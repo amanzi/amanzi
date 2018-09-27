@@ -22,7 +22,6 @@
 #include "Mesh.hh"
 #include "Op.hh"
 #include "Operator.hh"
-#include "OperatorDefs.hh"
 #include "PDE_HelperBCsList.hh"
 #include "Schema.hh"
 
@@ -102,9 +101,6 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
   int nfaces_owned, nfaces_wghost;
   int nnodes_owned, nnodes_wghost;
   int nedges_owned, nedges_wghost;
-
-  // discretization method
-  SpaceNickName space_col_, space_row_;
 };
 
 }  // namespace Operators

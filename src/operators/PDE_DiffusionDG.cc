@@ -87,6 +87,9 @@ void PDE_DiffusionDG::Init_(Teuchos::ParameterList& plist)
   method_ = plist.get<std::string>("method");
   method_order_ = plist.get<int>("method order", 0);
   matrix_ = plist.get<std::string>("matrix type");
+  
+  std::string basis = plist.get<std::string>("dg basis");
+  dg_ = std::make_shared<WhetStone::DG_Modal>(method_order_, mesh_, basis);
 }
 
 
@@ -109,7 +112,6 @@ void PDE_DiffusionDG::SetProblemCoefficients(
 void PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
                                      const Teuchos::Ptr<const CompositeVector>& u)
 {
-  WhetStone::DG_Modal dg(method_order_, mesh_, "natural");
   WhetStone::DenseMatrix Acell, Aface;
 
   int d = mesh_->space_dimension();
@@ -122,13 +124,13 @@ void PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
 
   for (int c = 0; c != ncells_owned; ++c) {
     if (Kc_.get()) Kc1 = (*Kc_)[c];
-    dg.StiffnessMatrix(c, Kc1, Acell);
+    dg_->StiffnessMatrix(c, Kc1, Acell);
     local_op_->matrices[c] = Acell;
   }
 
   for (int f = 0; f != nfaces_owned; ++f) {
     if (Kf_.get()) Kf = (*Kf_)[f];
-    dg.FaceMatrixPenalty(f, Kf, Aface);
+    dg_->FaceMatrixPenalty(f, Kf, Aface);
     penalty_op_->matrices[f] = Aface;
   }
 
@@ -138,7 +140,7 @@ void PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
       Kc1 = (*Kc_)[cells[0]]; 
       if (cells.size() > 1) Kc2 = (*Kc_)[cells[1]]; 
     }
-    dg.FaceMatrixJump(f, Kc1, Kc2, Aface);
+    dg_->FaceMatrixJump(f, Kc1, Kc2, Aface);
     Aface *= -1.0;
     jump_up_op_->matrices[f] = Aface;
 
@@ -165,7 +167,7 @@ void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
   std::vector<AmanziGeometry::Point> tau(d - 1);
 
   // create integration object for all mesh cells
-  WhetStone::NumericalIntegration numi(mesh_, false);
+  WhetStone::NumericalIntegration numi(mesh_);
 
   for (int f = 0; f != nfaces_owned; ++f) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET ||
@@ -182,13 +184,11 @@ void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
         coef(i) = bc_value[f][i];
       }
 
-      WhetStone::Polynomial pf(d, method_order_); 
-      pf.SetPolynomialCoefficients(coef);
+      WhetStone::Polynomial pf(d, method_order_, coef); 
       pf.set_origin(xf);
 
       // convert boundary polynomial to space polynomial
       pf.ChangeOrigin(mesh_->cell_centroid(c));
-      numi.ChangeBasisRegularToNatural(c, pf);
 
       // extract coefficients and update right-hand side 
       WhetStone::DenseMatrix& Pcell = penalty_op_->matrices[f];
@@ -196,7 +196,8 @@ void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
       int ncols = Pcell.NumCols();
 
       WhetStone::DenseVector v(nrows), pv(ncols), jv(ncols);
-      pf.GetPolynomialCoefficients(v);
+      v = pf.coefs();
+      dg_->cell_basis(c).ChangeBasisNaturalToMy(v);
 
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
         WhetStone::DenseMatrix& Jcell = jump_up_op_->matrices[f];

@@ -39,7 +39,7 @@ TEST(NUMI_CELL_2D_EULER_FORMULA) {
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
   Teuchos::RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo", gm, true, true); 
  
-  NumericalIntegration numi(mesh, true);
+  NumericalIntegration numi(mesh);
 
   int cell(0);
   double val;
@@ -72,7 +72,7 @@ TEST(NUMI_CELL_2D_QUADRATURE_POLYGON) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "Test: Numerical integration: quadrature rule" << std::endl;
+  std::cout << "Test: Numerical integration: quadrature rules in 2D" << std::endl;
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
   MeshFactory meshfactory(comm);
@@ -80,33 +80,33 @@ TEST(NUMI_CELL_2D_QUADRATURE_POLYGON) {
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
   Teuchos::RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo", gm, true, true); 
  
-  NumericalIntegration numi(mesh, true);
+  NumericalIntegration numi(mesh);
 
   int cell(0);
   double val1, val2;
 
-  // 1st-order polynomial
+  // linear polynomial centered at the origin
   Polynomial poly(2, 1);
   poly(1, 0) = 2.0;
   poly(1, 1) = 3.0;
   poly.set_origin(mesh->cell_centroid(cell));
 
-  std::vector<const Polynomial*> polys(1);
+  std::vector<const WhetStoneFunction*> polys(1);
   polys[0] = &poly;
 
   for (int order = 1; order < 10; ++order) {
-    val1 = numi.IntegratePolynomialsTrianglatedCell(cell, polys, order);
+    val1 = numi.IntegrateFunctionsTrianglatedCell(cell, polys, order);
 
     printf("order=%d  value=%10.6g\n", order, val1);
     CHECK_CLOSE(val1, poly.Value(mesh->cell_centroid(cell)), 1e-12);
   }
  
-  // cross-comparison of integartors
+  // cross-comparison of integrators
   for (int order = 1; order < 10; ++order) {
     poly.Reshape(2, order, true);
     poly(order, 0) = 1.0;
 
-    val1 = numi.IntegratePolynomialsTrianglatedCell(cell, polys);
+    val1 = numi.IntegrateFunctionsTrianglatedCell(cell, polys, order);
     val2 = numi.IntegratePolynomialCell(cell, poly);
 
     printf("order=%d  values: %10.6g %10.6g\n", order, val1, val2);
@@ -131,7 +131,7 @@ TEST(NUMI_CELL_2D_QUADRATURE_SQUARE) {
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
   Teuchos::RCP<Mesh> mesh = meshfactory(-1.0, -1.0, 1.0, 1.0, 2, 2); 
  
-  NumericalIntegration numi(mesh, true);
+  NumericalIntegration numi(mesh);
 
   int cell(3);
   double val, exact;
@@ -140,10 +140,10 @@ TEST(NUMI_CELL_2D_QUADRATURE_SQUARE) {
     Polynomial poly(2, order);
     poly(order, 0) = 1.0;
 
-    std::vector<const Polynomial*> polys(1);
+    std::vector<const WhetStoneFunction*> polys(1);
     polys[0] = &poly;
 
-    val = numi.IntegratePolynomialsTrianglatedCell(cell, polys);
+    val = numi.IntegrateFunctionsTrianglatedCell(cell, polys, poly.order());
     exact = 1.0 / (order + 1);
 
     printf("order=%d  value=%10.6g  exact=%10.6g\n", order, val, exact);
@@ -153,3 +153,91 @@ TEST(NUMI_CELL_2D_QUADRATURE_SQUARE) {
   delete comm;
 }
 
+
+/* **************************************************************** */
+TEST(NUMI_CELL_3D_QUADRATURE_POLYHEDRON) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "Test: Numerical integration: quadrature rules in 3D" << std::endl;
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<Mesh> mesh = meshfactory("test/dodecahedron.exo", gm, true, true); 
+ 
+  NumericalIntegration numi(mesh);
+
+  int cell(0);
+  double val1, val2;
+
+  // linear polynomial centered at the origin
+  Polynomial poly(3, 1);
+  poly(1, 0) = 2.0;
+  poly(1, 1) = 3.0;
+  poly(1, 2) = 4.0;
+  poly.set_origin(mesh->cell_centroid(cell));
+
+  std::vector<const WhetStoneFunction*> polys(1);
+  polys[0] = &poly;
+
+  for (int order = 1; order < 7; ++order) {
+    val1 = numi.IntegrateFunctionsTrianglatedCell(cell, polys, order);
+
+    printf("order=%d  value=%10.6g\n", order, val1);
+    CHECK_CLOSE(val1, poly.Value(mesh->cell_centroid(cell)), 1e-12);
+  }
+ 
+  // cross-comparison of integrators
+  for (int order = 1; order < 7; ++order) {
+    poly.Reshape(3, order, true);
+    poly(order, 0) = 1.0;
+
+    val1 = numi.IntegrateFunctionsTrianglatedCell(cell, polys, order);
+    val2 = numi.IntegratePolynomialCell(cell, poly);
+
+    printf("order=%d  value= %12.6f  diff=%10.6g\n", order, val1, val1 - val2);
+    CHECK_CLOSE(val1, val2, 1e-11 * std::max(1.0, fabs(val1)));
+  }
+
+  delete comm;
+}
+
+
+/* **************************************************************** */
+TEST(NUMI_CELL_3D_QUADRATURE_SQUARE) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "Test: Numerical integration: quadrature rule for cube" << std::endl;
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<Mesh> mesh = meshfactory(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 2, 2, 2); 
+ 
+  NumericalIntegration numi(mesh);
+
+  int cell(7);
+  double val, exact;
+
+  for (int order = 1; order < 7; ++order) {
+    Polynomial poly(3, order);
+    poly(order, 0) = 1.0;
+
+    std::vector<const WhetStoneFunction*> polys(1);
+    polys[0] = &poly;
+
+    val = numi.IntegrateFunctionsTrianglatedCell(cell, polys, poly.order());
+    exact = 1.0 / (order + 1);
+
+    printf("order=%d  value=%10.6g  exact=%10.6g\n", order, val, exact);
+    CHECK_CLOSE(val, exact, 1e-13);
+  }
+ 
+  delete comm;
+}

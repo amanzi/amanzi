@@ -471,7 +471,7 @@ void State::WriteDependencyGraph() const {
 void State::WriteStatistics(Teuchos::RCP<VerboseObject>& vo) const {
   if (vo->os_OK(Teuchos::VERB_HIGH)) {
     Teuchos::OSTab tab = vo->getOSTab();
-    *vo->os() << "\nField                               Min/Max/Avg" << std::endl;
+    *vo->os() << "\nField                                    Min/Max/Avg" << std::endl;
 
     for (FieldMap::const_iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
       std::string name(f_it->first);
@@ -485,13 +485,13 @@ void State::WriteStatistics(Teuchos::RCP<VerboseObject>& vo) const {
         for (auto c_it = vmin.begin(); c_it != vmin.end(); ++c_it) {
           std::string namedot(name), name_comp(c_it->first);
           if (vmin.size() != 1) namedot.append("." + name_comp);
-          namedot.resize(35, '.');
+          namedot.resize(40, '.');
           *vo->os() << namedot << " " << c_it->second << " / " 
                     << vmax[name_comp] << " / " << vavg[name_comp] << std::endl;
         }
       } else if (f_it->second->type() == CONSTANT_SCALAR) {
         double vmin = *f_it->second->GetScalarData();
-        name.resize(35, '.');
+        name.resize(40, '.');
         *vo->os() << name << " " << vmin << std::endl;
       }
     }

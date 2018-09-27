@@ -32,7 +32,7 @@ class MeshMapsFactory {
   // select numerical scheme using its name and order 
   std::shared_ptr<MeshMaps> Create(const Teuchos::ParameterList& plist,
                                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh0,
-                                   const Teuchos::RCP<AmanziMesh::Mesh>& mesh1) {
+                                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh1) {
     std::string name = plist.get<std::string>("map name");
     std::shared_ptr<MeshMaps> maps(NULL);
 

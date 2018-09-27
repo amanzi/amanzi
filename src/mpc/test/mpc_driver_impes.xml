@@ -533,7 +533,6 @@
   <!-- SOLVERS -->
   <ParameterList name="solvers">
     <ParameterList name="AztecOO CG">
-      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
         <Parameter name="maximum number of iterations" type="int" value="100"/>

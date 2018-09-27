@@ -30,7 +30,7 @@
 #include "Polynomial.hh"
 #include "Tensor.hh"
 #include "VectorPolynomial.hh"
-#include "WhetStone_typedefs.hh"
+#include "WhetStoneDefs.hh"
 
 // Operators
 #include "PDE_HelperDiscretization.hh"

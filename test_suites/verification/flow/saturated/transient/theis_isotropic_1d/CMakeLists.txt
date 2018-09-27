@@ -8,4 +8,4 @@ add_amanzi_comparison_test(theis_isotropic_1d
                            RELATIVE_TOLERANCE 1e-5
                            OBSERVATION "aqueous pressure"
                            REFERENCE ${THEIS_ISOTROPIC_1D_SOURCE_DIR}/golden_output/observation.out
-                           NPROCS 4)
+                           NPROCS 8)

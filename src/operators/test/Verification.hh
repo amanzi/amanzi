@@ -78,6 +78,22 @@ class Verification {
     }
   }
 
+  void CheckResidual(const Vector x, const Vector b, double tol) {
+    Vector r(b);
+
+    op_->ApplyAssembled(x, r);
+    r.Update(1.0, b, -1.0);
+
+    double tmp;
+    r.Dot(r, &tmp);
+    CHECK_CLOSE(0.0, tmp, tol * tol);
+  }
+
+  void CheckResidual(const Vector x, double tol) {
+    Vector b(*op_->rhs());
+    CheckResidual(x, b, tol);
+  }
+
  private:
   Teuchos::RCP<const Operator> op_;
 };

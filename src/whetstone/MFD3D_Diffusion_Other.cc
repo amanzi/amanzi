@@ -175,9 +175,9 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
 
     Tensor& Mv_tmp = Mv[n];
     for (int i = 0; i < d_; i++) {
-      int k = FindPosition(corner_faces[i], faces);
+      int k = std::distance(faces.begin(), std::find(faces.begin(), faces.end(), corner_faces[i]));
       for (int j = i; j < d_; j++) {
-        int l = FindPosition(corner_faces[j], faces);
+        int l = std::distance(faces.begin(), std::find(faces.begin(), faces.end(), corner_faces[j]));
         W(k, l) += Mv_tmp(i, j) * cwgt[n] * fdirs[k] * fdirs[l];
         W(l, k) = W(k, l);
       }

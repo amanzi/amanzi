@@ -145,7 +145,6 @@
    <!-- SOLVERS -->
    <ParameterList name="solvers">
      <ParameterList name="AztecOO CG">
-       <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
        <Parameter name="iterative method" type="string" value="gmres"/>
        <ParameterList name="gmres parameters">
          <Parameter name="error tolerance" type="double" value="1e-12"/>

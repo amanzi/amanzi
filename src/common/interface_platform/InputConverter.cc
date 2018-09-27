@@ -214,7 +214,9 @@ void InputConverter::ParseConstants_()
   if (node_list->getLength() == 0) return;
 
   children = node_list->item(0)->getChildNodes();
-  for (int i = 0; i < children->getLength(); ++i) {
+  int nchildren = children->getLength();
+
+  for (int i = 0; i < nchildren; ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
     element = static_cast<DOMElement*>(inode);
@@ -282,10 +284,10 @@ DOMNode* InputConverter::GetUniqueElementByTagsString_(
 
     bool found(true);
     for (int n = 1; n < tag_names.size(); ++n) {
-      DOMNodeList* children = node->getChildNodes();
       int ntag(0);
-      for (int i = 0; i < children->getLength(); i++) {
-        DOMNode* inode = children->item(i);
+      DOMNode* inode = node->getFirstChild();
+
+      while (inode != NULL) {
         if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
           char* tagname = mm.transcode(inode->getNodeName());   
           if (strcmp(tagname, tag_names[n].c_str()) == 0) {
@@ -293,7 +295,9 @@ DOMNode* InputConverter::GetUniqueElementByTagsString_(
             ntag++;
           }
         }
+        inode = inode->getNextSibling();
       }
+
       if (ntag > 1) {
         Errors::Message msg;
         msg << "Tag \"" << tag_names[n] << "\" in \"" << tags << "\"\n";
@@ -335,10 +339,10 @@ DOMNode* InputConverter::GetUniqueElementByTagsString_(
   node = const_cast<DOMNode*>(node1);
 
   for (int n = 0; n < tag_names.size(); ++n) {
-    DOMNodeList* children = node->getChildNodes();
     int ntag(0);
-    for (int i = 0; i < children->getLength(); i++) {
-      DOMNode* inode = children->item(i);
+    DOMNode* inode = node->getFirstChild();
+
+    while (inode != NULL) {
       if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
         char* tagname = XMLString::transcode(inode->getNodeName());   
         if (strcmp(tagname, tag_names[n].c_str()) == 0) {
@@ -347,6 +351,7 @@ DOMNode* InputConverter::GetUniqueElementByTagsString_(
         }
         XMLString::release(&tagname);
       }
+      inode = inode->getNextSibling();
     }
     if (ntag != 1) return node;
   }
@@ -495,10 +500,12 @@ std::vector<DOMNode*> InputConverter::GetSameChildNodes_(
   std::vector<DOMNode*> same;
 
   name = "";
-  DOMNodeList* children = node->getChildNodes();
-  for (int i = 0; i < children->getLength(); ++i) {
-    DOMNode* inode = children->item(i);
-    if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+  DOMNode* inode = node->getFirstChild();
+  while (inode != NULL) {
+    if (inode->getNodeType() != DOMNode::ELEMENT_NODE) {
+      inode = inode->getNextSibling();
+      continue;
+    }
 
     char* text = mm.transcode(inode->getNodeName());
     if (n == 0) name = text;
@@ -507,6 +514,7 @@ std::vector<DOMNode*> InputConverter::GetSameChildNodes_(
       n++;
     } 
     m++;
+    inode = inode->getNextSibling();
   }
   if (n == m && n > 0) flag = true;
 
@@ -585,7 +593,7 @@ double InputConverter::GetAttributeValueD_(
     val = default_val;
   } else {
     char* tagname = mm.transcode(elem->getNodeName());
-    ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
+    ThrowErrorMissing_(tagname, "attribute", attr_name, tagname);
     val = default_val;
   }
 
@@ -632,7 +640,7 @@ int InputConverter::GetAttributeValueL_(
     val = default_val;
   } else {
     char* tagname = mm.transcode(elem->getNodeName());
-    ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
+    ThrowErrorMissing_(tagname, "attribute", attr_name, tagname);
   }
 
   return val;
@@ -671,7 +679,7 @@ std::string InputConverter::GetAttributeValueS_(
     val = default_val;
   } else {
     char* tagname = mm.transcode(elem->getNodeName());
-    ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
+    ThrowErrorMissing_(tagname, "attribute", attr_name, tagname);
   }
 
   return val;
@@ -715,7 +723,7 @@ std::vector<double> InputConverter::GetAttributeVectorD_(
 
   } else if (exception) {
     char* tagname = mm.transcode(elem->getNodeName());
-    ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
+    ThrowErrorMissing_(tagname, "attribute", attr_name, tagname);
   }
 
   return val;
@@ -741,7 +749,7 @@ std::vector<std::string> InputConverter::GetAttributeVectorS_(
     }
   } else if (exception) {
     char* tagname = mm.transcode(elem->getNodeName());
-    ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
+    ThrowErrorMissing_(tagname, "attribute", attr_name, tagname);
   }
 
   return val;
@@ -760,7 +768,8 @@ std::string InputConverter::GetChildValueS_(
   flag = false;
 
   DOMNodeList* children = node->getChildNodes();
-  for (int i = 0; i < children->getLength(); ++i) {
+  int nchildren = children->getLength();
+  for (int i = 0; i < nchildren; ++i) {
     DOMNode* inode = children->item(i);
     char* tagname = mm.transcode(inode->getNodeName());   
     if (childName == tagname) {
@@ -918,8 +927,11 @@ std::string InputConverter::GetTextContentS_(
 * Parse input string using lists of available constants.
 ****************************************************************** */
 std::string InputConverter::GetConstantType_(
-    const std::string& val, std::string& parsed_val)
+    const std::string& val_in, std::string& parsed_val)
 {
+  std::string val(val_in);
+  boost::algorithm::trim(val);
+
   std::string type;
   if (constants_time_.find(val) != constants_time_.end()) {
     type = TYPE_TIME;
@@ -1169,15 +1181,16 @@ void InputConverter::ThrowErrorIllformed_(
 /* *******************************************************************
 * Generate unified error message for missing item
 ******************************************************************* */
-void InputConverter::ThrowErrorMissattr_(
-    const std::string& section, const std::string& type, const std::string& missing, const std::string& name)
+void InputConverter::ThrowErrorMissing_(
+    const std::string& node, const std::string& type,
+    const std::string& key, const std::string& subnode)
 {
   Errors::Message msg;
-  msg << "An error occurred during parsing node \"" << section << "\"\n";
-  msg << "No " << type << " \"" << missing << "\" found for \"" << name << "\".\n";
-  msg << "Please correct and try again \n";
+  msg << "An error occurred during parsing high-level node \"" << node << "\"\n";
+  msg << "No " << type << " \"" << key << "\" found for sub-node \"" << subnode << "\".\n";
   Exceptions::amanzi_throw(msg);
 }
+
 
 /* *******************************************************************
 * Generate unified error message for missing child
@@ -1790,7 +1803,7 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
   if (incomplete_tracers.size() > 0) {
     std::cout << "WARNING: primary species that may have missing atributes: ";
     for (auto it = incomplete_tracers.begin(); it != incomplete_tracers.end(); ++it) {
-      std::cout << it->first << " ";
+      std::cout << it->first << ", ";
     }
     std::cout << std::endl;
   }

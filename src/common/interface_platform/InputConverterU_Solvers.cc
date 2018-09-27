@@ -131,15 +131,10 @@ Teuchos::ParameterList InputConverterU::TranslateLinearSolvers_(
   }
 
   // collect other parameters
-  node = GetUniqueElementByTagsString_(tags_default + ", preconditioner", flag);
-  if (flag) prec = mm.transcode(node->getTextContent());
-  node = GetUniqueElementByTagsString_(tags + ", preconditioner", flag);
-  if (flag) prec = mm.transcode(node->getTextContent());
-
   node = GetUniqueElementByTagsString_(tags_default + ", tolerance", flag);
-  if (flag) tol = GetTextContentD_(node);
+  if (flag) tol = GetTextContentD_(node, "-");
   node = GetUniqueElementByTagsString_(tags + ", tolerance", flag);
-  if (flag) tol = GetTextContentD_(node);
+  if (flag) tol = GetTextContentD_(node, "-");
 
   node = GetUniqueElementByTagsString_(tags_default + ", max_iterations", flag);
   if (flag) maxiter = std::strtol(mm.transcode(node->getTextContent()), NULL, 10);
@@ -147,7 +142,6 @@ Teuchos::ParameterList InputConverterU::TranslateLinearSolvers_(
   if (flag) maxiter = std::strtol(mm.transcode(node->getTextContent()), NULL, 10);
 
   // populate parameter list
-  plist.set<std::string>("preconditioner", prec);
   plist.set<std::string>("iterative method", method);
  
   Teuchos::ParameterList& slist = plist.sublist(method + " parameters");
@@ -306,8 +300,9 @@ Teuchos::ParameterList InputConverterU::TranslateHypreAMG_()
 
   if (flag) {
     DOMNodeList* children = node->getChildNodes();
+    int nchildren = children->getLength();
 
-    for (int i = 0; i < children->getLength(); i++) {
+    for (int i = 0; i < nchildren; i++) {
       DOMNode* inode = children->item(i);
       char* tagname = mm.transcode(inode->getNodeName());
       char* text_content = mm.transcode(inode->getTextContent());

@@ -33,9 +33,8 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
     int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
 {
   Entity_ID_List faces;
-  std::vector<int> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  mesh_->cell_get_faces(c, &faces);
   int nfaces = faces.size();
 
   R.Reshape(nfaces, d_ - 1);

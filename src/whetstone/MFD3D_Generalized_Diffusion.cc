@@ -15,7 +15,7 @@
 #include "Mesh.hh"
 
 #include "MFD3D_Generalized_Diffusion.hh"
-#include "WhetStone_typedefs.hh"
+#include "WhetStoneDefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {

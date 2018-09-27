@@ -25,6 +25,7 @@
 #include "MFD3D.hh"
 #include "MFD3D_BernardiRaugel.hh"
 #include "MFD3D_CrouzeixRaviart.hh"
+#include "MFD3D_CrouzeixRaviartSerendipity.hh"
 #include "MFD3D_Diffusion.hh"
 #include "MFD3D_Generalized_Diffusion.hh"
 #include "MFD3D_Lagrange.hh"
@@ -100,6 +101,11 @@ Teuchos::RCP<MFD3D> MFD3DFactory::CreateMFD3D(
   } 
   else if (method == "CrouzeixRaviart") {
     Teuchos::RCP<MFD3D_CrouzeixRaviart> mfd = Teuchos::rcp(new MFD3D_CrouzeixRaviart(mesh));
+    mfd->set_order(method_order);
+    return mfd;
+  } 
+  else if (method == "CrouzeixRaviart serendipity") {
+    Teuchos::RCP<MFD3D_CrouzeixRaviartSerendipity> mfd = Teuchos::rcp(new MFD3D_CrouzeixRaviartSerendipity(mesh));
     mfd->set_order(method_order);
     return mfd;
   } 

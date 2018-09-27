@@ -20,7 +20,7 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Prepare scaling data for the natural basis.
+* Prepare scaling data for the normalized basis.
 ****************************************************************** */
 void Basis_Normalized::Init(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order)
@@ -29,7 +29,7 @@ void Basis_Normalized::Init(
   monomial_scales_.Reshape(d, order);
 
   Polynomial integrals(d, 2 * order);
-  NumericalIntegration numi(mesh, true);
+  NumericalIntegration numi(mesh);
 
   for (int k = 0; k <= 2 * order; ++k) {
     numi.IntegrateMonomialsCell(c, k, integrals);
@@ -38,7 +38,7 @@ void Basis_Normalized::Init(
   double volume = integrals(0, 0); 
 
   monomial_scales_(0, 0) = 1.0;
-  for (auto it = monomial_scales_.begin(); it.end() <= monomial_scales_.end(); ++it) {
+  for (auto it = monomial_scales_.begin(); it < monomial_scales_.end(); ++it) {
     int k = it.MonomialSetPosition();
     const int* multi_index = it.multi_index();
     int index[d]; 
@@ -50,7 +50,7 @@ void Basis_Normalized::Init(
     }
 
     if (m > 0) {
-      double norm = integrals(2 * m, integrals.MonomialSetPosition(index));
+      double norm = integrals(2 * m, MonomialSetPosition(d, index));
       monomial_scales_(m, k) = std::pow(volume / norm, 0.5);
     }
   }
@@ -58,107 +58,101 @@ void Basis_Normalized::Init(
 
 
 /* ******************************************************************
-* Transfrmation of natural basis to owned basis.
+* Transformation from natural basis to my basis: A_new = R^T A_old R.
 ****************************************************************** */
-void Basis_Normalized::ChangeBasisMatrix(DenseMatrix& A) const
+void Basis_Normalized::BilinearFormNaturalToMy(DenseMatrix& A) const
 {
   AMANZI_ASSERT(A.NumRows() == monomial_scales_.size());
 
-  int order = monomial_scales_.order();
-  int d = monomial_scales_.dimension();
-
   int nrows = A.NumRows();
-  std::vector<double> a(nrows);
-
-  PolynomialIterator it(d);
-  for (it.begin(); it.end() <= order; ++it) {
-    int m = it.MonomialSetOrder();
-    int k = it.MonomialSetPosition();
-
-    a[k] = monomial_scales_(m, k);
-  }
+  const DenseVector& a = monomial_scales_.coefs();
 
   // calculate R^T * A * R
   for (int k = 0; k < nrows; ++k) {
     for (int i = 0; i < nrows; ++i) {
-      A(i, k) = A(i, k) * a[k] * a[i];
+      A(i, k) = A(i, k) * a(k) * a(i);
     }
   }
 }
 
 
 /* ******************************************************************
-* Transfrmation of natural basis to owned basis.
+* Transformation of interface matrix from natural to my bases.
 ****************************************************************** */
-void Basis_Normalized::ChangeBasisVector(DenseVector& v) const
-{
-  AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
-
-  for (auto it = monomial_scales_.begin(); it.end() <= monomial_scales_.end(); ++it) {
-    int n = it.PolynomialPosition();
-    int m = it.MonomialSetOrder();
-    int k = it.MonomialSetPosition();
-
-    v(n) /= monomial_scales_(m, k);
-  }
-}
-
-
-/* ******************************************************************
-* Transfrmation of natural basis to owned basis.
-****************************************************************** */
-void Basis_Normalized::ChangeBasisMatrix(
+void Basis_Normalized::BilinearFormNaturalToMy(
     std::shared_ptr<Basis> bl, std::shared_ptr<Basis> br, DenseMatrix& A) const
 {
-  int order = monomial_scales_.order();
-  int d = monomial_scales_.dimension();
-
   int nrows = A.NumRows();
   int m(nrows / 2);
-  std::vector<double> a1(m), a2(m);
 
   auto bll = std::dynamic_pointer_cast<Basis_Normalized>(bl);
   auto brr = std::dynamic_pointer_cast<Basis_Normalized>(br);
 
-  PolynomialIterator it(d);
-  for (it.begin(); it.end() <= order; ++it) {
-    int n = it.PolynomialPosition();
-    int m = it.MonomialSetOrder();
-    int k = it.MonomialSetPosition();
-
-    double ak = (bll->monomial_scales())(m, k);
-    a1[n] = ak;
-
-    ak = (brr->monomial_scales())(m, k);
-    a2[n] = ak;
-  }
+  const DenseVector& a1 = bll->monomial_scales().coefs();
+  const DenseVector& a2 = brr->monomial_scales().coefs();
 
   // calculate R^T * A * R
   for (int k = 0; k < m; ++k) {
     for (int i = 0; i < m; ++i) {
-      A(i, k) = A(i, k) * a1[k] * a2[i];
-      A(i, k + m) = A(i, k + m) * a2[k] * a1[i];
+      A(i, k) = A(i, k) * a1(i) * a1(k);
+      A(i, k + m) = A(i, k + m) * a1(i) * a2(k);
 
-      A(i + m, k) = A(i + m, k) * a1[k] * a2[i];
-      A(i + m, k + m) = A(i + m, k + m) * a2[k] * a1[i];
+      A(i + m, k) = A(i + m, k) * a2(i) * a1(k);
+      A(i + m, k + m) = A(i + m, k + m) * a2(i) * a2(k);
     }
   }
 }
 
 
 /* ******************************************************************
-* Recover polynomial from data coeffieints. 
+* Transformation from natural basis to my basis: f_new = R^T f_old.
+****************************************************************** */
+void Basis_Normalized::LinearFormNaturalToMy(DenseVector& f) const
+{
+  for (int n = 0; n < monomial_scales_.size(); ++n) {
+    f(n) *= monomial_scales_(n);
+  }
+}
+
+
+/* ******************************************************************
+* Transformation from my to natural bases: v_old = R * v_new.
+****************************************************************** */
+void Basis_Normalized::ChangeBasisMyToNatural(DenseVector& v) const
+{
+  AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
+
+  for (int n = 0; n < monomial_scales_.size(); ++n) {
+    v(n) *= monomial_scales_(n);
+  }
+}
+
+
+/* ******************************************************************
+* Transformation from natural to my bases: v_new = inv(R) * v_old.
+****************************************************************** */
+void Basis_Normalized::ChangeBasisNaturalToMy(DenseVector& v) const
+{
+  AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
+
+  for (int n = 0; n < monomial_scales_.size(); ++n) {
+    v(n) /= monomial_scales_(n);
+  }
+}
+
+
+/* ******************************************************************
+* Recover polynomial from data coefficients. 
 ****************************************************************** */
 Polynomial Basis_Normalized::CalculatePolynomial(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     int c, int order, DenseVector& coefs) const
 {
-  int d = mesh->space_dimension();
   Polynomial poly(monomial_scales_);
   poly.set_origin(mesh->cell_centroid(c));
 
   int n(0);
-  for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
+  for (auto it = poly.begin(); it < poly.end(); ++it) {
     int m = it.MonomialSetOrder();
     int k = it.MonomialSetPosition();
 

@@ -27,7 +27,7 @@
 #include "MeshMaps.hh"
 #include "Polynomial.hh"
 #include "Tensor.hh"
-#include "WhetStone_typedefs.hh"
+#include "WhetStoneDefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {

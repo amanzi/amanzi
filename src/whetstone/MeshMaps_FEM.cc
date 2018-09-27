@@ -49,7 +49,7 @@ void MeshMaps_FEM::VelocityCell(
   Tensor J0 = JacobianValueInternal_(mesh0_, c, xref);
   J0.Inverse();
 
-  //calculate map in coordinate system centered at point 1
+  // calculate map in coordinate system centered at point 1
   vc.resize(d_);
   for (int i = 0; i < d_; ++i) {
     vc[i].Reshape(d_, 2);

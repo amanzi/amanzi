@@ -119,7 +119,7 @@ TEST(RECONSTRUCTION_LINEAR_2D) {
 
   ReconstructionCell lifting(mesh);
   lifting.Init(field, plist);
-  lifting.Compute(); 
+  lifting.ComputeGradient(); 
 
   // calculate gradient error
   Epetra_MultiVector grad_computed(*lifting.gradient()->ViewComponent("cell"));
@@ -178,7 +178,7 @@ TEST(RECONSTRUCTION_LINEAR_3D) {
 
   ReconstructionCell lifting(mesh);
   lifting.Init(field, plist);
-  lifting.Compute(); 
+  lifting.ComputeGradient(); 
 
   // calculate gradient error
   Epetra_MultiVector grad_computed(*lifting.gradient()->ViewComponent("cell"));
@@ -289,7 +289,7 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_2D) {
     // Compute reconstruction
     ReconstructionCell lifting(mesh);
     lifting.Init(field, plist);
-    lifting.Compute(); 
+    lifting.ComputeGradient(); 
 
     // Apply limiter
     lifting.InitLimiter(flux);
@@ -409,7 +409,7 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_3D) {
     // Compute reconstruction
     ReconstructionCell lifting(mesh);
     lifting.Init(field, plist);
-    lifting.Compute(); 
+    lifting.ComputeGradient(); 
 
     // Apply limiter
     lifting.InitLimiter(flux);
@@ -530,7 +530,7 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_2D) {
       // Compute reconstruction
       ReconstructionCell lifting(mesh);
       lifting.Init(field, plist);
-      lifting.Compute(); 
+      lifting.ComputeGradient(); 
 
       // Apply limiter
       lifting.InitLimiter(flux);
@@ -656,7 +656,7 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_3D) {
       // Compute reconstruction
       ReconstructionCell lifting(mesh);
       lifting.Init(field, plist);
-      lifting.Compute(); 
+      lifting.ComputeGradient(); 
 
       // Apply limiter
       lifting.InitLimiter(flux);
@@ -781,7 +781,7 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_2D_POLYMESH) {
     // Compute reconstruction
     ReconstructionCell lifting(mesh);
     lifting.Init(field, plist);
-    lifting.Compute(); 
+    lifting.ComputeGradient(); 
 
     // Apply limiter
     lifting.InitLimiter(flux);
@@ -890,7 +890,7 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_FRACtURES) {
     // Compute reconstruction
     ReconstructionCell lifting(mesh);
     lifting.Init(field, plist);
-    lifting.Compute(); 
+    lifting.ComputeGradient(); 
 
     // Apply limiter
     // lifting.InitLimiter(flux);

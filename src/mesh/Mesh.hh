@@ -837,9 +837,6 @@ protected:
                              double *length,
                              AmanziGeometry::Point *edge_vector) const;
 
- private:
-  int FindPosition_(Entity_ID v, Entity_ID_List nodes) const;
-
  public:
   void PrintMeshStatistics() const;
 

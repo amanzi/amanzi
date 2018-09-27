@@ -32,14 +32,14 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   Polynomial p(2, 3);
 
   int i(0);
-  for (auto it = p.begin(); it.end() <= p.end(); ++it) {
+  for (auto it = p.begin(); it < p.end(); ++it) {
     const int* index = it.multi_index();
     CHECK(index[0] >= 0 && index[1] >= 0);
 
-    int pos = p.PolynomialPosition(index);
+    int pos = PolynomialPosition(2, index);
     CHECK(pos == i++);
 
-    int m = p.MonomialSetPosition(index);
+    int m = MonomialSetPosition(2, index);
     p(index[0] + index[1], m) = pos;
   }
   std::cout << p << std::endl; 
@@ -67,14 +67,14 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   Polynomial q(3, 3);
 
   i = 0;
-  for (auto it = q.begin(); it.end() <= q.end(); ++it) {
+  for (auto it = q.begin(); it < q.end(); ++it) {
     const int* index = it.multi_index();
     CHECK(index[0] >= 0 && index[1] >= 0 && index[2] >= 0);
 
-    int pos = q.PolynomialPosition(index);
+    int pos = PolynomialPosition(3, index);
     CHECK(pos == i++);
 
-    int m = q.MonomialSetPosition(index);
+    int m = MonomialSetPosition(3, index);
     q(index[0] + index[1] + index[2], m) = pos;
   }
   std::cout << "Original polynomial\n" << q << std::endl; 
@@ -105,12 +105,14 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   CHECK_CLOSE(q4.Value(xyz), 0.0, 1e-10);
 
   // derivatives
-  VectorPolynomial grad;
-  grad.Gradient(q_orig);
-  std::cout << "Gradient of a polynomial:\n" << grad[0] << grad[1] << grad[2] << std::endl;
-
+  auto grad = Gradient(q_orig);
+  std::cout << "Gradient of a polynomial:\n" << grad << std::endl;
+ 
   Polynomial lp = q_orig.Laplacian();
   std::cout << "Laplacian of original polynomial:\n" << lp << std::endl;
+
+  q4 = Divergence(grad) - lp; 
+  CHECK_CLOSE(0.0, q4.NormMax(), 1e-12);
 
   // change origin of coordinate system
   AmanziGeometry::Point origin(0.5, 0.3, 0.2);
@@ -123,9 +125,9 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   // trace of a 2D polynomial
   Polynomial p2d(2, 3);
 
-  for (auto it = p2d.begin(); it.end() <= p2d.end(); ++it) {
+  for (auto it = p2d.begin(); it < p2d.end(); ++it) {
     const int* index = it.multi_index();
-    int pos = p2d.PolynomialPosition(index);
+    int pos = PolynomialPosition(2, index);
 
     int m = it.MonomialSetOrder();
     int k = it.MonomialSetPosition();
@@ -146,5 +148,10 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   p1d.ChangeCoordinates(x0, tau);
   std::cout << "Before ChangeCoordinates: " << p2d << std::endl;
   std::cout << "After ChangeCoordinates: " << p1d << std::endl;
+
+  // assignement small to large
+  q1.Reshape(2, 3, true);
+  q2.Reshape(2, 2, true);
+  q1 = q2;
 }
 

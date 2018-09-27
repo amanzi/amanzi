@@ -28,12 +28,6 @@ typedef enum { OPERATOR_DIFFUSION_MFD,
                OPERATOR_ELECTROMAGNETICS,
                OPERATOR_MAGNETIC_DIFFUSION} OperatorType;
 
-typedef enum { BERNARDI_RAUGEL,
-               MINI,
-               RAVIART_THOMAS,
-               P0,
-               DG } SpaceNickName;
-
 enum class DOF_Type { SCALAR = 1,
                       VECTOR,
                       POINT,

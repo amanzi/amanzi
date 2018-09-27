@@ -56,6 +56,8 @@ add_amanzi_library(operators_audit
 #
 set(operators_inc_files
     BCs.hh
+    Mini_Diffusion1D.hh
+    Mini_Operator1D.hh
     RemapUtils.hh
     OperatorDefs.hh
     OperatorUtils.hh
@@ -115,7 +117,9 @@ set(operators_inc_files
 )
 
 add_amanzi_library(operators 
-                   SOURCE OperatorUtils.cc
+                   SOURCE Mini_Diffusion1D.cc
+                          Mini_Operator1D.cc
+                          OperatorUtils.cc
                           Operator.cc
                           Operator_Node.cc
                           Operator_Edge.cc
@@ -226,7 +230,7 @@ if (BUILD_TESTS)
     add_amanzi_test(operators_diffusion_dg operators_diffusion_dg
                     KIND unit
                     SOURCE test/Main.cc test/operator_diffusion_dg.cc
-                    LINK_LIBS operators_audit ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(operators_commute operators_commute
                     KIND unit
@@ -321,8 +325,7 @@ if (BUILD_TESTS)
     # remap tests
     add_amanzi_test(operators_remap operators_remap
                     KIND unit
-                    SOURCE test/Main.cc test/operator_remap_primal.cc
-                           test/operator_remap_dual.cc
+                    SOURCE test/Main.cc test/operator_remap_dual.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # high-order diffusion test
@@ -338,6 +341,13 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/operator_advection_dg.cc
                                         test/operator_advection_dg_transient
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: mini PDEs
+    add_amanzi_test(operators_mini1D operators_mini1D
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_mini1D.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
 endif()
 
 

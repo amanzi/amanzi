@@ -65,15 +65,6 @@ void PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
   // parse discretization  parameters
   WhetStone::MFD3DFactory factory;
   mfd_ = factory.Create(mesh_, plist);
-
-  if (factory.method() == "dg modal") {
-    space_col_ = DG;
-    space_row_ = DG;
-  } else {
-    Errors::Message msg;
-    msg << "Reaction operator: method \"" << factory.method() << "\" is invalid.";
-    Exceptions::amanzi_throw(msg);
-  }
 }
 
 

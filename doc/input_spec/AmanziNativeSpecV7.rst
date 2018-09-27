@@ -12,25 +12,6 @@ This is a continuously evolving specification format used by the code developers
 Its main purpose is to develop and test new capabilities without disruption of end-users.
 
 
-Changes V6 -> V7
-================
-
-* Lower-case naming convention for parameters.
-* Dual porosity model to flow and transport.
-* Support of units in output of observations.
-* New regions: with volume fractions and line segments.
-* Finer control of IO of state fields via blacklisting
-* New functions: distance and monomial.
-* Support of Trilinos solvers: Belos GMRES and NOX.
-* Simple back-tracking and continuation algorithms.
-* More submodels for boundary conditions.
-* New permeability models for flow in fractures.
-* Support of higher-order transport, 3rd and 4th.
-* New time step controller "from file".
-* Experimental support of Stokes and Navier Stokes flows
-* Better layout, less typos.
-
-
 ParameterList XML
 =================
 
@@ -498,6 +479,82 @@ The evaluator has the following fields.
 The independent variable *SATURATION_LIQUID* is defined as a cell-based variable with
 constant value 0.8. 
 Note that the user-defined name for this field cannot have spaces.
+
+
+Independent field evaluator from file
+.....................................
+
+An independent field evaluator from file has no dependencies and is specified by 
+data at specific time moments. 
+
+* `"filename`" [string] defines name of a data file.
+  
+* `"domain name`" [string] specifies mesh. Default is `"domain`".
+
+* `"variable name`" [string] defines variable name in the data file.
+
+* `"component name`" [string] defines component name in a composite vector.
+
+* `"mesh entity`" [string] specifies geometric object associated with the mesh function.
+  Available options are `"cell`", `"face`", and `"node`".
+
+* `"number of DoFs`" [string] defines the number of degrees of freedom. Default is 1.
+
+* `"time function`" [list] defines a time function to interpolate data. This is the 
+  optional parameter.
+
+.. code-block:: xml
+
+  <ParameterList name="field_evaluators">  <!-- parent list -->
+    <ParameterList name="POROSITY">
+      <Parameter name="field evaluator type" type="string" value="independent variable from file"/>
+      <Parameter name="filename" type="string" value="DATA_FILE.h5"/>
+      <Parameter name="domain name" type="string" value="domain"/>
+      <Parameter name="variable name" type="string" value="porosity"/>
+      <Parameter name="component name" type="string" value="cell"/>
+      <Parameter name="mesh entity" type="string" value="cell"/>
+      <Parameter name="number of DoFs" type="int" value="1"/>
+
+      <ParameterList name="time function">  
+        <Parameter name="times" type="Array(double)" value="{1.0, 2.0, 3.0}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+The independent variable *POROSITY* is defined as a cell-based variable and
+interpolated between three time intervals.
+
+
+Constant field evaluator
+........................
+
+Constant field evaluator as a simplified version of independent field evaluator from
+file which allows one to define constant in time field. Initialization of the field 
+has to be done in the initial conditions sublist of state.
+
+.. code-block:: xml
+
+  <ParameterList name="initial conditions">  <!-- parent list -->
+    <ParameterList name="POROSITY"> 
+      <ParameterList name="function">
+        <ParameterList name="MESH BLOCK">
+          <Parameter name="regions" type="Array(string)" value="ALL"/>
+          <Parameter name="component" type="string" value="cell"/>
+          <ParameterList name="function">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="90000.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="field_evaluators">  <!-- parent list -->
+    <ParameterList name="POROSITY">
+      <Parameter name="field evaluator type" type="string" value="constant variable"/>
+    </ParameterList>
+  </ParameterList>
 
 
 Primary field evaluator
@@ -1755,6 +1812,7 @@ Initialization and constraints
 
 * `"linear solver`" [string] refers to a generic linear solver from list `"solvers`".
   It is used in all cases except for `"initialization`" and `"enforce pressure-lambda constraints`".
+  Currently, it is used by the Darcy PK only.
 
 * `"preconditioner`" [string] specifies preconditioner for linear and nonlinear solvers.
 
@@ -1778,7 +1836,7 @@ Initialization and constraints
       Default is 1e-8.
     * `"maximum number of iterations`" [int] limits the number of iterations. Default is 400. 
 
-  * `"linear solver`" [string] refers to a solver sublist of the list `"solvers`".
+  * `"linear solver`" [string] refers to a solver sublist of the list `"solvers`". 
 
   * `"clipping saturation value`" [double] is an experimental option. It is used 
     after pressure initialization to cut-off small values of pressure.
@@ -1807,8 +1865,8 @@ Initialization and constraints
      <ParameterList name="time integrator">
        <Parameter name="error control options" type="Array(string)" value="{pressure, saturation}"/>
        <Parameter name="linear solver" type="string" value="GMRES_with_AMG"/>
-       <Parameter name="linear solver as preconditioner" type="string" value="GMRES_with_AMG"/>
        <Parameter name="preconditioner" type="string" value="HYPRE_AMG"/>
+       <Parameter name="preconditioner enhancement" type="string" value="none"/>
 
        <ParameterList name="initialization">  <!-- first method -->
          <Parameter name="method" type="string" value="saturated solver"/>
@@ -1970,13 +2028,22 @@ The incomplete list is
 Transport PK
 ------------
 
-The conceptual PDE model for the fully saturated flow is
+Mathematical models
+...................
+
+A few PDE models can be instantiated using the parameters described below.
+
+
+Single-phase transport
+``````````````````````
+
+The conceptual PDE model for the transport in partially saturated media is
 
 .. math::
   \frac{\partial (\phi s_l C_l)}{\partial t} 
   =
   - \boldsymbol{\nabla} \cdot (\boldsymbol{q}_l C_l) 
-  + \boldsymbol{\nabla} \cdot (\phi_e s_l (\boldsymbol{D}_l + \tau \boldsymbol{M}_l) \boldsymbol{\nabla} C_l) + Q,
+  + \boldsymbol{\nabla} \cdot (\phi_e s_l\, (\boldsymbol{D}_l + \tau \boldsymbol{M}_l) \boldsymbol{\nabla} C_l) + Q,
 
 where 
 :math:`\phi` is total porosity,
@@ -2004,8 +2071,51 @@ and :math:`\boldsymbol{v}` is average pore velocity.
 Amanzi supports two additional models for dispersivity with 3 and 4 parameters.
 
 
-Physical models and assumptions
-...............................
+Single-phase transport with dual porosity model
+```````````````````````````````````````````````
+
+The dual porosity formulation of the solute transport consists of two equations
+for the fracture and matrix regions. 
+In the fracture region, we have \citep{simunek-vangenuchten_2008}
+
+.. math::
+  \frac{\partial (\phi_f\, s_{lf}\, C_{lf})}{\partial t} 
+  =
+  - \boldsymbol{\nabla} \cdot (\boldsymbol{q}_l C_{lf}) 
+  + \boldsymbol{\nabla} \cdot (\phi_f\, s_{lf}\, (\boldsymbol{D}_l + \tau \boldsymbol{M}_l) \boldsymbol{\nabla} C_{lf}) 
+  - \Sigma_s + Q_f,
+
+where 
+:math:`\phi_f` is fracture porosity,
+:math:`s_{lf}` is liquid saturation in fracture, 
+:math:`\boldsymbol{q}_l` is the Darcy velocity,
+:math:`\boldsymbol{D}_l` is dispersion tensor,
+:math:`\boldsymbol{M}_l` is diffusion coefficient,
+:math:`\Sigma_s` is the solute exchange term,
+and :math:`Q_f` is source or sink term.
+In the matrix region, we have
+
+.. math::
+  \frac{\partial (\phi_m\, s_{lm}\, C_{lm})}{\partial t}
+  = \Sigma_s + Q_m,
+
+where 
+:math:`\phi_m` is matrix porosity,
+:math:`s_{lm}` is liquid saturation in matrix, 
+:math:`Q_m` is source or sink term.
+The solute exchange term is defined as
+
+.. math::
+  \Sigma_s = \alpha_s (C_{lf} - C_{lm}) + \Sigma_w C^*,
+
+where 
+:math:`\Sigma_w` is transfer rate for water from the matrix to the fracture, and
+:math:`C^*` is equal to :math:`C_{lf}` if :math:`\Sigma_w > 0` and :math:`C_{lm}` is :math:`\Sigma_w < 0`.
+The coefficient :math:`\alpha_s` is the first-order solute mass transfer coefficient [:math:`s^{-1}`].
+
+
+Model specifications and assumptions
+....................................
 
 This list is used to summarize physical models and assumptions, such as
 coupling with other PKs.
@@ -2059,6 +2169,8 @@ and temporal accuracy, and verbosity:
   describe in the separate section below.
 
 * `"solver`" [string] Specifies the dispersion/diffusion solver.
+
+* `"preconditioner`" [string] specifies preconditioner for dispersion solver.
 
 * `"number of aqueous components`" [int] The total number of aqueous components. 
   Default value is the total number of components.
@@ -2218,16 +2330,34 @@ discretized in mesh cells and on mesh faces. The later unknowns are auxiliary un
 Multiscale continuum models
 ...........................
 
-The list of multiscale models is the placeholder for various multiscale models.
+The list of multiscale models is the place for various subscale models that coul 
+be mixed and matched.
 Its ordered by materials and includes parameters for the assigned multiscale model
 This list is optional.
 
-* `"multiscale model`" [string] is the model name. Available option is "dual porosity".
+* `"multiscale model`" [string] is the model name. Available option is `"dual porosity`"
+  and `"generalized dual porosity`".
 
 * `"regions`" [Array(string)] is the list of regions where this model should be applied.
 
-* `"solute transfer coefficient`" [list] defines diffusive solute transport due to
-  convetration gradients.
+* `"xxx parameters`" [sublist] provides parameters for the model specified by variable `"multiscale model`".
+
+
+Dual porosity model
+```````````````````
+
+* `"Warren Root parameter`" [list] scales diffusive solute transport due to
+  concentration gradient.
+* `"tortousity`" [double] defines tortuosity to correct diffusivity of a liquid solute.
+
+
+Generalized dual porosity model
+```````````````````````````````
+
+* `"number of matrix nodes`" [int] defines number of matrix layers.
+* `"matrix depth`" [double] is the characteristic length for matrix continuum.
+* `"tortousity`" [double] defines tortuosity to correct diffusivity of a liquid solute.
+* `"matrix volume fraction`" [double] defines relative volume of matrix continuum.
 
 .. code-block:: xml
 
@@ -2236,11 +2366,21 @@ This list is optional.
       <ParameterList name="WHITE SOIL">
         <Parameter name="multiscale model" type="string" value="dual porosity"/>
         <Parameter name="regions" type="Array(string)" value="{TOP_REGION, BOTTOM_REGION}"/>
-        <Paramater name="solute transfer coefficient" type="double" value="4.0e-5"/>
+        <ParameterList name="dual porosity parameters">
+          <Paramater name="Warren Root parameter" type="double" value="4.0e-5"/>
+          <Paramater name="matrix tortuosity" type="double" value="0.95"/>
+          <Paramater name="matrix volume fraction" type="double" value="0.9999"/>
+        </ParameterList>  
       </ParameterList>  
 
       <ParameterList name="GREY SOIL">
-         ...  
+        <Parameter name="multiscale model" type="string" value="generalized dual porosity"/>
+        <Parameter name="regions" type="Array(string)" value="{MIDDLE_REGION}"/>
+        <ParameterList name="generalized dual porosity parameters">
+          <Paramater name="number of matrix nodes" type="int" value="2"/>
+          <Paramater name="matrix depth" type="double" value="0.01"/>
+          <Paramater name="matrix tortuosity" type="double" value="1.0"/>
+        </ParameterList>  
       </ParameterList>  
     </ParameterList>  
   </ParameterList>  
@@ -3539,7 +3679,8 @@ Operators
 
 Operators are discrete forms of linearized PDEs operators.
 They form a layer between physical process kernels and solvers
-and include diffusion, advection, elasticity, and source operators.
+and include accumulation, diffusion, advection, elasticity, reaction, 
+and source operators.
 The residual associated with an operator :math:`L_h` helps to 
 understand the employed sign convention:
 
@@ -3548,7 +3689,7 @@ understand the employed sign convention:
 
 A PK decides how to bundle operators in a collection of operators.
 For example, an advection-diffusion problem may benefit from using
-an operator that combines two operators representing diffusion and advection process.
+a single operator that combines two operators representing diffusion and advection process.
 Collection of operators must be used for implicit solvers and for building preconditioners.
 In such a case, the collections acts as a single operator.
 
@@ -3563,35 +3704,40 @@ The operators use notion of schema to describe operator's abstract structure.
 Old operators use a simple schema which is simply the list of geometric objects where
 scalar degrees of freedom are defined.
 New operators use a list to define location, type, and number of degrees of freedom.
+In addition, the base of local stencil is either *face* or *cell*.
 A rectangular operator needs two schemas do describe its domain (called `"schema domain`") 
 and its range (called `"schema range`").
+A square operator may use either two identical schema lists or a single list called `"schema`".
 
 .. code-block:: xml
 
   <ParameterList name="OPERATOR_NAME">  <!-- parent list-->
     <ParameterList name="schema domain">
+      <Parameter name="base" type="string" value="cell"/>
       <Parameter name="location" type="Array(string)" value="{node, face}"/>
       <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
       <Parameter name="number" type="Array(int)" value="{2, 1}"/>
     </ParameterList>
     <ParameterList name="schema domain">
+      <Parameter name="base" type="string" value="cell"/>
       <Parameter name="location" type="Array(string)" value="{node, face}"/>
       <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
       <Parameter name="number" type="Array(int)" value="{2, 1}"/>
     </ParameterList>
   </ParameterList>
 
-This example describes square operator with two degrees of freedom per mesh node and one
+This example describes a square operator with two degrees of freedom per mesh node and one
 degree of freedom per mesh face. 
 The face-based degree of freedom is the normal component of a vector field. 
 Such set of degrees of freedom is used in the Bernardi-Raugel element for discretizing 
 Stokes equations.
+Parameter `"base`" indicates that local matrices are associated with mesh cells. 
 
 
 Diffusion operator
 ..................
 
-Diffusion is the most frequently used operator.
+Diffusion is the most frequently used operator. It employs the old schema.
 
 * `"OPERATOR_NAME`" [list] a PK specific name for the diffusion operator.
 
@@ -3606,9 +3752,11 @@ Diffusion is the most frequently used operator.
 
   * `"discretization secondary`" [string] specifies the most robust discretization method
     that is used when the primary selection fails to satisfy all a priori conditions.
+    Default value is equal to that for the primary discretization.
 
-  * `"diffusion tensor`" [string] allows us to solve problems with symmetric and non-symmetric 
-    (but positive definite) tensors. Available options are *symmetric* (default) and *nonsymmetric*.
+  * `"diffusion tensor`" [string] specifies additional properties of the diffusion tensor.
+    It allows us to solve problems with non-symmetric but positive definite tensors. 
+    Available options are *symmetric* (default) and *nonsymmetric*.
 
   * `"nonlinear coefficient`" [string] specifies a method for treating nonlinear diffusion
     coefficient, if any. Available options are `"none`", `"upwind: face`", `"divk: cell-face`" (default),
@@ -3620,11 +3768,12 @@ Diffusion is the most frequently used operator.
     Default is `"none`".
 
   * `"schema`" [Array(string)] defines the operator stencil. It is a collection of 
-    geometric objects.
+    geometric objects. It equals to `"{cell}`" for finite volume schemes. 
+    It is typically `"{face, cell}`" for mimetic discretizations.
 
   * `"preconditioner schema`" [Array(string)] defines the preconditioner stencil.
-    It is needed only when the default assembling procedure is not desirable. If skipped,
-    the `"schema`" is used instead. 
+    It is needed only when the default assembling procedure is not desirable. 
+    If skipped, the `"schema`" is used instead. 
 
   * `"gravity`" [bool] specifies if flow is driven also by the gravity.
 
@@ -3634,9 +3783,9 @@ Diffusion is the most frequently used operator.
     and derives gravity discretization by the reserve shifting.
     The second option is based on the divergence formula.
 
-  * `"Newton correction`" [string] specifies a model for non-physical terms 
-    that must be added to the matrix. These terms represent Jacobian and are needed 
-    for the preconditioner. Available options are `"true Jacobian`" and `"approximate Jacobian`".
+  * `"Newton correction`" [string] specifies a model for correction (non-physical) terms 
+    that must be added to the preconditioner. These terms approximate some Jacobian terms.
+    Available options are `"true Jacobian`" and `"approximate Jacobian`".
     The FV scheme accepts only the first options. The othre schemes accept only the second option.
 
   * `"scaled constraint equation`" [bool] rescales flux continuity equations on mesh faces.
@@ -3688,13 +3837,34 @@ Schur complement.
 Advection operator
 ..................
 
-An advection operator may have different domain and range and therefore requires two schemas.
-The structure of the schema is described in the previous section.
+A high-order advection operator may have different domain and range and therefore requires two schemas.
+The structure of the new schema is described in the previous section.
+A high-order advection operator has two terms in a weak formulation, corresponding to 
+volume and surface integrals. These two terms are discretixed using two operators with
+matrix of types *advection* and *flux*, respectively.
+
 
 * `"OPERATOR_NAME`" [list] a PK specific name for the advection operator.
 
-  * `"method`" [string] defines a discretization method. The available options 
-    are `"DG order 0`", `"DG order 1`".
+  * `"method`" [string] defines a discretization method. The available option is `"dg modal`".
+
+  * `"method order`" [int] defines method order. For example, the classical low-order finite 
+    volume scheme is equivalent to DG of order 0.
+
+  * `"matrix type`" [string] defines matrix type. The supported options are `"advection`"
+    and `"flux`".
+
+  * `"dg basis`" [string] defines bases for DG schemes. The available options are 
+    `"regularized`" (recommended), `"normalized`", `"orthonormalized`", and `"natural`" 
+    (not recommended).
+
+  * `"gradient operator on test function`" [bool] defines place of the gradient operator.
+    For integration by parts schemes, the gradient is transfered to a test function.
+    This option is needed for discretizing volumetric integrals.
+
+  * `"jump operator on test function`" [bool] defines place of the jump operator.
+    For integration by parts schemes, the jump operator is applied to a test function.
+    This option is needed for discretizing surface fluxes.
 
   * `"flux formula`" [string] defines type of the flux. The available options 
     are `"Rusanov`" (default), `"upwind`", `"downwind`", and `"NavierStokes`".
@@ -3706,7 +3876,7 @@ The structure of the schema is described in the previous section.
 .. code-block:: xml
 
   <ParameterList name="OPERATOR_NAME">
-    <Parameter name="method" type="string" value="DG order 0"/>
+    <Parameter name="method" type="string" value="dg modal"/>
     <Parameter name="method order" type="int" value="2"/>
     <Parameter name="reconstruction order" type="int" value="0"/>
     <Parameter name="flux formula" type="string" value="Rusanov"/>
@@ -3714,15 +3884,32 @@ The structure of the schema is described in the previous section.
     <Parameter name="jump operator on test function" type="bool" value="true"/>
 
     <ParameterList name="schema domain">
+      <Parameter name="base" type="string" value="cell"/>
       <Parameter name="location" type="Array(string)" value="{node, face}"/>
       <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
       <Parameter name="number" type="Array(int)" value="{2, 1}"/>
     </ParameterList>
     <ParameterList name="schema range">
+      <Parameter name="base" type="string" value="cell"/>
       <Parameter name="location" type="Array(string)" value="{cell}"/>
       <Parameter name="type" type="Array(string)" value="{scalar}"/>
       <Parameter name="number" type="Array(int)" value="{1}"/>
     </ParameterList>
+  </ParameterList>
+
+In this example, we construct an operator for volumetric integrals in a weak formulation
+of advection problem.
+
+The only low-order advection operator in Amanzi is the upwind operator. 
+It employes the old schema.
+
+.. code-block:: xml
+
+  <ParameterList name="OPERATOR_NAME">
+    <Parameter name="base" type="string" value="face"/>
+    <Parameter name="schema" type="Array(string)" value="{cell}"/>
+    <Parameter name="method order" type="int" value="0"/>
+    <Parameter name="matrix type" type="string" value="advection"/>
   </ParameterList>
 
 
@@ -3735,17 +3922,19 @@ The structure of the schema is described in the previous section.
 
 * `"OPERATOR_NAME`" [list] a PK specific name for the advection operator.
 
-  * `"method`" [string] defines a discretization method. The available 
-    options are `"DG order 0`", `"DG order 1`".
+  * `"method`" [string] defines a discretization method. The only supported
+    option is `"dg nodal`".
 
   * `"schema`" [list] defines a discretization schema for the operator domain.
 
 .. code-block:: xml
 
   <ParameterList name="OPERATOR_NAME">
-    <Parameter name="method" type="string" value="DG order 1"/>
+    <Parameter name="method" type="string" value="dg modal"/>
+    <Parameter name="method order" type="int" value="1"/>
     <Parameter name="matrix type" type="string" value="mass"/>
     <ParameterList name="schema">
+      <Parameter name="base" type="string" value="cell"/>
       <Parameter name="location" type="Array(string)" value="{cell}"/>
       <Parameter name="type" type="Array(string)" value="{scalar}"/>
       <Parameter name="number" type="Array(int)" value="{3}"/>
@@ -3773,14 +3962,15 @@ and Navier-Stokes).
 
 .. code-block:: xml
 
-    <ParameterList name="elasticity operator">
-      <Parameter name="method" type="string" value="BernardiRaugel"/>
-      <ParameterList name="schema">
-        <Parameter name="location" type="Array(string)" value="{node, face}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
-        <Parameter name="number" type="Array(int)" value="{2, 1}"/>
-      </ParameterList>
+  <ParameterList name="elasticity operator">
+    <Parameter name="method" type="string" value="BernardiRaugel"/>
+    <ParameterList name="schema">
+      <Parameter name="base" type="string" value="cell"/>
+      <Parameter name="location" type="Array(string)" value="{node, face}"/>
+      <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+      <Parameter name="number" type="Array(int)" value="{2, 1}"/>
     </ParameterList>
+  </ParameterList>
 
 
 Abstract operator
@@ -3791,7 +3981,8 @@ required by this factory and/or particular method in it.
 
 * `"method`" [string] defines a discretization method. The available
   options are `"diffusion`", `"diffusion generalized`", `"BernardiRaugel`",
-  `"CrouzeixRaviart`", `"Lagrange`", `"Lagrange serendipity`", and `"dg modal`".
+  `"CrouzeixRaviart`", `"CrouzeixRaviart serendipity`", `"Lagrange`", 
+  `"Lagrange serendipity`", and `"dg modal`".
 
 * `"method order`" [int] defines disretization order. It is used by 
   high-order discretization methods such as the discontinuous Galerkin.
@@ -3804,7 +3995,7 @@ required by this factory and/or particular method in it.
     <ParameterList name="ABSTRACT OPERATOR">
       <Parameter name="method" type="string" value="dg modal"/>
       <Parameter name="method order" type="int" value="2"/>
-      <Parameter name="dg basis" type="string" value="natural"/>
+      <Parameter name="dg basis" type="string" value="regularized"/>
       <Parameter name="matrix type" type="string" value="flux"/>
 
       <ParameterList name="schema domain">
@@ -4393,9 +4584,8 @@ Linear solvers
 --------------
 
 This list contains sublists for various linear solvers such as PCG, GMRES, and NKA.
-
-* `"preconditioner`" [string] is name in the list of preconditioners. If it is missing, 
-  the identity preconditioner is employed.
+Note that only PK can provide a preconditioner for a linear solver; hence, we cannot
+specify it here.
 
 * `"iterative method`" [string] defines a Krylov-based method. The available options
   include `"pcg`" and `"gmres`".
@@ -4410,7 +4600,6 @@ This list contains sublists for various linear solvers such as PCG, GMRES, and N
    <ParameterList>  <!-- parent list -->
      <ParameterList name="solvers">
        <ParameterList name="GMRES with HYPRE AMG">
-         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
          <Parameter name="iterative method" type="string" value="gmres"/>
 
          <ParameterList name="gmres parameters">
@@ -4419,7 +4608,6 @@ This list contains sublists for various linear solvers such as PCG, GMRES, and N
        </ParameterList>
 
        <ParameterList name="PCG with HYPRE AMG">
-         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
          <Parameter name="iterative method" type="string" value="pcg"/>
          <ParameterList name="pcg parameters">
            ...

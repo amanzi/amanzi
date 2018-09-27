@@ -35,8 +35,14 @@ class PolynomialIterator {
     multi_index_[0] = k0;
     multi_index_[1] = 0;
     multi_index_[2] = 0;
-    count_ = 0;
+    count_ = k0;
 
+    if (k0 > 0) {
+      for (int i = 1; i < d_; ++i) {
+        count_ *= k0 + i;
+        count_ /= i + 1;
+      }
+    }
     return *this;
   }
 
@@ -83,10 +89,10 @@ class PolynomialIterator {
     return *this;
   }
 
-  // One way to terminate a for-loop is to capture the moment when
-  // the iterator moved to the next group of monomials. Returning
-  // the current monomial order is not ideal solution, but robust.
-  int end() { return k_; }
+  // Comparison of iterators
+  friend bool operator<(const PolynomialIterator& it1, const PolynomialIterator& it2) {
+    return it1.PolynomialPosition() < it2.PolynomialPosition();
+  }
 
   // access
   int MonomialSetOrder() const { return k_; }

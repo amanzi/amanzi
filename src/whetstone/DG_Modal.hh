@@ -33,7 +33,6 @@
 #include "Tensor.hh"
 #include "VectorPolynomial.hh"
 #include "WhetStoneDefs.hh"
-#include "WhetStone_typedefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -104,10 +103,7 @@ class DG_Modal : public BilinearForm {
   // -- order of polynomials in each cell
   void set_order(int order) { order_ = order; }
   int order() { return order_; }
-  const Basis& cell_basis(int c) { return *basis_[c]; }
-
-  // deprecated
-  void UpdateScales_(int c, int order);
+  const Basis& cell_basis(int c) const { return *basis_[c]; }
 
  private:
   int MassMatrixPoly_(int c, const Polynomial& K, DenseMatrix& M);
@@ -124,8 +120,6 @@ class DG_Modal : public BilinearForm {
   int order_, d_;
 
   VectorPolynomial integrals_;  // integrals of non-normalized monomials
-  VectorPolynomial scales_a_;   // partial orthonormalization of Taylor basis
-  VectorPolynomial scales_b_;  
   std::vector<std::shared_ptr<Basis> > basis_;
 };
 
