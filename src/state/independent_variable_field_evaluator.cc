@@ -89,13 +89,15 @@ bool IndependentVariableFieldEvaluator::HasFieldChanged(const Teuchos::Ptr<State
     // field DOES have to be computed at least once, even if it never changes.
     UpdateField_(S);
     computed_once_ = true;
+    requests_.insert(request);
     return true;
   }
 
   if (temporally_variable_ && (S->time() != time_)) { // field is not current, update and clear requests
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
-      *vo_->os() << "Independent field \"" << my_key_ << "\" requested by " << request 
-                 << " is updating." << std::endl;
+      *vo_->os() << "Independent field \"" << my_key_ << "\" evaluated previously at time = "
+                 << time_ << " requested by " << request 
+                 << " is updating at time = " << S->time() << std::endl;
     }
     UpdateField_(S);
     requests_.clear();
