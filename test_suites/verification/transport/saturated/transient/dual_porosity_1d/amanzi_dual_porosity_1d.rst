@@ -27,19 +27,16 @@ case, the steady-state flow field is uniform and the tracer influx
 does not affect the flow field. The dominant transport processes are
 advection, dispersion in fractured rock, and solute exchange with 
 immobile fluid in matrix. Matrix play the role of storage and delays
-propagation of tracer dow the flow stream.  Dispersion results in the 
+propagation of tracer down the flow stream.  Dispersion results in the 
 spreading of the released mass in all directions including upstream 
 of the source location. 
 Accuracy of the break-through curve at a distant point down the stream
 is sensitive to the time step in Amanzi's operator split approach.
 
-The verification data used in this test is generated from Fortran code
-shared by authors of :cite:`Sudicky_et_al_1982`. 
-
 Model
 -----
 
-The analytical solution addresses the advection-dispersion equation in fracture
+The analytical solution addresses the advection-dispersion equation in the fracture
 
 .. math::
   \frac{\partial (\phi_f\, C_f)}{\partial t} 
@@ -48,7 +45,7 @@ The analytical solution addresses the advection-dispersion equation in fracture
   + \boldsymbol{\nabla} \cdot (\phi_f\, (\boldsymbol{D} + \tau_f M_f) \boldsymbol{\nabla} C_f) 
   - \frac{\phi_m\,\tau_m}{L_m}\, M_m \nabla C_m,
 
-and linear ODE in matrix:
+and the linear ODE in the matrix:
 
 .. math::
   \frac{\partial (\phi_m\, C_m)}{\partial t} = -\nabla\cdot (\phi_m\, \tau_m\, M_m \nabla C_m).
@@ -58,19 +55,19 @@ Here
 :math:`\boldsymbol{q}` is the Darcy velocity,
 :math:`\boldsymbol{D}` is dispersion tensor, 
 :math:`M` is molecular diffusion coefficient, and
-:math:`L_m` is the characteristic matrix depth defined typically as the ration of matrix block
+:math:`L_m` is the characteristic matrix depth defined typically as the ratio of a matrix block
 volume to its surface area.
 Subscripts :math:`f` and :math:`m` indicate fracture and matrix media, respectively. 
 
-For pseudo one-dimenstion problem, the dispersion tensor is diagonal:
+We neglect transvrse dispersion, so that the dispersion tensor is diagonal:
 
 .. math::
   \boldsymbol{D} = \begin{pmatrix}
   D_{xx} & 0 \\[0.5ex]
-  0      & 0
+  0      & D_{yy}
   \end{pmatrix},
   \qquad
-  D_{xx} = \alpha_L v_x.
+  D_{xx} = \alpha_L v_x, \quad \D_{yy} = 0.
   
 
 Problem Specification
@@ -79,7 +76,8 @@ Problem Specification
 Schematic
 ~~~~~~~~~
 
-The domain, flow direction, and source location are shown in the following schematic.
+The domain, flow direction, and source location are shown in the schematic below.
+Note that :math:`B = L_m` here.
 
 .. figure:: schematic/schematic.pdf
     :figclass: align-center
@@ -105,11 +103,12 @@ Variables
 * :math:`\alpha_T=0.0` transverse dispersivity [m]
 * :math:`M_m=2.65 \cdot 10^{-9}` molecular diffusion coefficient [m^2/s]
 * :math:`\tau_m = 1.0` matrix tortuosity [-]
+* :math:`L_m = 0.8` characteristic matrix depth [m]
 * :math:`T=200` simulation time [y]
 
-Initial condition: :math:`C(x,0)=0` [kg/m^3]
+Initial condition: :math:`C_m(x,0)=C_f(x,0) = 0` [kg/m^3]
 
-Boundary conditions: :math:`C(x,t)=1` [kg/m^3] at :math:`x=0.0` of fracture.
+Boundary conditions: :math:`C_f(x,t)=1` [kg/m^3] at :math:`x=0.0` of fracture.
 
 
 Results and Comparison
@@ -120,10 +119,8 @@ The concentrantaion at the fracture end point as the function of time.
 .. plot:: amanzi_dual_porosity_1d.py
    :align: center
 
-The analytic data were computed with the AT123DAT software package.
-A difference is observed near the downstream boundary for Amanzi with 
-the first-order transport scheme (boxes), while the second-order transport 
-scheme provides excellent match (circles).
+The verification data used in this test is generated from a Fortran code
+shared by the authors of :cite:`Sudicky_et_al_1982`. 
 
 
 References
@@ -150,7 +147,7 @@ About
 
   * amanzi_dual_porosity_1d-u.xml 
 
-    * Spec Version 2.3, unstructured mesh framework
+  * Spec Version 2.3, unstructured mesh framework
  
 
 * Analytic solution computed with Sudicky's code:
@@ -171,12 +168,11 @@ Status
 
   * Documentation:
 
-    * Complete for unstructured mesh framework, including line plots and tables.
+    * Complete for unstructured mesh framework, including line plots. Tables will be added.
 
 .. todo:: 
 
   * Documentation:
 
-    * Decide whether to run this as a 2D or 3D problem
+    * Decide whether to add simple dual porosity model with Warren-Root parameter.
     * Do we need a short discussion on numerical methods (i.e., discretization, splitting, solvers)?
-    * Store *Gold Standard* simulation results (need name and location)?

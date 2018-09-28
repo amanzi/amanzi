@@ -1019,7 +1019,6 @@ void Transport_PK::AddMultiscalePorosity_(
   }
   WhetStone::DenseVector tcc_m(nnodes);
 
-
   double flux_liquid, flux_solute, wcm0, wcm1, wcf0, wcf1;
   double dtg, dts, t1, t2, tmp0, tmp1, tfp0, tfp1, a, b;
   std::vector<AmanziMesh::Entity_ID> block;

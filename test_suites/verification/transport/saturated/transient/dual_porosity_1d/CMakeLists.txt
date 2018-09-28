@@ -5,6 +5,6 @@ add_amanzi_comparison_test(dual_porosity_1d
                            RELATIVE_TOLERANCE 1e-5
                            ABSOLUTE_TOLERANCE 1e-8
                            OBSERVATION "Tc-99 aqueous concentration"
-                           REFERENCE ${DUAL_POROSITY_1D_SOURCE_DIR}/golden_output/observations.out
+                           REFERENCE ${DUAL_POROSITY_1D_SOURCE_DIR}/golden_output/observation.out
                            NPROCS 1)
 
