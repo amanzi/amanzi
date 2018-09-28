@@ -26,7 +26,7 @@ Channels are: 0 = land, 1 = water/ice, 2 = snow.
 * `"emissivity ground surface [-]`" ``[double]`` **0.92** Defaults to that of tundra.
 * `"emissivity snow [-]`" ``[double]`` **0.98**
 
-* `"snow density key`" ``[string]`` **DOMAIN-snow_density** 
+* `"snow density key`" ``[string]`` **SNOW_DOMAIN-density** 
 * `"ponded depth key`" ``[string]`` **DOMAIN-ponded_depth** 
 * `"unfrozen fraction key`" ``[string]`` **DOMAIN-unfrozen_fraction**
 
@@ -64,6 +64,7 @@ class AlbedoSubgridEvaluator : public SecondaryVariablesFieldEvaluator {
 
  protected:
   Key domain_;
+  Key domain_snow_;
 
   Key albedo_key_, emissivity_key_;
   Key snow_dens_key_;

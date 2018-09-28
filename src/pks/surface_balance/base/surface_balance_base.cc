@@ -30,12 +30,16 @@ SurfaceBalanceBase::SurfaceBalanceBase(Teuchos::ParameterList& pk_tree,
 {
   // name the layer
   layer_ = plist_->get<std::string>("layer name", name_);
+
+  // source terms
   is_source_ = plist_->get<bool>("source term", true);
-  is_source_differentiable_ = plist_->get<bool>("source term is differentiable", true);
   if (is_source_) {
     source_key_ = Keys::readKey(*plist_, layer_, "source", "source_sink");
   }
-
+  is_source_differentiable_ = plist_->get<bool>("source term is differentiable", true);
+  source_finite_difference_ = plist_->get<bool>("source term finite difference", false);
+  eps_ = plist_->get<double>("source term finite difference epsilon", 1.e-8);
+  
   theta_ = plist_->get<double>("time discretization theta", 1.0);
   AMANZI_ASSERT(theta_ <= 1.);
   AMANZI_ASSERT(theta_ >= 0.);
@@ -43,7 +47,6 @@ SurfaceBalanceBase::SurfaceBalanceBase(Teuchos::ParameterList& pk_tree,
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance"))
     plist_->set("absolute error tolerance", .01 * 55000.); // h * nl
-
 }
 
 // main methods
@@ -101,7 +104,10 @@ SurfaceBalanceBase::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<
                             Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   Teuchos::OSTab tab = vo_->getOSTab();
   double dt = t_new - t_old;
-  double T_eps = 0.0001;
+  int cycle = S_next_->cycle();
+  if (cycle >= 175) {
+    std::cout << "we is here!" << std::endl;
+  }
 
   // pointer-copy temperature into state and update any auxilary data
   Solution_to_State(*u_new, S_next_);
@@ -176,21 +182,40 @@ SurfaceBalanceBase::UpdatePreconditioner(double t,
 
   if (conserved_quantity_) {
     preconditioner_->Init();
-    
+
+    // add derivative of conserved quantity wrt primary
     S_next_->GetFieldEvaluator(conserved_key_)
         ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-    std::string dkey = Keys::getDerivKey(conserved_key_, key_);
-    db_->WriteVector("d(cons)/d(prim)", S_next_->GetFieldData(dkey).ptr());
-    preconditioner_acc_->AddAccumulationTerm(*S_next_->GetFieldData(dkey), h, "cell", false);
+    auto dconserved_dT = S_next_->GetFieldData(Keys::getDerivKey(conserved_key_, key_));
+    db_->WriteVector("d(cons)/d(prim)", dconserved_dT.ptr());
+    preconditioner_acc_->AddAccumulationTerm(*dconserved_dT, h, "cell", false);
 
-    if (is_source_ && is_source_differentiable_) {
-      if (S_next_->GetFieldEvaluator(source_key_)->IsDependency(S_next_.ptr(), key_)) {
-        S_next_->GetFieldEvaluator(source_key_)
-            ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-        std::string dkey = std::string("d")+source_key_+std::string("_d")+key_;
-        db_->WriteVector("d(Q)/d(prim)", S_next_->GetFieldData(dkey).ptr());
-        preconditioner_acc_->AddAccumulationTerm(*S_next_->GetFieldData(dkey), -1.0/theta_, "cell");
+    // add derivative of source wrt primary
+    if (theta_ > 0. && is_source_ && is_source_differentiable_ &&
+        S_next_->GetFieldEvaluator(source_key_)->IsDependency(S_next_.ptr(), key_)) {
+
+      Teuchos::RCP<const CompositeVector> dsource_dT;
+      if (!source_finite_difference_) {
+        // evaluate the derivative through chain rule and the DAG
+        S_next_->GetFieldEvaluator(source_key_)->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
+        dsource_dT = S_next_->GetFieldData(Keys::getDerivKey(source_key_,key_));
+      } else {
+        // evaluate the derivative through finite differences
+        S_next_->GetFieldData(key_, name_)->Shift(eps_);
+        ChangedSolution();
+        S_next_->GetFieldEvaluator(source_key_)->HasFieldChanged(S_next_.ptr(), name_);
+        auto dsource_dT_nc = Teuchos::rcp(new CompositeVector(*S_next_->GetFieldData(source_key_)));
+
+        S_next_->GetFieldData(key_, name_)->Shift(-eps_);
+        ChangedSolution();
+        S_next_->GetFieldEvaluator(source_key_)->HasFieldChanged(S_next_.ptr(), name_);
+
+        dsource_dT_nc->Update(-1/eps_, *S_next_->GetFieldData(source_key_), 1/eps_);
+        dsource_dT = dsource_dT_nc;
       }
+
+      db_->WriteVector("d(Q)/d(prim)", dsource_dT.ptr());
+      preconditioner_acc_->AddAccumulationTerm(*dsource_dT, -1.0/theta_, "cell", true);
     }
 
     if (precon_used_) {

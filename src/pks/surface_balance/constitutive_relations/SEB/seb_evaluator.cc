@@ -152,31 +152,13 @@ SEBEvaluator::SEBEvaluator(Teuchos::ParameterList& plist) :
     Errors::Message message("Invalid parameters: snow-ground transitional depth or minimum snow transitional depth.");
     Exceptions::amanzi_throw(message);
   }
-
-  // control of temperature epsilon to determine derivative
-  epsT_ = plist_.get<double>("finite difference epsilon [K]", 1.e-8);
-  epsA_ = plist_.get<double>("finite difference epsilon [albedo]", 1.e-8);
 }
 
 void
 SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
                              const std::vector<Teuchos::Ptr<CompositeVector> >& results)
 {
-  const auto& surf_temp = *S->GetFieldData(surf_temp_key_);
-  const auto& sg_albedo = *S->GetFieldData(sg_albedo_key_);
-  EvaluateFieldTemp_(S, surf_temp, sg_albedo, results);
-}
-
-// Required methods from SecondaryVariableFieldEvaluator
-void
-SEBEvaluator::EvaluateFieldTemp_(const Teuchos::Ptr<State>& S,
-                        const CompositeVector& surf_temp_v,
-                        const CompositeVector& sg_albedo_v,
-                        const std::vector<Teuchos::Ptr<CompositeVector> >& results)
-{
   const SEBPhysics::ModelParams params;
-  const auto& surf_temp = *surf_temp_v.ViewComponent("cell",false);
-  const auto& sg_albedo = *sg_albedo_v.ViewComponent("cell",false);
 
   // collect met data
   const auto& qSW_in = *S->GetFieldData(met_sw_key_)->ViewComponent("cell",false);
@@ -193,9 +175,11 @@ SEBEvaluator::EvaluateFieldTemp_(const Teuchos::Ptr<State>& S,
   
   // collect skin properties
   const auto& ponded_depth = *S->GetFieldData(ponded_depth_key_)->ViewComponent("cell",false);
+  const auto& sg_albedo = *S->GetFieldData(sg_albedo_key_)->ViewComponent("cell",false);
   const auto& emissivity = *S->GetFieldData(sg_emissivity_key_)->ViewComponent("cell",false);
   const auto& area_fracs = *S->GetFieldData(area_frac_key_)->ViewComponent("cell",false);
   const auto& surf_pres = *S->GetFieldData(surf_pres_key_)->ViewComponent("cell",false);
+  const auto& surf_temp = *S->GetFieldData(surf_temp_key_)->ViewComponent("cell",false);
 
   // collect subsurface properties
   const auto& sat_gas = *S->GetFieldData(sat_gas_key_)->ViewComponent("cell",false);
@@ -265,8 +249,8 @@ SEBEvaluator::EvaluateFieldTemp_(const Teuchos::Ptr<State>& S,
       surf.saturation_gas = sat_gas[0][cells[0]];
       surf.density_w = params.density_water; // NOTE: could update this to use true density! --etc
       surf.dz = dessicated_zone_thickness_;
-      surf.emissivity = emissivity[0][c];
       surf.albedo = sg_albedo[0][c];
+      surf.emissivity = emissivity[0][c];
       surf.porosity = ponded_depth[0][c] > 0. ? 1. : poro[0][cells[0]];
       surf.ponded_depth = ponded_depth[0][c];
 
@@ -323,7 +307,7 @@ SEBEvaluator::EvaluateFieldTemp_(const Teuchos::Ptr<State>& S,
       met.Ps = Psnow[0][c] / area_fracs[1][c];
       
       SEBPhysics::SnowProperties snow;
-      snow.height = snow_depth[0][c] / area_fracs[1][c];
+      snow.height = snow_depth[0][c] / area_fracs[1][c]; // all snow on this patch
       AMANZI_ASSERT(snow.height >= snow_ground_trans_ - 1.e-8);
       snow.density = snow_dens[0][c];
       snow.albedo = surf.albedo;
@@ -447,8 +431,6 @@ SEBEvaluator::EvaluateFieldTemp_(const Teuchos::Ptr<State>& S,
     db_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();
   }
-  
-  
 }
 
 void

@@ -45,11 +45,6 @@ class SEBEvaluator : public SecondaryVariablesFieldEvaluator {
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
           const std::vector<Teuchos::Ptr<CompositeVector> >& results);
 
-  virtual void EvaluateFieldTemp_(const Teuchos::Ptr<State>& S,
-          const CompositeVector& temp_surf,
-          const CompositeVector& albedo,
-          const std::vector<Teuchos::Ptr<CompositeVector> >& results);
-
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> > & results);
 
@@ -91,7 +86,6 @@ class SEBEvaluator : public SecondaryVariablesFieldEvaluator {
                                      // A limiter on evaporation as the water
                                      // table drops below the surface.
 
-  double epsA_, epsT_;
   
   bool diagnostics_;
   Teuchos::RCP<Debugger> db_;

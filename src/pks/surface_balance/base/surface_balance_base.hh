@@ -59,10 +59,11 @@ class SurfaceBalanceBase : public PK_PhysicalBDF_Default {
 
   Key layer_;
   bool conserved_quantity_;
-  bool is_source_, is_source_differentiable_;
+  bool is_source_, is_source_differentiable_, source_finite_difference_;
   Key source_key_;
 
   double theta_;
+  double eps_;
 
   bool precon_used_;
   Teuchos::RCP<Operators::PDE_Accumulation> preconditioner_acc_;

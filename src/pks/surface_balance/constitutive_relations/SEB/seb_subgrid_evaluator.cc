@@ -73,9 +73,12 @@ SubgridEvaluator::SubgridEvaluator(Teuchos::ParameterList& plist) :
   my_keys_.push_back(mass_source_key_);
   energy_source_key_ = Keys::readKey(plist, domain_, "surface energy source", "total_energy_source");
   my_keys_.push_back(energy_source_key_);
-  snow_source_key_ = Keys::readKey(plist, domain_snow_, "snow mass source", "source_sink");
+  snow_source_key_ = Keys::readKey(plist, domain_snow_, "snow mass source - sink", "source_sink");
   my_keys_.push_back(snow_source_key_);
 
+  new_snow_key_ = Keys::readKey(plist, domain_snow_, "new snow source", "source");
+  my_keys_.push_back(new_snow_key_);
+  
   // diagnostics and debugging
   diagnostics_ = plist.get<bool>("save diagnostic data", false);
   if (diagnostics_) {
@@ -148,26 +151,13 @@ SubgridEvaluator::SubgridEvaluator(Teuchos::ParameterList& plist) :
     Errors::Message message("Invalid parameters: snow-ground transitional depth or minimum snow transitional depth.");
     Exceptions::amanzi_throw(message);
   }
-
-  // control of temperature epsilon to determine derivative
-  eps_ = plist_.get<double>("finite difference epsilon [K]", 1.e-8);
 }
 
 void
 SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
                              const std::vector<Teuchos::Ptr<CompositeVector> >& results)
 {
-  const auto& surf_temp = *S->GetFieldData(surf_temp_key_);
-  EvaluateFieldTemp_(S, surf_temp, results);
-}
-
-void
-SubgridEvaluator::EvaluateFieldTemp_(const Teuchos::Ptr<State>& S,
-                        const CompositeVector& surf_temp_v,
-                        const std::vector<Teuchos::Ptr<CompositeVector> >& results)
-{
   const SEBPhysics::ModelParams params;
-  const auto& surf_temp = *surf_temp_v.ViewComponent("cell",false);
 
   // collect met data
   const auto& qSW_in = *S->GetFieldData(met_sw_key_)->ViewComponent("cell",false);
@@ -188,6 +178,7 @@ SubgridEvaluator::EvaluateFieldTemp_(const Teuchos::Ptr<State>& S,
   const auto& emissivity = *S->GetFieldData(sg_emissivity_key_)->ViewComponent("cell",false);
   const auto& area_fracs = *S->GetFieldData(area_frac_key_)->ViewComponent("cell",false);
   const auto& surf_pres = *S->GetFieldData(surf_pres_key_)->ViewComponent("cell",false);
+  const auto& surf_temp = *S->GetFieldData(surf_temp_key_)->ViewComponent("cell",false);
 
   // collect subsurface properties
   const auto& sat_gas = *S->GetFieldData(sat_gas_key_)->ViewComponent("cell",false);
@@ -197,10 +188,12 @@ SubgridEvaluator::EvaluateFieldTemp_(const Teuchos::Ptr<State>& S,
   auto& mass_source = *results[0]->ViewComponent("cell",false);
   auto& energy_source = *results[1]->ViewComponent("cell",false);
   auto& snow_source = *results[2]->ViewComponent("cell",false);
+  auto& new_snow = *results[3]->ViewComponent("cell",false);
   mass_source.PutScalar(0.);
   energy_source.PutScalar(0.);
   snow_source.PutScalar(0.);
-  
+  new_snow.PutScalar(0.);
+
   const auto& mesh = *S->GetMesh(domain_);
   const auto& mesh_ss = *S->GetMesh(domain_ss_);
 
@@ -260,7 +253,6 @@ SubgridEvaluator::EvaluateFieldTemp_(const Teuchos::Ptr<State>& S,
       surf.porosity = poro[0][cells[0]];
       surf.ponded_depth = 0.;
 
-
       // must ensure that energy is put into melting snow precip, even if it
       // all melts so there is no snow column
       if (area_fracs[2][c] == 0.) {
@@ -278,6 +270,7 @@ SubgridEvaluator::EvaluateFieldTemp_(const Teuchos::Ptr<State>& S,
       mass_source[0][c] += area_fracs[0][c] * flux.M_surf;
       energy_source[0][c] += area_fracs[0][c] * flux.E_surf * 1.e-6; // convert to MW/m^2
       snow_source[0][c] += area_fracs[0][c] * flux.M_snow;
+      new_snow[0][c] += area_fracs[0][c] * met.Ps;
 
       // diagnostics
       if (diagnostics_) {
@@ -327,6 +320,7 @@ SubgridEvaluator::EvaluateFieldTemp_(const Teuchos::Ptr<State>& S,
       mass_source[0][c] += area_fracs[1][c] * flux.M_surf;
       energy_source[0][c] += area_fracs[1][c] * flux.E_surf * 1.e-6;
       snow_source[0][c] += area_fracs[1][c] * flux.M_snow;
+      new_snow[0][c] += area_fracs[1][c] * met.Ps;
 
       // diagnostics
       if (diagnostics_) {
@@ -362,7 +356,7 @@ SubgridEvaluator::EvaluateFieldTemp_(const Teuchos::Ptr<State>& S,
       met.Ps = Psnow[0][c] / area_fracs[2][c];
       
       SEBPhysics::SnowProperties snow;
-      snow.height = snow_depth[0][c];
+      snow.height = snow_depth[0][c]; // snow depth is already depth, not volumetric depth
       AMANZI_ASSERT(snow.height >= snow_ground_trans_ - 1.e-8);
       snow.density = snow_dens[0][c];
       snow.albedo = surf.albedo;
@@ -377,6 +371,7 @@ SubgridEvaluator::EvaluateFieldTemp_(const Teuchos::Ptr<State>& S,
       mass_source[0][c] += area_fracs[2][c] * flux.M_surf;
       energy_source[0][c] += area_fracs[2][c] * flux.E_surf * 1.e-6; // convert to MW/m^2 from W/m^2
       snow_source[0][c] += area_fracs[2][c] * flux.M_snow;
+      new_snow[0][c] += (met.Ps + std::max(mb.Me, 0.)) * area_fracs[2][c];
 
       // diagnostics
       if (diagnostics_) {
@@ -488,6 +483,10 @@ SubgridEvaluator::EvaluateFieldTemp_(const Teuchos::Ptr<State>& S,
 }
 
 void
+SubgridEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
+        Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> > & results) {}
+
+void
 SubgridEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
 {
   if (db_ == Teuchos::null)
@@ -550,7 +549,6 @@ SubgridEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
     S->GetField(qE_lw_out_key_, qE_lw_out_key_)->set_initialized(true);
     S->GetField(qE_cond_key_, qE_cond_key_)->set_initialized(true);
   }
-
   
   for (auto dep_key : dependencies_) {
     auto fac = S->RequireField(dep_key);
@@ -572,57 +570,9 @@ SubgridEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
 void
 SubgridEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<State>& S, Key wrt_key)
 {
-  if (wrt_key != surf_temp_key_) {
-    Errors::Message message("SubgridEvaluator: cannot differentiate with respect to anything but surface temperature.");
-    Exceptions::amanzi_throw(message);
-  }
-
-  std::vector<Teuchos::Ptr<CompositeVector> > dmys;
-  for (auto my_key : my_keys_) {
-    Key dmy_key = std::string("d")+my_key+std::string("_d")+wrt_key;
-    if (S->HasField(dmy_key)) {
-      // Get the field...
-      auto dmy = S->GetFieldData(dmy_key, my_key);
-      dmy->PutScalar(0.0);
-      dmys.push_back(dmy.ptr());
-    } else {
-      // or create the field.  Note we have to do extra work that is normally
-      // done by State in initialize.
-      Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(my_key);
-      Teuchos::RCP<CompositeVectorSpace> new_fac =
-        S->RequireField(dmy_key, my_key);
-      new_fac->Update(*my_fac);
-      auto dmy = Teuchos::rcp(new CompositeVector(*new_fac));
-      S->SetData(dmy_key, my_key, dmy);
-      S->GetField(dmy_key,my_key)->set_initialized();
-      S->GetField(dmy_key,my_key)->set_io_vis(plist_.get<bool>("visualize derivative", false));
-      S->GetField(dmy_key,my_key)->set_io_checkpoint(plist_.get<bool>("checkpoint derivative", false));
-
-      dmy->PutScalar(0.0);
-      dmys.push_back(dmy.ptr());
-    }
-  }
-
-  // turn off diagnostics to avoid saving derivative values
-  bool diagnostics_tmp = diagnostics_;
-  diagnostics_ = false;
-
-  // increment temperature
-  CompositeVector temp_tmp(*S->GetFieldData(surf_temp_key_));
-  temp_tmp.Shift(eps_);
-
-  // evaluate again (already evaluated at the real temp)
-  EvaluateFieldTemp_(S, temp_tmp, dmys);
-
-  // difference
-  for (int i=0; i!=dmys.size(); ++i) {
-    dmys[i]->Update(-1/eps_, *S->GetFieldData(my_keys_[i]), 1/eps_);
-  }
-
-  // turn back on diagnostics
-  diagnostics_ = diagnostics_tmp;
+  Errors::Message message("SEBEvaluator: cannot differentiate with respect to anything.");
+  Exceptions::amanzi_throw(message);
 }
-
 
 
 }  // namespace AmanziFlow

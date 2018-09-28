@@ -58,6 +58,11 @@ void
 ImplicitSubgrid::Setup(const Teuchos::Ptr<State>& S) {
   SurfaceBalanceBase::Setup(S);
 
+  // requireiments: things I use
+  S->RequireField(new_snow_key_)->SetMesh(mesh_)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator(new_snow_key_);
+  
   // requirements: other primary variables
   Teuchos::RCP<FieldEvaluator> fm;
   S->RequireField(snow_dens_key_, name_)->SetMesh(mesh_)
@@ -122,6 +127,8 @@ ImplicitSubgrid::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<Tre
         Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   int cycle = S_next_->cycle();
 
+  AMANZI_ASSERT(S_next_->GetFieldEvaluator(new_snow_key_).get() == S_next_->GetFieldEvaluator(source_key_).get());
+  
   // update the residual
   SurfaceBalanceBase::FunctionalResidual(t_old, t_new, u_old, u_new, g);  
 
@@ -135,6 +142,8 @@ ImplicitSubgrid::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<Tre
   const auto& snow_dens_old = *S_inter_->GetFieldData(snow_dens_key_)->ViewComponent("cell",false);
   auto& snow_dens_new = *S_next_->GetFieldData(snow_dens_key_, name_)->ViewComponent("cell",false);
 
+  AMANZI_ASSERT(S_next_->GetFieldEvaluator(new_snow_key_).get() == S_next_->GetFieldEvaluator(source_key_).get());
+  
   S_next_->GetFieldEvaluator(new_snow_key_)->HasFieldChanged(S_next_.ptr(), name_);
   const auto& new_snow = *S_next_->GetFieldData(new_snow_key_)->ViewComponent("cell",false);
 
