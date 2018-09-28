@@ -29,6 +29,7 @@
 #include "flow_permafrost_registration.hh"
 #include "flow_richards_registration.hh"
 #include "transport_amanzi_registration.hh"
+#include "sediment_transport_registration.hh"
 
 
 //#include "multiscale_transport_registration.hh"

@@ -22,11 +22,14 @@ namespace Transport {
  * Routine takes a parallel overlapping vector C and returns a parallel
  * overlapping vector F(C).
  ****************************************************************** */
-void Transport_PK_ATS::Functional(const double t, const Epetra_Vector& component, Epetra_Vector& f_component)
+void Transport_PK_ATS::FunctionalTimeDerivative(const double t,
+                                                const Epetra_Vector& component,
+                                                Epetra_Vector& f_component)
 {
 
   // distribute vector
-  
+  Epetra_Vector component_tmp(component);
+  component_tmp.Import(component, *tcc->importer("cell"), Insert);
   
   
   // transport routines need an RCP pointer

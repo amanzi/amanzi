@@ -1,13 +1,13 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
-  The erosion evaluator gets the erosion rates.
+  The trapping evaluator gets the erosion rates.
 
   License: BSD
   Authors: Daniil Svyatsky (dasvyat@lanl.gov)
 */
 
-#include "erosion_evaluator.hh"
+#include "trapping_evaluator.hh"
 
 namespace Amanzi {
 

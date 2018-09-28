@@ -142,7 +142,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   void Advance_Diffusion(double t_old, double t_new);
 
   // time integration members
-    void Functional(const double t, const Epetra_Vector& component, Epetra_Vector& f_component){};
+    void FunctionalTimeDerivative(const double t, const Epetra_Vector& component, Epetra_Vector& f_component){};
     //  void Functional(const double t, const Epetra_Vector& component, TreeVector& f_component);
 
   void IdentifyUpwindCells();
@@ -195,7 +195,8 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
     Key tcc_key_;
     Key molar_density_key_;
     Key solid_residue_mass_key_;
-    Key sd_trapping_key_, sd_settling_key_, sd_erosion_key_, horiz_mixing_key_;
+    Key sd_trapping_key_, sd_settling_key_, sd_erosion_key_, horiz_mixing_key_, porosity_key_;
+    Key elevation_increase_key_;
 
   
  

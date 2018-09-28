@@ -26,7 +26,7 @@ namespace Energy {
 // -----------------------------------------------------------------------------
 // computes the non-linear functional g = g(t,u,udot)
 // -----------------------------------------------------------------------------
-void EnergyBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+void EnergyBase::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                        Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   Teuchos::OSTab tab = vo_->getOSTab();
 

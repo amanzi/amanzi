@@ -45,7 +45,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 namespace Amanzi {
 namespace Flow {
 
-#define DEBUG_FLAG 1
+#define DEBUG_FLAG 0
 #define DEBUG_RES_FLAG 0
 
 OverlandPressureFlow::OverlandPressureFlow(Teuchos::ParameterList& pk_tree,
@@ -127,6 +127,8 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   bc_seepage_head_ = bc_factory.CreateSeepageFaceHead();
   bc_seepage_pressure_ = bc_factory.CreateSeepageFacePressure();
   bc_critical_depth_ = bc_factory.CreateCriticalDepth();
+  bc_dynamic_ = bc_factory.CreateDynamic();
+  
   if (bc_plist.isParameter("seepage face")) {
     // old style! DEPRECATED
     Errors::Message message;
@@ -502,6 +504,7 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
   bc_seepage_head_->Compute(S->time());
   bc_seepage_pressure_->Compute(S->time());
   bc_critical_depth_->Compute(S->time());
+  bc_dynamic_->Compute(S->time());
   
   // Set extra fields as initialized -- these don't currently have evaluators.
 
@@ -547,6 +550,7 @@ void OverlandPressureFlow::CommitStep(double t_old, double t_new, const Teuchos:
   bc_seepage_head_->Compute(S->time());
   bc_seepage_pressure_->Compute(S->time());
   bc_critical_depth_->Compute(S->time());
+  bc_dynamic_->Compute(S->time());
   UpdateBoundaryConditions_(S.ptr());
 
   // Update flux if rel perm or h + Z has changed.
@@ -819,6 +823,23 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
     else values[f] = val;
   }
 
+  //for (auto bc : bc_dynamic_) {
+  if (bc_dynamic_ -> size() > 0){
+    double time = S->time();
+    int id = bc_dynamic_->Func_ID(time);
+    for (Functions::DynamicBoundaryFunction::Iterator bc=bc_dynamic_->GetFunction(id) -> begin();
+         bc!=bc_dynamic_-> GetFunction(id) -> end(); ++bc){
+      int f = bc->first;
+      if (id == 0){
+        markers[f] = Operators::OPERATOR_BC_DIRICHLET;
+        values[f] = bc->second + elevation[0][f];
+      }else if (id==1){
+        markers[f] = Operators::OPERATOR_BC_NEUMANN;
+        values[f] = bc->second;
+      }
+    }
+  }
+
   // Standard Neumann data for flux
   for (Functions::BoundaryFunction::Iterator bc=bc_flux_->begin();
        bc!=bc_flux_->end(); ++bc) {
@@ -952,6 +973,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
         markers[f] = Operators::OPERATOR_BC_NEUMANN;
         values[f] = 0.0;
     }
+
   } 
 }
 

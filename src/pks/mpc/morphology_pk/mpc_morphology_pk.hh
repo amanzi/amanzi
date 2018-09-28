@@ -16,14 +16,14 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "weak_mpc.hh"
+#include "pk_mpcsubcycled_ats.hh"
 #include "pk_physical_bdf_default.hh"
 #include "PK.hh"
 #include "Debugger.hh"
 
 namespace Amanzi {
 
-  class Morphology_PK: public WeakMPC{
+  class Morphology_PK: public PK_MPCSubcycled_ATS{
 
   public: 
     Morphology_PK(Teuchos::ParameterList& pk_tree_or_fe_list,
@@ -42,14 +42,33 @@ namespace Amanzi {
     // -- advance each sub pk from t_old to t_new.
     virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
 
-    //virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
+    virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
 
     std::string name() { return name_;} 
 
   protected:
 
-    Teuchos::RCP<PK_PhysicalBDF_Default> flow_pk_;
-    Teuchos::RCP<PK_PhysicalBDF_Default> sed_transport_pk_;
+    void Initialize_MeshVertices_(const Teuchos::Ptr<State>& S,
+                                  Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                                  Key vert_field_key);
+    
+    void Update_MeshVertices_(const Teuchos::Ptr<State>& S);
+    
+    void FlowAnalyticalSolution_(const Teuchos::Ptr<State>& S, double time);
+    
+    Key domain_, domain_3d_, domain_ss_;
+    Key vertex_coord_key_, vertex_coord_key_3d_, vertex_coord_key_ss_;
+    Key elevation_increase_key_;
+    
+    Teuchos::RCP<PK> flow_pk_;
+    Teuchos::RCP<PK> sed_transport_pk_;
+
+    double master_dt_, slave_dt_;
+    double dt_MPC_, dt_sample_;
+
+    Teuchos::RCP<AmanziMesh::Mesh> mesh_, mesh_3d_, mesh_ss_;
+    Teuchos::RCP<PrimaryVariableFieldEvaluator> deform_eval_;
+    Key erosion_rate_;
 
     // debugger for dumping vectors
     Teuchos::RCP<Debugger> flow_db_;

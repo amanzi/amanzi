@@ -16,7 +16,7 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 namespace Amanzi {
 namespace Flow {
 
-#define DEBUG_FLAG 1
+#define DEBUG_FLAG 0
 #define DEBUG_ICE_FLAG 0
 #define DEBUG_RES_FLAG 0
 
@@ -25,7 +25,7 @@ namespace Flow {
 // -----------------------------------------------------------------------------
 // computes the non-linear functional g = g(t,u,udot)
 // -----------------------------------------------------------------------------
-void OverlandPressureFlow::Functional( double t_old,
+void OverlandPressureFlow::FunctionalResidual( double t_old,
                         double t_new,
                         Teuchos::RCP<TreeVector> u_old,
                         Teuchos::RCP<TreeVector> u_new,
@@ -39,10 +39,6 @@ void OverlandPressureFlow::Functional( double t_old,
 
   // pointer-copy temperature into state and update any auxilary data
   Solution_to_State(*u_new, S_next_);
-
-  //--  AMANZI_ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
-  //--AMANZI_ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
-
 
   Teuchos::RCP<CompositeVector> u = u_new->Data();
 
@@ -101,6 +97,7 @@ void OverlandPressureFlow::Functional( double t_old,
   bc_seepage_head_->Compute(S_next_->time());
   bc_seepage_pressure_->Compute(S_next_->time());
   bc_critical_depth_->Compute(S_next_->time());
+  bc_dynamic_->Compute(S_next_->time());
   UpdateBoundaryConditions_(S_next_.ptr());
 
   // diffusion term, treated implicitly
@@ -207,7 +204,10 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
     iter_ = 0;
     iter_counter_time_ = t;
   }
+
+
   AMANZI_ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
+  
   PK_PhysicalBDF_Default::Solution_to_State(*up, S_next_);
 
   // calculating the operator is done in 3 steps:

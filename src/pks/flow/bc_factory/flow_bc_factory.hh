@@ -293,6 +293,10 @@ public:
   Teuchos::RCP<Functions::BoundaryFunction> CreateFixedLevel() const {
     return CreateWithFunction("fixed level", "fixed level");
   }
+
+  Teuchos::RCP<Functions::DynamicBoundaryFunction> CreateDynamic() const {
+    return CreateDynamicFunction("dynamic");
+  }
   
 };
 

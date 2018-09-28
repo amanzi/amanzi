@@ -1,7 +1,7 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
-  The erosion evaluator gets the erosion rates.
+  The settlement evaluator gets the erosion rates.
 
   License: BSD
   Authors: Daniil Svyatsky (dasvyat@lanl.gov)

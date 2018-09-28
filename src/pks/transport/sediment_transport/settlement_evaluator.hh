@@ -43,12 +43,12 @@ protected:
                                                Key wrt_key,
                                                const Teuchos::Ptr<CompositeVector>& result);
 
-  double tau_e_;
-  double Qe_0_;
+  double tau_d_;
+  double ws_;
   double gamma_;
-  double lambda_;
+  double lambda_, umax_, xi_;
 
-  Key velocity_key_;
+  Key velocity_key_, sediment_key_;
 
   static Utils::RegisteredFactory<FieldEvaluator,SettlementRateEvaluator> factory_;
 

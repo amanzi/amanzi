@@ -42,6 +42,7 @@ message(STATUS "\n-------------------------------------------")
 message(STATUS "\n-- CMake: Configuring ATS build/install.\n--")
 message(STATUS "----------------------------------------")
 
+message (STATUS "Submitted Amanzi ${Amanzi_DIR}")
 
 # --------------------------------------------------------------------------- #
 # Search for Amanzi

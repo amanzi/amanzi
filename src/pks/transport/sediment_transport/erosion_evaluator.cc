@@ -8,6 +8,7 @@
 */
 
 #include "erosion_evaluator.hh"
+#include "boost/math/constants/constants.hpp"
 
 namespace Amanzi {
 
@@ -22,7 +23,12 @@ ErosionRateEvaluator :: ErosionRateEvaluator(Teuchos::ParameterList& plist) :
   tau_e_ = plist_.get<double>("critical shear stress");
   Qe_0_ = plist_.get<double>("empirical coefficient");
   gamma_ = plist_.get<double>("specific weight of water");
-  lambda_ = plist_.get<double>("bottom friction coefficient");
+  umax_ = plist_.get<double>("max current");
+  xi_ = plist_.get<double>("Chezy parameter");
+
+  double pi = boost::math::constants::pi<double>();
+
+  lambda_ = 8./(3*pi) * (umax_/(xi_*xi_));
     
   dependencies_.insert("surface-effective_pressure");
     
@@ -37,6 +43,8 @@ ErosionRateEvaluator ::ErosionRateEvaluator (const ErosionRateEvaluator & other)
   Qe_0_ = other.Qe_0_;
   gamma_ = other.gamma_;
   lambda_ = other.lambda_;
+  umax_ = other.umax_;
+  xi_ = other.xi_;
 } 
 
 
@@ -48,7 +56,20 @@ Teuchos::RCP<FieldEvaluator> ErosionRateEvaluator ::Clone() const {
 void ErosionRateEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
 
-  result -> PutScalar(0.);
+  const Epetra_MultiVector& vel = *S->GetFieldData(velocity_key_)->ViewComponent("cell");
+  Epetra_MultiVector& result_c = *result->ViewComponent("cell");
+  
+  for (int c=0; c<vel.MyLength(); c++){
+    double tau_0 = gamma_ * lambda_ * (sqrt(vel[0][c] * vel[0][c] + vel[1][c] * vel[1][c]));
+    if (tau_0 > tau_e_){
+      result_c[0][c] = Qe_0_*(tau_0 / tau_e_ - 1);
+    }else{
+      result_c[0][c] = 0.;
+    }
+    //if (c<20) std::cout<<c<<" "<< tau_0 <<" "<<result_c[0][c]<<"\n";
+  }
+
+ 
 
 }
 

@@ -28,7 +28,7 @@
 #include_directories(${ATS_SOURCE_DIR}/src/pks/transport/transport_amanzi)
 
 
-add_library(pk_morphology mpc_morphology_pk.cc)
+add_library(pk_morphology mpc_morphology_pk.cc biomass_evaluator.cc)
 
 install(TARGETS pk_morphology  DESTINATION lib)
 

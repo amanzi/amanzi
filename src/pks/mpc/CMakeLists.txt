@@ -159,6 +159,11 @@ register_evaluator_with_factory(
   LISTNAME   MPC_PK_FAC
   )
 
+register_evaluator_with_factory(
+  HEADERFILE morphology_pk/biomass_evaluator_reg.hh
+  LISTNAME MPC_PK_FAC
+  )
+
 generate_evaluators_registration_header(
   HEADERFILE mpc_registration.hh
   LISTNAME   MPC_PK_FAC

@@ -119,13 +119,13 @@ MPCCoupledWater::set_states(const Teuchos::RCP<const State>& S,
 // -- computes the non-linear functional g = g(t,u,udot)
 //    By default this just calls each sub pk Functional().
 void
-MPCCoupledWater::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+MPCCoupledWater::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                             Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   // propagate updated info into state
   Solution_to_State(*u_new, S_next_);
 
   // Evaluate the surface flow residual
-  surf_flow_pk_->Functional(t_old, t_new, u_old->SubVector(1),
+  surf_flow_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(1),
                             u_new->SubVector(1), g->SubVector(1));
 
   // The residual of the surface flow equation provides the mass flux from
@@ -136,7 +136,7 @@ MPCCoupledWater::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector>
   source = *g->SubVector(1)->Data()->ViewComponent("cell",false);
 
   // Evaluate the subsurface residual, which uses this flux as a Neumann BC.
-  domain_flow_pk_->Functional(t_old, t_new, u_old->SubVector(0),
+  domain_flow_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(0),
           u_new->SubVector(0), g->SubVector(0));
 
   // All surface to subsurface fluxes have been taken by the subsurface.

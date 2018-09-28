@@ -8,6 +8,7 @@
 */
 
 #include "settlement_evaluator.hh"
+#include "boost/math/constants/constants.hpp"
 
 namespace Amanzi {
 
@@ -19,22 +20,32 @@ SettlementRateEvaluator :: SettlementRateEvaluator(Teuchos::ParameterList& plist
   velocity_key_ = plist_.get<std::string>("velocity key",
                                      Keys::getKey(domain_name,"velocity"));
 
-  tau_e_ = plist_.get<double>("critical shear stress");
-  Qe_0_ = plist_.get<double>("empirical coefficient");
+  sediment_key_ =  plist_.get<std::string>("sediment key",
+                                     Keys::getKey(domain_name,"sediment"));
+
+  tau_d_ = plist_.get<double>("critical shear stress");
+  ws_ = plist_.get<double>("settling velocity");
   gamma_ = plist_.get<double>("specific weight of water");
-  lambda_ = plist_.get<double>("bottom friction coefficient");
+
+  umax_ = plist_.get<double>("max current");
+  xi_ = plist_.get<double>("Chezy parameter");
+
+  double pi = boost::math::constants::pi<double>();
+
+  lambda_ = 8./(3*pi) * (umax_/(xi_*xi_));
     
   dependencies_.insert("surface-effective_pressure");
+  dependencies_.insert(sediment_key_);
     
 }
 
   
 SettlementRateEvaluator ::SettlementRateEvaluator (const SettlementRateEvaluator & other) :
   SecondaryVariableFieldEvaluator(other),
-  velocity_key_(other.velocity_key_) {
+  velocity_key_(other.velocity_key_), sediment_key_(other.sediment_key_) {
 
-  tau_e_ = other.tau_e_;
-  Qe_0_ = other.Qe_0_;
+  tau_d_ = other.tau_d_;
+  ws_ = other.ws_;
   gamma_ = other.gamma_;
   lambda_ = other.lambda_;
 } 
@@ -48,8 +59,20 @@ Teuchos::RCP<FieldEvaluator> SettlementRateEvaluator ::Clone() const {
 void SettlementRateEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
 
-  result -> PutScalar(0.);
-
+  const Epetra_MultiVector& vel = *S->GetFieldData(velocity_key_)->ViewComponent("cell");
+  const Epetra_MultiVector& tcc = *S->GetFieldData(sediment_key_)->ViewComponent("cell");
+  Epetra_MultiVector& result_c = *result->ViewComponent("cell");
+  
+  for (int c=0; c<result_c.MyLength(); c++){
+    double tau_0 = gamma_ * lambda_ * (sqrt(vel[0][c] * vel[0][c] + vel[1][c] * vel[1][c]));
+    if (tau_0 < tau_d_){
+      result_c[0][c] = ws_ * std::min(tcc[0][c], 0.5) * (1 - tau_0 / tau_d_);
+    }else{
+      result_c[0][c] = 0.;
+    }
+    //if (c<50) std::cout<<"cell "<<c<<" "<<result_c[0][c]<<" "<< tau_0<<" "<<tcc[0][c]<<"\n";
+  }
+   
 }
 
 void SettlementRateEvaluator::EvaluateFieldPartialDerivative_ (const Teuchos::Ptr<State>& S,

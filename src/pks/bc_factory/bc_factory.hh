@@ -78,6 +78,7 @@ DIRICHLET_TYPE and DIRICHLET_FUNCTION_NAME.
 #include "Point.hh"
 #include "Mesh.hh"
 #include "BoundaryFunction.hh"
+#include "DynamicBoundaryFunction.hh"
 
 namespace Amanzi {
 
@@ -94,6 +95,9 @@ public:
   Teuchos::RCP<Functions::BoundaryFunction>
   CreateWithoutFunction(std::string list_name) const;
 
+  Teuchos::RCP<Functions::DynamicBoundaryFunction>
+  CreateDynamicFunction(std::string list_name) const;
+
  private:
 
   void ProcessListWithFunction_(const Teuchos::ParameterList&,
@@ -109,6 +113,11 @@ public:
 
   void ProcessSpecWithoutFunction_(const Teuchos::ParameterList&,
           const Teuchos::RCP<Functions::BoundaryFunction>&) const;
+
+  void ProcessSpecWithFunctionRegions_(const Teuchos::ParameterList& list,
+                                       std::string function_name,
+                                       std::vector<std::string>& regions,
+                                       const Teuchos::RCP<Functions::BoundaryFunction>& bc) const;
 
  private:
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_;

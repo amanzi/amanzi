@@ -75,11 +75,11 @@ SedimentTransport_PK::SedimentTransport_PK(Teuchos::ParameterList& pk_tree,
     Errors::Message msg("Transport PK: sublist Cycle Driver or parameter component names is missing.");
     Exceptions::amanzi_throw(msg);
   }
-  
-  preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners");
-  linear_solver_list_ = Teuchos::sublist(glist, "Solvers");
-  nonlinear_solver_list_ = Teuchos::sublist(glist, "Nonlinear solvers");
 
+  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners");
+  linear_solver_list_ = Teuchos::sublist(glist, "solvers");
+  nonlinear_solver_list_ = Teuchos::sublist(glist, "nonlinear solvers");
+  
   subcycling_ = tp_list_->get<bool>("transport subcycling", false);
    
   // initialize io
@@ -109,19 +109,20 @@ void SedimentTransport_PK::Setup(const Teuchos::Ptr<State>& S)
 
   domain_name_ = tp_list_->get<std::string>("domain name", "domain");
 
-  saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "saturation liquid", "");
-  prev_saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "previous saturation liquid", "");
-  flux_key_ = Keys::readKey(*tp_list_, domain_name_, "mass flux", "surface-mass_flux");
-  tcc_key_ = Keys::readKey(*tp_list_, domain_name_, "concentration", "surface-sediment");
-  //porosity_key_ = Keys::readKey(*tp_list_, domain_name_, "porosity", "porosity");
-  molar_density_key_ = Keys::readKey(*tp_list_, domain_name_, "molar density", "surface-molar_density_liquid");
-  solid_residue_mass_key_ =  Keys::readKey(*tp_list_, domain_name_, "solid residue", "surface-solid_residue_mass");
-  sd_trapping_key_ =  Keys::readKey(*tp_list_, domain_name_, "trapping rate", "surface-trapping_rate");
-  sd_settling_key_ =  Keys::readKey(*tp_list_, domain_name_, "settling rate", "surface-settling_rate");
-  sd_erosion_key_ =  Keys::readKey(*tp_list_, domain_name_, "erosion rate", "surface-erosion_rate");
-  horiz_mixing_key_ = Keys::readKey(*tp_list_, domain_name_, "horizontal mixing", "surface-horizontal_mixing");
+  saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "saturation liquid");
+  prev_saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "previous saturation liquid");
+  flux_key_ = Keys::readKey(*tp_list_, domain_name_, "mass flux", "mass_flux");
+  tcc_key_ = Keys::readKey(*tp_list_, domain_name_, "concentration", "sediment");
+  molar_density_key_ = Keys::readKey(*tp_list_, domain_name_, "molar density", "molar_density_liquid");
+  solid_residue_mass_key_ =  Keys::readKey(*tp_list_, domain_name_, "solid residue", "solid_residue_mass");
+  sd_trapping_key_ =  Keys::readKey(*tp_list_, domain_name_, "trapping rate", "trapping_rate");
+  sd_settling_key_ =  Keys::readKey(*tp_list_, domain_name_, "settling rate", "settling_rate");
+  sd_erosion_key_ =  Keys::readKey(*tp_list_, domain_name_, "erosion rate", "erosion_rate");
+  horiz_mixing_key_ = Keys::readKey(*tp_list_, domain_name_, "horizontal mixing", "horizontal_mixing");
+  elevation_increase_key_ = Keys::getKey(domain_name_, "deformation");
+  porosity_key_ = Keys::getKey(domain_name_, "soil_porosity");
 
-  water_tolerance_ = tp_list_->get<double>("water tolerance", 1e-3);
+  water_tolerance_ = tp_list_->get<double>("water tolerance", 1e-1);
   max_tcc_ = tp_list_->get<double>("maximal concentration", 0.9);
 
 
@@ -175,7 +176,14 @@ void SedimentTransport_PK::Setup(const Teuchos::Ptr<State>& S)
   if (!S->HasField(horiz_mixing_key_)){
     S->RequireField(horiz_mixing_key_,horiz_mixing_key_)->SetMesh(mesh_)->SetGhosted(false)->SetComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator(horiz_mixing_key_);
-  }    
+  }
+
+  if (!S->HasField(porosity_key_)){
+    S->RequireField(porosity_key_,porosity_key_)->SetMesh(mesh_)->SetGhosted(false)->SetComponent("cell", AmanziMesh::CELL, 1);
+    //S->RequireFieldEvaluator(porosity_key_);
+  }
+
+
 
   int ncomponents = component_names_.size();
   std::vector<std::vector<std::string> > subfield_names(1);
@@ -448,7 +456,9 @@ void SedimentTransport_PK::Initialize(const Teuchos::Ptr<State>& S)
     }
   }
 
+  dt_debug_ = tp_list_->get<double>("maximum time step", TRANSPORT_LARGE_TIME_STEP);
 
+  
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Number of components: " << tcc->size() << std::endl
@@ -552,7 +562,11 @@ void SedimentTransport_PK::InitializeAll_()
   temporal_disc_order = tp_list_->get<int>("temporal discretization order", 1);
   if (temporal_disc_order < 1 || temporal_disc_order > 2) temporal_disc_order = 1;
 
-  num_aqueous = 1;
+
+  num_aqueous = tp_list_->get<int>("number of sediment components", component_names_.size());
+  
+  // sediment diffusion (default is none)
+  diffusion_solver = tp_list_->get<std::string>("solver", "missing");
 
   // mass_solutes_exact_.assign(num_aqueous + num_gaseous, 0.0);
   // mass_solutes_source_.assign(num_aqueous + num_gaseous, 0.0);
@@ -585,16 +599,17 @@ double SedimentTransport_PK::StableTimeStep()
   S_next_->GetFieldData(flux_key_)->ScatterMasterToGhosted("face");
  
   flux_ = S_next_->GetFieldData(flux_key_)->ViewComponent("face", true);
+  *flux_copy_ = *flux_; // copy flux vector from S_next_ to S_;
 
   // double flux_next_norm=0., flux_norm=0.;
   // flux_->NormInf(&flux_next_norm);
   // S_->GetFieldData(flux_key_)->ViewComponent("face", true)->NormInf(&flux_norm);
   
-  // if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME){
-  //   if (flux_key_=="surface-mass_flux"){
-  //     *vo_->os()<<"Stable step: "<<flux_key_<<" ||flux_next||="<<flux_next_norm<<" ||flux||="<<flux_norm<<"\n";
-  //   }
-  // }
+  //  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME){
+    // if (flux_key_=="surface-mass_flux"){
+    //   *vo_->os()<<"Stable step: "<<flux_key_<<" ||flux_next||="<<flux_next_norm<<" ||flux||="<<flux_norm<<"\n";
+    // }
+  //}
   
   IdentifyUpwindCells();
 
@@ -617,18 +632,23 @@ double SedimentTransport_PK::StableTimeStep()
   dt_ = dt_cell = TRANSPORT_LARGE_TIME_STEP;
   int cmin_dt = 0;
   for (int c = 0; c < ncells_owned; c++) {
+    // std::cout<< c<<" : "<< total_outflux[c]<<" "<<(*ws_)[0][c]<<" "<<(*ws_prev_)[0][c]<<"\n";
     outflux = total_outflux[c];
-    if ( (outflux > 0) && ((*ws_prev_)[0][c]>0) && ((*ws_)[0][c]>0 )) {
+
+    if ( (outflux > 0) && ((*ws_prev_)[0][c] > 1e-4) && ((*ws_)[0][c] > 1e-4 )) {
       vol = mesh_->cell_volume(c);
       dt_cell = vol * (*mol_dens_)[0][c] * std::min( (*ws_prev_)[0][c], (*ws_)[0][c] ) / outflux;
     }
     if (dt_cell < dt_) {
-      // *vo_->os()<<"Stable step: "<<flux_key_<<" cell "<<c<<" out "<<outflux<<"  dt= "<<dt_cell<<"\n";
+      // *vo_->os()<<"Stable step: "<<flux_key_<<" cell "<<c<<" out "<<outflux<<" ws "<<
+      //   (*ws_prev_)[0][c]<<" "<< (*ws_)[0][c] <<"  dt= "<<dt_cell<<"\n";
       dt_ = dt_cell;
       cmin_dt = c;
     }
   }
 
+
+  
   if (spatial_disc_order == 2) dt_ /= 2;
 
   // communicate global time step
@@ -700,8 +720,8 @@ bool SedimentTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   //double norm_old;
   
-  flux_ = S_next_->GetFieldData(flux_key_)->ViewComponent("face", true);
-  *flux_copy_ = *flux_; // copy flux vector from S_next_ to S_; 
+  // flux_ = S_next_->GetFieldData(flux_key_)->ViewComponent("face", true);
+  // *flux_copy_ = *flux_; // copy flux vector from S_next_ to S_; 
 
   ws_ = S_next_->GetFieldData(saturation_key_)->ViewComponent("cell", false);
   mol_dens_ = S_next_->GetFieldData(molar_density_key_)->ViewComponent("cell", false);
@@ -728,7 +748,7 @@ bool SedimentTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   //if ((dt_shift >1e-12) || (dt_stable < dt_global)) interpolate_ws = 1;
 
-  if ((t_old > S_->initial_time())||(t_new < S_->final_time())) interpolate_ws = 1;
+  interpolate_ws = (dt_ < dt_global) ? 1 : 0;
 
     // start subcycling
   double dt_sum = 0.0;
@@ -770,8 +790,10 @@ bool SedimentTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     double dt_try = dt_MPC - dt_sum;
     double tol = 1e-10 * (dt_try + dt_stable); 
     bool final_cycle = false;
-    // *vo_->os() <<std::setprecision(10)<<"dt_MPC "<<dt_MPC<<" dt_cycle "<<dt_cycle<<" dt_sum "<<dt_sum<<" dt_stable "<<
-    //   dt_stable<<" dt_try "<<dt_try<<" "<<dt_try - (dt_stable + tol)<<" tol "<<tol<<"\n";
+    if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME){
+      *vo_->os() <<std::setprecision(10)<<"dt_MPC "<<dt_MPC<<" dt_cycle "<<dt_cycle<<" dt_sum "<<dt_sum<<" dt_stable "<<
+        dt_stable<<" dt_try "<<dt_try<<" "<<dt_try - (dt_stable + tol)<<" tol "<<tol<<"\n";
+    }
     
     if (dt_try >= 2 * dt_stable) {
       dt_cycle = dt_stable;
@@ -789,8 +811,8 @@ bool SedimentTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       if (swap) {  // Initial water saturation is in 'start'.
         ws_start = ws_subcycle_start;
         ws_end = ws_subcycle_end;
-        mol_dens_start = mol_dens_subcycle_start;
-        mol_dens_end = mol_dens_subcycle_end;
+        mol_dens_start = mol_dens_;
+        mol_dens_end = mol_dens_;
                 
         double dt_int = dt_sum + dt_shift;
         InterpolateCellVector(*ws_prev_, *ws_, dt_int, dt_global, *ws_subcycle_end);
@@ -798,8 +820,8 @@ bool SedimentTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       } else {  // Initial water saturation is in 'end'.
         ws_start = ws_subcycle_end;
         ws_end = ws_subcycle_start;
-        mol_dens_start = mol_dens_subcycle_end;
-        mol_dens_end = mol_dens_subcycle_start;
+        mol_dens_start = mol_dens_;
+        mol_dens_end = mol_dens_;
 
         double dt_int = dt_sum + dt_shift;
         InterpolateCellVector(*ws_prev_, *ws_, dt_int, dt_global, *ws_subcycle_start);
@@ -821,9 +843,15 @@ bool SedimentTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     }
 
     ncycles++;
+    // if (ncycles > 150) {
+    //   std::cout <<"number of cycles more than 150\n";
+    //   exit(0);
+    // }
   }
+
+  std::cout<<"ncycles = "<<ncycles<<"\n";
  
-  //if (ncycles > 1) exit(0);
+
 
   dt_ = dt_stable;  // restore the original time step (just in case)
 
@@ -1034,7 +1062,7 @@ void SedimentTransport_PK::AdvanceDonorUpwind(double dt_cycle)
     else if (c1 >=0 && c1 < ncells_owned && (c2 >= ncells_owned || c2 < 0)) {
       for (int i = 0; i < num_advect; i++) {
         tcc_flux = dt_ * u * tcc_prev[i][c1];
-        // if ((c2 < 0) && fabs(tcc_flux) >1e-17) std::cout <<MyPID<<":u "<<u<<" cell "<<c1<<" "<<c2<<" face "<<f<<
+        //if ((c2 < 0) && fabs(tcc_flux) >1e-17) std::cout <<MyPID<<":u "<<u<<" cell "<<c1<<" "<<c2<<" face "<<f<<
         //                                          " tcc "<<tcc_prev[i][c1]<<" tcc_flux "<<tcc_flux<<" cntr "<<mesh_->face_centroid(f)<<"\n";
         (*conserve_qty_)[i][c1] -= tcc_flux;
         if (c2 < 0) mass_sediment_bc_ -= tcc_flux;
@@ -1075,10 +1103,10 @@ void SedimentTransport_PK::AdvanceDonorUpwind(double dt_cycle)
 
 
   // process external sources
-  if (srcs_.size() != 0) {
-    double time = t_physics_;
-    ComputeAddSourceTerms(time, dt_, *conserve_qty_, 0, num_advect - 1);
-  }
+  //if (srcs_.size() != 0) {
+  double time = t_physics_;
+  ComputeAddSourceTerms(time, dt_, *conserve_qty_, 0, num_advect - 1);
+  //}
 
   // if (domain_name_ == "surface") {
   //   std::cout<<*conserve_qty_<<"\n";
@@ -1088,8 +1116,17 @@ void SedimentTransport_PK::AdvanceDonorUpwind(double dt_cycle)
   for (int c = 0; c < ncells_owned; c++) {
     vol_ws_den = mesh_->cell_volume(c) * (*ws_end)[0][c] * (*mol_dens_end)[0][c];
     for (int i = 0; i < num_advect; i++) {
-      if (vol_ws_den > water_tolerance_ && (*conserve_qty_)[i][c] > 0) {
+      if ((*ws_end)[0][c] > water_tolerance_ && (*conserve_qty_)[i][c] > 0) {
+        
         tcc_next[i][c] = (*conserve_qty_)[i][c] / vol_ws_den;
+
+        //if ((*conserve_qty_)[i][c] > vol_ws_den) {
+        if (tcc_next[i][c] > 4e-6){
+          // std::cout<<"cell "<<c<<" tcc "<<tcc_next[i][c]<<" mass "<<(*conserve_qty_)[i][c]<<"\n";
+          // std::cout<<"ws " << (*ws_start)[0][c] <<" "<<(*ws_end)[0][c] << " den "<<(*mol_dens_start)[0][c] <<" " <<(*mol_dens_end)[0][c]<<" "<<mesh_->cell_volume(c)<<" dt "<<dt_<<"\n";
+          //exit(0);
+        }
+        
       }
       else  {
         (*solid_qty_)[i][c] += std::max((*conserve_qty_)[i][c], 0.);
@@ -1116,15 +1153,15 @@ void SedimentTransport_PK::AdvanceDonorUpwind(double dt_cycle)
 
     tmp1 = mass_sediment_bc_;
     mesh_->get_comm()->SumAll(&tmp1, &mass_sediment_bc_, 1);
-    *vo_->os() << "*****************\n";
-    if (domain_name_ == "surface") *vo_->os()<<"Surface mass BC "<<mass_sediment_bc_<<"\n";
-    else *vo_->os() <<"Subsurface mass BC "<<mass_sediment_bc_<<"\n";
+    // *vo_->os() << "*****************\n";
+    // if (domain_name_ == "surface") *vo_->os()<<"Surface mass BC "<<mass_sediment_bc_<<"\n";
+    // else *vo_->os() <<"Subsurface mass BC "<<mass_sediment_bc_<<"\n";
       
-    tmp1 = mass_sediment_source_;
-    mesh_->get_comm()->SumAll(&tmp1, &mass_sediment_source_, 1);
-    if (domain_name_ == "surface") *vo_->os()<<"Surface mass_sediment source "<<mass_sediment_source_ * dt_<<"\n";
-    else *vo_->os() << "Subsurface mass_sediment source "<<mass_sediment_source_ * dt_<<"\n";
-    *vo_->os() << "*****************\n";
+    // tmp1 = mass_sediment_source_;
+    // mesh_->get_comm()->SumAll(&tmp1, &mass_sediment_source_, 1);
+    // if (domain_name_ == "surface") *vo_->os()<<"Surface mass_sediment source "<<mass_sediment_source_ * dt_<<"\n";
+    // else *vo_->os() << "Subsurface mass_sediment source "<<mass_sediment_source_ * dt_<<"\n";
+    // *vo_->os() << "*****************\n";
   }
 
 
@@ -1132,13 +1169,13 @@ void SedimentTransport_PK::AdvanceDonorUpwind(double dt_cycle)
   //   VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
   // }
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
-    if (domain_name_ == "surface")  *vo_->os()<<"Surface mass final "<<mass_final<<"\n";
-    else  *vo_->os()<<"Subsurface mass final "<<mass_final<<"\n";
-  }
+  // if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
+  //   if (domain_name_ == "surface")  *vo_->os()<<"Surface mass final "<<mass_final<<"\n";
+  //   else  *vo_->os()<<"Subsurface mass final "<<mass_final<<"\n";
+  // }
   
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-    *vo_->os()<<"mass error "<<abs(mass_final - (mass_start + mass_sediment_bc_ + mass_sediment_source_*dt_) )<<"\n";
+  // if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+  //   *vo_->os()<<"mass error "<<abs(mass_final - (mass_start + mass_sediment_bc_ + mass_sediment_source_*dt_) )<<"\n";
 
   //if (abs(mass_final - (mass_start + mass_sediment_bc_[0] + mass_sediment_source_[0]*dt_) )/mass_final > 1e-6) exit(-1);
   
@@ -1191,7 +1228,7 @@ void SedimentTransport_PK::AdvanceDonorUpwind(double dt_cycle)
 
 //     double T = t_physics_;
 //     Epetra_Vector*& component = tcc_prev(i);
-//     Functional(T, *component, f_component);
+//     FunctionalTimeDerivative(T, *component, f_component);
 
 //     for (int c = 0; c < ncells_owned; c++) {
 //       tcc_next[i][c] = (tcc_prev[i][c] + dt_ * f_component[c]) * ws_ratio[c];
@@ -1256,7 +1293,7 @@ void SedimentTransport_PK::AdvanceDonorUpwind(double dt_cycle)
 
 //     double T = t_physics_;
 //     Epetra_Vector*& component = tcc_prev(i);
-//     Functional(T, *component, f_component);
+//     FunctionalTimeDerivative(T, *component, f_component);
 
 //     for (int c = 0; c < ncells_owned; c++) {
 //       tcc_next[i][c] = (tcc_prev[i][c] + dt_ * f_component[c]) * ws_ratio[c];
@@ -1277,7 +1314,7 @@ void SedimentTransport_PK::AdvanceDonorUpwind(double dt_cycle)
 
 //     double T = t_physics_;
 //     Epetra_Vector*& component = tcc_next(i);
-//     Functional(T, *component, f_component);
+//     FunctionalTimeDerivative(T, *component, f_component);
 
 //     for (int c = 0; c < ncells_owned; c++) {
 //       double value = (tcc_prev[i][c] + dt_ * f_component[c]) * ws_ratio[c];
@@ -1363,22 +1400,28 @@ void SedimentTransport_PK::ComputeAddSourceTerms(double tp, double dtp,
   int nsrcs = srcs_.size();
 
   double mass1 = 0., mass2 = 0., add_mass =0., tmp1;
-
+  bool chg;
   
-  S_->GetFieldEvaluator(sd_trapping_key_)->HasFieldChanged(S_.ptr(), sd_trapping_key_);
-  const Epetra_MultiVector Q_dt = *S_->GetFieldData(sd_trapping_key_)->ViewComponent("cell", false);
+  chg = S_next_->GetFieldEvaluator(sd_trapping_key_)->HasFieldChanged(S_next_.ptr(), sd_trapping_key_);
+  const Epetra_MultiVector& Q_dt = *S_next_->GetFieldData(sd_trapping_key_)->ViewComponent("cell", false);
 
-  S_->GetFieldEvaluator(sd_settling_key_)->HasFieldChanged(S_.ptr(), sd_settling_key_);
-  const Epetra_MultiVector Q_ds = *S_->GetFieldData(sd_settling_key_)->ViewComponent("cell", false);
+  chg = S_next_->GetFieldEvaluator(sd_settling_key_)->HasFieldChanged(S_next_.ptr(), sd_settling_key_);
+  const Epetra_MultiVector& Q_ds = *S_next_->GetFieldData(sd_settling_key_)->ViewComponent("cell", false);
 
-  S_->GetFieldEvaluator(sd_erosion_key_)->HasFieldChanged(S_.ptr(), sd_erosion_key_);
-  const Epetra_MultiVector Q_e = *S_->GetFieldData(sd_erosion_key_)->ViewComponent("cell", false);
+  chg = S_next_->GetFieldEvaluator(sd_erosion_key_)->HasFieldChanged(S_next_.ptr(), sd_erosion_key_);
+  const Epetra_MultiVector& Q_e = *S_next_->GetFieldData(sd_erosion_key_)->ViewComponent("cell", false);
+
+  Epetra_MultiVector& dz = *S_next_->GetFieldData(elevation_increase_key_, "state")->ViewComponent("cell", false);
+  
+  const Epetra_MultiVector& poro =  *S_next_->GetFieldData(porosity_key_)->ViewComponent("cell", false);
 
   
   for (int c=0; c<ncells_owned; c++) {
     double value = mesh_->cell_volume(c) * (Q_e[0][c] - Q_dt[0][c] - Q_ds[0][c]);
     tcc[0][c] += value * dtp;
     mass_sediment_source_ += value;
+    dz[0][c] += mesh_->cell_volume(c) * ((Q_dt[0][c] + Q_ds[0][c]) - Q_e[0][c]) * dtp/ (1 - poro[0][c]);
+    //std::cout <<  dz[0][c] << " "<<(Q_dt[0][c] + Q_ds[0][c]) * dtp <<" "<< - Q_e[0][c]* dtp<<"\n";
   }
 
   

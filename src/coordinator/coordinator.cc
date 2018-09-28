@@ -152,7 +152,7 @@ void Coordinator::initialize() {
   // -- BDF history to allow projection to continue correctly.
 
   int size = comm_->NumProc();
-
+  Teuchos::OSTab tab = vo_->getOSTab();
 
   //---
   if (restart_) {

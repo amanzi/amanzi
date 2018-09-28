@@ -53,10 +53,12 @@
 #
 set(transport_inc_files
   sediment_transport_pk.hh
+  erosion_evaluator.hh settlement_evaluator.hh trapping_evaluator.hh
   )
 
 set(transport_src_files sediment_transport_pk.cc
-                        Transport_Diffusion.cc )
+  Transport_Diffusion.cc
+  erosion_evaluator.cc settlement_evaluator.cc trapping_evaluator.cc)
 
 add_library(pk_sediment_transport 
             ${transport_src_files}
@@ -73,4 +75,3 @@ if ( 0 )
     include_directories(${UnitTest_INCLUDE_DIRS})
 
 endif()
-

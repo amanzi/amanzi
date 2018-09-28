@@ -34,8 +34,8 @@ class TrappingRateEvaluator : public SecondaryVariableFieldEvaluator {
 
   //virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S){};
 
-protected:
-
+  protected:
+  
     // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
                               const Teuchos::Ptr<CompositeVector>& result);
@@ -43,12 +43,12 @@ protected:
                                                Key wrt_key,
                                                const Teuchos::Ptr<CompositeVector>& result);
 
-  double tau_e_;
-  double Qe_0_;
-  double gamma_;
-  double lambda_;
+  double visc_, d_p_, alpha_, beta_, gamma_;
 
   Key velocity_key_;
+  Key sediment_key_;
+  Key ponded_depth_key_;
+  Key biomass_key_;  
 
   static Utils::RegisteredFactory<FieldEvaluator,TrappingRateEvaluator> factory_;
 

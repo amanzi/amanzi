@@ -78,6 +78,7 @@ May inherit options from PKPhysicalBDFBase_.
 #define PK_FLOW_OVERLAND_HEAD_HH_
 
 #include "BoundaryFunction.hh"
+#include "DynamicBoundaryFunction.hh"
 #include "upwinding.hh"
 
 #include "Operator.hh"
@@ -127,7 +128,7 @@ public:
 
   // ConstantTemperature is a BDFFnBase
   // computes the non-linear functional g = g(t,u,udot)
-  void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+  void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
            Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
 
   // applies preconditioner to u and returns the result in Pu
@@ -243,6 +244,7 @@ protected:
   Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_pressure_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_critical_depth_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_level_;
+  Teuchos::RCP<Functions::DynamicBoundaryFunction> bc_dynamic_;
   
   // needed physical models
   Teuchos::RCP<Flow::OverlandConductivityModel> cond_model_;

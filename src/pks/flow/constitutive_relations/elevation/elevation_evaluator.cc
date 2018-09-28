@@ -26,7 +26,8 @@ ElevationEvaluator::ElevationEvaluator(Teuchos::ParameterList& plist) :
   // mesh has been deformed. The indicator for the mesh deformation event is the 
   // the deformation field.
   dynamic_mesh_ = plist_.get<bool>("dynamic mesh",false);
-  if (dynamic_mesh_) dependencies_.insert("deformation");
+  deformation_key_ = Keys::getKey(domain, "deformation");
+  if (dynamic_mesh_) dependencies_.insert(deformation_key_);
 }
 
 void ElevationEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
