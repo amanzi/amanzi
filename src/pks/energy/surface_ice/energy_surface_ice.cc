@@ -110,12 +110,6 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     S->RequireField("surface_subsurface_energy_flux")
         ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
   }
-
-  // Many quantities are based upon face areas, which are not the cell volume,
-  // as the surface mesh has been flattened.
-  if (!standalone_mode_) {
-    S->RequireFieldEvaluator("surface_3d_cell_volume");
-  }
 }
 
 

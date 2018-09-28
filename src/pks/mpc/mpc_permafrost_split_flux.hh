@@ -5,7 +5,7 @@ ATS
 License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 
-An operator-split integrated hydrology coupler, based on flux.
+An operator-split permafrost coupler, based on flux.
 
 solve:
 
@@ -21,11 +21,23 @@ This effectively does an operator splitting on the surface flow equation, but
 instead of the typical strateegy of passing pressure, passes the divergence of
 lateral fluxes as a fixed source term.
 
+This is the permafrost analog, so deals with energy as well in a similar
+strategy.  In this case advection and diffusion of energy are handled in the
+first solve:
+
+(dE_s / dt)^* = div (  Kappa_s grad T + hq )
+
+then:
+
+dE_s / dt = (dE_s / dt)^* + QE_ext + h * Q_ext + qE_ss + h * q_ss
+dE / dt = div (  Kappa grad T) + hq )
+Kappa grad T |_s = qE_ss
+
 
 ------------------------------------------------------------------------- */
 
-#ifndef PKS_MPC_COUPLED_WATER_SPLIT_FLUX_HH_
-#define PKS_MPC_COUPLED_WATER_SPLIT_FLUX_HH_
+#ifndef PKS_MPC_PERMAFROST_SPLIT_FLUX_HH_
+#define PKS_MPC_PERMAFROST_SPLIT_FLUX_HH_
 
 #include "PK.hh"
 #include "mpc.hh"
@@ -33,22 +45,23 @@ lateral fluxes as a fixed source term.
 
 namespace Amanzi {
 
-class MPCCoupledWaterSplitFlux : public MPC<PK> {
+class MPCPermafrostSplitFlux : public MPC<PK> {
 
  public:
 
-  MPCCoupledWaterSplitFlux(Teuchos::ParameterList& FElist,
+  MPCPermafrostSplitFlux(Teuchos::ParameterList& FElist,
           const Teuchos::RCP<Teuchos::ParameterList>& plist,
           const Teuchos::RCP<State>& S,
           const Teuchos::RCP<TreeVector>& solution);
 
   // Virtual destructor
-  virtual ~MPCCoupledWaterSplitFlux() = default;
+  virtual ~MPCPermafrostSplitFlux() = default;
 
   // PK methods
   // -- dt is the minimum of the sub pks
   virtual double get_dt();
 
+  // -- initialize in reverse order
   virtual void Initialize(const Teuchos::Ptr<State>& S);
   virtual void Setup(const Teuchos::Ptr<State>& S);
   
@@ -65,16 +78,23 @@ class MPCCoupledWaterSplitFlux : public MPC<PK> {
   virtual void CopyStarToPrimary(double dt);
 
  protected:
-  Key primary_variable_;
-  Key primary_variable_star_;
-  Key conserved_variable_star_;
-  Key lateral_flow_source_;
+  Key p_primary_variable_;
+  Key p_primary_variable_star_;
+  Key p_conserved_variable_star_;
+  Key p_lateral_flow_source_;
+
+  Key T_primary_variable_;
+  Key T_primary_variable_star_;
+  Key T_conserved_variable_star_;
+  Key T_lateral_flow_source_;
+  
   Key cv_key_;
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> eval_pvfe_;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> p_eval_pvfe_;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> T_eval_pvfe_;
   
  private:
   // factory registration
-  static RegisteredPKFactory<MPCCoupledWaterSplitFlux> reg_;
+  static RegisteredPKFactory<MPCPermafrostSplitFlux> reg_;
 
 
 };
