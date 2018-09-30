@@ -213,7 +213,7 @@
         <ParameterList name="water retention models">
           <ParameterList name="WRM for RegionMiddle">
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
-            <Parameter name="region" type="string" value="RegionMiddle"/>
+            <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>
             <Parameter name="van Genuchten m" type="double" value="2.294e-01"/>
             <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
             <Parameter name="van Genuchten alpha" type="double" value="1.9467e-04"/>
@@ -223,7 +223,7 @@
           </ParameterList>
           <ParameterList name="WRM for RegionBottom">
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
-            <Parameter name="region" type="string" value="RegionBottom"/>
+            <Parameter name="regions" type="Array(string)" value="{RegionBottom}"/>
             <Parameter name="van Genuchten m" type="double" value="2.136e-01"/>
             <Parameter name="van Genuchten l" type="double" value="0.5"/>
             <Parameter name="van Genuchten alpha" type="double" value="2.026e-03"/>
@@ -233,7 +233,7 @@
           </ParameterList>
           <ParameterList name="WRM for RegionTop">
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
-            <Parameter name="region" type="string" value="RegionTop"/>
+            <Parameter name="regions" type="Array(string)" value="{RegionTop}"/>
             <Parameter name="van Genuchten m" type="double" value="3.006e-01"/>
             <Parameter name="van Genuchten l" type="double" value="0.5"/>
             <Parameter name="van Genuchten alpha" type="double" value="2.0674e-03"/>
@@ -244,10 +244,12 @@
         </ParameterList>
         <ParameterList name="multiscale models">
           <ParameterList name="MSM for RegionMiddle">
-            <Parameter name="region" type="string" value="RegionMiddle"/>
+            <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>
             <Parameter name="multiscale model" type="string" value="dual porosity"/>
-            <Parameter name="mass transfer coefficient" type="double" value="1.0e-9"/>
-            <Parameter name="tolerance" type="double" value="1.0e-9"/>
+            <ParameterList name="dual porosity parameters">
+              <Parameter name="mass transfer coefficient" type="double" value="1.0e-9"/>
+              <Parameter name="tolerance" type="double" value="1.0e-9"/>
+            </ParameterList>
 
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
             <Parameter name="van Genuchten m" type="double" value="2.294e-01"/>
@@ -261,10 +263,12 @@
             <Parameter name="value" type="double" value="2.08199999999999996e-01"/>
           </ParameterList>
           <ParameterList name="MSM for RegionBottom">
-            <Parameter name="region" type="string" value="RegionBottom"/>
+            <Parameter name="regions" type="Array(string)" value="{RegionBottom}"/>
             <Parameter name="multiscale model" type="string" value="dual porosity"/>
-            <Parameter name="mass transfer coefficient" type="double" value="1.0e-9"/>
-            <Parameter name="tolerance" type="double" value="1.0e-9"/>
+            <ParameterList name="dual porosity parameters">
+              <Parameter name="mass transfer coefficient" type="double" value="1.0e-9"/>
+              <Parameter name="tolerance" type="double" value="1.0e-9"/>
+            </ParameterList>
 
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
             <Parameter name="van Genuchten m" type="double" value="2.136e-01"/>
@@ -278,10 +282,12 @@
             <Parameter name="value" type="double" value="2.20599999999999991e-01"/>
           </ParameterList>
           <ParameterList name="MSM for RegionTop">
-            <Parameter name="region" type="string" value="RegionTop"/>
+            <Parameter name="regions" type="Array(string)" value="{RegionTop}"/>
             <Parameter name="multiscale model" type="string" value="dual porosity"/>
-            <Parameter name="mass transfer coefficient" type="double" value="1.0e-9"/>
-            <Parameter name="tolerance" type="double" value="1.0e-9"/>
+            <ParameterList name="dual porosity parameters">
+              <Parameter name="mass transfer coefficient" type="double" value="1.0e-9"/>
+              <Parameter name="tolerance" type="double" value="1.0e-9"/>
+            </ParameterList>
 
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
             <Parameter name="van Genuchten m" type="double" value="3.006e-01"/>

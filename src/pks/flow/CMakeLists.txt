@@ -101,6 +101,11 @@ register_evaluator_with_factory(
   LISTNAME   MSM_FLOW_REGISTRATIONS
   )
 
+register_evaluator_with_factory(
+  HEADERFILE MultiscaleFlowPorosity_GDPM_reg.hh
+  LISTNAME   MSM_FLOW_REGISTRATIONS
+  )
+
 generate_evaluators_registration_header( 
   HEADERFILE multiscale_flow_registration.hh   
   LISTNAME   MSM_FLOW_REGISTRATIONS
@@ -124,6 +129,7 @@ set(flow_src_files Flow_PK.cc
                    DarcyVelocityEvaluator.cc
                    MultiscaleFlowPorosityFactory.cc MultiscaleFlowPorosityPartition.cc
                    MultiscaleFlowPorosity_DPM.cc
+                   MultiscaleFlowPorosity_GDPM.cc
                    FracturePermModelPartition.cc FracturePermModelEvaluator.cc
                    )
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES} ${SEACAS_LIBRARIES})
@@ -151,6 +157,7 @@ set(flow_inc_files
   FracturePermModelEvaluator.hh
   MultiscaleFlowPorosity.hh
   MultiscaleFlowPorosity_DPM.hh
+  MultiscaleFlowPorosity_GDPM.hh
   MultiscaleFlowPorosityFactory.hh
   MultiscaleFlowPorosityPartition.hh
   PorosityModel.hh

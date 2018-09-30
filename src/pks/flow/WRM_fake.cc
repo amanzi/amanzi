@@ -22,7 +22,6 @@ namespace Flow {
 ****************************************************************** */
 WRM_fake::WRM_fake(Teuchos::ParameterList& plist)
 {
-  set_region(plist.get<std::string>("region", "unknown"));
   alpha = 1.0;
   n = 2.0;
   m = 1.0;

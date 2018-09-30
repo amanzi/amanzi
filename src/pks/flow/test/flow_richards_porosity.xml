@@ -139,7 +139,7 @@
 
         <ParameterList name="water retention models">
           <ParameterList name="WRM for Material 1">
-            <Parameter name="region" type="string" value="Material 1"/>
+            <Parameter name="regions" type="Array(string)" value="{Material 1}"/>
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
             <Parameter name="van Genuchten alpha" type="double" value="1.0"/>
             <Parameter name="van Genuchten m" type="double" value="0.5"/>
@@ -148,7 +148,7 @@
             <Parameter name="relative permeability model" type="string" value="Mualem"/>
           </ParameterList>
           <ParameterList name="WRM for Material 2">
-            <Parameter name="region" type="string" value="Material 2"/>
+            <Parameter name="regions" type="Array(string)" value="{Material 2}"/>
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
             <Parameter name="van Genuchten alpha" type="double" value="1.0"/>
             <Parameter name="van Genuchten m" type="double" value="0.5"/>
@@ -158,18 +158,18 @@
 
         <ParameterList name="porosity models">
           <ParameterList name="POM for Material 1">
-            <Parameter name="region" type="string" value="Material 1"/>
+            <Parameter name="regions" type="Array(string)" value="{Material 1}"/>
             <Parameter name="porosity model" type="string" value="constant"/>
             <Parameter name="value" type="double" value="0.2"/>
           </ParameterList>
 
           <ParameterList name="POM for Material 2">
-           <Parameter name="region" type="string" value="Material 2"/>
-           <Parameter name="porosity model" type="string" value="compressible"/>
-           <Parameter name="undeformed soil porosity" type="double" value="0.2"/>
-           <Parameter name="reference pressure" type="double" value="-10.0"/>
-           <Parameter name="pore compressibility" type="double" value="1e-2"/>
-         </ParameterList>
+            <Parameter name="regions" type="Array(string)" value="{Material 2}"/>
+            <Parameter name="porosity model" type="string" value="compressible"/>
+            <Parameter name="undeformed soil porosity" type="double" value="0.2"/>
+            <Parameter name="reference pressure" type="double" value="-10.0"/>
+            <Parameter name="pore compressibility" type="double" value="1e-2"/>
+          </ParameterList>
         </ParameterList>
 
         <ParameterList name="boundary conditions">

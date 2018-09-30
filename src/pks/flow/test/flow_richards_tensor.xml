@@ -128,7 +128,7 @@
 
         <ParameterList name="water retention models">
           <ParameterList name="WRM for All">
-            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
             <Parameter name="van Genuchten alpha" type="double" value="1.0"/>
             <Parameter name="van Genuchten m" type="double" value="0.5"/>

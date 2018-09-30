@@ -27,8 +27,7 @@ TEST(vanGenuchten) {
   std::string krel_function("Mualem");
   double pc0 = 500.0;
 
-  std::string region("test");
-  WRM_vanGenuchten vG(region, m, l, alpha, sr, krel_function, pc0);
+  WRM_vanGenuchten vG(m, l, alpha, sr, krel_function, pc0);
  
   // check k_relative for p = 2*p_atm
   double pc = -p_atm;

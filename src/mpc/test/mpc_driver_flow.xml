@@ -19,7 +19,7 @@
         <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Retion Bottom">
+    <ParameterList name="Region Bottom">
       <ParameterList name="region: box">
         <Parameter name="high coordinate" type="Array(double)" value="{2.16000e+02, 4.0e+01}"/>
         <Parameter name="low coordinate" type="Array(double)" value="{0.0e+00, 0.0e+00}"/>
@@ -147,8 +147,8 @@
               </ParameterList>
             </ParameterList>
           </ParameterList>
-          <ParameterList name="Retion Bottom">
-            <Parameter name="regions" type="Array(string)" value="{Retion Bottom}"/>
+          <ParameterList name="Region Bottom">
+            <Parameter name="regions" type="Array(string)" value="{Region Bottom}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -200,8 +200,8 @@
               </ParameterList>
             </ParameterList>
           </ParameterList>
-          <ParameterList name="Retion Bottom">
-            <Parameter name="regions" type="Array(string)" value="{Retion Bottom}"/>
+          <ParameterList name="Region Bottom">
+            <Parameter name="regions" type="Array(string)" value="{Region Bottom}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <Parameter name="number of dofs" type="int" value="2"/>
@@ -273,7 +273,7 @@
     </ParameterList>
     <ParameterList name="mesh partitions">
       <ParameterList name="materials">
-        <Parameter name="region list" type="Array(string)" value="{Region Middle, Retion Bottom, Region Top}"/>
+        <Parameter name="region list" type="Array(string)" value="{Region Middle, Region Bottom, Region Top}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -294,7 +294,7 @@
       <ParameterList name="water retention models">
       	<ParameterList name="Water Retention Model for Region Middle">
       	  <Parameter name="water retention model" type="string" value="van Genuchten"/>
-      	  <Parameter name="region" type="string" value="Region Middle"/>
+      	  <Parameter name="regions" type="Array(string)" value="{Region Middle}"/>
       	  <Parameter name="van Genuchten m" type="double" value="2.29399999999999993e-01"/>
       	  <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
       	  <Parameter name="van Genuchten alpha" type="double" value="1.94670000000000005e-04"/>
@@ -302,9 +302,9 @@
       	  <Parameter name="regularization interval" type="double" value="0.0e+00"/>
       	  <Parameter name="relative permeability model" type="string" value="Mualem"/>
       	</ParameterList>
-      	<ParameterList name="Water Retention Model for Retion Bottom">
+      	<ParameterList name="Water Retention Model for Region Bottom">
       	  <Parameter name="water retention model" type="string" value="van Genuchten"/>
-      	  <Parameter name="region" type="string" value="Retion Bottom"/>
+      	  <Parameter name="regions" type="Array(string)" value="{Region Bottom}"/>
       	  <Parameter name="van Genuchten m" type="double" value="2.13600000000000012e-01"/>
       	  <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
       	  <Parameter name="van Genuchten alpha" type="double" value="2.02600000000000002e-03"/>
@@ -314,7 +314,7 @@
       	</ParameterList>
       	<ParameterList name="Water Retention Model for Region Top">
       	  <Parameter name="water retention model" type="string" value="van Genuchten"/>
-      	  <Parameter name="region" type="string" value="Region Top"/>
+      	  <Parameter name="regions" type="Array(string)" value="{Region Top}"/>
       	  <Parameter name="van Genuchten m" type="double" value="3.00599999999999978e-01"/>
       	  <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
       	  <Parameter name="van Genuchten alpha" type="double" value="2.06740000000000005e-03"/>

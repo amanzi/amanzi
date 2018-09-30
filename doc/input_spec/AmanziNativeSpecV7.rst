@@ -1241,7 +1241,7 @@ Combination of both approaches may lead to a more efficient code.
   This option is ignored is mesh dimentionaly equals to manifold dimensionality.
 
 * `"multiscale model`" [string] specifies a multiscale model.
-  Available options are `"single porosity`" (default) and `"dual porosity`".
+  Available options are `"single porosity`" (default) and `"dual continuum discontinum matrix`".
 
 * `"water content model`" [string] changes the evaluator for water
   content. Available options are `"generic`" and `"constant density`" (default).
@@ -1312,7 +1312,7 @@ if the list *output* is provided. This list has two mandatory parameters:
    <ParameterList name="Richards problem">  <!-- parent list -->
      <ParameterList name="water retention models">
        <ParameterList name="SOIL_1">
-         <Parameter name="region" type="string" value="TOP HALF"/>
+         <Parameter name="regions" type="Array(string)" value="{TOP HALF}"/>
          <Parameter name="water retention model" type="string" value="van Genuchten"/>
          <Parameter name="van Genuchten alpha" type="double" value="0.000194"/>
          <Parameter name="van Genuchten m" type="double" value="0.28571"/>
@@ -1327,7 +1327,7 @@ if the list *output* is provided. This list has two mandatory parameters:
        </ParameterList>
 
        <ParameterList name="SOIL_2">
-         <Parameter name="region" type="string" value="BOTTOM HALF"/>
+         <Parameter name="regions" type="Array(string)" value="{BOTTOM HALF}"/>
          <Parameter name="water retention model" type="string" value="Brooks Corey"/>
          <Parameter name="Brooks Corey lambda" type="double" value="0.0014"/>
          <Parameter name="Brooks Corey alpha" type="double" value="0.000194"/>
@@ -1348,7 +1348,7 @@ Porosity models
 User defines porosity models in sublist *porosity models*. 
 It contains as many sublists, e.g. *SOIL_1*, *SOIL_2*, etc, as there are different soils. 
 The porosity models are associated with non-overlapping regions. Each of the sublists (e.g. *Soil 1*) 
-includes a few mandatory parameters: *region name*, *model name*, and parameters for the selected model.
+includes a few mandatory parameters: *regions names*, *model name*, and parameters for the selected model.
 
 * `"porosity model`" [string] specifies a model for the soil.
   The available models are `"compressible`" and `"constant`". 
@@ -1364,13 +1364,13 @@ includes a few mandatory parameters: *region name*, *model name*, and parameters
    <ParameterList name="Richards problem">  <!-- parent list -->
      <ParameterList name="porosity models">
        <ParameterList name="SOIL_1">
-         <Parameter name="region" type="string" value="TOP HALF"/>
+         <Parameter name="regions" type="Array(string)" value="{TOP HALF}"/>
          <Parameter name="porosity model" type="string" value="constant"/>
          <Parameter name="value" type="double" value="0.2"/>
        </ParameterList>
 
        <ParameterList name="SOIL_2">
-         <Parameter name="region" type="string" value="BOTTOM HALF"/>
+         <Parameter name="regions" type="Array(string)" value="{BOTTOM HALF}"/>
          <Parameter name="porosity model" type="string" value="compressible"/>
          <Parameter name="underformed soil porosity" type="double" value="0.2"/>
          <Parameter name="reference pressure" type="double" value="101325.0"/>
@@ -1385,18 +1385,16 @@ In this example, we define two different porosity models in two soils.
 Multiscale continuum models
 ...........................
 
-The list *multiscale models* is the placeholder for various multiscale models.
+The list *multiscale models* is the place for various multiscale models.
 The list is extension of the list *water retention models*. 
 Its ordered by soil regions and includes parameters for the multiscale,
 capillary pressure, and relative permebility models.
 This list is optional. 
 
-* `"multiscale model`" [string] is the model name. Available option is `"dual porosity`".
+* `"multiscale model`" [string] is the model name. Available options are `"dual porosity`"
+  and `"generalized dual porosity`".
 
-* `"mass transfer coefficient`" [double] is the mass transfer coefficient.
-
-* `"tolerance`" [double] defines tolerance for iterative methods used to solve
-  secondary equations. Default is 1e-8.
+* `"xxx parameters`" [sublist] provides parameters for the model specified by variable `"multiscale model`".
 
 * `"water retention model`" [string] specifies a model for the soil.
   The available models are `"van Genuchten`" and `"Brooks Corey`". 
@@ -1405,15 +1403,34 @@ This list is optional.
 * `"relative permeability model`" [string] The available options are `"Mualem`" (default) 
   and `"Burdine`".
 
+
+Dual porosity model
+```````````````````
+
+* `"mass transfer coefficient`" [double] is the mass transfer coefficient.
+
+* `"tolerance`" [double] defines tolerance for iterative methods used to solve
+  secondary equations. Default is 1e-8.
+
+
+Generalized dual porosity model
+```````````````````````````````
+
+* `"number of matrix nodes`" [int] defines number of matrix layers.
+* `"matrix depth`" [double] is the characteristic length for matrix continuum.
+* `"matrix volume fraction`" [double] defines relative volume of matrix continuum.
+
 .. code-block:: xml
 
    <ParameterList name="Richards problem">  <!-- parent list -->
      <ParameterList name="multiscale models"> 
        <ParameterList name="SOIL_1">
-         <Parameter name="region" type="string" value="TOP HALF"/>
+         <Parameter name="regions" type="Array(string)" value="{TOP HALF}"/>
          <Parameter name="multiscale model" type="string" value="dual porosity"/> 
-         <Paramater name="mass transfer coefficient" type="double" value="4.0e-5"/>
-         <Paramater name="tolerance" type="double" value="1e-8"/>
+         <ParameterList name="dual porosity parameters">
+           <Paramater name="mass transfer coefficient" type="double" value="4.0e-5"/>
+           <Paramater name="tolerance" type="double" value="1e-8"/>
+         </ParameterList>
 
          <Parameter name="water retention model" type="string" value="van Genuchten"/>
          <Parameter name="van Genuchten alpha" type="double" value="0.000194"/>

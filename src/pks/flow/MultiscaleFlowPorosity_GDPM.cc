@@ -12,7 +12,7 @@
 #include <string>
 
 #include "FlowDefs.hh"
-#include "MultiscaleFlowPorosity_DPM.hh"
+#include "MultiscaleFlowPorosity_GDPM.hh"
 #include "WRMFactory.hh"
 
 namespace Amanzi {
@@ -21,21 +21,20 @@ namespace Flow {
 /* ******************************************************************
 * This model is minor extension of the WRM.
 ****************************************************************** */
-MultiscaleFlowPorosity_DPM::MultiscaleFlowPorosity_DPM(Teuchos::ParameterList& plist)
+MultiscaleFlowPorosity_GDPM::MultiscaleFlowPorosity_GDPM(Teuchos::ParameterList& plist)
 {
   WRMFactory factory;
   wrm_ = factory.Create(plist);
 
-  Teuchos::ParameterList& slist = plist.sublist("dual porosity parameters");
-  alpha_ = slist.get<double>("mass transfer coefficient", 0.0);
-  tol_ = slist.get<double>("tolerance", FLOW_DPM_NEWTON_TOLERANCE);
+  alpha_ = plist.get<double>("mass transfer coefficient", 0.0);
+  tol_ = plist.get<double>("tolerance", FLOW_DPM_NEWTON_TOLERANCE);
 }
 
 
 /* ******************************************************************
 * It should be called only once; otherwise, create an evaluator.
 ****************************************************************** */
-double MultiscaleFlowPorosity_DPM::ComputeField(double phi, double n_l, double pcm)
+double MultiscaleFlowPorosity_GDPM::ComputeField(double phi, double n_l, double pcm)
 {
   return wrm_->saturation(pcm) * phi * n_l;
 }
@@ -45,7 +44,7 @@ double MultiscaleFlowPorosity_DPM::ComputeField(double phi, double n_l, double p
 * Main capability: cell-based Newton solver. It returns water content, 
 * pressure in the matrix. max_itrs is input/output parameter.
 ****************************************************************** */
-double MultiscaleFlowPorosity_DPM::WaterContentMatrix(
+double MultiscaleFlowPorosity_GDPM::WaterContentMatrix(
     double dt, double phi, double n_l, double wcm0, double pcf0, double& pcm, int& max_itrs)
 {
   double patm(1e+5), zoom, pmin, pmax;
@@ -109,5 +108,4 @@ double MultiscaleFlowPorosity_DPM::WaterContentMatrix(
 
 }  // namespace Flow
 }  // namespace Amanzi
-  
-  
+ 

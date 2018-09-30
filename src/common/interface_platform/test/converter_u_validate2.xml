@@ -363,9 +363,9 @@
           </ParameterList>
         </ParameterList>
         <ParameterList name="water retention models">
-          <ParameterList name="WRM for RegionMiddle">
+          <ParameterList name="WRM_0">
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
-            <Parameter name="region" type="string" value="RegionMiddle"/>
+            <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>
             <Parameter name="van Genuchten m" type="double" value="2.29399999999999993e-01"/>
             <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
             <Parameter name="van Genuchten alpha" type="double" value="1.94670000000000005e-04"/>
@@ -373,13 +373,13 @@
             <Parameter name="regularization interval" type="double" value="0.0e+00"/>
             <Parameter name="relative permeability model" type="string" value="Mualem"/>
             <ParameterList name="output">
-              <Parameter name="file" type="string" value="RegionMiddle.txt"/>
+              <Parameter name="file" type="string" value="WRM_0.txt"/>
               <Parameter name="number of points" type="int" value="1000"/>
             </ParameterList>
           </ParameterList>
-          <ParameterList name="WRM for RegionBottom">
+          <ParameterList name="WRM_1">
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
-            <Parameter name="region" type="string" value="RegionBottom"/>
+            <Parameter name="regions" type="Array(string)" value="{RegionBottom}"/>
             <Parameter name="van Genuchten m" type="double" value="2.136e-01"/>
             <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
             <Parameter name="van Genuchten alpha" type="double" value="2.026e-03"/>
@@ -387,13 +387,13 @@
             <Parameter name="regularization interval" type="double" value="0.0e+00"/>
             <Parameter name="relative permeability model" type="string" value="Mualem"/>
             <ParameterList name="output">
-              <Parameter name="file" type="string" value="RegionBottom.txt"/>
+              <Parameter name="file" type="string" value="WRM_1.txt"/>
               <Parameter name="number of points" type="int" value="1000"/>
             </ParameterList>
           </ParameterList>
-          <ParameterList name="WRM for RegionTop">
+          <ParameterList name="WRM_2">
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
-            <Parameter name="region" type="string" value="RegionTop"/>
+            <Parameter name="regions" type="Array(string)" value="{RegionTop}"/>
             <Parameter name="van Genuchten m" type="double" value="3.006e-01"/>
             <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
             <Parameter name="van Genuchten alpha" type="double" value="2.0674e-03"/>
@@ -401,7 +401,7 @@
             <Parameter name="regularization interval" type="double" value="0.0e+00"/>
             <Parameter name="relative permeability model" type="string" value="Mualem"/>
             <ParameterList name="output">
-              <Parameter name="file" type="string" value="RegionTop.txt"/>
+              <Parameter name="file" type="string" value="WRM_2.txt"/>
               <Parameter name="number of points" type="int" value="1000"/>
             </ParameterList>
           </ParameterList>
