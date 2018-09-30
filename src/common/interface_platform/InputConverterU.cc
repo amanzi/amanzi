@@ -427,7 +427,7 @@ void InputConverterU::SaveXMLFile(
 
   if (filename == "") {
     filename = xmlfilename;
-    std::string new_extension("_native_v7.xml");
+    std::string new_extension("_native_v8.xml");
     size_t pos = filename.find(".xml");
     filename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)14);
   }
