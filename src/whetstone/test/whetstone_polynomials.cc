@@ -154,4 +154,3 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   q2.Reshape(2, 2, true);
   q1 = q2;
 }
-
