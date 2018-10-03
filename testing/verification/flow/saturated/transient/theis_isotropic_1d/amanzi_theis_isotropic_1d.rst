@@ -37,7 +37,7 @@ To apply the analysis developed by Theis, three parameters must be known:
 * :math:`S`, storativity
 * :math:`Q`, well-head pumping rate
 
-Transmissivity [L:sup:`2`/T] of the aquifer is defined as: 
+Transmissivity [L\ :sup:`2`/T] of the aquifer is defined as: 
 
 .. math:: T = Kb
 
@@ -85,14 +85,17 @@ aquifer transmissivity [m\ :sup:`2`/s], and :math:`t` is time [s].
 The analytical solution of drawdown as a function of time and distance
 is found to be:
 
-.. math:: s = h(r,0) - h(r,t) = \frac{Q W(u)}{4 \pi T} 
-   = \int_u^\infty \frac{exp[-\tau]}{\tau} d\tau = \frac{Q W(u)}{4\pi T},
+.. math:: s = h(r,0) - h(r,t) = \frac{Q }{4 \pi T} W(u),
 
-where 
+where
+
+.. math:: W(u) = \int_u^\infty \frac{e^{-\tau}}{\tau} d\tau,
+
+and
 
 .. math:: u(r,t) = \frac{r^2 S}{4 T t},
 
-for which the :math:`s` is head drawdown [m], :math:`Q` is the volumetric discharge
+for which :math:`s` is head drawdown [m], :math:`Q` is the volumetric discharge
 rate of the well [L\ :sup:`3`/T], :math:`W(u)` is the well function,
 and :math:`u` is the argument of the well function.  The integral approximation 
 for the well function, *W(u)*, for :math:`0 < u < 1` is
@@ -135,13 +138,13 @@ Note, the values in the schematic correlate to the values found in
 Mesh
 ~~~~
 
-The mesh is generated in the input file. It consists of cells with size :math:`\Delta x=4` m, :math:`\Delta y=4` m, and :math:`\Delta z=10` m. It has 600 grid cells in the x-direction and 600 grid cells in the y-direction, with a single cell width in the z-direction.  
+The mesh is generated in the input file. It consists of cells with size :math:`\Delta x=4` m, :math:`\Delta y=4` m, and :math:`\Delta z=10` m. It has 600 grid cells in the x-direction and 600 grid cells in the y-direction, with a single cell in the z-direction.  
 
-.. figure:: figures/mesh.png
+.. .. figure:: figures/mesh.png
     :figclass: align-center
     :width: 600 px
 
-    **Computational mesh with 360,000 cells.**
+    .. **Computational mesh with 360,000 cells.**
 
 .. _Variables:
 
