@@ -62,6 +62,7 @@ NOTE: Lazy definition of the cache itself is necessarily "mutable".
 #include "Epetra_Map.h"
 #include "Epetra_MpiComm.h"
 #include "Epetra_Import.h"
+#include "nanoflann.hpp"
 
 #include "errors.hh"
 #include "VerboseObject.hh"
@@ -70,8 +71,9 @@ NOTE: Lazy definition of the cache itself is necessarily "mutable".
 #include "Point.hh"
 #include "Region.hh"
 
-#include "MeshDefs.hh"
 #include "CellTopology.hh"
+#include "KDTree.hh"
+#include "MeshDefs.hh"
 
 // set to 0 to avoid using cache for profiling or debugging
 #define AMANZI_MESH_CACHE_VARS 1
@@ -105,7 +107,8 @@ class Mesh {
     geometric_model_(Teuchos::null),
     logical_(false),
     vo_(vo),
-    comm_(NULL) {};
+    comm_(NULL),
+    kdtree_faces_initialized_(false) {};
 
   // virtual destructor
   virtual ~Mesh() {};
@@ -901,6 +904,10 @@ protected:
 
   // friend classes change the cache?  why is this necessary? --etc
   friend class MeshEmbeddedLogical;
+
+  // fast search tools
+  mutable bool kdtree_faces_initialized_;
+  mutable KDTree kdtree_faces_;
 };
 
 
