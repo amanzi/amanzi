@@ -1,3 +1,5 @@
+.. _amanzi_unconfined_no_recharge_1D:
+
 Steady-State Flow in an Unconfined Aquifer: Head, and Flux Boundary Conditions
 ==============================================================================
 

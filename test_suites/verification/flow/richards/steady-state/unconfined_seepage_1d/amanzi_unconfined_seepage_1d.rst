@@ -51,18 +51,19 @@ readily derived if we make Dupuit-Forchheimer assumptions of free-surface flow -
 that flow is horizontal and the hydraulic gradient is equal to the slope of the free surface 
 :cite:`us-Freeze_1979`.
 
-Let :math:`L_s` denote the unknown location of the seepline, and
-:math:`h_s` the hydraulic head or height of the water table at this
+Let :math:`L_s` [m] denote the unknown location of the seepline, and
+:math:`h_s` [m] denote the hydraulic head or height of the water table at this
 location. Between the left boundary and seepline, the analytic
-solution for hydraulic head in the saturated zone :math:`h` is
-analogous to *Amanzi* unconfined aquifer test case #1 (:cite:`us-Aleman_PORFLOW_2007`,
-Equation 4.3.5) with
+solution for hydraulic head in the saturated zone (:cite:`us-Aleman_PORFLOW_2007`, Equation 4.3.5) :math:`h` is
+analogous to *Amanzi* unconfined aquifer test case #1 (:ref:`amanzi_unconfined_no_recharge_1D`), with
 :math:`(L_s,h_s)` taking the place of :math:`(L,h_L)`:
 
-	.. math:: h^2 = h_0^2 + (h_s^2 - h_0^2) \frac{x}{L_s} + \frac{Q_{src}L_s^2}{K}\left( \frac{x}{L_s} \right) \left(1 - \frac{x}{L_s} \right),\: 0 \leqslant x \leqslant L_s
+	.. math:: h^2 = h_0^2 + (h_s^2 - h_0^2) \frac{x}{L_s} + \frac{Q_{src}L_s^2}{K}\left( \frac{x}{L_s} \right) \left(1 - \frac{x}{L_s} \right),\: 0 \leqslant x \leqslant L_s,
 		:label: unconfinedLeft
 
-The hydraulic head :math:`h` is also the height of the water table. To
+where :math:`Q_{src}=-Q` the seepline is position at :math:`x=L_s` [m].
+
+The hydraulic head, :math:`h` [m], is also the height of the water table. To
 the right of the seepline, any surface water is assumed to readily
 drain off such that the hydraulic head or water table elevation
 coincides exactly with the ground elevation, that is,
@@ -74,9 +75,11 @@ The location of the seepline is obtained by recognizing that Darcy's law and
 mass conservation across the vertical line :math:`x=L_s` requires 
 (:cite:`us-Aleman_PORFLOW_2007`, Equations 4.4.3 and 4.4.4)
 
-	.. math:: \frac{dh}{dx} \vert_{x=L_s^-} = \frac{1}{h_s} \left[ \frac{h_s^2 - h_0^2}{2L_s} - \frac{Q_{src} L_s}{2K} \right] = \frac{h_L - h_s}{L - L_s} = \frac{dh}{dx} \vert_{x=L_s^+}
+	.. math:: \frac{dh}{dx} \vert_{x=L_s^-} = \frac{1}{h_s} \left[ \frac{h_s^2 - h_0^2}{2L_s} - \frac{Q_{src} L_s}{2K} \right] = \frac{h_L - h_s}{L - L_s} = \frac{dh}{dx} \vert_{x=L_s^+},
 		:label: massConstraint
 
+where 
+     
 where
 	.. math:: h_s = 50 \text{ ft} \left(2 - \frac{L_s}{L}  \right)
 		:label: elevationConstraint
