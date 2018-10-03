@@ -37,26 +37,27 @@ To apply the analysis developed by Theis, three parameters must be known:
 * :math:`S`, storativity
 * :math:`Q`, well-head pumping rate
 
-Transmissivity of the aquifer is defined as: 
+Transmissivity [L:sup:`2`/T] of the aquifer is defined as: 
 
 .. math:: T = Kb
 
-where :math:`K` is the hydraulic conductivity of the aquifer and :math:`b` is the
-saturated thickness.  Transmissivity values greater than 0.015 
+where :math:`K` is the hydraulic conductivity of the aquifer  [L/T] and :math:`b` is the
+saturated thickness of the aquifer [L].  Transmissivity values greater than 0.015 
 :math:`\frac{m^2}{s}` represent aquifers capable of well exploitation.
 Storativity is a dimensionless parameter that describes the amount of
-water released by the aquifer per unit volume of the aquifer.
+water released by the aquifer per unit unit decline in hydraulic head in the aquifer,
+per unit area of the aquifer.
 Storativity can be calculated using:
 
 .. math:: S = S_s b
 
-where :math:`S_s` is the *specific storage* and is unique to each aquifer.
-Again, :math:`b` is the saturated thickness of the aquifer.  Specific
-storage represents the volume of water released per unit volume of the
-aquifer per unit decline in hydraulic head.
+where :math:`S_s` is the *specific storage* [L\ :sup:`-1`], which describes
+the volume of water an aquifer releases from storage, per unit volume of aquifer, per 
+unit decline in hydraulic head. For a confined aquifer, storativity is the vertically
+integrated specific storage value.
 
 Lastly, the constant pumping rate, :math:`Q`, is the volume of water
-discharged from the well per unit time.
+discharged from the well per unit time [L\ :sup:`3`/T].
 
 
 Model
@@ -70,25 +71,31 @@ pumped the water table declines toward the well and flow is induced
 toward the well from all directions. Theoretically, this flow can be
 idealized by purely radial symmetric flow and can be decribed by the
 equation below (this is analogous to heat flow by conduction developed
-by Fourier)
+by Fourier):
 
 .. math:: 
      \frac{\partial^2 h}{\partial r^2} 
    + \frac{1}{r} \frac{\partial h}{\partial r} 
-   = \frac{S}{T} \frac{\partial h}{\partial t}
-          
+   = \frac{S}{T} \frac{\partial h}{\partial t},
+
+where :math:`h` is hydraulic head [m], :math:`r` is radial distance from 
+the well [m], :math:`S` is the aquifer storativity [-], :math:`T` is the 
+aquifer transmissivity [m\ :sup:`2`/s], and :math:`t` is time [s]. 
 
 The analytical solution of drawdown as a function of time and distance
 is found to be:
 
 .. math:: s = h(r,0) - h(r,t) = \frac{Q W(u)}{4 \pi T} 
-   = \int_u^\infty \frac{exp[-\tau]}{\tau} d\tau = \frac{Q W(u)}{4\pi T}
+   = \int_u^\infty \frac{exp[-\tau]}{\tau} d\tau = \frac{Q W(u)}{4\pi T},
 
-where, 
+where 
 
-.. math:: u(r,t) = \frac{r^2 S}{4 T t}
+.. math:: u(r,t) = \frac{r^2 S}{4 T t},
 
-and the integral approximation for the well function, *W(u)*, for :math:`0 < u < 1` is  
+for which the :math:`s` is head drawdown [m], :math:`Q` is the volumetric discharge
+rate of the well [L\ :sup:`3`/T], :math:`W(u)` is the well function,
+and :math:`u` is the argument of the well function.  The integral approximation 
+for the well function, *W(u)*, for :math:`0 < u < 1` is
 
 .. math::
       W(u) = -0.577 - log(u) + .99 u - 0.2499 u^2 +0.055 u^3 - 0.00976 u^4 +
