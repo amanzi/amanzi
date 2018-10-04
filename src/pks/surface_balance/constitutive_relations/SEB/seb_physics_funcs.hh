@@ -86,6 +86,7 @@ double EvaporativeResistanceGround(const GroundProperties& surf,
         const ModelParams& params, 
         double vapor_pressure_air, double vapor_pressure_ground);
 
+
 // 
 // Basic sensible heat.
 // ------------------------------------------------------------------------------------------
@@ -117,7 +118,7 @@ double ConductedHeatIfSnow(double ground_temp,
 // NOTE, this should not be used directly -- instead it is called within the loop solving for
 // snow temperature.
 // ------------------------------------------------------------------------------------------
-void UpdateEnergyBalanceWithSnow(const GroundProperties& surf,
+void UpdateEnergyBalanceWithSnow_Inner(const GroundProperties& surf,
         const SnowProperties& snow,
         const MetData& met,
         const ModelParams& params,
@@ -141,30 +142,50 @@ double DetermineSnowTemperature(const GroundProperties& surf,
 //
 // NOTE, this CAN be used directly.
 // ------------------------------------------------------------------------------------------
-void UpdateEnergyBalanceWithoutSnow(const GroundProperties& surf,
+EnergyBalance UpdateEnergyBalanceWithSnow(const GroundProperties& surf,
         const MetData& met,
         const ModelParams& params,
-        EnergyBalance& eb);
+        SnowProperties& snow);
 
+// 
+// Update the energy balance, solving for the amount of heat conducted to the ground.
+//
+// NOTE, this CAN be used directly.
+// ------------------------------------------------------------------------------------------
+EnergyBalance UpdateEnergyBalanceWithoutSnow(const GroundProperties& surf,
+        const MetData& met,
+        const ModelParams& params);
 
 // 
 // Given an energy balance, determine the resulting mass changes between
-// precip, evaporation, melt, etc.
+// precip, evaporation, melt, etc, with snow.
 // ------------------------------------------------------------------------------------------
-MassBalance UpdateMassBalance(const GroundProperties& surf, const SnowProperties& snow_old,
-        const MetData& met, const ModelParams& params, const EnergyBalance eb,
-        SnowProperties& snow_new, double dt);
+MassBalance UpdateMassBalanceWithSnow(const GroundProperties& surf,
+        const ModelParams& params, const EnergyBalance& eb);
 
 // 
-// Main driver -- calculate the energy and mass balances.
+// Given an energy balance, determine the resulting mass changes between
+// precip, evaporation, melt, etc, with snow.
 // ------------------------------------------------------------------------------------------
-std::tuple<SnowProperties, EnergyBalance, MassBalance, FluxBalance>
-CalculateSurfaceBalance(double dt,
-                        const GroundProperties& surf,
-                        const SnowProperties& snow_old,
-                        const MetData& met,
-                        const ModelParams& params,
-                        bool debug, const Teuchos::RCP<VerboseObject>& vo);
+MassBalance UpdateMassBalanceWithoutSnow(const GroundProperties& surf,
+        const ModelParams& params, const EnergyBalance& eb);
+
+
+// 
+// Given an energy balance and a mass balance, accumulate these into sources
+// for surf and subsurf.
+// ------------------------------------------------------------------------------------------
+FluxBalance UpdateFluxesWithSnow(const GroundProperties& surf,
+        const MetData& met, const ModelParams& params, const SnowProperties& snow,
+        const EnergyBalance& eb, const MassBalance& mb);
+
+// 
+// Given an energy balance and a mass balance, accumulate these into sources
+// for surf and subsurf.
+// ------------------------------------------------------------------------------------------
+FluxBalance UpdateFluxesWithoutSnow(const GroundProperties& surf,
+        const MetData& met, const ModelParams& params, const EnergyBalance& eb,
+        const MassBalance& mb);
 
 
 
@@ -187,7 +208,7 @@ class SnowTemperatureFunctor_ {
 
   double operator()(double temp) {
     snow_->temp = temp;
-    UpdateEnergyBalanceWithSnow(*surf_, *snow_, *met_, *params_, *eb_);
+    UpdateEnergyBalanceWithSnow_Inner(*surf_, *snow_, *met_, *params_, *eb_);
     return eb_->fQm;
   }
 

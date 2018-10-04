@@ -351,14 +351,14 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
   // -- evaluator for source term
   is_source_term_ = plist_->get<bool>("source term");
   if (is_source_term_) {
+    if (source_key_.empty()) {
+      source_key_ = Keys::readKey(*plist_, domain_, "source", "mass_source");
+    }
     source_in_meters_ = plist_->get<bool>("mass source in meters", true);
-    
-    // source term itself [m/s]
-    mass_source_key_ = plist_->get<std::string>("source key", Keys::getKey(domain_,"mass_source"));
 
-    S->RequireField(mass_source_key_)->SetMesh(mesh_)
+    S->RequireField(source_key_)->SetMesh(mesh_)
         ->AddComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator(mass_source_key_);
+    S->RequireFieldEvaluator(source_key_);
 
     if (source_in_meters_){
       // density of incoming water [mol/m^3]

@@ -156,6 +156,8 @@ public:
   bool modify_predictor_for_freezing_;
   bool modify_correction_for_freezing_;
   bool is_source_term_;
+  bool is_source_term_differentiable_;
+  bool is_source_term_finite_differentiable_;
   bool is_mass_source_term_;
   bool implicit_advection_;
   bool implicit_advection_in_pc_;

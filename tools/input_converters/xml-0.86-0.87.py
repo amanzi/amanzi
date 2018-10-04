@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""ATS input converter from 0.86 to 0.90"""
+"""ATS input converter from 0.86 to 0.87"""
 
 import sys, os
 try:

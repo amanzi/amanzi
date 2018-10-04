@@ -31,6 +31,7 @@ SurfaceBalanceBase::SurfaceBalanceBase(Teuchos::ParameterList& pk_tree,
   // name the layer
   layer_ = plist_->get<std::string>("layer name", name_);
   is_source_ = plist_->get<bool>("source term", true);
+  is_source_differentiable_ = plist_->get<bool>("source term is differentiable", true);
   if (is_source_) {
     source_key_ = Keys::readKey(*plist_, layer_, "source", "source_sink");
   }
@@ -178,11 +179,11 @@ SurfaceBalanceBase::UpdatePreconditioner(double t,
     
     S_next_->GetFieldEvaluator(conserved_key_)
         ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-    std::string dkey = std::string("d")+conserved_key_+std::string("_d")+key_;
+    std::string dkey = Keys::getDerivKey(conserved_key_, key_);
     db_->WriteVector("d(cons)/d(prim)", S_next_->GetFieldData(dkey).ptr());
     preconditioner_acc_->AddAccumulationTerm(*S_next_->GetFieldData(dkey), h, "cell", false);
 
-    if (is_source_) {
+    if (is_source_ && is_source_differentiable_) {
       if (S_next_->GetFieldEvaluator(source_key_)->IsDependency(S_next_.ptr(), key_)) {
         S_next_->GetFieldEvaluator(source_key_)
             ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
