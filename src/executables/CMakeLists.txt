@@ -14,6 +14,9 @@ endif ()
 
 #project(EXECUTABLE)
 
+
+include_directories(${CLM_DRIVER_DIR})
+
 #
 #  ATS
 #    Executable
@@ -129,7 +132,7 @@ set(AMANZI_LIBS
                       amanzi_output
                       amanzi_mstk_mesh
 		      amanzi_mesh_logical
-              amanzi_geochemrxns
+                      amanzi_geochemrxns
 		      amanzi_geochembase
 		      amanzi_geochemutil
 		      amanzi_geochemsolvers
@@ -138,7 +141,14 @@ set(AMANZI_LIBS
 		      amanzi_transport
 )
 
-target_link_libraries(ats ${ATS_LIBS} ${AMANZI_LIBS})
+# CLM HACKING
+set(CLM_INCLUDE_DIR /Users/uec/codes/clm/repos/bountiful-buttonquail/drivers/ats)
+set(CLM_LIBRARIES /Users/uec/codes/clm/repos/bountiful-buttonquail/drivers/ats/libats_clm.a /Users/uec/codes/clm/repos/bountiful-buttonquail/drivers/ats/ats_clm_interface.o /Users/uec/codes/clm/repos/bountiful-buttonquail/src/libclm.a)
+set(CMAKE_LINKER /usr/local/bin/mpifort)
+set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_LINKER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
+
+
+target_link_libraries(ats ${ATS_LIBS} ${AMANZI_LIBS} ${CLM_LIBRARIES})
 install(TARGETS ats DESTINATION bin)
 
 
@@ -148,8 +158,8 @@ if ( BUILD_TESTS )
     include_directories(".")
 
     # Test:
-    add_amanzi_test(plant_mesh plant_mesh
-                    KIND unit
-                    SOURCE test/main.cc test/plant_mesh.cc plant_1D_mesh.cc
-                    LINK_LIBS ${ATS_LIBS} ${AMANZI_LIBS} ${Amanzi_TPL_UnitTest_LIBRARIES})
+    # add_amanzi_test(plant_mesh plant_mesh
+    #                 KIND unit
+    #                 SOURCE test/main.cc test/plant_mesh.cc plant_1D_mesh.cc
+    #                 LINK_LIBS ${ATS_LIBS} ${AMANZI_LIBS} ${Amanzi_TPL_UnitTest_LIBRARIES} ${CLM_LIBRARIES})
 endif()   
