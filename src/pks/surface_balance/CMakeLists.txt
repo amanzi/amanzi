@@ -8,6 +8,7 @@ include_directories(${ATS_SOURCE_DIR}/src/constitutive_relations/surface_subsurf
 include_directories(${ATS_SOURCE_DIR}/src/pks)
 include_directories(constitutive_relations/SEB)
 include_directories(constitutive_relations/litter)
+include_directories(${CLM_DRIVER_DIR})
 
 add_library(pk_surface_balance_SEB
        constitutive_relations/SEB/SnowEnergyBalance.cc
@@ -31,6 +32,7 @@ add_library(pk_surface_balance_SEB
        # explicit/surface_balance_explicit.cc
        implicit/surface_balance_implicit.cc
        base/surface_balance_base.cc
+       CLM/surface_balance_CLM.cc
 )
 
 
@@ -86,6 +88,11 @@ register_evaluator_with_factory(
 
 register_evaluator_with_factory(
   HEADERFILE base/surface_balance_base_reg.hh
+  LISTNAME SURFACE_BALANCE_SEB_REG
+)
+
+register_evaluator_with_factory(
+  HEADERFILE CLM/surface_balance_CLM_reg.hh
   LISTNAME SURFACE_BALANCE_SEB_REG
 )
 
