@@ -67,6 +67,18 @@ void PK_BDF_Default::Initialize(const Teuchos::Ptr<State>& S) {
 
 };
 
+void PK_BDF_Default::ResetTimeStepper(double time){
+  
+    // -- initialize time derivative
+    Teuchos::RCP<TreeVector> solution_dot = Teuchos::rcp(new TreeVector(*solution_));
+    solution_dot->PutScalar(0.0);
+
+    // -- set initial state
+    time_stepper_->SetInitialState(time, solution_, solution_dot);
+
+    return;
+}
+  
 
 // -----------------------------------------------------------------------------
 // Initialization of timestepper.
@@ -117,6 +129,7 @@ bool PK_BDF_Default::AdvanceStep(double t_old, double t_new, bool reinit) {
                << "----------------------------------------------------------------" << std::endl;
 
   State_to_Solution(S_next_, *solution_);
+
 
   // take a bdf timestep
   double dt_solver;

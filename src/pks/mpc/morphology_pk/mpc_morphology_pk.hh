@@ -59,8 +59,10 @@ namespace Amanzi {
     Key domain_, domain_3d_, domain_ss_;
     Key vertex_coord_key_, vertex_coord_key_3d_, vertex_coord_key_ss_;
     Key elevation_increase_key_;
+
+    Teuchos::RCP<Epetra_MultiVector> dz_accumul_;
     
-    Teuchos::RCP<PK> flow_pk_;
+    Teuchos::RCP<PK_BDF_Default> flow_pk_;
     Teuchos::RCP<PK> sed_transport_pk_;
 
     double master_dt_, slave_dt_;

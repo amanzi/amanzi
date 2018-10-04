@@ -58,6 +58,10 @@ register_evaluator_with_factory(
   HEADERFILE sediment_transport/trapping_evaluator_reg.hh
   LISTNAME SEDIMENT_TRANSPORT_REGISTRATIONS
   )
+register_evaluator_with_factory(
+  HEADERFILE sediment_transport/organic_matter_evaluator_reg.hh
+  LISTNAME SEDIMENT_TRANSPORT_REGISTRATIONS
+  )
 
 generate_evaluators_registration_header( 
   HEADERFILE sediment_transport_registration.hh   

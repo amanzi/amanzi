@@ -72,15 +72,23 @@ void TrappingRateEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   Epetra_MultiVector& result_c = *result->ViewComponent("cell");
 
 
-    double h_s = 0.1;
-    double d_s = 0.1;
-    double n_s = 0.;
+  result_c.PutScalar(0.);
   
   for (int c=0; c<result_c.MyLength(); c++){
-    double u_abs = sqrt(vel[0][c] * vel[0][c] + vel[1][c] * vel[1][c]);
-    double eps = alpha_ * std::pow(u_abs*d_s/visc_, beta_) * std::pow(d_p_/d_s, gamma_);
 
-    result_c[0][c] = tcc[0][c] * u_abs * eps * d_s * n_s * std::min(depth[0][c], h_s);
+    for (int j=0; j<bio_n.NumVectors(); j++){
+
+      double h_s = bio_h[j][c];
+      double d_s = bio_d[j][c];
+      double n_s = bio_n[j][c];
+    
+      double u_abs = sqrt(vel[0][c] * vel[0][c] + vel[1][c] * vel[1][c]);
+      double eps = alpha_ * std::pow(u_abs*d_s/visc_, beta_) * std::pow(d_p_/d_s, gamma_);
+
+      result_c[0][c] += tcc[0][c] * u_abs * eps * d_s * n_s * std::min(depth[0][c], h_s);
+    }
+    //if (c<10) std::cout<<"trapping "<<c<<" "<<tcc[0][c]<<" "<<u_abs<<" "<<eps <<" "<< bio_d[0][c] <<" "<< bio_n[0][c] <<" "<< std::min(depth[0][c], bio_h[0][c])<<"\n";
+    //result_c[0][c] = 1e-2*tcc[0][c] * u_abs;
   }
       
 

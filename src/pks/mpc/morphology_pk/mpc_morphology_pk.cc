@@ -32,7 +32,8 @@ namespace Amanzi {
     name_ = "morphology pk";
 
     Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
-  
+    
+    
   }
 
 // -----------------------------------------------------------------------------
@@ -40,9 +41,13 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 double Morphology_PK::get_dt() {
 
-  double dt = Amanzi::PK_MPCSubcycled_ATS::get_dt();
-  set_dt(dt);
-  return dt;
+  if (dt_MPC_ < 0) {
+    double dt = Amanzi::PK_MPCSubcycled_ATS::get_dt();
+    set_dt(dt);
+    return dt;
+  }else{
+    return dt_MPC_;
+  }
  
 }
 
@@ -52,6 +57,10 @@ void Morphology_PK::Setup(const Teuchos::Ptr<State>& S){
   //passwd_ = "coupled_transport";  // owner's password
   //passwd_ = "state";  // owner's password
 
+
+  dt_MPC_ = plist_->get<double>("dt MPC", 31557600);
+  dt_sample_ = plist_->get<double>("dt sample", 259200);
+  
   Amanzi::PK_MPCSubcycled_ATS::Setup(S);
   
   mesh_ = S->GetDeformableMesh(domain_);
@@ -112,6 +121,7 @@ void Morphology_PK::Setup(const Teuchos::Ptr<State>& S){
   }
 
   int num_veg_species = plist_->get<int>("number of vegitation species", 1);
+
   
   Key biomass_key = Keys::getKey(domain_, "biomass");
   Key stem_density_key = Keys::getKey(domain_, "stem_density");
@@ -154,14 +164,20 @@ void Morphology_PK::Initialize(const Teuchos::Ptr<State>& S){
     S->GetField(elevation_increase_key_, "state")->set_initialized();
   }
     
-  flow_pk_ = sub_pks_[0];
+  flow_pk_ = Teuchos::rcp_dynamic_cast<PK_BDF_Default> (sub_pks_[0]);
   sed_transport_pk_ = sub_pks_[1];
-  
+
+
+  const Epetra_MultiVector& dz = *S->GetFieldData(elevation_increase_key_)->ViewComponent("cell", false);
+
+  dz_accumul_ = Teuchos::rcp(new Epetra_MultiVector(dz));
+  dz_accumul_->PutScalar(0.);
 }
 
 void Morphology_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
   sed_transport_pk_->CommitStep(t_old , t_new, S);
-  
+
+  S->set_time(t_new);
   // Key elev_key = Keys::readKey(*plist_, domain_, "elevation", "elevation");
   // Key slope_key = Keys::readKey(*plist_, domain_, "slope magnitude", "slope_magnitude");
     
@@ -189,49 +205,100 @@ void Morphology_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<St
 // -----------------------------------------------------------------------------
 bool Morphology_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
   bool fail = false;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  
+  double dt_step;
+  if (dt_sample_ > 0) dt_step = std::min(S_->final_time() - S_->initial_time(), dt_sample_);
+  else dt_step = S_->final_time() - S_->initial_time();
 
-  double dt_MPC = S_->final_time() - S_->initial_time();
+  
   Teuchos::RCP<Field_Scalar> msl_rcp = Teuchos::rcp_dynamic_cast<Field_Scalar>(S_->GetField("msl", "state"));
-  msl_rcp->Compute(t_new);
+  msl_rcp->Compute(t_old);
 
   Key elev_key = Keys::readKey(*plist_, domain_, "elevation", "elevation");
   Epetra_MultiVector& dz = *S_next_->GetFieldData(elevation_increase_key_, "state")->ViewComponent("cell",false);
   dz.PutScalar(0.);
-  // const Epetra_MultiVector& vc = *S_->GetFieldData(vertex_coord_key_ss_)->ViewComponent("node",false);
-  // const Epetra_MultiVector& elev = *S_->GetFieldData(elev_key)->ViewComponent("cell",false);
- 
-  fail = flow_pk_ -> AdvanceStep(t_old, t_new, reinit);
-  //FlowAnalyticalSolution_(S_next_.ptr(), t_new);
 
-  //std::cout << elev <<"\n";
+  flow_pk_ -> ResetTimeStepper(t_old);
   
-  fail |= !flow_pk_->ValidStep();
+  S_->set_intermediate_time(t_old);
+  S_next_->set_intermediate_time(t_old);
+  double dt_done = 0;
+  double dt_next = flow_pk_ -> get_dt();
+  double t_sample_end = t_old + dt_step;
   
-  if (fail) {
-    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) *vo_->os()<<"Master step is failed\n";
-    return fail;
+  bool done = false;
+  int ncycles = 0;
+
+  while(!done){
+    dt_next = flow_pk_ -> get_dt();   
+    if (t_old + dt_done + dt_next > t_sample_end) {
+      dt_next = t_sample_end - t_old - dt_done;
+    }
+    
+    fail = true;
+    while (fail){
+      S_next_ -> set_time(t_old + dt_done + dt_next);
+      S_ -> set_time(t_old + dt_done);
+      S_inter_-> set_time(t_old + dt_done);
+      fail = flow_pk_ -> AdvanceStep(t_old + dt_done, t_old + dt_done + dt_next, reinit);
+      fail |= !flow_pk_->ValidStep();
+      
+      if (fail) {
+        if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) *vo_->os()<<"Master step is failed\n";
+        dt_next = flow_pk_ -> get_dt();
+      }
+      
+    }
+
+    master_dt_ = dt_next;
+    //flow_pk_ -> CalculateDiagnostics(S_next_);
+    flow_pk_ -> CommitStep(t_old  + dt_done, t_old + dt_done + dt_next, S_next_);
+
+   
+    slave_dt_ = sed_transport_pk_->get_dt(); 
+    if (slave_dt_ > master_dt_) slave_dt_ = master_dt_;
+    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+      *vo_->os()<<"Slave dt="<<slave_dt_<<" Master dt="<<master_dt_<<"\n"; 
+   
+    fail = sed_transport_pk_->AdvanceStep(t_old + dt_done, t_old + dt_done + dt_next, reinit);
+
+    if (fail){
+      dt_next /= 2;
+    }else{
+      S_ -> set_intermediate_time(t_old + dt_done + dt_next);
+      sed_transport_pk_->CommitStep(t_old + dt_done, t_old + dt_done + dt_next, S_next_);
+      dt_done += dt_next;
+
+      // we're done with this time step, copy the state
+      *S_ = *S_next_;
+      *S_inter_ = *S_next_;
+      
+    }
+    ncycles ++;
+
+
+    // check for done condition
+    done = (std::abs(t_old + dt_done - t_sample_end) / (t_sample_end - t_old) < 0.1*min_dt_) || // finished the step
+      (dt_next  < min_dt_); // failed
   }
 
-  master_dt_ = t_new - t_old;
-  flow_pk_ -> CommitStep(t_old, t_new, S_next_);
 
-  //return fail;
-  
-  slave_dt_ = sed_transport_pk_->get_dt(); 
-  if (slave_dt_ > master_dt_) slave_dt_ = master_dt_;
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-    *vo_->os()<<"Slave dt="<<slave_dt_<<" Master dt="<<master_dt_<<"\n"; 
-  
-  fail = sed_transport_pk_->AdvanceStep(t_old, t_new, reinit);
+  if ((dt_sample_ > 0)&&(dt_MPC_ >0)){
+    double factor = dt_MPC_ / dt_sample_;   
+    dz.Scale(factor);
+  }
 
-  //  return fail;
+
+  dz_accumul_->Update(1, dz, 1);
+
   
   Update_MeshVertices_(S_next_.ptr() );
 
   
-  //bool chg = S_next_ -> GetFieldEvaluator(elev_key)->HasFieldChanged(S_next_.ptr(), elev_key);
-  // Epetra_MultiVector& elev_cell = *S_->GetFieldData(elev_key, elev_key)->ViewComponent("cell",false);
-  // std::cout<<elev_cell<<"\n";
+  bool chg = S_next_ -> GetFieldEvaluator(elev_key)->HasFieldChanged(S_next_.ptr(), elev_key);
+  Epetra_MultiVector& elev_cell = *S_next_->GetFieldData(elev_key, elev_key)->ViewComponent("cell",false);
+  for (int c=0; c<15; c++) std::cout<<c<<" "<<dz[0][c]<<" "<<(*dz_accumul_)[0][c]<<" "<<elev_cell[0][c] <<"\n";
 
   return fail;
 

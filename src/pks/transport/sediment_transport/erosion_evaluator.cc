@@ -66,7 +66,6 @@ void ErosionRateEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     }else{
       result_c[0][c] = 0.;
     }
-    //if (c<20) std::cout<<c<<" "<< tau_0 <<" "<<result_c[0][c]<<"\n";
   }
 
  

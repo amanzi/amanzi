@@ -12,6 +12,7 @@ namespace Amanzi {
   BiomassEvaluator::BiomassEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariablesFieldEvaluator(plist)
   {
+    last_update_ = -1;
     InitializeFromPlist_();    
   }
 
@@ -170,10 +171,11 @@ namespace Amanzi {
           }
         }
         for (int c=0; c<ncells; c++){
-          stem_density[n][c]  = alpha_d[n] * std::pow(biomass[n][c], beta_d[n]);
+          stem_diameter[n][c]  = alpha_d[n] * std::pow(biomass[n][c], beta_d[n]);
           stem_height[n][c]   = alpha_h[n] * std::pow(biomass[n][c], beta_h[n]);
-          stem_diameter[n][c] = alpha_n[n] * std::pow(biomass[n][c], beta_n[n]);
+          stem_density[n][c] = alpha_n[n] * std::pow(biomass[n][c], beta_n[n]);
           plant_area[n][c]    = alpha_a[n] * std::pow(biomass[n][c], beta_a[n]);
+
         }
       }
     

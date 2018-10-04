@@ -53,12 +53,12 @@
 #
 set(transport_inc_files
   sediment_transport_pk.hh
-  erosion_evaluator.hh settlement_evaluator.hh trapping_evaluator.hh
+  erosion_evaluator.hh settlement_evaluator.hh trapping_evaluator.hh organic_matter_evaluator.hh
   )
 
 set(transport_src_files sediment_transport_pk.cc
   Transport_Diffusion.cc
-  erosion_evaluator.cc settlement_evaluator.cc trapping_evaluator.cc)
+  erosion_evaluator.cc settlement_evaluator.cc trapping_evaluator.cc organic_matter_evaluator.cc)
 
 add_library(pk_sediment_transport 
             ${transport_src_files}
