@@ -54,6 +54,7 @@ HeightEvaluator::Clone() const {
 void HeightEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   // Ensure my field exists.  Requirements should be already set.
   AMANZI_ASSERT(my_key_ != std::string(""));
+  S->RequireGravity();
   Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(my_key_, my_key_);
 
   // check plist for vis or checkpointing control
