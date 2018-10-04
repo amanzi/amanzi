@@ -38,7 +38,7 @@ class Verification {
     if (a.Comm().MyPID() == 0) {
       std::cout << "Matrix:\n";
       if (symmetry)
-          std::cout << "  Symmetry test: " << ahb << " = " << bha << std::endl;
+          printf("  Symmetry test: %21.14e = %21.14e\n", ahb, bha);
       if (pos_def)
           std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
     } 
@@ -67,7 +67,7 @@ class Verification {
       int size = (op_->A() != Teuchos::null) ? op_->A()->NumGlobalRows() : -1;
       std::cout << "Preconditioner: size=" << size << "\n";
       if (symmetry)
-          std::cout << "  Symmetry test: " << ahb << " = " << bha << std::endl;
+          printf("  Symmetry test: %21.14e = %21.14e\n", ahb, bha);
       if (pos_def)
           std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
     } 
