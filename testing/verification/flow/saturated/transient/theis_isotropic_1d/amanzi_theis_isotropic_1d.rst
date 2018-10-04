@@ -89,7 +89,7 @@ is found to be:
 
 where
 
-.. math:: W(u) = \int_u^\infty \frac{e^{-\tau}}{\tau} d\tau,
+.. math:: W(u) = \int_u^\infty \frac{e^{-\psi}}{\psi} d\psi,
 
 and
 
