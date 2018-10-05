@@ -49,7 +49,7 @@ class Verification {
     }
   }
 
-  void CheckPreconditionerSPD(bool symmetry = true, bool pos_def = true) {
+  void CheckPreconditionerSPD(double rtol = 1e-12, bool symmetry = true, bool pos_def = true) {
     Vector a(op_->DomainMap()), ha(a), b(a), hb(a);
 
     a.Random();
@@ -71,7 +71,7 @@ class Verification {
       if (pos_def)
           std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
     } 
-    if (symmetry) CHECK_CLOSE(ahb, bha, 1e-12 * fabs(ahb));
+    if (symmetry) CHECK_CLOSE(ahb, bha, rtol * fabs(ahb));
     if (pos_def) {
       CHECK(aha > 0.0);
       CHECK(bhb > 0.0);

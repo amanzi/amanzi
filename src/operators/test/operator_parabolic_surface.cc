@@ -145,7 +145,7 @@ void RunTest(std::string op_list_name) {
   // Test SPD properties of the matrix and preconditioner.
   VerificationCV ver(global_op);
   ver.CheckMatrixSPD();
-  ver.CheckPreconditionerSPD();
+  ver.CheckPreconditionerSPD(1e-11);
 
   // solve the problem
   ParameterList lop_list = plist.sublist("solvers").sublist("AztecOO CG").sublist("pcg parameters");

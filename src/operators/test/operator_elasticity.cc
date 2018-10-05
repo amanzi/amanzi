@@ -155,7 +155,7 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   // Test SPD properties of the matrix and preconditioner.
   VerificationCV ver(global_op);
   ver.CheckMatrixSPD(true, true);
-  ver.CheckPreconditionerSPD(true, true);
+  ver.CheckPreconditionerSPD(1e-12, true, true);
 
   // solve the problem
   Teuchos::ParameterList lop_list = plist.sublist("solvers")
