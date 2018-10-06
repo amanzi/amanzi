@@ -131,6 +131,30 @@ class DenseVector {
     return *this;
   }
 
+  // compatibility members
+  // -- for nonlinear solvers: this = sa * A + sthis * this
+  DenseVector& Update(double sa, const DenseVector& A, double sthis) {
+    const double* dataA = A.Values();  
+    for (int i = 0; i < m_; ++i) data_[i] = sa * dataA[i] + sthis * data_[i];
+    return *this;
+  }
+
+  // -- for nonlinear solvers: this = sa * A + sb * B + sthis * this
+  DenseVector& Update(double sa, const DenseVector& A,
+                      double sb, const DenseVector& B, double sthis) {
+    const double* dataA = A.Values();  
+    const double* dataB = B.Values();  
+    for (int i = 0; i < m_; ++i) {
+      data_[i] = sa * dataA[i] + sb * dataB[i] + sthis * data_[i];
+    }
+    return *this;
+  }
+
+  // -- scale
+  void Scale(double val) {
+    for (int i = 0; i < m_; ++i) data_[i] *= val;
+  }
+
   // access to private data
   int NumRows() const { return m_; }
   double* Values() { return data_; }
@@ -145,18 +169,18 @@ class DenseVector {
   }
 
   // First level routines
-  void Norm2(double* result) {
+  void Norm2(double* result) const {
     *result = 0.0;
     for (int i = 0; i < m_; i++) *result += data_[i] * data_[i];
     *result = std::pow(*result, 0.5);
   }
 
-  double NormMax() const {
-    double tmp(0.0);
+  // -- we use 'inf' instead of 'max' for compatibility with solvers
+  void NormInf(double* result) const {
+    *result = 0.0;
     for (int i = 0; i < m_; ++i) {
-      tmp = std::max(tmp, fabs(data_[i]));
+      *result = std::max(*result, std::fabs(data_[i]));
     }
-    return tmp;
   }
 
   void SwapRows(int m1, int m2) {

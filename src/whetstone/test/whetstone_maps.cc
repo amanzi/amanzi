@@ -103,7 +103,7 @@ TEST(DG_MAP_DETERMINANT_CELL) {
 
       uc.ChangeOrigin(mesh0->cell_centroid(cell));
       printf("k=%d  %14s  vol=%8.6g  err=%12.8f  |poly|=%9.6g %9.6g\n",
-          k, name, tmp, err, uc[0].NormMax(), uc[1].NormMax());
+          k, name, tmp, err, uc[0].NormInf(), uc[1].NormInf());
     }
   }
   
@@ -191,7 +191,7 @@ TEST(DG_MAP_LEAST_SQUARE_CELL) {
   maps->VelocityCell(0, vf, vc2);
 
   vc1 -= vc2;
-  CHECK_CLOSE(0.0, vc1.NormMax(), 1e-12);
+  CHECK_CLOSE(0.0, vc1.NormInf(), 1e-12);
   
   delete comm;
 }

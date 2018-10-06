@@ -44,7 +44,7 @@ class VectorPolynomial {
 
   // typical operations with polynomials
   void PutScalar(double val);
-  double NormMax() const;
+  double NormInf() const;
 
   // ring algebra
   template<typename Type>

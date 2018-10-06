@@ -66,7 +66,7 @@ TEST(PROJECTORS_SQUARE_CR) {
   mfd.H1Cell(cell, vf, moments, uc);
 
   uc.ChangeOrigin(zero);
-  CHECK(uc.NormMax() < 1e-12);
+  CHECK(uc.NormInf() < 1e-12);
 
   // test linear deformation
   std::cout << "      subtest: LINEAR deformation" << std::endl;
@@ -83,7 +83,7 @@ TEST(PROJECTORS_SQUARE_CR) {
   std::cout << uc << std::endl;
 
   uc -= vf[0];
-  CHECK(uc.NormMax() < 1e-12);
+  CHECK(uc.NormInf() < 1e-12);
 
   for (int k = 2; k < 4; ++k) {
     moments.Reshape(2, k - 2, true);
@@ -101,7 +101,7 @@ TEST(PROJECTORS_SQUARE_CR) {
     std::cout << uc << std::endl;
 
     uc -= vf[0];
-    CHECK(uc.NormMax() < 1e-11);
+    CHECK(uc.NormInf() < 1e-11);
   }
 
   // test re-location of the right-top corner to (2,3)
@@ -166,7 +166,7 @@ TEST(PROJECTORS_POLYGON_CR) {
   std::cout << uc << std::endl;
 
   uc -= vf[0];
-  CHECK(uc.NormMax() < 1e-12);
+  CHECK(uc.NormInf() < 1e-12);
 
   // -- new scheme (k=1)
   mfd.set_use_always_ho(true);
@@ -185,7 +185,7 @@ TEST(PROJECTORS_POLYGON_CR) {
     std::cout << uc << std::endl;
 
     uc -= vf[0];
-    CHECK(uc.NormMax() < 1e-12);
+    CHECK(uc.NormInf() < 1e-12);
   }
 
   // test quadratic deformation
@@ -212,7 +212,7 @@ TEST(PROJECTORS_POLYGON_CR) {
     std::cout << uc << std::endl;
 
     uc -= vf[0];
-    CHECK(uc.NormMax() < 1e-12);
+    CHECK(uc.NormInf() < 1e-12);
   }
 
   // test cubic deformation
@@ -241,8 +241,8 @@ TEST(PROJECTORS_POLYGON_CR) {
     std::cout << uc << std::endl;
 
     uc -= vf[0];
-    std::cout << uc.NormMax() << std::endl;
-    CHECK(uc.NormMax() < 1e-12);
+    std::cout << uc.NormInf() << std::endl;
+    CHECK(uc.NormInf() < 1e-12);
   }
 
   // test trace compatibility between function and its projecton (k < 3 only!)
@@ -360,7 +360,7 @@ TEST(L2_PROJECTORS_SQUARE_CR) {
   std::cout << uc << std::endl;
 
   uc -= vf[0];
-  CHECK(uc.NormMax() < 1e-12);
+  CHECK(uc.NormInf() < 1e-12);
 
   delete comm;
 }
@@ -411,7 +411,7 @@ TEST(L2GRADIENT_PROJECTORS_SQUARE_CR) {
 
   uc[0][0] -= grad[0];
   uc[0][1] -= grad[1];
-  CHECK(uc[0][0].NormMax() < 1e-12 && uc[0][1].NormMax() < 1e-12);
+  CHECK(uc[0][0].NormInf() < 1e-12 && uc[0][1].NormInf() < 1e-12);
 
   std::cout << "    subtest: CUBIC deformation, computed moments" << std::endl;
   mfd.L2GradientCell(cell, vf, moments, uc);
@@ -469,7 +469,7 @@ TEST(PROJECTORS_SQUARE_PK) {
 
     uc.ChangeOrigin(zero);
     uc -= vf[0];
-    CHECK(uc.NormMax() < 1e-12);
+    CHECK(uc.NormInf() < 1e-12);
   }
 
   // test re-location of the right-top corner to (2,3)
@@ -492,14 +492,14 @@ TEST(PROJECTORS_SQUARE_PK) {
     uc.ChangeOrigin(zero);
     uc2.ChangeOrigin(zero);
     uc2 -= uc;
-    CHECK(uc2.NormMax() < 1e-12);
+    CHECK(uc2.NormInf() < 1e-12);
 
     // Compare H1 and L2 projectors
     mfd.L2Cell(cell, vf, moments, uc2);
 
     uc2.ChangeOrigin(zero);
     uc2 -= uc;
-    CHECK(uc2.NormMax() < 1e-12);
+    CHECK(uc2.NormInf() < 1e-12);
   }
 
   auto p = AmanziGeometry::Point(1.2, 1.1);
@@ -556,7 +556,7 @@ TEST(PROJECTORS_POLYGON_PK) {
     std::cout << uc << std::endl;
 
     uc -= vf[0];
-    CHECK(uc.NormMax() < 1e-12);
+    CHECK(uc.NormInf() < 1e-12);
   }
 
   // test globally quadratic deformation
@@ -582,7 +582,7 @@ TEST(PROJECTORS_POLYGON_PK) {
     uc.ChangeOrigin(zero);
     std::cout << uc << std::endl;
     uc -= vf[0];
-    CHECK(uc.NormMax() < 1e-10);
+    CHECK(uc.NormInf() < 1e-10);
   }
 
   // test trace compatibility between function and its projecton (k < 3 only!)
@@ -667,13 +667,13 @@ TEST(PROJECTORS_POLYGON_PK) {
     uc.ChangeOrigin(zero);
     uc2.ChangeOrigin(zero);
     uc2 -= uc;
-    if (k < 3) CHECK(uc2.NormMax() < 1e-12);
+    if (k < 3) CHECK(uc2.NormInf() < 1e-12);
 
     mfd.L2Cell(cell, vf, moments, uc2);
 
     uc2.ChangeOrigin(zero);
     uc2 -= uc;
-    if (k < 3) CHECK(uc2.NormMax() < 1e-12);
+    if (k < 3) CHECK(uc2.NormInf() < 1e-12);
     if (k > 2) std::cout << " moments: " << moments(0, 0) << " " 
                                          << moments(1, 0) << " " << moments(1, 1) << std::endl;
   }
@@ -736,12 +736,12 @@ void SerendipityProjectorPolygon() {
     std::cout << uc << std::endl;
 
     uc -= vf[0];
-    CHECK(uc.NormMax() < 1e-10);
+    CHECK(uc.NormInf() < 1e-10);
 
     mfd.H1Cell(cell, vf, moments, uc);
     uc.ChangeOrigin(zero);
     uc -= vf[0];
-    CHECK(uc.NormMax() < 2e-10);
+    CHECK(uc.NormInf() < 2e-10);
   }
 
   // test globally quadratic deformation
@@ -760,12 +760,12 @@ void SerendipityProjectorPolygon() {
     std::cout << uc << std::endl;
 
     uc -= vf[0];
-    CHECK(uc.NormMax() < 4e-10);
+    CHECK(uc.NormInf() < 4e-10);
 
     mfd.H1Cell(cell, vf, moments, uc);
     uc.ChangeOrigin(zero);
     uc -= vf[0];
-    CHECK(uc.NormMax() < 5e-10);
+    CHECK(uc.NormInf() < 5e-10);
   }
 
   // test piecewise linear deformation (part I)
@@ -801,12 +801,12 @@ void SerendipityProjectorPolygon() {
     mfd.L2Cell_LeastSquare(cell, vf, moments, uc2);
     uc2.ChangeOrigin(zero);
     uc2 -= uc;
-    CHECK(uc2.NormMax() < 1e-11);
+    CHECK(uc2.NormInf() < 1e-11);
 
     mfd.H1Cell(cell, vf, moments, uc2);
     uc2.ChangeOrigin(zero);
     uc2 -= uc;
-    CHECK(uc2.NormMax() < 2e-2);
+    CHECK(uc2.NormInf() < 2e-2);
   }
 
   delete comm;

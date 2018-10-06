@@ -101,7 +101,7 @@ TEST(OPERATOR_MINI_DIFFUSION_CONSTANT) {
   int dir = Amanzi::Operators::OPERATOR_BC_DIRICHLET;
   int neu = Amanzi::Operators::OPERATOR_BC_NEUMANN;
   MiniDiffusion1D_Constant(0.0, dir, 1.0, dir);
-  MiniDiffusion1D_Constant(0.0, dir, 6.0, neu);
+  MiniDiffusion1D_Constant(0.0, dir, -6.0, neu);
   MiniDiffusion1D_Constant(0.0, neu, 1.0, dir);
 }
 
@@ -181,7 +181,7 @@ TEST(OPERATOR_MINI_DIFFUSION_VARIABLE) {
   int dir = Amanzi::Operators::OPERATOR_BC_DIRICHLET;
   int neu = Amanzi::Operators::OPERATOR_BC_NEUMANN;
   MiniDiffusion1D_Variable(0.0, dir, 1.0, dir);
-  MiniDiffusion1D_Variable(0.0, dir, 4.0, neu);
+  MiniDiffusion1D_Variable(0.0, dir, -4.0, neu);
   MiniDiffusion1D_Variable(0.0, neu, 1.0, dir);
 }
 

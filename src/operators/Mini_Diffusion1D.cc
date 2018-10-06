@@ -36,8 +36,10 @@ void Mini_Diffusion1D::UpdateMatrices()
   x1 = mesh(ncells);
   
   Kc = (K_ != NULL) ? (*K_)(0) : Kconst_;
+
   hl = Kc / (mesh(1) - mesh(0));
   al = 2 * hl * area_min_;
+  if (k_ != NULL) al *= (*k_)(0);
 
   for (int i = 0; i < ncells - 1; ++i) {
     double x = mesh(i + 1);
@@ -45,8 +47,10 @@ void Mini_Diffusion1D::UpdateMatrices()
     area = std::pow(area, igeo_);
 
     Kc = (K_ != NULL) ? (*K_)(i + 1) : Kconst_;
+
     hr = Kc / (mesh(i + 2) - x);
     ar = 2 * hl * hr / (hl + hr) * area;
+    if (k_ != NULL) ar *= ((*k_)(i) + (*k_)(i + 1)) / 2;
 
     diag_(i) = al + ar;
     down_(i) = -al;
@@ -57,12 +61,87 @@ void Mini_Diffusion1D::UpdateMatrices()
   }
 
   Kc = (K_ != NULL) ? (*K_)(ncells - 1) : Kconst_;
+
   hr = Kc / (mesh(ncells) - mesh(ncells - 1));
   ar = 2 * hr * area_max_;
+  if (k_ != NULL) ar *= (*k_)(ncells - 1);
 
   diag_(ncells - 1) = al + ar;
   down_(ncells - 1) = -al;
   up_(ncells - 1) = -ar;
+}
+
+
+/* ******************************************************************
+* Jacobian matrix for operator A(k(p)) p - f(k(p)).
+* NOTE: we assume that k_ != NULL and dkdp_ != NULL, i.e. J != A.
+****************************************************************** */
+void Mini_Diffusion1D::UpdateJacobian(
+    const WhetStone::DenseVector& p,
+    double bcl, int type_l, double bcr, int type_r)
+{
+  int ncells = mesh_->NumRows() - 1; 
+  double al, ar, bl, br, hl, hr, area, x0, x1, Kc, tmp0, tmp1;
+
+  const auto& mesh = *mesh_;
+  const auto& k = *k_;
+  const auto& dkdp = *dkdp_;
+
+  x0 = mesh(0);
+  x1 = mesh(ncells);
+  
+  // derivatives of A(k(p))
+  Kc = (K_ != NULL) ? (*K_)(0) : Kconst_;
+  hl = Kc / mesh_cell_volume(0);
+  al = 2 * hl * area_min_;
+  tmp0 = al;
+  bl = al * p(0);
+  al *= k(0);
+
+  for (int i = 0; i < ncells - 1; ++i) {
+    int j = (i == 0) ? 0 : i - 1; 
+
+    double x = mesh(i + 1);
+    area = (area_max_ * (x - x0) + area_min_ * (x1 - x)) / (x1 - x0);
+    area = std::pow(area, igeo_);
+
+    Kc = (K_ != NULL) ? (*K_)(i + 1) : Kconst_;
+    hr = Kc / (mesh(i + 2) - x);
+    ar = hl * hr / (hl + hr) * area;
+    br = ar * (p(i + 1) - p(i));
+    ar *= k(i) + k(i + 1);
+
+    diag_(i) = (al + ar) + (bl - br) * dkdp(i);
+    down_(i) = -al + bl * dkdp(j);
+    up_(i) = -ar - br * dkdp(i + 1);
+
+    al = ar;
+    bl = br;
+    hl = hr;
+  }
+
+  Kc = (K_ != NULL) ? (*K_)(ncells - 1) : Kconst_;
+  hr = Kc / mesh_cell_volume(ncells - 1);
+  ar = 2 * hr * area_max_;
+  tmp1 = ar;
+  br = ar * p(ncells - 1);
+  ar *= k(ncells - 1);
+
+  diag_(ncells - 1) = (al + ar) + (bl + br) * dkdp(ncells - 1);
+  down_(ncells - 1) = -al + bl * dkdp(ncells - 2);
+  up_(ncells - 1) = -ar - br * dkdp(ncells - 1);
+
+  // derivatives of f(k(p))
+  if (type_l == Operators::OPERATOR_BC_DIRICHLET) {
+    diag_(0) -= tmp0 * dkdp(0) * bcl;
+  }
+
+  if (type_r == Operators::OPERATOR_BC_DIRICHLET) {
+    diag_(ncells - 1) -= tmp1 * dkdp(ncells - 1) * bcr;
+  }
+  else if(type_r == Operators::OPERATOR_BC_NEUMANN) {
+    diag_(ncells - 1) += up_(ncells - 1);
+  }
 }
 
 
@@ -73,7 +152,7 @@ void Mini_Diffusion1D::ApplyBCs(double bcl, int type_l, double bcr, int type_r)
 {
   if (type_l == Operators::OPERATOR_BC_DIRICHLET) {
     rhs_(0) -= down_(0) * bcl;
-  } else if(type_l == Operators::OPERATOR_BC_NEUMANN) {
+  } else if (type_l == Operators::OPERATOR_BC_NEUMANN) {
     diag_(0) += down_(0);
     rhs_(0) += bcl;
   }
@@ -83,7 +162,7 @@ void Mini_Diffusion1D::ApplyBCs(double bcl, int type_l, double bcr, int type_r)
     rhs_(n) -= up_(n) * bcr;
   } else if(type_r == Operators::OPERATOR_BC_NEUMANN) {
     diag_(n) += up_(n);
-    rhs_(n) += bcr;
+    rhs_(n) -= bcr;
   }
 }
 

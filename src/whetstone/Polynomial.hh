@@ -66,8 +66,12 @@ class Polynomial : public PolynomialBase {
   virtual double Value(const AmanziGeometry::Point& xp) const override;
   // -- get all polynomial coefficients
   virtual DenseVector ExpandCoefficients() const override { return coefs_; }
-  // -- polynomial norms
-  double NormMax() const { return coefs_.NormMax(); }
+  // -- polynomial norms (we use 'inf' instead of 'max' for uniformity)
+  double NormInf() const {
+    double tmp; 
+    coefs_.NormInf(&tmp); 
+    return tmp; 
+  }
 
   // -- operators (ring algebra)
   Polynomial& operator+=(const Polynomial& poly);

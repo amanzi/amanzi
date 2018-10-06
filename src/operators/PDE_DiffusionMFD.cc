@@ -175,6 +175,7 @@ void PDE_DiffusionMFD::UpdateMatricesNewtonCorrection(
   }
 }  
 
+
 /* ******************************************************************
 * Second-order reconstruction of little k inside mesh cells.
 * This member of DIVK-pamily of methods requires to recalcualte all

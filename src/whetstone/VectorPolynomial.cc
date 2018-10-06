@@ -184,11 +184,11 @@ void VectorPolynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
 /* ******************************************************************
 * Ring algebra
 ****************************************************************** */
-double VectorPolynomial::NormMax() const
+double VectorPolynomial::NormInf() const
 {
   double tmp(0.0);
   for (int i = 0; i < polys_.size(); ++i) {
-    tmp = std::max(tmp, polys_[i].NormMax());
+    tmp = std::max(tmp, polys_[i].NormInf());
   }
   return tmp;
 }

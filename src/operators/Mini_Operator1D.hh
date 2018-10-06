@@ -32,6 +32,7 @@ class Mini_Operator1D {
             const std::string& geometry, double area_min, double area_max);
 
   // main operations
+  void Apply(const WhetStone::DenseVector& v, WhetStone::DenseVector& av);
   void ApplyInverse(const WhetStone::DenseVector& rhs, WhetStone::DenseVector& sol);
 
   // modifying operator
@@ -51,7 +52,7 @@ class Mini_Operator1D {
   // access
   const WhetStone::DenseVector& rhs() const { return rhs_; }
   WhetStone::DenseVector& rhs() { return rhs_; }
-
+ 
  protected:
   // mesh
   std::shared_ptr<const WhetStone::DenseVector> mesh_;

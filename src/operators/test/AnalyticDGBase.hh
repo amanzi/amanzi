@@ -170,7 +170,7 @@ void AnalyticDGBase::ComputeCellError(
 
     Amanzi::WhetStone::Polynomial poly_err(poly);
     poly_err -= sol;
-    double err = poly_err.NormMax();
+    double err = poly_err.NormInf();
 
     l2_err += err * err * volume;
     inf_err = std::max(inf_err, fabs(err));

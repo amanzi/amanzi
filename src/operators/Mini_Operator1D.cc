@@ -62,6 +62,25 @@ void Mini_Operator1D::AddAccumulationTerm(double s0, double s1, double dt,
 
 
 /* ******************************************************************
+* Matrix-vector product
+****************************************************************** */
+void Mini_Operator1D::Apply(const WhetStone::DenseVector& v,
+                            WhetStone::DenseVector& av)
+{
+  int ncells = diag_.NumRows();
+  for (int i = 0; i < ncells; ++i) {
+    av(i) = diag_(i) * v(i);
+  }
+  for (int i = 0; i < ncells - 1; ++i) {
+    av(i) += up_(i) * v(i + 1);
+  }
+  for (int i = 1; i < ncells; ++i) {
+    av(i) += down_(i) * v(i - 1);
+  }
+}
+
+
+/* ******************************************************************
 * Solve linear system using direct method
 ****************************************************************** */
 void Mini_Operator1D::ApplyInverse(const WhetStone::DenseVector& rhs,

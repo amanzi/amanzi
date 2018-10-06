@@ -346,6 +346,7 @@ if (BUILD_TESTS)
     add_amanzi_test(operators_mini1D operators_mini1D
                     KIND unit
                     SOURCE test/Main.cc test/operator_mini1D.cc
+                                        test/operator_mini1D_nonlinear.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
 endif()
