@@ -38,7 +38,7 @@ class Verification {
     if (a.Comm().MyPID() == 0) {
       std::cout << "Matrix:\n";
       if (symmetry)
-          std::cout << "  Symmetry test: " << ahb << " = " << bha << std::endl;
+          printf("  Symmetry test: %21.14e = %21.14e\n", ahb, bha);
       if (pos_def)
           std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
     } 
@@ -49,7 +49,7 @@ class Verification {
     }
   }
 
-  void CheckPreconditionerSPD(bool symmetry = true, bool pos_def = true) {
+  void CheckPreconditionerSPD(double rtol = 1e-12, bool symmetry = true, bool pos_def = true) {
     Vector a(op_->DomainMap()), ha(a), b(a), hb(a);
 
     a.Random();
@@ -67,11 +67,11 @@ class Verification {
       int size = (op_->A() != Teuchos::null) ? op_->A()->NumGlobalRows() : -1;
       std::cout << "Preconditioner: size=" << size << "\n";
       if (symmetry)
-          std::cout << "  Symmetry test: " << ahb << " = " << bha << std::endl;
+          printf("  Symmetry test: %21.14e = %21.14e\n", ahb, bha);
       if (pos_def)
           std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
     } 
-    if (symmetry) CHECK_CLOSE(ahb, bha, 1e-12 * fabs(ahb));
+    if (symmetry) CHECK_CLOSE(ahb, bha, rtol * fabs(ahb));
     if (pos_def) {
       CHECK(aha > 0.0);
       CHECK(bhb > 0.0);

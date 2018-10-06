@@ -155,7 +155,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   // Test SPD properties of the matrix and preconditioner.
   VerificationCV ver(global_op);
   ver.CheckMatrixSPD(false, true);
-  ver.CheckPreconditionerSPD(false, true);
+  ver.CheckPreconditionerSPD(1e-12, false, true);
 
   // Solve the problem.
   ParameterList lop_list = plist.sublist("solvers")

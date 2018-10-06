@@ -203,7 +203,7 @@ void RunTest(std::string op_list_name) {
     VerificationCV ver(global_op);
     if (loop == 2) {
       ver.CheckMatrixSPD(true, true);
-      ver.CheckPreconditionerSPD(true, true);
+      ver.CheckPreconditionerSPD(1e-12, true, true);
     }
 
     // solve the problem
