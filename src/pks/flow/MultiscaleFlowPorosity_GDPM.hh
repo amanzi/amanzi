@@ -18,10 +18,14 @@
 #ifndef MULTISCALE_FLOW_POROSITY_GDPM_HH_
 #define MULTISCALE_FLOW_POROSITY_GDPM_HH_
 
+// TPLs
 #include "Teuchos_ParameterList.hpp"
 
+// Amanzi
 #include "factory.hh"
+#include "Mini_Diffusion1D.hh"
 
+// Flow
 #include "MultiscaleFlowPorosity.hh"
 #include "WRM.hh"
 
@@ -44,8 +48,10 @@ class MultiscaleFlowPorosity_GDPM : public MultiscaleFlowPorosity {
 
  private:
   Teuchos::RCP<WRM> wrm_;
-  double alpha_;
-  double tol_;
+
+  int matrix_nodes_;
+  double depth_, tau_, tol_;
+  Operators::Mini_Diffusion1D op_diff_;
 
   static Utils::RegisteredFactory<MultiscaleFlowPorosity, MultiscaleFlowPorosity_GDPM> factory_;
 };

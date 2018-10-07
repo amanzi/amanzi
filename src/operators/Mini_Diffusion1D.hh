@@ -26,11 +26,16 @@ namespace Operators {
 
 class Mini_Diffusion1D : public Mini_Operator1D {
  public:
-  Mini_Diffusion1D() {};
+  Mini_Diffusion1D() : Kconst_(1.0) {};
   ~Mini_Diffusion1D() {};
 
   // set up operator
   void Setup(double K) { Kconst_ = K; }
+  void Setup(const std::shared_ptr<WhetStone::DenseVector> k,
+             const std::shared_ptr<WhetStone::DenseVector> dkdp) {
+    k_ = k;
+    dkdp_ = dkdp;
+  }
   void Setup(const std::shared_ptr<WhetStone::DenseVector> K,
              const std::shared_ptr<WhetStone::DenseVector> k,
              const std::shared_ptr<WhetStone::DenseVector> dkdp) {

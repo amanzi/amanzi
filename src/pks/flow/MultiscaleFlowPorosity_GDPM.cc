@@ -26,13 +26,35 @@ MultiscaleFlowPorosity_GDPM::MultiscaleFlowPorosity_GDPM(Teuchos::ParameterList&
   WRMFactory factory;
   wrm_ = factory.Create(plist);
 
-  alpha_ = plist.get<double>("mass transfer coefficient", 0.0);
+  auto& sublist = plist.sublist("generalized dual porosity parameters");
+  matrix_nodes_ = sublist.get<int>("number of matrix nodes");
+
+  // depth is defined for each matrix block as A_m / V_m, so in general,
+  // it depends on geometry 
+  depth_ = sublist.get<double>("matrix depth");
+  tau_ = sublist.get<double>("matrix tortuosity");
+  double Ka = sublist.get<double>("absolute permeability");
+  std::string geometry("planar");
+
   tol_ = plist.get<double>("tolerance", FLOW_DPM_NEWTON_TOLERANCE);
+
+  // make uniform mesh inside the matrix
+  auto mesh = std::make_shared<WhetStone::DenseVector>(WhetStone::DenseVector(matrix_nodes_ + 1));
+  double h = depth_ / matrix_nodes_;
+  for (int i = 0; i < matrix_nodes_ + 1; ++i) (*mesh)(i) = h * i;
+
+  // initialize diffusion operator
+  auto kr_ = std::make_shared<WhetStone::DenseVector>(WhetStone::DenseVector(matrix_nodes_));
+  auto dkdp_ = std::make_shared<WhetStone::DenseVector>(WhetStone::DenseVector(matrix_nodes_));
+
+  op_diff_.Init(mesh, geometry, 1.0, 1.0);
+  op_diff_.Setup(Ka);
+  op_diff_.Setup(kr_, dkdp_);
 }
 
 
 /* ******************************************************************
-* It should be called only once; otherwise, create an evaluator.
+* Compute water content.
 ****************************************************************** */
 double MultiscaleFlowPorosity_GDPM::ComputeField(double phi, double n_l, double pcm)
 {
@@ -53,7 +75,7 @@ double MultiscaleFlowPorosity_GDPM::WaterContentMatrix(
   pmax = pcm + zoom; 
 
   // setup local parameters 
-  double sat0, alpha_mod;
+  double sat0, alpha_mod, alpha_(1.0);
   sat0 = wcm0 / (phi * n_l);
   alpha_mod = alpha_ * dt / (phi * n_l);
 

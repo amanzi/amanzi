@@ -53,7 +53,6 @@ class MultiscaleTransportPorosity_GDPM : public MultiscaleTransportPorosity {
 
   int matrix_nodes_;
   double depth_, tau_;
-  std::string geometry_;
   std::vector<double> mol_diff_;
 };
 

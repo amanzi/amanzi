@@ -59,7 +59,7 @@ Here
 volume to its surface area.
 Subscripts :math:`f` and :math:`m` indicate fracture and matrix media, respectively. 
 
-We neglect transvrse dispersion, so that the dispersion tensor is diagonal:
+We neglect transverse dispersion, so that the dispersion tensor is diagonal:
 
 .. math::
   \boldsymbol{D} = \begin{pmatrix}

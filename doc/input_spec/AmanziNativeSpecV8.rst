@@ -1038,7 +1038,7 @@ The conceptual PDE model for the fully saturated flow is
 .. math::
   \phi (s_s + s_y) \frac{\partial p_l}{\partial t} 
   =
-  \boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_l) + Q,
+  -\boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_l) + Q,
   \quad
   \boldsymbol{q}_l 
   = -\frac{\boldsymbol{K}}{\mu} 
@@ -1061,7 +1061,7 @@ The conceptual PDE model for the partially saturated flow is
 .. math::
   \frac{\partial \theta}{\partial t} 
   =
-  \boldsymbol{\nabla} \cdot (\eta_l \boldsymbol{q}_l) + Q,
+  -\boldsymbol{\nabla} \cdot (\eta_l \boldsymbol{q}_l) + Q,
   \qquad
   \boldsymbol{q}_l 
   = -\frac{\boldsymbol{K} k_r}{\mu} 
@@ -1093,7 +1093,7 @@ includes liquid phase (liquid water) and gas phase (water vapor):
 .. math::
   \frac{\partial \theta}{\partial t} 
   =
-  \boldsymbol{\nabla} \cdot (\eta_l \boldsymbol{q}_l)
+  - \boldsymbol{\nabla} \cdot (\eta_l \boldsymbol{q}_l)
   - \boldsymbol{\nabla} \cdot (\boldsymbol{K}_g \boldsymbol{\nabla} \big(\frac{p_v}{p_g}\big)) + Q,
   \quad
   \boldsymbol{q}_l 
@@ -1172,20 +1172,24 @@ term :math:`\Sigma_w`:
  
 .. math::
   \frac{\partial \theta_{lf}}{\partial t} 
-  = \boldsymbol{\nabla} \cdot (\eta_l \boldsymbol{q}_l) - \Sigma_w + Q_f,
+  = -\boldsymbol{\nabla} \cdot (\eta_l \boldsymbol{q}_l) 
+    -\frac{K_m\,k_{rm}\,\eta_l}{\mu\,L_m}\, \nabla p_m + Q_f,
   \qquad
   \boldsymbol{q}_l 
-  = -\frac{\boldsymbol{K} k_r}{\mu} 
-  (\boldsymbol{\nabla} p - \rho_l \boldsymbol{g})
+  = -\frac{\boldsymbol{K}_f\, k_{rf}}{\mu} 
+  (\boldsymbol{\nabla} p_f - \rho_l \boldsymbol{g})
 
 where 
-:math:`\Sigma_w` is transfer rate for water from the matrix to the fracture, 
+:math:`p_f` is fracture pressure,
+:math:`p_m` is matrix pressure,
+:math:`L_m` is the characteristic matrix depth defined typically as the ratio of a matrix block,
 and :math:`Q_f` is source or sink term [:math:`kg \cdot m^{-3} \cdot s^{-1}`].
 The equation for water balance in the matrix is
 
 .. math::
   \frac{\partial \theta_{lm}}{\partial t} 
-  = Q_m + \Sigma_w,
+  = Q_m
+    +\nabla\cdot \left(\frac{K_m\, k_{rm}\,\eta_l}{\mu}\, \nabla p_{m}\right),
 
 where 
 :math:`Q_m` is source or sink term [:math:`kg \cdot m^{-3} \cdot s^{-1}`].
@@ -1197,15 +1201,17 @@ The volumetric volumetric water contents are defined as
 
 where saturations :math:`s_{lf}` and :math:`s_{lm}` may use different capillary 
 pressure - saturation models.
-The rate of water exchange between the fracture and matrix regions is
-proportional to the difference in hydraulic heads:
+In the simplified model, the rate of water exchange between the fracture and matrix regions 
+is proportional to the difference in hydraulic heads:
 
 .. math::
-  \Sigma_w = \alpha_w (h_f - h_m),
+  \frac{K_m\,k_{rm}\,\eta_l}{\mu\,L_m}\, \nabla p_m 
+  \approx
+  \alpha_w (h_f - h_m),
 
 where :math:`\alpha_w` is the mass transfer coefficient.
 Since hydraulic heads are needed for both regions, this equation requires
-estimating retention curves for both regions and therefore is nonlinear.
+retention curves for both regions and therefore is nonlinear.
  
 
 The flow sublist includes exactly one sublist, either 
@@ -2099,36 +2105,40 @@ In the fracture region, we have \citep{simunek-vangenuchten_2008}
   \frac{\partial (\phi_f\, s_{lf}\, C_{lf})}{\partial t} 
   =
   - \boldsymbol{\nabla} \cdot (\boldsymbol{q}_l C_{lf}) 
-  + \boldsymbol{\nabla} \cdot (\phi_f\, s_{lf}\, (\boldsymbol{D}_l + \tau \boldsymbol{M}_l) \boldsymbol{\nabla} C_{lf}) 
-  - \Sigma_s + Q_f,
+  + \boldsymbol{\nabla} \cdot (\phi_f\, s_{lf}\, (\boldsymbol{D}_l + \tau_f M) \boldsymbol{\nabla} C_{lf}) 
+  - \frac{\phi_m\,\tau_m}{L_m}\, M \nabla C_m - \Sigma_w C^* + Q_f,
 
 where 
 :math:`\phi_f` is fracture porosity,
+:math:`\phi_m` is matrix porosity,
 :math:`s_{lf}` is liquid saturation in fracture, 
 :math:`\boldsymbol{q}_l` is the Darcy velocity,
 :math:`\boldsymbol{D}_l` is dispersion tensor,
-:math:`\boldsymbol{M}_l` is diffusion coefficient,
-:math:`\Sigma_s` is the solute exchange term,
+:math:`\tau_f` is fracture tortuosity,
+:math:`\tau_m` is matrix tortuosity,
+:math:`M` is molecular diffusion coefficient, and
+:math:`L_m` is the characteristic matrix depth defined typically as the ratio of a matrix block,
+:math:`\Sigma_w` is transfer rate due to flow from the matrix to the fracture, 
+:math:`C^*` is equal to :math:`C_{lf}` if :math:`\Sigma_w > 0` and :math:`C_{lm}` is :math:`\Sigma_w < 0`,
 and :math:`Q_f` is source or sink term.
 In the matrix region, we have
 
 .. math::
   \frac{\partial (\phi_m\, s_{lm}\, C_{lm})}{\partial t}
-  = \Sigma_s + Q_m,
+  = \nabla\cdot (\phi_m\, \tau_m\, M_m \nabla C_{lm}) + \Sigma_w C^* + Q_m,
 
 where 
 :math:`\phi_m` is matrix porosity,
 :math:`s_{lm}` is liquid saturation in matrix, 
 :math:`Q_m` is source or sink term.
-The solute exchange term is defined as
+The simplified one-node dual porosity model uses a finite difference approximation of the 
+solute gradient:
 
 .. math::
-  \Sigma_s = \alpha_s (C_{lf} - C_{lm}) + \Sigma_w C^*,
+  \nabla C_{lm} \approx WR \, \frac{C_{lf} - C_{lm}}{L_m},
 
 where 
-:math:`\Sigma_w` is transfer rate for water from the matrix to the fracture, and
-:math:`C^*` is equal to :math:`C_{lf}` if :math:`\Sigma_w > 0` and :math:`C_{lm}` is :math:`\Sigma_w < 0`.
-The coefficient :math:`\alpha_s` is the first-order solute mass transfer coefficient [:math:`s^{-1}`].
+:math:`WR` is the Warren-Root coefficient that estimates the poro-space geometry, [-]
 
 
 Model specifications and assumptions

@@ -155,7 +155,6 @@ class Flow_PK : public PK_PhysicalBDF {
   // io
   Utils::Units units_;
   Teuchos::RCP<Teuchos::ParameterList> fp_list_;
-
 };
 
 }  // namespace Flow
