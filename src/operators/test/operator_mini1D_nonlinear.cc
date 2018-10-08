@@ -110,7 +110,7 @@ void MiniDiffusion1D_Nonlinear(double bcl, int type_l, double bcr, int type_r) {
 
     // create nonlinear diffusion operator with Ka = 1, kr(u) = u^2
     auto op = Teuchos::rcp(new Operators::Mini_Diffusion1D());
-    op->Init(mesh, "planar", 1.0, 1.0);
+    op->Init(mesh);
 
     auto Ka = std::make_shared<DenseVector>(DenseVector(ncells));
     auto kr = std::make_shared<DenseVector>(DenseVector(ncells));

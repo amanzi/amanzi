@@ -36,7 +36,6 @@ MultiscaleTransportPorosity_GDPM::MultiscaleTransportPorosity_GDPM(
   depth_ = sublist.get<double>("matrix depth");
   tau_ = sublist.get<double>("matrix tortuosity");
   mol_diff_ = plist.get<Teuchos::Array<double> >("molecular diffusion").toVector();
-  std::string geometry("planar");
 
   // make uniform mesh inside matrix
   auto mesh = std::make_shared<WhetStone::DenseVector>(WhetStone::DenseVector(matrix_nodes_ + 1));
@@ -47,7 +46,7 @@ MultiscaleTransportPorosity_GDPM::MultiscaleTransportPorosity_GDPM(
   int ncomp = mol_diff_.size();
   op_diff_.resize(ncomp);
   for (int i = 0; i < ncomp; ++i) {
-    op_diff_[i].Init(mesh, geometry, 1.0, 1.0);
+    op_diff_[i].Init(mesh);
     op_diff_[i].Setup(mol_diff_[i]);
     op_diff_[i].UpdateMatrices();
   }

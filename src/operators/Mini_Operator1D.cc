@@ -23,19 +23,12 @@ namespace Operators {
 * Initialize 1D uniform mesh with given end-point areas and allocate
 * matrix for FV-type discretizations.
 ****************************************************************** */
-void Mini_Operator1D::Init(
-    std::shared_ptr<const WhetStone::DenseVector> mesh,
-    const std::string& geometry, double area_min, double area_max)
+void Mini_Operator1D::Init(std::shared_ptr<const WhetStone::DenseVector> mesh)
 {
   mesh_ = mesh;
-  area_min_ = area_min;
-  area_max_ = area_max;
 
   int ncells = mesh_->NumRows() - 1;
   AMANZI_ASSERT(ncells > 0);
-
-  igeo_ = 1;
-  if (geometry == "spherical") igeo_ = 2;
 
   diag_.Reshape(ncells);
   up_.Reshape(ncells);

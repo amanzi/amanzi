@@ -28,7 +28,7 @@ namespace Operators {
 void Mini_Diffusion1D::UpdateMatrices()
 {
   int ncells = mesh_->NumRows() - 1; 
-  double al, ar, hl, hr, area, x0, x1, Kc;
+  double al, ar, hl, hr, x0, x1, Kc;
 
   const auto& mesh = *mesh_;
 
@@ -38,18 +38,14 @@ void Mini_Diffusion1D::UpdateMatrices()
   Kc = (K_ != NULL) ? (*K_)(0) : Kconst_;
 
   hl = Kc / (mesh(1) - mesh(0));
-  al = 2 * hl * area_min_;
+  al = 2 * hl;
   if (k_ != NULL) al *= (*k_)(0);
 
   for (int i = 0; i < ncells - 1; ++i) {
-    double x = mesh(i + 1);
-    area = (area_max_ * (x - x0) + area_min_ * (x1 - x)) / (x1 - x0);
-    area = std::pow(area, igeo_);
-
     Kc = (K_ != NULL) ? (*K_)(i + 1) : Kconst_;
 
-    hr = Kc / (mesh(i + 2) - x);
-    ar = 2 * hl * hr / (hl + hr) * area;
+    hr = Kc / (mesh(i + 2) - mesh(i + 1));
+    ar = 2 * hl * hr / (hl + hr);
     if (k_ != NULL) ar *= ((*k_)(i) + (*k_)(i + 1)) / 2;
 
     diag_(i) = al + ar;
@@ -63,7 +59,7 @@ void Mini_Diffusion1D::UpdateMatrices()
   Kc = (K_ != NULL) ? (*K_)(ncells - 1) : Kconst_;
 
   hr = Kc / (mesh(ncells) - mesh(ncells - 1));
-  ar = 2 * hr * area_max_;
+  ar = 2 * hr;
   if (k_ != NULL) ar *= (*k_)(ncells - 1);
 
   diag_(ncells - 1) = al + ar;
@@ -81,7 +77,7 @@ void Mini_Diffusion1D::UpdateJacobian(
     double bcl, int type_l, double bcr, int type_r)
 {
   int ncells = mesh_->NumRows() - 1; 
-  double al, ar, bl, br, hl, hr, area, x0, x1, Kc, tmp0, tmp1;
+  double al, ar, bl, br, hl, hr, x0, x1, Kc, tmp0, tmp1;
 
   const auto& mesh = *mesh_;
   const auto& k = *k_;
@@ -93,7 +89,7 @@ void Mini_Diffusion1D::UpdateJacobian(
   // derivatives of A(k(p))
   Kc = (K_ != NULL) ? (*K_)(0) : Kconst_;
   hl = Kc / mesh_cell_volume(0);
-  al = 2 * hl * area_min_;
+  al = 2 * hl;
   tmp0 = al;
   bl = al * p(0);
   al *= k(0);
@@ -101,13 +97,9 @@ void Mini_Diffusion1D::UpdateJacobian(
   for (int i = 0; i < ncells - 1; ++i) {
     int j = (i == 0) ? 0 : i - 1; 
 
-    double x = mesh(i + 1);
-    area = (area_max_ * (x - x0) + area_min_ * (x1 - x)) / (x1 - x0);
-    area = std::pow(area, igeo_);
-
     Kc = (K_ != NULL) ? (*K_)(i + 1) : Kconst_;
-    hr = Kc / (mesh(i + 2) - x);
-    ar = hl * hr / (hl + hr) * area;
+    hr = Kc / (mesh(i + 2) - mesh(i + 1));
+    ar = hl * hr / (hl + hr);
     br = ar * (p(i + 1) - p(i));
     ar *= k(i) + k(i + 1);
 
@@ -122,7 +114,7 @@ void Mini_Diffusion1D::UpdateJacobian(
 
   Kc = (K_ != NULL) ? (*K_)(ncells - 1) : Kconst_;
   hr = Kc / mesh_cell_volume(ncells - 1);
-  ar = 2 * hr * area_max_;
+  ar = 2 * hr;
   tmp1 = ar;
   br = ar * p(ncells - 1);
   ar *= k(ncells - 1);

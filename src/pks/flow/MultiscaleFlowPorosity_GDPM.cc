@@ -34,7 +34,6 @@ MultiscaleFlowPorosity_GDPM::MultiscaleFlowPorosity_GDPM(Teuchos::ParameterList&
   depth_ = sublist.get<double>("matrix depth");
   tau_ = sublist.get<double>("matrix tortuosity");
   double Ka = sublist.get<double>("absolute permeability");
-  std::string geometry("planar");
 
   tol_ = plist.get<double>("tolerance", FLOW_DPM_NEWTON_TOLERANCE);
 
@@ -47,7 +46,7 @@ MultiscaleFlowPorosity_GDPM::MultiscaleFlowPorosity_GDPM(Teuchos::ParameterList&
   auto kr_ = std::make_shared<WhetStone::DenseVector>(WhetStone::DenseVector(matrix_nodes_));
   auto dkdp_ = std::make_shared<WhetStone::DenseVector>(WhetStone::DenseVector(matrix_nodes_));
 
-  op_diff_.Init(mesh, geometry, 1.0, 1.0);
+  op_diff_.Init(mesh);
   op_diff_.Setup(Ka);
   op_diff_.Setup(kr_, dkdp_);
 }

@@ -28,8 +28,7 @@ class Mini_Operator1D {
   ~Mini_Operator1D() {};
 
   // initialize 1D mesh and geometry
-  void Init(std::shared_ptr<const WhetStone::DenseVector> mesh,
-            const std::string& geometry, double area_min, double area_max);
+  void Init(std::shared_ptr<const WhetStone::DenseVector> mesh);
 
   // main operations
   void Apply(const WhetStone::DenseVector& v, WhetStone::DenseVector& av);
@@ -56,8 +55,6 @@ class Mini_Operator1D {
  protected:
   // mesh
   std::shared_ptr<const WhetStone::DenseVector> mesh_;
-  int igeo_;
-  double area_min_, area_max_;
 
   // matrix
   WhetStone::DenseVector diag_, up_, down_;
