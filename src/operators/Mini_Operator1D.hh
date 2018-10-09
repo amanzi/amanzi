@@ -37,6 +37,10 @@ class Mini_Operator1D {
   // modifying operator
   void AddAccumulationTerm(double s0, double s1, double dt,
                            WhetStone::DenseVector& sol);
+  void AddAccumulationTerm(const WhetStone::DenseVector& s0,
+                           const WhetStone::DenseVector& s1, double dt,
+                           WhetStone::DenseVector& sol);
+  void AddAccumulationTerm(const WhetStone::DenseVector& s1);
 
   void ScaleMatrix(double scale) { diag_ *= scale; 
                                    up_ *= scale; down_ *= scale; }

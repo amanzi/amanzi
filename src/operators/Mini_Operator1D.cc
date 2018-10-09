@@ -40,7 +40,7 @@ void Mini_Operator1D::Init(std::shared_ptr<const WhetStone::DenseVector> mesh)
 
 
 /* ******************************************************************
-* Update matrix and right-hand sides.
+* Update matrix and right-hand side: linear model
 ****************************************************************** */
 void Mini_Operator1D::AddAccumulationTerm(double s0, double s1, double dt,
                                           WhetStone::DenseVector& sol) 
@@ -50,6 +50,26 @@ void Mini_Operator1D::AddAccumulationTerm(double s0, double s1, double dt,
     double h = (*mesh_)(i + 1) - (*mesh_)(i);
     diag_(i) += s1 * h / dt;
     rhs_(i) += s0 * sol(i) * h / dt;
+  }
+}
+
+void Mini_Operator1D::AddAccumulationTerm(
+    const WhetStone::DenseVector& s0, const WhetStone::DenseVector& s1,
+    double dt, WhetStone::DenseVector& sol) 
+{
+  int ncells = diag_.NumRows();
+  for (int i = 0; i < ncells; ++i) {
+    double h = mesh_cell_volume(i);
+    diag_(i) += s1(i) * h / dt;
+    rhs_(i) += s0(i) * sol(i) * h / dt;
+  }
+}
+
+void Mini_Operator1D::AddAccumulationTerm(const WhetStone::DenseVector& s1)
+{
+  int ncells = diag_.NumRows();
+  for (int i = 0; i < ncells; ++i) {
+    diag_(i) += s1(i) * mesh_cell_volume(i);
   }
 }
 

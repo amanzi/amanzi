@@ -46,12 +46,13 @@ double MultiscaleFlowPorosity_DPM::ComputeField(double phi, double n_l, double p
 * pressure in the matrix. max_itrs is input/output parameter.
 ****************************************************************** */
 double MultiscaleFlowPorosity_DPM::WaterContentMatrix(
-    double dt, double phi, double n_l, double wcm0, double pcf0, double& pcm, int& max_itrs)
+    double pcf0, WhetStone::DenseVector& pcm,
+    double wcm0, double dt, double phi, double n_l, int& max_itrs)
 {
   double patm(1e+5), zoom, pmin, pmax;
-  zoom = fabs(pcm) + patm;
-  pmin = pcm - zoom; 
-  pmax = pcm + zoom; 
+  zoom = std::fabs(pcm(0)) + patm;
+  pmin = pcm(0) - zoom; 
+  pmax = pcm(0) + zoom; 
 
   // setup local parameters 
   double sat0, alpha_mod;
@@ -59,7 +60,7 @@ double MultiscaleFlowPorosity_DPM::WaterContentMatrix(
   alpha_mod = alpha_ * dt / (phi * n_l);
 
   // setup iterative parameters
-  double f0, f1, ds, dp, dsdp, guess, result(pcm);
+  double f0, f1, ds, dp, dsdp, guess, result(pcm(0));
   double delta(1.0e+10), delta1(1.0e+10), delta2(1.0e+10);
   int count(max_itrs);
 
@@ -103,8 +104,8 @@ double MultiscaleFlowPorosity_DPM::WaterContentMatrix(
   }
   max_itrs -= count - 1;
 
-  pcm = result;
-  return wrm_->saturation(pcm) * phi * n_l;
+  pcm(0) = result;
+  return wrm_->saturation(pcm(0)) * phi * n_l;
 }
 
 }  // namespace Flow

@@ -11,6 +11,9 @@
 
 #include <string>
 
+// Amanzi
+#include "OperatorDefs.hh"
+
 #include "FlowDefs.hh"
 #include "MultiscaleFlowPorosity_GDPM.hh"
 #include "WRMFactory.hh"
@@ -33,22 +36,8 @@ MultiscaleFlowPorosity_GDPM::MultiscaleFlowPorosity_GDPM(Teuchos::ParameterList&
   // it depends on geometry 
   depth_ = sublist.get<double>("matrix depth");
   tau_ = sublist.get<double>("matrix tortuosity");
-  double Ka = sublist.get<double>("absolute permeability");
-
+  Ka_ = sublist.get<double>("absolute permeability");
   tol_ = plist.get<double>("tolerance", FLOW_DPM_NEWTON_TOLERANCE);
-
-  // make uniform mesh inside the matrix
-  auto mesh = std::make_shared<WhetStone::DenseVector>(WhetStone::DenseVector(matrix_nodes_ + 1));
-  double h = depth_ / matrix_nodes_;
-  for (int i = 0; i < matrix_nodes_ + 1; ++i) (*mesh)(i) = h * i;
-
-  // initialize diffusion operator
-  auto kr_ = std::make_shared<WhetStone::DenseVector>(WhetStone::DenseVector(matrix_nodes_));
-  auto dkdp_ = std::make_shared<WhetStone::DenseVector>(WhetStone::DenseVector(matrix_nodes_));
-
-  op_diff_.Init(mesh);
-  op_diff_.Setup(Ka);
-  op_diff_.Setup(kr_, dkdp_);
 }
 
 
@@ -62,69 +51,93 @@ double MultiscaleFlowPorosity_GDPM::ComputeField(double phi, double n_l, double 
 
 
 /* ******************************************************************
-* Main capability: cell-based Newton solver. It returns water content, 
-* pressure in the matrix. max_itrs is input/output parameter.
+* Main capability: cell-based Newton solver. It returns water content
+* and pressure in the matrix. max_itrs is input/output parameter.
 ****************************************************************** */
 double MultiscaleFlowPorosity_GDPM::WaterContentMatrix(
-    double dt, double phi, double n_l, double wcm0, double pcf0, double& pcm, int& max_itrs)
+    double pcf0, WhetStone::DenseVector& pcm,
+    double wcm0, double dt, double phi, double n_l, int& max_itrs)
 {
-  double patm(1e+5), zoom, pmin, pmax;
-  zoom = fabs(pcm) + patm;
-  pmin = pcm - zoom; 
-  pmax = pcm + zoom; 
 
-  // setup local parameters 
-  double sat0, alpha_mod, alpha_(1.0);
-  sat0 = wcm0 / (phi * n_l);
-  alpha_mod = alpha_ * dt / (phi * n_l);
+  Operators::Mini_Diffusion1D op_diff;
 
-  // setup iterative parameters
-  double f0, f1, ds, dp, dsdp, guess, result(pcm);
-  double delta(1.0e+10), delta1(1.0e+10), delta2(1.0e+10);
-  int count(max_itrs);
+  // make uniform mesh inside the matrix
+  auto mesh = std::make_shared<WhetStone::DenseVector>(WhetStone::DenseVector(matrix_nodes_ + 1));
+  double h = depth_ / matrix_nodes_;
+  for (int i = 0; i < matrix_nodes_ + 1; ++i) (*mesh)(i) = h * i;
 
-  while (--count && (fabs(result * tol_) < fabs(delta))) {
-    delta2 = delta1;
-    delta1 = delta;
+  // initialize diffusion operator
+  auto kr = std::make_shared<WhetStone::DenseVector>(WhetStone::DenseVector(matrix_nodes_));
+  auto dkdp = std::make_shared<WhetStone::DenseVector>(WhetStone::DenseVector(matrix_nodes_));
 
-    ds = wrm_->saturation(result) - sat0;
-    dp = result - pcf0;
-    dsdp = wrm_->dSdPc(result);
+  op_diff.Init(mesh);
+  op_diff.Setup(Ka_);
+  op_diff.Setup(kr, dkdp);
 
-    f0 = ds - alpha_mod * dp;
-    if (f0 == 0.0) break;
+  // create nonlinear problem
+  Teuchos::RCP<SolverFnBase<WhetStone::DenseVector> > fn = Teuchos::rcp(this);
+  auto sol = Teuchos::rcp(new WhetStone::DenseVector(matrix_nodes_));
 
-    f1 = dsdp - alpha_mod;
-    delta = f0 / f1;
+  // create the solver
+  Teuchos::ParameterList plist;
+  plist.set<double>("nonlinear tolerance", 1.0e-7);
+  plist.sublist("verbose object").set<std::string>("verbosity level", "high");
 
-    // If the last two steps have not converged, try bisection:
-    if (fabs(delta * 2) > fabs(delta2)) {
-      delta = (delta > 0) ? (result - pmin) / 2 : (result - pmax) / 2;
-    }
-    guess = result;
-    result -= delta;
-    if (result <= pmin) {
-      delta = (guess - pmin) / 2;
-      result = guess - delta;
-      if ((result == pmin) || (result == pmax)) break;
+  Amanzi::AmanziSolvers::SolverNewton<WhetStone::DenseVector, int> newton(plist);
+  newton.Init(fn, 1);
 
-    } else if (result >= pmax) {
-      delta = (guess - pmax) / 2;
-      result = guess - delta;
-      if ((result == pmin) || (result == pmax)) break;
-    }
+  // solve the problem
+  newton.Solve(sol);  
 
-    // update brackets:
-    if (delta > 0.0) {
-      pmax = guess;
-    } else {
-      pmin = guess;
-    }
+  return wrm_->saturation(pcm(0)) * phi * n_l;
+}
+
+
+/* ******************************************************************
+* Nonlinear residual for Newton-type solvers.
+****************************************************************** */
+void MultiscaleFlowPorosity_GDPM::Residual(
+    const Teuchos::RCP<WhetStone::DenseVector>& u,
+    const Teuchos::RCP<WhetStone::DenseVector>& f)
+{
+  for (int i = 0; i < u->NumRows(); ++i) {
+    op_->k()(i) = 1.0 + (*u)(i) * (*u)(i);
   }
-  max_itrs -= count - 1;
 
-  pcm = result;
-  return wrm_->saturation(pcm) * phi * n_l;
+  op_->UpdateMatrices();
+  op_->ApplyBCs(bcl_, Operators::OPERATOR_BC_DIRICHLET,
+                0.0, Operators::OPERATOR_BC_NEUMANN);
+
+  op_->Apply(*u, *f);
+  f->Update(-1.0, op_->rhs(), 1.0);
+}
+
+
+/* ******************************************************************
+* Populate preconditioner's data.
+****************************************************************** */
+void MultiscaleFlowPorosity_GDPM::UpdatePreconditioner(
+    const Teuchos::RCP<const WhetStone::DenseVector>& u)
+{
+  for (int i = 0; i < u->NumRows(); ++i) {
+    op_->k()(i) = 1.0 + (*u)(i) * (*u)(i);
+    op_->dkdp()(i) = 2.0 * (*u)(i);
+  }
+  op_->UpdateJacobian(*u, bcl_, Operators::OPERATOR_BC_DIRICHLET,
+                          0.0, Operators::OPERATOR_BC_NEUMANN);
+}
+
+
+/* ******************************************************************
+* Error estimate for convergence criteria.
+****************************************************************** */
+double MultiscaleFlowPorosity_GDPM::ErrorNorm(
+    const Teuchos::RCP<const WhetStone::DenseVector>& u,
+    const Teuchos::RCP<const WhetStone::DenseVector>& du)
+{
+  double tmp;
+  du->NormInf(&tmp);
+  return tmp;
 }
 
 }  // namespace Flow

@@ -218,6 +218,25 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     Teuchos::RCP<PorosityModelPartition> pom = CreatePorosityModelPartition(mesh_, msp_list);
     Teuchos::RCP<PorosityModelEvaluator> eval = Teuchos::rcp(new PorosityModelEvaluator(elist, pom));
     S->SetFieldEvaluator("porosity_matrix", eval);
+
+    // Secondary matrix nodes are collected here.
+    int nnodes, nnodes_tmp = NumberMatrixNodes(msp_);
+    mesh_->get_comm()->MaxAll(&nnodes_tmp, &nnodes, 1);
+    if (nnodes > 1) {
+      S->RequireField("water_content_matrix_aux", passwd_)
+        ->SetMesh(mesh_)->SetGhosted(false)
+        ->SetComponent("cell", AmanziMesh::CELL, nnodes - 1);
+      S->GetField("water_content_matrix_aux", passwd_)->set_io_vis(false);
+
+      S->RequireField("pressure_matrix_aux", passwd_)->SetMesh(mesh_)->SetGhosted(false)
+        ->SetComponent("cell", AmanziMesh::CELL, nnodes - 1);
+      S->GetField("pressure_matrix_aux", passwd_)->set_io_vis(false);
+
+      S->RequireField("porosity_matrix_aux", "porosity_matrix_aux")->SetMesh(mesh_)->SetGhosted(false)
+        ->SetComponent("cell", AmanziMesh::CELL, nnodes - 1);
+      S->SetFieldEvaluator("porosity_matrix_aux", eval);
+      S->GetField("porosity_matrix_aux", passwd_)->set_io_vis(false);
+    }
   }
 
   // Require additional fields and evaluators for this PK.
