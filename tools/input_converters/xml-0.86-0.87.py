@@ -84,12 +84,12 @@ def adds_source_units(xml):
             te.setParameter("mass source units", "string", "mol m^-2 s^-1")
 
     try:
-        te = asearch.childByName(fevals, "surface-total_energy_source")
+        tes = asearch.childByName(fevals, "surface-total_energy_source")
     except aerrors.MissingXMLError:
         pass
     else:
-        if not te.isElement("mass source units"):
-            te.setParameter("mass source units", "string", "m s^-1")
+        if not tes.isElement("mass source units"):
+            tes.setParameter("mass source units", "string", "m s^-1")
 
 
 def seepage_face_bcs(xml):
@@ -296,9 +296,19 @@ def seb(xml):
     eval_list = [ev for ev in asearch.generateElementByNamePath(xml, "state/field evaluators")]
     assert(len(eval_list) == 1)
     eval_list = eval_list[0]
-    eval_list.pop("surface-total_energy_source")
-    eval_list.pop("surface-mass_source_enthalpy")
-    eval_list.pop("surface-source_internal_energy")
+    try:
+        eval_list.pop("surface-total_energy_source")
+    except aerrors.MissingXMLError:
+        pass
+    try:
+        eval_list.pop("surface-mass_source_enthalpy")
+    except aerrors.MissingXMLError:
+        pass
+    try:
+        eval_list.pop("surface-source_internal_energy")
+    except aerrors.MissingXMLError:
+        pass
+
     molar_dens = asearch.childByName(eval_list, "surface-source_molar_density")
     if molar_dens.isElement("temperature key"):
         asearch.childByName(molar_dens, "temperature key").set("value", "surface-temperature")

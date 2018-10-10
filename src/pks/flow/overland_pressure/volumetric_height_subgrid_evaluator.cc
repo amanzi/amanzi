@@ -14,7 +14,7 @@
          The name of del_excluded, the integral of the microtopography.
 * `"ponded depth key`" ``[string]`` **DOMAIN-ponded_depth**
          The true height of the water surface.
-* `"snow depth key`" ``[string]`` **DOMAIN-snow_depth**
+* `"snow depth key`" ``[string]`` **SNOW_DOMAIN-depth**
          The true height of the snow surface.
 
 */
@@ -48,13 +48,13 @@ VolumetricHeightSubgridEvaluator::VolumetricHeightSubgridEvaluator(Teuchos::Para
   // my keys
   vol_pd_key_ = Keys::readKey(plist, domain_surf, "volumetric ponded depth", "volumetric_ponded_depth");
   my_keys_.push_back(vol_pd_key_);
-  vol_sd_key_ = Keys::readKey(plist, domain_snow, "volumetric snow depth", "volumetric_snow_depth");
+  vol_sd_key_ = Keys::readKey(plist, domain_snow, "volumetric snow depth", "volumetric_depth");
   my_keys_.push_back(vol_sd_key_);
   
   // dependencies
   pd_key_ = Keys::readKey(plist_, domain, "ponded depth key", "ponded_depth");
   dependencies_.insert(pd_key_);
-  sd_key_ = Keys::readKey(plist_, domain, "snow depth key", "snow_depth");
+  sd_key_ = Keys::readKey(plist_, domain_snow, "snow depth key", "depth");
   dependencies_.insert(sd_key_);
 
   delta_max_key_ = Keys::readKey(plist_, domain, "microtopographic relief", "microtopographic_relief"); 
