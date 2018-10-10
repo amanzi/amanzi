@@ -445,6 +445,10 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
       xv[0] = yv[0] + yv[0] * yv[1] * (1.0 - yv[0]) / 2;
       xv[1] = yv[1] + yv[0] * yv[1] * (1.0 - yv[1]) / 2;
     }
+    else if (deform == 5) {
+      xv[0] = yv[0] + yv[0] * (1.0 - yv[0]) / 2;
+      xv[1] = yv[1] + yv[1] * (1.0 - yv[1]) / 2;
+    }
 
     nodeids.push_back(v);
     new_positions.push_back(xv);
@@ -496,7 +500,6 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   remap.ChangeVariables(0.0, *p1, p1aux, true);
 
   int nstep(0), nstep_dbg(0);
-  double gcl, gcl_err(0.0);
   double t(0.0), tend(1.0);
   while(t < tend - dt/2) {
     remap.L2Norm(t, p1aux);
@@ -627,6 +630,16 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
     }
   }
 
+  // error in GCL
+  double gcl_err(0.0);
+  auto& jac = remap.jac();
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    double vol1 = numi.IntegratePolynomialCell(c, jac[c][0]);
+    double vol2 = mesh1->cell_volume(c);
+    gcl_err = std::fabs(vol1 - vol2);
+  }
+
   // parallel collective operations
   double err_in[5] = {pl2_err, area, mass1, ql2_err, l20_err};
   double err_out[5];
@@ -654,6 +667,7 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
     printf("nx=%3d  L2=%12.8g %12.8g %12.8g  Inf=%12.8g %12.8g %12.8g dMass=%10.4g  dArea=%10.6g\n", 
         nx, l20_err, pl2_err, ql2_err, 
             inf0_err, pinf_err, qinf_err, err_out[2] - mass0, 1.0 - err_out[1]);
+    printf("GCL:    L1=%12.8g\n", gcl_err);
   }
 
   // initialize I/O
@@ -680,7 +694,7 @@ TEST(REMAP_DUAL_2D) {
   double dT(0.02);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
-  int deform = 1;
+  int deform = 5;
   RemapTestsDualRK(rk_method, maps, "",  16, 16,0, dT,    deform);
   RemapTestsDualRK(rk_method, maps, "",  32, 32,0, dT/2,  deform);
   RemapTestsDualRK(rk_method, maps, "",  64, 64,0, dT/4,  deform);
@@ -692,7 +706,7 @@ TEST(REMAP_DUAL_2D) {
   double dT(0.02);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
-  int deform = 4;
+  int deform = 5;
   RemapTestsDualRK(rk_method, maps, "test/median15x16.exo",    16,0,0, dT,   deform);
   RemapTestsDualRK(rk_method, maps, "test/median32x33.exo",    32,0,0, dT/2, deform);
   RemapTestsDualRK(rk_method, maps, "test/median63x64.exo",    64,0,0, dT/4, deform);

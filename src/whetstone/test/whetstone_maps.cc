@@ -196,3 +196,63 @@ TEST(DG_MAP_LEAST_SQUARE_CELL) {
   delete comm;
 }
 
+
+/* ****************************************************************
+* Geometric conservation law (GCL) equation: dj/dt = j div u.
+**************************************************************** */
+TEST(DG_MAP_GCL) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: GCL" << std::endl;
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+
+  // create 2D mesh
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo");
+
+  // create a map
+  Teuchos::ParameterList plist;
+  plist.set<std::string>("method", "Lagrange serendipity")
+       .set<int>("method order", 2)
+       .set<std::string>("projector", "L2");
+
+  auto maps = std::make_shared<MeshMaps_VEM>(mesh, plist);
+
+  // create a velocity polynomial for testing
+  double t(0.5), dt(1e-2);
+  VectorPolynomial u(2, 2, 3);
+  for (int i = 0; i < 10; ++i) {
+    u[0](i) = i;
+    u[1](i) = (i * i) / 3 + 1.0;
+  }
+
+  // left-hand side of GCL, 2nd-order FD is exact
+  VectorPolynomial det0, det1, det2;
+  MatrixPolynomial J, C;
+
+  maps->Jacobian(u, J);
+
+  maps->Determinant(t, J, det0);
+  maps->Determinant(t - dt, J, det1);
+  maps->Determinant(t - 2 * dt, J, det2);
+  det0 = (1.5 * det0 - 2 * det1 + 0.5 * det2) * (1.0 / dt);
+
+  // rigth-hand side of GCL
+  VectorPolynomial v(u);
+
+  maps->Cofactors(t, J, C);
+  v.Multiply(C, u, true);
+  det1 = Divergence(v);
+
+  // error
+  det1 -= det0;
+  double err = det1.NormInf();
+  std::cout << "GCL error=" << err << ", poly order=3" << std::endl;
+  CHECK(err < 1e-10);
+
+  delete comm;
+}
+
