@@ -3,15 +3,9 @@
 
   <!--  REGIONS  -->
   <ParameterList name="Regions Flat">
-    <ParameterList name="Left side">
+    <ParameterList name="Middle side">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{-1.0,0.0,0.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Right side">
-      <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{1.0,0.0,0.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.5,0.0,0.0}"/>
         <Parameter name="normal" type="Array(double)" value="{1.0,0.0,0.0}"/>
       </ParameterList>
     </ParameterList>
