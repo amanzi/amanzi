@@ -3,7 +3,19 @@
 
   <!--  REGIONS  -->
   <ParameterList name="Regions Flat">
-    <ParameterList name="Middle side">
+    <ParameterList name="Middle z-surface">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.0,0.0,0.5}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0,0.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Middle y-surface">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.0,0.5,0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0,1.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Middle x-surface">
       <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{0.5,0.0,0.0}"/>
         <Parameter name="normal" type="Array(double)" value="{1.0,0.0,0.0}"/>
@@ -13,6 +25,12 @@
       <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{0.0,0.0,1.0}"/>
         <Parameter name="normal" type="Array(double)" value="{0.0,0.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Half z-surface">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0,0.5}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.3,0.3,0.5}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

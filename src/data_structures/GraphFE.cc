@@ -62,8 +62,6 @@ GraphFE::GraphFE(const Teuchos::RCP<const Epetra_Map>& row_map,
     // create the exporter from offproc to onproc
     exporter_ = Teuchos::rcp(new Epetra_Export(*offproc_row_map_, *row_map_));
   }
-
-
 }
 
 GraphFE::GraphFE(const Teuchos::RCP<const Epetra_Map>& row_map,
@@ -80,7 +78,6 @@ GraphFE::GraphFE(const Teuchos::RCP<const Epetra_Map>& row_map,
   // create the offproc maps
   n_used_ = ghosted_row_map_->NumMyElements();
   n_owned_ = row_map_->NumMyElements();
-
 
   if (n_used_ - n_owned_ > 0) {
     includes_ghosted_ = true;

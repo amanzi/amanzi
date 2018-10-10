@@ -34,7 +34,7 @@
 #include "Verification.hh"
 
 
-void LaplaceBeltramiFlat(const std::string diff_op)
+void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -45,53 +45,61 @@ void LaplaceBeltramiFlat(const std::string diff_op)
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: Laplace Beltrami solver: " << diff_op << std::endl;
+  if (MyPID == 0) {
+    std::cout << "\nTest: Laplace Beltrami solver: ";
+    for (int i = 0; i < surfaces.size(); ++i)
+      std::cout << "\"" << surfaces[i] << "\", ";
+    std::cout << diff_op << std::endl;
+  }
 
   // read parameter list
   std::string xmlFileName = "test/operator_laplace_beltrami.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
-  // create an SIMPLE mesh framework
+  // create a mesh
   ParameterList region_list = plist.sublist("Regions Flat");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({Framework::MSTK}));
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 5, gm);
+  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, gm);
   RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh);
 
-  // extract surface mesh
-  std::vector<std::string> setnames;
-  setnames.push_back(std::string("Top surface"));
+  // extract a manifold mesh
+  RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(*mesh_mstk, surfaces, AmanziMesh::FACE));
 
-  RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(*mesh_mstk, setnames, AmanziMesh::FACE));
-
-  // modify diffusion coefficient
-  // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
+  std::cout << "pid=" << MyPID << " cells: " << ncells_owned << " " << ncells_wghost << std::endl;
+
+  // modify diffusion coefficient
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
     const Point& xc = mesh->cell_centroid(c);
     Kc(0, 0) = 1.0 + xc[0] * xc[0];
     K->push_back(Kc);
   }
-  double rho(1.0), mu(1.0);
 
   // create boundary data (no mixed bc)
+  Entity_ID_List cells;
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
+    surfmesh->face_get_cells(f, Parallel_type::ALL, &cells);
+    if (cells.size() == 2) continue;
+
     const Point& xf = surfmesh->face_centroid(f);
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
-        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
+        fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) {
       bc_model[f] = OPERATOR_BC_DIRICHLET;
-      bc_value[f] = xf[1] * xf[1];
+      bc_value[f] = AmanziGeometry::L22(xf);
     }
   }
 
@@ -136,13 +144,18 @@ void LaplaceBeltramiFlat(const std::string diff_op)
 
   int num_itrs = solver->num_itrs();
   CHECK(num_itrs < 10);
+ 
+  // check bounds of cell-based solution
+  const Epetra_MultiVector& p = *solution.ViewComponent("cell");
+  for (int c = 0; c < p.MyLength(); ++c) {
+    CHECK(p[0][c] > 0.0 && p[0][c] < 3.0);
+  } 
 
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver->residual() << " itr=" << num_itrs
               << " code=" << solver->returned_code() << std::endl;
 
     // visualization
-    const Epetra_MultiVector& p = *solution.ViewComponent("cell");
     GMV::open_data_file(*surfmesh, (std::string)"operators.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "solution");
@@ -151,9 +164,25 @@ void LaplaceBeltramiFlat(const std::string diff_op)
 }
 
 TEST(LAPLACE_BELTRAMI_FLAT) {
-  LaplaceBeltramiFlat("diffusion operator Sff");
-  LaplaceBeltramiFlat("diffusion operator Scc");
-  LaplaceBeltramiFlat("diffusion operator");
+  // boundary surface
+  std::vector<std::string> surfaces(1);
+  surfaces[0] = "Top surface";
+  LaplaceBeltramiFlat(surfaces, "diffusion operator Sff");
+  LaplaceBeltramiFlat(surfaces, "diffusion operator Scc");
+  LaplaceBeltramiFlat(surfaces, "diffusion operator");
+
+  // internal surface(s)
+  surfaces[0] = "Middle z-surface";
+  LaplaceBeltramiFlat(surfaces, "diffusion operator");
+  surfaces.push_back("Middle y-surface");
+  LaplaceBeltramiFlat(surfaces, "diffusion operator");
+  surfaces.push_back("Middle x-surface");
+  LaplaceBeltramiFlat(surfaces, "diffusion operator");
+
+  // half surfaces
+  surfaces.resize(1);
+  surfaces[0] = "Half z-surface";
+  LaplaceBeltramiFlat(surfaces, "diffusion operator");
 }
 
 
