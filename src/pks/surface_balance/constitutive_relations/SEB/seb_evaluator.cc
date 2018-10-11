@@ -454,6 +454,11 @@ SEBEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
       ->SetGhosted()
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
+  CompositeVectorSpace domain_fac_owned_snow;
+  domain_fac_owned_snow.SetMesh(S->GetMesh(domain_snow_))
+      ->SetGhosted()
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  
   CompositeVectorSpace domain_fac_2;
   domain_fac_2.SetMesh(S->GetMesh(domain_))
       ->SetGhosted()
@@ -471,7 +476,11 @@ SEBEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
   
   for (auto my_key : my_keys_) {
     auto my_fac = S->RequireField(my_key, my_key);
-    my_fac->Update(domain_fac_owned);
+    if (boost::starts_with(my_key, domain_snow_)) {
+      my_fac->Update(domain_fac_owned_snow);
+    } else {
+      my_fac->Update(domain_fac_owned);
+    }
 
     // Check plist for vis or checkpointing control.
     bool io_my_key = plist_.get<bool>("visualize", true);

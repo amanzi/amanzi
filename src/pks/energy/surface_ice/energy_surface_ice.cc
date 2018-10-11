@@ -42,15 +42,10 @@ EnergySurfaceIce::EnergySurfaceIce(Teuchos::ParameterList& FElist,
     standalone_mode_(false),
     is_energy_source_term_(false),
     is_mass_source_term_(false),
-    is_air_conductivity_(false) {
-
-
-  if(!plist_->isParameter("conserved quanity suffix"))
-    plist_->set("conserved quantity suffix", "energy");
-
-  //plist_->set("primary variable key", "surface-temperature");
-  //plist_->set("domain name", "surface");
-  plist_->set("conserved quantity key", Keys::getKey(domain_,"energy"));
+    is_air_conductivity_(false)
+{
+  if(!plist_->isParameter("conserved quantity key suffix"))
+    plist_->set("conserved quantity key suffix", "energy");
 }
 
 

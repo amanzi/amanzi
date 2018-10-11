@@ -32,6 +32,9 @@ Channels are: 0 = land, 1 = water/ice, 2 = snow.
 
 */
 
+#include "boost/algorithm/string/predicate.hpp"
+
+
 #include "albedo_subgrid_evaluator.hh"
 #include "seb_physics_defs.hh"
 #include "seb_physics_funcs.hh"
@@ -118,6 +121,11 @@ void AlbedoSubgridEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
       ->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
+  CompositeVectorSpace domain_fac_snow;
+  domain_fac_snow.SetMesh(S->GetMesh(domain_snow_))
+      ->SetGhosted()
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+
   CompositeVectorSpace domain_fac_owned;
   domain_fac_owned.SetMesh(S->GetMesh(domain_))
       ->SetGhosted()
@@ -139,7 +147,11 @@ void AlbedoSubgridEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   // Loop over dependencies, making sure they are the same mesh
   for (auto key : dependencies_) {
     auto fac = S->RequireField(key);
-    fac->Update(domain_fac);
+    if (boost::starts_with(key, domain_snow_)) {
+      fac->Update(domain_fac_snow);
+    } else {
+      fac->Update(domain_fac);
+    }
 
     // Recurse into the tree to propagate info to leaves.
     S->RequireFieldEvaluator(key)->EnsureCompatibility(S);

@@ -70,8 +70,8 @@ Richards::Richards(Teuchos::ParameterList& pk_tree,
     iter_(0),
     iter_counter_time_(0.)
 {
-  if (!plist_->isParameter("conserved quantity suffix"))
-    plist_->set("conserved quantity suffix", "water_content");
+  if (!plist_->isParameter("conserved quantity key suffix"))
+    plist_->set("conserved quantity key suffix", "water_content");
   
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance"))

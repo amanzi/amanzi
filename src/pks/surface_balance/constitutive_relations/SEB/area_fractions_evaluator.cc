@@ -30,6 +30,8 @@ the subsurface) really don't matter much. --etc
          
 */
 
+#include "boost/algorithm/string/predicate.hpp"
+
 #include "area_fractions_evaluator.hh"
 
 namespace Amanzi {
@@ -97,12 +99,17 @@ AreaFractionsEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   bool checkpoint_my_key = plist_.get<bool>("checkpoint", false);
   S->GetField(my_key_, my_key_)->set_io_checkpoint(checkpoint_my_key);
 
-  
   for (auto dep_key : dependencies_) {
     auto fac = S->RequireField(dep_key);
-    fac->SetMesh(S->GetMesh(domain_))
-        ->SetGhosted()
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    if (boost::starts_with(dep_key, domain_snow_)) {
+      fac->SetMesh(S->GetMesh(domain_snow_))
+          ->SetGhosted()
+          ->SetComponent("cell", AmanziMesh::CELL, 1);
+    } else {
+      fac->SetMesh(S->GetMesh(domain_))
+          ->SetGhosted()
+          ->SetComponent("cell", AmanziMesh::CELL, 1);
+    }
 
     // Recurse into the tree to propagate info to leaves.
     S->RequireFieldEvaluator(dep_key)->EnsureCompatibility(S);

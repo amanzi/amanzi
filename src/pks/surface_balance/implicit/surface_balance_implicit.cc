@@ -31,8 +31,8 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(Teuchos::ParameterList& pk_tree,
   PK_PhysicalBDF_Default(pk_tree, global_list,  S, solution),
   modify_predictor_advance_(false)
 {
-  if (!plist_->isParameter("conserved quantity suffix"))
-    plist_->set("conserved quantity suffix", "snow_depth");
+  if (!plist_->isParameter("conserved quantity key suffix"))
+    plist_->set("conserved quantity key suffix", "snow_depth");
 
   Teuchos::ParameterList& FElist = S->FEList();
 

@@ -29,7 +29,7 @@ SurfaceBalanceBase::SurfaceBalanceBase(Teuchos::ParameterList& pk_tree,
     PK_PhysicalBDF_Default(pk_tree, global_list,  S, solution)
 {
   // name the layer
-  layer_ = plist_->get<std::string>("layer name", name_);
+  layer_ = plist_->get<std::string>("layer name", domain_);
 
   // source terms
   is_source_ = plist_->get<bool>("source term", true);

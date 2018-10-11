@@ -78,7 +78,7 @@ class AreaFractionsSubgridEvaluator : public SecondaryVariableFieldEvaluator {
         + 3 * std::pow(delta/del_max,2) * (2*del_ex - del_max) / del_max;
   }
 
-  Key domain_;
+  Key domain_, domain_snow_;
   Key ponded_depth_key_, snow_depth_key_, vol_snow_depth_key_;
   Key delta_max_key_, delta_ex_key_;
   double rho_liq_;

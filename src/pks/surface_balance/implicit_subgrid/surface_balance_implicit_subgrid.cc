@@ -31,8 +31,8 @@ ImplicitSubgrid::ImplicitSubgrid(Teuchos::ParameterList& pk_tree,
   PK(pk_tree, global_list,  S, solution),
   SurfaceBalanceBase(pk_tree, global_list,  S, solution)
 {
-  if (!plist_->isParameter("conserved quantity suffix"))
-    plist_->set("conserved quantity suffix", "snow_water_equivalent");
+  if (!plist_->isParameter("conserved quantity key suffix"))
+    plist_->set("conserved quantity key suffix", "snow_water_equivalent");
 
   Teuchos::ParameterList& FElist = S->FEList();
 

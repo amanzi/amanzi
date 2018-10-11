@@ -49,8 +49,8 @@ EnergyBase::EnergyBase(Teuchos::ParameterList& FElist,
     flux_exists_(true),
     implicit_advection_(true) {
 
-  if (!plist_->isParameter("conserved quantity suffix"))
-    plist_->set("conserved quantity suffix", "energy");
+  if (!plist_->isParameter("conserved quantity key suffix"))
+    plist_->set("conserved quantity key suffix", "energy");
 
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance")) {

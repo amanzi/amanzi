@@ -35,6 +35,7 @@ However, we hypothesize that these differences, on the surface (unlike in
 the subsurface) really don't matter much. --etc
          
 */
+#include "boost/algorithm/string/predicate.hpp"
 
 #include "area_fractions_subgrid_evaluator.hh"
 
@@ -55,6 +56,11 @@ AreaFractionsSubgridEvaluator::AreaFractionsSubgridEvaluator(Teuchos::ParameterL
   min_area_ = plist_.get<double>("minimum fractional area [-]", 0.);
   
   domain_ = Keys::getDomain(my_key_);
+  if (domain_ == "surface") {
+    domain_snow_ = "snow";
+  } else if (boost::starts_with(domain_, "surface_")) {
+    domain_snow_ = std::string("snow_") + domain_.substr(8,domain_.size());
+  }
 
   // FIXME: "maximum_ponded_depth" is a terrible name, this is a geometric thing, not a dynamic thing. --etc
   delta_max_key_ = Keys::readKey(plist_, domain_, "microtopographic relief", "maximum_ponded_depth"); 
@@ -66,10 +72,10 @@ AreaFractionsSubgridEvaluator::AreaFractionsSubgridEvaluator(Teuchos::ParameterL
   ponded_depth_key_ = Keys::readKey(plist_, domain_, "ponded depth", "ponded_depth");
   dependencies_.insert(ponded_depth_key_);
 
-  snow_depth_key_ = Keys::readKey(plist_, domain_, "snow depth", "snow_depth");
+  snow_depth_key_ = Keys::readKey(plist_, domain_snow_, "snow depth", "depth");
   dependencies_.insert(snow_depth_key_);
 
-  vol_snow_depth_key_ = Keys::readKey(plist_, domain_, "volumetric snow depth", "volumetric_snow_depth");
+  vol_snow_depth_key_ = Keys::readKey(plist_, domain_snow_, "volumetric snow depth", "volumetric_depth");
   dependencies_.insert(vol_snow_depth_key_);
 }
 
@@ -127,9 +133,15 @@ AreaFractionsSubgridEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
   
   for (auto dep_key : dependencies_) {
     auto fac = S->RequireField(dep_key);
-    fac->SetMesh(S->GetMesh(domain_))
-        ->SetGhosted()
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    if (boost::starts_with(dep_key, domain_snow_)) {
+      fac->SetMesh(S->GetMesh(domain_snow_))
+          ->SetGhosted()
+          ->SetComponent("cell", AmanziMesh::CELL, 1);
+    } else {
+      fac->SetMesh(S->GetMesh(domain_))
+          ->SetGhosted()
+          ->SetComponent("cell", AmanziMesh::CELL, 1);
+    }
 
     // Recurse into the tree to propagate info to leaves.
     S->RequireFieldEvaluator(dep_key)->EnsureCompatibility(S);
