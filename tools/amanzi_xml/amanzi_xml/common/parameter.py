@@ -151,6 +151,10 @@ class Parameter(base.TeuchosBaseXML):
             self.value = self._checkSingleValueFromString(value)
             self.set("value", self._checkSingleValueFromType(self.value))
 
+    def getValue(self):
+        """Returns the value, not as a string but as a typed value."""
+        return self._checkSingleValueFromString(self.get("value"))
+
     def _checkSingleValueFromString(self, value):
         retval = _valid_parameter_from_string(self._basetype, value)
         assert retval is not None
