@@ -1,16 +1,21 @@
 Sand Clay Layers
 ================
 
-Verification problems from the literature have been identified to test
-isothermal, single-phase, variably saturated flow.  We initially focus
-on test problems that address the two most widely used k-s-p
-functions, van Genuchten-Mualem and Brooks-Corey.  These include
-steady-state and transient tests with Dirichlet and Neumann boundary
-conditions.
+Capabilities Tested
+-------------------
+
+For details on this test, see :ref:`about_sand_clay`.
 
 
 Background
 ----------
+
+Verification problems from the literature have been identified to test
+isothermal, single-phase, variably saturated flow.  We initially focus
+on test problems that address the two most widely used k-s-p
+functions, Mualem-van Genuchten :cite:`scinfil-Mualem_1976` :cite:`scinfil-vanGenuchten_1980` and Brooks-Corey :cite:`scinfil-brooks1964hydraulic`.  These include
+steady-state and transient tests with Dirichlet and Neumann boundary
+conditions.
 
 This is documentation for the Amanzi run that is intended to compare
 the results from Amanzi against the semi-analytical results documented
@@ -42,15 +47,53 @@ Flow at surface for all time:  .5 cm/d = 5.78703704E-8 m/s
   :width: 200px
 
 
+Problem Specification
+---------------------
+
+
+Schematic
+~~~~~~~~~
+
+
+Mesh
+~~~~
+
+
+Variables
+~~~~~~~~~
+
+
 Results and Comparison
-~~~~~~~~~~~~~~~~~~~~~~
+----------------------
 
 .. plot:: verification/flow/richards/steady-steate/infiltration_clay_sand_1d/amanzi_infiltration_clay_sand_1d.py
    :align: center
 
 
+References
+----------
+
+.. bibliography:: /bib/ascem.bib
+   :filter: docname in docnames
+   :style:  alpha
+   :keyprefix: scinfil-
+
+.. _about_sand_clay:
+
 About
 -----
 
-Status
-------
+* Directory:  testing/verification/flow/richards/steady-state/infiltration_clay_sand_1d
+
+* Author:  
+
+* Maintainer:  David Moulton (moulton@lanl.gov)
+
+* Input Files:
+
+  * amanzi_infiltration_clay_sand_1d-u.xml
+
+    * Spec Version 2.3, unstructured mesh framework
+    * mesh:  generated internally 
+
+
