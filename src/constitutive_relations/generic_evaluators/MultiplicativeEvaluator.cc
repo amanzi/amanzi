@@ -10,7 +10,22 @@ namespace Amanzi {
 namespace Relations {
 
 MultiplicativeEvaluator::MultiplicativeEvaluator(Teuchos::ParameterList& plist) :
-    SecondaryVariableFieldEvaluator(plist) {
+    SecondaryVariableFieldEvaluator(plist)
+{
+  if (!plist.isParameter("evaluator dependencies")) {
+    if (plist.isParameter("evaluator dependency suffixes")) {
+      const auto& names = plist_.get<Teuchos::Array<std::string> >("evaluator dependency suffixes");
+      Key domain = Keys::getDomain(my_key_);
+      for (const auto& name : names) {
+        dependencies_.insert(Keys::getKey(domain, name));
+      }
+    } else {
+      Errors::Message msg;
+      msg << "AdditiveEvaluator for: \"" << my_key_ << "\" has no dependencies.";
+      Exceptions::amanzi_throw(msg);
+    }
+  }
+
   coef_ = plist_.get<double>("coefficient", 1.0);
 }
 
