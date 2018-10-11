@@ -79,8 +79,12 @@ def evals(xml, dc):
     eval_list.append(eval_snow_source_sink(dc))
     eval_list.append(eval_albedo())
 
-    snow_precip = asearch.childByName(eval_list, "surface-precipitation_snow")
-    snow_precip.setName("snow-precipitation")
+    try:
+        snow_precip = asearch.childByName(eval_list, "surface-precipitation_snow")
+    except aerrors.MissingXMLError:
+        pass
+    else:
+        snow_precip.setName("snow-precipitation")
 
 
 def pks(xml):
