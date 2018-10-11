@@ -213,9 +213,10 @@ About
 
 * Input Files:
 
-  *  amanzi_theis_isotropic_1d-u.xml
+  * amanzi_theis_isotropic_1d-u.xml
 
     * Spec Version 2.3, unstructured mesh framework
     * mesh:  generated internally
 
 * Analytic solution computed with model_theis_isotropic_1d.py
+
