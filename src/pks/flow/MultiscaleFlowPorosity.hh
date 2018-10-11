@@ -14,6 +14,8 @@
 #ifndef MULTISCALE_FLOW_POROSITY_HH_
 #define MULTISCALE_FLOW_POROSITY_HH_
 
+#include "DenseVector.hh"
+
 namespace Amanzi {
 namespace Flow {
 
@@ -28,8 +30,11 @@ class MultiscaleFlowPorosity {
   // local (cell-based) solver returns water content and capilalry
   // pressure in the matrix. 
   virtual double WaterContentMatrix(
-      double dt, double phi, double n_l, double wcm0, double pcf0,
-      double& pcm, int& max_itrs) = 0;
+      double pcf0, WhetStone::DenseVector& pcm,
+      double wcm0, double dt, double phi, double n_l, int& max_itrs) = 0;
+
+  // Number of matrix nodes
+  virtual int NumberMatrixNodes() = 0;
 };
 
 }  // namespace Flow

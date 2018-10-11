@@ -32,42 +32,50 @@ namespace Operators {
 
 class ReconstructionCell : public Reconstruction {  
  public:
-  ReconstructionCell() {};
-  ReconstructionCell(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : Reconstruction(mesh) {};
+  ReconstructionCell() : flux_(Teuchos::null) {};
+  ReconstructionCell(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) 
+    : flux_(Teuchos::null),
+      Reconstruction(mesh) {};
   ~ReconstructionCell() {};
 
   // save pointer to the already distributed field.
   virtual void Init(Teuchos::RCP<const Epetra_MultiVector> field,
                     Teuchos::ParameterList& plist, int component = 0) override;
 
-  // global reconstruction
+  // unlimited gradient
   // -- compute gradient and keep it internally
-  virtual void Compute() override;
+  virtual void ComputeGradient() override;
 
+  // -- compute gradient only in specified cells
+  void ComputeGradient(const AmanziMesh::Entity_ID_List& ids,
+                       std::vector<AmanziGeometry::Point>& gradient);
+
+  // limited gradient
   // -- identify inflow boundaries (optional)
   void InitLimiter(Teuchos::RCP<const Epetra_MultiVector> flux);
+
   // -- limit gradient using boundary data
   virtual void ApplyLimiter(const std::vector<int>& bc_model,
                             const std::vector<double>& bc_value) override;
+
   // -- apply external limiter 
   virtual void ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter) override;
-
-  // -- calculate value of a reconstructed function at given point p
-  virtual double getValue(int c, const AmanziGeometry::Point& p) override;
-  double getValue(AmanziGeometry::Point& gradient, int c, const AmanziGeometry::Point& p);
-
-  // local reconstruction
-  // -- compute gradient in specified cells
-  void ComputeGradient(const AmanziMesh::Entity_ID_List& ids,
-                       std::vector<AmanziGeometry::Point>& gradient);
 
   // -- apply limiter in specified cells
   void ApplyLimiter(AmanziMesh::Entity_ID_List& ids,
                     std::vector<AmanziGeometry::Point>& gradient);
 
+  // polynomial values
+  // -- calculate value of a reconstructed function at given point p
+  virtual double getValue(int c, const AmanziGeometry::Point& p) override;
+  double getValue(AmanziGeometry::Point& gradient, int c, const AmanziGeometry::Point& p);
+
   // access
   Teuchos::RCP<CompositeVector> gradient() { return gradient_; }
   Teuchos::RCP<Epetra_Vector> limiter() { return limiter_; }
+
+  // modifiers
+  void set_gradient(const Teuchos::RCP<CompositeVector>& gradient) { gradient_ = gradient; }
  
  private:
   void PopulateLeastSquareSystem_(AmanziGeometry::Point& centroid,

@@ -126,7 +126,7 @@ endif()
 # HDF5 - http://www.hdfgroup.org/HDF5/
 ##############################################################################
 
-find_package(HDF5 1.8.0 REQUIRED COMPONENTS C HL)
+find_package(HDF5 1.8.18 REQUIRED COMPONENTS C HL)
 if (NOT HDF5_IS_PARALLEL) 
     message(WARNING "The HDF5 installation found in ${HDF5_DIR} is not "
                     "a parallel build. At this time, this installation "

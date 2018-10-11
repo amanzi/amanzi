@@ -796,6 +796,13 @@ else()
 
 endif()
 
+# Nanoflann is used by MSTK only
+if (ENABLE_MSTK_Mesh)
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_Nanoflann.cmake)
+  set(Nanoflann_INSTALL_PREFIX ${TPL_INSTALL_PREFIX})
+  set(Nanoflann_INCLUDE_DIRS "${Nanoflann_INSTALL_PREFIX}/include")
+endif()
+
 
 # ############################################################################ #
 #  Final steps
@@ -823,119 +830,4 @@ if (BUILD_DOCS)
   add_subdirectory(doc)
 endif()
 
-# Build the Amanzi build script
-option(BUILD_Amanzi "Add Amanzi to the build stack" FALSE)
-if (Amanzi_INSTALL_PREFIX)
-  set(BUILD_Amanzi TRUE)
-endif()
 
-if (BUILD_Amanzi)
-  set(Amanzi_CMAKE_ARGS ${Amanzi_CMAKE_COMPILER_ARGS})
-
-  # Enable the config report
-  append_set(Amanzi_CMAKE_ARGS -DENABLE_Config_Report:BOOL=TRUE)
-
-  # Install path
-  if (Amanzi_INSTALL_PREFIX)
-    append_set(Amanzi_CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:FILEPATH=${Amanzi_INSTALL_PREFIX})
-  endif()
-
-  # Build type
-  if (CMAKE_BUILD_TYPE)
-    append_set(Amanzi_CMAKE_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
-  endif() 
-
-  # Disable shared libraries and executable unless user has requested shared libs
-  set(Amanzi_SHARED_CMAKE_ARGS)
-  if (BUILD_SHARED_LIBS)
-    append_set(Amanzi_SHARED_CMAKE_ARGS -DBUILD_SHARED_LIBS:BOOL=TRUE)
-  else()  
-    append_set(Amanzi_SHARED_CMAKE_ARGS 
-               -DBUILD_SHARED_LIBS:BOOL=FALSE
-            -DPREFER_STATIC_LIBRARIES:BOOL=TRUE)
-    #        -DBUILD_STATIC_EXECUTABLES:BOOL=TRUE)
-  endif()      
-
-  append_set(Amanzi_CMAKE_ARGS ${Amanzi_SHARED_CMAKE_ARGS})
-
-  # MPI
-  set(Amanzi_MPI_CMAKE_ARGS)
-  if (MPI_EXEC)
-    append_set(Amanzi_MPI_CMAKE_ARGS -DMPI_EXEC:FILEPATH=${MPI_EXEC})
-  else()  
-    message(FATAL_ERROR "Enable Amanzi build requires MPI parallel run launch command\n"
-                        "Please define the this binary with:\n"
-                        "-DMPI_EXEC:FILEPATH=<binary>\n"
-                        "and re-run cmake")
-  endif()        
-
-  if (MPI_EXEC_MAX_NUMPROCS)
-    append_set(Amanzi_MPI_CMAKE_ARGS -DMPI_EXEC_MAX_NUMPROCS:STRING=${MPI_EXEC_NUMPROCS})
-  else()  
-    append_set(Amanzi_MPI_CMAKE_ARGS -DMPI_EXEC_MAX_NUMPROCS:STRING=4)
-  endif()        
-
-  if (MPI_EXEC_NUMPROCS_FLAG)
-    append_set(Amanzi_MPI_CMAKE_ARGS -DMPI_EXEC_NUMPROCS_FLAG:STRING=${MPI_EXEC_NUMPROCS_FLAG})
-  else()  
-    append_set(Amanzi_MPI_CMAKE_ARGS -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n)
-  endif()        
-
-  append_set(Amanzi_CMAKE_ARGS ${Amanzi_MPI_CMAKE_ARGS})
-  
-  append_set(Amanzi_CMAKE_ARGS ${Amanzi_TPL_CMAKE_ARGS})
-
-
-  append_set(Amanzi_CMAKE_ARGS
-             -DENABLE_Unstructured:BOOL=${ENABLE_Unstructured}
-             -DENABLE_Structured:BOOL=${ENABLE_Structured})
-
-  #print_variable(Amanzi_CMAKE_ARGS) 
-
-  if (NOT Amanzi_SOURCE_DIR)
-    message(FATAL_ERROR "Enable Amanzi build requires an Amanzi source directory."
-                        "Define this dorectory with:"
-                        "-DAmanzi_SOURCE_DIR:FILEPATH=<Amanzi source location>"
-                        "and re-run cmake")
-  endif()
-  message(STATUS "Will build Amanzi source located in ${Amanzi_SOURCE_DIR}")
-
-  # Now add amanzi to the build stack
-  include(ExternalProject)
-
-  set(Amanzi_DEPENDS 
-	${HDF5_BUILD_TARGET}
-	${ASCEMIO_BUILD_TARGET}
-	${XERCES_BUILD_TARGET}
-	${UnitTest_BUILD_TARGET}
-	${Boost_BUILD_TARGET}
-	${Trilinos_BUILD_TARGET})
-
-  if (ENABLE_Unstructured)
-    list(APPEND Amanzi_DEPENDS ${MSTK_BUILD_TARGET} ${MOAB_BUILD_TARGET})
-  endif()
-  
-  if (ENABLE_Structured)
-    list(APPEND Amanzi_DEPENDS ${CCSE_BUILD_TARGET})
-  endif()  
-
-  if (ENABLE_Silo)
-    list(APPEND Amanzi_DEPENDS ${Silo_BUILD_TARGET})
-  endif()
-
-  ExternalProject_Add(amanzi
-    DEPENDS ${Amanzi_DEPENDS}
-    PREFIX ${CMAKE_BINARY_DIR}/Amanzi
-    SOURCE_DIR ${Amanzi_SOURCE_DIR}
-    DOWNLOAD_COMMAND ""
-    UPDATE_COMMAND ""
-    CMAKE_ARGS	${Amanzi_CMAKE_ARGS}
-                ${Amanzi_CMAKE_C_COMPILER_ARGS}
-                -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-			    ${Amanzi_CMAKE_CXX_COMPILER_ARGS}
-                -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
-			    ${Amanzi_CMAKE_Fortran_COMPILER_ARGS}
-                -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
-    INSTALL_DIR ${Amanzi_INSTALL_PREFIX} )
-endif()        
-               

@@ -136,7 +136,7 @@
 
         <ParameterList name="water retention models">
           <ParameterList name="WRM for All">
-            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
             <Parameter name="van Genuchten alpha" type="double" value="0.000735"/>
             <Parameter name="van Genuchten m" type="double" value="0.31138"/>
@@ -222,7 +222,6 @@
   <!-- SOLVERS -->
   <ParameterList name="solvers">
     <ParameterList name="PCG with Hypre AMG">
-      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
         <Parameter name="maximum number of iterations" type="int" value="400"/>
@@ -230,7 +229,6 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="AztecOO">
-      <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
         <Parameter name="maximum number of iterations" type="int" value="200"/>

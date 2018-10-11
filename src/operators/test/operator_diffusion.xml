@@ -32,7 +32,6 @@
   <!-- SOLVERS -->
   <ParameterList name="solvers">
     <ParameterList name="AztecOO CG">
-      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
         <Parameter name="maximum number of iterations" type="int" value="60000"/>
@@ -41,7 +40,6 @@
     </ParameterList>
 
     <ParameterList name="GMRES">
-      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
         <Parameter name="maximum number of iterations" type="int" value="20"/>
@@ -53,7 +51,6 @@
     </ParameterList>
 
     <ParameterList name="Belos GMRES">
-      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="belos gmres"/>
       <ParameterList name="belos gmres parameters">
         <Parameter name="maximum number of iterations" type="int" value="20"/>
@@ -252,6 +249,7 @@
     <!-- DG (nonconformal) schemes -->
     <ParameterList name="diffusion operator dg">
       <Parameter name="method" type="string" value="dg modal"/>
+      <Parameter name="dg basis" type="string" value="regularized"/>
       <Parameter name="method order" type="int" value="2"/>
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema">

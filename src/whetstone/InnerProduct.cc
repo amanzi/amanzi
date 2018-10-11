@@ -14,7 +14,7 @@
 
 #include "DenseMatrix.hh"
 #include "InnerProduct.hh"
-#include "WhetStone_typedefs.hh"
+#include "WhetStoneDefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -193,7 +193,7 @@ double InnerProduct::CalculateStabilityScalar_(DenseMatrix& Mc)
 
 
 /* ******************************************************************
-* Conventional Gramm-Schimdt orthogonalization of colums of matrix N. 
+* Conventional Gramm-Schmidt orthogonalization of colums of matrix N. 
 ****************************************************************** */
 void InnerProduct::GrammSchmidt_(DenseMatrix& N)
 {

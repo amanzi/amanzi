@@ -168,7 +168,7 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
   Teuchos::RCP<Teuchos::ParameterList> physical_models =
       Teuchos::sublist(tp_list_, "physical models and assumptions");
   bool abs_perm = physical_models->get<bool>("permeability field is required", false);
-  std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single porosity");
+  std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single continuum");
   use_transport_porosity_ = physical_models->get<bool>("effective transport porosity", false);
 
   // require state fields when Flow PK is off
@@ -224,11 +224,9 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // require multiscale fields
   multiscale_porosity_ = false;
-  if (multiscale_model == "dual porosity") {
+  if (multiscale_model == "dual continuum discontinuous matrix") {
     multiscale_porosity_ = true;
-    Teuchos::RCP<Teuchos::ParameterList>
-        msp_list = Teuchos::sublist(tp_list_, "multiscale models", true);
-    msp_ = CreateMultiscaleTransportPorosityPartition(mesh_, msp_list);
+    msp_ = CreateMultiscaleTransportPorosityPartition(mesh_, tp_list_);
 
     if (!S->HasField("total_component_concentraion_matrix")) {
       std::vector<std::vector<std::string> > subfield_names(1);
@@ -237,6 +235,16 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
       S->RequireField("total_component_concentration_matrix", passwd_, subfield_names)
         ->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
+
+      // Secondary matrix nodes are collected here. We assume same order of species.
+      int nnodes, nnodes_tmp = NumberMatrixNodes(msp_);
+      mesh_->get_comm()->MaxAll(&nnodes_tmp, &nnodes, 1);
+      if (nnodes > 1) {
+        S->RequireField("total_component_concentration_matrix_aux", passwd_)
+          ->SetMesh(mesh_)->SetGhosted(false)
+          ->SetComponent("cell", AmanziMesh::CELL, ncomponents * (nnodes - 1));
+        S->GetField("total_component_concentration_matrix_aux", passwd_)->set_io_vis(false);
+      }
     }
 
     // -- water content in fractures
@@ -259,6 +267,12 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
       S->RequireField("prev_water_content_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
       S->GetField("prev_water_content_matrix", passwd_)->set_io_vis(false);
+    }
+
+    // -- porosity of matrix
+    if (!S->HasField("porosity_matrix")) {
+      S->RequireField("porosity_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
     }
   }
 
@@ -460,7 +474,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 #endif
   }
 
-  // Temporarily Transport hosts Henry law.
+  // Temporarily Transport PK hosts the Henry law.
   PrepareAirWaterPartitioning_();
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
@@ -487,13 +501,15 @@ void Transport_PK::InitializeFields_()
   InitializeField(S_.ptr(), passwd_, "darcy_flux_fracture", 0.0);
 
   InitializeFieldFromField_("water_content", "porosity", false);
-  InitializeFieldFromField_("prev_water_content", "water_content_matrix", false);
+  InitializeFieldFromField_("prev_water_content", "water_content", false);
 
-  InitializeFieldFromField_("water_content_matrix", "porosity", false);
+  InitializeFieldFromField_("water_content_matrix", "porosity_matrix", false);
   InitializeFieldFromField_("prev_water_content_matrix", "water_content_matrix", false);
 
   InitializeFieldFromField_("prev_saturation_liquid", "saturation_liquid", false);
   InitializeFieldFromField_("total_component_concentration_matrix", "total_component_concentration", false);
+
+  InitializeField(S_.ptr(), passwd_, "total_component_concentration_matrix_aux", 0.0);
 }
 
 
@@ -516,7 +532,7 @@ void Transport_PK::InitializeFieldFromField_(
         S_->GetField(field0, passwd_)->set_initialized();
 
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-            *vo_->os() << "initiliazed " << field0 << " to " << field1 << std::endl;
+            *vo_->os() << "initialized " << field0 << " to " << field1 << std::endl;
       }
     }
   }
@@ -565,18 +581,6 @@ double Transport_PK::StableTimeStep()
           total_outflux[c] = std::max(total_outflux[c], value);
         }
       }
-    }
-  }
-
-  // modify estimate for other models
-  if (multiscale_porosity_) {
-    const Epetra_MultiVector& wcm_prev = *S_->GetFieldData("prev_water_content_matrix")->ViewComponent("cell");
-    const Epetra_MultiVector& wcm = *S_->GetFieldData("water_content_matrix")->ViewComponent("cell");
-
-    double dtg = S_->final_time() - S_->initial_time();
-    for (int c = 0; c < ncells_owned; ++c) {
-      double flux_liquid = (wcm[0][c] - wcm_prev[0][c]) / dtg;
-      msp_->second[(*msp_->first)[c]]->UpdateStabilityOutflux(flux_liquid, &total_outflux[c]);
     }
   }
 
@@ -746,7 +750,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       }
     }
 
-    // add multiscale model
+    // add implicit multiscale model
     if (multiscale_porosity_) {
       double t_int1 = t_old + dt_sum - dt_cycle;
       double t_int2 = t_old + dt_sum;
@@ -986,15 +990,15 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
 
 /* ******************************************************************* 
-* Add multiscale porosity model on sub interval [t_int1, t_int2]:
+* Add implict time discretization of the multiscale porosity model on 
+* time sub-interval [t_int1, t_int2]:
 *   d(VWC_f)/dt -= G_s, d(VWC_m) = G_s 
 *   G_s = G_w C^* + omega_s (C_f - C_m).
 ******************************************************************* */
 void Transport_PK::AddMultiscalePorosity_(
     double t_old, double t_new, double t_int1, double t_int2)
 {
-  const Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
-  Epetra_MultiVector& tcc = *tcc_tmp->ViewComponent("cell");
+  Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell");
   Epetra_MultiVector& tcc_matrix = 
      *S_->GetFieldData("total_component_concentration_matrix", passwd_)->ViewComponent("cell");
 
@@ -1004,10 +1008,21 @@ void Transport_PK::AddMultiscalePorosity_(
   const Epetra_MultiVector& wcm_prev = *S_->GetFieldData("prev_water_content_matrix")->ViewComponent("cell");
   const Epetra_MultiVector& wcm = *S_->GetFieldData("water_content_matrix")->ViewComponent("cell");
 
-  double flux_solute, flux_liquid, f1, f2, f3;
+  // multi-node matrix requires more input data
+  const Epetra_MultiVector& phi_matrix = *S_->GetFieldData("porosity_matrix")->ViewComponent("cell");
+
+  int nnodes(1);
+  Teuchos::RCP<Epetra_MultiVector> tcc_matrix_aux;
+  if (S_->HasField("total_component_concentration_matrix_aux")) {
+    tcc_matrix_aux = S_->GetFieldData("total_component_concentration_matrix_aux", passwd_)->ViewComponent("cell");
+    nnodes = tcc_matrix_aux->NumVectors() + 1; 
+  }
+  WhetStone::DenseVector tcc_m(nnodes);
+
+  double flux_liquid, flux_solute, wcm0, wcm1, wcf0, wcf1;
+  double dtg, dts, t1, t2, tmp0, tmp1, tfp0, tfp1, a, b;
   std::vector<AmanziMesh::Entity_ID> block;
 
-  double dtg, dts, t1, t2, wcm0, wcm1, wcf0, wcf1,tmp0, tmp1, a, b;
   dtg = t_new - t_old;
   dts = t_int2 - t_int1;
   t1 = t_int1 - t_old;
@@ -1021,22 +1036,33 @@ void Transport_PK::AddMultiscalePorosity_(
     wcf0 = wcf_prev[0][c];
     wcf1 = wcf[0][c];
   
-    a = t2 / dtg;
-    tmp1 = a * wcf1 + (1.0 - a) * wcf0;
-    f1 = dts / tmp1;
+    a = t1 / dtg;
+    b = t2 / dtg;
 
-    b = t1 / dtg;
-    tmp0 = b * wcm1 + (1.0 - b) * wcm0;
-    tmp1 = a * wcm1 + (1.0 - a) * wcm0;
+    tfp0 = a * wcf1 + (1.0 - a) * wcf0;
+    tfp1 = b * wcf1 + (1.0 - b) * wcf0;
 
-    f2 = dts / tmp1;
-    f3 = tmp0 / tmp1;
+    tmp0 = a * wcm1 + (1.0 - a) * wcm0;
+    tmp1 = b * wcm1 + (1.0 - b) * wcm0;
+
+    double phim = phi_matrix[0][c];
 
     for (int i = 0; i < num_aqueous; ++i) {
+      tcc_m(0) = tcc_matrix[i][c];
+      if (tcc_matrix_aux != Teuchos::null) {
+        for (int n = 0; n < nnodes - 1; ++n) 
+          tcc_m(n + 1) = (*tcc_matrix_aux)[n][c];
+      }
+
       flux_solute = msp_->second[(*msp_->first)[c]]->ComputeSoluteFlux(
-          flux_liquid, tcc_prev[i][c], tcc_matrix[i][c]);
-      tcc[i][c] -= flux_solute * f1;
-      tcc_matrix[i][c] = tcc_matrix[i][c] * f3 + flux_solute * f2;
+          flux_liquid, tcc_next[i][c], tcc_m, 
+          i, dts, tfp0, tfp1, tmp0, tmp1, phim);
+
+      tcc_matrix[i][c] = tcc_m(0);
+      if (tcc_matrix_aux != Teuchos::null) {
+        for (int n = 0; n < nnodes - 1; ++n) 
+          (*tcc_matrix_aux)[n][c] = tcc_m(n + 1);
+      }
     }
   }
 }
@@ -1554,7 +1580,7 @@ void Transport_PK::IdentifyUpwindCells()
     S_->GetFieldData("darcy_flux_fracture", passwd_)->ScatterMasterToGhosted();
 
     for (int c = 0; c < ncells_wghost; c++) {
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      mesh_->cell_get_faces(c, &faces);
 
       for (int i = 0; i < faces.size(); i++) {
         int f = faces[i];

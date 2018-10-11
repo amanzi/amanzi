@@ -412,10 +412,10 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
         }
          
         if (!haveOp) {
-          ThrowErrorMissattr_("regions", "element", "operation", "logical");
+          ThrowErrorMissing_("regions", "element", "operation", "logical");
         }
         if (!haveRL) {
-          ThrowErrorMissattr_("regions", "element", "region_list", "logical");
+          ThrowErrorMissing_("regions", "element", "region_list", "logical");
         }
       }
 

@@ -145,7 +145,7 @@ void RunTest(std::string op_list_name) {
   // Test SPD properties of the matrix and preconditioner.
   VerificationCV ver(global_op);
   ver.CheckMatrixSPD();
-  ver.CheckPreconditionerSPD();
+  ver.CheckPreconditionerSPD(1e-11);
 
   // solve the problem
   ParameterList lop_list = plist.sublist("solvers").sublist("AztecOO CG").sublist("pcg parameters");
@@ -156,6 +156,8 @@ void RunTest(std::string op_list_name) {
   CompositeVector rhs = *global_op->rhs();
   solution.PutScalar(0.0);
   int ierr = solver.ApplyInverse(rhs, solution);
+
+  // ver.CheckResidual(solution, 1.0e-12);
 
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 

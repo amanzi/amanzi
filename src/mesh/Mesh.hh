@@ -62,6 +62,7 @@ NOTE: Lazy definition of the cache itself is necessarily "mutable".
 #include "Epetra_Map.h"
 #include "Epetra_MpiComm.h"
 #include "Epetra_Import.h"
+#include "nanoflann.hpp"
 
 #include "errors.hh"
 #include "VerboseObject.hh"
@@ -70,8 +71,9 @@ NOTE: Lazy definition of the cache itself is necessarily "mutable".
 #include "Point.hh"
 #include "Region.hh"
 
-#include "MeshDefs.hh"
 #include "CellTopology.hh"
+#include "KDTree.hh"
+#include "MeshDefs.hh"
 
 // set to 0 to avoid using cache for profiling or debugging
 #define AMANZI_MESH_CACHE_VARS 1
@@ -105,7 +107,8 @@ class Mesh {
     geometric_model_(Teuchos::null),
     logical_(false),
     vo_(vo),
-    comm_(NULL) {};
+    comm_(NULL),
+    kdtree_faces_initialized_(false) {};
 
   // virtual destructor
   virtual ~Mesh() {};
@@ -768,9 +771,7 @@ protected:
   //
   // Default implementations use _internal() methods below.
   virtual
-  void cache_cell2face_info_() const;
-  virtual
-  void cache_face2cell_info_() const;
+  void cache_cell_face_info_() const;
   virtual
   void cache_cell2edge_info_() const;
   virtual
@@ -839,9 +840,6 @@ protected:
                              double *length,
                              AmanziGeometry::Point *edge_vector) const;
 
- private:
-  int FindPosition_(Entity_ID v, Entity_ID_List nodes) const;
-
  public:
   void PrintMeshStatistics() const;
 
@@ -880,8 +878,12 @@ protected:
   
   // -- topology
   mutable std::vector<Entity_ID_List> cell_face_ids_;
-  mutable std::vector< std::vector<int> > cell_face_dirs_;
+  mutable std::vector< std::vector<int> > cell_face_dirs_;  // 1 or -1
+
+  // 1s complement if face is pointing out of cell; cannot use 0 as
+  // cellid can be 0
   mutable std::vector<Entity_ID_List> face_cell_ids_;
+
   mutable std::vector< std::vector<Parallel_type> > face_cell_ptype_;
   mutable std::vector<Entity_ID_List> cell_edge_ids_;
   mutable std::vector< std::vector<int> > cell_2D_edge_dirs_;
@@ -902,6 +904,10 @@ protected:
 
   // friend classes change the cache?  why is this necessary? --etc
   friend class MeshEmbeddedLogical;
+
+  // fast search tools
+  mutable bool kdtree_faces_initialized_;
+  mutable KDTree kdtree_faces_;
 };
 
 

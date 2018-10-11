@@ -40,7 +40,7 @@ Simulator* Create(const std::string& input_filename, const std::string& output_p
   XMLCh xstr[100];
   DOMElement* element = doc->getDocumentElement();
   XMLString::transcode(element->getTagName(), str, 99);
-  string version;
+  std::string version;
   if (strcmp(str, "amanzi_input") == 0) {
     version = "v2";
   } else {
@@ -51,7 +51,7 @@ Simulator* Create(const std::string& input_filename, const std::string& output_p
   }
 
   // Figure out the type of input (structured, unstructured).
-  string type;
+  std::string type;
   if (version == "v2") {
     XMLString::transcode("type", xstr, 99);
     if (not element->hasAttribute(xstr)) 
@@ -59,20 +59,20 @@ Simulator* Create(const std::string& input_filename, const std::string& output_p
     XMLString::transcode(element->getAttribute(xstr), str, 99);
     type = str;
   } else {
-    // We check the parameter lists for the Structured tag. If we don't 
-    // find this, we assume it to be unstructured.
-    type = "unstructured";
-    XMLString::transcode("ParameterList", xstr, 99);
-    DOMNodeList* nodes = doc->getElementsByTagName(xstr);
-    for (int i = 0; i < nodes->getLength(); ++i) {
-      DOMElement* element = static_cast<DOMElement*>(nodes->item(i));
-      if (element != NULL) {
-        XMLString::transcode("name", xstr, 99);
-        XMLString::transcode(element->getAttribute(xstr), str, 99);
-        if (strcmp(str, "Structured") == 0) {
-          type = "structured";
-          break;
-        }
+    // We check the parameter lists for the unstructured tag. If we don't 
+    // find this, we assume it to be structured.
+    type = "structured";
+    XMLString::transcode("name", xstr, 99);
+
+    DOMNodeList* children = doc->getDocumentElement()->getChildNodes();
+    for (int i = 0; i < children->getLength(); ++i) {
+      DOMNode* child = children->item(i);
+      if (child->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+      DOMElement* element = static_cast<DOMElement*>(child);
+      XMLString::transcode(element->getAttribute(xstr), str, 99);
+      if (strcmp(str, "Native Unstructured Input") == 0) {
+        type = "unstructured";
+        break;
       }
     }
   }

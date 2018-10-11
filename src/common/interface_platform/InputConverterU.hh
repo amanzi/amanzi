@@ -163,6 +163,8 @@ class InputConverterU : public InputConverter {
   void MergeInitialConditionsLists_(Teuchos::ParameterList& plist);
 
   // -- miscalleneous
+  bool FindNameInVector_(const std::string& name, const std::vector<std::string>& list); 
+  std::string CreateNameFromVector_(const std::vector<std::string>& list); 
   bool WeightVolumeSubmodel_(const std::vector<std::string>& regions);
   void PrintStatistics_();
 

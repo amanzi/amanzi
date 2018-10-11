@@ -29,9 +29,7 @@ class DenseVector {
  public:
   DenseVector() : m_(0), mem_(0), data_(NULL) {};
 
-  explicit DenseVector(int mrow) {
-    m_ = mrow;
-    mem_ = mrow;
+  explicit DenseVector(int mrow) : m_(mrow), mem_(mrow) {
     data_ = new double[mem_];
   }
 
@@ -57,33 +55,10 @@ class DenseVector {
 
   // primary members 
   // -- smart memory management: preserves data only for vector reduction
-  void Reshape(int mrow) {
-    m_ = mrow;
-
-    if (mem_ < m_) {
-      if (data_ != NULL) {
-        delete [] data_;
-      }
-      mem_ = m_;
-      data_ = new double[mem_];
-    }
-  }
+  void Reshape(int mrow);
 
   // -- initialization
-  DenseVector& operator=(const DenseVector& B) {
-    if (this != &B) {
-      if (m_ != B.m_ && B.m_ != 0) {
-        if (data_ != NULL) {
-          delete [] data_;
-        }
-        data_ = new double[B.m_];
-      }
-      m_ = B.m_;
-      const double *b = B.Values();
-      for (int i = 0; i < m_; ++i) data_[i] = b[i];
-    }
-    return (*this);
-  }
+  DenseVector& operator=(const DenseVector& B);
 
   void PutScalar(double val) {
     for (int i = 0; i < m_; i++) data_[i] = val;
@@ -129,7 +104,8 @@ class DenseVector {
   DenseVector& operator=(double val) {
     if (data_ == NULL) {
       m_ = 1;
-      data_ = new double[1];
+      mem_ = 1;
+      data_ = new double[mem_];
     }
     for (int i = 0; i < m_; ++i) data_[i] = val;
     return *this;
@@ -143,9 +119,9 @@ class DenseVector {
   }
 
   // -- vector type behaviour (no checks for compatiility) 
-  DenseVector& operator+=(const DenseVector& A) {
-    const double* dataA = A.Values();  
-    for (int i = 0; i < m_; ++i) data_[i] += dataA[i];
+  DenseVector& operator+=(const DenseVector& v) {
+    const double* datav = v.Values();  
+    for (int i = 0; i < m_; ++i) data_[i] += datav[i];
     return *this;
   }
 
@@ -155,13 +131,37 @@ class DenseVector {
     return *this;
   }
 
+  // compatibility members
+  // -- for nonlinear solvers: this = sa * A + sthis * this
+  DenseVector& Update(double sa, const DenseVector& A, double sthis) {
+    const double* dataA = A.Values();  
+    for (int i = 0; i < m_; ++i) data_[i] = sa * dataA[i] + sthis * data_[i];
+    return *this;
+  }
+
+  // -- for nonlinear solvers: this = sa * A + sb * B + sthis * this
+  DenseVector& Update(double sa, const DenseVector& A,
+                      double sb, const DenseVector& B, double sthis) {
+    const double* dataA = A.Values();  
+    const double* dataB = B.Values();  
+    for (int i = 0; i < m_; ++i) {
+      data_[i] = sa * dataA[i] + sb * dataB[i] + sthis * data_[i];
+    }
+    return *this;
+  }
+
+  // -- scale
+  void Scale(double val) {
+    for (int i = 0; i < m_; ++i) data_[i] *= val;
+  }
+
   // access to private data
   int NumRows() const { return m_; }
   double* Values() { return data_; }
   const double* Values() const { return data_; }
 
   // output 
-  friend std::ostream& operator << (std::ostream& os, DenseVector& A) {
+  friend std::ostream& operator << (std::ostream& os, const DenseVector& A) {
     for (int i = 0; i < A.NumRows(); i++)
         os << std::setw(12) << std::setprecision(12) << A(i) << " ";
     os << "\n";
@@ -169,18 +169,18 @@ class DenseVector {
   }
 
   // First level routines
-  void Norm2(double* result) {
+  void Norm2(double* result) const {
     *result = 0.0;
     for (int i = 0; i < m_; i++) *result += data_[i] * data_[i];
     *result = std::pow(*result, 0.5);
   }
 
-  double NormMax() const {
-    double tmp(0.0);
+  // -- we use 'inf' instead of 'max' for compatibility with solvers
+  void NormInf(double* result) const {
+    *result = 0.0;
     for (int i = 0; i < m_; ++i) {
-      tmp = std::max(tmp, fabs(data_[i]));
+      *result = std::max(*result, std::fabs(data_[i]));
     }
-    return tmp;
   }
 
   void SwapRows(int m1, int m2) {

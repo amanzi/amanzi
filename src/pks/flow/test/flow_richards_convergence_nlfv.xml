@@ -139,11 +139,11 @@
 
         <ParameterList name="water retention models">
           <ParameterList name="WRM for Material 1 Region">
-            <Parameter name="region" type="string" value="Material 1 Region"/>
+            <Parameter name="regions" type="Array(string)" value="{Material 1 Region}"/>
             <Parameter name="water retention model" type="string" value="fake"/>
           </ParameterList>
           <ParameterList name="WRM for Material 2 Region">
-            <Parameter name="region" type="string" value="Material 2 Region"/>
+            <Parameter name="regions" type="Array(string)" value="{Material 2 Region}"/>
             <Parameter name="water retention model" type="string" value="fake"/>
           </ParameterList>
         </ParameterList>
@@ -188,7 +188,6 @@
   <!-- SOLVERS -->
   <ParameterList name="solvers">
     <ParameterList name="PCG with Hypre AMG">
-      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
         <Parameter name="maximum number of iterations" type="int" value="400"/>

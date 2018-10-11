@@ -28,12 +28,6 @@ class WRM {
   virtual double capillaryPressure(double s) const = 0;
   virtual double residualSaturation() const = 0;
   virtual double dKdPc(double pc) const = 0;
-
-  const std::string region() const { return region_; };
-
- protected:
-  void set_region(std::string region) { region_ = region; };
-  std::string region_;
 };
 
 typedef double(WRM::*KRelFn)(double pc) const; 

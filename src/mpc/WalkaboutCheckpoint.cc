@@ -23,11 +23,11 @@
 #include "errors.hh"
 #include "Darcy_PK.hh"
 #include "Mesh.hh"
-#include "MeshUtils.hh"
 #include "OperatorDefs.hh"
 #include "ParallelCommunication.hh"
 #include "ReconstructionCell.hh"
 #include "Tensor.hh"
+#include "WhetStoneMeshUtils.hh"
 
 #include "WalkaboutCheckpoint.hh"
 
@@ -240,7 +240,7 @@ void WalkaboutCheckpoint::CalculateData(
 
   Operators::ReconstructionCell lifting(mesh);
   lifting.Init(p, plist);
-  lifting.Compute();
+  lifting.ComputeGradient();
 
   // Populate state data at mesh nodes
   porosity.clear();

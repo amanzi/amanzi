@@ -1,9 +1,9 @@
 //
 // Mesh
 //
-// Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-// Amanzi is released under the three-clause BSD License. 
-// The terms of use and "as is" disclaimer for this license are 
+// Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+// Amanzi is released under the three-clause BSD License.
+// The terms of use and "as is" disclaimer for this license are
 // provided in the top-level COPYRIGHT file.
 //
 // Base mesh class for Amanzi
@@ -54,51 +54,39 @@
 namespace Amanzi {
 namespace AmanziMesh {
 
-// Gather and cache cell to face connectivity info.
+// Gather and cache cell to face and face to cell connectivity
+// info. Both are gathered simultaneously because we assume that if we
+// asked for faces we are likely to need both cell->face and
+// face->cell info and in the rare case that we don't, we are ready to
+// pay the storage price.
 //
-// sets up: cell_face_ids_, cell_face_dirs_
+// Sets up: cell_face_ids_, cell_face_dirs_, face_cell_ids_, face_cell_ptype_
+
 void
-Mesh::cache_cell2face_info_() const
+Mesh::cache_cell_face_info_() const
 {
-  int ncells = num_entities(CELL,Parallel_type::ALL);
+  int ncells = num_entities(CELL, Parallel_type::ALL);
   cell_face_ids_.resize(ncells);
   cell_face_dirs_.resize(ncells);
 
-  for (int c = 0; c < ncells; c++)
-    cell_get_faces_and_dirs_internal_(c, &(cell_face_ids_[c]),
-            &(cell_face_dirs_[c]), false);
-
-  cell2face_info_cached_ = true;
-  faces_requested_ = true;
-}
-
-
-// Gather and cache face to cell connectivity info.
-//
-// sets up: face_cell_ids_, face_cell_ptype_
-void
-Mesh::cache_face2cell_info_() const
-{
-  int nfaces = num_entities(FACE,Parallel_type::ALL);
+  int nfaces = num_entities(FACE, Parallel_type::ALL);
   face_cell_ids_.resize(nfaces);
   face_cell_ptype_.resize(nfaces);
 
-  std::vector<Entity_ID> fcells;
+  for (int c = 0; c < ncells; c++) {
+    cell_get_faces_and_dirs_internal_(c, &(cell_face_ids_[c]),
+            &(cell_face_dirs_[c]), false);
 
-  for (int f = 0; f < nfaces; f++) {
-    face_get_cells_internal_(f, Parallel_type::ALL, &fcells);
-    int n = fcells.size();
-
-    face_cell_ids_[f].resize(n);
-    face_cell_ptype_[f].resize(n);
-
-    for (int i = 0; i < n; i++) {
-      int c = fcells[i];
-      face_cell_ids_[f][i] = c;
-      face_cell_ptype_[f][i] = entity_get_ptype(CELL,c);
+    int nf = cell_face_ids_[c].size();
+    for (int jf = 0; jf < nf; jf++) {
+      Entity_ID f = cell_face_ids_[c][jf];
+      int dir = cell_face_dirs_[c][jf];
+      face_cell_ids_[f].push_back(dir > 0 ? c : ~c); // store 1s complement of c if dir is -ve
+      face_cell_ptype_[f].push_back(entity_get_ptype(CELL, c));
     }
   }
 
+  cell2face_info_cached_ = true;
   face2cell_info_cached_ = true;
   faces_requested_ = true;
 }
@@ -160,7 +148,7 @@ unsigned int
 Mesh::cell_get_num_faces(const Entity_ID cellid) const
 {
 #if AMANZI_MESH_CACHE_VARS != 0
-  if (!cell2face_info_cached_) cache_cell2face_info_();
+  if (!cell2face_info_cached_) cache_cell_face_info_();
   return cell_face_ids_[cellid].size();
 
 #else  // Non-cached version
@@ -225,7 +213,7 @@ Mesh::cell_get_faces_and_dirs(const Entity_ID cellid,
                               const bool ordered) const
 {
 #if AMANZI_MESH_CACHE_VARS != 0
-  if (!cell2face_info_cached_) cache_cell2face_info_();
+  if (!cell2face_info_cached_) cache_cell_face_info_();
 
   if (ordered)
     cell_get_faces_and_dirs_internal_(cellid, faceids, face_dirs, ordered);
@@ -272,30 +260,21 @@ void Mesh::face_get_cells(const Entity_ID faceid, const Parallel_type ptype,
                           Entity_ID_List *cellids) const
 {
 #if AMANZI_MESH_CACHE_VARS != 0
-  if (!face2cell_info_cached_) cache_face2cell_info_();
+  if (!face2cell_info_cached_) cache_cell_face_info_();
 
   cellids->clear();
   int n = face_cell_ptype_[faceid].size();
 
-  switch (ptype) {
-    case Parallel_type::ALL:
-      for (int i = 0; i < n; i++)
-        if (face_cell_ptype_[faceid][i] != Parallel_type::PTYPE_UNKNOWN)
-          cellids->push_back(face_cell_ids_[faceid][i]);
-      break;
-    case Parallel_type::OWNED:
-      for (int i = 0; i < n; i++)
-        if (face_cell_ptype_[faceid][i] == Parallel_type::OWNED)
-          cellids->push_back(face_cell_ids_[faceid][i]);
-      break;
-    case Parallel_type::GHOST:
-      for (int i = 0; i < n; i++)
-        if (face_cell_ptype_[faceid][i] == Parallel_type::GHOST)
-          cellids->push_back(face_cell_ids_[faceid][i]);
-      break;
-    default:
-      break;
-  }
+  for (int i = 0; i < n; i++) {
+    Parallel_type cell_ptype = face_cell_ptype_[faceid][i];
+    if (cell_ptype == Parallel_type::PTYPE_UNKNOWN) continue;
+
+    int c = face_cell_ids_[faceid][i];
+    if (std::signbit(c)) c = ~c;  // strip dir info by taking 1s complement
+
+    if (ptype == Parallel_type::ALL || ptype == cell_ptype)
+      cellids->push_back(c);
+  } 
 
 #else  // Non-cached version
   Entity_ID_List fcells;
@@ -612,9 +591,6 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
 
   if (manifold_dim_ == 3) {
     // 3D Elements with possibly curved faces
-    // We have to build a description of the element topology
-    // and send it into the polyhedron volume and centroid
-    // calculation routine
 
     face_get_coordinates(faceid,&fcoords);
 
@@ -936,57 +912,32 @@ Mesh::face_normal(const Entity_ID faceid,
       fnormals = &(face_normals_[faceid]);
   }
 
-  Entity_ID refcell = cellid;
-  int irefcell = -1;
+  AMANZI_ASSERT(fnormals->size() > 0);
+
   if (cellid == -1) {
-    irefcell = 0;  // use first cell connected to face as reference cell
-    refcell = face_cell_ids_[faceid][irefcell];
+    // Return the natural normal. This is the normal with respect to
+    // the first cell, appropriately adjusted according to whether the
+    // face is pointing into the cell (-ve cell id) or out
+
+    int c = face_cell_ids_[faceid][0];
+    return std::signbit(c) ? -(*fnormals)[0] : (*fnormals)[0];
   } else {
     // Find the index of 'cellid' in list of cells connected to face
 
+    int dir;
+    int irefcell;
     int nfc = face_cell_ids_[faceid].size();
-    for (irefcell = 0; irefcell < nfc; irefcell++)
-      if (face_cell_ids_[faceid][irefcell] == cellid)
+    for (irefcell = 0; irefcell < nfc; irefcell++) {
+      int c = face_cell_ids_[faceid][irefcell];
+      if (c == cellid || ~c == cellid) {
+        dir = std::signbit(c) ? -1 : 1;
         break;
-    AMANZI_ASSERT(irefcell < nfc);
-  }
-
-  // Determine the direction in which the reference cell uses the edge
-  
-  Entity_ID_List faceids;
-  std::vector<int> face_dirs;
-  
-  cell_get_faces_and_dirs(refcell, &faceids, &face_dirs);
-  
-  int nf = faceids.size();
-  bool found = false;
-  int dir = 1;
-  for (int i = 0; i < nf; i++)
-    if (faceids[i] == faceid) {
-      dir = face_dirs[i];
-      found = true;
-      break;
+      }
     }
-  AMANZI_ASSERT(found);
-
-  if (orientation) *orientation = dir;  // if orientation was requested
-
-    
-  if (cellid == -1) {
-    // Since fnormals[0] always points out of
-    // face_cell_ids_[faceid][0], to get the natural normal of the
-    // face, we have to adjust according to direction in which the
-    // edge uses the face
-
-    // Flip fnormals[0] if necessary and return
-    return (dir == 1) ? (*fnormals)[0] : -(*fnormals)[0];
-  } else {
+    AMANZI_ASSERT(irefcell < nfc);
+    if (orientation) *orientation = dir;  // if orientation was requested
     return (*fnormals)[irefcell];
   }
-
-  // Should never come here
-  AmanziGeometry::Point zero_normal(space_dim_);
-  return zero_normal;
 }
 
 
@@ -1114,46 +1065,45 @@ Mesh::valid_set_name(std::string name, Entity_kind kind) const
     Exceptions::amanzi_throw(mesg);
   }
 
-  unsigned int ngr = geometric_model_->RegionSize();
-  for (int i = 0; i < ngr; i++) {
-    Teuchos::RCP<const AmanziGeometry::Region> rgn = geometric_model_->FindRegion(i);
-
-    unsigned int rdim = rgn->manifold_dimension();
-
-    if (rgn->name() == name) {
-      // For regions of type Color Function, the dimension
-      // parameter is not guaranteed to be correct
-      if (rgn->type() == AmanziGeometry::COLORFUNCTION) return true;
-
-      // For regions of type Labeled set, extract some more info and verify
-      if (rgn->type() == AmanziGeometry::LABELEDSET) {
-        Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
-            Teuchos::rcp_dynamic_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
-        std::string entity_type = lsrgn->entity_str();
-
-        if ((kind == CELL && entity_type == "CELL") ||
-            (kind == FACE && entity_type == "FACE") ||
-            (kind == EDGE && entity_type == "EDGE") ||
-            (kind == NODE && entity_type == "NODE"))
-          return true;
-        else
-          return false;
-      }
-
-      // If we are looking for a cell set the region has to be
-      // of the same topological dimension as the cells or it
-      // has to be a point region
-      if (kind == CELL && (rdim >= manifold_dim_ || rdim == 1 || rdim == 0)) return true;
-
-      // If we are looking for a side set, the region has to be
-      // one topological dimension less than the cells
-      if (kind == FACE && (rdim >= manifold_dim_-1 || rdim == 0)) return true;
-
-      // If we are looking for a node set, the region can be of any
-      // dimension upto the spatial dimension of the domain
-      if (kind == NODE) return true;
-    }
+  Teuchos::RCP<const AmanziGeometry::Region> rgn;
+  try {
+    rgn = geometric_model_->FindRegion(name);
+  } catch (...) {
+    return false;
   }
+
+  unsigned int rdim = rgn->manifold_dimension();
+
+  // For regions of type Color Function, the dimension
+  // parameter is not guaranteed to be correct
+  if (rgn->type() == AmanziGeometry::COLORFUNCTION) return true;
+
+  // For regions of type Labeled set, extract some more info and verify
+  if (rgn->type() == AmanziGeometry::LABELEDSET) {
+    auto lsrgn = Teuchos::rcp_dynamic_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
+    std::string entity_type = lsrgn->entity_str();
+
+    if ((kind == CELL && entity_type == "CELL") ||
+        (kind == FACE && entity_type == "FACE") ||
+        (kind == EDGE && entity_type == "EDGE") ||
+        (kind == NODE && entity_type == "NODE"))
+      return true;
+    else
+      return false;
+  }
+
+  // If we are looking for a cell set the region has to be
+  // of the same topological dimension as the cells or it
+  // has to be a point region
+  if (kind == CELL && (rdim >= manifold_dim_ || rdim == 1 || rdim == 0)) return true;
+
+  // If we are looking for a side set, the region has to be
+  // one topological dimension less than the cells
+  if (kind == FACE && (rdim >= manifold_dim_-1 || rdim == 0)) return true;
+
+  // If we are looking for a node set, the region can be of any
+  // dimension upto the spatial dimension of the domain
+  if (kind == NODE) return true;
 
   return false;
 }
@@ -1401,7 +1351,7 @@ Mesh::build_columns(const std::string& setname) const
 {
 
   if (columns_built_) return 0;
-  
+
   // Allocate space and initialize.
   int nn = num_entities(NODE,Parallel_type::ALL);
   int nf = num_entities(FACE,Parallel_type::ALL);
@@ -1419,7 +1369,7 @@ Mesh::build_columns(const std::string& setname) const
 
   Entity_ID_List top_faces;
   get_set_entities(setname, FACE, Parallel_type::ALL, &top_faces);
-  
+
   int ncolumns = top_faces.size();
   num_owned_cols_ = get_set_size(setname, FACE, Parallel_type::OWNED);
 
@@ -1471,7 +1421,7 @@ int
 Mesh::build_columns() const
 {
   if (columns_built_) return 1;
-  
+
   // Allocate space and initialize.
   int nn = num_entities(NODE,Parallel_type::ALL);
   int nf = num_entities(FACE,Parallel_type::ALL);
@@ -1527,7 +1477,7 @@ Mesh::build_columns() const
   columns_built_ = (min_success == 1);
   return columns_built_ ? 1 : 0;
 }
-    
+
 
 int
 Mesh::build_single_column_(int colnum, Entity_ID top_face) const
@@ -1558,7 +1508,7 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
       std::cerr << "A column contains cells from different mesh partitions" << std::endl;
       success = 0;
       break;
-      
+
     }
     columnID_[cur_cell] = colnum;
     colcells.push_back(cur_cell);
@@ -1599,9 +1549,9 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
     face_get_cells(bot_face,Parallel_type::ALL,&fcells2);
     if (fcells2.size() == 2) {
       if (cell_cellbelow_[cur_cell] != -1) {  // intersecting column of cells
-	std::cerr << "Intersecting column of cells\n";
-	success = 0;
-	break;
+        std::cerr << "Intersecting column of cells\n";
+        success = 0;
+        break;
       }
 
       if (fcells2[0] == cur_cell) {
@@ -1615,9 +1565,9 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
         cur_cell = fcells2[0];
       }
       else {
-	std::cerr << "Unlikely problem in face to cell connectivity\n";
-	success = 0;
-	break;
+        std::cerr << "Unlikely problem in face to cell connectivity\n";
+        success = 0;
+        break;
       }
     }
     else {
@@ -1706,9 +1656,9 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
   }
 
   return success;
-}  
+}
 
-    
+
 std::string
 Mesh::cell_type_to_name(const Cell_type type)
 {

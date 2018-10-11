@@ -30,29 +30,29 @@ namespace WhetStone {
 void MeshMaps_VEM::VelocityCell(
     int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
-  // LeastSquareProjector_Cell_(order_, c, vf, vc);
-
-  auto moments = std::make_shared<DenseVector>();
+  Polynomial moments(d_, std::max(0, order_ - 2));
 
   WhetStone::MFD3DFactory factory;
   auto mfd = factory.CreateMFD3D(mesh0_, method_, order_);
 
-  if (projector_ == "H1 harmonic") {
-    auto mfd_tmp = dynamic_cast<MFD3D_CrouzeixRaviart*>(&*mfd);
-    mfd_tmp->H1CellHarmonic(c, vf, moments, vc);
-  }
-  else if (projector_ == "L2 harmonic") {
-    auto mfd_tmp = dynamic_cast<MFD3D_CrouzeixRaviart*>(&*mfd);
-    mfd_tmp->L2CellHarmonic(c, vf, moments, vc);
-  } 
-  else if (projector_ == "H1") {
-    mfd->H1Cell(c, vf, moments, vc);
-  }
-  else if (projector_ == "L2") {
-    mfd->L2Cell(c, vf, moments, vc);
-  }
-  else {
-    AMANZI_ASSERT(false);
+  vc.resize(d_);
+
+  if (projector_ == "least square") {
+    LeastSquareProjector_Cell_(order_, c, vf, vc);
+  } else {
+    for (int i = 0; i < d_; ++i) {
+      std::vector<Polynomial> vvf;
+      for (int n = 0; n < vf.size(); ++n) {
+        vvf.push_back(vf[n][i]);
+      }
+    
+      if (projector_ == "H1") {
+        mfd->H1Cell(c, vvf, moments, vc[i]);
+      }
+      else if (projector_ == "L2") {
+        mfd->L2Cell(c, vvf, moments, vc[i]);
+      }
+    }
   }
 }
 
@@ -84,7 +84,7 @@ void MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
     mfd.set_order(order_);
 
     AmanziGeometry::Point p0(mesh1_->face_centroid(f) - mesh0_->face_centroid(f));
-    mfd.H1FaceHarmonic(f, p0, ve, vf);
+    mfd.H1Face(f, p0, ve, vf);
   }
 }
 
@@ -161,7 +161,7 @@ void MeshMaps_VEM::JacobianCell(
   MFD3D_CrouzeixRaviart mfd(mesh0_);
 
   mfd.set_order(order_ + 1);
-  mfd.L2GradientCellHarmonic(c, vf, moments, J);
+  mfd.L2GradientCell(c, vf, moments, J);
 }
 
 
@@ -188,30 +188,44 @@ void MeshMaps_VEM::JacobianFaceValue_(
 void MeshMaps_VEM::LeastSquareProjector_Cell_(
     int order, int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
+  AMANZI_ASSERT(order == 1 || order == 2);
+
   vc.resize(d_);
-  for (int i = 0; i < d_; ++i) vc[i].Reshape(d_, 1);
+  for (int i = 0; i < d_; ++i) vc[i].Reshape(d_, order);
   
-  Entity_ID_List nodes;
+  AmanziGeometry::Point px1, px2;
+  std::vector<AmanziGeometry::Point> x1, x2;
+
+  Entity_ID_List nodes, faces;
   mesh0_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
-  AmanziGeometry::Point px;
-  std::vector<AmanziGeometry::Point> x1, x2, u;
-  for (int i = 0; i < nnodes; ++i) {
-    mesh0_->node_get_coordinates(nodes[i], &px);
-    x1.push_back(px);
+  for (int n = 0; n < nnodes; ++n) {
+    mesh0_->node_get_coordinates(nodes[n], &px1);
+    x1.push_back(px1);
+
+    mesh1_->node_get_coordinates(nodes[n], &px2);
+    x2.push_back(px2 - px1);
   }
-  for (int i = 0; i < nnodes; ++i) {
-    mesh1_->node_get_coordinates(nodes[i], &px);
-    x2.push_back(px);
+
+  // FIXME
+  if (order > 1) {
+    mesh0_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+
+    for (int n = 0; n < nfaces; ++n) {
+      const auto& xf = mesh0_->face_centroid(faces[n]);
+      x1.push_back(xf);
+
+      for (int i = 0; i < d_; ++i)  {
+        px2[i] = vf[n][i].Value(xf); 
+      }
+      x2.push_back(px2);
+    }
   }
 
   // calculate velocity u(X) = F(X) - X
   LeastSquareFit(order, x1, x2, vc);
-
-  for (int i = 0; i < d_; ++i) {
-    vc[i](1, i) -= 1.0;
-  }
 }
 
 

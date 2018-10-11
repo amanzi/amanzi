@@ -35,8 +35,7 @@ void Transport_PK::FunctionalTimeDerivative(double t,
 
   Teuchos::ParameterList plist = tp_list_->sublist("reconstruction");
   lifting_->Init(component_rcp, plist);
-  lifting_->Compute();
-  Teuchos::RCP<CompositeVector> gradient = lifting_->gradient();
+  lifting_->ComputeGradient();
 
   // extract boundary conditions for the current component
   std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
@@ -157,16 +156,15 @@ void Transport_PK::FunctionalTimeDerivative(double t,
 * overlapping vector F(C). Old version.
 ****************************************************************** */
 void Transport_PK::DudtOld(double t,
-                                 const Epetra_Vector& component,
-                                 Epetra_Vector& f_component)
+                           const Epetra_Vector& component,
+                           Epetra_Vector& f_component)
 {
   // transport routines need an RCP pointer
   Teuchos::RCP<const Epetra_Vector> component_rcp(&component, false);
 
   Teuchos::ParameterList plist = tp_list_->sublist("reconstruction");
   lifting_->Init(component_rcp, plist);
-  lifting_->Compute();
-  Teuchos::RCP<CompositeVector> gradient = lifting_->gradient();
+  lifting_->ComputeGradient();
 
   // extract boundary conditions for the current component
   std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);

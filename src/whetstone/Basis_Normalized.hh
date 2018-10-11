@@ -9,7 +9,9 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  The normalized basis for dG methods: |\psi| = 1.
+  The normalized basis for dG methods with monomials of the form
+  |a (x-x0)^m| = 1. The transformation matrix R is diagonal with
+  entries a.
 */
 
 #ifndef AMANZI_DG_BASIS_NORMALIZED_HH_
@@ -30,11 +32,17 @@ class Basis_Normalized : public Basis {
   // initialization
   virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order);
 
-  // transformation from natural basis to owned basis
-  virtual void ChangeBasisMatrix(DenseMatrix& A) const;
-  virtual void ChangeBasisVector(DenseVector& v) const;
+  // transformation of bilinear form
+  virtual void BilinearFormNaturalToMy(DenseMatrix& A) const;
+  virtual void BilinearFormNaturalToMy(std::shared_ptr<Basis> bl,
+                                       std::shared_ptr<Basis> br, DenseMatrix& A) const;
 
-  virtual void ChangeBasisMatrix(std::shared_ptr<Basis> bl, std::shared_ptr<Basis> br, DenseMatrix& A) const;
+  // transformation of linear form
+  virtual void LinearFormNaturalToMy(DenseVector& v) const;
+
+  // transformation of vector 
+  virtual void ChangeBasisMyToNatural(DenseVector& v) const;
+  virtual void ChangeBasisNaturalToMy(DenseVector& v) const;
 
   // Recover polynomial in regular basis
   virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,

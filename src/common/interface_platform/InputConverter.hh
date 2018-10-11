@@ -271,8 +271,8 @@ class InputConverter {
       const std::string& section, const std::string& type, const std::string& ill_formed);
   void ThrowErrorIllformed_(
       const std::string& section, const std::string& type, const std::string& ill_formed, const std::string& options);
-  void ThrowErrorMissattr_(
-      const std::string& section, const std::string& type, const std::string& missing, const std::string& name);
+  void ThrowErrorMissing_(
+      const std::string& node, const std::string& type, const std::string& key, const std::string& subnode);
   void ThrowErrorMisschild_(
     const std::string& section, const std::string& missing, const std::string& name = std::string());
 

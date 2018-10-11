@@ -77,7 +77,12 @@ class PDE_DiffusionNLFV : public virtual PDE_Diffusion {
                               const Teuchos::Ptr<const CompositeVector>& u) override;
   virtual void UpdateMatricesNewtonCorrection(
           const Teuchos::Ptr<const CompositeVector>& flux,
-          const Teuchos::Ptr<const CompositeVector>& u, double scalar_limiter) override;
+          const Teuchos::Ptr<const CompositeVector>& u, double scalar_factor) override;
+  
+    virtual void UpdateMatricesNewtonCorrection(
+          const Teuchos::Ptr<const CompositeVector>& flux,
+          const Teuchos::Ptr<const CompositeVector>& u,
+          const Teuchos::Ptr<const CompositeVector>& factor) override;
 
   // -- after solving the problem: postrocessing
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,

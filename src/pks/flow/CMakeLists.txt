@@ -25,6 +25,7 @@ include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
+include_directories(${MSTK_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${PKS_SOURCE_DIR})
@@ -101,6 +102,11 @@ register_evaluator_with_factory(
   LISTNAME   MSM_FLOW_REGISTRATIONS
   )
 
+register_evaluator_with_factory(
+  HEADERFILE MultiscaleFlowPorosity_GDPM_reg.hh
+  LISTNAME   MSM_FLOW_REGISTRATIONS
+  )
+
 generate_evaluators_registration_header( 
   HEADERFILE multiscale_flow_registration.hh   
   LISTNAME   MSM_FLOW_REGISTRATIONS
@@ -124,6 +130,7 @@ set(flow_src_files Flow_PK.cc
                    DarcyVelocityEvaluator.cc
                    MultiscaleFlowPorosityFactory.cc MultiscaleFlowPorosityPartition.cc
                    MultiscaleFlowPorosity_DPM.cc
+                   MultiscaleFlowPorosity_GDPM.cc
                    FracturePermModelPartition.cc FracturePermModelEvaluator.cc
                    )
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES} ${SEACAS_LIBRARIES})
@@ -151,6 +158,7 @@ set(flow_inc_files
   FracturePermModelEvaluator.hh
   MultiscaleFlowPorosity.hh
   MultiscaleFlowPorosity_DPM.hh
+  MultiscaleFlowPorosity_GDPM.hh
   MultiscaleFlowPorosityFactory.hh
   MultiscaleFlowPorosityPartition.hh
   PorosityModel.hh
@@ -299,5 +307,13 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/flow_multiscale.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # Test: Fractures
+    add_amanzi_test(flow_darcy_fractures flow_darcy_fractures 
+                    KIND int
+                    SOURCE test/Main.cc test/flow_darcy_fractures.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                    NPROCS 4)
+
 endif()
 

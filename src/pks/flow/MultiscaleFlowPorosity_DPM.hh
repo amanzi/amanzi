@@ -34,13 +34,16 @@ class MultiscaleFlowPorosity_DPM : public MultiscaleFlowPorosity {
   ~MultiscaleFlowPorosity_DPM() {};
 
   // Calculate field water content assuming pressure equilibrium
-  double ComputeField(double phi, double n_l, double pcm);
+  virtual double ComputeField(double phi, double n_l, double pcm) override;
 
   // local (cell-based) solver returns water content and capilalry
   // pressure in the matrix. max_itrs is input/output parameter
-  double WaterContentMatrix(
-      double dt, double phi, double n_l, double wcm0, double pcf0, 
-      double& pcm, int& max_itrs);
+  virtual double WaterContentMatrix(
+      double pcf0, WhetStone::DenseVector& pcm,
+      double wcm0, double dt, double phi, double n_l, int& max_itrs) override;
+
+  // Number of matrix nodes
+  virtual int NumberMatrixNodes() override { return 1; }
 
  private:
   Teuchos::RCP<WRM> wrm_;

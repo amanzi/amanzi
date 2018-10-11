@@ -60,8 +60,9 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, gm, true, true);
-  // RCP<const Mesh> mesh = meshfactory("test/median7x8_filtered.exo", gm, true, true);
+  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, gm, true, true);
+  RCP<const Mesh> mesh = meshfactory("test/median7x8_filtered.exo", gm, true, true);
+  // RCP<const Mesh> mesh = meshfactory("test/median15x16.exo", gm, true, true);
 
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
@@ -122,7 +123,8 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART) {
 
   // create preconditioner using the base operator class
   ParameterList slist;
-  slist.set<std::string>("preconditioner type", "diagonal");
+  // slist.set<std::string>("preconditioner type", "diagonal");
+  slist = plist.sublist("preconditioners").sublist("Hypre AMG");
   global_op->InitializePreconditioner(slist);
   global_op->UpdatePreconditioner();
 

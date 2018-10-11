@@ -66,6 +66,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   out_list.set<std::string>("flow mode", "transient");
 
   out_list.set<std::string>("solver", "Dispersion Solver");
+  out_list.set<std::string>("preconditioner", LINEAR_SOLVER_PC);
   out_list.set<bool>("enable internal tests", false);
   out_list.set<bool>("transport subcycling", TRANSPORT_SUBCYCLING);
 
@@ -117,8 +118,6 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
 
   // check if we need to write a dispersivity sublist
   bool dispersion = doc_->getElementsByTagName(mm.transcode("dispersion_tensor"))->getLength() > 0;
-  dispersion |= doc_->getElementsByTagName(mm.transcode("tortuosity"))->getLength() > 0;
-  dispersion |= doc_->getElementsByTagName(mm.transcode("tortuosity_gas"))->getLength() > 0;
 
   // create dispersion list
   if (dispersion) {
@@ -199,9 +198,15 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
     }
   }
 
-  // -- molecular diffusion
+  // -- molecular diffusion (liquid)
   //    check in phases->water list (other solutes are ignored)
+  //    two names are supported (solutes and primaries) FIXME
+  std::string species("solute");
   node = GetUniqueElementByTagsString_("phases, liquid_phase, dissolved_components, solutes", flag);
+  if (!flag) {
+    node = GetUniqueElementByTagsString_("phases, liquid_phase, dissolved_components, primaries", flag);
+    species = "primary";
+  }
   if (flag) {
     Teuchos::ParameterList& diff_list = out_list.sublist("molecular diffusion");
     std::vector<std::string> aqueous_names;
@@ -213,7 +218,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
       if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
       tagname = mm.transcode(inode->getNodeName());
-      if (strcmp(tagname, "solute") != 0) continue;
+      if (strcmp(tagname, species.c_str()) != 0) continue;
 
       double val = GetAttributeValueD_(inode, "coefficient_of_diffusion", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m^2/s", false);
       text = mm.transcode(inode->getTextContent());
@@ -228,7 +233,13 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
 
   // -- molecular diffusion
   //    check in phases->air list (other solutes are ignored)
+  species = "solute";
   node = GetUniqueElementByTagsString_("phases, gas_phase, dissolved_components, solutes", flag);
+  if (!flag) {
+    node = GetUniqueElementByTagsString_("phases, gas_phase, dissolved_components, primaries", flag);
+    species = "primary";
+  }
+
   if (flag) {
     Teuchos::ParameterList& diff_list = out_list.sublist("molecular diffusion");
     std::vector<std::string> gaseous_names;
@@ -240,7 +251,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
       if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
       tagname = mm.transcode(inode->getNodeName());
-      if (strcmp(tagname, "solute") != 0) continue;
+      if (strcmp(tagname, species.c_str()) != 0) continue;
 
       double val = GetAttributeValueD_(inode, "coefficient_of_diffusion", TYPE_NUMERICAL, 0.0, DVAL_MAX, "", false);
       double kh = GetAttributeValueD_(inode, "kh", TYPE_NUMERICAL, 0.0, DVAL_MAX);
@@ -269,11 +280,11 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   out_list.sublist("operators") = TranslateDiffusionOperator_(
       disc_methods, "diffusion_operator", "", "", "", false);
 
-  // multiscale model list
+  // multiscale models sublist
   out_list.sublist("multiscale models") = TranslateTransportMSM_();
   if (out_list.sublist("multiscale models").numParams() > 0) {
     out_list.sublist("physical models and assumptions")
-        .set<std::string>("multiscale model", "dual porosity");
+        .set<std::string>("multiscale model", "dual continuum discontinuous matrix");
   }
 
   // create the sources and boundary conditions lists
@@ -301,7 +312,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::TranslateTransportMSM_()
 {
-  Teuchos::ParameterList out_list, empty_list;
+  Teuchos::ParameterList out_list;
 
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
@@ -309,34 +320,78 @@ Teuchos::ParameterList InputConverterU::TranslateTransportMSM_()
 
   MemoryManager mm;
   DOMNodeList *node_list, *children;
-  DOMNode* node;
+  DOMNode *node, *knode;
   DOMElement* element;
 
   bool flag;
-  std::string model, rel_perm;
+  std::string name, model, rel_perm;
 
-  node_list = doc_->getElementsByTagName(mm.transcode("materials"));
+  // check that list of models does exist
+  node_list = doc_->getElementsByTagName(mm.transcode("materials_secondary_continuum"));
+  if (node_list->getLength() == 0) return out_list;
+
   element = static_cast<DOMElement*>(node_list->item(0));
   children = element->getElementsByTagName(mm.transcode("material"));
 
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i); 
 
-    node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
-    std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
+    node = GetUniqueElementByTagsString_(inode, "multiscale_model", flag);
+    if (!flag) ThrowErrorMissing_("materials", "element", "multiscale_model", "material");
+    model = GetAttributeValueS_(node, "name");
 
-    node = GetUniqueElementByTagsString_(inode, "multiscale_structure, solute_transfer_coefficient", flag);
-    if (!flag) return empty_list;
-    double omega = InputConverter::GetTextContentD_(node, "s^-1", true);
-    
+    // verify material name
+    name = GetAttributeValueS_(inode, "name");
+    if (! FindNameInVector_(name, material_names_)) {
+      Errors::Message msg("Materials names in primary and secondary continua do not match.\n");
+      Exceptions::amanzi_throw(msg);
+    } 
+
+    // common for all models
     std::stringstream ss;
     ss << "MSM " << i;
+    Teuchos::ParameterList& msm_plist = out_list.sublist(ss.str());
+    Teuchos::ParameterList& msm_slist = msm_plist.sublist(model + " parameters");
 
-    Teuchos::ParameterList& msm_list = out_list.sublist(ss.str());
+    // -- regions
+    node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
+    std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
+    msm_plist.set<Teuchos::Array<std::string> >("regions", regions)
+             .set<std::string>("multiscale model", model);
 
-    msm_list.set<std::string>("multiscale model", "dual porosity")
-        .set<double>("solute transfer coefficient", omega)
-        .set<Teuchos::Array<std::string> >("regions", regions);
+    // -- volume fraction
+    node = GetUniqueElementByTagsString_(inode, "volume_fraction", flag);
+    double vof = GetTextContentD_(node, "", true);
+
+    // -- tortousity
+    double tau(1.0);
+    node = GetUniqueElementByTagsString_(inode, "mechanical_properties, tortuosity", flag);
+    if (flag) tau = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "-");
+    msm_slist.set<double>("matrix tortuosity", tau);
+
+    // dual porosity model
+    if (model == "dual porosity") {
+      node = GetUniqueElementByTagsString_(inode, "multiscale_model, matrix", flag);
+      if (!flag) ThrowErrorMissing_("materials", "element", "matrix", "multiscale_model");
+
+      double depth = GetAttributeValueD_(node, "depth", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
+      double sigma = GetAttributeValueD_(node, "warren_root", TYPE_NUMERICAL, 0.0, 1000.0, "m^-2");
+
+      msm_slist.set<double>("Warren Root parameter", sigma)
+               .set<double>("matrix depth", depth)
+               .set<double>("matrix volume fraction", vof);
+
+    } else if (model == "generalized dual porosity") {
+      node = GetUniqueElementByTagsString_(inode, "multiscale_model, matrix", flag);
+      if (!flag) ThrowErrorMissing_("materials", "element", "matrix", "multiscale_model");
+
+      int nnodes = GetAttributeValueL_(node, "number_of_nodes", TYPE_NUMERICAL, 0, INT_MAX, false, 1);
+      double depth = GetAttributeValueD_(node, "depth", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
+    
+      msm_slist.set<int>("number of matrix nodes", nnodes)
+               .set<double>("matrix depth", depth)
+               .set<double>("matrix volume fraction", vof);
+    }
   }
 
   return out_list;
@@ -591,7 +646,7 @@ void InputConverterU::TranslateTransportBCsAmanziGeochemistry_(
 
         bcn.set("regions", bco.get<Teuchos::Array<std::string> >("regions"))
            .set<std::string>("spatial distribution method", "none")
-           .set<bool>("use volume fractions", false);
+           .set<bool>("use area fractions", false);
         fnc.set("x values", bco.get<Teuchos::Array<double> >("times"));
         fnc.set("forms", bco.get<Teuchos::Array<std::string> >("time functions"));
       

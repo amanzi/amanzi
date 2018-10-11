@@ -25,15 +25,13 @@ void UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec) {
   // Ensure uniqueness of the spec and create the set of IDs contained in 
   // the domain of the spec.
   
-  Teuchos::RCP<Domain> domain = spec->first;
+  Teuchos::RCP<Domain>& domain = spec->first;
   AmanziMesh::Entity_kind kind = domain->second;
 
   // Loop over regions in the spec, getting their ids and adding to the set.
   Teuchos::RCP<MeshIDs> this_spec_ids = Teuchos::rcp(new MeshIDs());
-  for (RegionList::const_iterator region = domain->first.begin();
-      region != domain->first.end(); ++region) {
-
-    // Get the ids from the mesh by region name and entity kind.
+  for (auto region = domain->first.begin(); region != domain->first.end(); ++region) {
+    // Get all region IDs by the region name and entity kind.
     if (mesh_->valid_set_name(*region, kind)) {
       AmanziMesh::Entity_ID_List id_list;
       mesh_->get_set_entities(*region, kind, AmanziMesh::Parallel_type::ALL, &id_list);
@@ -53,9 +51,7 @@ void UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec) {
     other_specs = Teuchos::rcp(new UniqueSpecList());
     unique_specs_[kind] = other_specs;
   } else {
-    for (UniqueSpecList::const_iterator uspec = other_specs->begin();
-         uspec != other_specs->end(); ++uspec) {
-
+    for (auto uspec = other_specs->begin(); uspec != other_specs->end(); ++uspec) {
       MeshIDs overlap;
       MeshIDs::iterator overlap_end;
       const MeshIDs& prev_spec_ids = *(*uspec)->second;

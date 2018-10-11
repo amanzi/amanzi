@@ -160,7 +160,17 @@
       <filename>observation.out</filename>
       <liquid_phase name="water">
         <aqueous_pressure>
-          <assigned_regions>Obs_r1,Obs_r2,Obs_r3</assigned_regions>
+          <assigned_regions>Obs_r1</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_pressure>
+        <aqueous_pressure>
+          <assigned_regions>Obs_r2</assigned_regions>
+          <functional>point</functional>
+          <time_macros>Observation Times</time_macros>
+        </aqueous_pressure>
+        <aqueous_pressure>
+          <assigned_regions>Obs_r3</assigned_regions>
           <functional>point</functional>
           <time_macros>Observation Times</time_macros>
         </aqueous_pressure>

@@ -20,11 +20,11 @@
 #include "errors.hh"
 #include "exceptions.hh"
 #include "LinearOperatorFactory.hh"
-#include "MFD3D_Diffusion.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "TimestepControllerFactory.hh"
 #include "Tensor.hh"
+#include "WhetStoneMeshUtils.hh"
 
 // Amanzi::Flow
 #include "Darcy_PK.hh"
@@ -540,7 +540,6 @@ void Darcy_PK::UpdateSpecificYield_()
   specific_yield_copy_->ScatterMasterToGhosted();
   const Epetra_MultiVector& specific_yield = *specific_yield_copy_->ViewComponent("cell", true);
 
-  WhetStone::MFD3D_Diffusion mfd3d(mesh_);
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
@@ -553,7 +552,7 @@ void Darcy_PK::UpdateSpecificYield_()
       int nfaces = faces.size();
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
-        int c2 = mfd3d.cell_get_face_adj_cell(c, f);
+        int c2 = WhetStone::cell_get_face_adj_cell(*mesh_, c, f);
 
         if (c2 >= 0) {
           if (specific_yield[0][c2] <= 0.0)  // cell in the fully saturated layer

@@ -134,7 +134,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   Teuchos::RCP<Teuchos::ParameterList> physical_models =
       Teuchos::sublist(fp_list_, "physical models and assumptions");
   std::string vwc_model = physical_models->get<std::string>("water content model", "constant density");
-  std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single porosity");
+  std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single continuum");
 
   // Require primary field for this PK, which is pressure
   std::vector<std::string> names;
@@ -185,7 +185,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // -- multiscale extension: secondary (immobile water content)
-  if (multiscale_model == "dual porosity") {
+  if (multiscale_model == "dual continuum discontinuous matrix") {
     if (!S->HasField("pressure_matrix")) {
       S->RequireField("pressure_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -218,6 +218,25 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     Teuchos::RCP<PorosityModelPartition> pom = CreatePorosityModelPartition(mesh_, msp_list);
     Teuchos::RCP<PorosityModelEvaluator> eval = Teuchos::rcp(new PorosityModelEvaluator(elist, pom));
     S->SetFieldEvaluator("porosity_matrix", eval);
+
+    // Secondary matrix nodes are collected here.
+    int nnodes, nnodes_tmp = NumberMatrixNodes(msp_);
+    mesh_->get_comm()->MaxAll(&nnodes_tmp, &nnodes, 1);
+    if (nnodes > 1) {
+      S->RequireField("water_content_matrix_aux", passwd_)
+        ->SetMesh(mesh_)->SetGhosted(false)
+        ->SetComponent("cell", AmanziMesh::CELL, nnodes - 1);
+      S->GetField("water_content_matrix_aux", passwd_)->set_io_vis(false);
+
+      S->RequireField("pressure_matrix_aux", passwd_)->SetMesh(mesh_)->SetGhosted(false)
+        ->SetComponent("cell", AmanziMesh::CELL, nnodes - 1);
+      S->GetField("pressure_matrix_aux", passwd_)->set_io_vis(false);
+
+      S->RequireField("porosity_matrix_aux", "porosity_matrix_aux")->SetMesh(mesh_)->SetGhosted(false)
+        ->SetComponent("cell", AmanziMesh::CELL, nnodes - 1);
+      S->SetFieldEvaluator("porosity_matrix_aux", eval);
+      S->GetField("porosity_matrix_aux", passwd_)->set_io_vis(false);
+    }
   }
 
   // Require additional fields and evaluators for this PK.
@@ -413,7 +432,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
       Teuchos::sublist(fp_list_, "physical models and assumptions");
   vapor_diffusion_ = physical_models->get<bool>("vapor diffusion", false);
   multiscale_porosity_ = (physical_models->get<std::string>(
-      "multiscale model", "single porosity") != "single porosity");
+      "multiscale model", "single continuum") != "single continuum");
 
   // Process other fundamental structures.
   SetAbsolutePermeabilityTensor();
@@ -685,7 +704,7 @@ void Richards_PK::InitializeFields_()
       S_->GetField("viscosity_liquid", passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initilized viscosity_liquid to input value " << mu << std::endl;  
+          *vo_->os() << "initialized viscosity_liquid to input value " << mu << std::endl;  
     }
   }
 
@@ -696,7 +715,7 @@ void Richards_PK::InitializeFields_()
         S_->GetField("saturation_liquid", passwd_)->set_initialized();
 
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-            *vo_->os() << "initiliazed saturation_liquid to default value 1.0" << std::endl;  
+            *vo_->os() << "initialized saturation_liquid to default value 1.0" << std::endl;  
       }
     }
   }
@@ -753,7 +772,7 @@ void Richards_PK::InitializeFieldFromField_(
       S_->GetField(field0, passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initiliazed " << field0 << " to " << field1 << std::endl;
+          *vo_->os() << "initialized " << field0 << " to " << field1 << std::endl;
     }
   }
 }
@@ -789,8 +808,10 @@ void Richards_PK::InitializeStatistics_()
     VV_PrintHeadExtrema(*solution);
     VV_PrintSourceExtrema();
 
-    *vo_->os() << "\nPrinting WRM files..." << std::endl;
-    relperm_->PlotWRMcurves();
+    if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+      *vo_->os() << "\nPrinting WRM files..." << std::endl;
+      relperm_->PlotWRMcurves();
+    }
 
     *vo_->os() << vo_->color("green") << "Initalization of PK is complete, T=" 
                << units_.OutputTime(S_->time()) << vo_->reset() << std::endl << std::endl;

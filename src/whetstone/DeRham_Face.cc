@@ -15,7 +15,7 @@
 #include "Mesh.hh"
 
 #include "DeRham_Face.hh"
-#include "WhetStone_typedefs.hh"
+#include "WhetStoneDefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {

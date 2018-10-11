@@ -91,7 +91,7 @@ static const int HexTetVert[10][4] = {{0,1,3,4}, {1,2,0,5}, {2,3,1,6},
                                       {1,3,4,6}
 };
 
-} // close namespace Amanzi
-} // close namespace AmanziMesh
+} // namespace AmanziMesh
+} // namespace Amanzi
 
 #endif

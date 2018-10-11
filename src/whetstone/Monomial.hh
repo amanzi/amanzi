@@ -21,41 +21,73 @@
 #include <cstdlib>
 
 #include "Point.hh"
+#include "PolynomialBase.hh"
 
 namespace Amanzi {
 namespace WhetStone {
 
-class Monomial {
+class Monomial : public PolynomialBase {
  public:
-  Monomial() : d_(0), order_(-1), coef_(0.0) {};
-  Monomial(int d, const int* multi_index, double coef) : d_(d), coef_(coef) {
+  Monomial() { coefs_.Reshape(1); coefs_(0) = 0.0; }
+  Monomial(int d, const int* multi_index, double coef) {
+    d_ = d;
     order_ = 0;
     for (int i = 0; i < d_; ++i) {
       multi_index_[i] = multi_index[i];
       order_ += multi_index_[i];
     }
+    coefs_.Reshape(1);
+    coefs_(0) = coef;
   }
   ~Monomial() {};
 
-  // modifiers
-  void set_origin(const AmanziGeometry::Point& origin) { origin_ = origin; }
+  // typical operations with monomials
+  // -- polynomial values
+  virtual double Value(const AmanziGeometry::Point& xp) const override;
+  // -- get all polynomial coefficients
+  virtual DenseVector ExpandCoefficients() const override; 
 
   // access
-  int dimension() const { return d_; }
-  int order() const { return order_; }
   const int* multi_index() const { return multi_index_; }
-  const AmanziGeometry::Point& origin() const { return origin_; }
-
-  double& coef() { return coef_; } 
-  const double& coef() const { return coef_; } 
 
  private:
-  int d_, order_;
   int multi_index_[3];
-  double coef_;
-  AmanziGeometry::Point origin_;
 };
  
+
+/* ******************************************************************
+* Return ordered list of all polynomial coefficients of monomial.
+****************************************************************** */
+inline
+DenseVector Monomial::ExpandCoefficients() const
+{
+  int size = PolynomialSpaceDimension(d_, order_);
+  DenseVector coefs(size);
+  coefs.PutScalar(0.0);
+
+  int l = PolynomialPosition(d_, multi_index_);
+  coefs(l) = coefs_(0);
+
+  return coefs;
+}
+
+
+/* ******************************************************************
+* Calculate monomial value
+****************************************************************** */
+inline
+double Monomial::Value(const AmanziGeometry::Point& xp) const
+{
+  double tmp = coefs_(0);
+  if (tmp != 0.0) {
+    for (int i = 0; i < d_; ++i) {
+      tmp *= std::pow(xp[i] - origin_[i], multi_index_[i]);
+    }
+  }
+  return tmp;
+}
+
+
 }  // namespace WhetStone
 }  // namespace Amanzi
 

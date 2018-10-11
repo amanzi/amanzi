@@ -13,8 +13,51 @@
 #ifndef AMANZI_WHETSTONE_DEFS_HH_
 #define AMANZI_WHETSTONE_DEFS_HH_
 
+#include <vector>
+
+#include "GeometryDefs.hh"
+#include "Mesh.hh"
+
 namespace Amanzi {
 namespace WhetStone {
+
+// This definition allows us to use WhetStone as a standalone library.
+#define AMANZI_CODE
+
+#ifdef AMANZI_CODE
+typedef AmanziGeometry::Entity_ID Entity_ID;
+typedef std::vector<Entity_ID> Entity_ID_List;
+typedef AmanziMesh::Parallel_type Parallel_type;
+typedef AmanziMesh::Entity_kind Entity_kind;
+
+const int NODE = AmanziMesh::NODE;
+const int EDGE = AmanziMesh::EDGE;
+const int FACE = AmanziMesh::FACE;
+const int CELL = AmanziMesh::CELL;
+const int BOUNDARY_FACE = AmanziMesh::BOUNDARY_FACE;
+
+#else
+typedef long long int Entity_ID;
+typedef std::vector<Entity_ID> Entity_ID_List;
+
+enum Entity_kind {
+  NODE = 0,
+  EDGE,
+  FACE,
+  CELL,
+  BOUNDARY_FACE
+};
+
+enum class Parallel_type {
+  OWNED = 1;  // Owned by this processor
+  GHOST = 2;  // Owned by another processor
+  ALL = 3;    // OWNED + GHOST
+};
+#endif
+
+class Polynomial;
+typedef std::vector<std::vector<Polynomial> > MatrixPolynomial;
+
 
 // status of elemental matrices
 const int WHETSTONE_ELEMENTAL_MATRIX_OK = 0;
@@ -50,9 +93,10 @@ const int DIFFUSION_SUPPORT_OPERATOR = 7;
 const int DIFFUSION_TPFA = 5; 
 
 // various DG schemes
-const int TAYLOR_BASIS_NORMALIZED = 1;
-const int TAYLOR_BASIS_NORMALIZED_ORTHO = 2;  // recommended
-const int TAYLOR_BASIS_NATURAL = 3; 
+const int TAYLOR_BASIS_NATURAL = 1;
+const int TAYLOR_BASIS_NORMALIZED = 2;
+const int TAYLOR_BASIS_NORMALIZED_ORTHO = 3;  // recommended
+const int TAYLOR_BASIS_REGULARIZED = 4; 
 
 }  // namespace WhetStone
 }  // namespace Amanzi

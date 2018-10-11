@@ -17,17 +17,16 @@
 // Amanzi
 #include "errors.hh"
 #include "MatrixFE.hh"
-#include "MFD3D_Elasticity.hh"
-#include "MFD3D_BernardiRaugel.hh"
+#include "MFD3DFactory.hh"
 #include "PreconditionerFactory.hh"
 #include "WhetStoneDefs.hh"
 
 // Amanzi::Operators
-#include "PDE_Elasticity.hh"
 #include "Op.hh"
 #include "Op_Cell_Schema.hh"
 #include "OperatorDefs.hh"
 #include "Operator_Schema.hh"
+#include "PDE_Elasticity.hh"
 #include "Schema.hh"
 
 namespace Amanzi {
@@ -55,19 +54,15 @@ void PDE_Elasticity::SetTensorCoefficient(double K) {
 void PDE_Elasticity::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                                     const Teuchos::Ptr<const CompositeVector>& p)
 {
-  WhetStone::MFD3D_BernardiRaugel mfd(mesh_);
   WhetStone::DenseMatrix Acell;
 
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = K_default_;
   
   for (int c = 0; c < ncells_owned; c++) {
-    if (space_col_ == BERNARDI_RAUGEL) {
-      if (K_.get()) Kc = (*K_)[c];
-      mfd.StiffnessMatrix(c, Kc, Acell);
-
-      local_op_->matrices[c] = Acell;
-    }
+    if (K_.get()) Kc = (*K_)[c];
+    mfd_->StiffnessMatrix(c, Kc, Acell);
+    local_op_->matrices[c] = Acell;
   }
 }
 
@@ -113,18 +108,9 @@ void PDE_Elasticity::Init_(Teuchos::ParameterList& plist)
   
   K_ = Teuchos::null;
 
-  // discretization method
-  std::string name = plist.get<std::string>("method");
-  if (name == "BernardiRaugel") {
-    space_col_ = BERNARDI_RAUGEL;
-  } else if (name == "mini") {
-    space_col_ = MINI;
-  } else {
-    Errors::Message msg;
-    msg << "Elasticity operator's method \"" << name << "\" is not supported.";
-    Exceptions::amanzi_throw(msg);
-  }
-  space_row_ = space_col_;
+  // parse discretization  parameters
+  WhetStone::MFD3DFactory factory;
+  mfd_ = factory.Create(mesh_, plist);
 }
 
 }  // namespace Operators

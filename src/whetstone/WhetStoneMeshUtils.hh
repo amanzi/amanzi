@@ -22,6 +22,8 @@
 #include "MeshDefs.hh"
 #include "Point.hh"
 
+#include "WhetStoneDefs.hh"
+
 namespace Amanzi {
 namespace WhetStone {
 
@@ -60,6 +62,22 @@ void PolygonCentroidWeights(
     weights[i1] += tmp;
     weights[i2] += tmp;
   }
+}
+
+
+/* ******************************************************************
+* Extension of Mesh API. 
+****************************************************************** */
+inline
+int cell_get_face_adj_cell(const AmanziMesh::Mesh& mesh, int c, int f)
+{
+  AmanziMesh::Entity_ID_List cells;
+  mesh.face_get_cells(f, Parallel_type::ALL, &cells);
+
+  if (cells.size() == 2)
+    return cells[0] + cells[1] - c;
+
+  return -1;
 }
 
 

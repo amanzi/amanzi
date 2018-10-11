@@ -126,8 +126,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   // Create a verbose object to pass to the mesh_factory and mesh
   Teuchos::ParameterList mesh_params = plist_->sublist("mesh");
 
-  Teuchos::RCP<Amanzi::VerboseObject> mesh_vo =
-      Teuchos::rcp(new Amanzi::VerboseObject("Mesh", mesh_params));
+  auto mesh_vo = Teuchos::rcp(new Amanzi::VerboseObject("Mesh", mesh_params));
 
   // Create a mesh factory for this geometric model
   Amanzi::AmanziMesh::MeshFactory factory(comm, mesh_vo);
@@ -276,7 +275,10 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   } else {  // If Generate parameters are specified
     std::cerr << rank << ": error: " << "Neither Read nor Generate options specified for mesh" << std::endl;
     throw std::exception();
-  }
+  } 
+
+  Teuchos::OSTab tab = mesh_vo->getOSTab();
+  *mesh_vo->os() << "CPU time stamp: " << mesh_vo->clock() << std::endl;
   Amanzi::timer_manager.stop("Mesh creation");
 
   AMANZI_ASSERT(!mesh.is_null());

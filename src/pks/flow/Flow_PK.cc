@@ -235,16 +235,15 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
   op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
 
   Teuchos::RCP<FlowBoundaryFunction> bc;
-  Teuchos::RCP<Teuchos::ParameterList>
-      bc_list = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("boundary conditions", true)));
+  auto& bc_list = plist.sublist("boundary conditions", true);
 
   bcs_.clear();
 
   // -- pressure 
-  if (bc_list->isSublist("pressure")) {
+  if (bc_list.isSublist("pressure")) {
     PK_DomainFunctionFactory<FlowBoundaryFunction> bc_factory(mesh_);
 
-    Teuchos::ParameterList& tmp_list = bc_list->sublist("pressure");
+    Teuchos::ParameterList& tmp_list = bc_list.sublist("pressure");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
@@ -257,10 +256,10 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
   }
 
   // -- hydraulic head
-  if (bc_list->isSublist("static head")) {
+  if (bc_list.isSublist("static head")) {
     PK_DomainFunctionFactory<FlowBoundaryFunction> bc_factory(mesh_);
 
-    Teuchos::ParameterList& tmp_list = bc_list->sublist("static head");
+    Teuchos::ParameterList& tmp_list = bc_list.sublist("static head");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
@@ -273,14 +272,13 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
   }
 
   // -- Darcy velocity
-  if (bc_list->isSublist("mass flux")) {
+  if (bc_list.isSublist("mass flux")) {
     PK_DomainFunctionFactory<FlowBoundaryFunction> bc_factory(mesh_);
 
-    Teuchos::ParameterList& tmp_list = bc_list->sublist("mass flux");
+    Teuchos::ParameterList& tmp_list = bc_list.sublist("mass flux");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
-      std::string name = it->first;
-      if (tmp_list.isSublist(name)) {
-        Teuchos::ParameterList& spec = tmp_list.sublist(name);
+      if (it->second.isList()) {
+        Teuchos::ParameterList spec = Teuchos::getValue<Teuchos::ParameterList>(it->second);
         bc = bc_factory.Create(spec, "outward mass flux", AmanziMesh::FACE, Teuchos::null);
         bc->set_bc_name("flux");
         bcs_.push_back(bc);
@@ -289,10 +287,10 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
   }
 
   // -- seepage face
-  if (bc_list->isSublist("seepage face")) {
+  if (bc_list.isSublist("seepage face")) {
     PK_DomainFunctionFactory<FlowBoundaryFunction> bc_factory(mesh_);
 
-    Teuchos::ParameterList& tmp_list = bc_list->sublist("seepage face");
+    Teuchos::ParameterList& tmp_list = bc_list.sublist("seepage face");
     for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
       std::string name = it->first;
       if (tmp_list.isSublist(name)) {
@@ -768,31 +766,6 @@ void Flow_PK::VerticalNormals(int c, AmanziGeometry::Point& n1, AmanziGeometry::
 
   n1 = mesh_->face_normal(faces[i1]) * dirs[i1];
   n2 = mesh_->face_normal(faces[i2]) * dirs[i2];
-}
-
-
-/* ******************************************************************
-* Returns position of face f in the list faces.  
-****************************************************************** */
-int Flow_PK::FindPosition(int f, AmanziMesh::Entity_ID_List faces)
-{
-  for (int i = 0; i < faces.size(); i++) {
-    if (faces[i] == f) return i;
-  }
-  return -1;
-}
-
-
-/* ****************************************************************
-* DEBUG: creating GMV file 
-**************************************************************** */
-void Flow_PK::WriteGMVfile(Teuchos::RCP<State> FS) const
-{
-  GMV::open_data_file(*mesh_, (std::string)"flow.gmv");
-  GMV::start_data();
-  GMV::write_cell_data(*(S_->GetFieldData("pressure")->ViewComponent("cell")), 0, "pressure");
-  GMV::write_cell_data(*(S_->GetFieldData("saturation_liquid")->ViewComponent("cell")), 0, "saturation");
-  GMV::close_data_file();
 }
 
 }  // namespace Flow
