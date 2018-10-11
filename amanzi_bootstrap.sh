@@ -40,5 +40,5 @@ ${AMANZI_SRC_DIR}/bootstrap.sh \
    --tools-download-dir=${ATS_BASE}/amanzi-tpls/Downloads \
    --tools-build-dir=${ATS_BASE}/build \
    --tools-install-prefix=${ATS_BASE}/install \
-   --with-cmake=/software/dev_tools/swtree/cs400_centos7.2_pe2016-08/cmake/3.8.2/centos7.2_gnu5.3.0/bin/cmake  \
-   --with-ctest=/software/dev_tools/swtree/cs400_centos7.2_pe2016-08/cmake/3.8.2/centos7.2_gnu5.3.0/bin/ctest
+   --with-cmake=`which cmake` \
+   --with-ctest=`which ctest`
