@@ -21,7 +21,7 @@ This is documentation for the Amanzi run that is intended to compare
 the results from Amanzi against the semi-analytical results documented
 in "A set of Analytical Benchmarks to Test Numerical Models of Flow
 and Transport in Soils." by J. Vanderborght,
-et. al. http://vzj.geoscienceworld.org/content/4/1/206.abstract
+et. al. http://vzj.geoscienceworld.org/content/4/1/206.abstract :cite:`scinfil-vanderborght2005set`.
 
 This page is a summary of the first test case noted as the first line
 in Table 3 of that paper.  It is three cases that are all
