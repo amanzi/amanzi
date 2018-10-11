@@ -25,6 +25,7 @@ include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
+include_directories(${MSTK_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${PKS_SOURCE_DIR})
@@ -306,5 +307,13 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/flow_multiscale.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # Test: Fractures
+    add_amanzi_test(flow_darcy_fractures flow_darcy_fractures 
+                    KIND int
+                    SOURCE test/Main.cc test/flow_darcy_fractures.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                    NPROCS 4)
+
 endif()
 

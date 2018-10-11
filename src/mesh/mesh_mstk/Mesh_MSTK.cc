@@ -2950,26 +2950,28 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
     mset = MSet_New(mesh,internal_name.c_str(),enttype);
 
     if (region->type() == AmanziGeometry::BOX) {
+      int nface = num_entities(FACE, Parallel_type::ALL);
 
-      if (! kdtree_faces_initialized_) {
-        int nface = num_entities(FACE, Parallel_type::ALL);
-        face_centroid(0);
-        kdtree_faces_.Init(&face_centroids_);
-        kdtree_faces_initialized_ = true;
-      }
+      if (nface > 0) { 
+        if (! kdtree_faces_initialized_) {
+          face_centroid(0);
+          kdtree_faces_.Init(&face_centroids_);
+          kdtree_faces_initialized_ = true;
+        }
 
-      auto box = Teuchos::rcp_dynamic_cast<const AmanziGeometry::RegionBox>(region);
-      AmanziGeometry::Point query = (box->point0() + box->point1()) / 2;
-      double radius = AmanziGeometry::norm(box->point0() - query);
-      double radius_sqr = std::pow(radius + AmanziGeometry::TOL, 2);
+        auto box = Teuchos::rcp_dynamic_cast<const AmanziGeometry::RegionBox>(region);
+        AmanziGeometry::Point query = (box->point0() + box->point1()) / 2;
+        double radius = AmanziGeometry::norm(box->point0() - query);
+        double radius_sqr = std::pow(radius + AmanziGeometry::TOL, 2);
 
-      std::vector<double> dist_sqr;
-      auto idx = kdtree_faces_.SearchInSphere(query, dist_sqr, radius_sqr);
+        std::vector<double> dist_sqr;
+        auto idx = kdtree_faces_.SearchInSphere(query, dist_sqr, radius_sqr);
      
-      for (int i = 0; i < idx.size(); ++i) {
-        int iface = idx[i];
-        if (region->inside(face_centroid(iface)))
-          MSet_Add(mset, face_id_to_handle[iface]);
+        for (int i = 0; i < idx.size(); ++i) {
+          int iface = idx[i];
+          if (region->inside(face_centroid(iface)))
+            MSet_Add(mset, face_id_to_handle[iface]);
+        }
       }
     }
     else if (region->type() == AmanziGeometry::ALL)  {
