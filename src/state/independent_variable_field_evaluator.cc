@@ -127,7 +127,6 @@ bool IndependentVariableFieldEvaluator::HasFieldChanged(const Teuchos::Ptr<State
 // wrt_key changed since it was last requested for Field Key reqest.
 // Updates the derivative if needed.
 // ---------------------------------------------------------------------------
-inline
 bool IndependentVariableFieldEvaluator::HasFieldDerivativeChanged(const Teuchos::Ptr<State>& S,
         Key request, Key wrt_key) {
 
@@ -140,12 +139,10 @@ bool IndependentVariableFieldEvaluator::HasFieldDerivativeChanged(const Teuchos:
 }
 
 
-inline
 bool IndependentVariableFieldEvaluator::IsDependency(const Teuchos::Ptr<State>& S, Key key) const {
   return false;
 }
 
-inline
 bool IndependentVariableFieldEvaluator::ProvidesKey(Key key) const { return key == my_key_; }
 
 
