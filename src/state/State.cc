@@ -243,20 +243,12 @@ Teuchos::RCP<AmanziMesh::Mesh> State::GetMesh_(Key key) const {
 Teuchos::RCP<FieldEvaluator>
 State::RequireFieldEvaluator(Key key) {
   Teuchos::RCP<FieldEvaluator> evaluator = GetFieldEvaluator_(key);
-
-
-  if (key == "snow-source" || key == "snow-source_sink") {
-    std::cout << "key = " << key;
-  }
   
   // See if the key is provided by another existing evaluator.
   if (evaluator == Teuchos::null) {
     for (evaluator_iterator f_it = field_evaluator_begin();
          f_it != field_evaluator_end(); ++f_it) {
       if (f_it->second->ProvidesKey(key)) {
-        if (key == "snow-source" || key == "snow-source_sink")
-          std::cout << " provided by " << f_it->first << std::endl;
-        
         evaluator = f_it->second;
         SetFieldEvaluator(key, evaluator);
         break;
@@ -297,9 +289,6 @@ State::RequireFieldEvaluator(Key key) {
       }
 
       // -- Create and set the evaluator.
-      if (key == "snow-source" || key == "snow-source_sink")
-        std::cout << " constructing new" << std::endl;
-
       FieldEvaluator_Factory evaluator_factory;
       evaluator = evaluator_factory.createFieldEvaluator(sublist);
       SetFieldEvaluator(key, evaluator);
@@ -437,10 +426,6 @@ Teuchos::RCP<FieldEvaluator> State::GetFieldEvaluator_(Key key) {
 
 
 void State::SetFieldEvaluator(Key key, const Teuchos::RCP<FieldEvaluator>& evaluator) {
-  if (boost::starts_with(key, "surface_3d")) {
-    std::cout << "uh oh set eval" << std::endl;
-  }
-
   AMANZI_ASSERT(field_evaluators_[key] == Teuchos::null);
   field_evaluators_[key] = evaluator;
 };
@@ -586,11 +571,6 @@ void State::RequireConstantVector(Key fieldname, int dimension) {
 // Vector Field requires
 Teuchos::RCP<CompositeVectorSpace>
 State::RequireField(Key fieldname, Key owner) {
-  if (boost::starts_with(fieldname, "surface_3d")) {
-    std::cout << "uh oh" << std::endl;
-  }
-    
-
   Teuchos::RCP<Field> field = CheckConsistent_or_die_(fieldname,
           COMPOSITE_VECTOR_FIELD, owner);
 
@@ -980,11 +960,7 @@ void State::Initialize(Teuchos::RCP<State> S) {
 void State::InitializeEvaluators() {
   for (evaluator_iterator f_it = field_evaluator_begin();
        f_it != field_evaluator_end(); ++f_it) {
-    AMANZI_ASSERT(f_it->second.get());
     f_it->second->HasFieldChanged(Teuchos::Ptr<State>(this), "state");
-    if (!fields_[f_it->first].get()) {
-      std::cout << "wtf with " << f_it->first << std::endl;
-    }
     fields_[f_it->first]->set_initialized();
   }
 };
