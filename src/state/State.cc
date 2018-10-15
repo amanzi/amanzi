@@ -876,11 +876,6 @@ void State::Setup() {
       f_it->second->CreateData();
     }
   }
-
-
-  AMANZI_ASSERT(GetFieldEvaluator_("snow-source_sink").get() == GetFieldEvaluator_("snow-source").get());
-  AMANZI_ASSERT(GetFieldEvaluator_("snow-source_sink").get() == GetFieldEvaluator_("surface-mass_source").get());
-  
 };
 
 
