@@ -7,14 +7,15 @@ Capabilities Tested
 This two-dimensional flow problem --- with a constant pumping rate in a heterogeneous confined aquifer --- tests the Amanzi saturated flow process kernel. 
 Capabilities tested include:
   
-  * single-phase, transient flow
-  * saturated flow conditions
-  * flow-field response to multiple point-source pumping wells
-  * flow/drawdown response to pumping in homogeneous medium (confined aquifer) with uniform properties
-  * flow/drawdown response of an aquifer in a bounded domain
-  * constant-head (Dirichlet) boundary conditions
-  * no-flux (Neumann) boundary conditions 
-  * uniform mesh 
+  * single-phase, two-dimensional flow
+  * transient flow
+  * saturated flow
+  * constant-rate pumping wells 
+  * constant-head (Dirichlet) boundary conditions 
+  * specified volumetric flux (Neumann) boundary conditions
+  * homogeneous porous medium
+  * isotropic porous medium
+  * uniform mesh
 
 For details on this test, see :ref:`about_bounded_domain`.
 
@@ -41,7 +42,7 @@ where
 :math:`t` [T]is the time,
 :math:`T` [L\ :sup:`2`\/T] is the transmissivity, 
 :math:`S` [-] is the storage coefficient,
-:math:`Q_i` [L\ :sup:`3`\/T]is the pumpage at a  well located at :math:`(x_i,y_i)` that starts pumping at :math:`t_i`,
+:math:`Q_i` [L\ :sup:`3`\/T] is the pumpage at a  well located at :math:`(x_i,y_i)` that starts pumping at :math:`t_i`,
 :math:`N_w` is the number of pumping wells,
 :math:`\delta(x)` is the Direc delta function, being 1 for :math:`x = 0` and 0 otherwise, and
 :math:`H(x)` is the Heaviside function, being 1 for :math:`x \ge 0` and 0 otherwise.
@@ -99,16 +100,39 @@ The model domain is 2400 m :math:`\times` 2400 m. It has 3600 grid cells: 600 ce
 Variables
 ~~~~~~~~~
 
-* :math:`T = 0.011574` transmissivity [m\ :sup:`2`\/s]
-* :math:`S = 2\times 10^{-4}` storativity
-* :math:`Q = 1000` pumping rate [m\ :sup:`3`\/s] 
-* :math:`(x_i,y_i) = (1200, 1200)` pumping well coordinates [m]
+* Domain:
+  
+  * pumping well coordinates:    :math:`(x_i,y_i) = (1200 \text{ m}, 1200 \text{ m})`
+  * observation well coordinates:    :math:`(1224 \text{ m}, 1200 \text{ m})` and :math:`(1300 \text{ m}, 1200 \text{ m})`
 
-Observation wells located at (1224 m, 1200 m) and (1300 m, 1200 m), so  their respective distances  to the pumping well are 24 m and 100 m.
+    * respective distances from pumping well:    :math:`24 \text{ m}` and :math:`100 \text{ m}`
 
-Initial condition: pressure head = 1.07785 MPa everywhere in the domain at :math:`t = 0`. 
 
-Boundary conditions: constant pressure head (1.07785 MPa) at left/right boundaries, no-flow condition at upper/lower boundaries.  
+* Boundary and initial conditions:
+  
+  * initial hydraulic head:   :math:`h(r,0)=100.0 \: \text{[m]}`
+
+    * derived from:    :math:`p-p_0 = \rho gh`, where reference pressure :math:`p_0` is at :math:`z=10 \text{ [m]}` and :math:`p=1.07785 \times 10^6 \text{ [Pa]}`
+  * constant-head (Dirichlet) far-field lateral (east, west) boundary conditions:   :math:`h(x_{max},t)=h(y_{max},t)=100.0 \: \text{[m]}`
+  * no-flow (Neumann) north and south boundary conditions
+  * well-head pumping rate:   :math:`Q=-11.5485 \: \text{[m}^3\text{/s]}`
+
+* Material properties:
+
+  * storativity:    :math:`S=2 \times 10^{-4} \text{ [-]}`
+
+    * derived from:    :math:`S=S_s b`, where :math:`S_s=2.0 \times 10^{-4} \: \text{[m}^{-1} \text{]}` and :math:`b=1 \: \text{[m]}`
+
+  * transmissivity:    :math:`T=0.011617 \: \text{[m}^2\text{/s]}`
+
+    * derived from:    :math:`T=Kb`, where :math:`K=\frac{k \rho g}{\mu}`
+    * intrinsic permeability:    :math:`k = 1.187 \times 10^{-9} \: \text{[m}^2\text{]}` 
+
+  * porosity:    :math:`\phi = 0.25`
+
+  * fluid density:    :math:`\rho = 1000.0 \: \text{[kg/m}^3\text{]}`
+  * dynamic viscosity:    :math:`\mu = 1.002 \times 10^{-3} \: \text{[Pa} \cdot \text{s]}` 
+  * gravitational acceleration:    :math:`g = 9.807 \: \text{[m/s}^2\text{]}`
 
 
 Results and Comparison
@@ -152,7 +176,7 @@ About
   * amanzi_boundedDomain_2d.xml
  
     * Spec: Version 2.3, unstructured mesh framework
-    * mesh: Generated internally 
+    * Mesh: generated internally 
 
 * Analytical Solutions
 
