@@ -105,9 +105,6 @@ SurfaceBalanceBase::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<
   Teuchos::OSTab tab = vo_->getOSTab();
   double dt = t_new - t_old;
   int cycle = S_next_->cycle();
-  if (cycle >= 175) {
-    std::cout << "we is here!" << std::endl;
-  }
 
   // pointer-copy temperature into state and update any auxilary data
   Solution_to_State(*u_new, S_next_);
