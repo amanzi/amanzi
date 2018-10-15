@@ -124,7 +124,7 @@ Variables
 
   * isotropic hydraulic conductivity:    :math:`K = 84.41 \: \text{[m/d]}`
 
-    * derived from:    :math:`K=\frac{k \rho g}{\mu}`, where permeability, :math:`k = 1.0 \times 10^{-10} \text{ [m}^2\text{]}`
+    * derived from:    :math:`K=\frac{k \rho g}{\mu}`, where permeability :math:`k = 1.0 \times 10^{-10} \text{ [m}^2\text{]}`
   
   * porosity:    :math:`\phi=0.35` 
   * longitudinal dispersivity:    :math:`\alpha_L=21.3 \: \text{[m]}` 
