@@ -141,26 +141,30 @@ are summarized as:
 
 * Domain (2D)
       
-  * :math:`x_{min} = z_{min} = 0` [ft]
-  * :math:`x_{max} = L = 1000` [ft]
-  * :math:`z_{max} = 100` at :math:`x = 0` and :math:`50` at :math:`x = L` [ft]
+  * :math:`x_{min} = z_{min} = 0 \text{ [ft]}`
+  * :math:`x_{max} = L = 1000 \text{ [ft]}`
+  * :math:`z_{max} = 100` at :math:`x = 0` and :math:`50` at :math:`x = L \text{ [ft]}`
 
 * Material properties
+  
+  * isotropic hydraulic conductivity:     :math:`K = 1 \text{ [ft/d]} =  3.528 \times 10^{-6} \text{ [m/s]}`
 
-  * :math:`\rho = 998.2` [kg/m\ :sup:`3`]
-  * :math:`\mu = 1.002 \times 10^{-3}` [Pa :math:`\cdot` s]
-  * :math:`g = 9.807` [m/s\ :sup:`2`]
-  * hydraulic conductivity :math:`K = 1` [ft/d]
+    * derived from:    :math:`K=\frac{k \rho g}{\mu}`, where permeability :math:`k = 3.6098 \times 10^{-13} \text{ [m}^2\text{]}` (1 ft = 0.3048 ft)
+
+  * porosity:    :math:`\phi = 0.3`
+  * fluid density:    :math:`\rho = 998.2 \: \text{[kg/m}^3\text{]}`
+  * dynamic viscosity:    :math:`\mu = 1.002 \times 10^{-3} \: \text{[Pa} \cdot \text{s]}` 
+  * gravitational acceleration:    :math:`g = 9.807 \: \text{[m/s}^2\text{]}` 
   * van Genuchten :cite:`us-vanGenuchten_1980` - Mualem :cite:`us-Mualem_1976` parameters
 
-    * :math:`\alpha = 1.0212 \times 10^{-4}` [Pa\ :sup:`-1`]
+    * :math:`\alpha = 1.0212 \times 10^{-4} \text{ [Pa}^{-1} \text{]}`
     * :math:`S_r = 0.25`
     * :math:`m = 0.09090`
 
 * Boundary conditions
 
-  * no-flow prescribed at the :math:`z_{min}` boundary
-  * prescribed hydraulic head: :math:`h(0) = 80,\: h(L) = 50` [ft]
+  * no-flow (Neumann) boundary condition prescribed at :math:`z_{min}`
+  * prescribed hydraulic head (Dirichlet): :math:`h(0) = 80,\: h(L) = 50 \text{ [ft]}`
   * recharge along the top surface = 1 ft/y for :math:`0 \leqslant x \leqslant L_s`
 
 
@@ -199,14 +203,16 @@ About
   * amanzi_unconfined_seepage_1d-u.xml
 
     * Spec Version 2.3, unstructured mesh framework
-    * mesh:  porflow4_4.exo 
+    * mesh:  porflow4_4.exo
 
-* Mesh Files:
+      * two-dimensional mesh with conformal (non-orthogonal) grid
 
-  * porflow4_4.exo
+.. * Mesh Files:
+
+  .. * porflow4_4.exo
  
     * two-dimensional mesh with conformal grid
 
 
-Status
-------
+.. Status
+.. ------
