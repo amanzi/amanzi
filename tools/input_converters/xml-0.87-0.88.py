@@ -17,6 +17,13 @@ from amanzi_xml.utils import io as aio
 from amanzi_xml.utils import errors as aerrors
 from amanzi_xml.common import parameter
 
+def fixEvaluator(xml, name, newname):
+    try:
+        pd = asearch.childByNamePath(xml, "state/field evaluators/%s"%name)
+    except aerrors.MissingXMLError:
+        pass
+    else:
+        pd.setName(newname)
 
 def linear_operator(xml):
     """Changes any instances of "linear operator" to "linear solver",
@@ -98,7 +105,22 @@ def sources(xml):
                 except aerrors.MissingXMLError:
                     pk.append(parameter.BoolParameter("source term is differentiable", True))
     
-            
+def snow_distribution(xml):
+    for snow_dist_pk in asearch.generateElementByNamePath(xml, "PKs/snow distribution"):
+        if snow_dist_pk.isElement("primary variable key") and \
+             asearch.childByName(snow_dist_pk,"primary variable key").get("value") == "surface-precipitation_snow":
+            asearch.childByName(snow_dist_pk,"primary variable key").set("value", "snow-precipitation")
+        if snow_dist_pk.isElement("conserved quantity key") and \
+             asearch.childByName(snow_dist_pk,"conserved quantity key").get("value") == "surface-precipitation_snow":
+            asearch.childByName(snow_dist_pk,"conserved quantity key").set("value", "snow-precipitation")
+        if snow_dist_pk.isElement("domain name") and \
+           asearch.childByName(snow_dist_pk,"domain name").get("value") == "surface":
+            asearch.childByName(snow_dist_pk,"domain name").set("value", "snow")
+    
+    for ssk in asearch.generateElementByNamePath(xml, "state/field evaluators/snow-conductivity"):
+        if ssk.isElement("height key"):
+            asearch.childByName(ssk, "height key").set("value", "snow-precipitation")
+
 def update(xml):
     linear_operator(xml)
     max_valid_change(xml)
@@ -113,8 +135,10 @@ def update(xml):
             import seb_monolithic_to_evals
             seb_monolithic_to_evals.update_seb(xml)
 
+    fixEvaluator(xml, "surface-snow_skin_potential", "snow-skin_potential")
+    fixEvaluator(xml, "surface-snow_conductivity", "snow-conductivity")
+    snow_distribution(xml)
 
-    
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Fix a number of changes from ATS input spec 0.86 to 0.9x")
