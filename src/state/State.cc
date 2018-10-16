@@ -550,8 +550,7 @@ void State::RequireConstantVector(Key fieldname, Key owner,
   Teuchos::RCP<Field> field = CheckConsistent_or_die_(fieldname, CONSTANT_VECTOR, owner);
 
   if (field == Teuchos::null) {
-    Teuchos::RCP<Field_ConstantVector> field =
-        Teuchos::rcp(new Field_ConstantVector(fieldname, Key("state"), dimension));
+    field = Teuchos::rcp(new Field_ConstantVector(fieldname, Key("state"), dimension));
     fields_[fieldname] = field;
   } else {
     Teuchos::RCP<Field_ConstantVector> cv =
@@ -576,8 +575,7 @@ State::RequireField(Key fieldname, Key owner) {
 
   if (field == Teuchos::null) {
     // Create the field and CV factory.
-    Teuchos::RCP<Field_CompositeVector> field =
-        Teuchos::rcp(new Field_CompositeVector(fieldname, owner));
+    field = Teuchos::rcp(new Field_CompositeVector(fieldname, owner));
     fields_[fieldname] = field;
     field_factories_[fieldname] = Teuchos::rcp(new CompositeVectorSpace());
   } else if (owner != Key("state")) {
@@ -596,8 +594,7 @@ State::RequireField(Key fieldname, Key owner,
 
   if (field == Teuchos::null) {
     // Create the field and CV factory.
-    Teuchos::RCP<Field_CompositeVector> field =
-        Teuchos::rcp(new Field_CompositeVector(fieldname, owner, subfield_names));
+    field = Teuchos::rcp(new Field_CompositeVector(fieldname, owner, subfield_names));
     fields_[fieldname] = field;
     field_factories_[fieldname] = Teuchos::rcp(new CompositeVectorSpace());
   } else if (owner != Key("state")) {
