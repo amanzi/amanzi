@@ -225,8 +225,12 @@ void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
   // Add derivatives to the matrix (Jacobian in this case)
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_TRUE && u.get()) {
     AMANZI_ASSERT(u != Teuchos::null);
-    if (k_ != Teuchos::null) k_ -> ScatterMasterToGhosted("face");
-    if (dkdp_ != Teuchos::null) dkdp_ -> ScatterMasterToGhosted("face");
+    if (k_ != Teuchos::null){
+      if (k_ -> HasComponent("face")) k_ -> ScatterMasterToGhosted("face");
+    }
+    if (dkdp_ != Teuchos::null){
+      if (dkdp_ -> HasComponent("face")) dkdp_ -> ScatterMasterToGhosted("face");
+    }
     AnalyticJacobian_(*u);
   }
 }
@@ -239,8 +243,12 @@ void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
   // Add derivatives to the matrix (Jacobian in this case)
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_TRUE && u.get()) {
     AMANZI_ASSERT(u != Teuchos::null);
-    if (k_ != Teuchos::null) k_ -> ScatterMasterToGhosted("face");
-    if (dkdp_ != Teuchos::null) dkdp_ -> ScatterMasterToGhosted("face");
+    if (k_ != Teuchos::null){
+      if (k_ -> HasComponent("face")) k_ -> ScatterMasterToGhosted("face");
+    }
+    if (dkdp_ != Teuchos::null){
+      if (dkdp_ -> HasComponent("face")) dkdp_ -> ScatterMasterToGhosted("face");
+    }
     AnalyticJacobian_(*u);
   }
 }  

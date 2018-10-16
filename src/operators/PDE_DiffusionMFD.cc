@@ -1180,7 +1180,9 @@ void PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
   flux->PutScalar(0.0);
   u->ScatterMasterToGhosted("face");
 
-  if (k_ != Teuchos::null) k_->ScatterMasterToGhosted("face");
+  if (k_ != Teuchos::null) {
+    if (k_->HasComponent("face")) k_->ScatterMasterToGhosted("face");
+  }
 
   const Epetra_MultiVector& u_cell = *u->ViewComponent("cell");
   const Epetra_MultiVector& u_face = *u->ViewComponent("face", true);
