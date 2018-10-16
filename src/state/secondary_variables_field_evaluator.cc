@@ -89,7 +89,10 @@ bool SecondaryVariablesFieldEvaluator::HasFieldChanged(const Teuchos::Ptr<State>
   bool update = false;
   for (KeySet::const_iterator dep=dependencies_.begin();
        dep!=dependencies_.end(); ++dep) {
-    update |= S->GetFieldEvaluator(*dep)->HasFieldChanged(S, *my_keys_.begin());
+    bool updated = S->GetFieldEvaluator(*dep)->HasFieldChanged(S, *my_keys_.begin());
+    if (updated && vo_->os_OK(Teuchos::VERB_EXTREME))
+      *vo_->os() << "  must update " << my_keys_[0] << " due to changes in " << *dep << std::endl;
+    update |= updated;
   }
 
   // check if nonlocal for changes in offprocess dependencies

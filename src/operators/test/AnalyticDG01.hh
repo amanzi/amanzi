@@ -12,8 +12,8 @@
   Diffusion: K = 1
   Accumulation: a = 0
   Reaction: r = 0
-  Velocity: v = [1, 0, 0]
-  Source: f = 0
+  Velocity: v = [1.0, 0, 0]
+  Source: f = 0 or 1
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_DG_01_BASE_HH_
@@ -23,8 +23,8 @@
 
 class AnalyticDG01 : public AnalyticDGBase {
  public:
-  AnalyticDG01(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order)
-    : AnalyticDGBase(mesh, order) {};
+  AnalyticDG01(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order, bool advection)
+    : AnalyticDGBase(mesh, order, advection) {};
   ~AnalyticDG01() {};
 
   // analytic data in conventional Taylor basis
@@ -66,7 +66,7 @@ class AnalyticDG01 : public AnalyticDGBase {
     for (int i = 0; i < d_; ++i) {
       v[i].Reshape(d_, 0, true); 
     }
-    v[0](0, 0) = 1.0;
+    if (advection_) v[0](0, 0) = 1.0;
   }
 
   // -- reaction
@@ -80,6 +80,7 @@ class AnalyticDG01 : public AnalyticDGBase {
   virtual void SourceTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                             Amanzi::WhetStone::Polynomial& src) override {
     src.Reshape(d_, 0, true);
+    if (advection_) src(0, 0) = 1.0;
     src.set_origin(p);
   }
 };

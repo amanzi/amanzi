@@ -126,7 +126,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
   const std::vector<double>& bc_value = bc.bc_value();
 
   AmanziMesh::Entity_ID_List entities, cells;
-  std::vector<int> dirs, offset;
+  std::vector<int> offset;
 
   CompositeVector& rhs = *global_op_->rhs();
   rhs.PutScalarGhosted(0.0);
@@ -145,7 +145,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
     int nrows = Acell.NumRows();
 
     if (kind == AmanziMesh::FACE) {
-      mesh_->cell_get_faces_and_dirs(c, &entities, &dirs);
+      mesh_->cell_get_faces(c, &entities);
     } else if (kind == AmanziMesh::EDGE) {
       mesh_->cell_get_edges(c, &entities);
     } else if (kind == AmanziMesh::NODE) {
@@ -352,7 +352,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(
   int d = bc_value[0].size();
 
   AmanziMesh::Entity_ID_List entities;
-  std::vector<int> dirs, offset;
+  std::vector<int> offset;
 
   CompositeVector& rhs = *global_op_->rhs();
   rhs.PutScalarGhosted(0.0);
@@ -371,7 +371,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(
     int nrows = Acell.NumRows();
 
     if (kind == AmanziMesh::FACE) {
-      mesh_->cell_get_faces_and_dirs(c, &entities, &dirs);
+      mesh_->cell_get_faces(c, &entities);
     }
     int nents = entities.size();
 

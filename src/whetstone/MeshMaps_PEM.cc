@@ -17,9 +17,9 @@
 
 #include "DenseMatrix.hh"
 #include "MeshMaps_PEM.hh"
-#include "MeshUtils.hh"
 #include "Polynomial.hh"
 #include "WhetStoneDefs.hh"
+#include "WhetStoneMeshUtils.hh"
 
 namespace Amanzi {
 namespace WhetStone {

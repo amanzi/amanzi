@@ -54,32 +54,33 @@ class Richards_PK : public Flow_PK {
   ~Richards_PK();
 
   // methods required for PK interface
-  virtual void Setup(const Teuchos::Ptr<State>& S);
-  virtual void Initialize(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S) override;
+  virtual void Initialize(const Teuchos::Ptr<State>& S) override;
 
-  virtual double get_dt() { return dt_; }
-  virtual void set_dt(double dt) { dt_ = dt; dt_desirable_ = dt_; }
+  virtual double get_dt() override { return dt_; }
+  virtual void set_dt(double dt) override { dt_ = dt; dt_desirable_ = dt_; }
 
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false);
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
-  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) override;
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) override;
 
-  virtual std::string name() { return passwd_; }
+  virtual std::string name() override { return passwd_; }
 
   // methods required for time integration interface
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
-  void FunctionalResidual(const double t_old, double t_new, 
-                  Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
-                  Teuchos::RCP<TreeVector> f);
-  double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
+  virtual void FunctionalResidual(
+      const double t_old, double t_new, 
+      Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
+      Teuchos::RCP<TreeVector> f) override;
+  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) override;
 
   // -- management of the preconditioner
-  int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu);
-  void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u, double dt);
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu) override;
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u, double dt) override;
 
   // -- check the admissibility of a solution
   //    override with the actual admissibility check
-  bool IsAdmissible(Teuchos::RCP<const TreeVector> up) { return true; }
+  virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up) override { return true; }
 
   // -- possibly modifies the predictor that is going to be used as a
   //    starting value for the nonlinear solve in the time integrator,
@@ -87,26 +88,26 @@ class Richards_PK : public Flow_PK {
   //    using extrapolation and the time step that is used to compute
   //    this predictor this function returns true if the predictor was
   //    modified, false if not
-  bool ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0,
-                       Teuchos::RCP<TreeVector> u);
+  virtual bool ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0,
+                               Teuchos::RCP<TreeVector> u) override;
 
   // -- possibly modifies the correction, after the nonlinear solver (NKA)
   //    has computed it, will return true if it did change the correction,
   //    so that the nonlinear iteration can store the modified correction
   //    and pass it to NKA so that the NKA space can be updated
-  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
       ModifyCorrection(double dt, Teuchos::RCP<const TreeVector> res,
                        Teuchos::RCP<const TreeVector> u, 
-                       Teuchos::RCP<TreeVector> du);
+                       Teuchos::RCP<TreeVector> du) override;
 
   // -- calling this indicates that the time integration
   //    scheme is changing the value of the solution in state.
-  void ChangedSolution() {
+  virtual void ChangedSolution() override {
     pressure_eval_->SetFieldAsChanged(S_.ptr());
   }
 
   // -- returns the number of linear iterations.
-  int ReportStatistics() { 
+  virtual int ReportStatistics() override { 
     return op_preconditioner_->apply_calls();
   }
 
@@ -140,7 +141,7 @@ class Richards_PK : public Flow_PK {
 
   // -- developement methods
   double DeriveBoundaryFaceValue(int f, const CompositeVector& u, Teuchos::RCP<const WRM> model);
-  virtual double BoundaryFaceValue(int f, const CompositeVector& pressure);
+  virtual double BoundaryFaceValue(int f, const CompositeVector& pressure) override;
 
  private:
   void InitializeFields_();

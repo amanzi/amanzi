@@ -184,13 +184,12 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
     // preparing upwind data
     Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
     if (k_ != Teuchos::null) {
-      k_ -> ScatterMasterToGhosted("face");
+      k_->ScatterMasterToGhosted("face");
       if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
     }
 
     // updating matrix blocks
     AmanziMesh::Entity_ID_List cells, faces;
-    std::vector<int> dirs;
 
     for (int f = 0; f != nfaces_owned; ++f) {
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
@@ -225,12 +224,14 @@ void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
   // Add derivatives to the matrix (Jacobian in this case)
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_TRUE && u.get()) {
     AMANZI_ASSERT(u != Teuchos::null);
+
     if (k_ != Teuchos::null){
       if (k_ -> HasComponent("face")) k_ -> ScatterMasterToGhosted("face");
     }
     if (dkdp_ != Teuchos::null){
       if (dkdp_ -> HasComponent("face")) dkdp_ -> ScatterMasterToGhosted("face");
     }
+
     AnalyticJacobian_(*u);
   }
 }
@@ -243,12 +244,14 @@ void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
   // Add derivatives to the matrix (Jacobian in this case)
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_TRUE && u.get()) {
     AMANZI_ASSERT(u != Teuchos::null);
+
     if (k_ != Teuchos::null){
       if (k_ -> HasComponent("face")) k_ -> ScatterMasterToGhosted("face");
     }
     if (dkdp_ != Teuchos::null){
       if (dkdp_ -> HasComponent("face")) dkdp_ -> ScatterMasterToGhosted("face");
     }
+
     AnalyticJacobian_(*u);
   }
 }  
@@ -320,7 +323,7 @@ void PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solu
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
 
   solution->ScatterMasterToGhosted("cell");
-  if (k_ != Teuchos::null)  k_ -> ScatterMasterToGhosted("face");
+  if (k_ != Teuchos::null)  k_->ScatterMasterToGhosted("face");
   
   const Teuchos::Ptr<const Epetra_MultiVector> Krel_face =
       k_.get() ? k_->ViewComponent("face", false).ptr() : Teuchos::null;
@@ -401,7 +404,6 @@ void PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   AmanziMesh::Entity_ID_List cells, faces;
-  std::vector<int> dirs;
 
   double k_rel[2], dkdp[2], pres[2], dist;
 
@@ -544,11 +546,7 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
   for (int f = 0; f < nfaces_owned; f++) {
     trans_face[0][f] = 1.0 / beta_face[0][f];
   }
-
-#ifdef HAVE_MPI
   transmissibility_->ScatterMasterToGhosted("face", true);
-#endif
-
   transmissibility_initialized_ = true;
 }
 

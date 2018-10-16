@@ -13,6 +13,7 @@ map, not the true row map.
 */
 
 #include <vector>
+#include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_Export.h"
@@ -39,11 +40,10 @@ GraphFE::GraphFE(const Teuchos::RCP<const Epetra_Map>& row_map,
   n_used_ = ghosted_row_map_->NumMyElements();
   n_owned_ = row_map_->NumMyElements();
 
-  if (n_used_ - n_owned_ > 0) {
-    includes_ghosted_ = true;
-  } else {
-    includes_ghosted_ = false;
-  }
+  // offproc graph is not empty when at least one processor has a mesh
+  int tmp2, tmp1(n_used_ - n_owned_);
+  ghosted_row_map_->Comm().MaxAll(&tmp1, &tmp2, 1);
+  includes_ghosted_ = (tmp2 > 0);
 
   // create the graphs
   graph_ = Teuchos::rcp(new Epetra_CrsGraph(Copy, *row_map_, *col_map_,
@@ -62,8 +62,6 @@ GraphFE::GraphFE(const Teuchos::RCP<const Epetra_Map>& row_map,
     // create the exporter from offproc to onproc
     exporter_ = Teuchos::rcp(new Epetra_Export(*offproc_row_map_, *row_map_));
   }
-
-
 }
 
 GraphFE::GraphFE(const Teuchos::RCP<const Epetra_Map>& row_map,
@@ -81,12 +79,10 @@ GraphFE::GraphFE(const Teuchos::RCP<const Epetra_Map>& row_map,
   n_used_ = ghosted_row_map_->NumMyElements();
   n_owned_ = row_map_->NumMyElements();
 
-
-  if (n_used_ - n_owned_ > 0) {
-    includes_ghosted_ = true;
-  } else {
-    includes_ghosted_ = false;
-  }
+  // offproc graph is not empty when at least one processor has a mesh
+  int tmp2, tmp1(n_used_ - n_owned_);
+  ghosted_row_map_->Comm().MaxAll(&tmp1, &tmp2, 1);
+  includes_ghosted_ = (tmp2 > 0);
 
   // create the graphs
   graph_ = Teuchos::rcp(new Epetra_CrsGraph(Copy, *row_map_, *col_map_,
@@ -194,8 +190,6 @@ GraphFE::FillComplete(const Teuchos::RCP<const Epetra_Map>& domain_map,
 
   return ierr;  
 }
-  
-
   
 } // namespace Operators
 } // namespace Amanzi

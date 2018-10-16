@@ -119,7 +119,8 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
   //    placeholder for new approximation methods.
   virtual void UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
                                               const Teuchos::Ptr<const CompositeVector>& u,
-                                              double scalar_factor=1) override;
+                                              double scalar_factor = 1) override;
+
   virtual void UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
                                               const Teuchos::Ptr<const CompositeVector>& u,
                                               const Teuchos::Ptr<const CompositeVector>& factor) override;

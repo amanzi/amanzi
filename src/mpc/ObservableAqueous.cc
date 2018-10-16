@@ -43,7 +43,7 @@ int ObservableAqueous::ComputeRegionSize()
   // check if observation is planar
   obs_planar_ = false;
 
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_ptr = mesh_ -> geometric_model();
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_ptr = mesh_->geometric_model();
   Teuchos::RCP<const AmanziGeometry::Region> reg_ptr = gm_ptr->FindRegion(region_);
 
   if (reg_ptr->type() == AmanziGeometry::POLYGON) {
@@ -106,7 +106,7 @@ void ObservableAqueous::ComputeObservation(
 {
   //double volume, value;
   Errors::Message msg;
-  int dim = mesh_ -> space_dimension();
+  int dim = mesh_->space_dimension();
   double rho = *S.GetScalarData("fluid_density");
   const Epetra_MultiVector& porosity = *S.GetFieldData("porosity")->ViewComponent("cell");    
   const Epetra_MultiVector& ws = *S.GetFieldData("saturation_liquid")->ViewComponent("cell");

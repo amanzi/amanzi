@@ -54,7 +54,8 @@
 * **************************************************************** */
 template<class AnalyticDG>
 void AdvectionSteady(int dim, std::string filename, int nx,
-                     std::string weak_form, bool conservative_form)
+                     std::string weak_form, bool conservative_form,
+                     std::string dg_basis = "regularized")
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -66,8 +67,10 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   int MyPID = comm.MyPID();
 
   std::string problem = (conservative_form) ? ", conservative formulation" : "";
-  if (MyPID == 0) std::cout << "\nTest: " << dim << "D steady advection, dG method" << problem
-                            << ", weak formulation=" << weak_form << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: " << dim 
+                            << "D steady advection, dG method" << problem
+                            << ", weak formulation=" << weak_form
+                            << ", basis=" << dg_basis << std::endl;
 
   // read parameter list
   std::string xmlFileName;
@@ -107,15 +110,19 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   // create global operator 
   // -- flux term
   ParameterList op_list = plist.sublist(pk_name).sublist("flux operator");
+  op_list.set<std::string>("dg basis", dg_basis);
   auto op_flux = Teuchos::rcp(new PDE_AdvectionRiemann(op_list, mesh));
   auto global_op = op_flux->global_operator();
+  const WhetStone::DG_Modal& dg = op_flux->dg();
 
   // -- volumetric advection term
   op_list = plist.sublist(pk_name).sublist("advection operator");
+  op_list.set<std::string>("dg basis", dg_basis);
   auto op_adv = Teuchos::rcp(new PDE_Abstract(op_list, global_op));
 
   // -- reaction term
   op_list = plist.sublist(pk_name).sublist("reaction operator");
+  op_list.set<std::string>("dg basis", dg_basis);
   auto op_reac = Teuchos::rcp(new PDE_Reaction(op_list, global_op));
   double Kreac = op_list.get<double>("coef");
 
@@ -124,7 +131,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   int nk = (dim == 2) ? (order + 1) * (order + 2) / 2 :
                         (order + 1) * (order + 2) * (order + 3) / 6;
 
-  AnalyticDG ana(mesh, order);
+  AnalyticDG ana(mesh, order, true);
 
   // set up problem coefficients
   // -- reaction function
@@ -172,10 +179,9 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   // -- source term is calculated using method of manufactured solutions
   //    f = K p + div (v p) = K p + v . grad p + p div(v)
   WhetStone::Polynomial sol, src;
-  WhetStone::VectorPolynomial grad(dim, 0);
-
   WhetStone::Polynomial pc(dim, order);
-  WhetStone::NumericalIntegration numi(mesh, false);
+  WhetStone::DenseVector data(pc.size());
+  WhetStone::NumericalIntegration numi(mesh);
 
   Epetra_MultiVector& rhs_c = *global_op->rhs()->ViewComponent("cell");
   for (int c = 0; c < ncells; ++c) {
@@ -186,22 +192,26 @@ void AdvectionSteady(int dim, std::string filename, int nx,
     divv.ChangeOrigin(xc);
 
     ana.SolutionTaylor(xc, 0.0, sol);
-    grad.Gradient(sol); 
 
-    src = Kreac * sol + v * grad;
+    src = Kreac * sol + v * Gradient(sol);
     if (conservative_form) src += divv * sol;
 
-    for (auto it = pc.begin(); it.end() <= pc.end(); ++it) {
+    for (auto it = pc.begin(); it < pc.end(); ++it) {
       int n = it.PolynomialPosition();
       int k = it.MonomialSetOrder();
 
-      double factor = numi.MonomialNaturalScales(c, k);
-      WhetStone::Polynomial cmono(dim, it.multi_index(), factor);
+      WhetStone::Polynomial cmono(dim, it.multi_index(), 1.0);
       cmono.set_origin(xc);      
 
       WhetStone::Polynomial tmp = src * cmono;      
 
-      rhs_c[n][c] = numi.IntegratePolynomialCell(c, tmp);
+      data(n) = numi.IntegratePolynomialCell(c, tmp);
+    }
+
+    // -- convert moment to my basis
+    dg.cell_basis(c).LinearFormNaturalToMy(data);
+    for (int n = 0; n < pc.size(); ++n) {
+      rhs_c[n][c] = data(n);
     }
   }
 
@@ -211,7 +221,6 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(nk);
 
   WhetStone::Polynomial coefs;
-  WhetStone::DenseVector data;
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
@@ -226,7 +235,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
         if (weak_sign < 0.0) bc_model[f] = OPERATOR_BC_DIRICHLET_TYPE2;
 
         ana.SolutionTaylor(xf, 0.0, coefs);
-        coefs.GetPolynomialCoefficients(data);
+        data = coefs.coefs();
 
         for (int i = 0; i < nk; ++i) {
           bc_value[f][i] = data(i);
@@ -297,22 +306,26 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   solution.ScatterMasterToGhosted();
   Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
 
-  double pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean;
-  ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean);
+  double pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean, pl2_int;
+  ana.ComputeCellError(dg, p, 0.0, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean, pl2_int);
 
   if (MyPID == 0) {
     sol.ChangeOrigin(AmanziGeometry::Point(2));
     std::cout << "\nEXACT solution: " << sol << std::endl;
-    printf("Mean:  L2(p)=%12.9f  Inf(p)=%12.9f  itr=%3d\n", pl2_mean, pinf_mean, solver.num_itrs());
-    printf("Total: L2(p)=%12.9f  Inf(p)=%12.9f\n", pl2_err, pinf_err);
+    printf("Mean:     L2(p)=%12.9f  Inf(p)=%12.9f  itr=%3d\n", pl2_mean, pinf_mean, solver.num_itrs());
+    printf("Total:    L2(p)=%12.9f  Inf(p)=%12.9f\n", pl2_err, pinf_err);
+    printf("Integral: L2(p)=%12.9f\n", pl2_int);
     CHECK(pl2_err < 1e-10 && pinf_err < 1e-10);
   } 
 }
 
 
 TEST(OPERATOR_ADVECTION_STEADY_DG) {
-  AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "primal", false);
-  AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "dual", true);
+  AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "primal", false, "orthonormalized");
+  AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "primal", false, "normalized");
+  AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "primal", false, "regularized");
+  AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "dual", true, "normalized");
+  AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "dual", true, "regularized");
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "dual", false);
   AdvectionSteady<AnalyticDG02>(3, "cubic", 3, "dual", true);
 }

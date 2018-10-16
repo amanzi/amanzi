@@ -46,53 +46,52 @@ class Darcy_PK : public Flow_PK {
   ~Darcy_PK();
 
   // methods required for PK interface
-  virtual void Setup(const Teuchos::Ptr<State>& S);
-  virtual void Initialize(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S) override;
+  virtual void Initialize(const Teuchos::Ptr<State>& S) override;
 
-  virtual void set_dt(double dt) { dt_ = dt; dt_desirable_ = dt; }
-  virtual double get_dt() { return dt_desirable_; }
+  virtual void set_dt(double dt) override { dt_ = dt; dt_desirable_ = dt; }
+  virtual double get_dt() override { return dt_desirable_; }
 
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false); 
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
-  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) override; 
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) override;
 
-  virtual std::string name() { return passwd_; }
+  virtual std::string name() override { return passwd_; }
 
   // methods required for time integration interface: dummy routines for Darcy flow.
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
   void FunctionalResidual(const double t_old, double t_new, 
                   Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
-                  Teuchos::RCP<TreeVector> f) {};
-  double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) { return 0.0; }
+                  Teuchos::RCP<TreeVector> f) override {};
+  double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) override { return 0.0; }
   void update_norm(double rtol, double atol) {};
 
   // -- preconditioner management
-  int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu) { return 0; }
-  void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt) {};
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu) override { return 0; }
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt) override {};
  
   // -- check the admissibility of a solution
   //    override with the actual admissibility check
-  bool IsAdmissible(Teuchos::RCP<const TreeVector> u) { return false; }
+  virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> u) override { return false; }
 
   // -- possibly modifies the predictor that is going to be used as a
   //    starting value for the nonlinear solve in the time integrator,
-  bool ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) {
-    return false;
-  }
+  virtual bool ModifyPredictor(double dt, Teuchos::RCP<const TreeVector> u0,
+                               Teuchos::RCP<TreeVector> u) override { return false; }
 
   // -- possibly modifies the correction, after the nonlinear solver (i.e., NKA)
   //    has computed it, will return true if it did change the correction,
   //    so that the nonlinear iteration can store the modified correction
   //    and pass it to NKA so that the NKA space can be updated
-   AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
       ModifyCorrection(double dt, Teuchos::RCP<const TreeVector> res,
-                       Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
+                       Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) override {
     return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
   }
 
   // -- experimental approach -- calling this indicates that the time
   //    integration scheme is changing the value of the solution in state.
-  void ChangedSolution() {};
+  virtual void ChangedSolution() override {};
 
   // other members of the PK linear solvers
   void SolveFullySaturatedProblem(CompositeVector& u, bool wells_on);

@@ -200,10 +200,10 @@ void RunTest(std::string op_list_name) {
     global_op->UpdatePreconditioner();
 
     // Test SPD properties of the matrix and preconditioner.
+    VerificationCV ver(global_op);
     if (loop == 2) {
-      VerificationCV ver(global_op);
       ver.CheckMatrixSPD(true, true);
-      ver.CheckPreconditionerSPD(true, true);
+      ver.CheckPreconditionerSPD(1e-12, true, true);
     }
 
     // solve the problem
@@ -214,6 +214,9 @@ void RunTest(std::string op_list_name) {
 
     CompositeVector rhs = *global_op->rhs();
     int ierr = solver->ApplyInverse(rhs, *solution);
+
+    if (op_list_name == "diffusion operator")
+         ver.CheckResidual(*solution, 1.0e-12);
 
     int num_itrs = solver->num_itrs();
     CHECK(num_itrs > 5 && num_itrs < 15);

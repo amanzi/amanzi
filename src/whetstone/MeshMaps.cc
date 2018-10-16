@@ -73,9 +73,8 @@ void MeshMaps::Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const
   }
 
   // copy velocity gradients to Jacobian
-  VectorPolynomial tmp(d_, 0);
   for (int i = 0; i < nvc; ++i) {
-    tmp.Gradient(vc[i]);
+    auto tmp = Gradient(vc[i]);
     for (int j = 0; j < d_; ++j) {
       J[i][j] = tmp[j];
     }
@@ -192,9 +191,9 @@ int MeshMaps::LeastSquareFit(int order,
   int nx = x1.size();
 
   // evaluate basis functions at given points
-  DenseMatrix psi(nk, nx);
+  DenseMatrix psi(nx, nk);
 
-  for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
+  for (auto it = poly.begin(); it < poly.end(); ++it) {
     int i = it.PolynomialPosition();
     const int* idx = it.multi_index();
 
@@ -203,23 +202,14 @@ int MeshMaps::LeastSquareFit(int order,
       for (int k = 0; k < d_; ++k) {
         val *= std::pow(x1[n][k], idx[k]);
       }
-      psi(i, n) = val;
+      psi(n, i) = val;
     }
   }
       
-  // form matrix of linear system
+  // form linear system
   DenseMatrix A(nk, nk);
 
-  for (int i = 0; i < nk; ++i) {
-    for (int j = i; j < nk; ++j) {
-      double tmp(0.0);
-      for (int n = 0; n < nx; ++n) {
-        tmp += psi(i, n) * psi(j, n);
-      }
-      A(i, j) = A(j, i) = tmp;
-    }
-  }
-
+  A.Multiply(psi, psi, true);
   A.Inverse();
 
   // solver linear systems
@@ -228,21 +218,19 @@ int MeshMaps::LeastSquareFit(int order,
   v.resize(d_);
   for (int k = 0; k < d_; ++k) { 
     v[k].Reshape(d_, order);
+    v[k].set_origin(AmanziGeometry::Point(d_));
 
     for (int i = 0; i < nk; ++i) {
       b(i) = 0.0;
       for (int n = 0; n < nx; ++n) {
-        b(i) += x2[n][k] * psi(i, n);
+        b(i) += x2[n][k] * psi(n, i);
       }
     }
 
     A.Multiply(b, u, false);
 
-    for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
-      int n = it.MonomialSetOrder();
-      int m = it.MonomialSetPosition();
-      int i = it.PolynomialPosition();
-      v[k](n, m) = u(i);
+    for (auto i = 0; i < nk; ++i) {
+      v[k](i) = u(i);
     }
   }
 
@@ -258,13 +246,12 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
   int order = poly.order();
 
   WhetStone::Entity_ID_List faces, nodes;
-  std::vector<int> dirs;
 
-  mesh0_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  mesh0_->cell_get_faces(c, &faces);
   int nfaces = faces.size();  
 
   AmanziGeometry::Point v0(d_), v1(d_);
-  std::vector<VectorPolynomial> vvf;
+  std::vector<Polynomial> vvf;
 
   for (int i = 0; i < nfaces; ++i) {
     int f = faces[i];
@@ -276,16 +263,16 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
     double f0 = poly.Value(v0);
     double f1 = poly.Value(v1);
 
-    WhetStone::VectorPolynomial vf(d_ - 1, 1);
-    vf[0].Reshape(d_ - 1, order);
+    WhetStone::Polynomial vf(d_ - 1, 1);
+    vf.Reshape(d_ - 1, order);
     if (order == 1) {
-      vf[0](0, 0) = (f0 + f1) / 2; 
-      vf[0](1, 0) = f1 - f0; 
+      vf(0, 0) = (f0 + f1) / 2; 
+      vf(1, 0) = f1 - f0; 
     } else if (order == 2) {
       double f2 = poly.Value((v0 + v1) / 2);
-      vf[0](0, 0) = f2;
-      vf[0](1, 0) = f1 - f0;
-      vf[0](2, 0) = -4 * f2 + 2 * f0 + 2 * f1;
+      vf(0, 0) = f2;
+      vf(1, 0) = f1 - f0;
+      vf(2, 0) = -4 * f2 + 2 * f0 + 2 * f1;
     } else {
       AMANZI_ASSERT(0);
     }
@@ -295,24 +282,22 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
 
     std::vector<AmanziGeometry::Point> tau;
     tau.push_back(v1 - v0);
-    vf[0].InverseChangeCoordinates(xf, tau);
+    vf.InverseChangeCoordinates(xf, tau);
     vvf.push_back(vf);
   }
 
-  auto moments = std::make_shared<WhetStone::DenseVector>();
+  Polynomial moments(d_, 0);
+
   if (order == 2) {
-    NumericalIntegration numi(mesh1_, true);
+    NumericalIntegration numi(mesh1_);
     double mass = numi.IntegratePolynomialCell(c, poly);
 
-    moments->Reshape(1);
-    (*moments)(0) = mass / mesh1_->cell_volume(c);
+    moments(0) = mass / mesh1_->cell_volume(c);
   }
 
-  VectorPolynomial vc(d_, 0);
   MFD3D_LagrangeSerendipity mfd(mesh1_);
   mfd.set_order(order);
-  mfd.L2Cell(c, vvf, moments, vc);
-  poly = vc[0];
+  mfd.L2Cell(c, vvf, moments, poly);
 }
 
 }  // namespace WhetStone

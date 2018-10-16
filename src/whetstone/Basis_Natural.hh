@@ -9,15 +9,22 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  The natural basis for dG methods: (x - x0)^m / h^m.
+  Natural basis with basis with monomials of form (x-x0)^k. The
+  transformation matrix R is identity. This class is introduced 
+  for factory to work uniformly.
 */
 
 #ifndef AMANZI_DG_BASIS_NATURAL_HH_
 #define AMANZI_DG_BASIS_NATURAL_HH_
 
-#include <vector>
+#include "Teuchos_RCP.hpp"
+
+#include "Mesh.hh"
 
 #include "Basis.hh"
+#include "DenseMatrix.hh"
+#include "DenseVector.hh"
+#include "Polynomial.hh"
 #include "WhetStoneDefs.hh"
 
 namespace Amanzi {
@@ -29,25 +36,39 @@ class Basis_Natural : public Basis {
   ~Basis_Natural() {};
 
   // initialization
-  virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order);
+  virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order) {
+    order_ = order;
+  }
 
-  // transformation from natural basis to owned basis (nothing to do)
-  virtual void ChangeBasisMatrix(DenseMatrix& A) const {};
-  virtual void ChangeBasisVector(DenseVector& v) const {};
+  // transformation of bilinear form
+  virtual void BilinearFormNaturalToMy(DenseMatrix& A) const {};
+  virtual void BilinearFormNaturalToMy(std::shared_ptr<Basis> bl,
+                                       std::shared_ptr<Basis> br, DenseMatrix& A) const {};
 
-  virtual void ChangeBasisMatrix(Basis* bl, Basis* br, DenseMatrix& A) const {};
-  virtual void ChangeBasisMatrix(std::shared_ptr<Basis> bl, std::shared_ptr<Basis> br, DenseMatrix& A) const {};
+  // transformation of linear form
+  virtual void LinearFormNaturalToMy(DenseVector& v) const {};
 
-  // Recover polynomial in regular basis
+  // transformation of vector 
+  virtual void ChangeBasisMyToNatural(DenseVector& v) const {};
+  virtual void ChangeBasisNaturalToMy(DenseVector& v) const {};
+
+  // recover polynomial in natural basis
   virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                                         int c, int order, DenseVector& coefs) const;
+                                         int c, int order, DenseVector& coefs) const {
+    int d = mesh->space_dimension();
+    Polynomial poly(d, order, coefs);
+    poly.set_origin(mesh->cell_centroid(c));
+    return poly;
+  }
 
-  // access
-  const std::vector<double>& monomial_scales() { return monomial_scales_; }
+  // assess 
+  int id() { return id_; };
+
+ protected:
+  int id_;
 
  private:
-  using Basis::id_;
-  std::vector<double> monomial_scales_;
+  int order_;
 };
 
 }  // namespace WhetStone

@@ -141,7 +141,7 @@ void RelPerm::PlotWRMcurves()
   int ndata(1000);
   for (int n = 0; n < wrm_->second.size(); ++n) {
     std::ofstream ofile;
-    std::string filename("wrm_" + wrm_->second[n]->region() + ".txt");
+    std::string filename("wrm_" + std::to_string(n) + ".txt");
     ofile.open(filename.c_str());
 
     double sr = wrm_->second[n]->residualSaturation();

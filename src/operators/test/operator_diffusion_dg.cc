@@ -33,15 +33,16 @@
 #include "AnalyticDG01.hh"
 #include "AnalyticDG02.hh"
 
-#include "OperatorAudit.hh"
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionDG.hh"
+#include "Verification.hh"
 
 
 /* *****************************************************************
 * This test diffusion solver with full tensor and source term.
 * **************************************************************** */
-void OperatorDiffusionDG(std::string solver_name) {
+void OperatorDiffusionDG(std::string solver_name,
+                         std::string dg_basis = "regularized") {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -51,7 +52,8 @@ void OperatorDiffusionDG(std::string solver_name) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: 2D elliptic problem, dG method, solver: " << solver_name << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: 2D elliptic problem, dG method, solver: " << solver_name 
+                            << ", basis=" << dg_basis << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion.xml";
@@ -77,7 +79,7 @@ void OperatorDiffusionDG(std::string solver_name) {
   auto Kc = std::make_shared<std::vector<WhetStone::Tensor> >();
   auto Kf = std::make_shared<std::vector<double> >();
 
-  AnalyticDG02 ana(mesh, 2);
+  AnalyticDG02 ana(mesh, 2, false);
 
   for (int c = 0; c < ncells_wghost; c++) {
     const Point& xc = mesh->cell_centroid(c);
@@ -111,27 +113,26 @@ void OperatorDiffusionDG(std::string solver_name) {
       bc_model[f] = OPERATOR_BC_DIRICHLET;
 
       ana.SolutionTaylor(xf, 0.0, coefs);
-      coefs.GetPolynomialCoefficients(data);
-
-      for (int i = 0; i < data.NumRows(); ++i) {
-        bc_value[f][i] = data(i);
+      for (int i = 0; i < coefs.size(); ++i) {
+        bc_value[f][i] = coefs(i);
       }
     } else if (fabs(xf[1] - 1.0) < 1e-6) {
-      bc_model[f] = OPERATOR_BC_NEUMANN;
+      // bc_model[f] = OPERATOR_BC_NEUMANN;
+      bc_model[f] = OPERATOR_BC_DIRICHLET;
 
       ana.SolutionTaylor(xf, 0.0, coefs);
-      coefs.GetPolynomialCoefficients(data);
-
-      for (int i = 0; i < data.NumRows(); ++i) {
-        bc_value[f][i] = data(i);
+      for (int i = 0; i < coefs.size(); ++i) {
+        bc_value[f][i] = coefs(i);
       }
     }
   }
 
   // create diffusion operator 
   // -- primary term
+  op_list.set<std::string>("dg basis", dg_basis);
   Teuchos::RCP<PDE_DiffusionDG> op = Teuchos::rcp(new PDE_DiffusionDG(op_list, mesh));
   auto global_op = op->global_operator();
+  const WhetStone::DG_Modal& dg = op->dg();
 
   // -- boundary conditions
   op->SetBCs(bc, bc);
@@ -142,7 +143,7 @@ void OperatorDiffusionDG(std::string solver_name) {
   Epetra_MultiVector& src_c = *src.ViewComponent("cell");
 
   WhetStone::Polynomial pc(2, order);
-  WhetStone::NumericalIntegration numi(mesh, false);
+  WhetStone::NumericalIntegration numi(mesh);
 
   for (int c = 0; c < ncells; ++c) {
     const Point& xc = mesh->cell_centroid(c);
@@ -151,17 +152,22 @@ void OperatorDiffusionDG(std::string solver_name) {
     ana.SourceTaylor(xc, 0.0, coefs);
     coefs.set_origin(xc);
 
-    for (auto it = pc.begin(); it.end() <= pc.end(); ++it) {
+    // -- calculate moments in natural basis
+    data.Reshape(pc.size());
+    for (auto it = pc.begin(); it < pc.end(); ++it) {
       int n = it.PolynomialPosition();
-      int k = it.MonomialSetOrder();
 
-      double factor = numi.MonomialNaturalScales(c, k);
-      WhetStone::Polynomial cmono(2, it.multi_index(), factor);
+      WhetStone::Polynomial cmono(2, it.multi_index(), 1.0);
       cmono.set_origin(xc);      
-
       WhetStone::Polynomial tmp = coefs * cmono;      
 
-      src_c[n][c] = numi.IntegratePolynomialCell(c, tmp);
+      data(n) = numi.IntegratePolynomialCell(c, tmp);
+    } 
+
+    // -- convert moment to my basis 
+    dg.cell_basis(c).LinearFormNaturalToMy(data);
+    for (int n = 0; n < pc.size(); ++n) {
+      src_c[n][c] = data(n);
     }
   }
 
@@ -178,8 +184,8 @@ void OperatorDiffusionDG(std::string solver_name) {
   global_op->AssembleMatrix();
 
   // Test SPD properties of the matrix.
-  Operators::CheckMatrixSymmetry(global_op->A());
-  Operators::CheckMatrixCoercivity(global_op->A());
+  VerificationCV ver(global_op);
+  ver.CheckMatrixSPD(false, true);
 
   // create preconditoner using the base operator class
   ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
@@ -196,6 +202,8 @@ void OperatorDiffusionDG(std::string solver_name) {
   solution.PutScalar(0.0);
 
   int ierr = solver->ApplyInverse(rhs, solution);
+
+  ver.CheckResidual(solution, 1.0e-11);
 
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver->residual() 
@@ -218,18 +226,21 @@ void OperatorDiffusionDG(std::string solver_name) {
   solution.ScatterMasterToGhosted();
   Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
 
-  double pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean;
-  ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean);
+  double pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean, pl2_int;
+  ana.ComputeCellError(dg, p, 0.0, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean, pl2_int);
 
   if (MyPID == 0) {
-    printf("Mean:  L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_mean, pinf_mean, solver->num_itrs());
-    printf("Total: L2(p)=%9.6f  Inf(p)=%9.6f\n", pl2_err, pinf_err);
+    printf("Mean:     L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_mean, pinf_mean, solver->num_itrs());
+    printf("Total:    L2(p)=%9.6f  Inf(p)=%9.6f\n", pl2_err, pinf_err);
+    printf("Integral: L2(p)=%9.6f\n", pl2_int);
 
-    CHECK(pl2_err < 3e-2);
+    CHECK(pl2_err < 1e-10);
   }
 }
 
 TEST(OPERATOR_DIFFUSION_DG) {
+  OperatorDiffusionDG("AztecOO CG", "orthonormalized");
+  OperatorDiffusionDG("AztecOO CG", "normalized");
   OperatorDiffusionDG("AztecOO CG");
   OperatorDiffusionDG("Amesos1");
   OperatorDiffusionDG("Amesos2");

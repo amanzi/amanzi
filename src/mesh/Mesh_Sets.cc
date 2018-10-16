@@ -13,6 +13,7 @@
   framework.
 */
 
+#include <iterator>
 #include <map>
 #include <string>
 #include <vector>
@@ -75,7 +76,8 @@ void Mesh::get_set_entities_box_vofs_(
 
             for (int i = 0; i < nnodes; ++i) {
               int j = (dirs[n] > 0) ? i : nnodes - i - 1; 
-              polytope_faces[n].push_back(FindPosition_(fnodes[j], cnodes));
+              int pos = std::distance(cnodes.begin(), std::find(cnodes.begin(), cnodes.end(), fnodes[j]));
+              polytope_faces[n].push_back(pos);
             }
           }
         }
@@ -199,15 +201,6 @@ void Mesh::get_set_entities(const Set_ID setid,
   std::vector<double> vofs;
   std::string setname = geometric_model()->FindRegion(setid)->name();
   get_set_entities_and_vofs(setname, kind, ptype, entids, &vofs);
-}
-
-
-int Mesh::FindPosition_(Entity_ID v, Entity_ID_List nodes) const
-{
-  for (int i = 0; i < nodes.size(); i++) {
-    if (nodes[i] == v) return i;
-  }
-  return -1;
 }
 
 }  // namespace AmanziMesh

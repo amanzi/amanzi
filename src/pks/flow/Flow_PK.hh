@@ -54,8 +54,8 @@ class Flow_PK : public PK_PhysicalBDF {
   virtual ~Flow_PK() {};
 
   // members required by PK interface
-  virtual void Setup(const Teuchos::Ptr<State>& S);
-  virtual void Initialize(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S) override;
+  virtual void Initialize(const Teuchos::Ptr<State>& S) override;
 
   // other members of this PK.
   // -- initialize simple fields common for both flow models.
@@ -76,11 +76,9 @@ class Flow_PK : public PK_PhysicalBDF {
 
   // -- miscallenous members
   void DeriveFaceValuesFromCellValues(const Epetra_MultiVector& ucells, Epetra_MultiVector& ufaces);
-  int FindPosition(int f, AmanziMesh::Entity_ID_List faces);
 
   // -- io members
   void OutputTimeHistory(const Teuchos::ParameterList& plist, std::vector<dt_tuple>& dt_history);
-  void WriteGMVfile(Teuchos::RCP<State> S) const;
 
   // -- utilities
   double WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
@@ -98,13 +96,9 @@ class Flow_PK : public PK_PhysicalBDF {
   void VerticalNormals(int c, AmanziGeometry::Point& n1, AmanziGeometry::Point& n2);
   virtual double BoundaryFaceValue(int f, const CompositeVector& u);
 
-  // -- support of unit tests
-  double rho() { return rho_; }
-  const AmanziGeometry::Point& gravity() { return gravity_; }
-  double seepage_mass() { return seepage_mass_; }
-
   // access
   Teuchos::RCP<Operators::BCs> op_bc() { return op_bc_; }
+  double seepage_mass() { return seepage_mass_; } // support of unit tests
 
  private:
   void InitializeFields_();
@@ -161,7 +155,6 @@ class Flow_PK : public PK_PhysicalBDF {
   // io
   Utils::Units units_;
   Teuchos::RCP<Teuchos::ParameterList> fp_list_;
-
 };
 
 }  // namespace Flow

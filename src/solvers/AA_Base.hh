@@ -220,8 +220,8 @@ void AA_Base<Vector, VectorSpace>::QRdelete() {
     }
 
     *temp_vec = *Q_[i];
-    temp_vec -> Update(s, *Q_[i+1], c);
-    Q_[i+1] -> Update(-s, *Q_[i], c);
+    temp_vec->Update(s, *Q_[i+1], c);
+    Q_[i+1]->Update(-s, *Q_[i], c);
    *Q_[i] = *temp_vec;
   }
 
@@ -265,21 +265,18 @@ void AA_Base<Vector, VectorSpace>::TestQR(int nv) {
 
   double norm2 = 0;
   int loc_id = 0.;
-  ff -> PutScalar(0.);
+  ff->PutScalar(0.);
   std::cout << "num_vec_ "<<num_vec_<<"\n";
   for (int i=0; i<nv; i++) {
-    ff -> PutScalar(0.);
+    ff->PutScalar(0.);
     for (int j=0; j<=i; j++) {
-      // std::cout<<"R_ "<<R_[loc_id]<<"\n";
-      ff -> Update(R_[loc_id], *Q_[j], 1.);
+      ff->Update(R_[loc_id], *Q_[j], 1.);
       loc_id++;
-      // std::cout<<"Q "<<j<<"\n";
       // Q_[j]->Print(std::cout);
     }
     int I = (first_f_ + i)%(mvec_ + 1);
-    ff -> Update(-1., *dF_[I], 1.);
+    ff->Update(-1., *dF_[I], 1.);
 
-    //std::cout<<"I "<<I<<"\n";
     //dF_[I]->Print(std::cout);
 
     ff->Norm2(&norm2);
@@ -332,12 +329,12 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
 
   if (last_f_ >= 0) {
     k = last_f_;
-    dF_[last_f_] -> Update(1., *dF_[new_f_], -1.);   //dF_last =  dF_new - dF_last
-    dG_[last_f_] -> Update(1., *dG_[new_f_], -1.);   //dG_last = dG_new  - dG_last
+    dF_[last_f_]->Update(1., *dF_[new_f_], -1.);   //dF_last =  dF_new - dF_last
+    dG_[last_f_]->Update(1., *dG_[new_f_], -1.);   //dG_last = dG_new  - dG_last
   }
 
   // std::cout<<"new_f "<<new_f_<<"\n";
-  // dF_[new_f_] -> Print(std::cout);
+  // dF_[new_f_]->Print(std::cout);
 
   double alp;
   double eps = 1e-12;
@@ -346,9 +343,9 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
     if (last_f_ == 0) {
       double norm2;
       *Q_[last_f_] = *dF_[last_f_];
-      Q_[last_f_] -> Norm2(&norm2);
+      Q_[last_f_]->Norm2(&norm2);
       //std::cout<<"norm2 "<<norm2<<"\n";
-      Q_[last_f_] -> Scale(1./norm2);
+      Q_[last_f_]->Scale(1./norm2);
       R_[0] = norm2;
     }
   } else if (num_vec_ > 1) {
@@ -365,11 +362,11 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
       *tmp = *dF_[last_f_];
       for (int i=0; i<num_vec_ - 1; i++) {
         double val;
-        tmp -> Dot(*Q_[i], &val);
+        tmp->Dot(*Q_[i], &val);
         R_[last_col_i + i] = val;
-        tmp -> Update(-val, *Q_[i], 1.);
+        tmp->Update(-val, *Q_[i], 1.);
       }    
-      tmp -> Norm2(&norm2); 
+      tmp->Norm2(&norm2); 
 
       if (norm2 < 1e-12) {
         QRdelete();       
@@ -379,7 +376,7 @@ void AA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
     }
 
     *Q_[num_vec_ - 1] = *tmp;
-    Q_[num_vec_ - 1] -> Scale(1./norm2);
+    Q_[num_vec_ - 1]->Scale(1./norm2);
     R_[last_col_i + num_vec_ - 1] = norm2;     
 
   }

@@ -158,6 +158,9 @@ int main(int argc, char *argv[]) {
 #ifdef MSTK_MAJOR 
         std::cout << "  MSTK           " << XSTR(MSTK_MAJOR) << "." << XSTR(MSTK_MINOR) << "." << XSTR(MSTK_PATCH) << std::endl;
 #endif
+#ifdef Nanoflann_MAJOR 
+        std::cout << "  Nanoflann      " << XSTR(Nanoflann_MAJOR) << "." << XSTR(Nanoflann_MINOR) << "." << XSTR(Nanoflann_PATCH) << std::endl;
+#endif
 #ifdef NetCDF_MAJOR
         std::cout << "  NetCDF         " << XSTR(NetCDF_MAJOR) << "." << XSTR(NetCDF_MINOR) << "." << XSTR(NetCDF_PATCH) << std::endl;
 #endif
