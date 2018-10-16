@@ -60,7 +60,7 @@ enum Entity_kind
   FACE,
   CELL,
   BOUNDARY_FACE,
-  NOENTITY
+  UNDEFINED
 };
 
 // Check if Entity_kind is valid

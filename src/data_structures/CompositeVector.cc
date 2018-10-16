@@ -160,45 +160,22 @@ CompositeVector::CompositeVector(const CompositeVector& other, bool ghosted,
 void CompositeVector::InitMap_(const CompositeVectorSpace& space) {
   // generate the master's maps
   std::vector<Teuchos::RCP<const Epetra_Map> > mastermaps;
-  for (CompositeVectorSpace::name_iterator name=space.begin(); name!=space.end(); ++name) {
-    if (space.Location(*name) == AmanziMesh::CELL) {
-      mastermaps.push_back(Teuchos::rcpFromRef(Mesh()->cell_map(false)));
-    } else if (space.Location(*name) == AmanziMesh::FACE) {
-      mastermaps.push_back(Teuchos::rcpFromRef(Mesh()->face_map(false)));
-    } else if (space.Location(*name) == AmanziMesh::NODE) {
-      mastermaps.push_back(Teuchos::rcpFromRef(Mesh()->node_map(false)));
-    } else if (space.Location(*name) == AmanziMesh::EDGE) {
-      mastermaps.push_back(Teuchos::rcpFromRef(Mesh()->edge_map(false)));
-    } else if (space.Location(*name) == AmanziMesh::BOUNDARY_FACE) {
-      mastermaps.push_back(Teuchos::rcpFromRef(Mesh()->exterior_face_map(false)));
-    }
+  for (CompositeVectorSpace::name_iterator name = space.begin(); name != space.end(); ++name) {
+    mastermaps.push_back(space.Map(*name, false));
   }
 
   // create the master BlockVector
-  mastervec_ = Teuchos::rcp(new BlockVector(Comm(), names_,
-          mastermaps, space.num_dofs_));
+  mastervec_ = Teuchos::rcp(new BlockVector(Comm(), names_, mastermaps, space.num_dofs_));
 
   // do the same for the ghosted Vector, if necessary
   if (space.Ghosted()) {
     // generate the ghost's maps
     std::vector<Teuchos::RCP<const Epetra_Map> > ghostmaps;
     for (CompositeVectorSpace::name_iterator name=space.begin(); name!=space.end(); ++name) {
-      if (space.Location(*name) == AmanziMesh::CELL) {
-        ghostmaps.push_back(Teuchos::rcpFromRef(Mesh()->cell_map(true)));
-      } else if (space.Location(*name) == AmanziMesh::FACE) {
-        ghostmaps.push_back(Teuchos::rcpFromRef(Mesh()->face_map(true)));
-      } else if (space.Location(*name) == AmanziMesh::NODE) {
-        ghostmaps.push_back(Teuchos::rcpFromRef(Mesh()->node_map(true)));
-      } else if (space.Location(*name) == AmanziMesh::EDGE) {
-        ghostmaps.push_back(Teuchos::rcpFromRef(Mesh()->edge_map(true)));
-      } else if (space.Location(*name) == AmanziMesh::BOUNDARY_FACE) {
-        ghostmaps.push_back(Teuchos::rcpFromRef(Mesh()->exterior_face_map(true)));
-      }
+      ghostmaps.push_back(space.Map(*name, true));
     }
-
     // create the ghost BlockVector
-    ghostvec_ = Teuchos::rcp(new BlockVector(Comm(), names_,
-            ghostmaps, space.num_dofs_));
+    ghostvec_ = Teuchos::rcp(new BlockVector(Comm(), names_, ghostmaps, space.num_dofs_));
   } else {
     ghostvec_ = mastervec_;
   }

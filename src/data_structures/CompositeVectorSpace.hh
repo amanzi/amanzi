@@ -85,6 +85,8 @@ public:
   AmanziMesh::Entity_kind Location(std::string name) const {
     return locations_[Index_(name)]; }
 
+  Teuchos::RCP<const Epetra_Map> Map(std::string name, bool ghost=false) const;
+
   // Update all specs from another space's specs.
   // Useful for PKs to maintain default factories that apply to multiple CVs.
   CompositeVectorSpace* Update(const CompositeVectorSpace& other);
@@ -97,25 +99,25 @@ public:
   AddComponent(std::string name,
                AmanziMesh::Entity_kind location,
                int num_dofs);
-  
-  CompositeVectorSpace*
-  AddComponent(std::string names,
-               const std::vector<int>& num_dofs,
-               AmanziMesh::Entity_kind location,               
-               Teuchos::RCP<const Epetra_Map> mastermap,
-               Teuchos::RCP<const Epetra_Map> ghostmap);
- 
+   
   CompositeVectorSpace*
   AddComponents(const std::vector<std::string>& names,
                 const std::vector<AmanziMesh::Entity_kind>& locations,
                 const std::vector<int>& num_dofs);
 
   CompositeVectorSpace*
+  AddComponent(std::string& name,
+               Teuchos::RCP<const Epetra_Map> mastermap,
+               Teuchos::RCP<const Epetra_Map> ghostmap,
+               int num_dofs);
+
+  
+  CompositeVectorSpace*
   AddComponents(const std::vector<std::string>& names,
                 const std::vector<AmanziMesh::Entity_kind>& locations,
-                const std::vector<int>& num_dofs,                
                 std::map<std::string, Teuchos::RCP<const Epetra_Map> > mastermaps,
-                std::map<std::string, Teuchos::RCP<const Epetra_Map> > ghostmaps);
+                std::map<std::string, Teuchos::RCP<const Epetra_Map> > ghostmaps,
+                const std::vector<int>& num_dofs);
 
 
   // Set methods fix the component specs, checking to make sure all previously
@@ -130,6 +132,22 @@ public:
                 const std::vector<AmanziMesh::Entity_kind>& locations,
                 const std::vector<int>& num_dofs);
 
+
+  CompositeVectorSpace*
+  SetComponent(std::string& name,
+               Teuchos::RCP<const Epetra_Map> mastermap,
+               Teuchos::RCP<const Epetra_Map> ghostmap,
+               int num_dof);
+
+
+  CompositeVectorSpace*
+  SetComponents(const std::vector<std::string>& names,
+                const std::vector<AmanziMesh::Entity_kind> locations,                
+                std::map<std::string, Teuchos::RCP<const Epetra_Map> > mastermaps,
+                std::map<std::string, Teuchos::RCP<const Epetra_Map> > ghostmaps,
+                const std::vector<int>& num_dofs);
+
+  
 private:
   // Indexing of name->int
   int Index_(std::string name) const {
@@ -158,16 +176,17 @@ private:
                            std::vector<std::string>& names2,
                            std::vector<AmanziMesh::Entity_kind>& locations2,
                            std::vector<int>& num_dofs2);
+  
  bool UnionAndConsistent_(const std::vector<std::string>& names1,
-                          const std::vector<AmanziMesh::Entity_kind>& locations1,
+                          const std::vector<AmanziMesh::Entity_kind>& locations1,                                 
                           const std::vector<int>& num_dofs1,
-                          const std::vector<Teuchos::RCP<const Epetra_Map> >& mastermaps1,
-                          const std::vector<Teuchos::RCP<const Epetra_Map> >& ghostmaps1,                                                             
+                          std::map<std::string, Teuchos::RCP<const Epetra_Map> >& mastermaps1,
+                          std::map<std::string, Teuchos::RCP<const Epetra_Map> >& ghostmaps1,                          
                           std::vector<std::string>& names2,
-                          std::vector<AmanziMesh::Entity_kind>& locations2,
+                          std::vector<AmanziMesh::Entity_kind>& locations2,       
                           std::vector<int>& num_dofs2,
-                          std::map<std::string, Teuchos::RCP<const Epetra_Map> > mastermaps2,
-                          std::map<std::string, Teuchos::RCP<const Epetra_Map> > ghostmaps2);
+                          std::map<std::string, Teuchos::RCP<const Epetra_Map> >& mastermaps2,
+                          std::map<std::string, Teuchos::RCP<const Epetra_Map> >& ghostmaps2);
 
 
 private:
@@ -180,6 +199,7 @@ private:
   std::map< std::string, int > indexmap_;
 
   std::vector<AmanziMesh::Entity_kind> locations_;
+  
   std::vector<int> num_dofs_;
   std::map<std::string, Teuchos::RCP<const Epetra_Map> > mastermaps_;
   std::map<std::string, Teuchos::RCP<const Epetra_Map> > ghostmaps_;  
