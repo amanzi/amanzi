@@ -61,8 +61,6 @@ struct GroundProperties {
 struct SnowProperties {
   double height;                // snow depth [m] (NOT SWE!)
   double density;               // snow density [ kg / m^3 ]
-  double age;                   // snow age [days]
-  double SWE;                   // SNOW WATER EQUIVALANCE [m]
   double temp;                  // snow temperature [K]
   double albedo;                // [-]
   double emissivity;            // [-]
@@ -71,8 +69,6 @@ struct SnowProperties {
   SnowProperties() :
       height(MY_LOCAL_NAN),
       density(MY_LOCAL_NAN),
-      age(MY_LOCAL_NAN),
-      SWE(MY_LOCAL_NAN),
       temp(MY_LOCAL_NAN),
       albedo(MY_LOCAL_NAN),
       emissivity(MY_LOCAL_NAN),

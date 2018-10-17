@@ -141,8 +141,6 @@ ImplicitSubgrid::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<Tre
 
   const auto& snow_dens_old = *S_inter_->GetFieldData(snow_dens_key_)->ViewComponent("cell",false);
   auto& snow_dens_new = *S_next_->GetFieldData(snow_dens_key_, name_)->ViewComponent("cell",false);
-
-  AMANZI_ASSERT(S_next_->GetFieldEvaluator(new_snow_key_).get() == S_next_->GetFieldEvaluator(source_key_).get());
   
   S_next_->GetFieldEvaluator(new_snow_key_)->HasFieldChanged(S_next_.ptr(), name_);
   const auto& new_snow = *S_next_->GetFieldData(new_snow_key_)->ViewComponent("cell",false);
@@ -172,10 +170,10 @@ ImplicitSubgrid::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<Tre
       //        (1/0.3)) - 1 + dt;
 
       // ignoring frost, just weighting precip and old snow
-      snow_age_new[0][c] = (age_settled * (swe_old - swe_lost) + age_new_snow * swe_added)
-                           / (swe_old + swe_added - swe_lost);
-      snow_dens_new[0][c] = (dens_settled * (swe_old - swe_lost) + params.density_freshsnow * swe_added)
-                            / (swe_old + swe_added - swe_lost);
+      snow_age_new[0][c] = (age_settled * std::max(swe_old - swe_lost,0.) + age_new_snow * swe_added)
+                           / (std::max(swe_old - swe_lost,0.) + swe_added);
+      snow_dens_new[0][c] = (dens_settled * std::max(swe_old - swe_lost,0.) + params.density_freshsnow * swe_added)
+                            / (std::max(swe_old - swe_lost,0.) + swe_added);
     }
   }
   pvfe_snow_dens_->SetFieldAsChanged(S_next_.ptr());
