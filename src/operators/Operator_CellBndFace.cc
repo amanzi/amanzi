@@ -80,7 +80,7 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Face_CellFace& op,
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
-    if (ncells == 2){
+    if (ncells == 2) {
       WhetStone::DenseVector v(ncells), av(ncells);
       for (int n=0; n!=ncells; ++n) {
         v(n) = Xc[0][cells[n]];
@@ -92,7 +92,7 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Face_CellFace& op,
       for (int n=0; n!=ncells; ++n) {
         Yc[0][cells[n]] += av(n);
       }
-    }else if (ncells==1){
+    }else if (ncells==1) {
       int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f));
 
       WhetStone::DenseVector v(2), av(2);
@@ -151,12 +151,12 @@ void Operator_CellBndFace::SymbolicAssembleMatrixOp(const Op_Face_CellFace& op,
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     
     int ncells = cells.size();
-    if (ncells == 2){
+    if (ncells == 2) {
       for (int n=0; n!=ncells; ++n) {
         lid_r[n] = cell_row_inds[cells[n]];
         lid_c[n] = cell_col_inds[cells[n]];
       }
-    }else if (ncells==1){
+    }else if (ncells==1) {
       lid_r[0] = cell_row_inds[cells[0]];
       lid_c[0] = cell_col_inds[cells[0]];
       int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f));
@@ -211,26 +211,17 @@ void Operator_CellBndFace::AssembleMatrixOp(const Op_Face_CellFace& op,
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     
     int ncells = cells.size();
-    if (ncells == 2){
+    if (ncells == 2) {
       for (int n=0; n!=ncells; ++n) {
         lid_r[n] = cell_row_inds[cells[n]];
         lid_c[n] = cell_col_inds[cells[n]];
       }
-
-      // std::cout<<cells[0]<<" "<<cells[1]<<"\n";
-      // std::cout<<"mat face "<<f<<"\n"<<op.matrices[f]<<"\n";
-
-    }else if (ncells==1){
+    }else if (ncells==1) {
       lid_r[0] = cell_row_inds[cells[0]];
       lid_c[0] = cell_col_inds[cells[0]];
       int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f));
       lid_r[1] = bndface_row_inds[bf];
       lid_c[1] = bndface_col_inds[bf];     
-
-      // if (cells[0]==5){
-      //   std::cout  << "bnd face "<<f<<" : "<<lid_r[0]<<" "<<lid_r[1]<<"\n";
-      //   std::cout<<"bnd\n"<<op.matrices[f]<<"\n";       
-      // }
     }
 
     ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[f]);

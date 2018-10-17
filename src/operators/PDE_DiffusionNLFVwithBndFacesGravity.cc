@@ -42,9 +42,9 @@ void PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
     hh_c[0][c] = u_c[0][c] + rho_g * zc;
     AmanziMesh::Entity_ID_List faces;
     mesh_->cell_get_faces(c, &faces);
-    for (auto f : faces){
+    for (auto f : faces) {
       int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f));
-      if (bf >= 0){
+      if (bf >= 0) {
         double zf = (mesh_->face_centroid(f))[dim_ - 1];
         hh_bnd[0][bf] = u_bnd[0][bf] + rho_g*zf;
       }
@@ -69,7 +69,6 @@ void PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
 
   for (int f = 0; f < nfaces_owned; ++f) {
     WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
-    //std::cout<<"face "<<f<<"\n"<<Aface<<"\n";
     
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
@@ -107,8 +106,6 @@ void PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
 
   global_op_->rhs()->GatherGhostedToMaster();
 
-  // std::cout<<"RHS\n"<<rhs_cell<<"\n";
-  // exit(0);
 }
 
 
@@ -137,16 +134,11 @@ void PDE_DiffusionNLFVwithBndFacesGravity::UpdateFlux(const Teuchos::Ptr<const C
     hh_c[0][c] = u_c[0][c] + rho_g * zc;
     AmanziMesh::Entity_ID_List faces;
     mesh_->cell_get_faces(c, &faces);
-    for (auto f : faces){
+    for (auto f : faces) {
       int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f));
-      if (bf >= 0){
+      if (bf >= 0) {
         double zf = (mesh_->face_centroid(f))[dim_ - 1];
         hh_bnd[0][bf] = u_bnd[0][bf] + rho_g*zf;
-        // if (bc_model[f]== OPERATOR_BC_NEUMANN) {
-        //   const AmanziGeometry::Point& normal = mesh_->face_normal(f, false);
-        //   if (normal[dim_ - 1] > 1e-4)
-        //     std::cout<<"boundary "<<u_c[0][c]<<" "<<u_bnd[0][bf]<<"\n";
-        // }
       }
     }
   }
@@ -156,19 +148,6 @@ void PDE_DiffusionNLFVwithBndFacesGravity::UpdateFlux(const Teuchos::Ptr<const C
   PDE_DiffusionNLFVwithBndFaces::UpdateFlux(hh.ptr(), flux);
 }
 
-
-/* ******************************************************************
-* BCs are typically given in base system and must be re-mapped.
-* **************************************************************** */
-// double PDE_DiffusionNLFVwithBndFacesGravity::MapBoundaryValue_(int f, double u)
-// {
-//   AmanziMesh::Entity_ID_List cells;  
-//   mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);  
-//   double rho_g = GetDensity(cells[0]) * fabs(g_[dim_ - 1]);
-
-//   double zf = (mesh_->face_centroid(f))[dim_ - 1];
-//   return u + rho_g * zf; 
-// }
 
 }  // namespace Operators
 }  // namespace Amanzi

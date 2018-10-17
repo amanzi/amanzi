@@ -101,7 +101,6 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
   double rho(1.0);
   AmanziGeometry::Point g(0.0, -gravity);
   Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(op_list, mesh, rho, g));
-  // Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionNLFV(op_list, mesh));
   Teuchos::RCP<Operator> global_op = op->global_operator();
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = global_op->DomainMap();
@@ -147,13 +146,8 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
 
     CompositeVector& rhs = *global_op->rhs();
 
-    //std::cout<<*rhs.ViewComponent("cell");
-    
     int ierr = solver.ApplyInverse(rhs, *solution);
     
-    //    std::cout<<*solution->ViewComponent("cell");
-    
-
     // compute pressure error
     Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
     double pnorm, pl2_err, pinf_err;
@@ -288,10 +282,6 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
   //   }
   // }
 
-  // std::cout<<"solution\n";
-  // std::cout<<*solution->ViewComponent("cell");
-  // std::cout<<*solution->ViewComponent("boundary_face");
-
   // populate the diffusion operator
   op->Setup(K, Teuchos::null, Teuchos::null);
   for (int loop = 0; loop < 12; ++loop) {
@@ -316,20 +306,7 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
     solver.Init(lop_list);
 
     CompositeVector& rhs = *global_op->rhs();
-
-    // std::cout<<"rhs\n";
-    // std::cout<<*rhs.ViewComponent("cell");
-    // std::cout<<*rhs.ViewComponent("boundary_face");
-    
-    // global_op->Apply(*solution, t1);
-
-    // t1.Update(-1, rhs, 1); 
-    // std::cout<<"residual\n";
-    // std::cout<<*t1.ViewComponent("cell");
-    // std::cout<<*t1.ViewComponent("boundary_face");
-
-    // exit(0);
-    
+   
     int ierr = solver.ApplyInverse(rhs, *solution);
  
     // compute pressure error

@@ -78,8 +78,6 @@ SuperMap::SuperMap(const Epetra_MpiComm& comm,
     n_global_ghosted += ghosted_maps[i]->NumGlobalElements() * dofnums[i];
   }
   
-  // for (std::vector<int>::iterator it=gids.begin(); it!=gids.end(); ++it) std::cout<<*it<<" "; std::cout<<"\n";
-  // std::cout<<n_global<<" "<< n_local <<"\n";
   // create the maps
   map_ = Teuchos::rcp(new Epetra_Map(n_global, n_local, &gids[0], 0, comm)); 
   ghosted_map_ = Teuchos::rcp(new Epetra_Map(n_global_ghosted, n_local_ghosted, &gids[0], 0, comm));

@@ -33,7 +33,7 @@ void MeshInfo::WriteMeshCentroids(const AmanziMesh::Mesh& mesh) {
   if (dim > 2) name.push_back("z");
    
 
-  for (int n = 0; n < ncells_owned; n++){
+  for (int n = 0; n < ncells_owned; n++) {
     const AmanziGeometry::Point& xc = mesh.cell_centroid(n);
     for (int i = 0; i < dim; i++) {
       (*(*aux)(i))[n] = xc[i];

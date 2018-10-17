@@ -79,7 +79,7 @@ class Op_Face_CellFace : public Op {
           matrices[f](0,1) *= s_c[0][cells[1]];          
           matrices[f](1,0) *= s_c[0][cells[0]];          
           matrices[f](1,1) *= s_c[0][cells[1]];
-        }else if (cells.size()==1){
+        }else if (cells.size()==1) {
           int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f));
           matrices[f](0,0) *= s_c[0][cells[0]];
           matrices[f](1,0) *= s_c[0][cells[0]];          

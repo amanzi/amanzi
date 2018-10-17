@@ -962,7 +962,7 @@ PorousMedia::variableSetUp ()
       // surface complexation
       //const Array<std::string>& sorptionSiteNames = rock_manager->SorptionSiteNames();
       const Array<std::string>& sorptionSiteNames = sorption_sites;
-      if (sorptionSiteNames.size()>0){
+      if (sorptionSiteNames.size()>0) {
 	for (int i=0; i<sorptionSiteNames.size(); ++i) {
 	  intern_reqd_der.push_back(sorptionSiteNames[i]+"_Surface_Site_Density");
 	}

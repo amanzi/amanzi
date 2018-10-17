@@ -43,13 +43,13 @@ class PDE_DiffusionWithGravity : public virtual PDE_Diffusion {
 
   virtual void SetDensity(const Teuchos::RCP<const CompositeVector>& rho) {
     is_scalar_ = false;
-    if (rho->HasComponent("cell")){
+    if (rho->HasComponent("cell")) {
       rho_cv_ = rho;
     }
   }
 
-  double GetDensity( int c){
-    if (is_scalar_){
+  double GetDensity( int c) {
+    if (is_scalar_) {
       return rho_ ;
     }else{
       return (*rho_cv_->ViewComponent("cell", true))[0][c];
