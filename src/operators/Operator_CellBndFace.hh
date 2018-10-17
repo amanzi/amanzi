@@ -19,42 +19,43 @@
 #define AMANZI_OPERATOR_WITH_CELLBND_HH_
 
 #include "DenseMatrix.hh"
-#include "Operator.hh"
+#include "Operator_Cell.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class Operator_CellBndFace : public Operator {
+class Operator_CellBndFace : public Operator_Cell {
  public:
   // main constructor
   //   The CVS is the domain and range of the operator
   Operator_CellBndFace(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
                 Teuchos::ParameterList& plist,
                 int schema) :
-    Operator(cvs, plist, schema) {
+    Operator_Cell(cvs, plist, schema) {
     set_schema_string("CELLBNDFACE");
   }
 
-  // rhs update which multiplies by cell
-  virtual void UpdateRHS(const CompositeVector& source, bool volume_included);
-  
-  // visit methods for Apply
-  virtual int ApplyMatrixFreeOp(const Op_Cell_Cell& op,
-      const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_Face_CellFace& op,
       const CompositeVector& X, CompositeVector& Y) const;
+
+
+  // visit methods for symbolic assemble
+  virtual void SymbolicAssembleMatrixOp(const Op_Face_CellFace& op,
+          const SuperMap& map, GraphFE& graph,
+          int my_block_row, int my_block_col) const;
+
+  
+  // visit methods for assemble
+  virtual void AssembleMatrixOp(const Op_Face_CellFace& op,
+          const SuperMap& map, MatrixFE& mat,
+          int my_block_row, int my_block_col) const;
+
+
   virtual int ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
                                 const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
                                 const CompositeVector& X, CompositeVector& Y) const;
 
-  // visit methods for symbolic assemble
-  virtual void SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
-          const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const;
-  virtual void SymbolicAssembleMatrixOp(const Op_Face_CellFace& op,
-          const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const;
 
   virtual void SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
                                         const SuperMap& map, GraphFE& graph,
@@ -63,14 +64,6 @@ class Operator_CellBndFace : public Operator {
                                         const SuperMap& map, GraphFE& graph,
                                         int my_block_row, int my_block_col) const;
   
-  // visit methods for assemble
-  virtual void AssembleMatrixOp(const Op_Cell_Cell& op,
-          const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col) const;
-  virtual void AssembleMatrixOp(const Op_Face_CellFace& op,
-          const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col) const;
-
   virtual void AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
                                 const SuperMap& map, MatrixFE& mat,
                                 int my_block_row, int my_block_col) const;

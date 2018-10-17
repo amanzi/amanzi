@@ -29,33 +29,33 @@ namespace Operators {
 /* ******************************************************************
 * Apply a source which may or may not have cell volume included already. 
 ****************************************************************** */
-void Operator_CellBndFace::UpdateRHS(const CompositeVector& source,
-                              bool volume_included)
-{
-  if (volume_included) {
-    Operator::UpdateRHS(source);
-  } else {
-    Epetra_MultiVector& rhs_c = *rhs_->ViewComponent("cell", false);
-    const Epetra_MultiVector& source_c = *source.ViewComponent("cell", false);
-    for (int c = 0; c != ncells_owned; ++c) {
-      rhs_c[0][c] += source_c[0][c] * mesh_->cell_volume(c);
-    }
-  }
-}
+// void Operator_CellBndFace::UpdateRHS(const CompositeVector& source,
+//                               bool volume_included)
+// {
+//   if (volume_included) {
+//     Operator::UpdateRHS(source);
+//   } else {
+//     Epetra_MultiVector& rhs_c = *rhs_->ViewComponent("cell", false);
+//     const Epetra_MultiVector& source_c = *source.ViewComponent("cell", false);
+//     for (int c = 0; c != ncells_owned; ++c) {
+//       rhs_c[0][c] += source_c[0][c] * mesh_->cell_volume(c);
+//     }
+//   }
+// }
 
-int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
-                                     const CompositeVector& X, CompositeVector& Y) const
-{
-  const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
-  Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
+// int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
+//                                      const CompositeVector& X, CompositeVector& Y) const
+// {
+//   const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
+//   Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
 
-  for (int k = 0; k != Xc.NumVectors(); ++k) {
-    for (int c = 0; c != ncells_owned; ++c) {
-      Yc[k][c] += Xc[k][c] * (*op.diag)[k][c];
-    }
-  }
-  return 0;
-}
+//   for (int k = 0; k != Xc.NumVectors(); ++k) {
+//     for (int c = 0; c != ncells_owned; ++c) {
+//       Yc[k][c] += Xc[k][c] * (*op.diag)[k][c];
+//     }
+//   }
+//   return 0;
+// }
 
 
 /* ******************************************************************
@@ -113,22 +113,22 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Face_CellFace& op,
   return 0;
 }
 
-void Operator_CellBndFace::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
-                                             const SuperMap& map, GraphFE& graph,
-                                             int my_block_row, int my_block_col) const
-{
-  const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
-  const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
+// void Operator_CellBndFace::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
+//                                              const SuperMap& map, GraphFE& graph,
+//                                              int my_block_row, int my_block_col) const
+// {
+//   const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
+//   const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
 
-  int ierr(0);
-  for (int c=0; c!=ncells_owned; ++c) {
-    int row = cell_row_inds[c];
-    int col = cell_col_inds[c];
+//   int ierr(0);
+//   for (int c=0; c!=ncells_owned; ++c) {
+//     int row = cell_row_inds[c];
+//     int col = cell_col_inds[c];
 
-    ierr |= graph.InsertMyIndices(row, 1, &col);
-  }
-  AMANZI_ASSERT(!ierr);
-}
+//     ierr |= graph.InsertMyIndices(row, 1, &col);
+//   }
+//   AMANZI_ASSERT(!ierr);
+// }
 
 /* ******************************************************************
 * Insert each cells neighboring cells.
@@ -170,24 +170,24 @@ void Operator_CellBndFace::SymbolicAssembleMatrixOp(const Op_Face_CellFace& op,
   AMANZI_ASSERT(!ierr);
 }
 
-void Operator_CellBndFace::AssembleMatrixOp(const Op_Cell_Cell& op,
-                                     const SuperMap& map, MatrixFE& mat,
-                                     int my_block_row, int my_block_col) const
-{
-  AMANZI_ASSERT(op.diag->NumVectors() == 1);
+// void Operator_CellBndFace::AssembleMatrixOp(const Op_Cell_Cell& op,
+//                                      const SuperMap& map, MatrixFE& mat,
+//                                      int my_block_row, int my_block_col) const
+// {
+//   AMANZI_ASSERT(op.diag->NumVectors() == 1);
 
-  const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
-  const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
+//   const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
+//   const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
 
-  int ierr(0);
-  for (int c=0; c!=ncells_owned; ++c) {
-    int row = cell_row_inds[c];
-    int col = cell_col_inds[c];
+//   int ierr(0);
+//   for (int c=0; c!=ncells_owned; ++c) {
+//     int row = cell_row_inds[c];
+//     int col = cell_col_inds[c];
 
-    ierr |= mat.SumIntoMyValues(row, 1, &(*op.diag)[0][c], &col);
-  }
-  AMANZI_ASSERT(!ierr);
-}
+//     ierr |= mat.SumIntoMyValues(row, 1, &(*op.diag)[0][c], &col);
+//   }
+//   AMANZI_ASSERT(!ierr);
+// }
 
 
 
