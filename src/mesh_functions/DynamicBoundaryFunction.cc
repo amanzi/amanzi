@@ -18,13 +18,13 @@
 namespace Amanzi {
 namespace Functions {
 
-void DynamicBoundaryFunction::AddFunction(const Teuchos::RCP<BoundaryFunction>& f) {
+void DynamicBoundaryFunction::AddFunction(const Teuchos::RCP<BoundaryFunction>& f){
 
   func_.push_back(f);
   
 }
 
-int DynamicBoundaryFunction::Func_ID(double time) {
+int DynamicBoundaryFunction::Func_ID(double time){
 // lazily generate space for the values
   if (!finalized_) {
     Finalize();

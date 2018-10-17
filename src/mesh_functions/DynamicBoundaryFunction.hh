@@ -6,13 +6,13 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: (v1) Neil Carlson
-           (v2) Ethan Coon
+  Authors: (v1) Daniil Svyatsky
 
-  Function applied to a mesh component with at most one function 
-  application per entity.
+
+  Set of function applied to a mesh component with one temporal function 
+
  
-  Aamanzi is no longer using this function!
+
 */
 
 #ifndef AMANZI_DYNAMICBOUNDARY_FUNCTION_HH_
@@ -40,16 +40,16 @@ public:
 
   void AddFunction(const Teuchos::RCP<BoundaryFunction>& f);
   
-  Teuchos::RCP<BoundaryFunction> GetFunction(int id) {return func_[id];}
+  Teuchos::RCP<BoundaryFunction> GetFunction(int id){return func_[id];}
 
   int Func_ID(double time);
 
   void Compute(double time);
 
 protected:
-
+  //std::map<int,double> value_;
+  //bool finalized_;
   std::vector< Teuchos::RCP<BoundaryFunction> > func_;
-  
 };
 
 } // namespace
