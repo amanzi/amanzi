@@ -8,30 +8,33 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  A two-scale porosity model (fracture + matrix) aka dual porosity
-  model. Current naming convention is that the fields used in the 
-  single-porosity model correspond now to the fracture continuum.
+  A generalized dual porosity model, fracture + multiple matrix nodes.
+  Current naming convention is that the fields used in the single-porosity 
+  model correspond now to the fracture continuum.
   Example: tcc = total component concentration in the fracture continuum;
            tcc_matrix = total component concentration in the matrix continuum.
 */
 
-#ifndef MULTISCALE_TRANSPORT_POROSITY_DPM_HH_
-#define MULTISCALE_TRANSPORT_POROSITY_DPM_HH_
+#ifndef MULTISCALE_TRANSPORT_POROSITY_GDPM_HH_
+#define MULTISCALE_TRANSPORT_POROSITY_GDPM_HH_
+
+#include <string>
+#include <vector>
 
 #include "Teuchos_ParameterList.hpp"
 
 #include "factory.hh"
-#include "DenseVector.hh"
+#include "Mini_Diffusion1D.hh"
 
 #include "MultiscaleTransportPorosity.hh"
 
 namespace Amanzi {
 namespace Transport {
 
-class MultiscaleTransportPorosity_DPM : public MultiscaleTransportPorosity {
+class MultiscaleTransportPorosity_GDPM : public MultiscaleTransportPorosity {
  public:
-  MultiscaleTransportPorosity_DPM(const Teuchos::ParameterList& plist);
-  ~MultiscaleTransportPorosity_DPM() {};
+  MultiscaleTransportPorosity_GDPM(Teuchos::ParameterList& plist);
+  ~MultiscaleTransportPorosity_GDPM() {};
 
   // Compute solute flux: icomp - component id, phi - matrix porosity,
   // tcc_m_aux - vector of concentration values in secondary nodes,
@@ -42,13 +45,15 @@ class MultiscaleTransportPorosity_DPM : public MultiscaleTransportPorosity {
       double dt, double wcf0, double wcf1, double wcm0, double wcm1, double phi) override;
 
   // Number of matrix nodes
-  virtual int NumberMatrixNodes() override { return 1; }
+  virtual int NumberMatrixNodes() override { return matrix_nodes_; }
 
  private:
-  std::vector<double> mol_diff_;
-  double warren_root_, tau_, depth_;
+  static Utils::RegisteredFactory<MultiscaleTransportPorosity, MultiscaleTransportPorosity_GDPM> factory_;
+  std::vector<Operators::Mini_Diffusion1D> op_diff_;
 
-  static Utils::RegisteredFactory<MultiscaleTransportPorosity, MultiscaleTransportPorosity_DPM> factory_;
+  int matrix_nodes_;
+  double depth_, tau_;
+  std::vector<double> mol_diff_;
 };
 
 }  // namespace Transport

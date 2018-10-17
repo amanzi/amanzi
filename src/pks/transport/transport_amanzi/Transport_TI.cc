@@ -34,7 +34,7 @@ void Transport_PK_ATS::FunctionalTimeDerivative(const double t, const Epetra_Vec
 
   Teuchos::ParameterList plist = tp_list_->sublist("reconstruction");
   lifting_->Init(component_rcp, plist);
-  lifting_->Compute();
+  lifting_->ComputeGradient();
   Teuchos::RCP<CompositeVector> gradient = lifting_->gradient();
 
   // extract boundary conditions for the current component
