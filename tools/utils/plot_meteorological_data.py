@@ -8,22 +8,40 @@ import h5py
 import numpy as np
 from matplotlib import pyplot as plt
 
-names = ["air temperature [K]",
+import colors
+
+
+names1 = ["air temperature [K]",
          "relative humidity [-]",
          "incoming shortwave radiation [W m^-2]",
          "incoming longwave radiation [W m^-2]",
          "wind speed [m s^-1]"]
 
-precip = ["precipitation rain [m s^-1]",
+precip1 = ["precipitation rain [m s^-1]",
           "precipitation snow [m SWE s^-1]"]
 
+
+names2 = ["Ta", "RH", "Qswin", "Qlwin", "Us"]
+precip2 = ["Pr", "Ps"]
 
 def plot_met(fname, axs, color='b', end_time_in_years=np.inf, style='-'):
     axs = axs.ravel()
 
     with h5py.File(fname, 'r') as fid:
-        time = fid['time [s]'][:]/86400.0/365.0
-
+        try:
+            time = fid['time [s]'][:]/86400.0/365.0
+        except KeyError:
+            try:
+                time = fid['time'][:]/86400.0/365.0
+            except KeyError:
+                raise KeyError('Missing time entry "time [s]"')
+            else:
+                names = names2
+                precip = precip2
+        else:
+            names = names1
+            precip = precip1
+            
         if end_time_in_years > time[-1]:
             end = len(time)
         else:
@@ -50,7 +68,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Plot met data from an ATS input h5 file using default names.")
     parser.add_argument("INPUT_FILES", nargs="+", type=str,
                         help="List of logfiles to parse.")
-    parser.add_argument("--colors", "-c", type=float_list_type,
+    parser.add_argument("--colors", "-c", type=colors.float_list_type,
                         default=None,
                         help="List of color indices to use, of the form: --colors=[0,0.1,1], where the doubles are in the range (0,1) and are mapped to a color using the colormap.")
     parser.add_argument("--colormap", "-m", type=str,
@@ -62,7 +80,7 @@ if __name__ == "__main__":
     cm = colors.cm_mapper(0,1,args.colormap)
     fig, axs = get_axs()
 
-    fnames = args.LOG_FILES
+    fnames = args.INPUT_FILES
     for i,fname in enumerate(fnames):
         if args.colors is None:
             if len(fnames) > 1:

@@ -12,7 +12,8 @@ from matplotlib import pyplot as plt
 import matplotlib.cm
 import parse_ats
 import itertools
-    
+
+import colors
 
 def plot_surface((keys,times,dat), ax, color, varname, style='-', version='dev-new',
                  negate=False, label=None, hackfactor=None, divide_by_cell_volume=False):
@@ -117,9 +118,7 @@ def get_axs():
         
 if __name__ == "__main__":
     import sys
-
     import argparse
-    import colors
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("INPUT_DIRECTORIES", nargs="+", type=str,
                         help="List of directories to plot.")
