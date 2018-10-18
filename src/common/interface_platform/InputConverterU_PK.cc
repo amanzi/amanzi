@@ -54,8 +54,13 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
   out_list.set<Teuchos::Array<std::string> >("error control options", tmp);
 
   // linear solver
+  bool flag;
+  std::string prec(TI_PRECONDITIONER);
+  node = GetUniqueElementByTagsString_(unstr_controls + ", preconditioner", flag);
+  if (flag) prec = mm.transcode(node->getTextContent());
+
   out_list.set<std::string>("linear solver", TI_SOLVER);
-  out_list.set<std::string>("preconditioner", TI_PRECONDITIONER);
+  out_list.set<std::string>("preconditioner", prec);
   out_list.set<std::string>("preconditioner enhancement", "none");
 
   // pressure-lambda constraints
@@ -69,7 +74,6 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
   Teuchos::ParameterList& bdf1 = out_list.sublist("BDF1");
 
   // use standard timestep controller type
-  bool flag;
   std::string name(TI_TIMESTEP_CONTROLLER);
   node = GetUniqueElementByTagsString_(unstr_controls + ", timestep_controller", flag);
   if (flag) name = mm.transcode(node->getTextContent());

@@ -221,6 +221,9 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   // -- execute GMRES solver
   int ierr = solver.ApplyInverse(rhs, solution);
 
+  // op->AssembleMatrix();
+  // ver1.CheckResidual(solution, rhs, 1.0e-12);
+
   if (MyPID == 0) {
     std::cout << "elasticity solver (gmres): ||r||=" << solver.residual() 
               << " itr=" << solver.num_itrs()

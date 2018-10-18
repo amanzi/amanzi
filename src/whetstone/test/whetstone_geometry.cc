@@ -18,7 +18,7 @@
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "MeshUtils.hh"
+#include "WhetStoneMeshUtils.hh"
 
 /* ****************************************************************
 * Test of face centroids

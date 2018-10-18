@@ -22,7 +22,7 @@
 // Amanzi
 #include "CompositeVector.hh"
 #include "Mesh.hh"
-#include "MFD3D_Diffusion.hh"
+#include "WhetStoneMeshUtils.hh"
 
 // Operators
 #include "Upwind.hh"
@@ -117,7 +117,6 @@ void UpwindSecondOrder<Model>::Compute(
   std::vector<int> dirs;
   AmanziGeometry::Point grad(dim);
   AmanziMesh::Entity_ID_List faces;
-  WhetStone::MFD3D_Diffusion mfd(mesh_);
 
   int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   for (int c = 0; c < ncells_wghost; c++) {
@@ -135,7 +134,7 @@ void UpwindSecondOrder<Model>::Compute(
       // Internal faces. We average field on almost vertical faces. 
       if (bc_model[f] == OPERATOR_BC_NONE && fabs(flx_face[0][f]) <= tol) { 
         double tmp(0.5);
-        int c2 = mfd.cell_get_face_adj_cell(c, f);
+        int c2 = WhetStone::cell_get_face_adj_cell(*mesh_, c, f);
         if (c2 >= 0) { 
           double v1 = mesh_->cell_volume(c);
           double v2 = mesh_->cell_volume(c2);

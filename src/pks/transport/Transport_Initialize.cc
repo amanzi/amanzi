@@ -43,16 +43,14 @@ void Transport_PK::InitializeAll_()
 
   // transport dispersion (default is none)
   dispersion_solver = tp_list_->get<std::string>("solver", "missing");
+  dispersion_preconditioner = tp_list_->get<std::string>("preconditioner", "identity");
 
   if (tp_list_->isSublist("material properties")) {
     Teuchos::ParameterList& dlist = tp_list_->sublist("material properties");
 
-    if (linear_solver_list_->isSublist(dispersion_solver)) {
-      Teuchos::ParameterList slist = linear_solver_list_->sublist(dispersion_solver);
-      dispersion_preconditioner = slist.get<std::string>("preconditioner", "identity");
-    } else {
+    if (!linear_solver_list_->isSublist(dispersion_solver)) {
       Errors::Message msg;
-      msg << "Transport PK: dispersivity solver does not exist.\n";
+      msg << "Transport PK: sublist \"dispersion solver\" does not exist.\n";
       Exceptions::amanzi_throw(msg);  
     }
 

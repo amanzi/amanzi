@@ -28,9 +28,10 @@ namespace Flow {
 /* ******************************************************************
 * Calculate f(u, du/dt) = a d(s(u))/dt + A*u - rhs.
 ****************************************************************** */
-void Richards_PK::FunctionalResidual(double t_old, double t_new, 
-                             Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
-                             Teuchos::RCP<TreeVector> f)
+void Richards_PK::FunctionalResidual(
+    double t_old, double t_new, 
+    Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
+    Teuchos::RCP<TreeVector> f)
 { 
   double dtp(t_new - t_old);
 
@@ -240,20 +241,21 @@ void Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<Comp
 
   Epetra_MultiVector& fc = *f->ViewComponent("cell");
 
-  double phi0, wcm0, wcm1, pcf0, pcm0;
+  double phi0, wcm0, wcm1, pcf0;
+  WhetStone::DenseVector pcm0(1);
   for (int c = 0; c < ncells_owned; ++c) {
     pcf0 = atm_pressure_ - pcf[0][c];
-    pcm0 = atm_pressure_ - pcm[0][c];
+    pcm0(0) = atm_pressure_ - pcm[0][c];
     wcm0 = wcm_prev[0][c];
     phi0 = phi[0][c];
 
     int max_itrs(100);
     wcm1 = msp_->second[(*msp_->first)[c]]->WaterContentMatrix(
-        dt, phi0, molar_rho_, wcm0, pcf0, pcm0, max_itrs);
+        pcf0, pcm0, wcm0, dt, phi0, molar_rho_, max_itrs);
 
     fc[0][c] += (wcm1 - wcm0) / dt;
     wcm[0][c] = wcm1;
-    pcm[0][c] = atm_pressure_ - pcm0;
+    pcm[0][c] = atm_pressure_ - pcm0(0);
 
     ms_itrs_ += max_itrs;
   }

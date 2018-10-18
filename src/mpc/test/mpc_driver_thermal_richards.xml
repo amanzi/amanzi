@@ -307,7 +307,6 @@
 
   <ParameterList name="solvers">
     <ParameterList name="AztecOO">
-      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
         <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
@@ -318,7 +317,6 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="PCG with Hypre AMG">
-      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
         <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
@@ -501,7 +499,7 @@
         <ParameterList name="water retention models">
           <ParameterList name="WRM for RegionMiddle">
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
-            <Parameter name="region" type="string" value="RegionMiddle"/>
+            <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>
             <Parameter name="van Genuchten m" type="double" value="2.29399999999999993e-01"/>
             <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
             <Parameter name="van Genuchten alpha" type="double" value="1.94670000000000005e-04"/>
@@ -511,7 +509,7 @@
           </ParameterList>
           <ParameterList name="WRM for RegionBottom">
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
-            <Parameter name="region" type="string" value="RegionBottom"/>
+            <Parameter name="regions" type="Array(string)" value="{RegionBottom}"/>
             <Parameter name="van Genuchten m" type="double" value="2.13600000000000012e-01"/>
             <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
             <Parameter name="van Genuchten alpha" type="double" value="2.02600000000000002e-03"/>
@@ -521,7 +519,7 @@
           </ParameterList>
           <ParameterList name="WRM for RegionTop">
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
-            <Parameter name="region" type="string" value="RegionTop"/>
+            <Parameter name="regions" type="Array(string)" value="{RegionTop}"/>
             <Parameter name="van Genuchten m" type="double" value="3.00599999999999978e-01"/>
             <Parameter name="van Genuchten l" type="double" value="5.0e-01"/>
             <Parameter name="van Genuchten alpha" type="double" value="2.06740000000000005e-03"/>

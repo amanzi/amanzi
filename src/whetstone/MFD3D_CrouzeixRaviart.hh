@@ -56,61 +56,38 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
     }
   }
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override {
-    if (order_ == 1 && !use_always_ho_) {
+    if (order_ == 1 && !use_always_ho_)
       return StiffnessMatrixLO_(c, T, A);
-    } else {
+    else
       return StiffnessMatrixHO_(c, T, A);
-    }
   }
 
-  // -- projectors
+  // -- projectors: base L2 and H1 projectors
   virtual void L2Cell(
-      int c, const std::vector<VectorPolynomial>& vf,
-      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) override {
-    ProjectorCell_HO_(c, vf, Type::L2, false, moments, uc);
+      int c, const std::vector<Polynomial>& vf,
+      Polynomial& moments, Polynomial& uc) override {
+    ProjectorCell_HO_(c, vf, Type::L2, moments, uc);
   }
 
   virtual void H1Cell(
-      int c, const std::vector<VectorPolynomial>& vf,
-      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) override {
-    ProjectorCell_HO_(c, vf, Type::H1, false, moments, uc);
-  }
-
-  // harmonic projector calculates and returns cell-moments
-  void L2CellHarmonic(
-      int c, const std::vector<VectorPolynomial>& vf,
-      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) {
-    ProjectorCell_HO_(c, vf, Type::L2, true, moments, uc);
-  }
-
-  void H1CellHarmonic(
-      int c, const std::vector<VectorPolynomial>& vf,
-      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) {
-    if (order_ == 1 && !use_always_ho_) {
+      int c, const std::vector<Polynomial>& vf,
+      Polynomial& moments, Polynomial& uc) override {
+    if (order_ == 1 && !use_always_ho_)
       ProjectorCell_LO_(c, vf, uc);
-    } else {
-      ProjectorCell_HO_(c, vf, Type::H1, true, moments, uc);
-    }
+    else 
+      ProjectorCell_HO_(c, vf, Type::H1, moments, uc);
   }
 
-  // additional projectors: prototypes
-  // -- on faces
-  void H1FaceHarmonic(
-      int f, const AmanziGeometry::Point& p0,
-      const std::vector<VectorPolynomial>& ve, VectorPolynomial& uf) const;
-
-  // -- L2 projector of gradient
+  // additional miscaleneous projectors
   void L2GradientCell(
       int c, const std::vector<VectorPolynomial>& vf,
       const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc) {
-    ProjectorGradientCell_(c, vf, Type::L2, false, moments, uc);
+    ProjectorGradientCell_(c, vf, Type::L2, moments, uc);
   }
 
-  void L2GradientCellHarmonic(
-      int c, const std::vector<VectorPolynomial>& vf,
-      const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc) {
-    ProjectorGradientCell_(c, vf, Type::L2, true, moments, uc);
-  }
+  void H1Face(
+      int f, const AmanziGeometry::Point& p0,
+      const std::vector<VectorPolynomial>& ve, VectorPolynomial& uf) const;
 
   // access / setup
   // -- integrals of monomials in high-order schemes could be reused
@@ -131,27 +108,29 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
 
   // efficient implementation of low-order elliptic projectors
   void ProjectorCell_LO_(
-      int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& uc);
+      int c, const std::vector<Polynomial>& vf, Polynomial& uc);
 
   // generic code for multiple projectors
   void ProjectorCell_HO_(
-      int c, const std::vector<VectorPolynomial>& vf,
-      const Projectors::Type type, bool is_harmonic,
-      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc);
+      int c, const std::vector<Polynomial>& vf,
+      const Projectors::Type type, 
+      Polynomial& moments, Polynomial& uc);
 
   void ProjectorGradientCell_(
       int c, const std::vector<VectorPolynomial>& vf,
-      const Projectors::Type type, bool is_harmonic, 
+      const Projectors::Type type, 
       const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc);
 
   // supporting routines
   void CalculateFaceDOFs_(int f, const Polynomial& vf, const Polynomial& pf,
                           DenseVector& vdof, int& row);
 
- private:
-  bool use_always_ho_;
+ protected:
   PolynomialOnMesh integrals_;
   DenseMatrix R_, G_;
+
+ private:
+  bool use_always_ho_;
 };
 
 }  // namespace WhetStone

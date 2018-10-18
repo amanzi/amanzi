@@ -90,7 +90,7 @@ TEST(DG3D_MASS_MATRIX) {
   T(0, 0) = 2.0;
 
   for (int k = 0; k < 3; k++) {
-    DG_Modal dg1(k, mesh, "natural");
+    DG_Modal dg1(k, mesh, "regularized");
     dg1.MassMatrix(0, T, M0);
     int nk = M0.NumRows();
 
@@ -340,7 +340,7 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
   Teuchos::RCP<Mesh> mesh = meshfactory("test/one_quad.exo"); 
 
   for (int k = 0; k < 3; k++) {
-    DG_Modal dg(k, mesh, "natural");
+    DG_Modal dg(k, mesh, "regularized");
 
     DenseMatrix A0, A1;
     VectorPolynomial u(2, 2);
@@ -436,7 +436,7 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
 
     dg.AdvectionMatrix(0, vu, A1, false);
     A1 -= A0;
-    CHECK_CLOSE(A1.NormInf(), 0.0, 1e-12);
+    CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
   }
 
   delete comm;
@@ -461,7 +461,7 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
 
   int d(3);
   for (int k = 0; k < 2; k++) {
-    DG_Modal dg(k, mesh, "natural");
+    DG_Modal dg(k, mesh, "regularized");
 
     DenseMatrix A0;
     VectorPolynomial u(d, 3);
@@ -601,9 +601,36 @@ TEST(DG_LEAST_SQUARE_MAP_CELL) {
   x2[3] += AmanziGeometry::Point(0.1, 0.1);
 
   maps.LeastSquareFit(1, x1, x2, u);
-  std::cout << u[0] << " " << u[1] << std::endl;
+  std::cout << u << std::endl;
 
   CHECK_CLOSE(0.025, u[0](0, 0), 1e-12);
+
+  // test quadratic approximation (must be exact for square)
+  x1.push_back(AmanziGeometry::Point(0.0, -0.5));
+  x1.push_back(AmanziGeometry::Point(-0.5, 0.0));
+  x1.push_back(AmanziGeometry::Point(0.5, 0.0));
+  x1.push_back(AmanziGeometry::Point(0.0, 0.5));
+
+  x2 = x1;
+  x2[1] += AmanziGeometry::Point(0.1, -0.1);
+  x2[3] += AmanziGeometry::Point(0.2,  0.3);
+  x2[4] += AmanziGeometry::Point(0.05,-0.05);
+  x2[6] += AmanziGeometry::Point(0.15, 0.1);
+  x2[7] += AmanziGeometry::Point(0.1,  0.15);
+
+  maps.LeastSquareFit(2, x1, x2, u);
+  std::cout << u << std::endl;
+
+  // -- check vertex-to-vertex map
+  for (int n = 0; n < 7; ++n) {
+    for (int i = 0; i < 2; ++i) {
+      CHECK_CLOSE(x2[n][i], u[i].Value(x1[n]), 1e-12);
+    }
+  }
+
+  // -- check that it is bilinear map
+  CHECK_CLOSE(0.0, u[0](2, 0), 1e-14);
+  CHECK_CLOSE(0.0, u[0](2, 2), 1e-14);
 
   delete comm;
 }

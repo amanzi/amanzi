@@ -41,60 +41,61 @@ add_amanzi_library(whetstone
                           DeRham_Node.cc DeRham_Edge.cc DeRham_Face.cc
                           MFD3D.cc
                           MFD3D_BernardiRaugel.cc
-			  MFD3D_CrouzeixRaviart.cc
+			  MFD3D_CrouzeixRaviart.cc MFD3D_CrouzeixRaviartSerendipity.cc
                           MFD3D_Diffusion.cc MFD3D_Diffusion_Surface.cc MFD3D_Diffusion_Other.cc 
                           MFD3D_Elasticity.cc 
                           MFD3D_Electromagnetics.cc MFD3D_Electromagnetics_Surface.cc
                           MFD3D_Generalized_Diffusion.cc
-                          MFD3D_Lagrange.cc
-                          MFD3D_LagrangeSerendipity.cc
+                          MFD3D_Lagrange.cc MFD3D_LagrangeSerendipity.cc
                           DG_Modal.cc
-                          Basis_Natural.cc Basis_Normalized.cc Basis_Orthonormalized.cc
+                          Basis_Regularized.cc Basis_Normalized.cc Basis_Orthonormalized.cc
                           nlfv.cc 
-                          Tensor.cc DenseMatrix.cc
+                          Tensor.cc DenseMatrix.cc DenseVector.cc
                           Polynomial.cc VectorPolynomial.cc
                           NumericalIntegration.cc
                           MeshMaps.cc
                           MeshMaps_FEM.cc MeshMaps_VEM.cc MeshMaps_PEM.cc
+                          GrammMatrix.cc
                    HEADERS DenseMatrix.hh DenseVector.hh
                            DG_Modal.hh
                            Basis.hh BasisFactory.hh
-                           Basis_Natural.hh Basis_Normalized.hh Basis_Orthonormalized.hh
+                           Basis_Natural.hh Basis_Regularized.hh 
+                           Basis_Normalized.hh Basis_Orthonormalized.hh
                            lapack.hh
                            InnerProduct.hh InnerProductL2.hh InnerProductH1.hh
                            BilinearForm.hh Projectors.hh
                            DeRham_Node.hh DeRham_Edge.hh DeRham_Face.hh
+                           GrammMatrix.hh
                            MFD3D.hh
                            MFD3D_BernardiRaugel.hh
-			   MFD3D_CrouzeixRaviart.hh
+			   MFD3D_CrouzeixRaviart.hh MFD3D_CrouzeixRaviartSerendipity.hh
                            MFD3D_Diffusion.hh
                            MFD3D_Elasticity.hh
                            MFD3D_Electromagnetics.hh
                            MFD3D_Generalized_Diffusion.hh
-                           MFD3D_Lagrange.hh
-                           MFD3D_LagrangeSerendipity.hh
+                           MFD3D_Lagrange.hh MFD3D_LagrangeSerendipity.hh
                            MFD3DFactory.hh
                            nlfv.hh
                            NumericalIntegration.hh
-                           Quadrature1D.hh Quadrature2D.hh
+                           Quadrature1D.hh Quadrature2D.hh Quadrature3D.hh
                            MeshMaps.hh MeshMapsFactory.hh
-                           MeshMaps_FEM.hh MeshMaps_VEM.hh MeshMaps_VEM.hh MeshUtils.hh
+                           MeshMaps_FEM.hh MeshMaps_VEM.hh MeshMaps_VEM.hh
                            CoordinateSystems.hh
-                           Monomial.hh Polynomial.hh PolynomialIterator.hh
+                           Monomial.hh Polynomial.hh PolynomialIterator.hh PolynomialBase.hh
                            VectorPolynomial.hh PolynomialOnMesh.hh
                            Tensor.hh
                            WhetStoneDefs.hh
-                           WhetStone_typedefs.hh
+                           WhetStoneFunction.hh WhetStoneMeshUtils.hh
                    LINK_LIBS geometry mesh error_handling ${Epetra_LIBRARIES})
 
 
-if ( BUILD_TESTS )
+if (BUILD_TESTS)
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
     include_directories(${MESH_SIMPLE_SOURCE_DIR})
 
     # Copy test directory files if an out of source build
-    if (NOT (${WHETSTONE_SOURCE_DIR} EQUAL ${WHETSTONE_BINARY_DIR}) )
+    if (NOT (${WHETSTONE_SOURCE_DIR} EQUAL ${WHETSTONE_BINARY_DIR}))
         file(GLOB DataFiles "${WHETSTONE_SOURCE_DIR}/test/*.exo")
         file(COPY ${DataFiles} DESTINATION ${WHETSTONE_BINARY_DIR}/test/)
     endif()
@@ -145,9 +146,9 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/whetstone_polynomials.cc
                                         test/whetstone_dg.cc
                                         test/whetstone_numi.cc
-                                        test/whetstone_projectors.cc
                                         test/whetstone_high_order.cc
                                         test/whetstone_maps.cc
+                                        test/whetstone_projectors.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: matrices for Derham complex

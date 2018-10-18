@@ -11,6 +11,7 @@
 
 #include <vector>
 
+#include "Basis_Regularized.hh"
 #include "MFD3DFactory.hh"
 
 #include "OperatorDefs.hh"
@@ -91,18 +92,11 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
   matrix_ = plist.get<std::string>("matrix type");
 
   if (factory.method() == "dg modal") {
-    space_col_ = DG;
     dg_ = Teuchos::rcp_dynamic_cast<WhetStone::DG_Modal>(mfd);
   } else {
     Errors::Message msg;
     msg << "Advection operator: method \"" << method_ << "\" is invalid.";
     Exceptions::amanzi_throw(msg);
-  }
-
-  if (local_schema_row_ == local_schema_col_) { 
-    space_row_ = space_col_;
-  } else {
-    space_row_ = P0;  // FIXME
   }
 
   // -- fluxes
@@ -163,7 +157,7 @@ void PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential
   std::vector<AmanziGeometry::Point> tau(d - 1);
 
   // create integration object for all mesh cells
-  WhetStone::NumericalIntegration numi(mesh_, false);
+  WhetStone::NumericalIntegration numi(mesh_);
 
   for (int f = 0; f != nfaces_owned; ++f) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET ||
@@ -181,13 +175,11 @@ void PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential
         coef(i) = bc_value[f][i];
       }
 
-      WhetStone::Polynomial pf(d, dg_->order()); 
-      pf.SetPolynomialCoefficients(coef);
+      WhetStone::Polynomial pf(d, dg_->order(), coef);
       pf.set_origin(xf);
 
-      // -- convert boundary polynomial to space polynomial
+      // -- convert boundary polynomial to regularized space polynomial
       pf.ChangeOrigin(mesh_->cell_centroid(c));
-      numi.ChangeBasisRegularToNatural(c, pf);
 
       // -- extract coefficients and update right-hand side 
       WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
@@ -195,7 +187,8 @@ void PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential
       int ncols = Aface.NumCols();
 
       WhetStone::DenseVector v(nrows), av(ncols);
-      pf.GetPolynomialCoefficients(v);
+      v = pf.coefs();
+      dg_->cell_basis(c).ChangeBasisNaturalToMy(v);
 
       Aface.Multiply(v, av, false);
 

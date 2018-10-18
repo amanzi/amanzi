@@ -9,8 +9,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Numerical and exact integration over polytopal cells. An object of
-  this class can be used both for the whole mesh and single cell. 
+  Numerical and exact integration over polytopal cells. 
 */
 
 #ifndef AMANZI_WHETSTONE_NUMERICAL_INTEGRATION_HH_
@@ -23,42 +22,42 @@
 #include "Mesh.hh"
 #include "Point.hh"
 
-#include "Basis_Natural.hh"
 #include "Polynomial.hh"
 #include "PolynomialOnMesh.hh"
 #include "Quadrature1D.hh"
 #include "Quadrature2D.hh"
+#include "Quadrature3D.hh"
+#include "WhetStoneFunction.hh"
 
 namespace Amanzi {
 namespace WhetStone {
 
 class NumericalIntegration { 
  public:
-  NumericalIntegration(Teuchos::RCP<const AmanziMesh::Mesh> mesh, bool single_cell);
+  NumericalIntegration(Teuchos::RCP<const AmanziMesh::Mesh> mesh);
   ~NumericalIntegration() {};
 
   // main methods
-  // integrate product of polynomials with potentialy different origins
-  // -- automatically calculate quadrature order if order < 0 
-  double IntegratePolynomialsTrianglatedCell(
-      int c, const std::vector<const Polynomial*>& polys, int order = -1) const;
+  // integrate product of functions with quadrature order 
+  double IntegrateFunctionsTrianglatedCell(
+      int c, const std::vector<const WhetStoneFunction*>& funcs, int order) const;
 
   double IntegratePolynomialsFace(
-      int f, const std::vector<const Polynomial*>& polys) const;
+      int f, const std::vector<const PolynomialBase*>& polys) const;
 
   double IntegratePolynomialsEdge(
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
-      const std::vector<const Polynomial*>& polys) const;
+      const std::vector<const PolynomialBase*>& polys) const;
 
-  // -- automatically calculate quadrature order if order < 0
-  double IntegratePolynomialsTriangle(
+  // -- integral over a simplex 
+  double IntegrateFunctionsSimplex(
       const std::vector<AmanziGeometry::Point>& xy,
-      const std::vector<const Polynomial*>& polys, int order = -1) const;
-
-  double IntegratePolynomialsTriangle(
-      const std::vector<AmanziGeometry::Point>& xy, const Polynomial& poly) const {
-    const std::vector<const Polynomial*> polys(1, &poly);
-    return IntegratePolynomialsTriangle(xy, polys);
+      const std::vector<const WhetStoneFunction*>& funcs, int order) const {
+    if (xy.size() == 3)
+      return IntegrateFunctionsTriangle_(xy, funcs, order);
+    else if (xy.size() == 4)
+      return IntegrateFunctionsTetrahedron_(xy, funcs, order);
+    return 0.0;
   }
 
   // integrate group of monomials 
@@ -69,27 +68,19 @@ class NumericalIntegration {
   double IntegratePolynomialCell(int c, const Polynomial& poly);
 
   double IntegratePolynomialFace(int f, const Polynomial& poly) const {
-    const std::vector<const Polynomial*> polys(1, &poly);
+    const std::vector<const PolynomialBase*> polys(1, &poly);
     return IntegratePolynomialsFace(f, polys);
   }
 
   double IntegratePolynomialEdge(
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
       const Polynomial& poly) const {
-    const std::vector<const Polynomial*> polys(1, &poly);
+    const std::vector<const PolynomialBase*> polys(1, &poly);
     return IntegratePolynomialsEdge(x1, x2, polys);
   }
 
   // various bounds
   double PolynomialMaxValue(int f, const Polynomial& poly);
-
-  // natural scaling of monomials (e.g. x^k / h^k)
-  // -- scaling factor is constant for monomials of the same order
-  double MonomialNaturalScales(int c, int k);
-  // -- polynomial is converted from regular to natural basis
-  void ChangeBasisRegularToNatural(int c, Polynomial& p);
-  // -- polynomial is converted from natural to regular basis
-  void ChangeBasisNaturalToRegular(int c, Polynomial& p);
 
  private:
   void IntegrateMonomialsFace_(int c, int f, double factor, int k, Polynomial& integrals);
@@ -97,16 +88,17 @@ class NumericalIntegration {
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
       double factor, int k, Polynomial& integrals);
 
-  double MonomialNaturalSingleScale_(int k, double volume) const;
+  double IntegrateFunctionsTriangle_(
+      const std::vector<AmanziGeometry::Point>& xy,
+      const std::vector<const WhetStoneFunction*>& funcs, int order) const;
+
+  double IntegrateFunctionsTetrahedron_(
+      const std::vector<AmanziGeometry::Point>& xy,
+      const std::vector<const WhetStoneFunction*>& funcs, int order) const;
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int d_;
-
-  // cached variables
-  bool single_cell_;
-  Basis_Natural single_cell_basis_;
-  std::vector<Basis_Natural> basis_;
 };
 
 }  // namespace WhetStone

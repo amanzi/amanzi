@@ -15,7 +15,7 @@ liquid mass continuity equation:
 .. math::
   \frac{\partial (\phi\, s_l \rho)}{\partial t} 
   =
-  \boldsymbol{\nabla} \cdot (\rho \boldsymbol{q}) + Q,
+  -\boldsymbol{\nabla} \cdot (\rho \boldsymbol{q}) + Q,
 
 where :math:`s_l` is the liquid saturation, 
 :math:`\phi` is the porosity,

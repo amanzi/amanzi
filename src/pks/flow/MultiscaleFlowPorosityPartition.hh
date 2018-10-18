@@ -29,6 +29,9 @@ Teuchos::RCP<MultiscaleFlowPorosityPartition> CreateMultiscaleFlowPorosityPartit
     Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     Teuchos::RCP<Teuchos::ParameterList> plist);
 
+// Non-member function quering partition
+int NumberMatrixNodes(Teuchos::RCP<MultiscaleFlowPorosityPartition>& msp);
+
 }  // namespace Flow
 }  // namespace Amanzi
 

@@ -21,8 +21,8 @@
 
 #include "CompositeVector.hh"
 #include "Mesh.hh"
-#include "MFD3D_Diffusion.hh"
 #include "VerboseObject.hh"
+#include "WhetStoneMeshUtils.hh"
 
 #include "Upwind.hh"
 
@@ -98,7 +98,6 @@ void UpwindDivK<Model>::Compute(
 
   std::vector<int> dirs;
   AmanziMesh::Entity_ID_List faces;
-  WhetStone::MFD3D_Diffusion mfd(mesh_);
 
   int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   for (int c = 0; c < ncells_wghost; c++) {
@@ -113,7 +112,7 @@ void UpwindDivK<Model>::Compute(
       // Internal faces. We average field on almost vertical faces. 
       if (bc_model[f] == OPERATOR_BC_NONE && fabs(flx_face[0][f]) <= tol) { 
         double tmp(0.5);
-        int c2 = mfd.cell_get_face_adj_cell(c, f);
+        int c2 = WhetStone::cell_get_face_adj_cell(*mesh_, c, f);
         if (c2 >= 0) { 
           double v1 = mesh_->cell_volume(c);
           double v2 = mesh_->cell_volume(c2);
@@ -130,7 +129,7 @@ void UpwindDivK<Model>::Compute(
         upw_face[0][f] = kc;
       // Internal and boundary faces. 
       } else if (!flag) {
-        int c2 = mfd.cell_get_face_adj_cell(c, f);
+        int c2 = WhetStone::cell_get_face_adj_cell(*mesh_, c, f);
         if (c2 >= 0) {
           double kc2(fld_cell[0][c2]);
           upw_face[0][f] = std::pow(kc * (kc + kc2) / 2, 0.5);

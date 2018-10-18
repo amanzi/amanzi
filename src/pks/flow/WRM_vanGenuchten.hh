@@ -26,8 +26,8 @@ class WRM_vanGenuchten : public WRM {
  public:
   explicit WRM_vanGenuchten(Teuchos::ParameterList& plist);
 
-  explicit WRM_vanGenuchten(std::string& region, double m, double l, double alpha, 
-                            double sr, std::string& krel_function, double pc0 = 0.0);
+  explicit WRM_vanGenuchten(double m, double l, double alpha, double sr,
+                            std::string& krel_function, double pc0 = 0.0);
   ~WRM_vanGenuchten() {};
   
   // required methods from the base class

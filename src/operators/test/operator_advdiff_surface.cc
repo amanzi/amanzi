@@ -155,7 +155,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   // Test SPD properties of the matrix and preconditioner.
   VerificationCV ver(global_op);
   ver.CheckMatrixSPD(false, true);
-  ver.CheckPreconditionerSPD(false, true);
+  ver.CheckPreconditionerSPD(1e-12, false, true);
 
   // Solve the problem.
   ParameterList lop_list = plist.sublist("solvers")
@@ -169,6 +169,8 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
 
   int num_itrs = solver.num_itrs();
   CHECK(num_itrs > 5 && num_itrs < 15);
+
+  ver.CheckResidual(solution, 1.0e-12);
 
   if (MyPID == 0) {
     std::cout << "pressure solver (gmres): ||r||=" << solver.residual() 

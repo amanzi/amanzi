@@ -74,10 +74,10 @@ void ReconstructionCell::Init(Teuchos::RCP<const Epetra_MultiVector> field,
 
 
 /* ******************************************************************
-* Implementation is tuned up for gradient (first-order reconstruction).
-* It can be extended easily if needed in the future.
+* Gradient of linear reconstruction is based on stabilized 
+* least-square fit.
 ****************************************************************** */
-void ReconstructionCell::Compute()
+void ReconstructionCell::ComputeGradient()
 {
   Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
   AmanziMesh::Entity_ID_List cells;
@@ -128,8 +128,8 @@ void ReconstructionCell::Compute()
 
 
 /* ******************************************************************
-* Special implementation of Compute(). The gradient is computed only
-* in specied cells and internal structures are not modified.
+* Special implementation of ComputeGradient(). The gradient is computed 
+* only in specied cells and internal structures are not modified.
 ****************************************************************** */
 void ReconstructionCell::ComputeGradient(
     const AmanziMesh::Entity_ID_List& ids,
@@ -187,9 +187,6 @@ void ReconstructionCell::ComputeGradient(
 void ReconstructionCell::ApplyLimiter(
     const std::vector<int>& bc_model, const std::vector<double>& bc_value)
 {
-  AMANZI_ASSERT(upwind_cells_.size() > 0);
-  AMANZI_ASSERT(downwind_cells_.size() > 0);
-
   limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
   if (limiter_id_ == OPERATOR_LIMITER_BARTH_JESPERSEN) {
     LimiterBarthJespersen_(bc_model, bc_value, limiter_);
@@ -288,9 +285,8 @@ void ReconstructionCell::CellFaceAdjCellsNonManifold_(
     std::vector<AmanziMesh::Entity_ID>& cells) const
 {
   AmanziMesh::Entity_ID_List faces, fcells;
-  std::vector<int> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  mesh_->cell_get_faces(c, &faces);
   int nfaces = faces.size();
 
   cells.clear();

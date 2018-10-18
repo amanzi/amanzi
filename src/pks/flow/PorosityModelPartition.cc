@@ -29,13 +29,13 @@ Teuchos::RCP<PorosityModelPartition> CreatePorosityModelPartition(
     Teuchos::RCP<Teuchos::ParameterList> plist)
 {
   std::vector<Teuchos::RCP<PorosityModel> > pom_list;
-  std::vector<std::string> region_list;
+  std::vector<std::vector<std::string> > region_list;
 
   for (auto lcv = plist->begin(); lcv != plist->end(); ++lcv) {
     std::string name = lcv->first;
     if (plist->isSublist(name)) {
       Teuchos::ParameterList sublist = plist->sublist(name);
-      region_list.push_back(sublist.get<std::string>("region"));
+      region_list.push_back(sublist.get<Teuchos::Array<std::string> >("regions").toVector());
 
       std::string model = sublist.get<std::string>("porosity model");
       if (model == "constant") {
@@ -50,9 +50,8 @@ Teuchos::RCP<PorosityModelPartition> CreatePorosityModelPartition(
     }
   }
 
-  Teuchos::RCP<Functions::MeshPartition> partition =
-      Teuchos::rcp(new Functions::MeshPartition(AmanziMesh::CELL, region_list));
-  partition->Initialize(mesh, -1);
+  auto partition = Teuchos::rcp(new Functions::MeshPartition());
+  partition->Initialize(mesh, AmanziMesh::CELL, region_list, -1);
   partition->Verify();
 
   return Teuchos::rcp(new PorosityModelPartition(partition, pom_list));

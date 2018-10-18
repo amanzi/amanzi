@@ -154,7 +154,7 @@ Debugger::FormatHeader_(std::string name, int c) {
 // Write cell + face info
 void
 Debugger::WriteCellInfo(bool include_faces) {
-  Teuchos::OSTab tab = vo_->getOSTab();
+  Teuchos::OSTab tab1 = vo_->getOSTab();
   if (vo_->os_OK(verb_level_)) {
     *vo_->os() << "Debug Cells Information:" << std::endl;
   }
@@ -191,38 +191,44 @@ void
 Debugger::WriteVector(const std::string& name,
                       const Teuchos::Ptr<const CompositeVector>& vec,
                       bool include_faces) {
+  int n_vecs = 1;
   Teuchos::RCP<const Epetra_MultiVector> vec_c;
-  if (vec->HasComponent("cell"))
+  if (vec->HasComponent("cell")) {
     vec_c = vec->ViewComponent("cell",false);
+    n_vecs = vec_c->NumVectors();
+  }
 
   Teuchos::RCP<const Epetra_MultiVector> vec_f;
   int nfaces_valid = 0;
   if (vec->HasComponent("face")) {
     vec_f = vec->ViewComponent("face",true);
     nfaces_valid = vec_f->MyLength();
+    n_vecs = vec_f->NumVectors();
   }
 
   for (int i=0; i!=dc_.size(); ++i) {
-    AmanziMesh::Entity_ID c0 = dc_[i];
-    AmanziMesh::Entity_ID c0_gid = dc_gid_[i];
-    Teuchos::OSTab tab = dcvo_[i]->getOSTab();
+    for (int j=0; j!=n_vecs; ++j) {
+      AmanziMesh::Entity_ID c0 = dc_[i];
+      AmanziMesh::Entity_ID c0_gid = dc_gid_[i];
+      Teuchos::OSTab tab = dcvo_[i]->getOSTab();
 
-    if (dcvo_[i]->os_OK(verb_level_)) {
-      *dcvo_[i]->os() << FormatHeader_(name, c0_gid);
+      if (dcvo_[i]->os_OK(verb_level_)) {
+        *dcvo_[i]->os() << FormatHeader_(name, c0_gid);
 
-      if (vec_c != Teuchos::null) 
-        *dcvo_[i]->os() << Format_((*vec_c)[0][c0]);
+        if (vec_c != Teuchos::null) 
+          *dcvo_[i]->os() << Format_((*vec_c)[j][c0]);
 
-      if (include_faces && vec_f != Teuchos::null) {
-        AmanziMesh::Entity_ID_List fnums0;
-        std::vector<int> dirs;
-        mesh_->cell_get_faces_and_dirs(c0, &fnums0, &dirs);
+        if (include_faces && vec_f != Teuchos::null) {
+          AmanziMesh::Entity_ID_List fnums0;
+          std::vector<int> dirs;
+          mesh_->cell_get_faces_and_dirs(c0, &fnums0, &dirs);
 
-        for (unsigned int n=0; n!=fnums0.size(); ++n)
-          if (fnums0[n] < nfaces_valid)
-            *dcvo_[i]->os() << " " << Format_((*vec_f)[0][fnums0[n]]);
+          for (unsigned int n=0; n!=fnums0.size(); ++n)
+            if (fnums0[n] < nfaces_valid)
+              *dcvo_[i]->os() << " " << Format_((*vec_f)[j][fnums0[n]]);
+        }
+        *dcvo_[i]->os() << std::endl;
       }
-      *dcvo_[i]->os() << std::endl;
     }
   }
 }
@@ -249,27 +255,34 @@ Debugger::WriteVectors(const std::vector<std::string>& names,
         std::string name = names[lcv];
         Teuchos::Ptr<const CompositeVector> vec = vecs[lcv];
 
+        int n_vec = 1;
         Teuchos::RCP<const Epetra_MultiVector> vec_c;
-        if (vec->HasComponent("cell"))
+        if (vec->HasComponent("cell")) {
           vec_c = vec->ViewComponent("cell",false);
+          n_vec = vec_c->NumVectors();
+        }
 
         Teuchos::RCP<const Epetra_MultiVector> vec_f;
-        if (vec->HasComponent("face"))
+        if (vec->HasComponent("face")) {
           vec_f = vec->ViewComponent("face",false);
-
-        *dcvo_[i]->os() << FormatHeader_(name, c0_gid);
-        if (vec_c != Teuchos::null)
-          *dcvo_[i]->os() << Format_((*vec_c)[0][c0]);
-
-        if (include_faces && vec_f != Teuchos::null) {
-          AmanziMesh::Entity_ID_List fnums0;
-          std::vector<int> dirs;
-          mesh_->cell_get_faces_and_dirs(c0, &fnums0, &dirs);
-
-          for (unsigned int n=0; n!=fnums0.size(); ++n)
-            *dcvo_[i]->os() << " " << Format_((*vec_f)[0][fnums0[n]]);
+          n_vec = vec_f->NumVectors();
         }
-        *dcvo_[i]->os() << std::endl;
+
+        for (int j=0; j!=n_vec; ++j) {
+          *dcvo_[i]->os() << FormatHeader_(name, c0_gid);
+          if (vec_c != Teuchos::null) 
+            *dcvo_[i]->os() << Format_((*vec_c)[j][c0]);
+
+          if (include_faces && vec_f != Teuchos::null) {
+            AmanziMesh::Entity_ID_List fnums0;
+            std::vector<int> dirs;
+            mesh_->cell_get_faces_and_dirs(c0, &fnums0, &dirs);
+
+            for (unsigned int n=0; n!=fnums0.size(); ++n)
+              *dcvo_[i]->os() << " " << Format_((*vec_f)[j][fnums0[n]]);
+          }
+          *dcvo_[i]->os() << std::endl;
+        }
       }
     }
   }

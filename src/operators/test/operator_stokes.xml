@@ -32,7 +32,6 @@
   <!-- SOLVERS -->
   <ParameterList name="solvers">
     <ParameterList name="GMRES">
-      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
         <Parameter name="maximum number of iterations" type="int" value="100"/>
@@ -71,6 +70,8 @@
     <!-- NODE 2, FACE 1 scheme -->
     <ParameterList name="elasticity operator">
       <Parameter name="method" type="string" value="BernardiRaugel"/>
+      <Parameter name="method order" type="int" value="1"/>
+      <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
         <Parameter name="location" type="Array(string)" value="{node, face}"/>

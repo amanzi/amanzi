@@ -53,10 +53,10 @@ Example:
 */
 
 
-/* Ghost elemets of  CompositeVectors k_, dkdp_  are NOT used to be up to date.
-   So they always have to be scattered from master elements before accesssing their data */
-
-
+/*
+  Ghost elemets of composite vectors k_ and dkdp_ are NOT used to be up to date.
+  They always have to be updated from master elements before accessing their values.
+*/
 
 namespace Amanzi {
 namespace Operators {
