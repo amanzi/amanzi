@@ -182,6 +182,12 @@ About
 
   .. * porflow4_6.exo
 
+* Analytic Solution:
+
+  * Directory: analytic/
+   
+    * test_h_tr.dat
+
 
 .. todo::
 
