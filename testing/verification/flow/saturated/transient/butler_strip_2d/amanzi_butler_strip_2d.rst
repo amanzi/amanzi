@@ -30,7 +30,7 @@ The solution reveals several interesting features of flow in this configuration 
 Model
 -----
 
-Flow within zones that do not contain the pumping well can be described mathematically as :eq:`flow_nowell`
+Flow within zones that do not contain the pumping well can be described mathematically in terms of drawdown :math:`s` as :eq:`flow_nowell`
 
 .. math:: \frac{\partial ^2 s_i}{\partial x^2} 
    + \frac{\partial ^2 s_i}{\partial y^2} 
@@ -38,10 +38,10 @@ Flow within zones that do not contain the pumping well can be described mathemat
   :label: flow_nowell
 
 where 
-:math:`s_i` [L] is the drawdown in material :math:`i`,
-:math:`t` [T] is the time,
-:math:`T_i` [L\ :sup:`2`\/T] is the transmissivity of material :math:`i`, and
-:math:`S_i` [-] is the storage coefficient of material :math:`i`.
+:math:`s_i` is the drawdown [L] in material :math:`i`,
+:math:`t` is time [T],
+:math:`T_i` is the transmissivity [L\ :sup:`2`\/T] of material :math:`i`, and
+:math:`S_i` is the storage coefficient [-] of material :math:`i`.
 
 Flow within zones that contain the pumping well can be represented as
 
@@ -52,12 +52,12 @@ Flow within zones that contain the pumping well can be represented as
   :label: flow_well
 
 where
-:math:`Q` [L\ :sup:`3`\/T]is the pumping rate from well located at :math:`(a,b)`,
+:math:`Q` is the pumping rate [L\ :sup:`3`\/T] from well located at :math:`(a,b)`,
 :math:`\delta(x)` is the Direc delta function, being 1 for :math:`x = 0` and :math:`0 \text{ otherwise}`.
 
 The initial conditions are the same for all three zones:
 
-.. math:: s_i(x,y,0) =0.
+.. math:: s_i(x,y,0) = 0.
   :label: ic_ButlerLiu_strip
 
 The boundary conditions are:
@@ -75,6 +75,7 @@ The boundary conditions are:
 
 Problem Specification
 ---------------------
+
 
 Schematic
 ~~~~~~~~~
