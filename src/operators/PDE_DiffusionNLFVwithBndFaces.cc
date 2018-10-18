@@ -21,6 +21,7 @@
 #include "OperatorDefs.hh"
 #include "Operator_CellBndFace.hh"
 #include "PDE_DiffusionNLFVwithBndFaces.hh"
+#include "WhetStoneMeshUtils.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -266,7 +267,7 @@ void PDE_DiffusionNLFVwithBndFaces::InitStencils_()
       for (int i = 0; i < dim_; i++) {
         weight[k + i][f] = ws[i];
         (*stencil_faces_[k + i])[f] = faces[ids[i]];
-        (*stencil_cells_[k + i])[f] = mfd3d.cell_get_face_adj_cell(c, faces[ids[i]]);
+        (*stencil_cells_[k + i])[f] = Amanzi::WhetStone::cell_get_face_adj_cell(*mesh_, c, faces[ids[i]]);
       }
     }
     
@@ -324,7 +325,7 @@ void PDE_DiffusionNLFVwithBndFaces::InitStencils_()
       for (int i = 1; i < dim_; i++) {
         weight[dim_ + i][f] = ws[i];
         (*stencil_faces_[dim_ + i])[f] = faces[ids[i]];
-        (*stencil_cells_[dim_ + i])[f] = mfd3d.cell_get_face_adj_cell(c, faces[ids[i]]);
+        (*stencil_cells_[dim_ + i])[f] = Amanzi::WhetStone::cell_get_face_adj_cell(*mesh_, c, faces[ids[i]]);
       }
      
     }
