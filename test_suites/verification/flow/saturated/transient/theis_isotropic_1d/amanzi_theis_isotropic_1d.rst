@@ -4,7 +4,7 @@ Transient One-Dimensional Confined Flow to a Pumping Well (Theis)
 Capabilities Tested
 -------------------
 
-This transient one-dimensional (radial) flow problem tests the Amanzi flow process kernel. Capabilities tested include:
+This transient one-dimensional (radial) flow problem tests the Amanzi saturated flow process kernel. Capabilities tested include:
 
   * single-phase, one-dimensional flow 
   * transient flow

@@ -4,13 +4,18 @@ Transient Flow to a Pumping Well in an Anisotropic Aquifer (Hantush)
 Capabilities Tested
 -------------------
 
-This two-dimensional transient flow problem in a non-leaky aquifer with constant pumping tests the Amanzi saturated flow process kernel in anistropic media.
+This transient two-dimensional flow problem in a non-leaky aquifer with constant pumping tests the Amanzi saturated flow process kernel in anistropic media.
 Capabilities tested include:
 
-  * transient, single-phase flow
-  * saturated flow conditions 
-  * drawdown prediction in anistropic media
-  * statically refined (non-uniform) mesh
+  * single-phase, two-dimensional flow
+  * transient flow
+  * saturated flow
+  * constant-rate pumping well
+  * constant-head (Dirichlet) boundary conditions
+  * specified volumetric flux (Neumann) boundary conditions
+  * homogeneous porous medium 
+  * anisotropic porous medium
+  * non-uniform mesh (statically refined) 
 
 For details on this test, see :ref:`about_hantush_anisotropic`.
 
@@ -101,19 +106,43 @@ The mesh consists of 12,208 cells. There is a single cell in the z-direction, wh
 Variables
 ~~~~~~~~~
 
-* :math:`Q=2.0` constant pumping rate, [m\ :sup:`3`/s]
-* :math:`\phi=0.3` constant porosity
-* :math:`S_s=7.5 \times 10^{-5}` specific storage (:math:`S=S_s b`), [m\ :sup:`-1`]
-* :math:`k_x=2.3543 \times 10^{-11}, \: k_y=k_z=2.3543 \times 10^{-12}` permeability tensor (:math:`k_i \rho g /\mu=K_i=T_i/b)`, [m\ :sup:`2`] 
-* :math:`\rho=998.20` water density, [kg/m\ :sup:`3`]
-* :math:`g=9.81` gravity constant, [m/s\ :sup:`2`]
-* :math:`\mu=1.002 \times 10^{-3}` dynamic viscosity, [kg/s/m]
-* :math:`t=86400` total simulation time (= 1 day), [s]
+* Domain:
+  
+  * :math:`x_{min} = y_{min} = -1200`, :math:`z_{min} = 0 \text{ [m]}`
+  * :math:`x_{max} = y_{max} =1200`, :math:`z_{max} = 5 \text{ [m]}`
+  * aquifer thickness:    :math:`b=z_{max}-z_{min}=5 \text{ [m]}` 
+  * pumping well location:    :math:`(x,y) = (0,0) \text{ [m]}`, spanning entire aquifer thickness
+  * observation well locations:   
 
-Initial condition: zero drawdown everywhere in domain
+    * :math:`(x_{obs1},y_{obs1},z_{obs1}) = (55.0, 0.0, 2.0) \text{ [m]}`
+    * :math:`(x_{obs2},y_{obs2},z_{obs2}) = (0.0, 55.0, 2.0) \text{ [m]}`
+    * :math:`(x_{obs3},y_{obs3},z_{obs3}) = (55.0, 55.0, 2.0) \text{ [m]}`
 
-Boundary conditions: zero drawdown on four lateral boundaries
+* Boundary and initial conditions:
 
+  * initial hydraulic head:   :math:`h(x,y,0)=h_0 \: \text{[m]}`, where :math:`h_0` is hydrostatic (i.e. drawdown :math:`s=0 \text{ [m]}`)
+  * constant-head (Dirichlet) lateral boundary conditions:   :math:`h(x_{min,max},y_{min,max},t)=h_0 \: \text{[m]}`
+  * no-flow (Neumann) upper and lower boundary conditions
+  * well-head pumping rate:   :math:`Q=2.0 \: \text{[m}^3\text{/s]}`
+
+    * duration of pumping:    :math:`t_{max}=86400\: \text{[s]} = 1 \text{ [day]}`
+
+* Material properties:
+
+  * storativity:    :math:`S=3.75 \times 10^{-4} \: \text{[-]}`
+
+    * derived from:    :math:`S=S_s b`, where :math:`S_s=7.5 \times 10^{-5} \: \text{[m}^{-1} \text{]}` and :math:`b=5 \: \text{[m]}`
+  * porosity:    :math:`\phi = 0.3`
+  * transmissivity:    :math:`T_x= 1.15 \times 10^{-3}, T_y= 1.15 \times 10^{-4} \: \text{[m}^2\text{/s]}`
+
+    * derived from:    :math:`T=Kb`, where :math:`K=\frac{k \rho g}{\mu}`
+
+      * intrinsic permeability tensor:    :math:`k_x = 2.3543 \times 10^{-11},  k_y = k_z = 2.3543 \times 10^{-12} \: \text{[m}^2\text{]}` 
+
+  * fluid density:    :math:`\rho = 998.2 \: \text{[kg/m}^3\text{]}`
+  * dynamic viscosity:    :math:`\mu = 1.002 \times 10^{-3} \: \text{[Pa} \cdot \text{s]}` 
+  * gravitational acceleration:    :math:`g = 9.807 \: \text{[m/s}^2\text{]}`
+  
 
 Results and Comparison
 ----------------------
@@ -147,11 +176,11 @@ About
   * amanzi_hantush_anisotropic_2d-u.xml
 
     * Spec Version 2.3, unstructured mesh framework
-    * mesh:  porflow4_6.exo
+    * Mesh:  porflow4_6.exo
 
-* Mesh Files:
+.. * Mesh Files:
 
-  * porflow4_6.exo
+  .. * porflow4_6.exo
 
 
 .. todo::
