@@ -17,7 +17,7 @@
 #include "nlfv.hh"
 #include "ParallelCommunication.hh"
 
-#include "Op_Face_CellFace.hh"
+#include "Op_Face_CellBndFace.hh"
 #include "OperatorDefs.hh"
 #include "Operator_CellBndFace.hh"
 #include "PDE_DiffusionNLFVwithBndFaces.hh"
@@ -54,7 +54,7 @@ void PDE_DiffusionNLFVwithBndFaces::InitDiffusion_(Teuchos::ParameterList& plist
 
   // create the local Op and register it with the global Operator
   std::string name = "Diffusion: FACE_CELLBNDFACE";
-  local_op_ = Teuchos::rcp(new Op_Face_CellFace(name, mesh_));
+  local_op_ = Teuchos::rcp(new Op_Face_CellBndFace(name, mesh_));
   global_op_->OpPushBack(local_op_);
 
   // upwind options (not used yet)
@@ -82,7 +82,7 @@ void PDE_DiffusionNLFVwithBndFaces::InitDiffusion_(Teuchos::ParameterList& plist
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
 
     std::string name = "Diffusion: FACE_CELLBNDFACE Jacobian terms";
-    jac_op_ = Teuchos::rcp(new Op_Face_CellFace(name, mesh_));
+    jac_op_ = Teuchos::rcp(new Op_Face_CellBndFace(name, mesh_));
 
     global_op_->OpPushBack(jac_op_);
   } else if (jacobian == "true Jacobian") {

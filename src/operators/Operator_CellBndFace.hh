@@ -35,18 +35,18 @@ class Operator_CellBndFace : public Operator_Cell {
     set_schema_string("CELLBNDFACE");
   }
 
-  virtual int ApplyMatrixFreeOp(const Op_Face_CellFace& op,
+  virtual int ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
       const CompositeVector& X, CompositeVector& Y) const;
 
 
   // visit methods for symbolic assemble
-  virtual void SymbolicAssembleMatrixOp(const Op_Face_CellFace& op,
+  virtual void SymbolicAssembleMatrixOp(const Op_Face_CellBndFace& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;
 
   
   // visit methods for assemble
-  virtual void AssembleMatrixOp(const Op_Face_CellFace& op,
+  virtual void AssembleMatrixOp(const Op_Face_CellBndFace& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
 

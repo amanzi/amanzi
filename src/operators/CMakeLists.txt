@@ -70,7 +70,7 @@ set(operators_inc_files
     Op_Cell_Edge.hh
     Op_Cell_Schema.hh
     Op_Face_Cell.hh
-    Op_Face_CellFace.hh
+    Op_Face_CellBndFace.hh
     Op_Face_Schema.hh
     Op_Node_Node.hh
     Operator.hh

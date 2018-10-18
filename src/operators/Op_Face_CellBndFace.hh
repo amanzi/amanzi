@@ -30,9 +30,9 @@
 namespace Amanzi {
 namespace Operators {
 
-class Op_Face_CellFace : public Op {
+class Op_Face_CellBndFace : public Op {
  public:
-  Op_Face_CellFace(std::string& name,
+  Op_Face_CellBndFace(std::string& name,
                const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       Op(OPERATOR_SCHEMA_BASE_FACE |
          OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE | OPERATOR_SCHEMA_DOFS_BNDFACE,
