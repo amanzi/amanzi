@@ -33,10 +33,10 @@ class Analytic02 : public AnalyticBase {
 
   Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) {
     Amanzi::WhetStone::Tensor K(2, 2);
-    K(0, 0) = 3.0;
-    K(1, 1) = 1.0;
-    K(0, 1) = 1.0;
-    K(1, 0) = 1.0;
+    K(0, 0) = 1.0;
+    K(1, 1) = 3.0;
+    K(0, 1) = 0.1;
+    K(1, 0) = 0.1;
     return K;
   }
 

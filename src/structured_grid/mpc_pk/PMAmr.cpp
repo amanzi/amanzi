@@ -1341,7 +1341,7 @@ void PMAmr::InitializeControlEvents()
           ppc.get("stop",stop);
           defined_events[cmacroNames[i]] = new EventCoord::CycleEvent(start,period,stop);
       }
-      else if (type == "cycles" ){
+      else if (type == "cycles" ) {
           Array<int> cycles; ppc.getarr("cycles",cycles,0,ppc.countval("cycles"));
           defined_events[cmacroNames[i]] = new EventCoord::CycleEvent(cycles);
       }
@@ -1366,7 +1366,7 @@ void PMAmr::InitializeControlEvents()
           ppt.get("stop",stop);
           defined_events[tmacroNames[i]] = new EventCoord::TimeEvent(start,period,stop);
       }
-      else if (type == "times" ){
+      else if (type == "times" ) {
           Array<Real> times; ppt.getarr("times",times,0,ppt.countval("times"));
           defined_events[tmacroNames[i]] = new EventCoord::TimeEvent(times);
       }
