@@ -4,12 +4,17 @@ Transient Flow in a 2D Confined Aquifer with a Linear Strip
 Capabilities Tested
 -------------------
 
-This two-dimensional flow problem --- with a constant pumping rate in a heterogeneous confined aquifer --- tests the Amanzi flow process kernel. Capabilities tested include:
-  
-  * transient flow field induced by constant pumping
-  * flow/drawdown response to pumping in heterogeneous medium (confined aquifer)
-  * differing flow regimes dependent on material transmissivity contrast and configuration 
-  * statically refined (nonuniform) mesh
+This two-dimensional flow problem --- with a constant pumping rate in a heterogeneous confined aquifer --- tests the Amanzi saturated flow process kernel. 
+Capabilities tested include:
+ 
+  * single-phase, two-dimensional flow
+  * transient flow
+  * saturated flow
+  * constant-rate pumping well
+  * constant-head (Dirichlet) boundary conditions
+  * heterogeneous porous medium
+  * isotropic porous medium
+  * uniform mesh
 
 For details on this test, see :ref:`about_butler_strip_2d`.
 
