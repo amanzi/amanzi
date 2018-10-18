@@ -46,36 +46,43 @@ The soil permeabilty varies in the *x* and *y* directions; thus, anisotropic
 condictions exist. Hantush and Thomas simplifies to the Theis solution :cite:`han-Theis1935relation`, which
 assumes isotropic soil profile, when the permeabilty is equal in all
 directions for all times. This solution will yield contour lines of
-equal draw down by an elliptical shape.     
+equal draw down by an elliptical shape. The problem is described by the following 
+governing groundwater equation:
 
 .. math::
     \frac{\partial }{\partial x} (T_x \frac{\partial h}{\partial x})+\frac{\partial }{\partial y} (T_y \frac{\partial h}{\partial y})
-    = S \frac{\partial h}{\partial t} + Q \delta(x) \delta(y)
+    = S \frac{\partial h}{\partial t} + Q \delta(x) \delta(y),
 
-The initial conditions is
+where :math:`T_i` is transmissivity in the direction :math:`i` [L\ :sup:`2`/T], :math:`h` is hydraulic head [L], :math:`S` is the storativity of the aquifer [-], and :math:`Q` is the volumetric pumping rate of the well [L\ :sup:`3`/T].
+
+The initial condition is
 
 .. math::  h(x,y,0)=h_0
 
-Due to the varying hydraulic conductivities two transmissivities are
-defined as 
+where initial head :math:`h_0` is often prescribed as hydrostatic head [L]. 
 
-.. math:: T_x = K_xb \; \; and \;\; T_y=K_yb
+Due to the directionally-varying hydraulic conductivity, two transmissivities are
+defined as: 
 
-Hantush and Thomas found the solution to the governing equation as
+.. math:: T_x = K_xb \; \; and \;\; T_y=K_yb,
+
+where :math:`K_i` is the hydraulic conductivity in the direction :math:`i` [L/T] and :math:`b` is the aquifer thickness [L].
+
+Hantush and Thomas :cite:`han-Hantush_1966_wells` found the following solution to the governing equation in terms of drawdown :math:`s` [L]:
 
 .. math:: s=h_0-h(r,t)=\frac{Q}{4 \pi \sqrt{T_x T_y}} \int_\phi^\infty
-	  \frac{exp[-\tau]}{\tau} d\tau = \frac{Q}{4 \pi \sqrt{T_x T_y}} \; W(\phi)
+	  \frac{e^{-\psi}}{\psi} d\psi = \frac{Q}{4 \pi \sqrt{T_x T_y}} \; W(\phi),
 
 where
 
 .. math:: \phi = \frac{(x^2T_t + y^2T_x)\;S}{4T_xT_yt}
 
-Notice when :math:`T_x=T_y`, :math:`\phi` is now equal to *u* and the
-problem simplifies to the Theis solution :cite:`han-Theis1935relation`.  The variables in
-the equations above are defined in :ref:`Variables` with subtle
+
+Notice that when :math:`T_x=T_y` (isotropic conditions), :math:`\phi` is now equal 
+to :math:`u` and the problem simplifies to the Theis solution :cite:`han-Theis1935relation`.  The variables in the equations above are defined in :ref:`Variables` with subtle
 differences.  We have now defined transmissivity in two directions and
-redefined the well function, *W*, to apply to :math:`\phi` instead of
-*u*.  The integral is still solved as a negative exponential integral.  
+redefined the well function, :math:`W`, to apply to :math:`\phi` instead of
+:math:`u`.  The integral is still solved as a negative exponential integral.  
 
 
 Problem Specification
@@ -193,6 +200,7 @@ About
 
   * Documentation:
 
+    * Fix governing equation in Model to be homogeneous? [jpo]  
     * Decide whether to keep structured run
     * Include info about analytic solution calculation?
     * convert units in Variables to be same as in Model?
