@@ -5053,67 +5053,6 @@ void Mesh_MSTK::label_celltype()
 }
 
 
-//------------
-// Epetra maps
-//------------
-    
-inline 
-const Epetra_Map& Mesh_MSTK::cell_map(bool include_ghost) const
-{
-  if (serial_run)
-    return *cell_map_wo_ghosts_;
-  else
-    return (include_ghost ? *cell_map_w_ghosts_ : *cell_map_wo_ghosts_);
-}
-    
-
-inline 
-const Epetra_Map& Mesh_MSTK::face_map(bool include_ghost) const
-{
-  if (serial_run)
-    return *face_map_wo_ghosts_;
-  else
-    return (include_ghost ? *face_map_w_ghosts_ : *face_map_wo_ghosts_);
-}
-    
-
-inline 
-const Epetra_Map& Mesh_MSTK::edge_map(bool include_ghost) const
-{
-  if (serial_run)
-    return *edge_map_wo_ghosts_;
-  else
-    return (include_ghost ? *edge_map_w_ghosts_ : *edge_map_wo_ghosts_);
-}
-    
-
-inline 
-const Epetra_Map& Mesh_MSTK::node_map(bool include_ghost) const
-{
-  if (serial_run)
-    return *node_map_wo_ghosts_;
-  else
-    return (include_ghost ? *node_map_w_ghosts_ : *node_map_wo_ghosts_);
-}
-
-
-inline
-const Epetra_Map& Mesh_MSTK::exterior_face_map(bool include_ghost) const
-{
-  if (serial_run)
-    return *extface_map_wo_ghosts_;
-  else
-    return (include_ghost ? *extface_map_w_ghosts_ : *extface_map_wo_ghosts_);
-}
-
-
-inline
-const Epetra_Import& Mesh_MSTK::exterior_face_importer(void) const
-{
-  return *owned_to_extface_importer_;
-}
-
-
 int Mesh_MSTK::generate_regular_mesh(Mesh_ptr mesh, double x0, double y0, 
                                      double z0, double x1, double y1, 
                                      double z1, int nx, int ny, int nz)
