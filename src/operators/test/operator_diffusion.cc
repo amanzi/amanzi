@@ -65,11 +65,11 @@ void RunTestDiffusionMixed(int dim, double gravity) {
   RCP<const Mesh> mesh;
   if (dim == 2) {
     meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
-    mesh = meshfactory("test/median32x33.exo", Teuchos::null);
+    mesh = meshfactory("test/median32x33.exo");
   } else {
     meshfactory.preference(FrameworkPreference({AmanziMesh::Simple}));
     if (comm.NumProc() > 1) meshfactory.preference(FrameworkPreference({MSTK}));
-    mesh = meshfactory(0.0,0.0,0.0, 1.0,1.0,1.0, 4, 5, 6, Teuchos::null);
+    mesh = meshfactory(0.0,0.0,0.0, 1.0,1.0,1.0, 4, 5, 6);
   }
 
   // modify diffusion coefficient
@@ -219,12 +219,9 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   ParameterList plist = xmlreader.getParameters();
 
   // create a geometric model and mesh
-  ParameterList region_list = plist.sublist("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
-
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 15, 8, gm);
+  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 15, 8);
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
