@@ -92,7 +92,7 @@ The domain configuration and well locations are indicated in the following schem
 Mesh
 ~~~~
 
-The background mesh is :math:`2404 \: m \times 2404 \: m \times 1 \: m` and consists of 361,201 cells. There are 601 cells in the x-direction, 601 cells in the y-direction, and 1 cell in the z-direction.  
+The background mesh is :math:`1202 \: m \times 1202 \: m \times 1 \: m` and consists of 361,201 cells. There are 601 cells in the x-direction, 601 cells in the y-direction, and 1 cell in the z-direction.  
 
 
 Variables
