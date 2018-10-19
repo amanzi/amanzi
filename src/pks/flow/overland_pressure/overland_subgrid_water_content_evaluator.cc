@@ -11,7 +11,7 @@
 
 This is Phi * density * area, where Phi is the volumetric (effective) ponded depth as in Jan et al WRR 2018.
 
-* `"maximum ponded depth key`" ``[string]`` **DOMAIN-maximum_ponded_depth**
+* `"microtopographic relief key`" ``[string]`` **DOMAIN-microtopographic_refied**
          The name of del_max, the max microtopography value.
 * `"excluded volume key`" ``[string]`` **DOMAIN-excluded_volume**
          The name of del_excluded, the integral of the microtopography.
@@ -40,7 +40,7 @@ OverlandSubgridWaterContentEvaluator::OverlandSubgridWaterContentEvaluator(Teuch
   M_ = plist_.get<double>("molar mass", 0.0180153);
   n_liq_ = plist_.get<double>("molar density", 1000./0.0180153);
   //bar_ = plist_.get<bool>("allow negative water content", false);
-
+ 
   //
   // NOTE: A bar in this evaluator doesn't make sense, because bar is intended
   // to keep the derivative positive even for negative pressures, but this
@@ -104,10 +104,15 @@ OverlandSubgridWaterContentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& 
       double delta_ex = ex_vol_v[0][c] * n_liq_;
 
       double pd = (pres[0][c] - p_atm)/ (gz * M_);
+      AMANZI_ASSERT(2*delta_max > 3*delta_ex);
+      
       if (pd <= 0.) {
         res[0][c] = 0.;
       } else if (pd < delta_max) {
         double pd_on_delmax = pd / delta_max;
+
+        
+        std::cout<<"SUBGRID: "<<delta_max<< " "<<delta_ex<<"\n";
         res[0][c] = std::pow(pd_on_delmax,2) * (2*delta_max - 3*delta_ex)
                     + std::pow(pd_on_delmax,3) * (2*delta_ex - delta_max);
 	res[0][c] *= cv[0][c];
