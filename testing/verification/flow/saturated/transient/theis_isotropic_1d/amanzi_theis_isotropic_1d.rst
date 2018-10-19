@@ -164,7 +164,7 @@ Variables
   * well-head pumping rate:   :math:`Q=4.0 \: \text{[m}^3\text{/s]}`
 
 * radial distance from well:    :math:`r \: \text{[m]}`
-* duration of pumping time:    :math:`t \: \text{[s]}`
+* duration of pumping:    :math:`t \: \text{[s]}`
 
 * Material properties:
 
