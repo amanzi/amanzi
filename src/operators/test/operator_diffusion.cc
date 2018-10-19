@@ -41,7 +41,7 @@
 /* *****************************************************************
 * Exactness test for mixed diffusion solver.
 ***************************************************************** */
-void RunTestDiffusionMixed(double gravity) {
+void RunTestDiffusionMixed(int dim, double gravity) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -50,7 +50,7 @@ void RunTestDiffusionMixed(double gravity) {
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-  if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, exactness test" 
+  if (MyPID == 0) std::cout << "\nTest: " << dim << "D elliptic solver, exactness test" 
                             << " for mixed discretization, g=" << gravity << std::endl;
 
   // read parameter list
@@ -59,17 +59,18 @@ void RunTestDiffusionMixed(double gravity) {
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
-  // create the MSTK mesh framework 
-  // -- geometric model is defined in the region sublist of XML list
-  ParameterList region_list = plist.sublist("regions");
-  auto gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
-
-  // -- provide at lest one framework to the mesh factory. The first available
+  // provide at lest one framework to the mesh factory. The first available
   // -- framework will be used
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
-  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 1, gm);
-  RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
+  RCP<const Mesh> mesh;
+  if (dim == 2) {
+    meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
+    mesh = meshfactory("test/median32x33.exo", Teuchos::null);
+  } else {
+    meshfactory.preference(FrameworkPreference({AmanziMesh::Simple}));
+    if (comm.NumProc() > 1) meshfactory.preference(FrameworkPreference({MSTK}));
+    mesh = meshfactory(0.0,0.0,0.0, 1.0,1.0,1.0, 4, 5, 6, Teuchos::null);
+  }
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
@@ -115,7 +116,9 @@ void RunTestDiffusionMixed(double gravity) {
 
   // create diffusion operator 
   double rho(1.0);
-  AmanziGeometry::Point g(0.0, -gravity);
+  AmanziGeometry::Point g(dim);
+  g[dim - 1] = -gravity;
+
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator mixed");
   Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(op_list, mesh, rho, g));
   op->SetBCs(bc, bc);
@@ -185,11 +188,12 @@ void RunTestDiffusionMixed(double gravity) {
 
 
 TEST(OPERATOR_DIFFUSION_MIXED) {
-  RunTestDiffusionMixed(0.0);
+  RunTestDiffusionMixed(2, 0.0);
+  RunTestDiffusionMixed(3, 0.0);
 }
 
 TEST(OPERATOR_DIFFUSION_MIXED_wGRAVITY) {
-  RunTestDiffusionMixed(0.1);
+  RunTestDiffusionMixed(2, 0.1);
 }
 
 

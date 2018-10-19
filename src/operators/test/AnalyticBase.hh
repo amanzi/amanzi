@@ -40,7 +40,9 @@
 
 class AnalyticBase {
  public:
-  AnalyticBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh) {};
+  AnalyticBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) 
+    : mesh_(mesh),
+      d_(mesh->space_dimension()) {};
   ~AnalyticBase() {};
 
   // analytic solution for diffusion problem with gravity
@@ -85,6 +87,7 @@ class AnalyticBase {
 
  protected:
   Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh_;
+  int d_;
 };
 
 
@@ -174,9 +177,8 @@ void AnalyticBase::ComputeNodeError(
   hnorm = 0.0;
   h1_err = 0.0;
 
-  int d = mesh_->space_dimension();
-  Amanzi::AmanziGeometry::Point xv(d);
-  Amanzi::AmanziGeometry::Point grad(d);
+  Amanzi::AmanziGeometry::Point xv(d_);
+  Amanzi::AmanziGeometry::Point grad(d_);
 
   Amanzi::AmanziMesh::Entity_ID_List nodes;
   Amanzi::WhetStone::MFD3D_Diffusion mfd(mesh_);
@@ -247,8 +249,7 @@ void AnalyticBase::ComputeEdgeError(
   hnorm = 1.0;  // missing code
   h1_err = 0.0;
 
-  int d = mesh_->space_dimension();
-  Amanzi::AmanziGeometry::Point grad(d);
+  Amanzi::AmanziGeometry::Point grad(d_);
 
   Amanzi::AmanziMesh::Entity_ID_List edges;
   Amanzi::WhetStone::MFD3D_Diffusion mfd(mesh_);
@@ -298,10 +299,8 @@ void AnalyticBase::ComputeEdgeMomentsError(
   l2_err = 0.0;
   inf_err = 0.0;
 
-  int d = mesh_->space_dimension();
-
   Amanzi::AmanziMesh::Entity_ID n0, n1;
-  Amanzi::AmanziGeometry::Point x0(d), x1(d), xv(d);
+  Amanzi::AmanziGeometry::Point x0(d_), x1(d_), xv(d_);
 
   Amanzi::AmanziMesh::Entity_ID_List edges;
   Amanzi::WhetStone::MFD3D_Diffusion mfd(mesh_);
@@ -359,8 +358,8 @@ Amanzi::AmanziGeometry::Point AnalyticBase::face_normal_exterior(int f, bool* fl
   mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
   *flag = (cells.size() == 1);
 
-  int dir, d = mesh_->space_dimension();
-  Amanzi::AmanziGeometry::Point normal(d);
+  int dir;
+  Amanzi::AmanziGeometry::Point normal(d_);
   if (*flag) 
     normal = mesh_->face_normal(f, false, cells[0], &dir);
 
