@@ -144,8 +144,8 @@ CompositeVectorSpace::AddComponents(const std::vector<std::string>& names,
                    const std::vector<AmanziMesh::Entity_kind>& locations,
                    const std::vector<int>& num_dofs) {
 
-  std::map<std::string, Teuchos::RCP<const Epetra_Map> >  mastermaps;
-  std::map<std::string, Teuchos::RCP<const Epetra_Map> >  ghostmaps;
+  std::map<std::string, Teuchos::RCP<const Epetra_Map> > mastermaps;
+  std::map<std::string, Teuchos::RCP<const Epetra_Map> > ghostmaps;
 
   for (int i=0; i<locations.size(); ++i) {
     //const Epetra_Map* mp = &mesh_->map(lc, false);
@@ -156,7 +156,6 @@ CompositeVectorSpace::AddComponents(const std::vector<std::string>& names,
   }
        
   return AddComponents(names, locations, mastermaps, ghostmaps, num_dofs);
-  
 }
 
 CompositeVectorSpace*  
@@ -164,7 +163,6 @@ CompositeVectorSpace::AddComponent(std::string& name,
                                    Teuchos::RCP<const Epetra_Map> mastermap,
                                    Teuchos::RCP<const Epetra_Map> ghostmap,
                                    int num_dof) {
-
 
   std::vector<std::string> names(1,name);
   std::vector<int> num_dofs(1,num_dof);

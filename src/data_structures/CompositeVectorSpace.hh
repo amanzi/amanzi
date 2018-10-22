@@ -173,16 +173,16 @@ private:
                            std::vector<AmanziMesh::Entity_kind>& locations2,
                            std::vector<int>& num_dofs2);
   
- bool UnionAndConsistent_(const std::vector<std::string>& names1,
-                          const std::vector<AmanziMesh::Entity_kind>& locations1,
-                          const std::vector<int>& num_dofs1,
-                          std::map<std::string, Teuchos::RCP<const Epetra_Map> >& mastermaps1,
-                          std::map<std::string, Teuchos::RCP<const Epetra_Map> >& ghostmaps1,
-                          std::vector<std::string>& names2,
-                          std::vector<AmanziMesh::Entity_kind>& locations2,
-                          std::vector<int>& num_dofs2,
-                          std::map<std::string, Teuchos::RCP<const Epetra_Map> >& mastermaps2,
-                          std::map<std::string, Teuchos::RCP<const Epetra_Map> >& ghostmaps2);
+  bool UnionAndConsistent_(const std::vector<std::string>& names1,
+                           const std::vector<AmanziMesh::Entity_kind>& locations1,
+                           const std::vector<int>& num_dofs1,
+                           std::map<std::string, Teuchos::RCP<const Epetra_Map> >& mastermaps1,
+                           std::map<std::string, Teuchos::RCP<const Epetra_Map> >& ghostmaps1,
+                           std::vector<std::string>& names2,
+                           std::vector<AmanziMesh::Entity_kind>& locations2,
+                           std::vector<int>& num_dofs2,
+                           std::map<std::string, Teuchos::RCP<const Epetra_Map> >& mastermaps2,
+                           std::map<std::string, Teuchos::RCP<const Epetra_Map> >& ghostmaps2);
 
 private:
   bool ghosted_;
