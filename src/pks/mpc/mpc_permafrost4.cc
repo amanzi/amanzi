@@ -4,6 +4,7 @@
 
 #include "OperatorDefs.hh"
 #include "Operator_FaceCell.hh"
+#include "Operator_CellBndFace.hh"
 #include "mpc_delegate_ewc_surface.hh"
 #include "mpc_delegate_ewc_subsurface.hh"
 #include "mpc_surface_subsurface_helpers.hh"
@@ -66,21 +67,32 @@ MPCPermafrost4::Setup(const Teuchos::Ptr<State>& S) {
   surf_flow_pk_ = sub_pks_[2];
   surf_energy_pk_ = sub_pks_[3];
 
+
+  // call the subsurface setup, which calls the sub-pk's setups and sets up
+  // the subsurface block operator
+  MPCSubsurface::Setup(S);
+  
   // Create the dE_dp block, which will at least have a CELL-based diagonal
   // entry (from subsurface dE/dp) and a FACE-based diagonal entry (from
   // surface dE/dp), but the subsurface will likely create a CELL-only matrix.
   // This can get removed/fixed once there is a better way of
   // creating/amalgamating ops into a single global operator.
-  Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-  cvs->SetMesh(domain_mesh_)->SetGhosted()
-      ->AddComponent("face", AmanziMesh::FACE, 1)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
+
+  //Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
+  // cvs->SetMesh(domain_mesh_)->SetGhosted()
+  //     ->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1)
+  //     ->AddComponent("cell", AmanziMesh::CELL, 1);  
   Teuchos::ParameterList plist;
-  dE_dp_block_ = Teuchos::rcp(new Operators::Operator_FaceCell(cvs, plist));
+  const CompositeVectorSpace& cvs = domain_flow_pk_->preconditioner()->DomainMap();
+ 
+  if (cvs.HasComponent("face")){
+    dE_dp_block_ = Teuchos::rcp(new Operators::Operator_FaceCell(Teuchos::rcpFromRef(cvs), plist));
+  }else if (cvs.HasComponent("boundary_face")){
+    int global_op_schema = Operators::OPERATOR_SCHEMA_DOFS_CELL|Operators::OPERATOR_SCHEMA_DOFS_BNDFACE;
+    dE_dp_block_ = Teuchos::rcp(new Operators::Operator_CellBndFace(Teuchos::rcpFromRef(cvs), plist, global_op_schema));
+  }
   
-  // call the subsurface setup, which calls the sub-pk's setups and sets up
-  // the subsurface block operator
-  MPCSubsurface::Setup(S);
+
 
   // require the coupling fields, claim ownership
 
@@ -156,6 +168,7 @@ MPCPermafrost4::Setup(const Teuchos::Ptr<State>& S) {
     water_->set_indices(0,2,1,3);
     water_->set_db(surf_db_);
   }
+
 }
 
 void
@@ -411,7 +424,7 @@ MPCPermafrost4::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
     vecs[1] = u->SubVector(1)->Data().ptr();
     domain_db_->WriteVectors(vnames, vecs, true);
   }
-  
+ 
   // Calculate consistent faces
   modified |= domain_flow_pk_->ModifyPredictor(h, u0->SubVector(0), u->SubVector(0));
   modified |= domain_energy_pk_->ModifyPredictor(h, u0->SubVector(1), u->SubVector(1));
@@ -437,12 +450,12 @@ MPCPermafrost4::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
   
   // Copy consistent faces to surface
   if (modified) {
-
     //S_next_->GetFieldEvaluator(Keys::getKey(domain_surf_,"relative_permeability"))->HasFieldChanged(S_next_.ptr(),name_);
     Teuchos::RCP<const CompositeVector> h_prev = S_inter_->GetFieldData(Keys::getKey(domain_surf_,"ponded_depth"));
 
     MergeSubsurfaceAndSurfacePressure(*h_prev, u->SubVector(0)->Data().ptr(), u->SubVector(2)->Data().ptr());
     CopySubsurfaceToSurface(*u->SubVector(1)->Data(), u->SubVector(3)->Data().ptr());
+
   }
 
   // Hack surface faces

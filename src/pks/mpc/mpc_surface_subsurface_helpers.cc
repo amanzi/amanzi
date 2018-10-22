@@ -36,7 +36,6 @@ MergeSubsurfaceAndSurfacePressure(const CompositeVector& h_prev,
 				  const Teuchos::Ptr<CompositeVector>& sub_p,
 				  const Teuchos::Ptr<CompositeVector>& surf_p) {
   
-  Epetra_MultiVector& sub_p_f = *sub_p->ViewComponent("face",false);
   Epetra_MultiVector& surf_p_c = *surf_p->ViewComponent("cell",false);
   const Epetra_MultiVector& h_c = *h_prev.ViewComponent("cell",false);
   double p_atm = 101325.;

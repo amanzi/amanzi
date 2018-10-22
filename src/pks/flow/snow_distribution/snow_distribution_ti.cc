@@ -39,6 +39,8 @@ void SnowDistribution::Functional( double t_old,
   Teuchos::RCP<CompositeVector> res = g->Data();
   res->PutScalar(0.0);
 
+
+
 #if DEBUG_FLAG
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "----------------------------------------------------------------" << std::endl
@@ -86,6 +88,9 @@ void SnowDistribution::Functional( double t_old,
   }
   db_->WriteVector("res (post accumulation)", res.ptr(), true);
 #endif
+
+
+    
 };
 
 
@@ -105,6 +110,7 @@ int SnowDistribution::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuc
   int ierr = lin_solver_->ApplyInverse(*u->Data(), *Pu->Data());
   Pu->Data()->Scale(1./(10*dt_factor_));
 
+
 #if DEBUG_FLAG
   db_->WriteVector("PC*h_res", Pu->Data().ptr(), true);
 #endif
@@ -122,6 +128,8 @@ void SnowDistribution::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Precon update at t = " << t << std::endl;
 
+
+  
   // update state with the solution up.
   AMANZI_ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   //PKDefaultBase::solution_to_state(*up, S_next_);
@@ -240,6 +248,7 @@ bool SnowDistribution::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> 
 //  4. set: pk's distribution time, potential's dt factor
 bool
 SnowDistribution::AdvanceStep(double t_old, double t_new, bool reinit) {
+  Teuchos::OSTab tab = vo_->getOSTab();
   if (t_new <= my_next_time_) {
     if (vo_->os_OK(Teuchos::VERB_HIGH))
       *vo_->os() << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl
@@ -296,6 +305,7 @@ SnowDistribution::AdvanceStep(double t_old, double t_new, bool reinit) {
   S_next_->set_last_time(t_old);
   S_inter_->set_time(t_old);
 
+  
   return false;
 }
 

@@ -42,7 +42,6 @@ MPCCoupledWater::Setup(const Teuchos::Ptr<State>& S) {
   surf_flow_pk_ = sub_pks_[1];
   
   // call the MPC's setup, which calls the sub-pk's setups
-
   StrongMPC<PK_PhysicalBDF_Default>::Setup(S);
 
   // require the coupling fields, claim ownership

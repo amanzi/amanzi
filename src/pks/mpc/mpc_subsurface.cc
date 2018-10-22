@@ -717,16 +717,14 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
     Teuchos::RCP<const CompositeVector> dE_dp =
       S_next_->GetFieldData(Keys::getDerivKey(e_key_, pres_key_));
     dE_dp_->AddAccumulationTerm(*dE_dp, h, "cell", false);
-
-    // std::cout << "1/h * DE/Dp" << std::endl;
-    // dbg = *dE_dp; dbg.Scale(1./h); dbg.Print(std::cout);
-    
+   
     // write for debugging
-    std::vector<std::string> vnames;
-    vnames.push_back("  dwc_dT"); vnames.push_back("  de_dp"); 
-    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
-    vecs.push_back(dWC_dT.ptr()); vecs.push_back(dE_dp.ptr());
-    db_->WriteVectors(vnames, vecs, false);
+    // std::vector<std::string> vnames;
+    // vnames.push_back("  dwc_dT"); vnames.push_back("  de_dp"); 
+    // std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+    // vecs.push_back(dWC_dT.ptr()); vecs.push_back(dE_dp.ptr());
+    // db_->WriteVectors(vnames, vecs, false);
+    
 
     // finally assemble the full system, dump if requested, and form the inverse
     if (assemble) {
