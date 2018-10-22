@@ -2923,10 +2923,9 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       }
     }
     else {
-      Teuchos::RCP<const VerboseObject> verbobj = Mesh::verbosity_obj();
-      if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_HIGH)) {
-        Teuchos::OSTab tab = verbobj->getOSTab();
-        *(verbobj->os()) << "Requested CELLS on region " << region->name() 
+      if (vo_.get() && vo_->os_OK(Teuchos::VERB_HIGH)) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *(vo_->os()) << "Requested CELLS on region " << region->name() 
             << " of type " << region->type()  
             << " and dimension " << region->manifold_dimension() << ".\n"
             << "This request will result in an empty set";
@@ -5050,67 +5049,6 @@ void Mesh_MSTK::label_celltype()
       MEnt_Set_AttVal(region,celltype_att,ctype,0.0,NULL);
     }
   }
-}
-
-
-//------------
-// Epetra maps
-//------------
-    
-inline 
-const Epetra_Map& Mesh_MSTK::cell_map(bool include_ghost) const
-{
-  if (serial_run)
-    return *cell_map_wo_ghosts_;
-  else
-    return (include_ghost ? *cell_map_w_ghosts_ : *cell_map_wo_ghosts_);
-}
-    
-
-inline 
-const Epetra_Map& Mesh_MSTK::face_map(bool include_ghost) const
-{
-  if (serial_run)
-    return *face_map_wo_ghosts_;
-  else
-    return (include_ghost ? *face_map_w_ghosts_ : *face_map_wo_ghosts_);
-}
-    
-
-inline 
-const Epetra_Map& Mesh_MSTK::edge_map(bool include_ghost) const
-{
-  if (serial_run)
-    return *edge_map_wo_ghosts_;
-  else
-    return (include_ghost ? *edge_map_w_ghosts_ : *edge_map_wo_ghosts_);
-}
-    
-
-inline 
-const Epetra_Map& Mesh_MSTK::node_map(bool include_ghost) const
-{
-  if (serial_run)
-    return *node_map_wo_ghosts_;
-  else
-    return (include_ghost ? *node_map_w_ghosts_ : *node_map_wo_ghosts_);
-}
-
-
-inline
-const Epetra_Map& Mesh_MSTK::exterior_face_map(bool include_ghost) const
-{
-  if (serial_run)
-    return *extface_map_wo_ghosts_;
-  else
-    return (include_ghost ? *extface_map_w_ghosts_ : *extface_map_wo_ghosts_);
-}
-
-
-inline
-const Epetra_Import& Mesh_MSTK::exterior_face_importer(void) const
-{
-  return *owned_to_extface_importer_;
 }
 
 

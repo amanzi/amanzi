@@ -259,8 +259,7 @@ MeshFactory::create(double x0, double y0,
   my_comm_->SumAll(ierr, aerr, 1);
   if (aerr[0] > 0) amanzi_throw(e);
       
-  for (FrameworkPreference::const_iterator i = my_preference.begin(); 
-       i != my_preference.end(); i++) {
+  for (auto i = my_preference.begin(); i != my_preference.end(); i++) {
     if (framework_generates(*i, my_comm_->NumProc() > 1, dim)) {
       try {
         result = framework_generate(my_comm_, *i, 

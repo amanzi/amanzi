@@ -146,7 +146,7 @@ void MeshMaps_VEM::NansonFormula(
   cn.resize(d_);
   for (int i = 0; i < d_; ++i) {
     cn[i].Reshape(d_, 0);
-    cn[i](0, 0) = p[i];
+    cn[i](0) = p[i];
   }
 }
 

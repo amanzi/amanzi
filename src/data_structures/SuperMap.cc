@@ -79,7 +79,7 @@ SuperMap::SuperMap(const Epetra_MpiComm& comm,
   }
   
   // create the maps
-  map_ = Teuchos::rcp(new Epetra_Map(n_global, n_local, &gids[0], 0, comm));
+  map_ = Teuchos::rcp(new Epetra_Map(n_global, n_local, &gids[0], 0, comm)); 
   ghosted_map_ = Teuchos::rcp(new Epetra_Map(n_global_ghosted, n_local_ghosted, &gids[0], 0, comm));
 }
 
@@ -109,6 +109,7 @@ bool SuperMap::HasComponent(const std::string& key) const {
 
 const std::vector<int>&
 SuperMap::Indices(const std::string& compname, int dofnum) const {
+  
   if (indices_.count(compname)) {
     if (indices_[compname].count(dofnum)) {
       return indices_[compname][dofnum];
@@ -216,7 +217,7 @@ getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
 
     case AmanziMesh::BOUNDARY_FACE:
       return std::make_pair(Teuchos::rcpFromRef(mesh.exterior_face_map(false)),
-                            Teuchos::rcpFromRef(mesh.exterior_face_map(false)));
+                            Teuchos::rcpFromRef(mesh.exterior_face_map(true)));
     default:
       AMANZI_ASSERT(false);
       return std::make_pair(Teuchos::null, Teuchos::null);

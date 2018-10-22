@@ -61,14 +61,11 @@ void OperatorDiffusionDG(std::string solver_name,
   ParameterList plist = xmlreader.getParameters();
 
   // create a mesh framework
-  ParameterList region_list = plist.sublist("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
-
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
-  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 2, gm);
-  RCP<const Mesh> mesh = meshfactory("test/median7x8_filtered.exo", gm);
-  // RCP<const Mesh> mesh = meshfactory("test/triangular8_clockwise.exo", gm);
+  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 2);
+  RCP<const Mesh> mesh = meshfactory("test/median7x8_filtered.exo");
+  // RCP<const Mesh> mesh = meshfactory("test/triangular8_clockwise.exo");
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);

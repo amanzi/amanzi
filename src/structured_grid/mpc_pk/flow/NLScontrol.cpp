@@ -47,7 +47,7 @@ static Real min_dt = 1.e-2; // FIXME: set this with rsparams
 
 
 void
-NLScontrol::SetNLIterationsTaken(int iters){
+NLScontrol::SetNLIterationsTaken(int iters) {
   nl_iterations_taken = iters;
 }
 

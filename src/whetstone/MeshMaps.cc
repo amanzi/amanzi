@@ -30,6 +30,9 @@ namespace WhetStone {
 ****************************************************************** */
 void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
 {
+  const AmanziGeometry::Point_List* points = NULL;
+  mesh1_->face_get_curvature_points(f, points);
+
   AmanziMesh::Entity_ID_List nodes;
   AmanziGeometry::Point x0, x1;
 

@@ -8,11 +8,7 @@
 
   Authors: (v1) Daniil Svyatsky
 
-
   Set of function applied to a mesh component with one temporal function 
-
- 
-
 */
 
 #ifndef AMANZI_DYNAMICBOUNDARY_FUNCTION_HH_
@@ -40,20 +36,18 @@ public:
 
   void AddFunction(const Teuchos::RCP<BoundaryFunction>& f);
   
-  Teuchos::RCP<BoundaryFunction> GetFunction(int id){return func_[id];}
+  Teuchos::RCP<BoundaryFunction> GetFunction(int id) { return func_[id]; }
 
   int Func_ID(double time);
 
   void Compute(double time);
 
 protected:
-  //std::map<int,double> value_;
-  //bool finalized_;
   std::vector< Teuchos::RCP<BoundaryFunction> > func_;
 };
 
-} // namespace
-} // namespace
+}  // namespace Functions
+}  // namespace Amanzi
 
 
 #endif

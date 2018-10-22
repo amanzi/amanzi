@@ -37,6 +37,7 @@
 #include "Op_Cell_Schema.hh"
 #include "Op_Edge_Edge.hh"
 #include "Op_Face_Cell.hh"
+#include "Op_Face_CellBndFace.hh"
 #include "Op_Face_Schema.hh"
 #include "Op_Node_Node.hh"
 #include "Op_SurfaceCell_SurfaceCell.hh"
@@ -203,9 +204,10 @@ void Operator::AssembleMatrix()
     Amat_->DiagonalShift(shift_);
   }
   
-// std::stringstream filename_s2;
-// filename_s2 << "assembled_matrix" << 0 << ".txt";
-// EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Amat_ ->Matrix());
+  // std::stringstream filename_s2;
+  // filename_s2 << "assembled_matrix" << 0 << ".txt";
+  // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Amat_ ->Matrix());
+  //exit(0);
 }
 
 
@@ -249,7 +251,9 @@ int Operator::ComputeNegativeResidual(const CompositeVector& u, CompositeVector&
   } else {
     ierr = Apply(u, r, 1.0);
   }    
+  
   r.Update(-1.0, *rhs_, 1.0);
+
   return ierr;
 }
 
@@ -362,6 +366,7 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
   // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *A_);
 
   ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
+  
   ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y, 0);
 
   if (ierr) {
@@ -382,6 +387,7 @@ void Operator::InitPreconditioner(const std::string& prec_name,
                                   const Teuchos::ParameterList& plist)
 {
   AmanziPreconditioners::PreconditionerFactory factory;
+ 
   preconditioner_ = factory.Create(prec_name, plist);
   UpdatePreconditioner();
 }
@@ -713,6 +719,11 @@ int Operator::ApplyMatrixFreeOp(const Op_Face_Cell& op,
   return SchemaMismatch_(op.schema_string, schema_string_);
 }
 
+int Operator::ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
+                                const CompositeVector& X, CompositeVector& Y) const {
+  return SchemaMismatch_(op.schema_string, schema_string_);
+}
+
 
 int Operator::ApplyMatrixFreeOp(const Op_Face_Schema& op,
                                 const CompositeVector& X, CompositeVector& Y) const
@@ -829,6 +840,12 @@ void Operator::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
   SchemaMismatch_(op.schema_string, schema_string_);
 }
 
+void Operator::SymbolicAssembleMatrixOp(const Op_Face_CellBndFace& op,
+                                        const SuperMap& map, GraphFE& graph,
+                                        int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
+}
+
 
 void Operator::SymbolicAssembleMatrixOp(const Op_Face_Schema& op,
                                         const SuperMap& map, GraphFE& graph,
@@ -936,6 +953,12 @@ void Operator::AssembleMatrixOp(const Op_Cell_Schema& op,
 * Visit methods for assemble: Face.
 ****************************************************************** */
 void Operator::AssembleMatrixOp(const Op_Face_Cell& op,
+                                const SuperMap& map, MatrixFE& mat,
+                                int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+void Operator::AssembleMatrixOp(const Op_Face_CellBndFace& op,
                                 const SuperMap& map, MatrixFE& mat,
                                 int my_block_row, int my_block_col) const {
   SchemaMismatch_(op.schema_string, schema_string_);

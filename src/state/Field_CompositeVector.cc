@@ -601,5 +601,8 @@ long int Field_CompositeVector::GetLocalElementCount() {
   return count;
 }
 
-
+// void Field_CompositeVector::CopyFace2BndFace(const Epetra_MultiVector& vec_face, Epetra_MultiVector& vec_bndface) {
+//   for (int bf=0   
+// }
+  
 } // namespace Amanzi

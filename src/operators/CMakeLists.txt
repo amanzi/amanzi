@@ -19,6 +19,7 @@ include(LibraryManager)
 # through these variables.
 project(OPERATORS)
 
+
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
@@ -39,6 +40,8 @@ include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
+
+
 
 # Need this define. Errors from MSTK include files 
 # about MPI_COMM_WORLD. --lpritch
@@ -69,11 +72,13 @@ set(operators_inc_files
     Op_Cell_Edge.hh
     Op_Cell_Schema.hh
     Op_Face_Cell.hh
+    Op_Face_CellBndFace.hh
     Op_Face_Schema.hh
     Op_Node_Node.hh
     Operator.hh
     Operator_Cell.hh
     Operator_FaceCell.hh
+    Operator_CellBndFace.hh
     Operator_FaceCellScc.hh
     Operator_FaceCellSff.hh
     Operator_ConsistentFace.hh
@@ -94,6 +99,7 @@ set(operators_inc_files
     PDE_DiffusionFV.hh
     PDE_DiffusionFVwithGravity.hh
     PDE_DiffusionNLFV.hh
+    PDE_DiffusionNLFVwithBndFaces.hh
     PDE_DiffusionNLFVwithGravity.hh
     PDE_DiffusionDG.hh
     PDE_Elasticity.hh
@@ -124,6 +130,7 @@ add_amanzi_library(operators
                           Operator_Node.cc
                           Operator_Edge.cc
                           Operator_Cell.cc
+                          Operator_CellBndFace.cc
                           Operator_FaceCell.cc
                           Operator_FaceCellScc.cc
                           Operator_FaceCellSff.cc
@@ -136,6 +143,7 @@ add_amanzi_library(operators
                           PDE_DiffusionMFD.cc PDE_DiffusionMFDwithGravity.cc
                           PDE_DiffusionFV.cc PDE_DiffusionFVwithGravity.cc
                           PDE_DiffusionNLFV.cc PDE_DiffusionNLFVwithGravity.cc
+                          PDE_DiffusionNLFVwithBndFaces.cc PDE_DiffusionNLFVwithBndFacesGravity.cc
                           PDE_DiffusionDG.cc
                           PDE_DiffusionFactory.cc                   
                           PDE_HelperDiscretization.cc
@@ -148,8 +156,9 @@ add_amanzi_library(operators
                           ReconstructionCell.cc
                           ReconstructionCell_Limiters.cc
                           RemapUtils.cc
-                   HEADERS ${operators_inc_files}
-                   LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})
+                          HEADERS ${operators_inc_files}
+                   LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})                          
+
 
 
 if (BUILD_TESTS)
@@ -215,7 +224,8 @@ if (BUILD_TESTS)
                                         test/operator_diffusion_nonsymmetric.cc
                                         test/operator_diffusion_nlfv.cc
                                         test/operator_diffusion_curved.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+                   LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
 
     add_amanzi_test(operators_diffusion_3pe operators_diffusion NPROCS 3 KIND unit)
 
@@ -326,6 +336,11 @@ if (BUILD_TESTS)
     add_amanzi_test(operators_remap operators_remap
                     KIND unit
                     SOURCE test/Main.cc test/operator_remap_dual.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(operators_remap_curved operators_remap_curved
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_remap_curved.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # high-order diffusion test

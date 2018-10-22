@@ -30,6 +30,7 @@
 // Amanzi::Operators
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionNLFVwithGravity.hh"
+#include "PDE_DiffusionNLFVwithBndFacesGravity.hh"
 
 #include "Analytic01.hh"
 #include "Analytic02.hh"
@@ -57,7 +58,7 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
   // create an MSTK mesh framework
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
-  // Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 3, 3, Teuchos::null);
+  // Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, Teuchos::null);
   Teuchos::RCP<const Mesh> mesh = meshfactory("test/random10.exo");
 
   // modify diffusion coefficient
@@ -116,12 +117,12 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
     src[0][c] = ana.source_exact(xc, 0.0);
-    // sol[0][c] = ana.pressure_exact(xc, 0.0);
+    //sol[0][c] = ana.pressure_exact(xc, 0.0);
   }
 
   // populate the diffusion operator
   op->Setup(K, Teuchos::null, Teuchos::null);
-  for (int loop = 0; loop < 9; ++loop) {
+  for (int loop = 0; loop < 12; ++loop) {
     global_op->Init();
     op->UpdateMatrices(Teuchos::null, solution.ptr());
 
@@ -144,8 +145,170 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
     solver.Init(lop_list);
 
     CompositeVector& rhs = *global_op->rhs();
-    int ierr = solver.ApplyInverse(rhs, *solution);
 
+    int ierr = solver.ApplyInverse(rhs, *solution);
+    
+    // compute pressure error
+    Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
+    double pnorm, pl2_err, pinf_err;
+    ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
+
+    // compute flux error
+    CompositeVectorSpace cvs_tmp;
+    cvs_tmp.SetMesh(mesh)->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("face", AmanziMesh::FACE, 1);
+    Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs_tmp));
+    Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
+   
+    op->UpdateFlux(solution.ptr(), flux.ptr());
+    double unorm, ul2_err, uinf_err;
+
+    ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
+
+    if (MyPID == 0) {
+      pl2_err /= pnorm; 
+      ul2_err /= unorm;
+      printf("L2(p)=%10.4e  Inf(p)=%10.4e  L2(u)=%10.4e  Inf(u)=%10.4e  (itr=%d ||r||=%10.4e code=%d)\n",
+          pl2_err, pinf_err, ul2_err, uinf_err,
+          solver.num_itrs(), solver.residual(), solver.returned_code());
+
+      if (testing) {
+        double factor = std::pow(1.6, loop);
+        CHECK(pl2_err < 0.2 / factor && ul2_err < 0.4 / factor);
+      }
+      CHECK(solver.num_itrs() < 15);
+    }
+  }
+}
+
+
+template<class Analytic>
+void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;
+  using namespace Amanzi::Operators;
+
+  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  int MyPID = comm.MyPID();
+  if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, NLFVwithBndFaces with DMP, g=" << gravity << std::endl;
+
+  // read parameter list
+  std::string xmlFileName = "test/operator_diffusion.xml";
+  Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
+  Teuchos::ParameterList plist = xmlreader.getParameters();
+  Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator")
+                                        .sublist("diffusion operator nlfv");
+
+  // create an MSTK mesh framework
+  MeshFactory meshfactory(&comm);
+  meshfactory.preference(FrameworkPreference({MSTK}));
+  //Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, Teuchos::null);
+  Teuchos::RCP<const Mesh> mesh = meshfactory("test/random10.exo");
+
+  // modify diffusion coefficient
+  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+
+  Analytic ana(mesh, gravity);
+
+  for (int c = 0; c < ncells; c++) {
+    const Point& xc = mesh->cell_centroid(c);
+    const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
+    K->push_back(Kc);
+  }
+
+  // create boundary data
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
+
+  for (int f = 0; f < nfaces_wghost; f++) {
+    const Point& xf = mesh->face_centroid(f);
+    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
+        fabs(xf[1]) < 1e-6) {
+      bc_model[f] = OPERATOR_BC_DIRICHLET;
+      bc_value[f] = ana.pressure_exact(xf, 0.0);
+    } else if (fabs(xf[1] - 1.0) < 1e-6) {
+      const AmanziGeometry::Point& normal = mesh->face_normal(f);
+      double area = mesh->face_area(f);
+      bc_model[f] = OPERATOR_BC_NEUMANN;
+      bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
+      // bc_model[f] = OPERATOR_BC_DIRICHLET;
+      // bc_value[f] = ana.pressure_exact(xf, 0.0);
+    }
+  }
+
+
+
+  // create diffusion operator 
+  double rho(1.0);
+  AmanziGeometry::Point g(0.0, -gravity);
+  Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFacesGravity(op_list, mesh, rho, g));
+  // Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFaces(op_list, mesh));
+  Teuchos::RCP<Operator> global_op = op->global_operator();
+  op->SetBCs(bc, bc);
+  const CompositeVectorSpace& cvs = global_op->DomainMap();
+
+  // create and initialize state variables.
+  Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(cvs));
+  solution->PutScalar(0.0);
+ 
+  // create source 
+  CompositeVector source(cvs), t1(cvs), t2(cvs);
+  Epetra_MultiVector& src = *source.ViewComponent("cell");
+  Epetra_MultiVector& sol = *solution->ViewComponent("cell");
+  Epetra_MultiVector& sol_bnd = *solution->ViewComponent("boundary_face");
+
+  for (int c = 0; c < ncells; c++) {
+    const Point& xc = mesh->cell_centroid(c);
+    src[0][c] = ana.source_exact(xc, 0.0);
+    //sol[0][c] = ana.pressure_exact(xc, 0.0);
+  }
+
+  // for (int f = 0; f < nfaces; f++) {
+  //   const Point& xf = mesh->face_centroid(f);
+  //   if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
+  //       fabs(xf[1]) < 1e-6) {
+  //     int bf = mesh->exterior_face_map(true).LID(mesh->face_map(false).GID(f));
+  //     sol_bnd[0][bf] = ana.pressure_exact(xf, 0.0);
+  //   } else if (fabs(xf[1] - 1.0) < 1e-6) {
+  //     int bf = mesh->exterior_face_map(true).LID(mesh->face_map(false).GID(f));
+  //     sol_bnd[0][bf] = ana.pressure_exact(xf, 0.0);
+  //   }
+  // }
+
+  // populate the diffusion operator
+  op->Setup(K, Teuchos::null, Teuchos::null);
+  for (int loop = 0; loop < 12; ++loop) {
+    global_op->Init();
+    op->UpdateMatrices(Teuchos::null, solution.ptr());
+    // get and assmeble the global operator
+    global_op->UpdateRHS(source, false);
+    op->ApplyBCs(true, true, true);
+    global_op->SymbolicAssembleMatrix();
+    global_op->AssembleMatrix();
+
+
+    // create preconditoner using the base operator class
+    Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
+    global_op->InitPreconditioner("Hypre AMG", slist);
+
+    // solve the problem
+    Teuchos::ParameterList lop_list = plist.sublist("solvers")
+                                           .sublist("Belos GMRES").sublist("belos gmres parameters");
+    AmanziSolvers::LinearOperatorBelosGMRES<Operator, CompositeVector, CompositeVectorSpace>
+        solver(global_op, global_op);
+    solver.Init(lop_list);
+
+    CompositeVector& rhs = *global_op->rhs();
+   
+    int ierr = solver.ApplyInverse(rhs, *solution);
+ 
     // compute pressure error
     Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
     double pnorm, pl2_err, pinf_err;
@@ -172,23 +335,35 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
           solver.num_itrs(), solver.residual(), solver.returned_code());
 
       if (testing) {
-        double factor = std::pow(1.6, loop);
+        double factor = 0.5*std::pow(1.6, loop);
         CHECK(pl2_err < 0.2 / factor && ul2_err < 0.4 / factor);
       }
       CHECK(solver.num_itrs() < 15);
     }
   }
+
 }
 
 TEST(OPERATOR_DIFFUSION_NLFV_DMP_02) {
   RunTestDiffusionNLFV_DMP<Analytic02>(0.0, true);
 }
 
+TEST(OPERATOR_DIFFUSION_NLFVwithBndFaces_DMP_02) {
+  RunTestDiffusionNLFVwithBndFaces_DMP<Analytic02>(0.0, true);
+}
+
 TEST(OPERATOR_DIFFUSION_NLFV_wGravity) {
   RunTestDiffusionNLFV_DMP<Analytic02>(2.7, true);
+}
+
+TEST(OPERATOR_DIFFUSION_NLFVwithBndFaces_wGravity) {
+  RunTestDiffusionNLFVwithBndFaces_DMP<Analytic02>(2.7, true);
 }
 
 TEST(OPERATOR_DIFFUSION_NLFV_DMP_01) {
   RunTestDiffusionNLFV_DMP<Analytic01>(2.7, false);
 }
 
+TEST(OPERATOR_DIFFUSION_NLFVwithBndFaces_DMP_01) {
+  RunTestDiffusionNLFVwithBndFaces_DMP<Analytic01>(2.7, false);
+}

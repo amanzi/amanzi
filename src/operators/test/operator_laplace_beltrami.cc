@@ -75,6 +75,13 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
 
   std::cout << "pid=" << MyPID << " cells: " << ncells_owned << " " << ncells_wghost << std::endl;
 
+  // verify one-to-one map (2D-cell -> 3D-face)
+  for (int c = 0; c < ncells_wghost; ++c) {
+    int g = surfmesh->entity_get_parent(AmanziMesh::CELL, c);
+    double diff = AmanziGeometry::norm(surfmesh->cell_centroid(c) - mesh_mstk->face_centroid(g));
+    CHECK_CLOSE(0.0, diff, 1e-14); 
+  }
+
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   for (int c = 0; c < ncells_owned; c++) {
