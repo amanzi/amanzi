@@ -12,7 +12,7 @@
   This operator is a collection of local "DIAGONAL" Ops.
 */
 
-#include "WhetStoneMeshUtils.hh"
+//#include "WhetStoneMeshUtils.hh"
 
 #include "Operator_Cell.hh"
 #include "Operator_Edge.hh"
@@ -210,25 +210,26 @@ void PDE_Accumulation::CalculateEntityVolume_(
     volume.GatherGhostedToMaster(name);
 
   } else if (name == "node" && volume.HasComponent("node")) {
-    Epetra_MultiVector& vol = *volume.ViewComponent(name, true); 
-    vol.PutScalar(0.0);
+    // Epetra_MultiVector& vol = *volume.ViewComponent(name, true); 
+    // vol.PutScalar(0.0);
 
-    for (int c = 0; c != ncells_owned; ++c) {
-      mesh_->cell_get_nodes(c, &nodes);
-      int nnodes = nodes.size();
+    // for (int c = 0; c != ncells_owned; ++c) {
+    //   mesh_->cell_get_nodes(c, &nodes);
+    //   int nnodes = nodes.size();
 
-      double cellvolume = mesh_->cell_volume(c);
-      std::vector<double> weights(nnodes, 1.0 / nnodes);
+    //   double cellvolume = mesh_->cell_volume(c);
+    //   std::vector<double> weights(nnodes, 1.0 / nnodes);
 
-      if (mesh_->space_dimension() == 2) {
-        WhetStone::PolygonCentroidWeights(*mesh_, nodes, cellvolume, weights);
-      }
+    //   if (mesh_->space_dimension() == 2) {
+    //     WhetStone::PolygonCentroidWeights(*mesh_, nodes, cellvolume, weights);
+    //   }
 
-      for (int i = 0; i < nnodes; i++) {
-        vol[0][nodes[i]] += weights[i] * cellvolume; 
-      }
-    }
-    volume.GatherGhostedToMaster(name);
+    //   for (int i = 0; i < nnodes; i++) {
+    //     vol[0][nodes[i]] += weights[i] * cellvolume; 
+    //   }
+    // }
+    // volume.GatherGhostedToMaster(name);
+    AMANZI_ASSERT(false);
 
   } else {
     AMANZI_ASSERT(false);

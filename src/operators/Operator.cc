@@ -24,7 +24,7 @@
 #include "dbc.hh"
 #include "DenseVector.hh"
 #include "MatrixFE.hh"
-#include "PreconditionerFactory.hh"
+// #include "PreconditionerFactory.hh"
 #include "SuperMap.hh"
 
 // Operators
@@ -352,22 +352,22 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
   int ierr(1);
 
-  Epetra_Vector Xcopy(*smap_->Map());
-  Epetra_Vector Ycopy(*smap_->Map());
-  ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, 0);
+  // Epetra_Vector Xcopy(*smap_->Map());
+  // Epetra_Vector Ycopy(*smap_->Map());
+  // ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, 0);
 
-  // dump the schur complement
-  // std::stringstream filename_s2;
-  // filename_s2 << "schur_PC_" << 0 << ".txt";
-  // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *A_);
+  // // dump the schur complement
+  // // std::stringstream filename_s2;
+  // // filename_s2 << "schur_PC_" << 0 << ".txt";
+  // // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *A_);
 
-  ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
-  ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y, 0);
+  // ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
+  // ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y, 0);
 
-  if (ierr) {
-    Errors::Message msg("Operator: ApplyInverse failed.\n");
-    Exceptions::amanzi_throw(msg);
-  }
+  // if (ierr) {
+  //   Errors::Message msg("Operator: ApplyInverse failed.\n");
+  //   Exceptions::amanzi_throw(msg);
+  // }
 
   return ierr;
 }
@@ -381,9 +381,9 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 void Operator::InitPreconditioner(const std::string& prec_name,
                                   const Teuchos::ParameterList& plist)
 {
-  AmanziPreconditioners::PreconditionerFactory factory;
-  preconditioner_ = factory.Create(prec_name, plist);
-  UpdatePreconditioner();
+  // AmanziPreconditioners::PreconditionerFactory factory;
+  // preconditioner_ = factory.Create(prec_name, plist);
+  // UpdatePreconditioner();
 }
 
 
@@ -394,9 +394,9 @@ void Operator::InitPreconditioner(const std::string& prec_name,
 ****************************************************************** */
 void Operator::InitPreconditioner(Teuchos::ParameterList& plist)
 {
-  AmanziPreconditioners::PreconditionerFactory factory;
-  preconditioner_ = factory.Create(plist);
-  preconditioner_->Update(A_);
+  // AmanziPreconditioners::PreconditionerFactory factory;
+  // preconditioner_ = factory.Create(plist);
+  // preconditioner_->Update(A_);
 }
 
 
@@ -407,28 +407,28 @@ void Operator::InitPreconditioner(Teuchos::ParameterList& plist)
 ****************************************************************** */
 void Operator::InitializePreconditioner(Teuchos::ParameterList& plist)
 {
-  if (A_.get() == NULL || smap_.get() == NULL) {
-    Errors::Message msg("InitializePreconditioner has no matrix or super map.\n");
-    Exceptions::amanzi_throw(msg);
-  }
+  // if (A_.get() == NULL || smap_.get() == NULL) {
+  //   Errors::Message msg("InitializePreconditioner has no matrix or super map.\n");
+  //   Exceptions::amanzi_throw(msg);
+  // }
 
-  // provide block ids for block strategies.
-  if (plist.isParameter("preconditioner type") &&
-      plist.get<std::string>("preconditioner type") == "boomer amg" &&
-      plist.isSublist("boomer amg parameters")) {
+  // // provide block ids for block strategies.
+  // if (plist.isParameter("preconditioner type") &&
+  //     plist.get<std::string>("preconditioner type") == "boomer amg" &&
+  //     plist.isSublist("boomer amg parameters")) {
 
-    // NOTE: Hypre frees this
-    auto block_ids = smap_->BlockIndices();
+  //   // NOTE: Hypre frees this
+  //   auto block_ids = smap_->BlockIndices();
 
-    plist.sublist("boomer amg parameters").set("number of unique block indices", block_ids.first);
+  //   plist.sublist("boomer amg parameters").set("number of unique block indices", block_ids.first);
 
-    // Note, this passes a raw pointer through a ParameterList.  I was surprised
-    // this worked too, but ParameterList is a boost::any at heart... --etc
-    plist.sublist("boomer amg parameters").set("block indices", block_ids.second);
-  }
+  //   // Note, this passes a raw pointer through a ParameterList.  I was surprised
+  //   // this worked too, but ParameterList is a boost::any at heart... --etc
+  //   plist.sublist("boomer amg parameters").set("block indices", block_ids.second);
+  // }
 
-  AmanziPreconditioners::PreconditionerFactory factory;
-  preconditioner_ = factory.Create(plist);
+  // AmanziPreconditioners::PreconditionerFactory factory;
+  // preconditioner_ = factory.Create(plist);
 }
 
 
@@ -439,11 +439,11 @@ void Operator::InitializePreconditioner(Teuchos::ParameterList& plist)
 ****************************************************************** */
 void Operator::UpdatePreconditioner()
 {
-  if (A_.get() == NULL || preconditioner_.get() == NULL) {
-    Errors::Message msg("UpdatePreconditioner has no matrix or preconditioner.\n");
-    Exceptions::amanzi_throw(msg);
-  }
-  preconditioner_->Update(A_);
+  // if (A_.get() == NULL || preconditioner_.get() == NULL) {
+  //   Errors::Message msg("UpdatePreconditioner has no matrix or preconditioner.\n");
+  //   Exceptions::amanzi_throw(msg);
+  // }
+  // preconditioner_->Update(A_);
 }
 
 

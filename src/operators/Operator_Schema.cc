@@ -18,7 +18,7 @@
 #include "GraphFE.hh"
 #include "MatrixFE.hh"
 #include "MeshDefs.hh"
-#include "PreconditionerFactory.hh"
+//#include "PreconditionerFactory.hh"
 #include "SuperMap.hh"
 
 #include "OperatorDefs.hh"
@@ -144,12 +144,13 @@ int Operator_Schema::ApplyTransposeMatrixFreeOp(const Op_Cell_Schema& op,
 ******************************************************************* */
 int Operator_Schema::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
-  Epetra_Vector Xcopy(A_->RowMap());
-  Epetra_Vector Ycopy(A_->RowMap());
+  // Epetra_Vector Xcopy(A_->RowMap());
+  // Epetra_Vector Ycopy(A_->RowMap());
 
-  int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, schema_col_);
-  ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
-  ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y, schema_row_);
+  int ierr = 0;
+  // ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, schema_col_);
+  // ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
+  // ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y, schema_row_);
 
   return ierr;
 }

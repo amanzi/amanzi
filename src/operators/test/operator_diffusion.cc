@@ -24,8 +24,8 @@
 
 // Amanzi
 #include "MeshFactory.hh"
-#include "GMVMesh.hh"
-#include "LinearOperatorPCG.hh"
+//#include "GMVMesh.hh"
+//#include "LinearOperatorPCG.hh"
 #include "Tensor.hh"
 
 // Operators
@@ -33,164 +33,8 @@
 
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionFV.hh"
-#include "PDE_DiffusionMFDwithGravity.hh"
-#include "UpwindSecondOrder.hh"
-#include "Verification.hh"
-
-
-/* *****************************************************************
-* Exactness test for mixed diffusion solver.
-***************************************************************** */
-void RunTestDiffusionMixed(double gravity) {
-  using namespace Teuchos;
-  using namespace Amanzi;
-  using namespace Amanzi::AmanziMesh;
-  using namespace Amanzi::AmanziGeometry;
-  using namespace Amanzi::Operators;
-
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
-  if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, exactness test" 
-                            << " for mixed discretization, g=" << gravity << std::endl;
-
-  // read parameter list
-  // -- it specifies details of the mesh, diffusion operator, and solver
-  std::string xmlFileName = "test/operator_diffusion.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
-
-  // create the MSTK mesh framework 
-  // -- geometric model is defined in the region sublist of XML list
-  ParameterList region_list = plist.sublist("regions");
-  auto gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
-
-  // -- provide at lest one framework to the mesh factory. The first available
-  // -- framework will be used
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
-  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 1, gm);
-  RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
-
-  // modify diffusion coefficient
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-
-  Analytic02 ana(mesh, gravity);
-
-  for (int c = 0; c < ncells; c++) {
-    const Point& xc = mesh->cell_centroid(c);
-    const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
-    K->push_back(Kc);
-  }
-
-  // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
-  std::vector<int>& bc_model = bc->bc_model();
-  std::vector<double>& bc_value = bc->bc_value();
-  std::vector<double>& bc_mixed = bc->bc_mixed();
-
-  for (int f = 0; f < nfaces_wghost; f++) {
-    const Point& xf = mesh->face_centroid(f);
-    double area = mesh->face_area(f);
-    bool flag;
-    Point normal = ana.face_normal_exterior(f, &flag);
-
-    if (fabs(xf[0]) < 1e-6) {
-      bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
-      bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
-    } else if(fabs(xf[1]) < 1e-6) {
-      bc_model[f] = Operators::OPERATOR_BC_MIXED;
-      bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
-
-      double tmp = ana.pressure_exact(xf, 0.0);
-      bc_mixed[f] = 1.0;
-      bc_value[f] -= bc_mixed[f] * tmp;
-    } else if(fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
-      bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_value[f] = ana.pressure_exact(xf, 0.0);
-    }
-  }
-
-  // create diffusion operator 
-  double rho(1.0);
-  AmanziGeometry::Point g(0.0, -gravity);
-  ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator mixed");
-  Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(op_list, mesh, rho, g));
-  op->SetBCs(bc, bc);
-  const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
-
-  // set up the diffusion operator
-  op->Setup(K, Teuchos::null, Teuchos::null);
-  op->UpdateMatrices(Teuchos::null, Teuchos::null);
-
-  // get and assemble the global operator
-  Teuchos::RCP<Operator> global_op = op->global_operator();
-  op->ApplyBCs(true, true, true);
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
-
-  // create preconditoner using the base operator class
-  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
-
-  // Test SPD properties of the preconditioner.
-  VerificationCV ver(global_op);
-  ver.CheckPreconditionerSPD();
-
-  // solve the problem
-  ParameterList lop_list = plist.sublist("solvers")
-                                .sublist("AztecOO CG").sublist("pcg parameters");
-  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
-      solver(global_op, global_op);
-  solver.Init(lop_list);
-
-  CompositeVector rhs = *global_op->rhs();
-  Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(rhs));
-  Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(rhs));
-  solution->PutScalar(0.0);
-
-  int ierr = solver.ApplyInverse(rhs, *solution);
-
-  if (MyPID == 0) {
-    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
-              << " itr=" << solver.num_itrs()
-              << " code=" << solver.returned_code() << std::endl;
-  }
-
-  // compute pressure error
-  Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
-  double pnorm, pl2_err, pinf_err;
-  ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
-
-  // calculate flux error
-  Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
-  double unorm, ul2_err, uinf_err;
-
-  op->UpdateFlux(solution.ptr(), flux.ptr());
-  ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
-
-  if (MyPID == 0) {
-    pl2_err /= pnorm; 
-    ul2_err /= unorm;
-    printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  itr=%3d\n",
-        pl2_err, pinf_err, ul2_err, uinf_err, solver.num_itrs());
-
-    CHECK(pl2_err < 1e-12 && ul2_err < 1e-12);
-    CHECK(solver.num_itrs() < 10);
-  }
-}
-
-
-TEST(OPERATOR_DIFFUSION_MIXED) {
-  RunTestDiffusionMixed(0.0);
-}
-
-TEST(OPERATOR_DIFFUSION_MIXED_wGRAVITY) {
-  RunTestDiffusionMixed(0.1);
-}
+//#include "PDE_DiffusionMFDwithGravity.hh"
+//#include "Verification.hh"
 
 
 /* *****************************************************************
@@ -219,7 +63,7 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
+  meshfactory.preference(FrameworkPreference({MSTK}));
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 15, 8, gm);
 
   // modify diffusion coefficient
@@ -281,44 +125,44 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   op->ApplyBCs(true, true, true);
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
+  // global_op->SymbolicAssembleMatrix();
+  // global_op->AssembleMatrix();
   
-  // create preconditoner using the base operator class
-  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-  global_op->InitializePreconditioner(slist);
-  global_op->UpdatePreconditioner();
+  // // create preconditoner using the base operator class
+  // ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  // global_op->InitializePreconditioner(slist);
+  // global_op->UpdatePreconditioner();
 
-  // solve the problem
-  ParameterList lop_list = plist.sublist("solvers")
-                                .sublist("AztecOO CG").sublist("pcg parameters");
-  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
-      solver(global_op, global_op);
-  solver.Init(lop_list);
+  // // solve the problem
+  // ParameterList lop_list = plist.sublist("solvers")
+  //                               .sublist("AztecOO CG").sublist("pcg parameters");
+  // AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
+  //     solver(global_op, global_op);
+  // solver.Init(lop_list);
 
-  CompositeVector rhs = *global_op->rhs();
-  CompositeVector solution(rhs);
-  solution.PutScalar(0.0);
+  // CompositeVector rhs = *global_op->rhs();
+  // CompositeVector solution(rhs);
+  // solution.PutScalar(0.0);
 
-  int ierr = solver.ApplyInverse(rhs, solution);
+  // int ierr = solver.ApplyInverse(rhs, solution);
 
-  if (MyPID == 0) {
-    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
-              << " itr=" << solver.num_itrs()
-              << " code=" << solver.returned_code() << std::endl;
-  }
+  // if (MyPID == 0) {
+  //   std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
+  //             << " itr=" << solver.num_itrs()
+  //             << " code=" << solver.returned_code() << std::endl;
+  // }
 
-  // compute pressure error
-  Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
-  double pnorm, pl2_err, pinf_err;
-  ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
+  // // compute pressure error
+  // Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
+  // double pnorm, pl2_err, pinf_err;
+  // ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
-  if (MyPID == 0) {
-    pl2_err /= pnorm; 
-    printf("L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_err, pinf_err, solver.num_itrs());
+  // if (MyPID == 0) {
+  //   pl2_err /= pnorm; 
+  //   printf("L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_err, pinf_err, solver.num_itrs());
 
-    CHECK(pl2_err < 1e-5);
-    CHECK(solver.num_itrs() < 10);
-  }
+  //   CHECK(pl2_err < 1e-5);
+  //   CHECK(solver.num_itrs() < 10);
+  // }
 }
 

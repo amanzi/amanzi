@@ -49,20 +49,20 @@ add_install_include_file(${mesh_inc_files})
 
 
 # Derived and support classes
-add_subdirectory(mesh_data)
+#add_subdirectory(mesh_data)
 add_subdirectory(mesh_simple)
-add_subdirectory(exodus_reader)
+#add_subdirectory(exodus_reader)
 
 # Mesh Frameworks
 
 # STK (Trilinos Package)
 if (ENABLE_STK_Mesh)
-  add_subdirectory(mesh_stk)
+ # add_subdirectory(mesh_stk)
 endif(ENABLE_STK_Mesh)    
 
 # MOAB Mesh framework
 if (ENABLE_MOAB_Mesh)
-  add_subdirectory(mesh_moab)
+ # add_subdirectory(mesh_moab)
 endif(ENABLE_MOAB_Mesh)    
 
 # MSTK Mesh framework
@@ -95,12 +95,12 @@ if (BUILD_TESTS)
 
     # STK (Trilinos Package)
     if (ENABLE_STK_Mesh)
-      list(APPEND test_link_libs stk_mesh)
+  #    list(APPEND test_link_libs stk_mesh)
     endif()    
 
     # MOAB Mesh framework
     if (ENABLE_MOAB_Mesh)
-      list(APPEND test_link_libs moab_mesh)
+   #   list(APPEND test_link_libs moab_mesh)
     endif()    
     
     # MSTK Mesh framework
@@ -115,10 +115,10 @@ if (BUILD_TESTS)
                     LINK_LIBS ${test_link_libs})
 
     # Test: mesh deformation
-    add_amanzi_test(mesh_deform mesh_deform
-                    KIND unit
-		    SOURCE test/Main.cc test/test_deform.cc
-		    LINK_LIBS ${test_link_libs})
+ #   add_amanzi_test(mesh_deform mesh_deform
+  #                  KIND unit
+#		    SOURCE test/Main.cc test/test_deform.cc
+#		    LINK_LIBS ${test_link_libs})
 
     # Test: mesh columns
     add_amanzi_test(mesh_columns mesh_columns

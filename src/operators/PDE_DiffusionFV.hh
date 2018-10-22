@@ -46,7 +46,6 @@
 // Amanzi
 #include "CompositeVector.hh"
 #include "DenseMatrix.hh"
-#include "Preconditioner.hh"
 
 // Opertors
 #include "PDE_Diffusion.hh"

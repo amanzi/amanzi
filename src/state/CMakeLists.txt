@@ -78,8 +78,8 @@ set(state_inc_files
   evaluator/EvaluatorSecondaryMonotype.hh
   evaluator/EvaluatorSecondaryMonotypeFromFunction.hh
   evaluator/Evaluator_OperatorApply.hh
-  evaluator/Evaluator_PDE_Diffusion.hh
-  evaluator/Evaluator_PDE_Accumulation.hh
+#  evaluator/Evaluator_PDE_Diffusion.hh
+#  evaluator/Evaluator_PDE_Accumulation.hh
   evaluator/Evaluator_BCs.hh
   evaluator/EvaluatorSecondaryMonotypeAdditive.hh
   evaluator/EvaluatorSecondaryMonotypeMultiplicative.hh
@@ -118,8 +118,8 @@ add_amanzi_library(state
                       evaluator/EvaluatorSecondaryMonotype.cc
                       evaluator/EvaluatorSecondaryMonotypeFromFunction.cc
                       evaluator/Evaluator_OperatorApply.cc
-                      evaluator/Evaluator_PDE_Diffusion.cc
-                      evaluator/Evaluator_PDE_Accumulation.cc
+#                      evaluator/Evaluator_PDE_Diffusion.cc
+#                      evaluator/Evaluator_PDE_Accumulation.cc
                       evaluator/Evaluator_BCs.cc
                       evaluator/EvaluatorCellVolume.cc
 #		      evaluator/cell_volume_evaluator.cc
@@ -146,8 +146,8 @@ register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorIndependentFunctio
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorIndependentTensorFunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorIndependentFromFile_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_OperatorApply_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
-register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_PDE_Diffusion_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
-register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_PDE_Accumulation_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+#register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_PDE_Diffusion_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+#register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_PDE_Accumulation_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_BCs_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_BoundaryFunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorSecondaryMonotypeAdditive_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
