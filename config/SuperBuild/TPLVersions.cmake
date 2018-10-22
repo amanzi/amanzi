@@ -113,6 +113,9 @@
 #                - update HYPRE to 2.14.0
 #                - update OpenMPI to 3.0.2
 #   0.95.4       - update Boost to version 1.67.0
+#   0.95.5       - update NetCDF to version 4.6.1
+#                - update OpenMPI to 3.1.1
+#   0.95.6       - added new package nanoflann 1.3.0
 
 include(CMakeParseArguments)
 
@@ -165,7 +168,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 95)
-set(AMANZI_TPLS_VERSION_PATCH 4)
+set(AMANZI_TPLS_VERSION_PATCH 6)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -193,13 +196,13 @@ set(XERCES_MD5_SUM        7b1394c32abbdd87841d94a8404c2ac6)
 # TPL: OpenMPI
 #
 set(OpenMPI_VERSION_MAJOR 3)
-set(OpenMPI_VERSION_MINOR 0)
-set(OpenMPI_VERSION_PATCH 2)
+set(OpenMPI_VERSION_MINOR 1)
+set(OpenMPI_VERSION_PATCH 1)
 set(OpenMPI_VERSION ${OpenMPI_VERSION_MAJOR}.${OpenMPI_VERSION_MINOR}.${OpenMPI_VERSION_PATCH})
-set(OpenMPI_URL_STRING     "https://www.open-mpi.org/software/ompi/v3.0/downloads/")
+set(OpenMPI_URL_STRING     "https://www.open-mpi.org/software/ompi/v3.1/downloads/")
 set(OpenMPI_ARCHIVE_FILE   openmpi-${OpenMPI_VERSION}.tar.bz2)
 set(OpenMPI_SAVEAS_FILE    ${OpenMPI_ARCHIVE_FILE})
-set(OpenMPI_MD5_SUM        098fa89646f5b4438d9d8534bc960cd6)
+set(OpenMPI_MD5_SUM        493f1db2f75afaab1c8ecba78d2f5aab)
 
 #
 # TPL: MPICH
@@ -267,6 +270,7 @@ set(UnitTest_MD5_SUM      29f958e355e516e7ab016b467974728d)
 #
 set(Boost_VERSION_MAJOR 1)
 set(Boost_VERSION_MINOR 67)
+
 set(Boost_VERSION_PATCH 0)
 set(Boost_VERSION        ${Boost_VERSION_MAJOR}.${Boost_VERSION_MINOR}.${Boost_VERSION_PATCH})
 set(Boost_VERSION_STRING ${Boost_VERSION_MAJOR}_${Boost_VERSION_MINOR}_${Boost_VERSION_PATCH})
@@ -292,13 +296,14 @@ set(HDF5_MD5_SUM        dd2148b740713ca0295442ec683d7b1c)
 # TPL: NetCDF
 #
 set(NetCDF_VERSION_MAJOR 4)
-set(NetCDF_VERSION_MINOR 5)
-set(NetCDF_VERSION_PATCH 0)
+set(NetCDF_VERSION_MINOR 6)
+set(NetCDF_VERSION_PATCH 1)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
 set(NetCDF_URL_STRING     "https://github.com/Unidata/netcdf-c/archive/")
 set(NetCDF_ARCHIVE_FILE   v${NetCDF_VERSION}.tar.gz)
 set(NetCDF_SAVEAS_FILE    netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_MD5_SUM        a523ad253bd832efa632847940c2317e)
+set(NetCDF_MD5_SUM        e35e98e2478271caa8c1d8569ac9835b)
+
 
 #
 # TPL: NetCDF Fortran
@@ -492,4 +497,16 @@ set(CRUNCHTOPE_URL_STRING    ${AMANZI_TPLS_DOWNLOAD_URL})
 set(CRUNCHTOPE_ARCHIVE_FILE  CrunchTope_160915-c31ecb9.tgz)
 set(CRUNCHTOPE_SAVEAS_FILE   ${CRUNCHTOPE_ARCHIVE_FILE})
 set(CRUNCHTOPE_MD5_SUM       84c38ca70da8f0e14cce3841dbbb4c0b)
+
+#
+# TPL: Nanoflann
+#
+set(Nanoflann_VERSION_MAJOR 1)
+set(Nanoflann_VERSION_MINOR 3)
+set(Nanoflann_VERSION_PATCH 0)
+set(Nanoflann_VERSION  ${Nanoflann_VERSION_MAJOR}.${Nanoflann_VERSION_MINOR}.${Nanoflann_VERSION_PATCH})
+set(Nanoflann_URL_STRING    "https://github.com/jlblancoc/nanoflann/archive")
+set(Nanoflann_ARCHIVE_FILE  v${Nanoflann_VERSION}.tar.gz)
+set(Nanoflann_SAVEAS_FILE   nanoflann-${Nanoflann_VERSION}.tar.gz)
+set(Nanoflann_MD5_SUM       c9836578e97fca4f05335699b8394b4d)
 

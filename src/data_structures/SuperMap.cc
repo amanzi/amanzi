@@ -236,8 +236,7 @@ Teuchos::RCP<SuperMap> createSuperMap(const CompositeVectorSpace& cv) {
     names.push_back(*it);
     dofnums.push_back(cv.NumVectors(*it));
 
-    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
-        getMaps(*cv.Mesh(), cv.Location(*it));
+    auto meshmaps = getMaps(*cv.Mesh(), cv.Location(*it));
     maps.push_back(meshmaps.first);
     ghost_maps.push_back(meshmaps.second);
   }
@@ -271,8 +270,7 @@ Teuchos::RCP<SuperMap> createSuperMap(const TreeVectorSpace& tv) {
           names.push_back(*compname);
           dofnums.push_back(1);
 
-          std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
-              getMaps(*(*it)->Data()->Mesh(), (*it)->Data()->Location(*compname));
+          auto meshmaps = getMaps(*(*it)->Data()->Mesh(), (*it)->Data()->Location(*compname));
           maps.push_back(meshmaps.first);
           ghost_maps.push_back(meshmaps.second);
         } else {

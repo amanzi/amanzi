@@ -12,7 +12,7 @@
   This operator is a collection of local "DIAGONAL" Ops.
 */
 
-#include "MeshUtils.hh"
+#include "WhetStoneMeshUtils.hh"
 
 #include "Operator_Cell.hh"
 #include "Operator_Edge.hh"

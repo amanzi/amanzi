@@ -185,7 +185,6 @@ void PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeV
   grav_flux.PutScalar(0.0);
 
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
   std::vector<int> hits(nfaces_wghost, 0);
 
   WhetStone::Tensor Kc(dim, 1);
@@ -196,7 +195,7 @@ void PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeV
       !(little_k_ & OPERATOR_LITTLE_K_DIVK_BASE);
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
     double zc = mesh_->cell_centroid(c)[dim - 1];
 
@@ -295,13 +294,12 @@ void PDE_DiffusionMFDwithGravity::UpdateFluxNonManifold(
   Epetra_MultiVector& flux_data = *flux->ViewComponent("cell", true);
 
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
 
   WhetStone::Tensor Kc(dim, 1);
   Kc(0, 0) = 1.0;
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
     double zc = mesh_->cell_centroid(c)[dim - 1];
 

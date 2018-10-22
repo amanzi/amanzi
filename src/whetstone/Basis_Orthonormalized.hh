@@ -10,7 +10,12 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   The partially orthonormalized basis for dG methods: |\psi| = 1 and
-  (\psi, 1) = 0 for \psi != 1. 
+  (\psi, 1) = 0 for \psi != 1. Transformation matrix has the form
+      | 1 -b1 -b2 -b3 -b4 |
+      |    a1             |
+  R = |        a2         |
+      |            a3     |
+      |               a4  |
 */
 
 #ifndef AMANZI_DG_BASIS_ORTHONORMALIZED_HH_
@@ -31,11 +36,17 @@ class Basis_Orthonormalized : public Basis {
   // initialization
   virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order);
 
-  // transformation from natural basis to owned basis
-  virtual void ChangeBasisMatrix(DenseMatrix& A) const;
-  virtual void ChangeBasisVector(DenseVector& v) const;
+  // transformation of bilinear form
+  virtual void BilinearFormNaturalToMy(DenseMatrix& A) const;
+  virtual void BilinearFormNaturalToMy(std::shared_ptr<Basis> bl,
+                                       std::shared_ptr<Basis> br, DenseMatrix& A) const;
 
-  virtual void ChangeBasisMatrix(std::shared_ptr<Basis> bl, std::shared_ptr<Basis> br, DenseMatrix& A) const;
+  // transformation of linear form
+  virtual void LinearFormNaturalToMy(DenseVector& v) const;
+
+  // transformation of vector 
+  virtual void ChangeBasisMyToNatural(DenseVector& v) const;
+  virtual void ChangeBasisNaturalToMy(DenseVector& v) const;
 
   // Recover polynomial in regular basis
   virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,

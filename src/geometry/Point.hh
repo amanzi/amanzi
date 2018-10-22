@@ -51,7 +51,6 @@ class Point {
 
   // main members
   void set(const double& val) {
-    AMANZI_ASSERT(this);
     AMANZI_ASSERT(d > 0);
     for (int i = 0; i < d; i++) xyz[i] = val;
   }

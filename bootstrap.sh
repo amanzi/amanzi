@@ -126,7 +126,6 @@ pflotran=${FALSE}
 crunchtope=${FALSE}
 shared=${FALSE}
 spacedim=2
-native=${FALSE}
 silo=${FALSE}
 physics=${TRUE}
 
@@ -338,7 +337,6 @@ Value in brackets indicates default setting.
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
   reg_tests               build regression tests into Amanzi Test Suite ['"${reg_tests}"']
   shared                  build Amanzi and tpls using shared libraries ['"${shared}"']
-  native                  build Amanzi with native xml output for debugging enabled ['"${native}"']
   Spack                   build TPLs using the Spack package manager when appropriate ['"${Spack}"']
   xsdk                    build TPLs available in xSDK first, then supplement with additional 
                           individual TPL builds ['"${xsdk}"']
@@ -479,7 +477,6 @@ Build Features:
     pflotran            ='"${pflotran}"'
     crunchtope          ='"${crunchtope}"'
     physics             ='"${physics}"'
-    native              ='"${native}"'
     Spack               ='"${Spack}"'
     xsdk                ='"${xsdk}"'
 
@@ -524,16 +521,13 @@ function parse_argv()
       
       --opt)
                  build_type=Release
-		 enable_native=${FALSE}
                  ;;
 
       --relwithdebinfo)
                  build_type=RelWithDebInfo
-		 enable_native=${FALSE}
                  ;;
       --debug)
                  build_type=Debug
-		 enable_native=${TRUE}
                  ;;
       --dry_run)
                  dry_run=${TRUE}
@@ -1569,7 +1563,6 @@ cmd_configure="${cmake_binary} \
     -DBUILD_SHARED_LIBS:BOOL=${shared} \
     -DCCSE_BL_SPACEDIM:INT=${spacedim} \
     -DENABLE_Regression_Tests:BOOL=${reg_tests} \
-    -DENABLE_NATIVE_XML_OUTPUT:BOOL=${native} \
     -DMPI_EXEC_GLOBAL_ARGS:STRING=${tools_mpi_exec_args} \
     ${nersc_amanzi_opts} \
     ${amanzi_source_dir}"

@@ -246,7 +246,7 @@ createRegion(const std::string reg_name,
     region = Teuchos::rcp(new RegionBoxVolumeFractions(
         reg_name, reg_id, p0, p1, normals, lifecycle));
 
-  } else if (shape == "region: line segment"){
+  } else if (shape == "region: line segment") {
     Teuchos::ParameterList& reg_params = reg_spec.sublist(shape);
 
     Teuchos::Array<double> p0_vec = reg_params.get<Teuchos::Array<double> >("end coordinate");

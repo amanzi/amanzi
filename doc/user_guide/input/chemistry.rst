@@ -30,4 +30,4 @@ allowing any subsurface flow and transport simulator to access a range of functi
 The official repository for Alquimia API documentation and reference API is 
 https://bitbucket.org/berkeleylab/alquimia. The alquimia API is intended to be open and implemented 
 by anyone. The reference implementation developed by Lawrence Berkeley National Laboratory is open
- source, licensed under a BSD License.
+source, licensed under a BSD License.

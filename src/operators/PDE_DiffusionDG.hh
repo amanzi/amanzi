@@ -15,7 +15,8 @@
 #ifndef AMANZI_OPERATOR_PDE_DIFFUSION_DG_HH_
 #define AMANZI_OPERATOR_PDE_DIFFUSION_DG_HH_
 
-#include <strings.h>
+#include <memory>
+#include <string>
 
 // TPLs
 #include "Teuchos_RCP.hpp"
@@ -38,7 +39,6 @@ class PDE_DiffusionDG : public PDE_HelperDiscretization {
   PDE_DiffusionDG(Teuchos::ParameterList& plist,
                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       PDE_HelperDiscretization(mesh),
-      plist_(plist),
       Kc_(NULL),
       Kf_(NULL)
   {
@@ -64,11 +64,13 @@ class PDE_DiffusionDG : public PDE_HelperDiscretization {
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::Ptr<CompositeVector>& flux) override;
 
+  // access
+  const WhetStone::DG_Modal& dg() const { return *dg_; }
+
  private:
   virtual void Init_(Teuchos::ParameterList& plist);
 
  private:
-  Teuchos::ParameterList plist_;
   std::string method_, matrix_;
   int method_order_;
 
@@ -81,6 +83,8 @@ class PDE_DiffusionDG : public PDE_HelperDiscretization {
 
   // other operators
   Teuchos::RCP<Op> jump_up_op_, jump_pu_op_, penalty_op_;
+
+  std::shared_ptr<WhetStone::DG_Modal> dg_;
 };
 
 }  // namespace Operators

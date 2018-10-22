@@ -20,6 +20,7 @@
 #include "Basis_Natural.hh"
 #include "Basis_Normalized.hh"
 #include "Basis_Orthonormalized.hh"
+#include "Basis_Regularized.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -31,8 +32,8 @@ class BasisFactory {
 
   // select numerical scheme using its name and order 
   std::shared_ptr<Basis> Create(const std::string& name) {
-    if (name == "natural") {
-      auto basis = std::make_shared<Basis_Natural>();
+    if (name == "regularized") {
+      auto basis = std::make_shared<Basis_Regularized>();
       return basis;
     }
     else if (name == "normalized") {
@@ -41,6 +42,10 @@ class BasisFactory {
     }
     else if (name == "orthonormalized") {
       auto basis = std::make_shared<Basis_Orthonormalized>();
+      return basis;
+    }
+    else if (name == "natural") {
+      auto basis = std::make_shared<Basis_Natural>();
       return basis;
     }
     return NULL;

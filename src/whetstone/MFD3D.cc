@@ -400,23 +400,6 @@ void MFD3D::SimplexExchangeVariables_(DenseMatrix& T, int kp, int ip)
 }
 
 
-/* ******************************************************************
-* Extension of Mesh API. 
-****************************************************************** */
-int MFD3D::cell_get_face_adj_cell(int cell, int face)
-{
-  Entity_ID_List cells;
-  mesh_->face_get_cells(face, Parallel_type::ALL, &cells);
-  int ncells = cells.size();
-
-  if (ncells == 2) {
-    int c2 = cells[0];
-    if (cell == c2) c2 = cells[1];
-    return c2;
-  }
-  return -1;
-}
-
 }  // namespace WhetStone
 }  // namespace Amanzi
 

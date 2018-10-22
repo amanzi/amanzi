@@ -1,0 +1,72 @@
+diff -ruNbB ccse-1.3.4/Tools/Py_util/fsnapshot.f90 ccse-1.3.4-source/Tools/Py_util/fsnapshot.f90
+--- ccse-1.3.4/Tools/Py_util/fsnapshot.f90	2015-09-24 18:01:31.000000000 -0600
++++ ccse-1.3.4-source/Tools/Py_util/fsnapshot.f90	2018-07-16 22:04:00.000000000 -0600
+@@ -236,10 +236,10 @@
+ !------------------------------------------------------------------------------
+ ! fplotfile_get_data_1d
+ !------------------------------------------------------------------------------
+-subroutine fplotfile_get_data_1d(pltfile, component, mydata, x, nx_max, nx, ierr)
++subroutine fplotfile_get_data_1d(pltfile, component, mydata, x, nx_max, nx, ierr, k)
+ 
+-  ! return a single variable in mydata with coordinate locations x --
+-  ! it may not be evenly gridded due to AMR.  nx_max is the size of
++  ! return a single variable in mydata with coordinate locations x (k=1) or
++  ! y (k=2) it may not be evenly gridded due to AMR.  nx_max is the size of
+   ! the mydata and x arrays as allocated (hidden in this interface)
+   ! while nx is the number of points actually stored, since some may
+   ! be at lower resolution.
+@@ -260,6 +260,7 @@
+   double precision , intent(inout) :: x(nx_max)
+   integer          , intent(out) :: nx
+   integer, intent(out) :: ierr
++  integer, intent(in) :: k
+ 
+ !f2py intent(in) :: pltfile, component
+ !f2py intent(in,out) :: mydata
+@@ -273,7 +274,7 @@
+ 
+   integer :: comp
+ 
+-  integer :: flo(1), fhi(1)
++  integer :: flo(2), fhi(2)
+ 
+   integer :: max_level
+   
+@@ -312,7 +313,7 @@
+ 
+ 
+   ! domain limit
+-  xmin = pf%plo(1)
++  xmin = pf%plo(k)
+     
+ 
+   ! domain index limits on the fine level
+@@ -324,7 +325,7 @@
+   ! Note, imask is defined in terms of the finest level.  As we loop            
+   ! over levels, we will compare to the finest level index space to             
+   ! determine if we've already output here  
+-  allocate(imask(flo(1):fhi(1)))
++  allocate(imask(max(0, flo(k)-1):fhi(k)))
+   imask = .true.
+ 
+ 
+@@ -356,13 +357,17 @@
+ 
+         p => dataptr(pf, i, j)
+ 
+-        do ii = lbound(p,dim=1), ubound(p,dim=1)
++        do ii = lbound(p,dim=k), ubound(p,dim=k)
+            if ( any(imask(ii*r1:(ii+1)*r1-1) ) ) then
+ 
+               cnt = cnt + 1
+ 
+-              x_tmp(cnt) = xmin + (ii + HALF)*dx(1)/rr
++              x_tmp(cnt) = xmin + (ii + HALF)*dx(k)/rr
++              if (k == 1) then
+               mydata_tmp(cnt) = p(ii,1,1,1)
++              else
++                 mydata_tmp(cnt) = p(1,ii,1,1)
++              endif
+ 
+               imask(ii*r1:(ii+1)*r1-1) = .false.
+            endif

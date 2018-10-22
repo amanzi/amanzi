@@ -1,7 +1,15 @@
 /*
-  The discretization component of Amanzi.
-  License: BSD
+  WhetStone, version 2.1
+  Release name: naka-to.
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  The mimetic finite difference method.
 */
 
 #include <cstdlib>
@@ -9,14 +17,11 @@
 #include <iostream>
 #include <vector>
 
-#include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "UnitTest++.h"
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "MeshAudit.hh"
 #include "Point.hh"
 
 #include "DeRham_Node.hh"
@@ -49,7 +54,7 @@ TEST(DERHAM_COMPLEX_NODE) {
   drc.MassMatrix(cell, T, M);
 
   printf("Mass matrix for cell %3d\n", cell);
-  M.PrintMatrix("%8.4f ");
+  PrintMatrix(M, "%8.4f ");
 
   // verify SPD propery
   for (int i = 0; i < nnodes; ++i) CHECK(M(i, i) > 0.0);

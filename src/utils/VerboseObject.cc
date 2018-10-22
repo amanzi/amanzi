@@ -14,6 +14,8 @@
   code smell (composition over inheritance, especially for code reuse).
 */
 
+#include <ctime>
+
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Epetra_Comm.h"
 
@@ -177,6 +179,26 @@ std::string VerboseObject::reset() const
   return output;
 }
 
+
+std::string VerboseObject::clock() const
+{
+  int tmp = std::clock() / CLOCKS_PER_SEC;
+  int s = tmp % 60;
+  tmp /= 60;
+
+  int m = tmp % 60;
+  tmp /= 60;
+
+  int h = tmp % 100;
+
+  std::stringstream ss;
+  ss << "[" << std::setfill('0') 
+     << std::setw(2) << h << ":" 
+     << std::setw(2) << m << ":" 
+     << std::setw(2) << s << "]";
+
+  return ss.str();
+}
 
 void VerboseObject::WriteWarning(Teuchos::EVerbosityLevel verbosity, const std::stringstream& data) const
 {

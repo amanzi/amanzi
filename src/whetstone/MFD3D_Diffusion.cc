@@ -13,6 +13,7 @@
 */
 
 #include <cmath>
+#include <iterator>
 #include <vector>
 
 #include "Mesh.hh"
@@ -187,7 +188,7 @@ int MFD3D_Diffusion::H1consistency(
         u = dirs[i] * norm(v3) / (4 * area);
       }
 
-      int pos = FindPosition(v, nodes);
+      int pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
       for (int k = 0; k < d_; k++) N(pos, k) += normal[k] * u;
     }
   }
@@ -407,7 +408,7 @@ int MFD3D_Diffusion::RecoverGradient_StiffnessMatrix(
         u = dirs[i] * norm(v3) / (4 * area);
       }
 
-      int pos = FindPosition(v, nodes);
+      int pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
       for (int k = 0; k < d_; k++) R(pos, k) += normal[k] * u;
     }
   }

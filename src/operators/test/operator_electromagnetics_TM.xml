@@ -20,7 +20,6 @@
   <!-- SOLVERS -->
   <ParameterList name="solvers">
     <ParameterList name="default">
-      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
         <Parameter name="error tolerance" type="double" value="1e-12"/>
@@ -32,7 +31,6 @@
     </ParameterList>
 
     <ParameterList name="silent">
-      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
         <Parameter name="error tolerance" type="double" value="1e-12"/>

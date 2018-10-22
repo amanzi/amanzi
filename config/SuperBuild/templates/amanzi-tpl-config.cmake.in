@@ -41,6 +41,7 @@ set(ENABLE_MOAB_Mesh @ENABLE_MOAB_Mesh@ CACHE BOOL "Enable MOAB Unstructured Mes
 
 # TPL version
 set(AMANZI_TPLS_VERSION @AMANZI_TPLS_VERSION@ CACHE STRING "TPLs version")
+set(CMAKE_PREFIX_PATH @TPL_INSTALL_PREFIX@ CACHE STRING "search path for TPLs")
 
 
 # --------------------------------------------------------------------------- #

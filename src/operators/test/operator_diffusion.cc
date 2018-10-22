@@ -35,6 +35,7 @@
 #include "PDE_DiffusionFV.hh"
 #include "PDE_DiffusionMFDwithGravity.hh"
 #include "UpwindSecondOrder.hh"
+#include "Verification.hh"
 
 
 /* *****************************************************************
@@ -61,7 +62,7 @@ void RunTestDiffusionMixed(double gravity) {
   // create the MSTK mesh framework 
   // -- geometric model is defined in the region sublist of XML list
   ParameterList region_list = plist.sublist("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
+  auto gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   // -- provide at lest one framework to the mesh factory. The first available
   // -- framework will be used
@@ -124,7 +125,7 @@ void RunTestDiffusionMixed(double gravity) {
   op->Setup(K, Teuchos::null, Teuchos::null);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  // get and assmeble the global operator
+  // get and assemble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   op->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
@@ -136,26 +137,8 @@ void RunTestDiffusionMixed(double gravity) {
   global_op->UpdatePreconditioner();
 
   // Test SPD properties of the preconditioner.
-  CompositeVector a(cvs), ha(cvs), b(cvs), hb(cvs);
-  a.Random();
-  b.Random();
-  global_op->ApplyInverse(a, ha);
-  global_op->ApplyInverse(b, hb);
-
-  double ahb, bha, aha, bhb;
-  a.Dot(hb, &ahb);
-  b.Dot(ha, &bha);
-  a.Dot(ha, &aha);
-  b.Dot(hb, &bhb);
-
-  if (MyPID == 0) {
-    std::cout << "Preconditioner:\n"
-              << "  Symmetry test: " << ahb << " = " << bha << std::endl;
-    std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
-  }
-  CHECK_CLOSE(ahb, bha, 1e-12 * fabs(ahb));
-  CHECK(aha > 0.0);
-  CHECK(bhb > 0.0);
+  VerificationCV ver(global_op);
+  ver.CheckPreconditionerSPD();
 
   // solve the problem
   ParameterList lop_list = plist.sublist("solvers")

@@ -14,7 +14,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   VERSION ${NetCDF_VERSION_MAJOR} ${NetCDF_VERSION_MINOR} ${NetCDF_VERSION_PATCH})
 
 # --- Patch the original code
-set(NetCDF_patch_file netcdf-cmake.patch netcdf-cmake-rpath.patch)
+set(NetCDF_patch_file netcdf-cmake.patch netcdf-cmake-rpath.patch netcdf-cmake-dl.patch)
 set(NetCDF_sh_patch ${NetCDF_prefix_dir}/netcdf-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/netcdf-patch-step.sh.in
                ${NetCDF_sh_patch}
@@ -49,10 +49,14 @@ option(ENABLE_NetCDF4 "Enable netCDF4 build" TRUE)
 if (ENABLE_NetCDF4)
   list(APPEND NetCDF_PACKAGE_DEPENDS ${HDF5_BUILD_TARGET})
   list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DENABLE_NETCDF_4:BOOL=TRUE")
+  list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DZLIB_LIBRARY:FILEPATH=${ZLIB_LIBRARIES}")
 endif() 
 
 # share libraries -- disabled by default
 list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}")
+if (BUILD_STATIC_LIBS)
+  list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DCMAKE_EXE_LINKER_FLAGS:STRING=-ldl")
+endif()
 
 # --- Add external project build 
 ExternalProject_Add(${NetCDF_BUILD_TARGET}

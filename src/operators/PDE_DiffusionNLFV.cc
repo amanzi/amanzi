@@ -13,9 +13,9 @@
 #include <vector>
 
 // Amanzi
-#include "MFD3D_Diffusion.hh"
 #include "nlfv.hh"
 #include "ParallelCommunication.hh"
+#include "WhetStoneMeshUtils.hh"
 
 #include "Op_Face_Cell.hh"
 #include "OperatorDefs.hh"
@@ -165,7 +165,6 @@ void PDE_DiffusionNLFV::InitStencils_()
 
   // instantiate variables to access supporting tools
   WhetStone::NLFV nlfv(mesh_);
-  WhetStone::MFD3D_Diffusion mfd3d(mesh_);
 
   // distribute diffusion tensor
   WhetStone::DenseVector data(dim_ * dim_);
@@ -258,7 +257,7 @@ void PDE_DiffusionNLFV::InitStencils_()
       for (int i = 0; i < dim_; i++) {
         weight[k + i][f] = ws[i];
         (*stencil_faces_[k + i])[f] = faces[ids[i]];
-        (*stencil_cells_[k + i])[f] = mfd3d.cell_get_face_adj_cell(c, faces[ids[i]]);
+        (*stencil_cells_[k + i])[f] = WhetStone::cell_get_face_adj_cell(*mesh_, c, faces[ids[i]]);
       }
     }
   }
@@ -290,6 +289,7 @@ void PDE_DiffusionNLFV::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& u)
 {
   if (!stencil_initialized_) InitStencils_();
+  if (k_ != Teuchos::null) k_ -> ScatterMasterToGhosted("face");
 
   u->ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& uc = *u->ViewComponent("cell", true);
@@ -316,14 +316,13 @@ void PDE_DiffusionNLFV::UpdateMatrices(
 
   // split each stencil between different local matrices
   int c1, c2, c3, c4, k1, k2;
-  std::vector<int> dirs;
   AmanziMesh::Entity_ID_List cells, cells_tmp, faces;
 
   matrix_cv.PutScalarMasterAndGhosted(0.0);
   flux_data.PutScalar(0.0);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
     
     for (int n = 0; n < nfaces; ++n) {
@@ -423,13 +422,16 @@ void PDE_DiffusionNLFV::UpdateMatrices(
 ****************************************************************** */
 void PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(
     const Teuchos::Ptr<const CompositeVector>& flux,
-    const Teuchos::Ptr<const CompositeVector>& u, double scalar_limiter)
+    const Teuchos::Ptr<const CompositeVector>& u, double scalar_factor)
 {
   // ignore correction if no flux provided.
   if (flux == Teuchos::null) return;
 
   // Correction is zero for linear problems
   if (k_ == Teuchos::null || dkdp_ == Teuchos::null) return;
+
+  k_ -> ScatterMasterToGhosted("face");
+  dkdp_ -> ScatterMasterToGhosted("face");
 
   // Correction is not required
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_NONE) return;
@@ -456,7 +458,7 @@ void PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(
     vmod = std::abs(v);
 
     // prototype for future limiters
-    vmod *= scalar_limiter;
+    vmod *= scalar_factor;
 
     // We use the upwind discretization of the generalized flux.
     int i, dir, c1;
@@ -475,6 +477,68 @@ void PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(
   }
 }
 
+void PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(
+    const Teuchos::Ptr<const CompositeVector>& flux,
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<const CompositeVector>& factor)
+{
+  // ignore correction if no flux provided.
+  if (flux == Teuchos::null) return;
+
+  // Correction is zero for linear problems
+  if (k_ == Teuchos::null || dkdp_ == Teuchos::null) return;
+
+  k_ -> ScatterMasterToGhosted("face");
+  dkdp_ -> ScatterMasterToGhosted("face");
+
+  // Correction is not required
+  if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_NONE) return;
+
+  // only works on upwinded methods
+  if (little_k_ == OPERATOR_UPWIND_NONE) return;
+
+  const Epetra_MultiVector& kf = *k_->ViewComponent("face");
+  const Epetra_MultiVector& dkdp_f = *dkdp_->ViewComponent("face");
+  const Epetra_MultiVector& flux_f = *flux->ViewComponent("face");
+  const Epetra_MultiVector& factor_cell = *factor->ViewComponent("cell");
+
+  // populate the local matrices
+  double v, vmod;
+  AmanziMesh::Entity_ID_List cells;
+
+  for (int f = 0; f < nfaces_owned; f++) {
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    int ncells = cells.size();
+    WhetStone::DenseMatrix Aface(ncells, ncells);
+    Aface.PutScalar(0.0);
+
+    // We use the upwind discretization of the generalized flux.
+    v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] * dkdp_f[0][f] / kf[0][f] : 0.0;
+    vmod = std::abs(v);
+
+    double scalar_factor=0.;
+    for (int j=0; j<ncells; j++) scalar_factor += factor_cell[0][cells[j]];
+    scalar_factor *= 1./ncells;
+    
+    // prototype for future limiters
+    vmod *= scalar_factor;
+
+    // We use the upwind discretization of the generalized flux.
+    int i, dir, c1;
+    c1 = cells[0];
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
+    i = (v * dir >= 0.0) ? 0 : 1;
+
+    if (ncells == 2) {
+      Aface(i, i) = vmod;
+      Aface(1 - i, i) = -vmod;
+    } else if (i == 0) {
+      Aface(0, 0) = vmod;
+    }
+
+    jac_op_->matrices[f] = Aface;
+  }
+}
 
 /* ******************************************************************
 * Calculate one-sided fluxes (i0=0) or flux corrections (i0=1).
@@ -498,12 +562,11 @@ void PDE_DiffusionNLFV::OneSidedFluxCorrections_(
 
   int c1, c2, c3, k1, k2, dir;
   double gamma, tmp;
-  std::vector<int> dirs;
   AmanziMesh::Entity_ID_List cells, cells_tmp, faces;
 
   flux_cv.PutScalarMasterAndGhosted(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
     
     for (int n = 0; n < nfaces; ++n) {
@@ -567,12 +630,11 @@ void PDE_DiffusionNLFV::OneSidedWeightFluxes_(
 
   int c1, c2, c3, k1, k2, dir;
   double gamma, tmp;
-  std::vector<int> dirs;
   AmanziMesh::Entity_ID_List cells, cells_tmp, faces;
 
   flux_cv.PutScalarMasterAndGhosted(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
     
     for (int n = 0; n < nfaces; ++n) {
@@ -656,6 +718,8 @@ void PDE_DiffusionNLFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
 
+  if (k_ != Teuchos::null) k_ -> ScatterMasterToGhosted("face");
+  
   CompositeVectorSpace cvs; 
   cvs.SetMesh(mesh_)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, 2);
   CompositeVector wgt_sideflux_cv(cvs);

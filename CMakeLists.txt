@@ -5,8 +5,9 @@
 #       Root CMakeLists.txt file
 #
 
-# Require cmake 3.1.3 or higher for c++11 support
-cmake_minimum_required(VERSION 3.1.3)
+# Require cmake version same as the version used to buildg TPLs 
+#(see SuperBuild/CMakeLists.txt)
+cmake_minimum_required(VERSION 3.6.1)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -98,7 +99,8 @@ add_subdirectory(src)
 # EIB - uncommenting this will include the verification/benchmarking tests
 include(CTest)
 if (ENABLE_Regression_Tests)
-  add_subdirectory(testing) 
+  find_package(PythonInterp)
+  add_subdirectory(test_suites) 
 endif()
 
 

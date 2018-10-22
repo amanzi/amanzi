@@ -38,7 +38,6 @@
   <!-- SOLVERS -->
   <ParameterList name="solvers">
     <ParameterList name="AztecOO CG">
-      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
         <Parameter name="error tolerance" type="double" value="1e-16"/>
@@ -49,7 +48,6 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Amanzi GMRES">
-      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
         <Parameter name="error tolerance" type="double" value="1e-16"/>
@@ -70,8 +68,8 @@
         <Parameter name="smoother sweeps" type="int" value="3"/>
         <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="strong threshold" type="double" value="0.5"/>
-        <Parameter name="relaxation type down" type="int" value="3"/>
-        <Parameter name="relaxation type up" type="int" value="4"/>
+        <Parameter name="relaxation type down" type="int" value="13"/>
+        <Parameter name="relaxation type up" type="int" value="14"/>
         <Parameter name="coarsen type" type="int" value="0"/>
         <Parameter name="tolerance" type="double" value="0.0"/>
         <Parameter name="verbosity" type="int" value="0"/>

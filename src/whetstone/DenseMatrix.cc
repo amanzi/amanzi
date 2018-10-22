@@ -116,7 +116,7 @@ DenseMatrix::DenseMatrix(const DenseMatrix& B, int m1, int m2, int n1, int n2)
 
 
 /* ******************************************************************
-* Smart memory management.
+* Smart memory management. Data destroyed in general.
 ****************************************************************** */
 void DenseMatrix::Reshape(int mrow, int ncol)
 {

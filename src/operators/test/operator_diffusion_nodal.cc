@@ -34,6 +34,7 @@
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PDE_DiffusionMFD.hh"
+#include "Verification.hh"
 
 
 /* *****************************************************************
@@ -141,26 +142,8 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   global_op->UpdatePreconditioner();
 
   // Test SPD properties of the preconditioner.
-  CompositeVector a(cvs), ha(cvs), b(cvs), hb(cvs);
-  a.Random();
-  b.Random();
-  global_op->ApplyInverse(a, ha);
-  global_op->ApplyInverse(b, hb);
-
-  double ahb, bha, aha, bhb;
-  a.Dot(hb, &ahb);
-  b.Dot(ha, &bha);
-  a.Dot(ha, &aha);
-  b.Dot(hb, &bhb);
-
-  if (MyPID == 0) {
-    std::cout << "Preconditioner:\n"
-              << "  Symmetry test: " << ahb << " = " << bha << std::endl;
-    std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
-  }
-  CHECK_CLOSE(ahb, bha, 1e-12 * fabs(ahb));
-  CHECK(aha > 0.0);
-  CHECK(bhb > 0.0);
+  VerificationCV ver(global_op);
+  ver.CheckPreconditionerSPD();
 
   // solve the problem
   ParameterList lop_list = plist.sublist("solvers")

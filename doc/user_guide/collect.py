@@ -82,6 +82,7 @@ verification['index'] = {
   'index_file' : 'doc/user_guide/verification/index.rst',
   'index_list' : [ 'confined_flow',
                    'unconfined_flow',
+                   'infiltration',
                    'transport'
                  ],
 }
@@ -102,47 +103,47 @@ verification['confined_flow'] = {
                             ],
             },
   'linear_head_head_1d' : {
-    'from_dir' : 'testing/verification/flow/saturated/steady-state/linear_head_head_1d',
+    'from_dir' : 'test_suites/verification/flow/saturated/steady-state/linear_head_head_1d',
     'dest_dir' : 'doc/user_guide/verification/confined_flow/linear_head_head_1d',
     'index_entry' : 'linear_head_head_1d/amanzi_linear_head_head_1d.rst'
   },
   'linear_flux_head_1d' : {
-    'from_dir' : 'testing/verification/flow/saturated/steady-state/linear_flux_head_1d',
+    'from_dir' : 'test_suites/verification/flow/saturated/steady-state/linear_flux_head_1d',
     'dest_dir' : 'doc/user_guide/verification/confined_flow/linear_flux_head_1d',
     'index_entry' : 'linear_flux_head_1d/amanzi_linear_flux_head_1d.rst'
   },
   'linear_materials_serial_1d' : {
-    'from_dir' : 'testing/verification/flow/saturated/steady-state/linear_materials_serial_1d',
+    'from_dir' : 'test_suites/verification/flow/saturated/steady-state/linear_materials_serial_1d',
     'dest_dir' : 'doc/user_guide/verification/confined_flow/linear_materials_serial_1d',
     'index_entry' : 'linear_materials_serial_1d/amanzi_linear_materials_serial_1d.rst'
   },
   'linear_materials_parallel_1d' : {
-    'from_dir' : 'testing/verification/flow/saturated/steady-state/linear_materials_parallel_1d',
+    'from_dir' : 'test_suites/verification/flow/saturated/steady-state/linear_materials_parallel_1d',
     'dest_dir' : 'doc/user_guide/verification/confined_flow/linear_materials_parallel_1d',
     'index_entry' : 'linear_materials_parallel_1d/amanzi_linear_materials_parallel_1d.rst'
   },
   'theis_isotropic_1d' : {
-    'from_dir' : 'testing/verification/flow/saturated/transient/theis_isotropic_1d',
+    'from_dir' : 'test_suites/verification/flow/saturated/transient/theis_isotropic_1d',
     'dest_dir' : 'doc/user_guide/verification/confined_flow/theis_isotropic_1d',
     'index_entry' : 'theis_isotropic_1d/amanzi_theis_isotropic_1d.rst',
   },
   'butler_pod_2d' : {
-    'from_dir' : 'testing/verification/flow/saturated/transient/butler_pod_2d',
+    'from_dir' : 'test_suites/verification/flow/saturated/transient/butler_pod_2d',
     'dest_dir' : 'doc/user_guide/verification/confined_flow/butler_pod_2d',
     'index_entry' : 'butler_pod_2d/amanzi_butler_pod_2d.rst',
   },
   'butler_strip_2d' : {
-    'from_dir' : 'testing/verification/flow/saturated/transient/butler_strip_2d',
+    'from_dir' : 'test_suites/verification/flow/saturated/transient/butler_strip_2d',
     'dest_dir' : 'doc/user_guide/verification/confined_flow/butler_strip_2d',
     'index_entry' : 'butler_strip_2d/amanzi_butler_strip_2d.rst',
   },
   'hantush_anisotropic_2d' : {
-    'from_dir' : 'testing/verification/flow/saturated/transient/hantush_anisotropic_2d',
+    'from_dir' : 'test_suites/verification/flow/saturated/transient/hantush_anisotropic_2d',
     'dest_dir' : 'doc/user_guide/verification/confined_flow/hantush_anisotropic_2d',
     'index_entry' : 'hantush_anisotropic_2d/amanzi_hantush_anisotropic_2d.rst',
   },
   'boundedDomain_2d' : {
-     'from_dir' : 'testing/verification/flow/saturated/transient/boundedDomain_2d',
+     'from_dir' : 'test_suites/verification/flow/saturated/transient/boundedDomain_2d',
      'dest_dir' : 'doc/user_guide/verification/confined_flow/boundedDomain_2d',
      'index_entry' : 'boundedDomain_2d/amanzi_boundedDomain_2d.rst',
   },
@@ -159,24 +160,50 @@ verification['unconfined_flow'] = {
                              ], 
             },
   'unconfined_no_recharge_1d': {
-    'from_dir' : 'testing/verification/flow/richards/steady-state/unconfined_no_recharge_1d',
+    'from_dir' : 'test_suites/verification/flow/richards/steady-state/unconfined_no_recharge_1d',
     'dest_dir' : 'doc/user_guide/verification/unconfined_flow/unconfined_no_recharge_1d',
     'index_entry' : 'unconfined_no_recharge_1d/amanzi_unconfined_no_recharge_1d.rst',
   },
   'unconfined_seepage_1d': {
-    'from_dir' : 'testing/verification/flow/richards/steady-state/unconfined_seepage_1d',
+    'from_dir' : 'test_suites/verification/flow/richards/steady-state/unconfined_seepage_1d',
     'dest_dir' : 'doc/user_guide/verification/unconfined_flow/unconfined_seepage_1d',
     'index_entry' : 'unconfined_seepage_1d/amanzi_unconfined_seepage_1d.rst',
   },
   'unconfined_layered_2d': {
-    'from_dir' : 'testing/verification/flow/richards/steady-state/unconfined_layered_2d',
+    'from_dir' : 'test_suites/verification/flow/richards/steady-state/unconfined_layered_2d',
     'dest_dir' : 'doc/user_guide/verification/unconfined_flow/unconfined_layered_2d',
     'index_entry' : 'unconfined_layered_2d/amanzi_unconfined_layered_2d.rst'
   },
   'unconfined_recharge_1d': {
-    'from_dir' : 'testing/verification/flow/richards/steady-state/unconfined_recharge_1d',
+    'from_dir' : 'test_suites/verification/flow/richards/steady-state/unconfined_recharge_1d',
     'dest_dir' : 'doc/user_guide/verification/unconfined_flow/unconfined_recharge_1d',
     'index_entry' : 'unconfined_recharge_1d/amanzi_unconfined_recharge_1d.rst',
+  },
+}
+
+verification['infiltration'] = {
+  'index_entry': 'infiltration/index.rst',
+  'index' : {'index_title' : 'Infiltration Flow Tests',
+             'index_file'  : 'doc/user_guide/verification/infiltration/index.rst',
+             'index_list'  : [ 'infiltration_clay_sand_1d', 
+                               'infiltration_loam_sand_1d',
+                               'infiltration_sand_loam_1d',
+                             ], 
+            },
+  'infiltration_clay_sand_1d': {
+    'from_dir' : 'test_suites/verification/flow/richards/steady-state/infiltration_clay_sand_1d',
+    'dest_dir' : 'doc/user_guide/verification/infiltration/infiltration_clay_sand_1d',
+    'index_entry' : 'infiltration_clay_sand_1d/amanzi_infiltration_clay_sand_1d.rst',
+  },
+  'infiltration_loam_sand_1d': {
+    'from_dir' : 'test_suites/verification/flow/richards/steady-state/infiltration_loam_sand_1d',
+    'dest_dir' : 'doc/user_guide/verification/infiltration/infiltration_loam_sand_1d',
+    'index_entry' : 'infiltration_loam_sand_1d/amanzi_infiltration_loam_sand_1d.rst',
+  },
+  'infiltration_sand_loam_1d': {
+    'from_dir' : 'test_suites/verification/flow/richards/steady-state/infiltration_sand_loam_1d',
+    'dest_dir' : 'doc/user_guide/verification/infiltration/infiltration_sand_loam_1d',
+    'index_entry' : 'infiltration_sand_loam_1d/amanzi_infiltration_sand_loam_1d.rst',
   },
 }
 
@@ -185,18 +212,24 @@ verification['transport'] = {
   'index' : {'index_title' : 'Transport of Solutes: Advection, Dispersion and Diffusion',
              'index_file' : 'doc/user_guide/verification/transport/index.rst',
              'index_list' : [ 'dispersion_aligned_point_2d',
-                              'dispersion_45_point_2d'
+                              'dispersion_45_point_2d',
+                              'dual_porosity_1d'
                             ],
             },
   'dispersion_aligned_point_2d' : {
-    'from_dir' : 'testing/verification/transport/saturated/steady-state/dispersion_aligned_point_2d',
+    'from_dir' : 'test_suites/verification/transport/saturated/steady-state/dispersion_aligned_point_2d',
     'dest_dir' : 'doc/user_guide/verification/transport/dispersion_aligned_point_2d',
     'index_entry' : 'dispersion_aligned_point_2d/amanzi_dispersion_aligned_point_2d.rst',
   },
   'dispersion_45_point_2d' : {
-    'from_dir' : 'testing/verification/transport/saturated/steady-state/dispersion_45_point_2d',
+    'from_dir' : 'test_suites/verification/transport/saturated/steady-state/dispersion_45_point_2d',
     'dest_dir' : 'doc/user_guide/verification/transport/dispersion_45_point_2d',
     'index_entry' : 'dispersion_45_point_2d/amanzi_dispersion_45_point_2d.rst',
+  },
+  'dual_porosity_1d' : {
+    'from_dir' : 'test_suites/verification/transport/saturated/transient/dual_porosity_1d',
+    'dest_dir' : 'doc/user_guide/verification/transport/dual_porosity_1d',
+    'index_entry' : 'dual_porosity_1d/amanzi_dual_porosity_1d.rst',
   },
 }
 
@@ -227,37 +260,37 @@ benchmark['chemistry'] = {
                              ]
             },
   'tracer_1d' : {
-    'from_dir' : 'testing/benchmarking/chemistry/tracer_1d',
+    'from_dir' : 'test_suites/benchmarking/chemistry/tracer_1d',
     'dest_dir' : 'doc/user_guide/benchmarking/chemistry/tracer_1d',
     'index_entry' : 'tracer_1d/amanzi_u-1d-tracer.rst'
   },
   'tritium_1d': {
-    'from_dir' : 'testing/benchmarking/chemistry/tritium_1d',
+    'from_dir' : 'test_suites/benchmarking/chemistry/tritium_1d',
     'dest_dir' : 'doc/user_guide/benchmarking/chemistry/tritium_1d',
     'index_entry' : 'tritium_1d/amanzi_u-1d-tritium.rst'
   },
   'calcite_1d' : {
-    'from_dir' : 'testing/benchmarking/chemistry/calcite_1d',
+    'from_dir' : 'test_suites/benchmarking/chemistry/calcite_1d',
     'dest_dir' : 'doc/user_guide/benchmarking/chemistry/calcite_1d',
     'index_entry' : 'calcite_1d/amanzi_u-1d-calcite.rst'
   },
   'isotherms_1d' : {
-    'from_dir' : 'testing/benchmarking/chemistry/isotherms_1d',
+    'from_dir' : 'test_suites/benchmarking/chemistry/isotherms_1d',
     'dest_dir' : 'doc/user_guide/benchmarking/chemistry/isotherms_1d',
     'index_entry' : 'isotherms_1d/amanzi_u-1d-isotherms.rst'
   },
   'ion_exchange_1d' : {
-    'from_dir' : 'testing/benchmarking/chemistry/ion_exchange_1d',
+    'from_dir' : 'test_suites/benchmarking/chemistry/ion_exchange_1d',
     'dest_dir' : 'doc/user_guide/benchmarking/chemistry/ion_exchange_1d',
     'index_entry' : 'ion_exchange_1d/amanzi_u-1d-ion-exchange.rst'
   },
   'surface_complexation_1d': {
-    'from_dir' : 'testing/benchmarking/chemistry/surface_complexation_1d',
+    'from_dir' : 'test_suites/benchmarking/chemistry/surface_complexation_1d',
     'dest_dir' : 'doc/user_guide/benchmarking/chemistry/surface_complexation_1d',
     'index_entry' : 'surface_complexation_1d/amanzi_u-1d-surface-complexation.rst'
   },
   'farea_1d': {
-    'from_dir' : 'testing/benchmarking/chemistry/farea_1d',
+    'from_dir' : 'test_suites/benchmarking/chemistry/farea_1d',
     'dest_dir' : 'doc/user_guide/benchmarking/chemistry/farea_1d',
     'index_entry' : 'farea_1d/amanzi_u-1d-farea.rst'
   },
@@ -271,7 +304,7 @@ benchmark['transport'] = {
                              ]
             },
   'non_grid_aligned' : {
-    'from_dir' : 'testing/benchmarking/chemistry/non_grid_aligned',
+    'from_dir' : 'test_suites/benchmarking/chemistry/non_grid_aligned',
     'dest_dir' : 'doc/user_guide/benchmarking/transport/non_grid_aligned',
     'index_entry' : 'non_grid_aligned/non_grid_aligned.rst'
   },
@@ -289,7 +322,7 @@ mycase['index'] = {
 }
 
 mycase['my_test'] = {
-  'from_dir' : 'testing/verification/flow/saturated/steady-state/my_test',
+  'from_dir' : 'test_suites/verification/flow/saturated/steady-state/my_test',
   'dest_dir' : 'doc/user_guide/mycase/my_test',
   'index_entry' : 'linear_head_head/amanzi_my_test.rst'
 }

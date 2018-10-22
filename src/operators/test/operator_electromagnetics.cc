@@ -184,7 +184,7 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   // Test SPD properties of the matrix and preconditioner.
   VerificationCV ver(global_op);
   ver.CheckMatrixSPD(true, true);
-  ver.CheckPreconditionerSPD(true, true);
+  ver.CheckPreconditionerSPD(1e-12, true, true);
 
   // Solve the problem.
   ParameterList lop_list = plist.sublist("solvers").sublist("default").sublist("pcg parameters");
@@ -194,6 +194,8 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
 
   CompositeVector& rhs = *global_op->rhs();
   int ierr = solver.ApplyInverse(rhs, solution);
+
+  ver.CheckResidual(solution, 1.0e-10);
 
   int num_itrs = solver.num_itrs();
   CHECK(num_itrs < 100);

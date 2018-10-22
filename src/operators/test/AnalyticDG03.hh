@@ -23,8 +23,8 @@
 
 class AnalyticDG03 : public AnalyticDGBase {
  public:
-  AnalyticDG03(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order)
-    : AnalyticDGBase(mesh, order) {};
+  AnalyticDG03(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order, bool advection)
+    : AnalyticDGBase(mesh, order, advection) {};
   ~AnalyticDG03() {};
 
   // diffusion tensor

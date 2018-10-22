@@ -13,7 +13,7 @@
   Accumulation: a = 0
   Reaction: r = 0
   Velocity: v = [0.1 + x - x^2, y - y^2, 0]
-  Source: f = -6
+  Source: exact, e.g. f = -6 for 2D diffusion
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_DG_02_BASE_HH_
@@ -23,8 +23,8 @@
 
 class AnalyticDG02 : public AnalyticDGBase {
  public:
-  AnalyticDG02(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order)
-    : AnalyticDGBase(mesh, order) {};
+  AnalyticDG02(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order, bool advection)
+    : AnalyticDGBase(mesh, order, advection) {};
   ~AnalyticDG02() {};
 
   // diffusion tensor
@@ -75,21 +75,27 @@ class AnalyticDG02 : public AnalyticDGBase {
     double x(p[0]), y(p[1]);
 
     v.resize(d_);
-    for (int i = 0; i < 2; ++i) {
-      v[i].Reshape(d_, 2, true); 
-    }
-    v[0](0, 0) = 0.1 + x - x * x;
-    v[0](1, 0) = 1.0 - 2 * x;
-    v[0](2, 0) =-2.0;
-
-    v[1](0, 0) = y - y * y;
-    v[1](1, 1) = 1.0 - 2 * y;
-
-    if (d_ == 2) {
-      v[1](2, 2) =-2.0;
+    if (! advection_) {
+      for (int i = 0; i < 2; ++i) {
+        v[i].Reshape(d_, 0, true); 
+      }
     } else {
-      v[2].Reshape(d_, 0, true); 
-      v[1](2, 3) =-2.0;
+      for (int i = 0; i < 2; ++i) {
+        v[i].Reshape(d_, 2, true); 
+      }
+      v[0](0, 0) = 0.1 + x - x * x;
+      v[0](1, 0) = 1.0 - 2 * x;
+      v[0](2, 0) =-1.0;
+
+      v[1](0, 0) = y - y * y;
+      v[1](1, 1) = 1.0 - 2 * y;
+
+      if (d_ == 2) {
+        v[1](2, 2) =-1.0;
+      } else {
+        v[2].Reshape(d_, 0, true); 
+        v[1](2, 3) =-1.0;
+      }
     }
 
     v.set_origin(p);
@@ -105,8 +111,24 @@ class AnalyticDG02 : public AnalyticDGBase {
   // -- source term
   virtual void SourceTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                             Amanzi::WhetStone::Polynomial& src) override {
-    src.Reshape(d_, 0, true);
-    src(0, 0) = -6.0;
+    double x(p[0]), y(p[1]);
+
+    if (!advection_) {
+      src.Reshape(d_, 0, true);
+      src(0, 0) = -6.0;
+    } else {
+      src.Reshape(d_, 3, true);
+      src(0, 0) = -6.0 + 0.2 * x + 2 * x * x - 2 * x * x * x + 2 * y * y * (1.0 - y);
+      src(1, 0) = 0.2 + 4 * x - 6 * x * x;
+      src(1, 1) = 4 * y - 6 * y * y;
+      src(2, 0) = 2.0 - 6 * x;
+      src(2, 2) = 2.0 - 6 * y;
+      src(3, 0) = -2.0;
+      src(3, 3) = -2.0;
+    }
+
+    if (d_ == 3) src(0, 0) -= 2.0;
+
     src.set_origin(p);
   }
 };

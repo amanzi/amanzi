@@ -49,7 +49,6 @@ add_install_include_file(${mesh_inc_files})
 
 
 # Derived and support classes
-
 add_subdirectory(mesh_data)
 add_subdirectory(mesh_simple)
 add_subdirectory(exodus_reader)
@@ -58,28 +57,26 @@ add_subdirectory(exodus_reader)
 
 # STK (Trilinos Package)
 if (ENABLE_STK_Mesh)
-    add_subdirectory(mesh_stk)
+  add_subdirectory(mesh_stk)
 endif(ENABLE_STK_Mesh)    
 
 # MOAB Mesh framework
 if (ENABLE_MOAB_Mesh)
-    add_subdirectory(mesh_moab)
+  add_subdirectory(mesh_moab)
 endif(ENABLE_MOAB_Mesh)    
 
 # MSTK Mesh framework
 if (ENABLE_MSTK_Mesh)
-    add_subdirectory(mesh_mstk)
+  add_subdirectory(mesh_mstk)
 endif(ENABLE_MSTK_Mesh)    
 
 
 # Factory class
-
 add_subdirectory(mesh_factory)
 add_subdirectory(mesh_logical)
 
 
 if (BUILD_TESTS)
-
     # Include dirs for test
     include_directories(${MESH_SOURCE_DIR})
     include_directories(${MESH_FACTORY_SOURCE_DIR})
@@ -99,44 +96,40 @@ if (BUILD_TESTS)
     # STK (Trilinos Package)
     if (ENABLE_STK_Mesh)
       list(APPEND test_link_libs stk_mesh)
-    endif(ENABLE_STK_Mesh)    
+    endif()    
 
     # MOAB Mesh framework
     if (ENABLE_MOAB_Mesh)
       list(APPEND test_link_libs moab_mesh)
-    endif(ENABLE_MOAB_Mesh)    
+    endif()    
     
     # MSTK Mesh framework
     if (ENABLE_MSTK_Mesh)
       list(APPEND test_link_libs mstk_mesh)
-    endif(ENABLE_MSTK_Mesh)    
+    endif()    
 
     # Test: mesh geometry
-
-    set(test_src_files test/Main.cc test/test_mesh_geometry.cc)
-
     add_amanzi_test(mesh_geometry mesh_geometry
                     KIND unit
-		            SOURCE ${test_src_files}
-		            LINK_LIBS ${test_link_libs})
-
+                    SOURCE test/Main.cc test/test_mesh_geometry.cc
+                    LINK_LIBS ${test_link_libs})
 
     # Test: mesh deformation
-    set(test_src_files test/Main.cc test/test_deform.cc)
-
     add_amanzi_test(mesh_deform mesh_deform
                     KIND unit
-		    SOURCE ${test_src_files}
+		    SOURCE test/Main.cc test/test_deform.cc
 		    LINK_LIBS ${test_link_libs})
 
     # Test: mesh columns
-
-    set(test_src_files test/Main.cc test/test_columns.cc)
-
     add_amanzi_test(mesh_columns mesh_columns
                     KIND unit
-		    SOURCE ${test_src_files}
+		    SOURCE test/Main.cc test/test_columns.cc
 		    LINK_LIBS ${test_link_libs})
 
+    # Test: mesh KD search
+    add_amanzi_test(mesh_nanoflann mesh_nanoflann
+                    KIND unit
+		    SOURCE test/Main.cc test/test_nanoflann.cc
+		    LINK_LIBS ${test_link_libs})
 endif()
   
