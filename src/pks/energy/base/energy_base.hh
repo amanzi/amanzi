@@ -62,7 +62,7 @@ public:
 
   // EnergyBase is a BDFFnBase
   // computes the non-linear functional f = f(t,u,udot)
-  virtual void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+  virtual void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                    Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f);
 
   // applies preconditioner to u and returns the result in Pu
@@ -156,6 +156,8 @@ public:
   bool modify_predictor_for_freezing_;
   bool modify_correction_for_freezing_;
   bool is_source_term_;
+  bool is_source_term_differentiable_;
+  bool is_source_term_finite_differentiable_;
   bool is_mass_source_term_;
   bool implicit_advection_;
   bool implicit_advection_in_pc_;

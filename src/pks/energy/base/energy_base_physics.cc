@@ -67,7 +67,7 @@ void EnergyBase::AddAdvection_(const Teuchos::Ptr<State>& S,
   S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S.ptr(), name_);
   Teuchos::RCP<const CompositeVector> enth = S->GetFieldData(enthalpy_key_);;
   ApplyDirichletBCsToEnthalpy_(S.ptr());
-  matrix_adv_->ApplyBCs(bc_adv_, false);
+  matrix_adv_->ApplyBCs(false, true, false);
 
   // apply
   matrix_adv_->global_operator()->ComputeNegativeResidual(*enth, *g, false);
@@ -97,7 +97,7 @@ void EnergyBase::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   matrix_diff_->UpdateFlux(temp.ptr(), flux.ptr());
 
   // finish assembly of the stiffness matrix
-  matrix_diff_->ApplyBCs(true, true);
+  matrix_diff_->ApplyBCs(true, true, true);
 
   // calculate the residual
   matrix_diff_->global_operator()->ComputeNegativeResidual(*temp, *g);
@@ -138,13 +138,31 @@ void EnergyBase::AddSources_(const Teuchos::Ptr<State>& S,
 
 void EnergyBase::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {
   // external sources of energy (temperature dependent source)
-  if (is_source_term_ && S->GetFieldEvaluator(source_key_)->IsDependency(S, key_)) {
+  if (is_source_term_ && is_source_term_differentiable_ && 
+      S->GetFieldEvaluator(source_key_)->IsDependency(S, key_)) {
 
-    // evaluate the derivative
-    S->GetFieldEvaluator(source_key_)->HasFieldDerivativeChanged(S, name_, key_);
-    const CompositeVector& dsource_dT =
-        *S->GetFieldData(Keys::getDerivKey(source_key_, key_));
-    preconditioner_acc_->AddAccumulationTerm(dsource_dT, -1.0, "cell", false);
+    Teuchos::RCP<const CompositeVector> dsource_dT;
+    if (!is_source_term_finite_differentiable_) {
+      // evaluate the derivative through the dag
+      S->GetFieldEvaluator(source_key_)->HasFieldDerivativeChanged(S, name_, key_);
+      dsource_dT = S->GetFieldData(Keys::getDerivKey(source_key_, key_));
+    } else {
+      // evaluate the derivative through fniite differences
+      double eps = 1.e-8;
+      S->GetFieldData(key_, name_)->Shift(eps);
+      ChangedSolution();
+      S->GetFieldEvaluator(source_key_)->HasFieldChanged(S, name_);
+      auto dsource_dT_nc = Teuchos::rcp(new CompositeVector(*S->GetFieldData(source_key_)));
+
+      S->GetFieldData(key_, name_)->Shift(-eps);
+      ChangedSolution();
+      S->GetFieldEvaluator(source_key_)->HasFieldChanged(S, name_);
+
+      dsource_dT_nc->Update(-1/eps, *S->GetFieldData(source_key_), 1/eps);
+      dsource_dT = dsource_dT_nc;
+    }
+    db_->WriteVector("  dQ_ext/dT", dsource_dT.ptr(), false);
+    preconditioner_acc_->AddAccumulationTerm(*dsource_dT, -1.0, "cell", true);
   }
 }
 

@@ -42,6 +42,16 @@ MPCCoupledWaterSplitFlux::MPCCoupledWaterSplitFlux(Teuchos::ParameterList& FElis
 };
 
 
+// -- initialize in reverse order
+void MPCCoupledWaterSplitFlux::Initialize(const Teuchos::Ptr<State>& S)
+{
+  sub_pks_[1]->Initialize(S);
+  CopyPrimaryToStar(S, S);
+  S->GetField(primary_variable_star_, "star")->set_initialized();
+  sub_pks_[0]->Initialize(S);
+}
+
+
 void MPCCoupledWaterSplitFlux::Setup(const Teuchos::Ptr<State>& S) {
   MPC<PK>::Setup(S);
 

@@ -23,7 +23,7 @@ namespace Flow {
 // -----------------------------------------------------------------------------
 // computes the non-linear functional g = g(t,u,udot)
 // -----------------------------------------------------------------------------
-void Richards::Functional(double t_old,
+void Richards::FunctionalResidual(double t_old,
                    double t_new,
                    Teuchos::RCP<TreeVector> u_old,
                    Teuchos::RCP<TreeVector> u_new,
@@ -238,7 +238,7 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   AddSourcesToPrecon_(S_next_.ptr(), h);
   
   // -- apply BCs
-  preconditioner_diff_->ApplyBCs(true, true);
+  preconditioner_diff_->ApplyBCs(true, true, true);
 
   if (precon_used_) {
     preconditioner_->AssembleMatrix();

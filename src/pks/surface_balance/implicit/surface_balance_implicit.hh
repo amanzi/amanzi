@@ -41,7 +41,7 @@ public:
 
   // ConstantTemperature is a BDFFnBase
   // computes the non-linear functional g = g(t,u,udot)
-  virtual void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+  virtual void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                    Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
 
   // applies preconditioner to u and returns the result in Pu
@@ -83,6 +83,7 @@ public:
   double snow_ground_trans_;
   double min_snow_trans_;
   double roughness_bare_ground_, roughness_snow_covered_ground_;
+  double desiccated_zone_thickness_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> subsurf_mesh_;
 

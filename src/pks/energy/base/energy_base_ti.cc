@@ -26,7 +26,7 @@ namespace Energy {
 // -----------------------------------------------------------------------------
 // computes the non-linear functional g = g(t,u,udot)
 // -----------------------------------------------------------------------------
-void EnergyBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+void EnergyBase::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                        Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   Teuchos::OSTab tab = vo_->getOSTab();
 
@@ -240,11 +240,11 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
     preconditioner_adv_->Setup(*mass_flux);
     preconditioner_adv_->UpdateMatrices(mass_flux.ptr(), dhdT.ptr());
     ApplyDirichletBCsToEnthalpy_(S_next_.ptr());
-    preconditioner_adv_->ApplyBCs(bc_adv_, false);
+    preconditioner_adv_->ApplyBCs(false, true, false);
   }
 
   // Apply boundary conditions.
-  preconditioner_diff_->ApplyBCs(true, true);
+  preconditioner_diff_->ApplyBCs(true, true, true);
   if (precon_used_) {
     preconditioner_->AssembleMatrix();
     preconditioner_->UpdatePreconditioner();

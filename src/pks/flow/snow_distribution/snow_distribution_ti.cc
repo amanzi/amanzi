@@ -20,7 +20,7 @@ namespace Flow {
 // -----------------------------------------------------------------------------
 // computes the non-linear functional g = g(t,u,udot)
 // -----------------------------------------------------------------------------
-void SnowDistribution::Functional( double t_old,
+void SnowDistribution::FunctionalResidual( double t_old,
                         double t_new,
                         Teuchos::RCP<TreeVector> u_old,
                         Teuchos::RCP<TreeVector> u_new,
@@ -48,7 +48,7 @@ void SnowDistribution::Functional( double t_old,
 
   // unnecessary here if not debeugging, but doesn't hurt either
 
-  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"snow_skin_potential"))->HasFieldChanged(S_next_.ptr(), name_);
+  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"skin_potential"))->HasFieldChanged(S_next_.ptr(), name_);
 
 #if DEBUG_FLAG
   // dump u_old, u_new
@@ -60,7 +60,7 @@ void SnowDistribution::Functional( double t_old,
   std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
   vecs.push_back(u.ptr());
 
-  vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"snow_skin_potential")).ptr());
+  vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"skin_potential")).ptr());
 
   db_->WriteVectors(vnames, vecs, true);
 #endif
@@ -72,7 +72,7 @@ void SnowDistribution::Functional( double t_old,
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 
 #if DEBUG_FLAG
-  db_->WriteVector("k_s", S_next_->GetFieldData(Keys::getKey(domain_,"upwind_snow_conductivity")).ptr(), true);
+  db_->WriteVector("k_s", S_next_->GetFieldData(Keys::getKey(domain_,"upwind_conductivity")).ptr(), true);
   db_->WriteVector("res (post diffusion)", res.ptr(), true);
 #endif
 
@@ -131,14 +131,14 @@ void SnowDistribution::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   UpdatePermeabilityData_(S_next_.ptr());
   
   Teuchos::RCP<const CompositeVector> cond =
-    S_next_->GetFieldData(Keys::getKey(domain_,"upwind_snow_conductivity"));
+    S_next_->GetFieldData(Keys::getKey(domain_,"upwind_conductivity"));
 
   // Jacobian
-  Key deriv_key = Keys::getDerivKey(Keys::getKey(domain_,"snow_conductivity"),key_);
-  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"snow_conductivity"))
+  Key deriv_key = Keys::getDerivKey(Keys::getKey(domain_,"conductivity"),key_);
+  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"conductivity"))
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
   // playing it fast and loose.... --etc
-  auto dcond = S_next_->GetFieldData(deriv_key, Keys::getKey(domain_,"snow_conductivity"));
+  auto dcond = S_next_->GetFieldData(deriv_key, Keys::getKey(domain_,"conductivity"));
 
   // NOTE: this scaling of dt is wrong, but keeps consistent with the diffusion derivatives
   double dt = S_next_->time() - S_next_->last_time();
@@ -152,9 +152,9 @@ void SnowDistribution::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   preconditioner_diff_->SetScalarCoefficient(cond, dcond);
   preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"snow_skin_potential"))
+  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"skin_potential"))
       ->HasFieldChanged(S_next_.ptr(), name_);
-  auto potential = S_next_->GetFieldData(Keys::getKey(domain_, "snow_skin_potential"));
+  auto potential = S_next_->GetFieldData(Keys::getKey(domain_, "skin_potential"));
   preconditioner_diff_->UpdateMatricesNewtonCorrection(Teuchos::null, potential.ptr());
   
   // 2.b Update local matrices diagonal with the accumulation terms.
@@ -164,7 +164,7 @@ void SnowDistribution::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   CompositeVector cv_times_10(cell_volume); cv_times_10.Scale(10);
   preconditioner_acc_->AddAccumulationTerm(cv_times_10, "cell");
 
-  preconditioner_diff_->ApplyBCs(true, true);
+  preconditioner_diff_->ApplyBCs(true, true, true);
   preconditioner_->AssembleMatrix();
   preconditioner_->UpdatePreconditioner();
 };

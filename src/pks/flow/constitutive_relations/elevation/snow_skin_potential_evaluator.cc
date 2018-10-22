@@ -29,10 +29,10 @@ SnowSkinPotentialEvaluator::SnowSkinPotentialEvaluator(Teuchos::ParameterList& p
   pd_key_ = Keys::readKey(plist_, surf_domain, "ponded depth", "ponded_depth");
   dependencies_.insert(pd_key_);
 
-  sd_key_ = Keys::readKey(plist_, domain, "snow depth", "snow_depth");
+  sd_key_ = Keys::readKey(plist_, domain, "snow depth", "depth");
   dependencies_.insert(sd_key_);
 
-  precip_key_ = Keys::readKey(plist_, domain, "snow precipitation", "precipitation_snow");
+  precip_key_ = Keys::readKey(plist_, domain, "snow precipitation", "precipitation");
   dependencies_.insert(precip_key_);
 
   elev_key_ = Keys::readKey(plist_, surf_domain, "elevation", "elevation");

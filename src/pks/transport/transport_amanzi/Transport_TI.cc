@@ -22,7 +22,7 @@ namespace Transport {
  * Routine takes a parallel overlapping vector C and returns a parallel
  * overlapping vector F(C).
  ****************************************************************** */
-void Transport_PK_ATS::Functional(const double t, const Epetra_Vector& component, Epetra_Vector& f_component)
+void Transport_PK_ATS::FunctionalTimeDerivative(const double t, const Epetra_Vector& component, Epetra_Vector& f_component)
 {
 
   // distribute vector
@@ -34,7 +34,7 @@ void Transport_PK_ATS::Functional(const double t, const Epetra_Vector& component
 
   Teuchos::ParameterList plist = tp_list_->sublist("reconstruction");
   lifting_->Init(component_rcp, plist);
-  lifting_->Compute();
+  lifting_->ComputeGradient();
   Teuchos::RCP<CompositeVector> gradient = lifting_->gradient();
 
   // extract boundary conditions for the current component

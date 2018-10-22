@@ -45,7 +45,7 @@ class SurfaceBalanceBase : public PK_PhysicalBDF_Default {
 
   // ConstantTemperature is a BDFFnBase
   // computes the non-linear functional g = g(t,u,udot)
-  virtual void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+  virtual void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                           Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
   // updates the preconditioner
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);
@@ -59,10 +59,11 @@ class SurfaceBalanceBase : public PK_PhysicalBDF_Default {
 
   Key layer_;
   bool conserved_quantity_;
-  bool is_source_;
+  bool is_source_, is_source_differentiable_, source_finite_difference_;
   Key source_key_;
 
   double theta_;
+  double eps_;
 
   bool precon_used_;
   Teuchos::RCP<Operators::PDE_Accumulation> preconditioner_acc_;

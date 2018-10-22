@@ -31,20 +31,14 @@ void PK_PhysicalBDF_Default::Setup(const Teuchos::Ptr<State>& S) {
   
   // convergence criteria
   if (conserved_key_.empty()) {
-    if (plist_->isParameter("conserved quantity suffix")) {
-      Key conserved_default = Keys::getKey(domain_, plist_->get<std::string>("conserved quantity suffix"));
-      conserved_key_ = plist_->get<std::string>("conserved quantity key", conserved_default);
-    } else {
-      conserved_key_ = plist_->get<std::string>("conserved quantity key");
-    }
+    conserved_key_ = Keys::readKey(*plist_, domain_, "conserved quantity");
   }
   S->RequireField(conserved_key_)->SetMesh(mesh_)
       ->AddComponent("cell",AmanziMesh::CELL,true);
   S->RequireFieldEvaluator(conserved_key_);
 
   if (cell_vol_key_.empty()) {
-    cell_vol_key_ = plist_->get<std::string>("cell volume key",
-            Keys::getKey(domain_, "cell_volume"));
+    cell_vol_key_ = Keys::readKey(*plist_, domain_, "cell volume", "cell_volume");
   }
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
       ->AddComponent("cell",AmanziMesh::CELL,true);

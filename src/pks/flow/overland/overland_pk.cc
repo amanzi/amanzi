@@ -51,8 +51,8 @@ OverlandFlow::OverlandFlow(Teuchos::ParameterList& FElist,
     niter_(0)
 {
   // used for error norm
-  if (!plist_->isParameter("conserved quantity suffix"))
-    plist_->set("conserved quantity suffix", "ponded_depth");
+  if (!plist_->isParameter("conserved quantity key suffix"))
+    plist_->set("conserved quantity key suffix", "ponded_depth_times_cell_volume");
   
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance"))

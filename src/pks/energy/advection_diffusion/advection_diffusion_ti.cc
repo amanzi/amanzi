@@ -17,7 +17,7 @@ namespace Energy {
 
 // AdvectionDiffusion is a BDFFnBase
 // computes the non-linear functional g = g(t,u,udot)
-void AdvectionDiffusion::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+void AdvectionDiffusion::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                  Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
 
   // pointer-copy temperature into states and update any auxilary data
@@ -110,11 +110,11 @@ void AdvectionDiffusion::UpdatePreconditioner(double t, Teuchos::RCP<const TreeV
     Teuchos::RCP<const CompositeVector> mass_flux = S_next_->GetFieldData("mass_flux");
     preconditioner_adv_->Setup(*mass_flux);
     preconditioner_adv_->UpdateMatrices(mass_flux.ptr());
-    preconditioner_adv_->ApplyBCs(bc_, false);
+    preconditioner_adv_->ApplyBCs(false, true, false);
   }
   
   // assemble and create PC
-  preconditioner_diff_->ApplyBCs(true, true);
+  preconditioner_diff_->ApplyBCs(true, true, true);
   preconditioner_->AssembleMatrix();
   preconditioner_->UpdatePreconditioner();
 

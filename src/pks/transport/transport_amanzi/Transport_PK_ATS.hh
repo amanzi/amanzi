@@ -157,8 +157,8 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   void Advance_Dispersion_Diffusion(double t_old, double t_new);
 
   // time integration members
-  void Functional(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
-    //  void Functional(const double t, const Epetra_Vector& component, TreeVector& f_component);
+  void FunctionalTimeDerivative(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
+    //  void FunctionalTimeDerivative(const double t, const Epetra_Vector& component, TreeVector& f_component);
 
   void IdentifyUpwindCells();
 

@@ -25,7 +25,7 @@ namespace Flow {
 // -----------------------------------------------------------------------------
 // computes the non-linear functional g = g(t,u,udot)
 // -----------------------------------------------------------------------------
-void OverlandPressureFlow::Functional( double t_old,
+void OverlandPressureFlow::FunctionalResidual( double t_old,
                         double t_new,
                         Teuchos::RCP<TreeVector> u_old,
                         Teuchos::RCP<TreeVector> u_new,
@@ -277,10 +277,10 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
   preconditioner_acc_->AddAccumulationTerm(dwc_dh, "cell");
   
   // // -- update the source term derivatives
-  // if (S_next_->GetFieldEvaluator(mass_source_key_)->IsDependency(S_next_.ptr(), key_)) {
-  //   S_next_->GetFieldEvaluator(mass_source_key_)
+  // if (S_next_->GetFieldEvaluator(source_key_)->IsDependency(S_next_.ptr(), key_)) {
+  //   S_next_->GetFieldEvaluator(source_key_)
   //       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-  //   std::string dkey = std::string("d")+mass_source_key_+std::string("_d")+key_;
+  //   std::string dkey = std::string("d")+source_key_+std::string("_d")+key_;
   //   const Epetra_MultiVector& dq_dp = *S_next_->GetFieldData(dkey)
   //       ->ViewComponent("cell",false);
 
@@ -300,7 +300,7 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
   //     const Epetra_MultiVector& nliq1_s =
   //       *S_next_->GetFieldData("surface-source_molar_density")
   //         ->ViewComponent("cell",false);
-  //     const Epetra_MultiVector& q = *S_next_->GetFieldData(mass_source_key_)
+  //     const Epetra_MultiVector& q = *S_next_->GetFieldData(source_key_)
   //         ->ViewComponent("cell",false);
 
   //     for (int c=0; c!=cv.MyLength(); ++c) {
@@ -349,7 +349,7 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
   //                                          bc_values_);
   // }
 
-  preconditioner_diff_->ApplyBCs(true, true);
+  preconditioner_diff_->ApplyBCs(true, true, true);
   
   // 3.d: Rescale to use as a pressure matrix if used in a coupler
   if (coupled_to_subsurface_via_head_ || coupled_to_subsurface_via_flux_) {
