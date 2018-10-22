@@ -2923,10 +2923,9 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       }
     }
     else {
-      Teuchos::RCP<const VerboseObject> verbobj = Mesh::verbosity_obj();
-      if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_HIGH)) {
-        Teuchos::OSTab tab = verbobj->getOSTab();
-        *(verbobj->os()) << "Requested CELLS on region " << region->name() 
+      if (vo_.get() && vo_->os_OK(Teuchos::VERB_HIGH)) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *(vo_->os()) << "Requested CELLS on region " << region->name() 
             << " of type " << region->type()  
             << " and dimension " << region->manifold_dimension() << ".\n"
             << "This request will result in an empty set";

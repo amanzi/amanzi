@@ -91,6 +91,20 @@
         <Parameter name="number" type="Array(int)" value="{3}"/>
       </ParameterList>
     </ParameterList>
+
+    <ParameterList name="divergence operator">
+      <Parameter name="method" type="string" value="dg modal"/>
+      <Parameter name="dg basis" type="string" value="orthonormalized"/>
+      <Parameter name="method order" type="int" value="1"/>
+      <Parameter name="matrix type" type="string" value="mass"/>
+
+      <ParameterList name="schema">
+        <Parameter name="base" type="string" value="cell"/>
+        <Parameter name="location" type="Array(string)" value="{cell}"/>
+        <Parameter name="type" type="Array(string)" value="{scalar}"/>
+        <Parameter name="number" type="Array(int)" value="{3}"/>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 </ParameterList>
 

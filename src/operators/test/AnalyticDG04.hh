@@ -107,6 +107,11 @@ class AnalyticDG04 : public AnalyticDGBase {
       v[1](4) = (1 - 2 * y) / 2;
       v[1](5) = -x / 2;
     }
+
+    if (order_ > 2) {
+      v[0](7) = -1.0;
+      v[1](8) = -1.0;
+    }
   }
 
   // -- reaction

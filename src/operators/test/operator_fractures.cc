@@ -47,7 +47,7 @@ void RunTest(int icase, bool gravity) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: Farcy flow in fractures, gravity=" << gravity << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: Darcy flow in fractures, gravity=" << gravity << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_fractures.xml";

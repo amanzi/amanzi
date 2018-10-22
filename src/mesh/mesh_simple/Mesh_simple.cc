@@ -1,4 +1,13 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Mesh
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Rao Garimella, others
+*/
 
 #include <algorithm>
 
@@ -141,6 +150,7 @@ Mesh_simple::~Mesh_simple()
   delete cell_map_;
   delete face_map_;
   delete node_map_;
+  delete extface_map_;
 }
 
 
@@ -170,17 +180,14 @@ Mesh_simple::generate_(const GenerationSpec& gspec)
     Mesh::set_manifold_dimension(3);
   }
   
-  //  std::copy(gspec.block_begin(), gspec.block_end(), 
-  //          std::back_inserter(mesh_blocks_));
-  
   update();
 }
 
 
 void Mesh_simple::update()
 {
-  clear_internals_ ();
-  update_internals_ ();
+  clear_internals_();
+  update_internals_();
 }
 
 
@@ -200,7 +207,8 @@ void Mesh_simple::update_internals_()
 {
   num_cells_ = nx_ * ny_ * nz_;
   num_nodes_ = (nx_+1)*(ny_+1)*(nz_+1);
-  num_faces_ = (nx_+1)*(ny_)*(nz_) + (nx_)*(ny_+1)*(nz_) + (nx_)*(ny_)*(nz_+1);
+  num_faces_ = (nx_+1)*ny_*nz_ + nx_*(ny_+1)*nz_ + nx_*ny_*(nz_+1);
+  num_faces_bnd_ = 2*nx_*ny_ + 2*nx_*nz_ + 2*ny_*nz_;
 
   coordinates_.resize(3*num_nodes_);
 
@@ -430,25 +438,40 @@ void Mesh_simple::update_internals_()
         (node_to_face_[jstart])++;
       }
 
-  build_maps_ ();
+  build_maps_();
 }
 
 
 void Mesh_simple::build_maps_()
 {
   const Epetra_Comm *epcomm_ = Mesh::get_comm();
-  std::vector<int> cells( num_cells_ );
+  std::vector<int> cells(num_cells_);
   for (int i=0; i< num_cells_; i++) cells[i] = i;
   
-  std::vector<int> nodes( num_nodes_ );
+  std::vector<int> nodes(num_nodes_);
   for (int i=0; i< num_nodes_; i++) nodes[i] = i;
 
-  std::vector<int> faces( num_faces_ );
+  std::vector<int> faces(num_faces_);
   for (int i=0; i< num_faces_; i++) faces[i] = i;
+
+  std::vector<int> faces_bnd(num_faces_bnd_);
+  int i = 0;
+  for (int iz=0; iz<nz_; iz++)
+    for (int iy=0; iy<ny_; iy++)
+      for (int ix=0; ix<nx_; ix++) {
+        if (iz == 0 || iz == nz_ - 1) {
+          faces_bnd[i++] = xyface_index_(ix,iy,iz);
+        } else if (iy == 0 || iy == ny_ - 1) {
+          faces_bnd[i++] = xzface_index_(ix,iy,iz);
+        } else if (ix == 0 || ix == nx_ - 1) {
+          faces_bnd[i++] = yzface_index_(ix,iy,iz);
+        }
+      } 
 
   cell_map_ = new Epetra_Map(-1, num_cells_, &cells[0], 0, *epcomm_);
   face_map_ = new Epetra_Map(-1, num_faces_, &faces[0], 0, *epcomm_);
   node_map_ = new Epetra_Map(-1, num_nodes_, &nodes[0], 0, *epcomm_);
+  extface_map_ = new Epetra_Map(-1, num_faces_bnd_, &faces_bnd[0], 0, *epcomm_);
 }
 
 
@@ -804,8 +827,7 @@ const Epetra_Map& Mesh_simple::node_map(bool include_ghost) const
 
 const Epetra_Map& Mesh_simple::exterior_face_map(bool include_ghost) const
 {
-  Errors::Message mesg("not implemented");
-  amanzi_throw(mesg);
+  return *extface_map_;
 }
 
 
@@ -816,7 +838,7 @@ const Epetra_Map& Mesh_simple::exterior_face_map(bool include_ghost) const
 //--------------------------------------
 const Epetra_Import& Mesh_simple::exterior_face_importer(void) const
 {
-  Errors::Message mesg("not implemented");
+  Errors::Message mesg("exterior face importer is not implemented");
   amanzi_throw(mesg);
 }
 

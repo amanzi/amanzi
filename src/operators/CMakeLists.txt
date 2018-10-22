@@ -338,6 +338,11 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/operator_remap_dual.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+    add_amanzi_test(operators_remap_curved operators_remap_curved
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_remap_curved.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     # high-order diffusion test
     add_amanzi_test(operators_diffusion_high_order operators_diffusion_high_order
                     KIND unit

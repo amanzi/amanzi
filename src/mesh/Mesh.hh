@@ -738,10 +738,10 @@ class Mesh {
 
   // Geometry of a curved face is defined by a derived mesh class from
   // the list of returned curvature points. For a linear mesh, this
-  // list is empty.
+  // function is null.
   virtual
-  void face_get_curvature_points(const Entity_ID faceid,
-                                 Entity_ID_List *points) const { points->clear(); }
+  void face_get_curvature_points(Entity_ID faceid,
+                                 const AmanziGeometry::Point_List *points) const {};
 
   //
   // Miscellaneous functions

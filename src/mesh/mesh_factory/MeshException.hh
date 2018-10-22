@@ -30,9 +30,9 @@ namespace AmanziMesh {
 /// A special exception type for MeshFactory errors
 class Message : public Errors::Message {
  public:
-  explicit Message(void) : Errors::Message() {}
-  explicit Message(const char* message) : Errors::Message(message) {}
-  virtual ~Message(void) throw() {};
+  explicit Message(void) : Errors::Message() {};
+  explicit Message(const char* message) : Errors::Message(message) {};
+  virtual ~Message(void) noexcept {};
 };
 
 

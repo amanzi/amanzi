@@ -253,6 +253,15 @@ TEST(DG_MAP_GCL) {
   std::cout << "GCL error=" << err << ", poly order=3" << std::endl;
   CHECK(err < 1e-10);
 
+  // Piola compatibility condition
+  for (int i = 0; i < 2; ++i) {
+    v[0] = C[i][0];
+    v[1] = C[i][1];
+    u = Divergence(v);
+    err = u.NormInf();
+    std::cout << "Piola compatibility condition error=" << err << std::endl;
+  }
+
   delete comm;
 }
 
