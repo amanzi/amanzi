@@ -128,26 +128,23 @@ void MeshMaps_VEM::VelocityEdge_(int e, VectorPolynomial& ve) const
 
 /* ******************************************************************
 * Transformation of normal is defined completely by face data.
-* NOTE: Limited to P1 elements. FIXME
 ****************************************************************** */
 void MeshMaps_VEM::NansonFormula(
     int f, double t, const VectorPolynomial& vf, VectorPolynomial& cn) const
 {
-  AmanziGeometry::Point p(d_);
-  WhetStone::Tensor J(d_, 2);
+  AMANZI_ASSERT(d_ == 2);
 
-  JacobianFaceValue_(f, vf, p, J);
-  J *= t;
-  J += 1.0 - t;
-
-  Tensor C = J.Cofactors();
-  p = C * mesh0_->face_normal(f);
+  const AmanziGeometry::Point& normal = mesh0_->face_normal(f);
+  AmanziGeometry::Point tnormal(normal * t);
 
   cn.resize(d_);
-  for (int i = 0; i < d_; ++i) {
-    cn[i].Reshape(d_, 0);
-    cn[i](0) = p[i];
-  }
+  auto grad = Gradient(vf[0]);
+  cn[1] = grad[0] * tnormal[1] - grad[1] * tnormal[0];
+  cn[1](0) += normal[1]; 
+
+  grad = Gradient(vf[1]);
+  cn[0] = grad[1] * tnormal[0] - grad[0] * tnormal[1];
+  cn[0](0) += normal[0]; 
 }
 
 
@@ -162,23 +159,6 @@ void MeshMaps_VEM::JacobianCell(
 
   mfd.set_order(order_ + 1);
   mfd.L2GradientCell(c, vf, moments, J);
-}
-
-
-/* ******************************************************************
-* Calculate Jacobian at point x of face f 
-* NOTE: limited to linear velocity FIXME
-****************************************************************** */
-void MeshMaps_VEM::JacobianFaceValue_(
-    int f, const VectorPolynomial& v,
-    const AmanziGeometry::Point& x, Tensor& J) const
-{
-  for (int i = 0; i < d_; ++i) {
-    for (int j = 0; j < d_; ++j) {
-      J(i, j) = v[i](1, j);
-    }
-  }
-  J += 1.0;
 }
 
 

@@ -151,19 +151,14 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   meshfactory.preference(FrameworkPreference({AmanziMesh::MSTK}));
 
   Teuchos::RCP<const Mesh> mesh0;
-  Teuchos::RCP<Mesh> mesh1;
+  Teuchos::RCP<MeshCurved> mesh1;
   if (dim == 2 && ny != 0) {
     mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-    mesh1 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, &comm));
-  } else if (dim == 2) {
-    mesh0 = meshfactory(file_name, Teuchos::null);
-    mesh1 = meshfactory(file_name, Teuchos::null);
-  } else { 
-    mesh0 = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, Teuchos::null, true, true);
-    mesh1 = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, Teuchos::null, true, true);
+    mesh1 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, &comm, AmanziMesh::Partitioner_type::ZOLTAN_RCB));
   }
 
   int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // create and initialize cell-based field 
   CompositeVectorSpace cvs1, cvs2;
@@ -185,6 +180,16 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   // create remap object
   MyRemapDG remap(mesh0, mesh1, plist);
   remap.DeformMesh(deform);
+
+  if (order == 2) {
+    auto ho_nodes = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nfaces_wghost);
+    for (int f = 0; f < nfaces_wghost; ++f) {
+      const AmanziGeometry::Point& xf = mesh0->face_centroid(f);
+      (*ho_nodes)[f].push_back(remap.DeformationFunctional(deform, xf));
+    }
+    mesh1->set_face_ho_nodes(ho_nodes);
+  }
+
   remap.Init();
 
   // initial mass
@@ -238,7 +243,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   ana.ComputeCellErrorRemap(dg, p2c, tend, 0, mesh1,
                             pnorm, l2_err, inf_err, l20_err, inf0_err);
 
-  CHECK(l2_err < 0.12 / (order + 1));
+  CHECK(l2_err < 0.2 / (order + 1));
 
   if (MyPID == 0) {
     printf("nx=%3d (orig) L2=%12.8g %12.8g  Inf=%12.8g %12.8g\n", 
@@ -247,15 +252,15 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
 
   // conservation errors: mass and volume
   double area(0.0), mass1(0.0);
+  auto& jac = remap.jac();
 
   for (int c = 0; c < ncells_owned; ++c) {
-    area += mesh1->cell_volume(c);
+    area += numi.IntegratePolynomialCell(c, jac[c][0]);
 
     WhetStone::DenseVector data(nk);
     for (int i = 0; i < nk; ++i) data(i) = p2c[i][c];
     auto poly = dg.cell_basis(c).CalculatePolynomial(mesh0, c, order, data);
 
-    auto& jac = remap.jac();
     int quad_order = jac[c][0].order() + poly.order();
 
     WhetStone::Polynomial tmp(jac[c][0]);
@@ -266,7 +271,6 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
 
   // error in GCL
   double gcl_err(0.0), gcl_inf(0.0);
-  auto& jac = remap.jac();
 
   for (int c = 0; c < ncells_owned; ++c) {
     double vol1 = numi.IntegratePolynomialCell(c, jac[c][0]);
@@ -280,14 +284,13 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   double err_in[3] = {area, mass1, gcl_err};
   double err_out[3];
   mesh1->get_comm()->SumAll(err_in, err_out, 3);
-  gcl_err = sqrt(err_out[2]);
 
   double err_tmp = gcl_inf;
   mesh1->get_comm()->MaxAll(&err_tmp, &gcl_inf, 1);
 
   if (MyPID == 0) {
     printf("Conservation: dMass=%10.4g  dArea=%10.6g\n", err_out[1] - mass0, 1.0 - err_out[0]);
-    printf("GCL: L1=%12.8g  Inf=%12.8g\n", gcl_err, gcl_inf);
+    printf("GCL: L1=%12.8g  Inf=%12.8g\n", err_out[2], gcl_inf);
   }
 
   // initialize I/O
@@ -304,6 +307,19 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
 TEST(REMAP_CURVED_2D) {
   double dT(0.1);
   auto rk_method = Amanzi::Explicit_TI::heun_euler;
-  RemapTestsCurved(rk_method, "FEM", "", 10,10,0, dT);
+  std::string maps = "VEM";
+  int deform = 5;
+  RemapTestsCurved(rk_method, maps, "", 8,8,0, dT, deform);
+
+  /*
+  double dT(0.02);
+  auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
+  std::string maps = "VEM";
+  int deform = 4;
+  RemapTestsCurved(rk_method, maps, "",  16, 16,0, dT,    deform);
+  RemapTestsCurved(rk_method, maps, "",  32, 32,0, dT/2,  deform);
+  RemapTestsCurved(rk_method, maps, "",  64, 64,0, dT/4,  deform);
+  RemapTestsCurved(rk_method, maps, "", 128,128,0, dT/8,  deform);
+  */
 }
 

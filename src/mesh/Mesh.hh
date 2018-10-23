@@ -741,7 +741,7 @@ class Mesh {
   // function is null.
   virtual
   void face_get_ho_nodes(Entity_ID faceid,
-                         const AmanziGeometry::Point_List *nodes) const {};
+                         AmanziGeometry::Point_List *nodes) const { nodes->clear(); }
 
   //
   // Miscellaneous functions

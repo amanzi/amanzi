@@ -42,6 +42,10 @@ class NumericalIntegration {
   double IntegrateFunctionsTrianglatedCell(
       int c, const std::vector<const WhetStoneFunction*>& funcs, int order) const;
 
+  // integrate product of polynomials and monomials with different origins
+  double IntegratePolynomialsCell(
+      int c, const std::vector<const PolynomialBase*>& polys) const;
+
   double IntegratePolynomialsFace(
       int f, const std::vector<const PolynomialBase*>& polys) const;
 
@@ -61,7 +65,7 @@ class NumericalIntegration {
   }
 
   // integrate group of monomials 
-  void IntegrateMonomialsCell(int c, int k, Polynomial& integrals);
+  void IntegrateMonomialsCell(int c, int k, Polynomial& integrals) const;
   void UpdateMonomialIntegralsCell(int c, int order, PolynomialOnMesh& integrals);
 
   // useful functions: integrate single polynomial
@@ -83,10 +87,12 @@ class NumericalIntegration {
   double PolynomialMaxValue(int f, const Polynomial& poly);
 
  private:
-  void IntegrateMonomialsFace_(int c, int f, double factor, int k, Polynomial& integrals);
+  void IntegrateMonomialsFace_(
+      int c, int f, double factor, int k, Polynomial& integrals) const;
+
   void IntegrateMonomialsEdge_(
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
-      double factor, int k, Polynomial& integrals);
+      double factor, int k, Polynomial& integrals) const;
 
   double IntegrateFunctionsTriangle_(
       const std::vector<AmanziGeometry::Point>& xy,

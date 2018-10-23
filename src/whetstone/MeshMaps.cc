@@ -15,6 +15,7 @@
 
 #include "Point.hh"
 
+#include "CoordinateSystems.hh"
 #include "DenseMatrix.hh"
 #include "MeshMaps.hh"
 #include "MFD3D_LagrangeSerendipity.hh"
@@ -25,39 +26,47 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Calculate mesh velocity on face f.
-* NOTE: 2D algorithm for linear velocity.
+* Calculate mesh velocity on 2D face f.
 ****************************************************************** */
 void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
 {
-  const AmanziGeometry::Point_List* points = NULL;
-  mesh1_->face_get_ho_nodes(f, points);
+  AMANZI_ASSERT(d_ == 2);
+  AmanziGeometry::Point_List points;
+  mesh1_->face_get_ho_nodes(f, &points);
 
+  // local coordinate system
+  const AmanziGeometry::Point& normal = mesh0_->face_normal(f);
+  std::vector<AmanziGeometry::Point> tau(d_ - 1);
+  FaceCoordinateSystem(normal, tau);
+
+  // polynomial is converted from local to global coordinate system
   AmanziMesh::Entity_ID_List nodes;
-  AmanziGeometry::Point x0, x1;
+  AmanziGeometry::Point y0, y1;
 
-  const AmanziGeometry::Point& xf0 = mesh0_->face_centroid(f);
-  const AmanziGeometry::Point& xf1 = mesh1_->face_centroid(f);
+  const AmanziGeometry::Point& xf = mesh0_->face_centroid(f);
+  const AmanziGeometry::Point& yf = mesh1_->face_centroid(f);
 
-  mesh0_->face_get_nodes(f, &nodes);
-  mesh0_->node_get_coordinates(nodes[0], &x0);
-  mesh1_->node_get_coordinates(nodes[0], &x1);
+  mesh1_->face_get_nodes(f, &nodes);
+  mesh1_->node_get_coordinates(nodes[0], &y0);
+  mesh1_->node_get_coordinates(nodes[1], &y1);
 
-  x0 -= xf0;
-  x1 -= xf1;
+  int order = points.size() + 1;
 
   v.resize(d_);
   for (int i = 0; i < d_; ++i) {
-    v[i].Reshape(d_, 1);
-  }
-
-  x0 /= L22(x0);
-  for (int i = 0; i < d_; ++i) {
-    for (int j = 0; j < d_; ++j) {
-      v[i](1, j) = x1[i] * x0[j];
+    v[i].Reshape(d_ - 1, order);
+    if (order == 1) {
+      v[i](0) = yf[i];
+      v[i](1) = y1[i] - y0[i];
+    } else {
+      v[i](0) = points[0][i];
+      v[i](1) = y1[i] - y0[i];
+      v[i](2) = 2 * y0[i] + 2 * y1[i] - 4 * points[0][i];
     }
-    v[i](0, 0) = xf1[i] - x1[i] * (x0 * xf0);
-    v[i](1, i) -= 1.0;
+
+    v[i].InverseChangeCoordinates(xf, tau);  
+    v[i].ChangeOrigin(AmanziGeometry::Point(d_));
+    v[i](i + 1) -= 1.0;
   }
 }
 

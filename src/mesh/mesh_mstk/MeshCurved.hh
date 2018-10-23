@@ -25,25 +25,25 @@ namespace AmanziMesh {
 class MeshCurved : public Mesh_MSTK {
  public:
   MeshCurved(double x0, double y0, double x1, double y1,
-	     int nx, int ny, const Epetra_MpiComm *comm)
+	     int nx, int ny, const Epetra_MpiComm *comm, Partitioner_type partitioner)
       : Mesh_MSTK(x0, y0, x1, y1, nx, ny, comm, 
-                  Teuchos::null, Teuchos::null, true, false, PARTITIONER_DEFAULT),
+                  Teuchos::null, Teuchos::null, true, false, partitioner),
         face_ho_nodes_(NULL) {};
   ~MeshCurved() {};
 
   virtual 
   void face_get_ho_nodes(Entity_ID f,
-                         const AmanziGeometry::Point_List* nodes) const override {
-    nodes = &(*face_ho_nodes_)[f];
+                         AmanziGeometry::Point_List* nodes) const override {
+    if (face_ho_nodes_ != NULL) *nodes = (*face_ho_nodes_)[f];
   }
 
   // define a curved mesh using additional face points
-  void set_face_ho_nodes(std::shared_ptr<const std::vector<AmanziGeometry::Point_List> > face_ho_nodes) {
+  void set_face_ho_nodes(std::shared_ptr<std::vector<AmanziGeometry::Point_List> > face_ho_nodes) {
     face_ho_nodes_ = face_ho_nodes;
   }
 
  private:
-  std::shared_ptr<const std::vector<AmanziGeometry::Point_List> > face_ho_nodes_;
+  std::shared_ptr<std::vector<AmanziGeometry::Point_List> > face_ho_nodes_;
 };
 
 }  // namespace AmanziMesh

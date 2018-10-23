@@ -45,6 +45,7 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
     : mesh0_(mesh0),
       mesh1_(mesh1),
       plist_(plist),
+      dim_(mesh0->space_dimension()),
       high_order_velocity_(false) {};
   ~RemapDG() {};
 
@@ -57,6 +58,7 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   // miscalleneous tools
   void UpdateGeometricQuantities(double t);
   void DeformMesh(int deform);
+  AmanziGeometry::Point DeformationFunctional(int deform, const AmanziGeometry::Point& yv);
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh0_;
@@ -69,6 +71,7 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   bool high_order_velocity_;
 
   // operators
+  int order_;
   Teuchos::RCP<Operators::PDE_Abstract> op_adv_;
   Teuchos::RCP<Operators::PDE_AdvectionRiemann> op_flux_;
   Teuchos::RCP<Operators::PDE_Reaction>op_reac_;
@@ -99,10 +102,9 @@ void RemapDG<AnalyticDG>::Init()
   ncells_wghost_ = mesh0_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   nfaces_owned_ = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   nfaces_wghost_ = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  dim_ = mesh0_->space_dimension();
 
-  int order = plist_.sublist("PK operator")
-                    .sublist("flux operator").template get<int>("method order");
+  order_ = plist_.sublist("PK operator")
+                 .sublist("flux operator").template get<int>("method order");
 
   // create right-hand side operator
   // -- flux
@@ -155,7 +157,6 @@ void RemapDG<AnalyticDG>::Init()
 
     maps_->VelocityCell(c, vvf, uc_[c]);
     maps_->Jacobian(uc_[c], J_[c]);
-    // maps_->JacobianCell(c, vvf, J_[c]);
   }
 
   // boundary data
@@ -292,49 +293,60 @@ void RemapDG<AnalyticDG>::DeformMesh(int deform)
   AmanziMesh::Entity_ID_List nodeids;
   AmanziGeometry::Point_List new_positions, final_positions;
 
+  // relocate mesh nodes
   int nnodes = mesh0_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
   for (int v = 0; v < nnodes; ++v) {
     mesh1_->node_get_coordinates(v, &xv);
-    yv = xv;
-
-    if (deform == 1) {
-      double ds(0.0001);
-      for (int i = 0; i < 10000; ++i) {
-        if (dim_ == 2) {
-          uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]);
-          uv[1] =-0.2 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]);
-        } else {
-          uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]) * std::cos(M_PI * xv[2]);
-          uv[1] =-0.1 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]) * std::cos(M_PI * xv[2]);
-          uv[2] =-0.1 * std::cos(M_PI * xv[0]) * std::cos(M_PI * xv[1]) * std::sin(M_PI * xv[2]);
-        }
-        xv += uv * ds;
-      }
-    }
-    else if (deform == 2) {
-      xv[0] = yv[0] * yv[1] + (1.0 - yv[1]) * std::pow(yv[0], 0.8);
-      xv[1] = yv[1] * yv[0] + (1.0 - yv[0]) * std::pow(yv[1], 0.8);
-    }
-    else if (deform == 3) {
-      xv = yv;
-      if (xv[0] < 0.5) 
-        xv[0] += yv[0] / 2;
-      else
-        xv[0] += (1.0 - yv[0]) / 2;
-    }
-    else if (deform == 4) {
-      xv[0] = yv[0] + yv[0] * yv[1] * (1.0 - yv[0]) / 2;
-      xv[1] = yv[1] + yv[0] * yv[1] * (1.0 - yv[1]) / 2;
-    }
-    else if (deform == 5) {
-      xv[0] = yv[0] + yv[0] * (1.0 - yv[0]) / 2;
-      xv[1] = yv[1] + yv[1] * (1.0 - yv[1]) / 2;
-    }
-
     nodeids.push_back(v);
-    new_positions.push_back(xv);
+    new_positions.push_back(DeformationFunctional(deform, xv));
   }
   mesh1_->deform(nodeids, new_positions, false, &final_positions);
+}
+
+
+/* *****************************************************************
+* Deformation functional
+***************************************************************** */
+template<class AnalyticDG>
+AmanziGeometry::Point RemapDG<AnalyticDG>::DeformationFunctional(
+  int deform, const AmanziGeometry::Point& yv)
+{
+  AmanziGeometry::Point uv(dim_), xv(yv);
+
+  if (deform == 1) {
+    double ds(0.0001);
+    for (int i = 0; i < 10000; ++i) {
+      if (dim_ == 2) {
+        uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]);
+        uv[1] =-0.2 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]);
+      } else {
+        uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]) * std::cos(M_PI * xv[2]);
+        uv[1] =-0.1 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]) * std::cos(M_PI * xv[2]);
+        uv[2] =-0.1 * std::cos(M_PI * xv[0]) * std::cos(M_PI * xv[1]) * std::sin(M_PI * xv[2]);
+      }
+      xv += uv * ds;
+    }
+  }
+  else if (deform == 2) {
+    xv[0] = yv[0] * yv[1] + (1.0 - yv[1]) * std::pow(yv[0], 0.8);
+    xv[1] = yv[1] * yv[0] + (1.0 - yv[0]) * std::pow(yv[1], 0.8);
+  }
+  else if (deform == 3) {
+    if (xv[0] < 0.5) 
+      xv[0] += yv[0] / 2;
+    else
+      xv[0] += (1.0 - yv[0]) / 2;
+    }
+  else if (deform == 4) {
+    xv[0] = yv[0] + yv[0] * yv[1] * (1.0 - yv[0]) / 2;
+    xv[1] = yv[1] + yv[0] * yv[1] * (1.0 - yv[1]) / 2;
+  }
+  else if (deform == 5) {
+    xv[0] = yv[0] + yv[0] * (1.0 - yv[0]) / 2;
+    xv[1] = yv[1] + yv[1] * (1.0 - yv[1]) / 2;
+  }
+
+  return xv;
 }
 
 } // namespace Amanzi

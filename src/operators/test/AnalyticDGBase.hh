@@ -97,7 +97,7 @@ class AnalyticDGBase {
                                        double& l2_int);
 
   void ComputeCellErrorRemap(const Amanzi::WhetStone::DG_Modal& dg, Epetra_MultiVector& p, double t,
-                             int p_location, Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& mesh1,
+                             int p_location, Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh1,
                              double& pnorm, double& l2_err, double& inf_err,
                              double& l20_err, double& inf0_err);
 
@@ -224,7 +224,7 @@ inline
 void AnalyticDGBase::ComputeCellErrorRemap(
     const Amanzi::WhetStone::DG_Modal& dg, 
     Epetra_MultiVector& p, double t, int p_location,
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& mesh1,
+    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh1,
     double& pnorm, double& l2_err, double& inf_err,
                    double& l20_err, double& inf0_err)
 {
