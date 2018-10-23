@@ -269,13 +269,20 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
         nx, l20_err, l2_err, inf0_err, inf_err);
   }
 
-  // concervation errors: mass and volume
+  // concervation errors: mass and volume (CGL)
   auto& jac = remap.jac();
-  double area(0.0), area1(0.0), mass1(0.0);
+  double area(0.0), area1(0.0), mass1(0.0), gcl_err(0.0), gcl_inf(0.0);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    area += numi.IntegratePolynomialCell(c, jac[c][0]);
-    area1 += mesh1->cell_volume(c);
+    double vol1 = numi.IntegratePolynomialCell(c, jac[c][0]);
+    double vol2 = mesh1->cell_volume(c);
+
+    area += vol1;
+    area1 += vol2;
+
+    double err = std::fabs(vol1 - vol2);
+    gcl_inf = std::max(gcl_inf, err / vol1);
+    gcl_err += err;
 
     WhetStone::DenseVector data(nk);
     for (int i = 0; i < nk; ++i) data(i) = p2c[i][c];
@@ -308,17 +315,6 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
       poly *= tmp;
       mass1 += numi.IntegratePolynomialCell(c, poly);
     }
-  }
-
-  // error in GCL
-  double gcl_err(0.0), gcl_inf(0.0);
-
-  for (int c = 0; c < ncells_owned; ++c) {
-    double vol1 = numi.IntegratePolynomialCell(c, jac[c][0]);
-    double vol2 = mesh1->cell_volume(c);
-    double err = std::fabs(vol1 - vol2);
-    gcl_inf = std::max(gcl_inf, err / vol1);
-    gcl_err += err;
   }
 
   // parallel collective operations
@@ -369,7 +365,7 @@ TEST(REMAP_DUAL_2D) {
   double dT(0.02);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
-  int deform = 2;
+  int deform = 4;
   RemapTestsDualRK(rk_method, maps, "test/median15x16.exo",    16,0,0, dT,   deform);
   RemapTestsDualRK(rk_method, maps, "test/median32x33.exo",    32,0,0, dT/2, deform);
   RemapTestsDualRK(rk_method, maps, "test/median63x64.exo",    64,0,0, dT/4, deform);
@@ -392,7 +388,7 @@ TEST(REMAP_DUAL_2D) {
   double dT(0.05);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
-  int deform = 2;
+  int deform = 4;
   RemapTestsDualRK(rk_method, maps, "test/random10.exo", 10,0,0, dT,   deform);
   RemapTestsDualRK(rk_method, maps, "test/random20.exo", 20,0,0, dT/2, deform);
   RemapTestsDualRK(rk_method, maps, "test/random40.exo", 40,0,0, dT/4, deform);

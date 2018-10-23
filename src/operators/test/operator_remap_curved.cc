@@ -250,12 +250,20 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
         nx, l20_err, l2_err, inf0_err, inf_err);
   }
 
-  // conservation errors: mass and volume
-  double area(0.0), mass1(0.0);
+  // conservation errors: mass and volume (CGL)
+  double area(0.0), area1(0.0), mass1(0.0), gcl_err(0.0), gcl_inf(0.0);
   auto& jac = remap.jac();
 
   for (int c = 0; c < ncells_owned; ++c) {
-    area += numi.IntegratePolynomialCell(c, jac[c][0]);
+    double vol1 = numi.IntegratePolynomialCell(c, jac[c][0]);
+    double vol2 = mesh1->cell_volume(c);
+
+    area += vol1;
+    area1 += vol2;
+
+    double err = std::fabs(vol1 - vol2);
+    gcl_inf = std::max(gcl_inf, err / vol1);
+    gcl_err += err;
 
     WhetStone::DenseVector data(nk);
     for (int i = 0; i < nk; ++i) data(i) = p2c[i][c];
@@ -269,28 +277,18 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
     mass1 += numi.IntegratePolynomialCell(c, poly);
   }
 
-  // error in GCL
-  double gcl_err(0.0), gcl_inf(0.0);
-
-  for (int c = 0; c < ncells_owned; ++c) {
-    double vol1 = numi.IntegratePolynomialCell(c, jac[c][0]);
-    double vol2 = mesh1->cell_volume(c);
-    double err = std::fabs(vol1 - vol2);
-    gcl_inf = std::max(gcl_inf, err / vol1);
-    gcl_err += err;
-  }
 
   // parallel collective operations
-  double err_in[3] = {area, mass1, gcl_err};
-  double err_out[3];
-  mesh1->get_comm()->SumAll(err_in, err_out, 3);
+  double err_out[4], err_in[4] = {area, area1, mass1, gcl_err};
+  mesh1->get_comm()->SumAll(err_in, err_out, 4);
 
   double err_tmp = gcl_inf;
   mesh1->get_comm()->MaxAll(&err_tmp, &gcl_inf, 1);
 
   if (MyPID == 0) {
-    printf("Conservation: dMass=%10.4g  dArea=%10.6g\n", err_out[1] - mass0, 1.0 - err_out[0]);
-    printf("GCL: L1=%12.8g  Inf=%12.8g\n", err_out[2], gcl_inf);
+    printf("Conservation: dMass=%10.4g  dVolume=%10.6g  dVolLinear=%10.6g\n",
+           err_out[2] - mass0, 1.0 - err_out[0], 1.0 - err_out[1]);
+    printf("GCL: L1=%12.8g  Inf=%12.8g\n", err_out[3], gcl_inf);
   }
 
   // initialize I/O
@@ -315,11 +313,11 @@ TEST(REMAP_CURVED_2D) {
   double dT(0.02);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
-  int deform = 4;
+  int deform = 2;
   RemapTestsCurved(rk_method, maps, "",  16, 16,0, dT,    deform);
   RemapTestsCurved(rk_method, maps, "",  32, 32,0, dT/2,  deform);
   RemapTestsCurved(rk_method, maps, "",  64, 64,0, dT/4,  deform);
-  RemapTestsCurved(rk_method, maps, "", 128,128,0, dT/8,  deform);
+  // RemapTestsCurved(rk_method, maps, "", 128,128,0, dT/8,  deform);
   */
 }
 
