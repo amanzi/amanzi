@@ -14,7 +14,7 @@ map, not the true row map.
 
 #include <vector>
 #include "Epetra_Comm.h"
-#include "Epetra_Map.h"
+#include "Map_type.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_Export.h"
 
@@ -25,9 +25,9 @@ namespace Amanzi {
 namespace Operators {
 
 // Constructor
-GraphFE::GraphFE(const Teuchos::RCP<const Epetra_Map>& row_map,
-		 const Teuchos::RCP<const Epetra_Map>& ghosted_row_map,
-		 const Teuchos::RCP<const Epetra_Map>& col_map,
+GraphFE::GraphFE(const Teuchos::RCP<const Map_type>& row_map,
+		 const Teuchos::RCP<const Map_type>& ghosted_row_map,
+		 const Teuchos::RCP<const Map_type>& col_map,
 		 int max_nnz_per_row) :
     row_map_(row_map),
     ghosted_row_map_(ghosted_row_map),
@@ -54,8 +54,8 @@ GraphFE::GraphFE(const Teuchos::RCP<const Epetra_Map>& row_map,
     std::vector<int> offproc_gids(n_used_ - n_owned_);
     for (int i=n_owned_; i!=n_used_; ++i)
       offproc_gids[i-n_owned_] = ghosted_row_map_->GID(i);
-    offproc_row_map_ = Teuchos::rcp(new Epetra_Map(-1, n_used_-n_owned_,
-			   &offproc_gids[0], 0, ghosted_row_map_->Comm()));
+    offproc_row_map_ = Teuchos::rcp(new Map_type(-1, n_used_-n_owned_,
+			   &offproc_gids[0], 0, *ghosted_row_map_->getComm()));
   
     offproc_graph_ = Teuchos::rcp(new Epetra_CrsGraph(Copy, *offproc_row_map_,
   			*col_map_, max_nnz_per_row, false));
@@ -64,9 +64,9 @@ GraphFE::GraphFE(const Teuchos::RCP<const Epetra_Map>& row_map,
   }
 }
 
-GraphFE::GraphFE(const Teuchos::RCP<const Epetra_Map>& row_map,
-		 const Teuchos::RCP<const Epetra_Map>& ghosted_row_map,
-		 const Teuchos::RCP<const Epetra_Map>& col_map,
+GraphFE::GraphFE(const Teuchos::RCP<const Map_type>& row_map,
+		 const Teuchos::RCP<const Map_type>& ghosted_row_map,
+		 const Teuchos::RCP<const Map_type>& col_map,
 		 const int* max_nnz_per_row) :
     row_map_(row_map),
     ghosted_row_map_(ghosted_row_map),
@@ -92,8 +92,8 @@ GraphFE::GraphFE(const Teuchos::RCP<const Epetra_Map>& row_map,
     std::vector<int> offproc_gids(n_used_ - n_owned_);
     for (int i=n_owned_; i!=n_used_; ++i)
       offproc_gids[i-n_owned_] = ghosted_row_map_->GID(i);
-    offproc_row_map_ = Teuchos::rcp(new Epetra_Map(-1, n_used_-n_owned_,
-    			   &offproc_gids[0], 0, ghosted_row_map_->Comm()));
+    offproc_row_map_ = Teuchos::rcp(new Map_type(-1, n_used_-n_owned_,
+    			   &offproc_gids[0], 0, *ghosted_row_map_->getComm()));
   
     offproc_graph_ = Teuchos::rcp(new Epetra_CrsGraph(Copy, *offproc_row_map_,
 			      *col_map_, max_nnz_per_row+n_owned_, false));
@@ -165,8 +165,8 @@ GraphFE::InsertGlobalIndices(int row_count, int *row_inds, int count, int *indic
 
 // finish fill
 int
-GraphFE::FillComplete(const Teuchos::RCP<const Epetra_Map>& domain_map,
-		      const Teuchos::RCP<const Epetra_Map>& range_map) {
+GraphFE::FillComplete(const Teuchos::RCP<const Map_type>& domain_map,
+		      const Teuchos::RCP<const Map_type>& range_map) {
   int ierr = 0;
   domain_map_ = domain_map;
   range_map_ = range_map;

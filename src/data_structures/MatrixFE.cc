@@ -12,7 +12,7 @@ map, not the true row map.
 */
 
 #include <vector>
-#include "Epetra_Map.h"
+#include "Map_type.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 #include "Epetra_SerialDenseMatrix.h"

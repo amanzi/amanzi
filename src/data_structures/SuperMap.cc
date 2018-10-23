@@ -21,11 +21,11 @@
 namespace Amanzi {
 namespace Operators {
 
-SuperMap::SuperMap(const Epetra_MpiComm& comm,
+SuperMap::SuperMap(const Teuchos::Comm<int>& comm,
                    const std::vector<std::string>& compnames,
                    const std::vector<int>& dofnums,
-                   const std::vector<Teuchos::RCP<const Epetra_Map> >& maps,
-                   const std::vector<Teuchos::RCP<const Epetra_Map> >& ghosted_maps) :
+                   const std::vector<Teuchos::RCP<const Map_type> >& maps,
+                   const std::vector<Teuchos::RCP<const Map_type> >& ghosted_maps) :
     compnames_(compnames)
 {
   AMANZI_ASSERT(compnames.size() == dofnums.size());
@@ -79,8 +79,8 @@ SuperMap::SuperMap(const Epetra_MpiComm& comm,
   }
   
   // create the maps
-  map_ = Teuchos::rcp(new Epetra_Map(n_global, n_local, &gids[0], 0, comm));
-  ghosted_map_ = Teuchos::rcp(new Epetra_Map(n_global_ghosted, n_local_ghosted, &gids[0], 0, comm));
+  map_ = Teuchos::rcp(new Map_type(n_global, n_local, &gids[0], 0, comm));
+  ghosted_map_ = Teuchos::rcp(new Map_type(n_global_ghosted, n_local_ghosted, &gids[0], 0, comm));
 }
 
 
@@ -195,7 +195,7 @@ SuperMap::CreateIndices_(const std::string& compname, int dofnum, bool ghosted) 
 }
 
 
-std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >
+std::pair<Teuchos::RCP<const Map_type>, Teuchos::RCP<const Map_type> >
 getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
   switch(location) {
     case AmanziMesh::CELL:
@@ -228,8 +228,8 @@ getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
 Teuchos::RCP<SuperMap> createSuperMap(const CompositeVectorSpace& cv) {
   std::vector<std::string> names;
   std::vector<int> dofnums;
-  std::vector<Teuchos::RCP<const Epetra_Map> > maps;
-  std::vector<Teuchos::RCP<const Epetra_Map> > ghost_maps;
+  std::vector<Teuchos::RCP<const Map_type> > maps;
+  std::vector<Teuchos::RCP<const Map_type> > ghost_maps;
 
   for (CompositeVectorSpace::name_iterator it=cv.begin();
        it!=cv.end(); ++it) {
@@ -248,8 +248,8 @@ Teuchos::RCP<SuperMap> createSuperMap(const CompositeVectorSpace& cv) {
 Teuchos::RCP<SuperMap> createSuperMap(const TreeVectorSpace& tv) {
   std::vector<std::string> names;
   std::vector<int> dofnums;
-  std::vector<Teuchos::RCP<const Epetra_Map> > maps;
-  std::vector<Teuchos::RCP<const Epetra_Map> > ghost_maps;
+  std::vector<Teuchos::RCP<const Map_type> > maps;
+  std::vector<Teuchos::RCP<const Map_type> > ghost_maps;
 
   if (tv.Data() != Teuchos::null) {
     // TV with only a CV inside

@@ -59,9 +59,7 @@ NOTE: Lazy definition of the cache itself is necessarily "mutable".
 #include <vector>
 #include <string>
 
-#include "Epetra_Map.h"
-#include "Epetra_MpiComm.h"
-#include "Epetra_Import.h"
+#include "Teuchos_Comm.hpp"
 #include "nanoflann.hpp"
 
 #include "errors.hh"
@@ -87,10 +85,14 @@ class MeshEmbeddedLogical;
 class Mesh {
  public:
   // constructor
-  Mesh(const Teuchos::RCP<const VerboseObject>& vo=Teuchos::null,
+  Mesh(const Teuchos::RCP<Teuchos::Comm<int> >& comm,
+       const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+       const Teuchos::RCP<const VerboseObject>& vo=Teuchos::null,
        const bool request_faces=true,
        const bool request_edges=false)
-  : space_dim_(-1),
+  : comm_(comm),
+    geometric_model_(gm),
+    space_dim_(-1),
     manifold_dim_(-1),
     mesh_type_(GENERAL),
     cell_geometry_precomputed_(false),
@@ -116,12 +118,7 @@ class Mesh {
   //
   // Accessors and Mutators
   // ----------------------
-
-  // Get/set comm_unicator
-  void set_comm(const Epetra_MpiComm *incomm) {
-    comm_ = incomm;
-  }
-  const Epetra_MpiComm* get_comm() const {
+  Teuchos::RCP<const Teuchos::Comm<int> > Comm() const {
     return comm_;
   }
 
@@ -635,7 +632,7 @@ class Mesh {
   //
   // Epetra maps
   //------------
-  const Epetra_Map& map(Entity_kind kind, bool include_ghost) const {
+  const Map_type& map(Entity_kind kind, bool include_ghost) const {
     if (kind == CELL) return cell_map(include_ghost);
     else if (kind == FACE) return face_map(include_ghost);
     else if (kind == EDGE) return edge_map(include_ghost);
@@ -648,16 +645,16 @@ class Mesh {
   
   // Get cell map
   virtual
-  const Epetra_Map& cell_map(bool include_ghost) const = 0;
+  Teuchos::RCP<const Map_type> cell_map(bool include_ghost) const = 0;
 
   // Get face map
   virtual
-  const Epetra_Map& face_map(bool include_ghost) const = 0;
+  Teuchos::RCP<const Map_type> face_map(bool include_ghost) const = 0;
 
   // Get edge map
   // dummy implementation so that frameworks can skip or overwrite
   virtual
-  const Epetra_Map& edge_map(bool include_ghost) const
+  Teuchos::RCP<const Map_type> edge_map(bool include_ghost) const
   {
     Errors::Message mesg("Edges are not implemented in this framework.");
     Exceptions::amanzi_throw(mesg);
@@ -666,17 +663,17 @@ class Mesh {
 
   // Get node map
   virtual
-  const Epetra_Map& node_map(bool include_ghost) const = 0;
+  Teuchos::RCP<const Map_type> node_map(bool include_ghost) const = 0;
 
   // Get map of only exterior faces
   virtual
-  const Epetra_Map& exterior_face_map(bool include_ghost) const = 0;
+  Teuchos::RCP<const Map_type> exterior_face_map(bool include_ghost) const = 0;
 
   // Get Epetra importer that will allow apps to import values from a
   // Epetra vector defined on all owned faces into an Epetra vector
   // defined only on exterior faces
   virtual
-  const Epetra_Import& exterior_face_importer(void) const = 0;
+  Teuchos::RCP<const Import_type> exterior_face_importer(void) const = 0;
 
 
   //
@@ -844,7 +841,7 @@ protected:
   void PrintMeshStatistics() const;
 
  protected:
-  const Epetra_MpiComm *comm_;
+  Teuchos::RCP<const Teuchos::Comm<int> > comm_;
   Teuchos::RCP<const AmanziGeometry::GeometricModel> geometric_model_;
   Teuchos::RCP<const VerboseObject> vo_;
 

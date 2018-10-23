@@ -6,7 +6,7 @@
 #include "../Mesh_MSTK.hh"
 #include "MeshAudit.hh"
 
-#include "Epetra_Map.h"
+#include "Map_type.h"
 #include "Epetra_MpiComm.h"
 
 
@@ -49,8 +49,8 @@ TEST(MSTK_HEX_3x3x3_PAR_READ_4P)
 
 
   std::vector<Amanzi::AmanziMesh::Entity_ID>  c2f(6);
-  Epetra_Map cell_map(mesh->cell_map(false));
-  Epetra_Map face_map(mesh->face_map(true));
+  Map_type cell_map(mesh->cell_map(false));
+  Map_type face_map(mesh->face_map(true));
 
   for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
     {

@@ -199,9 +199,9 @@ modeled by three segments:
 #define AMANZI_LOGICAL_MESH_FACTORY2_HH_
 
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_Map.h"
 #include "Epetra_MpiComm.h"
 
+#include "MeshDefs.hh"
 #include "MeshLogical.hh"
 #include "GeometricModel.hh"
 

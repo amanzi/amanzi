@@ -91,12 +91,12 @@ private:
   bool global_any(bool) const;
   int same_face(const std::vector<unsigned int>, const std::vector<unsigned int>) const;
   
-  bool check_maps(const Epetra_Map&, const Epetra_Map&) const;
+  bool check_maps(const Map_type&, const Map_type&) const;
   bool check_get_set_ids(AmanziMesh::Entity_kind) const;
   bool check_valid_set_id(AmanziMesh::Entity_kind) const;
-  bool check_sets(AmanziMesh::Entity_kind, const Epetra_Map&, const Epetra_Map&) const;
-  bool check_get_set(unsigned int, AmanziMesh::Entity_kind, AmanziMesh::Parallel_type, const Epetra_Map&) const;
-  bool check_used_set(unsigned int, AmanziMesh::Entity_kind, const Epetra_Map&, const Epetra_Map&) const;
+  bool check_sets(AmanziMesh::Entity_kind, const Map_type&, const Map_type&) const;
+  bool check_get_set(unsigned int, AmanziMesh::Entity_kind, AmanziMesh::Parallel_type, const Map_type&) const;
+  bool check_used_set(unsigned int, AmanziMesh::Entity_kind, const Map_type&, const Map_type&) const;
   bool check_sets_alt(AmanziMesh::Entity_kind) const;
   bool check_get_set_alt(unsigned int, AmanziMesh::Entity_kind, AmanziMesh::Parallel_type) const;
   

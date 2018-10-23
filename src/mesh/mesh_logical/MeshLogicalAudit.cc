@@ -8,7 +8,6 @@
 
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_IntSerialDenseMatrix.h"
-#include "Epetra_Import.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_IntVector.h"
 
@@ -163,7 +162,7 @@ void MeshLogicalAudit::create_test_dependencies()
 ////////////////////////////////////////////////////////////////////////////////
 
 // The count_entities method should return values that match the number of
-// elements in the corresponding Epetra_Maps.  This applies to nodes, faces
+// elements in the corresponding Map_types.  This applies to nodes, faces
 // and cells, including ghosts and not.  Here the maps are considered to be
 // the authoritative source of information.  A positive value is returned
 // if any discrepancy is found, but it is safe to perform other tests as
@@ -509,7 +508,7 @@ bool MeshLogicalAudit::check_cell_maps() const
   return check_maps(mesh->cell_map(false), mesh->cell_map(true));
 }
 
-bool MeshLogicalAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &map_use) const
+bool MeshLogicalAudit::check_maps(const Map_type &map_own, const Map_type &map_use) const
 {
   bool error = false;
 
@@ -629,9 +628,9 @@ bool MeshLogicalAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &m
 
 bool MeshLogicalAudit::check_cell_to_faces_ghost_data() const
 {
-  const Epetra_Map &face_map = mesh->face_map(true);
-  const Epetra_Map &cell_map_own = mesh->cell_map(false);
-  const Epetra_Map &cell_map_use = mesh->cell_map(true);
+  const Map_type &face_map = mesh->face_map(true);
+  const Map_type &cell_map_own = mesh->cell_map(false);
+  const Map_type &cell_map_use = mesh->cell_map(true);
 
   int ncell_own = cell_map_own.NumMyElements();
   int ncell_use = cell_map_use.NumMyElements();
@@ -657,7 +656,7 @@ bool MeshLogicalAudit::check_cell_to_faces_ghost_data() const
   }
 
   // Import these GIDs to all used cells; sets values on ghost cells.
-  Epetra_Import importer(cell_map_use, cell_map_own);
+  Import_type importer(cell_map_use, cell_map_own);
   for (int k = 0; k < maxfaces; ++k) {
     Epetra_IntVector kgids_own(View, cell_map_own, gids[k]);
     Epetra_IntVector kgids_use(View, cell_map_use, gids[k]);

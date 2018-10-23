@@ -27,7 +27,6 @@
 #include <vector>
 
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_Map.h"
 #include "Epetra_MpiComm.h"
 #include "Epetra_SerialComm.h"
 
@@ -35,6 +34,7 @@
 #include "dbc.hh"
 #include "errors.hh"
 
+#include "MeshDefs.hh"
 #include "Region.hh"
 #include "Mesh.hh"
 
@@ -255,23 +255,23 @@ class MeshLogical : public Mesh {
   //------------
 
   virtual
-  const Epetra_Map& cell_map(bool include_ghost) const;
+  const Map_type& cell_map(bool include_ghost) const;
 
   virtual
-  const Epetra_Map& face_map(bool include_ghost) const;
+  const Map_type& face_map(bool include_ghost) const;
 
   virtual
-  const Epetra_Map& node_map(bool include_ghost) const;
+  const Map_type& node_map(bool include_ghost) const;
 
   virtual
-  const Epetra_Map& exterior_face_map(bool include_ghost) const;
+  const Map_type& exterior_face_map(bool include_ghost) const;
 
   // Epetra importer that will allow apps to import values from a
   // Epetra vector defined on all owned faces into an Epetra vector
   // defined only on exterior faces
 
   virtual
-  const Epetra_Import& exterior_face_importer(void) const;
+  const Import_type& exterior_face_importer(void) const;
 
 
   //
@@ -376,9 +376,9 @@ class MeshLogical : public Mesh {
   bool initialized_;
 
   std::map<Entity_kind,Entity_ID> num_entities_;
-  std::map<Entity_kind,Teuchos::RCP<Epetra_Map> > maps_;
+  std::map<Entity_kind,Teuchos::RCP<Map_type> > maps_;
   std::map<Set_ID,std::vector<int> > regions_;
-  Teuchos::RCP<Epetra_Import> exterior_face_importer_;
+  Teuchos::RCP<Import_type> exterior_face_importer_;
 
   std::vector<std::vector<AmanziGeometry::Point> > cell_face_bisectors_;
 

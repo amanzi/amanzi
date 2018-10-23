@@ -461,7 +461,7 @@ HexMeshGenerator::generate(void)
  * 
  * @return map relating local to global cell indexes
  */
-Epetra_Map*
+Map_type*
 HexMeshGenerator::cellmap(bool onebased)
 {
   std::vector<int> myidx;
@@ -474,7 +474,7 @@ HexMeshGenerator::cellmap(bool onebased)
   if (onebased)
     std::for_each(myidx.begin(), myidx.end(), bl::_1 += 1);
 
-  Epetra_Map *result(new Epetra_Map(ncell_, myidx.size(), &myidx[0], 
+  Map_type *result(new Map_type(ncell_, myidx.size(), &myidx[0], 
                                     (onebased ? 1 : 0), *comm_));
 
   return result;
@@ -489,11 +489,11 @@ HexMeshGenerator::cellmap(bool onebased)
  * The created map will have to overlap with other processors, so it
  * should not be used for vertex ownership.
  * 
- * @param onebased if true, generate an Epetra_Map with 1-based global indexes
+ * @param onebased if true, generate an Map_type with 1-based global indexes
  * 
  * @return map relating local to global vertex indexes
  */
-Epetra_Map *
+Map_type *
 HexMeshGenerator::vertexmap(bool onebased)
 {
   std::vector<int> myidx(vertex_gidx_.size());
@@ -502,7 +502,7 @@ HexMeshGenerator::vertexmap(bool onebased)
   if (onebased)
     std::for_each(myidx.begin(), myidx.end(), bl::_1 += 1);
   
-  Epetra_Map *result(new Epetra_Map(-1, vertex_gidx_.size(), &myidx[0], 
+  Map_type *result(new Map_type(-1, vertex_gidx_.size(), &myidx[0], 
                                     (onebased ? 1 : 0), *comm_));
 
   return result;

@@ -38,30 +38,30 @@ SUITE (HexMeshGenerator)
     // FIXME: do some checks on mesh
 
     try {
-      std::unique_ptr<Epetra_Map> cmap(gen.cellmap(true));
+      std::unique_ptr<Map_type> cmap(gen.cellmap(true));
       CHECK_EQUAL(cmap->NumGlobalElements(), (size*size)*size*size);
       CHECK_EQUAL(cmap->NumGlobalElements(), gen.cells());
       CHECK_EQUAL(cmap->NumMyElements(), gen.mycells());
       cmap->Print(std::cerr);   // ends up in the test log file
     } catch (int e) {
       
-      // it appears that Epetra_Map's throw an int when in trouble,
+      // it appears that Map_type's throw an int when in trouble,
       // let's make into an Amanzi exception
 
       std::string msg = 
-        boost::str(boost::format("Cell Epetra_Map error: %d") % e);
+        boost::str(boost::format("Cell Map_type error: %d") % e);
       Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
     }
 
     try {
-      std::unique_ptr<Epetra_Map> cmap(gen.vertexmap(true));
+      std::unique_ptr<Map_type> cmap(gen.vertexmap(true));
       CHECK_EQUAL(cmap->MaxAllGID(), (size*size+1)*(size+1)*(size+1));
       CHECK_EQUAL(cmap->MinAllGID(), 1);
       CHECK_EQUAL(cmap->NumMyElements(), gen.myvertexes());
       cmap->Print(std::cerr);   // ends up in the test log file
     } catch (int e) {
       std::string msg = 
-        boost::str(boost::format("Vertex Epetra_Map error: %d") % e);
+        boost::str(boost::format("Vertex Map_type error: %d") % e);
       Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
     }
 

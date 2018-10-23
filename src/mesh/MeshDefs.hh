@@ -18,11 +18,16 @@
 #include <vector>
 #include <string>
 #include "boost/algorithm/string.hpp"
+#include "Tpetra_Map.hpp"
 
 #include "errors.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
+
+// TPetra typedefs
+typedef Tpetra::Map<> Map_type;
+typedef Tpetra::Import<> Import_type;
 
 // Necessary typedefs and enumerations
 typedef int Set_ID;

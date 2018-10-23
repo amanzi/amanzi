@@ -1166,9 +1166,9 @@ Mesh::update_ghost_node_coordinates()
 {
   int ndim = space_dimension();
 
-  Epetra_Map owned_node_map = node_map(false);
-  Epetra_Map used_node_map = node_map(true);
-  Epetra_Import importer(used_node_map, owned_node_map);
+  Map_type owned_node_map = node_map(false);
+  Map_type used_node_map = node_map(true);
+  Import_type importer(used_node_map, owned_node_map);
 
   // change last arg to false after debugging
   Epetra_MultiVector owned_node_coords(node_map(true),ndim,true);

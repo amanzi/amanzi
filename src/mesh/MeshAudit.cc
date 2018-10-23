@@ -8,7 +8,6 @@
 
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_IntSerialDenseMatrix.h"
-#include "Epetra_Import.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_IntVector.h"
 
@@ -276,7 +275,7 @@ void MeshAudit::create_test_dependencies()
 ////////////////////////////////////////////////////////////////////////////////
 
 // The count_entities method should return values that match the number of
-// elements in the corresponding Epetra_Maps.  This applies to nodes, faces
+// elements in the corresponding Map_types.  This applies to nodes, faces
 // and cells, including ghosts and not.  Here the maps are considered to be
 // the authoritative source of information.  A positive value is returned
 // if any discrepancy is found, but it is safe to perform other tests as
@@ -928,7 +927,7 @@ bool MeshAudit::check_cell_maps() const
   return check_maps(mesh->cell_map(false), mesh->cell_map(true));
 }
 
-bool MeshAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &map_use) const
+bool MeshAudit::check_maps(const Map_type &map_own, const Map_type &map_use) const
 {
   bool error = false;
 
@@ -1044,8 +1043,8 @@ bool MeshAudit::check_node_to_coordinates_ghost_data() const
 {
   int spdim = mesh->space_dimension();
 
-  const Epetra_Map &node_map_own = mesh->node_map(false);
-  const Epetra_Map &node_map_use = mesh->node_map(true);
+  const Map_type &node_map_own = mesh->node_map(false);
+  const Map_type &node_map_use = mesh->node_map(true);
 
   int nnode_own = node_map_own.NumMyElements();
   int nnode_use = node_map_use.NumMyElements();
@@ -1063,7 +1062,7 @@ bool MeshAudit::check_node_to_coordinates_ghost_data() const
     for (int k = 0; k < spdim; ++k) coord_own[k][j] = coord[k];
   }
 
-  Epetra_Import importer(node_map_use, node_map_own);
+  Import_type importer(node_map_use, node_map_own);
   coord_use.Import(coord_own, importer, Insert);
 
   for (AmanziMesh::Entity_ID j = nnode_own; j < nnode_use; ++j) {
@@ -1091,9 +1090,9 @@ bool MeshAudit::check_node_to_coordinates_ghost_data() const
 
 bool MeshAudit::check_face_to_nodes_ghost_data() const
 {
-  const Epetra_Map &node_map = mesh->node_map(true);
-  const Epetra_Map &face_map_own = mesh->face_map(false);
-  const Epetra_Map &face_map_use = mesh->face_map(true);
+  const Map_type &node_map = mesh->node_map(true);
+  const Map_type &face_map_own = mesh->face_map(false);
+  const Map_type &face_map_use = mesh->face_map(true);
 
   int nface_own = face_map_own.NumMyElements();
   int nface_use = face_map_use.NumMyElements();
@@ -1119,7 +1118,7 @@ bool MeshAudit::check_face_to_nodes_ghost_data() const
   }
 
   // Import these GIDs to all used faces; sets values on ghost faces.
-  Epetra_Import importer(face_map_use, face_map_own);
+  Import_type importer(face_map_use, face_map_own);
   for (int k = 0; k < maxnodes; ++k) {
     Epetra_IntVector kgids_own(View, face_map_own, gids[k]);
     Epetra_IntVector kgids_use(View, face_map_use, gids[k]);
@@ -1207,9 +1206,9 @@ bool MeshAudit::check_face_to_nodes_ghost_data() const
 
 bool MeshAudit::check_cell_to_nodes_ghost_data() const
 {
-  const Epetra_Map &node_map = mesh->node_map(true);
-  const Epetra_Map &cell_map_own = mesh->cell_map(false);
-  const Epetra_Map &cell_map_use = mesh->cell_map(true);
+  const Map_type &node_map = mesh->node_map(true);
+  const Map_type &cell_map_own = mesh->cell_map(false);
+  const Map_type &cell_map_use = mesh->cell_map(true);
 
   int ncell_own = cell_map_own.NumMyElements();
   int ncell_use = cell_map_use.NumMyElements();
@@ -1234,7 +1233,7 @@ bool MeshAudit::check_cell_to_nodes_ghost_data() const
   }
 
   // Import these GIDs to all used cells; sets values on ghost cells.
-  Epetra_Import importer(cell_map_use, cell_map_own);
+  Import_type importer(cell_map_use, cell_map_own);
   for (int k = 0; k < maxnodes; ++k) {
     Epetra_IntVector kgids_own(View, cell_map_own, gids[k]);
     Epetra_IntVector kgids_use(View, cell_map_use, gids[k]);
@@ -1286,9 +1285,9 @@ bool MeshAudit::check_cell_to_nodes_ghost_data() const
 
 bool MeshAudit::check_cell_to_faces_ghost_data() const
 {
-  const Epetra_Map &face_map = mesh->face_map(true);
-  const Epetra_Map &cell_map_own = mesh->cell_map(false);
-  const Epetra_Map &cell_map_use = mesh->cell_map(true);
+  const Map_type &face_map = mesh->face_map(true);
+  const Map_type &cell_map_own = mesh->cell_map(false);
+  const Map_type &cell_map_use = mesh->cell_map(true);
 
   int ncell_own = cell_map_own.NumMyElements();
   int ncell_use = cell_map_use.NumMyElements();
@@ -1314,7 +1313,7 @@ bool MeshAudit::check_cell_to_faces_ghost_data() const
   }
 
   // Import these GIDs to all used cells; sets values on ghost cells.
-  Epetra_Import importer(cell_map_use, cell_map_own);
+  Import_type importer(cell_map_use, cell_map_own);
   for (int k = 0; k < maxfaces; ++k) {
     Epetra_IntVector kgids_own(View, cell_map_own, gids[k]);
     Epetra_IntVector kgids_use(View, cell_map_use, gids[k]);
@@ -1532,7 +1531,7 @@ bool MeshAudit::check_cell_sets() const
 }
 
 bool MeshAudit::check_sets(AmanziMesh::Entity_kind kind,
-                          const Epetra_Map &map_own, const Epetra_Map &map_use) const
+                          const Map_type &map_own, const Map_type &map_use) const
 {
   os << "WARNING: Checks on sets disabled until MeshAudit handles new set specification methods (Tkt #686)" << std::endl;
   return false;
@@ -1572,7 +1571,7 @@ bool MeshAudit::check_sets(AmanziMesh::Entity_kind kind,
 bool MeshAudit::check_get_set(AmanziMesh::Set_ID sid, 
 			      AmanziMesh::Entity_kind kind,
 			      AmanziMesh::Parallel_type ptype, 
-			      const Epetra_Map &map) const
+			      const Map_type &map) const
 {
   os << "WARNING: Checks on sets disabled until MeshAudit handles new set specification methods (Tkt #686)" << std::endl;
   return false;
@@ -1634,8 +1633,8 @@ bool MeshAudit::check_get_set(AmanziMesh::Set_ID sid,
 
 bool MeshAudit::check_used_set(AmanziMesh::Set_ID sid, 
 			       AmanziMesh::Entity_kind kind,
-                               const Epetra_Map &map_own, 
-			       const Epetra_Map &map_use) const
+                               const Map_type &map_own, 
+			       const Map_type &map_use) const
 {
   os << "WARNING: Checks on sets disabled until MeshAudit handles new set specification methods (Tkt #686)" << std::endl;
   return false;
@@ -1686,7 +1685,7 @@ bool MeshAudit::check_used_set(AmanziMesh::Set_ID sid,
     tag_use.ExtractView(&tag_data);
     Epetra_IntVector tag_own(View, map_own, tag_data);
     for (int j = 0; j < set_own.size(); ++j) tag_own[set_own[j]] = 1;
-    Epetra_Import importer(map_use, map_own);
+    Import_type importer(map_use, map_own);
     tag_use.Import(tag_own, importer, Insert);
 
     // Now untag all the LIDs that belong to the used set.  If things

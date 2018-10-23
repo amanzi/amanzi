@@ -40,8 +40,8 @@ class SuperMap {
   SuperMap(const Epetra_MpiComm& comm,
            const std::vector<std::string>& compnames,
            const std::vector<int>& dofnums,
-           const std::vector<Teuchos::RCP<const Epetra_Map> >& maps,
-           const std::vector<Teuchos::RCP<const Epetra_Map> >& ghost_maps);
+           const std::vector<Teuchos::RCP<const Map_type> >& maps,
+           const std::vector<Teuchos::RCP<const Map_type> >& ghost_maps);
 
   SuperMap(const SuperMap& other);  
   virtual ~SuperMap() = default;
@@ -56,8 +56,8 @@ class SuperMap {
   int NumDofs(const std::string& compname) const { return num_dofs_.at(compname); }
 
   // map accessors
-  Teuchos::RCP<const Epetra_Map> Map() const { return map_; }
-  Teuchos::RCP<const Epetra_Map> GhostedMap() const { return ghosted_map_; }
+  Teuchos::RCP<const Map_type> Map() const { return map_; }
+  Teuchos::RCP<const Map_type> GhostedMap() const { return ghosted_map_; }
 
   // index accessors
   const std::vector<int>& Indices(const std::string& compname, int dofnum) const;
@@ -114,13 +114,13 @@ class SuperMap {
   mutable std::map<std::string, std::map<int, std::vector<int> > > indices_;
   mutable std::map<std::string, std::map<int, std::vector<int> > > ghosted_indices_;
 
-  Teuchos::RCP<Epetra_Map> map_;
-  Teuchos::RCP<Epetra_Map> ghosted_map_;
+  Teuchos::RCP<Map_type> map_;
+  Teuchos::RCP<Map_type> ghosted_map_;
 };
 
 
 // Nonmember helper function
-std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >
+std::pair<Teuchos::RCP<const Map_type>, Teuchos::RCP<const Map_type> >
 getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location);
 
 // Nonmember contructors/factories

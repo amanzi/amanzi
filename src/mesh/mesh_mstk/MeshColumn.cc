@@ -173,14 +173,14 @@ void MeshColumn::build_epetra_maps_() {
   int indexBase = 0;
 
   int nfaces = column_faces_.size();
-  face_map_ = new Epetra_Map(nfaces,indexBase,epcomm_);
+  face_map_ = new Map_type(nfaces,indexBase,epcomm_);
 
   std::vector<int> ext_gids(2,-1);
   ext_gids[0] = 0;
   ext_gids[1] = nfaces-1;
 
-  exterior_face_map_ = new Epetra_Map(-1, 2, &ext_gids[0], 0, *get_comm());
-  exterior_face_importer_ = new Epetra_Import(*exterior_face_map_, *face_map_);
+  exterior_face_map_ = new Map_type(-1, 2, &ext_gids[0], 0, *get_comm());
+  exterior_face_importer_ = new Import_type(*face_map_, *exterior_face_map_);
 }
 
 }  // namespace AmanziMesh

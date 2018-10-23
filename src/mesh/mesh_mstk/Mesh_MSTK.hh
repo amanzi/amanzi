@@ -5,7 +5,7 @@
 #include <vector>
 #include <sstream>
 
-#include "Epetra_MpiComm.h"
+#include "Teuchos_Comm.hpp"
 #include "MSTK.h"
 
 #include "Mesh.hh"
@@ -42,14 +42,15 @@ class Mesh_MSTK : public Mesh {
   // we could "delete" the illegal version of the call effectively
   // blocking the implicit conversion.
   Mesh_MSTK(const char *filename,
-            const Epetra_MpiComm *incomm_,
+            const Teuchos::RCP<Teuchos::Comm>& comm,
             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
             const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	    const bool request_faces = true,
 	    const bool request_edges = false,
 	    const Partitioner_type partitioner = PARTITIONER_DEFAULT);
 
-  Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_, 
+  Mesh_MSTK(const char *filename, 
+            const Teuchos::RCP<Teuchos::Comm>& comm,
             int space_dimension,
 	    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = 
             Teuchos::null,
@@ -65,7 +66,7 @@ class Mesh_MSTK : public Mesh {
 	    const double x1, const double y1, const double z1,
 	    const unsigned int nx, const unsigned int ny, 
             const unsigned int nz, 
-            const Epetra_MpiComm *incomm_,
+            const Teuchos::RCP<Teuchos::Comm>& comm,
             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
             const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	    const bool request_faces = true,
@@ -76,7 +77,7 @@ class Mesh_MSTK : public Mesh {
   Mesh_MSTK(const double x0, const double y0,
 	    const double x1, const double y1,
 	    const int nx, const int ny, 
-	    const Epetra_MpiComm *comm_,
+            const Teuchos::RCP<Teuchos::Comm>& comm,
             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
             const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	    const bool request_faces = true,
@@ -85,7 +86,7 @@ class Mesh_MSTK : public Mesh {
 
   // Construct a hexahedral mesh from specs 
   Mesh_MSTK(const GenerationSpec& gspec,
-	    const Epetra_MpiComm *comm_,
+            const Teuchos::RCP<Teuchos::Comm>& comm,
             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm =Teuchos::null,
             const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	    const bool request_faces = true,
@@ -121,7 +122,7 @@ class Mesh_MSTK : public Mesh {
 	    const bool request_faces = true,
 	    const bool request_edges = false);
 
-  Mesh_MSTK(const Epetra_MpiComm *comm_,
+  Mesh_MSTK(const Teuchos::RCP<Teuchos::Comm>& comm,
             const Mesh& inmesh,
             const Entity_ID_List& entity_ids, 
             const Entity_kind entity_kind,
@@ -274,17 +275,17 @@ class Mesh_MSTK : public Mesh {
   // Epetra maps
   //------------
     
-  const Epetra_Map& cell_map(bool include_ghost) const;
+  Teuchos::RCP<const Map_type> cell_map(bool include_ghost) const;
     
-  const Epetra_Map& face_map(bool include_ghost) const; 
+  Teuchos::RCP<const Map_type> face_map(bool include_ghost) const; 
 
-  const Epetra_Map& edge_map(bool include_ghost) const;
+  Teuchos::RCP<const Map_type> edge_map(bool include_ghost) const;
     
-  const Epetra_Map& node_map(bool include_ghost) const;
+  Teuchos::RCP<const Map_type> node_map(bool include_ghost) const;
     
-  const Epetra_Map& exterior_face_map(bool include_ghost) const; 
+  Teuchos::RCP<const Map_type> exterior_face_map(bool include_ghost) const; 
     
-  const Epetra_Import& exterior_face_importer(void) const;
+  Teuchos::RCP<const Import_type> exterior_face_importer(void) const;
     
     
   //
@@ -414,16 +415,16 @@ class Mesh_MSTK : public Mesh {
 
 
   // Maps
-  Epetra_Map *cell_map_w_ghosts_, *cell_map_wo_ghosts_;
-  mutable Epetra_Map *face_map_w_ghosts_, *face_map_wo_ghosts_;
-  mutable Epetra_Map *edge_map_w_ghosts_, *edge_map_wo_ghosts_;
-  Epetra_Map *node_map_w_ghosts_, *node_map_wo_ghosts_;
-  Epetra_Map *extface_map_w_ghosts_, *extface_map_wo_ghosts_; // exterior faces (connected to only 1 cell)
+  Teuchos::RCP<Map_type> cell_map_w_ghosts_, cell_map_wo_ghosts_;
+  mutable Teuchos::RCP<Map_type> face_map_w_ghosts_, face_map_wo_ghosts_;
+  mutable Teuchos::RCP<Map_type> edge_map_w_ghosts_, edge_map_wo_ghosts_;
+  Teuchos::RCP<Map_type> node_map_w_ghosts_, node_map_wo_ghosts_;
+  Teuchos::RCP<Map_type> extface_map_w_ghosts_, extface_map_wo_ghosts_;
 
   // Epetra importer that will allow apps to import values from a Epetra
   // vector defined on all owned faces into an Epetra vector defined
   // only on exterior faces
-  Epetra_Import *owned_to_extface_importer_; 
+  Teuchos::RCP<Import_type> owned_to_extface_importer_; 
   
   // flag whether to flip a face dir or not when returning nodes of a
   // face (relevant only on partition boundaries)
@@ -454,7 +455,7 @@ class Mesh_MSTK : public Mesh {
   
   void clear_internals_();
 
-  void pre_create_steps_(const int space_dimension, const Epetra_MpiComm *incomm_, 
+  void pre_create_steps_(const int space_dimension, const Teuchos::RCP<Teuchos::Comm<int> >& comm,
                          const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm);
   void post_create_steps_(const bool request_faces, const bool request_edges);
 
@@ -504,7 +505,7 @@ class Mesh_MSTK : public Mesh {
   int generate_regular_mesh(Mesh_ptr mesh, double x0, double y0,
                             double x1, double y1, int nx, int ny);
 
-  void extract_mstk_mesh(const Epetra_MpiComm *incomm,
+  void extract_mstk_mesh(const Teuchos::RCP<Teuchos::Comm<int> >& comm,
                          const Mesh_MSTK& inmesh,
                          const List_ptr entity_ids,
                          const MType entity_dim,

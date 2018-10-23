@@ -186,7 +186,7 @@ Parallel_Exodus_file::read_mesh(void)
 // -------------------------------------------------------------
 // Parallel_Exodus_file::cellmap
 // -------------------------------------------------------------
-Teuchos::RCP<Epetra_Map>
+Teuchos::RCP<Map_type>
 Parallel_Exodus_file::cellmap(void)
 {
   if (my_mesh.is_null()) {
@@ -207,7 +207,7 @@ Parallel_Exodus_file::cellmap(void)
 
   my_comm_->Barrier();
 
-  Teuchos::RCP<Epetra_Map> cmap(new Epetra_Map(-1, myelem, &gids[0], 1, *my_comm_));
+  Teuchos::RCP<Map_type> cmap(new Map_type(-1, myelem, &gids[0], 1, *my_comm_));
   
   return cmap;
 }
@@ -216,7 +216,7 @@ Parallel_Exodus_file::cellmap(void)
 // -------------------------------------------------------------
 // Parallel_Exodus_file::vertexmap
 // -------------------------------------------------------------
-Teuchos::RCP<Epetra_Map>
+Teuchos::RCP<Map_type>
 Parallel_Exodus_file::vertexmap(void)
 {
   if (my_mesh.is_null()) {
@@ -237,7 +237,7 @@ Parallel_Exodus_file::vertexmap(void)
 
   my_comm_->Barrier();
 
-  Teuchos::RCP<Epetra_Map> vmap(new Epetra_Map(-1, myvert, &gids[0], 1, *my_comm_));
+  Teuchos::RCP<Map_type> vmap(new Map_type(-1, myvert, &gids[0], 1, *my_comm_));
   
   return vmap;
 }

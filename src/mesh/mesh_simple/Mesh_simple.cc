@@ -446,9 +446,9 @@ void Mesh_simple::build_maps_()
   std::vector<int> faces( num_faces_ );
   for (int i=0; i< num_faces_; i++) faces[i] = i;
 
-  cell_map_ = new Epetra_Map(-1, num_cells_, &cells[0], 0, *epcomm_);
-  face_map_ = new Epetra_Map(-1, num_faces_, &faces[0], 0, *epcomm_);
-  node_map_ = new Epetra_Map(-1, num_nodes_, &nodes[0], 0, *epcomm_);
+  cell_map_ = new Map_type(-1, num_cells_, &cells[0], 0, *epcomm_);
+  face_map_ = new Map_type(-1, num_faces_, &faces[0], 0, *epcomm_);
+  node_map_ = new Map_type(-1, num_nodes_, &nodes[0], 0, *epcomm_);
 }
 
 
@@ -784,25 +784,25 @@ void Mesh_simple::cell_get_node_adj_cells(const AmanziMesh::Entity_ID cellid,
 }
 
     
-const Epetra_Map& Mesh_simple::cell_map(bool include_ghost) const
+const Map_type& Mesh_simple::cell_map(bool include_ghost) const
 {
   return *cell_map_;
 }
 
 
-const Epetra_Map& Mesh_simple::face_map(bool include_ghost) const
+const Map_type& Mesh_simple::face_map(bool include_ghost) const
 {
   return *face_map_;
 }
 
 
-const Epetra_Map& Mesh_simple::node_map(bool include_ghost) const
+const Map_type& Mesh_simple::node_map(bool include_ghost) const
 {
   return *node_map_;
 }
 
 
-const Epetra_Map& Mesh_simple::exterior_face_map(bool include_ghost) const
+const Map_type& Mesh_simple::exterior_face_map(bool include_ghost) const
 {
   Errors::Message mesg("not implemented");
   amanzi_throw(mesg);
@@ -814,7 +814,7 @@ const Epetra_Map& Mesh_simple::exterior_face_map(bool include_ghost) const
 // vector defined on all owned faces into an Epetra vector defined
 // only on exterior faces
 //--------------------------------------
-const Epetra_Import& Mesh_simple::exterior_face_importer(void) const
+const Import_type& Mesh_simple::exterior_face_importer(void) const
 {
   Errors::Message mesg("not implemented");
   amanzi_throw(mesg);

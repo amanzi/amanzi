@@ -1,6 +1,6 @@
 #include <fstream>
 
-#include "Epetra_Map.h"
+#include "Map_type.h"
 #include "Epetra_MpiComm.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"

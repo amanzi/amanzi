@@ -18,7 +18,7 @@ map, not the true row map.
 #include "Teuchos_RCP.hpp"
 
 // forward declarations
-class Epetra_Map;
+class Map_type;
 class Epetra_CrsGraph;
 class Epetra_Export;
 
@@ -30,34 +30,34 @@ class GraphFE {
  public:
 
   // Constructor
-  GraphFE(const Teuchos::RCP<const Epetra_Map>& row_map,
-	  const Teuchos::RCP<const Epetra_Map>& ghosted_row_map,
-	  const Teuchos::RCP<const Epetra_Map>& col_map,
+  GraphFE(const Teuchos::RCP<const Map_type>& row_map,
+	  const Teuchos::RCP<const Map_type>& ghosted_row_map,
+	  const Teuchos::RCP<const Map_type>& col_map,
 	  int max_nnz_per_row);
 
   // Constructor with nnz -- note this should include ghosted rows.
-  GraphFE(const Teuchos::RCP<const Epetra_Map>& row_map,
-	  const Teuchos::RCP<const Epetra_Map>& ghosted_row_map,
-	  const Teuchos::RCP<const Epetra_Map>& col_map,
+  GraphFE(const Teuchos::RCP<const Map_type>& row_map,
+	  const Teuchos::RCP<const Map_type>& ghosted_row_map,
+	  const Teuchos::RCP<const Map_type>& col_map,
 	  const int* max_nnz_per_row);
 
   // does this graph include off-process entries?
   bool includes_offproc() const { return includes_ghosted_; }
   
   // accessors to maps
-  const Epetra_Map& DomainMap() const {
+  const Map_type& DomainMap() const {
     return *domain_map_; }
 
-  const Epetra_Map& RangeMap() const {
+  const Map_type& RangeMap() const {
     return *range_map_; }
 
-  const Epetra_Map& RowMap() const {
+  const Map_type& RowMap() const {
     return *row_map_; }
 
-  const Epetra_Map& GhostedRowMap() const {
+  const Map_type& GhostedRowMap() const {
     return *ghosted_row_map_; }
 
-  const Epetra_Map& ColMap() const {
+  const Map_type& ColMap() const {
     return *col_map_; }
 
   // accessor to the importer
@@ -79,19 +79,19 @@ class GraphFE {
   int InsertGlobalIndices(int row_count, int *row_indices, int col_count, int *col_indices);
 
   // finish fill
-  int FillComplete(const Teuchos::RCP<const Epetra_Map>& domain_map,
-                   const Teuchos::RCP<const Epetra_Map>& range_map);
+  int FillComplete(const Teuchos::RCP<const Map_type>& domain_map,
+                   const Teuchos::RCP<const Map_type>& range_map);
 
 
  protected:
 
-  Teuchos::RCP<const Epetra_Map> row_map_;
-  Teuchos::RCP<const Epetra_Map> ghosted_row_map_;
-  Teuchos::RCP<const Epetra_Map> col_map_;
-  Teuchos::RCP<const Epetra_Map> domain_map_;
-  Teuchos::RCP<const Epetra_Map> range_map_;
+  Teuchos::RCP<const Map_type> row_map_;
+  Teuchos::RCP<const Map_type> ghosted_row_map_;
+  Teuchos::RCP<const Map_type> col_map_;
+  Teuchos::RCP<const Map_type> domain_map_;
+  Teuchos::RCP<const Map_type> range_map_;
 
-  Teuchos::RCP<Epetra_Map> offproc_row_map_;
+  Teuchos::RCP<Map_type> offproc_row_map_;
   Teuchos::RCP<Epetra_CrsGraph> graph_;
   Teuchos::RCP<Epetra_CrsGraph> offproc_graph_;  
 

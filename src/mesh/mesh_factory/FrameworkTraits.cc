@@ -249,22 +249,22 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
                             const Amanzi::AmanziGeometry::Point coords)
   {};
 
-  const Epetra_Map& cell_map(bool include_ghost) const
+  const Map_type& cell_map(bool include_ghost) const
   { return *bogus_map_; }
     
-  const Epetra_Map& face_map(bool include_ghost) const
+  const Map_type& face_map(bool include_ghost) const
   { return *bogus_map_; }
 
-  const Epetra_Map& edge_map(bool include_ghost) const
+  const Map_type& edge_map(bool include_ghost) const
   { return *bogus_map_; }
     
-  const Epetra_Map& node_map(bool include_ghost) const
+  const Map_type& node_map(bool include_ghost) const
   { return *bogus_map_; }
 
-  const Epetra_Map& exterior_face_map(bool include_ghost) const
+  const Map_type& exterior_face_map(bool include_ghost) const
   { return *bogus_map_; }
 
-  const Epetra_Import& exterior_face_importer(void) const
+  const Import_type& exterior_face_importer(void) const
   { return *bogus_importer_; }
     
 
@@ -308,8 +308,8 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
 
  private:
 
-  Epetra_Map *bogus_map_;
-  Epetra_Import *bogus_importer_;
+  Map_type *bogus_map_;
+  Import_type *bogus_importer_;
 };
 
 }  // namespace AmanziMesh

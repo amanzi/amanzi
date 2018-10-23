@@ -5,11 +5,9 @@
 #include "../Mesh_MSTK.hh"
 #include "MeshAudit.hh"
 
-#include "Epetra_Map.h"
 #include "Epetra_MpiComm.h"
-#include "Epetra_Import.h"
 #include "Epetra_Vector.h"
-
+#include "MeshDefs.hh"
 
 TEST(MSTK_EXTFACE_MAP_4P)
 {
@@ -36,10 +34,10 @@ TEST(MSTK_EXTFACE_MAP_4P)
 
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_3x3x3_sets.exo",comm_.get(),3));
 
-  Epetra_Map face_map(mesh->face_map(false));
-  Epetra_Map extface_map(mesh->exterior_face_map(false));
+  Map_type face_map(mesh->face_map(false));
+  Map_type extface_map(mesh->exterior_face_map(false));
 
-  Epetra_Import all_to_extface_importer = mesh->exterior_face_importer();
+  Import_type all_to_extface_importer = mesh->exterior_face_importer();
 
   for (int f = extface_map.MinLID(); f <= extface_map.MaxLID(); f++)
     {
@@ -72,7 +70,7 @@ TEST(MSTK_EXTFACE_MAP_4P)
 
   // Check if ghostmap contains only boundary faces
 
-  Epetra_Map extface_map_wghost(mesh->exterior_face_map(true));
+  Map_type extface_map_wghost(mesh->exterior_face_map(true));
 
   int nowned_bnd = extface_map. NumMyElements();
   int nnotowned_bnd = extface_map_wghost.NumMyElements() - nowned_bnd;

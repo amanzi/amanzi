@@ -325,11 +325,11 @@ void MeshLogical::set_logical_geometry(std::vector<double> const* const cell_vol
 void
 MeshLogical::init_maps() {
   // cell map
-  maps_[CELL] = Teuchos::rcp(new Epetra_Map(-1, cell_face_ids_.size(), 0, *comm_));
+  maps_[CELL] = Teuchos::rcp(new Map_type(-1, cell_face_ids_.size(), 0, *comm_));
 
   // face map
-  Teuchos::RCP<Epetra_Map> face_map =
-      Teuchos::rcp(new Epetra_Map(-1, face_cell_ids_.size(), 0, *comm_));
+  Teuchos::RCP<Map_type> face_map =
+      Teuchos::rcp(new Map_type(-1, face_cell_ids_.size(), 0, *comm_));
   maps_[FACE] = face_map;
 
   // exterior face map
@@ -342,11 +342,10 @@ MeshLogical::init_maps() {
     }
     f_id++;
   }
-  maps_[BOUNDARY_FACE] = Teuchos::rcp(new Epetra_Map(-1, extface_ids.size(),
+  maps_[BOUNDARY_FACE] = Teuchos::rcp(new Map_type(-1, extface_ids.size(),
           &extface_ids[0], 0, *comm_));
 
-  exterior_face_importer_ = Teuchos::rcp(new Epetra_Import(*maps_[BOUNDARY_FACE],
-          *face_map));
+  exterior_face_importer_ = Teuchos::rcp(new Import_type(*face_map, *maps_[BOUNDARY_FACE]));
 
 
   num_entities_[CELL] = maps_[CELL]->NumMyElements();
@@ -655,17 +654,17 @@ MeshLogical::deform(const std::vector<double>& target_cell_volumes_in,
 //
 // Epetra maps
 //------------
-const Epetra_Map&
+const Map_type&
 MeshLogical::cell_map(bool include_ghost) const {
   return *maps_.at(CELL);
 }
 
-const Epetra_Map&
+const Map_type&
 MeshLogical::face_map(bool include_ghost) const {
   return *maps_.at(FACE);
 }
 
-const Epetra_Map&
+const Map_type&
 MeshLogical::node_map(bool include_ghost) const {
   Errors::Message mesg("No nodes in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
@@ -673,7 +672,7 @@ MeshLogical::node_map(bool include_ghost) const {
 }
 
 
-const Epetra_Map&
+const Map_type&
 MeshLogical::exterior_face_map(bool include_ghost) const {
   return *maps_.at(BOUNDARY_FACE);
 }
@@ -682,7 +681,7 @@ MeshLogical::exterior_face_map(bool include_ghost) const {
 // Epetra importer that will allow apps to import values from a
 // Epetra vector defined on all owned faces into an Epetra vector
 // defined only on exterior faces
-const Epetra_Import&
+const Import_type&
 MeshLogical::exterior_face_importer(void) const {
   return *exterior_face_importer_;
 }

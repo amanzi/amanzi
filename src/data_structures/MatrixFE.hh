@@ -36,19 +36,19 @@ class MatrixFE {
   MatrixFE(const Teuchos::RCP<const GraphFE>& graph);
 
   // accessors to maps
-  const Epetra_Map& DomainMap() const {
+  const Map_type& DomainMap() const {
     return graph_->DomainMap(); }
 
-  const Epetra_Map& RangeMap() const {
+  const Map_type& RangeMap() const {
     return graph_->RangeMap(); }
 
-  const Epetra_Map& RowMap() const {
+  const Map_type& RowMap() const {
     return graph_->RowMap(); }
 
-  const Epetra_Map& GhostedRowMap() const {
+  const Map_type& GhostedRowMap() const {
     return graph_->GhostedRowMap(); }
 
-  const Epetra_Map& ColMap() const {
+  const Map_type& ColMap() const {
     return graph_->ColMap(); }
 
   // accessor to graphs

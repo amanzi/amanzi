@@ -17,7 +17,7 @@
 #include <iostream>
 #include <UnitTest++.h>
 
-#include <Epetra_Map.h>
+#include <Map_type.h>
 #include <Epetra_MpiComm.h>
 
 #include "../Parallel_Exodus_file.hh"
@@ -33,7 +33,7 @@ checkit(Amanzi::Exodus::Parallel_Exodus_file & thefile)
   int lcell(themesh->parameters().num_elements_), gcell;
   thefile.comm_().SumAll(&lcell, &gcell, 1);
 
-  Teuchos::RCP<Epetra_Map> cmap(thefile.cellmap());
+  Teuchos::RCP<Map_type> cmap(thefile.cellmap());
   CHECK_EQUAL(cmap->NumGlobalElements(), gcell);
   CHECK_EQUAL(cmap->NumMyElements(), lcell);
   CHECK_EQUAL(cmap->MinAllGID(), 1);
@@ -42,7 +42,7 @@ checkit(Amanzi::Exodus::Parallel_Exodus_file & thefile)
   
 
   int lvert(themesh->parameters().num_nodes_);
-  Teuchos::RCP<Epetra_Map> vmap(thefile.vertexmap());
+  Teuchos::RCP<Map_type> vmap(thefile.vertexmap());
   CHECK_EQUAL(vmap->NumMyElements(), lvert);
   CHECK(cmap->IsOneToOne()); 
 

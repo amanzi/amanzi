@@ -11,7 +11,7 @@ communicate itself.
 CompositeVectors are a collection of vectors defined on a common mesh and
 communicator.  Each vector, or component, has a name (used as a key), a mesh
 Entity_kind (CELL, FACE, NODE, or BOUNDARY_FACE), and a number of degrees of
-freedom (dofs).  This, along with the Epetra_Map provided from the mesh on a
+freedom (dofs).  This, along with the Map_type provided from the mesh on a
 given Entity_kind, is enough to create an Epetra_MultiVector.
 
 Note that construction of the CompositeVector does not allocate the
@@ -182,7 +182,7 @@ public:
   int GlobalLength() const { return mastervec_->GlobalLength(); }
   
   // Access the VectorSpace for each component.
-  Teuchos::RCP<const Epetra_Map> ComponentMap(std::string name,
+  Teuchos::RCP<const Map_type> ComponentMap(std::string name,
           bool ghosted=false) const {
     return ghosted ? ghostvec_->ComponentMap(name) : mastervec_->ComponentMap(name);
   }

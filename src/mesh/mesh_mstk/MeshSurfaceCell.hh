@@ -14,7 +14,6 @@
 #include <algorithm>
 
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_Map.h"
 #include "Epetra_MpiComm.h"
 #include "Epetra_SerialComm.h"
 
@@ -74,10 +73,10 @@ class MeshSurfaceCell : public Mesh {
     }
 
     // set the maps
-    cell_map_ = Teuchos::rcp(new Epetra_Map(1, 0, *get_comm()));
-    face_map_ = Teuchos::rcp(new Epetra_Map((int)nodes_.size(), 0, *get_comm()));
+    cell_map_ = Teuchos::rcp(new Map_type(1, 0, *get_comm()));
+    face_map_ = Teuchos::rcp(new Map_type((int)nodes_.size(), 0, *get_comm()));
     exterior_face_importer_ =
-        Teuchos::rcp(new Epetra_Import(*face_map_,*face_map_));
+        Teuchos::rcp(new Import_type(*face_map_,*face_map_));
 
     // set the geometric model and sets
     Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = inmesh.geometric_model();
@@ -361,17 +360,17 @@ class MeshSurfaceCell : public Mesh {
   // Epetra maps
   //------------
   virtual
-  const Epetra_Map& cell_map(bool include_ghost) const {
+  const Map_type& cell_map(bool include_ghost) const {
     return *cell_map_;
   }
 
   virtual
-  const Epetra_Map& face_map(bool include_ghost) const {
+  const Map_type& face_map(bool include_ghost) const {
     return *face_map_;
   }
 
   // dummy implementation so that frameworks can skip or overwrite
-  const Epetra_Map& edge_map(bool include_ghost) const
+  const Map_type& edge_map(bool include_ghost) const
   {
     Errors::Message mesg("Edges not implemented in this framework");
     Exceptions::amanzi_throw(mesg);
@@ -379,12 +378,12 @@ class MeshSurfaceCell : public Mesh {
   };
 
   virtual
-  const Epetra_Map& node_map(bool include_ghost) const {
+  const Map_type& node_map(bool include_ghost) const {
     return *face_map_;
   }
 
   virtual
-  const Epetra_Map& exterior_face_map(bool include_ghost) const {
+  const Map_type& exterior_face_map(bool include_ghost) const {
     return *face_map_;
   }
 
@@ -393,7 +392,7 @@ class MeshSurfaceCell : public Mesh {
   // Epetra vector defined on all owned faces into an Epetra vector
   // defined only on exterior faces
   virtual
-  const Epetra_Import& exterior_face_importer(void) const {
+  const Import_type& exterior_face_importer(void) const {
     return *exterior_face_importer_;
   }
 
@@ -527,9 +526,9 @@ class MeshSurfaceCell : public Mesh {
   Entity_ID parent_face_;
   Cell_type cell_type_;
 
-  Teuchos::RCP<Epetra_Map> cell_map_;
-  Teuchos::RCP<Epetra_Map> face_map_;
-  Teuchos::RCP<Epetra_Import> exterior_face_importer_;
+  Teuchos::RCP<Map_type> cell_map_;
+  Teuchos::RCP<Map_type> face_map_;
+  Teuchos::RCP<Import_type> exterior_face_importer_;
 
 };
 

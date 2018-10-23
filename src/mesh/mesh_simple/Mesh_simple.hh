@@ -12,7 +12,6 @@
 #ifndef AMANZI_MESH_SIMPLE_HH_
 #define AMANZI_MESH_SIMPLE_HH_
 
-#include <Epetra_Map.h>
 #include <Epetra_MpiComm.h>
 #include <Epetra_SerialComm.h>
 
@@ -244,18 +243,18 @@ class Mesh_simple : public virtual Mesh {
   // Epetra maps
   //------------
     
-  const Epetra_Map& cell_map(bool include_ghost) const;
+  const Map_type& cell_map(bool include_ghost) const;
     
-  const Epetra_Map& face_map(bool include_ghost) const; 
+  const Map_type& face_map(bool include_ghost) const; 
 
-  const Epetra_Map& node_map(bool include_ghost) const;
+  const Map_type& node_map(bool include_ghost) const;
     
-  const Epetra_Map& exterior_face_map(bool include_ghost) const; 
+  const Map_type& exterior_face_map(bool include_ghost) const; 
     
   // Epetra importer that will allow apps to import values from a
   // Epetra vector defined on all owned faces into an Epetra vector
   // defined only on exterior faces
-  const Epetra_Import& exterior_face_importer(void) const;
+  const Import_type& exterior_face_importer(void) const;
     
     
   //
@@ -298,7 +297,7 @@ class Mesh_simple : public virtual Mesh {
   void clear_internals_();
   void build_maps_();
 
-  Epetra_Map *cell_map_, *face_map_, *node_map_;
+  Map_type *cell_map_, *face_map_, *node_map_;
 
   std::vector<double> coordinates_;
 
