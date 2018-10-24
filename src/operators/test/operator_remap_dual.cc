@@ -353,7 +353,7 @@ TEST(REMAP_DUAL_2D) {
   double dT(0.02);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
-  int deform = 4;
+  int deform = 3;
   RemapTestsDualRK(rk_method, maps, "",  16, 16,0, dT,    deform);
   RemapTestsDualRK(rk_method, maps, "",  32, 32,0, dT/2,  deform);
   RemapTestsDualRK(rk_method, maps, "",  64, 64,0, dT/4,  deform);

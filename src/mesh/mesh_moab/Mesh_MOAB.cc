@@ -17,7 +17,8 @@ Mesh_MOAB::Mesh_MOAB(const char *filename, const Epetra_MpiComm *comm_,
                      const bool request_faces,
                      const bool request_edges,
 		     const Partitioner_type partitioner)
-  : Mesh(vo, request_faces, request_edges)
+  : Mesh(vo, request_faces, request_edges),
+    extface_map_w_ghosts_(NULL), extface_map_wo_ghosts_(NULL)
 {
   int result, rank;
   
@@ -202,6 +203,8 @@ Mesh_MOAB::~Mesh_MOAB() {
   delete face_map_w_ghosts_;
   delete node_map_wo_ghosts_;
   delete node_map_w_ghosts_;
+  if (extface_map_wo_ghosts_) delete extface_map_wo_ghosts_;
+  if (extface_map_w_ghosts_) delete extface_map_w_ghosts_;
   delete [] setids_;
   delete [] setdims_;
   delete [] faceflip;
@@ -1198,7 +1201,7 @@ void Mesh_MOAB::cell_get_coordinates(
 
   nn = cell_nodes.size();
 
-  coords = new double[space_dim_];
+  coords = new double[3];
   
   ccoords->resize(nn);
   std::vector<AmanziGeometry::Point>::iterator it = ccoords->begin();
@@ -1221,7 +1224,8 @@ void Mesh_MOAB::cell_get_coordinates(
 //--------------------------------------------------------------------
 // TBW
 //--------------------------------------------------------------------
-void Mesh_MOAB::face_get_coordinates(Entity_ID faceid, std::vector<AmanziGeometry::Point> *fcoords) const
+void Mesh_MOAB::face_get_coordinates(Entity_ID faceid,
+                                     std::vector<AmanziGeometry::Point> *fcoords) const
 {
   moab::EntityHandle face;
   std::vector<moab::EntityHandle> face_nodes;
@@ -1240,7 +1244,7 @@ void Mesh_MOAB::face_get_coordinates(Entity_ID faceid, std::vector<AmanziGeometr
 
   nn = face_nodes.size();
 
-  coords = new double[space_dim_];
+  coords = new double[3];
     
   fcoords->resize(nn);
   std::vector<AmanziGeometry::Point>::iterator it = fcoords->begin();
@@ -2072,7 +2076,7 @@ void Mesh_MOAB::init_cell_map()
 //--------------------------------------------------------------------
 void Mesh_MOAB::init_face_map()
 {
-  int *face_gids;
+  int *face_gids, *extface_gids;
   int nface, result;
   const Epetra_Comm *epcomm_ = Mesh::get_comm();
 
@@ -2102,20 +2106,35 @@ void Mesh_MOAB::init_face_map()
     face_map_w_ghosts_ = new Epetra_Map(-1, nface, face_gids, 0, *epcomm_);
   }
   else {
-    face_gids = new int[AllFaces.size()];
+    // all faces
+    nface = AllFaces.size();
+    face_gids = new int[nface];
 
     result = mbcore->tag_get_data(gid_tag, AllFaces, face_gids);
     if (result != MB_SUCCESS) {
       std::cerr << "Problem getting tag data" << std::endl;
       assert(result == MB_SUCCESS);
     }
-
-    nface = AllFaces.size();
-
     face_map_wo_ghosts_ = new Epetra_Map(-1, nface, face_gids, 0, *epcomm_);
+
+    // boundary faces
+    int n_extface = 0;
+    extface_gids = new int[nface];
+
+    if (manifold_dimension() == 2) {
+      Entity_ID_List cellids;
+      for (int f = 0; f < nface; ++f) {
+        face_get_cells_internal_(f, Parallel_type::ALL, &cellids);
+        if (cellids.size() == 1)
+          extface_gids[++n_extface] = face_gids[f];
+      }
+    }
+
+    extface_map_wo_ghosts_ = new Epetra_Map(-1, n_extface, extface_gids, 0, *epcomm_);
   }
 
   delete [] face_gids;
+  delete [] extface_gids;
 }
 
 
@@ -2247,7 +2266,11 @@ const Epetra_Map& Mesh_MOAB::node_map(bool include_ghost) const
 // TBW
 //--------------------------------------------------------------------
 const Epetra_Map& Mesh_MOAB::exterior_face_map(bool include_ghost) const {
-  throw std::exception(); // Not implemented
+  if (serial_run)
+    return *extface_map_wo_ghosts_;
+  else
+    Exceptions::amanzi_throw("Exterior face map is not implemented in parallel");
+    // return (include_ghost ? *extface_map_w_ghosts_ : *extface_map_wo_ghosts_);
 }
 
 
@@ -2258,7 +2281,7 @@ const Epetra_Map& Mesh_MOAB::exterior_face_map(bool include_ghost) const {
 //--------------------------------------------------------------------
 const Epetra_Import& Mesh_MOAB::exterior_face_importer(void) const
 {
-  Errors::Message mesg("not implemented");
+  Errors::Message mesg("Exterior face importer is not implemented");
   amanzi_throw(mesg);
 }
 
@@ -2299,6 +2322,7 @@ Parallel_type Mesh_MOAB::entity_get_ptype(const Entity_kind kind,
 //--------------------------------------------------------------------
 Cell_type Mesh_MOAB::cell_get_type(const Entity_ID cellid) const
 {
+  if (space_dim_ == 2) return QUAD;
   return HEX;
 }
     

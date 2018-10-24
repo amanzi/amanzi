@@ -92,6 +92,7 @@ void MeshMaps_FEM::NansonFormula(
 /* ******************************************************************
 * Calculation of Jacobian for linearized map xi + t (F(xi) - xi).
 ****************************************************************** */
+/*
 void MeshMaps_FEM::JacobianCellValue_(
     int c, double t, const AmanziGeometry::Point& xref, Tensor& J) const
 {
@@ -105,6 +106,7 @@ void MeshMaps_FEM::JacobianCellValue_(
   J *= t;
   J += 1.0 - t;
 }
+*/
 
 
 /* ******************************************************************

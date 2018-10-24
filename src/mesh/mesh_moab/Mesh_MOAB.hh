@@ -327,6 +327,7 @@ class Mesh_MOAB : public Mesh {
   // Maps
   Epetra_Map *cell_map_wo_ghosts_, *face_map_wo_ghosts_, *node_map_wo_ghosts_;
   Epetra_Map *cell_map_w_ghosts_, *face_map_w_ghosts_, *node_map_w_ghosts_;
+  Epetra_Map *extface_map_w_ghosts_, *extface_map_wo_ghosts_; // exterior faces (connected to only 1 cell)
 
   // Sets (material sets, sidesets, nodesets)
   // We store the number of sets in the whole problem regardless of whether

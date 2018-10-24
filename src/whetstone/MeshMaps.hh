@@ -61,8 +61,6 @@ class MeshMaps {
                              VectorPolynomial& cn) const = 0;
 
   // -- Jacobian 
-  virtual void JacobianCell(int c, const std::vector<VectorPolynomial>& vf,
-                            MatrixPolynomial& J) const { AMANZI_ASSERT(0); }
   void Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const;
 
   // -- matrix of cofactors

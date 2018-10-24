@@ -14,6 +14,7 @@
 #ifndef AMANZI_REMAP_DG_HH_
 #define AMANZI_REMAP_DG_HH_
 
+#include <cstdlib>
 #include <iostream>
 #include <vector>
 
@@ -58,7 +59,8 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   // miscalleneous tools
   void UpdateGeometricQuantities(double t);
   void DeformMesh(int deform);
-  AmanziGeometry::Point DeformationFunctional(int deform, const AmanziGeometry::Point& yv);
+  AmanziGeometry::Point DeformationFunctional(int deform, const AmanziGeometry::Point& yv,
+                                              const AmanziGeometry::Point& rv = AmanziGeometry::Point(3));
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh0_;
@@ -289,16 +291,31 @@ void RemapDG<AnalyticDG>::UpdateGeometricQuantities(double t)
 template<class AnalyticDG>
 void RemapDG<AnalyticDG>::DeformMesh(int deform)
 {
-  AmanziGeometry::Point xv(dim_), yv(dim_), uv(dim_);
+  // create distributed random vector
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(mesh0_)->SetGhosted(true)->AddComponent("node", AmanziMesh::NODE, dim_);
+  CompositeVector random(cvs);
+
+  int gid = mesh0_->node_map(false).MaxAllGID();
+  double scale = 0.2 * std::pow(gid, -1.0 / dim_);
+  Epetra_MultiVector& random_n = *random.ViewComponent("node", true);
+
+  random_n.Random();
+  random_n.Scale(scale);
+  random.ScatterMasterToGhosted();
+
+  // relocate mesh nodes
+  AmanziGeometry::Point xv(dim_), yv(dim_), uv(dim_), rv(dim_);
   AmanziMesh::Entity_ID_List nodeids;
   AmanziGeometry::Point_List new_positions, final_positions;
 
-  // relocate mesh nodes
   int nnodes = mesh0_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+
   for (int v = 0; v < nnodes; ++v) {
+    for (int i = 0; i < dim_; ++i) rv[i] = random_n[i][v];
     mesh1_->node_get_coordinates(v, &xv);
     nodeids.push_back(v);
-    new_positions.push_back(DeformationFunctional(deform, xv));
+    new_positions.push_back(DeformationFunctional(deform, xv, rv));
   }
   mesh1_->deform(nodeids, new_positions, false, &final_positions);
 }
@@ -309,7 +326,7 @@ void RemapDG<AnalyticDG>::DeformMesh(int deform)
 ***************************************************************** */
 template<class AnalyticDG>
 AmanziGeometry::Point RemapDG<AnalyticDG>::DeformationFunctional(
-  int deform, const AmanziGeometry::Point& yv)
+  int deform, const AmanziGeometry::Point& yv, const AmanziGeometry::Point& rv)
 {
   AmanziGeometry::Point uv(dim_), xv(yv);
 
@@ -332,18 +349,19 @@ AmanziGeometry::Point RemapDG<AnalyticDG>::DeformationFunctional(
     xv[1] = yv[1] * yv[0] + (1.0 - yv[0]) * std::pow(yv[1], 0.8);
   }
   else if (deform == 3) {
-    if (xv[0] < 0.5) 
-      xv[0] += yv[0] / 2;
-    else
-      xv[0] += (1.0 - yv[0]) / 2;
+    if (fabs(yv[0]) > 1e-6 && fabs(1.0 - yv[0]) > 1e-6 &&
+        fabs(yv[1]) > 1e-6 && fabs(1.0 - yv[1]) > 1e-6) {
+      xv[0] += rv[0];
+      xv[1] += rv[1];
     }
+  }
   else if (deform == 4) {
-    xv[0] = yv[0] + yv[0] * yv[1] * (1.0 - yv[0]) / 2;
-    xv[1] = yv[1] + yv[0] * yv[1] * (1.0 - yv[1]) / 2;
+    xv[0] += yv[0] * yv[1] * (1.0 - yv[0]) / 2;
+    xv[1] += yv[0] * yv[1] * (1.0 - yv[1]) / 2;
   }
   else if (deform == 5) {
-    xv[0] = yv[0] + yv[0] * (1.0 - yv[0]) / 2;
-    xv[1] = yv[1] + yv[1] * (1.0 - yv[1]) / 2;
+    xv[0] += yv[0] * (1.0 - yv[0]) / 2;
+    xv[1] += yv[1] * (1.0 - yv[1]) / 2;
   }
 
   return xv;

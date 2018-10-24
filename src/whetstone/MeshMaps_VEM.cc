@@ -149,20 +149,6 @@ void MeshMaps_VEM::NansonFormula(
 
 
 /* ******************************************************************
-* Calculate mesh velocity in cell c: new algorithm
-****************************************************************** */
-void MeshMaps_VEM::JacobianCell(
-    int c, const std::vector<VectorPolynomial>& vf, MatrixPolynomial& J) const
-{
-  auto moments = std::make_shared<DenseVector>();
-  MFD3D_CrouzeixRaviart mfd(mesh0_);
-
-  mfd.set_order(order_ + 1);
-  mfd.L2GradientCell(c, vf, moments, J);
-}
-
-
-/* ******************************************************************
 * Calculate mesh velocity in cell c: old algorithm
 ****************************************************************** */
 void MeshMaps_VEM::LeastSquareProjector_Cell_(

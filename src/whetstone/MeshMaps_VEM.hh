@@ -55,10 +55,6 @@ class MeshMaps_VEM : public MeshMaps {
   virtual void NansonFormula(int f, double t, const VectorPolynomial& vf,
                              VectorPolynomial& cn) const override;
 
-  // -- Jacobian
-  virtual void JacobianCell(int c, const std::vector<VectorPolynomial>& vf,
-                            MatrixPolynomial& J) const override;
-
  private:
   // pseudo-velocity on edge e
   void VelocityEdge_(int e, VectorPolynomial& ve) const;

@@ -3720,10 +3720,10 @@ void Mesh_MSTK::init_face_map()
     // In effect we are checking if a ghost face that claims to be on the boundary is in the
     // owned boundary face list on another processor (pr_id >= 0)
     
-    extface_map_wo_ghosts_ -> RemoteIDList(nnotowned, gl_id.data(), pr_id.data(), lc_id.data());
+    extface_map_wo_ghosts_->RemoteIDList(nnotowned, gl_id.data(), pr_id.data(), lc_id.data());
 
 
-    int n_extface_w_ghosts = extface_map_wo_ghosts_ -> NumMyElements();
+    int n_extface_w_ghosts = extface_map_wo_ghosts_->NumMyElements();
 
     //Add to maping only external faces (which belong to local mapping on other processors
     for (int k=0; k < nnotowned_bnd; k++) {
