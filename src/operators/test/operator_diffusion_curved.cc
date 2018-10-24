@@ -46,7 +46,7 @@ void RunTestDiffusionCurved() {
   using namespace Amanzi::Operators;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  int MyPID = comm->getRank();
   if (MyPID == 0) std::cout << "\nTest: elliptic solver, mesh with curved faces\n";
 
   // read parameter list

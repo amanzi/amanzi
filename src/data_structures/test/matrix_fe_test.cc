@@ -43,7 +43,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA) {
   using namespace Amanzi::Operators;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
 
@@ -175,7 +175,7 @@ TEST(FE_MATRIX_FACE_FACE) {
   using namespace Amanzi::Operators;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
 

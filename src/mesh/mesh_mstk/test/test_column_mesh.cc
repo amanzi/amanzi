@@ -30,8 +30,8 @@ TEST(COLUMN_MESH_3D)
 {
 
   Epetra_MpiComm comm_(MPI_COMM_WORLD);
-  const int nproc(comm_.NumProc());
-  const int me(comm_.MyPID());
+  const int nproc(comm_->getSize());
+  const int me(comm_->getRank());
 
 
   int nx = 4, ny = 4, nz = 4;
@@ -204,8 +204,8 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
 {
 
   Epetra_MpiComm comm_(MPI_COMM_WORLD);
-  const int nproc(comm_.NumProc());
-  const int me(comm_.MyPID());
+  const int nproc(comm_->getSize());
+  const int me(comm_->getRank());
 
 
   int nx = 4, ny = 4, nz = 4;

@@ -36,7 +36,7 @@ TEST(MSTK_DEFORM_VOLS_2D)
 
   //  Teuchos::writeParameterListToXmlOStream(param_list,std::cout);
 
-  if (comm_->NumProc() > 1) return;
+  if (comm_->getSize() > 1) return;
 
   // Create a geometric model from region spec
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
@@ -196,7 +196,7 @@ TEST(MSTK_DEFORM_VOLS_3D)
       double diff = mesh->cell_volume(i)-min_volumes[i];
       std::cerr << "Cell Global ID " << mesh->GID(i,Amanzi::AmanziMesh::CELL)
                 << " Cell Local ID " << i 
-                << " Rank " << comm_->MyPID() 
+                << " Rank " << comm_->getRank() 
                 << ": Min volume = " << min_volumes[i] << "    "
                 << "Cell volume = " << mesh->cell_volume(i)  << "  Diff = "
                 << diff << std::endl;

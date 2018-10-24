@@ -28,8 +28,8 @@ TEST(MESH_GEOMETRY_PLANAR)
 {
 
   Epetra_MpiComm comm_(MPI_COMM_WORLD);
-  const int nproc(comm_.NumProc());
-  const int me(comm_.MyPID());
+  const int nproc(comm_->getSize());
+  const int me(comm_->getRank());
 
   const Amanzi::AmanziMesh::Framework frameworks[] = {  
     Amanzi::AmanziMesh::MSTK
@@ -225,8 +225,8 @@ TEST(MESH_GEOMETRY_SURFACE)
 
 
   Epetra_MpiComm comm_(MPI_COMM_WORLD);
-  const int nproc(comm_.NumProc());
-  const int me(comm_.MyPID());
+  const int nproc(comm_->getSize());
+  const int me(comm_->getRank());
 
   const Amanzi::AmanziMesh::Framework frameworks[] = {  
     Amanzi::AmanziMesh::MSTK
@@ -415,8 +415,8 @@ TEST(MESH_GEOMETRY_SOLID)
 {
 
   Epetra_MpiComm comm_(MPI_COMM_WORLD);
-  const int nproc(comm_.NumProc());
-  const int me(comm_.MyPID());
+  const int nproc(comm_->getSize());
+  const int me(comm_->getRank());
 
   const Amanzi::AmanziMesh::Framework frameworks[] = {  
     Amanzi::AmanziMesh::STKMESH,

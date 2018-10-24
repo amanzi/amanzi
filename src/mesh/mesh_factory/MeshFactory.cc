@@ -108,7 +108,7 @@ MeshFactory::create(const std::string& filename,
   Teuchos::RCP<Mesh> result;
   for (FrameworkPreference::const_iterator i = my_preference.begin(); 
        i != my_preference.end(); i++) {
-    if (framework_reads(*i, fmt, my_comm_->NumProc() > 1)) {
+    if (framework_reads(*i, fmt, my_comm_->getSize() > 1)) {
       try {
         result = framework_read(my_comm_, *i, filename, gm, vo_,
                                 request_faces, request_edges, partitioner_);
@@ -185,7 +185,7 @@ MeshFactory::create(double x0, double y0, double z0,
       
   for (FrameworkPreference::const_iterator i = my_preference.begin(); 
        i != my_preference.end(); i++) {
-    if (framework_generates(*i, my_comm_->NumProc() > 1, dim)) {
+    if (framework_generates(*i, my_comm_->getSize() > 1, dim)) {
       try {
         result = framework_generate(my_comm_, *i, 
                                     x0, y0, z0, x1, y1, z1, 
@@ -261,7 +261,7 @@ MeshFactory::create(double x0, double y0,
       
   for (FrameworkPreference::const_iterator i = my_preference.begin(); 
        i != my_preference.end(); i++) {
-    if (framework_generates(*i, my_comm_->NumProc() > 1, dim)) {
+    if (framework_generates(*i, my_comm_->getSize() > 1, dim)) {
       try {
         result = framework_generate(my_comm_, *i, 
                                     x0, y0, x1, y1,
@@ -311,7 +311,7 @@ MeshFactory::create(Teuchos::ParameterList &parameter_list,
   unsigned int dim = ncells.size();
 
   for (auto i = my_preference.begin(); i != my_preference.end(); i++) {
-    if (framework_generates(*i, my_comm_->NumProc() > 1, dim)) {
+    if (framework_generates(*i, my_comm_->getSize() > 1, dim)) {
       try {
         result = framework_generate(my_comm_, *i, parameter_list, gm, vo_,
                                     request_faces, request_edges);
@@ -364,7 +364,7 @@ MeshFactory::create(const Mesh *inmesh,
 
   for (FrameworkPreference::const_iterator i = my_preference.begin(); 
        i != my_preference.end(); i++) {
-    if (framework_extracts(*i, my_comm_->NumProc() > 1, dim)) {
+    if (framework_extracts(*i, my_comm_->getSize() > 1, dim)) {
       try {
         result = framework_extract(my_comm_, *i, inmesh, setnames, setkind, 
                                    flatten, extrude,

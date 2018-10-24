@@ -3,8 +3,8 @@
 
 #include <string>
 #include <fstream>
-#include "Epetra_Comm.h"
 
+#include "AmanziTypes.hh"
 #include "ColorFunction.hh"
 
 namespace Amanzi {

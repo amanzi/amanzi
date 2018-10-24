@@ -43,7 +43,7 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
   using namespace Amanzi::Operators;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  int MyPID = comm->getRank();
 
   if (MyPID == 0) {
     std::cout << "\nTest: Laplace Beltrami solver: ";

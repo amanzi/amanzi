@@ -68,7 +68,7 @@ SUITE (MeshFramework)
   TEST (PreferenceThrow)
   {
     Epetra_MpiComm comm_(MPI_COMM_WORLD);
-    bool parallel(comm_.NumProc() > 1);
+    bool parallel(comm_->getSize() > 1);
     
     Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm_);
     Amanzi::AmanziMesh::FrameworkPreference pref(mesh_factory.preference());
@@ -83,7 +83,7 @@ SUITE (MeshFramework)
   TEST (Generate)
   {
     Epetra_MpiComm comm_(MPI_COMM_WORLD);
-    bool parallel(comm_.NumProc() > 1);
+    bool parallel(comm_->getSize() > 1);
     
     Amanzi::AmanziMesh::FrameworkPreference pref;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
@@ -154,7 +154,7 @@ SUITE (MeshFramework)
   TEST (Generate2D)
   {
     Epetra_MpiComm comm_(MPI_COMM_WORLD);
-    bool parallel(comm_.NumProc() > 1);
+    bool parallel(comm_->getSize() > 1);
     
     Amanzi::AmanziMesh::FrameworkPreference pref;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
@@ -217,7 +217,7 @@ SUITE (MeshFramework)
   TEST (ParameterGenerate3)
   {
     Epetra_MpiComm comm_(MPI_COMM_WORLD);
-    bool parallel(comm_.NumProc() > 1);
+    bool parallel(comm_->getSize() > 1);
     
     Amanzi::AmanziMesh::FrameworkPreference pref;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
@@ -278,7 +278,7 @@ SUITE (MeshFramework)
   TEST (ParameterGenerate2)
   {
     Epetra_MpiComm comm_(MPI_COMM_WORLD);
-    bool parallel(comm_.NumProc() > 1);
+    bool parallel(comm_->getSize() > 1);
     
     Amanzi::AmanziMesh::FrameworkPreference pref;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
@@ -338,7 +338,7 @@ SUITE (MeshFramework)
   // The Simple framework cannot read anything, even if it exists
   TEST (ReadSimple) {
     Epetra_MpiComm comm_(MPI_COMM_WORLD);
-    bool parallel(comm_.NumProc() > 1);
+    bool parallel(comm_->getSize() > 1);
     
     Amanzi::AmanziMesh::FrameworkPreference pref;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
@@ -361,7 +361,7 @@ SUITE (MeshFramework)
   TEST (ReadMOABHDF5)
   {
     Epetra_MpiComm comm_(MPI_COMM_WORLD);
-    bool parallel(comm_.NumProc() > 1);
+    bool parallel(comm_->getSize() > 1);
 
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
     Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm_);
@@ -388,7 +388,7 @@ SUITE (MeshFramework)
   TEST (ReadExodus) 
   {
     Epetra_MpiComm comm_(MPI_COMM_WORLD);
-    bool parallel(comm_.NumProc() > 1);
+    bool parallel(comm_->getSize() > 1);
 
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
     Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm_);
@@ -408,7 +408,7 @@ SUITE (MeshFramework)
   TEST (ReadNemesis) 
   {
     Epetra_MpiComm comm_(MPI_COMM_WORLD);
-    bool parallel(comm_.NumProc() > 1);
+    bool parallel(comm_->getSize() > 1);
     
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
     Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm_);
@@ -427,7 +427,7 @@ SUITE (MeshFramework)
   TEST (Extract3)
   {
     Epetra_MpiComm comm_(MPI_COMM_WORLD);
-    bool parallel(comm_.NumProc() > 1);
+    bool parallel(comm_->getSize() > 1);
     
     Amanzi::AmanziMesh::FrameworkPreference pref;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh, newmesh;

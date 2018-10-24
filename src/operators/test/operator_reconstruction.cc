@@ -63,11 +63,11 @@ void GradientError(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
 
 #ifdef HAVE_MPI
     double tmp = err_int;
-    mesh->get_comm()->SumAll(&tmp, &err_int, 1);
+    mesh->Comm()->SumAll(&tmp, &err_int, 1);
     tmp = err_glb;
-    mesh->get_comm()->SumAll(&tmp, &err_glb, 1);
+    mesh->Comm()->SumAll(&tmp, &err_glb, 1);
     tmp = norm;
-    mesh->get_comm()->SumAll(&tmp, &norm, 1);
+    mesh->Comm()->SumAll(&tmp, &norm, 1);
 #endif
 
   err_int = pow(err_int / norm, 0.5);
@@ -85,7 +85,7 @@ TEST(RECONSTRUCTION_LINEAR_2D) {
   using namespace Amanzi::Operators;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "\nTest: Exactness on linear functions in 2D." << std::endl;
 
@@ -143,7 +143,7 @@ TEST(RECONSTRUCTION_LINEAR_3D) {
   using namespace Amanzi::Operators;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "\nTest: Exactness on linear functions in 3D." << std::endl;
 
@@ -202,7 +202,7 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_2D) {
   using namespace Amanzi::Operators;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  int MyPID = comm->getRank();
   if (MyPID == 0) std::cout << "\nTest: Limiters for linear functions in 2D." << std::endl;
 
   // create rectangular mesh
@@ -319,7 +319,7 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_3D) {
   using namespace Amanzi::Operators;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  int MyPID = comm->getRank();
   if (MyPID == 0) std::cout << "\nTest: Limiters for linear functions in 3D." << std::endl;
 
   // create rectangular mesh
@@ -439,7 +439,7 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_2D) {
   using namespace Amanzi::Operators;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  int MyPID = comm->getRank();
   if (MyPID == 0) std::cout << "\nTest: Accuracy on a smooth field in 2D." << std::endl;
 
   // create rectangular mesh
@@ -562,7 +562,7 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_3D) {
   using namespace Amanzi::Operators;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  int MyPID = comm->getRank();
   if (MyPID == 0) std::cout << "\nTest: Accuracy on a smooth field in 3D" << std::endl;
 
   // create rectangular mesh
@@ -688,7 +688,7 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_2D_POLYMESH) {
   using namespace Amanzi::Operators;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  int MyPID = comm->getRank();
   if (MyPID == 0) std::cout << "\nTest: Accuracy on a smooth field on polygonal mesh." << std::endl;
 
   // load polygonal mesh
@@ -810,7 +810,7 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_FRACtURES) {
   using namespace Amanzi::Operators;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  int MyPID = comm->getRank();
   if (MyPID == 0) std::cout << "\nTest: Limiters for linear functions in fractures." << std::endl;
 
   // create rectangular mesh

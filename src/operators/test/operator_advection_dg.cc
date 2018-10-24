@@ -64,7 +64,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   using namespace Amanzi::Operators;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  int MyPID = comm->getRank();
 
   std::string problem = (conservative_form) ? ", conservative formulation" : "";
   if (MyPID == 0) std::cout << "\nTest: " << dim 

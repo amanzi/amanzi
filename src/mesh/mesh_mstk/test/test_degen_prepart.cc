@@ -25,8 +25,8 @@ TEST(ELIM_DEGEN_PREPARTITION)
   std::string xml_filename = "test/test_degen_prepart.xml";
   
   Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
-  int num_procs = comm_->NumProc();
-  int rank = comm_->MyPID();
+  int num_procs = comm_->getSize();
+  int rank = comm_->getRank();
   
   std::cout << "Reading the input file..." << std::endl;
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xml_filename);

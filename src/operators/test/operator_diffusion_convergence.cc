@@ -165,7 +165,7 @@ std::pair<double, double> RunForwardProblem(const std::string& discretization,
   double linf(0.0);
   error.NormInf(&linf);
   
-  if (comm.MyPID() == 0) {
+  if (comm->getRank() == 0) {
     printf("[%4d, %6.12e, %6.12e],\n",(int) round(log2(nx)), log2(l2), log2(linf));
   }
   return std::make_pair(log2(l2), log2(linf));
@@ -324,7 +324,7 @@ std::pair<double, double> RunInverseProblem(const std::string& discretization,
   double linf(0.0);
   error.NormInf(&linf);
   
-  if (comm.MyPID() == 0) {
+  if (comm->getRank() == 0) {
     printf("[%4d, %6.12e, %6.12e],\n",(int) round(log2(nx)), log2(l2), log2(linf));
   }
   return std::make_pair(log2(l2), log2(linf));

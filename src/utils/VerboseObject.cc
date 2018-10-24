@@ -80,7 +80,7 @@ VerboseObject::VerboseObject(std::string name, Teuchos::ParameterList& plist)
 
 VerboseObject::VerboseObject(Comm_ptr_type comm, std::string name,
                              Teuchos::ParameterList& plist) :
-    comm_(Teuchos::rcp(comm.Clone()))
+    comm_(comm)
 {
   int root = -1;
   // Check if we are in the mode of writing only a specific rank.
@@ -119,8 +119,8 @@ VerboseObject::VerboseObject(Comm_ptr_type comm, std::string name,
 
   // Set up a local FancyOStream
   if (root >= 0) {
-    int size = comm_->NumProc();
-    int pid = comm_->MyPID();
+    int size = comm_->getSize();
+    int pid = comm_->getRank();
     Teuchos::RCP<Teuchos::FancyOStream> newout = Teuchos::rcp(new Teuchos::FancyOStream(out_->getOStream()));
     newout->setProcRankAndSize(pid,size);
     newout->setOutputToRootOnly(root);

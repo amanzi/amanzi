@@ -33,8 +33,8 @@ int main (int argc, char* argv[])
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  const int nproc(comm.NumProc());
-  const int me(comm.MyPID());
+  const int nproc(comm->getSize());
+  const int me(comm->getRank());
 
   // handle command line
 

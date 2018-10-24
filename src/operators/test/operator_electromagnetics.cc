@@ -49,7 +49,7 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   using namespace Amanzi::Operators;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "\nTest: Curl-curl operator, tol=" << tolerance << std::endl;
 

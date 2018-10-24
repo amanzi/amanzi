@@ -45,7 +45,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   using namespace Amanzi::Operators;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "\nTest: Simulating nonlinear Marshak wave" << std::endl;
 
@@ -231,9 +231,9 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     pnorm += p[0][c] * p[0][c];
   }
   double tmp = pl2_err;
-  mesh->get_comm()->SumAll(&tmp, &pl2_err, 1);
+  mesh->Comm()->SumAll(&tmp, &pl2_err, 1);
   tmp = pnorm;
-  mesh->get_comm()->SumAll(&tmp, &pnorm, 1);
+  mesh->Comm()->SumAll(&tmp, &pnorm, 1);
 
   pl2_err = std::pow(pl2_err / pnorm, 0.5);
   pnorm = std::pow(pnorm, 0.5);

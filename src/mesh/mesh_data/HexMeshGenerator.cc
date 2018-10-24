@@ -67,9 +67,9 @@ HexMeshGenerator::HexMeshGenerator(const Epetra_Comm *comm,
   AMANZI_ASSERT(ni_ > 0);
   AMANZI_ASSERT(nj_ > 0);
   AMANZI_ASSERT(nk_ > 0);
-  const int p_size(comm_->NumProc());
+  const int p_size(comm_->getSize());
   AMANZI_ASSERT(ncell_ >= p_size);      // require at least 1 cell per process
-  const int p_rank(comm_->MyPID());
+  const int p_rank(comm_->getRank());
   unsigned int proccell(ncell_/p_size);
   int cell0_ = p_rank * proccell;
   int cell1_ = (p_rank + 1) * proccell - 1;
@@ -275,7 +275,7 @@ HexMeshGenerator::generate_the_elements_(void)
     r->gidx.push_back(gidx);
     std::copy(c, c+nvcell, std::back_inserter(r->connectivity));
     
-    // std::cerr << comm_->MyPID() << ": "
+    // std::cerr << comm_->getRank() << ": "
     //           << "cell " << gidx << ": " << i << ", " << j << ", " << k 
     //           << ": " << p << ": block " << r->id << std::endl;
 

@@ -436,7 +436,7 @@ void Mesh_simple::update_internals_()
 
 void Mesh_simple::build_maps_()
 {
-  Comm_ptr_type epcomm_ = Mesh::get_comm();
+  Comm_ptr_type epcomm_ = Mesh::Comm();
   std::vector<int> cells( num_cells_ );
   for (int i=0; i< num_cells_; i++) cells[i] = i;
   

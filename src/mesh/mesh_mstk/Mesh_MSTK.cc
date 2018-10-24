@@ -118,7 +118,7 @@ Mesh_MSTK::Mesh_MSTK(const char *filename,
     owned_to_extface_importer_(NULL)
 {  
 
-  int numprocs = comm_->NumProc();
+  int numprocs = comm_->getSize();
 
   // Assume three dimensional problem if constructor called without 
   // the space_dimension parameter
@@ -591,7 +591,7 @@ Mesh_MSTK::Mesh_MSTK(const Mesh *inmesh,
 
   MType entity_dim = ((Mesh_MSTK *) inmesh)->entity_kind_to_mtype(setkind);
 
-  extract_mstk_mesh(inmesh->get_comm(), *((Mesh_MSTK *) inmesh), src_ents, entity_dim,
+  extract_mstk_mesh(inmesh->Comm(), *((Mesh_MSTK *) inmesh), src_ents, entity_dim,
                     flatten, extrude, request_faces, request_edges);
 
   List_Delete(src_ents);
@@ -647,7 +647,7 @@ Mesh_MSTK::Mesh_MSTK(const Mesh& inmesh,
 
   MType entity_dim = ((Mesh_MSTK&) inmesh).entity_kind_to_mtype(setkind);
 
-  extract_mstk_mesh(inmesh.get_comm(), (Mesh_MSTK&) inmesh, src_ents, entity_dim, flatten, extrude,
+  extract_mstk_mesh(inmesh.Comm(), (Mesh_MSTK&) inmesh, src_ents, entity_dim, flatten, extrude,
                     request_faces, request_edges);
 
   List_Delete(src_ents);
@@ -694,7 +694,7 @@ Mesh_MSTK::Mesh_MSTK(const Mesh& inmesh,
     List_Add(src_ents,ent);
   }
   
-  extract_mstk_mesh(inmesh.get_comm(), (Mesh_MSTK&) inmesh, src_ents, entity_dim, flatten, extrude,
+  extract_mstk_mesh(inmesh.Comm(), (Mesh_MSTK&) inmesh, src_ents, entity_dim, flatten, extrude,
                     request_faces, request_edges);
 
   List_Delete(src_ents);
@@ -819,7 +819,7 @@ Mesh_MSTK::other_internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::R
 // Extract a list of MSTK entities and make a new MSTK mesh
 // For private use of Mesh_MSTK class only
 //---------------------------------------------------------
-void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
+void Mesh_MSTK::extract_mstk_mesh(const Comm_type *incomm,
                                   const Mesh_MSTK& inmesh,
                                   List_ptr src_entities, 
                                   const MType entity_dim,
@@ -3303,28 +3303,6 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
   return mset;
 }
 
-MPI_Comm getMpiCommOutOfEpetraComm (const Epetra_Comm* epetraComm)
-{
-  if (epetraComm == nullptr) {
-    return MPI_COMM_NULL;
-  }
-  const Epetra_MpiComm* epetraMpiComm = dynamic_cast<const Epetra_MpiComm*> (epetraComm);
-  if (epetraMpiComm == nullptr) {
-    return MPI_COMM_SELF;
-  }
-  else {
-    return epetraMpiComm->Comm ();
-  }
-}
-
-Teuchos::RCP<const Teuchos::Comm<int> >
-getTeuchosCommFromEpetraComm (const Epetra_Comm* epetraComm)
-{
-  MPI_Comm mpiComm = getMpiCommOutOfEpetraComm (epetraComm);
-  Teuchos::RCP<const Teuchos::MpiComm<int> teuchosMpiComm (new Teuchos::MpiComm<int> (mpiComm));
-  Teuchos::RCP<const Teuchos::Comm<int> > teuchosComm = teuchosMpiComm;
-  return teuchosComm;
-}
 
 //---------------------------------------------------------
 // Get list of entities of type 'category' in set specified by setname
@@ -3341,7 +3319,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
   bool found(false);
   int celldim = Mesh::manifold_dimension();
   int space_dim_ = Mesh::space_dimension();
-  Comm_ptr_type epcomm_ = get_comm();
+  Comm_ptr_type epcomm_ = Comm();
   Teuchos::RCP<const VerboseObject> verbobj = Mesh::verbosity_obj();
 
   assert(setents != NULL);
@@ -3410,7 +3388,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
         /// set is not on this processor
       
         if (!mset1) {
-          if (epcomm_->NumProc() == 1) {
+          if (epcomm_->getSize() == 1) {
             Errors::Message msg;
             msg << "Could not find labeled set \"" << label 
                 << "\" in mesh file to initialize mesh set \"" << setname 
@@ -3615,7 +3593,7 @@ void Mesh_MSTK::init_cell_map()
   int *cell_gids;
   int ncell, idx, i;
   MEntity_ptr ment;
-  Comm_ptr_type epcomm_ = get_comm();
+  Comm_ptr_type epcomm_ = Comm();
 
   auto teuchosComm = getTeuchosCommFromEpetraComm (epcomm_);
   if (!serial_run) {
@@ -3673,7 +3651,7 @@ void Mesh_MSTK::init_face_map()
   int *face_gids = nullptr, *extface_gids = nullptr;
   int nface = -1, n_extface = -1, idx, i = -1, j = -1;
   MEntity_ptr ment = nullptr;
-  Comm_ptr_type epcomm_ = get_comm();
+  Comm_ptr_type epcomm_ = Comm();
 
   if (!serial_run) {
 
@@ -3847,7 +3825,7 @@ void Mesh_MSTK::init_edge_map()
   int *edge_gids;
   int nedge, idx, i;
   MEntity_ptr ment;
-  Comm_ptr_type epcomm_ = get_comm();
+  Comm_ptr_type epcomm_ = Comm();
 
   if (!serial_run) {
 
@@ -3908,7 +3886,7 @@ void Mesh_MSTK::init_node_map()
   int *vert_gids;
   int nvert, idx, i;
   MEntity_ptr ment;
-  Comm_ptr_type epcomm_ = get_comm();
+  Comm_ptr_type epcomm_ = Comm();
 
   if (!serial_run) {
 

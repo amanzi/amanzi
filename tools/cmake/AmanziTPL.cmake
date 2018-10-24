@@ -172,6 +172,7 @@ if (Trilinos_FOUND)
   message(STATUS "\tTrilinos_VERSION      = ${Trilinos_VERSION}")
   message(STATUS "\tTrilinos_DIR          = ${Trilinos_DIR}")
   message(STATUS "\tTrilinos_INCLUDE_DIRS = ${Trilinos_INCLUDE_DIRS}")
+  message(STATUS "\tTrilinos_CXX_COMPILER_FLAGS = ${Trilinos_CXX_COMPILER_FLAGS}")
   message(STATUS "")
 
   trilinos_package_enabled_tpls(Trilinos)           

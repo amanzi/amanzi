@@ -94,8 +94,8 @@ std::string file_format_name(const Format& f)
  */
 Format file_format(Comm_ptr_type comm_, const char *name) 
 {
-  const int np(comm_.NumProc());
-  const int me(comm_.MyPID());
+  const int np(comm_->getSize());
+  const int me(comm_->getRank());
 
   // take a guess at the format using the file name
   std::string fname(name);
@@ -110,7 +110,7 @@ Format file_format(Comm_ptr_type comm_, const char *name)
     int ndigits = (int)floor(log10(np)) + 1;
     std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
     fname = boost::str(boost::format(fmt) % 
-                       name % comm_.NumProc() % comm_.MyPID());
+                       name % comm_->getSize() % comm_->getRank());
   }
 
   // check to see if there is actually a file first

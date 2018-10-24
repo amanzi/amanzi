@@ -61,11 +61,11 @@ void InputAnalysis::RegionAnalysis()
       int nblock_tmp(nblock), nvofs_tmp(nvofs);
       double volume_tmp(volume), vofs_min_tmp(vofs_min), vofs_max_tmp(vofs_max);
 
-      mesh_->get_comm()->SumAll(&nblock_tmp, &nblock, 1);
-      mesh_->get_comm()->SumAll(&nvofs_tmp, &nvofs, 1);
-      mesh_->get_comm()->SumAll(&volume_tmp, &volume, 1);
-      mesh_->get_comm()->MinAll(&vofs_min_tmp, &vofs_min, 1);
-      mesh_->get_comm()->MaxAll(&vofs_max_tmp, &vofs_max, 1);
+      mesh_->Comm()->SumAll(&nblock_tmp, &nblock, 1);
+      mesh_->Comm()->SumAll(&nvofs_tmp, &nvofs, 1);
+      mesh_->Comm()->SumAll(&volume_tmp, &volume, 1);
+      mesh_->Comm()->MinAll(&vofs_min_tmp, &vofs_min, 1);
+      mesh_->Comm()->MaxAll(&vofs_max_tmp, &vofs_max, 1);
 #endif
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
@@ -110,11 +110,11 @@ void InputAnalysis::RegionAnalysis()
       int nblock_tmp(nblock), nvofs_tmp(nvofs);
       double area_tmp(area), vofs_min_tmp(vofs_min), vofs_max_tmp(vofs_max);
 
-      mesh_->get_comm()->SumAll(&nblock_tmp, &nblock, 1);
-      mesh_->get_comm()->SumAll(&nvofs_tmp, &nvofs, 1);
-      mesh_->get_comm()->SumAll(&area_tmp, &area, 1);
-      mesh_->get_comm()->MinAll(&vofs_min_tmp, &vofs_min, 1);
-      mesh_->get_comm()->MaxAll(&vofs_max_tmp, &vofs_max, 1);
+      mesh_->Comm()->SumAll(&nblock_tmp, &nblock, 1);
+      mesh_->Comm()->SumAll(&nvofs_tmp, &nvofs, 1);
+      mesh_->Comm()->SumAll(&area_tmp, &area, 1);
+      mesh_->Comm()->MinAll(&vofs_min_tmp, &vofs_min, 1);
+      mesh_->Comm()->MaxAll(&vofs_max_tmp, &vofs_max, 1);
 #endif
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
         std::string name(regions[i]);
@@ -158,8 +158,8 @@ void InputAnalysis::RegionAnalysis()
 
 #ifdef HAVE_MPI
       volume_tmp = volume;
-      mesh_->get_comm()->SumAll(&nblock_tmp, &nblock, 1);
-      mesh_->get_comm()->SumAll(&volume_tmp, &volume, 1);
+      mesh_->Comm()->SumAll(&nblock_tmp, &nblock, 1);
+      mesh_->Comm()->SumAll(&volume_tmp, &volume, 1);
 #endif
 
       if (nblock == 0) {
@@ -171,8 +171,8 @@ void InputAnalysis::RegionAnalysis()
 
 #ifdef HAVE_MPI
         volume_tmp = volume;
-        mesh_->get_comm()->SumAll(&nblock_tmp, &nblock, 1);
-        mesh_->get_comm()->SumAll(&volume_tmp, &volume, 1);
+        mesh_->Comm()->SumAll(&nblock_tmp, &nblock, 1);
+        mesh_->Comm()->SumAll(&volume_tmp, &volume, 1);
 #endif
       } 
 

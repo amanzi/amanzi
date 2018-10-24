@@ -27,8 +27,8 @@ TEST(ELIM_DEGEN_INLINE_PARTITION)
   std::string out_exo_filename = "test/po_mesh_out.exo";
   
   Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
-  int num_procs = comm_->NumProc();
-  int rank = comm_->MyPID();
+  int num_procs = comm_->getSize();
+  int rank = comm_->getRank();
   
   std::cout << "Reading the input file..." << std::endl;
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xml_filename);

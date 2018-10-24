@@ -74,7 +74,7 @@ grab_filename(const bf::path& some_path) {
 void
 dump_output(const int& me, Amanzi::AmanziMesh::Mesh &mesh, const std::string& filenameout)
 {
-  Amanzi::HDF5_MPI *viz_output = new Amanzi::HDF5_MPI(*mesh.get_comm());
+  Amanzi::HDF5_MPI *viz_output = new Amanzi::HDF5_MPI(*mesh.Comm());
   viz_output->setTrackXdmf(true);
   viz_output->createMeshFile(Teuchos::rcp(&mesh), filenameout);
   viz_output->createDataFile(filenameout);
@@ -140,7 +140,7 @@ do_the_audit(const int& me,
 
   int gresult;
 
-  mesh->get_comm()->MaxAll(&lresult, &gresult, 1);
+  mesh->Comm()->MaxAll(&lresult, &gresult, 1);
 
   return gresult;
 
@@ -158,8 +158,8 @@ main(int argc, char **argv)
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  const int nproc(comm.NumProc());
-  const int me(comm.MyPID());
+  const int nproc(comm->getSize());
+  const int me(comm->getRank());
 
   unsigned int xcells(4), ycells(4), zcells(4);
   double xdelta(1.0), ydelta(1.0), zdelta(1.0);

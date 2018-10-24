@@ -77,7 +77,7 @@ int CheckMatrixSymmetry(Teuchos::RCP<Epetra_CrsMatrix> A)
   Epetra_Vector x(A->DomainMap());
   Epetra_Vector y(x), z(x);
 
-  if (A->Comm().MyPID() == 0)
+  if (A->Comm()->getRank() == 0)
     printf("Running 10 symmetry tests: size(A)=%d\n", A->NumGlobalRows());
 
   for (int n = 0; n < 10; n++) {
@@ -92,7 +92,7 @@ int CheckMatrixSymmetry(Teuchos::RCP<Epetra_CrsMatrix> A)
     A->Multiply(false, y, z);
     z.Dot(x, &ayx);
     double err = fabs(axy - ayx) / (fabs(axy) + fabs(ayx) + 1e-10);
-    if (A->Comm().MyPID() == 0 && err > 1e-10) {        
+    if (A->Comm()->getRank() == 0 && err > 1e-10) {        
       printf("   Summetry violation: (Ax,y)=%12.7g (Ay,x)=%12.7g\n", axy, ayx);
     }
   }
@@ -109,7 +109,7 @@ int CheckMatrixCoercivity(Teuchos::RCP<Epetra_CrsMatrix> A)
   Epetra_Vector x(A->DomainMap());
   Epetra_Vector y(x), z(x);
 
-  if (A->Comm().MyPID() == 0)
+  if (A->Comm()->getRank() == 0)
     printf("Running 10 coercivity tests: size(A)=%d\n", A->NumGlobalRows());
 
   double tmp, axx, axxmin(1e+99), axxmax(-1e+99);
@@ -121,7 +121,7 @@ int CheckMatrixCoercivity(Teuchos::RCP<Epetra_CrsMatrix> A)
     A->Multiply(false, x, y);
     y.Dot(x, &axx);
 
-    if (A->Comm().MyPID() == 0 && axx <= 1e-12) {        
+    if (A->Comm()->getRank() == 0 && axx <= 1e-12) {        
       printf("   Coercivity violation: (Ax,x)=%12.7g\n", axx);
     }
 
@@ -131,7 +131,7 @@ int CheckMatrixCoercivity(Teuchos::RCP<Epetra_CrsMatrix> A)
     axxmax = std::max(axxmax, axx);
   }
 
-  if (A->Comm().MyPID() == 0) {        
+  if (A->Comm()->getRank() == 0) {        
     printf("   min/max of (Ax,x)/(x,x): %12.7g %12.7g\n", axxmin, axxmax);
   }
   return 0;

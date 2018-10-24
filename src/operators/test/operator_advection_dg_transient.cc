@@ -568,8 +568,8 @@ void AdvectionFn<AnalyticDG>::ApplyLimiter(CompositeVector& u)
     tmp1 = std::min(tmp1, limiter[c]);
     tmp2 += limiter[c];
   }
-  mesh_->get_comm()->MinAll(&tmp1, &limiter_min, 1);
-  mesh_->get_comm()->SumAll(&tmp2, &limiter_mean, 1);
+  mesh_->Comm()->MinAll(&tmp1, &limiter_min, 1);
+  mesh_->Comm()->SumAll(&tmp2, &limiter_mean, 1);
   limiter_mean /= limiter.Map().MaxAllGID();
 }
 
@@ -605,7 +605,7 @@ void AdvectionTransient(std::string filename, int nx, int ny,
   using namespace Amanzi::Operators;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  int MyPID = comm->getRank();
 
   // read parameter list
   std::string xmlFileName = "test/operator_advection_dg_transient.xml";

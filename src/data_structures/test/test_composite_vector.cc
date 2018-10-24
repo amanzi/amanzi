@@ -61,7 +61,7 @@ SUITE(COMPOSITE_VECTOR) {
     CompositeVectorSpace space(x->Map());
     CHECK(x->Map().SameAs(space));
     CHECK_EQUAL(2, x->NumComponents());
-    int size = comm->NumProc();
+    int size = comm->getSize();
     if (size == 1)
       CHECK_EQUAL(8, x->size("cell"));
     CHECK_EQUAL(2, x->NumVectors("cell"));
@@ -191,8 +191,8 @@ SUITE(COMPOSITE_VECTOR) {
 
   // test the communication routines
   TEST_FIXTURE(test_cv, CVScatter) {
-    int rank = comm->MyPID();
-    int size = comm->NumProc();
+    int rank = comm->getRank();
+    int size = comm->getSize();
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
     { // scope for x_c
@@ -226,7 +226,7 @@ SUITE(COMPOSITE_VECTOR) {
   }
 
   TEST_FIXTURE(test_cv, CVGather) {
-    int rank = comm->MyPID();
+    int rank = comm->getRank();
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     Epetra_MultiVector& x_c = *x->ViewComponent("cell",true);
     for (int c=0; c!=ncells; ++c) {
@@ -244,8 +244,8 @@ SUITE(COMPOSITE_VECTOR) {
 
   TEST_FIXTURE(test_cv, CVManageCommSmoke) {
     // Ensures that Communication happens after a change.
-    int rank = comm->MyPID();
-    int size = comm->NumProc();
+    int rank = comm->getRank();
+    int size = comm->getSize();
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
     Epetra_MultiVector& x_c = *x->ViewComponent("cell",false);
     for (int c=0; c!=ncells; ++c) {
@@ -272,8 +272,8 @@ SUITE(COMPOSITE_VECTOR) {
   TEST_FIXTURE(test_cv, CVManageCommNoComm) {
     // Ensures that Communication DOESN"T happen if it isn't needed 
     // Does not work
-    int rank = comm->MyPID();
-    int size = comm->NumProc();
+    int rank = comm->getRank();
+    int size = comm->getSize();
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
     Epetra_MultiVector& x_c = *x->ViewComponent("cell",false);

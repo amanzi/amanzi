@@ -214,7 +214,7 @@ void RemapDG::FunctionalTimeDerivative(
   xc.MaxValue(xmax);
   xc.MinValue(xmin);
 
-  if (fabs(tprint_ - t) < 1e-6 && mesh0_->get_comm()->MyPID() == 0) {
+  if (fabs(tprint_ - t) < 1e-6 && mesh0_->Comm()->getRank() == 0) {
     printf("t=%8.5f  L2=%9.5g  nfnc=%3d  umax: ", t, l2norm_, nfun_);
     for (int i = 0; i < nk; ++i) printf("%9.5g ", xmax[i]);
     printf("\n");
@@ -342,7 +342,7 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   int dim = (nz == 0) ? 2 : 3;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  int MyPID = comm->getRank();
 
   // read parameter list
   std::string xmlFileName = "test/operator_remap.xml";
@@ -485,7 +485,7 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
     mass0 += numi.IntegratePolynomialCell(c, poly);
   }
   double mass_tmp(mass0);
-  mesh0->get_comm()->SumAll(&mass_tmp, &mass0, 1);
+  mesh0->Comm()->SumAll(&mass_tmp, &mass0, 1);
 
   // allocate memory for global variables
   CompositeVectorSpace cvs2;
@@ -643,19 +643,19 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   // parallel collective operations
   double err_in[5] = {pl2_err, area, mass1, ql2_err, l20_err};
   double err_out[5];
-  mesh1->get_comm()->SumAll(err_in, err_out, 5);
+  mesh1->Comm()->SumAll(err_in, err_out, 5);
 
   double err_tmp = pinf_err;
-  mesh1->get_comm()->MaxAll(&err_tmp, &pinf_err, 1);
+  mesh1->Comm()->MaxAll(&err_tmp, &pinf_err, 1);
 
   err_tmp = qinf_err;
-  mesh1->get_comm()->MaxAll(&err_tmp, &qinf_err, 1);
+  mesh1->Comm()->MaxAll(&err_tmp, &qinf_err, 1);
 
   err_tmp = inf0_err;
-  mesh1->get_comm()->MaxAll(&err_tmp, &inf0_err, 1);
+  mesh1->Comm()->MaxAll(&err_tmp, &inf0_err, 1);
 
   err_tmp = gcl_err;
-  mesh1->get_comm()->MaxAll(&err_tmp, &gcl_err, 1);
+  mesh1->Comm()->MaxAll(&err_tmp, &gcl_err, 1);
 
   // error tests
   pl2_err = std::pow(err_out[0], 0.5);

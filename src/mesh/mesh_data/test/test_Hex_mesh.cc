@@ -27,7 +27,7 @@ SUITE (HexMeshGenerator)
   {
     Epetra_MpiComm comm_(MPI_COMM_WORLD);
 
-    int me(comm_.MyPID());
+    int me(comm_->getRank());
 
     Amanzi::AmanziMesh::Data::HexMeshGenerator gen(&comm_, size*size, size, size);
     Amanzi::AmanziMesh::Data::Data *mesh;

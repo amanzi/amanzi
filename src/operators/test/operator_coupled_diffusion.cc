@@ -77,7 +77,7 @@ struct Problem {
       mesh(mesh_),
       ana(ana_),
       discretization(discretization_),
-      comm(mesh_->get_comm())
+      comm(mesh_->Comm())
       
   {}
 
@@ -542,7 +542,7 @@ struct Problem {
   void Report(CompositeVector& u,
               CompositeVector& v) {
     std::cout << "Problem with " << mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL)
-              << " on " << mesh->get_comm()->NumProc() << " cores with discretization \""
+              << " on " << mesh->Comm()->getSize() << " cores with discretization \""
               << discretization << "\"" << std::endl;
     std::cout << "Solution:" << std::endl;
     std::cout << "U = ";
@@ -737,7 +737,7 @@ std::pair<double,double> RunForwardProblem(
   double error_l2 = sqrt(pow(error0_l2/unorm,2) + pow(error1_l2/vnorm,2));
   double error_linf = std::max(error0_linf, error1_linf);
 
-  if (problem->comm->MyPID() == 0) {
+  if (problem->comm->getRank() == 0) {
     printf("[%4d, %6.12e, %6.12e],\n",(int) round(log2(nx)), log2(error_l2), log2(error_linf));
   }
 
@@ -824,7 +824,7 @@ std::pair<double,double> RunForwardProblem_Assembled(
   double error_l2 = sqrt(pow(error0_l2/unorm,2) + pow(error1_l2/vnorm,2));
   double error_linf = std::max(error0_linf, error1_linf);
 
-  if (problem->comm->MyPID() == 0) {
+  if (problem->comm->getRank() == 0) {
     printf("[%4d, %6.12e, %6.12e],\n",(int) round(log2(nx)), log2(error_l2), log2(error_linf));
   }
 
@@ -948,7 +948,7 @@ std::pair<double,double> RunInverseProblem(
   double error_l2 = sqrt(pow(error0_l2/unorm,2) + pow(error1_l2/vnorm,2));
   double error_linf = std::max(error0_linf, error1_linf);
 
-  if (problem->comm->MyPID() == 0) {
+  if (problem->comm->getRank() == 0) {
     printf("[%4d, %6.12e, %6.12e],\n",(int) round(log2(nx)), log2(error_l2), log2(error_linf));
   }
 
@@ -1176,7 +1176,7 @@ std::pair<double,double> RunNonlinearProblem(
   double error_l2 = sqrt(pow(error0_l2/unorm,2) + pow(error1_l2/vnorm,2));
   double error_linf = std::max(error0_linf, error1_linf);
 
-  if (problem->comm->MyPID() == 0) {
+  if (problem->comm->getRank() == 0) {
     printf("[%4d, %6.12e, %6.12e],\n",(int) round(log2(nx)), log2(error_l2), log2(error_linf));
   }
 
@@ -1305,7 +1305,7 @@ std::pair<double,double> RunInverseProblem_Diag(
   double error_l2 = sqrt(pow(error0_l2/unorm,2) + pow(error1_l2/vnorm,2));
   double error_linf = std::max(error0_linf, error1_linf);
 
-  if (problem->comm->MyPID() == 0) {
+  if (problem->comm->getRank() == 0) {
     printf("[%4d, %6.12e, %6.12e],\n",(int) round(log2(nx)), log2(error_l2), log2(error_linf));
   }
 

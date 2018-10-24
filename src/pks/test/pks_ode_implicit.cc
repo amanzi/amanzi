@@ -133,7 +133,7 @@ Teuchos::RCP<PK> create(const Teuchos::RCP<State> &S) {
   // intentionally leaks memory
   auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
-  int MyPID = comm->MyPID();
+  int MyPID = comm->getRank();
   if (MyPID == 0)
     std::cout << "Test: 2D transient Darcy, 2-layer model" << std::endl;
 

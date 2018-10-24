@@ -1399,7 +1399,7 @@ Mesh::build_columns(const std::string& setname) const
   }
 
   int min_success;
-  get_comm()->MinAll(&success, &min_success, 1);
+  Comm()->MinAll(&success, &min_success, 1);
   columns_built_ = (min_success == 1);
   return columns_built_ ? 1 : 0;
 }
@@ -1473,7 +1473,7 @@ Mesh::build_columns() const
   }
 
   int min_success;
-  get_comm()->MinAll(&success, &min_success, 1);
+  Comm()->MinAll(&success, &min_success, 1);
   columns_built_ = (min_success == 1);
   return columns_built_ ? 1 : 0;
 }
@@ -1693,9 +1693,9 @@ void Mesh::PrintMeshStatistics() const
     int nfaces = num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
     int min_out[2], max_out[2], sum_out[2], tmp_in[2] = {ncells, nfaces};
-    get_comm()->MinAll(tmp_in, min_out, 2);
-    get_comm()->MaxAll(tmp_in, max_out, 2);
-    get_comm()->SumAll(tmp_in, sum_out, 2);
+    Comm()->MinAll(tmp_in, min_out, 2);
+    Comm()->MaxAll(tmp_in, max_out, 2);
+    Comm()->SumAll(tmp_in, sum_out, 2);
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "cells, tot/min/max: " << sum_out[0] << "/" << min_out[0] << "/" << max_out[0] << "\n";

@@ -28,8 +28,8 @@ TEST(MESH_DEFORM2D)
 {
 
   Epetra_MpiComm comm_(MPI_COMM_WORLD);
-  const int nproc(comm_.NumProc());
-  const int me(comm_.MyPID());
+  const int nproc(comm_->getSize());
+  const int me(comm_->getRank());
 
   // We are not including MOAB since Mesh_MOAB.cc does not have
   // routines for generating a mesh
@@ -145,8 +145,8 @@ TEST(MESH_DEFORM3D)
 {
 
   Epetra_MpiComm comm_(MPI_COMM_WORLD);
-  const int nproc(comm_.NumProc());
-  const int me(comm_.MyPID());
+  const int nproc(comm_->getSize());
+  const int me(comm_->getRank());
 
   // We are not including MOAB since Mesh_MOAB.cc does not have
   // routines for generating a mesh

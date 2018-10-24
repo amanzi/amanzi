@@ -33,8 +33,8 @@ int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  const int nproc(comm.NumProc());
-  const int me(comm.MyPID());
+  const int nproc(comm->getSize());
+  const int me(comm->getRank());
 
 
   std::cerr << "Testing deformation code " << std::endl;

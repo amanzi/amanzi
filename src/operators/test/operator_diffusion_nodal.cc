@@ -48,7 +48,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   using namespace Amanzi::Operators;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, nodal discretization" << std::endl;
 
@@ -204,7 +204,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   using namespace Amanzi::Operators;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  int MyPID = comm->getRank();
   if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, exactness" 
                             << " test for nodal discretization" << std::endl;
 

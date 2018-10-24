@@ -54,7 +54,7 @@ void MagneticDiffusion2D(double dt, double tend,
   using namespace Amanzi::Operators;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "\nTest: Magnetic diffusion, TM mode, dt=" 
                             << dt << ", name: " << name << std::endl;
@@ -293,7 +293,7 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
   using namespace Amanzi::Operators;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "\nTest: Magnetic diffusion 3D, dt=" 
                             << dt << ", name: " << name << std::endl;
@@ -529,7 +529,7 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
 
     double err_in[2] = {errB, divB};
     double err_out[2];
-    mesh->get_comm()->SumAll(err_in, err_out, 2);
+    mesh->Comm()->SumAll(err_in, err_out, 2);
 
     if (cycle == 1) divB0 = divB;
     CHECK_CLOSE(divB0, divB, 1e-8);

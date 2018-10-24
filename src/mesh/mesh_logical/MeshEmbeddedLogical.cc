@@ -275,7 +275,7 @@ MeshEmbeddedLogical::init_maps() {
 
   // ghosted maps: use the bg mesh to communicate the new GIDs into their ghost values
   // CELL:
-  if (bg_mesh_->get_comm()->NumProc() == 1) {
+  if (bg_mesh_->Comm()->getSize() == 1) {
     maps_used_[CELL] = maps_owned_[CELL];
     maps_used_[FACE] = maps_owned_[FACE];
   } else {

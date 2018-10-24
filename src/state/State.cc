@@ -486,7 +486,7 @@ void WriteCheckpoint(Checkpoint &chkp, const Epetra_MpiComm &comm,
     for (auto r = S.data_begin(); r != S.data_end(); ++r) {
       r->second->WriteCheckpoint(chkp);
     }
-    chkp.Write("mpi_num_procs", comm.NumProc());
+    chkp.Write("mpi_num_procs", comm->getSize());
     chkp.Finalize();
   }
 };
@@ -499,12 +499,12 @@ void ReadCheckpoint(const Epetra_MpiComm &comm, State &S,
   // Load the number of processes and ensure they are the same.
   int num_procs(-1);
   chkp.Read("mpi_num_procs", num_procs);
-  if (comm.NumProc() != num_procs) {
+  if (comm->getSize() != num_procs) {
     std::stringstream messagestream;
     messagestream << "Requested checkpoint file " << filename
                   << " was created on " << num_procs
                   << " processes, making it incompatible with this run on "
-                  << comm.NumProc() << " processes.";
+                  << comm->getSize() << " processes.";
     Errors::Message message(messagestream.str());
     throw(message);
   }

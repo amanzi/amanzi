@@ -33,7 +33,7 @@ SUITE (Exodus_4_Proc)
     
     Epetra_MpiComm comm_(MPI_COMM_WORLD);
 
-    CHECK_EQUAL(comm_.NumProc(), 4);
+    CHECK_EQUAL(comm_->getSize(), 4);
     
     Amanzi::Exodus::Parallel_Exodus_file thefile(comm_, bname);
     checkit(thefile);
@@ -45,7 +45,7 @@ SUITE (Exodus_4_Proc)
     
     Epetra_MpiComm comm_(MPI_COMM_WORLD);
 
-    CHECK_EQUAL(comm_.NumProc(), 4);
+    CHECK_EQUAL(comm_->getSize(), 4);
     
     Amanzi::Exodus::Parallel_Exodus_file thefile(comm_, bname);
     checkit(thefile);
@@ -57,7 +57,7 @@ SUITE (Exodus_4_Proc)
     
     Epetra_MpiComm comm_(MPI_COMM_WORLD);
 
-    CHECK_EQUAL(comm_.NumProc(), 4);
+    CHECK_EQUAL(comm_->getSize(), 4);
     
     Amanzi::Exodus::Parallel_Exodus_file thefile(comm_, bname);
     checkit(thefile);
@@ -69,7 +69,7 @@ SUITE (Exodus_4_Proc)
     
     Epetra_MpiComm comm_(MPI_COMM_WORLD);
 
-    CHECK_EQUAL(comm_.NumProc(), 4);
+    CHECK_EQUAL(comm_->getSize(), 4);
     
     Amanzi::Exodus::Parallel_Exodus_file thefile(comm_, bname);
     checkit(thefile);
@@ -82,7 +82,7 @@ SUITE (Exodus_4_Proc)
     
     Epetra_MpiComm comm_(MPI_COMM_WORLD);
 
-    CHECK_EQUAL(comm_.NumProc(), 4);
+    CHECK_EQUAL(comm_->getSize(), 4);
     
     Amanzi::Exodus::Parallel_Exodus_file thefile(comm_, bname);
     checkit(thefile);
@@ -95,7 +95,7 @@ SUITE (Exodus_4_Proc)
     
     Epetra_MpiComm comm_(MPI_COMM_WORLD);
 
-    CHECK_EQUAL(comm_.NumProc(), 4);
+    CHECK_EQUAL(comm_->getSize(), 4);
     
     Amanzi::Exodus::Parallel_Exodus_file thefile(comm_, bname);
     checkit(thefile);

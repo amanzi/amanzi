@@ -45,7 +45,7 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   using namespace Amanzi::Operators;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  int MyPID = comm->getRank();
   if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, non-symmetric tensor" << std::endl;
 
   // read parameter list

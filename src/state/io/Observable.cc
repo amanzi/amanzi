@@ -69,7 +69,7 @@ Observable::Observable(Teuchos::ParameterList &plist, Epetra_MpiComm *comm)
     filenamebase_ = plist.get<std::string>("observation output filename");
 
     // open file only on process 0
-    if (!comm->MyPID()) {
+    if (!comm->getRank()) {
       std::string safename(name_);
       std::replace(safename.begin(), safename.end(), ' ', '_');
       std::replace(safename.begin(), safename.end(), ':', '_');
@@ -195,7 +195,7 @@ void Observable::Update_(const State &S,
       double local[2], global[2];
       local[0] = value;
       local[1] = volume;
-      S.GetMesh()->get_comm()->SumAll(local, global, 2);
+      S.GetMesh()->Comm()->SumAll(local, global, 2);
 
       if (global[1] > 0) {
         if (functional_ == "observation data: point") {
@@ -212,12 +212,12 @@ void Observable::Update_(const State &S,
       }
     } else if (functional_ == "observation data: minimum") {
       double global;
-      S.GetMesh()->get_comm()->MinAll(&value, &global, 1);
+      S.GetMesh()->Comm()->MinAll(&value, &global, 1);
       data.value = global;
       data.is_valid = true;
     } else if (functional_ == "observation data: maximum") {
       double global;
-      S.GetMesh()->get_comm()->MaxAll(&value, &global, 1);
+      S.GetMesh()->Comm()->MaxAll(&value, &global, 1);
       data.value = global;
       data.is_valid = true;
     } else {

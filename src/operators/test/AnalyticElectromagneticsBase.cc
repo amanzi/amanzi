@@ -40,11 +40,11 @@ void AnalyticElectromagneticsBase::ComputeFaceError(
   }
 #ifdef HAVE_MPI
   double tmp = unorm;
-  mesh_->get_comm()->SumAll(&tmp, &unorm, 1);
+  mesh_->Comm()->SumAll(&tmp, &unorm, 1);
   tmp = l2_err;
-  mesh_->get_comm()->SumAll(&tmp, &l2_err, 1);
+  mesh_->Comm()->SumAll(&tmp, &l2_err, 1);
   tmp = inf_err;
-  mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
+  mesh_->Comm()->MaxAll(&tmp, &inf_err, 1);
 #endif
   unorm = sqrt(unorm);
   l2_err = sqrt(l2_err);
@@ -84,11 +84,11 @@ void AnalyticElectromagneticsBase::ComputeEdgeError(
   }
 #ifdef HAVE_MPI
   double tmp = unorm;
-  mesh_->get_comm()->SumAll(&tmp, &unorm, 1);
+  mesh_->Comm()->SumAll(&tmp, &unorm, 1);
   tmp = l2_err;
-  mesh_->get_comm()->SumAll(&tmp, &l2_err, 1);
+  mesh_->Comm()->SumAll(&tmp, &l2_err, 1);
   tmp = inf_err;
-  mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
+  mesh_->Comm()->MaxAll(&tmp, &inf_err, 1);
 #endif
   unorm = sqrt(unorm);
   l2_err = sqrt(l2_err);
@@ -130,11 +130,11 @@ void AnalyticElectromagneticsBase::ComputeNodeError(
   }
 #ifdef HAVE_MPI
   double tmp = unorm;
-  mesh_->get_comm()->SumAll(&tmp, &unorm, 1);
+  mesh_->Comm()->SumAll(&tmp, &unorm, 1);
   tmp = l2_err;
-  mesh_->get_comm()->SumAll(&tmp, &l2_err, 1);
+  mesh_->Comm()->SumAll(&tmp, &l2_err, 1);
   tmp = inf_err;
-  mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
+  mesh_->Comm()->MaxAll(&tmp, &inf_err, 1);
 #endif
   unorm = sqrt(unorm);
   l2_err = sqrt(l2_err);

@@ -23,7 +23,7 @@ namespace Amanzi
 {
 
 MeshAuditOld:: MeshAuditOld(Teuchos::RCP<AmanziMesh::Mesh> &mesh_, ostream& os_) :
-      mesh(mesh_), comm_(*(mesh_->get_comm())), MyPID(mesh_->get_comm()->MyPID()),
+      mesh(mesh_), comm_(*(mesh_->Comm())), MyPID(mesh_->Comm()->getRank()),
       os(os_),
       nnode(mesh_->node_map(true).NumMyElements()),
       nface(mesh_->face_map(true).NumMyElements()),
@@ -1236,7 +1236,7 @@ bool MeshAuditOld::check_maps(const Map_type &map_own, const Map_type &map_use) 
   error = global_any(error);
   if (error) return error;
 
-  if (comm_.NumProc() == 1)
+  if (comm_->getSize() == 1)
   {
 
     // Serial or 1-process MPI
@@ -1282,7 +1282,7 @@ bool MeshAuditOld::check_maps(const Map_type &map_own, const Map_type &map_use) 
     map_own.RemoteIDList(num_ovl, gids, pids, lids);
     bad_map = false;
     for (int j = 0; j < num_ovl; ++j)
-      if (pids[j] < 0 || pids[j] == comm_.MyPID()) bad_map = true;
+      if (pids[j] < 0 || pids[j] == comm_->getRank()) bad_map = true;
     if (bad_map) {
       os << "ERROR: invalid ghosts in overlap map." << std::endl;
       error = true;
@@ -1621,7 +1621,7 @@ bool MeshAuditOld::check_get_set_ids(AmanziMesh::Entity_kind kind) const
   if (error) return error;
 
   // In parallel, verify that each process returns the exact same result.
-  if (comm_.NumProc() > 1) {
+  if (comm_->getSize() > 1) {
     // Check the number of sets are the same.
     comm_.Broadcast(&nset, 1, 0);
     if (nset != mesh->num_sets(kind)) {
@@ -1827,7 +1827,7 @@ bool MeshAuditOld::check_used_set(unsigned int sid,
 				  const Map_type &map_own, 
 				  const Map_type &map_use) const
 {
-  if (comm_.NumProc() == 1) {
+  if (comm_->getSize() == 1) {
 
     // In serial, the owned and used sets should be identical.
 

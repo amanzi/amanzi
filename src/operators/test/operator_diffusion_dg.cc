@@ -50,7 +50,7 @@ void OperatorDiffusionDG(std::string solver_name,
   using namespace Amanzi::Operators;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "\nTest: 2D elliptic problem, dG method, solver: " << solver_name 
                             << ", basis=" << dg_basis << std::endl;

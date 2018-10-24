@@ -23,7 +23,7 @@ namespace Amanzi
 {
 
   MeshAudit:: MeshAudit(Teuchos::RCP<AmanziMesh::Mesh> &mesh_, std::ostream& os_) :
-      mesh(mesh_), comm_(*(mesh_->get_comm())), MyPID(mesh_->get_comm()->MyPID()),
+      mesh(mesh_), comm_(*(mesh_->Comm())), MyPID(mesh_->Comm()->getRank()),
       os(os_),
       nnode(mesh_->node_map(true).NumMyElements()),
       nface(mesh_->face_map(true).NumMyElements()),
@@ -968,7 +968,7 @@ bool MeshAudit::check_maps(const Map_type &map_own, const Map_type &map_use) con
   error = global_any(error);
   if (error) return error;
 
-  if (comm_.NumProc() == 1)
+  if (comm_->getSize() == 1)
   {
 
     // Serial or 1-process MPI
@@ -1014,7 +1014,7 @@ bool MeshAudit::check_maps(const Map_type &map_own, const Map_type &map_use) con
     map_own.RemoteIDList(num_ovl, gids, pids, lids);
     bad_map = false;
     for (int j = 0; j < num_ovl; ++j)
-      if (pids[j] < 0 || pids[j] == comm_.MyPID()) bad_map = true;
+      if (pids[j] < 0 || pids[j] == comm_->getRank()) bad_map = true;
     if (bad_map) {
       os << "ERROR: invalid ghosts in overlap map." << std::endl;
       error = true;
@@ -1145,7 +1145,7 @@ bool MeshAudit::check_face_to_nodes_ghost_data() const
       case 0: // completely bad -- different face
         bad_faces.push_back(j);
 
-        std::cerr << "P " << comm_.MyPID() << ": ghost face " << j << " (GID "
+        std::cerr << "P " << comm_->getRank() << ": ghost face " << j << " (GID "
                   << face_map_use.GID(j) << ")," <<
             " has different nodes than its master " << std::endl;
         std::cerr << "ghost face nodes (GIDs): ";
@@ -1160,7 +1160,7 @@ bool MeshAudit::check_face_to_nodes_ghost_data() const
       case -1: // very bad -- same face but wrong orientation
         bad_faces1.push_back(j);
 
-        std::cerr << "P " << comm_.MyPID() << ": ghost face " << j << ", has different orientation than its master " << std::endl;
+        std::cerr << "P " << comm_->getRank() << ": ghost face " << j << ", has different orientation than its master " << std::endl;
         std::cerr << "ghost face nodes (GIDs): ";
         for (int k = 0; k < fnode.size(); ++k)
           std::cerr << fnode[k];
@@ -1420,7 +1420,7 @@ bool MeshAudit::check_get_set_ids(AmanziMesh::Entity_kind kind) const
   // if (error) return error;
 
   // // In parallel, verify that each process returns the exact same result.
-  // if (comm_.NumProc() > 1) {
+  // if (comm_->getSize() > 1) {
   //   // Check the number of sets are the same.
   //   comm_.Broadcast(&nset, 1, 0);
   //   if (nset != mesh->num_sets(kind)) {
@@ -1641,7 +1641,7 @@ bool MeshAudit::check_used_set(AmanziMesh::Set_ID sid,
 
   std::string set_name = mesh->geometric_model()->FindRegion(sid)->name();
 
-  if (comm_.NumProc() == 1) {
+  if (comm_->getSize() == 1) {
     // In serial, the owned and used sets should be identical.
 
     int n = mesh->get_set_size(sid, kind, AmanziMesh::Parallel_type::OWNED);

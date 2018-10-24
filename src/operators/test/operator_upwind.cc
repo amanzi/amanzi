@@ -66,7 +66,7 @@ using namespace Amanzi::Operators;
 template<class UpwindClass>
 void RunTestUpwind(std::string method) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "\nTest: 1st-order convergence for upwind \"" << method << "\"\n";
 
@@ -171,13 +171,13 @@ void RunTestUpwind(std::string method) {
     }
 #ifdef HAVE_MPI
     double tmp = error;
-    mesh->get_comm()->SumAll(&tmp, &error, 1);
+    mesh->Comm()->SumAll(&tmp, &error, 1);
     int itmp = nfaces_owned;
-    mesh->get_comm()->SumAll(&itmp, &nfaces_owned, 1);
+    mesh->Comm()->SumAll(&itmp, &nfaces_owned, 1);
 #endif
     error = sqrt(error / nfaces_owned);
   
-    if (comm.MyPID() == 0)
+    if (comm->getRank() == 0)
         printf("n=%2d %s=%8.4f\n", n, method.c_str(), error);
   }
 }

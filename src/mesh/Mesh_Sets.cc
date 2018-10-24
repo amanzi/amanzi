@@ -155,7 +155,7 @@ void Mesh::get_set_entities_box_vofs_(
 
   // Check if no processor got any mesh entities
   int nents, nents_tmp = setents->size();
-  get_comm()->SumAll(&nents_tmp, &nents, 1);
+  Comm()->SumAll(&nents_tmp, &nents, 1);
   if (nents == 0) {
     Errors::Message msg;
     msg << "Could not retrieve any mesh entities for set \"" << region->name() << "\".\n";

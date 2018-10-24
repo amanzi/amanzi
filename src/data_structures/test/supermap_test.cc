@@ -41,8 +41,8 @@ TEST(SUPERMAP_MANUAL) {
   //  using namespace Amanzi::Operators;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
-  int NumProc = comm.NumProc();
+  int MyPID = comm->getRank();
+  int NumProc = comm->getSize();
 
   if (MyPID == 0) std::cout << "Test: Manual test of SuperMap" << std::endl;
 
@@ -228,7 +228,7 @@ TEST(SUPERMAP_FROM_COMPOSITEVECTOR) {
   using namespace Amanzi::Operators;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
 
@@ -271,7 +271,7 @@ TEST(SUPERMAP_FROM_TREEVECTOR) {
   using namespace Amanzi::Operators;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
 

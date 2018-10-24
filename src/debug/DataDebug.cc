@@ -56,13 +56,13 @@ void DataDebug::write_region_statistics(std::string& region_name,
     }      
   }
   
-  int num_procs(mesh_->get_comm()->NumProc());
-  int my_proc(mesh_->get_comm()->MyPID());
+  int num_procs(mesh_->Comm()->getSize());
+  int my_proc(mesh_->Comm()->getRank());
 
   double* all_values = new double[num_procs];
   int* all_indices = new int[num_procs];
-  mesh_->get_comm()->GatherAll(&max_value,all_values,1);
-  mesh_->get_comm()->GatherAll(&max_index,all_indices,1);
+  mesh_->Comm()->GatherAll(&max_value,all_values,1);
+  mesh_->Comm()->GatherAll(&max_index,all_indices,1);
  
 
   // find global max value and index
@@ -74,8 +74,8 @@ void DataDebug::write_region_statistics(std::string& region_name,
     }
   }
   
-  mesh_->get_comm()->GatherAll(&min_value,all_values,1);
-  mesh_->get_comm()->GatherAll(&min_index,all_indices,1);
+  mesh_->Comm()->GatherAll(&min_value,all_values,1);
+  mesh_->Comm()->GatherAll(&min_index,all_indices,1);
   // find global min value and index
   min_value = all_values[0];
   for (int i=1; i<num_procs; ++i) {

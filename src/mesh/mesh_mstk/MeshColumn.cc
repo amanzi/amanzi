@@ -28,7 +28,7 @@ MeshColumn::MeshColumn(const Mesh& inmesh,
   AMANZI_ASSERT(column_id_ >= 0 && column_id_ < inmesh.num_columns());
 
   // set supporting subclasses
-  set_comm(extracted_.get_comm());
+  set_comm(extracted_.Comm());
   set_geometric_model(extracted_.geometric_model());
   set_space_dimension(3);
   set_manifold_dimension(3);
@@ -179,7 +179,7 @@ void MeshColumn::build_epetra_maps_() {
   ext_gids[0] = 0;
   ext_gids[1] = nfaces-1;
 
-  exterior_face_map_ = new Map_type(-1, 2, &ext_gids[0], 0, *get_comm());
+  exterior_face_map_ = new Map_type(-1, 2, &ext_gids[0], 0, *Comm());
   exterior_face_importer_ = new Import_type(*face_map_, *exterior_face_map_);
 }
 
