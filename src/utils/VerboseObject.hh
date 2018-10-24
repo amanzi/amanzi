@@ -84,8 +84,7 @@ Example:
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
-
-class Epetra_Comm;
+#include "AmanziTypes.hh"
 
 namespace Amanzi {
 
@@ -94,7 +93,7 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   // Constructors
   VerboseObject(std::string name, const std::string& verbosity);
   VerboseObject(std::string name, Teuchos::ParameterList& plist);
-  VerboseObject(const Epetra_Comm& comm, std::string name,
+  VerboseObject(Comm_ptr_type comm, std::string name,
                 Teuchos::ParameterList& plist);
 
   // NOTE: Default destructor, copy construct should be ok.
@@ -131,7 +130,7 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
 
  protected:
   Teuchos::RCP<Teuchos::FancyOStream> out_;
-  Teuchos::RCP<Epetra_Comm> comm_;
+  Comm_ptr_type comm_;
 };
 
 

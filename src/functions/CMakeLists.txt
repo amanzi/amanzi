@@ -44,7 +44,7 @@ file(GLOB inc_files "*.hh")
 add_amanzi_library(functions 
                    SOURCE ${src_files}
                    HEADERS ${inc_files}
-                   LINK_LIBS error_handling ${HDF5_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
+                   LINK_LIBS error_handling ${HDF5_LIBRARIES} ${Epetra_LIBRARIES})
 
 # Define all tests at the of the file. BUILD_TESTS gates test building.
 if (BUILD_TESTS)
@@ -70,7 +70,7 @@ if (BUILD_TESTS)
   add_amanzi_test(function_factory function_factory
                   KIND unit
                   SOURCE test/FunctionFactoryTest.cc
-                  LINK_LIBS functions ${UnitTest_LIBRARIES})
+                  LINK_LIBS functions ${UnitTest_LIBRARIES} ${Epetra_LIBRARIES})
  
   add_amanzi_test(function_concrete_color function_concrete_color
                   KIND unit
@@ -82,13 +82,11 @@ if (BUILD_TESTS)
                   SOURCE test/ColorFunctionFactoryTest.cc
                   LINK_LIBS 
                          functions
-                         ${UnitTest_LIBRARIES}
-                         ${Teuchos_LIBRARIES}
-                         ${Epetra_LIBRARIES})
-
+                         ${UnitTest_LIBRARIES} ${Epetra_LIBRARIES})
+                         
   add_amanzi_test(function_composite function_composite
                   KIND unit
                   SOURCE test/CompositeFunctionTest.cc
-		  LINK_LIBS functions ${UnitTest_LIBRARIES})
+		  LINK_LIBS functions ${UnitTest_LIBRARIES} ${Epetra_LIBRARIES})
 
 endif()

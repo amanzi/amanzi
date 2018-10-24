@@ -13,9 +13,9 @@ class ColorFunctionFactory {
  public:
   ColorFunctionFactory() {}
   ~ColorFunctionFactory() {}
-  ColorFunction* Create(std::string&, const Epetra_Comm&) const;
+  ColorFunction* Create(std::string&, Comm_ptr_type) const;
  private:
-  ColorFunction* create_grid_color_function(int, std::fstream&, const Epetra_Comm&) const;
+  ColorFunction* create_grid_color_function(int, std::fstream&, Comm_ptr_type) const;
 };
 
 } // namespace Amanzi

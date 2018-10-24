@@ -33,10 +33,10 @@ namespace AmanziMesh {
   extern std::string file_format_name(const Format& f);
 
   /// Determine, if possible, the format of the specified file
-  extern Format file_format(const Epetra_Comm& comm_, const char *name);
+  extern Format file_format(Comm_ptr_type comm_, const char *name);
 
   /// Determine, if possible, the format of the specified file
-  inline Format file_format(const Epetra_Comm& comm_, const std::string& name)
+  inline Format file_format(Comm_ptr_type comm_, const std::string& name)
   {
     return file_format(comm_, name.c_str());
   }

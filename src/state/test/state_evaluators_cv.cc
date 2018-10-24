@@ -66,7 +66,7 @@ SUITE(EVALUATORS_CV) {
   TEST(PRIMARY_CV) {
     // Tests a primary variable evaluator
 
-    auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
     MeshFactory meshfac(comm);
     auto mesh = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
@@ -131,7 +131,7 @@ SUITE(EVALUATORS_CV) {
   TEST(SECONDARY_CV_DEFAULT_USAGE) {
     // Tests a secondary variable evaluator in standard usage
     std::cout << "Secondary Variable Test" << std::endl;
-    auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
     MeshFactory meshfac(comm);
     auto mesh = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
@@ -227,7 +227,7 @@ SUITE(EVALUATORS_CV) {
   TEST(SECONDARY_CV_JOINT_DEPENDENCIES) {
     // Tests two secondaries depending upon one primary, making sure they correctly set structure
     std::cout << "Secondary Variable Test" << std::endl;
-    auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
     MeshFactory meshfac(comm);
     auto mesh = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
@@ -300,7 +300,7 @@ SUITE(EVALUATORS_CV) {
   TEST(SECONDARY_CV_THROWS_PARENT_CHILD_INCONSISTENT_MESH) {
     // Test that Setup() throws if parent and child meshes are different
     std::cout << "Secondary Variable Test" << std::endl;
-    auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
     MeshFactory meshfac(comm);
     auto mesh = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
     auto mesh2 = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
@@ -339,7 +339,7 @@ SUITE(EVALUATORS_CV) {
   TEST(SECONDARY_CV_THROWS_PARENT_CHILD_INCONSISTENT_STRUCTURE) {
     // Test that Setup() throws if parent and child structure/components are different
     std::cout << "Secondary Variable Test" << std::endl;
-    auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
     MeshFactory meshfac(comm);
     auto mesh = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
     auto mesh2 = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
@@ -381,7 +381,7 @@ SUITE(EVALUATORS_CV) {
   TEST(SECONDARY_CV_JOINT_DEPENDENCIES_INCONSISTENT_MESH) {
     // Test that Setup() throws if two parents have inconsistent meshes and try to both set their child
     std::cout << "Secondary Variable Test" << std::endl;
-    auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
     MeshFactory meshfac(comm);
     auto mesh = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
     auto mesh2 = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
@@ -438,7 +438,7 @@ SUITE(EVALUATORS_CV) {
   TEST(SECONDARY_CV_JOINT_DEPENDENCIES_INCONSISTENT_STRUCTURE) {
     // Test that Setup() throws if two parents have inconsistent structure and both try to set the parent
     std::cout << "Secondary Variable Test" << std::endl;
-    auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
     MeshFactory meshfac(comm);
     auto mesh = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
     auto mesh2 = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
@@ -494,7 +494,7 @@ SUITE(EVALUATORS_CV) {
   TEST(SECONDARY_CV_JOINT_DEPENDENCIES_REVERSED_DEPENDENCY) {
     // Test the reversed structure case, where a parent takes its structure from a child
     std::cout << "Secondary Variable Test" << std::endl;
-    auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
     MeshFactory meshfac(comm);
     auto mesh = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
@@ -538,7 +538,7 @@ SUITE(EVALUATORS_CV) {
   TEST(SECONDARY_CV_JOINT_DEPENDENCIES_REVERSED_DEPENDENCY_WITHOUT_FLAG_THROWS) {
     // Test the reversed structure case, where a parent takes its structure from a child
     std::cout << "Secondary Variable Test" << std::endl;
-    auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
     MeshFactory meshfac(comm);
     auto mesh = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 

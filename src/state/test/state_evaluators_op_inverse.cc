@@ -166,7 +166,7 @@ protected:
 
 
 void test(const std::string &discretization) {
-  auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
   MeshFactory meshfac(comm);
   auto mesh = meshfac(-1.0, -1.0, 1.0, 1.0, 128, 128);
 
@@ -277,7 +277,7 @@ void test(const std::string &discretization) {
 
 
 void test_inverse(const std::string &discretization) {
-  auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
   MeshFactory meshfac(comm);
   //  auto mesh = meshfac(-1.0, -1.0, 1.0, 1.0, 128, 128);
   auto mesh = meshfac(-1.0, -1.0, 1.0, 1.0, 4,4);

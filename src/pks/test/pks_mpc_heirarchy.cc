@@ -64,7 +64,7 @@ createRun(const std::string &mpc_A_name, const std::string &pk_A_name,
   auto global_list = Teuchos::getParametersFromXmlFile("test/pks_ode.xml");
   auto S = Teuchos::rcp(new State(global_list->sublist("state")));
 
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // create mesh
   Teuchos::ParameterList &regions_list = global_list->sublist("regions");

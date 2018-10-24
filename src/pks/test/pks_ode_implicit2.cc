@@ -137,7 +137,7 @@ Teuchos::RCP<PK> create(const Teuchos::RCP<State> &S) {
   ti_c_list->set("min time step", 0.25);
 
   // intentionally leaks memory
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // read parameter list
   std::string xmlFileName = "test/flow_darcy_transient_2D.xml";

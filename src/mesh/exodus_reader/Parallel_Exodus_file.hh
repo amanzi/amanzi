@@ -61,13 +61,13 @@ class Parallel_Exodus_file {
  public:
 
   /// Default constructor.
-  Parallel_Exodus_file(const Epetra_Comm& comm_, const std::string& basename);
+  Parallel_Exodus_file(Comm_ptr_type comm_, const std::string& basename);
 
   /// Destructor
   ~Parallel_Exodus_file(void);
 
   /// Get the parallel environment
-  const Epetra_Comm& comm_() { return *my_comm_; }
+  Comm_ptr_type comm_() { return *my_comm_; }
 
   /// Read the (local) mesh from the file
   Teuchos::RCP<AmanziMesh::Data::Data> read_mesh(void);

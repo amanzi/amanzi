@@ -37,7 +37,7 @@ TEST(DG2D_MASS_MATRIX) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "Test: DG2D mass matrices (tensors)" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
@@ -78,7 +78,7 @@ TEST(DG3D_MASS_MATRIX) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: DG3D mass matrices (tensors and polynomials)" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
@@ -156,7 +156,7 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: DG mass matrices (polynomials)" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
@@ -220,7 +220,7 @@ TEST(DG2D_ADVECTION_MATRIX_FACE) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: DG2D advection matrices on faces" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
@@ -275,7 +275,7 @@ TEST(DG3D_ADVECTION_MATRIX_FACE) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: DG3D advection matrices on faces" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
@@ -332,7 +332,7 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: DG2D advection matrices in cells" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
@@ -452,7 +452,7 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: DG3D advection matrices in cells" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
@@ -527,7 +527,7 @@ TEST(DG_LEAST_SQUARE_MAP_CELL) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: Least-square polynomial approximation of map in cells." << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));

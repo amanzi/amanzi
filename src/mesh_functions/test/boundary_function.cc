@@ -45,7 +45,7 @@ struct reference_mesh
     TOP = "TOP";
     INVALID = "INVALID";
 
-    comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
 
     // Brick domain corners and outward normals to sides
     Teuchos::Array<double> corner_min(Teuchos::tuple(0.0, 0.0, 0.0));

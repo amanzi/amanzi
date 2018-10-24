@@ -43,7 +43,7 @@ Teuchos::RCP<PK> createForwardEuler(const Teuchos::RCP<State> &S,
   sublist->set<std::string>("primary variable key", "primary");
 
   // intentionally leaks memory
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // create mesh
   Teuchos::ParameterList regions_list;

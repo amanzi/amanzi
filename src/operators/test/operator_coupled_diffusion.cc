@@ -638,7 +638,7 @@ Teuchos::RCP<Problem> getProblem(const std::string& discretization,
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Epetra_MpiComm* comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
 
   // create a mesh
   Teuchos::RCP<Mesh> mesh =

@@ -31,7 +31,7 @@ struct test_field {
 
   Teuchos::RCP<Field_CompositeVector> field;
   test_field() {
-    comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
     MeshFactory mesh_fact(comm);
     mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
@@ -80,7 +80,7 @@ struct test_state {
   Teuchos::RCP<State> state;
 
   test_state() {
-    comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
     MeshFactory mesh_fact(comm);
     mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
     state = Teuchos::rcp(new State());

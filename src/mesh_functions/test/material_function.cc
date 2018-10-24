@@ -45,7 +45,7 @@ class DomainFunction : public MaterialMeshFunction {
 TEST(MESH2D)
 {
   Epetra_MpiComm *comm;
-  comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
 
   Teuchos::Array<double> corner_min(Teuchos::tuple(0.0, 0.0));
   Teuchos::Array<double> corner_max(Teuchos::tuple(0.3, 0.3));

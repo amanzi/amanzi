@@ -34,7 +34,7 @@ TEST(FACE_CENTROIDS) {
   pref.clear();
   pref.push_back(MSTK);
 
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   MeshFactory factory(comm);
   factory.preference(pref);
   // Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 1, 1); 

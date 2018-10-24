@@ -41,7 +41,7 @@ TEST(PROJECTORS_SQUARE_CR) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: Crouziex-Raviart harmonic projectors for square" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
@@ -133,7 +133,7 @@ TEST(PROJECTORS_POLYGON_CR) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: Crouzeix-Raviart harmonic projector for pentagon" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
@@ -328,7 +328,7 @@ TEST(L2_PROJECTORS_SQUARE_CR) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: Crouzeix-Raviart L2 projector for square" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
@@ -373,7 +373,7 @@ TEST(L2GRADIENT_PROJECTORS_SQUARE_CR) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: Crouzeix-Raviart L2 projector of gradient for square" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
@@ -430,7 +430,7 @@ TEST(PROJECTORS_SQUARE_PK) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: HO Lagrange projectors for square (linear deformation)" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
@@ -516,7 +516,7 @@ TEST(PROJECTORS_POLYGON_PK) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: HO Lagrange projectors for pentagon (linear deformation)" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
@@ -706,7 +706,7 @@ void SerendipityProjectorPolygon() {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: HO Serendipity Lagrange projectors for pentagon (linear deformation)" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));

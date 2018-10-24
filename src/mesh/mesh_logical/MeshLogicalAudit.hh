@@ -45,7 +45,7 @@ private:
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh;
 
-  const Epetra_Comm &comm_;
+  Comm_ptr_type_;
   const int MyPID;
   const int nface;
   const int ncell;

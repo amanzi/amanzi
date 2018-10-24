@@ -41,7 +41,7 @@ TEST(DG_MAP_DETERMINANT_CELL) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: Convergence of determinant." << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // create two meshes
   MeshFactory meshfactory(comm);
@@ -120,7 +120,7 @@ TEST(DG_MAP_LEAST_SQUARE_CELL) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: Comparison of reconstruction." << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // create two meshes
   MeshFactory meshfactory(comm);
@@ -206,7 +206,7 @@ TEST(DG_MAP_GCL) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: GCL" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // create 2D mesh
   MeshFactory meshfactory(comm);

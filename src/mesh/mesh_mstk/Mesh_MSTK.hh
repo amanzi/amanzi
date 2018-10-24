@@ -274,18 +274,18 @@ class Mesh_MSTK : public Mesh {
   //
   // Epetra maps
   //------------
+  
+  Map_ptr_type cell_map(bool include_ghost) const;
     
-  Teuchos::RCP<const Map_type> cell_map(bool include_ghost) const;
-    
-  Teuchos::RCP<const Map_type> face_map(bool include_ghost) const; 
+  Map_ptr_type face_map(bool include_ghost) const; 
 
-  Teuchos::RCP<const Map_type> edge_map(bool include_ghost) const;
+  Map_ptr_type edge_map(bool include_ghost) const;
     
-  Teuchos::RCP<const Map_type> node_map(bool include_ghost) const;
+  Map_ptr_type node_map(bool include_ghost) const;
     
-  Teuchos::RCP<const Map_type> exterior_face_map(bool include_ghost) const; 
+  Map_ptr_type exterior_face_map(bool include_ghost) const; 
     
-  Teuchos::RCP<const Import_type> exterior_face_importer(void) const;
+  Import_ptr_type exterior_face_importer(void) const;
     
     
   //
@@ -415,16 +415,16 @@ class Mesh_MSTK : public Mesh {
 
 
   // Maps
-  Teuchos::RCP<Map_type> cell_map_w_ghosts_, cell_map_wo_ghosts_;
-  mutable Teuchos::RCP<Map_type> face_map_w_ghosts_, face_map_wo_ghosts_;
-  mutable Teuchos::RCP<Map_type> edge_map_w_ghosts_, edge_map_wo_ghosts_;
-  Teuchos::RCP<Map_type> node_map_w_ghosts_, node_map_wo_ghosts_;
-  Teuchos::RCP<Map_type> extface_map_w_ghosts_, extface_map_wo_ghosts_;
+  Map_ptr_type cell_map_w_ghosts_, cell_map_wo_ghosts_;
+  mutable Map_ptr_type face_map_w_ghosts_, face_map_wo_ghosts_;
+  mutable Map_ptr_type edge_map_w_ghosts_, edge_map_wo_ghosts_;
+  Map_ptr_type node_map_w_ghosts_, node_map_wo_ghosts_;
+  Map_ptr_type extface_map_w_ghosts_, extface_map_wo_ghosts_;
 
   // Epetra importer that will allow apps to import values from a Epetra
   // vector defined on all owned faces into an Epetra vector defined
   // only on exterior faces
-  Teuchos::RCP<Import_type> owned_to_extface_importer_; 
+  Import_ptr_type owned_to_extface_importer_; 
   
   // flag whether to flip a face dir or not when returning nodes of a
   // face (relevant only on partition boundaries)

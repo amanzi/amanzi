@@ -8,7 +8,7 @@
 TEST(XDMF) {
   
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh_MSTK> Mesh = Teuchos::rcp(
       new Amanzi::AmanziMesh::Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1,

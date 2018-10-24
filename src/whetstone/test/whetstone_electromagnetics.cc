@@ -36,7 +36,7 @@ TEST(MASS_MATRIX_2D) {
 
   std::cout << "\nTest: Mass matrix for edge elements in 2D" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
@@ -125,7 +125,7 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
 
   std::cout << "\nTest: Mass matrix for edge elements in 3D: " << mesh_file << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
@@ -230,7 +230,7 @@ TEST(STIFFNESS_MATRIX_2D) {
 
   std::cout << "\nTest: Stiffness matrix for edge elements in 2D" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
@@ -315,7 +315,7 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
 
   std::cout << "\nTest: Stiffness matrix for edge elements in 3D: " << mesh_file << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif

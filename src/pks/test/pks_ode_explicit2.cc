@@ -68,7 +68,7 @@ create(const Teuchos::RCP<State> &S,
       Teuchos::rcp(new Teuchos::ParameterList("my pk"));
 
   // intentionally leaks memory
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // create mesh
   Teuchos::ParameterList regions_list;

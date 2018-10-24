@@ -170,6 +170,9 @@ function(ADD_AMANZI_TEST test_name)
 
     # Add link libraries if needed
     if(AMANZI_TEST_LINK_LIBS)
+#      message(DEBUG "PRE ${test_exec}: ${AMANZI_TEST_LINK_LIBS}")
+#      list(REMOVE_DUPLICATES AMANZI_TEST_LINK_LIBS)
+#      message(DEBUG "POST ${test_exec}: ${AMANZI_TEST_LINK_LIBS}")
       target_link_libraries(${test_exec} ${AMANZI_TEST_LINK_LIBS})
     endif()
   endif()  

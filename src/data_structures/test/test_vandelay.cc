@@ -32,7 +32,7 @@ struct test_cv_vandelay {
   Teuchos::RCP<CompositeVector> x2;
 
   test_cv_vandelay() {
-    comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
     FrameworkPreference pref;
     pref.clear();
     pref.push_back(MSTK);

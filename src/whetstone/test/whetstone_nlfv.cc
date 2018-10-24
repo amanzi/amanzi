@@ -126,7 +126,7 @@ TEST(HARMONIC_AVERAGING_POINT_2D) {
 
   std::cout << "\nTest: Harmonic averagin point in 2D" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif

@@ -37,7 +37,7 @@ TEST(DERHAM_COMPLEX_NODE) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "Test: Mass matrix for nodes" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));

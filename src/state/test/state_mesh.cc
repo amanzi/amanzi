@@ -14,7 +14,7 @@
 TEST(STATE_CREATION) {
   using namespace Amanzi;
 
-  auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
   AmanziMesh::MeshFactory fac(comm);
   auto mesh = fac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 

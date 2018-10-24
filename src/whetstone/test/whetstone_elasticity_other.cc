@@ -35,7 +35,7 @@ TEST(DIFFUSION_STOKES_2D) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: Stiffness matrix for Stokes in 2D" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
@@ -123,7 +123,7 @@ TEST(ADVECTION_NAVIER_STOKES_2D) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: Advection matrix for Navier-Stokes in 2D" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));

@@ -32,7 +32,7 @@ TEST(NUMI_CELL_2D_EULER_FORMULA) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "Test: Numerical integration: Euler's formula for polygon" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
@@ -73,7 +73,7 @@ TEST(NUMI_CELL_2D_QUADRATURE_POLYGON) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "Test: Numerical integration: quadrature rules in 2D" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
@@ -124,7 +124,7 @@ TEST(NUMI_CELL_2D_QUADRATURE_SQUARE) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "Test: Numerical integration: quadrature rule for square" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
@@ -161,7 +161,7 @@ TEST(NUMI_CELL_3D_QUADRATURE_POLYHEDRON) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "Test: Numerical integration: quadrature rules in 3D" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
@@ -213,7 +213,7 @@ TEST(NUMI_CELL_3D_QUADRATURE_SQUARE) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "Test: Numerical integration: quadrature rule for cube" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));

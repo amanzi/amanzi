@@ -8,8 +8,8 @@
            Daniil Svyatskiy 
 */
 
-#ifndef TIME_STEP_MANAGER__
-#define TIME_STEP_MANAGER__
+#ifndef TIME_STEP_MANAGER_
+#define TIME_STEP_MANAGER_
 
 #include <cmath>
 #include <list>
@@ -69,4 +69,4 @@ class TimeStepManager {
 
 }  // namespace Amanzi
 
-#endif // TIME_STEP_MANAGER__
+#endif // TIME_STEP_MANAGER_

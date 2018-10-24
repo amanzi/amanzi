@@ -275,7 +275,7 @@ SUITE(EVALUATOR_ON_OP) {
   // A test that simply tests the ability to put a Local Op into the DAG
   TEST(PRIMARY) {
     std::cout << "Local Op as a primary variable." << std::endl;
-    auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
     MeshFactory meshfac(comm);
     auto mesh = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
@@ -309,7 +309,7 @@ SUITE(EVALUATOR_ON_OP) {
 
   // Apply a diagonal global operator through the DAG
   TEST(OP_APPLY_DIAG) {
-    auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
     MeshFactory meshfac(comm);
     auto mesh = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
@@ -404,7 +404,7 @@ SUITE(EVALUATOR_ON_OP) {
 
   // Apply a non-diagonal operator, including boundary conditions
   TEST(OP_APPLY_DIFFUSION) {
-    auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
     MeshFactory meshfac(comm);
     auto mesh = meshfac(-1.0, -1.0, 1.0, 1.0, 80, 80);
 

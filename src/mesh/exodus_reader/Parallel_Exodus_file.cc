@@ -43,7 +43,7 @@ namespace Exodus {
  * @param comm_ parallel environment
  * @param basename ExodusII file set base name
  */
-Parallel_Exodus_file::Parallel_Exodus_file(const Epetra_Comm& comm_, 
+Parallel_Exodus_file::Parallel_Exodus_file(Comm_ptr_type comm_, 
                                            const std::string& basename)
   : my_comm_(comm_.Clone()), my_basename(basename)
 {

@@ -31,7 +31,7 @@ struct test_cv {
   Teuchos::RCP<CompositeVector> x2;
 
   test_cv() {
-    comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
     MeshFactory mesh_fact(comm);
     mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 

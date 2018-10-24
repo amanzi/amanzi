@@ -9,7 +9,7 @@
 
 namespace Amanzi {
 
-ColorFunction* ColorFunctionFactory::Create(std::string &filename, const Epetra_Comm &comm) const
+ColorFunction* ColorFunctionFactory::Create(std::string &filename, Comm_ptr_type) const
 {
   int error;
   ColorFunction* f(0);
@@ -87,7 +87,7 @@ ColorFunction* ColorFunctionFactory::Create(std::string &filename, const Epetra_
   return f;
 }
 
-ColorFunction* ColorFunctionFactory::create_grid_color_function(int dim, std::fstream &infile, const Epetra_Comm &comm) const
+ColorFunction* ColorFunctionFactory::create_grid_color_function(int dim, std::fstream &infile, Comm_ptr_type) const
 {
   int error;
 

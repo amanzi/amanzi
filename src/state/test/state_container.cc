@@ -38,7 +38,7 @@ TEST(STATE_FACTORIES_PERSIST) {
   using namespace Amanzi;
 
   // create a mesh
-  auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
   AmanziMesh::MeshFactory fac(comm);
   auto mesh = fac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
@@ -61,7 +61,7 @@ TEST(STATE_HETEROGENEOUS_DATA) {
   using namespace Amanzi;
 
   // create a mesh
-  auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
   AmanziMesh::MeshFactory fac(comm);
   auto mesh = fac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
@@ -126,7 +126,7 @@ TEST(STATE_VIRTUAL_DATA) {
   using namespace Amanzi;
 
   // create a mesh
-  auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
   AmanziMesh::MeshFactory fac(comm);
   auto mesh = fac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 

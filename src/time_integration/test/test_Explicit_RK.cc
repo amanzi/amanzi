@@ -22,7 +22,7 @@ class fn1 : public Explicit_TI::fnBase<Epetra_Vector> {
 
   TEST(Explicit_RK_Euler) {
     std::cout << "Test: Explicit_RK_Euler" << std::endl;    
-    Epetra_Comm* comm = new Epetra_SerialComm();    
+    Comm_ptr_type comm = new Epetra_SerialComm();    
     Epetra_BlockMap map(1, 1, 0, *comm);
     Epetra_Vector y(map);
     Epetra_Vector y_new(map);
@@ -53,7 +53,7 @@ class fn1 : public Explicit_TI::fnBase<Epetra_Vector> {
   TEST(Explicit_RK_Heun) {
     std::cout << "Test: Explicit_RK_Heun" << std::endl;    
     
-    Epetra_Comm* comm = new Epetra_SerialComm();    
+    Comm_ptr_type comm = new Epetra_SerialComm();    
     Epetra_BlockMap map(1, 1, 0, *comm);
     Epetra_Vector y(map);
     Epetra_Vector y_new(map);
@@ -82,7 +82,7 @@ class fn1 : public Explicit_TI::fnBase<Epetra_Vector> {
   TEST(Explicit_RK_Midpoint) {
     std::cout << "Test: Explicit_RK_Midpoint" << std::endl;    
     
-    Epetra_Comm* comm = new Epetra_SerialComm();    
+    Comm_ptr_type comm = new Epetra_SerialComm();    
     Epetra_BlockMap map(1, 1, 0, *comm);
     Epetra_Vector y(map);
     Epetra_Vector y_new(map);
@@ -113,7 +113,7 @@ class fn1 : public Explicit_TI::fnBase<Epetra_Vector> {
   TEST(Explicit_RK_Ralston) {
     std::cout << "Test: Explicit_RK_Rapson" << std::endl;    
     
-    Epetra_Comm* comm = new Epetra_SerialComm();    
+    Comm_ptr_type comm = new Epetra_SerialComm();    
     Epetra_BlockMap map(1, 1, 0, *comm);
     Epetra_Vector y(map);
     Epetra_Vector y_new(map);
@@ -144,7 +144,7 @@ class fn1 : public Explicit_TI::fnBase<Epetra_Vector> {
   TEST(Explicit_TVD_RK3) {
     std::cout << "Test: Explicit_TVD_RK3" << std::endl;    
     
-    Epetra_Comm* comm = new Epetra_SerialComm();    
+    Comm_ptr_type comm = new Epetra_SerialComm();    
     Epetra_BlockMap map(1, 1, 0, *comm);
     Epetra_Vector y(map);
     Epetra_Vector y_new(map);
@@ -175,7 +175,7 @@ class fn1 : public Explicit_TI::fnBase<Epetra_Vector> {
   TEST(Explicit_RK_Kutta3D) {
     std::cout << "Test: Explicit_RK_Kutta3D" << std::endl;    
     
-    Epetra_Comm* comm = new Epetra_SerialComm();    
+    Comm_ptr_type comm = new Epetra_SerialComm();    
     Epetra_BlockMap map(1, 1, 0, *comm);
     Epetra_Vector y(map);
     Epetra_Vector y_new(map);
@@ -206,7 +206,7 @@ class fn1 : public Explicit_TI::fnBase<Epetra_Vector> {
   TEST(Explicit_RK_UserDefined) {
     std::cout << "Test: Explicit_RK_UserDefined" << std::endl;    
     
-    Epetra_Comm* comm = new Epetra_SerialComm();    
+    Comm_ptr_type comm = new Epetra_SerialComm();    
     Epetra_BlockMap map(1, 1, 0, *comm);
     Epetra_Vector y(map);
     Epetra_Vector y_new(map);
@@ -249,7 +249,7 @@ class fn1 : public Explicit_TI::fnBase<Epetra_Vector> {
   TEST(Explicit_RK_RK4) {
     std::cout << "Test: Explicit_RK_RK4" << std::endl;    
     
-    Epetra_Comm* comm = new Epetra_SerialComm();    
+    Comm_ptr_type comm = new Epetra_SerialComm();    
     Epetra_BlockMap map(1, 1, 0, *comm);
     Epetra_Vector y(map);
     Epetra_Vector y_new(map);

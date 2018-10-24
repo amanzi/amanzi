@@ -17,7 +17,7 @@
 #include <ctime>
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include "Epetra_Comm.h"
+#include "Teuchos_Comm.hpp"
 
 #include "VerboseObject.hh"
 
@@ -78,7 +78,7 @@ VerboseObject::VerboseObject(std::string name, Teuchos::ParameterList& plist)
 }
 
 
-VerboseObject::VerboseObject(const Epetra_Comm& comm, std::string name,
+VerboseObject::VerboseObject(Comm_ptr_type comm, std::string name,
                              Teuchos::ParameterList& plist) :
     comm_(Teuchos::rcp(comm.Clone()))
 {

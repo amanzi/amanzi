@@ -33,7 +33,7 @@ TEST(DARCY_MASS_2D) {
 
   std::cout << "Test: Mass matrix for Darcy in 2D" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
@@ -114,7 +114,7 @@ TEST(DARCY_MASS_3D) {
 
   std::cout << "\n\nTest: Mass matrix for Darcy in 3D" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
@@ -193,7 +193,7 @@ TEST(DARCY_MASS_3D_GENERALIZED_POLYHEDRON) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\n\nTest: Mass matrix for generalized polyhedra" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
@@ -247,7 +247,7 @@ TEST(DARCY_INVERSE_MASS_3D) {
 
   std::cout << "\n\nTest: Inverse mass matrix for Darcy" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
@@ -331,7 +331,7 @@ TEST(DARCY_FULL_TENSOR_2D) {
 
   std::cout << "\n\nTest: Inverse mass matrix and full tensor in 2D" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
@@ -429,7 +429,7 @@ TEST(DARCY_FULL_TENSOR_3D) {
 
   std::cout << "\nTest: Inverse mass matrix and full tensor in 3D" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
@@ -520,7 +520,7 @@ TEST(DARCY_STIFFNESS_2D_NODE) {
 
   std::cout << "\nTest: Stiffness matrix for Darcy in 2D" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
@@ -594,7 +594,7 @@ TEST(DARCY_STIFFNESS_2D_EDGE) {
 
   std::cout << "\nTest: Stiffness matrix for Darcy in 2D:edges" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
@@ -662,7 +662,7 @@ TEST(DARCY_STIFFNESS_3D) {
 
   std::cout << "\nTest: Stiffness matrix for Darcy in 3D" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
@@ -729,7 +729,7 @@ TEST(RECOVER_GRADIENT_MIXED) {
 
   std::cout << "\nTest: Recover gradient from Darcy fluxes" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
@@ -779,7 +779,7 @@ TEST(RECOVER_GRADIENT_NODAL) {
 
   std::cout << "\nTest: Recover gradient from nodal pressures" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
@@ -828,7 +828,7 @@ TEST(DARCY_INVERSE_MASS_2D) {
 
   std::cout << "\nTest: Inverse mass matrix for Darcy, 2D" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif

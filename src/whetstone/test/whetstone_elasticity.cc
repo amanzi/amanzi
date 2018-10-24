@@ -36,7 +36,7 @@ TEST(ELASTICITY_STIFFNESS_2D) {
 
   std::cout << "\nTest: Stiffness matrix for elasticity in 2D" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
@@ -125,7 +125,7 @@ TEST(ELASTICITY_STIFFNESS_3D) {
 
   std::cout << "\nTest: Stiffness matrix for Elasticity in 3D" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif

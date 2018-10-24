@@ -92,7 +92,7 @@ std::string file_format_name(const Format& f)
  * 
  * @return format type identifier (::UnknownFormat if something goes wrong)
  */
-Format file_format(const Epetra_Comm& comm_, const char *name) 
+Format file_format(Comm_ptr_type comm_, const char *name) 
 {
   const int np(comm_.NumProc());
   const int me(comm_.MyPID());

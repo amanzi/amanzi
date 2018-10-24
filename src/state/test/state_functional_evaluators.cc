@@ -33,7 +33,7 @@ using namespace Amanzi::AmanziMesh;
 SUITE(EVALS) {
   TEST(EVALS_INDPENDENT_FROMFUNCTION) {
 
-    auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
     MeshFactory meshfac(comm);
 
     // Create the geometric model
@@ -103,7 +103,7 @@ SUITE(EVALS) {
 
   TEST(EVALS_SECONDARY_FROMFUNCTION) {
 
-    auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
     MeshFactory meshfac(comm);
 
     // Create the geometric model

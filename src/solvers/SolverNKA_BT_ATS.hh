@@ -81,7 +81,7 @@ class SolverNKA_BT_ATS : public Solver<Vector, VectorSpace> {
   }
 
  private:
-  void Init_(const Epetra_Comm& comm);
+  void Init_(Comm_ptr_type comm);
   int NKA_BT_ATS_(const Teuchos::RCP<Vector>& u);
   int NKA_ErrorControl_(double error, double previous_error, double l2_error);
 
@@ -148,7 +148,7 @@ SolverNKA_BT_ATS<Vector,VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vecto
  * Initialization of the NKA solver.
  ****************************************************************** */
 template<class Vector, class VectorSpace>
-void SolverNKA_BT_ATS<Vector, VectorSpace>::Init_(const Epetra_Comm& comm)
+void SolverNKA_BT_ATS<Vector, VectorSpace>::Init_(Comm_ptr_type comm)
 {
   tol_ = plist_.get<double>("nonlinear tolerance", 1.e-6);
   overflow_tol_ = plist_.get<double>("diverged tolerance", 1.0e10);

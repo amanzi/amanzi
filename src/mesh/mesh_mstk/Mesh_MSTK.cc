@@ -3341,7 +3341,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
   bool found(false);
   int celldim = Mesh::manifold_dimension();
   int space_dim_ = Mesh::space_dimension();
-  const Epetra_Comm *epcomm_ = get_comm();
+  Comm_ptr_type epcomm_ = get_comm();
   Teuchos::RCP<const VerboseObject> verbobj = Mesh::verbosity_obj();
 
   assert(setents != NULL);
@@ -3615,7 +3615,7 @@ void Mesh_MSTK::init_cell_map()
   int *cell_gids;
   int ncell, idx, i;
   MEntity_ptr ment;
-  const Epetra_Comm *epcomm_ = get_comm();
+  Comm_ptr_type epcomm_ = get_comm();
 
   auto teuchosComm = getTeuchosCommFromEpetraComm (epcomm_);
   if (!serial_run) {
@@ -3673,7 +3673,7 @@ void Mesh_MSTK::init_face_map()
   int *face_gids = nullptr, *extface_gids = nullptr;
   int nface = -1, n_extface = -1, idx, i = -1, j = -1;
   MEntity_ptr ment = nullptr;
-  const Epetra_Comm *epcomm_ = get_comm();
+  Comm_ptr_type epcomm_ = get_comm();
 
   if (!serial_run) {
 
@@ -3847,7 +3847,7 @@ void Mesh_MSTK::init_edge_map()
   int *edge_gids;
   int nedge, idx, i;
   MEntity_ptr ment;
-  const Epetra_Comm *epcomm_ = get_comm();
+  Comm_ptr_type epcomm_ = get_comm();
 
   if (!serial_run) {
 
@@ -3908,7 +3908,7 @@ void Mesh_MSTK::init_node_map()
   int *vert_gids;
   int nvert, idx, i;
   MEntity_ptr ment;
-  const Epetra_Comm *epcomm_ = get_comm();
+  Comm_ptr_type epcomm_ = get_comm();
 
   if (!serial_run) {
 
@@ -5090,7 +5090,7 @@ void Mesh_MSTK::label_celltype()
 //------------
     
 inline 
-Teuchos::RCP<const Map_type> Mesh_MSTK::cell_map(bool include_ghost) const
+Map_ptr_type Mesh_MSTK::cell_map(bool include_ghost) const
 {
   if (serial_run)
     return *cell_map_wo_ghosts_;
@@ -5100,7 +5100,7 @@ Teuchos::RCP<const Map_type> Mesh_MSTK::cell_map(bool include_ghost) const
     
 
 inline 
-Teuchos::RCP<const Map_type> Mesh_MSTK::face_map(bool include_ghost) const
+Map_ptr_type Mesh_MSTK::face_map(bool include_ghost) const
 {
   if (serial_run)
     return *face_map_wo_ghosts_;
@@ -5110,7 +5110,7 @@ Teuchos::RCP<const Map_type> Mesh_MSTK::face_map(bool include_ghost) const
     
 
 inline 
-Teuchos::RCP<const Map_type> Mesh_MSTK::edge_map(bool include_ghost) const
+Map_ptr_type Mesh_MSTK::edge_map(bool include_ghost) const
 {
   if (serial_run)
     return *edge_map_wo_ghosts_;
@@ -5120,7 +5120,7 @@ Teuchos::RCP<const Map_type> Mesh_MSTK::edge_map(bool include_ghost) const
     
 
 inline 
-Teuchos::RCP<const Map_type> Mesh_MSTK::node_map(bool include_ghost) const
+Map_ptr_type Mesh_MSTK::node_map(bool include_ghost) const
 {
   if (serial_run)
     return *node_map_wo_ghosts_;
@@ -5130,7 +5130,7 @@ Teuchos::RCP<const Map_type> Mesh_MSTK::node_map(bool include_ghost) const
 
 
 inline
-Teuchos::RCP<const Map_type> Mesh_MSTK::exterior_face_map(bool include_ghost) const
+Map_ptr_type> Mesh_MSTK::exterior_face_map(bool include_ghost) const
 {
   if (serial_run)
     return *extface_map_wo_ghosts_;
@@ -5140,7 +5140,7 @@ Teuchos::RCP<const Map_type> Mesh_MSTK::exterior_face_map(bool include_ghost) co
 
 
 inline
-Teuchos::RCP<const Import_type> Mesh_MSTK::exterior_face_importer(void) const
+Map_ptr_type Mesh_MSTK::exterior_face_importer(void) const
 {
   return *owned_to_extface_importer_;
 }

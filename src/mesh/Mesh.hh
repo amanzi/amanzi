@@ -632,7 +632,7 @@ class Mesh {
   //
   // Epetra maps
   //------------
-  const Map_type& map(Entity_kind kind, bool include_ghost) const {
+  const Map_ptr_type map(Entity_kind kind, bool include_ghost) const {
     if (kind == CELL) return cell_map(include_ghost);
     else if (kind == FACE) return face_map(include_ghost);
     else if (kind == EDGE) return edge_map(include_ghost);
@@ -645,16 +645,16 @@ class Mesh {
   
   // Get cell map
   virtual
-  Teuchos::RCP<const Map_type> cell_map(bool include_ghost) const = 0;
+  Map_ptr_type cell_map(bool include_ghost) const = 0;
 
   // Get face map
   virtual
-  Teuchos::RCP<const Map_type> face_map(bool include_ghost) const = 0;
+  Map_ptr_type face_map(bool include_ghost) const = 0;
 
   // Get edge map
   // dummy implementation so that frameworks can skip or overwrite
   virtual
-  Teuchos::RCP<const Map_type> edge_map(bool include_ghost) const
+  Map_ptr_type edge_map(bool include_ghost) const
   {
     Errors::Message mesg("Edges are not implemented in this framework.");
     Exceptions::amanzi_throw(mesg);
@@ -663,17 +663,17 @@ class Mesh {
 
   // Get node map
   virtual
-  Teuchos::RCP<const Map_type> node_map(bool include_ghost) const = 0;
+  Map_ptr_type node_map(bool include_ghost) const = 0;
 
   // Get map of only exterior faces
   virtual
-  Teuchos::RCP<const Map_type> exterior_face_map(bool include_ghost) const = 0;
+  Map_ptr_type exterior_face_map(bool include_ghost) const = 0;
 
   // Get Epetra importer that will allow apps to import values from a
   // Epetra vector defined on all owned faces into an Epetra vector
   // defined only on exterior faces
   virtual
-  Teuchos::RCP<const Import_type> exterior_face_importer(void) const = 0;
+  Map_ptr_type exterior_face_importer(void) const = 0;
 
 
   //

@@ -131,7 +131,7 @@ Teuchos::RCP<PK> create(const Teuchos::RCP<State> &S) {
       Teuchos::sublist(ti_list, "timestep controller fixed parameters");
 
   // intentionally leaks memory
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   int MyPID = comm->MyPID();
   if (MyPID == 0)
