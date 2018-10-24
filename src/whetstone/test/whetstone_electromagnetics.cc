@@ -38,7 +38,7 @@ TEST(MASS_MATRIX_2D) {
 #ifdef HAVE_MPI
   auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());
 #endif
 
   MeshFactory factory(comm);
@@ -127,7 +127,7 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
 #ifdef HAVE_MPI
   auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());
 #endif
 
   MeshFactory meshfactory(comm);
@@ -232,7 +232,7 @@ TEST(STIFFNESS_MATRIX_2D) {
 #ifdef HAVE_MPI
   auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());
 #endif
 
   MeshFactory factory(comm);
@@ -317,7 +317,7 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
 #ifdef HAVE_MPI
   auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());
 #endif
 
   MeshFactory meshfactory(comm);

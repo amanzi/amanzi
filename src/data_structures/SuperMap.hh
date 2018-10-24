@@ -21,7 +21,7 @@
 #define AMANZI_OPERATORS_SUPER_MAP_HH_
 
 #include "Teuchos_RCP.hpp"
-#include "Epetra_MpiComm.h"
+#include "AmanziTypes.hh"
 
 #include "dbc.hh"
 #include "Mesh.hh"

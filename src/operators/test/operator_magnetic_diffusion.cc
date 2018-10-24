@@ -53,7 +53,7 @@ void MagneticDiffusion2D(double dt, double tend,
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "\nTest: Magnetic diffusion, TM mode, dt=" 
@@ -292,7 +292,7 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "\nTest: Magnetic diffusion 3D, dt=" 

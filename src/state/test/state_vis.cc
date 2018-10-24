@@ -51,7 +51,7 @@ SUITE(VISUALIZATION) {
     times[1] = 3.0;
     plist.set<Teuchos::Array<double>>("times", times);
 
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     Amanzi::Visualization V(plist);
 
     // test the cycle stuff, the expected result is in cycles_ and
@@ -83,7 +83,7 @@ SUITE(VISUALIZATION) {
     // the mesh and data files are written
     Teuchos::ParameterList plist;
 
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
     std::string xmlFileName = "test/state_vis.xml";
     Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);

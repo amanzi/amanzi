@@ -22,7 +22,7 @@ TEST(MSTK_QUAD_GEN_3x3)
   int NF = 24;
   int NC = 9;
 
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
 
   // Load a mesh consisting of 3x3 elements

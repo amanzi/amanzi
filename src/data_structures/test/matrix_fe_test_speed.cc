@@ -43,7 +43,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
@@ -140,7 +140,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs_Nonlocal) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
@@ -243,7 +243,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
@@ -340,7 +340,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 //   using namespace Amanzi::AmanziGeometry;
 //   using namespace Amanzi::Operators;
 
-//   Epetra_MpiComm comm(MPI_COMM_WORLD);
+//   auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 //   int MyPID = comm->getRank();
 
 //   if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
@@ -420,7 +420,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 //   using namespace Amanzi::AmanziGeometry;
 //   using namespace Amanzi::Operators;
 
-//   Epetra_MpiComm comm(MPI_COMM_WORLD);
+//   auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 //   int MyPID = comm->getRank();
 
 //   if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
@@ -504,7 +504,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 //   using namespace Amanzi::AmanziGeometry;
 //   using namespace Amanzi::Operators;
 
-//   Epetra_MpiComm comm(MPI_COMM_WORLD);
+//   auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 //   int MyPID = comm->getRank();
 
 //   if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
@@ -582,7 +582,7 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix2) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
@@ -658,7 +658,7 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix_offproc2) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
@@ -736,7 +736,7 @@ TEST(FE_MATRIX_FACE_FACE_MatrixFE2) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;

@@ -8,7 +8,7 @@ TEST(HDF5_MPI) {
 #ifdef HAVE_MPI
   auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 //#else
-//  Epetra_SerialComm *comm = new Epetra_SerialComm();
+//  auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());
 //#endif
     
   std::string hdf5_meshfile  = "new_mesh_mpi";

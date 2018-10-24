@@ -37,7 +37,7 @@ SUITE(RESTART) {
     csps[2] = 10;
     plist.set<Teuchos::Array<int>>("cycles start period stop", csps);
 
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     Amanzi::Checkpoint R(plist, comm);
 
     // test the cycle stuff, the expected result is in cycles_ and
@@ -63,7 +63,7 @@ SUITE(RESTART) {
     csps[2] = -1;
     plist.set<Teuchos::Array<int>>("cycles start period stop", csps);
 
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     Amanzi::Checkpoint R(plist, comm);
 
     // test the cycle stuff, the expected result is in cycles_ and
@@ -89,7 +89,7 @@ SUITE(RESTART) {
     csps[2] = -1;
     plist.set<Teuchos::Array<int>>("cycles start period stop", csps);
 
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     Amanzi::Checkpoint R(plist, comm);
 
     // test the cycle stuff, the expected result is in cycles_ and
@@ -121,7 +121,7 @@ SUITE(RESTART) {
     cyc[2] = 4;
     plist.set<Teuchos::Array<int>>("cycles", cyc);
 
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     Amanzi::Checkpoint R(plist, comm);
 
     // test the cycle stuff, the expected result is in cycles_ and
@@ -153,7 +153,7 @@ SUITE(RESTART) {
     tim[2] = 4.0;
     plist.set<Teuchos::Array<double>>("times", tim);
 
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     Amanzi::Checkpoint R(plist, comm);
 
     // test the cycle stuff, the expected result is in cycles_ and
@@ -177,7 +177,7 @@ SUITE(RESTART) {
     // i1_.set<int>("End",10);
     // i1_.set<int>("Interval",1);
 
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
     std::string xmlFileName = "test/state_restart.xml";
     Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);

@@ -45,7 +45,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "\nTest: Commuting of advection-duffusion operators." << std::endl;
@@ -168,7 +168,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "\nTest: Commuting of advection-duffusion operators." << std::endl;

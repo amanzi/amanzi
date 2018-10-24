@@ -47,7 +47,7 @@ using namespace Amanzi::Operators;
 ***************************************************************** */
 template<class UpwindClass>
 void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list) {
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
   if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, divK discretization: \"" 
                             << diffusion_list << "\" + \"" << upwind_list << "\"\n";
@@ -208,7 +208,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
   if (MyPID == 0) std::cout << "\nTest: 3D elliptic solver, divK discretization, average" << std::endl;
 

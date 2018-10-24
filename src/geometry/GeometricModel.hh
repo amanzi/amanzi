@@ -18,7 +18,7 @@
 #include <map>
 
 #include "Teuchos_RCP.hpp"
-#include "Epetra_MpiComm.h"
+#include "AmanziTypes.hh"
 
 #include "Region.hh"
 
@@ -34,7 +34,7 @@ class GeometricModel {
   // Constructor from parameter list
   GeometricModel(unsigned int dim,
                  Teuchos::ParameterList& gm_param_list,
-                 const Epetra_MpiComm *comm);      
+                 Comm_ptr_type comm);      
 
   unsigned int dimension() const { return dim_; }
   

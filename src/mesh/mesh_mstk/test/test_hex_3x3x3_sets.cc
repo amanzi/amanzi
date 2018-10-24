@@ -24,7 +24,7 @@ TEST(MSTK_HEX_3x3x3_SETS)
 
   std::vector<std::string> expnsetnames{"INTERIOR XY PLANE", "TOP BOX", "Entire Mesh"};
 
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
 
   std::string infilename = "test/hex_3x3x3.xml";

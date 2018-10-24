@@ -6,7 +6,7 @@
 #include "Epetra_BlockMap.h"
 #include "Epetra_Vector.h"
 #include "Epetra_SerialDenseMatrix.h"
-#include "Epetra_SerialComm.h"
+#include "Teuchos_DefaultSerialComm.hpp"
 
 SUITE(TimeIntegrationTests) {
 using namespace Amanzi;
@@ -22,7 +22,7 @@ class fn1 : public Explicit_TI::fnBase<Epetra_Vector> {
 
   TEST(Explicit_RK_Euler) {
     std::cout << "Test: Explicit_RK_Euler" << std::endl;    
-    Comm_ptr_type comm = new Epetra_SerialComm();    
+    auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());    
     Epetra_BlockMap map(1, 1, 0, *comm);
     Epetra_Vector y(map);
     Epetra_Vector y_new(map);
@@ -53,7 +53,7 @@ class fn1 : public Explicit_TI::fnBase<Epetra_Vector> {
   TEST(Explicit_RK_Heun) {
     std::cout << "Test: Explicit_RK_Heun" << std::endl;    
     
-    Comm_ptr_type comm = new Epetra_SerialComm();    
+    auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());    
     Epetra_BlockMap map(1, 1, 0, *comm);
     Epetra_Vector y(map);
     Epetra_Vector y_new(map);
@@ -82,7 +82,7 @@ class fn1 : public Explicit_TI::fnBase<Epetra_Vector> {
   TEST(Explicit_RK_Midpoint) {
     std::cout << "Test: Explicit_RK_Midpoint" << std::endl;    
     
-    Comm_ptr_type comm = new Epetra_SerialComm();    
+    auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());    
     Epetra_BlockMap map(1, 1, 0, *comm);
     Epetra_Vector y(map);
     Epetra_Vector y_new(map);
@@ -113,7 +113,7 @@ class fn1 : public Explicit_TI::fnBase<Epetra_Vector> {
   TEST(Explicit_RK_Ralston) {
     std::cout << "Test: Explicit_RK_Rapson" << std::endl;    
     
-    Comm_ptr_type comm = new Epetra_SerialComm();    
+    auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());    
     Epetra_BlockMap map(1, 1, 0, *comm);
     Epetra_Vector y(map);
     Epetra_Vector y_new(map);
@@ -144,7 +144,7 @@ class fn1 : public Explicit_TI::fnBase<Epetra_Vector> {
   TEST(Explicit_TVD_RK3) {
     std::cout << "Test: Explicit_TVD_RK3" << std::endl;    
     
-    Comm_ptr_type comm = new Epetra_SerialComm();    
+    auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());    
     Epetra_BlockMap map(1, 1, 0, *comm);
     Epetra_Vector y(map);
     Epetra_Vector y_new(map);
@@ -175,7 +175,7 @@ class fn1 : public Explicit_TI::fnBase<Epetra_Vector> {
   TEST(Explicit_RK_Kutta3D) {
     std::cout << "Test: Explicit_RK_Kutta3D" << std::endl;    
     
-    Comm_ptr_type comm = new Epetra_SerialComm();    
+    auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());    
     Epetra_BlockMap map(1, 1, 0, *comm);
     Epetra_Vector y(map);
     Epetra_Vector y_new(map);
@@ -206,7 +206,7 @@ class fn1 : public Explicit_TI::fnBase<Epetra_Vector> {
   TEST(Explicit_RK_UserDefined) {
     std::cout << "Test: Explicit_RK_UserDefined" << std::endl;    
     
-    Comm_ptr_type comm = new Epetra_SerialComm();    
+    auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());    
     Epetra_BlockMap map(1, 1, 0, *comm);
     Epetra_Vector y(map);
     Epetra_Vector y_new(map);
@@ -249,7 +249,7 @@ class fn1 : public Explicit_TI::fnBase<Epetra_Vector> {
   TEST(Explicit_RK_RK4) {
     std::cout << "Test: Explicit_RK_RK4" << std::endl;    
     
-    Comm_ptr_type comm = new Epetra_SerialComm();    
+    auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());    
     Epetra_BlockMap map(1, 1, 0, *comm);
     Epetra_Vector y(map);
     Epetra_Vector y_new(map);

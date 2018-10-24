@@ -2,7 +2,7 @@
 #define __MESHAUDITOLD__
 
 #include "Teuchos_RCP.hpp"
-#include "Epetra_Comm.h"
+#include "AmanziTypes.hh"
 
 #include "Mesh.hh"
 

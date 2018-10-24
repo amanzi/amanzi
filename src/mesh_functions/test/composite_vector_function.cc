@@ -27,7 +27,7 @@ int main (int argc, char *argv[])
 
 struct another_reference_mesh
 {
-  Epetra_MpiComm *comm;
+  Comm_ptr_type comm;
   Teuchos::RCP<Mesh> mesh;
   Teuchos::RCP<GeometricModel> gm;
   std::string LEFT, RIGHT, FRONT, BACK, BOTTOM, TOP, INVALID;

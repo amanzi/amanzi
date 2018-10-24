@@ -85,13 +85,14 @@ class MeshEmbeddedLogical;
 class Mesh {
  public:
   // constructor
-  Mesh(const Teuchos::RCP<Teuchos::Comm<int> >& comm,
+  Mesh(Comm_ptr_type comm,
        const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
        const Teuchos::RCP<const VerboseObject>& vo=Teuchos::null,
        const bool request_faces=true,
        const bool request_edges=false)
   : comm_(comm),
     geometric_model_(gm),
+    vo_(vo),
     space_dim_(-1),
     manifold_dim_(-1),
     mesh_type_(GENERAL),
@@ -106,10 +107,7 @@ class Mesh {
     cell2edge_info_cached_(false),
     face2edge_info_cached_(false),
     parent_(Teuchos::null),
-    geometric_model_(Teuchos::null),
     logical_(false),
-    vo_(vo),
-    comm_(NULL),
     kdtree_faces_initialized_(false) {};
 
   // virtual destructor
@@ -140,7 +138,7 @@ class Mesh {
   }
 
   // Set/get the space dimension
-  void set_space_dimension(const unsigned int dim) {
+  void set_space_dimension(int dim) {
     space_dim_ = dim;
   }
   unsigned int space_dimension() const {
@@ -148,10 +146,10 @@ class Mesh {
   }
 
   // Set/get the manifold dimension
-  void set_manifold_dimension(const unsigned int dim) {
+  void set_manifold_dimension(int dim) {
     manifold_dim_ = dim;   // 3 is solid mesh, 2 is surface mesh
   }
-  unsigned int manifold_dimension() const {
+  int manifold_dimension() const {
     return manifold_dim_;
   }
 
@@ -846,7 +844,7 @@ protected:
   Teuchos::RCP<const VerboseObject> vo_;
 
   Mesh_type mesh_type_;
-  unsigned int manifold_dim_, space_dim_;
+  int manifold_dim_, space_dim_;
 
   bool logical_;
   Teuchos::RCP<const Mesh> parent_;

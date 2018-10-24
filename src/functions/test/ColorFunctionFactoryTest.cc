@@ -4,7 +4,8 @@
 #include "TestReporterStdout.h"
 
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Epetra_MpiComm.h"
+#include "AmanziTypes.hh"
+#include "Teuchos_DefaultMpiComm.hpp"
 
 #include "ColorFunction.hh"
 #include "ColorFunctionFactory.hh"
@@ -20,7 +21,7 @@ int main(int argc, char *argv[])
 
 TEST(Grid1D_cell)
 {
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   ColorFunctionFactory factory;
   std::string infile("test/ColorFunc1Cell.txt");
   ColorFunction *f = factory.Create(infile, comm);
@@ -33,7 +34,7 @@ TEST(Grid1D_cell)
 
 TEST(Grid1D_node)
 {
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   ColorFunctionFactory factory;
   std::string infile("test/ColorFunc1Node.txt");
   ColorFunction *f = factory.Create(infile, comm);
@@ -46,7 +47,7 @@ TEST(Grid1D_node)
 
 TEST(Grid2D_cell)
 {
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   ColorFunctionFactory factory;
   std::string infile("test/ColorFunc2Cell.txt");
   ColorFunction *f = factory.Create(infile, comm);
@@ -62,7 +63,7 @@ TEST(Grid2D_cell)
 
 TEST(Grid2D_node)
 {
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   ColorFunctionFactory factory;
   std::string infile("test/ColorFunc2Node.txt");
   ColorFunction *f = factory.Create(infile, comm);
@@ -78,7 +79,7 @@ TEST(Grid2D_node)
 
 TEST(Grid3D_cell)
 {
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   ColorFunctionFactory factory;
   std::string infile("test/ColorFunc3Cell.txt");
   ColorFunction *f = factory.Create(infile, comm);
@@ -95,7 +96,7 @@ TEST(Grid3D_cell)
 
 TEST(Grid3D_node)
 {
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   ColorFunctionFactory factory;
   std::string infile("test/ColorFunc3Node.txt");
   ColorFunction *f = factory.Create(infile, comm);

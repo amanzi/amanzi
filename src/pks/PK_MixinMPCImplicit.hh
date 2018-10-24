@@ -26,7 +26,7 @@ PK_Implicit<TreeVector> > > >
 
 #include <vector>
 
-#include "Epetra_MpiComm.h"
+#include "AmanziTypes.hh"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 

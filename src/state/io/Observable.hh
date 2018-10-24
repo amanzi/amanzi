@@ -13,7 +13,7 @@ Observable data object
 #ifndef AMANZI_OBSERVABLE_HH_
 #define AMANZI_OBSERVABLE_HH_
 
-#include "Epetra_MpiComm.h"
+#include "AmanziTypes.hh"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 

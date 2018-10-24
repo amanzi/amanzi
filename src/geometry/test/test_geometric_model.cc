@@ -8,6 +8,13 @@
 
 #include <iostream>
 
+#include "AmanziTypes.hh"
+
+#include "Teuchos_DefaultMpiComm.hpp"
+#include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_Array.hpp"
 
 #include "../Region.hh"
 #include "../RegionLabeledSet.hh"
@@ -16,19 +23,14 @@
 #include "../RegionFactory.hh"
 #include "../GeometricModel.hh"
 
-#include "Epetra_MpiComm.h"
-#include "Teuchos_ParameterXMLFileReader.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_Array.hpp"
-
 #include "mpi.h"
 
+using namespace Amanzi;
 
 TEST(GEOMETRIC_MODEL)
 {
 
-  Epetra_MpiComm ecomm(MPI_COMM_WORLD);
+  auto ecomm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // read the parameter list from input file
 
@@ -37,7 +39,7 @@ TEST(GEOMETRIC_MODEL)
 
   Teuchos::ParameterList reg_spec(xmlreader.getParameters());
 
-  Amanzi::AmanziGeometry::GeometricModel gm((unsigned int)3, reg_spec, &ecomm);
+  AmanziGeometry::GeometricModel gm((unsigned int)3, reg_spec, ecomm);
 
   for (Teuchos::ParameterList::ConstIterator i = reg_spec.begin(); 
        i != reg_spec.end(); i++) {
@@ -47,7 +49,7 @@ TEST(GEOMETRIC_MODEL)
     Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
 
     // See if the geometric model has a region by this name
-    Teuchos::RCP<const Amanzi::AmanziGeometry::Region> reg = gm.FindRegion(reg_name);
+    Teuchos::RCP<const AmanziGeometry::Region> reg = gm.FindRegion(reg_name);
 
     CHECK(reg.get());
 
@@ -61,7 +63,7 @@ TEST(GEOMETRIC_MODEL)
 
     if (shape == "region: plane") {
       // Make sure that the region type is a Plane
-      CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::PLANE);
+      CHECK_EQUAL(reg->type(),AmanziGeometry::PLANE);
 
       // See if the point and normal of the region were correctly retrieved
       Teuchos::Array<double> in_xyz, in_nrm;
@@ -70,9 +72,9 @@ TEST(GEOMETRIC_MODEL)
       in_xyz = plane_params.get< Teuchos::Array<double> >("point");
       in_nrm = plane_params.get< Teuchos::Array<double> >("normal");  
  
-      Amanzi::AmanziGeometry::Point p, n;
-      Teuchos::RCP<const Amanzi::AmanziGeometry::RegionPlane> plane =
-	Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionPlane>(reg);
+      AmanziGeometry::Point p, n;
+      Teuchos::RCP<const AmanziGeometry::RegionPlane> plane =
+	Teuchos::rcp_dynamic_cast<const AmanziGeometry::RegionPlane>(reg);
 
       p = plane->point();
       n = plane->normal();
@@ -91,7 +93,7 @@ TEST(GEOMETRIC_MODEL)
       
     } else if (shape == "region: box") {
       // Make sure that the region type is a BOX
-      CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::BOX);
+      CHECK_EQUAL(reg->type(),AmanziGeometry::BOX);
 
       // Get the min-max bounds of the region from the XML specification
       Teuchos::Array<double> in_min_xyz, in_max_xyz;
@@ -105,8 +107,8 @@ TEST(GEOMETRIC_MODEL)
       CHECK_EQUAL(reg->manifold_dimension(),in_min_xyz.size());
       
       // See if the min-max of the region were correctly retrieved
-      Amanzi::AmanziGeometry::Point pmin, pmax;
-      auto rect = Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionBox>(reg);
+      AmanziGeometry::Point pmin, pmax;
+      auto rect = Teuchos::rcp_dynamic_cast<const AmanziGeometry::RegionBox>(reg);
       
       pmin = rect->point0();
       pmax = rect->point1();
@@ -132,10 +134,10 @@ TEST(GEOMETRIC_MODEL)
       std::string in_entity_str = labset_params.get< std::string >("entity");
 
       // Make sure that the region type is a Labeled Set
-      CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::LABELEDSET);
+      CHECK_EQUAL(reg->type(),AmanziGeometry::LABELEDSET);
   
-      Teuchos::RCP<const Amanzi::AmanziGeometry::RegionLabeledSet> lsreg =
-	Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionLabeledSet>(reg);
+      Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsreg =
+	Teuchos::rcp_dynamic_cast<const AmanziGeometry::RegionLabeledSet>(reg);
 
       // Did we get the entity string right?
       CHECK_EQUAL(in_entity_str,lsreg->entity_str());

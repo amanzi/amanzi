@@ -20,7 +20,7 @@ TEST(MSTK_HEX_GEN_3x3x3_4P)
   std::vector<Amanzi::AmanziGeometry::Point> ccoords(8), fcoords(4);
 
 			      
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 			      
 
   int rank, size;

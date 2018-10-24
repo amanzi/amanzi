@@ -48,7 +48,7 @@ void UserReadCheckpoint(const Amanzi::Checkpoint &chkp,
 TEST(STATE_EXTENSIBILITY_CREATION) {
   using namespace Amanzi;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   Teuchos::ParameterList region_list;
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm = Teuchos::rcp(
       new Amanzi::AmanziGeometry::GeometricModel(3, region_list, &comm));

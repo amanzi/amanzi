@@ -46,7 +46,7 @@ const unsigned int HexMeshGenerator::nvcell(8);
  * @param ydelta cell size in the y-direction
  * @param zdelta cell size in the z-direction
  */
-HexMeshGenerator::HexMeshGenerator(const Epetra_Comm *comm, 
+HexMeshGenerator::HexMeshGenerator(Comm_ptr_type comm, 
                                    const unsigned int& ni, 
                                    const unsigned int& nj, 
                                    const unsigned int& nk,

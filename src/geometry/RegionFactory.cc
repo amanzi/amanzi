@@ -47,7 +47,7 @@ Teuchos::RCP<Region>
 createRegion(const std::string reg_name,
              int reg_id,
              Teuchos::ParameterList& reg_spec,
-             const Epetra_MpiComm *comm)
+	     Comm_ptr_type comm)	     
 {
   std::stringstream sstream;
 

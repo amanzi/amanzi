@@ -12,7 +12,7 @@ NOTE: Should make this class RAII
 #ifndef AMANZI_STATE_CHECKPOINT_HH_
 #define AMANZI_STATE_CHECKPOINT_HH_
 
-#include "Epetra_Comm.h"
+#include "AmanziTypes.hh"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
 

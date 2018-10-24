@@ -14,8 +14,8 @@
 #include <algorithm>
 
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_MpiComm.h"
-#include "Epetra_SerialComm.h"
+#include "AmanziTypes.hh"
+#include "Teuchos_DefaultSerialComm.hpp"
 
 #include "VerboseObject.hh"
 #include "dbc.hh"

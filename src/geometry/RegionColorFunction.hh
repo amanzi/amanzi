@@ -44,8 +44,6 @@ Example:
 #ifndef AMANZI_REGION_COLOR_FUNCTION_HH_
 #define AMANZI_REGION_COLOR_FUNCTION_HH_
 
-#include "Epetra_MpiComm.h"
-
 #include "Region.hh"
 
 namespace Amanzi {
@@ -62,7 +60,7 @@ class RegionColorFunction : public Region {
                       const int id, 
                       const std::string& file,
                       const int value,
-                      const Epetra_MpiComm *comm,
+                      Comm_ptr_type comm,
                       const LifeCycleType lifecycle=PERMANENT);
 
   // Is the the specified point inside this region

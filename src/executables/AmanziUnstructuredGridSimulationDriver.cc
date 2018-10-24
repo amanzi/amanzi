@@ -14,7 +14,7 @@
 
 #include <Epetra_Comm.h>
 #include <Epetra_MpiComm.h>
-#include "Epetra_SerialComm.h"
+#include "Teuchos_DefaultSerialComm.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -87,7 +87,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(mpi_comm);
 #else  
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());
 #endif
 
   int rank, ierr, aerr, size;

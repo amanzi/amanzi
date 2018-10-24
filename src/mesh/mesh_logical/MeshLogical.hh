@@ -27,8 +27,8 @@
 #include <vector>
 
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_MpiComm.h"
-#include "Epetra_SerialComm.h"
+#include "AmanziTypes.hh"
+#include "Teuchos_DefaultSerialComm.hpp"
 
 #include "VerboseObject.hh"
 #include "dbc.hh"
@@ -58,12 +58,12 @@ class MeshLogical : public Mesh {
   //                              is area
   //  - cell_centroids_          : (optional, for plotting) length ncell
   //                              array of centroids
-  MeshLogical(const Epetra_MpiComm *comm,
+  MeshLogical(Comm_ptr_type comm,
               const std::vector<Entity_ID_List>& face_cell_ids,
               const std::vector<AmanziGeometry::Point>& face_normals,
               const Teuchos::RCP<const VerboseObject>& verbosity_obj=Teuchos::null);
 
-  MeshLogical(const Epetra_MpiComm *comm,
+  MeshLogical(Comm_ptr_type comm,
               const std::vector<double>& cell_volumes,
               const std::vector<Entity_ID_List>& face_cell_ids,
               const std::vector<std::vector<double> >& face_cell_lengths,

@@ -3,8 +3,8 @@
 #define AMANZI_EMBEDDED_LOGICAL_MESH_H_
 
 #include "Tpetra_Map.hpp"
-#include "Epetra_MpiComm.h"
-#include "Epetra_SerialComm.h"
+#include "AmanziTypes.hh"
+#include "Teuchos_DefaultSerialComm.hpp"
 
 #include <memory>
 #include <vector>

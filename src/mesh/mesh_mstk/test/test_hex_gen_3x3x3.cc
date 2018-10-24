@@ -22,7 +22,7 @@ TEST(MSTK_HEX_GEN_3x3x3)
   int NF = 108;
   int NC = 27;
 
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // Generate a mesh consisting of 3x3x3 elements 
 

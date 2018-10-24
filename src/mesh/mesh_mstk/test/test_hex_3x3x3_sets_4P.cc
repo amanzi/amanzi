@@ -31,7 +31,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
 
   int fsetsize;
 
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   
   int initialized;

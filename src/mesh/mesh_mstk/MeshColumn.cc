@@ -169,11 +169,11 @@ void MeshColumn::compute_special_node_coordinates_() {
 // comm_unicator
 // -----------------------------------------------------------------------------
 void MeshColumn::build_epetra_maps_() {
-  Epetra_SerialComm epcomm_;
+  Comm_ptr_type comm;
   int indexBase = 0;
 
   int nfaces = column_faces_.size();
-  face_map_ = new Map_type(nfaces,indexBase,epcomm_);
+  face_map_ = new Map_type(nfaces,indexBase,comm);
 
   std::vector<int> ext_gids(2,-1);
   ext_gids[0] = 0;

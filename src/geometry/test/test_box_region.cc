@@ -3,21 +3,25 @@
 #include <iostream>
 #include <vector>
 
+#include "AmanziTypes.hh"
+
+#include "Teuchos_DefaultMpiComm.hpp"
+#include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_Array.hpp"
+
 #include "../Region.hh"
 #include "../RegionBox.hh"
 #include "../RegionBoxVolumeFractions.hh"
 #include "../RegionFactory.hh"
 
-#include "Epetra_MpiComm.h"
-#include "Teuchos_ParameterXMLFileReader.hpp"
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_Array.hpp"
-
 #include "mpi.h"
+
+using namespace Amanzi;
 
 TEST(BOX_REGION_2D)
 {
-  Epetra_MpiComm ecomm(MPI_COMM_WORLD);
+  auto ecomm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // read the parameter list from input file
   std::string infilename = "test/boxregion_2D.xml";
@@ -32,7 +36,7 @@ TEST(BOX_REGION_2D)
   Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
     
   // Create a rectangular region
-  auto reg = Amanzi::AmanziGeometry::createRegion(reg_name, reg_id, reg_params, &ecomm);
+  auto reg = AmanziGeometry::createRegion(reg_name, reg_id, reg_params, ecomm);
   
   // See if we retrieved the name and id correctly
   CHECK_EQUAL(reg->name(), reg_name);
@@ -48,14 +52,14 @@ TEST(BOX_REGION_2D)
   in_max_xyz = box_params.get< Teuchos::Array<double> >("high coordinate");
  
   // Make sure that the region type is a BOX
-  CHECK_EQUAL(reg->type(), Amanzi::AmanziGeometry::BOX);
+  CHECK_EQUAL(reg->type(), AmanziGeometry::BOX);
 
   // Make sure that the region dimension is 2
   CHECK_EQUAL(reg->manifold_dimension(), 2);
   
   // See if the min-max of the region were correctly retrieved
-  Amanzi::AmanziGeometry::Point pmin, pmax;
-  auto rect = Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionBox>(reg);
+  AmanziGeometry::Point pmin, pmax;
+  auto rect = Teuchos::rcp_dynamic_cast<const AmanziGeometry::RegionBox>(reg);
 
   // Make sure we got back 2D points
   pmin = rect->point0();
@@ -70,23 +74,23 @@ TEST(BOX_REGION_2D)
   CHECK_EQUAL(pmax.y(),in_min_xyz[1]);
 
   // test the functionality of the region
-  std::vector<Amanzi::AmanziGeometry::Point> pin;
-  pin.push_back(Amanzi::AmanziGeometry::Point(9., 8.));
-  pin.push_back(Amanzi::AmanziGeometry::Point(11., 8.));
-  pin.push_back(Amanzi::AmanziGeometry::Point(11., 1.5));
-  pin.push_back(Amanzi::AmanziGeometry::Point(9., 1.5));
-  pin.push_back(Amanzi::AmanziGeometry::Point(10., 5.));
+  std::vector<AmanziGeometry::Point> pin;
+  pin.push_back(AmanziGeometry::Point(9., 8.));
+  pin.push_back(AmanziGeometry::Point(11., 8.));
+  pin.push_back(AmanziGeometry::Point(11., 1.5));
+  pin.push_back(AmanziGeometry::Point(9., 1.5));
+  pin.push_back(AmanziGeometry::Point(10., 5.));
 
-  for (std::vector<Amanzi::AmanziGeometry::Point>::iterator p=pin.begin();
+  for (std::vector<AmanziGeometry::Point>::iterator p=pin.begin();
        p!=pin.end(); ++p) {
     CHECK(reg->inside(*p));
   }
 
-  std::vector<Amanzi::AmanziGeometry::Point> pout;
-  pin.push_back(Amanzi::AmanziGeometry::Point(9.9, 8.));
-  pin.push_back(Amanzi::AmanziGeometry::Point(11, 7.9));
+  std::vector<AmanziGeometry::Point> pout;
+  pin.push_back(AmanziGeometry::Point(9.9, 8.));
+  pin.push_back(AmanziGeometry::Point(11, 7.9));
 
-  for (std::vector<Amanzi::AmanziGeometry::Point>::iterator p=pout.begin();
+  for (std::vector<AmanziGeometry::Point>::iterator p=pout.begin();
        p!=pout.end(); ++p) {
     CHECK(!reg->inside(*p));
   }
@@ -95,7 +99,7 @@ TEST(BOX_REGION_2D)
 
 TEST(BOX_REGION_3D)
 {
-  Epetra_MpiComm ecomm(MPI_COMM_WORLD);
+  auto ecomm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // read the parameter list from input file
 
@@ -112,9 +116,9 @@ TEST(BOX_REGION_3D)
   Teuchos::ParameterList reg_params = reg_spec.sublist(reg_spec.name(i));
   
   // Create a rectangular region
-  Teuchos::RCP<Amanzi::AmanziGeometry::Region> reg = 
-    Amanzi::AmanziGeometry::createRegion(reg_spec.name(i), reg_id,
-					 reg_params, &ecomm);
+  Teuchos::RCP<AmanziGeometry::Region> reg = 
+    AmanziGeometry::createRegion(reg_spec.name(i), reg_id,
+					 reg_params, ecomm);
   
   // See if we retrieved the name and id correctly
   CHECK_EQUAL(reg->name(),reg_name);
@@ -130,14 +134,14 @@ TEST(BOX_REGION_3D)
   in_max_xyz = box_params.get< Teuchos::Array<double> >("high coordinate");
  
   // Make sure that the region type is a BOX
-  CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::BOX);
+  CHECK_EQUAL(reg->type(),AmanziGeometry::BOX);
 
   // Make sure that the region dimension is 3
   CHECK_EQUAL(reg->manifold_dimension(),3);
   
   // See if the min-max of the region were correctly retrieved
-  Amanzi::AmanziGeometry::Point pmin, pmax;
-  auto rect = Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionBox>(reg);
+  AmanziGeometry::Point pmin, pmax;
+  auto rect = Teuchos::rcp_dynamic_cast<const AmanziGeometry::RegionBox>(reg);
 
   pmin = rect->point0();
   pmax = rect->point1();
@@ -155,25 +159,25 @@ TEST(BOX_REGION_3D)
   CHECK_EQUAL(pmax.z(),in_max_xyz[2]);
  
   // test the functionality of the region
-  std::vector<Amanzi::AmanziGeometry::Point> pin;
-  pin.push_back(Amanzi::AmanziGeometry::Point(2.,3.,5.));
-  pin.push_back(Amanzi::AmanziGeometry::Point(4,5,8));
-  pin.push_back(Amanzi::AmanziGeometry::Point(2,3,8));
-  pin.push_back(Amanzi::AmanziGeometry::Point(4,5,5));
-  pin.push_back(Amanzi::AmanziGeometry::Point(2,5,5));
-  pin.push_back(Amanzi::AmanziGeometry::Point(3,4,6));
+  std::vector<AmanziGeometry::Point> pin;
+  pin.push_back(AmanziGeometry::Point(2.,3.,5.));
+  pin.push_back(AmanziGeometry::Point(4,5,8));
+  pin.push_back(AmanziGeometry::Point(2,3,8));
+  pin.push_back(AmanziGeometry::Point(4,5,5));
+  pin.push_back(AmanziGeometry::Point(2,5,5));
+  pin.push_back(AmanziGeometry::Point(3,4,6));
 
-  for (std::vector<Amanzi::AmanziGeometry::Point>::iterator p=pin.begin();
+  for (std::vector<AmanziGeometry::Point>::iterator p=pin.begin();
        p!=pin.end(); ++p) {
     CHECK(reg->inside(*p));
   }
 
-  std::vector<Amanzi::AmanziGeometry::Point> pout;
-  pin.push_back(Amanzi::AmanziGeometry::Point(3.,4.,4.9));
-  pin.push_back(Amanzi::AmanziGeometry::Point(3.,4.,8.001));
-  pin.push_back(Amanzi::AmanziGeometry::Point(-3,-4,-6));
+  std::vector<AmanziGeometry::Point> pout;
+  pin.push_back(AmanziGeometry::Point(3.,4.,4.9));
+  pin.push_back(AmanziGeometry::Point(3.,4.,8.001));
+  pin.push_back(AmanziGeometry::Point(-3,-4,-6));
 
-  for (std::vector<Amanzi::AmanziGeometry::Point>::iterator p=pout.begin();
+  for (std::vector<AmanziGeometry::Point>::iterator p=pout.begin();
        p!=pout.end(); ++p) {
     CHECK(!reg->inside(*p));
   }
@@ -182,8 +186,8 @@ TEST(BOX_REGION_3D)
 
 TEST(BOXREGION_VOFS_2D_INTERSECTION)
 {
-  Amanzi::AmanziGeometry::Point v1(2), v2(2), v3(2), v4(2), vv(2);
-  std::vector<Amanzi::AmanziGeometry::Point> xy1, xy2, xy3;
+  AmanziGeometry::Point v1(2), v2(2), v3(2), v4(2), vv(2);
+  std::vector<AmanziGeometry::Point> xy1, xy2, xy3;
 
   v1.set(0.0, 0.0);
   v2.set(1.0, 0.0);
@@ -204,7 +208,7 @@ TEST(BOXREGION_VOFS_2D_INTERSECTION)
     xy1.push_back(vv + v3);
     std::cout << "\nshift: " << xy1[0] << std::endl;
 
-    Amanzi::AmanziGeometry::IntersectConvexPolygons(xy1, xy2, xy3);
+    AmanziGeometry::IntersectConvexPolygons(xy1, xy2, xy3);
 
     for (int i = 0; i < xy3.size(); ++i) {
       std::cout << i << " xy=" << xy3[i] << std::endl;
@@ -216,9 +220,9 @@ TEST(BOXREGION_VOFS_2D_INTERSECTION)
 
 TEST(BOXREGION_VOFS_2D_AREA)
 {
-  using namespace Amanzi::AmanziGeometry;
+  using namespace AmanziGeometry;
 
-  Epetra_MpiComm ecomm(MPI_COMM_WORLD);
+  auto ecomm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // read the parameter list from input file
   std::string infilename = "test/boxregion_vofs.xml";
@@ -231,11 +235,11 @@ TEST(BOXREGION_VOFS_2D_AREA)
   unsigned int reg_id = 9959;  // something arbitrary
   Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
     
-  Teuchos::RCP<Amanzi::AmanziGeometry::Region> reg = 
-    Amanzi::AmanziGeometry::createRegion(reg_name, reg_id, reg_params, &ecomm);
+  Teuchos::RCP<AmanziGeometry::Region> reg = 
+    AmanziGeometry::createRegion(reg_name, reg_id, reg_params, ecomm);
   
-  Amanzi::AmanziGeometry::Point v1(2), v2(2), v3(2), vv(2);
-  std::vector<Amanzi::AmanziGeometry::Point> polygon;
+  AmanziGeometry::Point v1(2), v2(2), v3(2), vv(2);
+  std::vector<AmanziGeometry::Point> polygon;
 
   v1.set(0.0, 0.0);
   v2.set(1.0, 0.0);
@@ -258,7 +262,7 @@ TEST(BOXREGION_VOFS_2D_AREA)
 
 TEST(BOXREGION_VOFS_3D_INTERSECTION)
 {
-  using namespace Amanzi::AmanziGeometry;
+  using namespace AmanziGeometry;
 
   std::cout << "\nIntersection of a moving tet with the unit box\n\n";
 
@@ -302,7 +306,7 @@ TEST(BOXREGION_VOFS_3D_INTERSECTION)
     faces1[3].push_back(2);
     faces1[3].push_back(3);
 
-    Amanzi::AmanziGeometry::IntersectConvexPolyhedra(xyz1, faces1, xyz2, xyz3, faces3);
+    AmanziGeometry::IntersectConvexPolyhedra(xyz1, faces1, xyz2, xyz3, faces3);
 
     int nfaces3(faces3.size());
     std::cout << "Total number of faces: " << nfaces3 << std::endl;
@@ -320,11 +324,11 @@ TEST(BOXREGION_VOFS_3D_INTERSECTION)
 
 TEST(BOXREGION_VOFS_3D_VOLUME)
 {
-  using namespace Amanzi::AmanziGeometry;
+  using namespace AmanziGeometry;
 
   std::cout << "\nVolume of intersection of a moving tet with the unit box\n\n";
 
-  Epetra_MpiComm ecomm(MPI_COMM_WORLD);
+  auto ecomm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // read the parameter list from input file
   std::string infilename = "test/boxregion_vofs_3D.xml";
@@ -337,8 +341,8 @@ TEST(BOXREGION_VOFS_3D_VOLUME)
   unsigned int reg_id = 9959;  // something arbitrary
   Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
     
-  Teuchos::RCP<Amanzi::AmanziGeometry::Region> reg = 
-    Amanzi::AmanziGeometry::createRegion(reg_name, reg_id, reg_params, &ecomm);
+  Teuchos::RCP<AmanziGeometry::Region> reg = 
+    AmanziGeometry::createRegion(reg_name, reg_id, reg_params, ecomm);
   
   std::vector<Point> xyz;
   std::vector<std::vector<int> > faces(4);

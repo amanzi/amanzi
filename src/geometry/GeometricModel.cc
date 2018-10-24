@@ -11,6 +11,8 @@
            Ethan Coon (ecoon@lanl.gov)
 */
 
+#include "Teuchos_Comm.hpp"
+
 #include "dbc.hh"
 #include "errors.hh"
 
@@ -27,7 +29,7 @@ GeometricModel::GeometricModel(unsigned int dim)
 
 GeometricModel::GeometricModel(unsigned int dim,
                                Teuchos::ParameterList& gm_params,
-                               const Epetra_MpiComm *comm)
+			       Comm_ptr_type comm)
   : dim_(dim)
 {
   // Go through the parameter list and populate the geometric model with regions

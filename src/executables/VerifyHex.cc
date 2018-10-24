@@ -157,7 +157,7 @@ main(int argc, char **argv)
 
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   const int nproc(comm->getSize());
   const int me(comm->getRank());
 

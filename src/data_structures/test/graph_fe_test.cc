@@ -34,7 +34,7 @@ TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "Test: FD like graph, null off-proc assembly" << std::endl;
@@ -110,7 +110,7 @@ TEST(FE_GRAPH_FACE_FACE) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "Test: FE like graph, off-proc assembly" << std::endl;

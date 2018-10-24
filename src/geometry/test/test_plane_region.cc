@@ -8,8 +8,9 @@
 
 #include <iostream>
 
+#include "AmanziTypes.hh"
 
-#include "Epetra_MpiComm.h"
+#include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
@@ -21,10 +22,11 @@
 
 #include "mpi.h"
 
+using namespace Amanzi;
 
 TEST(PLANE_REGION)
 {
-  Epetra_MpiComm ecomm(MPI_COMM_WORLD);
+  auto ecomm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // read the parameter list from input file
 
@@ -42,9 +44,9 @@ TEST(PLANE_REGION)
 
   // Create a rectangular region
   
-  Teuchos::RCP<const Amanzi::AmanziGeometry::Region> reg = 
-    Amanzi::AmanziGeometry::createRegion(reg_spec.name(i), reg_id,
-					 reg_params, &ecomm);
+  Teuchos::RCP<const AmanziGeometry::Region> reg = 
+    AmanziGeometry::createRegion(reg_spec.name(i), reg_id,
+					 reg_params, ecomm);
   
   // See if we retrieved the name and id correctly
   
@@ -71,13 +73,13 @@ TEST(PLANE_REGION)
  
   // Make sure that the region type is a Plane
 
-  CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::PLANE);
+  CHECK_EQUAL(reg->type(),AmanziGeometry::PLANE);
   
   // See if the min-max of the region were correctly retrieved
   
-  Amanzi::AmanziGeometry::Point p, n;
-  Teuchos::RCP<const Amanzi::AmanziGeometry::RegionPlane> plane =
-    Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionPlane>(reg);
+  AmanziGeometry::Point p, n;
+  Teuchos::RCP<const AmanziGeometry::RegionPlane> plane =
+    Teuchos::rcp_dynamic_cast<const AmanziGeometry::RegionPlane>(reg);
 
   p = plane->point();
   n = plane->normal();
@@ -91,13 +93,13 @@ TEST(PLANE_REGION)
   CHECK_EQUAL(n.z(),in_nrm[2]/len);
 
   int dim = p.dim();
-  Amanzi::AmanziGeometry::Point p2(dim),testp(dim);
+  AmanziGeometry::Point p2(dim),testp(dim);
 
   // See if a point we know to be on the plane is considered to be "inside"
 
   p2.set(p.x()+0.1,p.y()+0.2,p.z()+0.3);  // create a point p2 that will probably
                                       // be off the plane
-  Amanzi::AmanziGeometry::Point ppvec(dim);
+  AmanziGeometry::Point ppvec(dim);
   ppvec = p-p2;
   double dp = ppvec*n;
   testp = p2 + dp*n;

@@ -13,7 +13,7 @@ TEST(MSTK_READ_NONMANIFOLD_SURFACES)
 {
   std::string expcsetnames[2] = {"FRACTURE 1", "FRACTURE 2"};
   
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   Teuchos::ParameterList parameterlist;
  

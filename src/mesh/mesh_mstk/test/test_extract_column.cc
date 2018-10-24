@@ -18,7 +18,7 @@
 TEST(Extract_Column_MSTK)
 {
 
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   Teuchos::ParameterList reg_spec; // no regions declared here
   

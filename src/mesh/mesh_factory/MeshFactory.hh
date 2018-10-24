@@ -60,7 +60,7 @@ class MeshFactory {
  public:
 
   /// Default constructor.
-  explicit MeshFactory(const Epetra_MpiComm *communicator, 
+  explicit MeshFactory(Comm_ptr_type communicator, 
                        const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null);
 
   /// Destructor

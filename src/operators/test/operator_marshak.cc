@@ -44,7 +44,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "\nTest: Simulating nonlinear Marshak wave" << std::endl;

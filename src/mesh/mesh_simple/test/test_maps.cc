@@ -5,7 +5,7 @@
 #include "../Mesh_simple.hh"
 #include <Epetra_Comm.h>
 #include <Epetra_MpiComm.h>
-#include "Epetra_SerialComm.h"
+#include "Teuchos_DefaultSerialComm.hpp"
 #include "GenerationSpec.hh"
 
 SUITE (MeshSimple) {
@@ -16,7 +16,7 @@ using namespace std;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm_ = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
-  Epetra_SerialComm *comm_ = new Epetra_SerialComm();
+  auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());
 #endif
 
 

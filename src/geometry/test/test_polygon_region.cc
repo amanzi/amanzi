@@ -7,7 +7,7 @@
 
 #include "mpi.h"
 #include "UnitTest++.h"
-#include "Epetra_MpiComm.h"
+#include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
@@ -20,7 +20,7 @@
 
 TEST(POLYGON_REGION2)
 {
-  Epetra_MpiComm ecomm(MPI_COMM_WORLD);
+  auto ecomm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // read the parameter list from input file
   std::string infilename = "test/polygonregion_2D.xml";
@@ -111,7 +111,7 @@ TEST(POLYGON_REGION2)
 
 TEST(POLYGON_REGION3)
 {
-  Epetra_MpiComm ecomm(MPI_COMM_WORLD);
+  auto ecomm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // read the parameter list from input file
 

@@ -12,6 +12,7 @@
 
   Authors: Rao Garimella
 */
+#include "Teuchos_Comm.hpp"
 
 #include "dbc.hh"
 #include "errors.hh"
@@ -32,7 +33,7 @@ RegionColorFunction::RegionColorFunction(const std::string& name,
                                          const int id,
                                          const std::string& file,
                                          const int value,
-                                         const Epetra_MpiComm *comm,
+					 Comm_ptr_type comm,
                                          const LifeCycleType lifecycle)
   : Region(name, id, true, COLORFUNCTION, 0, 0, lifecycle),
     file_(file),
@@ -42,7 +43,7 @@ RegionColorFunction::RegionColorFunction(const std::string& name,
   // entities in the mesh will determine the dimension
 
   ColorFunctionFactory colfunc_factory;
-  colorfunc_ = Teuchos::rcp(colfunc_factory.Create(file_,*comm));
+  colorfunc_ = Teuchos::rcp(colfunc_factory.Create(file_,comm));
 }
 
 

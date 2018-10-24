@@ -65,7 +65,7 @@ using namespace Amanzi::Operators;
 
 template<class UpwindClass>
 void RunTestUpwind(std::string method) {
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "\nTest: 1st-order convergence for upwind \"" << method << "\"\n";

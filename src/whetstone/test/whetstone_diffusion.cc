@@ -35,7 +35,7 @@ TEST(DARCY_MASS_2D) {
 #ifdef HAVE_MPI
   auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());
 #endif
 
   MeshFactory meshfactory(comm);
@@ -116,7 +116,7 @@ TEST(DARCY_MASS_3D) {
 #ifdef HAVE_MPI
   auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());
 #endif
 
   FrameworkPreference pref;
@@ -249,7 +249,7 @@ TEST(DARCY_INVERSE_MASS_3D) {
 #ifdef HAVE_MPI
   auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());
 #endif
 
   FrameworkPreference pref;
@@ -333,7 +333,7 @@ TEST(DARCY_FULL_TENSOR_2D) {
 #ifdef HAVE_MPI
   auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());
 #endif
 
   MeshFactory factory(comm);
@@ -431,7 +431,7 @@ TEST(DARCY_FULL_TENSOR_3D) {
 #ifdef HAVE_MPI
   auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());
 #endif
 
   FrameworkPreference pref;
@@ -522,7 +522,7 @@ TEST(DARCY_STIFFNESS_2D_NODE) {
 #ifdef HAVE_MPI
   auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());
 #endif
 
   MeshFactory meshfactory(comm);
@@ -596,7 +596,7 @@ TEST(DARCY_STIFFNESS_2D_EDGE) {
 #ifdef HAVE_MPI
   auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());
 #endif
 
   MeshFactory meshfactory(comm);
@@ -664,7 +664,7 @@ TEST(DARCY_STIFFNESS_3D) {
 #ifdef HAVE_MPI
   auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());
 #endif
 
   MeshFactory meshfactory(comm);
@@ -731,7 +731,7 @@ TEST(RECOVER_GRADIENT_MIXED) {
 #ifdef HAVE_MPI
   auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());
 #endif
 
   MeshFactory meshfactory(comm);
@@ -781,7 +781,7 @@ TEST(RECOVER_GRADIENT_NODAL) {
 #ifdef HAVE_MPI
   auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());
 #endif
 
   MeshFactory meshfactory(comm);
@@ -830,7 +830,7 @@ TEST(DARCY_INVERSE_MASS_2D) {
 #ifdef HAVE_MPI
   auto comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());
 #endif
 
   MeshFactory factory(comm);

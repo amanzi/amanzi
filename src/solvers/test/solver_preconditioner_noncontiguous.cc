@@ -8,7 +8,7 @@
 TEST(OUT_OF_ORDER_GIDS) {
   // This tests our patches of Ifpack for Hypre.
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int numProcs = comm->getSize();
   int myRank = comm->getRank();
 

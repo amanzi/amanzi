@@ -5,7 +5,7 @@
 #include "../Mesh_simple.hh"
 #include <Epetra_Comm.h>
 #include <Epetra_MpiComm.h>
-#include "Epetra_SerialComm.h"
+#include "Teuchos_DefaultSerialComm.hpp"
 
 TEST(NODE_CELL_FACES) {
   
@@ -14,7 +14,7 @@ TEST(NODE_CELL_FACES) {
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm_ = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
-  Epetra_SerialComm *comm_ = new Epetra_SerialComm();
+  auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());
 #endif
 
   const unsigned int exp_nnode = 27;

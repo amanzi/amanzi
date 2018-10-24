@@ -50,7 +50,7 @@ std::pair<double, double> RunForwardProblem(const std::string& discretization,
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   
   // create a mesh
   Teuchos::RCP<Mesh> mesh =
@@ -181,7 +181,7 @@ std::pair<double, double> RunInverseProblem(const std::string& discretization,
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   
   // create a mesh
   Teuchos::RCP<Mesh> mesh = Teuchos::rcp(new Mesh_MSTK(0.0, 0.0, 1.0, 1.0, nx, ny, &comm));

@@ -31,7 +31,7 @@
 TEST(SURFACE_COLUMN_MESH_3D)
 {
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   const int nproc(comm->getSize());
   const int me(comm->getRank());
 
@@ -114,7 +114,7 @@ TEST(SURFACE_COLUMN_MESH_3D)
 TEST(SURFACE_COLUMN_MESH_3D_UNSTRUCTURED)
 {
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   const int nproc(comm->getSize());
   const int me(comm->getRank());
 

@@ -13,7 +13,7 @@
 TEST(MSTK_EDGES_2D)
 {
 
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 			      
   int rank, size;
 
@@ -131,7 +131,7 @@ TEST(MSTK_EDGES_2D)
 TEST(MSTK_EDGES_3D)
 {
 
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 			      
   int rank, size;
 

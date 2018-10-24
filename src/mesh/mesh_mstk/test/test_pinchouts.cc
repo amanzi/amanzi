@@ -26,7 +26,7 @@ TEST(ELIM_DEGEN_INLINE_PARTITION)
   std::string xml_filename = "test/po_test_pri.xml";
   std::string out_exo_filename = "test/po_mesh_out.exo";
   
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int num_procs = comm_->getSize();
   int rank = comm_->getRank();
   

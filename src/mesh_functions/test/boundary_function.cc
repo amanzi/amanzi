@@ -31,7 +31,7 @@ int main (int argc, char *argv[])
 
 struct reference_mesh
 {
-  Epetra_MpiComm *comm;
+  Comm_ptr_type comm;
   Teuchos::RCP<Mesh> mesh;
   std::string LEFT, RIGHT, FRONT, BACK, BOTTOM, TOP, INVALID;
 

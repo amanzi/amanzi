@@ -46,7 +46,7 @@ void AdvectionDiffusion2D(int nx, double* error)
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "\nTest: Advection-duffusion in 2D" << std::endl;

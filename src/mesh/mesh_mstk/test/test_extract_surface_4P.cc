@@ -15,7 +15,7 @@
 TEST(Extract_Surface_MSTK1_4P)
 {
 
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
 
   Teuchos::ParameterList parameterlist;
@@ -100,7 +100,7 @@ TEST(Extract_Surface_MSTK1_4P)
 TEST(Extract_Surface_MSTK2_4P)
 {
 
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
 
   Teuchos::ParameterList parameterlist;
@@ -199,7 +199,7 @@ TEST(Extract_Surface_MSTK3_4P)
 
   std::string filename("test/hex_3x3x3_sets.exo");
 
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   Teuchos::ParameterList parameterlist;
 

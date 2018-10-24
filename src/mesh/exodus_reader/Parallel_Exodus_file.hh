@@ -21,7 +21,7 @@
 #define _Parallel_Exodus_file_hh_
 
 #include "Teuchos_RCP.hpp"
-#include "Epetra_Comm.h"
+#include "AmanziTypes.hh"
 
 #include "MeshDefs.hh"
 #include "Data.hh"

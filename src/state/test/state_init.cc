@@ -27,7 +27,7 @@
 TEST(FIELD_INITIALIZATION) {
   using namespace Amanzi;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   std::string xmlFileName = "test/state_init.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);

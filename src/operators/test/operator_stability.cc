@@ -47,7 +47,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   using namespace Amanzi::Operators;
   using namespace Amanzi::AmanziSolvers;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "Test: 2D steady-state elliptic solver, mixed discretization" << std::endl;
@@ -205,7 +205,7 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
   using namespace Amanzi::Operators;
   using namespace Amanzi::AmanziSolvers;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
   if (MyPID == 0) std::cout << "\nTest: 2D steady-state elliptic solver, nodal discretization" << std::endl;
 

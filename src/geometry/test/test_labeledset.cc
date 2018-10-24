@@ -10,11 +10,14 @@
 
 #include "mpi.h"
 
-#include "Epetra_MpiComm.h"
+#include "AmanziTypes.hh"
+
+#include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
+
 
 #include "../Point.hh"
 #include "../Region.hh"
@@ -24,7 +27,7 @@
 TEST(LABELEDSET_REGION)
 {
 
-  Epetra_MpiComm ecomm(MPI_COMM_WORLD);
+  auto ecomm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // read the parameter list from input file
 

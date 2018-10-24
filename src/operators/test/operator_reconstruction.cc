@@ -84,7 +84,7 @@ TEST(RECONSTRUCTION_LINEAR_2D) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "\nTest: Exactness on linear functions in 2D." << std::endl;
@@ -142,7 +142,7 @@ TEST(RECONSTRUCTION_LINEAR_3D) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "\nTest: Exactness on linear functions in 3D." << std::endl;
@@ -201,7 +201,7 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_2D) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
   if (MyPID == 0) std::cout << "\nTest: Limiters for linear functions in 2D." << std::endl;
 
@@ -318,7 +318,7 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_3D) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
   if (MyPID == 0) std::cout << "\nTest: Limiters for linear functions in 3D." << std::endl;
 
@@ -438,7 +438,7 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_2D) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
   if (MyPID == 0) std::cout << "\nTest: Accuracy on a smooth field in 2D." << std::endl;
 
@@ -561,7 +561,7 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_3D) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
   if (MyPID == 0) std::cout << "\nTest: Accuracy on a smooth field in 3D" << std::endl;
 
@@ -687,7 +687,7 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_2D_POLYMESH) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
   if (MyPID == 0) std::cout << "\nTest: Accuracy on a smooth field on polygonal mesh." << std::endl;
 
@@ -809,7 +809,7 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_FRACtURES) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
   if (MyPID == 0) std::cout << "\nTest: Limiters for linear functions in fractures." << std::endl;
 

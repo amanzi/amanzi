@@ -48,7 +48,7 @@ TEST(MSTK_HEX_2x2x1)
 			      {0,3,2,1},
 			      {4,5,6,7}};
 
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD)); 
+  auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD)); 
 
 
   // Load a simple 4 element hex mesh 

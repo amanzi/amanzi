@@ -15,7 +15,7 @@
 
 #include <vector>
 #include "Teuchos_RCP.hpp"
-#include "Epetra_MpiComm.h"
+#include "AmanziTypes.hh"
 #include "Epetra_MultiVector.h"
 
 #include "dbc.hh"

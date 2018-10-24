@@ -13,7 +13,7 @@ map, not the true row map.
 */
 
 #include <vector>
-#include "Epetra_Comm.h"
+#include "Teuchos_Comm.hpp"
 #include "Map_type.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_Export.h"

@@ -9,11 +9,13 @@
 #include "mpi.h"
 
 #include "UnitTest++.h"
-#include "Epetra_MpiComm.h"
+#include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
+
+#include "AmanziTypes.hh"
 
 #include "../Point.hh"
 #include "../Region.hh"
@@ -23,7 +25,7 @@
 
 TEST(COLORFUNCTION_REGION)
 {
-  Epetra_MpiComm ecomm(MPI_COMM_WORLD);
+  auto ecomm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // read the parameter list from input file
   std::string infilename = "test/colorfunc_region.xml";

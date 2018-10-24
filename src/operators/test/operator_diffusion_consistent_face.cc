@@ -45,7 +45,7 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
   if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, exactness" 
                             << " test for mixed discretization" << std::endl;

@@ -5,7 +5,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "Epetra_MpiComm.h"
-#include "Epetra_SerialComm.h"
+#include "Teuchos_DefaultSerialComm.hpp"
 #include "Epetra_Vector.h"
 
 #include "SolutionHistory.hh"

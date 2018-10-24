@@ -22,7 +22,7 @@
 TEST(MSTK_DEFORM_VOLS_2D)
 {
 
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // Define a box region to capture bottom boundary
   Teuchos::ParameterList param_list;
@@ -108,7 +108,7 @@ TEST(MSTK_DEFORM_VOLS_2D)
 
 TEST(MSTK_DEFORM_VOLS_3D)
 {
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // Define a box region to capture bottom boundary
   Teuchos::ParameterList param_list;

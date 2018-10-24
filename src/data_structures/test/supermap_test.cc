@@ -40,7 +40,7 @@ TEST(SUPERMAP_MANUAL) {
   using namespace Amanzi::AmanziGeometry;
   //  using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
   int NumProc = comm->getSize();
 
@@ -227,7 +227,7 @@ TEST(SUPERMAP_FROM_COMPOSITEVECTOR) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
@@ -270,7 +270,7 @@ TEST(SUPERMAP_FROM_TREEVECTOR) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   int MyPID = comm->getRank();
 
   if (MyPID == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
