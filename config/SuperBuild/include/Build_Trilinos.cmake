@@ -36,7 +36,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 #endif()
 
 # List of packages enabled in the Trilinos build
-set(Trilinos_PACKAGE_LIST Teuchos Epetra EpetraExt Amesos Amesos2 Belos NOX Ifpack AztecOO)
+set(Trilinos_PACKAGE_LIST Teuchos Epetra EpetraExt Amesos Amesos2 Belos NOX Ifpack AztecOO Tpetra Ifpack2 Zoltan2 MueLu)
 if (ENABLE_STK_Mesh)
   list(APPEND Trilinos_PACKAGE_LIST STK)
 endif()
@@ -46,7 +46,6 @@ endif()
 if (ENABLE_Unstructured)
   list(APPEND Trilinos_PACKAGE_LIST ML)
 endif()
-
 
 # Generate the Trilinos Package CMake Arguments
 set(Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF")
@@ -134,7 +133,7 @@ endif()
 set(Trilinos_CMAKE_EXTRA_ARGS
     "-DTrilinos_VERBOSE_CONFIGURE:BOOL=ON"
     "-DTrilinos_ENABLE_TESTS:BOOL=OFF"
-    "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
+    "-DCMAKE_VERBOSE_MAKEFILE:BOOL=OFF"
     "-DNOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA:BOOL=OFF"
     "-DNOX_ENABLE_THYRA_EPETRA_ADAPTERS:BOOL=OFF"    
     )
@@ -178,7 +177,7 @@ set(Trilinos_CMAKE_ARGS
 #
 
 # Trilinos patches
-set(ENABLE_Trilinos_Patch ON)
+set(ENABLE_Trilinos_Patch OFF)
 if (ENABLE_Trilinos_Patch)
   set(Trilinos_patch_file trilinos-ifpack-hypre.patch trilinos-duplicate-parameters.patch)
   configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
@@ -256,13 +255,21 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     # -- Configure
                     SOURCE_DIR    ${Trilinos_source_dir}           # Source directory
                     CMAKE_ARGS        ${Trilinos_Config_File_ARGS}
-                    CMAKE_CACHE_ARGS  ${Trilinos_CMAKE_ARGS} 
-                                      -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
-                                      -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                    CMAKE_CACHE_ARGS  ${Trilinos_CMAKE_ARGS}
+                                      -DKokkos_ENABLE_Serial:BOOL=ON
+                                      -DKokkos_ENABLE_OpenMP:BOOL=OFF
+                                      -DKokkos_ENABLE_Pthread:BOOL=OFF
+                                      -DKokkos_ENABLE_Cuda:BOOL=ON
+                                      -DKokkos_ENABLE_Cuda_UVM:BOOL=ON
+                                      -DKOKKOS_ENABLE_CUDA_UVM:BOOL=ON
+                                      -DKokkos_ENABLE_Cuda_Lambda:BOOL=ON
+                                      -DKokkos_ENABLE_Cuda_Relocatable_Device_Code:BOOL=ON 
+				      -DTpetraCore_ENABLE_TESTS:BOOL=ON
+				      -DTPL_ENABLE_CUDA:BOOL=ON 
+				      -DKOKKOS_ARCH:STRING=Power9,Volta70
+                                      -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}
                                       -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
-                                      -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
                                       -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
-                                      -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
                                       -DCMAKE_INSTALL_PREFIX:PATH=${Trilinos_install_dir}
                                       -DTrilinos_ENABLE_Stratimikos:BOOL=FALSE
                                       -DTrilinos_ENABLE_SEACAS:BOOL=FALSE
@@ -277,6 +284,11 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     # -- Output control
                     ${Trilinos_logging_args}
 		    )
+
+#                                      -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+#                                      -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
+#                                      -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
+
 
 # --- Useful variables for packages that depends on Trilinos
 global_set(Trilinos_INSTALL_PREFIX  ${Trilinos_install_dir})
