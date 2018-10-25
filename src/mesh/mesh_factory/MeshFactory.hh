@@ -1,28 +1,20 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-// -------------------------------------------------------------
-/**
- * @file   MeshFactory.hh
- * @author William A. Perkins
- * @date Wed Sep 28 09:10:15 2011
- * 
- * @brief  declaration of the MeshFactory class
- * 
- * 
- */
-// -------------------------------------------------------------
-// -------------------------------------------------------------
-// Created March 10, 2011 by William A. Perkins
-// Last Change: Wed Sep 28 09:10:15 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
-// -------------------------------------------------------------
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: William Perkins
+*/
 
 #ifndef _MeshFactory_hh_
 #define _MeshFactory_hh_
 
 #include <string>
 #include <vector>
-#include <Epetra_MpiComm.h>
-#include <Teuchos_RCPDecl.hpp>
-#include <Teuchos_ParameterList.hpp>
+#include "AmanziTypes.hh"
+#include "Teuchos_RCPDecl.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 #include "MeshException.hh"
 #include "MeshFramework.hh"
@@ -41,10 +33,10 @@ class MeshFactory {
  protected:
 
   /// The parallel environment
-  const Epetra_MpiComm *my_comm_;
+  Comm_ptr_type comm_;
 
   /// A list of preferred mesh frameworks to consider
-  FrameworkPreference my_preference;
+  FrameworkPreference my_preference_;
 
  private:
 
@@ -68,7 +60,7 @@ class MeshFactory {
 
   /// Get the framework preference
   const FrameworkPreference& preference(void) const
-  { return my_preference; }
+  { return my_preference_; }
 
   /// Set the framework preference
   void preference(const FrameworkPreference& pref);

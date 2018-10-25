@@ -42,7 +42,8 @@
 // NOTE: Lazy definition of the cache itself is necessarily "mutable".
 //
 
-#include "Epetra_MultiVector.h"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_Import.hpp"
 
 #include "dbc.hh"
 
@@ -1166,10 +1167,11 @@ Mesh::update_ghost_node_coordinates()
 {
   int ndim = space_dimension();
 
-  Map_type owned_node_map = node_map(false);
-  Map_type used_node_map = node_map(true);
+  Map_ptr_type owned_node_map = node_map(false);
+  Map_ptr_type used_node_map = node_map(true);
   Import_type importer(used_node_map, owned_node_map);
 
+  /* -- BEGIN EPETRA FIXME -- 
   // change last arg to false after debugging
   Epetra_MultiVector owned_node_coords(node_map(true),ndim,true);
 
@@ -1197,6 +1199,7 @@ Mesh::update_ghost_node_coordinates()
     pnt.set(xyz);
     node_set_coordinates(i, pnt);
   }
+  -- END EPETRA FIXME */
 }
 
 
@@ -1399,7 +1402,7 @@ Mesh::build_columns(const std::string& setname) const
   }
 
   int min_success;
-  Comm()->MinAll(&success, &min_success, 1);
+  Teuchos::reduceAll(*Comm(), Teuchos::REDUCE_MIN, success, Teuchos::outArg(min_success));
   columns_built_ = (min_success == 1);
   return columns_built_ ? 1 : 0;
 }
@@ -1473,7 +1476,7 @@ Mesh::build_columns() const
   }
 
   int min_success;
-  Comm()->MinAll(&success, &min_success, 1);
+  Teuchos::reduceAll(*Comm(), Teuchos::REDUCE_MIN, success, Teuchos::outArg(min_success));
   columns_built_ = (min_success == 1);
   return columns_built_ ? 1 : 0;
 }
@@ -1688,14 +1691,14 @@ Mesh::cell_type_to_name(const Cell_type type)
 
 void Mesh::PrintMeshStatistics() const
 {
-  if (vo_.get() && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+  if (vo_.get() && vo_->os_OK(Teuchos::VERB_LOW)) {
     int ncells = num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
     int nfaces = num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
     int min_out[2], max_out[2], sum_out[2], tmp_in[2] = {ncells, nfaces};
-    Comm()->MinAll(tmp_in, min_out, 2);
-    Comm()->MaxAll(tmp_in, max_out, 2);
-    Comm()->SumAll(tmp_in, sum_out, 2);
+    Teuchos::reduceAll(*Comm(), Teuchos::REDUCE_MIN, 2, tmp_in, min_out);
+    Teuchos::reduceAll(*Comm(), Teuchos::REDUCE_MAX, 2, tmp_in, max_out);
+    Teuchos::reduceAll(*Comm(), Teuchos::REDUCE_SUM, 2, tmp_in, sum_out);
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "cells, tot/min/max: " << sum_out[0] << "/" << min_out[0] << "/" << max_out[0] << "\n";

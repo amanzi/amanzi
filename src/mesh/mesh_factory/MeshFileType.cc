@@ -1,22 +1,11 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-// -------------------------------------------------------------
-// file: MeshFileType.cc
-// -------------------------------------------------------------
-/**
- * @file   MeshFileType.cc
- * @author William A. Perkins
- * @date Thu Jul 28 14:16:00 2011
- * 
- * @brief  
- * 
- * 
- */
-// -------------------------------------------------------------
-// Created March 11, 2011 by William A. Perkins
-// Last Change: Thu Jul 28 14:16:00 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
-// -------------------------------------------------------------
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-static const char* SCCS_ID = "$Id$ Battelle PNL";
+  Authors: William Perkins
+*/
 
 #include <regex>
 
@@ -92,10 +81,10 @@ std::string file_format_name(const Format& f)
  * 
  * @return format type identifier (::UnknownFormat if something goes wrong)
  */
-Format file_format(Comm_ptr_type comm_, const char *name) 
+Format file_format(Comm_ptr_type comm, const char *name) 
 {
-  const int np(comm_->getSize());
-  const int me(comm_->getRank());
+  const int np(comm->getSize());
+  const int me(comm->getRank());
 
   // take a guess at the format using the file name
   std::string fname(name);
@@ -110,7 +99,7 @@ Format file_format(Comm_ptr_type comm_, const char *name)
     int ndigits = (int)floor(log10(np)) + 1;
     std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
     fname = boost::str(boost::format(fmt) % 
-                       name % comm_->getSize() % comm_->getRank());
+                       name % comm->getSize() % comm->getRank());
   }
 
   // check to see if there is actually a file first

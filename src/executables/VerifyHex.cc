@@ -26,7 +26,7 @@ namespace po = boost::program_options;
 
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Epetra_Vector.h>
-#include <Epetra_MpiComm.h>
+#include "AmanziTypes.hh"
 
 #include "Teuchos_ParameterXMLFileReader.hpp"
 // DEPRECATED #include "Teuchos_XMLParameterListHelpers.hpp"

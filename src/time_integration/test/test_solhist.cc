@@ -4,7 +4,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "Epetra_MpiComm.h"
+#include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 #include "Epetra_Vector.h"
 
@@ -16,7 +16,7 @@ SUITE(SolutionHistoryTests) {
 
   // data structures for testing
   struct test_data {
-    Epetra_MpiComm *comm;
+    Comm_ptr_type comm;
     Teuchos::RCP<Epetra_Vector> x;
 
     test_data() {

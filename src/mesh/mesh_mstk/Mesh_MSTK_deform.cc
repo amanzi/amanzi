@@ -1,4 +1,4 @@
-//#include <Teuchos_RCP.hpp>
+#include "Teuchos_CommHelpers.hpp"
 
 #include "dbc.hh"
 #include "errors.hh"
@@ -385,7 +385,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
     int converged_onthisproc = 0;
     if (global_normdist2 < eps*eps)
       converged_onthisproc = 1;
-    Comm()->MinAll(&converged_onthisproc,&converged_global,1);
+    Teuchos::reduceAll(*Comm(), Teuchos::REDUCE_MIN, converged_onthisproc, Teuchos::outArg(converged_global));
 
   } // while (!converged_global)
 

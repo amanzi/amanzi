@@ -37,7 +37,7 @@ namespace Operators {
 class SuperMap {
  public:
   // Constructor
-  SuperMap(const Epetra_MpiComm& comm,
+  SuperMap(Comm_ptr_type comm,
            const std::vector<std::string>& compnames,
            const std::vector<int>& dofnums,
            const std::vector<Teuchos::RCP<const Map_type> >& maps,

@@ -31,7 +31,7 @@ double ObservableIntensiveSum(double a, double b, double vol) {
 double ObservableMin(double a, double b, double vol) { return std::min(a, b); }
 double ObservableMax(double a, double b, double vol) { return std::max(a, b); }
 
-Observable::Observable(Teuchos::ParameterList &plist, Epetra_MpiComm *comm)
+Observable::Observable(Teuchos::ParameterList &plist, Comm_ptr_type comm)
     : IOEvent(plist), count_(0) {
   // process the spec
   name_ = plist.name();

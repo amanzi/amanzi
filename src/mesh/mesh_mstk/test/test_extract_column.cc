@@ -5,7 +5,7 @@
 
 
 #include "Map_type.h"
-#include "Epetra_MpiComm.h"
+#include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_Array.hpp"

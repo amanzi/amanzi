@@ -42,8 +42,8 @@ namespace Amanzi {
 
 class HDF5_MPI {
  public:
-  HDF5_MPI(const Epetra_MpiComm &comm);
-  HDF5_MPI(const Epetra_MpiComm &comm, std::string dataFilename);
+  HDF5_MPI(Comm_ptr_type comm);
+  HDF5_MPI(Comm_ptr_type comm, std::string dataFilename);
   ~HDF5_MPI(void);
   
   bool TrackXdmf() { return TrackXdmf_; }
@@ -167,7 +167,7 @@ class HDF5_MPI {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_maps_;
 
   // parallel info
-  Epetra_MpiComm viz_comm_;
+  Comm_ptr_type comm_;
   MPI_Info info_;
   iogroup_conf_t IOconfig_;
   iogroup_t IOgroup_;

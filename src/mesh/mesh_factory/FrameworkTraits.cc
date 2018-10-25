@@ -55,24 +55,22 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
  public:
   
   /// Default constructor.
-  bogus_mesh(const char *filename, const Epetra_MpiComm *c,
+  bogus_mesh(const char *filename, Comm_ptr_type comm,
              const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
              const Teuchos::RCP<const VerboseObject>& vo,
              const bool request_faces, const bool request_edges,
 	     const Partitioner_type partitioner) 
-    : Mesh(vo, request_faces, request_edges),
-      bogus_map_(NULL) 
+    : Mesh(comm, gm, vo, request_faces, request_edges)
   {
     Exceptions::amanzi_throw(Errors::Message("reading not supported"));
   }
   
-  bogus_mesh(const char *filename, const Epetra_MpiComm *c, int dim,
+  bogus_mesh(const char *filename, Comm_ptr_type comm, int dim,
              const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
              const Teuchos::RCP<const VerboseObject>& vo,
              const bool request_faces, const bool request_edges,
 	     const Partitioner_type partitioner) 
-    : Mesh(vo, request_faces, request_edges),
-      bogus_map_(NULL) 
+    : Mesh(comm, gm, vo, request_faces, request_edges)
   {
     Exceptions::amanzi_throw(Errors::Message("reading not supported"));
   }
@@ -80,13 +78,12 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
   bogus_mesh(double x0, double y0, double z0,
 	     double x1, double y1, double z1,
 	     int nx, int ny, int nz, 
-	     const Epetra_MpiComm *comm_unicator,
+	     Comm_ptr_type comm,
              const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
              const Teuchos::RCP<const VerboseObject>& vo,
              const bool request_faces, const bool request_edges,
 	     const Partitioner_type partitioner)
-    : Mesh(vo, request_faces, request_edges),
-      bogus_map_(NULL) 
+    : Mesh(comm, gm, vo, request_faces, request_edges)
   {
     Exceptions::amanzi_throw(Errors::Message("generation not supported"));
   }
@@ -94,24 +91,22 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
   bogus_mesh(double x0, double y0,
 	     double x1, double y1,
 	     int nx, int ny,
-	     const Epetra_MpiComm *comm_unicator,
+	     Comm_ptr_type comm,
              const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
              const Teuchos::RCP<const VerboseObject>& vo,
              const bool request_faces, const bool request_edges,
 	     const Partitioner_type partitioner)
-    : Mesh(vo, request_faces, request_edges),
-      bogus_map_(NULL) 
+    : Mesh(comm, gm, vo, request_faces, request_edges)
   {
     Exceptions::amanzi_throw(Errors::Message("generation not supported"));
   }
 
   bogus_mesh(const Amanzi::AmanziMesh::GenerationSpec& gspec, 
-             const Epetra_MpiComm *comm_unicator,
+             Comm_ptr_type comm,
              const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
              const Teuchos::RCP<const VerboseObject>& vo,
              const bool request_faces, const bool request_edges)
-    : Mesh(vo, request_faces, request_edges),
-      bogus_map_(NULL) 
+    : Mesh(comm, gm, vo, request_faces, request_edges)
   {
     Exceptions::amanzi_throw(Errors::Message("generation not supported"));
   }
@@ -121,15 +116,18 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
              const Amanzi::AmanziMesh::Entity_kind setkind,
              const bool flatten, const bool extrude,
              const bool request_faces, const bool request_edges)
+    : Mesh(inmesh->Comm(), inmesh->geometric_model(), inmesh->verbosity_obj(), request_faces, request_edges)
   {
     Exceptions::amanzi_throw(Errors::Message("extraction not supported"));
   }
 
   bogus_mesh(const Mesh& inmesh,
+
              const std::vector<std::string>& setnames,
              const Amanzi::AmanziMesh::Entity_kind setkind,
              const bool flatten, const bool extrude,
              const bool request_faces, const bool request_edges)
+    : Mesh(inmesh.Comm(), inmesh.geometric_model(), inmesh.verbosity_obj(), request_faces, request_edges)
   {
     Exceptions::amanzi_throw(Errors::Message("extraction not supported"));
   }
@@ -139,6 +137,7 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
              const Amanzi::AmanziMesh::Entity_kind entity_kind,
              const bool flatten, const bool extrude,
              const bool request_faces, const bool request_edges)
+    : Mesh(inmesh.Comm(), inmesh.geometric_model(), inmesh.verbosity_obj(), request_faces, request_edges)
   {
     Exceptions::amanzi_throw(Errors::Message("extraction not supported"));
   }
@@ -249,23 +248,23 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
                             const Amanzi::AmanziGeometry::Point coords)
   {};
 
-  const Map_type& cell_map(bool include_ghost) const
-  { return *bogus_map_; }
+  Map_ptr_type cell_map(bool include_ghost) const
+  { return Teuchos::null; }
     
-  const Map_type& face_map(bool include_ghost) const
-  { return *bogus_map_; }
+  Map_ptr_type face_map(bool include_ghost) const
+  { return Teuchos::null; }
 
-  const Map_type& edge_map(bool include_ghost) const
-  { return *bogus_map_; }
+  Map_ptr_type edge_map(bool include_ghost) const
+  { return Teuchos::null; }
     
-  const Map_type& node_map(bool include_ghost) const
-  { return *bogus_map_; }
+  Map_ptr_type node_map(bool include_ghost) const
+  { return Teuchos::null; }
 
-  const Map_type& exterior_face_map(bool include_ghost) const
-  { return *bogus_map_; }
+  Map_ptr_type exterior_face_map(bool include_ghost) const
+  { return Teuchos::null; }
 
-  const Import_type& exterior_face_importer(void) const
-  { return *bogus_importer_; }
+  Import_ptr_type exterior_face_importer(void) const
+  { return Teuchos::null; }
     
 
   unsigned int get_set_size(const std::string setname, 
@@ -305,11 +304,6 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
   void write_to_exodus_file(const std::string filename) const
   {};
   
-
- private:
-
-  Map_type *bogus_map_;
-  Import_type *bogus_importer_;
 };
 
 }  // namespace AmanziMesh
@@ -485,7 +479,7 @@ struct FrameworkTraits {
   
   /// Construct a mesh from a Exodus II file or file set
   static Teuchos::RCP<Mesh>
-  read(const Epetra_MpiComm *comm_, const std::string& fname,
+  read(Comm_ptr_type comm, const std::string& fname,
        const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
        const Teuchos::RCP<const VerboseObject>& vo,
        const bool request_faces, 
@@ -493,7 +487,7 @@ struct FrameworkTraits {
        const Partitioner_type partitioner)
   {
     Teuchos::RCP<Mesh> 
-      result(new typename read_mesh::type(fname.c_str(), comm_,
+      result(new typename read_mesh::type(fname.c_str(), comm,
                                           gm, vo, 
                                           request_faces, request_edges,
 					  partitioner));
@@ -536,7 +530,7 @@ struct FrameworkTraits {
   generate(const double& x0, const double& y0, const double& z0,
            const double& x1, const double& y1, const double& z1,
            const unsigned int& nx, const unsigned int& ny, const unsigned int& nz, 
-           const Epetra_MpiComm *comm_,
+           Comm_ptr_type comm,
            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
            const Teuchos::RCP<const VerboseObject>& vo,
            const bool request_faces, 
@@ -545,7 +539,7 @@ struct FrameworkTraits {
   {
     Teuchos::RCP<Mesh> 
       result(new typename generate_mesh::type(x0, y0, z0, x1, y1, z1, 
-                                              nx, ny, nz, comm_,
+                                              nx, ny, nz, comm,
                                               gm, vo, 
                                               request_faces, request_edges,
 					      partitioner));
@@ -557,7 +551,7 @@ struct FrameworkTraits {
   generate(const double& x0, const double& y0,
            const double& x1, const double& y1,
            const unsigned int& nx, const unsigned int& ny,
-           const Epetra_MpiComm *comm_,
+           Comm_ptr_type comm,
            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
            const Teuchos::RCP<const VerboseObject>& vo,
            const bool request_faces, 
@@ -565,7 +559,7 @@ struct FrameworkTraits {
 	   const Partitioner_type partitioner)
   {
     Teuchos::RCP<Mesh> 
-      result(new typename generate_mesh::type(x0, y0, x1, y1, nx, ny, comm_,
+      result(new typename generate_mesh::type(x0, y0, x1, y1, nx, ny, comm,
                                               gm, vo, 
                                               request_faces, request_edges,
 					      partitioner));
@@ -574,14 +568,14 @@ struct FrameworkTraits {
   
   /// Generate a hex mesh from arguments sent in through a parameter list
   static Teuchos::RCP<Mesh>
-  generate(Teuchos::ParameterList &parameter_list, const Epetra_MpiComm *comm_,
+  generate(Teuchos::ParameterList &parameter_list, Comm_ptr_type comm,
            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
            const Teuchos::RCP<const VerboseObject>& vo,
            const bool request_faces, const bool request_edges)
   {
     GenerationSpec gspec(parameter_list);
     Teuchos::RCP<Mesh> 
-      result(new typename generate_mesh::type(gspec, comm_,
+      result(new typename generate_mesh::type(gspec, comm,
                                               gm, vo, 
                                               request_faces, request_edges));
     return result;
@@ -614,7 +608,7 @@ struct FrameworkTraits {
 
   /// Construct a new mesh by extracting mesh entities from an existing mesh
   static Teuchos::RCP<Mesh>
-  extract(const Epetra_MpiComm *comm_,            // unused for now
+  extract(Comm_ptr_type comm,            // unused for now
           const Mesh *inmesh, 
           const std::vector<std::string>& setnames,
           const Entity_kind setkind,
@@ -633,7 +627,7 @@ struct FrameworkTraits {
 
   /// Construct a new mesh by extracting mesh entities from an existing mesh
   static Teuchos::RCP<Mesh>
-  extract(const Epetra_MpiComm *comm_,            // unused for now
+  extract(Comm_ptr_type comm,            // unused for now
           const Mesh& inmesh, 
           const std::vector<std::string>& setnames,
           const Entity_kind setkind,
@@ -652,7 +646,7 @@ struct FrameworkTraits {
 
   /// Construct a new mesh by extracting mesh entities from an existing mesh
   static Teuchos::RCP<Mesh>
-  extract(const Epetra_MpiComm *comm_,            // unused for now
+  extract(Comm_ptr_type comm,            // unused for now
           const Mesh& inmesh, 
           const std::vector<int>& entity_id_list,
           const Entity_kind entity_kind,
@@ -778,7 +772,7 @@ framework_reads(const Framework& f, const Format& fmt, const bool& parallel)
 // framework_read
 // -------------------------------------------------------------
 Teuchos::RCP<Mesh> 
-framework_read(const Epetra_MpiComm *comm_, const Framework& f, 
+framework_read(Comm_ptr_type comm, const Framework& f, 
                const std::string& fname,
                const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                const Teuchos::RCP<const VerboseObject>& vo,
@@ -794,25 +788,25 @@ framework_read(const Epetra_MpiComm *comm_, const Framework& f,
   Teuchos::RCP<Mesh> result;
   switch (f) {
   case Simple:
-    result = FrameworkTraits<Simple>::read(comm_, fname, 
+    result = FrameworkTraits<Simple>::read(comm, fname, 
                                            gm, vo, 
                                            request_faces, request_edges,
 					   partitioner);
     break;
   case STKMESH:
-    result = FrameworkTraits<STKMESH>::read(comm_, fname,
+    result = FrameworkTraits<STKMESH>::read(comm, fname,
                                             gm, vo, 
                                             request_faces, request_edges,
 					    partitioner);
     break;
   case MOAB:
-    result = FrameworkTraits<MOAB>::read(comm_, fname,
+    result = FrameworkTraits<MOAB>::read(comm, fname,
                                          gm, vo, 
                                          request_faces, request_edges,
 					 partitioner);
     break;
   case MSTK:
-    result = FrameworkTraits<MSTK>::read(comm_, fname,
+    result = FrameworkTraits<MSTK>::read(comm, fname,
                                          gm, vo, 
                                          request_faces, request_edges,
 					 partitioner);
@@ -887,7 +881,7 @@ framework_generates(const Framework& f, const bool& parallel, const unsigned int
 // framework_generate
 // -------------------------------------------------------------
 Teuchos::RCP<Mesh> 
-framework_generate(const Epetra_MpiComm *comm_, const Framework& f, 
+framework_generate(Comm_ptr_type comm, const Framework& f, 
                    const double& x0, const double& y0, const double& z0,
                    const double& x1, const double& y1, const double& z1,
                    const unsigned int& nx, const unsigned int& ny, 
@@ -907,28 +901,28 @@ framework_generate(const Epetra_MpiComm *comm_, const Framework& f,
   switch (f) {
   case Simple:
     result = FrameworkTraits<Simple>::generate(x0, y0, z0, x1, y1, z1, 
-                                               nx, ny, nz, comm_,
+                                               nx, ny, nz, comm,
                                                gm, vo, 
                                                request_faces, request_edges,
 					       partitioner);
     break;
   case STKMESH:
     result = FrameworkTraits<STKMESH>::generate(x0, y0, z0, x1, y1, z1, 
-                                                nx, ny, nz, comm_,
+                                                nx, ny, nz, comm,
                                                 gm, vo, 
                                                 request_faces, request_edges,
 						partitioner);
     break;
   case MOAB:
     result = FrameworkTraits<MOAB>::generate(x0, y0, z0, x1, y1, z1, 
-                                             nx, ny, nz, comm_,
+                                             nx, ny, nz, comm,
                                              gm, vo, 
                                              request_faces, request_edges,
 					     partitioner);
     break;
   case MSTK:
     result = FrameworkTraits<MSTK>::generate(x0, y0, z0, x1, y1, z1, 
-                                             nx, ny, nz, comm_,
+                                             nx, ny, nz, comm,
                                              gm, vo, 
                                              request_faces, request_edges,
 					     partitioner);
@@ -951,7 +945,7 @@ framework_generate(const Epetra_MpiComm *comm_, const Framework& f,
 // framework_generate
 // -------------------------------------------------------------
 Teuchos::RCP<Mesh> 
-framework_generate(const Epetra_MpiComm *comm_, const Framework& f, 
+framework_generate(Comm_ptr_type comm, const Framework& f, 
                    const double& x0, const double& y0,
                    const double& x1, const double& y1,
                    const unsigned int& nx, const unsigned int& ny,
@@ -969,25 +963,25 @@ framework_generate(const Epetra_MpiComm *comm_, const Framework& f,
   Teuchos::RCP<Mesh> result;
   switch (f) {
   case Simple:
-    result = FrameworkTraits<Simple>::generate(x0, y0, x1, y1, nx, ny, comm_,
+    result = FrameworkTraits<Simple>::generate(x0, y0, x1, y1, nx, ny, comm,
                                                gm, vo,
                                                request_faces, request_edges,
 					       partitioner);
     break;
   case STKMESH:
-    result = FrameworkTraits<STKMESH>::generate(x0, y0, x1, y1, nx, ny, comm_,
+    result = FrameworkTraits<STKMESH>::generate(x0, y0, x1, y1, nx, ny, comm,
                                                 gm, vo, 
                                                 request_faces, request_edges,
 						partitioner);
     break;
   case MOAB:
-    result = FrameworkTraits<MOAB>::generate(x0, y0, x1, y1, nx, ny, comm_,
+    result = FrameworkTraits<MOAB>::generate(x0, y0, x1, y1, nx, ny, comm,
                                              gm, vo, 
                                              request_faces, request_edges,
 					     partitioner);
     break;
   case MSTK:
-    result = FrameworkTraits<MSTK>::generate(x0, y0, x1, y1, nx, ny, comm_,
+    result = FrameworkTraits<MSTK>::generate(x0, y0, x1, y1, nx, ny, comm,
                                              gm, vo, 
                                              request_faces, request_edges,
 					     partitioner);
@@ -1007,7 +1001,7 @@ framework_generate(const Epetra_MpiComm *comm_, const Framework& f,
 
 
 Teuchos::RCP<Mesh> 
-framework_generate(const Epetra_MpiComm *comm_, const Framework& f, 
+framework_generate(Comm_ptr_type comm, const Framework& f, 
                    Teuchos::ParameterList &parameter_list,
                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                    const Teuchos::RCP<const VerboseObject>& vo,
@@ -1022,22 +1016,22 @@ framework_generate(const Epetra_MpiComm *comm_, const Framework& f,
   Teuchos::RCP<Mesh> result;
   switch (f) {
   case Simple:
-    result = FrameworkTraits<Simple>::generate(parameter_list, comm_,
+    result = FrameworkTraits<Simple>::generate(parameter_list, comm,
                                                gm, vo, 
                                                request_faces, request_edges);
     break;
   case STKMESH:
-    result = FrameworkTraits<STKMESH>::generate(parameter_list, comm_,
+    result = FrameworkTraits<STKMESH>::generate(parameter_list, comm,
                                                 gm, vo, 
                                                 request_faces, request_edges);
     break;
   case MOAB:
-    result = FrameworkTraits<MOAB>::generate(parameter_list, comm_,
+    result = FrameworkTraits<MOAB>::generate(parameter_list, comm,
                                              gm, vo, 
                                              request_faces, request_edges);
     break;
   case MSTK:
-    result = FrameworkTraits<MSTK>::generate(parameter_list, comm_,
+    result = FrameworkTraits<MSTK>::generate(parameter_list, comm,
                                              gm, vo, 
                                              request_faces, request_edges);
     break;
@@ -1111,7 +1105,7 @@ framework_extracts(const Framework& f, const bool& parallel, const unsigned int&
 // framework_extract
 // -------------------------------------------------------------
 Teuchos::RCP<Mesh> 
-framework_extract(const Epetra_MpiComm *comm_, const Framework& f, 
+framework_extract(Comm_ptr_type comm, const Framework& f, 
                   const Mesh *inmesh, 
                   const std::vector<std::string>& setnames,
                   const Entity_kind setkind,
@@ -1121,28 +1115,28 @@ framework_extract(const Epetra_MpiComm *comm_, const Framework& f,
   Teuchos::RCP<Mesh> result;
   switch (f) {
   case Simple:
-    result = FrameworkTraits<Simple>::extract(comm_, 
+    result = FrameworkTraits<Simple>::extract(comm, 
                                               inmesh,
                                               setnames, setkind, 
                                               flatten, extrude, 
                                               request_faces, request_edges);
     break;
   case STKMESH:
-    result = FrameworkTraits<STKMESH>::extract(comm_, 
+    result = FrameworkTraits<STKMESH>::extract(comm, 
                                                inmesh, 
                                                setnames, setkind,
                                                flatten, extrude,
                                                request_faces, request_edges);
     break;
   case MOAB:
-    result = FrameworkTraits<MOAB>::extract(comm_, 
+    result = FrameworkTraits<MOAB>::extract(comm, 
                                             inmesh, 
                                             setnames, setkind,
                                             flatten, extrude, 
                                             request_faces, request_edges);
     break;
   case MSTK:
-    result = FrameworkTraits<MSTK>::extract(comm_, 
+    result = FrameworkTraits<MSTK>::extract(comm, 
                                             inmesh, 
                                             setnames, setkind,
                                             flatten, extrude, 
@@ -1160,7 +1154,7 @@ framework_extract(const Epetra_MpiComm *comm_, const Framework& f,
 
 
 Teuchos::RCP<Mesh> 
-framework_extract(const Epetra_MpiComm *comm_, const Framework& f, 
+framework_extract(Comm_ptr_type comm, const Framework& f, 
                   const Mesh& inmesh, 
                   const std::vector<std::string>& setnames,
                   const Entity_kind setkind,
@@ -1170,28 +1164,28 @@ framework_extract(const Epetra_MpiComm *comm_, const Framework& f,
   Teuchos::RCP<Mesh> result;
   switch (f) {
   case Simple:
-    result = FrameworkTraits<Simple>::extract(comm_, 
+    result = FrameworkTraits<Simple>::extract(comm, 
                                               inmesh, 
                                               setnames, setkind, 
                                               flatten, extrude, 
                                               request_faces, request_edges);
     break;
   case STKMESH:
-    result = FrameworkTraits<STKMESH>::extract(comm_, 
+    result = FrameworkTraits<STKMESH>::extract(comm, 
                                                inmesh, 
                                                setnames, setkind,
                                                flatten, extrude,
                                                request_faces, request_edges);
     break;
   case MOAB:
-    result = FrameworkTraits<MOAB>::extract(comm_, 
+    result = FrameworkTraits<MOAB>::extract(comm, 
                                             inmesh, 
                                             setnames, setkind,
                                             flatten, extrude, 
                                             request_faces, request_edges);
     break;
   case MSTK:
-    result = FrameworkTraits<MSTK>::extract(comm_, 
+    result = FrameworkTraits<MSTK>::extract(comm, 
                                             inmesh, 
                                             setnames, setkind,
                                             flatten, extrude, 
@@ -1209,7 +1203,7 @@ framework_extract(const Epetra_MpiComm *comm_, const Framework& f,
 
 
 Teuchos::RCP<Mesh> 
-framework_extract(const Epetra_MpiComm *comm_, const Framework& f, 
+framework_extract(Comm_ptr_type comm, const Framework& f, 
                   const Mesh& inmesh, 
                   const std::vector<int>& entity_id_list,
                   const Entity_kind entity_kind,
@@ -1219,7 +1213,7 @@ framework_extract(const Epetra_MpiComm *comm_, const Framework& f,
   Teuchos::RCP<Mesh> result;
   switch (f) {
   case Simple:
-    result = FrameworkTraits<Simple>::extract(comm_, 
+    result = FrameworkTraits<Simple>::extract(comm, 
                                               inmesh, 
                                               entity_id_list, 
                                               entity_kind, 
@@ -1227,7 +1221,7 @@ framework_extract(const Epetra_MpiComm *comm_, const Framework& f,
                                               request_faces, request_edges);
     break;
   case STKMESH:
-    result = FrameworkTraits<STKMESH>::extract(comm_, 
+    result = FrameworkTraits<STKMESH>::extract(comm, 
                                                inmesh, 
                                                entity_id_list, 
                                                entity_kind,
@@ -1235,7 +1229,7 @@ framework_extract(const Epetra_MpiComm *comm_, const Framework& f,
                                                request_faces, request_edges);
     break;
   case MOAB:
-    result = FrameworkTraits<MOAB>::extract(comm_, 
+    result = FrameworkTraits<MOAB>::extract(comm, 
                                             inmesh, 
                                             entity_id_list, 
                                             entity_kind,
@@ -1243,7 +1237,7 @@ framework_extract(const Epetra_MpiComm *comm_, const Framework& f,
                                             request_faces, request_edges);
     break;
   case MSTK:
-    result = FrameworkTraits<MSTK>::extract(comm_, 
+    result = FrameworkTraits<MSTK>::extract(comm, 
                                             inmesh, 
                                             entity_id_list, 
                                             entity_kind,

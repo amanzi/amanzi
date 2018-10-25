@@ -3,23 +3,18 @@
 #include "math.h"
 #include "UnitTest++.h"
 #include "../Mesh_simple.hh"
-#include <Epetra_Comm.h>
-#include <Epetra_MpiComm.h>
-#include "Teuchos_DefaultSerialComm.hpp"
+#include <Teuchos_DefaultMpiComm.hpp>
+#include "AmanziTypes.hh"
 
 TEST(NODE_CELL_FACES) {
   
-  using namespace std;
-
-#ifdef HAVE_MPI
-  Epetra_MpiComm *comm_ = new Epetra_MpiComm(MPI_COMM_WORLD);
-#else
-  auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());
-#endif
+using namespace std;
+using namespace Amanzi;
+ auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   const unsigned int exp_nnode = 27;
 
-  Amanzi::AmanziMesh::Mesh_simple Mm(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, comm_); 
+  Amanzi::AmanziMesh::Mesh_simple Mm(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, comm); 
 
 
   for (int i = 0; i < exp_nnode; i++)

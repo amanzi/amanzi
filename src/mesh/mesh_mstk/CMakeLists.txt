@@ -61,12 +61,11 @@ endif ()
 #
 # Library: mstk_mesh
 #
-set(mstk_mesh_files Mesh_MSTK.cc Mesh_MSTK_deform.cc MeshColumn.cc) 
+set(mstk_mesh_files Mesh_MSTK.cc Mesh_MSTK_deform.cc)
 file(GLOB mstk_inc_files "*.hh")
 add_amanzi_library(mstk_mesh
                    SOURCE ${mstk_mesh_files} HEADERS ${mstk_inc_files}
-                   LINK_LIBS geometry mesh ${MSTK_LIBRARIES} ${Epetra_LIBRARIES}
-		             ${Teuchos_LIBRARIES} ${Zoltan_LIBRARIES} ${HDF5_LIBRARIES})
+		   LINK_LIBS ${MSTK_LIBRARIES})
 
 if (BUILD_TESTS)
     
@@ -113,7 +112,7 @@ if (BUILD_TESTS)
                          test/test_hex_gen_3x3x3.cc
                          test/test_quad_gen_3x3.cc
                          test/test_extract_surface.cc
- 			 test/test_extract_column.cc
+# 			 test/test_extract_column.cc
                          test/test_deform_vols.cc
                     LINK_LIBS mstk_mesh mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}) 
 
@@ -135,20 +134,21 @@ if (BUILD_TESTS)
                          test/test_deform_vols.cc
                     LINK_LIBS mstk_mesh mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # Test: column_mesh
-    add_amanzi_test(mstk_column_mesh mstk_column_mesh
-                    KIND unit
-                    SOURCE
-                          test/Main.cc 
-                          test/test_column_mesh.cc 
-			  LINK_LIBS mstk_mesh geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
-    # Test: extracted surface from column_mesh
-    add_amanzi_test(mstk_surface_column_mesh mstk_surface_column_mesh
-                    KIND unit
-                    SOURCE
-                          test/Main.cc 
-                          test/test_surface_column_mesh.cc 
-                    LINK_LIBS mstk_mesh geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    # # Test: column_mesh
+    # add_amanzi_test(mstk_column_mesh mstk_column_mesh
+    #                 KIND unit
+    #                 SOURCE
+    #                       test/Main.cc 
+    #                       test/test_column_mesh.cc 
+    # 			  LINK_LIBS mstk_mesh geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    # # Test: extracted surface from column_mesh
+    # add_amanzi_test(mstk_surface_column_mesh mstk_surface_column_mesh
+    #                 KIND unit
+    #                 SOURCE
+    #                       test/Main.cc 
+    #                       test/test_surface_column_mesh.cc 
+    #                 LINK_LIBS mstk_mesh geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
 endif()
 

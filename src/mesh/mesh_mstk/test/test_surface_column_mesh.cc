@@ -17,7 +17,7 @@
 #include <mpi.h>
 #include <fstream>
 
-#include <Epetra_MpiComm.h>
+#include "AmanziTypes.hh"
 
 #include "Geometry.hh"
 #include "../Mesh_MSTK.hh"

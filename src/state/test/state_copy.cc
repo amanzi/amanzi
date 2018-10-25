@@ -10,7 +10,7 @@
            Ethan Coon (ecoon@lanl.gov)
 */
 
-#include "Epetra_MpiComm.h"
+#include "Teuchos_DefaultMpiComm.hpp"
 #include "Epetra_MultiVector.h"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_RCP.hpp"
@@ -26,7 +26,7 @@ using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 
 struct test_field {
-  Epetra_MpiComm *comm;
+  Comm_ptr_type comm;
   Teuchos::RCP<Mesh> mesh;
 
   Teuchos::RCP<Field_CompositeVector> field;
@@ -74,7 +74,7 @@ double get_value(const State &state) {
 };
 
 struct test_state {
-  Epetra_MpiComm *comm;
+  Comm_ptr_type comm;
   Teuchos::RCP<Mesh> mesh;
 
   Teuchos::RCP<State> state;

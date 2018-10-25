@@ -4,116 +4,24 @@ ATS & Amanzi
 License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon (ecoon@lanl.gov)
 
-Interface for CompositeVector, an implementation of a slightly improved
-Epetra_MultiVector which spans multiple simplices and knows how to
-communicate itself.
+Interface for CompositeVector, an implementation of a block Tpetra
+vector which spans multiple simplices and knows how to communicate
+itself.
 
 CompositeVectors are a collection of vectors defined on a common mesh and
 communicator.  Each vector, or component, has a name (used as a key), a mesh
 Entity_kind (CELL, FACE, NODE, or BOUNDARY_FACE), and a number of degrees of
 freedom (dofs).  This, along with the Map_type provided from the mesh on a
-given Entity_kind, is enough to create an Epetra_MultiVector.
+given Entity_kind, is enough to create a Vector
 
 Note that construction of the CompositeVector does not allocate the
-Epetra_MultiVectors.  CreateData() must be called before usage.
+Tpetra_Vector.  CreateData() must be called before usage.
 
 Access using operator() is slow, and should only be used for debugging.
 Prefer to use the ViewComponent() accessors.
 
-Ghost cell updates are managed by the CompositeVector.  The design of this pattern
-is prompted by two things:
-
-  -- The need for updated ghost cell information is typically known by the
-     user just prior to being used, not just after the non-ghost values are
-     updated.
-
-  -- Occasionally multiple functions need ghost values, but no changes to
-     owned data have been made between these functions.  However, it is not
-     always possible for the second call to know, for certain, that the first
-     call did the communication.  Versatility means many code paths may be
-     followed.
-
-Therefore we use the following pattern:
-
-  -- Each time the values of the vector are changed, flags are marked to
-     record that the ghost values are stale.
-
-  -- Each time ghost cells are needed, that flag is checked and communication
-     is done, IF NEEDED.
-
-Keeping these flags correct is therefore critical.  To do this, access to
-vectors must follow some patterns; prefer to change via one of the first three
-methods.  The following modifications tag the flag:
-
-  -- Any of the usual PutScalar(), Apply(), etc methods tag changed.
-
-  -- Non-const calls to ViewComponent() tag changed.
-
-  -- GatherMasterToGhosted() tags changed.
-
-  -- The ChangedValues() call manually tags changed.
-
-  -- Scatter() called in non-INSERT mode tags changd.
-
-Known ways to break this paradigm.  If you do any of these, it is not my fault
-that you get strange parallel bugs! :
-
-  -- Store a non-const pointer to the underlying Epetra_MultiVector.
-
-      *** FIX: NEVER store a pointer to the underlying data, just keep
-          pointers to the CompositeVector itself. ***
-
-  -- Grab a non-const pointer, call Scatter(), then change the values of the
-     local data.  This is the nasty one, because it is both subtle and
-     reasonable usage.  When you access a non-const pointer, the data is
-     flagged as changed.  Then you call Scatter(), and the data is flagged as
-     unchanged.  Then you change the data from your old non-const pointer, and
-     the data is changed, but not flagged.
-
-     *** FIX: ALWAYS call ViewComponent() after Scatter() and before changing
-         values! ***
-
-     *** FIX2: One way to avoid protect yourself within this convention if you
-         need to use the pattern "change owned values, scatter, change owned
-         values again" is to put non-const references in their own scope.
-         For instance, the following practice is encourage:
-
-         // ============  begin snip  ======================================
-         CompositeVector my_cv;
-         ...
-         { // unnamed scope for MultiVector my_vec
-           Epetra_MultiVector& my_vec = *my_cv.ViewComponent("cell",false);
-           my_vec[0][0] = 12;
-         } // close scope of MultiVector my_vec
-
-         my_cv.ScatterMasterToGhosted()
-
-         // Ref to MultiVector my_vec is now gone, so we cannot use it and
-         // screw things up!
-
-         { // unnamed scope for MultiVector my_vec
-           // This is now safe!
-           Epetra_MultiVector& my_vec = *my_cv.ViewComponent("cell",true);
-           my_vec[0][0] = my_vec[0][ghost_index] + ...
-         } // close scope of MultiVector my_vec
-         // ============  end snip  ========================================
-
-     Note that any fix would require a RestoreValues() type call (PETSc's
-     VecGetArray(), VecRestoreArray() make this convention explicit, but are
-     not unbreakable either.)
-
-  -- Using const_cast() and then changing the values.
-
-     *** FIX: Const-correctness is your friend.  Keep your PKs const-correct,
-         and you will never have this problem.
-
-Note that non-INSERT modes of scatter are always done, and also always tag as
-changed.  This is because subsequent calls with different modes would break
-the code.
-
 This vector provides the duck-type interface Vec and may be used with time
 integrators/nonlinear solvers.
-
 
 DOCUMENT VANDELAY HERE! FIX ME --etc
 ------------------------------------------------------------------------- */
@@ -125,9 +33,7 @@ DOCUMENT VANDELAY HERE! FIX ME --etc
 
 #include <vector>
 #include "Teuchos_RCP.hpp"
-#include "Epetra_MultiVector.h"
-#include "Epetra_CombineMode.h"
-#include "Epetra_Import.h"
+#include "AmanziTypes.hh"
 
 #include "dbc.hh"
 #include "Mesh.hh"
@@ -167,7 +73,7 @@ public:
   name_iterator begin() const { return map_->begin(); }
   name_iterator end() const { return map_->end(); }
   unsigned int size() const { return map_->size(); }
-  const Epetra_MpiComm& Comm() const { return map_->Comm(); }
+  Comm_ptr_type Comm() const { return map_->Comm(); }
   Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return map_->Mesh(); }
   bool HasComponent(std::string name) const { return map_->HasComponent(name); }
   int NumComponents() const { return size(); }
@@ -186,10 +92,8 @@ public:
           bool ghosted=false) const {
     return ghosted ? ghostvec_->ComponentMap(name) : mastervec_->ComponentMap(name);
   }
-  CompositeVector(const Epetra_BlockMap& map) {};
 
   // -- View data. --
-
   // Access a view of a single component's data.
   //
   // Const access -- this does not tag as changed.
@@ -221,7 +125,6 @@ public:
   // and set entries in the MultiVector.  THESE ARE VERY VERY SLOW (But they
   // can be handy in debugging.)  Tags changed.
   double& operator()(std::string name, int i, int j) {
-    ChangedValue(name);
     return (*ghostvec_)(name,i,j);
   }
 
@@ -231,7 +134,6 @@ public:
   // and set entries in the MultiVector.  THESE ARE VERY VERY SLOW (But they
   // can be handy in debugging.)  Tags changed.
   double& operator()(std::string name, int j) {
-    ChangedValue(name);
     return (*ghostvec_)(name,0,j);
   }
 #endif
@@ -239,14 +141,6 @@ public:
 
   // Set block by pointer if possible, copy if not?????? FIX ME --etc
   void SetComponent(std::string name, const Teuchos::RCP<Epetra_MultiVector>& data);
-
-  // -- Communicate data and communication management. --
-
-  // Mark all components as changed.
-  void ChangedValue() const;
-
-  // Mark a single component as changed.
-  void ChangedValue(std::string name) const;
 
   // Scatter master values to ghosted values, on all components (INSERT mode).
   //
@@ -409,7 +303,6 @@ public:
   // data enumerating the blocks
   std::map< std::string, int > indexmap_;
   std::vector<std::string> names_;
-  mutable std::vector<bool> ghost_are_current_;
 
   // data containing the blocks
   mutable Teuchos::RCP<BlockVector> ghostvec_;
@@ -424,33 +317,18 @@ public:
 };
 
 
-inline void
-CompositeVector::ChangedValue() const {
-  for (std::vector<bool>::iterator lcv=ghost_are_current_.begin();
-       lcv!=ghost_are_current_.end(); ++lcv) *lcv = false;
-}
-
-inline void
-CompositeVector::ChangedValue(std::string name) const {
-  ghost_are_current_[Index_(name)] = false;
-}
-
-
 inline int
 CompositeVector::PutScalar(double scalar) {
-  ChangedValue();
   return mastervec_->PutScalar(scalar);
 }
 
 inline int
 CompositeVector::PutScalarMasterAndGhosted(double scalar) {
-  ChangedValue();
   return ghostvec_->PutScalar(scalar);
 }
 
 inline int
 CompositeVector::PutScalarGhosted(double scalar) {
-  ChangedValue();
   for (int lcv_comp = 0; lcv_comp != NumComponents(); ++lcv_comp) {
     int size_owned = mastervec_->size(names_[lcv_comp]);
     int size_ghosted = ghostvec_->size(names_[lcv_comp]);
@@ -467,55 +345,46 @@ CompositeVector::PutScalarGhosted(double scalar) {
 
 inline int
 CompositeVector::PutScalar(std::string name, double scalar) {
-  ChangedValue(name);
   return mastervec_->PutScalar(name, scalar);
 }
 
 inline int
 CompositeVector::PutScalar(std::string name, std::vector<double> scalar) {
-  ChangedValue(name);
   return mastervec_->PutScalar(name, scalar);
 }
 
 inline int
 CompositeVector::Abs(const CompositeVector& other) {
-  ChangedValue();
   return mastervec_->Abs(*other.mastervec_);
 }
 
 inline int
 CompositeVector::Scale(double scalar) {
-  ChangedValue();
   return mastervec_->Scale(scalar);
 }
 
 inline int
 CompositeVector::ScaleMasterAndGhosted(double scalar) {
-  ChangedValue();
   return ghostvec_->Scale(scalar);
 }
 
 inline int
 CompositeVector::Scale(std::string name, double scalar) {
-  ChangedValue(name);
   return mastervec_->Scale(name, scalar);
 }
 
 inline int
 CompositeVector::Shift(double scalar) {
-  ChangedValue();
   return mastervec_->Shift(scalar);
 }
 
 inline int
 CompositeVector::Shift(std::string name, double scalar) {
-  ChangedValue(name);
   return mastervec_->Shift(name, scalar);
 }
 
 inline int
 CompositeVector::Reciprocal(const CompositeVector& other) {
-  ChangedValue();
   return mastervec_->Reciprocal(*other.mastervec_);
 }
 
@@ -556,7 +425,6 @@ CompositeVector::Print(std::ostream &os, bool data_io) const {
 
 inline int
 CompositeVector::Random() {
-  ChangedValue();
   return mastervec_->Random();
 }
 

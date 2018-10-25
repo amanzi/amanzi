@@ -1,22 +1,17 @@
-// Emacs Mode Line: -*- Mode:c++;-*-
-// -------------------------------------------------------------
-// file: MeshFileType.hh
-// -------------------------------------------------------------
-// -------------------------------------------------------------
-// Battelle Memorial Institute
-// Pacific Northwest Laboratory
-// -------------------------------------------------------------
-// -------------------------------------------------------------
-// Created March 11, 2011 by William A. Perkins
-// Last Change: Mon Mar 14 08:58:36 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
-// -------------------------------------------------------------
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-// SCCS ID: $Id$ Battelle PNL
+  Authors: William Perkins
+*/
 
-#ifndef _MeshFileType_hh_
-#define _MeshFileType_hh_
+#ifndef AMANZI_MESH_FILE_TYPE_HH_
+#define AMANZI_MESH_FILE_TYPE_HH_
 
-#include <Epetra_Comm.h>
+#include "AmanziTypes.hh"
+#include "Teuchos_Comm.hpp"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -33,12 +28,12 @@ namespace AmanziMesh {
   extern std::string file_format_name(const Format& f);
 
   /// Determine, if possible, the format of the specified file
-  extern Format file_format(Comm_ptr_type comm_, const char *name);
+  extern Format file_format(Comm_ptr_type comm, const char *name);
 
   /// Determine, if possible, the format of the specified file
-  inline Format file_format(Comm_ptr_type comm_, const std::string& name)
+  inline Format file_format(Comm_ptr_type comm, const std::string& name)
   {
-    return file_format(comm_, name.c_str());
+    return file_format(comm, name.c_str());
   }
 
 } // namespace AmanziMesh

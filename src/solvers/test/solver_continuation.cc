@@ -4,7 +4,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "Epetra_MpiComm.h"
+#include "Teuchos_DefaultMpiComm.hpp"
 #include "Epetra_Vector.h"
 
 #include "solver_fnbase1_cont.hh"
@@ -15,7 +15,7 @@ using namespace Amanzi;
 SUITE(SOLVERS) {
 // data structures for testing
 struct test_data {
-  Epetra_MpiComm *comm;
+  Comm_ptr_type comm;
   Teuchos::RCP<Epetra_Map> map;
   Teuchos::RCP<Epetra_Vector> vec;
 

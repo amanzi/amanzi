@@ -1,6 +1,8 @@
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_DefaultMpiComm.hpp"
+
 #include "PK.hh"
 #include "State.hh"
-#include "Teuchos_RCP.hpp"
 
 using namespace Amanzi;
 //
@@ -67,7 +69,7 @@ std::unique_ptr<Run> createRunMPC(const std::string &mpc_name,
   auto global_list = Teuchos::getParametersFromXmlFile(filename);
   auto S = Teuchos::rcp(new State(global_list->sublist("state")));
 
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // create mesh
   Teuchos::ParameterList &regions_list = global_list->sublist("regions");
@@ -110,7 +112,7 @@ std::unique_ptr<Run> createRunODE(const std::string &pk_name, const std::string&
   auto global_list = Teuchos::getParametersFromXmlFile(filename);
   auto S = Teuchos::rcp(new State(global_list->sublist("state")));
 
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // create mesh
   Teuchos::ParameterList &regions_list = global_list->sublist("regions");
@@ -147,7 +149,7 @@ std::unique_ptr<Run> createRunPDE(const std::string &pk_name, const std::string&
   auto global_list = Teuchos::getParametersFromXmlFile(filename);
   auto S = Teuchos::rcp(new State(global_list->sublist("state")));
 
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
   // create mesh
   Teuchos::ParameterList &regions_list = global_list->sublist("regions");

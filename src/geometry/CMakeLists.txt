@@ -32,14 +32,14 @@ file(GLOB geometry_source_files "*.cc")
 file(GLOB geometry_inc_files "*.hh")
 add_amanzi_library(geometry 
                    SOURCE ${geometry_source_files} 
-		   HEADERS ${geometry_inc_files}
-		   LINK_LIBS error_handling functions ${Teuchos_LIBRARIES}
-)
+		   HEADERS ${geometry_inc_files})
 
 #
 # Unit tests
 #
 if (BUILD_TESTS)
+   set(geometry_test_link_libs geometry functions error_handling ${Epetra_LIBRARIES} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
    include_directories(${UnitTest_INCLUDE_DIRS})
 
    # Copy test directory files if an out of source build
@@ -54,15 +54,14 @@ if (BUILD_TESTS)
    add_amanzi_test(geometry_points geometry_points
                    KIND unit
 		   SOURCE test/Main.cc test/test_points.cc
-		   LINK_LIBS geometry ${UnitTest_LIBRARIES})
+		   LINK_LIBS ${geometry_test_link_libs})
 
    # Test: test geometric operators
    add_amanzi_test(geometry_operators geometry_operations
                    KIND unit
                    SOURCE test/Main.cc 
                           test/test_geometric_ops.cc
-                   LINK_LIBS 
-                          geometry ${UnitTest_LIBRARIES})
+		   LINK_LIBS ${geometry_test_link_libs})
 
    # Test: test region creation
    add_amanzi_test(geometry_region geometry_region
@@ -74,17 +73,14 @@ if (BUILD_TESTS)
                           test/test_enumeratedset.cc
                           test/test_colorfunc_region.cc
 			  test/test_polygon_region.cc
-                   LINK_LIBS 
-                          geometry ${UnitTest_LIBRARIES})
+		   LINK_LIBS ${geometry_test_link_libs})
 
    # Test: test geometric model creation
    add_amanzi_test(geometry_geometric_model geometry_geometric_model
                    KIND unit
                    SOURCE test/Main.cc
                           test/test_geometric_model.cc
-                   LINK_LIBS 
-                          geometry
-                          ${UnitTest_LIBRARIES})  
+		   LINK_LIBS ${geometry_test_link_libs})
 
 endif()
 

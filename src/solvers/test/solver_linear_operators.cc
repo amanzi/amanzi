@@ -3,7 +3,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Epetra_CrsMatrix.h"
-#include "Epetra_MpiComm.h"
+#include "Teuchos_DefaultMpiComm.hpp"
 #include "Epetra_Vector.h"
 
 #include "exceptions.hh"
@@ -89,7 +89,7 @@ class Matrix {
 TEST(PCG_SOLVER) {
   std::cout << "Checking PCG solver..." << std::endl;
 
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
 
   // create the pcg operator
@@ -115,7 +115,7 @@ TEST(PCG_SOLVER) {
 TEST(GMRES_SOLVER_LEFT_PRECONDITIONER) {
   std::cout << "\nChecking GMRES solver with LEFT preconditioner..." << std::endl;
 
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
 
   // create the gmres operator
@@ -143,7 +143,7 @@ TEST(GMRES_SOLVER_LEFT_PRECONDITIONER) {
 TEST(GMRES_SOLVER_RIGHT_PRECONDITIONER) {
   std::cout << "\nChecking GMRES solver with RIGHT preconditioner..." << std::endl;
 
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
 
   Teuchos::ParameterList plist;
@@ -175,7 +175,7 @@ TEST(GMRES_SOLVER_RIGHT_PRECONDITIONER) {
 TEST(GMRES_SOLVER_DEFLATION) {
   std::cout << "\nChecking GMRES solver with deflated restart..." << std::endl;
 
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
 
   Teuchos::ParameterList plist;
@@ -208,7 +208,7 @@ TEST(GMRES_SOLVER_DEFLATION) {
 TEST(NKA_SOLVER) {
   std::cout << "\nChecking NKA solver..." << std::endl;
 
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
 
   // create the pcg operator
@@ -239,7 +239,7 @@ TEST(BELOS_GMRES_SOLVER) {
   plist.set<int>("size of Krylov space", 15);
   plist.set<double>("error tolerance", 1e-12);
   
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
 
   // create the operator
@@ -270,7 +270,7 @@ TEST(AMESOS_SOLVER) {
   plist.set<std::string>("solver name", "Amesos_Klu")
        .set<int>("amesos version", 1);
   
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(10, 0, *comm));
 
   // create the operator
@@ -313,7 +313,7 @@ TEST(AMESOS_SOLVER) {
 TEST(SOLVER_FACTORY) {
   std::cout << "\nChecking solver factory..." << std::endl;
 
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
 
   Teuchos::ParameterList plist;
@@ -344,7 +344,7 @@ TEST(SOLVER_FACTORY) {
 TEST(VERBOSITY_OBJECT) {
   std::cout << "\nChecking verbosity object..." << std::endl;
 
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
 
   Teuchos::ParameterList plist;

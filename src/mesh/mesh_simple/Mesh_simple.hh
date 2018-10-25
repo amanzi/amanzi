@@ -13,7 +13,7 @@
 #define AMANZI_MESH_SIMPLE_HH_
 
 #include <Epetra_MpiComm.h>
-#include "Teuchos_DefaultSerialComm.hpp"
+#include <Epetra_SerialComm.h>
 
 #include <memory>
 #include <vector>
@@ -41,7 +41,7 @@ class Mesh_simple : public virtual Mesh {
   // blocking the implicit conversion.
   Mesh_simple(double x0, double y0, double z0,
               double x1, double y1, double z1,
-              int nx, int ny, int nz, Comm_ptr_type comm_unicator,
+              int nx, int ny, int nz, Comm_ptr_type comm,
               const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
               const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
               const bool request_faces = true,
@@ -50,7 +50,7 @@ class Mesh_simple : public virtual Mesh {
   
   Mesh_simple(double x0, double y0,
               double x1, double y1,
-              int nx, int ny, Comm_ptr_type comm_unicator,
+              int nx, int ny, Comm_ptr_type comm,
               const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
               const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
               const bool request_faces = true,
@@ -58,7 +58,7 @@ class Mesh_simple : public virtual Mesh {
 	      const Partitioner_type partitioner = PARTITIONER_DEFAULT);
   
   Mesh_simple(const GenerationSpec& gspec,
-              Comm_ptr_type comm_unicator,
+              Comm_ptr_type comm,
               const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
               const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
               const bool request_faces = true,
@@ -66,7 +66,7 @@ class Mesh_simple : public virtual Mesh {
 	      const Partitioner_type partitioner = PARTITIONER_DEFAULT);
 
   Mesh_simple(Teuchos::ParameterList &parameter_list,
-              Comm_ptr_type comm_unicator,
+              Comm_ptr_type comm,
               const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
               const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
               const bool request_faces = true,
@@ -243,18 +243,18 @@ class Mesh_simple : public virtual Mesh {
   // Epetra maps
   //------------
     
-  const Map_type& cell_map(bool include_ghost) const;
+  Map_ptr_type cell_map(bool include_ghost) const;
     
-  const Map_type& face_map(bool include_ghost) const; 
+  Map_ptr_type face_map(bool include_ghost) const; 
 
-  const Map_type& node_map(bool include_ghost) const;
+  Map_ptr_type node_map(bool include_ghost) const;
     
-  const Map_type& exterior_face_map(bool include_ghost) const; 
+  Map_ptr_type exterior_face_map(bool include_ghost) const; 
     
   // Epetra importer that will allow apps to import values from a
   // Epetra vector defined on all owned faces into an Epetra vector
   // defined only on exterior faces
-  const Import_type& exterior_face_importer(void) const;
+  Import_ptr_type exterior_face_importer(void) const;
     
     
   //
@@ -297,7 +297,7 @@ class Mesh_simple : public virtual Mesh {
   void clear_internals_();
   void build_maps_();
 
-  Map_type *cell_map_, *face_map_, *node_map_;
+  Map_ptr_type cell_map_, face_map_, node_map_;
 
   std::vector<double> coordinates_;
 

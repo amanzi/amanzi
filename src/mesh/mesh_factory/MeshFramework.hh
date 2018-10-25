@@ -1,25 +1,11 @@
-// Emacs Mode Line: -*- Mode:c++;-*-
-// -------------------------------------------------------------
-/**
- * @file   MeshFramework.hh
- * @author William A. Perkins
- * @date Tue May 17 11:37:06 2011
- * 
- * @brief  some typedefs to identify mesh frameworks
- * 
- * 
- */
-// -------------------------------------------------------------
-// -------------------------------------------------------------
-// Battelle Memorial Institute
-// Pacific Northwest Laboratory
-// -------------------------------------------------------------
-// -------------------------------------------------------------
-// Created March 11, 2011 by William A. Perkins
-// Last Change: Tue May 17 11:37:06 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
-// -------------------------------------------------------------
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-// SCCS ID: $Id$ Battelle PNL
+  Authors: William Perkins
+*/
 
 #ifndef _MeshFramework_hh_
 #define _MeshFramework_hh_

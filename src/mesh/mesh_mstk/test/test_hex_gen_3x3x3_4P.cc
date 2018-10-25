@@ -5,7 +5,7 @@
 #include "../Mesh_MSTK.hh"
 
 #include "Map_type.h"
-#include "Epetra_MpiComm.h"
+#include "Teuchos_DefaultMpiComm.hpp"
 
 #include "MeshAudit.hh"
 

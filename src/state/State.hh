@@ -439,7 +439,7 @@ private:
   data_iterator_ data_end_() { return data_.end(); }
 
   // read checkpoint is friend to have access to non-const iterator
-  friend void ReadCheckpoint(const Epetra_MpiComm &, State &,
+  friend void ReadCheckpoint(Comm_ptr_type, State &,
                              const std::string &);
 
   // Containers
@@ -462,10 +462,10 @@ private:
 void WriteVis(Visualization &vis, const State &S);
 
 // Checkpointing State.
-void WriteCheckpoint(Checkpoint &chkp, const Epetra_MpiComm &comm,
+void WriteCheckpoint(Checkpoint &chkp, Comm_ptr_type comm,
                      const State &S, bool final = false);
 
-void ReadCheckpoint(const Epetra_MpiComm &comm, State &S,
+void ReadCheckpoint(Comm_ptr_type comm, State &S,
                     const std::string &filename);
 
 void DeformCheckpointMesh(State &S);

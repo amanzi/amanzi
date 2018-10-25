@@ -17,7 +17,7 @@
 #include <iostream>
 #include <UnitTest++.h>
 
-#include <Epetra_MpiComm.h>
+#include "AmanziTypes.hh"
 
 #include "dbc.hh"
 #include "../Parallel_Exodus_file.hh"
@@ -31,7 +31,7 @@ SUITE (Exodus_4_Proc)
   {
     std::string bname(split_file_path("htc_rad_test-random.par").c_str());
     
-    Epetra_MpiComm comm_(MPI_COMM_WORLD);
+    auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
     CHECK_EQUAL(comm_->getSize(), 4);
     
@@ -43,7 +43,7 @@ SUITE (Exodus_4_Proc)
   {
     std::string bname(split_file_path("hex_10x10x10_ss.par").c_str());
     
-    Epetra_MpiComm comm_(MPI_COMM_WORLD);
+    auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
     CHECK_EQUAL(comm_->getSize(), 4);
     
@@ -55,7 +55,7 @@ SUITE (Exodus_4_Proc)
   {
     std::string bname(split_file_path("twoblktet_ss.par").c_str());
     
-    Epetra_MpiComm comm_(MPI_COMM_WORLD);
+    auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
     CHECK_EQUAL(comm_->getSize(), 4);
     
@@ -67,7 +67,7 @@ SUITE (Exodus_4_Proc)
   {
     std::string bname(split_file_path("prism.par").c_str());
     
-    Epetra_MpiComm comm_(MPI_COMM_WORLD);
+    auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
     CHECK_EQUAL(comm_->getSize(), 4);
     
@@ -80,7 +80,7 @@ SUITE (Exodus_4_Proc)
   {
     std::string bname(split_file_path("mixed-coarse.par").c_str());
     
-    Epetra_MpiComm comm_(MPI_COMM_WORLD);
+    auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
     CHECK_EQUAL(comm_->getSize(), 4);
     
@@ -93,7 +93,7 @@ SUITE (Exodus_4_Proc)
   {
     std::string bname(split_file_path("mixed.par").c_str());
     
-    Epetra_MpiComm comm_(MPI_COMM_WORLD);
+    auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
     CHECK_EQUAL(comm_->getSize(), 4);
     

@@ -17,7 +17,7 @@
 #include <iostream>
 #include <string>
 
-#include "Epetra_MpiComm.h"
+#include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
 #include "Mesh.hh"

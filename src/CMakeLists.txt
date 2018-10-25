@@ -18,7 +18,7 @@ if (ENABLE_Unstructured)
   add_subdirectory(mesh)
 
   # Debug helpers
-  add_subdirectory(debug)
+#  add_subdirectory(debug)
 
   # Discretization
   add_subdirectory(whetstone)

@@ -4,7 +4,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
-#include "Epetra_MpiComm.h"
+#include "Teuchos_DefaultMpiComm.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
@@ -20,7 +20,7 @@
 using namespace Amanzi;
 
 struct test_data {
-  Epetra_MpiComm *comm;
+  Comm_ptr_type comm;
   Teuchos::RCP<AmanziMesh::Mesh> mesh;
 
   Teuchos::RCP<TreeVector> tv1;

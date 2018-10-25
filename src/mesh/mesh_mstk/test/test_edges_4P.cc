@@ -6,7 +6,7 @@
 #include "MeshAudit.hh"
 
 #include "Map_type.h"
-#include "Epetra_MpiComm.h"
+#include "Teuchos_DefaultMpiComm.hpp"
 
 // Test edge functions in 2D
 

@@ -17,47 +17,50 @@
 #include <iostream>
 #include <UnitTest++.h>
 
-#include <Epetra_MpiComm.h>
+#include "AmanziTypes.hh"
+#include "Teuchos_DefaultMpiComm.hpp"
 
 #include "dbc.hh"
 #include "../MeshFramework.hh"
 #include "../FrameworkTraits.hh"
 
+using namespace Amanzi;
+
 SUITE (Framework) 
 {
   TEST (DefaultPreference) {
     
-    Amanzi::AmanziMesh::FrameworkPreference pref(Amanzi::AmanziMesh::default_preference());
+    AmanziMesh::FrameworkPreference pref(AmanziMesh::default_preference());
 
-    CHECK(std::find(pref.begin(), pref.end(), Amanzi::AmanziMesh::Simple) != pref.end());
+    CHECK(std::find(pref.begin(), pref.end(), AmanziMesh::Simple) != pref.end());
     
 #ifdef HAVE_MOAB_MESH
-    CHECK(std::find(pref.begin(), pref.end(), Amanzi::AmanziMesh::MOAB) != pref.end());
+    CHECK(std::find(pref.begin(), pref.end(), AmanziMesh::MOAB) != pref.end());
 #else
-    CHECK(std::find(pref.begin(), pref.end(), Amanzi::AmanziMesh::MOAB) == pref.end());
+    CHECK(std::find(pref.begin(), pref.end(), AmanziMesh::MOAB) == pref.end());
 #endif
 
 #ifdef HAVE_STK_MESH
-    CHECK(std::find(pref.begin(), pref.end(), Amanzi::AmanziMesh::STKMESH) != pref.end());
+    CHECK(std::find(pref.begin(), pref.end(), AmanziMesh::STKMESH) != pref.end());
 #else
-    CHECK(std::find(pref.begin(), pref.end(), Amanzi::AmanziMesh::STKMESH) == pref.end());
+    CHECK(std::find(pref.begin(), pref.end(), AmanziMesh::STKMESH) == pref.end());
 #endif
 
 #ifdef HAVE_MSTK_MESH
-    CHECK(std::find(pref.begin(), pref.end(), Amanzi::AmanziMesh::MSTK) != pref.end());
+    CHECK(std::find(pref.begin(), pref.end(), AmanziMesh::MSTK) != pref.end());
 #else
-    CHECK(std::find(pref.begin(), pref.end(), Amanzi::AmanziMesh::MSTK) == pref.end());
+    CHECK(std::find(pref.begin(), pref.end(), AmanziMesh::MSTK) == pref.end());
 #endif
 
   }
 
   TEST (AvailablePreference) 
   {
-    Amanzi::AmanziMesh::FrameworkPreference pref;
+    AmanziMesh::FrameworkPreference pref;
     
     pref.clear();
-    pref.push_back(Amanzi::AmanziMesh::MOAB);
-    pref = Amanzi::AmanziMesh::available_preference(pref);
+    pref.push_back(AmanziMesh::MOAB);
+    pref = AmanziMesh::available_preference(pref);
 #ifdef HAVE_MOAB_MESH
     CHECK(!pref.empty());
 #else
@@ -65,8 +68,8 @@ SUITE (Framework)
 #endif
     
     pref.clear();
-    pref.push_back(Amanzi::AmanziMesh::STKMESH);
-    pref = Amanzi::AmanziMesh::available_preference(pref);
+    pref.push_back(AmanziMesh::STKMESH);
+    pref = AmanziMesh::available_preference(pref);
 #ifdef HAVE_STK_MESH
     CHECK(!pref.empty());
 #else
@@ -74,8 +77,8 @@ SUITE (Framework)
 #endif
     
     pref.clear();
-    pref.push_back(Amanzi::AmanziMesh::MSTK);
-    pref = Amanzi::AmanziMesh::available_preference(pref);
+    pref.push_back(AmanziMesh::MSTK);
+    pref = AmanziMesh::available_preference(pref);
 #ifdef HAVE_MSTK_MESH
     CHECK(!pref.empty());
 #else
@@ -86,46 +89,46 @@ SUITE (Framework)
 
   TEST (Readability)
   {
-    Epetra_MpiComm comm_(MPI_COMM_WORLD);
-    bool parallel(comm_->getSize() > 1);
+    auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+    bool parallel(comm->getSize() > 1);
     
-    CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::Simple, Amanzi::AmanziMesh::ExodusII, parallel));
-    CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::Simple, Amanzi::AmanziMesh::Nemesis, parallel));
-    CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::Simple, Amanzi::AmanziMesh::MOABHDF5, parallel));
+    CHECK(!AmanziMesh::framework_reads(AmanziMesh::Simple, AmanziMesh::ExodusII, parallel));
+    CHECK(!AmanziMesh::framework_reads(AmanziMesh::Simple, AmanziMesh::Nemesis, parallel));
+    CHECK(!AmanziMesh::framework_reads(AmanziMesh::Simple, AmanziMesh::MOABHDF5, parallel));
 
-    CHECK(Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::MOAB, Amanzi::AmanziMesh::ExodusII, parallel));
-    CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::MOAB, Amanzi::AmanziMesh::Nemesis, parallel));
-    CHECK(Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::MOAB, Amanzi::AmanziMesh::MOABHDF5, parallel));
+    CHECK(AmanziMesh::framework_reads(AmanziMesh::MOAB, AmanziMesh::ExodusII, parallel));
+    CHECK(!AmanziMesh::framework_reads(AmanziMesh::MOAB, AmanziMesh::Nemesis, parallel));
+    CHECK(AmanziMesh::framework_reads(AmanziMesh::MOAB, AmanziMesh::MOABHDF5, parallel));
 
     if (parallel) {
-      CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::STKMESH, Amanzi::AmanziMesh::ExodusII, parallel));
-      CHECK(Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::STKMESH, Amanzi::AmanziMesh::Nemesis, parallel));
+      CHECK(!AmanziMesh::framework_reads(AmanziMesh::STKMESH, AmanziMesh::ExodusII, parallel));
+      CHECK(AmanziMesh::framework_reads(AmanziMesh::STKMESH, AmanziMesh::Nemesis, parallel));
     } else {
-      CHECK(Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::STKMESH, Amanzi::AmanziMesh::ExodusII, parallel));
-      CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::STKMESH, Amanzi::AmanziMesh::Nemesis, parallel));
+      CHECK(AmanziMesh::framework_reads(AmanziMesh::STKMESH, AmanziMesh::ExodusII, parallel));
+      CHECK(!AmanziMesh::framework_reads(AmanziMesh::STKMESH, AmanziMesh::Nemesis, parallel));
     }
-    CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::STKMESH, Amanzi::AmanziMesh::MOABHDF5, parallel));
+    CHECK(!AmanziMesh::framework_reads(AmanziMesh::STKMESH, AmanziMesh::MOABHDF5, parallel));
 
   }
 
   TEST (Generatability)
   {
-    Epetra_MpiComm comm_(MPI_COMM_WORLD);
-    bool parallel(comm_->getSize() > 1);
+    auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+    bool parallel(comm->getSize() > 1);
     
-    CHECK(!Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::MOAB, parallel,3));
-    CHECK(Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::MSTK, parallel,3));
-    CHECK(Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::STKMESH, parallel,3));
+    CHECK(!AmanziMesh::framework_generates(AmanziMesh::MOAB, parallel,3));
+    CHECK(AmanziMesh::framework_generates(AmanziMesh::MSTK, parallel,3));
+    CHECK(AmanziMesh::framework_generates(AmanziMesh::STKMESH, parallel,3));
     if (parallel) {
-      CHECK(!Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::Simple, parallel,3));
+      CHECK(!AmanziMesh::framework_generates(AmanziMesh::Simple, parallel,3));
     } 
 
 
-    //    CHECK(!Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::MOAB, parallel,2));
-    //    CHECK(Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::MSTK, parallel,2));
-    //    CHECK(!Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::STKMESH, parallel,2));
+    //    CHECK(!AmanziMesh::framework_generates(AmanziMesh::MOAB, parallel,2));
+    //    CHECK(AmanziMesh::framework_generates(AmanziMesh::MSTK, parallel,2));
+    //    CHECK(!AmanziMesh::framework_generates(AmanziMesh::STKMESH, parallel,2));
     //    if (parallel) {
-    //      CHECK(!Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::Simple, parallel,2));
+    //      CHECK(!AmanziMesh::framework_generates(AmanziMesh::Simple, parallel,2));
     //    } 
 
   }

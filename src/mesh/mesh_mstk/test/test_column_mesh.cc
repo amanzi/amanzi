@@ -17,7 +17,7 @@
 #include <mpi.h>
 #include <fstream>
 
-#include <Epetra_MpiComm.h>
+#include "AmanziTypes.hh"
 
 #include "Geometry.hh"
 #include "../Mesh_MSTK.hh"
@@ -29,7 +29,7 @@
 TEST(COLUMN_MESH_3D)
 {
 
-  Epetra_MpiComm comm_(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   const int nproc(comm_->getSize());
   const int me(comm_->getRank());
 
@@ -58,7 +58,7 @@ TEST(COLUMN_MESH_3D)
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh =
       Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,
               lx,ly,lz,nx,ny,nz,
-              &comm_, gm));
+              comm, gm));
 
   CHECK_EQUAL(mesh->build_columns(), 1);
   
@@ -203,7 +203,7 @@ TEST(COLUMN_MESH_3D)
 TEST(COLUMN_MESH_3D_FROM_SURFACE)
 {
 
-  Epetra_MpiComm comm_(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   const int nproc(comm_->getSize());
   const int me(comm_->getRank());
 
@@ -232,7 +232,7 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh =
       Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,
               lx,ly,lz,nx,ny,nz,
-              &comm_, gm));
+              comm, gm));
   mesh->build_columns("surface");
 
   int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,

@@ -17,7 +17,7 @@
 #include <mpi.h>
 #include <iostream>
 
-#include <Epetra_MpiComm.h>
+#include "AmanziTypes.hh"
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
@@ -27,7 +27,7 @@
 TEST(MESH_DEFORM2D)
 {
 
-  Epetra_MpiComm comm_(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   const int nproc(comm_->getSize());
   const int me(comm_->getRank());
 
@@ -68,7 +68,7 @@ TEST(MESH_DEFORM2D)
 
     // Create the mesh
 
-    Amanzi::AmanziMesh::MeshFactory factory(&comm_);
+    Amanzi::AmanziMesh::MeshFactory factory(comm);
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
     int ierr = 0;
@@ -144,7 +144,7 @@ TEST(MESH_DEFORM2D)
 TEST(MESH_DEFORM3D)
 {
 
-  Epetra_MpiComm comm_(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   const int nproc(comm_->getSize());
   const int me(comm_->getRank());
 
@@ -178,7 +178,7 @@ TEST(MESH_DEFORM3D)
 
     // Create the mesh
 
-    Amanzi::AmanziMesh::MeshFactory factory(&comm_);
+    Amanzi::AmanziMesh::MeshFactory factory(comm);
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
     int ierr = 0;

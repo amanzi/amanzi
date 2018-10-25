@@ -154,9 +154,6 @@ class Mesh {
   }
 
   // Set/Get geometric model
-  void set_geometric_model(const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm) {
-    geometric_model_ = gm;
-  }
   Teuchos::RCP<const AmanziGeometry::GeometricModel> geometric_model() const {
     return geometric_model_;
   }
@@ -671,7 +668,7 @@ class Mesh {
   // Epetra vector defined on all owned faces into an Epetra vector
   // defined only on exterior faces
   virtual
-  Map_ptr_type exterior_face_importer(void) const = 0;
+  Import_ptr_type exterior_face_importer(void) const = 0;
 
 
   //

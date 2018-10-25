@@ -23,6 +23,8 @@
 #include "../RegionEnumerated.hh"
 #include "../RegionFactory.hh"
 
+using namespace Amanzi;
+
 
 TEST(ENUMERATEDSET_REGION)
 {
@@ -46,9 +48,9 @@ TEST(ENUMERATEDSET_REGION)
 
     // Create a Enumerated Set Region
   
-    Teuchos::RCP<const Amanzi::AmanziGeometry::Region> reg = 
-      Amanzi::AmanziGeometry::createRegion(reg_spec.name(i), reg_id,
-					   reg_params, &ecomm);
+    Teuchos::RCP<const AmanziGeometry::Region> reg = 
+      AmanziGeometry::createRegion(reg_spec.name(i), reg_id,
+					   reg_params, ecomm);
   
     // See if we retrieved the name and id correctly
     CHECK_EQUAL(reg->name(),reg_name);
@@ -62,12 +64,12 @@ TEST(ENUMERATEDSET_REGION)
     std::string in_entity_str = labset_params.get< std::string >("entity");
     
     // Make sure that the region type is a Enumerated Set
-    CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::ENUMERATED);
+    CHECK_EQUAL(reg->type(),AmanziGeometry::ENUMERATED);
   
     // See if the min-max of the region were correctly retrieved
-    Amanzi::AmanziGeometry::Point p, n;
-    Teuchos::RCP<const Amanzi::AmanziGeometry::RegionEnumerated> lsreg =
-      Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionEnumerated>(reg);
+    AmanziGeometry::Point p, n;
+    Teuchos::RCP<const AmanziGeometry::RegionEnumerated> lsreg =
+      Teuchos::rcp_dynamic_cast<const AmanziGeometry::RegionEnumerated>(reg);
 
     // Did we get the entity string right?
     CHECK_EQUAL(in_entity_str,lsreg->entity_str());

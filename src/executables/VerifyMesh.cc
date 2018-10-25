@@ -19,7 +19,7 @@
 
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
-#include "Epetra_MpiComm.h"
+#include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 
 #include "MeshFactory.hh"

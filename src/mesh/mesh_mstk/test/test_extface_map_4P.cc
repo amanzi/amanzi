@@ -5,7 +5,7 @@
 #include "../Mesh_MSTK.hh"
 #include "MeshAudit.hh"
 
-#include "Epetra_MpiComm.h"
+#include "Teuchos_DefaultMpiComm.hpp"
 #include "Epetra_Vector.h"
 #include "MeshDefs.hh"
 

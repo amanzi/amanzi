@@ -24,6 +24,8 @@
 #include "../RegionLabeledSet.hh"
 #include "../RegionFactory.hh"
 
+using namespace Amanzi;
+
 TEST(LABELEDSET_REGION)
 {
 
@@ -43,9 +45,9 @@ TEST(LABELEDSET_REGION)
     Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
 
     // Create a Labeled Set Region
-    Teuchos::RCP<const Amanzi::AmanziGeometry::Region> reg = 
-      Amanzi::AmanziGeometry::createRegion(reg_spec.name(i), reg_id,
-					   reg_params, &ecomm);
+    Teuchos::RCP<const AmanziGeometry::Region> reg = 
+      AmanziGeometry::createRegion(reg_spec.name(i), reg_id,
+					   reg_params, ecomm);
   
     // See if we retrieved the name and id correctly
     CHECK_EQUAL(reg->name(),reg_name);
@@ -60,12 +62,12 @@ TEST(LABELEDSET_REGION)
 
     
     // Make sure that the region type is a Labeled Set
-    CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::LABELEDSET);
+    CHECK_EQUAL(reg->type(),AmanziGeometry::LABELEDSET);
   
     // See if the min-max of the region were correctly retrieved
-    Amanzi::AmanziGeometry::Point p, n;
-    Teuchos::RCP<const Amanzi::AmanziGeometry::RegionLabeledSet> lsreg =
-      Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionLabeledSet>(reg);
+    AmanziGeometry::Point p, n;
+    Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsreg =
+      Teuchos::rcp_dynamic_cast<const AmanziGeometry::RegionLabeledSet>(reg);
 
     // Did we get the entity string right?
     CHECK_EQUAL(in_entity_str,lsreg->entity_str());

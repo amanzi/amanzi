@@ -1,5 +1,5 @@
 #include "Teuchos_RCP.hpp"
-#include "Epetra_MpiComm.h"
+#include "Teuchos_DefaultMpiComm.hpp"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 #include "UnitTest++.h"

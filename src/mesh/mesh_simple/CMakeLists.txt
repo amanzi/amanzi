@@ -29,10 +29,11 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 file(GLOB simple_mesh_source_files "*.cc")
 file(GLOB simple_inc_files "*.hh")
 add_amanzi_library(simple_mesh
-                   SOURCE ${simple_mesh_source_files} HEADERS ${simple_inc_files}
-                   LINK_LIBS mesh geometry error_handling ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
+                   SOURCE ${simple_mesh_source_files} HEADERS ${simple_inc_files})
 
 if (BUILD_TESTS)
+
+    set(test_link_libs simple_mesh mesh geometry functions error_handling ${Tpetra_LIBRARIES} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Add UnitTest include directories
     include_directories(${UnitTest_INCLUDE_DIRS})
@@ -57,7 +58,7 @@ if (BUILD_TESTS)
                           test/test_face_adj_cells.cc 
                           test/test_node_cell_faces.cc
                           test/test_sets.cc
-                    LINK_LIBS simple_mesh ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${test_link_libs})
 
 endif()
 

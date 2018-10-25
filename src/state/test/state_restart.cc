@@ -10,7 +10,7 @@
            Ethan Coon (ecoon@lanl.gov)
 */
 
-#include "Epetra_MpiComm.h"
+#include "Teuchos_DefaultMpiComm.hpp"
 #include "Epetra_MultiVector.h"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ParameterList.hpp"

@@ -25,7 +25,7 @@ namespace Amanzi {
 
 UnstructuredObservations::UnstructuredObservations(
     Teuchos::ParameterList &plist,
-    const Teuchos::RCP<ObservationData> &observation_data, Epetra_MpiComm *comm)
+    const Teuchos::RCP<ObservationData> &observation_data, Comm_ptr_type comm)
     : observation_data_(observation_data) {
 
   // interpret paramerter list

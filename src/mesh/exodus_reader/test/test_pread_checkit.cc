@@ -18,7 +18,7 @@
 #include <UnitTest++.h>
 
 #include <Map_type.h>
-#include <Epetra_MpiComm.h>
+#include "AmanziTypes.hh"
 
 #include "../Parallel_Exodus_file.hh"
 

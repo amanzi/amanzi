@@ -42,7 +42,7 @@ class Mesh_MSTK : public Mesh {
   // we could "delete" the illegal version of the call effectively
   // blocking the implicit conversion.
   Mesh_MSTK(const char *filename,
-            const Teuchos::RCP<Teuchos::Comm>& comm,
+            Comm_ptr_type comm,
             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
             const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	    const bool request_faces = true,
@@ -50,7 +50,7 @@ class Mesh_MSTK : public Mesh {
 	    const Partitioner_type partitioner = PARTITIONER_DEFAULT);
 
   Mesh_MSTK(const char *filename, 
-            const Teuchos::RCP<Teuchos::Comm>& comm,
+            Comm_ptr_type comm,
             int space_dimension,
 	    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = 
             Teuchos::null,
@@ -66,7 +66,7 @@ class Mesh_MSTK : public Mesh {
 	    const double x1, const double y1, const double z1,
 	    const unsigned int nx, const unsigned int ny, 
             const unsigned int nz, 
-            const Teuchos::RCP<Teuchos::Comm>& comm,
+            Comm_ptr_type comm,
             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
             const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	    const bool request_faces = true,
@@ -77,7 +77,7 @@ class Mesh_MSTK : public Mesh {
   Mesh_MSTK(const double x0, const double y0,
 	    const double x1, const double y1,
 	    const int nx, const int ny, 
-            const Teuchos::RCP<Teuchos::Comm>& comm,
+            Comm_ptr_type comm,
             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
             const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	    const bool request_faces = true,
@@ -86,7 +86,7 @@ class Mesh_MSTK : public Mesh {
 
   // Construct a hexahedral mesh from specs 
   Mesh_MSTK(const GenerationSpec& gspec,
-            const Teuchos::RCP<Teuchos::Comm>& comm,
+            Comm_ptr_type comm,
             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm =Teuchos::null,
             const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	    const bool request_faces = true,
@@ -122,7 +122,7 @@ class Mesh_MSTK : public Mesh {
 	    const bool request_faces = true,
 	    const bool request_edges = false);
 
-  Mesh_MSTK(const Teuchos::RCP<Teuchos::Comm>& comm,
+  Mesh_MSTK(Comm_ptr_type comm,
             const Mesh& inmesh,
             const Entity_ID_List& entity_ids, 
             const Entity_kind entity_kind,
@@ -455,8 +455,7 @@ class Mesh_MSTK : public Mesh {
   
   void clear_internals_();
 
-  void pre_create_steps_(const int space_dimension, const Teuchos::RCP<Teuchos::Comm<int> >& comm,
-                         const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm);
+  void pre_create_steps_(const int space_dimension);
   void post_create_steps_(const bool request_faces, const bool request_edges);
 
   void init_mesh_from_file_(const std::string filename,
@@ -505,8 +504,7 @@ class Mesh_MSTK : public Mesh {
   int generate_regular_mesh(Mesh_ptr mesh, double x0, double y0,
                             double x1, double y1, int nx, int ny);
 
-  void extract_mstk_mesh(const Teuchos::RCP<Teuchos::Comm<int> >& comm,
-                         const Mesh_MSTK& inmesh,
+  void extract_mstk_mesh(const Mesh_MSTK& inmesh,
                          const List_ptr entity_ids,
                          const MType entity_dim,
                          const bool flatten = false,

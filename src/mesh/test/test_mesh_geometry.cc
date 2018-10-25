@@ -17,31 +17,35 @@
 #include <mpi.h>
 #include <iostream>
 
-#include <Epetra_MpiComm.h>
+#include "AmanziTypes.hh"
+#include "Teuchos_DefaultMpiComm.hpp"
+#include "Teuchos_CommHelpers.hpp"
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "FrameworkTraits.hh"
 #include "Geometry.hh"
 
+using namespace Amanzi;
+
 TEST(MESH_GEOMETRY_PLANAR)
 {
 
-  Epetra_MpiComm comm_(MPI_COMM_WORLD);
-  const int nproc(comm_->getSize());
-  const int me(comm_->getRank());
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+  const int nproc(comm->getSize());
+  const int me(comm->getRank());
 
-  const Amanzi::AmanziMesh::Framework frameworks[] = {  
-    Amanzi::AmanziMesh::MSTK
+  const AmanziMesh::Framework frameworks[] = {  
+    AmanziMesh::MSTK
   };
   const char *framework_names[] = {
     "MSTK"
   };
   
-  const int numframeworks = sizeof(frameworks)/sizeof(Amanzi::AmanziMesh::Framework);
+  const int numframeworks = sizeof(frameworks)/sizeof(AmanziMesh::Framework);
 
 
-  Amanzi::AmanziMesh::Framework the_framework;
+  AmanziMesh::Framework the_framework;
   for (int i = 0; i < numframeworks; i++) {
 
 
@@ -49,20 +53,20 @@ TEST(MESH_GEOMETRY_PLANAR)
 
     the_framework = frameworks[i];
 
-    if (!Amanzi::AmanziMesh::framework_available(the_framework)) continue;
+    if (!AmanziMesh::framework_available(the_framework)) continue;
 
     std::cerr << "Testing geometry operators with " << framework_names[i] << std::endl;
 
 
     // Create the mesh
 
-    Amanzi::AmanziMesh::MeshFactory factory(&comm_);
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
+    AmanziMesh::MeshFactory factory(comm);
+    Teuchos::RCP<AmanziMesh::Mesh> mesh;
 
     int ierr = 0;
     int aerr = 0;
     try {
-      Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
+      AmanziMesh::FrameworkPreference prefs(factory.preference());
       prefs.clear(); 
       prefs.push_back(the_framework);
 
@@ -70,7 +74,7 @@ TEST(MESH_GEOMETRY_PLANAR)
 
       mesh = factory(0.0,0.0,1.0,1.0,2,2);
 
-    } catch (const Amanzi::AmanziMesh::Message& e) {
+    } catch (const AmanziMesh::Message& e) {
       std::cerr << ": mesh error: " << e.what() << std::endl;
       ierr++;
     } catch (const std::exception& e) {
@@ -78,7 +82,7 @@ TEST(MESH_GEOMETRY_PLANAR)
       ierr++;
     }
 
-    comm_.SumAll(&ierr, &aerr, 1);
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, ierr, Teuchos::outArg(aerr));
 
     CHECK_EQUAL(aerr,0);
 
@@ -98,15 +102,15 @@ TEST(MESH_GEOMETRY_PLANAR)
                                        {1.0,0.25},{0.75,0.5},
                                        {1.0,0.75},{0.75,1.0}};
 
-    int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
-    int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::ALL);
-    int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::ALL);
+    int ncells = mesh->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED);
+    int nfaces = mesh->num_entities(AmanziMesh::FACE,AmanziMesh::Parallel_type::ALL);
+    int nnodes = mesh->num_entities(AmanziMesh::NODE,AmanziMesh::Parallel_type::ALL);
 
     int space_dim_ = 2;
 
     for (int i = 0; i < ncells; i++) {
 
-      Amanzi::AmanziGeometry::Point centroid = mesh->cell_centroid(i);
+      AmanziGeometry::Point centroid = mesh->cell_centroid(i);
 
       // Search for a cell with the same centroid in the 
       // expected list of centroid
@@ -126,8 +130,8 @@ TEST(MESH_GEOMETRY_PLANAR)
 
       CHECK_EQUAL(found,true);
 
-      Amanzi::AmanziMesh::Entity_ID_List cfaces;
-      Amanzi::AmanziGeometry::Point normal_sum(2), normal(2);      
+      AmanziMesh::Entity_ID_List cfaces;
+      AmanziGeometry::Point normal_sum(2), normal(2);      
 
       mesh->cell_get_faces(i,&cfaces);
       normal_sum.set(0.0);
@@ -142,7 +146,7 @@ TEST(MESH_GEOMETRY_PLANAR)
     }
 
     for (int i = 0; i < nfaces; i++) {
-      Amanzi::AmanziGeometry::Point centroid = mesh->face_centroid(i);
+      AmanziGeometry::Point centroid = mesh->face_centroid(i);
 
       bool found = false;
 
@@ -156,20 +160,20 @@ TEST(MESH_GEOMETRY_PLANAR)
 
           // Check the natural normal
 
-          Amanzi::AmanziGeometry::Point normal = mesh->face_normal(i);
+          AmanziGeometry::Point normal = mesh->face_normal(i);
             
       
           // Check the normal with respect to each connected cell
           
-          Amanzi::AmanziMesh::Entity_ID_List cellids;
-          mesh->face_get_cells(i,Amanzi::AmanziMesh::Parallel_type::ALL,&cellids);
+          AmanziMesh::Entity_ID_List cellids;
+          mesh->face_get_cells(i,AmanziMesh::Parallel_type::ALL,&cellids);
           
           for (int k = 0; k < cellids.size(); k++) {
             int dir;
-            Amanzi::AmanziGeometry::Point normal_wrt_cell = 
+            AmanziGeometry::Point normal_wrt_cell = 
               mesh->face_normal(i,false,cellids[k],&dir);
 
-            //            Amanzi::AmanziMesh::Entity_ID_List cellfaces;
+            //            AmanziMesh::Entity_ID_List cellfaces;
             //            std::vector<int> cellfacedirs;
             //            mesh->cell_get_faces_and_dirs(cellids[k],&cellfaces,&cellfacedirs);
             //
@@ -185,16 +189,16 @@ TEST(MESH_GEOMETRY_PLANAR)
             //
             //            CHECK_EQUAL(found2,true);
 
-            Amanzi::AmanziGeometry::Point normal1(normal);
+            AmanziGeometry::Point normal1(normal);
             normal1 *= dir;
 
             CHECK_ARRAY_EQUAL(&(normal1[0]),&(normal_wrt_cell[0]),space_dim_);
 
             
-            Amanzi::AmanziGeometry::Point cellcentroid = mesh->cell_centroid(cellids[k]);
-            Amanzi::AmanziGeometry::Point facecentroid = mesh->face_centroid(i);
+            AmanziGeometry::Point cellcentroid = mesh->cell_centroid(cellids[k]);
+            AmanziGeometry::Point facecentroid = mesh->face_centroid(i);
 
-            Amanzi::AmanziGeometry::Point outvec = facecentroid-cellcentroid;
+            AmanziGeometry::Point outvec = facecentroid-cellcentroid;
 
 
             double dp = outvec*normal_wrt_cell;
@@ -224,21 +228,21 @@ TEST(MESH_GEOMETRY_SURFACE)
  return;
 
 
-  Epetra_MpiComm comm_(MPI_COMM_WORLD);
-  const int nproc(comm_->getSize());
-  const int me(comm_->getRank());
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+  const int nproc(comm->getSize());
+  const int me(comm->getRank());
 
-  const Amanzi::AmanziMesh::Framework frameworks[] = {  
-    Amanzi::AmanziMesh::MSTK
+  const AmanziMesh::Framework frameworks[] = {  
+    AmanziMesh::MSTK
   };
   const char *framework_names[] = {
     "MSTK"
   };
   
-  const int numframeworks = sizeof(frameworks)/sizeof(Amanzi::AmanziMesh::Framework);
+  const int numframeworks = sizeof(frameworks)/sizeof(AmanziMesh::Framework);
 
 
-  Amanzi::AmanziMesh::Framework the_framework;
+  AmanziMesh::Framework the_framework;
   for (int i = 0; i < numframeworks; i++) {
 
 
@@ -246,20 +250,20 @@ TEST(MESH_GEOMETRY_SURFACE)
 
     the_framework = frameworks[i];
 
-    if (!Amanzi::AmanziMesh::framework_available(the_framework)) continue;
+    if (!AmanziMesh::framework_available(the_framework)) continue;
 
     std::cerr << "Testing geometry operators with " << framework_names[i] << std::endl;
 
 
     // Create the mesh
 
-    Amanzi::AmanziMesh::MeshFactory factory(&comm_);
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
+    AmanziMesh::MeshFactory factory(comm);
+    Teuchos::RCP<AmanziMesh::Mesh> mesh;
 
     int ierr = 0;
     int aerr = 0;
     try {
-      Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
+      AmanziMesh::FrameworkPreference prefs(factory.preference());
       prefs.clear(); 
       prefs.push_back(the_framework);
 
@@ -267,7 +271,7 @@ TEST(MESH_GEOMETRY_SURFACE)
 
       mesh = factory("test/surfquad.exo");
 
-    } catch (const Amanzi::AmanziMesh::Message& e) {
+    } catch (const AmanziMesh::Message& e) {
       std::cerr << ": mesh error: " << e.what() << std::endl;
       ierr++;
     } catch (const std::exception& e) {
@@ -275,7 +279,7 @@ TEST(MESH_GEOMETRY_SURFACE)
       ierr++;
     }
 
-    comm_.SumAll(&ierr, &aerr, 1);
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, ierr, Teuchos::outArg(aerr));
 
     CHECK_EQUAL(aerr,0);
 
@@ -295,15 +299,15 @@ TEST(MESH_GEOMETRY_SURFACE)
                                        {0.5,0.25,0.5},{0.5,0.5,0.25},
                                        {0.5,0.75,0.5},{0.5,1.0,0.25}};
 
-    int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
-    int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::ALL);
-    int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::ALL);
+    int ncells = mesh->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED);
+    int nfaces = mesh->num_entities(AmanziMesh::FACE,AmanziMesh::Parallel_type::ALL);
+    int nnodes = mesh->num_entities(AmanziMesh::NODE,AmanziMesh::Parallel_type::ALL);
 
     int space_dim_ = 3;
 
     for (int i = 0; i < ncells; i++) {
 
-      Amanzi::AmanziGeometry::Point centroid = mesh->cell_centroid(i);
+      AmanziGeometry::Point centroid = mesh->cell_centroid(i);
 
       // Search for a cell with the same centroid in the 
       // expected list of centroid
@@ -326,7 +330,7 @@ TEST(MESH_GEOMETRY_SURFACE)
     }
 
     for (int i = 0; i < nfaces; i++) {
-      Amanzi::AmanziGeometry::Point centroid = mesh->face_centroid(i);
+      AmanziGeometry::Point centroid = mesh->face_centroid(i);
 
       bool found = false;
 
@@ -342,18 +346,18 @@ TEST(MESH_GEOMETRY_SURFACE)
       
           // Check the normal with respect to each connected cell
           
-          Amanzi::AmanziMesh::Entity_ID_List cellids;
-          mesh->face_get_cells(i,Amanzi::AmanziMesh::Parallel_type::ALL,&cellids);
+          AmanziMesh::Entity_ID_List cellids;
+          mesh->face_get_cells(i,AmanziMesh::Parallel_type::ALL,&cellids);
 
 
-          Amanzi::AmanziGeometry::Point facecentroid = mesh->face_centroid(i);
+          AmanziGeometry::Point facecentroid = mesh->face_centroid(i);
           
           for (int k = 0; k < cellids.size(); k++) {
             int dir;
-            Amanzi::AmanziGeometry::Point normal_wrt_cell = 
+            AmanziGeometry::Point normal_wrt_cell = 
               mesh->face_normal(i,false,cellids[k],&dir);
 
-            //            Amanzi::AmanziMesh::Entity_ID_List cellfaces;
+            //            AmanziMesh::Entity_ID_List cellfaces;
             //            std::vector<int> cellfacedirs;
             //            mesh->cell_get_faces_and_dirs(cellids[k],&cellfaces,&cellfacedirs);
 
@@ -370,9 +374,9 @@ TEST(MESH_GEOMETRY_SURFACE)
             //            CHECK_EQUAL(found2,true);
 
 
-            Amanzi::AmanziGeometry::Point cellcentroid = mesh->cell_centroid(cellids[k]);
+            AmanziGeometry::Point cellcentroid = mesh->cell_centroid(cellids[k]);
 
-            Amanzi::AmanziGeometry::Point outvec = facecentroid-cellcentroid;
+            AmanziGeometry::Point outvec = facecentroid-cellcentroid;
 
             double dp = outvec*normal_wrt_cell;
             dp /= (norm(outvec)*norm(normal_wrt_cell));         
@@ -388,8 +392,8 @@ TEST(MESH_GEOMETRY_SURFACE)
 
             // An edge on the crease. The two normals should be different 
    
-            Amanzi::AmanziGeometry::Point n0 = mesh->face_normal(i,false,cellids[0]);
-            Amanzi::AmanziGeometry::Point n1 = mesh->face_normal(i,false,cellids[1]);
+            AmanziGeometry::Point n0 = mesh->face_normal(i,false,cellids[0]);
+            AmanziGeometry::Point n1 = mesh->face_normal(i,false,cellids[1]);
 
             double dp = n0*n1/(norm(n0)*norm(n1));
 
@@ -414,25 +418,23 @@ TEST(MESH_GEOMETRY_SURFACE)
 TEST(MESH_GEOMETRY_SOLID)
 {
 
-  Epetra_MpiComm comm_(MPI_COMM_WORLD);
-  const int nproc(comm_->getSize());
-  const int me(comm_->getRank());
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+  const int nproc(comm->getSize());
+  const int me(comm->getRank());
 
-  const Amanzi::AmanziMesh::Framework frameworks[] = {  
-    Amanzi::AmanziMesh::STKMESH,
-    Amanzi::AmanziMesh::MSTK,
-    Amanzi::AmanziMesh::Simple
+  const AmanziMesh::Framework frameworks[] = {  
+    AmanziMesh::MSTK,
+    AmanziMesh::Simple
   };
   const char *framework_names[] = {
-    "STKMesh",
     "MSTK",
     "Simple"
   };
   
-  const int numframeworks = sizeof(frameworks)/sizeof(Amanzi::AmanziMesh::Framework);
+  const int numframeworks = sizeof(frameworks)/sizeof(AmanziMesh::Framework);
 
 
-  Amanzi::AmanziMesh::Framework the_framework;
+  AmanziMesh::Framework the_framework;
   for (int i = 0; i < numframeworks; i++) {
 
 
@@ -440,20 +442,20 @@ TEST(MESH_GEOMETRY_SOLID)
 
     the_framework = frameworks[i];
 
-    if (!Amanzi::AmanziMesh::framework_available(the_framework)) continue;
+    if (!AmanziMesh::framework_available(the_framework)) continue;
 
     std::cerr << "Testing geometry operators with " << framework_names[i] << std::endl;
 
 
     // Create the mesh
 
-    Amanzi::AmanziMesh::MeshFactory factory(&comm_);
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
+    AmanziMesh::MeshFactory factory(comm);
+    Teuchos::RCP<AmanziMesh::Mesh> mesh;
 
     int ierr = 0;
     int aerr = 0;
     try {
-      Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
+      AmanziMesh::FrameworkPreference prefs(factory.preference());
       prefs.clear(); 
       prefs.push_back(the_framework);
 
@@ -461,7 +463,7 @@ TEST(MESH_GEOMETRY_SOLID)
 
       mesh = factory(0.0,0.0,0.0,1.0,1.0,1.0,2,2,2);
 
-    } catch (const Amanzi::AmanziMesh::Message& e) {
+    } catch (const AmanziMesh::Message& e) {
       std::cerr << ": mesh error: " << e.what() << std::endl;
       ierr++;
     } catch (const std::exception& e) {
@@ -469,7 +471,7 @@ TEST(MESH_GEOMETRY_SOLID)
       ierr++;
     }
 
-    comm_.SumAll(&ierr, &aerr, 1);
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, ierr, Teuchos::outArg(aerr));
 
     CHECK_EQUAL(aerr,0);
 
@@ -541,15 +543,15 @@ TEST(MESH_GEOMETRY_SOLID)
     };
 
 
-    int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
-    int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::ALL);
-    int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::ALL);
+    int ncells = mesh->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED);
+    int nfaces = mesh->num_entities(AmanziMesh::FACE,AmanziMesh::Parallel_type::ALL);
+    int nnodes = mesh->num_entities(AmanziMesh::NODE,AmanziMesh::Parallel_type::ALL);
 
     int space_dim_ = 3;
 
     for (int i = 0; i < ncells; i++) {
 
-      Amanzi::AmanziGeometry::Point centroid = mesh->cell_centroid(i);
+      AmanziGeometry::Point centroid = mesh->cell_centroid(i);
 
       // Search for a cell with the same centroid in the 
       // expected list of centroid
@@ -570,8 +572,8 @@ TEST(MESH_GEOMETRY_SOLID)
 
       CHECK_EQUAL(found,true);
 
-      Amanzi::AmanziMesh::Entity_ID_List cfaces;
-      Amanzi::AmanziGeometry::Point normal_sum(3), normal(3);      
+      AmanziMesh::Entity_ID_List cfaces;
+      AmanziGeometry::Point normal_sum(3), normal(3);      
 
       mesh->cell_get_faces(i,&cfaces);
       normal_sum.set(0.0);
@@ -586,7 +588,7 @@ TEST(MESH_GEOMETRY_SOLID)
     }
 
     for (int i = 0; i < nfaces; i++) {
-      Amanzi::AmanziGeometry::Point centroid = mesh->face_centroid(i);
+      AmanziGeometry::Point centroid = mesh->face_centroid(i);
 
       bool found = false;
 
@@ -601,20 +603,20 @@ TEST(MESH_GEOMETRY_SOLID)
 
           // Check the natural normal
 
-          Amanzi::AmanziGeometry::Point normal = mesh->face_normal(i);
+          AmanziGeometry::Point normal = mesh->face_normal(i);
             
       
           // Check the normal with respect to each connected cell
           
-          Amanzi::AmanziMesh::Entity_ID_List cellids;
-          mesh->face_get_cells(i,Amanzi::AmanziMesh::Parallel_type::ALL,&cellids);
+          AmanziMesh::Entity_ID_List cellids;
+          mesh->face_get_cells(i,AmanziMesh::Parallel_type::ALL,&cellids);
           
           for (int k = 0; k < cellids.size(); k++) {
             int dir;
-            Amanzi::AmanziGeometry::Point normal_wrt_cell = 
+            AmanziGeometry::Point normal_wrt_cell = 
               mesh->face_normal(i,false,cellids[k],&dir);
 
-            // Amanzi::AmanziMesh::Entity_ID_List cellfaces;
+            // AmanziMesh::Entity_ID_List cellfaces;
             // std::vector<int> cellfacedirs;
             // mesh->cell_get_faces_and_dirs(cellids[k],&cellfaces,&cellfacedirs);
 
@@ -630,16 +632,16 @@ TEST(MESH_GEOMETRY_SOLID)
 
             // CHECK_EQUAL(found2,true);
 
-            Amanzi::AmanziGeometry::Point normal1(normal);
+            AmanziGeometry::Point normal1(normal);
             normal1 *= dir;
 
             CHECK_ARRAY_EQUAL(&(normal1[0]),&(normal_wrt_cell[0]),space_dim_);
 
             
-            Amanzi::AmanziGeometry::Point cellcentroid = mesh->cell_centroid(cellids[k]);
-            Amanzi::AmanziGeometry::Point facecentroid = mesh->face_centroid(i);
+            AmanziGeometry::Point cellcentroid = mesh->cell_centroid(cellids[k]);
+            AmanziGeometry::Point facecentroid = mesh->face_centroid(i);
 
-            Amanzi::AmanziGeometry::Point outvec = facecentroid-cellcentroid;
+            AmanziGeometry::Point outvec = facecentroid-cellcentroid;
 
             double dp = outvec*normal_wrt_cell;
             dp /= (norm(outvec)*norm(normal_wrt_cell));         
@@ -659,7 +661,7 @@ TEST(MESH_GEOMETRY_SOLID)
     // Now deform the mesh a little and verify that the sum of the
     // outward normals of all faces of cell is still zero
 
-    Amanzi::AmanziGeometry::Point ccoords(3);
+    AmanziGeometry::Point ccoords(3);
     mesh->node_get_coordinates(13,&ccoords); // central node
 
     // Lets be sure this is the central node
@@ -675,8 +677,8 @@ TEST(MESH_GEOMETRY_SOLID)
 
     for (int i = 0; i < ncells; i++) {
 
-      Amanzi::AmanziMesh::Entity_ID_List cfaces;
-      Amanzi::AmanziGeometry::Point normal_sum(3), normal(3);      
+      AmanziMesh::Entity_ID_List cfaces;
+      AmanziGeometry::Point normal_sum(3), normal(3);      
 
       mesh->cell_get_faces(i,&cfaces);
       normal_sum.set(0.0);

@@ -22,6 +22,7 @@
 #include "../RegionColorFunction.hh"
 #include "../RegionFactory.hh"
 
+using namespace Amanzi;
 
 TEST(COLORFUNCTION_REGION)
 {
@@ -40,19 +41,19 @@ TEST(COLORFUNCTION_REGION)
     Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
 
     // Create a Color Function Region
-    Teuchos::RCP<const Amanzi::AmanziGeometry::Region> reg = 
-      Amanzi::AmanziGeometry::createRegion(reg_spec.name(i), reg_id,
-					   reg_params, &ecomm);
+    Teuchos::RCP<const AmanziGeometry::Region> reg = 
+      AmanziGeometry::createRegion(reg_spec.name(i), reg_id,
+					   reg_params, ecomm);
   
     // See if we retrieved the name and id correctly
     CHECK_EQUAL(reg->name(),reg_name);
     CHECK_EQUAL(reg->id(),reg_id);
   
     // Make sure that the region type is an Indicator Function
-    CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::COLORFUNCTION);
+    CHECK_EQUAL(reg->type(),AmanziGeometry::COLORFUNCTION);
 
     // Check if two known points are in the appropriate regions
-    Amanzi::AmanziGeometry::Point p(3);
+    AmanziGeometry::Point p(3);
 
     if (reg_name == "Top") {
       double xyz[3] = {0.5,0.5,0.75};

@@ -12,11 +12,14 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
 
+#include "AmanziTypes.hh"
+
 #include "../Point.hh"
 #include "../Region.hh"
 #include "../RegionPolygon.hh"
 #include "../RegionFactory.hh"
 
+using namespace Amanzi;
 
 TEST(POLYGON_REGION2)
 {
@@ -36,9 +39,9 @@ TEST(POLYGON_REGION2)
   Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
 
   // Create a rectangular region
-  Teuchos::RCP<const Amanzi::AmanziGeometry::Region> reg = 
-    Amanzi::AmanziGeometry::createRegion(reg_spec.name(i), reg_id,
-					 reg_params, &ecomm);
+  Teuchos::RCP<const AmanziGeometry::Region> reg = 
+    AmanziGeometry::createRegion(reg_spec.name(i), reg_id,
+					 reg_params, ecomm);
   
   // See if we retrieved the name and id correctly
   CHECK_EQUAL(reg->name(),reg_name);
@@ -61,18 +64,18 @@ TEST(POLYGON_REGION2)
   // }
   
   // Make sure that the region type is a Plane
-  CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::POLYGON);
+  CHECK_EQUAL(reg->type(),AmanziGeometry::POLYGON);
   
   // See if the parameters of the region were correctly retrieved
-  Teuchos::RCP<const Amanzi::AmanziGeometry::RegionPolygon> poly =
-    Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionPolygon>(reg);
+  Teuchos::RCP<const AmanziGeometry::RegionPolygon> poly =
+    Teuchos::rcp_dynamic_cast<const AmanziGeometry::RegionPolygon>(reg);
 
   int np = poly->PointsSize();
   CHECK_EQUAL(numpoints,np);
 
   int lcv=0;
   int dim = 0;
-  for (Amanzi::AmanziGeometry::RegionPolygon::PointIterator p=poly->PointsBegin();
+  for (AmanziGeometry::RegionPolygon::PointIterator p=poly->PointsBegin();
        p!=poly->PointsEnd(); ++lcv,++p) {
     dim = p->dim();
     for (int j = 0; j < dim; j++)
@@ -81,14 +84,14 @@ TEST(POLYGON_REGION2)
 
   // See if the derived parameters are sane
 
-  Amanzi::AmanziGeometry::Point normal = poly->normal();
+  AmanziGeometry::Point normal = poly->normal();
   CHECK_CLOSE(normal[0],sqrt(0.5),1.0e-06);
   CHECK_CLOSE(normal[1],sqrt(0.5),1.0e-06);
 
 
   // See if a point we know is considered to be inside
 
-  Amanzi::AmanziGeometry::Point testp(dim);
+  AmanziGeometry::Point testp(dim);
   testp.set(0.0,0.0);
   CHECK(poly->inside(testp));
 
@@ -129,9 +132,9 @@ TEST(POLYGON_REGION3)
 
   // Create a rectangular region
   
-  Teuchos::RCP<const Amanzi::AmanziGeometry::Region> reg = 
-    Amanzi::AmanziGeometry::createRegion(reg_spec.name(i), reg_id,
-					 reg_params, &ecomm);
+  Teuchos::RCP<const AmanziGeometry::Region> reg = 
+    AmanziGeometry::createRegion(reg_spec.name(i), reg_id,
+					 reg_params, ecomm);
   
   // See if we retrieved the name and id correctly
   CHECK_EQUAL(reg->name(),reg_name);
@@ -148,32 +151,32 @@ TEST(POLYGON_REGION3)
   in_xyz = poly_params.get< Teuchos::Array<double> >("points");
  
   // Make sure that the region type is a Plane
-  CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::POLYGON);
+  CHECK_EQUAL(reg->type(),AmanziGeometry::POLYGON);
   
   // See if the parameters of the region were correctly retrieved
-  Teuchos::RCP<const Amanzi::AmanziGeometry::RegionPolygon> poly =
-    Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionPolygon>(reg);
+  Teuchos::RCP<const AmanziGeometry::RegionPolygon> poly =
+    Teuchos::rcp_dynamic_cast<const AmanziGeometry::RegionPolygon>(reg);
 
   int np = poly->PointsSize();
   CHECK_EQUAL(numpoints,np);
  
   int lcv=0;
   int dim = 0;
-  for (Amanzi::AmanziGeometry::RegionPolygon::PointIterator p=poly->PointsBegin();
+  for (AmanziGeometry::RegionPolygon::PointIterator p=poly->PointsBegin();
        p!=poly->PointsEnd(); ++lcv,++p) {
     dim = p->dim();
     for (int j = 0; j < dim; j++)
       CHECK_EQUAL((*p)[j],in_xyz[dim*lcv+j]);
   }
 
-  Amanzi::AmanziGeometry::Point normal = poly->normal();
+  AmanziGeometry::Point normal = poly->normal();
   CHECK_CLOSE(normal[0],0.0,1.0e-06);
   CHECK_CLOSE(normal[1],-sqrt(0.5),1.0e-06);
   CHECK_CLOSE(normal[2],sqrt(0.5),1.0e-06);
 
 
   // See if a point we know is considered to be inside
-  Amanzi::AmanziGeometry::Point testp(dim);
+  AmanziGeometry::Point testp(dim);
   testp.set(0.1,0.1,0.1);
   CHECK(poly->inside(testp));
 

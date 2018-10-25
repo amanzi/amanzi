@@ -66,9 +66,10 @@ endif()
 
 add_amanzi_library(mesh_factory
                    SOURCE ${mesh_factory_files} HEADERS ${mesh_factory_inc_files}
-                   LINK_LIBS ${mesh_factory_frameworks} ${Boost_LIBRARIES})
+                   LINK_LIBS ${Boost_LIBRARIES})
 
 if (BUILD_TESTS)
+    set(test_link_libs mesh_factory mesh simple_mesh  geometry functions error_handling ${Tpetra_LIBRARIES} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # some test file locations defined as macros
 
@@ -103,15 +104,11 @@ if (BUILD_TESTS)
                    KIND unit
 		   SOURCE
                          test/Main.cc
-                         test/test_mesh_file.cc 
+#                         test/test_mesh_file.cc 
                          test/test_mesh_framework.cc
                          test/test_mesh_factory.cc
                    LINK_LIBS
-		         mesh_factory
-			 ${UnitTest_LIBRARIES}
-			 ${Boost_LIBRARIES}
-                         ${Epetra_LIBRARIES}
-			 ${HDF5_LIBRARIES})
+		   ${test_link_libs})
 
    # Do not call add_amanzi_test again with SOURCE and LINK_LIBS since the
    # previous call carries instructions to build the executable

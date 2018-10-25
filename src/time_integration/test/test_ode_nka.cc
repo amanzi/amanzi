@@ -5,7 +5,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerbosityLevel.hpp"
 
-#include "Epetra_MpiComm.h"
+#include "Teuchos_DefaultMpiComm.hpp"
 #include "Epetra_Vector.h"
 
 #include "BDFFnBase.hh"
@@ -24,7 +24,7 @@ using namespace Amanzi::AmanziSolvers;
 SUITE(ODEIntegrationTests) {
   // data structures for testing
   struct test_data {
-    Epetra_MpiComm *comm;
+    Comm_ptr_type comm;
 
     Teuchos::RCP<Epetra_Vector> init;
     Teuchos::RCP<Epetra_Vector> u;

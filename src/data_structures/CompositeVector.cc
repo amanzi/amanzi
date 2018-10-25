@@ -6,88 +6,21 @@ ATS and Amanzi
 License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 
-Interface for CompositeVector, an implementation of a slightly improved
-Epetra_MultiVector (now Tpetra) which spans multiple simplices and knows how to
-communicate itself.
+Interface for CompositeVector, an implementation of a block Tpetra
+vector which spans multiple simplices and knows how to communicate
+itself.
 
 CompositeVectors are a collection of vectors defined on a common mesh and
 communicator.  Each vector, or component, has a name (used as a key), a mesh
 Entity_kind (CELL, FACE, NODE, or BOUNDARY_FACE), and a number of degrees of
 freedom (dofs).  This, along with the Map_type provided from the mesh on a
-given Entity_kind, is enough to create an Epetra_MultiVector (now Tpetra).
+given Entity_kind, is enough to create a Vector
 
 Note that construction of the CompositeVector does not allocate the
-Epetra_MultiVector (now Tpetra).  CreateData() must be called before usage.
+Tpetra_Vector.  CreateData() must be called before usage.
 
 Access using operator() is slow, and should only be used for debugging.
 Prefer to use the ViewComponent() accessors.
-
-Ghost cell updates are managed by the CompositeVector.  The design of this pattern
-is prompted by two things:
-
-  -- The need for updated ghost cell information is typically known by the
-     user just prior to being used, not just after the non-ghost values are
-     updated.
-
-  -- Occasionally multiple functions need ghost values, but no changes to
-     owned data have been made between these functions.  However, it is not
-     always possible for the second call to know, for certain, that the first
-     call did the communication.  Versatility means many code paths may be
-     followed.
-
-Therefore we use the following pattern:
-
-  -- Each time the values of the vector are changed, flags are marked to
-     record that the ghost values are stale.
-
-  -- Each time ghost cells are needed, that flag is checked and communication
-     is done, IF NEEDED.
-
-Keeping these flags correct is therefore critical.  To do this, access to
-vectors must follow some patterns; prefer to change via one of the first three
-methods.  The following modifications tag the flag:
-
-  -- Any of the usual PutScalar(), Apply(), etc methods tag changed.
-
-  -- Non-const calls to ViewComponent() tag changed.
-
-  -- GatherMasterToGhosted() tags changed.
-
-  -- The ChangedValues() call manually tags changed.
-
-  -- Scatter() called in non-INSERT mode tags changd.
-
-Known ways to break this paradigm.  If you do any of these, it is not my fault
-that you get strange parallel bugs! :
-
-  -- Store a non-const pointer to the underlying Epetra_MultiVector (now Tpetra).
-
-      *** FIX: NEVER store a pointer to the underlying data, just keep
-          pointers to the CompositeVector itself. ***
-
-  -- Grab a non-const pointer, call Scatter(), then change the values of the
-     local data.  This is the nasty one, because it is both subtle and common.
-     When you access a non-const pointer, the data is flagged as changed.
-     Then you call Scatter(), and the data is flagged as unchanged.  Then you
-     change the data from your old non-const pointer, and the data is changed,
-     but not flagged.
-
-     *** FIX: ALWAYS call ViewComponent() after Scatter() and before changing
-         values! ***
-
-     Note that any fix would require a RestoreValues() type call (PETSc's
-     VecGetArray(), VecRestoreArray() make this convention explicit, but are
-     not unbreakable either.)
-
-  -- Using const_cast() and then changing the values.
-
-     *** FIX: Const-correctness is your friend.  Keep your PKs const-correct,
-         and you will never have this problem.
-
-Note that non-INSERT modes of scatter are always done, and also always tag as
-changed.  This is because subsequent calls with different modes would break
-the code.
-
 
 DOCUMENT VANDELAY HERE! FIX ME --etc
 ------------------------------------------------------------------------- */
@@ -97,10 +30,6 @@ DOCUMENT VANDELAY HERE! FIX ME --etc
 #include "dbc.hh"
 #include "errors.hh"
 #include "CompositeVector.hh"
-
-#ifndef MANAGED_COMMUNICATION
-#define MANAGED_COMMUNICATION 0
-#endif
 
 namespace Amanzi {
 
@@ -215,7 +144,7 @@ void CompositeVector::InitData_(const CompositeVector& other, InitMode mode) {
   }
 }
 
-// Sets sizes of vectors, instantiates Epetra_Vectors, and preps for lazy
+// Sets sizes of vectors, instantiates Vectors, and preps for lazy
 // creation of everything else.
 void CompositeVector::CreateData_() {
   if (!Mesh().get()) {
@@ -278,8 +207,6 @@ CompositeVector& CompositeVector::operator=(const CompositeVector& other) {
       }
     }
   }
-
-  ChangedValue();
   return *this;
 };
 
@@ -312,12 +239,10 @@ CompositeVector::ViewComponent(std::string name, bool ghosted) {
     if (!mastervec_->HasComponent("boundary_face") &&
         mastervec_->HasComponent("face")) {
       ApplyVandelay_();
-      ChangedValue("face");
       return vandelay_vector_;
     }
   }
 
-  ChangedValue(name);
   if (ghosted) {
     return ghostvec_->ViewComponent(name);
   } else {
@@ -329,8 +254,6 @@ CompositeVector::ViewComponent(std::string name, bool ghosted) {
 // Set data by pointer if possible, otherwise by copy.
 void CompositeVector::SetComponent(std::string name,
         const Teuchos::RCP<MultiVector_type>& data) {
-  ChangedValue(name);
-
   if (ghostvec_->ComponentMap(name)->SameAs(data->Map())) {
     // setting the ghost vec -- drop in the data in the ghost
     ghostvec_->SetComponent(name, data);
@@ -367,11 +290,7 @@ CompositeVector::ScatterMasterToGhosted(std::string name, bool force) const {
   // NOTE: allowing const is a hack to allow non-owning PKs to nonetheless
   // update ghost cells, which may be necessary for their discretization
 #ifdef HAVE_MPI
-#if MANAGED_COMMUNICATION
-  if (ghosted_ && ((!ghost_are_current_[Index_(name)]) || force)) {
-#else
   if (ghosted_) {
-#endif
     // check for and create the importer if needed
     if (importers_[Index_(name)] == Teuchos::null) {
       Teuchos::RCP<const Map_type> target_map = ghostvec_->ComponentMap(name);
@@ -387,10 +306,6 @@ CompositeVector::ScatterMasterToGhosted(std::string name, bool force) const {
       mastervec_->ViewComponent(name);
     g_comp->doImport(*m_comp, *importers_[Index_(name)], Tpetra::INSERT);
 
-#if MANAGED_COMMUNICATION
-    // mark as communicated
-    ghost_are_current_[Index_(name)] = true;
-#endif
   }
 #endif
 };
@@ -426,7 +341,6 @@ CompositeVector::ScatterMasterToGhosted(Tpetra::CombineMode mode) const {
 void
 CompositeVector::ScatterMasterToGhosted(std::string name,
         Tpetra::CombineMode mode) const {
-  ChangedValue(name);
 
 #ifdef HAVE_MPI
   if (ghosted_) {
@@ -466,7 +380,6 @@ void CompositeVector::GatherGhostedToMaster(Tpetra::CombineMode mode) {
 
 void CompositeVector::GatherGhostedToMaster(std::string name,
         Tpetra::CombineMode mode) {
-  ChangedValue(name);
 #ifdef HAVE_MPI
   if (ghosted_) {
     // check for and create the importer if needed
@@ -540,7 +453,6 @@ int CompositeVector::Dot(const CompositeVector& other, double* result) const {
 CompositeVector& CompositeVector::Update(double scalarA, const CompositeVector& A,
                                          double scalarThis) {
   //  AMANZI_ASSERT(map_->SubsetOf(*A.map_));
-  ChangedValue();
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
     if (A.HasComponent(*lcv))
       ViewComponent(*lcv, false)->Update(scalarA, *A.ViewComponent(*lcv,false), scalarThis);
@@ -554,7 +466,6 @@ CompositeVector& CompositeVector::Update(double scalarA, const CompositeVector& 
                  double scalarB, const CompositeVector& B, double scalarThis) {
   //  AMANZI_ASSERT(map_->SubsetOf(*A.map_));
   //  AMANZI_ASSERT(map_->SubsetOf(*B.map_));
-  ChangedValue();
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
     if (A.HasComponent(*lcv) && B.HasComponent(*lcv))
       ViewComponent(*lcv, false)->Update(scalarA, *A.ViewComponent(*lcv,false),
@@ -569,7 +480,6 @@ int CompositeVector::Multiply(double scalarAB, const CompositeVector& A,
         const CompositeVector& B, double scalarThis) {
   //  AMANZI_ASSERT(map_->SubsetOf(*A.map_));
   //  AMANZI_ASSERT(map_->SubsetOf(*B.map_));
-  ChangedValue();
   int ierr = 0;
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
     if (A.HasComponent(*lcv) && B.HasComponent(*lcv))
@@ -585,7 +495,6 @@ int CompositeVector::ReciprocalMultiply(double scalarAB, const CompositeVector& 
                                         const CompositeVector& B, double scalarThis) {
   AMANZI_ASSERT(map_->SubsetOf(*A.map_));
   AMANZI_ASSERT(map_->SubsetOf(*B.map_));
-  ChangedValue();
   int ierr = 0;
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
     if (A.HasComponent(*lcv) && B.HasComponent(*lcv))

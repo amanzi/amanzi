@@ -32,14 +32,12 @@ include_directories(${Boost_INCLUDE_DIRS})
 #
 add_amanzi_library(mesh SOURCE Mesh.cc 
                                Mesh_Sets.cc 
-                               GenerationSpec.cc 
-                        LINK_LIBS geometry ${Epetra_LIBRARIES})
+                               GenerationSpec.cc )
 
 #
 # Library: mesh_audit
 #
-add_amanzi_library(mesh_audit SOURCE MeshAudit.cc 
-	                      LINK_LIBS mesh error_handling ${Epetra_LIBRARIES})
+#add_amanzi_library(mesh_audit SOURCE MeshAudit.cc)
 
 #
 # Install Header files
@@ -50,7 +48,7 @@ add_install_include_file(${mesh_inc_files})
 
 # Derived and support classes
 #add_subdirectory(mesh_data)
-#add_subdirectory(mesh_simple)
+add_subdirectory(mesh_simple)
 #add_subdirectory(exodus_reader)
 
 # Mesh Frameworks
@@ -67,13 +65,13 @@ endif(ENABLE_MOAB_Mesh)
 
 # MSTK Mesh framework
 if (ENABLE_MSTK_Mesh)
-  add_subdirectory(mesh_mstk)
+#  add_subdirectory(mesh_mstk)
 endif(ENABLE_MSTK_Mesh)    
 
 
 # Factory class
 add_subdirectory(mesh_factory)
-add_subdirectory(mesh_logical)
+#add_subdirectory(mesh_logical)
 
 
 if (BUILD_TESTS)
@@ -91,21 +89,21 @@ if (BUILD_TESTS)
     endif()
 
     # Test link libraries
-    set(test_link_libs geometry simple_mesh mesh_factory ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    set(test_link_libs mesh mesh_factory simple_mesh  geometry functions error_handling ${Tpetra_LIBRARIES} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # STK (Trilinos Package)
     if (ENABLE_STK_Mesh)
-  #    list(APPEND test_link_libs stk_mesh)
+      list(APPEND test_link_libs stk_mesh)
     endif()    
 
     # MOAB Mesh framework
     if (ENABLE_MOAB_Mesh)
-   #   list(APPEND test_link_libs moab_mesh)
+      list(APPEND test_link_libs moab_mesh)
     endif()    
     
     # MSTK Mesh framework
     if (ENABLE_MSTK_Mesh)
-      list(APPEND test_link_libs mstk_mesh)
+    #  list(APPEND test_link_libs mstk_mesh)
     endif()    
 
     # Test: mesh geometry
@@ -114,17 +112,17 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/test_mesh_geometry.cc
                     LINK_LIBS ${test_link_libs})
 
-    # Test: mesh deformation
- #   add_amanzi_test(mesh_deform mesh_deform
-  #                  KIND unit
-#		    SOURCE test/Main.cc test/test_deform.cc
-#		    LINK_LIBS ${test_link_libs})
+    # # Test: mesh deformation
+    # add_amanzi_test(mesh_deform mesh_deform
+    #                 KIND unit
+    # 		    SOURCE test/Main.cc test/test_deform.cc
+    # 		    LINK_LIBS ${test_link_libs})
 
-    # Test: mesh columns
-    add_amanzi_test(mesh_columns mesh_columns
-                    KIND unit
-		    SOURCE test/Main.cc test/test_columns.cc
-		    LINK_LIBS ${test_link_libs})
+    # # Test: mesh columns
+    # add_amanzi_test(mesh_columns mesh_columns
+    #                 KIND unit
+    # 		    SOURCE test/Main.cc test/test_columns.cc
+    # 		    LINK_LIBS ${test_link_libs})
 
     # Test: mesh KD search
     add_amanzi_test(mesh_nanoflann mesh_nanoflann

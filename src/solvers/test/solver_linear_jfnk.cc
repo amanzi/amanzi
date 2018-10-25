@@ -2,7 +2,7 @@
 #include "UnitTest++.h"
 
 #include "Teuchos_RCP.hpp"
-#include "Epetra_MpiComm.h"
+#include "Teuchos_DefaultMpiComm.hpp"
 #include "Epetra_Vector.h"
 
 #include "exceptions.hh"
@@ -89,7 +89,7 @@ SUITE(SOLVERS) {
   TEST(JFNK_SOLVER_LINEAR) {
     std::cout << "Checking JFNK solver on linear problem..." << std::endl;
 
-    Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
+    auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(5, 0, *comm));
 
     // create the SolverFnBase object

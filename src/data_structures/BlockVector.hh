@@ -16,7 +16,6 @@
 #include <vector>
 #include "Teuchos_RCP.hpp"
 #include "AmanziTypes.hh"
-#include "Epetra_MultiVector.h"
 
 #include "dbc.hh"
 #include "data_structures_types.hh"
@@ -27,9 +26,9 @@ class BlockVector {
 
 public:
   // Constructor
-  BlockVector(const Epetra_MpiComm& comm,
+  BlockVector(Comm_ptr_type comm,
               std::vector<std::string>& names,
-              std::vector<Teuchos::RCP<const Map_type> >& maps,
+              std::vector<Map_ptr_type>& maps,
               std::vector<int> num_dofs);
 
   // copy constructor
@@ -55,7 +54,7 @@ public:
   int NumVectors(std::string name) const { return num_dofs_[Index_(name)]; }
   unsigned int size(std::string name) const { return sizes_[Index_(name)]; }
 
-  Teuchos::RCP<const Map_type> ComponentMap(std::string name) const {
+  Map_ptr_type ComponentMap(std::string name) const {
     return maps_[Index_(name)]; }
 
   // Accessors to data.
@@ -152,7 +151,7 @@ public:
 
   int Random();
 
-  const Epetra_MpiComm& Comm() const { return comm_; }
+  Comm_ptr_type Comm() const { return comm_; }
 
 private:
   int Index_(std::string name) const {
@@ -162,15 +161,15 @@ private:
   }
 
 private:
-  const Epetra_MpiComm comm_;
+  Comm_ptr_type comm_;
   std::map< std::string, int > indexmap_;
   int num_components_;
 
   std::vector<std::string> names_;
   std::vector<int> num_dofs_;
-  std::vector<Teuchos::RCP<const Map_type> > maps_;
+  std::vector<Map_ptr_type > maps_;
   std::vector<unsigned int> sizes_;
-  std::vector<Teuchos::RCP<Epetra_MultiVector> > data_;
+  std::vector<MultiVector_ptr_type> data_;
 };
 
 } // namespace

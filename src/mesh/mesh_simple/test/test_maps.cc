@@ -3,24 +3,19 @@
 #include "math.h"
 #include "UnitTest++.h"
 #include "../Mesh_simple.hh"
-#include <Epetra_Comm.h>
-#include <Epetra_MpiComm.h>
-#include "Teuchos_DefaultSerialComm.hpp"
+#include <Teuchos_DefaultMpiComm.hpp>
+#include "Epetra_SerialComm.h"
+
+#include "AmanziTypes.hh"
 #include "GenerationSpec.hh"
 
 SUITE (MeshSimple) {
 TEST(MAPS) {
   
 using namespace std;
-
-#ifdef HAVE_MPI
-  Epetra_MpiComm *comm_ = new Epetra_MpiComm(MPI_COMM_WORLD);
-#else
-  auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());
-#endif
-
-
-  Amanzi::AmanziMesh::Mesh_simple Mm(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, comm_); 
+using namespace Amanzi;
+ auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+  AmanziMesh::Mesh_simple Mm(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, comm); 
 
   double xc[] = { 2.0, 2.0, 2.0 };
   Mm.node_set_coordinates(7,xc);
@@ -42,15 +37,15 @@ using namespace std;
                             {1,3,7,5}};
 
 
-  CHECK_EQUAL(1,Mm.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED));
-  CHECK_EQUAL(6,Mm.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::OWNED));
-  CHECK_EQUAL(8,Mm.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::OWNED));
+  CHECK_EQUAL(1,Mm.num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED));
+  CHECK_EQUAL(6,Mm.num_entities(AmanziMesh::FACE,AmanziMesh::Parallel_type::OWNED));
+  CHECK_EQUAL(8,Mm.num_entities(AmanziMesh::NODE,AmanziMesh::Parallel_type::OWNED));
 
-  vector<Amanzi::AmanziGeometry::Point> x(8);
-  vector<Amanzi::AmanziMesh::Entity_ID> nodes(8);
-  vector<Amanzi::AmanziMesh::Entity_ID> faces(6);
+  vector<AmanziGeometry::Point> x(8);
+  vector<AmanziMesh::Entity_ID> nodes(8);
+  vector<AmanziMesh::Entity_ID> faces(6);
   
-  for (auto i=0; i<Mm.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED); i++) {
+  for (auto i=0; i<Mm.num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED); i++) {
     Mm.cell_get_nodes(i, &nodes);
 
     CHECK_EQUAL(8,nodes.size());
@@ -64,7 +59,7 @@ using namespace std;
     Mm.cell_get_faces(i, &faces, true);
     double xx[4][3];
     for (int j=0; j<6; j++) {
-      Amanzi::AmanziMesh::Entity_ID_List fnodes;
+      AmanziMesh::Entity_ID_List fnodes;
 
       Mm.face_get_nodes(faces[j],&fnodes);
       CHECK_ARRAY_EQUAL(expfacenodes[faces[j]],fnodes,4);

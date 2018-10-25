@@ -7,7 +7,7 @@
 #include "MeshAudit.hh"
 
 #include "Map_type.h"
-#include "Epetra_MpiComm.h"
+#include "Teuchos_DefaultMpiComm.hpp"
 
 
 TEST(MSTK_HEX_3x3x3)

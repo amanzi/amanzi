@@ -1,8 +1,7 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-
 #include <algorithm>
 
-#include <Teuchos_RCP.hpp>
+#include "Teuchos_RCP.hpp"
+#include "Tpetra_Map.hpp"
 
 #include "Mesh_simple.hh"
 #include "GenerationSpec.hh"
@@ -15,24 +14,21 @@ namespace AmanziMesh {
 Mesh_simple::Mesh_simple(double x0, double y0, double z0,
                          double x1, double y1, double z1,
                          int nx, int ny, int nz,
-                         const Epetra_MpiComm *comm_unicator,
+                         Comm_ptr_type comm,
                          const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                          const Teuchos::RCP<const VerboseObject>&verbosity_obj,
                          const bool request_faces,
                          const bool request_edges,
                          const Partitioner_type partitioner)
-  : nx_(nx), ny_(ny), nz_(nz),
+  : Mesh(comm, gm, verbosity_obj, request_faces, request_edges),
+    nx_(nx), ny_(ny), nz_(nz),
     x0_(x0), x1_(x1),
     y0_(y0), y1_(y1),
-    z0_(z0), z1_(z1),
-    Mesh(verbosity_obj,request_faces,request_edges)
+    z0_(z0), z1_(z1)
 {
-  Mesh::set_comm(comm_unicator);
   Mesh::set_mesh_type(RECTANGULAR);
   Mesh::set_space_dimension(3);
   Mesh::set_manifold_dimension(3);
-  if (gm != Teuchos::null) Mesh::set_geometric_model(gm);
- 
   update();
 }
 
@@ -45,12 +41,13 @@ Mesh_simple::Mesh_simple(double x0, double y0, double z0,
 Mesh_simple::Mesh_simple(double x0, double y0,
                          double x1, double y1,
                          int nx, int ny, 
-                         const Epetra_MpiComm *comm_unicator,
+                         Comm_ptr_type comm,
                          const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                          const Teuchos::RCP<const VerboseObject>&verbosity_obj,
                          const bool request_faces,
                          const bool request_edges,
                          const Partitioner_type partitioner) 
+  : Mesh(comm, gm, verbosity_obj, request_faces, request_edges)
 {
   Exceptions::amanzi_throw(Errors::Message("Simple mesh cannot generate 2D meshes"));
 }
@@ -58,38 +55,30 @@ Mesh_simple::Mesh_simple(double x0, double y0,
 
 
 Mesh_simple::Mesh_simple(Teuchos::ParameterList &parameter_list,
-                         const Epetra_MpiComm *comm_unicator,
+                         Comm_ptr_type comm,
                          const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                          const Teuchos::RCP<const VerboseObject>&verbosity_obj,
                          const bool request_faces,
                          const bool request_edges,
                          const Partitioner_type partitioner)
-  : Mesh(verbosity_obj,request_faces,request_edges)
+  : Mesh(comm, gm, verbosity_obj, request_faces, request_edges)
 {
-  Mesh::set_comm(comm_unicator);
   Mesh::set_mesh_type(RECTANGULAR);
-  if (gm != Teuchos::null)
-    Mesh::set_geometric_model(gm);
-
   GenerationSpec gspec(parameter_list);
   generate_(gspec);
 }
 
 
 Mesh_simple::Mesh_simple(const GenerationSpec& gspec,
-                         const Epetra_MpiComm *comm_unicator,
+                         Comm_ptr_type comm,
                          const Teuchos::RCP<const AmanziGeometry::GeometricModel> &gm,
                          const Teuchos::RCP<const VerboseObject>&verbosity_obj,
                          const bool request_faces,
                          const bool request_edges,
                          const Partitioner_type partitioner)
-  : Mesh(verbosity_obj,request_faces,request_edges)
+  : Mesh(comm, gm, verbosity_obj, request_faces, request_edges)
 {
-  Mesh::set_comm(comm_unicator);
   Mesh::set_mesh_type(RECTANGULAR);
-  if (gm != Teuchos::null) 
-    Mesh::set_geometric_model(gm);
-
   generate_(gspec);
 }
 
@@ -104,6 +93,7 @@ Mesh_simple::Mesh_simple(const Mesh *inmesh,
                          const bool extrude,
                          const bool request_faces,
                          const bool request_edges)
+  : Mesh(inmesh->Comm(), inmesh->geometric_model(), inmesh->verbosity_obj(), request_faces, request_edges)
 {  
   Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the Simple mesh framework\n");
   Exceptions::amanzi_throw(mesg);
@@ -117,6 +107,7 @@ Mesh_simple::Mesh_simple(const Mesh& inmesh,
                          const bool extrude,
                          const bool request_faces,
                          const bool request_edges)
+  : Mesh(inmesh.Comm(), inmesh.geometric_model(), inmesh.verbosity_obj(), request_faces, request_edges)
 {  
   Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the Simple mesh framework\n");
   Exceptions::amanzi_throw(mesg);
@@ -130,6 +121,7 @@ Mesh_simple::Mesh_simple(const Mesh& inmesh,
                          const bool extrude,
                          const bool request_faces,
                          const bool request_edges)
+  : Mesh(inmesh.Comm(), inmesh.geometric_model(), inmesh.verbosity_obj(), request_faces, request_edges)
 {  
   Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the Simple mesh framework\n");
   Exceptions::amanzi_throw(mesg);
@@ -137,11 +129,7 @@ Mesh_simple::Mesh_simple(const Mesh& inmesh,
 
 
 Mesh_simple::~Mesh_simple()
-{
-  delete cell_map_;
-  delete face_map_;
-  delete node_map_;
-}
+{}
 
 
 void 
@@ -436,7 +424,6 @@ void Mesh_simple::update_internals_()
 
 void Mesh_simple::build_maps_()
 {
-  Comm_ptr_type epcomm_ = Mesh::Comm();
   std::vector<int> cells( num_cells_ );
   for (int i=0; i< num_cells_; i++) cells[i] = i;
   
@@ -446,9 +433,9 @@ void Mesh_simple::build_maps_()
   std::vector<int> faces( num_faces_ );
   for (int i=0; i< num_faces_; i++) faces[i] = i;
 
-  cell_map_ = new Map_type(-1, num_cells_, &cells[0], 0, *epcomm_);
-  face_map_ = new Map_type(-1, num_faces_, &faces[0], 0, *epcomm_);
-  node_map_ = new Map_type(-1, num_nodes_, &nodes[0], 0, *epcomm_);
+  cell_map_ = Map_ptr_type(new Map_type(-1, &cells[0], num_cells_, 0, Comm()));
+  face_map_ = Map_ptr_type(new Map_type(-1, &faces[0], num_faces_, 0, Comm()));
+  node_map_ = Map_ptr_type(new Map_type(-1, &nodes[0], num_nodes_, 0, Comm()));
 }
 
 
@@ -784,25 +771,25 @@ void Mesh_simple::cell_get_node_adj_cells(const AmanziMesh::Entity_ID cellid,
 }
 
     
-const Map_type& Mesh_simple::cell_map(bool include_ghost) const
+Map_ptr_type Mesh_simple::cell_map(bool include_ghost) const
 {
-  return *cell_map_;
+  return cell_map_;
 }
 
 
-const Map_type& Mesh_simple::face_map(bool include_ghost) const
+Map_ptr_type Mesh_simple::face_map(bool include_ghost) const
 {
-  return *face_map_;
+  return face_map_;
 }
 
 
-const Map_type& Mesh_simple::node_map(bool include_ghost) const
+Map_ptr_type Mesh_simple::node_map(bool include_ghost) const
 {
-  return *node_map_;
+  return node_map_;
 }
 
 
-const Map_type& Mesh_simple::exterior_face_map(bool include_ghost) const
+Map_ptr_type Mesh_simple::exterior_face_map(bool include_ghost) const
 {
   Errors::Message mesg("not implemented");
   amanzi_throw(mesg);
@@ -814,7 +801,7 @@ const Map_type& Mesh_simple::exterior_face_map(bool include_ghost) const
 // vector defined on all owned faces into an Epetra vector defined
 // only on exterior faces
 //--------------------------------------
-const Import_type& Mesh_simple::exterior_face_importer(void) const
+Import_ptr_type Mesh_simple::exterior_face_importer(void) const
 {
   Errors::Message mesg("not implemented");
   amanzi_throw(mesg);

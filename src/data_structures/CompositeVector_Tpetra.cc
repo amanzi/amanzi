@@ -250,7 +250,7 @@ void CompositeVector::CreateData_() {
 
       // create the master component
       Teuchos::RCP<Epetra_MultiVector> m_comp =
-        Teuchos::rcp(new Epetra_MultiVector(View, *mastervec_->ComponentMap(*name), data,
+        Teuchos::rcp(new MultiVector_type(View, *mastervec_->ComponentMap(*name), data,
                 mastervec_->NumVectors(*name)));
 
       // push it back into the master vec
@@ -343,7 +343,7 @@ void CompositeVector::SetComponent(std::string name,
     double** vals;
     data->ExtractView(&vals);
     Teuchos::RCP<Epetra_MultiVector> m_comp =
-      Teuchos::rcp(new Epetra_MultiVector(View, *mastervec_->ComponentMap(name), vals,
+      Teuchos::rcp(new MultiVector_type(View, *mastervec_->ComponentMap(name), vals,
               mastervec_->NumVectors(name)));
     mastervec_->SetComponent(name, m_comp);
 
@@ -495,7 +495,7 @@ void CompositeVector::GatherGhostedToMaster(std::string name,
 // Vandelay operations
 void CompositeVector::CreateVandelay_() const {
   vandelay_importer_ = Teuchos::rcp(new Epetra_Import(Mesh()->exterior_face_importer()));
-  vandelay_vector_ = Teuchos::rcp(new Epetra_MultiVector(Mesh()->exterior_face_map(false),
+  vandelay_vector_ = Teuchos::rcp(new MultiVector_type(Mesh()->exterior_face_map(false),
           mastervec_->NumVectors("face"), false));
 }
 

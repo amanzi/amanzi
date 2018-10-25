@@ -55,7 +55,7 @@ class TreeVector {
   // -- Accessors --
 
   // Access to ANY communicator (this may be ill-posed!)
-  const Epetra_MpiComm& Comm() const {
+  Comm_ptr_type Comm() const {
     return Map().Comm();
   }
 

@@ -31,7 +31,7 @@ public:
   UnstructuredObservations(
       Teuchos::ParameterList &observations_plist,
       const Teuchos::RCP<ObservationData> &observation_data,
-      Epetra_MpiComm *comm);
+      Comm_ptr_type comm);
 
   bool DumpRequested(int cycle, double time) const;
   void MakeObservations(const State &state);

@@ -25,10 +25,10 @@ class Checkpoint : public IOEvent {
 
 public:
   // standard output constructor
-  Checkpoint(Teuchos::ParameterList &plist, const Epetra_MpiComm &comm);
+  Checkpoint(Teuchos::ParameterList &plist, Comm_ptr_type comm);
 
   // standard input constructor
-  Checkpoint(const std::string &filename, const Epetra_MpiComm &comm);
+  Checkpoint(const std::string &filename, Comm_ptr_type comm);
 
   // this object will not create any output
   Checkpoint();
@@ -55,7 +55,7 @@ protected:
   bool final_;
 
   // the Epetra communicator
-  const Epetra_MpiComm comm_;
+  Comm_ptr_type comm_;
   Teuchos::RCP<Amanzi::HDF5_MPI> checkpoint_output_;
 };
 

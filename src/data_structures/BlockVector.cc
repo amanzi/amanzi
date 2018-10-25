@@ -12,7 +12,7 @@
    NOTE: All BlockVector data is NOT initialized to zero!
    ------------------------------------------------------------------------- */
 
-#include "Epetra_MpiComm.h"
+#include "Teuchos_DefaultMpiComm.hpp"
 #include "Map_type.h"
 #include "Epetra_Vector.h"
 
@@ -24,9 +24,9 @@
 namespace Amanzi {
 
 // Constructor
-BlockVector::BlockVector(const Epetra_MpiComm& comm,
+BlockVector::BlockVector(Comm_ptr_type comm,
         std::vector<std::string>& names,
-        std::vector<Teuchos::RCP<const Map_type> >& maps,
+        std::vector<Map_ptr_type >& maps,
         std::vector<int> num_dofs) :
     names_(names),
     maps_(maps),
@@ -62,7 +62,7 @@ BlockVector::BlockVector(const BlockVector& other) :
 
   data_.resize(num_components_);
   for (int i=0; i != num_components_; ++i) {
-    data_[i] = Teuchos::rcp(new Epetra_MultiVector(*other.data_[i]));
+    data_[i] = Teuchos::rcp(new MultiVector_type(*other.data_[i]));
   }
 };
 
@@ -92,7 +92,7 @@ BlockVector& BlockVector::operator=(const BlockVector& other) {
       if (other.data_[i] == Teuchos::null) {
         data_[i] = Teuchos::null;
       } else if (data_[i] == Teuchos::null) {
-        data_[i] = Teuchos::rcp(new Epetra_MultiVector(*other.data_[i]));
+        data_[i] = Teuchos::rcp(new MultiVector_type(*other.data_[i]));
       } else {
         *data_[i] = *other.data_[i];
       }
@@ -122,7 +122,7 @@ void BlockVector::CreateData() {
 
   // create the data
   for (int i = 0; i != num_components_; ++i) {
-    data_[i] = Teuchos::rcp(new Epetra_MultiVector(*maps_[i], num_dofs_[i], true));
+    data_[i] = Teuchos::rcp(new MultiVector_type(*maps_[i], num_dofs_[i], true));
   }
 };
 

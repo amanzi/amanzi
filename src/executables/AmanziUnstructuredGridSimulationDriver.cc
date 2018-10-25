@@ -12,8 +12,8 @@
 #include <iostream>
 #include <fstream>
 
-#include <Epetra_Comm.h>
-#include <Epetra_MpiComm.h>
+#include "Teuchos_Comm.hpp"
+#include "AmanziTypes.hh"
 #include "Teuchos_DefaultSerialComm.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
@@ -85,7 +85,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   // Teuchos::OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(mpi_comm);
+  Comm_ptr_type comm = new Epetra_MpiComm(mpi_comm);
 #else  
   auto comm = Comm_ptr_type( new Teuchos::SerialComm<int>());
 #endif

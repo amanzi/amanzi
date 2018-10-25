@@ -1,20 +1,11 @@
-// -------------------------------------------------------------
-/**
- * @file   MeshFramework.cc
- * @author William A. Perkins
- * @date Tue May 17 11:49:33 2011
- * 
- * @brief  
- * 
- * 
- */
-// -------------------------------------------------------------
-// -------------------------------------------------------------
-// Created March 11, 2011 by William A. Perkins
-// Last Change: Tue May 17 11:49:33 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
-// -------------------------------------------------------------
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-static const char* SCCS_ID = "$Id$ Battelle PNL";
+  Authors: William Perkins
+*/
 
 #include "MeshFramework.hh"
 #include "MeshException.hh"
