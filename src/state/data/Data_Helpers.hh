@@ -17,11 +17,11 @@ Helpers that know how to read/write/etc data.
 #include "errors.hh"
 
 #include "CompositeVector.hh"
-#include "Op.hh"
-#include "TensorVector.hh"
-#include "Operator.hh"
-#include "BCs.hh"
-#include "BoundaryFunction.hh"
+//#include "Op.hh"
+//#include "TensorVector.hh"
+//#include "Operator.hh"
+//#include "BCs.hh"
+//#include "BoundaryFunction.hh"
 
 #include "FunctionFactory.hh"
 
@@ -141,7 +141,7 @@ bool Initialize<CompositeVector>(Teuchos::ParameterList &plist,
 //
 // Specializations for Op
 // ======================================================================
-
+/*
 template <>
 inline void
 WriteVis<Operators::Op>(const Visualization &vis, const Key &fieldname,
@@ -226,7 +226,8 @@ Initialize<TensorVector>(Teuchos::ParameterList &plist, TensorVector &tensor,
 //
 // Specializations for Operators::BCs
 // ======================================================================
-
+*/
+/*
 template <>
 inline void
 WriteVis<Operators::BCs>(const Visualization &vis, const Key &fieldname,
@@ -279,7 +280,7 @@ Initialize<Functions::BoundaryFunction>(Teuchos::ParameterList &plist,
                            const std::vector<std::string> &subfieldnames) {
   return true;
 }
-
+*/
 } // namespace Helpers
 } // namespace Amanzi
 

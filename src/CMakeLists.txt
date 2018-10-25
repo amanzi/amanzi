@@ -27,10 +27,10 @@ if (ENABLE_Unstructured)
   add_subdirectory(data_structures)
 
   # Mesh functions
-  add_subdirectory(mesh_functions)
+  # add_subdirectory(mesh_functions)
 
   # Output
-  add_subdirectory(output)
+  # add_subdirectory(output)
 
   # Solvers
   # add_subdirectory(solvers)
@@ -39,10 +39,10 @@ if (ENABLE_Unstructured)
   # add_subdirectory(time_integration)
 
   # Operators
-  add_subdirectory(operators)
+  # add_subdirectory(operators)
 
   # Build State
-#  add_subdirectory(state)
+  add_subdirectory(state)
 endif()
 
 # if (ENABLE_Unstructured)  

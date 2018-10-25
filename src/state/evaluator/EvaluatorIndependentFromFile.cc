@@ -216,7 +216,7 @@ void EvaluatorIndependentFromFile::LoadFile_(int i) {
   file_input->open_h5file();
 
   // load the data
-  Epetra_MultiVector &vec = *val_after_->ViewComponent(compname_, false);
+  MultiVector_type &vec = *val_after_->ViewComponent(compname_, false);
   for (int j = 0; j != ndofs_; ++j) {
     std::stringstream varname;
     varname << varname_ << "." << locname_ << "." << j << "//" << i;

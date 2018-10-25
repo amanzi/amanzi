@@ -240,8 +240,8 @@ bool Initialize<CompositeVector>(
       unsigned int nfaces_owned =
           t.Mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
-      Epetra_MultiVector &dat_f = *t.ViewComponent("face", false);
-      const Epetra_MultiVector &vel_f = *vel_vec.ViewComponent("face", false);
+      MultiVector_type &dat_f = *t.ViewComponent("face", false);
+      const MultiVector_type &vel_f = *vel_vec.ViewComponent("face", false);
 
       AmanziGeometry::Point vel(dim);
       for (unsigned int f = 0; f != nfaces_owned; ++f) {

@@ -13,7 +13,7 @@ Checkpointing for state.
 #include "boost/filesystem.hpp"
 
 #include "Checkpoint.hh"
-#include "Teuchos_DefaultMpiComm.hpp"
+#include "Epetra_MpiComm.h"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 namespace Amanzi {

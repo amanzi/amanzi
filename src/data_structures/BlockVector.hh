@@ -63,23 +63,23 @@ public:
   }
 
   // -- Access a view of a single component's data.
-  Teuchos::RCP<const Epetra_MultiVector>
-  ViewComponent(std::string name) const;
+  Teuchos::RCP<const MultiVector_type>
+  GetComponent(std::string name) const;
 
-  Teuchos::RCP<Epetra_MultiVector>
-  ViewComponent(std::string name);
+  MultiVector_ptr_type
+  GetComponent(std::string name);
 
-  // -- View entries in the vectors.
-  double operator()(std::string name, int i, int j) const {
-    return (*data_[Index_(name)])[i][j];
-  }
-  double operator()(std::string name, int j) const {
-    return (*data_[Index_(name)])[0][j];
-  }
+  // // -- View entries in the vectors.
+  // double operator()(std::string name, int i, int j) const {
+  //   return (*data_[Index_(name)])[i][j];
+  // }
+  // double operator()(std::string name, int j) const {
+  //   return (*data_[Index_(name)])[0][j];
+  // }
 
   // Mutators of data
   // -- Set entries in the vectors.
-  void SetComponent(std::string name, const Teuchos::RCP<Epetra_MultiVector>& data);
+  void SetComponent(std::string name, const MultiVector_ptr_type& data);
 
   // double& operator()(std::string name, int i, int j) {
   //   return (*data_[Index_(name)])[i][j];
@@ -93,13 +93,13 @@ public:
   int PutScalar(double scalar);
 
   // Insert values into data, by DOF, not by component!
-  int PutScalar(std::vector<double> scalar);
+  //int PutScalar(std::vector<double> scalar);
 
   // Insert value into component [name].
   int PutScalar(std::string name, double scalar);
 
   // Insert values into component [name].
-  int PutScalar(std::string name, std::vector<double> scalar);
+  //int PutScalar(std::string name, std::vector<double> scalar);
 
   // this <- abs(this)
   int Abs(const BlockVector& other);
@@ -134,17 +134,17 @@ public:
                double scalarThis);
 
   // this <- scalarAB * B/A + scalarThis*this  (/ is the elementwise division
-  int ReciprocalMultiply(double scalarAB, const BlockVector& A, const BlockVector& B,
-                         double scalarThis);
+  // int ReciprocalMultiply(double scalarAB, const BlockVector& A, const BlockVector& B,
+  //                        double scalarThis);
 
   // Norms.
   int NormInf(double* norm) const;
   int Norm1(double* norm) const;
   int Norm2(double* norm) const;
 
-  int MinValue(double* value) const;
-  int MaxValue(double* value) const;
-  int MeanValue(double* value) const;
+  // int MinValue(double* value) const;
+  // int MaxValue(double* value) const;
+  // int MeanValue(double* value) const;
 
   // Extras
   void Print(std::ostream &os, bool data_io = true) const;

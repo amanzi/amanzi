@@ -24,6 +24,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "UnitTest++.h"
+#include "Teuchos_CommHelpers.hpp"
 
 // Amanzi
 #include "LinearOperatorGMRES.hh"
@@ -214,7 +215,8 @@ void RunTestMarshakLogical(std::string op_list_name) {
       ds_rel = std::max(ds_rel, sol_diff[0][c] / (1e-3 + sol_old[0][c] + sol_new[0][c]));
     }
     double ds_rel_local = ds_rel;
-    sol_diff.Comm().MaxAll(&ds_rel_local, &ds_rel, 1);
+    Teuchos::reduceAll(*sol_diff.Comm(), Teuchos::REDUCE_SUM, ds_rel_local, Teuchos::outArg(ds_rel));
+
 
     if (ds_rel < 0.05) {
       dT *= 1.2;

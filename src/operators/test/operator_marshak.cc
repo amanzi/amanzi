@@ -20,6 +20,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "UnitTest++.h"
+#include "Teuchos_CommHelpers.hpp"
 
 // Amanzi
 #include "GMVMesh.hh"
@@ -210,7 +211,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
       ds_rel = std::max(ds_rel, sol_diff[0][c] / (1e-3 + sol_old[0][c] + sol_new[0][c]));
     }
     double ds_rel_local = ds_rel;
-    sol_diff.Comm().MaxAll(&ds_rel_local, &ds_rel, 1);
+    Teuchos::reduceAll(*sol_diff.Comm(), Teuchos::REDUCE_SUM, ds_rel_local, Teuchos::outArg(ds_rel));
 
     if (ds_rel < 0.05) {
       dt *= 1.2;
@@ -231,9 +232,9 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     pnorm += p[0][c] * p[0][c];
   }
   double tmp = pl2_err;
-  mesh->Comm()->SumAll(&tmp, &pl2_err, 1);
+  Teuchos::reduceAll(*mesh->Comm(), Teuchos::REDUCE_SUM, tmp, Teuchos::outArg(pl2_err));
   tmp = pnorm;
-  mesh->Comm()->SumAll(&tmp, &pnorm, 1);
+  Teuchos::reduceAll(*mesh->Comm(), Teuchos::REDUCE_SUM, tmp, Teuchos::outArg(pnorm));
 
   pl2_err = std::pow(pl2_err / pnorm, 0.5);
   pnorm = std::pow(pnorm, 0.5);

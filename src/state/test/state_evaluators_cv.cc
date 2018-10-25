@@ -4,7 +4,7 @@
   Authors: Ethan Coon
 */
 
-#include "Teuchos_DefaultMpiComm.hpp"
+#include "Epetra_MpiComm.h"
 #include "Epetra_Vector.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
@@ -38,8 +38,8 @@ public:
 
  protected:
   virtual void Evaluate_(const State &S, const std::vector<CompositeVector*> &results) override {
-    Epetra_MultiVector &result_c = *results[0]->ViewComponent(comp_);
-    const Epetra_MultiVector &fb_c =
+    MultiVector_type &result_c = *results[0]->ViewComponent(comp_);
+    const MultiVector_type &fb_c =
         *S.Get<CompositeVector>("fb").ViewComponent(comp_);
 
     for (int c = 0; c != result_c.MyLength(); ++c) {
@@ -50,7 +50,7 @@ public:
   virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
                                           const Key &wrt_tag,
                                           const std::vector<CompositeVector*> &results) override {
-    Epetra_MultiVector &result_c = *results[0]->ViewComponent(comp_);
+    MultiVector_type &result_c = *results[0]->ViewComponent(comp_);
 
     if (wrt_key == "fb") {
       for (int c = 0; c != result_c.MyLength(); ++c) {
@@ -65,8 +65,8 @@ public:
 SUITE(EVALUATORS_CV) {
   TEST(PRIMARY_CV) {
     // Tests a primary variable evaluator
+    auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
-    auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
     MeshFactory meshfac(comm);
     auto mesh = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
@@ -131,7 +131,8 @@ SUITE(EVALUATORS_CV) {
   TEST(SECONDARY_CV_DEFAULT_USAGE) {
     // Tests a secondary variable evaluator in standard usage
     std::cout << "Secondary Variable Test" << std::endl;
-    auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
+    auto comm =  Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+
     MeshFactory meshfac(comm);
     auto mesh = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
@@ -227,7 +228,8 @@ SUITE(EVALUATORS_CV) {
   TEST(SECONDARY_CV_JOINT_DEPENDENCIES) {
     // Tests two secondaries depending upon one primary, making sure they correctly set structure
     std::cout << "Secondary Variable Test" << std::endl;
-    auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
+    auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+
     MeshFactory meshfac(comm);
     auto mesh = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
@@ -300,7 +302,8 @@ SUITE(EVALUATORS_CV) {
   TEST(SECONDARY_CV_THROWS_PARENT_CHILD_INCONSISTENT_MESH) {
     // Test that Setup() throws if parent and child meshes are different
     std::cout << "Secondary Variable Test" << std::endl;
-    auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
+    auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+
     MeshFactory meshfac(comm);
     auto mesh = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
     auto mesh2 = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
@@ -339,7 +342,7 @@ SUITE(EVALUATORS_CV) {
   TEST(SECONDARY_CV_THROWS_PARENT_CHILD_INCONSISTENT_STRUCTURE) {
     // Test that Setup() throws if parent and child structure/components are different
     std::cout << "Secondary Variable Test" << std::endl;
-    auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
+    auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     MeshFactory meshfac(comm);
     auto mesh = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
     auto mesh2 = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
@@ -381,7 +384,7 @@ SUITE(EVALUATORS_CV) {
   TEST(SECONDARY_CV_JOINT_DEPENDENCIES_INCONSISTENT_MESH) {
     // Test that Setup() throws if two parents have inconsistent meshes and try to both set their child
     std::cout << "Secondary Variable Test" << std::endl;
-    auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
+    auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     MeshFactory meshfac(comm);
     auto mesh = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
     auto mesh2 = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
@@ -438,7 +441,8 @@ SUITE(EVALUATORS_CV) {
   TEST(SECONDARY_CV_JOINT_DEPENDENCIES_INCONSISTENT_STRUCTURE) {
     // Test that Setup() throws if two parents have inconsistent structure and both try to set the parent
     std::cout << "Secondary Variable Test" << std::endl;
-    auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
+    auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+
     MeshFactory meshfac(comm);
     auto mesh = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
     auto mesh2 = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
@@ -494,7 +498,7 @@ SUITE(EVALUATORS_CV) {
   TEST(SECONDARY_CV_JOINT_DEPENDENCIES_REVERSED_DEPENDENCY) {
     // Test the reversed structure case, where a parent takes its structure from a child
     std::cout << "Secondary Variable Test" << std::endl;
-    auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
+    auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     MeshFactory meshfac(comm);
     auto mesh = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
@@ -538,7 +542,7 @@ SUITE(EVALUATORS_CV) {
   TEST(SECONDARY_CV_JOINT_DEPENDENCIES_REVERSED_DEPENDENCY_WITHOUT_FLAG_THROWS) {
     // Test the reversed structure case, where a parent takes its structure from a child
     std::cout << "Secondary Variable Test" << std::endl;
-    auto comm = new Teuchos::MpiComm<int>(MPI_COMM_WORLD);
+    auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     MeshFactory meshfac(comm);
     auto mesh = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 

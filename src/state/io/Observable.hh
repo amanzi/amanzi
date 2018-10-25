@@ -13,7 +13,7 @@ Observable data object
 #ifndef AMANZI_OBSERVABLE_HH_
 #define AMANZI_OBSERVABLE_HH_
 
-#include "AmanziTypes.hh"
+#include "Epetra_MpiComm.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 
@@ -32,7 +32,7 @@ double ObservableMax(double a, double b);
 class Observable : public IOEvent {
 
 public:
-  Observable(Teuchos::ParameterList &plist, Comm_ptr_type comm);
+  Observable(Teuchos::ParameterList &plist, Epetra_MpiComm *comm);
 
   std::string name() { return name_; }
   std::string variable() { return variable_; }

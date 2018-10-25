@@ -37,6 +37,7 @@
 #include "MFD3D_Diffusion.hh"
 #include "Mesh.hh"
 #include "NumericalIntegration.hh"
+#include "Teuchos_CommHelpers.hpp"
 
 class AnalyticBase {
  public:
@@ -112,11 +113,12 @@ void AnalyticBase::ComputeCellError(
   }
 #ifdef HAVE_MPI
   double tmp = pnorm;
-  mesh_->get_comm()->SumAll(&tmp, &pnorm, 1);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_SUM, tmp, Teuchos::outArg(pnorm));
   tmp = l2_err;
-  mesh_->get_comm()->SumAll(&tmp, &l2_err, 1);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_SUM, tmp, Teuchos::outArg(l2_err));
   tmp = inf_err;
-  mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_SUM, tmp, Teuchos::outArg(inf_err));
+
 #endif
   pnorm = sqrt(pnorm);
   l2_err = sqrt(l2_err);
@@ -149,11 +151,11 @@ void AnalyticBase::ComputeFaceError(
   }
 #ifdef HAVE_MPI
   double tmp = unorm;
-  mesh_->get_comm()->SumAll(&tmp, &unorm, 1);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_SUM, tmp, Teuchos::outArg(unorm));
   tmp = l2_err;
-  mesh_->get_comm()->SumAll(&tmp, &l2_err, 1);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_SUM, tmp, Teuchos::outArg(l2_err));
   tmp = inf_err;
-  mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_SUM, tmp, Teuchos::outArg(inf_err));
 #endif
   unorm = sqrt(unorm);
   l2_err = sqrt(l2_err);
@@ -215,15 +217,15 @@ void AnalyticBase::ComputeNodeError(
   }
 #ifdef HAVE_MPI
   double tmp = pnorm;
-  mesh_->get_comm()->SumAll(&tmp, &pnorm, 1);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_SUM, tmp, Teuchos::outArg(pnorm));
   tmp = l2_err;
-  mesh_->get_comm()->SumAll(&tmp, &l2_err, 1);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_SUM, tmp, Teuchos::outArg(l2_err));
   tmp = inf_err;
-  mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_SUM, tmp, Teuchos::outArg(inf_err));
   tmp = hnorm;
-  mesh_->get_comm()->SumAll(&tmp, &hnorm, 1);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_SUM, tmp, Teuchos::outArg(hnorm));
   tmp = h1_err;
-  mesh_->get_comm()->SumAll(&tmp, &h1_err, 1);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_SUM, tmp, Teuchos::outArg(h1_err));
 #endif
   pnorm = sqrt(pnorm);
   l2_err = sqrt(l2_err);
@@ -275,11 +277,11 @@ void AnalyticBase::ComputeEdgeError(
   }
 #ifdef HAVE_MPI
   double tmp = pnorm;
-  mesh_->get_comm()->SumAll(&tmp, &pnorm, 1);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_SUM, tmp, Teuchos::outArg(pnorm));
   tmp = l2_err;
-  mesh_->get_comm()->SumAll(&tmp, &l2_err, 1);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_SUM, tmp, Teuchos::outArg(l2_err));
   tmp = inf_err;
-  mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_SUM, tmp, Teuchos::outArg(inf_err));
 #endif
   pnorm = sqrt(pnorm);
   l2_err = sqrt(l2_err);
@@ -338,11 +340,11 @@ void AnalyticBase::ComputeEdgeMomentsError(
   }
 #ifdef HAVE_MPI
   double tmp = pnorm;
-  mesh_->get_comm()->SumAll(&tmp, &pnorm, 1);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_SUM, tmp, Teuchos::outArg(pnorm));
   tmp = l2_err;
-  mesh_->get_comm()->SumAll(&tmp, &l2_err, 1);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_SUM, tmp, Teuchos::outArg(l2_err));
   tmp = inf_err;
-  mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_SUM, tmp, Teuchos::outArg(inf_err));
 #endif
   pnorm = sqrt(pnorm);
   l2_err = sqrt(l2_err);

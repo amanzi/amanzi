@@ -45,16 +45,16 @@ typedef Tpetra::Vector<int> IntVector_type;
 typedef Teuchos::RCP<const IntVector_type> IntVector_ptr_type;
 
 typedef Tpetra::MultiVector<> MultiVector_type;
-typedef Teuchos::RCP<const MultiVector_type> MultiVector_ptr_type;
+typedef Teuchos::RCP<MultiVector_type> MultiVector_ptr_type;
 
 typedef Tpetra::MultiVector<int> IntMultiVector_type;
-typedef Teuchos::RCP<const IntMultiVector_type> IntMultiVector_ptr_type;
+typedef Teuchos::RCP<IntMultiVector_type> IntMultiVector_ptr_type;
 
 typedef Tpetra::CrsGraph<> CrsGraph_type;
-typedef Teuchos::RCP<const CrsGraph_type> CrsGraph_ptr_type;
+typedef Teuchos::RCP<CrsGraph_type> CrsGraph_ptr_type;
 
 typedef Tpetra::CrsMatrix<> CrsMatrix_type;
-typedef Teuchos::RCP<const CrsMatrix_type> CrsMatrix_ptr_type;
+typedef Teuchos::RCP<CrsMatrix_type> CrsMatrix_ptr_type;
 
 } // namespace Amanzi
 

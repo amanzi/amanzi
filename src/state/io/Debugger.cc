@@ -42,9 +42,9 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
         vo_plist.sublist("verbose object");
         vo_plist.sublist("verbose object") = plist.sublist("verbose object");
         vo_plist.sublist("verbose object")
-            .set("write on rank", mesh->Comm()->getRank());
+            .set("write on rank", mesh->get_comm()->MyPID());
         dcvo_.push_back(Teuchos::rcp(
-            new VerboseObject(*mesh_->Comm(), name, vo_plist)));
+            new VerboseObject(*mesh_->get_comm(), name, vo_plist)));
       }
     }
   }
@@ -71,9 +71,9 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
           vo_plist.sublist("verbose object");
           vo_plist.sublist("verbose object") = plist.sublist("verbose object");
           vo_plist.sublist("verbose object")
-              .set("write on rank", mesh->Comm()->getRank());
+              .set("write on rank", mesh->get_comm()->MyPID());
           dcvo_.push_back(Teuchos::rcp(
-              new VerboseObject(*mesh_->Comm(), name, vo_plist)));
+              new VerboseObject(*mesh_->get_comm(), name, vo_plist)));
         }
       }
     }
@@ -298,7 +298,7 @@ void Debugger::WriteBoundaryConditions(const std::vector<int> &flag,
 }
 
 // call MPI_Comm_Barrier to sync between writing steps
-void Debugger::Barrier() { mesh_->Comm()->Barrier(); }
+void Debugger::Barrier() { mesh_->get_comm()->Barrier(); }
 
 // write a line of ----
 void Debugger::WriteDivider() {

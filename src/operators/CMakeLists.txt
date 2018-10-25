@@ -47,18 +47,18 @@ add_definitions("-DMSTK_HAVE_MPI")
 #
 # Library: operator audit
 #
-add_amanzi_library(operators_audit 
-                   SOURCE OperatorAudit.cc 
-		   LINK_LIBS whetstone ${Epetra_LIBRARIES})
+# add_amanzi_library(operators_audit 
+#                    SOURCE OperatorAudit.cc 
+# 		   LINK_LIBS whetstone ${Epetra_LIBRARIES})
 
 #
 # Library: operators
 #
 set(operators_inc_files
     BCs.hh
-    Mini_Diffusion1D.hh
-    Mini_Operator1D.hh
-    RemapUtils.hh
+#    Mini_Diffusion1D.hh
+#    Mini_Operator1D.hh
+#    RemapUtils.hh
     OperatorDefs.hh
     OperatorUtils.hh
     Op.hh
@@ -76,18 +76,18 @@ set(operators_inc_files
     Operator_FaceCell.hh
 #    Operator_FaceCellScc.hh
 #    Operator_FaceCellSff.hh
-    Operator_ConsistentFace.hh
+#    Operator_ConsistentFace.hh
     Operator_Node.hh
     Operator_Edge.hh
     Operator_Factory.hh
  #   BoundaryFlux.hh
     PDE_Abstract.hh
     PDE_Accumulation.hh
-    PDE_Advection.hh
-    PDE_AdvectionUpwind.hh
+#    PDE_Advection.hh
+#    PDE_AdvectionUpwind.hh
 #    PDE_AdvectionRiemann.hh
     PDE_Diffusion.hh
-    PDE_DiffusionWithGravity.hh
+#    PDE_DiffusionWithGravity.hh
 #    PDE_DiffusionFactory.hh
 #    PDE_DiffusionMFD.hh
 #    PDE_DiffusionMFDwithGravity.hh

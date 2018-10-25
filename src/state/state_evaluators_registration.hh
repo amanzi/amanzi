@@ -32,39 +32,11 @@ Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFunction>
     EvaluatorIndependentFunction::fac_("independent variable");
 
 } // namespace Amanzi
-#include "evaluator/EvaluatorIndependentTensorFunction.hh"
-namespace Amanzi {
-
-Utils::RegisteredFactory<Evaluator, EvaluatorIndependentTensorFunction>
-    EvaluatorIndependentTensorFunction::fac_("tensor independent variable");
-
-} // namespace Amanzi
 #include "evaluator/EvaluatorIndependentFromFile.hh"
 namespace Amanzi {
 
 Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFromFile>
     EvaluatorIndependentFromFile::fac_("independent variable from file");
-
-} // namespace Amanzi
-#include "evaluator/Evaluator_OperatorApply.hh"
-namespace Amanzi {
-
-Utils::RegisteredFactory<Evaluator, Evaluator_OperatorApply>
-    Evaluator_OperatorApply::fac_("operator application");
-
-} // namespace Amanzi
-#include "evaluator/Evaluator_BCs.hh"
-namespace Amanzi {
-
-Utils::RegisteredFactory<Evaluator, Evaluator_BCs>
-    Evaluator_BCs::fac_("general boundary conditions");
-
-} // namespace Amanzi
-#include "evaluator/Evaluator_BoundaryFunction.hh"
-namespace Amanzi {
-
-Utils::RegisteredFactory<Evaluator, Evaluator_BoundaryFunction>
-    Evaluator_BoundaryFunction::fac_("boundary function");
 
 } // namespace Amanzi
 #include "evaluator/EvaluatorSecondaryMonotypeAdditive.hh"

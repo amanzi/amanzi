@@ -55,8 +55,8 @@ class HeatConduction {
 
     // add boundary face component
     Epetra_MultiVector& vbf = *values_->ViewComponent("dirichlet_faces", true);
-    const Epetra_Map& ext_face_map = mesh_->exterior_face_map(true);
-    const Epetra_Map& face_map = mesh_->face_map(true);
+    Map_ptr_type ext_face_map = mesh_->exterior_face_map(true);
+    Map_ptr_type face_map = mesh_->face_map(true);
     for (int f=0; f!=face_map.NumMyElements(); ++f) {
       if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
         AmanziMesh::Entity_ID_List cells;

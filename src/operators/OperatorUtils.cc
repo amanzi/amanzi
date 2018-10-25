@@ -224,14 +224,14 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schem
 {
   std::vector<std::string> compnames;
   std::vector<int> dofnums;
-  std::vector<Teuchos::RCP<const Epetra_Map> > maps;
-  std::vector<Teuchos::RCP<const Epetra_Map> > ghost_maps;
+  std::vector<Map_ptr_type> maps;
+  std::vector<Map_ptr_type> ghost_maps;
 
   if (schema & OPERATOR_SCHEMA_DOFS_FACE) {
     AMANZI_ASSERT(cvs.HasComponent("face"));
     compnames.push_back("face");
     dofnums.push_back(n_dofs);
-    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
+    std::pair<Map_ptr_type, Map_ptr_type> meshmaps =
         getMaps(*cvs.Mesh(), AmanziMesh::FACE);
     maps.push_back(meshmaps.first);
     ghost_maps.push_back(meshmaps.second);
@@ -241,7 +241,7 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schem
     AMANZI_ASSERT(cvs.HasComponent("cell"));
     compnames.push_back("cell");
     dofnums.push_back(n_dofs);
-    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
+    std::pair<Map_ptr_type, Map_ptr_type> meshmaps =
         getMaps(*cvs.Mesh(), AmanziMesh::CELL);
     maps.push_back(meshmaps.first);
     ghost_maps.push_back(meshmaps.second);
@@ -251,7 +251,7 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schem
     AMANZI_ASSERT(cvs.HasComponent("edge"));
     compnames.push_back("edge");
     dofnums.push_back(n_dofs);
-    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
+    std::pair<Map_ptr_type, Map_ptr_type> meshmaps =
         getMaps(*cvs.Mesh(), AmanziMesh::EDGE);
     maps.push_back(meshmaps.first);
     ghost_maps.push_back(meshmaps.second);
@@ -261,7 +261,7 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schem
     AMANZI_ASSERT(cvs.HasComponent("node"));
     compnames.push_back("node");
     dofnums.push_back(n_dofs);
-    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
+    std::pair<Map_ptr_type, Map_ptr_type> meshmaps =
         getMaps(*cvs.Mesh(), AmanziMesh::NODE);
     maps.push_back(meshmaps.first);
     ghost_maps.push_back(meshmaps.second);
@@ -278,13 +278,13 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, Schema& s
 {
   std::vector<std::string> compnames;
   std::vector<int> dofnums;
-  std::vector<Teuchos::RCP<const Epetra_Map> > maps;
-  std::vector<Teuchos::RCP<const Epetra_Map> > ghost_maps;
+  std::vector<Map_ptr_type> maps;
+  std::vector<Map_ptr_type> ghost_maps;
 
   for (auto it = schema.begin(); it != schema.end(); ++it) {
     compnames.push_back(schema.KindToString(it->kind));
     dofnums.push_back(it->num);
-    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
+    std::pair<Map_ptr_type, Map_ptr_type> meshmaps =
         getMaps(*cvs.Mesh(), it->kind);
     maps.push_back(meshmaps.first);
     ghost_maps.push_back(meshmaps.second);

@@ -12,7 +12,7 @@ NOTE: Should make this class RAII
 #ifndef AMANZI_STATE_CHECKPOINT_HH_
 #define AMANZI_STATE_CHECKPOINT_HH_
 
-#include "AmanziTypes.hh"
+#include "Epetra_Comm.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
@@ -25,10 +25,10 @@ class Checkpoint : public IOEvent {
 
 public:
   // standard output constructor
-  Checkpoint(Teuchos::ParameterList &plist, Comm_ptr_type comm);
+  Checkpoint(Teuchos::ParameterList &plist, const Epetra_MpiComm &comm);
 
   // standard input constructor
-  Checkpoint(const std::string &filename, Comm_ptr_type comm);
+  Checkpoint(const std::string &filename, const Epetra_MpiComm &comm);
 
   // this object will not create any output
   Checkpoint();
@@ -55,7 +55,7 @@ protected:
   bool final_;
 
   // the Epetra communicator
-  Comm_ptr_type comm_;
+  const Epetra_MpiComm comm_;
   Teuchos::RCP<Amanzi::HDF5_MPI> checkpoint_output_;
 };
 

@@ -46,15 +46,15 @@ add_definitions("-DMSTK_HAVE_MPI")
 #file(GLOB data_structures_src_files "*.cc")
 set(data_structures_src_files BlockVector.cc
                               CompositeVectorSpace.cc
-                              CompositeVector.cc
-                              NoxVector.cc
-                              TreeVectorSpace.cc
-                              TreeVector.cc
-                              ParallelCommunication.cc
-                              GraphFE.cc
-                              MatrixFE.cc
-                              SuperMap.cc
-                              SuperMapSurface.cc)
+                              CompositeVector.cc)
+                              #NoxVector.cc
+                              #TreeVectorSpace.cc
+                              #TreeVector.cc
+                              #ParallelCommunication.cc
+                              #GraphFE.cc
+                              #MatrixFE.cc
+                              #SuperMap.cc
+                              #SuperMapSurface.cc)
 
 file(GLOB data_structures_inc_files "*.hh")
 
@@ -69,68 +69,68 @@ add_amanzi_library(data_structures
 # Install Target
 #
 
-if (BUILD_TESTS)
-    # Add UnitTest includes
-    include_directories(${UnitTest_INCLUDE_DIRS})
+# if (BUILD_TESTS)
+#     # Add UnitTest includes
+#     include_directories(${UnitTest_INCLUDE_DIRS})
 
-    # Add Data_structures include directory.
-    include_directories(${DATA_STRUCTURES_SOURCE_DIR})
+#     # Add Data_structures include directory.
+#     include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 
-    include_directories(${MESH_SOURCE_DIR})
-    include_directories(${MESH_SIMPLE_SOURCE_DIR})
-    include_directories(${MESH_FACTORY_SOURCE_DIR})
-    include_directories(${MSTK_SOURCE_DIR})
+#     include_directories(${MESH_SOURCE_DIR})
+#     include_directories(${MESH_SIMPLE_SOURCE_DIR})
+#     include_directories(${MESH_FACTORY_SOURCE_DIR})
+#     include_directories(${MSTK_SOURCE_DIR})
 
-    # Copy test subdirectory for out of source builds
-    if (NOT (DATA_STRUCTURES_SOURCE_DIR STREQUAL DATA_STRUCTURES_BINARY_DIR))
-        file(GLOB DataFiles "${DATA_STRUCTURES_SOURCE_DIR}/test/*.xml"
-                            "${DATA_STRUCTURES_SOURCE_DIR}/test/*.exo")
-        file(COPY ${DataFiles} DESTINATION ${DATA_STRUCTURES_BINARY_DIR}/test/)
-    endif()
+#     # Copy test subdirectory for out of source builds
+#     if (NOT (DATA_STRUCTURES_SOURCE_DIR STREQUAL DATA_STRUCTURES_BINARY_DIR))
+#         file(GLOB DataFiles "${DATA_STRUCTURES_SOURCE_DIR}/test/*.xml"
+#                             "${DATA_STRUCTURES_SOURCE_DIR}/test/*.exo")
+#         file(COPY ${DataFiles} DESTINATION ${DATA_STRUCTURES_BINARY_DIR}/test/)
+#     endif()
 
-    set(amanzi_libs data_structures geometry mstk_mesh mesh_factory mesh)
+#     set(amanzi_libs data_structures geometry mstk_mesh mesh_factory mesh)
 
-    add_amanzi_test(data_structures test_data_structures 
-                    KIND unit
-                    NPROCS 2
-		    SOURCE test/Main.cc 
-			   test/test_composite_vector.cc
-			   test/test_tree_vector.cc
-                           test/test_vandelay.cc
-                           # test/test_thyra_wrappers.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
+#     add_amanzi_test(data_structures test_data_structures 
+#                     KIND unit
+#                     NPROCS 2
+# 		    SOURCE test/Main.cc 
+# 			   test/test_composite_vector.cc
+# 			   test/test_tree_vector.cc
+#                            test/test_vandelay.cc
+#                            # test/test_thyra_wrappers.cc
+#                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
 
-    # Test: tests for FE graph and matrices
-    add_amanzi_test(graph_fe_test graph_fe_test
-                    KIND unit
-                    SOURCE test/Main.cc test/graph_fe_test.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
+#     # Test: tests for FE graph and matrices
+#     add_amanzi_test(graph_fe_test graph_fe_test
+#                     KIND unit
+#                     SOURCE test/Main.cc test/graph_fe_test.cc
+#                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
 
-    add_amanzi_test(matrix_fe_test matrix_fe_test
-                    KIND unit
-                    SOURCE test/Main.cc test/matrix_fe_test.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
+#     add_amanzi_test(matrix_fe_test matrix_fe_test
+#                     KIND unit
+#                     SOURCE test/Main.cc test/matrix_fe_test.cc
+#                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
 
-    add_amanzi_test(matrix_fe_test_np2 matrix_fe_test NPROCS 2 KIND unit)
-    add_amanzi_test(matrix_fe_test_np4 matrix_fe_test NPROCS 4 KIND unit)
+#     add_amanzi_test(matrix_fe_test_np2 matrix_fe_test NPROCS 2 KIND unit)
+#     add_amanzi_test(matrix_fe_test_np4 matrix_fe_test NPROCS 4 KIND unit)
 
-    add_amanzi_test(supermap_test supermap_test
-                    KIND unit
-                    SOURCE test/Main.cc test/supermap_test.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
-    add_amanzi_test(supermap_test_np3 supermap_test NPROCS 3 KIND unit)
-    add_amanzi_test(supermap_test_np5 supermap_test NPROCS 5 KIND unit)
+#     add_amanzi_test(supermap_test supermap_test
+#                     KIND unit
+#                     SOURCE test/Main.cc test/supermap_test.cc
+#                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
+#     add_amanzi_test(supermap_test_np3 supermap_test NPROCS 3 KIND unit)
+#     add_amanzi_test(supermap_test_np5 supermap_test NPROCS 5 KIND unit)
 
-    # add_amanzi_test(matrix_fe_test_speed matrix_fe_test_speed
-    #                 KIND unit
-    # 	              SOURCE test/Main.cc test/matrix_fe_test_speed.cc
-    # 	              LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+#     # add_amanzi_test(matrix_fe_test_speed matrix_fe_test_speed
+#     #                 KIND unit
+#     # 	              SOURCE test/Main.cc test/matrix_fe_test_speed.cc
+#     # 	              LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    # add_amanzi_test(test_access test_access_times
-    #                 KIND int
-    #		      SOURCE test/Main.cc test/test_cv_access.cc
-    #		      LINK_LIBS data_structures mesh
-    #	                        geometry mesh_factory
-    #                           simple_mesh
-    #	                        ${UnitTest_LIBRARIES})
-endif()
+#     # add_amanzi_test(test_access test_access_times
+#     #                 KIND int
+#     #		      SOURCE test/Main.cc test/test_cv_access.cc
+#     #		      LINK_LIBS data_structures mesh
+#     #	                        geometry mesh_factory
+#     #                           simple_mesh
+#     #	                        ${UnitTest_LIBRARIES})
+# endif()

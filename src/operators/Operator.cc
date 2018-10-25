@@ -17,7 +17,7 @@
 #include "Epetra_CrsGraph.h"
 #include "Epetra_Export.h"
 #include "Epetra_FECrsGraph.h"
-#include "Epetra_Map.h"
+#include "Tpetra_Map.hpp"
 #include "Epetra_Vector.h"
 
 // Amanzi
