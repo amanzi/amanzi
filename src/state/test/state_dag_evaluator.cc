@@ -80,7 +80,7 @@ public:
     auto fe_c = S.Get<CompositeVector>("fe").ViewComponent("cell",false);
     auto fh_c = S.Get<CompositeVector>("fh").ViewComponent("cell",false);
     
-    AModel<AmanziDafaultDevice> model(result_c, fb_c, fc_c,fe_c,fh_c, plist_);
+    AModel<AmanziDefaultDevice> model(result_c, fb_c, fc_c,fe_c,fh_c, plist_);
     
     ExecuteModel("A",model,0,result_c.extent(0));
     ExecuteModel("A",model::dAdB,0,result_c.extent(0));

@@ -112,7 +112,7 @@ public:
   // Access a view of a single component's data.
   //
   // Const access -- this does not tag as changed.
-  template<class DeviceType>
+  template<class DeviceType=Kokkos::HostSpace>
   InputMultiVector_type<DeviceType>
   ViewComponent(const std::string& name, bool ghosted=false) const {
     return VectorHarness::getMultiVector(VectorHarness::readOnly(GetComponent_(name,ghosted)));
@@ -139,7 +139,7 @@ public:
   // Access a view of a single component's data.
   //
   // Non-const access -- tags changed.
-  template<class DeviceType>
+  template<class DeviceType=Kokkos::HostSpace>
   OutputMultiVector_type<DeviceType>
   ViewComponent(const std::string& name, bool ghosted=false) {
     return VectorHarness::getMultiVector(VectorHarness::readWrite(GetComponent_(name,ghosted)));

@@ -39,13 +39,13 @@ public:
 
   // DO NOT OVERRIDE -- instead, use the virtual, protected version.
   void Update(const State &S,
-              Amanzi::ObservationData::DataTriple &data_triplet);
+              Amanzi::ObservationData::DataQuadruple &data_triplet);
 
   void Flush();
 
 protected:
   virtual void Update_(const State &S,
-                       Amanzi::ObservationData::DataTriple &data_triplet);
+                       Amanzi::ObservationData::DataQuadruple &data_triplet);
 
   virtual void WriteHeader_();
 

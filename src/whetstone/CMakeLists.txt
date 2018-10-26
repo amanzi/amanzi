@@ -86,7 +86,6 @@ add_amanzi_library(whetstone
                            Tensor.hh
                            WhetStoneDefs.hh
                            WhetStoneFunction.hh WhetStoneMeshUtils.hh)
-#                   LINK_LIBS geometry mesh error_handling ${Epetra_LIBRARIES})
 
 
 # if (BUILD_TESTS)

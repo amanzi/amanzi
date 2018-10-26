@@ -104,7 +104,7 @@ private:
 
 // thing factory base class implementation
 template <typename T, typename F> bool DataFactory_Intf::ValidType() const {
-  auto p = dynamic_cast<DataFactory_Impl<T, F> *>(this);
+  auto p = dynamic_cast<const DataFactory_Impl<T, F> *>(this);
   if (!p) {
     return false;
   } else {
@@ -113,7 +113,7 @@ template <typename T, typename F> bool DataFactory_Intf::ValidType() const {
 }
 
 template <typename T, typename F> const F &DataFactory_Intf::Get() const {
-  auto p = dynamic_cast<DataFactory_Impl<T, F> *>(this);
+  auto p = dynamic_cast<const DataFactory_Impl<T, F> *>(this);
   if (!p) {
     Errors::Message msg;
     msg << "factory requested via incorrect type: \"" << typeid(T).name()

@@ -25,39 +25,3 @@ Utils::RegisteredFactory<
         "primary variable");
 
 } // namespace Amanzi
-#include "evaluator/EvaluatorIndependentFunction.hh"
-namespace Amanzi {
-
-Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFunction>
-    EvaluatorIndependentFunction::fac_("independent variable");
-
-} // namespace Amanzi
-#include "evaluator/EvaluatorIndependentFromFile.hh"
-namespace Amanzi {
-
-Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFromFile>
-    EvaluatorIndependentFromFile::fac_("independent variable from file");
-
-} // namespace Amanzi
-#include "evaluator/EvaluatorSecondaryMonotypeAdditive.hh"
-namespace Amanzi {
-
-template<>
-Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryMonotypeAdditive<CompositeVector,CompositeVectorSpace>>
-EvaluatorSecondaryMonotypeAdditive<CompositeVector,CompositeVectorSpace>::fac_("additive");
-
-} // namespace Amanzi
-#include "evaluator/EvaluatorSecondaryMonotypeMultiplicative.hh"
-namespace Amanzi {
-
-template<>
-Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryMonotypeMultiplicative<CompositeVector,CompositeVectorSpace>>
- EvaluatorSecondaryMonotypeMultiplicative<CompositeVector,CompositeVectorSpace>::fac_("multiplicative");
-
-} // namespace Amanzi
-#include "evaluator/EvaluatorCellVolume.hh"
-namespace Amanzi {
-
-Utils::RegisteredFactory<Evaluator, EvaluatorCellVolume> EvaluatorCellVolume::fac_("cell volume");
-
-} // namespace Amanzi

@@ -19,12 +19,13 @@
 #include <vector>
 
 #include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
 #include "Teuchos_ParameterList.hpp"
 
 #include "Mesh.hh"
 
 #include "IOEvent.hh"
-#include "Output.hh"
+//#include "Output.hh"
 
 namespace Amanzi {
 
@@ -57,7 +58,7 @@ protected:
 
   std::string name_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  Teuchos::RCP<Output> visualization_output_;
+  //  Teuchos::RCP<Output> visualization_output_;
 
   std::map<std::string, Teuchos::Array<std::string>> regions_;
   bool write_partition_;
@@ -68,19 +69,19 @@ protected:
 template <>
 inline void Visualization::Write<Epetra_Vector>(const std::string &name,
                                                 const Epetra_Vector &t) const {
-  visualization_output_->WriteVector(t, name);
+  //visualization_output_->WriteVector(t, name);
 }
 
 template <>
 inline void Visualization::Write<double>(const std::string &name,
                                          const double &t) const {
-  visualization_output_->WriteAttribute(t, name);
+  //visualization_output_->WriteAttribute(t, name);
 }
 
 template <>
 inline void Visualization::Write<int>(const std::string &name,
                                       const int &t) const {
-  visualization_output_->WriteAttribute(t, name);
+  //visualization_output_->WriteAttribute(t, name);
 }
 
 } // namespace Amanzi

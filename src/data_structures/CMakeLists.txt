@@ -60,10 +60,8 @@ file(GLOB data_structures_inc_files "*.hh")
 
 add_amanzi_library(data_structures 
                    SOURCE ${data_structures_src_files}
-                   HEADERS ${data_structures_inc_files}
-		   LINK_LIBS mesh error_handling 
-                             ${Teuchos_Libraries} ${Epetra_Libraries}
-                             ${Thyra_Libraries} ${NOX_LIBRARIES})
+                   HEADERS ${data_structures_inc_files})
+
 
 #
 # Install Target

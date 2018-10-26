@@ -57,8 +57,7 @@ add_amanzi_library(atk
                            ObservationData.hh
                            Spline.hh
                            SplinedCurve.hh
-                           Key.hh
-                    LINK_LIBS error_handling ${Teuchos_LIBRARIES})
+                           Key.hh)
 
 if (APPLE AND BUILD_SHARED_LIBS)
   set_target_properties(atk PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
