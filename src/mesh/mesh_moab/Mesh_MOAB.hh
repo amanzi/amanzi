@@ -273,6 +273,14 @@ class Mesh_MOAB : public Mesh {
   void write_to_exodus_file(const std::string filename) const;
 
  private:
+  void ErrorCheck_(int result, std::string msg) const {
+    if (result != moab::MB_SUCCESS) {
+      std::cerr << msg << std::endl;
+      assert(false);
+     }
+   }
+
+ private:
   moab::Core *mbcore;
   moab::ParallelComm *mbcomm_;
 

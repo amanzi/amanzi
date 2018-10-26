@@ -77,32 +77,5 @@ TEST(MOAB_HEX1)
     CHECK_EQUAL(cellnodes[j],nodes[j]);
     CHECK_ARRAY_EQUAL(xyz[cellnodes[j]],&(ccoords[j][0]),3);
   }
-
-  // Verify the sidesets
-  // std::vector<unsigned int> setids(7);
-  // unsigned int expsetids[7]={1,101,102,103,104,105,106};
-  // mesh.get_set_ids(Amanzi::AmanziMesh::FACE,&setids);
-  
-  // CHECK_ARRAY_EQUAL(expsetids,setids,7);
-
-  // unsigned int setsize, expsetsizes[7] = {6,1,1,1,1,1,1};
-  // unsigned int expsetfaces[7][6] = {{0,1,2,3,4,5},
-  //       			    {0,0,0,0,0,0},
-  //       			    {1,0,0,0,0,0},
-  //       			    {2,0,0,0,0,0},
-  //       			    {3,0,0,0,0,0},
-  //       			    {4,0,0,0,0,0},
-  //       			    {5,0,0,0,0,0}};
-
-  // for (i = 0; i < ns; i++) {
-  //   unsigned int setfaces[6];
-
-  //   setsize = mesh.get_set_size(setids[i],Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::OWNED);
-  //   CHECK_EQUAL(expsetsizes[i],setsize);
-
-  //   mesh.get_set(setids[i],Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED, setfaces, setfaces+setsize);
-    
-  //   CHECK_ARRAY_EQUAL(expsetfaces[i],setfaces,setsize);
-  // }
 }
 

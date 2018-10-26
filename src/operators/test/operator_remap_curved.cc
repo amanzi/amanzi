@@ -146,15 +146,12 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   }
 
   // create initial mesh
-  MeshFactory meshfactory(&comm);
-  meshfactory.set_partitioner(AmanziMesh::Partitioner_type::ZOLTAN_RCB);
-  meshfactory.preference(FrameworkPreference({AmanziMesh::MSTK}));
+  const auto& partitioner = AmanziMesh::Partitioner_type::ZOLTAN_RCB;
+  Teuchos::RCP<MeshCurved> mesh0, mesh1;
 
-  Teuchos::RCP<const Mesh> mesh0;
-  Teuchos::RCP<MeshCurved> mesh1;
   if (dim == 2 && ny != 0) {
-    mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-    mesh1 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, &comm, AmanziMesh::Partitioner_type::ZOLTAN_RCB));
+    mesh0 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, &comm, partitioner));
+    mesh1 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, &comm, partitioner));
   }
 
   int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -177,35 +174,35 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   AnalyticDG04 ana(mesh0, order, true);
   ana.InitialGuess(dg, p1c, 1.0);
 
-  // create remap object
-  MyRemapDG remap(mesh0, mesh1, plist);
-  remap.DeformMesh(deform);
-
-  if (order == 2) {
-    auto ho_nodes = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nfaces_wghost);
-    for (int f = 0; f < nfaces_wghost; ++f) {
-      const AmanziGeometry::Point& xf = mesh0->face_centroid(f);
-      (*ho_nodes)[f].push_back(remap.DeformationFunctional(deform, xf));
-    }
-    mesh1->set_face_ho_nodes(ho_nodes);
-  }
-
-  remap.Init();
-
   // initial mass
   double mass0(0.0);
   WhetStone::NumericalIntegration numi(mesh0);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::DenseVector data(nk);
-    for (int i = 0; i < nk; ++i) {
-      data(i) = p1c[i][c];
-    }
+    for (int i = 0; i < nk; ++i) data(i) = p1c[i][c];
     auto poly = dg.cell_basis(c).CalculatePolynomial(mesh0, c, order, data);
     mass0 += numi.IntegratePolynomialCell(c, poly);
   }
-  double mass_tmp(mass0);
-  mesh0->get_comm()->SumAll(&mass_tmp, &mass0, 1);
+  ana.GlobalOp("sum", &mass0, 1);
+
+  // create remap object
+  MyRemapDG remap(mesh0, mesh1, plist);
+  remap.DeformMesh(deform);
+
+  if (order == 2) {
+    auto ho_nodes0 = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nfaces_wghost);
+    auto ho_nodes1 = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nfaces_wghost);
+    for (int f = 0; f < nfaces_wghost; ++f) {
+      const AmanziGeometry::Point& xf = mesh0->face_centroid(f);
+      (*ho_nodes0)[f].push_back(xf);
+      (*ho_nodes1)[f].push_back(remap.DeformationFunctional(deform, xf));
+    }
+    mesh0->set_face_ho_nodes(ho_nodes0);
+    mesh1->set_face_ho_nodes(ho_nodes1);
+  }
+
+  remap.Init();
 
   // explicit time integration
   CompositeVector p1aux(*p1);
@@ -277,18 +274,17 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
     mass1 += numi.IntegratePolynomialCell(c, poly);
   }
 
-
   // parallel collective operations
-  double err_out[4], err_in[4] = {area, area1, mass1, gcl_err};
-  mesh1->get_comm()->SumAll(err_in, err_out, 4);
-
-  double err_tmp = gcl_inf;
-  mesh1->get_comm()->MaxAll(&err_tmp, &gcl_inf, 1);
+  ana.GlobalOp("sum", &area, 1);
+  ana.GlobalOp("sum", &area1, 1);
+  ana.GlobalOp("sum", &mass1, 1);
+  ana.GlobalOp("sum", &gcl_err, 1);
+  ana.GlobalOp("max", &gcl_inf, 1);
 
   if (MyPID == 0) {
     printf("Conservation: dMass=%10.4g  dVolume=%10.6g  dVolLinear=%10.6g\n",
-           err_out[2] - mass0, 1.0 - err_out[0], 1.0 - err_out[1]);
-    printf("GCL: L1=%12.8g  Inf=%12.8g\n", err_out[3], gcl_inf);
+           mass1 - mass0, 1.0 - area, 1.0 - area1);
+    printf("GCL: L1=%12.8g  Inf=%12.8g\n", gcl_err, gcl_inf);
   }
 
   // initialize I/O
@@ -317,7 +313,7 @@ TEST(REMAP_CURVED_2D) {
   RemapTestsCurved(rk_method, maps, "",  16, 16,0, dT,    deform);
   RemapTestsCurved(rk_method, maps, "",  32, 32,0, dT/2,  deform);
   RemapTestsCurved(rk_method, maps, "",  64, 64,0, dT/4,  deform);
-  // RemapTestsCurved(rk_method, maps, "", 128,128,0, dT/8,  deform);
+  RemapTestsCurved(rk_method, maps, "", 128,128,0, dT/8,  deform);
   */
 }
 

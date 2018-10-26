@@ -13,6 +13,8 @@
 
 TEST(MOAB_HEX_3x3x3_4P)
 {
+  using namespace Amanzi;
+
   int i, j, k, err, nc, nf, nv;
   unsigned int faces[6], nodes[8];
   int facedirs[6];
@@ -28,13 +30,12 @@ TEST(MOAB_HEX_3x3x3_4P)
   int NFghost[4] = {36,49,49,68};
   int NCghost[4] = {9,12,12,15};
 
-			      
-  std::shared_ptr<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));			      
+  std::shared_ptr<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD));			      
 
   int rank, size;
 
-  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
-  MPI_Comm_size(MPI_COMM_WORLD,&size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
   CHECK_EQUAL(4,size);
 
   if (rank == 0) {
@@ -44,69 +45,83 @@ TEST(MOAB_HEX_3x3x3_4P)
 
   // Load a single hex from the hex1.exo file
 
-  Amanzi::AmanziMesh::Mesh_MOAB mesh("test/hex_3x3x3_ss_4P.h5m",comm_.get());
+  AmanziMesh::Mesh_MOAB mesh("test/hex_3x3x3_ss_4P.h5m", comm.get());
+
+  nv = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);  
+  CHECK_EQUAL(NVowned[rank], nv);
+  
+  nf = mesh.num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);  
+  CHECK_EQUAL(NFowned[rank], nf);
+  
+  nc = mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  CHECK_EQUAL(NCowned[rank], nc);
+
+  nv = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);  
+  CHECK_EQUAL(NVused[rank], nv);
+  
+  nf = mesh.num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);  
+  CHECK_EQUAL(NFused[rank], nf);
+  
+  nc = mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  CHECK_EQUAL(NCused[rank], nc);
+
+  nv = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::GHOST);  
+  CHECK_EQUAL(NVghost[rank], nv);
+  
+  nf = mesh.num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::GHOST);  
+  CHECK_EQUAL(NFghost[rank], nf);
+  
+  nc = mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::GHOST);
+  CHECK_EQUAL(NCghost[rank], nc);
 
 
-  nv = mesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::OWNED);  
-  CHECK_EQUAL(NVowned[rank],nv);
-  
-  nf = mesh.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::OWNED);  
-  CHECK_EQUAL(NFowned[rank],nf);
-  
-  nc = mesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
-  CHECK_EQUAL(NCowned[rank],nc);
-
-  nv = mesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::ALL);  
-  CHECK_EQUAL(NVused[rank],nv);
-  
-  nf = mesh.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::ALL);  
-  CHECK_EQUAL(NFused[rank],nf);
-  
-  nc = mesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::ALL);
-  CHECK_EQUAL(NCused[rank],nc);
-
-  nv = mesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::GHOST);  
-  CHECK_EQUAL(NVghost[rank],nv);
-  
-  nf = mesh.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::GHOST);  
-  CHECK_EQUAL(NFghost[rank],nf);
-  
-  nc = mesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::GHOST);
-  CHECK_EQUAL(NCghost[rank],nc);
-
-
-  Amanzi::AmanziMesh::Entity_ID_List  c2f;
+  AmanziMesh::Entity_ID_List c2f;
   std::vector<int> c2fdirs;
   Epetra_Map cell_map(mesh.cell_map(false));
   Epetra_Map face_map(mesh.face_map(true));
 
-  for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
-    {
-      CHECK_EQUAL(cell_map.GID(c),mesh.GID(c,Amanzi::AmanziMesh::CELL));
-      mesh.cell_get_faces_and_dirs( c, &c2f, &c2fdirs, true );
+  for (int c = cell_map.MinLID(); c <= cell_map.MaxLID(); c++) {
+    CHECK_EQUAL(cell_map.GID(c), mesh.GID(c, AmanziMesh::CELL));
+    mesh.cell_get_faces_and_dirs(c, &c2f, &c2fdirs, true);
 
-      for (int j=0; j<6; j++)
-	{
-	  int f = face_map.LID(mesh.GID(c2f[j],Amanzi::AmanziMesh::FACE));
-	  CHECK_EQUAL( f,c2f[j] );
-	  CHECK_EQUAL(1,abs(c2fdirs[j]));
-	}
-
+    for (int j = 0; j < 6; j++) {
+      int f = face_map.LID(mesh.GID(c2f[j], AmanziMesh::FACE));
+      CHECK_EQUAL(f, c2f[j]);
+      CHECK_EQUAL(1, abs(c2fdirs[j]));
     }
-  
+  }
 
-  // Verify cell sets
+  // verify boundary maps: owned
+  int gid, g;
+  {
+    Epetra_Map extface_map(mesh.exterior_face_map(false));
+    int nfaces(extface_map.MaxLID() + 1), nall;
+    comm->SumAll(&nfaces, &nall, 1);
+    CHECK_EQUAL(nall, 54);
 
-  //  int ns;
-  //  ns = mesh.num_sets(Amanzi::AmanziMesh::CELL);
-  //  CHECK_EQUAL(3,ns);
+    for (int f = extface_map.MinLID(); f <= extface_map.MaxLID(); ++f) {
+      gid = extface_map.GID(f);
+      g = face_map.LID(gid);
+      const AmanziGeometry::Point& xf = mesh.face_centroid(g);
 
-  //  std::vector<unsigned int> csetids(3);
-  //  unsigned int expcsetids[3] = {10000,20000,30000};
+      CHECK(std::fabs(xf[0]) < 1e-7 || std::fabs(1.0 - xf[0]) < 1e-7 ||
+            std::fabs(xf[1]) < 1e-7 || std::fabs(1.0 - xf[1]) < 1e-7 ||
+            std::fabs(xf[2]) < 1e-7 || std::fabs(1.0 - xf[2]) < 1e-7);
+    }
+  }
 
-  //  mesh.get_set_ids(Amanzi::AmanziMesh::CELL,&csetids);
+  // verify boundary maps: owned + ghost
+  {
+    Epetra_Map extface_map(mesh.exterior_face_map(true));
+    for (int f = extface_map.MinLID(); f <= extface_map.MaxLID(); ++f) {
+      gid = extface_map.GID(f);
+      g = face_map.LID(gid);
+      const AmanziGeometry::Point& xf = mesh.face_centroid(g);
 
-  //  CHECK_ARRAY_EQUAL(expcsetids,csetids,3);
-
+      CHECK(std::fabs(xf[0]) < 1e-7 || std::fabs(1.0 - xf[0]) < 1e-7 ||
+            std::fabs(xf[1]) < 1e-7 || std::fabs(1.0 - xf[1]) < 1e-7 ||
+            std::fabs(xf[2]) < 1e-7 || std::fabs(1.0 - xf[2]) < 1e-7);
+    }
+  }
 }
 

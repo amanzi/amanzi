@@ -101,6 +101,9 @@ class AnalyticDGBase {
                              double& pnorm, double& l2_err, double& inf_err,
                              double& l20_err, double& inf0_err);
 
+  // communications
+  void GlobalOp(std::string op, double* val, int n);
+
  protected:
   Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh_;
   int order_, d_;
@@ -198,17 +201,12 @@ void AnalyticDGBase::ComputeCellError(
     l2_int += numi.IntegrateFunctionsTrianglatedCell(c, funcs, 2 * order_);
   }
 #ifdef HAVE_MPI
-  double tmp_out[4], tmp_ina[4] = {pnorm, l2_err, l2_mean, l2_int};
-  mesh_->get_comm()->SumAll(tmp_ina, tmp_out, 4);
-  pnorm = tmp_out[0];
-  l2_err = tmp_out[1];
-  l2_mean = tmp_out[2];
-  l2_int = tmp_out[3];
-
-  double tmp_inb[2] = {inf_err, inf_mean};
-  mesh_->get_comm()->MaxAll(tmp_inb, tmp_out, 2);
-  inf_err = tmp_out[0];
-  inf_mean = tmp_out[1];
+  GlobalOp("sum", &pnorm, 1);
+  GlobalOp("sum", &l2_err, 1);
+  GlobalOp("sum", &l2_mean, 1);
+  GlobalOp("sum", &l2_int, 1);
+  GlobalOp("max", &inf_err, 1);
+  GlobalOp("max", &inf_mean, 1);
 #endif
   pnorm = sqrt(pnorm);
   l2_err = sqrt(l2_err);
@@ -278,20 +276,32 @@ void AnalyticDGBase::ComputeCellErrorRemap(
   }
 
 #ifdef HAVE_MPI
-  double tmp_out[3], tmp_ina[3] = {pnorm, l2_err, l20_err};
-  mesh_->get_comm()->SumAll(tmp_ina, tmp_out, 3);
-  pnorm = tmp_out[0];
-  l2_err = tmp_out[1];
-  l20_err = tmp_out[2];
-
-  double tmp_inb[2] = {inf_err, inf0_err};
-  mesh_->get_comm()->MaxAll(tmp_inb, tmp_out, 2);
-  inf_err = tmp_out[0];
-  inf0_err = tmp_out[1];
+  GlobalOp("sum", &pnorm, 1);
+  GlobalOp("sum", &l2_err, 1);
+  GlobalOp("sum", &l20_err, 1);
+  GlobalOp("max", &inf_err, 1);
 #endif
   pnorm = sqrt(pnorm);
   l2_err = sqrt(l2_err);
   l20_err = sqrt(l20_err);
+}
+
+
+/* ******************************************************************
+* Collective communications.
+****************************************************************** */
+inline
+void AnalyticDGBase::GlobalOp(std::string op, double* val, int n)
+{
+  double* val_tmp = new double[n];
+  for (int i = 0; i < n; ++i) val_tmp[i] = val[i];
+
+  if (op == "sum") 
+    mesh_->get_comm()->SumAll(val_tmp, val, n);
+  else if (op == "max") 
+    mesh_->get_comm()->MaxAll(val_tmp, val, n);
+
+  delete[] val_tmp;
 }
 
 #endif

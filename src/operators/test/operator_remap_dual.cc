@@ -199,8 +199,7 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
     auto poly = dg.cell_basis(c).CalculatePolynomial(mesh0, c, order, data);
     mass0 += numi.IntegratePolynomialCell(c, poly);
   }
-  double mass_tmp(mass0);
-  mesh0->get_comm()->SumAll(&mass_tmp, &mass0, 1);
+  ana.GlobalOp("sum", &mass0, 1);
 
   // explicit time integration
   CompositeVector p1aux(*p1);
@@ -318,16 +317,16 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   }
 
   // parallel collective operations
-  double err_out[4], err_in[4] = {area, area1, mass1, gcl_err};
-  mesh1->get_comm()->SumAll(err_in, err_out, 4);
-
-  double err_tmp = gcl_inf;
-  mesh1->get_comm()->MaxAll(&err_tmp, &gcl_inf, 1);
+  ana.GlobalOp("sum", &area, 1);
+  ana.GlobalOp("sum", &area1, 1);
+  ana.GlobalOp("sum", &mass1, 1);
+  ana.GlobalOp("sum", &gcl_err, 1);
+  ana.GlobalOp("max", &gcl_inf, 1);
 
   if (MyPID == 0) {
     printf("Conservation: dMass=%10.4g  dVol=%10.6g  dVolLinear=%10.6g\n",
-           err_out[2] - mass0, 1.0 - err_out[0], 1.0 - err_out[1]);
-    printf("GCL: L1=%12.8g  Inf=%12.8g\n", err_out[3], gcl_inf);
+           mass1 - mass0, 1.0 - area, 1.0 - area1);
+    printf("GCL: L1=%12.8g  Inf=%12.8g\n", gcl_err, gcl_inf);
   }
 
   // initialize I/O

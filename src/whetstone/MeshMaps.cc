@@ -31,8 +31,10 @@ namespace WhetStone {
 void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
 {
   AMANZI_ASSERT(d_ == 2);
-  AmanziGeometry::Point_List points;
-  mesh1_->face_get_ho_nodes(f, &points);
+  AmanziGeometry::Point_List points0, points1;
+  mesh0_->face_get_ho_nodes(f, &points0);
+  mesh1_->face_get_ho_nodes(f, &points1);
+  AMANZI_ASSERT(points0.size() == points1.size());
 
   // local coordinate system
   const AmanziGeometry::Point& normal = mesh0_->face_normal(f);
@@ -41,16 +43,29 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
 
   // polynomial is converted from local to global coordinate system
   AmanziMesh::Entity_ID_List nodes;
-  AmanziGeometry::Point y0, y1;
+  AmanziGeometry::Point x0, x1, y0, y1;
 
   const AmanziGeometry::Point& xf = mesh0_->face_centroid(f);
-  const AmanziGeometry::Point& yf = mesh1_->face_centroid(f);
+  AmanziGeometry::Point yf = mesh1_->face_centroid(f);
 
-  mesh1_->face_get_nodes(f, &nodes);
+  mesh0_->face_get_nodes(f, &nodes);
+  mesh0_->node_get_coordinates(nodes[0], &x0);
+  mesh0_->node_get_coordinates(nodes[1], &x1);
+
   mesh1_->node_get_coordinates(nodes[0], &y0);
   mesh1_->node_get_coordinates(nodes[1], &y1);
 
-  int order = points.size() + 1;
+  // velocity at points defining the polynomial
+  y0 -= x0;
+  y1 -= x1;
+  yf -= xf;
+
+  for (int i = 0; i < points1.size(); ++i) {
+    points1[i] -= points0[i];
+  }
+
+  // velocity is transformed from local to glocal coordinate systems
+  int order = points1.size() + 1;
 
   v.resize(d_);
   for (int i = 0; i < d_; ++i) {
@@ -59,14 +74,13 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
       v[i](0) = yf[i];
       v[i](1) = y1[i] - y0[i];
     } else {
-      v[i](0) = points[0][i];
+      v[i](0) = points1[0][i];
       v[i](1) = y1[i] - y0[i];
-      v[i](2) = 2 * y0[i] + 2 * y1[i] - 4 * points[0][i];
+      v[i](2) = 2 * y0[i] + 2 * y1[i] - 4 * points1[0][i];
     }
 
     v[i].InverseChangeCoordinates(xf, tau);  
     v[i].ChangeOrigin(AmanziGeometry::Point(d_));
-    v[i](i + 1) -= 1.0;
   }
 }
 

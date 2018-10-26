@@ -3722,17 +3722,15 @@ void Mesh_MSTK::init_face_map()
     
     extface_map_wo_ghosts_->RemoteIDList(nnotowned, gl_id.data(), pr_id.data(), lc_id.data());
 
-
     int n_extface_w_ghosts = extface_map_wo_ghosts_->NumMyElements();
 
-    //Add to maping only external faces (which belong to local mapping on other processors
+    // Add to maping only external faces (which belong to local mapping on other processors
     for (int k=0; k < nnotowned_bnd; k++) {
       if (pr_id[k] >= 0) {
         n_extface_w_ghosts++;
       }
     }
 
-    
     std::vector<int> global_id_ghosted(n_extface_w_ghosts);
     for (int k=0; k<n_extface; k++)  {
       global_id_ghosted[k] = extface_gids[k];  
