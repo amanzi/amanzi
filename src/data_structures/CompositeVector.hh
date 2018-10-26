@@ -38,6 +38,7 @@ DOCUMENT VANDELAY HERE! FIX ME --etc
 #include "Tpetra_MultiVector.hpp"
 
 #include "dbc.hh"
+#include "Executor.hh"
 #include "Mesh.hh"
 #include "data_structures_types.hh"
 #include "VectorHarness.hh"
@@ -47,16 +48,16 @@ DOCUMENT VANDELAY HERE! FIX ME --etc
 namespace Amanzi {
 
 template<class DeviceType>
-using OutputVector_type = Kokkos::View<double*, DeviceType>;
+using OutputVector_type = Kokkos::View<double*, Kokkos::LayoutLeft, DeviceType>; // layout depends on Tpetra fix later
 
 template<class DeviceType>
-using InputVector_type = Kokkos::View<const double*, DeviceType>;
+using InputVector_type = Kokkos::View<const double*, Kokkos::LayoutLeft, DeviceType>;
 
 template<class DeviceType>
-using OutputMultiVector_type = Kokkos::View<double**, DeviceType>;
+using OutputMultiVector_type = Kokkos::View<double**, Kokkos::LayoutLeft, DeviceType>;
 
 template<class DeviceType>
-using InputMultiVector_type = Kokkos::View<const double**, DeviceType>;
+using InputMultiVector_type = Kokkos::View<const double**, Kokkos::LayoutLeft, DeviceType>;
 
 class CompositeVector {
 
@@ -112,10 +113,11 @@ public:
   // Access a view of a single component's data.
   //
   // Const access -- this does not tag as changed.
-  template<class DeviceType=Kokkos::HostSpace>
+  template<class DeviceType=AmanziDefaultDevice>
   InputMultiVector_type<DeviceType>
   ViewComponent(const std::string& name, bool ghosted=false) const {
-    return VectorHarness::getMultiVector(VectorHarness::readOnly(GetComponent_(name,ghosted)));
+    using memory_space = typename DeviceType::memory_space;
+    return VectorHarness::getMultiVector(VectorHarness::readOnly(GetComponent_(name,ghosted)).on(memory_space()));
   }
 
   // template<class DeviceType>
@@ -139,10 +141,11 @@ public:
   // Access a view of a single component's data.
   //
   // Non-const access -- tags changed.
-  template<class DeviceType=Kokkos::HostSpace>
+  template<class DeviceType=AmanziDefaultDevice>
   OutputMultiVector_type<DeviceType>
   ViewComponent(const std::string& name, bool ghosted=false) {
-    return VectorHarness::getMultiVector(VectorHarness::readWrite(GetComponent_(name,ghosted)));
+    using memory_space = typename DeviceType::memory_space;
+    return VectorHarness::getMultiVector(VectorHarness::readWrite(GetComponent_(name,ghosted)).on(memory_space()));
   }
 
 

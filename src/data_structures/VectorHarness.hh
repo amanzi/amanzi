@@ -190,7 +190,6 @@ namespace Amanzi {
       template<class NewMemorySpace>
       LocalAccess<GlobalObjectType, NewMemorySpace, am>
       on (NewMemorySpace space) const {
-        std::cout << "  .on(" << space.name () << ")" << std::endl;
         return {this->G_, space, this->valid_};
       }
 
