@@ -4,14 +4,20 @@ Transient Flow in a 2D Confined Aquifer with a Disc Embedded in A Matrix
 Capabilities Tested
 -------------------
 
-This transient two-dimensional flow problem --- with a constant pumping rate in a heterogenous confined aquifer --- tests the Amanzi flow process kernel. Capabilities tested include:
+This transient two-dimensional flow problem --- with a constant pumping rate in a heterogenous confined aquifer --- tests the Amanzi saturated flow process kernel. 
+Capabilities tested include:
 
-  * transient flow field induced by constant pumping
-  * flow/drawdown in heterogeneous medium (confined aquifer)
-  * lateral variations in flow properties
-  * statically refined (nonuniform) mesh
+  * single-phase, two-dimensional flow
+  * transient flow
+  * saturated flow
+  * constant-rate pumping well
+  * constant-head (Dirichlet) boundary conditions
+  * heterogeneous porous medium
+  * isotropic porous medium
+  * uniform mesh
 
 For details on this test, see :ref:`about_butler_pod_2d`
+
 
 Background
 ----------
