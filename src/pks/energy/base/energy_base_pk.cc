@@ -204,8 +204,8 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
     implicit_advection_in_pc_ = !plist_->get<bool>("supress advective terms in preconditioner", false);
 
     if (implicit_advection_in_pc_) {
-      Teuchos::ParameterList advect_plist = plist_->sublist("advection preconditioner");
-      preconditioner_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(advect_plist, preconditioner_));
+      Teuchos::ParameterList advect_plist_pc = plist_->sublist("advection preconditioner");
+      preconditioner_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(advect_plist_pc, preconditioner_));
       preconditioner_adv_->SetBCs(bc_adv_, bc_adv_);
     }
   }

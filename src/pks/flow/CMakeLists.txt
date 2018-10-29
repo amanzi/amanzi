@@ -77,11 +77,6 @@ register_evaluator_with_factory(
   )
 
 
-register_evaluator_with_factory(
-  HEADERFILE overland_pressure/overland_subgrid_water_content_evaluator_reg.hh
-  LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
-  )
-
 generate_evaluators_registration_header(
   HEADERFILE flow_overland_pressure_registration.hh
   LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC

@@ -17,34 +17,26 @@ FractionalConductanceEvaluator::FractionalConductanceEvaluator(Teuchos::Paramete
 
   Key domain = Keys::getDomain(my_key_);
 
-  if (my_key_.empty())
-    my_key_ = plist_.get<std::string>("fractional conductance key", Keys::getKey(domain,"fractional_conductance"));
-
-
-  //pd_key_ = plist_.get<std::string>("height key", Keys::getKey(domain,"ponded_depth"));
-  //dependencies_.insert(pd_key_);
-  
-  vpd_key_ = plist_.get<std::string>("volumetric height key", Keys::getKey(domain,"volumetric_ponded_depth"));
+  vpd_key_ = Keys::readKey(plist_, domain, "volumetric ponded depth", "volumetric_ponded_depth");
   dependencies_.insert(vpd_key_); 
 
-  pdd_key_ = plist_.get<std::string>("ponded depression depth key", Keys::getKey(domain,"ponded_depression_depth"));
+  pdd_key_ = Keys::readKey(plist_, domain, "ponded depth minus depression depth", "ponded_depth_minus_depression_depth");
   dependencies_.insert(pdd_key_);
   
   delta_max_key_ = Keys::readKey(plist_, domain, "microtopographic relief", "microtopographic_relief");
-  //delta_max_key_ = plist_.get<std::string>("maximum ponded depth key", Keys::getKey(domain,"maximum_ponded_depth"));
   dependencies_.insert(delta_max_key_);
+
   delta_ex_key_ = plist_.get<std::string>("excluded volume key", Keys::getKey(domain,"excluded_volume"));
   dependencies_.insert(delta_ex_key_);
+
   depr_depth_key_ = plist_.get<std::string>("depression depth key", Keys::getKey(domain,"depression_depth"));
   dependencies_.insert(depr_depth_key_);
-
 }
 
 
 FractionalConductanceEvaluator::FractionalConductanceEvaluator(const FractionalConductanceEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
     pdd_key_(other.pdd_key_),
-    //pd_key_(other.pd_key_),
     vpd_key_(other.vpd_key_),
     delta_ex_key_(other.delta_ex_key_),
     delta_max_key_(other.delta_max_key_),
@@ -62,14 +54,11 @@ void FractionalConductanceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S
 
   Epetra_MultiVector& res = *result->ViewComponent("cell",false);
   
-  //const Epetra_MultiVector& depth = *S->GetFieldData(pd_key_)->ViewComponent("cell",false);
   const Epetra_MultiVector& vpd = *S->GetFieldData(vpd_key_)->ViewComponent("cell",false);
-  
   const Epetra_MultiVector& delta_max_v = *S->GetFieldData(delta_max_key_)->ViewComponent("cell", false);
   const Epetra_MultiVector& delta_ex_v = *S->GetFieldData(delta_ex_key_)->ViewComponent("cell", false);
   const Epetra_MultiVector& depr_depth_v = *S->GetFieldData(depr_depth_key_)->ViewComponent("cell", false);
   const Epetra_MultiVector& pdd_v = *S->GetFieldData(pdd_key_)->ViewComponent("cell",false);
- 
   
   int ncells = res.MyLength();
   assert(depr_depth_v[0][0] > 0.);

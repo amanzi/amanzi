@@ -205,7 +205,6 @@ protected:
   bool modify_predictor_with_consistent_faces_;
   bool symmetric_;
   bool perm_update_required_;
-  bool subgrid_model_;
   
   double p_limit_;
   double patm_limit_;

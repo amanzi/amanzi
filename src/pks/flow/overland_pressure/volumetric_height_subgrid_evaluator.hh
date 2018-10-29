@@ -37,16 +37,18 @@ class VolumetricHeightSubgridEvaluator : public SecondaryVariablesFieldEvaluator
   VolumetricHeightSubgridEvaluator(Teuchos::ParameterList& plist);
   VolumetricHeightSubgridEvaluator(const VolumetricHeightSubgridEvaluator& other) = default;
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const {
+  virtual Teuchos::RCP<FieldEvaluator> Clone() const override {
     return Teuchos::rcp(new VolumetricHeightSubgridEvaluator(*this));
   }
 
+  virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S) override;
+
  protected:
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const std::vector<Teuchos::Ptr<CompositeVector> >& results);
+          const std::vector<Teuchos::Ptr<CompositeVector> >& results) override;
 
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> >& results);
+          Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> >& results) override;
 
  protected:
 
@@ -54,6 +56,7 @@ class VolumetricHeightSubgridEvaluator : public SecondaryVariablesFieldEvaluator
   Key pd_key_, sd_key_;
   Key delta_max_key_, delta_ex_key_;
 
+  Key domain_snow_, domain_surf_;
 
   // TODO: put these functions into a model and share them across evaluators:
   //  - this one
@@ -70,6 +73,7 @@ class VolumetricHeightSubgridEvaluator : public SecondaryVariablesFieldEvaluator
         + 3 * std::pow(delta/del_max,2) * (2*del_ex - del_max) / del_max;
   }
 
+  bool compatibility_checked_;
   
  private:
   static Utils::RegisteredFactory<FieldEvaluator,VolumetricHeightSubgridEvaluator> reg_;

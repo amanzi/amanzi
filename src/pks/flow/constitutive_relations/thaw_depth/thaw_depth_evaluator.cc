@@ -83,6 +83,7 @@ bool ThawDepthEvaluator::HasFieldChanged(const Teuchos::Ptr<State>& S,
 void ThawDepthEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S){
   
   Key domain = Keys::getDomain(my_key_);
+  AMANZI_ASSERT(domain == "surface_star");
   
   int ncells = S->GetMesh("surface_star")->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   

@@ -32,7 +32,6 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "overland_conductivity_evaluator.hh"
 #include "overland_conductivity_model.hh"
 #include "overland_pressure_water_content_evaluator.hh"
-#include "overland_subgrid_water_content_evaluator.hh"
 #include "height_model.hh"
 #include "height_evaluator.hh"
 #include "overland_source_from_subsurface_flux_evaluator.hh"
@@ -290,8 +289,6 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   p_limit_ = plist_->get<double>("limit correction to pressure change [Pa]", -1.);
   patm_limit_ = plist_->get<double>("limit correction when crossing atmospheric pressure [Pa]", -1.);
   patm_hard_limit_ = plist_->get<bool>("allow no negative ponded depths", false);
-
-  subgrid_model_ =  plist_->get<bool>("subgrid model", false);
   
 };
 

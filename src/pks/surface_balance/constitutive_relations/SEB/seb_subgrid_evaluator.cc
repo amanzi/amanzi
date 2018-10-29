@@ -542,7 +542,7 @@ SubgridEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
     S->RequireField(albedo_key_, albedo_key_)->Update(domain_fac_owned);
     S->RequireField(melt_key_, melt_key_)->Update(domain_fac_owned);
     S->RequireField(evap_key_, evap_key_)->Update(domain_fac_owned);
-    S->RequireField(snow_temp_key_, snow_temp_key_)->Update(domain_fac_owned);
+    S->RequireField(snow_temp_key_, snow_temp_key_)->Update(domain_fac_owned_snow);
     S->RequireField(qE_sh_key_, qE_sh_key_)->Update(domain_fac_owned);
     S->RequireField(qE_lh_key_, qE_lh_key_)->Update(domain_fac_owned);
     S->RequireField(qE_sm_key_, qE_sm_key_)->Update(domain_fac_owned);
