@@ -16,7 +16,7 @@ Capabilities tested include:
   * isotropic porous medium
   * uniform mesh
 
-For details on this test, see :ref:`about_butler_pod_2d`
+For details on this test, see :ref:`about_butler_pod_2d`.
 
 
 Background
@@ -36,10 +36,10 @@ Flow within the circular disc (:math:`i =1`) and surrounding matrix (:math:`i =2
    = \frac{S_i}{T_i} \frac{\partial s_i}{\partial t},
 
 where 
-:math:`s_i` [L] is the drawdown in material :math:`i`,
-:math:`t` [T] is the time,
-:math:`T_i` [L\ :sup:`2`\/T] is the transmissivity of material :math:`i`, and
-:math:`S_i` [-] is the storage coefficient of material :math:`i`.
+:math:`s_i` is the drawdown [L] in material :math:`i`,
+:math:`t` is the time [T],
+:math:`T_i` is the transmissivity [L\ :sup:`2`\/T] of material :math:`i`, and
+:math:`S_i` is the storage coefficient [-] of material :math:`i`.
 
 The initial conditions are the same for the disc and the matrix:
 
@@ -49,7 +49,7 @@ The boundary condition at infinite distance is:
 
 .. math::    s_2(-\infty, \theta, t) =  0.
 
-A pumping well discharging at a constant rate :math:`Q` is assumed at location :math:`(r_{pw}, \theta_{pw})`
+A pumping well discharging at a constant rate :math:`Q` [L\ :sup:`3`\/T] is assumed at location :math:`(r_{pw}, \theta_{pw})`
 
 .. math:: \lim_{R \rightarrow 0} 2 \pi R T_2 \frac{\partial s_2(R,t)}{\partial R} = -Q,\;\; t>0,
 
@@ -62,6 +62,7 @@ where :math:`R` is the distance between the pumping and observation wells. To en
 Problem Specification
 ---------------------
 
+
 Schematic
 ~~~~~~~~~
 
@@ -71,7 +72,7 @@ The problem configuration is illustrated in the following schematic figure:
     :figclass: align-center
     :width: 600 px
 
-    **Figure 1. Schematic of the Butler and Liu pod verification problem**
+    **Schematic of the Butler and Liu pod verification problem**
 
 
 Mesh
@@ -83,7 +84,7 @@ A non-uniform mesh was used to better represent the disc in numerical simulation
     :figclass: align-center
     :width: 600 px
 
-    **Figure 2. Mesh of the Butler and Liu's pod verification problem**
+    **Mesh of the Butler and Liu's pod verification problem**
 
 
 Variables
