@@ -121,7 +121,7 @@ Variables
     * :math:`-1202 \leq y \leq 1202`
     * :math:`0 \leq z \leq 1`
 
-  * pumping well location:    :math:`(a,b) = (0,0)`
+  * pumping well location:    :math:`(a,b) = (0,0) \text{ [m]}`
   * observation well locations:
 
     * :math:`(x_{obs24},y_{obs24},z_{obs24}) = (24,0,1) \text{ [m]}`
