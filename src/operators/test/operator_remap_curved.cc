@@ -169,10 +169,10 @@ void MyRemapDG::DeformMesh(int deform, double t)
   RemapDG<AnalyticDG04>::DeformMesh(deform, t);
 
   if (order_ == 2) {
-    auto ho_nodes0 = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nfaces_wghost_);
-    auto ho_nodes1 = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nfaces_wghost_);
-
     int nfaces = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+    auto ho_nodes0 = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nfaces);
+    auto ho_nodes1 = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nfaces);
+
     for (int f = 0; f < nfaces; ++f) {
       const AmanziGeometry::Point& xf = mesh0_->face_centroid(f);
       (*ho_nodes0)[f].push_back(xf);
