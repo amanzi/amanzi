@@ -528,13 +528,7 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
 
   // create zero vector polynomial
   int dim = vf[0].size();
-  uc.resize(dim);
-  for (int i = 0; i < dim; ++i) { 
-    uc[i].resize(d_);
-    for (int j = 0; j < d_; ++j) { 
-      uc[i][j].Reshape(d_, order_ - 1, true);
-    }
-  }
+  uc.Reshape(d_, dim, d_, order_ - 1, true);
 
   std::vector<const PolynomialBase*> polys(2);
   NumericalIntegration numi(mesh_);
@@ -590,7 +584,7 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
       M.Inverse();
       M.Multiply(v4, v5, false);
 
-      uc[i][j] = basis.CalculatePolynomial(mesh_, c, order_ - 1, v5);
+      uc(i, j) = basis.CalculatePolynomial(mesh_, c, order_ - 1, v5);
     }
   }
 }

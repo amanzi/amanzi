@@ -29,6 +29,11 @@ class MeshCurved : public Mesh_MSTK {
       : Mesh_MSTK(x0, y0, x1, y1, nx, ny, comm, 
                   Teuchos::null, Teuchos::null, true, false, partitioner),
         face_ho_nodes_(NULL) {};
+
+  MeshCurved(const std::string& filename, const Epetra_MpiComm *comm, Partitioner_type partitioner)
+      : Mesh_MSTK(filename.c_str(), comm, Teuchos::null, Teuchos::null, true, false, partitioner),
+        face_ho_nodes_(NULL) {};
+
   ~MeshCurved() {};
 
   virtual 

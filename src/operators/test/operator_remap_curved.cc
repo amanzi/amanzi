@@ -41,20 +41,152 @@ class MyRemapDG : public RemapDG<AnalyticDG04> {
  public:
   MyRemapDG(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
             const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
-            Teuchos::ParameterList& plist) : RemapDG<AnalyticDG04>(mesh0, mesh1, plist) {};
+            Teuchos::ParameterList& plist, double T1)
+    : RemapDG<AnalyticDG04>(mesh0, mesh1, plist),
+      T1_(T1),
+      tini_(0.0),
+      tl2_(0.0) {};
   ~MyRemapDG() {};
 
+  // create basic structures at time zero
+  virtual void Init() override;
+  void ReInit(double tini);
+
+  // geometric tools
+  virtual void Jacobian(int c, double t, const WhetStone::MatrixPolynomial& J,
+                        WhetStone::MatrixPolynomial& Jt) override;
+  virtual void UpdateGeometricQuantities(double t) override;
+
+  // mesh deformation from time 0 to t
+  virtual void DeformMesh(int deform, double t) override;
+
+  // miscalleneous other tools
   void ChangeVariables(double t, const CompositeVector& p1, CompositeVector& p2, bool flag);
-  double L2Norm(double t, const CompositeVector& p1);
+  double L2Norm(double t, double dt, const CompositeVector& p1);
+  virtual double global_time(double t) override { return tini_ + t * T1_; }
 
   // access 
   const std::vector<WhetStone::VectorPolynomial> jac() const { return *jac_; }
   const std::shared_ptr<WhetStone::MeshMaps> maps() const { return maps_; }
+
+ private:
+  double T1_, tini_, tl2_;
+  std::vector<WhetStone::MatrixPolynomial> J0_;
+  std::vector<WhetStone::VectorPolynomial> velf_vec0_;
 };
 
 
 /* *****************************************************************
+* Initialization of remap.
+***************************************************************** */
+void MyRemapDG::Init()
+{
+  InitPrimary();
+  InitSecondary();
+
+  velf_vec0_.resize(nfaces_wghost_);
+  for (int f = 0; f < nfaces_wghost_; ++f) {
+    velf_vec0_[f].Reshape(dim_, dim_, 0, true);
+  }
+
+  J0_.resize(ncells_wghost_);
+  for (int c = 0; c < ncells_wghost_; ++c) {
+    J0_[c].Reshape(dim_, dim_, dim_, 0, true);
+    J0_[c].set_origin(mesh0_->cell_centroid(c));
+  }
+}
+
+
+/* *****************************************************************
 * TBW
+***************************************************************** */
+void MyRemapDG::ReInit(double tini)
+{
+  for (int f = 0; f < nfaces_wghost_; ++f)
+    velf_vec0_[f] += velf_vec_[f];
+
+  for (int c = 0; c < ncells_wghost_; ++c)
+    J0_[c] += J_[c];
+
+  InitPrimary();
+
+  // adjust new velocities for interval [tini, tend]
+  for (int f = 0; f < nfaces_wghost_; ++f)
+    velf_vec_[f] -= velf_vec0_[f];
+
+  InitSecondary();
+
+  tini_ = tini;
+  tl2_ = 0.0;
+}
+
+
+/* *****************************************************************
+* Calculates various geometric quantaties on intermediate meshes.
+***************************************************************** */
+void MyRemapDG::Jacobian(
+    int c, double t, const WhetStone::MatrixPolynomial& J, WhetStone::MatrixPolynomial& Jt)
+{
+  Jt = J0_[c] + t * J;
+
+  for (int i = 0; i < dim_; ++i)
+    Jt(i, i)(0) += 1.0;
+}
+
+
+/* *****************************************************************
+* Calculates various geometric quantaties on intermediate meshes.
+***************************************************************** */
+void MyRemapDG::UpdateGeometricQuantities(double t)
+{
+  // cn = j J^{-t} N dA
+  WhetStone::VectorPolynomial cn;
+
+  for (int f = 0; f < nfaces_wghost_; ++f) {
+    WhetStone::VectorPolynomial tmp = velf_vec0_[f] + t * velf_vec_[f]; 
+    maps_->NansonFormula(f, tmp, cn);
+    (*velf_)[f] = velf_vec_[f] * cn;
+  }
+
+  WhetStone::MatrixPolynomial Jt, C;
+  for (int c = 0; c < ncells_wghost_; ++c) {
+    Jacobian(c, t, J_[c], Jt);
+    maps_->Determinant(Jt, (*jac_)[c]);
+    maps_->Cofactors(Jt, C);
+    
+    // cell-based pseudo velocity -C^t u 
+    C.Multiply(uc_[c], (*velc_)[c], true);
+    (*velc_)[c] *= -1.0;
+  }
+}
+
+
+/* *****************************************************************
+* Deform mesh1
+***************************************************************** */
+void MyRemapDG::DeformMesh(int deform, double t)
+{
+  RemapDG<AnalyticDG04>::DeformMesh(deform, t);
+
+  if (order_ == 2) {
+    auto ho_nodes0 = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nfaces_wghost_);
+    auto ho_nodes1 = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nfaces_wghost_);
+
+    int nfaces = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+    for (int f = 0; f < nfaces; ++f) {
+      const AmanziGeometry::Point& xf = mesh0_->face_centroid(f);
+      (*ho_nodes0)[f].push_back(xf);
+      (*ho_nodes1)[f].push_back(DeformNode(deform, t, xf));
+    }
+    auto tmp = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(mesh0_);
+    Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(tmp)->set_face_ho_nodes(ho_nodes0);
+    Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(mesh1_)->set_face_ho_nodes(ho_nodes1);
+  }
+}
+
+
+/* *****************************************************************
+* Time integration is done in new variables
 ***************************************************************** */
 void MyRemapDG::ChangeVariables(
     double t, const CompositeVector& p1, CompositeVector& p2, bool flag)
@@ -79,13 +211,13 @@ void MyRemapDG::ChangeVariables(
 /* *****************************************************************
 * L2 norm
 ***************************************************************** */
-double MyRemapDG::L2Norm(double t, const CompositeVector& p1) {
-  if (fabs(tl2_ - t) < 1e-6) {
+double MyRemapDG::L2Norm(double t, double dt, const CompositeVector& p1) {
+  if (fabs(tl2_ - t) < dt / 2) {
     CompositeVector p2(p1);
 
     ChangeVariables(t, p1, p2, false);
     p1.Dot(p2, &l2norm_);
-    tl2_ += 0.1;
+    tl2_ += dt_output_;
   }
   return l2norm_;
 } 
@@ -100,7 +232,7 @@ double MyRemapDG::L2Norm(double t, const CompositeVector& p1) {
 void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
                       std::string map_name, std::string file_name,
                       int nx, int ny, int nz, double dt,
-                      int deform = 1) {
+                      int deform = 1, int nloop = 1, double T1 = 1.0) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -152,6 +284,9 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   if (dim == 2 && ny != 0) {
     mesh0 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, &comm, partitioner));
     mesh1 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, &comm, partitioner));
+  } else if (ny == 0) {
+    mesh0 = Teuchos::rcp(new MeshCurved(file_name, &comm, partitioner));
+    mesh1 = Teuchos::rcp(new MeshCurved(file_name, &comm, partitioner));
   }
 
   int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -187,22 +322,10 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   ana.GlobalOp("sum", &mass0, 1);
 
   // create remap object
-  MyRemapDG remap(mesh0, mesh1, plist);
-  remap.DeformMesh(deform);
-
-  if (order == 2) {
-    auto ho_nodes0 = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nfaces_wghost);
-    auto ho_nodes1 = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nfaces_wghost);
-    for (int f = 0; f < nfaces_wghost; ++f) {
-      const AmanziGeometry::Point& xf = mesh0->face_centroid(f);
-      (*ho_nodes0)[f].push_back(xf);
-      (*ho_nodes1)[f].push_back(remap.DeformationFunctional(deform, xf));
-    }
-    mesh0->set_face_ho_nodes(ho_nodes0);
-    mesh1->set_face_ho_nodes(ho_nodes1);
-  }
-
+  MyRemapDG remap(mesh0, mesh1, plist, T1);
+  remap.DeformMesh(deform, T1);
   remap.Init();
+  remap.set_dt_output((nloop > 3) ? 0.5 : 0.1);
 
   // explicit time integration
   CompositeVector p1aux(*p1);
@@ -210,16 +333,26 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
 
   remap.ChangeVariables(0.0, *p1, p1aux, true);
 
-  int nstep(0), nstep_dbg(0);
-  double t(0.0), tend(1.0);
-  while(t < tend - dt/2) {
-    remap.L2Norm(t, p1aux);
-    rk.TimeStep(t, dt, p1aux, *p1);
+  int nstep(0);
+  double t(0.0), tend(0.0);
+  for (int iloop = 0; iloop < nloop; ++iloop) {
+    tend += T1;
+    if (iloop > 0) { 
+      remap.DeformMesh(deform, tend);
+      remap.ReInit(tend - T1);
+      t = 0.0;
+    }
 
-    *p1aux.ViewComponent("cell") = *p1->ViewComponent("cell");
+    // run iterations on pseudo-time interval (0.0, 1.0)
+    while(t < 1.0 - dt/2) {
+      remap.L2Norm(t, dt, p1aux);
+      rk.TimeStep(t, dt, p1aux, *p1);
 
-    t += dt;
-    nstep++;
+      *p1aux.ViewComponent("cell") = *p1->ViewComponent("cell");
+
+      t += dt;
+      nstep++;
+    }
   }
 
   remap.ChangeVariables(1.0, *p1, p2, false);
@@ -299,21 +432,35 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
 }
 
 TEST(REMAP_CURVED_2D) {
-  double dT(0.1);
+  int nloop = 2;
+  double dT(0.1), T1(1.0 / nloop);
   auto rk_method = Amanzi::Explicit_TI::heun_euler;
   std::string maps = "VEM";
-  int deform = 5;
-  RemapTestsCurved(rk_method, maps, "", 8,8,0, dT, deform);
+  int deform = 1;
+  RemapTestsCurved(rk_method, maps, "", 8,8,0, dT, deform, nloop, T1);
 
   /*
-  double dT(0.02);
+  int nloop = 5;
+  double dT(0.01 * nloop), T1(1.0 / nloop);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
   int deform = 4;
-  RemapTestsCurved(rk_method, maps, "",  16, 16,0, dT,    deform);
-  RemapTestsCurved(rk_method, maps, "",  32, 32,0, dT/2,  deform);
-  RemapTestsCurved(rk_method, maps, "",  64, 64,0, dT/4,  deform);
-  RemapTestsCurved(rk_method, maps, "", 128,128,0, dT/8,  deform);
+  RemapTestsCurved(rk_method, maps, "",  16, 16,0, dT,   deform, nloop, T1);
+  RemapTestsCurved(rk_method, maps, "",  32, 32,0, dT/2, deform, nloop, T1);
+  RemapTestsCurved(rk_method, maps, "",  64, 64,0, dT/4, deform, nloop, T1);
+  RemapTestsCurved(rk_method, maps, "", 128,128,0, dT/8, deform, nloop, T1);
+  */
+
+  /*
+  int nloop = 5;
+  double dT(0.01 * nloop), T1(1.0 / nloop);
+  auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
+  std::string maps = "VEM";
+  int deform = 4;
+  RemapTestsCurved(rk_method, maps, "test/median15x16.exo",    16,0,0, dT,   deform, nloop, T1);
+  RemapTestsCurved(rk_method, maps, "test/median32x33.exo",    32,0,0, dT/2, deform, nloop, T1);
+  RemapTestsCurved(rk_method, maps, "test/median63x64.exo",    64,0,0, dT/4, deform, nloop, T1);
+  RemapTestsCurved(rk_method, maps, "test/median127x128.exo", 128,0,0, dT/8, deform, nloop, T1);
   */
 }
 

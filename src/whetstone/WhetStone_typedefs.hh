@@ -54,9 +54,6 @@ enum class Parallel_type {
 };
 #endif
 
-class Polynomial;
-typedef std::vector<std::vector<Polynomial> > MatrixPolynomial;
-
 }  // namespace WhetStone
 }  // namespace Amanzi
 

@@ -41,7 +41,8 @@ class MyRemapDG : public RemapDG<AnalyticDG04> {
  public:
   MyRemapDG(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
             const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
-            Teuchos::ParameterList& plist) : RemapDG<AnalyticDG04>(mesh0, mesh1, plist) {};
+            Teuchos::ParameterList& plist)
+    : RemapDG<AnalyticDG04>(mesh0, mesh1, plist), tl2_(0.0) {};
   ~MyRemapDG() {};
 
   void ChangeVariables(double t, const CompositeVector& p1, CompositeVector& p2, bool flag);
@@ -50,6 +51,9 @@ class MyRemapDG : public RemapDG<AnalyticDG04> {
   // access 
   const std::vector<WhetStone::VectorPolynomial> jac() const { return *jac_; }
   const std::shared_ptr<WhetStone::MeshMaps> maps() const { return maps_; }
+
+ private:
+  double tl2_;
 };
 
 
@@ -184,7 +188,7 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
 
   // create remap object
   MyRemapDG remap(mesh0, mesh1, plist);
-  remap.DeformMesh(deform);
+  remap.DeformMesh(deform, 1.0);
   remap.Init();
 
   // initial mass
@@ -207,7 +211,7 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
 
   remap.ChangeVariables(0.0, *p1, p1aux, true);
 
-  int nstep(0), nstep_dbg(0);
+  int nstep(0);
   double t(0.0), tend(1.0);
   while(t < tend - dt/2) {
     remap.L2Norm(t, p1aux);
