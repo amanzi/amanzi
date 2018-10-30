@@ -14,13 +14,15 @@
 
 Requires the following dependencies:
 
-* `"microtopographic relief key`" ``[string]`` **DOMAIN-maximum_ponded_depth**
+* `"microtopographic relief key`" ``[string]`` **DOMAIN-microtopographic_relief**
          The name of del_max, the max microtopography value.
 * `"excluded volume key`" ``[string]`` **DOMAIN-excluded_volume**
          The name of del_excluded, the integral of the microtopography.
 * `"ponded depth key`" ``[string]`` **DOMAIN-pressure**
          The name of the surface water ponded depth.
-* `"snow depth key`" ``[string]`` **DOMAIN-snow_depth**
+* `"snow depth key`" ``[string]`` **DOMAIN_SNOW-depth**
+         The name of the snow depth.
+* `"volumetric snow depth key`" ``[string]`` **DOMAIN_SNOW-volumetric_depth**
          The name of the snow depth.
 
 * `"snow-ground transitional depth [m]`" ``[double]`` **0.02**
@@ -63,7 +65,7 @@ AreaFractionsSubgridEvaluator::AreaFractionsSubgridEvaluator(Teuchos::ParameterL
   }
 
   // FIXME: "maximum_ponded_depth" is a terrible name, this is a geometric thing, not a dynamic thing. --etc
-  delta_max_key_ = Keys::readKey(plist_, domain_, "microtopographic relief", "maximum_ponded_depth"); 
+  delta_max_key_ = Keys::readKey(plist_, domain_, "microtopographic relief", "microtopographic_relief"); 
   dependencies_.insert(delta_max_key_);
   
   delta_ex_key_ = Keys::readKey(plist_, domain_, "excluded volume", "excluded_volume");

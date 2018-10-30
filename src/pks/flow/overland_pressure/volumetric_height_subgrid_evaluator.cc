@@ -100,6 +100,11 @@ VolumetricHeightSubgridEvaluator::EvaluateFieldPartialDerivative_(const Teuchos:
       vpd[0][c] = f_prime_(pd[0][c], del_max[0][c], del_ex[0][c]);
       vsd[0][c] = f_prime_(pd[0][c] + sd[0][c], del_max[0][c], del_ex[0][c]);
     }
+  } else if (wrt_key == sd_key_) {
+    vpd.PutScalar(0.);
+    for (int c=0; c!=vpd.MyLength(); ++c){
+      vsd[0][c] = f_prime_(pd[0][c] + sd[0][c], del_max[0][c], del_ex[0][c]);
+    }
   } else {
     Errors::Message msg("VolumetricHeightSubgridEvaluator: Not Implemented: no derivatives implemented other than ponded depth.");
     Exceptions::amanzi_throw(msg);

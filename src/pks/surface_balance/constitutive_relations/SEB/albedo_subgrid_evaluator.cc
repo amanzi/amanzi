@@ -26,7 +26,7 @@ Channels are: 0 = land, 1 = water/ice, 2 = snow.
 * `"emissivity ground surface [-]`" ``[double]`` **0.92** Defaults to that of tundra.
 * `"emissivity snow [-]`" ``[double]`` **0.98**
 
-* `"snow density key`" ``[string]`` **DOMAIN-snow_density** 
+* `"snow density key`" ``[string]`` **DOMAIN_SNOW-density** 
 * `"ponded depth key`" ``[string]`` **DOMAIN-ponded_depth** 
 * `"unfrozen fraction key`" ``[string]`` **DOMAIN-unfrozen_fraction**
 
@@ -63,7 +63,7 @@ AlbedoSubgridEvaluator::AlbedoSubgridEvaluator(Teuchos::ParameterList& plist) :
   
   // dependencies  
   // -- snow properties
-  snow_dens_key_ = Keys::readKey(plist, domain_, "snow density", "density");
+  snow_dens_key_ = Keys::readKey(plist, domain_snow_, "snow density", "density");
   dependencies_.insert(snow_dens_key_);
 
   // -- skin properties  
