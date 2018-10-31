@@ -241,8 +241,8 @@ EnergyBalance UpdateEnergyBalanceWithoutSnow(const GroundProperties& surf,
   eb.fQlwOut = OutgoingRadiation(surf.temp, surf.emissivity, params.stephB);
 
   // potentially have incoming precip to melt
-  if (surf.temp > 273.15 && met.Ps > 0.) {
-    eb.fQm = met.Ps * surf.density_w * params.Hf;
+  if (surf.temp > 273.15) {
+    eb.fQm = (met.Ps + surf.snow_death_rate) * surf.density_w * params.Hf;
   } else {
     eb.fQm = 0.;
   }

@@ -36,7 +36,8 @@ namespace Amanzi {
 namespace SurfaceBalance {
 
 SubgridEvaluator::SubgridEvaluator(Teuchos::ParameterList& plist) :
-    SecondaryVariablesFieldEvaluator(plist)    
+    SecondaryVariablesFieldEvaluator(plist),
+    plist_(plist)
 {
   // determine the domain
   Key a_key = Keys::cleanPListName(plist.name());
@@ -112,10 +113,12 @@ SubgridEvaluator::SubgridEvaluator(Teuchos::ParameterList& plist) :
   dependencies_.insert(met_psnow_key_);
 
   // -- snow properties
-  snow_depth_key_ = Keys::readKey(plist, domain_snow_, "snow depth", "depth");
+  snow_depth_key_ = Keys::readKey(plist, domain_snow_, "volumetric snow depth", "volumetric_depth");
   dependencies_.insert(snow_depth_key_);
   snow_dens_key_ = Keys::readKey(plist, domain_snow_, "snow density", "density");
   dependencies_.insert(snow_dens_key_);
+  snow_death_rate_key_ = Keys::readKey(plist, domain_snow_, "snow death rate", "death_rate");
+  dependencies_.insert(snow_death_rate_key_);
 
   // -- skin properties  
   ponded_depth_key_ = Keys::readKey(plist, domain_, "ponded depth", "ponded_depth");
@@ -138,15 +141,15 @@ SubgridEvaluator::SubgridEvaluator(Teuchos::ParameterList& plist) :
   dependencies_.insert(poro_key_);
 
   // parameters
-  min_wind_speed_ = plist_.get<double>("minimum wind speed [m/s]?", 1.0);
-  wind_speed_ref_ht_ = plist_.get<double>("wind speed reference height [m]", 2.0);
-  dessicated_zone_thickness_ = plist_.get<double>("dessicated zone thickness [m]", 0.025);
+  min_wind_speed_ = plist.get<double>("minimum wind speed [m/s]?", 1.0);
+  wind_speed_ref_ht_ = plist.get<double>("wind speed reference height [m]", 2.0);
+  dessicated_zone_thickness_ = plist.get<double>("dessicated zone thickness [m]", 0.025);
   AMANZI_ASSERT(dessicated_zone_thickness_ > 0.);
 
-  roughness_bare_ground_ = plist_.get<double>("roughness length of bare ground [m]", 0.04);
-  roughness_snow_covered_ground_ = plist_.get<double>("roughness length of snow-covered ground [m]", 0.004);
-  snow_ground_trans_ = plist_.get<double>("snow-ground transitional depth [m]", 0.02);
-  min_snow_trans_ = plist_.get<double>("minimum snow transitional depth", 1.e-8);
+  roughness_bare_ground_ = plist.get<double>("roughness length of bare ground [m]", 0.04);
+  roughness_snow_covered_ground_ = plist.get<double>("roughness length of snow-covered ground [m]", 0.004);
+  snow_ground_trans_ = plist.get<double>("snow-ground transitional depth [m]", 0.02);
+  min_snow_trans_ = plist.get<double>("minimum snow transitional depth", 1.e-8);
   if (min_snow_trans_ < 0. || snow_ground_trans_ < min_snow_trans_) {
     Errors::Message message("Invalid parameters: snow-ground transitional depth or minimum snow transitional depth.");
     Exceptions::amanzi_throw(message);
@@ -169,8 +172,9 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   const auto& Psnow = *S->GetFieldData(met_psnow_key_)->ViewComponent("cell",false);
 
   // collect snow properties
-  const auto& snow_depth = *S->GetFieldData(snow_depth_key_)->ViewComponent("cell",false);
+  const auto& snow_volumetric_depth = *S->GetFieldData(snow_depth_key_)->ViewComponent("cell",false);
   const auto& snow_dens = *S->GetFieldData(snow_dens_key_)->ViewComponent("cell",false);
+  const auto& snow_death_rate = *S->GetFieldData(snow_death_rate_key_)->ViewComponent("cell",false);
   
   // collect skin properties
   const auto& ponded_depth = *S->GetFieldData(ponded_depth_key_)->ViewComponent("cell",false);
@@ -257,8 +261,10 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       // all melts so there is no snow column
       if (area_fracs[2][c] == 0.) {
         met.Ps = Psnow[0][c];
+        surf.snow_death_rate = snow_death_rate[0][c]; // m H20 / s
       } else {
         met.Ps = 0.;
+        surf.snow_death_rate = 0.;
       }
 
       // calculate the surface balance
@@ -307,8 +313,10 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       // all melts so there is no snow column
       if (area_fracs[2][c] == 0.) {
         met.Ps = Psnow[0][c];
+        surf.snow_death_rate = snow_death_rate[0][c]; // m H20 / s
       } else {
         met.Ps = 0.;
+        surf.snow_death_rate = 0.;
       }
 
       // calculate the surface balance
@@ -356,7 +364,11 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       met.Ps = Psnow[0][c] / area_fracs[2][c];
       
       SEBPhysics::SnowProperties snow;
-      snow.height = snow_depth[0][c]; // snow depth is already depth, not volumetric depth
+      // take the snow height to be some measure of average thickness -- use
+      // volumetric snow depth divided by the area fraction of snow
+      snow.height = snow_volumetric_depth[0][c] / area_fracs[2][c];
+
+      // I believe that theoretically this is required by the area fraction model.
       AMANZI_ASSERT(snow.height >= snow_ground_trans_ - 1.e-8);
       snow.density = snow_dens[0][c];
       snow.albedo = surf.albedo;
@@ -423,8 +435,10 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     vecs.push_back(S->GetFieldData(surf_pres_key_).ptr());
     vnames.push_back("ponded_depth"); 
     vecs.push_back(S->GetFieldData(ponded_depth_key_).ptr());
-    vnames.push_back("snow_depth"); 
+    vnames.push_back("vol_snow_depth"); 
     vecs.push_back(S->GetFieldData(snow_depth_key_).ptr());
+    vnames.push_back("snow_death"); 
+    vecs.push_back(S->GetFieldData(snow_death_rate_key_).ptr());
     db_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();
 
@@ -484,7 +498,9 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
 void
 SubgridEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-        Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> > & results) {}
+        Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> > & results) {
+  AMANZI_ASSERT(false);
+}
 
 void
 SubgridEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
@@ -573,6 +589,10 @@ SubgridEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
 
     S->RequireFieldEvaluator(dep_key)->EnsureCompatibility(S);
   }
+
+  // additionally MANUALLY require the area frac, because it is not in the
+  // list of dependencies :ISSUE:#8
+  // S->RequireField(area_frac_key_)->Update(domain_fac_3);
 }
 
 

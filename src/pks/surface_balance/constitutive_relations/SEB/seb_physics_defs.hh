@@ -39,6 +39,7 @@ struct GroundProperties {
   double roughness;                     // [m] surface roughness of a bare domain
   double ponded_depth;                  // [m] thickness of ponded water
   double fractional_area;               // [-] not used by SEB, but useful for later bookkeeping
+  double snow_death_rate;               // [kg/m^2/s] snow that must die this timestep, make it melt!
 
   GroundProperties() :
       temp(MY_LOCAL_NAN),
@@ -50,7 +51,8 @@ struct GroundProperties {
       emissivity(MY_LOCAL_NAN),
       saturation_gas(MY_LOCAL_NAN),
       roughness(MY_LOCAL_NAN),
-      fractional_area(0.)
+      fractional_area(0.),
+      snow_death_rate(0.)
   {}
 
   void UpdateVaporPressure();

@@ -117,6 +117,8 @@ SEBEvaluator::SEBEvaluator(Teuchos::ParameterList& plist) :
   dependencies_.insert(snow_depth_key_);
   snow_dens_key_ = Keys::readKey(plist, domain_snow_, "snow density", "density");
   dependencies_.insert(snow_dens_key_);
+  snow_death_rate_key_ = Keys::readKey(plist, domain_snow_, "snow death rate", "death_rate");
+  dependencies_.insert(snow_death_rate_key_);
 
   // -- skin properties  
   ponded_depth_key_ = Keys::readKey(plist, domain_, "ponded depth", "ponded_depth");
@@ -126,7 +128,8 @@ SEBEvaluator::SEBEvaluator(Teuchos::ParameterList& plist) :
   sg_emissivity_key_ = Keys::readKey(plist, domain_, "subgrid emissivities", "subgrid_emissivities");
   dependencies_.insert(sg_emissivity_key_);
   area_frac_key_ = Keys::readKey(plist, domain_, "area fractions", "fractional_areas");
-  dependencies_.insert(area_frac_key_);
+  dependencies_.insert(area_frac_key_); // specifically excluding to get the old value of area fractions, which deals correctly with snow disappearance. FIXME :ISSUE:#8
+
   surf_temp_key_ = Keys::readKey(plist, domain_, "temperature", "temperature");
   dependencies_.insert(surf_temp_key_);
   surf_pres_key_ = Keys::readKey(plist, domain_, "pressure", "pressure");
@@ -139,15 +142,15 @@ SEBEvaluator::SEBEvaluator(Teuchos::ParameterList& plist) :
   dependencies_.insert(poro_key_);
 
   // parameters
-  min_wind_speed_ = plist_.get<double>("minimum wind speed [m/s]?", 1.0);
-  wind_speed_ref_ht_ = plist_.get<double>("wind speed reference height [m]", 2.0);
-  dessicated_zone_thickness_ = plist_.get<double>("dessicated zone thickness [m]", 0.025);
+  min_wind_speed_ = plist.get<double>("minimum wind speed [m/s]?", 1.0);
+  wind_speed_ref_ht_ = plist.get<double>("wind speed reference height [m]", 2.0);
+  dessicated_zone_thickness_ = plist.get<double>("dessicated zone thickness [m]", 0.025);
   AMANZI_ASSERT(dessicated_zone_thickness_ > 0.);
 
-  roughness_bare_ground_ = plist_.get<double>("roughness length of bare ground [m]", 0.04);
-  roughness_snow_covered_ground_ = plist_.get<double>("roughness length of snow-covered ground [m]", 0.004);
-  snow_ground_trans_ = plist_.get<double>("snow-ground transitional depth [m]", 0.02);
-  min_snow_trans_ = plist_.get<double>("minimum snow transitional depth", 1.e-8);
+  roughness_bare_ground_ = plist.get<double>("roughness length of bare ground [m]", 0.04);
+  roughness_snow_covered_ground_ = plist.get<double>("roughness length of snow-covered ground [m]", 0.004);
+  snow_ground_trans_ = plist.get<double>("snow-ground transitional depth [m]", 0.02);
+  min_snow_trans_ = plist.get<double>("minimum snow transitional depth", 1.e-8);
   if (min_snow_trans_ < 0. || snow_ground_trans_ < min_snow_trans_) {
     Errors::Message message("Invalid parameters: snow-ground transitional depth or minimum snow transitional depth.");
     Exceptions::amanzi_throw(message);
@@ -172,6 +175,7 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   // collect snow properties
   const auto& snow_depth = *S->GetFieldData(snow_depth_key_)->ViewComponent("cell",false);
   const auto& snow_dens = *S->GetFieldData(snow_dens_key_)->ViewComponent("cell",false);
+  const auto& snow_death_rate = *S->GetFieldData(snow_death_rate_key_)->ViewComponent("cell",false);
   
   // collect skin properties
   const auto& ponded_depth = *S->GetFieldData(ponded_depth_key_)->ViewComponent("cell",false);
@@ -258,8 +262,10 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       // all melts so there is no snow column
       if (area_fracs[1][c] == 0.) {
         met.Ps = Psnow[0][c];
+        surf.snow_death_rate = snow_death_rate[0][c]; // m H20 / s
       } else {
         met.Ps = 0.;
+        surf.snow_death_rate = 0.;
       }
       
       // calculate the surface balance
@@ -376,6 +382,8 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     vecs.push_back(S->GetFieldData(ponded_depth_key_).ptr());
     vnames.push_back("snow_depth"); 
     vecs.push_back(S->GetFieldData(snow_depth_key_).ptr());
+    vnames.push_back("snow_death"); 
+    vecs.push_back(S->GetFieldData(snow_death_rate_key_).ptr());
     db_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();
 
@@ -524,6 +532,10 @@ SEBEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
 
     S->RequireFieldEvaluator(dep_key)->EnsureCompatibility(S);
   }
+
+  // additionally MANUALLY require the area frac, because it is not in the
+  // list of dependencies :ISSUE:#8
+  // S->RequireField(area_frac_key_)->Update(domain_fac_2);
 }
 
 
