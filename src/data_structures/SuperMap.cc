@@ -24,8 +24,8 @@ namespace Operators {
 SuperMap::SuperMap(const Epetra_MpiComm& comm,
                    const std::vector<std::string>& compnames,
                    const std::vector<int>& dofnums,
-                   const std::vector<Teuchos::RCP<const Epetra_Map> >& maps,
-                   const std::vector<Teuchos::RCP<const Epetra_Map> >& ghosted_maps) :
+                   const std::vector<Teuchos::RCP<const Epetra_BlockMap> >& maps,
+                   const std::vector<Teuchos::RCP<const Epetra_BlockMap> >& ghosted_maps) :
     compnames_(compnames)
 {
   AMANZI_ASSERT(compnames.size() == dofnums.size());
@@ -196,7 +196,7 @@ SuperMap::CreateIndices_(const std::string& compname, int dofnum, bool ghosted) 
 }
 
 
-std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >
+std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >
 getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
   switch(location) {
     case AmanziMesh::CELL:
@@ -229,8 +229,8 @@ getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
 Teuchos::RCP<SuperMap> createSuperMap(const CompositeVectorSpace& cv) {
   std::vector<std::string> names;
   std::vector<int> dofnums;
-  std::vector<Teuchos::RCP<const Epetra_Map> > maps;
-  std::vector<Teuchos::RCP<const Epetra_Map> > ghost_maps;
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps;
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > ghost_maps;
 
   for (CompositeVectorSpace::name_iterator it=cv.begin();
        it!=cv.end(); ++it) {
@@ -251,8 +251,8 @@ Teuchos::RCP<SuperMap> createSuperMap(const CompositeVectorSpace& cv) {
 Teuchos::RCP<SuperMap> createSuperMap(const TreeVectorSpace& tv) {
   std::vector<std::string> names;
   std::vector<int> dofnums;
-  std::vector<Teuchos::RCP<const Epetra_Map> > maps;
-  std::vector<Teuchos::RCP<const Epetra_Map> > ghost_maps;
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps;
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > ghost_maps;
 
   if (tv.Data() != Teuchos::null) {
     // TV with only a CV inside

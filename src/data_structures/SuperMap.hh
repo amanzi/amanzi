@@ -40,8 +40,8 @@ class SuperMap {
   SuperMap(const Epetra_MpiComm& comm,
            const std::vector<std::string>& compnames,
            const std::vector<int>& dofnums,
-           const std::vector<Teuchos::RCP<const Epetra_Map> >& maps,
-           const std::vector<Teuchos::RCP<const Epetra_Map> >& ghost_maps);
+           const std::vector<Teuchos::RCP<const Epetra_BlockMap> >& maps,
+           const std::vector<Teuchos::RCP<const Epetra_BlockMap> >& ghost_maps);
 
   SuperMap(const SuperMap& other);  
   virtual ~SuperMap() = default;
@@ -120,7 +120,7 @@ class SuperMap {
 
 
 // Nonmember helper function
-std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >
+std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >
 getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location);
 
 // Nonmember contructors/factories

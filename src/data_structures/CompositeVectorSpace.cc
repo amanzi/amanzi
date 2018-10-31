@@ -144,14 +144,13 @@ CompositeVectorSpace::AddComponents(const std::vector<std::string>& names,
                    const std::vector<AmanziMesh::Entity_kind>& locations,
                    const std::vector<int>& num_dofs) {
 
-  std::map<std::string, Teuchos::RCP<const Epetra_Map> > mastermaps;
-  std::map<std::string, Teuchos::RCP<const Epetra_Map> > ghostmaps;
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > mastermaps;
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghostmaps;
 
   for (int i=0; i<locations.size(); ++i) {
-    //const Epetra_Map* mp = &mesh_->map(lc, false);
-    Teuchos::RCP<const Epetra_Map> master_mp(&mesh_->map(locations[i], false), false);
+    Teuchos::RCP<const Epetra_BlockMap> master_mp(&mesh_->map(locations[i], false), false);
     mastermaps[names[i]] = master_mp;
-    Teuchos::RCP<const Epetra_Map> ghost_mp(&mesh_->map(locations[i], true), false);
+    Teuchos::RCP<const Epetra_BlockMap> ghost_mp(&mesh_->map(locations[i], true), false);
     ghostmaps[names[i]] = ghost_mp;
   }
        
@@ -160,15 +159,15 @@ CompositeVectorSpace::AddComponents(const std::vector<std::string>& names,
 
 CompositeVectorSpace*  
 CompositeVectorSpace::AddComponent(std::string& name,
-                                   Teuchos::RCP<const Epetra_Map> mastermap,
-                                   Teuchos::RCP<const Epetra_Map> ghostmap,
+                                   Teuchos::RCP<const Epetra_BlockMap> mastermap,
+                                   Teuchos::RCP<const Epetra_BlockMap> ghostmap,
                                    int num_dof) {
 
   std::vector<std::string> names(1,name);
   std::vector<int> num_dofs(1,num_dof);
   std::vector<AmanziMesh::Entity_kind> locations(1, AmanziMesh::UNDEFINED);
-  std::map<std::string, Teuchos::RCP<const Epetra_Map> >  mastermaps;
-  std::map<std::string, Teuchos::RCP<const Epetra_Map> >  ghostmaps;
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> >  mastermaps;
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> >  ghostmaps;
 
   mastermaps[name] = mastermap;
   ghostmaps[name] = ghostmap;
@@ -180,8 +179,8 @@ CompositeVectorSpace::AddComponent(std::string& name,
 CompositeVectorSpace*
 CompositeVectorSpace::AddComponents(const std::vector<std::string>& names,
                                     const std::vector<AmanziMesh::Entity_kind>& locations,
-                                    std::map<std::string, Teuchos::RCP<const Epetra_Map> > mastermaps,
-                                    std::map<std::string, Teuchos::RCP<const Epetra_Map> > ghostmaps,
+                                    std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > mastermaps,
+                                    std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghostmaps,
                                     const std::vector<int>& num_dofs) {
 
   // Add a set of specifications to the factory's list.
@@ -228,14 +227,13 @@ CompositeVectorSpace::SetComponents(const std::vector<std::string>& names,
                                     const std::vector<AmanziMesh::Entity_kind>& locations,
                                     const std::vector<int>& num_dofs) {
 
-  std::map<std::string, Teuchos::RCP<const Epetra_Map> > mastermaps;
-  std::map<std::string, Teuchos::RCP<const Epetra_Map> > ghostmaps;
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > mastermaps;
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghostmaps;
 
   for (int i=0; i<locations.size(); ++i) {
-    //const Epetra_Map* mp = &mesh_->map(lc, false);
-    Teuchos::RCP<const Epetra_Map> master_mp(&mesh_->map(locations[i], false), false);
+    Teuchos::RCP<const Epetra_BlockMap> master_mp(&mesh_->map(locations[i], false), false);
     mastermaps[names[i]] = master_mp;
-    Teuchos::RCP<const Epetra_Map> ghost_mp(&mesh_->map(locations[i], true), false);
+    Teuchos::RCP<const Epetra_BlockMap> ghost_mp(&mesh_->map(locations[i], true), false);
     ghostmaps[names[i]] = ghost_mp;
   }
        
@@ -244,15 +242,15 @@ CompositeVectorSpace::SetComponents(const std::vector<std::string>& names,
 
 CompositeVectorSpace*  
 CompositeVectorSpace::SetComponent(std::string& name,
-                                   Teuchos::RCP<const Epetra_Map> mastermap,
-                                   Teuchos::RCP<const Epetra_Map> ghostmap,
+                                   Teuchos::RCP<const Epetra_BlockMap> mastermap,
+                                   Teuchos::RCP<const Epetra_BlockMap> ghostmap,
                                    int num_dof) {
 
   std::vector<std::string> names(1, name);
   std::vector<int> num_dofs(1, num_dof);
   std::vector<AmanziMesh::Entity_kind> locations(1, AmanziMesh::UNDEFINED);  
-  std::map<std::string, Teuchos::RCP<const Epetra_Map> > mastermaps;
-  std::map<std::string, Teuchos::RCP<const Epetra_Map> > ghostmaps;
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > mastermaps;
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghostmaps;
 
   mastermaps[name] = mastermap;
   ghostmaps[name] = ghostmap;
@@ -264,8 +262,8 @@ CompositeVectorSpace*
 CompositeVectorSpace::SetComponents(
     const std::vector<std::string>& names,
     std::vector<AmanziMesh::Entity_kind> locations,
-    std::map<std::string, Teuchos::RCP<const Epetra_Map> > mastermaps,
-    std::map<std::string, Teuchos::RCP<const Epetra_Map> > ghostmaps,
+    std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > mastermaps,
+    std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghostmaps,
     const std::vector<int>& num_dofs) {
   
   if (owned_) {
@@ -317,7 +315,7 @@ void CompositeVectorSpace::InitIndexMap_() {
   }
 }
 
-Teuchos::RCP<const Epetra_Map> CompositeVectorSpace::Map(std::string name, bool ghost) const {
+Teuchos::RCP<const Epetra_BlockMap> CompositeVectorSpace::Map(std::string name, bool ghost) const {
 
   if (std::find(names_.begin(), names_.end(), name) == names_.end()) {
     Errors::Message message("Map: Requested component ("+name+") doesn't exist in CompositeVectorSpace.");
@@ -460,13 +458,13 @@ bool CompositeVectorSpace::UnionAndConsistent_(
     const std::vector<std::string>& names1,
     const std::vector<AmanziMesh::Entity_kind>& locations1,       
     const std::vector<int>& num_dofs1,
-    std::map<std::string, Teuchos::RCP<const Epetra_Map> >& mastermaps1,
-    std::map<std::string, Teuchos::RCP<const Epetra_Map> >& ghostmaps1,                                                             
+    std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> >& mastermaps1,
+    std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> >& ghostmaps1,                                                             
     std::vector<std::string>& names2,
     std::vector<AmanziMesh::Entity_kind>& locations2,       
     std::vector<int>& num_dofs2,
-    std::map<std::string, Teuchos::RCP<const Epetra_Map> >& mastermaps2,
-    std::map<std::string, Teuchos::RCP<const Epetra_Map> >& ghostmaps2) {
+    std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> >& mastermaps2,
+    std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> >& ghostmaps2) {
 
   for (int i=0; i!=names1.size(); ++i) {
     std::vector<std::string>::iterator n2_it =

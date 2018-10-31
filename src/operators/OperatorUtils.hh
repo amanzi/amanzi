@@ -61,9 +61,9 @@ unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n
 unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, Schema& schema);
 
 std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >
-CreateBoundaryMaps(Teuchos::RCP<const AmanziMesh::Mesh>  mesh,
-                   std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >& bnd_maps,
-                   std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >& face_maps);  
+CreateBoundaryMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                   std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >& bnd_maps,
+                   std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >& face_maps);  
 
 }  // namespace Operators
 }  // namespace Amanzi
