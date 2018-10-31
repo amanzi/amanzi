@@ -1008,7 +1008,8 @@ int PDE_DiffusionNLFVwithBndFaces::NLTPFAContributions_(int f, double& tc1, doub
 
    int c, c1, c2, c3, f1;
    AmanziMesh::Entity_ID_List cells, cells_tmp, faces;
-
+   int ierr(0);
+   
    const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
    const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
 
@@ -1027,7 +1028,8 @@ int PDE_DiffusionNLFVwithBndFaces::NLTPFAContributions_(int f, double& tc1, doub
     int f1 = (*stencil_faces_[i])[f];
     if (c3 >= 0) {
       mesh_->face_get_cells(f1, AmanziMesh::Parallel_type::ALL, &cells_tmp);
-      OrderCellsByGlobalId_(cells_tmp, c1, c2);
+      ierr = OrderCellsByGlobalId_(cells_tmp, c1, c2);
+      if (ierr) return ierr;
 
       double gamma = hap_gamma[0][f1];
       if (c1 != c) gamma = 1.0 - gamma;
@@ -1045,7 +1047,8 @@ int PDE_DiffusionNLFVwithBndFaces::NLTPFAContributions_(int f, double& tc1, doub
     int f1 = (*stencil_faces_[dim_ + i])[f];
     if (c3 >= 0) {
       mesh_->face_get_cells(f1, AmanziMesh::Parallel_type::ALL, &cells_tmp);
-      OrderCellsByGlobalId_(cells_tmp, c1, c2);
+      ierr = OrderCellsByGlobalId_(cells_tmp, c1, c2);
+      if (ierr) return ierr;
 
       double gamma = hap_gamma[0][f1];
       if (c1 != c) gamma = 1.0 - gamma;
@@ -1057,6 +1060,8 @@ int PDE_DiffusionNLFVwithBndFaces::NLTPFAContributions_(int f, double& tc1, doub
       tc2 += weight[i + dim_][f];
     }
   }
+
+  return ierr;
 
 }   
 
