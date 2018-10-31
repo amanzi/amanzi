@@ -924,7 +924,7 @@ void State::Initialize(Teuchos::RCP<State> S) {
           Errors::Message message("Copy field with unknown type\n");
           Exceptions::amanzi_throw(message);
         }
-        field -> set_initialized();      
+        field->set_initialized();      
       }
     }   
   }
@@ -1114,7 +1114,7 @@ bool State::CheckAllFieldsInitialized(Teuchos::RCP<State> S) {
         Exceptions::amanzi_throw(message);
         return false;
       }
-      field -> set_initialized();
+      field->set_initialized();
     }   
   }
 

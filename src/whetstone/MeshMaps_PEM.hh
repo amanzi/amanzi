@@ -37,14 +37,9 @@ class MeshMaps_PEM : public MeshMaps {
                Teuchos::RCP<const AmanziMesh::Mesh> mesh1) : MeshMaps(mesh0, mesh1) {};
   ~MeshMaps_PEM() {};
 
-  // Maps
-  // -- pseudo-velocity
+  // remap pseudo velocity
   virtual void VelocityCell(int c, const std::vector<VectorPolynomial>& vf,
                             VectorPolynomial& vc) const override;
-
-  // -- Nanson formula
-  virtual void NansonFormula(int f, double t, const VectorPolynomial& vf,
-                             VectorPolynomial& cn) const override;
 };
 
 }  // namespace WhetStone

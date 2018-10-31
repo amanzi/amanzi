@@ -15,6 +15,7 @@
 
 #include "Point.hh"
 
+#include "CoordinateSystems.hh"
 #include "DenseMatrix.hh"
 #include "MeshMaps.hh"
 #include "MFD3D_LagrangeSerendipity.hh"
@@ -25,40 +26,83 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Calculate mesh velocity on face f.
-* NOTE: 2D algorithm for linear velocity.
+* Calculate mesh velocity on 2D face f.
 ****************************************************************** */
 void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
 {
-  const AmanziGeometry::Point_List* points = NULL;
-  mesh1_->face_get_curvature_points(f, points);
+  AMANZI_ASSERT(d_ == 2);
+  AmanziGeometry::Point_List points0, points1;
+  mesh0_->face_get_ho_nodes(f, &points0);
+  mesh1_->face_get_ho_nodes(f, &points1);
+  AMANZI_ASSERT(points0.size() == points1.size());
 
+  // local coordinate system
+  const AmanziGeometry::Point& normal = mesh0_->face_normal(f);
+  std::vector<AmanziGeometry::Point> tau(d_ - 1);
+  FaceCoordinateSystem(normal, tau);
+
+  // polynomial is converted from local to global coordinate system
   AmanziMesh::Entity_ID_List nodes;
-  AmanziGeometry::Point x0, x1;
+  AmanziGeometry::Point x0, x1, y0, y1;
 
-  const AmanziGeometry::Point& xf0 = mesh0_->face_centroid(f);
-  const AmanziGeometry::Point& xf1 = mesh1_->face_centroid(f);
+  const AmanziGeometry::Point& xf = mesh0_->face_centroid(f);
+  AmanziGeometry::Point yf = mesh1_->face_centroid(f);
 
   mesh0_->face_get_nodes(f, &nodes);
   mesh0_->node_get_coordinates(nodes[0], &x0);
-  mesh1_->node_get_coordinates(nodes[0], &x1);
+  mesh0_->node_get_coordinates(nodes[1], &x1);
 
-  x0 -= xf0;
-  x1 -= xf1;
+  mesh1_->node_get_coordinates(nodes[0], &y0);
+  mesh1_->node_get_coordinates(nodes[1], &y1);
+
+  // velocity at points defining the polynomial
+  y0 -= x0;
+  y1 -= x1;
+  yf -= xf;
+
+  for (int i = 0; i < points1.size(); ++i) {
+    points1[i] -= points0[i];
+  }
+
+  // velocity is transformed from local to glocal coordinate systems
+  int order = points1.size() + 1;
 
   v.resize(d_);
   for (int i = 0; i < d_; ++i) {
-    v[i].Reshape(d_, 1);
-  }
-
-  x0 /= L22(x0);
-  for (int i = 0; i < d_; ++i) {
-    for (int j = 0; j < d_; ++j) {
-      v[i](1, j) = x1[i] * x0[j];
+    v[i].Reshape(d_ - 1, order);
+    if (order == 1) {
+      v[i](0) = yf[i];
+      v[i](1) = y1[i] - y0[i];
+    } else {
+      v[i](0) = points1[0][i];
+      v[i](1) = y1[i] - y0[i];
+      v[i](2) = 2 * y0[i] + 2 * y1[i] - 4 * points1[0][i];
     }
-    v[i](0, 0) = xf1[i] - x1[i] * (x0 * xf0);
-    v[i](1, i) -= 1.0;
+
+    v[i].InverseChangeCoordinates(xf, tau);  
+    v[i].ChangeOrigin(AmanziGeometry::Point(d_));
   }
+}
+
+
+/* ******************************************************************
+* Transformation of normal is defined completely by face data.
+****************************************************************** */
+void MeshMaps::NansonFormula(
+    int f, const VectorPolynomial& map, VectorPolynomial& cn) const
+{
+  AMANZI_ASSERT(d_ == 2);
+
+  const AmanziGeometry::Point& normal = mesh0_->face_normal(f);
+
+  cn.resize(d_);
+  auto grad = Gradient(map[0]);
+  cn[1] = grad[0] * normal[1] - grad[1] * normal[0];
+  cn[1](0) += normal[1]; 
+
+  grad = Gradient(map[1]);
+  cn[0] = grad[1] * normal[0] - grad[0] * normal[1];
+  cn[0](0) += normal[0]; 
 }
 
 
@@ -70,16 +114,13 @@ void MeshMaps::Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const
 {
   // allocate memory
   int nvc = vc.size();
-  J.resize(nvc);
-  for (int i = 0; i < nvc; ++i) {
-    J[i].resize(d_);
-  }
+  J.Reshape(d_, nvc, d_, 0, false);
 
   // copy velocity gradients to Jacobian
   for (int i = 0; i < nvc; ++i) {
     auto tmp = Gradient(vc[i]);
     for (int j = 0; j < d_; ++j) {
-      J[i][j] = tmp[j];
+      J(i, j) = tmp[j];
     }
   }
 }
@@ -89,15 +130,11 @@ void MeshMaps::Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const
 * Calculation of matrix of cofactors.
 * Multiple cofactors are packed in a rectagular matrix.
 ****************************************************************** */
-void MeshMaps::Cofactors(
-    double t, const MatrixPolynomial& J, MatrixPolynomial& C) const
+void MeshMaps::Cofactors(const MatrixPolynomial& J, MatrixPolynomial& C) const
 {
   // allocate memory for matrix of cofactors
-  int nJ = J.size();
-  C.resize(nJ);
-  for (int i = 0; i < nJ; ++i) {
-    C[i].resize(d_);
-  }
+  int nJ = J.NumRows();
+  C.Reshape(d_, nJ, d_, 0, false);
 
   // calculate cofactors
   int kJ = nJ / d_;
@@ -105,36 +142,28 @@ void MeshMaps::Cofactors(
     int m0 = n * d_;
     int m1 = m0 + 1;
     if (d_ == 2) {
-      C[m1][1] = J[m0][0];
-      C[m1][0] = J[m0][1];
-      C[m1][0] *= -1.0;
+      C(m1, 1) = J(m0, 0);
+      C(m1, 0) = J(m0, 1);
+      C(m1, 0) *= -1.0;
 
-      C[m0][0] = J[m1][1];
-      C[m0][1] = J[m1][0];
-      C[m0][1] *= -1.0;
+      C(m0, 0) = J(m1, 1);
+      C(m0, 1) = J(m1, 0);
+      C(m0, 1) *= -1.0;
     }
     else if (d_ == 3) {
       int m2 = m0 + 2;
-      C[m0][0] = J[m1][1] * J[m2][2] - J[m2][1] * J[m1][2];
-      C[m1][0] = J[m2][1] * J[m0][2] - J[m0][1] * J[m2][2];
-      C[m2][0] = J[m0][1] * J[m1][2] - J[m1][1] * J[m0][2];
+      C(m0, 0) = J(m1, 1) * J(m2, 2) - J(m2, 1) * J(m1, 2);
+      C(m1, 0) = J(m2, 1) * J(m0, 2) - J(m0, 1) * J(m2, 2);
+      C(m2, 0) = J(m0, 1) * J(m1, 2) - J(m1, 1) * J(m0, 2);
 
-      C[m0][1] = J[m2][0] * J[m1][2] - J[m1][0] * J[m2][2];
-      C[m1][1] = J[m0][0] * J[m2][2] - J[m2][0] * J[m0][2];
-      C[m2][1] = J[m1][0] * J[m0][2] - J[m0][0] * J[m1][2];
+      C(m0, 1) = J(m2, 0) * J(m1, 2) - J(m1, 0) * J(m2, 2);
+      C(m1, 1) = J(m0, 0) * J(m2, 2) - J(m2, 0) * J(m0, 2);
+      C(m2, 1) = J(m1, 0) * J(m0, 2) - J(m0, 0) * J(m1, 2);
 
-      C[m0][2] = J[m1][0] * J[m2][1] - J[m2][0] * J[m1][1];
-      C[m1][2] = J[m2][0] * J[m0][1] - J[m0][0] * J[m2][1];
-      C[m2][2] = J[m0][0] * J[m1][1] - J[m1][0] * J[m0][1];
+      C(m0, 2) = J(m1, 0) * J(m2, 1) - J(m2, 0) * J(m1, 1);
+      C(m1, 2) = J(m2, 0) * J(m0, 1) - J(m0, 0) * J(m2, 1);
+      C(m2, 2) = J(m0, 0) * J(m1, 1) - J(m1, 0) * J(m0, 1);
     }
-  }
-
-  // add time dependence
-  for (int i = 0; i < nJ; ++i) {
-    for (int j = 0; j < d_; ++j) {
-      C[i][j] *= t;
-    }
-    C[i][i % d_](0, 0) += 1.0;
   }
 }
 
@@ -143,37 +172,26 @@ void MeshMaps::Cofactors(
 * Calculate detminant at time t.
 * Multiple determinatds are packed in a vector.
 ****************************************************************** */
-void MeshMaps::Determinant(
-   double t, const MatrixPolynomial& J, VectorPolynomial& det) const
+void MeshMaps::Determinant(const MatrixPolynomial& J, VectorPolynomial& det) const
 {
-  int ndet = J.size() / d_;
+  int ndet = J.NumRows() / d_;
   det.resize(ndet);
 
-  MatrixPolynomial Jt;
-  Jt.resize(d_);
-  for (int i = 0; i < d_; ++i) {
-    Jt[i].resize(d_);
-  }
-
   for (int n = 0; n < ndet; ++n) {
-    int m = n * d_;
-    for (int i = 0; i < d_; ++i) {
-      for (int j = 0; j < d_; ++j) {
-        Jt[i][j] = J[m + i][j] * t;
-      }
-      Jt[i][i](0, 0) += 1.0;
-    }
+    int m0 = n * d_;
+    int m1 = m0 + 1;
 
     if (d_ == 2) {
-      det[n] = Jt[0][0] * Jt[1][1] - Jt[0][1] * Jt[1][0];
+      det[n] = J(m0, 0) * J(m1, 1) - J(m0, 1) * J(m1, 0);
     }
     else if (d_ == 3) {
-      det[n] = Jt[0][0] * Jt[1][1] * Jt[2][2] 
-             + Jt[2][0] * Jt[0][1] * Jt[1][2] 
-             + Jt[1][0] * Jt[2][1] * Jt[0][2] 
-             - Jt[2][0] * Jt[1][1] * Jt[0][2] 
-             - Jt[1][0] * Jt[0][1] * Jt[2][2] 
-             - Jt[0][0] * Jt[2][1] * Jt[1][2]; 
+      int m2 = m0 + 2;
+      det[n] = J(m0, 0) * J(m1, 1) * J(m2, 2) 
+             + J(m2, 0) * J(m0, 1) * J(m1, 2) 
+             + J(m1, 0) * J(m2, 1) * J(m0, 2) 
+             - J(m2, 0) * J(m1, 1) * J(m0, 2) 
+             - J(m1, 0) * J(m0, 1) * J(m2, 2) 
+             - J(m0, 0) * J(m2, 1) * J(m1, 2); 
     }
   }
 }

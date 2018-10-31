@@ -41,13 +41,13 @@ class AnalyticDG01 : public AnalyticDGBase {
     sol.Reshape(d_, order_, true); 
     sol.set_origin(p);
 
-    sol(0, 0) = 1.0 + p[0] + 2 * p[1];
-    sol(1, 0) = 1.0;
-    sol(1, 1) = 2.0;
+    sol(0) = 1.0 + p[0] + 2 * p[1];
+    sol(1) = 1.0;
+    sol(2) = 2.0;
 
     if (d_ == 3) {
-      sol(0, 0) += 3 * p[2];
-      sol(1, 2) += 3.0;
+      sol(0) += 3 * p[2];
+      sol(3) += 3.0;
     }
   }
 

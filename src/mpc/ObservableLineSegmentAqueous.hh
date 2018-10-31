@@ -48,7 +48,7 @@ int ObservableLineSegmentAqueous::ComputeRegionSize() {
 void ObservableLineSegmentAqueous::ComputeObservation(
     State& S, double* value, double* volume, std::string& unit) {
   Errors::Message msg;
-  int dim = mesh_ -> space_dimension();
+  int dim = mesh_->space_dimension();
   
   std::vector<double> values(region_size_);
   double weight_corr = 1e-15;

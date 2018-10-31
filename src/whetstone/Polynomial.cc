@@ -63,6 +63,19 @@ Polynomial::Polynomial(int d, const int* multi_index, double factor)
 
 
 /* ******************************************************************
+* Copy constructor.
+****************************************************************** */
+Polynomial::Polynomial(const Polynomial& poly)
+{
+  d_ = poly.dimension();
+  order_ = poly.order();
+  origin_ = poly.origin();
+  size_ = poly.size();
+  coefs_ = poly.coefs();
+}
+
+
+/* ******************************************************************
 * Constructor of a polynomial from a monomial.
 ****************************************************************** */
 Polynomial::Polynomial(const Monomial& mono)

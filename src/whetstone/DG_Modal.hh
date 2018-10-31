@@ -119,7 +119,7 @@ class DG_Modal : public BilinearForm {
   NumericalIntegration numi_;
   int order_, d_;
 
-  VectorPolynomial integrals_;  // integrals of non-normalized monomials
+  std::vector<Polynomial> integrals_;  // integrals of non-normalized monomials
   std::vector<std::shared_ptr<Basis> > basis_;
 };
 

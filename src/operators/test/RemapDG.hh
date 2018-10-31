@@ -14,6 +14,7 @@
 #ifndef AMANZI_REMAP_DG_HH_
 #define AMANZI_REMAP_DG_HH_
 
+#include <cstdlib>
 #include <iostream>
 #include <vector>
 
@@ -45,18 +46,36 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
     : mesh0_(mesh0),
       mesh1_(mesh1),
       plist_(plist),
-      high_order_velocity_(false) {};
+      dim_(mesh0->space_dimension()),
+      high_order_velocity_(false),
+      dt_output_(0.1) {};
   ~RemapDG() {};
 
   // main members required by high-level interface
   virtual void FunctionalTimeDerivative(double t, const CompositeVector& u, CompositeVector& f) override;
 
   // create basic structures
-  void Init();
+  virtual void Init() { 
+    InitPrimary();
+    InitSecondary();
+  }
+  void InitPrimary();
+  void InitSecondary();
 
-  // miscalleneous tools
-  void UpdateGeometricQuantities(double t);
-  void DeformMesh(int deform);
+  // geometric tools
+  // -- various geometric quantities
+  virtual void Jacobian(int c, double t, const WhetStone::MatrixPolynomial& J,
+                        WhetStone::MatrixPolynomial& Jt);
+  virtual void UpdateGeometricQuantities(double t);
+
+  // -- mesh deformation
+  virtual void DeformMesh(int deform, double t);
+  AmanziGeometry::Point DeformNode(int deform, double t, const AmanziGeometry::Point& yv,
+                                              const AmanziGeometry::Point& rv = AmanziGeometry::Point(3));
+
+  // output
+  virtual double global_time(double t) { return t; }
+  void set_dt_output(double dt) { dt_output_ = dt; }
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh0_;
@@ -69,6 +88,7 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   bool high_order_velocity_;
 
   // operators
+  int order_;
   Teuchos::RCP<Operators::PDE_Abstract> op_adv_;
   Teuchos::RCP<Operators::PDE_AdvectionRiemann> op_flux_;
   Teuchos::RCP<Operators::PDE_Reaction>op_reac_;
@@ -84,25 +104,24 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
 
   // statistics
   int nfun_;
-  double tprint_, tl2_, l2norm_;
+  double tprint_, dt_output_, l2norm_;
 };
 
 
 /* *****************************************************************
-* Initialization of remap
+* Initialization of remap: operarot and face velocity.
 ***************************************************************** */
 template<class AnalyticDG>
-void RemapDG<AnalyticDG>::Init()
+void RemapDG<AnalyticDG>::InitPrimary()
 {
   // mesh data
   ncells_owned_ = mesh0_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   ncells_wghost_ = mesh0_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   nfaces_owned_ = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   nfaces_wghost_ = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  dim_ = mesh0_->space_dimension();
 
-  int order = plist_.sublist("PK operator")
-                    .sublist("flux operator").template get<int>("method order");
+  order_ = plist_.sublist("PK operator")
+                 .sublist("flux operator").template get<int>("method order");
 
   // create right-hand side operator
   // -- flux
@@ -123,41 +142,6 @@ void RemapDG<AnalyticDG>::Init()
   WhetStone::MeshMapsFactory maps_factory;
   maps_ = maps_factory.Create(map_list, mesh0_, mesh1_);
 
-  // face velocities
-  velf_vec_.resize(nfaces_wghost_);
-  if (high_order_velocity_) {
-    int vel_order = plist_.sublist("maps").template get<int>("method order");
-    AnalyticDG ana(mesh0_, vel_order, true);
-
-    for (int f = 0; f < nfaces_wghost_; ++f) {
-      const auto& xf = mesh0_->face_centroid(f);
-      ana.VelocityTaylor(xf, 0.0, velf_vec_[f]); 
-      velf_vec_[f].ChangeOrigin(AmanziGeometry::Point(dim_));
-    }
-  } else {
-    for (int f = 0; f < nfaces_wghost_; ++f) {
-      maps_->VelocityFace(f, velf_vec_[f]);
-    }
-  } 
-
-  // cell-baced velocities and Jacobian matrices
-  WhetStone::Entity_ID_List faces;
-  uc_.resize(ncells_wghost_);
-  J_.resize(ncells_wghost_);
-
-  for (int c = 0; c < ncells_wghost_; ++c) {
-    mesh0_->cell_get_faces(c, &faces);
-
-    std::vector<WhetStone::VectorPolynomial> vvf;
-    for (int n = 0; n < faces.size(); ++n) {
-      vvf.push_back(velf_vec_[faces[n]]);
-    }
-
-    maps_->VelocityCell(c, vvf, uc_[c]);
-    maps_->Jacobian(uc_[c], J_[c]);
-    // maps_->JacobianCell(c, vvf, J_[c]);
-  }
-
   // boundary data
   auto bc = Teuchos::rcp(new Operators::BCs(mesh0_, AmanziMesh::FACE, Operators::DOF_Type::VECTOR));
   std::vector<int>& bc_model = bc->bc_model();
@@ -175,14 +159,56 @@ void RemapDG<AnalyticDG>::Init()
   }
   op_flux_->SetBCs(bc, bc);
 
+  // face velocities fixed for the pseudo time interval [0, 1]
+  velf_vec_.resize(nfaces_wghost_);
+  if (high_order_velocity_) {
+    int vel_order = plist_.sublist("maps").template get<int>("method order");
+    AnalyticDG ana(mesh0_, vel_order, true);
+
+    for (int f = 0; f < nfaces_wghost_; ++f) {
+      const auto& xf = mesh0_->face_centroid(f);
+      ana.VelocityTaylor(xf, 0.0, velf_vec_[f]); 
+      velf_vec_[f].ChangeOrigin(AmanziGeometry::Point(dim_));
+    }
+  } else {
+    for (int f = 0; f < nfaces_wghost_; ++f) {
+      maps_->VelocityFace(f, velf_vec_[f]);
+    }
+  } 
+
+  // memory allocation
   velf_ = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost_));
   velc_ = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_wghost_));
   jac_ = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_wghost_));
 
+  // miscallateous
   tprint_ = 0.0;
-  tl2_ = 0.0;
   nfun_ = 0;
   l2norm_ = -1.0;
+}
+
+
+/* *****************************************************************
+* Initialization of remap: Jacobian and cell velcolity.
+***************************************************************** */
+template<class AnalyticDG>
+void RemapDG<AnalyticDG>::InitSecondary()
+{
+  WhetStone::Entity_ID_List faces;
+  J_.resize(ncells_wghost_);
+  uc_.resize(ncells_wghost_);
+
+  for (int c = 0; c < ncells_wghost_; ++c) {
+    mesh0_->cell_get_faces(c, &faces);
+
+    std::vector<WhetStone::VectorPolynomial> vvf;
+    for (int n = 0; n < faces.size(); ++n) {
+      vvf.push_back(velf_vec_[faces[n]]);
+    }
+
+    maps_->VelocityCell(c, vvf, uc_[c]);
+    maps_->Jacobian(uc_[c], J_[c]);
+  }
 }
 
 
@@ -223,10 +249,10 @@ void RemapDG<AnalyticDG>::FunctionalTimeDerivative(
   xc.MinValue(xmin);
 
   if (fabs(tprint_ - t) < 1e-6 && mesh0_->get_comm()->MyPID() == 0) {
-    printf("t=%8.5f  L2=%9.5g  nfnc=%3d  umax: ", t, l2norm_, nfun_);
+    printf("t=%8.5f  L2=%9.5g  nfnc=%3d  umax: ", global_time(t), l2norm_, nfun_);
     for (int i = 0; i < std::min(nk, 3); ++i) printf("%9.5g ", xmax[i]);
     printf("\n");
-    tprint_ += 0.1;
+    tprint_ += dt_output_;
   } 
 
   // -- calculate right-hand_side
@@ -235,32 +261,51 @@ void RemapDG<AnalyticDG>::FunctionalTimeDerivative(
 
 
 /* *****************************************************************
-* Calculates various geometric quantaties of intermediate meshes.
+* Calculates various geometric quantaties on intermediate meshes.
+***************************************************************** */
+template<class AnalyticDG>
+void RemapDG<AnalyticDG>::Jacobian(
+    int c, double t, const WhetStone::MatrixPolynomial& J, WhetStone::MatrixPolynomial& Jt)
+{
+  int nJ = J.NumRows();
+  Jt = J * t;
+
+  for (int i = 0; i < nJ; ++i) {
+    Jt(i, i % dim_)(0) += 1.0;
+  }
+}
+
+
+/* *****************************************************************
+* Calculates various geometric quantaties on intermediate meshes.
 ***************************************************************** */
 template<class AnalyticDG>
 void RemapDG<AnalyticDG>::UpdateGeometricQuantities(double t)
 {
-  WhetStone::VectorPolynomial cn;
+  WhetStone::VectorPolynomial tmp, fmap, cn;
 
   for (int f = 0; f < nfaces_wghost_; ++f) {
     // cn = j J^{-t} N dA
     if (high_order_velocity_) {
-      WhetStone::VectorPolynomial tmp; 
       maps_->VelocityFace(f, tmp);
-      maps_->NansonFormula(f, t, tmp, cn);
+      fmap = t * tmp;
+      maps_->NansonFormula(f, fmap, cn);
       (*velf_)[f] = tmp * cn;
     } else {
-      maps_->NansonFormula(f, t, velf_vec_[f], cn);
+      fmap = t * velf_vec_[f];
+      maps_->NansonFormula(f, fmap, cn);
       (*velf_)[f] = velf_vec_[f] * cn;
     }
   }
 
-  WhetStone::MatrixPolynomial C;
+  WhetStone::MatrixPolynomial Jt, C;
   for (int c = 0; c < ncells_wghost_; ++c) {
-    maps_->Cofactors(t, J_[c], C);
+    Jacobian(c, t, J_[c], Jt);
+    maps_->Determinant(Jt, (*jac_)[c]);
+    maps_->Cofactors(Jt, C);
     
     // cell-based pseudo velocity -C^t u 
-    int nC = C.size();
+    int nC = C.NumRows();
     (*velc_)[c].resize(nC);
 
     int kC = nC / dim_;
@@ -271,13 +316,10 @@ void RemapDG<AnalyticDG>::UpdateGeometricQuantities(double t)
         (*velc_)[c][m + i].set_origin(uc_[c][0].origin());
 
         for (int k = 0; k < dim_; ++k) {
-          (*velc_)[c][m + i] -= C[m + k][i] * uc_[c][m + k];
+          (*velc_)[c][m + i] -= C(m + k, i) * uc_[c][m + k];
         }
       }
     }
-
-    // determinant of Jacobian
-    maps_->Determinant(t, J_[c], (*jac_)[c]);
   }
 }
 
@@ -286,55 +328,83 @@ void RemapDG<AnalyticDG>::UpdateGeometricQuantities(double t)
 * Deform mesh1
 ***************************************************************** */
 template<class AnalyticDG>
-void RemapDG<AnalyticDG>::DeformMesh(int deform)
+void RemapDG<AnalyticDG>::DeformMesh(int deform, double t)
 {
-  AmanziGeometry::Point xv(dim_), yv(dim_), uv(dim_);
+  // create distributed random vector
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(mesh0_)->SetGhosted(true)->AddComponent("node", AmanziMesh::NODE, dim_);
+  CompositeVector random(cvs);
+
+  int gid = mesh0_->node_map(false).MaxAllGID();
+  double scale = 0.2 * std::pow(gid, -1.0 / dim_);
+  Epetra_MultiVector& random_n = *random.ViewComponent("node", true);
+
+  random_n.Random();
+  random_n.Scale(scale);
+  random.ScatterMasterToGhosted();
+
+  // relocate mesh nodes
+  AmanziGeometry::Point xv(dim_), yv(dim_), uv(dim_), rv(dim_);
   AmanziMesh::Entity_ID_List nodeids;
   AmanziGeometry::Point_List new_positions, final_positions;
 
   int nnodes = mesh0_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+
   for (int v = 0; v < nnodes; ++v) {
-    mesh1_->node_get_coordinates(v, &xv);
-    yv = xv;
-
-    if (deform == 1) {
-      double ds(0.0001);
-      for (int i = 0; i < 10000; ++i) {
-        if (dim_ == 2) {
-          uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]);
-          uv[1] =-0.2 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]);
-        } else {
-          uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]) * std::cos(M_PI * xv[2]);
-          uv[1] =-0.1 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]) * std::cos(M_PI * xv[2]);
-          uv[2] =-0.1 * std::cos(M_PI * xv[0]) * std::cos(M_PI * xv[1]) * std::sin(M_PI * xv[2]);
-        }
-        xv += uv * ds;
-      }
-    }
-    else if (deform == 2) {
-      xv[0] = yv[0] * yv[1] + (1.0 - yv[1]) * std::pow(yv[0], 0.8);
-      xv[1] = yv[1] * yv[0] + (1.0 - yv[0]) * std::pow(yv[1], 0.8);
-    }
-    else if (deform == 3) {
-      xv = yv;
-      if (xv[0] < 0.5) 
-        xv[0] += yv[0] / 2;
-      else
-        xv[0] += (1.0 - yv[0]) / 2;
-    }
-    else if (deform == 4) {
-      xv[0] = yv[0] + yv[0] * yv[1] * (1.0 - yv[0]) / 2;
-      xv[1] = yv[1] + yv[0] * yv[1] * (1.0 - yv[1]) / 2;
-    }
-    else if (deform == 5) {
-      xv[0] = yv[0] + yv[0] * (1.0 - yv[0]) / 2;
-      xv[1] = yv[1] + yv[1] * (1.0 - yv[1]) / 2;
-    }
-
+    for (int i = 0; i < dim_; ++i) rv[i] = random_n[i][v];
+    mesh0_->node_get_coordinates(v, &xv);
     nodeids.push_back(v);
-    new_positions.push_back(xv);
+    new_positions.push_back(DeformNode(deform, t, xv, rv));
   }
   mesh1_->deform(nodeids, new_positions, false, &final_positions);
+}
+
+
+/* *****************************************************************
+* Deformation functional
+***************************************************************** */
+template<class AnalyticDG>
+AmanziGeometry::Point RemapDG<AnalyticDG>::DeformNode(
+  int deform, double t, const AmanziGeometry::Point& yv, const AmanziGeometry::Point& rv)
+{
+  AmanziGeometry::Point uv(dim_), xv(yv);
+
+  if (deform == 1) {
+    double ds(0.0001);
+    int n = t / ds;
+    for (int i = 0; i < n; ++i) {
+      if (dim_ == 2) {
+        uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]);
+        uv[1] =-0.2 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]);
+      } else {
+        uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]) * std::cos(M_PI * xv[2]);
+        uv[1] =-0.1 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]) * std::cos(M_PI * xv[2]);
+        uv[2] =-0.1 * std::cos(M_PI * xv[0]) * std::cos(M_PI * xv[1]) * std::sin(M_PI * xv[2]);
+      }
+      xv += uv * ds;
+    }
+  }
+  else if (deform == 2) {
+    xv[0] = yv[0] * yv[1] + (1.0 - yv[1]) * std::pow(yv[0], 0.8);
+    xv[1] = yv[1] * yv[0] + (1.0 - yv[0]) * std::pow(yv[1], 0.8);
+  }
+  else if (deform == 3) {
+    if (fabs(yv[0]) > 1e-6 && fabs(1.0 - yv[0]) > 1e-6 &&
+        fabs(yv[1]) > 1e-6 && fabs(1.0 - yv[1]) > 1e-6) {
+      xv[0] += rv[0];
+      xv[1] += rv[1];
+    }
+  }
+  else if (deform == 4) {
+    xv[0] += t * yv[0] * yv[1] * (1.0 - yv[0]) / 2;
+    xv[1] += t * yv[0] * yv[1] * (1.0 - yv[1]) / 2;
+  }
+  else if (deform == 5) {
+    xv[0] += t * yv[0] * (1.0 - yv[0]) / 2;
+    xv[1] += t * yv[1] * (1.0 - yv[1]) / 2;
+  }
+
+  return xv;
 }
 
 } // namespace Amanzi

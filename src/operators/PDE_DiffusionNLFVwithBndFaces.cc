@@ -542,8 +542,8 @@ void PDE_DiffusionNLFVwithBndFaces::UpdateMatricesNewtonCorrection(
   // Correction is zero for linear problems
   if (k_ == Teuchos::null || dkdp_ == Teuchos::null) return;
 
-  if (k_->HasComponent("face")) k_ -> ScatterMasterToGhosted("face");
-  if (dkdp_->HasComponent("face")) dkdp_ -> ScatterMasterToGhosted("face");
+  if (k_->HasComponent("face")) k_->ScatterMasterToGhosted("face");
+  if (dkdp_->HasComponent("face")) dkdp_->ScatterMasterToGhosted("face");
 
   // Correction is not required
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_NONE) return;

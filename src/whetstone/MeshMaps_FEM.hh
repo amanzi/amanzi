@@ -39,14 +39,9 @@ class MeshMaps_FEM : public MeshMaps {
                Teuchos::RCP<const AmanziMesh::Mesh> mesh1) : MeshMaps(mesh0, mesh1) {};
   ~MeshMaps_FEM() {};
 
-  // Maps
-  // -- pseudo-velocity
+  // remap pseudo velocity
   virtual void VelocityCell(int c, const std::vector<VectorPolynomial>& vf,
                             VectorPolynomial& vc) const override;
-
-  // -- Nanson formula
-  virtual void NansonFormula(int f, double t, const VectorPolynomial& vf,
-                             VectorPolynomial& cn) const override;
 
  private:
   void JacobianCellValue_(int c, double t, const AmanziGeometry::Point& x, Tensor& J) const;

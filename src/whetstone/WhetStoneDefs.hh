@@ -55,10 +55,6 @@ enum class Parallel_type {
 };
 #endif
 
-class Polynomial;
-typedef std::vector<std::vector<Polynomial> > MatrixPolynomial;
-
-
 // status of elemental matrices
 const int WHETSTONE_ELEMENTAL_MATRIX_OK = 0;
 const int WHETSTONE_ELEMENTAL_MATRIX_SIZE = 1;
