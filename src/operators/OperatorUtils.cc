@@ -254,8 +254,7 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schem
     AMANZI_ASSERT(cvs.HasComponent("face"));
     compnames.push_back("face");
     dofnums.push_back(n_dofs);
-    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
-        getMaps(*cvs.Mesh(), AmanziMesh::FACE);
+    auto meshmaps = getMaps(*cvs.Mesh(), AmanziMesh::FACE);
     maps.push_back(meshmaps.first);
     ghost_maps.push_back(meshmaps.second);
   }
@@ -264,8 +263,7 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schem
     AMANZI_ASSERT(cvs.HasComponent("cell"));
     compnames.push_back("cell");
     dofnums.push_back(n_dofs);
-    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
-        getMaps(*cvs.Mesh(), AmanziMesh::CELL);
+    auto meshmaps = getMaps(*cvs.Mesh(), AmanziMesh::CELL);
     maps.push_back(meshmaps.first);
     ghost_maps.push_back(meshmaps.second);
   }
@@ -274,8 +272,7 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schem
     AMANZI_ASSERT(cvs.HasComponent("edge"));
     compnames.push_back("edge");
     dofnums.push_back(n_dofs);
-    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
-        getMaps(*cvs.Mesh(), AmanziMesh::EDGE);
+    auto meshmaps = getMaps(*cvs.Mesh(), AmanziMesh::EDGE);
     maps.push_back(meshmaps.first);
     ghost_maps.push_back(meshmaps.second);
   }
@@ -284,8 +281,7 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schem
     AMANZI_ASSERT(cvs.HasComponent("node"));
     compnames.push_back("node");
     dofnums.push_back(n_dofs);
-    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
-        getMaps(*cvs.Mesh(), AmanziMesh::NODE);
+    auto meshmaps = getMaps(*cvs.Mesh(), AmanziMesh::NODE);
     maps.push_back(meshmaps.first);
     ghost_maps.push_back(meshmaps.second);
   }
@@ -295,19 +291,12 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schem
     compnames.push_back("boundary_face");
     dofnums.push_back(n_dofs);
 
-    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
-        getMaps(*cvs.Mesh(), AmanziMesh::BOUNDARY_FACE);
-    
-    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > facemaps =
-        getMaps(*cvs.Mesh(), AmanziMesh::FACE);
-
-    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > new_bnd_map =
-      CreateBoundaryMaps(cvs.Mesh(), facemaps, meshmaps);
+    auto meshmaps = getMaps(*cvs.Mesh(), AmanziMesh::BOUNDARY_FACE);
+    auto facemaps = getMaps(*cvs.Mesh(), AmanziMesh::FACE);
+    auto new_bnd_map = CreateBoundaryMaps(cvs.Mesh(), facemaps, meshmaps);
     
     maps.push_back(new_bnd_map.first);
     ghost_maps.push_back(new_bnd_map.second);
-
-
   }
   
   return Teuchos::rcp(new SuperMap(cvs.Comm(), compnames, dofnums, maps, ghost_maps));
@@ -327,8 +316,7 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, Schema& s
   for (auto it = schema.begin(); it != schema.end(); ++it) {
     compnames.push_back(schema.KindToString(it->kind));
     dofnums.push_back(it->num);
-    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
-        getMaps(*cvs.Mesh(), it->kind);
+    auto meshmaps = getMaps(*cvs.Mesh(), it->kind);
     maps.push_back(meshmaps.first);
     ghost_maps.push_back(meshmaps.second);
   }
@@ -408,15 +396,15 @@ unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, Schema& schema)
 std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >
 CreateBoundaryMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >& face_maps,
-                   std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >& bnd_maps) {
-
-  int num_boundary_faces_owned = bnd_maps.first -> NumMyElements();
+                   std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >& bnd_maps)
+{
+  int num_boundary_faces_owned = bnd_maps.first->NumMyElements();
 
   AMANZI_ASSERT(num_boundary_faces_owned > 0);
   
-  Teuchos::RCP<Epetra_Map>  boundary_map =  Teuchos::rcp(new Epetra_Map(-1, num_boundary_faces_owned, 0, bnd_maps.first->Comm()));
+  Teuchos::RCP<Epetra_Map> boundary_map = Teuchos::rcp(new Epetra_Map(-1, num_boundary_faces_owned, 0, bnd_maps.first->Comm()));
 
-  int n_ghosted = bnd_maps.second -> NumMyElements() - num_boundary_faces_owned;
+  int n_ghosted = bnd_maps.second->NumMyElements() - num_boundary_faces_owned;
   std::vector<int> gl_id(n_ghosted), pr_id(n_ghosted), lc_id(n_ghosted);
 
   int total_proc = mesh->get_comm()->NumProc();
@@ -430,7 +418,7 @@ CreateBoundaryMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
   MPI_Allreduce(tmp.data(), min_global_id.data(), total_proc, MPI_INT, MPI_SUM, comm);
 #endif
   
-  for (int n = num_boundary_faces_owned; n < bnd_maps.second -> NumMyElements(); n++) {
+  for (int n = num_boundary_faces_owned; n < bnd_maps.second->NumMyElements(); n++) {
     int f = face_maps.second->LID(bnd_maps.second->GID(n));
     gl_id[n - num_boundary_faces_owned] = face_maps.second->GID(f);
   }
@@ -460,8 +448,8 @@ CreateBoundaryMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
   }
   
 
-  Teuchos::RCP<Epetra_Map>  boundary_map_ghosted =  Teuchos::rcp(new Epetra_Map(-1, n_ghosted_new, global_id_ghosted.data(), 0, bnd_maps.first->Comm()));
-  
+  Teuchos::RCP<Epetra_Map> boundary_map_ghosted = 
+    Teuchos::rcp(new Epetra_Map(-1, n_ghosted_new, global_id_ghosted.data(), 0, bnd_maps.first->Comm()));
 
   return std::make_pair(boundary_map, boundary_map_ghosted);
 }
