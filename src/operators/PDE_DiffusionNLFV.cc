@@ -289,7 +289,7 @@ void PDE_DiffusionNLFV::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& u)
 {
   if (!stencil_initialized_) InitStencils_();
-  if (k_ != Teuchos::null) k_ -> ScatterMasterToGhosted("face");
+  if (k_ != Teuchos::null) k_->ScatterMasterToGhosted("face");
 
   u->ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& uc = *u->ViewComponent("cell", true);
@@ -430,8 +430,8 @@ void PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(
   // Correction is zero for linear problems
   if (k_ == Teuchos::null || dkdp_ == Teuchos::null) return;
 
-  if (k_->HasComponent("face")) k_ -> ScatterMasterToGhosted("face");
-  if (dkdp_->HasComponent("face")) dkdp_ -> ScatterMasterToGhosted("face");
+  if (k_->HasComponent("face")) k_->ScatterMasterToGhosted("face");
+  if (dkdp_->HasComponent("face")) dkdp_->ScatterMasterToGhosted("face");
 
   // Correction is not required
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_NONE) return;
@@ -488,8 +488,8 @@ void PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(
   // Correction is zero for linear problems
   if (k_ == Teuchos::null || dkdp_ == Teuchos::null) return;
 
-  k_ -> ScatterMasterToGhosted("face");
-  dkdp_ -> ScatterMasterToGhosted("face");
+  k_->ScatterMasterToGhosted("face");
+  dkdp_->ScatterMasterToGhosted("face");
 
   // Correction is not required
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_NONE) return;
@@ -718,7 +718,7 @@ void PDE_DiffusionNLFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
 
-  if (k_ != Teuchos::null) k_ -> ScatterMasterToGhosted("face");
+  if (k_ != Teuchos::null) k_->ScatterMasterToGhosted("face");
   
   CompositeVectorSpace cvs; 
   cvs.SetMesh(mesh_)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, 2);

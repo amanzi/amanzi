@@ -49,7 +49,7 @@ int ObservableLineSegment::ComputeRegionSize() {
   //int mesh_block_size;
   Errors::Message msg;
 
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_ptr = mesh_ -> geometric_model();
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_ptr = mesh_->geometric_model();
   Teuchos::RCP<const AmanziGeometry::Region> reg_ptr = gm_ptr->FindRegion(region_);
 
   if (reg_ptr->type() != AmanziGeometry::LINE_SEGMENT) {

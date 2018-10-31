@@ -38,7 +38,7 @@ int ObservableSolute::ComputeRegionSize()
   // check if observation is planar
   obs_planar_ = false;
 
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_ptr = mesh_ -> geometric_model();
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_ptr = mesh_->geometric_model();
   Teuchos::RCP<const AmanziGeometry::Region> reg_ptr = gm_ptr->FindRegion(region_);
     
   if (reg_ptr->type() == AmanziGeometry::POLYGON) {
@@ -99,7 +99,7 @@ void ObservableSolute::ComputeObservation(
     State& S, double* value, double* volume, std::string& unit)
 {
   Errors::Message msg;
-  int dim = mesh_ -> space_dimension();
+  int dim = mesh_->space_dimension();
 
   if (!S.HasField("total_component_concentration")) {
     // bail out with default values if this field is not yet created

@@ -109,7 +109,7 @@ void PDE_DiffusionMFD::UpdateMatrices(
 {
 
 
-  if (k_ != Teuchos::null) k_ -> ScatterMasterToGhosted();
+  if (k_ != Teuchos::null) k_->ScatterMasterToGhosted();
 
   if (!exclude_primary_terms_) {
     if (local_op_schema_ & OPERATOR_SCHEMA_DOFS_NODE) {
@@ -145,7 +145,7 @@ void PDE_DiffusionMFD::UpdateMatricesNewtonCorrection(
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
     if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
 
-      if (dkdp_ !=  Teuchos::null) dkdp_ -> ScatterMasterToGhosted();      
+      if (dkdp_ !=  Teuchos::null) dkdp_->ScatterMasterToGhosted();      
       AddNewtonCorrectionCell_(flux, u, scalar_factor);
       
     } else {
@@ -165,7 +165,7 @@ void PDE_DiffusionMFD::UpdateMatricesNewtonCorrection(
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
     if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
 
-      if (dkdp_ !=  Teuchos::null) dkdp_ -> ScatterMasterToGhosted();      
+      if (dkdp_ !=  Teuchos::null) dkdp_->ScatterMasterToGhosted();      
       AddNewtonCorrectionCell_(flux, u, factor);
 
     } else {

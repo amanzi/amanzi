@@ -53,7 +53,7 @@ void DynamicBoundaryFunction::Compute(double time) {
   int func_id = Func_ID(time);
   
   if (func_id >= func_.size()) return;
-  func_[func_id] -> Compute(time);
+  func_[func_id]->Compute(time);
 };
 
 } // namespace Functions
