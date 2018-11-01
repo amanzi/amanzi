@@ -22,7 +22,7 @@ For details on this test, see :ref:`about_butler_pod_2d`.
 Background
 ----------
 
-Butler and Liu (1993) :cite:`pod-Butler_Liu_radially_asymmetric_1993` developed a semi-analytical solution for calculating drawdown in an aquifer system, in which a disc of one material is embedded in a matrix of different hydraulic properties. The problem is interested in drawdown as a function of location and time due to pumping from a fully penetrating well located either in the disc or the matrix. The differences in hydraulic properties between the disc and the matrix can be of any magnitude. The problem is solved analytically in Laplace space and the drawdown is solved numerically by inversion from the Laplace space to the real space.
+Butler and Liu  :cite:`pod-Butler_Liu_radially_asymmetric_1993` developed a semi-analytical solution for calculating drawdown in an aquifer system, in which a disc of one material is embedded in a matrix of different hydraulic properties. The problem is interested in drawdown as a function of location and time due to pumping from a fully penetrating well located either in the disc or the matrix. The differences in hydraulic properties between the disc and the matrix can be of any magnitude. The problem is solved analytically in Laplace space and the drawdown is solved numerically by inversion from the Laplace space to the real space.
 
 
 Model
@@ -92,7 +92,7 @@ Variables
 
 * Domain:
 
-  * :math:`x_{min} = y_{min} = 0, z_{min} = 0 \text{ [m]}` (in mesh/cartesian coordinates)
+  * :math:`x_{min} = y_{min} = z_{min} = 0 \text{ [m]}` (in mesh/cartesian coordinates)
   * :math:`x_{max} = y_{max} = 20200, z_{max} = 1 \text{ [m]}` (in mesh/cartesian coordinates) 
   * aquifer thickness:    :math:`b=z_{max}-z_{min} = 1 \text{ [m]}`
   * pumping well location:    :math:`(r_{pw}, \theta_{pw}) = (600 \text{m}, 0^{\circ})`
@@ -126,8 +126,14 @@ Variables
 
 * Boundary and initial conditions:
 
-  * initial condition:    :math:`s(r,\theta,0)=0 \text{ [m]}`
-  * constant-head (Dirichlet) boundary conditions:    :math:`s(\infty,\theta,t) = 0 \text{ [m]}` 
+  * initial condition:    :math:`s(r,\theta,0)=0`
+
+    * (in grid/cartesian coordinates):    :math:`s(x,y,z,0) = 0 \text{ [m]}`
+
+  * constant-head (Dirichlet) boundary conditions:    :math:`s(\infty,\theta,t) = 0` 
+
+    * (in grid/cartesian coordinates):    :math:`s(x_{min,max},y_{min,max},z,t) = 0 \text{ [m]}`
+
   * well-head pumping rate:    :math:`Q = -11.5485 \text{ [m}^3 \text{/s]} = 1000 \text{ [m}^3 \text{/d]}`
   * duration of pumping:    :math:`t_{max} = 31.7 \text{ [yrs]}`
 
