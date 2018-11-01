@@ -168,7 +168,7 @@ void MyRemapDG::DeformMesh(int deform, double t)
 {
   RemapDG<AnalyticDG04>::DeformMesh(deform, t);
 
-  if (order_ == 2) {
+  if (order_ > 1) {
     int nfaces = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
     auto ho_nodes0 = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nfaces);
     auto ho_nodes1 = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nfaces);
@@ -389,7 +389,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
     double vol2 = mesh1->cell_volume(c);
 
     area += vol1;
-    area1 += vol2;
+    area1 += mesh1->cell_volume_linear(c);
 
     double err = std::fabs(vol1 - vol2);
     gcl_inf = std::max(gcl_inf, err / vol1);
@@ -456,7 +456,7 @@ TEST(REMAP_CURVED_2D) {
   double dT(0.01 * nloop), T1(1.0 / nloop);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
-  int deform = 4;
+  int deform = 2;
   RemapTestsCurved(rk_method, maps, "test/median15x16.exo",    16,0,0, dT,   deform, nloop, T1);
   RemapTestsCurved(rk_method, maps, "test/median32x33.exo",    32,0,0, dT/2, deform, nloop, T1);
   RemapTestsCurved(rk_method, maps, "test/median63x64.exo",    64,0,0, dT/4, deform, nloop, T1);

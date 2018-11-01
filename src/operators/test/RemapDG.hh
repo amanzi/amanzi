@@ -42,13 +42,7 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
  public:
   RemapDG(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
           const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
-          Teuchos::ParameterList& plist) 
-    : mesh0_(mesh0),
-      mesh1_(mesh1),
-      plist_(plist),
-      dim_(mesh0->space_dimension()),
-      high_order_velocity_(false),
-      dt_output_(0.1) {};
+          Teuchos::ParameterList& plist);
   ~RemapDG() {};
 
   // main members required by high-level interface
@@ -112,7 +106,16 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
 * Initialization of remap: operarot and face velocity.
 ***************************************************************** */
 template<class AnalyticDG>
-void RemapDG<AnalyticDG>::InitPrimary()
+RemapDG<AnalyticDG>::RemapDG(
+    const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
+    const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
+    Teuchos::ParameterList& plist) 
+  : mesh0_(mesh0),
+    mesh1_(mesh1),
+    plist_(plist),
+    dim_(mesh0->space_dimension()),
+    high_order_velocity_(false),
+    dt_output_(0.1)
 {
   // mesh data
   ncells_owned_ = mesh0_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -122,7 +125,15 @@ void RemapDG<AnalyticDG>::InitPrimary()
 
   order_ = plist_.sublist("PK operator")
                  .sublist("flux operator").template get<int>("method order");
+}
 
+
+/* *****************************************************************
+* Initialization of remap: operarot and face velocity.
+***************************************************************** */
+template<class AnalyticDG>
+void RemapDG<AnalyticDG>::InitPrimary()
+{
   // create right-hand side operator
   // -- flux
   auto oplist = plist_.sublist("PK operator").sublist("flux operator");
