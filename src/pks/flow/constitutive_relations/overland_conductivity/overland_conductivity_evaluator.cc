@@ -18,7 +18,12 @@ namespace Flow {
 OverlandConductivityEvaluator::OverlandConductivityEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   Key domain = Keys::getDomain(my_key_);
-  
+
+  if (plist_.isParameter("height key") || plist_.isParameter("ponded depth key")
+      || plist_.isParameter("height key suffix") || plist_.isParameter("ponded depth key suffix")) {
+    Errors::Message message("OverlandConductivity: only use \"depth key\" or \"depth key suffix\", not \"height key\" or \"ponded depth key\".");
+    Exceptions::amanzi_throw(message);
+  }
   depth_key_ = Keys::readKey(plist_, domain, "depth", "ponded_depth");
   dependencies_.insert(depth_key_);
 
