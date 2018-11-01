@@ -47,13 +47,13 @@ The initial conditions are the same for the disc and the matrix:
 
 The boundary condition at infinite distance is:
 
-.. math::    s_2(-\infty, \theta, t) =  0.
+.. math::    s_2(\infty, \theta, t) =  0.
 
 A pumping well discharging at a constant rate :math:`Q` [L\ :sup:`3`\/T] is assumed at location :math:`(r_{pw}, \theta_{pw})`
 
 .. math:: \lim_{R \rightarrow 0} 2 \pi R T_2 \frac{\partial s_2(R,t)}{\partial R} = -Q,\;\; t>0,
 
-where :math:`R` is the distance between the pumping and observation wells. To ensure the flow continuity, the auxiliary conditions at the matrix-disc interfaces (:math:`r = a`) must be met:
+where :math:`R` is the distance between the pumping and observation wells. To ensure flow continuity, the auxiliary conditions at the matrix-disc interfaces (:math:`r = a`) must be met:
 
 .. math::      s_1(a,\theta,t) = s_2(a,\theta,t),\\
 .. math::      T_1\frac{\partial s_1(a,\theta,t)}{\partial r} = T_2\frac{\partial s_2(a,\theta,t)}{\partial r}.\\
@@ -90,21 +90,48 @@ A non-uniform mesh was used to better represent the disc in numerical simulation
 Variables
 ~~~~~~~~~
 
-	Transmissivity: :math:`\;\; T_1 = 0.0011574 \; m^{2}/s`; :math:`T_2 = 0.011574 \;m^{2}/s`;
+* Domain:
 
-	Storativity: :math:`\;\; S_1 = S_2 = 2\times 10^{-4}`;
+  * :math:`x_{min} = y_{min} = 0, z_{min} = 0 \text{ [m]}` (in mesh/cartesian coordinates)
+  * :math:`x_{max} = y_{max} = 20200, z_{max} = 1 \text{ [m]}` (in mesh/cartesian coordinates) 
+  * aquifer thickness:    :math:`b=z_{max}-z_{min} = 1 \text{ [m]}`
+  * pumping well location:    :math:`(r_{pw}, \theta_{pw}) = (600 \text{m}, 0^{\circ})`
 
-	Pumping rate: :math:`\;\; Q = 1000 \;m^{3} /day (= 0.011574 \;m^{3} /s)`;
+  * observation well locations:
 
-	Radius of the disc: :math:`\;\; d = 18 \;m`;
+    * :math:`(r_{obs40},\theta_{obs40}) = (40 \text{m},360^{\circ})`
+    * :math:`(r_{obs360},\theta_{obs360}) = (60 \text{m},120^{\circ})`
 
-	Pumping well location :math:`\;\; (600 \;m, 0^o)` in polar coordinates with its origin at the center of the disc;
+* Material properties:
 
-	Observation well locations :math:`\;\; (40\; m, 60^o)` and :math:`(360 \; m, 120^o)`.
+  * transmissivity (all isotropic):
 
-Initial conditions: zero drawdown everywhere in the domain.
+    * :math:`T_1 = 0.0011574 \text{ [m}^2 \text{/s]}`
+    * :math:`T_2 = 0.011574 \text{ [m}^2 \text{/s]}`
+    
+      * derived from:    :math:`T=Kb`, where :math:`K=\frac{k \rho g}{\mu}`
 
-Boundary conditions: zero drawdown on four lateral boundaries.
+      * intrinsic permeability:    :math:`k_1 = 1.187 \times 10^{-10}, \: k_2 = 1.187 \times 10^{-9} \text{ [m}^2 \text{]}`
+
+  * storativity:   
+    
+    * :math:`S_1= S_2 = 2.0\times 10^{-4} \: \text{[-]}`
+
+      * derived from:    :math:`S=S_s b`, where :math:`b=1 \: \text{[m]}`
+
+  * porosity:    :math:`\phi_{1,2} = 0.25`
+  * fluid density:    :math:`\rho = 1000.0 \: \text{[kg/m}^3\text{]}`
+  * dynamic viscosity:    :math:`\mu = 1.002 \times 10^{-3} \: \text{[Pa} \cdot \text{s]}` 
+  * gravitational acceleration:    :math:`g = 9.807 \: \text{[m/s}^2\text{]}`
+
+* Boundary and initial conditions:
+
+  * initial condition:    :math:`s(r,\theta,0)=0 \text{ [m]}`
+  * constant-head (Dirichlet) boundary conditions:    :math:`s(\infty,\theta,t) = 0 \text{ [m]}` 
+  * well-head pumping rate:    :math:`Q = -11.5485 \text{ [m}^3 \text{/s]} = 1000 \text{ [m}^3 \text{/d]}`
+  * duration of pumping:    :math:`t_{max} = 31.7 \text{ [yrs]}`
+
+.. Radius of the disc: :math:`\;\; d = 18 \;m`;
 
 
 Results and Comparison
