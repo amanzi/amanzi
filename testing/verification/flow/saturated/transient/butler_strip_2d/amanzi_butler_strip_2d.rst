@@ -132,7 +132,7 @@ Variables
   * initial condition:    :math:`s(x,y,0)=0 \text{ [m]}`
   * constant-head (Dirichlet) boundary conditions:    :math:`s(x_{min,max},y_{min,max},t) = 0 \text{ [m]}`
   * well-head pumping rate:    :math:`Q = -11.5485 \text{ [m}^3 \text{/s]} = 1000 \text{ [m}^3 \text{/d]}`
-  * duration of pumping:    :math:`t_{max} = 31.7 \text{ [days]}`
+  * duration of pumping:    :math:`t_{max} = 31.7 \text{ [yrs]}`
 
 * Material properties:
 
@@ -144,7 +144,7 @@ Variables
     
       * derived from:    :math:`T=Kb`, where :math:`K=\frac{k \rho g}{\mu}`
 
-      * intrinsic permeability:    :math:`k_1 = 1.187 \times 10^{-8}, k_2 = 1.187 \times 10^{-9}, k_2 = 1.187 \times 10^{-10} \text{ [m}^2 \text{]}`
+      * intrinsic permeability:    :math:`k_1 = 1.187 \times 10^{-8}, k_2 = 1.187 \times 10^{-9}, k_3 = 1.187 \times 10^{-10} \text{ [m}^2 \text{]}`
 
   * storativity:   
     
@@ -155,6 +155,9 @@ Variables
       * derived from:    :math:`S=S_s b`, where :math:`b=10 \: \text{[m]}`
 
   * porosity:    :math:`\phi_{1,2,3} = 0.25`
+  * fluid density:    :math:`\rho = 1000.0 \: \text{[kg/m}^3\text{]}`
+  * dynamic viscosity:    :math:`\mu = 1.002 \times 10^{-3} \: \text{[Pa} \cdot \text{s]}` 
+  * gravitational acceleration:    :math:`g = 9.807 \: \text{[m/s}^2\text{]}`
 
 .. * Width of the strip: :math:`\;\; d = 18 \;m`
 
