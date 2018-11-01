@@ -140,18 +140,16 @@ About
 
 * Directory: testing/verification/flow/transient/butler_pod_2d
 
-
 * Authors:  Zhiming Lu (zhiming@lanl.gov),  Dylan Harp (dharp@lanl.gov)
 
 * Maintainer(s):  Zhiming Lu,  Dylan Harp
 
 * Input Files:
 
-  * amanzi_butler_pod_2d.xml
+  * amanzi_butler_pod_2d-u.xml
 
-     * Spec: Version 2.0
-     * Mesh: mesh_cylinder.exo
-     * Runs
+    * Spec: Version 2.3, unstructured mesh framework
+    * Mesh: mesh_cylinder.exo
 
 * Analytical Solutions
 
@@ -161,12 +159,12 @@ About
 
   * Input Files:
 
-     * obs.dat,  specifying parameters for observation wells.
-     * anal.dat, specifying other parameters such as the number of time steps, and so on.
+    * obs.dat,  specifying parameters for observation wells.
+    * anal.dat, specifying other parameters such as the number of time steps, and so on.
 
   * Output Files:
 
-     * drdn.res,  drawdown as a function of time for all observation wells.
+    * drdn.res,  drawdown as a function of time for all observation wells.
 
 
 Status
