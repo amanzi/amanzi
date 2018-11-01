@@ -19,7 +19,7 @@ OverlandConductivityEvaluator::OverlandConductivityEvaluator(Teuchos::ParameterL
     SecondaryVariableFieldEvaluator(plist) {
   Key domain = Keys::getDomain(my_key_);
   
-  depth_key_ = Keys::readKey(plist_, domain, "ponded depth", "ponded_depth");
+  depth_key_ = Keys::readKey(plist_, domain, "depth", "ponded_depth");
   dependencies_.insert(depth_key_);
 
   slope_key_ = Keys::readKey(plist_, domain, "slope", "slope_magnitude");
