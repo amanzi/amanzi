@@ -216,7 +216,8 @@ void AnalyticDGBase::ComputeCellError(
 
 
 /* ******************************************************************
-* Error for cell-based fields
+* Error for cell-based fields in original coordinates (p_location=0)
+* or Lagrangian coordinates (p_location=1)
 ****************************************************************** */
 inline
 void AnalyticDGBase::ComputeCellErrorRemap(

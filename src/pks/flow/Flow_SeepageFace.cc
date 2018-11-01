@@ -42,6 +42,7 @@ void Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, doubl
         bcs_[i]->seepage_model() == "PFloTran") {
       double ref_pressure = bcs_[i]->ref_pressure();
       double tol = ref_pressure * 1e-14;
+      double flux_threshold = bcs_[i]->seepage_flux_threshold();
 
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
@@ -60,7 +61,7 @@ void Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, doubl
             bc_value[f] = ref_pressure;
           }
         }
-        if (flux[0][f] < 0.0) {
+        if (flux[0][f] < it->second[0] * flux_units_ * flux_threshold) {
           bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
           bc_value[f] = it->second[0] * flux_units_;
         }

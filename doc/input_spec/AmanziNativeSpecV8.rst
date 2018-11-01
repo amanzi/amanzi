@@ -1625,6 +1625,11 @@ This modification is referred to as a submodel and requires additional parameter
     It employs a smooth transition from the infiltration 
     to mixed boundary condition. The recommended value is `"PFloTran`".
 
+  * `"seepage flux threshold`" [double] sets up the threshold for switching from the pressure 
+    to influx boundary condition in submodel `"PFloTran`". The pressure condition remains 
+    for a small influx value until it exceeds the certain fraction of the `"mass flux`" specified 
+    by this parameter. The admissible range is from 0 to 0.1. Default value is 0. 
+
 Each boundary condition accepts three parameters: `"regions`", 
 `"use area fractions`", and `"spatial distribution method`". Parameter `"regions`"
 specifies the list of regions where the boundary condition is defined. 

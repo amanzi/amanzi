@@ -41,7 +41,8 @@ class FlowBoundaryFunction : public PK_DomainFunction {
         relative_to_bottom_(false),
         no_flow_above_water_table_(false),
         bc_name_("underfined"),
-        seepage_model_("") {};
+        seepage_model_(""),
+        seepage_flux_threshold_(0.0) {};
 
   FlowBoundaryFunction(const Teuchos::ParameterList& plist);
   void ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
@@ -53,6 +54,7 @@ class FlowBoundaryFunction : public PK_DomainFunction {
   bool no_flow_above_water_table() const { return no_flow_above_water_table_; }
   std::string seepage_model() const { return seepage_model_; }
   double ref_pressure() const { return ref_pressure_; }
+  double seepage_flux_threshold() const { return seepage_flux_threshold_; }
 
  private:
   void CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
@@ -68,7 +70,7 @@ class FlowBoundaryFunction : public PK_DomainFunction {
   bool no_flow_above_water_table_;
 
   double rho_, g_;
-  double ref_pressure_;
+  double ref_pressure_, seepage_flux_threshold_;
   std::string bc_name_, seepage_model_;
 
   std::vector<std::string> regions_;
