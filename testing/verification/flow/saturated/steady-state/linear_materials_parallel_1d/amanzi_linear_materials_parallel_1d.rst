@@ -4,17 +4,17 @@ Steady-State One-Dimensional Flow: Materials in Parallel
 Capabilities Tested
 -------------------
 
-This one-dimensional model of steady-state flow through a saturated porous
-medium with constant properties tests the Amanzi
-implementation of prescribed hydraulic head boundary conditions,
-Darcy's law, and mass conservation on an elementary problem with discrete heterogeneity.  
+This one-dimensional steady-state flow problem tests the Amanzi
+saturated flow process kernel.
 Capabilities tested include:
-  
-  * one-dimensional representation
-  * steady-state
+ 
+  * single-phase, one-dimensional flow
+  * steady-state flow
   * saturated flow
-  * heterogenous porous medium
-  * prescribed hydraulic head boundary conditions
+  * constant-head (Dirichlet) boundary conditions
+  * heterogeneous porous medium
+  * isotropic porous medium
+  * uniform mesh
 
 For details on this test, see :ref:`about_linear_materials_parallel_1d`.
 
