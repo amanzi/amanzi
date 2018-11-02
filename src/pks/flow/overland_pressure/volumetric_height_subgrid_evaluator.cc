@@ -77,7 +77,7 @@ VolumetricHeightSubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   const auto& del_ex = *S->GetFieldData(delta_ex_key_)->ViewComponent("cell",false);
 
   for (int c=0; c!=vpd.MyLength(); ++c){
-    double vol_tot = f_(pd[0][c] + sd[0][c], del_max[0][c], del_ex[0][c]);
+    double vol_tot = f_(pd[0][c] + std::max(sd[0][c], 0.0) , del_max[0][c], del_ex[0][c]);
     vpd[0][c] = f_(pd[0][c], del_max[0][c], del_ex[0][c]);
     vsd[0][c] = vol_tot - vpd[0][c];
   }
