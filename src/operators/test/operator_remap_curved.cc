@@ -55,7 +55,7 @@ class MyRemapDG : public RemapDG<AnalyticDG04> {
   // geometric tools
   virtual void Jacobian(int c, double t, const WhetStone::MatrixPolynomial& J,
                         WhetStone::MatrixPolynomial& Jt) override;
-  virtual void UpdateGeometricQuantities(double t) override;
+  virtual void UpdateGeometricQuantities(double t, bool consistent_det = false) override;
 
   // mesh deformation from time 0 to t
   virtual void DeformMesh(int deform, double t) override;
@@ -137,7 +137,7 @@ void MyRemapDG::Jacobian(
 /* *****************************************************************
 * Calculates various geometric quantaties on intermediate meshes.
 ***************************************************************** */
-void MyRemapDG::UpdateGeometricQuantities(double t)
+void MyRemapDG::UpdateGeometricQuantities(double t, bool consistent_det)
 {
   // cn = j J^{-t} N dA
   WhetStone::VectorPolynomial cn;
@@ -437,7 +437,16 @@ TEST(REMAP_CURVED_2D) {
   auto rk_method = Amanzi::Explicit_TI::heun_euler;
   std::string maps = "VEM";
   int deform = 1;
-  RemapTestsCurved(rk_method, maps, "", 8,8,0, dT, deform, nloop, T1);
+  // RemapTestsCurved(rk_method, maps, "", 8,8,0, dT, deform, nloop, T1);
+
+  /*
+  int nloop = 5;
+  double dT(0.01 * nloop), T1(1.0 / nloop);
+  auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
+  std::string maps = "VEM";
+  int deform = 6;
+  RemapTestsCurved(rk_method, maps, "test/circle_quad10.exo", 10,0,0, dT, deform, nloop, T1);
+  */
 
   /*
   int nloop = 5;
@@ -456,7 +465,7 @@ TEST(REMAP_CURVED_2D) {
   double dT(0.01 * nloop), T1(1.0 / nloop);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
-  int deform = 2;
+  int deform = 1;
   RemapTestsCurved(rk_method, maps, "test/median15x16.exo",    16,0,0, dT,   deform, nloop, T1);
   RemapTestsCurved(rk_method, maps, "test/median32x33.exo",    32,0,0, dT/2, deform, nloop, T1);
   RemapTestsCurved(rk_method, maps, "test/median63x64.exo",    64,0,0, dT/4, deform, nloop, T1);
