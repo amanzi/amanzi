@@ -440,12 +440,13 @@ TEST(REMAP_CURVED_2D) {
   // RemapTestsCurved(rk_method, maps, "", 8,8,0, dT, deform, nloop, T1);
 
   /*
-  int nloop = 5;
-  double dT(0.01 * nloop), T1(1.0 / nloop);
+  int nloop = 10;
+  double dT(0.005 * nloop), T1(1.0 / nloop);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
   int deform = 6;
   RemapTestsCurved(rk_method, maps, "test/circle_quad10.exo", 10,0,0, dT, deform, nloop, T1);
+  RemapTestsCurved(rk_method, maps, "test/circle_quad20.exo", 20,0,0, dT, deform, nloop, T1);
   */
 
   /*

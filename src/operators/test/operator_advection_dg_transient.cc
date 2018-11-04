@@ -44,7 +44,6 @@
 #include "AnalyticDG07b.hh"
 #include "AnalyticDG08.hh"
 
-#include "OperatorAudit.hh"
 #include "OperatorDefs.hh"
 #include "PDE_Abstract.hh"
 #include "PDE_AdvectionRiemann.hh"

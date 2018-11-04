@@ -14,6 +14,7 @@
 #ifndef AMANZI_REMAP_DG_HH_
 #define AMANZI_REMAP_DG_HH_
 
+#include <cmath>
 #include <cstdlib>
 #include <iostream>
 #include <vector>
@@ -491,8 +492,10 @@ AmanziGeometry::Point RemapDG<AnalyticDG>::DeformNode(
     xv[1] += t * yv[1] * (1.0 - yv[1]) / 2;
   }
   else if (deform == 6) {
-    xv[0] -= t * yv[1];
-    xv[1] += t * yv[0];
+    double phi = t * M_PI / 8;
+    double cs(std::cos(phi)), sn(std::sin(phi));
+    xv[0] = cs * yv[0] - sn * yv[1];
+    xv[1] = sn * yv[0] + cs * yv[1];
   }
 
   return xv;
