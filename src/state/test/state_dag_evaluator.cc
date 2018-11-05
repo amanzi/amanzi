@@ -37,7 +37,7 @@ class AModel {
     A_(i) = 2 * B_(i)  + C_(i) * E_(i) * H_(i);
   }
 
-  class dAdB{};
+  class dAdB {};
   KOKKOS_INLINE_FUNCTION void operator() (dAdB, const int i) const {
     A_(i) = 2.0;
   }
@@ -113,29 +113,36 @@ public:
   }
 
   virtual void Evaluate_(const State &S, const std::vector<CompositeVector*> &results) override {
-    auto result_c = Kokkos::subview(results[0]->ViewComponent("cell",false), Kokkos::ALL(), 0);
-    auto fb_c = Kokkos::subview(S.Get<CompositeVector>("fb").ViewComponent("cell",false), Kokkos::ALL(), 0);
-    auto fc_c = Kokkos::subview(S.Get<CompositeVector>("fc").ViewComponent("cell",false), Kokkos::ALL(), 0);
-    auto fe_c = Kokkos::subview(S.Get<CompositeVector>("fe").ViewComponent("cell",false), Kokkos::ALL(), 0);
-    auto fh_c = Kokkos::subview(S.Get<CompositeVector>("fh").ViewComponent("cell",false), Kokkos::ALL(), 0);
-    AModel<AmanziDefaultDevice> model(result_c, fb_c, fc_c,fe_c,fh_c, plist_);
-    
-    ExecuteModel("A",model,0,result_c.extent(0));
+    auto result_c = results[0]->ViewComponent("cell",0,false);
+    auto fb_c = S.Get<CompositeVector>("fb").ViewComponent("cell",0,false);
+    auto fc_c = S.Get<CompositeVector>("fc").ViewComponent("cell",0,false);
+    auto fe_c = S.Get<CompositeVector>("fe").ViewComponent("cell",0,false);
+    auto fh_c = S.Get<CompositeVector>("fh").ViewComponent("cell",0,false);
 
+    AModel<AmanziDefaultDevice> model(result_c, fb_c, fc_c,fe_c,fh_c, plist_);
+    ExecuteModel("A",model, 0,result_c.extent(0));
   }
 
   virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
                                           const Key &wrt_tag,
                                           const std::vector<CompositeVector*> &results) override {
-    AMANZI_ASSERT(false);
-    // if (wrt_tag == "fb") {
-    //   ExecuteModel("A",model::dAdB,0,result_c.extent(0));
-    // }
-    // ExecuteModel("A",model::dAdC,0,result_c.extent(0));
-    // ExecuteModel("A",model::dAdE,0,result_c.extent(0));
-    // ExecuteModel("A",model::dAdH,0,result_c.extent(0));
+    auto result_c = results[0]->ViewComponent("cell",0,false);
+    auto fb_c = S.Get<CompositeVector>("fb").ViewComponent("cell",0,false);
+    auto fc_c = S.Get<CompositeVector>("fc").ViewComponent("cell",0,false);
+    auto fe_c = S.Get<CompositeVector>("fe").ViewComponent("cell",0,false);
+    auto fh_c = S.Get<CompositeVector>("fh").ViewComponent("cell",0,false);
+
+    AModel<AmanziDefaultDevice> model(result_c, fb_c, fc_c,fe_c,fh_c, plist_);
+    if (wrt_key == "fb") {
+      ExecuteModel("dAdB",model, AModel<AmanziDefaultDevice>::dAdB(), 0,result_c.extent(0));
+    } else if (wrt_key == "fc") {
+      ExecuteModel("dAdC",model, AModel<AmanziDefaultDevice>::dAdC(), 0,result_c.extent(0));
+    } else if (wrt_key == "fe") {
+      ExecuteModel("dAdE",model, AModel<AmanziDefaultDevice>::dAdE(), 0,result_c.extent(0));
+    } else if (wrt_key == "fh") {
+      ExecuteModel("dAdH",model, AModel<AmanziDefaultDevice>::dAdH(), 0,result_c.extent(0));
+    }
   }
-  
 };
 
 
@@ -148,16 +155,12 @@ public:
     ep_list.sublist("verbose object")
         .set<std::string>("verbosity level", "extreme");
 
-
     // create a mesh
     auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
-    //    auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-    //AmanziMesh::MeshFactory fac(comm);
     MeshFactory meshfac(comm);
     auto mesh = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
     // create a state
-    //State S;
     S.RegisterDomainMesh(mesh);
 
     // Secondary fields
@@ -168,8 +171,8 @@ public:
       .SetMesh(mesh)
       ->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    // S.RequireDerivative<CompositeVector,CompositeVectorSpace>("fa", "", "fb", "");
-    // S.RequireDerivative<CompositeVector,CompositeVectorSpace>("fa", "", "fg", "");
+    S.RequireDerivative<CompositeVector,CompositeVectorSpace>("fa", "", "fb", "");
+    S.RequireDerivative<CompositeVector,CompositeVectorSpace>("fa", "", "fh", "");
     fa_eval = Teuchos::rcp(new AEvaluator(es_list));
     S.SetEvaluator("fa", fa_eval);
     
@@ -201,8 +204,6 @@ public:
     fe_eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector,CompositeVectorSpace>(ep_list));
     S.SetEvaluator("fe", fe_eval);
 
-
-
     // Setup fields initialize
     S.Setup();
     S.GetW<CompositeVector>("fb", "fb").PutScalar(2.0);
@@ -214,7 +215,6 @@ public:
     S.GetW<CompositeVector>("fh", "fh").PutScalar(5.0);
     S.GetRecordW("fh", "fh").set_initialized();
     S.Initialize();
-
   }
 
 public:
@@ -240,11 +240,11 @@ SUITE(DAG) {
     // check intermediate steps got updated too
     //--CHECK_CLOSE(6.0, (*S.Get<CompositeVector>("fd").ViewComponent("cell", false))(0,0), 1e-12);
     
-    // // calculate dA/dB
-    // std::cout << "Calculate derivative of field A wrt field B:" << std::endl;
-    // changed = fa_eval->UpdateDerivative(S, "fa", "fb", "");
-    // CHECK_CLOSE(2.0, (S.GetDerivative<CompositeVector>("fa", "", "fb", "").ViewComponent("cell",false))(0,0), 1e-12);
-    // CHECK(changed);
+    // calculate dA/dB
+    std::cout << "Calculate derivative of field A wrt field B:" << std::endl;
+    changed = fa_eval->UpdateDerivative(S, "fa", "fb", "");
+    CHECK_CLOSE(2.0, (S.GetDerivative<CompositeVector>("fa", "", "fb", "").ViewComponent("cell",false))(0,0), 1e-12);
+    CHECK(changed);
     // /*
     // // calculate dA/dG
     // std::cout << "Calculate derivative of field A wrt field G:" << std::endl;

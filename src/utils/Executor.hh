@@ -22,14 +22,14 @@ void ExecuteModel(const std::string& kernelName,
   Kokkos::parallel_for(kernelName, range(beg, end), model);
 }
 
-#if 0
-template<template <class> class Model, 
+#if 1
+template<template <typename> class Model, 
 	 class TagType,
          class DeviceType = AmanziDefaultDevice>
 void ExecuteModel(const std::string& kernelName,
 		  Model<DeviceType>& model,
-		  const int beg, const int end,
 		  TagType /* tag */,
+		  const int beg, const int end,
 		  DeviceType /* dev */ = DeviceType ())
 {
   using execution_space = typename DeviceType::execution_space;

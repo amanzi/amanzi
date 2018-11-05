@@ -120,11 +120,12 @@ public:
     return VectorHarness::getMultiVector(VectorHarness::readOnly(GetComponent_(name,ghosted)).on(memory_space()));
   }
 
-  // template<class DeviceType>
-  // InputVector_type<DeviceType>
-  // ViewComponent(const std::string& name, int dof, bool ghosted=false) const {
-  //   return VectorHarness::getMultiVector(VectorHarness::readOnly(GetComponent_(name,ghosted)));
-  // }
+  template<class DeviceType=AmanziDefaultDevice>
+  InputVector_type<DeviceType>
+  ViewComponent(const std::string& name, int dof, bool ghosted=false) const {
+    using memory_space = typename DeviceType::memory_space;
+    return Kokkos::subview(ViewComponent<DeviceType>(name, ghosted), Kokkos::ALL(), 0);
+  }
 
   // View entries in the vectors
   //
@@ -146,6 +147,13 @@ public:
   ViewComponent(const std::string& name, bool ghosted=false) {
     using memory_space = typename DeviceType::memory_space;
     return VectorHarness::getMultiVector(VectorHarness::readWrite(GetComponent_(name,ghosted)).on(memory_space()));
+  }
+
+  template<class DeviceType=AmanziDefaultDevice>
+  OutputVector_type<DeviceType>
+  ViewComponent(const std::string& name, int dof, bool ghosted=false) {
+    using memory_space = typename DeviceType::memory_space;
+    return Kokkos::subview(ViewComponent<DeviceType>(name, ghosted), Kokkos::ALL(), 0);
   }
 
 
