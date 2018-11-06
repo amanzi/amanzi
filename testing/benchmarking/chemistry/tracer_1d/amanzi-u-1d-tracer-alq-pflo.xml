@@ -55,19 +55,19 @@
 
   <numerical_controls>
     <unstructured_controls>
- 
+      
       <unstr_flow_controls>
-	  <preconditioning_strategy>diffusion_operator</preconditioning_strategy>
+        <preconditioning_strategy>diffusion_operator</preconditioning_strategy>
       </unstr_flow_controls>
 
       <unstr_transport_controls>
-	  <sub_cycling>on</sub_cycling>
-	  <algorithm>explicit second-order</algorithm>
+        <sub_cycling>on</sub_cycling>
+        <algorithm>explicit second-order</algorithm>
       </unstr_transport_controls>
 
       <unstr_chemistry_controls>
-          <max_time_step>1.5778463e+07</max_time_step>
-          <initial_time_step>1.5778463e+07</initial_time_step>
+        <max_time_step>1.5778463e+07</max_time_step>
+        <initial_time_step>1.5778463e+07</initial_time_step>
       </unstr_chemistry_controls>
 
       <unstr_steady-state_controls>
@@ -76,25 +76,17 @@
         <limit_iterations>20</limit_iterations>
         <max_preconditioner_lag_iterations>4</max_preconditioner_lag_iterations>
         <nonlinear_tolerance>1.0e-12</nonlinear_tolerance>
-	<preconditioner>hypre_amg</preconditioner>
+        <preconditioner>hypre_amg</preconditioner>
       </unstr_steady-state_controls>
 
       <unstr_transient_controls>
-	<bdf1_integration_method>
-	    <min_iterations>10</min_iterations>
-	    <max_iterations>15</max_iterations> 
-	    <limit_iterations>20</limit_iterations>
-	    <max_preconditioner_lag_iterations>4</max_preconditioner_lag_iterations>
-	    <nonlinear_tolerance>1e-12</nonlinear_tolerance>
-	</bdf1_integration_method>
-	<preconditioner>hypre_amg</preconditioner>
+        <min_iterations>10</min_iterations>
+        <max_iterations>15</max_iterations> 
+        <limit_iterations>20</limit_iterations>
+        <max_preconditioner_lag_iterations>4</max_preconditioner_lag_iterations>
+        <nonlinear_tolerance>1e-12</nonlinear_tolerance>
+        <preconditioner>hypre_amg</preconditioner>
       </unstr_transient_controls>
-
-      <!--unstr_linear_solver>
-        <comments>Comment section.</comments>
-        <tolerance>1.0e-22</tolerance>
-        <preconditioner>trilinos_ml</preconditioner>
-      </unstr_linear_solver-->
 
     </unstructured_controls>
   </numerical_controls>

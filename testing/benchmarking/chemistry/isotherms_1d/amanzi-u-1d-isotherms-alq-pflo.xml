@@ -63,11 +63,16 @@
 
   <numerical_controls>
     <unstructured_controls>
+      
+      <unstr_flow_controls>
+        <preconditioning_strategy>diffusion_operator</preconditioning_strategy>
+      </unstr_flow_controls>
+      
       <unstr_transport_controls>
-	  <algorithm>explicit second-order</algorithm>
-	  <sub_cycling>on</sub_cycling>
+        <algorithm>explicit second-order</algorithm>
+        <sub_cycling>on</sub_cycling>
       </unstr_transport_controls>
-
+      
       <unstr_chemistry_controls>
           <process_model>implicit operator split</process_model>
           <chem_tolerance>1e-12</chem_tolerance>
