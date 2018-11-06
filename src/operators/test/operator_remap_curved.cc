@@ -33,16 +33,16 @@
 // Amanzi::Operators
 #include "RemapDG.hh"
 
-#include "AnalyticDG04.hh"
+#include "AnalyticDG08b.hh"
 
 namespace Amanzi {
 
-class MyRemapDG : public RemapDG<AnalyticDG04> {
+class MyRemapDG : public RemapDG<AnalyticDG08b> {
  public:
   MyRemapDG(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
             const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
             Teuchos::ParameterList& plist, double T1)
-    : RemapDG<AnalyticDG04>(mesh0, mesh1, plist),
+    : RemapDG<AnalyticDG08b>(mesh0, mesh1, plist),
       T1_(T1),
       tini_(0.0),
       tl2_(0.0) {};
@@ -166,7 +166,7 @@ void MyRemapDG::UpdateGeometricQuantities(double t, bool consistent_det)
 ***************************************************************** */
 void MyRemapDG::DeformMesh(int deform, double t)
 {
-  RemapDG<AnalyticDG04>::DeformMesh(deform, t);
+  RemapDG<AnalyticDG08b>::DeformMesh(deform, t);
 
   if (order_ > 1) {
     int nfaces = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
@@ -306,8 +306,21 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   std::string basis = plist.sublist("PK operator")
                            .sublist("flux operator").get<std::string>("dg basis");
   WhetStone::DG_Modal dg(order, mesh0, basis);
-  AnalyticDG04 ana(mesh0, order, true);
+  AnalyticDG08b ana(mesh0, order, true);
   ana.InitialGuess(dg, p1c, 1.0);
+
+  // vizualize initial solution
+  {
+    Teuchos::ParameterList iolist;
+    iolist.get<std::string>("file name base", "plot0");
+    OutputXDMF io(iolist, mesh0, true, false);
+
+    const Epetra_MultiVector& ptmp = *p1->ViewComponent("cell");
+
+    io.InitializeCycle(0.0, 0);
+    io.WriteVector(*ptmp(0), "solution");
+    io.FinalizeCycle();
+  }
 
   // initial mass
   double mass0(0.0);
@@ -325,7 +338,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   MyRemapDG remap(mesh0, mesh1, plist, T1);
   remap.DeformMesh(deform, T1);
   remap.Init();
-  remap.set_dt_output((nloop > 3) ? 0.5 : 0.1);
+  remap.set_dt_output(0.1);
 
   // explicit time integration
   CompositeVector p1aux(*p1);
@@ -357,6 +370,15 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
 
   remap.ChangeVariables(1.0, *p1, p2, false);
 
+  // visualize solution on mesh1
+  Teuchos::ParameterList iolist;
+  iolist.get<std::string>("file name base", "plot");
+  OutputXDMF io(iolist, mesh1, true, false);
+
+  io.InitializeCycle(1.0, nstep);
+  io.WriteVector(*p2c(0), "solution");
+  io.FinalizeCycle();
+
   // calculate error in the new basis
   Entity_ID_List nodes;
   std::vector<int> dirs;
@@ -381,7 +403,8 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   }
 
   // conservation errors: mass and volume (CGL)
-  double area(0.0), area1(0.0), mass1(0.0), gcl_err(0.0), gcl_inf(0.0);
+  double area(0.0), area0(0.0), area1(0.0);
+  double mass1(0.0), gcl_err(0.0), gcl_inf(0.0);
   auto& jac = remap.jac();
 
   for (int c = 0; c < ncells_owned; ++c) {
@@ -389,6 +412,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
     double vol2 = mesh1->cell_volume(c);
 
     area += vol1;
+    area0 += mesh0->cell_volume_linear(c);
     area1 += mesh1->cell_volume_linear(c);
 
     double err = std::fabs(vol1 - vol2);
@@ -409,6 +433,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
 
   // parallel collective operations
   ana.GlobalOp("sum", &area, 1);
+  ana.GlobalOp("sum", &area0, 1);
   ana.GlobalOp("sum", &area1, 1);
   ana.GlobalOp("sum", &mass1, 1);
   ana.GlobalOp("sum", &gcl_err, 1);
@@ -416,19 +441,9 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
 
   if (MyPID == 0) {
     printf("Conservation: dMass=%10.4g  dVolume=%10.6g  dVolLinear=%10.6g\n",
-           mass1 - mass0, 1.0 - area, 1.0 - area1);
+           mass1 - mass0, area1 - area, area0 - area1);
     printf("GCL: L1=%12.8g  Inf=%12.8g\n", gcl_err, gcl_inf);
   }
-
-  // initialize I/O
-  Teuchos::ParameterList iolist;
-  iolist.get<std::string>("file name base", "plot");
-  OutputXDMF io(iolist, mesh1, true, false);
-
-  io.InitializeCycle(t, nstep);
-  io.WriteVector(*p2c(0), "remapped");
-  io.WriteVector(*q2c(0), "remapped-prj");
-  io.FinalizeCycle();
 }
 
 TEST(REMAP_CURVED_2D) {
@@ -440,13 +455,15 @@ TEST(REMAP_CURVED_2D) {
   // RemapTestsCurved(rk_method, maps, "", 8,8,0, dT, deform, nloop, T1);
 
   /*
-  int nloop = 10;
-  double dT(0.005 * nloop), T1(1.0 / nloop);
+  int nloop = 40;
+  double dT(0.0025 * nloop), T1(1.0 / nloop);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
   int deform = 6;
-  RemapTestsCurved(rk_method, maps, "test/circle_quad10.exo", 10,0,0, dT, deform, nloop, T1);
-  RemapTestsCurved(rk_method, maps, "test/circle_quad20.exo", 20,0,0, dT, deform, nloop, T1);
+  RemapTestsCurved(rk_method, maps, "test/circle_quad10.exo", 10,0,0, dT,   deform, nloop, T1);
+  RemapTestsCurved(rk_method, maps, "test/circle_quad20.exo", 20,0,0, dT/2, deform, nloop, T1);
+  RemapTestsCurved(rk_method, maps, "test/circle_quad40.exo", 40,0,0, dT/4, deform, nloop, T1);
+  RemapTestsCurved(rk_method, maps, "test/circle_quad80.exo", 80,0,0, dT/8, deform, nloop, T1);
   */
 
   /*

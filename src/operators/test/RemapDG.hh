@@ -88,6 +88,8 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   Teuchos::RCP<Operators::PDE_Abstract> op_adv_;
   Teuchos::RCP<Operators::PDE_AdvectionRiemann> op_flux_;
   Teuchos::RCP<Operators::PDE_Reaction>op_reac_;
+  
+  int bc_type_;
 
   // geometric data
   std::vector<WhetStone::VectorPolynomial> uc_;
@@ -130,6 +132,16 @@ RemapDG<AnalyticDG>::RemapDG(
 
   order_ = plist_.sublist("PK operator")
                  .sublist("flux operator").template get<int>("method order");
+
+  bc_type_ = Operators::OPERATOR_BC_NONE;
+  auto name = plist_.sublist("PK operator").template get<std::string>("boundary conditions");
+  if (name == "remove")
+    bc_type_ = Operators::OPERATOR_BC_REMOVE;
+
+  // miscallateous
+  tprint_ = 0.0;
+  nfun_ = 0;
+  l2norm_ = -1.0;
 }
 
 
@@ -159,9 +171,10 @@ void RemapDG<AnalyticDG>::InitPrimary()
   maps_ = maps_factory.Create(map_list, mesh0_, mesh1_);
 
   // boundary data
+  int nk = WhetStone::PolynomialSpaceDimension(dim_, order_);
   auto bc = Teuchos::rcp(new Operators::BCs(mesh0_, AmanziMesh::FACE, Operators::DOF_Type::VECTOR));
   std::vector<int>& bc_model = bc->bc_model();
-  std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(1);
+  std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(nk);
 
   WhetStone::Polynomial coefs;
 
@@ -169,7 +182,8 @@ void RemapDG<AnalyticDG>::InitPrimary()
   const auto& bmap = mesh0_->exterior_face_map(true);
   for (int bf = 0; bf < bmap.NumMyElements(); ++bf) {
     int f = fmap.LID(bmap.GID(bf));
-    bc_model[f] = Operators::OPERATOR_BC_REMOVE;
+    for (int i = 0; i < nk; ++i) bc_value[f][i] = 0.0;
+    bc_model[f] = bc_type_;
   }
   op_flux_->SetBCs(bc, bc);
 
@@ -194,11 +208,6 @@ void RemapDG<AnalyticDG>::InitPrimary()
   velf_ = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost_));
   velc_ = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_wghost_));
   jac_ = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_wghost_));
-
-  // miscallateous
-  tprint_ = 0.0;
-  nfun_ = 0;
-  l2norm_ = -1.0;
 }
 
 
@@ -330,8 +339,9 @@ void RemapDG<AnalyticDG>::FunctionalTimeDerivative(
   xc.MaxValue(xmax);
   xc.MinValue(xmin);
 
-  if (fabs(tprint_ - t) < 1e-6 && mesh0_->get_comm()->MyPID() == 0) {
-    printf("t=%8.5f  L2=%9.5g  nfnc=%3d  umax: ", global_time(t), l2norm_, nfun_);
+  double tglob = global_time(t);
+  if (fabs(tprint_ - tglob) < 1e-6 && mesh0_->get_comm()->MyPID() == 0) {
+    printf("t=%8.5f  L2=%9.5g  nfnc=%4d  umax: ", tglob, l2norm_, nfun_);
     for (int i = 0; i < std::min(nk, 3); ++i) printf("%9.5g ", xmax[i]);
     printf("\n");
     tprint_ += dt_output_;
@@ -492,7 +502,7 @@ AmanziGeometry::Point RemapDG<AnalyticDG>::DeformNode(
     xv[1] += t * yv[1] * (1.0 - yv[1]) / 2;
   }
   else if (deform == 6) {
-    double phi = t * M_PI / 8;
+    double phi = t * 2 * M_PI;
     double cs(std::cos(phi)), sn(std::sin(phi));
     xv[0] = cs * yv[0] - sn * yv[1];
     xv[1] = sn * yv[0] + cs * yv[1];
