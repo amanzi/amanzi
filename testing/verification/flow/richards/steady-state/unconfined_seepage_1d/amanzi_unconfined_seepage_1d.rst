@@ -4,16 +4,19 @@ Steady-State Unconfined Flow with a Seepage Boundary Condition
 Capabilities Tested
 -------------------
 
-This one-dimensional flow problem tests the Amanzi unsaturated (Richards) flow process
-kernel with spatially-varying recharge and drain boundary
+This one-dimensional flow problem tests the Amanzi unsaturated (Richards) flow process kernel with spatially-varying recharge and drain boundary
 conditions in an unconfined aquifer.
 Capabilities tested include:
 
-  * steady-state flow  
-  * variably-saturated flow in unconfined aquifer with adjoining vadose zone
+  * single-phase, one-dimensional flow
+  * steady-state flow
+  * variably-saturated (both saturated and unsaturated) flow
+  * constant-head (Dirichlet) boundary conditions
+  * no-flow (Neumann) boundary conditions
   * spatially-varying recharge/drain (Cauchy) boundary conditions
-  * mass conservation 
-  * non-orthogonal mesh 
+  * homogeneous porous medium
+  * isotropic porous medium
+  * non-uniform, non-orthogonal mesh
 
 For details on this test, see :ref:`about_unconfined_seepage`. 
 
@@ -48,18 +51,19 @@ readily derived if we make Dupuit-Forchheimer assumptions of free-surface flow -
 that flow is horizontal and the hydraulic gradient is equal to the slope of the free surface 
 :cite:`us-Freeze_1979`.
 
-Let :math:`L_s` denote the unknown location of the seepline, and
-:math:`h_s` the hydraulic head or height of the water table at this
+Let :math:`L_s` [m] denote the unknown location of the seepline, and
+:math:`h_s` [m] denote the hydraulic head or height of the water table at this
 location. Between the left boundary and seepline, the analytic
-solution for hydraulic head in the saturated zone :math:`h` is
-analogous to *Amanzi* unconfined aquifer test case #1 (:cite:`us-Aleman_PORFLOW_2007`,
-Equation 4.3.5) with
+solution for hydraulic head in the saturated zone (:cite:`us-Aleman_PORFLOW_2007`, Equation 4.3.5) :math:`h` is
+analogous to *Amanzi* unconfined aquifer test case #1 (:ref:`amanzi_unconfined_no_recharge_1D`), with
 :math:`(L_s,h_s)` taking the place of :math:`(L,h_L)`:
 
-	.. math:: h^2 = h_0^2 + (h_s^2 - h_0^2) \frac{x}{L_s} + \frac{Q_{src}L_s^2}{K}\left( \frac{x}{L_s} \right) \left(1 - \frac{x}{L_s} \right),\: 0 \leqslant x \leqslant L_s
+	.. math:: h^2 = h_0^2 + (h_s^2 - h_0^2) \frac{x}{L_s} + \frac{Q_{src}L_s^2}{K}\left( \frac{x}{L_s} \right) \left(1 - \frac{x}{L_s} \right),\: 0 \leqslant x \leqslant L_s,
 		:label: unconfinedLeft
 
-The hydraulic head :math:`h` is also the height of the water table. To
+where :math:`Q_{src}=-Q` the seepline is position at :math:`x=L_s` [m].
+
+The hydraulic head, :math:`h` [m], is also the height of the water table. To
 the right of the seepline, any surface water is assumed to readily
 drain off such that the hydraulic head or water table elevation
 coincides exactly with the ground elevation, that is,
@@ -71,9 +75,11 @@ The location of the seepline is obtained by recognizing that Darcy's law and
 mass conservation across the vertical line :math:`x=L_s` requires 
 (:cite:`us-Aleman_PORFLOW_2007`, Equations 4.4.3 and 4.4.4)
 
-	.. math:: \frac{dh}{dx} \vert_{x=L_s^-} = \frac{1}{h_s} \left[ \frac{h_s^2 - h_0^2}{2L_s} - \frac{Q_{src} L_s}{2K} \right] = \frac{h_L - h_s}{L - L_s} = \frac{dh}{dx} \vert_{x=L_s^+}
+	.. math:: \frac{dh}{dx} \vert_{x=L_s^-} = \frac{1}{h_s} \left[ \frac{h_s^2 - h_0^2}{2L_s} - \frac{Q_{src} L_s}{2K} \right] = \frac{h_L - h_s}{L - L_s} = \frac{dh}{dx} \vert_{x=L_s^+},
 		:label: massConstraint
 
+where 
+     
 where
 	.. math:: h_s = 50 \text{ ft} \left(2 - \frac{L_s}{L}  \right)
 		:label: elevationConstraint
@@ -135,26 +141,30 @@ are summarized as:
 
 * Domain (2D)
       
-  * :math:`x_{min} = z_{min} = 0` [ft]
-  * :math:`x_{max} = L = 1000` [ft]
-  * :math:`z_{max} = 100` at :math:`x = 0` and :math:`50` at :math:`x = L` [ft]
+  * :math:`x_{min} = z_{min} = 0 \text{ [ft]}`
+  * :math:`x_{max} = L = 1000 \text{ [ft]}`
+  * :math:`z_{max} = 100` at :math:`x = 0` and :math:`50` at :math:`x = L \text{ [ft]}`
 
 * Material properties
+  
+  * isotropic hydraulic conductivity:     :math:`K = 1 \text{ [ft/d]} =  3.528 \times 10^{-6} \text{ [m/s]}`
 
-  * :math:`\rho = 998.2` [kg/m\ :sup:`3`]
-  * :math:`\mu = 1.002 \times 10^{-3}` [Pa :math:`\cdot` s]
-  * :math:`g = 9.807` [m/s\ :sup:`2`]
-  * hydraulic conductivity :math:`K = 1` [ft/d]
+    * derived from:    :math:`K=\frac{k \rho g}{\mu}`, where permeability :math:`k = 3.6098 \times 10^{-13} \text{ [m}^2\text{]}` (1 ft = 0.3048 ft)
+
+  * porosity:    :math:`\phi = 0.3`
+  * fluid density:    :math:`\rho = 998.2 \: \text{[kg/m}^3\text{]}`
+  * dynamic viscosity:    :math:`\mu = 1.002 \times 10^{-3} \: \text{[Pa} \cdot \text{s]}` 
+  * gravitational acceleration:    :math:`g = 9.807 \: \text{[m/s}^2\text{]}` 
   * van Genuchten :cite:`us-vanGenuchten_1980` - Mualem :cite:`us-Mualem_1976` parameters
 
-    * :math:`\alpha = 1.0212 \times 10^{-4}` [Pa\ :sup:`-1`]
+    * :math:`\alpha = 1.0212 \times 10^{-4} \text{ [Pa}^{-1} \text{]}`
     * :math:`S_r = 0.25`
     * :math:`m = 0.09090`
 
 * Boundary conditions
 
-  * no-flow prescribed at the :math:`z_{min}` boundary
-  * prescribed hydraulic head: :math:`h(0) = 80,\: h(L) = 50` [ft]
+  * no-flow (Neumann) boundary condition prescribed at :math:`z_{min}`
+  * prescribed hydraulic head (Dirichlet): :math:`h(0) = 80,\: h(L) = 50 \text{ [ft]}`
   * recharge along the top surface = 1 ft/y for :math:`0 \leqslant x \leqslant L_s`
 
 
@@ -193,14 +203,16 @@ About
   * amanzi_unconfined_seepage_1d-u.xml
 
     * Spec Version 2.3, unstructured mesh framework
-    * mesh:  porflow4_4.exo 
+    * mesh:  porflow4_4.exo
 
-* Mesh Files:
+      * two-dimensional mesh with conformal (non-orthogonal) grid
 
-  * porflow4_4.exo
+.. * Mesh Files:
+
+  .. * porflow4_4.exo
  
     * two-dimensional mesh with conformal grid
 
 
-Status
-------
+.. Status
+.. ------

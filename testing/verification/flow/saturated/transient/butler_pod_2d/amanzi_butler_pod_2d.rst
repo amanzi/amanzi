@@ -4,19 +4,25 @@ Transient Flow in a 2D Confined Aquifer with a Disc Embedded in A Matrix
 Capabilities Tested
 -------------------
 
-This transient two-dimensional flow problem --- with a constant pumping rate in a heterogenous confined aquifer --- tests the Amanzi flow process kernel. Capabilities tested include:
+This transient two-dimensional flow problem --- with a constant pumping rate in a heterogenous confined aquifer --- tests the Amanzi saturated flow process kernel. 
+Capabilities tested include:
 
-  * transient flow field induced by constant pumping
-  * flow/drawdown in heterogeneous medium (confined aquifer)
-  * lateral variations in flow properties
-  * statically refined (nonuniform) mesh
+  * single-phase, two-dimensional flow
+  * transient flow
+  * saturated flow
+  * constant-rate pumping well
+  * constant-head (Dirichlet) boundary conditions
+  * heterogeneous porous medium
+  * isotropic porous medium
+  * uniform mesh
 
-For details on this test, see :ref:`about_butler_pod_2d`
+For details on this test, see :ref:`about_butler_pod_2d`.
+
 
 Background
 ----------
 
-Butler and Liu (1993) :cite:`pod-Butler_Liu_radially_asymmetric_1993` developed a semi-analytical solution for calculating drawdown in an aquifer system, in which a disc of one material is embedded in a matrix of different hydraulic properties. The problem is interested in drawdown as a function of location and time due to pumping from a fully penetrating well located either in the disc or the matrix. The differences in hydraulic properties between the disc and the matrix can be of any magnitude. The problem is solved analytically in Laplace space and the drawdown is solved numerically by inversion from the Laplace space to the real space.
+Butler and Liu  :cite:`pod-Butler_Liu_radially_asymmetric_1993` developed a semi-analytical solution for calculating drawdown in an aquifer system, in which a disc of one material is embedded in a matrix of different hydraulic properties. The problem is interested in drawdown as a function of location and time due to pumping from a fully penetrating well located either in the disc or the matrix. The differences in hydraulic properties between the disc and the matrix can be of any magnitude. The problem is solved analytically in Laplace space and the drawdown is solved numerically by inversion from the Laplace space to the real space.
 
 
 Model
@@ -30,10 +36,10 @@ Flow within the circular disc (:math:`i =1`) and surrounding matrix (:math:`i =2
    = \frac{S_i}{T_i} \frac{\partial s_i}{\partial t},
 
 where 
-:math:`s_i` [L] is the drawdown in material :math:`i`,
-:math:`t` [T] is the time,
-:math:`T_i` [L\ :sup:`2`\/T] is the transmissivity of material :math:`i`, and
-:math:`S_i` [-] is the storage coefficient of material :math:`i`.
+:math:`s_i` is the drawdown [L] in material :math:`i`,
+:math:`t` is the time [T],
+:math:`T_i` is the transmissivity [L\ :sup:`2`\/T] of material :math:`i`, and
+:math:`S_i` is the storage coefficient [-] of material :math:`i`.
 
 The initial conditions are the same for the disc and the matrix:
 
@@ -41,13 +47,13 @@ The initial conditions are the same for the disc and the matrix:
 
 The boundary condition at infinite distance is:
 
-.. math::    s_2(-\infty, \theta, t) =  0.
+.. math::    s_2(\infty, \theta, t) =  0.
 
-A pumping well discharging at a constant rate :math:`Q` is assumed at location :math:`(r_{pw}, \theta_{pw})`
+A pumping well discharging at a constant rate :math:`Q` [L\ :sup:`3`\/T] is assumed at location :math:`(r_{pw}, \theta_{pw})`
 
 .. math:: \lim_{R \rightarrow 0} 2 \pi R T_2 \frac{\partial s_2(R,t)}{\partial R} = -Q,\;\; t>0,
 
-where :math:`R` is the distance between the pumping and observation wells. To ensure the flow continuity, the auxiliary conditions at the matrix-disc interfaces (:math:`r = a`) must be met:
+where :math:`R` is the distance between the pumping and observation wells. To ensure flow continuity, the auxiliary conditions at the matrix-disc interfaces (:math:`r = a`) must be met:
 
 .. math::      s_1(a,\theta,t) = s_2(a,\theta,t),\\
 .. math::      T_1\frac{\partial s_1(a,\theta,t)}{\partial r} = T_2\frac{\partial s_2(a,\theta,t)}{\partial r}.\\
@@ -55,6 +61,7 @@ where :math:`R` is the distance between the pumping and observation wells. To en
 
 Problem Specification
 ---------------------
+
 
 Schematic
 ~~~~~~~~~
@@ -65,7 +72,7 @@ The problem configuration is illustrated in the following schematic figure:
     :figclass: align-center
     :width: 600 px
 
-    **Figure 1. Schematic of the Butler and Liu pod verification problem**
+    **Schematic of the Butler and Liu pod verification problem**
 
 
 Mesh
@@ -77,27 +84,60 @@ A non-uniform mesh was used to better represent the disc in numerical simulation
     :figclass: align-center
     :width: 600 px
 
-    **Figure 2. Mesh of the Butler and Liu's pod verification problem**
+    **Mesh of the Butler and Liu's pod verification problem**
 
 
 Variables
 ~~~~~~~~~
 
-	Transmissivity: :math:`\;\; T_1 = 0.0011574 \; m^{2}/s`; :math:`T_2 = 0.011574 \;m^{2}/s`;
+* Domain:
 
-	Storativity: :math:`\;\; S_1 = S_2 = 2\times 10^{-4}`;
+  * :math:`x_{min} = y_{min} = z_{min} = 0 \text{ [m]}` (in mesh/cartesian coordinates)
+  * :math:`x_{max} = y_{max} = 20200, z_{max} = 1 \text{ [m]}` (in mesh/cartesian coordinates) 
+  * aquifer thickness:    :math:`b=z_{max}-z_{min} = 1 \text{ [m]}`
+  * pumping well location:    :math:`(r_{pw}, \theta_{pw}) = (600 \text{m}, 0^{\circ})`
 
-	Pumping rate: :math:`\;\; Q = 1000 \;m^{3} /day (= 0.011574 \;m^{3} /s)`;
+  * observation well locations:
 
-	Radius of the disc: :math:`\;\; d = 18 \;m`;
+    * :math:`(r_{obs40},\theta_{obs40}) = (40 \text{m},360^{\circ})`
+    * :math:`(r_{obs360},\theta_{obs360}) = (60 \text{m},120^{\circ})`
 
-	Pumping well location :math:`\;\; (600 \;m, 0^o)` in polar coordinates with its origin at the center of the disc;
+* Material properties:
 
-	Observation well locations :math:`\;\; (40\; m, 60^o)` and :math:`(360 \; m, 120^o)`.
+  * transmissivity (all isotropic):
 
-Initial conditions: zero drawdown everywhere in the domain.
+    * :math:`T_1 = 0.0011574 \text{ [m}^2 \text{/s]}`
+    * :math:`T_2 = 0.011574 \text{ [m}^2 \text{/s]}`
+    
+      * derived from:    :math:`T=Kb`, where :math:`K=\frac{k \rho g}{\mu}`
 
-Boundary conditions: zero drawdown on four lateral boundaries.
+      * intrinsic permeability:    :math:`k_1 = 1.187 \times 10^{-10}, \: k_2 = 1.187 \times 10^{-9} \text{ [m}^2 \text{]}`
+
+  * storativity:   
+    
+    * :math:`S_1= S_2 = 2.0\times 10^{-4} \: \text{[-]}`
+
+      * derived from:    :math:`S=S_s b`, where :math:`b=1 \: \text{[m]}`
+
+  * porosity:    :math:`\phi_{1,2} = 0.25`
+  * fluid density:    :math:`\rho = 1000.0 \: \text{[kg/m}^3\text{]}`
+  * dynamic viscosity:    :math:`\mu = 1.002 \times 10^{-3} \: \text{[Pa} \cdot \text{s]}` 
+  * gravitational acceleration:    :math:`g = 9.807 \: \text{[m/s}^2\text{]}`
+
+* Boundary and initial conditions:
+
+  * initial condition:    :math:`s(r,\theta,0)=0`
+
+    * (in grid/cartesian coordinates):    :math:`s(x,y,z,0) = 0 \text{ [m]}`
+
+  * constant-head (Dirichlet) boundary conditions:    :math:`s(\infty,\theta,t) = 0` 
+
+    * (in grid/cartesian coordinates):    :math:`s(x_{min,max},y_{min,max},z,t) = 0 \text{ [m]}`
+
+  * well-head pumping rate:    :math:`Q = -11.5485 \text{ [m}^3 \text{/s]} = 1000 \text{ [m}^3 \text{/d]}`
+  * duration of pumping:    :math:`t_{max} = 31.7 \text{ [yrs]}`
+
+.. Radius of the disc: :math:`\;\; d = 18 \;m`;
 
 
 Results and Comparison
@@ -133,18 +173,16 @@ About
 
 * Directory: testing/verification/flow/transient/butler_pod_2d
 
-
 * Authors:  Zhiming Lu (zhiming@lanl.gov),  Dylan Harp (dharp@lanl.gov)
 
 * Maintainer(s):  Zhiming Lu,  Dylan Harp
 
 * Input Files:
 
-  * amanzi_butler_pod_2d.xml
+  * amanzi_butler_pod_2d-u.xml
 
-     * Spec: Version 2.0
-     * Mesh: mesh_cylinder.exo
-     * Runs
+    * Spec: Version 2.3, unstructured mesh framework
+    * Mesh: mesh_cylinder.exo
 
 * Analytical Solutions
 
@@ -154,12 +192,12 @@ About
 
   * Input Files:
 
-     * obs.dat,  specifying parameters for observation wells.
-     * anal.dat, specifying other parameters such as the number of time steps, and so on.
+    * obs.dat,  specifying parameters for observation wells.
+    * anal.dat, specifying other parameters such as the number of time steps, and so on.
 
   * Output Files:
 
-     * drdn.res,  drawdown as a function of time for all observation wells.
+    * drdn.res,  drawdown as a function of time for all observation wells.
 
 
 Status

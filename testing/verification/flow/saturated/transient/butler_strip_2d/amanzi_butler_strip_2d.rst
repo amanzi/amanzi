@@ -4,12 +4,17 @@ Transient Flow in a 2D Confined Aquifer with a Linear Strip
 Capabilities Tested
 -------------------
 
-This two-dimensional flow problem --- with a constant pumping rate in a heterogeneous confined aquifer --- tests the Amanzi flow process kernel. Capabilities tested include:
-  
-  * transient flow field induced by constant pumping
-  * flow/drawdown response to pumping in heterogeneous medium (confined aquifer)
-  * differing flow regimes dependent on material transmissivity contrast and configuration 
-  * statically refined (nonuniform) mesh
+This two-dimensional flow problem --- with a constant pumping rate in a heterogeneous confined aquifer --- tests the Amanzi saturated flow process kernel. 
+Capabilities tested include:
+ 
+  * single-phase, two-dimensional flow
+  * transient flow
+  * saturated flow
+  * constant-rate pumping well
+  * constant-head (Dirichlet) boundary conditions
+  * heterogeneous porous medium
+  * isotropic porous medium
+  * uniform mesh
 
 For details on this test, see :ref:`about_butler_strip_2d`.
 
@@ -25,7 +30,7 @@ The solution reveals several interesting features of flow in this configuration 
 Model
 -----
 
-Flow within zones that do not contain the pumping well can be described mathematically as :eq:`flow_nowell`
+Flow within zones that do not contain the pumping well can be described mathematically in terms of drawdown :math:`s` as :eq:`flow_nowell`
 
 .. math:: \frac{\partial ^2 s_i}{\partial x^2} 
    + \frac{\partial ^2 s_i}{\partial y^2} 
@@ -33,10 +38,10 @@ Flow within zones that do not contain the pumping well can be described mathemat
   :label: flow_nowell
 
 where 
-:math:`s_i` [L] is the drawdown in material :math:`i`,
-:math:`t` [T] is the time,
-:math:`T_i` [L\ :sup:`2`\/T] is the transmissivity of material :math:`i`, and
-:math:`S_i` [-] is the storage coefficient of material :math:`i`.
+:math:`s_i` is the drawdown [L] in material :math:`i`,
+:math:`t` is time [T],
+:math:`T_i` is the transmissivity [L\ :sup:`2`\/T] of material :math:`i`, and
+:math:`S_i` is the storage coefficient [-] of material :math:`i`.
 
 Flow within zones that contain the pumping well can be represented as
 
@@ -47,12 +52,12 @@ Flow within zones that contain the pumping well can be represented as
   :label: flow_well
 
 where
-:math:`Q` [L\ :sup:`3`\/T]is the pumping rate from well located at :math:`(a,b)`,
+:math:`Q` is the pumping rate [L\ :sup:`3`\/T] from well located at :math:`(a,b)`,
 :math:`\delta(x)` is the Direc delta function, being 1 for :math:`x = 0` and :math:`0 \text{ otherwise}`.
 
 The initial conditions are the same for all three zones:
 
-.. math:: s_i(x,y,0) =0.
+.. math:: s_i(x,y,0) = 0.
   :label: ic_ButlerLiu_strip
 
 The boundary conditions are:
@@ -71,6 +76,7 @@ The boundary conditions are:
 Problem Specification
 ---------------------
 
+
 Schematic
 ~~~~~~~~~
 
@@ -86,25 +92,80 @@ The domain configuration and well locations are indicated in the following schem
 Mesh
 ~~~~
 
-The background mesh is :math:`2404 \: m \times 2404 \: m \times 1 \: m` and consists of 361,201 cells. There are 601 cells in the x-direction, 601 cells in the y-direction, and 1 cell in the z-direction.  
+The background mesh is :math:`1202 \: m \times 1202 \: m \times 1 \: m` and consists of 361,201 cells. There are 601 cells in the x-direction, 601 cells in the y-direction, and 1 cell in the z-direction.  
 
 
 Variables
 ~~~~~~~~~
 
-* Transmissivity: :math:`\;\; T_1 = 0.11574 \; m^{2}/s`; :math:`T_2 = 0.011574 \;m^{2}/s`; :math:`T_3 = 0.0011574 \;m^{2}/s`
+* Domain:
 
-* Storativity: :math:`\;\; S_1 = 5\times 10^{-4}`; :math:`S_2 = 2\times 10^{-4}`; :math:`S_3 = 2\times 10^{-5}`
+  * :math:`x_{min} = y_{min} = 1202, z_{min} = 0 \text{ [m]}`
+  * :math:`x_{max} = y_{max} = 1202, z_{max} = 1 \text{ [m]}`
+  * aquifer thickness:    :math:`b=z_{max}-z_{min} = 1 \text{ [m]}`
+  * Zone 1 (left zone):   
+    
+    * :math:`-1202 \leq x \leq -10`
+    * :math:`-1202 \leq y \leq 1202`
+    * :math:`0 \leq z \leq 1`
 
-* Pumping rate: :math:`\;\; Q = 1000 \;m^{3}/d \;(= 0.011574 \;m^{3}/s)`
+  * Zone 2 (strip):   
+    
+    * :math:`-10 \leq x \leq 10`
+    * :math:`-1202 \leq y \leq 1202`
+    * :math:`0 \leq z \leq 1`
+  
+  * Zone 3 (right zone):   
+    
+    * :math:`10 \leq x \leq 1202`
+    * :math:`-1202 \leq y \leq 1202`
+    * :math:`0 \leq z \leq 1`
 
-* Width of the strip: :math:`\;\; d = 18 \;m`
+  * pumping well location:    :math:`(a,b) = (0,0) \text{ [m]}`
+  * observation well locations:
 
-* Pumping well location :math:`\;\; (-9\; m, 0\; m)`
+    * :math:`(x_{obs24},y_{obs24},z_{obs24}) = (24,0,1) \text{ [m]}`
+    * :math:`(x_{obs100},y_{obs100},z_{obs100}) = (100,0,1) \text{ [m]}`
 
-The boundary conditions are given as: constant pressure of 1.07785 MPa (i.e., head = 100 m) at all four boundaries and initially the pressure is 1.07785 MPa (head = 100 m) everywhere in the domain. 
+* Boundary and initial conditions:
 
-Observation well locations :math:`(15\; m, 0\; m)` and :math:`(91\; m, 0\; m)`, which gives the distance between the pumping well and observation wells :math:`r = 24 \;m` and :math:`r = 100 \;m`.
+  * initial condition:    :math:`s(x,y,0)=0 \text{ [m]}`
+  * constant-head (Dirichlet) boundary conditions:    :math:`s(x_{min,max},y_{min,max},t) = 0 \text{ [m]}`
+  * well-head pumping rate:    :math:`Q = -11.5485 \text{ [m}^3 \text{/s]} = 1000 \text{ [m}^3 \text{/d]}`
+  * duration of pumping:    :math:`t_{max} = 31.7 \text{ [yrs]}`
+
+* Material properties:
+
+  * transmissivity (all isotropic):
+
+    * :math:`T_1 = 0.11574 \text{ [m}^2 \text{/s]}`
+    * :math:`T_2 = 0.011574 \text{ [m}^2 \text{/s]}`
+    * :math:`T_3 = 0.0011574 \text{ [m}^2 \text{/s]}`
+    
+      * derived from:    :math:`T=Kb`, where :math:`K=\frac{k \rho g}{\mu}`
+
+      * intrinsic permeability:    :math:`k_1 = 1.187 \times 10^{-8}, k_2 = 1.187 \times 10^{-9}, k_3 = 1.187 \times 10^{-10} \text{ [m}^2 \text{]}`
+
+  * storativity:   
+    
+    * :math:`S_1=5.0 \times 10^{-3} \: \text{[-]}`
+    * :math:`S_2=2.0 \times 10^{-3} \: \text{[-]}`
+    * :math:`S_3=2.0 \times 10^{-4} \: \text{[-]}`
+
+      * derived from:    :math:`S=S_s b`, where :math:`b=10 \: \text{[m]}`
+
+  * porosity:    :math:`\phi_{1,2,3} = 0.25`
+  * fluid density:    :math:`\rho = 1000.0 \: \text{[kg/m}^3\text{]}`
+  * dynamic viscosity:    :math:`\mu = 1.002 \times 10^{-3} \: \text{[Pa} \cdot \text{s]}` 
+  * gravitational acceleration:    :math:`g = 9.807 \: \text{[m/s}^2\text{]}`
+
+.. * Width of the strip: :math:`\;\; d = 18 \;m`
+
+.. * Pumping well location :math:`\;\; (-9\; m, 0\; m)`
+
+.. The boundary conditions are given as: constant pressure of 1.07785 MPa (i.e., head = 100 m) at all four boundaries and initially the pressure is 1.07785 MPa (head = 100 m) everywhere in the domain. 
+
+.. Observation well locations :math:`(15\; m, 0\; m)` and :math:`(91\; m, 0\; m)`, which gives the distance between the pumping well and observation wells :math:`r = 24 \;m` and :math:`r = 100 \;m`.
 
 
 Results and Comparison
@@ -142,11 +203,10 @@ About
 
 * Input Files: 
   
-  * amanzi_butler_strip_2d.xml
+  * amanzi_butler_strip_2d-u.xml
 
-    * Spec: Version 2.0
-    * Mesh: Generated in file 
-    * Runs
+    * Spec: Version 2.3, unstructured mesh framework
+    * Mesh: generated internally 
 
 * Analytical Solutions
 

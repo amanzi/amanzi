@@ -7,15 +7,21 @@ Capabilities Tested
 -------------------
 
 This two-dimensional transport problem --- with a constant rate mass
-loading point source in a steady-state flow field --- tests the Amanzi
-advection and dispersion features of the transport process kernel.  
+loading point source in a steady-state flow field --- tests the Amanzi flow process kernel as well as advection and dispersion features of the 
+transport process kernel.  
 Capabilities tested include:
   
-  * single-phase, steady-state flow induced by prescribed constant velocity field 
-  * saturated flow conditions  
-  * solute source with constant mass loading rate 
-  * advection in an isotropic medium
-  * longitudinal and transverse dispersivities
+  * single-phase, one-dimensional flow
+  * two-dimensional transport
+  * steady-state flow
+  * saturated flow
+  * constant-rate solute mass injection well 
+  * advective transport
+  * dispersive transport
+  * longitudinal and transverse dispersivity
+  * non-reactive (conservative) solute
+  * homogeneous porous medium
+  * isotropic porous medium
   * statically refined (non-uniform) mesh
 
 For details on this test, see :ref:`about_aligned_dispersion`.
@@ -27,12 +33,13 @@ Background
 This test problem is motivated by confined flow applications with
 transport from a relatively small source.  A typical source would be a
 well that is fully screened over the confined flow interval.  In this
-case, the steady-state flow field is uniform and the mass source rate
+case, the steady-state flow field is uniform and the injection well tracer 
+mass source rate
 does not affect the flow field.  The dominant transport processes are
 advection and dispersion.  Dispersion results in the spreading of the
 released mass in all directions, including upstream of the source
 location.  Longitudinal dispersivity (in the axis of flow) is
-typically several times larger than the transverse dispersivity.
+typically up to an order of magnitude larger than the transverse dispersivity.
 Accuracy of the simulated concentrations in the vicinity of the source
 is sensitive to the resolution of the grid and the numerical transport
 scheme.
@@ -62,9 +69,9 @@ The analytical solution addresses the advection-dispersion equation
 
 .. math::
   \phi \frac{\partial C}{\partial t} 
-  = Q + {\rm div}(\boldsymbol{D} \nabla C),
+  = Q + {\nabla \cdot }(\boldsymbol{D} \nabla C),
 
-where :math:`\boldsymbol{D}` is the dispersion tensor
+where :math:`\phi` is porosity, :math:`C` is the solute concentration [kg/m\ :sup:`3`], :math:`t` is time [s], :math:`Q` is solute mass injection rate [kg of tracer/m\ :sup:`3`/s], and :math:`\boldsymbol{D}` is the dispersion tensor:
 
 .. math::
   \boldsymbol{D} = \begin{pmatrix}
@@ -73,7 +80,7 @@ where :math:`\boldsymbol{D}` is the dispersion tensor
   \end{pmatrix}.
 
 Let :math:`\boldsymbol{v} = (v_x,\,v_y)` denote the pore velocity,
-:math:`\tau` the torsuosity, and :math:`D_m` the molecular diffusion.
+:math:`\tau` the tortuosityi [-], and :math:`D_m` the molecular diffusion [m\ :sup:`2`/s].
 Then the diagonal entries in the dispersion tensor are
 
 .. math::
@@ -83,9 +90,9 @@ Then the diagonal entries in the dispersion tensor are
   \qquad
   D_{yy} = \alpha_L \frac{v_y^2}{\| \boldsymbol{v}\|}
   + \alpha_L \frac{v_x^2}{\| \boldsymbol{v}\|}
-  + \phi \tau D_m.,
+  + \phi \tau D_m,
 
-The off-diagonal entries are
+where :math:`\alpha_L` is longitudinal dispersivity [m] and :math:`\alpha_T` is transverse dispersivity [m]. The off-diagonal entries are:
 
 .. math::
   D_{xy} = D_{yx} 
@@ -126,17 +133,30 @@ The mesh refinement adds 17% more cells.
 Variables
 ~~~~~~~~~
 
-* :math:`Q=8.1483 \times 10^{-8}` constant pumping rate [kg/s/m]
-* :math:`\boldsymbol{q}=(1.8634 \times 10^{-6},\,0.0)` constant Darcy velocity [m/s]
-* :math:`\phi=0.35` constant porosity
-* :math:`\alpha_L=21.3` longitudinal dispersivity [m]
-* :math:`\alpha_T=4.3` transverse dispersivity [m]
-* :math:`D_m=0.0` molecular diffusion coefficient [m\ :sup:`2`\/s]
-* :math:`T=1400` simulation time [d]
+* initial concentration condition:    :math:`C(x,0)=0 \: \text{[kg/m}^3\text{]}`
+* constant solute mass injection rate:    :math:`Q=8.1483 \times 10^{-8} \: \text{[kg/m}^3\text{/s]}`
+* volumetric fluid flux:    :math:`\boldsymbol{q}=(1.8634 \times 10^{-6},\,0.0) \: \text{[m}^3 \text{/(m}^2 \text{ s)]}` or :math:`\text{[m/s]}`
 
-Initial condition: :math:`C(x,0)=0` [kg/m\ :sup:`3`\]
+* Material properties:
 
-Boundary conditions: :math:`C(x,t)=0` [kg/m\ :sup:`3`\]
+  * isotropic hydraulic conductivity:    :math:`K = 84.41 \: \text{[m/d]}`
+
+    * derived from:    :math:`K=\frac{k \rho g}{\mu}`, where permeability, :math:`k = 1.0 \times 10^{-10} \text{ [m}^2\text{]}`
+  
+  * porosity:    :math:`\phi=0.35` 
+  * longitudinal dispersivity:    :math:`\alpha_L=21.3 \: \text{[m]}` 
+  * transverse dispersivity:    :math:`\alpha_T=4.3 \: \text{[m]}` 
+  * molecular diffusion coefficient:    :math:`D_m=0.0 \: \text{[m}^2\text{/s]}` 
+  * fluid density:    :math:`\rho = 998.2 \: \text{[kg/m}^3\text{]}`
+  * dynamic viscosity:    :math:`\mu = 1.002 \times 10^{-3} \: \text{[Pa} \cdot \text{s]}` 
+  * gravitational acceleration:    :math:`g = 9.807 \: \text{[m/s}^2\text{]}` 
+
+* total simulation time:    :math:`t=1400 \: \text{[d]}`
+
+.. Boundary conditions: :math:`C(x,t)=0 \: \text{[kg/m}^3\text{]}`
+
+
+
 
 
 Results and Comparison
@@ -194,20 +214,20 @@ About
     * Spec Version 2.2, unstructured mesh framework
     * mesh:  amanzi_dispersion_aligned_point_2d.exo
  
-  * amanzi_dispersion_aligned_point_2d-s.xml
+  .. * amanzi_dispersion_aligned_point_2d-s.xml
 
-    * Spec Version 1.2, structured AMR framework
+    .. * Spec Version 1.2, structured AMR framework
 
-* Mesh Files:
+.. * Mesh Files:
 
-  * amanzi_dispersion_aligned_point_2d.exo
+  .. * amanzi_dispersion_aligned_point_2d.exo
 
-    * two-dimensional statically refined mesh
+    .. * two-dimensional statically refined mesh
     * treated as an unstructured polygonal mesh
 
-  * amanzi_dispersion_aligned_point_2d-1layer.exo
+  .. * amanzi_dispersion_aligned_point_2d-1layer.exo
 
-    * three-dimensional statically refined mesh
+    .. * three-dimensional statically refined mesh
     * one layer of cells in the z-direction
 
 * Analytic solution computed with AT123D-AT
