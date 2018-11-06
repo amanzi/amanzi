@@ -126,6 +126,7 @@
     <xs:restriction base="xs:string">
       <xs:enumeration value="molar" />
       <xs:enumeration value="mol/m^3" />
+      <xs:enumeration value="SI" />
     </xs:restriction>
   </xs:simpleType>
 
@@ -531,6 +532,8 @@
       <xs:element type="xs:string" name="description" minOccurs="0" />
       <xs:element type="xs:string" name="purpose" minOccurs="0" />
       <xs:element type="typedef_default_units" name="units" minOccurs="0" />
+      <!-- FIXME: not sure how we really use the coordinate system -->
+      <xs:element type="xs:string" name="coordinate_system" minOccurs="0" />
     </xs:all>
     <xs:attribute type="xs:string" name="name" />
   </xs:complexType>
@@ -644,6 +647,7 @@
 
   <xs:complexType name="typedef_unstr_flow_controls">
     <xs:all minOccurs="0" maxOccurs="1">
+      <xs:element name="comments" minOccurs="0" maxOccurs="1" />
       <xs:element name="discretization_method" type="typedef_discretization_method" minOccurs="0" maxOccurs="1" />
       <xs:element name="rel_perm_method" type="typedef_rel_perm_method" default="upwind-darcy_velocity" minOccurs="0" maxOccurs="1" />
       <xs:element name="preconditioning_strategy" type="typedef_preconditioning_strategy" default="linearized_operator" minOccurs="0" maxOccurs="1" />
@@ -653,6 +657,7 @@
 
   <xs:complexType name="typedef_unstr_transport_controls">
     <xs:all minOccurs="0" maxOccurs="1">
+      <xs:element name="comments" minOccurs="0" maxOccurs="1" />
       <xs:element name="algorithm" type="typedef_algorithm" default="explicit first-order" minOccurs="0" maxOccurs="1" />
       <xs:element name="sub_cycling" type="xs:string" default="off" minOccurs="0" maxOccurs="1" />
       <xs:element name="cfl" type="typedef_exponential" minOccurs="0" maxOccurs="1" />
@@ -662,12 +667,16 @@
 
   <xs:complexType name="typedef_unstr_chemistry_controls">
     <xs:all minOccurs="0" maxOccurs="1">
-      <xs:element name="process_model" type="xs:string" />
+      <xs:element name="comments" minOccurs="0" maxOccurs="1" />
+      <xs:element name="process_model" type="xs:string" default="implicit operator split" minOccurs="0" maxOccurs="1" />
       <!-- Amanzi native chemistry -->
       <xs:element name="activity_model" type="xs:string" default="unit" minOccurs="0" maxOccurs="1" />
       <xs:element name="tolerance" type="typedef_exponential" default="1e-12" minOccurs="0" maxOccurs="1" />
       <xs:element name="maximum_newton_iterations" type="xs:integer" default="100" minOccurs="0" maxOccurs="1" />
-      <xs:element name="auxiliary_data" type="xs:string" minOccurs="0" maxOccurs="1" />
+      <xs:element name="auxiliary_data" type="typedef_exponential" minOccurs="0" maxOccurs="1" />
+
+      <xs:element name="activity_coefficients" type="xs:string" default="timestep" minOccurs="0" maxOccurs="1" />
+      <xs:element name="max_residual_tolerance" type="typedef_exponential" default="1e-10" minOccurs="0" maxOccurs="1" />
 
       <!-- Alqumia - PFlotran chemistry -->
       <xs:element name="min_time_step" type="typedef_exponential" default="1e+10" minOccurs="0" maxOccurs="1" />
@@ -695,6 +704,7 @@
 
   <xs:complexType name="typedef_unstr_steady-state_controls">
     <xs:all minOccurs="0" maxOccurs="1">
+      <xs:element name="comments" minOccurs="0" maxOccurs="1" />
       <xs:element name="min_iterations" type="xs:integer" minOccurs="0" maxOccurs="1" />
       <xs:element name="max_iterations" type="xs:integer" minOccurs="0" maxOccurs="1" />
       <xs:element name="limit_iterations" type="xs:integer" minOccurs="0" maxOccurs="1" />
@@ -716,6 +726,7 @@
 
   <xs:complexType name="typedef_unstr_initialization">
     <xs:all minOccurs="0" maxOccurs="1">
+      <xs:element name="comments" minOccurs="0" maxOccurs="1" />
       <xs:element name="clipping_saturation" type="typedef_exponential" minOccurs="0" maxOccurs="1" />
       <xs:element name="clipping_pressure" type="typedef_exponential" minOccurs="0" maxOccurs="1" />
       <xs:element name="method" type="typedef_unstr_initialization_method" minOccurs="0" maxOccurs="1" />
@@ -754,6 +765,7 @@
 
   <xs:complexType name="typedef_unstr_transient_controls">
     <xs:all minOccurs="0" maxOccurs="1">
+      <xs:element name="comments" minOccurs="0" maxOccurs="1" />
       <xs:element name="min_iterations" type="xs:integer" default="10" minOccurs="0" maxOccurs="1" />
       <xs:element name="max_iterations" type="xs:integer" default="15" minOccurs="0" maxOccurs="1" />
       <xs:element name="limit_iterations" type="xs:integer" default="20" minOccurs="0" maxOccurs="1" />
@@ -776,6 +788,7 @@
 
   <xs:complexType name="typedef_unstr_nonlinear_solver">
     <xs:all minOccurs="0" maxOccurs="1">
+      <xs:element name="comments" minOccurs="0" maxOccurs="1" />
       <xs:element name="modify_correction" type="xs:boolean" default="false" />
       <xs:element name="update_upwind_frequency" type="xs:string" default="every_timestep" />
     </xs:all>
@@ -786,6 +799,7 @@
 
   <xs:complexType name="typedef_unstr_linear_solver">
     <xs:all minOccurs="0" maxOccurs="1">
+      <xs:element name="comments" minOccurs="0" maxOccurs="1" />
       <xs:element name="method" type="xs:string" minOccurs="0" maxOccurs="1" />
       <xs:element name="max_iterations" type="xs:integer" minOccurs="0" maxOccurs="1" />
       <xs:element name="tolerance" type="typedef_exponential" minOccurs="0" maxOccurs="1" />
@@ -797,6 +811,7 @@
 
   <xs:complexType name="typedef_unstr_preconditioners">
     <xs:all minOccurs="0" maxOccurs="1">
+      <xs:element name="comments" minOccurs="0" maxOccurs="1" />
       <xs:element name="hypre_amg" type="typedef_hypre_amg" minOccurs="0" maxOccurs="1" />
       <xs:element name="trilinos_ml" type="typedef_trilinos_ml" minOccurs="0" maxOccurs="1" />
       <xs:element name="block_ilu" type="typedef_block_ilu" minOccurs="0" maxOccurs="1" />
@@ -805,6 +820,7 @@
 
   <xs:complexType name="typedef_hypre_amg">
     <xs:all minOccurs="0" maxOccurs="1">
+      <xs:element name="comments" minOccurs="0" maxOccurs="1" />
       <xs:element name="hypre_cycle_applications" type="xs:integer" minOccurs="0" maxOccurs="1" />
       <xs:element name="hypre_smoother_sweeps" type="xs:integer" minOccurs="0" maxOccurs="1" />
       <xs:element name="hypre_tolerance" type="typedef_exponential" minOccurs="0" maxOccurs="1" />
@@ -814,6 +830,7 @@
 
   <xs:complexType name="typedef_trilinos_ml">
     <xs:all minOccurs="0" maxOccurs="1">
+      <xs:element name="comments" minOccurs="0" maxOccurs="1" />
       <xs:element name="trilinos_smoother_type" minOccurs="0" maxOccurs="1">
         <xs:alternative test="@type eq 'jacobi'" type="xs:string" />
         <xs:alternative test="@type eq 'gauss_seidel'" type="xs:string" />
@@ -827,6 +844,7 @@
 
   <xs:complexType name="typedef_block_ilu">
     <xs:all minOccurs="0" maxOccurs="1">
+      <xs:element name="comments" minOccurs="0" maxOccurs="1" />
       <xs:element name="ilu_overlap" type="xs:integer" minOccurs="0" maxOccurs="1" />
       <xs:element name="ilu_relax" type="typedef_exponential" minOccurs="0" maxOccurs="1" />
       <xs:element name="ilu_rel_threshold" type="typedef_exponential" minOccurs="0" maxOccurs="1" />
@@ -1531,6 +1549,7 @@
     <xs:all minOccurs="0" maxOccurs="1">
       <xs:element name="primaries" type="typedef_primaries" minOccurs="0" maxOccurs="1" />
       <xs:element name="secondaries" type="typedef_secondaries" minOccurs="0" maxOccurs="1" />
+      <xs:element name="redox" type="typedef_redox" minOccurs="0" maxOccurs="1" />
     </xs:all>
   </xs:complexType>
 
@@ -1557,6 +1576,13 @@
     </xs:all>
   </xs:complexType>
 
+  <xs:complexType name="typedef_redox">
+    <xs:all minOccurs="0" maxOccurs="1">
+      <xs:element name="redox" type="xs:string" minOccurs="0" maxOccurs="unbounded" />
+      <xs:element name="primary" type="xs:string" minOccurs="0" maxOccurs="unbounded" />
+    </xs:all>
+  </xs:complexType>
+
   <xs:complexType name="typedef_solid_phase">
     <xs:all minOccurs="0" maxOccurs="1">
       <xs:element name="minerals" type="typedef_minerals" minOccurs="0" maxOccurs="1" />
@@ -1572,6 +1598,8 @@
   <xs:complexType name="typedef_mineral">
     <xs:simpleContent>
       <xs:extension base="xs:string">
+        <xs:attribute name="alpha" type="typedef_exponential" />
+        <xs:attribute name="prefactor_species" type="xs:string" />
         <xs:attribute name="rate_constant" type="typedef_exponential" />
       </xs:extension>
     </xs:simpleContent>
@@ -1939,6 +1967,7 @@
       <xs:element name="time_macros" type="xs:string" minOccurs="0" maxOccurs="unbounded" />
       <xs:element name="cycle_macros" type="xs:string" minOccurs="0" maxOccurs="unbounded" />
       <xs:element name="write_regions" type="typedef_write_regions" minOccurs="0" maxOccurs="1" />
+      <xs:element name="blacklist" type="xs:string" minOccurs="0" maxOccurs="1" />
     </xs:all>
   </xs:complexType>
 
