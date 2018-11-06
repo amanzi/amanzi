@@ -33,7 +33,8 @@ void ExecuteModel(const std::string& kernelName,
 		  DeviceType /* dev */ = DeviceType ())
 {
   using execution_space = typename DeviceType::execution_space;
-  using range = Kokkos::RangePolicy<execution_space, int, TagType>;
+  using range = Kokkos::RangePolicy<execution_space, TagType, int>;
+  std::cout << "launching kernel of type " << kernelName << std::endl;
   Kokkos::parallel_for(kernelName, range(beg, end), model);
 }
 #endif // 0

@@ -119,28 +119,28 @@ public:
     auto fe_c = S.Get<CompositeVector>("fe").ViewComponent("cell",0,false);
     auto fh_c = S.Get<CompositeVector>("fh").ViewComponent("cell",0,false);
 
-    AModel<AmanziDefaultDevice> model(result_c, fb_c, fc_c,fe_c,fh_c, plist_);
-    ExecuteModel("A",model, 0,result_c.extent(0));
+    AModel<AmanziDefaultDevice> model(result_c, fb_c, fc_c, fe_c, fh_c, plist_);
+    ExecuteModel("A", model, 0, result_c.extent(0));
   }
 
-  virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
+  virtual void EvaluatePartialDerivative_(const State &S, 
+					  const Key &wrt_key,
                                           const Key &wrt_tag,
                                           const std::vector<CompositeVector*> &results) override {
-    auto result_c = results[0]->ViewComponent("cell",0,false);
-    auto fb_c = S.Get<CompositeVector>("fb").ViewComponent("cell",0,false);
-    auto fc_c = S.Get<CompositeVector>("fc").ViewComponent("cell",0,false);
-    auto fe_c = S.Get<CompositeVector>("fe").ViewComponent("cell",0,false);
-    auto fh_c = S.Get<CompositeVector>("fh").ViewComponent("cell",0,false);
-
-    AModel<AmanziDefaultDevice> model(result_c, fb_c, fc_c,fe_c,fh_c, plist_);
+    auto result = results[0]->ViewComponent("cell",0,false);
+    auto fb = S.Get<CompositeVector>("fb").ViewComponent("cell",0,false);
+    auto fc = S.Get<CompositeVector>("fc").ViewComponent("cell",0,false);
+    auto fe = S.Get<CompositeVector>("fe").ViewComponent("cell",0,false);
+    auto fh = S.Get<CompositeVector>("fh").ViewComponent("cell",0,false);
+    AModel<AmanziDefaultDevice> model(result, fb, fc, fe, fh, plist_);
     if (wrt_key == "fb") {
-      ExecuteModel("dAdB",model, AModel<AmanziDefaultDevice>::dAdB(), 0,result_c.extent(0));
+      ExecuteModel("dAdB",model, AModel<AmanziDefaultDevice>::dAdB(), 0,result.extent(0));
     } else if (wrt_key == "fc") {
-      ExecuteModel("dAdC",model, AModel<AmanziDefaultDevice>::dAdC(), 0,result_c.extent(0));
+      ExecuteModel("dAdC",model, AModel<AmanziDefaultDevice>::dAdC(), 0,result.extent(0));
     } else if (wrt_key == "fe") {
-      ExecuteModel("dAdE",model, AModel<AmanziDefaultDevice>::dAdE(), 0,result_c.extent(0));
+      ExecuteModel("dAdE",model, AModel<AmanziDefaultDevice>::dAdE(), 0,result.extent(0));
     } else if (wrt_key == "fh") {
-      ExecuteModel("dAdH",model, AModel<AmanziDefaultDevice>::dAdH(), 0,result_c.extent(0));
+      ExecuteModel("dAdH",model, AModel<AmanziDefaultDevice>::dAdH(), 0,result.extent(0));
     }
   }
 };
@@ -227,50 +227,18 @@ SUITE(DAG) {
   TEST_FIXTURE(make_state, DAG_TWO_FIELDS) {
     // check initialized properly
     CHECK_CLOSE(2.0, (S.Get<CompositeVector>("fb").ViewComponent("cell",false))(0,0), 1e-12);
-    //--CHECK_CLOSE(3.0, (*S.Get<CompositeVector>("fg").ViewComponent("cell",false))(0,0), 1e-12);
     CHECK_CLOSE(5.0, (S.Get<CompositeVector>("fh").ViewComponent("cell",false))(0,0), 1e-12);
 	
     // calculate field A
     std::cout << "Calculate field A:" << std::endl;
     bool changed = fa_eval->Update(S, "main");
-    CHECK_CLOSE(64.0, (S.Get<CompositeVector>("fa").ViewComponent("cell",false))(0,0), 1e-12);
     CHECK(changed);
-
-    
-    // check intermediate steps got updated too
-    //--CHECK_CLOSE(6.0, (*S.Get<CompositeVector>("fd").ViewComponent("cell", false))(0,0), 1e-12);
+    CHECK_CLOSE(64.0, (S.Get<CompositeVector>("fa").ViewComponent("cell",false))(0,0), 1e-12);
     
     // calculate dA/dB
     std::cout << "Calculate derivative of field A wrt field B:" << std::endl;
-    changed = fa_eval->UpdateDerivative(S, "fa", "fb", "");
-    CHECK_CLOSE(2.0, (S.GetDerivative<CompositeVector>("fa", "", "fb", "").ViewComponent("cell",false))(0,0), 1e-12);
+    changed = fa_eval->UpdateDerivative(S, "main", "fb", "");
     CHECK(changed);
-    // /*
-    // // calculate dA/dG
-    // std::cout << "Calculate derivative of field A wrt field G:" << std::endl;
-    // changed = fa_eval->UpdateDerivative(S, "fa", "fg", "");
-    // CHECK_CLOSE(8640.0, (*S.GetDerivative<CompositeVector>("fa", "", "fg", "").ViewComponent("cell",false))(0,0), 1e-12);
-    // CHECK(changed);
-    
-    // // calculate dE/dG:
-    // std::cout << "Calculate derivative of field E wrt field G:" << std::endl;
-    // changed = fe_eval->UpdateDerivative(S, "fe", "fg", "");
-    // CHECK_CLOSE(24.0, (*S.GetDerivative<CompositeVector>("fe", "", "fg", "").ViewComponent("cell",false))(0,0), 1e-12);
-    // CHECK(changed);
-
-    // // Now we repeat some calculations. Since no primary fields changed,
-    // // the result should be the same
-    // // calculate dA/dG
-    // std::cout << "Calculate derivative of field A wrt field G:" << std::endl;
-    // changed = fa_eval->UpdateDerivative(S, "fa", "fg", "");
-    // CHECK_CLOSE(8640.0, (*S.GetDerivative<CompositeVector>("fa", "", "fg", "").ViewComponent("cell",false))(0,0), 1e-12);
-    // CHECK(!changed);
-    
-    // std::cout << "Calculate derivative of field A wrt field G:" << std::endl;
-    // fb_eval->SetChanged();
-    // changed = fa_eval->UpdateDerivative(S, "fa", "fg", "");
-    // CHECK_CLOSE(8640.0, (*S.GetDerivative<CompositeVector>("fa", "", "fg", "").ViewComponent("cell",false))(0,0), 1e-12);
-    // CHECK(changed);
-    // */
+    CHECK_CLOSE(2.0, (S.GetDerivative<CompositeVector>("fa", "", "fb", "").ViewComponent("cell",false))(0,0), 1e-12);
   }
 }
