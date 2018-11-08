@@ -29,7 +29,7 @@ namespace Relations {
 
 SubgridDisaggregateEvaluator::SubgridDisaggregateEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist),
-    source_lid_(-1)
+    source_gid_(-1)
 {
   // my_key_ = "surface_column_6-del_max"
   domain_ = Keys::getDomain(my_key_);  // "surface_column_6"
@@ -49,18 +49,20 @@ void
 SubgridDisaggregateEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result)
 {
-  if (source_lid_ < 0) {
+  if (source_gid_ < 0) {
     auto pos = domain_.find_last_of('_');
     AMANZI_ASSERT(pos != domain_.size());
     AMANZI_ASSERT(pos != domain_.size()-1);
     int col_id = std::stoi(domain_.substr(pos+1, domain_.size()));
     AMANZI_ASSERT(col_id >= 0 && col_id <= 1e3);
-    source_lid_ = col_id; // 6
+    source_gid_ = col_id; // 6
   }
 
   const auto& source = *S->GetFieldData(source_key_)->ViewComponent("cell",false);
-  AMANZI_ASSERT(source.MyLength() > source_lid_);
-  (*result->ViewComponent("cell", false))[0][0] = source[0][source_lid_];
+
+  int source_lid = S->GetMesh("surface")->cell_map(false).LID(source_gid_);
+  AMANZI_ASSERT(source.MyLength() > source_lid);
+  (*result->ViewComponent("cell", false))[0][0] = source[0][source_lid];
 }
 
 void

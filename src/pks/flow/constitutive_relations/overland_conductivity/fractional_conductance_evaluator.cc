@@ -80,8 +80,55 @@ void FractionalConductanceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S
 // This is hopefully never called?
 void FractionalConductanceEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-  std::cout<<"Fractional Conductance Evaluator Partial Derivative -- NEVER CALLED??: \n"; abort();
-  result->PutScalar(1.0/double(maxpd_depth_ - depr_depth_));
+  //  std::cout<<"Fractional Conductance Evaluator Partial Derivative -- NEVER CALLED??: \n"; abort();
+  std::cout<<"Fractional: "<<my_key_<<" "<<wrt_key<<"\n";
+
+  Epetra_MultiVector& res = *result->ViewComponent("cell",false);
+  
+  const Epetra_MultiVector& vpd = *S->GetFieldData(vpd_key_)->ViewComponent("cell",false);
+  const Epetra_MultiVector& delta_max_v = *S->GetFieldData(delta_max_key_)->ViewComponent("cell", false);
+  const Epetra_MultiVector& delta_ex_v = *S->GetFieldData(delta_ex_key_)->ViewComponent("cell", false);
+  const Epetra_MultiVector& depr_depth_v = *S->GetFieldData(depr_depth_key_)->ViewComponent("cell", false);
+  const Epetra_MultiVector& pdd_v = *S->GetFieldData(pdd_key_)->ViewComponent("cell",false);
+  
+  int ncells = res.MyLength();
+  //  assert(depr_depth_v[0][0] > 0.);
+
+  if (wrt_key == pdd_key_) {
+    for (int c=0; c!=ncells; ++c) {
+      double depr_depth = depr_depth_v[0][c];
+      double delta_max = delta_max_v[0][c];
+      double delta_ex = delta_ex_v[0][c];
+      double fixed_depth = std::pow(depr_depth,2)*(2*delta_max - 3*delta_ex)/std::pow(delta_max,2) + std::pow(depr_depth,3)*(2*delta_ex - delta_max)/std::pow(delta_max,3);
+      
+      if (pdd_v[0][c] <= 0.0)
+        res[0][c] = 0;
+      else{
+        res[0][c] = - (vpd[0][c] - fixed_depth) / std::pow(pdd_v[0][c],2.);
+      }
+    }
+    
+  }
+  else if (wrt_key == vpd_key_) {
+    for (int c=0; c!=ncells; ++c) {
+      double depr_depth = depr_depth_v[0][c];
+      double delta_max = delta_max_v[0][c];
+      double delta_ex = delta_ex_v[0][c];
+      double fixed_depth = std::pow(depr_depth,2)*(2*delta_max - 3*delta_ex)/std::pow(delta_max,2) + std::pow(depr_depth,3)*(2*delta_ex - delta_max)/std::pow(delta_max,3);
+      
+      if (pdd_v[0][c] <= 0.0)
+        res[0][c] = 0;
+      else{
+        res[0][c] =  1.0 / pdd_v[0][c];
+      }
+    }
+    
+  }
+  else {
+    Errors::Message msg("VolumetricHeightSubgridEvaluator: Not Implemented: no derivatives implemented other than ponded depth.");
+    Exceptions::amanzi_throw(msg);
+  }
+  
 }
 
 } //namespace
