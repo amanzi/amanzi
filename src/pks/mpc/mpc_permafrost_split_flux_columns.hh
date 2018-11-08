@@ -68,6 +68,8 @@ class MPCPermafrostSplitFluxColumns : public MPC<PK> {
   // -- advance each sub pk dt.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit);
 
+  virtual bool ValidStep();
+  
   virtual void set_dt(double dt);
 
   virtual void CommitStep(double t_old, double t_new,

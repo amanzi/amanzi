@@ -111,7 +111,7 @@ void Coordinator::coordinator_init() {
         S_->RequireField(node_key)->SetMesh(mesh->second.first)->SetGhosted()
           ->AddComponent("node", Amanzi::AmanziMesh::NODE, mesh->second.first->space_dimension());
       }
-      else if (!parameter_list_->sublist("mesh").isSublist("column")){
+      else if (!parameter_list_->sublist("mesh").isSublist("column") && !(mesh->first == "snow")){
         std::string node_key;
         if (mesh->first != "domain")
           node_key= mesh->first+std::string("-vertex_coordinate");
@@ -530,7 +530,7 @@ bool Coordinator::advance(double t_old, double t_new) {
          mesh!=S_->mesh_end(); ++mesh) {
       bool surf = boost::starts_with(mesh->first, "surface_");
 
-      if (S_->IsDeformableMesh(mesh->first)){
+      if (S_->IsDeformableMesh(mesh->first) && !(mesh->first == "snow")){
         if (mesh->first.find("column") != std::string::npos) {
         // collect the old coordinates
           

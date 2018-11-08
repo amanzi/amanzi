@@ -167,10 +167,25 @@ bool MPCPermafrostSplitFluxColumns::AdvanceStep(double t_old, double t_new, bool
   // Now advance the primary
   for (int i=1; i!=sub_pks_.size(); ++i) {
     fail = sub_pks_[i]->AdvanceStep(t_old, t_new, reinit);
-    if (fail) return fail;
+    if (fail) break;
   }
-  return fail;
+  int fail_l = (int)fail;
+  int fail_g = -1;
+  S_->GetMesh("surface")->get_comm()->MaxAll(&fail_l, &fail_g, 1);
+  AMANZI_ASSERT(fail_g == 0 || fail_g == 1);
+  return (bool)fail_g;
 };
+
+bool MPCPermafrostSplitFluxColumns::ValidStep() 
+{
+  bool valid = MPC<PK>::ValidStep();
+  int valid_l = (int)valid;
+  int valid_g = 2;
+  S_->GetMesh("surface")->get_comm()->MinAll(&valid_l, &valid_g, 1);
+  AMANZI_ASSERT(valid_g == 0 || valid_g == 1);
+  return (bool)valid_g;
+}
+  
 
 
 void MPCPermafrostSplitFluxColumns::CommitStep(double t_old, double t_new,
