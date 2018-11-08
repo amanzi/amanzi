@@ -263,20 +263,19 @@ void ReconstructionCell::LimiterBarthJespersen_(
     const std::vector<int>& bc_model, const std::vector<double>& bc_value,
     Teuchos::RCP<Epetra_Vector> limiter)
 {
-  AMANZI_ASSERT(upwind_cells_.size() > 0);
-  AMANZI_ASSERT(downwind_cells_.size() > 0);
-
   limiter->PutScalar(1.0);
   Epetra_MultiVector& grad = *gradient_->ViewComponent("cell", false);
 
   double u1, u2, u1f, u2f, umin, umax;  // cell and inteface values
   AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim);
+  AmanziMesh::Entity_ID_List cells;
 
   // Step 1: limiting gradient inside domain
   for (int f = 0; f < nfaces_owned; f++) {
-    int c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
-    int c2 = (downwind_cells_[f].size() > 0) ? downwind_cells_[f][0] : -1;
-    if (c1 < 0 || c2 < 0) continue;
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    if (cells.size() == 1) continue; 
+    int c1 = cells[0];
+    int c2 = cells[1];
 
     u1 = (*field_)[component_][c1];
     u2 = (*field_)[component_][c2];
@@ -310,7 +309,6 @@ void ReconstructionCell::LimiterBarthJespersen_(
   }
 
   // Local extrema are calculated here and updated in Step 2.
-  AmanziMesh::Entity_ID_List cells;
   std::vector<double> field_local_min(ncells_wghost);
   std::vector<double> field_local_max(ncells_wghost);
 
@@ -326,31 +324,33 @@ void ReconstructionCell::LimiterBarthJespersen_(
   }
 
   // Step 2: limiting gradient on the Dirichlet boundary
-  for (int f = 0; f < nfaces_owned; ++f) {
-    if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-      if (downwind_cells_[f].size() > 0) {
-        int c2 = downwind_cells_[f][0];
+  if (flux_ != Teuchos::null) {
+    for (int f = 0; f < nfaces_owned; ++f) {
+      if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+        if (downwind_cells_[f].size() > 0) {
+          int c2 = downwind_cells_[f][0];
 
-        u2 = (*field_)[component_][c2];
-        u1 = bc_value[f];
-        umin = std::min(u1, u2);
-        umax = std::max(u1, u2);
-        double tol = sqrt(OPERATOR_LIMITER_TOLERANCE) * (fabs(u1) + fabs(u2));
+          u2 = (*field_)[component_][c2];
+          u1 = bc_value[f];
+          umin = std::min(u1, u2);
+          umax = std::max(u1, u2);
+          double tol = sqrt(OPERATOR_LIMITER_TOLERANCE) * (fabs(u1) + fabs(u2));
 
-        field_local_max[c2] = std::max(field_local_max[c2], u1);
-        field_local_min[c2] = std::min(field_local_min[c2], u1);
+          field_local_max[c2] = std::max(field_local_max[c2], u1);
+          field_local_min[c2] = std::min(field_local_min[c2], u1);
 
-        const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
-        const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
+          const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
+          const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
 
-        for (int k = 0; k < dim; k++) gradient_c2[k] = grad[k][c2];
-        double u_add = gradient_c2 * (xcf - xc2);
-        u2f = u2 + u_add;
+          for (int k = 0; k < dim; k++) gradient_c2[k] = grad[k][c2];
+          double u_add = gradient_c2 * (xcf - xc2);
+          u2f = u2 + u_add;
 
-        if (u2f < umin - tol) {
-          (*limiter)[c2] = std::min((*limiter)[c2], (umin - u2) / u_add);
-        } else if (u2f > umax + tol) {
-          (*limiter)[c2] = std::min((*limiter)[c2], (umax - u2) / u_add);
+          if (u2f < umin - tol) {
+            (*limiter)[c2] = std::min((*limiter)[c2], (umin - u2) / u_add);
+          } else if (u2f > umax + tol) {
+            (*limiter)[c2] = std::min((*limiter)[c2], (umax - u2) / u_add);
+          }
         }
       }
     }

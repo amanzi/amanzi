@@ -33,16 +33,16 @@
 // Amanzi::Operators
 #include "RemapDG.hh"
 
-#include "AnalyticDG08b.hh"
+#include "AnalyticDG04.hh"
 
 namespace Amanzi {
 
-class MyRemapDG : public RemapDG<AnalyticDG08b> {
+class MyRemapDG : public RemapDG<AnalyticDG04> {
  public:
   MyRemapDG(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
             const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
             Teuchos::ParameterList& plist, double T1)
-    : RemapDG<AnalyticDG08b>(mesh0, mesh1, plist),
+    : RemapDG<AnalyticDG04>(mesh0, mesh1, plist),
       T1_(T1),
       tini_(0.0),
       tl2_(0.0) {};
@@ -166,7 +166,7 @@ void MyRemapDG::UpdateGeometricQuantities(double t, bool consistent_det)
 ***************************************************************** */
 void MyRemapDG::DeformMesh(int deform, double t)
 {
-  RemapDG<AnalyticDG08b>::DeformMesh(deform, t);
+  RemapDG<AnalyticDG04>::DeformMesh(deform, t);
 
   if (order_ > 1) {
     int nfaces = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
@@ -306,7 +306,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   std::string basis = plist.sublist("PK operator")
                            .sublist("flux operator").get<std::string>("dg basis");
   WhetStone::DG_Modal dg(order, mesh0, basis);
-  AnalyticDG08b ana(mesh0, order, true);
+  AnalyticDG04 ana(mesh0, order, true);
   ana.InitialGuess(dg, p1c, 1.0);
 
   // vizualize initial solution
@@ -365,6 +365,8 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
 
       t += dt;
       nstep++;
+
+      // remap.ApplyLimiter(dg, p1aux);
     }
   }
 
@@ -452,7 +454,7 @@ TEST(REMAP_CURVED_2D) {
   auto rk_method = Amanzi::Explicit_TI::heun_euler;
   std::string maps = "VEM";
   int deform = 1;
-  // RemapTestsCurved(rk_method, maps, "", 8,8,0, dT, deform, nloop, T1);
+  RemapTestsCurved(rk_method, maps, "", 8,8,0, dT, deform, nloop, T1);
 
   /*
   int nloop = 40;

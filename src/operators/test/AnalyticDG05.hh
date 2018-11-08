@@ -8,10 +8,10 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Nonlinear function: f = sin(3x) sin(6y) * step(x),
-  where
-     step(x) = 1 if x < 0.5
-     step(x) =-1 otherwise.
+  A simple step function moving with constant velocity V. Initial
+  location of step is at x = X0:
+     u(x,t) = 1 if x < X0 + t V
+     u(x,t) = 0 otherwise.
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_DG_05_BASE_HH_
@@ -21,32 +21,52 @@
 
 class AnalyticDG05 : public AnalyticDGBase {
  public:
-  AnalyticDG05(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order, advection)
+  const double X0 = 0.0;
+  const double VEL = 0.0;
+
+ public:
+  AnalyticDG05(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order, bool advection)
     : AnalyticDGBase(mesh, order, advection) {};
   ~AnalyticDG05() {};
 
-  // analytic solution in conventional Taylor basis
-  virtual void TaylorCoefficients(const Amanzi::AmanziGeometry::Point& p, double t,
-                                  Amanzi::WhetStone::Polynomial& coefs) override {
-    coefs.Reshape(d_, order_, true); 
-    coefs(0, 0) = std::sin(3 * p[0]) * std::sin(6 * p[1]);
+  // analytic data in conventional Taylor basis
+  // -- diffusion tensor
+  virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) override {
+    Amanzi::WhetStone::Tensor K(2, 1);
+    K(0, 0) = 0.0;
+    return K;
+  }
 
-    if (order_ > 0) {
-      coefs(1, 0) = 3 * std::cos(3 * p[0]) * std::sin(6 * p[1]);
-      coefs(1, 1) = 6 * std::sin(3 * p[0]) * std::cos(6 * p[1]);
-    }
+  // -- solution
+  virtual void SolutionTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
+                              Amanzi::WhetStone::Polynomial& sol) override {
+    sol.Reshape(d_, 0, true); 
+    sol(0) = (p[0] < X0 + t * VEL) ? 1.0 : 0.0;
+  }
 
-    if (order_ > 1) {
-      int k = (d_ == 2) ? 2 : 3;
-      coefs(2, 0) =  -4.5 * std::sin(3 * p[0]) * std::sin(6 * p[1]);
-      coefs(2, 1) =  18.0 * std::cos(3 * p[0]) * std::cos(6 * p[1]);
-      coefs(2, k) = -18.0 * std::sin(3 * p[0]) * std::sin(6 * p[1]);
-    }
+  // -- accumulation
+  virtual void AccumulationTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
+                                  Amanzi::WhetStone::Polynomial& a) override {
+    a.Reshape(d_, 0, true); 
+  }
 
-    // multiply by a step function (1, -1)
-    if (p[0] > 0.5) {
-      coefs *= -1.0;
-    }
+  // -- velocity
+  virtual void VelocityTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
+                              Amanzi::WhetStone::VectorPolynomial& v) override {
+    v.Reshape(d_, d_, 0, true);
+    v[0](0) = VEL;
+  }
+
+  // -- reaction
+  virtual void ReactionTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
+                              Amanzi::WhetStone::Polynomial& r) override {
+    r.Reshape(d_, 0, true); 
+  }
+
+  // -- source term
+  virtual void SourceTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
+                            Amanzi::WhetStone::Polynomial& src) override {
+    src.Reshape(d_, 0, true); 
   }
 };
 

@@ -35,6 +35,7 @@
 #include "PDE_Abstract.hh"
 #include "PDE_AdvectionRiemann.hh"
 #include "PDE_Reaction.hh"
+#include "ReconstructionCell.hh"
 
 namespace Amanzi {
 
@@ -63,6 +64,9 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   virtual void Jacobian(int c, double t, const WhetStone::MatrixPolynomial& J,
                         WhetStone::MatrixPolynomial& Jt);
   virtual void UpdateGeometricQuantities(double t, bool consistent_det = false);
+
+  // limiters
+  void ApplyLimiter(const Amanzi::WhetStone::DG_Modal& dg, CompositeVector& u); 
 
   // -- mesh deformation
   virtual void DeformMesh(int deform, double t);
@@ -418,6 +422,56 @@ void RemapDG<AnalyticDG>::UpdateGeometricQuantities(double t, bool consistent_de
         }
       }
     }
+  }
+}
+
+
+/* *****************************************************************
+* Limit gradient
+***************************************************************** */
+template <class AnalyticDG>
+void RemapDG<AnalyticDG>::ApplyLimiter(
+    const Amanzi::WhetStone::DG_Modal& dg, CompositeVector& u)
+{
+  // AMANZI_ASSERT(order_ == 1);
+  const Epetra_MultiVector& u_c = *u.ViewComponent("cell", true);
+
+  // initialize limiter
+  auto limlist = plist_.sublist("limiter");
+
+  int nnodes_wghost = mesh0_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+  std::vector<int> bc_model(nnodes_wghost, Operators::OPERATOR_BC_NONE);
+  std::vector<double> bc_value(nnodes_wghost, 0.0);
+
+  Operators::ReconstructionCell lifting(mesh0_);
+  lifting.Init(u.ViewComponent("cell", true), limlist);
+
+  // create gradient in the natural basis
+  int nk = u_c.NumVectors();
+  WhetStone::DenseVector data(nk);
+
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(mesh0_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, dim_);
+  auto grad = Teuchos::rcp(new CompositeVector(cvs));
+  Epetra_MultiVector& grad_c = *grad->ViewComponent("cell");
+
+  for (int c = 0; c < ncells_owned_; ++c) {
+    for (int i = 0; i < nk; ++i) data(i) = u_c[i][c];
+    dg.cell_basis(c).ChangeBasisMyToNatural(data);
+    for (int i = 0; i < dim_; ++i) grad_c[i][c] = data(i + 1);
+  }
+
+  grad->ScatterMasterToGhosted("cell");
+  lifting.set_gradient(grad);
+
+  // limit gradient and save it to solution
+  lifting.ApplyLimiter(bc_model, bc_value);
+
+  for (int c = 0; c < ncells_owned_; ++c) {
+    data(0) = u_c[0][c];
+    for (int i = 0; i < dim_; ++i) data(i + 1) = grad_c[i][c];
+    dg.cell_basis(c).ChangeBasisNaturalToMy(data);
+    for (int i = 0; i < nk; ++i) u_c[i][c] = data(i);
   }
 }
 
