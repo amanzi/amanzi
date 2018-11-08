@@ -80,8 +80,6 @@ void FractionalConductanceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S
 // This is hopefully never called?
 void FractionalConductanceEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-  //  std::cout<<"Fractional Conductance Evaluator Partial Derivative -- NEVER CALLED??: \n"; abort();
-  std::cout<<"Fractional: "<<my_key_<<" "<<wrt_key<<"\n";
 
   Epetra_MultiVector& res = *result->ViewComponent("cell",false);
   
