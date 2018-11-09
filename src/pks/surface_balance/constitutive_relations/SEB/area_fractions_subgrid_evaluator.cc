@@ -96,7 +96,7 @@ AreaFractionsSubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
   for (int c=0; c!=res.MyLength(); ++c) {
     // calculate area of land
-    double wet_area = f_prime_(pd[0][c] + sd[0][c], del_max[0][c], del_ex[0][c]);
+    double wet_area = f_prime_(pd[0][c] + std::max(sd[0][c],0.0), del_max[0][c], del_ex[0][c]);
     res[0][c] = 1 - wet_area;
 
     // now partition the wet area into snow and water
