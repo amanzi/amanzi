@@ -40,6 +40,7 @@ struct GroundProperties {
   double ponded_depth;                  // [m] thickness of ponded water
   double fractional_area;               // [-] not used by SEB, but useful for later bookkeeping
   double snow_death_rate;               // [kg/m^2/s] snow that must die this timestep, make it melt!
+  double unfrozen_fraction;		// [-] fraction of ground water that is unfrozen
 
   GroundProperties() :
       temp(MY_LOCAL_NAN),
@@ -52,7 +53,8 @@ struct GroundProperties {
       saturation_gas(MY_LOCAL_NAN),
       roughness(MY_LOCAL_NAN),
       fractional_area(0.),
-      snow_death_rate(0.)
+      snow_death_rate(0.),
+      unfrozen_fraction(0.)
   {}
 
   void UpdateVaporPressure();
@@ -187,6 +189,8 @@ struct MassBalance {    // all are in [m/s] of WATER, i.e. snow are in SWE
 struct FluxBalance {
   double M_surf; // [m/s], mass to surface system
   double E_surf; // [W/m^2], energy to surface system
+  double M_subsurf; // [m/s], mass to/from subsurface system
+  double E_subsurf; // [W/m^2], energy to/from subsurface system
   double M_snow; // [m/s], mass swe to snow system
 };
 

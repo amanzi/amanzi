@@ -27,6 +27,8 @@ Requires the following dependencies:
 
 * `"snow-ground transitional depth [m]`" ``[double]`` **0.02**
          Minimum thickness for specifying the snow gradient.
+* `"minimum fractional area [-]`" ``[double]`` **1.e-5**
+         Mimimum area fraction allowed, less than this is rebalanced as zero.
          
 Ordering of the area fractions calculated are: [land, water, snow].
          
@@ -55,8 +57,12 @@ AreaFractionsSubgridEvaluator::AreaFractionsSubgridEvaluator(Teuchos::ParameterL
   // However, we hypothesize that these differences, on the surface (unlike in
   // the subsurface) really don't matter much. --etc
   snow_subgrid_transition_ = plist_.get<double>("snow transition height [m]", 0.02);
-  min_area_ = plist_.get<double>("minimum fractional area [-]", 0.);
-  
+  min_area_ = plist_.get<double>("minimum fractional area [-]", 1.e-5);
+  if (min_area_ <= 0.) {
+    Errors::Message message("AreaFractionsEvaluator: Minimum fractional area should be > 0.");
+    Exceptions::amanzi_throw(message);
+  }  
+
   domain_ = Keys::getDomain(my_key_);
   if (domain_ == "surface") {
     domain_snow_ = "snow";
@@ -108,13 +114,41 @@ AreaFractionsSubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       res[1][c] = wet_area - res[2][c];
     }
 
+    // if any area fraction is less than eps, give it to the others
+    if (res[0][c] > 0 && res[0][c] < min_area_) {
+      if (res[1][c] < min_area_) {
+        res[2][c] = 1.;
+        res[1][c] = 0.;
+        res[0][c] = 0.;
+      } else {
+        res[0][c] = 0.;
+        res[1][c] += res[0][c] * res[1][c] / (res[1][c] + res[2][c]);
+        res[2][c] += res[0][c] * res[2][c] / (res[1][c] + res[2][c]);
+      }
+    } else if (res[1][c] > 0 && res[1][c] < min_area_) {
+      if (res[2][c] < min_area_) {
+        res[0][c] = 1.;
+        res[1][c] = 0.;
+        res[2][c] = 0.;
+      } else {
+        res[1][c] = 0.;
+        res[0][c] += res[1][c] * res[0][c] / (res[0][c] + res[2][c]);
+        res[2][c] += res[1][c] * res[2][c] / (res[0][c] + res[2][c]);
+      }
+    } else if (res[2][c] > 0 && res[2][c] < min_area_) {
+      res[2][c] = 0.;
+      res[0][c] += res[2][c] * res[0][c] / (res[0][c] + res[1][c]);
+      res[1][c] += res[2][c] * res[1][c] / (res[0][c] + res[1][c]);
+    }
+
     AMANZI_ASSERT(std::abs(res[0][c] + res[1][c] + res[2][c] - 1.0) < 1.e-10);
     AMANZI_ASSERT(-1.e-10 <= res[0][c] && res[0][c] <= 1.+1.e-10);
     AMANZI_ASSERT(-1.e-10 <= res[1][c] && res[1][c] <= 1.+1.e-10);
     AMANZI_ASSERT(-1.e-10 <= res[2][c] && res[2][c] <= 1.+1.e-10);
-    res[0][c] = res[0][c] < min_area_ ? 0. : std::min(std::max(0.,res[0][c]), 1.);
-    res[1][c] = res[1][c] < min_area_ ? 0. : std::min(std::max(0.,res[1][c]), 1.);
-    res[2][c] = res[2][c] < min_area_ ? 0. : std::min(std::max(0.,res[2][c]), 1.);
+
+    res[0][c] = std::min(std::max(0.,res[0][c]), 1.);
+    res[1][c] = std::min(std::max(0.,res[1][c]), 1.);
+    res[2][c] = std::min(std::max(0.,res[2][c]), 1.);
   }
 }
 
@@ -135,7 +169,7 @@ AreaFractionsSubgridEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
   
   for (auto dep_key : dependencies_) {
     auto fac = S->RequireField(dep_key);
-    if (boost::starts_with(dep_key, domain_snow_)) {
+    if (Keys::getDomain(dep_key) == domain_snow_) {
       fac->SetMesh(S->GetMesh(domain_snow_))
           ->SetGhosted()
           ->SetComponent("cell", AmanziMesh::CELL, 1);

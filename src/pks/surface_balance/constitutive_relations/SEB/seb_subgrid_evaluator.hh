@@ -63,11 +63,14 @@ class SubgridEvaluator : public SecondaryVariablesFieldEvaluator {
   virtual void UpdateFieldDerivative_(const Teuchos::Ptr<State>& S, Key wrt_key);
   
  protected:
-  Key mass_source_key_, energy_source_key_, snow_source_key_, new_snow_key_;
+  Key mass_source_key_, energy_source_key_;
+  Key ss_mass_source_key_, ss_energy_source_key_;
+  Key snow_source_key_, new_snow_key_;
   Key met_sw_key_, met_lw_key_, met_air_temp_key_, met_rel_hum_key_;
   Key met_wind_speed_key_, met_prain_key_, met_psnow_key_;
   Key snow_depth_key_, snow_dens_key_, snow_death_rate_key_;
-  Key ponded_depth_key_, sg_albedo_key_, sg_emissivity_key_, area_frac_key_;
+  Key ponded_depth_key_, unfrozen_fraction_key_;
+  Key sg_albedo_key_, sg_emissivity_key_, area_frac_key_;
   Key surf_temp_key_, surf_pres_key_;
   Key sat_gas_key_, poro_key_;
 

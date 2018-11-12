@@ -74,6 +74,10 @@ SEBEvaluator::SEBEvaluator(Teuchos::ParameterList& plist) :
   my_keys_.push_back(mass_source_key_);
   energy_source_key_ = Keys::readKey(plist, domain_, "surface energy source", "total_energy_source");
   my_keys_.push_back(energy_source_key_);
+  ss_mass_source_key_ = Keys::readKey(plist, domain_ss_, "subsurface mass source", "mass_source");
+  my_keys_.push_back(ss_mass_source_key_);
+  ss_energy_source_key_ = Keys::readKey(plist, domain_ss_, "subsurface energy source", "total_energy_source");
+  my_keys_.push_back(ss_energy_source_key_);
   snow_source_key_ = Keys::readKey(plist, domain_snow_, "snow mass source - sink", "source_sink");
   my_keys_.push_back(snow_source_key_);
 
@@ -123,6 +127,8 @@ SEBEvaluator::SEBEvaluator(Teuchos::ParameterList& plist) :
   // -- skin properties  
   ponded_depth_key_ = Keys::readKey(plist, domain_, "ponded depth", "ponded_depth");
   dependencies_.insert(ponded_depth_key_);
+  unfrozen_fraction_key_ = Keys::readKey(plist, domain_, "unfrozen fraction", "unfrozen_fraction");
+  dependencies_.insert(unfrozen_fraction_key_);
   sg_albedo_key_ = Keys::readKey(plist, domain_, "subgrid albedos", "subgrid_albedos");
   dependencies_.insert(sg_albedo_key_);
   sg_emissivity_key_ = Keys::readKey(plist, domain_, "subgrid emissivities", "subgrid_emissivities");
@@ -162,6 +168,7 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
                              const std::vector<Teuchos::Ptr<CompositeVector> >& results)
 {
   const SEBPhysics::ModelParams params;
+  double snow_eps = 1.e-5;
 
   // collect met data
   const auto& qSW_in = *S->GetFieldData(met_sw_key_)->ViewComponent("cell",false);
@@ -179,6 +186,7 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   
   // collect skin properties
   const auto& ponded_depth = *S->GetFieldData(ponded_depth_key_)->ViewComponent("cell",false);
+  const auto& unfrozen_fraction = *S->GetFieldData(unfrozen_fraction_key_)->ViewComponent("cell",false);
   const auto& sg_albedo = *S->GetFieldData(sg_albedo_key_)->ViewComponent("cell",false);
   const auto& emissivity = *S->GetFieldData(sg_emissivity_key_)->ViewComponent("cell",false);
   const auto& area_fracs = *S->GetFieldData(area_frac_key_)->ViewComponent("cell",false);
@@ -192,10 +200,14 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   // collect output vecs
   auto& mass_source = *results[0]->ViewComponent("cell",false);
   auto& energy_source = *results[1]->ViewComponent("cell",false);
-  auto& snow_source = *results[2]->ViewComponent("cell",false);
-  auto& new_snow = *results[3]->ViewComponent("cell",false);
+  auto& ss_mass_source = *results[2]->ViewComponent("cell",false);
+  auto& ss_energy_source = *results[3]->ViewComponent("cell",false);
+  auto& snow_source = *results[4]->ViewComponent("cell",false);
+  auto& new_snow = *results[5]->ViewComponent("cell",false);
   mass_source.PutScalar(0.);
   energy_source.PutScalar(0.);
+  ss_mass_source.PutScalar(0.);
+  ss_energy_source.PutScalar(0.);
   snow_source.PutScalar(0.);
   new_snow.PutScalar(0.);
 
@@ -225,7 +237,7 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     qE_cond = S->GetFieldData(qE_cond_key_, qE_cond_key_)->ViewComponent("cell",false).get();
     qE_cond->PutScalar(0.);
   }
-  
+
   unsigned int ncells = mass_source.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
     // get the top cell
@@ -257,6 +269,7 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       surf.emissivity = emissivity[0][c];
       surf.porosity = ponded_depth[0][c] > 0. ? 1. : poro[0][cells[0]];
       surf.ponded_depth = ponded_depth[0][c];
+      surf.unfrozen_fraction = unfrozen_fraction[0][c];
 
       // must ensure that energy is put into melting snow precip, even if it
       // all melts so there is no snow column
@@ -276,6 +289,11 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       // fQe, Me positive is condensation, water flux positive to surface
       mass_source[0][c] += area_fracs[0][c] * flux.M_surf;
       energy_source[0][c] += area_fracs[0][c] * flux.E_surf * 1.e-6; // convert to MW/m^2
+
+      double area_to_volume = mesh.cell_volume(c) / mesh_ss.cell_volume(cells[0]);
+      ss_mass_source[0][cells[0]] += area_fracs[0][c] * flux.M_subsurf * area_to_volume * params.density_water / 0.0180153; // convert from m/m^2/s to mol/m^3/s
+      ss_energy_source[0][cells[0]] += area_fracs[0][c] * flux.E_subsurf * area_to_volume * 1.e-6; // convert from W/m^2 to MW/m^3
+
       snow_source[0][c] += area_fracs[0][c] * flux.M_snow;
       new_snow[0][c] += met.Ps;
 
@@ -309,6 +327,7 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       surf.albedo = sg_albedo[1][c];
       surf.porosity = 1.;
       surf.ponded_depth = 0.;
+      surf.unfrozen_fraction = unfrozen_fraction[0][c];
 
       met.Ps = Psnow[0][c] / area_fracs[1][c];
       
@@ -324,7 +343,7 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       const SEBPhysics::MassBalance mb = SEBPhysics::UpdateMassBalanceWithSnow(surf, params, eb);
       SEBPhysics::FluxBalance flux = SEBPhysics::UpdateFluxesWithSnow(surf, met, params, snow, eb, mb);
 
-      // fQe, Me positive is condensation, water flux positive to surface
+      // fQe, Me positive is condensation, water flux positive to surface.  No need for subsurf as there is snow present.
       mass_source[0][c] += area_fracs[1][c] * flux.M_surf;
       energy_source[0][c] += area_fracs[1][c] * flux.E_surf * 1.e-6; // convert to MW/m^2 from W/m^2
       snow_source[0][c] += area_fracs[1][c] * flux.M_snow;
@@ -380,6 +399,8 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     vecs.push_back(S->GetFieldData(surf_pres_key_).ptr());
     vnames.push_back("ponded_depth"); 
     vecs.push_back(S->GetFieldData(ponded_depth_key_).ptr());
+    vnames.push_back("unfrozen_fraction"); 
+    vecs.push_back(S->GetFieldData(unfrozen_fraction_key_).ptr());
     vnames.push_back("snow_depth"); 
     vecs.push_back(S->GetFieldData(snow_depth_key_).ptr());
     vnames.push_back("snow_death"); 
@@ -462,6 +483,11 @@ SEBEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
       ->SetGhosted()
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
+  CompositeVectorSpace domain_fac_owned_ss;
+  domain_fac_owned_ss.SetMesh(S->GetMesh(domain_ss_))
+      ->SetGhosted()
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+
   CompositeVectorSpace domain_fac_owned_snow;
   domain_fac_owned_snow.SetMesh(S->GetMesh(domain_snow_))
       ->SetGhosted()
@@ -484,10 +510,15 @@ SEBEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
   
   for (auto my_key : my_keys_) {
     auto my_fac = S->RequireField(my_key, my_key);
-    if (boost::starts_with(my_key, domain_snow_)) {
+    if (Keys::getDomain(my_key) == domain_snow_) {
       my_fac->Update(domain_fac_owned_snow);
-    } else {
+    } else if (Keys::getDomain(my_key) == domain_) {
       my_fac->Update(domain_fac_owned);
+    } else if (Keys::getDomain(my_key) == domain_ss_) {
+      my_fac->Update(domain_fac_owned_ss);
+    } else {
+      Errors::Message message("SEBEvaluator: Key requested with unrecognizable domain name.");
+      Exceptions::amanzi_throw(message);
     }
 
     // Check plist for vis or checkpointing control.
