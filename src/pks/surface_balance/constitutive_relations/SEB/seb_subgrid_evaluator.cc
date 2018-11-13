@@ -76,7 +76,7 @@ SubgridEvaluator::SubgridEvaluator(Teuchos::ParameterList& plist) :
   my_keys_.push_back(energy_source_key_);
   ss_mass_source_key_ = Keys::readKey(plist, domain_ss_, "subsurface mass source", "mass_source");
   my_keys_.push_back(ss_mass_source_key_);
-  ss_energy_source_key_ = Keys::readKey(plist, domain_, "subsurface energy source", "total_energy_source");
+  ss_energy_source_key_ = Keys::readKey(plist, domain_ss_, "subsurface energy source", "total_energy_source");
   my_keys_.push_back(ss_energy_source_key_);
   snow_source_key_ = Keys::readKey(plist, domain_snow_, "snow mass source - sink", "source_sink");
   my_keys_.push_back(snow_source_key_);
