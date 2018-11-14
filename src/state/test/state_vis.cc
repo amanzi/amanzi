@@ -77,8 +77,50 @@ SUITE(VISUALIZATION) {
     CHECK_EQUAL(false, V.DumpRequested(3.2));
     CHECK_EQUAL(false, V.DumpRequested(3.99));
     CHECK_EQUAL(false, V.DumpRequested(10.0));    
+    CHECK_EQUAL(false, V.DumpRequested(12.0));    
   }
 
+
+  TEST(VIZ_DUMP_REQUIRED_WITH_UNITS) {
+    Teuchos::ParameterList plist;
+
+    plist.set<std::string>("file name base", "visdump");
+    plist.set<int>("file name digits", 5);
+
+    Teuchos::Array<double> tsps(3);
+    tsps[0] = 0.0;
+    tsps[1] = 4.0;
+    tsps[2] = 10.0;
+    plist.set<Teuchos::Array<double> >("times start period stop", tsps);    
+    plist.set<std::string>("times start period stop units", "y 365");
+    
+    Teuchos::Array<double> times(2);
+    times[0] = 1.0;
+    times[1] = 3.0;
+    plist.set<Teuchos::Array<double> >("times", times);
+    plist.set<std::string>("times units", "d");
+
+    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    Amanzi::Visualization V(plist);
+
+    // test the time sps stuff
+    double y_s = 365. * 86400.;
+    double d_s = 86400.;
+    
+    CHECK_EQUAL(true, V.DumpRequested(0.0));
+    CHECK_EQUAL(true, V.DumpRequested(1.0*d_s));
+    CHECK_EQUAL(true, V.DumpRequested(3.0*d_s));
+    CHECK_EQUAL(true, V.DumpRequested(4.0*y_s));
+    CHECK_EQUAL(true, V.DumpRequested(8.0*y_s));
+    
+    CHECK_EQUAL(false, V.DumpRequested(0.5*d_s));
+    CHECK_EQUAL(false, V.DumpRequested(1.1*d_s));
+    CHECK_EQUAL(false, V.DumpRequested(3.2*d_s));
+    CHECK_EQUAL(false, V.DumpRequested(3.99*y_s));
+    CHECK_EQUAL(false, V.DumpRequested(10.0*y_s));    
+    CHECK_EQUAL(false, V.DumpRequested(12.0*y_s));    
+  }
+  
 
   TEST(DUMP_MESH_AND_DATA) {
     // here we just check that the code does not crash when 

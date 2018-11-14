@@ -33,6 +33,7 @@ void Units::Init()
 {
   // supported units of time (extendable list)
   time_["y"] = 365.25 * 24.0 * 3600.0 * bu::si::second;
+  time_["y 365"] = 365. * 24.0 * 3600.0 * bu::si::second;
   time_["d"] = 24.0 * 3600.0 * bu::si::second;
   time_["h"] = 3600.0 * bu::si::second;
   time_["min"] = 60.0 * bu::si::second;
