@@ -1,7 +1,5 @@
 #include "UnitTest++.h"
 
-#include "VerboseObject_objs.hh"
-
 #include "Units.hh"
 
 using namespace Amanzi;

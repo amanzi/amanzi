@@ -1,7 +1,5 @@
 #include <iostream>
 #include "UnitTest++.h"
- 
-#include "VerboseObject_objs.hh"
 
 #include "Spline.hh"
 #include "SplinedCurve.hh"

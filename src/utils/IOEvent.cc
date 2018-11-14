@@ -154,7 +154,7 @@ void IOEvent::ReadParameters_() {
     auto my_units = plist_.get<std::string>("times start period stop units", "s");
     ValidUnitOrThrow_(my_units);
     bool success;
-    for (auto& time : times_sps) time = units_.ConvertTime(time, my_units, "s", success);
+    for (auto& time : times_sps) time = time >= 0. ? units_.ConvertTime(time, my_units, "s", success) : -1.;
     AMANZI_ASSERT(success);
 
     times_sps_.push_back(times_sps);
@@ -173,7 +173,7 @@ void IOEvent::ReadParameters_() {
       auto my_units = plist_.get<std::string>(pname.str(), "s");
       ValidUnitOrThrow_(my_units);
       bool success;
-      for (auto& time : times_sps) time = units_.ConvertTime(time, my_units, "s", success);
+      for (auto& time : times_sps) time = time >= 0. ? units_.ConvertTime(time, my_units, "s", success) : -1.;
       AMANZI_ASSERT(success);
 
       times_sps_.push_back(times_sps);
