@@ -123,7 +123,7 @@ bool PK_Physical_Default::ValidStep() {
 
   if (max_valid_change_ > 0.0) {
     const CompositeVector& var_new = *S_next_->GetFieldData(key_);
-    const CompositeVector& var_old = *S_->GetFieldData(key_);
+    const CompositeVector& var_old = *S_inter_->GetFieldData(key_);
     CompositeVector dvar(var_new);
     dvar.Update(-1., var_old, 1.);
     double change = 0.;

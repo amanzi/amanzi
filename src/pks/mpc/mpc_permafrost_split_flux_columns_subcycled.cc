@@ -175,7 +175,7 @@ bool MPCPermafrostSplitFluxColumnsSubcycled::AdvanceStep(double t_old, double t_
         *vo_->os() << "  step was " << fail_inner << std::endl;
       fail_inner |= !sub_pks_[i]->ValidStep();
       if (vo_->os_OK(Teuchos::VERB_HIGH))
-        *vo_->os() << "  step was valid " << fail_inner << std::endl;
+        *vo_->os() << "  step was not valid " << fail_inner << std::endl;
 
       if (fail_inner) {
         dt_inner = sub_pks_[i]->get_dt();
