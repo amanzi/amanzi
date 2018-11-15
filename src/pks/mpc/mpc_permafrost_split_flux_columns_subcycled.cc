@@ -162,29 +162,43 @@ bool MPCPermafrostSplitFluxColumnsSubcycled::AdvanceStep(double t_old, double t_
   for (int i=1; i!=sub_pks_.size(); ++i) {
     double t_inner = t_old;
     bool done = false;
+    if (vo_->os_OK(Teuchos::VERB_HIGH))
+      *vo_->os() << "Beginning timestepping on column " << i << std::endl;
 
     S_inter_->set_time(t_old);
     while (!done) {
       double dt_inner = std::min(sub_pks_[i]->get_dt(), t_new - t_inner);
+      *S_next_->GetScalarData("dt", "coordinator") = dt_inner;
       S_next_->set_time(t_inner + dt_inner);
       bool fail_inner = sub_pks_[i]->AdvanceStep(t_inner, t_inner+dt_inner, false);
+      if (vo_->os_OK(Teuchos::VERB_HIGH))
+        *vo_->os() << "  step was " << fail_inner << std::endl;
       fail_inner |= !sub_pks_[i]->ValidStep();
+      if (vo_->os_OK(Teuchos::VERB_HIGH))
+        *vo_->os() << "  step was valid " << fail_inner << std::endl;
 
       if (fail_inner) {
         dt_inner = sub_pks_[i]->get_dt();
         *S_next_ = *S_inter_;
+
+        if (vo_->os_OK(Teuchos::VERB_HIGH))
+          *vo_->os() << "  failed, new timestep is " << dt_inner << std::endl;
+
+        
       } else {
         sub_pks_[i]->CommitStep(t_inner, t_inner + dt_inner, S_next_);
         t_inner += dt_inner;
-        dt_inner = sub_pks_[i]->get_dt();
         *S_inter_ = *S_next_;
-
         if (t_inner >= t_new - 1.e-10) {
           done = true;
         }
+        dt_inner = sub_pks_[i]->get_dt();
+        if (vo_->os_OK(Teuchos::VERB_HIGH))
+          *vo_->os() << "  success, new timestep is " << dt_inner << std::endl;
       }
     }
   }
+  S_inter_->set_time(t_old);
 
   // Copy the primary into the star to advance
   CopyPrimaryToStar(S_next_.ptr(), S_next_.ptr());
@@ -201,8 +215,7 @@ bool MPCPermafrostSplitFluxColumnsSubcycled::ValidStep()
 
 void MPCPermafrostSplitFluxColumnsSubcycled::CommitStep(double t_old, double t_new,
         const Teuchos::RCP<State>& S)
-{
-}
+{}
 
 
 // -----------------------------------------------------------------------------
