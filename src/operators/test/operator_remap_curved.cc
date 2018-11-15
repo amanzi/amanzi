@@ -267,7 +267,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
       
     auto limiter_list = plist.sublist("limiter");
     std::string limiter = limiter_list.get<std::string>("limiter");
-    std::string stencil = limiter_list.get<std::string>("stencil", "default");
+    std::string stencil = limiter_list.get<std::string>("limiter stencil", "default");
 
     std::cout << "\nTest: " << dim << "D remap, dual formulation:"
               << " mesh=" << ((ny == 0) ? file_name : "square")

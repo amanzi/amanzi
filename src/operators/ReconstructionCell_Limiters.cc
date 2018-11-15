@@ -411,6 +411,9 @@ void ReconstructionCell::LimiterBarthJespersenCell_(
       int f = faces[i];
       if (f > nfaces_owned) continue;
 
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      if (cells.size() == 1) continue;
+
       const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
       for (int i = 0; i < dim; i++) gradient_c[i] = grad[i][c];
@@ -434,12 +437,10 @@ void ReconstructionCell::LimiterBarthJespersenCell_(
 
           u2 = (*field_)[component_][c2];
           u1 = bc_value[f];
-          umin = field_local_min[c2];
-          umax = field_local_max[c2];
           double tol = sqrt(OPERATOR_LIMITER_TOLERANCE) * (fabs(u1) + fabs(u2));
 
-          field_local_max[c2] = std::max(field_local_max[c2], u1);
-          field_local_min[c2] = std::min(field_local_min[c2], u1);
+          umin = field_local_min[c2] = std::min(field_local_min[c2], u1);
+          umax = field_local_max[c2] = std::max(field_local_max[c2], u1);
 
           const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
           const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
@@ -459,9 +460,9 @@ void ReconstructionCell::LimiterBarthJespersenCell_(
   }
 
   // Step 3: enforcing a priori time step estimate (division of dT by 2).
-  // if (limiter_correction_) {
-  //   LimiterExtensionTransportBarthJespersen_(field_local_min, field_local_max, limiter);
-  // }    
+  if (limiter_correction_) {
+    LimiterExtensionTransportBarthJespersen_(field_local_min, field_local_max, limiter);
+  }    
 }
 
 

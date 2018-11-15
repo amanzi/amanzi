@@ -4061,7 +4061,7 @@ and their extensions for various PKs.
  * `"limiter`" [string] specifies limiting method. Available options are 
    `"Barth-Jespersen`" (default), `"tensorial`", and `"Kuzmin`". 
 
- * `"stencil`" [string] specifies stencil for calculating local bounds. Available 
+ * `"limiter stencil`" [string] specifies stencil for calculating local bounds. Available 
    options are `"face to cells`", `"cell to closets cells`", `"cell to all cells`",
    and `"node to cells`".
    For a square mesh, the above options define stencils of size 2, 5, 9, and 4,
@@ -4079,7 +4079,7 @@ and their extensions for various PKs.
     <Parameter name="polynomial order" type="int" value="1"/>
     <Parameter name="limiter" type="string" value="tensorial"/>
     <Parameter name="limiter extension for transport" type="bool" value="false"/>
-    <Parameter name="stencil" type="string" value="face to cells"/>
+    <Parameter name="limiter stencil" type="string" value="face to cells"/>
   </ParameterList>
 
 

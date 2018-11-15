@@ -32,14 +32,16 @@
 #include "Transport_PK.hh"
 
 /* **************************************************************** */
-void runTest(double switch_time, std::string limiter) {
+void runTest(double switch_time, std::string xmlfile, std::string exofile,
+             std::string limiter, std::string stencil) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
-std::cout << "Test: Advance on a 2D square mesh" << std::endl;
+std::cout << "Test: Advance on a 2D square mesh: limiter=" << limiter 
+          << ", stencil=" << stencil << std::endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -47,8 +49,7 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
 #endif
 
   // read parameter list
-  std::string xmlFileName = "test/transport_2D.xml";
-  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlfile);
 
   /* create a mesh framework */
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
@@ -57,7 +58,12 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
-  RCP<const Mesh> mesh = meshfactory("test/rect2D_10x10_ss.exo", gm);
+
+  RCP<const Mesh> mesh;
+  if (exofile != "")
+    mesh = meshfactory(exofile, gm);
+  else
+    mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 10, gm);
 
   // create a simple state and populate it
   Amanzi::VerboseObject::hide_line_prefix = true;
@@ -71,8 +77,9 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
   S->set_time(0.0);
 
-  plist->sublist("PKs").sublist("transport")
-        .sublist("reconstruction").set<std::string>("limiter", limiter);
+  plist->sublist("PKs").sublist("transport").sublist("reconstruction")
+        .set<std::string>("limiter", limiter)
+        .set<std::string>("limiter stencil", stencil);
   Transport_PK TPK(plist, S, "transport", component_names);
   TPK.Setup(S.ptr());
   TPK.CreateDefaultState(mesh, 2);
@@ -148,7 +155,7 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
     }
   } else {
     for (int k = 0; k < 10; k++) {
-      CHECK_CLOSE(0.0, (*tcc)[0][k], 1e-6);
+      CHECK_CLOSE(0.0, (*tcc)[0][k], 2e-6);
     }
   }
 
@@ -157,14 +164,16 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
 
 
 TEST(ADVANCE_2D_MESH) {
-  runTest(1.0, "tensorial");  // no velocity swicth
+  // no velocity switch
+  runTest(1.0, "test/transport_2D.xml", "", "tensorial", "face to cells");
+  runTest(1.0, "test/transport_2D.xml", "test/median7x8.exo", "Barth-Jespersen", "cell to closest cells");
 }
 
 TEST(ADVANCE_2D_MESH_SWITCH_FLOW) {
-  runTest(0.16, "tensorial");
+  runTest(0.16, "test/transport_2D.xml", "", "tensorial", "face to cells");
 }
 
 TEST(ADVANCE_2D_MESH_SWITCH_FLOW_KUZMIN) {
-  runTest(0.16, "Kuzmin");
+  runTest(0.16, "test/transport_2D.xml", "", "Kuzmin", "node to cells");
 }
 

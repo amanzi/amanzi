@@ -63,13 +63,13 @@ void ReconstructionCell::Init(Teuchos::RCP<const Epetra_MultiVector> field,
   limiter_id_ = 0;
   if (name == "Barth-Jespersen") {
     limiter_id_ = OPERATOR_LIMITER_BARTH_JESPERSEN;
-    stencil = plist.get<std::string>("stencil", "face to cells");
+    stencil = plist.get<std::string>("limiter stencil", "face to cells");
   } else if (name == "tensorial") {
     limiter_id_ = OPERATOR_LIMITER_TENSORIAL;
-    stencil = plist.get<std::string>("stencil", "face to cells");
+    stencil = plist.get<std::string>("limiter stencil", "face to cells");
   } else if (name == "Kuzmin") {
     limiter_id_ = OPERATOR_LIMITER_KUZMIN;
-    stencil = plist.get<std::string>("stencil", "node to cells");
+    stencil = plist.get<std::string>("limiter stencil", "node to cells");
   }
 
   if (stencil == "node to cells")
