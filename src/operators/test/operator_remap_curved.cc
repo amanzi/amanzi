@@ -265,6 +265,10 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
     std::string vel_projector = map_list.get<std::string>("projector");
     std::string map_name = map_list.get<std::string>("map name");
       
+    auto limiter_list = plist.sublist("limiter");
+    std::string limiter = limiter_list.get<std::string>("limiter");
+    std::string stencil = limiter_list.get<std::string>("stencil", "default");
+
     std::cout << "\nTest: " << dim << "D remap, dual formulation:"
               << " mesh=" << ((ny == 0) ? file_name : "square")
               << " deform=" << deform << std::endl;
@@ -272,9 +276,12 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
     std::cout << "      discretization: order=" << order 
               << ", map=" << map_name << std::endl;
 
-    std::cout << "      map details: order=" << vel_order 
+    std::cout << "      map: order=" << vel_order 
               << ", projector=" << vel_projector 
               << ", method=\"" << vel_method << "\"" << std::endl;
+
+    std::cout << "      limiter: " << limiter
+              << ", stencil=\"" << stencil << "\"" << std::endl;
   }
 
   // create initial mesh
@@ -312,7 +319,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   // vizualize initial solution
   {
     Teuchos::ParameterList iolist;
-    iolist.get<std::string>("file name base", "plot0");
+    iolist.get<std::string>("file name base", "plot");
     OutputXDMF io(iolist, mesh0, true, false);
 
     const Epetra_MultiVector& ptmp = *p1->ViewComponent("cell");
@@ -372,15 +379,6 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
 
   remap.ChangeVariables(1.0, *p1, p2, false);
 
-  // visualize solution on mesh1
-  Teuchos::ParameterList iolist;
-  iolist.get<std::string>("file name base", "plot");
-  OutputXDMF io(iolist, mesh1, true, false);
-
-  io.InitializeCycle(1.0, nstep);
-  io.WriteVector(*p2c(0), "solution");
-  io.FinalizeCycle();
-
   // calculate error in the new basis
   Entity_ID_List nodes;
   std::vector<int> dirs;
@@ -388,10 +386,6 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
 
   CompositeVectorSpace cvs3;
   cvs3.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  CompositeVector q2(p2);
-  Epetra_MultiVector& q2c = *q2.ViewComponent("cell");
-  q2c = p2c;
 
   double pnorm, l2_err, inf_err, l20_err, inf0_err;
   ana.ComputeCellErrorRemap(dg, p2c, tend, 0, mesh1,
@@ -403,6 +397,35 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
     printf("nx=%3d (orig) L2=%12.8g %12.8g  Inf=%12.8g %12.8g\n", 
         nx, l20_err, l2_err, inf0_err, inf_err);
   }
+
+  // optional projection on the space of polynomials 
+  CompositeVector q2(p2);
+  Epetra_MultiVector& q2c = *q2.ViewComponent("cell");
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    const AmanziGeometry::Point& xc0 = mesh0->cell_centroid(c);
+    const AmanziGeometry::Point& xc1 = mesh1->cell_centroid(c);
+
+    WhetStone::DenseVector data(nk);
+    for (int i = 0; i < nk; ++i) data(i) = p2c[i][c];
+
+    if (order > 0 && order < 3 && dim == 2) {
+      auto poly = dg.cell_basis(c).CalculatePolynomial(mesh0, c, order, data);
+      remap.maps()->ProjectPolynomial(c, poly);
+      poly.ChangeOrigin(mesh1->cell_centroid(c));
+      for (int i = 0; i < nk; ++i) q2c[i][c] = poly(i);
+    }
+  }
+
+  // visualize solution on mesh1
+  Teuchos::ParameterList iolist;
+  iolist.get<std::string>("file name base", "plot");
+  OutputXDMF io(iolist, mesh1, true, false);
+
+  io.InitializeCycle(1.0, nstep);
+  io.WriteVector(*p2c(0), "solution");
+  io.WriteVector(*q2c(0), "projection");
+  io.FinalizeCycle();
 
   // conservation errors: mass and volume (CGL)
   double area(0.0), area0(0.0), area1(0.0);
@@ -460,6 +483,7 @@ TEST(REMAP_CURVED_2D) {
   int nloop = 40;
   double dT(0.0025 * nloop), T1(1.0 / nloop);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
+  // auto rk_method = Amanzi::Explicit_TI::forward_euler;
   std::string maps = "VEM";
   int deform = 6;
   RemapTestsCurved(rk_method, maps, "test/circle_quad10.exo", 10,0,0, dT,   deform, nloop, T1);

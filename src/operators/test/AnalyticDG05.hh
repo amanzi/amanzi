@@ -40,7 +40,7 @@ class AnalyticDG05 : public AnalyticDGBase {
   // -- solution
   virtual void SolutionTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                               Amanzi::WhetStone::Polynomial& sol) override {
-    sol.Reshape(d_, 0, true); 
+    sol.Reshape(d_, order_, true); 
     sol(0) = (p[0] < X0 + t * VEL) ? 1.0 : 0.0;
   }
 

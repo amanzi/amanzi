@@ -84,7 +84,11 @@ class ReconstructionCell : public Reconstruction {
                                   WhetStone::DenseVector& rhs);
 
   // internal limiters and supporting routines
-  void LimiterBarthJespersen_(
+  void LimiterBarthJespersenFace_(
+      const std::vector<int>& bc_model, const std::vector<double>& bc_value,
+      Teuchos::RCP<Epetra_Vector> limiter);
+
+  void LimiterBarthJespersenCell_(
       const std::vector<int>& bc_model, const std::vector<double>& bc_value,
       Teuchos::RCP<Epetra_Vector> limiter);
 
@@ -144,7 +148,7 @@ class ReconstructionCell : public Reconstruction {
   std::vector<std::vector<int> > downwind_cells_;
 
   double bc_scaling_;
-  int limiter_id_, poly_order_;
+  int limiter_id_, stencil_id_, poly_order_;
   bool limiter_correction_;
 };
 

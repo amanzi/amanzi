@@ -58,15 +58,28 @@ void ReconstructionCell::Init(Teuchos::RCP<const Epetra_MultiVector> field,
   // process parameters for limiters
   bc_scaling_ = 0.0;
 
+  std::string stencil;
   std::string name = plist.get<std::string>("limiter", "Barth-Jespersen");
   limiter_id_ = 0;
   if (name == "Barth-Jespersen") {
     limiter_id_ = OPERATOR_LIMITER_BARTH_JESPERSEN;
+    stencil = plist.get<std::string>("stencil", "face to cells");
   } else if (name == "tensorial") {
     limiter_id_ = OPERATOR_LIMITER_TENSORIAL;
+    stencil = plist.get<std::string>("stencil", "face to cells");
   } else if (name == "Kuzmin") {
     limiter_id_ = OPERATOR_LIMITER_KUZMIN;
+    stencil = plist.get<std::string>("stencil", "node to cells");
   }
+
+  if (stencil == "node to cells")
+    stencil_id_ = OPERATOR_LIMITER_STENSIL_N2C;
+  else if (stencil == "face to cells") 
+    stencil_id_ = OPERATOR_LIMITER_STENSIL_F2C;
+  else if (stencil == "cell to closest cells")
+    stencil_id_ = OPERATOR_LIMITER_STENSIL_C2C_CLOSEST;
+  else if (stencil == "cell to all cells")
+    stencil_id_ = OPERATOR_LIMITER_STENSIL_C2C_ALL;
 
   poly_order_ = plist.get<int>("polynomial order", 0);
   limiter_correction_ = plist.get<bool>("limiter extension for transport", false);
@@ -189,7 +202,10 @@ void ReconstructionCell::ApplyLimiter(
 {
   limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
   if (limiter_id_ == OPERATOR_LIMITER_BARTH_JESPERSEN) {
-    LimiterBarthJespersen_(bc_model, bc_value, limiter_);
+    if (stencil_id_ == OPERATOR_LIMITER_STENSIL_F2C) 
+      LimiterBarthJespersenFace_(bc_model, bc_value, limiter_);
+    else 
+      LimiterBarthJespersenCell_(bc_model, bc_value, limiter_);
     ApplyLimiter(limiter_);
   } else if (limiter_id_ == OPERATOR_LIMITER_TENSORIAL) {
     LimiterTensorial_(bc_model, bc_value);

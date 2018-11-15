@@ -253,13 +253,13 @@ void ReconstructionCell::LimiterExtensionTransportTensorial_(
 
 
 /* *******************************************************************
-* Routine calculates BJ limiter adjusted to linear advection. 
+* Routine calculates the BJ limiter using a face-based algorithm.
 * First, it limits face-centered value of a reconstracted function 
 * by min-max of two cell-centered values.
 * Second, it limits outflux values which gives factor 0.5 in the
 * time step estimate.
 ******************************************************************* */
-void ReconstructionCell::LimiterBarthJespersen_(
+void ReconstructionCell::LimiterBarthJespersenFace_(
     const std::vector<int>& bc_model, const std::vector<double>& bc_value,
     Teuchos::RCP<Epetra_Vector> limiter)
 {
@@ -360,6 +360,108 @@ void ReconstructionCell::LimiterBarthJespersen_(
   if (limiter_correction_) {
     LimiterExtensionTransportBarthJespersen_(field_local_min, field_local_max, limiter);
   }    
+}
+
+
+/* *******************************************************************
+* Routine calculates the BJ limiter using the cell-based algorithm.
+* First, it limits face-centered value of a reconstracted function 
+* by min-max of two cell-centered values.
+* Second, it limits outflux values which gives factor 0.5 in the
+* time step estimate.
+******************************************************************* */
+void ReconstructionCell::LimiterBarthJespersenCell_(
+    const std::vector<int>& bc_model, const std::vector<double>& bc_value,
+    Teuchos::RCP<Epetra_Vector> limiter)
+{
+  limiter->PutScalar(1.0);
+  Epetra_MultiVector& grad = *gradient_->ViewComponent("cell", false);
+
+  double u1, u2, u1f, u2f, umin, umax;  // cell and inteface values
+  AmanziGeometry::Point gradient_c(dim), gradient_c2(dim);
+  AmanziMesh::Entity_ID_List faces, cells;
+
+  // Local extrema are calculated here and updated in Step 2.
+  std::vector<double> field_local_min(ncells_wghost);
+  std::vector<double> field_local_max(ncells_wghost);
+
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_->cell_get_face_adj_cells(c, AmanziMesh::Parallel_type::ALL, &cells);
+    field_local_min[c] = field_local_max[c] = (*field_)[component_][c];
+
+    for (int i = 0; i < cells.size(); i++) {
+      double value = (*field_)[component_][cells[i]];
+      field_local_min[c] = std::min(field_local_min[c], value);
+      field_local_max[c] = std::max(field_local_max[c], value);
+    }
+  }
+
+  // Step 1: limiting gradient inside domain
+  for (int c = 0; c < ncells_owned; c++) {
+    umin = field_local_min[c];
+    umax = field_local_max[c];
+    u1 = (*field_)[component_][c];
+    double tol = sqrt(OPERATOR_LIMITER_TOLERANCE) * fabs(u1);
+
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+
+    for (int i = 0; i < nfaces; i++) {
+      int f = faces[i];
+      if (f > nfaces_owned) continue;
+
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+
+      for (int i = 0; i < dim; i++) gradient_c[i] = grad[i][c];
+      double u1_add = gradient_c * (xf - xc);
+      u1f = u1 + u1_add;
+
+      if (u1f < umin - tol) {
+        (*limiter)[c] = std::min((*limiter)[c], (umin - u1) / u1_add);
+      } else if (u1f > umax + tol) {
+        (*limiter)[c] = std::min((*limiter)[c], (umax - u1) / u1_add);
+      }
+    }
+  }
+
+  // Step 2: limiting gradient on the Dirichlet boundary
+  if (flux_ != Teuchos::null) {
+    for (int f = 0; f < nfaces_owned; ++f) {
+      if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+        if (downwind_cells_[f].size() > 0) {
+          int c2 = downwind_cells_[f][0];
+
+          u2 = (*field_)[component_][c2];
+          u1 = bc_value[f];
+          umin = field_local_min[c2];
+          umax = field_local_max[c2];
+          double tol = sqrt(OPERATOR_LIMITER_TOLERANCE) * (fabs(u1) + fabs(u2));
+
+          field_local_max[c2] = std::max(field_local_max[c2], u1);
+          field_local_min[c2] = std::min(field_local_min[c2], u1);
+
+          const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
+          const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
+
+          for (int k = 0; k < dim; k++) gradient_c2[k] = grad[k][c2];
+          double u_add = gradient_c2 * (xcf - xc2);
+          u2f = u2 + u_add;
+
+          if (u2f < umin - tol) {
+            (*limiter)[c2] = std::min((*limiter)[c2], (umin - u2) / u_add);
+          } else if (u2f > umax + tol) {
+            (*limiter)[c2] = std::min((*limiter)[c2], (umax - u2) / u_add);
+          }
+        }
+      }
+    }
+  }
+
+  // Step 3: enforcing a priori time step estimate (division of dT by 2).
+  // if (limiter_correction_) {
+  //   LimiterExtensionTransportBarthJespersen_(field_local_min, field_local_max, limiter);
+  // }    
 }
 
 
