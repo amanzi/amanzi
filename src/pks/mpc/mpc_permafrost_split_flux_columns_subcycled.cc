@@ -148,7 +148,12 @@ void MPCPermafrostSplitFluxColumnsSubcycled::set_dt( double dt)
 // -----------------------------------------------------------------------------
 bool MPCPermafrostSplitFluxColumnsSubcycled::AdvanceStep(double t_old, double t_new, bool reinit)
 {
+  Teuchos::OSTab tab = vo_->getOSTab();
+
   // Advance the star system 
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "Beginning timestepping on star system." << std::endl;
+
   bool fail = false;
   fail = sub_pks_[0]->AdvanceStep(t_old, t_new, reinit);
   fail |= !sub_pks_[0]->ValidStep();
@@ -171,17 +176,17 @@ bool MPCPermafrostSplitFluxColumnsSubcycled::AdvanceStep(double t_old, double t_
       *S_next_->GetScalarData("dt", "coordinator") = dt_inner;
       S_next_->set_time(t_inner + dt_inner);
       bool fail_inner = sub_pks_[i]->AdvanceStep(t_inner, t_inner+dt_inner, false);
-      if (vo_->os_OK(Teuchos::VERB_HIGH))
-        *vo_->os() << "  step was " << fail_inner << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_EXTREME))
+        *vo_->os() << "  step failed? " << fail_inner << std::endl;
       fail_inner |= !sub_pks_[i]->ValidStep();
-      if (vo_->os_OK(Teuchos::VERB_HIGH))
-        *vo_->os() << "  step was not valid " << fail_inner << std::endl;
+      if (vo_->os_OK(Teuchos::VERB_EXTREME))
+        *vo_->os() << "  step failed or was not valid? " << fail_inner << std::endl;
 
       if (fail_inner) {
         dt_inner = sub_pks_[i]->get_dt();
         *S_next_ = *S_inter_;
 
-        if (vo_->os_OK(Teuchos::VERB_HIGH))
+        if (vo_->os_OK(Teuchos::VERB_EXTREME))
           *vo_->os() << "  failed, new timestep is " << dt_inner << std::endl;
 
         
@@ -193,7 +198,7 @@ bool MPCPermafrostSplitFluxColumnsSubcycled::AdvanceStep(double t_old, double t_
           done = true;
         }
         dt_inner = sub_pks_[i]->get_dt();
-        if (vo_->os_OK(Teuchos::VERB_HIGH))
+        if (vo_->os_OK(Teuchos::VERB_EXTREME))
           *vo_->os() << "  success, new timestep is " << dt_inner << std::endl;
       }
     }
