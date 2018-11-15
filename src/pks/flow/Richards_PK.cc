@@ -923,7 +923,7 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     VV_ReportMultiscale();
   }
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    VV_ReportSeepageOutflow(S_.ptr());
+    VV_ReportSeepageOutflow(S_.ptr(), dt_);
   }
 
   dt_ = dt_next_;
