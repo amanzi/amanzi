@@ -10,13 +10,13 @@ Author: Ethan Coon
 #include "primary_variable_field_evaluator.hh"
 #include "mpc_surface_subsurface_helpers.hh"
 
-#include "mpc_permafrost_split_flux_columns.hh"
+#include "mpc_permafrost_split_flux_columns_subcycled.hh"
 
 #include "PK_Physical.hh"
 
 namespace Amanzi {
 
-MPCPermafrostSplitFluxColumns::MPCPermafrostSplitFluxColumns(Teuchos::ParameterList& FElist,
+MPCPermafrostSplitFluxColumnsSubcycled::MPCPermafrostSplitFluxColumnsSubcycled(Teuchos::ParameterList& FElist,
                  const Teuchos::RCP<Teuchos::ParameterList>& plist,
                  const Teuchos::RCP<State>& S,
                  const Teuchos::RCP<TreeVector>& solution)
@@ -87,7 +87,7 @@ MPCPermafrostSplitFluxColumns::MPCPermafrostSplitFluxColumns(Teuchos::ParameterL
 };
 
 
-void MPCPermafrostSplitFluxColumns::Initialize(const Teuchos::Ptr<State>& S)
+void MPCPermafrostSplitFluxColumnsSubcycled::Initialize(const Teuchos::Ptr<State>& S)
 {
   // initialize the columns
   for (int i=1; i!=sub_pks_.size(); ++i) sub_pks_[i]->Initialize(S);
@@ -102,7 +102,7 @@ void MPCPermafrostSplitFluxColumns::Initialize(const Teuchos::Ptr<State>& S)
 }
 
 
-void MPCPermafrostSplitFluxColumns::Setup(const Teuchos::Ptr<State>& S)
+void MPCPermafrostSplitFluxColumnsSubcycled::Setup(const Teuchos::Ptr<State>& S)
 {
   MPC<PK>::Setup(S);
 
@@ -125,7 +125,7 @@ void MPCPermafrostSplitFluxColumns::Setup(const Teuchos::Ptr<State>& S)
 // -----------------------------------------------------------------------------
 // Calculate the min of sub PKs timestep sizes.
 // -----------------------------------------------------------------------------
-double MPCPermafrostSplitFluxColumns::get_dt()
+double MPCPermafrostSplitFluxColumnsSubcycled::get_dt()
 {
   return sub_pks_[0]->get_dt();
 };
@@ -133,7 +133,7 @@ double MPCPermafrostSplitFluxColumns::get_dt()
 // -----------------------------------------------------------------------------
 // Set timestep for sub PKs 
 // -----------------------------------------------------------------------------
-void MPCPermafrostSplitFluxColumns::set_dt( double dt)
+void MPCPermafrostSplitFluxColumnsSubcycled::set_dt( double dt)
 {
   AMANZI_ASSERT(false);
   sub_pks_[0]->set_dt(dt);
@@ -146,7 +146,7 @@ void MPCPermafrostSplitFluxColumns::set_dt( double dt)
 // -----------------------------------------------------------------------------
 // Advance each sub-PK individually.
 // -----------------------------------------------------------------------------
-bool MPCPermafrostSplitFluxColumns::AdvanceStep(double t_old, double t_new, bool reinit)
+bool MPCPermafrostSplitFluxColumnsSubcycled::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   // Advance the star system 
   bool fail = false;
@@ -192,14 +192,14 @@ bool MPCPermafrostSplitFluxColumns::AdvanceStep(double t_old, double t_new, bool
   return false;
 };
 
-bool MPCPermafrostSplitFluxColumns::ValidStep() 
+bool MPCPermafrostSplitFluxColumnsSubcycled::ValidStep() 
 {
   return true;
 }
   
 
 
-void MPCPermafrostSplitFluxColumns::CommitStep(double t_old, double t_new,
+void MPCPermafrostSplitFluxColumnsSubcycled::CommitStep(double t_old, double t_new,
         const Teuchos::RCP<State>& S)
 {
 }
@@ -209,7 +209,7 @@ void MPCPermafrostSplitFluxColumns::CommitStep(double t_old, double t_new,
 // Copy the primary variable to the star system
 // -----------------------------------------------------------------------------
 void
-MPCPermafrostSplitFluxColumns::CopyPrimaryToStar(const Teuchos::Ptr<const State>& S,
+MPCPermafrostSplitFluxColumnsSubcycled::CopyPrimaryToStar(const Teuchos::Ptr<const State>& S,
                                     const Teuchos::Ptr<State>& S_star)
 {
   // copy p primary variables into star primary variable
@@ -249,7 +249,7 @@ MPCPermafrostSplitFluxColumns::CopyPrimaryToStar(const Teuchos::Ptr<const State>
 // Copy the star time derivative to the source evaluator.
 // -----------------------------------------------------------------------------
 void
-MPCPermafrostSplitFluxColumns::CopyStarToPrimary(double dt)
+MPCPermafrostSplitFluxColumnsSubcycled::CopyStarToPrimary(double dt)
 {
   // make sure we have the evaluator at the new state timestep
   if (p_eval_pvfes_.size() == 0) {

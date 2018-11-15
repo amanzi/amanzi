@@ -610,7 +610,7 @@ Richards::ValidStep() {
   if (sat_change_limit_ > 0.0) {
     const Epetra_MultiVector& sl_new = *S_next_->GetFieldData(sat_key_)
         ->ViewComponent("cell",false);
-    const Epetra_MultiVector& sl_old = *S_->GetFieldData(sat_key_)
+    const Epetra_MultiVector& sl_old = *S_inter_->GetFieldData(sat_key_)
         ->ViewComponent("cell",false);
     Epetra_MultiVector dsl(sl_new);
     dsl.Update(-1., sl_old, 1.);
@@ -627,7 +627,7 @@ Richards::ValidStep() {
   if (sat_ice_change_limit_ > 0.0) {
     const Epetra_MultiVector& si_new = *S_next_->GetFieldData(sat_ice_key_)
         ->ViewComponent("cell",false);
-    const Epetra_MultiVector& si_old = *S_->GetFieldData(sat_ice_key_)
+    const Epetra_MultiVector& si_old = *S_inter_->GetFieldData(sat_ice_key_)
         ->ViewComponent("cell",false);
     Epetra_MultiVector dsi(si_new);
     dsi.Update(-1., si_old, 1.);
