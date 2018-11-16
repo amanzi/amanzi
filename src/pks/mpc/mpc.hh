@@ -177,6 +177,9 @@ void MPC<PK_t>::Solution_to_State(const TreeVector& soln,
 // -----------------------------------------------------------------------------
 template <class PK_t>
 void MPC<PK_t>::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "commiting step" << std::endl;
   for (typename SubPKList::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
     (*pk)->CommitStep(t_old, t_new, S);
@@ -189,6 +192,9 @@ void MPC<PK_t>::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>
 // -----------------------------------------------------------------------------
 template <class PK_t>
 void MPC<PK_t>::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "calculating diagnostics" << std::endl;
   for (typename SubPKList::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
     (*pk)->CalculateDiagnostics(S);
@@ -201,11 +207,20 @@ void MPC<PK_t>::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
 // -----------------------------------------------------------------------------
 template <class PK_t>
 bool MPC<PK_t>::ValidStep() {
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "Validating time step." << std::endl;
+
   bool valid(true);
   for (typename SubPKList::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
     bool is_valid = (*pk)->ValidStep();
-    if (!is_valid) valid = is_valid;
+    if (!is_valid) {
+      valid = is_valid;
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+        *vo_->os() << "Invalid time step, sub_pk: " << (*pk)->name()
+                   << " is invalid." << std::endl;
+    }
   }
   return valid;
 };
