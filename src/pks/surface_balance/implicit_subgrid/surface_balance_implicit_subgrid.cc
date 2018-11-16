@@ -152,12 +152,36 @@ bool
 ImplicitSubgrid::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
         Teuchos::RCP<TreeVector> u) {
   Epetra_MultiVector& u_vec = *u->Data()->ViewComponent("cell",false);
-  unsigned int ncells = u_vec.MyLength();
-  for (unsigned int c=0; c!=ncells; ++c) {
+  for (int c=0; c!=u_vec.MyLength(); ++c) {
     u_vec[0][c] = std::max(0., u_vec[0][c]);
   }
   return true;
 }
+
+
+// -- Modify the correction.
+AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+ImplicitSubgrid::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+        Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
+  Teuchos::OSTab tab = vo_->getOSTab();
+
+  // modify correction to enforce nonnegativity
+  int n_modified = 0;
+  const Epetra_MultiVector& snow_depth = *u->Data()->ViewComponent("cell",false);
+  Epetra_MultiVector& dsnow_depth = *du->Data()->ViewComponent("cell",false);
+  for (int c=0; c!=snow_depth.MyLength(); ++c) {
+    if (snow_depth[0][c] - dsnow_depth[0][c] < 0.) {
+      dsnow_depth[0][c] = snow_depth[0][c];
+      n_modified++;
+    }
+  }
+
+  // -- accumulate globally
+  //  int n_modified_l = n_modified;
+  //  u->Data()->Comm().SumAll(&n_modified_l, &n_modified, 1);
+  return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED; // ok to backtrack on this
+}
+
 
 
 // computes the non-linear functional g = g(t,u,udot)
