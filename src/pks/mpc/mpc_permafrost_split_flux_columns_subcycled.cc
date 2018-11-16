@@ -228,7 +228,7 @@ bool MPCPermafrostSplitFluxColumnsSubcycled::ValidStep()
 void MPCPermafrostSplitFluxColumnsSubcycled::CommitStep(double t_old, double t_new,
         const Teuchos::RCP<State>& S)
 {
-  sub_pks_[0]->CommitStep(t_old, t_new, S_next_);
+  sub_pks_[0]->CommitStep(t_old, t_new, S);
 }
 
 
