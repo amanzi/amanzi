@@ -192,6 +192,12 @@ bool MPCPermafrostSplitFluxColumnsSubcycled::AdvanceStep(double t_old, double t_
         if (vo_->os_OK(Teuchos::VERB_EXTREME))
           *vo_->os() << "  failed, new timestep is " << dt_inner << std::endl;
 
+        if (dt_inner < 1.e-10) {
+          Errors::Message msg;
+          msg << "Crashing timestep in subcycling: dt = " << dt_inner;
+          Exceptions::amanzi_throw(msg);
+        }
+
         
       } else {
         sub_pks_[i]->CommitStep(t_inner, t_inner + dt_inner, S_next_);
