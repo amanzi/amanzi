@@ -27,7 +27,7 @@
 #include "OperatorDefs.hh"
 #include "ReconstructionCell.hh"
 
-const std::string LIMITERS[4] = {"B-J", "Tensorial", "Kuzmin", "B-J c2c"};
+const std::string LIMITERS[5] = {"B-J", "Tensorial", "Kuzmin", "B-J c2cc", "B-J c2ac"};
 
 void GradientError(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
                    Epetra_MultiVector& grad_err, Epetra_MultiVector& grad,
@@ -245,7 +245,7 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_2D) {
     (*flux)[0][f] = (velocity * normal) / mesh->face_area(f);
   }
 
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 5; i++) {
     std::vector<int> bc_model;
     std::vector<double> bc_value;
     Teuchos::ParameterList plist;
@@ -262,6 +262,9 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_2D) {
     } else if (i == 3) {
       plist.set<std::string>("limiter", "Barth-Jespersen")
            .set<std::string>("limiter stencil", "cell to closest cells");
+    } else if (i == 4) {
+      plist.set<std::string>("limiter", "Barth-Jespersen")
+           .set<std::string>("limiter stencil", "cell to all cells");
     }
 
     if (i != 2) {
@@ -491,7 +494,7 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_2D) {
       (*flux)[0][f] = (velocity * normal) / mesh->face_area(f);
     }
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 5; i++) {
       std::vector<int> bc_model;
       std::vector<double> bc_value;
       Teuchos::ParameterList plist;
@@ -508,6 +511,9 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_2D) {
       } else if (i == 3) {
         plist.set<std::string>("limiter", "Barth-Jespersen")
              .set<std::string>("limiter stencil", "cell to closest cells");
+      } else if (i == 4) {
+        plist.set<std::string>("limiter", "Barth-Jespersen")
+             .set<std::string>("limiter stencil", "cell to all cells");
       }
 
       if (i != 2) {
@@ -749,7 +755,7 @@ void SmoothField2DPoly(double extension)
     (*flux)[0][f] = (velocity * normal) / mesh->face_area(f);
   }
 
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 5; i++) {
     std::vector<int> bc_model;
     std::vector<double> bc_value;
     Teuchos::ParameterList plist;
@@ -766,6 +772,9 @@ void SmoothField2DPoly(double extension)
     } else if (i == 3) {
       plist.set<std::string>("limiter", "Barth-Jespersen")
            .set<std::string>("limiter stencil", "cell to closest cells");
+    } else if (i == 4) {
+      plist.set<std::string>("limiter", "Barth-Jespersen")
+           .set<std::string>("limiter stencil", "cell to all cells");
     }
 
     if (i != 2) {
