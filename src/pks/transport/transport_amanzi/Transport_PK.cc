@@ -387,6 +387,7 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
  
   // reconstruction initialization
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
+  limiter_ = Teuchos::rcp(new Operators::LimiterCell(mesh_));
   lifting_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
 
   // mechanical dispersion
