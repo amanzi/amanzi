@@ -92,8 +92,8 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
   Teuchos::ParameterList& diff0_list = pks_list_->sublist(pk_order[0]).sublist("diffusion");
   Teuchos::ParameterList& diff1_list = pks_list_->sublist(pk_order[1]).sublist("diffusion");
   
-  if ((diff0_list.get<std::string>("discretization primary") == "fv:default") &&
-      (diff1_list.get<std::string>("discretization primary") == "fv:default")){
+  if ((diff0_list.get<std::string>("discretization primary") == "fv: default") &&
+      (diff1_list.get<std::string>("discretization primary") == "fv: default")){
     is_fv_ = true;
   } else {
     is_fv_ = false;
