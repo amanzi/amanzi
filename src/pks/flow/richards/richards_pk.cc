@@ -618,7 +618,7 @@ Richards::ValidStep() {
     dsl.NormInf(&change);
 
     if (change > sat_change_limit_) {
-      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+      if (vo_->os_OK(Teuchos::VERB_LOW))
         *vo_->os() << "Invalid time step, max sl change="
                    << change << " > limit=" << sat_change_limit_ << std::endl;
       return false;
@@ -635,7 +635,7 @@ Richards::ValidStep() {
     dsi.NormInf(&change);
 
     if (change > sat_ice_change_limit_) {
-      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+      if (vo_->os_OK(Teuchos::VERB_LOW))
         *vo_->os() << "Invalid time step, max si change="
                    << change << " > limit=" << sat_ice_change_limit_ << std::endl;
       return false;

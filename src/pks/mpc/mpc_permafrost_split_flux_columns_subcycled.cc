@@ -150,11 +150,9 @@ bool MPCPermafrostSplitFluxColumnsSubcycled::AdvanceStep(double t_old, double t_
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  // Advance the star system 
-  if (vo_->os_OK(Teuchos::VERB_HIGH))
-    *vo_->os() << "Beginning timestepping on star system." << std::endl;
-
   bool fail = false;
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "Beginning timestepping on surface star system" << std::endl;
   fail = sub_pks_[0]->AdvanceStep(t_old, t_new, reinit);
   fail |= !sub_pks_[0]->ValidStep();
   if (fail) return fail;
@@ -167,7 +165,7 @@ bool MPCPermafrostSplitFluxColumnsSubcycled::AdvanceStep(double t_old, double t_
     auto col_domain_name = col_domains_[i-1];
     double t_inner = t_old;
     bool done = false;
-    if (vo_->os_OK(Teuchos::VERB_HIGH))
+    if (vo_->os_OK(Teuchos::VERB_EXTREME))
       *vo_->os() << "Beginning timestepping on " << col_domain_name << std::endl;
 
     S_inter_->set_time(t_old);

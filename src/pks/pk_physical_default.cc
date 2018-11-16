@@ -129,7 +129,7 @@ bool PK_Physical_Default::ValidStep() {
     double change = 0.;
     dvar.NormInf(&change);
     if (change > max_valid_change_) {
-      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+      if (vo_->os_OK(Teuchos::VERB_LOW))
         *vo_->os() << "Invalid time step, max primary variable change="
                    << change << " > limit=" << max_valid_change_ << std::endl;
       return false;

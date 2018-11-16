@@ -110,7 +110,7 @@ void PK_BDF_Default::set_states(const Teuchos::RCP<const State>& S,
 bool PK_BDF_Default::AdvanceStep(double t_old, double t_new, bool reinit) {
   double dt = t_new -t_old;
   Teuchos::OSTab out = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_HIGH))
+  if (vo_->os_OK(Teuchos::VERB_LOW))
     *vo_->os() << "----------------------------------------------------------------" << std::endl
                << "Advancing: t0 = " << S_inter_->time()
                << " t1 = " << S_next_->time() << " h = " << dt << std::endl
@@ -131,6 +131,8 @@ bool PK_BDF_Default::AdvanceStep(double t_old, double t_new, bool reinit) {
     // check step validity
     bool valid = ValidStep();
     if (valid) {
+      if (vo_->os_OK(Teuchos::VERB_LOW))
+        *vo_->os() << "successful timestep" << std::endl;
       // update the timestep size
       if (dt_solver < dt_ && dt_solver >= dt) {
         // We took a smaller step than we recommended, and it worked fine (not
@@ -140,10 +142,14 @@ bool PK_BDF_Default::AdvanceStep(double t_old, double t_new, bool reinit) {
         dt_ = dt_solver;
       }
     } else {
+      if (vo_->os_OK(Teuchos::VERB_LOW))
+        *vo_->os() << "successful advance, but not valid" << std::endl;
       time_stepper_->CommitSolution(dt_, solution_, valid);
       dt_ = 0.5*dt_;
     }
   } else {
+    if (vo_->os_OK(Teuchos::VERB_LOW))
+      *vo_->os() << "unsuccessful timestep" << std::endl;
     // take the decreased timestep size
     dt_ = dt_solver;
   }
