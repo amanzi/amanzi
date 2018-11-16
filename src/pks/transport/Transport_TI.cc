@@ -59,8 +59,8 @@ void Transport_PK::FunctionalTimeDerivative(double t,
     }
   }
 
-  lifting_->InitLimiter(darcy_flux);
-  lifting_->ApplyLimiter(bc_model, bc_value);
+  limiter_->Init(plist, darcy_flux);
+  limiter_->ApplyLimiter(component_rcp, 0, lifting_->gradient(), bc_model, bc_value);
 
   // ADVECTIVE FLUXES
   // We assume that limiters made their job up to round-off errors.
@@ -88,7 +88,7 @@ void Transport_PK::FunctionalTimeDerivative(double t,
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
     if (c1 >= 0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
-      upwind_tcc = lifting_->getValue(c1, xf);
+      upwind_tcc = limiter_->getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
 
@@ -96,14 +96,14 @@ void Transport_PK::FunctionalTimeDerivative(double t,
       f_component[c1] -= tcc_flux;
       f_component[c2] += tcc_flux;
     } else if (c1 >= 0 && c1 < ncells_owned && (c2 >= ncells_owned || c2 < 0)) {
-      upwind_tcc = lifting_->getValue(c1, xf);
+      upwind_tcc = limiter_->getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
 
       tcc_flux = u * upwind_tcc;
       f_component[c1] -= tcc_flux;
     } else if (c1 >= ncells_owned && c2 >= 0 && c2 < ncells_owned) {
-      upwind_tcc = lifting_->getValue(c1, xf);
+      upwind_tcc = limiter_->getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
 
@@ -188,8 +188,8 @@ void Transport_PK::DudtOld(double t,
     }
   }
 
-  lifting_->InitLimiter(darcy_flux);
-  lifting_->ApplyLimiter(bc_model, bc_value);
+  limiter_->Init(plist, darcy_flux);
+  limiter_->ApplyLimiter(component_rcp, 0, lifting_->gradient(), bc_model, bc_value);
 
   // ADVECTIVE FLUXES
   // We assume that limiters made their job up to round-off errors.
@@ -217,7 +217,7 @@ void Transport_PK::DudtOld(double t,
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
     if (c1 >= 0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
-      upwind_tcc = lifting_->getValue(c1, xf);
+      upwind_tcc = limiter_->getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
 
@@ -225,14 +225,14 @@ void Transport_PK::DudtOld(double t,
       f_component[c1] -= tcc_flux;
       f_component[c2] += tcc_flux;
     } else if (c1 >= 0 && c1 < ncells_owned && (c2 >= ncells_owned || c2 < 0)) {
-      upwind_tcc = lifting_->getValue(c1, xf);
+      upwind_tcc = limiter_->getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
 
       tcc_flux = u * upwind_tcc;
       f_component[c1] -= tcc_flux;
     } else if (c1 >= ncells_owned && c2 >= 0 && c2 < ncells_owned) {
-      upwind_tcc = lifting_->getValue(c1, xf);
+      upwind_tcc = limiter_->getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
 

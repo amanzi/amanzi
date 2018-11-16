@@ -36,16 +36,6 @@ void ReconstructionCell::Init(Teuchos::RCP<const Epetra_MultiVector> field,
   field_ = field;
   component_ = component;
 
-  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
-
-  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
-
-  cell_max_nodes = mesh_->cell_get_max_nodes();
-
   dim = mesh_->space_dimension();
 
   CompositeVectorSpace cv_space;
@@ -55,34 +45,8 @@ void ReconstructionCell::Init(Teuchos::RCP<const Epetra_MultiVector> field,
 
   gradient_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cv_space, true));
 
-  // process parameters for limiters
-  bc_scaling_ = 0.0;
-
-  std::string stencil;
-  std::string name = plist.get<std::string>("limiter", "Barth-Jespersen");
-  limiter_id_ = 0;
-  if (name == "Barth-Jespersen") {
-    limiter_id_ = OPERATOR_LIMITER_BARTH_JESPERSEN;
-    stencil = plist.get<std::string>("limiter stencil", "face to cells");
-  } else if (name == "tensorial") {
-    limiter_id_ = OPERATOR_LIMITER_TENSORIAL;
-    stencil = plist.get<std::string>("limiter stencil", "face to cells");
-  } else if (name == "Kuzmin") {
-    limiter_id_ = OPERATOR_LIMITER_KUZMIN;
-    stencil = plist.get<std::string>("limiter stencil", "node to cells");
-  }
-
-  if (stencil == "node to cells")
-    stencil_id_ = OPERATOR_LIMITER_STENSIL_N2C;
-  else if (stencil == "face to cells") 
-    stencil_id_ = OPERATOR_LIMITER_STENSIL_F2C;
-  else if (stencil == "cell to closest cells")
-    stencil_id_ = OPERATOR_LIMITER_STENSIL_C2C_CLOSEST;
-  else if (stencil == "cell to all cells")
-    stencil_id_ = OPERATOR_LIMITER_STENSIL_C2C_ALL;
-
+  // process other parameters
   poly_order_ = plist.get<int>("polynomial order", 0);
-  limiter_correction_ = plist.get<bool>("limiter extension for transport", false);
 }
 
 
@@ -98,6 +62,8 @@ void ReconstructionCell::ComputeGradient()
 
   WhetStone::DenseMatrix matrix(dim, dim);
   WhetStone::DenseVector rhs(dim);
+
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -195,86 +161,6 @@ void ReconstructionCell::ComputeGradient(
 
 
 /* ******************************************************************
-* Apply internal limiter.
-****************************************************************** */
-void ReconstructionCell::ApplyLimiter(
-    const std::vector<int>& bc_model, const std::vector<double>& bc_value)
-{
-  limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
-  if (limiter_id_ == OPERATOR_LIMITER_BARTH_JESPERSEN) {
-    if (stencil_id_ == OPERATOR_LIMITER_STENSIL_F2C) 
-      LimiterBarthJespersenFace_(bc_model, bc_value, limiter_);
-    else 
-      LimiterBarthJespersenCell_(bc_model, bc_value, limiter_);
-    ApplyLimiter(limiter_);
-  } else if (limiter_id_ == OPERATOR_LIMITER_TENSORIAL) {
-    LimiterTensorial_(bc_model, bc_value);
-  } else if (limiter_id_ == OPERATOR_LIMITER_KUZMIN) {
-    LimiterKuzmin_(bc_model, bc_value);
-  }
-}
-
-
-/* ******************************************************************
-* Apply internal limiter over set of cells.
-****************************************************************** */
-void ReconstructionCell::ApplyLimiter(AmanziMesh::Entity_ID_List& ids,
-                                      std::vector<AmanziGeometry::Point>& gradient)
-{
-  if (limiter_id_ == OPERATOR_LIMITER_KUZMIN) {
-    LimiterKuzminSet_(ids, gradient);   
-  } else {
-    AMANZI_ASSERT(0);
-  }
-}
-
-
-/* ******************************************************************
-* The limiter must be between 0 and 1
-****************************************************************** */
-void ReconstructionCell::ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter)
-{
-  Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
-
-  for (int c = 0; c < ncells_owned; c++) {
-    for (int i = 0; i < dim; i++) (*grad)[i][c] *= (*limiter)[0][c];
-  }
-
-  gradient_->ScatterMasterToGhosted("cell");
-}
-
-
-/* ******************************************************************
-* Calculates reconstructed value at point p.
-****************************************************************** */
-double ReconstructionCell::getValue(int cell, const AmanziGeometry::Point& p)
-{
-  Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(cell);
-
-  double value = (*field_)[component_][cell];
-  for (int i = 0; i < dim; i++) value += (*grad)[i][cell] * (p[i] - xc[i]);
-
-  return value;
-}
-
-
-/* ******************************************************************
-* Calculates reconstructed value at point p using external gradient.
-****************************************************************** */
-double ReconstructionCell::getValue(
-    AmanziGeometry::Point& gradient, int cell, const AmanziGeometry::Point& p)
-{
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(cell);
-
-  double value = (*field_)[component_][cell];
-  for (int i = 0; i < dim; i++) value += gradient[i] * (p[i] - xc[i]);
-
-  return value;
-}
-
-
-/* ******************************************************************
 * Assemble a SPD least square matrix
 ****************************************************************** */
 void ReconstructionCell::PopulateLeastSquareSystem_(
@@ -335,6 +221,31 @@ void ReconstructionCell::CellFaceAdjCellsNonManifold_(
       cells.push_back(cmax);
     }
   }
+}
+
+
+/* ******************************************************************
+* Calculates reconstructed value at point p.
+****************************************************************** */
+double ReconstructionCell::getValue(int c, const AmanziGeometry::Point& p)
+{
+  Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
+  const auto& xc = mesh_->cell_centroid(c);
+
+  double value = (*field_)[component_][c];
+  for (int i = 0; i < dim; i++) value += (*grad)[i][c] * (p[i] - xc[i]);
+  return value;
+}
+
+
+/* ******************************************************************
+* Calculates reconstructed value at point p using external gradient.
+****************************************************************** */
+double ReconstructionCell::getValue(
+    const AmanziGeometry::Point& gradient, int c, const AmanziGeometry::Point& p)
+{
+  const auto& xc = mesh_->cell_centroid(c);
+  return (*field_)[component_][c] + gradient * (p - xc);
 }
 
 }  // namespace Operator

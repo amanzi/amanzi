@@ -31,11 +31,11 @@
 #include "WhetStoneDefs.hh"
 
 // Amanzi::Operators
+#include "LimiterCell.hh"
 #include "OperatorDefs.hh"
 #include "PDE_Abstract.hh"
 #include "PDE_AdvectionRiemann.hh"
 #include "PDE_Reaction.hh"
-#include "ReconstructionCell.hh"
 
 namespace Amanzi {
 
@@ -443,9 +443,6 @@ void RemapDG<AnalyticDG>::ApplyLimiter(
   std::vector<int> bc_model(nnodes_wghost, Operators::OPERATOR_BC_NONE);
   std::vector<double> bc_value(nnodes_wghost, 0.0);
 
-  Operators::ReconstructionCell lifting(mesh0_);
-  lifting.Init(u.ViewComponent("cell", true), limlist);
-
   // create gradient in the natural basis
   int nk = u_c.NumVectors();
   WhetStone::DenseVector data(nk);
@@ -462,10 +459,11 @@ void RemapDG<AnalyticDG>::ApplyLimiter(
   }
 
   grad->ScatterMasterToGhosted("cell");
-  lifting.set_gradient(grad);
 
   // limit gradient and save it to solution
-  lifting.ApplyLimiter(bc_model, bc_value);
+  Operators::LimiterCell limiter(mesh0_);
+  limiter.Init(limlist);
+  limiter.ApplyLimiter(u.ViewComponent("cell", true), 0, grad, bc_model, bc_value);
 
   for (int c = 0; c < ncells_owned_; ++c) {
     data(0) = u_c[0][c];

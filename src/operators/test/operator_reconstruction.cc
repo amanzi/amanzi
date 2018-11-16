@@ -22,6 +22,7 @@
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
 #include "GMVMesh.hh"
+#include "LimiterCell.hh"
 #include "MeshFactory.hh"
 #include "OperatorDefs.hh"
 #include "ReconstructionCell.hh"
@@ -296,8 +297,9 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_2D) {
     lifting.ComputeGradient(); 
 
     // Apply limiter
-    lifting.InitLimiter(flux);
-    lifting.ApplyLimiter(bc_model, bc_value);
+    LimiterCell limiter(mesh);
+    limiter.Init(plist, flux);
+    limiter.ApplyLimiter(field, 0, lifting.gradient(), bc_model, bc_value);
 
     // calculate gradient error
     Epetra_MultiVector grad_computed(*lifting.gradient()->ViewComponent("cell"));
@@ -417,8 +419,9 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_3D) {
     lifting.ComputeGradient(); 
 
     // Apply limiter
-    lifting.InitLimiter(flux);
-    lifting.ApplyLimiter(bc_model, bc_value);
+    LimiterCell limiter(mesh);
+    limiter.Init(plist, flux);
+    limiter.ApplyLimiter(field, 0, lifting.gradient(), bc_model, bc_value);
 
     // calculate gradient error
     Epetra_MultiVector grad_computed(*lifting.gradient()->ViewComponent("cell"));
@@ -542,8 +545,9 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_2D) {
       lifting.ComputeGradient(); 
 
       // Apply limiter
-      lifting.InitLimiter(flux);
-      lifting.ApplyLimiter(bc_model, bc_value);
+      LimiterCell limiter(mesh);
+      limiter.Init(plist, flux);
+      limiter.ApplyLimiter(field, 0, lifting.gradient(), bc_model, bc_value);
 
       // calculate gradient error
       Epetra_MultiVector grad_computed(*lifting.gradient()->ViewComponent("cell"));
@@ -668,8 +672,9 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_3D) {
       lifting.ComputeGradient(); 
 
       // Apply limiter
-      lifting.InitLimiter(flux);
-      lifting.ApplyLimiter(bc_model, bc_value);
+      LimiterCell limiter(mesh);
+      limiter.Init(plist, flux);
+      limiter.ApplyLimiter(field, 0, lifting.gradient(), bc_model, bc_value);
 
       // calculate gradient error
       Epetra_MultiVector grad_computed(*lifting.gradient()->ViewComponent("cell"));
@@ -798,8 +803,9 @@ void SmoothField2DPoly(double extension)
     lifting.ComputeGradient(); 
 
     // Apply limiter
-    lifting.InitLimiter(flux);
-    lifting.ApplyLimiter(bc_model, bc_value);
+    LimiterCell limiter(mesh);
+    limiter.Init(plist, flux);
+    limiter.ApplyLimiter(field, 0, lifting.gradient(), bc_model, bc_value);
 
     // calculate gradient error
     Epetra_MultiVector grad_computed(*lifting.gradient()->ViewComponent("cell"));
@@ -910,10 +916,6 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_FRACtURES) {
     ReconstructionCell lifting(mesh);
     lifting.Init(field, plist);
     lifting.ComputeGradient(); 
-
-    // Apply limiter
-    // lifting.InitLimiter(flux);
-    // lifting.ApplyLimiter(bc_model, bc_value);
 
     // calculate gradient error
     Epetra_MultiVector grad_computed(*lifting.gradient()->ViewComponent("cell"));

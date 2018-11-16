@@ -21,24 +21,25 @@
 // Amanzi
 #include "CompositeVector.hh"
 #include "DenseVector.hh"
-#include "DiffusionPhase.hh"
-#include "MaterialProperties.hh"
+#include "LimiterCell.hh"
 #include "PK.hh"
-#include "PK_PhysicalExplicit.hh"
+#include "PK_Explicit.hh"
 #include "PK_Factory.hh"
+#include "PK_PhysicalExplicit.hh"
 #include "ReconstructionCell.hh"
 #include "State.hh"
 #include "Tensor.hh"
 #include "Units.hh"
 #include "VerboseObject.hh"
-#include "PK_Explicit.hh"
 
 #ifdef ALQUIMIA_ENABLED
 #include "Alquimia_PK.hh"
 #include "ChemistryEngine.hh"
 #endif
 
-// Transport
+// Amanzi::Transport
+#include "DiffusionPhase.hh"
+#include "MaterialProperties.hh"
 #include "MDMPartition.hh"
 #include "MultiscaleTransportPorosityPartition.hh"
 #include "TransportDefs.hh"
@@ -210,6 +211,7 @@ class Transport_PK : public PK_PhysicalExplicit<Epetra_Vector> {
 
   int current_component_;  // data for lifting
   Teuchos::RCP<Operators::ReconstructionCell> lifting_;
+  Teuchos::RCP<Operators::LimiterCell> limiter_;
 
   std::vector<Teuchos::RCP<TransportDomainFunction> > srcs_;  // Sources and sinks
   std::vector<Teuchos::RCP<TransportDomainFunction> > bcs_;

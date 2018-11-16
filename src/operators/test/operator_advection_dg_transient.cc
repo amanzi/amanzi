@@ -44,11 +44,11 @@
 #include "AnalyticDG07b.hh"
 #include "AnalyticDG08.hh"
 
+#include "LimiterCell.hh"
 #include "OperatorDefs.hh"
 #include "PDE_Abstract.hh"
 #include "PDE_AdvectionRiemann.hh"
 #include "PDE_Reaction.hh"
-#include "ReconstructionCell.hh"
 
 // global variables
 bool exact_solution_expected = false;
@@ -529,9 +529,6 @@ void AdvectionFn<AnalyticDG>::ApplyLimiter(CompositeVector& u)
   std::vector<int> bc_model(nnodes_wghost, Operators::OPERATOR_BC_NONE);
   std::vector<double> bc_value(nnodes_wghost, 0.0);
 
-  Operators::ReconstructionCell lifting(mesh_);
-  lifting.Init(u.ViewComponent("cell", true), plist);
-
   // create gradient in the natural basis
   int nk = u_c.NumVectors();
   WhetStone::DenseVector data(nk);
@@ -548,10 +545,11 @@ void AdvectionFn<AnalyticDG>::ApplyLimiter(CompositeVector& u)
   }
 
   grad->ScatterMasterToGhosted("cell");
-  lifting.set_gradient(grad);
 
   // limit gradient and save it to solution
-  lifting.ApplyLimiter(bc_model, bc_value);
+  Operators::LimiterCell limiter(mesh_);
+  limiter.Init(plist);
+  limiter.ApplyLimiter(u.ViewComponent("cell", true), 0, grad, bc_model, bc_value);
 
   for (int c = 0; c < ncells_owned; ++c) {
     data(0) = u_c[0][c];
@@ -561,15 +559,15 @@ void AdvectionFn<AnalyticDG>::ApplyLimiter(CompositeVector& u)
   }
 
   // statistics
-  auto limiter = *lifting.limiter();
+  auto& lim = *limiter.limiter();
   double tmp1(1.0), tmp2(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
-    tmp1 = std::min(tmp1, limiter[c]);
-    tmp2 += limiter[c];
+    tmp1 = std::min(tmp1, lim[c]);
+    tmp2 += lim[c];
   }
   mesh_->get_comm()->MinAll(&tmp1, &limiter_min, 1);
   mesh_->get_comm()->SumAll(&tmp2, &limiter_mean, 1);
-  limiter_mean /= limiter.Map().MaxAllGID();
+  limiter_mean /= lim.Map().MaxAllGID();
 }
 
 }  // namespace Amanzi
