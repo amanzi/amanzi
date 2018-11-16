@@ -68,10 +68,13 @@ void PK_PhysicalBDF_Default::Initialize(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 double PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<const TreeVector> du) {
-  S_next_->GetFieldEvaluator(conserved_key_)->HasFieldChanged(S_next_.ptr(), name_);
-  const Epetra_MultiVector& conserved = *S_->GetFieldData(conserved_key_)
+  // Abs tol based on old conserved quantity -- we know these have been vetted
+  // at some level whereas the new quantity is some iterate, and may be
+  // anything from negative to overflow.
+  S_inter_->GetFieldEvaluator(conserved_key_)->HasFieldChanged(S_inter_.ptr(), name_);
+  const Epetra_MultiVector& conserved = *S_inter_->GetFieldData(conserved_key_)
       ->ViewComponent("cell",true);
-  const Epetra_MultiVector& cv = *S_->GetFieldData(cell_vol_key_)
+  const Epetra_MultiVector& cv = *S_inter_->GetFieldData(cell_vol_key_)
       ->ViewComponent("cell",true);
 
   // VerboseObject stuff.

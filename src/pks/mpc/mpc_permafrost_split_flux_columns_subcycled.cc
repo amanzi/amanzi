@@ -158,17 +158,17 @@ bool MPCPermafrostSplitFluxColumnsSubcycled::AdvanceStep(double t_old, double t_
   fail = sub_pks_[0]->AdvanceStep(t_old, t_new, reinit);
   fail |= !sub_pks_[0]->ValidStep();
   if (fail) return fail;
-  sub_pks_[0]->CommitStep(t_old, t_new, S_next_);
 
   // Copy star's new value into primary's old value
   CopyStarToPrimary(t_new - t_old);
 
   // Now advance the primary
   for (int i=1; i!=sub_pks_.size(); ++i) {
+    auto col_domain_name = col_domains_[i-1];
     double t_inner = t_old;
     bool done = false;
     if (vo_->os_OK(Teuchos::VERB_HIGH))
-      *vo_->os() << "Beginning timestepping on column " << i << std::endl;
+      *vo_->os() << "Beginning timestepping on " << col_domain_name << std::endl;
 
     S_inter_->set_time(t_old);
     while (!done) {
@@ -184,7 +184,10 @@ bool MPCPermafrostSplitFluxColumnsSubcycled::AdvanceStep(double t_old, double t_
 
       if (fail_inner) {
         dt_inner = sub_pks_[i]->get_dt();
-        *S_next_ = *S_inter_;
+        S_next_->AssignDomain(*S_inter_, col_domain_name);
+        S_next_->AssignDomain(*S_inter_, "surface_"+col_domain_name);
+        S_next_->AssignDomain(*S_inter_, "snow_"+col_domain_name);
+        S_next_->set_time(S_inter_->time());
 
         if (vo_->os_OK(Teuchos::VERB_EXTREME))
           *vo_->os() << "  failed, new timestep is " << dt_inner << std::endl;
@@ -193,10 +196,14 @@ bool MPCPermafrostSplitFluxColumnsSubcycled::AdvanceStep(double t_old, double t_
       } else {
         sub_pks_[i]->CommitStep(t_inner, t_inner + dt_inner, S_next_);
         t_inner += dt_inner;
-        *S_inter_ = *S_next_;
         if (t_inner >= t_new - 1.e-10) {
           done = true;
         }
+
+        S_inter_->AssignDomain(*S_next_, col_domain_name);
+        S_inter_->AssignDomain(*S_next_, "surface_"+col_domain_name);
+        S_inter_->AssignDomain(*S_next_, "snow_"+col_domain_name);
+        S_inter_->set_time(S_next_->time());
         dt_inner = sub_pks_[i]->get_dt();
         if (vo_->os_OK(Teuchos::VERB_EXTREME))
           *vo_->os() << "  success, new timestep is " << dt_inner << std::endl;
@@ -220,7 +227,9 @@ bool MPCPermafrostSplitFluxColumnsSubcycled::ValidStep()
 
 void MPCPermafrostSplitFluxColumnsSubcycled::CommitStep(double t_old, double t_new,
         const Teuchos::RCP<State>& S)
-{}
+{
+  sub_pks_[0]->CommitStep(t_old, t_new, S_next_);
+}
 
 
 // -----------------------------------------------------------------------------

@@ -21,6 +21,7 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
+#include "Units.hh"
 #include "TimeStepManager.hh"
 #include "Visualization.hh"
 #include "checkpoint.hh"
@@ -300,12 +301,17 @@ void Coordinator::initialize() {
   // we know it has succeeded.
   S_next_ = Teuchos::rcp(new Amanzi::State(*S_));
   *S_next_ = *S_;
-  S_inter_ = Teuchos::rcp(new Amanzi::State(*S_));
-  *S_inter_ = *S_;
+  if (parameter_list_->get<bool>("support subcycling", false)) {
+    S_inter_ = Teuchos::rcp(new Amanzi::State(*S_));
+    *S_inter_ = *S_;
+  } else {
+    S_inter_ = S_;
+  }
 
-  // set the states in the PKs
-  //Teuchos::RCP<const State> cS = S_; // ensure PKs get const reference state
-  pk_->set_states(S_, S_inter_, S_next_); // note this does not allow subcycling
+  // set the states in the PKs Passing null for S_ allows for safer subcycling
+  // -- PKs can't use it, so it is guaranteed to be pristinely the old
+  // timestep.  This comes at the expense of an increase in memory footprint.
+  pk_->set_states(Teuchos::null, S_inter_, S_next_);
 }
 
 void Coordinator::finalize() {
@@ -410,35 +416,28 @@ void Coordinator::report_memory() {
 
 
 void Coordinator::read_parameter_list() {
+  Amanzi::Utils::Units units;
   t0_ = coordinator_list_->get<double>("start time");
-  t1_ = coordinator_list_->get<double>("end time");
   std::string t0_units = coordinator_list_->get<std::string>("start time units", "s");
+  if (!units.IsValidTime(t0_units)) {
+    Errors::Message msg;
+    msg << "Coordinator start time: unknown time units type: \"" << t0_units << "\"  Valid are: " << units.ValidTimeStrings();
+    Exceptions::amanzi_throw(msg);
+  }
+  bool success;
+  t0_ = units.ConvertTime(t0_, t0_units, "s", success);
+
+  t1_ = coordinator_list_->get<double>("end time");
   std::string t1_units = coordinator_list_->get<std::string>("end time units", "s");
+  if (!units.IsValidTime(t1_units)) {
+    Errors::Message msg;
+    msg << "Coordinator end time: unknown time units type: \"" << t1_units << "\"  Valid are: " << units.ValidTimeStrings();
+    Exceptions::amanzi_throw(msg);
+  }  
+  t1_ = units.ConvertTime(t1_, t1_units, "s", success);
 
-  if (t0_units == "s") {
-    // internal units in s
-  } else if (t0_units == "d") { // days
-    t0_ = t0_ * 24.0*3600.0;
-  } else if (t0_units == "yr") { // years
-    t0_ = t0_ * 365.*24.0*3600.0;
-  } else {
-    Errors::Message message("Coordinator: error, invalid start time units");
-    Exceptions::amanzi_throw(message);
-  }
-
-  if (t1_units == "s") {
-    // internal units in s
-  } else if (t1_units == "d") { // days
-    t1_ = t1_ * 24.0*3600.0;
-  } else if (t1_units == "yr") { // years
-    t1_ = t1_ * 365.25*24.0*3600.0;
-  } else {
-    Errors::Message message("Coordinator: error, invalid end time units");
-    Exceptions::amanzi_throw(message);
-  }
-
-  max_dt_ = coordinator_list_->get<double>("max time step size", 1.0e99);
-  min_dt_ = coordinator_list_->get<double>("min time step size", 1.0e-12);
+  max_dt_ = coordinator_list_->get<double>("max time step size [s]", 1.0e99);
+  min_dt_ = coordinator_list_->get<double>("min time step size [s]", 1.0e-12);
   cycle0_ = coordinator_list_->get<int>("start cycle",0);
   cycle1_ = coordinator_list_->get<int>("end cycle",-1);
   duration_ = coordinator_list_->get<double>("wallclock duration [hrs]", -1.0);
@@ -524,6 +523,7 @@ bool Coordinator::advance(double t_old, double t_new) {
 
     // The timestep sizes have been updated, so copy back old soln and try again.
     *S_next_ = *S_;
+    *S_inter_ = *S_;
 
     // check whether meshes are deformable, and if so, recover the old coordinates
     for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
@@ -716,5 +716,6 @@ void Coordinator::cycle_driver() {
   finalize();
 
 } // cycle driver
+
 
 } // close namespace Amanzi
