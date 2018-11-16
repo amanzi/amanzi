@@ -1,6 +1,5 @@
 #include "UnitTest++.h"
 #include "VerboseObject.hh"
-#include "VerboseObject_objs.hh"
 
 #include "Teuchos_ParameterList.hpp"
 

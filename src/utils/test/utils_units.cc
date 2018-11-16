@@ -1,7 +1,5 @@
 #include "UnitTest++.h"
 
-#include "VerboseObject_objs.hh"
-
 #include "Units.hh"
 
 using namespace Amanzi;
@@ -25,6 +23,16 @@ TEST(UNITS_TIME)
   t = units.ConvertTime(1.0, "y", "d", flag);
   std::cout << "  1 y = " << t << " d, flag=" << flag << std::endl;
   CHECK_CLOSE(t, 365.25, 1e-3);
+
+  t = units.ConvertTime(1.0, "noleap", "d", flag);
+  std::cout << "  1 noleap = " << t << " d, flag=" << flag << std::endl;
+  CHECK_CLOSE(t, 365., 1e-3);
+  
+  CHECK(units.IsValidTime("y"));
+  CHECK(units.IsValidTime("noleap"));
+  CHECK(!units.IsValidTime("yr"));
+  CHECK(!units.IsValidTime("m"));
+  std::cout << "Valid times are: " << units.ValidTimeStrings() << std::endl;
 }
 
 
@@ -44,6 +52,12 @@ TEST(UNITS_LENGTH)
   len = units.ConvertLength(1.0, "ft", "in", flag);
   std::cout << "  1 ft = " << len << " in, flag=" << flag << std::endl;
   CHECK_CLOSE(len, 12.0, 1e-5);
+
+  CHECK(units.IsValidLength("ft"));
+  CHECK(units.IsValidLength("m"));
+  CHECK(!units.IsValidLength("meter"));
+  std::cout << "Valid lengths are: " << units.ValidLengthStrings() << std::endl;
+  
 }
 
 
@@ -67,6 +81,12 @@ TEST(UNITS_CONCENTRATION)
   conc = units.ConvertConcentration(1.0, "molar", "ppb", 51.9961e-3, flag);
   std::cout << "  1 molar = " << conc << " ppb, flag=" << flag << std::endl;
   // CHECK_CLOSE(conc, 1e+3, 1e-4);
+
+  CHECK(units.IsValidConcentration("molar"));
+  CHECK(units.IsValidConcentration("SI"));
+  CHECK(!units.IsValidConcentration("y"));
+  std::cout << "Valid concentrations are: " << units.ValidConcentrationStrings() << std::endl;
+  
 }
 
 

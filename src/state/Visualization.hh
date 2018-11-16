@@ -19,6 +19,9 @@ Each list contains all parameters as in a IOEvent_ spec, and also:
 * `"dynamic mesh`" ``[bool]`` **false** Write mesh data for every
   visualization dump; this facilitates visualizing deforming meshes.
 
+* `"time units`" ``[string]`` **s** A valid time unit to convert time
+  into for output files.  One of `"s`", `"d`", `"y`", or `"yr 365`"
+  
 INCLUDES:
 * ``[io-event-spec]`` An IOEvent_ spec
 
@@ -51,6 +54,7 @@ Example:
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_MultiVector.h"
 
+#include "Units.hh"
 #include "Mesh.hh"
 
 #include "IOEvent.hh"
@@ -74,7 +78,7 @@ class Visualization : public IOEvent {
 
   // public interface for coordinator clients
   void CreateFiles();
-  void CreateTimestep(const double& time, const int& cycle);
+  void CreateTimestep(double time, int cycle);
   void FinalizeTimestep() const;
 
   // public interface for data clients
@@ -86,7 +90,9 @@ class Visualization : public IOEvent {
  protected:
   void ReadParameters_();
 
+  std::string my_units_;
   std::string name_;
+
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<Output> visualization_output_;
 
