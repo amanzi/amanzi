@@ -85,7 +85,7 @@ SUITE(IOEVENT) {
     tsps[1] = 4.0;
     tsps[2] = 10.0;
     plist.set<Teuchos::Array<double> >("times start period stop", tsps);    
-    plist.set<std::string>("times start period stop units", "y 365");
+    plist.set<std::string>("times start period stop units", "noleap");
     
     Teuchos::Array<double> times(2);
     times[0] = 1.0;
@@ -123,7 +123,7 @@ SUITE(IOEVENT) {
     tsps[1] = 4.0;
     tsps[2] = -1.0;
     plist.set<Teuchos::Array<double> >("times start period stop", tsps);    
-    plist.set<std::string>("times start period stop units", "y 365");
+    plist.set<std::string>("times start period stop units", "noleap");
     
     Teuchos::Array<double> times(2);
     times[0] = 1.0;

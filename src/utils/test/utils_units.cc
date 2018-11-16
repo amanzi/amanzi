@@ -24,12 +24,12 @@ TEST(UNITS_TIME)
   std::cout << "  1 y = " << t << " d, flag=" << flag << std::endl;
   CHECK_CLOSE(t, 365.25, 1e-3);
 
-  t = units.ConvertTime(1.0, "y 365", "d", flag);
-  std::cout << "  1 y 365 = " << t << " d, flag=" << flag << std::endl;
+  t = units.ConvertTime(1.0, "noleap", "d", flag);
+  std::cout << "  1 noleap = " << t << " d, flag=" << flag << std::endl;
   CHECK_CLOSE(t, 365., 1e-3);
   
   CHECK(units.IsValidTime("y"));
-  CHECK(units.IsValidTime("y 365"));
+  CHECK(units.IsValidTime("noleap"));
   CHECK(!units.IsValidTime("yr"));
   CHECK(!units.IsValidTime("m"));
   std::cout << "Valid times are: " << units.ValidTimeStrings() << std::endl;
