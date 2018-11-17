@@ -57,7 +57,7 @@ void LimiterCell::Init(Teuchos::ParameterList& plist,
                        Teuchos::RCP<const Epetra_MultiVector> flux)
 {
   flux_ = flux;
-  IdentifyUpwindCells_();
+  if (flux_ != Teuchos::null) IdentifyUpwindCells_();
 
   // process parameters for limiters
   bc_scaling_ = 0.0;
