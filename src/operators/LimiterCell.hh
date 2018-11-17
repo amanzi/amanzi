@@ -118,7 +118,6 @@ class LimiterCell {
   int dim;
   int ncells_owned, nfaces_owned, nnodes_owned;
   int ncells_wghost, nfaces_wghost, nnodes_wghost;
-  int cell_max_nodes;
 
   Teuchos::RCP<const Epetra_MultiVector> field_;
   Teuchos::RCP<CompositeVector> gradient_, bounds_;

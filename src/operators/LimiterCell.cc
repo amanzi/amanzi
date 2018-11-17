@@ -45,8 +45,6 @@ LimiterCell::LimiterCell(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
   ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
-
-  cell_max_nodes = mesh_->cell_get_max_nodes();
 }
 
 
@@ -653,13 +651,13 @@ void LimiterCell::LimiterKuzmin_(
 
   double L22normal_new;
   AmanziGeometry::Point gradient_c(dim), p(dim), normal_new(dim), direction(dim);
-  std::vector<double> field_min_cell(cell_max_nodes), field_max_cell(cell_max_nodes);
-
   std::vector<AmanziGeometry::Point> normals;
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();
+    std::vector<double> field_min_cell(nnodes), field_max_cell(nnodes);
+
     for (int i = 0; i < nnodes; i++) {
       int v = nodes[i];
       field_min_cell[i] = field_node_min[v];
@@ -720,7 +718,6 @@ void LimiterCell::LimiterKuzminSet_(AmanziMesh::Entity_ID_List& ids,
   // Step 1: local extrema are calculated here at nodes and updated later
   std::vector<double> field_node_min(nnodes_wghost);
   std::vector<double> field_node_max(nnodes_wghost);
-  std::vector<double> field_min_cell(cell_max_nodes), field_max_cell(cell_max_nodes);
 
   AmanziMesh::Entity_ID_List nodes;
 
@@ -742,6 +739,8 @@ void LimiterCell::LimiterKuzminSet_(AmanziMesh::Entity_ID_List& ids,
     int c = ids[k];
     mesh_->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();
+    std::vector<double> field_min_cell(nnodes), field_max_cell(nnodes);
+
     for (int i = 0; i < nnodes; i++) {
       int v = nodes[i];
       field_min_cell[i] = field_node_min[v];
