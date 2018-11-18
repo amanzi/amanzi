@@ -171,6 +171,7 @@ TEST(ADVANCE_2D_MESH) {
 
 TEST(ADVANCE_2D_MESH_SWITCH_FLOW) {
   runTest(0.16, "test/transport_2D.xml", "", "tensorial", "face to cells");
+  runTest(0.16, "test/transport_2D.xml", "", "tensorial", "cell to closest cells");
 }
 
 TEST(ADVANCE_2D_MESH_SWITCH_FLOW_KUZMIN) {

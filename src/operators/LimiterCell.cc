@@ -165,7 +165,7 @@ void LimiterCell::LimiterTensorial_(
   AMANZI_ASSERT(upwind_cells_.size() > 0);
   AMANZI_ASSERT(downwind_cells_.size() > 0);
 
-  double u1, u2, u1f, u2f, umin, umax, L22normal_new;
+  double u1, u1f, umin, umax, L22normal_new;
   AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim);
   AmanziGeometry::Point normal_new(dim), direction(dim), p(dim);
 
@@ -176,6 +176,11 @@ void LimiterCell::LimiterTensorial_(
   auto limiter = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
 
   // Step 1: limit gradient to a feasiable set excluding Dirichlet boundary
+  if (stencil_id_ == OPERATOR_LIMITER_STENCIL_F2C)
+    BoundsForFaces(bc_model, bc_value, stencil_id_, true);
+  else 
+    BoundsForCells(bc_model, bc_value, stencil_id_, true);
+  
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
@@ -188,36 +193,16 @@ void LimiterCell::LimiterTensorial_(
     for (int loop = 0; loop < 2; loop++) {
       for (int i = 0; i < nfaces; ++i) {
         int f = faces[i];
-        // Limiting on inflow boundary is done in Step 2.
-        if (upwind_cells_[f].size() == 0) continue;
+        const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
-        // We enforce non-decreasing reconstruction on outflow boundary.
-        if (downwind_cells_[f].size() == 0) {
-          u1 = u2 = (*field_)[component_][c];
-        } else {
-          int c1 = upwind_cells_[f][0];
-          for (int n = 1; n < upwind_cells_[f].size(); ++n) {
-            if (upwind_cells_[f][n] == c) c1 = c;
-          }   
+        getBounds(c, f, stencil_id_, &umin, &umax);
 
-          int c2 = downwind_cells_[f][0];
-          for (int n = 1; n < downwind_cells_[f].size(); ++n) {
-            if (downwind_cells_[f][n] == c) c2 = c;
-          }
-
-          u1 = (*field_)[component_][c];
-          u2 = (*field_)[component_][c1 + c2 - c];
-        }
-
-        umin = std::min(u1, u2);
-        umax = std::max(u1, u2);
-
-        const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
-        u1f = getValue(gradient_c1, c, xcf);
+        u1 = (*field_)[component_][c];
+        u1f = getValue(gradient_c1, c, xf);
 
         // check if umin <= u1f <= umax
         if (u1f < umin) {
-          normal_new = xcf - xc;
+          normal_new = xf - xc;
           CalculateDescentDirection_(normals, normal_new, L22normal_new, direction);
 
           // p = ((umin - u1) / sqrt(L22normal_new)) * direction;
@@ -225,7 +210,7 @@ void LimiterCell::LimiterTensorial_(
           ApplyDirectionalLimiter_(normal_new, p, direction, gradient_c1);
 
         } else if (u1f > umax) {
-          normal_new = xcf - xc;
+          normal_new = xf - xc;
           CalculateDescentDirection_(normals, normal_new, L22normal_new, direction);
 
           // p = ((umax - u1) / sqrt(L22normal_new)) * direction;
@@ -240,38 +225,6 @@ void LimiterCell::LimiterTensorial_(
     if (grad_norm < OPERATOR_LIMITER_TOLERANCE * bc_scaling_) gradient_c1.set(0.0);
 
     for (int i = 0; i < dim; i++) grad[i][c] = gradient_c1[i];
-  }
-
-  // Step 2: limit gradient on the Dirichlet boundary
-  for (int f = 0; f < nfaces_owned; f++) {
-    if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-      int c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
-      int c2 = (downwind_cells_[f].size() > 0) ? downwind_cells_[f][0] : -1;
-
-      if (c2 >= 0 && c2 < ncells_owned) {
-        u2 = (*field_)[component_][c2];
-        u1 = bc_value[f];
-        umin = std::min(u1, u2);
-        umax = std::max(u1, u2);
-
-        const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
-        const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
-        u2f = getValue(c2, xcf);
-        for (int k = 0; k < dim; k++) gradient_c2[k] = grad[k][c2];
-        direction = xcf - xc2;
-
-        if (u2f < umin) {
-          p = ((umin - u2) / L22(direction)) * direction;
-          ApplyDirectionalLimiter_(direction, p, direction, gradient_c2);
-
-        } else if (u2f > umax) {
-          p = ((umax - u2) / L22(direction)) * direction;
-          ApplyDirectionalLimiter_(direction, p, direction, gradient_c2);
-        }
-
-        for (int k = 0; k < dim; k++) grad[k][c2] = gradient_c2[k];
-      }
-    }
   }
 
   // Step 3: enforce a priori time step estimate (division of dT by 2).
@@ -907,12 +860,18 @@ void LimiterCell::BoundsForCells(
 
   for (int f = 0; f < nfaces_owned; ++f) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-      if (downwind_cells_[f].size() > 0) {
-        int c2 = downwind_cells_[f][0];
+      int ncells = downwind_cells_[f].size();
 
-        double u1 = bc_value[f];
-        bounds_c[0][c2] = std::min(bounds_c[0][c2], u1);
-        bounds_c[1][c2] = std::max(bounds_c[1][c2], u1);
+      if (ncells > 0) {
+        for (int n = 0; n < ncells; ++n) {
+          int c = downwind_cells_[f][n];
+          double value = (*field_)[component_][c];
+          bounds_c[0][c] = std::min(bounds_c[0][c], value);
+          bounds_c[1][c] = std::max(bounds_c[1][c], value);
+
+          bounds_c[0][c] = std::min(bounds_c[0][c], bc_value[f]);
+          bounds_c[1][c] = std::max(bounds_c[1][c], bc_value[f]);
+        }
       }
     }
   }
@@ -926,7 +885,7 @@ void LimiterCell::BoundsForFaces(
     const std::vector<int>& bc_model, const std::vector<double>& bc_value, 
     int stencil, bool reset)
 {
-  if (bounds_ == Teuchos::null) {
+  if (bounds_ == Teuchos::null || reset) {
     auto cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->SetGhosted(true)
        ->AddComponent("face", AmanziMesh::FACE, 2);
@@ -961,13 +920,18 @@ void LimiterCell::BoundsForFaces(
 
   for (int f = 0; f < nfaces_owned; ++f) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-      if (downwind_cells_[f].size() > 0) {
-        int c2 = downwind_cells_[f][0];
+      int ncells = downwind_cells_[f].size();
 
-        double u2 = (*field_)[component_][c2];
-        double u1 = bc_value[f];
-        bounds_f[0][f] = std::min(u2, u1);
-        bounds_f[1][f] = std::max(u2, u1);
+      if (ncells > 0) {
+        bounds_f[0][f] = std::min(bounds_f[0][f], bc_value[f]);
+        bounds_f[1][f] = std::max(bounds_f[1][f], bc_value[f]);
+
+        for (int n = 0; n < ncells; ++n) {
+          int c2 = downwind_cells_[f][n];
+          double value = (*field_)[component_][c2];
+          bounds_f[0][f] = std::min(bounds_f[0][f], value);
+          bounds_f[1][f] = std::max(bounds_f[1][f], value);
+        }
       }
     }
   }
