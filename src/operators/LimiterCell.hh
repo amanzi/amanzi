@@ -53,13 +53,14 @@ class LimiterCell {
                     Teuchos::RCP<const Epetra_MultiVector> field, int component,
                     std::vector<AmanziGeometry::Point>& gradient);
 
-  // bounds
-  void BoundsFaceToCells();
-  void BoundsCellToClosestCells();
-  void BoundsCellToAllCells();
-  void BoundsCellOnBoundary(const std::vector<int>& bc_model, const std::vector<double>& bc_value);
+  // bounds: if reset=true they are recalculated 
+  void BoundsForCells(const std::vector<int>& bc_model,
+                      const std::vector<double>& bc_value, int stencil, bool reset);
+  void BoundsForFaces(const std::vector<int>& bc_model,
+                      const std::vector<double>& bc_value, int stencil, bool reset);
 
   // calculate value of a linear function at the given point p
+  void getBounds(int c, int f, int stencil, double* umin, double* umax);
   double getValue(int c, const AmanziGeometry::Point& p);
   double getValue(const AmanziGeometry::Point& gradient, int c, const AmanziGeometry::Point& p);
 
@@ -78,7 +79,7 @@ class LimiterCell {
       const std::vector<int>& bc_model, const std::vector<double>& bc_value,
       Teuchos::RCP<Epetra_Vector> limiter);
 
-  void LimiterBarthJespersenCell_(
+  void LimiterBarthJespersen_(
       const std::vector<int>& bc_model, const std::vector<double>& bc_value,
       Teuchos::RCP<Epetra_Vector> limiter);
 
@@ -130,7 +131,7 @@ class LimiterCell {
 
   double bc_scaling_;
   int limiter_id_, stencil_id_;
-  bool limiter_correction_;
+  bool limiter_correction_, external_bounds_;
 };
 
 }  // namespace Operators

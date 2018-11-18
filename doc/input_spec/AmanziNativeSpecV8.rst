@@ -4069,6 +4069,9 @@ and their extensions for various PKs.
    Option `"face to cells`" is default for `"Barth-Jespersen`" and `"tensorial`".
    Option `"node to cells`" is default for `"Kuzmin`".
 
+ * `"use external bounds`" [bool] specifies if bounds for limiters are provided by 
+   the hosting application. Default is `"false`".`
+
  * `"limiter extension for transport`" [bool] adds additional corrections to 
    limiters required by the transport PK. Default value is *false*.
 
