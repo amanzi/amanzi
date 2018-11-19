@@ -147,7 +147,7 @@ void EnergyBase::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {
       S->GetFieldEvaluator(source_key_)->HasFieldDerivativeChanged(S, name_, key_);
       dsource_dT = S->GetFieldData(Keys::getDerivKey(source_key_, key_));
     } else {
-      // evaluate the derivative through fniite differences
+      // evaluate the derivative through finite differences
       double eps = 1.e-8;
       S->GetFieldData(key_, name_)->Shift(eps);
       ChangedSolution();

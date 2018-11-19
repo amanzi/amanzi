@@ -262,12 +262,18 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       surf.temp = surf_temp[0][c];
       surf.pressure = surf_pres[0][c];
       surf.roughness = roughness_bare_ground_;
-      surf.saturation_gas = sat_gas[0][cells[0]];
       surf.density_w = params.density_water; // NOTE: could update this to use true density! --etc
       surf.dz = dessicated_zone_thickness_;
       surf.albedo = sg_albedo[0][c];
       surf.emissivity = emissivity[0][c];
-      surf.porosity = ponded_depth[0][c] > 0. ? 1. : poro[0][cells[0]];
+      if (ponded_depth[0][c] > params.water_ground_transition_depth) {
+        surf.porosity = 1.;
+        surf.saturation_gas = 0.;
+      } else {
+        double factor = std::max(ponded_depth[0][c],0.)/params.water_ground_transition_depth;
+        surf.porosity = 1. * factor + poro[0][cells[0]] * (1-factor);
+        surf.saturation_gas = (1-factor) * sat_gas[0][cells[0]];
+      }
       surf.ponded_depth = ponded_depth[0][c];
       surf.unfrozen_fraction = unfrozen_fraction[0][c];
 
@@ -333,7 +339,11 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       
       SEBPhysics::SnowProperties snow;
       snow.height = snow_depth[0][c] / area_fracs[1][c]; // all snow on this patch
-      AMANZI_ASSERT(snow.height >= snow_ground_trans_ - 1.e-8);
+      AMANZI_ASSERT(snow.height >= snow_ground_trans_ - 1.e-6);
+       // area_fracs may have been set to 1 for snow depth < snow_ground_trans
+       // due to min fractional area option in area_fractions evaluator.
+       // Decreasing the tol by 1e-6 is about equivalent to a min fractional
+       // area of 1e-5 (the default)
       snow.density = snow_dens[0][c];
       snow.albedo = surf.albedo;
       snow.emissivity = surf.emissivity;

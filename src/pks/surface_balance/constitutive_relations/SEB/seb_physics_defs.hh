@@ -120,7 +120,8 @@ struct ModelParams {
       VKc(0.41),                // Von Karman Constant -------------- [-]
       stephB(0.00000005670373), // Stephan-Boltzmann constant ------- [W/m^2 K^4]
       Apa(101.325),             // atmospheric pressure ------------- [kPa]
-      evap_transition_width(0.02), // transition on evaporation from surface to evaporation from subsurface [m]
+      water_ground_transition_depth(0.02),
+      evap_transition_width(1000.), // transition on evaporation from surface to evaporation from subsurface [m]
       gravity(9.807),
       Clapp_Horn_b(1.),          // Clapp and Hornberger "b" [-]
       R_ideal_gas(461.52)       // ideal gas law R? [Pa m^3 kg^-1 K^-1]
@@ -141,6 +142,7 @@ struct ModelParams {
   // other constants
   double Apa;
   double evap_transition_width;
+  double water_ground_transition_depth;
   double gravity;
 
 };

@@ -131,13 +131,25 @@ ImplicitSubgrid::Initialize(const Teuchos::Ptr<State>& S) {
       // initialize density, age from restart file
       S->GetField(snow_dens_key_, name_)->Initialize(ic_list);
       S->GetField(snow_dens_key_, name_)->set_initialized();
-      S->GetField(snow_age_key_, name_)->Initialize(ic_list);
-      S->GetField(snow_age_key_, name_)->set_initialized();
+    } else if (plist_->isSublist("initial condition snow density")) {
+      S->GetField(snow_dens_key_, name_)->Initialize(plist_->sublist("initial condition snow density"));
     } else {
       // initialize density to fresh powder, age to 0
       SEBPhysics::ModelParams params;
       S->GetFieldData(snow_dens_key_,name_)->PutScalar(params.density_freshsnow);
       S->GetField(snow_dens_key_, name_)->set_initialized();
+    }
+  }
+
+  if (!S->GetField(snow_age_key_)->initialized()) {
+    if (ic_list.isParameter("restart file")) {
+      // initialize density, age from restart file
+      S->GetField(snow_age_key_, name_)->Initialize(ic_list);
+      S->GetField(snow_age_key_, name_)->set_initialized();
+    } else if (plist_->isSublist("initial condition snow age")) {
+      S->GetField(snow_age_key_, name_)->Initialize(plist_->sublist("initial condition snow age"));
+    } else {
+      // initialize age to fresh powder, age to 0
       S->GetFieldData(snow_age_key_,name_)->PutScalar(0.);
       S->GetField(snow_age_key_, name_)->set_initialized();
     }
