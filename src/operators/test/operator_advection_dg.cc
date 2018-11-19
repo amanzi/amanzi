@@ -39,7 +39,6 @@
 #include "AnalyticDG02.hh"
 #include "AnalyticDG03.hh"
 
-#include "OperatorAudit.hh"
 #include "OperatorDefs.hh"
 #include "PDE_Abstract.hh"
 #include "PDE_AdvectionRiemann.hh"

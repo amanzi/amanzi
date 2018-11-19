@@ -142,7 +142,7 @@ void Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const
 /* *******************************************************************
 * Calculate flow out of the current seepage face.
 ******************************************************************* */
-void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const
+void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dT) const
 {
   const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face");
 
@@ -168,7 +168,7 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const
   mesh_->get_comm()->SumAll(&tmp, &outflow, 1);
 
   outflow *= rho_;
-  seepage_mass_ += outflow * dt_;
+  seepage_mass_ += outflow * dT;
 
   if (MyPID == 0 && nbcs > 0) {
     Teuchos::OSTab tab = vo_->getOSTab();

@@ -709,15 +709,18 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
     bc.set<bool>("use area fractions", WeightVolumeSubmodel_(regions));
 
     // special cases and parameters without default values
+    element = static_cast<DOMElement*>(same_list[0]);
     if (bctype == "mass flux") {
       bc.set<bool>("rainfall", false);
     }
     else if (bctype == "seepage face") {
+      double tmp = GetAttributeValueD_(
+          element, "flux_threshold", TYPE_NUMERICAL, 0.0, 0.1, "", false, 0.0);
       bc.set<bool>("rainfall", false)
-        .set<std::string>("submodel", "PFloTran");
+        .set<std::string>("submodel", "PFloTran")
+        .set<double>("seepage flux threshold", tmp);
     }
     else if (bctype == "static head") {
-      element = static_cast<DOMElement*>(same_list[0]);
       std::string tmp = GetAttributeValueS_(
           element, "coordinate_system", TYPE_NONE, false, "absolute");
       bc.set<bool>("relative to top", (tmp == "relative to mesh top"));

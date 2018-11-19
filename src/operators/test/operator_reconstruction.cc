@@ -22,11 +22,12 @@
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
 #include "GMVMesh.hh"
+#include "LimiterCell.hh"
 #include "MeshFactory.hh"
 #include "OperatorDefs.hh"
 #include "ReconstructionCell.hh"
 
-const std::string LIMITERS[3] = {"B-J", "Tensorial", "Kuzmin"};
+const std::string LIMITERS[6] = {"B-J", "Tensorial", "Tens. c2c", "Kuzmin", "B-J c2c", "B-J all"};
 
 void GradientError(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
                    Epetra_MultiVector& grad_err, Epetra_MultiVector& grad,
@@ -244,7 +245,7 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_2D) {
     (*flux)[0][f] = (velocity * normal) / mesh->face_area(f);
   }
 
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 6; i++) {
     std::vector<int> bc_model;
     std::vector<double> bc_value;
     Teuchos::ParameterList plist;
@@ -252,14 +253,24 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_2D) {
     plist.set<bool>("limiter extension for transport", false);
 
     if (i == 0) {
-      plist.set<std::string>("limiter", "Barth-Jespersen");
+      plist.set<std::string>("limiter", "Barth-Jespersen")
+           .set<std::string>("limiter stencil", "face to cells");
     } else if (i == 1) {
       plist.set<std::string>("limiter", "tensorial");
     } else if (i == 2) {
+      plist.set<std::string>("limiter", "tensorial")
+           .set<std::string>("limiter stencil", "cell to closest cells");
+    } else if (i == 3) {
       plist.set<std::string>("limiter", "Kuzmin");
+    } else if (i == 4) {
+      plist.set<std::string>("limiter", "Barth-Jespersen")
+           .set<std::string>("limiter stencil", "cell to closest cells");
+    } else if (i == 5) {
+      plist.set<std::string>("limiter", "Barth-Jespersen")
+           .set<std::string>("limiter stencil", "cell to all cells");
     }
 
-    if (i < 2) {
+    if (i != 3) {
       bc_model.assign(nfaces_wghost, 0);
       bc_value.assign(nfaces_wghost, 0.0);
 
@@ -292,8 +303,9 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_2D) {
     lifting.ComputeGradient(); 
 
     // Apply limiter
-    lifting.InitLimiter(flux);
-    lifting.ApplyLimiter(bc_model, bc_value);
+    LimiterCell limiter(mesh);
+    limiter.Init(plist, flux);
+    limiter.ApplyLimiter(field, 0, lifting.gradient(), bc_model, bc_value);
 
     // calculate gradient error
     Epetra_MultiVector grad_computed(*lifting.gradient()->ViewComponent("cell"));
@@ -362,7 +374,7 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_3D) {
     (*flux)[0][f] = (velocity * normal) / mesh->face_area(f);
   }
 
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 4; i++) {
     std::vector<int> bc_model;
     std::vector<double> bc_value;
     Teuchos::ParameterList plist;
@@ -370,14 +382,18 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_3D) {
     plist.set<bool>("limiter extension for transport", false);
 
     if (i == 0) {
-      plist.set<std::string>("limiter", "Barth-Jespersen");
+      plist.set<std::string>("limiter", "Barth-Jespersen")
+           .set<std::string>("limiter stencil", "face to cells");
     } else if (i == 1) {
       plist.set<std::string>("limiter", "tensorial");
     } else if (i == 2) {
+      plist.set<std::string>("limiter", "tensorial")
+           .set<std::string>("limiter stencil", "cell to closest cells");
+    } else if (i == 3) {
       plist.set<std::string>("limiter", "Kuzmin");
     }
 
-    if (i < 2) {
+    if (i != 3) {
       bc_model.assign(nfaces_wghost, 0);
       bc_value.assign(nfaces_wghost, 0.0);
 
@@ -412,8 +428,9 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_3D) {
     lifting.ComputeGradient(); 
 
     // Apply limiter
-    lifting.InitLimiter(flux);
-    lifting.ApplyLimiter(bc_model, bc_value);
+    LimiterCell limiter(mesh);
+    limiter.Init(plist, flux);
+    limiter.ApplyLimiter(field, 0, lifting.gradient(), bc_model, bc_value);
 
     // calculate gradient error
     Epetra_MultiVector grad_computed(*lifting.gradient()->ViewComponent("cell"));
@@ -483,7 +500,7 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_2D) {
       (*flux)[0][f] = (velocity * normal) / mesh->face_area(f);
     }
 
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 6; i++) {
       std::vector<int> bc_model;
       std::vector<double> bc_value;
       Teuchos::ParameterList plist;
@@ -491,14 +508,24 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_2D) {
       plist.set<bool>("limiter extension for transport", false);
 
       if (i == 0) {
-        plist.set<std::string>("limiter", "Barth-Jespersen");
+        plist.set<std::string>("limiter", "Barth-Jespersen")
+             .set<std::string>("limiter stencil", "face to cells");
       } else if (i == 1) {
         plist.set<std::string>("limiter", "tensorial");
       } else if (i == 2) {
+        plist.set<std::string>("limiter", "tensorial")
+             .set<std::string>("limiter stencil", "cell to closest cells");
+      } else if (i == 3) {
         plist.set<std::string>("limiter", "Kuzmin");
+      } else if (i == 4) {
+        plist.set<std::string>("limiter", "Barth-Jespersen")
+             .set<std::string>("limiter stencil", "cell to closest cells");
+      } else if (i == 5) {
+        plist.set<std::string>("limiter", "Barth-Jespersen")
+             .set<std::string>("limiter stencil", "cell to all cells");
       }
 
-      if (i < 2) {
+      if (i != 3) {
         bc_model.assign(nfaces_wghost, 0);
         bc_value.assign(nfaces_wghost, 0.0);
 
@@ -533,8 +560,9 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_2D) {
       lifting.ComputeGradient(); 
 
       // Apply limiter
-      lifting.InitLimiter(flux);
-      lifting.ApplyLimiter(bc_model, bc_value);
+      LimiterCell limiter(mesh);
+      limiter.Init(plist, flux);
+      limiter.ApplyLimiter(field, 0, lifting.gradient(), bc_model, bc_value);
 
       // calculate gradient error
       Epetra_MultiVector grad_computed(*lifting.gradient()->ViewComponent("cell"));
@@ -659,8 +687,9 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_3D) {
       lifting.ComputeGradient(); 
 
       // Apply limiter
-      lifting.InitLimiter(flux);
-      lifting.ApplyLimiter(bc_model, bc_value);
+      LimiterCell limiter(mesh);
+      limiter.Init(plist, flux);
+      limiter.ApplyLimiter(field, 0, lifting.gradient(), bc_model, bc_value);
 
       // calculate gradient error
       Epetra_MultiVector grad_computed(*lifting.gradient()->ViewComponent("cell"));
@@ -681,7 +710,8 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_3D) {
 /* *****************************************************************
 * Convergece of limited functions in two dimensions.
 ***************************************************************** */
-TEST(RECONSTRUCTION_SMOOTH_FIELD_2D_POLYMESH) {
+void SmoothField2DPoly(double extension)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -734,22 +764,32 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_2D_POLYMESH) {
     (*flux)[0][f] = (velocity * normal) / mesh->face_area(f);
   }
 
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 6; i++) {
     std::vector<int> bc_model;
     std::vector<double> bc_value;
     Teuchos::ParameterList plist;
     plist.set<int>("polynomial_order", 1);
-    plist.set<bool>("limiter extension for transport", false);
+    plist.set<bool>("limiter extension for transport", extension);
 
     if (i == 0) {
-      plist.set<std::string>("limiter", "Barth-Jespersen");
+      plist.set<std::string>("limiter", "Barth-Jespersen")
+           .set<std::string>("limiter stencil", "face to cells");
     } else if (i == 1) {
       plist.set<std::string>("limiter", "tensorial");
     } else if (i == 2) {
+      plist.set<std::string>("limiter", "tensorial")
+           .set<std::string>("limiter stencil", "cell to closest cells");
+    } else if (i == 3) {
       plist.set<std::string>("limiter", "Kuzmin");
+    } else if (i == 4) {
+      plist.set<std::string>("limiter", "Barth-Jespersen")
+           .set<std::string>("limiter stencil", "cell to closest cells");
+    } else if (i == 5) {
+      plist.set<std::string>("limiter", "Barth-Jespersen")
+           .set<std::string>("limiter stencil", "cell to all cells");
     }
 
-    if (i < 2) {
+    if (i != 3) {
       bc_model.assign(nfaces_wghost, 0);
       bc_value.assign(nfaces_wghost, 0.0);
 
@@ -784,8 +824,9 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_2D_POLYMESH) {
     lifting.ComputeGradient(); 
 
     // Apply limiter
-    lifting.InitLimiter(flux);
-    lifting.ApplyLimiter(bc_model, bc_value);
+    LimiterCell limiter(mesh);
+    limiter.Init(plist, flux);
+    limiter.ApplyLimiter(field, 0, lifting.gradient(), bc_model, bc_value);
 
     // calculate gradient error
     Epetra_MultiVector grad_computed(*lifting.gradient()->ViewComponent("cell"));
@@ -799,11 +840,16 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_2D_POLYMESH) {
   }
 }
 
+TEST(RECONSTRUCTION_SMOOTH_FIELD_2D_POLYMESH) {
+  SmoothField2DPoly(false);
+  SmoothField2DPoly(true);
+}
+
 
 /* *****************************************************************
 * Limiters must be 1 on linear functions in three dimensions.
 ***************************************************************** */
-TEST(RECONSTRUCTION_LINEAR_LIMITER_FRACtURES) {
+TEST(RECONSTRUCTION_LINEAR_LIMITER_FRACTURES) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -891,10 +937,6 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_FRACtURES) {
     ReconstructionCell lifting(mesh);
     lifting.Init(field, plist);
     lifting.ComputeGradient(); 
-
-    // Apply limiter
-    // lifting.InitLimiter(flux);
-    // lifting.ApplyLimiter(bc_model, bc_value);
 
     // calculate gradient error
     Epetra_MultiVector grad_computed(*lifting.gradient()->ViewComponent("cell"));

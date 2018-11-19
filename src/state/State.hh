@@ -139,6 +139,16 @@ class State {
   // only one State should be instantiated and populated -- all other States
   // should be copy-constructed from that initial State.
   State& operator=(const State& other);
+  
+  // -----------------------------------------------------------------------------
+  // Partial operator=
+  //
+  // This is hacky, but it works with ATS's multi-state data model to allow
+  // subcycling when an entire domain is the thing to be subcycled.
+  //
+  // This assigns fields and evaluators named domain-*.
+  // -----------------------------------------------------------------------------
+  void AssignDomain(const State& other, const std::string& domain);
 
   // Create data structures, finalizing the structure of the state.
   void Setup();
@@ -426,7 +436,8 @@ void ReadCheckpointObservations(Epetra_MpiComm* comm,
                                 std::string filename,
                                 Amanzi::ObservationData& obs_data);
 
-  void DeformCheckpointMesh(const Teuchos::Ptr<State>& S, Key domain);
+void DeformCheckpointMesh(const Teuchos::Ptr<State>& S, Key domain);
+
 
 }  // namespace Amanzi
 

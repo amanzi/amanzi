@@ -14,6 +14,7 @@
 #ifndef AMANZI_REMAP_DG_HH_
 #define AMANZI_REMAP_DG_HH_
 
+#include <cmath>
 #include <cstdlib>
 #include <iostream>
 #include <vector>
@@ -30,6 +31,7 @@
 #include "WhetStoneDefs.hh"
 
 // Amanzi::Operators
+#include "LimiterCell.hh"
 #include "OperatorDefs.hh"
 #include "PDE_Abstract.hh"
 #include "PDE_AdvectionRiemann.hh"
@@ -42,13 +44,7 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
  public:
   RemapDG(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
           const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
-          Teuchos::ParameterList& plist) 
-    : mesh0_(mesh0),
-      mesh1_(mesh1),
-      plist_(plist),
-      dim_(mesh0->space_dimension()),
-      high_order_velocity_(false),
-      dt_output_(0.1) {};
+          Teuchos::ParameterList& plist);
   ~RemapDG() {};
 
   // main members required by high-level interface
@@ -61,12 +57,16 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   }
   void InitPrimary();
   void InitSecondary();
+  void InitTertiary(const Amanzi::WhetStone::DG_Modal& dg); 
 
   // geometric tools
   // -- various geometric quantities
   virtual void Jacobian(int c, double t, const WhetStone::MatrixPolynomial& J,
                         WhetStone::MatrixPolynomial& Jt);
-  virtual void UpdateGeometricQuantities(double t);
+  virtual void UpdateGeometricQuantities(double t, bool consistent_det = false);
+
+  // limiters
+  void ApplyLimiter(const Amanzi::WhetStone::DG_Modal& dg, CompositeVector& u); 
 
   // -- mesh deformation
   virtual void DeformMesh(int deform, double t);
@@ -92,6 +92,8 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   Teuchos::RCP<Operators::PDE_Abstract> op_adv_;
   Teuchos::RCP<Operators::PDE_AdvectionRiemann> op_flux_;
   Teuchos::RCP<Operators::PDE_Reaction>op_reac_;
+  
+  int bc_type_;
 
   // geometric data
   std::vector<WhetStone::VectorPolynomial> uc_;
@@ -101,6 +103,9 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > velc_;
   Teuchos::RCP<std::vector<WhetStone::Polynomial> > velf_;
   std::vector<WhetStone::VectorPolynomial> velf_vec_;
+
+  // new determinant
+  std::vector<WhetStone::Polynomial> jac0_, jac1_;
 
   // statistics
   int nfun_;
@@ -112,7 +117,16 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
 * Initialization of remap: operarot and face velocity.
 ***************************************************************** */
 template<class AnalyticDG>
-void RemapDG<AnalyticDG>::InitPrimary()
+RemapDG<AnalyticDG>::RemapDG(
+    const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
+    const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
+    Teuchos::ParameterList& plist) 
+  : mesh0_(mesh0),
+    mesh1_(mesh1),
+    plist_(plist),
+    dim_(mesh0->space_dimension()),
+    high_order_velocity_(false),
+    dt_output_(0.1)
 {
   // mesh data
   ncells_owned_ = mesh0_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -123,6 +137,24 @@ void RemapDG<AnalyticDG>::InitPrimary()
   order_ = plist_.sublist("PK operator")
                  .sublist("flux operator").template get<int>("method order");
 
+  bc_type_ = Operators::OPERATOR_BC_NONE;
+  auto name = plist_.sublist("PK operator").template get<std::string>("boundary conditions");
+  if (name == "remove")
+    bc_type_ = Operators::OPERATOR_BC_REMOVE;
+
+  // miscallateous
+  tprint_ = 0.0;
+  nfun_ = 0;
+  l2norm_ = -1.0;
+}
+
+
+/* *****************************************************************
+* Initialization of remap: operarot and face velocity.
+***************************************************************** */
+template<class AnalyticDG>
+void RemapDG<AnalyticDG>::InitPrimary()
+{
   // create right-hand side operator
   // -- flux
   auto oplist = plist_.sublist("PK operator").sublist("flux operator");
@@ -143,19 +175,19 @@ void RemapDG<AnalyticDG>::InitPrimary()
   maps_ = maps_factory.Create(map_list, mesh0_, mesh1_);
 
   // boundary data
+  int nk = WhetStone::PolynomialSpaceDimension(dim_, order_);
   auto bc = Teuchos::rcp(new Operators::BCs(mesh0_, AmanziMesh::FACE, Operators::DOF_Type::VECTOR));
   std::vector<int>& bc_model = bc->bc_model();
-  std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(1);
+  std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(nk);
 
   WhetStone::Polynomial coefs;
 
-  for (int f = 0; f < nfaces_wghost_; f++) {
-    const AmanziGeometry::Point& xf = mesh0_->face_centroid(f);
-    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
-        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
-        fabs(xf[dim_ - 1]) < 1e-6 || fabs(xf[dim_ - 1] - 1.0) < 1e-6) {
-      bc_model[f] = Operators::OPERATOR_BC_REMOVE;
-    }
+  const auto& fmap = mesh0_->face_map(true);
+  const auto& bmap = mesh0_->exterior_face_map(true);
+  for (int bf = 0; bf < bmap.NumMyElements(); ++bf) {
+    int f = fmap.LID(bmap.GID(bf));
+    for (int i = 0; i < nk; ++i) bc_value[f][i] = 0.0;
+    bc_model[f] = bc_type_;
   }
   op_flux_->SetBCs(bc, bc);
 
@@ -180,11 +212,6 @@ void RemapDG<AnalyticDG>::InitPrimary()
   velf_ = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost_));
   velc_ = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_wghost_));
   jac_ = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_wghost_));
-
-  // miscallateous
-  tprint_ = 0.0;
-  nfun_ = 0;
-  l2norm_ = -1.0;
 }
 
 
@@ -208,6 +235,74 @@ void RemapDG<AnalyticDG>::InitSecondary()
 
     maps_->VelocityCell(c, vvf, uc_[c]);
     maps_->Jacobian(uc_[c], J_[c]);
+  }
+}
+
+
+/* *****************************************************************
+* Initialization of consistent determinant
+***************************************************************** */
+template<class AnalyticDG>
+void RemapDG<AnalyticDG>::InitTertiary(const Amanzi::WhetStone::DG_Modal& dg)
+{
+  // constant part of determinant
+  UpdateGeometricQuantities(0.0, false);
+
+  op_adv_->SetupPolyVector(velc_);
+  op_adv_->UpdateMatrices();
+
+  op_reac_->Setup(jac_);
+  op_reac_->UpdateMatrices(Teuchos::null);
+
+  auto& matrices = op_reac_->local_matrices()->matrices;
+  for (int n = 0; n < matrices.size(); ++n) matrices[n].Inverse();
+
+  op_flux_->Setup(velc_, velf_);
+  op_flux_->UpdateMatrices(velf_.ptr());
+  op_flux_->ApplyBCs(true, true, true);
+
+  CompositeVector& tmp = *op_reac_->global_operator()->rhs();
+  CompositeVector one(tmp), u0(tmp), u1(tmp);
+  Epetra_MultiVector& one_c = *one.ViewComponent("cell", true);
+
+  one.PutScalarMasterAndGhosted(0.0);
+  for (int c = 0; c < ncells_wghost_; ++c) one_c[0][c] = 1.0;
+
+  op_flux_->global_operator()->Apply(one, tmp);
+  op_reac_->global_operator()->Apply(tmp, u0);
+
+  // linear part of determinant
+  double dt(0.01);
+  UpdateGeometricQuantities(dt, false);
+ 
+  op_adv_->SetupPolyVector(velc_);
+  op_adv_->UpdateMatrices();
+
+  op_flux_->Setup(velc_, velf_);
+  op_flux_->UpdateMatrices(velf_.ptr());
+  op_flux_->ApplyBCs(true, true, true);
+
+  op_flux_->global_operator()->Apply(one, tmp);
+  op_reac_->global_operator()->Apply(tmp, u1);
+  u1.Update(-1.0/dt, u0, 1.0/dt);
+
+  // save as polynomials
+  int nk = one_c.NumVectors();
+  Amanzi::WhetStone::DenseVector data(nk);
+  Epetra_MultiVector& u0c = *u0.ViewComponent("cell", true);
+  Epetra_MultiVector& u1c = *u1.ViewComponent("cell", true);
+
+  jac0_.resize(ncells_wghost_);
+  jac1_.resize(ncells_wghost_);
+
+  for (int c = 0; c < ncells_wghost_; ++c) {
+    const auto& basis = dg.cell_basis(c);
+
+    for (int i = 0; i < nk; ++i) data(i) = u0c[i][c];
+    jac0_[c] = basis.CalculatePolynomial(mesh0_, c, order_, data);
+
+    for (int i = 0; i < nk; ++i) data(i) = u1c[i][c];
+    jac1_[c] = basis.CalculatePolynomial(mesh0_, c, order_, data);
   }
 }
 
@@ -248,8 +343,9 @@ void RemapDG<AnalyticDG>::FunctionalTimeDerivative(
   xc.MaxValue(xmax);
   xc.MinValue(xmin);
 
-  if (fabs(tprint_ - t) < 1e-6 && mesh0_->get_comm()->MyPID() == 0) {
-    printf("t=%8.5f  L2=%9.5g  nfnc=%3d  umax: ", global_time(t), l2norm_, nfun_);
+  double tglob = global_time(t);
+  if (fabs(tprint_ - tglob) < 1e-6 && mesh0_->get_comm()->MyPID() == 0) {
+    printf("t=%8.5f  L2=%9.5g  nfnc=%4d  umax: ", tglob, l2norm_, nfun_);
     for (int i = 0; i < std::min(nk, 3); ++i) printf("%9.5g ", xmax[i]);
     printf("\n");
     tprint_ += dt_output_;
@@ -280,7 +376,7 @@ void RemapDG<AnalyticDG>::Jacobian(
 * Calculates various geometric quantaties on intermediate meshes.
 ***************************************************************** */
 template<class AnalyticDG>
-void RemapDG<AnalyticDG>::UpdateGeometricQuantities(double t)
+void RemapDG<AnalyticDG>::UpdateGeometricQuantities(double t, bool consistent_det)
 {
   WhetStone::VectorPolynomial tmp, fmap, cn;
 
@@ -301,8 +397,14 @@ void RemapDG<AnalyticDG>::UpdateGeometricQuantities(double t)
   WhetStone::MatrixPolynomial Jt, C;
   for (int c = 0; c < ncells_wghost_; ++c) {
     Jacobian(c, t, J_[c], Jt);
-    maps_->Determinant(Jt, (*jac_)[c]);
     maps_->Cofactors(Jt, C);
+    if (consistent_det) {
+      double tmp = t * t / 2;
+      (*jac_)[c][0] = t * jac0_[c] + tmp * jac1_[c];
+      (*jac_)[c][0](0) += 1.0;
+    } else {
+      maps_->Determinant(Jt, (*jac_)[c]);
+    }
     
     // cell-based pseudo velocity -C^t u 
     int nC = C.NumRows();
@@ -320,6 +422,54 @@ void RemapDG<AnalyticDG>::UpdateGeometricQuantities(double t)
         }
       }
     }
+  }
+}
+
+
+/* *****************************************************************
+* Limit gradient
+***************************************************************** */
+template <class AnalyticDG>
+void RemapDG<AnalyticDG>::ApplyLimiter(
+    const Amanzi::WhetStone::DG_Modal& dg, CompositeVector& u)
+{
+  // AMANZI_ASSERT(order_ == 1);
+  const Epetra_MultiVector& u_c = *u.ViewComponent("cell", true);
+
+  // initialize limiter
+  auto limlist = plist_.sublist("limiter");
+
+  int nnodes_wghost = mesh0_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+  std::vector<int> bc_model(nnodes_wghost, Operators::OPERATOR_BC_NONE);
+  std::vector<double> bc_value(nnodes_wghost, 0.0);
+
+  // create gradient in the natural basis
+  int nk = u_c.NumVectors();
+  WhetStone::DenseVector data(nk);
+
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(mesh0_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, dim_);
+  auto grad = Teuchos::rcp(new CompositeVector(cvs));
+  Epetra_MultiVector& grad_c = *grad->ViewComponent("cell");
+
+  for (int c = 0; c < ncells_owned_; ++c) {
+    for (int i = 0; i < nk; ++i) data(i) = u_c[i][c];
+    dg.cell_basis(c).ChangeBasisMyToNatural(data);
+    for (int i = 0; i < dim_; ++i) grad_c[i][c] = data(i + 1);
+  }
+
+  grad->ScatterMasterToGhosted("cell");
+
+  // limit gradient and save it to solution
+  Operators::LimiterCell limiter(mesh0_);
+  limiter.Init(limlist);
+  limiter.ApplyLimiter(u.ViewComponent("cell", true), 0, grad, bc_model, bc_value);
+
+  for (int c = 0; c < ncells_owned_; ++c) {
+    data(0) = u_c[0][c];
+    for (int i = 0; i < dim_; ++i) data(i + 1) = grad_c[i][c];
+    dg.cell_basis(c).ChangeBasisNaturalToMy(data);
+    for (int i = 0; i < nk; ++i) u_c[i][c] = data(i);
   }
 }
 
@@ -402,6 +552,12 @@ AmanziGeometry::Point RemapDG<AnalyticDG>::DeformNode(
   else if (deform == 5) {
     xv[0] += t * yv[0] * (1.0 - yv[0]) / 2;
     xv[1] += t * yv[1] * (1.0 - yv[1]) / 2;
+  }
+  else if (deform == 6) {
+    double phi = t * 2 * M_PI;
+    double cs(std::cos(phi)), sn(std::sin(phi));
+    xv[0] = cs * yv[0] - sn * yv[1];
+    xv[1] = sn * yv[0] + cs * yv[1];
   }
 
   return xv;

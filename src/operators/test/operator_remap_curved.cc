@@ -55,7 +55,7 @@ class MyRemapDG : public RemapDG<AnalyticDG04> {
   // geometric tools
   virtual void Jacobian(int c, double t, const WhetStone::MatrixPolynomial& J,
                         WhetStone::MatrixPolynomial& Jt) override;
-  virtual void UpdateGeometricQuantities(double t) override;
+  virtual void UpdateGeometricQuantities(double t, bool consistent_det = false) override;
 
   // mesh deformation from time 0 to t
   virtual void DeformMesh(int deform, double t) override;
@@ -137,7 +137,7 @@ void MyRemapDG::Jacobian(
 /* *****************************************************************
 * Calculates various geometric quantaties on intermediate meshes.
 ***************************************************************** */
-void MyRemapDG::UpdateGeometricQuantities(double t)
+void MyRemapDG::UpdateGeometricQuantities(double t, bool consistent_det)
 {
   // cn = j J^{-t} N dA
   WhetStone::VectorPolynomial cn;
@@ -168,7 +168,7 @@ void MyRemapDG::DeformMesh(int deform, double t)
 {
   RemapDG<AnalyticDG04>::DeformMesh(deform, t);
 
-  if (order_ == 2) {
+  if (order_ > 1) {
     int nfaces = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
     auto ho_nodes0 = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nfaces);
     auto ho_nodes1 = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nfaces);
@@ -265,6 +265,10 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
     std::string vel_projector = map_list.get<std::string>("projector");
     std::string map_name = map_list.get<std::string>("map name");
       
+    auto limiter_list = plist.sublist("limiter");
+    std::string limiter = limiter_list.get<std::string>("limiter");
+    std::string stencil = limiter_list.get<std::string>("limiter stencil", "default");
+
     std::cout << "\nTest: " << dim << "D remap, dual formulation:"
               << " mesh=" << ((ny == 0) ? file_name : "square")
               << " deform=" << deform << std::endl;
@@ -272,9 +276,12 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
     std::cout << "      discretization: order=" << order 
               << ", map=" << map_name << std::endl;
 
-    std::cout << "      map details: order=" << vel_order 
+    std::cout << "      map: order=" << vel_order 
               << ", projector=" << vel_projector 
               << ", method=\"" << vel_method << "\"" << std::endl;
+
+    std::cout << "      limiter: " << limiter
+              << ", stencil=\"" << stencil << "\"" << std::endl;
   }
 
   // create initial mesh
@@ -309,6 +316,19 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   AnalyticDG04 ana(mesh0, order, true);
   ana.InitialGuess(dg, p1c, 1.0);
 
+  // vizualize initial solution
+  {
+    Teuchos::ParameterList iolist;
+    iolist.get<std::string>("file name base", "plot");
+    OutputXDMF io(iolist, mesh0, true, false);
+
+    const Epetra_MultiVector& ptmp = *p1->ViewComponent("cell");
+
+    io.InitializeCycle(0.0, 0);
+    io.WriteVector(*ptmp(0), "solution");
+    io.FinalizeCycle();
+  }
+
   // initial mass
   double mass0(0.0);
   WhetStone::NumericalIntegration numi(mesh0);
@@ -325,7 +345,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   MyRemapDG remap(mesh0, mesh1, plist, T1);
   remap.DeformMesh(deform, T1);
   remap.Init();
-  remap.set_dt_output((nloop > 3) ? 0.5 : 0.1);
+  remap.set_dt_output(0.1);
 
   // explicit time integration
   CompositeVector p1aux(*p1);
@@ -352,6 +372,8 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
 
       t += dt;
       nstep++;
+
+      // remap.ApplyLimiter(dg, p1aux);
     }
   }
 
@@ -365,10 +387,6 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   CompositeVectorSpace cvs3;
   cvs3.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  CompositeVector q2(p2);
-  Epetra_MultiVector& q2c = *q2.ViewComponent("cell");
-  q2c = p2c;
-
   double pnorm, l2_err, inf_err, l20_err, inf0_err;
   ana.ComputeCellErrorRemap(dg, p2c, tend, 0, mesh1,
                             pnorm, l2_err, inf_err, l20_err, inf0_err);
@@ -380,8 +398,38 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
         nx, l20_err, l2_err, inf0_err, inf_err);
   }
 
+  // optional projection on the space of polynomials 
+  CompositeVector q2(p2);
+  Epetra_MultiVector& q2c = *q2.ViewComponent("cell");
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    const AmanziGeometry::Point& xc0 = mesh0->cell_centroid(c);
+    const AmanziGeometry::Point& xc1 = mesh1->cell_centroid(c);
+
+    WhetStone::DenseVector data(nk);
+    for (int i = 0; i < nk; ++i) data(i) = p2c[i][c];
+
+    if (order > 0 && order < 3 && dim == 2) {
+      auto poly = dg.cell_basis(c).CalculatePolynomial(mesh0, c, order, data);
+      remap.maps()->ProjectPolynomial(c, poly);
+      poly.ChangeOrigin(mesh1->cell_centroid(c));
+      for (int i = 0; i < nk; ++i) q2c[i][c] = poly(i);
+    }
+  }
+
+  // visualize solution on mesh1
+  Teuchos::ParameterList iolist;
+  iolist.get<std::string>("file name base", "plot");
+  OutputXDMF io(iolist, mesh1, true, false);
+
+  io.InitializeCycle(1.0, nstep);
+  io.WriteVector(*p2c(0), "solution");
+  io.WriteVector(*q2c(0), "projection");
+  io.FinalizeCycle();
+
   // conservation errors: mass and volume (CGL)
-  double area(0.0), area1(0.0), mass1(0.0), gcl_err(0.0), gcl_inf(0.0);
+  double area(0.0), area0(0.0), area1(0.0);
+  double mass1(0.0), gcl_err(0.0), gcl_inf(0.0);
   auto& jac = remap.jac();
 
   for (int c = 0; c < ncells_owned; ++c) {
@@ -389,7 +437,8 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
     double vol2 = mesh1->cell_volume(c);
 
     area += vol1;
-    area1 += vol2;
+    area0 += mesh0->cell_volume_linear(c);
+    area1 += mesh1->cell_volume_linear(c);
 
     double err = std::fabs(vol1 - vol2);
     gcl_inf = std::max(gcl_inf, err / vol1);
@@ -409,6 +458,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
 
   // parallel collective operations
   ana.GlobalOp("sum", &area, 1);
+  ana.GlobalOp("sum", &area0, 1);
   ana.GlobalOp("sum", &area1, 1);
   ana.GlobalOp("sum", &mass1, 1);
   ana.GlobalOp("sum", &gcl_err, 1);
@@ -416,19 +466,9 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
 
   if (MyPID == 0) {
     printf("Conservation: dMass=%10.4g  dVolume=%10.6g  dVolLinear=%10.6g\n",
-           mass1 - mass0, 1.0 - area, 1.0 - area1);
+           mass1 - mass0, area1 - area, area0 - area1);
     printf("GCL: L1=%12.8g  Inf=%12.8g\n", gcl_err, gcl_inf);
   }
-
-  // initialize I/O
-  Teuchos::ParameterList iolist;
-  iolist.get<std::string>("file name base", "plot");
-  OutputXDMF io(iolist, mesh1, true, false);
-
-  io.InitializeCycle(t, nstep);
-  io.WriteVector(*p2c(0), "remapped");
-  io.WriteVector(*q2c(0), "remapped-prj");
-  io.FinalizeCycle();
 }
 
 TEST(REMAP_CURVED_2D) {
@@ -438,6 +478,19 @@ TEST(REMAP_CURVED_2D) {
   std::string maps = "VEM";
   int deform = 1;
   RemapTestsCurved(rk_method, maps, "", 8,8,0, dT, deform, nloop, T1);
+
+  /*
+  int nloop = 40;
+  double dT(0.0025 * nloop), T1(1.0 / nloop);
+  auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
+  // auto rk_method = Amanzi::Explicit_TI::forward_euler;
+  std::string maps = "VEM";
+  int deform = 6;
+  RemapTestsCurved(rk_method, maps, "test/circle_quad10.exo", 10,0,0, dT,   deform, nloop, T1);
+  RemapTestsCurved(rk_method, maps, "test/circle_quad20.exo", 20,0,0, dT/2, deform, nloop, T1);
+  RemapTestsCurved(rk_method, maps, "test/circle_quad40.exo", 40,0,0, dT/4, deform, nloop, T1);
+  RemapTestsCurved(rk_method, maps, "test/circle_quad80.exo", 80,0,0, dT/8, deform, nloop, T1);
+  */
 
   /*
   int nloop = 5;
@@ -456,7 +509,7 @@ TEST(REMAP_CURVED_2D) {
   double dT(0.01 * nloop), T1(1.0 / nloop);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
-  int deform = 4;
+  int deform = 1;
   RemapTestsCurved(rk_method, maps, "test/median15x16.exo",    16,0,0, dT,   deform, nloop, T1);
   RemapTestsCurved(rk_method, maps, "test/median32x33.exo",    32,0,0, dT/2, deform, nloop, T1);
   RemapTestsCurved(rk_method, maps, "test/median63x64.exo",    64,0,0, dT/4, deform, nloop, T1);

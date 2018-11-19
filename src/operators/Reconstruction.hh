@@ -38,12 +38,6 @@ class Reconstruction {
                                                                     component_ = component; }
   virtual void ComputeGradient() = 0;
 
-  // apply either internal or external limiter
-  virtual void ApplyLimiter(const std::vector<int>& bc_model, const std::vector<double>& bc_values) {};
-  virtual void ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter) {};
-
-  virtual double getValue(int id, const AmanziGeometry::Point& p) = 0;
- 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<const Epetra_MultiVector> field_;

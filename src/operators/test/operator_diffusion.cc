@@ -65,7 +65,8 @@ void RunTestDiffusionMixed(int dim, double gravity) {
   RCP<const Mesh> mesh;
   if (dim == 2) {
     meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
-    mesh = meshfactory("test/median32x33.exo");
+    // mesh = meshfactory("test/median15x16.exo");
+    mesh = meshfactory("test/circle_quad10.exo");
   } else {
     meshfactory.preference(FrameworkPreference({AmanziMesh::Simple}));
     if (comm.NumProc() > 1) meshfactory.preference(FrameworkPreference({MSTK}));
@@ -92,23 +93,27 @@ void RunTestDiffusionMixed(int dim, double gravity) {
   std::vector<double>& bc_value = bc->bc_value();
   std::vector<double>& bc_mixed = bc->bc_mixed();
 
-  for (int f = 0; f < nfaces_wghost; f++) {
+  const auto& fmap = mesh->face_map(true);
+  const auto& bmap = mesh->exterior_face_map(true);
+
+  for (int bf = 0; bf < bmap.NumMyElements(); ++bf) {
+    int f = fmap.LID(bmap.GID(bf));
     const Point& xf = mesh->face_centroid(f);
     double area = mesh->face_area(f);
     bool flag;
     Point normal = ana.face_normal_exterior(f, &flag);
 
-    if (fabs(xf[0]) < 1e-6) {
+    if (xf[0] < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
-    } else if(fabs(xf[1]) < 1e-6) {
+    } else if(xf[1] < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_MIXED;
       bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
 
       double tmp = ana.pressure_exact(xf, 0.0);
       bc_mixed[f] = 1.0;
       bc_value[f] -= bc_mixed[f] * tmp;
-    } else if(fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+    } else {
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_value[f] = ana.pressure_exact(xf, 0.0);
     }

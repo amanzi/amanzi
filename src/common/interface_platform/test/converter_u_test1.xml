@@ -84,6 +84,8 @@
         <algorithm>explicit first-order</algorithm>
         <sub_cycling>on</sub_cycling>
         <cfl>1</cfl>
+        <limiter>Kuzmin</limiter>
+        <limiter_stencil>node-to-cells</limiter_stencil>
         <dispersion_linear_solver>
           <method>pcg</method>
           <max_iterations>222</max_iterations>

@@ -456,17 +456,21 @@ void Mesh_simple::build_maps_()
 
   std::vector<int> faces_bnd(num_faces_bnd_);
   int i = 0;
-  for (int iz=0; iz<nz_; iz++)
-    for (int iy=0; iy<ny_; iy++)
-      for (int ix=0; ix<nx_; ix++) {
-        if (iz == 0 || iz == nz_ - 1) {
-          faces_bnd[i++] = xyface_index_(ix,iy,iz);
-        } else if (iy == 0 || iy == ny_ - 1) {
-          faces_bnd[i++] = xzface_index_(ix,iy,iz);
-        } else if (ix == 0 || ix == nx_ - 1) {
-          faces_bnd[i++] = yzface_index_(ix,iy,iz);
-        }
-      } 
+  for (int ix=0; ix<nx_; ix++)
+    for (int iy=0; iy<ny_; iy++) {
+      faces_bnd[i++] = xyface_index_(ix,iy,0);
+      faces_bnd[i++] = xyface_index_(ix,iy,nz_);
+    }
+  for (int ix=0; ix<nx_; ix++)
+    for (int iz=0; iz<nz_; iz++) {
+      faces_bnd[i++] = xzface_index_(ix,0,iz);
+      faces_bnd[i++] = xzface_index_(ix,ny_,iz);
+    }
+  for (int iy=0; iy<ny_; iy++)
+    for (int iz=0; iz<nz_; iz++) {
+      faces_bnd[i++] = yzface_index_(0,iy,iz);
+      faces_bnd[i++] = yzface_index_(nx_,iy,iz);
+    }
 
   cell_map_ = new Epetra_Map(-1, num_cells_, &cells[0], 0, *epcomm_);
   face_map_ = new Epetra_Map(-1, num_faces_, &faces[0], 0, *epcomm_);

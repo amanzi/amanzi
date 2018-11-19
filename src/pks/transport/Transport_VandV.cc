@@ -176,7 +176,7 @@ void Transport_PK::VV_PrintLimiterStatistics()
       std::string& name = runtime_solutes_[n];
 
       if (FindComponentNumber(name) == current_component_) {
-        const Epetra_Vector& limiter = *lifting_->limiter();
+        const Epetra_Vector& limiter = *limiter_->limiter();
         double vmin(1e+99), vavg(0.0), vmax(-1e+99);
 
         for (int c = 0; c < ncells_owned; ++c) {

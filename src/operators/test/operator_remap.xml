@@ -31,8 +31,17 @@
     <Parameter name="map name" type="string" value="VEM"/>
   </ParameterList>
 
+  <!-- LIMITER -->
+  <ParameterList name="limiter">
+    <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
+    <Parameter name="polynomial order" type="int" value="1"/>
+    <Parameter name="limiter extension for transport" type="bool" value="false"/>
+    <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>
+  </ParameterList>
+
   <!--  OPERATORS: dual formulation -->
   <ParameterList name="PK operator">
+    <Parameter name="boundary conditions" type="string" value="none"/>
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
     <ParameterList name="flux operator">

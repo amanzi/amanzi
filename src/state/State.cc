@@ -143,6 +143,40 @@ State& State::operator=(const State& other) {
 };
 
 
+//  Assign a state's data from another state.  Note this
+// implementation requires the State being copied has the same structure (in
+// terms of fields, order of fields, etc) as *this.  This really means that
+// it should be a previously-copy-constructed version of the State.  One and
+// only one State should be instantiated and populated -- all other States
+// should be copy-constructed from that initial State.
+void State::AssignDomain(const State& other, const std::string& domain)
+{
+  if (this != &other) {
+    for (auto f_it : other.fields_) {
+      if (Keys::getDomain(f_it.first) == domain) {
+        auto myfield = GetField_(f_it.first);
+        auto otherfield = f_it.second;
+
+        if (myfield->type() == COMPOSITE_VECTOR_FIELD) {
+          myfield->SetData(*otherfield->GetFieldData());
+        } else if (myfield->type() == CONSTANT_VECTOR) {
+          myfield->SetData(*otherfield->GetConstantVectorData());
+        } else if (myfield->type() == CONSTANT_SCALAR) {
+          myfield->SetData(*otherfield->GetScalarData());
+        }
+      }
+    }
+
+    for (auto fm_it : other.field_evaluators_) {
+      if (Keys::getDomain(fm_it.first) == domain) {
+        auto myfm = GetFieldEvaluator_(fm_it.first);
+        *myfm = *fm_it.second;
+      }
+    }
+  }
+};
+
+
 // -----------------------------------------------------------------------------
 // State handles mesh management.
 // -----------------------------------------------------------------------------
@@ -1218,9 +1252,8 @@ void State::InitializeIOFlags_() {
 void WriteVis(const Teuchos::Ptr<Visualization>& vis,
               const Teuchos::Ptr<State>& S) {
   if (!vis->is_disabled()) {
-    // Create the new time step (internally we use seconds, but write the time in years).
-    //    vis->WriteMesh(S->time()/(365.25*24*60*60),S->cycle());
-    vis->CreateTimestep(S->time()/(365.25*24*60*60),S->cycle());
+    // Create the new time step
+    vis->CreateTimestep(S->time(), S->cycle());
 
     // Write all fields to the visualization file, the fields know if they
     // need to be written.

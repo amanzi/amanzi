@@ -10,6 +10,7 @@
            Ethan Coon (ecoon@lanl.gov)
 
   Visualization of data.
+
 */
 
 // TPLs
@@ -43,13 +44,16 @@ Visualization::Visualization (Teuchos::ParameterList& plist) :
 
   // Read the sublist for verbosity settings.
   Teuchos::readVerboseObjectSublist(&plist_,this);
+
+  my_units_ = plist_.get<std::string>("time units", "y");
+  ValidUnitOrThrow_(my_units_);
 }
 
 
 // -----------------------------------------------------------------------------
 // Constructor for a disabled Vis.
 // -----------------------------------------------------------------------------
-Visualization::Visualization () : IOEvent() {}
+Visualization::Visualization () : IOEvent(), my_units_("s") {}
 
 
 // -----------------------------------------------------------------------------
@@ -164,8 +168,12 @@ void Visualization::CreateFiles() {
 }
 
 
-void Visualization::CreateTimestep(const double& time, const int& cycle) {
-  visualization_output_->InitializeCycle(time,cycle);
+void Visualization::CreateTimestep(double time, int cycle) {
+  bool success = false;
+  time = units_.ConvertTime(time, "s", my_units_, success);
+  AMANZI_ASSERT(success);
+  
+  visualization_output_->InitializeCycle(time, cycle);
   if (write_mesh_exo_ && dynamic_mesh_) {
     std::stringstream mesh_fname;
     mesh_fname << plist_.get<std::string>("file name base") << "_mesh_" << cycle << ".exo";

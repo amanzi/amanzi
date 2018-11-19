@@ -48,17 +48,11 @@ include_directories(${WHETSTONE_SOURCE_DIR})
 add_definitions("-DMSTK_HAVE_MPI")
 
 #
-# Library: operator audit
-#
-add_amanzi_library(operators_audit 
-                   SOURCE OperatorAudit.cc 
-		   LINK_LIBS whetstone ${Epetra_LIBRARIES})
-
-#
 # Library: operators
 #
 set(operators_inc_files
     BCs.hh
+    LimiterCell.hh
     Mini_Diffusion1D.hh
     Mini_Operator1D.hh
     RemapUtils.hh
@@ -123,7 +117,8 @@ set(operators_inc_files
 )
 
 add_amanzi_library(operators 
-                   SOURCE Mini_Diffusion1D.cc
+                   SOURCE LimiterCell.cc
+                          Mini_Diffusion1D.cc
                           Mini_Operator1D.cc
                           OperatorUtils.cc
                           Operator.cc
@@ -154,7 +149,6 @@ add_amanzi_library(operators
                           Schema.cc
                           TreeOperator.cc
                           ReconstructionCell.cc
-                          ReconstructionCell_Limiters.cc
                           RemapUtils.cc
                           HEADERS ${operators_inc_files}
                    LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})                          
@@ -336,7 +330,7 @@ if (BUILD_TESTS)
     add_amanzi_test(operators_remap operators_remap
                     KIND unit
                     NPROCS 2
-                    SOURCE test/Main.cc test/operator_remap_dual.cc
+                    SOURCE test/Main.cc test/operator_remap.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(operators_remap_curved operators_remap_curved

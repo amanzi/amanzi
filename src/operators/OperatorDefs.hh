@@ -119,6 +119,12 @@ const int OPERATOR_LIMITER_KUZMIN = 3;
 const double OPERATOR_LIMITER_TOLERANCE = 1e-14;
 const double OPERATOR_LIMITER_INFINITY = 1e+99;
 
+ // stencil for calculating limiting bounds
+const int OPERATOR_LIMITER_STENCIL_N2C = 10;
+const int OPERATOR_LIMITER_STENCIL_F2C = 20;
+const int OPERATOR_LIMITER_STENCIL_C2C_CLOSEST = 30;
+const int OPERATOR_LIMITER_STENCIL_C2C_ALL = 31;
+
 }  // namespace Operators
 }  // namespace Amanzi
 

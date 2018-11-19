@@ -32,7 +32,6 @@
 // Amanzi::Operators
 #include "RemapDG.hh"
 
-#include "AnalyticDG01.hh"
 #include "AnalyticDG04.hh"
 
 namespace Amanzi {
@@ -190,6 +189,7 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   MyRemapDG remap(mesh0, mesh1, plist);
   remap.DeformMesh(deform, 1.0);
   remap.Init();
+  remap.InitTertiary(dg);
 
   // initial mass
   double mass0(0.0);
@@ -221,6 +221,8 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
 
     t += dt;
     nstep++;
+
+    // remap.ApplyLimiter(dg, p1aux);
   }
 
   remap.ChangeVariables(1.0, *p1, p2, false);
@@ -354,9 +356,10 @@ TEST(REMAP_DUAL_2D) {
 
   /*
   double dT(0.02);
-  auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
+  // auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
+  auto rk_method = Amanzi::Explicit_TI::forward_euler;
   std::string maps = "VEM";
-  int deform = 3;
+  int deform = 4;
   RemapTestsDualRK(rk_method, maps, "",  16, 16,0, dT,    deform);
   RemapTestsDualRK(rk_method, maps, "",  32, 32,0, dT/2,  deform);
   RemapTestsDualRK(rk_method, maps, "",  64, 64,0, dT/4,  deform);
@@ -368,7 +371,7 @@ TEST(REMAP_DUAL_2D) {
   double dT(0.02);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
-  int deform = 4;
+  int deform = 1;
   RemapTestsDualRK(rk_method, maps, "test/median15x16.exo",    16,0,0, dT,   deform);
   RemapTestsDualRK(rk_method, maps, "test/median32x33.exo",    32,0,0, dT/2, deform);
   RemapTestsDualRK(rk_method, maps, "test/median63x64.exo",    64,0,0, dT/4, deform);

@@ -41,19 +41,32 @@ The IOEvent is used for multiple objects that need to indicate simulation times 
     and the third is the stop time or -1, in which case there is no
     stop time. A visualization dump is written at such times that
     satisfy time = start + n*period, for n=0,1,2,... and time < stop
-    if stop != -1.0.  Note that all times units are in seconds.
+    if stop != -1.0.
 
+* `"times start period stop units`" ``string`` **s** 
+
+    Units corresponding to this spec.  One of `"s`", `"d`", `"yr`", or `"yr 365`"
+    
 * `"times start period stop 0`" ``[Array(double)]`` **optional**
 
     If multiple start period stop parameters are needed, then use this these
     parameters with N=0,1,2.  If one with 0 is found, then one with 1 is
-    looked for, etc, until the Nth one is not found.  Note that all times
-    units are in seconds.
+    looked for, etc, until the Nth one is not found.
+
+* `"times start period stop 0 units`" ``string`` **s** 
+
+    Units corresponding to this spec.  One of `"s`", `"d`", `"yr`", or `"yr 365`"
+    See above for continued integer listings.
 
 * `"times`" ``[Array(double)]`` **optional** 
 
     An array of discrete times that at which a visualization dump
-    shall be written.  Note that all times units are in seconds.
+    shall be written.
+
+* `"times units`" ``string`` **s** 
+
+    Units corresponding to this spec.  One of `"s`", `"d`", `"yr`", or `"yr 365`"
+    
  */
 
 #ifndef AMANZI_STATE_IO_EVENT_HH_
@@ -61,6 +74,8 @@ The IOEvent is used for multiple objects that need to indicate simulation times 
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
+
+#include "Units.hh"
 
 namespace Amanzi {
 
@@ -82,8 +97,11 @@ class IOEvent : public Teuchos::VerboseObject<IOEvent> {
 
  protected:
   void ReadParameters_();
+  void ValidUnitOrThrow_(const std::string&);
 
   Teuchos::ParameterList plist_;
+
+  Utils::Units units_;
 
   // Time step control -- when to do this i/o?
   Teuchos::Array<int> cycles_;

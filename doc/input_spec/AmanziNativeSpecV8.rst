@@ -1625,6 +1625,11 @@ This modification is referred to as a submodel and requires additional parameter
     It employs a smooth transition from the infiltration 
     to mixed boundary condition. The recommended value is `"PFloTran`".
 
+  * `"seepage flux threshold`" [double] sets up the threshold for switching from the pressure 
+    to influx boundary condition in submodel `"PFloTran`". The pressure condition remains 
+    for a small influx value until it exceeds the certain fraction of the `"mass flux`" specified 
+    by this parameter. The admissible range is from 0 to 0.1. Default value is 0. 
+
 Each boundary condition accepts three parameters: `"regions`", 
 `"use area fractions`", and `"spatial distribution method`". Parameter `"regions`"
 specifies the list of regions where the boundary condition is defined. 
@@ -4056,6 +4061,17 @@ and their extensions for various PKs.
  * `"limiter`" [string] specifies limiting method. Available options are 
    `"Barth-Jespersen`" (default), `"tensorial`", and `"Kuzmin`". 
 
+ * `"limiter stencil`" [string] specifies stencil for calculating local bounds. Available 
+   options are `"face to cells`", `"cell to closets cells`", `"cell to all cells`",
+   and `"node to cells`".
+   For a square mesh, the above options define stencils of size 2, 5, 9, and 4,
+   respectively.
+   Option `"face to cells`" is default for `"Barth-Jespersen`" and `"tensorial`".
+   Option `"node to cells`" is default for `"Kuzmin`".
+
+ * `"use external bounds`" [bool] specifies if bounds for limiters are provided by 
+   the hosting application. Default is `"false`".`
+
  * `"limiter extension for transport`" [bool] adds additional corrections to 
    limiters required by the transport PK. Default value is *false*.
 
@@ -4066,6 +4082,7 @@ and their extensions for various PKs.
     <Parameter name="polynomial order" type="int" value="1"/>
     <Parameter name="limiter" type="string" value="tensorial"/>
     <Parameter name="limiter extension for transport" type="bool" value="false"/>
+    <Parameter name="limiter stencil" type="string" value="face to cells"/>
   </ParameterList>
 
 

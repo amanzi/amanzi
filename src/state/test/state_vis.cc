@@ -27,59 +27,6 @@
 
 
 SUITE(VISUALIZATION) {
-
-  TEST(VIZ_DUMP_REQUIRED) {
-    Teuchos::ParameterList plist;
-
-    plist.set<std::string>("file name base", "visdump");
-    plist.set<int>("file name digits", 5);
-
-    Teuchos::Array<int> csps(3);
-    csps[0] = 0;
-    csps[1] = 4;
-    csps[2] = 10;
-    plist.set<Teuchos::Array<int> >("cycles start period stop", csps);
-    
-    Teuchos::Array<double> tsps(3);
-    tsps[0] = 0.0;
-    tsps[1] = 4.0;
-    tsps[2] = 10.0;
-    plist.set<Teuchos::Array<double> >("times start period stop", tsps);    
-
-    Teuchos::Array<double> times(2);
-    times[0] = 1.0;
-    times[1] = 3.0;
-    plist.set<Teuchos::Array<double> >("times", times);
-
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
-    Amanzi::Visualization V(plist);
-
-    // test the cycle stuff, the expected result is in cycles_ and 
-    // we store the computed result in cycles
-    int cycles_[31] = {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0,
-                       0, 0, 0, 0,
-                       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    int cycles[31];
-    for (int ic = 0; ic <= 30; ic++) {
-      cycles[ic] = V.DumpRequested(ic);
-    }
-    CHECK_ARRAY_EQUAL(cycles_, cycles, 31);
-
-    // test the time sps stuff
-    CHECK_EQUAL(true, V.DumpRequested(0.0));
-    CHECK_EQUAL(true, V.DumpRequested(1.0));
-    CHECK_EQUAL(true, V.DumpRequested(3.0));
-    CHECK_EQUAL(true, V.DumpRequested(4.0));
-    CHECK_EQUAL(true, V.DumpRequested(8.0));
-    
-    CHECK_EQUAL(false, V.DumpRequested(0.5));
-    CHECK_EQUAL(false, V.DumpRequested(1.1));
-    CHECK_EQUAL(false, V.DumpRequested(3.2));
-    CHECK_EQUAL(false, V.DumpRequested(3.99));
-    CHECK_EQUAL(false, V.DumpRequested(10.0));    
-  }
-
-
   TEST(DUMP_MESH_AND_DATA) {
     // here we just check that the code does not crash when 
     // the mesh and data files are written

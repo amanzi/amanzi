@@ -10,7 +10,6 @@
 */
 
 #include "LinearOperatorFactory.hh"
-// #include "OperatorAudit.hh"
 #include "OperatorDefs.hh"
 #include "PDE_Diffusion.hh"
 #include "PDE_DiffusionFactory.hh"

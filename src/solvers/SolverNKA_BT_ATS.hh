@@ -249,7 +249,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
   residual_ = error;
   res->Norm2(&l2_error);
 
-  if (vo_->os_OK(Teuchos::VERB_LOW)) {
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
     *vo_->os() << num_itrs_ << ": error(res) = " << error << std::endl
                << num_itrs_ << ": L2 error(res) = " << l2_error << std::endl;
   }
@@ -366,7 +366,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
           
           residual_ = error;
           res->Norm2(&l2_error);
-          if (vo_->os_OK(Teuchos::VERB_LOW)) {
+          if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
             *vo_->os() << num_itrs_ << ": NKA "
                        << ": error(res) = " << error << std::endl
                        << num_itrs_ << ": NKA "
@@ -421,7 +421,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
 
                 residual_ = error;
                 res->Norm2(&l2_error);
-                if (vo_->os_OK(Teuchos::VERB_LOW)) {
+                if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
                   *vo_->os() << num_itrs_ << ": PIC "
                              << ": error(res) = " << error << std::endl
                              << num_itrs_ << ": PIC "
@@ -471,7 +471,7 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
             
             residual_ = error;
             res->Norm2(&l2_error);
-            if (vo_->os_OK(Teuchos::VERB_LOW)) {
+            if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
               *vo_->os() << num_itrs_ << ": backtrack " << n_backtrack
                          << ": error(res) = " << error << std::endl
                          << num_itrs_ << ": backtrack " << n_backtrack

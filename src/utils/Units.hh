@@ -16,14 +16,14 @@
 #include <cstdio>
 #include <iomanip>
 
-#include <boost/units/scaled_base_unit.hpp>
-#include <boost/units/derived_dimension.hpp>
-#include <boost/units/io.hpp>
-#include <boost/units/make_scaled_unit.hpp>
-#include <boost/units/make_system.hpp>
-#include <boost/units/systems/si.hpp>
-#include <boost/units/quantity.hpp>
-#include <boost/units/unit.hpp>
+#include "boost/units/scaled_base_unit.hpp"
+#include "boost/units/derived_dimension.hpp"
+#include "boost/units/io.hpp"
+#include "boost/units/make_scaled_unit.hpp"
+#include "boost/units/make_system.hpp"
+#include "boost/units/systems/si.hpp"
+#include "boost/units/quantity.hpp"
+#include "boost/units/unit.hpp"
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -168,6 +168,9 @@ class Units {
   double ConvertConcentration(double val, const std::string& in_unit,
                               const std::string& out_unit, double mol_mass, bool& flag);
 
+  double ConvertTemperature(double val, const std::string& in_unit,
+                            const std::string& out_unit, bool& flag);
+  
   double ConvertUnitD(double val, const std::string& in_unit,
                       const std::string& out_unit, double mol_mass, bool& flag);
 
@@ -181,6 +184,62 @@ class Units {
   std::string OutputLength(double val) const;
   std::string OutputConcentration(double val);
 
+  // error checking
+  bool IsValidTime(const std::string& unit) const {
+    return time_.find(unit) != time_.end();
+  }
+  std::string ValidTimeStrings() const {
+    std::stringstream valids;
+    for (auto v : time_) valids << "\"" << v.first << "\",";
+    auto valids_str = valids.str();
+    valids_str.pop_back(); // remove the last comma
+    return valids_str;
+  }
+      
+  bool IsValidMass(const std::string& unit) const {
+    return mass_.find(unit) != mass_.end();
+  }
+  std::string ValidMassStrings() const {
+    std::stringstream valids;
+    for (auto v : mass_) valids << "\"" << v.first << "\",";
+    auto valids_str = valids.str();
+    valids_str.pop_back(); // remove the last comma
+    return valids_str;
+  }
+
+  bool IsValidLength(const std::string& unit) const {
+    return length_.find(unit) != length_.end();
+  }
+  std::string ValidLengthStrings() const {
+    std::stringstream valids;
+    for (auto v : length_) valids << "\"" << v.first << "\",";
+    auto valids_str = valids.str();
+    valids_str.pop_back(); // remove the last comma
+    return valids_str;
+  }
+
+  bool IsValidConcentration(const std::string& unit) const {
+    return concentration_.find(unit) != concentration_.end();
+  }
+  std::string ValidConcentrationStrings() const {
+    std::stringstream valids;
+    for (auto v : concentration_) valids << "\"" << v.first << "\",";
+    auto valids_str = valids.str();
+    valids_str.pop_back(); // remove the last comma
+    return valids_str;
+  }
+
+  bool IsValidTemperature(const std::string& unit) const {
+    return temperature_.find(unit) != temperature_.end();
+  }
+  std::string ValidTemperatureStrings() const {
+    std::stringstream valids;
+    for (auto v : temperature_) valids << "\"" << v.first << "\",";
+    auto valids_str = valids.str();
+    valids_str.pop_back(); // remove the last comma
+    return valids_str;
+  }
+  
   // access
   UnitsSystem& system() { return system_; }
 
@@ -204,6 +263,7 @@ class Units {
   // default Amanzi's units
   UnitsSystem system_;
 };
+
 
 }  // namespace Utils
 }  // namespace Amanzi

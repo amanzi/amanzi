@@ -34,7 +34,7 @@ class Matrix {
     return Teuchos::rcp(new Matrix(*this));
   }
     
-  // 5-point FD stensil
+  // 5-point FD stencil
   virtual int Apply(const Epetra_Vector& v, Epetra_Vector& mv) const { 
     int n = std::pow(v.Map().NumMyElements(), 0.5);
     for (int i = 0; i < n; i++) {
@@ -57,7 +57,7 @@ class Matrix {
     return 0;
   }
 
-  // 3-point FD stensil
+  // 3-point FD stencil
   void Init() {
     int n = map_->NumMyElements();
     A_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *map_, *map_, 3));
