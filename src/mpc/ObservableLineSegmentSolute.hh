@@ -120,25 +120,25 @@ void ObservableLineSegmentSolute::InterpolatedValues(State& S,
   if (interpolation == "linear") {
     Teuchos::ParameterList plist;
     Operators::ReconstructionCell lifting(mesh_);
-    std::vector<AmanziGeometry::Point> gradient; 
       
     cv->ScatterMasterToGhosted();
 
     lifting.Init(vector, plist, tcc_index_);
-    lifting.ComputeGradient(ids, gradient);
+    lifting.ComputeGradient(ids);
 
     if (limiter_) {
-      // At the moment only Kuzmin limiter is implemented for observ.
       plist.set<std::string>("limiter", "Kuzmin");
+      std::vector<int> bc_model;
+      std::vector<double> bc_value;
 
       Operators::LimiterCell limiter(mesh_); 
       limiter.Init(plist);
-      limiter.ApplyLimiter(ids, vector, 0, gradient);
+      limiter.ApplyLimiter(ids, vector, 0, lifting.gradient(), bc_model, bc_value);
     }
     
     for (int i = 0; i < ids.size(); i++) {
       int c = ids[i];
-      values[i] = lifting.getValue(gradient[i], c, line_pnts[i]);
+      values[i] = lifting.getValue(c, line_pnts[i]);
     }
 
   } else if (interpolation == "constant") {    

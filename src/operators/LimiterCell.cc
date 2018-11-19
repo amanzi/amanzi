@@ -60,8 +60,6 @@ void LimiterCell::Init(Teuchos::ParameterList& plist,
   if (flux_ != Teuchos::null) IdentifyUpwindCells_();
 
   // process parameters for limiters
-  bc_scaling_ = 0.0;
-
   std::string stencil;
   std::string name = plist.get<std::string>("limiter", "Barth-Jespersen");
   limiter_id_ = 0;
@@ -94,6 +92,7 @@ void LimiterCell::Init(Teuchos::ParameterList& plist,
 * Apply internal limiter.
 ****************************************************************** */
 void LimiterCell::ApplyLimiter(
+    const AmanziMesh::Entity_ID_List& ids,
     Teuchos::RCP<const Epetra_MultiVector> field, int component,
     const Teuchos::RCP<CompositeVector>& gradient,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value)
@@ -109,14 +108,14 @@ void LimiterCell::ApplyLimiter(
 
   limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
   if (limiter_id_ == OPERATOR_LIMITER_BARTH_JESPERSEN) {
-    LimiterBarthJespersen_(bc_model, bc_value, limiter_);
+    LimiterBarthJespersen_(ids, bc_model, bc_value, limiter_);
     ApplyLimiter(limiter_);
   }
   else if (limiter_id_ == OPERATOR_LIMITER_TENSORIAL) {
-    LimiterTensorial_(bc_model, bc_value);
+    LimiterTensorial_(ids, bc_model, bc_value);
   } 
   else if (limiter_id_ == OPERATOR_LIMITER_KUZMIN) {
-    LimiterKuzmin_(bc_model, bc_value);
+    LimiterKuzmin_(ids, bc_model, bc_value);
   }
 }
 
@@ -136,30 +135,12 @@ void LimiterCell::ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter)
 }
 
 
-/* ******************************************************************
-* Apply internal limiter over set of cells.
-****************************************************************** */
-void LimiterCell::ApplyLimiter(
-    AmanziMesh::Entity_ID_List& ids,
-    Teuchos::RCP<const Epetra_MultiVector> field, int component,
-    std::vector<AmanziGeometry::Point>& gradient) 
-{
-  field_ = field;
-  component_ = component;
-
-  if (limiter_id_ == OPERATOR_LIMITER_KUZMIN) {
-    LimiterKuzminSet_(ids, gradient);   
-  } else {
-    AMANZI_ASSERT(0);
-  }
-}
-
-
 /* *******************************************************************
 * Tensorial limiter limits the gradient directly, to avoid 
 * calculation of a 3x3 matrix.
 ******************************************************************* */
 void LimiterCell::LimiterTensorial_(
+    const AmanziMesh::Entity_ID_List& ids,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value)
 {
   AMANZI_ASSERT(upwind_cells_.size() > 0);
@@ -181,7 +162,8 @@ void LimiterCell::LimiterTensorial_(
   else 
     BoundsForCells(bc_model, bc_value, stencil_id_, true);
   
-  for (int c = 0; c < ncells_owned; c++) {
+  for (int n = 0; n < ids.size(); ++n) {
+    int c = ids[n];
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
@@ -222,7 +204,7 @@ void LimiterCell::LimiterTensorial_(
     }
 
     double grad_norm = norm(gradient_c1);
-    if (grad_norm < OPERATOR_LIMITER_TOLERANCE * bc_scaling_) gradient_c1.set(0.0);
+    if (grad_norm < OPERATOR_LIMITER_TOLERANCE) gradient_c1.set(0.0);
 
     for (int i = 0; i < dim; i++) grad[i][c] = gradient_c1[i];
   }
@@ -309,6 +291,7 @@ void LimiterCell::LimiterExtensionTransportTensorial_()
 * time step estimate.
 ******************************************************************* */
 void LimiterCell::LimiterBarthJespersen_(
+    const AmanziMesh::Entity_ID_List& ids,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value,
     Teuchos::RCP<Epetra_Vector> limiter)
 {
@@ -325,9 +308,8 @@ void LimiterCell::LimiterBarthJespersen_(
   else 
     BoundsForCells(bc_model, bc_value, stencil_id_, true);
   
-  for (int c = 0; c < ncells_owned; c++) {
-    // umin = bounds_c[0][c];
-    // umax = bounds_c[1][c];
+  for (int n = 0; n < ids.size(); ++n) {
+    int c = ids[n];
     u1 = (*field_)[component_][c];
     double tol = sqrt(OPERATOR_LIMITER_TOLERANCE) * fabs(u1);
 
@@ -425,6 +407,7 @@ void LimiterCell::LimiterExtensionTransportBarthJespersen_(
 * Kuzmin's limiter use all neighbors of a computational cell.  
 ******************************************************************* */
 void LimiterCell::LimiterKuzmin_(
+    const AmanziMesh::Entity_ID_List& ids,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value)
 {
   Epetra_MultiVector& grad = *gradient_->ViewComponent("cell", false);
@@ -438,7 +421,8 @@ void LimiterCell::LimiterKuzmin_(
   field_node_min.assign(nnodes_wghost,  OPERATOR_LIMITER_INFINITY);
   field_node_max.assign(nnodes_wghost, -OPERATOR_LIMITER_INFINITY);
 
-  for (int c = 0; c < ncells_wghost; c++) {
+  for (int n = 0; n < ids.size(); ++n) {
+    int c = ids[n];
     mesh_->cell_get_nodes(c, &nodes);
 
     double value = (*field_)[component_][c];
@@ -534,49 +518,6 @@ void LimiterCell::LimiterKuzmin_(
 }
 
 
-
-/* *******************************************************************
-* Kuzmin's limiter over a subset of cells.  
-******************************************************************* */
-void LimiterCell::LimiterKuzminSet_(AmanziMesh::Entity_ID_List& ids,
-                                    std::vector<AmanziGeometry::Point>& gradient)
-{
-  // Step 1: local extrema are calculated here at nodes and updated later
-  std::vector<double> field_node_min(nnodes_wghost);
-  std::vector<double> field_node_max(nnodes_wghost);
-
-  AmanziMesh::Entity_ID_List nodes;
-
-  field_node_min.assign(nnodes_wghost,  OPERATOR_LIMITER_INFINITY);
-  field_node_max.assign(nnodes_wghost, -OPERATOR_LIMITER_INFINITY);
-  bc_scaling_ = 1.0;
-
-  for (int c = 0; c < ncells_wghost; ++c) {
-    mesh_->cell_get_nodes(c, &nodes);
-    double value = (*field_)[component_][c];
-    for (int i = 0; i < nodes.size(); ++i) {
-      int v = nodes[i];
-      field_node_min[v] = std::min(field_node_min[v], value);
-      field_node_max[v] = std::max(field_node_max[v], value);
-    }
-  }
-
-  for (int k = 0; k < ids.size(); ++k) {
-    int c = ids[k];
-    mesh_->cell_get_nodes(c, &nodes);
-    int nnodes = nodes.size();
-    std::vector<double> field_min_cell(nnodes), field_max_cell(nnodes);
-
-    for (int i = 0; i < nnodes; i++) {
-      int v = nodes[i];
-      field_min_cell[i] = field_node_min[v];
-      field_max_cell[i] = field_node_max[v];
-    }
-    LimiterKuzminCell_(c, gradient[k], field_min_cell, field_max_cell);
-  }
-}
-
-
 /* *******************************************************************
 * Kuzmin's limiter use all neighbors of the given cell and limit 
 * gradient in this cell only.  
@@ -631,7 +572,7 @@ void LimiterCell::LimiterKuzminCell_(int cell,
     if (normals.size() == 0) break;  // No limiters were imposed.
   
     double grad_norm = norm(gradient_c);
-    if (grad_norm < OPERATOR_LIMITER_TOLERANCE * bc_scaling_) gradient_c.set(0.0);
+    if (grad_norm < OPERATOR_LIMITER_TOLERANCE) gradient_c.set(0.0);
   }
 }
 

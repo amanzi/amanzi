@@ -42,11 +42,15 @@ class ReconstructionCell : public Reconstruction {
 
   // unlimited gradient
   // -- compute gradient and keep it internally
-  virtual void ComputeGradient() override;
+  virtual void ComputeGradient() override {
+    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+    AmanziMesh::Entity_ID_List ids(ncells_wghost);
+    for (int c = 0; c < ncells_wghost; ++c) ids[c] = c;
+    ComputeGradient(ids);
+  }
 
   // -- compute gradient only in specified cells
-  void ComputeGradient(const AmanziMesh::Entity_ID_List& ids,
-                       std::vector<AmanziGeometry::Point>& gradient);
+  void ComputeGradient(const AmanziMesh::Entity_ID_List& ids);
 
   // calculate value of a linear function at point p
   double getValue(int c, const AmanziGeometry::Point& p);

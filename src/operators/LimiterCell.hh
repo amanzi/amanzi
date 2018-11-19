@@ -43,15 +43,20 @@ class LimiterCell {
   // -- limit gradient using boundary data
   void ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field, int component,
                     const Teuchos::RCP<CompositeVector>& gradient,
+                    const std::vector<int>& bc_model, const std::vector<double>& bc_value) {
+    AmanziMesh::Entity_ID_List ids(ncells_wghost);
+    for (int c = 0; c < ncells_wghost; ++c) ids[c] = c;
+    ApplyLimiter(ids, field, component, gradient, bc_model, bc_value); 
+  }
+
+  // -- apply limiter in specified cells
+  void ApplyLimiter(const AmanziMesh::Entity_ID_List& ids,
+                    Teuchos::RCP<const Epetra_MultiVector> field, int component,
+                    const Teuchos::RCP<CompositeVector>& gradient,
                     const std::vector<int>& bc_model, const std::vector<double>& bc_value);
 
   // -- apply external limiter 
   void ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter);
-
-  // -- apply limiter in specified cells
-  void ApplyLimiter(AmanziMesh::Entity_ID_List& ids,
-                    Teuchos::RCP<const Epetra_MultiVector> field, int component,
-                    std::vector<AmanziGeometry::Point>& gradient);
 
   // bounds: if reset=true they are recalculated 
   void BoundsForCells(const std::vector<int>& bc_model,
@@ -75,22 +80,18 @@ class LimiterCell {
  
  private:
   // internal limiters and supporting routines
-  void LimiterBarthJespersenFace_(
-      const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-      Teuchos::RCP<Epetra_Vector> limiter);
-
   void LimiterBarthJespersen_(
+      const AmanziMesh::Entity_ID_List& ids,
       const std::vector<int>& bc_model, const std::vector<double>& bc_value,
       Teuchos::RCP<Epetra_Vector> limiter);
 
   void LimiterTensorial_(
+      const AmanziMesh::Entity_ID_List& ids,
       const std::vector<int>& bc_model, const std::vector<double>& bc_value);
 
   void LimiterKuzmin_(
+      const AmanziMesh::Entity_ID_List& ids,
       const std::vector<int>& bc_model, const std::vector<double>& bc_value);
-
-  void LimiterKuzminSet_(AmanziMesh::Entity_ID_List& ids,
-                         std::vector<AmanziGeometry::Point>& gradient);
 
   void LimiterKuzminCell_(int cell,
                           AmanziGeometry::Point& gradient_c,
@@ -129,7 +130,6 @@ class LimiterCell {
   std::vector<std::vector<int> > upwind_cells_;  // fracture friendly 
   std::vector<std::vector<int> > downwind_cells_;
 
-  double bc_scaling_;
   int limiter_id_, stencil_id_;
   bool limiter_correction_, external_bounds_;
 };

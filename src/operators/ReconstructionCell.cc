@@ -54,7 +54,7 @@ void ReconstructionCell::Init(Teuchos::RCP<const Epetra_MultiVector> field,
 * Gradient of linear reconstruction is based on stabilized 
 * least-square fit.
 ****************************************************************** */
-void ReconstructionCell::ComputeGradient()
+void ReconstructionCell::ComputeGradient(const AmanziMesh::Entity_ID_List& ids)
 {
   Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
   AmanziMesh::Entity_ID_List cells;
@@ -103,60 +103,6 @@ void ReconstructionCell::ComputeGradient()
   }
 
   gradient_->ScatterMasterToGhosted("cell");
-}
-
-
-/* ******************************************************************
-* Special implementation of ComputeGradient(). The gradient is computed 
-* only in specied cells and internal structures are not modified.
-****************************************************************** */
-void ReconstructionCell::ComputeGradient(
-    const AmanziMesh::Entity_ID_List& ids,
-    std::vector<AmanziGeometry::Point>& gradient)
-{
-  AmanziMesh::Entity_ID_List cells;
-  AmanziGeometry::Point xcc(dim), grad(dim);
-
-  WhetStone::DenseMatrix matrix(dim, dim);
-  WhetStone::DenseVector rhs(dim);
-
-  gradient.clear();
-  for (auto it = ids.begin(); it != ids.end(); ++it) {
-    int c = *it;
-    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-
-    mesh_->cell_get_face_adj_cells(c, AmanziMesh::Parallel_type::ALL, &cells);
-    int ncells = cells.size();
-
-    matrix.PutScalar(0.0);
-    rhs.PutScalar(0.0);
-
-    for (int n = 0; n < ncells; n++) {
-      const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(cells[n]);
-      for (int i = 0; i < dim; i++) xcc[i] = xc2[i] - xc[i];
-
-      double value = (*field_)[component_][cells[n]] - (*field_)[component_][c];
-      PopulateLeastSquareSystem_(xcc, value, matrix, rhs);
-    }
-
-    // improve robustness w.r.t degenerate matrices
-    double det = matrix.Det();
-    double norm = matrix.NormInf();
-
-    if (det < pow(norm, 1.0/dim)) {
-      norm *= OPERATOR_RECONSTRUCTION_MATRIX_CORRECTION;
-      for (int i = 0; i < dim; i++) matrix(i, i) += norm;
-    }
-
-    int info, nrhs = 1;
-    WhetStone::DPOSV_F77("U", &dim, &nrhs, matrix.Values(), &dim, rhs.Values(), &dim, &info);
-    if (info) {  // reduce reconstruction order
-      for (int i = 0; i < dim; i++) rhs(i) = 0.0;
-    }
-
-    for (int i = 0; i < dim; i++) grad[i] = rhs(i);
-    gradient.push_back(grad);
-  }
 }
 
 
