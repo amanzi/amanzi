@@ -22,7 +22,7 @@ class UnfrozenEffectiveDepthEvaluator : public SecondaryVariableFieldEvaluator {
  public:
   explicit
   UnfrozenEffectiveDepthEvaluator(Teuchos::ParameterList& plist);
-  UnfrozenEffectiveDepthEvaluator(const UnfrozenEffectiveDepthEvaluator& other);
+  UnfrozenEffectiveDepthEvaluator(const UnfrozenEffectiveDepthEvaluator& other) = default;
   Teuchos::RCP<FieldEvaluator> Clone() const;
 
   // Required methods from SecondaryVariableFieldEvaluator
@@ -34,6 +34,7 @@ class UnfrozenEffectiveDepthEvaluator : public SecondaryVariableFieldEvaluator {
 protected:
   Key uf_key_;
   Key depth_key_;
+  double alpha_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,UnfrozenEffectiveDepthEvaluator> fac_;
