@@ -62,7 +62,7 @@ class MyRemapDG : public RemapDG<AnalyticDG04> {
 void MyRemapDG::ChangeVariables(
     double t, const CompositeVector& p1, CompositeVector& p2, bool flag)
 {
-  UpdateGeometricQuantities(t);
+  UpdateGeometricQuantities(t, consistent_jac_);
   op_reac_->Setup(jac_);
   op_reac_->UpdateMatrices(Teuchos::null);
 

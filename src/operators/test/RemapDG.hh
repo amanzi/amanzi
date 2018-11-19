@@ -63,7 +63,7 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   // -- various geometric quantities
   virtual void Jacobian(int c, double t, const WhetStone::MatrixPolynomial& J,
                         WhetStone::MatrixPolynomial& Jt);
-  virtual void UpdateGeometricQuantities(double t, bool consistent_det = false);
+  virtual void UpdateGeometricQuantities(double t, bool consistent_det);
 
   // limiters
   void ApplyLimiter(const Amanzi::WhetStone::DG_Modal& dg, CompositeVector& u); 
@@ -85,7 +85,7 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
 
   const Teuchos::ParameterList plist_;
   std::shared_ptr<WhetStone::MeshMaps> maps_;
-  bool high_order_velocity_;
+  bool high_order_velocity_, consistent_jac_;
 
   // operators
   int order_;
@@ -94,6 +94,7 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   Teuchos::RCP<Operators::PDE_Reaction>op_reac_;
   
   int bc_type_;
+  std::string smoothness_;
 
   // geometric data
   std::vector<WhetStone::VectorPolynomial> uc_;
@@ -137,10 +138,14 @@ RemapDG<AnalyticDG>::RemapDG(
   order_ = plist_.sublist("PK operator")
                  .sublist("flux operator").template get<int>("method order");
 
+  // other control variable
   bc_type_ = Operators::OPERATOR_BC_NONE;
-  auto name = plist_.sublist("PK operator").template get<std::string>("boundary conditions");
+  std::string name = plist_.sublist("PK operator").template get<std::string>("boundary conditions");
   if (name == "remove")
     bc_type_ = Operators::OPERATOR_BC_REMOVE;
+
+  consistent_jac_ = plist_.sublist("PK operator").template get<bool>("consistent jacobian");
+  smoothness_ = plist_.sublist("limiter").get<std::string>("smoothness indicator");
 
   // miscallateous
   tprint_ = 0.0;
@@ -313,7 +318,7 @@ void RemapDG<AnalyticDG>::InitTertiary(const Amanzi::WhetStone::DG_Modal& dg)
 template<class AnalyticDG>
 void RemapDG<AnalyticDG>::FunctionalTimeDerivative(
     double t, const CompositeVector& u, CompositeVector& f) {
-  UpdateGeometricQuantities(t);
+  UpdateGeometricQuantities(t, consistent_jac_);
 
   // -- populate operators
   op_adv_->SetupPolyVector(velc_);

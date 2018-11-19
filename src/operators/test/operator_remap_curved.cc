@@ -55,7 +55,7 @@ class MyRemapDG : public RemapDG<AnalyticDG04> {
   // geometric tools
   virtual void Jacobian(int c, double t, const WhetStone::MatrixPolynomial& J,
                         WhetStone::MatrixPolynomial& Jt) override;
-  virtual void UpdateGeometricQuantities(double t, bool consistent_det = false) override;
+  virtual void UpdateGeometricQuantities(double t, bool consistent_det) override;
 
   // mesh deformation from time 0 to t
   virtual void DeformMesh(int deform, double t) override;
@@ -191,7 +191,7 @@ void MyRemapDG::DeformMesh(int deform, double t)
 void MyRemapDG::ChangeVariables(
     double t, const CompositeVector& p1, CompositeVector& p2, bool flag)
 {
-  UpdateGeometricQuantities(t);
+  UpdateGeometricQuantities(t, consistent_jac_);
   op_reac_->Setup(jac_);
   op_reac_->UpdateMatrices(Teuchos::null);
 
@@ -483,7 +483,6 @@ TEST(REMAP_CURVED_2D) {
   int nloop = 40;
   double dT(0.0025 * nloop), T1(1.0 / nloop);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
-  // auto rk_method = Amanzi::Explicit_TI::forward_euler;
   std::string maps = "VEM";
   int deform = 6;
   RemapTestsCurved(rk_method, maps, "test/circle_quad10.exo", 10,0,0, dT,   deform, nloop, T1);
