@@ -13,8 +13,8 @@
   2. Limiters are modified optionally so the the stable time step
      of first-order scheme is reduce not more than twice. This
      step requires to specify a face-based flux field.
-  3. At the moment, we require the input field to have valid values
-     in ghost cells. 
+  3. At the moment, we require the input field and boundary data
+     to have valid values in ghost positions.
 */
 
 #ifndef AMANZI_LIMITER_CELL_HH_

@@ -13,8 +13,8 @@
   2. Limiters are modified optionally so the the stable time step
      of first-order scheme is reduce not more than twice. This
      step requires to specify a face-based flux field.
-  3. At the moment, we require the input field to have valid values
-     in ghost cells. 
+  3. At the moment, we require the input field and boundary data
+     to have valid values in ghost positions.
 */
 
 #include <algorithm>
@@ -136,8 +136,6 @@ void LimiterCell::ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter)
   for (int c = 0; c < ncells_owned; c++) {
     for (int i = 0; i < dim; i++) (*grad)[i][c] *= (*limiter)[0][c];
   }
-
-  gradient_->ScatterMasterToGhosted("cell");
 }
 
 
@@ -217,8 +215,6 @@ void LimiterCell::LimiterTensorial_(
     BoundsForCells(bc_model, bc_value, OPERATOR_LIMITER_STENCIL_C2C_CLOSEST, true);
     LimiterExtensionTransportTensorial_();
   }    
-
-  gradient_->ScatterMasterToGhosted("cell");
 
   // approximate estimate of scalar limiter (mainly for statistics)
   for (int c = 0; c < ncells_owned; c++) {
@@ -432,7 +428,8 @@ void LimiterCell::LimiterKuzmin_(
   std::vector<AmanziGeometry::Point> normals;
   AmanziMesh::Entity_ID_List nodes;
 
-  for (int c = 0; c < ncells_owned; c++) {
+  for (int n = 0; n < ids.size(); ++n) {
+    int c = ids[n];
     mesh_->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();
     std::vector<double> field_min_cell(nnodes), field_max_cell(nnodes);
@@ -470,8 +467,6 @@ void LimiterCell::LimiterKuzmin_(
 
     LimiterExtensionTransportKuzmin_(field_local_min, field_local_max);
   }    
-
-  gradient_->ScatterMasterToGhosted("cell");
 
   // approximate estimate of scalar limiter (mainly for statistics)
   for (int c = 0; c < ncells_owned; c++) {
