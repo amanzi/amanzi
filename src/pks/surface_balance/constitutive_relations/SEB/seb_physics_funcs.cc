@@ -241,10 +241,13 @@ EnergyBalance UpdateEnergyBalanceWithoutSnow(const GroundProperties& surf,
   eb.fQlwOut = OutgoingRadiation(surf.temp, surf.emissivity, params.stephB);
 
   // potentially have incoming precip to melt
-  if (surf.temp > 273.15) {
+  if (surf.temp > 273.65) {
     eb.fQm = (met.Ps + surf.snow_death_rate) * surf.density_w * params.Hf;
-  } else {
+  } else if (surf.temp <= 273.15) {
     eb.fQm = 0.;
+  } else {
+    double Em = (met.Ps + surf.snow_death_rate) * surf.density_w * params.Hf;
+    eb.fQm = Em * (surf.temp - 273.15) / (0.5);
   }
   
   // sensible heat
@@ -258,6 +261,10 @@ EnergyBalance UpdateEnergyBalanceWithoutSnow(const GroundProperties& surf,
 
   double Rsoil = EvaporativeResistanceGround(surf, met, params, vapor_pressure_air, vapor_pressure_skin);
   double coef = 1.0 / (Rsoil + 1.0/(Dhe*Sqig));
+
+  // NUMERICAL DOWNREGULATION due to difficulty evaporating ice...
+  //  coef *= surf.unfrozen_fraction;
+  
   // positive is condensation
   eb.fQe = LatentHeat(coef, params.density_air, 
 		      surf.unfrozen_fraction * params.Le + (1-surf.unfrozen_fraction) * params.Ls,
@@ -371,12 +378,12 @@ FluxBalance UpdateFluxesWithoutSnow(const GroundProperties& surf,
   // Now put evap in the right place
   double evap_to_subsurface_fraction = 0.;
   if (mb.Me < 0) {
-    if (surf.pressure >= 1000.*params.Apa) {
+    if (surf.pressure >= 1000.*params.Apa + params.evap_transition_width) {
       evap_to_subsurface_fraction = 0.;
-    } else if (surf.pressure < 1000.*params.Apa - params.evap_transition_width) {
+    } else if (surf.pressure < 1000.*params.Apa) {
       evap_to_subsurface_fraction = 1.;
     } else {
-      evap_to_subsurface_fraction = (1000.*params.Apa - surf.pressure) / params.evap_transition_width;
+      evap_to_subsurface_fraction = (1000.*params.Apa + params.evap_transition_width - surf.pressure) / (params.evap_transition_width);
     }
   }
   flux.M_surf += (1. - evap_to_subsurface_fraction) * mb.Me;

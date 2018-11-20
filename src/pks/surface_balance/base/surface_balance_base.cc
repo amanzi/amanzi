@@ -123,9 +123,6 @@ SurfaceBalanceBase::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<
     db_->WriteVectors(vnames, vecs, true);
   }
 
-  S_next_->GetFieldEvaluator(cell_vol_key_)->HasFieldChanged(S_next_.ptr(), name_);
-  Teuchos::RCP<const CompositeVector> cv = S_next_->GetFieldData(cell_vol_key_);
-
   if (conserved_quantity_) {
     S_next_->GetFieldEvaluator(conserved_key_)->HasFieldChanged(S_next_.ptr(), name_);
     S_inter_->GetFieldEvaluator(conserved_key_)->HasFieldChanged(S_inter_.ptr(), name_);
@@ -147,6 +144,9 @@ SurfaceBalanceBase::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<
 
   db_->WriteDivider();
   db_->WriteVector("res(acc)", g->Data().ptr());
+
+  S_next_->GetFieldEvaluator(cell_vol_key_)->HasFieldChanged(S_next_.ptr(), name_);
+  Teuchos::RCP<const CompositeVector> cv = S_next_->GetFieldData(cell_vol_key_);
 
   if (is_source_) {
     if (theta_ < 1.0) {

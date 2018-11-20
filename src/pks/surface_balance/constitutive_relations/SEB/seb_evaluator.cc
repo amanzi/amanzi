@@ -326,11 +326,12 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       surf.temp = surf_temp[0][c];
       surf.pressure = surf_pres[0][c];
       surf.roughness = roughness_bare_ground_;
-      surf.saturation_gas = 0.;
       surf.density_w = params.density_water; // NOTE: could update this to use true density! --etc
       surf.dz = dessicated_zone_thickness_;
       surf.emissivity = emissivity[1][c];
       surf.albedo = sg_albedo[1][c];
+
+      surf.saturation_gas = 0.;
       surf.porosity = 1.;
       surf.ponded_depth = 0.;
       surf.unfrozen_fraction = unfrozen_fraction[0][c];
@@ -461,12 +462,18 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
     vnames.clear();
     vecs.clear();
-    vnames.push_back("mass source");
-    vnames.push_back("energy source");
-    vnames.push_back("snow source");
+    vnames.push_back("mass src");
+    vnames.push_back("energy src");
+    vnames.push_back("sub mass src");
+    vnames.push_back("sub energy src");
+    vnames.push_back("snow src");
+    vnames.push_back("new snow");
     vecs.push_back(results[0]);
     vecs.push_back(results[1]);
     vecs.push_back(results[2]);
+    vecs.push_back(results[3]);
+    vecs.push_back(results[4]);
+    vecs.push_back(results[5]);
     db_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();
   }

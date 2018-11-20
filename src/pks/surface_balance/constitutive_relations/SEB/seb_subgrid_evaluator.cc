@@ -265,8 +265,8 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       surf.albedo = sg_albedo[0][c];
       surf.emissivity = emissivity[0][c];
 
-      surf.saturation_gas = sat_gas[0][cells[0]];
       surf.porosity = poro[0][cells[0]];
+      surf.saturation_gas = sat_gas[0][cells[0]];
       surf.ponded_depth = 0.;
       surf.unfrozen_fraction = unfrozen_fraction[0][c];
 
@@ -514,7 +514,7 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     vnames.clear();
     vecs.clear();
     
-    vnames.push_back("water_source"); 
+    vnames.push_back("water_src"); 
     vecs.push_back(S->GetFieldData(mass_source_key_).ptr());
     vnames.push_back("evap flux"); 
     vecs.push_back(S->GetFieldData(evap_key_).ptr());
@@ -523,12 +523,19 @@ SubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
     vnames.clear();
     vecs.clear();
-    vnames.push_back("mass source");
-    vnames.push_back("energy source");
-    vnames.push_back("snow source");
+    vnames.push_back("mass src");
+    vnames.push_back("energy src");
+    vnames.push_back("sub mass src");
+    vnames.push_back("sub energy src");
+    vnames.push_back("snow src");
+    vnames.push_back("new snow");
     vecs.push_back(results[0]);
     vecs.push_back(results[1]);
     vecs.push_back(results[2]);
+    vecs.push_back(results[3]);
+    vecs.push_back(results[4]);
+    vecs.push_back(results[5]);
+
     db_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();
   }
