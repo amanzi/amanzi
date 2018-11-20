@@ -7,6 +7,14 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Implementation of different limiters uses a few common rules:
+  1. Dirichlet boundary data are used to update limter bounds.
+  2. Limiters are modified optionally so the the stable time step
+     of first-order scheme is reduce not more than twice. This
+     step requires to specify a face-based flux field.
+  3. At the moment, we require the input field to have valid values
+     in ghost cells. 
 */
 
 #ifndef AMANZI_LIMITER_CELL_HH_
@@ -44,8 +52,8 @@ class LimiterCell {
   void ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field, int component,
                     const Teuchos::RCP<CompositeVector>& gradient,
                     const std::vector<int>& bc_model, const std::vector<double>& bc_value) {
-    AmanziMesh::Entity_ID_List ids(ncells_wghost);
-    for (int c = 0; c < ncells_wghost; ++c) ids[c] = c;
+    AmanziMesh::Entity_ID_List ids(ncells_owned);
+    for (int c = 0; c < ncells_owned; ++c) ids[c] = c;
     ApplyLimiter(ids, field, component, gradient, bc_model, bc_value); 
   }
 

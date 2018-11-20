@@ -142,7 +142,7 @@ void ObservableLineSegmentAqueous::InterpolatedValues(State& S,
     }
   } else {
     Errors::Message msg;
-    msg <<"InterpolatedValue: unknown interpolation method "<<interpolation;
+    msg << "InterpolatedValue: unknown interpolation method " << interpolation;
     Exceptions::amanzi_throw(msg);
   }
 }

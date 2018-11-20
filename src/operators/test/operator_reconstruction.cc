@@ -216,8 +216,10 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_2D) {
   Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
   Epetra_MultiVector grad_exact(mesh->cell_map(false), 2);
 
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned  = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
@@ -226,23 +228,6 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_2D) {
       grad_exact[0][c] = 1.0;
       grad_exact[1][c] = 2.0;
     }
-  }
-
-  // create and initialize flux
-  // Since limiters do not allow maximum on the outflow bounadry, 
-  // we use this trick: re-entering flow everywhere.
-  const Epetra_Map& fmap = mesh->face_map(true);
-  Teuchos::RCP<Epetra_MultiVector> flux = Teuchos::rcp(new Epetra_MultiVector(fmap, 1));
-
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
-  AmanziGeometry::Point velocity(1.0, 2.0), center(0.5, 0.5);
-
-  for (int f = 0; f < nfaces_wghost; f++) {
-    const AmanziGeometry::Point& xf = mesh->face_centroid(f);
-    velocity = center - xf;
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    (*flux)[0][f] = (velocity * normal) / mesh->face_area(f);
   }
 
   for (int i = 0; i < 6; i++) {
@@ -304,7 +289,7 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_2D) {
 
     // Apply limiter
     LimiterCell limiter(mesh);
-    limiter.Init(plist, flux);
+    limiter.Init(plist);
     limiter.ApplyLimiter(field, 0, lifting.gradient(), bc_model, bc_value);
 
     // calculate gradient error
@@ -719,7 +704,7 @@ void SmoothField2DPoly(double extension)
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-  if (MyPID == 0) std::cout << "\nTest: Accuracy on a smooth field on polygonal mesh." << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: smooth field on a polygonal mesh, extension=" << extension << std::endl;
 
   // load polygonal mesh
   Teuchos::ParameterList region_list;
