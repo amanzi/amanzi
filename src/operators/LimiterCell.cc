@@ -413,6 +413,7 @@ void LimiterCell::LimiterKuzmin_(
   Epetra_MultiVector& grad = *gradient_->ViewComponent("cell", false);
 
   // Step 1: local extrema are calculated here at nodes and updated later
+  // BoundsForNodes
   std::vector<double> field_node_min(nnodes_wghost);
   std::vector<double> field_node_max(nnodes_wghost);
 
@@ -874,6 +875,53 @@ void LimiterCell::BoundsForFaces(
           bounds_f[1][f] = std::max(bounds_f[1][f], value);
         }
       }
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Calculate internal bounds for the node to cells stencil.
+****************************************************************** */
+void LimiterCell::BoundsForNodes(
+    const std::vector<int>& bc_model, const std::vector<double>& bc_value, 
+    int stencil, bool reset)
+{
+  if (bounds_ == Teuchos::null || reset) {
+    auto cvs = Teuchos::rcp(new CompositeVectorSpace());
+    cvs->SetMesh(mesh_)->SetGhosted(true)
+       ->AddComponent("node", AmanziMesh::FACE, 2);
+
+    bounds_ = Teuchos::rcp(new CompositeVector(*cvs));
+  }
+
+  auto& bounds_v = *bounds_->ViewComponent("node", true);
+
+  if (reset) {
+    for (int v = 0; v < nnodes_wghost; ++v) {
+      bounds_v[0][v] = OPERATOR_LIMITER_INFINITY;
+      bounds_v[1][v] =-OPERATOR_LIMITER_INFINITY;
+    }
+  }
+
+  AmanziMesh::Entity_ID_List cells;
+
+  for (int v = 0; v < nnodes_wghost; ++v) {
+    mesh_->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
+
+    for (int i = 0; i < cells.size(); ++i) {
+      int c = cells[i];
+      double value = (*field_)[component_][c];
+      bounds_v[0][v] = std::min(bounds_v[0][v], value);
+      bounds_v[1][v] = std::max(bounds_v[1][v], value);
+    }
+  }
+
+  // add boundary conditions to the bounds
+  for (int v = 0; v < nnodes_owned; ++v) {
+    if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
+      bounds_v[0][v] = std::min(bounds_v[0][v], bc_value[v]);
+      bounds_v[1][v] = std::max(bounds_v[1][v], bc_value[v]);
     }
   }
 }

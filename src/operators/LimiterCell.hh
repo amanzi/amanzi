@@ -63,6 +63,8 @@ class LimiterCell {
                       const std::vector<double>& bc_value, int stencil, bool reset);
   void BoundsForFaces(const std::vector<int>& bc_model,
                       const std::vector<double>& bc_value, int stencil, bool reset);
+  void BoundsForNodes(const std::vector<int>& bc_model,
+                      const std::vector<double>& bc_value, int stencil, bool reset);
 
   // calculate value of a linear function at the given point p
   void getBounds(int c, int f, int stencil, double* umin, double* umax);

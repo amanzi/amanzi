@@ -64,8 +64,6 @@ class AnalyticDG08b : public AnalyticDGBase {
     sol.Reshape(d_, order_, true); 
     sol.set_origin(p);
 
-    bool ok(false);
-
     if (shape0) {
       auto dp = p - r0;
       double tmp = Amanzi::AmanziGeometry::norm(dp);
@@ -78,27 +76,41 @@ class AnalyticDG08b : public AnalyticDGBase {
           sol(2) += -dp[1] / factor;
         }
 
-        // if (order_ > 1) AMANZI_ASSERT(false);
-        ok = true;
+        if (order_ > 1) {
+          double factor = tmp * tmp * tmp * R0;
+          sol(3) += -dp[1] * dp[1] / factor / 2;
+          sol(3) +=  dp[0] * dp[1] / factor;
+          sol(5) += -dp[0] * dp[0] / factor / 2;
+        }
+
+        if (order_ > 2) AMANZI_ASSERT(false);
       }
     }
     if (shape1) {
       auto dp = p - r1;
       double tmp = Amanzi::AmanziGeometry::norm(dp);
-      double arg = M_PI * tmp / R1;
+      double sn, cs, arg = M_PI * tmp / R1;
 
       if (tmp <= R1) {
-        sol(0) = (1.0 + std::cos(arg)) / 4;
+        cs = std::cos(arg);
+        sol(0) = (1.0 + cs) / 4;
 
         if (order_ > 0) {
-          double sn = std::sin(arg);
+          sn = std::sin(arg);
           double factor = M_PI / (4 * R1 * tmp);
           sol(1) += -sn * factor * dp[0];
           sol(2) += -sn * factor * dp[1];
         }
 
-        // if (order_ > 1) AMANZI_ASSERT(false);
-        ok = true;
+        if (order_ > 1) {
+          double fac1 = M_PI / (4 * R1 * tmp * tmp * tmp);
+          double fac2 = M_PI * tmp / R1;
+          sol(3) += -fac1 * (dp[1] * dp[1] * sn + dp[0] * dp[0] * cs * fac2) / 2;
+          sol(4) +=  fac1 * dp[0] * dp[1] * (sn - cs * fac2);
+          sol(5) += -fac1 * (dp[0] * dp[0] * sn + dp[1] * dp[1] * cs * fac2) / 2;
+        }
+
+        if (order_ > 2) AMANZI_ASSERT(false);
       }
     }
     if (shape2) {
@@ -106,7 +118,6 @@ class AnalyticDG08b : public AnalyticDGBase {
       double tmp = Amanzi::AmanziGeometry::norm(dp);
       if (tmp <= R2 && !(dp[1] >= 0.0 && std::fabs(dp[0]) <= W2)) {
         sol(0) += 1.0;
-        ok = true;
       }
     }
   }

@@ -56,7 +56,7 @@ void ReconstructionCell::Init(Teuchos::RCP<const Epetra_MultiVector> field,
 ****************************************************************** */
 void ReconstructionCell::ComputeGradient(const AmanziMesh::Entity_ID_List& ids)
 {
-  Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
+  Epetra_MultiVector& grad = *gradient_->ViewComponent("cell", false);
   AmanziMesh::Entity_ID_List cells;
   AmanziGeometry::Point xcc(dim);
 
@@ -99,7 +99,7 @@ void ReconstructionCell::ComputeGradient(const AmanziMesh::Entity_ID_List& ids)
     }
 
     // rhs[0] = rhs[1] = rhs[2] = 0.0;  // TESTING COMPATABILITY
-    for (int i = 0; i < dim; i++) (*grad)[i][c] = rhs(i);
+    for (int i = 0; i < dim; i++) grad[i][c] = rhs(i);
   }
 
   gradient_->ScatterMasterToGhosted("cell");

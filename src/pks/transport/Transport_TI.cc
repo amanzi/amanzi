@@ -19,12 +19,11 @@ namespace Amanzi {
 namespace Transport {
 
 /* ******************************************************************* 
-* Routine takes a parallel overlapping vector C and returns parallel
-* overlapping vector F(C). 
+* Routine takes a parallel vector C and returns parallel vector F(C). 
 ****************************************************************** */
-void Transport_PK::FunctionalTimeDerivative(double t,
-                              const Epetra_Vector& component,
-                              Epetra_Vector& f_component)
+void Transport_PK::FunctionalTimeDerivative(
+    double t, const Epetra_Vector& component,
+    Epetra_Vector& f_component)
 {
   // distribute vector
   Epetra_Vector component_tmp(component);

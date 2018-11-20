@@ -110,7 +110,7 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
 
   // statistics
   int nfun_;
-  double tprint_, dt_output_, l2norm_;
+  double tprint_, dt_output_, l2norm_, sharp_;
 };
 
 
@@ -150,6 +150,7 @@ RemapDG<AnalyticDG>::RemapDG(
   // miscallateous
   tprint_ = 0.0;
   nfun_ = 0;
+  sharp_ = 0.0;
   l2norm_ = -1.0;
 }
 
@@ -350,10 +351,11 @@ void RemapDG<AnalyticDG>::FunctionalTimeDerivative(
 
   double tglob = global_time(t);
   if (fabs(tprint_ - tglob) < 1e-6 && mesh0_->get_comm()->MyPID() == 0) {
-    printf("t=%8.5f  L2=%9.5g  nfnc=%4d  umax: ", tglob, l2norm_, nfun_);
-    for (int i = 0; i < std::min(nk, 3); ++i) printf("%9.5g ", xmax[i]);
+    printf("t=%8.5f  L2=%9.5g  nfnc=%5d  sharp=%5.1f%%  umax: ", tglob, l2norm_, nfun_, sharp_);
+    for (int i = 0; i < std::min(nk, 4); ++i) printf("%9.5g ", xmax[i]);
     printf("\n");
     tprint_ += dt_output_;
+    sharp_ = 0.0;
   } 
 
   // -- calculate right-hand_side
@@ -449,32 +451,62 @@ void RemapDG<AnalyticDG>::ApplyLimiter(
   std::vector<double> bc_value(nnodes_wghost, 0.0);
 
   // create gradient in the natural basis
+  u.ScatterMasterToGhosted("cell");
+
   int nk = u_c.NumVectors();
   WhetStone::DenseVector data(nk);
 
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh0_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, dim_);
   auto grad = Teuchos::rcp(new CompositeVector(cvs));
-  Epetra_MultiVector& grad_c = *grad->ViewComponent("cell");
+  Epetra_MultiVector& grad_c = *grad->ViewComponent("cell", true);
 
-  for (int c = 0; c < ncells_owned_; ++c) {
+  for (int c = 0; c < ncells_wghost_; ++c) {
     for (int i = 0; i < nk; ++i) data(i) = u_c[i][c];
     dg.cell_basis(c).ChangeBasisMyToNatural(data);
     for (int i = 0; i < dim_; ++i) grad_c[i][c] = data(i + 1);
   }
 
-  grad->ScatterMasterToGhosted("cell");
+  // create list of cells where to apply limiter
+  double threshold = -4.0;
+  AmanziMesh::Entity_ID_List ids;
+
+  for (int c = 0; c < ncells_wghost_; ++c) {
+    if (smoothness_ == "high order term" && order_ > 1) {
+      double honorm(0.0);
+      for (int i = dim_ + 1; i < nk; ++i)
+        honorm += u_c[i][c] * u_c[i][c];
+
+      double unorm = honorm;
+      for (int i = 0; i <= dim_; ++i)
+        unorm += u_c[i][c] * u_c[i][c];
+
+      if (unorm > 0.0 && std::log10(honorm / unorm) > threshold) {
+        ids.push_back(c);
+      }
+    } else {
+      ids.push_back(c);
+    }
+  }
+
+  AnalyticDG ana(mesh0_, 0, true);
+  sharp_ = std::max(sharp_, 100.0 * ids.size() / ncells_wghost_);
+  ana.GlobalOp("max", &sharp_, 1);
 
   // limit gradient and save it to solution
   Operators::LimiterCell limiter(mesh0_);
   limiter.Init(limlist);
-  limiter.ApplyLimiter(u.ViewComponent("cell", true), 0, grad, bc_model, bc_value);
+  limiter.ApplyLimiter(ids, u.ViewComponent("cell", true), 0, grad, bc_model, bc_value);
 
-  for (int c = 0; c < ncells_owned_; ++c) {
-    data(0) = u_c[0][c];
-    for (int i = 0; i < dim_; ++i) data(i + 1) = grad_c[i][c];
-    dg.cell_basis(c).ChangeBasisNaturalToMy(data);
-    for (int i = 0; i < nk; ++i) u_c[i][c] = data(i);
+  for (int n = 0; n < ids.size(); ++n) {
+    int c = ids[n];
+    if (c < ncells_owned_) {
+      data(0) = u_c[0][c];
+      for (int i = 0; i < dim_; ++i) data(i + 1) = grad_c[i][c];
+      for (int i = dim_ + 1; i < nk; ++i) data(i) = 0.0;
+      dg.cell_basis(c).ChangeBasisNaturalToMy(data);
+      for (int i = 0; i < nk; ++i) u_c[i][c] = data(i);
+    }
   }
 }
 
