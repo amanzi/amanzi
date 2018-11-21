@@ -145,7 +145,7 @@ RemapDG<AnalyticDG>::RemapDG(
     bc_type_ = Operators::OPERATOR_BC_REMOVE;
 
   consistent_jac_ = plist_.sublist("PK operator").template get<bool>("consistent jacobian");
-  smoothness_ = plist_.sublist("limiter").get<std::string>("smoothness indicator");
+  smoothness_ = plist_.sublist("limiter").template get<std::string>("smoothness indicator");
 
   // miscallateous
   tprint_ = 0.0;
