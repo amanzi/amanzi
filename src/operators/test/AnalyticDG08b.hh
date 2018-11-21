@@ -29,26 +29,33 @@
 class AnalyticDG08b : public AnalyticDGBase {
  public:
   // cone
-  const bool shape0 = true;
   const double phi = 2 * M_PI / 3;
   const Amanzi::AmanziGeometry::Point r0 = Amanzi::AmanziGeometry::Point(0.5 * std::cos(phi), 0.5 * std::sin(phi));
   const double R0 = 0.35;
 
   // hump
-  const bool shape1 = true;
   const Amanzi::AmanziGeometry::Point r1 = Amanzi::AmanziGeometry::Point(0.5 * std::cos(phi), -0.5 * std::sin(phi));
   const double R1 = 0.35;
 
   // notched cylinder
-  const bool shape2 = true;
   const Amanzi::AmanziGeometry::Point r2 = Amanzi::AmanziGeometry::Point(0.5, 0.0);
   const double R2 = 0.4;
   const double W2 = 0.05;
 
  public:
   AnalyticDG08b(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order, bool advection)
-    : AnalyticDGBase(mesh, order, advection) {};
+    : AnalyticDGBase(mesh, order, advection),
+      cone_(true),
+      hump_(true),
+      cylinder_(true) {};
   ~AnalyticDG08b() {};
+
+  // control of details
+  bool set_shapes(bool cone, bool hump, bool cylinder) {
+    cone_ = cone;
+    hump_ = hump;
+    cylinder_ = cylinder;
+  }
 
   // analytic data in conventional Taylor basis
   // -- diffusion tensor
@@ -64,7 +71,7 @@ class AnalyticDG08b : public AnalyticDGBase {
     sol.Reshape(d_, order_, true); 
     sol.set_origin(p);
 
-    if (shape0) {
+    if (cone_) {
       auto dp = p - r0;
       double tmp = Amanzi::AmanziGeometry::norm(dp);
       if (tmp <= R0) {
@@ -79,14 +86,14 @@ class AnalyticDG08b : public AnalyticDGBase {
         if (order_ > 1) {
           double factor = tmp * tmp * tmp * R0;
           sol(3) += -dp[1] * dp[1] / factor / 2;
-          sol(3) +=  dp[0] * dp[1] / factor;
+          sol(4) +=  dp[0] * dp[1] / factor;
           sol(5) += -dp[0] * dp[0] / factor / 2;
         }
 
         if (order_ > 2) AMANZI_ASSERT(false);
       }
     }
-    if (shape1) {
+    if (hump_) {
       auto dp = p - r1;
       double tmp = Amanzi::AmanziGeometry::norm(dp);
       double sn, cs, arg = M_PI * tmp / R1;
@@ -113,7 +120,7 @@ class AnalyticDG08b : public AnalyticDGBase {
         if (order_ > 2) AMANZI_ASSERT(false);
       }
     }
-    if (shape2) {
+    if (cylinder_) {
       auto dp = p - r2;
       double tmp = Amanzi::AmanziGeometry::norm(dp);
       if (tmp <= R2 && !(dp[1] >= 0.0 && std::fabs(dp[0]) <= W2)) {
@@ -153,6 +160,9 @@ class AnalyticDG08b : public AnalyticDGBase {
     src.Reshape(d_, 0, true);
     src.set_origin(p);
   }
+
+ private:
+  bool cone_, hump_, cylinder_;
 
  private:
   double StepNotchedCircle_(double x, double y);

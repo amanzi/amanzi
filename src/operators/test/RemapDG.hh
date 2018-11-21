@@ -471,7 +471,7 @@ void RemapDG<AnalyticDG>::ApplyLimiter(
   double threshold = -4.0;
   AmanziMesh::Entity_ID_List ids;
 
-  for (int c = 0; c < ncells_wghost_; ++c) {
+  for (int c = 0; c < ncells_owned_; ++c) {
     if (smoothness_ == "high order term" && order_ > 1) {
       double honorm(0.0);
       for (int i = dim_ + 1; i < nk; ++i)

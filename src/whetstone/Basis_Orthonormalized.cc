@@ -230,7 +230,8 @@ void Basis_Orthonormalized::ChangeBasisNaturalToMy(DenseVector& v) const
 
 
 /* ******************************************************************
-* Recover polynomial from data coefficients. 
+* Recover polynomial in the natural basis from vector coefs of 
+* coefficients in the orthonormalized basis. 
 ****************************************************************** */
 Polynomial Basis_Orthonormalized::CalculatePolynomial(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
