@@ -42,10 +42,11 @@ Kappa grad T |_s = qE_ss
 #include "PK.hh"
 #include "mpc.hh"
 #include "primary_variable_field_evaluator.hh"
+#include "mpc_permafrost_split_flux_columns.hh"
 
 namespace Amanzi {
 
-class MPCPermafrostSplitFluxColumnsSubcycled : public MPC<PK> {
+class MPCPermafrostSplitFluxColumnsSubcycled : public MPCPermafrostSplitFluxColumns {
 
  public:
 
@@ -59,41 +60,17 @@ class MPCPermafrostSplitFluxColumnsSubcycled : public MPC<PK> {
 
   // PK methods
   // -- dt is the minimum of the sub pks
-  virtual double get_dt();
+  virtual double get_dt() {
+    return sub_pks_[0]->get_dt();
+  }    
 
-  // -- initialize in reverse order
-  virtual void Initialize(const Teuchos::Ptr<State>& S);
-  virtual void Setup(const Teuchos::Ptr<State>& S);
-  
   // -- advance each sub pk dt.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit);
 
   virtual bool ValidStep();
   
-  virtual void set_dt(double dt);
-
   virtual void CommitStep(double t_old, double t_new,
                           const Teuchos::RCP<State>& S);
-  
-  virtual void CopyPrimaryToStar(const Teuchos::Ptr<const State>& S,
-          const Teuchos::Ptr<State>& S_star);
-  virtual void CopyStarToPrimary(double dt);
-
- protected:
-  Key p_primary_variable_suffix_;
-  Key p_primary_variable_star_;
-  Key p_conserved_variable_star_;
-  Key p_lateral_flow_source_suffix_;
-
-  Key T_primary_variable_suffix_;
-  Key T_primary_variable_star_;
-  Key T_conserved_variable_star_;
-  Key T_lateral_flow_source_suffix_;
-  
-  Key cv_key_;
-  std::vector<Teuchos::RCP<PrimaryVariableFieldEvaluator> > p_eval_pvfes_;
-  std::vector<Teuchos::RCP<PrimaryVariableFieldEvaluator> > T_eval_pvfes_;
-  std::vector<std::string> col_domains_;
   
  private:
   // factory registration
