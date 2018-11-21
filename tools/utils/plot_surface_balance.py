@@ -25,6 +25,7 @@ def get_filename_base(base, suffix):
 def get_filename(directory, base, suffix):
     return os.path.join(directory, get_filename_base(base, suffix))
 
+
 def plot_surface((keys,times,dat), ax, color, varname, style='-', version='dev-new', domain_suffix=None,
                  negate=False, label=None, hackfactor=None, divide_by_cell_volume=False):
     if version == '0.86':
@@ -125,6 +126,9 @@ def plot_surface_balance(ktd, ax, color, marker=None, version='dev-new', label=N
 def get_version(dirname, domain_suffix):
     if os.path.isfile(get_filename(dirname, 'snow', domain_suffix)):
         version = 'dev-new'
+    elif os.path.isfile(get_filename(dirname, 'snow', None)):
+        version = 'dev-new'
+        domain_suffix = None
     else:
         d = h5py.File(get_filename(dirname, 'surface', domain_suffix), 'r')
         if domain_suffix is None:
@@ -136,7 +140,7 @@ def get_version(dirname, domain_suffix):
         else:
             version = '0.86'
         d.close()
-    return version
+    return version, domain_suffix
 
     
 def get_axs():
@@ -168,8 +172,8 @@ if __name__ == "__main__":
     dirnames = args.INPUT_DIRECTORIES
     markers = reversed(['x', '+', 'o', '^', 'v', 's'][0:len(dirnames)])
     for i,(dirname,marker) in enumerate(zip(dirnames, itertools.cycle(markers))):
-        version = get_version(dirname, args.domain_suffix)
-        print("Directory %s got version: %s"%(dirname,version))
+        version, domain_suffix = get_version(dirname, args.domain_suffix)
+        print("Directory %s got version: %s and domain_suffix: %r"%(dirname,version, domain_suffix))
         hackfactor = None
         if dirname == "run-transient4":
             hackfactor = 2.0
@@ -185,12 +189,12 @@ if __name__ == "__main__":
             else:
                 c = args.colors[i]
 
-        ktd = parse_ats.readATS(dirname, get_filename_base('surface', args.domain_suffix))
+        ktd = parse_ats.readATS(dirname, get_filename_base('surface', domain_suffix))
         if version == 'dev-new':
-            ktds = parse_ats.readATS(dirname, get_filename_base('snow', args.domain_suffix))[2]
+            ktds = parse_ats.readATS(dirname, get_filename_base('snow', domain_suffix))[2]
         else:
             ktds = None
-        plot_surface_balance((ktd[0], ktd[1], (ktd[2],ktds)), axs, c, label=dirname, hackfactor=hackfactor, version=version, marker=marker, domain_suffix=args.domain_suffix)
+        plot_surface_balance((ktd[0], ktd[1], (ktd[2],ktds)), axs, c, label=dirname, hackfactor=hackfactor, version=version, marker=marker, domain_suffix=domain_suffix)
         if ktds is not None:
             ktds.close()
         ktd[2].close()
