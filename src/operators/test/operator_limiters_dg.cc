@@ -67,7 +67,7 @@ void RunTest(std::string filename)
   std::string basis("normalized");
   WhetStone::DG_Modal dg(order, mesh, basis);
   AnalyticDG08b ana(mesh, order, true);
-  // ana.set_shapes(false, true, false);
+  ana.set_shapes(false, true, false);
 
   ana.InitialGuess(dg, *field_c, 0.0);
   field->ScatterMasterToGhosted("cell");
@@ -111,7 +111,7 @@ void RunTest(std::string filename)
     }
 
     // create gradient for limiting
-    WhetStone::DenseVector data(nk);
+    WhetStone::DenseVector data(nk), data2(nk);
 
     for (int c = 0; c < ncells_owned; ++c) {
       for (int i = 0; i < nk; ++i) data(i) = (*field_c)[i][c];
@@ -123,7 +123,7 @@ void RunTest(std::string filename)
     Epetra_MultiVector grad_exact(grad_c);
 
     // create list of cells where to apply limiter
-    double threshold = -4.0;
+    double threshold = -4 * std::log10((double) order) - 4.6;
     AmanziMesh::Entity_ID_List ids;
 
     for (int c = 0; c < ncells_owned; ++c) {
@@ -156,6 +156,33 @@ void RunTest(std::string filename)
     if (MyPID == 0) 
       printf("%9s: errors: %10.6f %10.6f  ||grad||=%8.4f  indicator=%5.1f%%\n",
           LIMITERS[i].c_str(), err_int, err_glb, gnorm, fraction);
+    CHECK(fraction < 15.0);
+
+    // calculate error of limited gradient
+    double err(0.0), unorm(0.0);
+    for (int n = 0; n < ids.size(); ++n) {
+      int c = ids[n];
+      double volume = mesh->cell_volume(c);
+
+      for (int i = 0; i < nk; ++i) data2(i) = (*field_c)[i][c];
+
+      data(0) = (*field_c)[0][c];
+      for (int i = 0; i < dim; ++i) data(i + 1) = grad_c[i][c];
+      for (int i = dim + 1; i < nk; ++i) data(i) = 0.0;
+      dg.cell_basis(c).ChangeBasisNaturalToMy(data);
+
+      data2 -= data;
+      err += (data2 * data2) * volume;
+      unorm += (data * data) * volume;
+    }
+
+    double tmp = err;
+    mesh->get_comm()->SumAll(&tmp, &err, 1);
+    tmp = unorm;
+    mesh->get_comm()->SumAll(&tmp, &unorm, 1);
+    if (MyPID == 0) 
+      printf("       sol errors: %10.6f   ||u||=%8.4f\n", std::pow(err, 0.5), std::pow(unorm, 0.5));
+    CHECK(err < 0.02);
   }
 }
 
@@ -165,5 +192,6 @@ TEST(LIMITER_SMOOTHNESS_INDICATOR_2D) {
   // RunTest("test/circle_quad20.exo");
   // RunTest("test/circle_quad40.exo");
   // RunTest("test/circle_quad80.exo");
+  // RunTest("test/circle_quad160.exo");
 }
 

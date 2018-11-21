@@ -500,13 +500,11 @@ void RemapDG<AnalyticDG>::ApplyLimiter(
 
   for (int n = 0; n < ids.size(); ++n) {
     int c = ids[n];
-    if (c < ncells_owned_) {
-      data(0) = u_c[0][c];
-      for (int i = 0; i < dim_; ++i) data(i + 1) = grad_c[i][c];
-      for (int i = dim_ + 1; i < nk; ++i) data(i) = 0.0;
-      dg.cell_basis(c).ChangeBasisNaturalToMy(data);
-      for (int i = 0; i < nk; ++i) u_c[i][c] = data(i);
-    }
+    data(0) = u_c[0][c];
+    for (int i = 0; i < dim_; ++i) data(i + 1) = grad_c[i][c];
+    for (int i = dim_ + 1; i < nk; ++i) data(i) = 0.0;
+    dg.cell_basis(c).ChangeBasisNaturalToMy(data);
+    for (int i = 0; i < nk; ++i) u_c[i][c] = data(i);
   }
 }
 
