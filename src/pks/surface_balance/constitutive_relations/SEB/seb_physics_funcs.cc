@@ -386,20 +386,13 @@ FluxBalance UpdateFluxesWithoutSnow(const GroundProperties& surf,
       evap_to_subsurface_fraction = (1000.*params.Apa + params.evap_transition_width - surf.pressure) / (params.evap_transition_width);
     }
   }
+  AMANZI_ASSERT(evap_to_subsurface_fraction >= 0. && evap_to_subsurface_fraction <= 1.);
   flux.M_surf += (1. - evap_to_subsurface_fraction) * mb.Me;
   flux.M_subsurf += evap_to_subsurface_fraction * mb.Me;
 
-  if (eb.fQe > 0.) {
-    // enthalpy of evap      // if condensation, just add energy due to introduction of new water.
-    flux.E_surf += (1-evap_to_subsurface_fraction) * mb.Me * surf.density_w * (surf.temp-273.15) * params.Cv_water;
-    flux.E_subsurf += evap_to_subsurface_fraction * mb.Me * surf.density_w * (surf.temp-273.15) * params.Cv_water;
-  } else {
-    // if evaporation, take away the energy of that water, but also cool due
-    // to latent heat removal.  Note this is equivalent to simply taking
-    // away the energy of the VAPOR removed.
-    flux.E_surf += (1-evap_to_subsurface_fraction) * (mb.Me * surf.density_w * (surf.temp-273.15) * params.Cv_water + eb.fQe);
-    flux.E_subsurf += evap_to_subsurface_fraction * (mb.Me * surf.density_w * (surf.temp-273.15) * params.Cv_water + eb.fQe);
-  }
+  // enthalpy of evap/condensation
+  flux.E_surf += (1-evap_to_subsurface_fraction) * eb.fQe;
+  flux.E_subsurf += evap_to_subsurface_fraction * eb.fQe;
 
   flux.M_snow = met.Ps - mb.Mm;
   return flux;
@@ -419,8 +412,8 @@ FluxBalance UpdateFluxesWithSnow(const GroundProperties& surf,
 
   // Energy to surface.
   flux.E_surf = eb.fQc   // conducted to ground  
-                + surf.density_w * met.Pr * (met.air_temp-273.15) * params.Cv_water // rain enthalpy
-                + mb.Me * surf.density_w * (surf.temp - 273.15) * params.Cv_water;  // enthalpy of evap
+                + surf.density_w * met.Pr * (met.air_temp-273.15) * params.Cv_water; // rain enthalpy
+               // + 0 // enthalpy of meltwater at 0C.
   return flux;
 }
 
