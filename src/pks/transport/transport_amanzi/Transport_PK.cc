@@ -157,9 +157,9 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
   passwd_ = "state";  // owner's password
 
   domain_name_ = tp_list_->get<std::string>("domain name", "domain");
-
-  saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "saturation liquid", "");
-  prev_saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "previous saturation liquid", "");
+  
+  saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "saturation liquid", "saturation_liquid");
+  prev_saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "previous saturation liquid", "prev_saturation_liquid");
   flux_key_ = Keys::readKey(*tp_list_, domain_name_, "mass flux", "mass_flux");
   darcy_flux_key_ = Keys::readKey(*tp_list_, domain_name_, "darcy flux", "mass_flux");
   permeability_key_ = Keys::readKey(*tp_list_, domain_name_, "permeability", "permeability");
