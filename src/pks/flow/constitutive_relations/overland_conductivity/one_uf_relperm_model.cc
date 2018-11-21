@@ -26,18 +26,20 @@ OneUFRelPermModel::OneUFRelPermModel(Teuchos::ParameterList& plist) :
     Exceptions::amanzi_throw(message);
   }
 
-  h_cutoff_ = plist_.get<double>("unfrozen rel perm cutoff height", 0.01);
+  h_cutoff_ = plist_.get<double>("unfrozen rel perm cutoff pressure", 100.);
 }
 
 double
 OneUFRelPermModel::SurfaceRelPerm(double uf, double h) {
   double kr = std::pow(std::sin(pi_ * uf / 2.), alpha_);
 
-  if (h <= 0.) {
+  if (h <= 101325. - h_cutoff_) {
     kr = 1.;
-  } else if (h < h_cutoff_) {
-    double fac = h / h_cutoff_;
-    kr = kr * fac + (1-fac); // kr --> 1  as h --> 0
+  } else if (h >= 101325.) {
+    // pass
+  } else {
+    double fac = (101325. - h)/ h_cutoff_;
+    kr = fac + (1-fac) * kr;
   }
   return kr;
 }
