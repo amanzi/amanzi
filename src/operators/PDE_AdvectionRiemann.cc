@@ -127,6 +127,11 @@ void PDE_AdvectionRiemann::UpdateMatrices(
       dg_->FluxMatrix(f, (*u)[f], Aface, false, jump_on_test_);
       matrix[f] = Aface;
     }
+  } else if (matrix_ == "flux" && flux_ == "downwind at gauss points") {
+    for (int f = 0; f < nfaces_owned; ++f) {
+      // dg_->FluxMatrixGaussPoints(f, (*u)[f], Aface, false, jump_on_test_);
+      // matrix[f] = Aface;
+    }
   } else if (matrix_ == "flux" && flux_ == "Rusanov") {
     AmanziMesh::Entity_ID_List cells;
     for (int f = 0; f < nfaces_owned; ++f) {

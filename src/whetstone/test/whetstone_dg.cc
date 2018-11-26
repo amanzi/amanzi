@@ -24,6 +24,7 @@
 // Amanzi::WhetStone
 #include "DenseMatrix.hh"
 #include "DG_Modal.hh"
+#include "FunctionUpwind.hh"
 #include "MeshMaps_VEM.hh"
 #include "Polynomial.hh"
 
@@ -633,5 +634,32 @@ TEST(DG_LEAST_SQUARE_MAP_CELL) {
   CHECK_CLOSE(0.0, u[0](2, 2), 1e-14);
 
   delete comm;
+}
+
+
+/* ****************************************************************
+* Test of upwind function
+**************************************************************** */
+TEST(DG2D_FLUX_MATRIX) {
+  using namespace Amanzi;
+  using namespace Amanzi::WhetStone;
+
+  Polynomial un(2, 1), p(2, 0);
+  un(0) = 0.0;
+  un(1) = 1.0;
+  p(0) = 2.0;
+
+  AmanziGeometry::Point x1(-1.0, 0.0), x2(1.0, 0.0);
+  {
+    FunctionUpwindPlus f(&un, &p);
+    CHECK_CLOSE(f.Value(x1), 0.0, 1e-12);
+    CHECK_CLOSE(f.Value(x2), p.Value(x2), 1e-12);
+  }
+
+  {
+    FunctionUpwindMinus f(&un, &p);
+    CHECK_CLOSE(f.Value(x1), p.Value(x1), 1e-12);
+    CHECK_CLOSE(f.Value(x2), 0.0, 1e-12);
+  }
 }
 

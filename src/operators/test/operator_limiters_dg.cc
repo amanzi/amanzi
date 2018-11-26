@@ -40,7 +40,7 @@ const std::string LIMITERS[3] = {"B-J", "B-J c2c", "B-J all"};
 /* *****************************************************************
 * Limiters must be localized based on a smoothness indicator.
 ***************************************************************** */
-void RunTest(std::string filename)
+void RunTest(std::string filename, std::string basis, double& l2norm)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -64,7 +64,6 @@ void RunTest(std::string filename)
   auto field_c = field->ViewComponent("cell", true);
 
   int order = 2;
-  std::string basis("normalized");
   WhetStone::DG_Modal dg(order, mesh, basis);
   AnalyticDG08b ana(mesh, order, true);
   ana.set_shapes(false, true, false);
@@ -111,7 +110,7 @@ void RunTest(std::string filename)
     }
 
     // create gradient for limiting
-    WhetStone::DenseVector data(nk), data2(nk);
+    WhetStone::DenseVector data(nk), data2(nk), data3(nk);
 
     for (int c = 0; c < ncells_owned; ++c) {
       for (int i = 0; i < nk; ++i) data(i) = (*field_c)[i][c];
@@ -158,8 +157,12 @@ void RunTest(std::string filename)
           LIMITERS[i].c_str(), err_int, err_glb, gnorm, fraction);
     CHECK(fraction < 15.0);
 
-    // calculate error of limited gradient
-    double err(0.0), unorm(0.0);
+    // calculate true L2 error of limited gradient
+    WhetStone::Tensor K(dim, 1);
+    K(0, 0) = 1.0;
+
+    double err(0.0);
+    l2norm = 0.0;
     for (int n = 0; n < ids.size(); ++n) {
       int c = ids[n];
       double volume = mesh->cell_volume(c);
@@ -171,24 +174,33 @@ void RunTest(std::string filename)
       for (int i = dim + 1; i < nk; ++i) data(i) = 0.0;
       dg.cell_basis(c).ChangeBasisNaturalToMy(data);
 
+      WhetStone::DenseMatrix M;
+      dg.MassMatrix(c, K, M);
+
+      M.Multiply(data2, data3, false);
+      l2norm += data2 * data3;
+
       data2 -= data;
-      err += (data2 * data2) * volume;
-      unorm += (data * data) * volume;
+      M.Multiply(data2, data3, false);
+      err += data2 * data3;
     }
 
     double tmp = err;
     mesh->get_comm()->SumAll(&tmp, &err, 1);
-    tmp = unorm;
-    mesh->get_comm()->SumAll(&tmp, &unorm, 1);
+    tmp = l2norm;
+    mesh->get_comm()->SumAll(&tmp, &l2norm, 1);
     if (MyPID == 0) 
-      printf("       sol errors: %10.6f   ||u||=%8.4f\n", std::pow(err, 0.5), std::pow(unorm, 0.5));
+      printf("       sol errors: %10.6f   ||u||=%8.4f\n", std::pow(err, 0.5), std::pow(l2norm, 0.5));
     CHECK(err < 0.02);
   }
 }
 
 
 TEST(LIMITER_SMOOTHNESS_INDICATOR_2D) {
-  RunTest("test/circle_quad10.exo");
+  double l2norm1, l2norm2;
+  RunTest("test/circle_quad10.exo", "normalized", l2norm1);
+  RunTest("test/circle_quad10.exo", "orthonormalized", l2norm2);
+  CHECK_CLOSE(l2norm1, l2norm2, 1e-12);
   // RunTest("test/circle_quad20.exo");
   // RunTest("test/circle_quad40.exo");
   // RunTest("test/circle_quad80.exo");

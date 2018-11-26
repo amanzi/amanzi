@@ -49,7 +49,7 @@ class MeshMaps {
       mesh0_(mesh0),
       d_(mesh1_->space_dimension()) {};
 
-  ~MeshMaps() {};
+  virtual ~MeshMaps() {};
 
   // Maps
   // -- pseudo-velocity

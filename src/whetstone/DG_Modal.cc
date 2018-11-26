@@ -53,9 +53,12 @@ int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 {
   double K00 = K(0, 0);
 
-  // extend list of integrals of monomials
-  UpdateIntegrals_(c, 2 * order_);
-  const Polynomial& integrals = integrals_[c];
+  // calculate integrals of non-normalized monomials
+  Polynomial integrals(d_, 2 * order_);
+
+  integrals(0) = mesh_->cell_volume(c);
+  for (int k = 1; k <= 2 * order_; ++k)
+    numi_.IntegrateMonomialsCell(c, k, integrals);
    
   // copy integrals to mass matrix
   int multi_index[3];
@@ -137,11 +140,14 @@ int DG_Modal::MassMatrixPoly_(int c, const Polynomial& K, DenseMatrix& M)
   Polynomial Kcopy(K);
   Kcopy.ChangeOrigin(mesh_->cell_centroid(c));
 
-  // extend list of integrals of monomials
+  // calculate integrals of non-normalized monomials
   int uk(Kcopy.order());
-  UpdateIntegrals_(c, 2 * order_ + uk);
-  const Polynomial& integrals = integrals_[c];
-   
+  Polynomial integrals(d_, 2 * order_ + uk);
+
+  integrals(0) = mesh_->cell_volume(c);
+  for (int k = 1; k <= 2 * order_ + uk; ++k)
+    numi_.IntegrateMonomialsCell(c, k, integrals);
+
   // sum up integrals to the mass matrix
   int multi_index[3];
   Polynomial p(d_, order_);
@@ -269,10 +275,13 @@ int DG_Modal::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
     Ktmp.MakeDiagonal(K(0, 0));
   }
 
-  // extend list of integrals of monomials
-  UpdateIntegrals_(c, 2 * order_ - 2);
-  const Polynomial& integrals = integrals_[c];
-   
+  // calculate integrals of non-normalized monomials
+  Polynomial integrals(d_, std::max(2 * order_ - 2, 0));
+
+  integrals(0) = mesh_->cell_volume(c);
+  for (int k = 1; k <= 2 * order_ - 2; ++k)
+    numi_.IntegrateMonomialsCell(c, k, integrals);
+
   // copy integrals to mass matrix
   int multi_index[3];
   Polynomial p(d_, order_);
@@ -331,10 +340,13 @@ int DG_Modal::AdvectionMatrixPoly_(
   VectorPolynomial ucopy(u);
   ucopy.ChangeOrigin(xc);
 
-  // extend list of integrals of monomials
-  int uk(ucopy[0].order());
-  UpdateIntegrals_(c, order_ + std::max(0, order_ - 1) + uk);
-  const Polynomial& integrals = integrals_[c];
+  // calculate integrals of non-normalized monomials
+  int order_tmp = order_ + std::max(order_ - 1, 0) + ucopy[0].order();
+  Polynomial integrals(d_, order_tmp);
+
+  integrals(0) = mesh_->cell_volume(c);
+  for (int k = 1; k <= order_tmp; ++k)
+    numi_.IntegrateMonomialsCell(c, k, integrals);
 
   // sum-up integrals to the advection matrix
   int multi_index[3];
@@ -510,13 +522,11 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
   // Calculate integrals needed for scaling
   int c1, c2;
   c1 = cells[id];
-  UpdateIntegrals_(c1, 2 * order_);
 
   if (ncells == 1) {
     c2 = c1;
   } else {
     c2 = cells[1 - id];
-    UpdateIntegrals_(c2, 2 * order_);
   }
 
   // integrate traces of polynomials on face f
@@ -612,9 +622,6 @@ int DG_Modal::FluxMatrixRusanov(
   int c1 = cells[0];
   int c2 = cells[1];
 
-  UpdateIntegrals_(c1, 2 * order_);
-  UpdateIntegrals_(c2, 2 * order_);
-
   // integrate traces of polynomials on face f
   normal *= -1;
   Polynomial uf1 = uc1 * normal;
@@ -705,11 +712,6 @@ int DG_Modal::FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMat
   // Calculate integrals needed for scaling
   int c1 = cells[0];
   int c2 = (ncells > 1) ? cells[1] : -1;
-
-  UpdateIntegrals_(c1, 2 * order_ - 1);
-  if (c2 >= 0) {
-    UpdateIntegrals_(c2, 2 * order_ - 1);
-  }
 
   // Calculate co-normals
   int dir;
@@ -809,11 +811,6 @@ int DG_Modal::FaceMatrixPenalty(int f, double Kf, DenseMatrix& A)
   int c1 = cells[0];
   int c2 = (ncells > 1) ? cells[1] : -1;
 
-  UpdateIntegrals_(c1, 2 * order_);
-  if (c2 >= 0) {
-    UpdateIntegrals_(c2, 2 * order_);
-  }
-
   // integrate traces of polynomials on face f
   double coef00, coef01, coef11;
   Polynomial p0, p1, q0, q1;
@@ -866,33 +863,6 @@ int DG_Modal::FaceMatrixPenalty(int f, double Kf, DenseMatrix& A)
   }
 
   return 0;
-}
-
-
-/* ******************************************************************
-* Update integrals of non-normalized monomials.
-****************************************************************** */
-void DG_Modal::UpdateIntegrals_(int c, int order)
-{
-  if (integrals_.size() == 0) {
-    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-    integrals_.resize(ncells_wghost);
-
-    for (int n = 0; n < ncells_wghost; ++n) {
-      integrals_[n].Reshape(d_, 0);
-      integrals_[n](0) = mesh_->cell_volume(n);
-    }
-  }
-
-  // add additional integrals of monomials
-  int k0 = integrals_[c].order();
-  if (k0 < order) {
-    integrals_[c].Reshape(d_, order);
-
-    for (int k = k0 + 1; k <= order; ++k) {
-      numi_.IntegrateMonomialsCell(c, k, integrals_[c]);
-    }
-  }
 }
 
 }  // namespace WhetStone
