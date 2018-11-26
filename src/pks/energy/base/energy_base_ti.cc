@@ -217,11 +217,20 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
       acc_c[0][c] = pres[0][c] >= patm ? de_dT[0][c] / h : 0.;
     }
   } else {
-    for (unsigned int c=0; c!=ncells; ++c) {
-      //      AMANZI_ASSERT(de_dT[0][c] > 1.e-10);
-      // ?? Not using e_bar anymore apparently, though I didn't think we were ever.  Need a nonzero here to ensure not singlar.
-      acc_c[0][c] = std::max(de_dT[0][c], 1.e-12) / h;
-    }
+    if (precon_used_) {
+      for (unsigned int c=0; c!=ncells; ++c) {
+        //      AMANZI_ASSERT(de_dT[0][c] > 1.e-10);
+        // ?? Not using e_bar anymore apparently, though I didn't think we were ever.  Need a nonzero here to ensure not singlar.
+        acc_c[0][c] = std::max(de_dT[0][c], 1.e-12) / h;
+      }
+    } else {
+      for (unsigned int c=0; c!=ncells; ++c) {
+        //      AMANZI_ASSERT(de_dT[0][c] > 1.e-10);
+        // ?? Not using e_bar anymore apparently, though I didn't think we were ever.  Need a nonzero here to ensure not singlar.
+        // apply a diagonal shift manually for coupled problems
+        acc_c[0][c] = de_dT[0][c] / h + 1.e-6;
+      }
+    }      
   }
   preconditioner_acc_->AddAccumulationTerm(acc, "cell");
 

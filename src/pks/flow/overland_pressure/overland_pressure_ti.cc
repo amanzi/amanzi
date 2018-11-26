@@ -352,7 +352,8 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
   preconditioner_diff_->ApplyBCs(true, true, true);
   
   // 3.d: Rescale to use as a pressure matrix if used in a coupler
-  if (coupled_to_subsurface_via_head_ || coupled_to_subsurface_via_flux_) {
+  //  if (coupled_to_subsurface_via_head_ || coupled_to_subsurface_via_flux_) {
+  if (!precon_used_) {
     // Scale Spp by dh/dp (h, NOT h_bar), clobbering rows with p < p_atm
     std::string pd_key = Keys::getKey(domain_,"ponded_depth");
     std::string pd_deriv_key = Keys::getDerivKey(pd_key,key_);

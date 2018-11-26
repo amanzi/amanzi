@@ -107,8 +107,8 @@ void MPCCoupledCells::Setup(const Teuchos::Ptr<State>& S) {
   }
 
   // setup and initialize the linear solver for the preconditioner
-  if (plist_->isSublist("solver")) {
-    Teuchos::ParameterList linsolve_sublist = plist_->sublist("solver");
+  if (plist_->isSublist("linear solver")) {
+    Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
     AmanziSolvers::LinearOperatorFactory<Operators::TreeOperator,TreeVector,TreeVectorSpace> fac;
     linsolve_preconditioner_ = fac.Create(linsolve_sublist, preconditioner_);
   } else {

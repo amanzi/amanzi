@@ -253,7 +253,7 @@ MPCPermafrostSplitFluxColumns::CopyStarToPrimaryPressure_(double dt)
   const auto& p_star = *S_next_->GetFieldData(p_primary_variable_star_)
                        ->ViewComponent("cell",false);
   for (int c=0; c!=p_star.MyLength(); ++c) {
-    if (p_star[0][c] > 101325.) {
+    if (p_star[0][c] > 101325.0000001) {
       Key pkey = Keys::getKey("surface_"+col_domains_[c], p_primary_variable_suffix_);
       auto& p = *S_inter_->GetFieldData(pkey, S_inter_->GetField(pkey)->owner())->ViewComponent("cell",false);
       AMANZI_ASSERT(p.MyLength() == 1);
