@@ -45,6 +45,7 @@ OverlandConductivityEvaluator::OverlandConductivityEvaluator(Teuchos::ParameterL
   }
 
   sg_model_ =  plist_.get<bool>("subgrid model", false);
+  AMANZI_ASSERT(!sg_model_);
   if(sg_model_){
     pdd_key_ = Keys::readKey(plist_, domain, "ponded depth minus depression depth", "ponded_depth_minus_depression_depth");
     dependencies_.insert(pdd_key_);

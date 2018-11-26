@@ -1,5 +1,5 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! FractionalConductanceEvaluator: calculates a fractional conductance.
+//! SubgridManningCoefficientEvaluator: calculates a fractional conductance.
 
 /*
   ATS is released under the three-clause BSD License. 
@@ -13,8 +13,8 @@
 
 */
 
-#ifndef AMANZI_FLOWRELATIONS_FRACTIONAL_CONDUCTANCE_EVALUATOR_
-#define AMANZI_FLOWRELATIONS_FRACTIONAL_CONDUCTANCE_EVALUATOR_
+#ifndef AMANZI_FLOWRELATIONS_SUBGRID_MANNING_COEF_EVALUATOR_HH_
+#define AMANZI_FLOWRELATIONS_SUBGRID_MANNING_COEF_EVALUATOR_HH_
 
 #include "factory.hh"
 #include "secondary_variable_field_evaluator.hh"
@@ -23,15 +23,17 @@ namespace Amanzi {
 namespace Flow {
 namespace FlowRelations {
 
-class FractionalConductanceEvaluator : public SecondaryVariableFieldEvaluator {
+class SubgridManningCoefficientEvaluator : public SecondaryVariableFieldEvaluator {
 
  public:
   explicit
-  FractionalConductanceEvaluator(Teuchos::ParameterList& plist);
+  SubgridManningCoefficientEvaluator(Teuchos::ParameterList& plist);
 
-  FractionalConductanceEvaluator(const FractionalConductanceEvaluator& other);
+  SubgridManningCoefficientEvaluator(const SubgridManningCoefficientEvaluator& other) = default;
 
-  Teuchos::RCP<FieldEvaluator> Clone() const;
+  Teuchos::RCP<FieldEvaluator> Clone() const {
+    return Teuchos::rcp(new SubgridManningCoefficientEvaluator(*this));
+  }
   
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
@@ -40,11 +42,10 @@ class FractionalConductanceEvaluator : public SecondaryVariableFieldEvaluator {
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
  private:
-  Key pdd_key_, pd_key_, vpd_key_;
-  Key depr_depth_key_, delta_ex_key_, delta_max_key_;
+  Key mann_key_, beta_key_, frac_cond_key_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,FractionalConductanceEvaluator> factory_;
+  static Utils::RegisteredFactory<FieldEvaluator,SubgridManningCoefficientEvaluator> factory_;
 };
 
 } //namespace

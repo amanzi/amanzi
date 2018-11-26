@@ -1,11 +1,5 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
-/*
-  The elevation evaluator gets the surface elevation, slope, and updates pres + elev.
-
-  Authors: Ethan Coon (ecoon@lanl.gov)
-*/
-
 #include "fractional_conductance_evaluator.hh"
 
 namespace Amanzi {
@@ -61,7 +55,6 @@ void FractionalConductanceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S
   const Epetra_MultiVector& pdd_v = *S->GetFieldData(pdd_key_)->ViewComponent("cell",false);
   
   int ncells = res.MyLength();
-  assert(depr_depth_v[0][0] > 0.);
 
   for (int c=0; c!=ncells; ++c) {
     double depr_depth = depr_depth_v[0][c];
@@ -77,7 +70,7 @@ void FractionalConductanceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S
   }
 }
 
-// This is hopefully never called?
+
 void FractionalConductanceEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
 
