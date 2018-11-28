@@ -53,15 +53,16 @@ EnergyBase::EnergyBase(Teuchos::ParameterList& FElist,
     plist_->set("conserved quantity key suffix", "energy");
 
   // set a default absolute tolerance
-  if (!plist_->isParameter("absolute error tolerance")) {
+  if (domain_.find("surface") != std::string::npos) {
+    mass_atol_ = plist_->get<double>("mass absolute error tolerance",
+                                     .01 * 55000.);
+  } else {
+    mass_atol_ = plist_->get<double>("mass absolute error tolerance",
+                                     .5 * .1 * 55000.);
+  }
 
-    if (domain_.find("surface") != std::string::npos) {
-      // h * nl * u at 1C in MJ/mol
-      plist_->set("absolute error tolerance", .01 * 55000. * 76.e-6);
-    } else {
-      // phi * s * nl * u at 1C in MJ/mol
-      plist_->set("absolute error tolerance", .5 * .1 * 55000. * 76.e-6);
-    }
+  if (!plist_->isParameter("absolute error tolerance")) {
+    plist_->set("absolute error tolerance", 6.e-3);
   }
 }
 
@@ -81,6 +82,7 @@ void EnergyBase::Setup(const Teuchos::Ptr<State>& S) {
 void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   // Set up keys if they were not already set.
   energy_key_ = Keys::readKey(*plist_, domain_, "energy", "energy");
+  wc_key_ = Keys::readKey(*plist_, domain_, "water content", "water_content");
   enthalpy_key_ = Keys::readKey(*plist_, domain_, "enthalpy", "enthalpy");
   flux_key_ = Keys::readKey(*plist_, domain_, "mass flux", "mass_flux");
   energy_flux_key_ = Keys::readKey(*plist_, domain_, "diffusive energy flux", "diffusive_energy_flux");

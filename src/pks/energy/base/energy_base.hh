@@ -59,6 +59,10 @@ public:
   // -- Calculate any diagnostics prior to doing vis
   virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S);
 
+  // Default implementations of BDFFnBase methods.
+  // -- Compute a norm on u-du and return the result.
+  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
+                       Teuchos::RCP<const TreeVector> du) override;
 
   // EnergyBase is a BDFFnBase
   // computes the non-linear functional f = f(t,u,udot)
@@ -168,6 +172,7 @@ public:
   bool compute_boundary_values_;
   
   double T_limit_;
+  double mass_atol_;
   
   bool coupled_to_subsurface_via_temp_;
   bool coupled_to_subsurface_via_flux_;
@@ -176,6 +181,7 @@ public:
 
   // Keys
   Key energy_key_;
+  Key wc_key_;
   Key enthalpy_key_;
   Key flux_key_;
   Key energy_flux_key_;
