@@ -92,10 +92,10 @@ namespace Amanzi {
 class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
  public:
   // Constructors
-  VerboseObject(std::string name, const std::string& verbosity);
-  VerboseObject(std::string name, Teuchos::ParameterList& plist);
-  VerboseObject(const Epetra_Comm& comm, std::string name,
-                Teuchos::ParameterList& plist);
+  VerboseObject(const std::string& name, const std::string& verbosity);
+  VerboseObject(const std::string& name, Teuchos::ParameterList plist);
+  VerboseObject(const Epetra_Comm& comm, const std::string& name,
+                Teuchos::ParameterList plist);
 
   // NOTE: Default destructor, copy construct should be ok.
 
@@ -123,11 +123,11 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   static unsigned int line_prefix_size;
 
   // Color output for developers
-  std::string color(std::string name) const;
+  std::string color(const std::string& name) const;
   std::string reset() const;
   std::string clock() const;
 
-  void set_name(std::string name);
+  void set_name(const std::string& name);
 
  protected:
   Teuchos::RCP<Teuchos::FancyOStream> out_;
