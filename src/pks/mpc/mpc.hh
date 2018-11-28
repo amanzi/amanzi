@@ -57,8 +57,17 @@ public:
     // get my parameter list
     plist_ = Teuchos::sublist(pks_list_, name_);
 
+    // set the verbose object list if need be
+    if (plist_->isSublist(name_ + " verbose object")) {
+      plist_->set("verbose object", plist_->sublist(name_ + " verbose object"));
+      std::cout << "Overwriting VO with name = " << name_ << std::endl;
+    } else {
+      std::cout << "Default VO with name = " << name_ << std::endl;
+    }
+
+
     // verbose object
-    vo_ = Teuchos::rcp(new VerboseObject(name_, *plist_));
+    vo_ = Teuchos::rcp(new VerboseObject(solution->Comm(), name_, *plist_));
   }
 
   // Virtual destructor
@@ -267,7 +276,7 @@ void MPC<PK_t>::init_(const Teuchos::RCP<State>& S)
   int npks = pk_order.size();
   for (int i=0; i!=npks; ++i) {
     // create the solution vector
-    Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector());
+    Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector(solution_->Comm()));
     solution_->PushBack(pk_soln);
 
     // create the PK

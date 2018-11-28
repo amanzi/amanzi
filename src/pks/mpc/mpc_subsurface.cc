@@ -353,6 +353,8 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
   // create the linear solver
   if (plist_->isSublist("linear solver")) {
     Teuchos::ParameterList& lin_solver_list = plist_->sublist("linear solver");
+    if (!lin_solver_list.isSublist("verbose object"))
+      lin_solver_list.set("verbose object", plist_->sublist("verbose object"));
     AmanziSolvers::LinearOperatorFactory<Operators::TreeOperator, TreeVector, TreeVectorSpace> fac;
     linsolve_preconditioner_ = fac.Create(lin_solver_list, preconditioner_);
   } else {

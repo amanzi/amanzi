@@ -359,4 +359,31 @@ MPCPermafrostSplitFluxColumns::CopyStarToPrimaryFlux_(double dt)
   }
 }
 
+// protected constructor of subpks
+void MPCPermafrostSplitFluxColumns::init_(const Teuchos::RCP<State>& S)
+{
+  PKFactory pk_factory;
+  Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
+  int npks = pk_order.size();
+
+  // create the coupling PK
+  // -- create the solution vector
+  auto pk_soln = Teuchos::rcp(new TreeVector());
+  solution_->PushBack(pk_soln);
+
+  // -- create the PK
+  sub_pks_.push_back(pk_factory.CreatePK(pk_order[0], pk_tree_, global_list_, S, pk_soln));
+
+  // create the column PKs
+  for (int i=1; i!=npks; ++i) {
+    // create the solution vector
+    auto pk_soln = Teuchos::rcp(new TreeVector(Epetra_MpiComm(MPI_COMM_SELF)));
+    solution_->PushBack(pk_soln);
+
+    // create the PK
+    std::string name_i = pk_order[i];
+    sub_pks_.push_back(pk_factory.CreatePK(name_i, pk_tree_, global_list_, S, pk_soln));
+  }
+};
+
 } // namespace

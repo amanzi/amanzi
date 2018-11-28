@@ -30,6 +30,7 @@ MPCPermafrostSplitFluxColumnsSubcycled::MPCPermafrostSplitFluxColumnsSubcycled(T
 bool MPCPermafrostSplitFluxColumnsSubcycled::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
+  int my_pid = S_next_->GetMesh("surface_star")->get_comm()->MyPID();
   // Advance the star system 
   bool fail = false;
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
@@ -58,11 +59,16 @@ bool MPCPermafrostSplitFluxColumnsSubcycled::AdvanceStep(double t_old, double t_
       bool fail_inner = sub_pks_[i]->AdvanceStep(t_inner, t_inner+dt_inner, false);
       if (vo_->os_OK(Teuchos::VERB_EXTREME))
         *vo_->os() << "  step failed? " << fail_inner << std::endl;
-      fail_inner |= !sub_pks_[i]->ValidStep();
+      bool valid_inner = sub_pks_[i]->ValidStep();
       if (vo_->os_OK(Teuchos::VERB_EXTREME))
-        *vo_->os() << "  step failed or was not valid? " << fail_inner << std::endl;
+        *vo_->os() << "  step valid? " << valid_inner << std::endl;
 
-      if (fail_inner) {
+      // DEBUGGING
+      std::cout << col_domain << " (" << my_pid << ") Step: " << t_inner/86400.0 << " (" << dt_inner/86400. 
+                << ") failed/!valid = " << fail_inner << "," << !valid_inner << std::endl;
+      // END DEBUGGING
+
+      if (fail_inner || !valid_inner) {
         dt_inner = sub_pks_[i]->get_dt();
         S_next_->AssignDomain(*S_inter_, col_domain);
         S_next_->AssignDomain(*S_inter_, "surface_"+col_domain);
@@ -74,13 +80,6 @@ bool MPCPermafrostSplitFluxColumnsSubcycled::AdvanceStep(double t_old, double t_
 
         if (vo_->os_OK(Teuchos::VERB_EXTREME))
           *vo_->os() << "  failed, new timestep is " << dt_inner << std::endl;
-
-        if (dt_inner < 1.e-6) {
-          Errors::Message msg;
-          msg << "Crashing timestep in subcycling: dt = " << dt_inner;
-          Exceptions::amanzi_throw(msg);
-        }
-
         
       } else {
         sub_pks_[i]->CommitStep(t_inner, t_inner + dt_inner, S_next_);
@@ -100,6 +99,13 @@ bool MPCPermafrostSplitFluxColumnsSubcycled::AdvanceStep(double t_old, double t_
         if (vo_->os_OK(Teuchos::VERB_EXTREME))
           *vo_->os() << "  success, new timestep is " << dt_inner << std::endl;
       }
+
+      if (dt_inner < 1.e-4) {
+        Errors::Message msg;
+        msg << "Column " << col_domain << " on PID " << my_pid << " crashing timestep in subcycling: dt = " << dt_inner;
+        Exceptions::amanzi_throw(msg);
+      }
+
     }
   }
   S_inter_->set_time(t_old);

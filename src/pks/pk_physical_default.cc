@@ -33,9 +33,9 @@ PK_Physical_Default::PK_Physical_Default(Teuchos::ParameterList& pk_tree,
   max_valid_change_ = plist_->get<double>("max valid change", -1.0);
 
   // verbose object
-  if (plist_->isParameter("verbose object "+domain_))
-    plist_->set("verbose object", plist_->sublist("verbose object "+domain_));
-  vo_ = Teuchos::rcp(new VerboseObject(name_, *plist_));
+  if (plist_->isSublist(name_ + " verbose object")) 
+    plist_->set("verbose object", plist_->sublist(name_ + " verbose object"));
+  vo_ = Teuchos::rcp(new VerboseObject(*S->GetMesh(domain_)->get_comm(), name_, *plist_));
 }
 
 // -----------------------------------------------------------------------------

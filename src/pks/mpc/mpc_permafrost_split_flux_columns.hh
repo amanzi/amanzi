@@ -84,6 +84,8 @@ class MPCPermafrostSplitFluxColumns : public MPC<PK> {
 
  protected:
 
+  void init_(const Teuchos::RCP<State>& S);
+
   virtual void CopyStarToPrimaryPressure_(double dt);
   virtual void CopyStarToPrimaryFlux_(double dt);
   

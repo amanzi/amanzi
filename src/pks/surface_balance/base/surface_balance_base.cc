@@ -89,6 +89,8 @@ SurfaceBalanceBase::Setup(const Teuchos::Ptr<State>& S) {
   //    Potentially create a linear solver
   if (plist_->isSublist("linear solver")) {
     Teuchos::ParameterList& linsolve_sublist = plist_->sublist("linear solver");
+    if (!linsolve_sublist.isSublist("verbose object"))
+      linsolve_sublist.set("verbose object", plist_->sublist("verbose object"));
     AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeVectorSpace> fac;
 
     lin_solver_ = fac.Create(linsolve_sublist, preconditioner_);

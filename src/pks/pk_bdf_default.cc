@@ -49,6 +49,8 @@ void PK_BDF_Default::Initialize(const Teuchos::Ptr<State>& S) {
     // -- instantiate time stepper
     Teuchos::ParameterList& bdf_plist = plist_->sublist("time integrator");
     bdf_plist.set("initial time", S->time());
+    if (!bdf_plist.isSublist("verbose object"))
+      bdf_plist.set("verbose object", plist_->sublist("verbose object"));
     time_stepper_ = Teuchos::rcp(new BDF1_TI<TreeVector,TreeVectorSpace>(*this, bdf_plist, solution_));
 
     // initialize continuation parameter if needed.
