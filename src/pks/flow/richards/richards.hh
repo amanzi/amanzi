@@ -244,6 +244,7 @@ protected:
   bool explicit_source_;
   bool precon_used_;
   bool clobber_surf_kr_;
+  bool max_surf_kr_;
   bool clobber_boundary_flux_dir_;
   
   // coupling terms

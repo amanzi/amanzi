@@ -62,6 +62,7 @@ Richards::Richards(Teuchos::ParameterList& pk_tree,
     precon_wc_(false),
     dynamic_mesh_(false),
     clobber_surf_kr_(false),
+    max_surf_kr_(false),
     clobber_boundary_flux_dir_(false),
     vapor_diffusion_(false),
     perm_scale_(1.),
@@ -140,6 +141,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   // -- nonlinear coefficients/upwinding
   Teuchos::ParameterList& wrm_plist = plist_->sublist("water retention evaluator");
   clobber_surf_kr_ = plist_->get<bool>("clobber surface rel perm", false);
+  max_surf_kr_ = plist_->get<bool>("max surface rel perm", false);
   clobber_boundary_flux_dir_ = plist_->get<bool>("clobber boundary flux direction for upwinding", false);
 
   std::string method_name = plist_->get<std::string>("relative permeability method", "upwind with Darcy flux");
@@ -758,6 +760,16 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     if (clobber_surf_kr_) {
       Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);
       uw_rel_perm_f.Export(rel_perm_bf, vandelay, Insert);
+    } else if (max_surf_kr_) {
+      Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);
+      const auto& fmap = mesh_->face_map(true);
+      const auto& bfmap = mesh_->exterior_face_map(true);
+      for (int bf=0; bf!=rel_perm_bf.MyLength(); ++bf) {
+        auto f = fmap.LID(bfmap.GID(bf));
+        if (rel_perm_bf[0][bf] > uw_rel_perm_f[0][f]) {
+          uw_rel_perm_f[0][f] = rel_perm_bf[0][bf];
+        }
+      }      
     }
 
     if (uw_rel_perm->HasComponent("face"))
