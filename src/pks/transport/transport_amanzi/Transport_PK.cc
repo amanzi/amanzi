@@ -643,20 +643,7 @@ void Transport_PK_ATS::InitializeFieldFromField_(const std::string& field0,
         double vmin0, vmax0, vavg0;
         double vmin1, vmax1, vavg1;
         
-        // f0.ViewComponent("cell")->MinValue(&vmin0);
-        // f1.ViewComponent("cell")->MinValue(&vmin1);
- 
-        // std::cout<<field0<<" vmin "<<vmin0<<"\n"; 
-        // std::cout<<field1<<" vmin "<<vmin1<<"\n";
-
         f0 = f1;
-
-        // f0.ViewComponent("cell")->MinValue(&vmin0);
-        // f1.ViewComponent("cell")->MinValue(&vmin1);
- 
-        // std::cout<<field0<<" vmin "<<vmin0<<"\n"; 
-        // std::cout<<field1<<" vmin "<<vmin1<<"\n";
-        // *vo_->os() << "initiliazed " << field0 << " to " << field1 << std::endl;
       
         S->GetField(field0, passwd_)->set_initialized();
         if ((vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)&&(!overwrite)){
@@ -710,6 +697,7 @@ double Transport_PK_ATS::StableTimeStep()
     if (c >= 0) {
       total_outflux[c] += fabs((*flux_)[0][f]);
     }
+
   }
 
   Sinks2TotalOutFlux(tcc_prev, total_outflux, 0, num_aqueous - 1);
@@ -1287,11 +1275,12 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
     vol_phi_ws_den = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_start)[0][c] * (*mol_dens_start)[0][c];
     for (int i = 0; i < num_advect; i++){
       (*conserve_qty_)[i][c] = tcc_prev[i][c] * vol_phi_ws_den;
-      if ((vol_phi_ws_den > water_tolerance_) && ((*solid_qty_)[i][c] > 0 )){  // Desolve solid residual into liquid
-        double add_mass = std::min((*solid_qty_)[i][c], max_tcc_* vol_phi_ws_den - (*conserve_qty_)[i][c]);
-        (*solid_qty_)[i][c] -= add_mass;
-        (*conserve_qty_)[i][c] += add_mass;
-      }
+
+      // if (( (*ws_start)[0][c]  > water_tolerance_) && ((*solid_qty_)[i][c] > 0 )){  // Desolve solid residual into liquid
+      //   double add_mass = std::min((*solid_qty_)[i][c], max_tcc_* vol_phi_ws_den - (*conserve_qty_)[i][c]);
+      //   (*solid_qty_)[i][c] -= add_mass;
+      //   (*conserve_qty_)[i][c] += add_mass;
+      // }
       mass_start += (*conserve_qty_)[i][c];
     }
   }
@@ -1325,14 +1314,14 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
         tcc_flux = dt_ * u * tcc_prev[i][c1];     
         (*conserve_qty_)[i][c1] -= tcc_flux;
         if (c2 < 0) mass_solutes_bc_[i] -= tcc_flux;
-        //AmanziGeometry::Point normal = mesh_->face_normal(f);
       }
 
     } else if (c1 >= ncells_owned && c2 >= 0 && c2 < ncells_owned) {
       for (int i = 0; i < num_advect; i++) {
         tcc_flux = dt_ * u * tcc_prev[i][c1];
-        (*conserve_qty_)[i][c2] += tcc_flux;
+        (*conserve_qty_)[i][c2] += tcc_flux;                
       }
+
     }
   }
 
@@ -1391,44 +1380,33 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
   //   else  *vo_->os()<<std::setprecision(10)<<"Subsurface mass "<<mass<<"\n";
   // }
 
-
-
-  // if (domain_name_ == "surface"){
-  //   std::cout<<"Before ComputeAddSourceTerms\n";
-  //   std::cout<<(*conserve_qty_)<<"\n";
-  // }
-
   // process external sources
   if (srcs_.size() != 0) {
     double time = t_physics_;
     ComputeAddSourceTerms(time, dt_, *conserve_qty_, 0, num_advect - 1);
   }
-
-  // if (domain_name_ == "domain"){
-  //   std::cout<<"After ComputeAddSourceTerms\n";
-  //   std::cout<<(*conserve_qty_)<<"\n";
-  // }
-
   
   // recover concentration from new conservative state
   for (int c = 0; c < ncells_owned; c++) {
     vol_phi_ws_den = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_end)[0][c] * (*mol_dens_end)[0][c];
     for (int i = 0; i < num_advect; i++) {
-      if (vol_phi_ws_den > water_tolerance_ && (*conserve_qty_)[i][c] > 0) {
+      if ((*ws_end)[0][c] > water_tolerance_ && (*conserve_qty_)[i][c] > 0) {
         tcc_next[i][c] = (*conserve_qty_)[i][c] / vol_phi_ws_den;
       }
       else  {
         (*solid_qty_)[i][c] += std::max((*conserve_qty_)[i][c], 0.);
         tcc_next[i][c] = 0.;
       }
+      // if ( (tcc_next[i][c] > 1.9e-4)&&(i==20) ){
+      //   MyPID = mesh_->get_comm()->MyPID();
+      //   std::cout<<"cell "<<c<<"  rank "<<MyPID<<" tcc "<<tcc_next[i][c]<<" vol_phi_ws_den "<<vol_phi_ws_den<<"\n";
+      //   std::cout<<"cell "<<c<<"  rank "<<MyPID<<" ws_start "<< (*ws_start)[0][c] << " ws end"<<(*ws_end)[0][c] <<" mol "<<(*mol_dens_end)[0][c]<<"\n";
+      //   std::cout<<"conserve_qty_ "<< (*conserve_qty_)[i][c]<<" water tolerance " << water_tolerance_ <<"\n";
+      //   exit(0);
+      // }
     }
   }
   
-  // if (domain_name_ == "domain"){
-  //   std::cout<<"tcc_next\n";
-  //   std::cout<<tcc_next<<"\n";
-  // }
-
   double mass_final = 0;
   for (int c = 0; c < ncells_owned; c++) {
     for (int i = 0; i < num_advect; i++){        

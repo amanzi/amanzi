@@ -16,6 +16,7 @@
 #define AMANZI_REACTIVETRANSPORT_PK_ATS_HH_
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 #include "PK.hh"
 #include "Transport_PK_ATS.hh"
@@ -66,7 +67,9 @@ class ReactiveTransport_PK_ATS : public PK_MPCAdditive<PK> {
                         double t_old, double t_new, bool reinit = false);
   
 
-  std::string name() { return "reactive transport"; } 
+  std::string name() { return "reactive transport"; }
+
+
 
 protected:
   int transport_pk_index_, chemistry_pk_index_;
@@ -76,6 +79,9 @@ protected:
   bool transport_subcycling_;
   double dTtran_, dTchem_;
   virtual void cast_sub_pks_();
+
+  Teuchos::RCP<Teuchos::Time> chem_timer_;
+  Teuchos::RCP<Teuchos::Time> alquimia_timer_;  
   
 private:
 
@@ -84,6 +90,8 @@ private:
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration_stor;
   Teuchos::RCP<Transport::Transport_PK_ATS> tranport_pk_;
   Teuchos::RCP<AmanziChemistry::Chemistry_PK> chemistry_pk_;
+
+
   
 // int master_, slave_;
   

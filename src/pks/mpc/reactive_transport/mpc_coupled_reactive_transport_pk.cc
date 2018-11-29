@@ -228,8 +228,8 @@ bool Coupled_ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, b
     Exceptions::amanzi_throw(message);
   }
 
-
- 
+  Teuchos::RCP<Teuchos::TimeMonitor> local_flow_monitor = Teuchos::rcp(new Teuchos::TimeMonitor(*chem_timer_));
+  
   try {
     
     Teuchos::RCP<Epetra_MultiVector> tcc_sub = 
@@ -256,6 +256,7 @@ bool Coupled_ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, b
     fail = true;
   }
 
+  local_flow_monitor = Teuchos::null;
   
   return fail;
 };

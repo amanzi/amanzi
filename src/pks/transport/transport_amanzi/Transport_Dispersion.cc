@@ -27,11 +27,11 @@ namespace Amanzi {
 namespace Transport{
 
 /* *******************************************************************
-* Calculate dispersive tensor from given Darcy fluxes. The flux is
+* Calculate dispersive tensor from given mass fluxes. The flux is
 * assumed to be scaled by face area.
 ******************************************************************* */
 void Transport_PK_ATS::CalculateDispersionTensor_(
-    const Epetra_MultiVector& darcy_flux, 
+    const Epetra_MultiVector& mass_flux, 
     const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation,
     const Epetra_MultiVector& mol_density )
 {
@@ -47,7 +47,7 @@ void Transport_PK_ATS::CalculateDispersionTensor_(
     int nfaces = faces.size();
 
     std::vector<double> flux(nfaces);
-    for (int n = 0; n < nfaces; n++) flux[n] = darcy_flux[0][faces[n]];
+    for (int n = 0; n < nfaces; n++) flux[n] = mass_flux[0][faces[n]];
     mfd3d.RecoverGradient_MassMatrix(c, flux, velocity);
 
     D_[c] = mdm_->second[(*mdm_->first)[c]]->mech_dispersion(
@@ -83,14 +83,14 @@ void Transport_PK_ATS::CalculateDiffusionTensor_(
       if (phase == TRANSPORT_PHASE_LIQUID) {
         for (c = block.begin(); c != block.end(); c++) {
           D_[*c] += md * spec->tau[phase] * porosity[0][*c] * saturation[0][*c];
-          // double mol_den = mol_density[0][c];
-          // D_[*c] *= mol_den;
+          double mol_den = mol_density[0][*c];
+          D_[*c] *= mol_den;
         }
       } else if (phase == TRANSPORT_PHASE_GAS) {
         for (c = block.begin(); c != block.end(); c++) {
           D_[*c] += md * spec->tau[phase] * porosity[0][*c] * (1.0 - saturation[0][*c]);
-          // double mol_den = mol_density[0][c];
-          // D_[*c] *= mol_den;
+          double mol_den = mol_density[0][*c];
+          D_[*c] *= mol_den;
         }
       }
 

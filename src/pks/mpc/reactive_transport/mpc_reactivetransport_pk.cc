@@ -53,6 +53,10 @@ ReactiveTransport_PK_ATS::ReactiveTransport_PK_ATS(Teuchos::ParameterList& pk_tr
   // ASSERT(tranport_pk_->domain_name() == chemistry_pk_->domain_name());
   // master_ = 1;  // Transport;
   // slave_ = 0;  // Chemistry;
+
+  chem_timer_ = Teuchos::TimeMonitor::getNewCounter("chemistry");
+  alquimia_timer_ = Teuchos::TimeMonitor::getNewCounter("alquimia");
+  
 }
 
 void ReactiveTransport_PK_ATS::Setup(const Teuchos::Ptr<State>& S){
@@ -160,6 +164,7 @@ bool ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool rein
   Key tcc_key = Keys::getKey(domain_name, "total_component_concentration");
   Key mol_den_key = Keys::getKey(domain_name,  "molar_density_liquid");
 
+  
   // First we do a transport step.
   bool pk_fail = tranport_pk_->AdvanceStep(t_old, t_new, reinit);
 
@@ -168,6 +173,8 @@ bool ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool rein
     Exceptions::amanzi_throw(message);
   } 
 
+  Teuchos::RCP<Teuchos::TimeMonitor> local_flow_monitor = Teuchos::rcp(new Teuchos::TimeMonitor(*chem_timer_));
+  
   // Second, we do a chemistry step.
   try {
     int num_aq_componets = tranport_pk_ -> num_aqueous_component();
@@ -188,7 +195,9 @@ bool ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool rein
   catch (const Errors::Message& chem_error) {
     fail = true;
   }
-    
+
+   local_flow_monitor = Teuchos::null;
+  
   return fail;
 };
 
@@ -219,7 +228,12 @@ bool ReactiveTransport_PK_ATS::AdvanceChemistry(Teuchos::RCP<AmanziChemistry::Ch
 
     
     chem_pk->set_aqueous_components(tcc_copy);
+
+    Teuchos::RCP<Teuchos::TimeMonitor> local_flow_monitor = Teuchos::rcp(new Teuchos::TimeMonitor(*alquimia_timer_));
     pk_fail = chem_pk->AdvanceStep(t_old, t_new, reinit);
+    local_flow_monitor = Teuchos::null;
+
+    
     *tcc_copy = *chem_pk->aqueous_components();
     
     // convert from mol/L fraction to mole fraction[-]

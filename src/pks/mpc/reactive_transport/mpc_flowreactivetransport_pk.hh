@@ -15,11 +15,13 @@
 #define ATS_AMANZI_FLOWREACTIVETRANSPORT_PK_HH_
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 #include "PK.hh"
 #include "PK_Factory.hh"
 #include "mpc.hh"
 #include "pk_mpcsubcycled_ats.hh"
+
 
 namespace Amanzi {
 
@@ -46,6 +48,11 @@ class FlowReactiveTransport_PK_ATS : public PK_MPCSubcycled_ATS {
   std::string name() { return "flow reactive transport ATS";} 
 
  private:
+
+  Teuchos::RCP<Teuchos::Time> flow_timer_;
+  Teuchos::RCP<Teuchos::Time> rt_timer_;
+
+  
   // factory registration
   static RegisteredPKFactory<FlowReactiveTransport_PK_ATS> reg_;
 };

@@ -40,6 +40,9 @@ FlowReactiveTransport_PK_ATS::FlowReactiveTransport_PK_ATS(
   vlist.sublist("verbose object") = pk_list -> sublist("verbose object");
   vo_ =  Teuchos::rcp(new VerboseObject("Flow&TransportPK", vlist)); 
 
+  flow_timer_ = Teuchos::TimeMonitor::getNewCounter("flow");
+  rt_timer_ = Teuchos::TimeMonitor::getNewCounter("reactive tranport");
+  
 }
 
 
@@ -79,9 +82,13 @@ bool FlowReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool 
   // advance the master PK using the full step size
 
   Teuchos::OSTab tab = vo_->getOSTab();
+
+  Teuchos::RCP<Teuchos::TimeMonitor> local_flow_monitor = Teuchos::rcp(new Teuchos::TimeMonitor(*flow_timer_));
   
   fail = sub_pks_[master_]->AdvanceStep(t_old, t_new, reinit);
   fail |= !sub_pks_[master_]->ValidStep();
+
+  local_flow_monitor = Teuchos::null;
   
   if (fail) {
     if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
@@ -93,12 +100,6 @@ bool FlowReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool 
   //return fail;
   master_dt_ = t_new - t_old;
   sub_pks_[master_]->CommitStep(t_old, t_new, S_next_);
-
-  // Teuchos::RCP<const Field> field_tmp = S_->GetFieldCopy("mass_flux", "next_timestep");
-  // Key copy_owner = field_tmp->owner();
-  // Teuchos::RCP<Epetra_MultiVector> flux_copy = S_->GetFieldCopyData("mass_flux", "next_timestep", copy_owner)->ViewComponent("face", true);
-  // *flux_copy = *S_next_->GetFieldData("mass_flux")->ViewComponent("face", true);
-  // if (vo_->getVerbLevel() > Teuchos::VERB_EXTREME) *vo_->os()<<"Master step is successful\n";
 
   slave_dt_ = sub_pks_[slave_]->get_dt(); 
   if (slave_dt_ > master_dt_) slave_dt_ = master_dt_;
@@ -112,6 +113,8 @@ bool FlowReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool 
   double dt_next = slave_dt_;
   double dt_done = 0.;
 
+  local_flow_monitor = Teuchos::rcp(new Teuchos::TimeMonitor(*rt_timer_));
+  
   while (!done) {
     // do not overstep
     if (t_old + dt_done + dt_next > t_new) {
@@ -148,7 +151,9 @@ bool FlowReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool 
   } else {
     if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) *vo_->os()<<"Slave step is failed\n";
     return true;
-  }  
+  }
+
+  local_flow_monitor = Teuchos::null;
 }
 
 }  // namespace Amanzi
