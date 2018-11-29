@@ -92,8 +92,8 @@ void MyRemapDG::Init()
     velf_vec0_[f].Reshape(dim_, dim_, 0, true);
   }
 
-  J0_.resize(ncells_wghost_);
-  for (int c = 0; c < ncells_wghost_; ++c) {
+  J0_.resize(ncells_owned_);
+  for (int c = 0; c < ncells_owned_; ++c) {
     J0_[c].Reshape(dim_, dim_, dim_, 0, true);
     J0_[c].set_origin(mesh0_->cell_centroid(c));
   }
@@ -108,7 +108,7 @@ void MyRemapDG::ReInit(double tini)
   for (int f = 0; f < nfaces_wghost_; ++f)
     velf_vec0_[f] += velf_vec_[f];
 
-  for (int c = 0; c < ncells_wghost_; ++c)
+  for (int c = 0; c < ncells_owned_; ++c)
     J0_[c] += J_[c];
 
   InitializeOperators();
@@ -159,7 +159,7 @@ void MyRemapDG::DynamicFaceVelocity(double t)
 void MyRemapDG::DynamicCellVelocity(double t, bool consistent_det)
 {
   WhetStone::MatrixPolynomial Jt, C;
-  for (int c = 0; c < ncells_wghost_; ++c) {
+  for (int c = 0; c < ncells_owned_; ++c) {
     DynamicJacobianMatrix(c, t, J_[c], Jt);
     maps_->Determinant(Jt, (*jac_)[c]);
     maps_->Cofactors(Jt, C);

@@ -87,13 +87,14 @@ void RemapDG::InitializeOperators()
   }
   op_flux_->SetBCs(bc, bc);
 
+  // memory allocation
   // -- physical field
   field_ = Teuchos::rcp(new CompositeVector(*op_reac_->global_operator()->rhs()));
 
   // -- velocities
   velf_ = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost_));
-  velc_ = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_wghost_));
-  jac_ = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_wghost_));
+  velc_ = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_owned_));
+  jac_ = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_owned_));
 }
 
 
@@ -119,10 +120,10 @@ void RemapDG::InitializeFaceVelocity()
 void RemapDG::InitializeJacobianMatrix()
 {
   WhetStone::Entity_ID_List faces;
-  J_.resize(ncells_wghost_);
-  uc_.resize(ncells_wghost_);
+  J_.resize(ncells_owned_);
+  uc_.resize(ncells_owned_);
 
-  for (int c = 0; c < ncells_wghost_; ++c) {
+  for (int c = 0; c < ncells_owned_; ++c) {
     mesh0_->cell_get_faces(c, &faces);
 
     std::vector<WhetStone::VectorPolynomial> vvf;
@@ -190,10 +191,10 @@ void RemapDG::InitializeConsistentJacobianDeterminant(const Amanzi::WhetStone::D
   Epetra_MultiVector& u0c = *u0.ViewComponent("cell", true);
   Epetra_MultiVector& u1c = *u1.ViewComponent("cell", true);
 
-  jac0_.resize(ncells_wghost_);
-  jac1_.resize(ncells_wghost_);
+  jac0_.resize(ncells_owned_);
+  jac1_.resize(ncells_owned_);
 
-  for (int c = 0; c < ncells_wghost_; ++c) {
+  for (int c = 0; c < ncells_owned_; ++c) {
     const auto& basis = dg.cell_basis(c);
 
     for (int i = 0; i < nk; ++i) data(i) = u0c[i][c];
@@ -274,7 +275,7 @@ void RemapDG::DynamicFaceVelocity(double t)
 void RemapDG::DynamicCellVelocity(double t, bool consistent_det)
 {
   WhetStone::MatrixPolynomial Jt, C;
-  for (int c = 0; c < ncells_wghost_; ++c) {
+  for (int c = 0; c < ncells_owned_; ++c) {
     DynamicJacobianMatrix(c, t, J_[c], Jt);
     maps_->Cofactors(Jt, C);
     if (consistent_det) {

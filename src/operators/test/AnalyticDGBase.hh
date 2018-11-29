@@ -279,6 +279,7 @@ void AnalyticDGBase::ComputeCellErrorRemap(
   GlobalOp("sum", &l2_err, 1);
   GlobalOp("sum", &l20_err, 1);
   GlobalOp("max", &inf_err, 1);
+  GlobalOp("max", &inf0_err, 1);
 #endif
   pnorm = sqrt(pnorm);
   l2_err = sqrt(l2_err);
