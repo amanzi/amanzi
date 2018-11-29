@@ -198,7 +198,7 @@ void AnalyticDGBase::ComputeCellError(
     std::vector<const Amanzi::WhetStone::WhetStoneFunction*> funcs(2);
     funcs[0] = &poly_err;
     funcs[1] = &poly_err;
-    l2_int += numi.IntegrateFunctionsTrianglatedCell(c, funcs, 2 * order_);
+    l2_int += numi.IntegrateFunctionsTriangulatedCell(c, funcs, 2 * order_);
   }
 #ifdef HAVE_MPI
   GlobalOp("sum", &pnorm, 1);

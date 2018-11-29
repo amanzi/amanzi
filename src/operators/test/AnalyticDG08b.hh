@@ -51,7 +51,7 @@ class AnalyticDG08b : public AnalyticDGBase {
   ~AnalyticDG08b() {};
 
   // control of details
-  bool set_shapes(bool cone, bool hump, bool cylinder) {
+  void set_shapes(bool cone, bool hump, bool cylinder) {
     cone_ = cone;
     hump_ = hump;
     cylinder_ = cylinder;

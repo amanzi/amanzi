@@ -30,18 +30,18 @@
 #include "OutputXDMF.hh"
 
 // Amanzi::Operators
-#include "RemapDG.hh"
+#include "RemapDG_Tests.hh"
 
 #include "AnalyticDG04.hh"
 
 namespace Amanzi {
 
-class MyRemapDG : public RemapDG<AnalyticDG04> {
+class MyRemapDG : public RemapDG_Tests<AnalyticDG04> {
  public:
   MyRemapDG(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
             const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
             Teuchos::ParameterList& plist)
-    : RemapDG<AnalyticDG04>(mesh0, mesh1, plist), tl2_(0.0) {};
+    : RemapDG_Tests<AnalyticDG04>(mesh0, mesh1, plist), tl2_(0.0) {};
   ~MyRemapDG() {};
 
   void ChangeVariables(double t, const CompositeVector& p1, CompositeVector& p2, bool flag);
@@ -62,7 +62,9 @@ class MyRemapDG : public RemapDG<AnalyticDG04> {
 void MyRemapDG::ChangeVariables(
     double t, const CompositeVector& p1, CompositeVector& p2, bool flag)
 {
-  UpdateGeometricQuantities(t, consistent_jac_);
+  DynamicFaceVelocity(t);
+  DynamicCellVelocity(t, consistent_jac_);
+
   op_reac_->Setup(jac_);
   op_reac_->UpdateMatrices(Teuchos::null);
 
@@ -136,7 +138,7 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
     std::string vel_projector = map_list.get<std::string>("projector");
     std::string map_name = map_list.get<std::string>("map name");
       
-    std::cout << "\nTest: " << dim << "D remap, dual formulation:"
+    std::cout << "\nTest: " << dim << "D remap:"
               << " mesh=" << ((ny == 0) ? file_name : "square")
               << " deform=" << deform << std::endl;
 
@@ -188,8 +190,10 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   // create remap object
   MyRemapDG remap(mesh0, mesh1, plist);
   remap.DeformMesh(deform, 1.0);
-  remap.Init();
-  remap.InitTertiary(dg);
+  remap.InitializeOperators();
+  remap.InitializeFaceVelocity();
+  remap.InitializeJacobianMatrix();
+  remap.InitializeConsistentJacobianDeterminant(dg);
 
   // initial mass
   double mass0(0.0);

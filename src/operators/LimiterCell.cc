@@ -25,6 +25,7 @@
 
 // Amanzi
 #include "exceptions.hh"
+#include "Quadrature1D.hh"
 #include "WhetStoneMeshUtils.hh"
 
 // Amanzi::Operators
@@ -72,6 +73,9 @@ void LimiterCell::Init(Teuchos::ParameterList& plist,
   if (name == "Barth-Jespersen") {
     limiter_id_ = OPERATOR_LIMITER_BARTH_JESPERSEN;
     stencil = plist.get<std::string>("limiter stencil", "face to cells");
+  } else if (name == "Barth-Jespersen dg") {
+    limiter_id_ = OPERATOR_LIMITER_BARTH_JESPERSEN_DG;
+    stencil = plist.get<std::string>("limiter stencil", "face to cells");
   } else if (name == "tensorial") {
     limiter_id_ = OPERATOR_LIMITER_TENSORIAL;
     stencil = plist.get<std::string>("limiter stencil", "face to cells");
@@ -89,13 +93,14 @@ void LimiterCell::Init(Teuchos::ParameterList& plist,
   else if (stencil == "cell to all cells")
     stencil_id_ = OPERATOR_LIMITER_STENCIL_C2C_ALL;
 
-  limiter_correction_ = plist.get<bool>("limiter extension for transport", false);
   external_bounds_ = plist.get<bool>("use external bounds", false);
+  limiter_points_ = plist.get<int>("limiter points", 1);
+  limiter_correction_ = plist.get<bool>("limiter extension for transport", false);
 }
 
 
 /* ******************************************************************
-* Apply internal limiter.
+* Apply an internal limiter.
 ****************************************************************** */
 void LimiterCell::ApplyLimiter(
     const AmanziMesh::Entity_ID_List& ids,
@@ -122,6 +127,9 @@ void LimiterCell::ApplyLimiter(
   } 
   else if (limiter_id_ == OPERATOR_LIMITER_KUZMIN) {
     LimiterKuzmin_(ids, bc_model, bc_value);
+  } else {
+    Errors::Message msg("Unknown limiter");
+    Exceptions::amanzi_throw(msg);
   }
 }
 
@@ -135,6 +143,31 @@ void LimiterCell::ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter)
 
   for (int c = 0; c < ncells_owned; c++) {
     for (int i = 0; i < dim; i++) (*grad)[i][c] *= (*limiter)[0][c];
+  }
+}
+
+
+/* ******************************************************************
+* Apply internal limiter.
+****************************************************************** */
+void LimiterCell::ApplyLimiter(
+    const AmanziMesh::Entity_ID_List& ids,
+    Teuchos::RCP<const Epetra_MultiVector> field, const WhetStone::DG_Modal& dg,
+    const std::vector<int>& bc_model, const std::vector<double>& bc_value)
+{
+  field_ = field;
+
+  if (external_bounds_ && bounds_ == Teuchos::null) {
+    Errors::Message msg("External bounds for limiters are requested but not provided");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
+  if (limiter_id_ == OPERATOR_LIMITER_BARTH_JESPERSEN_DG) {
+    LimiterBarthJespersenDG_(dg, ids, bc_model, bc_value);
+  } else {
+    Errors::Message msg("Unknown limiter");
+    Exceptions::amanzi_throw(msg);
   }
 }
 
@@ -287,7 +320,7 @@ void LimiterCell::LimiterExtensionTransportTensorial_()
 /* *******************************************************************
 * Routine calculates the BJ limiter using the cell-based algorithm.
 * First, it limits face-centered value of a reconstracted function 
-* by min-max of two cell-centered values.
+* by min-max of two or more cell-centered values.
 * Second, it limits outflux values which gives factor 0.5 in the
 * time step estimate.
 ******************************************************************* */
@@ -299,9 +332,9 @@ void LimiterCell::LimiterBarthJespersen_(
   limiter->PutScalar(1.0);
   Epetra_MultiVector& grad = *gradient_->ViewComponent("cell", false);
 
-  double u1, u2, u1f, u2f, umin, umax;  // cell and inteface values
-  AmanziGeometry::Point gradient_c(dim), gradient_c2(dim);
-  AmanziMesh::Entity_ID_List faces, cells;
+  double u1, u2, u1f, umin, umax;
+  AmanziGeometry::Point gradient_c(dim);
+  AmanziMesh::Entity_ID_List faces;
 
   // Step 1: limiting gradient inside domain
   if (stencil_id_ == OPERATOR_LIMITER_STENCIL_F2C)
@@ -321,8 +354,6 @@ void LimiterCell::LimiterBarthJespersen_(
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
       const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
 
       for (int i = 0; i < dim; i++) gradient_c[i] = grad[i][c];
       double u1_add = gradient_c * (xf - xc);
@@ -402,6 +433,69 @@ void LimiterCell::LimiterExtensionTransportBarthJespersen_(
       double psi = outflux / outflux_weigted;
       (*limiter)[c] *= psi;
     }
+  }
+}
+
+
+/* *******************************************************************
+* The BJ limiter for modal DG schemes.
+* Note: At the moment, the routine requires external bounds.
+******************************************************************* */
+void LimiterCell::LimiterBarthJespersenDG_(
+    const WhetStone::DG_Modal& dg, const AmanziMesh::Entity_ID_List& ids,
+    const std::vector<int>& bc_model, const std::vector<double>& bc_value)
+{
+  AMANZI_ASSERT(dim == 2);
+
+  double u1, u2, u1f, umin, umax;
+  AmanziMesh::Entity_ID_List faces, nodes;
+
+  int nk = field_->NumVectors();
+  WhetStone::DenseVector data(nk);
+  AmanziGeometry::Point x1(dim), x2(dim), xm(dim);
+  int order = WhetStone::PolynomialSpaceOrder(dim, nk);
+
+  BoundsForCells(bc_model, bc_value, stencil_id_, true);
+
+  for (int n = 0; n < ids.size(); ++n) {
+    int c = ids[n];
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+
+    for (int i = 0; i < nk; ++i) data(i) = (*field_)[i][c];
+    auto poly = dg.cell_basis(c).CalculatePolynomial(mesh_, c, order, data);
+
+    u1 = poly.Value(xc);
+    double tol = sqrt(OPERATOR_LIMITER_TOLERANCE) * fabs(u1);
+
+    int m = limiter_points_ - 1;
+    double climiter(1.0);
+
+    for (int i = 0; i < nfaces; i++) {
+      int f = faces[i];
+      mesh_->face_get_nodes(f, &nodes);
+
+      mesh_->node_get_coordinates(nodes[0], &x1);
+      mesh_->node_get_coordinates(nodes[1], &x2);
+
+      getBounds(c, f, stencil_id_, &umin, &umax);
+
+      for (int k = 0; k < limiter_points_; ++k) {
+        xm = x1 * WhetStone::q1d_points[m][k] + x2 * (1.0 - WhetStone::q1d_points[m][k]);
+        u1f = poly.Value(xm);
+        double u1_add = u1f - u1;
+
+        if (u1f < umin - tol) {
+          climiter = std::min(climiter, (umin - u1) / u1_add);
+        } else if (u1f > umax + tol) {
+          climiter = std::min(climiter, (umax - u1) / u1_add);
+        }
+      }
+    }
+
+    for (int i = 1; i < nk; ++i) (*field_)[i][c] *= climiter;
+    (*limiter_)[c] = climiter;
   }
 }
 

@@ -135,9 +135,13 @@ AdvectionFn<AnalyticDG>::AdvectionFn(
   if (weak_form == "dual") {
     weak_sign_ = 1.0;
     pk_name_ = "PK operator";
-  } else {
+  } else if (weak_form == "primal") {
     weak_sign_ = -1.0;
     pk_name_ = "PK operator: primal";
+    divergence_term_ = false;
+  } else if (weak_form == "gauss points") {
+    weak_sign_ = -1.0;
+    pk_name_ = "PK operator: gauss points";
     divergence_term_ = false;
   }
 
@@ -611,6 +615,7 @@ void AdvectionTransient(std::string filename, int nx, int ny,
 
   std::string pk_name = "PK operator";
   if (weak_form == "primal") pk_name = "PK operator: primal";
+  if (weak_form == "gauss points") pk_name = "PK operator: gauss points";
 
   int order = plist.sublist(pk_name)
                    .sublist("flux operator").get<int>("method order");
@@ -739,6 +744,7 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
   exact_solution_expected = true;
   AdvectionTransient<AnalyticDG02b>("square", 4,4, dT,T1, rk_order, false);
+  AdvectionTransient<AnalyticDG02b>("square", 4,4, dT,T1, rk_order, false, "gauss points");
 
   exact_solution_expected = false;
   AdvectionTransient<AnalyticDG06b>("square", 4,4, dT,T1, rk_order);

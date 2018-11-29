@@ -31,31 +31,32 @@
 #include "OutputXDMF.hh"
 
 // Amanzi::Operators
-#include "RemapDG.hh"
+#include "RemapDG_Tests.hh"
 
 #include "AnalyticDG04.hh"
 
 namespace Amanzi {
 
-class MyRemapDG : public RemapDG<AnalyticDG04> {
+class MyRemapDG : public RemapDG_Tests<AnalyticDG04> {
  public:
   MyRemapDG(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
             const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
             Teuchos::ParameterList& plist, double T1)
-    : RemapDG<AnalyticDG04>(mesh0, mesh1, plist),
+    : RemapDG_Tests<AnalyticDG04>(mesh0, mesh1, plist),
       T1_(T1),
       tini_(0.0),
       tl2_(0.0) {};
   ~MyRemapDG() {};
 
   // create basic structures at time zero
-  virtual void Init() override;
+  void Init();
   void ReInit(double tini);
 
   // geometric tools
-  virtual void Jacobian(int c, double t, const WhetStone::MatrixPolynomial& J,
-                        WhetStone::MatrixPolynomial& Jt) override;
-  virtual void UpdateGeometricQuantities(double t, bool consistent_det) override;
+  virtual void DynamicJacobianMatrix(
+      int c, double t, const WhetStone::MatrixPolynomial& J, WhetStone::MatrixPolynomial& Jt) override;
+  virtual void DynamicFaceVelocity(double t) override;
+  virtual void DynamicCellVelocity(double t, bool consistent_det) override;
 
   // mesh deformation from time 0 to t
   virtual void DeformMesh(int deform, double t) override;
@@ -81,8 +82,10 @@ class MyRemapDG : public RemapDG<AnalyticDG04> {
 ***************************************************************** */
 void MyRemapDG::Init()
 {
-  InitPrimary();
-  InitSecondary();
+
+  InitializeOperators();
+  InitializeFaceVelocity();
+  InitializeJacobianMatrix();
 
   velf_vec0_.resize(nfaces_wghost_);
   for (int f = 0; f < nfaces_wghost_; ++f) {
@@ -108,13 +111,14 @@ void MyRemapDG::ReInit(double tini)
   for (int c = 0; c < ncells_wghost_; ++c)
     J0_[c] += J_[c];
 
-  InitPrimary();
+  InitializeOperators();
+  InitializeFaceVelocity();
 
   // adjust new velocities for interval [tini, tend]
   for (int f = 0; f < nfaces_wghost_; ++f)
     velf_vec_[f] -= velf_vec0_[f];
 
-  InitSecondary();
+  InitializeJacobianMatrix();
 
   tini_ = tini;
   tl2_ = 0.0;
@@ -124,7 +128,7 @@ void MyRemapDG::ReInit(double tini)
 /* *****************************************************************
 * Calculates various geometric quantaties on intermediate meshes.
 ***************************************************************** */
-void MyRemapDG::Jacobian(
+void MyRemapDG::DynamicJacobianMatrix(
     int c, double t, const WhetStone::MatrixPolynomial& J, WhetStone::MatrixPolynomial& Jt)
 {
   Jt = J0_[c] + t * J;
@@ -135,22 +139,28 @@ void MyRemapDG::Jacobian(
 
 
 /* *****************************************************************
-* Calculates various geometric quantaties on intermediate meshes.
+* Calculate face co-velocity in reference coordinates
 ***************************************************************** */
-void MyRemapDG::UpdateGeometricQuantities(double t, bool consistent_det)
+void MyRemapDG::DynamicFaceVelocity(double t)
 {
-  // cn = j J^{-t} N dA
-  WhetStone::VectorPolynomial cn;
+  WhetStone::VectorPolynomial cn;  // cn = j J^{-t} N dA
 
   for (int f = 0; f < nfaces_wghost_; ++f) {
     WhetStone::VectorPolynomial tmp = velf_vec0_[f] + t * velf_vec_[f]; 
     maps_->NansonFormula(f, tmp, cn);
     (*velf_)[f] = velf_vec_[f] * cn;
   }
+}
 
+
+/* *****************************************************************
+* Cell co-velocity in reference coordinates and Jacobian determinant
+***************************************************************** */
+void MyRemapDG::DynamicCellVelocity(double t, bool consistent_det)
+{
   WhetStone::MatrixPolynomial Jt, C;
   for (int c = 0; c < ncells_wghost_; ++c) {
-    Jacobian(c, t, J_[c], Jt);
+    DynamicJacobianMatrix(c, t, J_[c], Jt);
     maps_->Determinant(Jt, (*jac_)[c]);
     maps_->Cofactors(Jt, C);
     
@@ -166,7 +176,7 @@ void MyRemapDG::UpdateGeometricQuantities(double t, bool consistent_det)
 ***************************************************************** */
 void MyRemapDG::DeformMesh(int deform, double t)
 {
-  RemapDG<AnalyticDG04>::DeformMesh(deform, t);
+  RemapDG_Tests<AnalyticDG04>::DeformMesh(deform, t);
 
   if (order_ > 1) {
     int nfaces = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
@@ -191,7 +201,9 @@ void MyRemapDG::DeformMesh(int deform, double t)
 void MyRemapDG::ChangeVariables(
     double t, const CompositeVector& p1, CompositeVector& p2, bool flag)
 {
-  UpdateGeometricQuantities(t, consistent_jac_);
+  DynamicFaceVelocity(t);
+  DynamicCellVelocity(t, consistent_jac_);
+
   op_reac_->Setup(jac_);
   op_reac_->UpdateMatrices(Teuchos::null);
 
@@ -231,7 +243,7 @@ double MyRemapDG::L2Norm(double t, double dt, const CompositeVector& p1) {
 ***************************************************************** */
 void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
                       std::string map_name, std::string file_name,
-                      int nx, int ny, int nz, double dt,
+                      int nx, int ny, int nz, double dt0,
                       int deform = 1, int nloop = 1, double T1 = 1.0) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -269,7 +281,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
     std::string limiter = limiter_list.get<std::string>("limiter");
     std::string stencil = limiter_list.get<std::string>("limiter stencil", "default");
 
-    std::cout << "\nTest: " << dim << "D remap, dual formulation:"
+    std::cout << "\nTest: " << dim << "D remap:"
               << " mesh=" << ((ny == 0) ? file_name : "square")
               << " deform=" << deform << std::endl;
 
@@ -314,6 +326,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
                            .sublist("flux operator").get<std::string>("dg basis");
   WhetStone::DG_Modal dg(order, mesh0, basis);
   AnalyticDG04 ana(mesh0, order, true);
+  // ana.set_shapes(false, false, true);
   ana.InitialGuess(dg, p1c, 1.0);
 
   // vizualize initial solution
@@ -354,8 +367,9 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   remap.ChangeVariables(0.0, *p1, p1aux, true);
 
   int nstep(0);
-  double t(0.0), tend(0.0);
+  double dt, t(0.0), tend(0.0);
   for (int iloop = 0; iloop < nloop; ++iloop) {
+    dt = dt0;
     tend += T1;
     if (iloop > 0) { 
       remap.DeformMesh(deform, tend);
@@ -365,19 +379,20 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
 
     // run iterations on pseudo-time interval (0.0, 1.0)
     while(t < 1.0 - dt/2) {
+      // remap.ApplyLimiter(dg, p1aux);
+
       remap.L2Norm(t, dt, p1aux);
       rk.TimeStep(t, dt, p1aux, *p1);
 
       *p1aux.ViewComponent("cell") = *p1->ViewComponent("cell");
 
       t += dt;
+      dt = std::min(dt0, 1.0 - t);
       nstep++;
-
-      // remap.ApplyLimiter(dg, p1aux);
     }
   }
 
-  remap.ChangeVariables(1.0, *p1, p2, false);
+  remap.ChangeVariables(t, *p1, p2, false);
 
   // calculate error in the new basis
   Entity_ID_List nodes;
@@ -482,13 +497,13 @@ TEST(REMAP_CURVED_2D) {
   /*
   int nloop = 40;
   double dT(0.0025 * nloop), T1(1.0 / nloop);
-  auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
+  auto rk_method = Amanzi::Explicit_TI::forward_euler;
   std::string maps = "VEM";
   int deform = 6;
-  RemapTestsCurved(rk_method, maps, "test/circle_quad10.exo", 10,0,0, dT,   deform, nloop, T1);
-  RemapTestsCurved(rk_method, maps, "test/circle_quad20.exo", 20,0,0, dT/2, deform, nloop, T1);
-  RemapTestsCurved(rk_method, maps, "test/circle_quad40.exo", 40,0,0, dT/4, deform, nloop, T1);
-  RemapTestsCurved(rk_method, maps, "test/circle_quad80.exo", 80,0,0, dT/8, deform, nloop, T1);
+  RemapTestsCurved(rk_method, maps, "test/circle_quad10.exo", 10,0,0, dT/10,   deform, nloop, T1);
+  // RemapTestsCurved(rk_method, maps, "test/circle_quad20.exo", 20,0,0, dT/2, deform, nloop, T1);
+  // RemapTestsCurved(rk_method, maps, "test/circle_quad40.exo", 40,0,0, dT/4, deform, nloop, T1);
+  // RemapTestsCurved(rk_method, maps, "test/circle_quad80.exo", 80,0,0, dT/8, deform, nloop, T1);
   */
 
   /*
@@ -496,7 +511,7 @@ TEST(REMAP_CURVED_2D) {
   double dT(0.01 * nloop), T1(1.0 / nloop);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
-  int deform = 4;
+  int deform = 1;
   RemapTestsCurved(rk_method, maps, "",  16, 16,0, dT,   deform, nloop, T1);
   RemapTestsCurved(rk_method, maps, "",  32, 32,0, dT/2, deform, nloop, T1);
   RemapTestsCurved(rk_method, maps, "",  64, 64,0, dT/4, deform, nloop, T1);
