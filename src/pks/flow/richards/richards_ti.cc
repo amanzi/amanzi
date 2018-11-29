@@ -88,7 +88,7 @@ void Richards::FunctionalResidual(double t_old,
     vecs.push_back(S_inter_->GetFieldData(Keys::getKey(domain_,"saturation_ice")).ptr());
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"saturation_ice")).ptr());
   }
-  vnames.push_bac("poro");
+  vnames.push_back("poro");
   vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"porosity")).ptr());
   vnames.push_back("perm_K");
   vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"permeability")).ptr());
