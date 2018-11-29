@@ -44,7 +44,11 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
   Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
   // domain_name_ = plist_->get<std::string>("domain name", "domain");
   //--  domain_name_ =  plist_->sublist("PKs").sublist(pk_order[1]).get<std::string>("domain name", "domain");
-  domain_name_ =  plist_->sublist("ewc delegate").get<std::string>("domain name", "domain"); 
+  if (plist_->isParameter("domain name")) {
+    domain_name_ = plist_->get<std::string>("domain name");
+  } else {
+    domain_name_ =  plist_->sublist("ewc delegate").get<std::string>("domain name", "domain");
+  }
  
   temp_key_ = Keys::getKey(domain_name_, "temperature");
   pres_key_ = Keys::getKey(domain_name_, "pressure");

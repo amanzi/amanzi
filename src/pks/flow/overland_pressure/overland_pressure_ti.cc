@@ -71,7 +71,7 @@ void OverlandPressureFlow::FunctionalResidual( double t_old,
   vnames.push_back("h_new");
   vnames.push_back("h+z");
   if (plist_->get<bool>("subgrid model", false)) {
-    vnames.push_back("pdd");
+    vnames.push_back("pd - dd");
     vnames.push_back("frac_cond"); 
   }
 
