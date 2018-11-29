@@ -56,6 +56,7 @@ add_library(mpc
 #  mpc_coupled_water_neumann_splitting.cc
 #  mpc_coupled_water_dirichlet_splitting.cc
   mpc_subsurface.cc
+  mpc_surface.cc
 ##  mpc_permafrost3.cc
   mpc_permafrost4.cc
 ##  mpc_coupled_transport.cc
@@ -103,6 +104,11 @@ register_evaluator_with_factory(
     
 register_evaluator_with_factory(
   HEADERFILE mpc_subsurface_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE mpc_surface_reg.hh
   LISTNAME   MPC_PK_FAC
   )
 
