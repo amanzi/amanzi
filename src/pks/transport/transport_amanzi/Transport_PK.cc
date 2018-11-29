@@ -169,6 +169,7 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
   solid_residue_mass_key_ =  Keys::readKey(*tp_list_, domain_name_, "solid residue", "solid_residue_mass");
 
   water_tolerance_ = tp_list_->get<double>("water tolerance", 1e-6);
+  dissolution_ = tp_list_->get<bool>("allow dissolution", false);
   max_tcc_ = tp_list_->get<double>("maximum concentration", 0.9);
 
   mesh_ = S->GetMesh(domain_name_);
@@ -1276,11 +1277,14 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
     for (int i = 0; i < num_advect; i++){
       (*conserve_qty_)[i][c] = tcc_prev[i][c] * vol_phi_ws_den;
 
-      // if (( (*ws_start)[0][c]  > water_tolerance_) && ((*solid_qty_)[i][c] > 0 )){  // Desolve solid residual into liquid
-      //   double add_mass = std::min((*solid_qty_)[i][c], max_tcc_* vol_phi_ws_den - (*conserve_qty_)[i][c]);
-      //   (*solid_qty_)[i][c] -= add_mass;
-      //   (*conserve_qty_)[i][c] += add_mass;
-      // }
+      if (dissolution_){
+        if (( (*ws_start)[0][c]  > water_tolerance_) && ((*solid_qty_)[i][c] > 0 )){  // Dissolve solid residual into liquid
+          double add_mass = std::min((*solid_qty_)[i][c], max_tcc_* vol_phi_ws_den - (*conserve_qty_)[i][c]);
+          (*solid_qty_)[i][c] -= add_mass;
+          (*conserve_qty_)[i][c] += add_mass;
+        }
+      }
+      
       mass_start += (*conserve_qty_)[i][c];
     }
   }

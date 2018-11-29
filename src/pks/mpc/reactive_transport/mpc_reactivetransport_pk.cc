@@ -87,9 +87,8 @@ void ReactiveTransport_PK_ATS::cast_sub_pks_(){
 // -----------------------------------------------------------------------------
 void ReactiveTransport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S) {
 
+  Teuchos::OSTab tab = vo_->getOSTab();
   //Amanzi::PK_MPCAdditive<PK>::Initialize(S);
-
-  chemistry_pk_->Initialize(S);
 
   Key domain_name = chemistry_pk_->domain_name();
   Key tcc_key = Keys::getKey(domain_name, "total_component_concentration");
@@ -100,11 +99,17 @@ void ReactiveTransport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S) {
 
   Teuchos::RCP<const Epetra_MultiVector> mol_dens =
     S_->GetFieldData(mol_den_key)->ViewComponent("cell", true);
-
+  
+  
+  ConvertConcentrationToAmanzi(chemistry_pk_, *mol_dens, *tcc_copy, *tcc_copy);
+  
+  chemistry_pk_->Initialize(S);
+  
   ConvertConcentrationToATS(chemistry_pk_, *mol_dens, *tcc_copy, *tcc_copy);
 
   tranport_pk_->Initialize(S);
-  
+
+
   
 }
 

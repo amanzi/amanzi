@@ -317,6 +317,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   std::vector<double> mol_masses_;
   int num_aqueous, num_gaseous;
   double water_tolerance_, max_tcc_;
+  bool dissolution_;
 
   // io
   Utils::Units units_;

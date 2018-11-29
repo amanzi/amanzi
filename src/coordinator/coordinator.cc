@@ -164,8 +164,7 @@ void Coordinator::initialize() {
   // -- BDF history to allow projection to continue correctly.
 
   int size = comm_->NumProc();
-
-
+  
   //---
   if (restart_) {
     if (parameter_list_->sublist("mesh").isSublist("column") && size >1){
@@ -179,7 +178,6 @@ void Coordinator::initialize() {
       S_->set_time(t0_);
     }
   }
-
   // Restart from checkpoint, part 2.
   if (restart_) {
     if (parameter_list_->sublist("mesh").isSublist("column") && size >1){
@@ -188,11 +186,17 @@ void Coordinator::initialize() {
       ReadCheckpoint(comm_self, S_.ptr(), restart_filename_);
       t0_ = S_->time();
       cycle0_ = S_->cycle();
+      if (vo_->os_OK(Teuchos::VERB_LOW)) {
+        *vo_->os() << "Restarting from checkpoint file: " << restart_filename_ << std::endl;
+      }
     }
     else{
       ReadCheckpoint(comm_, S_.ptr(), restart_filename_);
       t0_ = S_->time();
       cycle0_ = S_->cycle();
+      if (vo_->os_OK(Teuchos::VERB_LOW)) {
+        *vo_->os() << "Restarting from checkpoint file: " << restart_filename_ << std::endl;
+      }
     }
     
     for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
@@ -200,10 +204,8 @@ void Coordinator::initialize() {
       if (boost::starts_with(mesh->first, "column")){
         DeformCheckpointMesh(S_.ptr(), mesh->first);
       }
-    }
-    
-  }
-  
+    }   
+  }  
   // double check columns
   if(restart_){
     for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
@@ -214,17 +216,21 @@ void Coordinator::initialize() {
     }
   }
 
-  
-  // Initialize the state (initializes all dependent variables).
+
+// Initialize the state (initializes all dependent variables).
   //S_->Initialize();
+  
   *S_->GetScalarData("dt", "coordinator") = 0.;
   S_->GetField("dt","coordinator")->set_initialized();
 
   S_->InitializeFields();
-  //S_->WriteStatistics(vo_);
+  // *vo_->os() << "Statistic after InitializeFields " << restart_filename_ << std::endl;  
+  // S_->WriteStatistics(vo_);
 
   S_->InitializeEvaluators();
-  //S_->WriteStatistics(vo_);
+  // *vo_->os() << "Statistic after InitializeEvaluators " << restart_filename_ << std::endl;  
+  // S_->WriteStatistics(vo_);
+  
 
   // Initialize the process kernels (initializes all independent variables)
   pk_->Initialize(S_.ptr());
@@ -241,7 +247,8 @@ void Coordinator::initialize() {
 
   // Reset io_vis flags using blacklist and whitelist
   S_->InitializeIOFlags(); 
-  
+
+  // *vo_->os() << "Statistic before Commit " << restart_filename_ << std::endl;
   S_->WriteStatistics(vo_);
 
 
@@ -658,7 +665,7 @@ void Coordinator::cycle_driver() {
    
   }
 
-  //  exit(0);
+  ////exit(0);
 
   // get the intial timestep -- note, this would have to be fixed for a true restart
   double dt = get_dt(false);

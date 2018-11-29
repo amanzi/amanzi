@@ -155,10 +155,7 @@ void Coupled_ReactiveTransport_PK_ATS::set_states(const Teuchos::RCP<const State
 void Coupled_ReactiveTransport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S){
 
   //Amanzi::ReactiveTransport_PK_ATS::Initialize(S);
-
-  chemistry_pk_overland_->Initialize(S);
-  chemistry_pk_subsurface_->Initialize(S);
-    
+   
   Key subsurface_domain_key = tranport_pk_subsurface_->domain_name();
   Key overland_domain_key = tranport_pk_overland_->domain_name();
   Key tcc_sub_key = Keys::getKey(subsurface_domain_key, "total_component_concentration");
@@ -176,11 +173,15 @@ void Coupled_ReactiveTransport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S){
   Teuchos::RCP<const Epetra_MultiVector> mol_den_over = 
     S_->GetFieldData(over_mol_den_key)->ViewComponent("cell", true);
 
+  ConvertConcentrationToAmanzi(chemistry_pk_subsurface_, *mol_den_sub,  *tcc_sub,  *tcc_sub);
+  ConvertConcentrationToAmanzi(chemistry_pk_overland_, *mol_den_over,  *tcc_over,  *tcc_over);
+  
+  chemistry_pk_overland_->Initialize(S);
+  chemistry_pk_subsurface_->Initialize(S);
   
   ConvertConcentrationToATS(chemistry_pk_subsurface_, *mol_den_sub,  *tcc_sub,  *tcc_sub);
   ConvertConcentrationToATS(chemistry_pk_overland_, *mol_den_over,  *tcc_over,  *tcc_over);
-
-
+ 
   tranport_pk_subsurface_->Initialize(S);
   tranport_pk_overland_->Initialize(S);
   
