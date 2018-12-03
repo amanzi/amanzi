@@ -31,15 +31,23 @@ OneUFRelPermModel::OneUFRelPermModel(Teuchos::ParameterList& plist) :
 
 double
 OneUFRelPermModel::SurfaceRelPerm(double uf, double h) {
-  double kr = std::pow(std::sin(pi_ * uf / 2.), alpha_);
+  double kr;
+  // if (h <= 101325. - h_cutoff_) {
+  //   kr = 1.;
+  // } else if (h >= 101325.) {
+  //   kr = std::pow(std::sin(pi_ * uf / 2.), alpha_);
+  // } else {
+  //   double fac = (101325. - h)/ h_cutoff_;
+  //   kr = fac + (1-fac) * std::pow(std::sin(pi_ * uf / 2.), alpha_);
+  // }
 
-  if (h <= 101325. - h_cutoff_) {
+  if (h <= 101325.) {
     kr = 1.;
-  } else if (h >= 101325.) {
-    // pass
+  } else if (h >= 101325. + h_cutoff_) {
+    kr = std::pow(std::sin(pi_ * uf / 2.), alpha_);
   } else {
-    double fac = (101325. - h)/ h_cutoff_;
-    kr = fac + (1-fac) * kr;
+    double fac = (101325. + h_cutoff_ - h)/ h_cutoff_;
+    kr = fac + (1-fac) * std::pow(std::sin(pi_ * uf / 2.), alpha_);
   }
   return kr;
 }
