@@ -28,6 +28,7 @@ respectively.
 
 #include "boost/algorithm/string/predicate.hpp"
 
+#include "VerboseObject.hh"
 #include "seb_subgrid_evaluator.hh"
 #include "seb_physics_defs.hh"
 #include "seb_physics_funcs.hh"
@@ -563,8 +564,14 @@ SubgridEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
 void
 SubgridEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
 {
-  if (db_ == Teuchos::null)
+  if (db_ == Teuchos::null) {
+    // update the vo?
+    if (plist_.isSublist(domain_ + " verbose object")) {
+      plist_.set("verbose object", plist_.sublist(domain_ + " verbose object"));
+      vo_ = Teuchos::rcp(new VerboseObject(*S->GetMesh(domain_)->get_comm(), plist_.name(), plist_));
+    }
     db_ = Teuchos::rcp(new Debugger(S->GetMesh(domain_), my_keys_[0], plist_));
+  }
 
   // see if we can find a master fac
   CompositeVectorSpace domain_fac;
