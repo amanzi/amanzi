@@ -77,10 +77,7 @@ class MPCPermafrostSplitFluxColumns : public MPC<PK> {
   
   virtual void CopyPrimaryToStar(const Teuchos::Ptr<const State>& S,
           const Teuchos::Ptr<State>& S_star);
-  virtual void CopyStarToPrimary(double dt) {
-    if (pressure_) CopyStarToPrimaryPressure_(dt);
-    else CopyStarToPrimaryFlux_(dt);
-  }
+  virtual void CopyStarToPrimary(double dt);
 
  protected:
 
@@ -88,6 +85,7 @@ class MPCPermafrostSplitFluxColumns : public MPC<PK> {
 
   virtual void CopyStarToPrimaryPressure_(double dt);
   virtual void CopyStarToPrimaryFlux_(double dt);
+  virtual void CopyStarToPrimaryHybrid_(double dt);
   
  protected:
   
@@ -106,7 +104,7 @@ class MPCPermafrostSplitFluxColumns : public MPC<PK> {
   std::vector<Teuchos::RCP<PrimaryVariableFieldEvaluator> > T_eval_pvfes_;
   std::vector<std::string> col_domains_;
 
-  bool pressure_;
+  std::string coupling_;
   
  private:
   // factory registration
