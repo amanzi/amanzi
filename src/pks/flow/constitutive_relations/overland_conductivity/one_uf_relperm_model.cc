@@ -26,29 +26,22 @@ OneUFRelPermModel::OneUFRelPermModel(Teuchos::ParameterList& plist) :
     Exceptions::amanzi_throw(message);
   }
 
-  h_cutoff_ = plist_.get<double>("unfrozen rel perm cutoff pressure", 100.);
+  h_cutoff_up_ = plist_.get<double>("unfrozen rel perm cutoff pressure", 100.);
+  h_cutoff_dn_ = plist_.get<double>("unfrozen rel perm cutoff pressure, below", 0.);
 }
 
 double
 OneUFRelPermModel::SurfaceRelPerm(double uf, double h) {
   double kr;
-  // if (h <= 101325. - h_cutoff_) {
-  //   kr = 1.;
-  // } else if (h >= 101325.) {
-  //   kr = std::pow(std::sin(pi_ * uf / 2.), alpha_);
-  // } else {
-  //   double fac = (101325. - h)/ h_cutoff_;
-  //   kr = fac + (1-fac) * std::pow(std::sin(pi_ * uf / 2.), alpha_);
-  // }
 
-  if (h <= 101325.) {
-    kr = 1.;
-  } else if (h >= 101325. + h_cutoff_) {
+  if (h >= 101325. + h_cutoff_up_) {
     kr = std::pow(std::sin(pi_ * uf / 2.), alpha_);
+  } else if (h <= 101325 + h_cutoff_dn_) {
+    kr = 1.;
   } else {
-    double fac = (101325. + h_cutoff_ - h)/ h_cutoff_;
-    kr = fac + (1-fac) * std::pow(std::sin(pi_ * uf / 2.), alpha_);
-  }
+    double fac = (h - (101325 + h_cutoff_dn_)) / (h_cutoff_up_ - h_cutoff_dn_);
+    kr = (1-fac) + fac*std::pow(std::sin(pi_ * uf / 2.), alpha_);
+  }  
   return kr;
 }
 
