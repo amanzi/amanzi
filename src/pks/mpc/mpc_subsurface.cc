@@ -630,13 +630,13 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
       upwinding_hkr_->Update(S_next_.ptr(), db_.ptr());
 
       ASSERT(richards_pk_ != Teuchos::null);
-      if (richards_pk_->clobber_surf_kr_) {
+      //if (richards_pk_->clobber_surf_kr_) {
         // -- stick zeros in the boundary faces
         Epetra_MultiVector enth_kr_bf(*enth_kr->ViewComponent("boundary_face",false));
         enth_kr_bf.PutScalar(0.0);
         enth_kr_uw->ViewComponent("face",false)->Export(enth_kr_bf,
                 mesh_->exterior_face_importer(), Insert);
-      }
+        //}
       
       if (is_fv_) {
         denth_kr_dp_uw = S_next_->GetFieldData(Keys::getDerivKey(hkr_key_, pres_key_));
@@ -670,7 +670,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
 
         // -- clobber
         ASSERT(richards_pk_ != Teuchos::null);
-        if (richards_pk_->clobber_surf_kr_) {
+        //if (richards_pk_->clobber_surf_kr_) {
           // -- stick zeros in the boundary faces
           Epetra_MultiVector enth_kr_bf(*enth_kr->ViewComponent("boundary_face",false));
           enth_kr_bf.PutScalar(0.0);
@@ -678,7 +678,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
                   mesh_->exterior_face_importer(), Insert);
           denth_kr_dT_uw_nc->ViewComponent("face",false)->Export(enth_kr_bf,
                   mesh_->exterior_face_importer(), Insert);
-        }
+          //}
 
         denth_kr_dp_uw =
             S_next_->GetFieldData(Keys::getDerivKey(uw_hkr_key_, pres_key_));

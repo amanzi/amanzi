@@ -61,8 +61,6 @@ Richards::Richards(Teuchos::ParameterList& pk_tree,
     upwind_from_prev_flux_(false),
     precon_wc_(false),
     dynamic_mesh_(false),
-    clobber_surf_kr_(false),
-    max_surf_kr_(false),
     clobber_boundary_flux_dir_(false),
     vapor_diffusion_(false),
     perm_scale_(1.),
@@ -140,8 +138,15 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   
   // -- nonlinear coefficients/upwinding
   Teuchos::ParameterList& wrm_plist = plist_->sublist("water retention evaluator");
-  clobber_surf_kr_ = plist_->get<bool>("clobber surface rel perm", false);
-  max_surf_kr_ = plist_->get<bool>("max surface rel perm", false);
+  if (plist_->get<bool>("clobber surface rel perm", false)) {
+    clobber_policy_ = "clobber";
+  } else if (plist_->get<bool>("max surface rel perm", false)) {
+    clobber_policy_ = "max";
+  } else if (plist_->get<bool>("unsaturated clobber surface rel perm", false)) {
+    clobber_policy_ = "unsaturated";
+  } else {
+    clobber_policy_ = "none";
+  }
   clobber_boundary_flux_dir_ = plist_->get<bool>("clobber boundary flux direction for upwinding", false);
 
   std::string method_name = plist_->get<std::string>("relative permeability method", "upwind with Darcy flux");
@@ -757,10 +762,10 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     // Upwind, only overwriting boundary faces if the wind says to do so.
     upwinding_->Update(S);
 
-    if (clobber_surf_kr_) {
+    if (clobber_policy_ == "clobber") {
       Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);
       uw_rel_perm_f.Export(rel_perm_bf, vandelay, Insert);
-    } else if (max_surf_kr_) {
+    } else if (clobber_policy_ == "max") {
       Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);
       const auto& fmap = mesh_->face_map(true);
       const auto& bfmap = mesh_->exterior_face_map(true);
@@ -768,6 +773,24 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
         auto f = fmap.LID(bfmap.GID(bf));
         if (rel_perm_bf[0][bf] > uw_rel_perm_f[0][f]) {
           uw_rel_perm_f[0][f] = rel_perm_bf[0][bf];
+        }
+      }      
+    } else if (clobber_policy_ == "unsaturated") {
+      // clobber only when the interior cell is unsaturated
+      Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);
+      const Epetra_MultiVector& pres = *S_inter_->GetFieldData(key_)->ViewComponent("cell",false);
+      const auto& fmap = mesh_->face_map(true);
+      const auto& bfmap = mesh_->exterior_face_map(true);
+      for (int bf=0; bf!=rel_perm_bf.MyLength(); ++bf) {
+        auto f = fmap.LID(bfmap.GID(bf));
+        AmanziMesh::Entity_ID_List fcells;
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &fcells);
+        AMANZI_ASSERT(fcells.size() == 1);
+        if (pres[0][fcells[0]] < 101225.) {
+          uw_rel_perm_f[0][f] = rel_perm_bf[0][bf];
+        } else if (pres[0][fcells[0]] < 101325.) {
+          double frac = (101325. - pres[0][fcells[0]])/100.;
+          uw_rel_perm_f[0][f] = rel_perm_bf[0][bf] * frac + uw_rel_perm_f[0][f] * (1-frac);
         }
       }      
     }
