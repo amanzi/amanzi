@@ -47,14 +47,18 @@ class AnalyticDG08b : public AnalyticDGBase {
     : AnalyticDGBase(mesh, order, advection),
       cone_(true),
       hump_(true),
-      cylinder_(true) {};
+      cylinder_(true),
+      hump_amp_(1.0) {};
   ~AnalyticDG08b() {};
 
   // control of details
-  bool set_shapes(bool cone, bool hump, bool cylinder) {
+  void set_shapes(bool cone, bool hump, bool cylinder) {
     cone_ = cone;
     hump_ = hump;
     cylinder_ = cylinder;
+  }
+  void set_amplitudes(double hump_amp) {
+    hump_amp_ = hump_amp;
   }
 
   // analytic data in conventional Taylor basis
@@ -118,6 +122,8 @@ class AnalyticDG08b : public AnalyticDGBase {
         }
 
         if (order_ > 2) AMANZI_ASSERT(false);
+
+        if (hump_amp_ != 1.0) sol *= hump_amp_;
       }
     }
     if (cylinder_) {
@@ -163,6 +169,7 @@ class AnalyticDG08b : public AnalyticDGBase {
 
  private:
   bool cone_, hump_, cylinder_;
+  double hump_amp_;
 
  private:
   double StepNotchedCircle_(double x, double y);

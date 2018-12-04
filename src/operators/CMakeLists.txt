@@ -55,7 +55,6 @@ set(operators_inc_files
     LimiterCell.hh
     Mini_Diffusion1D.hh
     Mini_Operator1D.hh
-    RemapUtils.hh
     OperatorDefs.hh
     OperatorUtils.hh
     Op.hh
@@ -103,6 +102,8 @@ set(operators_inc_files
     PDE_HelperBCsList.hh
     PDE_HelperDiscretization.hh
     PDE_Reaction.hh
+    RemapDG.hh
+    RemapUtils.hh
     Schema.hh
     TreeOperator.hh
     Reconstruction.hh
@@ -149,7 +150,7 @@ add_amanzi_library(operators
                           Schema.cc
                           TreeOperator.cc
                           ReconstructionCell.cc
-                          RemapUtils.cc
+                          RemapDG.cc RemapUtils.cc
                           HEADERS ${operators_inc_files}
                    LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})                          
 

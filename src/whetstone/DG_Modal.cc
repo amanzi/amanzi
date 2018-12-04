@@ -17,6 +17,7 @@
 #include "BasisFactory.hh"
 #include "DenseMatrix.hh"
 #include "DG_Modal.hh"
+#include "FunctionUpwind.hh"
 #include "Monomial.hh"
 #include "Polynomial.hh"
 #include "VectorPolynomial.hh"
@@ -476,15 +477,17 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
 
 
 /* ******************************************************************
-* Upwind/Downwind matrix for Taylor basis and normal velocity u.n. 
-* If jump_on_test=true, we calculate
+* Upwind/downwind matrix for Taylor basis and normal velocity u.n. 
+* The normal in u.n is scaled by the face area. If jump_on_test=true,
+* we calculate
 * 
-*   \Int { (u.n) \rho^* [\psi] } dS
+*   a \Int { (u.n) \rho^* [\psi] } dS
 * 
-* where star means downwind, \psi is a test function, and \rho is 
-* a solution. Otherwise, we calculate 
+* where star means upwind/downwind, \psi is a test function, \rho is 
+* a solution, a=-1 for upwind, a=1 for downwind. Otherwise, we
+* calculate 
 *
-*   \Int { (u.n) \psi^* [\rho] } dS
+*   a \Int { (u.n) \psi^* [\rho] } dS
 ****************************************************************** */
 int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
                          bool upwind, bool jump_on_test)
@@ -519,7 +522,7 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
   int col(id * size);
   int row(size - col);
 
-  // Calculate integrals needed for scaling
+  // Calculate upwind/downwind cells
   int c1, c2;
   c1 = cells[id];
 
@@ -570,6 +573,132 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
       } else {
         A(row + k, col + l) = vel0;
         A(col + k, col + l) = -vel1;
+      }
+    }
+  }
+
+  // jump operator is applied to solution
+  if (!jump_on_test) {
+    A.Transpose();
+  }
+
+  if (ncells == 1) {
+    basis_[cells[0]]->BilinearFormNaturalToMy(A);
+  } else { 
+    basis_[cells[0]]->BilinearFormNaturalToMy(basis_[cells[0]], basis_[cells[1]], A);
+  }
+
+  return 0;
+}
+
+
+/* ******************************************************************
+* Upwind/downwind at Gauss points to calculate matrix for the Taylor
+* basis and normal velocity u.n. The normal in u.n is scaled by the 
+* face area. If jump_on_test=true, we calculate
+* 
+*   a \Int { (u.n) \rho^* [\psi] } dS
+* 
+* where star means upwind/downwind, \psi is a test function, \rho is 
+* a solution, a=-1 for upwind, and a=1 for downwind. Otherwise, we
+* calculate 
+*
+*   a \Int { (u.n) \psi^* [\rho] } dS
+****************************************************************** */
+int DG_Modal::FluxMatrixGaussPoints(
+    int f, const Polynomial& un, DenseMatrix& A, bool upwind, bool jump_on_test)
+{
+  AmanziMesh::Entity_ID_List cells;
+  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+  int ncells = cells.size();
+
+  Polynomial poly(d_, order_);
+  int size = poly.size();
+  int order_tmp = 2 * order_ + un.order();
+
+  int nrows = ncells * size;
+  A.Reshape(nrows, nrows);
+  A.PutScalar(0.0);
+
+  // identify index of upwind/downwind cell (id) 
+  int dir; 
+  double area = mesh_->face_area(f);
+  mesh_->face_normal(f, false, cells[0], &dir);
+  const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+
+  // Calculate integrals needed for scaling
+  int c1, c2, pos0, pos1;
+  if (!upwind) {
+    dir = -dir;
+    area = -area;
+  }
+
+  if (dir > 0) {
+    c1 = cells[0];
+    c2 = cells[ncells - 1];
+    pos0 = 0;
+  } else {
+    c1 = cells[ncells - 1];
+    c2 = cells[0];
+    pos0 = size;
+  }
+  pos1 = size - pos0;
+
+  // integrate traces of polynomials on face f
+  std::vector<const WhetStoneFunction*> polys(3);
+
+  for (auto it = poly.begin(); it < poly.end(); ++it) {
+    const int* idx0 = it.multi_index();
+    int k = PolynomialPosition(d_, idx0);
+
+    Monomial p0(d_, idx0, 1.0);
+    p0.set_origin(mesh_->cell_centroid(c1));
+
+    Monomial p1(d_, idx0, 1.0);
+    p1.set_origin(mesh_->cell_centroid(c2));
+
+    FunctionUpwindPlus unplus(&un);
+    FunctionUpwindMinus unminus(&un);
+
+    for (auto jt = poly.begin(); jt < poly.end(); ++jt) {
+      const int* idx1 = jt.multi_index();
+      int l = PolynomialPosition(d_, idx1);
+
+      Monomial q0(d_, idx1, 1.0);
+      q0.set_origin(mesh_->cell_centroid(c1));
+
+      Monomial q1(d_, idx1, 1.0);
+      q1.set_origin(mesh_->cell_centroid(c2));
+
+      double v00, v00p, v10m, v01p, v11m;
+      if (ncells == 1) {
+        polys[0] = &un;
+        polys[1] = &p0;
+       polys[2] = &q0;
+
+        v00 = numi_.IntegrateFunctionsTriangulatedFace(f, polys, order_tmp) / area;
+        A(k, l) = v00;
+      } else {
+        polys[0] = &unplus;
+        polys[1] = &p0;
+        polys[2] = &q0;
+        v00p = numi_.IntegrateFunctionsTriangulatedFace(f, polys, order_tmp) / area;
+
+        polys[0] = &unminus;
+        polys[1] = &p1;
+        v10m = numi_.IntegrateFunctionsTriangulatedFace(f, polys, order_tmp) / area;
+
+        polys[2] = &q1;
+        v11m = numi_.IntegrateFunctionsTriangulatedFace(f, polys, order_tmp) / area;
+
+        polys[0] = &unplus;
+        polys[1] = &p0;
+        v01p = numi_.IntegrateFunctionsTriangulatedFace(f, polys, order_tmp) / area;
+
+        A(pos0 + l, pos0 + k) = v00p;
+        A(pos0 + l, pos1 + k) = v10m;
+        A(pos1 + l, pos0 + k) =-v01p;
+        A(pos1 + l, pos1 + k) =-v11m;
       }
     }
   }

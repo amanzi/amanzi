@@ -207,3 +207,108 @@ TEST(LIMITER_SMOOTHNESS_INDICATOR_2D) {
   // RunTest("test/circle_quad160.exo");
 }
 
+
+/* *****************************************************************
+* New limiters
+***************************************************************** */
+TEST(LIMITER_GAUSS_POINTS)
+{
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;
+  using namespace Amanzi::Operators;
+
+  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  int MyPID = comm.MyPID();
+  if (MyPID == 0) std::cout << "\nTest: Limiters at Gauss points" << std::endl;
+
+  // create rectangular mesh
+  MeshFactory meshfactory(&comm);
+  meshfactory.preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<const Mesh> mesh = meshfactory("test/circle_quad10.exo", Teuchos::null);
+
+  // create and initialize cell-based field 
+  int nk(6), dim(2);
+  CompositeVectorSpace cvs1;
+  cvs1.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
+  auto field = Teuchos::rcp(new CompositeVector(cvs1));
+  auto field_c = field->ViewComponent("cell", true);
+
+  int order = 2;
+  WhetStone::DG_Modal dg(order, mesh, "normalized");
+  AnalyticDG08b ana(mesh, order, true);
+  ana.set_shapes(true, false, false);
+
+  ana.InitialGuess(dg, *field_c, 0.0);
+  field->ScatterMasterToGhosted("cell");
+
+  int ncells_owned  = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+
+  // memory for gradient
+  CompositeVectorSpace cvs2;
+  cvs2.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, dim);
+  auto grad = Teuchos::rcp(new CompositeVector(cvs2));
+  Epetra_MultiVector& grad_c = *grad->ViewComponent("cell");
+
+  Teuchos::ParameterList plist;
+  plist.set<int>("polynomial_order", 2)
+       .set<bool>("limiter extension for transport", false)
+       .set<std::string>("limiter", "Barth-Jespersen dg")
+       .set<std::string>("limiter stencil", "cell to all cells")
+       .set<int>("limiter points", 5);
+
+  // boundary data
+  std::vector<int> bc_model(nfaces_wghost, 0);
+  std::vector<double> bc_value(nfaces_wghost, 0.0);
+
+  const auto& fmap = mesh->face_map(true);
+  const auto& bmap = mesh->exterior_face_map(true);
+  for (int bf = 0; bf < bmap.NumMyElements(); ++bf) {
+    int f = fmap.LID(bmap.GID(bf));
+    const auto& xf = mesh->face_centroid(f);
+    bc_model[f] = OPERATOR_BC_DIRICHLET;
+    bc_value[f] = ana.SolutionExact(xf, 0.0);
+  }
+
+  // create gradient for limiting
+  WhetStone::DenseVector data(nk), data2(nk), data3(nk);
+
+  // create list of cells where to apply limiter
+  AmanziMesh::Entity_ID_List ids;
+  for (int c = 0; c < ncells_owned; ++c) ids.push_back(c);
+
+  // Apply limiter
+  LimiterCell limiter(mesh);
+  limiter.Init(plist);
+  limiter.ApplyLimiter(ids, field_c, dg, bc_model, bc_value);
+
+  double minlim, avglim, maxlim;
+  limiter.limiter()->MinValue(&minlim);
+  limiter.limiter()->MeanValue(&avglim);
+  limiter.limiter()->MaxValue(&maxlim);
+
+  // calculate extrema of the limited function
+  double umin(1.0e+12), umax(-1.0e+12);
+  for (int c = 0; c < ncells_owned; ++c) {
+    double volume = mesh->cell_volume(c);
+
+    umin = std::min(umin, (*field_c)[0][c]);
+    umax = std::max(umax, (*field_c)[0][c]);
+  }
+
+  double tmp = umin;
+  mesh->get_comm()->SumAll(&tmp, &umin, 1);
+  tmp = umax;
+  mesh->get_comm()->SumAll(&tmp, &umax, 1);
+  if (MyPID == 0) {
+    printf("function min/max: %10.6f %10.6f\n", umin, umax);
+    printf("limiter min/avg/max: %10.6f %10.6f %10.6f\n", minlim, avglim, maxlim);
+  }
+
+  CHECK(umax > 0.85);
+  CHECK(avglim > 0.97);
+}
+
+

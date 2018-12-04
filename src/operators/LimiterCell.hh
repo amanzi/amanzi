@@ -29,6 +29,7 @@
 #include "CompositeVector.hh"
 #include "DenseMatrix.hh"
 #include "DenseVector.hh"
+#include "DG_Modal.hh"
 #include "Mesh.hh"
 #include "Point.hh"
 
@@ -66,13 +67,34 @@ class LimiterCell {
   // -- apply external limiter 
   void ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter);
 
-  // bounds: if reset=true they are recalculated 
-  void BoundsForCells(const std::vector<int>& bc_model,
-                      const std::vector<double>& bc_value, int stencil, bool reset);
-  void BoundsForFaces(const std::vector<int>& bc_model,
-                      const std::vector<double>& bc_value, int stencil, bool reset);
-  void BoundsForNodes(const std::vector<int>& bc_model,
-                      const std::vector<double>& bc_value, int stencil, bool reset);
+  // limited dG solution 
+  // -- apply limiter in spcified cells
+  void ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field, const WhetStone::DG_Modal& dg,
+                    const std::vector<int>& bc_model, const std::vector<double>& bc_value) {
+    AmanziMesh::Entity_ID_List ids(ncells_owned);
+    for (int c = 0; c < ncells_owned; ++c) ids[c] = c;
+    ApplyLimiter(ids, field, dg, bc_model, bc_value); 
+  }
+
+  void ApplyLimiter(const AmanziMesh::Entity_ID_List& ids,
+                    Teuchos::RCP<const Epetra_MultiVector> field, const WhetStone::DG_Modal& dg,
+                    const std::vector<int>& bc_model, const std::vector<double>& bc_value);
+
+  // bounds for FV fields: if reset=true they are recalculated 
+  void BoundsForCells(const Epetra_MultiVector& field, 
+                      const std::vector<int>& bc_model, const std::vector<double>& bc_value,
+                      int stencil, bool reset);
+  void BoundsForFaces(const Epetra_MultiVector& field,
+                      const std::vector<int>& bc_model, const std::vector<double>& bc_value,
+                      int stencil, bool reset);
+  void BoundsForNodes(const Epetra_MultiVector& field,
+                      const std::vector<int>& bc_model, const std::vector<double>& bc_value,
+                      int stencil, bool reset);
+
+  // bounds for DG fields: if reset=true they are recalculated 
+  void BoundsForCells(const WhetStone::DG_Modal& dg,
+                      const std::vector<int>& bc_model, const std::vector<double>& bc_value,
+                      int stencil, bool reset);
 
   // calculate value of a linear function at the given point p
   void getBounds(int c, int f, int stencil, double* umin, double* umax);
@@ -94,6 +116,10 @@ class LimiterCell {
       const AmanziMesh::Entity_ID_List& ids,
       const std::vector<int>& bc_model, const std::vector<double>& bc_value,
       Teuchos::RCP<Epetra_Vector> limiter);
+
+  void LimiterBarthJespersenDG_(
+      const WhetStone::DG_Modal& dg, const AmanziMesh::Entity_ID_List& ids,
+      const std::vector<int>& bc_model, const std::vector<double>& bc_value);
 
   void LimiterTensorial_(
       const AmanziMesh::Entity_ID_List& ids,
@@ -142,6 +168,8 @@ class LimiterCell {
 
   int limiter_id_, stencil_id_;
   bool limiter_correction_, external_bounds_;
+
+  int limiter_points_;  // number of Gauss points on faces where limiting occurs
 };
 
 }  // namespace Operators

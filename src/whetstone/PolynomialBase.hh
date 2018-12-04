@@ -105,6 +105,16 @@ int PolynomialPosition(int d, const int* multi_index)
   return nk + MonomialSetPosition(d, multi_index);
 }
 
+
+// calculate order of polynomial space from given dspace dimension 
+inline
+int PolynomialSpaceOrder(int d, int nk)
+{
+  int order = -1;
+  while (PolynomialSpaceDimension(d, order) != nk) order++;
+  return order;
+}
+
 } // namespace WhetStone
 } // namespace Amanzi
 

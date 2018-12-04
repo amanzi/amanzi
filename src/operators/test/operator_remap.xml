@@ -26,18 +26,19 @@
   <!-- MAPS -->
   <ParameterList name="maps">
     <Parameter name="method" type="string" value="Lagrange serendipity"/>
-    <Parameter name="method order" type="int" value="1"/>
+    <Parameter name="method order" type="int" value="2"/>
     <Parameter name="projector" type="string" value="H1"/>
     <Parameter name="map name" type="string" value="VEM"/>
   </ParameterList>
 
   <!-- LIMITER -->
   <ParameterList name="limiter">
-    <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
+    <Parameter name="limiter" type="string" value="none"/>
     <Parameter name="polynomial order" type="int" value="1"/>
     <Parameter name="limiter extension for transport" type="bool" value="false"/>
     <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>
-    <Parameter name="smoothness indicator" type="string" value="missing"/>
+    <Parameter name="smoothness indicator" type="string" value="high order term"/>
+    <Parameter name="limiter points" type="int" value="1"/>
   </ParameterList>
 
   <!--  OPERATORS: dual formulation -->

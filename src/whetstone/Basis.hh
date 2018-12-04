@@ -58,7 +58,7 @@ class Basis {
                                          int c, int order, DenseVector& coefs) const = 0;
 
   // assess 
-  int id() { return id_; };
+  int id() const { return id_; };
 
  protected:
   int id_;

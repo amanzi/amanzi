@@ -83,7 +83,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
       const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& divc);
 
   // limit solution
-  void ApplyLimiter(CompositeVector& u);
+  void ApplyLimiter(std::string& limiter, CompositeVector& u);
 
  public:
   double l2norm;
@@ -135,9 +135,13 @@ AdvectionFn<AnalyticDG>::AdvectionFn(
   if (weak_form == "dual") {
     weak_sign_ = 1.0;
     pk_name_ = "PK operator";
-  } else {
+  } else if (weak_form == "primal") {
     weak_sign_ = -1.0;
     pk_name_ = "PK operator: primal";
+    divergence_term_ = false;
+  } else if (weak_form == "gauss points") {
+    weak_sign_ = -1.0;
+    pk_name_ = "PK operator: gauss points";
     divergence_term_ = false;
   }
 
@@ -512,16 +516,12 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
 * Limit gradient
 ***************************************************************** */
 template <class AnalyticDG>
-void AdvectionFn<AnalyticDG>::ApplyLimiter(CompositeVector& u)
+void AdvectionFn<AnalyticDG>::ApplyLimiter(std::string& name, CompositeVector& u)
 {
+  if (name == "none") return;
+
   const Epetra_MultiVector& u_c = *u.ViewComponent("cell", true);
   int dim = mesh_->space_dimension();
-
-  // initialize limiter
-  Teuchos::ParameterList plist;
-  plist.set<std::string>("limiter", "Kuzmin");
-  plist.set<int>("polynomial_order", 1);
-  plist.set<bool>("limiter extension for transport", false);
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
@@ -529,33 +529,54 @@ void AdvectionFn<AnalyticDG>::ApplyLimiter(CompositeVector& u)
   std::vector<int> bc_model(nnodes_wghost, Operators::OPERATOR_BC_NONE);
   std::vector<double> bc_value(nnodes_wghost, 0.0);
 
-  // create gradient in the natural basis
-  int nk = u_c.NumVectors();
-  WhetStone::DenseVector data(nk);
-
-  CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, dim);
-  auto grad = Teuchos::rcp(new CompositeVector(cvs));
-  Epetra_MultiVector& grad_c = *grad->ViewComponent("cell");
-
-  for (int c = 0; c < ncells_owned; ++c) {
-    for (int i = 0; i < nk; ++i) data(i) = u_c[i][c];
-    dg_->cell_basis(c).ChangeBasisMyToNatural(data);
-    for (int i = 0; i < dim; ++i) grad_c[i][c] = data(i + 1);
-  }
-
-  grad->ScatterMasterToGhosted("cell");
+  // initialize limiter
+  Teuchos::ParameterList plist;
+  plist.set<std::string>("limiter", name);
+  plist.set<int>("polynomial_order", 1);
+  plist.set<bool>("limiter extension for transport", false);
+  plist.set<std::string>("limiter stencil", "cell to all cells");
+  plist.set<int>("limiter points", 3);
 
   // limit gradient and save it to solution
   Operators::LimiterCell limiter(mesh_);
   limiter.Init(plist);
-  limiter.ApplyLimiter(u.ViewComponent("cell", true), 0, grad, bc_model, bc_value);
 
-  for (int c = 0; c < ncells_owned; ++c) {
-    data(0) = u_c[0][c];
-    for (int i = 0; i < dim; ++i) data(i + 1) = grad_c[i][c];
-    dg_->cell_basis(c).ChangeBasisNaturalToMy(data);
-    for (int i = 0; i < nk; ++i) u_c[i][c] = data(i);
+  if (name == "Barth-Jespersen dg") {
+    limiter.ApplyLimiter(u.ViewComponent("cell", true), *dg_, bc_model, bc_value);
+  } else {
+    int nk = u_c.NumVectors();
+    WhetStone::DenseVector data(nk);
+
+    CompositeVectorSpace cvs;
+    cvs.SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, dim);
+    auto grad = Teuchos::rcp(new CompositeVector(cvs));
+    Epetra_MultiVector& grad_c = *grad->ViewComponent("cell", true);
+
+    for (int c = 0; c < ncells_owned; ++c) {
+      // mean value is preserved automatiacally for the partially orthogonalized basis
+      // otherwise, a more complicated routine is needed
+      AMANZI_ASSERT(dg_->cell_basis(c).id() == WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
+
+      for (int i = 0; i < nk; ++i) data(i) = u_c[i][c];
+      for (int i = dim + 1; i < nk; ++i) data(i) = 0.0;
+
+      dg_->cell_basis(c).ChangeBasisMyToNatural(data);
+      for (int i = 0; i < dim; ++i) grad_c[i][c] = data(i + 1);
+      u_c[0][c] = data(0);
+    }
+
+    grad->ScatterMasterToGhosted("cell");
+
+    limiter.ApplyLimiter(u.ViewComponent("cell", true), 0, grad, bc_model, bc_value);
+
+    for (int c = 0; c < ncells_owned; ++c) {
+      data(0) = u_c[0][c];
+      for (int i = 0; i < dim; ++i) data(i + 1) = grad_c[i][c];
+      for (int i = dim + 1; i < nk; ++i) data(i) = 0.0;
+
+      dg_->cell_basis(c).ChangeBasisNaturalToMy(data);
+      for (int i = 0; i < nk; ++i) u_c[i][c] = data(i);
+    }
   }
 
   // statistics
@@ -567,7 +588,7 @@ void AdvectionFn<AnalyticDG>::ApplyLimiter(CompositeVector& u)
   }
   mesh_->get_comm()->MinAll(&tmp1, &limiter_min, 1);
   mesh_->get_comm()->SumAll(&tmp2, &limiter_mean, 1);
-  limiter_mean /= lim.Map().MaxAllGID();
+  limiter_mean /= lim.Map().MaxAllGID() + 1;
 }
 
 }  // namespace Amanzi
@@ -593,7 +614,7 @@ void AdvectionTransient(std::string filename, int nx, int ny,
                         bool conservative_form = true, 
                         std::string weak_form = "dual",
                         std::string face_velocity_method = "high order",
-                        bool limiter = false)
+                        std::string limiter = "none")
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -611,18 +632,22 @@ void AdvectionTransient(std::string filename, int nx, int ny,
 
   std::string pk_name = "PK operator";
   if (weak_form == "primal") pk_name = "PK operator: primal";
+  if (weak_form == "gauss points") pk_name = "PK operator: gauss points";
 
   int order = plist.sublist(pk_name)
                    .sublist("flux operator").get<int>("method order");
+  std::string basis = plist.sublist(pk_name)
+                           .sublist("flux operator").get<std::string>("dg basis");
 
   { 
     std::string problem = (conservative_form) ? ", conservative PDE" : "";
     if (MyPID == 0) {
       std::cout << "\nTest: 2D dG transient advection: " << filename 
                 << ", order=" << order << problem 
+                << ", basis=" << basis 
                 << "\n      weak formulation=\"" << weak_form << "\""
                 << ", face_velocity=\"" << face_velocity_method << "\""
-                << ", limiter=" << limiter << std::endl;
+                << ", limiter=\"" << limiter << "\"" << std::endl;
       if (face_velocity_method == "high order") {
         const auto& map_list = plist.sublist("maps");
         int vel_order = map_list.get<int>("method order");
@@ -663,7 +688,7 @@ void AdvectionTransient(std::string filename, int nx, int ny,
   plist.set<std::string>("file name", filename);
   plist.set<std::string>("face velocity method", face_velocity_method);
 
-  auto dg = Teuchos::rcp(new WhetStone::DG_Modal(order, mesh, "regularized"));
+  auto dg = Teuchos::rcp(new WhetStone::DG_Modal(order, mesh, basis));
   AdvectionFn<AnalyticDG> fn(plist, nx, dt0, mesh, dg, conservative_form, weak_form);
 
   // create initial guess
@@ -682,6 +707,7 @@ void AdvectionTransient(std::string filename, int nx, int ny,
 
   while(std::fabs(t < tend) < dt/4 || dt > 1e-12) {
     fn.set_dt(dt);
+    fn.ApplyLimiter(limiter, sol);
     rk.TimeStep(t, dt, sol, sol_next);
 
     sol = sol_next;
@@ -692,7 +718,7 @@ void AdvectionTransient(std::string filename, int nx, int ny,
     if (std::fabs(t - tio) < dt/4) {
       tio = std::min(tio + 0.1, tend); 
       if (MyPID == 0)
-        printf("t=%9.6f |p|=%12.8g limiter=%8.4g %8.4g\n",
+        printf("t=%9.6f |p|=%12.8g limiter min/mean: %8.4g %8.4g\n",
             t, fn.l2norm, fn.limiter_min, fn.limiter_mean);
 
       const Epetra_MultiVector& p = *sol.ViewComponent("cell");
@@ -704,14 +730,9 @@ void AdvectionTransient(std::string filename, int nx, int ny,
 
     dt = std::min(dt0, tend - t);
 
-    // modify solution
-    // -- overwrite solution at the origin
+    // overwrite solution at the origin
     if (face_velocity_method == "level set") {
       ana.InitialGuess(*dg, sol_c, t, inside2);
-    }
-    // -- limit solution gradient
-    if (limiter) {
-      fn.ApplyLimiter(sol);
     }
   }
 
@@ -728,8 +749,10 @@ void AdvectionTransient(std::string filename, int nx, int ny,
     printf("   (integral) L2(p)=%9.6g\n", pl2_int);
     if (exact_solution_expected) 
       CHECK(pl2_mean < 1e-10);
-    else
+    else if (limiter == "none") 
       CHECK(pl2_mean < 0.1 / nx);
+    else
+      CHECK(pl2_mean < 0.3 / nx);
   }
 }
 
@@ -739,11 +762,13 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
   exact_solution_expected = true;
   AdvectionTransient<AnalyticDG02b>("square", 4,4, dT,T1, rk_order, false);
+  AdvectionTransient<AnalyticDG02b>("square", 4,4, dT,T1, rk_order, false, "gauss points");
 
   exact_solution_expected = false;
   AdvectionTransient<AnalyticDG06b>("square", 4,4, dT,T1, rk_order);
-  AdvectionTransient<AnalyticDG06>("square",  4,4, dT,T1, rk_order, false);
   AdvectionTransient<AnalyticDG06>("square",  4,4, dT,T1, rk_order, false, "primal");
+  AdvectionTransient<AnalyticDG06>("square",  4,4, dT,T1, rk_order, false, "dual", "high order");
+  AdvectionTransient<AnalyticDG06>("square",  4,4, dT,T1, rk_order, false, "gauss points", "high order", "Barth-Jespersen dg");
 
   /*
   double dT(0.01), T1(1.0);
@@ -804,14 +829,14 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   double dT(0.001), T1(0.8);
   auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
   AdvectionTransient<AnalyticDG07b>("square", 128, 128, dT/6,T1, rk_order, false, "primal", "level set");
-  // AdvectionTransient<AnalyticDG07b>("test/median127x128.exo", 128,0, dT/6,T1, rk_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07b>("test/median127x128.exo", 128,0, dT/6,T1, rk_order, false, "primal", "level set");
   */
 
   /*
   double dT(0.01), T1(6.2832);
   auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
-  // AdvectionTransient<AnalyticDG08>("square", 160,160, dT/8,T1, rk_order, true, "dual", "high order", false);
-  AdvectionTransient<AnalyticDG08>("test/median127x128.exo", 128,0, dT/8,T1, rk_order, true, "dual", "high order", false);
+  AdvectionTransient<AnalyticDG08>("square", 160,160, dT/8,T1, rk_order, true, "dual", "high order", "none");
+  AdvectionTransient<AnalyticDG08>("test/median127x128.exo", 128,0, dT/8,T1, rk_order, true, "dual", "high order", "none");
   */
 }
 
