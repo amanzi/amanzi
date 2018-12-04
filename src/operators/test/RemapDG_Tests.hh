@@ -25,14 +25,10 @@ class RemapDG_Tests : public RemapDG {
                 const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
                 Teuchos::ParameterList& plist) 
     : RemapDG(mesh0, mesh1, plist),
-      nfun_(0),
       tprint_(0.0),
-      l2norm_(1.0),
+      l2norm_(-1.0),
       dt_output_(0.1) {};
   ~RemapDG_Tests() {};
-
-  // main function  
-  virtual void FunctionalTimeDerivative(double t, const CompositeVector& u, CompositeVector& f) override;
 
   // mesh deformation
   virtual void DeformMesh(int deform, double t);
@@ -40,38 +36,44 @@ class RemapDG_Tests : public RemapDG {
                                    const AmanziGeometry::Point& rv = AmanziGeometry::Point(3));
 
   // output
+  void CollectStatistics(double t, const CompositeVector& u);
   virtual double global_time(double t) { return t; }
   void set_dt_output(double dt) { dt_output_ = dt; }
 
  protected:
   // statistics
-  int nfun_;
   double tprint_, dt_output_, l2norm_;
 };
 
 
 /* *****************************************************************
-* Main routine: evaluation of functional
+* Print statistics using conservative field u
 ***************************************************************** */
 template<class AnalyticDG>
-void RemapDG_Tests<AnalyticDG>::FunctionalTimeDerivative(
-    double t, const CompositeVector& u, CompositeVector& f)
+void RemapDG_Tests<AnalyticDG>::CollectStatistics(double t, const CompositeVector& u)
 {
-  RemapDG::FunctionalTimeDerivative(t, u, f);
-
-  // statistics
-  nfun_++;
-  Epetra_MultiVector& xc = *field_->ViewComponent("cell");
-  int nk = xc.NumVectors();
-  double xmax[nk], xmin[nk];
-  xc.MaxValue(xmax);
-  xc.MinValue(xmin);
-
   double tglob = global_time(t);
-  if (fabs(tprint_ - tglob) < 1e-6 && mesh0_->get_comm()->MyPID() == 0) {
-    printf("t=%8.5f  L2=%9.5g  nfnc=%5d  sharp=%5.1f%%  umax: ", tglob, l2norm_, nfun_, sharp_);
-    for (int i = 0; i < std::min(nk, 4); ++i) printf("%9.5g ", xmax[i]);
-    printf("\n");
+  if (tglob >= tprint_) {
+    op_reac_->UpdateMatrices(Teuchos::null);
+    auto& matrices = op_reac_->local_matrices()->matrices;
+    for (int n = 0; n < matrices.size(); ++n) matrices[n].Inverse();
+
+    auto& rhs = *op_reac_->global_operator()->rhs();
+    op_reac_->global_operator()->Apply(u, rhs);
+    rhs.Dot(u, &l2norm_);
+
+    Epetra_MultiVector& xc = *rhs.ViewComponent("cell");
+    int nk = xc.NumVectors();
+    double xmax[nk], xmin[nk];
+    xc.MaxValue(xmax);
+    xc.MinValue(xmin);
+
+    if (mesh0_->get_comm()->MyPID() == 0) {
+      printf("t=%8.5f  L2=%9.5g  nfnc=%5d  sharp=%5.1f%%  umax: ", tglob, l2norm_, nfun_, sharp_);
+      for (int i = 0; i < std::min(nk, 4); ++i) printf("%9.5g ", xmax[i]);
+      printf("  umin: %9.5g\n", xmin[0]);
+    }
+
     tprint_ += dt_output_;
     sharp_ = 0.0;
   } 

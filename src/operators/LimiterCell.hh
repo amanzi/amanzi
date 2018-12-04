@@ -69,17 +69,32 @@ class LimiterCell {
 
   // limited dG solution 
   // -- apply limiter in spcified cells
+  void ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field, const WhetStone::DG_Modal& dg,
+                    const std::vector<int>& bc_model, const std::vector<double>& bc_value) {
+    AmanziMesh::Entity_ID_List ids(ncells_owned);
+    for (int c = 0; c < ncells_owned; ++c) ids[c] = c;
+    ApplyLimiter(ids, field, dg, bc_model, bc_value); 
+  }
+
   void ApplyLimiter(const AmanziMesh::Entity_ID_List& ids,
                     Teuchos::RCP<const Epetra_MultiVector> field, const WhetStone::DG_Modal& dg,
                     const std::vector<int>& bc_model, const std::vector<double>& bc_value);
 
-  // bounds: if reset=true they are recalculated 
-  void BoundsForCells(const std::vector<int>& bc_model,
-                      const std::vector<double>& bc_value, int stencil, bool reset);
-  void BoundsForFaces(const std::vector<int>& bc_model,
-                      const std::vector<double>& bc_value, int stencil, bool reset);
-  void BoundsForNodes(const std::vector<int>& bc_model,
-                      const std::vector<double>& bc_value, int stencil, bool reset);
+  // bounds for FV fields: if reset=true they are recalculated 
+  void BoundsForCells(const Epetra_MultiVector& field, 
+                      const std::vector<int>& bc_model, const std::vector<double>& bc_value,
+                      int stencil, bool reset);
+  void BoundsForFaces(const Epetra_MultiVector& field,
+                      const std::vector<int>& bc_model, const std::vector<double>& bc_value,
+                      int stencil, bool reset);
+  void BoundsForNodes(const Epetra_MultiVector& field,
+                      const std::vector<int>& bc_model, const std::vector<double>& bc_value,
+                      int stencil, bool reset);
+
+  // bounds for DG fields: if reset=true they are recalculated 
+  void BoundsForCells(const WhetStone::DG_Modal& dg,
+                      const std::vector<int>& bc_model, const std::vector<double>& bc_value,
+                      int stencil, bool reset);
 
   // calculate value of a linear function at the given point p
   void getBounds(int c, int f, int stencil, double* umin, double* umax);

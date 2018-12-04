@@ -46,18 +46,26 @@ RemapDG::RemapDG(
     bc_type_ = Operators::OPERATOR_BC_REMOVE;
 
   consistent_jac_ = plist_.sublist("PK operator").template get<bool>("consistent jacobian");
-  smoothness_ = plist_.sublist("limiter").template get<std::string>("smoothness indicator");
+  smoothness_ = plist_.sublist("limiter").template get<std::string>("smoothness indicator", "none");
+  is_limiter_ = (plist_.sublist("limiter").template get<std::string>("limiter") != "none");
 
   // miscallateous
+  nfun_ = 0;
   sharp_ = 0.0;
+
+  t_adv_ = -1.0;
+  t_flux_ = -1.0;
+  t_reac_inv_ = -1.0;
 }
 
 
 /* *****************************************************************
 * Initialization of opertors
 ***************************************************************** */
-void RemapDG::InitializeOperators()
+void RemapDG::InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg)
 {
+  dg_ = dg;
+
   // create right-hand side operator
   // -- flux
   auto oplist = plist_.sublist("PK operator").sublist("flux operator");
@@ -87,11 +95,7 @@ void RemapDG::InitializeOperators()
   }
   op_flux_->SetBCs(bc, bc);
 
-  // memory allocation
-  // -- physical field
-  field_ = Teuchos::rcp(new CompositeVector(*op_reac_->global_operator()->rhs()));
-
-  // -- velocities
+  // memory allocation for velocities
   velf_ = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost_));
   velc_ = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_owned_));
   jac_ = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_owned_));
@@ -140,7 +144,7 @@ void RemapDG::InitializeJacobianMatrix()
 /* *****************************************************************
 * Initialization of the consistent jacobian
 ***************************************************************** */
-void RemapDG::InitializeConsistentJacobianDeterminant(const Amanzi::WhetStone::DG_Modal& dg)
+void RemapDG::InitializeConsistentJacobianDeterminant()
 {
   // constant part of determinant
   DynamicFaceVelocity(0.0);
@@ -195,7 +199,7 @@ void RemapDG::InitializeConsistentJacobianDeterminant(const Amanzi::WhetStone::D
   jac1_.resize(ncells_owned_);
 
   for (int c = 0; c < ncells_owned_; ++c) {
-    const auto& basis = dg.cell_basis(c);
+    const auto& basis = dg_->cell_basis(c);
 
     for (int i = 0; i < nk; ++i) data(i) = u0c[i][c];
     jac0_[c] = basis.CalculatePolynomial(mesh0_, c, order_, data);
@@ -203,6 +207,10 @@ void RemapDG::InitializeConsistentJacobianDeterminant(const Amanzi::WhetStone::D
     for (int i = 0; i < nk; ++i) data(i) = u1c[i][c];
     jac1_[c] = basis.CalculatePolynomial(mesh0_, c, order_, data);
   }
+
+  // t_adv_ = dt;
+  // t_flux_ = dt;
+  // t_reac_inv_ = 0.0;
 }
 
 
@@ -212,29 +220,43 @@ void RemapDG::InitializeConsistentJacobianDeterminant(const Amanzi::WhetStone::D
 void RemapDG::FunctionalTimeDerivative(
     double t, const CompositeVector& u, CompositeVector& f)
 {
+  CompositeVector uu(u);
+  if (is_limiter_) ApplyLimiter(t, uu);
+
   DynamicFaceVelocity(t);
   DynamicCellVelocity(t, consistent_jac_);
 
   // -- populate operators
-  op_adv_->SetupPolyVector(velc_);
-  op_adv_->UpdateMatrices();
+  if (t_adv_ != t) { 
+    op_adv_->SetupPolyVector(velc_);
+    op_adv_->UpdateMatrices();
+    // t_adv_ = t;
+  }
 
-  op_flux_->Setup(velc_, velf_);
-  op_flux_->UpdateMatrices(velf_.ptr());
-  op_flux_->ApplyBCs(true, true, true);
+  if (t_flux_ != t) {
+    op_flux_->Setup(velc_, velf_);
+    op_flux_->UpdateMatrices(velf_.ptr());
+    op_flux_->ApplyBCs(true, true, true);
+    // t_flux_ = t;
+  }
 
-  op_reac_->Setup(jac_);
-  op_reac_->UpdateMatrices(Teuchos::null);
+  if (t_reac_inv_ != t) {
+    op_reac_->Setup(jac_);
+    op_reac_->UpdateMatrices(Teuchos::null);
+
+    auto& matrices = op_reac_->local_matrices()->matrices;
+    for (int n = 0; n < matrices.size(); ++n) matrices[n].Inverse();
+    // t_reac_inv_ = t;
+  }
 
   // -- solve the problem with mass matrix
-  auto& matrices = op_reac_->local_matrices()->matrices;
-  for (int n = 0; n < matrices.size(); ++n) {
-    matrices[n].Inverse();
-  }
-  op_reac_->global_operator()->Apply(u, *field_);
+  auto& x = *op_reac_->global_operator()->rhs(); // re-use memory
+  op_reac_->global_operator()->Apply(uu, x);
 
   // -- calculate right-hand_side
-  op_flux_->global_operator()->Apply(*field_, f);
+  op_flux_->global_operator()->Apply(x, f);
+
+  nfun_++;
 }
 
 
@@ -307,34 +329,16 @@ void RemapDG::DynamicCellVelocity(double t, bool consistent_det)
 
 
 /* *****************************************************************
-* Limit gradient
+* Limit conservative field u
 ***************************************************************** */
-void RemapDG::ApplyLimiter(
-    const Amanzi::WhetStone::DG_Modal& dg, CompositeVector& u)
+void RemapDG::ApplyLimiter(double t, CompositeVector& u)
 {
-  // AMANZI_ASSERT(order_ == 1);
-  const Epetra_MultiVector& u_c = *u.ViewComponent("cell", true);
+  // calculate non-conservative field x
+  auto& x = *op_reac_->global_operator()->rhs(); // re-use memory
+  ConservativeToNonConservative(t, u, x);
 
-  // initialize boundary conditions
-  std::vector<int> bc_model(nfaces_wghost_, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost_, 0.0);
-
-  // create gradient in the natural basis
-  u.ScatterMasterToGhosted("cell");
-
-  int nk = u_c.NumVectors();
-  WhetStone::DenseVector data(nk);
-
-  CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh0_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, dim_);
-  auto grad = Teuchos::rcp(new CompositeVector(cvs));
-  Epetra_MultiVector& grad_c = *grad->ViewComponent("cell", true);
-
-  for (int c = 0; c < ncells_wghost_; ++c) {
-    for (int i = 0; i < nk; ++i) data(i) = u_c[i][c];
-    dg.cell_basis(c).ChangeBasisMyToNatural(data);
-    for (int i = 0; i < dim_; ++i) grad_c[i][c] = data(i + 1);
-  }
+  const Epetra_MultiVector& x_c = *x.ViewComponent("cell", true);
+  int nk = x_c.NumVectors();
 
   // create list of cells where to apply limiter
   double threshold = -4.0;
@@ -344,15 +348,14 @@ void RemapDG::ApplyLimiter(
     if (smoothness_ == "high order term" && order_ > 1) {
       double honorm(0.0);
       for (int i = dim_ + 1; i < nk; ++i)
-        honorm += u_c[i][c] * u_c[i][c];
+        honorm += x_c[i][c] * x_c[i][c];
 
-      double unorm = honorm;
+      double xnorm = honorm;
       for (int i = 0; i <= dim_; ++i)
-        unorm += u_c[i][c] * u_c[i][c];
+        xnorm += x_c[i][c] * x_c[i][c];
 
-      if (unorm > 0.0 && std::log10(honorm / unorm) > threshold) {
+      if (xnorm > 0.0 && std::log10(honorm / xnorm) > threshold)
         ids.push_back(c);
-      }
     } else {
       ids.push_back(c);
     }
@@ -360,28 +363,94 @@ void RemapDG::ApplyLimiter(
 
   int nids, itmp = ids.size();
   mesh0_->get_comm()->SumAll(&itmp, &nids, 1);
-  sharp_ = std::max(sharp_, 100.0 * nids / u.ViewComponent("cell")->GlobalLength());
+  sharp_ = std::max(sharp_, 100.0 * nids / x.ViewComponent("cell")->GlobalLength());
 
-  // limit gradient and save it to solution
+  // initialize limiter
   auto limlist = plist_.sublist("limiter");
   Operators::LimiterCell limiter(mesh0_);
   limiter.Init(limlist);
 
   std::string name = limlist.template get<std::string>("limiter");
+  
+  // apply limiter
+  std::vector<int> bc_model(nfaces_wghost_, Operators::OPERATOR_BC_NONE);
+  std::vector<double> bc_value(nfaces_wghost_, 0.0);
+
+  x.ScatterMasterToGhosted("cell");
+
   if (name == "Barth-Jespersen dg") {
-    limiter.ApplyLimiter(ids, u.ViewComponent("cell", true), dg, bc_model, bc_value);
+    limiter.ApplyLimiter(ids, x.ViewComponent("cell", true), *dg_, bc_model, bc_value);
   } else {
-    limiter.ApplyLimiter(ids, u.ViewComponent("cell", true), 0, grad, bc_model, bc_value);
+    // -- create gradient in the natural basis
+    WhetStone::DenseVector data(nk);
+
+    CompositeVectorSpace cvs;
+    cvs.SetMesh(mesh0_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, dim_);
+    auto grad = Teuchos::rcp(new CompositeVector(cvs));
+    Epetra_MultiVector& grad_c = *grad->ViewComponent("cell", true);
+
+    // -- mean value is preserved automatiacally for the partially orthogonalized basis
+    //    otherwise, a more complicated algorithm is needed
+    AMANZI_ASSERT(dg_->cell_basis(0).id() == WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
+
+    for (int c = 0; c < ncells_wghost_; ++c) {
+      for (int i = 0; i < nk; ++i) data(i) = x_c[i][c];
+      for (int i = dim_ + 1; i < nk; ++i) data(i) = 0.0;
+
+      dg_->cell_basis(c).ChangeBasisMyToNatural(data);
+      for (int i = 0; i < dim_; ++i) grad_c[i][c] = data(i + 1);
+      x_c[0][c] = data(0);
+    }
+
+    // -- limit gradient and save it to solution
+    limiter.ApplyLimiter(ids, x.ViewComponent("cell", true), 0, grad, bc_model, bc_value);
 
     for (int n = 0; n < ids.size(); ++n) {
       int c = ids[n];
-      data(0) = u_c[0][c];
+      data(0) = x_c[0][c];
       for (int i = 0; i < dim_; ++i) data(i + 1) = grad_c[i][c];
       for (int i = dim_ + 1; i < nk; ++i) data(i) = 0.0;
-      dg.cell_basis(c).ChangeBasisNaturalToMy(data);
-      for (int i = 0; i < nk; ++i) u_c[i][c] = data(i);
+
+      dg_->cell_basis(c).ChangeBasisNaturalToMy(data);
+      for (int i = 0; i < nk; ++i) x_c[i][c] = data(i);
     }
   }
+
+  NonConservativeToConservative(t, x, u);
+}
+
+
+/* *****************************************************************
+* Change between conservative and non-conservative variables.
+***************************************************************** */
+void RemapDG::NonConservativeToConservative(
+    double t, const CompositeVector& u, CompositeVector& v)
+{
+  DynamicFaceVelocity(t);
+  DynamicCellVelocity(t, consistent_jac_);
+
+  op_reac_->Setup(jac_);
+  op_reac_->UpdateMatrices(Teuchos::null);
+  op_reac_->global_operator()->Apply(u, v);
+  t_reac_inv_ = -1.0;
+}
+
+void RemapDG::ConservativeToNonConservative(
+    double t, const CompositeVector& u, CompositeVector& v)
+{
+  DynamicFaceVelocity(t);
+  DynamicCellVelocity(t, consistent_jac_);
+
+  if (t_reac_inv_ != t) {
+    op_reac_->Setup(jac_);
+    op_reac_->UpdateMatrices(Teuchos::null);
+
+    auto& matrices = op_reac_->local_matrices()->matrices;
+    for (int n = 0; n < matrices.size(); ++n) matrices[n].Inverse();
+    // t_reac_inv_ = t;
+  }
+
+  op_reac_->global_operator()->Apply(u, v);
 }
 
 } // namespace Amanzi

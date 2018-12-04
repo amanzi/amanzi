@@ -33,7 +33,7 @@
 
   <!-- LIMITER -->
   <ParameterList name="limiter">
-    <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
+    <Parameter name="limiter" type="string" value="none"/>
     <Parameter name="polynomial order" type="int" value="1"/>
     <Parameter name="limiter extension for transport" type="bool" value="false"/>
     <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>

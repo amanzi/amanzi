@@ -63,10 +63,10 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   virtual void FunctionalTimeDerivative(double t, const CompositeVector& u, CompositeVector& f) override;
 
   // initialization routines
-  void InitializeOperators();
+  void InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg); 
   void InitializeFaceVelocity();
   void InitializeJacobianMatrix();
-  void InitializeConsistentJacobianDeterminant(const Amanzi::WhetStone::DG_Modal& dg); 
+  void InitializeConsistentJacobianDeterminant(); 
 
   // dynamic geometric quantities
   virtual void DynamicJacobianMatrix(
@@ -74,8 +74,12 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   virtual void DynamicFaceVelocity(double t);
   virtual void DynamicCellVelocity(double t, bool consistent_det);
 
+  // change between conservative and non-conservative variable
+  void ConservativeToNonConservative(double t, const CompositeVector& u, CompositeVector& v);
+  void NonConservativeToConservative(double t, const CompositeVector& u, CompositeVector& v);
+
   // limiters
-  void ApplyLimiter(const Amanzi::WhetStone::DG_Modal& dg, CompositeVector& u); 
+  void ApplyLimiter(double t, CompositeVector& u); 
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh0_;
@@ -83,9 +87,9 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   int ncells_owned_, ncells_wghost_, nfaces_owned_, nfaces_wghost_;
   int dim_;
 
-  const Teuchos::ParameterList plist_;
+  Teuchos::ParameterList plist_;
   std::shared_ptr<WhetStone::MeshMaps> maps_;
-  bool consistent_jac_;
+  Teuchos::RCP<WhetStone::DG_Modal> dg_; 
 
   // operators
   int order_;
@@ -108,11 +112,13 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   // new determinant
   std::vector<WhetStone::Polynomial> jac0_, jac1_;
 
-  // phisycal field to be remap
-  Teuchos::RCP<CompositeVector> field_;
-
   // statistics
+  int nfun_;
+  bool is_limiter_, consistent_jac_;
   double sharp_;
+
+ private:
+  double t_adv_, t_flux_, t_reac_inv_;
 };
 
 } // namespace Amanzi
