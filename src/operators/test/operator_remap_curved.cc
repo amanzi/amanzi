@@ -390,6 +390,13 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
 
   io.InitializeCycle(1.0, 1);
   io.WriteVector(*p2c(0), "solution");
+  io.WriteVector(*p2c(1), "gradx");
+  io.WriteVector(*p2c(2), "grady");
+  if (order > 1) {
+    io.WriteVector(*p2c(3), "hesxx");
+    io.WriteVector(*p2c(4), "hesxy");
+    io.WriteVector(*p2c(5), "hesyy");
+  }
   io.WriteVector(*q2c(0), "projection");
   io.FinalizeCycle();
 

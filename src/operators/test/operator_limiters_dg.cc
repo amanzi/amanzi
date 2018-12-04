@@ -49,7 +49,7 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-  if (MyPID == 0) std::cout << "\nTest: Smoothness indicator and limiters for DG" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: Smoothness indicator and limiters for DG, basis=" << basis << std::endl;
 
   // create rectangular mesh
   MeshFactory meshfactory(&comm);
@@ -122,7 +122,8 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
     Epetra_MultiVector grad_exact(grad_c);
 
     // create list of cells where to apply limiter
-    double threshold = -4 * std::log10((double) order) - 4.6;
+    double L(0.0);
+    double threshold = -4 * std::log10((double) order) - L;
     AmanziMesh::Entity_ID_List ids;
 
     for (int c = 0; c < ncells_owned; ++c) {
@@ -198,9 +199,7 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
 
 TEST(LIMITER_SMOOTHNESS_INDICATOR_2D) {
   double l2norm1, l2norm2;
-  RunTest("test/circle_quad10.exo", "normalized", l2norm1);
-  RunTest("test/circle_quad10.exo", "orthonormalized", l2norm2);
-  CHECK_CLOSE(l2norm1, l2norm2, 1e-12);
+  RunTest("test/circle_quad10.exo", "orthonormalized", l2norm1);
   // RunTest("test/circle_quad20.exo");
   // RunTest("test/circle_quad40.exo");
   // RunTest("test/circle_quad80.exo");
@@ -235,7 +234,7 @@ TEST(LIMITER_GAUSS_POINTS)
   auto field_c = field->ViewComponent("cell", true);
 
   int order = 2;
-  WhetStone::DG_Modal dg(order, mesh, "normalized");
+  WhetStone::DG_Modal dg(order, mesh, "orthonormalized");
   AnalyticDG08b ana(mesh, order, true);
   ana.set_shapes(true, false, false);
 
@@ -257,7 +256,7 @@ TEST(LIMITER_GAUSS_POINTS)
        .set<bool>("limiter extension for transport", false)
        .set<std::string>("limiter", "Barth-Jespersen dg")
        .set<std::string>("limiter stencil", "cell to all cells")
-       .set<int>("limiter points", 5);
+       .set<int>("limiter points", 3);
 
   // boundary data
   std::vector<int> bc_model(nfaces_wghost, 0);
@@ -272,17 +271,10 @@ TEST(LIMITER_GAUSS_POINTS)
     bc_value[f] = ana.SolutionExact(xf, 0.0);
   }
 
-  // create gradient for limiting
-  WhetStone::DenseVector data(nk), data2(nk), data3(nk);
-
-  // create list of cells where to apply limiter
-  AmanziMesh::Entity_ID_List ids;
-  for (int c = 0; c < ncells_owned; ++c) ids.push_back(c);
-
   // Apply limiter
   LimiterCell limiter(mesh);
   limiter.Init(plist);
-  limiter.ApplyLimiter(ids, field_c, dg, bc_model, bc_value);
+  limiter.ApplyLimiter(field_c, dg, bc_model, bc_value);
 
   double minlim, avglim, maxlim;
   limiter.limiter()->MinValue(&minlim);
@@ -291,11 +283,12 @@ TEST(LIMITER_GAUSS_POINTS)
 
   // calculate extrema of the limited function
   double umin(1.0e+12), umax(-1.0e+12);
-  for (int c = 0; c < ncells_owned; ++c) {
-    double volume = mesh->cell_volume(c);
+  WhetStone::DenseVector data(nk);
 
-    umin = std::min(umin, (*field_c)[0][c]);
-    umax = std::max(umax, (*field_c)[0][c]);
+  for (int c = 0; c < ncells_owned; ++c) {
+    for (int i = 0; i < nk; ++i) data(i) = (*field_c)[i][c];
+    umin = std::min(umin, data(0));
+    umax = std::max(umax, data(0));
   }
 
   double tmp = umin;
@@ -307,7 +300,7 @@ TEST(LIMITER_GAUSS_POINTS)
     printf("limiter min/avg/max: %10.6f %10.6f %10.6f\n", minlim, avglim, maxlim);
   }
 
-  CHECK(umax > 0.85);
+  CHECK(umax > 0.84);
   CHECK(avglim > 0.97);
 }
 

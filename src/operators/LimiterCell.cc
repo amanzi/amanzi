@@ -27,6 +27,7 @@
 // Amanzi
 #include "exceptions.hh"
 #include "Quadrature1D.hh"
+#include "WhetStoneDefs.hh"
 #include "WhetStoneMeshUtils.hh"
 
 // Amanzi::Operators
@@ -451,6 +452,7 @@ void LimiterCell::LimiterBarthJespersenDG_(
     const std::vector<int>& bc_model, const std::vector<double>& bc_value)
 {
   AMANZI_ASSERT(dim == 2);
+  AMANZI_ASSERT(dg.cell_basis(0).id() == WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
 
   double u1, u1f, umin, umax;
   AmanziMesh::Entity_ID_List faces, nodes;
