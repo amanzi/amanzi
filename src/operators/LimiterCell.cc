@@ -119,7 +119,7 @@ void LimiterCell::ApplyLimiter(
     Exceptions::amanzi_throw(msg);
   }
 
-  limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
+  limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
   if (limiter_id_ == OPERATOR_LIMITER_BARTH_JESPERSEN) {
     LimiterBarthJespersen_(ids, bc_model, bc_value, limiter_);
     ApplyLimiter(limiter_);
@@ -164,11 +164,7 @@ void LimiterCell::ApplyLimiter(
     Exceptions::amanzi_throw(msg);
   }
 
-  if (!external_bounds_) {
-    BoundsForCells(dg, bc_model, bc_value, stencil_id_, true);
-  }
-
-  limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
+  limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
   if (limiter_id_ == OPERATOR_LIMITER_BARTH_JESPERSEN_DG) {
     LimiterBarthJespersenDG_(dg, ids, bc_model, bc_value);
   } else {
@@ -462,6 +458,8 @@ void LimiterCell::LimiterBarthJespersenDG_(
   AmanziGeometry::Point x1(dim), x2(dim), xm(dim);
   int order = WhetStone::PolynomialSpaceOrder(dim, nk);
 
+  BoundsForCells(*field_, bc_model, bc_value, stencil_id_, true);
+
   for (int n = 0; n < ids.size(); ++n) {
     int c = ids[n];
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -471,7 +469,7 @@ void LimiterCell::LimiterBarthJespersenDG_(
     for (int i = 0; i < nk; ++i) data(i) = (*field_)[i][c];
     auto poly = dg.cell_basis(c).CalculatePolynomial(mesh_, c, order, data);
 
-    u1 = poly(0);
+    u1 = (*field_)[0][c];
     double tol = sqrt(OPERATOR_LIMITER_TOLERANCE) * fabs(u1);
 
     int m = limiter_points_ - 1;
@@ -499,7 +497,6 @@ void LimiterCell::LimiterBarthJespersenDG_(
       }
     }
 
-if (climiter > 1.0) std::cout << c << " " << climiter << std::endl;
     for (int i = 1; i < nk; ++i) (*field_)[i][c] *= climiter;
     (*limiter_)[c] = climiter;
   }
@@ -967,37 +964,6 @@ void LimiterCell::BoundsForNodes(
       bounds_v[1][v] = std::max(bounds_v[1][v], bc_value[v]);
     }
   }
-}
-
-
-/* ******************************************************************
-* Calculate internal bounds for DG field represented by a multivector.
-****************************************************************** */
-void LimiterCell::BoundsForCells(
-    const WhetStone::DG_Modal& dg,
-    const std::vector<int>& bc_model, const std::vector<double>& bc_value, 
-    int stencil, bool reset)
-{
-  // create auxiliary cell-centered field with one component
-  auto cvs = Teuchos::rcp(new CompositeVectorSpace());
-  cvs->SetMesh(mesh_)->SetGhosted(true)
-     ->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  CompositeVector tmp(*cvs);
-  auto& tmp_c = *tmp.ViewComponent("cell");
-
-  int nk = field_->NumVectors();
-  WhetStone::DenseVector data(nk);
-
-  for (int c = 0; c < ncells_owned; ++c) {
-    for (int i = 0; i < nk; ++i) data(i) = (*field_)[i][c];
-    dg.cell_basis(c).ChangeBasisMyToNatural(data);
-    tmp_c[0][c] = data(0);
-  }
-
-  // use the auxiliary field to calculate bounds
-  tmp.ScatterMasterToGhosted();
-  BoundsForCells(tmp_c, bc_model, bc_value, stencil, reset);
 }
 
 

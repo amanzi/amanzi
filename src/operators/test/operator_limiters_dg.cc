@@ -286,15 +286,14 @@ TEST(LIMITER_GAUSS_POINTS)
   WhetStone::DenseVector data(nk);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    for (int i = 0; i < nk; ++i) data(i) = (*field_c)[i][c];
-    umin = std::min(umin, data(0));
-    umax = std::max(umax, data(0));
+    umin = std::min(umin, (*field_c)[0][c]);
+    umax = std::max(umax, (*field_c)[0][c]);
   }
 
   double tmp = umin;
-  mesh->get_comm()->SumAll(&tmp, &umin, 1);
+  mesh->get_comm()->MinAll(&tmp, &umin, 1);
   tmp = umax;
-  mesh->get_comm()->SumAll(&tmp, &umax, 1);
+  mesh->get_comm()->MaxAll(&tmp, &umax, 1);
   if (MyPID == 0) {
     printf("function min/max: %10.6f %10.6f\n", umin, umax);
     printf("limiter min/avg/max: %10.6f %10.6f %10.6f\n", minlim, avglim, maxlim);

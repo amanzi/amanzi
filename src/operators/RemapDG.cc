@@ -220,9 +220,6 @@ void RemapDG::InitializeConsistentJacobianDeterminant()
 void RemapDG::FunctionalTimeDerivative(
     double t, const CompositeVector& u, CompositeVector& f)
 {
-  CompositeVector uu(u);
-  if (is_limiter_) ApplyLimiter(t, uu);
-
   DynamicFaceVelocity(t);
   DynamicCellVelocity(t, consistent_jac_);
 
@@ -251,7 +248,10 @@ void RemapDG::FunctionalTimeDerivative(
 
   // -- solve the problem with mass matrix
   auto& x = *op_reac_->global_operator()->rhs(); // re-use memory
-  op_reac_->global_operator()->Apply(uu, x);
+  op_reac_->global_operator()->Apply(u, x);
+
+  // -- limite non-conservative field
+  if (is_limiter_) ApplyLimiter(t, x);
 
   // -- calculate right-hand_side
   op_flux_->global_operator()->Apply(x, f);
@@ -329,19 +329,16 @@ void RemapDG::DynamicCellVelocity(double t, bool consistent_det)
 
 
 /* *****************************************************************
-* Limit conservative field u
+* Limit non-conservative field x
 ***************************************************************** */
-void RemapDG::ApplyLimiter(double t, CompositeVector& u)
+void RemapDG::ApplyLimiter(double t, CompositeVector& x)
 {
-  // calculate non-conservative field x
-  auto& x = *op_reac_->global_operator()->rhs(); // re-use memory
-  ConservativeToNonConservative(t, u, x);
-
   const Epetra_MultiVector& x_c = *x.ViewComponent("cell", true);
   int nk = x_c.NumVectors();
 
   // create list of cells where to apply limiter
-  double threshold = -4.0;
+  double L(-1.0);
+  double threshold = -4.0 * std::log10((double)order_) - L;
   AmanziMesh::Entity_ID_List ids;
 
   for (int c = 0; c < ncells_owned_; ++c) {
@@ -415,8 +412,6 @@ void RemapDG::ApplyLimiter(double t, CompositeVector& u)
       for (int i = 0; i < nk; ++i) x_c[i][c] = data(i);
     }
   }
-
-  NonConservativeToConservative(t, x, u);
 }
 
 

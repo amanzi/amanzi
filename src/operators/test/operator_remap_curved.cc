@@ -286,17 +286,15 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   ana.InitialGuess(*dg, p1c, 1.0);
 
   // visualize initial solution
-  {
-    Teuchos::ParameterList iolist;
-    iolist.get<std::string>("file name base", "plot");
-    OutputXDMF io(iolist, mesh0, true, false);
+  Teuchos::ParameterList iolist;
+  iolist.get<std::string>("file name base", "plot");
+  OutputXDMF io(iolist, mesh1, true, false);
 
-    const Epetra_MultiVector& ptmp = *p1->ViewComponent("cell");
+  p2c = *p1->ViewComponent("cell");
 
-    io.InitializeCycle(0.0, 0);
-    io.WriteVector(*ptmp(0), "solution");
-    io.FinalizeCycle();
-  }
+  io.InitializeCycle(0.0, 0);
+  io.WriteVector(*p2c(0), "solution");
+  io.FinalizeCycle();
 
   // initial mass
   double mass0(0.0);
@@ -341,9 +339,21 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
       dt = std::min(dt0, 1.0 - t);
       remap.CollectStatistics(t, *p1);
     }
-  }
 
-  remap.ConservativeToNonConservative(t, *p1, p2);
+    remap.ConservativeToNonConservative(t, *p1, p2);
+
+    // visualize solution on mesh1
+    io.InitializeCycle(t, iloop + 1);
+    io.WriteVector(*p2c(0), "solution");
+    io.WriteVector(*p2c(1), "gradx");
+    io.WriteVector(*p2c(2), "grady");
+    if (order > 1) {
+      io.WriteVector(*p2c(3), "hesxx");
+      io.WriteVector(*p2c(4), "hesxy");
+      io.WriteVector(*p2c(5), "hesyy");
+    }
+    io.FinalizeCycle();
+  }
 
   // calculate error in the new basis
   Entity_ID_List nodes;
@@ -382,23 +392,6 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
       for (int i = 0; i < nk; ++i) q2c[i][c] = poly(i);
     }
   }
-
-  // visualize solution on mesh1
-  Teuchos::ParameterList iolist;
-  iolist.get<std::string>("file name base", "plot");
-  OutputXDMF io(iolist, mesh1, true, false);
-
-  io.InitializeCycle(1.0, 1);
-  io.WriteVector(*p2c(0), "solution");
-  io.WriteVector(*p2c(1), "gradx");
-  io.WriteVector(*p2c(2), "grady");
-  if (order > 1) {
-    io.WriteVector(*p2c(3), "hesxx");
-    io.WriteVector(*p2c(4), "hesxy");
-    io.WriteVector(*p2c(5), "hesyy");
-  }
-  io.WriteVector(*q2c(0), "projection");
-  io.FinalizeCycle();
 
   // conservation errors: mass and volume (CGL)
   double area(0.0), area0(0.0), area1(0.0);
@@ -458,10 +451,10 @@ TEST(REMAP_CURVED_2D) {
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
   int deform = 6;
-  // RemapTestsCurved(rk_method, maps, "test/circle_quad10.exo", 10,0,0, dT,   deform, nloop, T1);
+  RemapTestsCurved(rk_method, maps, "test/circle_quad10.exo", 10,0,0, dT,   deform, nloop, T1);
   RemapTestsCurved(rk_method, maps, "test/circle_quad20.exo", 20,0,0, dT/2, deform, nloop, T1);
-  // RemapTestsCurved(rk_method, maps, "test/circle_quad40.exo", 40,0,0, dT/4, deform, nloop, T1);
-  // RemapTestsCurved(rk_method, maps, "test/circle_quad80.exo", 80,0,0, dT/8, deform, nloop, T1);
+  RemapTestsCurved(rk_method, maps, "test/circle_quad40.exo", 40,0,0, dT/4, deform, nloop, T1);
+  RemapTestsCurved(rk_method, maps, "test/circle_quad80.exo", 80,0,0, dT/8, deform, nloop, T1);
   */
 
   /*
