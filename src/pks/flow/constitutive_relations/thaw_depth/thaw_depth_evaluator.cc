@@ -41,12 +41,12 @@ ThawDepthEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   
   int ncells = res_c.MyLength();
   for (int c=0; c!=ncells; c++){
-    const auto& top_z_centroid = S->GetMesh(domain.str())->face_centroid(0);
-    AmanziGeometry::Point z_centroid(top_z_centroid);
-
     int id = S->GetMesh("surface_star")->cell_map(false).GID(c);
     std::stringstream domain;
     domain << "column_" << id;
+
+    const auto& top_z_centroid = S->GetMesh(domain.str())->face_centroid(0);
+    AmanziGeometry::Point z_centroid(top_z_centroid);
 
     // search through the column and find the deepest unfrozen cell
     const auto& temp_c = *S->GetFieldData(Keys::getKey(domain.str(),"temperature"))
