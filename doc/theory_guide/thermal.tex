@@ -1,0 +1,154 @@
+% =========================================================================
+% -------------------------------------------------------------------------
+% Thermal:
+% -------------------------------------------
+%
+%  Non-isothermal (heat)
+%
+% -------------------------------------------------------------------------
+
+\section{Thermal Processes}
+\label{sec:thermal}
+
+\subsection{Overview}
+
+Heat flow and thermal conduction is an important aspect of many geochemical systems 
+affecting chemical processes through changes in equilibrium and kinetic rate constants. 
+Non-isothermal conditions can also result in buoyancy driven flow leading to convection cells 
+and causing fingering phenomena due to differences in density.
+
+%---------------------------------------------------------------------------------------------
+% Conservation Equations - Energy.
+%---------------------------------------------------------------------------------------------
+
+\subsection{Energy Conservation Equation}
+\label{sec:Energy}
+\label{sec:thermal-model}
+
+
+One form of the governing equation for energy conservation in a porous medium with porosity $\phi$ is given by
+\BA\label{eq:energy_balance}
+  \frac{\partial}{\partial t} \Big[ 
+  \phi \rho_l u_l s_l
+  + 
+  (1-\phi )\rho_r u_r 
+  \Big] \ 
+  + \ &
+  \boldsymbol{\nabla} \cdot \left[ 
+  -\frac{\K k_{rl} }{\mu _l } (\boldsymbol{\nabla} p_l 
+  -
+  \rho _{\alpha} g \boldsymbol{e}_z)\rho _l h_l 
+  - 
+  Q_T 
+  \right] 
+  \eq 
+  Q_e,
+\EA
+where
+$\rho_{r}$ and $\rho_{r}$ are the density, 
+$u_{r}$ and $u_l$ are the internal energy 
+of the rock and the liquid phases, respectively;
+$\K$ is the absolute permeability tensor,
+$k_{rl}$ is the relative permeability coefficient,
+$s_l$ is the liquid saturation,
+$\mu_l$ is fluid viscosity,
+$h_l$ is the enthalpy of the liquid phase, 
+$Q_T$ represents thermal conduction and radiation, and 
+$Q_{e} $ is a source or sink of energy. 
+Note that the energy consumed/produced by chemical reactions is included in this last term. 
+
+
+Assuming that the internal energy $u_r$ and the thermal conduction $Q_T$
+have linear dependence on temperature,  
+$$
+  u_r = c_r T \qquad \text{and}\qquad Q_T=\kappa T,
+$$
+the equation \eqref{eq:energy_balance} takes the form 
+\EQ
+  \frac{\partial}{\partial t} 
+  \Big[ \phi s_l \rho_l u_l 
+  + 
+  (1-\phi) \rho_r c_r T \Big] 
+  + 
+  \boldsymbol{\nabla}\cdot \Big[
+  \bq_l \rho_l h_l 
+  - 
+  \kappa\boldsymbol{\nabla} T\Big] 
+  \eq 
+  Q_e,
+\EN
+where 
+$T$ refers to temperature, 
+$\bq_l$ is the Darcy velocity 
+\EQ
+  \bq_l 
+  =  
+  -\frac{\K k_{rl} }{\mu _l } 
+  \left(
+  \boldsymbol{\nabla} p_l 
+  -
+  \rho _{\alpha} g \boldsymbol{e}_z
+  \right), 
+\EN
+the coefficient $\kappa$ denotes the thermal conductivity of the medium and 
+$c_r$ refers to the specific heat of the porous medium. 
+The internal energy and enthalpy are related by the equation
+\EQ
+  u_l \eq h_l -\frac{p_l}{\rho_l}.
+\EN
+Thermal conductivity if often described by the phenomenological relation given by \citet{somerton1974high}
+\EQ\label{cond} 
+  \kappa \eq \kappa_{\rm dry} + \sqrt{s_l^{}} (\kappa_{\rm sat} - \kappa_{\rm dry}), 
+\EN 
+where $\kappa_{\rm dry}$ and $\kappa_{\rm sat}$ are dry and fully saturated rock thermal conductivities, 
+and $s_l$ denotes the saturation state of the liquid. 
+
+\paragraph{Evapotranspiration. } 
+Evapotranspiration models should include all the processes that convert water from the aqueous phase into water in the gaseous phase, 
+i.e., water vapor.  
+This should also account for evaporation from soil and plant surfaces and plant transpiration and include options 
+where these components vary wiith soil properties and structure of the plant canopy.
+
+\paragraph{Equation of State.}
+
+For multicomponent system, equation of state (EOS) data is required for water and all the NAPL components.  
+Typically these are EOS for pure substances that are combined for mixtures.  
+A basic EOS relates density to pressure and temperature.  
+The form for the EOS is typically cubic such as the Soave-Redlich-Kwong (SRK) or the
+Peng-Robinson (PR) models.  
+Tabular models are also in common use.
+
+Mixture thermodynamics is used to combine pure phase EOS's for the application.  
+The EPA lists over 80 potential NAPL components
+(volatile organic compounds or VOCs) that can cause groundwater
+contamination and has data bases with at least some properties for these
+contaminants.
+
+
+\paragraph{Mixture Internal Energy and Enthalpy.} 
+
+These will generally follow the simple additive rule based of
+component values and mass fraction. Consideration must be also given
+to heats of solution.
+
+
+\subsection{Data Needs}
+
+Equations of state for fluid density, internal energy and/or enthalpy are needed 
+in addition to heat capacity and thermal conductivity of the porous medium. 
+Often the fluid properties for a complex mixture are unknown and the pure phase end member properties are used. 
+
+\subsection{Boundary Conditions, Sources and Sinks}
+
+Boundary conditions may take the form of specified temperature or heat flux including zero temperature gradient. 
+Initial conditions include specifying the temperature over the computational domain 
+such as a constant value or derived from the geothermal gradient.
+
+\subsection{Coupling Considerations}
+
+As heat flow is coupled to the Darcy flux, the heat equation itself is coupled to the flow equation 
+as well as reactive transport equations through heat generated by chemical reactions. 
+Conversely the flow and reactive transport equations are coupled to the heat equation 
+through the temperature dependence of fluid properties such as density, viscosity, internal energy and enthalpy, 
+and equilibrium thermodynamic and kinetic rate constants.
+
