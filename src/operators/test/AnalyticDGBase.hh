@@ -133,9 +133,7 @@ void AnalyticDGBase::InitialGuess(
     Amanzi::WhetStone::DenseVector data = coefs.coefs();
     basis.ChangeBasisNaturalToMy(data);
 
-    for (int n = 0; n < data.NumRows(); ++n) {
-      p[n][c] = data(n);
-    }
+    for (int n = 0; n < data.NumRows(); ++n) p[n][c] = data(n);
   }
 }
 
