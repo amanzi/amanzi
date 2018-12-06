@@ -149,15 +149,13 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Compute(double t0, double t1)
       int ncells_sg = vec_out.Mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
       double cv_total = 0.;
       for (int c_sg=0; c_sg!=ncells_sg; ++c_sg) {
-        double cv_sg = vec_out.Mesh()->cell_volume(c_sg);
         for (int k=0; k!=nfun; ++k) {
-          val[k] += cv_sg * vec_c[k][c_sg] * alpha[k];
+	  val[k] += vec_c[k][c_sg] * alpha[k] ;
         }
-        cv_total += cv_sg;
       }
 
       for (int k=0; k!=nfun; ++k) {
-        val[k] /= cv_total;
+        val[k] /= ncells_sg;
       }
       value_[*c] = val;
     }
