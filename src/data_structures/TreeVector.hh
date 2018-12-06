@@ -43,6 +43,7 @@ class TreeVector {
 
   // Basic constructors of a TreeVector
   TreeVector();
+  TreeVector(const Epetra_MpiComm& comm);
   explicit TreeVector(const TreeVectorSpace& space, InitMode mode=INIT_MODE_NONE);
   explicit TreeVector(const Teuchos::RCP<TreeVectorSpace>& space, InitMode mode=INIT_MODE_NONE);
 

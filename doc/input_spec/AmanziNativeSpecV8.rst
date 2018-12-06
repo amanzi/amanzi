@@ -3400,7 +3400,6 @@ This section to be written.
    <ParameterList name="operators">  <!-- parent list -->
      <ParameterList name="advection operator">
        <Parameter name="method" type="string" value="upwind"/>
-       <Parameter name="reconstruction order" type="int" value="0"/>
      </ParameterList>
    </ParameterList>
 
@@ -3910,7 +3909,6 @@ matrix of types *advection* and *flux*, respectively.
   <ParameterList name="OPERATOR_NAME">
     <Parameter name="method" type="string" value="dg modal"/>
     <Parameter name="method order" type="int" value="2"/>
-    <Parameter name="reconstruction order" type="int" value="0"/>
     <Parameter name="flux formula" type="string" value="Rusanov"/>
     <Parameter name="matrix type" type="string" value="flux"/>
     <Parameter name="jump operator on test function" type="bool" value="true"/>
@@ -4055,7 +4053,7 @@ and their extensions for various PKs.
  * `"method`" [string] specifies a reconstruction method. Available option is
    `"cell-based`" (default).
 
- * `"polynomial order`" [int] defines the polynomial order of a reconstructed function. 
+ * `"polynomial order`" [int] defines the polynomial order of the reconstructed function. 
    Default is 1.
 
  * `"limiter`" [string] specifies limiting method. Available options are 
@@ -4068,6 +4066,9 @@ and their extensions for various PKs.
    respectively.
    Option `"face to cells`" is default for `"Barth-Jespersen`" and `"tensorial`".
    Option `"node to cells`" is default for `"Kuzmin`".
+
+ * `"limiter points`" [int] specifies the number of integration points (Gauss points in 2D) 
+   on face where limiting occurs. Default is 1. Limited to 2D.
 
  * `"use external bounds`" [bool] specifies if bounds for limiters are provided by 
    the hosting application. Default is `"false`".`
@@ -4083,6 +4084,7 @@ and their extensions for various PKs.
     <Parameter name="limiter" type="string" value="tensorial"/>
     <Parameter name="limiter extension for transport" type="bool" value="false"/>
     <Parameter name="limiter stencil" type="string" value="face to cells"/>
+    <Parameter name="limiter points" type="int" value="0"/>
   </ParameterList>
 
 

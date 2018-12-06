@@ -45,7 +45,7 @@ class Basis_Regularized : public Basis {
   virtual void ChangeBasisMyToNatural(DenseVector& v) const;
   virtual void ChangeBasisNaturalToMy(DenseVector& v) const;
 
-  // Recover polynomial in natural basis
+  // Recover polynomial in the natural basis
   virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                          int c, int order, DenseVector& coefs) const;
 

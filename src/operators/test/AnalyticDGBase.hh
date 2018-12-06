@@ -133,9 +133,7 @@ void AnalyticDGBase::InitialGuess(
     Amanzi::WhetStone::DenseVector data = coefs.coefs();
     basis.ChangeBasisNaturalToMy(data);
 
-    for (int n = 0; n < data.NumRows(); ++n) {
-      p[n][c] = data(n);
-    }
+    for (int n = 0; n < data.NumRows(); ++n) p[n][c] = data(n);
   }
 }
 
@@ -198,7 +196,7 @@ void AnalyticDGBase::ComputeCellError(
     std::vector<const Amanzi::WhetStone::WhetStoneFunction*> funcs(2);
     funcs[0] = &poly_err;
     funcs[1] = &poly_err;
-    l2_int += numi.IntegrateFunctionsTrianglatedCell(c, funcs, 2 * order_);
+    l2_int += numi.IntegrateFunctionsTriangulatedCell(c, funcs, 2 * order_);
   }
 #ifdef HAVE_MPI
   GlobalOp("sum", &pnorm, 1);
@@ -279,6 +277,7 @@ void AnalyticDGBase::ComputeCellErrorRemap(
   GlobalOp("sum", &l2_err, 1);
   GlobalOp("sum", &l20_err, 1);
   GlobalOp("max", &inf_err, 1);
+  GlobalOp("max", &inf0_err, 1);
 #endif
   pnorm = sqrt(pnorm);
   l2_err = sqrt(l2_err);
