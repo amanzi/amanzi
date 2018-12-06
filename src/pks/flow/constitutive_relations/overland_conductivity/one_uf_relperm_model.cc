@@ -26,7 +26,7 @@ OneUFRelPermModel::OneUFRelPermModel(Teuchos::ParameterList& plist) :
     Exceptions::amanzi_throw(message);
   }
 
-  h_cutoff_up_ = plist_.get<double>("unfrozen rel perm cutoff pressure", 100.);
+  h_cutoff_up_ = plist_.get<double>("unfrozen rel perm cutoff pressure", 10.);
   h_cutoff_dn_ = plist_.get<double>("unfrozen rel perm cutoff pressure, below", 0.);
 }
 
