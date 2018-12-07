@@ -33,7 +33,7 @@
 #include "OperatorDefs.hh"
 #include "ReconstructionCell.hh"
 
-const std::string LIMITERS[6] = {"B-J", "Tensorial", "Tens. c2c", "Kuzmin", "B-J c2c", "B-J all"};
+const std::string LIMITERS[7] = {"B-J", "Tensorial", "Tens. c2c", "Kuzmin", "B-J c2c", "B-J all", "M-G all"};
 
 /* *****************************************************************
 * Limiters must be 1 on linear functions in two dimensions
@@ -72,7 +72,7 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
     }
   }
 
-  for (int i = 0; i < 6; i++) {
+  for (int i = 0; i < 7; i++) {
     std::vector<int> bc_model;
     std::vector<double> bc_value;
     Teuchos::ParameterList plist;
@@ -94,6 +94,9 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
            .set<std::string>("limiter stencil", "cell to closest cells");
     } else if (i == 5) {
       plist.set<std::string>("limiter", "Barth-Jespersen")
+           .set<std::string>("limiter stencil", "cell to all cells");
+    } else if (i == 6) {
+      plist.set<std::string>("limiter", "Machalik-Gooch")
            .set<std::string>("limiter stencil", "cell to all cells");
     }
 
@@ -325,7 +328,7 @@ TEST(LIMITER_SMOOTH_FIELD_2D) {
       (*flux)[0][f] = (velocity * normal) / mesh->face_area(f);
     }
 
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 7; i++) {
       std::vector<int> bc_model;
       std::vector<double> bc_value;
       Teuchos::ParameterList plist;
@@ -347,6 +350,9 @@ TEST(LIMITER_SMOOTH_FIELD_2D) {
              .set<std::string>("limiter stencil", "cell to closest cells");
       } else if (i == 5) {
         plist.set<std::string>("limiter", "Barth-Jespersen")
+             .set<std::string>("limiter stencil", "cell to all cells");
+      } else if (i == 6) {
+        plist.set<std::string>("limiter", "Machalik-Gooch")
              .set<std::string>("limiter stencil", "cell to all cells");
       }
 
@@ -522,7 +528,7 @@ TEST(LIMITER_SMOOTH_FIELD_3D) {
       ComputeGradError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
 
       if (MyPID == 0)
-          printf("%9s: rel errors: %9.5f %9.5f\n", LIMITERS[i].c_str(), err_int, err_glb);
+          printf("n=%d  %9s: rel errors: %9.5f %9.5f\n", n, LIMITERS[i].c_str(), err_int, err_glb);
 
       CHECK(err_int + err_glb < 1.0 / n);
     }
@@ -587,7 +593,7 @@ void SmoothField2DPoly(double extension)
     (*flux)[0][f] = (velocity * normal) / mesh->face_area(f);
   }
 
-  for (int i = 0; i < 6; i++) {
+  for (int i = 0; i < 7; i++) {
     std::vector<int> bc_model;
     std::vector<double> bc_value;
     Teuchos::ParameterList plist;
@@ -609,6 +615,9 @@ void SmoothField2DPoly(double extension)
            .set<std::string>("limiter stencil", "cell to closest cells");
     } else if (i == 5) {
       plist.set<std::string>("limiter", "Barth-Jespersen")
+           .set<std::string>("limiter stencil", "cell to all cells");
+    } else if (i == 6) {
+      plist.set<std::string>("limiter", "Machalik-Gooch")
            .set<std::string>("limiter stencil", "cell to all cells");
     }
 

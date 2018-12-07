@@ -78,6 +78,9 @@ void LimiterCell::Init(Teuchos::ParameterList& plist,
   } else if (name == "Barth-Jespersen dg") {
     limiter_id_ = OPERATOR_LIMITER_BARTH_JESPERSEN_DG;
     stencil = plist.get<std::string>("limiter stencil", "face to cells");
+  } else if (name == "Machalik-Gooch") {
+    limiter_id_ = OPERATOR_LIMITER_MACHALIK_GOOCH;
+    stencil = plist.get<std::string>("limiter stencil", "face to cells");
   } else if (name == "tensorial") {
     limiter_id_ = OPERATOR_LIMITER_TENSORIAL;
     stencil = plist.get<std::string>("limiter stencil", "face to cells");
@@ -121,7 +124,10 @@ void LimiterCell::ApplyLimiter(
 
   limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
   if (limiter_id_ == OPERATOR_LIMITER_BARTH_JESPERSEN) {
-    LimiterBarthJespersen_(ids, bc_model, bc_value, limiter_);
+    LimiterScalar_(ids, bc_model, bc_value, limiter_, [](double x) { return x; });
+    ApplyLimiter(limiter_);
+  } else if (limiter_id_ == OPERATOR_LIMITER_MACHALIK_GOOCH) {
+    LimiterScalar_(ids, bc_model, bc_value, limiter_, [](double x) { return x - 4 * x * x * x / 27; });
     ApplyLimiter(limiter_);
   }
   else if (limiter_id_ == OPERATOR_LIMITER_TENSORIAL) {
@@ -166,7 +172,7 @@ void LimiterCell::ApplyLimiter(
 
   limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
   if (limiter_id_ == OPERATOR_LIMITER_BARTH_JESPERSEN_DG) {
-    LimiterBarthJespersenDG_(dg, ids, bc_model, bc_value);
+    LimiterScalarDG_(dg, ids, bc_model, bc_value);
   } else {
     Errors::Message msg("Unknown limiter");
     Exceptions::amanzi_throw(msg);
@@ -320,16 +326,16 @@ void LimiterCell::LimiterExtensionTransportTensorial_()
 
 
 /* *******************************************************************
-* Routine calculates the BJ limiter using the cell-based algorithm.
+* Routine calculates a scalar limiter using the cell-based algorithm.
 * First, it limits face-centered value of a reconstracted function 
 * by min-max of two or more cell-centered values.
 * Second, it limits outflux values which gives factor 0.5 in the
 * time step estimate.
 ******************************************************************* */
-void LimiterCell::LimiterBarthJespersen_(
+void LimiterCell::LimiterScalar_(
     const AmanziMesh::Entity_ID_List& ids,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-    Teuchos::RCP<Epetra_Vector> limiter)
+    Teuchos::RCP<Epetra_Vector> limiter, double (*func)(double))
 {
   limiter->PutScalar(1.0);
   Epetra_MultiVector& grad = *gradient_->ViewComponent("cell", false);
@@ -364,9 +370,9 @@ void LimiterCell::LimiterBarthJespersen_(
       getBounds(c, f, stencil_id_, &umin, &umax);
 
       if (u1f < umin - tol) {
-        (*limiter)[c] = std::min((*limiter)[c], (umin - u1) / u1_add);
+        (*limiter)[c] = std::min((*limiter)[c], func((umin - u1) / u1_add));
       } else if (u1f > umax + tol) {
-        (*limiter)[c] = std::min((*limiter)[c], (umax - u1) / u1_add);
+        (*limiter)[c] = std::min((*limiter)[c], func((umax - u1) / u1_add));
       }
     }
   }
@@ -375,17 +381,17 @@ void LimiterCell::LimiterBarthJespersen_(
   if (limiter_correction_) {
     if (stencil_id_ == OPERATOR_LIMITER_STENCIL_F2C)
       BoundsForCells(*field_, bc_model, bc_value, OPERATOR_LIMITER_STENCIL_C2C_CLOSEST, true);
-    LimiterExtensionTransportBarthJespersen_(limiter);
+    LimiterExtensionTransportScalar_(limiter);
   }    
 }
 
 
 /* *******************************************************************
-* Extension of Barth-Jespersen's limiter. Routine changes gradient to 
+* Extension of the scalarlimiter. Routine changes gradient to 
 * satisfy an a prioty estimate of the stable time step. That estimate
 * assumes that the weigthed flux is smaller that the first-order flux.
 ******************************************************************* */
-void LimiterCell::LimiterExtensionTransportBarthJespersen_(
+void LimiterCell::LimiterExtensionTransportScalar_(
     Teuchos::RCP<Epetra_Vector> limiter)
 {
   AMANZI_ASSERT(upwind_cells_.size() > 0);
@@ -440,10 +446,10 @@ void LimiterCell::LimiterExtensionTransportBarthJespersen_(
 
 
 /* *******************************************************************
-* The BJ limiter for modal DG schemes. 
+* The scalar limiter for modal DG schemes. 
 * Note: external bounds are required.
 ******************************************************************* */
-void LimiterCell::LimiterBarthJespersenDG_(
+void LimiterCell::LimiterScalarDG_(
     const WhetStone::DG_Modal& dg, const AmanziMesh::Entity_ID_List& ids,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value)
 {
