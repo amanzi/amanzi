@@ -778,7 +778,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     } else if (clobber_policy_ == "unsaturated") {
       // clobber only when the interior cell is unsaturated
       Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);
-      const Epetra_MultiVector& pres = *S_inter_->GetFieldData(key_)->ViewComponent("cell",false);
+      const Epetra_MultiVector& pres = *S->GetFieldData(key_)->ViewComponent("cell",false);
       const auto& fmap = mesh_->face_map(true);
       const auto& bfmap = mesh_->exterior_face_map(true);
       for (int bf=0; bf!=rel_perm_bf.MyLength(); ++bf) {
@@ -1197,7 +1197,7 @@ bool Richards::ModifyPredictorFluxBCs_(double h, Teuchos::RCP<TreeVector> u) {
 
   if (flux_predictor_ == Teuchos::null) {
     flux_predictor_ = Teuchos::rcp(new PredictorDelegateBCFlux(S_next_, mesh_, matrix_diff_,
-            wrms_, &markers, &values));
+            wrms_, &markers, &values, uw_coef_key_));
   }
 
   UpdatePermeabilityData_(S_next_.ptr());
@@ -1383,37 +1383,37 @@ bool Richards::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
   }
   
   if (minT < -1.e9 || maxT > 1.e8) {
-    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-      *vo_->os() << " is not admissible, as it is not within bounds of constitutive models:" << std::endl;
-      ENorm_t global_minT_c, local_minT_c;
-      ENorm_t global_maxT_c, local_maxT_c;
+    // if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+    //   *vo_->os() << " is not admissible, as it is not within bounds of constitutive models:" << std::endl;
+    //   ENorm_t global_minT_c, local_minT_c;
+    //   ENorm_t global_maxT_c, local_maxT_c;
 
-      local_minT_c.value = minT_c;
-      local_minT_c.gid = pres_c.Map().GID(min_c);
-      local_maxT_c.value = maxT_c;
-      local_maxT_c.gid = pres_c.Map().GID(max_c);
+    //   local_minT_c.value = minT_c;
+    //   local_minT_c.gid = pres_c.Map().GID(min_c);
+    //   local_maxT_c.value = maxT_c;
+    //   local_maxT_c.gid = pres_c.Map().GID(max_c);
 
-      MPI_Allreduce(&local_minT_c, &global_minT_c, 1, MPI_DOUBLE_INT, MPI_MINLOC, mesh_->get_comm()->Comm());
-      MPI_Allreduce(&local_maxT_c, &global_maxT_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
-      *vo_->os() << "   cells (min/max): [" << global_minT_c.gid << "] " << global_minT_c.value
-                 << ", [" << global_maxT_c.gid << "] " << global_maxT_c.value << std::endl;
+    //   MPI_Allreduce(&local_minT_c, &global_minT_c, 1, MPI_DOUBLE_INT, MPI_MINLOC, mesh_->get_comm()->Comm());
+    //   MPI_Allreduce(&local_maxT_c, &global_maxT_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
+    //   *vo_->os() << "   cells (min/max): [" << global_minT_c.gid << "] " << global_minT_c.value
+    //              << ", [" << global_maxT_c.gid << "] " << global_maxT_c.value << std::endl;
 
-      if (pres->HasComponent("face")) {
-        const Epetra_MultiVector& pres_f = *pres->ViewComponent("face",false);
-        ENorm_t global_minT_f, local_minT_f;
-        ENorm_t global_maxT_f, local_maxT_f;
+    //   if (pres->HasComponent("face")) {
+    //     const Epetra_MultiVector& pres_f = *pres->ViewComponent("face",false);
+    //     ENorm_t global_minT_f, local_minT_f;
+    //     ENorm_t global_maxT_f, local_maxT_f;
 
-        local_minT_f.value = minT_f;
-        local_minT_f.gid = pres_f.Map().GID(min_f);
-        local_maxT_f.value = maxT_f;
-        local_maxT_f.gid = pres_f.Map().GID(max_f);
+    //     local_minT_f.value = minT_f;
+    //     local_minT_f.gid = pres_f.Map().GID(min_f);
+    //     local_maxT_f.value = maxT_f;
+    //     local_maxT_f.gid = pres_f.Map().GID(max_f);
         
-        MPI_Allreduce(&local_minT_f, &global_minT_f, 1, MPI_DOUBLE_INT, MPI_MINLOC, mesh_->get_comm()->Comm());
-        MPI_Allreduce(&local_maxT_f, &global_maxT_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
-        *vo_->os() << "   cells (min/max): [" << global_minT_f.gid << "] " << global_minT_f.value
-                   << ", [" << global_maxT_f.gid << "] " << global_maxT_f.value << std::endl;
-      }
-    }
+    //     MPI_Allreduce(&local_minT_f, &global_minT_f, 1, MPI_DOUBLE_INT, MPI_MINLOC, mesh_->get_comm()->Comm());
+    //     MPI_Allreduce(&local_maxT_f, &global_maxT_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
+    //     *vo_->os() << "   cells (min/max): [" << global_minT_f.gid << "] " << global_minT_f.value
+    //                << ", [" << global_maxT_f.gid << "] " << global_maxT_f.value << std::endl;
+    //   }
+    // }
     return false;
   }
   return true;

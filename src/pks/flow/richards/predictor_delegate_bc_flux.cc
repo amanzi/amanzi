@@ -60,7 +60,7 @@ PredictorDelegateBCFlux::CreateFunctor_(int f,
   lambda->resize(faces.size());
 
   // unscale the Aff for my cell with the rel perm that was used to calculate it
-  double Krel = (*S_next_->GetFieldData("upwind_relative_permeability")
+  double Krel = (*S_next_->GetFieldData(uw_kr_key_)
                  ->ViewComponent("face",false))[0][f];
 
   // fill the arrays
