@@ -20,6 +20,7 @@
 #ifndef AMANZI_LIMITER_CELL_HH_
 #define AMANZI_LIMITER_CELL_HH_
 
+#include <functional>
 #include <vector>
 
 #include "Epetra_IntVector.h"
@@ -107,12 +108,12 @@ class LimiterCell {
  
  private:
   // internal limiters and supporting routines
-  void LimiterBarthJespersen_(
+  void LimiterScalar_(
       const AmanziMesh::Entity_ID_List& ids,
       const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-      Teuchos::RCP<Epetra_Vector> limiter);
+      Teuchos::RCP<Epetra_Vector> limiter, double (*)(double));
 
-  void LimiterBarthJespersenDG_(
+  void LimiterScalarDG_(
       const WhetStone::DG_Modal& dg, const AmanziMesh::Entity_ID_List& ids,
       const std::vector<int>& bc_model, const std::vector<double>& bc_value);
 
@@ -141,8 +142,8 @@ class LimiterCell {
 
   void IdentifyUpwindCells_();
 
+  void LimiterExtensionTransportScalar_(Teuchos::RCP<Epetra_Vector> limiter);
   void LimiterExtensionTransportTensorial_();
-  void LimiterExtensionTransportBarthJespersen_(Teuchos::RCP<Epetra_Vector> limiter);
   void LimiterExtensionTransportKuzmin_(
       const std::vector<double>& field_local_min, const std::vector<double>& field_local_max);
 

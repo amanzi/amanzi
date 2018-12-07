@@ -1501,7 +1501,8 @@ relative permeability, density and viscosity.
     * `"polynomial order`" [int] defines the polynomial order of a reconstructed function. Default is 1.
 
     * `"limiter`" [string] specifies limiting method for a high-order reconstruction. 
-      Available options are `"Barth-Jespersen`" (default), `"tensorial`", and `"Kuzmin`". 
+      Available options are `"Barth-Jespersen`" (default), `"Machalik-Gooch`", `"tensorial`",
+      and `"Kuzmin`". 
 
 .. code-block:: xml
 
@@ -4057,15 +4058,15 @@ and their extensions for various PKs.
    Default is 1.
 
  * `"limiter`" [string] specifies limiting method. Available options are 
-   `"Barth-Jespersen`" (default), `"tensorial`", and `"Kuzmin`". 
+   `"Barth-Jespersen`" (default), `"Machalik-Gooch`", `"tensorial`", and `"Kuzmin`". 
 
  * `"limiter stencil`" [string] specifies stencil for calculating local bounds. Available 
    options are `"face to cells`", `"cell to closets cells`", `"cell to all cells`",
    and `"node to cells`".
    For a square mesh, the above options define stencils of size 2, 5, 9, and 4,
    respectively.
-   Option `"face to cells`" is default for `"Barth-Jespersen`" and `"tensorial`".
-   Option `"node to cells`" is default for `"Kuzmin`".
+   Option `"face to cells`" is default for `"Barth-Jespersen`", `"Machalik-Gooch`", 
+   and `"tensorial`".  Option `"node to cells`" is default for `"Kuzmin`".
 
  * `"limiter points`" [int] specifies the number of integration points (Gauss points in 2D) 
    on face where limiting occurs. Default is 1. Limited to 2D.
