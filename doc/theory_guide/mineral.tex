@@ -1,0 +1,369 @@
+
+\subsection{Mineral Precipitation and Dissolution} 
+\label{sec:mineralPrecipDissolution}
+
+\subsubsection{Overview} 
+
+Mineral precipitation and dissolution are among the most important
+processes affecting the transport of contaminants in the subsurface.
+They represent a class of heterogeneous reactions that require a
+slightly different treatment than do reactions taking place within the
+same phase.  Perhaps most importantly, a kinetic treatment of mineral
+reactions requires the inclusion of the interfacial area between the
+phases (water and mineral), or reactive surface area (see
+Section~\ref{sec:ReactiveSurfaceArea}).  The reactive minerals may be
+considered as pure, in which case their treatment is simplified by the
+fact that their activity is always equal to one, or they may be solid
+solutions, in which case their activities have to be determined as in
+any other solution.  Minerals may be assumed to be at equilibrium with
+the aqueous solution, in which case they can be included in the total
+concentration in a fashion similar to the way in which equilibrium
+secondary species are (Equation~\eqref{eq:AqueousComplexation_GrindEQ__12}), 
+or they may be treated kinetically.  In most cases, it appears to be sufficient to
+treat the minerals kinetically, since the equilibrium condition can be
+regained by using reaction rates that are sufficiently fast relative
+to the time scales of interest \citep{steefel_1996}.  This approach
+also offers the advantage that the minerals can potentially be removed
+as direct unknowns in the solution procedure within any one nonlinear
+iteration cycle and updated only at the end of the time step.
+
+\subsubsection{Kinetic Mineral-Water Rate Laws}
+
+Following the notation presented in Section~\ref{sec:mathframework},
+the mineral reactions take the form
+%
+\begin{equation} 
+ \sum_j\nu_{jm} \A_{j\a} \arrows \M_m,
+ \label{heterogeneous-restated}
+\end{equation}
+%
+for mineral $\M_m$ with reaction rate $I_{m\a}$ and stoichiometric
+coefficients $\nu_{jm}$.  The sum of the mineral reaction rates
+affecting component $j$ in phase $\a$ can be written as
+%
+\begin{equation} 
+ R_{j\a} \eq \sum_m\nu_{jm} I_{m{\a}}.
+ \label{eq:MineralReactionSummation}
+\end{equation} 
+In most cases, this will involve water as the fluid phase.
+Equation~\eqref{eq:MineralReactionSummation} implies that component $j$
+may be involved in any number of parallel mineral reaction pathways
+(even within the same phase), with each potentially described by its
+own rate law.  Changes in mineral concentrations are described by the
+equation
+%
+\begin{equation}
+  \frac{\partial \phi_m}{\partial t} \eq \overline V_m \sum_\a I_{m\a},
+\end{equation} 
+%
+with molar volume $\overline V_m$ and where the sum over $\a$ on the
+right-hand side is over all fluid phases that react with the $m$th
+mineral.
+
+We use a kinetic rate law based on the assumption that attachment and detachment of ions from mineral surfaces is the rate--limiting step (i.e., a surface reaction-controlled rate law). It does not mean, however, that one cannot obtain overall transport control on the mineral dissolution or precipitation rate since this depends on the magnitude of the reaction rate relative to the macroscopic transport rates. The rate laws used for mineral precipitation and dissolution are based loosely on transition state theory \citep{lasaga_1981,aagaard_1982,lasaga_1984}). 
+
+\paragraph{TST Type Rate Law.}
+
+This formulation gives the dependence of the rate on the saturation state of the solution with respect to a particular mineral as a function of the ion activity product, $Q_{s} $, defined by 
+\begin{equation} \label{eq:Mineral3}  
+  Q_{m} =\prod _{j=1}^{N_{c} } \, a_{j}^{\nu _{jm} } , 
+\end{equation} 
+where the $a_{j} $ are the activities of the primary species used in writing the dissolution reaction for the mineral and $\nu _{jm}$ are stoichiometric reaction coefficients. In order to incorporate the strong pH dependence of most mineral dissolution and precipitation reactions far from equilibrium, parallel rate laws are used which are summed to give the overall reaction rate law for a particular mineral in phase $\a$
+\begin{equation} \label{eq:Mineral4} 
+  I_{m\a} =-A_{m\a} \left\{ \sum _{l=1}^{N_{rm} } \, k_{l} 
+  \left(\prod _{i=1}^{N_{c} +N_{x} } \, a_{i}^{p_{il} } \right) 
+  \mathop{\left[1-\mathop{\left(\frac{Q_{m} }{K_{m} } \right)}
+  \nolimits^{M_l} \right]}\nolimits^{n_l} \right\} , 
+\end{equation} 
+where $k_{l} $ is the far from equilibrium dissolution rate constant for the $l$th parallel reaction, $p_{il}$ is the exponential dependence on species $i$ of the $l$th parallel reaction (i.e., the reaction order), $K_{m} $ is the equilibrium constant, $N_{rm}$ is the number of parallel reactions within phase $\a$, and $A_{m\a} $ refers to the surface area of the reacting mineral in contact with phase $\a$ (m$^2$ mineral m$^{-3}$ porous medium). The exponents $n_l$ and $M_l$ allow for nonlinear dependencies on the affinity term and are normally taken from experimental studies. The term $\prod _{i=1}^{N_{c} +N_{x} } \, a_{i}^{p_{il}} $ incorporates the effects of various ions in solution on the far from equilibrium dissolution rate. This is most commonly the solution pH or hydroxyl ion activity but may include other electrolytes as well.
+
+The temperature dependence of the reaction rate constant can be expressed reasonably well via an Arrhenius equation \citep{lasaga_1984}. Since many rate constants are reported at 25$^{\circ } $C, it is more convenient to write the rate constant at some temperature as 
+\begin{equation} \label{eq:Mineral5} 
+  k=k_{25} \; \rm{exp} \left[ \frac{-E_{a} }{R} \left( \frac{1}{T} -\frac{1}{298.15} \right) \right], 
+\end{equation} 
+where $E_{a} $ is the activation energy, $k_{25} $ is the rate constant at 25$^{\circ } $C, $R$ is the gas constant, and $T$ is temperature in the Kelvin scale. 
+
+\paragraph{Nonlinear Parallel Mineral Rate Laws.}
+
+The rate law proposed by \citet{hellmann2006dissolution}, based on experimental data for albite, can be used for dissolution of silicate minerals. One rate law describes far from equilibrium dissolution behavior with a rate constant $k_2$, and one rate law describes close to equilibrium behavior ($k_1$):
+\begin{equation}  \label{eq:Mineral6} 
+  I_{m\a_\circ} \eq A_{m\a_\circ}  \{ k_{1} [1-\exp (-m_{1} g^{m_{2} } )]+k_{2} [1-\exp (-g)]^{m_{3} }  \},
+\end{equation}                
+where $g$ represents $\frac{|\Delta G_r|}{RT}$ and the fitted parameters $m_1$, $m_2$ and $m_3$ have values of $7.98 \times 10^{-5}$, $3.81$ and $1.17$ \citep{hellmann2006dissolution}. Here again the assumption is that the phase in question, $\a_\circ$, is water.  This formulation is consistent with theoretical and experimental considerations which suggest that far-from-equilibrium dissolution is characterized by the opening of etch pits and rapid propagation of step waves, whereas close-to-equilibrium dissolution in the absence of etch pits is localized to surface defects. 
+
+\paragraph{Dissolution Only.}
+
+The simplest form of a dissolution only rate law would be a completely irreversible reaction with no back reaction (i.e., no precipitation).  However, it may be desirable to have a rate law which slows as equilibrium is approached, even though the back reaction cannot really be demonstrated.  Such a rate law is likely applicable to the dissolution of albite at low temperature, since dissolution can be demonstrated while precipitation cannot.  There is clear evidence in the case of plagioclase that the rate of dissolution does slow, so it is important to be able to include this in the code \citep{maher2009role}.  Similarly, it was found that kaolinite could not be described with a single rate law that was continuous for both dissolution and precipitation \citep{yang2008kaolinite}.  To describe both precipitation and dissolution of kaolinite, therefore, one can use distinct dissolution-only and precipitation-only rate laws.
+
+A rate law for dissolution only could in principle include any number of rate laws
+having a TST (linear or nonlinear) form, but with the added code (here presented as a linear TST rate with no dependence on dissolved or sorbed species far from equilibrium for the sake of simplicity):
+\begin{eqnarray}
+I_{m\a_\circ} \eq
+  \begin{cases}
+   -A_{m\a_\circ} \mathop{\left[1-\mathop{\left(\frac{Q_{m} }{K_{m} } \right)} \right]} & \text{if $I_{m\a_\circ} < 0$},\\
+   0 & \text{if $I_{m\a_\circ} > 0$}.
+  \end{cases}
+\end{eqnarray}
+%\[
+ % r_{s} = \left\{ 
+%\begin{array}{l l}
+%  =-A_{s} \mathop{\left[1-\mathop{\left(\frac{Q_{s} }{K_{s} } \right)} \right]} & \quad \mbox{if $r_{S}<0$}\\
+%  =  0 & \quad \mbox{if $r_{S}>0$}\\ \end{array} \right. \]  \label{dissolutiononly}
+
+%Could have the following
+%\subparagraph{Assumptions}
+%\subparagraph{Data Needs}
+
+\paragraph{Precipitation Only.}
+
+A precipitation-only rate law takes a similar form to that of dissolution-only
+\begin{eqnarray}
+I_{m\a_\circ} \eq
+  \begin{cases}
+   A_{m\a_\circ} \mathop{\left[1-\mathop{\left(\frac{Q_{m} }{K_{m} } \right)} \right]} & \text{if $I_{m\a_\circ} > 0$},\\
+   0 & \text{if $I_{m\a_\circ} < 0$}.
+  \end{cases}
+\end{eqnarray}
+
+%Could have the following
+\subsubsection{Assumptions and Applicability for Rate Laws}
+
+All of the rate laws described above use reactive surface area as an important parameter (see Section~\ref{sec:ReactiveSurfaceArea}).  This is because most of the rates determined for mineral dissolution and precipitation are based on normalization to physical surface area.  Rate laws that consider the actual kind and density of reactive sites are possible, but so far are difficult to implement at the field scale.
+
+\subsubsection{Data Needs for Rate Laws}
+
+Data needs for mineral dissolution and precipitation are considerable and help to explain why these processes have not always been included in subsurface environmental management codes.  In the case of mineral dissolution, it is necessary to know the reactive surface area of the dissolving mineral in contact with the mobile fluid phase.  Reactive surface area within immobile zones may contribute to the reactivity as well over long time scales via diffusion, so normally must be considered as well (see Section~\ref{sec:ReactiveSurfaceArea}).  
+
+Reactive surface area is an even more difficult topic in the case of mineral precipitation.  Here seeds may be created by nucleation, the seeds may growth via crystal growth and/or ripening and agglomeration \citep{steefel1990new}.  Some proposed methods for including the evolution of reactive surface area are given in Section~\ref{sec:ReactiveSurfaceArea}.  
+%Could have the following
+%\subparagraph{Assumptions}
+%\subparagraph{Data Needs}
+
+%Steefel
+%\paragraph{Nucleation.}
+
+%Could have the following
+%\subparagraph{Assumptions}
+%\subparagraph{Data Needs}
+
+%\paragraph{Solid Solutions.}
+
+%Could have the following
+%\subparagraph{Assumptions}
+%\subparagraph{Data Needs}
+
+%\subsubsection{Common Data Needs for Mineral Precipitation/Dissolution Models}
+
+\subsubsection{Reactive Surface Area Evolution}  
+\label{sec:ReactiveSurfaceArea}
+
+Surface area is a key parameter affecting mineral dissolution and
+precipitation rates, as well as the extent of aqueous species (e.g.,
+contaminants) sorption onto mineral surfaces.  Accordingly, surface
+area is one of the variables that appear in mineral dissolution and
+precipitation rate laws, Section~\ref{sec:mineralPrecipDissolution},
+as well as in expressions needed to compute sorption site
+concentration for surface complexation models,
+Section~\ref{sec:surfaceComplexation}.  The incorporation and
+treatment of surface areas into reactive transport simulations can be
+broken down into two parts: initial surface areas,
+Equation~\eqref{eq:RSA:1}, which can be either directly input into the
+model if known, or estimated from input geometric data and
+Equation~\eqref{eq:FractureSurfaceArea} the actual evolution of surface areas
+(starting from input or calculated initial values) upon mineral
+dissolution or precipitation.
+
+Initial surface areas can be estimated from laboratory measurements
+for pure minerals or bulk sediments.  However, actual ``reactive''
+surface areas in natural systems are largely unknown, and have been
+shown to be typically smaller than laboratory measurements by several
+orders of magnitude, and in much closer agreement with geometric
+mineral surface areas.  For this reason, it is not uncommon to
+estimate initial reactive surface areas from available geometric data
+on the size and shape of mineral grains in porous media, or from data
+on fracture coverage (thus spacing) in fractured rocks.  This can be
+achieved either internally or externally prior to input, using
+relatively simple mathematical expressions that do not require a high
+level of accuracy given the large variability of this parameter in
+natural systems.  Alternatively, initial surface areas can be
+calibrated during the course of reactive transport simulations.
+
+Once initial (reactive) surface areas have been determined, the
+evolution of these areas upon mineral reaction needs to be captured in
+a manner that is consistent with field and experimental observations.
+For dissolving minerals in water-saturated systems, the evolution of
+reactive surface area can be calculated, as a first approximation, by
+assuming some proportionality between the amount of mineral present
+and its surface area.  In such case, simple relationships can be
+developed relating surface area with mineral volume fraction, as shown
+further below.  In unsaturated systems, however, the problem is
+complicated by the fact that reactive surface areas are not only
+function of mineral volume fractions, but also potentially of liquid
+saturation.  While water serves as the wetting phase in most cases,
+and thus in in contact with the solid grains in the medium, at low
+saturations the coverage may become discontinuous.  In this case, as a
+first approximation, the reactive surface area in contact with the
+phase (in the case of water, the "wetting phase") can be assumed to be
+proportional to liquid saturation.
+
+Predicting the evolution of surface area from the onset of, and
+during, mineral precipitation is less straightforward.  If a mineral
+forms on existing surfaces (of the same mineral and/or on surfaces of
+existing precursors), the surface area can be assumed to evolve with
+some proportionality to the current volume fraction of the mineral (or
+precursor mineral(s)).  However, if a mineral actually nucleates from
+solution, without precursors, a rigorous treatment of nucleation is
+required \citep{steefel1990new}.  Such rigorous treatment, however, is
+deemed outside the scope of current model requirements, primarily
+because input parameters for nucleation models are scarce for most
+minerals.  Instead, an approximate treatment can be considered,
+yielding a trend of surface area evolution similar to that expected
+upon nucleation (i.e., initially large surface areas upon nucleation
+decreasing with growth).  This general behavior can be captured by
+assuming that the initial (first formed, minimum) amount and grain
+size of a nucleating mineral is known.  Using these two (input)
+parameters (i.e., minimum/initial volume fraction and grain size), the
+initial number of precipitating mineral grains and their surface area
+can be easily computed for each mineral assuming simple grain
+geometries (e.g., spheres).  Upon further precipitation, the evolution
+of surface area can then be computed as a function of mineral grain
+size, with mineral grains growing with some proportionality to the
+amount of mineral precipitation.  As such, surface areas initially
+decrease with increasing mineral amounts, starting from initially
+large values at small initial grain sizes.  For each mineral, this
+decrease in surface area with growth can be assumed to continue until
+the surface area reaches some preset (input) value corresponding to
+the surface area of the ``bulk'' mineral.  At this point, the surface
+area is assumed to evolve again with some direct proportionality to
+volume fraction, as in the case of dissolving minerals.
+
+The general methodology and formulation of the above-described
+approach are presented further below.  Note that because surface areas
+evolve relatively slowly in most systems, compared to other parameters
+such as aqueous concentrations, surface areas can be computed
+explicitly.  That is, surface areas computed at the end of a
+flow/transport/reaction time step can be used as values for computing
+reactive transport at the next time step.
+
+\paragraph{Reactive Surface Area.}
+
+The following general relationship can be used to compute reactive
+surface areas of minerals as a function of time:
+%
+\begin{equation}
+  A_{m\a} \eq \gamma_{m} \; \left( \phi_{m} A _{SS_m} \; 1000 \;
+    \rho_{m} + \overline{A}_{m\a} \right),
+ \label{eq:RSA:1}
+\end{equation}
+%
+where $A_{m\a}$ is the effective reactive surface area of minerals
+(m$^2$ mineral per m$^{-3}$ porous medium), $\gamma_{m}$ is the
+fraction of the mineral's surface area that is in contact with the
+phase (normally water), $\phi_m$ is the volume fraction of the
+mineral, $A _{SS_m}$ is the specific surface area of the mineral
+(m$^2$/g), $\rho_M$ is the dry density of the mineral (kg m$^{-3}$),
+and the factor of 1000 converts from kg to g.  $\overline{A}_{m\a}$ is
+the precursor surface area (m$^2$ mineral m$^{-3}$ medium).  The
+fraction of the mineral surface area, $\gamma_{m}$, in contact with
+the phase $\a$ may be estimated from petrographic observations, fitted
+from field data, or potentially estimated based on as yet unspecified
+relationship with phase (liquid) saturation.
+
+An alternative expression for computing reactive surface area is given
+by \citet{steefel-1994}
+%
+\begin{equation}  
+  A_{m\a} \eq \gamma_{m}   A_{m\a}^{\circ}   
+   \left(\frac{\phi_m}{\phi_{m}^{\circ} } \right),
+ \label{eq:BulkSurfaceArea}
+\end{equation} 
+%
+where $A_{m\a}^{\circ}$ and $\phi_{m}^{\circ}$ are the initial surface
+area and volume fraction of the mineral, respectively.
+
+In the case of secondary minerals that are not initially present and
+where no precursor mineral occurs with a non-zero volume fraction,
+both Eqns. \eqref{eq:RSA:1} and \eqref{eq:BulkSurfaceArea} can be modified
+to include a ``threshold'' mineral volume fraction that is used just
+for the purposes of calculating reactive surface area.  This mineral
+mass is considered to be derived from a short-lived nucleation event
+that quickly creates surface area upon which subsequent mineral growth
+can occur.  The threshold volume fraction, $\phi_{nucl}$, can be
+incorporated in the following way:
+%
+\begin{eqnarray}
+  A_{m\a} \eq
+ \begin{cases}
+   \gamma_{m} \; \left( \phi_{m} A _{SS_m} \; 1000 \; \rho_{m} \right)    & 
+   \text{if $\phi_{m}  > \phi_{m}^{nucl}$},\\
+   \gamma_{m} \; \left( \phi_{nucl} A _{SS_m} \; 1000 \; \rho_{m} \right)    & 
+   \text{if $\phi_{m}  < \phi_{m}^{nucl}$}.\\
+ \end{cases}
+\end{eqnarray}
+%
+Such a procedure obviates the need for a more complicated formulation
+such as that found in \citet{steefel1990new}.
+
+Another option to be implemented involves a simple geometric method
+for calculating surface area \citep{lasaga_1984}. If a simple cubic
+packing of spherical grains of radius $r$, is considered, then the
+cubic arrangement of spheres yields, in a cube of side $4r$ and volume
+$(4r)^3$, a total of 8 spheres, each of radius $r$, volume 
+$\frac{4\pi r^3}{3}$, and area $4\pi r^2$.  Thus the surface area 
+$A_{nucl}$ (as the area of the spheres divided by the volume of the
+cube) can be computed as
+%
+\begin{equation}
+  A_{m\a} \eq \gamma_{m} \frac{0.5}{r} ,         
+  \label{eq:RSA:5}
+\end{equation} 
+%
+where $r$ is the average grain size of the mineral.  A more
+comprehensive approach involving crystal size distributions has been
+proposed by \citet{steefel1990new}.
+
+\paragraph{Estimation of Reactive Surface Areas for Fractures.}
+%
+In a dual permeability (fracture-matrix) system, the surface area of
+the fracture in contact with the mobile fluid phase, $A_F$ (in units
+of m$^2$ fracture m$^{-3}$ medium) is \citep{steefel-1994}
+%
+\begin{equation}
+  A_F \eq \varphi_{F} \frac{2}{\delta},
+ \label{eq:FractureSurfaceArea} 
+\end{equation}
+where $\varphi_{F}$ is the fracture porosity and $\delta$ is the
+fracture aperture.  To calculate the amount of mineral surface area
+present along the fracture, one can use the volume fraction of the
+primary dissolving phase as an estimate of the fraction of the
+fracture surface made up of that mineral
+%
+\begin{equation}
+ A_{m\a} \eq \varphi_{F} \phi_{m} \frac{2}{\delta}.
+ \label{eq:MineralSurfaceArea}
+\end{equation}
+For precipitation, various schemes are possible.  If the assumption is
+made that mineral precipitation can occur anywhere along the fracture
+surface, then \eqref{eq:FractureSurfaceArea} 
+%
+%\todo{Carl check this equation reference, I fixed a duplicate label
+%  -JDM}
+%
+can be used without modification.  For partially wetted fractures, a correction can be 
+introduced to reduce the reactive surface area:
+%
+\begin{equation} 
+  A_{m\a} \eq \varphi_{F} \gamma_m \phi_{m} \frac{2}{\delta},
+  \label{eq:WettedFractureSurfaceArea}
+\end{equation}
+%
+where $\gamma_m$ is the fraction of the fracture actually in contact
+with the reactive phase (normally water).
+
+
+
+
+
+
+
+
