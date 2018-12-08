@@ -159,6 +159,7 @@ class DenseMatrix {
 
   // -- inversion is applicable for square matrices only
   int Inverse();
+  int InverseSPD();
   int NullSpace(DenseMatrix& D);
   double Det();  // limited capabilities
 

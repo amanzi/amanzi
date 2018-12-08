@@ -325,21 +325,31 @@ void RK<Vector>::CreateStorage_(const Vector& initvector)
 template<class Vector>
 void RK<Vector>::TimeStep(double t, double h, const Vector& y, Vector& y_new)
 {
+  Vector y_tmp(y);
+  fn_.ModifySolution(t, y_tmp);
+
   double sum_time;
   for (int i = 0; i != order_; ++i) {
     sum_time = t + c_[i] * h;
-    y_new = y;
+
+    if (i == 0) {
+      fn_.FunctionalTimeDerivative(sum_time, y_tmp, *k_[0]);
+    } else {
+      y_new = y_tmp;
       
-    for (int j = 0; j != i; ++j) {
-      if (a_(i,j) != 0.0) {
-        y_new.Update(a_(i,j), *k_[j], 1.0);
+      for (int j = 0; j != i; ++j) {
+        if (a_(i,j) != 0.0) {
+          y_new.Update(a_(i,j), *k_[j], 1.0);
+        }
       }
+      fn_.ModifySolution(sum_time, y_new);
+      fn_.FunctionalTimeDerivative(sum_time, y_new, *k_[i]);
     }
-    fn_.FunctionalTimeDerivative(sum_time, y_new, *k_[i]);
+
     k_[i]->Scale(h);
   }
 
-  y_new = y;
+  y_new = y_tmp;
   for (int i = 0; i != order_; ++i) {
     if (b_[i] != 0.0) {
       y_new.Update(b_[i], *k_[i], 1.0);
