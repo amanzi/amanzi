@@ -17,6 +17,7 @@
 #include "RemapDG.hh"
 
 namespace Amanzi {
+namespace Operators {
 
 /* *****************************************************************
 * Initialization of remap: operarot and face velocity.
@@ -36,18 +37,32 @@ RemapDG::RemapDG(
   nfaces_owned_ = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   nfaces_wghost_ = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
-  order_ = plist_.sublist("PK operator")
-                 .sublist("flux operator").template get<int>("method order");
+  auto& pklist = plist_.sublist("PK operator");
+  order_ = pklist.sublist("flux operator").template get<int>("method order");
 
   // other control variable
-  bc_type_ = Operators::OPERATOR_BC_NONE;
-  std::string name = plist_.sublist("PK operator").template get<std::string>("boundary conditions");
+  bc_type_ = OPERATOR_BC_NONE;
+  std::string name = pklist.template get<std::string>("boundary conditions");
   if (name == "remove")
-    bc_type_ = Operators::OPERATOR_BC_REMOVE;
+    bc_type_ = OPERATOR_BC_REMOVE;
 
-  consistent_jac_ = plist_.sublist("PK operator").template get<bool>("consistent jacobian");
-  smoothness_ = plist_.sublist("limiter").template get<std::string>("smoothness indicator", "none");
-  is_limiter_ = (plist_.sublist("limiter").template get<std::string>("limiter") != "none");
+  name = pklist.template get<std::string>("jacobian determinant method");
+  if (name == "VEM") 
+    det_method_ = OPERATOR_DETERMINANT_VEM;
+  else if (name == "exact time integration") 
+    det_method_ = OPERATOR_DETERMINANT_EXACT_TI;
+  else if (name == "monotone") 
+    det_method_ = OPERATOR_DETERMINANT_MONOTONE;
+
+  // initialize limiter
+  auto limlist = plist_.sublist("limiter");
+  is_limiter_ = (limlist.template get<std::string>("limiter") != "none");
+
+  if (is_limiter_) {
+    smoothness_ = limlist.template get<std::string>("smoothness indicator", "none");
+    limiter_ = Teuchos::rcp(new LimiterCell(mesh0_));
+    limiter_->Init(limlist);
+  }
 
   // miscallateous
   nfun_ = 0;
@@ -65,20 +80,20 @@ void RemapDG::InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg)
   // create right-hand side operator
   // -- flux
   auto oplist = plist_.sublist("PK operator").sublist("flux operator");
-  op_flux_ = Teuchos::rcp(new Operators::PDE_AdvectionRiemann(oplist, mesh0_));
+  op_flux_ = Teuchos::rcp(new PDE_AdvectionRiemann(oplist, mesh0_));
   auto global_op = op_flux_->global_operator();
 
   // -- advection
   oplist = plist_.sublist("PK operator").sublist("advection operator");
-  op_adv_ = Teuchos::rcp(new Operators::PDE_Abstract(oplist, global_op));
+  op_adv_ = Teuchos::rcp(new PDE_Abstract(oplist, global_op));
 
   // create left-hand side operator 
   oplist = plist_.sublist("PK operator").sublist("reaction operator");
-  op_reac_ = Teuchos::rcp(new Operators::PDE_Reaction(oplist, mesh0_));
+  op_reac_ = Teuchos::rcp(new PDE_Reaction(oplist, mesh0_));
 
   // boundary data
   int nk = WhetStone::PolynomialSpaceDimension(dim_, order_);
-  auto bc = Teuchos::rcp(new Operators::BCs(mesh0_, AmanziMesh::FACE, Operators::DOF_Type::VECTOR));
+  auto bc = Teuchos::rcp(new BCs(mesh0_, AmanziMesh::FACE, Operators::DOF_Type::VECTOR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(nk);
 
@@ -94,7 +109,7 @@ void RemapDG::InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg)
   // memory allocation for velocities
   velf_ = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost_));
   velc_ = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_owned_));
-  jac_ = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_owned_));
+  det_ = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_owned_));
 
   // memory allocation for non-conservative field
   field_ = Teuchos::rcp(new CompositeVector(*op_reac_->global_operator()->rhs()));
@@ -141,75 +156,6 @@ void RemapDG::InitializeJacobianMatrix()
 
 
 /* *****************************************************************
-* Initialization of the consistent jacobian
-***************************************************************** */
-void RemapDG::InitializeConsistentJacobianDeterminant()
-{
-  // constant part of determinant
-  DynamicFaceVelocity(0.0);
-  DynamicCellVelocity(0.0, false);
-
-  op_adv_->SetupPolyVector(velc_);
-  op_adv_->UpdateMatrices();
-
-  op_reac_->Setup(jac_);
-  op_reac_->UpdateMatrices(Teuchos::null);
-
-  auto& matrices = op_reac_->local_matrices()->matrices;
-  for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
-
-  op_flux_->Setup(velc_, velf_);
-  op_flux_->UpdateMatrices(velf_.ptr());
-  op_flux_->ApplyBCs(true, true, true);
-
-  CompositeVector& tmp = *op_reac_->global_operator()->rhs();
-  CompositeVector one(tmp), u0(tmp), u1(tmp);
-  Epetra_MultiVector& one_c = *one.ViewComponent("cell", true);
-
-  one.PutScalarMasterAndGhosted(0.0);
-  for (int c = 0; c < ncells_wghost_; ++c) one_c[0][c] = 1.0;
-
-  op_flux_->global_operator()->Apply(one, tmp);
-  op_reac_->global_operator()->Apply(tmp, u0);
-
-  // linear part of determinant
-  double dt(0.01);
-  DynamicFaceVelocity(dt);
-  DynamicCellVelocity(dt, false);
- 
-  op_adv_->SetupPolyVector(velc_);
-  op_adv_->UpdateMatrices();
-
-  op_flux_->Setup(velc_, velf_);
-  op_flux_->UpdateMatrices(velf_.ptr());
-  op_flux_->ApplyBCs(true, true, true);
-
-  op_flux_->global_operator()->Apply(one, tmp);
-  op_reac_->global_operator()->Apply(tmp, u1);
-  u1.Update(-1.0/dt, u0, 1.0/dt);
-
-  // save as polynomials
-  int nk = one_c.NumVectors();
-  Amanzi::WhetStone::DenseVector data(nk);
-  Epetra_MultiVector& u0c = *u0.ViewComponent("cell", true);
-  Epetra_MultiVector& u1c = *u1.ViewComponent("cell", true);
-
-  jac0_.resize(ncells_owned_);
-  jac1_.resize(ncells_owned_);
-
-  for (int c = 0; c < ncells_owned_; ++c) {
-    const auto& basis = dg_->cell_basis(c);
-
-    for (int i = 0; i < nk; ++i) data(i) = u0c[i][c];
-    jac0_[c] = basis.CalculatePolynomial(mesh0_, c, order_, data);
-
-    for (int i = 0; i < nk; ++i) data(i) = u1c[i][c];
-    jac1_[c] = basis.CalculatePolynomial(mesh0_, c, order_, data);
-  }
-}
-
-
-/* *****************************************************************
 * Main routine: evaluation of functional at time t
 ***************************************************************** */
 void RemapDG::FunctionalTimeDerivative(
@@ -237,10 +183,10 @@ void RemapDG::FunctionalTimeDerivative(
 void RemapDG::ModifySolution(double t, CompositeVector& u)
 {
   DynamicFaceVelocity(t);
-  DynamicCellVelocity(t, consistent_jac_);
+  DynamicCellVelocity(t);
 
   // -- populate operators
-  op_reac_->Setup(jac_);
+  op_reac_->Setup(det_);
   op_reac_->UpdateMatrices(Teuchos::null);
 
   // -- solve the problem with mass matrix
@@ -292,19 +238,13 @@ void RemapDG::DynamicFaceVelocity(double t)
 /* *****************************************************************
 * Cell co-velocity in reference coordinates and Jacobian determinant
 ***************************************************************** */
-void RemapDG::DynamicCellVelocity(double t, bool consistent_det)
+void RemapDG::DynamicCellVelocity(double t)
 {
   WhetStone::MatrixPolynomial Jt, C;
   for (int c = 0; c < ncells_owned_; ++c) {
     DynamicJacobianMatrix(c, t, J_[c], Jt);
     maps_->Cofactors(Jt, C);
-    if (consistent_det) {
-      double tmp = t * t / 2;
-      (*jac_)[c][0] = t * jac0_[c] + tmp * jac1_[c];
-      (*jac_)[c][0](0) += 1.0;
-    } else {
-      maps_->Determinant(Jt, (*jac_)[c]);
-    }
+    maps_->Determinant(Jt, (*det_)[c]);
     
     // negative co-velocity, v = -C^t u 
     int nC = C.NumRows();
@@ -360,21 +300,14 @@ void RemapDG::ApplyLimiter(double t, CompositeVector& x)
   mesh0_->get_comm()->SumAll(&itmp, &nids, 1);
   sharp_ = std::max(sharp_, 100.0 * nids / x.ViewComponent("cell")->GlobalLength());
 
-  // initialize limiter
-  auto limlist = plist_.sublist("limiter");
-  Operators::LimiterCell limiter(mesh0_);
-  limiter.Init(limlist);
-
-  std::string name = limlist.template get<std::string>("limiter");
-  
   // apply limiter
-  std::vector<int> bc_model(nfaces_wghost_, Operators::OPERATOR_BC_NONE);
+  std::vector<int> bc_model(nfaces_wghost_, OPERATOR_BC_NONE);
   std::vector<double> bc_value(nfaces_wghost_, 0.0);
 
   x.ScatterMasterToGhosted("cell");
 
-  if (name == "Barth-Jespersen dg") {
-    limiter.ApplyLimiter(ids, x.ViewComponent("cell", true), *dg_, bc_model, bc_value);
+  if (limiter_->type() == OPERATOR_LIMITER_BARTH_JESPERSEN_DG) { 
+    limiter_->ApplyLimiter(ids, x.ViewComponent("cell", true), *dg_, bc_model, bc_value);
   } else {
     // -- create gradient in the natural basis
     WhetStone::DenseVector data(nk);
@@ -398,7 +331,7 @@ void RemapDG::ApplyLimiter(double t, CompositeVector& x)
     }
 
     // -- limit gradient and save it to solution
-    limiter.ApplyLimiter(ids, x.ViewComponent("cell", true), 0, grad, bc_model, bc_value);
+    limiter_->ApplyLimiter(ids, x.ViewComponent("cell", true), 0, grad, bc_model, bc_value);
 
     for (int n = 0; n < ids.size(); ++n) {
       int c = ids[n];
@@ -420,9 +353,9 @@ void RemapDG::NonConservativeToConservative(
     double t, const CompositeVector& u, CompositeVector& v)
 {
   DynamicFaceVelocity(t);
-  DynamicCellVelocity(t, consistent_jac_);
+  DynamicCellVelocity(t);
 
-  op_reac_->Setup(jac_);
+  op_reac_->Setup(det_);
   op_reac_->UpdateMatrices(Teuchos::null);
   op_reac_->global_operator()->Apply(u, v);
 }
@@ -431,9 +364,9 @@ void RemapDG::ConservativeToNonConservative(
     double t, const CompositeVector& u, CompositeVector& v)
 {
   DynamicFaceVelocity(t);
-  DynamicCellVelocity(t, consistent_jac_);
+  DynamicCellVelocity(t);
 
-  op_reac_->Setup(jac_);
+  op_reac_->Setup(det_);
   op_reac_->UpdateMatrices(Teuchos::null);
 
   auto& matrices = op_reac_->local_matrices()->matrices;
@@ -442,5 +375,6 @@ void RemapDG::ConservativeToNonConservative(
   op_reac_->global_operator()->Apply(u, v);
 }
 
-} // namespace Amanzi
+}  // namespace Operators
+}  // namespace Amanzi
 

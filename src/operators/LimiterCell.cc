@@ -71,24 +71,24 @@ void LimiterCell::Init(Teuchos::ParameterList& plist,
   // process parameters for limiters
   std::string stencil;
   std::string name = plist.get<std::string>("limiter", "Barth-Jespersen");
-  limiter_id_ = 0;
+  type_ = 0;
   if (name == "Barth-Jespersen") {
-    limiter_id_ = OPERATOR_LIMITER_BARTH_JESPERSEN;
+    type_ = OPERATOR_LIMITER_BARTH_JESPERSEN;
     stencil = plist.get<std::string>("limiter stencil", "face to cells");
   } else if (name == "Barth-Jespersen dg") {
-    limiter_id_ = OPERATOR_LIMITER_BARTH_JESPERSEN_DG;
+    type_ = OPERATOR_LIMITER_BARTH_JESPERSEN_DG;
     stencil = plist.get<std::string>("limiter stencil", "face to cells");
   } else if (name == "Michalak-Gooch") {
-    limiter_id_ = OPERATOR_LIMITER_MICHALAK_GOOCH;
+    type_ = OPERATOR_LIMITER_MICHALAK_GOOCH;
     stencil = plist.get<std::string>("limiter stencil", "face to cells");
   } else if (name == "Michalak-Gooch dg") {
-    limiter_id_ = OPERATOR_LIMITER_MICHALAK_GOOCH_DG;
+    type_ = OPERATOR_LIMITER_MICHALAK_GOOCH_DG;
     stencil = plist.get<std::string>("limiter stencil", "face to cells");
   } else if (name == "tensorial") {
-    limiter_id_ = OPERATOR_LIMITER_TENSORIAL;
+    type_ = OPERATOR_LIMITER_TENSORIAL;
     stencil = plist.get<std::string>("limiter stencil", "face to cells");
   } else if (name == "Kuzmin") {
-    limiter_id_ = OPERATOR_LIMITER_KUZMIN;
+    type_ = OPERATOR_LIMITER_KUZMIN;
     stencil = plist.get<std::string>("limiter stencil", "node to cells");
   }
 
@@ -126,18 +126,18 @@ void LimiterCell::ApplyLimiter(
   }
 
   limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
-  if (limiter_id_ == OPERATOR_LIMITER_BARTH_JESPERSEN) {
+  if (type_ == OPERATOR_LIMITER_BARTH_JESPERSEN) {
     LimiterScalar_(ids, bc_model, bc_value, limiter_, [](double x) { return x; });
     ApplyLimiter(limiter_);
   }
-  else if (limiter_id_ == OPERATOR_LIMITER_MICHALAK_GOOCH) {
+  else if (type_ == OPERATOR_LIMITER_MICHALAK_GOOCH) {
     LimiterScalar_(ids, bc_model, bc_value, limiter_, [](double x) { return x - 4 * x * x * x / 27; });
     ApplyLimiter(limiter_);
   } 
-  else if (limiter_id_ == OPERATOR_LIMITER_TENSORIAL) {
+  else if (type_ == OPERATOR_LIMITER_TENSORIAL) {
     LimiterTensorial_(ids, bc_model, bc_value);
   } 
-  else if (limiter_id_ == OPERATOR_LIMITER_KUZMIN) {
+  else if (type_ == OPERATOR_LIMITER_KUZMIN) {
     LimiterKuzmin_(ids, bc_model, bc_value);
   } else {
     Errors::Message msg("Unknown limiter");
@@ -175,10 +175,10 @@ void LimiterCell::ApplyLimiter(
   }
 
   limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
-  if (limiter_id_ == OPERATOR_LIMITER_BARTH_JESPERSEN_DG) {
+  if (type_ == OPERATOR_LIMITER_BARTH_JESPERSEN_DG) {
     LimiterScalarDG_(dg, ids, bc_model, bc_value, [](double x) { return x; });
   } 
-  else if (limiter_id_ == OPERATOR_LIMITER_MICHALAK_GOOCH_DG) {
+  else if (type_ == OPERATOR_LIMITER_MICHALAK_GOOCH_DG) {
     LimiterScalarDG_(dg, ids, bc_model, bc_value, [](double x) { return x - 4 * x * x * x / 27; });
   } else {
     Errors::Message msg("Unknown limiter");
@@ -206,10 +206,12 @@ void LimiterCell::LimiterTensorial_(
   auto limiter = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
 
   // Step 1: limit gradient to a feasiable set excluding Dirichlet boundary
-  if (stencil_id_ == OPERATOR_LIMITER_STENCIL_F2C)
-    BoundsForFaces(*field_, bc_model, bc_value, stencil_id_, true);
-  else 
-    BoundsForCells(*field_, bc_model, bc_value, stencil_id_, true);
+  if (!external_bounds_) {
+    if (stencil_id_ == OPERATOR_LIMITER_STENCIL_F2C)
+      bounds_ = BoundsForFaces(*field_, bc_model, bc_value, stencil_id_);
+    else 
+      bounds_ = BoundsForCells(*field_, bc_model, bc_value, stencil_id_);
+  }
   
   for (int n = 0; n < ids.size(); ++n) {
     int c = ids[n];
@@ -260,7 +262,7 @@ void LimiterCell::LimiterTensorial_(
 
   // Step 3: enforce a priori time step estimate (division of dT by 2).
   if (limiter_correction_) {
-    BoundsForCells(*field_, bc_model, bc_value, OPERATOR_LIMITER_STENCIL_C2C_CLOSEST, true);
+    bounds_ = BoundsForCells(*field_, bc_model, bc_value, OPERATOR_LIMITER_STENCIL_C2C_CLOSEST);
     LimiterExtensionTransportTensorial_();
   }    
 
@@ -352,10 +354,12 @@ void LimiterCell::LimiterScalar_(
   AmanziMesh::Entity_ID_List faces;
 
   // Step 1: limiting gradient inside domain
+  if (!external_bounds_) {
   if (stencil_id_ == OPERATOR_LIMITER_STENCIL_F2C)
-    BoundsForFaces(*field_, bc_model, bc_value, stencil_id_, true);
+    bounds_ = BoundsForFaces(*field_, bc_model, bc_value, stencil_id_);
   else 
-    BoundsForCells(*field_, bc_model, bc_value, stencil_id_, true);
+    bounds_ = BoundsForCells(*field_, bc_model, bc_value, stencil_id_);
+  }
   
   for (int n = 0; n < ids.size(); ++n) {
     int c = ids[n];
@@ -387,7 +391,7 @@ void LimiterCell::LimiterScalar_(
   // enforce an a priori time step estimate (dT / 2).
   if (limiter_correction_) {
     if (stencil_id_ == OPERATOR_LIMITER_STENCIL_F2C)
-      BoundsForCells(*field_, bc_model, bc_value, OPERATOR_LIMITER_STENCIL_C2C_CLOSEST, true);
+      bounds_ = BoundsForCells(*field_, bc_model, bc_value, OPERATOR_LIMITER_STENCIL_C2C_CLOSEST);
     LimiterExtensionTransportScalar_(limiter);
   }    
 }
@@ -471,7 +475,9 @@ void LimiterCell::LimiterScalarDG_(
   AmanziGeometry::Point x1(dim), x2(dim), xm(dim);
   int order = WhetStone::PolynomialSpaceOrder(dim, nk);
 
-  BoundsForCells(*field_, bc_model, bc_value, stencil_id_, true);
+  if (!external_bounds_) {
+    bounds_ = BoundsForCells(*field_, bc_model, bc_value, stencil_id_);
+  }
 
   for (int n = 0; n < ids.size(); ++n) {
     int c = ids[n];
@@ -526,7 +532,8 @@ void LimiterCell::LimiterKuzmin_(
   Epetra_MultiVector& grad = *gradient_->ViewComponent("cell", false);
 
   // calculate local extrema at nodes
-  BoundsForNodes(*field_, bc_model, bc_value, stencil_id_, true);
+  if (!external_bounds_)
+    bounds_ = BoundsForNodes(*field_, bc_model, bc_value, stencil_id_);
   auto& bounds_v = *bounds_->ViewComponent("node", true);
 
   // limit reconstructed gradients at cell nodes
@@ -810,28 +817,21 @@ void LimiterCell::IdentifyUpwindCells_()
 /* ******************************************************************
 * Calculate internal bounds.
 ****************************************************************** */
-void LimiterCell::BoundsForCells(
+Teuchos::RCP<CompositeVector> LimiterCell::BoundsForCells(
     const Epetra_MultiVector& field,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value, 
-    int stencil, bool reset)
+    int stencil)
 {
-  if (external_bounds_) return;
+  auto cvs = Teuchos::rcp(new CompositeVectorSpace());
+  cvs->SetMesh(mesh_)->SetGhosted(true)
+     ->AddComponent("cell", AmanziMesh::CELL, 2);
 
-  if (bounds_ == Teuchos::null || reset) {
-    auto cvs = Teuchos::rcp(new CompositeVectorSpace());
-    cvs->SetMesh(mesh_)->SetGhosted(true)
-       ->AddComponent("cell", AmanziMesh::CELL, 2);
+  auto bounds = Teuchos::rcp(new CompositeVector(*cvs));
+  auto& bounds_c = *bounds->ViewComponent("cell", true);
 
-    bounds_ = Teuchos::rcp(new CompositeVector(*cvs));
-  }
-
-  auto& bounds_c = *bounds_->ViewComponent("cell", true);
-
-  if (reset) {
-    for (int c = 0; c < ncells_wghost; ++c) {
-      bounds_c[0][c] = OPERATOR_LIMITER_INFINITY;
-      bounds_c[1][c] =-OPERATOR_LIMITER_INFINITY;
-    }
+  for (int c = 0; c < ncells_wghost; ++c) {
+    bounds_c[0][c] = OPERATOR_LIMITER_INFINITY;
+    bounds_c[1][c] =-OPERATOR_LIMITER_INFINITY;
   }
 
   AmanziMesh::Entity_ID_List nodes, cells;
@@ -881,32 +881,29 @@ void LimiterCell::BoundsForCells(
       }
     }
   }
+
+  return bounds;
 }
 
 
 /* ******************************************************************
 * Calculate internal bounds for the face to closest cells stencil.
 ****************************************************************** */
-void LimiterCell::BoundsForFaces(
+Teuchos::RCP<CompositeVector> LimiterCell::BoundsForFaces(
     const Epetra_MultiVector& field,
-    const std::vector<int>& bc_model, const std::vector<double>& bc_value, 
-    int stencil, bool reset)
+    const std::vector<int>& bc_model, const std::vector<double>& bc_value,
+    int stencil)
 {
-  if (bounds_ == Teuchos::null || reset) {
-    auto cvs = Teuchos::rcp(new CompositeVectorSpace());
-    cvs->SetMesh(mesh_)->SetGhosted(true)
-       ->AddComponent("face", AmanziMesh::FACE, 2);
+  auto cvs = Teuchos::rcp(new CompositeVectorSpace());
+  cvs->SetMesh(mesh_)->SetGhosted(true)
+     ->AddComponent("face", AmanziMesh::FACE, 2);
 
-    bounds_ = Teuchos::rcp(new CompositeVector(*cvs));
-  }
+  auto bounds = Teuchos::rcp(new CompositeVector(*cvs));
+  auto& bounds_f = *bounds->ViewComponent("face", true);
 
-  auto& bounds_f = *bounds_->ViewComponent("face", true);
-
-  if (reset) {
-    for (int f = 0; f < nfaces_wghost; ++f) {
-      bounds_f[0][f] = OPERATOR_LIMITER_INFINITY;
-      bounds_f[1][f] =-OPERATOR_LIMITER_INFINITY;
-    }
+  for (int f = 0; f < nfaces_wghost; ++f) {
+    bounds_f[0][f] = OPERATOR_LIMITER_INFINITY;
+    bounds_f[1][f] =-OPERATOR_LIMITER_INFINITY;
   }
 
   AmanziMesh::Entity_ID_List cells;
@@ -929,32 +926,29 @@ void LimiterCell::BoundsForFaces(
       bounds_f[1][f] = std::max(bounds_f[1][f], bc_value[f]);
     }
   }
+
+  return bounds;
 }
 
 
 /* ******************************************************************
 * Calculate internal bounds for the node to cells stencil.
 ****************************************************************** */
-void LimiterCell::BoundsForNodes(
+Teuchos::RCP<CompositeVector> LimiterCell::BoundsForNodes(
     const Epetra_MultiVector& field,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value, 
-    int stencil, bool reset)
+    int stencil)
 {
-  if (bounds_ == Teuchos::null || reset) {
-    auto cvs = Teuchos::rcp(new CompositeVectorSpace());
-    cvs->SetMesh(mesh_)->SetGhosted(true)
-       ->AddComponent("node", AmanziMesh::FACE, 2);
+  auto cvs = Teuchos::rcp(new CompositeVectorSpace());
+  cvs->SetMesh(mesh_)->SetGhosted(true)
+     ->AddComponent("node", AmanziMesh::FACE, 2);
 
-    bounds_ = Teuchos::rcp(new CompositeVector(*cvs));
-  }
+  auto bounds = Teuchos::rcp(new CompositeVector(*cvs));
+  auto& bounds_v = *bounds->ViewComponent("node", true);
 
-  auto& bounds_v = *bounds_->ViewComponent("node", true);
-
-  if (reset) {
-    for (int v = 0; v < nnodes_wghost; ++v) {
-      bounds_v[0][v] = OPERATOR_LIMITER_INFINITY;
-      bounds_v[1][v] =-OPERATOR_LIMITER_INFINITY;
-    }
+  for (int v = 0; v < nnodes_wghost; ++v) {
+    bounds_v[0][v] = OPERATOR_LIMITER_INFINITY;
+    bounds_v[1][v] =-OPERATOR_LIMITER_INFINITY;
   }
 
   AmanziMesh::Entity_ID_List cells;
@@ -977,6 +971,8 @@ void LimiterCell::BoundsForNodes(
       bounds_v[1][v] = std::max(bounds_v[1][v], bc_value[v]);
     }
   }
+
+  return bounds;
 }
 
 

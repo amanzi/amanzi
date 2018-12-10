@@ -50,6 +50,7 @@
 #include "PDE_Reaction.hh"
 
 namespace Amanzi {
+namespace Operators {
 
 class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
  public:
@@ -69,13 +70,12 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   void InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg); 
   void InitializeFaceVelocity();
   void InitializeJacobianMatrix();
-  void InitializeConsistentJacobianDeterminant(); 
 
   // dynamic geometric quantities
   virtual void DynamicJacobianMatrix(
       int c, double t, const WhetStone::MatrixPolynomial& J, WhetStone::MatrixPolynomial& Jt);
   virtual void DynamicFaceVelocity(double t);
-  virtual void DynamicCellVelocity(double t, bool consistent_det);
+  virtual void DynamicCellVelocity(double t);
 
   // change between conservative and non-conservative variable
   void ConservativeToNonConservative(double t, const CompositeVector& u, CompositeVector& v);
@@ -83,6 +83,9 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
 
   // limiters
   void ApplyLimiter(double t, CompositeVector& u); 
+
+  // access
+  Teuchos::RCP<LimiterCell> limiter() { return limiter_; }
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh0_;
@@ -96,34 +99,37 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
 
   // operators
   int order_;
-  Teuchos::RCP<Operators::PDE_Abstract> op_adv_;
-  Teuchos::RCP<Operators::PDE_AdvectionRiemann> op_flux_;
-  Teuchos::RCP<Operators::PDE_Reaction>op_reac_;
+  Teuchos::RCP<PDE_Abstract> op_adv_;
+  Teuchos::RCP<PDE_AdvectionRiemann> op_flux_;
+  Teuchos::RCP<PDE_Reaction>op_reac_;
   
   int bc_type_;
+
+  // shock inticators and limiters
   std::string smoothness_;
+  Teuchos::RCP<LimiterCell> limiter_;
 
   // intermediate non-conservative quantity
   Teuchos::RCP<CompositeVector> field_;
 
   // geometric data
+  int det_method_;
+
   std::vector<WhetStone::VectorPolynomial> uc_;
   std::vector<WhetStone::MatrixPolynomial> J_;
-  Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > jac_;
+  Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > det_;
 
   Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > velc_;
   Teuchos::RCP<std::vector<WhetStone::Polynomial> > velf_;
   std::vector<WhetStone::VectorPolynomial> velf_vec_;
 
-  // new determinant
-  std::vector<WhetStone::Polynomial> jac0_, jac1_;
-
   // statistics
   int nfun_;
-  bool is_limiter_, consistent_jac_;
+  bool is_limiter_;
   double sharp_;
 };
 
-} // namespace Amanzi
+}  // namespace Operators
+}  // namespace Amanzi
 
 #endif

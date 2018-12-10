@@ -82,15 +82,15 @@ class LimiterCell {
                     const std::vector<int>& bc_model, const std::vector<double>& bc_value);
 
   // bounds for FV fields: if reset=true they are recalculated 
-  void BoundsForCells(const Epetra_MultiVector& field, 
-                      const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-                      int stencil, bool reset);
-  void BoundsForFaces(const Epetra_MultiVector& field,
-                      const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-                      int stencil, bool reset);
-  void BoundsForNodes(const Epetra_MultiVector& field,
-                      const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-                      int stencil, bool reset);
+  Teuchos::RCP<CompositeVector> BoundsForCells(
+      const Epetra_MultiVector& field, 
+      const std::vector<int>& bc_model, const std::vector<double>& bc_value, int stencil);
+  Teuchos::RCP<CompositeVector> BoundsForFaces(
+      const Epetra_MultiVector& field,
+      const std::vector<int>& bc_model, const std::vector<double>& bc_value, int stencil);
+  Teuchos::RCP<CompositeVector> BoundsForNodes(
+      const Epetra_MultiVector& field,
+      const std::vector<int>& bc_model, const std::vector<double>& bc_value, int stencil);
 
   // calculate value of a linear function at the given point p
   void getBounds(int c, int f, int stencil, double* umin, double* umax);
@@ -101,6 +101,7 @@ class LimiterCell {
   Teuchos::RCP<CompositeVector> gradient() { return gradient_; }
   Teuchos::RCP<Epetra_Vector> limiter() { return limiter_; }
   Teuchos::RCP<CompositeVector> bounds() { return bounds_; }
+  int type() { return type_; }
 
   // modifiers
   void set_gradient(const Teuchos::RCP<CompositeVector>& gradient) { gradient_ = gradient; }
@@ -162,7 +163,7 @@ class LimiterCell {
   std::vector<std::vector<int> > upwind_cells_;  // fracture friendly 
   std::vector<std::vector<int> > downwind_cells_;
 
-  int limiter_id_, stencil_id_;
+  int type_, stencil_id_;
   bool limiter_correction_, external_bounds_;
 
   int limiter_points_;  // number of Gauss points on faces where limiting occurs

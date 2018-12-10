@@ -45,7 +45,7 @@ class MyRemapDG : public RemapDG_Tests<AnalyticDG04> {
   ~MyRemapDG() {};
 
   // access 
-  const std::vector<WhetStone::VectorPolynomial> jac() const { return *jac_; }
+  const std::vector<WhetStone::VectorPolynomial> det() const { return *det_; }
   const std::shared_ptr<WhetStone::MeshMaps> maps() const { return maps_; }
 };
 
@@ -228,11 +228,11 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   }
 
   // concervation errors: mass and volume (CGL)
-  auto& jac = remap.jac();
+  auto& det = remap.det();
   double area(0.0), area1(0.0), mass1(0.0), gcl_err(0.0), gcl_inf(0.0);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    double vol1 = numi.IntegratePolynomialCell(c, jac[c][0]);
+    double vol1 = numi.IntegratePolynomialCell(c, det[c][0]);
     double vol2 = mesh1->cell_volume(c);
 
     area += vol1;
@@ -246,7 +246,7 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
     for (int i = 0; i < nk; ++i) data(i) = p2c[i][c];
     auto poly = dg->cell_basis(c).CalculatePolynomial(mesh0, c, order, data);
 
-    int quad_order = jac[c][0].order() + poly.order();
+    int quad_order = det[c][0].order() + poly.order();
 
     if (map_name == "PEM") {
       AmanziMesh::Entity_ID_List faces, nodes;
@@ -263,12 +263,12 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
         mesh0->node_get_coordinates(nodes[1], &(xy[2]));
 
         std::vector<const WhetStone::WhetStoneFunction*> polys(2);
-        polys[0] = &jac[c][n];
+        polys[0] = &det[c][n];
         polys[1] = &poly;
         mass1 += numi.IntegrateFunctionsSimplex(xy, polys, quad_order);
       }
     } else {
-      WhetStone::Polynomial tmp(jac[c][0]);
+      WhetStone::Polynomial tmp(det[c][0]);
       tmp.ChangeOrigin(mesh0->cell_centroid(c));
       poly *= tmp;
       mass1 += numi.IntegratePolynomialCell(c, poly);
