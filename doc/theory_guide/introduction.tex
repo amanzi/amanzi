@@ -11,13 +11,310 @@
 
 \subsection{ASCEM Overview}
 
+The Advanced Simulation Capability for Environmental Management
+(ASCEM) is intended to be a state-of-the-art scientific tool and
+approach for understanding and predicting contaminant fate and
+transport in natural and engineered systems.  
+%This modular and open
+%source high performance computing capability will facilitate
+%integrated approaches to modeling and site characterization that
+%enable robust and standardized assessments of performance and risk for
+%EM cleanup and closure activities. 
+The ASCEM program is aimed at addressing critical EM program needs to
+better understand and quantify flow and contaminant transport behavior
+in complex geological systems.  It will also address the long-term
+performance of engineered components including cementitious materials
+in nuclear waste disposal facilities, in order to reduce uncertainties
+and risks associated with {DOE EM's} environmental cleanup and closure
+activities.  Building upon national capabilities developed from decades
+of Research and Development in subsurface geosciences, computational
+and computer science, modeling and applied mathematics, and
+environmental remediation, the ASCEM initiative will develop an
+integrated, open-source, high-performance computer modeling system for
+multiphase, multicomponent, multiscale subsurface flow and contaminant
+transport.  This integrated modeling system will incorporate
+capabilities for predicting releases from various waste forms,
+identifying exposure pathways and performing dose calculations, and
+conducting systematic uncertainty quantification. The ASCEM approach
+will be demonstrated on selected sites, and then applied to support the
+next generation of performance assessments of nuclear waste disposal
+and facility decommissioning across the EM complex.
+%\todo{It seems like we have should include something about the
+%   time-scale here}
+
+The Multi-Process High Performance Computing (HPC) Simulator is one of
+three thrust areas in ASCEM.  The other two thrusts are the Platform
+and Integrated Toolsets (dubbed the Platform) and Site Applications.
+The primary objective of the HPC Simulator thrust is to provide a
+flexible and extensible computational engine, named Amanzi, to
+simulate the coupled processes and flow scenarios described by the
+conceptual models developed with the Platform toolset, named Akuna.
+The graded and iterative approach to assessments naturally generates a
+suite of conceptual models that span a range of process complexity,
+potentially coupling hydrological, biogeochemical, geomechanical, and
+thermal processes.  Akuna will use ensembles of these simulations to
+quantify the associated uncertainty, sensitivity, and risk.  The
+Process Models task within the HPC Simulator thrust focuses on the
+mathematical descriptions of the relevant physical processes.
+
 \subsection{Purpose and Scope of this Document}
 
+At the highest level of the HPC Simulator design is a set of process
+models that mathematically represent the physical, chemical, and
+biological phenomena controlling contaminant release into, and
+transport in, the subsurface.  The objective of this requirements
+document is to provide a catalogue of process models, along with their
+detailed mathematical formulation, for potential implementation in the
+HPC Simulator.  This concise mathematical description and accompanying
+analysis, provides critical information for requirements and design of
+both the HPC Core Framework (Task 1.1.2.2) and the HPC Toolsets (Task
+1.1.2.3). This effort will also leverage ongoing efforts elsewhere in
+the Department of Energy, including the Cementitious Barrier Project
+(CBP) funded also by Environmental Management through EM-31.
+
+It is important to note that with its focus on mathematical
+descriptions for a catalogue of process models, this requirements
+document is significantly different from a traditional Software
+Requirements Specification (SRS) document.  Hence, this document does
+not follow the IEEE Std 830-1998 template, and instead uses a process
+category based layout that is summarized in Section~\ref{sec:layout}.
+Moreover, this mathematical focus serves multiple audiences:
+%
+\begin{enumerate}
+\item This document provides guidance to the developers engaged in
+  designing and implementing the HPC Core Framework and HPC Toolsets.
+  To meet their needs, sufficient detail for each process model is
+  provided in the form of a background discussion, supporting equations, 
+  and references to relevant literature.  The process models that are
+  currently targeted for implementation in the Phase II demonstration 
+  are listed in
+  Table~\ref{tab:phase-ii-demo-models}.
+\item The document is also intended for ``domain scientists'' whose
+  primary interest is in the processes themselves.  The presentation
+  is intended to justify the choice of process models and their
+  mathematical detail.
+\item Finally, the document is also intended for end users engaged in
+  individual site applications.
+\end{enumerate}
+%
+Over time this document will evolve into a comprehensive graded
+presentation of models, from complex to simple, under a general
+mathematical framework for each process category.  The prioritization
+and selection of process models from this catalogue for implementation
+is discussed in Section~\ref{sec:selecting-process-models}.
+%
+%~\todo{Not sure what categories you are referring to here. -Finsterle}
+Evolution of the list of processes is inevitable, and the modular
+design of the HPC Simulator will easily accommodate the addition of
+new process implementations. 
+
+
 \subsection{Links to Other Thrust Areas}
+\label{sec:other-thrusts}
+
+The set of requirements detailed in this document have a clear
+connection to the other two thrust areas in ASCEM.  In particular,
+many of the process model requirements follow from recommendations
+made from end users as captured in the User Suggestions for ASCEM
+Requirements Documents (Section 5, pp. 18--19)~\citep{ASCEM-SiteApps}.
+%These requirements include the need for multiphase flow and transport,
+%reactive transport, and both groundwater and surface water
+%flow.
+These requirements include the need for multiphase flow and transport,
+reactive transport, and both groundwater flow.  Surface water flow, an important process at some contaminated sites, will be added as needed at a later date, but is currently beyond the scope of the present effort.
+%
+%~\todo{wasn't this excluded? -Finsterle} 
+%
+In addition, there is a need for modeling the degradation of
+engineered barriers, including, for example, covers, liners,
+cementitious materials and waste forms.  Other aspects that were
+deemed desirable include the modeling of radionuclides, source
+releases, and fractured media.  All of these needs have been
+recognized and addressed in some form within this document.
+
+Similarly, there are several areas where the process models will need
+to interface with the Platform and Integrated Toolsets Thrust Area.
+The Platform Thrust Area is tasked with developing the tools necessary
+to set up the conceptual models.  These models represent the
+subsurface flow and reactive transport processes described in this
+document and will include 1) the geologic setting or framework, 2) the
+physical, geochemical, and biological processes and their
+interactions, and 3) the scenarios to which the models are applied.
+An end user wishing to perform a simulation will have to specify
+features such as the process models, the initial and boundary
+conditions, and the material properties.  These features will have to
+be consistent with and fully integrated with the existing capabilities
+of the process models.  For example, for each process model that is
+available, there will be an associated set of constitutive models from
+which a user can select.  In turn, each process model will have a set
+of specifications that will dictate the parameter requirements that
+are specific to the particular model and associated constitutive
+relations.  Because of these links, there needs to be close ties
+between the development of the process models and the tools being
+developed by the Platform Thrust area so that the final simulation
+package can be reliable, robust, and easy to use.  
+%
+%~\todo{Need a diagram showing the overall ASCEM framework and a
+%  diagram which depicts the interfaces of the thrust areas.}
+
+
 
 \subsection{Organization and Layout of this Document}
+\label{sec:layout}
+
+The remainder of this document is organized based on individual process category.
+These include presentation of
+\emph{Isothermal Flow Processes} in Section~\ref{sec:flow-processes}, 
+\emph{Thermal Processes} in Section~\ref{sec:thermal-processes}
+\emph{Transport Processes} in Section~\ref{sec:transport-processes}, and 
+\emph{Biogeochemical Reaction Processes} in Section~\ref{sec:biogeochemical}. 
+%\emph{Colloid Transport Processes} in Section~\ref{sec:colloids}, 
+%\emph{Thermal Processes} in Section~\ref{sec:thermal}, 
+%\emph{Geomechanical Processes} in Section~\ref{sec:geomechanics}, and 
+%\emph{Source Terms}, in Section~\ref{sec:source-terms}.  
+%
+Each of these process categories may present multiple process models.  
+%For example, biogeochemistry includes individual process models for sorption, 
+%mineral precipitation-dissolution, microbially-mediated reactions, colloid
+%generation, etc.  
+%In addition, models of differing fidelity can be accommodated by the HPC code so, 
+%for example, several models for sorption 
+%(e.g., classical Kd, multicomponent-multisite ion exchange,
+%non-electrostatic surface complexation, electrostatic surface
+%complexation) are included.
+
+
+In Section~\ref{sec:flow-processes}, \emph{Isothermal Flow Processes}, 
+we consider models of fluid flow at constant temperature.
+We limit ourselves to the case of a single fluid phase, i.e. no water-oil flows.
+Based on the saturation levels we use one of two models:
+\emph{Darcy's Law} for fully saturated flows and
+\emph{Richards Equation} for partially saturated flows.
+Further, use of Richards Equation requires certain assumptions on the gas phase not moving.
+
+In Section~\ref{sec:thermal-processes}, \emph{Thermal Processes},
+we discuss extension of the models of Section~\ref{sec:flow-processes}
+to the case of changing temperature by adding a concervation of energy equation.
+
+
+In Section~\ref{sec:transport-processes}, \emph{Transport Processes},
+we consider models for transport of solute species 
+that can be part of either gas, fluid or solid phase.
+In the solid phase specied do not move.
+In the gas phase species can only diffuse (due to the assumptions of Richards equation),
+In the fluid phase the transport of the species is affected by the 
+fluid flow as well as dispersion and diffusion processes. 
+In this section we also consider a dual porocity models,
+designed to capture the difference in fluid motion in the cracks and pores.  
+ 
+
+In Section~\ref{sec:biogeochemical}, \emph{Biogeochemical Reaction Processes},
+we consider a variety of biochemical reaction processes,
+which which from the point of view of model equations
+convert one species into others and result in various heat sources.
+  
+
+The difficult question of prioritizing and ultimately selecting process
+models for implementation in any given year is addressed in the
+following subsection (Section~\ref{sec:selecting-process-models}).
+Finally, the notational conventions and variables are summarized in
+Section~\ref{sec:variables}.
+
 
 \subsection{Prioritization and Selection of Process Models}
+\label{sec:selecting-process-models}
+
+Within each section that focuses on a particular process category
+(e.g., flow, transport), sub-sections contain the details of specific
+process models that may be implemented in the HPC Simulator.
+However, the inclusion of a process model in this document does not
+guarantee it will be implemented in the HPC Simulator in the near
+term.  A combination of many factors will be considered in the
+prioritization of process models and selection for implementation in
+any given year.  For example, these factors include, the relative
+importance of the process models to various EM sites and the
+availability of required data for EM sites of interest.  These types
+of information are gathered and organized by the Site Application
+Thrust.  In the first years of the ASCEM project, prioritization must also
+consider the overhead of initiating development of the supporting HPC
+Core Framework (i.e., supporting infrastructure), as well as the design and 
+initial development of the HPC Toolsets (i.e., the fundamental algorithmic
+building blocks).
+
+Given these constraints, discussions involving all three thrusts were
+necessary to generate an initial list of process models that would be
+supported by Amanzi for the Phase~I demonstration. This list is
+updated each year through further discussion with all three thrusts to
+include additional process models that are needed for the next ASCEM
+demonstration, or at desired sites.  The current list of process
+models supported by Amanzi, which will support the Phase~II
+demonstration, is presented in Table~\ref{tab:phase-ii-demo-models}.
+
+%
+% \todo[color=cyan]{GEH: Single-phase $\rightarrow$ Single-phase
+%   saturated, Richards $\rightarrow$ Single-phase
+%   variably-saturated?}
+%
+\begin{table}[ht!]
+\caption{The process models that will be supported
+  by the HPC Simulator, Amanzi, for the Phase~II demonstration 
+  are listed along with their corresponding subsection.
+  \label{tab:phase-ii-demo-models}
+}
+\begin{center}
+\begin{tabular}{lll}
+   Process Category &   Process Model   &     Section       \\
+  \hline
+  \hline
+  \hspace*{2in} & \hspace*{2in} & \\[-10pt]
+  Flow                       &  Single-phase saturated
+                             &  \ref{sec:flow-single-phase} 
+  \\
+  Flow                       &  Single-phase variably saturated (Richards)
+                             &  \ref{sec:richards-equation}      
+  \\
+  \hline           
+  & & \\[-10pt]
+  Transport                  &  Advective
+                             &        \ref{sec:transport-advection}
+  \\
+  Transport                  &  Dispersive
+                             &        \ref{sec:transport-dispersion}
+  \\
+  Transport                  &  Diffusive
+                             &        \ref{sec:transport-diffusion}
+  \\
+  Transpor         t         &  Dual porosity (cracks-pores)
+                             &         \ref{sec:transport-single-phase-dual-porosity}
+  \\
+  \hline           
+  & & \\[-10pt]
+  Biogeochemical Reactions   &  Linear distribution coefficient ($K_d$)
+                             &   \ref{sec:Sorption}      
+  \\
+  Biogeochemical Reactions   &  Electrostatic and non-electrostatic 
+                                surface complexation           
+                             &   \ref{sec:Sorption}      
+  \\
+  Biogeochemical Reactions   &  Multicomponent ion exchange           
+                             &   \ref{sec:Sorption}      
+  \\
+  Biogeochemical Reactions   &  Precipitation/Dissolution  
+                             &   \ref{sec:mineralPrecipDissolution}
+  \\
+  Biogeochemical Reactions   &  Radioactive decay + ingrowth
+                             &   \ref{sec:AqueousComplexation}
+  \\
+  \hline
+  \hline
+\end{tabular}
+\end{center}
+\end{table}
+
+Finally, it is important to note that the set of process models described
+in this document is by no means exhaustive.  Process models will be
+added based on the prioritization of specific EM needs during periodic reviews 
+and updates of this document.
 
 
 

@@ -39,7 +39,7 @@ from the continuum treatment of the porous medium.
 Pore scale processes, including the resolution of variations in transport rates 
 within individual pores or pore networks \citep{li2008scale,kang2006lattice,lichtner-kang-2007}, 
 are generally not resolved, although some capabilities for treating multi-scale 
-effects are discussed in Section~\ref{sec:transport-dual-porosity}.  
+effects are discussed in Section~\ref{sec:transport-single-phase-dual-porosity}.  
 In general, it is assumed that within any one Representative Elementary Volume (REV) 
 corresponding to a grid cell all transport rates are the same.  
 It will be possible, however, to define overlapping continua with distinct transport 
@@ -232,7 +232,7 @@ where $\a_L^{H,\,V}$ and $\a_T^{H,\,V}$ refer to the longitudinal and transverse
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Diffusive Transport} 
-\label{sec:diffusive-transport}
+\label{sec:transport-diffusion}
 
 
 
@@ -415,12 +415,6 @@ or concentration gradient
   \frac{\partial \boldsymbol{C}}{\partial \boldsymbol{n}} = \alpha,
 \end{equation}
 where $\alpha$ is a prescribed value of the flux or concentration gradient. The flux term can be a total, advective, or diffusive flux.
-
-
-
-
-
-
 
 
 
