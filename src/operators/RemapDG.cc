@@ -52,10 +52,6 @@ RemapDG::RemapDG(
   // miscallateous
   nfun_ = 0;
   sharp_ = 0.0;
-
-  t_adv_ = -1.0;
-  t_flux_ = -1.0;
-  t_reac_inv_ = -1.0;
 }
 
 
@@ -99,6 +95,9 @@ void RemapDG::InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg)
   velf_ = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost_));
   velc_ = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_owned_));
   jac_ = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_owned_));
+
+  // memory allocation for non-conservative field
+  field_ = Teuchos::rcp(new CompositeVector(*op_reac_->global_operator()->rhs()));
 }
 
 
@@ -157,7 +156,7 @@ void RemapDG::InitializeConsistentJacobianDeterminant()
   op_reac_->UpdateMatrices(Teuchos::null);
 
   auto& matrices = op_reac_->local_matrices()->matrices;
-  for (int n = 0; n < matrices.size(); ++n) matrices[n].Inverse();
+  for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
 
   op_flux_->Setup(velc_, velf_);
   op_flux_->UpdateMatrices(velf_.ptr());
@@ -207,56 +206,55 @@ void RemapDG::InitializeConsistentJacobianDeterminant()
     for (int i = 0; i < nk; ++i) data(i) = u1c[i][c];
     jac1_[c] = basis.CalculatePolynomial(mesh0_, c, order_, data);
   }
-
-  // t_adv_ = dt;
-  // t_flux_ = dt;
-  // t_reac_inv_ = 0.0;
 }
 
 
 /* *****************************************************************
-* Main routine: evaluation of functional
+* Main routine: evaluation of functional at time t
 ***************************************************************** */
 void RemapDG::FunctionalTimeDerivative(
     double t, const CompositeVector& u, CompositeVector& f)
+{
+  // -- populate operators
+  //    geometric data were updated during solution modification
+  op_adv_->SetupPolyVector(velc_);
+  op_adv_->UpdateMatrices();
+
+  op_flux_->Setup(velc_, velf_);
+  op_flux_->UpdateMatrices(velf_.ptr());
+  op_flux_->ApplyBCs(true, true, true);
+
+  // -- calculate right-hand_side
+  op_flux_->global_operator()->Apply(*field_, f);
+
+  nfun_++;
+}
+
+
+/* *****************************************************************
+* Limiting the non-conservative field at time t
+***************************************************************** */
+void RemapDG::ModifySolution(double t, CompositeVector& u)
 {
   DynamicFaceVelocity(t);
   DynamicCellVelocity(t, consistent_jac_);
 
   // -- populate operators
-  if (t_adv_ != t) { 
-    op_adv_->SetupPolyVector(velc_);
-    op_adv_->UpdateMatrices();
-    // t_adv_ = t;
-  }
-
-  if (t_flux_ != t) {
-    op_flux_->Setup(velc_, velf_);
-    op_flux_->UpdateMatrices(velf_.ptr());
-    op_flux_->ApplyBCs(true, true, true);
-    // t_flux_ = t;
-  }
-
-  if (t_reac_inv_ != t) {
-    op_reac_->Setup(jac_);
-    op_reac_->UpdateMatrices(Teuchos::null);
-
-    auto& matrices = op_reac_->local_matrices()->matrices;
-    for (int n = 0; n < matrices.size(); ++n) matrices[n].Inverse();
-    // t_reac_inv_ = t;
-  }
+  op_reac_->Setup(jac_);
+  op_reac_->UpdateMatrices(Teuchos::null);
 
   // -- solve the problem with mass matrix
-  auto& x = *op_reac_->global_operator()->rhs(); // re-use memory
-  op_reac_->global_operator()->Apply(u, x);
+  auto& matrices = op_reac_->local_matrices()->matrices;
+  for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
+  op_reac_->global_operator()->Apply(u, *field_);
 
-  // -- limite non-conservative field
-  if (is_limiter_) ApplyLimiter(t, x);
+  // -- limit non-conservative field and update the conservative field
+  if (is_limiter_) {
+    ApplyLimiter(t, *field_);
 
-  // -- calculate right-hand_side
-  op_flux_->global_operator()->Apply(x, f);
-
-  nfun_++;
+    for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
+    op_reac_->global_operator()->Apply(*field_, u);
+  }
 }
 
 
@@ -427,7 +425,6 @@ void RemapDG::NonConservativeToConservative(
   op_reac_->Setup(jac_);
   op_reac_->UpdateMatrices(Teuchos::null);
   op_reac_->global_operator()->Apply(u, v);
-  t_reac_inv_ = -1.0;
 }
 
 void RemapDG::ConservativeToNonConservative(
@@ -436,14 +433,11 @@ void RemapDG::ConservativeToNonConservative(
   DynamicFaceVelocity(t);
   DynamicCellVelocity(t, consistent_jac_);
 
-  if (t_reac_inv_ != t) {
-    op_reac_->Setup(jac_);
-    op_reac_->UpdateMatrices(Teuchos::null);
+  op_reac_->Setup(jac_);
+  op_reac_->UpdateMatrices(Teuchos::null);
 
-    auto& matrices = op_reac_->local_matrices()->matrices;
-    for (int n = 0; n < matrices.size(); ++n) matrices[n].Inverse();
-    // t_reac_inv_ = t;
-  }
+  auto& matrices = op_reac_->local_matrices()->matrices;
+  for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
 
   op_reac_->global_operator()->Apply(u, v);
 }

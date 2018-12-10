@@ -96,7 +96,7 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
       plist.set<std::string>("limiter", "Barth-Jespersen")
            .set<std::string>("limiter stencil", "cell to all cells");
     } else if (i == 6) {
-      plist.set<std::string>("limiter", "Machalik-Gooch")
+      plist.set<std::string>("limiter", "Michalak-Gooch")
            .set<std::string>("limiter stencil", "cell to all cells");
     }
 
@@ -352,7 +352,7 @@ TEST(LIMITER_SMOOTH_FIELD_2D) {
         plist.set<std::string>("limiter", "Barth-Jespersen")
              .set<std::string>("limiter stencil", "cell to all cells");
       } else if (i == 6) {
-        plist.set<std::string>("limiter", "Machalik-Gooch")
+        plist.set<std::string>("limiter", "Michalak-Gooch")
              .set<std::string>("limiter stencil", "cell to all cells");
       }
 
@@ -617,7 +617,7 @@ void SmoothField2DPoly(double extension)
       plist.set<std::string>("limiter", "Barth-Jespersen")
            .set<std::string>("limiter stencil", "cell to all cells");
     } else if (i == 6) {
-      plist.set<std::string>("limiter", "Machalik-Gooch")
+      plist.set<std::string>("limiter", "Michalak-Gooch")
            .set<std::string>("limiter stencil", "cell to all cells");
     }
 

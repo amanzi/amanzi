@@ -524,10 +524,10 @@ void AdvectionFn<AnalyticDG>::ApplyLimiter(std::string& name, CompositeVector& u
   int dim = mesh_->space_dimension();
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
-  std::vector<int> bc_model(nnodes_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nnodes_wghost, 0.0);
+  std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
+  std::vector<double> bc_value(nfaces_wghost, 0.0);
 
   // initialize limiter
   Teuchos::ParameterList plist;
@@ -540,6 +540,8 @@ void AdvectionFn<AnalyticDG>::ApplyLimiter(std::string& name, CompositeVector& u
   // limit gradient and save it to solution
   Operators::LimiterCell limiter(mesh_);
   limiter.Init(plist);
+
+  u.ScatterMasterToGhosted();
 
   if (name == "Barth-Jespersen dg") {
     limiter.ApplyLimiter(u.ViewComponent("cell", true), *dg_, bc_model, bc_value);

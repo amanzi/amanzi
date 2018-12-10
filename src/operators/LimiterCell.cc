@@ -78,8 +78,11 @@ void LimiterCell::Init(Teuchos::ParameterList& plist,
   } else if (name == "Barth-Jespersen dg") {
     limiter_id_ = OPERATOR_LIMITER_BARTH_JESPERSEN_DG;
     stencil = plist.get<std::string>("limiter stencil", "face to cells");
-  } else if (name == "Machalik-Gooch") {
-    limiter_id_ = OPERATOR_LIMITER_MACHALIK_GOOCH;
+  } else if (name == "Michalak-Gooch") {
+    limiter_id_ = OPERATOR_LIMITER_MICHALAK_GOOCH;
+    stencil = plist.get<std::string>("limiter stencil", "face to cells");
+  } else if (name == "Michalak-Gooch dg") {
+    limiter_id_ = OPERATOR_LIMITER_MICHALAK_GOOCH_DG;
     stencil = plist.get<std::string>("limiter stencil", "face to cells");
   } else if (name == "tensorial") {
     limiter_id_ = OPERATOR_LIMITER_TENSORIAL;
@@ -126,10 +129,11 @@ void LimiterCell::ApplyLimiter(
   if (limiter_id_ == OPERATOR_LIMITER_BARTH_JESPERSEN) {
     LimiterScalar_(ids, bc_model, bc_value, limiter_, [](double x) { return x; });
     ApplyLimiter(limiter_);
-  } else if (limiter_id_ == OPERATOR_LIMITER_MACHALIK_GOOCH) {
+  }
+  else if (limiter_id_ == OPERATOR_LIMITER_MICHALAK_GOOCH) {
     LimiterScalar_(ids, bc_model, bc_value, limiter_, [](double x) { return x - 4 * x * x * x / 27; });
     ApplyLimiter(limiter_);
-  }
+  } 
   else if (limiter_id_ == OPERATOR_LIMITER_TENSORIAL) {
     LimiterTensorial_(ids, bc_model, bc_value);
   } 
@@ -172,7 +176,10 @@ void LimiterCell::ApplyLimiter(
 
   limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
   if (limiter_id_ == OPERATOR_LIMITER_BARTH_JESPERSEN_DG) {
-    LimiterScalarDG_(dg, ids, bc_model, bc_value);
+    LimiterScalarDG_(dg, ids, bc_model, bc_value, [](double x) { return x; });
+  } 
+  else if (limiter_id_ == OPERATOR_LIMITER_MICHALAK_GOOCH_DG) {
+    LimiterScalarDG_(dg, ids, bc_model, bc_value, [](double x) { return x - 4 * x * x * x / 27; });
   } else {
     Errors::Message msg("Unknown limiter");
     Exceptions::amanzi_throw(msg);
@@ -451,7 +458,7 @@ void LimiterCell::LimiterExtensionTransportScalar_(
 ******************************************************************* */
 void LimiterCell::LimiterScalarDG_(
     const WhetStone::DG_Modal& dg, const AmanziMesh::Entity_ID_List& ids,
-    const std::vector<int>& bc_model, const std::vector<double>& bc_value)
+    const std::vector<int>& bc_model, const std::vector<double>& bc_value, double (*func)(double))
 {
   AMANZI_ASSERT(dim == 2);
   AMANZI_ASSERT(dg.cell_basis(0).id() == WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
@@ -496,9 +503,9 @@ void LimiterCell::LimiterScalarDG_(
         double u1_add = u1f - u1;
 
         if (u1f < umin - tol) {
-          climiter = std::min(climiter, (umin - u1) / u1_add);
+          climiter = std::min(climiter, func((umin - u1) / u1_add));
         } else if (u1f > umax + tol) {
-          climiter = std::min(climiter, (umax - u1) / u1_add);
+          climiter = std::min(climiter, func((umax - u1) / u1_add));
         }
       }
     }

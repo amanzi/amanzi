@@ -59,8 +59,11 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   ~RemapDG() {};
 
   // main members required by the time integration class
-  // u is the conservative quantity
+  // -- calculate functional f(t, u) where u is the conservative quantity
   virtual void FunctionalTimeDerivative(double t, const CompositeVector& u, CompositeVector& f) override;
+
+  // -- limit solution at all steps of the RK scheme
+  virtual void ModifySolution(double t, CompositeVector& u) override;
 
   // initialization routines
   void InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg); 
@@ -100,6 +103,9 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   int bc_type_;
   std::string smoothness_;
 
+  // intermediate non-conservative quantity
+  Teuchos::RCP<CompositeVector> field_;
+
   // geometric data
   std::vector<WhetStone::VectorPolynomial> uc_;
   std::vector<WhetStone::MatrixPolynomial> J_;
@@ -116,9 +122,6 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   int nfun_;
   bool is_limiter_, consistent_jac_;
   double sharp_;
-
- private:
-  double t_adv_, t_flux_, t_reac_inv_;
 };
 
 } // namespace Amanzi
