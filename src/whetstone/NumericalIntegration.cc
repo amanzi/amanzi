@@ -531,7 +531,6 @@ void NumericalIntegration::IntegrateMonomialsEdge_(
     double factor, int k, Polynomial& integrals) const
 {
   int nk = PolynomialSpaceDimension(d_, k - 1);
-  AmanziGeometry::Point xm(d_);
 
   // minimal quadrature rule
   int m = k / 2;
@@ -543,11 +542,10 @@ void NumericalIntegration::IntegrateMonomialsEdge_(
     int l = it.MonomialSetPosition();
 
     for (int n = 0; n <= m; ++n) { 
-      xm = x1 * q1d_points[m][n] + x2 * (1.0 - q1d_points[m][n]);
-
-      double a1(factor);
+      double a1(factor), q1d(q1d_points[m][n]);
       for (int i = 0; i < d_; ++i) {
-        a1 *= std::pow(xm[i], idx[i]);
+        double tmp = x1[i] * q1d + x2[i] * (1.0 - q1d);
+        a1 *= std::pow(tmp, idx[i]);
       }
 
       integrals(nk + l) += a1 * q1d_weights[m][n];      

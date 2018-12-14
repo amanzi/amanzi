@@ -198,7 +198,7 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   CHECK(l2_err < 0.12 / (order + 1));
 
   if (MyPID == 0) {
-    printf("nx=%3d (orig) L2=%12.8g %12.8g  Inf=%12.8g %12.8g\n", 
+    printf("nx=%3d (orig) L2=%12.8g(mean) %12.8g  Inf=%12.8g %12.8g\n", 
         nx, l20_err, l2_err, inf0_err, inf_err);
   }
 
@@ -223,7 +223,7 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
                             pnorm, l2_err, inf_err, l20_err, inf0_err);
 
   if (MyPID == 0) {
-    printf("nx=%3d (proj) L2=%12.8g %12.8g  Inf=%12.8g %12.8g\n", 
+    printf("nx=%3d (proj) L2=%12.8g(mean) %12.8g  Inf=%12.8g %12.8g\n", 
         nx, l20_err, l2_err, inf0_err, inf_err);
   }
 
@@ -294,8 +294,8 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   OutputXDMF io(iolist, mesh1, true, false);
 
   io.InitializeCycle(t, 1);
-  io.WriteVector(*p2c(0), "remapped");
-  io.WriteVector(*q2c(0), "remapped-prj");
+  io.WriteVector(*p2c(0), "solution");
+  io.WriteVector(*q2c(0), "solution-prj");
   io.FinalizeCycle();
 }
 
@@ -308,11 +308,10 @@ TEST(REMAP_DUAL_2D) {
   // RemapTestsDualRK(rk_method, "VEM", "", 5,5,5, dT);
 
   /*
-  double dT(0.02);
-  // auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
-  auto rk_method = Amanzi::Explicit_TI::forward_euler;
+  double dT(0.01);
+  auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
-  int deform = 4;
+  int deform = 1;
   RemapTestsDualRK(rk_method, maps, "",  16, 16,0, dT,    deform);
   RemapTestsDualRK(rk_method, maps, "",  32, 32,0, dT/2,  deform);
   RemapTestsDualRK(rk_method, maps, "",  64, 64,0, dT/4,  deform);
@@ -321,10 +320,10 @@ TEST(REMAP_DUAL_2D) {
   */
 
   /*
-  double dT(0.02);
+  double dT(0.01);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
-  int deform = 1;
+  int deform = 4;
   RemapTestsDualRK(rk_method, maps, "test/median15x16.exo",    16,0,0, dT,   deform);
   RemapTestsDualRK(rk_method, maps, "test/median32x33.exo",    32,0,0, dT/2, deform);
   RemapTestsDualRK(rk_method, maps, "test/median63x64.exo",    64,0,0, dT/4, deform);

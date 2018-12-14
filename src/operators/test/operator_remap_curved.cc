@@ -288,13 +288,13 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   // visualize initial solution
   Teuchos::ParameterList iolist;
   iolist.get<std::string>("file name base", "plot");
-  OutputXDMF io(iolist, mesh1, true, false);
+  auto io = Teuchos::rcp(new OutputXDMF(iolist, mesh1, true, false));
 
   p2c = *p1->ViewComponent("cell");
 
-  io.InitializeCycle(0.0, 0);
-  io.WriteVector(*p2c(0), "solution");
-  io.FinalizeCycle();
+  io->InitializeCycle(0.0, 0);
+  io->WriteVector(*p2c(0), "solution");
+  io->FinalizeCycle();
 
   // initial mass
   double mass0(0.0);
@@ -347,16 +347,17 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
     remap.ConservativeToNonConservative(t, *p1, p2);
 
     // visualize solution on mesh1
-    io.InitializeCycle(t, iloop + 1);
-    io.WriteVector(*p2c(0), "solution");
-    io.WriteVector(*p2c(1), "gradx");
-    io.WriteVector(*p2c(2), "grady");
+    // io = Teuchos::rcp(new OutputXDMF(iolist, mesh1, true, false));
+    io->InitializeCycle(t, iloop + 1);
+    io->WriteVector(*p2c(0), "solution");
+    io->WriteVector(*p2c(1), "gradx");
+    io->WriteVector(*p2c(2), "grady");
     if (order > 1) {
-      io.WriteVector(*p2c(3), "hesxx");
-      io.WriteVector(*p2c(4), "hesxy");
-      io.WriteVector(*p2c(5), "hesyy");
+      io->WriteVector(*p2c(3), "hesxx");
+      io->WriteVector(*p2c(4), "hesxy");
+      io->WriteVector(*p2c(5), "hesyy");
     }
-    io.FinalizeCycle();
+    io->FinalizeCycle();
   }
 
   // calculate error in the new basis
@@ -374,7 +375,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   CHECK(l2_err < 0.2 / (order + 1));
 
   if (MyPID == 0) {
-    printf("nx=%3d (orig) L2=%12.8g %12.8g  Inf=%12.8g %12.8g\n", 
+    printf("nx=%3d (orig) L2=%12.8g(mean) %12.8g  Inf=%12.8g %12.8g\n", 
         nx, l20_err, l2_err, inf0_err, inf_err);
   }
 
@@ -457,13 +458,13 @@ TEST(REMAP_CURVED_2D) {
   int deform = 6;
   RemapTestsCurved(rk_method, maps, "test/circle_quad10.exo", 10,0,0, dT,   deform, nloop, T1);
   RemapTestsCurved(rk_method, maps, "test/circle_quad20.exo", 20,0,0, dT/2, deform, nloop, T1);
-  RemapTestsCurved(rk_method, maps, "test/circle_quad40.exo", 40,0,0, dT/4, deform, nloop, T1);
-  RemapTestsCurved(rk_method, maps, "test/circle_quad80.exo", 80,0,0, dT/8, deform, nloop, T1);
+  RemapTestsCurved(rk_method, maps, "test/circle_poly40.exo", 40,0,0, dT/4, deform, nloop, T1);
+  RemapTestsCurved(rk_method, maps, "test/circle_poly80.exo", 80,0,0, dT/8, deform, nloop, T1);
   */
 
   /*
   int nloop = 5;
-  double dT(0.01 * nloop), T1(1.0 / nloop);
+  double dT(0.02 * nloop), T1(1.0 / nloop);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
   int deform = 1;
@@ -474,11 +475,11 @@ TEST(REMAP_CURVED_2D) {
   */
 
   /*
-  int nloop = 5;
+  int nloop = 1;
   double dT(0.01 * nloop), T1(1.0 / nloop);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
-  int deform = 1;
+  int deform = 4;
   RemapTestsCurved(rk_method, maps, "test/median15x16.exo",    16,0,0, dT,   deform, nloop, T1);
   RemapTestsCurved(rk_method, maps, "test/median32x33.exo",    32,0,0, dT/2, deform, nloop, T1);
   RemapTestsCurved(rk_method, maps, "test/median63x64.exo",    64,0,0, dT/4, deform, nloop, T1);
