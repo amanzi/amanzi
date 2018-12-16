@@ -94,7 +94,9 @@ TEST(DG_MAP_DETERMINANT_CELL) {
         maps->VelocityCell(cell, vf, uc);
       }
       maps->Jacobian(uc, J);
-      maps->Determinant(1.0, J, det);
+      J(0, 0)(0) += 1.0;
+      J(1, 1)(0) += 1.0;
+      maps->Determinant(J, det);
 
       double tmp = numi->IntegratePolynomialCell(cell, det[0]);
       double err = tmp - volume;
@@ -231,20 +233,29 @@ TEST(DG_MAP_GCL) {
 
   // left-hand side of GCL, 2nd-order FD is exact
   VectorPolynomial det0, det1, det2;
-  MatrixPolynomial J, C;
+  MatrixPolynomial J, Jt, C;
 
   maps->Jacobian(u, J);
 
-  maps->Determinant(t, J, det0);
-  maps->Determinant(t - dt, J, det1);
-  maps->Determinant(t - 2 * dt, J, det2);
+  Jt = J * (t - 2 * dt);
+  for (int i = 0; i < 2; ++i) Jt(i, i)(0) += 1.0; 
+  maps->Determinant(Jt, det2);
+
+  Jt = J * (t - dt);
+  for (int i = 0; i < 2; ++i) Jt(i, i)(0) += 1.0; 
+  maps->Determinant(Jt, det1);
+
+  Jt = J * t;
+  for (int i = 0; i < 2; ++i) Jt(i, i)(0) += 1.0; 
+  maps->Determinant(Jt, det0);
+
   det0 = (1.5 * det0 - 2 * det1 + 0.5 * det2) * (1.0 / dt);
 
   // rigth-hand side of GCL
   VectorPolynomial v(u);
 
-  maps->Cofactors(t, J, C);
-  v.Multiply(C, u, true);
+  maps->Cofactors(Jt, C);
+  C.Multiply(u, v, true);
   det1 = Divergence(v);
 
   // error
@@ -252,6 +263,15 @@ TEST(DG_MAP_GCL) {
   double err = det1.NormInf();
   std::cout << "GCL error=" << err << ", poly order=3" << std::endl;
   CHECK(err < 1e-10);
+
+  // Piola compatibility condition
+  for (int i = 0; i < 2; ++i) {
+    v[0] = C(i, 0);
+    v[1] = C(i, 1);
+    u = Divergence(v);
+    err = u.NormInf();
+    std::cout << "Piola compatibility condition error=" << err << std::endl;
+  }
 
   delete comm;
 }

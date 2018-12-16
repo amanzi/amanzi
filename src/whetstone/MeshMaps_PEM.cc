@@ -79,32 +79,6 @@ void MeshMaps_PEM::VelocityCell(
   }
 }
 
-
-/* ******************************************************************
-* Transformation of normal is defined completely by face data.
-****************************************************************** */
-void MeshMaps_PEM::NansonFormula(
-    int f, double t, const VectorPolynomial& vf, VectorPolynomial& cn) const
-{
-  WhetStone::Tensor J(d_, 2);
-
-  for (int i = 0; i < d_; ++i) {
-    for (int j = 0; j < d_; ++j) {
-      J(i, j) = t * vf[i](1, j);
-    }
-  }
-  J += 1.0;
-
-  Tensor C = J.Cofactors();
-  AmanziGeometry::Point p = C * mesh0_->face_normal(f);
-
-  cn.resize(d_);
-  for (int i = 0; i < d_; ++i) {
-    cn[i].Reshape(d_, 0);
-    cn[i](0, 0) = p[i];
-  }
-}
-
 }  // namespace WhetStone
 }  // namespace Amanzi
 

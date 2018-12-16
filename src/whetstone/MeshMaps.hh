@@ -26,9 +26,10 @@
 #include "Point.hh"
 
 #include "DenseMatrix.hh"
+#include "MatrixPolynomial.hh"
 #include "Tensor.hh"
 #include "VectorPolynomial.hh"
-#include "WhetStoneDefs.hh"
+// #include "WhetStoneDefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -56,20 +57,18 @@ class MeshMaps {
   virtual void VelocityCell(int c, const std::vector<VectorPolynomial>& vf,
                             VectorPolynomial& vc) const = 0;
 
-  // -- Nanson formula
-  virtual void NansonFormula(int f, double t, const VectorPolynomial& vf,
-                             VectorPolynomial& cn) const = 0;
+  // -- Nanson formula. Face deformation is defined completely by the
+  //    deformation map in this formula: X = x + map(x)
+  void NansonFormula(int f, const VectorPolynomial& map, VectorPolynomial& cn) const;
 
   // -- Jacobian 
-  virtual void JacobianCell(int c, const std::vector<VectorPolynomial>& vf,
-                            MatrixPolynomial& J) const { AMANZI_ASSERT(0); }
   void Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const;
 
   // -- matrix of cofactors
-  void Cofactors(double t, const MatrixPolynomial& J, MatrixPolynomial& C) const;
+  void Cofactors(const MatrixPolynomial& J, MatrixPolynomial& C) const;
 
   // -- determinant
-  void Determinant(double t, const MatrixPolynomial& J, VectorPolynomial& det) const;
+  void Determinant(const MatrixPolynomial& J, VectorPolynomial& det) const;
 
   // Miscalleneous
   // -- projection ffrom reference coordinates (mesh0) to mesh1

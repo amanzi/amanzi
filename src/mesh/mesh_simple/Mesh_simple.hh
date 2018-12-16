@@ -298,7 +298,7 @@ class Mesh_simple : public virtual Mesh {
   void clear_internals_();
   void build_maps_();
 
-  Epetra_Map *cell_map_, *face_map_, *node_map_;
+  Epetra_Map *cell_map_, *face_map_, *node_map_, *extface_map_;
 
   std::vector<double> coordinates_;
 
@@ -313,7 +313,7 @@ class Mesh_simple : public virtual Mesh {
 
   int num_cells_;
   int num_nodes_;
-  int num_faces_;
+  int num_faces_, num_faces_bnd_;
 
   // Local-id tables of entities
   std::vector<Entity_ID> cell_to_face_;

@@ -96,6 +96,14 @@ class AnalyticDGBase {
                                        double& l2_mean, double& inf_mean,
                                        double& l2_int);
 
+  void ComputeCellErrorRemap(const Amanzi::WhetStone::DG_Modal& dg, Epetra_MultiVector& p, double t,
+                             int p_location, Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh1,
+                             double& pnorm, double& l2_err, double& inf_err,
+                             double& l20_err, double& inf0_err);
+
+  // communications
+  void GlobalOp(std::string op, double* val, int n);
+
  protected:
   Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh_;
   int order_, d_;
@@ -175,7 +183,7 @@ void AnalyticDGBase::ComputeCellError(
     l2_err += err * err * volume;
     inf_err = std::max(inf_err, fabs(err));
 
-    err = poly_err(0, 0);
+    err = poly_err(0);
     l2_mean += err * err * volume;
     inf_mean = std::max(inf_mean, fabs(err));
     // std::cout << c << " Exact: " << sol << "dG:" << poly << "ERRs: " << l2_err << " " << inf_err << "\n\n";
@@ -193,22 +201,107 @@ void AnalyticDGBase::ComputeCellError(
     l2_int += numi.IntegrateFunctionsTrianglatedCell(c, funcs, 2 * order_);
   }
 #ifdef HAVE_MPI
-  double tmp_out[4], tmp_ina[4] = {pnorm, l2_err, l2_mean, l2_int};
-  mesh_->get_comm()->SumAll(tmp_ina, tmp_out, 4);
-  pnorm = tmp_out[0];
-  l2_err = tmp_out[1];
-  l2_mean = tmp_out[2];
-  l2_int = tmp_out[3];
-
-  double tmp_inb[2] = {inf_err, inf_mean};
-  mesh_->get_comm()->MaxAll(tmp_inb, tmp_out, 2);
-  inf_err = tmp_out[0];
-  inf_mean = tmp_out[1];
+  GlobalOp("sum", &pnorm, 1);
+  GlobalOp("sum", &l2_err, 1);
+  GlobalOp("sum", &l2_mean, 1);
+  GlobalOp("sum", &l2_int, 1);
+  GlobalOp("max", &inf_err, 1);
+  GlobalOp("max", &inf_mean, 1);
 #endif
   pnorm = sqrt(pnorm);
   l2_err = sqrt(l2_err);
   l2_mean = sqrt(l2_mean);
   l2_int = sqrt(l2_int);
+}
+
+
+/* ******************************************************************
+* Error for cell-based fields
+****************************************************************** */
+inline
+void AnalyticDGBase::ComputeCellErrorRemap(
+    const Amanzi::WhetStone::DG_Modal& dg, 
+    Epetra_MultiVector& p, double t, int p_location,
+    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh1,
+    double& pnorm, double& l2_err, double& inf_err,
+                   double& l20_err, double& inf0_err)
+{
+  auto& mesh0 = mesh_;
+
+  pnorm = 0.0;
+  l2_err = inf_err = 0.0;
+  l20_err = inf0_err = 0.0;
+
+  int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  for (int c = 0; c < ncells; ++c) {
+    const Amanzi::AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
+    const Amanzi::AmanziGeometry::Point& yc = mesh1->cell_centroid(c);
+    double volume = mesh1->cell_volume(c);
+
+    int nk = p.NumVectors();
+    Amanzi::WhetStone::DenseVector data(nk);
+    Amanzi::WhetStone::Polynomial poly;
+    for (int i = 0; i < nk; ++i) data(i) = p[i][c];
+
+    double err;
+    if (p_location == 0) {
+      const Amanzi::WhetStone::Basis& basis = dg.cell_basis(c);
+      poly = basis.CalculatePolynomial(mesh0, c, order_, data);
+      err = poly.Value(xc) - SolutionExact(yc, t);
+    } else {
+      poly = Amanzi::WhetStone::Polynomial(d_, order_, data);
+      poly.set_origin(yc);
+      err = poly.Value(yc) - SolutionExact(yc, t);
+    }
+
+    inf0_err = std::max(inf0_err, fabs(err));
+    l20_err += err * err * volume;
+
+    if (nk > 1) {
+      Amanzi::AmanziGeometry::Point v0(d_), v1(d_);
+      Amanzi::AmanziMesh::Entity_ID_List nodes;
+
+      mesh0->cell_get_nodes(c, &nodes);
+      int nnodes = nodes.size();  
+      for (int i = 0; i < nnodes; ++i) {
+        mesh0->node_get_coordinates(nodes[i], &v0);
+        mesh1->node_get_coordinates(nodes[i], &v1);
+        if (p_location == 1) v0 = v1;
+
+        double tmp = poly.Value(v0) - SolutionExact(v1, t);
+        inf_err = std::max(inf_err, fabs(tmp));
+        l2_err += tmp * tmp * volume / nnodes;
+      }
+    }
+  }
+
+#ifdef HAVE_MPI
+  GlobalOp("sum", &pnorm, 1);
+  GlobalOp("sum", &l2_err, 1);
+  GlobalOp("sum", &l20_err, 1);
+  GlobalOp("max", &inf_err, 1);
+#endif
+  pnorm = sqrt(pnorm);
+  l2_err = sqrt(l2_err);
+  l20_err = sqrt(l20_err);
+}
+
+
+/* ******************************************************************
+* Collective communications.
+****************************************************************** */
+inline
+void AnalyticDGBase::GlobalOp(std::string op, double* val, int n)
+{
+  double* val_tmp = new double[n];
+  for (int i = 0; i < n; ++i) val_tmp[i] = val[i];
+
+  if (op == "sum") 
+    mesh_->get_comm()->SumAll(val_tmp, val, n);
+  else if (op == "max") 
+    mesh_->get_comm()->MaxAll(val_tmp, val, n);
+
+  delete[] val_tmp;
 }
 
 #endif

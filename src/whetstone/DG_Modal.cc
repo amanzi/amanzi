@@ -477,7 +477,7 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
 int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
                          bool upwind, bool jump_on_test)
 {
-  AmanziMesh::Entity_ID_List cells, nodes;
+  AmanziMesh::Entity_ID_List cells;
   mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
   int ncells = cells.size();
 

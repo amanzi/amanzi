@@ -43,6 +43,7 @@ class Polynomial : public PolynomialBase {
   Polynomial(int d, int order);
   Polynomial(int d, int order, const DenseVector& coefs);
   Polynomial(int d, const int* multi_index, double factor);
+  Polynomial(const Polynomial& poly);
   Polynomial(const Monomial& mono);
   Polynomial(int d, int order,
              const std::vector<AmanziGeometry::Point>& xyz, 

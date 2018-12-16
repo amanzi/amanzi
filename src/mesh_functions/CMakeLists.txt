@@ -43,8 +43,8 @@ add_amanzi_library(mesh_functions
                           DynamicBoundaryFunction.cc
                           MeshPartition.cc
                           MaterialMeshFunction.cc
-                  HEADERS BoundaryFunction.hh
-                          DynamicBoundaryFunction.hh
+                   HEADERS BoundaryFunction.hh
+                           DynamicBoundaryFunction.hh
                            CompositeVectorFunction.hh
                            CompositeVectorFunctionFactory.hh
                            MeshPartition.hh

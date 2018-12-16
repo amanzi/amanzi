@@ -75,39 +75,6 @@ void MeshMaps_FEM::VelocityCell(
 
 
 /* ******************************************************************
-* Transformation of normal is defined completely by face data.
-****************************************************************** */
-void MeshMaps_FEM::NansonFormula(
-    int f, double t, const VectorPolynomial& vc, VectorPolynomial& cn) const
-{
-  WhetStone::MatrixPolynomial J, C;
-  Jacobian(vc, J);
-  Cofactors(t, J, C);
-
-  AmanziGeometry::Point normal = mesh0_->face_normal(f);
-  cn.Multiply(C, normal, false);
-}
-
-
-/* ******************************************************************
-* Calculation of Jacobian for linearized map xi + t (F(xi) - xi).
-****************************************************************** */
-void MeshMaps_FEM::JacobianCellValue_(
-    int c, double t, const AmanziGeometry::Point& xref, Tensor& J) const
-{
-  J = JacobianValueInternal_(mesh1_, c, xref);
- 
-  // convolution of two maps.
-  Tensor J0 = JacobianValueInternal_(mesh0_, c, xref);
-  J0.Inverse();
-  J = J * J0;
-
-  J *= t;
-  J += 1.0 - t;
-}
-
-
-/* ******************************************************************
 * Supporting routine for calculating Jacobian.
 ****************************************************************** */
 Tensor MeshMaps_FEM::JacobianValueInternal_(

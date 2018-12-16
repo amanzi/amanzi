@@ -83,7 +83,7 @@ double ReactiveTransport_PK::get_dt() {
 void ReactiveTransport_PK::set_dt(double dt) {
   dTtran_ = dt;
   dTchem_ = dt;
-  //dTchem_ = chemistry_pk_ -> get_dt();
+  //dTchem_ = chemistry_pk_->get_dt();
   //if (dTchem_ > dTtran_) dTchem_ = dTtran_;
   //if (dTtran_ > dTchem_) dTtran_= dTchem_; 
   chemistry_pk_->set_dt(dTchem_);

@@ -97,12 +97,6 @@ void MeshMaps_VEM::VelocityEdge_(int e, VectorPolynomial& ve) const
   const AmanziGeometry::Point& xe0 = mesh0_->edge_centroid(e);
   const AmanziGeometry::Point& xe1 = mesh1_->edge_centroid(e);
 
-  // velocity order 0
-  ve.resize(d_);
-  for (int i = 0; i < d_; ++i) {
-    ve[i].Reshape(d_, 1);
-  }
-
   // velocity order 1
   int n0, n1;
   AmanziGeometry::Point x0, x1;
@@ -115,6 +109,8 @@ void MeshMaps_VEM::VelocityEdge_(int e, VectorPolynomial& ve) const
   x1 -= xe1;
 
   // operator F(\xi) = x_c + R (\xi - \xi_c) where R = x1 * x0^T
+  ve.Reshape(d_, d_, 1);
+
   x0 /= L22(x0);
   for (int i = 0; i < d_; ++i) {
     for (int j = 0; j < d_; ++j) {
@@ -127,62 +123,6 @@ void MeshMaps_VEM::VelocityEdge_(int e, VectorPolynomial& ve) const
 
 
 /* ******************************************************************
-* Transformation of normal is defined completely by face data.
-* NOTE: Limited to P1 elements. FIXME
-****************************************************************** */
-void MeshMaps_VEM::NansonFormula(
-    int f, double t, const VectorPolynomial& vf, VectorPolynomial& cn) const
-{
-  AmanziGeometry::Point p(d_);
-  WhetStone::Tensor J(d_, 2);
-
-  JacobianFaceValue_(f, vf, p, J);
-  J *= t;
-  J += 1.0 - t;
-
-  Tensor C = J.Cofactors();
-  p = C * mesh0_->face_normal(f);
-
-  cn.resize(d_);
-  for (int i = 0; i < d_; ++i) {
-    cn[i].Reshape(d_, 0);
-    cn[i](0, 0) = p[i];
-  }
-}
-
-
-/* ******************************************************************
-* Calculate mesh velocity in cell c: new algorithm
-****************************************************************** */
-void MeshMaps_VEM::JacobianCell(
-    int c, const std::vector<VectorPolynomial>& vf, MatrixPolynomial& J) const
-{
-  auto moments = std::make_shared<DenseVector>();
-  MFD3D_CrouzeixRaviart mfd(mesh0_);
-
-  mfd.set_order(order_ + 1);
-  mfd.L2GradientCell(c, vf, moments, J);
-}
-
-
-/* ******************************************************************
-* Calculate Jacobian at point x of face f 
-* NOTE: limited to linear velocity FIXME
-****************************************************************** */
-void MeshMaps_VEM::JacobianFaceValue_(
-    int f, const VectorPolynomial& v,
-    const AmanziGeometry::Point& x, Tensor& J) const
-{
-  for (int i = 0; i < d_; ++i) {
-    for (int j = 0; j < d_; ++j) {
-      J(i, j) = v[i](1, j);
-    }
-  }
-  J += 1.0;
-}
-
-
-/* ******************************************************************
 * Calculate mesh velocity in cell c: old algorithm
 ****************************************************************** */
 void MeshMaps_VEM::LeastSquareProjector_Cell_(
@@ -190,8 +130,7 @@ void MeshMaps_VEM::LeastSquareProjector_Cell_(
 {
   AMANZI_ASSERT(order == 1 || order == 2);
 
-  vc.resize(d_);
-  for (int i = 0; i < d_; ++i) vc[i].Reshape(d_, order);
+  vc.Reshape(d_, d_, order);
   
   AmanziGeometry::Point px1, px2;
   std::vector<AmanziGeometry::Point> x1, x2;

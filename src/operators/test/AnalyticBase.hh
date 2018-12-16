@@ -40,7 +40,9 @@
 
 class AnalyticBase {
  public:
-  AnalyticBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh) {};
+  AnalyticBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) 
+    : mesh_(mesh),
+      d_(mesh->space_dimension()) {};
   ~AnalyticBase() {};
 
   // analytic solution for diffusion problem with gravity
@@ -83,8 +85,12 @@ class AnalyticBase {
   // utilities
   Amanzi::AmanziGeometry::Point face_normal_exterior(int f, bool* flag);
 
+  // communications
+  void GlobalOp(std::string op, double* val, int n);
+
  protected:
   Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh_;
+  int d_;
 };
 
 
@@ -111,12 +117,9 @@ void AnalyticBase::ComputeCellError(
     pnorm += std::pow(tmp, 2.0) * volume;
   }
 #ifdef HAVE_MPI
-  double tmp = pnorm;
-  mesh_->get_comm()->SumAll(&tmp, &pnorm, 1);
-  tmp = l2_err;
-  mesh_->get_comm()->SumAll(&tmp, &l2_err, 1);
-  tmp = inf_err;
-  mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
+  GlobalOp("sum", &pnorm, 1);
+  GlobalOp("sum", &l2_err, 1);
+  GlobalOp("max", &inf_err, 1);
 #endif
   pnorm = sqrt(pnorm);
   l2_err = sqrt(l2_err);
@@ -148,12 +151,9 @@ void AnalyticBase::ComputeFaceError(
     // std::cout << f << " " << xf << " " << u[0][f] << " " << tmp << std::endl;
   }
 #ifdef HAVE_MPI
-  double tmp = unorm;
-  mesh_->get_comm()->SumAll(&tmp, &unorm, 1);
-  tmp = l2_err;
-  mesh_->get_comm()->SumAll(&tmp, &l2_err, 1);
-  tmp = inf_err;
-  mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
+  GlobalOp("sum", &unorm, 1);
+  GlobalOp("sum", &l2_err, 1);
+  GlobalOp("max", &inf_err, 1);
 #endif
   unorm = sqrt(unorm);
   l2_err = sqrt(l2_err);
@@ -174,9 +174,8 @@ void AnalyticBase::ComputeNodeError(
   hnorm = 0.0;
   h1_err = 0.0;
 
-  int d = mesh_->space_dimension();
-  Amanzi::AmanziGeometry::Point xv(d);
-  Amanzi::AmanziGeometry::Point grad(d);
+  Amanzi::AmanziGeometry::Point xv(d_);
+  Amanzi::AmanziGeometry::Point grad(d_);
 
   Amanzi::AmanziMesh::Entity_ID_List nodes;
   Amanzi::WhetStone::MFD3D_Diffusion mfd(mesh_);
@@ -214,16 +213,11 @@ void AnalyticBase::ComputeNodeError(
     hnorm += L22(grad_exact) * volume;
   }
 #ifdef HAVE_MPI
-  double tmp = pnorm;
-  mesh_->get_comm()->SumAll(&tmp, &pnorm, 1);
-  tmp = l2_err;
-  mesh_->get_comm()->SumAll(&tmp, &l2_err, 1);
-  tmp = inf_err;
-  mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
-  tmp = hnorm;
-  mesh_->get_comm()->SumAll(&tmp, &hnorm, 1);
-  tmp = h1_err;
-  mesh_->get_comm()->SumAll(&tmp, &h1_err, 1);
+  GlobalOp("sum", &pnorm, 1);
+  GlobalOp("sum", &l2_err, 1);
+  GlobalOp("max", &inf_err, 1);
+  GlobalOp("sum", &hnorm, 1);
+  GlobalOp("sum", &h1_err, 1);
 #endif
   pnorm = sqrt(pnorm);
   l2_err = sqrt(l2_err);
@@ -247,8 +241,7 @@ void AnalyticBase::ComputeEdgeError(
   hnorm = 1.0;  // missing code
   h1_err = 0.0;
 
-  int d = mesh_->space_dimension();
-  Amanzi::AmanziGeometry::Point grad(d);
+  Amanzi::AmanziGeometry::Point grad(d_);
 
   Amanzi::AmanziMesh::Entity_ID_List edges;
   Amanzi::WhetStone::MFD3D_Diffusion mfd(mesh_);
@@ -274,12 +267,9 @@ void AnalyticBase::ComputeEdgeError(
     }
   }
 #ifdef HAVE_MPI
-  double tmp = pnorm;
-  mesh_->get_comm()->SumAll(&tmp, &pnorm, 1);
-  tmp = l2_err;
-  mesh_->get_comm()->SumAll(&tmp, &l2_err, 1);
-  tmp = inf_err;
-  mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
+  GlobalOp("sum", &pnorm, 1);
+  GlobalOp("sum", &l2_err, 1);
+  GlobalOp("max", &inf_err, 1);
 #endif
   pnorm = sqrt(pnorm);
   l2_err = sqrt(l2_err);
@@ -298,10 +288,8 @@ void AnalyticBase::ComputeEdgeMomentsError(
   l2_err = 0.0;
   inf_err = 0.0;
 
-  int d = mesh_->space_dimension();
-
   Amanzi::AmanziMesh::Entity_ID n0, n1;
-  Amanzi::AmanziGeometry::Point x0(d), x1(d), xv(d);
+  Amanzi::AmanziGeometry::Point x0(d_), x1(d_), xv(d_);
 
   Amanzi::AmanziMesh::Entity_ID_List edges;
   Amanzi::WhetStone::MFD3D_Diffusion mfd(mesh_);
@@ -337,12 +325,9 @@ void AnalyticBase::ComputeEdgeMomentsError(
     }
   }
 #ifdef HAVE_MPI
-  double tmp = pnorm;
-  mesh_->get_comm()->SumAll(&tmp, &pnorm, 1);
-  tmp = l2_err;
-  mesh_->get_comm()->SumAll(&tmp, &l2_err, 1);
-  tmp = inf_err;
-  mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
+  GlobalOp("sum", &pnorm, 1);
+  GlobalOp("sum", &l2_err, 1);
+  GlobalOp("max", &inf_err, 1);
 #endif
   pnorm = sqrt(pnorm);
   l2_err = sqrt(l2_err);
@@ -359,12 +344,30 @@ Amanzi::AmanziGeometry::Point AnalyticBase::face_normal_exterior(int f, bool* fl
   mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
   *flag = (cells.size() == 1);
 
-  int dir, d = mesh_->space_dimension();
-  Amanzi::AmanziGeometry::Point normal(d);
+  int dir;
+  Amanzi::AmanziGeometry::Point normal(d_);
   if (*flag) 
     normal = mesh_->face_normal(f, false, cells[0], &dir);
 
   return normal;
+}
+
+
+/* ******************************************************************
+* Collective communications.
+****************************************************************** */
+inline
+void AnalyticBase::GlobalOp(std::string op, double* val, int n)
+{
+  double* val_tmp = new double[n];
+  for (int i = 0; i < n; ++i) val_tmp[i] = val[i];
+
+  if (op == "sum") 
+    mesh_->get_comm()->SumAll(val_tmp, val, n);
+  else if (op == "max") 
+    mesh_->get_comm()->MaxAll(val_tmp, val, n);
+
+  delete[] val_tmp;
 }
 
 #endif

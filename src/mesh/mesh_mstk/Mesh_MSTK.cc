@@ -2923,10 +2923,9 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       }
     }
     else {
-      Teuchos::RCP<const VerboseObject> verbobj = Mesh::verbosity_obj();
-      if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_HIGH)) {
-        Teuchos::OSTab tab = verbobj->getOSTab();
-        *(verbobj->os()) << "Requested CELLS on region " << region->name() 
+      if (vo_.get() && vo_->os_OK(Teuchos::VERB_HIGH)) {
+        Teuchos::OSTab tab = vo_->getOSTab();
+        *(vo_->os()) << "Requested CELLS on region " << region->name() 
             << " of type " << region->type()  
             << " and dimension " << region->manifold_dimension() << ".\n"
             << "This request will result in an empty set";
@@ -3721,19 +3720,17 @@ void Mesh_MSTK::init_face_map()
     // In effect we are checking if a ghost face that claims to be on the boundary is in the
     // owned boundary face list on another processor (pr_id >= 0)
     
-    extface_map_wo_ghosts_ -> RemoteIDList(nnotowned, gl_id.data(), pr_id.data(), lc_id.data());
+    extface_map_wo_ghosts_->RemoteIDList(nnotowned, gl_id.data(), pr_id.data(), lc_id.data());
 
+    int n_extface_w_ghosts = extface_map_wo_ghosts_->NumMyElements();
 
-    int n_extface_w_ghosts = extface_map_wo_ghosts_ -> NumMyElements();
-
-    //Add to maping only external faces (which belong to local mapping on other processors
+    // Add to maping only external faces (which belong to local mapping on other processors
     for (int k=0; k < nnotowned_bnd; k++) {
       if (pr_id[k] >= 0) {
         n_extface_w_ghosts++;
       }
     }
 
-    
     std::vector<int> global_id_ghosted(n_extface_w_ghosts);
     for (int k=0; k<n_extface; k++)  {
       global_id_ghosted[k] = extface_gids[k];  
@@ -5050,67 +5047,6 @@ void Mesh_MSTK::label_celltype()
       MEnt_Set_AttVal(region,celltype_att,ctype,0.0,NULL);
     }
   }
-}
-
-
-//------------
-// Epetra maps
-//------------
-    
-inline 
-const Epetra_Map& Mesh_MSTK::cell_map(bool include_ghost) const
-{
-  if (serial_run)
-    return *cell_map_wo_ghosts_;
-  else
-    return (include_ghost ? *cell_map_w_ghosts_ : *cell_map_wo_ghosts_);
-}
-    
-
-inline 
-const Epetra_Map& Mesh_MSTK::face_map(bool include_ghost) const
-{
-  if (serial_run)
-    return *face_map_wo_ghosts_;
-  else
-    return (include_ghost ? *face_map_w_ghosts_ : *face_map_wo_ghosts_);
-}
-    
-
-inline 
-const Epetra_Map& Mesh_MSTK::edge_map(bool include_ghost) const
-{
-  if (serial_run)
-    return *edge_map_wo_ghosts_;
-  else
-    return (include_ghost ? *edge_map_w_ghosts_ : *edge_map_wo_ghosts_);
-}
-    
-
-inline 
-const Epetra_Map& Mesh_MSTK::node_map(bool include_ghost) const
-{
-  if (serial_run)
-    return *node_map_wo_ghosts_;
-  else
-    return (include_ghost ? *node_map_w_ghosts_ : *node_map_wo_ghosts_);
-}
-
-
-inline
-const Epetra_Map& Mesh_MSTK::exterior_face_map(bool include_ghost) const
-{
-  if (serial_run)
-    return *extface_map_wo_ghosts_;
-  else
-    return (include_ghost ? *extface_map_w_ghosts_ : *extface_map_wo_ghosts_);
-}
-
-
-inline
-const Epetra_Import& Mesh_MSTK::exterior_face_importer(void) const
-{
-  return *owned_to_extface_importer_;
 }
 
 

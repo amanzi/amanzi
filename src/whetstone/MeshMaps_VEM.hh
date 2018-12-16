@@ -45,26 +45,14 @@ class MeshMaps_VEM : public MeshMaps {
   }
   ~MeshMaps_VEM() {};
 
-  // Maps
-  // -- pseudo-velocity
+  // remap pseudo velocity
   virtual void VelocityFace(int f, VectorPolynomial& vf) const override;
   virtual void VelocityCell(int c, const std::vector<VectorPolynomial>& vf,
                             VectorPolynomial& vc) const override;
 
-  // -- Nanson formula
-  virtual void NansonFormula(int f, double t, const VectorPolynomial& vf,
-                             VectorPolynomial& cn) const override;
-
-  // -- Jacobian
-  virtual void JacobianCell(int c, const std::vector<VectorPolynomial>& vf,
-                            MatrixPolynomial& J) const override;
-
  private:
   // pseudo-velocity on edge e
   void VelocityEdge_(int e, VectorPolynomial& ve) const;
-
-  // old deprecated methods
-  void JacobianFaceValue_(int f, const VectorPolynomial& v, const AmanziGeometry::Point& x, Tensor& J) const;
 
   void LeastSquareProjector_Cell_(int order, int c, const std::vector<VectorPolynomial>& vf,
                                   VectorPolynomial& vc) const;

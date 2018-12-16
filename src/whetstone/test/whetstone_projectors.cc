@@ -24,6 +24,7 @@
 #include "Point.hh"
 
 // WhetStone
+#include "MatrixPolynomial.hh"
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "MFD3D_CrouzeixRaviartSerendipity.hh"
 #include "MFD3D_Diffusion.hh"
@@ -405,13 +406,12 @@ TEST(L2GRADIENT_PROJECTORS_SQUARE_CR) {
   mfd.set_order(3);
   mfd.L2GradientCell(cell, vf, moments, uc);
 
-  uc[0][0].ChangeOrigin(zero);
-  uc[0][1].ChangeOrigin(zero);
-  std::cout << uc[0][0] << std::endl;
+  uc.ChangeOrigin(zero);
+  std::cout << uc << std::endl;
 
-  uc[0][0] -= grad[0];
-  uc[0][1] -= grad[1];
-  CHECK(uc[0][0].NormInf() < 1e-12 && uc[0][1].NormInf() < 1e-12);
+  uc(0, 0) -= grad[0];
+  uc(0, 1) -= grad[1];
+  CHECK(uc.NormInf() < 1e-12);
 
   std::cout << "    subtest: CUBIC deformation, computed moments" << std::endl;
   mfd.L2GradientCell(cell, vf, moments, uc);

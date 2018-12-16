@@ -18,13 +18,11 @@
 namespace Amanzi {
 namespace Functions {
 
-void DynamicBoundaryFunction::AddFunction(const Teuchos::RCP<BoundaryFunction>& f){
-
+void DynamicBoundaryFunction::AddFunction(const Teuchos::RCP<BoundaryFunction>& f) {
   func_.push_back(f);
-  
 }
 
-int DynamicBoundaryFunction::Func_ID(double time){
+int DynamicBoundaryFunction::Func_ID(double time) {
 // lazily generate space for the values
   if (!finalized_) {
     Finalize();
@@ -37,11 +35,11 @@ int DynamicBoundaryFunction::Func_ID(double time){
   args[0] = time;
 
   UniqueSpecList::const_iterator uspec = unique_specs_[AmanziMesh::FACE]->begin();
-  int val = std::floor( (*(*uspec)->first->second)(args)[0] );
+  int val = std::floor((*(*uspec)->first->second)(args)[0]);
 
   return val;
-  
 }
+
   
 // Evaluate values at time.
 void DynamicBoundaryFunction::Compute(double time) {
@@ -55,11 +53,8 @@ void DynamicBoundaryFunction::Compute(double time) {
   int func_id = Func_ID(time);
   
   if (func_id >= func_.size()) return;
-  func_[func_id] -> Compute(time);
-
-   
+  func_[func_id]->Compute(time);
 };
-
 
 } // namespace Functions
 } // namespace Amanzi

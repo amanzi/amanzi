@@ -27,6 +27,8 @@
 namespace Amanzi {
 namespace WhetStone {
 
+class MatrixPolynomial;
+
 class VectorPolynomial {
  public:
   VectorPolynomial() : d_(0) {};
@@ -34,6 +36,9 @@ class VectorPolynomial {
   VectorPolynomial(int d, int size, int order);
   VectorPolynomial(const Polynomial& p);
   ~VectorPolynomial() {};
+
+  // reshape polynomial with erase (optionally) memory
+  void Reshape(int d, int m, int order, bool reset = false);
 
   // minimal set of vector operations
   int size() const { return polys_.size(); }
@@ -87,14 +92,6 @@ class VectorPolynomial {
   // typical operations with vector polynomials
   // -- value
   DenseVector Value(const AmanziGeometry::Point& xp) const;
-
-  // -- matrix-vector product A * v
-  void Multiply(const std::vector<std::vector<Polynomial> >& A,
-                const VectorPolynomial& v, bool transpose);
-
-  // -- matrix-point product A * p
-  void Multiply(const std::vector<std::vector<Polynomial> >& A,
-                const AmanziGeometry::Point& p, bool transpose);
 
   // dot product v1 * p 
   friend Polynomial operator*(const VectorPolynomial& poly, const AmanziGeometry::Point& p) {

@@ -22,6 +22,7 @@
 #include "Point.hh"
 
 #include "DenseMatrix.hh"
+#include "MatrixPolynomial.hh"
 #include "MFD3D.hh"
 #include "Polynomial.hh"
 #include "PolynomialOnMesh.hh"

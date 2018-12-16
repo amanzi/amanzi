@@ -57,9 +57,7 @@ TEST(OPERATOR_DIFFUSION_EDGES) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  ParameterList region_list = plist.sublist("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
-
+  Teuchos::RCP<GeometricModel> gm;
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 30, 30, gm, true, true);

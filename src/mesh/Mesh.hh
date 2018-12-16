@@ -733,6 +733,17 @@ class Mesh {
                                  std::vector<double> *vofs) const = 0;
 
   //
+  // High-order mesh
+  //----------------
+
+  // Geometry of a curved face is defined by a derived mesh class from
+  // the list of returned interior nodess. For a linear mesh, this
+  // function is null.
+  virtual
+  void face_get_ho_nodes(Entity_ID faceid,
+                         AmanziGeometry::Point_List *nodes) const { nodes->clear(); }
+
+  //
   // Miscellaneous functions
   //------------------------
 
