@@ -39,7 +39,8 @@ class Basis {
   virtual ~Basis() {};
 
   // initialization
-  virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order) = 0;
+  virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order,
+                    Polynomial& integrals) = 0;
 
   // transformation of bilinear form
   virtual void BilinearFormNaturalToMy(DenseMatrix& A) const = 0;

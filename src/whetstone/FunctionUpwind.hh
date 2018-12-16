@@ -43,7 +43,7 @@ class FunctionUpwindMinus : public WhetStoneFunction {
   }
 
  private:
-  const WhetStoneFunction *un_, *f_;
+  const WhetStoneFunction *f_;
 };
 
 } // namespace WhetStone

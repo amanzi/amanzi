@@ -34,7 +34,8 @@ class Basis_Orthonormalized : public Basis {
   ~Basis_Orthonormalized() {};
 
   // initialization
-  virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order);
+  virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order,
+                    Polynomial& integrals);
 
   // transformation of bilinear form
   virtual void BilinearFormNaturalToMy(DenseMatrix& A) const;

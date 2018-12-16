@@ -38,11 +38,17 @@ DG_Modal::DG_Modal(int order, Teuchos::RCP<const AmanziMesh::Mesh> mesh, std::st
 {
   int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   basis_.resize(ncells_wghost);
+  monomial_integrals_.resize(ncells_wghost);
+
+  for (int c = 0; c < ncells_wghost; ++c) {
+    monomial_integrals_[c].Reshape(d_, 0);
+    monomial_integrals_[c](0) = mesh_->cell_volume(c);
+  }
 
   BasisFactory factory;
   for (int c = 0; c < ncells_wghost; ++c) {
     basis_[c] = factory.Create(basis_name);
-    basis_[c]->Init(mesh_, c, order_);
+    basis_[c]->Init(mesh_, c, order_, monomial_integrals_[c]);
   }
 }
 
@@ -54,12 +60,8 @@ int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 {
   double K00 = K(0, 0);
 
-  // calculate integrals of non-normalized monomials
-  Polynomial integrals(d_, 2 * order_);
-
-  integrals(0) = mesh_->cell_volume(c);
-  for (int k = 1; k <= 2 * order_; ++k)
-    numi_.IntegrateMonomialsCell(c, k, integrals);
+  // extend (optionally) the list of integrals of non-normalized monomials
+  numi_.UpdateMonomialIntegralsCell(c, 2 * order_, monomial_integrals_[c]);
    
   // copy integrals to mass matrix
   int multi_index[3];
@@ -80,7 +82,7 @@ int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
         multi_index[i] = idx_p[i] + idx_q[i];
       }
 
-      M(l, k) = M(k, l) = K00 * integrals(PolynomialPosition(d_, multi_index));
+      M(l, k) = M(k, l) = K00 * monomial_integrals_[c](PolynomialPosition(d_, multi_index));
     }
   }
 
@@ -141,13 +143,9 @@ int DG_Modal::MassMatrixPoly_(int c, const Polynomial& K, DenseMatrix& M)
   Polynomial Kcopy(K);
   Kcopy.ChangeOrigin(mesh_->cell_centroid(c));
 
-  // calculate integrals of non-normalized monomials
+  // extend (optionally) the list of integrals of non-normalized monomials
   int uk(Kcopy.order());
-  Polynomial integrals(d_, 2 * order_ + uk);
-
-  integrals(0) = mesh_->cell_volume(c);
-  for (int k = 1; k <= 2 * order_ + uk; ++k)
-    numi_.IntegrateMonomialsCell(c, k, integrals);
+  numi_.UpdateMonomialIntegralsCell(c, 2 * order_ + uk, monomial_integrals_[c]);
 
   // sum up integrals to the mass matrix
   int multi_index[3];
@@ -175,7 +173,7 @@ int DG_Modal::MassMatrixPoly_(int c, const Polynomial& K, DenseMatrix& M)
           multi_index[i] = idx_p[i] + idx_q[i] + idx_K[i];
         }
 
-        M(k, l) += factor * integrals(PolynomialPosition(d_, multi_index));
+        M(k, l) += factor * monomial_integrals_[c](PolynomialPosition(d_, multi_index));
       }
     }
   }
@@ -276,12 +274,8 @@ int DG_Modal::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
     Ktmp.MakeDiagonal(K(0, 0));
   }
 
-  // calculate integrals of non-normalized monomials
-  Polynomial integrals(d_, std::max(2 * order_ - 2, 0));
-
-  integrals(0) = mesh_->cell_volume(c);
-  for (int k = 1; k <= 2 * order_ - 2; ++k)
-    numi_.IntegrateMonomialsCell(c, k, integrals);
+  // extend (optionally) the list of integrals of non-normalized monomials
+  numi_.UpdateMonomialIntegralsCell(c, std::max(2 * order_ - 2, 0), monomial_integrals_[c]);
 
   // copy integrals to mass matrix
   int multi_index[3];
@@ -310,7 +304,7 @@ int DG_Modal::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
             multi_index[i]--;
             multi_index[j]--;
 
-            tmp = integrals(PolynomialPosition(d_, multi_index)); 
+            tmp = monomial_integrals_[c](PolynomialPosition(d_, multi_index)); 
             sum += Ktmp(i, j) * tmp * index[i] * jndex[j];
 
             multi_index[i]++;
@@ -341,13 +335,9 @@ int DG_Modal::AdvectionMatrixPoly_(
   VectorPolynomial ucopy(u);
   ucopy.ChangeOrigin(xc);
 
-  // calculate integrals of non-normalized monomials
+  // extend (optionally) the list  of integrals of non-normalized monomials
   int order_tmp = order_ + std::max(order_ - 1, 0) + ucopy[0].order();
-  Polynomial integrals(d_, order_tmp);
-
-  integrals(0) = mesh_->cell_volume(c);
-  for (int k = 1; k <= order_tmp; ++k)
-    numi_.IntegrateMonomialsCell(c, k, integrals);
+  numi_.UpdateMonomialIntegralsCell(c, order_tmp, monomial_integrals_[c]);
 
   // sum-up integrals to the advection matrix
   int multi_index[3];
@@ -381,7 +371,7 @@ int DG_Modal::AdvectionMatrixPoly_(
           multi_index[i] = idx_q[i] + idx_K[i];
         }
 
-        A(k, l) += factor * integrals(PolynomialPosition(d_, multi_index));
+        A(k, l) += factor * monomial_integrals_[c](PolynomialPosition(d_, multi_index));
       }
     }
   }
@@ -674,7 +664,7 @@ int DG_Modal::FluxMatrixGaussPoints(
       if (ncells == 1) {
         polys[0] = &un;
         polys[1] = &p0;
-       polys[2] = &q0;
+        polys[2] = &q0;
 
         v00 = numi_.IntegrateFunctionsTriangulatedFace(f, polys, order_tmp) / area;
         A(k, l) = v00;
