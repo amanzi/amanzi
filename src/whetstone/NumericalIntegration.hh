@@ -73,6 +73,7 @@ class NumericalIntegration {
 
   // integrate group of monomials 
   void IntegrateMonomialsCell(int c, int k, Polynomial& integrals) const;
+  void UpdateMonomialIntegralsCell(int c, int order, Polynomial& integrals);
   void UpdateMonomialIntegralsCell(int c, int order, PolynomialOnMesh& integrals);
 
   // useful functions: integrate single polynomial

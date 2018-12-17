@@ -71,7 +71,7 @@ int MFD3D_LagrangeSerendipity::H1consistency(
 
   // selecting regularized basis
   Basis_Regularized basis;
-  basis.Init(mesh_, c, order_);
+  basis.Init(mesh_, c, order_, integrals_.poly());
 
   // Dot-product matrix for polynomials and Laplacian of polynomials
   DenseMatrix M(nd, nd);
@@ -155,8 +155,9 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
     Polynomial& moments, Polynomial& uc)
 {
   // selecting regularized basis
+  Polynomial ptmp;
   Basis_Regularized basis;
-  basis.Init(mesh_, c, order_);
+  basis.Init(mesh_, c, order_, ptmp);
 
   // calculate stiffness matrix
   Tensor T(d_, 1);
@@ -206,6 +207,7 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
   Ns.Multiply(vdof, v1, true);
   NN.Multiply(v1, v5, false);
 
+  // this gives the least square projector
   uc = basis.CalculatePolynomial(mesh_, c, order_, v5);
 
   // H1 projector needs to populate moments from ndof_cs + 1 till ndof_c

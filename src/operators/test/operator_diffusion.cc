@@ -67,6 +67,7 @@ void RunTestDiffusionMixed(int dim, double gravity) {
     meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
     // mesh = meshfactory("test/median15x16.exo");
     mesh = meshfactory("test/circle_quad10.exo");
+    // mesh = meshfactory("test/circle_poly10.exo");
   } else {
     meshfactory.preference(FrameworkPreference({AmanziMesh::Simple}));
     if (comm.NumProc() > 1) meshfactory.preference(FrameworkPreference({MSTK}));

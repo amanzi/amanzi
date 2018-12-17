@@ -122,11 +122,16 @@ const int OPERATOR_LIMITER_KUZMIN = 6;
 const double OPERATOR_LIMITER_TOLERANCE = 1e-14;
 const double OPERATOR_LIMITER_INFINITY = 1e+99;
 
- // stencil for calculating limiting bounds
+// stencil for calculating limiting bounds
 const int OPERATOR_LIMITER_STENCIL_N2C = 10;
 const int OPERATOR_LIMITER_STENCIL_F2C = 20;
 const int OPERATOR_LIMITER_STENCIL_C2C_CLOSEST = 30;
 const int OPERATOR_LIMITER_STENCIL_C2C_ALL = 31;
+
+// detrminant of Jacobian of a map
+const int OPERATOR_DETERMINANT_VEM = 1;
+const int OPERATOR_DETERMINANT_EXACT_TI = 2;  // experimental
+const int OPERATOR_DETERMINANT_MONOTONE = 3;
 
 }  // namespace Operators
 }  // namespace Amanzi

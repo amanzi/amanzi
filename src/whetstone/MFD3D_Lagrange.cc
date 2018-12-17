@@ -77,7 +77,7 @@ int MFD3D_Lagrange::H1consistency(
 
   // selecting regularized basis
   Basis_Regularized basis;
-  basis.Init(mesh_, c, order_);
+  basis.Init(mesh_, c, order_, integrals_.poly());
 
   // populate matrices N and R
   std::vector<AmanziGeometry::Point> tau(d_ - 1);
@@ -318,8 +318,9 @@ void MFD3D_Lagrange::ProjectorCell_(
   NumericalIntegration numi(mesh_);
 
   // selecting regularized basis
+  Polynomial ptmp;
   Basis_Regularized basis;
-  basis.Init(mesh_, c, order_);
+  basis.Init(mesh_, c, order_, ptmp);
 
   AmanziGeometry::Point xv(d_);
   std::vector<AmanziGeometry::Point> tau(d_ - 1);

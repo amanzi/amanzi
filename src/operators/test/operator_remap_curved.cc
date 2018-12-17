@@ -55,7 +55,7 @@ class MyRemapDG : public RemapDG_Tests<AnalyticDG04> {
   virtual void DynamicJacobianMatrix(
       int c, double t, const WhetStone::MatrixPolynomial& J, WhetStone::MatrixPolynomial& Jt) override;
   virtual void DynamicFaceVelocity(double t) override;
-  virtual void DynamicCellVelocity(double t, bool consistent_det) override;
+  virtual void DynamicCellVelocity(double t) override;
 
   // mesh deformation from time 0 to t
   virtual void DeformMesh(int deform, double t) override;
@@ -64,7 +64,7 @@ class MyRemapDG : public RemapDG_Tests<AnalyticDG04> {
   virtual double global_time(double t) override { return tini_ + t * T1_; }
 
   // access 
-  const std::vector<WhetStone::VectorPolynomial> jac() const { return *jac_; }
+  const std::vector<WhetStone::VectorPolynomial> det() const { return *det_; }
   const std::shared_ptr<WhetStone::MeshMaps> maps() const { return maps_; }
 
  private:
@@ -151,12 +151,12 @@ void MyRemapDG::DynamicFaceVelocity(double t)
 /* *****************************************************************
 * Cell co-velocity in reference coordinates and Jacobian determinant
 ***************************************************************** */
-void MyRemapDG::DynamicCellVelocity(double t, bool consistent_det)
+void MyRemapDG::DynamicCellVelocity(double t)
 {
   WhetStone::MatrixPolynomial Jt, C;
   for (int c = 0; c < ncells_owned_; ++c) {
     DynamicJacobianMatrix(c, t, J_[c], Jt);
-    maps_->Determinant(Jt, (*jac_)[c]);
+    maps_->Determinant(Jt, (*det_)[c]);
     maps_->Cofactors(Jt, C);
     
     // cell-based pseudo velocity -C^t u 
@@ -288,13 +288,13 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   // visualize initial solution
   Teuchos::ParameterList iolist;
   iolist.get<std::string>("file name base", "plot");
-  OutputXDMF io(iolist, mesh1, true, false);
+  auto io = Teuchos::rcp(new OutputXDMF(iolist, mesh1, true, false));
 
   p2c = *p1->ViewComponent("cell");
 
-  io.InitializeCycle(0.0, 0);
-  io.WriteVector(*p2c(0), "solution");
-  io.FinalizeCycle();
+  io->InitializeCycle(0.0, 0);
+  io->WriteVector(*p2c(0), "solution");
+  io->FinalizeCycle();
 
   // initial mass
   double mass0(0.0);
@@ -313,6 +313,10 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   remap.DeformMesh(deform, T1);
   remap.Init(dg);
   remap.set_dt_output(0.1);
+
+  // work in progress on boundary conditions for remap object
+  std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
+  std::vector<double> bc_value(nfaces_wghost, 0.0);
 
   // explicit time integration
   CompositeVector p1aux(*p1);
@@ -343,16 +347,17 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
     remap.ConservativeToNonConservative(t, *p1, p2);
 
     // visualize solution on mesh1
-    io.InitializeCycle(t, iloop + 1);
-    io.WriteVector(*p2c(0), "solution");
-    io.WriteVector(*p2c(1), "gradx");
-    io.WriteVector(*p2c(2), "grady");
+    // io = Teuchos::rcp(new OutputXDMF(iolist, mesh1, true, false));
+    io->InitializeCycle(t, iloop + 1);
+    io->WriteVector(*p2c(0), "solution");
+    io->WriteVector(*p2c(1), "gradx");
+    io->WriteVector(*p2c(2), "grady");
     if (order > 1) {
-      io.WriteVector(*p2c(3), "hesxx");
-      io.WriteVector(*p2c(4), "hesxy");
-      io.WriteVector(*p2c(5), "hesyy");
+      io->WriteVector(*p2c(3), "hesxx");
+      io->WriteVector(*p2c(4), "hesxy");
+      io->WriteVector(*p2c(5), "hesyy");
     }
-    io.FinalizeCycle();
+    io->FinalizeCycle();
   }
 
   // calculate error in the new basis
@@ -370,7 +375,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   CHECK(l2_err < 0.2 / (order + 1));
 
   if (MyPID == 0) {
-    printf("nx=%3d (orig) L2=%12.8g %12.8g  Inf=%12.8g %12.8g\n", 
+    printf("nx=%3d (orig) L2=%12.8g(mean) %12.8g  Inf=%12.8g %12.8g\n", 
         nx, l20_err, l2_err, inf0_err, inf_err);
   }
 
@@ -396,10 +401,10 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   // conservation errors: mass and volume (CGL)
   double area(0.0), area0(0.0), area1(0.0);
   double mass1(0.0), gcl_err(0.0), gcl_inf(0.0);
-  auto& jac = remap.jac();
+  auto& det = remap.det();
 
   for (int c = 0; c < ncells_owned; ++c) {
-    double vol1 = numi.IntegratePolynomialCell(c, jac[c][0]);
+    double vol1 = numi.IntegratePolynomialCell(c, det[c][0]);
     double vol2 = mesh1->cell_volume(c);
 
     area += vol1;
@@ -414,9 +419,9 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
     for (int i = 0; i < nk; ++i) data(i) = p2c[i][c];
     auto poly = dg->cell_basis(c).CalculatePolynomial(mesh0, c, order, data);
 
-    int quad_order = jac[c][0].order() + poly.order();
+    int quad_order = det[c][0].order() + poly.order();
 
-    WhetStone::Polynomial tmp(jac[c][0]);
+    WhetStone::Polynomial tmp(det[c][0]);
     tmp.ChangeOrigin(mesh0->cell_centroid(c));
     poly *= tmp;
     mass1 += numi.IntegratePolynomialCell(c, poly);
@@ -453,13 +458,13 @@ TEST(REMAP_CURVED_2D) {
   int deform = 6;
   RemapTestsCurved(rk_method, maps, "test/circle_quad10.exo", 10,0,0, dT,   deform, nloop, T1);
   RemapTestsCurved(rk_method, maps, "test/circle_quad20.exo", 20,0,0, dT/2, deform, nloop, T1);
-  RemapTestsCurved(rk_method, maps, "test/circle_quad40.exo", 40,0,0, dT/4, deform, nloop, T1);
-  RemapTestsCurved(rk_method, maps, "test/circle_quad80.exo", 80,0,0, dT/8, deform, nloop, T1);
+  RemapTestsCurved(rk_method, maps, "test/circle_poly40.exo", 40,0,0, dT/4, deform, nloop, T1);
+  RemapTestsCurved(rk_method, maps, "test/circle_poly80.exo", 80,0,0, dT/8, deform, nloop, T1);
   */
 
   /*
   int nloop = 5;
-  double dT(0.01 * nloop), T1(1.0 / nloop);
+  double dT(0.02 * nloop), T1(1.0 / nloop);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
   int deform = 1;
@@ -470,11 +475,11 @@ TEST(REMAP_CURVED_2D) {
   */
 
   /*
-  int nloop = 5;
+  int nloop = 1;
   double dT(0.01 * nloop), T1(1.0 / nloop);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
-  int deform = 1;
+  int deform = 4;
   RemapTestsCurved(rk_method, maps, "test/median15x16.exo",    16,0,0, dT,   deform, nloop, T1);
   RemapTestsCurved(rk_method, maps, "test/median32x33.exo",    32,0,0, dT/2, deform, nloop, T1);
   RemapTestsCurved(rk_method, maps, "test/median63x64.exo",    64,0,0, dT/4, deform, nloop, T1);
