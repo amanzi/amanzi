@@ -354,6 +354,25 @@ int DenseMatrix::Inverse()
 
 
 /* ******************************************************************
+* Second level routine: inversion of symmetric poitive definite
+****************************************************************** */
+int DenseMatrix::InverseSPD() 
+{
+  if (n_ != m_) return 911;
+
+  int ierr;
+  DPOTRF_F77("U", &n_, data_, &n_, &ierr); 
+  if (ierr) return ierr;
+ 
+  DPOTRI_F77("U", &n_, data_, &n_, &ierr);
+  for (int i = 0; i < n_; i++)
+    for (int j = i + 1; j < n_; j++)
+      data_[i * n_ + j] = data_[j * n_ + i];
+  return ierr;
+}
+
+
+/* ******************************************************************
 * Second level routine: calculates matrix D such that (*this)^T D = 0.
 * The matrix (*this) must have a full rank and have more rows than
 * columns.

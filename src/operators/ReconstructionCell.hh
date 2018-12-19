@@ -7,6 +7,9 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  At the moment, we require the input field to have valid values
+  in ghost cells. 
 */
 
 #ifndef AMANZI_RECONSTRUCTION_CELL_HH_

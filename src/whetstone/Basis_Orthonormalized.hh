@@ -34,7 +34,8 @@ class Basis_Orthonormalized : public Basis {
   ~Basis_Orthonormalized() {};
 
   // initialization
-  virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order);
+  virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order,
+                    Polynomial& integrals);
 
   // transformation of bilinear form
   virtual void BilinearFormNaturalToMy(DenseMatrix& A) const;
@@ -48,7 +49,7 @@ class Basis_Orthonormalized : public Basis {
   virtual void ChangeBasisMyToNatural(DenseVector& v) const;
   virtual void ChangeBasisNaturalToMy(DenseVector& v) const;
 
-  // Recover polynomial in regular basis
+  // Recover polynomial in the natural basis
   virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                          int c, int order, DenseVector& coefs) const;
 

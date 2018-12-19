@@ -19,12 +19,11 @@ namespace Amanzi {
 namespace Transport {
 
 /* ******************************************************************* 
-* Routine takes a parallel overlapping vector C and returns parallel
-* overlapping vector F(C). 
+* Routine takes a parallel vector C and returns parallel vector F(C). 
 ****************************************************************** */
-void Transport_PK::FunctionalTimeDerivative(double t,
-                              const Epetra_Vector& component,
-                              Epetra_Vector& f_component)
+void Transport_PK::FunctionalTimeDerivative(
+    double t, const Epetra_Vector& component,
+    Epetra_Vector& f_component)
 {
   // distribute vector
   Epetra_Vector component_tmp(component);
@@ -61,6 +60,7 @@ void Transport_PK::FunctionalTimeDerivative(double t,
 
   limiter_->Init(plist, darcy_flux);
   limiter_->ApplyLimiter(component_rcp, 0, lifting_->gradient(), bc_model, bc_value);
+  limiter_->gradient()->ScatterMasterToGhosted("cell");
 
   // ADVECTIVE FLUXES
   // We assume that limiters made their job up to round-off errors.
@@ -190,6 +190,7 @@ void Transport_PK::DudtOld(double t,
 
   limiter_->Init(plist, darcy_flux);
   limiter_->ApplyLimiter(component_rcp, 0, lifting_->gradient(), bc_model, bc_value);
+  limiter_->gradient()->ScatterMasterToGhosted("cell");
 
   // ADVECTIVE FLUXES
   // We assume that limiters made their job up to round-off errors.

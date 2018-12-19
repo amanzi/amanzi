@@ -8,7 +8,14 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Implementation of different limiters.
+  Implementation of different limiters uses a few common rules:
+  1. Dirichlet boundary data are used to update limiter bounds.
+  2. Limiters are modified optionally so the the stable time step
+     of first-order scheme is reduce not more than twice. This
+     step requires to specify a face-based flux field.
+  3. At the moment, we require the input field and boundary data
+     to have valid values in ghost positions. Exception, is the 
+     limiter for DG fields.
 */
 
 #include <algorithm>
@@ -19,6 +26,8 @@
 
 // Amanzi
 #include "exceptions.hh"
+#include "Quadrature1D.hh"
+#include "WhetStoneDefs.hh"
 #include "WhetStoneMeshUtils.hh"
 
 // Amanzi::Operators
@@ -62,15 +71,24 @@ void LimiterCell::Init(Teuchos::ParameterList& plist,
   // process parameters for limiters
   std::string stencil;
   std::string name = plist.get<std::string>("limiter", "Barth-Jespersen");
-  limiter_id_ = 0;
+  type_ = 0;
   if (name == "Barth-Jespersen") {
-    limiter_id_ = OPERATOR_LIMITER_BARTH_JESPERSEN;
+    type_ = OPERATOR_LIMITER_BARTH_JESPERSEN;
+    stencil = plist.get<std::string>("limiter stencil", "face to cells");
+  } else if (name == "Barth-Jespersen dg") {
+    type_ = OPERATOR_LIMITER_BARTH_JESPERSEN_DG;
+    stencil = plist.get<std::string>("limiter stencil", "face to cells");
+  } else if (name == "Michalak-Gooch") {
+    type_ = OPERATOR_LIMITER_MICHALAK_GOOCH;
+    stencil = plist.get<std::string>("limiter stencil", "face to cells");
+  } else if (name == "Michalak-Gooch dg") {
+    type_ = OPERATOR_LIMITER_MICHALAK_GOOCH_DG;
     stencil = plist.get<std::string>("limiter stencil", "face to cells");
   } else if (name == "tensorial") {
-    limiter_id_ = OPERATOR_LIMITER_TENSORIAL;
+    type_ = OPERATOR_LIMITER_TENSORIAL;
     stencil = plist.get<std::string>("limiter stencil", "face to cells");
   } else if (name == "Kuzmin") {
-    limiter_id_ = OPERATOR_LIMITER_KUZMIN;
+    type_ = OPERATOR_LIMITER_KUZMIN;
     stencil = plist.get<std::string>("limiter stencil", "node to cells");
   }
 
@@ -83,13 +101,14 @@ void LimiterCell::Init(Teuchos::ParameterList& plist,
   else if (stencil == "cell to all cells")
     stencil_id_ = OPERATOR_LIMITER_STENCIL_C2C_ALL;
 
-  limiter_correction_ = plist.get<bool>("limiter extension for transport", false);
   external_bounds_ = plist.get<bool>("use external bounds", false);
+  limiter_points_ = plist.get<int>("limiter points", 1);
+  limiter_correction_ = plist.get<bool>("limiter extension for transport", false);
 }
 
 
 /* ******************************************************************
-* Apply internal limiter.
+* Apply an internal limiter.
 ****************************************************************** */
 void LimiterCell::ApplyLimiter(
     const AmanziMesh::Entity_ID_List& ids,
@@ -106,16 +125,23 @@ void LimiterCell::ApplyLimiter(
     Exceptions::amanzi_throw(msg);
   }
 
-  limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
-  if (limiter_id_ == OPERATOR_LIMITER_BARTH_JESPERSEN) {
-    LimiterBarthJespersen_(ids, bc_model, bc_value, limiter_);
+  limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
+  if (type_ == OPERATOR_LIMITER_BARTH_JESPERSEN) {
+    LimiterScalar_(ids, bc_model, bc_value, limiter_, [](double x) { return x; });
     ApplyLimiter(limiter_);
   }
-  else if (limiter_id_ == OPERATOR_LIMITER_TENSORIAL) {
+  else if (type_ == OPERATOR_LIMITER_MICHALAK_GOOCH) {
+    LimiterScalar_(ids, bc_model, bc_value, limiter_, [](double x) { return x - 4 * x * x * x / 27; });
+    ApplyLimiter(limiter_);
+  } 
+  else if (type_ == OPERATOR_LIMITER_TENSORIAL) {
     LimiterTensorial_(ids, bc_model, bc_value);
   } 
-  else if (limiter_id_ == OPERATOR_LIMITER_KUZMIN) {
+  else if (type_ == OPERATOR_LIMITER_KUZMIN) {
     LimiterKuzmin_(ids, bc_model, bc_value);
+  } else {
+    Errors::Message msg("Unknown limiter");
+    Exceptions::amanzi_throw(msg);
   }
 }
 
@@ -130,8 +156,34 @@ void LimiterCell::ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter)
   for (int c = 0; c < ncells_owned; c++) {
     for (int i = 0; i < dim; i++) (*grad)[i][c] *= (*limiter)[0][c];
   }
+}
 
-  gradient_->ScatterMasterToGhosted("cell");
+
+/* ******************************************************************
+* Apply internal limiter.
+****************************************************************** */
+void LimiterCell::ApplyLimiter(
+    const AmanziMesh::Entity_ID_List& ids,
+    Teuchos::RCP<const Epetra_MultiVector> field, const WhetStone::DG_Modal& dg,
+    const std::vector<int>& bc_model, const std::vector<double>& bc_value)
+{
+  field_ = field;
+
+  if (external_bounds_ && bounds_ == Teuchos::null) {
+    Errors::Message msg("External bounds for limiters are requested but not provided");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
+  if (type_ == OPERATOR_LIMITER_BARTH_JESPERSEN_DG) {
+    LimiterScalarDG_(dg, ids, bc_model, bc_value, [](double x) { return x; });
+  } 
+  else if (type_ == OPERATOR_LIMITER_MICHALAK_GOOCH_DG) {
+    LimiterScalarDG_(dg, ids, bc_model, bc_value, [](double x) { return x - 4 * x * x * x / 27; });
+  } else {
+    Errors::Message msg("Unknown limiter");
+    Exceptions::amanzi_throw(msg);
+  }
 }
 
 
@@ -143,9 +195,6 @@ void LimiterCell::LimiterTensorial_(
     const AmanziMesh::Entity_ID_List& ids,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value)
 {
-  AMANZI_ASSERT(upwind_cells_.size() > 0);
-  AMANZI_ASSERT(downwind_cells_.size() > 0);
-
   double u1, u1f, umin, umax, L22normal_new;
   AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim);
   AmanziGeometry::Point normal_new(dim), direction(dim), p(dim);
@@ -157,10 +206,12 @@ void LimiterCell::LimiterTensorial_(
   auto limiter = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
 
   // Step 1: limit gradient to a feasiable set excluding Dirichlet boundary
-  if (stencil_id_ == OPERATOR_LIMITER_STENCIL_F2C)
-    BoundsForFaces(bc_model, bc_value, stencil_id_, true);
-  else 
-    BoundsForCells(bc_model, bc_value, stencil_id_, true);
+  if (!external_bounds_) {
+    if (stencil_id_ == OPERATOR_LIMITER_STENCIL_F2C)
+      bounds_ = BoundsForFaces(*field_, bc_model, bc_value, stencil_id_);
+    else 
+      bounds_ = BoundsForCells(*field_, bc_model, bc_value, stencil_id_);
+  }
   
   for (int n = 0; n < ids.size(); ++n) {
     int c = ids[n];
@@ -211,11 +262,9 @@ void LimiterCell::LimiterTensorial_(
 
   // Step 3: enforce a priori time step estimate (division of dT by 2).
   if (limiter_correction_) {
-    BoundsForCells(bc_model, bc_value, OPERATOR_LIMITER_STENCIL_C2C_CLOSEST, true);
+    bounds_ = BoundsForCells(*field_, bc_model, bc_value, OPERATOR_LIMITER_STENCIL_C2C_CLOSEST);
     LimiterExtensionTransportTensorial_();
   }    
-
-  gradient_->ScatterMasterToGhosted("cell");
 
   // approximate estimate of scalar limiter (mainly for statistics)
   for (int c = 0; c < ncells_owned; c++) {
@@ -237,6 +286,8 @@ void LimiterCell::LimiterTensorial_(
 ******************************************************************* */
 void LimiterCell::LimiterExtensionTransportTensorial_()
 {
+  AMANZI_ASSERT(upwind_cells_.size() > 0);
+
   double u1f, u1;
   AmanziMesh::Entity_ID_List faces;
 
@@ -284,29 +335,31 @@ void LimiterCell::LimiterExtensionTransportTensorial_()
 
 
 /* *******************************************************************
-* Routine calculates the BJ limiter using the cell-based algorithm.
+* Routine calculates a scalar limiter using the cell-based algorithm.
 * First, it limits face-centered value of a reconstracted function 
-* by min-max of two cell-centered values.
+* by min-max of two or more cell-centered values.
 * Second, it limits outflux values which gives factor 0.5 in the
 * time step estimate.
 ******************************************************************* */
-void LimiterCell::LimiterBarthJespersen_(
+void LimiterCell::LimiterScalar_(
     const AmanziMesh::Entity_ID_List& ids,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-    Teuchos::RCP<Epetra_Vector> limiter)
+    Teuchos::RCP<Epetra_Vector> limiter, double (*func)(double))
 {
   limiter->PutScalar(1.0);
   Epetra_MultiVector& grad = *gradient_->ViewComponent("cell", false);
 
-  double u1, u2, u1f, u2f, umin, umax;  // cell and inteface values
-  AmanziGeometry::Point gradient_c(dim), gradient_c2(dim);
-  AmanziMesh::Entity_ID_List faces, cells;
+  double u1, u2, u1f, umin, umax;
+  AmanziGeometry::Point gradient_c(dim);
+  AmanziMesh::Entity_ID_List faces;
 
   // Step 1: limiting gradient inside domain
+  if (!external_bounds_) {
   if (stencil_id_ == OPERATOR_LIMITER_STENCIL_F2C)
-    BoundsForFaces(bc_model, bc_value, stencil_id_, true);
+    bounds_ = BoundsForFaces(*field_, bc_model, bc_value, stencil_id_);
   else 
-    BoundsForCells(bc_model, bc_value, stencil_id_, true);
+    bounds_ = BoundsForCells(*field_, bc_model, bc_value, stencil_id_);
+  }
   
   for (int n = 0; n < ids.size(); ++n) {
     int c = ids[n];
@@ -321,8 +374,6 @@ void LimiterCell::LimiterBarthJespersen_(
       int f = faces[i];
       const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-
       for (int i = 0; i < dim; i++) gradient_c[i] = grad[i][c];
       double u1_add = gradient_c * (xf - xc);
       u1f = u1 + u1_add;
@@ -330,9 +381,9 @@ void LimiterCell::LimiterBarthJespersen_(
       getBounds(c, f, stencil_id_, &umin, &umax);
 
       if (u1f < umin - tol) {
-        (*limiter)[c] = std::min((*limiter)[c], (umin - u1) / u1_add);
+        (*limiter)[c] = std::min((*limiter)[c], func((umin - u1) / u1_add));
       } else if (u1f > umax + tol) {
-        (*limiter)[c] = std::min((*limiter)[c], (umax - u1) / u1_add);
+        (*limiter)[c] = std::min((*limiter)[c], func((umax - u1) / u1_add));
       }
     }
   }
@@ -340,20 +391,22 @@ void LimiterCell::LimiterBarthJespersen_(
   // enforce an a priori time step estimate (dT / 2).
   if (limiter_correction_) {
     if (stencil_id_ == OPERATOR_LIMITER_STENCIL_F2C)
-      BoundsForCells(bc_model, bc_value, OPERATOR_LIMITER_STENCIL_C2C_CLOSEST, true);
-    LimiterExtensionTransportBarthJespersen_(limiter);
+      bounds_ = BoundsForCells(*field_, bc_model, bc_value, OPERATOR_LIMITER_STENCIL_C2C_CLOSEST);
+    LimiterExtensionTransportScalar_(limiter);
   }    
 }
 
 
 /* *******************************************************************
-* Extension of Barth-Jespersen's limiter. Routine changes gradient to 
+* Extension of the scalarlimiter. Routine changes gradient to 
 * satisfy an a prioty estimate of the stable time step. That estimate
 * assumes that the weigthed flux is smaller that the first-order flux.
 ******************************************************************* */
-void LimiterCell::LimiterExtensionTransportBarthJespersen_(
+void LimiterCell::LimiterExtensionTransportScalar_(
     Teuchos::RCP<Epetra_Vector> limiter)
 {
+  AMANZI_ASSERT(upwind_cells_.size() > 0);
+
   double u1, u1f;
   AmanziGeometry::Point gradient_c1(dim);
   AmanziMesh::Entity_ID_List faces;
@@ -404,6 +457,72 @@ void LimiterCell::LimiterExtensionTransportBarthJespersen_(
 
 
 /* *******************************************************************
+* The scalar limiter for modal DG schemes. 
+* Note: external bounds are required.
+******************************************************************* */
+void LimiterCell::LimiterScalarDG_(
+    const WhetStone::DG_Modal& dg, const AmanziMesh::Entity_ID_List& ids,
+    const std::vector<int>& bc_model, const std::vector<double>& bc_value, double (*func)(double))
+{
+  AMANZI_ASSERT(dim == 2);
+  AMANZI_ASSERT(dg.cell_basis(0).id() == WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
+
+  double u1, u1f, umin, umax;
+  AmanziMesh::Entity_ID_List faces, nodes;
+
+  int nk = field_->NumVectors();
+  WhetStone::DenseVector data(nk);
+  AmanziGeometry::Point x1(dim), x2(dim), xm(dim);
+  int order = WhetStone::PolynomialSpaceOrder(dim, nk);
+
+  if (!external_bounds_) {
+    bounds_ = BoundsForCells(*field_, bc_model, bc_value, stencil_id_);
+  }
+
+  for (int n = 0; n < ids.size(); ++n) {
+    int c = ids[n];
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+
+    for (int i = 0; i < nk; ++i) data(i) = (*field_)[i][c];
+    auto poly = dg.cell_basis(c).CalculatePolynomial(mesh_, c, order, data);
+
+    u1 = (*field_)[0][c];
+    double tol = sqrt(OPERATOR_LIMITER_TOLERANCE) * fabs(u1);
+
+    int m = limiter_points_ - 1;
+    double climiter(1.0);
+
+    for (int i = 0; i < nfaces; i++) {
+      int f = faces[i];
+      mesh_->face_get_nodes(f, &nodes);
+
+      mesh_->node_get_coordinates(nodes[0], &x1);
+      mesh_->node_get_coordinates(nodes[1], &x2);
+
+      getBounds(c, f, stencil_id_, &umin, &umax);
+
+      for (int k = 0; k < limiter_points_; ++k) {
+        xm = x1 * WhetStone::q1d_points[m][k] + x2 * (1.0 - WhetStone::q1d_points[m][k]);
+        u1f = poly.Value(xm);
+        double u1_add = u1f - u1;
+
+        if (u1f < umin - tol) {
+          climiter = std::min(climiter, func((umin - u1) / u1_add));
+        } else if (u1f > umax + tol) {
+          climiter = std::min(climiter, func((umax - u1) / u1_add));
+        }
+      }
+    }
+
+    for (int i = 1; i < nk; ++i) (*field_)[i][c] *= climiter;
+    (*limiter_)[c] = climiter;
+  }
+}
+
+
+/* *******************************************************************
 * Kuzmin's limiter use all neighbors of a computational cell.  
 ******************************************************************* */
 void LimiterCell::LimiterKuzmin_(
@@ -412,66 +531,30 @@ void LimiterCell::LimiterKuzmin_(
 {
   Epetra_MultiVector& grad = *gradient_->ViewComponent("cell", false);
 
-  // Step 1: local extrema are calculated here at nodes and updated later
-  std::vector<double> field_node_min(nnodes_wghost);
-  std::vector<double> field_node_max(nnodes_wghost);
+  // calculate local extrema at nodes
+  if (!external_bounds_)
+    bounds_ = BoundsForNodes(*field_, bc_model, bc_value, stencil_id_);
+  auto& bounds_v = *bounds_->ViewComponent("node", true);
 
-  AmanziMesh::Entity_ID_List nodes;
-
-  field_node_min.assign(nnodes_wghost,  OPERATOR_LIMITER_INFINITY);
-  field_node_max.assign(nnodes_wghost, -OPERATOR_LIMITER_INFINITY);
-
-  for (int n = 0; n < ids.size(); ++n) {
-    int c = ids[n];
-    mesh_->cell_get_nodes(c, &nodes);
-
-    double value = (*field_)[component_][c];
-    for (int i = 0; i < nodes.size(); i++) {
-      int v = nodes[i];
-      field_node_min[v] = std::min(field_node_min[v], value);
-      field_node_max[v] = std::max(field_node_max[v], value);
-    }
-  }
-
-  // Update min/max at nodes from influx boundary data
-  if (flux_ != Teuchos::null) {
-    for (int f = 0; f < nfaces_owned; ++f) {
-      int c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
-      int c2 = (downwind_cells_[f].size() > 0) ? downwind_cells_[f][0] : -1;
-
-      if (c2 >= 0 && c1 < 0) {
-        mesh_->face_get_nodes(f, &nodes);
-        int nnodes = nodes.size();
-
-        for (int i = 0; i < nnodes; i++) {
-          int v = nodes[i];
-          if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
-            double value = bc_value[v];
-            field_node_min[v] = std::min(field_node_min[v], value);
-            field_node_max[v] = std::max(field_node_max[v], value);
-          }
-        }
-      }
-    }
-  }
-
-  // Step 2: limit reconstructed gradients at cell nodes
+  // limit reconstructed gradients at cell nodes
   double umin, umax, up, u1;
   AmanziGeometry::Point xp(dim);
 
   double L22normal_new;
   AmanziGeometry::Point gradient_c(dim), p(dim), normal_new(dim), direction(dim);
   std::vector<AmanziGeometry::Point> normals;
+  AmanziMesh::Entity_ID_List nodes;
 
-  for (int c = 0; c < ncells_owned; c++) {
+  for (int n = 0; n < ids.size(); ++n) {
+    int c = ids[n];
     mesh_->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();
     std::vector<double> field_min_cell(nnodes), field_max_cell(nnodes);
 
     for (int i = 0; i < nnodes; i++) {
       int v = nodes[i];
-      field_min_cell[i] = field_node_min[v];
-      field_max_cell[i] = field_node_max[v];
+      field_min_cell[i] = bounds_v[0][v];
+      field_max_cell[i] = bounds_v[1][v];
     }
 
     for (int i = 0; i < dim; i++) gradient_c[i] = grad[i][c];
@@ -482,8 +565,8 @@ void LimiterCell::LimiterKuzmin_(
     for (int i = 0; i < dim; i++) grad[i][c] = gradient_c[i];
   }
 
+  // enforce an a priori time step estimate (dT / 2).
   if (limiter_correction_) {
-    // Step 3: extrema are calculated for cells.
     AmanziMesh::Entity_ID_List cells;
     std::vector<double> field_local_min(ncells_wghost);
     std::vector<double> field_local_max(ncells_wghost);
@@ -494,16 +577,13 @@ void LimiterCell::LimiterKuzmin_(
 
       for (int i = 0; i < nodes.size(); i++) {
         int v = nodes[i];
-        field_local_min[c] = std::min(field_local_min[c], field_node_min[v]);
-        field_local_max[c] = std::max(field_local_max[c], field_node_max[v]);
+        field_local_min[c] = std::min(field_local_min[c], bounds_v[0][v]);
+        field_local_max[c] = std::max(field_local_max[c], bounds_v[1][v]);
       }
     }
 
-    // Step 4: enforcing a priori time step estimate (division of dT by 2).
     LimiterExtensionTransportKuzmin_(field_local_min, field_local_max);
   }    
-
-  gradient_->ScatterMasterToGhosted("cell");
 
   // approximate estimate of scalar limiter (mainly for statistics)
   for (int c = 0; c < ncells_owned; c++) {
@@ -586,13 +666,12 @@ void LimiterCell::LimiterExtensionTransportKuzmin_(
     const std::vector<double>& field_local_min, const std::vector<double>& field_local_max)
 {
   AMANZI_ASSERT(upwind_cells_.size() > 0);
-  AMANZI_ASSERT(downwind_cells_.size() > 0);
 
   double u1, up;
   AmanziGeometry::Point xp(dim);
   AmanziMesh::Entity_ID_List faces, nodes;
 
-  Epetra_MultiVector& grad = *gradient_->ViewComponent("cell", false);
+  auto& grad = *gradient_->ViewComponent("cell", false);
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
@@ -691,9 +770,9 @@ void LimiterCell::CalculateDescentDirection_(
 * Routine projects gradient on a plane defined by normal and point p.
 ******************************************************************* */
 void LimiterCell::ApplyDirectionalLimiter_(AmanziGeometry::Point& normal,
-                                                  AmanziGeometry::Point& p,
-                                                  AmanziGeometry::Point& direction,
-                                                  AmanziGeometry::Point& gradient)
+                                           AmanziGeometry::Point& p,
+                                           AmanziGeometry::Point& direction,
+                                           AmanziGeometry::Point& gradient)
 {
   double a = ((p - gradient) * normal) / (direction * normal);
   gradient += a * direction;
@@ -738,47 +817,41 @@ void LimiterCell::IdentifyUpwindCells_()
 /* ******************************************************************
 * Calculate internal bounds.
 ****************************************************************** */
-void LimiterCell::BoundsForCells(
+Teuchos::RCP<CompositeVector> LimiterCell::BoundsForCells(
+    const Epetra_MultiVector& field,
     const std::vector<int>& bc_model, const std::vector<double>& bc_value, 
-    int stencil, bool reset)
+    int stencil)
 {
-  if (external_bounds_) return;
+  auto cvs = Teuchos::rcp(new CompositeVectorSpace());
+  cvs->SetMesh(mesh_)->SetGhosted(true)
+     ->AddComponent("cell", AmanziMesh::CELL, 2);
 
-  if (bounds_ == Teuchos::null || reset) {
-    auto cvs = Teuchos::rcp(new CompositeVectorSpace());
-    cvs->SetMesh(mesh_)->SetGhosted(true)
-       ->AddComponent("cell", AmanziMesh::CELL, 2);
+  auto bounds = Teuchos::rcp(new CompositeVector(*cvs));
+  auto& bounds_c = *bounds->ViewComponent("cell", true);
 
-    bounds_ = Teuchos::rcp(new CompositeVector(*cvs));
-  }
-
-  auto& bounds_c = *bounds_->ViewComponent("cell", true);
-
-  if (reset) {
-    for (int c = 0; c < ncells_wghost; ++c) {
-      bounds_c[0][c] = OPERATOR_LIMITER_INFINITY;
-      bounds_c[1][c] =-OPERATOR_LIMITER_INFINITY;
-    }
+  for (int c = 0; c < ncells_wghost; ++c) {
+    bounds_c[0][c] = OPERATOR_LIMITER_INFINITY;
+    bounds_c[1][c] =-OPERATOR_LIMITER_INFINITY;
   }
 
   AmanziMesh::Entity_ID_List nodes, cells;
 
   if (stencil == OPERATOR_LIMITER_STENCIL_C2C_CLOSEST) {
     for (int c = 0; c < ncells_owned; c++) {
-      double value = (*field_)[component_][c];
+      double value = field[component_][c];
       bounds_c[0][c] = std::min(bounds_c[0][c], value);
       bounds_c[1][c] = std::max(bounds_c[1][c], value);
 
       mesh_->cell_get_face_adj_cells(c, AmanziMesh::Parallel_type::ALL, &cells);
       for (int i = 0; i < cells.size(); i++) {
-        value = (*field_)[component_][cells[i]];
+        value = field[component_][cells[i]];
         bounds_c[0][c] = std::min(bounds_c[0][c], value);
         bounds_c[1][c] = std::max(bounds_c[1][c], value);
       }
     }
   } else if (stencil == OPERATOR_LIMITER_STENCIL_C2C_ALL) {
     for (int c = 0; c < ncells_owned; c++) {
-      double value = (*field_)[component_][c];
+      double value = field[component_][c];
       bounds_c[0][c] = std::min(bounds_c[0][c], value);
       bounds_c[1][c] = std::max(bounds_c[1][c], value);
 
@@ -788,7 +861,7 @@ void LimiterCell::BoundsForCells(
         mesh_->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
 
         for (int k = 0; k < cells.size(); ++k) {
-          double value = (*field_)[component_][cells[k]];
+          double value = field[component_][cells[k]];
           bounds_c[0][c] = std::min(bounds_c[0][c], value);
           bounds_c[1][c] = std::max(bounds_c[1][c], value);
         }
@@ -797,50 +870,40 @@ void LimiterCell::BoundsForCells(
   }
 
   // add boundary conditions to the bounds
-  if (flux_ == Teuchos::null) return;
-
-  for (int f = 0; f < nfaces_owned; ++f) {
+  for (int f = 0; f < nfaces_wghost; ++f) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-      int ncells = downwind_cells_[f].size();
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
 
-      if (ncells > 0) {
-        for (int n = 0; n < ncells; ++n) {
-          int c = downwind_cells_[f][n];
-          double value = (*field_)[component_][c];
-          bounds_c[0][c] = std::min(bounds_c[0][c], value);
-          bounds_c[1][c] = std::max(bounds_c[1][c], value);
-
-          bounds_c[0][c] = std::min(bounds_c[0][c], bc_value[f]);
-          bounds_c[1][c] = std::max(bounds_c[1][c], bc_value[f]);
-        }
+      for (int n = 0; n < cells.size(); ++n) {
+        int c = cells[n];
+        bounds_c[0][c] = std::min(bounds_c[0][c], bc_value[f]);
+        bounds_c[1][c] = std::max(bounds_c[1][c], bc_value[f]);
       }
     }
   }
+
+  return bounds;
 }
 
 
 /* ******************************************************************
 * Calculate internal bounds for the face to closest cells stencil.
 ****************************************************************** */
-void LimiterCell::BoundsForFaces(
-    const std::vector<int>& bc_model, const std::vector<double>& bc_value, 
-    int stencil, bool reset)
+Teuchos::RCP<CompositeVector> LimiterCell::BoundsForFaces(
+    const Epetra_MultiVector& field,
+    const std::vector<int>& bc_model, const std::vector<double>& bc_value,
+    int stencil)
 {
-  if (bounds_ == Teuchos::null || reset) {
-    auto cvs = Teuchos::rcp(new CompositeVectorSpace());
-    cvs->SetMesh(mesh_)->SetGhosted(true)
-       ->AddComponent("face", AmanziMesh::FACE, 2);
+  auto cvs = Teuchos::rcp(new CompositeVectorSpace());
+  cvs->SetMesh(mesh_)->SetGhosted(true)
+     ->AddComponent("face", AmanziMesh::FACE, 2);
 
-    bounds_ = Teuchos::rcp(new CompositeVector(*cvs));
-  }
+  auto bounds = Teuchos::rcp(new CompositeVector(*cvs));
+  auto& bounds_f = *bounds->ViewComponent("face", true);
 
-  auto& bounds_f = *bounds_->ViewComponent("face", true);
-
-  if (reset) {
-    for (int f = 0; f < nfaces_wghost; ++f) {
-      bounds_f[0][f] = OPERATOR_LIMITER_INFINITY;
-      bounds_f[1][f] =-OPERATOR_LIMITER_INFINITY;
-    }
+  for (int f = 0; f < nfaces_wghost; ++f) {
+    bounds_f[0][f] = OPERATOR_LIMITER_INFINITY;
+    bounds_f[1][f] =-OPERATOR_LIMITER_INFINITY;
   }
 
   AmanziMesh::Entity_ID_List cells;
@@ -850,32 +913,66 @@ void LimiterCell::BoundsForFaces(
 
     for (int i = 0; i < cells.size(); ++i) {
       int c = cells[i];
-      double value = (*field_)[component_][c];
+      double value = field[component_][c];
       bounds_f[0][f] = std::min(bounds_f[0][f], value);
       bounds_f[1][f] = std::max(bounds_f[1][f], value);
     }
   }
 
   // add boundary conditions to the bounds
-  if (flux_ == Teuchos::null) return;
-
   for (int f = 0; f < nfaces_owned; ++f) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-      int ncells = downwind_cells_[f].size();
-
-      if (ncells > 0) {
-        bounds_f[0][f] = std::min(bounds_f[0][f], bc_value[f]);
-        bounds_f[1][f] = std::max(bounds_f[1][f], bc_value[f]);
-
-        for (int n = 0; n < ncells; ++n) {
-          int c2 = downwind_cells_[f][n];
-          double value = (*field_)[component_][c2];
-          bounds_f[0][f] = std::min(bounds_f[0][f], value);
-          bounds_f[1][f] = std::max(bounds_f[1][f], value);
-        }
-      }
+      bounds_f[0][f] = std::min(bounds_f[0][f], bc_value[f]);
+      bounds_f[1][f] = std::max(bounds_f[1][f], bc_value[f]);
     }
   }
+
+  return bounds;
+}
+
+
+/* ******************************************************************
+* Calculate internal bounds for the node to cells stencil.
+****************************************************************** */
+Teuchos::RCP<CompositeVector> LimiterCell::BoundsForNodes(
+    const Epetra_MultiVector& field,
+    const std::vector<int>& bc_model, const std::vector<double>& bc_value, 
+    int stencil)
+{
+  auto cvs = Teuchos::rcp(new CompositeVectorSpace());
+  cvs->SetMesh(mesh_)->SetGhosted(true)
+     ->AddComponent("node", AmanziMesh::FACE, 2);
+
+  auto bounds = Teuchos::rcp(new CompositeVector(*cvs));
+  auto& bounds_v = *bounds->ViewComponent("node", true);
+
+  for (int v = 0; v < nnodes_wghost; ++v) {
+    bounds_v[0][v] = OPERATOR_LIMITER_INFINITY;
+    bounds_v[1][v] =-OPERATOR_LIMITER_INFINITY;
+  }
+
+  AmanziMesh::Entity_ID_List cells;
+
+  for (int v = 0; v < nnodes_wghost; ++v) {
+    mesh_->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
+
+    for (int i = 0; i < cells.size(); ++i) {
+      int c = cells[i];
+      double value = field[component_][c];
+      bounds_v[0][v] = std::min(bounds_v[0][v], value);
+      bounds_v[1][v] = std::max(bounds_v[1][v], value);
+    }
+  }
+
+  // add boundary conditions to the bounds
+  for (int v = 0; v < nnodes_wghost; ++v) {
+    if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
+      bounds_v[0][v] = std::min(bounds_v[0][v], bc_value[v]);
+      bounds_v[1][v] = std::max(bounds_v[1][v], bc_value[v]);
+    }
+  }
+
+  return bounds;
 }
 
 

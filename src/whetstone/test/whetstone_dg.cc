@@ -24,6 +24,7 @@
 // Amanzi::WhetStone
 #include "DenseMatrix.hh"
 #include "DG_Modal.hh"
+#include "FunctionUpwind.hh"
 #include "MeshMaps_VEM.hh"
 #include "Polynomial.hh"
 
@@ -212,14 +213,14 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
 
 
 /* ****************************************************************
-* Test of DG2D advection matrices on a face
+* Test of DG2D flux matrices on a face
 **************************************************************** */
-TEST(DG2D_ADVECTION_MATRIX_FACE) {
+void Run2DFluxMatrix(bool upwind, bool jump_on_test) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: DG2D advection matrices on faces" << std::endl;
+  std::cout << "\nTest: DG2D flux matrices: upwind=" << upwind << std::endl;
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
   MeshFactory meshfactory(comm);
@@ -230,36 +231,95 @@ TEST(DG2D_ADVECTION_MATRIX_FACE) {
     DG_Modal dg(k, mesh, "orthonormalized");
 
     Polynomial un(2, 0);
-    un(0, 0) = 1.0;
+    un(0) = 1.0;
 
     // TEST1: constant u
     DenseMatrix A0, A1;
-    dg.FluxMatrix(1, un, A0, true, false);
+    dg.FluxMatrix(1, un, A0, upwind, jump_on_test);
 
-    printf("Advection matrix (face-based) for order=%d  u.n=1\n", k);
+    printf("Flux matrix (face-based) for order=%d  u.n=1\n", k);
     int nk = A0.NumRows();
     for (int i = 0; i < nk; i++) {
       for (int j = 0; j < nk; j++ ) printf("%8.4f ", A0(i, j)); 
       printf("\n");
     }
 
-    // TEST2: add zero gradient to polynomial un
+    // TEST2: add zero gradient to velocity un
     un.Reshape(2, 1);
-    dg.FluxMatrix(1, un, A1, true, false);
+    dg.FluxMatrix(1, un, A1, upwind, jump_on_test);
 
     A1 -= A0;
     CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
 
-    // TEST3: nonzero linear component polynomial un
-    un(1, 0) = 1.0;
+    // TEST3: nonzero linear component of velocity un
+    un(1) = 1.0;
 
-    dg.FluxMatrix(1, un, A1, true, false);
+    dg.FluxMatrix(1, un, A1, upwind, jump_on_test);
 
-    printf("Advection matrix (face-based) for order=%d u.n=1+x\n", k);
+    printf("Flux matrix (face-based) for order=%d u.n=1+x\n", k);
     for (int i = 0; i < nk; i++) {
       for (int j = 0; j < nk; j++ ) printf("%8.4f ", A1(i, j)); 
       printf("\n");
     }
+
+    // TEST4: compare with the algorihtm based on Gauss points
+    dg.FluxMatrixGaussPoints(1, un, A0, upwind, jump_on_test);
+    A0 -= A1;
+    CHECK_CLOSE(0.0, A0.NormInf(), 1e-12);
+  }
+
+  delete comm;
+}
+
+TEST(DG2D_FLUX_MATRIX) {
+  Run2DFluxMatrix(true, false);
+  Run2DFluxMatrix(false, true);
+}
+
+
+/* ****************************************************************
+* Test of DG2D flux matrices based on gauss points
+**************************************************************** */
+TEST(DG2D_FLUX_MATRIX_CONSERVATION) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: DG2D flux matrices based on gauss points" << std::endl;
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 2, 2); 
+ 
+  for (int k = 0; k < 3; k++) {
+    DG_Modal dg(k, mesh, "normalized");
+
+    Polynomial un(2, 1);
+    un(0) = 1.0;
+    un(1) = 1.0;
+    un(2) =-6.0;
+
+    DenseMatrix A0, A1;
+    dg.FluxMatrix(1, un, A0, true, true);
+    dg.FluxMatrixGaussPoints(1, un, A1, true, true);
+
+    printf("Flux matrix (face-based) for order=%d u.n=1+x\n", k);
+    int nk = A1.NumRows();
+    for (int i = 0; i < nk; i++) {
+      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A1(i, j)); 
+      printf("\n");
+    }
+
+    // check conservation law
+    DenseVector e(nk), b(nk);
+    e.PutScalar(1.0);
+
+    A0.Multiply(e, b, false);
+    CHECK_CLOSE(0.0, b(0) + b(nk / 2), 1e-12); 
+
+    A1.Multiply(e, b, false);
+    CHECK_CLOSE(0.0, b(0) + b(nk / 2), 1e-12); 
   }
 
   delete comm;
@@ -267,14 +327,14 @@ TEST(DG2D_ADVECTION_MATRIX_FACE) {
 
 
 /* ****************************************************************
-* Test of DG3D advection matrices on a face
+* Test of DG3D flux matrices on a face
 **************************************************************** */
-TEST(DG3D_ADVECTION_MATRIX_FACE) {
+TEST(DG3D_FLUX_MATRIX) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: DG3D advection matrices on faces" << std::endl;
+  std::cout << "\nTest: DG3D flux matrices" << std::endl;
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
   MeshFactory meshfactory(comm);
@@ -317,6 +377,11 @@ TEST(DG3D_ADVECTION_MATRIX_FACE) {
       for (int j = 0; j < nk; j++ ) printf("%8.4f ", A1(i, j)); 
       printf("\n");
     }
+
+    // TEST4: compare with the algorihtm based on Gauss points
+    dg.FluxMatrixGaussPoints(f, un, A0, true, false);
+    A0 -= A1;
+    CHECK_CLOSE(0.0, A0.NormInf(), 1e-12);
   }
 
   delete comm;
@@ -633,5 +698,31 @@ TEST(DG_LEAST_SQUARE_MAP_CELL) {
   CHECK_CLOSE(0.0, u[0](2, 2), 1e-14);
 
   delete comm;
+}
+
+
+/* ****************************************************************
+* Test of upwind function
+**************************************************************** */
+TEST(UPWIND_FUNCTION) {
+  using namespace Amanzi;
+  using namespace Amanzi::WhetStone;
+
+  Polynomial un(2, 1);
+  un(0) = 0.0;
+  un(1) = 1.0;
+
+  AmanziGeometry::Point x1(-1.0, 0.0), x2(1.0, 0.0);
+  {
+    FunctionUpwindPlus f(&un);
+    CHECK_CLOSE(0.0, f.Value(x1), 1e-12);
+    CHECK_CLOSE(1.0, f.Value(x2), 1e-12);
+  }
+
+  {
+    FunctionUpwindMinus f(&un);
+    CHECK_CLOSE(-1.0, f.Value(x1), 1e-12);
+    CHECK_CLOSE( 0.0, f.Value(x2), 1e-12);
+  }
 }
 

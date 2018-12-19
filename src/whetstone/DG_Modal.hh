@@ -30,6 +30,8 @@
 #include "DenseMatrix.hh"
 #include "DenseVector.hh"
 #include "NumericalIntegration.hh"
+#include "Polynomial.hh"
+#include "PolynomialOnMesh.hh"
 #include "Tensor.hh"
 #include "VectorPolynomial.hh"
 #include "WhetStoneDefs.hh"
@@ -89,6 +91,7 @@ class DG_Modal : public BilinearForm {
   int FluxMatrix(int f, const Polynomial& uf, DenseMatrix& A, bool upwind, bool jump_on_test);
   int FluxMatrixRusanov(int f, const VectorPolynomial& uc1, const VectorPolynomial& uc2,
                         const Polynomial& uf, DenseMatrix& A);
+  int FluxMatrixGaussPoints(int f, const Polynomial& uf, DenseMatrix& A, bool upwind, bool jump_on_test);
 
   // -- interface matrices: jumps and penalty
   int FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMatrix& A);
@@ -103,7 +106,10 @@ class DG_Modal : public BilinearForm {
   // -- order of polynomials in each cell
   void set_order(int order) { order_ = order; }
   int order() { return order_; }
+
+  // -- access
   const Basis& cell_basis(int c) const { return *basis_[c]; }
+  Polynomial& monomial_integrals(int c) { return monomial_integrals_[c]; }
 
  private:
   int MassMatrixPoly_(int c, const Polynomial& K, DenseMatrix& M);
@@ -112,14 +118,12 @@ class DG_Modal : public BilinearForm {
   int AdvectionMatrixPoly_(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test);
   int AdvectionMatrixPiecewisePoly_(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test);
 
-  void UpdateIntegrals_(int c, int order);
-
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   NumericalIntegration numi_;
   int order_, d_;
 
-  std::vector<Polynomial> integrals_;  // integrals of non-normalized monomials
+  std::vector<Polynomial> monomial_integrals_;  // integrals of non-normalized monomials
   std::vector<std::shared_ptr<Basis> > basis_;
 };
 

@@ -270,6 +270,8 @@ void Polynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
       coefs_(0) += coefs_(i + 1) * shift[i];
     }
   } else if (order_ > 1) {
+    if (AmanziGeometry::L22(shift) == 0.0) return;
+
     // create powers (x_i - o_i)^k
     // FIXME: cost could be reduced using split Cnk * a^k
     std::vector<std::vector<DenseVector> > powers(d_);

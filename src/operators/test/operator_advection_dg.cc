@@ -95,6 +95,10 @@ void AdvectionSteady(int dim, std::string filename, int nx,
       weak_sign = -1.0;
       pk_name = "PK operator 2D: primal";
     }
+    else if (weak_form == "gauss points") {
+      weak_sign = -1.0;
+      pk_name = "PK operator 2D: gauss points";
+    }
   } else {
     bool request_faces(true), request_edges(true);
     mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx, gm, request_faces, request_edges);
@@ -254,7 +258,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   op_adv->SetupPolyVector(velc);
   op_adv->UpdateMatrices();
 
-  if (conservative_form || weak_form == "primal")
+  if (conservative_form || weak_form == "primal" || weak_form == "gauss points")
     op_reac->Setup(Kc);
   else 
     op_reac->Setup(Kn);
@@ -327,6 +331,8 @@ TEST(OPERATOR_ADVECTION_STEADY_DG) {
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "dual", true, "regularized");
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "dual", false);
   AdvectionSteady<AnalyticDG02>(3, "cubic", 3, "dual", true);
+
+  AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "gauss points", false, "orthonormalized");
 }
 
 
