@@ -12,6 +12,8 @@
   Numerical and exact integration over polytopal cells.
 */
 
+#include <cmath>
+
 #include "Monomial.hh"
 #include "NumericalIntegration.hh"
 #include "WhetStoneDefs.hh"
