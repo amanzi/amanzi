@@ -110,7 +110,7 @@ describing subsurface processes.
 
 There are many assumptions required for the strict validity of Darcy's Law, 
 including incompressibility and laminararity of the flow.
-In addition, we  assume that rock is incompressible and fluid viscosity is constant.
+We also assume that rock is incompressible and fluid viscosity is constant.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -119,28 +119,57 @@ In addition, we  assume that rock is incompressible and fluid viscosity is const
 %The governing equations for the single phase flow in porous media 
 %under isothermal conditions are
 Under the above assumptions Darcy's Law equations are
-\begin{equation}
+\begin{subequations}
+\label{eq:Darcy fully saturated}
+\begin{align}
   \phi \left(\Frac{S_s}{g} + \Frac{S_y}{L\,g}\right) \frac{\partial p_l}{\partial t} 
-  =
+  &=
   -\boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_l) + Q,
-  \qquad
-  \bq_l = -\frac{\K}{\mu_l} 
+  \\
+  \bq_l &= -\frac{\K}{\mu_l} 
   (\bnabla p_l - \rho_l \bg),
-\end{equation}
-where $L$ is a characteristic size of the yield layer, and 
+\end{align}
+\end{subequations}
+where the primary variable is the fluid presure $p_l$. 
+The fluid velocity $\bq_l$ is the dependent variable.
+All the other variables can be treated as material parameters
+that sometimes may depend on pressure.
+These include:
+$\phi$ is the porosity,
+$S_s$ and $S_y$ are specific storage and yeild, respectively,
+$g$ is the gravitational constant
+and $\bg$ is the gravitational vector,  
+$L$ is a characteristic size of the yield layer, and 
 $Q$ is source or sink term [$\ukg \ucdot \um^{-3} \ucdot \us^{-1}$].
-It is common to see the Darcy Law written in terms of hydraulic head $h$ [$\um$]
+ 
+
+It is common to see the Darcy Law written in terms of hydraulic head $h$
 and the hydraulic conductivity tensor $\K_h$:
-\begin{equation}  \label{eq:HydraulicHead}
-  \bq = -\K_h \bnabla h,\quad
-  h \eq  z + \frac{p_l}{\rho_l g},\quad
-  \K_h = \K \frac{\rho_l g}{\mu_l}.
-\end{equation}
+\begin{subequations}  \label{eq:HydraulicHead}
+\begin{align}
+  \bq_l &= -\K_h \bnabla h,
+  \\
+  h \, &=  z + \frac{p_l}{\rho_l g},
+  \\
+  \K_h &= \K \, \frac{\rho_l g}{\mu_l},
+\end{align}
+\end{subequations}
+where $\K$ is an absolute permeability tensor.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Boundary conditions}
+
 
 Three types of \textit{boundary conditions} are supported by the model:
-1) prescribed pressure (or head);
-2) prescribed flux;
-3) semipervious boundary. %\citep[for reference see][]{bear-1979}.
+\begin{enumerate}
+\item
+  prescribed pressure $p_l$ (or head), see \eqref{eq:BC pressure};
+\item
+  prescribed flux, i.e. normal component of the velocity $\bq_l$, see \eqref{eq:BC flux};
+\item
+  semipervious boundary, see \eqref{eq:BC semipervious}. 
+\end{enumerate}
+%\citep[for reference see][]{bear-1979}.
 These boundary conditions are described in Section~\ref{sec:flow-boundary-conditions}.
 
 
@@ -153,7 +182,7 @@ These boundary conditions are described in Section~\ref{sec:flow-boundary-condit
 The Richards equation is often used to describe single phase flow under partially 
 saturated conditions (i.e., the pores are not occupied exclusively by a single phase).  
 As such, it requires the introduction of a relative permeability and a capillary 
-pressure relations as discussed in Section~\ref{sec:pc_s_relations}.
+pressure relations. % as discussed in Section~\ref{sec:pc_s_relations}.
 The Richards equation is well suited to very large numerical problems (millions of 
 degrees of freedom) because it requires only one independent variable per cell.
 
@@ -178,13 +207,17 @@ The Richards equation is derived from the conservation of
 liquid mass equation.
 In the mixed formulation it is written
 for the volumetirc water content $\theta$ and the Darcy velocity $\bq_l$:  
-\begin{equation}\label{eq:Darcy}
-  \frac{\partial \theta}{\partial t} 
-  = -\bnabla \cdot (\eta_l \bq_l) + Q,
-  \qquad
-  \bq_l = -\frac{\K k_{rl}}{\mu_l} 
-  (\bnabla p_l - \rho_l \bg),
-\end{equation}
+\begin{subequations}\label{eq:Darcy}
+\begin{align}
+  \frac{\partial \theta(p_l)}{\partial t} 
+  &= 
+  -\bnabla \cdot (\eta_l \bq_l) + Q,
+  \\
+  \bq_l 
+  &= 
+  -\frac{\K k_{rl}}{\mu_l} (\bnabla p_l - \rho_l \bg),
+\end{align}
+\end{subequations}
 where 
 $\eta_l$ is the molar liquid density,
 $Q$ is source or sink term [$\ukg \ucdot \um^{-3} \ucdot \us^{-1}$],
@@ -192,16 +225,20 @@ $\K$ is absolute permeability tensor,
 $\mu_l$ is liquid viscosity,
 $\rho_l$ is liquid density, and
 $k_{rl}$ is relative permeability.
-The total volumetric water content is defined as
+The total volumetric water content $\theta$ is defined as
 a product of porosity $\phi$, molar liquid density $\eta_l$ and liquid saturation $s_l$:
 $$
-  \theta = \phi\, \eta_l\, s_l.
+  \theta(p_l) = \phi(p_l) \eta_l\, s_l(p_c).
 $$
 Usage of the molar liquid density (units of $\theta$ are $\umol\ucdot\um^{-3}$)
 allows us to easily extend the model to a non-isothermal case.
 
+Just like in the case of the fully saturated flow \eqref{eq:Darcy fully saturated},
+the primary dependent variable in \eqref{eq:Darcy} is liquid pressure $p_l$.
+The difference with \eqref{eq:Darcy fully saturated}
+is in that the pressure enters the equations in a nonlinear form,
+through a dependence $\theta_l(p_l)$ to be discussed in the following sections.
 
-The primary dependent variable in \eqref{eq:Darcy} is liquid pressure $p_l$.
 In general the porosity $\phi$ is a functions of pressure $p_l$.
 The relative permeability $k_{rl}$ is a function of saturation $s_l$,
 which in turns is a function of capillary pressure $p_c$. 
@@ -211,12 +248,20 @@ the van Genuchten-Mualem relations \eqref{eq:krl_vGM} and
 the Brooks-Corey-Burdine relations \eqref{eq:krl_BCB}.
 The equation \eqref{eq:Darcy} is continuous when transitioning from the saturated to the vadoze zones.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Boundary conditions}  
 
 Four types of boundary conditions are supported by the model:
-1) prescribed pressure (or head);
-2) prescribed flux;
-3) semipervious boundary %\citep[for reference see][]{bear-1979};
-4) seepage face.
+\begin{enumerate}
+\item
+  prescribed pressure $p_l$ (or head), see \eqref{eq:BC pressure};
+\item
+  prescribed flux, i.e. normal component of the velocity $\bq_l$, see \eqref{eq:BC flux};
+\item
+  semipervious boundary, see \eqref{eq:BC semipervious}; %\citep[for reference see][]{bear-1979};
+\item
+  seepage face.
+\end{enumerate}
 These boundary conditions are described in Section~\ref{sec:flow-boundary-conditions}.
 
 
@@ -237,7 +282,8 @@ there is only a single capillary pressure:
 \begin{equation} \label{eq:GasLiquidCapillaryPressure}
   p_c = p_g - p_l
 \end{equation}
-where $p_g$ is the pressure of the air. 
+where $p_g$ is the pressure of the air/gas. 
+
 Let us define the effective liquid saturation $s_e$ as
 \begin{equation}
 \label{eq:SaturationDefinition}
@@ -420,15 +466,20 @@ phase into mobile and immobile regions.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Process Model Equations} 
 
-The Richards equation in the mobile region is augmented by the water exchange
+The Richards equation in the mobile (fracture dominated) region is augmented by the water exchange
 term $\Sigma_w$: 
-\begin{equation}
+\begin{subequations}
+\begin{align}
   \frac{\partial \theta_f}{\partial t} 
-  = -\bnabla \cdot (\eta_l \bq_l) - \Sigma_w + Q_f,
-  \qquad
-  \bq_l = -\frac{\K k_r}{\mu} (\bnabla p_l - \rho_l \bg),
-\end{equation}
-where $\Sigma_w$ is transfer rate for water from the matrix to the fracture, 
+  &= 
+  -\bnabla \cdot (\eta_l \bq_l) + Q_f - \Sigma_w, 
+  \\
+  \bq_l 
+  &= 
+  -\frac{\K k_r}{\mu} (\bnabla p_l - \rho_l \bg),
+\end{align}
+\end{subequations}
+where $\Sigma_w$ is the transfer rate for water from the matrix to the fracture, 
 and $Q_f$ is source or sink term [$\ukg \ucdot \um^{-3} \ucdot \us^{-1}$].
 The equation for water balance in the matrix is
 $$
@@ -442,7 +493,7 @@ $$
   \theta_m = \phi_m\, \eta_l\, s_{lm},
 $$
 where saturations $s_{lf}$ and $s_{lm}$ may use different 
-capillary pressure - saturation models.
+capillary pressure-saturation models.
 The rate of water transfer from the matrix to the fracture regions $\Sigma_w$ 
 is proportional to the difference in hydraulic heads:
 $$
@@ -478,6 +529,7 @@ For instance, a boundary of this kind occurs whenever the flow domain is adjacen
 Segments A-B and E-F in Fig.~\ref{fig:bc_flow} are examples of a boundary of prescribed potential.
 The pressure or head boundary conditions are given functions, e.g.
 \begin{equation}
+\label{eq:BC pressure}
   p_l(\bx,t) = p_{b}(\bx,t), \quad \bx \in \Gamma_D. 
 \end{equation}
 
@@ -485,6 +537,7 @@ The pressure or head boundary conditions are given functions, e.g.
 This involves the specification of the flux normal to the boundary $\Gamma_N$
 (see segment C-D in Figure \ref{fig:bc_flow}):
 \begin{equation}
+\label{eq:BC flux}
   \bq_l\cdot \bn = q_{b}(\bx,t), \quad \bx \in \Gamma_N,
 \end{equation}
 where $q_b$ [$\um\ucdot\us^{-1}$] is the given boundary flux. 
@@ -498,8 +551,9 @@ out of the domain.
 This type of boundary occurs when the porous medium domain is in contact with 
 a body of water continuum (or another porous medium domain, see for instance segments 
 A-B and E-F in Fig.~\ref{fig:bc_flow}), however, a relatively thin semipervious layer 
-separates the two domain:
+separates the two domains:
 \begin{equation}
+\label{eq:BC semipervious}
   \bq_l \cdot \bn = I\, \left(p (\bx,t) - p_{b}(\bx,t) \right), \quad \bx \in \Gamma_R.
 \end{equation}
 where $I$ is an impedance and $p_{b}(\bx,t)$ is the given external pressure.
@@ -510,9 +564,14 @@ is always present when a phreatic surface ends at the down-stream external bound
 In this case the phreatic surface is tangent to the boundary of the porous medium at points C and D.
 Along a seepage surface, water emerges from the flow domain, trickling downward to the adjacent body of water.
 
-A seepage surface is defined as the boundary where water leaves the ground surface and then continues to flow in a thin film along its surface.
-Being exposed to the atmosphere, the pressure along the seepage face is equal to the atmospheric pressure (i.e. capillary pressure $p_{c}=0$).
-The geometry of the seepage face is known (as it coincides with the boundary of the porous medium), except for its limit (points C and D in Figure \ref{fig:bc_flow}) which is also lying on the (a priori) unknown phreatic surface.
+A seepage surface is defined as the boundary 
+where water leaves the ground surface and then continues to flow in a thin film along its surface.
+Being exposed to the atmosphere, the pressure along the seepage face is equal to the atmospheric pressure 
+(i.e. capillary pressure $p_{c}=0$). 
+
+The geometry of the seepage face is known (as it coincides with the boundary of the porous medium), 
+except for its limit (points C and D in Figure \ref{fig:bc_flow}) 
+which is also lying on the (a priori) unknown phreatic surface.
 The location of this point is, therefore, part of the required solution.
 In unsteady flow, the location of the upper limit of the seepage face varies with time
 and could be simulated in two ways:
@@ -603,20 +662,20 @@ pressure and, in the most sophisticated implementations,
 require the solution of coupled equations for mass and energy transport.
 
 A minimum set of processes for modeling the water budget should include:  
-\EQ
+%
+\begin{align}
 P + I = R_{over} + \Delta W + D + GD,% + E + T,
-\EN
-where:
-\begin{itemize}
-\item[$P$] -- precipitation 
-\item[$I$] -- irrigation
-\item[$R_{over}$] -- overland flow (run-off and run-on)
-\item[$D$] -- drainage out of the soil cover (diverted by reduced-permeability layer)
-\item[$GD$] -- ground water recharge (deep percolation past a reduced-permeability layer)
-\item[$\Delta W$] -- change in soil water storage.
+\end{align}
+where 
+$P$ is the precipitation, 
+$I$ -- irrigation,
+$R_{over}$ -- overland flow (run-off and run-on),
+$D$ -- drainage out of the soil cover (diverted by reduced-permeability layer),
+$GD$ -- ground water recharge (deep percolation past a reduced-permeability layer), and
+$\Delta W$ -- change in soil water storage.
 %$E$ = evaporation\\
 %$T$ = transpiration.
-\end{itemize}
+
 
 
 \noindent 
@@ -728,6 +787,7 @@ required.
 
 
 
+\begin{comment}
 \subsubsection{Boundary Conditions and Initial Conditions}
 
 Boundary and initial conditions can take several different forms
@@ -746,7 +806,6 @@ drainage, and seepage face are also used.
 %
 %  Need to fix this with the BC section.
 % 
-\begin{comment}
 
 \subsubsection{Boundary Conditions and Initial Conditions}
 %------------------------------------------------------------------------------

@@ -27,7 +27,7 @@ $$\label{eq:concervation of mass general}
   \frac{\partial ( \phi \sum_\alpha [s_{\alpha} C_{\alpha,i}] )}{\partial t } +
   \bnabla \cdot \bJ_{\text{adv}} \eq \bnabla \cdot \bJ_{\text{disp}} + \bnabla \cdot \bJ_{\text{diff}} + Q,
 $$
-where $C_{\alpha,i}$ is concentration of $i$th species in phase $\alpha$, 
+where $C_{\alpha,i}$ is a concentration of $i$th species in phase $\alpha$, 
 $\bJ_{\text{adv}}$ is advective flux, $\bJ_{\text{disp}}$ is the dispersive flux, 
 $\bJ_{\text{diff}}$ is the diffusive flux (often grouped with the dispersive flux), and  
 $Q$ is the summation of various source terms which may include reactions.
@@ -268,11 +268,11 @@ back to measurable quantities by making use of the mobility as the
 this case provided by the chemical potential rather than the
 concentration
 \begin{equation} \label{eq:ChemicalPotentialGradient)} 
-  \boldsymbol{J}_{j}^{\rm diff} =-\boldsymbol{\nabla} ( u_{j} C_{j} \mu _{j}), 
+  \boldsymbol{J}_{j}^{\rm diff} =-\boldsymbol{\nabla} ( M_{j} C_{j} \mu _{j}), 
 \end{equation} 
 where $u_{j}$ is the mobility of the $j$th ion defined by
 \begin{equation} \label{eq:IonMobility} 
-  u_{j} \eq \frac{D_j}{RT}.
+  M_{j} \eq \frac{D_j}{RT}.
 \end{equation} 
 
 
@@ -336,6 +336,40 @@ where the saturation, $s_{\alpha}$, can refer to either the gas or the aqueous p
 
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Boundary Conditions} 
+\label{sec:transport-boundary-conditions}
+
+\noindent 
+Boundary conditions have to be specified for each of the species concentrations $C_i$.
+A number of boundary conditions are possible for the diffusive flux, 
+including a Dirichlet boundary conditions (prescribed concentration) 
+and Neumann boundary conditions (prescribed flux). 
+\todo[color=cyan]{GEH:  I suggest that we stick with third-type as the title for this boundary condition.  
+It is technically Robin (definitely not Cauchy), but third-type is commonly used in subsurface reactive transport.  
+I also suggest that we remove First-Type and Second-Type and simply refer to them as 
+Dirichlet (specified concentration) and Neumann (specified flux).}
+
+\noindent \textit{Dirichlet Boundary Conditionis}:  
+These conditions specify a (typically fixed/constant) value of the concentration of the species, $C_0$, 
+at the boundary location:
+\begin{equation}\label{eq:transport Dirichlet}
+  \boldsymbol{C}(\boldsymbol{x})=\boldsymbol{C}_{0} .
+\end{equation}
+
+\textit{Neumann Boundary Conditions}:  
+These conditions specify a value of the flux
+\begin{equation}\label{eq:transport Neuman flux} 
+  \boldsymbol{J}\cdot \bn = J_0^{\bn},
+\end{equation}
+or concentration gradient
+\begin{equation}\label{eq:transport Neuman gradient}
+  \frac{\partial \boldsymbol{C}}{\partial \bn} = C_0^{\bn},
+\end{equation}
+where either $J_0^{\bn}$ or $C_0^{\bn}$ is prescribed. 
+The flux term can be a total, advective, or diffusive flux.
+
 
 
 
@@ -390,33 +424,19 @@ The coefficient $\alpha_s$ is the first-order solute mass transfer coefficient [
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Boundary Conditions, Sources and Sinks} 
-\label{sec:transport-boundary-conditions}
+\subsection{Boundary Conditions} 
+\label{sec:transport-boundary-conditions-dual-porosity}
 
 \noindent 
-A number of boundary conditions are possible for the diffusive flux, 
-including a Dirichlet (or first-type) boundary conditions (fixed concentration) 
-and Neumann (or second-type or flux) boundary conditions. 
-\todo[color=cyan]{GEH:  I suggest that we stick with third-type as the title for this boundary condition.  
-It is technically Robin (definitely not Cauchy), but third-type is commonly used in subsurface reactive transport.  
-I also suggest that we remove First-Type and Second-Type and simply refer to them as Dirichlet (specified concentration) and Neumann (specified flux).}
+For the dual porosity model boundary conditions have to be specified 
+for the fracture and the matrix concentrations.
+While the choice of the boundary conditions for the fracture component $C_f$ 
+are identical to those of \eqref{eq:transport Dirichlet}-\eqref{eq:transport Neuman gradient},
+boundary conditions for the matrix/pore component $C_m$
+are limited only to  \eqref{eq:transport Dirichlet} and 
+\eqref{eq:transport Neuman gradient}, and exclude the condition \eqref{eq:transport Neuman flux}
+on the flux values.
 
-\noindent \textit{First-Type or Dirichlet Boundary Condition}:  
-A first-type or Dirichlet condition involves specification of a fixed value (typically) of the concentration, $C_0$, at the boundary location,
-\begin{equation} \label{eq:Dirichlet}
-  \boldsymbol{C}(\boldsymbol{x})=\boldsymbol{C}_{0} .
-\end{equation}
-
-\textit{Second-Type or Neumann Boundary Condition}:  
-A second-type or Neumann (or flux) boundary condition involves specification of the flux
-\begin{equation}   \label{eq:Neuman}
-  \boldsymbol{J}_{i}=\alpha,
-\end{equation}
-or concentration gradient
-\begin{equation}
-  \frac{\partial \boldsymbol{C}}{\partial \boldsymbol{n}} = \alpha,
-\end{equation}
-where $\alpha$ is a prescribed value of the flux or concentration gradient. The flux term can be a total, advective, or diffusive flux.
 
 
 

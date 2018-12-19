@@ -117,7 +117,7 @@ The equilbrium constant, $K_{ads}$, is typically obtained from experimental data
 It depends on the specified absorbent and absorbate, and may be a function of temperature. 
 It may be calculated from:
 \begin{equation}
-  K_{ads} = exp\left(\frac{-\Delta G^{\circ}_{ads}}{RT}\right),
+  K_{ads} = \exp\left(\frac{-\Delta G^{\circ}_{ads}}{RT}\right),
 \end{equation}
 where $\Delta G$ is the change in free energy for the reaction,
 typically obtained from a database, $R$ is the gas constant and $T$ is the temperature.
@@ -193,11 +193,11 @@ The exchange reactions can then be used to write a mass action equation for bina
 
 In a single-site ion exchange model, the CEC is equal to the sum of the charge equivalent concentrations of the adsorbed cations:
 \begin{equation}
-  CEC=\sum _{M}z_{M} q_{M},
+  CEC = \sum _{M}z_{M} q_{M},
 \end{equation} 
 while in a multi-site model, the CEC is the charge summed over all of the cation exchange sites \citep{cernik-1996, voegelin-2000}
 \begin{equation}
-  CEC=\sum _{i}\sum _{M}z_{M} q(i)_{M}   .
+  CEC = \sum _{i}\sum _{M}z_{M} q(i)_{M}   .
 \end{equation} 
 
 %Could have the following
@@ -365,12 +365,36 @@ Multiple site-types are commonly used in formulating SCMs and approximate the no
 \item \textbf{Non-electrostatic Models:}
 EDL models differ in whether coulombic attraction or repulsion terms are considered in the mass laws of surface reactions. A non-electrostatic EDL means that the term
 \begin{equation}  \label{eq:ElectrostaticExponential}
- exp(\frac{zF\psi_0 }{RT}) 
+  \exp\left(\frac{zF\psi_0 }{RT}\right) 
 \end{equation}
- in Equation~\eqref{eq:KappEDL} need not be considered. While electrical double layer (EDL) models may represent these terms well for simple systems with single mineral phases, the approaches for treating these terms in mixed mineral assemblages have not been studied. In Component Additivity (CA) \citep{davis-2004, davis-1998} applications to sediments, typically authors assume that the EDL properties of pure, clean mineral phases investigated remain the same in mixed mineral assemblages \citep{davis-2004}. This ignores the likely effects of surface contaminants (adsorbed major solutes such as silicate, organic compounds, etc.) and the overlapping EDL regions of particles that are known to change coulombic terms. In Generalized Composite (GC) approaches \citep{davis-2004, davis-1998}, the coulombic attraction or repulsion terms are not included, but are instead built into the semi-empirical model calibration of reaction stoichiometries and binding constants to experimental data. That is, whatever EDL forces exist, they are lumped into the model fitting of reactions and binding constants. In each case, there is inherent uncertainty in the modeling approach. The errors within the GC model may not be that significant because of model calibration to experimental data, but the error is only minimized by confining model calculations to chemical conditions interpolated between those investigated in laboratory experiments. Extrapolation of any non-electrostatic model to uninvestigated chemical conditions is unwise because the EDL forces for those conditions will not necessarily be captured accurately by the model calibration. In addition the formation of unknown surface species may not be realized if calculations are extrapolated to chemical conditions not investigated at all.
+in Equation~\eqref{eq:KappEDL} need not be considered. 
+While electrical double layer (EDL) models may represent these terms well for simple systems with single mineral phases, 
+the approaches for treating these terms in mixed mineral assemblages have not been studied. 
+In Component Additivity (CA) \citep{davis-2004, davis-1998} applications to sediments, 
+typically authors assume that the EDL properties of pure, clean mineral phases 
+investigated remain the same in mixed mineral assemblages \citep{davis-2004}. 
+This ignores the likely effects of surface contaminants (adsorbed major solutes such as silicate, organic compounds, etc.) 
+and the overlapping EDL regions of particles that are known to change coulombic terms. 
+In Generalized Composite (GC) approaches \citep{davis-2004, davis-1998}, 
+the coulombic attraction or repulsion terms are not included, 
+but are instead built into the semi-empirical model calibration of reaction stoichiometries and binding constants to experimental data. 
+That is, whatever EDL forces exist, they are lumped into the model fitting of reactions and binding constants. 
+In each case, there is inherent uncertainty in the modeling approach. 
+The errors within the GC model may not be that significant because of model calibration to experimental data, 
+but the error is only minimized by confining model calculations to chemical conditions interpolated between those 
+investigated in laboratory experiments. 
+Extrapolation of any non-electrostatic model to uninvestigated chemical conditions is unwise 
+because the EDL forces for those conditions will not necessarily be captured accurately by the model calibration. 
+In addition the formation of unknown surface species may not be realized if calculations are extrapolated to chemical conditions 
+not investigated at all.
 
 \item \textbf{Electrostatic models:}
-When the coulombic attraction or repulsion terms is considered as shown in Equation~\eqref{eq:KappEDL}, the electrostatic models differs also among themselves in how they conceptualize the structure of the double-layer and describe changes in surface potential and surface charge from the surface of the sorbent phase to the bulk solution. In the constant capacity and diffuse-layer models, all adsorbed species are considered specifically adsorbed at the zero plane while the triple layer model can assign adsorbed species to either a zero plane or more distant plane. The constant capacity and diffuse-layer model are elaborated in the following sections.  
+When the coulombic attraction or repulsion terms is considered as shown in Equation~\eqref{eq:KappEDL}, 
+the electrostatic models differs also among themselves in how they conceptualize the structure of the double-layer 
+and describe changes in surface potential and surface charge from the surface of the sorbent phase to the bulk solution. 
+In the constant capacity and diffuse-layer models, all adsorbed species are considered specifically adsorbed at the zero plane 
+while the triple layer model can assign adsorbed species to either a zero plane or more distant plane. 
+The constant capacity and diffuse-layer model are elaborated in the following sections.  
 
 \begin{enumerate}
 \item \textbf{Constant Capacitance} The constant capacitance model is

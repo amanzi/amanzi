@@ -7,7 +7,8 @@
 %
 % -------------------------------------------------------------------------
 
-\section{Thermal Processes}
+\section{Thermal Flow Processes}
+
 \label{sec:thermal-processes}
 
 \subsection{Overview}
@@ -21,12 +22,99 @@ and causing fingering phenomena due to differences in density.
 % Conservation Equations - Energy.
 %---------------------------------------------------------------------------------------------
 
+
+\subsection{Partially saturated flow with water vapors}
+
+In the case of isothermal Richards equations it was possible to neglect water vapors, as 
+presumably their concentration was the same everywhere. 
+In the case when temperature variations cannot be neglected the effects of water vapors could be significant.
+
+The Richards equation is derived from the conservation of liquid mass equation.
+Thus, changing vapor concentrations introduce an additional term 
+$$
+  -\bnabla \cdot \left( \K_g \bnabla \frac{p_v}{p_g} \right) 
+$$
+into \eqref{eq:Darcy}, where 
+$p_v$ and $p_g$ are the vapor and the gas pressures, respectively,
+and
+$\K_g$ is the effective diffusion coefficient of the water vapors.
+The gas pressure is presumed to be equal to the atmospheric one,
+while water vapor pressure is derived from the equilibrium of liquid and gas phases:
+\[
+  p_v = P_\text{sat} (T) \exp\left(\frac{P_\text{cgl}}{\eta_l RT}\right),
+\] 
+where 
+$P_\text{sat}$ is the saturated vapor pressure,
+$P_\text{cgl}$ is the capilary gas-liquid pressure, and 
+$R$ is the ideal gas constant.  
+
+The Richards equation with gas vapors takes the form
+\begin{subequations}\label{eq:Richards with vapors}
+\begin{align}
+  \frac{\partial \theta(p_l)}{\partial t} 
+  &= 
+  -\bnabla \cdot (\eta_l \bq_l)
+  -\bnabla \cdot \left( \K_g \bnabla \frac{p_v}{p_g} \right) 
+  + Q,
+  \\
+  \bq_l 
+  &= 
+  -\frac{\K k_{rl}}{\mu_l} (\bnabla p_l - \rho_l \bg),
+\end{align}
+\end{subequations}
+where 
+$\eta_l$ is the molar liquid density,
+$Q$ is source or sink term [$\ukg \ucdot \um^{-3} \ucdot \us^{-1}$],
+$\K$ is absolute permeability tensor,
+$\mu_l$ is liquid viscosity,
+$\rho_l$ is liquid density, and
+$k_{rl}$ is relative permeability.
+The total volumetric water content $\theta$ has to be modified to include 
+the vapors
+$$
+  \theta = \phi \eta_l\, s_l + \phi (1-\eta_l) X_l,
+$$
+where $X_l$ is molar fraction of water vapors.
+
+The effective diffusion coeficient of water vapor is given by 
+\[
+  \K_g = \phi g_g \tau_g \eta_g D_g,
+\]
+where $s_g$ is gas saturation, 
+$\tau_g$ is the gas tortuosity,
+$\eta_g$ is the molar density of gas, and 
+$D_g$ is the gas diffusion coefficient.
+The later, based on the TOUGHT2 model, is 
+\[
+  D_g D = D_\text{ref} \frac{P_\text{ref}}{p} \frac{T}{T_\text{ref}}^\alpha,
+\]
+where 
+$D_\text{ref} = 2.14\times 10^{-5}$,
+$P_\text{ref}$ is the atmospheric pressure,
+$T_\text{ref} = 273.15$,
+$\alpha=1.8$.
+Finally, we need a model for the gas tortuosity
+for which we use \citet{millington1961permeability} 
+model
+\[
+  \tau_g = \phi^\beta, s_g^\gamma,
+  \qquad \beta = 1/3, \quad \gamma = 7/3.
+\]
+
+
+
+
+
+
+
+
 \subsection{Energy Conservation Equation}
 \label{sec:Energy}
 
-
-One form of the governing equation for energy conservation in a porous medium with porosity $\phi$ is given by
-\BA\label{eq:energy_balance}
+The Richards equation with water vapor have to be supplemented with conservation of energy equation.
+One form of such equation in a porous medium with porosity $\phi$ is given by
+\begin{align}
+\label{eq:energy_balance}
   \frac{\partial}{\partial t} \Big[ 
   \phi \rho_l u_l s_l
   + 
@@ -42,9 +130,9 @@ One form of the governing equation for energy conservation in a porous medium wi
   \right] 
   \eq 
   Q_e,
-\EA
+\end{align}
 where
-$\rho_{r}$ and $\rho_{r}$ are the density, 
+$\rho_{r}$ and $\rho_{l}$ are the density, 
 $u_{r}$ and $u_l$ are the internal energy 
 of the rock and the liquid phases, respectively;
 $\K$ is the absolute permeability tensor,
@@ -56,7 +144,9 @@ $Q_T$ represents thermal conduction and radiation, and
 $Q_{e} $ is a source or sink of energy. 
 Note that the energy consumed/produced by chemical reactions is included in this last term. 
 
-
+The primary variables in \eqref{eq:energy_balance} are the pressure $p_l$ 
+and the temperature $T$. 
+The internal energies $u_r$ and $u_l$ are both functions of temperature.  
 Assuming that the internal energy $u_r$ and the thermal conduction $Q_T$
 have linear dependence on temperature,  
 $$
@@ -103,13 +193,14 @@ where $\kappa_{\rm dry}$ and $\kappa_{\rm sat}$ are dry and fully saturated rock
 and $s_l$ denotes the saturation state of the liquid. 
 
 \paragraph{Evapotranspiration. } 
+%
 Evapotranspiration models should include all the processes that convert water from the aqueous phase into water in the gaseous phase, 
 i.e., water vapor.  
 This should also account for evaporation from soil and plant surfaces and plant transpiration and include options 
 where these components vary wiith soil properties and structure of the plant canopy.
 
 \paragraph{Equation of State.}
-
+%
 For multicomponent system, equation of state (EOS) data is required for water and all the NAPL components.  
 Typically these are EOS for pure substances that are combined for mixtures.  
 A basic EOS relates density to pressure and temperature.  
@@ -125,7 +216,7 @@ contaminants.
 
 
 \paragraph{Mixture Internal Energy and Enthalpy.} 
-
+%
 These will generally follow the simple additive rule based of
 component values and mass fraction. Consideration must be also given
 to heats of solution.
@@ -137,9 +228,16 @@ Equations of state for fluid density, internal energy and/or enthalpy are needed
 in addition to heat capacity and thermal conductivity of the porous medium. 
 Often the fluid properties for a complex mixture are unknown and the pure phase end member properties are used. 
 
-\subsection{Boundary Conditions, Sources and Sinks}
+\subsection{Boundary and Inital Conditions, Sources and Sinks}
 
-Boundary conditions may take the form of specified temperature or heat flux including zero temperature gradient. 
+The boundary conditions for the thermal flow 
+\eqref{eq:Richards with vapors}-\eqref{eq:energy_balance}
+consist of the conditions for each of the equations.
+%the Richards equation with vapor
+%<F6>\eqref{eq:Richards with vapors} and those for the conservation of energy equation \eqref{eq:energy_balance}.
+The choice of the boundary conditions for \eqref{eq:Richards with vapors} are identical to those of Isothermal equaiton.
+The boundary conditions for conservation of energy equation \eqref{eq:energy_balance}
+may take the form of specified temperature or heat flux including zero temperature gradient. 
 Initial conditions include specifying the temperature over the computational domain 
 such as a constant value or derived from the geothermal gradient.
 
