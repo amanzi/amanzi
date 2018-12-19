@@ -59,6 +59,9 @@ class RemapDG_Tests : public Operators::RemapDG {
 template<class AnalyticDG>
 void RemapDG_Tests<AnalyticDG>::InitializeConsistentJacobianDeterminant()
 {
+  int det_method_tmp = det_method_;
+  det_method_ = Operators::OPERATOR_DETERMINANT_VEM;
+
   // constant part of determinant
   DynamicFaceVelocity(0.0);
   DynamicCellVelocity(0.0);
@@ -120,6 +123,8 @@ void RemapDG_Tests<AnalyticDG>::InitializeConsistentJacobianDeterminant()
     for (int i = 0; i < nk; ++i) data(i) = u1c[i][c];
     det1_[c] = basis.CalculatePolynomial(mesh0_, c, order_, data);
   }
+
+  det_method_ = det_method_tmp;
 }
 
 
