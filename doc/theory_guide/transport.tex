@@ -55,56 +55,20 @@ Reactions can strongly modify gradients, and thus transport rates, by either con
 or producing various chemical species.
 
 
-\iffalse
-\begin{center}
-\begin{longtable}{cp{7cm}c}
-\caption{List of local variables.} \label{table:flow-list-of-variables} \\
-
-\multicolumn{1}{c}{Symbol} & \multicolumn{1}{c}{Meaning} & \multicolumn{1}{c}{Units} \\
-\hline  \hline 
-\endfirsthead
-
-\multicolumn{3}{c}{{\tablename} \thetable{} -- Continued} \\
-\multicolumn{1}{c}{Symbol} & \multicolumn{1}{c}{Meaning} & \multicolumn{1}{c}{Units} \\
-\hline  \hline 
-\endhead
-
-\hline \multicolumn{3}{c}{{Continued on next page}} \\ 
-\hline \hline 
-\endfoot
-
-\hline \hline
-\endlastfoot
-
-$p_l$      & liquid pressure      &  $\upa$ \\
-$\bq$      & Darcy velocity       &  $\um\ucdot\us^{-1}$  \\
-$s_l$      & liquid saturation    &  $-$ \\
-$\mu_l$    & liquid viscosity     &  $\upa\ucdot\us$ \\
-$\rho_l$   & liquid density       &  $\ukg\ucdot\um^{-3}$ \\
-$\phi$     & porosity             &  $-$  \\
-$\phi_f$   & porosity of fracture &  $-$  \\
-$\phi_m$   & porosity of matrix   &  $-$  \\
-$\eta_l$   & molar liquid density &  $\umol\ucdot\um^{-3}$ \\
-$C_i$      & concentration of $i$th species    &  $\umol\ucdot\um^{-3}$ \\
-
-
-\end{longtable}
-\end{center}
-\fi
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Single-Phase Transport} 
+\subsection{Transport in Porous Medium} 
 \label{sec:transport-single-phase}
 
-The name of this section single-phase transport indicates that we consider only one liquid phase 
-(vs. multiple liquid phases).
-At the same time we still consider the gas and solid phases as well.
+The name of this section indicates that we consider the pransport processes in the soil with 
+pores, but no fractures.
+At the same time we still consider the gas and solid phases in addition to the liquid pahse.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Process Model Equations} 
 
-The contaminants can be transported through one of three phases:
+The contaminants can be a part of one of three phases:
 solid, liquid or gas.
 When the contaminant $i$ is present in the solid phase (e.g. ice)
 it is assumed not to be moving.
@@ -152,7 +116,7 @@ changes in surface properties due to changes in metabolic state; chemotaxis; pre
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection{Advective Transport}  
+\subsubsection{Advective Fluxes}  
 \label{sec:transport-advection}
 
 Advection is the process where the bulk fluid motion transports mass and heat.  
@@ -180,10 +144,9 @@ average linear velocity of the liquid, and $C_{l,i}$ is the concentration of the
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection{Dispersive Transport}   
+\subsubsection{Dispersive Fluxes}   
 \label{sec:transport-dispersion}
 
-\subsubsection{Overview}
 
 Dispersion of a dissolved constituent refers to its spreading along tortuous pathways in a porous medium caused by mixing effects.  
 Dispersion takes place in the direction of the flow (longitudinal) and normal to the flow (transverse).  
@@ -195,7 +158,7 @@ such as backward dispersion against the direction of flow and scale independence
 it is still widely used in practical applications. 
 Furthermore, it may be the only approach for representing local scale dispersion. 
 
-\subsubsection{Process Model Equations}
+%\subsubsection{Process Model Equations}
 
 The dispersive flux $\bJ_i^{\rm disp}$ for a variably saturated porous medium has the form
 \EQ
@@ -233,12 +196,9 @@ where $\a_L^{H,\,V}$ and $\a_T^{H,\,V}$ refer to the longitudinal and transverse
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection{Diffusive Transport} 
+\subsubsection{Diffusive Fluxes} 
 \label{sec:transport-diffusion}
 
-
-
-\subsubsection{Overview}
 
 \noindent Molecular diffusion is often indistinguishable from mechanical dispersion as a process operating in porous media, and thus the two are often lumped together to form a hydrodynamic dispersion term.  Unlike dispersion, however, there is no effect of flow direction, so the potential difficulties associated with mismatches between flow and grid coordinate direction do not arise.  Molecular diffusion is an entropy-producing process in which the random motion of molecules causes spreading or homogenization of a concentration field.  Atomistic representations of molecular diffusion capture this random motion, but continuum models of the kind considered here typically represent only the average behavior of the molecules.  It is noteworthy, however, that atomistic and continuum models for molecular diffusion do agree if sufficiently long time scales with a sufficient number of molecules are considered \citep{bourg2008modeling}.
 
@@ -247,8 +207,6 @@ where $\a_L^{H,\,V}$ and $\a_T^{H,\,V}$ refer to the longitudinal and transverse
 \noindent In addition to the complexities associated with chemical interactions, it is also necessary to account for the effects of the porous medium through which diffusion occurs.  Corrections to the diffusive flux are often represented with a tortuosity (see Section~\ref{sec:tortuosity} below) based on an upscaled constitutive law intended to capture the heterogeneous pore geometries.  Since diffusion may be restricted or eliminated through narrow pore throats, the effective diffusivity for a specific ion may be quite different from its diffusivity in water alone.  Capturing the multiscale nature of the pore structure and its effect on molecular diffusion remains a challenge.
 
 
-
-\subsubsection{Process Model Equations}
 
 \paragraph{General Formulation for Molecular Diffusion.}
 
@@ -338,7 +296,7 @@ where the saturation, $s_{\alpha}$, can refer to either the gas or the aqueous p
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Boundary Conditions} 
+\subsubsection{Boundary Conditions} 
 \label{sec:transport-boundary-conditions}
 
 \noindent 
@@ -371,6 +329,8 @@ where either $J_0^{\bn}$ or $C_0^{\bn}$ is prescribed.
 The flux term can be a total, advective, or diffusive flux.
 
 
+
+\clearpage
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -424,7 +384,7 @@ The coefficient $\alpha_s$ is the first-order solute mass transfer coefficient [
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Boundary Conditions} 
+\subsubsection{Boundary Conditions} 
 \label{sec:transport-boundary-conditions-dual-porosity}
 
 \noindent 

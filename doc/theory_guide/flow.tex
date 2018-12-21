@@ -42,62 +42,17 @@ for laminar flows with Reynolds numbers less that 10 using the pore throat diame
 There has been some effort to include inertial as well as turbulence effects that can occur near the wells.
 
 It is also assumed that thermodynamic equilibrium (mechanical and thermal) exists for each grid block.  
-Sub-grid scale features will often play a prominent role in multi-fluid simulations. 
+Sub-grid scale features often play a prominent role in multi-fluid simulations. 
 Faults and fractures will likely be fast paths for contaminant transport and can
 effectively be treated with multiple porosity models. 
 Similarly, rate-limited diffusion from clay inclusions can also be modeled with a
 multiple porosity material.
 
-\iffalse
-\begin{center}
-\begin{longtable}{cp{7cm}c}
-\caption{List of local variables.} \label{table:flow-list-of-variables} \\
-
-\multicolumn{1}{c}{Symbol} & \multicolumn{1}{c}{Meaning} & \multicolumn{1}{c}{Units} \\
-\hline  \hline 
-\endfirsthead
-
-\multicolumn{3}{c}{{\tablename} \thetable{} -- Continued} \\
-\multicolumn{1}{c}{Symbol} & \multicolumn{1}{c}{Meaning} & \multicolumn{1}{c}{Units} \\
-\hline  \hline 
-\endhead
-
-\hline \multicolumn{3}{c}{{Continued on next page}} \\ 
-\hline \hline 
-\endfoot
-
-\hline \hline
-\endlastfoot
-
-$h$        & hydrolic head        &  $\um$  \\
-$\bg$      & gravity vector       &  $\um\ucdot\us^{-2}$  \\
-$g$        & gravity magnitude    &  $\um\ucdot\us^{-2}$  \\
-$\K$       & absolute permeability tensor & $\um^2$ \\
-$k_{rl}$   & relative permeability&  $-$ \\
-$p_l$      & liquid pressure      &  $\upa$ \\
-$\bq$      & Darcy velocity       &  $\um\ucdot\us^{-1}$  \\
-$S_s$      & specific storage     &  $\um^{-1}$  \\
-$S_y$      & specific yield       &  $-$  \\
-$s_l$      & liquid saturation    &  $-$ \\
-\hline
-$\mu_l$    & liquid viscosity     &  $\upa\ucdot\us$ \\
-$\rho_l$   & liquid density       &  $\ukg\ucdot\um^{-3}$ \\
-$\phi$     & porosity             &  $-$  \\
-$\phi_f$   & porosity of fracture &  $-$  \\
-$\phi_m$   & porosity of matrix   &  $-$  \\
-$\eta_l$   & molar liquid density &  $\umol\ucdot\um^{-3}$ \\
-$\theta$   & volumetric water content  &  $\umol\ucdot\um^{-3}$ \\
-$\theta_f$ & volumetric water content of fracture &  $\umol\ucdot\um^{-3}$ \\
-$\theta_m$ & volumetric water content of matrix   &  $\umol\ucdot\um^{-3}$ \\
-
-\end{longtable}
-\end{center}
-\fi
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Darcy's Law: Fully Saturated Flow}
+\subsection{Fully Saturated Flow}
 \label{sec:flow-single-phase}
 
 The most basic flow model is a single-phase fully saturated flow in a porous medium.  
@@ -109,16 +64,27 @@ describing subsurface processes.
 \subsubsection{Assumptions and Applicability}
 
 There are many assumptions required for the strict validity of Darcy's Law, 
-including incompressibility and laminararity of the flow.
-We also assume that rock is incompressible and fluid viscosity is constant.
-
+including 
+\begin{itemize}
+\item
+  incompressibility and 
+\item
+  laminararity of the flow.
+\end{itemize}
+We also assume that 
+\begin{itemize}
+\item
+  solid/rock is incompressible,
+\item 
+  fluid viscosity is constant,
+\item
+  there are no fractures, only pores.
+\end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Process Model Equations}
 
-%The governing equations for the single phase flow in porous media 
-%under isothermal conditions are
-Under the above assumptions Darcy's Law equations are
+Under the above assumptions fully saturated flow is governed by 
 \begin{subequations}
 \label{eq:Darcy fully saturated}
 \begin{align}
@@ -130,17 +96,18 @@ Under the above assumptions Darcy's Law equations are
   (\bnabla p_l - \rho_l \bg),
 \end{align}
 \end{subequations}
-where the primary variable is the fluid presure $p_l$. 
-The fluid velocity $\bq_l$ is the dependent variable.
+where the primary variable is the fluid presure $p_l$ [\upa]. 
+The fluid velocity $\bq_l$ [$\um\ucdot\us^{-1}$] is the dependent variable.
 All the other variables can be treated as material parameters
 that sometimes may depend on pressure.
 These include:
-$\phi$ is the porosity,
-$S_s$ and $S_y$ are specific storage and yeild, respectively,
-$g$ is the gravitational constant
-and $\bg$ is the gravitational vector,  
-$L$ is a characteristic size of the yield layer, and 
-$Q$ is source or sink term [$\ukg \ucdot \um^{-3} \ucdot \us^{-1}$].
+$\phi$ [-] is the porosity,
+$S_s$ [$\um^{-1}$] and $S_y$ [-] are specific storage and yeild, respectively,
+$g$ [$\um\ucdot\us^{-2}$] is the gravitational constant
+and $\bg$ [$\um\ucdot\us^{-2}$] is the gravitational vector,  
+$L$ [$\um$] is a characteristic size of the yield layer, 
+$\K$ [$\um^2$] is an absolute permeability tensor, and 
+$Q$ [$\ukg \ucdot \um^{-3} \ucdot \us^{-1}$] is source or sink term.
  
 
 It is common to see the Darcy Law written in terms of hydraulic head $h$
@@ -151,10 +118,9 @@ and the hydraulic conductivity tensor $\K_h$:
   \\
   h \, &=  z + \frac{p_l}{\rho_l g},
   \\
-  \K_h &= \K \, \frac{\rho_l g}{\mu_l},
+  \K_h &= \K \, \frac{\rho_l g}{\mu_l}.
 \end{align}
 \end{subequations}
-where $\K$ is an absolute permeability tensor.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Boundary conditions}
@@ -173,10 +139,12 @@ Three types of \textit{boundary conditions} are supported by the model:
 These boundary conditions are described in Section~\ref{sec:flow-boundary-conditions}.
 
 
+\clearpage
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Isothermal Richards Equation: Partially Saturated Flow}
+\subsection{Partially Saturated Flow}
 \label{sec:richards-equation}
 
 The Richards equation is often used to describe single phase flow under partially 
@@ -190,13 +158,14 @@ degrees of freedom) because it requires only one independent variable per cell.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Assumptions and Applicability}
 
-The Richards equation makes the fundamental assumption that we are neglecting
-the movement of the gas phase.
+The Richards equation makes the fundamental assumption that 
+we are neglecting the movement of the gas phase.
 Because of this assumption, using the Richards equation may limit the kinds of 
 transport analysis that can be done.
 It should also be noted that the Richards equation is often highly nonlinear
 due to strong dependence of the relative permeability of the liquid phase
 on the liquid saturation.
+We also assume that there are no fractures and the water flows through the pores only. 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -206,7 +175,8 @@ on the liquid saturation.
 The Richards equation is derived from the conservation of
 liquid mass equation.
 In the mixed formulation it is written
-for the volumetirc water content $\theta$ and the Darcy velocity $\bq_l$:  
+for the volumetirc water content $\theta$ [$\umol\ucdot\um^{-3}$] 
+and the Darcy velocity $\bq_l$ [$\um\ucdot\us^{-1}$]:  
 \begin{subequations}\label{eq:Darcy}
 \begin{align}
   \frac{\partial \theta(p_l)}{\partial t} 
@@ -219,18 +189,18 @@ for the volumetirc water content $\theta$ and the Darcy velocity $\bq_l$:
 \end{align}
 \end{subequations}
 where 
-$\eta_l$ is the molar liquid density,
-$Q$ is source or sink term [$\ukg \ucdot \um^{-3} \ucdot \us^{-1}$],
-$\K$ is absolute permeability tensor,
-$\mu_l$ is liquid viscosity,
-$\rho_l$ is liquid density, and
-$k_{rl}$ is relative permeability.
+$\eta_l$ [$\umol\ucdot\um^{-3}$] is the molar liquid density,
+$Q$ [$\ukg \ucdot \um^{-3} \ucdot \us^{-1}$] is source or sink term,
+$\K$ [$\um^2$] is absolute permeability tensor,
+$\mu_l$ [$\upa\ucdot\us$ ] is liquid viscosity,
+$\rho_l$ [$\ukg\ucdot\um^{-3}$ ] is liquid density, and
+$k_{rl}$ [-] is relative permeability.
 The total volumetric water content $\theta$ is defined as
 a product of porosity $\phi$, molar liquid density $\eta_l$ and liquid saturation $s_l$:
 $$
   \theta(p_l) = \phi(p_l) \eta_l\, s_l(p_c).
 $$
-Usage of the molar liquid density (units of $\theta$ are $\umol\ucdot\um^{-3}$)
+Usage of the molar liquid density $\theta$
 allows us to easily extend the model to a non-isothermal case.
 
 Just like in the case of the fully saturated flow \eqref{eq:Darcy fully saturated},
@@ -450,14 +420,30 @@ is given by
 %\end{equation}
 
 
+\clearpage
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Isothermal Richards Equation with Dual Porosity Model}
 \label{sec:dual-porosity-richards-equation}
 
-Dual-porosity model assumes that water flow is restricted to the fractures and the
-water in the matrix does not move.
-The rock matrix represents immobile pockets that can exchange, retain and store water
+Dual porosity model is designed to model fluid flows
+when the solid contains both pores/matrix and fractures.
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Assumptions and Applicability} 
+
+
+Typically flow in the fracture is much faster that that in the pores/matrix.
+Therefore, 
+dual-porosity model assumes that water flow is restricted to the fractures.
+The pores in the solid represent immobile pockets that can exchange, retain and store water
 but do not permit convective flow.
 This leads to dual-porosity type flow and transport models that partition the liquid
 phase into mobile and immobile regions.
@@ -626,7 +612,7 @@ the atmospheric pressure), and $p'$ is defined as
 %
 % -------------------------------------------------------------------------
 
-
+\begin{comment}
 
 \subsection{Infiltration} \label{sec:infiltration}
 %
@@ -784,7 +770,7 @@ viscosity for each of the flowing phases.  For more complex problems
 in which we are modeling a multicomponent system, additional data is
 required.
 
-
+\end{comment}
 
 
 \begin{comment}
