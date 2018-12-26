@@ -40,44 +40,54 @@ Teuchos::RCP<PDE_Diffusion> PDE_DiffusionFactory::Create(
     double rho,
     const AmanziGeometry::Point& g)
 {
-  Teuchos::RCP<PDE_Diffusion> op = Teuchos::null;
-
   std::string name = oplist.get<std::string>("discretization primary");
   bool flag = oplist.get<bool>("gravity", false);
 
   // FV methods
   if (name == "fv: default" && !flag) {
-    op = Teuchos::rcp(new PDE_DiffusionFV(oplist, mesh));
+    auto op = Teuchos::rcp(new PDE_DiffusionFV(oplist, mesh));
     op->SetBCs(bc, bc);
+    return op;
 
   } else if (name == "fv: default" && flag) {
-    op = Teuchos::rcp(new PDE_DiffusionFVwithGravity(oplist, mesh, rho, g));
+    auto op = Teuchos::rcp(new PDE_DiffusionFVwithGravity(oplist, mesh, rho, g));
     op->SetBCs(bc, bc);
+    return op;
+
   // NLFV methods
   } else if (name == "nlfv: default" && !flag) {
-    op = Teuchos::rcp(new PDE_DiffusionNLFV(oplist, mesh)); 
+    auto op = Teuchos::rcp(new PDE_DiffusionNLFV(oplist, mesh)); 
     op->SetBCs(bc, bc);
+    return op;
 
   } else if (name == "nlfv: default" && flag) {
-    op = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(oplist, mesh, rho, g)); 
+    auto op = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(oplist, mesh, rho, g)); 
     op->SetBCs(bc, bc);
-  // NLFV BndFaces methods
+    return op;
+
   } else if (name == "nlfv: bnd_faces" && !flag) {
-    op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFaces(oplist, mesh)); 
+    auto op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFaces(oplist, mesh)); 
     op->SetBCs(bc, bc);
+    return op;
+
   } else if (name == "nlfv: bnd_faces" && flag) {
-    op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFacesGravity(oplist, mesh, rho, g)); 
+    auto op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFacesGravity(oplist, mesh, rho, g)); 
     op->SetBCs(bc, bc);      
+    return op;
+
   // MFD methods
   } else if (!flag) {
-    op = Teuchos::rcp(new PDE_DiffusionMFD(oplist, mesh));
+    auto op = Teuchos::rcp(new PDE_DiffusionMFD(oplist, mesh));
+    op->Init(oplist);
     op->SetBCs(bc, bc);
+    return op;
 
   } else {
-    op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(oplist, mesh, rho, g));
+    auto op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(oplist, mesh, rho, g));
+    op->Init(oplist);
     op->SetBCs(bc, bc);
+    return op;
   }
-  return op;
 }
 
 
@@ -93,54 +103,56 @@ Teuchos::RCP<PDE_Diffusion> PDE_DiffusionFactory::Create(
     const Teuchos::RCP<const CompositeVector>& rho,
     const AmanziGeometry::Point& g)
 {
-  Teuchos::RCP<PDE_Diffusion> op = Teuchos::null;
-
   std::string name = oplist.get<std::string>("discretization primary");
   bool flag = oplist.get<bool>("gravity", false);
 
   // FV methods
   if (name == "fv: default" && !flag) {
-    op = Teuchos::rcp(new PDE_DiffusionFV(oplist, mesh));
+    auto op = Teuchos::rcp(new PDE_DiffusionFV(oplist, mesh));
     op->SetBCs(bc, bc);
+    return op;
 
   } else if (name == "fv: default" && flag) {
-    Teuchos::RCP<PDE_DiffusionFVwithGravity> op_g =
-        Teuchos::rcp(new PDE_DiffusionFVwithGravity(oplist, mesh, g));
-    op_g->SetBCs(bc, bc);
-    op_g->SetDensity(rho);
-    op = op_g;
+    auto op = Teuchos::rcp(new PDE_DiffusionFVwithGravity(oplist, mesh, g));
+    op->SetBCs(bc, bc);
+    op->SetDensity(rho);
+    return op;
+
   // NLFV methods
   } else if (name == "nlfv: default" && !flag) {
-    op = Teuchos::rcp(new PDE_DiffusionNLFV(oplist, mesh));
+    auto op = Teuchos::rcp(new PDE_DiffusionNLFV(oplist, mesh));
     op->SetBCs(bc, bc);
+    return op;
 
   } else if (name == "nlfv: default" && flag) {
-    Teuchos::RCP<PDE_DiffusionNLFVwithGravity> op_g =
-      Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(oplist, mesh, rho, g));
-    op_g->SetBCs(bc, bc);
-    op = op_g;
-  // NLFV methods with bnd faces
-  } else if (name == "nlfv: bnd_faces" && !flag) {
-    op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFaces(oplist, mesh));
+    auto op = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(oplist, mesh, rho, g));
     op->SetBCs(bc, bc);
+    return op;
+
+  } else if (name == "nlfv: bnd_faces" && !flag) {
+    auto op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFaces(oplist, mesh));
+    op->SetBCs(bc, bc);
+    return op;
+
   } else if (name == "nlfv: bnd_faces" && flag) {
-    Teuchos::RCP<PDE_DiffusionNLFVwithBndFacesGravity> op_g =
-      Teuchos::rcp(new PDE_DiffusionNLFVwithBndFacesGravity(oplist, mesh, rho, g));
-    op_g->SetBCs(bc, bc);
-    op = op_g;
+    auto op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFacesGravity(oplist, mesh, rho, g));
+    op->SetBCs(bc, bc);
+    return op;
+
   // MFD methods
   } else if (!flag) {
-    op = Teuchos::rcp(new PDE_DiffusionMFD(oplist, mesh));
+    auto op = Teuchos::rcp(new PDE_DiffusionMFD(oplist, mesh));
+    op->Init(oplist);
     op->SetBCs(bc, bc);
+    return op;
 
   } else {
-    Teuchos::RCP<PDE_DiffusionMFDwithGravity> op_g =
-        Teuchos::rcp(new PDE_DiffusionMFDwithGravity(oplist, mesh, g));
-    op_g->SetBCs(bc, bc);
-    op_g->SetDensity(rho);
-    op = op_g;
+    auto op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(oplist, mesh, g));
+    op->Init(oplist);
+    op->SetBCs(bc, bc);
+    op->SetDensity(rho);
+    return op;
   }
-  return op;
 }
 
 
@@ -152,27 +164,31 @@ Teuchos::RCP<PDE_Diffusion> PDE_DiffusionFactory::Create(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     const Teuchos::RCP<BCs>& bc)
 {
-  Teuchos::RCP<PDE_Diffusion> op = Teuchos::null;
   std::string name = oplist.get<std::string>("discretization primary");
   
   // FV methods
   if (name == "fv: default") {
-    op = Teuchos::rcp(new PDE_DiffusionFV(oplist, mesh));
+    auto op = Teuchos::rcp(new PDE_DiffusionFV(oplist, mesh));
     op->SetBCs(bc, bc);
-  // NLFV methods
+    return op;
+
   } else if (name == "nlfv: default") {
-    op = Teuchos::rcp(new PDE_DiffusionNLFV(oplist, mesh)); 
+    auto op = Teuchos::rcp(new PDE_DiffusionNLFV(oplist, mesh)); 
     op->SetBCs(bc, bc);
-  // NLFV Bnd methods    
+    return op;
+
   } else if (name == "nlfv: bnd_faces") {
-    op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFaces(oplist, mesh)); 
+    auto op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFaces(oplist, mesh)); 
     op->SetBCs(bc, bc);
+    return op;
+
   // MFD methods
   } else {
-    op = Teuchos::rcp(new PDE_DiffusionMFD(oplist, mesh));
+    auto op = Teuchos::rcp(new PDE_DiffusionMFD(oplist, mesh));
+    op->Init(oplist);
     op->SetBCs(bc, bc);
+    return op;
   }
-  return op;
 }
   
 
@@ -183,22 +199,26 @@ Teuchos::RCP<PDE_Diffusion> PDE_DiffusionFactory::Create(
     Teuchos::ParameterList& oplist,
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
 {
-  Teuchos::RCP<PDE_Diffusion> op = Teuchos::null;
   std::string name = oplist.get<std::string>("discretization primary");
   
   if (name == "fv: default") {
-    op = Teuchos::rcp(new PDE_DiffusionFV(oplist, mesh));
-  // // NLFV methods
+    auto op = Teuchos::rcp(new PDE_DiffusionFV(oplist, mesh));
+    return op;
+
   } else if (name == "nlfv: default") {
-    op = Teuchos::rcp(new PDE_DiffusionNLFV(oplist, mesh)); 
-  // NLFV Bnd methods    
+    auto op = Teuchos::rcp(new PDE_DiffusionNLFV(oplist, mesh)); 
+    return op;
+
   } else if (name == "nlfv: bnd_faces") {
-    op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFaces(oplist, mesh)); 
+    auto op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFaces(oplist, mesh)); 
+    return op;
+
   // MFD methods    
   } else {
-    op = Teuchos::rcp(new PDE_DiffusionMFD(oplist, mesh));
+    auto op = Teuchos::rcp(new PDE_DiffusionMFD(oplist, mesh));
+    op->Init(oplist);
+    return op;
   }
-  return op;
 }
   
 
@@ -209,22 +229,27 @@ Teuchos::RCP<PDE_Diffusion> PDE_DiffusionFactory::Create(
     Teuchos::ParameterList& oplist,
     const Teuchos::RCP<Operator>& global_op)
 {
-  Teuchos::RCP<PDE_Diffusion> op = Teuchos::null;
   std::string name = oplist.get<std::string>("discretization primary");
   
   if (name == "fv: default") {
-    op = Teuchos::rcp(new PDE_DiffusionFV(oplist, global_op));
+    auto op = Teuchos::rcp(new PDE_DiffusionFV(oplist, global_op));
+    return op;
+
   // NLFV methods
   } else if (name == "nlfv: default") {
-    op = Teuchos::rcp(new PDE_DiffusionNLFV(oplist,  global_op)); 
-  // NLFV Bnd methods    
+    auto op = Teuchos::rcp(new PDE_DiffusionNLFV(oplist,  global_op)); 
+    return op;
+
   } else if (name == "nlfv: bnd_faces") {
-    op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFaces(oplist,  global_op)); 
+    auto op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFaces(oplist,  global_op)); 
+    return op;
+
   // MFD methods    
   } else {
-    op = Teuchos::rcp(new PDE_DiffusionMFD(oplist, global_op));
+    auto op = Teuchos::rcp(new PDE_DiffusionMFD(oplist, global_op));
+    op->Init(oplist);
+    return op;
   }
-  return op;
 }
 
 
@@ -239,23 +264,31 @@ Teuchos::RCP<PDE_DiffusionWithGravity> PDE_DiffusionFactory::CreateWithGravity(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     const Teuchos::RCP<BCs>& bc)
 {
-  Teuchos::RCP<PDE_DiffusionWithGravity> op = Teuchos::null;
   std::string name = oplist.get<std::string>("discretization primary");
   
   if (name == "fv: default") {
-    op = Teuchos::rcp(new PDE_DiffusionFVwithGravity(oplist, mesh));
+    auto op = Teuchos::rcp(new PDE_DiffusionFVwithGravity(oplist, mesh));
+    op->SetBCs(bc, bc);
+    return op;
+
   // NLFV methods
   } else if (name == "nlfv: default") {
-    op = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(oplist, mesh)); 
-  // NLFV Bnd methods    
+    auto op = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(oplist, mesh)); 
+    op->SetBCs(bc, bc);
+    return op;
+
   } else if (name == "nlfv: bnd_faces") {
-    op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFacesGravity(oplist, mesh)); 
+    auto op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFacesGravity(oplist, mesh)); 
+    op->SetBCs(bc, bc);
+    return op;
+
   // MFD methods     
   } else {
-    op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(oplist, mesh));
+    auto op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(oplist, mesh));
+    op->Init(oplist);
+    op->SetBCs(bc, bc);
+    return op;
   }
-  op->SetBCs(bc, bc);
-  return op;
 }
 
 
@@ -269,23 +302,31 @@ Teuchos::RCP<PDE_DiffusionWithGravity> PDE_DiffusionFactory::CreateWithGravity(
     const Teuchos::RCP<Operator>& global_op,
     const Teuchos::RCP<BCs>& bc)
 {
-  Teuchos::RCP<PDE_DiffusionWithGravity> op = Teuchos::null;
   std::string name = oplist.get<std::string>("discretization primary");
   
   if (name == "fv: default") {
-    op = Teuchos::rcp(new PDE_DiffusionFVwithGravity(oplist, global_op));
+    auto op = Teuchos::rcp(new PDE_DiffusionFVwithGravity(oplist, global_op));
+    op->SetBCs(bc, bc);
+    return op;
+
   // NLFV
   } else if (name == "nlfv: default") {
-    op = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(oplist, global_op)); 
-  // NLFV Bnd methods    
+    auto op = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(oplist, global_op)); 
+    op->SetBCs(bc, bc);
+    return op;
+
   } else if (name == "nlfv: bnd_faces") {
-    op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFacesGravity(oplist, global_op)); 
+    auto op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFacesGravity(oplist, global_op)); 
+    op->SetBCs(bc, bc);
+    return op;
+
   // MFD methods        
   } else {
-    op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(oplist, global_op));
+    auto op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(oplist, global_op));
+    op->Init(oplist);
+    op->SetBCs(bc, bc);
+    return op;
   }
-  op->SetBCs(bc, bc);
-  return op;
 }
 
 
@@ -298,22 +339,27 @@ Teuchos::RCP<PDE_DiffusionWithGravity> PDE_DiffusionFactory::CreateWithGravity(
     Teuchos::ParameterList& oplist,
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
 {
-  Teuchos::RCP<PDE_DiffusionWithGravity> op = Teuchos::null;
   std::string name = oplist.get<std::string>("discretization primary");
   
   if (name == "fv: default") {
-    op = Teuchos::rcp(new PDE_DiffusionFVwithGravity(oplist, mesh));
+    auto op = Teuchos::rcp(new PDE_DiffusionFVwithGravity(oplist, mesh));
+    return op;
+
   // NLFV methods
   } else if (name == "nlfv: default") {
-    op = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(oplist, mesh)); 
-  // NLFV Bnd methods    
+    auto op = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(oplist, mesh)); 
+    return op;
+
   } else if (name == "nlfv: bnd_faces") {
-    op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFacesGravity(oplist, mesh)); 
+    auto op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFacesGravity(oplist, mesh)); 
+    return op;
+
   // MFD methods     
   } else {
-    op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(oplist, mesh));
+    auto op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(oplist, mesh));
+    op->Init(oplist);
+    return op;
   }
-  return op;
 }
 
 
@@ -326,22 +372,27 @@ Teuchos::RCP<PDE_DiffusionWithGravity> PDE_DiffusionFactory::CreateWithGravity(
     Teuchos::ParameterList& oplist,
     const Teuchos::RCP<Operator>& global_op)
 {
-  Teuchos::RCP<PDE_DiffusionWithGravity> op = Teuchos::null;
   std::string name = oplist.get<std::string>("discretization primary");
   
   if (name == "fv: default") {
-    op = Teuchos::rcp(new PDE_DiffusionFVwithGravity(oplist, global_op));
+    auto op = Teuchos::rcp(new PDE_DiffusionFVwithGravity(oplist, global_op));
+    return op;
+
   // NLFV methods
   } else if (name == "nlfv: default") {
-    op = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(oplist,  global_op)); 
-  // NLFV Bnd methods    
+    auto op = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(oplist,  global_op)); 
+    return op;
+
   } else if (name == "nlfv: bnd_faces") {
-    op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFacesGravity(oplist,  global_op)); 
+    auto op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFacesGravity(oplist,  global_op)); 
+    return op;
+
   // MFD methods     
   } else {
-    op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(oplist, global_op));
+    auto op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(oplist, global_op));
+    op->Init(oplist);
+    return op;
   }
-  return op;
 }
 
 }  // namespace Operators

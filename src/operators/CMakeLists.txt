@@ -95,6 +95,7 @@ set(operators_inc_files
     PDE_DiffusionNLFVwithBndFaces.hh
     PDE_DiffusionNLFVwithGravity.hh
     PDE_DiffusionDG.hh
+    PDE_DiffusionFracturedMatrix.hh
     PDE_Elasticity.hh
     PDE_Electromagnetics.hh
     PDE_MagneticDiffusion.hh
@@ -141,6 +142,7 @@ add_amanzi_library(operators
                           PDE_DiffusionNLFV.cc PDE_DiffusionNLFVwithGravity.cc
                           PDE_DiffusionNLFVwithBndFaces.cc PDE_DiffusionNLFVwithBndFacesGravity.cc
                           PDE_DiffusionDG.cc
+                          PDE_DiffusionFracturedMatrix.cc
                           PDE_DiffusionFactory.cc                   
                           PDE_HelperDiscretization.cc
                           PDE_Elasticity.cc
@@ -235,6 +237,11 @@ if (BUILD_TESTS)
     add_amanzi_test(operators_diffusion_dg operators_diffusion_dg
                     KIND unit
                     SOURCE test/Main.cc test/operator_diffusion_dg.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(operators_diffusion_fractured_matrix operators_diffusion_fractured_matrix
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_diffusion_fractured_matrix.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(operators_commute operators_commute

@@ -174,6 +174,7 @@ void RunTest(std::string op_list_name) {
 
     Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);
     PDE_DiffusionMFD op(olist, surfmesh);
+    op.Init(olist);
     op.SetBCs(bc, bc);
 
     // get the global operator

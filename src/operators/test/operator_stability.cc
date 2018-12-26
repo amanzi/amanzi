@@ -127,6 +127,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     // create the local diffusion operator
     Teuchos::ParameterList olist = plist.sublist("PK operators").sublist("mixed diffusion");
     PDE_DiffusionMFD op2(olist, mesh);
+    op2.Init(olist);
     op2.SetBCs(bc, bc);
 
     int schema_dofs = op2.schema_dofs();
@@ -282,6 +283,7 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     // create the local diffusion operator
     Teuchos::ParameterList olist = plist.sublist("PK operators").sublist("nodal diffusion");
     PDE_DiffusionMFD op2(olist, mesh);
+    op2.Init(olist);
     op2.SetBCs(bc, bc);
 
     int schema_dofs = op2.schema_dofs();

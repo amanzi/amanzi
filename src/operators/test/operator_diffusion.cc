@@ -126,7 +126,8 @@ void RunTestDiffusionMixed(int dim, double gravity) {
   g[dim - 1] = -gravity;
 
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator mixed");
-  Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(op_list, mesh, rho, g));
+  auto op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(op_list, mesh, rho, g));
+  op->Init(op_list);
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 

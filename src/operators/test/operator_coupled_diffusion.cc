@@ -33,8 +33,6 @@
 // Operators
 #include "BCs.hh"
 #include "OperatorDefs.hh"
-#include "PDE_DiffusionMFD.hh"
-#include "PDE_DiffusionFV.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "TreeOperator.hh"
 

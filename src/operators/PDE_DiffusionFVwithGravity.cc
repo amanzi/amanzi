@@ -26,7 +26,7 @@ namespace Operators {
 /* ******************************************************************
 * This completes initialization of the base class.
 ****************************************************************** */
-void PDE_DiffusionFVwithGravity::InitDiffusion_(Teuchos::ParameterList& plist)
+void PDE_DiffusionFVwithGravity::Init_(Teuchos::ParameterList& plist)
 {
   gravity_term_ = Teuchos::rcp(new CompositeVector(*transmissibility_));
 }

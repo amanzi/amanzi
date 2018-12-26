@@ -92,7 +92,8 @@ TEST(OPERATOR_DIFFUSION_EDGES) {
 
   // create diffusion operator 
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator edge");
-  Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionMFD(op_list, mesh));
+  auto op = Teuchos::rcp(new PDE_DiffusionMFD(op_list, mesh));
+  op->Init(op_list);
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
