@@ -29,6 +29,12 @@ class PDE_DiffusionFracturedMatrix : public PDE_DiffusionMFD {
 
   // main interface members
   virtual void Init(Teuchos::ParameterList& plist) override;
+
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
+                              const Teuchos::Ptr<const CompositeVector>& u) override;
+
+ private:
+  std::vector<int> points_;
 };
 
 }  // namespace Operators

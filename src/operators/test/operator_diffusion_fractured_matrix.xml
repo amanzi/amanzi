@@ -16,7 +16,7 @@
     <ParameterList name="AztecOO CG">
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
-        <Parameter name="maximum number of iterations" type="int" value="1000"/>
+        <Parameter name="maximum number of iterations" type="int" value="10"/>
         <Parameter name="error tolerance" type="double" value="1e-14"/>
       </ParameterList>
     </ParameterList>
@@ -36,7 +36,6 @@
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
-      <Parameter name="discretization method" type="string" value="generic mfd"/>
       <Parameter name="preconditioner type" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="cycle applications" type="int" value="2"/>
@@ -46,6 +45,10 @@
         <Parameter name="relaxation type" type="int" value="6"/>
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="identity">
+      <Parameter name="preconditioner type" type="string" value="identity"/>
     </ParameterList>
   </ParameterList>
 

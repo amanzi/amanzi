@@ -107,8 +107,6 @@ void PDE_DiffusionMFD::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u)
 {
-
-
   if (k_ != Teuchos::null) k_->ScatterMasterToGhosted();
 
   if (!exclude_primary_terms_) {
