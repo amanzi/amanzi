@@ -41,7 +41,7 @@
 /* *****************************************************************
 * Exactness test for mixed diffusion solver.
 ***************************************************************** */
-void RunTestDiffusionMixed(int dim, double gravity) {
+void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre AMG") {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -137,11 +137,13 @@ void RunTestDiffusionMixed(int dim, double gravity) {
   // get and assemble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   op->ApplyBCs(true, true, true);
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
+  if (pc_name != "identity") {
+    global_op->SymbolicAssembleMatrix();
+    global_op->AssembleMatrix();
+  }
 
   // create preconditoner using the base operator class
-  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  ParameterList slist = plist.sublist("preconditioners").sublist(pc_name);
   global_op->InitializePreconditioner(slist);
   global_op->UpdatePreconditioner();
 
@@ -188,13 +190,13 @@ void RunTestDiffusionMixed(int dim, double gravity) {
         pl2_err, pinf_err, ul2_err, uinf_err, solver.num_itrs());
 
     CHECK(pl2_err < 1e-12 && ul2_err < 1e-12);
-    CHECK(solver.num_itrs() < 10);
+    if (pc_name != "identity") CHECK(solver.num_itrs() < 10);
   }
 }
 
 
 TEST(OPERATOR_DIFFUSION_MIXED) {
-  RunTestDiffusionMixed(2, 0.0);
+  RunTestDiffusionMixed(2, 0.0, "identity");
   RunTestDiffusionMixed(3, 0.0);
 }
 

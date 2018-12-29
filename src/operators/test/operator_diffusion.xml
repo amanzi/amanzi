@@ -81,7 +81,6 @@
   <!-- PRECONDITIONERS -->
   <ParameterList name="preconditioners">
     <ParameterList name="Hypre AMG">
-      <Parameter name="discretization method" type="string" value="generic mfd"/>
       <Parameter name="preconditioner type" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
         <Parameter name="cycle applications" type="int" value="2"/>
@@ -91,6 +90,10 @@
         <Parameter name="relaxation type" type="int" value="6"/>
         <Parameter name="verbosity" type="int" value="0"/>
       </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="identity">
+      <Parameter name="preconditioner type" type="string" value="identity"/>
     </ParameterList>
   </ParameterList>
 
