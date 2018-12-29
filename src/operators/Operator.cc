@@ -413,9 +413,14 @@ void Operator::InitPreconditioner(Teuchos::ParameterList& plist)
 ****************************************************************** */
 void Operator::InitializePreconditioner(Teuchos::ParameterList& plist)
 {
-  if (A_.get() == NULL || smap_.get() == NULL) {
-    Errors::Message msg("InitializePreconditioner has no matrix or super map.\n");
-    Exceptions::amanzi_throw(msg);
+  if (smap_.get() == NULL) {
+    if (plist.isParameter("preconditioner type") &&
+        plist.get<std::string>("preconditioner type") == "identity") {
+      smap_ = CreateSuperMap(*cvs_col_, schema(), 1);
+    } else {
+      Errors::Message msg("Operator has no super map to be initialized.\n");
+      Exceptions::amanzi_throw(msg);
+    }
   }
 
   // provide block ids for block strategies.
@@ -445,8 +450,8 @@ void Operator::InitializePreconditioner(Teuchos::ParameterList& plist)
 ****************************************************************** */
 void Operator::UpdatePreconditioner()
 {
-  if (A_.get() == NULL || preconditioner_.get() == NULL) {
-    Errors::Message msg("UpdatePreconditioner has no matrix or preconditioner.\n");
+  if (preconditioner_.get() == NULL) {
+    Errors::Message msg("Operator has no matrix or preconditioner for update.\n");
     Exceptions::amanzi_throw(msg);
   }
   preconditioner_->Update(A_);
