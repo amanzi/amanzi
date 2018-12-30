@@ -33,6 +33,18 @@ class PDE_DiffusionFracturedMatrix : public PDE_DiffusionMFD {
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
                               const Teuchos::Ptr<const CompositeVector>& u) override;
 
+  // modify matrix due to boundary conditions 
+  //    primary=true indicates that the operator updates both matrix and right-hand
+  //      side using BC data. If primary=false, only matrix is changed.
+  //    eliminate=true indicates that we eliminate essential BCs for a trial 
+  //      function, i.e. zeros go in the corresponding matrix columns and 
+  //      right-hand side is modified using BC values. This is the optional 
+  //      parameter that enforces symmetry for a symmetric tree operators.
+  //    essential_eqn=true indicates that the operator places a positive number on 
+  //      the main matrix diagonal for the case of essential BCs. This is the
+  //      implementation trick.
+  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
+
  private:
   std::vector<int> points_;
 };

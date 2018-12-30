@@ -144,6 +144,109 @@ void PDE_DiffusionFracturedMatrix::UpdateMatrices(
   }
 }
 
+
+/* ******************************************************************
+* Apply boundary conditions to the local matrices. We always zero-out
+* matrix rows for essential test BCs. As to trial BCs, there are
+* options: eliminate them or not. Finally we may add the essential BC
+* the the system of equations as the trivial equations.
+*
+* Note: BCs imposed incorrectly on faces with many DOFs.
+****************************************************************** */
+void PDE_DiffusionFracturedMatrix::ApplyBCs(
+    bool primary, bool eliminate, bool essential_eqn)
+{
+  // apply diffusion type BCs to FACE-CELL system
+  AmanziMesh::Entity_ID_List faces;
+
+  const std::vector<int>& bc_model_trial = bcs_trial_[0]->bc_model();
+  const std::vector<int>& bc_model_test = bcs_test_[0]->bc_model();
+
+  const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
+  const std::vector<double>& bc_mixed = bcs_trial_[0]->bc_mixed();
+
+  global_op_->rhs()->PutScalarGhosted(0.0);
+  Epetra_MultiVector& rhs_face = *global_op_->rhs()->ViewComponent("face", true);
+  Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
+
+  const auto& map = rhs_face.Map();
+
+  for (int c = 0; c != ncells_owned; ++c) {
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+    
+    bool flag(true);
+    WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
+    int nrows = Acell.NumRows();
+        
+    // essential conditions for test functions
+    int np(0);
+    for (int n = 0; n != nfaces; ++n) {
+      int f = faces[n];
+      if (bc_model_test[f] == OPERATOR_BC_DIRICHLET) {
+        if (flag) {  // make a copy of elemental matrix
+          local_op_->matrices_shadow[c] = Acell;
+          flag = false;
+        }
+        for (int k = 0; k < map.ElementSize(f); ++k) {
+          for (int m = 0; m < nrows; m++) Acell(np + k, m) = 0.0;
+        }
+      }
+      np += map.ElementSize(f);
+    }
+
+    // conditions for trial functions
+    np = 0;
+    for (int n = 0; n != nfaces; ++n) {
+      int f = faces[n];
+      int first = map.FirstPointInElement(f);
+      double value = bc_value[f];
+
+      if (bc_model_trial[f] == OPERATOR_BC_DIRICHLET) {
+        // make a copy of elemental matrix for post-processing
+        if (flag) {
+          local_op_->matrices_shadow[c] = Acell;
+          flag = false;
+        }
+
+        if (eliminate) { 
+          for (int m = 0; m < nfaces; m++) {
+            int k = map.FirstPointInElement(faces[m]);
+            rhs_face[0][k] -= Acell(m, np) * value;
+            Acell(m, np) = 0.0;
+          }
+
+          rhs_cell[0][c] -= Acell(nrows - 1, np) * value;
+          Acell(nrows - 1, np) = 0.0;
+        }
+
+        if (essential_eqn) {
+          rhs_face[0][first] = value;
+          Acell(np, np) = 1.0;
+        }
+
+      } else if (bc_model_trial[f] == OPERATOR_BC_NEUMANN && primary) {
+        rhs_face[0][first] -= value * mesh_->face_area(f);
+
+      } else if (bc_model_trial[f] == OPERATOR_BC_TOTAL_FLUX && primary) {
+        rhs_face[0][first] -= value * mesh_->face_area(f);
+
+      } else if (bc_model_trial[f] == OPERATOR_BC_MIXED && primary) {
+        if (flag) {  // make a copy of elemental matrix
+          local_op_->matrices_shadow[c] = Acell;
+          flag = false;
+        }
+        double area = mesh_->face_area(f);
+        rhs_face[0][first] -= value * area;
+        Acell(np, np) += bc_mixed[f] * area;
+      }
+      np += map.ElementSize(f);
+    }
+  }
+
+  global_op_->rhs()->GatherGhostedToMaster("face", Add);
+}
+
 }  // namespace Operators
 }  // namespace Amanzi
 
