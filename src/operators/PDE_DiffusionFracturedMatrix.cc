@@ -72,6 +72,7 @@ void PDE_DiffusionFracturedMatrix::Init(Teuchos::ParameterList& plist)
   cvs->AddComponent("cell", AmanziMesh::CELL, 1);
 
   global_op_ = Teuchos::rcp(new Operator_FaceCell(cvs, plist));
+  global_op_->set_variable_dofs(true);
 
   std::string name = "DiffusionFracturedMatrix: CELL_FACE+CELL";
   local_op_ = Teuchos::rcp(new Op_Cell_FaceCell(name, mesh_));
@@ -123,16 +124,17 @@ void PDE_DiffusionFracturedMatrix::UpdateMatrices(
       map.push_back(npoints + shift);
       npoints += n;
     }
+    map.push_back(npoints);
     
     // resize matrix
     if (npoints != nfaces) {
       auto& Acell = local_op_->matrices[c];
 
-      WhetStone::DenseMatrix Anew(npoints, npoints);
+      WhetStone::DenseMatrix Anew(npoints + 1, npoints + 1);
       Anew.PutScalar(0.0);
 
-      for (int i = 0; i < nfaces; ++i) {
-        for (int j = 0; j < nfaces; ++j) {
+      for (int i = 0; i < nfaces + 1; ++i) {
+        for (int j = 0; j < nfaces + 1; ++j) {
           Anew(map[i], map[j]) = Acell(i, j);
         }
       }
