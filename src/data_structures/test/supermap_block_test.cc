@@ -1,5 +1,5 @@
 /*
-  This is the operator component of the Amanzi code. 
+  Data Structures
 
   Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -39,7 +39,6 @@ TEST(SUPERMAP_MANUAL) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
-  //  using namespace Amanzi::Operators;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
@@ -54,12 +53,11 @@ TEST(SUPERMAP_MANUAL) {
     size[i] = i+1;
   }
 
-  Teuchos::RCP<Epetra_BlockMap> owned_map1 =
-    Teuchos::rcp(new Epetra_BlockMap(3*NumProc, 3, &gids[0], &size[0], 0, comm));
+  auto owned_map1 = Teuchos::rcp(new Epetra_BlockMap(3*NumProc, 3, &gids[0], &size[0], 0, comm));
   
   if (MyPID > 0) gids.push_back(3*MyPID-1);
   if (MyPID < NumProc-1) gids.push_back(3*(MyPID+1));
-  Teuchos::RCP<Epetra_BlockMap> ghosted_map1 = Teuchos::rcp(new Epetra_BlockMap(-1, gids.size(), &gids[0], &size[0], 0, comm));
+  auto ghosted_map1 = Teuchos::rcp(new Epetra_BlockMap(-1, gids.size(), &gids[0], &size[0], 0, comm));
 
   // make a ghosted and local map 2
   std::vector<int> gids2(5), size2(5);
@@ -67,26 +65,32 @@ TEST(SUPERMAP_MANUAL) {
     gids2[i] = 5*MyPID + i;
     size2[i] = i%2 + 1;
   }
-  Teuchos::RCP<Epetra_BlockMap> owned_map2 =
-    Teuchos::rcp(new Epetra_BlockMap(5*NumProc, 5, &gids2[0], &size2[0], 0, comm));
+  auto owned_map2 = Teuchos::rcp(new Epetra_BlockMap(5*NumProc, 5, &gids2[0], &size2[0], 0, comm));
 
   if (MyPID > 0) gids2.push_back(5*MyPID-1);
   if (MyPID < NumProc-1) gids2.push_back(5*(MyPID+1));
-  Teuchos::RCP<Epetra_BlockMap> ghosted_map2 = Teuchos::rcp(new Epetra_BlockMap(-1, gids2.size(), &gids2[0],  &size2[0], 0, comm));
+  auto ghosted_map2 = Teuchos::rcp(new Epetra_BlockMap(-1, gids2.size(), &gids2[0],  &size2[0], 0, comm));
 
   // make the supermap
-  std::vector<std::string> names; names.push_back("map1"); names.push_back("map2");
+  std::vector<std::string> names;
+  names.push_back("map1");
+  names.push_back("map2");
   std::vector<int> dofnums(2,1);
+
   std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps;
   maps.push_back(owned_map1);
   maps.push_back(owned_map2);
   std::vector<Teuchos::RCP<const Epetra_BlockMap> > gmaps;
   gmaps.push_back(ghosted_map1);
   gmaps.push_back(ghosted_map2);
+
   Operators::SuperMap map(comm, names, dofnums, maps, gmaps);
 
+  std::cout << "======= Two Block Map =======" << std::endl;
+  maps[0]->Print(std::cout);
+  maps[0]->Print(std::cout);
+  std::cout << "\n======= SuperMap =======" << std::endl;
   map.Map()->Print(std::cout);
-  //return;
   
   // check the offsets
   CHECK(map.Offset("map1") == 0);
@@ -132,7 +136,6 @@ TEST(SUPERMAP_MANUAL) {
   // Epetra_Import importer(*map.GhostedMap(), *map.Map());
 
 
-  
   // for (int i=0; i!=map.Map()->NumMyElements(); ++i) {
   //   for (int j=0; j<map.Map()->ElementSize(i); ++j){
   //     owned[map.Map()->FirstPointInElement(i) + j] = map.Map()->GID(i);

@@ -1,5 +1,5 @@
 /*
-  This is the operator component of the Amanzi code. 
+  Data Structures
 
   Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -69,8 +69,6 @@ TEST(SUPERMAP_MANUAL) {
   if (MyPID < NumProc-1) gids2.push_back(5*(MyPID+1));
   Teuchos::RCP<Epetra_Map> ghosted_map2 = Teuchos::rcp(new Epetra_Map(-1, gids2.size(), &gids2[0], 0, comm));
 
-
-  
   // make the supermap
   std::vector<std::string> names; names.push_back("map1"); names.push_back("map2");
   std::vector<int> dofnums(2,2);
@@ -86,8 +84,6 @@ TEST(SUPERMAP_MANUAL) {
   CHECK(map.Offset("map1") == 0);
   CHECK(map.Offset("map2") == 2*3);
 
-
-  
   // check the ghosted offsets
   CHECK(map.GhostedOffset("map1") == (2*3 + 2*5));
   if (NumProc > 1) {
