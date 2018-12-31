@@ -22,7 +22,8 @@ namespace WhetStone {
 * Prepare scaling data for the regularized basis.
 ****************************************************************** */
 void Basis_Regularized::Init(
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order)
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order,
+    Polynomial& integrals)
 {
   int k0 = monomial_scales_.size();
 

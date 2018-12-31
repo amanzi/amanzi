@@ -120,6 +120,7 @@ void RunTest(std::string op_list_name) {
   // add the diffusion operator
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);
   PDE_DiffusionMFD op(olist, surfmesh);
+  op.Init(olist);
   op.SetBCs(bc, bc);
   op.Setup(K, Teuchos::null, Teuchos::null);
   op.UpdateMatrices(Teuchos::null, Teuchos::null);

@@ -20,7 +20,6 @@ namespace Operators {
 class BCs_Factory {
  public:
   BCs_Factory() {};
-
   
   Teuchos::RCP<const AmanziMesh::Mesh> mesh() const { return mesh_; }
   void set_mesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) { mesh_ = mesh; }

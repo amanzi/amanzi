@@ -43,7 +43,7 @@ class PDE_DiffusionFVwithGravity : public PDE_DiffusionFV,
       PDE_Diffusion(global_op)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV_GRAVITY;
-    InitDiffusion_(plist);
+    Init_(plist);
   }
 
   PDE_DiffusionFVwithGravity(Teuchos::ParameterList& plist,
@@ -53,7 +53,7 @@ class PDE_DiffusionFVwithGravity : public PDE_DiffusionFV,
       PDE_Diffusion(mesh)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV_GRAVITY;
-    InitDiffusion_(plist);
+    Init_(plist);
   }
 
   PDE_DiffusionFVwithGravity(Teuchos::ParameterList& plist,
@@ -64,7 +64,7 @@ class PDE_DiffusionFVwithGravity : public PDE_DiffusionFV,
       PDE_Diffusion(global_op)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV_GRAVITY;
-    InitDiffusion_(plist);
+    Init_(plist);
 
     SetGravity(g);
   }
@@ -77,7 +77,7 @@ class PDE_DiffusionFVwithGravity : public PDE_DiffusionFV,
       PDE_Diffusion(mesh)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV_GRAVITY;
-    InitDiffusion_(plist);
+    Init_(plist);
 
     SetGravity(g);
   }
@@ -90,7 +90,7 @@ class PDE_DiffusionFVwithGravity : public PDE_DiffusionFV,
       PDE_Diffusion(global_op)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV_GRAVITY;
-    InitDiffusion_(plist);
+    Init_(plist);
 
     SetGravity(g);
     SetDensity(rho);
@@ -104,7 +104,7 @@ class PDE_DiffusionFVwithGravity : public PDE_DiffusionFV,
       PDE_Diffusion(mesh)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV_GRAVITY;
-    InitDiffusion_(plist);
+    Init_(plist);
 
     SetGravity(g);
     SetDensity(rho);
@@ -166,7 +166,7 @@ class PDE_DiffusionFVwithGravity : public PDE_DiffusionFV,
 
   void ComputeTransmissibility_(Teuchos::RCP<CompositeVector> g_cv);
 
-  virtual void InitDiffusion_(Teuchos::ParameterList& plist) override;
+  void Init_(Teuchos::ParameterList& plist);
 
  protected:
   Teuchos::RCP<CompositeVector> gravity_term_;

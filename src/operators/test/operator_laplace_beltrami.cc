@@ -112,7 +112,8 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
 
   // create diffusion operator 
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(diff_op);
-  Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionMFD(olist, surfmesh));
+  auto op = Teuchos::rcp(new PDE_DiffusionMFD(olist, surfmesh));
+  op->Init(olist);
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 

@@ -146,7 +146,7 @@ class Operator {
  public:
   // constructors
   // At the moment CVS is the domain and range of the operator
-  Operator() { apply_calls_ = 0; }
+  Operator() { apply_calls_ = 0; variable_dofs_ = false; }
 
   // deprecated but yet supported
   Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
@@ -257,6 +257,9 @@ class Operator {
   void OpExtend(op_iterator begin, op_iterator end);
   void OpReplace(const Teuchos::RCP<Op>& op, int index) { ops_[index] = op; }
 
+  // other modifiers
+  void set_variable_dofs(bool val) { variable_dofs_ = val; }
+
  public:
   // visit methods for Apply
   virtual int ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
@@ -288,6 +291,13 @@ class Operator {
       const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
       const CompositeVector& X, CompositeVector& Y) const;
+
+  // visit methods for Apply with variable DOFs (aka points)
+  virtual int ApplyMatrixFreeOpVariableDOFs(const Op_Cell_FaceCell& op,
+      const CompositeVector& X, CompositeVector& Y) const;
+
+  virtual int ApplyMatrixFreeOpVariableDOFs(const Op_Cell_Cell& op,
+    const CompositeVector& X, CompositeVector& Y) const;
 
   // visit methods for ApplyTranspose 
   virtual int ApplyTransposeMatrixFreeOp(const Op_Cell_Schema& op,
@@ -430,6 +440,7 @@ class Operator {
   std::string schema_string_;
   double shift_;
 
+  bool variable_dofs_;
   mutable int apply_calls_;
 
  private:

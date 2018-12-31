@@ -49,8 +49,7 @@ TEST(DARCY_TWO_FRACTURES) {
 
   // create a mesh framework
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
-  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({Framework::MSTK, Framework::STKMESH}));

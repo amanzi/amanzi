@@ -114,7 +114,7 @@ void ObservableAqueous::ComputeObservation(
   
   unit = "";
 
-  if ( variable_ == "volumetric water content") {
+  if (variable_ == "volumetric water content") {
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
       double vol = mesh_->cell_volume(c);

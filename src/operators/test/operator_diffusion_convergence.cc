@@ -34,8 +34,6 @@
 
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionFactory.hh"
-#include "PDE_DiffusionMFD.hh"
-#include "PDE_DiffusionFV.hh"
 
 
 /* *****************************************************************

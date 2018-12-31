@@ -31,7 +31,7 @@
 #include "Richards_PK.hh"
 #include "Richards_SteadyState.hh"
 
-void Flow2D_SeepageTest()
+void Flow2D_SeepageTest(std::string filename, bool deform)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -44,31 +44,31 @@ void Flow2D_SeepageTest()
   if (MyPID == 0) std::cout << "Test: 2D Richards, seepage boundary condition" << std::endl;
 
   // read parameter list and select left head
-  std::string xmlFileName = "test/flow_richards_seepage.xml";
-  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(filename);
 
   // create a mesh framework
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
-  Teuchos::RCP<AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new AmanziGeometry::GeometricModel(2, regions_list, &comm));
+  auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(2, regions_list, &comm));
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
-  RCP<Mesh> mesh = meshfactory(0.0, 0.0, 100.0, 50.0, 100, 50, gm); 
+  RCP<Mesh> mesh = meshfactory(0.0, 0.0, 100.0, 50.0, 50, 25, gm); 
 
-  // create a slop
-  AmanziGeometry::Point xv(2);
-  AmanziMesh::Entity_ID_List nodeids;
-  AmanziGeometry::Point_List new_positions, final_positions;
+  // create an optional slop
+  if (deform) {
+    AmanziGeometry::Point xv(2);
+    AmanziMesh::Entity_ID_List nodeids;
+    AmanziGeometry::Point_List new_positions, final_positions;
 
-  int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
-  for (int v = 0; v < nnodes; ++v) {
-    mesh->node_get_coordinates(v, &xv);
-    nodeids.push_back(v);
-    xv[1] *= (xv[0] * 0.4 + (100.0 - xv[0])) / 100.0; 
-    new_positions.push_back(xv);
+    int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+    for (int v = 0; v < nnodes; ++v) {
+      mesh->node_get_coordinates(v, &xv);
+      nodeids.push_back(v);
+      xv[1] *= (xv[0] * 0.4 + (100.0 - xv[0])) / 100.0; 
+      new_positions.push_back(xv);
+    }
+    mesh->deform(nodeids, new_positions, false, &final_positions);
   }
-  mesh->deform(nodeids, new_positions, false, &final_positions);
 
   // create a simple state and populate it
   Amanzi::VerboseObject::hide_line_prefix = true;
@@ -142,5 +142,6 @@ void Flow2D_SeepageTest()
 }
 
 TEST(FLOW_2D_RICHARDS_SEEPAGE) {
-  Flow2D_SeepageTest();
+  // Flow2D_SeepageTest("test/flow_richards_seepage_vertical.xml", false);
+  Flow2D_SeepageTest("test/flow_richards_seepage.xml", true);
 }

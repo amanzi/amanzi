@@ -131,8 +131,9 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
   G_.Reshape(nd, nd);
 
   // select regularized basis
+  Polynomial ptmp;
   Basis_Regularized basis;
-  basis.Init(mesh_, c, order_);
+  basis.Init(mesh_, c, order_, ptmp);
 
   // pre-calculate integrals of natural monomials 
   NumericalIntegration numi(mesh_);
@@ -402,8 +403,9 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
   NumericalIntegration numi(mesh_);
 
   // selecting regularized basis
+  Polynomial ptmp;
   Basis_Regularized basis;
-  basis.Init(mesh_, c, order_);
+  basis.Init(mesh_, c, order_, ptmp);
 
   // populate matrices N and R
   int row(0);
@@ -534,8 +536,9 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
   NumericalIntegration numi(mesh_);
 
   // selecting regularized basis
+  Polynomial ptmp;
   Basis_Regularized basis;
-  basis.Init(mesh_, c, order_);
+  basis.Init(mesh_, c, order_, ptmp);
 
   for (int i = 0; i < dim; ++i) {
     for (int j = 0; j < d_; ++j) {

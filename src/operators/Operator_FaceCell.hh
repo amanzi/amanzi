@@ -46,6 +46,10 @@ class Operator_FaceCell : public Operator_Cell {
   virtual int ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
       const CompositeVector& X, CompositeVector& Y) const;
 
+  // visit methods for Apply with variable DOFs
+  virtual int ApplyMatrixFreeOpVariableDOFs(const Op_Cell_FaceCell& op,
+      const CompositeVector& X, CompositeVector& Y) const;
+
   // visit methods for symbolic assemble
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
           const SuperMap& map, GraphFE& graph,

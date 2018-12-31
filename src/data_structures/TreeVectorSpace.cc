@@ -16,7 +16,7 @@ namespace Amanzi {
 
 // Copy constructor
 TreeVectorSpace::TreeVectorSpace(const TreeVectorSpace& other) :
-    comm_world_(MPI_COMM_WORLD)
+  comm_(other.comm_)
 {
   if (other.data_ != Teuchos::null) {
     data_ = Teuchos::rcp(new CompositeVectorSpace(*other.data_));

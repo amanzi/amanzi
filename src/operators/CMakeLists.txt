@@ -55,7 +55,6 @@ set(operators_inc_files
     LimiterCell.hh
     Mini_Diffusion1D.hh
     Mini_Operator1D.hh
-    RemapUtils.hh
     OperatorDefs.hh
     OperatorUtils.hh
     Op.hh
@@ -96,6 +95,7 @@ set(operators_inc_files
     PDE_DiffusionNLFVwithBndFaces.hh
     PDE_DiffusionNLFVwithGravity.hh
     PDE_DiffusionDG.hh
+    PDE_DiffusionFracturedMatrix.hh
     PDE_Elasticity.hh
     PDE_Electromagnetics.hh
     PDE_MagneticDiffusion.hh
@@ -103,6 +103,8 @@ set(operators_inc_files
     PDE_HelperBCsList.hh
     PDE_HelperDiscretization.hh
     PDE_Reaction.hh
+    RemapDG.hh
+    RemapUtils.hh
     Schema.hh
     TreeOperator.hh
     Reconstruction.hh
@@ -140,6 +142,7 @@ add_amanzi_library(operators
                           PDE_DiffusionNLFV.cc PDE_DiffusionNLFVwithGravity.cc
                           PDE_DiffusionNLFVwithBndFaces.cc PDE_DiffusionNLFVwithBndFacesGravity.cc
                           PDE_DiffusionDG.cc
+                          PDE_DiffusionFracturedMatrix.cc
                           PDE_DiffusionFactory.cc                   
                           PDE_HelperDiscretization.cc
                           PDE_Elasticity.cc
@@ -149,7 +152,7 @@ add_amanzi_library(operators
                           Schema.cc
                           TreeOperator.cc
                           ReconstructionCell.cc
-                          RemapUtils.cc
+                          RemapDG.cc RemapUtils.cc
                           HEADERS ${operators_inc_files}
                    LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})                          
 
@@ -236,6 +239,11 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/operator_diffusion_dg.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+    add_amanzi_test(operators_diffusion_fractured_matrix operators_diffusion_fractured_matrix
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_diffusion_fractured_matrix.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
     add_amanzi_test(operators_commute operators_commute
                     KIND unit
                     SOURCE test/Main.cc test/operator_commute.cc
@@ -314,9 +322,11 @@ if (BUILD_TESTS)
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # reconstruction tests
-    add_amanzi_test(operators_reconstruction operators_reconstruction
+    add_amanzi_test(operators_reconstruction_limiters operators_reconstruction_limiters
                     KIND unit
                     SOURCE test/Main.cc test/operator_reconstruction.cc
+                                        test/operator_limiters.cc
+                                        test/operator_limiters_dg.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(operators_boundary_flux_solver operators_boundary_flux_solver
@@ -324,7 +334,9 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/operator_boundary_flux_solver.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    add_amanzi_test(operators_reconstruction_2pe operators_reconstruction NPROCS 2 KIND unit)
+    add_amanzi_test(operators_reconstruction_limiters_2pe operators_reconstruction_limiters
+                    NPROCS 2
+                    KIND unit)
 
     # remap tests
     add_amanzi_test(operators_remap operators_remap

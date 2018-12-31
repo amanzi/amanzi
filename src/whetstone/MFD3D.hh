@@ -47,7 +47,7 @@ class MFD3D : public virtual BilinearForm,
               public Projectors {
  public:
   explicit MFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
-  ~MFD3D() {};
+  virtual ~MFD3D() {};
 
   // access members
   double simplex_functional() { return simplex_functional_; }

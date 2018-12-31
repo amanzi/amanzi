@@ -168,6 +168,68 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
 
 
 /* ******************************************************************
+* Visit methods for Apply with variable number of DOFs (aka points):
+* apply the local matrices directly as schemas match.
+****************************************************************** */
+int Operator_FaceCell::ApplyMatrixFreeOpVariableDOFs(
+    const Op_Cell_FaceCell& op,
+    const CompositeVector& X, CompositeVector& Y) const
+{
+  AMANZI_ASSERT(op.matrices.size() == ncells_owned);
+
+  Y.PutScalarGhosted(0.0);
+  X.ScatterMasterToGhosted();
+  const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
+  const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
+
+  {
+    Epetra_MultiVector& Yf = *Y.ViewComponent("face", true);
+    Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
+
+    const auto& map = Yf.Map();
+
+    AmanziMesh::Entity_ID_List faces;
+    for (int c = 0; c != ncells_owned; ++c) {
+      mesh_->cell_get_faces(c, &faces);
+      int nfaces = faces.size();
+
+      int npoints(0);
+      for (int n = 0; n != nfaces; ++n)
+        npoints += map.ElementSize(faces[n]);
+
+      int m(0);
+      WhetStone::DenseVector v(npoints + 1), av(npoints + 1);
+
+      for (int n = 0; n != nfaces; ++n) {
+        int f = faces[n];
+        int first = map.FirstPointInElement(f);
+        for (int k = 0; k < map.ElementSize(f); ++k) {
+          v(m++) = Xf[0][first + k];
+        }
+      }
+      v(npoints) = Xc[0][c];
+
+      const WhetStone::DenseMatrix& Acell = op.matrices[c];
+      Acell.Multiply(v, av, false);
+
+      m = 0;
+      for (int n = 0; n != nfaces; ++n) {
+        int f = faces[n];
+        int first = map.FirstPointInElement(f);
+        for (int k = 0; k < map.ElementSize(f); ++k) {
+          Yf[0][first + k] += av(m++);
+        }
+      }
+      Yc[0][c] += av(npoints);
+    } 
+  }
+
+  Y.GatherGhostedToMaster(Add);
+  return 0;
+}
+
+
+/* ******************************************************************
 * Visit methods for symbolic assemble: FaceCell
 ****************************************************************** */
 void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,

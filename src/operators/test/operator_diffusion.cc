@@ -41,7 +41,7 @@
 /* *****************************************************************
 * Exactness test for mixed diffusion solver.
 ***************************************************************** */
-void RunTestDiffusionMixed(int dim, double gravity) {
+void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre AMG") {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -67,6 +67,7 @@ void RunTestDiffusionMixed(int dim, double gravity) {
     meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
     // mesh = meshfactory("test/median15x16.exo");
     mesh = meshfactory("test/circle_quad10.exo");
+    // mesh = meshfactory("test/circle_poly10.exo");
   } else {
     meshfactory.preference(FrameworkPreference({AmanziMesh::Simple}));
     if (comm.NumProc() > 1) meshfactory.preference(FrameworkPreference({MSTK}));
@@ -125,7 +126,8 @@ void RunTestDiffusionMixed(int dim, double gravity) {
   g[dim - 1] = -gravity;
 
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator mixed");
-  Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(op_list, mesh, rho, g));
+  auto op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(op_list, mesh, rho, g));
+  op->Init(op_list);
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
@@ -136,11 +138,13 @@ void RunTestDiffusionMixed(int dim, double gravity) {
   // get and assemble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   op->ApplyBCs(true, true, true);
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
+  if (pc_name != "identity") {
+    global_op->SymbolicAssembleMatrix();
+    global_op->AssembleMatrix();
+  }
 
   // create preconditoner using the base operator class
-  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  ParameterList slist = plist.sublist("preconditioners").sublist(pc_name);
   global_op->InitializePreconditioner(slist);
   global_op->UpdatePreconditioner();
 
@@ -187,13 +191,13 @@ void RunTestDiffusionMixed(int dim, double gravity) {
         pl2_err, pinf_err, ul2_err, uinf_err, solver.num_itrs());
 
     CHECK(pl2_err < 1e-12 && ul2_err < 1e-12);
-    CHECK(solver.num_itrs() < 10);
+    if (pc_name != "identity") CHECK(solver.num_itrs() < 10);
   }
 }
 
 
 TEST(OPERATOR_DIFFUSION_MIXED) {
-  RunTestDiffusionMixed(2, 0.0);
+  RunTestDiffusionMixed(2, 0.0, "identity");
   RunTestDiffusionMixed(3, 0.0);
 }
 
