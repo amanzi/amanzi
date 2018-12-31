@@ -69,6 +69,8 @@ TEST(SUPERMAP_MANUAL) {
   if (MyPID < NumProc-1) gids2.push_back(5*(MyPID+1));
   Teuchos::RCP<Epetra_Map> ghosted_map2 = Teuchos::rcp(new Epetra_Map(-1, gids2.size(), &gids2[0], 0, comm));
 
+
+  
   // make the supermap
   std::vector<std::string> names; names.push_back("map1"); names.push_back("map2");
   std::vector<int> dofnums(2,2);
@@ -84,6 +86,8 @@ TEST(SUPERMAP_MANUAL) {
   CHECK(map.Offset("map1") == 0);
   CHECK(map.Offset("map2") == 2*3);
 
+
+  
   // check the ghosted offsets
   CHECK(map.GhostedOffset("map1") == (2*3 + 2*5));
   if (NumProc > 1) {

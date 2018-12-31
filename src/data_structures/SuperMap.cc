@@ -12,11 +12,11 @@
   and converts them into a single map.
 */
 
-
 #include "CompositeVectorSpace.hh"
 #include "TreeVectorSpace.hh"
 #include "TreeVector_Utils.hh"
 #include "SuperMap.hh"
+#include "Epetra_Vector.h"
 
 namespace Amanzi {
 namespace Operators {
@@ -34,18 +34,32 @@ SuperMap::SuperMap(const Epetra_MpiComm& comm,
 
   int offset = 0;
 
+  int MyPID = comm.MyPID();
+  int NumProc = comm.NumProc();
+    
+
+  
   // fill the offsets
   for (int i=0; i!=compnames.size(); ++i) {
     std::string compname = compnames[i];
     num_dofs_[compname] = dofnums[i];
-    counts_[compname] = maps[i]->NumMyElements();
-    ghosted_counts_[compname] = ghosted_maps[i]->NumMyElements() - counts_[compname];
+    if (maps[i]->ConstantElementSize()){
+      counts_[compname] = maps[i]->NumMyElements();
+      ghosted_counts_[compname] = ghosted_maps[i]->NumMyElements() - counts_[compname];
+    }else{
+      counts_[compname] = 0;
+      for (int j=0; j < maps[i]->NumMyElements(); j++) counts_[compname] += maps[i]->ElementSize(j);
+      ghosted_counts_[compname] = 0;
+      for (int j=maps[i]->NumMyElements(); j < ghosted_maps[i]->NumMyElements(); j++){
+        ghosted_counts_[compname] += ghosted_maps[i]->ElementSize(j);
+      }    
+    }
     offsets_[compname] = offset;
-
-    offset += dofnums[i]*counts_[compname];
+    offset += dofnums[i]*counts_[compname];    
   }
   int n_local = offset;
 
+                
   // fill the ghosted offsets
   for (int i=0; i!=compnames.size(); ++i) {
     std::string compname = compnames[i];
@@ -54,33 +68,95 @@ SuperMap::SuperMap(const Epetra_MpiComm& comm,
   }
   int n_local_ghosted = offset;
 
-  // populate the map GIDs
-  int global_offset = 0;
+  std::vector<int> tmp(NumProc * compnames.size(), 0);
+  std::vector<int> tmp_ghosted(NumProc * compnames.size(), 0);  
+  std::vector<int> counts_all((NumProc + 1)* compnames.size(), 0);
+  std::vector<int> counts_ghosted_all((NumProc + 1) * compnames.size(), 0);  
+
+  for (int i=0; i!=compnames.size(); ++i) {
+    tmp[MyPID*compnames.size() + i] = counts_[compnames[i]];
+    tmp_ghosted[MyPID*compnames.size() + i] = counts_[compnames[i]] + ghosted_counts_[compnames[i]];
+  }
+      
+  comm.SumAll(&tmp[0], &counts_all[0], NumProc * compnames.size());
+  comm.SumAll(&tmp_ghosted[0], &counts_ghosted_all[0], NumProc * compnames.size());
+
+  for (int i=0; i!=compnames.size(); ++i) {
+    int tmp_val = 0;
+    int sum_val = 0;
+    int sum_ght_val = 0;    
+    for (int j=0; j<=NumProc; j++){
+      tmp_val = counts_all[j*compnames.size() + i];
+      counts_all[j*compnames.size() + i] = sum_val;
+      sum_val += tmp_val;
+
+      tmp_val = counts_ghosted_all[j*compnames.size() + i];
+      counts_ghosted_all[j*compnames.size() + i] = sum_ght_val;
+      sum_ght_val += tmp_val;
+      
+    }
+  }
+  
+  std::vector<Teuchos::RCP<Epetra_Vector> > global_ids_owned(compnames.size());
+  std::vector<Teuchos::RCP<Epetra_Vector> > global_ids_ght(compnames.size());
+  std::vector<Teuchos::RCP<Epetra_Import> > importer(compnames.size());
+
   int n(0);
+  int global_offset = 0;
+
+  
+  for (int i=0; i!=compnames.size(); ++i) {
+    global_ids_owned[i] = Teuchos::rcp(new Epetra_Vector( *(maps[i]) ));
+    global_ids_ght[i] = Teuchos::rcp(new Epetra_Vector( *(ghosted_maps[i]) ));
+    importer[i]  = Teuchos::rcp(new Epetra_Import( *(ghosted_maps[i]),  *(maps[i]) ));
+    n = 0;
+    for ( int j=0; j!=counts_[compnames[i]]; ++j){
+      int id = global_offset + counts_all[MyPID*compnames.size() + i] + j;
+      (*global_ids_owned[i])[n] = id;
+      n++;
+    }
+    global_offset += counts_all[NumProc*compnames.size() + i];
+    int ierr = global_ids_ght[i] -> Import(*(global_ids_owned[i]), *(importer[i]), Insert);
+
+    //std::cout<<*(global_ids_ght[i])<<"\n";
+  }
+  
+  // populate the map GIDs
+  global_offset = 0;
+  n = 0;
   std::vector<int> gids(offset, -1);
   for (int i=0; i!=compnames.size(); ++i) {
     for (int j=0; j!=counts_[compnames[i]]; ++j) {
-      int base = global_offset + ghosted_maps[i]->GID(j)*dofnums[i];
-      for (int dof=0; dof!=dofnums[i]; ++dof) gids[n++] = base+dof;
+      int base = (*global_ids_owned[i])[j] * dofnums[i];
+      for (int dof=0; dof!=dofnums[i]; ++dof) {        
+        gids[n++] = base + dof;
+      }
     }
-    global_offset += maps[i]->NumGlobalElements() * dofnums[i];
+    global_offset += counts_all[NumProc*compnames.size() + i] * dofnums[i];
   }
   int n_global = global_offset;
 
+
+
+  
   int n_global_ghosted = 0;
-  global_offset = 0;
   for (int i=0; i!=compnames.size(); ++i) {
     for (int j=counts_[compnames[i]]; j!=(counts_[compnames[i]]+ghosted_counts_[compnames[i]]); ++j) {
-      int base = global_offset + ghosted_maps[i]->GID(j)*dofnums[i];
-      for (int dof=0; dof!=dofnums[i]; ++dof) gids[n++] = base+dof;
+      int base = (*global_ids_ght[i])[j] * dofnums[i];
+      for (int dof=0; dof!=dofnums[i]; ++dof) {
+        gids[n++] = base+dof;
+      }
     }
-    global_offset += maps[i]->NumGlobalElements() * dofnums[i];
-    n_global_ghosted += ghosted_maps[i]->NumGlobalElements() * dofnums[i];
+    n_global_ghosted +=  counts_ghosted_all[NumProc*compnames.size() + i] * dofnums[i];
   }
-  
+
+
   // create the maps
-  map_ = Teuchos::rcp(new Epetra_Map(n_global, n_local, &gids[0], 0, comm)); 
+  map_ = Teuchos::rcp(new Epetra_Map(n_global, n_local, &gids[0],  0, comm)); 
   ghosted_map_ = Teuchos::rcp(new Epetra_Map(n_global_ghosted, n_local_ghosted, &gids[0], 0, comm));
+
+
+
 }
 
 
