@@ -129,14 +129,58 @@ and the hydraulic conductivity tensor $\K_h$:
 Three types of \textit{boundary conditions} are supported by the model:
 \begin{enumerate}
 \item
-  prescribed pressure $p_l$ (or head), see \eqref{eq:BC pressure};
+  prescribed pressure $p_l$ (or head), see \eqref{eq:BC pressure Darcy FS};
 \item
-  prescribed flux, i.e. normal component of the velocity $\bq_l$, see \eqref{eq:BC flux};
+  prescribed flux, i.e. normal component of the velocity $\bq_l$, see \eqref{eq:BC flux Darcy FS};
 \item
-  semipervious boundary, see \eqref{eq:BC semipervious}. 
+  semipervious boundary, see \eqref{eq:BC semipervious Darcy FS}. 
 \end{enumerate}
 %\citep[for reference see][]{bear-1979}.
-These boundary conditions are described in Section~\ref{sec:flow-boundary-conditions}.
+%These boundary conditions are described in Section~\ref{sec:flow-boundary-conditions}.
+
+\begin{figure}  [h]
+\begin{center} 
+\includegraphics[scale=0.25]{figs/bc_flow.pdf}
+\caption{Flow domain between two rivers \citep[it was partially based on]{bear-1972}.}
+\label{fig:bc_flow}
+\end{center}
+\end{figure}
+
+\paragraph{Boundary of prescribed pressure or head.}
+This involves the specification of a fixed pressure or hydrostatic head on boundary $\Gamma_D$.
+For instance, a boundary of this kind occurs whenever the flow domain is adjacent to a body of open water.
+Segments A-B and E-F in Fig.~\ref{fig:bc_flow} are examples of a boundary of prescribed potential.
+The pressure or head boundary conditions are given functions, e.g.
+\begin{equation}
+\label{eq:BC pressure Darcy FS}
+  p_l(\bx,t) = p_{b}(\bx,t), \quad \bx \in \Gamma_D. 
+\end{equation}
+
+\paragraph{Boundary of prescribed flux.}
+This involves the specification of the flux normal to the boundary $\Gamma_N$
+(see segment C-D in Figure \ref{fig:bc_flow}):
+\begin{equation}
+\label{eq:BC flux Darcy FS} 
+  \bq_l\cdot \bn = q_{b}(\bx,t), \quad \bx \in \Gamma_N,
+\end{equation}
+where $q_b$ [$\um\ucdot\us^{-1}$] is the given boundary flux. 
+For infiltration at the top horizontal surface, it equals to the Darcy velocity
+and referred to as the infiltration velocity.
+
+\paragraph{Semipervious boundary (or mixed boundary condition).}
+This boundary condition is more complicated than the first two as it involves a case 
+in which local conditions within the computational domain influence the flux in or 
+out of the domain.
+This type of boundary occurs when the porous medium domain is in contact with 
+a body of water continuum (or another porous medium domain, see for instance segments 
+A-B and E-F in Fig.~\ref{fig:bc_flow}), however, a relatively thin semipervious layer 
+separates the two domains:
+\begin{equation}
+\label{eq:BC semipervious Darcy FS}
+  \bq_l \cdot \bn = I\, \left(p (\bx,t) - p_{b}(\bx,t) \right), \quad \bx \in \Gamma_R.
+\end{equation}
+where $I$ is an impedance and $p_{b}(\bx,t)$ is the given external pressure.
+
 
 
 \clearpage
@@ -217,22 +261,6 @@ Typical models of relative permeability are
 the van Genuchten-Mualem relations \eqref{eq:krl_vGM} and 
 the Brooks-Corey-Burdine relations \eqref{eq:krl_BCB}.
 The equation \eqref{eq:Darcy} is continuous when transitioning from the saturated to the vadoze zones.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection{Boundary conditions}  
-
-Four types of boundary conditions are supported by the model:
-\begin{enumerate}
-\item
-  prescribed pressure $p_l$ (or head), see \eqref{eq:BC pressure};
-\item
-  prescribed flux, i.e. normal component of the velocity $\bq_l$, see \eqref{eq:BC flux};
-\item
-  semipervious boundary, see \eqref{eq:BC semipervious}; %\citep[for reference see][]{bear-1979};
-\item
-  seepage face.
-\end{enumerate}
-These boundary conditions are described in Section~\ref{sec:flow-boundary-conditions}.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -401,6 +429,126 @@ is given by
 \end{equation}
 
 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Boundary conditions}  
+%
+To facilitate the discussion on boundary conditions, consider the case of 
+flow described in Fig.~\ref{fig:bc_flow}. 
+Although the figure represents a two-dimensional flow field, the passage to three dimensions 
+is straightforward and requires no further explanations. 
+
+Four types of boundary conditions are supported by the model:
+\begin{enumerate}
+\item
+  prescribed pressure $p_l$ (or head), see \eqref{eq:BC pressure Darcy PS};
+\item
+  prescribed flux, i.e. normal component of the velocity $\bq_l$, see \eqref{eq:BC flux Darcy PS};
+\item
+  semipervious boundary, see \eqref{eq:BC semipervious Darcy PS}; %\citep[for reference see][]{bear-1979};
+\item
+  seepage face.
+\end{enumerate}
+
+
+
+\paragraph{Boundary of prescribed pressure or head.}
+This involves the specification of a fixed pressure or hydrostatic head on boundary $\Gamma_D$.
+For instance, a boundary of this kind occurs whenever the flow domain is adjacent to a body of open water.
+Segments A-B and E-F in Fig.~\ref{fig:bc_flow} are examples of a boundary of prescribed potential.
+The pressure or head boundary conditions are given functions, e.g.
+\begin{equation}
+\label{eq:BC pressure Darcy PS}
+  p_l(\bx,t) = p_{b}(\bx,t), \quad \bx \in \Gamma_D. 
+\end{equation}
+
+\paragraph{Boundary of prescribed flux.}
+This involves the specification of the flux normal to the boundary $\Gamma_N$
+(see segment C-D in Figure \ref{fig:bc_flow}):
+\begin{equation}
+\label{eq:BC flux Darcy PS}
+  \bq_l\cdot \bn = q_{b}(\bx,t), \quad \bx \in \Gamma_N,
+\end{equation}
+where $q_b$ [$\um\ucdot\us^{-1}$] is the given boundary flux. 
+For infiltration at the top horizontal surface, it equals to the Darcy velocity
+and referred to as the infiltration velocity.
+
+\paragraph{Semipervious boundary (or mixed boundary condition).}
+This boundary condition is more complicated than the first two as it involves a case 
+in which local conditions within the computational domain influence the flux in or 
+out of the domain.
+This type of boundary occurs when the porous medium domain is in contact with 
+a body of water continuum (or another porous medium domain, see for instance segments 
+A-B and E-F in Fig.~\ref{fig:bc_flow}), however, a relatively thin semipervious layer 
+separates the two domains:
+\begin{equation}
+\label{eq:BC semipervious Darcy PS}
+  \bq_l \cdot \bn = I\, \left(p (\bx,t) - p_{b}(\bx,t) \right), \quad \bx \in \Gamma_R.
+\end{equation}
+where $I$ is an impedance and $p_{b}(\bx,t)$ is the given external pressure.
+
+\paragraph{Seepage face.}
+As is shown in Fig.~\ref{fig:bc_flow} (see segments B-C and D-E), seepage face (or surface) 
+is always present when a phreatic surface ends at the down-stream external boundary of flow domain.
+In this case the phreatic surface is tangent to the boundary of the porous medium at points C and D.
+Along a seepage surface, water emerges from the flow domain, trickling downward to the adjacent body of water.
+
+A seepage surface is defined as the boundary 
+where water leaves the ground surface and then continues to flow in a thin film along its surface.
+Being exposed to the atmosphere, the pressure along the seepage face is equal to the atmospheric pressure 
+(i.e. capillary pressure $p_{c}=0$). 
+
+The geometry of the seepage face is known (as it coincides with the boundary of the porous medium), 
+except for its limit (points C and D in Figure \ref{fig:bc_flow}) 
+which is also lying on the (a priori) unknown phreatic surface.
+The location of this point is, therefore, part of the required solution.
+In unsteady flow, the location of the upper limit of the seepage face varies with time
+and could be simulated in two ways:
+\begin{enumerate}
+\item Using a dynamic boundary condition that switches from a prescribed pressure boundary condition
+to a prescribed flux boundary condition representing the recharge.
+\item Combining boundary conditions in a hybrid one to represent the transition recharge/seepage 
+surface (e.g. see Fig.~\ref{fig:seepage_bc}).
+\end{enumerate}
+
+\begin{figure}  [h]
+\begin{center}
+\includegraphics[scale=0.3]{figs/seepage_bc.pdf}
+\caption{Seepage face.}
+\label{fig:seepage_bc}
+\end{center}
+\end{figure}
+
+The state of the first option depends on the pressure inside the computational domain.
+Regarding the second option, this hybrid boundary condition \citep[based on][]{hamm2000} can be formulated as
+\begin{equation} \label{eq:fifth_bc_richard}
+\begin{array} {lllll}
+  \bq_l \cdot \bn & = & q_{b}(t) & \qquad \text{for} \quad &  p < \left( \frac{3}{2} p' + p_{0} \right), \\[0.5ex]
+  \bq_l \cdot \bn & = & \frac{\left(  7-2f-f^{2}  \right)}{8} q_{b}(t) 
+                    & \qquad \text{for} \quad &  \left( \frac32 p' + p_{0} \right) \leq p \leq \left( \frac12 p' + p_{0} \right), \\[1.0ex]
+  \bq_l \cdot \bn & = & I (p - p_{0}) &  \qquad \text{for} \quad & \left( \frac{1}{2} p' + p_{0} \right) < p, 
+\end{array} 
+\end{equation}
+where $q_{b}(t)$ is the maximum recharge and $f(p,t)$ is a local variable between $-1$ and $1$ 
+defined as 
+\begin{equation}
+  f(p,t) = 2 \frac{p'- (p(x_{b},y_{b},z_{b},t) - p_{0}) }{p'},
+\end{equation}
+where $p_{0}$ is a reference pressure (in this particular example case, its value is equal to 
+the atmospheric pressure), and $p'$ is defined as 
+\begin{equation}
+  p' = I^{-1} q_{b}(t).
+\end{equation}
+
+
+
+
+
+
+
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\subsection{Thermal Richards Equation}
@@ -443,7 +591,8 @@ when the solid contains both pores/matrix and fractures.
 Typically flow in the fracture is much faster that that in the pores/matrix.
 Therefore, 
 dual-porosity model assumes that water flow is restricted to the fractures.
-The pores in the solid represent immobile pockets that can exchange, retain and store water
+The pores in the solid material (e.g. rock) 
+represent immobile pockets that can exchange, retain and store water
 but do not permit convective flow.
 This leads to dual-porosity type flow and transport models that partition the liquid
 phase into mobile and immobile regions.
@@ -465,7 +614,7 @@ term $\Sigma_w$:
   -\frac{\K k_r}{\mu} (\bnabla p_l - \rho_l \bg),
 \end{align}
 \end{subequations}
-where $\Sigma_w$ is the transfer rate for water from the matrix to the fracture, 
+where $\Sigma_w$ is the transfer rate of water from the matrix to the fracture, 
 and $Q_f$ is source or sink term [$\ukg \ucdot \um^{-3} \ucdot \us^{-1}$].
 The equation for water balance in the matrix is
 $$
@@ -492,7 +641,7 @@ estimating retention curves for both regions and therefore is nonlinear.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Boundary conditions}
+\subsubsection{Boundary conditions}
 \label{sec:flow-boundary-conditions}
 
 
@@ -501,30 +650,33 @@ flow described in Fig.~\ref{fig:bc_flow}.
 Although the figure represents a two-dimensional flow field, the passage to three dimensions 
 is straightforward and requires no further explanations. 
 
-\begin{figure}  [h]
-\begin{center} 
-\includegraphics[scale=0.25]{figs/bc_flow.pdf}
-\caption{Flow domain between two rivers \citep[it was partially based on]{bear-1972}.}
-\label{fig:bc_flow}
-\end{center}
-\end{figure}
+In the dual porosity model one has to specify the boundary conditions for the fracture and the matrix (pores).
+Due to the assumption that the pores do not permit convective flow,
+\paragraph{the boundary conditions for the matrix} are always zero flux conditions:
+\begin{equation}
+\label{eq:BC flux DP matrix}
+  \bq_m\cdot \bn = 0, \quad \bx \in \Gamma.
+\end{equation}
 
-\paragraph{Boundary of prescribed pressure or head.}
+
+
+
+\paragraph{Boundary of prescribed pressure or head for fracture.}
 This involves the specification of a fixed pressure or hydrostatic head on boundary $\Gamma_D$.
 For instance, a boundary of this kind occurs whenever the flow domain is adjacent to a body of open water.
 Segments A-B and E-F in Fig.~\ref{fig:bc_flow} are examples of a boundary of prescribed potential.
 The pressure or head boundary conditions are given functions, e.g.
-\begin{equation}
-\label{eq:BC pressure}
-  p_l(\bx,t) = p_{b}(\bx,t), \quad \bx \in \Gamma_D. 
-\end{equation}
+\begin{align}
+\label{eq:BC pressure DP}
+  p_f(\bx,t) = p_{b}(\bx,t), \quad \bx \in \Gamma_D. 
+\end{align}
 
-\paragraph{Boundary of prescribed flux.}
+\paragraph{Boundary of prescribed flux for fracture.}
 This involves the specification of the flux normal to the boundary $\Gamma_N$
 (see segment C-D in Figure \ref{fig:bc_flow}):
 \begin{equation}
-\label{eq:BC flux}
-  \bq_l\cdot \bn = q_{b}(\bx,t), \quad \bx \in \Gamma_N,
+\label{eq:BC flux DP}
+  \bq_f\cdot \bn = q_{b}(\bx,t), \quad \bx \in \Gamma_N,
 \end{equation}
 where $q_b$ [$\um\ucdot\us^{-1}$] is the given boundary flux. 
 For infiltration at the top horizontal surface, it equals to the Darcy velocity
@@ -539,8 +691,8 @@ a body of water continuum (or another porous medium domain, see for instance seg
 A-B and E-F in Fig.~\ref{fig:bc_flow}), however, a relatively thin semipervious layer 
 separates the two domains:
 \begin{equation}
-\label{eq:BC semipervious}
-  \bq_l \cdot \bn = I\, \left(p (\bx,t) - p_{b}(\bx,t) \right), \quad \bx \in \Gamma_R.
+\label{eq:BC semipervious DP}
+  \bq_f \cdot \bn = I\, \left(p (\bx,t) - p_{b}(\bx,t) \right), \quad \bx \in \Gamma_R.
 \end{equation}
 where $I$ is an impedance and $p_{b}(\bx,t)$ is the given external pressure.
 
@@ -568,22 +720,15 @@ to a prescribed flux boundary condition representing the recharge.
 surface (e.g. see Fig.~\ref{fig:seepage_bc}).
 \end{enumerate}
 
-\begin{figure}  [h]
-\begin{center}
-\includegraphics[scale=0.3]{figs/seepage_bc.pdf}
-\caption{Seepage face.}
-\label{fig:seepage_bc}
-\end{center}
-\end{figure}
 
 The state of the first option depends on the pressure inside the computational domain.
 Regarding the second option, this hybrid boundary condition \citep[based on][]{hamm2000} can be formulated as
-\begin{equation} \label{eq:fifth_bc_richard}
+\begin{equation} \label{eq:fifth_bc_richard DP}
 \begin{array} {lllll}
-  \bq \cdot \bn & = & q_{b}(t) & \qquad \text{for} \quad &  p < \left( \frac{3}{2} p' + p_{0} \right), \\[0.5ex]
-  \bq \cdot \bn & = & \frac{\left(  7-2f-f^{2}  \right)}{8} q_{b}(t) 
+  \bq_f \cdot \bn & = & q_{b}(t) & \qquad \text{for} \quad &  p < \left( \frac{3}{2} p' + p_{0} \right), \\[0.5ex]
+  \bq_f \cdot \bn & = & \frac{\left(  7-2f-f^{2}  \right)}{8} q_{b}(t) 
                     & \qquad \text{for} \quad &  \left( \frac32 p' + p_{0} \right) \leq p \leq \left( \frac12 p' + p_{0} \right), \\[1.0ex]
-  \bq \cdot \bn & = & I (p - p_{0}) &  \qquad \text{for} \quad & \left( \frac{1}{2} p' + p_{0} \right) < p, 
+  \bq_f \cdot \bn & = & I (p - p_{0}) &  \qquad \text{for} \quad & \left( \frac{1}{2} p' + p_{0} \right) < p, 
 \end{array} 
 \end{equation}
 where $q_{b}(t)$ is the maximum recharge and $f(p,t)$ is a local variable between $-1$ and $1$ 

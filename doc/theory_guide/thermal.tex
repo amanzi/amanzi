@@ -245,9 +245,83 @@ consist of the conditions for each of the equations.
 %the Richards equation with vapor
 %<F6>\eqref{eq:Richards with vapors} and those for the conservation of energy equation \eqref{eq:energy_balance}.
 The choice of the boundary conditions for \eqref{eq:Richards with vapors} are identical to those of Isothermal equaiton.
+We repeat those equations here for the sake of self-contained presentation.
 The boundary conditions for conservation of energy equation \eqref{eq:energy_balance}
 may take the form of specified temperature or heat flux including zero temperature gradient. 
 Initial conditions include specifying the temperature over the computational domain 
 such as a constant value or derived from the geothermal gradient.
+
+
+\paragraph{Specified temperature boundary conditions.}
+These are Dirichlet type conditions on the temperature saying 
+that at the boundary $\Gamma_{TD}$
+\begin{align}
+  T(\bx,t) = T_b(\bx,t), \quad \bx\in \Gamma_{TD}, 
+\end{align}
+where the temperature $T_b(\bx,t)$ is given.
+
+\paragraph{Specified heat flux boundary conditions.}
+These are Neumann type boundary conditiosn on the temperature saying that
+at the boundary $\Gamma_{TN}$
+\begin{align}
+  \partial_{\bn} T(\bx,t) = \partial_{\bn} T_b(\bx,t), \quad \bx\in \Gamma_{TD}, 
+\end{align}
+where the temperature $\partial_{\bn} T_b(\bx,t)$ is given.
+
+
+
+
+
+\paragraph{Boundary of prescribed pressure or head.}
+This involves the specification of a fixed pressure or hydrostatic head on boundary $\Gamma_{lD}$.
+For instance, a boundary of this kind occurs whenever the flow domain is adjacent to a body of open water.
+Segments A-B and E-F in Fig.~\ref{fig:bc_flow} are examples of a boundary of prescribed potential.
+The pressure or head boundary conditions are given functions, e.g.
+\begin{equation}
+\label{eq:BC pressure Darcy PS thermal}
+  p_l(\bx,t) = p_{b}(\bx,t), \quad \bx \in \Gamma_{lD}. 
+\end{equation}
+
+\paragraph{Boundary of prescribed flux.}
+This involves the specification of the flux normal to the boundary $\Gamma_{lN}$
+(see segment C-D in Figure \ref{fig:bc_flow}):
+\begin{equation}
+\label{eq:BC flux Darcy PS thermal}
+  \bq_l\cdot \bn = q_{b}(\bx,t), \quad \bx \in \Gamma_{lN},
+\end{equation}
+where $q_b$ [$\um\ucdot\us^{-1}$] is the given boundary flux. 
+For infiltration at the top horizontal surface, it equals to the Darcy velocity
+and referred to as the infiltration velocity.
+
+\paragraph{Semipervious boundary (or mixed boundary condition).}
+This boundary condition is more complicated than the first two as it involves a case 
+in which local conditions within the computational domain influence the flux in or 
+out of the domain.
+This type of boundary occurs when the porous medium domain is in contact with 
+a body of water continuum (or another porous medium domain, see for instance segments 
+A-B and E-F in Fig.~\ref{fig:bc_flow}), however, a relatively thin semipervious layer 
+separates the two domains:
+\begin{equation}
+\label{eq:BC semipervious Darcy PS thermal}
+  \bq_l \cdot \bn = I\, \left(p (\bx,t) - p_{b}(\bx,t) \right), \quad \bx \in \Gamma_R.
+\end{equation}
+where $I$ is an impedance and $p_{b}(\bx,t)$ is the given external pressure.
+
+\paragraph{Seepage face.}
+As is shown in Fig.~\ref{fig:bc_flow} (see segments B-C and D-E), seepage face (or surface) 
+is always present when a phreatic surface ends at the down-stream external boundary of flow domain.
+In this case the phreatic surface is tangent to the boundary of the porous medium at points C and D.
+Along a seepage surface, water emerges from the flow domain, trickling downward to the adjacent body of water.
+
+A seepage surface is defined as the boundary 
+where water leaves the ground surface and then continues to flow in a thin film along its surface.
+Being exposed to the atmosphere, the pressure along the seepage face is equal to the atmospheric pressure 
+(i.e. capillary pressure $p_{c}=0$). 
+
+The geometry of the seepage face is known (as it coincides with the boundary of the porous medium), 
+except for its limit (points C and D in Figure \ref{fig:bc_flow}) 
+which is also lying on the (a priori) unknown phreatic surface.
+The location of this point is, therefore, part of the required solution.
+
 
 
