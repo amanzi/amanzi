@@ -1,5 +1,4 @@
-"""
-Extrudes a 2D mesh to generate an ExodusII 3D mesh.
+"""Extrudes a 2D mesh to generate an ExodusII 3D mesh.
 
 Works with and assumes all polyhedra cells (and polygon faces).
 
@@ -23,56 +22,14 @@ $> ats --xml_file=../test1-fv-four-polygon.xml
 
 Requires building the latest version of Exodus
 ------------------------------------------------------------
-git clone https://github.com/gsjaardema/seacas.git 
 
-Note this requires, in turn, HDF5 and netCDF.  It is highly
-recommended that you get these through anaconda or a comparable python
-distribution:
+Note that this is typically done in your standard ATS installation,
+assuming you have built your Amanzi TPLs with shared libraries (the
+default through bootstrap).
 
-conda install h5py
-conda install netCDF4
+In that case, simply ensure that ${AMANZI_TPLS_DIR}/SEACAS/lib is in
+your PYTHONPATH.
 
-```
-SEACAS_BUILD_DIR=/Users/uec/codes/seacas/build-dev
-SEACAS_INSTALL_DIR=/Users/uec/codes/seacas/install-dev
-SEACAS_SRC_DIR=/Users/uec/codes/seacas/repos/dev
-
-ANACONDA_DIR=/Users/uec/codes/anaconda
-
-CC=`which mpicc`
-CXX=`which mpicxx`
-FC=`which mpif90`
-
-mkdir -p $SEACAS_BUILD_DIR
-mkdir -p $SEACAS_INSTALL_DIR
-cd $SEACAS_BUILD_DIR
-
-cmake  \
-    -D SEACASProj_ENABLE_SEACASExodus:BOOL=ON \
-    -D CMAKE_INSTALL_PREFIX:PATH=${SEACAS_INSTALL_DIR} \
-    -D CMAKE_BUILD_TYPE=Debug \
-    -D BUILD_SHARED_LIBS:BOOL=ON \
-    \
-    -D CMAKE_CXX_COMPILER:FILEPATH=${CXX} \
-    -D CMAKE_C_COMPILER:FILEPATH=${CC} \
-    -D CMAKE_Fortran_COMPILER:FILEPATH=${FC} \
-    -D SEACASProj_SKIP_FORTRANCINTERFACE_VERIFY_TEST:BOOL=ON \
-    -D TPL_ENABLE_Netcdf:BOOL=ON \
-    -D TPL_ENABLE_Matio:BOOL=OFF \
-    -D TPL_ENABLE_MPI=ON \
-    -D TPL_ENABLE_CGNS:BOOL=OFF \
-    \
-    -D Netcdf_LIBRARY_DIRS:PATH=${ANACONDA_DIR}/lib \
-    -D Netcdf_INCLUDE_DIRS:PATH=${ANACONDA_DIR}/include \
-    -D HDF5_ROOT:PATH=${ANACONDA_DIR} \
-    -D HDF5_NO_SYSTEM_PATHS=ON \
-${SEACAS_SRC_DIR}
-
-
-```
-
-Excecute the configure script from your SEACAS_BUILD_DIR, then
-```make``` and ```make install```
 """
 
 from __future__ import print_function
@@ -80,9 +37,14 @@ from __future__ import print_function
 import sys,os
 import numpy as np
 import collections
-sys.path.append(os.path.join(os.environ["SEACAS_DIR"],"lib"))
-import exodus
 import argparse
+
+try:
+    import exodus
+except ImportError:
+    sys.path.append(os.path.join(os.environ["SEACAS_DIR"],"lib"))
+    import exodus
+
 
 class SideSet(object):
     def __init__(self, name, setid, elem_list, side_list):
@@ -108,7 +70,7 @@ class LabeledSet(object):
 
 
 class Mesh2D(object):
-    def __init__(self, coords, connectivity, labeled_sets=None):
+    def __init__(self, coords, connectivity, labeled_sets=None, check_handedness=True):
         """
         Creates a 2D mesh from coordinates and a list cell-to-node connectivity lists.
 
@@ -132,6 +94,8 @@ class Mesh2D(object):
 
         self.validate()
         self.edge_counts()
+        if check_handedness:
+            self.check_handedness()
 
 
     def validate(self):
@@ -142,8 +106,6 @@ class Mesh2D(object):
             assert len(set(f)) == len(f)
             for i in f:
                 assert i < self.coords.shape[0]
-
-
 
         for ls in self.labeled_sets:
             if ls.entity == "NODE":
@@ -178,6 +140,23 @@ class Mesh2D(object):
             self._edges = collections.Counter(self.edge_hash(f[i], f[(i+1)%len(f)]) for f in self.conn for i in range(len(f)))
         return self._edges
 
+    def check_handedness(self):
+        for conn in self.conn:
+            points = np.array([self.coords[c] for c in conn])
+            cross = 0
+            for i in range(len(points)):
+                im = i - 1
+                ip = i + 1
+                if ip == len(points):
+                    ip = 0
+
+                p = points[ip] - points[i]
+                m = points[i] - points[im]
+                cross = cross + p[1] * m[0] - p[0] * m[1]
+            if cross < 0:
+                conn.reverse()
+                    
+    
     def plot(self, color=None, ax=None):
         if color is None:
             import colors
