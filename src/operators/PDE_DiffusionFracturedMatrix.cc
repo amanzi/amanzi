@@ -210,10 +210,13 @@ void PDE_DiffusionFracturedMatrix::ApplyBCs(
         }
 
         if (eliminate) { 
+          int mp(0);
           for (int m = 0; m < nfaces; m++) {
-            int k = map.FirstPointInElement(faces[m]);
-            rhs_face[0][k] -= Acell(m, np) * value;
-            Acell(m, np) = 0.0;
+            int g = faces[m];
+            int k = map.FirstPointInElement(g);
+            rhs_face[0][k] -= Acell(mp, np) * value;
+            Acell(mp, np) = 0.0;
+            mp += map.ElementSize(g);
           }
 
           rhs_cell[0][c] -= Acell(nrows - 1, np) * value;

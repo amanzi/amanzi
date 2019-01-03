@@ -72,7 +72,7 @@ void TestDiffusionFracturedMatrix() {
   // modify diffusion coefficient
   auto Kc = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
 
-  Analytic02 ana(mesh);
+  Analytic02 ana(mesh, Point(1.0, 2.0, 0.0));
 
   for (int c = 0; c < ncells_wghost; c++) {
     const Point& xc = mesh->cell_centroid(c);

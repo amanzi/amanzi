@@ -88,7 +88,7 @@ TEST(SUPERMAP_MANUAL) {
 
   std::cout << "======= Two Block Map =======" << std::endl;
   maps[0]->Print(std::cout);
-  maps[0]->Print(std::cout);
+  maps[1]->Print(std::cout);
   std::cout << "\n======= SuperMap =======" << std::endl;
   map.Map()->Print(std::cout);
   
