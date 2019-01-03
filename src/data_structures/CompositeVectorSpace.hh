@@ -191,7 +191,7 @@ private:
   bool owned_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   std::vector<std::string> names_;
-  std::map< std::string, int > indexmap_;
+  std::map<std::string, int> indexmap_;
 
   std::vector<AmanziMesh::Entity_kind> locations_;
   

@@ -55,10 +55,10 @@ GraphFE::GraphFE(const Teuchos::RCP<const Epetra_Map>& row_map,
     for (int i=n_owned_; i!=n_used_; ++i)
       offproc_gids[i-n_owned_] = ghosted_row_map_->GID(i);
     offproc_row_map_ = Teuchos::rcp(new Epetra_Map(-1, n_used_-n_owned_,
-			   &offproc_gids[0], 0, ghosted_row_map_->Comm()));
+        &offproc_gids[0], 0, ghosted_row_map_->Comm()));
   
     offproc_graph_ = Teuchos::rcp(new Epetra_CrsGraph(Copy, *offproc_row_map_,
-  			*col_map_, max_nnz_per_row, false));
+        *col_map_, max_nnz_per_row, false));
     // create the exporter from offproc to onproc
     exporter_ = Teuchos::rcp(new Epetra_Export(*offproc_row_map_, *row_map_));
   }

@@ -160,7 +160,7 @@ void Operator::SymbolicAssembleMatrix()
   // create the graph
   int row_size = MaxRowSize(*mesh_, schema(), 1);
   Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->Map(),
-          smap_->GhostedMap(), smap_->GhostedMap(), row_size));
+      smap_->GhostedMap(), smap_->GhostedMap(), row_size));
 
   // fill the graph
   SymbolicAssembleMatrix(*smap_, *graph, 0, 0);
