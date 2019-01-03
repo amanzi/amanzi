@@ -15,7 +15,7 @@
 namespace Amanzi {
 namespace Flow {
 
-#define DEBUG_FLAG 1
+#define DEBUG_FLAG 0
 
 bool PredictorDelegateBCFlux::ModifyPredictor(const Teuchos::Ptr<CompositeVector>& u) {
   Epetra_MultiVector& u_f = *u->ViewComponent("face",false);
