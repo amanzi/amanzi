@@ -254,35 +254,6 @@ SuperMap::CreateIndices_(const std::string& compname, int dofnum, bool ghosted) 
 }
 
 
-std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >
-getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
-  switch(location) {
-    case AmanziMesh::CELL:
-      return std::make_pair(Teuchos::rcpFromRef(mesh.cell_map(false)),
-                            Teuchos::rcpFromRef(mesh.cell_map(true)));
-
-    case AmanziMesh::FACE:
-      return std::make_pair(Teuchos::rcpFromRef(mesh.face_map(false)),
-                            Teuchos::rcpFromRef(mesh.face_map(true)));
-
-    case AmanziMesh::EDGE:
-      return std::make_pair(Teuchos::rcpFromRef(mesh.edge_map(false)),
-                            Teuchos::rcpFromRef(mesh.edge_map(true)));
-
-    case AmanziMesh::NODE:
-      return std::make_pair(Teuchos::rcpFromRef(mesh.node_map(false)),
-                            Teuchos::rcpFromRef(mesh.node_map(true)));
-
-    case AmanziMesh::BOUNDARY_FACE:
-      return std::make_pair(Teuchos::rcpFromRef(mesh.exterior_face_map(false)),
-                            Teuchos::rcpFromRef(mesh.exterior_face_map(true)));
-    default:
-      AMANZI_ASSERT(false);
-      return std::make_pair(Teuchos::null, Teuchos::null);
-  }
-}
-
-
 // Nonmember contructors/factories
 Teuchos::RCP<SuperMap> createSuperMap(const CompositeVectorSpace& cv) {
   std::vector<std::string> names;
@@ -290,16 +261,12 @@ Teuchos::RCP<SuperMap> createSuperMap(const CompositeVectorSpace& cv) {
   std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps;
   std::vector<Teuchos::RCP<const Epetra_BlockMap> > ghost_maps;
 
-  for (CompositeVectorSpace::name_iterator it=cv.begin();
-       it!=cv.end(); ++it) {
+  for (auto it=cv.begin(); it!=cv.end(); ++it) {
     names.push_back(*it);
     dofnums.push_back(cv.NumVectors(*it));
 
-
-    auto meshmaps = std::make_pair(cv.Map(*it, false), cv.Map(*it, true));
-    
-    maps.push_back(meshmaps.first);
-    ghost_maps.push_back(meshmaps.second);
+    maps.push_back(cv.Map(*it, false));
+    ghost_maps.push_back(cv.Map(*it, true));
   }
 
   return Teuchos::rcp(new SuperMap(cv.Comm(), names, dofnums, maps, ghost_maps));
@@ -322,8 +289,7 @@ Teuchos::RCP<SuperMap> createSuperMap(const TreeVectorSpace& tv) {
         collectTreeVectorLeaves_const<TreeVectorSpace>(tv);
 
     // loop over nodes, finding unique component names on unique meshes
-    for (std::vector<Teuchos::RCP<const TreeVectorSpace> >::const_iterator it=tvs.begin();
-         it!=tvs.end(); ++it) {
+    for (auto it=tvs.begin(); it!=tvs.end(); ++it) {
       for (CompositeVectorSpace::name_iterator compname=(*it)->Data()->begin();
            compname!=(*it)->Data()->end(); ++compname) {
         int index = std::find(names.begin(), names.end(), *compname) - names.begin();
@@ -331,10 +297,8 @@ Teuchos::RCP<SuperMap> createSuperMap(const TreeVectorSpace& tv) {
           names.push_back(*compname);
           dofnums.push_back(1);
 
-          auto meshmaps = std::make_pair((*it)->Data()->Map(*compname, false), (*it)->Data()->Map(*compname, true));
-
-          maps.push_back(meshmaps.first);
-          ghost_maps.push_back(meshmaps.second);
+          maps.push_back((*it)->Data()->Map(*compname, false));
+          ghost_maps.push_back((*it)->Data()->Map(*compname, true));
         } else {
           dofnums[index]++;
         }

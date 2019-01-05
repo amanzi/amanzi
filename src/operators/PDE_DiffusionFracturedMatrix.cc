@@ -15,9 +15,11 @@
 #include "Epetra_BlockMap.h"
 
 // Amanzi
+#include "CompositeVector.hh"
 #include "Mesh_MSTK.hh"
 #include "Op_Cell_FaceCell.hh"
 #include "Operator_FaceCell.hh"
+#include "ParallelCommunication.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
 
 namespace Amanzi {
@@ -38,16 +40,19 @@ void PDE_DiffusionFracturedMatrix::Init(Teuchos::ParameterList& plist)
 
   // create list of parents for owned cells
   AmanziMesh::Entity_ID_List cells;
-  int ncells_f = fractures->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces_m = mstk->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells_f = fractures->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
-  points_.resize(nfaces_m, 1);
+  points_ = Teuchos::rcp(new Epetra_IntVector(mesh_->face_map(true)));
+  points_->PutValue(1);
 
   for (int c = 0; c < ncells_f; ++c) {
     int f = fractures->entity_get_parent(AmanziMesh::CELL, c);
     mstk->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    points_[f] = cells.size();
+    (*points_)[f] = cells.size();
   }
+
+  ParallelCommunication pp(mesh_);
+  pp.CopyMasterFace2GhostFace(*points_);
 
   // create ghosted map with two points on each fracture face
   auto& gfmap = mesh_->face_map(true);
@@ -56,13 +61,15 @@ void PDE_DiffusionFracturedMatrix::Init(Teuchos::ParameterList& plist)
   std::vector<int> gids(nlocal);
   gfmap.MyGlobalElements(&gids[0]);
 
-  auto gmap = Teuchos::rcp(new Epetra_BlockMap(-1, nlocal, &gids[0], &points_[0], 0, gfmap.Comm()));
+  int* data; 
+  points_->ExtractView(&data);
+  auto gmap = Teuchos::rcp(new Epetra_BlockMap(-1, nlocal, &gids[0], data, 0, gfmap.Comm()));
 
   // create master map with two points on each fracture face
   auto& mfmap = mesh_->face_map(false);
   nlocal = mfmap.NumMyElements();
 
-  auto mmap = Teuchos::rcp(new Epetra_BlockMap(-1, nlocal, &gids[0], &points_[0], 0, mfmap.Comm()));
+  auto mmap = Teuchos::rcp(new Epetra_BlockMap(-1, nlocal, &gids[0], data, 0, mfmap.Comm()));
 
   // create global operator
   std::string compname("face");
@@ -109,7 +116,7 @@ void PDE_DiffusionFracturedMatrix::UpdateMatrices(
 
     for (int i = 0; i < nfaces; ++i) {
       int f = faces[i];
-      int n = points_[f];
+      int n = (*points_)[f];
 
       int shift(0);
       if (n == 2) {

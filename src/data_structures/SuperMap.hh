@@ -119,10 +119,6 @@ class SuperMap {
 };
 
 
-// Nonmember helper function
-std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >
-getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location);
-
 // Nonmember contructors/factories
 Teuchos::RCP<SuperMap> createSuperMap(const CompositeVectorSpace& cv);
 Teuchos::RCP<SuperMap> createSuperMap(const TreeVectorSpace& cv);

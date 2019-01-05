@@ -65,6 +65,10 @@ CreateBoundaryMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                    std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >& bnd_maps,
                    std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >& face_maps);  
 
+// Nonmember helper function
+std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >
+getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location);
+
 }  // namespace Operators
 }  // namespace Amanzi
 

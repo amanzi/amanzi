@@ -10,6 +10,7 @@
 #ifndef AMANZI_OPERATOR_PDE_DIFFUSION_FRACTURED_MATRIX_HH_
 #define AMANZI_OPERATOR_PDE_DIFFUSION_FRACTURED_MATRIX_HH_
 
+#include "Epetra_IntVector.h"
 #include "Teuchos_RCP.hpp"
 
 #include "PDE_DiffusionMFD.hh"
@@ -46,7 +47,7 @@ class PDE_DiffusionFracturedMatrix : public PDE_DiffusionMFD {
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
  private:
-  std::vector<int> points_;
+  Teuchos::RCP<Epetra_IntVector> points_;
 };
 
 }  // namespace Operators

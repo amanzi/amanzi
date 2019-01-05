@@ -74,7 +74,7 @@ void TestDiffusionFracturedMatrix() {
 
   Analytic02 ana(mesh, Point(1.0, 2.0, 0.0));
 
-  for (int c = 0; c < ncells_wghost; c++) {
+  for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
     const WhetStone::Tensor& Ktmp = ana.TensorDiffusivity(xc, 0.0);
     Kc->push_back(Ktmp);
@@ -151,14 +151,14 @@ void TestDiffusionFracturedMatrix() {
 
   // compute pressure error
   Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
-  double pnorm, pl2_err, pinf_err, ul2_err, uinf_err;
+  double pnorm, pl2_err, pinf_err, ul2_err(0.0), uinf_err(0.0);
   ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
   if (MyPID == 0) {
     printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  itr=%3d\n",
         pl2_err, pinf_err, ul2_err, uinf_err, solver.num_itrs());
 
-    // CHECK(pl2_err < 1e-10);
+    CHECK(pl2_err < 1e-10);
   }
 }
 
