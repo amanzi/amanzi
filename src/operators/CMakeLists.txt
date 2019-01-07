@@ -154,8 +154,7 @@ add_amanzi_library(operators
                           ReconstructionCell.cc
                           RemapDG.cc RemapUtils.cc
                           HEADERS ${operators_inc_files}
-                   LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})                          
-
+                   LINK_LIBS geometry mesh mstk_mesh error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})                          
 
 
 if (BUILD_TESTS)
