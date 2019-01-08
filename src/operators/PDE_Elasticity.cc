@@ -15,9 +15,9 @@
 #include "Epetra_Vector.h"
 
 // Amanzi
+#include "BilinearFormFactory.hh"
 #include "errors.hh"
 #include "MatrixFE.hh"
-#include "MFD3DFactory.hh"
 #include "PreconditionerFactory.hh"
 #include "WhetStoneDefs.hh"
 
@@ -109,8 +109,7 @@ void PDE_Elasticity::Init_(Teuchos::ParameterList& plist)
   K_ = Teuchos::null;
 
   // parse discretization  parameters
-  WhetStone::MFD3DFactory factory;
-  mfd_ = factory.Create(mesh_, plist);
+  mfd_ = WhetStone::BilinearFormFactory::Create(plist, mesh_);
 }
 
 }  // namespace Operators

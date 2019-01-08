@@ -2,6 +2,7 @@
 #include <TestReporterStdout.h>
 
 #include "Teuchos_GlobalMPISession.hpp"
+#include "bilinear_form_registration.hh"
 
 
 int main( int argc, char *argv[] )

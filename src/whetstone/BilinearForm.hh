@@ -25,6 +25,7 @@
 #include "DenseMatrix.hh"
 #include "InnerProductL2.hh"
 #include "InnerProductH1.hh"
+#include "Projectors.hh"
 #include "Tensor.hh"
 #include "VectorPolynomial.hh"
 
@@ -34,7 +35,8 @@ namespace WhetStone {
 class Polynomial;
 
 class BilinearForm : public virtual InnerProductL2,
-                     public virtual InnerProductH1 {
+                     public virtual InnerProductH1,
+                     public Projectors {
  public:
   explicit BilinearForm() : order_(1) {};
   virtual ~BilinearForm() {};

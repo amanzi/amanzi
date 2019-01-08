@@ -2374,6 +2374,62 @@ void Mesh_MSTK::node_get_cell_faces(const Entity_ID nodeid,
 
 
 //---------------------------------------------------------
+// Cells of type 'ptype' connected to an edge. This routine uses
+// push_back on or near the partition boundary since we cannot tell at
+// the outset how many entries will be put into the list
+//---------------------------------------------------------
+void Mesh_MSTK::edge_get_cells(const Entity_ID edgeid, 
+                               const Parallel_type ptype,
+                               std::vector<Entity_ID> *cellids) const
+{
+  int idx, lid, nc;
+  List_ptr cell_list;
+  MEntity_ptr ment;
+
+  AMANZI_ASSERT (cellids != NULL);
+
+  MEdge_ptr me = (MEdge_ptr) edge_id_to_handle[edgeid];
+  
+  // mesh edge on a processor boundary may be connected to owned
+  // and ghost cells. So depending on the requested cell type, we
+  // may have to omit some entries
+
+  if (manifold_dimension() == 3)
+    cell_list = ME_Regions(me);
+  else
+    cell_list = ME_Faces(me);
+
+  nc = List_Num_Entries(cell_list);
+  cellids->resize(nc); // resize to maximum size possible
+  Entity_ID_List::iterator it = cellids->begin();
+
+  int n = 0;
+  idx = 0; 
+  while ((ment = List_Next_Entry(cell_list,&idx))) {
+    if (MEnt_PType(ment) == PGHOST) {
+      if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
+        lid = MEnt_ID(ment);
+        *it = lid-1;  // assign to next spot by dereferencing iterator
+        ++it;
+        ++n;
+      }
+    }
+    else {
+      if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
+        lid = MEnt_ID(ment);
+        *it = lid-1;  // assign to next spot by dereferencing iterator
+        ++it;
+        ++n;
+      }
+    }
+  }
+  cellids->resize(n); // resize to the actual number of cells being returned
+
+  List_Delete(cell_list);
+}
+
+
+//---------------------------------------------------------
 // Cells connected to a face
 //---------------------------------------------------------
 void Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid, 

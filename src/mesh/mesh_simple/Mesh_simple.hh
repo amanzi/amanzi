@@ -189,6 +189,16 @@ class Mesh_simple : public virtual Mesh {
                            const Parallel_type ptype,
                            std::vector<Entity_ID> *faceids) const;    
     
+  // Cells of type 'ptype' connected to an edge
+  void edge_get_cells(const Entity_ID edgeid, 
+                      const Parallel_type ptype,
+                      std::vector<Entity_ID> *cellids) const {
+    Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
+    amanzi_throw(mesg);
+  }
+
+    
+  // Faces of type 'ptype' connected to a node
 
   // Same level adjacencies
   //-----------------------

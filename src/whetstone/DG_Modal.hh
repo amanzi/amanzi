@@ -27,6 +27,7 @@
 // WhetStone
 #include "Basis.hh"
 #include "BilinearForm.hh"
+#include "BilinearFormFactory.hh"
 #include "DenseMatrix.hh"
 #include "DenseVector.hh"
 #include "NumericalIntegration.hh"
@@ -43,7 +44,7 @@ class Polynomial;
 
 class DG_Modal : public BilinearForm {
  public:
-  DG_Modal(int order, Teuchos::RCP<const AmanziMesh::Mesh> mesh, std::string basis_name);
+  DG_Modal(const Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~DG_Modal() {};
 
   // basic member functions
@@ -125,6 +126,8 @@ class DG_Modal : public BilinearForm {
 
   std::vector<Polynomial> monomial_integrals_;  // integrals of non-normalized monomials
   std::vector<std::shared_ptr<Basis> > basis_;
+
+  static RegisteredFactory<DG_Modal> factory_;
 };
 
 }  // namespace WhetStone

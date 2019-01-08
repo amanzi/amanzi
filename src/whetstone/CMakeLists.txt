@@ -48,6 +48,7 @@ add_amanzi_library(whetstone
                           MFD3D_Generalized_Diffusion.cc
                           MFD3D_Lagrange.cc MFD3D_LagrangeSerendipity.cc
                           DG_Modal.cc
+                          BilinearFormFactory.cc
                           Basis_Regularized.cc Basis_Normalized.cc Basis_Orthonormalized.cc
                           nlfv.cc 
                           Tensor.cc DenseMatrix.cc DenseVector.cc
@@ -63,7 +64,7 @@ add_amanzi_library(whetstone
                            Basis_Normalized.hh Basis_Orthonormalized.hh
                            lapack.hh
                            InnerProduct.hh InnerProductL2.hh InnerProductH1.hh
-                           BilinearForm.hh Projectors.hh
+                           BilinearForm.hh BilinearFormFactory.hh Projectors.hh
                            DeRham_Node.hh DeRham_Edge.hh DeRham_Face.hh
                            GrammMatrix.hh
                            FunctionUpwind.hh
@@ -75,7 +76,6 @@ add_amanzi_library(whetstone
                            MFD3D_Electromagnetics.hh
                            MFD3D_Generalized_Diffusion.hh
                            MFD3D_Lagrange.hh MFD3D_LagrangeSerendipity.hh
-                           MFD3DFactory.hh
                            nlfv.hh
                            NumericalIntegration.hh
                            Quadrature1D.hh Quadrature2D.hh Quadrature3D.hh
@@ -87,6 +87,7 @@ add_amanzi_library(whetstone
                            Tensor.hh
                            WhetStoneDefs.hh
                            WhetStoneFunction.hh WhetStoneMeshUtils.hh
+                           bilinear_form_registration.hh
                    LINK_LIBS geometry mesh error_handling ${Epetra_LIBRARIES})
 
 
@@ -122,11 +123,12 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/whetstone_electromagnetics.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    # Test: various operations with tensors 
-    add_amanzi_test(whetstone_tensors_geometry whetstone_tensors_geometry
+    # Test: miscalleneous library tools
+    add_amanzi_test(whetstone_misc whetstone_misc
                     KIND unit
                     SOURCE test/Main.cc test/whetstone_tensors.cc
                                         test/whetstone_geometry.cc
+                                        test/whetstone_factory.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: surface matrices for diffusion

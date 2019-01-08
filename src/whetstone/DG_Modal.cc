@@ -30,12 +30,15 @@ namespace WhetStone {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-DG_Modal::DG_Modal(int order, Teuchos::RCP<const AmanziMesh::Mesh> mesh, std::string basis_name)
+DG_Modal::DG_Modal(const Teuchos::ParameterList& plist,
+                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
   : numi_(mesh),
-    order_(order), 
     mesh_(mesh),
     d_(mesh->space_dimension())
 {
+  order_ = plist.get<int>("method order");
+  std::string basis_name = plist.get<std::string>("dg basis");
+
   int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   basis_.resize(ncells_wghost);
   monomial_integrals_.resize(ncells_wghost);

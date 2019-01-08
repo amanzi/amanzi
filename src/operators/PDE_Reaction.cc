@@ -11,7 +11,7 @@
 
 #include <vector>
 
-#include "MFD3DFactory.hh"
+#include "BilinearFormFactory.hh"
 
 #include "Op_Cell_Schema.hh"
 #include "OperatorDefs.hh"
@@ -63,8 +63,7 @@ void PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
   global_op_->OpPushBack(local_op_);
 
   // parse discretization  parameters
-  WhetStone::MFD3DFactory factory;
-  mfd_ = factory.Create(mesh_, plist);
+  mfd_ = WhetStone::BilinearFormFactory::Create(plist, mesh_);
 }
 
 

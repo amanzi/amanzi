@@ -13,7 +13,7 @@
 
 // Amanzi
 #include "CoordinateSystems.hh"
-#include "MFD3DFactory.hh"
+#include "DG_Modal.hh"
 #include "NumericalIntegration.hh"
 #include "Polynomial.hh"
 
@@ -88,8 +88,7 @@ void PDE_DiffusionDG::Init_(Teuchos::ParameterList& plist)
   method_order_ = plist.get<int>("method order", 0);
   matrix_ = plist.get<std::string>("matrix type");
   
-  std::string basis = plist.get<std::string>("dg basis");
-  dg_ = std::make_shared<WhetStone::DG_Modal>(method_order_, mesh_, basis);
+  dg_ = std::make_shared<WhetStone::DG_Modal>(plist, mesh_);
 }
 
 

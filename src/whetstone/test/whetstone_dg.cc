@@ -49,7 +49,10 @@ TEST(DG2D_MASS_MATRIX) {
   T(0, 0) = 1.0;
 
   for (int k = 0; k < 3; k++) {
-    DG_Modal dg(k, mesh, "orthonormalized");
+    Teuchos::ParameterList plist;
+    plist.set<std::string>("dg basis", "orthonormalized")
+         .set<int>("method order", k);
+    DG_Modal dg(plist, mesh);
 
     dg.MassMatrix(0, T, M);
     int nk = M.NumRows();
@@ -91,7 +94,11 @@ TEST(DG3D_MASS_MATRIX) {
   T(0, 0) = 2.0;
 
   for (int k = 0; k < 3; k++) {
-    DG_Modal dg1(k, mesh, "regularized");
+    Teuchos::ParameterList plist;
+    plist.set<std::string>("dg basis", "regularized")
+         .set<int>("method order", k);
+
+    DG_Modal dg1(plist, mesh);
     dg1.MassMatrix(0, T, M0);
     int nk = M0.NumRows();
 
@@ -130,7 +137,10 @@ TEST(DG3D_MASS_MATRIX) {
     }
 
     // partially orthonormalized Taylor basis
-    DG_Modal dg2(k, mesh, "orthonormalized");
+    plist.set<std::string>("dg basis", "orthonormalized")
+         .set<int>("method order", k);
+
+    DG_Modal dg2(plist, mesh);
     dg2.MassMatrix(0, T, M0);
 
     printf("Mass matrix for order=%d\n", k);
@@ -168,7 +178,10 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
   DenseMatrix M1, M2;
 
   for (int k = 0; k < 3; k++) {
-    DG_Modal dg(2, mesh, "orthonormalized");
+    Teuchos::ParameterList plist;
+    plist.set<std::string>("dg basis", "orthonormalized")
+         .set<int>("method order", 2);
+    DG_Modal dg(plist, mesh);
 
     Polynomial u(2, k);
     u(0, 0) = 1.0;
@@ -228,7 +241,10 @@ void Run2DFluxMatrix(bool upwind, bool jump_on_test) {
   Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 2, 2); 
  
   for (int k = 0; k < 3; k++) {
-    DG_Modal dg(k, mesh, "orthonormalized");
+    Teuchos::ParameterList plist;
+    plist.set<std::string>("dg basis", "orthonormalized")
+         .set<int>("method order", k);
+    DG_Modal dg(plist, mesh);
 
     Polynomial un(2, 0);
     un(0) = 1.0;
@@ -293,7 +309,10 @@ TEST(DG2D_FLUX_MATRIX_CONSERVATION) {
   Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 2, 2); 
  
   for (int k = 0; k < 3; k++) {
-    DG_Modal dg(k, mesh, "normalized");
+    Teuchos::ParameterList plist;
+    plist.set<std::string>("dg basis", "normalized")
+         .set<int>("method order", k);
+    DG_Modal dg(plist, mesh);
 
     Polynomial un(2, 1);
     un(0) = 1.0;
@@ -343,7 +362,10 @@ TEST(DG3D_FLUX_MATRIX) {
                                         Teuchos::null, true, true); 
  
   for (int k = 0; k < 2; k++) {
-    DG_Modal dg(k, mesh, "orthonormalized");
+    Teuchos::ParameterList plist;
+    plist.set<std::string>("dg basis", "orthonormalized")
+         .set<int>("method order", k);
+    DG_Modal dg(plist, mesh);
 
     int d(3), f(4);
     Polynomial un(d, 0);
@@ -405,7 +427,10 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
   Teuchos::RCP<Mesh> mesh = meshfactory("test/one_quad.exo"); 
 
   for (int k = 0; k < 3; k++) {
-    DG_Modal dg(k, mesh, "regularized");
+    Teuchos::ParameterList plist;
+    plist.set<std::string>("dg basis", "regularized")
+         .set<int>("method order", k);
+    DG_Modal dg(plist, mesh);
 
     DenseMatrix A0, A1;
     VectorPolynomial u(2, 2);
@@ -526,7 +551,11 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
 
   int d(3);
   for (int k = 0; k < 2; k++) {
-    DG_Modal dg(k, mesh, "regularized");
+    Teuchos::ParameterList plist;
+    plist.set<std::string>("dg basis", "regularized")
+         .set<int>("method order", k);
+
+    DG_Modal dg(plist, mesh);
 
     DenseMatrix A0;
     VectorPolynomial u(d, 3);

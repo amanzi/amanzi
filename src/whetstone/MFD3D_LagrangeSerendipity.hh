@@ -22,6 +22,7 @@
 #include "Mesh.hh"
 #include "Point.hh"
 
+#include "BilinearFormFactory.hh"
 #include "DenseMatrix.hh"
 #include "MFD3D_Lagrange.hh"
 #include "Polynomial.hh"
@@ -32,9 +33,8 @@ namespace WhetStone {
 
 class MFD3D_LagrangeSerendipity : public MFD3D_Lagrange { 
  public:
-  MFD3D_LagrangeSerendipity(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : InnerProduct(mesh),
-      MFD3D_Lagrange(mesh) {};
+  MFD3D_LagrangeSerendipity(const Teuchos::ParameterList& plist,
+                            const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~MFD3D_LagrangeSerendipity() {};
 
   // required methods
@@ -70,6 +70,9 @@ class MFD3D_LagrangeSerendipity : public MFD3D_Lagrange {
 
   void CalculateDOFsOnBoundary_(
       int c, const std::vector<Polynomial>& vf, DenseVector& vdof);
+
+ private:
+  static RegisteredFactory<MFD3D_LagrangeSerendipity> factory_;
 };
 
 }  // namespace WhetStone

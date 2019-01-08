@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "errors.hh"
-#include "MFD3DFactory.hh"
+#include "BilinearFormFactory.hh"
 
 #include "Operator_Schema.hh"
 #include "Op_Cell_Schema.hh"
@@ -96,8 +96,7 @@ void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
   grad_on_test_ = plist.get<bool>("gradient operator on test function", true);
 
   // discretization method
-  WhetStone::MFD3DFactory factory;
-  mfd_ = factory.Create(mesh_, plist);
+  mfd_ = WhetStone::BilinearFormFactory::Create(plist, mesh_);
 }
 
 

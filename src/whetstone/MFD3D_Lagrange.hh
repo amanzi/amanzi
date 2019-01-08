@@ -21,6 +21,7 @@
 #include "Mesh.hh"
 #include "Point.hh"
 
+#include "BilinearFormFactory.hh"
 #include "DenseMatrix.hh"
 #include "MFD3D.hh"
 #include "Polynomial.hh"
@@ -32,9 +33,8 @@ namespace WhetStone {
 
 class MFD3D_Lagrange : public MFD3D { 
  public:
-  MFD3D_Lagrange(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : MFD3D(mesh),
-      InnerProduct(mesh) {};
+  MFD3D_Lagrange(const Teuchos::ParameterList& plist,
+                 const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~MFD3D_Lagrange() {};
 
   // required methods
@@ -83,6 +83,9 @@ class MFD3D_Lagrange : public MFD3D {
  protected:
   PolynomialOnMesh integrals_;
   DenseMatrix R_, G_;
+
+ private:
+  static RegisteredFactory<MFD3D_Lagrange> factory_;
 };
 
 }  // namespace WhetStone
