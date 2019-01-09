@@ -171,7 +171,6 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
   void CreateMassMatrices_();
 
   void UpdateMatricesNodal_();
-  void UpdateMatricesEdge_();
   void UpdateMatricesTPFA_();
   void UpdateMatricesMixed_();
   void UpdateMatricesMixed_little_k_();
@@ -189,9 +188,6 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
                        const Teuchos::Ptr<const BCs>& bc_test,
                        bool primary, bool eliminate, bool essential_eqn);
   void ApplyBCs_Cell_(const Teuchos::Ptr<const BCs>& bc_trial,
-                      const Teuchos::Ptr<const BCs>& bc_test,
-                      bool primary, bool eliminate, bool essential_eqn);
-  void ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_trial,
                       const Teuchos::Ptr<const BCs>& bc_test,
                       bool primary, bool eliminate, bool essential_eqn);
   void ApplyBCs_Nodal_(const Teuchos::Ptr<const BCs>& bc_f,

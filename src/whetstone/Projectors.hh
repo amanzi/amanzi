@@ -34,6 +34,7 @@ namespace Amanzi {
 namespace WhetStone {
 
 class DenseVector;
+class Polynomial;
 class VectorPolynomial;
 
 class Projectors { 

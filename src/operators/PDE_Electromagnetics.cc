@@ -57,7 +57,8 @@ void PDE_Electromagnetics::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& u,
     const Teuchos::Ptr<const CompositeVector>& p)
 {
-  WhetStone::MFD3D_Electromagnetics mfd(mesh_);
+  Teuchos::ParameterList plist;
+  WhetStone::MFD3D_Electromagnetics mfd(plist, mesh_);
   WhetStone::DenseMatrix Acell;
 
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
@@ -109,8 +110,9 @@ void PDE_Electromagnetics::ApplyBCs_Edge_(
   Epetra_MultiVector& rhs_edge = *global_op_->rhs()->ViewComponent("edge", true);
 
   // support of surface integrals
+  Teuchos::ParameterList plist;
   int dim = mesh_->space_dimension();
-  WhetStone::MFD3D_Electromagnetics mfd3d(mesh_);
+  WhetStone::MFD3D_Electromagnetics mfd3d(plist, mesh_);
 
   // calculate number of cells for each edge 
   // move to properties of BCs (lipnikov@lanl.gov)

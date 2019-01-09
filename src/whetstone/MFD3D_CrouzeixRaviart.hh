@@ -21,6 +21,7 @@
 #include "Mesh.hh"
 #include "Point.hh"
 
+#include "BilinearFormFactory.hh"
 #include "DenseMatrix.hh"
 #include "MatrixPolynomial.hh"
 #include "MFD3D.hh"
@@ -33,10 +34,8 @@ namespace WhetStone {
 
 class MFD3D_CrouzeixRaviart : public MFD3D { 
  public:
-  MFD3D_CrouzeixRaviart(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : MFD3D(mesh),
-      InnerProduct(mesh),
-      use_always_ho_(false) {};
+  MFD3D_CrouzeixRaviart(const Teuchos::ParameterList& plist,
+                        const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~MFD3D_CrouzeixRaviart() {};
 
   // required methods
@@ -132,6 +131,8 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
 
  private:
   bool use_always_ho_;
+
+  static RegisteredFactory<MFD3D_CrouzeixRaviart> factory_;
 };
 
 }  // namespace WhetStone

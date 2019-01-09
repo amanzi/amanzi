@@ -19,6 +19,7 @@
 
 #include "Mesh.hh"
 
+#include "BilinearFormFactory.hh"
 #include "DenseMatrix.hh"
 #include "MFD3D.hh"
 #include "Tensor.hh"
@@ -28,8 +29,9 @@ namespace WhetStone {
 
 class MFD3D_Generalized_Diffusion : public MFD3D { 
  public:
-  MFD3D_Generalized_Diffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) 
-    : MFD3D(mesh), 
+  MFD3D_Generalized_Diffusion(const Teuchos::ParameterList& plist,
+                              const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : MFD3D(mesh),
       InnerProduct(mesh) {};
   ~MFD3D_Generalized_Diffusion() {};
 
@@ -52,6 +54,9 @@ class MFD3D_Generalized_Diffusion : public MFD3D {
   void CurvedFaceGeometry_(int f, int dirs,
                            std::vector<AmanziGeometry::Point>& vv, 
                            std::vector<AmanziGeometry::Point>& xm);
+
+ private:
+  static RegisteredFactory<MFD3D_Generalized_Diffusion> factory_;
 };
 
 }  // namespace WhetStone

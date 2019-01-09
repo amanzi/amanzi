@@ -22,6 +22,7 @@
 #include "Mesh.hh"
 #include "Point.hh"
 
+#include "BilinearFormFactory.hh"
 #include "DenseMatrix.hh"
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "Polynomial.hh"
@@ -32,9 +33,10 @@ namespace WhetStone {
 
 class MFD3D_CrouzeixRaviartSerendipity : public MFD3D_CrouzeixRaviart { 
  public:
-  MFD3D_CrouzeixRaviartSerendipity(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+  MFD3D_CrouzeixRaviartSerendipity(const Teuchos::ParameterList& plist,
+                                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : InnerProduct(mesh),
-      MFD3D_CrouzeixRaviart(mesh) {};
+      MFD3D_CrouzeixRaviart(plist, mesh) {};
   ~MFD3D_CrouzeixRaviartSerendipity() {};
 
   // required methods
@@ -70,6 +72,9 @@ class MFD3D_CrouzeixRaviartSerendipity : public MFD3D_CrouzeixRaviart {
 
   void CalculateDOFsOnBoundary_(
       int c, const std::vector<Polynomial>& vf, DenseVector& vdof);
+
+ private:
+  static RegisteredFactory<MFD3D_CrouzeixRaviartSerendipity> factory_;
 };
 
 }  // namespace WhetStone

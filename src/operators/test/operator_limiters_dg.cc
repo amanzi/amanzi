@@ -64,7 +64,11 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
   auto field_c = field->ViewComponent("cell", true);
 
   int order = 2;
-  WhetStone::DG_Modal dg(order, mesh, basis);
+  Teuchos::ParameterList dglist;
+  dglist.set<int>("method order", order)
+        .set<std::string>("dg basis", basis);
+
+  WhetStone::DG_Modal dg(dglist, mesh);
   AnalyticDG08b ana(mesh, order, true);
   ana.set_shapes(false, true, false);
 
@@ -234,7 +238,11 @@ TEST(LIMITER_GAUSS_POINTS)
   auto field_c = field->ViewComponent("cell", true);
 
   int order = 2;
-  WhetStone::DG_Modal dg(order, mesh, "orthonormalized");
+  Teuchos::ParameterList dglist;
+  dglist.set<int>("method order", order)
+        .set<std::string>("dg basis", "orthonormalized");
+
+  WhetStone::DG_Modal dg(dglist, mesh);
   AnalyticDG08b ana(mesh, order, true);
   ana.set_shapes(true, false, false);
 

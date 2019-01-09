@@ -208,6 +208,18 @@ class MeshColumn : public Mesh {
     amanzi_throw(mesg);
   }
 
+  // Cells of type 'ptype' connected to an edge - The order of cells is
+  // not guaranteed to be the same for corresponding edges on
+  // different processors
+  virtual
+  void edge_get_cells(const Entity_ID edgeid,
+                      const Parallel_type ptype,
+                      Entity_ID_List *cellids) const override {
+    Errors::Message mesg("Not implemented");
+    amanzi_throw(mesg);
+  }
+
+
   // Same level adjacencies
   //-----------------------
 
@@ -235,7 +247,6 @@ class MeshColumn : public Mesh {
                                Entity_ID_List *nadj_cellids) const override {
     extracted_.cell_get_node_adj_cells(cellid, ptype, nadj_cellids);
   }
-
 
 
   //

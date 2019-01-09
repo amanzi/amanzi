@@ -49,7 +49,8 @@ TEST(MASS_MATRIX_2D) {
   // Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 20, 20, gm, true, true); 
   Teuchos::RCP<Mesh> mesh = factory("test/two_cell2.exo", Teuchos::null, request_faces, request_edges); 
  
-  MFD3D_Electromagnetics mfd(mesh);
+  Teuchos::ParameterList plist;
+  MFD3D_Electromagnetics mfd(plist, mesh);
 
   int cell = 0;
   AmanziMesh::Entity_ID_List edges;
@@ -138,7 +139,8 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, Teuchos::null, true, true); 
   RCP<Mesh> mesh = meshfactory(mesh_file, Teuchos::null, request_faces, request_edges); 
  
-  MFD3D_Electromagnetics mfd(mesh);
+  Teuchos::ParameterList plist;
+  MFD3D_Electromagnetics mfd(plist, mesh);
 
   int cell = 0;
   AmanziMesh::Entity_ID_List edges;
@@ -242,7 +244,8 @@ TEST(STIFFNESS_MATRIX_2D) {
   // Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 1, 1, Teuchos::null, true, true); 
   Teuchos::RCP<Mesh> mesh = factory("test/two_cell2.exo", Teuchos::null, request_faces, request_edges); 
  
-  MFD3D_Electromagnetics mfd(mesh);
+  Teuchos::ParameterList plist;
+  MFD3D_Electromagnetics mfd(plist, mesh);
 
   int cell = 0;
   AmanziMesh::Entity_ID_List faces;
@@ -328,7 +331,8 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, Teuchos::null, true, true); 
   RCP<Mesh> mesh = meshfactory(mesh_file, Teuchos::null, request_faces, request_edges); 
  
-  MFD3D_Electromagnetics mfd(mesh);
+  Teuchos::ParameterList plist;
+  MFD3D_Electromagnetics mfd(plist, mesh);
 
   int cell = 0;
   AmanziMesh::Entity_ID_List edges;

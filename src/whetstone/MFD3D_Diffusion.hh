@@ -26,6 +26,7 @@
 #include "Mesh.hh"
 #include "Point.hh"
 
+#include "BilinearFormFactory.hh"
 #include "DenseMatrix.hh"
 #include "DeRham_Face.hh"
 #include "Tensor.hh"
@@ -37,8 +38,13 @@ namespace WhetStone {
 class MFD3D_Diffusion : public MFD3D,
                         public DeRham_Face { 
  public:
-  explicit MFD3D_Diffusion(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : MFD3D(mesh), 
+  // constructor for backward compatibility
+  MFD3D_Diffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : MFD3D(mesh),
+      InnerProduct(mesh) {};
+  MFD3D_Diffusion(const Teuchos::ParameterList& plist,
+                  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : MFD3D(mesh),
       InnerProduct(mesh) {};
   ~MFD3D_Diffusion() {};
 
@@ -111,6 +117,9 @@ class MFD3D_Diffusion : public MFD3D,
   // mesh extension methods 
   // -- exterior normal
   AmanziGeometry::Point mesh_face_normal(int f, int c);
+
+ private:
+  static RegisteredFactory<MFD3D_Diffusion> factory_;
 };
 
 }  // namespace WhetStone

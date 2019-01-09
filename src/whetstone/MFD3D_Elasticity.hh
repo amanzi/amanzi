@@ -26,6 +26,7 @@
 #include "Mesh.hh"
 #include "Point.hh"
 
+#include "BilinearFormFactory.hh"
 #include "DenseMatrix.hh"
 #include "MFD3D.hh"
 #include "Tensor.hh"
@@ -35,7 +36,8 @@ namespace WhetStone {
 
 class MFD3D_Elasticity : public MFD3D { 
  public:
-  MFD3D_Elasticity(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+  MFD3D_Elasticity(const Teuchos::ParameterList& plist,
+                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : MFD3D(mesh),
       InnerProduct(mesh) {};
   ~MFD3D_Elasticity() {};
@@ -60,6 +62,9 @@ class MFD3D_Elasticity : public MFD3D {
  private:
   void MatrixMatrixProduct_(
       const DenseMatrix& A, const DenseMatrix& B, bool transposeB, DenseMatrix& AB);
+
+ private:
+  static RegisteredFactory<MFD3D_Elasticity> factory_;
 };
 
 }  // namespace WhetStone

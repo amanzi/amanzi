@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "Basis_Regularized.hh"
-#include "MFD3DFactory.hh"
+#include "BilinearFormFactory.hh"
 
 #include "OperatorDefs.hh"
 #include "Operator_Schema.hh"
@@ -85,13 +85,13 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
 
   // parse discretization parameters
   // -- discretization method
-  WhetStone::MFD3DFactory factory;
-  auto mfd = factory.Create(mesh_, plist);
+  auto mfd = WhetStone::BilinearFormFactory::Create(plist, mesh_);
 
   // -- matrices to build
   matrix_ = plist.get<std::string>("matrix type");
+  method_ = plist.get<std::string>("method");
 
-  if (factory.method() == "dg modal") {
+  if (method_ == "dg modal") {
     dg_ = Teuchos::rcp_dynamic_cast<WhetStone::DG_Modal>(mfd);
   } else {
     Errors::Message msg;

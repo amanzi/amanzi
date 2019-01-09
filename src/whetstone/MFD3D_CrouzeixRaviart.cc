@@ -33,6 +33,19 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
+* Constructor parses the parameter list
+****************************************************************** */
+MFD3D_CrouzeixRaviart::MFD3D_CrouzeixRaviart(const Teuchos::ParameterList& plist,
+                                             const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+  : MFD3D(mesh),
+    InnerProduct(mesh),
+    use_always_ho_(false)
+{
+  order_ = plist.get<int>("method order");
+}
+
+
+/* ******************************************************************
 * Consistency condition for stiffness matrix. 
 * Only the upper triangular part of Ac is calculated.
 ****************************************************************** */

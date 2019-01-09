@@ -152,6 +152,15 @@ class MeshEmbeddedLogical : public Mesh {
                            const Parallel_type ptype,
                            Entity_ID_List *faceids) const;
 
+  // Cells of type 'ptype' connected to an edge
+  virtual
+  void edge_get_cells(const Entity_ID edgeid,
+                      const Parallel_type ptype,
+                      Entity_ID_List *cellids) const {
+    Errors::Message mesg("Not implemented");
+    amanzi_throw(mesg);
+  }
+
 
   // Same level adjacencies
   //-----------------------

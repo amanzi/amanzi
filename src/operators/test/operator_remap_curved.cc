@@ -277,9 +277,8 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   Epetra_MultiVector& p2c = *p2.ViewComponent("cell");
 
   // we need dg to use correct scaling of basis functions
-  std::string basis = plist.sublist("PK operator")
-                           .sublist("flux operator").get<std::string>("dg basis");
-  auto dg = Teuchos::rcp(new WhetStone::DG_Modal(order, mesh0, basis));
+  Teuchos::ParameterList dg_list = plist.sublist("PK operator").sublist("flux operator");
+  auto dg = Teuchos::rcp(new WhetStone::DG_Modal(dg_list, mesh0));
 
   AnalyticDG04 ana(mesh0, order, true);
   // ana.set_shapes(true, true, false);

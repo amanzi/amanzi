@@ -51,7 +51,7 @@ namespace mpl = boost::mpl;
 namespace Amanzi {
 namespace AmanziMesh {
 
-class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
+class bogus_mesh : public Mesh {
  public:
   
   /// Default constructor.
@@ -105,7 +105,7 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
     Exceptions::amanzi_throw(Errors::Message("generation not supported"));
   }
 
-  bogus_mesh(const Amanzi::AmanziMesh::GenerationSpec& gspec, 
+  bogus_mesh(const GenerationSpec& gspec, 
              const Epetra_MpiComm *comm_unicator,
              const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
              const Teuchos::RCP<const VerboseObject>& vo,
@@ -118,7 +118,7 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
 
   bogus_mesh(const Mesh *inmesh,
              const std::vector<std::string>& setnames,
-             const Amanzi::AmanziMesh::Entity_kind setkind,
+             const Entity_kind setkind,
              const bool flatten, const bool extrude,
              const bool request_faces, const bool request_edges)
   {
@@ -127,7 +127,7 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
 
   bogus_mesh(const Mesh& inmesh,
              const std::vector<std::string>& setnames,
-             const Amanzi::AmanziMesh::Entity_kind setkind,
+             const Entity_kind setkind,
              const bool flatten, const bool extrude,
              const bool request_faces, const bool request_edges)
   {
@@ -136,117 +136,108 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
 
   bogus_mesh(const Mesh& inmesh,
              const std::vector<int>& entity_list,
-             const Amanzi::AmanziMesh::Entity_kind entity_kind,
+             const Entity_kind entity_kind,
              const bool flatten, const bool extrude,
              const bool request_faces, const bool request_edges)
   {
     Exceptions::amanzi_throw(Errors::Message("extraction not supported"));
   }
 
-  Amanzi::AmanziMesh::Parallel_type 
-  entity_get_ptype(const Amanzi::AmanziMesh::Entity_kind kind, 
-                   const Amanzi::AmanziMesh::Entity_ID entid) const
-  { return Amanzi::AmanziMesh::Parallel_type::OWNED; }
+  Parallel_type 
+  entity_get_ptype(const Entity_kind kind, const Entity_ID entid) const
+  { return Parallel_type::OWNED; }
 
-  Amanzi::AmanziMesh::Cell_type 
-  cell_get_type(const Amanzi::AmanziMesh::Entity_ID cellid) const
-  { return Amanzi::AmanziMesh::CELLTYPE_UNKNOWN; }
+  Cell_type 
+  cell_get_type(const Entity_ID cellid) const
+  { return CELLTYPE_UNKNOWN; }
 
   unsigned int 
-  num_entities(const Amanzi::AmanziMesh::Entity_kind kind,
-               const Amanzi::AmanziMesh::Parallel_type ptype) const
+  num_entities(const Entity_kind kind, const Parallel_type ptype) const
   { return 0; }
 
-  Amanzi::AmanziMesh::Entity_ID
-  GID(const Amanzi::AmanziMesh::Entity_ID lid, 
-      const Amanzi::AmanziMesh::Entity_kind kind) const
+  Entity_ID
+  GID(const Entity_ID lid, const Entity_kind kind) const
   { return 0; }
 
-  void cell_get_faces_and_dirs_internal_(const Amanzi::AmanziMesh::Entity_ID cellid,
-                                         Amanzi::AmanziMesh::Entity_ID_List *faceids,
+  void cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
+                                         Entity_ID_List *faceids,
                                          std::vector<int> *face_dirs,
-                                          const bool ordered=false) const
+                                         const bool ordered=false) const
   {};
 
-  void cell_get_edges_internal_(const Amanzi::AmanziMesh::Entity_ID cellid,
-                                Amanzi::AmanziMesh::Entity_ID_List *edgeids) const
+  void cell_get_edges_internal_(const Entity_ID cellid,
+                                Entity_ID_List *edgeids) const
   {};
 
-  void cell_2D_get_edges_and_dirs_internal_(const Amanzi::AmanziMesh::Entity_ID cellid,
-                                            Amanzi::AmanziMesh::Entity_ID_List *edgeids,
+  void cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
+                                            Entity_ID_List *edgeids,
                                             std::vector<int> *edgedirs) const
   {};
 
-  void cell_get_nodes(const Amanzi::AmanziMesh::Entity_ID cellid, 
-                      Amanzi::AmanziMesh::Entity_ID_List *nodeids) const
+  void cell_get_nodes(const Entity_ID cellid, 
+                      Entity_ID_List *nodeids) const
   {};
 
-  void face_get_edges_and_dirs_internal_(const Amanzi::AmanziMesh::Entity_ID faceid,
-                                         Amanzi::AmanziMesh::Entity_ID_List *edgeids,
+  void face_get_edges_and_dirs_internal_(const Entity_ID faceid,
+                                         Entity_ID_List *edgeids,
                                          std::vector<int> *edge_dirs,
                                          const bool ordered=true) const
   {};
 
-  void face_get_nodes(const Amanzi::AmanziMesh::Entity_ID faceid, 
-                      Amanzi::AmanziMesh::Entity_ID_List *nodeids) const
+  void face_get_nodes(const Entity_ID faceid, Entity_ID_List *nodeids) const
   {};
 
 
-  void edge_get_nodes(const Amanzi::AmanziMesh::Entity_ID edgeid,
-                      Amanzi::AmanziMesh::Entity_ID *nodeid0,
-                      Amanzi::AmanziMesh::Entity_ID *nodeid1) const
+  void edge_get_nodes(const Entity_ID edgeid,
+                      Entity_ID *nodeid0, Entity_ID *nodeid1) const
   {};
 
-  void node_get_cells(const Amanzi::AmanziMesh::Entity_ID nodeid, 
-                      const Amanzi::AmanziMesh::Parallel_type ptype,
-                      Amanzi::AmanziMesh::Entity_ID_List *cellids) const
+  void node_get_cells(const Entity_ID nodeid, const Parallel_type ptype,
+                      Entity_ID_List *cellids) const
   {};
 
-  void node_get_faces(const Amanzi::AmanziMesh::Entity_ID nodeid, 
-                      const Amanzi::AmanziMesh::Parallel_type ptype,
-                      Amanzi::AmanziMesh::Entity_ID_List *faceids) const
+  void node_get_faces(const Entity_ID nodeid, const Parallel_type ptype,
+                      Entity_ID_List *faceids) const
   {};
     
-  void node_get_cell_faces(const Amanzi::AmanziMesh::Entity_ID nodeid, 
-                           const Amanzi::AmanziMesh::Entity_ID cellid,
-                           const Amanzi::AmanziMesh::Parallel_type ptype,
-                           Amanzi::AmanziMesh::Entity_ID_List *faceids) const
+  void node_get_cell_faces(const Entity_ID nodeid, 
+                           const Entity_ID cellid,
+                           const Parallel_type ptype,
+                           Entity_ID_List *faceids) const
   {};
     
-  void face_get_cells_internal_(const Amanzi::AmanziMesh::Entity_ID faceid, 
-                               const Amanzi::AmanziMesh::Parallel_type ptype,
-                               Amanzi::AmanziMesh::Entity_ID_List *cellids) const
+  void edge_get_cells(const Entity_ID edgeid, const Parallel_type ptype,
+                      Entity_ID_List *cellids) const
   {};
 
-  void cell_get_face_adj_cells(const Amanzi::AmanziMesh::Entity_ID cellid,
-                               const Amanzi::AmanziMesh::Parallel_type ptype,
-                               Amanzi::AmanziMesh::Entity_ID_List *fadj_cellids) const
+  void face_get_cells_internal_(const Entity_ID faceid, const Parallel_type ptype,
+                                Entity_ID_List *cellids) const
   {};
 
-  void cell_get_node_adj_cells(const Amanzi::AmanziMesh::Entity_ID cellid,
-                               const Amanzi::AmanziMesh::Parallel_type ptype,
-                               Amanzi::AmanziMesh::Entity_ID_List *nadj_cellids) const
+  void cell_get_face_adj_cells(const Entity_ID cellid, const Parallel_type ptype,
+                               Entity_ID_List *fadj_cellids) const
+  {};
+
+  void cell_get_node_adj_cells(const Entity_ID cellid, const Parallel_type ptype,
+                               Entity_ID_List *nadj_cellids) const
   {};
 
   void 
-  node_get_coordinates(const Amanzi::AmanziMesh::Entity_ID nodeid, 
-                       Amanzi::AmanziGeometry::Point *ncoord) const
+  node_get_coordinates(const Entity_ID nodeid, AmanziGeometry::Point *ncoord) const
   {};
 
-  void face_get_coordinates(const Amanzi::AmanziMesh::Entity_ID faceid, 
-			    std::vector<Amanzi::AmanziGeometry::Point> *fcoords) const
+  void face_get_coordinates(const Entity_ID faceid, 
+			    std::vector<AmanziGeometry::Point> *fcoords) const
   {};
 
-  void cell_get_coordinates(const Amanzi::AmanziMesh::Entity_ID cellid, 
-			    std::vector<Amanzi::AmanziGeometry::Point> *ccoords) const
+  void cell_get_coordinates(const Entity_ID cellid, 
+			    std::vector<AmanziGeometry::Point> *ccoords) const
   {};
 
-  void node_set_coordinates(const Amanzi::AmanziMesh::Entity_ID nodeid, 
-                                      const double *coords) 
+  void node_set_coordinates(const Entity_ID nodeid, const double *coords) 
   {};
 
-  void node_set_coordinates(const Amanzi::AmanziMesh::Entity_ID nodeid,
-                            const Amanzi::AmanziGeometry::Point coords)
+  void node_set_coordinates(const Entity_ID nodeid, const AmanziGeometry::Point coords)
   {};
 
   const Epetra_Map& cell_map(bool include_ghost) const
@@ -269,36 +260,36 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
     
 
   unsigned int get_set_size(const std::string setname, 
-                            const Amanzi::AmanziMesh::Entity_kind kind,
-                            const Amanzi::AmanziMesh::Parallel_type ptype) const
+                            const Entity_kind kind,
+                            const Parallel_type ptype) const
   { return 0; }
 
   unsigned int get_set_size(const char *setname, 
-                            const Amanzi::AmanziMesh::Entity_kind kind,
-                            const Amanzi::AmanziMesh::Parallel_type ptype) const
+                            const Entity_kind kind,
+                            const Parallel_type ptype) const
   { return 0; }
 
-  unsigned int get_set_size(const Amanzi::AmanziMesh::Set_ID setid, 
-                            const Amanzi::AmanziMesh::Entity_kind kind,
-                            const Amanzi::AmanziMesh::Parallel_type ptype) const
+  unsigned int get_set_size(const Set_ID setid, 
+                            const Entity_kind kind,
+                            const Parallel_type ptype) const
   { return 0; }
 
   void get_set_entities_and_vofs(const std::string setname, 
-                                 const Amanzi::AmanziMesh::Entity_kind kind, 
-                                 const Amanzi::AmanziMesh::Parallel_type ptype, 
-                                 Amanzi::AmanziMesh::Entity_ID_List *entids,
+                                 const Entity_kind kind, 
+                                 const Parallel_type ptype, 
+                                 Entity_ID_List *entids,
                                  std::vector<double> *vofs) const
   {};
 
-  void get_set_entities(const Amanzi::AmanziMesh::Set_ID setid, 
-                        const Amanzi::AmanziMesh::Entity_kind kind, 
-                        const Amanzi::AmanziMesh::Parallel_type ptype, 
-                        Amanzi::AmanziMesh::Entity_ID_List *entids) const
+  void get_set_entities(const Set_ID setid, 
+                        const Entity_kind kind, 
+                        const Parallel_type ptype, 
+                        Entity_ID_List *entids) const
   {};
 
   int deform(const std::vector<double>& target_cell_volumes_in, 
              const std::vector<double>& min_cell_volumes_in, 
-             const Amanzi::AmanziMesh::Entity_ID_List& fixed_nodes,
+             const Entity_ID_List& fixed_nodes,
              const bool move_vertical)
   { return 0; }
 

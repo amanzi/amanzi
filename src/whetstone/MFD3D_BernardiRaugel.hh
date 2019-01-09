@@ -21,6 +21,7 @@
 #include "Mesh.hh"
 #include "Point.hh"
 
+#include "BilinearFormFactory.hh"
 #include "DenseMatrix.hh"
 #include "MFD3D.hh"
 #include "Tensor.hh"
@@ -30,7 +31,8 @@ namespace WhetStone {
 
 class MFD3D_BernardiRaugel : public MFD3D { 
  public:
-  MFD3D_BernardiRaugel(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+  MFD3D_BernardiRaugel(const Teuchos::ParameterList& plist,
+                       const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : MFD3D(mesh),
       InnerProduct(mesh) {};
   ~MFD3D_BernardiRaugel() {};
@@ -51,6 +53,9 @@ class MFD3D_BernardiRaugel : public MFD3D {
   // -- other matrices
   virtual int DivergenceMatrix(int c, DenseMatrix& A);
   virtual int AdvectionMatrix(int c, const std::vector<AmanziGeometry::Point>& u, DenseMatrix& A);
+
+ private:
+  static RegisteredFactory<MFD3D_BernardiRaugel> factory_;
 };
 
 }  // namespace WhetStone

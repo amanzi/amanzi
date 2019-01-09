@@ -201,7 +201,8 @@ TEST(DARCY_MASS_3D_GENERALIZED_POLYHEDRON) {
   Teuchos::RCP<Mesh> mesh = meshfactory("test/hex_random.exo"); 
   // Teuchos::RCP<Mesh> mesh = meshfactory("test/random3D_05.exo"); 
  
-  MFD3D_Generalized_Diffusion mfd(mesh);
+  Teuchos::ParameterList plist;
+  MFD3D_Generalized_Diffusion mfd(plist, mesh);
 
   int nfaces = 6, cell = 0;
   double volume = mesh->cell_volume(cell);
@@ -604,7 +605,9 @@ TEST(DARCY_STIFFNESS_2D_EDGE) {
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
   RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo", Teuchos::null, true, true); 
  
-  MFD3D_CrouzeixRaviart mfd(mesh);
+  Teuchos::ParameterList plist;
+  plist.set<int>("method order", 1);
+  MFD3D_CrouzeixRaviart mfd(plist, mesh);
 
   int nedges = 5, cell = 0;
   Tensor T(2, 1);

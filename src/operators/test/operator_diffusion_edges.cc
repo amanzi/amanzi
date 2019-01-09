@@ -22,18 +22,17 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "MFD3D_Diffusion_Edge.hh"
 #include "MeshFactory.hh"
 #include "LinearOperatorPCG.hh"
 #include "Tensor.hh"
 
 // Operators
-#include "Analytic01.hh"
+#include "Analytic02.hh"
 
 #include "OperatorDefs.hh"
-#include "PDE_DiffusionFactory.hh"
-#include "PDE_DiffusionMFD.hh"
+#include "PDE_Abstract.hh"
 #include "Verification.hh"
-
 
 /* *****************************************************************
 * This test diffusion solver with full tensor and source term.
@@ -68,7 +67,7 @@ TEST(OPERATOR_DIFFUSION_EDGES) {
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nedges_wghost = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::ALL);
 
-  Analytic01 ana(mesh);
+  Analytic02 ana(mesh);
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
@@ -92,8 +91,7 @@ TEST(OPERATOR_DIFFUSION_EDGES) {
 
   // create diffusion operator 
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator edge");
-  auto op = Teuchos::rcp(new PDE_DiffusionMFD(op_list, mesh));
-  op->Init(op_list);
+  auto op = Teuchos::rcp(new PDE_Abstract(op_list, mesh));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
@@ -118,7 +116,7 @@ TEST(OPERATOR_DIFFUSION_EDGES) {
   source.GatherGhostedToMaster();
 
   // populate the diffusion operator
-  op->Setup(K, Teuchos::null, Teuchos::null);
+  op->Setup(K);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // update the source term

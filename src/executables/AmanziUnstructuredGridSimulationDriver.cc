@@ -34,6 +34,7 @@
 #include "State.hh"
 #include "TimerManager.hh"
 
+#include "bilinear_form_registration.hh"
 #include "dbc.hh"
 #include "energy_tcm_registration.hh"
 #include "energy_iem_registration.hh"

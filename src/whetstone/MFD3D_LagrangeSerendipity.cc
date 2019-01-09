@@ -32,6 +32,19 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
+* Constructor parses the parameter list
+****************************************************************** */
+MFD3D_LagrangeSerendipity::MFD3D_LagrangeSerendipity(
+    const Teuchos::ParameterList& plist,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+  : InnerProduct(mesh),
+    MFD3D_Lagrange(plist, mesh)
+{
+  order_ = plist.get<int>("method order");
+}
+
+
+/* ******************************************************************
 * High-order consistency condition for the stiffness matrix. 
 * Only the upper triangular part of Ac is calculated. 
 ****************************************************************** */

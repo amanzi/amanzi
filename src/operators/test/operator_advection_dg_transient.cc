@@ -31,7 +31,6 @@
 #include "LinearOperatorGMRES.hh"
 #include "MeshFactory.hh"
 #include "MeshMapsFactory.hh"
-#include "MFD3DFactory.hh"
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
 #include "VectorPolynomial.hh"
@@ -638,8 +637,8 @@ void AdvectionTransient(std::string filename, int nx, int ny,
 
   int order = plist.sublist(pk_name)
                    .sublist("flux operator").get<int>("method order");
-  std::string basis = plist.sublist(pk_name)
-                           .sublist("flux operator").get<std::string>("dg basis");
+  Teuchos::ParameterList dg_list = plist.sublist(pk_name).sublist("flux operator");
+  std::string basis = dg_list.get<std::string>("dg basis");
 
   { 
     std::string problem = (conservative_form) ? ", conservative PDE" : "";
@@ -690,7 +689,7 @@ void AdvectionTransient(std::string filename, int nx, int ny,
   plist.set<std::string>("file name", filename);
   plist.set<std::string>("face velocity method", face_velocity_method);
 
-  auto dg = Teuchos::rcp(new WhetStone::DG_Modal(order, mesh, basis));
+  auto dg = Teuchos::rcp(new WhetStone::DG_Modal(dg_list, mesh));
   AdvectionFn<AnalyticDG> fn(plist, nx, dt0, mesh, dg, conservative_form, weak_form);
 
   // create initial guess

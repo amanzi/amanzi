@@ -60,7 +60,10 @@ TEST(PROJECTORS_SQUARE_CR) {
     vf[n].Reshape(2, 1, true);
   }
 
-  MFD3D_CrouzeixRaviart mfd(mesh);
+  Teuchos::ParameterList plist;
+  plist.set<int>("method order", 1);
+
+  MFD3D_CrouzeixRaviart mfd(plist, mesh);
   Polynomial moments(2, 0);  // trivial polynomials p=0
 
   mfd.set_order(2);
@@ -156,7 +159,10 @@ TEST(PROJECTORS_POLYGON_CR) {
     vf[n](1, 1) = 3.0;
   }
   
-  MFD3D_CrouzeixRaviart mfd(mesh);
+  Teuchos::ParameterList plist;
+  plist.set<int>("method order", 1);
+
+  MFD3D_CrouzeixRaviart mfd(plist, mesh);
   Polynomial moments(2, 0);  // trivial polynomials p=0
 
   // -- old scheme
@@ -350,7 +356,10 @@ TEST(L2_PROJECTORS_SQUARE_CR) {
     vf[n].ChangeOrigin(AmanziGeometry::Point(0.0, 0.0));
   }
 
-  MFD3D_CrouzeixRaviart mfd(mesh);
+  Teuchos::ParameterList plist;
+  plist.set<int>("method order", 1);
+
+  MFD3D_CrouzeixRaviart mfd(plist, mesh);
   Polynomial moments(2, 2);
   moments(2, 1) = 1.0 / 60;
 
@@ -398,7 +407,10 @@ TEST(L2GRADIENT_PROJECTORS_SQUARE_CR) {
   }
   auto grad = Gradient(vf[0][0]);
 
-  MFD3D_CrouzeixRaviart mfd(mesh);
+  Teuchos::ParameterList plist;
+  plist.set<int>("method order", 1);
+
+  MFD3D_CrouzeixRaviart mfd(plist, mesh);
   auto moments = std::make_shared<WhetStone::DenseVector>(3);
   moments->PutScalar(0.0);
   (*moments)(2) = 1.0 / 15;
@@ -445,8 +457,11 @@ TEST(PROJECTORS_SQUARE_PK) {
   // test zero cell deformation
   for (int n = 0; n < 4; ++n) vf[n].Reshape(2, 1, true);
 
-  MFD3D_Lagrange mfd(mesh);
-  MFD3D_CrouzeixRaviart mfd_cr(mesh);
+  Teuchos::ParameterList plist;
+  plist.set<int>("method order", 1);
+
+  MFD3D_Lagrange mfd(plist, mesh);
+  MFD3D_CrouzeixRaviart mfd_cr(plist, mesh);
   Polynomial moments(2, 0);
 
   // test linear deformation
@@ -529,8 +544,11 @@ TEST(PROJECTORS_POLYGON_PK) {
   Polynomial uc, uc2;
   std::vector<Polynomial> vf(nfaces);
 
-  MFD3D_Lagrange mfd(mesh);
-  MFD3D_CrouzeixRaviart mfd_cr(mesh);
+  Teuchos::ParameterList plist;
+  plist.set<int>("method order", 1);
+
+  MFD3D_Lagrange mfd(plist, mesh);
+  MFD3D_CrouzeixRaviart mfd_cr(plist, mesh);
   Polynomial moments(2, 0);
 
   // test globally linear deformation
@@ -718,7 +736,10 @@ void SerendipityProjectorPolygon() {
   Polynomial uc, uc2;
   std::vector<Polynomial> vf(nfaces);
 
-  Serendipity mfd(mesh);
+  Teuchos::ParameterList plist;
+  plist.set<int>("method order", 1);
+
+  Serendipity mfd(plist, mesh);
   Polynomial moments(2, 0);
 
   // test globally linear deformation

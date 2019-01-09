@@ -15,9 +15,10 @@
 
 #include "Point.hh"
 
+#include "BilinearFormFactory.hh"
 #include "DenseMatrix.hh"
+#include "MFD3D_CrouzeixRaviart.hh"
 #include "MeshMaps_VEM.hh"
-#include "MFD3DFactory.hh"
 #include "Polynomial.hh"
 
 namespace Amanzi {
@@ -32,8 +33,10 @@ void MeshMaps_VEM::VelocityCell(
 {
   Polynomial moments(d_, std::max(0, order_ - 2));
 
-  WhetStone::MFD3DFactory factory;
-  auto mfd = factory.CreateMFD3D(mesh0_, method_, order_);
+  Teuchos::ParameterList plist;
+  plist.set<std::string>("method", method_)
+       .set<int>("method order", order_);
+  auto mfd = BilinearFormFactory::Create(plist, mesh0_);
 
   vc.resize(d_);
 
@@ -80,7 +83,8 @@ void MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
       ve.push_back(v);
     }
 
-    MFD3D_CrouzeixRaviart mfd(mesh0_);
+    Teuchos::ParameterList plist;
+    MFD3D_CrouzeixRaviart mfd(plist, mesh0_);
     mfd.set_order(order_);
 
     AmanziGeometry::Point p0(mesh1_->face_centroid(f) - mesh0_->face_centroid(f));
