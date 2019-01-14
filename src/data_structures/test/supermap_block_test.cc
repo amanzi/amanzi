@@ -54,6 +54,11 @@ TEST(SUPERMAP_MANUAL) {
   }
 
   auto owned_map1 = Teuchos::rcp(new Epetra_BlockMap(3*NumProc, 3, &gids[0], &size[0], 0, comm));
+
+  std::cout<< *owned_map1 << "\n";
+  std::cout<< owned_map1->FirstPointInElement(0)<<"\n";
+  std::cout<< owned_map1->FirstPointInElement(1)<<"\n";
+  std::cout<< owned_map1->FirstPointInElement(2)<<"\n";
   
   if (MyPID > 0) gids.push_back(3*MyPID-1);
   if (MyPID < NumProc-1) gids.push_back(3*(MyPID+1));
@@ -152,60 +157,65 @@ TEST(SUPERMAP_MANUAL) {
   // }
   
   // // check the indices
-  // {
-  //   const std::vector<int>& inds_m1_d0 = map.Indices("map1", 0);
-  //   CHECK(inds_m1_d0.size() == 3);
-  //   CHECK(inds_m1_d0[0] == 0);
-  //   CHECK(inds_m1_d0[1] == 2);
-  //   CHECK(inds_m1_d0[2] == 4);
+  {
+    const std::vector<int>& inds_m1_d0 = map.Indices("map1", 0);
+    CHECK(inds_m1_d0.size() == 3);
+    //    for (int i=0;i<3;i++) std::cout<<inds_m1_d0[i]<<" ";std::cout<<"\n";
+    CHECK(inds_m1_d0[0] == 0);
+    CHECK(inds_m1_d0[1] == 1);
+    CHECK(inds_m1_d0[2] == 3);
     
-  //   const std::vector<int>& inds_m1_d1 = map.Indices("map1", 1);
-  //   CHECK(inds_m1_d1.size() == 3);
-  //   CHECK(inds_m1_d1[0] == 1);
-  //   CHECK(inds_m1_d1[1] == 3);
-  //   CHECK(inds_m1_d1[2] == 5);
+    // const std::vector<int>& inds_m1_d1 = map.Indices("map1", 1);
+    // CHECK(inds_m1_d1.size() == 3);
+    // CHECK(inds_m1_d1[0] == 1);
+    // CHECK(inds_m1_d1[1] == 3);
+    // CHECK(inds_m1_d1[2] == 5);
 
-  //   const std::vector<int>& inds_m2_d0 = map.Indices("map2", 0);
-  //   CHECK(inds_m2_d0.size() == 5);
-  //   CHECK(inds_m2_d0[0] == 6);
-  //   CHECK(inds_m2_d0[1] == 8);
-  //   CHECK(inds_m2_d0[2] == 10);
-  //   CHECK(inds_m2_d0[3] == 12);
-  //   CHECK(inds_m2_d0[4] == 14);
+    const std::vector<int>& inds_m2_d0 = map.Indices("map2", 0);
+    CHECK(inds_m2_d0.size() == 5);
+    //for (int i=0;i<5;i++) std::cout<<inds_m2_d0[i]<<" ";std::cout<<"\n";
+    CHECK(inds_m2_d0[0] == 6);
+    CHECK(inds_m2_d0[1] == 7);
+    CHECK(inds_m2_d0[2] == 9);
+    CHECK(inds_m2_d0[3] == 10);
+    CHECK(inds_m2_d0[4] == 12);
 
-  //   const std::vector<int>& inds_m2_d1 = map.Indices("map2", 1);
-  //   CHECK(inds_m2_d1.size() == 5);
-  //   CHECK(inds_m2_d1[0] == 7);
-  //   CHECK(inds_m2_d1[1] == 9);
-  //   CHECK(inds_m2_d1[2] == 11);
-  //   CHECK(inds_m2_d1[3] == 13);
-  //   CHECK(inds_m2_d1[4] == 15);
-  // }
+    // const std::vector<int>& inds_m2_d1 = map.Indices("map2", 1);
+    // CHECK(inds_m2_d1.size() == 5);
+    // CHECK(inds_m2_d1[0] == 7);
+    // CHECK(inds_m2_d1[1] == 9);
+    // CHECK(inds_m2_d1[2] == 11);
+    // CHECK(inds_m2_d1[3] == 13);
+    // CHECK(inds_m2_d1[4] == 15);
+  }
 
-  // {
-  //   const std::vector<int>& inds_m1_d0 = map.GhostIndices("map1", 0);
-  //   CHECK(inds_m1_d0[0] == 0);
-  //   CHECK(inds_m1_d0[1] == 2);
-  //   CHECK(inds_m1_d0[2] == 4);
+  {
+    const std::vector<int>& inds_m1_d0 = map.GhostIndices("map1", 0);
+    CHECK(inds_m1_d0[0] == 0);
+    CHECK(inds_m1_d0[1] == 1);
+    CHECK(inds_m1_d0[2] == 3);
+   
 
-  //   const std::vector<int>& inds_m1_d1 = map.GhostIndices("map1", 1);
-  //   CHECK(inds_m1_d1[0] == 1);
-  //   CHECK(inds_m1_d1[1] == 3);
-  //   CHECK(inds_m1_d1[2] == 5);
+    // const std::vector<int>& inds_m1_d1 = map.GhostIndices("map1", 1);
+    // CHECK(inds_m1_d1[0] == 1);
+    // CHECK(inds_m1_d1[1] == 3);
+    // CHECK(inds_m1_d1[2] == 5);
 
-  //   const std::vector<int>& inds_m2_d0 = map.GhostIndices("map2", 0);
-  //   CHECK(inds_m2_d0[0] == 6);
-  //   CHECK(inds_m2_d0[1] == 8);
-  //   CHECK(inds_m2_d0[2] == 10);
-  //   CHECK(inds_m2_d0[3] == 12);
-  //   CHECK(inds_m2_d0[4] == 14);
+    const std::vector<int>& inds_m2_d0 = map.GhostIndices("map2", 0);
+    CHECK(inds_m2_d0.size() == 5);
+    //for (int i=0;i<5;i++) std::cout<<inds_m2_d0[i]<<" ";std::cout<<"\n";
+    CHECK(inds_m2_d0[0] == 6);
+    CHECK(inds_m2_d0[1] == 7);
+    CHECK(inds_m2_d0[2] == 9);
+    CHECK(inds_m2_d0[3] == 10);
+    CHECK(inds_m2_d0[4] == 12);
     
-  //   const std::vector<int>& inds_m2_d1 = map.GhostIndices("map2", 1);
-  //   CHECK(inds_m2_d1[0] == 7);
-  //   CHECK(inds_m2_d1[1] == 9);
-  //   CHECK(inds_m2_d1[2] == 11);
-  //   CHECK(inds_m2_d1[3] == 13);
-  //   CHECK(inds_m2_d1[4] == 15);
+    // const std::vector<int>& inds_m2_d1 = map.GhostIndices("map2", 1);
+    // CHECK(inds_m2_d1[0] == 7);
+    // CHECK(inds_m2_d1[1] == 9);
+    // CHECK(inds_m2_d1[2] == 11);
+    // CHECK(inds_m2_d1[3] == 13);
+    // CHECK(inds_m2_d1[4] == 15);
 
   //   if (NumProc > 1) {
   //     if (MyPID == 0 || MyPID == NumProc-1) {
@@ -239,7 +249,7 @@ TEST(SUPERMAP_MANUAL) {
   //     CHECK(inds_m2_d0.size() == 5);
   //     CHECK(inds_m2_d1.size() == 5);
   //   }
-  // }
+  }
 }
   
   

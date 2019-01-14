@@ -47,7 +47,10 @@ SuperMap::SuperMap(const Epetra_MpiComm& comm,
     ghosted_counts_[compname] = ghosted_maps[i]->NumMyPoints() - counts_[compname];
 
     offsets_[compname] = offset;
-    offset += dofnums[i] * counts_[compname];    
+    offset += dofnums[i] * counts_[compname];
+
+    indices_map_[compname] = maps[i];
+    ghosted_indices_map_[compname] = ghosted_maps[i];
   }
   int n_local = offset;
                 
@@ -212,19 +215,34 @@ SuperMap::CreateIndices_(const std::string& compname, int dofnum, bool ghosted) 
     }
 
     // create the vector
-    int nentities_owned = counts_.at(compname);
-    int nentities = nentities_owned + ghosted_counts_.at(compname);
+    int num_dof = num_dofs_.at(compname);
+    int nentities_owned = indices_map_[compname] -> NumMyElements();
+    int nentities = ghosted_indices_map_[compname] -> NumMyElements();
 
     std::vector<int> indices(nentities, -1);
     int offset = offsets_.at(compname);
-    int num_dof = num_dofs_.at(compname);
-    for (int i=0; i!=nentities_owned; ++i) {
-      indices[i] = offset + dofnum + i*num_dof;
+
+    if (ghosted_indices_map_[compname]->ConstantElementSize()){
+      for (int i=0; i!=nentities_owned; ++i) {
+        indices[i] = offset + dofnum + i*num_dof;
+      }
+    }else{
+      for (int i=0; i!=nentities_owned; ++i) {
+        indices[i] = offset + dofnum + indices_map_[compname] ->FirstPointInElement(i)*num_dof;
+      }
     }
+      
 
     int ghosted_offset = ghosted_offsets_.at(compname);
-    for (int i=nentities_owned; i!=nentities; ++i) {
-      indices[i] = ghosted_offset + dofnum + (i-nentities_owned)*num_dof;
+    if (ghosted_indices_map_[compname]->ConstantElementSize()){
+      for (int i=nentities_owned; i!=nentities; ++i) {
+        indices[i] = ghosted_offset + dofnum + (i-nentities_owned)*num_dof;
+      }
+    }else{
+      for (int i=nentities_owned; i!=nentities; ++i) {
+        indices[i] = ghosted_offset + dofnum +
+          ghosted_indices_map_[compname]->FirstPointInElement(i)*num_dof;
+      }
     }
 
     // assign
@@ -235,15 +253,15 @@ SuperMap::CreateIndices_(const std::string& compname, int dofnum, bool ghosted) 
     if (indices_.count(compname) == 0) {
       indices_[compname];
     }
-
+    
+    int num_dof = num_dofs_.at(compname);
     // create the vector
-    int nentities = counts_.at(compname);
-
+    int nentities = indices_map_[compname] -> NumMyElements();
     std::vector<int> indices(nentities, -1);
     int offset = offsets_.at(compname);
-    int num_dof = num_dofs_.at(compname);
+
     for (int i=0; i!=nentities; ++i) {
-      indices[i] = offset + dofnum + i*num_dof;
+      indices[i] = offset + dofnum + indices_map_[compname]->FirstPointInElement(i)*num_dof;
     }
 
     // assign

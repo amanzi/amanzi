@@ -59,6 +59,11 @@ class SuperMap {
   Teuchos::RCP<const Epetra_Map> Map() const { return map_; }
   Teuchos::RCP<const Epetra_Map> GhostedMap() const { return ghosted_map_; }
 
+  Teuchos::RCP<const Epetra_BlockMap> BaseMap(const std::string& compname)
+    const {return indices_map_[compname];}
+  Teuchos::RCP<const Epetra_BlockMap> BaseGhostedMap(const std::string& compname)
+    const {return ghosted_indices_map_[compname];}
+  
   // index accessors
   const std::vector<int>& Indices(const std::string& compname, int dofnum) const;
   const std::vector<int>& GhostIndices(const std::string& compname, int dofnum) const;
@@ -102,7 +107,8 @@ class SuperMap {
 
  protected:
   virtual const std::vector<int>& CreateIndices_(const std::string& compname, int dofnum, bool ghosted) const;
-
+  //  virtual const Epetra_BlockMap& CreateIndicesMap_(const std::string& compname, int dofnum, bool ghosted) const;
+  
  protected:
   std::vector<std::string> compnames_;
   std::map<std::string,int> offsets_;
@@ -114,6 +120,10 @@ class SuperMap {
   mutable std::map<std::string, std::map<int, std::vector<int> > > indices_;
   mutable std::map<std::string, std::map<int, std::vector<int> > > ghosted_indices_;
 
+  mutable std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > indices_map_;
+  mutable std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghosted_indices_map_;
+
+  
   Teuchos::RCP<Epetra_Map> map_;
   Teuchos::RCP<Epetra_Map> ghosted_map_;
 };
