@@ -63,12 +63,9 @@ class Analytic01 : public AnalyticBase {
     t13 = cos(2*M_PI*y);
 
     px = 3*y*t01 + t03*(t02 + 2*M_PI*y*x*t12);
-    py = 2*x*t01 + x*2*M_PI*(x*t12*t03 + t02*t13);
+    py = 2*x*t01 + x*2*M_PI*(x*t12*t03 + t02*t13) - g_;
 
-    Amanzi::AmanziGeometry::Point v(2);
-    v[0] = px;
-    v[1] = py;
-    return v;
+    return Amanzi::AmanziGeometry::Point(px, py);
   }
 
   Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
