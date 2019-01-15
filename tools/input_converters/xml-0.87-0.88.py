@@ -121,6 +121,11 @@ def snow_distribution(xml):
         if ssk.isElement("height key"):
             asearch.childByName(ssk, "height key").set("value", "snow-precipitation")
 
+def end_time_units(xml):
+    for end_time in asearch.generateElementByNamePath(xml, "cycle driver/end time units"):
+        if end_time.get("value") == "yr":
+            end_time.set("value", "y")
+            
 def update(xml):
     linear_operator(xml)
     max_valid_change(xml)
@@ -138,6 +143,7 @@ def update(xml):
     fixEvaluator(xml, "surface-snow_skin_potential", "snow-skin_potential")
     fixEvaluator(xml, "surface-snow_conductivity", "snow-conductivity")
     snow_distribution(xml)
+    end_time_units(xml)
 
 if __name__ == "__main__":
     import argparse
