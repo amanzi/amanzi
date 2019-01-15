@@ -57,12 +57,12 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
   Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_name, true);
   fp_list_ = Teuchos::sublist(flow_list, "Darcy problem", true);
 
-  // We also need iscaleneous sublists
+  // We also need miscaleneous sublists
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(fp_list_, "time integrator", true);
 
-  // domain name
+  // computational domain
   domain_ = flow_list->template get<std::string>("domain name", "domain");
 }
 
@@ -82,7 +82,7 @@ Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_list_name, true);
   fp_list_ = Teuchos::sublist(flow_list, "Darcy problem", true);
 
-  // We also need iscaleneous sublists
+  // We also need miscaleneous sublists
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(fp_list_, "time integrator", true);

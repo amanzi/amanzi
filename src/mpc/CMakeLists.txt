@@ -146,6 +146,12 @@ if (BUILD_TESTS)
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
 
+    # Test: mpc driver for coupled matrix-fracture flow 
+    add_amanzi_test(mpc_driver_flow_matrix_fracture mpc_driver_flow_matrix_fracture
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_driver_flow_matrix_fracture.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     # Test: mpc-new driver dummy
     add_amanzi_test(mpc_driver_dummy mpc_driver_dummy
                     KIND      int

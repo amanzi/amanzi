@@ -350,7 +350,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   if (plist_->isSublist("state")) {
     Teuchos::ParameterList state_plist = plist_->sublist("state");
     S = Teuchos::rcp(new Amanzi::State(state_plist));
-  } else{
+  } else {
     Errors::Message message("AmanziUnstructuredSimuluation: xml_file does not contain 'state' sublist\n");
     Exceptions::amanzi_throw(message);
   }

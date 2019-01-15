@@ -28,6 +28,7 @@ include_directories(${DBG_SOURCE_DIR})
 include_directories(${CHEM_INCLUDES_DIR})
 include_directories(${CHEMPK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
+include_directories(${MSTK_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${PKS_SOURCE_DIR})
@@ -43,40 +44,15 @@ include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${ASCEMIO_INCLUDE_DIR})
 
 #
-# MPC_PKS registrations
-#
-register_evaluator_with_factory(
-  HEADERFILE FlowReactiveTransport_PK_reg.hh 
-  LISTNAME   MPC_PKS_REGISTRATIONS
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE FlowEnergy_PK_reg.hh 
-  LISTNAME   MPC_PKS_REGISTRATIONS
-  INSTALL    True
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE ReactiveTransport_PK_reg.hh
-  LISTNAME   MPC_PKS_REGISTRATIONS
-  )
-
-generate_evaluators_registration_header( 
-  HEADERFILE mpc_pks_registration.hh 
-  LISTNAME   MPC_PKS_REGISTRATIONS
-  INSTALL    True
-  )
-
-
-#
 # Library: mpc_tree
 #
 set(mpc_tree_src_files 
     PK_MPCWeak.cc 
     PK_MPCSubcycled.cc 
-    ReactiveTransport_PK.cc
     FlowEnergy_PK.cc
-    FlowReactiveTransport_PK.cc)
+    FlowMatrixFracture_PK.cc
+    FlowReactiveTransport_PK.cc
+    ReactiveTransport_PK.cc)
 
 set(mpc_tree_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 add_amanzi_library(mpc_tree SOURCE ${mpc_tree_src_files}
@@ -92,9 +68,10 @@ set(mpc_tree_inc_files
     PK_MPCSubcycled.hh
     PK_MPC.hh
     PK_MPCAdditive.hh
-    ReactiveTransport_PK.hh
     FlowEnergy_PK.hh
-    FlowReactiveTransport_PK.hh)
+    FlowMatrixFracture_PK.hh
+    FlowReactiveTransport_PK.hh
+    ReactiveTransport_PK.hh)
 
 add_install_include_file(${mpc_tree_inc_files} mpc_pks_registration.hh)
 
