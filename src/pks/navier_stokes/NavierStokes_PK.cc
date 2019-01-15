@@ -44,6 +44,9 @@ NavierStokes_PK::NavierStokes_PK(Teuchos::ParameterList& pk_tree,
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   linear_solver_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(ns_list_, "time integrator", true);
+   
+  // domain name
+  domain_ = ns_list_->get<std::string>("domain name", "domain");
 }
 
 

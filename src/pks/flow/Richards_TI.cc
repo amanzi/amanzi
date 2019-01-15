@@ -133,7 +133,7 @@ void Richards_PK::FunctionalResidual(
 ****************************************************************** */
 void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
 {
-  const CompositeVector& pres = *S_->GetFieldData("pressure");
+  const CompositeVector& pres = *S_->GetFieldData(pressure_key_);
   const CompositeVector& temp = *S_->GetFieldData("temperature");
 
   // Compute conductivities
@@ -192,7 +192,7 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
   const Epetra_MultiVector& dmlf_g_dt = *S_->GetFieldData("dmolar_fraction_gas_dtemperature")->ViewComponent("cell");
 
   const Epetra_MultiVector& temp = *S_->GetFieldData("temperature")->ViewComponent("cell");
-  const Epetra_MultiVector& pres = *S_->GetFieldData("pressure")->ViewComponent("cell");
+  const Epetra_MultiVector& pres = *S_->GetFieldData(pressure_key_)->ViewComponent("cell");
 
   Epetra_MultiVector& kp_cell = *kvapor_pres->ViewComponent("cell");
   Epetra_MultiVector& kt_cell = *kvapor_temp->ViewComponent("cell");
@@ -230,7 +230,7 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
 ****************************************************************** */
 void Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<CompositeVector> f)
 {
-  const Epetra_MultiVector& pcf = *S_->GetFieldData("pressure")->ViewComponent("cell");
+  const Epetra_MultiVector& pcf = *S_->GetFieldData(pressure_key_)->ViewComponent("cell");
   const Epetra_MultiVector& pcm = *S_->GetFieldData("pressure_matrix")->ViewComponent("cell");
 
   S_->GetFieldEvaluator("porosity_matrix")->HasFieldChanged(S_.ptr(), "flow");
@@ -339,7 +339,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
 
   // add time derivative
   if (dtp > 0.0) {
-    S_->GetFieldEvaluator("water_content")->HasFieldDerivativeChanged(S_.ptr(), passwd_, "pressure");
+    S_->GetFieldEvaluator("water_content")->HasFieldDerivativeChanged(S_.ptr(), passwd_, pressure_key_);
     CompositeVector& dwc_dp = *S_->GetFieldData("dwater_content_dpressure", "water_content");
 
     op_acc_->AddAccumulationDelta(*u->Data(), dwc_dp, dwc_dp, dtp, "cell");

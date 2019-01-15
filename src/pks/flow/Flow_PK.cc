@@ -185,7 +185,7 @@ void Flow_PK::InitializeFields_()
   InitializeField(S_.ptr(), passwd_, "specific_storage", 0.0);
   InitializeField(S_.ptr(), passwd_, "specific_yield", 0.0);
 
-  InitializeField(S_.ptr(), passwd_, "pressure", 0.0);
+  InitializeField(S_.ptr(), passwd_, pressure_key_, 0.0);
   InitializeField(S_.ptr(), passwd_, "hydraulic_head", 0.0);
 
   InitializeField(S_.ptr(), passwd_, "darcy_flux", 0.0);
@@ -203,7 +203,7 @@ void Flow_PK::UpdateLocalFields_(const Teuchos::Ptr<State>& S)
   }  
 
   Epetra_MultiVector& hydraulic_head = *(S->GetFieldData("hydraulic_head", passwd_)->ViewComponent("cell"));
-  const Epetra_MultiVector& pressure = *(S->GetFieldData("pressure")->ViewComponent("cell"));
+  const Epetra_MultiVector& pressure = *(S->GetFieldData(pressure_key_)->ViewComponent("cell"));
   double rho = *(S->GetScalarData("fluid_density"));
 
   // calculate hydraulic head

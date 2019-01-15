@@ -37,7 +37,7 @@ Chemistry_PK::Chemistry_PK() :
 ******************************************************************* */
 void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
 {
-  mesh_ = S->GetMesh(domain_name_);
+  mesh_ = S->GetMesh(domain_);
 
   // Require data from flow
   if (!S->HasField(poro_key_)) {

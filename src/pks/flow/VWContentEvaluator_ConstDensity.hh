@@ -36,6 +36,9 @@ class VWContentEvaluator_ConstDensity : public VWContentEvaluator {
           const Teuchos::Ptr<CompositeVector>& result);
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
+
+ protected:
+  Key pressure_key_;
 };
 
 }  // namespace Flow

@@ -61,6 +61,9 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(fp_list_, "time integrator", true);
+
+  // domain name
+  domain_ = flow_list->template get<std::string>("domain name", "domain");
 }
 
 
@@ -137,8 +140,9 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
     ndofs.push_back(1);
   }
 
-  if (!S->HasField("pressure")) {
-    S->RequireField("pressure", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  pressure_key_ = Keys::getKey(domain_, "pressure"); 
+  if (!S->HasField(pressure_key_)) {
+    S->RequireField(pressure_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
   }
 
@@ -263,7 +267,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   UpdateLocalFields_(S);
 
   // Create solution and auxiliary data for time history.
-  solution = S->GetFieldData("pressure", passwd_);
+  solution = S->GetFieldData(pressure_key_, passwd_);
 
   const Epetra_BlockMap& cmap = mesh_->cell_map(false);
   pdot_cells_prev = Teuchos::rcp(new Epetra_Vector(cmap));
@@ -284,7 +288,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   UpdateSpecificYield_();
 
   // Initialize lambdas. It may be used by boundary conditions.
-  CompositeVector& pressure = *S->GetFieldData("pressure", passwd_);
+  CompositeVector& pressure = *S->GetFieldData(pressure_key_, passwd_);
 
   if (pressure.HasComponent("face")) {
     Epetra_MultiVector& p = *solution->ViewComponent("cell");

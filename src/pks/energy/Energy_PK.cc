@@ -72,14 +72,15 @@ void Energy_PK::Setup(const Teuchos::Ptr<State>& S)
  
   std::vector<int> ndofs(2, 1);
   
-  if (!S->HasField("temperature")) {
-    S->RequireField("temperature", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  temperature_key_ = Keys::getKey(domain_, "temperature"); 
+  if (!S->HasField(temperature_key_)) {
+    S->RequireField(temperature_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
 
     Teuchos::ParameterList elist;
-    elist.set<std::string>("evaluator name", "temperature");
+    elist.set<std::string>("evaluator name", temperature_key_);
     temperature_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S->SetFieldEvaluator("temperature", temperature_eval_);
+    S->SetFieldEvaluator(temperature_key_, temperature_eval_);
   }
 
   // conserved quantity from the last time step.
@@ -161,9 +162,9 @@ void Energy_PK::InitializeFields_()
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  if (!S_->GetField("temperature", passwd_)->initialized()) {
-    S_->GetFieldData("temperature", passwd_)->PutScalar(298.0);
-    S_->GetField("temperature", passwd_)->set_initialized();
+  if (!S_->GetField(temperature_key_, passwd_)->initialized()) {
+    S_->GetFieldData(temperature_key_, passwd_)->PutScalar(298.0);
+    S_->GetField(temperature_key_, passwd_)->set_initialized();
 
     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
         *vo_->os() << "initilized temperature to default value 298 K." << std::endl;  
