@@ -56,10 +56,14 @@ using namespace std;
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 5, 5, gm);
   AMANZI_ASSERT(!mesh.is_null());
 
+  Teuchos::ParameterList state_plist = glist_rcp->sublist("state");
+  Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
+  S -> RegisterMesh("domain", mesh);
+  
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
   Teuchos::RCP<Teuchos::ParameterList> glist_rcp = Teuchos::rcp(new Teuchos::ParameterList(plist));
-  Amanzi::CycleDriver cycle_driver(glist_rcp, mesh, &comm, obs_data);
+  Amanzi::CycleDriver cycle_driver(glist_rcp, S, &comm, obs_data);
   cycle_driver.Go();
 
   delete comm;

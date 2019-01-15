@@ -37,7 +37,7 @@ FlexibleObservations::FlexibleObservations(
     Teuchos::RCP<Teuchos::ParameterList> obs_list,
     Teuchos::RCP<Teuchos::ParameterList> units_list,
     Amanzi::ObservationData& observation_data,
-    Teuchos::RCP<AmanziMesh::Mesh> mesh)
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : observation_data_(observation_data),
       obs_list_(obs_list),
       coordinator_list_(coordinator_list)

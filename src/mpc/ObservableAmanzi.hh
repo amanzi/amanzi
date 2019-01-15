@@ -32,7 +32,7 @@ class Observable : public IOEvent {
 	     std::string functional,
 	     Teuchos::ParameterList& plist,
 	     Teuchos::ParameterList& units_plist,
-	     Teuchos::RCP<AmanziMesh::Mesh> mesh)
+	     Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : variable_(variable),
       region_(region),
       functional_(functional),
@@ -62,7 +62,7 @@ class Observable : public IOEvent {
 
  // protected:    
   const Teuchos::ParameterList& plist_;
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
   AmanziMesh::Entity_ID_List entity_ids_;
   int region_size_;

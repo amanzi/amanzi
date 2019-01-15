@@ -56,9 +56,13 @@ using namespace Amanzi::AmanziGeometry;
   AMANZI_ASSERT(!mesh.is_null());
 
   // create dummy observation data object
-  Amanzi::ObservationData obs_data;    
+  Amanzi::ObservationData obs_data;
+
+   Teuchos::ParameterList state_plist = plist->sublist("state");
+  Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
+  S -> RegisterMesh("domain", mesh);
   
-  Amanzi::CycleDriver cycle_driver(plist, mesh, &comm, obs_data);
+  Amanzi::CycleDriver cycle_driver(plist, S, &comm, obs_data);
   cycle_driver.Go();
 }
 

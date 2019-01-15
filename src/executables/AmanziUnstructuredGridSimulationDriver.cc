@@ -345,8 +345,21 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   analysis.OutputBCs();
 
 
+  // Create the state
+  Teuchos::RCP<Amanzi::State> S;
+  if (plist_->isSublist("state")) {
+    Teuchos::ParameterList state_plist = plist_->sublist("state");
+    S = Teuchos::rcp(new Amanzi::State(state_plist));
+  } else{
+    Errors::Message message("AmanziUnstructuredSimuluation: xml_file does not contain 'state' sublist\n");
+    Exceptions::amanzi_throw(message);
+  }
+
+  // Create meshes
+  S -> RegisterMesh("domain", mesh); 
+  
   // -------------- EXECUTION -------------------------------------------
-  Amanzi::CycleDriver cycle_driver(plist_, mesh, comm, observations_data);
+  Amanzi::CycleDriver cycle_driver(plist_,  S, comm, observations_data);
 
   cycle_driver.Go();
 

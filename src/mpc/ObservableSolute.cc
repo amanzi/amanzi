@@ -25,7 +25,7 @@ ObservableSolute::ObservableSolute(std::string variable,
                                    std::string functional,
                                    Teuchos::ParameterList& plist,
                                    Teuchos::ParameterList& units_plist,
-                                   Teuchos::RCP<AmanziMesh::Mesh> mesh):
+                                   Teuchos::RCP<const AmanziMesh::Mesh> mesh):
     Observable(variable, region, functional, plist, units_plist, mesh) 
 {};
 

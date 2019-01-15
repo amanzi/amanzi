@@ -73,24 +73,17 @@ double rss_usage() { // return ru_maxrss in MBytes
 * Constructor.
 ****************************************************************** */
 CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
-                         Teuchos::RCP<AmanziMesh::Mesh>& mesh,
+                         Teuchos::RCP<Amanzi::State>& S,
                          Epetra_MpiComm* comm,
                          Amanzi::ObservationData& observations_data) :
     glist_(glist),
-    mesh_(mesh),
+    S_(S),
     comm_(comm),
     observations_data_(observations_data),
     restart_requested_(false) {
 
-  if (glist_->isSublist("state")) {
-    Teuchos::ParameterList state_plist = glist_->sublist("state");
-    S_ = Teuchos::rcp(new Amanzi::State(state_plist));
-    S_->RegisterMesh("domain", mesh_); 
-  } else{
-    Errors::Message message("CycleDriver: xml_file does not contain 'State' sublist\n");
-    Exceptions::amanzi_throw(message);
-  }
-
+  mesh_ = S_->GetMesh("domain");
+  
   // create and start the global timer
   CoordinatorInit_();
 
@@ -903,7 +896,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
   S_->WriteStatistics(vo_);
   ReportMemory();
   // Finalize();
-
+ 
   return S_;
 } 
 
@@ -919,7 +912,7 @@ void CycleDriver::ResetDriver(int time_pr_id) {
   }
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(S_->GetMesh("domain"));
-
+ 
   S_old_ = S_;
 
   Teuchos::ParameterList state_plist = glist_->sublist("state");
