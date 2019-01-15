@@ -29,6 +29,7 @@
 
 // Operators
 #include "Analytic02.hh"
+#include "Analytic01b.hh"
 
 #include "OperatorDefs.hh"
 #include "PDE_Abstract.hh"
@@ -38,7 +39,9 @@
 * This test diffusion solver with full tensor and source term.
 * The degrees of freedom are on mesh edges.
 * **************************************************************** */
-TEST(OPERATOR_DIFFUSION_EDGES) {
+template<class Analytic>
+void TestDiffusionEdges(int dim, double tol, std::string filename)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -48,7 +51,8 @@ TEST(OPERATOR_DIFFUSION_EDGES) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, edge discretization" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: elliptic solver, edge discretization, d=" << dim 
+                            << ", file: " << filename << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion.xml";
@@ -59,15 +63,20 @@ TEST(OPERATOR_DIFFUSION_EDGES) {
   Teuchos::RCP<GeometricModel> gm;
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 30, 30, gm, true, true);
-  // RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm, true, true);
-
+  RCP<const Mesh> mesh;
+  if (dim == 2)
+    mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 6, 7, gm, true, true);
+    // mesh = meshfactory("test/median32x33.exo", gm, true, true);
+  else 
+    mesh = meshfactory(filename, gm, true, true);
+    // mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 1, 1, gm, true, true);
+  
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nedges_wghost = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::ALL);
 
-  Analytic02 ana(mesh);
+  Analytic ana(mesh);
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
@@ -80,10 +89,12 @@ TEST(OPERATOR_DIFFUSION_EDGES) {
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
+  int d = dim - 1;
   for (int e = 0; e < nedges_wghost; ++e) {
     const Point& xe = mesh->edge_centroid(e);
     if (fabs(xe[0]) < 1e-6 || fabs(xe[0] - 1.0) < 1e-6 ||
-        fabs(xe[1]) < 1e-6 || fabs(xe[1] - 1.0) < 1e-6) {
+        fabs(xe[1]) < 1e-6 || fabs(xe[1] - 1.0) < 1e-6 ||
+        fabs(xe[d]) < 1e-6 || fabs(xe[d] - 1.0) < 1e-6) {
       bc_model[e] = OPERATOR_BC_DIRICHLET;
       bc_value[e] = ana.pressure_exact(xe, 0.0);
     }
@@ -169,8 +180,13 @@ TEST(OPERATOR_DIFFUSION_EDGES) {
     ph1_err /= hnorm;
     printf("L2(p)=%9.6f  H1(p)=%9.6f  itr=%3d\n", pl2_err, ph1_err, solver.num_itrs());
 
-    CHECK(pl2_err < 5e-3 && ph1_err < 2e-5);
-    CHECK(solver.num_itrs() < 10);
+    CHECK(pl2_err < tol && ph1_err < tol);
   }
 }
 
+
+TEST(OPERATOR_DIFFUSION_EDGES) {
+  TestDiffusionEdges<Analytic02>(2, 1e-12, "");
+  TestDiffusionEdges<Analytic02>(3, 1e-12, "test/tetrahedra.exo");
+  TestDiffusionEdges<Analytic02>(3, 1e-12, "test/hexes.exo");
+}

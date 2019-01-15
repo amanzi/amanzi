@@ -21,6 +21,7 @@
 // Amanzi
 #include "CompositeVector.hh"
 #include "DenseVector.hh"
+#include "Key.hh"
 #include "LimiterCell.hh"
 #include "PK.hh"
 #include "PK_Explicit.hh"
@@ -185,6 +186,7 @@ class Transport_PK : public PK_PhysicalExplicit<Epetra_Vector> {
   Teuchos::RCP<TreeVector> soln_;
  
  private:
+  Key domain_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<State> S_;
   std::string passwd_;
@@ -252,6 +254,9 @@ class Transport_PK : public PK_PhysicalExplicit<Epetra_Vector> {
  
   std::vector<std::string> component_names_;  // details of components
   int num_aqueous, num_gaseous;
+
+  // names of state fields 
+  Key tcc_key_;
 
   // io
   Utils::Units units_;

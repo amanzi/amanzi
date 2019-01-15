@@ -84,6 +84,9 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
 
   subcycling_ = tp_list_->get<bool>("transport subcycling", true);
    
+  // domain name
+  domain_ = tp_list_->template get<std::string>("domain name", "domain");
+
   // initialize io
   Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist, "units");
   units_.Init(*units_list);
@@ -197,12 +200,13 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
     Exceptions::amanzi_throw(msg);  
   }
 
+  tcc_key_ = Keys::getKey(domain_, "total_component_concentration"); 
   int ncomponents = component_names_.size();
-  if (!S->HasField("total_component_concentration")) {
+  if (!S->HasField(tcc_key_)) {
     std::vector<std::vector<std::string> > subfield_names(1);
     subfield_names[0] = component_names_;
 
-    S->RequireField("total_component_concentration", passwd_, subfield_names)
+    S->RequireField(tcc_key_, passwd_, subfield_names)
       ->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
   }
@@ -341,10 +345,10 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
     transport_phi = phi;
   }
 
-  tcc = S->GetFieldData("total_component_concentration", passwd_);
+  tcc = S->GetFieldData(tcc_key_, passwd_);
 
   // memory for new components
-  tcc_tmp = Teuchos::rcp(new CompositeVector(*(S->GetFieldData("total_component_concentration"))));
+  tcc_tmp = Teuchos::rcp(new CompositeVector(*(S->GetFieldData(tcc_key_))));
   *tcc_tmp = *tcc;
 
   // upwind structures
@@ -508,7 +512,7 @@ void Transport_PK::InitializeFields_()
   InitializeFieldFromField_("prev_water_content_matrix", "water_content_matrix", false);
 
   InitializeFieldFromField_("prev_saturation_liquid", "saturation_liquid", false);
-  InitializeFieldFromField_("total_component_concentration_matrix", "total_component_concentration", false);
+  InitializeFieldFromField_("total_component_concentration_matrix", tcc_key_, false);
 
   InitializeField(S_.ptr(), passwd_, "total_component_concentration_matrix_aux", 0.0);
 }
@@ -663,7 +667,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   double dt_MPC = t_new - t_old;
 
   // We use original tcc and make a copy of it later if needed.
-  tcc = S_->GetFieldData("total_component_concentration", passwd_);
+  tcc = S_->GetFieldData(tcc_key_, passwd_);
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
 
   // calculate stable time step
@@ -1075,7 +1079,7 @@ void Transport_PK::AddMultiscalePorosity_(
 void Transport_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   Teuchos::RCP<CompositeVector> tcc;
-  tcc = S->GetFieldData("total_component_concentration", passwd_);
+  tcc = S->GetFieldData(tcc_key_, passwd_);
   *tcc = *tcc_tmp;
 }
 
@@ -1310,7 +1314,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dt_cycle)
   Epetra_Vector f_component(cmap_wghost);
 
   // distribute vector of concentrations
-  S_->GetFieldData("total_component_concentration")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData(tcc_key_)->ScatterMasterToGhosted("cell");
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
 
@@ -1358,7 +1362,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dt_cycle)
   Epetra_Vector f_component(cmap_wghost);
 
   // distribute old vector of concentrations
-  S_->GetFieldData("total_component_concentration")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData(tcc_key_)->ScatterMasterToGhosted("cell");
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
 
@@ -1416,7 +1420,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRKn(double dt_cycle)
 {
   dt_ = dt_cycle;  // overwrite the maximum stable transport step
 
-  S_->GetFieldData("total_component_concentration")->ScatterMasterToGhosted("cell");
+  S_->GetFieldData(tcc_key_)->ScatterMasterToGhosted("cell");
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
 

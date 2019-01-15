@@ -66,33 +66,33 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
   // create pointer to the chemistry parameter list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   cp_list_ = Teuchos::sublist(pk_list, pk_name, true);
-  domain_name_ = cp_list_->get<std::string>("domain name", "domain");
+  domain_ = cp_list_->get<std::string>("domain name", "domain");
 
   // obtain key of fields
-  tcc_key_ = Keys::getKey(domain_name_, "total_component_concentration"); 
-  poro_key_ = cp_list_->get<std::string>("porosity key", Keys::getKey(domain_name_, "porosity"));
-  saturation_key_ = cp_list_->get<std::string>("saturation key", Keys::getKey(domain_name_, "saturation_liquid"));
-  fluid_den_key_ = cp_list_->get<std::string>("fluid density key", Keys::getKey(domain_name_, "mass_density_liquid"));
+  tcc_key_ = Keys::getKey(domain_, "total_component_concentration"); 
+  poro_key_ = cp_list_->get<std::string>("porosity key", Keys::getKey(domain_, "porosity"));
+  saturation_key_ = cp_list_->get<std::string>("saturation key", Keys::getKey(domain_, "saturation_liquid"));
+  fluid_den_key_ = cp_list_->get<std::string>("fluid density key", Keys::getKey(domain_, "mass_density_liquid"));
 
-  min_vol_frac_key_ = Keys::getKey(domain_name_,"mineral_volume_fractions");
-  min_ssa_key_ = Keys::getKey(domain_name_,"mineral_specific_surface_area");
-  sorp_sites_key_ = Keys::getKey(domain_name_,"sorption_sites");
-  surf_cfsc_key_ = Keys::getKey(domain_name_,"surface_complex_free_site_conc");
-  total_sorbed_key_ = Keys::getKey(domain_name_,"total_sorbed");
-  isotherm_kd_key_ = Keys::getKey(domain_name_,"isotherm_kd");
-  isotherm_freundlich_n_key_ = Keys::getKey(domain_name_,"isotherm_freundlich_n");
-  isotherm_langmuir_b_key_ = Keys::getKey(domain_name_,"isotherm_langmuir_b");
-  free_ion_species_key_ = Keys::getKey(domain_name_,"free_ion_species");
-  primary_activity_coeff_key_ = Keys::getKey(domain_name_,"primary_activity_coeff");
+  min_vol_frac_key_ = Keys::getKey(domain_,"mineral_volume_fractions");
+  min_ssa_key_ = Keys::getKey(domain_,"mineral_specific_surface_area");
+  sorp_sites_key_ = Keys::getKey(domain_,"sorption_sites");
+  surf_cfsc_key_ = Keys::getKey(domain_,"surface_complex_free_site_conc");
+  total_sorbed_key_ = Keys::getKey(domain_,"total_sorbed");
+  isotherm_kd_key_ = Keys::getKey(domain_,"isotherm_kd");
+  isotherm_freundlich_n_key_ = Keys::getKey(domain_,"isotherm_freundlich_n");
+  isotherm_langmuir_b_key_ = Keys::getKey(domain_,"isotherm_langmuir_b");
+  free_ion_species_key_ = Keys::getKey(domain_,"free_ion_species");
+  primary_activity_coeff_key_ = Keys::getKey(domain_,"primary_activity_coeff");
 
-  ion_exchange_sites_key_ = Keys::getKey(domain_name_,"ion_exchange_sites");
+  ion_exchange_sites_key_ = Keys::getKey(domain_,"ion_exchange_sites");
   //ion_exchange_sites_key_ = "ion_exchange_sites";
 
-  ion_exchange_ref_cation_conc_key_ = Keys::getKey(domain_name_,"ion_exchange_ref_cation_conc");
-  secondary_activity_coeff_key_ = Keys::getKey(domain_name_,"secondary_activity_coeff");
-  alquimia_aux_data_key_ = Keys::getKey(domain_name_,"alquimia_aux_data");
-  mineral_rate_constant_key_ = Keys::getKey(domain_name_,"mineral_rate_constant");
-  first_order_decay_constant_key_ = Keys::getKey(domain_name_,"first_order_decay_constant");  
+  ion_exchange_ref_cation_conc_key_ = Keys::getKey(domain_,"ion_exchange_ref_cation_conc");
+  secondary_activity_coeff_key_ = Keys::getKey(domain_,"secondary_activity_coeff");
+  alquimia_aux_data_key_ = Keys::getKey(domain_,"alquimia_aux_data");
+  mineral_rate_constant_key_ = Keys::getKey(domain_,"mineral_rate_constant");
+  first_order_decay_constant_key_ = Keys::getKey(domain_,"first_order_decay_constant");  
   
   // collect high-level information about the problem
   Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "state", true);
@@ -114,7 +114,7 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
   number_total_sorbed_ = number_aqueous_components_;
 
   // verbosity object
-  vo_ = Teuchos::rcp(new VerboseObject("Amanzi_PK:" + domain_name_, *cp_list_)); 
+  vo_ = Teuchos::rcp(new VerboseObject("Amanzi_PK:" + domain_, *cp_list_)); 
 }
 
 

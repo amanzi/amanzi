@@ -25,6 +25,7 @@
 #ifdef ALQUIMIA_ENABLED
 #include "ChemistryEngine.hh"
 #endif
+#include "Key.hh"
 #include "Mesh.hh"
 #include "PK_Physical.hh"
 #include "State.hh"
@@ -64,13 +65,14 @@ class Chemistry_PK : public PK_Physical {
 
   // -- output of error messages.
   void ErrorAnalysis(int ierr, std::string& internal_msg);
-  Key get_domain_name() { return domain_name_; }
 
  protected:
   void InitializeField_(const Teuchos::Ptr<State>& S, std::string fieldname, double default_val);
 
  protected:
+  Key domain_;  // name of the computational domain
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+
   Teuchos::RCP<State> S_;
   std::string passwd_;
   Teuchos::RCP<Teuchos::ParameterList> glist_, cp_list_;
@@ -116,7 +118,6 @@ class Chemistry_PK : public PK_Physical {
   // time controls
   int num_iterations_, num_successful_steps_;
   double initial_conditions_time_;
-  Key domain_name_;
 };
 
 }  // namespace AmanziChemistry

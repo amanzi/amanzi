@@ -33,6 +33,7 @@ VWContentEvaluator_ConstDensity::VWContentEvaluator_ConstDensity(Teuchos::Parame
 void VWContentEvaluator_ConstDensity::Init_()
 {
   my_key_ = std::string("water_content");
+  pressure_key_ = std::string("pressure");
 
   dependencies_.insert(std::string("porosity"));
   dependencies_.insert(std::string("saturation_liquid"));
@@ -64,7 +65,7 @@ void VWContentEvaluator_ConstDensity::EvaluateField_(
     const Epetra_MultiVector& mlf_g = *S->GetFieldData("molar_fraction_gas")->ViewComponent("cell");
     
     const Epetra_MultiVector& temp = *S->GetFieldData("temperature")->ViewComponent("cell");
-    const Epetra_MultiVector& pres = *S->GetFieldData("pressure")->ViewComponent("cell");
+    const Epetra_MultiVector& pres = *S->GetFieldData(pressure_key_)->ViewComponent("cell");
     double patm = *S->GetScalarData("atmospheric_pressure");
 
     double R = CommonDefs::IDEAL_GAS_CONSTANT_R;

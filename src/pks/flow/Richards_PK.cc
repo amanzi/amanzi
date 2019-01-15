@@ -73,6 +73,9 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& pk_tree,
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(fp_list_, "time integrator");
 
+  // domain name
+  domain_ = flow_list->template get<std::string>("domain name", "domain");
+
   vo_ = Teuchos::null;
 }
 
@@ -155,14 +158,15 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     ndofs.push_back(1);
   }
 
-  if (!S->HasField("pressure")) {
-    S->RequireField("pressure", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  pressure_key_ = Keys::getKey(domain_, "pressure"); 
+  if (!S->HasField(pressure_key_)) {
+    S->RequireField(pressure_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
 
     Teuchos::ParameterList elist;
-    elist.set<std::string>("evaluator name", "pressure");
+    elist.set<std::string>("evaluator name", pressure_key_);
     pressure_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S->SetFieldEvaluator("pressure", pressure_eval_);
+    S->SetFieldEvaluator(pressure_key_, pressure_eval_);
   }
 
   // Require conserved quantity.
@@ -474,7 +478,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
 
   // Create pointers to the primary flow field pressure.
-  solution = S->GetFieldData("pressure", passwd_);
+  solution = S->GetFieldData(pressure_key_, passwd_);
   soln_->SetData(solution); 
   
   // Create auxiliary vectors for time history and error estimates.
@@ -486,7 +490,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   darcy_flux_copy = Teuchos::rcp(new CompositeVector(*S->GetFieldData("darcy_flux", passwd_)));
 
   // Conditional initialization of lambdas from pressures.
-  CompositeVector& pressure = *S->GetFieldData("pressure", passwd_);
+  CompositeVector& pressure = *S->GetFieldData(pressure_key_, passwd_);
 
   if (pressure.HasComponent("face")) {
     DeriveFaceValuesFromCellValues(*pressure.ViewComponent("cell"),
@@ -634,7 +638,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
     // We start with pressure equilibrium
     if (multiscale_porosity_) {
       *S->GetFieldData("pressure_matrix", passwd_)->ViewComponent("cell") =
-          *S->GetFieldData("pressure")->ViewComponent("cell");
+          *S->GetFieldData(pressure_key_)->ViewComponent("cell");
       pressure_matrix_eval_->SetFieldAsChanged(S.ptr());
     }
   }
@@ -727,7 +731,7 @@ void Richards_PK::InitializeFields_()
   // -- pressure
   if (S_->HasField("pressure_matrix")) {
     // if (!S_->GetField("pressure_matrix", passwd_)->initialized()) {
-      const Epetra_MultiVector& p1 = *S_->GetFieldData("pressure")->ViewComponent("cell");
+      const Epetra_MultiVector& p1 = *S_->GetFieldData(pressure_key_)->ViewComponent("cell");
       Epetra_MultiVector& p0 = *S_->GetFieldData("pressure_matrix", passwd_)->ViewComponent("cell");
       p0 = p1;
 
@@ -834,7 +838,7 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // save a copy of primary and conservative fields
   // -- pressure
-  CompositeVector pressure_copy(*S_->GetFieldData("pressure", passwd_));
+  CompositeVector pressure_copy(*S_->GetFieldData(pressure_key_, passwd_));
 
   // -- saturations, swap prev <- current
   S_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_.ptr(), "flow");
@@ -890,7 +894,7 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     dt_ = dt_next_;
 
     // revover the original primary solution, pressure
-    *S_->GetFieldData("pressure", passwd_) = pressure_copy;
+    *S_->GetFieldData(pressure_key_, passwd_) = pressure_copy;
     pressure_eval_->SetFieldAsChanged(S_.ptr());
 
     // revover the original fields

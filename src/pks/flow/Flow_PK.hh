@@ -29,6 +29,7 @@
 #include "checkpoint.hh"
 #include "CompositeVectorSpace.hh"
 #include "independent_variable_field_evaluator_fromfunction.hh"
+#include "Key.hh"
 #include "PK_DomainFunction.hh"
 #include "PK_PhysicalBDF.hh"
 #include "primary_variable_field_evaluator.hh"
@@ -122,6 +123,7 @@ class Flow_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Teuchos::ParameterList> ti_list_;
 
  protected:
+  Key domain_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim;
 
@@ -151,6 +153,9 @@ class Flow_PK : public PK_PhysicalBDF {
   // field evaluators (MUST GO AWAY lipnikov@lanl.gov)
   Teuchos::RCP<PrimaryVariableFieldEvaluator> darcy_flux_eval_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval_, pressure_matrix_eval_;
+
+  // names of state fields 
+  Key pressure_key_;
 
   // io
   Utils::Units units_;
