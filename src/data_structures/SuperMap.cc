@@ -216,33 +216,23 @@ SuperMap::CreateIndices_(const std::string& compname, int dofnum, bool ghosted) 
 
     // create the vector
     int num_dof = num_dofs_.at(compname);
-    int nentities_owned = indices_map_[compname] -> NumMyElements();
-    int nentities = ghosted_indices_map_[compname] -> NumMyElements();
+    int nentities_owned = counts_.at(compname);
+    int nentities = nentities_owned + ghosted_counts_.at(compname);
 
     std::vector<int> indices(nentities, -1);
     int offset = offsets_.at(compname);
 
-    if (ghosted_indices_map_[compname]->ConstantElementSize()){
-      for (int i=0; i!=nentities_owned; ++i) {
-        indices[i] = offset + dofnum + i*num_dof;
-      }
-    }else{
-      for (int i=0; i!=nentities_owned; ++i) {
-        indices[i] = offset + dofnum + indices_map_[compname] ->FirstPointInElement(i)*num_dof;
-      }
+    
+    for (int i=0; i!=nentities_owned; ++i) {
+      indices[i] = offset + dofnum + i*num_dof;
     }
       
-
+    int MyPID = BaseGhostedMap(compname)->Comm().MyPID();
     int ghosted_offset = ghosted_offsets_.at(compname);
-    if (ghosted_indices_map_[compname]->ConstantElementSize()){
-      for (int i=nentities_owned; i!=nentities; ++i) {
-        indices[i] = ghosted_offset + dofnum + (i-nentities_owned)*num_dof;
-      }
-    }else{
-      for (int i=nentities_owned; i!=nentities; ++i) {
-        indices[i] = ghosted_offset + dofnum +
-          ghosted_indices_map_[compname]->FirstPointInElement(i)*num_dof;
-      }
+
+    for (int i=nentities_owned; i!=nentities; ++i) {
+      indices[i] = ghosted_offset + dofnum + (i-nentities_owned)*num_dof;
+      //if (MyPID==1) std::cout << "ghost "<<i<<" "<<indices[i] <<"\n";
     }
 
     // assign
@@ -256,12 +246,13 @@ SuperMap::CreateIndices_(const std::string& compname, int dofnum, bool ghosted) 
     
     int num_dof = num_dofs_.at(compname);
     // create the vector
-    int nentities = indices_map_[compname] -> NumMyElements();
+    int nentities = counts_.at(compname);
+    
     std::vector<int> indices(nentities, -1);
     int offset = offsets_.at(compname);
 
     for (int i=0; i!=nentities; ++i) {
-      indices[i] = offset + dofnum + indices_map_[compname]->FirstPointInElement(i)*num_dof;
+      indices[i] = offset + dofnum + i*num_dof;
     }
 
     // assign

@@ -366,10 +366,10 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
   Epetra_Vector Ycopy(*smap_->Map());
   ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, 0);
 
-  // dump the schur complement
-  // std::stringstream filename_s2;
-  // filename_s2 << "schur_PC_" << 0 << ".txt";
-  // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *A_);
+  ////dump the schur complement
+  //std::stringstream filename_s2;
+  //filename_s2 << "schur_PC_" << 0 << ".txt";
+  //EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *A_);
 
   ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
   

@@ -236,28 +236,59 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
                                                  const SuperMap& map, GraphFE& graph,
                                                  int my_block_row, int my_block_col) const
 {
-  std::vector<int> lid_r(cell_max_faces + 1);
-  std::vector<int> lid_c(cell_max_faces + 1);
+  std::vector<int> lid_r(2*cell_max_faces + 1);
+  std::vector<int> lid_c(2*cell_max_faces + 1);
 
   // ELEMENT: cell, DOFS: cell and face
-  const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
-  const std::vector<int>& face_col_inds = map.GhostIndices("face", my_block_col);
-  const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
-  const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
+  // const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
+  // const std::vector<int>& face_col_inds = map.GhostIndices("face", my_block_col);
+  // const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
+  // const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
 
+
+  Teuchos::RCP<const Epetra_BlockMap> face_gh_map = map.BaseGhostedMap("face");
+  Teuchos::RCP<const Epetra_BlockMap> cell_gh_map = map.BaseGhostedMap("cell");
+  Teuchos::RCP<const Epetra_BlockMap> face_map = map.BaseMap("face");
+  int nface_points_owned =  face_map -> NumMyPoints();
+  int num_dof_faces = map.NumDofs("face");
+  int num_dof_cells = map.NumDofs("cell");
+
+  int MyPID =  cell_gh_map->Comm().MyPID();
+  
+  int face_row_offset = map.Offset("face");
+  int face_gh_offset = map.GhostedOffset("face");
+  int cell_row_offset = map.Offset("cell");
+  
   int ierr(0);
   AmanziMesh::Entity_ID_List faces;
   for (int c = 0; c != ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
+    int k = 0;
     for (int n = 0; n != nfaces; ++n) {
-      lid_r[n] = face_row_inds[faces[n]];
-      lid_c[n] = face_col_inds[faces[n]];
+      int face_dof_size = face_gh_map->ElementSize(faces[n]);
+      int first = face_gh_map->FirstPointInElement(faces[n]);
+      first = (faces[n] < nfaces_owned) ? first : (first - nface_points_owned);
+      int offset = (faces[n] < nfaces_owned) ? face_row_offset : face_gh_offset;
+      
+      for (int m=0; m !=face_dof_size; ++m){
+        lid_r[k] = offset + (first + m)*num_dof_faces + my_block_row;
+        lid_c[k] = offset + (first + m)*num_dof_faces + my_block_col;
+        k++;
+      }
     }
-    lid_r[nfaces] = cell_row_inds[c];
-    lid_c[nfaces] = cell_col_inds[c];
-    ierr |= graph.InsertMyIndices(nfaces+1, lid_r.data(), nfaces+1, lid_c.data());
+
+    int cell_dof_size = cell_gh_map -> ElementSize(c);
+    int first = cell_gh_map -> FirstPointInElement(c);
+    for (int m=0; m !=cell_dof_size; ++m){
+      lid_r[k] = cell_row_offset + (first + m)*num_dof_cells + my_block_row;
+      lid_c[k] = cell_row_offset + (first + m)*num_dof_cells + my_block_col;
+      k++;
+    }
+
+    
+    ierr |= graph.InsertMyIndices(k, lid_r.data(), k, lid_c.data());
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -270,24 +301,44 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
                                                  const SuperMap& map, GraphFE& graph,
                                                  int my_block_row, int my_block_col) const
 {
-  std::vector<int> lid_r(cell_max_faces);
-  std::vector<int> lid_c(cell_max_faces);
+  std::vector<int> lid_r(2*cell_max_faces);
+  std::vector<int> lid_c(2*cell_max_faces);
 
   // ELEMENT: cell, DOFS: face
   const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
   const std::vector<int>& face_col_inds = map.GhostIndices("face", my_block_col);
 
+  Teuchos::RCP<const Epetra_BlockMap> face_gh_map = map.BaseGhostedMap("face");
+  Teuchos::RCP<const Epetra_BlockMap> face_map = map.BaseMap("face");
+  int nface_points_owned =  face_map -> NumMyPoints();
+  int num_dof_faces = map.NumDofs("face");
+  
+  int face_row_offset = map.Offset("face");
+  int face_gh_offset = map.GhostedOffset("face");
+
+  int MyPID =  face_gh_map->Comm().MyPID();
+  
   int ierr(0);
   AmanziMesh::Entity_ID_List faces;
   for (int c = 0; c != ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
+    int k = 0;
     for (int n = 0; n != nfaces; ++n) {
-      lid_r[n] = face_row_inds[faces[n]];
-      lid_c[n] = face_col_inds[faces[n]];
+
+      int face_dof_size = face_map->ElementSize(faces[n]);
+      int first = face_gh_map->FirstPointInElement(faces[n]);
+      first = (faces[n] < nfaces_owned) ? first : (first - nface_points_owned);
+      int offset = (faces[n] < nfaces_owned) ? face_row_offset : face_gh_offset;
+      
+      for (int m=0; m !=face_dof_size; ++m){
+        lid_r[k] = offset + (first + m)*num_dof_faces + my_block_row;
+        lid_c[k] = offset + (first + m)*num_dof_faces + my_block_col;
+        k++;
+      }
     }
-    ierr |= graph.InsertMyIndices(nfaces, lid_r.data(), nfaces, lid_c.data());
+    ierr |= graph.InsertMyIndices(k, lid_r.data(), k, lid_c.data());
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -353,8 +404,8 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
-  std::vector<int> lid_r(cell_max_faces + 1);
-  std::vector<int> lid_c(cell_max_faces + 1);
+  std::vector<int> lid_r(2*cell_max_faces + 1);
+  std::vector<int> lid_c(2*cell_max_faces + 1);
 
   // ELEMENT: cell, DOFS: face and cell
   const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
@@ -362,19 +413,47 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
   const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
   const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);        
 
+  Teuchos::RCP<const Epetra_BlockMap> face_gh_map = map.BaseGhostedMap("face");
+  Teuchos::RCP<const Epetra_BlockMap> cell_gh_map = map.BaseGhostedMap("cell");
+  Teuchos::RCP<const Epetra_BlockMap> face_map = map.BaseMap("face");
+  int nface_points_owned =  face_map -> NumMyPoints();
+  int num_dof_faces = map.NumDofs("face");
+  int num_dof_cells = map.NumDofs("cell");
+  int face_row_offset = map.Offset("face");
+  int face_gh_offset = map.GhostedOffset("face");
+  int cell_row_offset = map.Offset("cell");
+
+  int MyPID =  cell_gh_map->Comm().MyPID();
+  
   int ierr(0);
   AmanziMesh::Entity_ID_List faces;
   for (int c = 0; c != ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
     
     int nfaces = faces.size();
+    int k = 0;
     for (int n = 0; n != nfaces; ++n) {
-      lid_r[n] = face_row_inds[faces[n]];
-      lid_c[n] = face_col_inds[faces[n]];
-    }
-    lid_r[nfaces] = cell_row_inds[c];
-    lid_c[nfaces] = cell_col_inds[c];
+      int face_dof_size = face_gh_map->ElementSize(faces[n]);
+      int first = face_gh_map->FirstPointInElement(faces[n]);
+      first = (faces[n] < nfaces_owned) ? first : (first - nface_points_owned);
+      int offset = (faces[n] < nfaces_owned) ? face_row_offset : face_gh_offset;
+      
+      for (int m=0; m !=face_dof_size; ++m){
+        lid_r[k] = offset + (first + m)*num_dof_faces + my_block_row;
+        lid_c[k] = offset + (first + m)*num_dof_faces + my_block_col;
 
+        k++;
+      }      
+    }
+
+    int cell_dof_size = cell_gh_map -> ElementSize(c);
+    int first = cell_gh_map -> FirstPointInElement(c);
+    for (int m=0; m !=cell_dof_size; ++m){
+      lid_r[k] = cell_row_offset + (first + m)*num_dof_cells + my_block_row;
+      lid_c[k] = cell_row_offset + (first + m)*num_dof_cells + my_block_col;
+      k++;
+    }
+    
     ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[c]);
   }
   AMANZI_ASSERT(!ierr);
@@ -394,19 +473,37 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_Face& op,
   std::vector<int> lid_c(cell_max_faces + 1);
 
   // ELEMENT: cell, DOFS: face and cell
-  const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
-  const std::vector<int>& face_col_inds = map.GhostIndices("face", my_block_col);
-
+  // const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
+  // const std::vector<int>& face_col_inds = map.GhostIndices("face", my_block_col);
+  Teuchos::RCP<const Epetra_BlockMap> face_gh_map = map.BaseGhostedMap("face");
+  Teuchos::RCP<const Epetra_BlockMap> face_map = map.BaseMap("face");
+  int nface_points_owned =  face_map -> NumMyPoints();
+  int num_dof_faces = map.NumDofs("face");
+  
+  int face_row_offset = map.Offset("face");
+  int face_gh_offset = map.GhostedOffset("face");
+  
   int ierr(0);
   AmanziMesh::Entity_ID_List faces;
   for (int c = 0; c != ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
     
     int nfaces = faces.size();
+
+    int k = 0;
     for (int n = 0; n != nfaces; ++n) {
-      lid_r[n] = face_row_inds[faces[n]];
-      lid_c[n] = face_col_inds[faces[n]];
-    }
+
+      int face_dof_size = face_map->ElementSize(faces[n]);
+      int first = face_gh_map->FirstPointInElement(faces[n]);
+      first = (faces[n] < nfaces_owned) ? first : (first - nface_points_owned);
+      int offset = (faces[n] < nfaces_owned) ? face_row_offset : face_gh_offset;
+      
+      for (int m=0; m !=face_dof_size; ++m){
+        lid_r[k] = offset + (first + m)*num_dof_faces + my_block_row;
+        lid_c[k] = offset + (first + m)*num_dof_faces + my_block_col;
+        k++;
+      }
+    }    
     
     ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[c]);
   }

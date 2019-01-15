@@ -112,14 +112,16 @@ void TestDiffusionFracturedMatrix() {
 
   // apply BCs (primary=true, eliminate=true) and assemble
   op->ApplyBCs(true, true, true);
-  // global_op->SymbolicAssembleMatrix();
-  // global_op->AssembleMatrix();
+  global_op->SymbolicAssembleMatrix();
+  std::cout<<"SymbolicAssembleMatrix\n";  
+  global_op->AssembleMatrix();
+  std::cout<<"AssembleMatrix\n";
 
   // create preconditoner using the base operator class
-  // ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-  ParameterList slist = plist.sublist("preconditioners").sublist("identity");
+  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  //ParameterList slist = plist.sublist("preconditioners").sublist("identity");
   global_op->InitializePreconditioner(slist);
-  // global_op->UpdatePreconditioner();
+  global_op->UpdatePreconditioner();
 
   // solve the problem
   ParameterList lop_list = plist.sublist("solvers")
