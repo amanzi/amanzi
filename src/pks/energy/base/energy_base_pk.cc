@@ -106,6 +106,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
 
   bc_adv_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
 
+  bc_surf_temp_dependent_ = bc_plist.get<bool>("surface temperature dependence", false);
   // -- nonlinear coefficient
   std::string method_name = plist_->get<std::string>("upwind conductivity method",
           "arithmetic mean");
@@ -526,6 +527,10 @@ void EnergyBase::UpdateBoundaryConditions_(
     adv_values[n] = 0.0;
   }
 
+    Epetra_MultiVector& temp = *S->GetFieldData(key_,name_)->ViewComponent("boundary_face",false);
+  const Epetra_Map& vandalay_map = mesh_->exterior_face_map(false);
+  const Epetra_Map& face_map = mesh_->face_map(false);
+
   // Dirichlet temperature boundary conditions
   for (Functions::BoundaryFunction::Iterator bc=bc_temperature_->begin();
        bc!=bc_temperature_->end(); ++bc) {
@@ -533,6 +538,25 @@ void EnergyBase::UpdateBoundaryConditions_(
     markers[f] = Operators::OPERATOR_BC_DIRICHLET;
     values[f] = bc->second;
     adv_markers[f] = Operators::OPERATOR_BC_DIRICHLET;
+    
+    if (key_ == "surface-temperature" && bc_surf_temp_dependent_) {
+      const Epetra_MultiVector& surf_temp = *S->GetFieldData("surface-temperature")->ViewComponent("cell",false);
+      for (int i=0; i< temp.MyLength(); i++) {
+        AmanziMesh::Entity_ID f1 = face_map.LID(vandalay_map.GID(i));
+        if (adv_markers[f1] == Operators::OPERATOR_BC_DIRICHLET) {
+          temp[0][i] = surf_temp[0][i];
+        }
+      }
+    }
+    else if (key_ == "surface-temperature") {
+      for (int i=0; i< temp.MyLength(); i++) {
+        AmanziMesh::Entity_ID f1 = face_map.LID(vandalay_map.GID(i));
+        if (adv_markers[f1] == Operators::OPERATOR_BC_DIRICHLET) {
+          temp[0][i] = bc->second;
+        }
+      }
+    }
+
   }
 
   // Neumann flux boundary conditions

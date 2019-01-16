@@ -193,7 +193,7 @@ public:
   Key source_key_;
   //  Key mass_source_key_;
   Key ss_flux_key_;
-
+  bool bc_surf_temp_dependent_;
 };
 
 } // namespace Energy
