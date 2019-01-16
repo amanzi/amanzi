@@ -104,7 +104,7 @@ Darcy_PK::~Darcy_PK()
 void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
 {
   dt_ = -1.0;
-  mesh_ = S->GetMesh();
+  mesh_ = S->GetMesh(domain_);
   dim = mesh_->space_dimension();
 
   Flow_PK::Setup(S);

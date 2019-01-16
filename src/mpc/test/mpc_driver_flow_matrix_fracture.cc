@@ -17,6 +17,7 @@
 #include "eos_registration.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
+#include "Mesh_MSTK.hh"
 #include "mpc_pks_registration.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
@@ -46,8 +47,7 @@ using namespace Amanzi::AmanziGeometry;
   // create mesh
   FrameworkPreference pref;
   pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
+  pref.push_back(Framework::MSTK);
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
@@ -56,7 +56,22 @@ using namespace Amanzi::AmanziGeometry;
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
   
-  Amanzi::CycleDriver cycle_driver(plist, mesh, &comm, obs_data);
+  Teuchos::ParameterList state_plist = plist->sublist("state");
+  Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
+  S->RegisterMesh("domain", mesh);
+  
+  // create additional mesh for fracture
+  std::vector<std::string> names;
+  names.push_back("fracture");
+
+  Teuchos::RCP<const AmanziMesh::Mesh_MSTK> mstk =
+      Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(mesh);
+  Teuchos::RCP<AmanziMesh::Mesh> mesh_fracture =
+      Teuchos::rcp(new AmanziMesh::Mesh_MSTK(*mstk, names, AmanziMesh::FACE));
+
+  S->RegisterMesh("fracture", mesh_fracture);
+
+  Amanzi::CycleDriver cycle_driver(plist, S, &comm, obs_data);
   cycle_driver.Go();
 }
 

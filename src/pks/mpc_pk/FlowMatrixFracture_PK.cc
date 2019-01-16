@@ -13,7 +13,6 @@
 */
 
 #include "FlowMatrixFracture_PK.hh"
-#include "Mesh_MSTK.hh"
 #include "PK_MPCStrong.hh"
 
 namespace Amanzi {
@@ -43,17 +42,6 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
   int dim = mesh_->space_dimension();
 
   Teuchos::ParameterList& elist = S->FEList();
-
-  // create additional mesh for fractures
-  std::vector<std::string> names;
-  names.push_back("fractures");
-
-  Teuchos::RCP<const AmanziMesh::Mesh_MSTK> mstk =
-      Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(mesh_);
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_fracture =
-      Teuchos::rcp(new AmanziMesh::Mesh_MSTK(*mstk, names, AmanziMesh::FACE));
-
-  S->RegisterMesh("fracture", mesh_fracture);
 
   // Fields for coupling terms
   // -- bc for matrix
