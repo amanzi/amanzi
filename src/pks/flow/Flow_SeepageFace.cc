@@ -30,7 +30,7 @@ namespace Flow {
 ****************************************************************** */
 void Flow_PK::SeepageFacePFloTran(const CompositeVector& u, int* nseepage, double* area_seepage)
 {
-  const Epetra_MultiVector& flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);
+  const Epetra_MultiVector& flux = *S_->GetFieldData(darcy_flux_key_)->ViewComponent("face", true);
   const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
 
   std::vector<int>& bc_model = op_bc_->bc_model();

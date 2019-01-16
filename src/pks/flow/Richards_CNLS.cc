@@ -30,7 +30,7 @@ void Richards_PK::CalculateCNLSLimiter_(
   Epetra_MultiVector& limiter = *cnls_limiter_->ViewComponent("cell");
   const Epetra_MultiVector& wcc = *wc.ViewComponent("cell");
   const Epetra_MultiVector& dwc_dpc = *dwc_dp.ViewComponent("cell");
-  const Epetra_MultiVector& por = *S_->GetFieldData("porosity")->ViewComponent("cell");
+  const Epetra_MultiVector& por = *S_->GetFieldData(porosity_key_)->ViewComponent("cell");
 
   double alpha0, alpha1, wc_max, wc_min(0.0);
   double eps = tol * atm_pressure_; 

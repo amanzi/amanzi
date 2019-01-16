@@ -147,40 +147,48 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // require additional fields for this PK
-  if (!S->HasField("specific_storage")) {
-    S->RequireField("specific_storage", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
-  if (!S->HasField("specific_yield")) {
-    S->RequireField("specific_yield", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  specific_storage_key_ = Keys::getKey(domain_, "specific_storage"); 
+  if (!S->HasField(specific_storage_key_)) {
+    S->RequireField(specific_storage_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  if (!S->HasField("saturation_liquid")) {
-    S->RequireField("saturation_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
-  if (!S->HasField("prev_saturation_liquid")) {
-    S->RequireField("prev_saturation_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  specific_yield_key_ = Keys::getKey(domain_, "specific_yield"); 
+  if (!S->HasField(specific_yield_key_)) {
+    S->RequireField(specific_yield_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  if (!S->HasField("darcy_flux")) {
-    S->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
+  if (!S->HasField(saturation_liquid_key_)) {
+    S->RequireField(saturation_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  prev_saturation_liquid_key_ = Keys::getKey(domain_, "prev_saturation_liquid"); 
+  if (!S->HasField(prev_saturation_liquid_key_)) {
+    S->RequireField(prev_saturation_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
+
+  darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
+  if (!S->HasField(darcy_flux_key_)) {
+    S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
 
     Teuchos::ParameterList elist;
-    elist.set<std::string>("evaluator name", "darcy_flux");
+    elist.set<std::string>("evaluator name", darcy_flux_key_);
     darcy_flux_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S->SetFieldEvaluator("darcy_flux", darcy_flux_eval_);
+    S->SetFieldEvaluator(darcy_flux_key_, darcy_flux_eval_);
   }
 
   // Require additional field evaluators for this PK.
   // -- porosity
-  if (!S->HasField("porosity")) {
-    S->RequireField("porosity", "porosity")->SetMesh(mesh_)->SetGhosted(true)
+  porosity_key_ = Keys::getKey(domain_, "porosity"); 
+  if (!S->HasField(porosity_key_)) {
+    S->RequireField(porosity_key_, porosity_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator("porosity");
+    S->RequireFieldEvaluator(porosity_key_);
   }
 
   // -- viscosity
@@ -210,19 +218,24 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // Local fields and evaluators.
-  if (!S->HasField("hydraulic_head")) {
-    S->RequireField("hydraulic_head", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  hydraulic_head_key_ = Keys::getKey(domain_, "hydraulic_head"); 
+  if (!S->HasField(hydraulic_head_key_)) {
+    S->RequireField(hydraulic_head_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // full velocity vector
-  if (!S->HasField("darcy_velocity")) {
-    S->RequireField("darcy_velocity", "darcy_velocity")->SetMesh(mesh_)->SetGhosted(true)
+  darcy_velocity_key_ = Keys::getKey(domain_, "darcy_velocity"); 
+  if (!S->HasField(darcy_velocity_key_)) {
+    S->RequireField(darcy_velocity_key_, darcy_velocity_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, dim);
 
     Teuchos::ParameterList elist;
+    elist.set<std::string>("domain name", domain_);
+    elist.set<std::string>("darcy velocity key", darcy_velocity_key_)
+         .set<std::string>("darcy flux key", darcy_flux_key_);
     Teuchos::RCP<DarcyVelocityEvaluator> eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
-    S->SetFieldEvaluator("darcy_velocity", eval);
+    S->SetFieldEvaluator(darcy_velocity_key_, eval);
   }
 
   // Require additional components for the existing fields
@@ -367,8 +380,8 @@ void Darcy_PK::InitializeFields_()
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  InitializeField(S_.ptr(), passwd_, "saturation_liquid", 1.0);
-  InitializeField(S_.ptr(), passwd_, "prev_saturation_liquid", 1.0);
+  InitializeField(S_.ptr(), passwd_, saturation_liquid_key_, 1.0);
+  InitializeField(S_.ptr(), passwd_, prev_saturation_liquid_key_, 1.0);
 }
 
 
@@ -430,7 +443,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // calculate and assemble elemental stiffness matrices
   double factor = 1.0 / g_;
-  const CompositeVector& ss = *S_->GetFieldData("specific_storage");
+  const CompositeVector& ss = *S_->GetFieldData(specific_storage_key_);
   CompositeVector ss_g(ss); 
   ss_g.Update(0.0, ss, factor);
 
@@ -512,7 +525,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void Darcy_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   // calculate Darcy mass flux
-  Teuchos::RCP<CompositeVector> flux = S->GetFieldData("darcy_flux", passwd_);
+  Teuchos::RCP<CompositeVector> flux = S->GetFieldData(darcy_flux_key_, passwd_);
   op_diff_->UpdateFlux(solution.ptr(), flux.ptr());
   flux->Scale(1.0 / rho_);
 
@@ -533,7 +546,7 @@ void Darcy_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>&
 ****************************************************************** */
 void Darcy_PK::UpdateSpecificYield_()
 {
-  specific_yield_copy_ = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("specific_yield"), true));
+  specific_yield_copy_ = Teuchos::rcp(new CompositeVector(*S_->GetFieldData(specific_yield_key_), true));
 
   // do we have non-zero specific yield? 
   double tmp;

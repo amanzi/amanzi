@@ -24,8 +24,8 @@ namespace Flow {
 DarcyVelocityEvaluator::DarcyVelocityEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   // hard-coded keys
-  my_key_ = std::string("darcy_velocity");
-  darcy_flux_key_ = std::string("darcy_flux");
+  my_key_ = plist.get<std::string>("darcy velocity key");
+  darcy_flux_key_ = plist.get<std::string>("darcy flux key");
   dependencies_.insert(darcy_flux_key_);
 }
 
@@ -52,12 +52,13 @@ Teuchos::RCP<FieldEvaluator> DarcyVelocityEvaluator::Clone() const {
 void DarcyVelocityEvaluator::EvaluateField_(
     const Teuchos::Ptr<State>& S, const Teuchos::Ptr<CompositeVector>& result) 
 {
+  Key domain = plist_.get<std::string>("domain name");
   S->GetFieldData(darcy_flux_key_)->ScatterMasterToGhosted("face");
 
   const Epetra_MultiVector& flux = *S->GetFieldData(darcy_flux_key_)->ViewComponent("face");
   Epetra_MultiVector& result_c = *(result->ViewComponent("cell", false));
 
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh();
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh(domain);
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int dim = mesh->space_dimension();
 

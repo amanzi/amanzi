@@ -156,6 +156,10 @@ class Flow_PK : public PK_PhysicalBDF {
 
   // names of state fields 
   Key pressure_key_;
+  Key darcy_flux_key_, specific_storage_key_, specific_yield_key_;
+  Key saturation_liquid_key_, prev_saturation_liquid_key_;
+  Key porosity_key_, hydraulic_head_key_;
+  Key darcy_velocity_key_;
 
   // io
   Utils::Units units_;
