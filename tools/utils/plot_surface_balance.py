@@ -74,9 +74,9 @@ def plot_surface((keys,times,dat), ax, color, varname, style='-', version='dev-n
     if hackfactor is not None:
         sd = sd * hackfactor
 
-    ax.plot(times, sd, style, color=color, label=label)
+    ax.plot(times*365.25, sd, style, color=color, label=label, markerfacecolor='none')
     ax.set_ylabel(varname)
-    ax.set_xlabel("time [yr]")
+    ax.set_xlabel("time [d]")
 
 
 def plot_surface_balance(ktd, ax, color, marker=None, version='dev-new', label=None, hackfactor=None, domain_suffix=None):
