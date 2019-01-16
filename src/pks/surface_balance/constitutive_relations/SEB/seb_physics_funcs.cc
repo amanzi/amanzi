@@ -270,7 +270,8 @@ EnergyBalance UpdateEnergyBalanceWithoutSnow(const GroundProperties& surf,
 		      surf.unfrozen_fraction * params.Le + (1-surf.unfrozen_fraction) * params.Ls,
 		      vapor_pressure_air, vapor_pressure_skin, params.Apa);
 
-  eb.fQc = eb.fQswIn + eb.fQlwIn - eb.fQlwOut + eb.fQh + eb.fQe - eb.fQm;
+  // fQc is the energy conducted between surface and snow layers, but there is no snow here
+  eb.fQc = 0.;
   return eb;
 }
 
@@ -368,13 +369,17 @@ FluxBalance UpdateFluxesWithoutSnow(const GroundProperties& surf,
   flux.M_surf = met.Pr + mb.Mm;
 
   // Energy to surface.
-  flux.E_surf = eb.fQc   // conducted to ground  
-    + surf.density_w * met.Pr * (met.air_temp-273.15) * params.Cv_water; // rain enthalpy
-                          // note snowmelt enthalpy is 0 as temp is 0
+  flux.E_surf = eb.fQswIn + eb.fQlwIn - eb.fQlwOut + eb.fQh // purely energy fluxes
+                - eb.fQm   // energy put into melting snow
+                + surf.density_w * met.Pr * (met.air_temp-273.15) * params.Cv_water; // energy advected in by rainfall
+
   // zero subsurf values
   flux.M_subsurf = 0.;
   flux.E_subsurf = 0.;
 
+  // At this point we have Mass and Energy fluxes but not including
+  // evaporation, which we have to allocate to surface or subsurface.
+  
   // Now put evap in the right place
   double evap_to_subsurface_fraction = 0.;
   if (mb.Me < 0) {

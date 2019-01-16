@@ -358,7 +358,8 @@ SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       mass_source[0][c] += area_fracs[1][c] * flux.M_surf;
       energy_source[0][c] += area_fracs[1][c] * flux.E_surf * 1.e-6; // convert to MW/m^2 from W/m^2
       snow_source[0][c] += area_fracs[1][c] * flux.M_snow;
-      new_snow[0][c] += (met.Ps + std::max(mb.Me, 0.)) * area_fracs[1][c];
+
+      new_snow[0][c] += std::max(met.Ps + mb.Me, 0.) * area_fracs[1][c];
 
       // diagnostics
       if (diagnostics_) {

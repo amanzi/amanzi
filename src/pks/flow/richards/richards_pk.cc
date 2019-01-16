@@ -138,7 +138,9 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   
   // -- nonlinear coefficients/upwinding
   Teuchos::ParameterList& wrm_plist = plist_->sublist("water retention evaluator");
-  if (plist_->get<bool>("clobber surface rel perm", false)) {
+  if (plist_->isParameter("surface rel perm strategy")) {
+    clobber_policy_ = plist_->get<std::string>("surface rel perm strategy");
+  } else if (plist_->get<bool>("clobber surface rel perm", false)) {
     clobber_policy_ = "clobber";
   } else if (plist_->get<bool>("max surface rel perm", false)) {
     clobber_policy_ = "max";
@@ -1383,37 +1385,37 @@ bool Richards::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
   }
   
   if (minT < -1.e9 || maxT > 1.e8) {
-    // if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-    //   *vo_->os() << " is not admissible, as it is not within bounds of constitutive models:" << std::endl;
-    //   ENorm_t global_minT_c, local_minT_c;
-    //   ENorm_t global_maxT_c, local_maxT_c;
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+      *vo_->os() << " is not admissible, as it is not within bounds of constitutive models:" << std::endl;
+      ENorm_t global_minT_c, local_minT_c;
+      ENorm_t global_maxT_c, local_maxT_c;
 
-    //   local_minT_c.value = minT_c;
-    //   local_minT_c.gid = pres_c.Map().GID(min_c);
-    //   local_maxT_c.value = maxT_c;
-    //   local_maxT_c.gid = pres_c.Map().GID(max_c);
+      local_minT_c.value = minT_c;
+      local_minT_c.gid = pres_c.Map().GID(min_c);
+      local_maxT_c.value = maxT_c;
+      local_maxT_c.gid = pres_c.Map().GID(max_c);
 
-    //   MPI_Allreduce(&local_minT_c, &global_minT_c, 1, MPI_DOUBLE_INT, MPI_MINLOC, mesh_->get_comm()->Comm());
-    //   MPI_Allreduce(&local_maxT_c, &global_maxT_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
-    //   *vo_->os() << "   cells (min/max): [" << global_minT_c.gid << "] " << global_minT_c.value
-    //              << ", [" << global_maxT_c.gid << "] " << global_maxT_c.value << std::endl;
+      MPI_Allreduce(&local_minT_c, &global_minT_c, 1, MPI_DOUBLE_INT, MPI_MINLOC, mesh_->get_comm()->Comm());
+      MPI_Allreduce(&local_maxT_c, &global_maxT_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
+      *vo_->os() << "   cells (min/max): [" << global_minT_c.gid << "] " << global_minT_c.value
+                 << ", [" << global_maxT_c.gid << "] " << global_maxT_c.value << std::endl;
 
-    //   if (pres->HasComponent("face")) {
-    //     const Epetra_MultiVector& pres_f = *pres->ViewComponent("face",false);
-    //     ENorm_t global_minT_f, local_minT_f;
-    //     ENorm_t global_maxT_f, local_maxT_f;
+      if (pres->HasComponent("face")) {
+        const Epetra_MultiVector& pres_f = *pres->ViewComponent("face",false);
+        ENorm_t global_minT_f, local_minT_f;
+        ENorm_t global_maxT_f, local_maxT_f;
 
-    //     local_minT_f.value = minT_f;
-    //     local_minT_f.gid = pres_f.Map().GID(min_f);
-    //     local_maxT_f.value = maxT_f;
-    //     local_maxT_f.gid = pres_f.Map().GID(max_f);
+        local_minT_f.value = minT_f;
+        local_minT_f.gid = pres_f.Map().GID(min_f);
+        local_maxT_f.value = maxT_f;
+        local_maxT_f.gid = pres_f.Map().GID(max_f);
         
-    //     MPI_Allreduce(&local_minT_f, &global_minT_f, 1, MPI_DOUBLE_INT, MPI_MINLOC, mesh_->get_comm()->Comm());
-    //     MPI_Allreduce(&local_maxT_f, &global_maxT_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
-    //     *vo_->os() << "   cells (min/max): [" << global_minT_f.gid << "] " << global_minT_f.value
-    //                << ", [" << global_maxT_f.gid << "] " << global_maxT_f.value << std::endl;
-    //   }
-    // }
+        MPI_Allreduce(&local_minT_f, &global_minT_f, 1, MPI_DOUBLE_INT, MPI_MINLOC, mesh_->get_comm()->Comm());
+        MPI_Allreduce(&local_maxT_f, &global_maxT_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
+        *vo_->os() << "   cells (min/max): [" << global_minT_f.gid << "] " << global_minT_f.value
+                   << ", [" << global_maxT_f.gid << "] " << global_maxT_f.value << std::endl;
+      }
+    }
     return false;
   }
   return true;
