@@ -176,7 +176,7 @@ void CycleDriver::Setup() {
 
   // vis successful steps
   bool surface_done = false;
-  for (State::mesh_iterator mesh=S_->mesh_begin(); mesh!=S_->mesh_end(); ++mesh) {
+  for (auto mesh=S_->mesh_begin(); mesh!=S_->mesh_end(); ++mesh) {
     if (mesh->first == "surface_3d") {
       // pass
     } else if ((mesh->first == "surface") && surface_done) {
@@ -193,6 +193,7 @@ void CycleDriver::Setup() {
         Teuchos::ParameterList& vis_plist = glist_->sublist(plist_name);
         Teuchos::RCP<Visualization> vis = Teuchos::rcp(new Visualization(vis_plist));
         vis->set_mesh(mesh->second.first);
+        vis->set_name(mesh->first);
         vis->CreateFiles();
         visualization_.push_back(vis);
       }
