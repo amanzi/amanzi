@@ -156,6 +156,7 @@ class Flow_PK : public PK_PhysicalBDF {
 
   // names of state fields 
   Key pressure_key_;
+  Key darcy_flux_key_;
 
   // io
   Utils::Units units_;

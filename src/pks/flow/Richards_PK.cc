@@ -251,14 +251,15 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // -- darcy flux
-  if (!S->HasField("darcy_flux")) {
-    S->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
+  if (!S->HasField(darcy_flux_key_)) {
+    S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
 
     Teuchos::ParameterList elist;
-    elist.set<std::string>("evaluator name", "darcy_flux");
+    elist.set<std::string>("evaluator name", darcy_flux_key_);
     darcy_flux_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S->SetFieldEvaluator("darcy_flux", darcy_flux_eval_);
+    S->SetFieldEvaluator(darcy_flux_key_, darcy_flux_eval_);
   }
 
   // -- porosity
@@ -487,7 +488,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap_owned));
 
   // Initialize flux copy for the upwind operator.
-  darcy_flux_copy = Teuchos::rcp(new CompositeVector(*S->GetFieldData("darcy_flux", passwd_)));
+  darcy_flux_copy = Teuchos::rcp(new CompositeVector(*S->GetFieldData(darcy_flux_key_, passwd_)));
 
   // Conditional initialization of lambdas from pressures.
   CompositeVector& pressure = *S->GetFieldData(pressure_key_, passwd_);
@@ -943,7 +944,7 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void Richards_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   // calculate Darcy flux.
-  Teuchos::RCP<CompositeVector> darcy_flux = S->GetFieldData("darcy_flux", passwd_);
+  Teuchos::RCP<CompositeVector> darcy_flux = S->GetFieldData(darcy_flux_key_, passwd_);
   op_matrix_diff_->UpdateFlux(solution.ptr(), darcy_flux.ptr());
 
   Epetra_MultiVector& flux = *darcy_flux->ViewComponent("face", true);

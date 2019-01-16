@@ -45,6 +45,7 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // Fields for coupling terms
   // -- bc for matrix
+  /*
   if (!S->HasField("matrix_fracture_bc")) {
     elist.sublist("matrix_fracture_bc")
          .set<std::string>("field evaluator type", "matrix_fracture_bc");
@@ -54,6 +55,7 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
     // S->RequireFieldEvaluator("matrix_fracture_bc");
     S->GetField("matrix_fracture_bc", "matrix_fracture_bc")->set_io_vis(false);
   }
+  */
 
   // -- source for fracture
 

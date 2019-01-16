@@ -165,14 +165,15 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  if (!S->HasField("darcy_flux")) {
-    S->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
+  if (!S->HasField(darcy_flux_key_)) {
+    S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
 
     Teuchos::ParameterList elist;
-    elist.set<std::string>("evaluator name", "darcy_flux");
+    elist.set<std::string>("evaluator name", darcy_flux_key_);
     darcy_flux_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
-    S->SetFieldEvaluator("darcy_flux", darcy_flux_eval_);
+    S->SetFieldEvaluator(darcy_flux_key_, darcy_flux_eval_);
   }
 
   // Require additional field evaluators for this PK.
@@ -221,6 +222,8 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetComponent("cell", AmanziMesh::CELL, dim);
 
     Teuchos::ParameterList elist;
+    elist.set<std::string>("domain name", domain_);
+    elist.set<std::string>("darcy flux key", darcy_flux_key_);
     Teuchos::RCP<DarcyVelocityEvaluator> eval = Teuchos::rcp(new DarcyVelocityEvaluator(elist));
     S->SetFieldEvaluator("darcy_velocity", eval);
   }
@@ -257,7 +260,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   // Create verbosity object to print out initialization statisticsr.,
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = fp_list_->sublist("verbose object");
-  vo_ = Teuchos::rcp(new VerboseObject("FlowPK::Darcy", vlist)); 
+  vo_ = Teuchos::rcp(new VerboseObject("DarcyPK: " + domain_, vlist)); 
 
   // Initilize various base class data.
   Flow_PK::Initialize(S);
@@ -512,7 +515,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void Darcy_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   // calculate Darcy mass flux
-  Teuchos::RCP<CompositeVector> flux = S->GetFieldData("darcy_flux", passwd_);
+  Teuchos::RCP<CompositeVector> flux = S->GetFieldData(darcy_flux_key_, passwd_);
   op_diff_->UpdateFlux(solution.ptr(), flux.ptr());
   flux->Scale(1.0 / rho_);
 
