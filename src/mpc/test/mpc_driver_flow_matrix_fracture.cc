@@ -51,7 +51,7 @@ using namespace Amanzi::AmanziGeometry;
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 216.0, 1.0, 120.0, 54, 2, 60, gm);
+  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 216.0, 10.0, 120.0, 54, 2, 60, gm);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    

@@ -25,8 +25,8 @@ FlowMatrixFracture_PK::FlowMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
                                                const Teuchos::RCP<State>& S,
                                                const Teuchos::RCP<TreeVector>& soln) :
     glist_(glist),
-    Amanzi::PK_MPC<PK_BDF>(pk_tree, glist, S, soln),
-    Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln)
+    Amanzi::PK(pk_tree, glist, S, soln),
+    Amanzi::PK_MPCWeak(pk_tree, glist, S, soln)
 {
   Teuchos::ParameterList vlist;
   vo_ =  Teuchos::rcp(new VerboseObject("MatrixFracture_PK", vlist)); 
@@ -73,7 +73,7 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
   fflow.set("coupled matrix fracture flow", true);
 
   // process other PKs.
-  PK_MPCStrong<PK_BDF>::Setup(S);
+  PK_MPCWeak::Setup(S);
 }
 
 
@@ -83,7 +83,7 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
 bool FlowMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
   // try a step
-  bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
+  bool fail = PK_MPCWeak::AdvanceStep(t_old, t_new, reinit);
 
   if (fail) {
     Teuchos::OSTab tab = vo_->getOSTab();

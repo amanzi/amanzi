@@ -7,7 +7,11 @@
     <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1000, -1}"/>
   </ParameterList>
   <ParameterList name="visualization data">
-    <Parameter name="file name base" type="string" value="plot_coupled"/>
+    <Parameter name="file name base" type="string" value="plot_matrix"/>
+    <Parameter name="cycles start period stop 0" type="Array(int)" value="{70, 20, -1}"/>
+  </ParameterList>
+  <ParameterList name="visualization data fracture">
+    <Parameter name="file name base" type="string" value="plot_fracture"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{70, 20, -1}"/>
   </ParameterList>
 
@@ -18,34 +22,34 @@
         <Parameter name="normal" type="Array(double)" value="{0.0,0.0,1.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="LineLeft">
+    <ParameterList name="SurfaceLeft">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{ 0.0,0.0,60.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{0.0,1.0,60.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.0, 0.0,  0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.0,10.0,120.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="SurfaceTop">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{   0.0,0.0,120.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{216.0,1.0,120.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{   0.0, 0.0,120.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{216.0,10.0,120.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="SurfaceBottom">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{   0.0,0.0,0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{216.0,1.0,0.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{   0.0, 0.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{216.0,10.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="RegionBottom">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{   0.0,0.0, 0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{216.0,1.0,60.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{   0.0, 0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{216.0,10.0,60.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="RegionTop">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{   0.0,0.0, 60.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{216.0,1.0,120.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{   0.0, 0.0, 60.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{216.0,10.0,120.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="All">
@@ -61,7 +65,7 @@
       <ParameterList name="generate mesh">
         <Parameter name="number of cells" type="Array(int)" value="{54, 2, 60}"/>
         <Parameter name="domain low coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
-        <Parameter name="domain high coordinate" type="Array(double)" value="{216.0, 1.0, 120.0}"/>
+        <Parameter name="domain high coordinate" type="Array(double)" value="{216.0, 10.0, 120.0}"/>
       </ParameterList>
       <ParameterList name="expert">
         <Parameter name="framework" type="string" value="MSTK"/>
@@ -107,6 +111,20 @@
   <ParameterList name="state">
     <ParameterList name="field evaluators">
       <ParameterList name="porosity">
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.2"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="fracture-porosity">
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
@@ -237,9 +255,9 @@
       <Parameter name="preconditioner type" type="string" value="block ilu"/>
       <Parameter name="discretization method" type="string" value="mfd: optimized for sparsity"/>
       <ParameterList name="block ilu parameters">
-        <Parameter name="fact: relax value" type="double" value="1.0e+00"/>
-        <Parameter name="fact: absolute threshold" type="double" value="0.0e+00"/>
-        <Parameter name="fact: relative threshold" type="double" value="1.0e+00"/>
+        <Parameter name="fact: relax value" type="double" value="1.0"/>
+        <Parameter name="fact: absolute threshold" type="double" value="0.0"/>
+        <Parameter name="fact: relative threshold" type="double" value="1.0"/>
         <Parameter name="fact: level-of-fill" type="int" value="0"/>
         <Parameter name="overlap" type="int" value="0"/>
         <Parameter name="schwarz: combine mode" type="string" value="Add"/>
@@ -277,42 +295,9 @@
 
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{pressure, pressure fracture}"/>
-        <Parameter name="linear solver" type="string" value="none"/>
+        <Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
         <Parameter name="time integration method" type="string" value="BDF1"/>
-        <ParameterList name="BDF1">
-          <Parameter name="timestep controller type" type="string" value="standard"/>
-          <ParameterList name="timestep controller standard parameters">
-            <Parameter name="max iterations" type="int" value="15"/>
-            <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="time step increase factor" type="double" value="1.2"/>
-            <Parameter name="time step reduction factor" type="double" value="0.8"/>
-            <Parameter name="max time step" type="double" value="6.0e+10"/>
-            <Parameter name="min time step" type="double" value="9.99999999999999945e-21"/>
-          </ParameterList>
-          <Parameter name="solver type" type="string" value="nka"/>
-          <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.00000000000000008e-05"/>
-            <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
-            <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
-            <Parameter name="max divergent iterations" type="int" value="3"/>
-            <Parameter name="max nka vectors" type="int" value="10"/>
-            <Parameter name="limit iterations" type="int" value="20"/>
-            <Parameter name="modify correction" type="bool" value="false"/>
-          </ParameterList>
-          <Parameter name="max preconditioner lag iterations" type="int" value="10"/>
-          <Parameter name="extrapolate initial guess" type="bool" value="false"/>
-          <Parameter name="nonlinear iteration damping factor" type="double" value="1.0e+00"/>
-          <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
-          <Parameter name="restart tolerance relaxation factor" type="double" value="10.0"/>
-          <Parameter name="restart tolerance relaxation factor damping" type="double" value="0.9"/>
-          <ParameterList name="verbose object">
-            <Parameter name="verbosity level" type="string" value="high"/>
-          </ParameterList>
-        </ParameterList>
-        <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="extreme"/>
-        </ParameterList>
       </ParameterList>
     </ParameterList>
 
@@ -388,13 +373,9 @@
 
         <ParameterList name="time integrator">
           <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
-          <Parameter name="linear solver" type="string" value="none"/>
+          <Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
           <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-          <ParameterList name="pressure-lambda constraints">
-            <Parameter name="method" type="string" value="projection"/>
-            <Parameter name="inflow krel correction" type="bool" value="true"/>
-            <Parameter name="linear solver" type="string" value="AztecOO"/>
-          </ParameterList>
+
           <Parameter name="time integration method" type="string" value="BDF1"/>
           <ParameterList name="BDF1">
             <Parameter name="timestep controller type" type="string" value="standard"/>
@@ -465,7 +446,7 @@
         <ParameterList name="boundary conditions">
           <ParameterList name="static head">
             <ParameterList name="BC 0">
-              <Parameter name="regions" type="Array(string)" value="{LineLeft}"/>
+              <Parameter name="regions" type="Array(string)" value="{SurfaceLeft}"/>
               <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="static head">
                 <ParameterList name="function-static-head">
@@ -475,7 +456,7 @@
                   <Parameter name="space dimension" type="int" value="2"/>
                   <ParameterList name="water table elevation">
                     <ParameterList name="function-linear">
-                      <Parameter name="y0" type="double" value="0.0e+00"/>
+                      <Parameter name="y0" type="double" value="0.0"/>
                       <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
                       <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
                     </ParameterList>
@@ -488,13 +469,9 @@
 
         <ParameterList name="time integrator">
           <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
-          <Parameter name="linear solver" type="string" value="none"/>
+          <Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
           <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-          <ParameterList name="pressure-lambda constraints">
-            <Parameter name="method" type="string" value="projection"/>
-            <Parameter name="inflow krel correction" type="bool" value="true"/>
-            <Parameter name="linear solver" type="string" value="AztecOO"/>
-          </ParameterList>
+
           <Parameter name="time integration method" type="string" value="BDF1"/>
           <ParameterList name="BDF1">
             <Parameter name="timestep controller type" type="string" value="standard"/>
