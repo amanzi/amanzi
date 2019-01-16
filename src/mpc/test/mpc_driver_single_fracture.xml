@@ -7,7 +7,12 @@
     <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1000, -1}"/>
   </ParameterList>
   <ParameterList name="visualization data">
-    <Parameter name="file name base" type="string" value="plot_coupled"/>
+    <Parameter name="file name base" type="string" value="plot_matrix"/>
+    <Parameter name="cycles start period stop 0" type="Array(int)" value="{70, 20, -1}"/>
+  </ParameterList>
+
+  <ParameterList name="visualization data fracture">
+    <Parameter name="file name base" type="string" value="plot_fracture"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{70, 20, -1}"/>
   </ParameterList>
 
@@ -21,7 +26,7 @@
     <ParameterList name="fracture" type="ParameterList">
       <ParameterList name="region: labeled set" type="ParameterList">
         <Parameter name="label" type="string" value="100" />
-        <Parameter name="file" type="string" value="single/geometry/gmsh.exo" />
+        <Parameter name="file" type="string" value="test/single_fracture.exo" />
         <Parameter name="format" type="string" value="Exodus II" />
         <Parameter name="entity" type="string" value="Face" />
       </ParameterList>
@@ -32,10 +37,10 @@
         <Parameter name="high coordinate" type="Array(double)" value="{100.0,100.0}"/>
       </ParameterList>
     </ParameterList>    
-    <ParameterList name="LineLeft">
+    <ParameterList name="SurfaceLeft">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{ 0.0,  0.0,80.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{0.0,100.0,80.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.0,  0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.0,100.0,100.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="SurfaceInlet">
@@ -67,7 +72,7 @@
   <ParameterList name="mesh">
     <ParameterList name="unstructured">
       <ParameterList name="read mesh file" type="ParameterList">
-        <Parameter name="file" type="string" value="single/geometry/gmsh.exo" />
+        <Parameter name="file" type="string" value="test/single_fracture.exo" />
         <Parameter name="format" type="string" value="Exodus II" />
       </ParameterList>
       <ParameterList name="expert">
@@ -96,7 +101,7 @@
         </ParameterList>
         <Parameter name="start period time" type="double" value="0.0"/>
         <Parameter name="end period time" type="double" value="9.0e+4"/>
-        <Parameter name="maximum cycle number" type="int" value="-1"/>
+        <Parameter name="maximum cycle number" type="int" value="2"/>
         <Parameter name="initial time step" type="double" value="500.0"/>
       </ParameterList>
     </ParameterList>
@@ -114,6 +119,20 @@
   <ParameterList name="state">
     <ParameterList name="field evaluators">
       <ParameterList name="porosity">
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.2"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="fracture-porosity">
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
@@ -259,9 +278,9 @@
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
         <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
-        <Parameter name="maximum number of iterations" type="int" value="100"/>
+        <Parameter name="maximum number of iterations" type="int" value="10"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -269,9 +288,9 @@
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
         <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
-        <Parameter name="maximum number of iterations" type="int" value="100"/>
+        <Parameter name="maximum number of iterations" type="int" value="10"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -284,39 +303,9 @@
 
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{pressure, pressure fracture}"/>
-        <Parameter name="linear solver" type="string" value="none"/>
+        <Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
         <Parameter name="time integration method" type="string" value="BDF1"/>
-        <ParameterList name="BDF1">
-          <Parameter name="timestep controller type" type="string" value="standard"/>
-          <ParameterList name="timestep controller standard parameters">
-            <Parameter name="max iterations" type="int" value="15"/>
-            <Parameter name="min iterations" type="int" value="10"/>
-            <Parameter name="time step increase factor" type="double" value="1.2"/>
-            <Parameter name="time step reduction factor" type="double" value="0.8"/>
-            <Parameter name="max time step" type="double" value="6.0e+10"/>
-            <Parameter name="min time step" type="double" value="9.99999999999999945e-21"/>
-          </ParameterList>
-          <Parameter name="solver type" type="string" value="nka"/>
-          <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.00000000000000008e-05"/>
-            <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
-            <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
-            <Parameter name="max divergent iterations" type="int" value="3"/>
-            <Parameter name="max nka vectors" type="int" value="10"/>
-            <Parameter name="limit iterations" type="int" value="20"/>
-            <Parameter name="modify correction" type="bool" value="false"/>
-          </ParameterList>
-          <Parameter name="max preconditioner lag iterations" type="int" value="10"/>
-          <Parameter name="extrapolate initial guess" type="bool" value="false"/>
-          <Parameter name="nonlinear iteration damping factor" type="double" value="1.0e+00"/>
-          <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
-          <Parameter name="restart tolerance relaxation factor" type="double" value="10.0"/>
-          <Parameter name="restart tolerance relaxation factor damping" type="double" value="0.9"/>
-          <ParameterList name="verbose object">
-            <Parameter name="verbosity level" type="string" value="high"/>
-          </ParameterList>
-        </ParameterList>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
@@ -334,7 +323,7 @@
           </ParameterList>
         </ParameterList>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="high"/>
+          <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>
         <ParameterList name="operators">
           <ParameterList name="diffusion operator">
@@ -357,57 +346,65 @@
         </ParameterList>
         <ParameterList name="boundary conditions">
 
-          <ParameterList name="static head">
+          <!-- <ParameterList name="static head"> -->
 
-            <ParameterList name="BC 0">
-              <Parameter name="regions" type="Array(string)" value="{SurfaceInlet}"/>
+          <!--   <ParameterList name="BC 0"> -->
+          <!--     <Parameter name="regions" type="Array(string)" value="{SurfaceInlet}"/> -->
+          <!--     <Parameter name="spatial distribution method" type="string" value="none"/> -->
+              <!-- <ParameterList name="static head"> -->
+              <!--   <ParameterList name="function-static-head"> -->
+              <!--     <Parameter name="p0" type="double" value="101325.0"/> -->
+              <!--     <Parameter name="density" type="double" value="998.2"/> -->
+              <!--     <Parameter name="gravity" type="double" value="9.80665"/> -->
+              <!--     <Parameter name="space dimension" type="int" value="2"/> -->
+              <!--     <ParameterList name="water table elevation"> -->
+              <!--       <ParameterList name="function-constant"> -->
+              <!--         <Parameter name="value" type="double" value="4.0"/> -->
+              <!--       </ParameterList> -->
+              <!--     </ParameterList> -->
+              <!--   </ParameterList> -->
+              <!-- </ParameterList> -->
+            <!-- </ParameterList> -->
+
+            <!-- <ParameterList name="BC 1"> -->
+            <!--   <Parameter name="regions" type="Array(string)" value="{SurfaceOutlet}"/> -->
+            <!--   <Parameter name="spatial distribution method" type="string" value="none"/> -->
+            <!--   <ParameterList name="static head"> -->
+            <!--     <ParameterList name="function-static-head"> -->
+            <!--       <Parameter name="p0" type="double" value="101325.0"/> -->
+            <!--       <Parameter name="density" type="double" value="998.2"/> -->
+            <!--       <Parameter name="gravity" type="double" value="9.80665"/> -->
+            <!--       <Parameter name="space dimension" type="int" value="2"/> -->
+            <!--       <ParameterList name="water table elevation"> -->
+            <!--         <ParameterList name="function-constant"> -->
+            <!--           <Parameter name="value" type="double" value="1.0"/> -->
+            <!--         </ParameterList> -->
+            <!--       </ParameterList> -->
+            <!--     </ParameterList> -->
+            <!--   </ParameterList>               -->
+            <!-- </ParameterList> -->
+
+          <!-- </ParameterList> -->
+
+          <ParameterList name="pressure">
+      	    <ParameterList name="BC 0">
+      	      <Parameter name="regions" type="Array(string)" value="{SurfaceInlet}"/>
               <Parameter name="spatial distribution method" type="string" value="none"/>
-              <ParameterList name="static head">
-                <ParameterList name="function-static-head">
-                  <Parameter name="p0" type="double" value="101325.0"/>
-                  <Parameter name="density" type="double" value="998.2"/>
-                  <Parameter name="gravity" type="double" value="9.80665"/>
-                  <Parameter name="space dimension" type="int" value="2"/>
-                  <ParameterList name="water table elevation">
-                    <ParameterList name="function-constant">
-                      <Parameter name="value" type="double" value="4.0"/>
-                    </ParameterList>
-                  </ParameterList>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-
-            <ParameterList name="BC 1">
-              <Parameter name="regions" type="Array(string)" value="{SurfaceOutlet}"/>
-              <Parameter name="spatial distribution method" type="string" value="none"/>
-              <ParameterList name="static head">
-                <ParameterList name="function-static-head">
-                  <Parameter name="p0" type="double" value="101325.0"/>
-                  <Parameter name="density" type="double" value="998.2"/>
-                  <Parameter name="gravity" type="double" value="9.80665"/>
-                  <Parameter name="space dimension" type="int" value="2"/>
-                  <ParameterList name="water table elevation">
-                    <ParameterList name="function-constant">
-                      <Parameter name="value" type="double" value="1.0"/>
-                    </ParameterList>
-                  </ParameterList>
-                </ParameterList>
-              </ParameterList>              
-            </ParameterList>
-
+      	      <ParameterList name="boundary pressure">
+      	        <ParameterList name="function-constant">
+      		  <Parameter name="value" type="double" value="101325.0"/>
+      	        </ParameterList>
+      	      </ParameterList>
+      	    </ParameterList>
           </ParameterList>
             
         </ParameterList>
 
         <ParameterList name="time integrator">
           <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
-          <Parameter name="linear solver" type="string" value="none"/>
+          <Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
           <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-          <ParameterList name="pressure-lambda constraints">
-            <Parameter name="method" type="string" value="projection"/>
-            <Parameter name="inflow krel correction" type="bool" value="true"/>
-            <Parameter name="linear solver" type="string" value="AztecOO"/>
-          </ParameterList>
+
           <Parameter name="time integration method" type="string" value="BDF1"/>
           <ParameterList name="BDF1">
             <Parameter name="timestep controller type" type="string" value="standard"/>
@@ -478,7 +475,7 @@
         <ParameterList name="boundary conditions">
           <ParameterList name="static head">
             <ParameterList name="BC 0">
-              <Parameter name="regions" type="Array(string)" value="{LineLeft}"/>
+              <Parameter name="regions" type="Array(string)" value="{SurfaceLeft}"/>
               <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="static head">
                 <ParameterList name="function-static-head">
@@ -487,7 +484,9 @@
                   <Parameter name="gravity" type="double" value="9.80665"/>
                   <Parameter name="space dimension" type="int" value="2"/>
                   <ParameterList name="water table elevation">
-                    <Parameter name="value" type="double" value="2.0"/>
+                    <ParameterList name="function-constant">
+                      <Parameter name="value" type="double" value="2.0"/>
+                    </ParameterList>                    
                   </ParameterList>
                 </ParameterList>
               </ParameterList>
@@ -497,13 +496,8 @@
 
         <ParameterList name="time integrator">
           <Parameter name="error control options" type="Array(string)" value="{pressure, residual}"/>
-          <Parameter name="linear solver" type="string" value="none"/>
+          <Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
           <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-          <ParameterList name="pressure-lambda constraints">
-            <Parameter name="method" type="string" value="projection"/>
-            <Parameter name="inflow krel correction" type="bool" value="true"/>
-            <Parameter name="linear solver" type="string" value="AztecOO"/>
-          </ParameterList>
           <Parameter name="time integration method" type="string" value="BDF1"/>
           <ParameterList name="BDF1">
             <Parameter name="timestep controller type" type="string" value="standard"/>
