@@ -78,8 +78,8 @@ void Richards_PK::FunctionalResidual(
   Epetra_MultiVector& f_cell = *f->Data()->ViewComponent("cell");
 
   pressure_eval_->SetFieldAsChanged(S_.ptr());
-  S_->GetFieldEvaluator("porosity")->HasFieldChanged(S_.ptr(), "flow");
-  const Epetra_MultiVector& phi_c = *S_->GetFieldData("porosity")->ViewComponent("cell");
+  S_->GetFieldEvaluator(porosity_key_)->HasFieldChanged(S_.ptr(), "flow");
+  const Epetra_MultiVector& phi_c = *S_->GetFieldData(porosity_key_)->ViewComponent("cell");
 
   S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
   const Epetra_MultiVector& wc_c = *S_->GetFieldData("water_content")->ViewComponent("cell");
@@ -176,11 +176,11 @@ void Richards_PK::CalculateVaporDiffusionTensor_(Teuchos::RCP<CompositeVector>& 
   S_->GetFieldEvaluator("molar_density_gas")->HasFieldChanged(S_.ptr(), passwd_);
   const Epetra_MultiVector& n_g = *S_->GetFieldData("molar_density_gas")->ViewComponent("cell");
 
-  S_->GetFieldEvaluator("porosity")->HasFieldChanged(S_.ptr(), passwd_);
-  const Epetra_MultiVector& phi = *S_->GetFieldData("porosity")->ViewComponent("cell");
+  S_->GetFieldEvaluator(porosity_key_)->HasFieldChanged(S_.ptr(), passwd_);
+  const Epetra_MultiVector& phi = *S_->GetFieldData(porosity_key_)->ViewComponent("cell");
 
-  S_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_.ptr(), passwd_);
-  const Epetra_MultiVector& s_l = *S_->GetFieldData("saturation_liquid")->ViewComponent("cell");
+  S_->GetFieldEvaluator(saturation_liquid_key_)->HasFieldChanged(S_.ptr(), passwd_);
+  const Epetra_MultiVector& s_l = *S_->GetFieldData(saturation_liquid_key_)->ViewComponent("cell");
 
   S_->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S_.ptr(), passwd_);
   const Epetra_MultiVector& n_l = *S_->GetFieldData("molar_density_liquid")->ViewComponent("cell");

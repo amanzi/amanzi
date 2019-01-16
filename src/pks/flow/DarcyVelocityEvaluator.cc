@@ -24,8 +24,8 @@ namespace Flow {
 DarcyVelocityEvaluator::DarcyVelocityEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   // hard-coded keys
-  my_key_ = std::string("darcy_velocity");
-  darcy_flux_key_ = plist.get<std::string>("darcy flux key", "darcy_flux");
+  my_key_ = plist.get<std::string>("darcy velocity key");
+  darcy_flux_key_ = plist.get<std::string>("darcy flux key");
   dependencies_.insert(darcy_flux_key_);
 }
 

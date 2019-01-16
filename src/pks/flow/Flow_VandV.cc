@@ -109,9 +109,9 @@ void Flow_PK::VV_ValidateBCs() const
 ******************************************************************* */
 void Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const
 {
-  const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell", false);
+  const Epetra_MultiVector& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell", false);
   const Epetra_MultiVector& flux = *S->GetFieldData(darcy_flux_key_)->ViewComponent("face", true);
-  const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell", false);
+  const Epetra_MultiVector& ws = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell", false);
 
   std::vector<int>& bc_model = op_bc_->bc_model();
   double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flux) * rho_ * dt_;
