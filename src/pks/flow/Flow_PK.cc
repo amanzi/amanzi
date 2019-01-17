@@ -202,7 +202,7 @@ void Flow_PK::UpdateLocalFields_(const Teuchos::Ptr<State>& S)
     *vo_->os() << "Secondary fields: hydraulic head, darcy_velocity" << std::endl;  
   }  
 
-  Epetra_MultiVector& hydraulic_head = *(S->GetFieldData("hydraulic_head", passwd_)->ViewComponent("cell"));
+  Epetra_MultiVector& hydraulic_head = *(S->GetFieldData(hydraulic_head_key_, passwd_)->ViewComponent("cell"));
   const Epetra_MultiVector& pressure = *(S->GetFieldData(pressure_key_)->ViewComponent("cell"));
   double rho = *(S->GetScalarData("fluid_density"));
 
@@ -217,7 +217,7 @@ void Flow_PK::UpdateLocalFields_(const Teuchos::Ptr<State>& S)
 
   // calculate full velocity vector
   darcy_flux_eval_->SetFieldAsChanged(S);
-  S->GetFieldEvaluator("darcy_velocity")->HasFieldChanged(S, "darcy_velocity");
+  S->GetFieldEvaluator(darcy_velocity_key_)->HasFieldChanged(S, darcy_velocity_key_);
 }
 
 

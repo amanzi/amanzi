@@ -38,6 +38,7 @@ using namespace Amanzi::AmanziGeometry;
   
   // read the main parameter list
   std::string xmlInFileName = "test/mpc_driver_single_fracture.xml";
+  // std::string xmlInFileName = "test/mpc_driver_flow_matrix_fracture.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
   
   // For now create one geometric model from all the regions in the spec
@@ -51,55 +52,8 @@ using namespace Amanzi::AmanziGeometry;
 
   MeshFactory factory(&comm);
   factory.preference(pref);
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-
-  // Create a verbose object to pass to the mesh_factory and mesh
-  Teuchos::ParameterList mesh_params = plist -> sublist("mesh");
-  // Read and initialize the unstructured mesh parameters
-  Teuchos::ParameterList unstr_mesh_params = mesh_params.sublist("unstructured");
-  // Decide on which mesh framework to use
-  bool expert_params_specified = unstr_mesh_params.isSublist("expert");
-
-  std::string file(""), format("");
-  
-  if (unstr_mesh_params.isSublist("read mesh file")) {
-    Teuchos::ParameterList read_params = unstr_mesh_params.sublist("read mesh file");
-    
-    if (read_params.isParameter("file")) {
-      file = read_params.get<std::string>("file");
-    } else {
-      std::cerr << "Must specify File parameter for Read option under mesh" << std::endl;
-      throw std::exception();
-    }
-
-    if (read_params.isParameter("format")) {
-      // Is the format one that we can read?
-      format = read_params.get<std::string>("format");
-
-      if (format != "Exodus II" && format != "H5M") {	    
-        std::cerr << "Can only read files in Exodus II or H5M format" << std::endl;
-        throw std::exception();
-      }
-    } else {
-      std::cerr << "Must specify 'format' parameter for Read option under mesh" << std::endl;
-      throw std::exception();
-    }
-
-    int ierr;
-    if (!file.empty()) {
-      ierr = 0;
-      try {
-        // create the mesh from the file
-        mesh = factory.create(file, gm);
-	    
-      } catch (const std::exception& e) {
-        std::cerr << ": error: " << e.what() << std::endl;
-        ierr++;
-      }
-
-    }
-  }
-
+  // Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory(0.0, 0.0, 0.0, 216.0, 10.0, 120.0, 54, 2, 30, gm);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory("test/single_fracture.exo", gm);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
