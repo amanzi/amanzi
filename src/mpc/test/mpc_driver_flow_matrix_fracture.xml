@@ -55,7 +55,7 @@
     <ParameterList name="All">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{-9.9e+98,-9.9e+98,-9.9e+98}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{9.9e+98, 9,9e+98, 9.9e+98}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{9.9e+98, 9.9e+98, 9.9e+98}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -304,13 +304,6 @@
     <ParameterList name="flow matrix">
       <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="Darcy problem">
-        <ParameterList name="relative permeability">
-          <Parameter name="upwind method" type="string" value="upwind: amanzi"/>
-          <Parameter name="upwind frequency" type="string" value="every timestep"/>
-          <ParameterList name="upwind parameters">
-            <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
-          </ParameterList>
-        </ParameterList>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
@@ -322,6 +315,7 @@
               <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="gravity" type="bool" value="true"/>
+              <Parameter name="fractures" type="Array(string)" value="{fracture}"/>
             </ParameterList>
             <ParameterList name="preconditioner">
               <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
@@ -329,7 +323,7 @@
               <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="gravity" type="bool" value="true"/>
-              <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
+              <Parameter name="fractures" type="Array(string)" value="{fracture}"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -414,16 +408,21 @@
     <ParameterList name="flow fracture">
       <Parameter name="domain name" type="string" value="fracture"/>
       <ParameterList name="Darcy problem">
-        <ParameterList name="relative permeability">
-          <Parameter name="upwind method" type="string" value="upwind: amanzi"/>
-          <Parameter name="upwind frequency" type="string" value="every timestep"/>
-          <ParameterList name="upwind parameters">
-            <Parameter name="tolerance" type="double" value="9.99999999999999980e-13"/>
+        <ParameterList name="physical models and assumptions">
+          <Parameter name="flow in fractures" type="bool" value="true"/>
+        </ParameterList>
+        <ParameterList name="fracture permeability models">
+          <ParameterList name="FPM for Entire Domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="model" type="string" value="cubic law"/>
+            <Parameter name="aperture" type="double" value="1.0"/>
           </ParameterList>
         </ParameterList>
+
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
+
         <ParameterList name="operators">
           <ParameterList name="diffusion operator">
             <ParameterList name="matrix">
@@ -439,7 +438,6 @@
               <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="gravity" type="bool" value="true"/>
-              <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
