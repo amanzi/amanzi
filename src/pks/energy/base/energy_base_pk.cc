@@ -62,7 +62,7 @@ EnergyBase::EnergyBase(Teuchos::ParameterList& FElist,
   }
 
   if (!plist_->isParameter("absolute error tolerance")) {
-    plist_->set("absolute error tolerance", 6.e-3);
+    plist_->set("absolute error tolerance", 76.e-6); // energy of 1 degree C of water per mass_atol
   }
 }
 
