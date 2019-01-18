@@ -103,6 +103,9 @@ Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(fp_list_, "time integrator");
 
+  // domain name
+  domain_ = flow_list->template get<std::string>("domain name", "domain");
+
   ms_itrs_ = 0;
   ms_calls_ = 0;
 
@@ -128,9 +131,23 @@ Richards_PK::~Richards_PK()
 void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
 {
   dt_ = 0.0;
-  mesh_ = S->GetMesh();
+  mesh_ = S->GetMesh(domain_);
   dim = mesh_->space_dimension();
 
+  // generate keys here to be available for setup of the base class
+  pressure_key_ = Keys::getKey(domain_, "pressure"); 
+  hydraulic_head_key_ = Keys::getKey(domain_, "hydraulic_head"); 
+
+  darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
+  darcy_velocity_key_ = Keys::getKey(domain_, "darcy_velocity"); 
+
+  permeability_key_ = Keys::getKey(domain_, "permeability"); 
+  porosity_key_ = Keys::getKey(domain_, "porosity"); 
+
+  saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
+  prev_saturation_liquid_key_ = Keys::getKey(domain_, "prev_saturation_liquid"); 
+
+  // set up the base class 
   Flow_PK::Setup(S);
 
   // Our decision can be affected by the list of models
@@ -158,7 +175,6 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     ndofs.push_back(1);
   }
 
-  pressure_key_ = Keys::getKey(domain_, "pressure"); 
   if (!S->HasField(pressure_key_)) {
     S->RequireField(pressure_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
@@ -171,8 +187,6 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // Require conserved quantity.
   // -- water content
-  saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
-  porosity_key_ = Keys::getKey(domain_, "porosity"); 
   if (!S->HasField("water_content")) {
     S->RequireField("water_content", "water_content")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -250,13 +264,12 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // Require additional fields and evaluators for this PK.
   // -- absolute permeability
-  if (!S->HasField("permeability")) {
-    S->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField(permeability_key_)) {
+    S->RequireField(permeability_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, dim);
   }
 
   // -- darcy flux
-  darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
   if (!S->HasField(darcy_flux_key_)) {
     S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
@@ -339,7 +352,6 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     S->SetFieldEvaluator(saturation_liquid_key_, eval);
   }
 
-  prev_saturation_liquid_key_ = Keys::getKey(domain_, "prev_saturation_liquid"); 
   if (!S->HasField(prev_saturation_liquid_key_)) {
     S->RequireField(prev_saturation_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -348,14 +360,12 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // Local fields and evaluators.
   // -- hydraulic head
-  hydraulic_head_key_ = Keys::getKey(domain_, "hydraulic_head"); 
   if (!S->HasField(hydraulic_head_key_)) {
     S->RequireField(hydraulic_head_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // -- Darcy velocity vector
-  darcy_velocity_key_ = Keys::getKey(domain_, "darcy_velocity"); 
   if (!S->HasField(darcy_velocity_key_)) {
     S->RequireField(darcy_velocity_key_, darcy_velocity_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, dim);
@@ -374,7 +384,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   int noff = abs_perm.get<int>("off-diagonal components", 0);
  
   if (noff > 0) {
-    CompositeVectorSpace& cvs = *S->RequireField("permeability", passwd_);
+    CompositeVectorSpace& cvs = *S->RequireField(permeability_key_, passwd_);
     cvs.SetOwned(false);
     cvs.AddComponent("offd", AmanziMesh::CELL, noff)->SetOwned(true);
   }

@@ -71,6 +71,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
     if (darcy_list.sublist("fracture permeability models").numParams() > 0) {
       darcy_list.sublist("physical models and assumptions")
           .set<bool>("flow in fractures", true);
+      out_list.set<std::string>("domain name", "fracture");
     }
 
     flow_list = &darcy_list;

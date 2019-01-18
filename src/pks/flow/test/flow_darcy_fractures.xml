@@ -31,9 +31,21 @@
   <!--  FLOW  -->
   <ParameterList name="PKs">
     <ParameterList name="flow">
+      <Parameter name="domain name" type="string" value="fracture"/>
       <ParameterList name="Darcy problem">
+        <ParameterList name="physical models and assumptions">
+          <Parameter name="flow in fractures" type="bool" value="true"/>
+        </ParameterList>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
+        </ParameterList>
+
+        <ParameterList name="fracture permeability models">
+          <ParameterList name="FPM for Entire Domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="model" type="string" value="cubic law"/>
+            <Parameter name="aperture" type="double" value="1.0"/>
+          </ParameterList>
         </ParameterList>
 
         <ParameterList name="operators">
@@ -44,6 +56,7 @@
               <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
               <Parameter name="gravity" type="bool" value="true"/>
+              <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -85,25 +98,22 @@
 
   <ParameterList name="state">
     <ParameterList name="field evaluators">
-      <ParameterList name="permeability">
+      <ParameterList name="fracture-aperture">
         <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="region" type="string" value="Computational domain"/>
+          <ParameterList name="ALL">
+            <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="function type" type="string" value="composite function"/>
-              <Parameter name="number of dofs" type="int" value="1"/>
-              <ParameterList name="dof 1 function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.0"/>
-                </ParameterList>
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="3.4641"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
       </ParameterList>
 
-      <ParameterList name="porosity">
+      <ParameterList name="fracture-porosity">
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>

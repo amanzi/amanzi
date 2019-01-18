@@ -247,7 +247,7 @@ void ObservableAqueous::ComputeObservation(
   // fractures
   } else if (variable_ == "fractures aqueous volumetric flow rate") {
     const Epetra_MultiVector& darcy_flux = *S.GetFieldData("darcy_flux")->ViewComponent("face");
-    const Epetra_MultiVector& aperture = *S.GetFieldData("fracture_aperture")->ViewComponent("cell");
+    const Epetra_MultiVector& aperture = *S.GetFieldData("fracture-aperture")->ViewComponent("cell");
 
     if (obs_boundary_) {
       Amanzi::AmanziMesh::Entity_ID_List cells;
