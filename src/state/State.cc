@@ -42,6 +42,7 @@ State::State(Teuchos::ParameterList& state_plist) :
     position_in_tp_(TIME_PERIOD_START)
 {};
 
+
 // copy constructor:
 // Create a new State with different data but the same values.
 //
@@ -91,7 +92,6 @@ State::State(const State& other, StateConstructMode mode) :
        mp_it!=other.mesh_partitions_.end(); ++mp_it) {
     mesh_partitions_[mp_it->first] = mp_it->second;
   }
-
 };
 
 // operator=:
@@ -984,8 +984,14 @@ void State::Initialize(Teuchos::RCP<State> S) {
 
 
 void State::InitializeEvaluators() {
-  for (evaluator_iterator f_it = field_evaluator_begin();
-       f_it != field_evaluator_end(); ++f_it) {
+  auto vo = Teuchos::rcp(new VerboseObject("State", state_plist_)); 
+
+  for (evaluator_iterator f_it = field_evaluator_begin(); f_it != field_evaluator_end(); ++f_it) {
+    if (vo->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+      Teuchos::OSTab tab = vo->getOSTab();
+      *vo->os() << "processing evaluator \"" << f_it->first << "\"\n";
+    }
+
     f_it->second->HasFieldChanged(Teuchos::Ptr<State>(this), "state");
     fields_[f_it->first]->set_initialized();
   }
@@ -995,6 +1001,8 @@ void State::InitializeEvaluators() {
 void State::InitializeFields() {
 
   bool pre_initialization = false;
+
+  auto vo = Teuchos::rcp(new VerboseObject("State", state_plist_)); 
 
   if (state_plist_.isParameter("initialization filename")) {
     pre_initialization = true;
@@ -1015,6 +1023,11 @@ void State::InitializeFields() {
   // Initialize through initial condition
  
   for (FieldMap::iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
+    if (vo->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+      Teuchos::OSTab tab = vo->getOSTab();
+      *vo->os() << "processing field \"" << f_it->first << "\"\n";
+    }
+
     if (pre_initialization || (!f_it->second->initialized())) {
       if (state_plist_.isSublist("initial conditions")) {
         if (state_plist_.sublist("initial conditions").isSublist(f_it->first)) {

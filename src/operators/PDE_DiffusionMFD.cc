@@ -1111,8 +1111,6 @@ void PDE_DiffusionMFD::UpdateFluxNonManifold(
   flux->PutScalar(0.0);
   u->ScatterMasterToGhosted("face");
 
-  if (k_ != Teuchos::null) k_->ScatterMasterToGhosted("face");
-
   const Epetra_MultiVector& u_cell = *u->ViewComponent("cell");
   const Epetra_MultiVector& u_face = *u->ViewComponent("face", true);
   Epetra_MultiVector& flux_data = *flux->ViewComponent("cell", true);
