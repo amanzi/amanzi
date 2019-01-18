@@ -31,7 +31,7 @@
   <!--  FLOW  -->
   <ParameterList name="PKs">
     <ParameterList name="flow">
-      <Parameter name="domain name" type="string" value="fracture"/>
+      <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="Darcy problem">
         <ParameterList name="physical models and assumptions">
           <Parameter name="flow in fractures" type="bool" value="true"/>
@@ -98,7 +98,7 @@
 
   <ParameterList name="state">
     <ParameterList name="field evaluators">
-      <ParameterList name="fracture-aperture">
+      <ParameterList name="aperture">
         <ParameterList name="function">
           <ParameterList name="ALL">
             <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
@@ -113,7 +113,7 @@
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
       </ParameterList>
 
-      <ParameterList name="fracture-porosity">
+      <ParameterList name="porosity">
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="extreme"/>
         </ParameterList>

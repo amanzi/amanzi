@@ -71,7 +71,7 @@ TEST(DARCY_TWO_FRACTURES) {
 
   Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
-  S->RegisterMesh("fracture", rcp_const_cast<Mesh>(mesh));
+  S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
   Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S));
   DPK->Setup(S.ptr());
@@ -82,17 +82,17 @@ TEST(DARCY_TWO_FRACTURES) {
 
   // modify the default state
   // -- storativity
-  S->GetFieldData("fracture-specific_storage", "flow")->PutScalar(2.0);
-  S->GetField("fracture-specific_storage", "flow")->set_initialized();
+  S->GetFieldData("specific_storage", "flow")->PutScalar(2.0);
+  S->GetField("specific_storage", "flow")->set_initialized();
 
   // create the initial pressure function
-  Epetra_MultiVector& p = *S->GetFieldData("fracture-pressure", "flow")->ViewComponent("cell", false);
+  Epetra_MultiVector& p = *S->GetFieldData("pressure", "flow")->ViewComponent("cell", false);
 
   for (int c = 0; c < p.MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);
     p[0][c] = xc[0] * (xc[1] + 2.0);
   }
-  S->GetField("fracture-pressure", "flow")->set_initialized();
+  S->GetField("pressure", "flow")->set_initialized();
 
   // initialize the Darcy process kernel
   DPK->Initialize(S.ptr());

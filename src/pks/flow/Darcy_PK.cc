@@ -333,6 +333,9 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   Teuchos::ParameterList& oplist = fp_list_->sublist("operators")
                                             .sublist("diffusion operator")
                                             .sublist("matrix");
+  if (flow_in_fractures_)
+      oplist.set<std::string>("nonlinear coefficient", "standard: cell");
+
   Operators::PDE_DiffusionFactory opfactory;
   op_diff_ = opfactory.Create(oplist, mesh_, op_bc_, rho_ * rho_ / mu, gravity_);
   op_diff_->SetBCs(op_bc_, op_bc_);
