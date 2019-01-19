@@ -26,7 +26,7 @@
     <ParameterList name="fracture" type="ParameterList">
       <ParameterList name="region: labeled set" type="ParameterList">
         <Parameter name="label" type="string" value="100" />
-        <Parameter name="file" type="string" value="test/single_fracture_pointbased.exo" />
+        <Parameter name="file" type="string" value="test/single_fracture_tet.exo" />
         <Parameter name="format" type="string" value="Exodus II" />
         <Parameter name="entity" type="string" value="Face" />
       </ParameterList>
@@ -66,7 +66,7 @@
   <ParameterList name="mesh">
     <ParameterList name="unstructured">
       <ParameterList name="read mesh file" type="ParameterList">
-        <Parameter name="file" type="string" value="test/single_fracture_pointbased.exo" />
+        <Parameter name="file" type="string" value="test/single_fracture_tet.exo" />
         <Parameter name="format" type="string" value="Exodus II" />
       </ParameterList>
       <ParameterList name="expert">
@@ -94,8 +94,8 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="start period time" type="double" value="0.0"/>
-        <Parameter name="end period time" type="double" value="9.0e+4"/>
-        <Parameter name="maximum cycle number" type="int" value="2"/>
+        <Parameter name="end period time" type="double" value="9.0e+7"/>
+        <Parameter name="maximum cycle number" type="int" value="-1"/>
         <Parameter name="initial time step" type="double" value="500.0"/>
       </ParameterList>
     </ParameterList>

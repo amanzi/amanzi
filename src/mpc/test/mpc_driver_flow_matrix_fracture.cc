@@ -39,8 +39,8 @@ using namespace Amanzi::AmanziGeometry;
   
   // read the main parameter list
   std::string xmlInFileName = "test/mpc_driver_single_fracture.xml";
-  // std::string xmlInFileName = "test/mpc_driver_only_flow_single_fracturte.xml";
-  // std::string xmlInFileName = "test/mpc_driver_flow_matrix_fracture.xml";
+  //std::string xmlInFileName = "test/mpc_driver_only_flow_single_fracturte.xml";
+  //std::string xmlInFileName = "test/mpc_driver_flow_matrix_fracture.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
   
   // For now create one geometric model from all the regions in the spec
