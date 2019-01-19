@@ -12,6 +12,7 @@
 
 // Amanzi
 #include "CycleDriver.hh"
+#include "MeshAudit.hh"
 #include "energy_tcm_registration.hh"
 #include "energy_iem_registration.hh"
 #include "eos_registration.hh"
@@ -38,6 +39,7 @@ using namespace Amanzi::AmanziGeometry;
   
   // read the main parameter list
   std::string xmlInFileName = "test/mpc_driver_single_fracture.xml";
+  // std::string xmlInFileName = "test/mpc_driver_only_flow_single_fracturte.xml";
   // std::string xmlInFileName = "test/mpc_driver_flow_matrix_fracture.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
   
@@ -52,8 +54,8 @@ using namespace Amanzi::AmanziGeometry;
 
   MeshFactory factory(&comm);
   factory.preference(pref);
-  // Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory(0.0, 0.0, 0.0, 216.0, 10.0, 120.0, 54, 2, 30, gm);
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory("test/single_fracture_pointbased.exo", gm);
+  // Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory(0.0, 0.0, 0.0, 100.0, 100.0, 100.0, 10, 10, 10, gm);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory("test/single_fracture_tet.exo", gm);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
@@ -61,8 +63,18 @@ using namespace Amanzi::AmanziGeometry;
   Teuchos::ParameterList state_plist = plist->sublist("state");
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
+
+   
+  Amanzi::MeshAudit mesh_auditor(mesh);
+  int status = mesh_auditor.Verify();
+  if (status == 0) {
+    std::cout << "Mesh Audit confirms that mesh is ok" << std::endl;
+  } else {
+    Errors::Message msg("Mesh Audit could not verify correctness of mesh.");
+    Exceptions::amanzi_throw(msg);
+  }
   
-  // create additional mesh for fracture
+  //create additional mesh for fracture
   std::vector<std::string> names;
   names.push_back("fracture");
 
