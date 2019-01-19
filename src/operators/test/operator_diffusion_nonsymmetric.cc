@@ -75,9 +75,6 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
     K->push_back(Kc);
   }
 
-  double rho(1.0), mu(1.0);
-  AmanziGeometry::Point g(0.0, -1.0);
-
   // create boundary data
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();

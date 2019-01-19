@@ -86,9 +86,6 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   Kc(0, 0) = 1.0;
   for (int c = 0; c < ncells; c++) K->push_back(Kc);
 
-  double rho(1.0), mu(1.0);
-  AmanziGeometry::Point g(0.0, -1.0);
-
   // create boundary data
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
@@ -240,16 +237,6 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   Analytic03 ana(mesh);
-
-/*
-  CompositeVectorSpace cvs1;
-  cvs1.SetMesh(mesh_).SetComponent("cell", AmanziMesh::CELL, 1);
-  Teuchos::RCP<CompositeVector> k = Teuchos::rcp(new CompositeVector(cvs1));
-  kc.PutScalar(1.0);
-*/
-
-  double rho(1.0), mu(1.0);
-  AmanziGeometry::Point g(0.0, 0.0, -1.0);
 
   // create boundary data
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));

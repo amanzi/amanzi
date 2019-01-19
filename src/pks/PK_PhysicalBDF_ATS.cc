@@ -197,11 +197,11 @@ double PK_PhysicalBDF_ATS::BoundaryValue(
   double value = 0.0;
 
   if (solution->HasComponent("face")) {
-    const Epetra_MultiVector& u = *solution -> ViewComponent("face",false);
+    const Epetra_MultiVector& u = *solution->ViewComponent("face",false);
     value = u[0][face_id];
   }
-  else if  (solution->HasComponent("boundary_face")) {
-    const Epetra_MultiVector& u = *solution -> ViewComponent("boundary_face",false);
+  else if (solution->HasComponent("boundary_face")) {
+    const Epetra_MultiVector& u = *solution->ViewComponent("boundary_face",false);
     const Epetra_Map& fb_map = mesh_->exterior_face_map();
     const Epetra_Map& f_map = mesh_->face_map(false);
 
@@ -210,7 +210,7 @@ double PK_PhysicalBDF_ATS::BoundaryValue(
 
     value =  u[0][face_lbid];
   }
-  else{
+  else {
     Errors::Message msg("No component is defined for boundary faces\n");
     Exceptions::amanzi_throw(msg);
   }

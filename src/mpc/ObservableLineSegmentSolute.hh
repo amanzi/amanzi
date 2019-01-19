@@ -48,7 +48,7 @@ void ObservableLineSegmentSolute::ComputeObservation(
     State& S, double* value, double* volume, std::string& unit) {
   //double volume, value;
   Errors::Message msg;
-  int dim = mesh_ -> space_dimension();
+  int dim = mesh_->space_dimension();
   // double rho = *S.GetScalarData("fluid_density");
   // const Epetra_MultiVector& porosity = *S.GetFieldData("porosity")->ViewComponent("cell");    
   // const Epetra_MultiVector& ws = *S.GetFieldData("saturation_liquid")->ViewComponent("cell");
