@@ -86,6 +86,9 @@ Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(fp_list_, "time integrator", true);
+
+  // domain name
+  domain_ = flow_list->template get<std::string>("domain name", "domain");
 }
 
 
@@ -107,6 +110,22 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   mesh_ = S->GetMesh(domain_);
   dim = mesh_->space_dimension();
 
+  // generate keys here to be available for setup of the base class
+  pressure_key_ = Keys::getKey(domain_, "pressure"); 
+  hydraulic_head_key_ = Keys::getKey(domain_, "hydraulic_head"); 
+
+  darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
+  darcy_velocity_key_ = Keys::getKey(domain_, "darcy_velocity"); 
+
+  permeability_key_ = Keys::getKey(domain_, "permeability"); 
+  porosity_key_ = Keys::getKey(domain_, "porosity"); 
+
+  specific_yield_key_ = Keys::getKey(domain_, "specific_yield"); 
+  specific_storage_key_ = Keys::getKey(domain_, "specific_storage"); 
+  saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
+  prev_saturation_liquid_key_ = Keys::getKey(domain_, "prev_saturation_liquid"); 
+
+  // set up the base class 
   Flow_PK::Setup(S);
 
   // Our decision can be affected by the list of models
@@ -140,38 +159,32 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
     ndofs.push_back(1);
   }
 
-  pressure_key_ = Keys::getKey(domain_, "pressure"); 
   if (!S->HasField(pressure_key_)) {
     S->RequireField(pressure_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
   }
 
   // require additional fields for this PK
-  specific_storage_key_ = Keys::getKey(domain_, "specific_storage"); 
   if (!S->HasField(specific_storage_key_)) {
     S->RequireField(specific_storage_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  specific_yield_key_ = Keys::getKey(domain_, "specific_yield"); 
   if (!S->HasField(specific_yield_key_)) {
     S->RequireField(specific_yield_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
   if (!S->HasField(saturation_liquid_key_)) {
     S->RequireField(saturation_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  prev_saturation_liquid_key_ = Keys::getKey(domain_, "prev_saturation_liquid"); 
   if (!S->HasField(prev_saturation_liquid_key_)) {
     S->RequireField(prev_saturation_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
-  darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
   if (!S->HasField(darcy_flux_key_)) {
     S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
@@ -184,7 +197,6 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // Require additional field evaluators for this PK.
   // -- porosity
-  porosity_key_ = Keys::getKey(domain_, "porosity"); 
   if (!S->HasField(porosity_key_)) {
     S->RequireField(porosity_key_, porosity_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -198,8 +210,8 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // -- effective fracture permeability
   if (flow_in_fractures_) {
-    if (!S->HasField("fracture_permeability")) {
-      S->RequireField("fracture_permeability", "fracture_permeability")->SetMesh(mesh_)->SetGhosted(true)
+    if (!S->HasField(permeability_key_)) {
+      S->RequireField(permeability_key_, permeability_key_)->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
 
       Teuchos::RCP<Teuchos::ParameterList>
@@ -207,25 +219,25 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
       Teuchos::RCP<FracturePermModelPartition> fpm = CreateFracturePermModelPartition(mesh_, fpm_list);
 
       Teuchos::ParameterList elist;
+      elist.set<std::string>("permeability key", permeability_key_)
+           .set<std::string>("aperture key", Keys::getKey(domain_, "aperture"));
       Teuchos::RCP<FracturePermModelEvaluator> eval = Teuchos::rcp(new FracturePermModelEvaluator(elist, fpm));
-      S->SetFieldEvaluator("fracture_permeability", eval);
+      S->SetFieldEvaluator(permeability_key_, eval);
     }
   } else {
-    if (!S->HasField("permeability")) {
-      S->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+    if (!S->HasField(permeability_key_)) {
+      S->RequireField(permeability_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, dim);
     }
   }
 
   // Local fields and evaluators.
-  hydraulic_head_key_ = Keys::getKey(domain_, "hydraulic_head"); 
   if (!S->HasField(hydraulic_head_key_)) {
     S->RequireField(hydraulic_head_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   // full velocity vector
-  darcy_velocity_key_ = Keys::getKey(domain_, "darcy_velocity"); 
   if (!S->HasField(darcy_velocity_key_)) {
     S->RequireField(darcy_velocity_key_, darcy_velocity_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, dim);
@@ -244,7 +256,7 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   int noff = abs_perm.get<int>("off-diagonal components", 0);
  
   if (noff > 0) {
-    CompositeVectorSpace& cvs = *S->RequireField("permeability", passwd_);
+    CompositeVectorSpace& cvs = *S->RequireField(permeability_key_, passwd_);
     cvs.SetOwned(false);
     cvs.AddComponent("offd", AmanziMesh::CELL, noff)->SetOwned(true);
   }
@@ -318,11 +330,12 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   // Initialize diffusion operator and solver.
   // -- instead of scaling K, we scale the elemental mass matrices 
   double mu = *S->GetScalarData("fluid_viscosity");
-  SetAbsolutePermeabilityTensor();
-
   Teuchos::ParameterList& oplist = fp_list_->sublist("operators")
                                             .sublist("diffusion operator")
                                             .sublist("matrix");
+  if (flow_in_fractures_)
+      oplist.set<std::string>("nonlinear coefficient", "standard: cell");
+
   Operators::PDE_DiffusionFactory opfactory;
   op_diff_ = opfactory.Create(oplist, mesh_, op_bc_, rho_ * rho_ / mu, gravity_);
   op_diff_->SetBCs(op_bc_, op_bc_);
@@ -332,8 +345,8 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
     Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
     op_diff_->Setup(Kptr, Teuchos::null, Teuchos::null);
   } else {
-    S_->GetFieldEvaluator("fracture_permeability")->HasFieldChanged(S_.ptr(), "fracture_permeability");
-    auto Kptr = S_->GetFieldData("fracture_permeability");
+    S_->GetFieldEvaluator(permeability_key_)->HasFieldChanged(S_.ptr(), permeability_key_);
+    auto Kptr = S_->GetFieldData(permeability_key_);
     op_diff_->Setup(Teuchos::null, Kptr, Teuchos::null);
   }
 

@@ -17,14 +17,15 @@
 #include "BCs.hh"
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionFactory.hh"
-#include "PDE_DiffusionMFD.hh"
 #include "PDE_DiffusionFV.hh"
-#include "PDE_DiffusionNLFV.hh"
-#include "PDE_DiffusionMFDwithGravity.hh"
 #include "PDE_DiffusionFVwithGravity.hh"
-#include "PDE_DiffusionNLFVwithGravity.hh"
+#include "PDE_DiffusionFracturedMatrix.hh"
+#include "PDE_DiffusionMFD.hh"
+#include "PDE_DiffusionMFDwithGravity.hh"
+#include "PDE_DiffusionNLFV.hh"
 #include "PDE_DiffusionNLFVwithBndFaces.hh"
 #include "PDE_DiffusionNLFVwithBndFacesGravity.hh"
+#include "PDE_DiffusionNLFVwithGravity.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -42,6 +43,7 @@ Teuchos::RCP<PDE_Diffusion> PDE_DiffusionFactory::Create(
 {
   std::string name = oplist.get<std::string>("discretization primary");
   bool flag = oplist.get<bool>("gravity", false);
+  bool fractured_matrix = oplist.isParameter("fractures");
 
   // FV methods
   if (name == "fv: default" && !flag) {
@@ -73,6 +75,13 @@ Teuchos::RCP<PDE_Diffusion> PDE_DiffusionFactory::Create(
   } else if (name == "nlfv: bnd_faces" && flag) {
     auto op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFacesGravity(oplist, mesh, rho, g)); 
     op->SetBCs(bc, bc);      
+    return op;
+
+  // MFD methods with non-uniform DOFs
+  } else if (fractured_matrix && flag) {
+    auto op = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(oplist, mesh));
+    op->Init(oplist);
+    op->SetBCs(bc, bc);
     return op;
 
   // MFD methods
