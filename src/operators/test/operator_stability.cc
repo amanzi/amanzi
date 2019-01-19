@@ -80,7 +80,6 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
-  double rho(1.0), mu(1.0);
 
   // create boundary data
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
@@ -238,7 +237,6 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
-  double rho(1.0), mu(1.0);
 
   // create boundary data (no mixed bc)
   Point xv(2);

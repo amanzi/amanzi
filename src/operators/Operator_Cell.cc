@@ -78,19 +78,19 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
   Epetra_MultiVector& Yc = *Y.ViewComponent("cell", true);
 
   AmanziMesh::Entity_ID_List cells;
-  for (int f=0; f!=nfaces_owned; ++f) {
+  for (int f = 0; f != nfaces_owned; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
     WhetStone::DenseVector v(ncells), av(ncells);
-    for (int n=0; n!=ncells; ++n) {
+    for (int n = 0; n != ncells; ++n) {
       v(n) = Xc[0][cells[n]];
     }
 
     const WhetStone::DenseMatrix& Aface = op.matrices[f];
     Aface.Multiply(v, av, false);
 
-    for (int n=0; n!=ncells; ++n) {
+    for (int n = 0; n != ncells; ++n) {
       Yc[0][cells[n]] += av(n);
     }
   }
@@ -112,7 +112,7 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
   const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
 
   int ierr(0);
-  for (int c=0; c!=ncells_owned; ++c) {
+  for (int c = 0; c != ncells_owned; ++c) {
     int row = cell_row_inds[c];
     int col = cell_col_inds[c];
 
@@ -137,11 +137,11 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
 
   int ierr(0);
   AmanziMesh::Entity_ID_List cells;
-  for (int f=0; f!=nfaces_owned; ++f) {
+  for (int f = 0; f != nfaces_owned; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     
     int ncells = cells.size();
-    for (int n=0; n!=ncells; ++n) {
+    for (int n = 0; n != ncells; ++n) {
       lid_r[n] = cell_row_inds[cells[n]];
       lid_c[n] = cell_col_inds[cells[n]];
     }
@@ -166,7 +166,7 @@ void Operator_Cell::AssembleMatrixOp(const Op_Cell_Cell& op,
   const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
 
   int ierr(0);
-  for (int c=0; c!=ncells_owned; ++c) {
+  for (int c = 0; c != ncells_owned; ++c) {
     int row = cell_row_inds[c];
     int col = cell_col_inds[c];
 
@@ -190,11 +190,11 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
 
   int ierr(0);
   AmanziMesh::Entity_ID_List cells;
-  for (int f=0; f!=nfaces_owned; ++f) {
+  for (int f = 0; f != nfaces_owned; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     
     int ncells = cells.size();
-    for (int n=0; n!=ncells; ++n) {
+    for (int n = 0; n != ncells; ++n) {
       lid_r[n] = cell_row_inds[cells[n]];
       lid_c[n] = cell_col_inds[cells[n]];
     }
