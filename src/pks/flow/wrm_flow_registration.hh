@@ -12,6 +12,9 @@
 */
 
 #include "WRMFactory.hh"
+#include "WRM_BrooksCorey.hh"
+#include "WRM_fake.hh"
+#include "WRM_vanGenuchten.hh"
 
 // explicity instantitate the static data of factory
 namespace Amanzi {
@@ -21,4 +24,16 @@ template<> Factory<Flow::WRM>::map_type* Factory<Flow::WRM>::map_;
 
 }  // namespace Utils
 }  // namespace Amanzi
+
+
+namespace Amanzi {
+namespace Flow {
+
+Utils::RegisteredFactory<WRM, WRM_BrooksCorey> WRM_BrooksCorey::factory_("Brooks Corey");
+Utils::RegisteredFactory<WRM, WRM_vanGenuchten> WRM_vanGenuchten::factory_("van Genuchten");
+Utils::RegisteredFactory<WRM, WRM_fake> WRM_fake::factory_("fake");
+
+}  // namespace Flow
+}  // namespace Amanzi
+
 

@@ -59,38 +59,6 @@ generate_evaluators_registration_header(
   INSTALL    True
   )
 
-# -- water retention models registration
-#register_evaluator_with_factory(
-#  HEADERFILE WRMEvaluator_reg.hh
-#  LISTNAME   WRM_FLOW_REGISTRATIONS
-#  )
-
-register_evaluator_with_factory(
-  HEADERFILE WRMFactory_reg.hh
-  LISTNAME   WRM_FLOW_REGISTRATIONS
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE WRM_vanGenuchten_reg.hh
-  LISTNAME   WRM_FLOW_REGISTRATIONS
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE WRM_BrooksCorey_reg.hh
-  LISTNAME   WRM_FLOW_REGISTRATIONS
-  )
-
-register_evaluator_with_factory(
-  HEADERFILE WRM_fake_reg.hh
-  LISTNAME   WRM_FLOW_REGISTRATIONS
-  )
-
-generate_evaluators_registration_header( 
-  HEADERFILE wrm_flow_registration.hh   
-  LISTNAME   WRM_FLOW_REGISTRATIONS
-  INSTALL    True
-  )
-
 # -- multiscale models registration
 register_evaluator_with_factory(
   HEADERFILE MultiscaleFlowPorosityFactory_reg.hh
@@ -174,7 +142,7 @@ set(flow_inc_files
   WRMFactory.hh
   WRMPartition.hh)
 
-add_install_include_file(${flow_inc_files})
+add_install_include_file(${flow_inc_files} wrm_flow_registration.hh)
 
 
 if (BUILD_TESTS) 
