@@ -31,54 +31,17 @@ namespace Operators {
 void PDE_DiffusionFracturedMatrix::Init(Teuchos::ParameterList& plist)
 {
   // extract mesh in fractures
-  std::vector<std::string> names = plist.get<Teuchos::Array<std::string> >("fractures").toVector();
+  std::vector<std::string> names = plist.get<Teuchos::Array<std::string> >("fracture").toVector();
 
   Teuchos::RCP<const AmanziMesh::Mesh_MSTK> mstk =
       Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(mesh_);
-  Teuchos::RCP<const AmanziMesh::Mesh> fractures =
+  Teuchos::RCP<const AmanziMesh::Mesh> fracture =
       Teuchos::rcp(new AmanziMesh::Mesh_MSTK(*mstk, names, AmanziMesh::FACE));
 
-  // create list of parents for owned cells
-  AmanziMesh::Entity_ID_List cells;
-  int ncells_f = fractures->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-
-  points_ = Teuchos::rcp(new Epetra_IntVector(mesh_->face_map(true)));
-  points_->PutValue(1);
-
-  for (int c = 0; c < ncells_f; ++c) {
-    int f = fractures->entity_get_parent(AmanziMesh::CELL, c);
-    mstk->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    (*points_)[f] = cells.size();
-  }
-
-  ParallelCommunication pp(mesh_);
-  pp.CopyMasterFace2GhostFace(*points_);
-
-  // create ghosted map with two points on each fracture face
-  auto& gfmap = mesh_->face_map(true);
-  int nlocal = gfmap.NumMyElements();
-
-  std::vector<int> gids(nlocal);
-  gfmap.MyGlobalElements(&gids[0]);
-
-  int* data; 
-  points_->ExtractView(&data);
-  auto gmap = Teuchos::rcp(new Epetra_BlockMap(-1, nlocal, &gids[0], data, 0, gfmap.Comm()));
-
-  // create master map with two points on each fracture face
-  auto& mfmap = mesh_->face_map(false);
-  nlocal = mfmap.NumMyElements();
-
-  auto mmap = Teuchos::rcp(new Epetra_BlockMap(-1, nlocal, &gids[0], data, 0, mfmap.Comm()));
-
   // create global operator
-  std::string compname("face");
-  auto cvs = Teuchos::rcp(new CompositeVectorSpace());
-  cvs->SetMesh(mesh_)->SetGhosted(true);
-  cvs->AddComponent(compname, mmap, gmap, 1);
-  cvs->AddComponent("cell", AmanziMesh::CELL, 1);
+  cvs_ = CreateFracturedMatrixCVS(mesh_, fracture);
 
-  global_op_ = Teuchos::rcp(new Operator_FaceCell(cvs, plist));
+  global_op_ = Teuchos::rcp(new Operator_FaceCell(cvs_, plist));
   global_op_->set_variable_dofs(true);
 
   std::string name = "DiffusionFracturedMatrix: CELL_FACE+CELL";
@@ -106,6 +69,7 @@ void PDE_DiffusionFracturedMatrix::UpdateMatrices(
 
   AmanziMesh::Entity_ID_List cells, faces;
   const auto& cmap = mesh_->cell_map(true);
+  const auto& fmap = *cvs_->Map("face", true);
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
@@ -116,7 +80,7 @@ void PDE_DiffusionFracturedMatrix::UpdateMatrices(
 
     for (int i = 0; i < nfaces; ++i) {
       int f = faces[i];
-      int n = (*points_)[f];
+      int n = fmap.ElementSize(f);
 
       int shift(0);
       if (n == 2) {
@@ -255,6 +219,56 @@ void PDE_DiffusionFracturedMatrix::ApplyBCs(
   }
 
   global_op_->rhs()->GatherGhostedToMaster("face", Add);
+}
+
+
+/* ******************************************************************
+* Non-member function
+****************************************************************** */
+Teuchos::RCP<CompositeVectorSpace> CreateFracturedMatrixCVS(
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& fracture)
+{
+  AmanziMesh::Entity_ID_List cells;
+  int ncells_f = fracture->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+
+  auto points = Teuchos::rcp(new Epetra_IntVector(mesh->face_map(true)));
+  points->PutValue(1);
+
+  for (int c = 0; c < ncells_f; ++c) {
+    int f = fracture->entity_get_parent(AmanziMesh::CELL, c);
+    mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    (*points)[f] = cells.size();
+  }
+
+  ParallelCommunication pp(mesh);
+  pp.CopyMasterFace2GhostFace(*points);
+
+  // create ghosted map with two points on each fracture face
+  auto& gfmap = mesh->face_map(true);
+  int nlocal = gfmap.NumMyElements();
+
+  std::vector<int> gids(nlocal);
+  gfmap.MyGlobalElements(&gids[0]);
+
+  int* data; 
+  points->ExtractView(&data);
+  auto gmap = Teuchos::rcp(new Epetra_BlockMap(-1, nlocal, &gids[0], data, 0, gfmap.Comm()));
+
+  // create master map with two points on each fracture face
+  auto& mfmap = mesh->face_map(false);
+  nlocal = mfmap.NumMyElements();
+
+  auto mmap = Teuchos::rcp(new Epetra_BlockMap(-1, nlocal, &gids[0], data, 0, mfmap.Comm()));
+
+  // create global operator
+  std::string compname("face");
+  auto cvs = Teuchos::rcp(new CompositeVectorSpace());
+  cvs->SetMesh(mesh)->SetGhosted(true);
+  cvs->AddComponent(compname, mmap, gmap, 1);
+  cvs->AddComponent("cell", AmanziMesh::CELL, 1);
+
+  return cvs;
 }
 
 }  // namespace Operators

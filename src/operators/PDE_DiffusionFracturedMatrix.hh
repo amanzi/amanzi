@@ -47,8 +47,14 @@ class PDE_DiffusionFracturedMatrix : public PDE_DiffusionMFD {
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
  private:
-  Teuchos::RCP<Epetra_IntVector> points_;
+  Teuchos::RCP<CompositeVectorSpace> cvs_;
 };
+
+
+// non-member functions
+Teuchos::RCP<CompositeVectorSpace> CreateFracturedMatrixCVS(
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& fracture);
 
 }  // namespace Operators
 }  // namespace Amanzi

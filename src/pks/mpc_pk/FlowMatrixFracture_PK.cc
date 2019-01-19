@@ -12,6 +12,9 @@
   Process kernel that couples Flow flow in matrix and fractures.
 */
 
+#include "PDE_DiffusionFracturedMatrix.hh"
+#include "primary_variable_field_evaluator.hh"
+
 #include "FlowMatrixFracture_PK.hh"
 #include "PK_MPCStrong.hh"
 
@@ -38,11 +41,30 @@ FlowMatrixFracture_PK::FlowMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
 ******************************************************************* */
 void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
 {
-  mesh_ = S->GetMesh();
-  int dim = mesh_->space_dimension();
+  mesh_domain_ = S->GetMesh();
+  mesh_fracture_ = S->GetMesh("fracture");
+  int dim = mesh_domain_->space_dimension();
 
   Teuchos::ParameterList& elist = S->FEList();
 
+  // primary and secondary fields for matrix flow PK 
+  // -- pressure 
+  auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
+  if (!S->HasField("pressure")) {
+    *S->RequireField("pressure", "flow")->SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
+  }
+
+  // -- darcy flux
+  if (!S->HasField("darcy_flux")) {
+    std::string name("face");
+    auto mmap = cvs->Map("face", false);
+    auto gmap = cvs->Map("face", true);
+    S->RequireField("darcy_flux", "flow")->SetMesh(mesh_domain_)->SetGhosted(true) 
+      ->SetComponent(name, mmap, gmap, 1);
+  }
+
+  // Require additional field evaluators for this PK.
+  // -- porosity
   // Fields for coupling terms
   // -- bc for matrix
   /*
@@ -52,12 +74,9 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
 
     S->RequireField("matrix_fracture_bc", "matrix_fracture_bc")->SetMesh(mesh_)
       ->SetGhosted(true)->SetComponent("boundary face", AmanziMesh::FACE, 2);
-    // S->RequireFieldEvaluator("matrix_fracture_bc");
     S->GetField("matrix_fracture_bc", "matrix_fracture_bc")->set_io_vis(false);
   }
   */
-
-  // -- source for fracture
 
   // inform other PKs about strong coupling
   // -- flow (matrix)

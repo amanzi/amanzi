@@ -49,7 +49,7 @@ class FlowMatrixFracture_PK : public PK_MPCWeak {
 
  private:
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
 
   Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> matrix_bc;
   Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> fracture_src;

@@ -21,6 +21,7 @@
 #include "exceptions.hh"
 #include "LinearOperatorFactory.hh"
 #include "PDE_DiffusionFactory.hh"
+#include "PDE_DiffusionFracturedMatrix.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "TimestepControllerFactory.hh"
 #include "Tensor.hh"
@@ -141,25 +142,26 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   flow_in_fractures_ &= (mesh_->manifold_dimension() != mesh_->space_dimension());
 
   // Require primary field for this PK.
-  std::vector<std::string> names;
-  std::vector<AmanziMesh::Entity_kind> locations;
-  std::vector<int> ndofs;
-
   Teuchos::RCP<Teuchos::ParameterList> list1 = Teuchos::sublist(fp_list_, "operators", true);
   Teuchos::RCP<Teuchos::ParameterList> list2 = Teuchos::sublist(list1, "diffusion operator", true);
   Teuchos::RCP<Teuchos::ParameterList> list3 = Teuchos::sublist(list2, "matrix", true);
   std::string name = list3->get<std::string>("discretization primary");
 
-  names.push_back("cell");
-  locations.push_back(AmanziMesh::CELL);
-  ndofs.push_back(1);
-  if (name != "fv: default" && name != "nlfv: default") {
-    names.push_back("face");
-    locations.push_back(AmanziMesh::FACE);
-    ndofs.push_back(1);
-  }
-
   if (!S->HasField(pressure_key_)) {
+    std::vector<std::string> names;
+    std::vector<AmanziMesh::Entity_kind> locations;
+    std::vector<int> ndofs;
+
+    names.push_back("cell");
+    locations.push_back(AmanziMesh::CELL);
+    ndofs.push_back(1);
+
+    if (name != "fv: default" && name != "nlfv: default") {
+      names.push_back("face");
+      locations.push_back(AmanziMesh::FACE);
+      ndofs.push_back(1);
+    }
+
     S->RequireField(pressure_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
   }
@@ -188,7 +190,9 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   if (!S->HasField(darcy_flux_key_)) {
     S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
+  }
 
+  {
     Teuchos::ParameterList elist;
     elist.set<std::string>("evaluator name", darcy_flux_key_);
     darcy_flux_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
@@ -506,7 +510,8 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "pressure solver (" << solver->name()
-               << "): ||p,lambda||=" << pnorm << std::endl;
+               << "): ||p,lambda||=" << pnorm 
+               << "  itrs=" << solver->num_itrs() << std::endl;
     VV_PrintHeadExtrema(*solution);
   }
 
