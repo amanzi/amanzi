@@ -105,8 +105,11 @@ void TestDiffusionFracturedMatrix() {
     }
   }
 
-  // create diffusion operator 
-  auto op = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(op_list, mesh));
+  // create diffusion operator
+  double rho = 1.0;
+  AmanziGeometry::Point g(3);
+
+  auto op = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(op_list, mesh, rho, g));
   op->Init(op_list);
   auto global_op = op->global_operator();
 

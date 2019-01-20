@@ -21,9 +21,12 @@ namespace Operators {
 class PDE_DiffusionFracturedMatrix : public PDE_DiffusionMFD {
  public:
   PDE_DiffusionFracturedMatrix(Teuchos::ParameterList& plist,
-                               const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+                               const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                               double rho, const AmanziGeometry::Point& g) :
       PDE_Diffusion(mesh),
-      PDE_DiffusionMFD(plist, mesh)
+      PDE_DiffusionMFD(plist, mesh),
+      g_(g),
+      rho_(rho)
   {
     operator_type_ = OPERATOR_DIFFUSION_FRACTURED_MATRIX;
   }
@@ -46,11 +49,19 @@ class PDE_DiffusionFracturedMatrix : public PDE_DiffusionMFD {
   //      implementation trick.
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
+  // main virtual members after solving the problem
+  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
+                          const Teuchos::Ptr<CompositeVector>& flux) override;
+
  private:
   int FaceLocalIndex_(int c, int f, const Epetra_BlockMap& cmap);
 
  private:
   Teuchos::RCP<CompositeVectorSpace> cvs_;
+
+  double rho_;
+  bool gravity_;
+  AmanziGeometry::Point g_;
 };
 
 

@@ -38,9 +38,8 @@ using namespace Amanzi::AmanziGeometry;
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   
   // read the main parameter list
-  std::string xmlInFileName = "test/mpc_driver_single_fracture.xml";
-  //std::string xmlInFileName = "test/mpc_driver_only_flow_single_fracturte.xml";
-  //std::string xmlInFileName = "test/mpc_driver_flow_matrix_fracture.xml";
+  // std::string xmlInFileName = "test/mpc_driver_single_fracture.xml";
+  std::string xmlInFileName = "test/mpc_driver_flow_matrix_fracture.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
   
   // For now create one geometric model from all the regions in the spec
@@ -54,8 +53,8 @@ using namespace Amanzi::AmanziGeometry;
 
   MeshFactory factory(&comm);
   factory.preference(pref);
-  // Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory(0.0, 0.0, 0.0, 100.0, 100.0, 100.0, 10, 10, 10, gm);
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory("test/single_fracture_tet.exo", gm);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory(0.0, 0.0, 0.0, 216.0, 10.0, 120.0, 54, 2, 60, gm);
+  // Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory("test/single_fracture_tet.exo", gm);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
@@ -64,7 +63,6 @@ using namespace Amanzi::AmanziGeometry;
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
 
-   
   Amanzi::MeshAudit mesh_auditor(mesh);
   int status = mesh_auditor.Verify();
   if (status == 0) {

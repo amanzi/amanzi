@@ -49,6 +49,7 @@ void PDE_DiffusionFracturedMatrix::Init(Teuchos::ParameterList& plist)
   global_op_->OpPushBack(local_op_);
 
   // other parameters
+  gravity_ = plist.get<bool>("gravity");
   scaled_constraint_ = false;
   little_k_ = OPERATOR_LITTLE_K_NONE;
   newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
@@ -71,30 +72,37 @@ void PDE_DiffusionFracturedMatrix::UpdateMatrices(
   const auto& cmap = mesh_->cell_map(true);
   const auto& fmap = *cvs_->Map("face", true);
 
+  int dim = mesh_->space_dimension();
+  Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
+  Epetra_MultiVector& rhs_face = *global_op_->rhs()->ViewComponent("face", true);
+
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
-    int npoints(0);
-    std::vector<int> map;
+    std::vector<int> map(nfaces + 1), lid(nfaces);
 
-    for (int i = 0; i < nfaces; ++i) {
-      int f = faces[i];
-      int n = fmap.ElementSize(f);
+    // create maps from faces to DOFs
+    int np(0);
+    for (int n = 0; n < nfaces; ++n) {
+      int f = faces[n];
+      int first = fmap.FirstPointInElement(f);
+      int ndofs = fmap.ElementSize(f);
 
       int shift(0);
-      if (n == 2) shift = FaceLocalIndex_(c, f, cmap); 
+      if (ndofs == 2) shift = FaceLocalIndex_(c, f, cmap); 
 
-      map.push_back(npoints + shift);
-      npoints += n;
+      map[n] = np + shift;
+      lid[n] = first + shift;
+      np += ndofs;
     }
-    map.push_back(npoints);
+    map[nfaces] = np;
     
-    // resize matrix
-    if (npoints != nfaces) {
+    // resize element matrices and right-hand side
+    if (np != nfaces) {
       auto& Acell = local_op_->matrices[c];
 
-      WhetStone::DenseMatrix Anew(npoints + 1, npoints + 1);
+      WhetStone::DenseMatrix Anew(np + 1, np + 1);
       Anew.PutScalar(0.0);
 
       for (int i = 0; i < nfaces + 1; ++i) {
@@ -104,6 +112,26 @@ void PDE_DiffusionFracturedMatrix::UpdateMatrices(
       }
 
       local_op_->matrices[c] = Anew;
+    }
+
+    // shift gravity
+    if (gravity_) {
+      double zc = (mesh_->cell_centroid(c))[dim - 1];
+      WhetStone::DenseMatrix& Wff = Wff_cells_[c];
+      WhetStone::DenseVector v(nfaces), av(nfaces);
+
+      for (int n = 0; n < nfaces; n++) {
+        int f = faces[n];
+        double zf = (mesh_->face_centroid(f))[dim - 1];
+        v(n) = -(zf - zc) * rho_ * norm(g_);
+      }
+
+      Wff.Multiply(v, av, false);
+
+      for (int n = 0; n < nfaces; n++) {
+        rhs_face[0][lid[n]] += av(n); 
+        rhs_cell[0][c] -= av(n); 
+      }
     }
   }
 }
@@ -156,7 +184,9 @@ void PDE_DiffusionFracturedMatrix::ApplyBCs(
       int f = faces[n];
       int first = fmap.FirstPointInElement(f);
       int ndofs = fmap.ElementSize(f);
-      int shift = FaceLocalIndex_(c, f, cmap); 
+
+      int shift(0);
+      if (ndofs == 2) shift = FaceLocalIndex_(c, f, cmap); 
 
       for (int k = 0; k < ndofs; ++k) {
         lid[np] = first + k;
@@ -226,6 +256,21 @@ void PDE_DiffusionFracturedMatrix::ApplyBCs(
   }
 
   global_op_->rhs()->GatherGhostedToMaster("face", Add);
+}
+
+
+/* ******************************************************************
+* WARNING: Since diffusive flux may be discontinuous (e.g. for
+* Richards equation), we derive it only once (using flag) and in 
+* exactly the same manner as other routines.
+* **************************************************************** */
+void PDE_DiffusionFracturedMatrix::UpdateFlux(
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<CompositeVector>& flux)
+{
+  // Initialize intensity in ghost faces.
+  flux->PutScalar(0.0);
+  u->ScatterMasterToGhosted("face");
 }
 
 

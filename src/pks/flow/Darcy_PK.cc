@@ -661,8 +661,8 @@ void Darcy_PK::UpdateMatrixBCsUsingFracture_()
   for (int c = 0; c < ncells_f; ++c) {
     int f = fracture->entity_get_parent(AmanziMesh::CELL, c);
     bc_model[f] = Operators::OPERATOR_BC_MIXED;
-    bc_value[f] = Kfn_c[0][c];
-    bc_mixed[f] =-Kfn_c[0][c] * pf_c[0][c];
+    bc_mixed[f] = Kfn_c[0][c];
+    bc_value[f] =-Kfn_c[0][c] * pf_c[0][c];
   }
 }
 
