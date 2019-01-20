@@ -78,7 +78,7 @@ Teuchos::RCP<PDE_Diffusion> PDE_DiffusionFactory::Create(
     return op;
 
   // MFD methods with non-uniform DOFs
-  } else if (fractured_matrix && flag) {
+  } else if (fractured_matrix) {
     auto op = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(oplist, mesh, rho, g));
     op->Init(oplist);
     op->SetBCs(bc, bc);
