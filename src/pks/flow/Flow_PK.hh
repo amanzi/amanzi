@@ -162,6 +162,8 @@ class Flow_PK : public PK_PhysicalBDF {
   Key permeability_key_;
   Key darcy_velocity_key_;
 
+  Key normal_permeability_key_;  // for coupled flows 
+
   // io
   Utils::Units units_;
   Teuchos::RCP<Teuchos::ParameterList> fp_list_;

@@ -126,6 +126,8 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
   prev_saturation_liquid_key_ = Keys::getKey(domain_, "prev_saturation_liquid"); 
 
+  normal_permeability_key_ = Keys::getKey(domain_, "normal_permeability"); 
+
   // set up the base class 
   Flow_PK::Setup(S);
 
@@ -138,8 +140,13 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
     msg << "Darcy PK supports only constant viscosity model.";
     Exceptions::amanzi_throw(msg);
   }
-  flow_in_fractures_ = physical_models->get<bool>("flow in fractures", false);
-  flow_in_fractures_ &= (mesh_->manifold_dimension() != mesh_->space_dimension());
+  // -- type of the flow (in matrix or on manifold)
+  flow_on_manifold_ = physical_models->get<bool>("flow in fractures", false);
+  flow_on_manifold_ &= (mesh_->manifold_dimension() != mesh_->space_dimension());
+
+  // -- coupling with other PKs
+  coupled_to_matrix_ = physical_models->get<std::string>("coupled matrix fracture flow", "") == "fracture";
+  coupled_to_fracture_ = physical_models->get<std::string>("coupled matrix fracture flow", "") == "matrix";
 
   // Require primary field for this PK.
   Teuchos::RCP<Teuchos::ParameterList> list1 = Teuchos::sublist(fp_list_, "operators", true);
@@ -213,7 +220,7 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // -- effective fracture permeability
-  if (flow_in_fractures_) {
+  if (flow_on_manifold_) {
     if (!S->HasField(permeability_key_)) {
       S->RequireField(permeability_key_, permeability_key_)->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -228,6 +235,7 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
       Teuchos::RCP<FracturePermModelEvaluator> eval = Teuchos::rcp(new FracturePermModelEvaluator(elist, fpm));
       S->SetFieldEvaluator(permeability_key_, eval);
     }
+  // -- matrix absolute permeability
   } else {
     if (!S->HasField(permeability_key_)) {
       S->RequireField(permeability_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
@@ -263,6 +271,14 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
     CompositeVectorSpace& cvs = *S->RequireField(permeability_key_, passwd_);
     cvs.SetOwned(false);
     cvs.AddComponent("offd", AmanziMesh::CELL, noff)->SetOwned(true);
+  }
+
+  // Require additional field to couple PKs
+  if (coupled_to_matrix_) {
+    if (!S->HasField(normal_permeability_key_)) {
+      S->RequireField(normal_permeability_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    }
   }
 }
 
@@ -337,14 +353,14 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   Teuchos::ParameterList& oplist = fp_list_->sublist("operators")
                                             .sublist("diffusion operator")
                                             .sublist("matrix");
-  if (flow_in_fractures_)
+  if (flow_on_manifold_)
       oplist.set<std::string>("nonlinear coefficient", "standard: cell");
 
   Operators::PDE_DiffusionFactory opfactory;
   op_diff_ = opfactory.Create(oplist, mesh_, op_bc_, rho_ * rho_ / mu, gravity_);
   op_diff_->SetBCs(op_bc_, op_bc_);
 
-  if (!flow_in_fractures_) {
+  if (!flow_on_manifold_) {
     SetAbsolutePermeabilityTensor();
     Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
     op_diff_->Setup(Kptr, Teuchos::null, Teuchos::null);
@@ -476,6 +492,11 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   if (S_->HasField("well_index")) {
     const CompositeVector& wi = *S_->GetFieldData("well_index");
     op_acc_->AddAccumulationTerm(wi, "cell");
+  }
+
+  // coupling with fracture modifies the list of boundary conditions
+  if (coupled_to_fracture_) {
+    UpdateMatrixBCsUsingFracture_();
   }
 
   op_diff_->ApplyBCs(true, true, true);
@@ -616,6 +637,33 @@ void Darcy_PK::UpdateSpecificYield_()
 ****************************************************************** */
 void Darcy_PK::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
   UpdateLocalFields_(S.ptr());
+}
+
+
+/* ******************************************************************
+* Update BCs for matrix PK using fracture PK.
+****************************************************************** */
+void Darcy_PK::UpdateMatrixBCsUsingFracture_()
+{
+  auto fracture = S_->GetMesh("fracture");
+  int ncells_f = fracture->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+
+  const auto& Kfn = S_->GetFieldData("fracture-normal_permeability");
+  const auto& Kfn_c = *Kfn->ViewComponent("cell", true);
+  const auto& pf_c = *S_->GetFieldData("fracture-pressure")->ViewComponent("cell", true);
+
+  Kfn->ScatterMasterToGhosted();
+
+  std::vector<int>& bc_model = op_bc_->bc_model();
+  std::vector<double>& bc_value = op_bc_->bc_value();
+  std::vector<double>& bc_mixed = op_bc_->bc_mixed();
+
+  for (int c = 0; c < ncells_f; ++c) {
+    int f = fracture->entity_get_parent(AmanziMesh::CELL, c);
+    bc_model[f] = Operators::OPERATOR_BC_MIXED;
+    bc_value[f] = Kfn_c[0][c];
+    bc_mixed[f] =-Kfn_c[0][c] * pf_c[0][c];
+  }
 }
 
 }  // namespace Flow

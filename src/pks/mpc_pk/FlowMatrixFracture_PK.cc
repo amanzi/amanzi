@@ -47,8 +47,9 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
 
   Teuchos::ParameterList& elist = S->FEList();
 
-  // primary and secondary fields for matrix flow PK 
-  // -- pressure 
+  // primary and secondary fields for matrix affected by non-uniform
+  // distribution of DOFs
+  // -- pressure
   auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
   if (!S->HasField("pressure")) {
     *S->RequireField("pressure", "flow")->SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
@@ -63,33 +64,20 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetComponent(name, mmap, gmap, 1);
   }
 
-  // Require additional field evaluators for this PK.
-  // -- porosity
-  // Fields for coupling terms
-  // -- bc for matrix
-  /*
-  if (!S->HasField("matrix_fracture_bc")) {
-    elist.sublist("matrix_fracture_bc")
-         .set<std::string>("field evaluator type", "matrix_fracture_bc");
+  // Require additional fields and evaluators
 
-    S->RequireField("matrix_fracture_bc", "matrix_fracture_bc")->SetMesh(mesh_)
-      ->SetGhosted(true)->SetComponent("boundary face", AmanziMesh::FACE, 2);
-    S->GetField("matrix_fracture_bc", "matrix_fracture_bc")->set_io_vis(false);
-  }
-  */
-
-  // inform other PKs about strong coupling
+  // inform dependent PKs about coupling
   // -- flow (matrix)
   Teuchos::ParameterList& mflow = glist_->sublist("PKs").sublist("flow matrix")
-                                         .sublist("Flow problem")
+                                         .sublist("Darcy problem")
                                          .sublist("physical models and assumptions");
-  mflow.set("coupled matrix fracture flow", true);
+  mflow.set<std::string>("coupled matrix fracture flow", "matrix");
 
   // -- flow (fracture)
   Teuchos::ParameterList& fflow = glist_->sublist("PKs").sublist("flow fracture")
-                                         .sublist("Flow problem")
+                                         .sublist("Darcy problem")
                                          .sublist("physical models and assumptions");
-  fflow.set("coupled matrix fracture flow", true);
+  fflow.set<std::string>("coupled matrix fracture flow", "fracture");
 
   // process other PKs.
   PK_MPCWeak::Setup(S);

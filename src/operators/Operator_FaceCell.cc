@@ -240,20 +240,14 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
   std::vector<int> lid_c(2*cell_max_faces + 1);
 
   // ELEMENT: cell, DOFS: cell and face
-  // const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
-  // const std::vector<int>& face_col_inds = map.GhostIndices("face", my_block_col);
-  // const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
-  // const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
-
-
   Teuchos::RCP<const Epetra_BlockMap> face_gh_map = map.BaseGhostedMap("face");
   Teuchos::RCP<const Epetra_BlockMap> cell_gh_map = map.BaseGhostedMap("cell");
   Teuchos::RCP<const Epetra_BlockMap> face_map = map.BaseMap("face");
-  int nface_points_owned =  face_map -> NumMyPoints();
+  int nface_points_owned = face_map->NumMyPoints();
   int num_dof_faces = map.NumDofs("face");
   int num_dof_cells = map.NumDofs("cell");
 
-  int MyPID =  cell_gh_map->Comm().MyPID();
+  int MyPID = cell_gh_map->Comm().MyPID();
   
   int face_row_offset = map.Offset("face");
   int face_gh_offset = map.GhostedOffset("face");
@@ -272,21 +266,20 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
       first = (faces[n] < nfaces_owned) ? first : (first - nface_points_owned);
       int offset = (faces[n] < nfaces_owned) ? face_row_offset : face_gh_offset;
       
-      for (int m=0; m !=face_dof_size; ++m){
+      for (int m = 0; m != face_dof_size; ++m){
         lid_r[k] = offset + (first + m)*num_dof_faces + my_block_row;
         lid_c[k] = offset + (first + m)*num_dof_faces + my_block_col;
         k++;
       }
     }
 
-    int cell_dof_size = cell_gh_map -> ElementSize(c);
-    int first = cell_gh_map -> FirstPointInElement(c);
-    for (int m=0; m !=cell_dof_size; ++m){
+    int cell_dof_size = cell_gh_map->ElementSize(c);
+    int first = cell_gh_map->FirstPointInElement(c);
+    for (int m = 0; m != cell_dof_size; ++m){
       lid_r[k] = cell_row_offset + (first + m)*num_dof_cells + my_block_row;
       lid_c[k] = cell_row_offset + (first + m)*num_dof_cells + my_block_col;
       k++;
     }
-
     
     ierr |= graph.InsertMyIndices(k, lid_r.data(), k, lid_c.data());
   }
@@ -310,13 +303,13 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
 
   Teuchos::RCP<const Epetra_BlockMap> face_gh_map = map.BaseGhostedMap("face");
   Teuchos::RCP<const Epetra_BlockMap> face_map = map.BaseMap("face");
-  int nface_points_owned =  face_map -> NumMyPoints();
+  int nface_points_owned = face_map->NumMyPoints();
   int num_dof_faces = map.NumDofs("face");
   
   int face_row_offset = map.Offset("face");
   int face_gh_offset = map.GhostedOffset("face");
 
-  int MyPID =  face_gh_map->Comm().MyPID();
+  int MyPID = face_gh_map->Comm().MyPID();
   
   int ierr(0);
   AmanziMesh::Entity_ID_List faces;
@@ -332,7 +325,7 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
       first = (faces[n] < nfaces_owned) ? first : (first - nface_points_owned);
       int offset = (faces[n] < nfaces_owned) ? face_row_offset : face_gh_offset;
       
-      for (int m=0; m !=face_dof_size; ++m){
+      for (int m = 0; m != face_dof_size; ++m){
         lid_r[k] = offset + (first + m)*num_dof_faces + my_block_row;
         lid_c[k] = offset + (first + m)*num_dof_faces + my_block_col;
         k++;
@@ -356,9 +349,9 @@ Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op
   const std::vector<int>& face_col_inds = map.GhostIndices("face", my_block_col);
 
   int ierr = 0;
-  for (int sc=0; sc!=nsurf_cells; ++sc) {
-    int lid_r = face_row_inds[op.surf_mesh->entity_get_parent(AmanziMesh::CELL,sc)];
-    int lid_c = face_col_inds[op.surf_mesh->entity_get_parent(AmanziMesh::CELL,sc)];
+  for (int sc = 0; sc != nsurf_cells; ++sc) {
+    int lid_r = face_row_inds[op.surf_mesh->entity_get_parent(AmanziMesh::CELL, sc)];
+    int lid_c = face_col_inds[op.surf_mesh->entity_get_parent(AmanziMesh::CELL, sc)];
     ierr |= graph.InsertMyIndices(lid_r, 1, &lid_c);
   }
   AMANZI_ASSERT(!ierr);
@@ -380,11 +373,11 @@ Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op
 
   int ierr = 0;
   AmanziMesh::Entity_ID_List cells;
-  for (int sf=0; sf!=nsurf_faces; ++sf) {
+  for (int sf = 0; sf != nsurf_faces; ++sf) {
     op.surf_mesh->face_get_cells(sf, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
-    for (int n=0; n!=ncells; ++n) {
-      int f = op.surf_mesh->entity_get_parent(AmanziMesh::CELL,cells[n]);
+    for (int n = 0; n != ncells; ++n) {
+      int f = op.surf_mesh->entity_get_parent(AmanziMesh::CELL, cells[n]);
       lid_r[n] = face_row_inds[f];
       lid_c[n] = face_col_inds[f];
     }
@@ -416,14 +409,14 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
   Teuchos::RCP<const Epetra_BlockMap> face_gh_map = map.BaseGhostedMap("face");
   Teuchos::RCP<const Epetra_BlockMap> cell_gh_map = map.BaseGhostedMap("cell");
   Teuchos::RCP<const Epetra_BlockMap> face_map = map.BaseMap("face");
-  int nface_points_owned =  face_map -> NumMyPoints();
+  int nface_points_owned = face_map->NumMyPoints();
   int num_dof_faces = map.NumDofs("face");
   int num_dof_cells = map.NumDofs("cell");
   int face_row_offset = map.Offset("face");
   int face_gh_offset = map.GhostedOffset("face");
   int cell_row_offset = map.Offset("cell");
 
-  int MyPID =  cell_gh_map->Comm().MyPID();
+  int MyPID = cell_gh_map->Comm().MyPID();
   
   int ierr(0);
   AmanziMesh::Entity_ID_List faces;
@@ -438,7 +431,7 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
       first = (faces[n] < nfaces_owned) ? first : (first - nface_points_owned);
       int offset = (faces[n] < nfaces_owned) ? face_row_offset : face_gh_offset;
       
-      for (int m=0; m !=face_dof_size; ++m){
+      for (int m = 0; m != face_dof_size; ++m){
         lid_r[k] = offset + (first + m)*num_dof_faces + my_block_row;
         lid_c[k] = offset + (first + m)*num_dof_faces + my_block_col;
 
@@ -446,9 +439,9 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
       }      
     }
 
-    int cell_dof_size = cell_gh_map -> ElementSize(c);
-    int first = cell_gh_map -> FirstPointInElement(c);
-    for (int m=0; m !=cell_dof_size; ++m){
+    int cell_dof_size = cell_gh_map->ElementSize(c);
+    int first = cell_gh_map->FirstPointInElement(c);
+    for (int m = 0; m != cell_dof_size; ++m){
       lid_r[k] = cell_row_offset + (first + m)*num_dof_cells + my_block_row;
       lid_c[k] = cell_row_offset + (first + m)*num_dof_cells + my_block_col;
       k++;
@@ -473,11 +466,9 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_Face& op,
   std::vector<int> lid_c(cell_max_faces + 1);
 
   // ELEMENT: cell, DOFS: face and cell
-  // const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
-  // const std::vector<int>& face_col_inds = map.GhostIndices("face", my_block_col);
   Teuchos::RCP<const Epetra_BlockMap> face_gh_map = map.BaseGhostedMap("face");
   Teuchos::RCP<const Epetra_BlockMap> face_map = map.BaseMap("face");
-  int nface_points_owned =  face_map -> NumMyPoints();
+  int nface_points_owned = face_map->NumMyPoints();
   int num_dof_faces = map.NumDofs("face");
   
   int face_row_offset = map.Offset("face");
@@ -492,13 +483,12 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_Face& op,
 
     int k = 0;
     for (int n = 0; n != nfaces; ++n) {
-
       int face_dof_size = face_map->ElementSize(faces[n]);
       int first = face_gh_map->FirstPointInElement(faces[n]);
       first = (faces[n] < nfaces_owned) ? first : (first - nface_points_owned);
       int offset = (faces[n] < nfaces_owned) ? face_row_offset : face_gh_offset;
       
-      for (int m=0; m !=face_dof_size; ++m){
+      for (int m = 0; m != face_dof_size; ++m){
         lid_r[k] = offset + (first + m)*num_dof_faces + my_block_row;
         lid_c[k] = offset + (first + m)*num_dof_faces + my_block_col;
         k++;
@@ -523,9 +513,9 @@ Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
   const std::vector<int>& face_col_inds = map.GhostIndices("face", my_block_col);
 
   int ierr = 0;
-  for (int sc=0; sc!=nsurf_cells; ++sc) {
-    int lid_r = face_row_inds[op.surf_mesh->entity_get_parent(AmanziMesh::CELL,sc)];
-    int lid_c = face_col_inds[op.surf_mesh->entity_get_parent(AmanziMesh::CELL,sc)];
+  for (int sc = 0; sc != nsurf_cells; ++sc) {
+    int lid_r = face_row_inds[op.surf_mesh->entity_get_parent(AmanziMesh::CELL, sc)];
+    int lid_c = face_col_inds[op.surf_mesh->entity_get_parent(AmanziMesh::CELL, sc)];
     ierr |= mat.SumIntoMyValues(lid_r, 1, &(*op.diag)[0][sc], &lid_c);
   }
   AMANZI_ASSERT(!ierr);
@@ -547,11 +537,11 @@ Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
 
   int ierr = 0;
   AmanziMesh::Entity_ID_List cells;
-  for (int sf=0; sf!=nsurf_faces; ++sf) {
+  for (int sf = 0; sf != nsurf_faces; ++sf) {
     op.surf_mesh->face_get_cells(sf, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
-    for (int n=0; n!=ncells; ++n) {
-      int f = op.surf_mesh->entity_get_parent(AmanziMesh::CELL,cells[n]);
+    for (int n = 0; n != ncells; ++n) {
+      int f = op.surf_mesh->entity_get_parent(AmanziMesh::CELL, cells[n]);
       lid_r[n] = face_row_inds[f];
       lid_c[n] = face_col_inds[f];
     }

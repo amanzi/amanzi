@@ -47,6 +47,9 @@ class PDE_DiffusionFracturedMatrix : public PDE_DiffusionMFD {
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
  private:
+  int FaceLocalIndex_(int c, int f, const Epetra_BlockMap& cmap);
+
+ private:
   Teuchos::RCP<CompositeVectorSpace> cvs_;
 };
 

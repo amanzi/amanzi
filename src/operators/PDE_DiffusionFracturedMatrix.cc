@@ -67,7 +67,7 @@ void PDE_DiffusionFracturedMatrix::UpdateMatrices(
 {
   PDE_DiffusionMFD::UpdateMatrices(flux, u);
 
-  AmanziMesh::Entity_ID_List cells, faces;
+  AmanziMesh::Entity_ID_List faces;
   const auto& cmap = mesh_->cell_map(true);
   const auto& fmap = *cvs_->Map("face", true);
 
@@ -83,14 +83,7 @@ void PDE_DiffusionFracturedMatrix::UpdateMatrices(
       int n = fmap.ElementSize(f);
 
       int shift(0);
-      if (n == 2) {
-        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-        if (cells.size() == 2) {
-          int gid = cmap.GID(c);
-          int gid_min = std::min(cmap.GID(cells[0]), cmap.GID(cells[1]));
-          if (gid > gid_min) shift = 1;
-        }
-      }
+      if (n == 2) shift = FaceLocalIndex_(c, f, cmap); 
 
       map.push_back(npoints + shift);
       npoints += n;
@@ -122,7 +115,10 @@ void PDE_DiffusionFracturedMatrix::UpdateMatrices(
 * options: eliminate them or not. Finally we may add the essential BC
 * the the system of equations as the trivial equations.
 *
-* Note: BCs imposed incorrectly on faces with many DOFs.
+* Supported BCs on faces with many DOFs:
+*   [Dirichlet]                         u = u0 
+*   [Neumann]            -K(u) grad u . n = g0
+*   [Mixed]        -K(u) grad u . n - c u = g1
 ****************************************************************** */
 void PDE_DiffusionFracturedMatrix::ApplyBCs(
     bool primary, bool eliminate, bool essential_eqn)
@@ -140,7 +136,8 @@ void PDE_DiffusionFracturedMatrix::ApplyBCs(
   Epetra_MultiVector& rhs_face = *global_op_->rhs()->ViewComponent("face", true);
   Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
 
-  const auto& map = rhs_face.Map();
+  const auto& fmap = *cvs_->Map("face", true);
+  const auto& cmap = mesh_->cell_map(true);
 
   for (int c = 0; c != ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
@@ -149,31 +146,47 @@ void PDE_DiffusionFracturedMatrix::ApplyBCs(
     bool flag(true);
     WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
     int nrows = Acell.NumRows();
-        
-    // essential conditions for test functions
+
+    // un-roll multiple DOFs in a linear array
+    std::vector<int> lid(nrows), mydof(nrows, 0), bctrial(nrows), bctest(nrows);
+    std::vector<double> bcval(nrows), bcmix(nrows), bcarea(nrows);
+
     int np(0);
     for (int n = 0; n != nfaces; ++n) {
       int f = faces[n];
-      if (bc_model_test[f] == OPERATOR_BC_DIRICHLET) {
+      int first = fmap.FirstPointInElement(f);
+      int ndofs = fmap.ElementSize(f);
+      int shift = FaceLocalIndex_(c, f, cmap); 
+
+      for (int k = 0; k < ndofs; ++k) {
+        lid[np] = first + k;
+        bctrial[np] = bc_model_trial[f];
+        bctest[np] = bc_model_test[f];
+
+        bcval[np] = bc_value[f];
+        if (bc_mixed.size() > 0) bcmix[np] = bc_mixed[f];
+
+        bcarea[np] = mesh_->face_area(f);
+        if (k == shift) mydof[np] = 1;
+        np++;
+      }
+    }
+
+    // essential conditions for test functions
+    for (int n = 0; n != np; ++n) {
+      if (bctest[n] == OPERATOR_BC_DIRICHLET) {
         if (flag) {  // make a copy of elemental matrix
           local_op_->matrices_shadow[c] = Acell;
           flag = false;
         }
-        for (int k = 0; k < map.ElementSize(f); ++k) {
-          for (int m = 0; m < nrows; m++) Acell(np + k, m) = 0.0;
-        }
+        for (int m = 0; m < nrows; m++) Acell(n, m) = 0.0;
       }
-      np += map.ElementSize(f);
     }
 
     // conditions for trial functions
-    np = 0;
-    for (int n = 0; n != nfaces; ++n) {
-      int f = faces[n];
-      int first = map.FirstPointInElement(f);
-      double value = bc_value[f];
-
-      if (bc_model_trial[f] == OPERATOR_BC_DIRICHLET) {
+    for (int n = 0; n != np; ++n) {
+      double value = bcval[n]; 
+      if (bctrial[n] == OPERATOR_BC_DIRICHLET) {
         // make a copy of elemental matrix for post-processing
         if (flag) {
           local_op_->matrices_shadow[c] = Acell;
@@ -181,46 +194,59 @@ void PDE_DiffusionFracturedMatrix::ApplyBCs(
         }
 
         if (eliminate) { 
-          int mp(0);
-          for (int m = 0; m < nfaces; m++) {
-            int g = faces[m];
-            int k = map.FirstPointInElement(g);
-            rhs_face[0][k] -= Acell(mp, np) * value;
-            Acell(mp, np) = 0.0;
-            mp += map.ElementSize(g);
+          for (int m = 0; m < np; m++) {
+            rhs_face[0][lid[m]] -= Acell(m, n) * value;
+            Acell(m, n) = 0.0;
           }
 
-          rhs_cell[0][c] -= Acell(nrows - 1, np) * value;
-          Acell(nrows - 1, np) = 0.0;
+          rhs_cell[0][c] -= Acell(nrows - 1, n) * value;
+          Acell(nrows - 1, n) = 0.0;
         }
 
         if (essential_eqn) {
-          rhs_face[0][first] = value;
-          Acell(np, np) = 1.0;
+          rhs_face[0][lid[n]] = value;
+          Acell(n, n) = 1.0;
         }
 
-      } else if (bc_model_trial[f] == OPERATOR_BC_NEUMANN && primary) {
-        rhs_face[0][first] -= value * mesh_->face_area(f);
+      } else if (bctrial[n] == OPERATOR_BC_NEUMANN && primary && mydof[n] == 1) {
+        rhs_face[0][lid[n]] -= value * bcarea[n];
 
-      } else if (bc_model_trial[f] == OPERATOR_BC_TOTAL_FLUX && primary) {
-        rhs_face[0][first] -= value * mesh_->face_area(f);
+      } else if (bctrial[n] == OPERATOR_BC_TOTAL_FLUX && primary && mydof[n] == 1) {
+        rhs_face[0][lid[n]] -= value * bcarea[n];
 
-      } else if (bc_model_trial[f] == OPERATOR_BC_MIXED && primary) {
+      } else if (bctrial[n] == OPERATOR_BC_MIXED && primary && mydof[n] == 1) {
         if (flag) {  // make a copy of elemental matrix
           local_op_->matrices_shadow[c] = Acell;
           flag = false;
         }
-        double area = mesh_->face_area(f);
-        rhs_face[0][first] -= value * area;
-        Acell(np, np) += bc_mixed[f] * area;
+        rhs_face[0][lid[n]] -= value * bcarea[n];
+        Acell(n, n) += bcmix[n] * bcarea[n];
       }
-      np += map.ElementSize(f);
     }
   }
 
   global_op_->rhs()->GatherGhostedToMaster("face", Add);
 }
 
+
+/* ******************************************************************
+* Local index of DOF on internal face
+****************************************************************** */
+int PDE_DiffusionFracturedMatrix::FaceLocalIndex_(
+    int c, int f, const Epetra_BlockMap& cmap)
+{
+  AmanziMesh::Entity_ID_List cells;
+
+  int idx = 0;
+  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+  if (cells.size() == 2) {
+     int gid = cmap.GID(c);
+     int gid_min = std::min(cmap.GID(cells[0]), cmap.GID(cells[1]));
+     if (gid > gid_min) idx = 1;
+  }
+
+  return idx;
+}
 
 /* ******************************************************************
 * Non-member function
@@ -270,6 +296,7 @@ Teuchos::RCP<CompositeVectorSpace> CreateFracturedMatrixCVS(
 
   return cvs;
 }
+
 
 }  // namespace Operators
 }  // namespace Amanzi

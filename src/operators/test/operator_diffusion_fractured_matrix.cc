@@ -90,11 +90,18 @@ void TestDiffusionFracturedMatrix() {
   for (int f = 0; f < nfaces_wghost; ++f) {
     const Point& xf = mesh->face_centroid(f);
 
+    // external boundary
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
         fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) {
       bc_model[f] = OPERATOR_BC_DIRICHLET;
       bc_value[f] = ana.pressure_exact(xf, 0.0);
+    }
+
+    // internal boundary
+    if (fabs(xf[2] - 0.5) < 1e-6) {
+      bc_model[f] = OPERATOR_BC_NEUMANN;
+      bc_value[f] = 0.0;
     }
   }
 
@@ -117,7 +124,7 @@ void TestDiffusionFracturedMatrix() {
 
   // create preconditoner using the base operator class
   ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
-  //ParameterList slist = plist.sublist("preconditioners").sublist("identity");
+  // ParameterList slist = plist.sublist("preconditioners").sublist("identity");
   global_op->InitializePreconditioner(slist);
   global_op->UpdatePreconditioner();
 

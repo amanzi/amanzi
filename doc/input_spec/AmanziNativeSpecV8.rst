@@ -1259,6 +1259,9 @@ Combination of both approaches may lead to a more efficient code.
   Available options are `"compressible: storativity coefficient`",
   `"compressible: pressure function`", and `"constant porosity`" (default).
 
+* `"coupled matrix fracture flow`" [string] specifies PK's role in the strong 
+  coupling of two flow PKs. The value is either `"matrix`" or `"fracture`".
+
 .. code-block:: xml
 
    <ParameterList name="Richards problem">  <!-- parent list -->
@@ -1268,6 +1271,7 @@ Combination of both approaches may lead to a more efficient code.
        <Parameter name="viscosity model" type="string" value="constant viscosity"/>
        <Parameter name="porosity model" type="string" value="compressible: pressure function"/>
        <Parameter name="multiscale model" type="string" value="single porosity"/>
+       <Parameter name="coupled matrix fracture flow" type="string" value="matrix"/>
      </ParameterList>
    </ParameterList>
 

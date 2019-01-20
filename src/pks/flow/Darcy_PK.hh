@@ -102,6 +102,9 @@ class Darcy_PK : public Flow_PK {
   double ErrorEstimate_(double* dTfactor);
   void InitializeStatistics_(bool init_darcy);
 
+  // support of coupled PKs
+  void UpdateMatrixBCsUsingFracture_();
+
  protected:
   Teuchos::RCP<TreeVector> soln_;
   
@@ -118,7 +121,8 @@ class Darcy_PK : public Flow_PK {
   bool initialize_with_darcy_;
   int num_itrs_;
 
-  bool flow_in_fractures_;
+  bool flow_on_manifold_;  // true for the DFN model
+  bool coupled_to_matrix_, coupled_to_fracture_;
 
   Teuchos::RCP<CompositeVector> solution;  // next pressure state
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure
