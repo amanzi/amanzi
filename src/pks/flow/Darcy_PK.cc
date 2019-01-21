@@ -511,7 +511,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   if (coupled_to_matrix_){
-     UpdateSourceUsingMatrix_();
+    UpdateSourceUsingMatrix_();
     const auto& s1 = *S_->GetFieldData(normal_permeability_key_);
     const auto& s2 = *S_->GetFieldData(fracture_matrix_source_key_);        
     op_acc_->AddAccumulationRhs(s1, s2, 2, "cell", true);
@@ -684,8 +684,11 @@ void Darcy_PK::UpdateMatrixBCsUsingFracture_()
   }
 }
 
-void Darcy_PK::UpdateSourceUsingMatrix_()
 
+/* ******************************************************************
+* Update source for fracture PK using matrix PK.
+****************************************************************** */
+void Darcy_PK::UpdateSourceUsingMatrix_()
 {
   auto matrix = S_->GetMesh("domain");
  
@@ -693,14 +696,15 @@ void Darcy_PK::UpdateSourceUsingMatrix_()
   const auto& Kfn_c = *S_->GetFieldData(normal_permeability_key_)->ViewComponent("cell");
   
   const auto& pm = S_->GetFieldData("pressure");
-  const auto& pm_f = *pm -> ViewComponent("face");
+  const auto& pm_f = *pm->ViewComponent("face", true);
   Teuchos::RCP<const Epetra_BlockMap> pm_map = pm->Map().Map("face", true);
 
-  for (int c=0; c<ncells_owned; c++){
+  for (int c = 0; c < ncells_owned; c++) {
     int f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
     int f_loc_id = pm_map->FirstPointInElement(f);
-    src_c[0][c] = 0.;
-    for (int k=0; k!= pm_map->ElementSize(f); ++k) {
+
+    src_c[0][c] = 0.0;
+    for (int k = 0; k != pm_map->ElementSize(f); ++k) {
       src_c[0][c] += pm_f[0][f_loc_id + k];
     }
     src_c[0][c] *= Kfn_c[0][c];

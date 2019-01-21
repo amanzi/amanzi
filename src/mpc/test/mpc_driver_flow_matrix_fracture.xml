@@ -8,17 +8,17 @@
   </ParameterList>
   <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot_matrix"/>
-    <Parameter name="cycles start period stop 0" type="Array(int)" value="{70, 20, -1}"/>
+    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 1, -1}"/>
   </ParameterList>
   <ParameterList name="visualization data fracture">
     <Parameter name="file name base" type="string" value="plot_fracture"/>
-    <Parameter name="cycles start period stop 0" type="Array(int)" value="{70, 20, -1}"/>
+    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 1, -1}"/>
   </ParameterList>
 
   <ParameterList name="regions">
     <ParameterList name="fracture">
       <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.0,40.0}"/>
+        <Parameter name="point" type="Array(double)" value="{0.0,0.0,60.0}"/>
         <Parameter name="normal" type="Array(double)" value="{0.0,0.0,1.0}"/>
       </ParameterList>
     </ParameterList>
@@ -28,10 +28,16 @@
         <Parameter name="high coordinate" type="Array(double)" value="{0.0,10.0,120.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="SurfaceTop">
+    <ParameterList name="SurfaceRight">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 216.0, 0.0,  0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{216.0,10.0,120.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="SurfaceTopHalf">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{   0.0, 0.0,120.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{216.0,10.0,120.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{108.0,10.0,120.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="SurfaceBottom">
@@ -63,7 +69,7 @@
   <ParameterList name="mesh">
     <ParameterList name="unstructured">
       <ParameterList name="generate mesh">
-        <Parameter name="number of cells" type="Array(int)" value="{54, 2, 60}"/>
+        <Parameter name="number of cells" type="Array(int)" value="{9, 2, 10}"/>
         <Parameter name="domain low coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
         <Parameter name="domain high coordinate" type="Array(double)" value="{216.0, 10.0, 120.0}"/>
       </ParameterList>
@@ -92,9 +98,9 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="start period time" type="double" value="0.0"/>
-        <Parameter name="end period time" type="double" value="100.0"/>
+        <Parameter name="end period time" type="double" value="3.0e+7"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="5.0"/>
+        <Parameter name="initial time step" type="double" value="1.0e+5"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="time period control">
@@ -159,7 +165,7 @@
         <Parameter name="value" type="double" value="101325.0"/>
       </ParameterList>
       <ParameterList name="gravity">
-        <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -9.80665e+00}"/>
+        <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -9.81}"/>
       </ParameterList>
       <ParameterList name="fluid_density">
         <Parameter name="value" type="double" value="998.2"/>
@@ -178,6 +184,33 @@
         </ParameterList>
       </ParameterList>
 
+      <ParameterList name="specific_storage">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1e-3"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="fracture-specific_storage">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1e-3"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
       <ParameterList name="fracture-normal_permeability">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -185,13 +218,12 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="2.0e-3"/>
+                <Parameter name="value" type="double" value="1.0e-7"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
       <ParameterList name="permeability">
         <ParameterList name="function">
           <ParameterList name="RegionBottom">
@@ -202,17 +234,17 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="6.9365e-11"/>
+                  <Parameter name="value" type="double" value="6.0e-11"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="6.9365e-12"/>
+                  <Parameter name="value" type="double" value="6.0e-12"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 3 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="6.9365e-12"/>
+                  <Parameter name="value" type="double" value="6.0e-12"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -225,23 +257,24 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="2.0706e-09"/>
+                  <Parameter name="value" type="double" value="6.0e-9"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="2.0706e-10"/>
+                  <Parameter name="value" type="double" value="6.0e-10"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 3 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="2.0706e-10"/>
+                  <Parameter name="value" type="double" value="6.0e-10"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
       <ParameterList name="pressure">
         <ParameterList name="function">
           <ParameterList name="All">
@@ -250,8 +283,8 @@
             <ParameterList name="function">
               <ParameterList name="function-linear">
                 <Parameter name="y0" type="double" value="1.01325e+05"/>
-                <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0, 0.0}"/>
-                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, -9.7935192e+03}"/>
+                <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0, 60.0}"/>
+                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, -9792.3}"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -265,8 +298,8 @@
             <ParameterList name="function">
               <ParameterList name="function-linear">
                 <Parameter name="y0" type="double" value="1.01325e+05"/>
-                <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0, 0.0}"/>
-                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, -9.7935192e+03}"/>
+                <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0, 60.0}"/>
+                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, -9792.3}"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -358,15 +391,7 @@
               <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
               <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-              <Parameter name="gravity" type="bool" value="true"/>
-              <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
-            </ParameterList>
-            <ParameterList name="preconditioner">
-              <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-              <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-              <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-              <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-              <Parameter name="gravity" type="bool" value="true"/>
+              <Parameter name="gravity" type="bool" value="false"/>
               <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
             </ParameterList>
           </ParameterList>
@@ -374,32 +399,35 @@
         <ParameterList name="boundary conditions">
           <ParameterList name="static head">
             <ParameterList name="BC 0">
-              <Parameter name="regions" type="Array(string)" value="{SurfaceBottom}"/>
+              <Parameter name="regions" type="Array(string)" value="{SurfaceLeft,SurfaceRight}"/>
               <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="static head">
                 <ParameterList name="function-static-head">
                   <Parameter name="p0" type="double" value="101325.0"/>
                   <Parameter name="density" type="double" value="998.2"/>
-                  <Parameter name="gravity" type="double" value="9.80665"/>
+                  <Parameter name="gravity" type="double" value="9.81"/>
                   <Parameter name="space dimension" type="int" value="3"/>
                   <ParameterList name="water table elevation">
-                    <ParameterList name="function-constant">
-                      <Parameter name="value" type="double" value="0.0"/>
+                    <ParameterList name="function-linear">
+                      <Parameter name="y0" type="double" value="0.0"/>
+                      <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0, 60.0}"/>
+                      <Parameter name="gradient" type="Array(double)" value="{0.0, -0.1, 0.0, 0.0}"/>
                     </ParameterList>
                   </ParameterList>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
           </ParameterList>
+
           <ParameterList name="mass flux">
             <ParameterList name="BC 1">
-              <Parameter name="regions" type="Array(string)" value="{SurfaceTop}"/>
+              <Parameter name="regions" type="Array(string)" value="{SurfaceTopHalf}"/>
               <Parameter name="spatial distribution method" type="string" value="none"/>
               <Parameter name="rainfall" type="bool" value="false"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
                   <Parameter name="x values" type="Array(double)" value="{0.0, 9.0e+10}"/>
-                  <Parameter name="y values" type="Array(double)" value="{-1.10e-07, -1.10e-07}"/>
+                  <Parameter name="y values" type="Array(double)" value="{-2.10e-3, -2.10e-3}"/>
                   <Parameter name="forms" type="Array(string)" value="{constant}"/>
                 </ParameterList>
               </ParameterList>
@@ -418,7 +446,7 @@
             <ParameterList name="timestep controller standard parameters">
               <Parameter name="max iterations" type="int" value="15"/>
               <Parameter name="min iterations" type="int" value="10"/>
-              <Parameter name="time step increase factor" type="double" value="1.25000e+00"/>
+              <Parameter name="time step increase factor" type="double" value="1.5"/>
               <Parameter name="time step reduction factor" type="double" value="8.0e-01"/>
               <Parameter name="max time step" type="double" value="6.0e+10"/>
               <Parameter name="min time step" type="double" value="9.99999999999999945e-21"/>
@@ -472,33 +500,26 @@
               <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
               <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-              <Parameter name="gravity" type="bool" value="true"/>
-            </ParameterList>
-            <ParameterList name="preconditioner">
-              <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
-              <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-              <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-              <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-              <Parameter name="gravity" type="bool" value="true"/>
+              <Parameter name="gravity" type="bool" value="false"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
         <ParameterList name="boundary conditions">
           <ParameterList name="static head">
             <ParameterList name="BC 0">
-              <Parameter name="regions" type="Array(string)" value="{SurfaceLeft}"/>
+              <Parameter name="regions" type="Array(string)" value="{SurfaceLeft,SurfaceRight}"/>
               <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="static head">
                 <ParameterList name="function-static-head">
                   <Parameter name="p0" type="double" value="101325.0"/>
                   <Parameter name="density" type="double" value="998.2"/>
-                  <Parameter name="gravity" type="double" value="9.80665"/>
+                  <Parameter name="gravity" type="double" value="9.81"/>
                   <Parameter name="space dimension" type="int" value="3"/>
                   <ParameterList name="water table elevation">
                     <ParameterList name="function-linear">
                       <Parameter name="y0" type="double" value="0.0"/>
-                      <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0, 0.0}"/>
-                      <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, 0.0}"/>
+                      <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0, 60.0}"/>
+                      <Parameter name="gradient" type="Array(double)" value="{0.0, -0.1, 0.0, 0.0}"/>
                     </ParameterList>
                   </ParameterList>
                 </ParameterList>
@@ -518,7 +539,7 @@
             <ParameterList name="timestep controller standard parameters">
               <Parameter name="max iterations" type="int" value="15"/>
               <Parameter name="min iterations" type="int" value="10"/>
-              <Parameter name="time step increase factor" type="double" value="1.25000e+00"/>
+              <Parameter name="time step increase factor" type="double" value="1.5"/>
               <Parameter name="time step reduction factor" type="double" value="8.0e-01"/>
               <Parameter name="max time step" type="double" value="6.0e+10"/>
               <Parameter name="min time step" type="double" value="9.99999999999999945e-21"/>

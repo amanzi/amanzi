@@ -80,10 +80,11 @@ void PDE_Accumulation::AddAccumulationTerm(
   }
 }
 
+
 /* ******************************************************************
 * Modifier for diagonal operators and rhs.
-  Op += alpha * s1 * vol
-  Rhs +=  alpha * s2 * vol
+* Op  += alpha * s1 * vol
+* Rhs += alpha * s2 * vol
 ****************************************************************** */
 void PDE_Accumulation::AddAccumulationRhs(
     const CompositeVector& s1,
@@ -98,7 +99,6 @@ void PDE_Accumulation::AddAccumulationRhs(
   const Epetra_MultiVector& s1c = *s1.ViewComponent(name);
   const Epetra_MultiVector& s2c = *s2.ViewComponent(name);  
 
-    
   int n = s1c.MyLength();
   int m = s1c.NumVectors();
 
