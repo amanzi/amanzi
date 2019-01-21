@@ -104,7 +104,8 @@ class Darcy_PK : public Flow_PK {
 
   // support of coupled PKs
   void UpdateMatrixBCsUsingFracture_();
-
+  void UpdateSourceUsingMatrix_();
+  
  protected:
   Teuchos::RCP<TreeVector> soln_;
   

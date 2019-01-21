@@ -80,6 +80,60 @@ void PDE_Accumulation::AddAccumulationTerm(
   }
 }
 
+/* ******************************************************************
+* Modifier for diagonal operators and rhs.
+  Op += alpha * s1 * vol
+  Rhs +=  alpha * s2 * vol
+****************************************************************** */
+void PDE_Accumulation::AddAccumulationRhs(
+    const CompositeVector& s1,
+    const CompositeVector& s2,
+    double alpha,
+    const std::string& name,
+    bool volume)
+{
+  Teuchos::RCP<Op> op = FindOp_(name);
+  Epetra_MultiVector& diag = *op->diag;
+
+  const Epetra_MultiVector& s1c = *s1.ViewComponent(name);
+  const Epetra_MultiVector& s2c = *s2.ViewComponent(name);  
+
+    
+  int n = s1c.MyLength();
+  int m = s1c.NumVectors();
+
+  Epetra_MultiVector& rhs = *global_operator()->rhs()->ViewComponent(name);
+
+  AMANZI_ASSERT(s1c.MyLength() == s2c.MyLength());
+  AMANZI_ASSERT(s1c.MyLength() == diag.MyLength());  
+  AMANZI_ASSERT(s2c.MyLength() == rhs.MyLength());
+
+  AMANZI_ASSERT(s1c.NumVectors() == s2c.NumVectors());
+  AMANZI_ASSERT(s1c.NumVectors() == diag.NumVectors());  
+  AMANZI_ASSERT(s2c.NumVectors() == rhs.NumVectors());
+  
+  if (volume) {
+    CompositeVector vol(s1);
+    CalculateEntityVolume_(vol, name);
+    Epetra_MultiVector& volc = *vol.ViewComponent(name); 
+
+    for (int k = 0; k < m; k++) {
+      for (int i = 0; i < n; i++) {
+        diag[k][i] += volc[0][i] * s1c[k][i] * alpha;
+        rhs[k][i] += volc[0][i] * s2c[k][i] * alpha;
+      } 
+    }
+
+  } else {
+    for (int k = 0; k < m; k++) {
+      for (int i = 0; i < n; i++) {
+        diag[k][i] += s1c[k][i] * alpha;
+        rhs[k][i] += s2c[k][i] * alpha;        
+      } 
+    }
+  }
+}
+
 
 /* ******************************************************************
 * Linearized update methods with storage terms for component "name".
