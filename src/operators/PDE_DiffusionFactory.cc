@@ -43,7 +43,7 @@ Teuchos::RCP<PDE_Diffusion> PDE_DiffusionFactory::Create(
 {
   std::string name = oplist.get<std::string>("discretization primary");
   bool flag = oplist.get<bool>("gravity", false);
-  bool fractured_matrix = oplist.isParameter("fractures");
+  bool fractured_matrix = oplist.isParameter("fracture");
 
   // FV methods
   if (name == "fv: default" && !flag) {
@@ -78,8 +78,8 @@ Teuchos::RCP<PDE_Diffusion> PDE_DiffusionFactory::Create(
     return op;
 
   // MFD methods with non-uniform DOFs
-  } else if (fractured_matrix && flag) {
-    auto op = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(oplist, mesh));
+  } else if (fractured_matrix) {
+    auto op = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(oplist, mesh, rho, g));
     op->Init(oplist);
     op->SetBCs(bc, bc);
     return op;

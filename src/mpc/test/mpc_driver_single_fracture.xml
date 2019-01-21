@@ -187,7 +187,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="2.0e-3"/>
+                <Parameter name="value" type="double" value="2.0e-7"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -252,8 +252,8 @@
             <ParameterList name="function">
               <ParameterList name="function-linear">
                 <Parameter name="y0" type="double" value="1.01325e+05"/>
-                <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
-                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, -9.7935192e+03}"/>
+                <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0, 0.0}"/>
+                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, -9.7935192e+03}"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
