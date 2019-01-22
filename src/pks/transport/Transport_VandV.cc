@@ -33,13 +33,13 @@ void Transport_PK::CreateDefaultState(
   std::string name("state"); 
   S_->RequireScalar("fluid_density", name);
 
-  if (!S_->HasField("saturation_liquid")) {
-    S_->RequireField("saturation_liquid", name)->SetMesh(mesh)->SetGhosted(true)
+  if (!S_->HasField(saturation_liquid_key_)) {
+    S_->RequireField(saturation_liquid_key_, name)->SetMesh(mesh)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
   
-  if (!S_->HasField("prev_saturation_liquid")) {
-    S_->RequireField("prev_saturation_liquid", name)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S_->HasField(prev_saturation_liquid_key_)) {
+    S_->RequireField(prev_saturation_liquid_key_, name)->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
@@ -64,11 +64,11 @@ void Transport_PK::CreateDefaultState(
   *(S_->GetScalarData("fluid_density", name)) = 1000.0;
   S_->GetField("fluid_density", name)->set_initialized();
 
-  S_->GetFieldData("saturation_liquid", name)->PutScalar(1.0);
-  S_->GetField("saturation_liquid", name)->set_initialized();
+  S_->GetFieldData(saturation_liquid_key_, name)->PutScalar(1.0);
+  S_->GetField(saturation_liquid_key_, name)->set_initialized();
 
-  S_->GetFieldData("prev_saturation_liquid", name)->PutScalar(1.0);
-  S_->GetField("prev_saturation_liquid", name)->set_initialized();
+  S_->GetFieldData(prev_saturation_liquid_key_, name)->PutScalar(1.0);
+  S_->GetField(prev_saturation_liquid_key_, name)->set_initialized();
 
   S_->GetFieldData(tcc_key_, name)->PutScalar(0.0);
   S_->GetField(tcc_key_, name)->set_initialized();
