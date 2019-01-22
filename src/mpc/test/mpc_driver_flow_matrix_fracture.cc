@@ -37,7 +37,7 @@ using namespace Amanzi::AmanziGeometry;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   
-  // read the main parameter list
+  // setup a piecewice linear solution with a jump
   // std::string xmlInFileName = "test/mpc_driver_single_fracture.xml";
   std::string xmlInFileName = "test/mpc_driver_flow_matrix_fracture.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
@@ -53,7 +53,7 @@ using namespace Amanzi::AmanziGeometry;
 
   MeshFactory factory(&comm);
   factory.preference(pref);
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory(0.0, 0.0, 0.0, 216.0, 10.0, 120.0, 27, 2, 30, gm);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory(0.0, 0.0, 0.0, 216.0, 10.0, 120.0, 9, 2, 60, gm);
   // Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory("test/single_fracture_tet.exo", gm);
 
   // create dummy observation data object
@@ -85,6 +85,22 @@ using namespace Amanzi::AmanziGeometry;
 
   Amanzi::CycleDriver cycle_driver(plist, S, &comm, obs_data);
   cycle_driver.Go();
+
+  // test pressure in fracture (5% error)
+  double p0 = 101325.0;
+  double rho = 998.2;
+  double mu = 0.001002;
+  double K1 = 1.0e-11;
+  double kn = 4.0e-8;
+  double L = 60.0;
+  double q0 = -2.0e-3;
+
+  K1 *= rho / mu;
+  double pf_exact = p0 - q0 * (L / K1 / 2 + 1.0 / kn);
+
+  double pf = (*S->GetFieldData("fracture-pressure")->ViewComponent("cell"))[0][0];
+  std::cout << "Fracture pressure: " << pf << ",  exact: " << pf_exact << std::endl;
+  CHECK(std::fabs(pf - pf_exact) < 0.05 * std::fabs(pf_exact));
 }
 
 

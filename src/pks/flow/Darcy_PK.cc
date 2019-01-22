@@ -707,9 +707,8 @@ void Darcy_PK::UpdateSourceUsingMatrix_()
     for (int k = 0; k != pm_map->ElementSize(f); ++k) {
       src_c[0][c] += pm_f[0][f_loc_id + k];
     }
-    src_c[0][c] *= Kfn_c[0][c];
+    src_c[0][c] *= Kfn_c[0][c] / 2;
   }
-
 }
 
 }  // namespace Flow

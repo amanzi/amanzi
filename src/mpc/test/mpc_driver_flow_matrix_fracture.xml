@@ -8,11 +8,11 @@
   </ParameterList>
   <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot_matrix"/>
-    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 1, -1}"/>
+    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 6, -1}"/>
   </ParameterList>
   <ParameterList name="visualization data fracture">
     <Parameter name="file name base" type="string" value="plot_fracture"/>
-    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 1, -1}"/>
+    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 6, -1}"/>
   </ParameterList>
 
   <ParameterList name="regions">
@@ -34,10 +34,10 @@
         <Parameter name="high coordinate" type="Array(double)" value="{216.0,10.0,120.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="SurfaceTopHalf">
+    <ParameterList name="SurfaceTop">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{   0.0, 0.0,120.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{108.0,10.0,120.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{216.0,10.0,120.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="SurfaceBottom">
@@ -98,7 +98,7 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="start period time" type="double" value="0.0"/>
-        <Parameter name="end period time" type="double" value="3.0e+7"/>
+        <Parameter name="end period time" type="double" value="3.0e+9"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
         <Parameter name="initial time step" type="double" value="1.0e+5"/>
       </ParameterList>
@@ -218,7 +218,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0e-7"/>
+                <Parameter name="value" type="double" value="4.0e-8"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -234,17 +234,17 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="6.0e-11"/>
+                  <Parameter name="value" type="double" value="1.0e-11"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="6.0e-12"/>
+                  <Parameter name="value" type="double" value="1.0e-11"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 3 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="6.0e-12"/>
+                  <Parameter name="value" type="double" value="1.0e-11"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -257,17 +257,17 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="6.0e-9"/>
+                  <Parameter name="value" type="double" value="4.0e-12"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="6.0e-10"/>
+                  <Parameter name="value" type="double" value="4.0e-12"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 3 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="6.0e-10"/>
+                  <Parameter name="value" type="double" value="4.0e-12"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -356,7 +356,7 @@
     <ParameterList name="PCG with Hypre AMG">
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
-        <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
+        <Parameter name="error tolerance" type="double" value="1.0e-16"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
@@ -399,7 +399,7 @@
         <ParameterList name="boundary conditions">
           <ParameterList name="static head">
             <ParameterList name="BC 0">
-              <Parameter name="regions" type="Array(string)" value="{SurfaceLeft,SurfaceRight}"/>
+              <Parameter name="regions" type="Array(string)" value="{SurfaceBottom}"/>
               <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="static head">
                 <ParameterList name="function-static-head">
@@ -410,8 +410,8 @@
                   <ParameterList name="water table elevation">
                     <ParameterList name="function-linear">
                       <Parameter name="y0" type="double" value="0.0"/>
-                      <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0, 60.0}"/>
-                      <Parameter name="gradient" type="Array(double)" value="{0.0, -0.1, 0.0, 0.0}"/>
+                      <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0, 0.0}"/>
+                      <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, 0.0, 0.0}"/>
                     </ParameterList>
                   </ParameterList>
                 </ParameterList>
@@ -421,13 +421,13 @@
 
           <ParameterList name="mass flux">
             <ParameterList name="BC 1">
-              <Parameter name="regions" type="Array(string)" value="{SurfaceTopHalf}"/>
+              <Parameter name="regions" type="Array(string)" value="{SurfaceTop}"/>
               <Parameter name="spatial distribution method" type="string" value="none"/>
               <Parameter name="rainfall" type="bool" value="false"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
                   <Parameter name="x values" type="Array(double)" value="{0.0, 9.0e+10}"/>
-                  <Parameter name="y values" type="Array(double)" value="{-2.10e-3, -2.10e-3}"/>
+                  <Parameter name="y values" type="Array(double)" value="{-2.0e-3, -2.0e-3}"/>
                   <Parameter name="forms" type="Array(string)" value="{constant}"/>
                 </ParameterList>
               </ParameterList>
@@ -505,7 +505,7 @@
           </ParameterList>
         </ParameterList>
         <ParameterList name="boundary conditions">
-          <ParameterList name="static head">
+          <!--ParameterList name="static head">
             <ParameterList name="BC 0">
               <Parameter name="regions" type="Array(string)" value="{SurfaceLeft,SurfaceRight}"/>
               <Parameter name="spatial distribution method" type="string" value="none"/>
@@ -525,7 +525,7 @@
                 </ParameterList>
               </ParameterList>
             </ParameterList>
-          </ParameterList>
+          </ParameterList-->
         </ParameterList>
 
         <ParameterList name="time integrator">
