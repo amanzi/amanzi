@@ -118,6 +118,7 @@ Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   units_.Init(*units_list);
 
   vo_ = Teuchos::null;
+
 }
 
 
@@ -167,6 +168,8 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
   mesh_ = S->GetMesh();
   dim = mesh_->space_dimension();
 
+  darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux");
+
   // cross-coupling of PKs
   Teuchos::RCP<Teuchos::ParameterList> physical_models =
       Teuchos::sublist(tp_list_, "physical models and assumptions");
@@ -179,8 +182,8 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
     S->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, dim);
   }
-  if (!S->HasField("darcy_flux")) {
-    S->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+  if (!S->HasField(darcy_flux_key_)) {
+    S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
   }
   if (!S->HasField("saturation_liquid")) {
@@ -332,9 +335,9 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
   InitializeAll_();
  
   // pointers to state variables (move in subroutines for consistency)
-  S->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
+  S->GetFieldData(darcy_flux_key_)->ScatterMasterToGhosted("face");
 
-  darcy_flux = S->GetFieldData("darcy_flux")->ViewComponent("face", true);
+  darcy_flux = S->GetFieldData(darcy_flux_key_)->ViewComponent("face", true);
   ws = S->GetFieldData("saturation_liquid")->ViewComponent("cell", false);
   ws_prev = S->GetFieldData("prev_saturation_liquid")->ViewComponent("cell", false);
   phi = S->GetFieldData("porosity")->ViewComponent("cell", false);
@@ -556,7 +559,7 @@ void Transport_PK::InitializeFieldFromField_(
 * ***************************************************************** */
 double Transport_PK::StableTimeStep()
 {
-  S_->GetFieldData("darcy_flux")->ScatterMasterToGhosted("face");
+  S_->GetFieldData(darcy_flux_key_)->ScatterMasterToGhosted("face");
 
   IdentifyUpwindCells();
 
@@ -1110,6 +1113,10 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
       tcc_next[i][c] = tcc_prev[i][c] * vol_phi_ws;
   }
 
+
+  Teuchos::RCP<const Epetra_BlockMap> flux_map = S_->GetFieldData(darcy_flux_key_)->Map().Map("face", true);
+
+  
   // advance all components at once
   for (int f = 0; f < nfaces_wghost; f++) {  // loop over master and slave faces
     int c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
@@ -1117,6 +1124,8 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
 
     double u = fabs((*darcy_flux)[0][f]);
 
+    //int f_loc_id = pm_map->FirstPointInElement(f);
+    
     if (c1 >=0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
       for (int i = 0; i < num_advect; i++) {
         tcc_flux = dt_ * u * tcc_prev[i][c1];
@@ -1148,13 +1157,15 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
       std::vector<double>& values = it->second; 
 
       if (downwind_cells_[f].size() > 0) {
-        int c2 = downwind_cells_[f][0];
-        double u = fabs((*darcy_flux)[0][f]);
-        for (int i = 0; i < ncomp; i++) {
-          int k = tcc_index[i];
-          if (k < num_advect) {
-            tcc_flux = dt_ * u * values[i];
-            tcc_next[k][c2] += tcc_flux;
+        for (int j=0; j<downwind_cells_[f].size(); j++){
+          int c2 = downwind_cells_[f][j];
+          double u = fabs(downwind_flux_[f][j]);
+          for (int i = 0; i < ncomp; i++) {
+            int k = tcc_index[i];
+            if (k < num_advect) {
+              tcc_flux = dt_ * u * values[i];
+              tcc_next[k][c2] += tcc_flux;
+            }
           }
         }
       }
@@ -1553,33 +1564,48 @@ void Transport_PK::IdentifyUpwindCells()
   upwind_cells_.resize(nfaces_wghost);
   downwind_cells_.resize(nfaces_wghost);
 
-  AmanziMesh::Entity_ID_List faces;
+  upwind_flux_.clear();
+  downwind_flux_.clear();
+
+  upwind_flux_.resize(nfaces_wghost);
+  downwind_flux_.resize(nfaces_wghost);
+
+
+  
+  AmanziMesh::Entity_ID_List faces, cells;
   std::vector<int> dirs;
 
   if (mesh_->space_dimension() == mesh_->manifold_dimension()) {
+
+    Teuchos::RCP<const Epetra_BlockMap> flux_map = S_->GetFieldData(darcy_flux_key_)->Map().Map("face", true);
+    
     for (int c = 0; c < ncells_wghost; c++) {
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-
+      
       for (int i = 0; i < faces.size(); i++) {
         int f = faces[i];
-        double tmp = (*darcy_flux)[0][f] * dirs[i];
-        if (tmp > 0.0) {
-          upwind_cells_[f].push_back(c);
-        } else if (tmp < 0.0) {
-          downwind_cells_[f].push_back(c);
-        } else if (dirs[i] > 0) {
-          upwind_cells_[f].push_back(c);
-        } else {
-          downwind_cells_[f].push_back(c);
+        mesh_ -> face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+        int f_lid = flux_map -> FirstPointInElement(f);
+        for (int k=0; k!=flux_map->ElementSize(f); ++k) {
+          int f_id = f_lid + k;          
+          double tmp = (*darcy_flux)[0][f_id] * dirs[i];
+          if (tmp > 0.0) {
+            upwind_cells_[f].push_back(c);
+            upwind_flux_[f].push_back((*darcy_flux)[0][f_id]);
+          } else if (tmp < 0.0) {
+            downwind_cells_[f].push_back(c);
+            downwind_flux_[f].push_back((*darcy_flux)[0][f_id]);
+          } else if (dirs[i] > 0) {
+            upwind_cells_[f].push_back(c);
+            upwind_flux_[f].push_back((*darcy_flux)[0][f_id]);            
+          } else {
+            downwind_cells_[f].push_back(c);
+            downwind_flux_[f].push_back((*darcy_flux)[0][f_id]);            
+          }
         }
       }
     }
   } else {
-    upwind_flux_.clear();
-    downwind_flux_.clear();
-
-    upwind_flux_.resize(nfaces_wghost);
-    downwind_flux_.resize(nfaces_wghost);
 
     const Epetra_MultiVector& flux = *S_->GetFieldData("darcy_flux_fracture")->ViewComponent("cell", true);
     S_->GetFieldData("darcy_flux_fracture", passwd_)->ScatterMasterToGhosted();

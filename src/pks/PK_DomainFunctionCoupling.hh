@@ -148,12 +148,12 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
     const Epetra_MultiVector& flux = 
         *S_->GetFieldCopyData(flux_key_, copy_flux_key_)->ViewComponent("face", true);
 
+    Teuchos::RCP<const Epetra_BlockMap> flux_map = S_->GetFieldData(flux_key_)->Map().Map("face", true);
+        
     const Epetra_MultiVector& field_out = 
-        // *S_->GetFieldCopyData(field_key_, "subcycling")->ViewComponent("cell", true);
         *S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ViewComponent("cell", true);
 
     const Epetra_MultiVector& field_in = 
-        //*S_->GetFieldCopyData(field_surf_key_, "subcycling")->ViewComponent("cell", true);
         *S_->GetFieldCopyData(field_in_key_, copy_field_in_key_)->ViewComponent("cell", true);
 
     if (field_in.NumVectors() != field_out.NumVectors()) {
@@ -163,7 +163,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
       Exceptions::amanzi_throw(message);
     }
     int num_vec = field_in.NumVectors();
-    std::vector<double> val(num_vec);
+
 
     Teuchos::RCP<const AmanziMesh::Mesh> mesh_out = S_->GetFieldData(field_out_key_)->Mesh();
     AmanziMesh::Entity_ID_List cells, faces;
@@ -175,31 +175,38 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
 
       mesh_out->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     
-      if (cells.size() > 1) {
+      if (cells.size() != flux_map -> ElementSize(f)) {
         std::stringstream m;
-        m << "Internal cell on the interface between coupled domains: cell_ids\"" << cells[0] << "\"";
+        m << "Number of flux DOF doesn't equal to the number of cell sharing the interface: cell_ids\"" << cells[0] << "\"";
         Errors::Message message(m.str());
         Exceptions::amanzi_throw(message);
       }
 
-      mesh_out->cell_get_faces_and_dirs(cells[0], &faces, &dirs);
+      std::vector<double> val(num_vec, 0);
+      
+      for (int j=0; j!=cells.size(); ++j){
 
-      for (int i = 0; i < faces.size(); i++) {
-        if (f == faces[i]) {
-          double fln = flux[0][f]*dirs[i];         
-          if (fln >= 0) {        
-            for (int k=0; k<num_vec; ++k) {
-              val[k] = field_out[k][cells[0]] * fln;
+        mesh_out->cell_get_faces_and_dirs(cells[j], &faces, &dirs);
+
+        for (int i = 0; i < faces.size(); i++) {
+          if (f == faces[i]) {
+            int f_loc_id = flux_map -> FirstPointInElement(f);
+            
+            double fln = flux[0][f_loc_id + j]*dirs[i];         
+            if (fln >= 0) {        
+              for (int k=0; k<num_vec; ++k) {
+                val[k] += field_out[k][cells[j]] * fln;
+              }
+            } else if (fln < 0) {       
+              for (int k=0; k<num_vec; ++k) {
+                val[k] += field_in[k][*c] * fln;
+              }
             }
-          } else if (fln < 0) {       
-            for (int k=0; k<num_vec; ++k) {
-              val[k] = field_in[k][*c] * fln;
-            }
+            break;
           }
-          value_[*c] = val; 
-          break;
         }
       }
+      value_[*c] = val; 
     }
   } else if (submodel_ == "field") {
     const Epetra_MultiVector& field_out = 
