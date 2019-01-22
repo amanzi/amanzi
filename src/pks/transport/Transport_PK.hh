@@ -257,6 +257,9 @@ class Transport_PK : public PK_PhysicalExplicit<Epetra_Vector> {
 
   // names of state fields 
   Key tcc_key_;
+  Key darcy_flux_key_, porosity_key_, transport_porosity_key_, permeability_key_;
+  Key saturation_liquid_key_, prev_saturation_liquid_key_;
+  Key water_content_key_, prev_water_content_key_;
 
   // io
   Utils::Units units_;
