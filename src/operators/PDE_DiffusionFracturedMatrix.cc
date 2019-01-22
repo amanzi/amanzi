@@ -271,6 +271,68 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
   // Initialize intensity in ghost faces.
   flux->PutScalar(0.0);
   u->ScatterMasterToGhosted("face");
+
+  const Epetra_MultiVector& u_cell = *u->ViewComponent("cell");
+  const Epetra_MultiVector& u_face = *u->ViewComponent("face", true);
+  Epetra_MultiVector& flux_data = *flux->ViewComponent("face", true);
+
+  const auto& fmap = *cvs_->Map("face", true);
+  const auto& cmap = mesh_->cell_map(true);
+
+  int ndofs_owned = flux->ViewComponent("face")->MyLength();
+  int ndofs_wghost = flux_data.MyLength();
+
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+  std::vector<int> hits(ndofs_wghost, 0);
+
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    int nfaces = faces.size();
+
+    // un-roll multiple DOFs in a linear array
+    int nrows = 2 * nfaces;  // pesimistic estimate
+    std::vector<int> lid(nrows), mydir(nrows);
+    WhetStone::DenseVector v(nrows), av(nrows);
+
+    int np(0);
+    for (int n = 0; n != nfaces; ++n) {
+      int f = faces[n];
+      int first = fmap.FirstPointInElement(f);
+      int ndofs = fmap.ElementSize(f);
+
+      for (int k = 0; k < ndofs; ++k) {
+        lid[np] = first + k;
+        mydir[np] = dirs[n];
+        if (k > 0) mydir[np] = -dirs[n];
+
+        v(np) = u_face[0][first + k];
+        np++;
+      }
+    }
+    v(np) = u_cell[0][c];
+
+    v.Reshape(np + 1);
+    av.Reshape(np + 1);
+
+    if (local_op_->matrices_shadow[c].NumRows() == 0) { 
+      local_op_->matrices[c].Multiply(v, av, false);
+    } else {
+      local_op_->matrices_shadow[c].Multiply(v, av, false);
+    }
+
+    for (int n = 0; n < np; n++) {
+      int g = lid[n];
+      if (g < ndofs_owned) {
+        flux_data[0][g] -= av(n) * mydir[n];
+        hits[g]++;
+      }
+    }
+  }
+
+  for (int g = 0; g != ndofs_owned; ++g) {
+    flux_data[0][g] /= hits[g];
+  }
 }
 
 
