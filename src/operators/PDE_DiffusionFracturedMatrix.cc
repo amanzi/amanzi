@@ -304,8 +304,6 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
       for (int k = 0; k < ndofs; ++k) {
         lid[np] = first + k;
         mydir[np] = dirs[n];
-        if (k > 0) mydir[np] = -dirs[n];
-
         v(np) = u_face[0][first + k];
         np++;
       }
