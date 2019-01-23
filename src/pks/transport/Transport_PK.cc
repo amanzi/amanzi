@@ -1187,6 +1187,7 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
         }
       }
     }
+    
   }
 
   // process external sources
@@ -1601,8 +1602,8 @@ void Transport_PK::IdentifyUpwindCells()
       
       for (int i = 0; i < faces.size(); i++) {
         int f = faces[i];
-        mesh_ -> face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         int f_lid = flux_map -> FirstPointInElement(f);
+
         for (int k=0; k!=flux_map->ElementSize(f); ++k) {
           int f_id = f_lid + k;          
           double tmp = (*darcy_flux)[0][f_id] * dirs[i];
