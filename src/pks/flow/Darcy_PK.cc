@@ -281,15 +281,11 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
     }
 
-
     if (!S->HasField(fracture_matrix_source_key_)) {
       S->RequireField(fracture_matrix_source_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
     }     
-
   }
-
-
 }
 
 
@@ -323,6 +319,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Create solution and auxiliary data for time history.
   solution = S->GetFieldData(pressure_key_, passwd_);
+  soln_->SetData(solution); 
 
   const Epetra_BlockMap& cmap = mesh_->cell_map(false);
   pdot_cells_prev = Teuchos::rcp(new Epetra_Vector(cmap));

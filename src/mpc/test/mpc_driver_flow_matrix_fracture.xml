@@ -369,6 +369,8 @@
     <ParameterList name="coupled flow">
       <Parameter name="PKs order" type="Array(string)" value="{flow matrix, flow fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
+      <Parameter name="maximum number of iterations" type="int" value="100"/>
+      <Parameter name="error tolerance" type="double" value="1e-6"/>
 
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{pressure, pressure fracture}"/>
