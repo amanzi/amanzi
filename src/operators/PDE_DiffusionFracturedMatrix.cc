@@ -292,7 +292,7 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
 
     // un-roll multiple DOFs in a linear array
     int nrows = 2 * nfaces;  // pesimistic estimate
-    std::vector<int> lid(nrows), mydir(nrows);
+    std::vector<int> lid(nrows), mydir(nrows), nohit(nrows, 0);
     WhetStone::DenseVector v(nrows), av(nrows);
 
     int np(0);
@@ -304,6 +304,8 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
       for (int k = 0; k < ndofs; ++k) {
         lid[np] = first + k;
         mydir[np] = dirs[n];
+        if (ndofs > 1) nohit[np] = 1;
+
         v(np) = u_face[0][first + k];
         np++;
       }
@@ -325,6 +327,7 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
         flux_data[0][g] -= av(n) * mydir[n];
         hits[g]++;
       }
+      if (nohit[n] == 1) hits[g] = 1;
     }
   }
 
