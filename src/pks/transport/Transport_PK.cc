@@ -403,18 +403,36 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 
     for (auto it = clist.begin(); it != clist.end(); ++it) {
       std::string name = it->first;
-      if (clist.isSublist(name)) {
-        Teuchos::ParameterList& bc_list = clist.sublist(name);
-        for (auto it1 = bc_list.begin(); it1 != bc_list.end(); ++it1) {
-          std::string specname = it1->first;
-          Teuchos::ParameterList& spec = bc_list.sublist(specname);
-          Teuchos::RCP<TransportDomainFunction> 
+      if (name == "coupling") {
+        Teuchos::ParameterList& bc_list = clist.sublist(name);        
+        Teuchos::ParameterList::ConstIterator it1 = bc_list.begin();
+        std::string specname = it1->first;
+        Teuchos::ParameterList& spec = bc_list.sublist(specname);
+        Teuchos::RCP<TransportDomainFunction> 
+          bc = factory.Create(spec, "boundary concentration", AmanziMesh::FACE, Kxy);
+        
+        for (int i = 0; i < component_names_.size(); i++){
+          bc->tcc_names().push_back(component_names_[i]);
+          bc->tcc_index().push_back(i);
+        }
+        //          std::cout << "tcc_names "<<tcc_names<<"\n";
+        //std::cout << "tcc_index "<<tcc_index<<"\n";          
+        bc->set_state(S_);
+        bcs_.push_back(bc);
+      }else{        
+        if (clist.isSublist(name)) {
+          Teuchos::ParameterList& bc_list = clist.sublist(name);
+          for (auto it1 = bc_list.begin(); it1 != bc_list.end(); ++it1) {
+            std::string specname = it1->first;
+            Teuchos::ParameterList& spec = bc_list.sublist(specname);
+            Teuchos::RCP<TransportDomainFunction> 
               bc = factory.Create(spec, "boundary concentration", AmanziMesh::FACE, Kxy);
 
-          bc->tcc_names().push_back(name);
-          bc->tcc_index().push_back(FindComponentNumber(name));
-
-          bcs_.push_back(bc);
+            bc->tcc_names().push_back(name);
+            bc->tcc_index().push_back(FindComponentNumber(name));
+            bc->set_state(S_);
+            bcs_.push_back(bc);
+          }
         }
       }
     }
@@ -1136,30 +1154,35 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
   
   // advance all components at once
   for (int f = 0; f < nfaces_wghost; f++) {  // loop over master and slave faces
-    int c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
-    int c2 = (downwind_cells_[f].size() > 0) ? downwind_cells_[f][0] : -1;
-
-    double u = fabs((*darcy_flux)[0][f]);
-
-    //int f_loc_id = pm_map->FirstPointInElement(f);
     
-    if (c1 >=0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
-      for (int i = 0; i < num_advect; i++) {
-        tcc_flux = dt_ * u * tcc_prev[i][c1];
-        tcc_next[i][c1] -= tcc_flux;
-        tcc_next[i][c2] += tcc_flux;
-      }
+    // int c1 = (upwind_cells_[f].size() == 1) ? upwind_cells_[f][0] : -1;
+    // int c2 = (downwind_cells_[f].size() == 1) ? downwind_cells_[f][0] : -1;
+    int f_loc_id = flux_map->FirstPointInElement(f);
+    for ( int j = 0; j<upwind_cells_[f].size(); j++){
 
-    } else if (c1 >=0 && c1 < ncells_owned && (c2 >= ncells_owned || c2 < 0)) {
-      for (int i = 0; i < num_advect; i++) {
-        tcc_flux = dt_ * u * tcc_prev[i][c1];
-        tcc_next[i][c1] -= tcc_flux;
-      }
+      int c1 = upwind_cells_[f][j];
+      int c2 = downwind_cells_[f][j];
+                
+      double u = fabs((*darcy_flux)[0][f_loc_id + j]);
 
-    } else if (c1 >= ncells_owned && c2 >= 0 && c2 < ncells_owned) {
-      for (int i = 0; i < num_advect; i++) {
-        tcc_flux = dt_ * u * tcc_prev[i][c1];
-        tcc_next[i][c2] += tcc_flux;
+      if (c1 >=0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
+        for (int i = 0; i < num_advect; i++) {
+          tcc_flux = dt_ * u * tcc_prev[i][c1];
+          tcc_next[i][c1] -= tcc_flux;
+          tcc_next[i][c2] += tcc_flux;
+        }
+
+      } else if (c1 >=0 && c1 < ncells_owned && (c2 >= ncells_owned || c2 < 0)) {
+        for (int i = 0; i < num_advect; i++) {
+          tcc_flux = dt_ * u * tcc_prev[i][c1];
+          tcc_next[i][c1] -= tcc_flux;
+        }
+
+      } else if (c1 >= ncells_owned && c2 >= 0 && c2 < ncells_owned) {
+        for (int i = 0; i < num_advect; i++) {
+          tcc_flux = dt_ * u * tcc_prev[i][c1];
+          tcc_next[i][c2] += tcc_flux;
+        }
       }
     }
   }
@@ -1171,11 +1194,12 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
 
     for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
       int f = it->first;
-      std::vector<double>& values = it->second; 
-
+      std::vector<double>& values = it->second;       
       if (downwind_cells_[f].size() > 0) {
         for (int j=0; j<downwind_cells_[f].size(); j++){
           int c2 = downwind_cells_[f][j];
+          if (c2 < 0) continue;
+
           double u = fabs(downwind_flux_[f][j]);
           for (int i = 0; i < ncomp; i++) {
             int k = tcc_index[i];
@@ -1186,8 +1210,7 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
           }
         }
       }
-    }
-    
+    }    
   }
 
   // process external sources
@@ -1596,33 +1619,82 @@ void Transport_PK::IdentifyUpwindCells()
   if (mesh_->space_dimension() == mesh_->manifold_dimension()) {
 
     Teuchos::RCP<const Epetra_BlockMap> flux_map = S_->GetFieldData(darcy_flux_key_)->Map().Map("face", true);
+    const Epetra_Map cell_map = mesh_->cell_map(true);
+
+
+    for (int f=0; f<nfaces_wghost; f++){
+      upwind_cells_[f].assign(flux_map->ElementSize(f), -1);
+      downwind_cells_[f].assign(flux_map->ElementSize(f), -1);
+      upwind_flux_[f].assign(flux_map->ElementSize(f), -1);
+      downwind_flux_[f].assign(flux_map->ElementSize(f), -1);
+        
+    }
     
     for (int c = 0; c < ncells_wghost; c++) {
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       
       for (int i = 0; i < faces.size(); i++) {
         int f = faces[i];
-        int f_lid = flux_map -> FirstPointInElement(f);
 
-        for (int k=0; k!=flux_map->ElementSize(f); ++k) {
-          int f_id = f_lid + k;          
-          double tmp = (*darcy_flux)[0][f_id] * dirs[i];
+        bool fracture = (flux_map->ElementSize(f)==2) ? true : false;
+        int pos = 0;
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+        
+        if (fracture){
+          if (c==cells[0]){
+            pos = (cell_map.GID(cells[0]) < cell_map.GID(cells[1])) ? 0 : 1;
+            cells[1] = -1;
+          }else if (c==cells[1]){
+            pos = (cell_map.GID(cells[0]) < cell_map.GID(cells[1])) ? 1 : 0;
+            cells[0] = -1;
+          }
+        } else {
+          cells[0] = c;
+        }
+
+        int f_lid = flux_map -> FirstPointInElement(f);
+        int f_id = f_lid  + pos;                  
+        int size = flux_map->ElementSize(f);
+        
+        for (int k=0; k!=size; ++k) {
+
+          double dir =  dirs[i] * (1 - 2*k);
+          double tmp = (*darcy_flux)[0][f_id] * dir;
+          int c0;
           if (tmp > 0.0) {
-            upwind_cells_[f].push_back(c);
-            upwind_flux_[f].push_back((*darcy_flux)[0][f_id]);
+            // auto it = std::find(upwind_cells_[f].begin(), upwind_cells_[f].end(), c);
+            // if (it != upwind_cells_[f].end()) c0 = -1;
+            // else c0 = c;
+            
+            upwind_cells_[f][pos] = cells[(k+pos)%2];
+            upwind_flux_[f][pos] = (*darcy_flux)[0][f_id];
           } else if (tmp < 0.0) {
-            downwind_cells_[f].push_back(c);
-            downwind_flux_[f].push_back((*darcy_flux)[0][f_id]);
-          } else if (dirs[i] > 0) {
-            upwind_cells_[f].push_back(c);
-            upwind_flux_[f].push_back((*darcy_flux)[0][f_id]);            
+            // auto it = std::find(downwind_cells_[f].begin(), downwind_cells_[f].end(), c);
+            // if (it != downwind_cells_[f].end()) c0=-1;
+            // else c0 = c;
+                        
+            downwind_cells_[f][pos] = cells[(k+pos)%2];
+            downwind_flux_[f][pos] = (*darcy_flux)[0][f_id];
+          } else if (dir > 0) {
+            // auto it = std::find(upwind_cells_[f].begin(), upwind_cells_[f].end(), c);
+            // if (it != upwind_cells_[f].end()) c0=-1;
+            // else c0 = c;            
+
+            upwind_cells_[f][pos] = cells[(k+pos)%2];
+            upwind_flux_[f][pos] = (*darcy_flux)[0][f_id];            
+
           } else {
-            downwind_cells_[f].push_back(c);
-            downwind_flux_[f].push_back((*darcy_flux)[0][f_id]);            
+            // auto it = std::find(downwind_cells_[f].begin(), downwind_cells_[f].end(), c);
+            // if (it != downwind_cells_[f].end()) c0=-1;
+            // else c0 = c;            
+
+            downwind_cells_[f][pos] = cells[(k+pos)%2];
+            downwind_flux_[f][pos] = (*darcy_flux)[0][f_id];
           }
         }
       }
     }
+
   } else {
 
     const Epetra_MultiVector& flux = *S_->GetFieldData("darcy_flux_fracture")->ViewComponent("cell", true);

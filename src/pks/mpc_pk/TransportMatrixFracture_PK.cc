@@ -51,16 +51,16 @@ void TransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
   // distribution of DOFs
   // -- pressure
   auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
-  if (!S->HasField("pressure")) {
-    *S->RequireField("pressure", "flow")->SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
-  }
+  // if (!S->HasField("pressure")) {
+  //   *S->RequireField("pressure", "flow")->SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
+  // }
 
   // -- darcy flux
   if (!S->HasField("darcy_flux")) {
     std::string name("face");
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
-    S->RequireField("darcy_flux", "flow")->SetMesh(mesh_domain_)->SetGhosted(true) 
+    S->RequireField("darcy_flux", "transport")->SetMesh(mesh_domain_)->SetGhosted(true) 
       ->SetComponent(name, mmap, gmap, 1);
   }
 

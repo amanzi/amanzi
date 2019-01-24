@@ -110,9 +110,15 @@
       </ParameterList>
       <ParameterList name="TP 1">
 	<ParameterList name="PK tree">
-	  <ParameterList name="transport">
-	    <Parameter name="PK type" type="string" value="transport"/>
-	  </ParameterList>
+          <ParameterList name="coupled transport">
+            <Parameter name="PK type" type="string" value="transport matrix fracture"/>
+            <ParameterList name="transport matrix">
+              <Parameter name="PK type" type="string" value="transport"/>
+            </ParameterList>
+            <ParameterList name="transport fracture">
+              <Parameter name="PK type" type="string" value="transport"/>
+            </ParameterList>
+          </ParameterList>
 	</ParameterList>
 	<Parameter name="initial time step" type="double" value="1.00000000000000000e+00"/>
 	<Parameter name="maximal time step" type="double" value="1.00000000000000000e+07"/>
@@ -614,8 +620,22 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="transport">
+    <ParameterList name="coupled flow">
+      <Parameter name="PKs order" type="Array(string)" value="{transport matrix, transport fracture}"/>
+      <Parameter name="master PK index" type="int" value="0"/>
+
+      <!-- <ParameterList name="time integrator"> -->
+      <!--   <Parameter name="error control options" type="Array(string)" value="{pressure, pressure fracture}"/> -->
+      <!--   <Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/> -->
+      <!--   <Parameter name="preconditioner" type="string" value="Hypre AMG"/> -->
+      <!--   <Parameter name="time integration method" type="string" value="BDF1"/> -->
+      <!-- </ParameterList> -->
+    </ParameterList>
+
+    
+    <ParameterList name="transport matrix">
       <Parameter name="PK type" type="string" value="transport"/>
+      <Parameter name="domain name" type="string" value="domain"/>      
       <Parameter name="cfl" type="double" value="0.5"/>   
       <Parameter name="spatial discretization order" type="int" value="1"/>   
       <Parameter name="temporal discretization order" type="int" value="1"/>   
@@ -662,6 +682,30 @@
 	  </ParameterList>
 	</ParameterList>
       </ParameterList>
+    </ParameterList>      
+      
+    <ParameterList name="transport fracture">
+      <Parameter name="PK type" type="string" value="transport"/>
+      <Parameter name="domain name" type="string" value="fracture"/>      
+      <Parameter name="cfl" type="double" value="0.5"/>   
+      <Parameter name="spatial discretization order" type="int" value="1"/>   
+      <Parameter name="temporal discretization order" type="int" value="1"/>   
+      <!-- developers parameters --> 
+      <Parameter name="enable internal tests" type="bool" value="true"/>   
+      <Parameter name="internal tests tolerance" type="double" value="1e-5"/> 
+      <Parameter name="component names" type="Array(string)" value="{Tc-99, Tc-98}"/>
+      <!-- end of developers parameters -->
+      <ParameterList name="reconstruction">
+        <Parameter name="polynomial order" type="int" value="0"/>
+        <Parameter name="limiter" type="string" value="tensorial"/>
+        <Parameter name="limiter extension for transport" type="bool" value="true"/>
+      </ParameterList>
+      <ParameterList name="verbose object">
+	<Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
+      <ParameterList name="boundary conditions">      
+      </ParameterList>
+      
     </ParameterList>
   </ParameterList>
 </ParameterList>
