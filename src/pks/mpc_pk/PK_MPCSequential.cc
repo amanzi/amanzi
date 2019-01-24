@@ -67,9 +67,10 @@ bool PK_MPCSequential::AdvanceStep(double t_old, double t_new, bool reinit) {
   // iterations require to reset the primary field, e.g. for correct
   // calculation of the accumulation term
   num_itrs_ = 0;
-  double err_norm(1.0), sol_norm(1.0);
+  error_norm_ = 1.0e+20;
+  double sol_norm(1.0);
 
-  while (err_norm > tol_ * sol_norm && num_itrs_ < max_itrs_) {
+  while (error_norm_ > tol_ && num_itrs_ < max_itrs_) {
     TreeVector solution_tmp(*solution_);
 
     int i = 0;
@@ -85,8 +86,9 @@ bool PK_MPCSequential::AdvanceStep(double t_old, double t_new, bool reinit) {
     // calculate error
     if (num_itrs_ > 0) {
       solution_tmp.Update(-1.0, *solution_, 1.0);
-      solution_tmp.Norm2(&err_norm);
+      solution_tmp.Norm2(&error_norm_);
       solution_->Norm2(&sol_norm);
+      error_norm_ /= sol_norm;
     }
     num_itrs_++;
   }

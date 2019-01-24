@@ -9,7 +9,7 @@
   Authors: Konstantin Lipnikov
            Daniil Svyatskiy
 
-  Process kernel that couples Trasnport in matrix and fractures.
+  Process kernel that couples Transport in matrix and fracture.
 */
 
 #include "PDE_DiffusionFracturedMatrix.hh"
@@ -32,7 +32,7 @@ TransportMatrixFracture_PK::TransportMatrixFracture_PK(Teuchos::ParameterList& p
     Amanzi::PK_MPCWeak(pk_tree, glist, S, soln)
 {
   Teuchos::ParameterList vlist;
-  vo_ =  Teuchos::rcp(new VerboseObject("TransportMatrixFracture_PK", vlist)); 
+  vo_ = Teuchos::rcp(new VerboseObject("TransportMatrixFracture_PK", vlist)); 
 }
 
 
@@ -43,9 +43,6 @@ void TransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
 {
   mesh_domain_ = S->GetMesh();
   mesh_fracture_ = S->GetMesh("fracture");
-  int dim = mesh_domain_->space_dimension();
-
-  Teuchos::ParameterList& elist = S->FEList();
 
   // primary and secondary fields for matrix affected by non-uniform
   // distribution of DOFs

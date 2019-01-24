@@ -95,7 +95,8 @@ class DarcyProblem {
     S->RegisterDomainMesh(Teuchos::rcp_const_cast<Mesh>(mesh));
     S->set_time(0.0);
 
-    DPK = new Darcy_PK(plist, "flow", S);
+    Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
+    DPK = new Darcy_PK(plist, "flow", S, soln);
     DPK->Setup(S.ptr());
     S->Setup();
     S->InitializeFields();

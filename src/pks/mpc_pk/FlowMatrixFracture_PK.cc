@@ -103,7 +103,8 @@ bool FlowMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "number of sequential iterations= " << num_itrs() << std::endl;
+    *vo_->os() << "number of sequential iterations= " << num_itrs() 
+               << " tol=" << error_norm() << std::endl;
   }
 
   return fail;

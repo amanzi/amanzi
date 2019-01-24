@@ -9,7 +9,7 @@
   Authors: Konstantin Lipnikov
            Daniil Svyatskiy
 
-  Process kernel that couples Transport in matrix and fractures.
+  Process kernel that couples transport in matrix and fracture.
 */
 
 #ifndef AMANZI_TRANSPORT_MATRIX_FRACTURE_PK_HH_
