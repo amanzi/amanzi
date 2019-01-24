@@ -73,8 +73,10 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
 ****************************************************************** */
 Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
                    const std::string& pk_list_name,
-                   Teuchos::RCP<State> S) :
-    Flow_PK()
+                   Teuchos::RCP<State> S,
+                   const Teuchos::RCP<TreeVector>& soln) :
+    Flow_PK(),
+    soln_(soln)
 {
   S_ = S;
 
@@ -128,6 +130,9 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   normal_permeability_key_ = Keys::getKey(domain_, "normal_permeability");
   fracture_matrix_source_key_ = Keys::getKey(domain_, "matrix_source");   
+
+  // optional keys
+  pressure_head_key_ = Keys::getKey(domain_, "pressure_head"); 
 
   // set up the base class 
   Flow_PK::Setup(S);
@@ -285,6 +290,18 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
       S->RequireField(fracture_matrix_source_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
     }     
+  }
+
+  // require optional fields
+  if (fp_list_->isParameter("optional fields")) {
+    std::vector<std::string> fields = fp_list_->get<Teuchos::Array<std::string> >("optional fields").toVector();
+    for (auto it = fields.begin(); it != fields.end(); ++it) {
+      Key optional_key = Keys::getKey(domain_, *it); 
+      if (!S->HasField(optional_key)) {
+        S->RequireField(optional_key, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+          ->SetComponent("cell", AmanziMesh::CELL, 1);
+      }
+    }
   }
 }
 

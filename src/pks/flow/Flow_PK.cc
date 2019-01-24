@@ -181,6 +181,7 @@ void Flow_PK::InitializeFields_()
 
   InitializeField(S_.ptr(), passwd_, pressure_key_, 0.0);
   InitializeField(S_.ptr(), passwd_, hydraulic_head_key_, 0.0);
+  InitializeField(S_.ptr(), passwd_, pressure_head_key_, 0.0);
 
   InitializeField(S_.ptr(), passwd_, darcy_flux_key_, 0.0);
 }
@@ -193,7 +194,7 @@ void Flow_PK::UpdateLocalFields_(const Teuchos::Ptr<State>& S)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    *vo_->os() << "Secondary fields: hydraulic head, darcy_velocity" << std::endl;  
+    *vo_->os() << "Secondary fields: hydraulic head, darcy_velocity, etc." << std::endl;  
   }  
 
   Epetra_MultiVector& hydraulic_head = *(S->GetFieldData(hydraulic_head_key_, passwd_)->ViewComponent("cell"));
@@ -207,6 +208,15 @@ void Flow_PK::UpdateLocalFields_(const Teuchos::Ptr<State>& S)
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c); 
     double z = xc[dim - 1]; 
     hydraulic_head[0][c] = z + (pressure[0][c] - atm_pressure_) / (g * rho);
+  }
+
+  // calculate optional fields
+  Key optional_key = Keys::getKey(domain_, "pressure_head"); 
+  if (S->HasField(optional_key)) {
+    auto& field_c = *S->GetFieldData(optional_key, passwd_)->ViewComponent("cell");
+    for (int c = 0; c != ncells_owned; ++c) {
+      field_c[0][c] = pressure[0][c] / (g * rho);
+    }
   }
 
   // calculate full velocity vector

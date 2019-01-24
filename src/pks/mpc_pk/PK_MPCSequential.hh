@@ -42,10 +42,11 @@ class PK_MPCSequential : public PK_MPC<PK> {
 
   // access
   int num_itrs() { return num_itrs_; }
+  double error_norm() { return error_norm_; }
 
  protected:
   int max_itrs_, num_itrs_;
-  double tol_;
+  double error_norm_, tol_;
 };
 
 }  // namespace Amanzi
