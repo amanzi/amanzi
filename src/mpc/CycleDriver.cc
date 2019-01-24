@@ -912,14 +912,19 @@ void CycleDriver::ResetDriver(int time_pr_id) {
     *vo_->os() << "Reseting CD: TP " << time_pr_id - 1 << " -> TP " << time_pr_id << "." << std::endl;
   }
 
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(S_->GetMesh("domain"));
+  Teuchos::RCP<AmanziMesh::Mesh> mesh =
+    Teuchos::rcp_const_cast<AmanziMesh::Mesh>(S_->GetMesh("domain"));
  
   S_old_ = S_;
 
   Teuchos::ParameterList state_plist = glist_->sublist("state");
   S_ = Teuchos::rcp(new Amanzi::State(state_plist));
 
-  S_->RegisterMesh("domain", mesh);
+  for (auto mesh = S_old_->mesh_begin(); mesh != S_old_->mesh_end(); ++mesh) {
+    S_->RegisterMesh(mesh->first, mesh->second.first);
+  }    
+  
+  //  S_->RegisterMesh("domain", mesh);
   S_->set_cycle(S_old_->cycle());
   S_->set_time(tp_start_[time_pr_id]); 
   S_->set_position(TIME_PERIOD_START);
