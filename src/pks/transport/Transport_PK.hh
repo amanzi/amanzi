@@ -230,6 +230,9 @@ class Transport_PK : public PK_PhysicalExplicit<Epetra_Vector> {
   std::vector<int> axi_symmetry_;  // axi-symmetry direction of permeability tensor
   std::string dispersion_preconditioner, dispersion_solver;
 
+  Teuchos::RCP<const Epetra_BlockMap> flux_map_;
+
+  
   std::vector<Teuchos::RCP<MaterialProperties> > mat_properties_;  // vector of materials
   std::vector<Teuchos::RCP<DiffusionPhase> > diffusion_phase_;   // vector of phases
 
