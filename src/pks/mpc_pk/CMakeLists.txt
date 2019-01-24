@@ -47,6 +47,7 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 #
 set(mpc_tree_src_files 
     PK_MPCWeak.cc 
+    PK_MPCSequential.cc 
     PK_MPCSubcycled.cc 
     FlowEnergy_PK.cc
     FlowMatrixFracture_PK.cc
@@ -65,6 +66,7 @@ add_amanzi_library(mpc_tree SOURCE ${mpc_tree_src_files}
 set(mpc_tree_inc_files
     PK_MPCStrong.hh
     PK_MPCWeak.hh
+    PK_MPCSequential.hh
     PK_MPCSubcycled.hh
     PK_MPC.hh
     PK_MPCAdditive.hh

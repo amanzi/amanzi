@@ -95,12 +95,33 @@ using namespace Amanzi::AmanziGeometry;
   double L = 60.0;
   double q0 = -2.0e-3;
 
+  // test pressure in fracture
   K1 *= rho / mu;
   double pf_exact = p0 - q0 * (L / K1 / 2 + 1.0 / kn);
 
-  double pf = (*S->GetFieldData("fracture-pressure")->ViewComponent("cell"))[0][0];
-  std::cout << "Fracture pressure: " << pf << ",  exact: " << pf_exact << std::endl;
-  CHECK(std::fabs(pf - pf_exact) < 0.05 * std::fabs(pf_exact));
+  auto& pf = *S->GetFieldData("fracture-pressure")->ViewComponent("cell");
+  for (int c = 0; c < pf.MyLength(); ++c) {
+    if (c == 0) std::cout << "Fracture pressure: " << pf[0][c] << ",  exact: " << pf_exact << std::endl;
+    CHECK(std::fabs(pf[0][c] - pf_exact) < 0.05 * std::fabs(pf_exact));
+  }
+
+  // test flux in bottom domain
+  Amanzi::AmanziGeometry::Point uf_exact(0.0, 0.0, q0);
+
+  auto& uf = *S->GetFieldData("darcy_flux")->ViewComponent("face");
+  const auto& fmap = *S->GetFieldData("darcy_flux")->ComponentMap("face");
+
+  int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  for (int f = 0; f < nfaces; ++f) {
+    double area = mesh->face_area(f);
+    const auto& normal = mesh->face_normal(f);
+
+    int g = fmap.FirstPointInElement(f);
+    double flux = (uf_exact * normal) / rho;
+
+    if (g == 2820) std::cout << "Matrix Darcy flux: " << uf[0][g] << ",  exact: " << flux << std::endl;
+    CHECK(std::fabs(uf[0][g] - flux) < 0.05 * std::fabs(q0));
+  }
 }
 
 
