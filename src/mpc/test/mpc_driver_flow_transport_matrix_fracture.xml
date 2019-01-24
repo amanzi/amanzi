@@ -42,8 +42,8 @@
     </ParameterList>
     <ParameterList name="SurfaceCenter">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{   70.0, 0.0,120.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{130.0,10.0,120.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{ 72.0, 0.0,120.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{144.0,10.0,120.0}"/>
       </ParameterList>
     </ParameterList>    
     <ParameterList name="SurfaceBottom">
@@ -75,7 +75,7 @@
   <ParameterList name="mesh">
     <ParameterList name="unstructured">
       <ParameterList name="generate mesh">
-        <Parameter name="number of cells" type="Array(int)" value="{9, 2, 10}"/>
+        <Parameter name="number of cells" type="Array(int)" value="{3, 2, 10}"/>
         <Parameter name="domain low coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
         <Parameter name="domain high coordinate" type="Array(double)" value="{216.0, 10.0, 120.0}"/>
       </ParameterList>
@@ -90,6 +90,7 @@
   </ParameterList>
 
   <ParameterList name="cycle driver">
+    <Parameter name="max time step size" type="double" value="1.00000000000000000e+06"/>    
     <ParameterList name="time periods">
       <ParameterList name="TP 0">
         <ParameterList name="PK tree">
@@ -107,6 +108,7 @@
         <Parameter name="end period time" type="double" value="3.0e+10"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
         <Parameter name="initial time step" type="double" value="1.0e+5"/>
+        <Parameter name="maximum time step" type="double" value="1.0e+10"/>        
       </ParameterList>
       <ParameterList name="TP 1">
 	<ParameterList name="PK tree">
@@ -120,10 +122,11 @@
             </ParameterList>
           </ParameterList>
 	</ParameterList>
-	<Parameter name="initial time step" type="double" value="1.00000000000000000e+00"/>
-	<Parameter name="maximal time step" type="double" value="1.00000000000000000e+07"/>
+	<Parameter name="initial time step" type="double" value="1.00000000000000000e+05"/>
 	<Parameter name="start period time" type="double" value="3.00000000000000000e+10"/>
-	<Parameter name="end period time" type="double" value="3.00500000000000000e+10"/>
+	<Parameter name="end period time" type="double" value="4.000000000000000e+10"/>
+        <Parameter name="maximum time step" type="double" value="1.0e+6"/>
+        <Parameter name="maximum cycle number" type="int" value="10"/>        
       </ParameterList>
     </ParameterList>
 
@@ -132,7 +135,7 @@
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{6.153732e+10, 6.15688776e+10}"/>
       <Parameter name="initial time step" type="Array(double)" value="{10.0, 10.0}"/>
-      <Parameter name="maximum time step" type="Array(double)" value="{4.3234e+17, 4.3234e+17}"/>
+      <Parameter name="maximum time step" type="Array(double)" value="{4.3234e+4, 4.3234e+4}"/>
     </ParameterList>
 
     <ParameterList name="verbose object">
@@ -354,6 +357,29 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+
+      <ParameterList name="fracture-total_component_concentration">
+        <ParameterList name="function">
+          <ParameterList name="Computational domain">
+            <Parameter name="regions" type="Array(string)" value="{fracture}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.2"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 2 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.2"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>      
       
     </ParameterList>
 
@@ -620,7 +646,7 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="coupled flow">
+    <ParameterList name="coupled transport">
       <Parameter name="PKs order" type="Array(string)" value="{transport matrix, transport fracture}"/>
       <Parameter name="master PK index" type="int" value="0"/>
 
@@ -654,6 +680,17 @@
       </ParameterList>
       <ParameterList name="boundary conditions">
 	<ParameterList name="concentration">
+          <ParameterList name="coupling">
+            <ParameterList name="BC coupling">
+              <Parameter name="spatial distribution method" type="string" value="domain coupling" />
+              <Parameter name="submodel" type="string" value="field" />
+              <Parameter name="regions" type="Array(string)" value="{fracture}" />
+              <ParameterList name="boundary concentration">
+                <Parameter name="field_out_key" type="string" value="fracture-total_component_concentration" />
+                <Parameter name="copy_field_out_key" type="string" value="default" />
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>          
 	  <ParameterList name="Tc-99">
 	    <ParameterList name="BC for center">
 	      <Parameter name="regions" type="Array(string)" value="{SurfaceCenter}"/>
