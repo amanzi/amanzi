@@ -50,6 +50,7 @@ set(mpc_tree_src_files
     PK_MPCSubcycled.cc 
     FlowEnergy_PK.cc
     FlowMatrixFracture_PK.cc
+    TransportMatrixFracture_PK.cc        
     FlowReactiveTransport_PK.cc
     ReactiveTransport_PK.cc)
 
@@ -69,6 +70,7 @@ set(mpc_tree_inc_files
     PK_MPCAdditive.hh
     FlowEnergy_PK.hh
     FlowMatrixFracture_PK.hh
+    TransportMatrixFracture_PK.hh    
     FlowReactiveTransport_PK.hh
     ReactiveTransport_PK.hh)
 
