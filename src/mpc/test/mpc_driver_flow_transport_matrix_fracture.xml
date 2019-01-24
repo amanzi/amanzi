@@ -126,7 +126,7 @@
 	<Parameter name="start period time" type="double" value="3.00000000000000000e+10"/>
 	<Parameter name="end period time" type="double" value="4.000000000000000e+10"/>
         <Parameter name="maximum time step" type="double" value="1.0e+6"/>
-        <Parameter name="maximum cycle number" type="int" value="10"/>        
+        <Parameter name="maximum cycle number" type="int" value="30"/>        
       </ParameterList>
     </ParameterList>
 

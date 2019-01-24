@@ -365,6 +365,9 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
     transport_phi = phi;
   }
 
+  flux_map_ = S_->GetFieldData(darcy_flux_key_)->Map().Map("face", true);
+
+  
   tcc = S->GetFieldData(tcc_key_, passwd_);
 
   // memory for new components
@@ -595,7 +598,7 @@ void Transport_PK::InitializeFieldFromField_(
 double Transport_PK::StableTimeStep()
 {
   S_->GetFieldData(darcy_flux_key_)->ScatterMasterToGhosted("face");
-
+  
   IdentifyUpwindCells();
 
   // Accumulate upwinding fluxes.
@@ -603,8 +606,13 @@ double Transport_PK::StableTimeStep()
 
   for (int f = 0; f < nfaces_wghost; f++) {
     if (upwind_cells_[f].size() > 0) {
-      int c = upwind_cells_[f][0];
-      total_outflux[c] += fabs((*darcy_flux)[0][f]);
+      for (int k=0; k<upwind_cells_[f].size(); k++){
+        int c = upwind_cells_[f][k];
+        if (c >= 0) {
+          int f_loc_id = flux_map_->FirstPointInElement(f);
+          total_outflux[c] += fabs((*darcy_flux)[0][f_loc_id + k]);
+        }
+      }
     }
   }
 
@@ -1618,15 +1626,15 @@ void Transport_PK::IdentifyUpwindCells()
 
   if (mesh_->space_dimension() == mesh_->manifold_dimension()) {
 
-    Teuchos::RCP<const Epetra_BlockMap> flux_map = S_->GetFieldData(darcy_flux_key_)->Map().Map("face", true);
+
     const Epetra_Map cell_map = mesh_->cell_map(true);
 
 
     for (int f=0; f<nfaces_wghost; f++){
-      upwind_cells_[f].assign(flux_map->ElementSize(f), -1);
-      downwind_cells_[f].assign(flux_map->ElementSize(f), -1);
-      upwind_flux_[f].assign(flux_map->ElementSize(f), -1);
-      downwind_flux_[f].assign(flux_map->ElementSize(f), -1);
+      upwind_cells_[f].assign(flux_map_->ElementSize(f), -1);
+      downwind_cells_[f].assign(flux_map_->ElementSize(f), -1);
+      upwind_flux_[f].assign(flux_map_->ElementSize(f), -1);
+      downwind_flux_[f].assign(flux_map_->ElementSize(f), -1);
         
     }
     
@@ -1636,7 +1644,7 @@ void Transport_PK::IdentifyUpwindCells()
       for (int i = 0; i < faces.size(); i++) {
         int f = faces[i];
 
-        bool fracture = (flux_map->ElementSize(f)==2) ? true : false;
+        bool fracture = (flux_map_->ElementSize(f)==2) ? true : false;
         int pos = 0;
         mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         
@@ -1652,9 +1660,9 @@ void Transport_PK::IdentifyUpwindCells()
           cells[0] = c;
         }
 
-        int f_lid = flux_map -> FirstPointInElement(f);
+        int f_lid = flux_map_ -> FirstPointInElement(f);
         int f_id = f_lid  + pos;                  
-        int size = flux_map->ElementSize(f);
+        int size = flux_map_->ElementSize(f);
         
         for (int k=0; k!=size; ++k) {
 

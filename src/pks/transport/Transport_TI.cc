@@ -138,11 +138,16 @@ void Transport_PK::FunctionalTimeDerivative(
           std::vector<double>& values = it->second;
 
           if (downwind_cells_[f].size() > 0 && f < nfaces_owned) {
-            c2 = downwind_cells_[f][0];
-            u = fabs((*darcy_flux)[0][f]);
-            double vol_phi_ws = mesh_->cell_volume(c2) * (*phi)[0][c2] * (*ws_start)[0][c2];
-            tcc_flux = u * values[i];
-            f_component[c2] += tcc_flux / vol_phi_ws;
+            for (int k=0;k<downwind_cells_[f].size(); k++){
+              c2 = downwind_cells_[f][k];
+              if (c2 >=0){
+                int f_loc_id = flux_map_->FirstPointInElement(f);
+                u = fabs((*darcy_flux)[0][f_loc_id + k]);
+                double vol_phi_ws = mesh_->cell_volume(c2) * (*phi)[0][c2] * (*ws_start)[0][c2];
+                tcc_flux = u * values[i];
+                f_component[c2] += tcc_flux / vol_phi_ws;
+              }
+            }
           }
         }
       }
