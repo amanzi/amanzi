@@ -329,7 +329,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
   // Create verbosity object.
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = tp_list_->sublist("verbose object");
-  vo_ =  Teuchos::rcp(new VerboseObject("TransportPK", vlist)); 
+  vo_ =  Teuchos::rcp(new VerboseObject("TransportPK " + domain_, vlist)); 
 
   MyPID = mesh_->get_comm()->MyPID();
 
@@ -483,17 +483,34 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
     Teuchos::ParameterList& clist = tp_list_->sublist("source terms").sublist("concentration");
     for (auto it = clist.begin(); it != clist.end(); ++it) {
       std::string name = it->first;
-      if (clist.isSublist(name)) {
+      if (name == "coupling") {
         Teuchos::ParameterList& src_list = clist.sublist(name);
-        for (auto it1 = src_list.begin(); it1 != src_list.end(); ++it1) {
-          std::string specname = it1->first;
-          Teuchos::ParameterList& spec = src_list.sublist(specname);
-          Teuchos::RCP<TransportDomainFunction> src = factory.Create(spec, AmanziMesh::CELL, Kxy);
+        Teuchos::ParameterList::ConstIterator it1 = src_list.begin();
+        std::string specname = it1->first;
+        Teuchos::ParameterList& spec = src_list.sublist(specname);
+        Teuchos::RCP<TransportDomainFunction> src = factory.Create(spec, "sink", AmanziMesh::CELL, Kxy);
+        
+        for (int i = 0; i < component_names_.size(); i++){
+          src->tcc_names().push_back(component_names_[i]);
+          src->tcc_index().push_back(i);
+        }
+          
+        src -> set_state(S_);
+        srcs_.push_back(src);
 
-          src->tcc_names().push_back(name);
-          src->tcc_index().push_back(FindComponentNumber(name));
+      }else{
+        if (clist.isSublist(name)) {
+          Teuchos::ParameterList& src_list = clist.sublist(name);
+          for (auto it1 = src_list.begin(); it1 != src_list.end(); ++it1) {
+            std::string specname = it1->first;
+            Teuchos::ParameterList& spec = src_list.sublist(specname);
+            Teuchos::RCP<TransportDomainFunction> src = factory.Create(spec, AmanziMesh::CELL, Kxy);
 
-          srcs_.push_back(src);
+            src->tcc_names().push_back(name);
+            src->tcc_index().push_back(FindComponentNumber(name));
+
+            srcs_.push_back(src);
+          }
         }
       }
     }
@@ -1156,10 +1173,8 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
       tcc_next[i][c] = tcc_prev[i][c] * vol_phi_ws;
   }
 
-
   Teuchos::RCP<const Epetra_BlockMap> flux_map = S_->GetFieldData(darcy_flux_key_)->Map().Map("face", true);
-
-  
+ 
   // advance all components at once
   for (int f = 0; f < nfaces_wghost; f++) {  // loop over master and slave faces
     
@@ -1183,6 +1198,9 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
       } else if (c1 >=0 && c1 < ncells_owned && (c2 >= ncells_owned || c2 < 0)) {
         for (int i = 0; i < num_advect; i++) {
           tcc_flux = dt_ * u * tcc_prev[i][c1];
+          // if (f==202) {
+          //   std::cout<<"c1 "<<c1<<"  dt_ "<<dt_<<" u "<< u <<" tcc "<< tcc_prev[i][c1]<<" add to fracture "<< tcc_flux <<"\n";
+          // }
           tcc_next[i][c1] -= tcc_flux;
         }
 
@@ -1213,6 +1231,10 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
             int k = tcc_index[i];
             if (k < num_advect) {
               tcc_flux = dt_ * u * values[i];
+              // if (f==202) {
+              //   std::cout << "centroid ("<<mesh_->face_centroid(f)<<")\n";
+              //   std::cout<<k<<" c2 "<<c2<<"  dt_ "<<dt_<<" u "<< u <<" tcc "<< values[i] <<" add to matrix "<< tcc_flux <<"\n";
+              // }
               tcc_next[k][c2] += tcc_flux;
             }
           }
@@ -1543,6 +1565,8 @@ void Transport_PK::ComputeSources_(
         if (srcs_[m]->keyword() == "producer") {
           // correction for an extraction well
           value *= tcc_prev[imap][c];
+        }else if (srcs_[m]->name() == "domain coupling"){
+          value = values[k];         
         } else {
           // correction for non-SI concentration units
           if (srcs_[m]->name() == "volume" || srcs_[m]->name() == "weight")
@@ -1550,6 +1574,10 @@ void Transport_PK::ComputeSources_(
         }
 
         tcc[imap][c] += dtp * value;
+        // if ((domain_ == "fracture") && (c==2)){
+        //   std::cout <<k << " : c="<<c<<" ("<<mesh_->cell_centroid(c)<<")  dt "<<dtp<<" val "<<value<<" add "<<dtp * value<<"\n";
+        // }
+        
         mass_solutes_source_[i] += value;
       }
     }
@@ -1627,7 +1655,7 @@ void Transport_PK::IdentifyUpwindCells()
   if (mesh_->space_dimension() == mesh_->manifold_dimension()) {
 
 
-    const Epetra_Map cell_map = mesh_->cell_map(true);
+    const Epetra_Map& cell_map = mesh_->cell_map(true);
 
 
     for (int f=0; f<nfaces_wghost; f++){

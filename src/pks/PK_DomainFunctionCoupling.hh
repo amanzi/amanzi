@@ -101,12 +101,10 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(
   } else if (submodel_ == "field") {
     try {
       Teuchos::ParameterList blist = plist.sublist("boundary concentration");
-      if (blist.isParameter("field_out_key"))
+      if (blist.isParameter("field_out_key")){
         field_out_key_ = blist.get<std::string>("field_out_key");
-      if (blist.isParameter("copy_field_out_key"))
-        copy_field_out_key_ = blist.get<std::string>("copy_field_out_key");
-      else
-        copy_field_out_key_ = "default";
+        copy_field_out_key_ = blist.get<std::string>("copy_field_out_key", "default");
+      }
     } catch (Errors::Message& msg) {
       Errors::Message m;
       m << "error in domain coupling sublist : " << msg.what();
@@ -168,12 +166,17 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
     Teuchos::RCP<const AmanziMesh::Mesh> mesh_out = S_->GetFieldData(field_out_key_)->Mesh();
     AmanziMesh::Entity_ID_List cells, faces;
     std::vector<int> dirs;
+    const Epetra_Map& cell_map = mesh_out -> cell_map(true);
 
+    
     for (MeshIDs::const_iterator c = entity_ids_->begin(); c != entity_ids_->end(); ++c) {
 
       AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, *c);
 
       mesh_out->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+
+      // if (f==202)
+      //   std::cout<<"Enter\n";
     
       if (cells.size() != flux_map -> ElementSize(f)) {
         std::stringstream m;
@@ -183,6 +186,10 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
       }
 
       std::vector<double> val(num_vec, 0);
+      int pos = 0;
+      if (cells.size() == 2){
+        pos = (cell_map.GID(cells[0]) < cell_map.GID(cells[1])) ? 0 : 1;
+      }
       
       for (int j=0; j!=cells.size(); ++j){
 
@@ -190,16 +197,18 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
 
         for (int i = 0; i < faces.size(); i++) {
           if (f == faces[i]) {
-            int f_loc_id = flux_map -> FirstPointInElement(f);
+            int f_loc_id = flux_map -> FirstPointInElement(f);            
+            double fln = flux[0][f_loc_id + (pos + j)%2]*dirs[i];
             
-            double fln = flux[0][f_loc_id + j]*dirs[i];         
             if (fln >= 0) {        
               for (int k=0; k<num_vec; ++k) {
                 val[k] += field_out[k][cells[j]] * fln;
+                //if (f == 202) std::cout<<"DomainFun in k="<<k<<" : u="<< fln<<" tcc "<<field_out[k][cells[j]]<<" c="<<cells[j]<<"\n";
               }
             } else if (fln < 0) {       
               for (int k=0; k<num_vec; ++k) {
                 val[k] += field_in[k][*c] * fln;
+                //if (f == 202) std::cout<<"DomainFun out k="<<k<<" : u="<< fln<<" tcc "<<field_in[k][*c]<<" c="<<(*c)<<"\n";
               }
             }
             break;
