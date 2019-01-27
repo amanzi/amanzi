@@ -96,7 +96,7 @@
         <Parameter name="start period time" type="double" value="0.0"/>
         <Parameter name="end period time" type="double" value="1.0e+11"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="1.0e+3"/>
+        <Parameter name="initial time step" type="double" value="1.0e+4"/>
         <Parameter name="maximum time step" type="double" value="1.0e+9"/>
       </ParameterList>
     </ParameterList>
@@ -189,7 +189,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.0e-2"/>
+                <Parameter name="value" type="double" value="0.0e-6"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -202,7 +202,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.0e-2"/>
+                <Parameter name="value" type="double" value="0.0e-6"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -216,7 +216,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="20.0"/>
+                <Parameter name="value" type="double" value="20.0e-4"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -281,7 +281,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0"/>
+                <Parameter name="value" type="double" value="1.7"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -294,7 +294,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0"/>
+                <Parameter name="value" type="double" value="1.8"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -385,14 +385,15 @@
 
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.0e-5"/>
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-8"/>
             <Parameter name="diverged tolerance" type="double" value="1.0e+12"/>
             <Parameter name="max error growth factor" type="double" value="1.0e+7"/>
             <Parameter name="max du growth factor" type="double" value="1.0e+7"/>
-            <Parameter name="max divergent iterations" type="int" value="5"/>
-            <Parameter name="max nka vectors" type="int" value="10"/>
-            <Parameter name="limit iterations" type="int" value="40"/>
+            <Parameter name="max divergent iterations" type="int" value="10"/>
+            <Parameter name="max nka vectors" type="int" value="200"/>
+            <Parameter name="limit iterations" type="int" value="1000"/>
             <Parameter name="modify correction" type="bool" value="false"/>
+            <Parameter name="monitor" type="string" value="monitor preconditioned residual"/>
             <ParameterList name="verbose object">
               <Parameter name="verbosity level" type="string" value="high"/>
             </ParameterList>
@@ -463,34 +464,8 @@
             <Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
           </ParameterList-->
 
-          <Parameter name="time integration method" type="string" value="BDF1"/>
-          <ParameterList name="BDF1">
-            <Parameter name="timestep controller type" type="string" value="standard"/>
-            <ParameterList name="timestep controller standard parameters">
-              <Parameter name="max iterations" type="int" value="15"/>
-              <Parameter name="min iterations" type="int" value="10"/>
-              <Parameter name="time step increase factor" type="double" value="1.25000e+00"/>
-              <Parameter name="time step reduction factor" type="double" value="8.0e-01"/>
-              <Parameter name="max time step" type="double" value="6.0e+10"/>
-              <Parameter name="min time step" type="double" value="9.99999999999999945e-21"/>
-            </ParameterList>
-            <Parameter name="solver type" type="string" value="nka"/>
-            <ParameterList name="nka parameters">
-              <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
-              <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
-              <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
-              <Parameter name="max divergent iterations" type="int" value="3"/>
-              <Parameter name="max nka vectors" type="int" value="10"/>
-              <Parameter name="limit iterations" type="int" value="100"/>
-              <Parameter name="modify correction" type="bool" value="false"/>
-            </ParameterList>
-            <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
-            <Parameter name="extrapolate initial guess" type="bool" value="true"/>
-            <Parameter name="nonlinear iteration damping factor" type="double" value="1.0e+00"/>
-            <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
-            <Parameter name="restart tolerance relaxation factor" type="double" value="1.0e+00"/>
-            <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0e+00"/>
-          </ParameterList>
+          <Parameter name="time integration method" type="string" value="none"/>
+
           <ParameterList name="verbose object">
             <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>
@@ -544,34 +519,8 @@
             <Parameter name="linear solver" type="string" value="PCG with Hypre AMG"/>
           </ParameterList-->
 
-          <Parameter name="time integration method" type="string" value="BDF1"/>
-          <ParameterList name="BDF1">
-            <Parameter name="timestep controller type" type="string" value="standard"/>
-            <ParameterList name="timestep controller standard parameters">
-              <Parameter name="max iterations" type="int" value="15"/>
-              <Parameter name="min iterations" type="int" value="10"/>
-              <Parameter name="time step increase factor" type="double" value="1.25000e+00"/>
-              <Parameter name="time step reduction factor" type="double" value="8.0e-01"/>
-              <Parameter name="max time step" type="double" value="6.0e+10"/>
-              <Parameter name="min time step" type="double" value="9.99999999999999945e-21"/>
-            </ParameterList>
-            <Parameter name="solver type" type="string" value="nka"/>
-            <ParameterList name="nka parameters">
-              <Parameter name="nonlinear tolerance" type="double" value="1.00000000000000008e-05"/>
-              <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
-              <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
-              <Parameter name="max divergent iterations" type="int" value="3"/>
-              <Parameter name="max nka vectors" type="int" value="10"/>
-              <Parameter name="limit iterations" type="int" value="20"/>
-              <Parameter name="modify correction" type="bool" value="false"/>
-            </ParameterList>
-            <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
-            <Parameter name="extrapolate initial guess" type="bool" value="true"/>
-            <Parameter name="nonlinear iteration damping factor" type="double" value="1.0e+00"/>
-            <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
-            <Parameter name="restart tolerance relaxation factor" type="double" value="1.0e+00"/>
-            <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0e+00"/>
-          </ParameterList>
+          <Parameter name="time integration method" type="string" value="none"/>
+
           <ParameterList name="verbose object">
             <Parameter name="verbosity level" type="string" value="high"/>
           </ParameterList>

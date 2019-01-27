@@ -343,14 +343,18 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap));
   
   std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");
-  AMANZI_ASSERT(ti_method_name == "BDF1");
-  Teuchos::ParameterList& bdf1_list = ti_list_->sublist("BDF1");
+  if (ti_method_name == "BDF1") {
+    Teuchos::ParameterList& bdf1_list = ti_list_->sublist("BDF1");
 
-  error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;  // usually 1e-4;
+    error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;  // usually 1e-4;
 
-  // time step controller
-  TimestepControllerFactory<Epetra_MultiVector> fac;
-  ts_control_ = fac.Create(bdf1_list, pdot_cells, pdot_cells_prev);
+    // time step controller
+    TimestepControllerFactory<Epetra_MultiVector> fac;
+    ts_control_ = fac.Create(bdf1_list, pdot_cells, pdot_cells_prev);
+  } else {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "WARNING: BDF1 time integration list is missing..." << std::endl;
+  }
 
   // Initialize specific yield
   specific_yield_copy_ = Teuchos::null;
@@ -450,13 +454,14 @@ void Darcy_PK::InitializeStatistics_(bool init_darcy)
 {
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     double mu = *S_->GetScalarData("fluid_viscosity");
-    std::string ti_method_name = ti_list_->get<std::string>("time integration method");
-    std::string dt_method_name = ti_list_->sublist("BDF1").get<std::string>("timestep controller type");
+    std::string ti_name = ti_list_->get<std::string>("time integration method", "none");
+    std::string ts_name = (ti_name == "BDF1") ? ti_list_->sublist(ti_name).get<std::string>("timestep controller type") 
+                                              : "timestep controller is not defined";
     std::string pc_name = ti_list_->get<std::string>("preconditioner");
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "\nTI:\"" << ti_method_name.c_str() << "\""
-               << " dt:" << dt_method_name
+    *vo_->os() << "\nTI:\"" << ti_name.c_str() << "\""
+               << " dt:" << ts_name
                << " LS:\"" << solver_name_.c_str() << "\""
                << " PC:\"" << pc_name.c_str() << "\"" << std::endl
                << "matrix: " << op_->PrintDiagnostics() << std::endl;

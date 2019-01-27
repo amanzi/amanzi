@@ -534,7 +534,8 @@ void Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
   int flag = flag_essential_bc;
   mesh_->get_comm()->MaxAll(&flag, &flag_essential_bc, 1);  // find the global maximum
 #endif
-  if (! flag_essential_bc && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+  if (! flag_essential_bc &&
+      domain_ == "domain" && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "WARNING: no essential boundary conditions, solver may fail" << std::endl;
   }
