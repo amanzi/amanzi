@@ -63,15 +63,6 @@ using namespace Amanzi::AmanziGeometry;
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
 
-  Amanzi::MeshAudit mesh_auditor(mesh);
-  int status = mesh_auditor.Verify();
-  if (status == 0) {
-    std::cout << "Mesh Audit confirms that mesh is ok" << std::endl;
-  } else {
-    Errors::Message msg("Mesh Audit could not verify correctness of mesh.");
-    Exceptions::amanzi_throw(msg);
-  }
-  
   //create additional mesh for fracture
   std::vector<std::string> names;
   names.push_back("fracture");

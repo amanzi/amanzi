@@ -375,7 +375,6 @@ void CycleDriver::ReportMemory() {
 * Read control variables for all time periods. 
 ****************************************************************** */
 void CycleDriver::ReadParameterList_() {
-  std::cout << *coordinator_list_<<"\n";
   max_dt_ = coordinator_list_->get<double>("max time step size", 1.0e+99);
   min_dt_ = coordinator_list_->get<double>("min time step size", 1.0e-12);
   cycle0_ = coordinator_list_->get<int>("start cycle", 0);
@@ -399,7 +398,6 @@ void CycleDriver::ReadParameterList_() {
     tp_dt_[i] = time_periods_list.sublist(tp_name).get<double>("initial time step", 1.0);
     tp_max_dt_[i] = time_periods_list.sublist(tp_name).get<double>("maximum time step", 1.0e+99);
     tp_max_cycle_[i] = time_periods_list.sublist(tp_name).get<int>("maximum cycle number", -1);
-    std::cout << tp_max_dt_[i] <<" "<< tp_max_cycle_[i]<<"\n";
     i++;
   }
 

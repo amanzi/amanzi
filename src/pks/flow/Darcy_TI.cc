@@ -9,10 +9,113 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
+#include "LinearOperatorFactory.hh"
+
 #include "Darcy_PK.hh"
 
 namespace Amanzi {
 namespace Flow {
+
+/* ******************************************************************
+* Calculate f(u, du/dt) = A*u - rhs.
+****************************************************************** */
+void Darcy_PK::FunctionalResidual(
+    double t_old, double t_new, 
+    Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
+    Teuchos::RCP<TreeVector> f)
+{ 
+  dt_ = t_new - t_old;
+
+  // refresh data
+  UpdateSourceBoundaryData(t_old, t_new, *u_new->Data());
+
+  // calculate and assemble elemental stiffness matrices
+  double factor = 1.0 / g_;
+  const CompositeVector& ss = *S_->GetFieldData(specific_storage_key_);
+  CompositeVector ss_g(ss); 
+  ss_g.Update(0.0, ss, factor);
+
+  factor = 1.0 / (g_ * dt_);
+  CompositeVector sy_g(*specific_yield_copy_); 
+  sy_g.Scale(factor);
+
+  op_->RestoreCheckPoint();
+  op_acc_->AddAccumulationDelta(*u_old->Data(), ss_g, ss_g, dt_, "cell");
+  op_acc_->AddAccumulationDeltaNoVolume(*u_old->Data(), sy_g, "cell");
+
+  // Peaceman model
+  if (S_->HasField("well_index")) {
+    const CompositeVector& wi = *S_->GetFieldData("well_index");
+    op_acc_->AddAccumulationTerm(wi, "cell");
+  }
+
+  // coupling with fracture modifies the list of boundary conditions
+  if (coupled_to_fracture_) {
+    UpdateMatrixBCsUsingFracture_();
+  }
+
+  // coupling with matrix modifies globla matrix and source term
+  if (coupled_to_matrix_) {
+    UpdateSourceUsingMatrix_();
+    const auto& s1 = *S_->GetFieldData(normal_permeability_key_);
+    const auto& s2 = *S_->GetFieldData(fracture_matrix_source_key_);        
+    op_acc_->AddAccumulationRhs(s1, s2, 2.0, "cell", true);
+  }
+
+  op_diff_->ApplyBCs(true, true, true);
+
+  CompositeVector& rhs = *op_->rhs();
+  AddSourceTerms(rhs);
+
+  op_->AssembleMatrix();
+  op_->UpdatePreconditioner();
+
+  op_->ComputeNegativeResidual(*u_new->Data(), *f->Data());
+}
+
+
+/* ******************************************************************
+* Apply preconditioner inv(B) * X.                                                 
+****************************************************************** */
+int Darcy_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, 
+                                  Teuchos::RCP<TreeVector> Y)
+{
+  num_itrs_++;
+  Y->PutScalar(0.0);
+
+  return op_->ApplyInverse(*X->Data(), *Y->Data());
+}
+
+
+/* ******************************************************************
+* Check difference du between the predicted and converged solutions.
+****************************************************************** */
+double Darcy_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, 
+                           Teuchos::RCP<const TreeVector> du)
+{
+  const Epetra_MultiVector& uc = *u->Data()->ViewComponent("cell");
+  const Epetra_MultiVector& duc = *du->Data()->ViewComponent("cell");
+
+  const Epetra_MultiVector& uf = *u->Data()->ViewComponent("face");
+  const Epetra_MultiVector& duf = *du->Data()->ViewComponent("face");
+
+  double error(0.0);
+
+  for (int c = 0; c < ncells_owned; c++) {
+    double tmp = fabs(duc[0][c]) / (fabs(uc[0][c] - atm_pressure_) + atm_pressure_);
+    error = std::max(error, tmp);
+  }
+
+  /*
+  for (int f = 0; f < nfaces_owned; f++) {
+    double tmp = fabs(duf[0][f]) / (fabs(uf[0][f] - atm_pressure_) + atm_pressure_);
+    error = std::max(error, tmp);
+  }
+  */
+
+  return error;
+}
+
 
 /* ******************************************************************
 * Estimate dT increase factor by comparing the 1st and 2nd order

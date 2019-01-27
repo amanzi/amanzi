@@ -193,7 +193,7 @@ void Flow_PK::InitializeFields_()
 void Flow_PK::UpdateLocalFields_(const Teuchos::Ptr<State>& S) 
 {
   Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
     *vo_->os() << "Secondary fields: hydraulic head, darcy_velocity, etc." << std::endl;  
   }  
 

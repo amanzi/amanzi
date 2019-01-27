@@ -59,16 +59,16 @@ class Darcy_PK : public Flow_PK {
 
   virtual std::string name() override { return passwd_; }
 
-  // methods required for time integration interface: dummy routines for Darcy flow.
+  // methods required for time integration interface. It is not used by simple Darcy flow,
+  // however, coupled method may need the residual evaluation routine.
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
   void FunctionalResidual(const double t_old, double t_new, 
                   Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
-                  Teuchos::RCP<TreeVector> f) override {};
-  double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) override { return 0.0; }
-  void update_norm(double rtol, double atol) {};
+                  Teuchos::RCP<TreeVector> f) override;
+  double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) override;
 
   // -- preconditioner management
-  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu) override { return 0; }
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu) override;
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt) override {};
  
   // -- check the admissibility of a solution

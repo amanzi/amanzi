@@ -28,8 +28,8 @@ FlowMatrixFracture_PK::FlowMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
                                                const Teuchos::RCP<State>& S,
                                                const Teuchos::RCP<TreeVector>& soln) :
     glist_(glist),
-    Amanzi::PK(pk_tree, glist, S, soln),
-    Amanzi::PK_MPCSequential(pk_tree, glist, S, soln)
+    Amanzi::PK_MPC<PK_BDF>(pk_tree, glist, S, soln),
+    Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln)
 {
   Teuchos::ParameterList vlist;
   vo_ =  Teuchos::rcp(new VerboseObject("MatrixFracture_PK", vlist)); 
@@ -80,7 +80,7 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
   fflow.set<std::string>("coupled matrix fracture flow", "fracture");
 
   // process other PKs.
-  PK_MPCSequential::Setup(S);
+  PK_MPCStrong<PK_BDF>::Setup(S);
 }
 
 
@@ -89,22 +89,11 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
 ******************************************************************* */
 bool FlowMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
-  // try a step
-  double pm_norm, pf_norm;
-  bool fail = PK_MPCSequential::AdvanceStep(t_old, t_new, reinit);
-
-  S_->GetFieldData("pressure")->Norm2(&pm_norm);
-  S_->GetFieldData("fracture-pressure")->Norm2(&pf_norm);
+  bool fail = PK_MPCStrong<PK_BDF>::AdvanceStep(t_old, t_new, reinit);
 
   if (fail) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Step failed." << std::endl;
-  }
-
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "number of sequential iterations= " << num_itrs() 
-               << " tol=" << error_norm() << std::endl;
   }
 
   return fail;

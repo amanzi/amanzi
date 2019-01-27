@@ -319,7 +319,6 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
 
     int k = 0;
     for (int n = 0; n != nfaces; ++n) {
-
       int face_dof_size = face_map->ElementSize(faces[n]);
       int first = face_gh_map->FirstPointInElement(faces[n]);
       first = (faces[n] < nfaces_owned) ? first : (first - nface_points_owned);
