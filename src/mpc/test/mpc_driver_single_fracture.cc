@@ -52,7 +52,7 @@ using namespace Amanzi::AmanziGeometry;
 
   MeshFactory factory(&comm);
   factory.preference(pref);
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory("test/single_fracture_tet.exo", gm);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory("test/single_fracture.exo", gm);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    

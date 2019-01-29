@@ -158,6 +158,11 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_driver_single_fracture.cc
         	    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+    add_amanzi_test(mpc_driver_transport_single_fracture mpc_driver_transport_single_fracture
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_driver_transport_single_fracture.cc
+        	    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                  
+
     # Test: mpc driver for coupled matrix-fracture flow and transport
     add_amanzi_test(mpc_driver_flow_transport_matrix_fracture mpc_driver_flow_transport_matrix_fracture
                     KIND      int

@@ -203,12 +203,10 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
             if (fln >= 0) {        
               for (int k=0; k<num_vec; ++k) {
                 val[k] += field_out[k][cells[j]] * fln;
-                //if (f == 202) std::cout<<"DomainFun in k="<<k<<" : u="<< fln<<" tcc "<<field_out[k][cells[j]]<<" c="<<cells[j]<<"\n";
               }
             } else if (fln < 0) {       
               for (int k=0; k<num_vec; ++k) {
                 val[k] += field_in[k][*c] * fln;
-                //if (f == 202) std::cout<<"DomainFun out k="<<k<<" : u="<< fln<<" tcc "<<field_in[k][*c]<<" c="<<(*c)<<"\n";
               }
             }
             break;
