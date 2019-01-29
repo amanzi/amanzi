@@ -620,6 +620,8 @@ void Darcy_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>&
     Teuchos::RCP<CompositeVector> flux_fracture = S->GetFieldData(darcy_flux_fracture_key_, "state");
     op_diff_->UpdateFluxNonManifold(solution.ptr(), flux_fracture.ptr());
     flux_fracture->Scale(1.0 / rho_);
+
+    FractureConservationLaw_();
   }
 
   // update time derivative
@@ -736,6 +738,55 @@ void Darcy_PK::UpdateSourceUsingMatrix_()
     }
     src_c[0][c] *= Kfn_c[0][c] / 2;
   }
+}
+
+
+void Darcy_PK::FractureConservationLaw_(){
+
+  double flux_sum = 0.;
+
+  AmanziMesh::Entity_ID_List faces, cells;
+  std::vector<int> dirs;
+
+  const auto& fracture_flux = *S_->GetFieldData("fracture-darcy_flux")->ViewComponent("face");
+  const auto& matrix_flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face");
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_matrix = S_->GetMesh("domain");
+  Teuchos::RCP<const Epetra_BlockMap> flux_map = S_->GetFieldData("darcy_flux")->Map().Map("face", true);
+  const Epetra_Map& cell_map = mesh_matrix -> cell_map(true);
+  
+  for (int c = 0; c < ncells_owned; c++) {
+    flux_sum = 0.;
+     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+     for (int i=0; i < faces.size(); i++) {
+        int f = faces[i];
+        flux_sum += fracture_flux[0][f] * dirs[i];
+     }
+
+     AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+     mesh_matrix -> face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+     int pos = 0;
+     if (cells.size() == 2){
+       pos = (cell_map.GID(cells[0]) < cell_map.GID(cells[1])) ? 0 : 1;
+     }
+
+     for (int j=0; j!=cells.size(); ++j){
+       mesh_matrix -> cell_get_faces_and_dirs(cells[j], &faces, &dirs);
+
+        for (int i = 0; i < faces.size(); i++) {
+          if (f == faces[i]) {
+            int f_loc_id = flux_map -> FirstPointInElement(f);            
+            double fln = matrix_flux[0][f_loc_id + (pos + j)%2]*dirs[i];
+            flux_sum -= fln;
+              
+            break;
+          }
+        }
+     }
+
+     std::cout<<"cell "<<c<<" sum of fluxes "<<flux_sum<<"\n";
+  }
+     
+
 }
 
 }  // namespace Flow
