@@ -119,6 +119,7 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
   darcy_velocity_key_ = Keys::getKey(domain_, "darcy_velocity"); 
+  darcy_flux_fracture_key_ = Keys::getKey(domain_, "darcy_flux_fracture"); 
 
   permeability_key_ = Keys::getKey(domain_, "permeability"); 
   porosity_key_ = Keys::getKey(domain_, "porosity"); 
@@ -290,6 +291,12 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
       S->RequireField(fracture_matrix_source_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
     }     
+
+    if (!S->HasField(darcy_flux_fracture_key_)) {
+      S->RequireField(darcy_flux_fracture_key_, "state")->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, mesh_->cell_get_max_faces());
+      S->GetField(darcy_flux_fracture_key_, "state")->set_io_vis(false);
+    }
   }
 
   // require optional fields
@@ -444,6 +451,7 @@ void Darcy_PK::InitializeFields_()
   InitializeField(S_.ptr(), passwd_, saturation_liquid_key_, 1.0);
   InitializeField(S_.ptr(), passwd_, prev_saturation_liquid_key_, 1.0);
   InitializeField(S_.ptr(), passwd_, fracture_matrix_source_key_, 0.0);
+  InitializeField(S_.ptr(), "state", darcy_flux_fracture_key_, 0.0);
 }
 
 
@@ -608,8 +616,8 @@ void Darcy_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>&
   flux->Scale(1.0 / rho_);
 
   // calculate Darcy mass flux in fractures
-  if (S->HasField("darcy_flux_fracture")) {
-    Teuchos::RCP<CompositeVector> flux_fracture = S->GetFieldData("darcy_flux_fracture", "state");
+  if (S->HasField(darcy_flux_fracture_key_)) {
+    Teuchos::RCP<CompositeVector> flux_fracture = S->GetFieldData(darcy_flux_fracture_key_, "state");
     op_diff_->UpdateFluxNonManifold(solution.ptr(), flux_fracture.ptr());
     flux_fracture->Scale(1.0 / rho_);
   }

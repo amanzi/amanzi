@@ -160,7 +160,7 @@ class Flow_PK : public PK_PhysicalBDF {
   Key saturation_liquid_key_, prev_saturation_liquid_key_;
   Key porosity_key_, hydraulic_head_key_, pressure_head_key_;
   Key permeability_key_;
-  Key darcy_velocity_key_;
+  Key darcy_flux_fracture_key_, darcy_velocity_key_;
 
   Key normal_permeability_key_, fracture_matrix_source_key_;  // for coupled flows 
 

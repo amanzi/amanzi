@@ -179,6 +179,7 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
   transport_porosity_key_ = Keys::getKey(domain_, "transport_porosity"); 
 
   darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
+  darcy_flux_fracture_key_ = Keys::getKey(domain_, "darcy_flux_fracture");
 
   saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
   prev_saturation_liquid_key_ = Keys::getKey(domain_, "prev_saturation_liquid"); 
@@ -301,10 +302,10 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // require fracture fields
   if (mesh_->space_dimension() != mesh_->manifold_dimension()) {
-    if (!S->HasField("darcy_flux_fracture")) {
-      S->RequireField("darcy_flux_fracture", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+    if (!S->HasField(darcy_flux_fracture_key_)) {
+      S->RequireField(darcy_flux_fracture_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, mesh_->cell_get_max_faces());
-      S->GetField("darcy_flux_fracture", passwd_)->set_io_vis(false);
+      S->GetField(darcy_flux_fracture_key_, passwd_)->set_io_vis(false);
     }
   }
 }
@@ -561,7 +562,7 @@ void Transport_PK::InitializeFields_()
 
   // set popular default values when flow PK is off
   InitializeField(S_.ptr(), passwd_, saturation_liquid_key_, 1.0);
-  InitializeField(S_.ptr(), passwd_, "darcy_flux_fracture", 0.0);
+  InitializeField(S_.ptr(), passwd_, darcy_flux_fracture_key_, 0.0);
 
   InitializeFieldFromField_(water_content_key_, porosity_key_, false);
   InitializeFieldFromField_(prev_water_content_key_, water_content_key_, false);
@@ -1733,8 +1734,8 @@ void Transport_PK::IdentifyUpwindCells()
 
   } else {
 
-    const Epetra_MultiVector& flux = *S_->GetFieldData("darcy_flux_fracture")->ViewComponent("cell", true);
-    S_->GetFieldData("darcy_flux_fracture", passwd_)->ScatterMasterToGhosted();
+    const Epetra_MultiVector& flux = *S_->GetFieldData(darcy_flux_fracture_key_)->ViewComponent("cell", true);
+    S_->GetFieldData(darcy_flux_fracture_key_, passwd_)->ScatterMasterToGhosted();
 
     for (int c = 0; c < ncells_wghost; c++) {
       mesh_->cell_get_faces(c, &faces);
