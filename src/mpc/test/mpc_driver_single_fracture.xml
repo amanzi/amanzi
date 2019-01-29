@@ -96,8 +96,8 @@
         <Parameter name="start period time" type="double" value="0.0"/>
         <Parameter name="end period time" type="double" value="1.0e+11"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="1.0e+4"/>
-        <Parameter name="maximum time step" type="double" value="1.0e+9"/>
+        <Parameter name="initial time step" type="double" value="1.0e+5"/>
+        <Parameter name="maximum time step" type="double" value="1.0e+10"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="time period control">
@@ -216,7 +216,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="20.0e-4"/>
+                <Parameter name="value" type="double" value="20.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -281,7 +281,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.7"/>
+                <Parameter name="value" type="double" value="2.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -294,7 +294,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.8"/>
+                <Parameter name="value" type="double" value="2.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -385,7 +385,7 @@
 
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.0e-8"/>
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-7"/>
             <Parameter name="diverged tolerance" type="double" value="1.0e+12"/>
             <Parameter name="max error growth factor" type="double" value="1.0e+7"/>
             <Parameter name="max du growth factor" type="double" value="1.0e+7"/>
