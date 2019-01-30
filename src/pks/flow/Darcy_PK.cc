@@ -293,6 +293,7 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
     }     
 
     if (!S->HasField(darcy_flux_fracture_key_)) {
+      AMANZI_ASSERT(mesh_->cell_get_max_faces() > 0);
       S->RequireField(darcy_flux_fracture_key_, "state")->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, mesh_->cell_get_max_faces());
       S->GetField(darcy_flux_fracture_key_, "state")->set_io_vis(false);
@@ -621,7 +622,7 @@ void Darcy_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>&
     op_diff_->UpdateFluxNonManifold(solution.ptr(), flux_fracture.ptr());
     flux_fracture->Scale(1.0 / rho_);
 
-    FractureConservationLaw_();
+    // FractureConservationLaw_();
   }
 
   // update time derivative
