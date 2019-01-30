@@ -55,8 +55,10 @@ void DarcyVelocityEvaluator::EvaluateField_(
   Key domain = plist_.get<std::string>("domain name");
   S->GetFieldData(darcy_flux_key_)->ScatterMasterToGhosted("face");
 
-  const Epetra_MultiVector& flux = *S->GetFieldData(darcy_flux_key_)->ViewComponent("face");
+  const Epetra_MultiVector& flux = *S->GetFieldData(darcy_flux_key_)->ViewComponent("face", true);
   Epetra_MultiVector& result_c = *(result->ViewComponent("cell", false));
+
+  const auto& fmap = *S->GetFieldData(darcy_flux_key_)->Map().Map("face", true);
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh(domain);
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -73,8 +75,8 @@ void DarcyVelocityEvaluator::EvaluateField_(
     std::vector<double> solution(nfaces);
 
     for (int n = 0; n < nfaces; n++) {
-      int f = faces[n];
-      solution[n] = flux[0][f];
+      int g = fmap.FirstPointInElement(faces[n]);
+      solution[n] = flux[0][g];
     }
   
     mfd.RecoverGradient_MassMatrix(c, solution, gradient);
