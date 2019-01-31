@@ -157,8 +157,8 @@ void PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
 
 
 /* ******************************************************************
-* WARNING: Since gravity flux is not continuous, we derive it only once
-* (using flag) and in exactly the same manner as in other routines.
+* WARNING: Since gravity flux is not continuous, we derive it in 
+* exactly the same manner as in other routines.
 * **************************************************************** */
 void PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                                              const Teuchos::Ptr<CompositeVector>& flux)
