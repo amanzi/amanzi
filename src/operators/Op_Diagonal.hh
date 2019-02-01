@@ -75,6 +75,9 @@ class Op_Diagonal : public Op {
   // access 
   const std::vector<std::vector<int> >& row_inds() const { return *row_inds_; }
   const std::vector<std::vector<int> >& col_inds() const { return *col_inds_; }
+  
+  std::string row_compname() const { return row_compname_; }
+  std::string col_compname() const { return col_compname_; }
 
  private:
   std::string row_compname_, col_compname_;

@@ -105,31 +105,73 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_tree_->SetOperatorBlock(1, 1, pk_fracture->op());
 
   // off-diagonal blocks are coupled PDEs
+  // -- minimum composite vector spaces containing the coupling term
   auto mesh_matrix = S_->GetMesh("domain");
   auto mesh_fracture = S_->GetMesh("fracture");
+
+  auto& mmap = solution_->SubVector(0)->Data()->ViewComponent("face", false)->Map();
+  auto& gmap = solution_->SubVector(0)->Data()->ViewComponent("face", true)->Map();
+  int npoints_owned = mmap.NumMyPoints();
 
   auto cvs_matrix = Teuchos::rcp(new CompositeVectorSpace());
   auto cvs_fracture = Teuchos::rcp(new CompositeVectorSpace());
 
+  std::string compname("face");
   cvs_matrix->SetMesh(mesh_matrix)->SetGhosted(true)
-            ->AddComponent("face", AmanziMesh::FACE, 1);
+            ->AddComponent(compname, Teuchos::rcpFromRef(mmap), Teuchos::rcpFromRef(gmap), 1);
 
   cvs_fracture->SetMesh(mesh_matrix)->SetGhosted(true)
               ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  auto inds_matrix = std::make_shared<std::vector<std::vector<int> > >(1);
-  auto inds_fracture = std::make_shared<std::vector<std::vector<int> > >(1);
+  // -- indices transmissibimility coefficients for matrix-fracture flux
+  auto kn = *S_->GetFieldData("fracture-normal_permeability")->ViewComponent("cell");
 
+  int ncells_owned_f = mesh_fracture->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  auto inds_matrix = std::make_shared<std::vector<std::vector<int> > >(npoints_owned);
+  auto inds_fracture = std::make_shared<std::vector<std::vector<int> > >(npoints_owned);
+  auto values = std::make_shared<std::vector<double> >(npoints_owned);
+
+  int np(0);
+  for (int c = 0; c < ncells_owned_f; ++c) {
+    int f = mesh_fracture->entity_get_parent(AmanziMesh::CELL, c);
+    double area = mesh_fracture->cell_volume(c);
+    int first = mmap.FirstPointInElement(f);
+    int ndofs = mmap.ElementSize(f);
+
+    for (int k = 0; k < ndofs; ++k) {
+      (*inds_matrix)[np].resize(1);
+      (*inds_fracture)[np].resize(1);
+      (*inds_matrix)[np][0] = first + k;
+      (*inds_fracture)[np][0] = c;
+
+      (*values)[np] = kn[0][c] * area;
+      np++;
+    }
+  }
+
+  // -- operators
   Teuchos::ParameterList oplist;
+
+  auto op_coupling00 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
+      oplist, cvs_matrix, cvs_matrix, inds_matrix, inds_matrix, pk_matrix->op()));
+  op_coupling00->Setup(values, 1.0);
+
   auto op_coupling01 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
       oplist, cvs_matrix, cvs_fracture, inds_matrix, inds_fracture));
-  // op_coupling01->Setup();
+  op_coupling01->Setup(values, -1.0);
 
   auto op_coupling10 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
-      oplist, cvs_fracture, cvs_matrix, inds_fracture, inds_matrix));
+      oplist, cvs_fracture, cvs_matrix, inds_fracture, inds_matrix, pk_fracture->op()));
+  op_coupling10->Setup(values, -1.0);
+
+  auto op_coupling11 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
+      oplist, cvs_fracture, cvs_fracture, inds_fracture, inds_fracture));
+  op_coupling11->Setup(values, 1.0);
 
   op_tree_->SetOperatorBlock(0, 1, op_coupling01->global_operator());
-  op_tree_->SetOperatorBlock(1, 0, op_coupling01->global_operator());
+  op_tree_->SetOperatorBlock(1, 0, op_coupling10->global_operator());
+
+  op_tree_->AssembleMatrix();
 }
 
 

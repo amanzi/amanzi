@@ -75,7 +75,7 @@ void Operator_Diagonal::SymbolicAssembleMatrixOp(
   std::vector<int> lid_r, lid_c;
 
   int ierr(0);
-  for (int n = 0; n != ncells_owned; ++n) {
+  for (int n = 0; n != col_lids.size(); ++n) {
     int ndofs = col_lids[n].size();
 
     lid_r.clear();
@@ -108,7 +108,7 @@ void Operator_Diagonal::AssembleMatrixOp(
   std::vector<int> lid_r, lid_c;
 
   int ierr(0);
-  for (int n = 0; n != ncells_owned; ++n) {
+  for (int n = 0; n != col_lids.size(); ++n) {
     int ndofs = col_lids[n].size();
 
     lid_r.clear();

@@ -15,6 +15,7 @@
 #include "DenseMatrix.hh"
 #include "Op_Cell_FaceCell.hh"
 #include "Op_Cell_Face.hh"
+#include "Op_Diagonal.hh"
 #include "Op_SurfaceCell_SurfaceCell.hh"
 #include "Op_SurfaceFace_SurfaceCell.hh"
 
@@ -336,10 +337,13 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
 }
 
 
-void
-Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
-        const SuperMap& map, GraphFE& graph,
-        int my_block_row, int my_block_col) const
+/* ******************************************************************
+* Visit methods for symbolic assemble: Surface
+****************************************************************** */
+void Operator_FaceCell::SymbolicAssembleMatrixOp(
+    const Op_SurfaceCell_SurfaceCell& op,
+    const SuperMap& map, GraphFE& graph,
+    int my_block_row, int my_block_col) const
 {
   int nsurf_cells = op.surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
@@ -357,10 +361,13 @@ Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op
 }
 
 
-void
-Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
-        const SuperMap& map, GraphFE& graph,
-        int my_block_row, int my_block_col) const
+/* ******************************************************************
+* Visit methods for symbolic assemble: Surface
+****************************************************************** */
+void Operator_FaceCell::SymbolicAssembleMatrixOp(
+    const Op_SurfaceFace_SurfaceCell& op,
+    const SuperMap& map, GraphFE& graph,
+    int my_block_row, int my_block_col) const
 {
   int nsurf_faces = op.surf_mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   int lid_r[2];
@@ -382,6 +389,38 @@ Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op
     }
 
     ierr |= graph.InsertMyIndices(ncells, lid_r, ncells, lid_c);
+  }
+  AMANZI_ASSERT(!ierr);
+}
+
+
+/* ******************************************************************
+* Visit methods for symbolic assemble: Coupling
+****************************************************************** */
+void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Diagonal& op,
+                                                 const SuperMap& map, GraphFE& graph,
+                                                 int my_block_row, int my_block_col) const
+{
+  const std::vector<int>& row_gids = map.GhostIndices(op.row_compname(), my_block_row);
+  const std::vector<int>& col_gids = map.GhostIndices(op.col_compname(), my_block_col);
+
+  const auto& col_lids = op.col_inds();
+  const auto& row_lids = op.row_inds();
+
+  std::vector<int> lid_r, lid_c;
+
+  int ierr(0);
+  for (int n = 0; n != col_lids.size(); ++n) {
+    int ndofs = col_lids[n].size();
+
+    lid_r.clear();
+    lid_c.clear();
+
+    for (int i = 0; i != ndofs; ++i) {
+      lid_r.push_back(row_gids[row_lids[n][i]]);
+      lid_c.push_back(col_gids[col_lids[n][i]]);
+    }
+    ierr |= graph.InsertMyIndices(ndofs, lid_r.data(), ndofs, lid_c.data());
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -500,10 +539,12 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_Face& op,
 }
 
 
-void
-Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
-        const SuperMap& map, MatrixFE& mat,
-        int my_block_row, int my_block_col) const
+/* ******************************************************************
+* Visit methods for assemble: Surface
+****************************************************************** */
+void Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
+                                         const SuperMap& map, MatrixFE& mat,
+                                         int my_block_row, int my_block_col) const
 {
   int nsurf_cells = op.surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
@@ -521,10 +562,9 @@ Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
 }
 
 
-void
-Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
-        const SuperMap& map, MatrixFE& mat,
-        int my_block_row, int my_block_col) const
+void Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
+                                         const SuperMap& map, MatrixFE& mat,
+                                         int my_block_row, int my_block_col) const
 {
   int nsurf_faces = op.surf_mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   int lid_r[2];
@@ -546,6 +586,39 @@ Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
     }
 
     ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[sf]);
+  }
+  AMANZI_ASSERT(!ierr);
+}
+
+
+/* ******************************************************************
+* Visit methods for assemble: Coupling
+****************************************************************** */
+void Operator_FaceCell::AssembleMatrixOp(const Op_Diagonal& op,
+                                         const SuperMap& map, MatrixFE& mat,
+                                         int my_block_row, int my_block_col) const
+{
+  const std::vector<int>& row_gids = map.GhostIndices(op.row_compname(), my_block_row);
+  const std::vector<int>& col_gids = map.GhostIndices(op.col_compname(), my_block_col);
+
+  const auto& col_lids = op.col_inds();
+  const auto& row_lids = op.row_inds();
+
+  std::vector<int> lid_r, lid_c;
+
+  int ierr(0);
+  for (int n = 0; n != col_lids.size(); ++n) {
+    int ndofs = col_lids[n].size();
+
+    lid_r.clear();
+    lid_c.clear();
+
+    for (int i = 0; i != ndofs; ++i) {
+      lid_r.push_back(row_gids[row_lids[n][i]]);
+      lid_c.push_back(col_gids[col_lids[n][i]]);
+    }
+
+    ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[n]);
   }
   AMANZI_ASSERT(!ierr);
 }

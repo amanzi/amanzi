@@ -63,6 +63,9 @@ class Operator_FaceCell : public Operator_Cell {
   virtual void SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;
+  virtual void SymbolicAssembleMatrixOp(const Op_Diagonal& op,
+          const SuperMap& map, GraphFE& graph,
+          int my_block_row, int my_block_col) const;
   
   // visit methods for actual assemble
   virtual void AssembleMatrixOp(const Op_Cell_FaceCell& op,
@@ -75,6 +78,9 @@ class Operator_FaceCell : public Operator_Cell {
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
   virtual void AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
+          const SuperMap& map, MatrixFE& mat,
+          int my_block_row, int my_block_col) const;
+  virtual void AssembleMatrixOp(const Op_Diagonal& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
 };
