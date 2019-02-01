@@ -133,6 +133,7 @@ class Op_Cell_Cell;
 class Op_Cell_Node;
 class Op_Cell_Edge;
 class Op_Cell_Schema;
+class Op_Diagonal;
 class Op_Face_Cell;
 class Op_Face_CellBndFace;
 class Op_Face_Schema;
@@ -292,6 +293,9 @@ class Operator {
   virtual int ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
       const CompositeVector& X, CompositeVector& Y) const;
 
+  virtual int ApplyMatrixFreeOp(const Op_Diagonal& op,
+      const CompositeVector& X, CompositeVector& Y) const;
+
   // visit methods for Apply with variable DOFs (aka points)
   virtual int ApplyMatrixFreeOpVariableDOFs(const Op_Cell_FaceCell& op,
       const CompositeVector& X, CompositeVector& Y) const;
@@ -349,6 +353,10 @@ class Operator {
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;
   
+  virtual void SymbolicAssembleMatrixOp(const Op_Diagonal& op,
+          const SuperMap& map, GraphFE& graph,
+          int my_block_row, int my_block_col) const;
+  
   // visit methods for assemble
   virtual void AssembleMatrixOp(const Op_Cell_FaceCell& op,
           const SuperMap& map, MatrixFE& mat,
@@ -390,6 +398,10 @@ class Operator {
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
   virtual void AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
+          const SuperMap& map, MatrixFE& mat,
+          int my_block_row, int my_block_col) const;
+
+  virtual void AssembleMatrixOp(const Op_Diagonal& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
 

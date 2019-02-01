@@ -61,6 +61,12 @@ class Op {
     schema_string = schema_row.CreateUniqueName() + '+' + schema_col.CreateUniqueName();
   }
 
+  Op(int schema, const std::string& schema_string_) :
+      schema_old_(schema),
+      schema_string(schema_string_),
+      mesh_(Teuchos::null)
+  {};
+
   virtual ~Op() = default;
 
   // Clean the operator without destroying memory

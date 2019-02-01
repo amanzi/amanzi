@@ -22,6 +22,7 @@
 #include "PK_BDF.hh"
 #include "PK_MPCStrong.hh"
 #include "PK_Factory.hh"
+#include "TreeOperator.hh"
 
 namespace Amanzi {
 
@@ -34,6 +35,7 @@ class FlowMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
 
   // PK methods
   virtual void Setup(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   // -- dt is the minimum of the sub pks
   // virtual double get_dt();
@@ -51,8 +53,10 @@ class FlowMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
 
-  Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> matrix_bc;
-  Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> fracture_src;
+  Teuchos::RCP<Operators::TreeOperator> op_tree_;
+
+  // Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> matrix_bc;
+  // Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> fracture_src;
 
   Teuchos::RCP<VerboseObject> vo_;
 

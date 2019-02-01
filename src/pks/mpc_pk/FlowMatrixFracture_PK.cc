@@ -12,8 +12,11 @@
   Process kernel that couples Flow flow in matrix and fractures.
 */
 
+#include "Darcy_PK.hh"
+#include "PDE_CouplingFlux.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "primary_variable_field_evaluator.hh"
+#include "TreeOperator.hh"
 
 #include "FlowMatrixFracture_PK.hh"
 #include "PK_MPCStrong.hh"
@@ -81,6 +84,52 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // process other PKs.
   PK_MPCStrong<PK_BDF>::Setup(S);
+}
+
+
+/* ******************************************************************* 
+* Initialization create a tree operator to assemble global matrix
+******************************************************************* */
+void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
+{
+  PK_MPCStrong<PK_BDF>::Initialize(S);
+
+  // diagonal blocks in tree operator and the Darcy PKs
+  auto pk_matrix = Teuchos::rcp_dynamic_cast<Flow::Darcy_PK>(sub_pks_[0]);
+  auto pk_fracture = Teuchos::rcp_dynamic_cast<Flow::Darcy_PK>(sub_pks_[1]);
+
+  auto tvs = Teuchos::rcp(new TreeVectorSpace(solution_->Map()));
+  op_tree_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
+
+  op_tree_->SetOperatorBlock(0, 0, pk_matrix->op());
+  op_tree_->SetOperatorBlock(1, 1, pk_fracture->op());
+
+  // off-diagonal blocks are coupled PDEs
+  auto mesh_matrix = S_->GetMesh("domain");
+  auto mesh_fracture = S_->GetMesh("fracture");
+
+  auto cvs_matrix = Teuchos::rcp(new CompositeVectorSpace());
+  auto cvs_fracture = Teuchos::rcp(new CompositeVectorSpace());
+
+  cvs_matrix->SetMesh(mesh_matrix)->SetGhosted(true)
+            ->AddComponent("face", AmanziMesh::FACE, 1);
+
+  cvs_fracture->SetMesh(mesh_matrix)->SetGhosted(true)
+              ->AddComponent("cell", AmanziMesh::CELL, 1);
+
+  auto inds_matrix = std::make_shared<std::vector<std::vector<int> > >(1);
+  auto inds_fracture = std::make_shared<std::vector<std::vector<int> > >(1);
+
+  Teuchos::ParameterList oplist;
+  auto op_coupling01 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
+      oplist, cvs_matrix, cvs_fracture, inds_matrix, inds_fracture));
+  // op_coupling01->Setup();
+
+  auto op_coupling10 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
+      oplist, cvs_fracture, cvs_matrix, inds_fracture, inds_matrix));
+
+  op_tree_->SetOperatorBlock(0, 1, op_coupling01->global_operator());
+  op_tree_->SetOperatorBlock(1, 0, op_coupling01->global_operator());
 }
 
 

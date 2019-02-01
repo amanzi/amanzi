@@ -35,6 +35,7 @@
 #include "Op_Cell_Face.hh"
 #include "Op_Cell_Node.hh"
 #include "Op_Cell_Schema.hh"
+#include "Op_Diagonal.hh"
 #include "Op_Edge_Edge.hh"
 #include "Op_Face_Cell.hh"
 #include "Op_Face_CellBndFace.hh"
@@ -779,6 +780,15 @@ int Operator::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
 
 
 /* ******************************************************************
+* Visit methods for Apply: Coupling
+****************************************************************** */
+int Operator::ApplyMatrixFreeOp(const Op_Diagonal& op,
+                                const CompositeVector& X, CompositeVector& Y) const {
+  return SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+/* ******************************************************************
 * Visit methods for Apply with variable DOFs: Cell.
 ****************************************************************** */
 int Operator::ApplyMatrixFreeOpVariableDOFs(
@@ -930,6 +940,16 @@ void Operator::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
 
 
 /* ******************************************************************
+* Visit methods for symbolic assemble: Coupling
+****************************************************************** */
+void Operator::SymbolicAssembleMatrixOp(const Op_Diagonal& op,
+                                        const SuperMap& map, GraphFE& graph,
+                                        int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+/* ******************************************************************
 * Visit methods for assemble: Cell.
 ****************************************************************** */
 void Operator::AssembleMatrixOp(const Op_Cell_FaceCell& op,
@@ -1044,6 +1064,16 @@ void Operator::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
       << " cannot be used with a matrix on " << schema_string_;
   Errors::Message message(err.str());
   Exceptions::amanzi_throw(message);
+}
+
+
+/* ******************************************************************
+* Visit methods for assemble: Coupling
+****************************************************************** */
+void Operator::AssembleMatrixOp(const Op_Diagonal& op,
+                                const SuperMap& map, MatrixFE& mat,
+                                int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 

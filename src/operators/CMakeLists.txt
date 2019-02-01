@@ -64,26 +64,29 @@ set(operators_inc_files
     Op_Cell_Node.hh
     Op_Cell_Edge.hh
     Op_Cell_Schema.hh
+    Op_Diagonal.hh
     Op_Face_Cell.hh
     Op_Face_CellBndFace.hh
     Op_Face_Schema.hh
     Op_Node_Node.hh
     Operator.hh
     Operator_Cell.hh
-    Operator_FaceCell.hh
     Operator_CellBndFace.hh
+    Operator_ConsistentFace.hh
+    Operator_Diagonal.hh
+    Operator_Edge.hh
+    Operator_FaceCell.hh
     Operator_FaceCellScc.hh
     Operator_FaceCellSff.hh
-    Operator_ConsistentFace.hh
-    Operator_Node.hh
-    Operator_Edge.hh
     Operator_Factory.hh
+    Operator_Node.hh
     BoundaryFlux.hh
     PDE_Abstract.hh
     PDE_Accumulation.hh
     PDE_Advection.hh
     PDE_AdvectionUpwind.hh
     PDE_AdvectionRiemann.hh
+    PDE_CouplingFlux.hh
     PDE_Diffusion.hh
     PDE_DiffusionWithGravity.hh
     PDE_DiffusionFactory.hh
@@ -124,19 +127,19 @@ add_amanzi_library(operators
                           Mini_Operator1D.cc
                           OperatorUtils.cc
                           Operator.cc
-                          Operator_Node.cc
-                          Operator_Edge.cc
-                          Operator_Cell.cc
-                          Operator_CellBndFace.cc
-                          Operator_FaceCell.cc
-                          Operator_FaceCellScc.cc
-                          Operator_FaceCellSff.cc
                           Operator_ConsistentFace.cc
-                          Operator_Schema.cc
+                          Operator_Edge.cc
+                          Operator_Cell.cc Operator_CellBndFace.cc
+                          Operator_Diagonal.cc
+                          Operator_FaceCell.cc
+                          Operator_FaceCellScc.cc Operator_FaceCellSff.cc
                           Operator_Factory.cc
+                          Operator_Node.cc
+                          Operator_Schema.cc
                           PDE_Accumulation.cc
                           PDE_Abstract.cc
                           PDE_AdvectionUpwind.cc PDE_AdvectionRiemann.cc
+                          PDE_CouplingFlux.cc
                           PDE_DiffusionMFD.cc PDE_DiffusionMFDwithGravity.cc
                           PDE_DiffusionFV.cc PDE_DiffusionFVwithGravity.cc
                           PDE_DiffusionNLFV.cc PDE_DiffusionNLFVwithGravity.cc
