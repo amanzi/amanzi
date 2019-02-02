@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -53,15 +53,15 @@ class MFD3D_Diffusion : public MFD3D,
   //    but we have to tell compiler a proper member function
   using DeRham_Face::MassMatrix;
 
-  // -- inverse mass matrix is adjusted to reflect scaling of fluxes by area
-  virtual int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W); 
+  // -- inverse mass matrix is modified to reflect scaling of fluxes by area
+  virtual int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W) override; 
 
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac);
-  virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A);
+  virtual int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac) override;
+  virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A) override;
 
   // -- divergence matrix
-  virtual int DivergenceMatrix(int c, DenseMatrix& A);
+  virtual int DivergenceMatrix(int c, DenseMatrix& A) override;
 
   // other mimetic methods
   // -- bad consistency conditions (flux is scaled by area)

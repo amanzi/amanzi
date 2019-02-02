@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -383,7 +383,7 @@ void MFD3D_CrouzeixRaviart::H1Face(
 ****************************************************************** */
 void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
     int c, const std::vector<Polynomial>& vf,
-    const Projectors::Type type,
+    const ProjectorType type,
     Polynomial& moments, Polynomial& uc)
 {
   AMANZI_ASSERT(d_ == 2);
@@ -472,7 +472,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
   }
 
   // calculate L2 projector
-  if (type == Type::L2 && ndof_c > 0) {
+  if (type == ProjectorType::L2 && ndof_c > 0) {
     v5(0) = uc(0);
 
     DenseMatrix M, M2;
@@ -511,7 +511,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
 ****************************************************************** */
 void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
     int c, const std::vector<VectorPolynomial>& vf,
-    const Projectors::Type type, 
+    const ProjectorType type, 
     const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc)
 {
   AMANZI_ASSERT(d_ == 2);

@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -39,19 +39,23 @@ class MFD3D_BernardiRaugel : public MFD3D {
 
   // required methods
   // -- mass matrices
-  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) { return -1; }
-  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) { return -1; } 
-
-  // -- inverse mass matrices
-  virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) { return -1; }
-  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& M) { return -1; } 
+  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override {
+    Errors::Message msg("L2 consistency is not supported for Bernardi-Raugel space.");
+    Exceptions::amanzi_throw(msg);
+    return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  }
+  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override {
+    Errors::Message msg("MassMatrix is not supported for Bernardi-Raugel space.");
+    Exceptions::amanzi_throw(msg);
+    return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  }
 
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
-  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
+  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc) override;
+  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
   // -- other matrices
-  virtual int DivergenceMatrix(int c, DenseMatrix& A);
+  virtual int DivergenceMatrix(int c, DenseMatrix& A) override;
   virtual int AdvectionMatrix(int c, const std::vector<AmanziGeometry::Point>& u, DenseMatrix& A);
 
  private:

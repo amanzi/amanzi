@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -25,7 +25,6 @@
 #include "DenseMatrix.hh"
 #include "InnerProductL2.hh"
 #include "InnerProductH1.hh"
-#include "Projectors.hh"
 #include "Tensor.hh"
 #include "VectorPolynomial.hh"
 
@@ -35,8 +34,7 @@ namespace WhetStone {
 class Polynomial;
 
 class BilinearForm : public virtual InnerProductL2,
-                     public virtual InnerProductH1,
-                     public Projectors {
+                     public virtual InnerProductH1 {
  public:
   explicit BilinearForm() : order_(1) {};
   virtual ~BilinearForm() {};
