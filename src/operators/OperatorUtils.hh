@@ -70,6 +70,19 @@ CreateBoundaryMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
 std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >
 getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location);
 
+// Factory of composite vector spaces
+Teuchos::RCP<CompositeVectorSpace>
+CreateCompositeVectorSpace(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                           const std::vector<std::string>& names,
+                           const std::vector<AmanziMesh::Entity_kind>& locations,
+                           const std::vector<int>& num_dofs, bool ghsoted = false);
+
+Teuchos::RCP<CompositeVectorSpace>
+CreateCompositeVectorSpace(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                           std::string name,
+                           AmanziMesh::Entity_kind location,
+                           int num_dof, bool ghsoted = false);
+
 }  // namespace Operators
 }  // namespace Amanzi
 

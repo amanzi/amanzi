@@ -32,14 +32,17 @@ void PDE_CouplingFlux::Init_(
     std::shared_ptr<const std::vector<std::vector<int> > >& row_inds,
     std::shared_ptr<const std::vector<std::vector<int> > >& col_inds)
 {
+  if (global_op_ == Teuchos::null) {
+    global_op_ = Teuchos::rcp(new Operator_Diagonal(cvs_row, cvs_col, plist, OPERATOR_SCHEMA_INDICES));
+    std::string name("Coupling: Matrix-Fracture");
+  }
+
+  // register the advection Op
   std::string row_compname = *(cvs_row->begin());
   std::string col_compname = *(cvs_col->begin());
 
-  global_op_ = Teuchos::rcp(new Operator_Diagonal(cvs_row, cvs_col, plist, OPERATOR_SCHEMA_INDICES));
   std::string name("Coupling: Matrix-Fracture");
   local_op_ = Teuchos::rcp(new Op_Diagonal(name, row_compname, col_compname, row_inds, col_inds));
-
-  // register the advection Op
   global_op_->OpPushBack(local_op_);
 }
 
@@ -52,13 +55,13 @@ void PDE_CouplingFlux::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>&
                                       const Teuchos::Ptr<const CompositeVector>& p)
 {
   auto& matrices = local_op_->matrices;
-  AMANZI_ASSERT(matrices.size() == K_->MyLength());
+  AMANZI_ASSERT(matrices.size() == K_->size());
 
   WhetStone::DenseMatrix Acell;
   Acell.Reshape(1, 1);
 
   for (int n = 0; n < matrices.size(); ++n) {
-    Acell(0, 0) = (*K_)[0][n];
+    Acell(0, 0) = (*K_)[n] * factor_;
     matrices[n] = Acell;
   }
 }

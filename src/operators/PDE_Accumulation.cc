@@ -14,6 +14,7 @@
 
 #include "WhetStoneMeshUtils.hh"
 
+#include "OperatorUtils.hh"
 #include "Operator_Cell.hh"
 #include "Operator_Edge.hh"
 #include "Operator_Node.hh"
@@ -305,8 +306,9 @@ void PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
 
     for (auto it = schema.begin(); it != schema.end(); ++it) {
       Teuchos::RCP<Op> op;
-      Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-      cvs->SetMesh(mesh_)->AddComponent(schema.KindToString(it->kind), it->kind, it->num);
+      // Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
+      // cvs->SetMesh(mesh_)->AddComponent(schema.KindToString(it->kind), it->kind, it->num);
+      auto cvs = CreateCompositeVectorSpace(mesh_, schema.KindToString(it->kind), it->kind, it->num);
 
       if (it->kind == AmanziMesh::CELL) {
         int old_schema = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL;
