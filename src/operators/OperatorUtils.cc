@@ -441,5 +441,47 @@ getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
   }
 }
 
+
+/* ******************************************************************
+* Generates a composite vestor space.
+****************************************************************** */
+Teuchos::RCP<CompositeVectorSpace>
+CreateCompositeVectorSpace(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                           const std::vector<std::string>& names,
+                           const std::vector<AmanziMesh::Entity_kind>& locations,
+                           const std::vector<int>& num_dofs, bool ghosted)
+{
+  auto cvs = Teuchos::rcp(new CompositeVectorSpace());
+  cvs->SetMesh(mesh);
+  cvs->SetGhosted(ghosted);
+
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > mastermaps;
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghostmaps;
+
+  for (int i=0; i<locations.size(); ++i) {
+    Teuchos::RCP<const Epetra_BlockMap> master_mp(&mesh->map(locations[i], false), false);
+    mastermaps[names[i]] = master_mp;
+    Teuchos::RCP<const Epetra_BlockMap> ghost_mp(&mesh->map(locations[i], true), false);
+    ghostmaps[names[i]] = ghost_mp;
+  }
+       
+  cvs->SetComponents(names, locations, mastermaps, ghostmaps, num_dofs);
+  return cvs;
+}
+
+
+Teuchos::RCP<CompositeVectorSpace>
+CreateCompositeVectorSpace(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                           std::string name,
+                           AmanziMesh::Entity_kind location,
+                           int num_dof, bool ghosted)
+{
+  std::vector<std::string> names(1, name);
+  std::vector<AmanziMesh::Entity_kind> locations(1, location);
+  std::vector<int> num_dofs(1, num_dof);
+
+  return CreateCompositeVectorSpace(mesh, names, locations, num_dofs, ghosted);
+}
+
 }  // namespace Operators
 }  // namespace Amanzi

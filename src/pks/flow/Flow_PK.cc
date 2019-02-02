@@ -670,8 +670,9 @@ void Flow_PK::DeriveFaceValuesFromCellValues(
   AmanziMesh::Entity_ID_List cells;
   auto& fmap = ufaces.Map(); 
 
-  for (int f = 0; f < nfaces_owned; f++) {
-    cells.clear();
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+
+  for (int f = 0; f < nfaces; f++) {
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::OWNED, &cells);
     int ncells = cells.size();
 

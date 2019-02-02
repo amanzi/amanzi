@@ -538,5 +538,5 @@ bool CompositeVectorSpace::UnionAndConsistent_(
   }
   return true;
 };
-  
+
 } // namespace Amanzi
