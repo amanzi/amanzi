@@ -31,8 +31,6 @@ namespace WhetStone {
 void MeshMaps_VEM::VelocityCell(
     int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
-  Polynomial moments(d_, std::max(0, order_ - 2));
-
   Teuchos::ParameterList plist;
   plist.set<std::string>("method", method_)
        .set<int>("method order", order_);
@@ -50,10 +48,10 @@ void MeshMaps_VEM::VelocityCell(
       }
     
       if (projector_ == "H1") {
-        mfd->H1Cell(c, vvf, moments, vc[i]);
+        mfd->H1Cell(c, vvf, NULL, vc[i]);
       }
       else if (projector_ == "L2") {
-        mfd->L2Cell(c, vvf, moments, vc[i]);
+        mfd->L2Cell(c, vvf, NULL, vc[i]);
       }
     }
   }

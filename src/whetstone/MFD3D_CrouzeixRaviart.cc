@@ -384,7 +384,7 @@ void MFD3D_CrouzeixRaviart::H1Face(
 void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
     int c, const std::vector<Polynomial>& vf,
     const ProjectorType type,
-    Polynomial& moments, Polynomial& uc)
+    const Polynomial* moments, Polynomial& uc)
 {
   AMANZI_ASSERT(d_ == 2);
 
@@ -430,7 +430,8 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
 
   // degrees of freedom in cell
   if (ndof_c > 0) {
-    const DenseVector& v3 = moments.coefs();
+    AMANZI_ASSERT(moments != NULL);
+    const DenseVector& v3 = moments->coefs();
     AMANZI_ASSERT(ndof_c == v3.NumRows());
 
     for (int n = 0; n < ndof_c; ++n) {
@@ -486,7 +487,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
     M2 = M.SubMatrix(ndof_c, nd, 0, nd);
     M2.Multiply(v5, v6, false);
 
-    const DenseVector& v3 = moments.coefs();
+    const DenseVector& v3 = moments->coefs();
     for (int n = 0; n < ndof_c; ++n) {
       v4(n) = v3(n) * mesh_->cell_volume(c);
     }

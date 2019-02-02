@@ -165,10 +165,12 @@ void Polynomial::Reshape(int d, int order, bool reset)
     coefs_.Reshape(size_);
 
     if (reset) { 
-      PutScalar(0.0);
+      coefs_.PutScalar(0.0);
     } else {
       for (int i = size; i < size_; ++i) coefs_(i) = 0.0;
     }
+  } else if (reset) {
+    coefs_.PutScalar(0.0);
   }
 }
 

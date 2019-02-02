@@ -749,24 +749,25 @@ TEST(RECOVER_GRADIENT_MIXED) {
   int nfaces = 6, cell = 0;
   mesh->cell_get_faces(cell, &faces);
 
-  Point flux(1.0, 2.0,3.0);
-  std::vector<double> solution(nfaces);
+  Point flux(1.0, 2.0, 3.0);
+  std::vector<Polynomial> solution(nfaces);
 
   for (int n = 0; n < nfaces; n++) {
     int f = faces[n];
     const Point& normal = mesh->face_normal(f);
-    solution[n] = -normal * flux;
+    solution[n].Reshape(3, 0);
+    solution[n](0) = -normal * flux;
   }
   
   // gradient recovery
-  Point gradient(3);
-  mfd.RecoverGradient_MassMatrix(cell, solution, gradient);
+  Polynomial gradient(3, 1);
+  mfd.L2Cell(cell, solution, NULL, gradient);
 
-  printf("Gradient %f %f %f\n", gradient[0], gradient[1], gradient[2]);
+  printf("Gradient %f %f %f\n", gradient(1), gradient(2), gradient(3));
 
-  CHECK_CLOSE(gradient[0], 1.0, 1e-10);
-  CHECK_CLOSE(gradient[1], 2.0, 1e-10);
-  CHECK_CLOSE(gradient[2], 3.0, 1e-10);
+  CHECK_CLOSE(gradient(1), 1.0, 1e-10);
+  CHECK_CLOSE(gradient(2), 2.0, 1e-10);
+  CHECK_CLOSE(gradient(3), 3.0, 1e-10);
 
   delete comm;
 }

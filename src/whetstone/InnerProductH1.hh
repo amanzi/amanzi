@@ -33,10 +33,9 @@ class InnerProductH1 : public virtual InnerProduct {
   virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc) = 0;
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) = 0; 
 
-  // H1 projectors
-  virtual void H1Cell(
-      int c, const std::vector<Polynomial>& vf,
-      Polynomial& moments, Polynomial& uc) {
+  // H1 projectors, moments in the optional argument
+  virtual void H1Cell(int c, const std::vector<Polynomial>& vf,
+                      const Polynomial* moments, Polynomial& vc) {
     Errors::Message msg("H1 projector is not supported/implemented for this scheme.");
     Exceptions::amanzi_throw(msg);
   }

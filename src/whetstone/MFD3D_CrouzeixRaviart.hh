@@ -68,12 +68,12 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
 
   // -- projectors: base L2 and H1 projectors
   virtual void L2Cell(int c, const std::vector<Polynomial>& vf,
-                      Polynomial& moments, Polynomial& uc) override {
+                      const Polynomial* moments, Polynomial& uc) override {
     ProjectorCell_HO_(c, vf, ProjectorType::L2, moments, uc);
   }
 
   virtual void H1Cell(int c, const std::vector<Polynomial>& vf,
-                      Polynomial& moments, Polynomial& uc) override {
+                      const Polynomial* moments, Polynomial& uc) override {
     if (order_ == 1 && !use_always_ho_)
       ProjectorCell_LO_(c, vf, uc);
     else 
@@ -112,7 +112,7 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
   // generic code for multiple projectors
   void ProjectorCell_HO_(int c, const std::vector<Polynomial>& vf,
                          const ProjectorType type, 
-                         Polynomial& moments, Polynomial& uc);
+                         const Polynomial* moments, Polynomial& uc);
 
   void ProjectorGradientCell_(int c, const std::vector<VectorPolynomial>& vf,
                               const ProjectorType type, 

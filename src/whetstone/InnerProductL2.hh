@@ -45,9 +45,9 @@ class InnerProductL2 : public virtual InnerProduct {
     return WHETSTONE_ELEMENTAL_MATRIX_OK;
   }
 
-  // L2 projectors
+  // L2 projectors, moments is the optional argument
   virtual void L2Cell(int c, const std::vector<Polynomial>& vf,
-                      Polynomial& moments, Polynomial& uc) {
+                      const Polynomial* moments, Polynomial& vc) {
     Errors::Message msg("L2 projector is not supported/implemented for this space.");
     Exceptions::amanzi_throw(msg);
   }

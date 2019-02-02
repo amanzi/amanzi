@@ -93,14 +93,15 @@ class MFD3D_Diffusion : public MFD3D,
   int L2consistencyInverseSurface(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc);
   int MassMatrixInverseSurface(int c, const Tensor& K, DenseMatrix& W);
 
-  // other related discetization methods
+  // -- other related discetization methods
   int MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W);
   int MassMatrixInverseTPFA(int c, const Tensor& K, DenseMatrix& W);
   int MassMatrixInverseDiagonal(int c, const Tensor& K, DenseMatrix& W);
 
-  // a posteriori error estimate
-  int RecoverGradient_MassMatrix(int c, const std::vector<double>& solution, 
-                                 AmanziGeometry::Point& gradient);
+  // -- projectors
+  //    we return linear polynomial instead of constant vector polynomial (FIXME)
+  virtual void L2Cell(int c, const std::vector<Polynomial>& vf,
+                      const Polynomial* moments, Polynomial& vc) override;
 
   int RecoverGradient_StiffnessMatrix(int c, const std::vector<double>& solution, 
                                       AmanziGeometry::Point& gradient);

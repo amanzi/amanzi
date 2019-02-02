@@ -322,12 +322,11 @@ int MFD3D_Diffusion::StiffnessMatrixMMatrix(int c, const Tensor& K, DenseMatrix&
 
 
 /* *****************************************************************
-* Recover gradient from solution, which is either the edge-based 
-* fluxes of node-based pressures. The algorithm is common if both
-* N and R are used. Here we use simplified versions.
+* Low-order L2 projector. 
+* NOTE: we abuse the interface and return a linear polynomial.
 ***************************************************************** */
-int MFD3D_Diffusion::RecoverGradient_MassMatrix(
-    int c, const std::vector<double>& solution, AmanziGeometry::Point& gradient)
+void MFD3D_Diffusion::L2Cell(int c, const std::vector<Polynomial>& vf,
+                             const Polynomial* moments, Polynomial& vc)
 {
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
 
@@ -337,19 +336,18 @@ int MFD3D_Diffusion::RecoverGradient_MassMatrix(
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
   int num_faces = faces.size();
 
-  gradient.set(0.0);
+  vc.Reshape(d_, 1, true);
   for (int i = 0; i < num_faces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
 
     for (int k = 0; k < d_; k++) {
       double Rik = fm[k] - cm[k];
-      gradient[k] += Rik * solution[i] * dirs[i];
+      vc(k + 1) += Rik * vf[i](0) * dirs[i];
     }
   }
 
-  gradient *= -1.0 / mesh_->cell_volume(c);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  vc *= -1.0 / mesh_->cell_volume(c);
 }
 
 

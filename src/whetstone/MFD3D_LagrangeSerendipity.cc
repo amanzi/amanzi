@@ -165,7 +165,7 @@ int MFD3D_LagrangeSerendipity::StiffnessMatrix(
 void MFD3D_LagrangeSerendipity::ProjectorCell_(
     int c, const std::vector<Polynomial>& vf,
     const ProjectorType type,
-    Polynomial& moments, Polynomial& uc)
+    const Polynomial* moments, Polynomial& uc)
 {
   // selecting regularized basis
   Polynomial ptmp;
@@ -209,7 +209,8 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
 
   // DOFs inside cell: copy moments from input data
   if (ndof_cs > 0) {
-    const DenseVector& v3 = moments.coefs();
+    AMANZI_ASSERT(moments != NULL);
+    const DenseVector& v3 = moments->coefs();
     AMANZI_ASSERT(ndof_cs == v3.NumRows());
 
     for (int n = 0; n < ndof_cs; ++n) {

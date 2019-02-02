@@ -56,7 +56,9 @@ class MFD3D_BernardiRaugel : public MFD3D {
 
   // -- other matrices
   virtual int DivergenceMatrix(int c, DenseMatrix& A) override;
-  virtual int AdvectionMatrix(int c, const std::vector<AmanziGeometry::Point>& u, DenseMatrix& A);
+  // -- this should really override the base function and use a vector polynomial 
+  //    provided by a projector (FIXME)
+  int AdvectionMatrix(int c, const std::vector<AmanziGeometry::Point>& u, DenseMatrix& A);
 
  private:
   static RegisteredFactory<MFD3D_BernardiRaugel> factory_;

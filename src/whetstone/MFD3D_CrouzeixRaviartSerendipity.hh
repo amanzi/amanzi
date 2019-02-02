@@ -46,25 +46,25 @@ class MFD3D_CrouzeixRaviartSerendipity : public MFD3D_CrouzeixRaviart {
 
   // -- projectors
   virtual void L2Cell(int c, const std::vector<Polynomial>& vf,
-                      Polynomial& moments, Polynomial& uc) override {
+                      const Polynomial* moments, Polynomial& uc) override {
     ProjectorCell_(c, vf, ProjectorType::L2, moments, uc);
   }
 
   virtual void H1Cell(int c, const std::vector<Polynomial>& vf,
-                      Polynomial& moments, Polynomial& uc) override {
+                      const Polynomial* moments, Polynomial& uc) override {
     ProjectorCell_(c, vf, ProjectorType::H1, moments, uc);
   }
 
   // other methods
   void L2Cell_LeastSquare(int c, const std::vector<Polynomial>& vf,
-                          Polynomial& moments, Polynomial& uc) {
+                          const Polynomial* moments, Polynomial& uc) {
     ProjectorCell_(c, vf, ProjectorType::LS, moments, uc);
   }
 
  private:
   void ProjectorCell_(int c, const std::vector<Polynomial>& vf,
                       const ProjectorType type,
-                      Polynomial& moments, Polynomial& uc);
+                      const Polynomial* moments, Polynomial& uc);
 
   void CalculateDOFsOnBoundary_(
       int c, const std::vector<Polynomial>& vf, DenseVector& vdof);

@@ -146,7 +146,7 @@ int MFD3D_CrouzeixRaviartSerendipity::StiffnessMatrix(
 void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
     int c, const std::vector<Polynomial>& vf,
     const ProjectorType type,
-    Polynomial& moments, Polynomial& uc)
+    const Polynomial* moments, Polynomial& uc)
 {
   // create integration object 
   NumericalIntegration numi(mesh_);
@@ -193,7 +193,8 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
 
   // DOFs inside cell: copy moments from input data
   if (ndof_cs > 0) {
-    const DenseVector& v3 = moments.coefs();
+    AMANZI_ASSERT(moments != NULL);
+    const DenseVector& v3 = moments->coefs();
     for (int n = 0; n < ndof_cs; ++n) {
       vdof(ndof_f + n) = v3(n);
     }
@@ -241,7 +242,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
     M2 = M.SubMatrix(ndof_cs, nd, 0, nd);
     M2.Multiply(v5, v6, false);
 
-    const DenseVector& v3 = moments.coefs();
+    const DenseVector& v3 = moments->coefs();
     for (int n = 0; n < ndof_cs; ++n) {
       v4(n) = v3(n) * mesh_->cell_volume(c);
     }
