@@ -279,6 +279,35 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, Schema& s
   return Teuchos::rcp(new SuperMap(cvs.Comm(), compnames, dofnums, maps, ghost_maps));
 }
 
+/* ******************************************************************
+* Create super map: general version
+****************************************************************** */
+Teuchos::RCP<SuperMap> CreateSuperMap(std::vector<Teuchos::RCP<const CompositeVectorSpace> > cvs_vec,
+                                      std::vector<std::string> cvs_names)
+{
+
+  AMANZI_ASSERT(cvs_vec.size() == cvs_names.size() );
+  
+  std::vector<std::string> compnames;
+  std::vector<int> dofnums;
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps;
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > ghost_maps;
+  
+  int i = 0;
+  for (auto cvs : cvs_vec){
+    for (auto name = cvs->begin(); name != cvs->end(); ++name){
+      compnames.push_back(cvs_names[i] + "-" + *name);
+      dofnums.push_back( cvs->NumVectors(*name) );
+      maps.push_back( cvs->Map(*name, false) );
+      ghost_maps.push_back( cvs->Map(*name, true) );
+    }
+    i++;
+  }
+
+  return Teuchos::rcp(new SuperMap(cvs_vec[0]->Comm(), compnames, dofnums, maps, ghost_maps));
+  
+}
+
 
 /* ******************************************************************
 * Estimate size of the matrix graph.
