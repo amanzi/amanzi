@@ -47,13 +47,14 @@ class MatrixFE;
 
 class TreeOperator {
  public:
-  TreeOperator() : block_diagonal_(false) {};
+  TreeOperator() : block_diagonal_(false), multi_domain_(false) {};
   TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs);
   virtual ~TreeOperator() = default;
 
   // main members
   void SetOperatorBlock(int i, int j, const Teuchos::RCP<const Operator>& op, bool transpose = false);
-    
+  void set_multi_domain(bool val) {multi_domain_ = val;}
+  
   virtual int Apply(const TreeVector& X, TreeVector& Y) const;
   virtual int ApplyAssembled(const TreeVector& X, TreeVector& Y) const;
   virtual int ApplyInverse(const TreeVector& X, TreeVector& Y) const;
@@ -91,6 +92,7 @@ class TreeOperator {
 
   Teuchos::RCP<AmanziPreconditioners::Preconditioner> preconditioner_;
   bool block_diagonal_;
+  bool multi_domain_;
 
   Teuchos::RCP<VerboseObject> vo_;
 };

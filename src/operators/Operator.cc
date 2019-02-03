@@ -164,7 +164,7 @@ void Operator::SymbolicAssembleMatrix()
       smap_->GhostedMap(), smap_->GhostedMap(), row_size));
 
   // fill the graph
-  SymbolicAssembleMatrix(*smap_, *graph, 0, 0);
+  SymbolicAssembleMatrix(*smap_, *graph, 0, 0, false);
 
   // Completing and optimizing the graphs
   int ierr = graph->FillComplete(smap_->Map(), smap_->Map());
@@ -180,11 +180,11 @@ void Operator::SymbolicAssembleMatrix()
 * Create structure of a global matrix.
 ****************************************************************** */
 void Operator::SymbolicAssembleMatrix(const SuperMap& map, GraphFE& graph,
-                                      int my_block_row, int my_block_col) const
+                                      int my_block_row, int my_block_col, bool multi_domain) const
 {
   // first of double dispatch via Visitor pattern
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    (*it)->SymbolicAssembleMatrixOp(this, map, graph, my_block_row, my_block_col);
+    (*it)->SymbolicAssembleMatrixOp(this, map, graph, my_block_row, my_block_col, multi_domain);
   }
 }
 
@@ -200,7 +200,7 @@ void Operator::AssembleMatrix()
   }
 
   Amat_->Zero();
-  AssembleMatrix(*smap_, *Amat_, 0, 0);
+  AssembleMatrix(*smap_, *Amat_, 0, 0, false);
   Amat_->FillComplete();
 
   if (shift_ != 0.0) {
@@ -218,11 +218,11 @@ void Operator::AssembleMatrix()
 * Populates matrix entries.
 ****************************************************************** */
 void Operator::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
-                              int my_block_row, int my_block_col) const
+                              int my_block_row, int my_block_col, bool multi_domain) const
 {
   // first of double dispatch via Visitor pattern
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    (*it)->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);
+    (*it)->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col, multi_domain);
   }
 }
 
@@ -826,42 +826,42 @@ int Operator::ApplyTransposeMatrixFreeOp(const Op_Face_Schema& op,
 ****************************************************************** */
 void Operator::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
                                         const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const {
+                                        int my_block_row, int my_block_col, bool multi_domain) const {
   SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
 void Operator::SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
                                         const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const {
+                                        int my_block_row, int my_block_col, bool multi_domain) const {
   SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
 void Operator::SymbolicAssembleMatrixOp(const Op_Cell_Node& op,
                                         const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const {
+                                        int my_block_row, int my_block_col, bool multi_domain) const {
   SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
 void Operator::SymbolicAssembleMatrixOp(const Op_Cell_Edge& op,
                                         const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const {
+                                        int my_block_row, int my_block_col, bool multi_domain) const {
   SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
 void Operator::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
                                         const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const {
+                                        int my_block_row, int my_block_col, bool multi_domain) const {
   SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
 void Operator::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
                                         const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const {
+                                        int my_block_row, int my_block_col, bool multi_domain) const {
   SchemaMismatch_(op.schema_string, schema_string_);
 }
 
@@ -871,20 +871,20 @@ void Operator::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
 ****************************************************************** */
 void Operator::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
                                         const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const {
+                                        int my_block_row, int my_block_col, bool multi_domain) const {
   SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 void Operator::SymbolicAssembleMatrixOp(const Op_Face_CellBndFace& op,
                                         const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const {
+                                        int my_block_row, int my_block_col, bool multi_domain) const {
   SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
 void Operator::SymbolicAssembleMatrixOp(const Op_Face_Schema& op,
                                         const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const {
+                                        int my_block_row, int my_block_col, bool multi_domain) const {
   SchemaMismatch_(op.schema_string, schema_string_);
 }
 
@@ -894,7 +894,7 @@ void Operator::SymbolicAssembleMatrixOp(const Op_Face_Schema& op,
 ****************************************************************** */
 void Operator::SymbolicAssembleMatrixOp(const Op_Edge_Edge& op,
                                         const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const {
+                                        int my_block_row, int my_block_col, bool multi_domain) const {
   SchemaMismatch_(op.schema_string, schema_string_);
 }
 
@@ -904,7 +904,7 @@ void Operator::SymbolicAssembleMatrixOp(const Op_Edge_Edge& op,
 ****************************************************************** */
 void Operator::SymbolicAssembleMatrixOp(const Op_Node_Node& op,
                                         const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const {
+                                        int my_block_row, int my_block_col, bool multi_domain) const {
   SchemaMismatch_(op.schema_string, schema_string_);
 }
 
@@ -914,7 +914,7 @@ void Operator::SymbolicAssembleMatrixOp(const Op_Node_Node& op,
 ****************************************************************** */
 void Operator::SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
                                         const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const
+                                        int my_block_row, int my_block_col, bool multi_domain) const
 {
   std::stringstream err;
   err << "Symbolic assemble: invalid schema combination -- " << op.schema_string
@@ -929,7 +929,7 @@ void Operator::SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
 ****************************************************************** */
 void Operator::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
                                         const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const
+                                        int my_block_row, int my_block_col, bool multi_domain) const
 {
   std::stringstream err;
   err << "Symbolic assemble: invalid schema combination -- " << op.schema_string
@@ -944,7 +944,7 @@ void Operator::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
 ****************************************************************** */
 void Operator::SymbolicAssembleMatrixOp(const Op_Diagonal& op,
                                         const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const {
+                                        int my_block_row, int my_block_col, bool multi_domain) const {
   SchemaMismatch_(op.schema_string, schema_string_);
 }
 
@@ -954,42 +954,42 @@ void Operator::SymbolicAssembleMatrixOp(const Op_Diagonal& op,
 ****************************************************************** */
 void Operator::AssembleMatrixOp(const Op_Cell_FaceCell& op,
                                 const SuperMap& map, MatrixFE& mat,
-                                int my_block_row, int my_block_col) const {
+                                int my_block_row, int my_block_col, bool multi_domain) const {
   SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
 void Operator::AssembleMatrixOp(const Op_Cell_Face& op,
                                 const SuperMap& map, MatrixFE& mat,
-                                int my_block_row, int my_block_col) const {
+                                int my_block_row, int my_block_col, bool multi_domain) const {
   SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
 void Operator::AssembleMatrixOp(const Op_Cell_Node& op,
                                 const SuperMap& map, MatrixFE& mat,
-                                int my_block_row, int my_block_col) const {
+                                int my_block_row, int my_block_col, bool multi_domain) const {
   SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
 void Operator::AssembleMatrixOp(const Op_Cell_Edge& op,
                                 const SuperMap& map, MatrixFE& mat,
-                                int my_block_row, int my_block_col) const {
+                                int my_block_row, int my_block_col, bool multi_domain) const {
   SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
 void Operator::AssembleMatrixOp(const Op_Cell_Cell& op,
                                 const SuperMap& map, MatrixFE& mat,
-                                int my_block_row, int my_block_col) const {
+                                int my_block_row, int my_block_col, bool multi_domain) const {
   SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
 void Operator::AssembleMatrixOp(const Op_Cell_Schema& op,
                                 const SuperMap& map, MatrixFE& mat,
-                                int my_block_row, int my_block_col) const {
+                                int my_block_row, int my_block_col, bool multi_domain) const {
   SchemaMismatch_(op.schema_string, schema_string_);
 }
 
@@ -999,20 +999,20 @@ void Operator::AssembleMatrixOp(const Op_Cell_Schema& op,
 ****************************************************************** */
 void Operator::AssembleMatrixOp(const Op_Face_Cell& op,
                                 const SuperMap& map, MatrixFE& mat,
-                                int my_block_row, int my_block_col) const {
+                                int my_block_row, int my_block_col, bool multi_domain) const {
   SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 void Operator::AssembleMatrixOp(const Op_Face_CellBndFace& op,
                                 const SuperMap& map, MatrixFE& mat,
-                                int my_block_row, int my_block_col) const {
+                                int my_block_row, int my_block_col, bool multi_domain) const {
   SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
 void Operator::AssembleMatrixOp(const Op_Face_Schema& op,
                                 const SuperMap& map, MatrixFE& mat,
-                                int my_block_row, int my_block_col) const {
+                                int my_block_row, int my_block_col, bool multi_domain) const {
   SchemaMismatch_(op.schema_string, schema_string_);
 }
 
@@ -1022,7 +1022,7 @@ void Operator::AssembleMatrixOp(const Op_Face_Schema& op,
 ****************************************************************** */
 void Operator::AssembleMatrixOp(const Op_Edge_Edge& op,
                                 const SuperMap& map, MatrixFE& mat,
-                                int my_block_row, int my_block_col) const {
+                                int my_block_row, int my_block_col, bool multi_domain) const {
   SchemaMismatch_(op.schema_string, schema_string_);
 }
 
@@ -1032,7 +1032,7 @@ void Operator::AssembleMatrixOp(const Op_Edge_Edge& op,
 ****************************************************************** */
 void Operator::AssembleMatrixOp(const Op_Node_Node& op,
                                 const SuperMap& map, MatrixFE& mat,
-                                int my_block_row, int my_block_col) const {
+                                int my_block_row, int my_block_col, bool multi_domain) const {
   SchemaMismatch_(op.schema_string, schema_string_);
 }
 
@@ -1042,7 +1042,7 @@ void Operator::AssembleMatrixOp(const Op_Node_Node& op,
 ****************************************************************** */
 void Operator::AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
                                 const SuperMap& map, MatrixFE& mat,
-                                int my_block_row, int my_block_col) const
+                                int my_block_row, int my_block_col, bool multi_domain) const
 {
   std::stringstream err;
   err << "Assemble matrix: invalid schema combination -- " << op.schema_string
@@ -1057,7 +1057,7 @@ void Operator::AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
 ****************************************************************** */
 void Operator::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
                                 const SuperMap& map, MatrixFE& mat,
-                                int my_block_row, int my_block_col) const
+                                int my_block_row, int my_block_col, bool multi_domain) const
 {
   std::stringstream err;
   err << "Assemble matrix: invalid schema combination -- " << op.schema_string
@@ -1072,7 +1072,7 @@ void Operator::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
 ****************************************************************** */
 void Operator::AssembleMatrixOp(const Op_Diagonal& op,
                                 const SuperMap& map, MatrixFE& mat,
-                                int my_block_row, int my_block_col) const {
+                                int my_block_row, int my_block_col, bool multi_domain) const {
   SchemaMismatch_(op.schema_string, schema_string_);
 }
 

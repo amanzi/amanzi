@@ -53,8 +53,9 @@ int AddSuperVectorToTreeVector(const SuperMap& map, const Epetra_Vector& sv, Tre
 // Supermap factory from CV and schema
 Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cv, int schema, int n_dofs);
 Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cv, Schema& schema);
-Teuchos::RCP<SuperMap> CreateSuperMap(std::vector<Teuchos::RCP<const CompositeVectorSpace> > cvs_vec, 
-                                      std::vector<std::string> cvs_names);
+Teuchos::RCP<SuperMap> CreateSuperMap(std::vector<const CompositeVectorSpace > cvs_vec, 
+                                      std::vector<std::string> cvs_names,
+                                      bool multi_domain);
 
 // Estimate the max number of unknowns per row. Note this can be an
 // overestimate, but shouldn't be an underestimate.

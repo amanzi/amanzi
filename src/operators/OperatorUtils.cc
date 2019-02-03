@@ -282,8 +282,9 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, Schema& s
 /* ******************************************************************
 * Create super map: general version
 ****************************************************************** */
-Teuchos::RCP<SuperMap> CreateSuperMap(std::vector<Teuchos::RCP<const CompositeVectorSpace> > cvs_vec,
-                                      std::vector<std::string> cvs_names)
+Teuchos::RCP<SuperMap> CreateSuperMap(std::vector<const CompositeVectorSpace > cvs_vec,
+                                      std::vector<std::string> cvs_names,
+                                      bool multi_domain)
 {
 
   AMANZI_ASSERT(cvs_vec.size() == cvs_names.size() );
@@ -295,16 +296,30 @@ Teuchos::RCP<SuperMap> CreateSuperMap(std::vector<Teuchos::RCP<const CompositeVe
   
   int i = 0;
   for (auto cvs : cvs_vec){
-    for (auto name = cvs->begin(); name != cvs->end(); ++name){
-      compnames.push_back(cvs_names[i] + "-" + *name);
-      dofnums.push_back( cvs->NumVectors(*name) );
-      maps.push_back( cvs->Map(*name, false) );
-      ghost_maps.push_back( cvs->Map(*name, true) );
+    for (auto name = cvs.begin(); name != cvs.end(); ++name){
+      if (multi_domain) {
+        compnames.push_back(*name + "-" + cvs_names[i] );
+      }else{
+        compnames.push_back(*name);
+      }
+      dofnums.push_back( cvs.NumVectors(*name) );
+      maps.push_back( cvs.Map(*name, false) );
+      ghost_maps.push_back( cvs.Map(*name, true) );
     }
     i++;
   }
 
-  return Teuchos::rcp(new SuperMap(cvs_vec[0]->Comm(), compnames, dofnums, maps, ghost_maps));
+  Teuchos::RCP<SuperMap> res = Teuchos::rcp(new SuperMap(cvs_vec[0].Comm(), compnames, dofnums, maps, ghost_maps));
+
+  // for (auto s : compnames) {
+  //   std::cout<<"name "<<s<<"\n";
+  //   std::cout<<"offset "<<res -> Offset(s)<<"\n";
+  //   std::cout<<"num "<<res -> NumOwnedElements(s)<<"\n";
+  // }
+
+
+  
+  return res;
   
 }
 

@@ -64,10 +64,24 @@ int Operator_Diagonal::ApplyMatrixFreeOp(
 ****************************************************************** */
 void Operator_Diagonal::SymbolicAssembleMatrixOp(
     const Op_Diagonal& op, const SuperMap& map, GraphFE& graph,
-    int my_block_row, int my_block_col) const
+    int my_block_row, int my_block_col, bool multi_domain) const
 {
-  const std::vector<int>& row_gids = map.GhostIndices(row_compname_, my_block_row);
-  const std::vector<int>& col_gids = map.GhostIndices(col_compname_, my_block_col);
+  std::string row_name = row_compname_;
+  std::string col_name = col_compname_;
+  int row_pos = my_block_row;
+  int col_pos = my_block_col;
+
+  
+  if (multi_domain){
+    row_name = row_name + "-" + std::to_string(my_block_row);
+    col_name = col_name + "-" + std::to_string(my_block_col);
+    row_pos = 0;
+    col_pos = 0;
+  }
+
+  
+  const std::vector<int>& row_gids = map.GhostIndices(row_name, row_pos);
+  const std::vector<int>& col_gids = map.GhostIndices(col_name, col_pos);
 
   const auto& col_lids = op.col_inds();
   const auto& row_lids = op.row_inds();
@@ -97,10 +111,25 @@ void Operator_Diagonal::SymbolicAssembleMatrixOp(
 ****************************************************************** */
 void Operator_Diagonal::AssembleMatrixOp(
     const Op_Diagonal& op, const SuperMap& map, MatrixFE& mat,
-    int my_block_row, int my_block_col) const
+    int my_block_row, int my_block_col, bool multi_domain) const
 {
-  const std::vector<int>& row_gids = map.GhostIndices(row_compname_, my_block_row);
-  const std::vector<int>& col_gids = map.GhostIndices(col_compname_, my_block_col);
+
+
+  std::string row_name = row_compname_;
+  std::string col_name = col_compname_;
+  int row_pos = my_block_row;
+  int col_pos = my_block_col;
+
+  
+  if (multi_domain){
+    row_name = row_name + "-" + std::to_string(my_block_row);
+    col_name = col_name + "-" + std::to_string(my_block_col);
+    row_pos = 0;
+    col_pos = 0;
+  }
+  
+  const std::vector<int>& row_gids = map.GhostIndices(row_name, row_pos);
+  const std::vector<int>& col_gids = map.GhostIndices(col_name, col_pos);
 
   const auto& col_lids = op.col_inds();
   const auto& row_lids = op.row_inds();
@@ -117,6 +146,8 @@ void Operator_Diagonal::AssembleMatrixOp(
     for (int i = 0; i != ndofs; ++i) {
       lid_r.push_back(row_gids[row_lids[n][i]]);
       lid_c.push_back(col_gids[col_lids[n][i]]);
+      // std::cout << row_lids[n][i]<<" "<<col_lids[n][i]<<" : "<<
+      //   row_gids[row_lids[n][i]] << " "<<col_gids[col_lids[n][i]]<<"\n";      
     }
 
     ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[n]);

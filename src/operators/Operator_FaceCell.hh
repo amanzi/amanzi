@@ -38,9 +38,9 @@ class Operator_FaceCell : public Operator_Cell {
 
   // visit methods for Apply
   virtual int ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
-      const CompositeVector& X, CompositeVector& Y) const;
+      const CompositeVector& X, CompositeVector& Y) const ;
   virtual int ApplyMatrixFreeOp(const Op_Cell_Face& op,
-      const CompositeVector& X, CompositeVector& Y) const;
+      const CompositeVector& X, CompositeVector& Y) const ;
   virtual int ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
       const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
@@ -53,36 +53,36 @@ class Operator_FaceCell : public Operator_Cell {
   // visit methods for symbolic assemble
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
           const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const;
+          int my_block_row, int my_block_col, bool multi_domain)  const;
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
           const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const;
+          int my_block_row, int my_block_col, bool multi_domain)  const;
   virtual void SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
           const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const;
+          int my_block_row, int my_block_col, bool multi_domain)  const;
   virtual void SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
           const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const;
+          int my_block_row, int my_block_col, bool multi_domain)  const;
   virtual void SymbolicAssembleMatrixOp(const Op_Diagonal& op,
           const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const;
+          int my_block_row, int my_block_col, bool multi_domain)  const;
   
   // visit methods for actual assemble
   virtual void AssembleMatrixOp(const Op_Cell_FaceCell& op,
           const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col) const;
+          int my_block_row, int my_block_col, bool multi_domain)  const;
   virtual void AssembleMatrixOp(const Op_Cell_Face& op,
           const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col) const;
+          int my_block_row, int my_block_col, bool multi_domain)  const ;
   virtual void AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
           const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col) const;
+          int my_block_row, int my_block_col, bool multi_domain)  const;
   virtual void AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
           const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col) const;
+          int my_block_row, int my_block_col, bool multi_domain)  const ;
   virtual void AssembleMatrixOp(const Op_Diagonal& op,
           const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col) const;
+          int my_block_row, int my_block_col, bool multi_domain)  const;
 };
 
 }  // namespace Operators

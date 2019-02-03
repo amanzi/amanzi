@@ -195,7 +195,7 @@ void Operator_Schema::SymbolicAssembleMatrix()
           smap_->GhostedMap(), smap_->GhostedMap(), row_size));
 
   // fill the graph
-  Operator::SymbolicAssembleMatrix(*smap_, *graph, 0, 0);
+  Operator::SymbolicAssembleMatrix(*smap_, *graph, 0, 0, false);
 
   // Completing and optimizing the graphs
   int ierr = graph->FillComplete(smap_->Map(), smap_->Map());
@@ -213,7 +213,7 @@ void Operator_Schema::SymbolicAssembleMatrix()
 ****************************************************************** */
 void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
                                                const SuperMap& map, GraphFE& graph,
-                                               int my_block_row, int my_block_col) const
+                                               int my_block_row, int my_block_col, bool multi_domain) const
 {
   std::vector<int> lid_r, lid_c;
   AmanziMesh::Entity_ID_List nodes, edges, faces;
@@ -295,7 +295,7 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
 
 void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Face_Schema& op,
                                                const SuperMap& map, GraphFE& graph,
-                                               int my_block_row, int my_block_col) const
+                                               int my_block_row, int my_block_col, bool multi_domain) const
 {
   std::vector<int> lid_r, lid_c;
   AmanziMesh::Entity_ID_List cells;
@@ -336,7 +336,7 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Face_Schema& op,
 ****************************************************************** */
 void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Node_Node& op,
                                                const SuperMap& map, GraphFE& graph,
-                                               int my_block_row, int my_block_col) const
+                                               int my_block_row, int my_block_col, bool multi_domain) const
 {
   const std::vector<int>& node_row_inds = map.GhostIndices("node", my_block_row);
   const std::vector<int>& node_col_inds = map.GhostIndices("node", my_block_col);
@@ -358,7 +358,7 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Node_Node& op,
 ****************************************************************** */
 void Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
                                        const SuperMap& map, MatrixFE& mat,
-                                       int my_block_row, int my_block_col) const
+                                       int my_block_row, int my_block_col, bool multi_domain) const
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
@@ -441,7 +441,7 @@ void Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
 
 void Operator_Schema::AssembleMatrixOp(const Op_Face_Schema& op,
                                        const SuperMap& map, MatrixFE& mat,
-                                       int my_block_row, int my_block_col) const
+                                       int my_block_row, int my_block_col, bool multi_domain) const
 {
   AMANZI_ASSERT(op.matrices.size() == nfaces_owned);
 
@@ -483,7 +483,7 @@ void Operator_Schema::AssembleMatrixOp(const Op_Face_Schema& op,
 ****************************************************************** */
 void Operator_Schema::AssembleMatrixOp(const Op_Node_Node& op,
                                        const SuperMap& map, MatrixFE& mat,
-                                       int my_block_row, int my_block_col) const
+                                       int my_block_row, int my_block_col, bool multi_domain) const
 {
   const std::vector<int>& node_row_inds = map.GhostIndices("node", my_block_row);
   const std::vector<int>& node_col_inds = map.GhostIndices("node", my_block_col);

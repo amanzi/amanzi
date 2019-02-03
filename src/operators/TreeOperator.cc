@@ -131,9 +131,8 @@ int TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
 
     
 /* ******************************************************************
-* Sumbolic assemble global matrix from elemental matrices of block 
-* operators. The algorithm is limited to the case the all blocks are
-* square matrices.
+* Symbolic assemble global matrix from elemental matrices of block 
+* operators. 
 ****************************************************************** */
 void TreeOperator::SymbolicAssembleMatrix()
 {
@@ -143,6 +142,8 @@ void TreeOperator::SymbolicAssembleMatrix()
   // May be ways to relax this a bit in the future, but it currently covers
   // all uses.
   int schema = 0;
+  std::vector<const CompositeVectorSpace > cvs_vec;
+  std::vector<std::string> cvs_names;
 
   // Check that each row has at least one non-null operator block
   Teuchos::RCP<const Operator> an_op;
@@ -156,19 +157,23 @@ void TreeOperator::SymbolicAssembleMatrix()
 
       if (lcv_row == lcv_col) {
         AMANZI_ASSERT(blocks_[lcv_row][lcv_col] != Teuchos::null);
-        if (schema == 0) {
-          schema = blocks_[lcv_row][lcv_col]->schema();
-        } else {
-          AMANZI_ASSERT(schema == blocks_[lcv_row][lcv_col]->schema());
-        }
+        cvs_vec.push_back(blocks_[lcv_row][lcv_col]->DomainMap());
+        cvs_names.push_back(std::to_string (lcv_row));
+        // if (schema == 0) {
+        //   schema = blocks_[lcv_row][lcv_col]->schema();
+        // } else {
+        //   AMANZI_ASSERT(schema == blocks_[lcv_row][lcv_col]->schema());
+        // }
       }
     }
     AMANZI_ASSERT(is_block);
   }
 
   // create the supermap and graph
-  smap_ = CreateSuperMap(an_op->DomainMap(), schema, n_blocks);
-  int row_size = MaxRowSize(*an_op->DomainMap().Mesh(), schema, n_blocks);
+  smap_ = CreateSuperMap(cvs_vec,  cvs_names, multi_domain_);
+  //exit(0);
+  //int row_size = MaxRowSize(*an_op->DomainMap().Mesh(), schema, n_blocks);
+  int row_size = 10;
   Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->Map(),
           smap_->GhostedMap(), smap_->GhostedMap(), row_size));
 
@@ -177,7 +182,7 @@ void TreeOperator::SymbolicAssembleMatrix()
     for (int lcv_col = 0; lcv_col != n_blocks; ++lcv_col) {
       Teuchos::RCP<const Operator> block = blocks_[lcv_row][lcv_col];
       if (block != Teuchos::null) {
-        block->SymbolicAssembleMatrix(*smap_, *graph, lcv_row, lcv_col);
+        block->SymbolicAssembleMatrix(*smap_, *graph, lcv_row, lcv_col, multi_domain_);
       }
     }
   }
@@ -204,13 +209,18 @@ void TreeOperator::AssembleMatrix() {
     for (int lcv_col = 0; lcv_col != n_blocks; ++lcv_col) {
       Teuchos::RCP<const Operator> block = blocks_[lcv_row][lcv_col];
       if (block != Teuchos::null) {
-        block->AssembleMatrix(*smap_, *Amat_, lcv_row, lcv_col);
+        block->AssembleMatrix(*smap_, *Amat_, lcv_row, lcv_col, multi_domain_);
       }
     }
   }
 
   int ierr = Amat_->FillComplete();
   AMANZI_ASSERT(!ierr);
+
+  std::stringstream filename_s2;
+  filename_s2 << "assembled_matrix" << 0 << ".txt";
+  EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Amat_ ->Matrix());
+
 }
 
 
@@ -286,7 +296,7 @@ void TreeOperator::InitBlockDiagonalPreconditioner()
 {
   block_diagonal_ = true;
 }
-
+ 
 
 /* ******************************************************************
 * Deep copy for building interfaces to TPLs, mainly to solvers.
