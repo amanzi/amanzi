@@ -103,9 +103,6 @@ class MFD3D_Diffusion : public MFD3D,
   virtual void L2Cell(int c, const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& vc) override;
 
-  int RecoverGradient_StiffnessMatrix(int c, const std::vector<double>& solution, 
-                                      AmanziGeometry::Point& gradient);
-
   // utils
   double Transmissibility(int f, int c, const Tensor& K);
 

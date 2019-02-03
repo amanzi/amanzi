@@ -22,6 +22,7 @@
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "MFD3D_Diffusion.hh"
 #include "MFD3D_Generalized_Diffusion.hh"
+#include "MFD3D_Lagrange.hh"
 #include "Tensor.hh"
 
 
@@ -792,32 +793,36 @@ TEST(RECOVER_GRADIENT_NODAL) {
   meshfactory.preference(FrameworkPreference({MSTK}));
   RCP<Mesh> mesh = meshfactory("test/one_trapezoid.exo"); 
  
-  MFD3D_Diffusion mfd(mesh);
+  Teuchos::ParameterList plist;
+  plist.set<int>("method order", 1)
+       .set<bool>("use low-order scheme", true);
+  MFD3D_Lagrange mfd(plist, mesh);
 
   // create pressure solution
   AmanziMesh::Entity_ID_List nodes;
   int nnodes = 8, cell = 0;
   mesh->cell_get_nodes(cell, &nodes);
 
-  Point slope(1.0, 2.0,3.0);
-  std::vector<double> solution(nnodes);
+  Point slope(1.0, 2.0, 3.0);
+  std::vector<Polynomial> solution(nnodes);
   Point xv(3);
 
   for (int n = 0; n < nnodes; n++) {
     int v = nodes[n];
     mesh->node_get_coordinates(v, &xv);
-    solution[n] = slope * xv;
+    solution[n].Reshape(3, 0);
+    solution[n](0) = slope * xv;
   }
   
   // gradient recovery
-  Point gradient(3);
-  mfd.RecoverGradient_StiffnessMatrix(cell, solution, gradient);
+  WhetStone::Polynomial gradient(3, 1);
+  mfd.L2Cell(cell, solution, NULL, gradient);
 
-  printf("Gradient %f %f %f\n", gradient[0], gradient[1], gradient[2]);
+  printf("Gradient %f %f %f\n", gradient(1), gradient(2), gradient(3));
 
-  CHECK_CLOSE(gradient[0], 1.0, 1e-10);
-  CHECK_CLOSE(gradient[1], 2.0, 1e-10);
-  CHECK_CLOSE(gradient[2], 3.0, 1e-10);
+  CHECK_CLOSE(gradient(1), 1.0, 1e-10);
+  CHECK_CLOSE(gradient(2), 2.0, 1e-10);
+  CHECK_CLOSE(gradient(3), 3.0, 1e-10);
 
   delete comm;
 }
