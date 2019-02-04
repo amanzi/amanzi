@@ -27,15 +27,30 @@ namespace Amanzi {
 * Constructor
 ******************************************************************* */
 FlowMatrixFracture_PK::FlowMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
-                                               const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                                               const Teuchos::RCP<State>& S,
-                                               const Teuchos::RCP<TreeVector>& soln) :
-    glist_(glist),
-    Amanzi::PK_MPC<PK_BDF>(pk_tree, glist, S, soln),
-    Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln)
+                                             const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                                             const Teuchos::RCP<State>& S,
+                                             const Teuchos::RCP<TreeVector>& soln) :
+  glist_(glist), matrix_assembled_(false),
+  Amanzi::PK_MPC<PK_BDF>(pk_tree, glist, S, soln),
+  Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln)
 {
   Teuchos::ParameterList vlist;
-  vo_ =  Teuchos::rcp(new VerboseObject("MatrixFracture_PK", vlist)); 
+  vo_ =  Teuchos::rcp(new VerboseObject("MatrixFracture_PK", vlist));
+  Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(glist, "PKs");
+  if (pks_list->isSublist(name_)) {
+    plist_ = Teuchos::sublist(pks_list, name_); 
+  } else {
+    std::stringstream messagestream;
+    messagestream << "There is no sublist for PK "<<name_<<"in PKs list\n";
+    Errors::Message message(messagestream.str());
+    Exceptions::amanzi_throw(message);
+  }
+  
+  dump_ = plist_->get<bool>("dump preconditioner", false);
+
+  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
+  linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
+
 }
 
 
@@ -100,9 +115,13 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   auto tvs = Teuchos::rcp(new TreeVectorSpace(solution_->Map()));
   op_tree_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
+  //  op_tree_rhs_ =  Teuchos::rcp(new TreeVector(tvs));
 
   op_tree_->SetOperatorBlock(0, 0, pk_matrix->op());
   op_tree_->SetOperatorBlock(1, 1, pk_fracture->op());
+
+  //op_tree_rhs_->PushBack(pk_matrix->op()->rhs());
+  //op_tree_rhs_->PushBack(pk_fracture->op()->rhs());
 
   // off-diagonal blocks are coupled PDEs
   // -- minimum composite vector spaces containing the coupling term
@@ -161,18 +180,24 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_coupling01->Setup(values, -1.0);
 
   auto op_coupling10 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
-      oplist, cvs_fracture, cvs_matrix, inds_fracture, inds_matrix, pk_fracture->op()));
+      oplist, cvs_fracture, cvs_matrix, inds_fracture, inds_matrix));
   op_coupling10->Setup(values, -1.0);
 
   auto op_coupling11 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
-      oplist, cvs_fracture, cvs_fracture, inds_fracture, inds_fracture));
+      oplist, cvs_fracture, cvs_fracture, inds_fracture, inds_fracture, pk_fracture->op()));
   op_coupling11->Setup(values, 1.0);
 
   op_tree_->SetOperatorBlock(0, 1, op_coupling01->global_operator());
   op_tree_->SetOperatorBlock(1, 0, op_coupling10->global_operator());
 
+  op_tree_->set_multi_domain(true);
+
   op_tree_->SymbolicAssembleMatrix();
+
   op_tree_->AssembleMatrix();
+
+  matrix_assembled_ = true;
+
 }
 
 
@@ -190,6 +215,56 @@ bool FlowMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   return fail;
 }
+
+void FlowMatrixFracture_PK::FunctionalResidual(double t_old, double t_new,
+                                               Teuchos::RCP<TreeVector> u_old,
+                                               Teuchos::RCP<TreeVector> u_new,
+                                               Teuchos::RCP<TreeVector> f){
+  double norm, sol;
+  
+  int ierr = op_tree_->ApplyAssembled(*u_new, *f);
+  AMANZI_ASSERT(!ierr);
+  
+  // diagonal blocks in tree operator and the Darcy PKs
+  auto pk_matrix = Teuchos::rcp_dynamic_cast<Flow::Darcy_PK>(sub_pks_[0]);
+  auto pk_fracture = Teuchos::rcp_dynamic_cast<Flow::Darcy_PK>(sub_pks_[1]);
+
+  f->SubVector(0)->Data()->Update(-1, *pk_matrix->op()->rhs(), 1);
+  f->SubVector(1)->Data()->Update(-1, *pk_fracture->op()->rhs(), 1);
+
+  
+
+}
+
+void FlowMatrixFracture_PK::UpdatePreconditioner(double t,
+                                                 Teuchos::RCP<const TreeVector> up,
+                                                 double h, bool assemble) {
+
+  if (assemble) {
+    op_tree_->AssembleMatrix();
+    if (dump_) {
+      std::stringstream filename;
+      filename << "FlowMatrixFracture_PC_.txt";
+      EpetraExt::RowMatrixToMatlabFile(filename.str().c_str(), *op_tree_->A());
+    }
+    
+    std::string name = plist_->get<std::string>("preconditioner");
+    Teuchos::ParameterList pc_list = preconditioner_list_->sublist(name);
+
+    op_tree_ -> InitPreconditioner(pc_list);
+  }
+  
+}
+
+
+int FlowMatrixFracture_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, 
+                             Teuchos::RCP<TreeVector> Y){
+
+  Y->PutScalar(0.0);
+  return op_tree_->ApplyInverse(*X, *Y);
+
+}
+
 
 }  // namespace Amanzi
 

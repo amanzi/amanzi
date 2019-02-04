@@ -340,9 +340,9 @@ int Operator::ApplyAssembled(const CompositeVector& X, CompositeVector& Y, doubl
   Epetra_Vector Xcopy(A_->RowMap());
   Epetra_Vector Ycopy(A_->RowMap());
 
-  int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, 0);
+  int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, false, 0);
   ierr |= A_->Apply(Xcopy, Ycopy);
-  ierr |= AddSuperVectorToCompositeVector(*smap_, Ycopy, Y, 0);
+  ierr |= AddSuperVectorToCompositeVector(*smap_, Ycopy, Y, false, 0);
 
   if (ierr) {
     Errors::Message msg;
@@ -365,7 +365,7 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 
   Epetra_Vector Xcopy(*smap_->Map());
   Epetra_Vector Ycopy(*smap_->Map());
-  ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, 0);
+  ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, false, 0);
 
   ////dump the schur complement
   //std::stringstream filename_s2;
@@ -374,7 +374,7 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 
   ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
   
-  ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y, 0);
+  ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y, false, 0);
 
   if (ierr) {
     Errors::Message msg("Operator: ApplyInverse failed.\n");

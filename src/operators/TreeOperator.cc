@@ -93,10 +93,13 @@ int TreeOperator::ApplyAssembled(const TreeVector& X, TreeVector& Y) const
   Y.PutScalar(0.0);
   Epetra_Vector Xcopy(A_->RowMap());
   Epetra_Vector Ycopy(A_->RowMap());
+  double x_norm, y_norm;
 
-  int ierr = CopyTreeVectorToSuperVector(*smap_, X, Xcopy);
+  int ierr = CopyTreeVectorToSuperVector(*smap_, X, multi_domain_, Xcopy);
+
   ierr |= A_->Apply(Xcopy, Ycopy);
-  ierr |= CopySuperVectorToTreeVector(*smap_, Ycopy, Y);
+
+  ierr |= CopySuperVectorToTreeVector(*smap_, Ycopy, multi_domain_, Y);
   AMANZI_ASSERT(!ierr);
 
   return ierr;
@@ -113,9 +116,9 @@ int TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
     Epetra_Vector Xcopy(A_->RowMap());
     Epetra_Vector Ycopy(A_->RowMap());
 
-    int ierr = CopyTreeVectorToSuperVector(*smap_, X, Xcopy);
+    int ierr = CopyTreeVectorToSuperVector(*smap_, X, multi_domain_, Xcopy);
     code = preconditioner_->ApplyInverse(Xcopy, Ycopy);
-    ierr |= CopySuperVectorToTreeVector(*smap_, Ycopy, Y);
+    ierr |= CopySuperVectorToTreeVector(*smap_, Ycopy, multi_domain_, Y);
 
     AMANZI_ASSERT(!ierr);
   } else {
@@ -307,7 +310,7 @@ void TreeOperator::CopyVectorToSuperVector(const TreeVector& tv, Epetra_Vector& 
   int ierr(0);
   int my_dof = 0;
   for (auto it = tv.begin(); it != tv.end(); ++it) {
-    ierr |= CopyCompositeVectorToSuperVector(*smap_, *(*it)->Data(), sv, my_dof);
+    ierr |= CopyCompositeVectorToSuperVector(*smap_, *(*it)->Data(), sv, multi_domain_, my_dof);
     my_dof++;            
   }
   AMANZI_ASSERT(!ierr);
@@ -319,7 +322,7 @@ void TreeOperator::CopySuperVectorToVector(const Epetra_Vector& sv, TreeVector& 
   int ierr(0);
   int my_dof = 0;
   for (auto it = tv.begin(); it != tv.end(); ++it) {
-    ierr |= CopySuperVectorToCompositeVector(*smap_, sv, *(*it)->Data(), my_dof);
+    ierr |= CopySuperVectorToCompositeVector(*smap_, sv, *(*it)->Data(), multi_domain_, my_dof);
     my_dof++;            
   }
   AMANZI_ASSERT(!ierr);

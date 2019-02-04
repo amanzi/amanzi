@@ -30,11 +30,11 @@ class Schema;
 // Nonmember CompositeVector to/from Super-vector
 // -- simple schema version
 int CopyCompositeVectorToSuperVector(const SuperMap& map, const CompositeVector& cv,
-                                     Epetra_Vector& sv, int dofnum = 0);
+                                     Epetra_Vector& sv, bool multi_domain, int dofnum = 0);
 int CopySuperVectorToCompositeVector(const SuperMap& map, const Epetra_Vector& sv,
-                                     CompositeVector& cv, int dofnum = 0);
+                                     CompositeVector& cv, bool multi_domain, int dofnum = 0);
 int AddSuperVectorToCompositeVector(const SuperMap& map, const Epetra_Vector& sv,
-                                    CompositeVector& cv, int dofnum = 0);
+                                    CompositeVector& cv, bool multi_domain, int dofnum = 0);
 
 // -- complex schema version
 int CopyCompositeVectorToSuperVector(const SuperMap& map, const CompositeVector& cv,
@@ -45,9 +45,9 @@ int CopySuperVectorToCompositeVector(const SuperMap& map, const Epetra_Vector& s
 
 // Nonmember TreeVector to/from Super-vector
 // -- simple schema version
-int CopyTreeVectorToSuperVector(const SuperMap& map, const TreeVector& cv, Epetra_Vector& sv);
-int CopySuperVectorToTreeVector(const SuperMap& map, const Epetra_Vector& sv, TreeVector& cv);
-int AddSuperVectorToTreeVector(const SuperMap& map, const Epetra_Vector& sv, TreeVector& cv);
+int CopyTreeVectorToSuperVector(const SuperMap& map, const TreeVector& cv, bool multi_domain, Epetra_Vector& sv);
+int CopySuperVectorToTreeVector(const SuperMap& map, const Epetra_Vector& sv, bool multi_domain, TreeVector& cv);
+int AddSuperVectorToTreeVector(const SuperMap& map, const Epetra_Vector& sv, bool multi_domain, TreeVector& cv);
 
 
 // Supermap factory from CV and schema
