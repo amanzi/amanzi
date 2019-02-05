@@ -415,7 +415,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
         Teuchos::RCP<TransportDomainFunction> 
           bc = factory.Create(spec, "boundary concentration", AmanziMesh::FACE, Kxy);
         
-        for (int i = 0; i < component_names_.size(); i++){
+        for (int i = 0; i < component_names_.size(); i++) {
           bc->tcc_names().push_back(component_names_[i]);
           bc->tcc_index().push_back(i);
         }
@@ -491,7 +491,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
         Teuchos::ParameterList& spec = src_list.sublist(specname);
         Teuchos::RCP<TransportDomainFunction> src = factory.Create(spec, "sink", AmanziMesh::CELL, Kxy);
         
-        for (int i = 0; i < component_names_.size(); i++){
+        for (int i = 0; i < component_names_.size(); i++) {
           src->tcc_names().push_back(component_names_[i]);
           src->tcc_index().push_back(i);
         }
@@ -624,7 +624,7 @@ double Transport_PK::StableTimeStep()
 
   for (int f = 0; f < nfaces_wghost; f++) {
     if (upwind_cells_[f].size() > 0) {
-      for (int k=0; k<upwind_cells_[f].size(); k++){
+      for (int k=0; k<upwind_cells_[f].size(); k++) {
         int c = upwind_cells_[f][k];
         if (c >= 0) {
           int f_loc_id = flux_map_->FirstPointInElement(f);
@@ -1182,7 +1182,7 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
     // int c1 = (upwind_cells_[f].size() == 1) ? upwind_cells_[f][0] : -1;
     // int c2 = (downwind_cells_[f].size() == 1) ? downwind_cells_[f][0] : -1;
     int f_loc_id = flux_map->FirstPointInElement(f);
-    for ( int j = 0; j<upwind_cells_[f].size(); j++){
+    for ( int j = 0; j<upwind_cells_[f].size(); j++) {
 
       int c1 = upwind_cells_[f][j];
       int c2 = downwind_cells_[f][j];
@@ -1223,7 +1223,7 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
       int f = it->first;
       std::vector<double>& values = it->second;       
       if (downwind_cells_[f].size() > 0) {
-        for (int j=0; j<downwind_cells_[f].size(); j++){
+        for (int j=0; j<downwind_cells_[f].size(); j++) {
           int c2 = downwind_cells_[f][j];
           if (c2 < 0) continue;
 
@@ -1566,7 +1566,7 @@ void Transport_PK::ComputeSources_(
         if (srcs_[m]->keyword() == "producer") {
           // correction for an extraction well
           value *= tcc_prev[imap][c];
-        }else if (srcs_[m]->name() == "domain coupling"){
+        } else if (srcs_[m]->name() == "domain coupling") {
           value = values[k];         
         } else {
           // correction for non-SI concentration units
@@ -1575,10 +1575,6 @@ void Transport_PK::ComputeSources_(
         }
 
         tcc[imap][c] += dtp * value;
-        // if ((domain_ == "fracture") && (c==2)){
-        //   std::cout <<k << " : c="<<c<<" ("<<mesh_->cell_centroid(c)<<")  dt "<<dtp<<" val "<<value<<" add "<<dtp * value<<"\n";
-        // }
-        
         mass_solutes_source_[i] += value;
       }
     }
@@ -1648,23 +1644,17 @@ void Transport_PK::IdentifyUpwindCells()
   upwind_flux_.resize(nfaces_wghost);
   downwind_flux_.resize(nfaces_wghost);
 
-
-  
   AmanziMesh::Entity_ID_List faces, cells;
   std::vector<int> dirs;
 
   if (mesh_->space_dimension() == mesh_->manifold_dimension()) {
-
-
     const Epetra_Map& cell_map = mesh_->cell_map(true);
 
-
-    for (int f=0; f<nfaces_wghost; f++){
+    for (int f=0; f<nfaces_wghost; f++) {
       upwind_cells_[f].assign(flux_map_->ElementSize(f), -1);
       downwind_cells_[f].assign(flux_map_->ElementSize(f), -1);
       upwind_flux_[f].assign(flux_map_->ElementSize(f), -1);
       downwind_flux_[f].assign(flux_map_->ElementSize(f), -1);
-        
     }
     
     for (int c = 0; c < ncells_wghost; c++) {
@@ -1677,11 +1667,11 @@ void Transport_PK::IdentifyUpwindCells()
         int pos = 0;
         mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         
-        if (fracture){
-          if (c==cells[0]){
+        if (fracture) {
+          if (c==cells[0]) {
             pos = (cell_map.GID(cells[0]) < cell_map.GID(cells[1])) ? 0 : 1;
             cells[1] = -1;
-          }else if (c==cells[1]){
+          } else if (c==cells[1]) {
             pos = (cell_map.GID(cells[0]) < cell_map.GID(cells[1])) ? 1 : 0;
             cells[0] = -1;
           }

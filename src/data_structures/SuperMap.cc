@@ -222,7 +222,6 @@ SuperMap::CreateIndices_(const std::string& compname, int dofnum, bool ghosted) 
     std::vector<int> indices(nentities, -1);
     int offset = offsets_.at(compname);
 
-    
     for (int i=0; i!=nentities_owned; ++i) {
       indices[i] = offset + dofnum + i*num_dof;
     }

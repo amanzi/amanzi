@@ -245,7 +245,7 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
   int row_pos = my_block_row;
   int col_pos = my_block_col;
 
-  if (multi_domain){
+  if (multi_domain) {
     face_name = face_name + "-" + std::to_string(my_block_row);
     cell_name = cell_name + "-" + std::to_string(my_block_col);
     row_pos = 0;
@@ -280,7 +280,7 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
       first = (faces[n] < nfaces_owned) ? first : (first - nface_points_owned);
       int offset = (faces[n] < nfaces_owned) ? face_row_offset : face_gh_offset;
       
-      for (int m = 0; m != face_dof_size; ++m){
+      for (int m = 0; m != face_dof_size; ++m) {
         lid_r[k] = offset + (first + m) * num_dof_faces + row_pos;
         lid_c[k] = offset + (first + m) * num_dof_faces + col_pos;
         k++;
@@ -289,9 +289,9 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
 
     int cell_dof_size = cell_gh_map->ElementSize(c);
     int first = cell_gh_map->FirstPointInElement(c);
-    for (int m = 0; m != cell_dof_size; ++m){
-      lid_r[k] = cell_row_offset + (first + m)*num_dof_cells + row_pos;
-      lid_c[k] = cell_row_offset + (first + m)*num_dof_cells + col_pos;
+    for (int m = 0; m != cell_dof_size; ++m) {
+      lid_r[k] = cell_row_offset + (first + m) * num_dof_cells + row_pos;
+      lid_c[k] = cell_row_offset + (first + m) * num_dof_cells + col_pos;
       k++;
     }
     
@@ -338,7 +338,7 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
       first = (faces[n] < nfaces_owned) ? first : (first - nface_points_owned);
       int offset = (faces[n] < nfaces_owned) ? face_row_offset : face_gh_offset;
       
-      for (int m = 0; m != face_dof_size; ++m){
+      for (int m = 0; m != face_dof_size; ++m) {
         lid_r[k] = offset + (first + m) * num_dof_faces + my_block_row;
         lid_c[k] = offset + (first + m) * num_dof_faces + my_block_col;
         k++;
@@ -414,13 +414,12 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Diagonal& op,
                                                  const SuperMap& map, GraphFE& graph,
                                                  int my_block_row, int my_block_col, bool multi_domain) const
 {
-
   std::string row_name = op.row_compname();
   std::string col_name = op.col_compname();
   int row_pos = my_block_row;
   int col_pos = my_block_col;
 
-  if (multi_domain){
+  if (multi_domain) {
     row_name = row_name + "-" + std::to_string(my_block_row);
     col_name = col_name + "-" + std::to_string(my_block_col);
     row_pos = 0;
@@ -459,7 +458,6 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
                                          const SuperMap& map, MatrixFE& mat,
                                          int my_block_row, int my_block_col, bool multi_domain) const
 {
-
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
   std::vector<int> lid_r(2*cell_max_faces + 1);
@@ -471,14 +469,13 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
   int row_pos = my_block_row;
   int col_pos = my_block_col;
 
-  if (multi_domain){
+  if (multi_domain) {
     face_name = face_name + "-" + std::to_string(my_block_row);
     cell_name = cell_name + "-" + std::to_string(my_block_col);
     row_pos = 0;
     col_pos = 0;
   }
 
-  
   // ELEMENT: cell, DOFS: face and cell
   const std::vector<int>& face_row_inds = map.GhostIndices(face_name, row_pos);
   const std::vector<int>& face_col_inds = map.GhostIndices(face_name, col_pos);
@@ -511,7 +508,7 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
       first = (faces[n] < nfaces_owned) ? first : (first - nface_points_owned);
       int offset = (faces[n] < nfaces_owned) ? face_row_offset : face_gh_offset;
       
-      for (int m = 0; m != face_dof_size; ++m){
+      for (int m = 0; m != face_dof_size; ++m) {
         lid_r[k] = offset + (first + m) * num_dof_faces + row_pos;
         lid_c[k] = offset + (first + m) * num_dof_faces + col_pos;
         k++;
@@ -520,7 +517,7 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
 
     int cell_dof_size = cell_gh_map->ElementSize(c);
     int first = cell_gh_map->FirstPointInElement(c);
-    for (int m = 0; m != cell_dof_size; ++m){
+    for (int m = 0; m != cell_dof_size; ++m) {
       lid_r[k] = cell_row_offset + (first + m) * num_dof_cells + row_pos;
       lid_c[k] = cell_row_offset + (first + m) * num_dof_cells + col_pos;
       k++;
@@ -569,7 +566,7 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_Face& op,
       first = (faces[n] < nfaces_owned) ? first : (first - nface_points_owned);
       int offset = (faces[n] < nfaces_owned) ? face_row_offset : face_gh_offset;
       
-      for (int m = 0; m != face_dof_size; ++m){
+      for (int m = 0; m != face_dof_size; ++m) {
         lid_r[k] = offset + (first + m) * num_dof_faces + my_block_row;
         lid_c[k] = offset + (first + m) * num_dof_faces + my_block_col;
         k++;
@@ -641,14 +638,12 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Diagonal& op,
                                          const SuperMap& map, MatrixFE& mat,
                                          int my_block_row, int my_block_col, bool multi_domain) const
 {
-
   std::string row_name = op.row_compname();
   std::string col_name = op.col_compname();
   int row_pos = my_block_row;
   int col_pos = my_block_col;
 
-  
-  if (multi_domain){
+  if (multi_domain) {
     row_name = row_name + "-" + std::to_string(my_block_row);
     col_name = col_name + "-" + std::to_string(my_block_col);
     row_pos = 0;

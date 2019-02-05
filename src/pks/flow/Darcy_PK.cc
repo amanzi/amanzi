@@ -129,9 +129,6 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
   prev_saturation_liquid_key_ = Keys::getKey(domain_, "prev_saturation_liquid"); 
 
-  normal_permeability_key_ = Keys::getKey(domain_, "normal_permeability");
-  fracture_matrix_source_key_ = Keys::getKey(domain_, "matrix_source");   
-
   // optional keys
   pressure_head_key_ = Keys::getKey(domain_, "pressure_head"); 
 
@@ -282,16 +279,6 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // Require additional field to couple PKs
   if (coupled_to_matrix_) {
-    if (!S->HasField(normal_permeability_key_)) {
-      S->RequireField(normal_permeability_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
-    }
-
-    if (!S->HasField(fracture_matrix_source_key_)) {
-      S->RequireField(fracture_matrix_source_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
-    }     
-
     if (!S->HasField(darcy_flux_fracture_key_)) {
       AMANZI_ASSERT(mesh_->cell_get_max_faces() > 0);
       S->RequireField(darcy_flux_fracture_key_, "state")->SetMesh(mesh_)->SetGhosted(true)
@@ -438,6 +425,9 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Verbose output of initialization statistics.
   InitializeStatistics_(init_darcy);
+
+  // for testing only
+  op_diff_->ApplyBCs(true, true, true);
 }
 
 
@@ -451,7 +441,6 @@ void Darcy_PK::InitializeFields_()
 
   InitializeField(S_.ptr(), passwd_, saturation_liquid_key_, 1.0);
   InitializeField(S_.ptr(), passwd_, prev_saturation_liquid_key_, 1.0);
-  InitializeField(S_.ptr(), passwd_, fracture_matrix_source_key_, 0.0);
   InitializeField(S_.ptr(), "state", darcy_flux_fracture_key_, 0.0);
 }
 
@@ -531,20 +520,6 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   if (S_->HasField("well_index")) {
     const CompositeVector& wi = *S_->GetFieldData("well_index");
     op_acc_->AddAccumulationTerm(wi, "cell");
-  }
-
-  // coupling with fracture modifies the list of boundary conditions
-  if (coupled_to_fracture_) {
-    UpdateMatrixBCsUsingFracture_();
-  }
-
-  // coupling with matrix modifies globla matrix and source term
-  if (coupled_to_matrix_){
-    UpdateSourceUsingMatrix_();
-
-    const auto& s1 = *S_->GetFieldData(normal_permeability_key_);
-    const auto& s2 = *S_->GetFieldData(fracture_matrix_source_key_);        
-    op_acc_->AddAccumulationRhs(s1, s2, 2.0, "cell", true);
   }
 
   op_diff_->ApplyBCs(true, true, true);
@@ -688,58 +663,6 @@ void Darcy_PK::UpdateSpecificYield_()
 ****************************************************************** */
 void Darcy_PK::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
   UpdateLocalFields_(S.ptr());
-}
-
-
-/* ******************************************************************
-* Update BCs for matrix PK using fracture PK.
-****************************************************************** */
-void Darcy_PK::UpdateMatrixBCsUsingFracture_()
-{
-  auto fracture = S_->GetMesh("fracture");
-  int ncells_f = fracture->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-
-  const auto& Kfn = S_->GetFieldData("fracture-normal_permeability");
-  const auto& Kfn_c = *Kfn->ViewComponent("cell", true);
-  const auto& pf_c = *S_->GetFieldData("fracture-pressure")->ViewComponent("cell", true);
-
-  Kfn->ScatterMasterToGhosted();
-
-  std::vector<int>& bc_model = op_bc_->bc_model();
-  std::vector<double>& bc_value = op_bc_->bc_value();
-  std::vector<double>& bc_mixed = op_bc_->bc_mixed();
-
-  for (int c = 0; c < ncells_f; ++c) {
-    int f = fracture->entity_get_parent(AmanziMesh::CELL, c);
-    bc_model[f] = Operators::OPERATOR_BC_MIXED;
-    bc_mixed[f] = Kfn_c[0][c];
-    bc_value[f] =-Kfn_c[0][c] * pf_c[0][c];
-  }
-}
-
-
-/* ******************************************************************
-* Update source for fracture PK using matrix PK.
-****************************************************************** */
-void Darcy_PK::UpdateSourceUsingMatrix_()
-{
-  auto& src_c = *S_->GetFieldData(fracture_matrix_source_key_, passwd_)->ViewComponent("cell");
-  const auto& Kfn_c = *S_->GetFieldData(normal_permeability_key_)->ViewComponent("cell");
-  
-  const auto& pm = S_->GetFieldData("pressure");
-  const auto& pm_f = *pm->ViewComponent("face", true);
-  Teuchos::RCP<const Epetra_BlockMap> pm_map = pm->Map().Map("face", true);
-
-  for (int c = 0; c < ncells_owned; c++) {
-    int f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
-    int f_loc_id = pm_map->FirstPointInElement(f);
-
-    src_c[0][c] = 0.0;
-    for (int k = 0; k != pm_map->ElementSize(f); ++k) {
-      src_c[0][c] += pm_f[0][f_loc_id + k];
-    }
-    src_c[0][c] *= Kfn_c[0][c] / 2;
-  }
 }
 
 

@@ -27,6 +27,7 @@
 
 // Operators
 #include "OperatorDefs.hh"
+#include "OperatorUtils.hh"
 #include "UpwindDivK.hh"
 #include "UpwindGravity.hh"
 #include "UpwindFlux.hh"
@@ -138,10 +139,7 @@ void RunTestUpwind(std::string method) {
     
 
     // create and initialize face-based flux field
-    cvs = Teuchos::rcp(new CompositeVectorSpace());
-    cvs->SetMesh(mesh);
-    cvs->SetGhosted(true);
-    cvs->SetComponent("face", AmanziMesh::FACE, 1);
+    cvs = CreateCompositeVectorSpace(mesh, "face", AmanziMesh::FACE, 1, true);
 
     CompositeVector flux(*cvs), solution(*cvs);
     Epetra_MultiVector& u = *flux.ViewComponent("face", true);

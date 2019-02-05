@@ -50,7 +50,7 @@ class Operator_FaceCellScc : public Operator_Cell {
   // visit method for sparsity structure of Schur complement
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
           const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col, bool multi_domain) const;
+          int my_block_row, int my_block_col, bool multi_domain) const;
 
  protected:
   mutable std::vector<Teuchos::RCP<Op_Cell_Cell> > diag_ops_;

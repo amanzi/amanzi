@@ -56,8 +56,8 @@ class Op_Face_CellBndFace : public Op {
   virtual void SymbolicAssembleMatrixOp(const Operator* assembler,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col, bool multi_domain) const {
-    assembler->SymbolicAssembleMatrixOp(*this,
-            map, graph, my_block_row, my_block_col, multi_domain);
+    assembler->SymbolicAssembleMatrixOp(*this, map, graph,
+                                        my_block_row, my_block_col, multi_domain);
   }
 
   virtual void AssembleMatrixOp(const Operator* assembler,

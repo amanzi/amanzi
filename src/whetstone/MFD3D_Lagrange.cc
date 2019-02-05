@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -38,22 +38,21 @@ namespace WhetStone {
 MFD3D_Lagrange::MFD3D_Lagrange(const Teuchos::ParameterList& plist,
                                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
   : MFD3D(mesh),
-    InnerProduct(mesh)
+    InnerProduct(mesh),
+    use_lo_(false)
 {
   order_ = plist.get<int>("method order");
+  if (plist.isParameter("use low-order scheme")) 
+    use_lo_ = plist.get<bool>("use low-order scheme");
 }
 
 
 /* ******************************************************************
 * High-order consistency condition for the stiffness matrix. 
-* Only the upper triangular part of Ac is calculated. 
 ****************************************************************** */
-int MFD3D_Lagrange::H1consistency(
+int MFD3D_Lagrange::H1consistency2D_(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  AMANZI_ASSERT(d_ == 2);  // FIXME
-  AMANZI_ASSERT(order_ < 4);
-
   Entity_ID_List nodes, faces;
   std::vector<int> dirs;
 
@@ -82,6 +81,9 @@ int MFD3D_Lagrange::H1consistency(
 
   R_.Reshape(ndof, nd);
   G_.Reshape(nd, nd);
+
+  // cut-off for exact integration
+  int ndf_moments = PolynomialSpaceDimension(d_, order_ - 1);
 
   // pre-calculate integrals of monomials 
   NumericalIntegration numi(mesh_);
@@ -164,40 +166,27 @@ int MFD3D_Lagrange::H1consistency(
           R_(pos0, col) += (q0 - qmid) / 6;
           R_(pos1, col) += (q1 - qmid) / 6;
           R_(row,  col) = qmid;
-        } else if (order_ == 3) {
-          // Gauss-Legendre quadrature rule with 3 points
-          int m(2); 
-          Polynomial poly0(1, 3), poly1(1, 3), poly2(1, 2), poly3(1, 3);
+        } else if (order_ > 2) {
+          if (col < 3) {
+            // constant gradient contributes only to 0th moment 
+            R_(row, col) += tmp(0);
+          } else {
+            auto polys = ConvertMomentsToPolynomials_(order_);
 
-          poly0(0, 0) = -0.25;
-          poly0(1, 0) = 1.5;
-          poly0(2, 0) = 3.0;
-          poly0(3, 0) = -10.0;
+            // Gauss-Legendre quadrature rule with (order_) points
+            int m(order_ - 1); 
+            for (int n = 0; n < order_; ++n) { 
+              xm = x0 * q1d_points[m][n] + x1 * (1.0 - q1d_points[m][n]);
+              sm[0] = 0.5 - q1d_points[m][n];
 
-          poly1(0, 0) = -0.25;
-          poly1(1, 0) = -1.5;
-          poly1(2, 0) = 3.0;
-          poly1(3, 0) = 10.0;
+              double factor = q1d_weights[m][n] * tmp.Value(xm);
+              R_(pos0, col) += polys[0].Value(sm) * factor;
+              R_(pos1, col) += polys[1].Value(sm) * factor;
 
-          poly2(0, 0) = 1.5;
-          poly2(1, 0) = 0.0;
-          poly2(2, 0) = -6.0;
-
-          poly3(0, 0) = 0.0;
-          poly3(1, 0) = 30.0;
-          poly3(2, 0) = 0.0;
-          poly3(3, 0) =-120.0;
-
-          for (int n = 0; n < 3; ++n) { 
-            xm = x0 * q1d_points[m][n] + x1 * (1.0 - q1d_points[m][n]);
-            sm[0] = 0.5 - q1d_points[m][n];
-
-            double factor = q1d_weights[m][n] * tmp.Value(xm);
-            R_(pos0, col) += poly0.Value(sm) * factor;
-            R_(pos1, col) += poly1.Value(sm) * factor;
-
-            R_(row, col) += poly2.Value(sm) * factor;
-            R_(row + 1, col) += poly3.Value(sm) * factor;
+              for (int k = 0; k < m; ++k) { 
+                R_(row + k, col) += polys[k + 2].Value(sm) * factor;
+              }
+            }
           }
         }
       }
@@ -290,8 +279,8 @@ int MFD3D_Lagrange::StiffnessMatrix(
 ****************************************************************** */
 void MFD3D_Lagrange::ProjectorCell_(
     int c, const std::vector<Polynomial>& vf, 
-    const Projectors::Type type,
-    Polynomial& moments, Polynomial& uc) 
+    const ProjectorType type,
+    const Polynomial* moments, Polynomial& uc) 
 {
   AMANZI_ASSERT(d_ == 2);
 
@@ -380,7 +369,8 @@ void MFD3D_Lagrange::ProjectorCell_(
 
   // DOFs inside cell: copy moments from input data
   if (ndof_c > 0) {
-    const DenseVector& v3 = moments.coefs();
+    AMANZI_ASSERT(moments != NULL);
+    const DenseVector& v3 = moments->coefs();
     AMANZI_ASSERT(ndof_c == v3.NumRows());
 
     for (int n = 0; n < ndof_c; ++n) {
@@ -422,7 +412,7 @@ void MFD3D_Lagrange::ProjectorCell_(
   }
 
   // calculate L2 projector
-  if (type == Type::L2 && ndof_c > 0) {
+  if (type == ProjectorType::L2 && ndof_c > 0) {
     v5(0) = uc(0);
 
     DenseMatrix M, M2;
@@ -436,7 +426,7 @@ void MFD3D_Lagrange::ProjectorCell_(
     M2 = M.SubMatrix(ndof_c, nd, 0, nd);
     M2.Multiply(v5, v6, false);
 
-    const DenseVector& v3 = moments.coefs();
+    const DenseVector& v3 = moments->coefs();
     for (int n = 0; n < ndof_c; ++n) {
       v4(n) = v3(n) * mesh_->cell_volume(c);
     }
@@ -453,6 +443,128 @@ void MFD3D_Lagrange::ProjectorCell_(
 
   // set correct origin
   uc.set_origin(xc);
+}
+
+
+/* *****************************************************************
+* N and R are used. Here we use simplified versions.
+***************************************************************** */
+void MFD3D_Lagrange::ProjectorCell_LO_(
+    int c, const std::vector<Polynomial>& vf, Polynomial& uc)
+{
+  Entity_ID_List nodes, faces;
+  std::vector<int> dirs;
+
+  mesh_->cell_get_nodes(c, &nodes);
+  int nnodes = nodes.size();
+
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int num_faces = faces.size();
+
+  // populate matrix R (should be a separate routine lipnikov@lanl.gv)
+  DenseMatrix R(nnodes, d_);
+  AmanziGeometry::Point p(d_), pnext(d_), pprev(d_), v1(d_), v2(d_), v3(d_);
+
+  R.PutScalar(0.0);
+  for (int i = 0; i < num_faces; i++) {
+    int f = faces[i];
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
+    double area = mesh_->face_area(f);
+
+    Entity_ID_List face_nodes;
+    mesh_->face_get_nodes(f, &face_nodes);
+    int num_face_nodes = face_nodes.size();
+
+    for (int j = 0; j < num_face_nodes; j++) {
+      int v = face_nodes[j];
+      double u(0.5);
+
+      if (d_ == 2) {
+        u = 0.5 * dirs[i]; 
+      } else {
+        int jnext = (j + 1) % num_face_nodes;
+        int jprev = (j + num_face_nodes - 1) % num_face_nodes;
+
+        int vnext = face_nodes[jnext];
+        int vprev = face_nodes[jprev];
+
+        mesh_->node_get_coordinates(v, &p);
+        mesh_->node_get_coordinates(vnext, &pnext);
+        mesh_->node_get_coordinates(vprev, &pprev);
+
+        v1 = pprev - pnext;
+        v2 = p - fm;
+        v3 = v1^v2;
+        u = dirs[i] * norm(v3) / (4 * area);
+      }
+
+      int pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
+      for (int k = 0; k < d_; k++) R(pos, k) += normal[k] * u;
+    }
+  }
+
+  uc.Reshape(d_, 1, true);
+  for (int i = 0; i < nnodes; i++) {
+    for (int k = 0; k < d_; k++) {
+      uc(k + 1) += R(i, k) * vf[i](0);
+    }
+  }
+  uc *= 1.0 / mesh_->cell_volume(c);
+}
+
+
+/* *****************************************************************
+* Convert basis (DOFs at end-points and moments) to basis of regular
+* polynomials on interval (-1/2, 1/2).
+***************************************************************** */
+std::vector<Polynomial> MFD3D_Lagrange::ConvertMomentsToPolynomials_(int order)
+{
+  int n = order + 1;
+  WhetStone::DenseMatrix T(n, n); 
+  T.PutScalar(0.0);
+
+  // values at end points
+  double b0, a0(1.0), a1(1.0);
+  for (int i = 0; i < n; ++i) {
+    T(0, i) = a0;
+    T(1, i) = a1;
+    a0 /=-2;
+    a1 /= 2;
+  } 
+
+  // moments of even power
+  b0 = 1.0;
+  for (int k = 2; k < n; k += 2) {
+    a0 = b0;
+    for (int i = 0; i < n; i += 2) {
+      T(k, i) = a0 / (k + i - 1); 
+      a0 /= 4;
+    }
+    b0 /= 4;
+  }
+
+  // moments of odd power
+  b0 = 0.25;
+  for (int k = 3; k < n; k += 2) {
+    a0 = b0;
+    for (int i = 1; i < n; i += 2) {
+      T(k, i) = a0 / (k + i - 1); 
+      a0 /= 4;
+    }
+    b0 /= 4;
+  }
+
+  T.Inverse();
+
+  // convert columns of T to polynomials
+  std::vector<Polynomial> polys(n);
+  for (int k = 0; k < n; ++k) {
+    polys[k].Reshape(1, order);
+    for (int i = 0; i < n; ++i) polys[k](i) = T(i, k);
+  }
+
+  return polys;
 }
 
 }  // namespace WhetStone

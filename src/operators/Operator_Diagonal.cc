@@ -71,14 +71,12 @@ void Operator_Diagonal::SymbolicAssembleMatrixOp(
   int row_pos = my_block_row;
   int col_pos = my_block_col;
 
-  
-  if (multi_domain){
+  if (multi_domain) {
     row_name = row_name + "-" + std::to_string(my_block_row);
     col_name = col_name + "-" + std::to_string(my_block_col);
     row_pos = 0;
     col_pos = 0;
   }
-
   
   const std::vector<int>& row_gids = map.GhostIndices(row_name, row_pos);
   const std::vector<int>& col_gids = map.GhostIndices(col_name, col_pos);
@@ -113,15 +111,12 @@ void Operator_Diagonal::AssembleMatrixOp(
     const Op_Diagonal& op, const SuperMap& map, MatrixFE& mat,
     int my_block_row, int my_block_col, bool multi_domain) const
 {
-
-
   std::string row_name = row_compname_;
   std::string col_name = col_compname_;
   int row_pos = my_block_row;
   int col_pos = my_block_col;
-
   
-  if (multi_domain){
+  if (multi_domain) {
     row_name = row_name + "-" + std::to_string(my_block_row);
     col_name = col_name + "-" + std::to_string(my_block_col);
     row_pos = 0;

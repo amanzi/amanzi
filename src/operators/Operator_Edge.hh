@@ -48,20 +48,20 @@ class Operator_Edge : public Operator {
   // visit methods for symbolic assemble
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_Edge& op,
           const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const;
+          int my_block_row, int my_block_col, bool multi_domain) const;
   
   virtual void SymbolicAssembleMatrixOp(const Op_Edge_Edge& op,
           const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const;
+          int my_block_row, int my_block_col, bool multi_domain) const;
 
   // visit methods for assemble
   virtual void AssembleMatrixOp(const Op_Cell_Edge& op,
           const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col) const;
+          int my_block_row, int my_block_col, bool multi_domain) const;
 
   virtual void AssembleMatrixOp(const Op_Edge_Edge& op,
           const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col) const;
+          int my_block_row, int my_block_col, bool multi_domain) const;
 
  protected:
   int cell_max_edges;

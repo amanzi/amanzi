@@ -29,11 +29,10 @@ namespace Operators {
 int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector& cv,
                                      Epetra_Vector& sv, bool multi_domain, int dofnum)
 {
-
   std::string sm_name;
   int dof_id;
 
-  for (auto it=cv.Map().begin(); it!=cv.Map().end(); ++it){
+  for (auto it=cv.Map().begin(); it!=cv.Map().end(); ++it) {
     if (multi_domain) {
       sm_name = *it + "-"+ std::to_string(dofnum);
       dof_id = 0;
@@ -43,7 +42,7 @@ int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector
       dof_id = dofnum;
     }
 
-    if (smap.HasComponent(sm_name)){
+    if (smap.HasComponent(sm_name)) {
       const std::vector<int>& inds = smap.Indices(sm_name, dof_id);
       const Epetra_MultiVector& data = *cv.ViewComponent(*it);
       for (int i=0; i!= data.MyLength(); ++i) sv[inds[i]] = data[0][i];
@@ -58,14 +57,13 @@ int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector
 * Copy super vector to composite vector, component-by-component.
 ****************************************************************** */
 int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& sv,
-                                     CompositeVector& cv, bool multi_domain, int dofnum )
-  
+                                     CompositeVector& cv, bool multi_domain, int dofnum)
 {
 
   std::string sm_name;
   int dof_id;
 
-  for (auto it=cv.Map().begin(); it!=cv.Map().end(); ++it){
+  for (auto it=cv.Map().begin(); it!=cv.Map().end(); ++it) {
     if (multi_domain) {
       sm_name = *it + "-"+ std::to_string(dofnum);
       dof_id = 0;
@@ -75,7 +73,7 @@ int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& 
       dof_id = dofnum;
     }
 
-    if (smap.HasComponent(sm_name)){
+    if (smap.HasComponent(sm_name)) {
       const std::vector<int>& inds = smap.Indices(sm_name, dof_id);
       const Epetra_MultiVector& data = *cv.ViewComponent(*it);
       for (int i=0; i!= data.MyLength(); ++i) data[0][i] = sv[inds[i]];
@@ -93,12 +91,10 @@ int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& 
 int AddSuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& sv,
                                     CompositeVector& cv, bool multi_domain, int dofnum)
 {
-
-
   std::string sm_name;
   int dof_id;
 
-  for (auto it=cv.Map().begin(); it!=cv.Map().end(); ++it){
+  for (auto it=cv.Map().begin(); it!=cv.Map().end(); ++it) {
     if (multi_domain) {
       sm_name = *it + "-"+ std::to_string(dofnum);
       dof_id = 0;
@@ -108,7 +104,7 @@ int AddSuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& s
       dof_id = dofnum;
     }
 
-    if (smap.HasComponent(sm_name)){
+    if (smap.HasComponent(sm_name)) {
       const std::vector<int>& inds = smap.Indices(sm_name, dof_id);
       const Epetra_MultiVector& data = *cv.ViewComponent(*it);
       for (int i=0; i!= data.MyLength(); ++i) data[0][i] += sv[inds[i]];
@@ -215,6 +211,9 @@ int AddSuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
 }
 
 
+/* ******************************************************************
+* TBW
+****************************************************************** */
 Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schema, int n_dofs)
 {
   std::vector<std::string> compnames;
@@ -254,15 +253,15 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, Schema& s
   return Teuchos::rcp(new SuperMap(cvs.Comm(), compnames, dofnums, maps, ghost_maps));
 }
 
+
 /* ******************************************************************
 * Create super map: general version
 ****************************************************************** */
-Teuchos::RCP<SuperMap> CreateSuperMap(std::vector<const CompositeVectorSpace > cvs_vec,
+Teuchos::RCP<SuperMap> CreateSuperMap(const std::vector<CompositeVectorSpace>& cvs_vec,
                                       std::vector<std::string> cvs_names,
                                       bool multi_domain)
 {
-
-  AMANZI_ASSERT(cvs_vec.size() == cvs_names.size() );
+  AMANZI_ASSERT(cvs_vec.size() == cvs_names.size());
   
   std::vector<std::string> compnames;
   std::vector<int> dofnums;
@@ -270,32 +269,47 @@ Teuchos::RCP<SuperMap> CreateSuperMap(std::vector<const CompositeVectorSpace > c
   std::vector<Teuchos::RCP<const Epetra_BlockMap> > ghost_maps;
   
   int i = 0;
-  for (auto cvs : cvs_vec){
-    for (auto name = cvs.begin(); name != cvs.end(); ++name){
+  for (auto cvs : cvs_vec) {
+    for (auto name = cvs.begin(); name != cvs.end(); ++name) {
       if (multi_domain) {
-        compnames.push_back(*name + "-" + cvs_names[i] );
-      }else{
-        compnames.push_back(*name);
+        compnames.push_back(*name + "-" + cvs_names[i]);
+        dofnums.push_back(cvs.NumVectors(*name));
+        maps.push_back(cvs.Map(*name, false));
+        ghost_maps.push_back(cvs.Map(*name, true));        
+      } else {
+        bool found = false;
+        for (int j=0; j<compnames.size();++j){
+          if (compnames[j] == *name){
+            found = true;
+            dofnums[j]++;
+            break;
+          }
+        }
+        if (!found){
+          compnames.push_back(*name);
+          dofnums.push_back(cvs.NumVectors(*name));
+          maps.push_back(cvs.Map(*name, false));
+          ghost_maps.push_back(cvs.Map(*name, true));
+        }
       }
-      dofnums.push_back( cvs.NumVectors(*name) );
-      maps.push_back( cvs.Map(*name, false) );
-      ghost_maps.push_back( cvs.Map(*name, true) );
     }
     i++;
   }
 
+  // std::cout<<"CreateSuperMap\n";
+  // for (auto s : compnames) std::cout<<s<<" "; std::cout<<"\n";
+  // for (auto s : dofnums) std::cout<<s<<" "; std::cout<<"\n";
+  // for (auto s : maps) std::cout<<*s<<"\n"; std::cout<<"\n";
+  
   Teuchos::RCP<SuperMap> res = Teuchos::rcp(new SuperMap(cvs_vec[0].Comm(), compnames, dofnums, maps, ghost_maps));
 
   // for (auto s : compnames) {
-  //   std::cout<<"name "<<s<<"\n";
-  //   std::cout<<"offset "<<res -> Offset(s)<<"\n";
+  //   std::cout<<"\nname "<<s<<"\n";
+  //   std::cout<<"offset "<<res->Offset(s)<<"\n";
   //   std::cout<<"num "<<res -> NumOwnedElements(s)<<"\n";
   // }
-
-
   
   return res;
-  
 }
 
 

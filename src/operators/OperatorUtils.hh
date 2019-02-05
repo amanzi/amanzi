@@ -53,7 +53,7 @@ int AddSuperVectorToTreeVector(const SuperMap& map, const Epetra_Vector& sv, boo
 // Supermap factory from CV and schema
 Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cv, int schema, int n_dofs);
 Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cv, Schema& schema);
-Teuchos::RCP<SuperMap> CreateSuperMap(std::vector<const CompositeVectorSpace > cvs_vec, 
+Teuchos::RCP<SuperMap> CreateSuperMap(const std::vector<CompositeVectorSpace>& cvs_vec, 
                                       std::vector<std::string> cvs_names,
                                       bool multi_domain);
 
@@ -76,13 +76,13 @@ Teuchos::RCP<CompositeVectorSpace>
 CreateCompositeVectorSpace(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                            const std::vector<std::string>& names,
                            const std::vector<AmanziMesh::Entity_kind>& locations,
-                           const std::vector<int>& num_dofs, bool ghsoted = false);
+                           const std::vector<int>& num_dofs, bool ghosted = false);
 
 Teuchos::RCP<CompositeVectorSpace>
 CreateCompositeVectorSpace(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                            std::string name,
                            AmanziMesh::Entity_kind location,
-                           int num_dof, bool ghsoted = false);
+                           int num_dof, bool ghosted = false);
 
 }  // namespace Operators
 }  // namespace Amanzi

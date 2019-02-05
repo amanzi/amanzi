@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -40,12 +40,16 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
 
   // required methods
   // -- mass matrices
-  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override { return -1; }
-  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override { return -1; } 
-
-  // -- inverse mass matrices
-  virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) override { return -1; }
-  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& M) override { return -1; } 
+  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override {
+    Errors::Message msg("L2 consistency is not implemented for Crouzeix-Raviart space.");
+    Exceptions::amanzi_throw(msg);
+    return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  }
+  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override {
+    Errors::Message msg("MassMatrix is not supported for Crouzeix-Raviart space.");
+    Exceptions::amanzi_throw(msg);
+    return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  }
 
   // -- stiffness matrix
   virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override {
@@ -63,31 +67,27 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
   }
 
   // -- projectors: base L2 and H1 projectors
-  virtual void L2Cell(
-      int c, const std::vector<Polynomial>& vf,
-      Polynomial& moments, Polynomial& uc) override {
-    ProjectorCell_HO_(c, vf, Type::L2, moments, uc);
+  virtual void L2Cell(int c, const std::vector<Polynomial>& vf,
+                      const Polynomial* moments, Polynomial& uc) override {
+    ProjectorCell_HO_(c, vf, ProjectorType::L2, moments, uc);
   }
 
-  virtual void H1Cell(
-      int c, const std::vector<Polynomial>& vf,
-      Polynomial& moments, Polynomial& uc) override {
+  virtual void H1Cell(int c, const std::vector<Polynomial>& vf,
+                      const Polynomial* moments, Polynomial& uc) override {
     if (order_ == 1 && !use_always_ho_)
       ProjectorCell_LO_(c, vf, uc);
     else 
-      ProjectorCell_HO_(c, vf, Type::H1, moments, uc);
+      ProjectorCell_HO_(c, vf, ProjectorType::H1, moments, uc);
   }
 
   // additional miscaleneous projectors
-  void L2GradientCell(
-      int c, const std::vector<VectorPolynomial>& vf,
-      const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc) {
-    ProjectorGradientCell_(c, vf, Type::L2, moments, uc);
+  void L2GradientCell(int c, const std::vector<VectorPolynomial>& vf,
+                      const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc) {
+    ProjectorGradientCell_(c, vf, ProjectorType::L2, moments, uc);
   }
 
-  void H1Face(
-      int f, const AmanziGeometry::Point& p0,
-      const std::vector<VectorPolynomial>& ve, VectorPolynomial& uf) const;
+  void H1Face(int f, const AmanziGeometry::Point& p0,
+              const std::vector<VectorPolynomial>& ve, VectorPolynomial& uf) const;
 
   // access / setup
   // -- integrals of monomials in high-order schemes could be reused
@@ -107,19 +107,16 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
   int StiffnessMatrixHO_(int c, const Tensor& T, DenseMatrix& A);
 
   // efficient implementation of low-order elliptic projectors
-  void ProjectorCell_LO_(
-      int c, const std::vector<Polynomial>& vf, Polynomial& uc);
+  void ProjectorCell_LO_(int c, const std::vector<Polynomial>& vf, Polynomial& uc);
 
   // generic code for multiple projectors
-  void ProjectorCell_HO_(
-      int c, const std::vector<Polynomial>& vf,
-      const Projectors::Type type, 
-      Polynomial& moments, Polynomial& uc);
+  void ProjectorCell_HO_(int c, const std::vector<Polynomial>& vf,
+                         const ProjectorType type, 
+                         const Polynomial* moments, Polynomial& uc);
 
-  void ProjectorGradientCell_(
-      int c, const std::vector<VectorPolynomial>& vf,
-      const Projectors::Type type, 
-      const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc);
+  void ProjectorGradientCell_(int c, const std::vector<VectorPolynomial>& vf,
+                              const ProjectorType type, 
+                              const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc);
 
   // supporting routines
   void CalculateFaceDOFs_(int f, const Polynomial& vf, const Polynomial& pf,

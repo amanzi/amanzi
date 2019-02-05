@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -15,6 +15,8 @@
 
 #ifndef AMANZI_MFD3D_LAGRANGE_HH_
 #define AMANZI_MFD3D_LAGRANGE_HH_
+
+#include <vector>
 
 #include "Teuchos_RCP.hpp"
 
@@ -39,30 +41,37 @@ class MFD3D_Lagrange : public MFD3D {
 
   // required methods
   // -- mass matrices
-  virtual int L2consistency(
-      int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override { return -1; }
-  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override { return -1; } 
-
-  // -- inverse mass matrices
-  virtual int L2consistencyInverse(
-     int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) override { return -1; }
-  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& M) override { return -1; } 
+  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override {
+    Errors::Message msg("L2 consistency is not implemented for Lagrange element.");
+    Exceptions::amanzi_throw(msg);
+    return 0;
+  }
+  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override {
+    Errors::Message msg("Mass matrix is not implemented for Lagrange element.");
+    Exceptions::amanzi_throw(msg);
+    return 0;
+  }
 
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override;
+  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override {
+    if (d_ == 2) return H1consistency2D_(c, T, N, Ac);
+    return H1consistency3D_(c, T, N, Ac);
+  }
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
   // -- projectors
-  virtual void L2Cell(
-      int c, const std::vector<Polynomial>& vf,
-      Polynomial& moments, Polynomial& uc) override {
-    ProjectorCell_(c, vf, Type::L2, moments, uc);
+  virtual void L2Cell(int c, const std::vector<Polynomial>& vf,
+                      const Polynomial* moments, Polynomial& uc) override {
+    if (use_lo_) {
+      ProjectorCell_LO_(c, vf, uc);
+    } else {
+      ProjectorCell_(c, vf, ProjectorType::L2, moments, uc);
+    }
   }
 
-  virtual void H1Cell(
-      int c, const std::vector<Polynomial>& vf,
-      Polynomial& moments, Polynomial& uc) override {
-    ProjectorCell_(c, vf, Type::H1, moments, uc);
+  virtual void H1Cell(int c, const std::vector<Polynomial>& vf,
+                      const Polynomial* moments, Polynomial& uc) override {
+    ProjectorCell_(c, vf, ProjectorType::H1, moments, uc);
   }
 
   // access 
@@ -75,16 +84,23 @@ class MFD3D_Lagrange : public MFD3D {
   const DenseMatrix& R() const { return R_; }
 
  private:
-  void ProjectorCell_(
-      int c, const std::vector<Polynomial>& vf,
-      const Projectors::Type type,
-      Polynomial& moments, Polynomial& uc);
+  int H1consistency2D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
+  int H1consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) { return 0; }
+
+  void ProjectorCell_(int c, const std::vector<Polynomial>& vf,
+                      const ProjectorType type,
+                      const Polynomial* moments, Polynomial& uc);
+
+  void ProjectorCell_LO_(int c, const std::vector<Polynomial>& vf, Polynomial& uc);
+
+  std::vector<Polynomial> ConvertMomentsToPolynomials_(int order);
 
  protected:
   PolynomialOnMesh integrals_;
   DenseMatrix R_, G_;
 
  private:
+  bool use_lo_;
   static RegisteredFactory<MFD3D_Lagrange> factory_;
 };
 
