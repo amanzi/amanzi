@@ -145,7 +145,7 @@ void TreeOperator::SymbolicAssembleMatrix()
   // May be ways to relax this a bit in the future, but it currently covers
   // all uses.
   int schema = 0;
-  std::vector<const CompositeVectorSpace > cvs_vec;
+  std::vector<CompositeVectorSpace> cvs_vec;
   std::vector<std::string> cvs_names;
 
   // Check that each row has at least one non-null operator block

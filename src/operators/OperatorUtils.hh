@@ -53,7 +53,7 @@ int AddSuperVectorToTreeVector(const SuperMap& map, const Epetra_Vector& sv, boo
 // Supermap factory from CV and schema
 Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cv, int schema, int n_dofs);
 Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cv, Schema& schema);
-Teuchos::RCP<SuperMap> CreateSuperMap(std::vector<const CompositeVectorSpace > cvs_vec, 
+Teuchos::RCP<SuperMap> CreateSuperMap(const std::vector<CompositeVectorSpace>& cvs_vec, 
                                       std::vector<std::string> cvs_names,
                                       bool multi_domain);
 
