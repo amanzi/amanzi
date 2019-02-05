@@ -269,7 +269,7 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
     const Teuchos::Ptr<CompositeVector>& flux)
 {
   // Initialize intensity in ghost faces.
-  flux->PutScalar(0.0);
+  flux->PutScalarMasterAndGhosted(0.0);
   u->ScatterMasterToGhosted("face");
 
   const Epetra_MultiVector& u_cell = *u->ViewComponent("cell");
@@ -321,9 +321,10 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
       local_op_->matrices_shadow[c].Multiply(v, av, false);
     }
 
+    // points of the master/slave interface require special logic
     for (int n = 0; n < np; n++) {
       int g = lid[n];
-      if (g < ndofs_owned) {
+      if (g < ndofs_owned || nohit[n] == 1) {
         flux_data[0][g] -= av(n) * mydir[n];
         hits[g]++;
       }
@@ -334,6 +335,8 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
   for (int g = 0; g != ndofs_owned; ++g) {
     flux_data[0][g] /= hits[g];
   }
+
+  flux->GatherGhostedToMaster();
 }
 
 

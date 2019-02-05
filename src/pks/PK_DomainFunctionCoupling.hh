@@ -147,10 +147,13 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
         *S_->GetFieldCopyData(flux_key_, copy_flux_key_)->ViewComponent("face", true);
 
     Teuchos::RCP<const Epetra_BlockMap> flux_map = S_->GetFieldData(flux_key_)->Map().Map("face", true);
-        
+
+    S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ScatterMasterToGhosted("cell");    
     const Epetra_MultiVector& field_out = 
         *S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ViewComponent("cell", true);
 
+
+    S_->GetFieldCopyData(field_in_key_, copy_field_in_key_)->ScatterMasterToGhosted("cell"); 
     const Epetra_MultiVector& field_in = 
         *S_->GetFieldCopyData(field_in_key_, copy_field_in_key_)->ViewComponent("cell", true);
 

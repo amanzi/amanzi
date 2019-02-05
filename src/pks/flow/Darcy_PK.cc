@@ -743,70 +743,53 @@ void Darcy_PK::UpdateSourceUsingMatrix_()
 }
 
 
-void Darcy_PK::FractureConservationLaw_(){
-
-  double flux_sum = 0.;
-
+/* ******************************************************************
+* TBW
+****************************************************************** */
+void Darcy_PK::FractureConservationLaw_()
+{
   AmanziMesh::Entity_ID_List faces, cells;
   std::vector<int> dirs;
 
   const auto& fracture_flux = *S_->GetFieldData("fracture-darcy_flux")->ViewComponent("face");
   const auto& matrix_flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face");
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_matrix = S_->GetMesh("domain");
-  Teuchos::RCP<const Epetra_BlockMap> flux_map = S_->GetFieldData("darcy_flux")->Map().Map("face", true);
+  auto mesh_matrix = S_->GetMesh("domain");
+  auto flux_map = S_->GetFieldData("darcy_flux")->Map().Map("face", true);
+  const Epetra_Map& cell_map = mesh_matrix->cell_map(true);
   
-  const Epetra_Map& cell_map = mesh_matrix -> cell_map(true);
+  for (int c = 0; c < ncells_owned; c++) {
+    double flux_sum = 0.0;
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    for (int i=0; i < faces.size(); i++) {
+      int f = faces[i];
+      flux_sum += fracture_flux[0][f] * dirs[i];
+    }
 
-  const auto& fracture_head = *S_->GetFieldData("fracture-pressure_head")->ViewComponent("cell");
-  const auto& matrix_pressure_f = *S_->GetFieldData("pressure")->ViewComponent("face");
+    AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+    mesh_matrix->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    int pos = 0;
+    if (cells.size() == 2) {
+      pos = (cell_map.GID(cells[0]) < cell_map.GID(cells[1])) ? 0 : 1;
+    }
 
+    for (int j = 0; j != cells.size(); ++j) {
+      mesh_matrix -> cell_get_faces_and_dirs(cells[j], &faces, &dirs);
 
-  double rho = *(S_->GetScalarData("fluid_density"));
-
-  // calculate hydraulic head
-  double g = fabs(gravity_[dim - 1]);
-  
-  for (int c = 29; c < ncells_owned; c++) {
-    flux_sum = 0.;
-     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-     for (int i=0; i < faces.size(); i++) {
-        int f = faces[i];
-        flux_sum += fracture_flux[0][f] * dirs[i];
-     }
-     std::cout<<"Fracture fluxes "<<flux_sum<<"\n";
-
-     AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
-     mesh_matrix -> face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-     int pos = 0;
-     if (cells.size() == 2){
-       pos = (cell_map.GID(cells[0]) < cell_map.GID(cells[1])) ? 0 : 1;
-     }
-
-     for (int j=0; j!=cells.size(); ++j){
-       mesh_matrix -> cell_get_faces_and_dirs(cells[j], &faces, &dirs);
-
-        for (int i = 0; i < faces.size(); i++) {
-          if (f == faces[i]) {
-            int f_loc_id = flux_map -> FirstPointInElement(f);            
-            double fln = matrix_flux[0][f_loc_id + (pos + j)%2]*dirs[i];
-            flux_sum -= fln;
-
-            double h2 = fracture_head[0][c];
-            double h3 = matrix_pressure_f[0][f_loc_id + (pos + j)%2] / (g * rho);
+      for (int i = 0; i < faces.size(); i++) {
+        if (f == faces[i]) {
+          int f_loc_id = flux_map -> FirstPointInElement(f);            
+          double fln = matrix_flux[0][f_loc_id + (pos + j)%2] * dirs[i];
+          flux_sum -= fln;
             
-            std::cout<<"coupled flux fln "<<fln<<" h2 = "<< h2<<" h3 = "<<h3<<"\n";
-            std::cout<<"k2(h2-h3) "<<(h2 - h3)*20<<"\n";
-              
-            break;
-          }
+          break;
+
         }
-     }
+      }
+    }
 
-     std::cout<<"cell "<<c<<" sum of fluxes "<<flux_sum<<"\n";
-     break;
+    std::cout << "cell " << c << " sum of fluxes " << flux_sum << "\n";
+
   }
-     
-
 }
 
 }  // namespace Flow

@@ -7,29 +7,44 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon (ecoon@lanl.gov)
+          Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  This operator is a container for local matrices of variable
+  length placed on operator's diagonal. The locations are
+  specified by two sets of indices.
 */
 
-#ifndef AMANZI_OP_CELL_NODE_HH_
-#define AMANZI_OP_CELL_NODE_HH_
+#ifndef AMANZI_OP_DIAGONAL_HH_
+#define AMANZI_OP_DIAGONAL_HH_
 
+#include <memory>
+#include <string>
 #include <vector>
+
 #include "DenseMatrix.hh"
 #include "Operator.hh"
 #include "Op.hh"
+#include "Schema.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class Op_Cell_Node : public Op {
+class Op_Diagonal : public Op {
  public:
-  Op_Cell_Node(const std::string& name,
-               const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      Op(OPERATOR_SCHEMA_BASE_CELL |
-         OPERATOR_SCHEMA_DOFS_NODE, name, mesh) {
+  Op_Diagonal(const std::string& name,
+              std::string row_compname, std::string col_compname,
+              std::shared_ptr<const std::vector<std::vector<int> > >& row_inds,
+              std::shared_ptr<const std::vector<std::vector<int> > >& col_inds) :
+      Op(OPERATOR_SCHEMA_INDICES, name),
+      row_compname_(row_compname),
+      col_compname_(col_compname),
+      row_inds_(row_inds),
+      col_inds_(col_inds) {
     WhetStone::DenseMatrix null_matrix;
-    matrices.resize(mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED), null_matrix);
+    matrices.resize(row_inds->size(), null_matrix);
     matrices_shadow = matrices;
   }
+  ~Op_Diagonal() {};
 
   virtual void ApplyMatrixFreeOp(const Operator* assembler,
           const CompositeVector& X, CompositeVector& Y) const {
@@ -52,30 +67,25 @@ class Op_Cell_Node : public Op {
           int my_block_row, int my_block_col, bool multi_domain) const {
     assembler->AssembleMatrixOp(*this, map, mat, my_block_row, my_block_col, multi_domain);
   }
+
+
+  // incomplete members
+  virtual void Rescale(const CompositeVector& scaling) { AMANZI_ASSERT(0); } 
+
+  // access 
+  const std::vector<std::vector<int> >& row_inds() const { return *row_inds_; }
+  const std::vector<std::vector<int> >& col_inds() const { return *col_inds_; }
   
-  // rescaling columns of local matrices
-  virtual void Rescale(const CompositeVector& scaling) {
-    if (scaling.HasComponent("node")) {
-      const Epetra_MultiVector& s_n = *scaling.ViewComponent("node", true);
-      AmanziMesh::Entity_ID_List nodes;
+  std::string row_compname() const { return row_compname_; }
+  std::string col_compname() const { return col_compname_; }
 
-      for (int c = 0; c != matrices.size(); ++c) {
-        WhetStone::DenseMatrix& Acell = matrices[c];
-        mesh_->cell_get_nodes(c, &nodes);
-
-        for (int n = 0; n != nodes.size(); ++n) {
-          for (int m = 0; m != nodes.size(); ++m) {
-            Acell(n, m) *= s_n[0][nodes[n]];
-          }
-        }
-      }
-    }
-  }
+ private:
+  std::string row_compname_, col_compname_;
+  std::shared_ptr<const std::vector<std::vector<int> > > row_inds_, col_inds_;
 };
 
 }  // namespace Operators
 }  // namespace Amanzi
-
 
 #endif
 

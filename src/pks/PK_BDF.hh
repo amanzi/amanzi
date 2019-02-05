@@ -32,8 +32,7 @@ class PK_BDF : virtual public PK,
 	 const Teuchos::RCP<Teuchos::ParameterList>& glist,
 	 const Teuchos::RCP<State>& S,
 	 const Teuchos::RCP<TreeVector>& soln) :
-    PK(pk_tree, glist, S, soln) {}
-  
+    PK(pk_tree, glist, S, soln) {};
 };
 
 }  // namespace Amanzi

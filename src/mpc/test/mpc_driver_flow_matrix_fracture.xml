@@ -99,7 +99,7 @@
         </ParameterList>
         <Parameter name="start period time" type="double" value="0.0"/>
         <Parameter name="end period time" type="double" value="3.0e+9"/>
-        <Parameter name="maximum cycle number" type="int" value="-1"/>
+        <Parameter name="maximum cycle number" type="int" value="2"/>
         <Parameter name="initial time step" type="double" value="1.0e+5"/>
       </ParameterList>
     </ParameterList>
@@ -371,6 +371,7 @@
       <Parameter name="master PK index" type="int" value="0"/>
       <Parameter name="maximum number of iterations" type="int" value="100"/>
       <Parameter name="error tolerance" type="double" value="1e-6"/>
+      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>      
 
       <ParameterList name="time integrator">
         <Parameter name="error control options" type="Array(string)" value="{pressure, pressure fracture}"/>
@@ -387,17 +388,23 @@
             <Parameter name="time step reduction factor" type="double" value="8.0e-01"/>
             <Parameter name="max time step" type="double" value="6.0e+10"/>
             <Parameter name="min time step" type="double" value="9.99999999999999945e-21"/>
+            <ParameterList name="verbose object">
+              <Parameter name="verbosity level" type="string" value="extreme"/>
+            </ParameterList>            
           </ParameterList>
 
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-04"/>
             <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
             <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
             <Parameter name="max divergent iterations" type="int" value="3"/>
             <Parameter name="max nka vectors" type="int" value="10"/>
             <Parameter name="limit iterations" type="int" value="100"/>
             <Parameter name="modify correction" type="bool" value="false"/>
+            <ParameterList name="verbose object">
+              <Parameter name="verbosity level" type="string" value="extreme"/>
+            </ParameterList>                        
           </ParameterList>
           <Parameter name="max preconditioner lag iterations" type="int" value="0"/>
           <Parameter name="extrapolate initial guess" type="bool" value="true"/>

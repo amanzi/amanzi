@@ -106,10 +106,21 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
 ****************************************************************** */
 void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
                                              const SuperMap& map, GraphFE& graph,
-                                             int my_block_row, int my_block_col) const
+                                             int my_block_row, int my_block_col, bool multi_domain) const
 {
-  const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
-  const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
+
+  std::string cell_name = "cell";
+  int row_pos = my_block_row;
+  int col_pos = my_block_col;
+  if (multi_domain){
+    cell_name = cell_name + "-" + std::to_string(my_block_col);
+    row_pos = 0;
+    col_pos = 0;
+  }
+
+
+  const std::vector<int>& cell_row_inds = map.GhostIndices(cell_name, row_pos);
+  const std::vector<int>& cell_col_inds = map.GhostIndices(cell_name, col_pos);
 
   int ierr(0);
   for (int c = 0; c != ncells_owned; ++c) {
@@ -127,7 +138,7 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
 ****************************************************************** */
 void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
                                              const SuperMap& map, GraphFE& graph,
-                                             int my_block_row, int my_block_col) const
+                                             int my_block_row, int my_block_col, bool multi_domain) const
 {
   // ELEMENT: face, DOF: cell
   int lid_r[2];
@@ -158,12 +169,23 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
 ****************************************************************** */
 void Operator_Cell::AssembleMatrixOp(const Op_Cell_Cell& op,
                                      const SuperMap& map, MatrixFE& mat,
-                                     int my_block_row, int my_block_col) const
+                                     int my_block_row, int my_block_col, bool multi_domain) const
 {
   AMANZI_ASSERT(op.diag->NumVectors() == 1);
 
-  const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
-  const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
+  
+  std::string cell_name = "cell";
+  int row_pos = my_block_row;
+  int col_pos = my_block_col;
+
+  if (multi_domain){
+    cell_name = cell_name + "-" + std::to_string(my_block_col);
+    row_pos = 0;
+    col_pos = 0;
+  }
+
+  const std::vector<int>& cell_row_inds = map.GhostIndices(cell_name, row_pos);
+  const std::vector<int>& cell_col_inds = map.GhostIndices(cell_name, col_pos);
 
   int ierr(0);
   for (int c = 0; c != ncells_owned; ++c) {
@@ -178,7 +200,7 @@ void Operator_Cell::AssembleMatrixOp(const Op_Cell_Cell& op,
 
 void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
                                      const SuperMap& map, MatrixFE& mat,
-                                     int my_block_row, int my_block_col) const
+                                     int my_block_row, int my_block_col, bool multi_domain) const
 {
   AMANZI_ASSERT(op.matrices.size() == nfaces_owned);
   

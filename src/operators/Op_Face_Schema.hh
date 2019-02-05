@@ -46,14 +46,14 @@ class Op_Face_Schema : public Op {
 
   virtual void SymbolicAssembleMatrixOp(const Operator* assembler,
           const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const {
-    assembler->SymbolicAssembleMatrixOp(*this, map, graph, my_block_row, my_block_col);
+          int my_block_row, int my_block_col, bool multi_domain) const {
+    assembler->SymbolicAssembleMatrixOp(*this, map, graph, my_block_row, my_block_col, multi_domain);
   }
 
   virtual void AssembleMatrixOp(const Operator* assembler,
           const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col) const {
-    assembler->AssembleMatrixOp(*this, map, mat, my_block_row, my_block_col);
+          int my_block_row, int my_block_col, bool multi_domain) const {
+    assembler->AssembleMatrixOp(*this, map, mat, my_block_row, my_block_col, multi_domain);
   }
 
   // incomplete members

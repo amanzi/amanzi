@@ -61,6 +61,12 @@ class Op {
     schema_string = schema_row.CreateUniqueName() + '+' + schema_col.CreateUniqueName();
   }
 
+  Op(int schema, const std::string& schema_string_) :
+      schema_old_(schema),
+      schema_string(schema_string_),
+      mesh_(Teuchos::null)
+  {};
+
   virtual ~Op() = default;
 
   // Clean the operator without destroying memory
@@ -120,11 +126,11 @@ class Op {
 
   virtual void SymbolicAssembleMatrixOp(const Operator* assembler,
           const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const = 0;
+          int my_block_row, int my_block_col, bool multi_domain) const = 0;
 
   virtual void AssembleMatrixOp(const Operator* assembler,
           const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col) const = 0;
+          int my_block_row, int my_block_col, bool multi_domain) const = 0;
 
   // Mutators of local matrices.
   // -- rescale local matrices in the container using a CV

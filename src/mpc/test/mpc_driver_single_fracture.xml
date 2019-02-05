@@ -96,7 +96,7 @@
         <Parameter name="start period time" type="double" value="0.0"/>
         <Parameter name="end period time" type="double" value="1.0e+11"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="1.0e+5"/>
+        <Parameter name="initial time step" type="double" value="1.0e+10"/>
         <Parameter name="maximum time step" type="double" value="1.0e+10"/>
       </ParameterList>
     </ParameterList>
@@ -393,7 +393,7 @@
             <Parameter name="max nka vectors" type="int" value="200"/>
             <Parameter name="limit iterations" type="int" value="1000"/>
             <Parameter name="modify correction" type="bool" value="false"/>
-            <Parameter name="monitor" type="string" value="monitor preconditioned residual"/>
+            <Parameter name="monitor" type="string" value="monitor residual"/>
             <ParameterList name="verbose object">
               <Parameter name="verbosity level" type="string" value="high"/>
             </ParameterList>

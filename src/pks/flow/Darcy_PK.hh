@@ -97,6 +97,9 @@ class Darcy_PK : public Flow_PK {
   // other members of the PK linear solvers
   void SolveFullySaturatedProblem(CompositeVector& u, bool wells_on);
 
+  // access methods
+  Teuchos::RCP<Operators::Operator> op() { return op_; }
+
  private:
   void InitializeFields_();
   void UpdateSpecificYield_();

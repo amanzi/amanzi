@@ -1046,8 +1046,8 @@ void PDE_DiffusionMFD::ModifyMatrices(const CompositeVector& u)
 
 /* ******************************************************************
 * WARNING: Since diffusive flux may be discontinuous (e.g. for
-* Richards equation), we derive it only once (using flag) and in 
-* exactly the same manner as other routines.
+* Richards equation), we derive it in exactly the same manner as 
+* in gravity routines.
 * **************************************************************** */
 void PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                                   const Teuchos::Ptr<CompositeVector>& flux)
