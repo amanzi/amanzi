@@ -36,7 +36,12 @@ class InnerProductH1 : public virtual InnerProduct {
   // H1 projectors, moments in the optional argument
   virtual void H1Cell(int c, const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& vc) {
-    Errors::Message msg("H1 projector is not supported/implemented for this scheme.");
+    Errors::Message msg("H1 cell projector is not supported/implemented for this scheme.");
+    Exceptions::amanzi_throw(msg);
+  }
+  virtual void H1Face(int f, const std::vector<Polynomial>& ve,
+                      const Polynomial* moments, Polynomial& vf) {
+    Errors::Message msg("H1 face projector is not supported/implemented for this scheme.");
     Exceptions::amanzi_throw(msg);
   }
 };

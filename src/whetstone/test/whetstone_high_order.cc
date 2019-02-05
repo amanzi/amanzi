@@ -170,7 +170,8 @@ void HighOrderLagrange(std::string file_name) {
 
   MeshFactory meshfactory(comm.get());
   meshfactory.preference(FrameworkPreference({MSTK}));
-  // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1, Teuchos::null, true, true); 
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
+  // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1, gm, true, true); 
   Teuchos::RCP<Mesh> mesh = meshfactory(file_name, Teuchos::null, true, true); 
  
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
@@ -202,7 +203,7 @@ void HighOrderLagrange(std::string file_name) {
     CHECK(A1.NormInf() <= 1e-10);
 
     // high-order scheme (new algorithm)
-    for (int k = 2; k < 4; ++k) {
+    for (int k = 2; k < 5; ++k) {
       mfd_ho.set_order(k);
       mfd_ho.H1consistency(c, T, N, Ak);
       mfd_ho.StiffnessMatrix(c, T, Ak);

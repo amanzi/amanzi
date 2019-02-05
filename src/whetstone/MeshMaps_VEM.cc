@@ -72,21 +72,24 @@ void MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
     mesh0_->face_get_edges_and_dirs(f, &edges, &dirs);
     int nedges = edges.size();
 
-    VectorPolynomial v;
-    std::vector<VectorPolynomial> ve;
-
-    for (int n = 0; n < nedges; ++n) {
-      int e = edges[n];
-      VelocityEdge_(e, v);
-      ve.push_back(v);
-    }
-
     Teuchos::ParameterList plist;
-    MFD3D_CrouzeixRaviart mfd(plist, mesh0_);
-    mfd.set_order(order_);
+    plist.set<std::string>("method", method_)
+         .set<int>("method order", order_);
+    auto mfd = BilinearFormFactory::Create(plist, mesh0_);
+    mfd->set_order(order_);
 
-    AmanziGeometry::Point p0(mesh1_->face_centroid(f) - mesh0_->face_centroid(f));
-    mfd.H1Face(f, p0, ve, vf);
+    VectorPolynomial v;
+    std::vector<Polynomial> ve;
+
+    for (int i = 0; i < d_; ++i) {
+      for (int n = 0; n < nedges; ++n) {
+        int e = edges[n];
+        VelocityEdge_(e, v);
+        ve.push_back(v[i]);
+      }
+
+      mfd->H1Face(f, ve, NULL, vf[i]);
+    }
   }
 }
 

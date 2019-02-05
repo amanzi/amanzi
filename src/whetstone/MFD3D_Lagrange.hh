@@ -16,6 +16,8 @@
 #ifndef AMANZI_MFD3D_LAGRANGE_HH_
 #define AMANZI_MFD3D_LAGRANGE_HH_
 
+#include <vector>
+
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
@@ -51,7 +53,10 @@ class MFD3D_Lagrange : public MFD3D {
   }
 
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override;
+  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override {
+    if (d_ == 2) return H1consistency2D_(c, T, N, Ac);
+    return H1consistency3D_(c, T, N, Ac);
+  }
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
   // -- projectors
@@ -79,12 +84,16 @@ class MFD3D_Lagrange : public MFD3D {
   const DenseMatrix& R() const { return R_; }
 
  private:
+  int H1consistency2D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
+  int H1consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) { return 0; }
+
   void ProjectorCell_(int c, const std::vector<Polynomial>& vf,
                       const ProjectorType type,
                       const Polynomial* moments, Polynomial& uc);
 
-  void ProjectorCell_LO_(int c, const std::vector<Polynomial>& vf,
-                         Polynomial& uc);
+  void ProjectorCell_LO_(int c, const std::vector<Polynomial>& vf, Polynomial& uc);
+
+  std::vector<Polynomial> ConvertMomentsToPolynomials_(int order);
 
  protected:
   PolynomialOnMesh integrals_;

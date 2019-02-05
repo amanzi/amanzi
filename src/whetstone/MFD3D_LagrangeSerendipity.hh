@@ -42,7 +42,7 @@ class MFD3D_LagrangeSerendipity : public MFD3D_Lagrange {
   virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override;
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
-  // -- projectors
+  // -- cell projectors
   virtual void L2Cell(int c, const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& uc) override {
     ProjectorCell_(c, vf, ProjectorType::L2, moments, uc);
@@ -51,6 +51,12 @@ class MFD3D_LagrangeSerendipity : public MFD3D_Lagrange {
   virtual void H1Cell(int c, const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& uc) override {
     ProjectorCell_(c, vf, ProjectorType::H1, moments, uc);
+  }
+
+  // -- face projectors
+  virtual void H1Face(int f, const std::vector<Polynomial>& ve,
+                      const Polynomial* moments, Polynomial& uf) override {
+     ProjectorFace_(f, ve, ProjectorType::H1, moments, uf);
   }
 
   // other methods
@@ -63,6 +69,9 @@ class MFD3D_LagrangeSerendipity : public MFD3D_Lagrange {
   void ProjectorCell_(int c, const std::vector<Polynomial>& vf,
                       const ProjectorType type,
                       const Polynomial* moments, Polynomial& uc);
+  void ProjectorFace_(int f, const std::vector<Polynomial>& ve,
+                      const ProjectorType type,
+                      const Polynomial* moments, Polynomial& uf) {};
 
   void CalculateDOFsOnBoundary_(
       int c, const std::vector<Polynomial>& vf, DenseVector& vdof);
