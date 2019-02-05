@@ -59,7 +59,6 @@ int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector
 int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& sv,
                                      CompositeVector& cv, bool multi_domain, int dofnum)
 {
-
   std::string sm_name;
   int dof_id;
 
@@ -200,8 +199,7 @@ int AddSuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
   AMANZI_ASSERT(tv.Data() == Teuchos::null);
   int ierr(0);
   int my_dof = 0;
-  for (TreeVector::iterator it = tv.begin();
-       it != tv.end(); ++it) {
+  for (TreeVector::iterator it = tv.begin(); it != tv.end(); ++it) {
     AMANZI_ASSERT((*it)->Data() != Teuchos::null);
     ierr |= AddSuperVectorToCompositeVector(map, sv, *(*it)->Data(), multi_domain, my_dof);
     my_dof++;            
@@ -278,14 +276,14 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const std::vector<CompositeVectorSpace>& c
         ghost_maps.push_back(cvs.Map(*name, true));        
       } else {
         bool found = false;
-        for (int j=0; j<compnames.size();++j){
-          if (compnames[j] == *name){
+        for (int j=0; j<compnames.size();++j) {
+          if (compnames[j] == *name) {
             found = true;
             dofnums[j]++;
             break;
           }
         }
-        if (!found){
+        if (!found) {
           compnames.push_back(*name);
           dofnums.push_back(cvs.NumVectors(*name));
           maps.push_back(cvs.Map(*name, false));
@@ -296,19 +294,7 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const std::vector<CompositeVectorSpace>& c
     i++;
   }
 
-  // std::cout<<"CreateSuperMap\n";
-  // for (auto s : compnames) std::cout<<s<<" "; std::cout<<"\n";
-  // for (auto s : dofnums) std::cout<<s<<" "; std::cout<<"\n";
-  // for (auto s : maps) std::cout<<*s<<"\n"; std::cout<<"\n";
-  
   Teuchos::RCP<SuperMap> res = Teuchos::rcp(new SuperMap(cvs_vec[0].Comm(), compnames, dofnums, maps, ghost_maps));
-
-  // for (auto s : compnames) {
-  //   std::cout<<"\nname "<<s<<"\n";
-  //   std::cout<<"offset "<<res->Offset(s)<<"\n";
-  //   std::cout<<"num "<<res -> NumOwnedElements(s)<<"\n";
-  // }
-  
   return res;
 }
 
@@ -438,7 +424,6 @@ CreateBoundaryMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
     }
   }
   
-
   Teuchos::RCP<Epetra_Map> boundary_map_ghosted = 
     Teuchos::rcp(new Epetra_Map(-1, n_ghosted_new, global_id_ghosted.data(), 0, bnd_maps.first->Comm()));
 
@@ -446,6 +431,9 @@ CreateBoundaryMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
 }
 
 
+/* ******************************************************************
+* TBW
+****************************************************************** */
 std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >
 getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
   switch(location) {

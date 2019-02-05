@@ -155,17 +155,17 @@ int LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace>::ApplyInverse(const Ve
     pl->set("Verbosity", Belos::Errors + Belos::Warnings);
   }
 
-  if(criteria_ & LIN_SOLVER_RELATIVE_RHS)
+  if (criteria_ & LIN_SOLVER_RELATIVE_RHS)
   {
     pl->set("Implicit Residual Scaling", "Norm of RHS");
     pl->set("Explicit Residual Scaling", "Norm of RHS");
   }
-  else if(criteria_ & LIN_SOLVER_RELATIVE_RESIDUAL)
+  else if (criteria_ & LIN_SOLVER_RELATIVE_RESIDUAL)
   {
     pl->set("Implicit Residual Scaling", "Norm of Initial Residual");
     pl->set("Explicit Residual Scaling", "Norm of Initial Residual");
   }
-  else // if(criteria_ & LIN_SOLVER_ABSOLUTE_RESIDUAL)
+  else // if (criteria_ & LIN_SOLVER_ABSOLUTE_RESIDUAL)
   {
     pl->set("Implicit Residual Scaling", "None");
     pl->set("Explicit Residual Scaling", "None");
@@ -189,7 +189,7 @@ int LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace>::ApplyInverse(const Ve
   num_itrs_ = solver.getNumIters();
   residual_ = solver.achievedTol();
 
-  if(success == Belos::Converged)
+  if (success == Belos::Converged)
     returned_code_ = LIN_SOLVER_BELOS_SAYS_SUCCESS;
   else
     returned_code_ = LIN_SOLVER_BELOS_SAYS_FAIL;

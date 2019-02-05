@@ -246,14 +246,14 @@ struct Problem {
         bc_model1[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_value1[f] = ana->velocity_exact1(xf, 0.0) * normal / area;
         
-      } else if(fabs(xf[1]) < 1e-12) {
+      } else if (fabs(xf[1]) < 1e-12) {
         // y = 0 boundary
         bc_model0[f] = Operators::OPERATOR_BC_DIRICHLET;
         bc_value0[f] = ana->exact0(xf, 0.0);
         bc_model1[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_value1[f] = ana->velocity_exact1(xf, 0.0) * normal / area;
         
-      } else if(fabs(xf[0] - 1.0) < 1e-12) {
+      } else if (fabs(xf[0] - 1.0) < 1e-12) {
         // x = 1 boundary
         bc_model0[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_value0[f] = ana->velocity_exact0(xf, 0.0) * normal / area;
@@ -900,12 +900,12 @@ std::pair<double,double> RunInverseProblem(
   Teuchos::ParameterList pc_list;
   pc_list.set("preconditioner type", "boomer amg");
   pc_list.sublist("boomer amg parameters").set("tolerance", 0.);
-  pc_list.sublist("boomer amg parameters").set("number of functions", 2);
+  // pc_list.sublist("boomer amg parameters").set("number of functions", 2);
   problem->op->InitPreconditioner(pc_list);
 
   Teuchos::ParameterList lin_list;
-  lin_list.set("iterative method", "nka");
-  lin_list.sublist("nka parameters").sublist("verbose object").set("verbosity level", "high");
+  lin_list.set("iterative method", "pcg");
+  lin_list.sublist("pcg parameters").sublist("verbose object").set("verbosity level", "medium");
   AmanziSolvers::LinearOperatorFactory<TreeOperator,TreeVector,TreeVectorSpace> fac;
   Teuchos::RCP<AmanziSolvers::LinearOperator<TreeOperator,TreeVector,TreeVectorSpace> > lin_op =
       fac.Create(lin_list, problem->op);
@@ -915,9 +915,6 @@ std::pair<double,double> RunInverseProblem(
   CHECK(ierr >= 0);
   CHECK(lin_op->num_itrs() < 100);
 
-  // std::cout<<*X.SubVector(0)->Data()->ViewComponent("cell",false)<<"\n";
-  // std::cout<<*X.SubVector(1)->Data()->ViewComponent("cell",false)<<"\n";
-  
   // subtract off true solution
   X.SubVector(0)->Data()->Update(-1., *u, 1.);
   X.SubVector(1)->Data()->Update(-1., *v, 1.);

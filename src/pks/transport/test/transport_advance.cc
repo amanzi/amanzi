@@ -41,7 +41,7 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
 
   for (int frm = 0; frm < 3; frm++) {
     std::cout << "Test: advance with framework " << framework_name[frm] << std::endl;
-    if(!framework_available(framework[frm])) continue;
+    if (!framework_available(framework[frm])) continue;
 #ifdef HAVE_MPI
     Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else

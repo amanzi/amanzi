@@ -38,7 +38,7 @@ using namespace Amanzi::AmanziGeometry;
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   
   // setup a piecewice linear solution with a jump
-  std::string xmlInFileName = "test/mpc_driver_single_fracture.xml";
+  std::string xmlInFileName = "test/mpc_driver_coupled_flow.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
   
   // For now create one geometric model from all the regions in the spec
@@ -52,7 +52,7 @@ using namespace Amanzi::AmanziGeometry;
 
   MeshFactory factory(&comm);
   factory.preference(pref);
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory("test/single_fracture_tet.exo", gm);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory(0.0, 0.0, 0.0, 216.0, 10.0, 120.0, 9, 2, 20, gm);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
@@ -61,15 +61,6 @@ using namespace Amanzi::AmanziGeometry;
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
 
-  /*
-  Amanzi::MeshAudit mesh_auditor(mesh);
-  int status = mesh_auditor.Verify();
-  if (status != 0) {
-    Errors::Message msg("Mesh Audit could not verify correctness of mesh.");
-    Exceptions::amanzi_throw(msg);
-  }
-  */
-  
   //create additional mesh for fracture
   std::vector<std::string> names;
   names.push_back("fracture");
@@ -83,6 +74,43 @@ using namespace Amanzi::AmanziGeometry;
 
   Amanzi::CycleDriver cycle_driver(plist, S, &comm, obs_data);
   cycle_driver.Go();
+
+  // test pressure in fracture (5% error)
+  double p0 = 101325.0;
+  double rho = 998.2;
+  double mu = 0.001002;
+  double K1 = 1.0e-11;
+  double kn = 4.0e-8;
+  double L = 60.0;
+  double q0 = -2.0e-3;
+
+  // test pressure in fracture
+  K1 *= rho / mu;
+  double pf_exact = p0 - q0 * (L / K1 / 2 + 1.0 / kn);
+
+  auto& pf = *S->GetFieldData("fracture-pressure")->ViewComponent("cell");
+  for (int c = 0; c < pf.MyLength(); ++c) {
+    if (c == 0) std::cout << "Fracture pressure: " << pf[0][c] << ",  exact: " << pf_exact << std::endl;
+    CHECK(std::fabs(pf[0][c] - pf_exact) < 0.05 * std::fabs(pf_exact));
+  }
+
+  // test flux in bottom domain
+  Amanzi::AmanziGeometry::Point uf_exact(0.0, 0.0, q0);
+
+  auto& uf = *S->GetFieldData("darcy_flux")->ViewComponent("face");
+  const auto& fmap = *S->GetFieldData("darcy_flux")->ComponentMap("face");
+
+  int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  for (int f = 0; f < nfaces; ++f) {
+    double area = mesh->face_area(f);
+    const auto& normal = mesh->face_normal(f);
+
+    int g = fmap.FirstPointInElement(f);
+    double flux = (uf_exact * normal) / rho;
+
+    if (g == f + 1) std::cout << "Matrix Darcy flux: " << uf[0][g] << ",  exact: " << flux << std::endl;
+    CHECK(std::fabs(uf[0][g] - flux) < 0.05 * std::fabs(q0));
+  }
 }
 
 

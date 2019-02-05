@@ -1184,11 +1184,11 @@ void PDE_DiffusionMFD::CreateMassMatrices_()
       if (ok != WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK) {
         if (method == WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY) {
           ok = mfd.MassMatrixInverseOptimized(c, Kc, Wff);
-        } else if(method == WhetStone::DIFFUSION_TPFA) {
+        } else if (method == WhetStone::DIFFUSION_TPFA) {
           ok = mfd.MassMatrixInverseTPFA(c, Kc, Wff);
-        } else if(method == WhetStone::DIFFUSION_SUPPORT_OPERATOR) {
+        } else if (method == WhetStone::DIFFUSION_SUPPORT_OPERATOR) {
           ok = mfd.MassMatrixInverseSO(c, Kc, Wff);
-        } else if(method == WhetStone::DIFFUSION_POLYHEDRA_SCALED) {
+        } else if (method == WhetStone::DIFFUSION_POLYHEDRA_SCALED) {
           if (K_symmetric_) {
             ok = mfd.MassMatrixInverse(c, Kc, Wff);
           } else {

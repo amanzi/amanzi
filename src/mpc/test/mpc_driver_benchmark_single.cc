@@ -38,7 +38,7 @@ using namespace Amanzi::AmanziGeometry;
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   
   // setup a piecewice linear solution with a jump
-  std::string xmlInFileName = "test/mpc_driver_flow_transport_single_fracture.xml";
+  std::string xmlInFileName = "test/mpc_driver_benchmark_single.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
   
   // For now create one geometric model from all the regions in the spec
@@ -61,14 +61,14 @@ using namespace Amanzi::AmanziGeometry;
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
 
-  
+  /*  
   Amanzi::MeshAudit mesh_auditor(mesh);
   int status = mesh_auditor.Verify();
   if (status != 0) {
     Errors::Message msg("Mesh Audit could not verify correctness of mesh.");
     Exceptions::amanzi_throw(msg);
   }
-  
+  */
   
   //create additional mesh for fracture
   std::vector<std::string> names;

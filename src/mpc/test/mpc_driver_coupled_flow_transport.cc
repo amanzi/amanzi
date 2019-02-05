@@ -38,8 +38,7 @@ using namespace Amanzi::AmanziGeometry;
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   
   // setup a piecewice linear solution with a jump
-  // std::string xmlInFileName = "test/mpc_driver_single_fracture.xml";
-  std::string xmlInFileName = "test/mpc_driver_flow_transport_matrix_fracture.xml";
+  std::string xmlInFileName = "test/mpc_driver_coupled_flow_transport.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
   
   // For now create one geometric model from all the regions in the spec

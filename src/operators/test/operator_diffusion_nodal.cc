@@ -246,7 +246,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
 
   for (int v = 0; v < nnodes_wghost; v++) {
     mesh->node_get_coordinates(v, &xv);
-    if(fabs(xv[0] - 1.0) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6) {
+    if (fabs(xv[0] - 1.0) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6) {
       bc_model_v[v] = OPERATOR_BC_DIRICHLET;
       bc_value_v[v] = ana.pressure_exact(xv, 0.0);
     }

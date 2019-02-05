@@ -95,7 +95,7 @@ void PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
         }
 
       // -- the second most popular choice: classical upwind
-      } else if(little_k_ == OPERATOR_LITTLE_K_UPWIND) {
+      } else if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
         for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
 
       } else if (little_k_ == OPERATOR_LITTLE_K_STANDARD && k_cell != Teuchos::null) {
@@ -214,7 +214,7 @@ void PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeV
     } else if (little_k_ == OPERATOR_LITTLE_K_STANDARD && k_cell != Teuchos::null) {
       kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
-    } else if(little_k_ == OPERATOR_LITTLE_K_UPWIND) {
+    } else if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
     }
 
@@ -314,7 +314,7 @@ void PDE_DiffusionMFDwithGravity::UpdateFluxNonManifold(
     } else if (little_k_ == OPERATOR_LITTLE_K_STANDARD && k_cell != Teuchos::null) {
       kc = (*k_cell)[0][c];
       for (int n = 0; n < nfaces; n++) kf[n] = kc;
-    } else if(little_k_ == OPERATOR_LITTLE_K_UPWIND) {
+    } else if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
       for (int n = 0; n < nfaces; n++) kf[n] = (*k_face)[0][faces[n]];
     }
 

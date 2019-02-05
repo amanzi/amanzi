@@ -147,27 +147,27 @@ if (BUILD_TESTS)
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
 
-    # Test: mpc driver for coupled matrix-fracture flow 
-    add_amanzi_test(mpc_driver_flow_matrix_fracture mpc_driver_flow_matrix_fracture
+    # Test: mpc driver for coupled matrix-fracture flow and transport
+    add_amanzi_test(mpc_driver_coupled_flow mpc_driver_coupled_flow
                     KIND      int
-                    SOURCE    test/Main.cc test/mpc_driver_flow_matrix_fracture.cc
+                    SOURCE    test/Main.cc test/mpc_driver_coupled_flow.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    add_amanzi_test(mpc_driver_single_fracture mpc_driver_single_fracture
+    add_amanzi_test(mpc_driver_coupled_flow_transport mpc_driver_coupled_flow_transport
                     KIND      int
-                    SOURCE    test/Main.cc test/mpc_driver_single_fracture.cc
-        	    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+                    SOURCE    test/Main.cc test/mpc_driver_coupled_flow_transport.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                  
 
-    add_amanzi_test(mpc_driver_transport_single_fracture mpc_driver_transport_single_fracture
+    # Test: mpc driver for coupled matrix-fracture flow and transport: benchmarks
+    add_amanzi_test(mpc_driver_benchmark_single mpc_driver_benchmark_single
                     KIND      int
-                    SOURCE    test/Main.cc test/mpc_driver_transport_single_fracture.cc
+                    SOURCE    test/Main.cc test/mpc_driver_benchmark_single.cc
         	    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                  
 
-    # Test: mpc driver for coupled matrix-fracture flow and transport
-    add_amanzi_test(mpc_driver_flow_transport_matrix_fracture mpc_driver_flow_transport_matrix_fracture
+    add_amanzi_test(mpc_driver_benchmark_regular mpc_driver_benchmark_regular
                     KIND      int
-                    SOURCE    test/Main.cc test/mpc_driver_flow_transport_matrix_fracture.cc
-		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                  
+                    SOURCE    test/Main.cc test/mpc_driver_benchmark_regular.cc
+        	    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                  
 
     # Test: mpc-new driver dummy
     add_amanzi_test(mpc_driver_dummy mpc_driver_dummy

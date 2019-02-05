@@ -17,7 +17,6 @@
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "TreeOperator.hh"
-#include "Verification.hh"
 
 #include "FlowMatrixFracture_PK.hh"
 #include "PK_MPCStrong.hh"
@@ -121,13 +120,13 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   auto tvs = Teuchos::rcp(new TreeVectorSpace(solution_->Map()));
   op_tree_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
-  // op_tree_rhs_ =  Teuchos::rcp(new TreeVector(tvs));
 
   op_tree_->SetOperatorBlock(0, 0, pk_matrix->op());
   op_tree_->SetOperatorBlock(1, 1, pk_fracture->op());
 
-  //op_tree_rhs_->PushBack(pk_matrix->op()->rhs());
-  //op_tree_rhs_->PushBack(pk_fracture->op()->rhs());
+  // op_tree_rhs_ = Teuchos::rcp(new TreeVector(tvs));
+  // op_tree_rhs_->PushBack(pk_matrix->op()->rhs());
+  // op_tree_rhs_->PushBack(pk_fracture->op()->rhs());
 
   // off-diagonal blocks are coupled PDEs
   // -- minimum composite vector spaces containing the coupling term
@@ -210,8 +209,6 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   // Test SPD properties of the matrix.
   // VerificationTV ver(op_tree_);
   // ver.CheckMatrixSPD();
-
-  //exit(0);
 }
 
 
