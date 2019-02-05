@@ -211,6 +211,9 @@ int AddSuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
 }
 
 
+/* ******************************************************************
+* TBW
+****************************************************************** */
 Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schema, int n_dofs)
 {
   std::vector<std::string> compnames;
@@ -249,6 +252,7 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, Schema& s
 
   return Teuchos::rcp(new SuperMap(cvs.Comm(), compnames, dofnums, maps, ghost_maps));
 }
+
 
 /* ******************************************************************
 * Create super map: general version
@@ -300,8 +304,8 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const std::vector<CompositeVectorSpace>& c
   Teuchos::RCP<SuperMap> res = Teuchos::rcp(new SuperMap(cvs_vec[0].Comm(), compnames, dofnums, maps, ghost_maps));
 
   // for (auto s : compnames) {
-  //   std::cout<<"name "<<s<<"\n";
-  //   std::cout<<"offset "<<res -> Offset(s)<<"\n";
+  //   std::cout<<"\nname "<<s<<"\n";
+  //   std::cout<<"offset "<<res->Offset(s)<<"\n";
   //   std::cout<<"num "<<res -> NumOwnedElements(s)<<"\n";
   // }
   

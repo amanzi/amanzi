@@ -162,24 +162,28 @@ void TreeOperator::SymbolicAssembleMatrix()
       if (lcv_row == lcv_col) {
         AMANZI_ASSERT(blocks_[lcv_row][lcv_col] != Teuchos::null);
         cvs_vec.push_back(blocks_[lcv_row][lcv_col]->DomainMap());
-        cvs_names.push_back(std::to_string (lcv_row));
-        // if (schema == 0) {
-        //   schema = blocks_[lcv_row][lcv_col]->schema();
-        // } else {
-        //   AMANZI_ASSERT(schema == blocks_[lcv_row][lcv_col]->schema());
-        // }
+        cvs_names.push_back(std::to_string(lcv_row));
+        if (!multi_domain_) {
+          int schema_tmp = blocks_[lcv_row][lcv_col]->schema();
+          schema |= schema_tmp;
+          AMANZI_ASSERT(schema == schema_tmp);
+        }
       }
     }
     AMANZI_ASSERT(is_block);
   }
 
   // create the supermap and graph
-  smap_ = CreateSuperMap(cvs_vec,  cvs_names, multi_domain_);
-  //exit(0);
-  //int row_size = MaxRowSize(*an_op->DomainMap().Mesh(), schema, n_blocks);
-  int row_size = 10;
 
-  
+  int row_size;
+  if (multi_domain_) {
+    row_size = 10;
+    smap_ = CreateSuperMap(cvs_vec, cvs_names, multi_domain_);
+  } else {
+    row_size = MaxRowSize(*an_op->DomainMap().Mesh(), schema, n_blocks);
+    smap_ = CreateSuperMap(an_op->DomainMap(), schema, n_blocks);
+  }
+
   Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->Map(),
           smap_->GhostedMap(), smap_->GhostedMap(), row_size));
 
