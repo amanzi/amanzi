@@ -227,9 +227,9 @@ void TreeOperator::AssembleMatrix() {
   int ierr = Amat_->FillComplete();
   AMANZI_ASSERT(!ierr);
 
-  std::stringstream filename_s2;
-  filename_s2 << "assembled_matrix" << 0 << ".txt";
-  EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Amat_ ->Matrix());
+  // std::stringstream filename_s2;
+  // filename_s2 << "assembled_matrix" << 0 << ".txt";
+  // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Amat_ ->Matrix());
 
 }
 

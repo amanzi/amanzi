@@ -668,8 +668,6 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Diagonal& op,
     for (int i = 0; i != ndofs; ++i) {
       lid_r.push_back(row_gids[row_lids[n][i]]);
       lid_c.push_back(col_gids[col_lids[n][i]]);
-      // std::cout << row_lids[n][i]<<" "<<col_lids[n][i]<<" : "<<
-      //   row_gids[row_lids[n][i]] << " "<<col_gids[col_lids[n][i]]<<"\n";      
     }
 
     ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[n]);

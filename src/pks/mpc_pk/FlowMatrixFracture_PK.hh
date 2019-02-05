@@ -64,6 +64,7 @@ class FlowMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   // virtual void CalculateDiagnostics() {};
   Teuchos::RCP<const Teuchos::ParameterList> linear_operator_list_;
   Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
+  Teuchos::RCP<const Teuchos::ParameterList> ti_list_;
   
  private:
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;

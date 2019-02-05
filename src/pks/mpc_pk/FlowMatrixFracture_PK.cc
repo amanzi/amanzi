@@ -51,6 +51,7 @@ FlowMatrixFracture_PK::FlowMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
 
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
+  ti_list_ = Teuchos::sublist(plist_, "time integrator", true);  
 }
 
 
@@ -179,18 +180,23 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   auto op_coupling00 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
       oplist, cvs_matrix, cvs_matrix, inds_matrix, inds_matrix, pk_matrix->op()));
   op_coupling00->Setup(values, 1.0);
+  op_coupling00->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   auto op_coupling01 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
       oplist, cvs_matrix, cvs_fracture, inds_matrix, inds_fracture));
   op_coupling01->Setup(values, -1.0);
+  op_coupling01->UpdateMatrices(Teuchos::null, Teuchos::null);
+  
 
   auto op_coupling10 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
       oplist, cvs_fracture, cvs_matrix, inds_fracture, inds_matrix));
   op_coupling10->Setup(values, -1.0);
+  op_coupling10->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   auto op_coupling11 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
       oplist, cvs_fracture, cvs_fracture, inds_fracture, inds_fracture, pk_fracture->op()));
   op_coupling11->Setup(values, 1.0);
+  op_coupling11->UpdateMatrices(Teuchos::null, Teuchos::null);  
 
   op_tree_->SetOperatorBlock(0, 1, op_coupling01->global_operator());
   op_tree_->SetOperatorBlock(1, 0, op_coupling10->global_operator());
@@ -202,8 +208,10 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   matrix_assembled_ = true;
 
   // Test SPD properties of the matrix.
-  VerificationTV ver(op_tree_);
-  ver.CheckMatrixSPD();
+  // VerificationTV ver(op_tree_);
+  // ver.CheckMatrixSPD();
+
+  //exit(0);
 }
 
 
@@ -254,14 +262,14 @@ void FlowMatrixFracture_PK::UpdatePreconditioner(double t,
       EpetraExt::RowMatrixToMatlabFile(filename.str().c_str(), *op_tree_->A());
     }
     
-    std::string name = plist_->get<std::string>("preconditioner");
+    std::string name = ti_list_->get<std::string>("preconditioner");
     Teuchos::ParameterList pc_list = preconditioner_list_->sublist(name);
 
     op_tree_->InitPreconditioner(pc_list);
 
     // Test SPD properties of the preconditioner.
-    VerificationTV ver(op_tree_);
-    ver.CheckPreconditionerSPD();
+    // VerificationTV ver(op_tree_);
+    // ver.CheckPreconditionerSPD();
   }
 }
 
