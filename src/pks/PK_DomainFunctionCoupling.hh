@@ -101,7 +101,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(
   } else if (submodel_ == "field") {
     try {
       Teuchos::ParameterList blist = plist.sublist("boundary concentration");
-      if (blist.isParameter("field_out_key")){
+      if (blist.isParameter("field_out_key")) {
         field_out_key_ = blist.get<std::string>("field_out_key");
         copy_field_out_key_ = blist.get<std::string>("copy_field_out_key", "default");
       }
@@ -187,11 +187,11 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
 
       std::vector<double> val(num_vec, 0);
       int pos = 0;
-      if (cells.size() == 2){
+      if (cells.size() == 2) {
         pos = (cell_map.GID(cells[0]) < cell_map.GID(cells[1])) ? 0 : 1;
       }
       
-      for (int j=0; j!=cells.size(); ++j){
+      for (int j=0; j!=cells.size(); ++j) {
 
         mesh_out->cell_get_faces_and_dirs(cells[j], &faces, &dirs);
 

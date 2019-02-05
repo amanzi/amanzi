@@ -17,6 +17,7 @@
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "TreeOperator.hh"
+#include "Verification.hh"
 
 #include "FlowMatrixFracture_PK.hh"
 #include "PK_MPCStrong.hh"
@@ -30,9 +31,9 @@ FlowMatrixFracture_PK::FlowMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
                                              const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                              const Teuchos::RCP<State>& S,
                                              const Teuchos::RCP<TreeVector>& soln) :
-  glist_(glist), matrix_assembled_(false),
-  Amanzi::PK_MPC<PK_BDF>(pk_tree, glist, S, soln),
-  Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln)
+    glist_(glist), matrix_assembled_(false),
+    Amanzi::PK_MPC<PK_BDF>(pk_tree, glist, S, soln),
+    Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln)
 {
   Teuchos::ParameterList vlist;
   vo_ =  Teuchos::rcp(new VerboseObject("MatrixFracture_PK", vlist));
@@ -50,7 +51,6 @@ FlowMatrixFracture_PK::FlowMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
 
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
-
 }
 
 
@@ -83,6 +83,11 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // Require additional fields and evaluators
+  Key normal_permeability_key_("fracture-normal_permeability");
+  if (!S->HasField(normal_permeability_key_)) {
+    S->RequireField(normal_permeability_key_, "state")->SetMesh(mesh_fracture_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  }
 
   // inform dependent PKs about coupling
   // -- flow (matrix)
@@ -115,7 +120,7 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   auto tvs = Teuchos::rcp(new TreeVectorSpace(solution_->Map()));
   op_tree_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
-  //  op_tree_rhs_ =  Teuchos::rcp(new TreeVector(tvs));
+  // op_tree_rhs_ =  Teuchos::rcp(new TreeVector(tvs));
 
   op_tree_->SetOperatorBlock(0, 0, pk_matrix->op());
   op_tree_->SetOperatorBlock(1, 1, pk_fracture->op());
@@ -193,11 +198,12 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_tree_->set_multi_domain(true);
 
   op_tree_->SymbolicAssembleMatrix();
-
   op_tree_->AssembleMatrix();
-
   matrix_assembled_ = true;
 
+  // Test SPD properties of the matrix.
+  VerificationTV ver(op_tree_);
+  ver.CheckMatrixSPD();
 }
 
 
@@ -216,10 +222,12 @@ bool FlowMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   return fail;
 }
 
+
 void FlowMatrixFracture_PK::FunctionalResidual(double t_old, double t_new,
                                                Teuchos::RCP<TreeVector> u_old,
                                                Teuchos::RCP<TreeVector> u_new,
-                                               Teuchos::RCP<TreeVector> f){
+                                               Teuchos::RCP<TreeVector> f)
+{
   double norm, sol;
   
   int ierr = op_tree_->ApplyAssembled(*u_new, *f);
@@ -231,15 +239,13 @@ void FlowMatrixFracture_PK::FunctionalResidual(double t_old, double t_new,
 
   f->SubVector(0)->Data()->Update(-1, *pk_matrix->op()->rhs(), 1);
   f->SubVector(1)->Data()->Update(-1, *pk_fracture->op()->rhs(), 1);
-
-  
-
 }
+
 
 void FlowMatrixFracture_PK::UpdatePreconditioner(double t,
                                                  Teuchos::RCP<const TreeVector> up,
-                                                 double h, bool assemble) {
-
+                                                 double h, bool assemble)
+{
   if (assemble) {
     op_tree_->AssembleMatrix();
     if (dump_) {
@@ -251,20 +257,21 @@ void FlowMatrixFracture_PK::UpdatePreconditioner(double t,
     std::string name = plist_->get<std::string>("preconditioner");
     Teuchos::ParameterList pc_list = preconditioner_list_->sublist(name);
 
-    op_tree_ -> InitPreconditioner(pc_list);
+    op_tree_->InitPreconditioner(pc_list);
+
+    // Test SPD properties of the preconditioner.
+    VerificationTV ver(op_tree_);
+    ver.CheckPreconditionerSPD();
   }
-  
 }
 
 
 int FlowMatrixFracture_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, 
-                             Teuchos::RCP<TreeVector> Y){
-
+                                               Teuchos::RCP<TreeVector> Y)
+{
   Y->PutScalar(0.0);
   return op_tree_->ApplyInverse(*X, *Y);
-
 }
-
 
 }  // namespace Amanzi
 

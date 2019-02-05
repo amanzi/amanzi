@@ -142,7 +142,7 @@ TEST(SUPERMAP_MANUAL) {
 
 
   // for (int i=0; i!=map.Map()->NumMyElements(); ++i) {
-  //   for (int j=0; j<map.Map()->ElementSize(i); ++j){
+  //   for (int j=0; j<map.Map()->ElementSize(i); ++j) {
   //     owned[map.Map()->FirstPointInElement(i) + j] = map.Map()->GID(i);
   //   }
   // }
@@ -151,7 +151,7 @@ TEST(SUPERMAP_MANUAL) {
   // ghosted.Print(std::cout);
   // CHECK(!ierr);
   // for (int i=0; i!=map.GhostedMap()->NumMyElements(); ++i) {
-  //   for (int j=0; j<map.Map()->ElementSize(i); ++j){
+  //   for (int j=0; j<map.Map()->ElementSize(i); ++j) {
   //     CHECK(ghosted[map.Map()->FirstPointInElement(i) + j] == map.GhostedMap()->GID(i));
   //   }
   // }

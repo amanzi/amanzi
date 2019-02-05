@@ -32,6 +32,7 @@
 
 // Amanzi::Operators
 #include "OperatorDefs.hh"
+#include "OperatorUtils.hh"
 #include "LimiterCell.hh"
 
 namespace Amanzi {
@@ -822,9 +823,7 @@ Teuchos::RCP<CompositeVector> LimiterCell::BoundsForCells(
     const std::vector<int>& bc_model, const std::vector<double>& bc_value, 
     int stencil)
 {
-  auto cvs = Teuchos::rcp(new CompositeVectorSpace());
-  cvs->SetMesh(mesh_)->SetGhosted(true)
-     ->AddComponent("cell", AmanziMesh::CELL, 2);
+  auto cvs = CreateCompositeVectorSpace(mesh_, "cell",  AmanziMesh::CELL, 2, true);
 
   auto bounds = Teuchos::rcp(new CompositeVector(*cvs));
   auto& bounds_c = *bounds->ViewComponent("cell", true);

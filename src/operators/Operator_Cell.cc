@@ -108,16 +108,14 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
                                              const SuperMap& map, GraphFE& graph,
                                              int my_block_row, int my_block_col, bool multi_domain) const
 {
-
   std::string cell_name = "cell";
   int row_pos = my_block_row;
   int col_pos = my_block_col;
-  if (multi_domain){
+  if (multi_domain) {
     cell_name = cell_name + "-" + std::to_string(my_block_col);
     row_pos = 0;
     col_pos = 0;
   }
-
 
   const std::vector<int>& cell_row_inds = map.GhostIndices(cell_name, row_pos);
   const std::vector<int>& cell_col_inds = map.GhostIndices(cell_name, col_pos);
@@ -173,12 +171,11 @@ void Operator_Cell::AssembleMatrixOp(const Op_Cell_Cell& op,
 {
   AMANZI_ASSERT(op.diag->NumVectors() == 1);
 
-  
   std::string cell_name = "cell";
   int row_pos = my_block_row;
   int col_pos = my_block_col;
 
-  if (multi_domain){
+  if (multi_domain) {
     cell_name = cell_name + "-" + std::to_string(my_block_col);
     row_pos = 0;
     col_pos = 0;

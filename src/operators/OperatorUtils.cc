@@ -29,11 +29,10 @@ namespace Operators {
 int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector& cv,
                                      Epetra_Vector& sv, bool multi_domain, int dofnum)
 {
-
   std::string sm_name;
   int dof_id;
 
-  for (auto it=cv.Map().begin(); it!=cv.Map().end(); ++it){
+  for (auto it=cv.Map().begin(); it!=cv.Map().end(); ++it) {
     if (multi_domain) {
       sm_name = *it + "-"+ std::to_string(dofnum);
       dof_id = 0;
@@ -43,7 +42,7 @@ int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector
       dof_id = dofnum;
     }
 
-    if (smap.HasComponent(sm_name)){
+    if (smap.HasComponent(sm_name)) {
       const std::vector<int>& inds = smap.Indices(sm_name, dof_id);
       const Epetra_MultiVector& data = *cv.ViewComponent(*it);
       for (int i=0; i!= data.MyLength(); ++i) sv[inds[i]] = data[0][i];
@@ -58,14 +57,13 @@ int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector
 * Copy super vector to composite vector, component-by-component.
 ****************************************************************** */
 int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& sv,
-                                     CompositeVector& cv, bool multi_domain, int dofnum )
-  
+                                     CompositeVector& cv, bool multi_domain, int dofnum)
 {
 
   std::string sm_name;
   int dof_id;
 
-  for (auto it=cv.Map().begin(); it!=cv.Map().end(); ++it){
+  for (auto it=cv.Map().begin(); it!=cv.Map().end(); ++it) {
     if (multi_domain) {
       sm_name = *it + "-"+ std::to_string(dofnum);
       dof_id = 0;
@@ -75,7 +73,7 @@ int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& 
       dof_id = dofnum;
     }
 
-    if (smap.HasComponent(sm_name)){
+    if (smap.HasComponent(sm_name)) {
       const std::vector<int>& inds = smap.Indices(sm_name, dof_id);
       const Epetra_MultiVector& data = *cv.ViewComponent(*it);
       for (int i=0; i!= data.MyLength(); ++i) data[0][i] = sv[inds[i]];
@@ -93,12 +91,10 @@ int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& 
 int AddSuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& sv,
                                     CompositeVector& cv, bool multi_domain, int dofnum)
 {
-
-
   std::string sm_name;
   int dof_id;
 
-  for (auto it=cv.Map().begin(); it!=cv.Map().end(); ++it){
+  for (auto it=cv.Map().begin(); it!=cv.Map().end(); ++it) {
     if (multi_domain) {
       sm_name = *it + "-"+ std::to_string(dofnum);
       dof_id = 0;
@@ -108,7 +104,7 @@ int AddSuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& s
       dof_id = dofnum;
     }
 
-    if (smap.HasComponent(sm_name)){
+    if (smap.HasComponent(sm_name)) {
       const std::vector<int>& inds = smap.Indices(sm_name, dof_id);
       const Epetra_MultiVector& data = *cv.ViewComponent(*it);
       for (int i=0; i!= data.MyLength(); ++i) data[0][i] += sv[inds[i]];
@@ -261,7 +257,6 @@ Teuchos::RCP<SuperMap> CreateSuperMap(std::vector<const CompositeVectorSpace > c
                                       std::vector<std::string> cvs_names,
                                       bool multi_domain)
 {
-
   AMANZI_ASSERT(cvs_vec.size() == cvs_names.size() );
   
   std::vector<std::string> compnames;
@@ -270,8 +265,8 @@ Teuchos::RCP<SuperMap> CreateSuperMap(std::vector<const CompositeVectorSpace > c
   std::vector<Teuchos::RCP<const Epetra_BlockMap> > ghost_maps;
   
   int i = 0;
-  for (auto cvs : cvs_vec){
-    for (auto name = cvs.begin(); name != cvs.end(); ++name){
+  for (auto cvs : cvs_vec) {
+    for (auto name = cvs.begin(); name != cvs.end(); ++name) {
       if (multi_domain) {
         compnames.push_back(*name + "-" + cvs_names[i] );
       }else{

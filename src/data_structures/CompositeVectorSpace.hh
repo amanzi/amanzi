@@ -108,7 +108,7 @@ public:
                 const std::vector<int>& num_dofs);
 
   CompositeVectorSpace*
-  AddComponent(std::string& name,
+  AddComponent(std::string name,
                Teuchos::RCP<const Epetra_BlockMap> mastermap,
                Teuchos::RCP<const Epetra_BlockMap> ghostmap,
                int num_dofs);

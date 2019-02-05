@@ -49,19 +49,6 @@ void Darcy_PK::FunctionalResidual(
     op_acc_->AddAccumulationTerm(wi, "cell");
   }
 
-  // coupling with fracture modifies the list of boundary conditions
-  if (coupled_to_fracture_) {
-    UpdateMatrixBCsUsingFracture_();
-  }
-
-  // coupling with matrix modifies globla matrix and source term
-  if (coupled_to_matrix_) {
-    UpdateSourceUsingMatrix_();
-    const auto& s1 = *S_->GetFieldData(normal_permeability_key_);
-    const auto& s2 = *S_->GetFieldData(fracture_matrix_source_key_);        
-    op_acc_->AddAccumulationRhs(s1, s2, 2.0, "cell", true);
-  }
-
   op_diff_->ApplyBCs(true, true, true);
 
   CompositeVector& rhs = *op_->rhs();
