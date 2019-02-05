@@ -35,7 +35,8 @@ namespace Operators {
 ****************************************************************** */
 TreeOperator::TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs) :
     tvs_(tvs),
-    block_diagonal_(false)
+    block_diagonal_(false),
+    multi_domain_(false)
 {
   // make sure we have the right kind of TreeVectorSpace -- it should be
   // one parent node with all leaf node children.
@@ -177,6 +178,8 @@ void TreeOperator::SymbolicAssembleMatrix()
   //exit(0);
   //int row_size = MaxRowSize(*an_op->DomainMap().Mesh(), schema, n_blocks);
   int row_size = 10;
+
+  
   Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->Map(),
           smap_->GhostedMap(), smap_->GhostedMap(), row_size));
 

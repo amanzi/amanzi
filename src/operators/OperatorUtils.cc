@@ -269,16 +269,34 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const std::vector<CompositeVectorSpace>& c
     for (auto name = cvs.begin(); name != cvs.end(); ++name) {
       if (multi_domain) {
         compnames.push_back(*name + "-" + cvs_names[i]);
+        dofnums.push_back(cvs.NumVectors(*name));
+        maps.push_back(cvs.Map(*name, false));
+        ghost_maps.push_back(cvs.Map(*name, true));        
       } else {
-        compnames.push_back(*name);
+        bool found = false;
+        for (int j=0; j<compnames.size();++j){
+          if (compnames[j] == *name){
+            found = true;
+            dofnums[j]++;
+            break;
+          }
+        }
+        if (!found){
+          compnames.push_back(*name);
+          dofnums.push_back(cvs.NumVectors(*name));
+          maps.push_back(cvs.Map(*name, false));
+          ghost_maps.push_back(cvs.Map(*name, true));
+        }
       }
-      dofnums.push_back(cvs.NumVectors(*name));
-      maps.push_back(cvs.Map(*name, false));
-      ghost_maps.push_back(cvs.Map(*name, true));
     }
     i++;
   }
 
+  // std::cout<<"CreateSuperMap\n";
+  // for (auto s : compnames) std::cout<<s<<" "; std::cout<<"\n";
+  // for (auto s : dofnums) std::cout<<s<<" "; std::cout<<"\n";
+  // for (auto s : maps) std::cout<<*s<<"\n"; std::cout<<"\n";
+  
   Teuchos::RCP<SuperMap> res = Teuchos::rcp(new SuperMap(cvs_vec[0].Comm(), compnames, dofnums, maps, ghost_maps));
 
   // for (auto s : compnames) {
