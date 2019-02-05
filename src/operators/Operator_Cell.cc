@@ -141,9 +141,28 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
   // ELEMENT: face, DOF: cell
   int lid_r[2];
   int lid_c[2];
-  const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
-  const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
 
+  std::string cell_name_row = "cell";
+  std::string cell_name_col = "cell";
+  int row_pos = my_block_row;
+  int col_pos = my_block_col;
+
+  if (multi_domain) {
+    cell_name_row = cell_name_row + "-" + std::to_string(my_block_row);
+    cell_name_col = cell_name_col + "-" + std::to_string(my_block_col);
+    row_pos = 0;
+    col_pos = 0;
+  }
+
+
+  const std::vector<int>& cell_row_inds = map.GhostIndices(cell_name_row, row_pos);
+  const std::vector<int>& cell_col_inds = map.GhostIndices(cell_name_col, col_pos);
+
+
+  
+  //for (auto s : cell_row_inds) std::cout<<s<<" "; std::cout<<"\n";
+  //for (auto s : cell_col_inds) std::cout<<s<<" "; std::cout<<"\n";  
+  
   int ierr(0);
   AmanziMesh::Entity_ID_List cells;
   for (int f = 0; f != nfaces_owned; ++f) {
@@ -157,6 +176,7 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
 
     ierr |= graph.InsertMyIndices(ncells, lid_r, ncells, lid_c);
   }
+  std::cout<<"\n";
   AMANZI_ASSERT(!ierr);
 }
 
@@ -204,8 +224,23 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
   // ELEMENT: face, DOF: cell
   int lid_r[2];
   int lid_c[2];
-  const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
-  const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
+
+   std::string cell_name_row = "cell";
+  std::string cell_name_col = "cell";
+  int row_pos = my_block_row;
+  int col_pos = my_block_col;
+
+  if (multi_domain) {
+    cell_name_row = cell_name_row + "-" + std::to_string(my_block_row);
+    cell_name_col = cell_name_col + "-" + std::to_string(my_block_col);
+    row_pos = 0;
+    col_pos = 0;
+  }
+
+
+  const std::vector<int>& cell_row_inds = map.GhostIndices(cell_name_row, row_pos);
+  const std::vector<int>& cell_col_inds = map.GhostIndices(cell_name_col, col_pos);
+
 
   int ierr(0);
   AmanziMesh::Entity_ID_List cells;
