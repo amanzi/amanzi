@@ -395,7 +395,6 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   op_diff_->ScaleMassMatrices(rho_ / mu);
   op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op_diff_->ApplyBCs(true, true, true);
   op_ = op_diff_->global_operator();
 
   // -- accumulation operator.
@@ -426,6 +425,9 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Verbose output of initialization statistics.
   InitializeStatistics_(init_darcy);
+
+  // for testing only
+  op_diff_->ApplyBCs(true, true, true);
 }
 
 
