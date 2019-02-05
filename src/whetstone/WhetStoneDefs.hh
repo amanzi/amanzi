@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -23,6 +23,12 @@ namespace WhetStone {
 
 // This definition allows us to use WhetStone as a standalone library.
 #define AMANZI_CODE
+
+enum class ProjectorType {
+  L2,
+  H1,
+  LS   // least square
+};
 
 #ifdef AMANZI_CODE
 typedef AmanziGeometry::Entity_ID Entity_ID;

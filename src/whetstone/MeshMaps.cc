@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -320,7 +320,7 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
   plist.set<int>("method order", order);
 
   MFD3D_LagrangeSerendipity mfd(plist, mesh1_);
-  mfd.L2Cell(c, vvf, moments, poly);
+  mfd.L2Cell(c, vvf, &moments, poly);
 }
 
 }  // namespace WhetStone

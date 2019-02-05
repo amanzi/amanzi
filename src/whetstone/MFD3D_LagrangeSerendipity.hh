@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -42,31 +42,36 @@ class MFD3D_LagrangeSerendipity : public MFD3D_Lagrange {
   virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override;
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
-  // -- projectors
-  virtual void L2Cell(
-      int c, const std::vector<Polynomial>& vf,
-      Polynomial& moments, Polynomial& uc) override {
-    ProjectorCell_(c, vf, Type::L2, moments, uc);
+  // -- cell projectors
+  virtual void L2Cell(int c, const std::vector<Polynomial>& vf,
+                      const Polynomial* moments, Polynomial& uc) override {
+    ProjectorCell_(c, vf, ProjectorType::L2, moments, uc);
   }
 
-  virtual void H1Cell(
-      int c, const std::vector<Polynomial>& vf,
-      Polynomial& moments, Polynomial& uc) override {
-    ProjectorCell_(c, vf, Type::H1, moments, uc);
+  virtual void H1Cell(int c, const std::vector<Polynomial>& vf,
+                      const Polynomial* moments, Polynomial& uc) override {
+    ProjectorCell_(c, vf, ProjectorType::H1, moments, uc);
+  }
+
+  // -- face projectors
+  virtual void H1Face(int f, const std::vector<Polynomial>& ve,
+                      const Polynomial* moments, Polynomial& uf) override {
+     ProjectorFace_(f, ve, ProjectorType::H1, moments, uf);
   }
 
   // other methods
-  void L2Cell_LeastSquare(
-      int c, const std::vector<Polynomial>& vf,
-      Polynomial& moments, Polynomial& uc) {
-    ProjectorCell_(c, vf, Type::LS, moments, uc);
+  void L2Cell_LeastSquare(int c, const std::vector<Polynomial>& vf,
+                          const Polynomial* moments, Polynomial& uc) {
+    ProjectorCell_(c, vf, ProjectorType::LS, moments, uc);
   }
 
  private:
-  void ProjectorCell_(
-      int c, const std::vector<Polynomial>& vf,
-      const Projectors::Type type,
-      Polynomial& moments, Polynomial& uc);
+  void ProjectorCell_(int c, const std::vector<Polynomial>& vf,
+                      const ProjectorType type,
+                      const Polynomial* moments, Polynomial& uc);
+  void ProjectorFace_(int f, const std::vector<Polynomial>& ve,
+                      const ProjectorType type,
+                      const Polynomial* moments, Polynomial& uf) {};
 
   void CalculateDOFsOnBoundary_(
       int c, const std::vector<Polynomial>& vf, DenseVector& vdof);

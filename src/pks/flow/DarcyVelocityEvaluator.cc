@@ -66,21 +66,22 @@ void DarcyVelocityEvaluator::EvaluateField_(
 
   WhetStone::MFD3D_Diffusion mfd(mesh);
 
-  AmanziGeometry::Point gradient(dim);
+  WhetStone::Polynomial gradient(dim, 1);
   AmanziMesh::Entity_ID_List faces;
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh->cell_get_faces(c, &faces);
     int nfaces = faces.size();
-    std::vector<double> solution(nfaces);
+    std::vector<WhetStone::Polynomial> solution(nfaces);
 
     for (int n = 0; n < nfaces; n++) {
       int g = fmap.FirstPointInElement(faces[n]);
-      solution[n] = flux[0][g];
+      solution[n].Reshape(dim, 0);
+      solution[n](0) = flux[0][g];
     }
   
-    mfd.RecoverGradient_MassMatrix(c, solution, gradient);
-    for (int i = 0; i < dim; i++) result_c[i][c] = -gradient[i];
+    mfd.L2Cell(c, solution, NULL, gradient);
+    for (int i = 0; i < dim; i++) result_c[i][c] = -gradient(i + 1);
   }
 }
 

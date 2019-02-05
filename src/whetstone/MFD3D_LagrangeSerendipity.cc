@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -164,8 +164,8 @@ int MFD3D_LagrangeSerendipity::StiffnessMatrix(
 ****************************************************************** */
 void MFD3D_LagrangeSerendipity::ProjectorCell_(
     int c, const std::vector<Polynomial>& vf,
-    const Projectors::Type type,
-    Polynomial& moments, Polynomial& uc)
+    const ProjectorType type,
+    const Polynomial* moments, Polynomial& uc)
 {
   // selecting regularized basis
   Polynomial ptmp;
@@ -209,7 +209,8 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
 
   // DOFs inside cell: copy moments from input data
   if (ndof_cs > 0) {
-    const DenseVector& v3 = moments.coefs();
+    AMANZI_ASSERT(moments != NULL);
+    const DenseVector& v3 = moments->coefs();
     AMANZI_ASSERT(ndof_cs == v3.NumRows());
 
     for (int n = 0; n < ndof_cs; ++n) {
@@ -224,7 +225,7 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
   uc = basis.CalculatePolynomial(mesh_, c, order_, v5);
 
   // H1 projector needs to populate moments from ndof_cs + 1 till ndof_c
-  if (type == Type::H1) {
+  if (type == ProjectorType::H1) {
     DenseVector v4(nd);
     DenseMatrix M;
     Polynomial poly(d_, order_);
@@ -248,7 +249,7 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
   }
 
   // L2 projector is different if the set S contains some internal dofs
-  if (type == Type::L2 && ndof_cs > 0) {
+  if (type == ProjectorType::L2 && ndof_cs > 0) {
     DenseVector v4(nd), v6(nd - ndof_cs);
     DenseMatrix M, M2;
     Polynomial poly(d_, order_);

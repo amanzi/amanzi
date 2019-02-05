@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -322,12 +322,11 @@ int MFD3D_Diffusion::StiffnessMatrixMMatrix(int c, const Tensor& K, DenseMatrix&
 
 
 /* *****************************************************************
-* Recover gradient from solution, which is either the edge-based 
-* fluxes of node-based pressures. The algorithm is common if both
-* N and R are used. Here we use simplified versions.
+* Low-order L2 projector. 
+* NOTE: we abuse the interface and return a linear polynomial.
 ***************************************************************** */
-int MFD3D_Diffusion::RecoverGradient_MassMatrix(
-    int c, const std::vector<double>& solution, AmanziGeometry::Point& gradient)
+void MFD3D_Diffusion::L2Cell(int c, const std::vector<Polynomial>& vf,
+                             const Polynomial* moments, Polynomial& vc)
 {
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
 
@@ -337,91 +336,18 @@ int MFD3D_Diffusion::RecoverGradient_MassMatrix(
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
   int num_faces = faces.size();
 
-  gradient.set(0.0);
+  vc.Reshape(d_, 1, true);
   for (int i = 0; i < num_faces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
 
     for (int k = 0; k < d_; k++) {
       double Rik = fm[k] - cm[k];
-      gradient[k] += Rik * solution[i] * dirs[i];
+      vc(k + 1) += Rik * vf[i](0) * dirs[i];
     }
   }
 
-  gradient *= -1.0 / mesh_->cell_volume(c);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
-}
-
-
-/* *****************************************************************
-* Recover gradient from solution, which is either the edge-based 
-* fluxes of node-based pressures. The algorithm is common if both
-* N and R are used. Here we use simplified versions.
-***************************************************************** */
-int MFD3D_Diffusion::RecoverGradient_StiffnessMatrix(
-    int c, const std::vector<double>& solution, AmanziGeometry::Point& gradient)
-{
-  Entity_ID_List nodes, faces;
-  std::vector<int> dirs;
-
-  mesh_->cell_get_nodes(c, &nodes);
-  int nnodes = nodes.size();
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-  int num_faces = faces.size();
-
-  // populate matrix R (should be a separate routine lipnikov@lanl.gv)
-  DenseMatrix R(nnodes, d_);
-  AmanziGeometry::Point p(d_), pnext(d_), pprev(d_), v1(d_), v2(d_), v3(d_);
-
-  R.PutScalar(0.0);
-  for (int i = 0; i < num_faces; i++) {
-    int f = faces[i];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
-    double area = mesh_->face_area(f);
-
-    Entity_ID_List face_nodes;
-    mesh_->face_get_nodes(f, &face_nodes);
-    int num_face_nodes = face_nodes.size();
-
-    for (int j = 0; j < num_face_nodes; j++) {
-      int v = face_nodes[j];
-      double u(0.5);
-
-      if (d_ == 2) {
-        u = 0.5 * dirs[i]; 
-      } else {
-        int jnext = (j + 1) % num_face_nodes;
-        int jprev = (j + num_face_nodes - 1) % num_face_nodes;
-
-        int vnext = face_nodes[jnext];
-        int vprev = face_nodes[jprev];
-
-        mesh_->node_get_coordinates(v, &p);
-        mesh_->node_get_coordinates(vnext, &pnext);
-        mesh_->node_get_coordinates(vprev, &pprev);
-
-        v1 = pprev - pnext;
-        v2 = p - fm;
-        v3 = v1^v2;
-        u = dirs[i] * norm(v3) / (4 * area);
-      }
-
-      int pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
-      for (int k = 0; k < d_; k++) R(pos, k) += normal[k] * u;
-    }
-  }
-
-  gradient.set(0.0);
-  for (int i = 0; i < nnodes; i++) {
-    for (int k = 0; k < d_; k++) {
-      gradient[k] += R(i, k) * solution[i];
-    }
-  }
-  gradient *= 1.0 / mesh_->cell_volume(c);
-
-  return 0;
+  vc *= -1.0 / mesh_->cell_volume(c);
 }
 
 

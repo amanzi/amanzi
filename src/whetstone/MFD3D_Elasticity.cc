@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -61,16 +61,6 @@ int MFD3D_Elasticity::L2consistency(int c, const Tensor& T,
     for (int k = 0; k < d_; k++) v1[k] = a - normal[k] * v1[k];
   }
 
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
-}
-
-
-/* ******************************************************************
-* Consistency condition for stiffness matrix in mechanics. 
-* Only the upper triangular part of Ac is calculated.
-****************************************************************** */
-int MFD3D_Elasticity::L2consistencyInverse(
-    int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) {
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 

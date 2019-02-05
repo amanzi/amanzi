@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -165,10 +165,12 @@ void Polynomial::Reshape(int d, int order, bool reset)
     coefs_.Reshape(size_);
 
     if (reset) { 
-      PutScalar(0.0);
+      coefs_.PutScalar(0.0);
     } else {
       for (int i = size; i < size_; ++i) coefs_(i) = 0.0;
     }
+  } else if (reset) {
+    coefs_.PutScalar(0.0);
   }
 }
 

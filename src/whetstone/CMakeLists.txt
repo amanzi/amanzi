@@ -64,7 +64,7 @@ add_amanzi_library(whetstone
                            Basis_Normalized.hh Basis_Orthonormalized.hh
                            lapack.hh
                            InnerProduct.hh InnerProductL2.hh InnerProductH1.hh
-                           BilinearForm.hh BilinearFormFactory.hh Projectors.hh
+                           BilinearForm.hh BilinearFormFactory.hh 
                            DeRham_Node.hh DeRham_Edge.hh DeRham_Face.hh
                            GrammMatrix.hh
                            FunctionUpwind.hh
