@@ -36,7 +36,7 @@ class TransportMatrixFracture_PK : public PK_MPCWeak {
   virtual void Setup(const Teuchos::Ptr<State>& S);
 
   // -- dt is the minimum of the sub pks
-  // virtual double get_dt();
+  virtual double get_dt();
   // virtual void set_dt(double dt);
 
   // -- advance each sub pk from t_old to t_new.

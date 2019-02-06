@@ -5,18 +5,18 @@
     <Parameter name="file name base" type="string" value="chk_benchmark_features"/>
     <Parameter name="file name digits" type="int" value="5"/>
     <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1000, -1}"/>
-    <Parameter name="times start period stop 0" type="Array(double)" value="{0, 5e+7, 1e+8}"/>
+    <!-- <Parameter name="times start period stop 0" type="Array(double)" value="{0, 5e+7, 1e+8}"/> -->
   </ParameterList>
   <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot_benchmark_features_matrix"/>
-    <Parameter name="times start period stop 0" type="Array(double)" value="{1e+8, 1, -1}"/>
+    <Parameter name="times start period stop 0" type="Array(double)" value="{1, 0.01, -1}"/>
     <!-- <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 1, -1}"/> -->
   </ParameterList>
 
   <ParameterList name="visualization data fracture">
     <Parameter name="file name base" type="string" value="plot_benchmark_features_fracture"/>
     <!-- <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 1, -1}"/> -->
-    <Parameter name="times start period stop 0" type="Array(double)" value="{1e+8, 1, -1}"/>
+    <Parameter name="times start period stop 0" type="Array(double)" value="{1, 0.01, -1}"/>
   </ParameterList>
 
   <ParameterList name="regions">
@@ -29,7 +29,7 @@
     <ParameterList name="fracture" type="ParameterList">
       <ParameterList name="region: labeled set" type="ParameterList">
         <Parameter name="label" type="string" value="100" />
-        <Parameter name="file" type="string" value="test/small_features.exo" />
+        <Parameter name="file" type="string" value="test/small_features_ref0.exo" />
         <Parameter name="format" type="string" value="Exodus II" />
         <Parameter name="entity" type="string" value="Face" />
       </ParameterList>
@@ -64,7 +64,7 @@
   <ParameterList name="mesh">
     <ParameterList name="unstructured">
       <ParameterList name="read mesh file" type="ParameterList">
-        <Parameter name="file" type="string" value="test/small_features.exo" />
+        <Parameter name="file" type="string" value="test/small_features_ref0.exo" />
         <Parameter name="format" type="string" value="Exodus II" />
       </ParameterList>
       <ParameterList name="expert">
@@ -95,10 +95,10 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="start period time" type="double" value="0.0"/>
-        <Parameter name="end period time" type="double" value="1.0e+8"/>
+        <Parameter name="end period time" type="double" value="1.0"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="1.0e+6"/>
-        <Parameter name="maximum time step" type="double" value="1.0e+9"/>
+        <Parameter name="initial time step" type="double" value="0.1"/>
+        <Parameter name="maximum time step" type="double" value="1"/>
       </ParameterList>
       <ParameterList name="TP 1">
 	<ParameterList name="PK tree">
@@ -112,10 +112,11 @@
             </ParameterList>
           </ParameterList>
 	</ParameterList>
-	<Parameter name="start period time" type="double" value="1.00000000000000000e+8"/>
-	<Parameter name="end period time" type="double" value="1.1000000000000e+9"/>
-	<Parameter name="initial time step" type="double" value="1.00000000000000000e+04"/>        
-        <Parameter name="maximum time step" type="double" value="1e+7"/>
+	<Parameter name="start period time" type="double" value="1."/>
+	<Parameter name="end period time" type="double" value="2"/>
+	<Parameter name="initial time step" type="double" value="1.00000000000000000e-04"/>        
+        <Parameter name="maximum time step" type="double" value="1e-2"/>
+        <Parameter name="minimum time step" type="double" value="1e-7"/>        
         <Parameter name="maximum cycle number" type="int" value="1000"/>        
       </ParameterList>      
     </ParameterList>

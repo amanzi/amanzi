@@ -80,7 +80,13 @@ void TransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
   PK_MPCWeak::Setup(S);
 }
 
+double TransportMatrixFracture_PK::get_dt(){
 
+  return 0.999*PK_MPCWeak::get_dt();
+
+}
+
+  
 /* ******************************************************************* 
 * Performs one time step.
 ******************************************************************* */
