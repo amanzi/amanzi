@@ -320,7 +320,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   // Create verbosity object to print out initialization statisticsr.,
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = fp_list_->sublist("verbose object");
-  vo_ = Teuchos::rcp(new VerboseObject("DarcyPK: " + domain_, vlist)); 
+  vo_ = Teuchos::rcp(new VerboseObject("DarcyPK-" + domain_, vlist)); 
 
   // Initilize various base class data.
   Flow_PK::Initialize(S);
@@ -597,8 +597,7 @@ void Darcy_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>&
     op_diff_->UpdateFluxNonManifold(solution.ptr(), flux_fracture.ptr());
     flux_fracture->Scale(1.0 / rho_);
 
-    //FractureConservationLaw_();
-
+    FractureConservationLaw_();
   }
 
   // update time derivative
@@ -674,20 +673,24 @@ void Darcy_PK::FractureConservationLaw_()
   AmanziMesh::Entity_ID_List faces, cells;
   std::vector<int> dirs;
 
-  const auto& fracture_flux = *S_->GetFieldData("fracture-darcy_flux")->ViewComponent("face");
-  const auto& matrix_flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face");
-  auto mesh_matrix = S_->GetMesh("domain");
+  const auto& fracture_flux = *S_->GetFieldData("fracture-darcy_flux_fracture")->ViewComponent("cell");
+  const auto& matrix_flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);
   auto flux_map = S_->GetFieldData("darcy_flux")->Map().Map("face", true);
+
+  auto mesh_matrix = S_->GetMesh("domain");
   const Epetra_Map& cell_map = mesh_matrix->cell_map(true);
-  
+
+  double err(0.0), flux_max(0.0);
+
   for (int c = 0; c < ncells_owned; c++) {
-    double flux_sum = 0.0;
+    double flux_sum(0.0);
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    for (int i=0; i < faces.size(); i++) {
+    for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];
-      flux_sum += fracture_flux[0][f] * dirs[i];
+      flux_sum += fracture_flux[i][c];
     }
 
+    // sum into fluxes from matrix
     AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
     mesh_matrix->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int pos = 0;
@@ -696,22 +699,27 @@ void Darcy_PK::FractureConservationLaw_()
     }
 
     for (int j = 0; j != cells.size(); ++j) {
-      mesh_matrix -> cell_get_faces_and_dirs(cells[j], &faces, &dirs);
+      mesh_matrix->cell_get_faces_and_dirs(cells[j], &faces, &dirs);
 
       for (int i = 0; i < faces.size(); i++) {
         if (f == faces[i]) {
-          int f_loc_id = flux_map -> FirstPointInElement(f);            
+          int f_loc_id = flux_map->FirstPointInElement(f);            
           double fln = matrix_flux[0][f_loc_id + (pos + j)%2] * dirs[i];
           flux_sum -= fln;
+          flux_max = std::max<double>(flux_max, std::fabs(fln));
             
           break;
-
         }
       }
     }
 
-    std::cout << "cell " << c << " sum of fluxes " << flux_sum << "\n";
+    err = std::max<double>(err, fabs(flux_sum));
+    // std::cout << "cell " << c << " sum of fluxes " << flux_sum << "\n";
+  }
 
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "maximum error in conservation law:" << err << " flux_max=" << flux_max << std::endl;
   }
 }
 

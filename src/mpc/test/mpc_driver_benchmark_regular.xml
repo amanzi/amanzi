@@ -8,12 +8,13 @@
   </ParameterList>
   <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot_benchmark_matrix"/>
-    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 100, -1}"/>
+    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 200, -1}"/>
   </ParameterList>
 
   <ParameterList name="visualization data fracture">
     <Parameter name="file name base" type="string" value="plot_benchmark_fracture"/>
-    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 100, -1}"/>
+    <!--Parameter name="times start period stop" type="Array(double)" value="{0.1, 0.0025, 2.0}"/-->
+    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 200, -1}"/>
   </ParameterList>
 
   <ParameterList name="regions">
@@ -134,9 +135,9 @@
           </ParameterList>
         </ParameterList>
         <Parameter name="start period time" type="double" value="0.0"/>
-        <Parameter name="end period time" type="double" value="1.0"/>
+        <Parameter name="end period time" type="double" value="0.0025"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="0.1"/>
+        <Parameter name="initial time step" type="double" value="0.0025"/>
         <Parameter name="maximum time step" type="double" value="1.0"/>
       </ParameterList>
       <ParameterList name="TP 1">
@@ -152,16 +153,16 @@
           </ParameterList>
 	</ParameterList>
 	<Parameter name="initial time step" type="double" value="1e-5"/>
-	<Parameter name="start period time" type="double" value="1.0"/>
-	<Parameter name="end period time" type="double" value="1.25"/>
-        <Parameter name="maximum time step" type="double" value="0.25"/>
+	<Parameter name="start period time" type="double" value="0.025"/>
+	<Parameter name="end period time" type="double" value="0.2525"/>
+        <Parameter name="maximum time step" type="double" value="0.0025"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>        
       </ParameterList>      
     </ParameterList>
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{0.0}"/>
-      <Parameter name="initial time step" type="Array(double)" value="{0.1}"/>
-      <Parameter name="maximum time step" type="Array(double)" value="{0.1}"/>
+      <Parameter name="initial time step" type="Array(double)" value="{0.0025}"/>
+      <Parameter name="maximum time step" type="Array(double)" value="{0.0025}"/>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{tracer}"/>
     <ParameterList name="verbose object">
@@ -420,15 +421,15 @@
 
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.0e-6"/>
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-8"/>
             <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
             <Parameter name="max error growth factor" type="double" value="1.0e+3"/>
             <Parameter name="max du growth factor" type="double" value="1.0e+3"/>
             <Parameter name="max divergent iterations" type="int" value="10"/>
-            <Parameter name="max nka vectors" type="int" value="20"/>
+            <Parameter name="max nka vectors" type="int" value="30"/>
             <Parameter name="limit iterations" type="int" value="200"/>
             <Parameter name="modify correction" type="bool" value="false"/>
-            <Parameter name="monitor" type="string" value="monitor preconditioned residual"/>
+            <Parameter name="monitor" type="string" value="monitor residual"/>
             <ParameterList name="verbose object">
               <Parameter name="verbosity level" type="string" value="high"/>
             </ParameterList>
