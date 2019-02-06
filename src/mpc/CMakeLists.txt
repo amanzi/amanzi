@@ -169,6 +169,11 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_driver_benchmark_regular.cc
         	    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                  
 
+    add_amanzi_test(mpc_driver_benchmark_features mpc_driver_benchmark_features
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_driver_benchmark_features.cc
+        	    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                  
+
     # Test: mpc-new driver dummy
     add_amanzi_test(mpc_driver_dummy mpc_driver_dummy
                     KIND      int
