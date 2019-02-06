@@ -46,13 +46,9 @@ using namespace Amanzi::AmanziGeometry;
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, &comm));
 
   // create mesh
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(Framework::MSTK);
-
   MeshFactory factory(&comm);
-  factory.preference(pref);
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory("test/single_fracture.exo", gm);
+  factory.preference(FrameworkPreference({Framework::MSTK}));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory("test/regular_fracture_ref0.exo", gm);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
