@@ -61,22 +61,7 @@ void TransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetComponent(name, mmap, gmap, 1);
   }
 
-  // Require additional fields and evaluators
-
-  // inform dependent PKs about coupling
-  // -- flow (matrix)
-  // Teuchos::ParameterList& mflow = glist_->sublist("PKs").sublist("flow matrix")
-  //                                        .sublist("Darcy problem")
-  //                                        .sublist("physical models and assumptions");
-  // mflow.set<std::string>("coupled matrix fracture flow", "matrix");
-
-  // // -- flow (fracture)
-  // Teuchos::ParameterList& fflow = glist_->sublist("PKs").sublist("flow fracture")
-  //                                        .sublist("Darcy problem")
-  //                                        .sublist("physical models and assumptions");
-  // fflow.set<std::string>("coupled matrix fracture flow", "fracture");
-
-  // process other PKs.
+  // setup the sub-PKs
   PK_MPCWeak::Setup(S);
 }
 
@@ -92,8 +77,6 @@ double TransportMatrixFracture_PK::get_dt(){
 ******************************************************************* */
 bool TransportMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 {
-  // try a step
- 
   bool fail = PK_MPCWeak::AdvanceStep(t_old, t_new, reinit);
 
   if (fail) {

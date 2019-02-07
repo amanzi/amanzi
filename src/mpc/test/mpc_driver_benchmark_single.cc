@@ -46,13 +46,10 @@ using namespace Amanzi::AmanziGeometry;
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, &comm));
 
   // create mesh
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(Framework::MSTK);
-
   MeshFactory factory(&comm);
-  factory.preference(pref);
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory("test/single_fracture.exo", gm);
+  factory.preference(FrameworkPreference({Framework::MSTK}));
+  factory.set_partitioner(Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_GRAPH);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory("test/single_fracture_tet.exo", gm);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    

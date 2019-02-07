@@ -8,13 +8,12 @@
   </ParameterList>
   <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot_benchmark_matrix"/>
-    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 200, -1}"/>
+    <Parameter name="times start period stop" type="Array(double)" value="{0.0025, 0.0025, 2.0}"/>
   </ParameterList>
 
   <ParameterList name="visualization data fracture">
     <Parameter name="file name base" type="string" value="plot_benchmark_fracture"/>
-    <!--Parameter name="times start period stop" type="Array(double)" value="{0.1, 0.0025, 2.0}"/-->
-    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 200, -1}"/>
+    <Parameter name="times start period stop" type="Array(double)" value="{0.0025, 0.0025, 2.0}"/>
   </ParameterList>
 
   <ParameterList name="regions">
@@ -153,7 +152,7 @@
           </ParameterList>
 	</ParameterList>
 	<Parameter name="initial time step" type="double" value="1e-5"/>
-	<Parameter name="start period time" type="double" value="0.025"/>
+	<Parameter name="start period time" type="double" value="0.0025"/>
 	<Parameter name="end period time" type="double" value="0.2525"/>
         <Parameter name="maximum time step" type="double" value="0.0025"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>        
@@ -592,8 +591,8 @@
               <Parameter name="submodel" type="string" value="field" />
               <Parameter name="regions" type="Array(string)" value="{fracture}" />
               <ParameterList name="boundary concentration">
+                <Parameter name="field_in_key" type="string" value="total_component_concentration"/>
                 <Parameter name="field_out_key" type="string" value="fracture-total_component_concentration" />
-                <Parameter name="copy_field_out_key" type="string" value="default" />
               </ParameterList>
             </ParameterList>
           </ParameterList>
