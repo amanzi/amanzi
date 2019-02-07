@@ -2,21 +2,21 @@
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
 
   <ParameterList name="checkpoint data">
-    <Parameter name="file name base" type="string" value="chk_coupled_transport"/>
+    <Parameter name="file name base" type="string" value="chk_benchmark_single"/>
     <Parameter name="file name digits" type="int" value="5"/>
     <Parameter name="cycles start period stop" type="Array(int)" value="{0, 1000, -1}"/>
     <Parameter name="times start period stop 0" type="Array(double)" value="{0, 5e+7, 1e+8}"/>
   </ParameterList>
   <ParameterList name="visualization data">
-    <Parameter name="file name base" type="string" value="plot_transport_matrix"/>
-    <Parameter name="times start period stop 0" type="Array(double)" value="{1e+8, 1e+7, -1}"/>
+    <Parameter name="file name base" type="string" value="plot_benchmark_single_matrix"/>
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0, 1e+7, -1}"/>    
     <!-- <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 1, -1}"/> -->
   </ParameterList>
 
   <ParameterList name="visualization data fracture">
-    <Parameter name="file name base" type="string" value="plot_transport_fracture"/>
+    <Parameter name="file name base" type="string" value="plot_benchmark_single_fracture"/>
     <!-- <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 1, -1}"/> -->
-    <Parameter name="times start period stop 0" type="Array(double)" value="{1e+8, 1e+7, -1}"/>    
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0, 1e+7, -1}"/>    
   </ParameterList>
 
   <ParameterList name="regions">
@@ -26,10 +26,10 @@
         <Parameter name="high coordinate" type="Array(double)" value="{9.9e+98, 9.9e+98, 9.9e+98}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="fracture">
-      <ParameterList name="region: labeled set">
+    <ParameterList name="fracture" type="ParameterList">
+      <ParameterList name="region: labeled set" type="ParameterList">
         <Parameter name="label" type="string" value="100" />
-        <Parameter name="file" type="string" value="../test/single_fracture_tet.exo" />
+        <Parameter name="file" type="string" value="test/single_fracture_ref0.exo" />
         <Parameter name="format" type="string" value="Exodus II" />
         <Parameter name="entity" type="string" value="Face" />
       </ParameterList>
@@ -65,7 +65,7 @@
       </ParameterList>
     </ParameterList>
     
-    <ParameterList name="fracture region">
+    <ParameterList name="fracture region" type="ParameterList">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{-9.9e+98,-9.9e+98,-9.9e+98}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{9.9e+98, 9.9e+98, 9.9e+98}"/>
@@ -77,7 +77,7 @@
   <ParameterList name="mesh">
     <ParameterList name="unstructured">
       <ParameterList name="read mesh file" type="ParameterList">
-        <Parameter name="file" type="string" value="../test/single_fracture_tet.exo" />
+        <Parameter name="file" type="string" value="test/single_fracture_ref0.exo" />
         <Parameter name="format" type="string" value="Exodus II" />
       </ParameterList>
       <ParameterList name="expert">
@@ -88,6 +88,39 @@
 
   <ParameterList name="domain">
     <Parameter name="spatial dimension" type="int" value="3"/>
+  </ParameterList>
+
+  <ParameterList name="units">
+    <Parameter name="length" type="string" value="m"/>
+    <Parameter name="time" type="string" value="s"/>
+    <Parameter name="mass" type="string" value="kg"/>
+    <Parameter name="concentration" type="string" value="SI"/>
+  </ParameterList>
+  
+  <ParameterList name="observation data">
+    <Parameter name="observation output filename" type="string" value="single_fracture_ref0.out"/>
+    <Parameter name="precision" type="int" value="10"/>
+    <ParameterList name="single_fracture_obs2">
+      <Parameter name="region" type="string" value="RegionBottom"/>
+      <Parameter name="domain name" type="string" value="domain"/>      
+      <Parameter name="functional" type="string" value="observation data: integral"/>
+      <Parameter name="variable" type="string" value="tracer aqueous concentration"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0, 1e+7, -1}"/>
+    </ParameterList>
+    <ParameterList name="single_fracture_obs3">
+      <Parameter name="region" type="string" value="fracture region"/>
+      <Parameter name="domain name" type="string" value="fracture"/>            
+      <Parameter name="functional" type="string" value="observation data: integral"/>
+      <Parameter name="variable" type="string" value="tracer aqueous concentration"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0, 1e+7, -1}"/>
+    </ParameterList>
+    <ParameterList name="single_fracture_obs4">
+      <Parameter name="region" type="string" value="SurfaceOutlet"/>
+      <Parameter name="domain name" type="string" value="domain"/>            
+      <Parameter name="functional" type="string" value="observation data: integral"/>
+      <Parameter name="variable" type="string" value="tracer volumetric flow rate"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0, 1e+7, -1}"/>
+    </ParameterList>        
   </ParameterList>
 
   <ParameterList name="cycle driver">
@@ -107,10 +140,10 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="start period time" type="double" value="0.0"/>
-        <Parameter name="end period time" type="double" value="1.0e+8"/>
+        <Parameter name="start period time" type="double" value="-100.0"/>
+        <Parameter name="end period time" type="double" value="0"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="1.0e+6"/>
+        <Parameter name="initial time step" type="double" value="1.0e"/>
         <Parameter name="maximum time step" type="double" value="1.0e+9"/>
       </ParameterList>
       <ParameterList name="TP 1">
@@ -125,11 +158,11 @@
             </ParameterList>
           </ParameterList>
 	</ParameterList>
-	<Parameter name="start period time" type="double" value="1.00000000000000000e+8"/>
-	<Parameter name="end period time" type="double" value="1.1000000000000e+9"/>
+	<Parameter name="start period time" type="double" value="0.00000000000000000e+8"/>
+	<Parameter name="end period time" type="double" value="1.000000000000e+9"/>
 	<Parameter name="initial time step" type="double" value="1.00000000000000000e+04"/>        
         <Parameter name="maximum time step" type="double" value="1e+7"/>
-        <Parameter name="maximum cycle number" type="int" value="10"/>        
+        <Parameter name="maximum cycle number" type="int" value="20"/>        
       </ParameterList>      
     </ParameterList>
     <ParameterList name="time period control">
@@ -138,6 +171,8 @@
       <Parameter name="maximum time step" type="Array(double)" value="{1.0e+7}"/>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{tracer}"/>
+    <Parameter name="component molar masses" type="Array(double)" value="{1.0e-3}"/>
+    <Parameter name="number of liquid components" type="int" value="1"/>
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
@@ -383,7 +418,7 @@
     <ParameterList name="Hypre AMG">
       <Parameter name="preconditioner type" type="string" value="boomer amg"/>
       <ParameterList name="boomer amg parameters">
-        <Parameter name="tolerance" type="double" value="0.0"/>
+        <Parameter name="tolerance" type="double" value="0."/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
         <Parameter name="cycle applications" type="int" value="2"/>
         <Parameter name="strong threshold" type="double" value="0.25"/>
@@ -456,12 +491,12 @@
 
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.0e-8"/>
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-9"/>
             <Parameter name="diverged tolerance" type="double" value="1.0e+12"/>
             <Parameter name="max error growth factor" type="double" value="1.0e+7"/>
             <Parameter name="max du growth factor" type="double" value="1.0e+7"/>
             <Parameter name="max divergent iterations" type="int" value="10"/>
-            <Parameter name="max nka vectors" type="int" value="500"/>
+            <Parameter name="max nka vectors" type="int" value="300"/>
             <Parameter name="limit iterations" type="int" value="150000"/>
             <Parameter name="modify correction" type="bool" value="false"/>
             <Parameter name="monitor" type="string" value="monitor residual"/>
@@ -640,8 +675,8 @@
               <Parameter name="submodel" type="string" value="field" />
               <Parameter name="regions" type="Array(string)" value="{fracture}" />
               <ParameterList name="boundary concentration">
-                <Parameter name="field_in_key" type="string" value="total_component_concentration" />
                 <Parameter name="field_out_key" type="string" value="fracture-total_component_concentration" />
+                <Parameter name="copy_field_out_key" type="string" value="default" />
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -692,8 +727,8 @@
               <Parameter name="submodel" type="string" value="rate" />
               <ParameterList name="sink">
                 <Parameter name="flux_key" type="string" value="darcy_flux" />
-                <Parameter name="field_in_key" type="string" value="fracture-total_component_concentration" />
                 <Parameter name="field_out_key" type="string" value="total_component_concentration" />
+                <Parameter name="field_in_key" type="string" value="fracture-total_component_concentration" />
               </ParameterList>
             </ParameterList>
           </ParameterList>
