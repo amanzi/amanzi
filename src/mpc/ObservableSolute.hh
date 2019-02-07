@@ -41,7 +41,7 @@ class ObservableSolute : public virtual Observable {
   std::vector<double> vofs_;
   AmanziGeometry::Point reg_normal_;
   Teuchos::Array<std::string> comp_names_;
-  int num_liquid_, tcc_index_;   
+  int num_liquid_, tcc_index_;
 };
 
 }  // namespace Amanzi

@@ -101,16 +101,24 @@ void ObservableSolute::ComputeObservation(
   Errors::Message msg;
   int dim = mesh_->space_dimension();
 
-  if (!S.HasField("total_component_concentration")) {
+  Key ws_key =  Keys::getKey(domain_, "saturation_liquid");
+  Key tcc_key = Keys::getKey(domain_, "total_component_concentration");
+  Key poro_key = Keys::getKey(domain_, "porosity");
+  Key darcy_key = Keys::getKey(domain_, "darcy_flux");
+
+  
+  if (!S.HasField(tcc_key)) {
     // bail out with default values if this field is not yet created
     *value = 0.0;
     *volume = 1.0;
     return;
   }
 
-  const Epetra_MultiVector& ws = *S.GetFieldData("saturation_liquid")->ViewComponent("cell");
-  const Epetra_MultiVector& tcc = *S.GetFieldData("total_component_concentration")->ViewComponent("cell");
-  const Epetra_MultiVector& porosity = *S.GetFieldData("porosity")->ViewComponent("cell");    
+
+
+  const Epetra_MultiVector& ws = *S.GetFieldData(ws_key)->ViewComponent("cell");
+  const Epetra_MultiVector& tcc = *S.GetFieldData(tcc_key)->ViewComponent("cell");
+  const Epetra_MultiVector& porosity = *S.GetFieldData(poro_key)->ViewComponent("cell");    
 
   unit = units_.system().concentration;
 
@@ -135,7 +143,7 @@ void ObservableSolute::ComputeObservation(
     }
 
   } else if (variable_ == comp_names_[tcc_index_] + " volumetric flow rate") {
-    const Epetra_MultiVector& darcy_flux = *S.GetFieldData("darcy_flux")->ViewComponent("face");
+    const Epetra_MultiVector& darcy_flux = *S.GetFieldData(darcy_key)->ViewComponent("face");
     Amanzi::AmanziMesh::Entity_ID_List cells;
 
     if (obs_boundary_) { // observation is on a boundary set

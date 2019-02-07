@@ -22,6 +22,7 @@
 #include "GeometryDefs.hh"
 #include "State.hh"
 #include "Units.hh"
+#include "Key.hh"
 
 namespace Amanzi{
 
@@ -43,6 +44,8 @@ class Observable : public IOEvent {
     ReadParameters_();
     
     units_.Init(units_plist);
+
+    domain_ = plist.get<std::string>("domain name", "domain");
 
     // for now we can only observe Integrals and Values
     if (functional_ != "observation data: integral"  &&
@@ -71,6 +74,7 @@ class Observable : public IOEvent {
   std::string region_;
   std::string functional_;
   double volume_;
+  Key domain_;
 
   Utils::Units units_;
 };

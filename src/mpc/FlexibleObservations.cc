@@ -37,12 +37,12 @@ FlexibleObservations::FlexibleObservations(
     Teuchos::RCP<Teuchos::ParameterList> obs_list,
     Teuchos::RCP<Teuchos::ParameterList> units_list,
     Amanzi::ObservationData& observation_data,
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    Teuchos::RCP<const State> S)
     : observation_data_(observation_data),
       obs_list_(obs_list),
       coordinator_list_(coordinator_list)
 {
-  rank_ = mesh->get_comm()->MyPID();
+  rank_ = S->GetMesh("domain")->get_comm()->MyPID();
 
   // initialize units
   units_.Init(*units_list);
@@ -104,9 +104,10 @@ FlexibleObservations::FlexibleObservations(
 
       // loop over all variables listed and create an observable for each
       std::string var = observable_plist.get<std::string>("variable");
+      Key domain_name = observable_plist.get<std::string>("domain name", "domain");
       observations.insert(std::pair<std::string, Teuchos::RCP<Observable> >(
           obs_list_->name(i), 
-	  CreateObservable(*coordinator_list, observable_plist, *units_list, mesh)));
+	  CreateObservable(*coordinator_list, observable_plist, *units_list, S->GetMesh(domain_name))));
           // Observable(var, observable_plist.get<std::string>("region"),
           //            observable_plist.get<std::string>("functional"),
           //            observable_plist, comm)));
