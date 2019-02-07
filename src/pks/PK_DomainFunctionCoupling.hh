@@ -224,10 +224,14 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
     int num_vec = field_out.NumVectors();
     std::vector<double> val(num_vec);
 
-    // loop over faces in space
+    // Loop over faces (owned + ghosted) in the space restricted to the manifold.
+    // The set of these faces could be bigger then the set of manifold cells (owned + ghosted)
     for (auto f = entity_ids_->begin(); f != entity_ids_->end(); ++f) {
-      int c = reverse_map_.at(*f);
-      for (int k=0; k<num_vec; ++k) val[k] = field_out[k][c]; 
+      auto it = reverse_map_.find(*f);
+      if (it == reverse_map_.end()) continue;
+
+      int c = it->second;
+      for (int k = 0; k < num_vec; ++k) val[k] = field_out[k][c]; 
       value_[*f] = val;     
     }
   }
