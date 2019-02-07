@@ -46,14 +46,10 @@ using namespace Amanzi::AmanziGeometry;
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, &comm));
 
   // create mesh
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(Framework::MSTK);
-
   MeshFactory factory(&comm);
-  factory.preference(pref);
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory(0.0, 0.0, 0.0, 216.0, 10.0, 120.0, 3, 2, 10, gm);
-  // Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory("test/single_fracture_tet.exo", gm);
+  factory.preference(FrameworkPreference({Framework::MSTK}));
+  factory.set_partitioner(Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_RCB);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory(0.0, 0.0, 0.0, 216.0, 10.0, 120.0, 9, 2, 20, gm);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
@@ -62,6 +58,7 @@ using namespace Amanzi::AmanziGeometry;
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
 
+  /*
   Amanzi::MeshAudit mesh_auditor(mesh);
   int status = mesh_auditor.Verify();
   if (status == 0) {
@@ -70,6 +67,7 @@ using namespace Amanzi::AmanziGeometry;
     Errors::Message msg("Mesh Audit could not verify correctness of mesh.");
     Exceptions::amanzi_throw(msg);
   }
+  */
   
   //create additional mesh for fracture
   std::vector<std::string> names;

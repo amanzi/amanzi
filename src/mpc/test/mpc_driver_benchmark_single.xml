@@ -26,8 +26,8 @@
         <Parameter name="high coordinate" type="Array(double)" value="{9.9e+98, 9.9e+98, 9.9e+98}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="fracture" type="ParameterList">
-      <ParameterList name="region: labeled set" type="ParameterList">
+    <ParameterList name="fracture">
+      <ParameterList name="region: labeled set">
         <Parameter name="label" type="string" value="100" />
         <Parameter name="file" type="string" value="../test/single_fracture_tet.exo" />
         <Parameter name="format" type="string" value="Exodus II" />
@@ -65,7 +65,7 @@
       </ParameterList>
     </ParameterList>
     
-    <ParameterList name="fracture region" type="ParameterList">
+    <ParameterList name="fracture region">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{-9.9e+98,-9.9e+98,-9.9e+98}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{9.9e+98, 9.9e+98, 9.9e+98}"/>
@@ -640,8 +640,8 @@
               <Parameter name="submodel" type="string" value="field" />
               <Parameter name="regions" type="Array(string)" value="{fracture}" />
               <ParameterList name="boundary concentration">
+                <Parameter name="field_in_key" type="string" value="total_component_concentration" />
                 <Parameter name="field_out_key" type="string" value="fracture-total_component_concentration" />
-                <Parameter name="copy_field_out_key" type="string" value="default" />
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -692,8 +692,8 @@
               <Parameter name="submodel" type="string" value="rate" />
               <ParameterList name="sink">
                 <Parameter name="flux_key" type="string" value="darcy_flux" />
-                <Parameter name="field_out_key" type="string" value="total_component_concentration" />
                 <Parameter name="field_in_key" type="string" value="fracture-total_component_concentration" />
+                <Parameter name="field_out_key" type="string" value="total_component_concentration" />
               </ParameterList>
             </ParameterList>
           </ParameterList>

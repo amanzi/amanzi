@@ -419,11 +419,9 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
           bc->tcc_names().push_back(component_names_[i]);
           bc->tcc_index().push_back(i);
         }
-        //          std::cout << "tcc_names "<<tcc_names<<"\n";
-        //std::cout << "tcc_index "<<tcc_index<<"\n";          
         bc->set_state(S_);
         bcs_.push_back(bc);
-      }else{        
+      } else {        
         if (clist.isSublist(name)) {
           Teuchos::ParameterList& bc_list = clist.sublist(name);
           for (auto it1 = bc_list.begin(); it1 != bc_list.end(); ++it1) {
@@ -496,10 +494,10 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
           src->tcc_index().push_back(i);
         }
           
-        src -> set_state(S_);
+        src->set_state(S_);
         srcs_.push_back(src);
 
-      }else{
+      } else {
         if (clist.isSublist(name)) {
           Teuchos::ParameterList& src_list = clist.sublist(name);
           for (auto it1 = src_list.begin(); it1 != src_list.end(); ++it1) {
@@ -1182,7 +1180,7 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
     // int c1 = (upwind_cells_[f].size() == 1) ? upwind_cells_[f][0] : -1;
     // int c2 = (downwind_cells_[f].size() == 1) ? downwind_cells_[f][0] : -1;
     int f_loc_id = flux_map->FirstPointInElement(f);
-    for ( int j = 0; j<upwind_cells_[f].size(); j++) {
+    for ( int j = 0; j < upwind_cells_[f].size(); j++) {
 
       int c1 = upwind_cells_[f][j];
       int c2 = downwind_cells_[f][j];
@@ -1199,9 +1197,6 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
       } else if (c1 >=0 && c1 < ncells_owned && (c2 >= ncells_owned || c2 < 0)) {
         for (int i = 0; i < num_advect; i++) {
           tcc_flux = dt_ * u * tcc_prev[i][c1];
-          // if (f==202) {
-          //   std::cout<<"c1 "<<c1<<"  dt_ "<<dt_<<" u "<< u <<" tcc "<< tcc_prev[i][c1]<<" add to fracture "<< tcc_flux <<"\n";
-          // }
           tcc_next[i][c1] -= tcc_flux;
         }
 
@@ -1232,10 +1227,6 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
             int k = tcc_index[i];
             if (k < num_advect) {
               tcc_flux = dt_ * u * values[i];
-              // if (f==202) {
-              //   std::cout << "centroid ("<<mesh_->face_centroid(f)<<")\n";
-              //   std::cout<<k<<" c2 "<<c2<<"  dt_ "<<dt_<<" u "<< u <<" tcc "<< values[i] <<" add to matrix "<< tcc_flux <<"\n";
-              // }
               tcc_next[k][c2] += tcc_flux;
             }
           }
