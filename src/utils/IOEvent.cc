@@ -111,7 +111,7 @@ bool IOEvent::DumpRequested(double time) const {
            sps!=times_sps_.end(); ++sps) {
         if ( Amanzi::near_equal(time, (*sps)[0]) ) return true;
         if ((time > (*sps)[0] ) && ( ((*sps)[2] == -1.0) || ( time <= (*sps)[2] ))) {
-          double n_periods = floor( (time - (*sps)[0])/(*sps)[1] );
+          double n_periods = round( (time - (*sps)[0])/(*sps)[1] );
           double next_time = (*sps)[0] + n_periods*(*sps)[1];
           if (Amanzi::near_equal(time, next_time)) return true;
         }
