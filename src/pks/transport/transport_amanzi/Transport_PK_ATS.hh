@@ -19,6 +19,7 @@
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
+#include "LimiterCell.hh"
 #include "CompositeVector.hh"
 #include "DiffusionPhase.hh"
 #include "Explicit_TI_FnBase.hh"
@@ -277,6 +278,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
   int current_component_;  // data for lifting
   Teuchos::RCP<Operators::ReconstructionCell> lifting_;
+  Teuchos::RCP<Operators::LimiterCell> limiter_;
 
   std::vector<Teuchos::RCP<TransportDomainFunction> > srcs_;  // Source or sink for components
   std::vector<Teuchos::RCP<TransportDomainFunction> > bcs_;  // influx BC for components

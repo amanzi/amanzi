@@ -244,19 +244,19 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
 
   // require multiscale fields
   multiscale_porosity_ = false;
-  if (multiscale_model == "dual porosity") {
-    multiscale_porosity_ = true;
-    Teuchos::RCP<Teuchos::ParameterList>
-        msp_list = Teuchos::sublist(tp_list_, "multiscale models", true);
-    msp_ = CreateMultiscaleTransportPorosityPartition(mesh_, msp_list);
+  // if (multiscale_model == "dual porosity") {
+  //   multiscale_porosity_ = true;
+  //   Teuchos::RCP<Teuchos::ParameterList>
+  //       msp_list = Teuchos::sublist(tp_list_, "multiscale models", true);
+  //   msp_ = CreateMultiscaleTransportPorosityPartition(mesh_, msp_list);
 
-    std::vector<std::vector<std::string> > subfield_names(1);
-    subfield_names[0] = component_names_;
+  //   std::vector<std::vector<std::string> > subfield_names(1);
+  //   subfield_names[0] = component_names_;
 
-    S->RequireField(tcc_matrix_key_, passwd_, subfield_names)
-        ->SetMesh(mesh_)->SetGhosted(false)
-        ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
-  }
+  //   S->RequireField(tcc_matrix_key_, passwd_, subfield_names)
+  //       ->SetMesh(mesh_)->SetGhosted(false)
+  //       ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
+  // }
 }
 
 
