@@ -124,7 +124,6 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(
       AmanziMesh::Entity_ID_List id_list;
       mesh_->get_set_entities(*region, kind, AmanziMesh::Parallel_type::ALL, &id_list);
       entity_ids_->insert(id_list.begin(), id_list.end());
-std:: cout << mesh_->get_comm()->MyPID() << " " << field_in_key_ << " " << id_list.size() << std::endl;
     } else {
       std::stringstream m;
       m << "Unknown region in processing coupling source spec: \"" << *region << "\"";
