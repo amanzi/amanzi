@@ -49,7 +49,7 @@ using namespace Amanzi::AmanziGeometry;
   MeshFactory factory(&comm);
   factory.preference(FrameworkPreference({Framework::MSTK}));
   factory.set_partitioner(Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_GRAPH);
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory("test/single_fracture_tet.exo", gm);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory("test/single_fracture_ref2.exo", gm);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
