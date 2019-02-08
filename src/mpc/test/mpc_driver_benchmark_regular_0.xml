@@ -24,8 +24,15 @@
   </ParameterList>
 
   <ParameterList name="observation data">
-    <Parameter name="observation output filename" type="string" value="regular_fracture_0_ref0.out"/>
+    <Parameter name="observation output filename" type="string" value="regular_fracture_0_ref2.out"/>
     <Parameter name="precision" type="int" value="10"/>
+    <ParameterList name="obs0">
+      <Parameter name="region" type="string" value="Obs0"/>
+      <Parameter name="domain name" type="string" value="domain"/>      
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="tracer aqueous concentration"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0, 0.0025, -1}"/>
+    </ParameterList>
     <ParameterList name="obs1">
       <Parameter name="region" type="string" value="Obs1"/>
       <Parameter name="domain name" type="string" value="domain"/>      
@@ -186,7 +193,7 @@
     <ParameterList name="fracture">
       <ParameterList name="region: labeled set">
         <Parameter name="label" type="string" value="100" />
-        <Parameter name="file" type="string" value="test/regular_fracture_ref0.exo" />
+        <Parameter name="file" type="string" value="test/regular_fracture_ref2.exo" />
         <Parameter name="format" type="string" value="Exodus II" />
         <Parameter name="entity" type="string" value="Face" />
       </ParameterList>
@@ -397,8 +404,8 @@
 
   <ParameterList name="mesh">
     <ParameterList name="unstructured">
-      <ParameterList name="read mesh file" type="ParameterList">
-        <Parameter name="file" type="string" value="test/regular_fracture_ref0.exo" />
+      <ParameterList name="read mesh file">
+        <Parameter name="file" type="string" value="test/regular_fracture_ref2.exo" />
         <Parameter name="format" type="string" value="Exodus II"/>
       </ParameterList>
       <ParameterList name="expert">

@@ -1176,12 +1176,11 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
  
   // advance all components at once
   for (int f = 0; f < nfaces_wghost; f++) {  // loop over master and slave faces
-    
     // int c1 = (upwind_cells_[f].size() == 1) ? upwind_cells_[f][0] : -1;
     // int c2 = (downwind_cells_[f].size() == 1) ? downwind_cells_[f][0] : -1;
     int f_loc_id = flux_map->FirstPointInElement(f);
-    for ( int j = 0; j < upwind_cells_[f].size(); j++) {
 
+    for ( int j = 0; j < upwind_cells_[f].size(); j++) {
       int c1 = upwind_cells_[f][j];
       int c2 = downwind_cells_[f][j];
                 
@@ -1218,7 +1217,7 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
       int f = it->first;
       std::vector<double>& values = it->second;       
       if (downwind_cells_[f].size() > 0) {
-        for (int j=0; j<downwind_cells_[f].size(); j++) {
+        for (int j = 0; j < downwind_cells_[f].size(); j++) {
           int c2 = downwind_cells_[f][j];
           if (c2 < 0) continue;
 
