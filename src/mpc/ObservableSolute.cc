@@ -114,8 +114,6 @@ void ObservableSolute::ComputeObservation(
     return;
   }
 
-
-
   const Epetra_MultiVector& ws = *S.GetFieldData(ws_key)->ViewComponent("cell");
   const Epetra_MultiVector& tcc = *S.GetFieldData(tcc_key)->ViewComponent("cell");
   const Epetra_MultiVector& porosity = *S.GetFieldData(poro_key)->ViewComponent("cell");    

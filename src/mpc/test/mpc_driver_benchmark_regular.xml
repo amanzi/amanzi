@@ -1,6 +1,13 @@
 <ParameterList>
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
 
+  <ParameterList name="units">
+    <Parameter name="length" type="string" value="m"/>
+    <Parameter name="time" type="string" value="s"/>
+    <Parameter name="mass" type="string" value="kg"/>
+    <Parameter name="concentration" type="string" value="SI"/>
+  </ParameterList>
+  
   <ParameterList name="checkpoint data">
     <Parameter name="file name base" type="string" value="chk_coupled"/>
     <Parameter name="file name digits" type="int" value="5"/>
@@ -8,12 +15,164 @@
   </ParameterList>
   <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot_benchmark_matrix"/>
-    <Parameter name="times start period stop" type="Array(double)" value="{0.0025, 0.0025, 2.0}"/>
+    <Parameter name="times start period stop" type="Array(double)" value="{0.0, 0.0025, 2.0}"/>
   </ParameterList>
 
   <ParameterList name="visualization data fracture">
     <Parameter name="file name base" type="string" value="plot_benchmark_fracture"/>
-    <Parameter name="times start period stop" type="Array(double)" value="{0.0025, 0.0025, 2.0}"/>
+    <Parameter name="times start period stop" type="Array(double)" value="{0.0, 0.0025, 2.0}"/>
+  </ParameterList>
+
+  <ParameterList name="observation data">
+    <Parameter name="observation output filename" type="string" value="regular_fracture_0_ref0.out"/>
+    <Parameter name="precision" type="int" value="10"/>
+    <ParameterList name="obs1">
+      <Parameter name="region" type="string" value="Obs1"/>
+      <Parameter name="domain name" type="string" value="domain"/>      
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="tracer aqueous concentration"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0, 0.0025, -1}"/>
+    </ParameterList>
+    <ParameterList name="obs2">
+      <Parameter name="region" type="string" value="Obs2"/>
+      <Parameter name="domain name" type="string" value="domain"/>      
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="tracer aqueous concentration"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0, 0.0025, -1}"/>
+    </ParameterList>
+    <ParameterList name="obs3">
+      <Parameter name="region" type="string" value="Obs3"/>
+      <Parameter name="domain name" type="string" value="domain"/>      
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="tracer aqueous concentration"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0, 0.0025, -1}"/>
+    </ParameterList>
+    <ParameterList name="obs4">
+      <Parameter name="region" type="string" value="Obs4"/>
+      <Parameter name="domain name" type="string" value="domain"/>      
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="tracer aqueous concentration"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0, 0.0025, -1}"/>
+    </ParameterList>
+    <ParameterList name="obs5">
+      <Parameter name="region" type="string" value="Obs5"/>
+      <Parameter name="domain name" type="string" value="domain"/>      
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="tracer aqueous concentration"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0, 0.0025, -1}"/>
+    </ParameterList>
+    <ParameterList name="obs6">
+      <Parameter name="region" type="string" value="Obs6"/>
+      <Parameter name="domain name" type="string" value="domain"/>      
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="tracer aqueous concentration"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0, 0.0025, -1}"/>
+    </ParameterList>
+    <ParameterList name="obs7">
+      <Parameter name="region" type="string" value="Obs7"/>
+      <Parameter name="domain name" type="string" value="domain"/>      
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="tracer aqueous concentration"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0, 0.0025, -1}"/>
+    </ParameterList>
+    <ParameterList name="obs8">
+      <Parameter name="region" type="string" value="Obs8"/>
+      <Parameter name="domain name" type="string" value="domain"/>      
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="tracer aqueous concentration"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0, 0.0025, -1}"/>
+    </ParameterList>
+    <ParameterList name="obs9">
+      <Parameter name="region" type="string" value="Obs9"/>
+      <Parameter name="domain name" type="string" value="domain"/>      
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="tracer aqueous concentration"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0, 0.0025, -1}"/>
+    </ParameterList>
+    <ParameterList name="obs10">
+      <Parameter name="region" type="string" value="Obs10"/>
+      <Parameter name="domain name" type="string" value="domain"/>      
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="tracer aqueous concentration"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0, 0.0025, -1}"/>
+    </ParameterList>
+    <ParameterList name="obs11">
+      <Parameter name="region" type="string" value="Obs11"/>
+      <Parameter name="domain name" type="string" value="domain"/>      
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="tracer aqueous concentration"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0, 0.0025, -1}"/>
+    </ParameterList>
+    <ParameterList name="obs12">
+      <Parameter name="region" type="string" value="Obs12"/>
+      <Parameter name="domain name" type="string" value="domain"/>      
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="tracer aqueous concentration"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0, 0.0025, -1}"/>
+    </ParameterList>
+    <ParameterList name="obs13">
+      <Parameter name="region" type="string" value="Obs13"/>
+      <Parameter name="domain name" type="string" value="domain"/>      
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="tracer aqueous concentration"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0, 0.0025, -1}"/>
+    </ParameterList>
+    <ParameterList name="obs14">
+      <Parameter name="region" type="string" value="Obs14"/>
+      <Parameter name="domain name" type="string" value="domain"/>      
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="tracer aqueous concentration"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0, 0.0025, -1}"/>
+    </ParameterList>
+    <ParameterList name="obs15">
+      <Parameter name="region" type="string" value="Obs15"/>
+      <Parameter name="domain name" type="string" value="domain"/>      
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="tracer aqueous concentration"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0, 0.0025, -1}"/>
+    </ParameterList>
+    <ParameterList name="obs16">
+      <Parameter name="region" type="string" value="Obs16"/>
+      <Parameter name="domain name" type="string" value="domain"/>      
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="tracer aqueous concentration"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0, 0.0025, -1}"/>
+    </ParameterList>
+    <ParameterList name="obs17">
+      <Parameter name="region" type="string" value="Obs17"/>
+      <Parameter name="domain name" type="string" value="domain"/>      
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="tracer aqueous concentration"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0, 0.0025, -1}"/>
+    </ParameterList>
+    <ParameterList name="obs18">
+      <Parameter name="region" type="string" value="Obs18"/>
+      <Parameter name="domain name" type="string" value="domain"/>      
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="tracer aqueous concentration"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0, 0.0025, -1}"/>
+    </ParameterList>
+    <ParameterList name="obs19">
+      <Parameter name="region" type="string" value="Obs19"/>
+      <Parameter name="domain name" type="string" value="domain"/>      
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="tracer aqueous concentration"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0, 0.0025, -1}"/>
+    </ParameterList>
+    <ParameterList name="obs20">
+      <Parameter name="region" type="string" value="Obs20"/>
+      <Parameter name="domain name" type="string" value="domain"/>      
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="tracer aqueous concentration"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0, 0.0025, -1}"/>
+    </ParameterList>
+    <ParameterList name="obs21">
+      <Parameter name="region" type="string" value="Obs21"/>
+      <Parameter name="domain name" type="string" value="domain"/>      
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="tracer aqueous concentration"/>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0, 0.0025, -1}"/>
+    </ParameterList>
   </ParameterList>
 
   <ParameterList name="regions">
@@ -101,6 +260,139 @@
         <Parameter name="regions" type="Array(string)" value="{All,RegionOneA,RegionOneB,RegionOneC}"/>
       </ParameterList>
     </ParameterList>
+
+    <ParameterList name="Obs0">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.0,0.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.5,0.5,0.5}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs1">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.5,0.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,0.5,0.5}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs2">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.0,0.5,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.5,1.0,0.5}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs3">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.5,0.5,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0,0.5}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs4">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.0,0.0,0.5}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.5,0.5,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs5">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.5,0.0,0.5}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,0.5,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs6">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.0,0.5,0.5}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.5,1.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs7">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.75,0.75,0.75}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0, 1.0, 1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs8">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.75,0.5, 0.75}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0, 0.75,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs9">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.5, 0.75,0.75}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.75,1.0, 1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs10">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.5, 0.5, 0.75}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.75,0.75,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs11">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.75,0.75,0.5}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0, 1.0, 0.75}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs12">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.75,0.5, 0.5}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0, 0.75,0.75}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs13">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.5, 0.75,0.5}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.75,1.0, 0.75}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs14">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.5,  0.5,  0.5}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.625,0.625,0.625}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs15">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.625,0.5,  0.5}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.75, 0.625,0.625}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs16">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.5,  0.625,0.5}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.625,0.75, 0.625}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs17">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.625,0.625,0.5}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.75, 0.75, 0.625}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs18">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.5,  0.5,  0.625}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.625,0.625,0.75}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs19">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.625,0.5,  0.625}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.75, 0.625,0.75}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs20">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.5,  0.625,0.625}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.625,0.75, 0.75}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Obs21">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{ 0.625,0.625,0.625}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.75, 0.75, 0.75}"/>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 
   <ParameterList name="mesh">
@@ -133,10 +425,10 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-        <Parameter name="start period time" type="double" value="0.0"/>
-        <Parameter name="end period time" type="double" value="0.0025"/>
+        <Parameter name="start period time" type="double" value="-1.0"/>
+        <Parameter name="end period time" type="double" value="0.0"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>
-        <Parameter name="initial time step" type="double" value="0.0025"/>
+        <Parameter name="initial time step" type="double" value="0.05"/>
         <Parameter name="maximum time step" type="double" value="1.0"/>
       </ParameterList>
       <ParameterList name="TP 1">
@@ -152,18 +444,19 @@
           </ParameterList>
 	</ParameterList>
 	<Parameter name="initial time step" type="double" value="1e-5"/>
-	<Parameter name="start period time" type="double" value="0.0025"/>
-	<Parameter name="end period time" type="double" value="0.2525"/>
+	<Parameter name="start period time" type="double" value="0.0"/>
+	<Parameter name="end period time" type="double" value="0.25"/>
         <Parameter name="maximum time step" type="double" value="0.0025"/>
         <Parameter name="maximum cycle number" type="int" value="-1"/>        
       </ParameterList>      
     </ParameterList>
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{0.0}"/>
-      <Parameter name="initial time step" type="Array(double)" value="{0.0025}"/>
-      <Parameter name="maximum time step" type="Array(double)" value="{0.0025}"/>
+      <Parameter name="initial time step" type="Array(double)" value="{0.5}"/>
+      <Parameter name="maximum time step" type="Array(double)" value="{1.0}"/>
     </ParameterList>
     <Parameter name="component names" type="Array(string)" value="{tracer}"/>
+    <Parameter name="component molar masses" type="Array(double)" value="{1.0e-3}"/>
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
@@ -420,7 +713,7 @@
 
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.0e-8"/>
+            <Parameter name="nonlinear tolerance" type="double" value="3.0e-8"/>
             <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
             <Parameter name="max error growth factor" type="double" value="1.0e+3"/>
             <Parameter name="max du growth factor" type="double" value="1.0e+3"/>
