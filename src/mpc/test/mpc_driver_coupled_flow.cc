@@ -46,12 +46,9 @@ using namespace Amanzi::AmanziGeometry;
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, &comm));
 
   // create mesh
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(Framework::MSTK);
-
   MeshFactory factory(&comm);
-  factory.preference(pref);
+  factory.preference(FrameworkPreference({Framework::MSTK}));
+  factory.set_partitioner(Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_RCB);
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory(0.0, 0.0, 0.0, 216.0, 10.0, 120.0, 9, 2, 20, gm);
 
   // create dummy observation data object
@@ -81,7 +78,7 @@ using namespace Amanzi::AmanziGeometry;
   double mu = 0.001002;
   double K1 = 1.0e-11;
   double kn = 4.0e-8;
-  double L = 60.0;
+  double L = 120.0;
   double q0 = -2.0e-3;
 
   // test pressure in fracture
@@ -91,7 +88,7 @@ using namespace Amanzi::AmanziGeometry;
   auto& pf = *S->GetFieldData("fracture-pressure")->ViewComponent("cell");
   for (int c = 0; c < pf.MyLength(); ++c) {
     if (c == 0) std::cout << "Fracture pressure: " << pf[0][c] << ",  exact: " << pf_exact << std::endl;
-    CHECK(std::fabs(pf[0][c] - pf_exact) < 0.05 * std::fabs(pf_exact));
+    CHECK(std::fabs(pf[0][c] - pf_exact) < 1e-8 * std::fabs(pf_exact));
   }
 
   // test flux in bottom domain
@@ -100,7 +97,9 @@ using namespace Amanzi::AmanziGeometry;
   auto& uf = *S->GetFieldData("darcy_flux")->ViewComponent("face");
   const auto& fmap = *S->GetFieldData("darcy_flux")->ComponentMap("face");
 
+  bool flag(true);
   int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+
   for (int f = 0; f < nfaces; ++f) {
     double area = mesh->face_area(f);
     const auto& normal = mesh->face_normal(f);
@@ -108,8 +107,11 @@ using namespace Amanzi::AmanziGeometry;
     int g = fmap.FirstPointInElement(f);
     double flux = (uf_exact * normal) / rho;
 
-    if (g == f + 1) std::cout << "Matrix Darcy flux: " << uf[0][g] << ",  exact: " << flux << std::endl;
-    CHECK(std::fabs(uf[0][g] - flux) < 0.05 * std::fabs(q0));
+    if (fmap.ElementSize(f) == 2 && flag) {
+       std::cout << "Matrix Darcy fluxes: " << uf[0][g] << ",  exact: " << flux << std::endl;
+       flag = false;
+    }
+    CHECK(std::fabs(uf[0][g] - flux) < 1e-8 * std::fabs(q0) + 1e-14);
   }
 }
 
