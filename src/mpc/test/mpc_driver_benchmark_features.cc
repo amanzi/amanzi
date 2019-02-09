@@ -13,6 +13,7 @@
 // Amanzi
 #include "CycleDriver.hh"
 #include "MeshAudit.hh"
+#include "InputAnalysis.hh"
 #include "energy_tcm_registration.hh"
 #include "energy_iem_registration.hh"
 #include "eos_registration.hh"
@@ -38,7 +39,7 @@ using namespace Amanzi::AmanziGeometry;
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   
   // setup a piecewice linear solution with a jump
-  std::string xmlInFileName = "test/mpc_driver_benchmark_features.xml";
+  std::string xmlInFileName = "mpc_driver_benchmark_features.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
 
   std::string meshfile = plist->sublist("mesh").sublist("unstructured").sublist("read mesh file").get<std::string>("file");
@@ -84,6 +85,13 @@ using namespace Amanzi::AmanziGeometry;
 
   S->RegisterMesh("fracture", mesh_fracture);
 
+    // -------------- ANALYSIS --------------------------------------------
+  Amanzi::InputAnalysis analysis(mesh_fracture);
+  analysis.Init(*plist);
+  analysis.RegionAnalysis();
+  //  analysis.OutputBCs();
+
+  
   Amanzi::CycleDriver cycle_driver(plist, S, &comm, obs_data);
   cycle_driver.Go();
 }
