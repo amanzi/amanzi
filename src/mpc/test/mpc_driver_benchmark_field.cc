@@ -49,7 +49,7 @@ using namespace Amanzi::AmanziGeometry;
   MeshFactory factory(&comm);
   factory.preference(FrameworkPreference({Framework::MSTK}));
   factory.set_partitioner(Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_GRAPH);
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory("test/gmsh.exo", gm);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory("test/field.exo", gm);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
@@ -58,7 +58,7 @@ using namespace Amanzi::AmanziGeometry;
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
 
-  /*  
+  /*
   Amanzi::MeshAudit mesh_auditor(mesh);
   int status = mesh_auditor.Verify();
   if (status != 0) {

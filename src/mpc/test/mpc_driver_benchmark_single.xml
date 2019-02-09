@@ -10,13 +10,13 @@
   <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot_benchmark_single_matrix"/>
     <Parameter name="times start period stop 0" type="Array(double)" value="{0, 1e+7, -1}"/>    
-    <!-- <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 1, -1}"/> -->
+    <Parameter name="write partitions" type="bool" value="true"/>    
   </ParameterList>
 
   <ParameterList name="visualization data fracture">
     <Parameter name="file name base" type="string" value="plot_benchmark_single_fracture"/>
-    <!-- <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 1, -1}"/> -->
     <Parameter name="times start period stop 0" type="Array(double)" value="{0, 1e+7, -1}"/>    
+    <Parameter name="write partitions" type="bool" value="true"/>    
   </ParameterList>
 
   <ParameterList name="regions">

@@ -38,7 +38,7 @@
     <ParameterList name="fracture">
       <ParameterList name="region: labeled set">
         <Parameter name="label" type="string" value="100" />
-        <Parameter name="file" type="string" value="test/gmsh.exo" />
+        <Parameter name="file" type="string" value="test/field.exo" />
         <Parameter name="format" type="string" value="Exodus II" />
         <Parameter name="entity" type="string" value="Face" />
       </ParameterList>
@@ -80,7 +80,7 @@
   <ParameterList name="mesh">
     <ParameterList name="unstructured">
       <ParameterList name="read mesh file">
-        <Parameter name="file" type="string" value="test/gmsh.exo" />
+        <Parameter name="file" type="string" value="test/field.exo" />
         <Parameter name="format" type="string" value="Exodus II" />
       </ParameterList>
       <ParameterList name="expert">

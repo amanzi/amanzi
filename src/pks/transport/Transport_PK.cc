@@ -613,21 +613,16 @@ void Transport_PK::InitializeFieldFromField_(
 * ***************************************************************** */
 double Transport_PK::StableTimeStep()
 {
-  S_->GetFieldData(darcy_flux_key_)->ScatterMasterToGhosted("face");
-  
   IdentifyUpwindCells();
 
   // Accumulate upwinding fluxes.
   std::vector<double> total_outflux(ncells_wghost, 0.0);
 
   for (int f = 0; f < nfaces_wghost; f++) {
-    if (upwind_cells_[f].size() > 0) {
-      for (int k=0; k<upwind_cells_[f].size(); k++) {
-        int c = upwind_cells_[f][k];
-        if (c >= 0) {
-          int f_loc_id = flux_map_->FirstPointInElement(f);
-          total_outflux[c] += fabs((*darcy_flux)[0][f_loc_id + k]);
-        }
+    for (int k = 0; k < upwind_cells_[f].size(); k++) {
+      int c = upwind_cells_[f][k];
+      if (c >= 0) {
+        total_outflux[c] += fabs(upwind_flux_[f][k]);
       }
     }
   }
@@ -1209,12 +1204,16 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
   }
 
   // loop over exterior boundary sets
+  tcc_tmp->PutScalarGhosted(0.0);
+
   for (int m = 0; m < bcs_.size(); m++) {
     std::vector<int>& tcc_index = bcs_[m]->tcc_index();
     int ncomp = tcc_index.size();
 
     for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
       int f = it->first;
+      if (f >= nfaces_owned) continue;
+
       std::vector<double>& values = it->second;       
       if (downwind_cells_[f].size() > 0) {
         for (int j = 0; j < downwind_cells_[f].size(); j++) {
@@ -1233,6 +1232,8 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
       }
     }    
   }
+
+  tcc_tmp->GatherGhostedToMaster();
 
   // process external sources
   if (srcs_.size() != 0) {
@@ -1652,16 +1653,16 @@ void Transport_PK::IdentifyUpwindCells()
       
       for (int i = 0; i < faces.size(); i++) {
         int f = faces[i];
-
-        bool fracture = (flux_map_->ElementSize(f)==2) ? true : false;
-        int pos = 0;
         mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-        
+
+        int pos = 0;
+        bool fracture = (flux_map_->ElementSize(f) == 2) && (cells.size() == 2);
+
         if (fracture) {
-          if (c==cells[0]) {
+          if (c == cells[0]) {
             pos = (cell_map.GID(cells[0]) < cell_map.GID(cells[1])) ? 0 : 1;
             cells[1] = -1;
-          } else if (c==cells[1]) {
+          } else if (c == cells[1]) {
             pos = (cell_map.GID(cells[0]) < cell_map.GID(cells[1])) ? 1 : 0;
             cells[0] = -1;
           }
@@ -1669,42 +1670,24 @@ void Transport_PK::IdentifyUpwindCells()
           cells[0] = c;
         }
 
-        int f_lid = flux_map_ -> FirstPointInElement(f);
-        int f_id = f_lid  + pos;                  
+        int f_lid = flux_map_->FirstPointInElement(f);
+        int f_id = f_lid + pos;                  
         int size = flux_map_->ElementSize(f);
         
-        for (int k=0; k!=size; ++k) {
-
-          double dir =  dirs[i] * (1 - 2*k);
+        for (int k = 0; k != size; ++k) {
+          double dir = dirs[i] * (1 - 2*k);
           double tmp = (*darcy_flux)[0][f_id] * dir;
           int c0;
           if (tmp > 0.0) {
-            // auto it = std::find(upwind_cells_[f].begin(), upwind_cells_[f].end(), c);
-            // if (it != upwind_cells_[f].end()) c0 = -1;
-            // else c0 = c;
-            
             upwind_cells_[f][pos] = cells[(k+pos)%2];
             upwind_flux_[f][pos] = (*darcy_flux)[0][f_id];
           } else if (tmp < 0.0) {
-            // auto it = std::find(downwind_cells_[f].begin(), downwind_cells_[f].end(), c);
-            // if (it != downwind_cells_[f].end()) c0=-1;
-            // else c0 = c;
-                        
             downwind_cells_[f][pos] = cells[(k+pos)%2];
             downwind_flux_[f][pos] = (*darcy_flux)[0][f_id];
           } else if (dir > 0) {
-            // auto it = std::find(upwind_cells_[f].begin(), upwind_cells_[f].end(), c);
-            // if (it != upwind_cells_[f].end()) c0=-1;
-            // else c0 = c;            
-
             upwind_cells_[f][pos] = cells[(k+pos)%2];
             upwind_flux_[f][pos] = (*darcy_flux)[0][f_id];            
-
           } else {
-            // auto it = std::find(downwind_cells_[f].begin(), downwind_cells_[f].end(), c);
-            // if (it != downwind_cells_[f].end()) c0=-1;
-            // else c0 = c;            
-
             downwind_cells_[f][pos] = cells[(k+pos)%2];
             downwind_flux_[f][pos] = (*darcy_flux)[0][f_id];
           }
@@ -1713,7 +1696,6 @@ void Transport_PK::IdentifyUpwindCells()
     }
 
   } else {
-
     const Epetra_MultiVector& flux = *S_->GetFieldData(darcy_flux_fracture_key_)->ViewComponent("cell", true);
     S_->GetFieldData(darcy_flux_fracture_key_, passwd_)->ScatterMasterToGhosted();
 

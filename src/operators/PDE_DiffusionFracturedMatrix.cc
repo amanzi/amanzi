@@ -291,7 +291,7 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
     int nfaces = faces.size();
 
     // un-roll multiple DOFs in a linear array
-    int nrows = 2 * nfaces;  // pesimistic estimate
+    int nrows = 2 * nfaces;  // pessimistic estimate
     std::vector<int> lid(nrows), mydir(nrows), nohit(nrows, 0);
     WhetStone::DenseVector v(nrows), av(nrows);
 
@@ -358,6 +358,7 @@ int PDE_DiffusionFracturedMatrix::FaceLocalIndex_(
 
   return idx;
 }
+
 
 /* ******************************************************************
 * Non-member function

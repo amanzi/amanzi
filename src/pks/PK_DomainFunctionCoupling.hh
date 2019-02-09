@@ -170,7 +170,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
 
       mesh_out->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
 
-      if (cells.size() != flux_map -> ElementSize(f)) {
+      if (cells.size() != flux_map->ElementSize(f)) {
         std::stringstream m;
         m << "Number of flux DOF doesn't equal to the number of cell sharing the interface: cell_ids\"" << cells[0] << "\"";
         Errors::Message message(m.str());
@@ -188,14 +188,14 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
 
         for (int i = 0; i < faces.size(); i++) {
           if (f == faces[i]) {
-            int f_loc_id = flux_map->FirstPointInElement(f);            
-            double fln = flux[0][f_loc_id + (pos + j)%2] * dirs[i];
+            int g = flux_map->FirstPointInElement(f);            
+            double fln = flux[0][g + (pos + j)%2] * dirs[i];
             
             if (fln >= 0) {        
               for (int k = 0; k < num_vec; ++k) {
                 val[k] += field_out[k][cells[j]] * fln;
               }
-            } else if (fln < 0) {       
+            } else {       
               for (int k = 0; k < num_vec; ++k) {
                 val[k] += field_in[k][*c] * fln;
               }
