@@ -56,10 +56,15 @@ class TransportDomainFunction {
   Iterator end() { return value_.end(); }
   std::map<int, std::vector<double> >::size_type size() { return value_.size(); }
 
-protected:
+  // derivatives
+  const std::map<int, double>& linear_term() const { return linear_term_; }
 
+ protected:
   double domain_volume_;
-  std::map<int, std::vector<double> > value_;  // tcc values on boundary faces
+  std::map<int, std::vector<double> > value_;  // tcc values on boundary faces or 
+                                               // src values in domain cells
+  std::map<int, double> linear_term_;  // linearized term, e.g. [mol / s] for sources
+
   std::string keyword_;
   Teuchos::RCP<const State> S_;
   

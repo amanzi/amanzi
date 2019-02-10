@@ -56,6 +56,7 @@ class PK_DomainFunctionCoupling : public FunctionBase {
 
  protected:
   using FunctionBase::value_;
+  using FunctionBase::linear_term_;
   using FunctionBase::keyword_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -177,6 +178,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
         Exceptions::amanzi_throw(message);
       }
 
+      double linear(0.0);
       std::vector<double> val(num_vec, 0.0);
       int pos = 0;
       if (cells.size() == 2) {
@@ -192,6 +194,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
             double fln = flux[0][g + (pos + j)%2] * dirs[i];
             
             if (fln >= 0) {        
+              linear += fln;
               for (int k = 0; k < num_vec; ++k) {
                 val[k] += field_out[k][cells[j]] * fln;
               }
@@ -205,6 +208,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
         }
       }
       value_[*c] = val; 
+      linear_term_[*c] = linear;
     }
   }
   else if (submodel_ == "field") {

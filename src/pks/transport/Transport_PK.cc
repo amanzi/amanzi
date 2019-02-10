@@ -644,6 +644,15 @@ double Transport_PK::StableTimeStep()
         }
       }
     }
+    else if (srcs_[m]->keyword() == "sink") {  // FIXME
+      srcs_[m]->Compute(t_old, t_old); 
+
+      const auto& to_matrix = srcs_[m]->linear_term();
+      for (auto it = to_matrix.begin(); it != to_matrix.end(); ++it) {
+        int c = it->first;
+        total_outflux[c] += std::fabs(it->second);
+      }
+    }
   }
 
   // loop over cells and calculate minimal time step
@@ -1171,8 +1180,6 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
  
   // advance all components at once
   for (int f = 0; f < nfaces_wghost; f++) {  // loop over master and slave faces
-    // int c1 = (upwind_cells_[f].size() == 1) ? upwind_cells_[f][0] : -1;
-    // int c2 = (downwind_cells_[f].size() == 1) ? downwind_cells_[f][0] : -1;
     int g = flux_map->FirstPointInElement(f);
 
     for ( int j = 0; j < upwind_cells_[f].size(); j++) {
@@ -1204,6 +1211,7 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
   }
 
   // loop over exterior boundary sets
+  int flag(0);
   tcc_tmp->PutScalarGhosted(0.0);
 
   for (int m = 0; m < bcs_.size(); m++) {
@@ -1219,6 +1227,7 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
         for (int j = 0; j < downwind_cells_[f].size(); j++) {
           int c2 = downwind_cells_[f][j];
           if (c2 < 0) continue;
+          if (c2 >= ncells_owned) flag = 1;
 
           double u = fabs(downwind_flux_[f][j]);
           for (int i = 0; i < ncomp; i++) {
@@ -1233,7 +1242,9 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
     }    
   }
 
-  tcc_tmp->GatherGhostedToMaster();
+  int flag_tmp(flag);
+  mesh_->get_comm()->MaxAll(&flag_tmp, &flag, 1);
+  if (flag == 1) tcc_tmp->GatherGhostedToMaster();
 
   // process external sources
   if (srcs_.size() != 0) {

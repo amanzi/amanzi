@@ -55,6 +55,7 @@ class PK_DomainFunction {
 
  protected:
   std::map<int, std::vector<double> > value_;
+  std::map<int, double> linear_term_;
   double domain_volume_;
   std::string keyword_;
 };

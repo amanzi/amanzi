@@ -12,13 +12,14 @@
 
 // Amanzi
 #include "CycleDriver.hh"
+#include "InputAnalysis.hh"
+#include "Mesh.hh"
 #include "MeshAudit.hh"
+#include "MeshFactory.hh"
+#include "Mesh_MSTK.hh"
 #include "energy_tcm_registration.hh"
 #include "energy_iem_registration.hh"
 #include "eos_registration.hh"
-#include "Mesh.hh"
-#include "MeshFactory.hh"
-#include "Mesh_MSTK.hh"
 #include "mpc_pks_registration.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
@@ -38,7 +39,7 @@ using namespace Amanzi::AmanziGeometry;
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   
   // setup a piecewice linear solution with a jump
-  std::string xmlInFileName = "test/mpc_driver_benchmark_regular_0.xml";
+  std::string xmlInFileName = "test/mpc_driver_benchmark_regular_1.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
   
   // For now create one geometric model from all the regions in the spec
@@ -56,6 +57,12 @@ using namespace Amanzi::AmanziGeometry;
   Teuchos::ParameterList state_plist = plist->sublist("state");
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
+
+  // analysys
+  Amanzi::InputAnalysis analysis(mesh);
+  analysis.Init(*plist);
+  analysis.RegionAnalysis();
+  analysis.OutputBCs();
 
   /* 
   Amanzi::MeshAudit mesh_auditor(mesh);
