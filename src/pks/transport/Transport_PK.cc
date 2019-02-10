@@ -1167,19 +1167,19 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
       tcc_next[i][c] = tcc_prev[i][c] * vol_phi_ws;
   }
 
-  Teuchos::RCP<const Epetra_BlockMap> flux_map = S_->GetFieldData(darcy_flux_key_)->Map().Map("face", true);
+  auto flux_map = S_->GetFieldData(darcy_flux_key_)->Map().Map("face", true);
  
   // advance all components at once
   for (int f = 0; f < nfaces_wghost; f++) {  // loop over master and slave faces
     // int c1 = (upwind_cells_[f].size() == 1) ? upwind_cells_[f][0] : -1;
     // int c2 = (downwind_cells_[f].size() == 1) ? downwind_cells_[f][0] : -1;
-    int f_loc_id = flux_map->FirstPointInElement(f);
+    int g = flux_map->FirstPointInElement(f);
 
     for ( int j = 0; j < upwind_cells_[f].size(); j++) {
       int c1 = upwind_cells_[f][j];
       int c2 = downwind_cells_[f][j];
                 
-      double u = fabs((*darcy_flux)[0][f_loc_id + j]);
+      double u = fabs((*darcy_flux)[0][g + j]);
 
       if (c1 >=0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
         for (int i = 0; i < num_advect; i++) {
@@ -1623,6 +1623,8 @@ bool Transport_PK::ComputeBCs_(
 ******************************************************************* */
 void Transport_PK::IdentifyUpwindCells()
 {
+  S_->GetFieldData(darcy_flux_key_)->ScatterMasterToGhosted("face");
+
   upwind_cells_.clear();
   downwind_cells_.clear();
 
@@ -1639,13 +1641,14 @@ void Transport_PK::IdentifyUpwindCells()
   std::vector<int> dirs;
 
   if (mesh_->space_dimension() == mesh_->manifold_dimension()) {
-    const Epetra_Map& cell_map = mesh_->cell_map(true);
+    const Epetra_Map& cmap = mesh_->cell_map(true);
 
-    for (int f=0; f<nfaces_wghost; f++) {
-      upwind_cells_[f].assign(flux_map_->ElementSize(f), -1);
-      downwind_cells_[f].assign(flux_map_->ElementSize(f), -1);
-      upwind_flux_[f].assign(flux_map_->ElementSize(f), -1);
-      downwind_flux_[f].assign(flux_map_->ElementSize(f), -1);
+    for (int f = 0; f < nfaces_wghost; f++) {
+      int ndofs = flux_map_->ElementSize(f);
+      upwind_cells_[f].assign(ndofs, -1);
+      downwind_cells_[f].assign(ndofs, -1);
+      upwind_flux_[f].assign(ndofs, 0.0);
+      downwind_flux_[f].assign(ndofs, 0.0);
     }
     
     for (int c = 0; c < ncells_wghost; c++) {
@@ -1655,41 +1658,42 @@ void Transport_PK::IdentifyUpwindCells()
         int f = faces[i];
         mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
 
-        int pos = 0;
-        bool fracture = (flux_map_->ElementSize(f) == 2) && (cells.size() == 2);
+        int g = flux_map_->FirstPointInElement(f);
+        int ndofs = flux_map_->ElementSize(f);
 
-        if (fracture) {
-          if (c == cells[0]) {
-            pos = (cell_map.GID(cells[0]) < cell_map.GID(cells[1])) ? 0 : 1;
-            cells[1] = -1;
-          } else if (c == cells[1]) {
-            pos = (cell_map.GID(cells[0]) < cell_map.GID(cells[1])) ? 1 : 0;
-            cells[0] = -1;
-          }
-        } else {
-          cells[0] = c;
-        }
+        // We assume that two DOFs are placed only on internal faces
+        if (ndofs == 2) {
+          // define local position of DOF that the current cell controls
+          int pos(0);
+          int gid = cmap.GID(c);
+          int gid_min = std::min(cmap.GID(cells[0]), cmap.GID(cells[1]));
+          if (gid > gid_min) pos = 1;
 
-        int f_lid = flux_map_->FirstPointInElement(f);
-        int f_id = f_lid + pos;                  
-        int size = flux_map_->ElementSize(f);
-        
-        for (int k = 0; k != size; ++k) {
-          double dir = dirs[i] * (1 - 2*k);
-          double tmp = (*darcy_flux)[0][f_id] * dir;
-          int c0;
-          if (tmp > 0.0) {
-            upwind_cells_[f][pos] = cells[(k+pos)%2];
-            upwind_flux_[f][pos] = (*darcy_flux)[0][f_id];
-          } else if (tmp < 0.0) {
-            downwind_cells_[f][pos] = cells[(k+pos)%2];
-            downwind_flux_[f][pos] = (*darcy_flux)[0][f_id];
-          } else if (dir > 0) {
-            upwind_cells_[f][pos] = cells[(k+pos)%2];
-            upwind_flux_[f][pos] = (*darcy_flux)[0][f_id];            
+          // define only upwind cell
+          double tmp = (*darcy_flux)[0][g + pos] * dirs[i];
+
+          if (tmp >= 0.0) {
+            upwind_cells_[f][pos] = c;
+            upwind_flux_[f][pos] = (*darcy_flux)[0][g + pos];
           } else {
-            downwind_cells_[f][pos] = cells[(k+pos)%2];
-            downwind_flux_[f][pos] = (*darcy_flux)[0][f_id];
+            downwind_cells_[f][pos] = c;
+            downwind_flux_[f][pos] = (*darcy_flux)[0][g + pos];
+          }
+        }
+        else {
+          double tmp = (*darcy_flux)[0][g] * dirs[i];
+          if (tmp >= 0.0) {
+            upwind_cells_[f][0] = c;
+            upwind_flux_[f][0] = (*darcy_flux)[0][g];
+          } else if (tmp < 0.0) {
+            downwind_cells_[f][0] = c;
+            downwind_flux_[f][0] = (*darcy_flux)[0][g];
+          } else if (dirs[i] > 0) {
+            upwind_cells_[f][0] = c;
+            upwind_flux_[f][0] = (*darcy_flux)[0][g];            
+          } else {
+            downwind_cells_[f][0] = c;
+            downwind_flux_[f][0] = (*darcy_flux)[0][g];
           }
         }
       }
