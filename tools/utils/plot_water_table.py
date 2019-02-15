@@ -61,6 +61,7 @@ def water_table(dirname, datum=None, v86=False, patm=101325.):
             wt[k] = col_dat[0,k,wt_index] - datum
     return times, wt
 
+
 def plot_water_table(times, wt, ax, **kwargs):
     ax.plot(times, wt, **kwargs)
 
@@ -76,6 +77,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("INPUT_DIRECTORIES", nargs="+", type=str,
                         help="List of directories to plot.")
+    parser.add_argument("-p", "--permafrost", action="store_true",
+                        help="Permafrost run, plot ice table too.")
     parser.add_argument("--colors", "-c", type=colors.float_list_type,
                         default=None,
                         help="List of color indices to use, of the form: --colors=[0,0.1,1], where the doubles are in the range (0,1) and are mapped to a color using the colormap.")
@@ -103,6 +106,12 @@ if __name__ == "__main__":
         times,wt = water_table(fname)
         plot_water_table(times, wt, axs, color=c, label=fname)
 
+        if args.permafrost:
+            import plot_thaw_depth
+            times, td = plot_thaw_depth.thaw_depth(fname)
+        plot_thaw_depth.plot_thaw_depth(times, td, axs, linestyle='--', color=c)
+
+    axs.plot([times[0], times[-1]], [0.,0.], '--', color='k')
     plt.tight_layout()
     axs.legend()
     plt.show()

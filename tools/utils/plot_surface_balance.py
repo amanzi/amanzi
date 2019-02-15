@@ -106,7 +106,8 @@ def plot_surface_balance(ktd, ax, color, marker=None, version='dev-new', label=N
         plot_surface(ktd, ax[2], color, 'qE_lw_out', style=style, version=version, negate=True, domain_suffix=domain_suffix)
     else:
         plot_surface(ktd, ax[2], color, 'qE_lw_out', style=style, version=version, domain_suffix=domain_suffix)
-    plot_surface(ktd, ax[3], color, 'qE_latent_heat', style=style, version=version, domain_suffix=domain_suffix)
+    #plot_surface(ktd, ax[3], color, 'qE_latent_heat', style=style, version=version, domain_suffix=domain_suffix)
+    plot_surface(ktd, ax[3], color, 'evaporative_flux', style=style, version=version, domain_suffix=domain_suffix)
     plot_surface(ktd, ax[4], color, 'qE_sensible_heat', style=style, version=version, domain_suffix=domain_suffix)
 
     if version == '0.86':
