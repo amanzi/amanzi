@@ -39,11 +39,6 @@ void OverlandPressureFlow::FunctionalResidual( double t_old,
 
   // pointer-copy temperature into state and update any auxilary data
   Solution_to_State(*u_new, S_next_);
-
-  //--  AMANZI_ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
-  //--AMANZI_ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
-
-
   Teuchos::RCP<CompositeVector> u = u_new->Data();
 
   // zero out residual
@@ -92,6 +87,10 @@ void OverlandPressureFlow::FunctionalResidual( double t_old,
   db_->WriteVectors(vnames, vecs, true);
 #endif
 
+  db_->WriteVector("uw_dir", S_next_->GetFieldData(Keys::getKey(domain_,"mass_flux_direction")).ptr(), true);
+  db_->WriteVector("k_s", S_next_->GetFieldData(Keys::getKey(domain_,"overland_conductivity")).ptr(), true);
+  db_->WriteVector("k_s_uw", S_next_->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity")).ptr(), true);
+  
   // update boundary conditions
   bc_head_->Compute(S_next_->time());
   bc_pressure_->Compute(S_next_->time());
@@ -118,8 +117,10 @@ void OverlandPressureFlow::FunctionalResidual( double t_old,
     db_->WriteVectors(vnames, vecs, false);
   }
 
+  db_->WriteVector("uw_dir", S_next_->GetFieldData(Keys::getKey(domain_,"mass_flux_direction")).ptr(), true);
+  db_->WriteVector("k_s", S_next_->GetFieldData(Keys::getKey(domain_,"overland_conductivity")).ptr(), true);
+  db_->WriteVector("k_s_uw", S_next_->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity")).ptr(), true);
   db_->WriteVector("q_s", S_next_->GetFieldData(Keys::getKey(domain_,"mass_flux")).ptr(), true);
-  db_->WriteVector("k_s", S_next_->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity")).ptr(), true);
   db_->WriteVector("res (diff)", res.ptr(), true);
 #endif
 
