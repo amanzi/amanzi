@@ -187,8 +187,8 @@ class MassBalanceFromVis(object):
         # load the vis files
         self._keys, self.times, self._dat = parse_ats.readATS(dirname, timeunits='d')
         self._keys_s, self.times_s, self._dat_s = parse_ats.readATS(dirname, 'visdump_surface_data.h5', timeunits='d')
-        if len(self._keys) is not len(self._keys_s):
-            print "Warning: surface and subsurface visualization files are of different lengths!"
+        if len(self._keys) != len(self._keys_s):
+            print "Warning: surface and subsurface visualization files are of different lengths! (%d, %d)"%(len(self._keys),len(self._keys_s))
         self.length = min(len(self._keys), len(self._keys_s))
 
         # save cell volume instead of loading it repeatedly
@@ -295,7 +295,7 @@ class MassBalanceFromVis(object):
         Note that some simulations may not include surface energy balance!
         """
         try:
-            return -self.integrate('evaporation',i,True)
+            return self.integrate('evaporation',i,True)
         except KeyError:
             return 0.0
         
