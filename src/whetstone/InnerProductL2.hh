@@ -51,6 +51,10 @@ class InnerProductL2 : public virtual InnerProduct {
     Errors::Message msg("L2 projector is not supported/implemented for this space.");
     Exceptions::amanzi_throw(msg);
   }
+  virtual void L2Cell(int c, const DenseVector& dofs, Polynomial& vc) {
+    Errors::Message msg("L2 projector (from DOFs) is not supported/implemented for this space.");
+    Exceptions::amanzi_throw(msg);
+  }
 };
 
 }  // namespace WhetStone

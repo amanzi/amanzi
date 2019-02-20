@@ -44,6 +44,12 @@ class InnerProductH1 : public virtual InnerProduct {
     Errors::Message msg("H1 face projector is not supported/implemented for this scheme.");
     Exceptions::amanzi_throw(msg);
   }
+
+  // H1 projectors using dofs
+  virtual void H1Cell(int c, const DenseVector& dofs, Polynomial& vc) {
+    Errors::Message msg("H1 cell projector (from DOFs) is not supported/implemented for this space.");
+    Exceptions::amanzi_throw(msg);
+  }
 };
 
 }  // namespace WhetStone

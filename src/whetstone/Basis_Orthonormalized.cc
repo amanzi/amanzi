@@ -23,7 +23,8 @@ namespace WhetStone {
 * Prepare scaling data for the orthonormalized basis.
 ****************************************************************** */
 void Basis_Orthonormalized::Init(
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+    AmanziMesh::Entity_ID id, int c, int order,
     Polynomial& integrals)
 {
   int d = mesh->space_dimension();

@@ -22,19 +22,29 @@ namespace WhetStone {
 * Prepare scaling data for the regularized basis.
 ****************************************************************** */
 void Basis_Regularized::Init(
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+    AmanziMesh::Entity_ID id, int c, int order,
     Polynomial& integrals)
 {
-  int k0 = monomial_scales_.size();
+  int dim, k0 = monomial_scales_.size();
+  double volume;
 
   if (k0 < order + 1) {
     order_ = order;
     d_ = mesh->space_dimension();
-    double volume = mesh->cell_volume(c);
+    if (id == AmanziMesh::CELL) {
+      volume = mesh->cell_volume(c);
+      dim = d_;
+    } else if (id == AmanziMesh::FACE) {
+      volume = mesh->face_area(c);
+      dim = d_ - 1;
+    } else { 
+      AMANZI_ASSERT(false);
+    }
 
     monomial_scales_.resize(order + 1);
     for (int k = k0; k < order + 1; ++k) {
-      monomial_scales_[k] = std::pow(volume, -(double)k / d_);
+      monomial_scales_[k] = std::pow(volume, -(double)k / dim);
     }
   }
 }
