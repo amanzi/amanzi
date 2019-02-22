@@ -34,6 +34,7 @@ namespace po = boost::program_options;
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
 #include "MeshException.hh"
+#include "VerboseObject_objs.hh"
 
 #include "HDF5_MPI.hh"
 
