@@ -34,9 +34,11 @@ using namespace Amanzi;
       Teuchos::rcp(new AmanziGeometry::GeometricModel(2, region_list, &comm));
 
   // create mesh
-  AmanziMesh::MeshFactory meshfactory(&comm);
+  auto mesh_list = Teuchos::sublist(glist, "mesh");
+  AmanziMesh::MeshFactory meshfactory(&comm, mesh_list);
+
   meshfactory.preference(AmanziMesh::FrameworkPreference({AmanziMesh::MSTK}));
-  auto mesh = meshfactory("test/mpc_walkabout_2D.exo", gm);
+  auto mesh = meshfactory.create("test/mpc_walkabout_2D.exo", gm);
 
   // use cycle driver to create and initialize state
   ObservationData obs_data;    
@@ -121,9 +123,13 @@ using namespace Amanzi;
       Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, &comm));
 
   // create mesh
-  AmanziMesh::MeshFactory meshfactory(&comm);
+  auto mesh_list = Teuchos::sublist(glist, "mesh");
+  AmanziMesh::MeshFactory meshfactory(&comm, mesh_list);
+
   meshfactory.preference(AmanziMesh::FrameworkPreference({AmanziMesh::MSTK}));
-  auto mesh = meshfactory("test/mpc_walkabout_tet5.exo", gm);
+  auto mesh = meshfactory.create("test/mpc_walkabout_tet5.exo", gm);
+  // auto mesh = meshfactory.create("test/mpc_walkabout_aaa.par", gm);
+  // auto mesh = meshfactory.create("test/mpc_walkabout_bbb.par", gm);
 
   // use cycle driver to create and initialize state
   ObservationData obs_data;    

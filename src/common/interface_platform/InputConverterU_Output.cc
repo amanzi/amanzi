@@ -245,6 +245,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
   node = GetUniqueElementByTagsString_("output, walkabout", flag);
 
   if (flag && node->getNodeType() == DOMNode::ELEMENT_NODE) {
+    io_walkabout_ = true;
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
       *vo_->os() << "Translating output: walkabout" << std::endl;
 

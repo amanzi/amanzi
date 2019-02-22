@@ -29,7 +29,6 @@
 #include "Mesh.hh"
 
 #include "GeometricModel.hh"
-#include "VerboseObject.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -54,14 +53,14 @@ class MeshFactory {
   /// Object encoding the level of verbosity and output stream for
   /// diagnostic messages
 
-  Teuchos::RCP<const VerboseObject> vo_;
+  Teuchos::RCP<const Teuchos::ParameterList> plist_;
 
   Partitioner_type partitioner_ = PARTITIONER_DEFAULT;
  public:
 
   /// Default constructor.
   explicit MeshFactory(const Epetra_MpiComm *communicator, 
-                       const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null);
+                       const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null);
 
   /// Destructor
   ~MeshFactory(void);
@@ -109,7 +108,7 @@ class MeshFactory {
 
     
   /// Create a quadrilateral/hexahedral mesh using the specified parameter list
-  Teuchos::RCP<Mesh> create(Teuchos::ParameterList &parameter_list, 
+  Teuchos::RCP<Mesh> create(Teuchos::ParameterList& parameter_list, 
                             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null, 
                             const bool request_faces = true,
                             const bool request_edges = false);

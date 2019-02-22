@@ -26,16 +26,20 @@ Mesh_simple::Mesh_simple(double x0, double y0, double z0,
                          int nx, int ny, int nz,
                          const Epetra_MpiComm *comm_unicator,
                          const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-                         const Teuchos::RCP<const VerboseObject>&verbosity_obj,
+                         const Teuchos::RCP<const Teuchos::ParameterList>& plist,
                          const bool request_faces,
-                         const bool request_edges,
-                         const Partitioner_type partitioner)
+                         const bool request_edges) 
   : nx_(nx), ny_(ny), nz_(nz),
     x0_(x0), x1_(x1),
     y0_(y0), y1_(y1),
     z0_(z0), z1_(z1),
-    Mesh(verbosity_obj,request_faces,request_edges)
+    Mesh(Teuchos::null,request_faces,request_edges)
 {
+  // extract control parameters
+  if (plist != Teuchos::null) {
+    vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Mesh:Simple", *plist)); 
+  }
+
   Mesh::set_comm(comm_unicator);
   Mesh::set_mesh_type(RECTANGULAR);
   Mesh::set_space_dimension(3);
@@ -56,10 +60,9 @@ Mesh_simple::Mesh_simple(double x0, double y0,
                          int nx, int ny, 
                          const Epetra_MpiComm *comm_unicator,
                          const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-                         const Teuchos::RCP<const VerboseObject>&verbosity_obj,
+                         const Teuchos::RCP<const Teuchos::ParameterList>& plist,
                          const bool request_faces,
-                         const bool request_edges,
-                         const Partitioner_type partitioner) 
+                         const bool request_edges)
 {
   Exceptions::amanzi_throw(Errors::Message("Simple mesh cannot generate 2D meshes"));
 }
@@ -69,12 +72,16 @@ Mesh_simple::Mesh_simple(double x0, double y0,
 Mesh_simple::Mesh_simple(Teuchos::ParameterList &parameter_list,
                          const Epetra_MpiComm *comm_unicator,
                          const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-                         const Teuchos::RCP<const VerboseObject>&verbosity_obj,
+                         const Teuchos::RCP<const Teuchos::ParameterList>& plist,
                          const bool request_faces,
-                         const bool request_edges,
-                         const Partitioner_type partitioner)
-  : Mesh(verbosity_obj,request_faces,request_edges)
+                         const bool request_edges) 
+  : Mesh(Teuchos::null,request_faces,request_edges)
 {
+  // extract control parameters
+  if (plist != Teuchos::null) {
+    vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Mesh:Simple", *plist)); 
+  }
+
   Mesh::set_comm(comm_unicator);
   Mesh::set_mesh_type(RECTANGULAR);
   if (gm != Teuchos::null)

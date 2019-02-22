@@ -252,15 +252,15 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   }
 
   // create initial mesh
-  const auto& partitioner = AmanziMesh::Partitioner_type::ZOLTAN_RCB;
+  auto mlist = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("mesh")));
   Teuchos::RCP<MeshCurved> mesh0, mesh1;
 
   if (dim == 2 && ny != 0) {
-    mesh0 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, &comm, partitioner));
-    mesh1 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, &comm, partitioner));
+    mesh0 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, &comm, mlist));
+    mesh1 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, &comm, mlist));
   } else if (ny == 0) {
-    mesh0 = Teuchos::rcp(new MeshCurved(file_name, &comm, partitioner));
-    mesh1 = Teuchos::rcp(new MeshCurved(file_name, &comm, partitioner));
+    mesh0 = Teuchos::rcp(new MeshCurved(file_name, &comm, mlist));
+    mesh1 = Teuchos::rcp(new MeshCurved(file_name, &comm, mlist));
   }
 
   int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -448,6 +448,7 @@ TEST(REMAP_CURVED_2D) {
   std::string maps = "VEM";
   int deform = 1;
   RemapTestsCurved(rk_method, maps, "", 8,8,0, dT, deform, nloop, T1);
+  // RemapTestsCurved(rk_method, maps, "test/circle_quad10.exo", 10,0,0, 0.1, 6, 40, 0.025);
 
   /*
   int nloop = 40;

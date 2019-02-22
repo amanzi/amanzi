@@ -225,7 +225,7 @@ TEST(Extract_Surface_MSTK3_4P)
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm_.get()));
 
   // Read a mesh from the file
-  Amanzi::AmanziMesh::Mesh_MSTK mesh(filename.c_str(),comm_.get(),3,gm);
+  Amanzi::AmanziMesh::Mesh_MSTK mesh(filename.c_str(),comm_.get(),gm);
 
 
   std::vector<std::string> setnames;

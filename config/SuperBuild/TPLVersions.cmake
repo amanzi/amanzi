@@ -116,6 +116,7 @@
 #   0.95.5       - update NetCDF to version 4.6.1
 #                - update OpenMPI to 3.1.1
 #   0.95.6       - added new package nanoflann 1.3.0
+#   0.95.7       - update MSTK to 3.1.0
 
 include(CMakeParseArguments)
 
@@ -168,7 +169,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 95)
-set(AMANZI_TPLS_VERSION_PATCH 6)
+set(AMANZI_TPLS_VERSION_PATCH 7)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -333,13 +334,13 @@ set(ASCEMIO_MD5_SUM       869820bacd4c289c8f320be58c1449a7)
 # TPL: MSTK
 #
 set(MSTK_VERSION_MAJOR 3)
-set(MSTK_VERSION_MINOR 0)
-set(MSTK_VERSION_PATCH 4)
+set(MSTK_VERSION_MINOR 1)
+set(MSTK_VERSION_PATCH 0)
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}.${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     "https://github.com/MeshToolkit/MSTK/archive")
 set(MSTK_ARCHIVE_FILE   v${MSTK_VERSION_MAJOR}_${MSTK_VERSION_MINOR}_${MSTK_VERSION_PATCH}.tar.gz)
 set(MSTK_SAVEAS_FILE    mstk-${MSTK_VERSION}.tar.gz)
-set(MSTK_MD5_SUM        adb83cf12d2547f82f988e5da6bf7016)
+set(MSTK_MD5_SUM        bc9c39885d9dc41655f8b54c628e460b)
 
 #
 # TPL: MOAB

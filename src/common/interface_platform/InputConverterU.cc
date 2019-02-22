@@ -92,6 +92,12 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
         .set<Teuchos::Array<std::string> >("runtime diagnostics: regions", transport_diagnostics_);
   }
 
+  // -- walkabout enforces non-contiguous maps
+  if (io_walkabout_) {
+    out_list.sublist("mesh").sublist("unstructured").sublist("expert")
+        .set<bool>("contiguous global ids", false);
+  }
+
   // -- final I/O
   PrintStatistics_();
 

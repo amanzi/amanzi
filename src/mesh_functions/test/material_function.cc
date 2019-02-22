@@ -11,6 +11,7 @@
 #include "ConstantFunction.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
+#include "VerboseObject_objs.hh"
 
 #include "MaterialMeshFunction.hh"
 

@@ -55,11 +55,8 @@ using namespace std;
   // get the Mesh sublist
   Teuchos::ParameterList mesh_parameter_list = plist.sublist("mesh");
 
-  Teuchos::RCP<Amanzi::VerboseObject> meshverbobj = 
-      Teuchos::rcp(new Amanzi::VerboseObject("mesh", plist));
-
   // Create a mesh factory for this geometric model
-  Amanzi::AmanziMesh::MeshFactory factory(comm,meshverbobj) ;
+  Amanzi::AmanziMesh::MeshFactory factory(comm, Teuchos::null);
 
   // get the Mesh sublist
   ierr = 0;
