@@ -24,9 +24,9 @@ namespace Amanzi {
 * Constructor
 ******************************************************************* */
 TransportMatrixFracture_PK::TransportMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
-                                               const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                                               const Teuchos::RCP<State>& S,
-                                               const Teuchos::RCP<TreeVector>& soln) :
+                                                       const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                                                       const Teuchos::RCP<State>& S,
+                                                       const Teuchos::RCP<TreeVector>& soln) :
     glist_(glist),
     Amanzi::PK(pk_tree, glist, S, soln),
     Amanzi::PK_MPCWeak(pk_tree, glist, S, soln)
@@ -46,11 +46,7 @@ void TransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // primary and secondary fields for matrix affected by non-uniform
   // distribution of DOFs
-  // -- pressure
   auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
-  // if (!S->HasField("pressure")) {
-  //   *S->RequireField("pressure", "flow")->SetMesh(mesh_domain_)->SetGhosted(true) = *cvs;
-  // }
 
   // -- darcy flux
   if (!S->HasField("darcy_flux")) {
@@ -61,14 +57,47 @@ void TransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetComponent(name, mmap, gmap, 1);
   }
 
+  // add boundary condition to transport in matrix list
+  Teuchos::ParameterList& bclist = glist_->sublist("PKs")
+      .sublist("transport matrix").sublist("boundary conditions")
+      .sublist("concentration").sublist("coupling").sublist("BC coupling");
+
+   Teuchos::Array<std::string> regs;
+   regs.push_back("fracture");
+   bclist.set<std::string>("spatial distribution method", "domain coupling")
+         .set<std::string>("submodel", "field")
+         .set<Teuchos::Array<std::string> >("regions", regs);
+
+   bclist.sublist("boundary concentration")
+         .set<std::string>("field_in_key", "total_component_concentration")
+         .set<std::string>("field_out_key", "fracture-total_component_concentration");
+
+  // add source term to transport in fracture list
+  Teuchos::ParameterList& srclist = glist_->sublist("PKs")
+      .sublist("transport fracture").sublist("source terms")
+      .sublist("concentration").sublist("coupling").sublist("fracture");
+
+   regs.clear();
+   regs.push_back("All");
+   srclist.set<std::string>("spatial distribution method", "domain coupling")
+          .set<std::string>("submodel", "rate")
+          .set<Teuchos::Array<std::string> >("regions", regs);
+
+   srclist.sublist("sink")
+         .set<std::string>("field_in_key", "fracture-total_component_concentration")
+         .set<std::string>("field_out_key", "total_component_concentration")
+         .set<std::string>("flux_key", "darcy_flux");
+
   // setup the sub-PKs
   PK_MPCWeak::Setup(S);
 }
 
-double TransportMatrixFracture_PK::get_dt(){
 
-  return 0.999*PK_MPCWeak::get_dt();
-
+/* ******************************************************************* 
+* Reduce stable dt to avoid the 2-cycle behavior of the transport PK
+******************************************************************* */
+double TransportMatrixFracture_PK::get_dt() {
+  return 0.999 * PK_MPCWeak::get_dt();
 }
 
   

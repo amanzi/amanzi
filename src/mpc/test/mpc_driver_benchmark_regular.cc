@@ -39,7 +39,7 @@ using namespace Amanzi::AmanziGeometry;
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   
   // setup a piecewice linear solution with a jump
-  std::string xmlInFileName = "test/mpc_driver_benchmark_regular_1.xml";
+  std::string xmlInFileName = "test/mpc_driver_benchmark_regular_0.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
   
   // For now create one geometric model from all the regions in the spec
@@ -49,7 +49,8 @@ using namespace Amanzi::AmanziGeometry;
   // create mesh
   MeshFactory factory(&comm);
   factory.preference(FrameworkPreference({Framework::MSTK}));
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory("test/regular_fracture_ref2.exo", gm);
+  // factory.set_partitioner(Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_GRAPH);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory("test/regular_fracture_ref0.exo", gm);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
@@ -58,22 +59,23 @@ using namespace Amanzi::AmanziGeometry;
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
 
+  // verify mesh
+  /*
+  Amanzi::MeshAudit mesh_auditor(mesh);
+  int status = mesh_auditor.Verify();
+  if (status != 0) {
+    Errors::Message msg("Mesh audit could not verify correctness of meshes.");
+    Exceptions::amanzi_throw(msg);
+  }
+  */
+  
   // analysys
   Amanzi::InputAnalysis analysis(mesh);
   analysis.Init(*plist);
   analysis.RegionAnalysis();
   analysis.OutputBCs();
 
-  /* 
-  Amanzi::MeshAudit mesh_auditor(mesh);
-  int status = mesh_auditor.Verify();
-  if (status != 0) {
-    Errors::Message msg("Mesh Audit could not verify correctness of mesh.");
-    Exceptions::amanzi_throw(msg);
-  }
-  */
-  
-  //create additional mesh for fracture
+  // create additional mesh for fracture
   std::vector<std::string> names;
   names.push_back("fracture");
 
