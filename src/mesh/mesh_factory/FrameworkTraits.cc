@@ -606,25 +606,6 @@ struct FrameworkTraits {
   static Teuchos::RCP<Mesh>
   extract(const Epetra_MpiComm *comm_,            // unused for now
           const Mesh& inmesh, 
-          const std::vector<std::string>& setnames,
-          const Entity_kind setkind,
-          const bool flatten = false,
-          const bool extrude = false,
-          const bool request_faces = true, 
-          const bool request_edges = false)
-  {
-    Teuchos::RCP<Mesh> 
-      result(new typename extract_mesh::type(inmesh,
-                                             setnames,setkind,
-                                             flatten,extrude,
-                                             request_faces,request_edges));
-    return result;
-  }
-
-  /// Construct a new mesh by extracting mesh entities from an existing mesh
-  static Teuchos::RCP<Mesh>
-  extract(const Epetra_MpiComm *comm_,            // unused for now
-          const Mesh& inmesh, 
           const std::vector<int>& entity_id_list,
           const Entity_kind entity_kind,
           const bool flatten = false,
@@ -1089,55 +1070,6 @@ framework_extract(const Epetra_MpiComm *comm_, const Framework& f,
   case Simple:
     result = FrameworkTraits<Simple>::extract(comm_, 
                                               inmesh,
-                                              setnames, setkind, 
-                                              flatten, extrude, 
-                                              request_faces, request_edges);
-    break;
-  case STKMESH:
-    result = FrameworkTraits<STKMESH>::extract(comm_, 
-                                               inmesh, 
-                                               setnames, setkind,
-                                               flatten, extrude,
-                                               request_faces, request_edges);
-    break;
-  case MOAB:
-    result = FrameworkTraits<MOAB>::extract(comm_, 
-                                            inmesh, 
-                                            setnames, setkind,
-                                            flatten, extrude, 
-                                            request_faces, request_edges);
-    break;
-  case MSTK:
-    result = FrameworkTraits<MSTK>::extract(comm_, 
-                                            inmesh, 
-                                            setnames, setkind,
-                                            flatten, extrude, 
-                                            request_faces, request_edges);
-    break;
-  default:
-    {
-      std::string msg = 
-        boost::str(boost::format("unknown mesh framework: %d") % static_cast<int>(f));
-      Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
-    }
-  }
-  return result;
-}
-
-
-Teuchos::RCP<Mesh> 
-framework_extract(const Epetra_MpiComm *comm_, const Framework& f, 
-                  const Mesh& inmesh, 
-                  const std::vector<std::string>& setnames,
-                  const Entity_kind setkind,
-                  const bool request_faces, const bool request_edges,
-                  const bool flatten, const bool extrude)
-{
-  Teuchos::RCP<Mesh> result;
-  switch (f) {
-  case Simple:
-    result = FrameworkTraits<Simple>::extract(comm_, 
-                                              inmesh, 
                                               setnames, setkind, 
                                               flatten, extrude, 
                                               request_faces, request_edges);

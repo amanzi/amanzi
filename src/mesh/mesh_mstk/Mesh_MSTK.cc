@@ -627,62 +627,6 @@ Mesh_MSTK::Mesh_MSTK(const Mesh *inmesh,
 }
 
 
-Mesh_MSTK::Mesh_MSTK(const Mesh& inmesh, 
-                     const std::vector<std::string>& setnames, 
-                     const Entity_kind setkind,
-                     const bool flatten,
-                     const bool extrude,
-                     const bool request_faces,
-                     const bool request_edges) :
-    mpicomm_(inmesh.get_comm()->GetMpiComm()),
-    Mesh(inmesh.verbosity_obj(),request_faces,request_edges),
-    extface_map_w_ghosts_(NULL), extface_map_wo_ghosts_(NULL),
-    owned_to_extface_importer_(NULL)
-{  
-
-  Mesh_ptr inmesh_mstk = ((Mesh_MSTK&) inmesh).mesh;
-
-  int mkid = MSTK_GetMarker();
-  List_ptr src_ents = List_New(10);
-  for (int i = 0; i < setnames.size(); ++i) {
-    MSet_ptr mset = nullptr;
-    
-    Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = inmesh.geometric_model();
-    Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setnames[i]);
-
-
-    // access the set in Amanzi so that the set gets created in 'inmesh'
-    // if it already does not exist
-
-    int setsize = ((Mesh_MSTK&) inmesh).get_set_size(setnames[i],setkind,Parallel_type::OWNED);
-
-    //  Now retrieve the entities in the set from MSTK
-
-    std::string internal_name = internal_name_of_set(rgn,setkind);
-
-    mset = MESH_MSetByName(inmesh_mstk,internal_name.c_str());
-
-    if (mset) {
-      int idx = 0;
-      MEntity_ptr ment = nullptr;
-      while ((ment = (MEntity_ptr) MSet_Next_Entry(mset,&idx))) {
-        if (!MEnt_IsMarked(ment,mkid) && MEnt_PType(ment) != PGHOST && MEnt_Dim(ment) != MDELETED) {
-          List_Add(src_ents,ment);
-          MEnt_Mark(ment,mkid);
-        }
-      }
-    }
-  }
-
-  MType entity_dim = ((Mesh_MSTK&) inmesh).entity_kind_to_mtype(setkind);
-
-  extract_mstk_mesh(inmesh.get_comm(), (Mesh_MSTK&) inmesh, src_ents, entity_dim, flatten, extrude,
-                    request_faces, request_edges);
-
-  List_Delete(src_ents);
-}
-
-
 //---------------------------------------------------------
 // Extract MSTK entities from an ID list and make a new MSTK mesh
 //---------------------------------------------------------
