@@ -79,7 +79,7 @@ using namespace Amanzi::AmanziGeometry;
   Teuchos::RCP<const AmanziMesh::Mesh_MSTK> mstk =
       Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(mesh);
   Teuchos::RCP<AmanziMesh::Mesh> mesh_fracture =
-      Teuchos::rcp(new AmanziMesh::Mesh_MSTK(*mstk, names, AmanziMesh::FACE));
+      Teuchos::rcp(new AmanziMesh::Mesh_MSTK(&*mstk, names, AmanziMesh::FACE));
 
   S->RegisterMesh("fracture", mesh_fracture);
 
