@@ -31,7 +31,8 @@ class Basis_Regularized : public Basis {
   ~Basis_Regularized() {};
 
   // initialization
-  virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order,
+  virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                    AmanziMesh::Entity_ID id, int c, int order,
                     Polynomial& integrals);
 
   // transformation of bilinear form

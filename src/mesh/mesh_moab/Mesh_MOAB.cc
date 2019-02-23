@@ -13,13 +13,17 @@ namespace AmanziMesh {
 //--------------------------------------------------------------------
 Mesh_MOAB::Mesh_MOAB(const char *filename, const Epetra_MpiComm *comm_, 
                      const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-                     const Teuchos::RCP<const VerboseObject>& vo,
+                     const Teuchos::RCP<const Teuchos::ParameterList>& plist,
                      const bool request_faces,
-                     const bool request_edges,
-		     const Partitioner_type partitioner)
-  : Mesh(vo, request_faces, request_edges),
+                     const bool request_edges)
+  : Mesh(Teuchos::null, request_faces, request_edges),
     extface_map_w_ghosts_(NULL), extface_map_wo_ghosts_(NULL)
 {
+  // extract control parameters
+  if (plist != Teuchos::null) {
+    vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Mesh:MOAB", *plist)); 
+  }
+
   int result, rank;
   
   clear_internals_();

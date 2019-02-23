@@ -25,13 +25,14 @@ namespace AmanziMesh {
 class MeshCurved : public Mesh_MSTK {
  public:
   MeshCurved(double x0, double y0, double x1, double y1,
-	     int nx, int ny, const Epetra_MpiComm *comm, Partitioner_type partitioner)
-      : Mesh_MSTK(x0, y0, x1, y1, nx, ny, comm, 
-                  Teuchos::null, Teuchos::null, true, false, partitioner),
+	     int nx, int ny, const Epetra_MpiComm *comm,
+             const Teuchos::RCP<Teuchos::ParameterList>& plist)
+      : Mesh_MSTK(x0, y0, x1, y1, nx, ny, comm, Teuchos::null, plist, true, false),
         face_ho_nodes_(NULL) {};
 
-  MeshCurved(const std::string& filename, const Epetra_MpiComm *comm, Partitioner_type partitioner)
-      : Mesh_MSTK(filename.c_str(), comm, Teuchos::null, Teuchos::null, true, false, partitioner),
+  MeshCurved(const std::string& filename, const Epetra_MpiComm *comm,
+             const Teuchos::RCP<Teuchos::ParameterList>& plist)
+      : Mesh_MSTK(filename.c_str(), comm, Teuchos::null, plist, true, false),
         face_ho_nodes_(NULL) {};
 
   ~MeshCurved() {};

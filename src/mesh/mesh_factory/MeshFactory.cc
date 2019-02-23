@@ -32,9 +32,9 @@ namespace AmanziMesh {
 // MeshFactory:: constructors / destructor
 // -------------------------------------------------------------
 MeshFactory::MeshFactory(const Epetra_MpiComm *comm_unicator,
-                         const Teuchos::RCP<const VerboseObject>& vo)
+                         const Teuchos::RCP<const Teuchos::ParameterList>& plist)
   : my_comm_(comm_unicator),
-    vo_(vo),
+    plist_(plist),
     my_preference(default_preference())
 {
 }
@@ -110,7 +110,7 @@ MeshFactory::create(const std::string& filename,
        i != my_preference.end(); i++) {
     if (framework_reads(*i, fmt, my_comm_->NumProc() > 1)) {
       try {
-        result = framework_read(my_comm_, *i, filename, gm, vo_,
+        result = framework_read(my_comm_, *i, filename, gm, plist_,
                                 request_faces, request_edges, partitioner_);
         return result;
       } catch (const Message& msg) {
@@ -190,8 +190,8 @@ MeshFactory::create(double x0, double y0, double z0,
         result = framework_generate(my_comm_, *i, 
                                     x0, y0, z0, x1, y1, z1, 
                                     nx, ny, nz,
-                                    gm, vo_,
-                                    request_faces, request_edges, partitioner_);
+                                    gm, plist_,
+                                    request_faces, request_edges);
         return result;
       } catch (const Message& msg) {
         ierr[0] += 1;
@@ -265,8 +265,8 @@ MeshFactory::create(double x0, double y0,
         result = framework_generate(my_comm_, *i, 
                                     x0, y0, x1, y1,
                                     nx, ny,
-                                    gm, vo_,
-                                    request_faces, request_edges, partitioner_);
+                                    gm, plist_,
+                                    request_faces, request_edges);
         return result;
       } catch (const Message& msg) {
         ierr[0] += 1;
@@ -295,7 +295,7 @@ MeshFactory::create(double x0, double y0,
  * @return 
  */
 Teuchos::RCP<Mesh> 
-MeshFactory::create(Teuchos::ParameterList &parameter_list, 
+MeshFactory::create(Teuchos::ParameterList& parameter_list, 
                     const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                     const bool request_faces, 
                     const bool request_edges)
@@ -312,7 +312,7 @@ MeshFactory::create(Teuchos::ParameterList &parameter_list,
   for (auto i = my_preference.begin(); i != my_preference.end(); i++) {
     if (framework_generates(*i, my_comm_->NumProc() > 1, dim)) {
       try {
-        result = framework_generate(my_comm_, *i, parameter_list, gm, vo_,
+        result = framework_generate(my_comm_, *i, parameter_list, gm, Teuchos::null,
                                     request_faces, request_edges);
         return result;
       } catch (const Message& msg) {

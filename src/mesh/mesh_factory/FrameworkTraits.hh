@@ -41,7 +41,7 @@ extern Teuchos::RCP<Mesh>
 framework_read(const Epetra_MpiComm *comm_, const Framework& f, 
                const std::string& fname,
                const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm =  Teuchos::null,
-               const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
+               const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
                const bool request_faces = true,
                const bool request_edges = false,
 	       const Partitioner_type partitioner = PARTITIONER_DEFAULT);
@@ -60,10 +60,9 @@ framework_generate(const Epetra_MpiComm *comm_, const Framework& f,
                    const unsigned int& nx, const unsigned int& ny, 
                    const unsigned int& nz,
                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
-                   const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
+                   const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
                    const bool request_faces = true,
-                   const bool request_edges = false,
-		   const Partitioner_type partitioner = PARTITIONER_DEFAULT);
+                   const bool request_edges = false);
 
 /// Generate a quadrilateral mesh
 extern Teuchos::RCP<Mesh> 
@@ -72,14 +71,13 @@ framework_generate(const Epetra_MpiComm *comm_, const Framework& f,
                    const double& x1, const double& y1,
                    const unsigned int& nx, const unsigned int& ny,
                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
-                   const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
+                   const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
                    const bool request_faces = true,
-                   const bool request_edges = false,
-		   const Partitioner_type partitioner = PARTITIONER_DEFAULT);
+                   const bool request_edges = false);
 
 extern Teuchos::RCP<Mesh> 
 framework_generate(const Epetra_MpiComm *comm_, const Framework& f, 
-                   Teuchos::ParameterList &parameter_list,
+                   Teuchos::ParameterList& parameter_list,
                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
                    const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
                    const bool request_faces = true,

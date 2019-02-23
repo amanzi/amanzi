@@ -107,6 +107,7 @@
       <ParameterList name="expert">
         <Parameter name="framework" type="string" value="MSTK"/>
         <Parameter name="partitioner" type="string" value="NOT_SPECIFIED"/>
+        <Parameter name="contiguous global ids" type="bool" value="false"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="verbose object">
