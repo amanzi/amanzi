@@ -870,6 +870,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
 
       time_period_id_++;
       if (time_period_id_ < num_time_periods_) {
+        S_->WriteStatistics(vo_);
         ResetDriver(time_period_id_); 
         dt = get_dt(false);
       }      
