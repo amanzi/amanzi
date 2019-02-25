@@ -13,6 +13,7 @@
 // Amanzi
 #include "CycleDriver.hh"
 #include "MeshAudit.hh"
+#include "InputAnalysis.hh"
 #include "energy_tcm_registration.hh"
 #include "energy_iem_registration.hh"
 #include "eos_registration.hh"
@@ -38,8 +39,10 @@ using namespace Amanzi::AmanziGeometry;
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   
   // setup a piecewice linear solution with a jump
-  std::string xmlInFileName = "test/mpc_driver_benchmark_field.xml";
+  std::string xmlInFileName = "mpc_driver_benchmark_field.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
+
+  std::string meshfile = plist->sublist("mesh").sublist("unstructured").sublist("read mesh file").get<std::string>("file");
   
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
@@ -49,7 +52,8 @@ using namespace Amanzi::AmanziGeometry;
   MeshFactory factory(&comm);
   factory.preference(FrameworkPreference({Framework::MSTK}));
   factory.set_partitioner(Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_GRAPH);
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory("test/field.exo", gm);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory(meshfile, gm);
+
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
@@ -77,6 +81,14 @@ using namespace Amanzi::AmanziGeometry;
       Teuchos::rcp(new AmanziMesh::Mesh_MSTK(*mstk, names, AmanziMesh::FACE));
 
   S->RegisterMesh("fracture", mesh_fracture);
+
+
+      // -------------- ANALYSIS --------------------------------------------
+  // Amanzi::InputAnalysis analysis(mesh_fracture);
+  // analysis.Init(*plist);
+  // analysis.RegionAnalysis();
+
+  // exit(0);
 
   Amanzi::CycleDriver cycle_driver(plist, S, &comm, obs_data);
   cycle_driver.Go();
