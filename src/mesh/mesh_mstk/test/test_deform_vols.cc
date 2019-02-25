@@ -43,13 +43,14 @@ TEST(MSTK_DEFORM_VOLS_2D)
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, comm_.get()));
 
   // Generate a mesh consisting of 3x3 elements 
+  auto plist = Teuchos::rcp(new Teuchos::ParameterList());
+  plist->sublist("unstructured").sublist("expert").set<std::string>("partitioner", "zoltan_rcb");
   bool request_faces = true;
   bool request_edges = true;
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
     mesh(new Amanzi::AmanziMesh::Mesh_MSTK(-5.0,0.0,5.0,10.0,10,10,comm_.get(),
-					   gm,Teuchos::null,
-					   request_faces,request_edges,
-					   Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_RCB));
+					   gm,plist,
+					   request_faces,request_edges));
 
   CHECK_EQUAL(mesh->build_columns(), 1);
   
@@ -123,17 +124,17 @@ TEST(MSTK_DEFORM_VOLS_3D)
   //  Teuchos::writeParameterListToXmlOStream(param_list,std::cout);
 
   // Create a geometric model from region spec
-  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, comm_.get()));
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, comm_.get()));
 
   // Generate a mesh consisting of 10x10 elements
+  auto plist = Teuchos::rcp(new Teuchos::ParameterList());
+  plist->sublist("unstructured").sublist("expert").set<std::string>("partitioner", "zoltan_rcb");
   bool request_faces = true;
   bool request_edges = true;
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
     mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,10.0,1.0,10.0,10,1,10,
-					   comm_.get(),gm,Teuchos::null,
-					   request_faces,request_edges,
-					   Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_RCB));
+					   comm_.get(),gm,plist,
+					   request_faces,request_edges));
 
   CHECK_EQUAL(mesh->build_columns(), 1);
   

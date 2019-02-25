@@ -36,7 +36,8 @@ class Basis_Natural : public Basis {
   ~Basis_Natural() {};
 
   // initialization
-  virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order,
+  virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, 
+                    AmanziMesh::Entity_ID id, int c, int order,
                     Polynomial& integrals) { order_ = order; }
 
   // transformation of bilinear form

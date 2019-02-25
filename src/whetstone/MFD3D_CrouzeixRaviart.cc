@@ -146,7 +146,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
   // select regularized basis
   Polynomial ptmp;
   Basis_Regularized basis;
-  basis.Init(mesh_, c, order_, ptmp);
+  basis.Init(mesh_, AmanziMesh::CELL, c, order_, ptmp);
 
   // pre-calculate integrals of natural monomials 
   NumericalIntegration numi(mesh_);
@@ -418,7 +418,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
   // selecting regularized basis
   Polynomial ptmp;
   Basis_Regularized basis;
-  basis.Init(mesh_, c, order_, ptmp);
+  basis.Init(mesh_, AmanziMesh::CELL, c, order_, ptmp);
 
   // populate matrices N and R
   int row(0);
@@ -448,7 +448,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
 
   // uniqueness requires to specify constant in polynomial
   if (order_ == 1) {
-    AmanziGeometry::Point grad(d_), zero(d_);
+    AmanziGeometry::Point grad(d_);
     for (int j = 0; j < d_; ++j) {
       grad[j] = uc(j + 1);
     }
@@ -552,7 +552,7 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
   // selecting regularized basis
   Polynomial ptmp;
   Basis_Regularized basis;
-  basis.Init(mesh_, c, order_, ptmp);
+  basis.Init(mesh_, AmanziMesh::CELL, c, order_, ptmp);
 
   for (int i = 0; i < dim; ++i) {
     for (int j = 0; j < d_; ++j) {

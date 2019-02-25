@@ -84,7 +84,7 @@ int MFD3D_LagrangeSerendipity::H1consistency(
 
   // selecting regularized basis
   Basis_Regularized basis;
-  basis.Init(mesh_, c, order_, integrals_.poly());
+  basis.Init(mesh_, AmanziMesh::CELL, c, order_, integrals_.poly());
 
   // Dot-product matrix for polynomials and Laplacian of polynomials
   DenseMatrix M(nd, nd);
@@ -170,7 +170,7 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
   // selecting regularized basis
   Polynomial ptmp;
   Basis_Regularized basis;
-  basis.Init(mesh_, c, order_, ptmp);
+  basis.Init(mesh_, AmanziMesh::CELL, c, order_, ptmp);
 
   // calculate stiffness matrix
   Tensor T(d_, 1);

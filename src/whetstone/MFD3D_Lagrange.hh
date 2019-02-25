@@ -74,6 +74,14 @@ class MFD3D_Lagrange : public MFD3D {
     ProjectorCell_(c, vf, ProjectorType::H1, moments, uc);
   }
 
+  virtual void H1Cell(int c, const DenseVector& dofs, Polynomial& uc) override {
+    ProjectorCellFromDOFs_(c, dofs, ProjectorType::H1, uc);
+  }
+
+  // surface methods
+  int H1consistencySurface(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
+  int StiffnessMatrixSurface(int c, const Tensor& T, DenseMatrix& A);
+
   // access 
   // -- integrals of monomials in high-order schemes could be reused
   const PolynomialOnMesh& integrals() const { return integrals_; }
@@ -85,13 +93,16 @@ class MFD3D_Lagrange : public MFD3D {
 
  private:
   int H1consistency2D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
-  int H1consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) { return 0; }
+  int H1consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
 
   void ProjectorCell_(int c, const std::vector<Polynomial>& vf,
                       const ProjectorType type,
                       const Polynomial* moments, Polynomial& uc);
 
   void ProjectorCell_LO_(int c, const std::vector<Polynomial>& vf, Polynomial& uc);
+
+  void ProjectorCellFromDOFs_(int c, const DenseVector& dofs,
+                              const ProjectorType type, Polynomial& uc);
 
   std::vector<Polynomial> ConvertMomentsToPolynomials_(int order);
 

@@ -1,6 +1,16 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
 
+  <!-- MESH -->
+  <ParameterList name="mesh">
+    <ParameterList name="unstructured">
+      <ParameterList name="expert">
+        <Parameter name="framework" type="string" value="MSTK"/>
+        <Parameter name="partitioner" type="string" value="zoltan_rcb"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
   <!-- MAPS -->
   <ParameterList name="maps">
     <Parameter name="method" type="string" value="Lagrange serendipity"/>

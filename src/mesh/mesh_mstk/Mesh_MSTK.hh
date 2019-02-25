@@ -44,19 +44,9 @@ class Mesh_MSTK : public Mesh {
   Mesh_MSTK(const char *filename,
             const Epetra_MpiComm *incomm_,
             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
-            const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
+            const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
 	    const bool request_faces = true,
-	    const bool request_edges = false,
-	    const Partitioner_type partitioner = PARTITIONER_DEFAULT);
-
-  Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_, 
-            int space_dimension,
-	    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = 
-            Teuchos::null,
-            const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
-	    const bool request_faces = true,
-	    const bool request_edges = false,
-	    const Partitioner_type partitioner = PARTITIONER_DEFAULT);
+	    const bool request_edges = false);
 
   // Constructors that generate a mesh internally (regular hexahedral mesh only)
 
@@ -67,10 +57,9 @@ class Mesh_MSTK : public Mesh {
             const unsigned int nz, 
             const Epetra_MpiComm *incomm_,
             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
-            const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
+            const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
 	    const bool request_faces = true,
-	    const bool request_edges = false,
-	    const Partitioner_type partitioner = PARTITIONER_DEFAULT);
+	    const bool request_edges = false);
 
   // 2D
   Mesh_MSTK(const double x0, const double y0,
@@ -78,10 +67,9 @@ class Mesh_MSTK : public Mesh {
 	    const int nx, const int ny, 
 	    const Epetra_MpiComm *comm_,
             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
-            const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
+            const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
 	    const bool request_faces = true,
-	    const bool request_edges = false,
-	    const Partitioner_type partitioner = PARTITIONER_DEFAULT);
+	    const bool request_edges = false);
 
   // Construct a hexahedral mesh from specs 
   Mesh_MSTK(const GenerationSpec& gspec,
@@ -98,14 +86,6 @@ class Mesh_MSTK : public Mesh {
   // lower dimensional space or to extrude the mesh to give higher
   // dimensional cells
   Mesh_MSTK(const Mesh *inmesh,
-            const std::vector<std::string>& setnames,
-            const Entity_kind entity_kind,
-            const bool flatten = false,
-            const bool extrude = false,
-	    const bool request_faces = true,
-	    const bool request_edges = false);
-
-  Mesh_MSTK(const Mesh& inmesh,
             const std::vector<std::string>& setnames,
             const Entity_kind entity_kind,
             const bool flatten = false,
@@ -372,6 +352,7 @@ class Mesh_MSTK : public Mesh {
   Mesh_ptr mesh;
 
   int serial_run;
+  bool contiguous_gids_;
   
   // Local handles to entity lists (Vertices, "Faces", "Cells")
   

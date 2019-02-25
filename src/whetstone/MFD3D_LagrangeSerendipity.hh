@@ -71,7 +71,7 @@ class MFD3D_LagrangeSerendipity : public MFD3D_Lagrange {
                       const Polynomial* moments, Polynomial& uc);
   void ProjectorFace_(int f, const std::vector<Polynomial>& ve,
                       const ProjectorType type,
-                      const Polynomial* moments, Polynomial& uf) {};
+                      const Polynomial* moments, Polynomial& uf) { AMANZI_ASSERT(false); }
 
   void CalculateDOFsOnBoundary_(
       int c, const std::vector<Polynomial>& vf, DenseVector& vdof);

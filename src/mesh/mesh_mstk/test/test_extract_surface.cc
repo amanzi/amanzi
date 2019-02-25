@@ -57,7 +57,7 @@ TEST(Extract_Surface_MSTK1)
   setnames.push_back(std::string("Top Surface"));
   setnames.push_back(std::string("Right Surface"));
 
-  Amanzi::AmanziMesh::Mesh_MSTK surfmesh(mesh,setnames,Amanzi::AmanziMesh::FACE);
+  Amanzi::AmanziMesh::Mesh_MSTK surfmesh(&mesh,setnames,Amanzi::AmanziMesh::FACE);
 
 
   // Number of cells (quadrilaterals) in surface mesh
@@ -153,7 +153,7 @@ TEST(Extract_Surface_MSTK2)
   setnames.push_back(std::string("Top Surface"));
 
   // Extract surface mesh while projecting to 2D
-  Amanzi::AmanziMesh::Mesh_MSTK surfmesh(mesh,setnames,Amanzi::AmanziMesh::FACE,true,false);
+  Amanzi::AmanziMesh::Mesh_MSTK surfmesh(&mesh,setnames,Amanzi::AmanziMesh::FACE,true,false);
 
   CHECK_EQUAL(surfmesh.space_dimension(),2);
 
@@ -235,13 +235,13 @@ TEST(Extract_Surface_MSTK3)
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm_.get()));
 
   // Read a mesh from the file
-  Amanzi::AmanziMesh::Mesh_MSTK mesh(filename.c_str(),comm_.get(),3,gm);
+  Amanzi::AmanziMesh::Mesh_MSTK mesh(filename.c_str(),comm_.get(),gm);
 
 
   std::vector<std::string> setnames;
   setnames.push_back(std::string("Top Surface"));
 
-  Amanzi::AmanziMesh::Mesh_MSTK surfmesh(mesh,setnames,Amanzi::AmanziMesh::FACE);
+  Amanzi::AmanziMesh::Mesh_MSTK surfmesh(&mesh,setnames,Amanzi::AmanziMesh::FACE);
 
 
   // Number of cells (quadrilaterals) in surface mesh
@@ -363,7 +363,7 @@ TEST(Extract_Surface_MSTK4)
 
   setnames.push_back(std::string("Top Surface"));
 
-  Amanzi::AmanziMesh::Mesh_MSTK surfmesh(mesh,setnames,Amanzi::AmanziMesh::FACE,false,false);
+  Amanzi::AmanziMesh::Mesh_MSTK surfmesh(&mesh,setnames,Amanzi::AmanziMesh::FACE,false,false);
 
 
 
@@ -372,7 +372,7 @@ TEST(Extract_Surface_MSTK4)
   setnames.clear();
   setnames.push_back("Whole Surface");
 
-  Amanzi::AmanziMesh::Mesh_MSTK surfmesh2D(surfmesh,setnames,Amanzi::AmanziMesh::CELL,true,false);
+  Amanzi::AmanziMesh::Mesh_MSTK surfmesh2D(&surfmesh,setnames,Amanzi::AmanziMesh::CELL,true,false);
   
 
 

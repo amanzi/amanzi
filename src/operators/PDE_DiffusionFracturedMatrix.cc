@@ -36,7 +36,7 @@ void PDE_DiffusionFracturedMatrix::Init(Teuchos::ParameterList& plist)
   Teuchos::RCP<const AmanziMesh::Mesh_MSTK> mstk =
       Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(mesh_);
   Teuchos::RCP<const AmanziMesh::Mesh> fracture =
-      Teuchos::rcp(new AmanziMesh::Mesh_MSTK(*mstk, names, AmanziMesh::FACE));
+      Teuchos::rcp(new AmanziMesh::Mesh_MSTK(&*mstk, names, AmanziMesh::FACE));
 
   // create global operator
   cvs_ = CreateFracturedMatrixCVS(mesh_, fracture);

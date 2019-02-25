@@ -14,6 +14,8 @@
 #include "CompositeVectorFunction.hh"
 #include "errors.hh"
 
+#include "VerboseObject_objs.hh"
+
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;

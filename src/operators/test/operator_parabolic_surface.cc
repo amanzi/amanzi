@@ -71,7 +71,7 @@ void RunTest(std::string op_list_name) {
   std::vector<std::string> setnames;
   setnames.push_back(std::string("Top surface"));
 
-  RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(*mesh_mstk, setnames, AmanziMesh::FACE));
+  RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(&*mesh_mstk, setnames, AmanziMesh::FACE));
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffsuion coefficient.
