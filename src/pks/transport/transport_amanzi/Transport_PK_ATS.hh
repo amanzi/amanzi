@@ -33,6 +33,7 @@
 #include "VerboseObject.hh"
 #include "PK_PhysicalExplicit.hh"
 #include "DenseVector.hh"
+#include "pk_physical_explicit_default.hh"
 
 #include <string>
 
@@ -46,6 +47,7 @@
 #include "MultiscaleTransportPorosityPartition.hh"
 #include "TransportDomainFunction.hh"
 #include "TransportDefs.hh"
+//#include "pk_physical_explicit_default.hh"
 
 
 /* ******************************************************************
@@ -62,7 +64,8 @@ namespace Transport {
 typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
   // class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
-  class Transport_PK_ATS : public PK_PhysicalExplicit<Epetra_Vector> {
+  // class Transport_PK_ATS : public PK_PhysicalExplicit<Epetra_Vector> {
+class Transport_PK_ATS : public PK_Physical_Explicit_Default {
 
   public:
     Transport_PK_ATS(Teuchos::ParameterList& pk_tree,
@@ -159,7 +162,8 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
   // time integration members
   void FunctionalTimeDerivative(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
-    //  void Functional(const double t, const Epetra_Vector& component, TreeVector& f_component);
+  void FunctionalTimeDerivative(const double t, const TreeVector& component, TreeVector& f_component){};
+  //  void Functional(const double t, const Epetra_Vector& component, TreeVector& f_component);
 
   void IdentifyUpwindCells();
 
@@ -230,7 +234,6 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
 
  protected:
-    Teuchos::RCP<TreeVector> soln_;
 
     Key domain_name_;
     Key saturation_key_;

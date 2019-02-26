@@ -18,16 +18,16 @@ EOSVaporInGas::EOSVaporInGas(Teuchos::ParameterList& eos_plist) : eos_plist_(eos
   InitializeFromPlist_();
 }
 
-double EOSVaporInGas::MolarDensity(double T, double p) {
-  return gas_eos_->MolarDensity(T,p);
+double EOSVaporInGas::MolarDensity(std::vector<double>& params) {
+  return gas_eos_->MolarDensity(params);
 };
 
-double EOSVaporInGas::DMolarDensityDT(double T, double p) {
-  return gas_eos_->DMolarDensityDT(T,p);
+double EOSVaporInGas::DMolarDensityDT(std::vector<double>& params) {
+  return gas_eos_->DMolarDensityDT(params);
 };
 
-double EOSVaporInGas::DMolarDensityDp(double T, double p) {
-  return gas_eos_->DMolarDensityDp(T,p);
+double EOSVaporInGas::DMolarDensityDp(std::vector<double>& params) {
+  return gas_eos_->DMolarDensityDp(params);
 };
 
 

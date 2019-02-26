@@ -17,6 +17,11 @@ register_evaluator_with_factory(
   )
 
 register_evaluator_with_factory(
+  HEADERFILE eos/effective_concentration_evaluator_reg.hh
+  LISTNAME   CONSTITUTIVE_RELATIONS_EOS_EVALUATORS
+  )
+
+register_evaluator_with_factory(
   HEADERFILE eos/eos_constant_reg.hh
   LISTNAME   CONSTITUTIVE_RELATIONS_EOS_EVALUATORS
   )
@@ -27,7 +32,12 @@ register_evaluator_with_factory(
   )
 
 register_evaluator_with_factory(
-  HEADERFILE eos/eos_evaluator_reg.hh
+  HEADERFILE eos/eos_evaluator_tp_reg.hh
+  LISTNAME   CONSTITUTIVE_RELATIONS_EOS_EVALUATORS
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE eos/eos_evaluator_ctp_reg.hh
   LISTNAME   CONSTITUTIVE_RELATIONS_EOS_EVALUATORS
   )
 
@@ -42,6 +52,11 @@ register_evaluator_with_factory(
 
 register_evaluator_with_factory(
   HEADERFILE eos/eos_vapor_in_gas_reg.hh
+  LISTNAME   CONSTITUTIVE_RELATIONS_EOS_EVALUATORS
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE eos/eos_sw_reg.hh
   LISTNAME   CONSTITUTIVE_RELATIONS_EOS_EVALUATORS
   )
 

@@ -10,6 +10,8 @@
 #ifndef AMANZI_RELATIONS_EOS_HH_
 #define AMANZI_RELATIONS_EOS_HH_
 
+#include <vector>
+
 namespace Amanzi {
 namespace Relations {
 
@@ -19,13 +21,13 @@ class EOS {
   virtual ~EOS() {};
 
   // Virtual methods that form the EOS
-  virtual double MassDensity(double T, double p) = 0;
-  virtual double DMassDensityDT(double T, double p) = 0;
-  virtual double DMassDensityDp(double T, double p) = 0;
+  virtual double MassDensity(std::vector<double>& params) = 0;
+  virtual double DMassDensityDT(std::vector<double>& params) = 0;
+  virtual double DMassDensityDp(std::vector<double>& params) = 0;
 
-  virtual double MolarDensity(double T, double p) = 0;
-  virtual double DMolarDensityDT(double T, double p) = 0;
-  virtual double DMolarDensityDp(double T, double p) = 0;
+  virtual double MolarDensity(std::vector<double>& params) = 0;
+  virtual double DMolarDensityDT(std::vector<double>& params) = 0;
+  virtual double DMolarDensityDp(std::vector<double>& params) = 0;
 
   // If molar mass is constant, we can take some shortcuts if we need both
   // molar and mass densities.  MolarMass() is undefined if

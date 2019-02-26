@@ -55,6 +55,9 @@ void EffectivePressureEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pres_key_);
   const double& p_atm = *(S->GetScalarData("atmospheric_pressure"));
 
+  // for (auto cmp : S->GetFieldData(my_key_)->Map()) std::cout<<cmp<<"\n";std::cout<<"\n";
+  // for (auto cmp : S->GetFieldData(pres_key_)->Map()) std::cout<<cmp<<"\n";std::cout<<"\n";    
+
   // evaluate effective pressure as max(pres, p_atm)
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {

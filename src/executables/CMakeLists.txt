@@ -71,7 +71,8 @@ include_evaluators_directories(LISTNAME TRANSPORT_AMANZI_REG_INCLUDES)
   
 
 
-add_executable(ats main.cc plant_1D_mesh.cc ats_mesh_factory.cc simulation_driver.cc )
+#add_executable(ats main.cc plant_1D_mesh.cc ats_mesh_factory.cc simulation_driver.cc )
+add_executable(ats main.cc ats_mesh_factory.cc simulation_driver.cc )
 
 
 set(ATS_LIBS
@@ -98,7 +99,7 @@ set(ATS_LIBS
 #                      pk_prescribed_volumetric_deformation
                       pk_volumetric_deformation
                       pk_surface_balance_SEB
-                      pk_BGC
+#                      pk_BGC
                       pk_bases
                       #deform_relations_porosity
                       energy_relations
@@ -138,6 +139,7 @@ set(AMANZI_LIBS
 		      amanzi_chemistry_pk
 		      amanzi_mpc_tree
 		      amanzi_transport
+                      amanzi_dbg                      
 )
 
 target_link_libraries(ats ${ATS_LIBS} ${AMANZI_LIBS})
@@ -150,8 +152,8 @@ if ( BUILD_TESTS )
     include_directories(".")
 
     # Test:
-    add_amanzi_test(plant_mesh plant_mesh
-                    KIND unit
-                    SOURCE test/main.cc test/plant_mesh.cc plant_1D_mesh.cc
-                    LINK_LIBS ${ATS_LIBS} ${AMANZI_LIBS} ${Amanzi_TPL_UnitTest_LIBRARIES})
+    # add_amanzi_test(plant_mesh plant_mesh
+    #                 KIND unit
+    #                 SOURCE test/main.cc test/plant_mesh.cc plant_1D_mesh.cc
+    #                 LINK_LIBS ${ATS_LIBS} ${AMANZI_LIBS} ${Amanzi_TPL_UnitTest_LIBRARIES})
 endif()   
