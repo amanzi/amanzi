@@ -106,8 +106,10 @@ bool FlowReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool 
   if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) *vo_->os()<<"Slave dt="<<slave_dt_<<"\n";
 
   // advance the slave, subcycling if needed
+  S_->set_initial_time(t_old);
   S_->set_intermediate_time(t_old);
   S_next_->set_intermediate_time(t_old);
+  S_next_->set_final_time(t_new);
   bool done = false;
 
   double dt_next = slave_dt_;

@@ -122,12 +122,19 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   void VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next, double dT_MPC);
   double VV_SoluteVolumeChangePerSecond(int idx_solute);
   double ComputeSolute(const Epetra_MultiVector& tcc_next, int idx);
+  double ComputeSolute(const Epetra_MultiVector& tcc,
+                       const Epetra_MultiVector& ws,
+                       const Epetra_MultiVector& den,
+                       int idx);
 
   void CalculateLpErrors(AnalyticFunction f, double t, Epetra_Vector* sol, double* L1, double* L2);
 
   // -- sources and sinks for components from n0 to n1 including
   void ComputeAddSourceTerms(double tp, double dtp, 
                              Epetra_MultiVector& tcc, int n0, int n1);
+
+  void MixingSolutesWthSources(double told, double tnew);
+    
 
   bool PopulateBoundaryData(std::vector<int>& bc_model,
                             std::vector<double>& bc_value, int component);
@@ -246,11 +253,12 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   Teuchos::RCP<State> S_;
   std::string passwd_;
 
-  bool subcycling_;
+  bool subcycling_, special_source_, water_source_in_meters_;
   int dim;
   int saturation_name_;
   bool vol_flux_conversion_;
 
+  Teuchos::RCP<CompositeVector> tcc_w_src;
   Teuchos::RCP<CompositeVector> tcc_tmp;  // next tcc
   Teuchos::RCP<CompositeVector> tcc;  // smart mirrow of tcc 
   Teuchos::RCP<Epetra_MultiVector> conserve_qty_, solid_qty_;

@@ -9,7 +9,7 @@
 */
 
 #include "mpc_coupled_transport.hh"
-#include "Transport_PK_ATS.hh"
+
 
 namespace Amanzi {
 
@@ -100,13 +100,15 @@ void CoupledTransport_PK::Initialize(const Teuchos::Ptr<State>& S){
 
   WeakMPC::Initialize(S);
 
+  subsurf_pk_ = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[subsurf_id_]);
+  surf_pk_ = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[surf_id_]);
 }
 
 int CoupledTransport_PK::num_aqueous_component(){
 
-  int num_aq_comp = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[subsurf_id_]) -> num_aqueous_component();
+  int num_aq_comp = subsurf_pk_ -> num_aqueous_component();
 
-  if (num_aq_comp != Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[surf_id_]) -> num_aqueous_component()){
+  if (num_aq_comp != surf_pk_ -> num_aqueous_component()){
     Errors::Message message("CoupledTransport_PK:: numbers aqueous component does not match.");
     Exceptions::amanzi_throw(message);
   }
@@ -119,43 +121,25 @@ int CoupledTransport_PK::num_aqueous_component(){
 // Advance each sub-PK individually, returning a failure as soon as possible.
 // -----------------------------------------------------------------------------
 bool CoupledTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
-  bool fail = false;
 
+  bool fail = false;
   double dt_MPC = S_->final_time() - S_->initial_time();
 
-
-  /* At the moment with multiple State object next step fluxes are stored in S_next.
-     To comibine them in one State copying has to be done.
-     It will be removed when we convert to one State
-  */
-
-  // Teuchos::RCP<const CompositeVector> next_darcy = S_next_->GetFieldData(subsurface_flux_key_);
-  // Key flux_owner = S_next_->GetField(subsurface_flux_key_)->owner();
-  // Teuchos::RCP<CompositeVector>  next_darcy_copy = S_copy -> GetFieldCopyData(subsurface_flux_key_, "next_timestep", flux_owner);
-  // *next_darcy_copy = *next_darcy;
-
-  // Teuchos::RCP<const CompositeVector> next_sur_flux = S_next_->GetFieldData(surface_flux_key_);
-  // flux_owner = S_next_->GetField(surface_flux_key_)->owner();
-  // Teuchos::RCP<CompositeVector>  next_sur_flux_copy = S_copy -> GetFieldCopyData(surface_flux_key_, "next_timestep", flux_owner);
-  // *next_sur_flux_copy = *next_sur_flux;
-
-
-  sub_pks_[subsurf_id_]->AdvanceStep(t_old, t_new, reinit);
-  sub_pks_[surf_id_]->AdvanceStep(t_old, t_new, reinit);
+  // In the case of rain sources these rain source are mixed with solutes on the surface
+  // to provide BC for subsurface domain
+  surf_pk_ -> MixingSolutesWthSources(t_old, t_new);
+  
+  surf_pk_ -> AdvanceStep(t_old, t_new, reinit);
+  subsurf_pk_ -> AdvanceStep(t_old, t_new, reinit);
 
 
   const Epetra_MultiVector& surf_tcc = *S_->GetFieldCopyData("surface-total_component_concentration", "subcycling")->ViewComponent("cell",false);  
   const Epetra_MultiVector& tcc = *S_->GetFieldCopyData("total_component_concentration", "subcycling")->ViewComponent("cell",false);
 
 
-  const std::vector<std::string>&  component_names_sub =
-    Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[subsurf_id_])->component_names();
-  
-  // const std::vector<std::string>&  component_names_surf =
-  //   Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[surf_id_])->component_names();
-  //ASSERT( component_names_sub.size() == component_names_surf.size());
-  
-  int num_components =  Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[subsurf_id_]) -> num_aqueous_component();
+  const std::vector<std::string>&  component_names_sub = subsurf_pk_ -> component_names();
+   
+  int num_components =  subsurf_pk_ -> num_aqueous_component();
   
   std::vector<double> mass_subsurface(num_components, 0.), mass_surface(num_components, 0.);
 

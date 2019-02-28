@@ -19,6 +19,7 @@
 //#include "pk_mpcsubcycled_ats.hh"
 #include "weak_mpc.hh"
 #include "PK.hh"
+#include "Transport_PK_ATS.hh"
 
 namespace Amanzi {
 
@@ -63,7 +64,9 @@ namespace Amanzi {
     Key surface_name_, subsurface_name_;
     Key mass_darcy_key, surf_mass_darcy_key;
     Key mol_density_key, surf_mol_density_key;
-    
+
+
+    Teuchos::RCP<Transport::Transport_PK_ATS> subsurf_pk_, surf_pk_;
     
     // factory registration
     static RegisteredPKFactory<CoupledTransport_PK> reg_;
