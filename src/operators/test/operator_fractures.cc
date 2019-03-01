@@ -29,6 +29,7 @@
 #include "Tensor.hh"
 
 // Amanzi::Operators
+#include "Analytic02.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionFactory.hh"
@@ -37,7 +38,7 @@
 /* *****************************************************************
 * TBW.
 * **************************************************************** */
-void RunTest(int icase, bool gravity) {
+void RunTest(int icase, double gravity) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -87,6 +88,9 @@ void RunTest(int icase, bool gravity) {
     K->push_back(Kc);
   }
 
+  AmanziGeometry::Point v(1.0, 2.0, 3.0);
+  Analytic02 ana(surfmesh, v, gravity);
+
   // create boundary data (no mixed bc)
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
@@ -94,13 +98,17 @@ void RunTest(int icase, bool gravity) {
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = surfmesh->face_centroid(f);
-    if (fabs(xf[2] - 0.5) < 1e-6 && fabs(xf[0]) < 1e-6) { 
+    if (fabs(xf[2] - 0.5) < 1e-6 && 
+        (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
+         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6)) { 
       bc_model[f] = OPERATOR_BC_DIRICHLET;
-      bc_value[f] = 1.0;
+      bc_value[f] = ana.pressure_exact(xf, 0.0);
     }
-    else if (fabs(xf[2] - 0.5) < 1e-6 && fabs(xf[0] - 1.0) < 1e-6) { 
+    else if (fabs(xf[1] - 0.5) < 1e-6 && 
+        (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
+         fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6)) { 
       bc_model[f] = OPERATOR_BC_DIRICHLET;
-      bc_value[f] = 0.0;
+      bc_value[f] = ana.pressure_exact(xf, 0.0);
     }
   }
 
@@ -115,9 +123,9 @@ void RunTest(int icase, bool gravity) {
 
   // create diffusion operator
   double rho(1.0);
-  AmanziGeometry::Point g(0.0, 0.0, -1.0);
+  AmanziGeometry::Point g(0.0, 0.0, -gravity);
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("diffusion operator");
-  olist.set<bool>("gravity", gravity);
+  olist.set<bool>("gravity", (gravity > 0.0));
 
   Operators::PDE_DiffusionFactory opfactory;
   Teuchos::RCP<Operators::PDE_Diffusion> op = opfactory.Create(olist, surfmesh, bc, rho, g);
@@ -158,9 +166,20 @@ void RunTest(int icase, bool gravity) {
               << " code=" << solver.returned_code() << std::endl;
   }
 
-  // remove gravity to check symmetry
+  // calculate error in cell-centered data
+  double pnorm, l2_err, inf_err;
   Epetra_MultiVector& p = *solution.ViewComponent("cell");
-  if (gravity) { 
+
+  ana.ComputeCellError(p, 0.0, pnorm, l2_err, inf_err);
+  CHECK(l2_err < 1e-12);
+
+  if (MyPID == 0) {
+    l2_err /= pnorm; 
+    printf("L2(p)=%9.6f  Inf(p)=%9.6f\n", l2_err, inf_err);
+  }
+
+  // remove gravity to check symmetry
+  if (gravity > 0.0) { 
     for (int c = 0; c < ncells_owned; c++) {
       const Point& xc = surfmesh->cell_centroid(c);
       p[0][c] -= rho * g[2] * xc[2];
@@ -177,14 +196,11 @@ void RunTest(int icase, bool gravity) {
 
 
 TEST(FRACTURES_EXTRACTION) {
-  RunTest(0, false);
+  RunTest(0, 0.0);
 }
 
-TEST(FRACTURES_INPUT_FILE_GRAVITY) {
-  RunTest(0, true);
+TEST(FRACTURES_INPUT_EXODUS_FILE_GRAVITY) {
+  RunTest(1, 2.0);
 }
 
-TEST(FRACTURES_INPUT_FILE) {
-  RunTest(1, false);
-}
 

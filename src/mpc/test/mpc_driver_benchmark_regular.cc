@@ -40,7 +40,7 @@ using namespace Amanzi::AmanziGeometry;
   
   // setup a piecewice linear solution with a jump
 
-  std::string xmlInFileName = "mpc_driver_benchmark_regular.xml";
+  std::string xmlInFileName = "test/mpc_driver_benchmark_regular_0.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
   
   // For now create one geometric model from all the regions in the spec
