@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -30,7 +30,9 @@ class Basis_Normalized : public Basis {
   ~Basis_Normalized() {};
 
   // initialization
-  virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order);
+  virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                    AmanziMesh::Entity_ID id, int c, int order,
+                    Polynomial& integrals);
 
   // transformation of bilinear form
   virtual void BilinearFormNaturalToMy(DenseMatrix& A) const;
@@ -44,7 +46,7 @@ class Basis_Normalized : public Basis {
   virtual void ChangeBasisMyToNatural(DenseVector& v) const;
   virtual void ChangeBasisNaturalToMy(DenseVector& v) const;
 
-  // Recover polynomial in regular basis
+  // recover polynomial in the natural basis
   virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                          int c, int order, DenseVector& coefs) const;
 

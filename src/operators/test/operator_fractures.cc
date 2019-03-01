@@ -71,7 +71,7 @@ void RunTest(int icase, bool gravity) {
     setnames.push_back("fracture 1");
     setnames.push_back("fracture 2");
 
-    surfmesh = Teuchos::rcp(new Mesh_MSTK(*mesh_mstk, setnames, AmanziMesh::FACE));
+    surfmesh = Teuchos::rcp(new Mesh_MSTK(&*mesh_mstk, setnames, AmanziMesh::FACE));
   } else {
     surfmesh = meshfactory("test/fractures.exo", gm);
   }

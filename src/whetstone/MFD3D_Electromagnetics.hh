@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -27,6 +27,7 @@
 #include "Mesh.hh"
 #include "Point.hh"
 
+#include "BilinearFormFactory.hh"
 #include "DenseMatrix.hh"
 #include "DeRham_Edge.hh"
 #include "MFD3D.hh"
@@ -38,7 +39,8 @@ namespace WhetStone {
 class MFD3D_Electromagnetics : public MFD3D,
                                public DeRham_Edge {
  public:
-  MFD3D_Electromagnetics(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+  MFD3D_Electromagnetics(const Teuchos::ParameterList& plist,
+                         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : MFD3D(mesh),
       InnerProduct(mesh) {};
   ~MFD3D_Electromagnetics() {};
@@ -50,8 +52,8 @@ class MFD3D_Electromagnetics : public MFD3D,
   using DeRham_Edge::MassMatrixInverse;
 
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
-  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
+  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override;
+  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
   // other methods
   int MassMatrixOptimized(int c, const Tensor& T, DenseMatrix& M);
@@ -69,6 +71,9 @@ class MFD3D_Electromagnetics : public MFD3D,
  private:
   int H1consistency2DExperimental_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
   int H1consistency3DExperimental_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
+
+ private:
+  static RegisteredFactory<MFD3D_Electromagnetics> factory_;
 };
 
 }  // namespace WhetStone

@@ -62,7 +62,7 @@ TEST(DARCY_TWO_FRACTURES) {
   setnames.push_back("fracture 2");
 
   RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh3D);
-  RCP<const Mesh> mesh = Teuchos::rcp(new Mesh_MSTK(*mesh_mstk, setnames, AmanziMesh::FACE));
+  RCP<const Mesh> mesh = Teuchos::rcp(new Mesh_MSTK(&*mesh_mstk, setnames, AmanziMesh::FACE));
 
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);

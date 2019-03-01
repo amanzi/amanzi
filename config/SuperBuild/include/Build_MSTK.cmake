@@ -20,20 +20,20 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
                          VERSION ${MSTK_VERSION_MAJOR} ${MSTK_VERSION_MINOR} ${MSTK_VERSION_PATCH})
 
 # --- Patch the original code
-#set(MSTK_patch_file mstk-findhdf5.patch)
-#set(MSTK_sh_patch ${MSTK_prefix_dir}/mstk-patch-step.sh)
-#configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/mstk-patch-step.sh.in
-#               ${MSTK_sh_patch}
-#               @ONLY)
+set(MSTK_patch_file mstk-cmake.patch)
+set(MSTK_sh_patch ${MSTK_prefix_dir}/mstk-patch-step.sh)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/mstk-patch-step.sh.in
+               ${MSTK_sh_patch}
+               @ONLY)
 
 # configure the CMake patch step
-#set(MSTK_cmake_patch ${MSTK_prefix_dir}/mstk-patch-step.cmake)
-#configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/mstk-patch-step.cmake.in
-#               ${MSTK_cmake_patch}
-#               @ONLY)
+set(MSTK_cmake_patch ${MSTK_prefix_dir}/mstk-patch-step.cmake)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/mstk-patch-step.cmake.in
+               ${MSTK_cmake_patch}
+               @ONLY)
 
 # set the patch command
-#set(MSTK_PATCH_COMMAND ${CMAKE_COMMAND} -P ${MSTK_cmake_patch})
+set(MSTK_PATCH_COMMAND ${CMAKE_COMMAND} -P ${MSTK_cmake_patch})
 
 # --- Define the configure parameters
 # compile flags
@@ -42,8 +42,6 @@ build_whitespace_string(mstk_cflags ${mstk_cflags_list})
 
 set(mstk_ldflags_list -L${TPL_INSTALL_PREFIX}/lib ${MPI_C_LIBRARIES})
 build_whitespace_string(mstk_ldflags ${mstk_ldflags_list})
-
-message(STATUS "JDM ----> PREFER_STATIC_LIBRARIES = ${PREFER_STATIC_LIBRARIES}")
 
 set(MSTK_CMAKE_CACHE_ARGS
 		    -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
@@ -63,7 +61,7 @@ set(MSTK_CMAKE_CACHE_ARGS
                     -DMETIS_MAJOR_VER:STRING=5
                     -DHDF5_DIR:PATH=${HDF5_DIR}
                     -DHDF5_INCLUDE_DIRS:PATH=${HDF5_INCLUDE_DIRS}
-		                -DHDF5_LIBRARIES:LIST=${HDF5_LIBRARIES}
+                    -DHDF5_LIBRARIES:LIST=${HDF5_LIBRARIES}
                     -DHDF5_NO_SYSTEM_PATHS:BOOL=TRUE
                     -DNetCDF_DIR:PATH=${NetCDF_DIR} 
                     -DExodusII_DIR:PATH=${TPL_INSTALL_PREFIX}/SEACAS
@@ -93,7 +91,7 @@ ExternalProject_Add(${MSTK_BUILD_TARGET}
                     URL_MD5       ${MSTK_MD5_SUM}                 # md5sum of the archive file
                     DOWNLOAD_NAME ${MSTK_SAVEAS_FILE}             # file name to store (if not end of URL)
                     # -- Patch 
-                    # PATCH_COMMAND ${MSTK_PATCH_COMMAND}
+                    PATCH_COMMAND ${MSTK_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR       ${MSTK_source_dir}           # Source directory
                     CMAKE_ARGS       -Wno-dev

@@ -9,46 +9,28 @@
         <Parameter name="high coordinate" type="Array(double)" value="{100.0,50.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Left Bottom">
+    <ParameterList name="Left">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{0.0,40.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Left Top">
-      <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0,40.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{0.0,50.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Right Bottom">
+    <ParameterList name="Right">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{100.0,0.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{100.0,20.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Right Middle">
-      <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{100.0,20.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{100.0,40.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Right Top">
-      <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{100.0,40.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{100.0,50.0}"/>
+    <ParameterList name="Top">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.0,50.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.3,1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom">
       <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
         <Parameter name="normal" type="Array(double)" value="{0.0,-1.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Top">
-      <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,50.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -81,8 +63,9 @@
               <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
               <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
               <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-              <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+              <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="gravity" type="bool" value="true"/>
+              <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -141,34 +124,14 @@
             <Parameter name="water retention model" type="string" value="van Genuchten"/>
             <Parameter name="van Genuchten alpha" type="double" value="0.000735"/>
             <Parameter name="van Genuchten m" type="double" value="0.31138"/>
-            <Parameter name="residual saturation" type="double" value="0.074"/>
+            <Parameter name="residual saturation" type="double" value="0.0"/>
           </ParameterList>
         </ParameterList>
 
         <ParameterList name="boundary conditions">
-          <ParameterList name="mass flux">
-            <ParameterList name="BC 0">
-              <Parameter name="regions" type="Array(string)" value="{Left Top, Right Top, Bottom}"/>
-              <Parameter name="spatial distribution method" type="string" value="none"/>
-              <ParameterList name="outward mass flux">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.0"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-            <ParameterList name="BC 1">
-              <Parameter name="regions" type="Array(string)" value="{Top}"/>
-              <Parameter name="spatial distribution method" type="string" value="none"/>
-              <ParameterList name="outward mass flux">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="-2.1076e-07"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
           <ParameterList name="static head">
-            <ParameterList name="BC 2">
-              <Parameter name="regions" type="Array(string)" value="{Left Bottom}"/>
+            <ParameterList name="BC 0">
+              <Parameter name="regions" type="Array(string)" value="{Left}"/>
               <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="static head">
                 <ParameterList name="function-static-head">
@@ -184,8 +147,8 @@
                 </ParameterList>
               </ParameterList>
             </ParameterList>
-            <ParameterList name="BC 3">
-              <Parameter name="regions" type="Array(string)" value="{Right Bottom}"/>
+            <ParameterList name="BC 1">
+              <Parameter name="regions" type="Array(string)" value="{Right}"/>
               <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="static head">
                 <ParameterList name="function-static-head">
@@ -203,14 +166,15 @@
             </ParameterList>
           </ParameterList>
           <ParameterList name="seepage face">
-            <ParameterList name="BC 4">
-              <Parameter name="regions" type="Array(string)" value="{Right Middle}"/>
+            <ParameterList name="BC 2">
+              <Parameter name="regions" type="Array(string)" value="{Top}"/>
               <Parameter name="spatial distribution method" type="string" value="none"/>
               <Parameter name="rainfall" type="bool" value="false"/>
               <Parameter name="submodel" type="string" value="PFloTran"/>
+              <Parameter name="flux threshold" type="double" value="0.01"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="0.0"/>
+                  <Parameter name="value" type="double" value="-2.1076e-07"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>
@@ -279,13 +243,40 @@
 
     <ParameterList name="initial conditions">
       <ParameterList name="fluid_density">
-        <Parameter name="value" type="double" value="1.0"/>
+        <Parameter name="value" type="double" value="998.0"/>
       </ParameterList>
       <ParameterList name="fluid_viscosity">
-        <Parameter name="value" type="double" value="1.0"/>
+        <Parameter name="value" type="double" value="1.002e-3"/>
       </ParameterList>
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="101325.0"/>
+      </ParameterList>
+      <ParameterList name="gravity">
+        <Parameter name="value" type="Array(double)" value="{0.0, -9.81}"/>
+      </ParameterList>
+
+      <ParameterList name="permeability">
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="function type" type="string" value="composite function"/>
+              <Parameter name="number of dofs" type="int" value="2"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1e-13"/>
+                </ParameterList>
+              </ParameterList>
+
+              <ParameterList name="dof 2 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1e-13"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>

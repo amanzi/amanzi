@@ -114,7 +114,7 @@ void ObservableAqueous::ComputeObservation(
   
   unit = "";
 
-  if ( variable_ == "volumetric water content") {
+  if (variable_ == "volumetric water content") {
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
       double vol = mesh_->cell_volume(c);
@@ -247,7 +247,7 @@ void ObservableAqueous::ComputeObservation(
   // fractures
   } else if (variable_ == "fractures aqueous volumetric flow rate") {
     const Epetra_MultiVector& darcy_flux = *S.GetFieldData("darcy_flux")->ViewComponent("face");
-    const Epetra_MultiVector& aperture = *S.GetFieldData("fracture_aperture")->ViewComponent("cell");
+    const Epetra_MultiVector& aperture = *S.GetFieldData("fracture-aperture")->ViewComponent("cell");
 
     if (obs_boundary_) {
       Amanzi::AmanziMesh::Entity_ID_List cells;
@@ -297,10 +297,10 @@ double ObservableAqueous::CalculateWaterTable_(State& S,
   // initilize and apply the reconstruction operator
   Teuchos::ParameterList plist;
   Operators::ReconstructionCell lifting(mesh_);
-  std::vector<AmanziGeometry::Point> gradient; 
 
   lifting.Init(pressure, plist);
-  lifting.ComputeGradient(ids, gradient);
+  lifting.ComputeGradient(ids);
+  const auto& gradient = *lifting.gradient(); 
 
   // set up extreme values for water table
   int dim = mesh_->space_dimension();
@@ -314,7 +314,7 @@ double ObservableAqueous::CalculateWaterTable_(State& S,
   for (int i = 0; i < ids.size(); i++) {
     int c = ids[i];
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    double pf, pc = (*pressure)[0][c];
+    double pc = (*pressure)[0][c];
     pref = pc;
 
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -323,8 +323,8 @@ double ObservableAqueous::CalculateWaterTable_(State& S,
       zmin = std::min(zmin, xf[dim - 1]);
       zmax = std::max(zmax, xf[dim - 1]);
 
-      double dp = gradient[i] * (xf - xc);
-      pf = pc + dp;
+      double pf = lifting.getValue(c, xf);
+      double dp = pf - pc;
 
       if ((pf - patm) * (pc - patm) <= 0.0) {
         if (fabs(dp) > 1e-8) {

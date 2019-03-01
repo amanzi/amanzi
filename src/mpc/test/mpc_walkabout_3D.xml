@@ -12,6 +12,15 @@
     </ParameterList>
   </ParameterList>
 
+  <ParameterList name="mesh">
+    <ParameterList name="unstructured">
+      <ParameterList name="expert">
+        <Parameter name="framework" type="string" value="MSTK"/>
+        <Parameter name="contiguous global ids" type="bool" value="false"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
   <ParameterList name="regions">
     <ParameterList name="Bottom Surface">
       <ParameterList name="region: box">

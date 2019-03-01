@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -15,9 +15,10 @@
 
 #include "Point.hh"
 
+#include "BilinearFormFactory.hh"
 #include "DenseMatrix.hh"
+#include "MFD3D_CrouzeixRaviart.hh"
 #include "MeshMaps_VEM.hh"
-#include "MFD3DFactory.hh"
 #include "Polynomial.hh"
 
 namespace Amanzi {
@@ -30,10 +31,10 @@ namespace WhetStone {
 void MeshMaps_VEM::VelocityCell(
     int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
-  Polynomial moments(d_, std::max(0, order_ - 2));
-
-  WhetStone::MFD3DFactory factory;
-  auto mfd = factory.CreateMFD3D(mesh0_, method_, order_);
+  Teuchos::ParameterList plist;
+  plist.set<std::string>("method", method_)
+       .set<int>("method order", order_);
+  auto mfd = BilinearFormFactory::Create(plist, mesh0_);
 
   vc.resize(d_);
 
@@ -47,10 +48,10 @@ void MeshMaps_VEM::VelocityCell(
       }
     
       if (projector_ == "H1") {
-        mfd->H1Cell(c, vvf, moments, vc[i]);
+        mfd->H1Cell(c, vvf, NULL, vc[i]);
       }
       else if (projector_ == "L2") {
-        mfd->L2Cell(c, vvf, moments, vc[i]);
+        mfd->L2Cell(c, vvf, NULL, vc[i]);
       }
     }
   }
@@ -71,20 +72,24 @@ void MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
     mesh0_->face_get_edges_and_dirs(f, &edges, &dirs);
     int nedges = edges.size();
 
+    Teuchos::ParameterList plist;
+    plist.set<std::string>("method", method_)
+         .set<int>("method order", order_);
+    auto mfd = BilinearFormFactory::Create(plist, mesh0_);
+    mfd->set_order(order_);
+
     VectorPolynomial v;
-    std::vector<VectorPolynomial> ve;
+    std::vector<Polynomial> ve;
 
-    for (int n = 0; n < nedges; ++n) {
-      int e = edges[n];
-      VelocityEdge_(e, v);
-      ve.push_back(v);
+    for (int i = 0; i < d_; ++i) {
+      for (int n = 0; n < nedges; ++n) {
+        int e = edges[n];
+        VelocityEdge_(e, v);
+        ve.push_back(v[i]);
+      }
+
+      mfd->H1Face(f, ve, NULL, vf[i]);
     }
-
-    MFD3D_CrouzeixRaviart mfd(mesh0_);
-    mfd.set_order(order_);
-
-    AmanziGeometry::Point p0(mesh1_->face_centroid(f) - mesh0_->face_centroid(f));
-    mfd.H1Face(f, p0, ve, vf);
   }
 }
 

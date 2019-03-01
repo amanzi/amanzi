@@ -21,24 +21,26 @@
 // Amanzi
 #include "CompositeVector.hh"
 #include "DenseVector.hh"
-#include "DiffusionPhase.hh"
-#include "MaterialProperties.hh"
+#include "Key.hh"
+#include "LimiterCell.hh"
 #include "PK.hh"
-#include "PK_PhysicalExplicit.hh"
+#include "PK_Explicit.hh"
 #include "PK_Factory.hh"
+#include "PK_PhysicalExplicit.hh"
 #include "ReconstructionCell.hh"
 #include "State.hh"
 #include "Tensor.hh"
 #include "Units.hh"
 #include "VerboseObject.hh"
-#include "PK_Explicit.hh"
 
 #ifdef ALQUIMIA_ENABLED
 #include "Alquimia_PK.hh"
 #include "ChemistryEngine.hh"
 #endif
 
-// Transport
+// Amanzi::Transport
+#include "DiffusionPhase.hh"
+#include "MaterialProperties.hh"
 #include "MDMPartition.hh"
 #include "MultiscaleTransportPorosityPartition.hh"
 #include "TransportDefs.hh"
@@ -184,6 +186,7 @@ class Transport_PK : public PK_PhysicalExplicit<Epetra_Vector> {
   Teuchos::RCP<TreeVector> soln_;
  
  private:
+  Key domain_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<State> S_;
   std::string passwd_;
@@ -210,6 +213,7 @@ class Transport_PK : public PK_PhysicalExplicit<Epetra_Vector> {
 
   int current_component_;  // data for lifting
   Teuchos::RCP<Operators::ReconstructionCell> lifting_;
+  Teuchos::RCP<Operators::LimiterCell> limiter_;
 
   std::vector<Teuchos::RCP<TransportDomainFunction> > srcs_;  // Sources and sinks
   std::vector<Teuchos::RCP<TransportDomainFunction> > bcs_;
@@ -250,6 +254,12 @@ class Transport_PK : public PK_PhysicalExplicit<Epetra_Vector> {
  
   std::vector<std::string> component_names_;  // details of components
   int num_aqueous, num_gaseous;
+
+  // names of state fields 
+  Key tcc_key_;
+  Key darcy_flux_key_, porosity_key_, transport_porosity_key_, permeability_key_;
+  Key saturation_liquid_key_, prev_saturation_liquid_key_;
+  Key water_content_key_, prev_water_content_key_;
 
   // io
   Utils::Units units_;

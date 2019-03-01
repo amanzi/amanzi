@@ -1,24 +1,12 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
 
-  <!--  REGIONS  -->
-  <ParameterList name="regions">
-    <ParameterList name="Left side">
-      <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{-1.0,0.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Right side">
-      <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,1.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{1.0,0.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Top surface">
-      <ParameterList name="region: plane">
-        <Parameter name="point" type="Array(double)" value="{0.0,1.0}"/>
-        <Parameter name="normal" type="Array(double)" value="{0.0,1.0}"/>
+  <!-- MESH -->
+  <ParameterList name="mesh">
+    <ParameterList name="unstructured">
+      <ParameterList name="expert">
+        <Parameter name="framework" type="string" value="MSTK"/>
+        <Parameter name="partitioner" type="string" value="zoltan_rcb"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -26,13 +14,25 @@
   <!-- MAPS -->
   <ParameterList name="maps">
     <Parameter name="method" type="string" value="Lagrange serendipity"/>
-    <Parameter name="method order" type="int" value="1"/>
+    <Parameter name="method order" type="int" value="2"/>
     <Parameter name="projector" type="string" value="H1"/>
     <Parameter name="map name" type="string" value="VEM"/>
   </ParameterList>
 
+  <!-- LIMITER -->
+  <ParameterList name="limiter">
+    <Parameter name="limiter" type="string" value="none"/>
+    <Parameter name="polynomial order" type="int" value="1"/>
+    <Parameter name="limiter extension for transport" type="bool" value="false"/>
+    <Parameter name="limiter stencil" type="string" value="cell to closest cells"/>
+    <Parameter name="smoothness indicator" type="string" value="high order term"/>
+    <Parameter name="limiter points" type="int" value="1"/>
+  </ParameterList>
+
   <!--  OPERATORS: dual formulation -->
   <ParameterList name="PK operator">
+    <Parameter name="boundary conditions" type="string" value="none"/>
+    <Parameter name="jacobian determinant method" type="string" value="VEM"/>
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
     <ParameterList name="flux operator">

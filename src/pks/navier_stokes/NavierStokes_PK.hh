@@ -22,6 +22,7 @@
 
 // Amanzi
 #include "BDF1_TI.hh"
+#include "Key.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_Abstract.hh"
 #include "PDE_Elasticity.hh"
@@ -151,6 +152,7 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   std::string solver_name_;
  
  private:
+  Key domain_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<State> S_;
   std::string passwd_;

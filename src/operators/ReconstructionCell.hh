@@ -7,6 +7,9 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  At the moment, we require the input field to have valid values
+  in ghost cells. 
 */
 
 #ifndef AMANZI_RECONSTRUCTION_CELL_HH_
@@ -32,10 +35,8 @@ namespace Operators {
 
 class ReconstructionCell : public Reconstruction {  
  public:
-  ReconstructionCell() : flux_(Teuchos::null) {};
-  ReconstructionCell(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) 
-    : flux_(Teuchos::null),
-      Reconstruction(mesh) {};
+  ReconstructionCell() {};
+  ReconstructionCell(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : Reconstruction(mesh) {};
   ~ReconstructionCell() {};
 
   // save pointer to the already distributed field.
@@ -44,85 +45,28 @@ class ReconstructionCell : public Reconstruction {
 
   // unlimited gradient
   // -- compute gradient and keep it internally
-  virtual void ComputeGradient() override;
+  virtual void ComputeGradient() override {
+    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+    AmanziMesh::Entity_ID_List ids(ncells_wghost);
+    for (int c = 0; c < ncells_wghost; ++c) ids[c] = c;
+    ComputeGradient(ids);
+  }
 
   // -- compute gradient only in specified cells
-  void ComputeGradient(const AmanziMesh::Entity_ID_List& ids,
-                       std::vector<AmanziGeometry::Point>& gradient);
+  void ComputeGradient(const AmanziMesh::Entity_ID_List& ids);
 
-  // limited gradient
-  // -- identify inflow boundaries (optional)
-  void InitLimiter(Teuchos::RCP<const Epetra_MultiVector> flux);
-
-  // -- limit gradient using boundary data
-  virtual void ApplyLimiter(const std::vector<int>& bc_model,
-                            const std::vector<double>& bc_value) override;
-
-  // -- apply external limiter 
-  virtual void ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter) override;
-
-  // -- apply limiter in specified cells
-  void ApplyLimiter(AmanziMesh::Entity_ID_List& ids,
-                    std::vector<AmanziGeometry::Point>& gradient);
-
-  // polynomial values
-  // -- calculate value of a reconstructed function at given point p
-  virtual double getValue(int c, const AmanziGeometry::Point& p) override;
-  double getValue(AmanziGeometry::Point& gradient, int c, const AmanziGeometry::Point& p);
+  // calculate value of a linear function at point p
+  double getValue(int c, const AmanziGeometry::Point& p);
+  double getValue(const AmanziGeometry::Point& gradient, int c, const AmanziGeometry::Point& p);
 
   // access
   Teuchos::RCP<CompositeVector> gradient() { return gradient_; }
-  Teuchos::RCP<Epetra_Vector> limiter() { return limiter_; }
 
-  // modifiers
-  void set_gradient(const Teuchos::RCP<CompositeVector>& gradient) { gradient_ = gradient; }
- 
  private:
   void PopulateLeastSquareSystem_(AmanziGeometry::Point& centroid,
                                   double field_value,
                                   WhetStone::DenseMatrix& matrix,
                                   WhetStone::DenseVector& rhs);
-
-  // internal limiters and supporting routines
-  void LimiterBarthJespersen_(
-      const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-      Teuchos::RCP<Epetra_Vector> limiter);
-
-  void LimiterTensorial_(
-      const std::vector<int>& bc_model, const std::vector<double>& bc_value);
-
-  void LimiterKuzmin_(
-      const std::vector<int>& bc_model, const std::vector<double>& bc_value);
-
-  void LimiterKuzminSet_(AmanziMesh::Entity_ID_List& ids,
-                         std::vector<AmanziGeometry::Point>& gradient);
-
-  void LimiterKuzminCell_(int cell,
-                          AmanziGeometry::Point& gradient_c,
-                          const std::vector<double>& field_node_min_c,
-                          const std::vector<double>& field_node_max_c);
-
-  void CalculateDescentDirection_(std::vector<AmanziGeometry::Point>& normals,
-                                  AmanziGeometry::Point& normal_new,
-                                  double& L22normal_new, 
-                                  AmanziGeometry::Point& direction);
-
-  void ApplyDirectionalLimiter_(AmanziGeometry::Point& normal, 
-                                AmanziGeometry::Point& p,
-                                AmanziGeometry::Point& direction, 
-                                AmanziGeometry::Point& gradient);
-
-  void IdentifyUpwindCells_();
-
-  void LimiterExtensionTransportTensorial_(
-      const std::vector<double>& field_local_min, const std::vector<double>& field_local_max);
-
-  void LimiterExtensionTransportKuzmin_(
-      const std::vector<double>& field_local_min, const std::vector<double>& field_local_max);
-
-  void LimiterExtensionTransportBarthJespersen_(
-      const std::vector<double>& field_local_min, const std::vector<double>& field_local_max,
-      Teuchos::RCP<Epetra_Vector> limiter);
 
   // On intersecting manifolds, we extract neighboors living in the same manifold
   // using a smoothness criterion.
@@ -130,22 +74,8 @@ class ReconstructionCell : public Reconstruction {
                                     AmanziMesh::Parallel_type ptype,
                                     std::vector<AmanziMesh::Entity_ID>& cells) const;
  private:
-  int dim;
-  int ncells_owned, nfaces_owned, nnodes_owned;
-  int ncells_wghost, nfaces_wghost, nnodes_wghost;
-  int cell_max_nodes;
-
+  int dim, poly_order_;
   Teuchos::RCP<CompositeVector> gradient_;
-  Teuchos::RCP<Epetra_Vector> limiter_;
-
- private: 
-  Teuchos::RCP<const Epetra_MultiVector> flux_;  // for limiters
-  std::vector<std::vector<int> > upwind_cells_;  // fracture friendly 
-  std::vector<std::vector<int> > downwind_cells_;
-
-  double bc_scaling_;
-  int limiter_id_, poly_order_;
-  bool limiter_correction_;
 };
 
 }  // namespace Operators

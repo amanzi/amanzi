@@ -43,6 +43,9 @@ EnergyOnePhase_PK::EnergyOnePhase_PK(
   // We also need miscaleneous sublists
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   ti_list_ = Teuchos::sublist(ep_list_, "time integrator");
+   
+  // domain name
+  domain_ = ep_list_->get<std::string>("domain name", "domain");
 };
 
 
@@ -99,7 +102,7 @@ void EnergyOnePhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   Energy_PK::Initialize(S);
 
   // Create pointers to the primary flow field pressure.
-  solution = S->GetFieldData("temperature", passwd_);
+  solution = S->GetFieldData(temperature_key_, passwd_);
   soln_->SetData(solution); 
 
   // Create local evaluators. Initialize local fields.
@@ -195,7 +198,7 @@ bool EnergyOnePhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   dt_ = t_new - t_old;
 
   // save a copy of pressure
-  CompositeVector temperature_copy(*S_->GetFieldData("temperature", passwd_));
+  CompositeVector temperature_copy(*S_->GetFieldData(temperature_key_, passwd_));
 
   // swap conserved field (i.e., energy) and save
   S_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_.ptr(), passwd_);
@@ -222,7 +225,7 @@ bool EnergyOnePhase_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     dt_ = dt_next_;
 
     // restore the original primary solution, temperature
-    *S_->GetFieldData("temperature", passwd_) = temperature_copy;
+    *S_->GetFieldData(temperature_key_, passwd_) = temperature_copy;
     temperature_eval_->SetFieldAsChanged(S_.ptr());
 
     // restore the original fields

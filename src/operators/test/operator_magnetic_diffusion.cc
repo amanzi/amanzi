@@ -503,7 +503,7 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
     sol_e.PutScalar(0.0);
 
     double avgE(0.0);
-    WhetStone::MFD3D_Electromagnetics mfd(mesh); 
+    WhetStone::MFD3D_Electromagnetics mfd(plist, mesh); 
     WhetStone::Tensor Ic(3, 1);
     Ic(0, 0) = 1.0;
 

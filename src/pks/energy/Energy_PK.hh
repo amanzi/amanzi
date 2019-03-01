@@ -20,6 +20,7 @@
 
 // Amanzi
 #include "CompositeVector.hh"
+#include "Key.hh"
 #include "Operator.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_AdvectionUpwind.hh"
@@ -102,6 +103,7 @@ class Energy_PK : public PK_PhysicalBDF {
   int nfaces_owned, nfaces_wghost;
 
  protected:
+  Key domain_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim;
 
@@ -115,7 +117,8 @@ class Energy_PK : public PK_PhysicalBDF {
   std::string passwd_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> temperature_eval_;
 
-  // keys
+  // names of state fields 
+  Key temperature_key_;
   Key energy_key_, prev_energy_key_;
   Key enthalpy_key_;
   Key conductivity_key_;

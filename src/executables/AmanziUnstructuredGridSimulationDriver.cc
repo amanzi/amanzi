@@ -34,6 +34,7 @@
 #include "State.hh"
 #include "TimerManager.hh"
 
+#include "bilinear_form_registration.hh"
 #include "dbc.hh"
 #include "energy_tcm_registration.hh"
 #include "energy_iem_registration.hh"
@@ -123,20 +124,17 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   Amanzi::timer_manager.add("Mesh creation",Amanzi::Timer::ONCE);
   Amanzi::timer_manager.start("Mesh creation");
 
-  // Create a verbose object to pass to the mesh_factory and mesh
-  Teuchos::ParameterList mesh_params = plist_->sublist("mesh");
-
-  auto mesh_vo = Teuchos::rcp(new Amanzi::VerboseObject("Mesh", mesh_params));
-
   // Create a mesh factory for this geometric model
-  Amanzi::AmanziMesh::MeshFactory factory(comm, mesh_vo);
+  auto mesh_params = Teuchos::sublist(plist_, "mesh", true);
+  auto mesh_vo = Teuchos::rcp(new Amanzi::VerboseObject("Mesh", *mesh_params));
+  Amanzi::AmanziMesh::MeshFactory factory(comm, mesh_params);
 
   // Prepare to read/create the mesh specification
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
   // Make sure the unstructured mesh option was chosen
   ierr = 0;
-  bool unstructured_option = mesh_params.isSublist("unstructured");
+  bool unstructured_option = mesh_params->isSublist("unstructured");
 
   if (!unstructured_option) {
     std::cerr << "Unstructured simulator invoked for structured mesh request" << std::endl;
@@ -144,7 +142,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   }
 
   // Read and initialize the unstructured mesh parameters
-  Teuchos::ParameterList unstr_mesh_params = mesh_params.sublist("unstructured");
+  Teuchos::ParameterList unstr_mesh_params = mesh_params->sublist("unstructured");
 
   // Decide on which mesh framework to use
   bool expert_params_specified = unstr_mesh_params.isSublist("expert");

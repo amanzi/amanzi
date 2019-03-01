@@ -26,7 +26,7 @@ namespace Amanzi {
 /* ******************************************************************
 * Create parameter list with the given verbosity.
 ****************************************************************** */
-VerboseObject::VerboseObject(std::string name, const std::string& verbosity)
+VerboseObject::VerboseObject(const std::string& name, const std::string& verbosity)
 {
   setDefaultVerbLevel(global_default_level);
   set_name(name);
@@ -46,12 +46,11 @@ VerboseObject::VerboseObject(std::string name, const std::string& verbosity)
 /* ******************************************************************
 * Read verbosity from a parameter list
 ****************************************************************** */
-VerboseObject::VerboseObject(std::string name, Teuchos::ParameterList& plist)
+VerboseObject::VerboseObject(const std::string& name, Teuchos::ParameterList plist)
 {
+  // Options from ParameterList
   // Set up the default level.
   setDefaultVerbLevel(global_default_level);
-
-  // Options from ParameterList
 
   // -- Set up the VerboseObject header.
   std::string headername(name);
@@ -78,10 +77,11 @@ VerboseObject::VerboseObject(std::string name, Teuchos::ParameterList& plist)
 }
 
 
-VerboseObject::VerboseObject(const Epetra_Comm& comm, std::string name,
-                             Teuchos::ParameterList& plist) :
+VerboseObject::VerboseObject(const Epetra_Comm& comm, const std::string& name,
+                             Teuchos::ParameterList plist) :
     comm_(Teuchos::rcp(comm.Clone()))
 {
+  // Options from ParameterList
   int root = -1;
   // Check if we are in the mode of writing only a specific rank.
   if (plist.sublist("verbose object").isParameter("write on rank")) {
@@ -142,7 +142,7 @@ VerboseObject::VerboseObject(const Epetra_Comm& comm, std::string name,
 }
 
 
-void VerboseObject::set_name(std::string name)
+void VerboseObject::set_name(const std::string& name)
 {
   std::string header(name);
   if (header.size() > line_prefix_size) {
@@ -154,7 +154,7 @@ void VerboseObject::set_name(std::string name)
 }
 
 
-std::string VerboseObject::color(std::string name) const
+std::string VerboseObject::color(const std::string& name) const
 { 
   std::string output("");
 #ifdef __linux

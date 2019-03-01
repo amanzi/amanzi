@@ -13,8 +13,10 @@
   to do the I/O.
 */
 
-#include "IOEvent.hh"
+#include "dbc.hh"
+#include "errors.hh"
 #include "TimeStepManager.hh"
+#include "IOEvent.hh"
 
 namespace Amanzi {
 
@@ -22,7 +24,9 @@ namespace Amanzi {
 // Standard constructor.
 // -----------------------------------------------------------------------------
 IOEvent::IOEvent(Teuchos::ParameterList& plist) :
-    plist_(plist), disabled_(false) {
+    plist_(plist),
+    disabled_(false),
+    units_() {
   ReadParameters_();
 };
 
@@ -30,9 +34,12 @@ IOEvent::IOEvent(Teuchos::ParameterList& plist) :
 // -----------------------------------------------------------------------------
 // Constructor for a disabled Event.
 // -----------------------------------------------------------------------------
-IOEvent::IOEvent(): disabled_(true) {};
+IOEvent::IOEvent(): disabled_(true), units_() {};
 
 
+// -----------------------------------------------------------------------------
+// Set flag to not act.
+// -----------------------------------------------------------------------------
 bool IOEvent::is_disabled() const { return disabled_; }
 void IOEvent::disable(bool disabled) { disabled_ = disabled; }
 
@@ -60,6 +67,10 @@ bool IOEvent::DumpRequested(int cycle, double time) const {
   return DumpRequested(cycle) || DumpRequested(time);
 }
 
+
+// -----------------------------------------------------------------------------
+// Does vis need to dump the state by cycle?
+// -----------------------------------------------------------------------------
 bool IOEvent::DumpRequested(int cycle) const {
   if (!is_disabled()) {
     if (cycles_.size() > 0) {
@@ -85,6 +96,9 @@ bool IOEvent::DumpRequested(int cycle) const {
   return false;
 }
 
+// -----------------------------------------------------------------------------
+// Does vis need to dump the state by time?
+// -----------------------------------------------------------------------------
 bool IOEvent::DumpRequested(double time) const {
   if (!is_disabled()) {
     if (times_.size() > 0) {
@@ -108,6 +122,9 @@ bool IOEvent::DumpRequested(double time) const {
 }
 
 
+// -----------------------------------------------------------------------------
+// Parse the parameter list and init.
+// -----------------------------------------------------------------------------
 void IOEvent::ReadParameters_() {
   if (plist_.isParameter("cycles start period stop") ) {
     cycles_sps_.push_back(plist_.get<Teuchos::Array<int> >("cycles start period stop"));
@@ -131,7 +148,16 @@ void IOEvent::ReadParameters_() {
   }
 
   if (plist_.isParameter("times start period stop")) {
-    times_sps_.push_back(plist_.get<Teuchos::Array<double> >("times start period stop"));
+    auto times_sps = plist_.get<Teuchos::Array<double> >("times start period stop");
+
+    // convert units
+    auto my_units = plist_.get<std::string>("times start period stop units", "s");
+    ValidUnitOrThrow_(my_units);
+    bool success;
+    for (auto& time : times_sps) time = time >= 0. ? units_.ConvertTime(time, my_units, "s", success) : -1.;
+    AMANZI_ASSERT(success);
+
+    times_sps_.push_back(times_sps);
   }
 
   done = false;
@@ -140,7 +166,17 @@ void IOEvent::ReadParameters_() {
     std::stringstream pname;
     pname << "times start period stop " << count;
     if (plist_.isParameter(pname.str())) {
-      times_sps_.push_back(plist_.get<Teuchos::Array<double> >(pname.str()));
+      auto times_sps = plist_.get<Teuchos::Array<double> >(pname.str());
+
+      // convert units
+      pname << " units";
+      auto my_units = plist_.get<std::string>(pname.str(), "s");
+      ValidUnitOrThrow_(my_units);
+      bool success;
+      for (auto& time : times_sps) time = time >= 0. ? units_.ConvertTime(time, my_units, "s", success) : -1.;
+      AMANZI_ASSERT(success);
+
+      times_sps_.push_back(times_sps);
       count++;
     } else {
       done = true;
@@ -149,7 +185,27 @@ void IOEvent::ReadParameters_() {
 
   if (plist_.isParameter("times")) {
     times_ = plist_.get<Teuchos::Array<double> >("times");
+
+    // convert units
+    auto my_units = plist_.get<std::string>("times units", "s");
+    ValidUnitOrThrow_(my_units);
+    bool success;
+    for (auto& time : times_) time = units_.ConvertTime(time, my_units, "s", success);
+    AMANZI_ASSERT(success);
   }
 }
+
+
+// -----------------------------------------------------------------------------
+// Check a user-provided unit string and throw if it is not a valid time unit.
+// -----------------------------------------------------------------------------
+void IOEvent::ValidUnitOrThrow_(const std::string& my_units) {
+  if (!units_.IsValidTime(my_units)) {
+    Errors::Message msg;
+    msg << "IOEvent: unknown time units type: \"" << my_units << "\"  Valid are: " << units_.ValidTimeStrings();
+    Exceptions::amanzi_throw(msg);
+  }  
+}
+
 
 } // namespace Amanzi

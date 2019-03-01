@@ -24,8 +24,8 @@ namespace Flow {
 DarcyVelocityEvaluator::DarcyVelocityEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   // hard-coded keys
-  my_key_ = std::string("darcy_velocity");
-  darcy_flux_key_ = std::string("darcy_flux");
+  my_key_ = plist.get<std::string>("darcy velocity key");
+  darcy_flux_key_ = plist.get<std::string>("darcy flux key");
   dependencies_.insert(darcy_flux_key_);
 }
 
@@ -52,32 +52,34 @@ Teuchos::RCP<FieldEvaluator> DarcyVelocityEvaluator::Clone() const {
 void DarcyVelocityEvaluator::EvaluateField_(
     const Teuchos::Ptr<State>& S, const Teuchos::Ptr<CompositeVector>& result) 
 {
+  Key domain = plist_.get<std::string>("domain name");
   S->GetFieldData(darcy_flux_key_)->ScatterMasterToGhosted("face");
 
   const Epetra_MultiVector& flux = *S->GetFieldData(darcy_flux_key_)->ViewComponent("face");
   Epetra_MultiVector& result_c = *(result->ViewComponent("cell", false));
 
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh();
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh(domain);
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int dim = mesh->space_dimension();
 
   WhetStone::MFD3D_Diffusion mfd(mesh);
 
-  AmanziGeometry::Point gradient(dim);
+  WhetStone::Polynomial gradient(dim, 1);
   AmanziMesh::Entity_ID_List faces;
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh->cell_get_faces(c, &faces);
     int nfaces = faces.size();
-    std::vector<double> solution(nfaces);
+    std::vector<WhetStone::Polynomial> solution(nfaces);
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      solution[n] = flux[0][f];
+      solution[n].Reshape(dim, 0);
+      solution[n](0) = flux[0][f];
     }
   
-    mfd.RecoverGradient_MassMatrix(c, solution, gradient);
-    for (int i = 0; i < dim; i++) result_c[i][c] = -gradient[i];
+    mfd.L2Cell(c, solution, NULL, gradient);
+    for (int i = 0; i < dim; i++) result_c[i][c] = -gradient(i + 1);
   }
 }
 

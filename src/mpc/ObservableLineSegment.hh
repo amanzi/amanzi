@@ -5,7 +5,6 @@
 #include "RegionPlane.hh"
 #include "RegionPolygon.hh"
 #include "RegionLineSegment.hh"
-#include "ReconstructionCell.hh"
 #include "Units.hh"
 
 namespace Amanzi{

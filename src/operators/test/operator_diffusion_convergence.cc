@@ -53,8 +53,7 @@ std::pair<double, double> RunForwardProblem(const std::string& discretization,
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   
   // create a mesh
-  Teuchos::RCP<Mesh> mesh =
-      Teuchos::rcp(new Mesh_MSTK(0.,0.,1.,1.,nx,ny, &comm));
+  Teuchos::RCP<Mesh> mesh = Teuchos::rcp(new Mesh_MSTK(0.,0.,1.,1.,nx,ny, &comm));
   
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
@@ -146,9 +145,7 @@ std::pair<double, double> RunForwardProblem(const std::string& discretization,
     Epetra_MultiVector& u_f = *u.ViewComponent("boundary_face",false);
 
     for (int bf = 0; bf != nboundary_faces; ++bf) {
-      int f = mesh->face_map(false).LID(
-          mesh->exterior_face_map(false).GID(bf));
-
+      int f = mesh->face_map(false).LID(mesh->exterior_face_map(false).GID(bf));
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
       u_f[0][f] = ana.pressure_exact(xf, 0.0);
     }

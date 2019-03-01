@@ -111,10 +111,27 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
     }
   }
 
+  // high-order transport
+  // -- defaults
   Teuchos::ParameterList& trp_lift = out_list.sublist("reconstruction");
   trp_lift.set<int>("polynomial order", poly_order);
   trp_lift.set<std::string>("limiter", "tensorial");
   trp_lift.set<bool>("limiter extension for transport", true);
+  trp_lift.set<std::string>("limiter stencil", "face to cells");
+
+  // -- overwrite data from expert parameters  
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_transport_controls, limiter", flag);
+  if (flag) {
+    std::string limiter = GetTextContentS_(node, "tensorial, Kuzmin, Barth-Jespersen");
+    trp_lift.set<std::string>("limiter", limiter);
+  }
+
+  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_transport_controls, limiter_stencil", flag);
+  if (flag) {
+    std::string stencil = GetTextContentS_(node, "node-to-cells, face-to-cells, cell-to-closest-cells");
+    std::replace(stencil.begin(), stencil.end(), '-', ' ');
+    trp_lift.set<std::string>("limiter stencil", stencil);
+  }
 
   // check if we need to write a dispersivity sublist
   bool dispersion = doc_->getElementsByTagName(mm.transcode("dispersion_tensor"))->getLength() > 0;

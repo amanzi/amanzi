@@ -133,9 +133,7 @@ void AnalyticDGBase::InitialGuess(
     Amanzi::WhetStone::DenseVector data = coefs.coefs();
     basis.ChangeBasisNaturalToMy(data);
 
-    for (int n = 0; n < data.NumRows(); ++n) {
-      p[n][c] = data(n);
-    }
+    for (int n = 0; n < data.NumRows(); ++n) p[n][c] = data(n);
   }
 }
 
@@ -198,7 +196,7 @@ void AnalyticDGBase::ComputeCellError(
     std::vector<const Amanzi::WhetStone::WhetStoneFunction*> funcs(2);
     funcs[0] = &poly_err;
     funcs[1] = &poly_err;
-    l2_int += numi.IntegrateFunctionsTrianglatedCell(c, funcs, 2 * order_);
+    l2_int += numi.IntegrateFunctionsTriangulatedCell(c, funcs, 2 * order_);
   }
 #ifdef HAVE_MPI
   GlobalOp("sum", &pnorm, 1);
@@ -216,7 +214,8 @@ void AnalyticDGBase::ComputeCellError(
 
 
 /* ******************************************************************
-* Error for cell-based fields
+* Error for cell-based fields in original coordinates (p_location=0)
+* or Lagrangian coordinates (p_location=1)
 ****************************************************************** */
 inline
 void AnalyticDGBase::ComputeCellErrorRemap(
@@ -257,21 +256,19 @@ void AnalyticDGBase::ComputeCellErrorRemap(
     inf0_err = std::max(inf0_err, fabs(err));
     l20_err += err * err * volume;
 
-    if (nk > 1) {
-      Amanzi::AmanziGeometry::Point v0(d_), v1(d_);
-      Amanzi::AmanziMesh::Entity_ID_List nodes;
+    Amanzi::AmanziGeometry::Point v0(d_), v1(d_);
+    Amanzi::AmanziMesh::Entity_ID_List nodes;
 
-      mesh0->cell_get_nodes(c, &nodes);
-      int nnodes = nodes.size();  
-      for (int i = 0; i < nnodes; ++i) {
-        mesh0->node_get_coordinates(nodes[i], &v0);
-        mesh1->node_get_coordinates(nodes[i], &v1);
-        if (p_location == 1) v0 = v1;
+    mesh0->cell_get_nodes(c, &nodes);
+    int nnodes = nodes.size();  
+    for (int i = 0; i < nnodes; ++i) {
+      mesh0->node_get_coordinates(nodes[i], &v0);
+      mesh1->node_get_coordinates(nodes[i], &v1);
+      if (p_location == 1) v0 = v1;
 
-        double tmp = poly.Value(v0) - SolutionExact(v1, t);
-        inf_err = std::max(inf_err, fabs(tmp));
-        l2_err += tmp * tmp * volume / nnodes;
-      }
+      double tmp = poly.Value(v0) - SolutionExact(v1, t);
+      inf_err = std::max(inf_err, fabs(tmp));
+      l2_err += tmp * tmp * volume / nnodes;
     }
   }
 
@@ -280,6 +277,7 @@ void AnalyticDGBase::ComputeCellErrorRemap(
   GlobalOp("sum", &l2_err, 1);
   GlobalOp("sum", &l20_err, 1);
   GlobalOp("max", &inf_err, 1);
+  GlobalOp("max", &inf0_err, 1);
 #endif
   pnorm = sqrt(pnorm);
   l2_err = sqrt(l2_err);

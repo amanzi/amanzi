@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -26,6 +26,7 @@
 #include "Mesh.hh"
 #include "Point.hh"
 
+#include "BilinearFormFactory.hh"
 #include "DenseMatrix.hh"
 #include "DeRham_Face.hh"
 #include "Tensor.hh"
@@ -37,8 +38,13 @@ namespace WhetStone {
 class MFD3D_Diffusion : public MFD3D,
                         public DeRham_Face { 
  public:
-  explicit MFD3D_Diffusion(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : MFD3D(mesh), 
+  // constructor for backward compatibility
+  MFD3D_Diffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : MFD3D(mesh),
+      InnerProduct(mesh) {};
+  MFD3D_Diffusion(const Teuchos::ParameterList& plist,
+                  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : MFD3D(mesh),
       InnerProduct(mesh) {};
   ~MFD3D_Diffusion() {};
 
@@ -47,15 +53,15 @@ class MFD3D_Diffusion : public MFD3D,
   //    but we have to tell compiler a proper member function
   using DeRham_Face::MassMatrix;
 
-  // -- inverse mass matrix is adjusted to reflect scaling of fluxes by area
-  virtual int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W); 
+  // -- inverse mass matrix is modified to reflect scaling of fluxes by area
+  virtual int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W) override; 
 
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac);
-  virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A);
+  virtual int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac) override;
+  virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A) override;
 
   // -- divergence matrix
-  virtual int DivergenceMatrix(int c, DenseMatrix& A);
+  virtual int DivergenceMatrix(int c, DenseMatrix& A) override;
 
   // other mimetic methods
   // -- bad consistency conditions (flux is scaled by area)
@@ -87,17 +93,15 @@ class MFD3D_Diffusion : public MFD3D,
   int L2consistencyInverseSurface(int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc);
   int MassMatrixInverseSurface(int c, const Tensor& K, DenseMatrix& W);
 
-  // other related discetization methods
+  // -- other related discetization methods
   int MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W);
   int MassMatrixInverseTPFA(int c, const Tensor& K, DenseMatrix& W);
   int MassMatrixInverseDiagonal(int c, const Tensor& K, DenseMatrix& W);
 
-  // a posteriori error estimate
-  int RecoverGradient_MassMatrix(int c, const std::vector<double>& solution, 
-                                 AmanziGeometry::Point& gradient);
-
-  int RecoverGradient_StiffnessMatrix(int c, const std::vector<double>& solution, 
-                                      AmanziGeometry::Point& gradient);
+  // -- projectors
+  //    we return linear polynomial instead of constant vector polynomial (FIXME)
+  virtual void L2Cell(int c, const std::vector<Polynomial>& vf,
+                      const Polynomial* moments, Polynomial& vc) override;
 
   // utils
   double Transmissibility(int f, int c, const Tensor& K);
@@ -111,6 +115,9 @@ class MFD3D_Diffusion : public MFD3D,
   // mesh extension methods 
   // -- exterior normal
   AmanziGeometry::Point mesh_face_normal(int f, int c);
+
+ private:
+  static RegisteredFactory<MFD3D_Diffusion> factory_;
 };
 
 }  // namespace WhetStone

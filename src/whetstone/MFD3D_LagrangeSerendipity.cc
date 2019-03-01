@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -30,6 +30,19 @@
 
 namespace Amanzi {
 namespace WhetStone {
+
+/* ******************************************************************
+* Constructor parses the parameter list
+****************************************************************** */
+MFD3D_LagrangeSerendipity::MFD3D_LagrangeSerendipity(
+    const Teuchos::ParameterList& plist,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+  : InnerProduct(mesh),
+    MFD3D_Lagrange(plist, mesh)
+{
+  order_ = plist.get<int>("method order");
+}
+
 
 /* ******************************************************************
 * High-order consistency condition for the stiffness matrix. 
@@ -71,7 +84,7 @@ int MFD3D_LagrangeSerendipity::H1consistency(
 
   // selecting regularized basis
   Basis_Regularized basis;
-  basis.Init(mesh_, c, order_);
+  basis.Init(mesh_, AmanziMesh::CELL, c, order_, integrals_.poly());
 
   // Dot-product matrix for polynomials and Laplacian of polynomials
   DenseMatrix M(nd, nd);
@@ -108,7 +121,7 @@ int MFD3D_LagrangeSerendipity::H1consistency(
   DenseMatrix NN(nd, nd), NM(nd, nd);
 
   NN.Multiply(N, N, true);
-  NN.Inverse();
+  NN.InverseSPD();
 
   NM.Multiply(NN, M, false);
   NN.Multiply(NM, L, false);
@@ -151,12 +164,13 @@ int MFD3D_LagrangeSerendipity::StiffnessMatrix(
 ****************************************************************** */
 void MFD3D_LagrangeSerendipity::ProjectorCell_(
     int c, const std::vector<Polynomial>& vf,
-    const Projectors::Type type,
-    Polynomial& moments, Polynomial& uc)
+    const ProjectorType type,
+    const Polynomial* moments, Polynomial& uc)
 {
   // selecting regularized basis
+  Polynomial ptmp;
   Basis_Regularized basis;
-  basis.Init(mesh_, c, order_);
+  basis.Init(mesh_, AmanziMesh::CELL, c, order_, ptmp);
 
   // calculate stiffness matrix
   Tensor T(d_, 1);
@@ -183,7 +197,7 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
   Ns = N.SubMatrix(0, ndof_f, 0, nd);
 
   NN.Multiply(Ns, Ns, true);
-  NN.Inverse();
+  NN.InverseSPD();
 
   // calculate degrees of freedom (Ns^T Ns)^{-1} Ns^T v
   // for consistency with other code, we use v5 for polynomial coefficients
@@ -195,7 +209,8 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
 
   // DOFs inside cell: copy moments from input data
   if (ndof_cs > 0) {
-    const DenseVector& v3 = moments.coefs();
+    AMANZI_ASSERT(moments != NULL);
+    const DenseVector& v3 = moments->coefs();
     AMANZI_ASSERT(ndof_cs == v3.NumRows());
 
     for (int n = 0; n < ndof_cs; ++n) {
@@ -206,10 +221,11 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
   Ns.Multiply(vdof, v1, true);
   NN.Multiply(v1, v5, false);
 
+  // this gives the least square projector
   uc = basis.CalculatePolynomial(mesh_, c, order_, v5);
 
   // H1 projector needs to populate moments from ndof_cs + 1 till ndof_c
-  if (type == Type::H1) {
+  if (type == ProjectorType::H1) {
     DenseVector v4(nd);
     DenseMatrix M;
     Polynomial poly(d_, order_);
@@ -233,7 +249,7 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
   }
 
   // L2 projector is different if the set S contains some internal dofs
-  if (type == Type::L2 && ndof_cs > 0) {
+  if (type == ProjectorType::L2 && ndof_cs > 0) {
     DenseVector v4(nd), v6(nd - ndof_cs);
     DenseMatrix M, M2;
     Polynomial poly(d_, order_);
@@ -253,7 +269,7 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
       v4(ndof_cs + n) = v6(n);
     }
 
-    M.Inverse();
+    M.InverseSPD();
     M.Multiply(v4, v5, false);
 
     uc = basis.CalculatePolynomial(mesh_, c, order_, v5);

@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -35,9 +35,6 @@ class DeRham_Node : virtual public InnerProductL2 {
 
   virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
   virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M); 
-
-  virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) { return 0; }
-  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) { return 0; } 
 };
 
 }  // namespace WhetStone

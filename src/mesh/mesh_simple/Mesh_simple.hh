@@ -44,19 +44,17 @@ class Mesh_simple : public virtual Mesh {
               double x1, double y1, double z1,
               int nx, int ny, int nz, const Epetra_MpiComm *comm_unicator,
               const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
-              const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
+              const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
               const bool request_faces = true,
-              const bool request_edges = false,
-	      const Partitioner_type partitioner = PARTITIONER_DEFAULT);
+              const bool request_edges = false);
   
   Mesh_simple(double x0, double y0,
               double x1, double y1,
               int nx, int ny, const Epetra_MpiComm *comm_unicator,
               const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
-              const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
+              const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
               const bool request_faces = true,
-              const bool request_edges = false,
-	      const Partitioner_type partitioner = PARTITIONER_DEFAULT);
+              const bool request_edges = false);
   
   Mesh_simple(const GenerationSpec& gspec,
               const Epetra_MpiComm *comm_unicator,
@@ -66,13 +64,12 @@ class Mesh_simple : public virtual Mesh {
               const bool request_edges = false,
 	      const Partitioner_type partitioner = PARTITIONER_DEFAULT);
 
-  Mesh_simple(Teuchos::ParameterList &parameter_list,
+  Mesh_simple(Teuchos::ParameterList& parameter_list,
               const Epetra_MpiComm *comm_unicator,
               const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
-              const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
+              const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
               const bool request_faces = true,
-              const bool request_edges = false,
-	      const Partitioner_type partitioner = PARTITIONER_DEFAULT);
+              const bool request_edges = false);
   
   // Construct a mesh by extracting a subset of entities from another
   // mesh. In some cases like extracting a surface mesh from a volume
@@ -189,6 +186,16 @@ class Mesh_simple : public virtual Mesh {
                            const Parallel_type ptype,
                            std::vector<Entity_ID> *faceids) const;    
     
+  // Cells of type 'ptype' connected to an edge
+  void edge_get_cells(const Entity_ID edgeid, 
+                      const Parallel_type ptype,
+                      std::vector<Entity_ID> *cellids) const {
+    Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
+    amanzi_throw(mesg);
+  }
+
+    
+  // Faces of type 'ptype' connected to a node
 
   // Same level adjacencies
   //-----------------------

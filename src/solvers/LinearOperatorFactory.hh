@@ -115,6 +115,8 @@ LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
                   << "\" is missing, use defaults." << vo->reset() << std::endl;
       }
     }
+    if (!slist.sublist(tmp).isSublist("verbose object"))
+      slist.sublist(tmp).set("verbose object", slist.sublist("verbose object"));
 
     if (method_name == "pcg") {
       Teuchos::ParameterList pcg_list = slist.sublist("pcg parameters");

@@ -42,7 +42,8 @@ TEST(DIFFUSION_STOKES_2D) {
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
   RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo"); 
  
-  MFD3D_BernardiRaugel mfd(mesh);
+  Teuchos::ParameterList plist;
+  MFD3D_BernardiRaugel mfd(plist, mesh);
 
   AmanziMesh::Entity_ID_List nodes, faces;
   std::vector<int> dirs;
@@ -130,7 +131,8 @@ TEST(ADVECTION_NAVIER_STOKES_2D) {
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
   RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo"); 
  
-  MFD3D_BernardiRaugel mfd(mesh);
+  Teuchos::ParameterList plist;
+  MFD3D_BernardiRaugel mfd(plist, mesh);
 
   // extract single cell
   int cell(0);

@@ -246,8 +246,6 @@ void PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
 
   if (global_op_ == Teuchos::null) {
     // constructor was given a mesh 
-    Teuchos::ParameterList plist;
-
     global_op_schema_ = schema;
     local_op_schema_ = schema;
 
@@ -258,7 +256,7 @@ void PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
 
       if (it->kind == AmanziMesh::CELL) {
         int old_schema = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL;
-        global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist, old_schema));
+        global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist_, old_schema));
         std::string name("CELL_CELL");
         if (surf) {
           op = Teuchos::rcp(new Op_SurfaceCell_SurfaceCell(name, mesh_));
@@ -268,18 +266,18 @@ void PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
 
       /*
       } else if (it->kind == AmanziMesh::FACE) {
-        global_op_ = Teuchos::rcp(new Operator_Face(cvs, plist));
+        global_op_ = Teuchos::rcp(new Operator_Face(cvs, plist_));
         std::string name("FACE_FACE");
         op = Teuchos::rcp(new Op_Face_Face(name, mesh_));
       */
 
       } else if (it->kind == AmanziMesh::EDGE) {
-        global_op_ = Teuchos::rcp(new Operator_Edge(cvs, plist));
+        global_op_ = Teuchos::rcp(new Operator_Edge(cvs, plist_));
         std::string name("EDGE_EDGE");
         op = Teuchos::rcp(new Op_Edge_Edge(name, mesh_));
 
       } else if (it->kind == AmanziMesh::NODE) {
-        global_op_ = Teuchos::rcp(new Operator_Node(cvs, plist));
+        global_op_ = Teuchos::rcp(new Operator_Node(cvs, plist_));
         std::string name("NODE_NODE");
         op = Teuchos::rcp(new Op_Node_Node(name, mesh_, it->num));
 

@@ -40,9 +40,7 @@ TreeOperator::TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs) :
   // make sure we have the right kind of TreeVectorSpace -- it should be
   // one parent node with all leaf node children.
   AMANZI_ASSERT(tvs_->Data() == Teuchos::null);
-  for (TreeVectorSpace::const_iterator
-           it = tvs_->begin();
-       it != tvs_->end(); ++it) {
+  for (TreeVectorSpace::const_iterator it = tvs_->begin(); it != tvs_->end(); ++it) {
     AMANZI_ASSERT((*it)->Data() != Teuchos::null);
   }
 
@@ -70,10 +68,10 @@ int TreeOperator::Apply(const TreeVector& X, TreeVector& Y) const
   Y.PutScalar(0.0);
 
   int ierr(0), n(0);
-  for (TreeVector::iterator yN_tv=Y.begin(); yN_tv!=Y.end(); ++yN_tv, ++n) {
+  for (TreeVector::iterator yN_tv = Y.begin(); yN_tv != Y.end(); ++yN_tv, ++n) {
     CompositeVector& yN = *(*yN_tv)->Data();
     int m(0);
-    for (TreeVector::const_iterator xM_tv=X.begin(); xM_tv!=X.end(); ++xM_tv, ++m) {
+    for (TreeVector::const_iterator xM_tv = X.begin(); xM_tv != X.end(); ++xM_tv, ++m) {
       if (blocks_[n][m] != Teuchos::null) {
         if (transpose_[n][m]) {
           ierr |= blocks_[n][m]->ApplyTranspose(*(*xM_tv)->Data(), yN, 1.0);

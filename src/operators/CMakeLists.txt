@@ -48,20 +48,13 @@ include_directories(${WHETSTONE_SOURCE_DIR})
 add_definitions("-DMSTK_HAVE_MPI")
 
 #
-# Library: operator audit
-#
-add_amanzi_library(operators_audit 
-                   SOURCE OperatorAudit.cc 
-		   LINK_LIBS whetstone ${Epetra_LIBRARIES})
-
-#
 # Library: operators
 #
 set(operators_inc_files
     BCs.hh
+    LimiterCell.hh
     Mini_Diffusion1D.hh
     Mini_Operator1D.hh
-    RemapUtils.hh
     OperatorDefs.hh
     OperatorUtils.hh
     Op.hh
@@ -109,6 +102,8 @@ set(operators_inc_files
     PDE_HelperBCsList.hh
     PDE_HelperDiscretization.hh
     PDE_Reaction.hh
+    RemapDG.hh
+    RemapUtils.hh
     Schema.hh
     TreeOperator.hh
     Reconstruction.hh
@@ -123,7 +118,8 @@ set(operators_inc_files
 )
 
 add_amanzi_library(operators 
-                   SOURCE Mini_Diffusion1D.cc
+                   SOURCE LimiterCell.cc
+                          Mini_Diffusion1D.cc
                           Mini_Operator1D.cc
                           OperatorUtils.cc
                           Operator.cc
@@ -154,8 +150,7 @@ add_amanzi_library(operators
                           Schema.cc
                           TreeOperator.cc
                           ReconstructionCell.cc
-                          ReconstructionCell_Limiters.cc
-                          RemapUtils.cc
+                          RemapDG.cc RemapUtils.cc
                           HEADERS ${operators_inc_files}
                    LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})                          
 
@@ -219,11 +214,11 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/operator_diffusion.cc
                                         test/operator_diffusion_nodal.cc
-                                        test/operator_diffusion_edges.cc
                                         test/operator_diffusion_divk.cc
                                         test/operator_diffusion_nonsymmetric.cc
                                         test/operator_diffusion_nlfv.cc
                                         test/operator_diffusion_curved.cc
+                                        test/operator_diffusion_edges.cc test/MFD3D_Diffusion_Edge.cc
                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
 
@@ -320,9 +315,11 @@ if (BUILD_TESTS)
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # reconstruction tests
-    add_amanzi_test(operators_reconstruction operators_reconstruction
+    add_amanzi_test(operators_reconstruction_limiters operators_reconstruction_limiters
                     KIND unit
                     SOURCE test/Main.cc test/operator_reconstruction.cc
+                                        test/operator_limiters.cc
+                                        test/operator_limiters_dg.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(operators_boundary_flux_solver operators_boundary_flux_solver
@@ -330,13 +327,15 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/operator_boundary_flux_solver.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    add_amanzi_test(operators_reconstruction_2pe operators_reconstruction NPROCS 2 KIND unit)
+    add_amanzi_test(operators_reconstruction_limiters_2pe operators_reconstruction_limiters
+                    NPROCS 2
+                    KIND unit)
 
     # remap tests
     add_amanzi_test(operators_remap operators_remap
                     KIND unit
                     NPROCS 2
-                    SOURCE test/Main.cc test/operator_remap_dual.cc
+                    SOURCE test/Main.cc test/operator_remap.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(operators_remap_curved operators_remap_curved

@@ -256,6 +256,16 @@ class MeshSurfaceCell : public Mesh {
     amanzi_throw(mesg);
   }
 
+  // Cells of type 'ptype' connected to an edges
+  virtual
+  void edge_get_cells(const Entity_ID edgeid,
+                      const Parallel_type ptype,
+                      Entity_ID_List *cellids) const {
+    Errors::Message mesg("Not implemented");
+    amanzi_throw(mesg);
+  }
+
+
   // Same level adjacencies
   //-----------------------
 

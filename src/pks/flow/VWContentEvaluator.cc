@@ -38,9 +38,11 @@ VWContentEvaluator::VWContentEvaluator(Teuchos::ParameterList& plist) :
 void VWContentEvaluator::Init_()
 {
   my_key_ = std::string("water_content");
+  saturation_key_ = plist_.get<std::string>("saturation key");
+  porosity_key_ = plist_.get<std::string>("porosity key");
 
-  dependencies_.insert(std::string("porosity"));
-  dependencies_.insert(std::string("saturation_liquid"));
+  dependencies_.insert(std::string(porosity_key_));
+  dependencies_.insert(std::string(saturation_key_));
   dependencies_.insert(std::string("molar_density_liquid"));
 
   vapor_phase_ = plist_.get<bool>("water vapor phase", false);
@@ -70,10 +72,10 @@ Teuchos::RCP<FieldEvaluator> VWContentEvaluator::Clone() const {
 void VWContentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
                                         const Teuchos::Ptr<CompositeVector>& result)
 {
-  const Epetra_MultiVector& s_l = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
+  const Epetra_MultiVector& s_l = *S->GetFieldData(saturation_key_)->ViewComponent("cell");
   const Epetra_MultiVector& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell");
 
-  const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell");
+  const Epetra_MultiVector& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
   Epetra_MultiVector& result_v = *result->ViewComponent("cell");
 
   if (vapor_phase_) {
@@ -101,10 +103,10 @@ void VWContentEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {
-  const Epetra_MultiVector& s_l = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
+  const Epetra_MultiVector& s_l = *S->GetFieldData(saturation_key_)->ViewComponent("cell");
   const Epetra_MultiVector& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell");
 
-  const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell");
+  const Epetra_MultiVector& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell");
   Epetra_MultiVector& result_v = *result->ViewComponent("cell");
 
   int ncells = result->size("cell", false);
@@ -113,11 +115,11 @@ void VWContentEvaluator::EvaluateFieldPartialDerivative_(
     const Epetra_MultiVector& n_g = *S->GetFieldData("molar_density_gas")->ViewComponent("cell");
     const Epetra_MultiVector& mlf_g = *S->GetFieldData("molar_fraction_gas")->ViewComponent("cell");
 
-    if (wrt_key == "porosity") {
+    if (wrt_key == porosity_key_) {
       for (int c = 0; c != ncells; ++c) {
         result_v[0][c] = (s_l[0][c]*n_l[0][c] + (1.0 - s_l[0][c]) * n_g[0][c] * mlf_g[0][c]);
       }
-    } else if (wrt_key == "saturation_liquid") {
+    } else if (wrt_key == saturation_key_) {
       for (int c = 0; c != ncells; ++c) {
         result_v[0][c] = phi[0][c] * n_l[0][c];
       }
@@ -138,7 +140,7 @@ void VWContentEvaluator::EvaluateFieldPartialDerivative_(
     }
     
   } else {
-    if (wrt_key == "porosity") {
+    if (wrt_key == porosity_key_) {
       for (int c = 0; c != ncells; ++c) {
         result_v[0][c] = s_l[0][c] * n_l[0][c];
       }
