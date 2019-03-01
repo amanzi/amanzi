@@ -54,7 +54,9 @@ int AdvanceToSteadyState(
     while (RPK.get_bdf1_dae()->TimeStep(dT, dTnext, soln)) {
       dT = dTnext;
     }
+    RPK.VV_ReportSeepageOutflow(S.ptr(), dT);
     RPK.get_bdf1_dae()->CommitSolution(dT, soln);
+    if (S->GetMesh()->get_comm()->MyPID() == 0) std::cout << "\n";
 
     T_physics = RPK.get_bdf1_dae()->time();
     dT = dTnext;

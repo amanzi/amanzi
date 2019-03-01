@@ -1,5 +1,5 @@
 /*
-  This is the operator component of the Amanzi code. 
+  Data Structures
 
   Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -21,6 +21,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
+#include "Epetra_BlockMap.h"
 #include "Epetra_Export.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
@@ -71,8 +72,12 @@ TEST(SUPERMAP_MANUAL) {
   // make the supermap
   std::vector<std::string> names; names.push_back("map1"); names.push_back("map2");
   std::vector<int> dofnums(2,2);
-  std::vector<Teuchos::RCP<const Epetra_Map> > maps; maps.push_back(owned_map1); maps.push_back(owned_map2);
-  std::vector<Teuchos::RCP<const Epetra_Map> > gmaps; gmaps.push_back(ghosted_map1); gmaps.push_back(ghosted_map2);
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps;
+  maps.push_back(owned_map1);
+  maps.push_back(owned_map2);
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > gmaps;
+  gmaps.push_back(ghosted_map1);
+  gmaps.push_back(ghosted_map2);
   Operators::SuperMap map(comm, names, dofnums, maps, gmaps);
 
   // check the offsets

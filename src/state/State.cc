@@ -42,6 +42,7 @@ State::State(Teuchos::ParameterList& state_plist) :
     position_in_tp_(TIME_PERIOD_START)
 {};
 
+
 // copy constructor:
 // Create a new State with different data but the same values.
 //
@@ -91,7 +92,6 @@ State::State(const State& other, StateConstructMode mode) :
        mp_it!=other.mesh_partitions_.end(); ++mp_it) {
     mesh_partitions_[mp_it->first] = mp_it->second;
   }
-
 };
 
 // operator=:
@@ -140,6 +140,40 @@ State& State::operator=(const State& other) {
     meshes_ = other.meshes_;
   }
   return *this;
+};
+
+
+//  Assign a state's data from another state.  Note this
+// implementation requires the State being copied has the same structure (in
+// terms of fields, order of fields, etc) as *this.  This really means that
+// it should be a previously-copy-constructed version of the State.  One and
+// only one State should be instantiated and populated -- all other States
+// should be copy-constructed from that initial State.
+void State::AssignDomain(const State& other, const std::string& domain)
+{
+  if (this != &other) {
+    for (auto f_it : other.fields_) {
+      if (Keys::getDomain(f_it.first) == domain) {
+        auto myfield = GetField_(f_it.first);
+        auto otherfield = f_it.second;
+
+        if (myfield->type() == COMPOSITE_VECTOR_FIELD) {
+          myfield->SetData(*otherfield->GetFieldData());
+        } else if (myfield->type() == CONSTANT_VECTOR) {
+          myfield->SetData(*otherfield->GetConstantVectorData());
+        } else if (myfield->type() == CONSTANT_SCALAR) {
+          myfield->SetData(*otherfield->GetScalarData());
+        }
+      }
+    }
+
+    for (auto fm_it : other.field_evaluators_) {
+      if (Keys::getDomain(fm_it.first) == domain) {
+        auto myfm = GetFieldEvaluator_(fm_it.first);
+        *myfm = *fm_it.second;
+      }
+    }
+  }
 };
 
 
@@ -898,10 +932,15 @@ void State::Initialize() {
 
 
 void State::Initialize(Teuchos::RCP<State> S) {
+  auto vo = Teuchos::rcp(new VerboseObject("State", state_plist_)); 
+  Teuchos::OSTab tab = vo->getOSTab();
+  
   for (FieldMap::iterator f_it = fields_.begin();
        f_it != fields_.end(); ++f_it) {
     Teuchos::RCP<Field> field = f_it->second;
     Teuchos::RCP<Field> copy = S->GetField_(field->fieldname());
+    *vo->os() << "processing field \"" << f_it->first << "\"\n";
+    
     if (copy != Teuchos::null) {
       if (field->type() != copy->type()) {
         std::stringstream messagestream;
@@ -950,8 +989,14 @@ void State::Initialize(Teuchos::RCP<State> S) {
 
 
 void State::InitializeEvaluators() {
-  for (evaluator_iterator f_it = field_evaluator_begin();
-       f_it != field_evaluator_end(); ++f_it) {
+  auto vo = Teuchos::rcp(new VerboseObject("State", state_plist_)); 
+
+  for (evaluator_iterator f_it = field_evaluator_begin(); f_it != field_evaluator_end(); ++f_it) {
+    if (vo->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+      Teuchos::OSTab tab = vo->getOSTab();
+      *vo->os() << "processing evaluator \"" << f_it->first << "\"\n";
+    }
+
     f_it->second->HasFieldChanged(Teuchos::Ptr<State>(this), "state");
     fields_[f_it->first]->set_initialized();
   }
@@ -961,6 +1006,8 @@ void State::InitializeEvaluators() {
 void State::InitializeFields() {
 
   bool pre_initialization = false;
+
+  auto vo = Teuchos::rcp(new VerboseObject("State", state_plist_)); 
 
   if (state_plist_.isParameter("initialization filename")) {
     pre_initialization = true;
@@ -981,6 +1028,11 @@ void State::InitializeFields() {
   // Initialize through initial condition
  
   for (FieldMap::iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
+    if (vo->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+      Teuchos::OSTab tab = vo->getOSTab();
+      *vo->os() << "processing field \"" << f_it->first << "\"\n";
+    }
+
     if (pre_initialization || (!f_it->second->initialized())) {
       if (state_plist_.isSublist("initial conditions")) {
         if (state_plist_.sublist("initial conditions").isSublist(f_it->first)) {
@@ -1218,9 +1270,8 @@ void State::InitializeIOFlags_() {
 void WriteVis(const Teuchos::Ptr<Visualization>& vis,
               const Teuchos::Ptr<State>& S) {
   if (!vis->is_disabled()) {
-    // Create the new time step (internally we use seconds, but write the time in years).
-    //    vis->WriteMesh(S->time()/(365.25*24*60*60),S->cycle());
-    vis->CreateTimestep(S->time()/(365.25*24*60*60),S->cycle());
+    // Create the new time step
+    vis->CreateTimestep(S->time(), S->cycle());
 
     // Write all fields to the visualization file, the fields know if they
     // need to be written.

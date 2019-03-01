@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -65,7 +65,7 @@ int MFD3D_CrouzeixRaviartSerendipity::H1consistency(
 
   // selecting regularized basis
   Basis_Regularized basis;
-  basis.Init(mesh_, c, order_);
+  basis.Init(mesh_, AmanziMesh::CELL, c, order_, integrals_.poly());
 
   // Gramm matrix for polynomials
   DenseMatrix M(nd, nd);
@@ -145,15 +145,16 @@ int MFD3D_CrouzeixRaviartSerendipity::StiffnessMatrix(
 ****************************************************************** */
 void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
     int c, const std::vector<Polynomial>& vf,
-    const Projectors::Type type,
-    Polynomial& moments, Polynomial& uc)
+    const ProjectorType type,
+    const Polynomial* moments, Polynomial& uc)
 {
   // create integration object 
   NumericalIntegration numi(mesh_);
 
   // selecting regularized basis
+  Polynomial ptmp;
   Basis_Regularized basis;
-  basis.Init(mesh_, c, order_);
+  basis.Init(mesh_, AmanziMesh::CELL, c, order_, ptmp);
 
   // calculate full matrices
   set_use_always_ho(true);
@@ -192,7 +193,8 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
 
   // DOFs inside cell: copy moments from input data
   if (ndof_cs > 0) {
-    const DenseVector& v3 = moments.coefs();
+    AMANZI_ASSERT(moments != NULL);
+    const DenseVector& v3 = moments->coefs();
     for (int n = 0; n < ndof_cs; ++n) {
       vdof(ndof_f + n) = v3(n);
     }
@@ -204,7 +206,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
   uc = basis.CalculatePolynomial(mesh_, c, order_, v5);
 
   // H1 projector needs to populate moments from ndof_cs + 1 till ndof_c
-  if (type == Type::H1) {
+  if (type == ProjectorType::H1) {
     DenseVector v4(nd);
     DenseMatrix M;
     Polynomial poly(d_, order_);
@@ -228,7 +230,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
   }
 
   // L2 projector is different if the set S contains some internal dofs
-  if (type == Type::L2 && ndof_cs > 0) {
+  if (type == ProjectorType::L2 && ndof_cs > 0) {
     DenseVector v4(nd), v6(nd - ndof_cs);
     DenseMatrix M, M2;
     Polynomial poly(d_, order_);
@@ -240,7 +242,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
     M2 = M.SubMatrix(ndof_cs, nd, 0, nd);
     M2.Multiply(v5, v6, false);
 
-    const DenseVector& v3 = moments.coefs();
+    const DenseVector& v3 = moments->coefs();
     for (int n = 0; n < ndof_cs; ++n) {
       v4(n) = v3(n) * mesh_->cell_volume(c);
     }

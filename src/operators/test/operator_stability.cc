@@ -80,7 +80,6 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
-  double rho(1.0), mu(1.0);
 
   // create boundary data
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
@@ -127,6 +126,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     // create the local diffusion operator
     Teuchos::ParameterList olist = plist.sublist("PK operators").sublist("mixed diffusion");
     PDE_DiffusionMFD op2(olist, mesh);
+    op2.Init(olist);
     op2.SetBCs(bc, bc);
 
     int schema_dofs = op2.schema_dofs();
@@ -238,7 +238,6 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
-  double rho(1.0), mu(1.0);
 
   // create boundary data (no mixed bc)
   Point xv(2);
@@ -282,6 +281,7 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     // create the local diffusion operator
     Teuchos::ParameterList olist = plist.sublist("PK operators").sublist("nodal diffusion");
     PDE_DiffusionMFD op2(olist, mesh);
+    op2.Init(olist);
     op2.SetBCs(bc, bc);
 
     int schema_dofs = op2.schema_dofs();

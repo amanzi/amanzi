@@ -11,8 +11,8 @@
   Linear solution for problem with constant tensorial coefficient
   working in 2D and 3D
   Solution: p = x + 2y - gy y
-  Diffusion: K = [3  1]
-                 [1  1]
+  Diffusion: K = [1   0.1]
+                 [0.1   3]
   Velocity: v = [0, 0]
   Source: f = -div(K grad(p))
 */
@@ -26,10 +26,15 @@ class Analytic02 : public AnalyticBase {
  public:
   Analytic02(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
       AnalyticBase(mesh),
-      g_(0.0) {};
+      g_(0.0), v_(d_) { v_[0] = 1.0, v_[1] = 2.0; }
   Analytic02(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, double g) :
       AnalyticBase(mesh),
-      g_(g) {};
+      g_(g), v_(d_) { v_[0] = 1.0, v_[1] = 2.0; }
+  Analytic02(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, 
+      const Amanzi::AmanziGeometry::Point& v, double g) :
+      AnalyticBase(mesh),
+      g_(g),
+      v_(v) {};
   ~Analytic02() {};
 
   Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) {
@@ -44,17 +49,11 @@ class Analytic02 : public AnalyticBase {
   }
 
   double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-    double x = p[0];
-    double y = p[1];
-
-    return x + 2 * y - g_ * y;
+    return p * v_ - g_ * p[d_ - 1];
   }
 
   Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-    Amanzi::AmanziGeometry::Point v(d_);
-    v[0] = 1.0;
-    v[1] = 2.0;
-    return v;
+    return v_;
   }
 
   Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
@@ -65,6 +64,7 @@ class Analytic02 : public AnalyticBase {
 
  private:
   double g_;
+  Amanzi::AmanziGeometry::Point v_;
 };
 
 #endif

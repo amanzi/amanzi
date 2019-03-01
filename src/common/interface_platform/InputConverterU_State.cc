@@ -212,7 +212,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       node = GetUniqueElementByTagsString_(inode, "fracture_permeability", flag);
       if (flag) {
         fractures_ = true;
-        TranslateFieldEvaluator_(node, "fracture_aperture", "m", reg_str, regions, out_ic, out_ev, "aperture");
+        TranslateFieldEvaluator_(node, "aperture", "m", reg_str, regions, out_ic, out_ev, "aperture");
       } else if (fractures_) {
         msg << "fracture_permeability element must be specified for all materials or none.";
         Exceptions::amanzi_throw(msg);
@@ -480,6 +480,11 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
     out_list.set<Teuchos::Array<std::string> >("whitelist", CharToStrings_(text_content));
   }
 
+  // temporary fix for fractures
+  if (fractures_) {
+    Teuchos::ParameterList empty;
+    out_list.sublist("initial conditions").sublist("permeability") = empty;
+  }
 
   return out_list;
 }

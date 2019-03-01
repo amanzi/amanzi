@@ -26,6 +26,7 @@
 #include "Units.hh"
 #include "VerboseObject.hh"
 #include "ObservableAmanzi.hh"
+#include "Key.hh"
 
 namespace Amanzi {
 
@@ -35,7 +36,7 @@ class FlexibleObservations {
 		       Teuchos::RCP<Teuchos::ParameterList> obs_list,
                        Teuchos::RCP<Teuchos::ParameterList> units_list,
                        Amanzi::ObservationData& observation_data,
-                       Teuchos::RCP<AmanziMesh::Mesh> mesh);
+                       Teuchos::RCP<const State> S);
 
   ~FlexibleObservations() {
     if (vo_ != NULL) delete vo_;

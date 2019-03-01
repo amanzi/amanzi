@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -103,6 +103,16 @@ int PolynomialPosition(int d, const int* multi_index)
   int nk = PolynomialSpaceDimension(d, k - 1);
 
   return nk + MonomialSetPosition(d, multi_index);
+}
+
+
+// calculate order of polynomial space from given dspace dimension 
+inline
+int PolynomialSpaceOrder(int d, int nk)
+{
+  int order = -1;
+  while (PolynomialSpaceDimension(d, order) != nk) order++;
+  return order;
 }
 
 } // namespace WhetStone

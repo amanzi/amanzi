@@ -122,9 +122,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   RPK->set_dt(1.0);
   printf("time step = %12.4f\n", RPK->get_dt());
   printf("seepage face total = %12.4f\n", RPK->seepage_mass());
-  RPK->VV_ReportSeepageOutflow(S.ptr());
   RPK->CommitStep(0.0, 1.0, S);  // dummy times for flow
-
 
   const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell");
   if (MyPID == 0) {

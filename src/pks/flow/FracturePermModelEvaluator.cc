@@ -30,8 +30,8 @@ FracturePermModelEvaluator::FracturePermModelEvaluator(
     SecondaryVariableFieldEvaluator(plist),
     fpm_(fpm)
 {
-  my_key_ = std::string("fracture_permeability");
-  aperture_key_ = std::string("fracture_aperture");
+  my_key_ = plist.get<std::string>("permeability key");
+  aperture_key_ = plist.get<std::string>("aperture key");
   dependencies_.insert(aperture_key_);
 }
 

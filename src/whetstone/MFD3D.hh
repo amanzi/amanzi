@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -20,8 +20,8 @@
   Notation used below: M (mass), W (inverse of M), A (stiffness).
 
   NOTE: This class should be never instantiated directly. It is used to
-  add additional functionality to the base class (BilinearForm) related to
-  MFD and VEM methods, such as various projectors.
+  add additional functionality to the base class (BilinearForm) specific
+  for MFD and VEM methods, such as various stabilization terms.
 */
 
 #ifndef AMANZI_MFD3D_HH_
@@ -36,18 +36,16 @@
 #include "DenseMatrix.hh"
 #include "InnerProductH1.hh"
 #include "InnerProductL2.hh"
-#include "Projectors.hh"
 #include "Tensor.hh"
 #include "WhetStoneDefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D : public virtual BilinearForm,
-              public Projectors {
+class MFD3D : public virtual BilinearForm {
  public:
   explicit MFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
-  ~MFD3D() {};
+  virtual ~MFD3D() {};
 
   // access members
   double simplex_functional() { return simplex_functional_; }

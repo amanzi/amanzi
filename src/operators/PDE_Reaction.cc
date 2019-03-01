@@ -11,10 +11,11 @@
 
 #include <vector>
 
-#include "MFD3DFactory.hh"
+#include "BilinearFormFactory.hh"
 
 #include "Op_Cell_Schema.hh"
 #include "OperatorDefs.hh"
+#include "OperatorUtils.hh"
 #include "Operator_Schema.hh"
 #include "PDE_Reaction.hh"
 
@@ -41,7 +42,8 @@ void PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
 
     for (auto it = global_schema_row_.begin(); it != global_schema_row_.end(); ++it) {
       std::string name(local_schema_row_.KindToString(it->kind));
-      cvs->AddComponent(name, it->kind, it->num);
+      const auto& maps = getMaps(*mesh_, it->kind);
+      cvs->AddComponent(name, maps.first, maps.second, it->num);
     }
 
     global_op_ = Teuchos::rcp(new Operator_Schema(cvs, cvs, plist, global_schema_row_, global_schema_col_));
@@ -63,8 +65,7 @@ void PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
   global_op_->OpPushBack(local_op_);
 
   // parse discretization  parameters
-  WhetStone::MFD3DFactory factory;
-  mfd_ = factory.Create(mesh_, plist);
+  mfd_ = WhetStone::BilinearFormFactory::Create(plist, mesh_);
 }
 
 

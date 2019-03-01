@@ -19,12 +19,11 @@ namespace Amanzi {
 namespace Transport {
 
 /* ******************************************************************* 
-* Routine takes a parallel overlapping vector C and returns parallel
-* overlapping vector F(C). 
+* Routine takes a parallel vector C and returns parallel vector F(C). 
 ****************************************************************** */
-void Transport_PK::FunctionalTimeDerivative(double t,
-                              const Epetra_Vector& component,
-                              Epetra_Vector& f_component)
+void Transport_PK::FunctionalTimeDerivative(
+    double t, const Epetra_Vector& component,
+    Epetra_Vector& f_component)
 {
   // distribute vector
   Epetra_Vector component_tmp(component);
@@ -59,8 +58,9 @@ void Transport_PK::FunctionalTimeDerivative(double t,
     }
   }
 
-  lifting_->InitLimiter(darcy_flux);
-  lifting_->ApplyLimiter(bc_model, bc_value);
+  limiter_->Init(plist, darcy_flux);
+  limiter_->ApplyLimiter(component_rcp, 0, lifting_->gradient(), bc_model, bc_value);
+  limiter_->gradient()->ScatterMasterToGhosted("cell");
 
   // ADVECTIVE FLUXES
   // We assume that limiters made their job up to round-off errors.
@@ -88,7 +88,7 @@ void Transport_PK::FunctionalTimeDerivative(double t,
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
     if (c1 >= 0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
-      upwind_tcc = lifting_->getValue(c1, xf);
+      upwind_tcc = limiter_->getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
 
@@ -96,14 +96,14 @@ void Transport_PK::FunctionalTimeDerivative(double t,
       f_component[c1] -= tcc_flux;
       f_component[c2] += tcc_flux;
     } else if (c1 >= 0 && c1 < ncells_owned && (c2 >= ncells_owned || c2 < 0)) {
-      upwind_tcc = lifting_->getValue(c1, xf);
+      upwind_tcc = limiter_->getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
 
       tcc_flux = u * upwind_tcc;
       f_component[c1] -= tcc_flux;
     } else if (c1 >= ncells_owned && c2 >= 0 && c2 < ncells_owned) {
-      upwind_tcc = lifting_->getValue(c1, xf);
+      upwind_tcc = limiter_->getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
 
@@ -138,11 +138,16 @@ void Transport_PK::FunctionalTimeDerivative(double t,
           std::vector<double>& values = it->second;
 
           if (downwind_cells_[f].size() > 0 && f < nfaces_owned) {
-            c2 = downwind_cells_[f][0];
-            u = fabs((*darcy_flux)[0][f]);
-            double vol_phi_ws = mesh_->cell_volume(c2) * (*phi)[0][c2] * (*ws_start)[0][c2];
-            tcc_flux = u * values[i];
-            f_component[c2] += tcc_flux / vol_phi_ws;
+            for (int k=0;k<downwind_cells_[f].size(); k++) {
+              c2 = downwind_cells_[f][k];
+              if (c2 >=0) {
+                int f_loc_id = flux_map_->FirstPointInElement(f);
+                u = fabs((*darcy_flux)[0][f_loc_id + k]);
+                double vol_phi_ws = mesh_->cell_volume(c2) * (*phi)[0][c2] * (*ws_start)[0][c2];
+                tcc_flux = u * values[i];
+                f_component[c2] += tcc_flux / vol_phi_ws;
+              }
+            }
           }
         }
       }
@@ -188,8 +193,9 @@ void Transport_PK::DudtOld(double t,
     }
   }
 
-  lifting_->InitLimiter(darcy_flux);
-  lifting_->ApplyLimiter(bc_model, bc_value);
+  limiter_->Init(plist, darcy_flux);
+  limiter_->ApplyLimiter(component_rcp, 0, lifting_->gradient(), bc_model, bc_value);
+  limiter_->gradient()->ScatterMasterToGhosted("cell");
 
   // ADVECTIVE FLUXES
   // We assume that limiters made their job up to round-off errors.
@@ -217,7 +223,7 @@ void Transport_PK::DudtOld(double t,
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
     if (c1 >= 0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
-      upwind_tcc = lifting_->getValue(c1, xf);
+      upwind_tcc = limiter_->getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
 
@@ -225,14 +231,14 @@ void Transport_PK::DudtOld(double t,
       f_component[c1] -= tcc_flux;
       f_component[c2] += tcc_flux;
     } else if (c1 >= 0 && c1 < ncells_owned && (c2 >= ncells_owned || c2 < 0)) {
-      upwind_tcc = lifting_->getValue(c1, xf);
+      upwind_tcc = limiter_->getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
 
       tcc_flux = u * upwind_tcc;
       f_component[c1] -= tcc_flux;
     } else if (c1 >= ncells_owned && c2 >= 0 && c2 < ncells_owned) {
-      upwind_tcc = lifting_->getValue(c1, xf);
+      upwind_tcc = limiter_->getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
 

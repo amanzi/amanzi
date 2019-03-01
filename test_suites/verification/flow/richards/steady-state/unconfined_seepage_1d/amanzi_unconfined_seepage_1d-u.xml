@@ -144,7 +144,7 @@
         <assigned_regions>Top side</assigned_regions>
         <liquid_phase name="water">
           <liquid_component name="water">
-            <seepage_face function="constant" inward_mass_flux="9.6411e-06" start="0.0" />
+            <seepage_face function="constant" inward_mass_flux="9.6411e-06" start="0.0" flux_threshold="0.01"/>
           </liquid_component>
         </liquid_phase>
       </boundary_condition>

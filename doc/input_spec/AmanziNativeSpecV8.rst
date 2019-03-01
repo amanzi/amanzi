@@ -1259,6 +1259,9 @@ Combination of both approaches may lead to a more efficient code.
   Available options are `"compressible: storativity coefficient`",
   `"compressible: pressure function`", and `"constant porosity`" (default).
 
+* `"coupled matrix fracture flow`" [string] specifies PK's role in the strong 
+  coupling of two flow PKs. The value is either `"matrix`" or `"fracture`".
+
 .. code-block:: xml
 
    <ParameterList name="Richards problem">  <!-- parent list -->
@@ -1268,6 +1271,7 @@ Combination of both approaches may lead to a more efficient code.
        <Parameter name="viscosity model" type="string" value="constant viscosity"/>
        <Parameter name="porosity model" type="string" value="compressible: pressure function"/>
        <Parameter name="multiscale model" type="string" value="single porosity"/>
+       <Parameter name="coupled matrix fracture flow" type="string" value="matrix"/>
      </ParameterList>
    </ParameterList>
 
@@ -1501,7 +1505,8 @@ relative permeability, density and viscosity.
     * `"polynomial order`" [int] defines the polynomial order of a reconstructed function. Default is 1.
 
     * `"limiter`" [string] specifies limiting method for a high-order reconstruction. 
-      Available options are `"Barth-Jespersen`" (default), `"tensorial`", and `"Kuzmin`". 
+      Available options are `"Barth-Jespersen`" (default), `"Michalak-Gooch`", `"tensorial`",
+      and `"Kuzmin`". 
 
 .. code-block:: xml
 
@@ -1624,6 +1629,11 @@ This modification is referred to as a submodel and requires additional parameter
     The second option is described in the document on mathematical models. 
     It employs a smooth transition from the infiltration 
     to mixed boundary condition. The recommended value is `"PFloTran`".
+
+  * `"seepage flux threshold`" [double] sets up the threshold for switching from the pressure 
+    to influx boundary condition in submodel `"PFloTran`". The pressure condition remains 
+    for a small influx value until it exceeds the certain fraction of the `"mass flux`" specified 
+    by this parameter. The admissible range is from 0 to 0.1. Default value is 0. 
 
 Each boundary condition accepts three parameters: `"regions`", 
 `"use area fractions`", and `"spatial distribution method`". Parameter `"regions`"
@@ -3395,7 +3405,6 @@ This section to be written.
    <ParameterList name="operators">  <!-- parent list -->
      <ParameterList name="advection operator">
        <Parameter name="method" type="string" value="upwind"/>
-       <Parameter name="reconstruction order" type="int" value="0"/>
      </ParameterList>
    </ParameterList>
 
@@ -3905,7 +3914,6 @@ matrix of types *advection* and *flux*, respectively.
   <ParameterList name="OPERATOR_NAME">
     <Parameter name="method" type="string" value="dg modal"/>
     <Parameter name="method order" type="int" value="2"/>
-    <Parameter name="reconstruction order" type="int" value="0"/>
     <Parameter name="flux formula" type="string" value="Rusanov"/>
     <Parameter name="matrix type" type="string" value="flux"/>
     <Parameter name="jump operator on test function" type="bool" value="true"/>
@@ -4050,11 +4058,25 @@ and their extensions for various PKs.
  * `"method`" [string] specifies a reconstruction method. Available option is
    `"cell-based`" (default).
 
- * `"polynomial order`" [int] defines the polynomial order of a reconstructed function. 
+ * `"polynomial order`" [int] defines the polynomial order of the reconstructed function. 
    Default is 1.
 
  * `"limiter`" [string] specifies limiting method. Available options are 
-   `"Barth-Jespersen`" (default), `"tensorial`", and `"Kuzmin`". 
+   `"Barth-Jespersen`" (default), `"Michalak-Gooch`", `"tensorial`", and `"Kuzmin`". 
+
+ * `"limiter stencil`" [string] specifies stencil for calculating local bounds. Available 
+   options are `"face to cells`", `"cell to closets cells`", `"cell to all cells`",
+   and `"node to cells`".
+   For a square mesh, the above options define stencils of size 2, 5, 9, and 4,
+   respectively.
+   Option `"face to cells`" is default for `"Barth-Jespersen`", `"Michalak-Gooch`", 
+   and `"tensorial`".  Option `"node to cells`" is default for `"Kuzmin`".
+
+ * `"limiter points`" [int] specifies the number of integration points (Gauss points in 2D) 
+   on face where limiting occurs. Default is 1. Limited to 2D.
+
+ * `"use external bounds`" [bool] specifies if bounds for limiters are provided by 
+   the hosting application. Default is `"false`".`
 
  * `"limiter extension for transport`" [bool] adds additional corrections to 
    limiters required by the transport PK. Default value is *false*.
@@ -4066,6 +4088,8 @@ and their extensions for various PKs.
     <Parameter name="polynomial order" type="int" value="1"/>
     <Parameter name="limiter" type="string" value="tensorial"/>
     <Parameter name="limiter extension for transport" type="bool" value="false"/>
+    <Parameter name="limiter stencil" type="string" value="face to cells"/>
+    <Parameter name="limiter points" type="int" value="0"/>
   </ParameterList>
 
 
@@ -5388,19 +5412,19 @@ This specification format uses and describes the unstructured mesh only.
         * `"domain high coordinate`" [Array(double)] Location of high corner of domain
         * `"number of cells`" [Array(int)] the number of uniform cells in each coordinate direction
 
-      * `"expert`" [list] accepts parameters that control which particular mesh framework is to be used.
+    * `"expert`" [list] accepts parameters that control which particular mesh framework is to be used.
 
-        * `"framework`" [string] one of `"stk::mesh`", `"MSTK`", `"MOAB`" or `"Simple`". 
-        * `"verify mesh`" [bool] true or false. 
+      * `"framework`" [string] one of `"stk::mesh`", `"MSTK`", `"MOAB`" or `"Simple`". 
+      * `"verify mesh`" [bool] true or false. 
 
-        * `"partitioner`" [string] defines the partitioning algorithm for parallel unstructured meshes.
-          The available options are `"metis"` (default), `"zoltan_graph"` and `"zoltan_rcb"`. `"metis"`
-          and `"zoltan_graph"` perform a graph partitioning of the mesh with no regard to the geometry 
-          of the mesh. `"zoltan_rcb"` partitions meshes using Recursive Coordinate Bisection which 
-          can lead to better partitioning in meshes that are thin in a particular direction. 
-          Additionally, the use of `"zoltan_rcb"` with the MSTK framework triggers an option to 
-          detect columns of elements in a mesh and adjust the partitioning such that no column is 
-          split over multiple partitions. If no partitioner is specified, the default one is used.
+      * `"partitioner`" [string] defines the partitioning algorithm for parallel unstructured meshes.
+        The available options are `"metis"` (default), `"zoltan_graph"` and `"zoltan_rcb"`. `"metis"`
+        and `"zoltan_graph"` perform a graph partitioning of the mesh with no regard to the geometry 
+        of the mesh. `"zoltan_rcb"` partitions meshes using Recursive Coordinate Bisection which 
+        can lead to better partitioning in meshes that are thin in a particular direction. 
+        Additionally, the use of `"zoltan_rcb"` with the MSTK framework triggers an option to 
+        detect columns of elements in a mesh and adjust the partitioning such that no column is 
+        split over multiple partitions. If no partitioner is specified, the default one is used.
 
 Example of *Unstructured* mesh generated internally:
 

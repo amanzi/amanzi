@@ -64,11 +64,6 @@ void Flow_PK::Setup(const Teuchos::Ptr<State>& S)
     S->RequireConstantVector("gravity", passwd_, dim);  // state resets ownership.
   } 
 
-  if (!S->HasField("permeability")) {
-    S->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, dim);
-  }
-
   // Wells
   if (!S->HasField("well_index")) {
     if (fp_list_->isSublist("source terms")) {
@@ -179,16 +174,16 @@ void Flow_PK::InitializeFields_()
         *vo_->os() << "initilized gravity to default value -9.8" << std::endl;  
   }
 
-  InitializeField(S_.ptr(), "porosity", "porosity", 0.2);
-  InitializeField(S_.ptr(), passwd_, "permeability", 1.0);
+  InitializeField(S_.ptr(), porosity_key_, porosity_key_, 0.2);
 
-  InitializeField(S_.ptr(), passwd_, "specific_storage", 0.0);
-  InitializeField(S_.ptr(), passwd_, "specific_yield", 0.0);
+  InitializeField(S_.ptr(), passwd_, specific_storage_key_, 0.0);
+  InitializeField(S_.ptr(), passwd_, specific_yield_key_, 0.0);
 
-  InitializeField(S_.ptr(), passwd_, "pressure", 0.0);
-  InitializeField(S_.ptr(), passwd_, "hydraulic_head", 0.0);
+  InitializeField(S_.ptr(), passwd_, pressure_key_, 0.0);
+  InitializeField(S_.ptr(), passwd_, hydraulic_head_key_, 0.0);
+  InitializeField(S_.ptr(), passwd_, pressure_head_key_, 0.0);
 
-  InitializeField(S_.ptr(), passwd_, "darcy_flux", 0.0);
+  InitializeField(S_.ptr(), passwd_, darcy_flux_key_, 0.0);
 }
 
 
@@ -198,12 +193,12 @@ void Flow_PK::InitializeFields_()
 void Flow_PK::UpdateLocalFields_(const Teuchos::Ptr<State>& S) 
 {
   Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    *vo_->os() << "Secondary fields: hydraulic head, darcy_velocity" << std::endl;  
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+    *vo_->os() << "Secondary fields: hydraulic head, darcy_velocity, etc." << std::endl;  
   }  
 
-  Epetra_MultiVector& hydraulic_head = *(S->GetFieldData("hydraulic_head", passwd_)->ViewComponent("cell"));
-  const Epetra_MultiVector& pressure = *(S->GetFieldData("pressure")->ViewComponent("cell"));
+  Epetra_MultiVector& hydraulic_head = *(S->GetFieldData(hydraulic_head_key_, passwd_)->ViewComponent("cell"));
+  const Epetra_MultiVector& pressure = *(S->GetFieldData(pressure_key_)->ViewComponent("cell"));
   double rho = *(S->GetScalarData("fluid_density"));
 
   // calculate hydraulic head
@@ -215,9 +210,18 @@ void Flow_PK::UpdateLocalFields_(const Teuchos::Ptr<State>& S)
     hydraulic_head[0][c] = z + (pressure[0][c] - atm_pressure_) / (g * rho);
   }
 
+  // calculate optional fields
+  Key optional_key = Keys::getKey(domain_, "pressure_head"); 
+  if (S->HasField(optional_key)) {
+    auto& field_c = *S->GetFieldData(optional_key, passwd_)->ViewComponent("cell");
+    for (int c = 0; c != ncells_owned; ++c) {
+      field_c[0][c] = pressure[0][c] / (g * rho);
+    }
+  }
+
   // calculate full velocity vector
   darcy_flux_eval_->SetFieldAsChanged(S);
-  S->GetFieldEvaluator("darcy_velocity")->HasFieldChanged(S, "darcy_velocity");
+  S->GetFieldEvaluator(darcy_velocity_key_)->HasFieldChanged(S, darcy_velocity_key_);
 }
 
 
@@ -349,7 +353,7 @@ void Flow_PK::ComputeWellIndex(Teuchos::ParameterList& spec)
 {
   AmanziMesh::Entity_ID_List cells, faces;
   Epetra_MultiVector& wi = *S_->GetFieldData("well_index", passwd_)->ViewComponent("cell");
-  const Epetra_MultiVector& perm = *S_->GetFieldData("permeability")->ViewComponent("cell");
+  const Epetra_MultiVector& perm = *S_->GetFieldData(permeability_key_)->ViewComponent("cell");
 
   double kx, ky, dx, dy, h, r0, rw;
   double xmin, xmax, ymin, ymax, zmin, zmax;
@@ -530,7 +534,8 @@ void Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
   int flag = flag_essential_bc;
   mesh_->get_comm()->MaxAll(&flag, &flag_essential_bc, 1);  // find the global maximum
 #endif
-  if (! flag_essential_bc && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+  if (! flag_essential_bc &&
+      domain_ == "domain" && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "WARNING: no essential boundary conditions, solver may fail" << std::endl;
   }
@@ -557,7 +562,7 @@ void Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
 ****************************************************************** */
 void Flow_PK::SetAbsolutePermeabilityTensor()
 {
-  const CompositeVector& cv = *S_->GetFieldData("permeability");
+  const CompositeVector& cv = *S_->GetFieldData(permeability_key_);
   cv.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& perm = *cv.ViewComponent("cell", true);
 
@@ -663,16 +668,21 @@ void Flow_PK::DeriveFaceValuesFromCellValues(
     const Epetra_MultiVector& ucells, Epetra_MultiVector& ufaces)
 {
   AmanziMesh::Entity_ID_List cells;
+  auto& fmap = ufaces.Map(); 
+
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
   for (int f = 0; f < nfaces; f++) {
-    cells.clear();
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::OWNED, &cells);
     int ncells = cells.size();
 
     double face_value = 0.0;
     for (int n = 0; n < ncells; n++) face_value += ucells[0][cells[n]];
-    ufaces[0][f] = face_value / ncells;
+    double pmean = face_value / ncells;
+
+    int first = fmap.FirstPointInElement(f);
+    int ndofs = fmap.ElementSize(f);
+    for (int k = 0; k < ndofs; ++k) ufaces[0][first + k] = pmean;
   }
 }
 

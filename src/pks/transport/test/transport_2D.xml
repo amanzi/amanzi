@@ -7,27 +7,21 @@
    
   <ParameterList name="regions">
     <ParameterList name="Computational domain">
-      <ParameterList name="region: labeled set">
-        <Parameter name="label" type="string" value="1"/>
-        <Parameter name="file" type="string" value="rect2D_10x10_ss.exo"/>
-        <Parameter name="format" type="string" value="Exodus II"/>
-        <Parameter name="entity" type="string" value="cell"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Left">
-      <ParameterList name="region: labeled set">
-        <Parameter name="label" type="string" value="3"/>
-        <Parameter name="file" type="string" value="rect2D_10x10_ss.exo"/>
-        <Parameter name="format" type="string" value="Exodus II"/>
-        <Parameter name="entity" type="string" value="face"/>
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom">
-      <ParameterList name="region: labeled set">
-        <Parameter name="label" type="string" value="2"/>
-        <Parameter name="file" type="string" value="rect2D_10x10_ss.exo"/>
-        <Parameter name="format" type="string" value="Exodus II"/>
-        <Parameter name="entity" type="string" value="face"/>
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0,-1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Left">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{-1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -47,6 +41,7 @@
         <Parameter name="polynomial order" type="int" value="1"/>
         <Parameter name="limiter" type="string" value="tensorial"/>
         <Parameter name="limiter extension for transport" type="bool" value="true"/>
+        <Parameter name="limiter stencil" type="string" value="face to cells"/>
       </ParameterList>
 
       <ParameterList name="verbose object">
@@ -69,7 +64,7 @@
           </ParameterList>
           <ParameterList name="Component 1">
             <ParameterList name="BC for bottom">
-              <Parameter name="regions" type="Array(string)" value="{Left}"/>
+              <Parameter name="regions" type="Array(string)" value="{Bottom}"/>
               <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="boundary concentration">
                 <ParameterList name="function-tabular">
@@ -80,7 +75,7 @@
               </ParameterList>
             </ParameterList>
             <ParameterList name="BC for left">
-              <Parameter name="regions" type="Array(string)" value="{Bottom}"/>
+              <Parameter name="regions" type="Array(string)" value="{Left}"/>
               <Parameter name="spatial distribution method" type="string" value="none"/>
               <ParameterList name="boundary concentration">
                 <ParameterList name="function-tabular">

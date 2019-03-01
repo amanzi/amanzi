@@ -29,6 +29,7 @@
 #include "checkpoint.hh"
 #include "CompositeVectorSpace.hh"
 #include "independent_variable_field_evaluator_fromfunction.hh"
+#include "Key.hh"
 #include "PK_DomainFunction.hh"
 #include "PK_PhysicalBDF.hh"
 #include "primary_variable_field_evaluator.hh"
@@ -87,7 +88,7 @@ class Flow_PK : public PK_PhysicalBDF {
   // -- V&V
   void VV_ValidateBCs() const;
   void VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const;
-  void VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const;
+  void VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dT) const;
   void VV_PrintHeadExtrema(const CompositeVector& pressure) const;
   void VV_PrintSourceExtrema() const;
 
@@ -122,6 +123,7 @@ class Flow_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Teuchos::ParameterList> ti_list_;
 
  protected:
+  Key domain_;  // computational domain
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim;
 
@@ -151,6 +153,14 @@ class Flow_PK : public PK_PhysicalBDF {
   // field evaluators (MUST GO AWAY lipnikov@lanl.gov)
   Teuchos::RCP<PrimaryVariableFieldEvaluator> darcy_flux_eval_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval_, pressure_matrix_eval_;
+
+  // names of state fields 
+  Key pressure_key_;
+  Key darcy_flux_key_, specific_storage_key_, specific_yield_key_;
+  Key saturation_liquid_key_, prev_saturation_liquid_key_;
+  Key porosity_key_, hydraulic_head_key_, pressure_head_key_;
+  Key permeability_key_;
+  Key darcy_flux_fracture_key_, darcy_velocity_key_;
 
   // io
   Utils::Units units_;

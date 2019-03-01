@@ -78,19 +78,19 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
   Epetra_MultiVector& Yc = *Y.ViewComponent("cell", true);
 
   AmanziMesh::Entity_ID_List cells;
-  for (int f=0; f!=nfaces_owned; ++f) {
+  for (int f = 0; f != nfaces_owned; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
     WhetStone::DenseVector v(ncells), av(ncells);
-    for (int n=0; n!=ncells; ++n) {
+    for (int n = 0; n != ncells; ++n) {
       v(n) = Xc[0][cells[n]];
     }
 
     const WhetStone::DenseMatrix& Aface = op.matrices[f];
     Aface.Multiply(v, av, false);
 
-    for (int n=0; n!=ncells; ++n) {
+    for (int n = 0; n != ncells; ++n) {
       Yc[0][cells[n]] += av(n);
     }
   }
@@ -106,13 +106,22 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
 ****************************************************************** */
 void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
                                              const SuperMap& map, GraphFE& graph,
-                                             int my_block_row, int my_block_col) const
+                                             int my_block_row, int my_block_col, bool multi_domain) const
 {
-  const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
-  const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
+  std::string cell_name = "cell";
+  int row_pos = my_block_row;
+  int col_pos = my_block_col;
+  if (multi_domain) {
+    cell_name = cell_name + "-" + std::to_string(my_block_col);
+    row_pos = 0;
+    col_pos = 0;
+  }
+
+  const std::vector<int>& cell_row_inds = map.GhostIndices(cell_name, row_pos);
+  const std::vector<int>& cell_col_inds = map.GhostIndices(cell_name, col_pos);
 
   int ierr(0);
-  for (int c=0; c!=ncells_owned; ++c) {
+  for (int c = 0; c != ncells_owned; ++c) {
     int row = cell_row_inds[c];
     int col = cell_col_inds[c];
 
@@ -127,27 +136,47 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
 ****************************************************************** */
 void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
                                              const SuperMap& map, GraphFE& graph,
-                                             int my_block_row, int my_block_col) const
+                                             int my_block_row, int my_block_col, bool multi_domain) const
 {
   // ELEMENT: face, DOF: cell
   int lid_r[2];
   int lid_c[2];
-  const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
-  const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
 
+  std::string cell_name_row = "cell";
+  std::string cell_name_col = "cell";
+  int row_pos = my_block_row;
+  int col_pos = my_block_col;
+
+  if (multi_domain) {
+    cell_name_row = cell_name_row + "-" + std::to_string(my_block_row);
+    cell_name_col = cell_name_col + "-" + std::to_string(my_block_col);
+    row_pos = 0;
+    col_pos = 0;
+  }
+
+
+  const std::vector<int>& cell_row_inds = map.GhostIndices(cell_name_row, row_pos);
+  const std::vector<int>& cell_col_inds = map.GhostIndices(cell_name_col, col_pos);
+
+
+  
+  //for (auto s : cell_row_inds) std::cout<<s<<" "; std::cout<<"\n";
+  //for (auto s : cell_col_inds) std::cout<<s<<" "; std::cout<<"\n";  
+  
   int ierr(0);
   AmanziMesh::Entity_ID_List cells;
-  for (int f=0; f!=nfaces_owned; ++f) {
+  for (int f = 0; f != nfaces_owned; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     
     int ncells = cells.size();
-    for (int n=0; n!=ncells; ++n) {
+    for (int n = 0; n != ncells; ++n) {
       lid_r[n] = cell_row_inds[cells[n]];
       lid_c[n] = cell_col_inds[cells[n]];
     }
 
     ierr |= graph.InsertMyIndices(ncells, lid_r, ncells, lid_c);
   }
+  std::cout<<"\n";
   AMANZI_ASSERT(!ierr);
 }
 
@@ -158,15 +187,25 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
 ****************************************************************** */
 void Operator_Cell::AssembleMatrixOp(const Op_Cell_Cell& op,
                                      const SuperMap& map, MatrixFE& mat,
-                                     int my_block_row, int my_block_col) const
+                                     int my_block_row, int my_block_col, bool multi_domain) const
 {
   AMANZI_ASSERT(op.diag->NumVectors() == 1);
 
-  const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
-  const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
+  std::string cell_name = "cell";
+  int row_pos = my_block_row;
+  int col_pos = my_block_col;
+
+  if (multi_domain) {
+    cell_name = cell_name + "-" + std::to_string(my_block_col);
+    row_pos = 0;
+    col_pos = 0;
+  }
+
+  const std::vector<int>& cell_row_inds = map.GhostIndices(cell_name, row_pos);
+  const std::vector<int>& cell_col_inds = map.GhostIndices(cell_name, col_pos);
 
   int ierr(0);
-  for (int c=0; c!=ncells_owned; ++c) {
+  for (int c = 0; c != ncells_owned; ++c) {
     int row = cell_row_inds[c];
     int col = cell_col_inds[c];
 
@@ -178,23 +217,38 @@ void Operator_Cell::AssembleMatrixOp(const Op_Cell_Cell& op,
 
 void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
                                      const SuperMap& map, MatrixFE& mat,
-                                     int my_block_row, int my_block_col) const
+                                     int my_block_row, int my_block_col, bool multi_domain) const
 {
   AMANZI_ASSERT(op.matrices.size() == nfaces_owned);
   
   // ELEMENT: face, DOF: cell
   int lid_r[2];
   int lid_c[2];
-  const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
-  const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
+
+   std::string cell_name_row = "cell";
+  std::string cell_name_col = "cell";
+  int row_pos = my_block_row;
+  int col_pos = my_block_col;
+
+  if (multi_domain) {
+    cell_name_row = cell_name_row + "-" + std::to_string(my_block_row);
+    cell_name_col = cell_name_col + "-" + std::to_string(my_block_col);
+    row_pos = 0;
+    col_pos = 0;
+  }
+
+
+  const std::vector<int>& cell_row_inds = map.GhostIndices(cell_name_row, row_pos);
+  const std::vector<int>& cell_col_inds = map.GhostIndices(cell_name_col, col_pos);
+
 
   int ierr(0);
   AmanziMesh::Entity_ID_List cells;
-  for (int f=0; f!=nfaces_owned; ++f) {
+  for (int f = 0; f != nfaces_owned; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     
     int ncells = cells.size();
-    for (int n=0; n!=ncells; ++n) {
+    for (int n = 0; n != ncells; ++n) {
       lid_r[n] = cell_row_inds[cells[n]];
       lid_c[n] = cell_col_inds[cells[n]];
     }

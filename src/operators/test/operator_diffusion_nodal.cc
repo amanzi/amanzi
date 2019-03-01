@@ -60,11 +60,10 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   // create an SIMPLE mesh framework
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 30, 30);
-  // RCP<const Mesh> mesh = meshfactory("test/median32x33.exo");
+  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 30, 30);
+  RCP<const Mesh> mesh = meshfactory("test/median15x16.exo");
 
   // modify diffusion coefficient
-  // -- since rho=mu=1.0, we do not need to scale the diffusion tensor.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
@@ -76,8 +75,6 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
     const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
-  double rho(1.0), mu(1.0);
-  AmanziGeometry::Point g(0.0, -1.0);
 
   // create boundary data
   Point xv(2);
@@ -85,10 +82,16 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
-  for (int v = 0; v < nnodes_wghost; v++) {
-    mesh->node_get_coordinates(v, &xv);
-    if (fabs(xv[0]) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 ||
-        fabs(xv[1]) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6) {
+  const auto& fmap = mesh->face_map(true);
+  const auto& bmap = mesh->exterior_face_map(true);
+
+  for (int bf = 0; bf < bmap.NumMyElements(); ++bf) {
+    int f = fmap.LID(bmap.GID(bf));
+    AmanziMesh::Entity_ID_List nodes; 
+    mesh->face_get_nodes(f, &nodes);
+    for (int n = 0; n < nodes.size(); ++n) {
+      int v = nodes[n];
+      mesh->node_get_coordinates(v, &xv);
       bc_model[v] = OPERATOR_BC_DIRICHLET;
       bc_value[v] = ana.pressure_exact(xv, 0.0);
     }
@@ -96,7 +99,8 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
 
   // create diffusion operator 
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator nodal");
-  Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionMFD(op_list, mesh));
+  auto op = Teuchos::rcp(new PDE_DiffusionMFD(op_list, mesh));
+  op->Init(op_list);
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
@@ -141,6 +145,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   // Test SPD properties of the preconditioner.
   VerificationCV ver(global_op);
   ver.CheckPreconditionerSPD();
+  ver.CheckSpectralBounds();
 
   // solve the problem
   ParameterList lop_list = plist.sublist("solvers")
@@ -182,7 +187,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
     ph1_err /= hnorm;
     printf("L2(p)=%9.6f  H1(p)=%9.6f  itr=%3d\n", pl2_err, ph1_err, solver.num_itrs());
 
-    CHECK(pl2_err < 3e-3 && ph1_err < 2e-2);
+    CHECK(pl2_err < 2e-2 && ph1_err < 7e-2);
     CHECK(solver.num_itrs() < 10);
   }
 }
@@ -241,7 +246,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
 
   for (int v = 0; v < nnodes_wghost; v++) {
     mesh->node_get_coordinates(v, &xv);
-    if(fabs(xv[0] - 1.0) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6) {
+    if (fabs(xv[0] - 1.0) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6) {
       bc_model_v[v] = OPERATOR_BC_DIRICHLET;
       bc_value_v[v] = ana.pressure_exact(xv, 0.0);
     }

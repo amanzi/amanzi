@@ -107,6 +107,7 @@
       <ParameterList name="expert">
         <Parameter name="framework" type="string" value="MSTK"/>
         <Parameter name="partitioner" type="string" value="NOT_SPECIFIED"/>
+        <Parameter name="contiguous global ids" type="bool" value="false"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="verbose object">
@@ -632,8 +633,9 @@
       <Parameter name="transport subcycling" type="bool" value="true"/>
       <ParameterList name="reconstruction">
         <Parameter name="polynomial order" type="int" value="0"/>
-        <Parameter name="limiter" type="string" value="tensorial"/>
+        <Parameter name="limiter" type="string" value="Kuzmin"/>
         <Parameter name="limiter extension for transport" type="bool" value="true"/>
+        <Parameter name="limiter stencil" type="string" value="node to cells"/>
       </ParameterList>
       <ParameterList name="material properties">
         <ParameterList name="Facies_1">

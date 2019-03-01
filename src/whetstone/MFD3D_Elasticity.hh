@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -26,6 +26,7 @@
 #include "Mesh.hh"
 #include "Point.hh"
 
+#include "BilinearFormFactory.hh"
 #include "DenseMatrix.hh"
 #include "MFD3D.hh"
 #include "Tensor.hh"
@@ -35,7 +36,8 @@ namespace WhetStone {
 
 class MFD3D_Elasticity : public MFD3D { 
  public:
-  MFD3D_Elasticity(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+  MFD3D_Elasticity(const Teuchos::ParameterList& plist,
+                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : MFD3D(mesh),
       InnerProduct(mesh) {};
   ~MFD3D_Elasticity() {};
@@ -43,23 +45,27 @@ class MFD3D_Elasticity : public MFD3D {
   // required methods
   // most methods use edge-based DOFs (part of DeRham complex) 
   // -- mass matrices
-  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
-  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) { return WHETSTONE_ELEMENTAL_MATRIX_OK; } 
+  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override;
+  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override {
+    Errors::Message msg("Mass matrix is not implemented for elasticity space.");
+    Exceptions::amanzi_throw(msg);
+    return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  }
 
-  // -- inverse mass matrices
-  virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
-  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) { return WHETSTONE_ELEMENTAL_MATRIX_OK; } 
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
-  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
+  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc) override;
+  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
-  // optimization methods (mainly for testing)
+  // optimization methods (mainly for research, since the maximum principle does not exists)
   int StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatrix& A);
   int StiffnessMatrixMMatrix(int c, const Tensor& T, DenseMatrix& A);
 
  private:
   void MatrixMatrixProduct_(
       const DenseMatrix& A, const DenseMatrix& B, bool transposeB, DenseMatrix& AB);
+
+ private:
+  static RegisteredFactory<MFD3D_Elasticity> factory_;
 };
 
 }  // namespace WhetStone

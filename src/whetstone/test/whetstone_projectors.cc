@@ -60,11 +60,14 @@ TEST(PROJECTORS_SQUARE_CR) {
     vf[n].Reshape(2, 1, true);
   }
 
-  MFD3D_CrouzeixRaviart mfd(mesh);
+  Teuchos::ParameterList plist;
+  plist.set<int>("method order", 1);
+
+  MFD3D_CrouzeixRaviart mfd(plist, mesh);
   Polynomial moments(2, 0);  // trivial polynomials p=0
 
   mfd.set_order(2);
-  mfd.H1Cell(cell, vf, moments, uc);
+  mfd.H1Cell(cell, vf, &moments, uc);
 
   uc.ChangeOrigin(zero);
   CHECK(uc.NormInf() < 1e-12);
@@ -78,7 +81,7 @@ TEST(PROJECTORS_SQUARE_CR) {
   }
   
   mfd.set_order(1);
-  mfd.H1Cell(cell, vf, moments, uc);
+  mfd.H1Cell(cell, vf, &moments, uc);
 
   uc.ChangeOrigin(zero);
   std::cout << uc << std::endl;
@@ -96,7 +99,7 @@ TEST(PROJECTORS_SQUARE_CR) {
     }
 
     mfd.set_order(k);
-    mfd.H1Cell(cell, vf, moments, uc);
+    mfd.H1Cell(cell, vf, &moments, uc);
 
     uc.ChangeOrigin(zero);
     std::cout << uc << std::endl;
@@ -115,7 +118,7 @@ TEST(PROJECTORS_SQUARE_CR) {
   moments(0) = 0.2;
 
   mfd.set_order(2);
-  mfd.H1Cell(cell, vf, moments, uc);
+  mfd.H1Cell(cell, vf, &moments, uc);
 
   uc.ChangeOrigin(zero);
   std::cout << uc << std::endl;
@@ -156,12 +159,14 @@ TEST(PROJECTORS_POLYGON_CR) {
     vf[n](1, 1) = 3.0;
   }
   
-  MFD3D_CrouzeixRaviart mfd(mesh);
-  Polynomial moments(2, 0);  // trivial polynomials p=0
+  Teuchos::ParameterList plist;
+  plist.set<int>("method order", 1);
+
+  MFD3D_CrouzeixRaviart mfd(plist, mesh);
 
   // -- old scheme
   mfd.set_order(1);
-  mfd.H1Cell(cell, vf, moments, uc);
+  mfd.H1Cell(cell, vf, NULL, uc);
 
   uc.ChangeOrigin(zero);
   std::cout << uc << std::endl;
@@ -170,6 +175,7 @@ TEST(PROJECTORS_POLYGON_CR) {
   CHECK(uc.NormInf() < 1e-12);
 
   // -- new scheme (k=1)
+  Polynomial moments(2, 0);  // trivial polynomials p=0
   mfd.set_use_always_ho(true);
   for (int k = 1; k < 4; ++k) {
     if (k > 1) moments.Reshape(2, k - 2, true);
@@ -180,7 +186,7 @@ TEST(PROJECTORS_POLYGON_CR) {
     }
 
     mfd.set_order(k);
-    mfd.H1Cell(cell, vf, moments, uc);
+    mfd.H1Cell(cell, vf, &moments, uc);
 
     uc.ChangeOrigin(zero);
     std::cout << uc << std::endl;
@@ -207,7 +213,7 @@ TEST(PROJECTORS_POLYGON_CR) {
     }
 
     mfd.set_order(k);
-    mfd.H1Cell(cell, vf, moments, uc);
+    mfd.H1Cell(cell, vf, &moments, uc);
 
     uc.ChangeOrigin(zero);
     std::cout << uc << std::endl;
@@ -235,7 +241,7 @@ TEST(PROJECTORS_POLYGON_CR) {
     }
 
     mfd.set_order(k);
-    mfd.H1Cell(cell, vf, moments, uc);
+    mfd.H1Cell(cell, vf, &moments, uc);
 
     uc.ChangeOrigin(zero);
     std::cout << vf[0] << std::endl;
@@ -259,7 +265,7 @@ TEST(PROJECTORS_POLYGON_CR) {
   moments(0) = 19.88406156156157;
 
   mfd.set_order(2);
-  mfd.H1Cell(cell, vf, moments, uc);
+  mfd.H1Cell(cell, vf, &moments, uc);
 
   uc.ChangeOrigin(zero);
   std::cout << uc << std::endl;
@@ -301,7 +307,7 @@ TEST(PROJECTORS_POLYGON_CR) {
     }
 
     mfd.set_order(k);
-    mfd.H1Cell(cell, vf, moments, uc);
+    mfd.H1Cell(cell, vf, &moments, uc);
 
     for (auto it = moments.begin(); it < moments.end(); ++it) {
       Polynomial mono(2, it.multi_index(), 1.0);
@@ -350,12 +356,15 @@ TEST(L2_PROJECTORS_SQUARE_CR) {
     vf[n].ChangeOrigin(AmanziGeometry::Point(0.0, 0.0));
   }
 
-  MFD3D_CrouzeixRaviart mfd(mesh);
+  Teuchos::ParameterList plist;
+  plist.set<int>("method order", 1);
+
+  MFD3D_CrouzeixRaviart mfd(plist, mesh);
   Polynomial moments(2, 2);
   moments(2, 1) = 1.0 / 60;
 
   mfd.set_order(4);
-  mfd.H1Cell(cell, vf, moments, uc);
+  mfd.H1Cell(cell, vf, &moments, uc);
 
   uc.ChangeOrigin(zero);
   std::cout << uc << std::endl;
@@ -398,7 +407,10 @@ TEST(L2GRADIENT_PROJECTORS_SQUARE_CR) {
   }
   auto grad = Gradient(vf[0][0]);
 
-  MFD3D_CrouzeixRaviart mfd(mesh);
+  Teuchos::ParameterList plist;
+  plist.set<int>("method order", 1);
+
+  MFD3D_CrouzeixRaviart mfd(plist, mesh);
   auto moments = std::make_shared<WhetStone::DenseVector>(3);
   moments->PutScalar(0.0);
   (*moments)(2) = 1.0 / 15;
@@ -445,8 +457,11 @@ TEST(PROJECTORS_SQUARE_PK) {
   // test zero cell deformation
   for (int n = 0; n < 4; ++n) vf[n].Reshape(2, 1, true);
 
-  MFD3D_Lagrange mfd(mesh);
-  MFD3D_CrouzeixRaviart mfd_cr(mesh);
+  Teuchos::ParameterList plist;
+  plist.set<int>("method order", 1);
+
+  MFD3D_Lagrange mfd(plist, mesh);
+  MFD3D_CrouzeixRaviart mfd_cr(plist, mesh);
   Polynomial moments(2, 0);
 
   // test linear deformation
@@ -465,7 +480,7 @@ TEST(PROJECTORS_SQUARE_PK) {
     }
 
     mfd.set_order(k);
-    mfd.H1Cell(cell, vf, moments, uc);  
+    mfd.H1Cell(cell, vf, &moments, uc);  
 
     uc.ChangeOrigin(zero);
     uc -= vf[0];
@@ -484,10 +499,10 @@ TEST(PROJECTORS_SQUARE_PK) {
 
   for (int k = 1; k < 3; ++k) { 
     mfd.set_order(k);
-    mfd.H1Cell(cell, vf, moments, uc);  
+    mfd.H1Cell(cell, vf, &moments, uc);  
 
     mfd_cr.set_order(k);
-    mfd_cr.H1Cell(cell, vf, moments, uc2);
+    mfd_cr.H1Cell(cell, vf, &moments, uc2);
 
     uc.ChangeOrigin(zero);
     uc2.ChangeOrigin(zero);
@@ -495,7 +510,7 @@ TEST(PROJECTORS_SQUARE_PK) {
     CHECK(uc2.NormInf() < 1e-12);
 
     // Compare H1 and L2 projectors
-    mfd.L2Cell(cell, vf, moments, uc2);
+    mfd.L2Cell(cell, vf, &moments, uc2);
 
     uc2.ChangeOrigin(zero);
     uc2 -= uc;
@@ -529,8 +544,11 @@ TEST(PROJECTORS_POLYGON_PK) {
   Polynomial uc, uc2;
   std::vector<Polynomial> vf(nfaces);
 
-  MFD3D_Lagrange mfd(mesh);
-  MFD3D_CrouzeixRaviart mfd_cr(mesh);
+  Teuchos::ParameterList plist;
+  plist.set<int>("method order", 1);
+
+  MFD3D_Lagrange mfd(plist, mesh);
+  MFD3D_CrouzeixRaviart mfd_cr(plist, mesh);
   Polynomial moments(2, 0);
 
   // test globally linear deformation
@@ -550,7 +568,7 @@ TEST(PROJECTORS_POLYGON_PK) {
     }
 
     mfd.set_order(k);
-    mfd.H1Cell(cell, vf, moments, uc);
+    mfd.H1Cell(cell, vf, &moments, uc);
 
     uc.ChangeOrigin(zero);
     std::cout << uc << std::endl;
@@ -577,7 +595,7 @@ TEST(PROJECTORS_POLYGON_PK) {
     }
 
     mfd.set_order(k);
-    mfd.H1Cell(cell, vf, moments, uc);
+    mfd.H1Cell(cell, vf, &moments, uc);
 
     uc.ChangeOrigin(zero);
     std::cout << uc << std::endl;
@@ -597,7 +615,7 @@ TEST(PROJECTORS_POLYGON_PK) {
   moments(0) = 19.88406156156157;
 
   mfd.set_order(2);
-  mfd.H1Cell(cell, vf, moments, uc);
+  mfd.H1Cell(cell, vf, &moments, uc);
 
   uc.ChangeOrigin(zero);
   std::cout << uc << std::endl;
@@ -659,17 +677,17 @@ TEST(PROJECTORS_POLYGON_PK) {
     }
 
     mfd.set_order(k);
-    mfd.H1Cell(cell, vf, moments, uc);
+    mfd.H1Cell(cell, vf, &moments, uc);
 
     mfd_cr.set_order(k);
-    mfd_cr.H1Cell(cell, vf, moments, uc2);
+    mfd_cr.H1Cell(cell, vf, &moments, uc2);
 
     uc.ChangeOrigin(zero);
     uc2.ChangeOrigin(zero);
     uc2 -= uc;
     if (k < 3) CHECK(uc2.NormInf() < 1e-12);
 
-    mfd.L2Cell(cell, vf, moments, uc2);
+    mfd.L2Cell(cell, vf, &moments, uc2);
 
     uc2.ChangeOrigin(zero);
     uc2 -= uc;
@@ -685,11 +703,11 @@ TEST(PROJECTORS_POLYGON_PK) {
     moments.PutScalar(1.0);
 
     mfd.set_order(k);
-    mfd.H1Cell(cell, vf, moments, uc);
+    mfd.H1Cell(cell, vf, &moments, uc);
     double tmp = numi.IntegratePolynomialCell(cell, uc) / mesh->cell_volume(cell);
     CHECK_CLOSE(1.0, tmp, 1e-12);
 
-    mfd.L2Cell(cell, vf, moments, uc);
+    mfd.L2Cell(cell, vf, &moments, uc);
     tmp = numi.IntegratePolynomialCell(cell, uc) / mesh->cell_volume(cell);
     CHECK_CLOSE(1.0, tmp, 1e-12);
   }
@@ -718,8 +736,10 @@ void SerendipityProjectorPolygon() {
   Polynomial uc, uc2;
   std::vector<Polynomial> vf(nfaces);
 
-  Serendipity mfd(mesh);
-  Polynomial moments(2, 0);
+  Teuchos::ParameterList plist;
+  plist.set<int>("method order", 1);
+
+  Serendipity mfd(plist, mesh);
 
   // test globally linear deformation
   for (int n = 0; n < nfaces; ++n) {
@@ -731,14 +751,14 @@ void SerendipityProjectorPolygon() {
   
   for (int k = 1; k < 4; ++k) {
     mfd.set_order(k);
-    mfd.L2Cell(cell, vf, moments, uc);
+    mfd.L2Cell(cell, vf, NULL, uc);
     uc.ChangeOrigin(zero);
     std::cout << uc << std::endl;
 
     uc -= vf[0];
     CHECK(uc.NormInf() < 1e-10);
 
-    mfd.H1Cell(cell, vf, moments, uc);
+    mfd.H1Cell(cell, vf, NULL, uc);
     uc.ChangeOrigin(zero);
     uc -= vf[0];
     CHECK(uc.NormInf() < 2e-10);
@@ -755,14 +775,14 @@ void SerendipityProjectorPolygon() {
 
   for (int k = 2; k < 4; ++k) {
     mfd.set_order(k);
-    mfd.L2Cell(cell, vf, moments, uc);
+    mfd.L2Cell(cell, vf, NULL, uc);
     uc.ChangeOrigin(zero);
     std::cout << uc << std::endl;
 
     uc -= vf[0];
     CHECK(uc.NormInf() < 4e-10);
 
-    mfd.H1Cell(cell, vf, moments, uc);
+    mfd.H1Cell(cell, vf, NULL, uc);
     uc.ChangeOrigin(zero);
     uc -= vf[0];
     CHECK(uc.NormInf() < 5e-10);
@@ -794,16 +814,16 @@ void SerendipityProjectorPolygon() {
   
   for (int k = 1; k < 4; ++k) {
     mfd.set_order(k);
-    mfd.L2Cell(cell, vf, moments, uc);
+    mfd.L2Cell(cell, vf, NULL, uc);
     uc.ChangeOrigin(zero);
     std::cout << "order=" << k << " " << uc << std::endl;
 
-    mfd.L2Cell_LeastSquare(cell, vf, moments, uc2);
+    mfd.L2Cell_LeastSquare(cell, vf, NULL, uc2);
     uc2.ChangeOrigin(zero);
     uc2 -= uc;
     CHECK(uc2.NormInf() < 1e-11);
 
-    mfd.H1Cell(cell, vf, moments, uc2);
+    mfd.H1Cell(cell, vf, NULL, uc2);
     uc2.ChangeOrigin(zero);
     uc2 -= uc;
     CHECK(uc2.NormInf() < 2e-2);

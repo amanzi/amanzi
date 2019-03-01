@@ -26,6 +26,7 @@ typedef enum { OPERATOR_DIFFUSION_MFD,
                OPERATOR_DIFFUSION_MFD_XMOF,
                OPERATOR_DIFFUSION_MFD_TRACER,
                OPERATOR_DIFFUSION_DG,
+               OPERATOR_DIFFUSION_FRACTURED_MATRIX,
                OPERATOR_ADVECTION,
                OPERATOR_ACCUMULATION,
                OPERATOR_ELASTICITY,
@@ -49,6 +50,8 @@ const int OPERATOR_SCHEMA_BASE_FACE = 32;
 const int OPERATOR_SCHEMA_BASE_CELL = 64;
 const int OPERATOR_SCHEMA_BASE_NODE = 128;
 const int OPERATOR_SCHEMA_BASE_EDGE = 256;
+
+const int OPERATOR_SCHEMA_INDICES = 512;
 
 // schemas
 const int OPERATOR_SCHEMA_RULE_EXACT = 1;
@@ -114,10 +117,24 @@ const double OPERATOR_RECONSTRUCTION_MATRIX_CORRECTION = 1e-15;
 
 // limiting options
 const int OPERATOR_LIMITER_BARTH_JESPERSEN = 1; 
-const int OPERATOR_LIMITER_TENSORIAL = 2;
-const int OPERATOR_LIMITER_KUZMIN = 3;
+const int OPERATOR_LIMITER_BARTH_JESPERSEN_DG = 2; 
+const int OPERATOR_LIMITER_MICHALAK_GOOCH = 3; 
+const int OPERATOR_LIMITER_MICHALAK_GOOCH_DG = 4; 
+const int OPERATOR_LIMITER_TENSORIAL = 5;
+const int OPERATOR_LIMITER_KUZMIN = 6;
 const double OPERATOR_LIMITER_TOLERANCE = 1e-14;
 const double OPERATOR_LIMITER_INFINITY = 1e+99;
+
+// stencil for calculating limiting bounds
+const int OPERATOR_LIMITER_STENCIL_N2C = 10;
+const int OPERATOR_LIMITER_STENCIL_F2C = 20;
+const int OPERATOR_LIMITER_STENCIL_C2C_CLOSEST = 30;
+const int OPERATOR_LIMITER_STENCIL_C2C_ALL = 31;
+
+// detrminant of Jacobian of a map
+const int OPERATOR_DETERMINANT_VEM = 1;
+const int OPERATOR_DETERMINANT_EXACT_TI = 2;  // experimental
+const int OPERATOR_DETERMINANT_MONOTONE = 3;
 
 }  // namespace Operators
 }  // namespace Amanzi

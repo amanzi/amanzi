@@ -71,7 +71,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   std::vector<std::string> setnames;
   setnames.push_back(std::string("Top surface"));
 
-  RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(*mesh_mstk, setnames, AmanziMesh::FACE));
+  RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(&*mesh_mstk, setnames, AmanziMesh::FACE));
 
   /* modify diffusion coefficient */
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
@@ -101,8 +101,8 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
 
   // create diffusion operator
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("diffusion operator");
-  Teuchos::RCP<PDE_Diffusion> op_diff =
-      Teuchos::rcp(new PDE_DiffusionMFD(olist, (Teuchos::RCP<const AmanziMesh::Mesh>) surfmesh));
+  auto op_diff = Teuchos::rcp(new PDE_DiffusionMFD(olist, (Teuchos::RCP<const AmanziMesh::Mesh>) surfmesh));
+  op_diff->Init(olist);
   op_diff->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op_diff->global_operator()->DomainMap();
 

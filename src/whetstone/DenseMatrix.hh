@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -159,6 +159,7 @@ class DenseMatrix {
 
   // -- inversion is applicable for square matrices only
   int Inverse();
+  int InverseSPD();
   int NullSpace(DenseMatrix& D);
   double Det();  // limited capabilities
 

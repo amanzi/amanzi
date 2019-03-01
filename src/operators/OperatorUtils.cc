@@ -27,40 +27,28 @@ namespace Operators {
 * Convert composite vector to/from super vector.
 ****************************************************************** */
 int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector& cv,
-                                     Epetra_Vector& sv, int dofnum)
+                                     Epetra_Vector& sv, bool multi_domain, int dofnum)
 {
-  if (cv.HasComponent("face") && smap.HasComponent("face")) {
-    const std::vector<int>& face_inds = smap.Indices("face", dofnum);
-    const Epetra_MultiVector& data = *cv.ViewComponent("face");
-    for (int f = 0; f != data.MyLength(); ++f) sv[face_inds[f]] = data[0][f];
+  std::string sm_name;
+  int dof_id;
+
+  for (auto it=cv.Map().begin(); it!=cv.Map().end(); ++it) {
+    if (multi_domain) {
+      sm_name = *it + "-"+ std::to_string(dofnum);
+      dof_id = 0;
+    }
+    else {
+      sm_name = *it;
+      dof_id = dofnum;
+    }
+
+    if (smap.HasComponent(sm_name)) {
+      const std::vector<int>& inds = smap.Indices(sm_name, dof_id);
+      const Epetra_MultiVector& data = *cv.ViewComponent(*it);
+      for (int i=0; i!= data.MyLength(); ++i) sv[inds[i]] = data[0][i];
+    }
   }
-
-  if (cv.HasComponent("cell") && smap.HasComponent("cell")) {
-    const std::vector<int>& cell_inds = smap.Indices("cell", dofnum);
-    const Epetra_MultiVector& data = *cv.ViewComponent("cell");
-    for (int c = 0; c != data.MyLength(); ++c) sv[cell_inds[c]] = data[0][c];
-  } 
-
-  if (cv.HasComponent("edge") && smap.HasComponent("edge")) {
-    const std::vector<int>& edge_inds = smap.Indices("edge", dofnum);
-    const Epetra_MultiVector& data = *cv.ViewComponent("edge");
-    for (int e = 0; e != data.MyLength(); ++e) sv[edge_inds[e]] = data[0][e];
-  } 
-
-  if (cv.HasComponent("node") && smap.HasComponent("node")) {
-    const std::vector<int>& node_inds = smap.Indices("node", dofnum);
-    const Epetra_MultiVector& data = *cv.ViewComponent("node");
-    for (int v = 0; v != data.MyLength(); ++v) sv[node_inds[v]] = data[0][v];
-  }
-
-  if (cv.HasComponent("boundary_face") && smap.HasComponent("boundary_face")) {
-    const std::vector<int>& bndface_inds = smap.Indices("boundary_face", dofnum);
-
     
-    const Epetra_MultiVector& data = *cv.ViewComponent("boundary_face");
-    for (int f = 0; f != data.MyLength(); ++f) sv[bndface_inds[f]] = data[0][f];
-  }
-  
   return 0;
 }
 
@@ -69,37 +57,29 @@ int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector
 * Copy super vector to composite vector, component-by-component.
 ****************************************************************** */
 int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& sv,
-                                     CompositeVector& cv, int dofnum)
+                                     CompositeVector& cv, bool multi_domain, int dofnum)
 {
-  if (cv.HasComponent("face") && smap.HasComponent("face")) {
-    const std::vector<int>& face_inds = smap.Indices("face", dofnum);
-    Epetra_MultiVector& data = *cv.ViewComponent("face");
-    for (int f = 0; f != data.MyLength(); ++f) data[0][f] = sv[face_inds[f]];
+  std::string sm_name;
+  int dof_id;
+
+  for (auto it=cv.Map().begin(); it!=cv.Map().end(); ++it) {
+    if (multi_domain) {
+      sm_name = *it + "-"+ std::to_string(dofnum);
+      dof_id = 0;
+    }
+    else {
+      sm_name = *it;
+      dof_id = dofnum;
+    }
+
+    if (smap.HasComponent(sm_name)) {
+      const std::vector<int>& inds = smap.Indices(sm_name, dof_id);
+      const Epetra_MultiVector& data = *cv.ViewComponent(*it);
+      for (int i=0; i!= data.MyLength(); ++i) data[0][i] = sv[inds[i]];
+    }
   }
 
-  if (cv.HasComponent("cell") && smap.HasComponent("cell")) {
-    const std::vector<int>& cell_inds = smap.Indices("cell", dofnum);
-    Epetra_MultiVector& data = *cv.ViewComponent("cell");
-    for (int c = 0; c != data.MyLength(); ++c) data[0][c] = sv[cell_inds[c]];
-  } 
-
-  if (cv.HasComponent("edge") && smap.HasComponent("edge")) {
-    const std::vector<int>& edge_inds = smap.Indices("edge", dofnum);
-    Epetra_MultiVector& data = *cv.ViewComponent("edge");
-    for (int e = 0; e != data.MyLength(); ++e) data[0][e] = sv[edge_inds[e]];
-  } 
-
-  if (cv.HasComponent("node") && smap.HasComponent("node")) {
-    const std::vector<int>& node_inds = smap.Indices("node", dofnum);
-    Epetra_MultiVector& data = *cv.ViewComponent("node");
-    for (int v = 0; v != data.MyLength(); ++v) data[0][v] = sv[node_inds[v]];
-  }
-
-  if (cv.HasComponent("boundary_face") && smap.HasComponent("boundary_face")) {
-    const std::vector<int>& bndface_inds = smap.Indices("boundary_face", dofnum);
-    Epetra_MultiVector& data = *cv.ViewComponent("boundary_face");
-    for (int f = 0; f != data.MyLength(); ++f) data[0][f] = sv[bndface_inds[f]];
-  } 
+  
   return 0;
 }
 
@@ -108,37 +88,28 @@ int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& 
 * Add super vector to composite vector, component-by-component.
 ****************************************************************** */
 int AddSuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& sv,
-                                    CompositeVector& cv, int dofnum)
+                                    CompositeVector& cv, bool multi_domain, int dofnum)
 {
-  if (cv.HasComponent("face") && smap.HasComponent("face")) {
-    const std::vector<int>& face_inds = smap.Indices("face", dofnum);
-    Epetra_MultiVector& data = *cv.ViewComponent("face");
-    for (int f = 0; f != data.MyLength(); ++f) data[0][f] += sv[face_inds[f]];
-  } 
+  std::string sm_name;
+  int dof_id;
 
-  if (cv.HasComponent("boundary_face") && smap.HasComponent("boundary_face")) {
-    const std::vector<int>& bndface_inds = smap.Indices("boundary_face", dofnum);   
-    const Epetra_MultiVector& data = *cv.ViewComponent("boundary_face");
-    for (int f = 0; f != data.MyLength(); ++f) data[0][f] += sv[bndface_inds[f]];
-  } 
-  
-  if (cv.HasComponent("cell") && smap.HasComponent("cell")) {
-    const std::vector<int>& cell_inds = smap.Indices("cell", dofnum);
-    Epetra_MultiVector& data = *cv.ViewComponent("cell");
-    for (int c = 0; c != data.MyLength(); ++c) data[0][c] += sv[cell_inds[c]];
-  } 
+  for (auto it=cv.Map().begin(); it!=cv.Map().end(); ++it) {
+    if (multi_domain) {
+      sm_name = *it + "-"+ std::to_string(dofnum);
+      dof_id = 0;
+    }
+    else {
+      sm_name = *it;
+      dof_id = dofnum;
+    }
 
-  if (cv.HasComponent("edge") && smap.HasComponent("edge")) {
-    const std::vector<int>& edge_inds = smap.Indices("edge", dofnum);
-    Epetra_MultiVector& data = *cv.ViewComponent("edge");
-    for (int e = 0; e != data.MyLength(); ++e) data[0][e] += sv[edge_inds[e]];
-  } 
-
-  if (cv.HasComponent("node") && smap.HasComponent("node")) {
-    const std::vector<int>& node_inds = smap.Indices("node", dofnum);
-    Epetra_MultiVector& data = *cv.ViewComponent("node");
-    for (int v = 0; v != data.MyLength(); ++v) data[0][v] += sv[node_inds[v]];
-  } 
+    if (smap.HasComponent(sm_name)) {
+      const std::vector<int>& inds = smap.Indices(sm_name, dof_id);
+      const Epetra_MultiVector& data = *cv.ViewComponent(*it);
+      for (int i=0; i!= data.MyLength(); ++i) data[0][i] += sv[inds[i]];
+    }
+  }
+   
   return 0;
 }
 
@@ -173,7 +144,6 @@ int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& 
 {
   for (auto it = schema.begin(); it != schema.end(); ++it) {
     std::string name(schema.KindToString(it->kind));
-
     for (int k = 0; k < it->num; ++k) {
       const std::vector<int>& inds = smap.Indices(name, k);
       Epetra_MultiVector& data = *cv.ViewComponent(name);
@@ -189,14 +159,14 @@ int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& 
 * Nonmember: copy TreeVector to/from Super-vector
 ****************************************************************** */
 int CopyTreeVectorToSuperVector(const SuperMap& map, const TreeVector& tv,
-                                Epetra_Vector& sv)
+                                bool multi_domain, Epetra_Vector& sv)
 {
   AMANZI_ASSERT(tv.Data() == Teuchos::null);
   int ierr(0);
   int my_dof = 0;
   for (TreeVector::const_iterator it = tv.begin(); it != tv.end(); ++it) {
     AMANZI_ASSERT((*it)->Data() != Teuchos::null);
-    ierr |= CopyCompositeVectorToSuperVector(map, *(*it)->Data(), sv, my_dof);
+    ierr |= CopyCompositeVectorToSuperVector(map, *(*it)->Data(), sv, multi_domain, my_dof);
     my_dof++;            
   }
   AMANZI_ASSERT(!ierr);
@@ -205,14 +175,14 @@ int CopyTreeVectorToSuperVector(const SuperMap& map, const TreeVector& tv,
 
 
 int CopySuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
-                                TreeVector& tv)
+                                bool multi_domain, TreeVector& tv)
 {
   AMANZI_ASSERT(tv.Data() == Teuchos::null);
   int ierr(0);
   int my_dof = 0;
   for (TreeVector::iterator it = tv.begin(); it != tv.end(); ++it) {
     AMANZI_ASSERT((*it)->Data() != Teuchos::null);
-    ierr |= CopySuperVectorToCompositeVector(map, sv, *(*it)->Data(), my_dof);
+    ierr |= CopySuperVectorToCompositeVector(map, sv, *(*it)->Data(), multi_domain, my_dof);
     my_dof++;            
   }
   AMANZI_ASSERT(!ierr);
@@ -224,15 +194,14 @@ int CopySuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
 * Add super vector to tree vector, subvector-by-subvector.
 ****************************************************************** */
 int AddSuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
-                               TreeVector& tv)
+                               bool multi_domain, TreeVector& tv)
 {
   AMANZI_ASSERT(tv.Data() == Teuchos::null);
   int ierr(0);
   int my_dof = 0;
-  for (TreeVector::iterator it = tv.begin();
-       it != tv.end(); ++it) {
+  for (TreeVector::iterator it = tv.begin(); it != tv.end(); ++it) {
     AMANZI_ASSERT((*it)->Data() != Teuchos::null);
-    ierr |= AddSuperVectorToCompositeVector(map, sv, *(*it)->Data(), my_dof);
+    ierr |= AddSuperVectorToCompositeVector(map, sv, *(*it)->Data(), multi_domain, my_dof);
     my_dof++;            
   }
   AMANZI_ASSERT(!ierr);
@@ -241,64 +210,22 @@ int AddSuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
 
 
 /* ******************************************************************
-* Create super map: compatibility version
+* TBW
 ****************************************************************** */
 Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schema, int n_dofs)
 {
   std::vector<std::string> compnames;
   std::vector<int> dofnums;
-  std::vector<Teuchos::RCP<const Epetra_Map> > maps;
-  std::vector<Teuchos::RCP<const Epetra_Map> > ghost_maps;
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps;
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > ghost_maps;
 
-  if (schema & OPERATOR_SCHEMA_DOFS_FACE) {
-    AMANZI_ASSERT(cvs.HasComponent("face"));
-    compnames.push_back("face");
+  for (auto it = cvs.begin(); it != cvs.end(); ++it) {
+    compnames.push_back(*it);
     dofnums.push_back(n_dofs);
-    auto meshmaps = getMaps(*cvs.Mesh(), AmanziMesh::FACE);
-    maps.push_back(meshmaps.first);
-    ghost_maps.push_back(meshmaps.second);
+    maps.push_back(cvs.Map(*it, false));
+    ghost_maps.push_back(cvs.Map(*it, true));
   }
 
-  if (schema & OPERATOR_SCHEMA_DOFS_CELL) {
-    AMANZI_ASSERT(cvs.HasComponent("cell"));
-    compnames.push_back("cell");
-    dofnums.push_back(n_dofs);
-    auto meshmaps = getMaps(*cvs.Mesh(), AmanziMesh::CELL);
-    maps.push_back(meshmaps.first);
-    ghost_maps.push_back(meshmaps.second);
-  }
-
-  if (schema & OPERATOR_SCHEMA_DOFS_EDGE) {
-    AMANZI_ASSERT(cvs.HasComponent("edge"));
-    compnames.push_back("edge");
-    dofnums.push_back(n_dofs);
-    auto meshmaps = getMaps(*cvs.Mesh(), AmanziMesh::EDGE);
-    maps.push_back(meshmaps.first);
-    ghost_maps.push_back(meshmaps.second);
-  }
-
-  if (schema & OPERATOR_SCHEMA_DOFS_NODE) {
-    AMANZI_ASSERT(cvs.HasComponent("node"));
-    compnames.push_back("node");
-    dofnums.push_back(n_dofs);
-    auto meshmaps = getMaps(*cvs.Mesh(), AmanziMesh::NODE);
-    maps.push_back(meshmaps.first);
-    ghost_maps.push_back(meshmaps.second);
-  }
-
-  if (schema & OPERATOR_SCHEMA_DOFS_BNDFACE) {
-    AMANZI_ASSERT(cvs.HasComponent("boundary_face"));
-    compnames.push_back("boundary_face");
-    dofnums.push_back(n_dofs);
-
-    auto meshmaps = getMaps(*cvs.Mesh(), AmanziMesh::BOUNDARY_FACE);
-    auto facemaps = getMaps(*cvs.Mesh(), AmanziMesh::FACE);
-    auto new_bnd_map = CreateBoundaryMaps(cvs.Mesh(), facemaps, meshmaps);
-    
-    maps.push_back(new_bnd_map.first);
-    ghost_maps.push_back(new_bnd_map.second);
-  }
-  
   return Teuchos::rcp(new SuperMap(cvs.Comm(), compnames, dofnums, maps, ghost_maps));
 }
 
@@ -310,8 +237,8 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, Schema& s
 {
   std::vector<std::string> compnames;
   std::vector<int> dofnums;
-  std::vector<Teuchos::RCP<const Epetra_Map> > maps;
-  std::vector<Teuchos::RCP<const Epetra_Map> > ghost_maps;
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps;
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > ghost_maps;
 
   for (auto it = schema.begin(); it != schema.end(); ++it) {
     compnames.push_back(schema.KindToString(it->kind));
@@ -322,6 +249,53 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, Schema& s
   }
 
   return Teuchos::rcp(new SuperMap(cvs.Comm(), compnames, dofnums, maps, ghost_maps));
+}
+
+
+/* ******************************************************************
+* Create super map: general version
+****************************************************************** */
+Teuchos::RCP<SuperMap> CreateSuperMap(const std::vector<CompositeVectorSpace>& cvs_vec,
+                                      std::vector<std::string> cvs_names,
+                                      bool multi_domain)
+{
+  AMANZI_ASSERT(cvs_vec.size() == cvs_names.size());
+  
+  std::vector<std::string> compnames;
+  std::vector<int> dofnums;
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps;
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > ghost_maps;
+  
+  int i = 0;
+  for (auto cvs : cvs_vec) {
+    for (auto name = cvs.begin(); name != cvs.end(); ++name) {
+      if (multi_domain) {
+        compnames.push_back(*name + "-" + cvs_names[i]);
+        dofnums.push_back(cvs.NumVectors(*name));
+        maps.push_back(cvs.Map(*name, false));
+        ghost_maps.push_back(cvs.Map(*name, true));        
+      } else {
+        bool found = false;
+        for (int j=0; j<compnames.size();++j) {
+          if (compnames[j] == *name) {
+            found = true;
+            dofnums[j]++;
+            break;
+          }
+        }
+        if (!found) {
+          compnames.push_back(*name);
+          dofnums.push_back(cvs.NumVectors(*name));
+          maps.push_back(cvs.Map(*name, false));
+          ghost_maps.push_back(cvs.Map(*name, true));
+        }
+      }
+    }
+    i++;
+  }
+
+  Teuchos::RCP<SuperMap> res = Teuchos::rcp(new SuperMap(cvs_vec[0].Comm(), compnames, dofnums, maps, ghost_maps));
+  return res;
 }
 
 
@@ -349,6 +323,10 @@ unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n
   if (schema & OPERATOR_SCHEMA_DOFS_NODE) {
     unsigned int i = (dim == 2) ? OPERATOR_QUAD_NODES : OPERATOR_HEX_NODES;
     row_size += 8 * i;
+  }
+
+  if (schema & OPERATOR_SCHEMA_INDICES) {
+    row_size += 1;
   }
 
   return row_size * n_dofs;
@@ -381,6 +359,7 @@ unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, Schema& schema)
   return row_size;
 }
 
+
 /* ******************************************************************
 *  Create continuous boundary maps
 *
@@ -392,12 +371,11 @@ unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, Schema& schema)
 *  Results:
 *  pair of master and ghost continuous maps of boundary faces
 ****************************************************************** */
-  
 std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >
 CreateBoundaryMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                   std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >& face_maps,
-                   std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >& bnd_maps) {
-
+                   std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >& face_maps,
+                   std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >& bnd_maps)
+{
   int num_boundary_faces_owned = bnd_maps.first->NumMyElements();
 
   AMANZI_ASSERT(num_boundary_faces_owned > 0);
@@ -424,7 +402,6 @@ CreateBoundaryMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
   }
 
   bnd_maps.first->RemoteIDList(n_ghosted, gl_id.data(), pr_id.data(), lc_id.data());
-
 
   int n_ghosted_new = num_boundary_faces_owned;
   for (int i=0; i<n_ghosted; i++) {
@@ -453,6 +430,79 @@ CreateBoundaryMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
   return std::make_pair(boundary_map, boundary_map_ghosted);
 }
 
+
+/* ******************************************************************
+* TBW
+****************************************************************** */
+std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >
+getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
+  switch(location) {
+    case AmanziMesh::CELL:
+      return std::make_pair(Teuchos::rcpFromRef(mesh.cell_map(false)),
+                            Teuchos::rcpFromRef(mesh.cell_map(true)));
+
+    case AmanziMesh::FACE:
+      return std::make_pair(Teuchos::rcpFromRef(mesh.face_map(false)),
+                            Teuchos::rcpFromRef(mesh.face_map(true)));
+
+    case AmanziMesh::EDGE:
+      return std::make_pair(Teuchos::rcpFromRef(mesh.edge_map(false)),
+                            Teuchos::rcpFromRef(mesh.edge_map(true)));
+
+    case AmanziMesh::NODE:
+      return std::make_pair(Teuchos::rcpFromRef(mesh.node_map(false)),
+                            Teuchos::rcpFromRef(mesh.node_map(true)));
+
+    case AmanziMesh::BOUNDARY_FACE:
+      return std::make_pair(Teuchos::rcpFromRef(mesh.exterior_face_map(false)),
+                            Teuchos::rcpFromRef(mesh.exterior_face_map(true)));
+    default:
+      AMANZI_ASSERT(false);
+      return std::make_pair(Teuchos::null, Teuchos::null);
+  }
+}
+
+
+/* ******************************************************************
+* Generates a composite vestor space.
+****************************************************************** */
+Teuchos::RCP<CompositeVectorSpace>
+CreateCompositeVectorSpace(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                           const std::vector<std::string>& names,
+                           const std::vector<AmanziMesh::Entity_kind>& locations,
+                           const std::vector<int>& num_dofs, bool ghosted)
+{
+  auto cvs = Teuchos::rcp(new CompositeVectorSpace());
+  cvs->SetMesh(mesh);
+  cvs->SetGhosted(ghosted);
+
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > mastermaps;
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghostmaps;
+
+  for (int i=0; i<locations.size(); ++i) {
+    Teuchos::RCP<const Epetra_BlockMap> master_mp(&mesh->map(locations[i], false), false);
+    mastermaps[names[i]] = master_mp;
+    Teuchos::RCP<const Epetra_BlockMap> ghost_mp(&mesh->map(locations[i], true), false);
+    ghostmaps[names[i]] = ghost_mp;
+  }
+       
+  cvs->SetComponents(names, locations, mastermaps, ghostmaps, num_dofs);
+  return cvs;
+}
+
+
+Teuchos::RCP<CompositeVectorSpace>
+CreateCompositeVectorSpace(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                           std::string name,
+                           AmanziMesh::Entity_kind location,
+                           int num_dof, bool ghosted)
+{
+  std::vector<std::string> names(1, name);
+  std::vector<AmanziMesh::Entity_kind> locations(1, location);
+  std::vector<int> num_dofs(1, num_dof);
+
+  return CreateCompositeVectorSpace(mesh, names, locations, num_dofs, ghosted);
+}
 
 }  // namespace Operators
 }  // namespace Amanzi

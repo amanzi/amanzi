@@ -138,7 +138,7 @@ int Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector
 
 // Special AssembleMatrix required to deal with schur complement
 void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
-                                          int my_block_row, int my_block_col) const
+                                          int my_block_row, int my_block_col, bool multi_domain) const
 {
   // first check preconditions -- Scc must have exactly one face-based schema (a FACE+CELL)
   int num_with_faces = 0;
@@ -286,14 +286,14 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
 
       // assemble
       diag_op->AssembleMatrixOp(this, map, matrix,
-              my_block_row, my_block_col);
+              my_block_row, my_block_col, multi_domain);
       AMANZI_ASSERT(schur_op->matrices.size() == nfaces_owned);
       schur_op->AssembleMatrixOp(this, map, matrix,
-              my_block_row, my_block_col);
+              my_block_row, my_block_col, multi_domain);
       i_schur++;
     } else {
       (*it)->AssembleMatrixOp(this, map, matrix,
-              my_block_row, my_block_col);
+              my_block_row, my_block_col, multi_domain);
     }
   } // for
 }
@@ -356,7 +356,7 @@ void Operator_FaceCellScc::SymbolicAssembleMatrix()
           smap_->GhostedMap(), smap_->GhostedMap(), row_size));
 
   // fill the graph
-  Operator::SymbolicAssembleMatrix(*smap_, *graph, 0, 0);
+  Operator::SymbolicAssembleMatrix(*smap_, *graph, 0, 0, false);
 
   // Completing and optimizing the graphs
   int ierr = graph->FillComplete(smap_->Map(), smap_->Map());
@@ -371,15 +371,15 @@ void Operator_FaceCellScc::SymbolicAssembleMatrix()
 // visit method for sparsity structure of Schur complement
 void Operator_FaceCellScc::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
                                                     const SuperMap& map, GraphFE& graph,
-                                                    int my_block_row, int my_block_col) const
+                                                    int my_block_row, int my_block_col, bool multi_domain) const
 {
   std::string name = "Scc alt as FACE_CELL";
   Op_Face_Cell schur_op(name, mesh_);
-  Operator_Cell::SymbolicAssembleMatrixOp(schur_op, map, graph, my_block_row, my_block_col);
+  Operator_Cell::SymbolicAssembleMatrixOp(schur_op, map, graph, my_block_row, my_block_col, multi_domain);
 
   name = "Scc alt as CELL_CELL";
   Op_Cell_Cell diag_op(name, mesh_);
-  Operator_Cell::SymbolicAssembleMatrixOp(diag_op, map, graph, my_block_row, my_block_col);
+  Operator_Cell::SymbolicAssembleMatrixOp(diag_op, map, graph, my_block_row, my_block_col, multi_domain);
 }
 
 }  // namespace Operators

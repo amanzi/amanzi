@@ -41,11 +41,11 @@ class AnalyticDG02b : public AnalyticDGBase {
     sol.Reshape(d_, order_, true); 
     sol.set_origin(p);
 
-    sol(0, 0) = 1.0 + p * p;
-    sol(1, 0) = 2.0 * p[0];
-    sol(1, 1) = 2.0 * p[1];
-    sol(2, 0) = 1.0;
-    sol(2, 2) = 1.0;
+    sol(0) = 1.0 + p * p;
+    sol(1) = 2.0 * p[0];
+    sol(2) = 2.0 * p[1];
+    sol(3) = 1.0;
+    sol(5) = 1.0;
 
     sol *= t;
   }
@@ -54,7 +54,7 @@ class AnalyticDG02b : public AnalyticDGBase {
   virtual void AccumulationTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                                   Amanzi::WhetStone::Polynomial& a) override {
     a.Reshape(d_, 0, true); 
-    a(0, 0) = 1.0;
+    a(0) = 1.0;
     a.set_origin(p);
   }
 

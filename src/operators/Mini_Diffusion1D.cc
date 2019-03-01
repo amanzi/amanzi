@@ -131,7 +131,7 @@ void Mini_Diffusion1D::UpdateJacobian(
   if (type_r == Operators::OPERATOR_BC_DIRICHLET) {
     diag_(ncells - 1) -= tmp1 * dkdp(ncells - 1) * bcr;
   }
-  else if(type_r == Operators::OPERATOR_BC_NEUMANN) {
+  else if (type_r == Operators::OPERATOR_BC_NEUMANN) {
     diag_(ncells - 1) += up_(ncells - 1);
   }
 }
@@ -152,7 +152,7 @@ void Mini_Diffusion1D::ApplyBCs(double bcl, int type_l, double bcr, int type_r)
   int n = mesh_->NumRows() - 2;
   if (type_r == Operators::OPERATOR_BC_DIRICHLET) {
     rhs_(n) -= up_(n) * bcr;
-  } else if(type_r == Operators::OPERATOR_BC_NEUMANN) {
+  } else if (type_r == Operators::OPERATOR_BC_NEUMANN) {
     diag_(n) += up_(n);
     rhs_(n) -= bcr;
   }

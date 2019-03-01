@@ -42,7 +42,7 @@ class UnstructuredObservations;
 class CycleDriver {
  public:
   CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
-              Teuchos::RCP<AmanziMesh::Mesh>& mesh,
+              Teuchos::RCP<Amanzi::State>& S,
               Epetra_MpiComm* comm,
               Amanzi::ObservationData& observations_data);
 
@@ -78,7 +78,7 @@ class CycleDriver {
 
   // states
   Teuchos::RCP<State> S_, S_old_;
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<TreeVector> soln_;
 
   // time step manager

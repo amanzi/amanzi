@@ -27,6 +27,7 @@
 
 // Operators
 #include "OperatorDefs.hh"
+#include "OperatorUtils.hh"
 #include "UpwindDivK.hh"
 #include "UpwindGravity.hh"
 #include "UpwindFlux.hh"
@@ -79,8 +80,7 @@ void RunTestUpwind(std::string method) {
   Teuchos::ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
-  Teuchos::RCP<VerboseObject> vo = Teuchos::rcp(new VerboseObject("dummy", "none"));
-  MeshFactory meshfactory(&comm, vo);
+  MeshFactory meshfactory(&comm, Teuchos::null);
   meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
 
   for (int n = 4; n < 17; n *= 2) {
@@ -138,10 +138,7 @@ void RunTestUpwind(std::string method) {
     
 
     // create and initialize face-based flux field
-    cvs = Teuchos::rcp(new CompositeVectorSpace());
-    cvs->SetMesh(mesh);
-    cvs->SetGhosted(true);
-    cvs->SetComponent("face", AmanziMesh::FACE, 1);
+    cvs = CreateCompositeVectorSpace(mesh, "face", AmanziMesh::FACE, 1, true);
 
     CompositeVector flux(*cvs), solution(*cvs);
     Epetra_MultiVector& u = *flux.ViewComponent("face", true);

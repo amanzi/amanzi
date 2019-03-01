@@ -109,9 +109,9 @@ void Flow_PK::VV_ValidateBCs() const
 ******************************************************************* */
 void Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const
 {
-  const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell", false);
-  const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face", true);
-  const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell", false);
+  const Epetra_MultiVector& phi = *S->GetFieldData(porosity_key_)->ViewComponent("cell", false);
+  const Epetra_MultiVector& flux = *S->GetFieldData(darcy_flux_key_)->ViewComponent("face", true);
+  const Epetra_MultiVector& ws = *S->GetFieldData(saturation_liquid_key_)->ViewComponent("cell", false);
 
   std::vector<int>& bc_model = op_bc_->bc_model();
   double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flux) * rho_ * dt_;
@@ -142,9 +142,9 @@ void Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const
 /* *******************************************************************
 * Calculate flow out of the current seepage face.
 ******************************************************************* */
-void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const
+void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S, double dT) const
 {
-  const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face");
+  const Epetra_MultiVector& flux = *S->GetFieldData(darcy_flux_key_)->ViewComponent("face");
 
   int dir, f, c, nbcs(0);
   double tmp, outflow(0.0);
@@ -168,7 +168,7 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const
   mesh_->get_comm()->SumAll(&tmp, &outflow, 1);
 
   outflow *= rho_;
-  seepage_mass_ += outflow * dt_;
+  seepage_mass_ += outflow * dT;
 
   if (MyPID == 0 && nbcs > 0) {
     Teuchos::OSTab tab = vo_->getOSTab();
@@ -224,10 +224,12 @@ void Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
   // process face-based quantaties (if any)
   if (pressure.HasComponent("face")) {
     const Epetra_MultiVector& pface = *pressure.ViewComponent("face");
+    const auto& fmap = *pressure.Map().Map("face", false);
 
     for (int f = 0; f < nfaces_owned; f++) {
       double z = mesh_->face_centroid(f)[dim - 1];              
-      double h = z + (pface[0][f] - atm_pressure_) / rho_g;
+      int g = fmap.FirstPointInElement(f);
+      double h = z + (pface[0][g] - atm_pressure_) / rho_g;
       vmax = std::max(vmax, h);
       vmin = std::min(vmin, h);
     }

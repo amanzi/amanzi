@@ -19,15 +19,15 @@ include(TestManager)
 project(MOAB)
 
 # Amanzi include directories
-include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
-include_directories(${MESH_SOURCE_DIR})
+include_directories(${DBC_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
+include_directories(${MESH_SOURCE_DIR})
 
 # External (TPL) include directories
-include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${MOAB_INCLUDE_DIRS})
+include_directories(${Teuchos_INCLUDE_DIRS})
 
 # Need this define. Errors from MOAB include files 
 # about MPI_COOM_WORLD. --lpritch
@@ -42,7 +42,8 @@ file(GLOB moab_mesh_files "*.cc")
 file(GLOB moab_inc_files "*.hh")
 add_amanzi_library(moab_mesh
                    SOURCE ${moab_mesh_files} HEADERS ${moab_inc_files}
-                   LINK_LIBS geometry mesh ${MOAB_LIBRARIES} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES}) 
+                   LINK_LIBS geometry mesh atk
+                             ${MOAB_LIBRARIES} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES}) 
 
 if (BUILD_TESTS)
     # Add UnitTest include

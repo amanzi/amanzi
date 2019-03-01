@@ -12,8 +12,6 @@
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
-#include "VerboseObject_objs.hh"
-
 #include "MeshAudit.hh"
 
 #include "../../mesh_factory/MeshFactory.hh"

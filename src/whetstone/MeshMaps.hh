@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -49,7 +49,7 @@ class MeshMaps {
       mesh0_(mesh0),
       d_(mesh1_->space_dimension()) {};
 
-  ~MeshMaps() {};
+  virtual ~MeshMaps() {};
 
   // Maps
   // -- pseudo-velocity

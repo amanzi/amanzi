@@ -26,6 +26,7 @@
 #include "Region.hh"
 #include "RegionBox.hh"
 #include "RegionPlane.hh"
+#include "RegionHalfSpace.hh"
 #include "RegionLabeledSet.hh"
 #include "RegionColorFunction.hh"
 #include "RegionPoint.hh"
@@ -117,6 +118,22 @@ createRegion(const std::string reg_name,
     n.set(dim,&(n_vec[0]));
 
     region = Teuchos::rcp(new RegionPlane(reg_name, reg_id, p, n,
+                                          lifecycle));
+  } else if (shape == "region: halfspace") {
+    Teuchos::ParameterList halfspace_params = reg_spec.sublist(shape);
+
+    Teuchos::Array<double> p_vec =
+      halfspace_params.get< Teuchos::Array<double> >("point");
+        
+    Teuchos::Array<double> n_vec =
+      halfspace_params.get< Teuchos::Array<double> >("normal");
+
+    int dim = p_vec.size();
+    Point p, n;
+    p.set(dim,&(p_vec[0]));
+    n.set(dim,&(n_vec[0]));
+
+    region = Teuchos::rcp(new RegionHalfSpace(reg_name, reg_id, p, n,
                                           lifecycle));
 
   } else if (shape == "region: polygon") {

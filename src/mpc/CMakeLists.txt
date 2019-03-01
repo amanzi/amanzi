@@ -25,6 +25,7 @@ include_directories(${ATK_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
+include_directories(${MSTK_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
@@ -110,7 +111,7 @@ if (BUILD_TESTS)
     endif()
 
     set(amanzi_libs mpc pks mpc_tree flow transport chemistry_pk energy dummy pks eos 
-                    state operators mesh_factory 
+                    state operators mesh_factory mesh_audit
                     geometry whetstone mesh_functions functions)
 
     # Test: mpc driver for flow
@@ -145,6 +146,38 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_driver_frt.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
+
+    # Test: mpc driver for coupled matrix-fracture flow and transport
+    add_amanzi_test(mpc_driver_coupled_flow mpc_driver_coupled_flow
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_driver_coupled_flow.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(mpc_driver_coupled_flow_transport mpc_driver_coupled_flow_transport
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_driver_coupled_flow_transport.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                  
+
+    # Test: mpc driver for coupled matrix-fracture flow and transport: benchmarks
+    add_amanzi_test(mpc_driver_benchmark_single mpc_driver_benchmark_single
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_driver_benchmark_single.cc
+        	    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                  
+
+    add_amanzi_test(mpc_driver_benchmark_regular mpc_driver_benchmark_regular
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_driver_benchmark_regular.cc
+        	    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                  
+
+    add_amanzi_test(mpc_driver_benchmark_features mpc_driver_benchmark_features
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_driver_benchmark_features.cc
+        	    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                  
+
+    add_amanzi_test(mpc_driver_benchmark_field mpc_driver_benchmark_field
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_driver_benchmark_field.cc
+        	    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                  
 
     # Test: mpc-new driver dummy
     add_amanzi_test(mpc_driver_dummy mpc_driver_dummy

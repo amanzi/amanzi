@@ -20,6 +20,7 @@
 
 #include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
+#include "State.hh"
 
 #include "CommonDefs.hh"
 #include "Mesh.hh"
@@ -47,19 +48,26 @@ class TransportDomainFunction {
 
   std::vector<std::string>& tcc_names() { return tcc_names_; }
   std::vector<int>& tcc_index() { return tcc_index_; }
-
+  virtual void set_state(const Teuchos::RCP<State>& S) {S_ = S;}
+  
   // iterator methods
   typedef std::map<int, std::vector<double> >::iterator Iterator;
   Iterator begin() { return value_.begin(); }
   Iterator end() { return value_.end(); }
   std::map<int, std::vector<double> >::size_type size() { return value_.size(); }
 
-protected:
+  // derivatives
+  const std::map<int, double>& linear_term() const { return linear_term_; }
 
+ protected:
   double domain_volume_;
-  std::map<int, std::vector<double> > value_;  // tcc values on boundary faces
-  std::string keyword_;
+  std::map<int, std::vector<double> > value_;  // tcc values on boundary faces or 
+                                               // src values in domain cells
+  std::map<int, double> linear_term_;  // linearized term, e.g. [mol / s] for sources
 
+  std::string keyword_;
+  Teuchos::RCP<const State> S_;
+  
   std::vector<std::string> tcc_names_;  // list of component names
   std::vector<int> tcc_index_;  // index of component in the global list
 };

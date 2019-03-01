@@ -53,10 +53,10 @@ Teuchos::RCP<FieldEvaluator> PorosityModelEvaluator::Clone() const {
 ****************************************************************** */
 void PorosityModelEvaluator::InitializeFromPlist_() {
   // my key is for saturation
-  my_keys_.push_back(plist_.get<std::string>("porosity key", "porosity"));
+  my_keys_.push_back(plist_.get<std::string>("porosity key"));
 
   // my dependency is pressure.
-  pressure_key_ = plist_.get<std::string>("pressure key", "pressure");
+  pressure_key_ = plist_.get<std::string>("pressure key");
   dependencies_.insert(pressure_key_);
 }
 

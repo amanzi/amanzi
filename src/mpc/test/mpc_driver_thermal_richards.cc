@@ -41,8 +41,7 @@ using namespace Amanzi::AmanziGeometry;
   
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
-  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, &comm));
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, &comm));
 
   // create mesh
   FrameworkPreference pref;
@@ -56,9 +55,13 @@ using namespace Amanzi::AmanziGeometry;
   AMANZI_ASSERT(!mesh.is_null());
 
   // create dummy observation data object
-  Amanzi::ObservationData obs_data;    
+  Amanzi::ObservationData obs_data;
+
+  Teuchos::ParameterList state_plist = plist->sublist("state");
+  Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
+  S->RegisterMesh("domain", mesh);
   
-  Amanzi::CycleDriver cycle_driver(plist, mesh, &comm, obs_data);
+  Amanzi::CycleDriver cycle_driver(plist, S, &comm, obs_data);
   cycle_driver.Go();
 }
 

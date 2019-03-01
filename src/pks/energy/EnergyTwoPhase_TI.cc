@@ -97,7 +97,7 @@ void EnergyTwoPhase_PK::UpdatePreconditioner(
 
   // update with accumulation terms
   // update the accumulation derivatives, dE/dT
-  S_->GetFieldEvaluator(energy_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, "temperature");
+  S_->GetFieldEvaluator(energy_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, temperature_key_);
   CompositeVector& dEdT = *S_->GetFieldData("denergy_dtemperature", energy_key_);
 
   if (dt > 0.0) {
@@ -108,7 +108,7 @@ void EnergyTwoPhase_PK::UpdatePreconditioner(
   if (prec_include_enthalpy_) {
     Teuchos::RCP<const CompositeVector> darcy_flux = S_->GetFieldData("darcy_flux");
 
-    S_->GetFieldEvaluator(enthalpy_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, "temperature");
+    S_->GetFieldEvaluator(enthalpy_key_)->HasFieldDerivativeChanged(S_.ptr(), passwd_, temperature_key_);
     Teuchos::RCP<const CompositeVector> dHdT = S_->GetFieldData("denthalpy_dtemperature");
 
     op_preconditioner_advection_->Setup(*darcy_flux);

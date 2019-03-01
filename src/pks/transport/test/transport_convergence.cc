@@ -55,19 +55,17 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
   if (MyPID == 0)
     std::cout << "\nTEST: convergence analysis, donor scheme, orthogonal meshes with subcycling" << std::endl;
 
-  /* read parameter list */
-  std::string xmlFileName = "test/transport_convergence.xml";
-  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
+  // read parameter list
+  auto plist = Teuchos::getParametersFromXmlFile("test/transport_convergence.xml");
 
-  /* convergence estimate */
+  // convergence estimate
   std::vector<double> h;
   std::vector<double> L1error, L2error;
 
   for (int nx = 20; nx < 321; nx *= 2) {
     /* create a SIMPLE mesh framework */
     ParameterList region_list = plist->sublist("regions");
-    Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, &comm));
+    auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, &comm));
 
     MeshFactory meshfactory(&comm);
     meshfactory.preference(FrameworkPreference({Framework::MSTK, Framework::Simple}));
@@ -177,9 +175,7 @@ void ConvergenceBoxMeshes(int order, double tol, std::string limiter)
               << ", limiter=" << limiter << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/transport_convergence.xml";
-  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
-
+  auto plist = Teuchos::getParametersFromXmlFile("test/transport_convergence.xml");
   ParameterList region_list = plist->sublist("regions");
   auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, &comm));
  
@@ -311,19 +307,17 @@ void ConvergencePolyMeshes(int order, double tol, std::string limiter)
     std::cout << "\nTEST: convergence analysis on polygonal meshes, order=" << order 
               << ", limiter=" << limiter << std::endl;
 
-  /* read parameter list */
-  std::string xmlFileName = "test/transport_convergence_poly.xml";
-  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
+  // read parameter list
+  auto plist = Teuchos::getParametersFromXmlFile("test/transport_convergence_poly.xml");
 
-  /* convergence estimate */
+  // convergence estimate
   std::vector<double> h;
   std::vector<double> L1error, L2error;
 
   for (int loop = 0; loop < 3; loop++) {
     /* create a mesh framework */
     ParameterList region_list = plist->sublist("regions");
-    Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, &comm));
+    auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, &comm));
 
     MeshFactory meshfactory(&comm);
     meshfactory.preference(FrameworkPreference({Framework::MSTK, Framework::STKMESH}));

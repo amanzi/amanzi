@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -36,9 +36,9 @@ class Basis_Natural : public Basis {
   ~Basis_Natural() {};
 
   // initialization
-  virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order) {
-    order_ = order;
-  }
+  virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, 
+                    AmanziMesh::Entity_ID id, int c, int order,
+                    Polynomial& integrals) { order_ = order; }
 
   // transformation of bilinear form
   virtual void BilinearFormNaturalToMy(DenseMatrix& A) const {};

@@ -58,7 +58,7 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm_.get()));
 
   // Load a mesh consisting of 3x3x3 elements
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_3x3x3_sets.exo",comm_.get(),3,gm));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_3x3x3_sets.exo",comm_.get(),gm));
 
   Teuchos::ParameterList::ConstIterator i;
   for (i = reg_spec.begin(); i != reg_spec.end(); i++) {

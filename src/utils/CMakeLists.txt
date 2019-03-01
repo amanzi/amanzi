@@ -100,5 +100,13 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/utils_spline.cc
                     LINK_LIBS atk error_handling 
                               ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
+
+    ADD_AMANZI_TEST(utils_ioevent utils_ioevent
+                    KIND unit
+                    SOURCE test/Main.cc test/utils_ioevent.cc
+                    LINK_LIBS atk error_handling 
+                              ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
+
+
 endif()
 

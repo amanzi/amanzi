@@ -1,3 +1,5 @@
+#include "VerboseObject.hh"
+
 #include "dbc.hh"
 #include "errors.hh"
 
@@ -51,6 +53,9 @@ void Mesh_MSTK::init_mesh_from_file_(std::string const filename,
       ok &= MSTK_Mesh_Distribute(globalmesh, &mesh, &topo_dim,
                                  num_ghost_layers, with_attr, method,
                                  del_inmesh, mpicomm_);
+      if (contiguous_gids_) {
+        ok &= MESH_Renumber_GlobalIDs(mesh, MALLTYPE, 0, NULL, mpicomm_);
+      }
     }
   } else if (filename.find(".par") != std::string::npos) {  // Nemesis file
 
@@ -76,7 +81,9 @@ void Mesh_MSTK::init_mesh_from_file_(std::string const filename,
     // but we cannot renumber global IDs until interprocessor
     // connectivity has been established
 
-    ok &= MESH_Renumber_GlobalIDs(mesh, MALLTYPE, 0, NULL, mpicomm_);
+    if (contiguous_gids_) {
+      ok &= MESH_Renumber_GlobalIDs(mesh, MALLTYPE, 0, NULL, mpicomm_);
+    }
 
   } else {
     std::stringstream mesg_stream;
@@ -100,17 +107,44 @@ void Mesh_MSTK::init_mesh_from_file_(std::string const filename,
 //--------------------------------------
 Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
                      const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-                     const Teuchos::RCP<const VerboseObject>& verbobj,
+                     const Teuchos::RCP<const Teuchos::ParameterList>& plist,
                      const bool request_faces,
-                     const bool request_edges,
-		     const Partitioner_type partitioner) :
-    Mesh(verbobj,request_faces,request_edges), 
+                     const bool request_edges) :
+    Mesh(Teuchos::null,request_faces,request_edges), 
     mpicomm_(incomm_->GetMpiComm()), meshxyz(NULL), 
     faces_initialized(false), edges_initialized(false),
     target_cell_volumes_(NULL), min_cell_volumes_(NULL),
     extface_map_w_ghosts_(NULL), extface_map_wo_ghosts_(NULL),
     owned_to_extface_importer_(NULL)
-{  
+{
+  // extract optional control parameters, but first specify defaults
+  contiguous_gids_ = true;
+  Partitioner_type partitioner = PARTITIONER_DEFAULT;
+    
+  if (plist != Teuchos::null) {
+    vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Mesh:MSTK", *plist)); 
+
+    if (plist->isSublist("unstructured")) {
+      const auto tmp = Teuchos::sublist(plist, "unstructured");
+      if (tmp->isSublist("expert")) {
+        const auto expert_list = Teuchos::sublist(tmp, "expert");
+
+        // -- partitioner
+        if (expert_list->isParameter("partitioner")) {
+          std::string partitioner_str = expert_list->get<std::string>("partitioner");
+          if (partitioner_str == "METIS" || partitioner_str == "metis")
+            partitioner = Partitioner_type::METIS;
+          else if (partitioner_str == "ZOLTAN_GRAPH" || partitioner_str == "zoltan_graph")
+            partitioner = Partitioner_type::ZOLTAN_GRAPH;
+          else if (partitioner_str == "ZOLTAN_RCB" || partitioner_str == "zoltan_rcb")
+            partitioner = Partitioner_type::ZOLTAN_RCB;
+        }
+        if (expert_list->isParameter("contiguous global ids")) {
+          contiguous_gids_ = expert_list->get<bool>("contiguous global ids");
+        }
+      }
+    }
+  }
 
   int numprocs = incomm_->NumProc();
 
@@ -120,8 +154,8 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
   int ok = 0;
 
 #ifdef DEBUG
-  if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
-      *(verbobj->os()) << "Testing Verbosity !!!! - Construct mesh from file" << std::endl;
+  if (vo_.get() && vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+      *(vo_->os()) << "Testing Verbosity !!!! - Construct mesh from file" << std::endl;
   }
 #endif
 
@@ -192,55 +226,6 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
 
 
 //--------------------------------------
-// Constructor - load up mesh from file
-//--------------------------------------
-Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_, 
-                     int space_dimension,
-                     const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-                     const Teuchos::RCP<const VerboseObject>& verbobj,
-                     const bool request_faces,
-                     const bool request_edges,
-		     const Partitioner_type partitioner) :
-    Mesh(verbobj,request_faces,request_edges), 
-    mpicomm_(incomm_->GetMpiComm()), meshxyz(NULL),
-    faces_initialized(false), edges_initialized(false),
-    target_cell_volumes_(NULL), min_cell_volumes_(NULL),
-    extface_map_w_ghosts_(NULL), extface_map_wo_ghosts_(NULL),
-    owned_to_extface_importer_(NULL)
-{
-  int ok = 0;
-
-  // Pre-processing (init, MPI queries etc)
-
-  pre_create_steps_(space_dimension, incomm_, gm);
-
-
-  if (myprocid == 0) {
-    int DebugWait=0;
-    while (DebugWait);
-  }
-
-  init_mesh_from_file_(filename, partitioner);
-
-  int cell_dim = MESH_Num_Regions(mesh) ? 3 : 2;
-  
-  int max;
-  incomm_->MaxAll(&cell_dim,&max,1);
-
-  if (max != cell_dim) {
-    Errors::Message mesg("cell dimension on this processor is different from max cell dimension across all processors");
-    amanzi_throw(mesg);
-  }
-
-  set_manifold_dimension(cell_dim);
-
-  // Do all the processing required for setting up the mesh for Amanzi 
-  
-  post_create_steps_(request_faces, request_edges);
-}
-
-
-//--------------------------------------
 // Construct a 3D regular hexahedral mesh internally
 //--------------------------------------
 Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
@@ -249,19 +234,46 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
                      const unsigned int nz, 
                      const Epetra_MpiComm *incomm_,
                      const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-                     const Teuchos::RCP<const VerboseObject>& verbobj,
+                     const Teuchos::RCP<const Teuchos::ParameterList>& plist,
                      const bool request_faces,
-                     const bool request_edges,
-		     const Partitioner_type partitioner) :
-    Mesh(verbobj,request_faces,request_edges), 
+                     const bool request_edges) :
+    Mesh(Teuchos::null,request_faces,request_edges), 
     mpicomm_(incomm_->GetMpiComm()), meshxyz(NULL), 
     faces_initialized(false), edges_initialized(false),
     target_cell_volumes_(NULL), min_cell_volumes_(NULL),
     extface_map_w_ghosts_(NULL), extface_map_wo_ghosts_(NULL),
     owned_to_extface_importer_(NULL)
 {
-  int ok;
+  // extract optional control parameters, but first specify defaults
+  contiguous_gids_ = true;
+  Partitioner_type partitioner = PARTITIONER_DEFAULT;
+    
+  if (plist != Teuchos::null) {
+    vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Mesh:MSTK", *plist)); 
 
+    if (plist->isSublist("unstructured")) {
+      const auto tmp = Teuchos::sublist(plist, "unstructured");
+      if (tmp->isSublist("expert")) {
+        const auto expert_list = Teuchos::sublist(tmp, "expert");
+
+        // -- partitioner
+        if (expert_list->isParameter("partitioner")) {
+          std::string partitioner_str = expert_list->get<std::string>("partitioner");
+          if (partitioner_str == "METIS" || partitioner_str == "metis")
+            partitioner = Partitioner_type::METIS;
+          else if (partitioner_str == "ZOLTAN_GRAPH" || partitioner_str == "zoltan_graph")
+            partitioner = Partitioner_type::ZOLTAN_GRAPH;
+          else if (partitioner_str == "ZOLTAN_RCB" || partitioner_str == "zoltan_rcb")
+            partitioner = Partitioner_type::ZOLTAN_RCB;
+        }
+        if (expert_list->isParameter("contiguous global ids")) {
+          contiguous_gids_ = expert_list->get<bool>("contiguous global ids");
+        }
+      }
+    }
+  }
+
+  int ok;
   int space_dimension = 3;
   pre_create_steps_(space_dimension, incomm_, gm);
 
@@ -335,17 +347,45 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
                      const int nx, const int ny, 
                      const Epetra_MpiComm *incomm_,
                      const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-                     const Teuchos::RCP<const VerboseObject>&verbobj,
+                     const Teuchos::RCP<const Teuchos::ParameterList>& plist,
                      const bool request_faces,
-                     const bool request_edges,
-		     const Partitioner_type partitioner) :
-    Mesh(verbobj,request_faces,request_edges), 
+                     const bool request_edges) :
+    Mesh(Teuchos::null,request_faces,request_edges), 
     mpicomm_(incomm_->GetMpiComm()), meshxyz(NULL), 
     faces_initialized(false), edges_initialized(false),
     target_cell_volumes_(NULL), min_cell_volumes_(NULL),
     extface_map_w_ghosts_(NULL), extface_map_wo_ghosts_(NULL),
     owned_to_extface_importer_(NULL)
 {
+  // extract optional control parameters, but first specify defaults
+  contiguous_gids_ = true;
+  Partitioner_type partitioner = PARTITIONER_DEFAULT;
+    
+  if (plist != Teuchos::null) {
+    vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Mesh:MSTK", *plist)); 
+
+    if (plist->isSublist("unstructured")) {
+      const auto tmp = Teuchos::sublist(plist, "unstructured");
+      if (tmp->isSublist("expert")) {
+        const auto expert_list = Teuchos::sublist(tmp, "expert");
+
+        // -- partitioner
+        if (expert_list->isParameter("partitioner")) {
+          std::string partitioner_str = expert_list->get<std::string>("partitioner");
+          if (partitioner_str == "METIS" || partitioner_str == "metis")
+            partitioner = Partitioner_type::METIS;
+          else if (partitioner_str == "ZOLTAN_GRAPH" || partitioner_str == "zoltan_graph")
+            partitioner = Partitioner_type::ZOLTAN_GRAPH;
+          else if (partitioner_str == "ZOLTAN_RCB" || partitioner_str == "zoltan_rcb")
+            partitioner = Partitioner_type::ZOLTAN_RCB;
+        }
+        if (expert_list->isParameter("contiguous global ids")) {
+          contiguous_gids_ = expert_list->get<bool>("contiguous global ids");
+        }
+      }
+    }
+  }
+
   int ok;
   int space_dim = 2;
   pre_create_steps_(space_dim, incomm_, gm);
@@ -582,62 +622,6 @@ Mesh_MSTK::Mesh_MSTK(const Mesh *inmesh,
 
   extract_mstk_mesh(inmesh->get_comm(), *((Mesh_MSTK *) inmesh), src_ents, entity_dim,
                     flatten, extrude, request_faces, request_edges);
-
-  List_Delete(src_ents);
-}
-
-
-Mesh_MSTK::Mesh_MSTK(const Mesh& inmesh, 
-                     const std::vector<std::string>& setnames, 
-                     const Entity_kind setkind,
-                     const bool flatten,
-                     const bool extrude,
-                     const bool request_faces,
-                     const bool request_edges) :
-    mpicomm_(inmesh.get_comm()->GetMpiComm()),
-    Mesh(inmesh.verbosity_obj(),request_faces,request_edges),
-    extface_map_w_ghosts_(NULL), extface_map_wo_ghosts_(NULL),
-    owned_to_extface_importer_(NULL)
-{  
-
-  Mesh_ptr inmesh_mstk = ((Mesh_MSTK&) inmesh).mesh;
-
-  int mkid = MSTK_GetMarker();
-  List_ptr src_ents = List_New(10);
-  for (int i = 0; i < setnames.size(); ++i) {
-    MSet_ptr mset = nullptr;
-    
-    Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = inmesh.geometric_model();
-    Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setnames[i]);
-
-
-    // access the set in Amanzi so that the set gets created in 'inmesh'
-    // if it already does not exist
-
-    int setsize = ((Mesh_MSTK&) inmesh).get_set_size(setnames[i],setkind,Parallel_type::OWNED);
-
-    //  Now retrieve the entities in the set from MSTK
-
-    std::string internal_name = internal_name_of_set(rgn,setkind);
-
-    mset = MESH_MSetByName(inmesh_mstk,internal_name.c_str());
-
-    if (mset) {
-      int idx = 0;
-      MEntity_ptr ment = nullptr;
-      while ((ment = (MEntity_ptr) MSet_Next_Entry(mset,&idx))) {
-        if (!MEnt_IsMarked(ment,mkid) && MEnt_PType(ment) != PGHOST && MEnt_Dim(ment) != MDELETED) {
-          List_Add(src_ents,ment);
-          MEnt_Mark(ment,mkid);
-        }
-      }
-    }
-  }
-
-  MType entity_dim = ((Mesh_MSTK&) inmesh).entity_kind_to_mtype(setkind);
-
-  extract_mstk_mesh(inmesh.get_comm(), (Mesh_MSTK&) inmesh, src_ents, entity_dim, flatten, extrude,
-                    request_faces, request_edges);
 
   List_Delete(src_ents);
 }
@@ -2374,6 +2358,62 @@ void Mesh_MSTK::node_get_cell_faces(const Entity_ID nodeid,
 
 
 //---------------------------------------------------------
+// Cells of type 'ptype' connected to an edge. This routine uses
+// push_back on or near the partition boundary since we cannot tell at
+// the outset how many entries will be put into the list
+//---------------------------------------------------------
+void Mesh_MSTK::edge_get_cells(const Entity_ID edgeid, 
+                               const Parallel_type ptype,
+                               std::vector<Entity_ID> *cellids) const
+{
+  int idx, lid, nc;
+  List_ptr cell_list;
+  MEntity_ptr ment;
+
+  AMANZI_ASSERT (cellids != NULL);
+
+  MEdge_ptr me = (MEdge_ptr) edge_id_to_handle[edgeid];
+  
+  // mesh edge on a processor boundary may be connected to owned
+  // and ghost cells. So depending on the requested cell type, we
+  // may have to omit some entries
+
+  if (manifold_dimension() == 3)
+    cell_list = ME_Regions(me);
+  else
+    cell_list = ME_Faces(me);
+
+  nc = List_Num_Entries(cell_list);
+  cellids->resize(nc); // resize to maximum size possible
+  Entity_ID_List::iterator it = cellids->begin();
+
+  int n = 0;
+  idx = 0; 
+  while ((ment = List_Next_Entry(cell_list,&idx))) {
+    if (MEnt_PType(ment) == PGHOST) {
+      if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
+        lid = MEnt_ID(ment);
+        *it = lid-1;  // assign to next spot by dereferencing iterator
+        ++it;
+        ++n;
+      }
+    }
+    else {
+      if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
+        lid = MEnt_ID(ment);
+        *it = lid-1;  // assign to next spot by dereferencing iterator
+        ++it;
+        ++n;
+      }
+    }
+  }
+  cellids->resize(n); // resize to the actual number of cells being returned
+
+  List_Delete(cell_list);
+}
+
+
+//---------------------------------------------------------
 // Cells connected to a face
 //---------------------------------------------------------
 void Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid, 
@@ -2855,7 +2895,8 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       }
 
     }
-    else if (region->type() == AmanziGeometry::PLANE) {
+    else if ((region->type() == AmanziGeometry::PLANE)||
+             (region->type() == AmanziGeometry::POLYGON)){
 
       if (celldim == 2) {
 

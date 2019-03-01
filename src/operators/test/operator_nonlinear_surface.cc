@@ -31,6 +31,7 @@
 // Operators
 #include "Operator.hh"
 #include "OperatorDefs.hh"
+#include "OperatorUtils.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_DiffusionMFD.hh"
 
@@ -42,9 +43,11 @@ class HeatConduction {
  public:
   HeatConduction(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh) { 
     CompositeVectorSpace cvs;
+    auto cmap = Operators::getMaps(*mesh_, AmanziMesh::CELL);
+    auto fmap = Operators::getMaps(*mesh_, AmanziMesh::FACE);
     cvs.SetMesh(mesh_)->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("face", AmanziMesh::FACE, 1);
+      ->AddComponent(std::string("cell"), cmap.first, cmap.second, 1)
+      ->AddComponent(std::string("face"), fmap.first, fmap.second, 1);
 
     values_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
     derivatives_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
@@ -119,7 +122,7 @@ void RunTest(std::string op_list_name) {
   std::vector<std::string> setnames;
   setnames.push_back(std::string("Top surface"));
 
-  RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(*mesh_mstk, setnames, AmanziMesh::FACE));
+  RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(&*mesh_mstk, setnames, AmanziMesh::FACE));
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
@@ -174,6 +177,7 @@ void RunTest(std::string op_list_name) {
 
     Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);
     PDE_DiffusionMFD op(olist, surfmesh);
+    op.Init(olist);
     op.SetBCs(bc, bc);
 
     // get the global operator

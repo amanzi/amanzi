@@ -222,9 +222,9 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
     // If monitoring the residual, check for convergence.
     if (monitor_ == SOLVER_MONITOR_RESIDUAL) {
       previous_error = error;
-      error = fn_->ErrorNorm(u, r);
-      residual_ = error;
+      // error = fn_->ErrorNorm(u, r);
       r->Norm2(&l2_error);
+      error = residual_ = l2_error;
 
       // We attempt to catch non-convergence early.
       if (num_itrs_ == 1) {
@@ -357,9 +357,9 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
     // Monitor the PC'd residual.
     if (monitor_ == SOLVER_MONITOR_PCED_RESIDUAL) {
       previous_error = error;
-      error = fn_->ErrorNorm(u, du_tmp);
-      residual_ = error;
+      // error = fn_->ErrorNorm(u, du_tmp);
       du_tmp->Norm2(&l2_error);
+      error = residual_ = l2_error;
 
       int ierr = NKA_ErrorControl_(error, previous_error, l2_error);
       if (ierr == SOLVER_CONVERGED) return num_itrs_;

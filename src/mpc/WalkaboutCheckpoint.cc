@@ -14,6 +14,7 @@
 
 // TPLs
 #include "Epetra_MpiComm.h"
+#include "Epetra_Export.h"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
@@ -253,13 +254,13 @@ void WalkaboutCheckpoint::CalculateData(
   AmanziGeometry::Point xv(dim);
 
   double local_phi, local_ws, local_p, local_kd;
-  int local_id(-1);
-
+  int local_id;
   for (int v = 0; v < nnodes_owned; v++) {
     mesh->node_get_coordinates(v, &xv);
     mesh->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
+    local_id = -1;
     local_phi = 0.0;
     local_ws = 0.0;
     local_p = 0.0;
@@ -313,23 +314,25 @@ void WalkaboutCheckpoint::WriteDataFile(
     CalculateData(S, xyz, velocity, porosity,
                   saturation, pressure, isotherm_kd, material_ids);
     
-    int n_loc = xyz.size();
-    int n_glob;
-
-    // create a block map that we can use to create an Epetra_MultiVector
+    // create a block map that we can use to create a new Epetra_MultiVector
     const AmanziMesh::Mesh& mesh = *S->GetMesh();
-    mesh.get_comm()->SumAll(&n_loc, &n_glob, 1);
-    
-    Epetra_BlockMap map(n_glob, n_loc, 1, 0, *mesh.get_comm());
+    const auto& map = mesh.node_map(false); 
+
+    const auto& source_map = mesh.node_map(true); 
+    Epetra_Map target_map(-1, map.NumMyElements(), 0, map.Comm());
+    Epetra_Export exporter(source_map, target_map);
     
     // create an auxiliary vector that will hold the centroid and velocity
     int dim = mesh.space_dimension();
-    Teuchos::RCP<Epetra_MultiVector> aux = Teuchos::rcp(new Epetra_MultiVector(map, dim));
+    Teuchos::RCP<Epetra_MultiVector> vs = Teuchos::rcp(new Epetra_MultiVector(source_map, dim));
+    Teuchos::RCP<Epetra_MultiVector> vt = Teuchos::rcp(new Epetra_MultiVector(target_map, dim));
     
+    // redistribute data
+    // -- coordinates of mesh nodes
     int ndata = xyz.size();
     for (int n = 0; n < ndata; n++) {      
       for (int i = 0; i < dim; i++) {
-        (*(*aux)(i))[n] = xyz[n][i];
+        (*(*vs)(i))[n] = xyz[n][i];
       }
     }
     std::vector<std::string> name;
@@ -337,59 +340,76 @@ void WalkaboutCheckpoint::WriteDataFile(
     name.push_back("x");
     name.push_back("y");
     if (dim > 2) name.push_back("z");
-    WriteVector(*aux, name);
+
+    vt->Export(*vs, exporter, Add);
+    WriteVector(*vt, name);
        
+    // -- pore velocity
+    vs->PutScalar(0.0);
+    vt->PutScalar(0.0);
     for (int n = 0; n < ndata; n++) {
       for (int i = 0; i < dim; i++) {
-        (*(*aux)(i))[n] = velocity[n][i];
+        (*(*vs)(i))[n] = velocity[n][i];
       }
     }
     name.resize(0);
     name.push_back("pore velocity x");
     name.push_back("pore velocity y");
     if (dim > 2) name.push_back("pore velocity z");
-    WriteVector(*aux, name);
+
+    vt->Export(*vs, exporter, Add);
+    WriteVector(*vt, name);
     
-    // reallocate a new aux vector only if we need to 
-    if (dim != 3) aux = Teuchos::rcp(new Epetra_MultiVector(map, 3));
+    // -- saturation, porosity, pressure
+    //    reallocate temporary vectors only if we need to
+    if (dim != 3) { 
+      vs = Teuchos::rcp(new Epetra_MultiVector(source_map, 3));
+      vt = Teuchos::rcp(new Epetra_MultiVector(target_map, 3));
+    }
+    vs->PutScalar(0.0);
+    vt->PutScalar(0.0);
     
     for (int n = 0; n < ndata; n++) {
-      (*(*aux)(0))[n] = saturation[n];
-      (*(*aux)(1))[n] = porosity[n];
-      (*(*aux)(2))[n] = pressure[n];
+      (*(*vs)(0))[n] = saturation[n];
+      (*(*vs)(1))[n] = porosity[n];
+      (*(*vs)(2))[n] = pressure[n];
     }
     name.resize(0);
     name.push_back("saturation");    
     name.push_back("porosity");
     name.push_back("pressure");
-    WriteVector(*aux, name);
 
-    // dump other parameters: "bulk density" and "isotherm kd"
+    vt->Export(*vs, exporter, Add);
+    WriteVector(*vt, name);
+
+    // -- bulk density and isotherm kd
     if (isotherm_kd.size() > 0) {
-      aux = Teuchos::rcp(new Epetra_MultiVector(map, 1));
-      // aux = Teuchos::rcp(new Epetra_MultiVector(map, 2));
+      vs = Teuchos::rcp(new Epetra_MultiVector(source_map, 1));
+      vt = Teuchos::rcp(new Epetra_MultiVector(target_map, 1));
 
       for (int n = 0; n < ndata; n++) {    
-        (*(*aux)(0))[n] = isotherm_kd[n];
-        // (*(*aux)(1))[n] =  particle_density[n] * (1.0 - porosity[n]);
+        (*(*vs)(0))[n] = isotherm_kd[n];
       }
 
       name.resize(0);
       name.push_back("isotherm kd");
-      // name.push_back("bulk density");    
-      WriteVector(*aux, name);
+      vt->Export(*vs, exporter, Add);
+      WriteVector(*vt, name);
     } 
 
-    // dump material ids
-    aux = Teuchos::rcp(new Epetra_MultiVector(map, 1));
+    // -- material ids
+    vs = Teuchos::rcp(new Epetra_MultiVector(source_map, 1));
+    vt = Teuchos::rcp(new Epetra_MultiVector(target_map, 1));
 
     for (int n = 0; n < ndata; n++) {    
-      (*(*aux)(0))[n] = material_ids[n];
+      (*(*vs)(0))[n] = material_ids[n];
     }
 
     name.resize(0);
     name.push_back("material ids");
-    WriteVector(*aux, name);
+
+    vt->Export(*vs, exporter, Add);
+    WriteVector(*vt, name);
 
     // dump pairs: material ids, material name
     if (plist_.isSublist("write regions")) {

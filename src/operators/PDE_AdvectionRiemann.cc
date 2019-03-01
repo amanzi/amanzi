@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "Basis_Regularized.hh"
-#include "MFD3DFactory.hh"
+#include "BilinearFormFactory.hh"
 
 #include "OperatorDefs.hh"
 #include "Operator_Schema.hh"
@@ -85,13 +85,13 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
 
   // parse discretization parameters
   // -- discretization method
-  WhetStone::MFD3DFactory factory;
-  auto mfd = factory.Create(mesh_, plist);
+  auto mfd = WhetStone::BilinearFormFactory::Create(plist, mesh_);
 
   // -- matrices to build
   matrix_ = plist.get<std::string>("matrix type");
+  method_ = plist.get<std::string>("method");
 
-  if (factory.method() == "dg modal") {
+  if (method_ == "dg modal") {
     dg_ = Teuchos::rcp_dynamic_cast<WhetStone::DG_Modal>(mfd);
   } else {
     Errors::Message msg;
@@ -127,7 +127,18 @@ void PDE_AdvectionRiemann::UpdateMatrices(
       dg_->FluxMatrix(f, (*u)[f], Aface, false, jump_on_test_);
       matrix[f] = Aface;
     }
+  } else if (matrix_ == "flux" && flux_ == "upwind at gauss points") {
+    for (int f = 0; f < nfaces_owned; ++f) {
+      dg_->FluxMatrixGaussPoints(f, (*u)[f], Aface, true, jump_on_test_);
+      matrix[f] = Aface;
+    }
+  } else if (matrix_ == "flux" && flux_ == "downwind at gauss points") {
+    for (int f = 0; f < nfaces_owned; ++f) {
+      dg_->FluxMatrixGaussPoints(f, (*u)[f], Aface, false, jump_on_test_);
+      matrix[f] = Aface;
+    }
   } else if (matrix_ == "flux" && flux_ == "Rusanov") {
+    // Polynomial Kc should be distributed here
     AmanziMesh::Entity_ID_List cells;
     for (int f = 0; f < nfaces_owned; ++f) {
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);

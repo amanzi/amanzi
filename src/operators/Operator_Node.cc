@@ -117,7 +117,7 @@ int Operator_Node::ApplyMatrixFreeOp(const Op_Node_Node& op,
 ****************************************************************** */
 void Operator_Node::SymbolicAssembleMatrixOp(const Op_Cell_Node& op,
                                              const SuperMap& map, GraphFE& graph,
-                                             int my_block_row, int my_block_col) const
+                                             int my_block_row, int my_block_col, bool multi_domain) const
 {
   std::vector<int> lid_r(cell_max_nodes);
   std::vector<int> lid_c(cell_max_nodes);
@@ -148,7 +148,7 @@ void Operator_Node::SymbolicAssembleMatrixOp(const Op_Cell_Node& op,
 ****************************************************************** */
 void Operator_Node::SymbolicAssembleMatrixOp(const Op_Node_Node& op,
                                              const SuperMap& map, GraphFE& graph,
-                                             int my_block_row, int my_block_col) const
+                                             int my_block_row, int my_block_col, bool multi_domain) const
 {
   const std::vector<int>& node_row_inds = map.GhostIndices("node", my_block_row);
   const std::vector<int>& node_col_inds = map.GhostIndices("node", my_block_col);
@@ -170,7 +170,7 @@ void Operator_Node::SymbolicAssembleMatrixOp(const Op_Node_Node& op,
 ****************************************************************** */
 void Operator_Node::AssembleMatrixOp(const Op_Cell_Node& op,
                                      const SuperMap& map, MatrixFE& mat,
-                                     int my_block_row, int my_block_col) const
+                                     int my_block_row, int my_block_col, bool multi_domain) const
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
@@ -204,7 +204,7 @@ void Operator_Node::AssembleMatrixOp(const Op_Cell_Node& op,
 ****************************************************************** */
 void Operator_Node::AssembleMatrixOp(const Op_Node_Node& op,
                                      const SuperMap& map, MatrixFE& mat,
-                                     int my_block_row, int my_block_col) const
+                                     int my_block_row, int my_block_col, bool multi_domain) const
 {
   AMANZI_ASSERT(op.diag->NumVectors() == 1);
 

@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -23,23 +23,21 @@ namespace WhetStone {
 * Prepare scaling data for the orthonormalized basis.
 ****************************************************************** */
 void Basis_Orthonormalized::Init(
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order)
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+    AmanziMesh::Entity_ID id, int c, int order,
+    Polynomial& integrals)
 {
   int d = mesh->space_dimension();
   monomial_scales_.Reshape(d, order);
   monomial_ortho_.Reshape(d, order);
 
-  Polynomial integrals(d, 2 * order);
   NumericalIntegration numi(mesh);
-
-  for (int k = 0; k <= 2 * order; ++k) {
-    numi.IntegrateMonomialsCell(c, k, integrals);
-  }
+  numi.UpdateMonomialIntegralsCell(c, 2 * order, integrals);
   
-  double volume = integrals(0, 0); 
+  double volume = integrals(0); 
 
-  monomial_scales_(0, 0) = 1.0;
-  monomial_ortho_(0, 0) = 0.0;
+  monomial_scales_(0) = 1.0;
+  monomial_ortho_(0) = 0.0;
 
   for (auto it = monomial_scales_.begin(); it < monomial_scales_.end(); ++it) {
     int k = it.MonomialSetPosition();
@@ -230,7 +228,8 @@ void Basis_Orthonormalized::ChangeBasisNaturalToMy(DenseVector& v) const
 
 
 /* ******************************************************************
-* Recover polynomial from data coefficients. 
+* Recover polynomial in the natural basis from vector coefs of 
+* coefficients in the orthonormalized basis. 
 ****************************************************************** */
 Polynomial Basis_Orthonormalized::CalculatePolynomial(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,

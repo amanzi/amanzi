@@ -49,8 +49,7 @@ TEST(DARCY_TWO_FRACTURES) {
 
   // create a mesh framework
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
-  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({Framework::MSTK, Framework::STKMESH}));
@@ -62,7 +61,7 @@ TEST(DARCY_TWO_FRACTURES) {
   setnames.push_back("fracture 2");
 
   RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh3D);
-  RCP<const Mesh> mesh = Teuchos::rcp(new Mesh_MSTK(*mesh_mstk, setnames, AmanziMesh::FACE));
+  RCP<const Mesh> mesh = Teuchos::rcp(new Mesh_MSTK(&*mesh_mstk, setnames, AmanziMesh::FACE));
 
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
@@ -73,7 +72,8 @@ TEST(DARCY_TWO_FRACTURES) {
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S));
+  Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
+  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
   DPK->Setup(S.ptr());
 
   S->Setup();

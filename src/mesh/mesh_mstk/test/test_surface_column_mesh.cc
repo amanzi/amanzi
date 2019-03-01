@@ -134,7 +134,7 @@ TEST(SURFACE_COLUMN_MESH_3D_UNSTRUCTURED)
 
   // Create the mesh
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh =
-      Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK("test/slab-0.05-5x4x25.exo", &comm, 3, gm));
+      Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK("test/slab-0.05-5x4x25.exo", &comm, gm));
 
   CHECK_EQUAL(20, mesh->get_set_size("surface",Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::ALL));
 

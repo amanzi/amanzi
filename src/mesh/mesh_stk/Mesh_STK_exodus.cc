@@ -71,12 +71,12 @@ Mesh_STK::read_exodus_(const std::string& fname)
   Mesh_STK::Mesh_STK(const Epetra_MpiComm *comm, 
                      const std::string& fname,
                      const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-                     const Teuchos::RCP<const VerboseObject>& verbosity_obj,
+                     const Teuchos::RCP<const Teuchos::ParameterList>& plist,
 		     const bool request_faces,
 		     const bool request_edges)
     : mesh_(), 
       map_owned_(), map_used_(),
-      Mesh(verbosity_obj,request_faces,request_edges)
+      Mesh(Teuchos::null,request_faces,request_edges)
   {
     Mesh::set_comm(comm);
     Mesh::set_space_dimension(3);
@@ -87,12 +87,12 @@ Mesh_STK::read_exodus_(const std::string& fname)
 
   Mesh_STK::Mesh_STK(const char *fname, const Epetra_MpiComm *comm,
                      const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-                     const Teuchos::RCP<const VerboseObject>& verbosity_obj,
+                     const Teuchos::RCP<const Teuhcos::ParameterList>& plist,
 		     const bool request_faces,
 		     const bool request_edges)
     : mesh_(), 
       map_owned_(), map_used_(),
-      Mesh(verbosity_obj,request_faces,request_edges)
+      Mesh(Teuchos::null,request_faces,request_edges)
   {
     Mesh::set_comm(comm);
     Mesh::set_space_dimension(3);

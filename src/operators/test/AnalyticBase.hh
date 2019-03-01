@@ -35,6 +35,7 @@
 #include "Epetra_MultiVector.h"
 
 #include "MFD3D_Diffusion.hh"
+#include "MFD3D_Lagrange.hh"
 #include "Mesh.hh"
 #include "NumericalIntegration.hh"
 
@@ -111,7 +112,7 @@ void AnalyticBase::ComputeCellError(
     double tmp = pressure_exact(xc, t);
     double volume = mesh_->cell_volume(c);
 
-    // std::cout << c << " " << tmp << " " << p[0][c] << std::endl;
+    // std::cout << c << " xc=" << xc << " p: " << tmp << " " << p[0][c] << std::endl;
     l2_err += std::pow(tmp - p[0][c], 2.0) * volume;
     inf_err = std::max(inf_err, fabs(tmp - p[0][c]));
     pnorm += std::pow(tmp, 2.0) * volume;
@@ -177,8 +178,13 @@ void AnalyticBase::ComputeNodeError(
   Amanzi::AmanziGeometry::Point xv(d_);
   Amanzi::AmanziGeometry::Point grad(d_);
 
+  Teuchos::ParameterList plist;
+  plist.set<int>("method order", 1)
+       .set<bool>("use low-order scheme", true);
+  Amanzi::WhetStone::MFD3D_Lagrange mfd(plist, mesh_);
+
+  Amanzi::WhetStone::Polynomial poly(d_, 1);
   Amanzi::AmanziMesh::Entity_ID_List nodes;
-  Amanzi::WhetStone::MFD3D_Diffusion mfd(mesh_);
   int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells; c++) {
@@ -186,11 +192,12 @@ void AnalyticBase::ComputeNodeError(
 
     mesh_->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();
-    std::vector<double> cell_solution(nnodes);
+    std::vector<Amanzi::WhetStone::Polynomial> cell_solution(nnodes);
 
     for (int k = 0; k < nnodes; k++) {
       int v = nodes[k];
-      cell_solution[k] = p[0][v];
+      cell_solution[k].Reshape(d_, 0);
+      cell_solution[k](0) = p[0][v];
 
       mesh_->node_get_coordinates(v, &xv);
       double tmp = pressure_exact(xv, t);
@@ -207,7 +214,8 @@ void AnalyticBase::ComputeNodeError(
 
     const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     const Amanzi::AmanziGeometry::Point& grad_exact = gradient_exact(xc, t);
-    mfd.RecoverGradient_StiffnessMatrix(c, cell_solution, grad);
+    mfd.L2Cell(c, cell_solution, NULL, poly);
+    for (int k = 0; k < d_; ++k) grad[k] = poly(k + 1);
 
     h1_err += L22(grad - grad_exact) * volume;
     hnorm += L22(grad_exact) * volume;

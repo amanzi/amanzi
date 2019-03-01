@@ -141,7 +141,7 @@ int Operator_FaceCellSff::ApplyInverse(const CompositeVector& X, CompositeVector
 * Special assemble algorithm is required to deal with Schur complement.
 ****************************************************************** */
 void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
-                                          int my_block_row, int my_block_col) const
+                                          int my_block_row, int my_block_col, bool multi_domain) const
 {
   // Check preconditions -- Scc must have exactly one CELL+FACE schema,
   // and no other CELL schemas that are not simply diagonal CELL_CELL.
@@ -213,13 +213,13 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
       }
 
       // Assemble this Schur Op into matrix
-      schur_op->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);
+      schur_op->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col, multi_domain);
     } else if (((*it)->schema_old_ ==
                 (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL))
                && ((*it)->diag->MyLength() == ncells_owned)) {
       // pass, already part of cell inverse
     } else {
-      (*it)->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);
+      (*it)->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col, multi_domain);
     }
   }
 }
@@ -284,7 +284,7 @@ void Operator_FaceCellSff::SymbolicAssembleMatrix()
   Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->Map(),
           smap_->GhostedMap(), smap_->GhostedMap(), row_size));
 
-  Operator::SymbolicAssembleMatrix(*smap_, *graph, 0, 0);
+  Operator::SymbolicAssembleMatrix(*smap_, *graph, 0, 0, false);
 
   // Completing and optimizing the graphs
   int ierr = graph->FillComplete(smap_->Map(), smap_->Map());
@@ -301,11 +301,11 @@ void Operator_FaceCellSff::SymbolicAssembleMatrix()
 ****************************************************************** */
 void Operator_FaceCellSff::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
                                                     const SuperMap& map, GraphFE& graph,
-                                                    int my_block_row, int my_block_col) const
+                                                    int my_block_row, int my_block_col, bool multi_domain) const
 {
   std::string name = "Sff alt CELL_FACE";
   Op_Cell_Face schur_op(name, mesh_);
-  Operator_FaceCell::SymbolicAssembleMatrixOp(schur_op, map, graph, my_block_row, my_block_col);
+  Operator_FaceCell::SymbolicAssembleMatrixOp(schur_op, map, graph, my_block_row, my_block_col, multi_domain);
 }
 
 }  // namespace Operators

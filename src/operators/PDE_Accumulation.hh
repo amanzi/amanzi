@@ -70,39 +70,42 @@ class PDE_Accumulation : public PDE_HelperBCsList {
 
   PDE_Accumulation(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op)
     : global_op_(global_op),
-      mesh_(Teuchos::null)
+      mesh_(Teuchos::null),
+      plist_(plist)
   {
     Schema schema;
-    std::string name = plist.get<std::string>("entity kind");
-    int n_vecs = plist.get<int>("number of vectors", 1);
+    std::string name = plist_.get<std::string>("entity kind");
+    int n_vecs = plist_.get<int>("number of vectors", 1);
 
     schema.Init(schema.StringToKind(name), n_vecs);
-    InitAccumulation_(schema, plist.get<bool>("surface operator", false));
+    InitAccumulation_(schema, plist_.get<bool>("surface operator", false));
   }
 
   PDE_Accumulation(Teuchos::ParameterList& plist, Teuchos::RCP<AmanziMesh::Mesh> mesh)
     : global_op_(Teuchos::null),
-      mesh_(mesh)
+      mesh_(mesh),
+      plist_(plist)
   {
     Schema schema;
-    std::string name = plist.get<std::string>("entity kind");
-    int n_vecs = plist.get<int>("number of vectors", 1);
+    std::string name = plist_.get<std::string>("entity kind");
+    int n_vecs = plist_.get<int>("number of vectors", 1);
 
     schema.Init(schema.StringToKind(name), n_vecs);
-    InitAccumulation_(schema, plist.get<bool>("surface operator", false));
+    InitAccumulation_(schema, plist_.get<bool>("surface operator", false));
   }
 
   PDE_Accumulation(Teuchos::ParameterList& plist, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : global_op_(Teuchos::null),
-      mesh_(mesh)
+      mesh_(mesh),
+      plist_(plist)
   {
     Schema schema;
-    std::string name = plist.get<std::string>("entity kind");
-    int n_vecs = plist.get<int>("number of vectors", 1);
+    std::string name = plist_.get<std::string>("entity kind");
+    int n_vecs = plist_.get<int>("number of vectors", 1);
 
     schema.Init(schema.StringToKind(name), n_vecs);
 
-    bool surface = plist.get<bool>("surface operator", false);
+    bool surface = plist_.get<bool>("surface operator", false);
     InitAccumulation_(schema, surface);
   }
   
@@ -117,7 +120,12 @@ class PDE_Accumulation : public PDE_HelperBCsList {
   // -- modifiers for diagonal operators
   void AddAccumulationTerm(const CompositeVector& du, const std::string& name);
   void AddAccumulationTerm(const CompositeVector& du, double dT, const std::string& name, bool volume=true);
-
+  // -- modifiers for diagonal operators and rhs
+  void AddAccumulationRhs(const CompositeVector& s1,
+                          const CompositeVector& s2,
+                          double alpha,
+                          const std::string& name,
+                          bool volume);
   // -- linearized update methods with storage terms
   void AddAccumulationDelta(const CompositeVector& u0,
                             const CompositeVector& s0, const CompositeVector& ss,
@@ -148,6 +156,8 @@ class PDE_Accumulation : public PDE_HelperBCsList {
   std::vector<Teuchos::RCP<Op> > local_ops_;
   Schema global_op_schema_, local_op_schema_;
 
+  Teuchos::ParameterList plist_;
+  
   // mesh info
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int ncells_owned;

@@ -1,6 +1,9 @@
 #ifndef AMANZI_OBSERVABLE_LINE_SEGMENT_AQUEOUS_HH
 #define AMANZI_OBSERVABLE_LINE_SEGMENT_AQUEOUS_HH
 
+#include "LimiterCell.hh"
+#include "ReconstructionCell.hh"
+
 #include "ObservableAmanzi.hh"
 #include "ObservableAqueous.hh"
 #include "ObservableLineSegment.hh"
@@ -16,7 +19,7 @@ class ObservableLineSegmentAqueous : public ObservableAqueous,
                                 std::string functional,
                                 Teuchos::ParameterList& plist,
                                 Teuchos::ParameterList& units_plist,
-                                Teuchos::RCP<AmanziMesh::Mesh> mesh);
+                                Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
   virtual void ComputeObservation(State& S, double* value, double* volume, std::string& unit);
   virtual int ComputeRegionSize();
@@ -34,7 +37,7 @@ ObservableLineSegmentAqueous::ObservableLineSegmentAqueous(std::string variable,
                                                            std::string functional,
                                                            Teuchos::ParameterList& plist,
                                                            Teuchos::ParameterList& units_plist,
-                                                           Teuchos::RCP<AmanziMesh::Mesh> mesh) :
+                                                           Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
     Observable(variable, region, functional, plist, units_plist, mesh),
     ObservableAqueous(variable, region, functional, plist, units_plist, mesh),
     ObservableLineSegment(variable, region, functional, plist, units_plist, mesh) {};
@@ -88,12 +91,6 @@ void ObservableLineSegmentAqueous::InterpolatedValues(State& S,
                                                       AmanziMesh::Entity_ID_List& ids,
                                                       std::vector<AmanziGeometry::Point>& line_pnts,
                                                       std::vector<double>& values) {
-  // if (!S.HasField(var)) {
-  //   Errors::Message msg;
-  //   msg <<"InterpolatedValue: field "<<var<<" doesn't exist in state";
-  //   Exceptions::amanzi_throw(msg);
-  // }
-
   Teuchos::RCP<const Epetra_MultiVector> vector;
   Teuchos::RCP<const CompositeVector> cv;
 
@@ -118,33 +115,25 @@ void ObservableLineSegmentAqueous::InterpolatedValues(State& S,
   if (interpolation == "linear") {
     Teuchos::ParameterList plist;
     Operators::ReconstructionCell lifting(mesh_);
-    std::vector<AmanziGeometry::Point> gradient; 
       
     cv->ScatterMasterToGhosted();
 
-    if (limiter_) { // At the moment only Kuzmin limiter is implemented for observ.
-      plist.set<std::string>("limiter", "Kuzmin");
-    }
-    
     lifting.Init(vector, plist);
-    lifting.ComputeGradient(ids, gradient);
+    lifting.ComputeGradient(ids);
 
     if (limiter_) {
-      // if (!S.HasField("darcy_velocity")) {
-      //   Errors::Message msg;
-      //   msg <<"Limiter can't be apllied without darcy_velocity";
-      //   Exceptions::amanzi_throw(msg);
-      // }
-      
-      // Teuchos::RCP<const Epetra_MultiVector> flux =  S.GetFieldData("darcy_velocity")->ViewComponent("cell");
-      // // Apply limiter
-      // lifting.InitLimiter(flux);
-      lifting.ApplyLimiter(ids, gradient);
+      plist.set<std::string>("limiter", "Kuzmin");
+      std::vector<int> bc_model;
+      std::vector<double> bc_value;
+
+      Operators::LimiterCell limiter(mesh_); 
+      limiter.Init(plist);
+      limiter.ApplyLimiter(ids, vector, 0, lifting.gradient(), bc_model, bc_value);
     }
 
     for (int i = 0; i < ids.size(); i++) {
       int c = ids[i];
-      values[i] = lifting.getValue( gradient[i], c, line_pnts[i]);
+      values[i] = lifting.getValue(c, line_pnts[i]);
     }
   } else if (interpolation == "constant") {    
     for (int i = 0; i < ids.size(); i++) {
@@ -153,7 +142,7 @@ void ObservableLineSegmentAqueous::InterpolatedValues(State& S,
     }
   } else {
     Errors::Message msg;
-    msg <<"InterpolatedValue: unknown interpolation method "<<interpolation;
+    msg << "InterpolatedValue: unknown interpolation method " << interpolation;
     Exceptions::amanzi_throw(msg);
   }
 }

@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -349,6 +349,25 @@ int DenseMatrix::Inverse()
   int lwork = n_ * n_;
   double dwork[lwork];
   DGETRI_F77(&n_, data_, &n_, iwork, dwork, &lwork, &ierr);
+  return ierr;
+}
+
+
+/* ******************************************************************
+* Second level routine: inversion of symmetric poitive definite
+****************************************************************** */
+int DenseMatrix::InverseSPD() 
+{
+  if (n_ != m_) return 911;
+
+  int ierr;
+  DPOTRF_F77("U", &n_, data_, &n_, &ierr); 
+  if (ierr) return ierr;
+ 
+  DPOTRI_F77("U", &n_, data_, &n_, &ierr);
+  for (int i = 0; i < n_; i++)
+    for (int j = i + 1; j < n_; j++)
+      data_[i * n_ + j] = data_[j * n_ + i];
   return ierr;
 }
 

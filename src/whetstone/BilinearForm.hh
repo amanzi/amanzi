@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -37,7 +37,7 @@ class BilinearForm : public virtual InnerProductL2,
                      public virtual InnerProductH1 {
  public:
   explicit BilinearForm() : order_(1) {};
-  ~BilinearForm() {};
+  virtual ~BilinearForm() {};
 
   // additional members
   // -- low-order schemes require typically constant vector/tensor coefficients

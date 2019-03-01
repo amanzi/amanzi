@@ -19,8 +19,9 @@ include(PrintVariable)
 project(MESH_SIMPLE)
 
 # Amanzi include directories
-include_directories(${MESH_SOURCE_DIR})
+include_directories(${ATK_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
+include_directories(${MESH_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -30,7 +31,8 @@ file(GLOB simple_mesh_source_files "*.cc")
 file(GLOB simple_inc_files "*.hh")
 add_amanzi_library(simple_mesh
                    SOURCE ${simple_mesh_source_files} HEADERS ${simple_inc_files}
-                   LINK_LIBS mesh geometry error_handling ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
+                   LINK_LIBS mesh geometry error_handling atk 
+                             ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
 
 if (BUILD_TESTS)
 

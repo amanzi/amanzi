@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.1
+  WhetStone, Version 2.2
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -39,8 +39,15 @@ class NumericalIntegration {
 
   // main methods
   // integrate product of functions with quadrature order 
-  double IntegrateFunctionsTrianglatedCell(
+  double IntegrateFunctionsTriangulatedCell(
       int c, const std::vector<const WhetStoneFunction*>& funcs, int order) const;
+
+  double IntegrateFunctionsTriangulatedFace(
+      int c, const std::vector<const WhetStoneFunction*>& funcs, int order) const;
+
+  double IntegrateFunctionsEdge(
+      const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
+      const std::vector<const WhetStoneFunction*>& funcs, int order) const;
 
   // integrate product of polynomials and monomials with different origins
   double IntegratePolynomialsCell(
@@ -66,6 +73,7 @@ class NumericalIntegration {
 
   // integrate group of monomials 
   void IntegrateMonomialsCell(int c, int k, Polynomial& integrals) const;
+  void UpdateMonomialIntegralsCell(int c, int order, Polynomial& integrals);
   void UpdateMonomialIntegralsCell(int c, int order, PolynomialOnMesh& integrals);
 
   // useful functions: integrate single polynomial
@@ -81,6 +89,14 @@ class NumericalIntegration {
       const Polynomial& poly) const {
     const std::vector<const PolynomialBase*> polys(1, &poly);
     return IntegratePolynomialsEdge(x1, x2, polys);
+  }
+
+  // useful functions: integrate single function
+  double IntegrateFunctionEdge(
+      const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
+      const WhetStoneFunction& func, int order) const {
+    const std::vector<const WhetStoneFunction*> funcs(1, &func);
+    return IntegrateFunctionsEdge(x1, x2, funcs, order);
   }
 
   // various bounds

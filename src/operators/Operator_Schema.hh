@@ -69,24 +69,24 @@ class Operator_Schema : public Operator {
   // -- visit methods for symbolic assemble
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
           const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const override;
+          int my_block_row, int my_block_col, bool multi_domain) const override;
   virtual void SymbolicAssembleMatrixOp(const Op_Face_Schema& op,
           const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const override;
+          int my_block_row, int my_block_col, bool multi_domain) const override;
   virtual void SymbolicAssembleMatrixOp(const Op_Node_Node& op,
           const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const override;
+          int my_block_row, int my_block_col, bool multi_domain) const override;
   
   // -- visit methods for assemble
   virtual void AssembleMatrixOp(const Op_Cell_Schema& op,
           const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col) const override;
+          int my_block_row, int my_block_col, bool multi_domain) const override;
   virtual void AssembleMatrixOp(const Op_Face_Schema& op,
           const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col) const override;
+          int my_block_row, int my_block_col, bool multi_domain) const override;
   virtual void AssembleMatrixOp(const Op_Node_Node& op,
           const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col) const override;
+          int my_block_row, int my_block_col, bool multi_domain) const override;
 
   // -- local <-> global communications
   virtual void ExtractVectorCellOp(int c, const Schema& schema,

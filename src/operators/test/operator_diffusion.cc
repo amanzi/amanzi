@@ -41,7 +41,7 @@
 /* *****************************************************************
 * Exactness test for mixed diffusion solver.
 ***************************************************************** */
-void RunTestDiffusionMixed(int dim, double gravity) {
+void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre AMG") {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -65,7 +65,9 @@ void RunTestDiffusionMixed(int dim, double gravity) {
   RCP<const Mesh> mesh;
   if (dim == 2) {
     meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
-    mesh = meshfactory("test/median32x33.exo");
+    // mesh = meshfactory("test/median15x16.exo");
+    mesh = meshfactory("test/circle_quad10.exo");
+    // mesh = meshfactory("test/circle_poly10.exo");
   } else {
     meshfactory.preference(FrameworkPreference({AmanziMesh::Simple}));
     if (comm.NumProc() > 1) meshfactory.preference(FrameworkPreference({MSTK}));
@@ -92,23 +94,27 @@ void RunTestDiffusionMixed(int dim, double gravity) {
   std::vector<double>& bc_value = bc->bc_value();
   std::vector<double>& bc_mixed = bc->bc_mixed();
 
-  for (int f = 0; f < nfaces_wghost; f++) {
+  const auto& fmap = mesh->face_map(true);
+  const auto& bmap = mesh->exterior_face_map(true);
+
+  for (int bf = 0; bf < bmap.NumMyElements(); ++bf) {
+    int f = fmap.LID(bmap.GID(bf));
     const Point& xf = mesh->face_centroid(f);
     double area = mesh->face_area(f);
     bool flag;
     Point normal = ana.face_normal_exterior(f, &flag);
 
-    if (fabs(xf[0]) < 1e-6) {
+    if (xf[0] < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
-    } else if(fabs(xf[1]) < 1e-6) {
+    } else if (xf[1] < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_MIXED;
       bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
 
       double tmp = ana.pressure_exact(xf, 0.0);
       bc_mixed[f] = 1.0;
       bc_value[f] -= bc_mixed[f] * tmp;
-    } else if(fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+    } else {
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_value[f] = ana.pressure_exact(xf, 0.0);
     }
@@ -120,7 +126,8 @@ void RunTestDiffusionMixed(int dim, double gravity) {
   g[dim - 1] = -gravity;
 
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator mixed");
-  Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(op_list, mesh, rho, g));
+  auto op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(op_list, mesh, rho, g));
+  op->Init(op_list);
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
@@ -131,11 +138,13 @@ void RunTestDiffusionMixed(int dim, double gravity) {
   // get and assemble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   op->ApplyBCs(true, true, true);
-  global_op->SymbolicAssembleMatrix();
-  global_op->AssembleMatrix();
+  if (pc_name != "identity") {
+    global_op->SymbolicAssembleMatrix();
+    global_op->AssembleMatrix();
+  }
 
   // create preconditoner using the base operator class
-  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  ParameterList slist = plist.sublist("preconditioners").sublist(pc_name);
   global_op->InitializePreconditioner(slist);
   global_op->UpdatePreconditioner();
 
@@ -182,13 +191,13 @@ void RunTestDiffusionMixed(int dim, double gravity) {
         pl2_err, pinf_err, ul2_err, uinf_err, solver.num_itrs());
 
     CHECK(pl2_err < 1e-12 && ul2_err < 1e-12);
-    CHECK(solver.num_itrs() < 10);
+    if (pc_name != "identity") CHECK(solver.num_itrs() < 10);
   }
 }
 
 
 TEST(OPERATOR_DIFFUSION_MIXED) {
-  RunTestDiffusionMixed(2, 0.0);
+  RunTestDiffusionMixed(2, 0.0, "identity");
   RunTestDiffusionMixed(3, 0.0);
 }
 
@@ -254,7 +263,7 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_value[f] = 3.0;
     /*
-    } else if(fabs(xf[1]) < 1e-6) {
+    } else if (fabs(xf[1]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_MIXED;
       bc_value[f] = 2.0;
 
@@ -262,8 +271,8 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
       bc_mixed[f] = 1.0;
       bc_value[f] -= bc_mixed[f] * tmp;
     */
-    } else if(fabs(xf[0] - 1.0) < 1e-6 || 
-              fabs(xf[1] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6) {
+    } else if (fabs(xf[0] - 1.0) < 1e-6 || 
+               fabs(xf[1] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_value[f] = ana.pressure_exact(xf, 0.0);
     }

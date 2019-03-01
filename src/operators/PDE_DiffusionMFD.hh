@@ -80,7 +80,7 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
       factor_(1.0)
   {
     operator_type_ = OPERATOR_DIFFUSION_MFD;
-    InitDiffusion_(plist);
+    ParsePList_(plist);
   }
 
   PDE_DiffusionMFD(Teuchos::ParameterList& plist,
@@ -90,7 +90,7 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
       factor_(1.0)
   {
     operator_type_ = OPERATOR_DIFFUSION_MFD;
-    InitDiffusion_(plist);
+    ParsePList_(plist);
   }
 
   PDE_DiffusionMFD(Teuchos::ParameterList& plist,
@@ -100,10 +100,12 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
       factor_(1.0)
   {
     operator_type_ = OPERATOR_DIFFUSION_MFD;
-    InitDiffusion_(plist);
+    ParsePList_(plist);
   }
 
   // main virtual members for populating an operator
+  virtual void Init(Teuchos::ParameterList& plist);
+
   virtual void SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K) override;
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                     const Teuchos::RCP<const CompositeVector>& dkdp) override;
@@ -165,11 +167,10 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
   void set_factor(double factor) { factor_ = factor; }
 
  protected:
-  void InitDiffusion_(Teuchos::ParameterList& plist);
+  void ParsePList_(Teuchos::ParameterList& plist);
   void CreateMassMatrices_();
 
   void UpdateMatricesNodal_();
-  void UpdateMatricesEdge_();
   void UpdateMatricesTPFA_();
   void UpdateMatricesMixed_();
   void UpdateMatricesMixed_little_k_();
@@ -187,9 +188,6 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
                        const Teuchos::Ptr<const BCs>& bc_test,
                        bool primary, bool eliminate, bool essential_eqn);
   void ApplyBCs_Cell_(const Teuchos::Ptr<const BCs>& bc_trial,
-                      const Teuchos::Ptr<const BCs>& bc_test,
-                      bool primary, bool eliminate, bool essential_eqn);
-  void ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_trial,
                       const Teuchos::Ptr<const BCs>& bc_test,
                       bool primary, bool eliminate, bool essential_eqn);
   void ApplyBCs_Nodal_(const Teuchos::Ptr<const BCs>& bc_f,
@@ -213,6 +211,9 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
   int nfailed_primary_;
 
   Teuchos::RCP<Operator> consistent_face_op_;
+
+ private:
+  int schema_prec_dofs_;
 };
 
 }  // namespace Operators

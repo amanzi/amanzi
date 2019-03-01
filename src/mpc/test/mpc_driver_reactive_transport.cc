@@ -54,9 +54,13 @@ using namespace Amanzi::AmanziGeometry;
   double avg1, avg2;
   Amanzi::ObservationData obs_data;    
   Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(plist));
- 
+
+  Teuchos::ParameterList state_plist = glist->sublist("state");
+  Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
+  S -> RegisterMesh("domain", mesh);
+  
   {
-    Amanzi::CycleDriver cycle_driver(glist, mesh, &comm, obs_data);
+    Amanzi::CycleDriver cycle_driver(glist, S, &comm, obs_data);
     try {
       auto S = cycle_driver.Go();
       S->GetFieldData("total_component_concentration")->MeanValue(&avg1);
@@ -68,9 +72,13 @@ using namespace Amanzi::AmanziGeometry;
   // restart simulation and compare results
   glist->sublist("cycle driver").sublist("restart").set<std::string>("file name", "chk_rt00005.h5");
   glist->sublist("state").sublist("initial conditions").remove("geochemical conditions", false);
-
+  S = Teuchos::null;
+  avg2 = 0.;
+  S = Teuchos::rcp(new Amanzi::State(state_plist));
+  S -> RegisterMesh("domain", mesh);
+  
   {
-    Amanzi::CycleDriver cycle_driver(glist, mesh, &comm, obs_data);
+    Amanzi::CycleDriver cycle_driver(glist, S, &comm, obs_data);
     try {
       auto S = cycle_driver.Go();
       S->GetFieldData("total_component_concentration")->MeanValue(&avg2);

@@ -135,7 +135,6 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
   const Schema& schema_col = global_op_->schema_col();
 
   AmanziMesh::Entity_kind kind = bc.kind();
-  AMANZI_ASSERT(kind != AmanziMesh::EDGE);
   Teuchos::RCP<Epetra_MultiVector> rhs_kind;
   if (primary) rhs_kind = rhs.ViewComponent(schema_row.KindToString(kind), true);
 
@@ -144,12 +143,16 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
     int ncols = Acell.NumCols();
     int nrows = Acell.NumRows();
 
+    int nents_owned(0);
     if (kind == AmanziMesh::FACE) {
       mesh_->cell_get_faces(c, &entities);
+      nents_owned = ncells_owned;
     } else if (kind == AmanziMesh::EDGE) {
       mesh_->cell_get_edges(c, &entities);
+      nents_owned = nedges_owned;
     } else if (kind == AmanziMesh::NODE) {
       mesh_->cell_get_nodes(c, &entities);
+      nents_owned = nnodes_owned;
     }
     int nents = entities.size();
 
@@ -210,12 +213,14 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
 
             if (essential_eqn) {
               rhs_loc(noff) = 0.0;
-              (*rhs_kind)[0][x] = value;
+              (*rhs_kind)[0][x] = (x < nents_owned) ? value : 0.0;
 
               if (kind == AmanziMesh::FACE) {
                 mesh_->face_get_cells(x, AmanziMesh::Parallel_type::ALL, &cells);
               } else if (kind == AmanziMesh::NODE) {
                 mesh_->node_get_cells(x, AmanziMesh::Parallel_type::ALL, &cells);
+              } else if (kind == AmanziMesh::EDGE) {
+                mesh_->edge_get_cells(x, AmanziMesh::Parallel_type::ALL, &cells);
               }
               Acell(noff, noff) = 1.0 / cells.size();
             }

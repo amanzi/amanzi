@@ -26,6 +26,7 @@
 #include "MeshAudit.hh"
 #include "MeshException.hh"
 
+#include "VerboseObject_objs.hh"
 
 
 int main (int argc, char* argv[])

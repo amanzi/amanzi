@@ -49,6 +49,7 @@ class VWContentEvaluator : public SecondaryVariableFieldEvaluator {
 
  protected:
   bool vapor_phase_;
+  Key saturation_key_, porosity_key_;
   
  private:
   static Utils::RegisteredFactory<FieldEvaluator,VWContentEvaluator> reg_;

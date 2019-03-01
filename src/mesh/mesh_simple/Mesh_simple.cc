@@ -26,16 +26,20 @@ Mesh_simple::Mesh_simple(double x0, double y0, double z0,
                          int nx, int ny, int nz,
                          const Epetra_MpiComm *comm_unicator,
                          const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-                         const Teuchos::RCP<const VerboseObject>&verbosity_obj,
+                         const Teuchos::RCP<const Teuchos::ParameterList>& plist,
                          const bool request_faces,
-                         const bool request_edges,
-                         const Partitioner_type partitioner)
+                         const bool request_edges) 
   : nx_(nx), ny_(ny), nz_(nz),
     x0_(x0), x1_(x1),
     y0_(y0), y1_(y1),
     z0_(z0), z1_(z1),
-    Mesh(verbosity_obj,request_faces,request_edges)
+    Mesh(Teuchos::null,request_faces,request_edges)
 {
+  // extract control parameters
+  if (plist != Teuchos::null) {
+    vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Mesh:Simple", *plist)); 
+  }
+
   Mesh::set_comm(comm_unicator);
   Mesh::set_mesh_type(RECTANGULAR);
   Mesh::set_space_dimension(3);
@@ -56,10 +60,9 @@ Mesh_simple::Mesh_simple(double x0, double y0,
                          int nx, int ny, 
                          const Epetra_MpiComm *comm_unicator,
                          const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-                         const Teuchos::RCP<const VerboseObject>&verbosity_obj,
+                         const Teuchos::RCP<const Teuchos::ParameterList>& plist,
                          const bool request_faces,
-                         const bool request_edges,
-                         const Partitioner_type partitioner) 
+                         const bool request_edges)
 {
   Exceptions::amanzi_throw(Errors::Message("Simple mesh cannot generate 2D meshes"));
 }
@@ -69,12 +72,16 @@ Mesh_simple::Mesh_simple(double x0, double y0,
 Mesh_simple::Mesh_simple(Teuchos::ParameterList &parameter_list,
                          const Epetra_MpiComm *comm_unicator,
                          const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-                         const Teuchos::RCP<const VerboseObject>&verbosity_obj,
+                         const Teuchos::RCP<const Teuchos::ParameterList>& plist,
                          const bool request_faces,
-                         const bool request_edges,
-                         const Partitioner_type partitioner)
-  : Mesh(verbosity_obj,request_faces,request_edges)
+                         const bool request_edges) 
+  : Mesh(Teuchos::null,request_faces,request_edges)
 {
+  // extract control parameters
+  if (plist != Teuchos::null) {
+    vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Mesh:Simple", *plist)); 
+  }
+
   Mesh::set_comm(comm_unicator);
   Mesh::set_mesh_type(RECTANGULAR);
   if (gm != Teuchos::null)
@@ -456,17 +463,21 @@ void Mesh_simple::build_maps_()
 
   std::vector<int> faces_bnd(num_faces_bnd_);
   int i = 0;
-  for (int iz=0; iz<nz_; iz++)
-    for (int iy=0; iy<ny_; iy++)
-      for (int ix=0; ix<nx_; ix++) {
-        if (iz == 0 || iz == nz_ - 1) {
-          faces_bnd[i++] = xyface_index_(ix,iy,iz);
-        } else if (iy == 0 || iy == ny_ - 1) {
-          faces_bnd[i++] = xzface_index_(ix,iy,iz);
-        } else if (ix == 0 || ix == nx_ - 1) {
-          faces_bnd[i++] = yzface_index_(ix,iy,iz);
-        }
-      } 
+  for (int ix=0; ix<nx_; ix++)
+    for (int iy=0; iy<ny_; iy++) {
+      faces_bnd[i++] = xyface_index_(ix,iy,0);
+      faces_bnd[i++] = xyface_index_(ix,iy,nz_);
+    }
+  for (int ix=0; ix<nx_; ix++)
+    for (int iz=0; iz<nz_; iz++) {
+      faces_bnd[i++] = xzface_index_(ix,0,iz);
+      faces_bnd[i++] = xzface_index_(ix,ny_,iz);
+    }
+  for (int iy=0; iy<ny_; iy++)
+    for (int iz=0; iz<nz_; iz++) {
+      faces_bnd[i++] = yzface_index_(0,iy,iz);
+      faces_bnd[i++] = yzface_index_(nx_,iy,iz);
+    }
 
   cell_map_ = new Epetra_Map(-1, num_cells_, &cells[0], 0, *epcomm_);
   face_map_ = new Epetra_Map(-1, num_faces_, &faces[0], 0, *epcomm_);

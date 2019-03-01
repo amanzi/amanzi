@@ -96,14 +96,14 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
     if (fabs(xf[0]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;  // We assume exterior normal.
-    } else if(fabs(xf[1]) < 1e-6) {
+    } else if (fabs(xf[1]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_MIXED;
       bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;  // We assume exterior normal.
 
       double tmp = ana.pressure_exact(xf, 0.0);
       bc_mixed[f] = 1.0;
       bc_value[f] -= bc_mixed[f] * tmp;
-    } else if(fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+    } else if (fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_value[f] = ana.pressure_exact(xf, 0.0);
     }
@@ -111,7 +111,8 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
 
   // create diffusion operator 
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator mixed");
-  Teuchos::RCP<PDE_DiffusionMFD> op = Teuchos::rcp(new PDE_DiffusionMFD(op_list, mesh));
+  auto op = Teuchos::rcp(new PDE_DiffusionMFD(op_list, mesh));
+  op->Init(op_list);
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 

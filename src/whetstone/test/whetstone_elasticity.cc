@@ -46,7 +46,8 @@ TEST(ELASTICITY_STIFFNESS_2D) {
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
   RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo"); 
  
-  MFD3D_Elasticity mfd(mesh);
+  Teuchos::ParameterList plist;
+  MFD3D_Elasticity mfd(plist, mesh);
 
   int nnodes = 5, nrows = nnodes * 2, cell = 0;
   DenseMatrix A(nrows, nrows);
@@ -135,7 +136,8 @@ TEST(ELASTICITY_STIFFNESS_3D) {
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
   RCP<Mesh> mesh = meshfactory("test/one_trapezoid.exo"); 
  
-  MFD3D_Elasticity mfd(mesh);
+  Teuchos::ParameterList plist;
+  MFD3D_Elasticity mfd(plist, mesh);
 
   int nrows = 24, nnodes = 8, cell = 0;
   Tensor T(3, 1);
@@ -145,13 +147,13 @@ TEST(ELASTICITY_STIFFNESS_3D) {
   mfd.StiffnessMatrix(cell, T, A);
 
   printf("Stiffness matrix for cell %3d\n", cell);
-  for (int i=0; i<nrows; i++) {
-    for (int j=0; j<nrows; j++ ) printf("%8.4f ", A(i, j)); 
+  for (int i = 0; i < nrows; i++) {
+    for (int j = 0; j < nrows; j++ ) printf("%8.4f ", A(i, j)); 
     printf("\n");
   }
 
   // verify SPD propery
-  for (int i=0; i<nrows; i++) CHECK(A(i, i) > 0.0);
+  for (int i = 0; i < nrows; i++) CHECK(A(i, i) > 0.0);
 
   // verify exact integration property
   AmanziMesh::Entity_ID_List nodes;

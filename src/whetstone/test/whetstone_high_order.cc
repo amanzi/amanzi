@@ -42,7 +42,9 @@ TEST(HIGH_ORDER_CROUZEIX_RAVIART) {
   // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.2, 1.1, 1, 1, Teuchos::null, true, false); 
   Teuchos::RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo", Teuchos::null, true, false); 
  
-  MFD3D_CrouzeixRaviart mfd(mesh);
+  Teuchos::ParameterList plist;
+  plist.set<int>("method order", 1);
+  MFD3D_CrouzeixRaviart mfd(plist, mesh);
 
   int cell(0);
   DenseMatrix N, A1, Ak;
@@ -108,7 +110,9 @@ void HighOrderCrouzeixRaviartSerendipity(std::string file_name) {
  
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
-  MFD3D_CrouzeixRaviartSerendipity mfd(mesh);
+  Teuchos::ParameterList plist;
+  plist.set<int>("method order", 1);
+  MFD3D_CrouzeixRaviartSerendipity mfd(plist, mesh);
 
   for (int c = 0; c < ncells; ++c) {
     if (mesh->cell_get_num_faces(c) < 4) continue;
@@ -166,13 +170,17 @@ void HighOrderLagrange(std::string file_name) {
 
   MeshFactory meshfactory(comm.get());
   meshfactory.preference(FrameworkPreference({MSTK}));
-  // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1, Teuchos::null, true, true); 
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
+  // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1, gm, true, true); 
   Teuchos::RCP<Mesh> mesh = meshfactory(file_name, Teuchos::null, true, true); 
  
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
-  MFD3D_Diffusion mfd_lo(mesh);
-  MFD3D_Lagrange mfd_ho(mesh);
+  Teuchos::ParameterList plist;
+  plist.set<int>("method order", 1);
+
+  MFD3D_Diffusion mfd_lo(plist, mesh);
+  MFD3D_Lagrange mfd_ho(plist, mesh);
 
   for (int c = 0; c < ncells; ++c) {
     DenseMatrix N, A1, Ak;
@@ -195,7 +203,7 @@ void HighOrderLagrange(std::string file_name) {
     CHECK(A1.NormInf() <= 1e-10);
 
     // high-order scheme (new algorithm)
-    for (int k = 2; k < 4; ++k) {
+    for (int k = 2; k < 5; ++k) {
       mfd_ho.set_order(k);
       mfd_ho.H1consistency(c, T, N, Ak);
       mfd_ho.StiffnessMatrix(c, T, Ak);
@@ -246,8 +254,11 @@ void HighOrderLagrangeSerendipity(std::string file_name) {
  
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
-  MFD3D_Diffusion mfd_lo(mesh);
-  MFD3D_LagrangeSerendipity mfd_ho(mesh);
+  Teuchos::ParameterList plist; 
+  plist.set<int>("method order", 1);
+
+  MFD3D_Diffusion mfd_lo(plist, mesh);
+  MFD3D_LagrangeSerendipity mfd_ho(plist, mesh);
 
   for (int c = 0; c < ncells; ++c) {
     if (mesh->cell_get_num_faces(c) < 4) continue;
