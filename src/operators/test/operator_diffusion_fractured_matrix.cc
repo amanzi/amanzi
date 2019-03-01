@@ -39,7 +39,7 @@
 /* *****************************************************************
 * This test diffusion solver with full tensor and source term.
 * **************************************************************** */
-void TestDiffusionFracturedMatrix() {
+void TestDiffusionFracturedMatrix(double gravity) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -49,7 +49,7 @@ void TestDiffusionFracturedMatrix() {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: 3D elliptic problem, fractured matrix\n";
+  if (MyPID == 0) std::cout << "\nTest: 3D fractured matrix problem: gravity=" << gravity << "\n";
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion_fractured_matrix.xml";
@@ -72,7 +72,7 @@ void TestDiffusionFracturedMatrix() {
   // modify diffusion coefficient
   auto Kc = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
 
-  Analytic02 ana(mesh, Point(1.0, 2.0, 0.0));
+  Analytic02 ana(mesh, Point(1.0, 2.0, 0.0), gravity);
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
@@ -108,6 +108,9 @@ void TestDiffusionFracturedMatrix() {
   // create diffusion operator
   double rho = 1.0;
   AmanziGeometry::Point g(3);
+  g[2] = -gravity;
+
+  if (gravity > 0.0) op_list.set<bool>("gravity", true);
 
   auto op = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(op_list, mesh, rho, g));
   op->Init(op_list);
@@ -173,5 +176,6 @@ void TestDiffusionFracturedMatrix() {
 }
 
 TEST(OPERATOR_DIFFUSION_FRACTURED_MATRIX) {
-  TestDiffusionFracturedMatrix();
+  TestDiffusionFracturedMatrix(0.0);
+  TestDiffusionFracturedMatrix(9.8);
 }

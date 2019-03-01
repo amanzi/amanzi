@@ -276,6 +276,7 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
   const Epetra_MultiVector& u_face = *u->ViewComponent("face", true);
   Epetra_MultiVector& flux_data = *flux->ViewComponent("face", true);
 
+  int dim = mesh_->space_dimension();
   const auto& fmap = *cvs_->Map("face", true);
   const auto& cmap = mesh_->cell_map(true);
 
@@ -289,10 +290,11 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
+    double zc = mesh_->cell_centroid(c)[dim - 1];
 
     // un-roll multiple DOFs in a linear array
     int nrows = 2 * nfaces;  // pessimistic estimate
-    std::vector<int> lid(nrows), mydir(nrows), nohit(nrows, 0);
+    std::vector<int> lid(nrows), mydir(nrows), nohit(nrows, 0), map(nfaces);
     WhetStone::DenseVector v(nrows), av(nrows);
 
     int np(0);
@@ -300,6 +302,10 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
       int f = faces[n];
       int first = fmap.FirstPointInElement(f);
       int ndofs = fmap.ElementSize(f);
+
+      int shift(0);
+      if (ndofs == 2) shift = FaceLocalIndex_(c, f, cmap); 
+      map[n] = np + shift;
 
       for (int k = 0; k < ndofs; ++k) {
         lid[np] = first + k;
@@ -319,6 +325,22 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
       local_op_->matrices[c].Multiply(v, av, false);
     } else {
       local_op_->matrices_shadow[c].Multiply(v, av, false);
+    }
+
+    if (gravity_) {
+      WhetStone::DenseVector w(nfaces), aw(nfaces);
+      for (int n = 0; n < nfaces; n++) {
+        int f = faces[n];
+        double zf = (mesh_->face_centroid(f))[dim - 1];
+        w(n) = -(zf - zc) * rho_ * norm(g_);
+      }
+
+      WhetStone::DenseMatrix& Wff = Wff_cells_[c];
+      Wff.Multiply(w, aw, false);
+
+      for (int n = 0; n < nfaces; n++) {
+        av(map[n]) += aw(n);
+      }
     }
 
     // points of the master/slave interface require special logic

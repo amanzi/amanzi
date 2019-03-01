@@ -31,9 +31,9 @@ class Analytic02 : public AnalyticBase {
       AnalyticBase(mesh),
       g_(g), v_(d_) { v_[0] = 1.0, v_[1] = 2.0; }
   Analytic02(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, 
-      const Amanzi::AmanziGeometry::Point& v) :
+      const Amanzi::AmanziGeometry::Point& v, double g) :
       AnalyticBase(mesh),
-      g_(0.0),
+      g_(g),
       v_(v) {};
   ~Analytic02() {};
 
@@ -48,7 +48,7 @@ class Analytic02 : public AnalyticBase {
   }
 
   double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-    return p * v_ - g_ * p[1];
+    return p * v_ - g_ * p[d_ - 1];
   }
 
   Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
