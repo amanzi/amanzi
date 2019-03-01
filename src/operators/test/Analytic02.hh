@@ -44,6 +44,7 @@ class Analytic02 : public AnalyticBase {
     K(0, 1) = 0.1;
     K(1, 0) = 0.1;
     if (d_ == 3) K(2, 2) = 1.0;
+
     return K;
   }
 
