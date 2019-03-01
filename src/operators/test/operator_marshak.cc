@@ -44,8 +44,8 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "\nTest: Simulating nonlinear Marshak wave" << std::endl;
 
@@ -56,12 +56,12 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 
   // create an MSTK mesh framework
   ParameterList region_list = plist.sublist("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({Framework::MSTK, Framework::STKMESH}));
-  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 3.0, 1.0, 200, 10, gm);
-  RCP<const Mesh> mesh = meshfactory("test/marshak.exo", gm);
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(FrameworkPreference({Framework::MSTK, Framework::STKMESH}));
+  // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 3.0, 1.0, 200, 10, gm);
+  RCP<const Mesh> mesh = meshfactory.create("test/marshak.exo", gm);
 
   // Create nonlinear coefficient.
   Teuchos::RCP<HeatConduction> knc = Teuchos::rcp(new HeatConduction(mesh, TemperatureFloor));

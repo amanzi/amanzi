@@ -43,7 +43,7 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
     std::cout << "Test: advance with framework " << framework_name[frm] << std::endl;
     if(!framework_available(framework[frm])) continue;
 #ifdef HAVE_MPI
-    Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    Comm_ptr_type comm = Amanzi::getDefaultComm();
 #else
     Epetra_SerialComm* comm = new Epetra_SerialComm();
 #endif
@@ -56,23 +56,23 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
     // create a mesh
     ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
+        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
     FrameworkPreference pref;
     pref.clear();
     pref.push_back(framework[frm]);
 
     MeshFactory meshfactory(comm);
-    meshfactory.preference(pref);
+    meshfactory.set_preference(pref);
     RCP<const Mesh> mesh;
     if (frm == 2) {
-      mesh = meshfactory(0.0,0.0,0.0, 1.0,1.0,1.0, 20, 1, 1, gm); 
+      mesh = meshfactory.create(0.0,0.0,0.0, 1.0,1.0,1.0, 20, 1, 1, gm); 
     } else {
-      mesh = meshfactory("test/hex_3x3x3_ss.exo", gm);
+      mesh = meshfactory.create("test/hex_3x3x3_ss.exo", gm);
     }
   
     // create a simple state and populate it
-    Amanzi::VerboseObject::hide_line_prefix = false;
+    Amanzi::VerboseObject::global_hide_line_prefix = false;
 
     std::vector<std::string> component_names;
     component_names.push_back("Component 0");
@@ -140,7 +140,7 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
       }
     }
 
-    delete comm;
+    
   }
 }
  

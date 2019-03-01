@@ -29,8 +29,8 @@ TEST(NAVIER_STOKES_2D) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::NavierStokes;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "Test: 2D Navier Stokes" << std::endl;
 
   // read parameter list
@@ -39,16 +39,16 @@ TEST(NAVIER_STOKES_2D) {
 
   // create a mesh framework
   Teuchos::ParameterList regions_list = plist->sublist("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, regions_list, &comm));
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, regions_list, *comm));
 
   FrameworkPreference pref;
   pref.clear();
   pref.push_back(MSTK);
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(pref);
   int nx = plist->get<int>("mesh resolution", 20);
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, nx, nx, gm);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, nx, gm);
 
   // create a simple state and populate it
   Teuchos::ParameterList state_list = plist->sublist("state");

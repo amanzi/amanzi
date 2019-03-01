@@ -8,7 +8,7 @@
 #include "UnitTest++.h"
 
 #include "errors.hh"
-#include "ConstantFunction.hh"
+#include "FunctionConstant.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "VerboseObject_objs.hh"
@@ -45,8 +45,7 @@ class DomainFunction : public MaterialMeshFunction {
 
 TEST(MESH2D)
 {
-  Epetra_MpiComm *comm;
-  comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = getDefaultComm();
 
   Teuchos::Array<double> corner_min(Teuchos::tuple(0.0, 0.0));
   Teuchos::Array<double> corner_max(Teuchos::tuple(0.3, 0.3));
@@ -62,16 +61,16 @@ TEST(MESH2D)
       .set("high coordinate", corner_max);
 
   Teuchos::RCP<AmanziGeometry::GeometricModel> 
-      gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(2, regions, comm));
+      gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(2, regions, *comm));
   MeshFactory factory(comm);
-  Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 4, 4, gm);
+  Teuchos::RCP<Mesh> mesh = factory.create(0.0, 0.0, 1.0, 1.0, 4, 4, gm);
 
   // test first region
   std::vector<std::string> rgns;
   rgns.push_back("RGN1");
   AmanziMesh::Entity_kind kind = AmanziMesh::CELL;  
 
-  Teuchos::RCP<MultiFunction> f = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new ConstantFunction(1.0))));
+  Teuchos::RCP<MultiFunction> f = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new FunctionConstant(1.0))));
   Teuchos::RCP<MeshFunction::Domain> domain = Teuchos::rcp(new MeshFunction::Domain(rgns, kind));
   Teuchos::RCP<MeshFunction::Spec> spec = Teuchos::rcp(new MeshFunction::Spec(domain, f));
 
@@ -104,6 +103,5 @@ TEST(MESH2D)
     }
   }
 
-  delete comm;
 }
 

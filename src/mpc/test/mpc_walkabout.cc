@@ -22,7 +22,7 @@
 TEST(MPC_WALKABOUT_2D) {
 using namespace Amanzi;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
   
   // read the main parameter list
   std::string xmlFileName = "test/mpc_walkabout_2D.xml";
@@ -31,18 +31,18 @@ using namespace Amanzi;
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = glist->sublist("regions");
   Teuchos::RCP<AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new AmanziGeometry::GeometricModel(2, region_list, &comm));
+      Teuchos::rcp(new AmanziGeometry::GeometricModel(2, region_list, *comm));
 
   // create mesh
   auto mesh_list = Teuchos::sublist(glist, "mesh");
-  AmanziMesh::MeshFactory meshfactory(&comm, mesh_list);
+  AmanziMesh::MeshFactory meshfactory(comm, mesh_list);
 
-  meshfactory.preference(AmanziMesh::FrameworkPreference({AmanziMesh::MSTK}));
+  meshfactory.set_preference(AmanziMesh::FrameworkPreference({AmanziMesh::MSTK}));
   auto mesh = meshfactory.create("test/mpc_walkabout_2D.exo", gm);
 
   // use cycle driver to create and initialize state
   ObservationData obs_data;    
-  CycleDriver cycle_driver(glist, mesh, &comm, obs_data);
+  CycleDriver cycle_driver(glist, mesh, comm, obs_data);
   auto S = cycle_driver.Go();
 
   // verify no-flow at selected points using existing S
@@ -51,7 +51,7 @@ using namespace Amanzi;
   std::vector<AmanziGeometry::Point> xyz, velocity;
   cycle_driver.walkabout()->CalculateDarcyVelocity(S, xyz, velocity);
 
-  if (comm.NumProc() == 1) {
+  if (comm->NumProc() == 1) {
     std::vector<int> list = {1, 2, 3, 16, 17, 18};
     for (int v : list) { 
       mesh->node_get_coordinates(v, &xv);
@@ -81,7 +81,7 @@ using namespace Amanzi;
 
   // -- check recovered velocity
   Teuchos::ParameterList& wlist = glist->sublist("walkabout data");
-  auto walkabout = Teuchos::rcp(new Amanzi::WalkaboutCheckpoint(wlist, &comm));
+  auto walkabout = Teuchos::rcp(new Amanzi::WalkaboutCheckpoint(wlist, comm));
 
   walkabout->CalculateDarcyVelocity(S, xyz, velocity);
 
@@ -111,7 +111,7 @@ using namespace Amanzi;
 TEST(MPC_WALKABOUT_3D) {
 using namespace Amanzi;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
   
   // read the main parameter list
   std::string xmlFileName = "test/mpc_walkabout_3D.xml";
@@ -120,20 +120,20 @@ using namespace Amanzi;
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = glist->sublist("regions");
   Teuchos::RCP<AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, &comm));
+      Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   // create mesh
   auto mesh_list = Teuchos::sublist(glist, "mesh");
-  AmanziMesh::MeshFactory meshfactory(&comm, mesh_list);
+  AmanziMesh::MeshFactory meshfactory(comm, mesh_list);
 
-  meshfactory.preference(AmanziMesh::FrameworkPreference({AmanziMesh::MSTK}));
+  meshfactory.set_preference(AmanziMesh::FrameworkPreference({AmanziMesh::MSTK}));
   auto mesh = meshfactory.create("test/mpc_walkabout_tet5.exo", gm);
   // auto mesh = meshfactory.create("test/mpc_walkabout_aaa.par", gm);
   // auto mesh = meshfactory.create("test/mpc_walkabout_bbb.par", gm);
 
   // use cycle driver to create and initialize state
   ObservationData obs_data;    
-  CycleDriver cycle_driver(glist, mesh, &comm, obs_data);
+  CycleDriver cycle_driver(glist, mesh, comm, obs_data);
   auto S = cycle_driver.Go();
 
   // verify velocity at all points
@@ -154,7 +154,7 @@ using namespace Amanzi;
 
   // -- check recovered velocity
   Teuchos::ParameterList& wlist = glist->sublist("walkabout data");
-  auto walkabout = Teuchos::rcp(new Amanzi::WalkaboutCheckpoint(wlist, &comm));
+  auto walkabout = Teuchos::rcp(new Amanzi::WalkaboutCheckpoint(wlist, comm));
 
   std::vector<AmanziGeometry::Point> xyz, velocity;
   walkabout->CalculateDarcyVelocity(S, xyz, velocity);

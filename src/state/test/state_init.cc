@@ -26,7 +26,7 @@
 TEST(FIELD_INITIALIZATION) {
   using namespace Amanzi;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 
   std::string xmlFileName = "test/state_init.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
@@ -35,16 +35,16 @@ TEST(FIELD_INITIALIZATION) {
   // create geometric model
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, &comm));
+      Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   // create a mesh
   AmanziMesh::FrameworkPreference pref;
   pref.clear();
   pref.push_back(AmanziMesh::MSTK);   
     
-  AmanziMesh::MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = meshfactory("test/cube3x3x3.exo", gm);
+  AmanziMesh::MeshFactory meshfactory(comm);
+  meshfactory.set_preference(pref);
+  Teuchos::RCP<AmanziMesh::Mesh> mesh = meshfactory.create("test/cube3x3x3.exo", gm);
 
   Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("state");
   Teuchos::Ptr<State> S = Teuchos::ptr(new State(state_list));

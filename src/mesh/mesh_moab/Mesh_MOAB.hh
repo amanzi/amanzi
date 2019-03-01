@@ -1,8 +1,22 @@
-#ifndef _MESH_MOAB_H_
-#define _MESH_MOAB_H_
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Rao Garimella, Konstantin Lipnikov, others
+*/
+
+//! Implementation of the Mesh interface leveraging MOAB.
+
+#ifndef AMANZI_MESH_MOAB_HH_
+#define AMANZI_MESH_MOAB_HH_
 
 // MOAB include files - for some reason they have to be first -
 // if not the compiler cannot find MPI_COMM_WORLD
+
+#include <memory>
+#include <vector>
 
 #include "moab_mpi.h"
 #include "Types.hpp"
@@ -14,22 +28,13 @@
 #include "ParallelComm.hpp"
 
 #include "Epetra_Map.h"
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 #include "Epetra_SerialComm.h"
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
 #include "GeometricModel.hh"
 #include "Point.hh"
-#include "GeometricModel.hh"
-#include "RegionLabeledSet.hh"
-#include "RegionPoint.hh"
-#include "RegionLogical.hh"
-#include "GenerationSpec.hh"
-#include <VerboseObject.hh>
-
-#include <memory>
-#include <vector>
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -43,35 +48,22 @@ class Mesh_MOAB : public Mesh {
   // of the call and making the pointer argument seem NULL. In C++11,
   // we could "delete" the illegal version of the call effectively
   // blocking the implicit conversion.
-  Mesh_MOAB(const char *filename, const Epetra_MpiComm *comm_,
+  Mesh_MOAB(const std::string& filename,
+            const Comm_ptr_type& comm,
             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
             const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
             const bool request_faces = true,
             const bool request_edges = false);
 
   // Construct a mesh by extracting a subset of entities from another
-  // mesh. In some cases like extracting a surface mesh from a volume
-  // mesh, constructor can be asked to "flatten" the mesh to a lower
-  // dimensional space or to extrude the mesh to give higher
+  // mesh. The subset may be specified by a setname or a list of
+  // entities. In some cases like extracting a surface mesh from a
+  // volume mesh, constructor can be asked to "flatten" the mesh to a
+  // lower dimensional space or to extrude the mesh to give higher
   // dimensional cells
-  Mesh_MOAB(const Mesh *inmesh,
-            const std::vector<std::string>& setnames,
-            const Entity_kind setkind,
-            const bool flatten = false,
-            const bool extrude = false,
-            const bool request_faces = true,
-            const bool request_edges = false);
-
-  Mesh_MOAB(const Mesh& inmesh,
-            const std::vector<std::string>& setnames,
-            const Entity_kind setkind,
-            const bool flatten = false,
-            const bool extrude = false,
-            const bool request_faces = true,
-            const bool request_edges = false);
-
-  Mesh_MOAB(const Mesh& inmesh, 
-            const std::vector<int>& entity_id_list, 
+  Mesh_MOAB(const Comm_ptr_type& comm,
+            const Teuchos::RCP<const Mesh>& parent_mesh,
+            const Entity_ID_List& entity_ids, 
             const Entity_kind entity_kind,
             const bool flatten = false,
             const bool extrude = false,
@@ -289,7 +281,7 @@ class Mesh_MOAB : public Mesh {
 
  private:
   moab::Core *mbcore;
-  moab::ParallelComm *mbcomm_;
+  Teuchos::RCP<moab::ParallelComm> mbcomm_;
 
   int serial_run;
 

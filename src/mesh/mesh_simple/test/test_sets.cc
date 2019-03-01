@@ -3,9 +3,7 @@
 #include "math.h"
 #include "UnitTest++.h"
 #include "../Mesh_simple.hh"
-#include <Epetra_Comm.h>
-#include <Epetra_MpiComm.h>
-#include "Epetra_SerialComm.h"
+#include "AmanziComm.hh"
 #include "GenerationSpec.hh"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
@@ -15,12 +13,8 @@ TEST(SETS) {
   
   using namespace std;
 
-#ifdef HAVE_MPI
-  Epetra_MpiComm *comm_ = new Epetra_MpiComm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm *comm_ = new Epetra_SerialComm();
-#endif
-
+  auto comm = Amanzi::getDefaultComm();
+  
   std::string expcsetnames[6] = {"Bottom Box", "Bottom+Middle Box",
                                  "Vertical Box",
                                  "Bottom ColFunc", "Middle ColFunc",
@@ -56,11 +50,11 @@ TEST(SETS) {
   Teuchos::ParameterList reg_spec(xmlreader.getParameters());
 
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm_));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, *comm));
 
   // Create a mesh consisting of 3x3x3 elements (4x4x4 nodes)
 
-  Amanzi::AmanziMesh::Mesh_simple mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3, comm_, gm); 
+  Amanzi::AmanziMesh::Mesh_simple mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3, comm, gm); 
 
   Teuchos::ParameterList::ConstIterator i;
   for (i = reg_spec.begin(); i != reg_spec.end(); i++) {

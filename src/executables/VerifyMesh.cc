@@ -19,8 +19,7 @@
 
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
-#include "Epetra_MpiComm.h"
-#include "Epetra_SerialComm.h"
+#include "AmanziComm.hh"
 
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
@@ -33,9 +32,9 @@ int main (int argc, char* argv[])
 {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  const int nproc(comm.NumProc());
-  const int me(comm.MyPID());
+  auto comm = Amanzi::getDefaultComm();
+  const int nproc(comm->NumProc());
+  const int me(comm->MyPID());
 
   // handle command line
 
@@ -86,7 +85,7 @@ int main (int argc, char* argv[])
     ierr++;
   }
 
-  comm.SumAll(&ierr, &aerr, 1);
+  comm->SumAll(&ierr, &aerr, 1);
 
   if (aerr > 0) {
     return 1;
@@ -105,13 +104,13 @@ int main (int argc, char* argv[])
 
   // A second command line argument is the framework preference
 
-  Amanzi::AmanziMesh::MeshFactory factory(&comm);
+  Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
   
   ierr = 0;
   aerr = 0;
   try {
-    Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
+    Amanzi::AmanziMesh::FrameworkPreference prefs(meshfactory.preference());
     if (the_framework !=  Amanzi::AmanziMesh::Simple) {
       prefs.clear(); 
       prefs.push_back(the_framework);
@@ -125,8 +124,8 @@ int main (int argc, char* argv[])
       }
       std::cerr << std::endl;
     }
-    factory.preference(prefs);
-    mesh = factory(filename);
+    meshfactory.set_preference(prefs);
+    mesh = meshfactory.create(filename);
   } catch (const Amanzi::AmanziMesh::Message& e) {
     std::cerr << argv[0] << ": mesh error: " << e.what() << std::endl;
     ierr++;
@@ -135,7 +134,7 @@ int main (int argc, char* argv[])
     ierr++;
   }
 
-  comm.SumAll(&ierr, &aerr, 1);
+  comm->SumAll(&ierr, &aerr, 1);
 
   if (aerr > 0) {
     return 3;

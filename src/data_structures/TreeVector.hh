@@ -43,7 +43,7 @@ class TreeVector {
 
   // Basic constructors of a TreeVector
   TreeVector();
-  TreeVector(const Epetra_MpiComm& comm);
+  TreeVector(const Comm_ptr_type& comm);
   explicit TreeVector(const TreeVectorSpace& space, InitMode mode=INIT_MODE_NONE);
   explicit TreeVector(const Teuchos::RCP<TreeVectorSpace>& space, InitMode mode=INIT_MODE_NONE);
 
@@ -56,7 +56,7 @@ class TreeVector {
   // -- Accessors --
 
   // Access to ANY communicator (this may be ill-posed!)
-  const Epetra_MpiComm& Comm() const {
+  Comm_ptr_type Comm() const {
     return Map().Comm();
   }
 

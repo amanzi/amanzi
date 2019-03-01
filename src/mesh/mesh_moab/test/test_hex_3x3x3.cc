@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "Epetra_Map.h"
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 #include "mpi.h"
 #include "UnitTest++.h"
 

@@ -1,3 +1,14 @@
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Rao Garimella, Konstantin Lipnikov, others
+*/
+
+//! Implementation of the Mesh interface leveraging MOAB.
+
 #include "dbc.hh"
 #include "errors.hh"
 
@@ -11,13 +22,14 @@ namespace AmanziMesh {
 //--------------------------------------------------------------------
 // Constructor - load up mesh from file
 //--------------------------------------------------------------------
-Mesh_MOAB::Mesh_MOAB(const char *filename, const Epetra_MpiComm *comm_, 
+Mesh_MOAB::Mesh_MOAB(const std::string& filename,
+                     const Comm_ptr_type& comm,
                      const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                      const Teuchos::RCP<const Teuchos::ParameterList>& plist,
                      const bool request_faces,
                      const bool request_edges)
-  : Mesh(Teuchos::null, request_faces, request_edges),
-    extface_map_w_ghosts_(NULL), extface_map_wo_ghosts_(NULL)
+    : Mesh(comm, gm, Teuchos::null, request_faces, request_edges),
+      extface_map_w_ghosts_(NULL), extface_map_wo_ghosts_(NULL)
 {
   // extract control parameters
   if (plist != Teuchos::null) {
@@ -31,20 +43,20 @@ Mesh_MOAB::Mesh_MOAB(const char *filename, const Epetra_MpiComm *comm_,
   // Core MOAB object
   mbcore = new moab::Core();
 
-  if (comm_) {
-    // MOAB's parallel comm_unicator
-    int mbcomm_id;
-    mbcomm_ = new ParallelComm(mbcore, comm_->GetMpiComm(), &mbcomm_id);
+  if (comm_.get()) {
+    auto mpi_comm = Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm_);
 
-    if (!mbcomm_) {
+    // MOAB's parallel communicator
+    int mbcomm_id;
+    mbcomm_ = Teuchos::rcp(new ParallelComm(mbcore, mpi_comm->GetMpiComm(), &mbcomm_id));
+
+    if (!mbcomm_.get()) {
       std::cerr << "Failed to initialize MOAB comm_unicator\n";
-      assert(mbcomm_ == 0);
+      AMANZI_ASSERT(mbcomm_ == 0);
     }
   }
 
-  Mesh::set_comm(comm_);
-
-  if (!mbcomm_ || mbcomm_->size() == 1) 
+  if (!mbcomm_.get() || mbcomm_->size() == 1) 
     serial_run = true;
   else
     serial_run = false;
@@ -83,7 +95,7 @@ Mesh_MOAB::Mesh_MOAB(const char *filename, const Epetra_MpiComm *comm_,
     std::cerr << "FAILED" << std::endl;
     std::cerr << "Failed to load " << filename << " on processor " << rank << std::endl;
     std::cerr << "MOAB error code " << result << std::endl;
-    assert(result == MB_SUCCESS);
+    AMANZI_ASSERT(result == MB_SUCCESS);
   }
       
       
@@ -112,7 +124,7 @@ Mesh_MOAB::Mesh_MOAB(const char *filename, const Epetra_MpiComm *comm_,
     }
     else {
       std::cerr << "Flow code works only on 2D and 3D meshes" << std::endl;
-      assert(nent > 0);
+      AMANZI_ASSERT(nent > 0);
     }
   }
 
@@ -122,9 +134,6 @@ Mesh_MOAB::Mesh_MOAB(const char *filename, const Epetra_MpiComm *comm_,
   mbcore->set_dimension(celldim);
   space_dim_ = celldim;
       
-  // Set the geometric model that this mesh is related to
-  set_geometric_model(gm);
-
   { // Keep together and in this order 
     init_pvert_lists();
     init_pcell_lists(); // cells MUST be initialized before faces
@@ -146,47 +155,18 @@ Mesh_MOAB::Mesh_MOAB(const char *filename, const Epetra_MpiComm *comm_,
   
   // Initialize some info about the global number of sets, global set
   // IDs and set types
-  if (Mesh::geometric_model() != Teuchos::null)
-    init_set_info();
+  if (geometric_model() != Teuchos::null) init_set_info();
 }
 
 
-//--------------------------------------------------------------------
-// Constructor - Construct a new mesh from a subset of an existing mesh
-//--------------------------------------------------------------------
-Mesh_MOAB::Mesh_MOAB(const Mesh *inmesh, 
-                     const std::vector<std::string>& setnames, 
-                     const Entity_kind setkind,
-                     const bool flatten,
-                     const bool extrude,
-                     const bool request_faces,
-                     const bool request_edges)
-{  
-  Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the MOAB mesh framework\n");
-  Exceptions::amanzi_throw(mesg);
-}
-
-
-Mesh_MOAB::Mesh_MOAB(const Mesh& inmesh, 
-                     const std::vector<std::string>& setnames, 
-                     const Entity_kind setkind,
-                     const bool flatten,
-                     const bool extrude,
-                     const bool request_faces,
-                     const bool request_edges)
-{  
-  Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the MOAB mesh framework\n");
-  Exceptions::amanzi_throw(mesg);
-}
-
-
-Mesh_MOAB::Mesh_MOAB(const Mesh& inmesh, 
-                     const std::vector<int>& entity_id_list, 
-                     const Entity_kind entity_kind,
-                     const bool flatten,
-                     const bool extrude,
-                     const bool request_faces,
-                     const bool request_edges)
+Mesh_MOAB::Mesh_MOAB(const Comm_ptr_type& comm,
+            const Teuchos::RCP<const Mesh>& parent_mesh,
+            const Entity_ID_List& entity_ids, 
+            const Entity_kind entity_kind,
+            const bool flatten = false,
+            const bool extrude = false,
+            const bool request_faces = true,
+            const bool request_edges = false)
 {  
   Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the MOAB mesh framework\n");
   Exceptions::amanzi_throw(mesg);
@@ -218,7 +198,7 @@ Mesh_MOAB::~Mesh_MOAB() {
 void Mesh_MOAB::clear_internals_() 
 { 
   mbcore = NULL;
-  mbcomm_ = NULL;
+  mbcomm_ = Teuchos::null;
 
   AllVerts.clear();
   OwnedVerts.clear();
@@ -666,7 +646,7 @@ void Mesh_MOAB::init_set_info()
     //                                  tag, MB_TAG_CREAT|MB_TAG_SPARSE);
     //    if (result != MB_SUCCESS) {
     //      std::cerr << "Could not create tag with name " << rgn->name() << std::endl;
-    //      assert(result != MB_SUCCESS);
+    //      AMANZI_ASSERT(result != MB_SUCCESS);
     //    }
     //  }
     //}
@@ -821,7 +801,7 @@ void Mesh_MOAB::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
         }
       }
 
-      assert(found);
+      AMANZI_ASSERT(found);
 
       if (found)
         ordfaces[i] = face;
@@ -1511,7 +1491,7 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
   int space_dim_ = Mesh::space_dimension();
   const Epetra_Comm *epcomm_ = get_comm();
 
-  assert(setents != NULL);
+  AMANZI_ASSERT(setents != NULL);
   
   setents->clear();
 
@@ -1744,7 +1724,7 @@ void Mesh_MOAB::face_get_cells_internal_(const Entity_ID faceid,
   result = mbcore->get_adjacencies(&face, 1, celldim, true, fcells, Core::UNION);
   if (result != MB_SUCCESS) {
     std::cerr << "Could not get cells of face" << faceid << std::endl;
-    assert(result == MB_SUCCESS);
+    AMANZI_ASSERT(result == MB_SUCCESS);
   }
   
   int nc = fcells.size();

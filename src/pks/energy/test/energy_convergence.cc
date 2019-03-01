@@ -15,8 +15,7 @@
 #include <vector>
 
 // TPLs
-#include "Epetra_MpiComm.h"
-#include "Epetra_SerialComm.h"
+#include "AmanziComm.hh"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -89,7 +88,7 @@ class TestEnthalpyEvaluator : public SecondaryVariableFieldEvaluator {
 
 
 TEST(ENERGY_CONVERGENCE) {
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout <<"Convergence analysis on three random meshes" << std::endl;
 
@@ -105,7 +104,7 @@ TEST(ENERGY_CONVERGENCE) {
   for (int n = 0; n < nmeshes; n++, nx *= 2) {
     Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, comm));
+        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
     
     FrameworkPreference pref;
     pref.clear();
@@ -113,17 +112,17 @@ TEST(ENERGY_CONVERGENCE) {
     pref.push_back(STKMESH);
 
     MeshFactory meshfactory(comm);
-    meshfactory.preference(pref);
+    meshfactory.set_preference(pref);
     Teuchos::RCP<const Mesh> mesh;
     if (n == 0) {
-      mesh = meshfactory(1.0, 0.0, 2.0, 1.0, 20, 10, gm);
-      // mesh = meshfactory("test/random_mesh1.exo", gm);
+      mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 20, 10, gm);
+      // mesh = meshfactory.create("test/random_mesh1.exo", gm);
     } else if (n == 1) {
-      mesh = meshfactory(1.0, 0.0, 2.0, 1.0, 40, 10, gm);
-      // mesh = meshfactory("test/random_mesh2.exo", gm);
+      mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 40, 10, gm);
+      // mesh = meshfactory.create("test/random_mesh2.exo", gm);
     } else if (n == 2) {
-      mesh = meshfactory(1.0, 0.0, 2.0, 1.0, 80, 10, gm);
-      // mesh = meshfactory("test/random_mesh3.exo", gm);
+      mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 80, 10, gm);
+      // mesh = meshfactory.create("test/random_mesh3.exo", gm);
     }
 
     // create a simple state and populate it
@@ -200,12 +199,12 @@ TEST(ENERGY_CONVERGENCE) {
   printf("convergence rate: %10.2f\n", l2_rate);
   CHECK(l2_rate > 0.84);
 
-  delete comm;
+  
 }
 
 
 TEST(ENERGY_PRECONDITIONER) {
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "\nImpact of advection term in the preconditioner" << std::endl;
 
@@ -217,7 +216,7 @@ TEST(ENERGY_PRECONDITIONER) {
   for (int loop = 0; loop < 2; loop++) {
     Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, comm));
+        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
     
     FrameworkPreference pref;
     pref.clear();
@@ -225,10 +224,10 @@ TEST(ENERGY_PRECONDITIONER) {
     pref.push_back(STKMESH);
 
     MeshFactory meshfactory(comm);
-    meshfactory.preference(pref);
+    meshfactory.set_preference(pref);
     Teuchos::RCP<const Mesh> mesh;
-    mesh = meshfactory(1.0, 0.0, 2.0, 1.0, 30, 30, gm);
-    // mesh = meshfactory("test/random_mesh1.exo", gm);
+    mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 30, 30, gm);
+    // mesh = meshfactory.create("test/random_mesh1.exo", gm);
 
     // create a simple state and populate it
     Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("state");
@@ -285,6 +284,6 @@ TEST(ENERGY_PRECONDITIONER) {
   }
   CHECK(num_itrs[1] > num_itrs[0]);
 
-  delete comm;
+  
 }
 

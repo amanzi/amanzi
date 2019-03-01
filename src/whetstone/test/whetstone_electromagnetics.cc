@@ -36,18 +36,18 @@ TEST(MASS_MATRIX_2D) {
 
   std::cout << "\nTest: Mass matrix for edge elements in 2D" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Amanzi::getCommSelf();
 #endif
 
   MeshFactory factory(comm);
-  factory.preference(FrameworkPreference({MSTK}));
+  factory.set_preference(FrameworkPreference({MSTK}));
 
   bool request_faces(true), request_edges(true);
   // Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  // Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 20, 20, gm, true, true); 
-  Teuchos::RCP<Mesh> mesh = factory("test/two_cell2.exo", Teuchos::null, request_faces, request_edges); 
+  // Teuchos::RCP<Mesh> mesh = factory.create(0.0, 0.0, 1.0, 1.0, 20, 20, gm, true, true); 
+  Teuchos::RCP<Mesh> mesh = factory.create("test/two_cell2.exo", Teuchos::null, request_faces, request_edges); 
  
   Teuchos::ParameterList plist;
   MFD3D_Electromagnetics mfd(plist, mesh);
@@ -112,7 +112,7 @@ TEST(MASS_MATRIX_2D) {
     CHECK_CLOSE(-volume, vxy, 1e-10);
   }
 
-  delete comm;
+  
 }
 
 
@@ -126,18 +126,18 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
 
   std::cout << "\nTest: Mass matrix for edge elements in 3D: " << mesh_file << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Amanzi::getCommSelf();
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
+  meshfactory.set_preference(FrameworkPreference({MSTK}));
 
   bool request_faces(true), request_edges(true);
 
-  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, Teuchos::null, true, true); 
-  RCP<Mesh> mesh = meshfactory(mesh_file, Teuchos::null, request_faces, request_edges); 
+  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, Teuchos::null, true, true); 
+  RCP<Mesh> mesh = meshfactory.create(mesh_file, Teuchos::null, request_faces, request_edges); 
  
   Teuchos::ParameterList plist;
   MFD3D_Electromagnetics mfd(plist, mesh);
@@ -205,7 +205,7 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
     CHECK_CLOSE(-volume, vxy, 1e-10);
   }
 
-  delete comm;
+  
 }
 
 TEST(MASS_MATRIX_3D_HEX) {
@@ -232,17 +232,17 @@ TEST(STIFFNESS_MATRIX_2D) {
 
   std::cout << "\nTest: Stiffness matrix for edge elements in 2D" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Amanzi::getCommSelf();
 #endif
 
   MeshFactory factory(comm);
-  factory.preference(FrameworkPreference({MSTK}));
+  factory.set_preference(FrameworkPreference({MSTK}));
 
   bool request_faces(true), request_edges(true);
-  // Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 1, 1, Teuchos::null, true, true); 
-  Teuchos::RCP<Mesh> mesh = factory("test/two_cell2.exo", Teuchos::null, request_faces, request_edges); 
+  // Teuchos::RCP<Mesh> mesh = factory.create(0.0, 0.0, 1.0, 1.0, 1, 1, Teuchos::null, true, true); 
+  Teuchos::RCP<Mesh> mesh = factory.create("test/two_cell2.exo", Teuchos::null, request_faces, request_edges); 
  
   Teuchos::ParameterList plist;
   MFD3D_Electromagnetics mfd(plist, mesh);
@@ -304,7 +304,7 @@ TEST(STIFFNESS_MATRIX_2D) {
     CHECK_CLOSE(4 * volume, vxx, 1e-10);
   }
 
-  delete comm;
+  
 }
 
 
@@ -318,18 +318,18 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
 
   std::cout << "\nTest: Stiffness matrix for edge elements in 3D: " << mesh_file << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Amanzi::getCommSelf();
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
+  meshfactory.set_preference(FrameworkPreference({MSTK}));
 
   bool request_faces(true), request_edges(true);
 
-  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, Teuchos::null, true, true); 
-  RCP<Mesh> mesh = meshfactory(mesh_file, Teuchos::null, request_faces, request_edges); 
+  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, Teuchos::null, true, true); 
+  RCP<Mesh> mesh = meshfactory.create(mesh_file, Teuchos::null, request_faces, request_edges); 
  
   Teuchos::ParameterList plist;
   MFD3D_Electromagnetics mfd(plist, mesh);
@@ -402,7 +402,7 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
     CHECK_CLOSE(4 * volume * T(0,1), vxy, tol);
   }
 
-  delete comm;
+  
 }
 
 TEST(STIFFNESS_MATRIX_3D_HEX) {

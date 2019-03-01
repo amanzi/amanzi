@@ -15,7 +15,7 @@
 
 // TPLs
 #include "Epetra_SerialComm.h"
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
@@ -46,7 +46,7 @@ class DarcyProblem {
   double mu, rho;
   AmanziGeometry::Point gravity;
 
-  Epetra_MpiComm* comm;
+  Comm_ptr_type comm;
   int MyPID;
 
   Framework framework[2];
@@ -54,7 +54,7 @@ class DarcyProblem {
 
   DarcyProblem() {
     passwd = "flow"; 
-    comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    comm = Amanzi::getDefaultComm();
     MyPID = comm->MyPID();    
 
     framework[0] = MSTK;
@@ -65,7 +65,7 @@ class DarcyProblem {
 
   ~DarcyProblem() {
     delete DPK;
-    delete comm;
+    
   }
 
   int Init(const std::string xmlFileName, const char* meshExodus, const Framework& framework) {
@@ -75,7 +75,7 @@ class DarcyProblem {
     plist = Teuchos::getParametersFromXmlFile(xmlFileName);
     Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
     FrameworkPreference pref;
     pref.clear();
@@ -83,11 +83,11 @@ class DarcyProblem {
 
     MeshFactory meshfactory(comm);
     try {
-      meshfactory.preference(pref);
+      meshfactory.set_preference(pref);
     } catch (Message& e) {
       return 1;
     }
-    mesh = meshfactory(meshExodus, gm);
+    mesh = meshfactory.create(meshExodus, gm);
 
     /* create Darcy process kernel */
     Teuchos::ParameterList state_list = plist->sublist("state");

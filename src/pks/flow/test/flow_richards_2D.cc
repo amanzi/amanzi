@@ -38,8 +38,8 @@ TEST(FLOW_2D_RICHARDS) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Flow;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "Test: 2D Richards, 2-layer model" << std::endl;
 
   // read parameter list
@@ -48,11 +48,11 @@ TEST(FLOW_2D_RICHARDS) {
 
   // create a mesh framework
   Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
-  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, &comm));
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, -2.0, 1.0, 0.0, 18, 18, gm);
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(FrameworkPreference({MSTK,STKMESH}));
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, -2.0, 1.0, 0.0, 18, 18, gm);
 
   int itrs[2];
   for (int loop = 0; loop < 2; ++loop) {

@@ -40,8 +40,8 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Flow;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "Test: 2D transient Darcy, polygonal mesh" << std::endl;
 
@@ -52,16 +52,16 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   // create a MSTK mesh framework
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, &comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
   FrameworkPreference pref;
   pref.clear();
   pref.push_back(MSTK);
   pref.push_back(STKMESH);
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
-  RCP<const Mesh> mesh = meshfactory("test/dual2D.exo", gm);
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(pref);
+  RCP<const Mesh> mesh = meshfactory.create("test/dual2D.exo", gm);
 
   // create a state and populate it
   Teuchos::ParameterList state_list = plist->sublist("state");

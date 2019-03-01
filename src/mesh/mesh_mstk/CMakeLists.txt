@@ -124,15 +124,15 @@ if (BUILD_TESTS)
                     NPROCS 4
                     SOURCE
                          test/Main.cc
-                         test/test_hex_3x3x3_4P.cc
-                         test/test_hex_3x3x3_sets_4P.cc
-                         test/test_hex_3x3x3_par_read_4P.cc
-                         test/test_quad_gen_3x3_4P.cc
-                         test/test_hex_gen_3x3x3_4P.cc
-                         test/test_edges_4P.cc
+                         # test/test_hex_3x3x3_4P.cc
+                         # test/test_hex_3x3x3_sets_4P.cc
+                         # test/test_hex_3x3x3_par_read_4P.cc
+                         # test/test_quad_gen_3x3_4P.cc
+                         # test/test_hex_gen_3x3x3_4P.cc
+                         # test/test_edges_4P.cc
                          test/test_extract_surface_4P.cc
-		         test/test_extface_map_4P.cc
-                         test/test_deform_vols.cc
+		         # test/test_extface_map_4P.cc
+                         # test/test_deform_vols.cc
                     LINK_LIBS mstk_mesh mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: column_mesh

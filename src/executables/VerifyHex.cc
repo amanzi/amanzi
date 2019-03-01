@@ -26,7 +26,7 @@ namespace po = boost::program_options;
 
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Epetra_Vector.h>
-#include <Epetra_MpiComm.h>
+#include <AmanziComm.hh>
 
 #include "Teuchos_ParameterXMLFileReader.hpp"
 // DEPRECATED #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -75,7 +75,7 @@ grab_filename(const bf::path& some_path) {
 void
 dump_output(const int& me, Amanzi::AmanziMesh::Mesh &mesh, const std::string& filenameout)
 {
-  Amanzi::HDF5_MPI *viz_output = new Amanzi::HDF5_MPI(*mesh.get_comm());
+  Amanzi::HDF5_MPI *viz_output = new Amanzi::HDF5_MPI(mesh.get_comm());
   viz_output->setTrackXdmf(true);
   viz_output->createMeshFile(Teuchos::rcp(&mesh), filenameout);
   viz_output->createDataFile(filenameout);
@@ -158,9 +158,9 @@ main(int argc, char **argv)
 
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  const int nproc(comm.NumProc());
-  const int me(comm.MyPID());
+  auto comm = Amanzi::getDefaultComm();
+  const int nproc(comm->NumProc());
+  const int me(comm->MyPID());
 
   unsigned int xcells(4), ycells(4), zcells(4);
   double xdelta(1.0), ydelta(1.0), zdelta(1.0);
@@ -266,43 +266,43 @@ main(int argc, char **argv)
 
   // generate a mesh
 
-  Amanzi::AmanziMesh::MeshFactory factory(&comm);
+  Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
   Amanzi::AmanziMesh::FrameworkPreference pref;
   if (dosimple) {
     pref.push_back(Amanzi::AmanziMesh::Simple);
   } else {
     pref.push_back(Amanzi::AmanziMesh::STKMESH);
   }
-  factory.preference(pref);
+  meshfactory.set_preference(pref);
 
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
   if (inname.empty()) {
-    mesh = factory(xorigin, yorigin, zorigin,
-                   xorigin+xdelta*xcells,
-                   yorigin+ydelta*ycells,
-                   zorigin+zdelta*zcells,
-                   xcells, ycells, zcells);
-  } else {
-    Teuchos::ParameterList parameter_list;
+    mesh = meshfactory.create(xorigin, yorigin, zorigin,
+            xorigin+xdelta*xcells,
+            yorigin+ydelta*ycells,
+            zorigin+zdelta*zcells,
+            xcells, ycells, zcells);
+  // } else {
+  //   Teuchos::ParameterList parameter_list;
     
-    int ierr(0), aerr(0);
+  //   int ierr(0), aerr(0);
 
-    try {
-      Teuchos::ParameterXMLFileReader xmlreader(inname);
-      Teuchos::ParameterList all_parameter_list(xmlreader.getParameters());      
-      Teuchos::ParameterList mesh_parameter_list = all_parameter_list.sublist("mesh");
-      parameter_list = mesh_parameter_list.sublist("Generate");
-    } catch (const std::runtime_error& e) {
-      std::cerr << me << ": error parsing xml-file: " << e.what() << std::endl;
-      ierr++;
-    }
+  //   try {
+  //     Teuchos::ParameterXMLFileReader xmlreader(inname);
+  //     Teuchos::ParameterList all_parameter_list(xmlreader.getParameters());      
+  //     Teuchos::ParameterList mesh_parameter_list = all_parameter_list.sublist("mesh");
+  //     parameter_list = mesh_parameter_list.sublist("Generate");
+  //   } catch (const std::runtime_error& e) {
+  //     std::cerr << me << ": error parsing xml-file: " << e.what() << std::endl;
+  //     ierr++;
+  //   }
 
-    comm.SumAll(&ierr, &aerr, 1);
-    if (aerr > 0) {
-      return 1;
-    }
+  //   comm->SumAll(&ierr, &aerr, 1);
+  //   if (aerr > 0) {
+  //     return 1;
+  //   }
    
-    mesh = factory(parameter_list);
+  //   mesh = meshfactory(parameter_list);
   }
 
   //  std::cout << "Generated mesh has " 

@@ -43,8 +43,8 @@ TEST(ENERGY_2D_MATRIX) {
   using namespace Amanzi::Operators;
   using namespace Amanzi::Energy;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "Test: 2D homogeneous medium, preconditioner" << std::endl;
 
@@ -57,19 +57,19 @@ TEST(ENERGY_2D_MATRIX) {
   // create a mesh framework
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, &comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
   FrameworkPreference pref;
   pref.clear();
   pref.push_back(MSTK);
   pref.push_back(STKMESH);
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 17, 17, gm);
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(pref);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 17, 17, gm);
 
   // create a simple state and populate it
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   Teuchos::ParameterList state_list = plist->sublist("state");
   Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));

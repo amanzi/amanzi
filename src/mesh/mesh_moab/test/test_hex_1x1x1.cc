@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "Epetra_Map.h"
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 #include "UnitTest++.h"
 
 #include "../Mesh_MOAB.hh"

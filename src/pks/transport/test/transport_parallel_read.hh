@@ -37,7 +37,7 @@ void runTest(const Amanzi::AmanziMesh::Framework& mypref) {
   else if (mypref == Simple)
     std::cout << "Test: advance using parallel mesh with parallel file read and format Simple" << std::endl;
     
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 
   // read parameter list 
   std::string xmlFileName = "test/transport_parallel_read_mstk.xml";
@@ -46,11 +46,11 @@ void runTest(const Amanzi::AmanziMesh::Framework& mypref) {
   // create an MSTK mesh framework
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({mypref}));
-  RCP<const Mesh> mesh = meshfactory("test/cube_4x4x4.par", gm);
+  meshfactory.set_preference(FrameworkPreference({mypref}));
+  RCP<const Mesh> mesh = meshfactory.create("test/cube_4x4x4.par", gm);
 
   // create a simple state and populate it
   std::vector<std::string> component_names;

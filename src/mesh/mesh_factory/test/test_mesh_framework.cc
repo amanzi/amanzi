@@ -17,7 +17,7 @@
 #include <iostream>
 #include <UnitTest++.h>
 
-#include <Epetra_MpiComm.h>
+#include <AmanziComm.hh>
 
 #include "dbc.hh"
 #include "../MeshFramework.hh"
@@ -86,17 +86,32 @@ SUITE (Framework)
 
   TEST (Readability)
   {
-    Epetra_MpiComm comm_(MPI_COMM_WORLD);
-    bool parallel(comm_.NumProc() > 1);
+    auto comm = Amanzi::getDefaultComm();
+    bool parallel(comm->NumProc() > 1);
     
     CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::Simple, Amanzi::AmanziMesh::ExodusII, parallel));
     CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::Simple, Amanzi::AmanziMesh::Nemesis, parallel));
     CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::Simple, Amanzi::AmanziMesh::MOABHDF5, parallel));
 
-    CHECK(Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::MOAB, Amanzi::AmanziMesh::ExodusII, parallel));
-    CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::MOAB, Amanzi::AmanziMesh::Nemesis, parallel));
+    if (parallel) {
+      CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::MOAB, Amanzi::AmanziMesh::ExodusII, parallel));
+      CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::MOAB, Amanzi::AmanziMesh::Nemesis, parallel));
+    } else {
+      CHECK(Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::MOAB, Amanzi::AmanziMesh::ExodusII, parallel));
+      CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::MOAB, Amanzi::AmanziMesh::Nemesis, parallel));
+    }
     CHECK(Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::MOAB, Amanzi::AmanziMesh::MOABHDF5, parallel));
 
+    if (parallel) {
+      CHECK(Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::MSTK, Amanzi::AmanziMesh::ExodusII, parallel));
+      CHECK(Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::MSTK, Amanzi::AmanziMesh::Nemesis, parallel));
+    } else {
+      CHECK(Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::MSTK, Amanzi::AmanziMesh::ExodusII, parallel));
+      CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::MSTK, Amanzi::AmanziMesh::Nemesis, parallel));
+    }
+    CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::MSTK, Amanzi::AmanziMesh::MOABHDF5, parallel));
+
+    
     if (parallel) {
       CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::STKMESH, Amanzi::AmanziMesh::ExodusII, parallel));
       CHECK(Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::STKMESH, Amanzi::AmanziMesh::Nemesis, parallel));
@@ -110,8 +125,8 @@ SUITE (Framework)
 
   TEST (Generatability)
   {
-    Epetra_MpiComm comm_(MPI_COMM_WORLD);
-    bool parallel(comm_.NumProc() > 1);
+    auto comm = Amanzi::getDefaultComm();
+    bool parallel(comm->NumProc() > 1);
     
     CHECK(!Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::MOAB, parallel,3));
     CHECK(Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::MSTK, parallel,3));

@@ -34,7 +34,7 @@ TEST(CONSTRUCTOR) {
 
   std::cout << "Test: read transport XML file" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
 #else
   Epetra_SerialComm* comm = new Epetra_SerialComm();
 #endif
@@ -46,15 +46,15 @@ TEST(CONSTRUCTOR) {
   /* create an MSTK mesh framework */
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   FrameworkPreference pref;
   pref.clear();
   pref.push_back(Simple);
 
-  MeshFactory factory(comm);
-  factory.preference(pref);
-  RCP<const Mesh> mesh = factory(0.0,0.0,0.0, 1.0,1.0,1.0, 1, 2, 1, gm); 
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(pref);
+  RCP<const Mesh> mesh = meshfactory.create(0.0,0.0,0.0, 1.0,1.0,1.0, 1, 2, 1, gm); 
  
   //MeshAudit audit(mesh);
   //audit.Verify();
@@ -80,7 +80,7 @@ TEST(CONSTRUCTOR) {
   double cfl = TPK.cfl();
   CHECK(0 < cfl && cfl <= 1.0);
  
-  delete comm;
+  
 }
 
 

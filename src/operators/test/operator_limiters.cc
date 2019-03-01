@@ -44,15 +44,15 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "\nTest: Limiters for linear functions in 2D." << std::endl;
 
   // create rectangular mesh
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(FrameworkPreference({MSTK,STKMESH}));
 
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 7, 7);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 7, 7);
 
   // create and initialize cell-based field 
   Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
@@ -159,15 +159,15 @@ TEST(LIMITER_LINEAR_FUNCTION_3D) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "\nTest: Limiters for linear functions in 3D." << std::endl;
 
   // create rectangular mesh
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(FrameworkPreference({MSTK,STKMESH}));
 
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 7, 6, 5);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 7, 6, 5);
 
   // create and initialize cell-based field 
   Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
@@ -283,16 +283,16 @@ TEST(LIMITER_SMOOTH_FIELD_2D) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "\nTest: Accuracy on a smooth field in 2D." << std::endl;
 
   // create rectangular mesh
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(FrameworkPreference({MSTK, STKMESH}));
 
   for (int n = 14; n < 100; n*=2) { 
-    Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, n, n - 1);
+    Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, n, n - 1);
 
     // create and initialize cell-based field ussing f(x,y) = x^2 y + 2 x y^3
     Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
@@ -419,16 +419,16 @@ TEST(LIMITER_SMOOTH_FIELD_3D) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "\nTest: Accuracy on a smooth field in 3D" << std::endl;
 
   // create rectangular mesh
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(FrameworkPreference({MSTK, STKMESH}));
 
   for (int n = 14; n < 50; n*=2) { 
-    Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n - 2, n - 1);
+    Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n - 2, n - 1);
 
     // create and initialize cell-based field f(x,y,z) = x^2 y z^2 + 2 x y^3 z
     Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
@@ -546,18 +546,18 @@ void SmoothField2DPoly(double extension)
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "\nTest: smooth field on a polygonal mesh, extension=" << extension << std::endl;
 
   // load polygonal mesh
   Teuchos::ParameterList region_list;
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(FrameworkPreference({MSTK,STKMESH}));
 
-  Teuchos::RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo", gm);
 
   // create and initialize cell-based field ussing f(x,y) = x^2 y + 2 x y^3
   Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
@@ -686,14 +686,14 @@ TEST(LIMITER_LINEAR_FUNCTION_FRACTURES) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "\nTest: Limiters for linear functions in fractures." << std::endl;
 
   // create rectangular mesh
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
-  Teuchos::RCP<const Mesh> mesh = meshfactory("test/fractures.exo", Teuchos::null);
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(FrameworkPreference({MSTK,STKMESH}));
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/fractures.exo", Teuchos::null);
 
   // create and initialize cell-based field 
   Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));

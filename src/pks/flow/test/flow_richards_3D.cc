@@ -38,8 +38,8 @@ TEST(FLOW_3D_RICHARDS) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Flow;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "Test: 3D Richards, 2-layer model" << std::endl;
 
@@ -50,19 +50,19 @@ TEST(FLOW_3D_RICHARDS) {
   // create an SIMPLE mesh framework
   Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, &comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
   FrameworkPreference pref;
   pref.clear();
   pref.push_back(MSTK);
   pref.push_back(STKMESH);
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, -2.0, 1.0, 1.0, 0.0, 18, 1, 18, gm);
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(pref);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, -2.0, 1.0, 1.0, 0.0, 18, 1, 18, gm);
 
   /* create a simple state and populate it */
-  Amanzi::VerboseObject::hide_line_prefix = false;
+  Amanzi::VerboseObject::global_hide_line_prefix = false;
 
   Teuchos::ParameterList state_list = plist->sublist("state");
   Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));

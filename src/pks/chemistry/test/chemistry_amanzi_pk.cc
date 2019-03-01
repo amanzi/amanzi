@@ -63,7 +63,7 @@ SUITE(GeochemistryTestsChemistryPK) {
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_;
 
    private:
-    Epetra_SerialComm* comm_;
+    Amanzi::Comm_ptr_type comm_;
     Teuchos::RCP<ag::GeometricModel> gm_;
   };  // end class SpeciationTest
 
@@ -77,19 +77,19 @@ SUITE(GeochemistryTestsChemistryPK) {
     glist_ = Teuchos::getParametersFromXmlFile(xml_input_filename);
 
     // create a test mesh
-    comm_ = new Epetra_SerialComm();
+    comm_ = Amanzi::getCommSelf();
     Teuchos::ParameterList mesh_parameter_list =
       glist_->sublist("mesh").sublist("unstructured").sublist("generate mesh");
 
     am::GenerationSpec g(mesh_parameter_list);
     
     Teuchos::ParameterList region_parameter_list = glist_->sublist("regions");
-    gm_ = Teuchos::rcp(new ag::GeometricModel(3, region_parameter_list, (const Epetra_MpiComm *)comm_));
+    gm_ = Teuchos::rcp(new ag::GeometricModel(3, region_parameter_list, *comm_));
   
-    am::MeshFactory meshfactory((Epetra_MpiComm *)comm_);
-    meshfactory.preference(am::FrameworkPreference({am::Simple}));
+    am::MeshFactory meshfactory(comm_);
+    meshfactory.set_preference(am::FrameworkPreference({am::Simple}));
 
-    mesh_ = meshfactory(mesh_parameter_list, gm_);
+    mesh_ = meshfactory.create(0.,0.,0.,1.,1.,1.,1,1,10, gm_);
 
     // get the state parameter list and create the state object
     Teuchos::ParameterList state_parameter_list = glist_->sublist("state");
@@ -110,10 +110,7 @@ SUITE(GeochemistryTestsChemistryPK) {
     pk_tree_ = glist_->sublist("PK tree").sublist("chemistry");
   }
 
-  ChemistryPKTest::~ChemistryPKTest() {
-    //delete cpk_;
-    delete comm_;
-  }
+  ChemistryPKTest::~ChemistryPKTest() {}
 
   void ChemistryPKTest::RunTest(const std::string name, double * gamma) {};
 

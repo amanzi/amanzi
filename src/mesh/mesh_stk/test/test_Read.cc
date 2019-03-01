@@ -18,7 +18,7 @@
 
 #include <sstream>
 #include <UnitTest++.h>
-#include <Epetra_MpiComm.h>
+#include <AmanziComm.hh>
 
 #include "Exodus_readers.hh"
 #include "Parallel_Exodus_file.hh"

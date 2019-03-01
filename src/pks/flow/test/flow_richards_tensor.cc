@@ -40,7 +40,7 @@ TEST(FLOW_RICHARDS_ACCURACY) {
 
 std::cout << "Test: Tensor Richards, a cube model" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
 #else
   Epetra_SerialComm* comm = new Epetra_SerialComm();
 #endif
@@ -51,18 +51,18 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
 
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
   FrameworkPreference pref;
   pref.clear();
   pref.push_back(MSTK);
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(pref);
-  RCP<const AmanziMesh::Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, gm);
+  meshfactory.set_preference(pref);
+  RCP<const AmanziMesh::Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, gm);
 
   /* create a simple state and populate it */
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   ParameterList state_list = plist->get<Teuchos::ParameterList>("state");
   RCP<State> S = rcp(new State(state_list));
@@ -141,6 +141,6 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
   CHECK(err_p < 1e-8);
   CHECK(err_u < 1e-8);
 
-  delete comm;
+  
   delete RPK;
 }

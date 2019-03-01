@@ -34,14 +34,14 @@ TEST(DARCY_MASS_2D) {
 
   std::cout << "Test: Mass matrix for Darcy in 2D" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Amanzi::getCommSelf();
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.5, 1.0, 1, 1); 
+  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.5, 1.0, 1, 1); 
  
   MFD3D_Diffusion mfd(mesh);
   DeRham_Face drc(mfd);
@@ -103,7 +103,7 @@ TEST(DARCY_MASS_2D) {
     CHECK_CLOSE(T(1,0) * volume, vxy, 1e-10);
   }
 
-  delete comm;
+  
 }
 
 
@@ -115,9 +115,9 @@ TEST(DARCY_MASS_3D) {
 
   std::cout << "\n\nTest: Mass matrix for Darcy in 3D" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Amanzi::getCommSelf();
 #endif
 
   FrameworkPreference pref;
@@ -125,8 +125,8 @@ TEST(DARCY_MASS_3D) {
   pref.push_back(Simple);
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
+  meshfactory.set_preference(pref);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
  
   MFD3D_Diffusion mfd(mesh);
   DeRham_Face drc(mfd);
@@ -183,7 +183,7 @@ TEST(DARCY_MASS_3D) {
     CHECK_CLOSE(0.0, vxy, 1e-10);
   }
 
-  delete comm;
+  
 }
 
 
@@ -194,13 +194,13 @@ TEST(DARCY_MASS_3D_GENERALIZED_POLYHEDRON) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\n\nTest: Mass matrix for generalized polyhedra" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
-  Teuchos::RCP<Mesh> mesh = meshfactory("test/hex_random.exo"); 
-  // Teuchos::RCP<Mesh> mesh = meshfactory("test/random3D_05.exo"); 
+  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/hex_random.exo"); 
+  // Teuchos::RCP<Mesh> mesh = meshfactory.create("test/random3D_05.exo"); 
  
   Teuchos::ParameterList plist;
   MFD3D_Generalized_Diffusion mfd(plist, mesh);
@@ -237,7 +237,7 @@ TEST(DARCY_MASS_3D_GENERALIZED_POLYHEDRON) {
   // verify SPD propery
   for (int i = 0; i < nfaces; ++i) CHECK(M(i, i) > 0.0);
 
-  delete comm;
+  
 }
 
 
@@ -249,9 +249,9 @@ TEST(DARCY_INVERSE_MASS_3D) {
 
   std::cout << "\n\nTest: Inverse mass matrix for Darcy" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Amanzi::getCommSelf();
 #endif
 
   FrameworkPreference pref;
@@ -259,8 +259,8 @@ TEST(DARCY_INVERSE_MASS_3D) {
   pref.push_back(Simple);
 
   MeshFactory factory(comm);
-  factory.preference(pref);
-  Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3); 
+  factory.set_preference(pref);
+  Teuchos::RCP<Mesh> mesh = factory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3); 
  
   MFD3D_Diffusion mfd(mesh);
   DeRham_Face drc(mfd);
@@ -321,7 +321,7 @@ TEST(DARCY_INVERSE_MASS_3D) {
     CHECK_CLOSE(vxy, 0.0, 1e-10);
   }
 
-  delete comm;
+  
 }
 
 
@@ -333,15 +333,15 @@ TEST(DARCY_FULL_TENSOR_2D) {
 
   std::cout << "\n\nTest: Inverse mass matrix and full tensor in 2D" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Amanzi::getCommSelf();
 #endif
 
   MeshFactory factory(comm);
-  factory.preference(FrameworkPreference({MSTK}));
-  // Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  Teuchos::RCP<Mesh> mesh = factory("test/two_cell2.exo"); 
+  factory.set_preference(FrameworkPreference({MSTK}));
+  // Teuchos::RCP<Mesh> mesh = factory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
+  Teuchos::RCP<Mesh> mesh = factory.create("test/two_cell2.exo"); 
  
   DenseMatrix W;
   MFD3D_Diffusion mfd(mesh);
@@ -419,7 +419,7 @@ TEST(DARCY_FULL_TENSOR_2D) {
     }
   }
 
-  delete comm;
+  
 }
 
 
@@ -431,9 +431,9 @@ TEST(DARCY_FULL_TENSOR_3D) {
 
   std::cout << "\nTest: Inverse mass matrix and full tensor in 3D" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Amanzi::getCommSelf();
 #endif
 
   FrameworkPreference pref;
@@ -441,8 +441,8 @@ TEST(DARCY_FULL_TENSOR_3D) {
   pref.push_back(Simple);
 
   MeshFactory factory(comm);
-  factory.preference(pref);
-  Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 0.0, 1.1, 1.0, 1.0, 3, 2, 1); 
+  factory.set_preference(pref);
+  Teuchos::RCP<Mesh> mesh = factory.create(0.0, 0.0, 0.0, 1.1, 1.0, 1.0, 3, 2, 1); 
  
   MFD3D_Diffusion mfd(mesh);
   DeRham_Face drc(mfd);
@@ -508,7 +508,7 @@ TEST(DARCY_FULL_TENSOR_3D) {
     CHECK_CLOSE(vxx, 4 * volume, 1e-10);
   }
 
-  delete comm;
+  
 }
 
 
@@ -522,15 +522,15 @@ TEST(DARCY_STIFFNESS_2D_NODE) {
 
   std::cout << "\nTest: Stiffness matrix for Darcy in 2D" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Amanzi::getCommSelf();
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo"); 
+  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
+  RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo"); 
  
   MFD3D_Diffusion mfd(mesh);
 
@@ -582,7 +582,7 @@ TEST(DARCY_STIFFNESS_2D_NODE) {
     CHECK_CLOSE(vxy, 0.0, 1e-10);
   }
 
-  delete comm;
+  
 }
 
 
@@ -596,15 +596,15 @@ TEST(DARCY_STIFFNESS_2D_EDGE) {
 
   std::cout << "\nTest: Stiffness matrix for Darcy in 2D:edges" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Amanzi::getCommSelf();
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo", Teuchos::null, true, true); 
+  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
+  RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", Teuchos::null, true, true); 
  
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
@@ -652,7 +652,7 @@ TEST(DARCY_STIFFNESS_2D_EDGE) {
     CHECK_CLOSE(vxy, 0.0, 1e-10);
   }
 
-  delete comm;
+  
 }
 
 
@@ -666,16 +666,16 @@ TEST(DARCY_STIFFNESS_3D) {
 
   std::cout << "\nTest: Stiffness matrix for Darcy in 3D" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Amanzi::getCommSelf();
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
-  // RCP<Mesh> mesh = meshfactory("test/one_trapezoid.exo"); 
-  RCP<Mesh> mesh = meshfactory("test/dodecahedron.exo"); 
+  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
+  // RCP<Mesh> mesh = meshfactory.create("test/one_trapezoid.exo"); 
+  RCP<Mesh> mesh = meshfactory.create("test/dodecahedron.exo"); 
  
   MFD3D_Diffusion mfd(mesh);
 
@@ -719,7 +719,7 @@ TEST(DARCY_STIFFNESS_3D) {
   CHECK_CLOSE(vxx, volume, 1e-10);
   CHECK_CLOSE(vxy, 0.0, 1e-10);
 
-  delete comm;
+  
 }
 
 
@@ -733,14 +733,14 @@ TEST(RECOVER_GRADIENT_MIXED) {
 
   std::cout << "\nTest: Recover gradient from Darcy fluxes" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Amanzi::getCommSelf();
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  RCP<Mesh> mesh = meshfactory("test/one_trapezoid.exo"); 
+  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  RCP<Mesh> mesh = meshfactory.create("test/one_trapezoid.exo"); 
  
   MFD3D_Diffusion mfd(mesh);
 
@@ -770,7 +770,7 @@ TEST(RECOVER_GRADIENT_MIXED) {
   CHECK_CLOSE(gradient(2), 2.0, 1e-10);
   CHECK_CLOSE(gradient(3), 3.0, 1e-10);
 
-  delete comm;
+  
 }
 
 
@@ -784,14 +784,14 @@ TEST(RECOVER_GRADIENT_NODAL) {
 
   std::cout << "\nTest: Recover gradient from nodal pressures" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Amanzi::getCommSelf();
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  RCP<Mesh> mesh = meshfactory("test/one_trapezoid.exo"); 
+  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  RCP<Mesh> mesh = meshfactory.create("test/one_trapezoid.exo"); 
  
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1)
@@ -824,7 +824,7 @@ TEST(RECOVER_GRADIENT_NODAL) {
   CHECK_CLOSE(gradient(2), 2.0, 1e-10);
   CHECK_CLOSE(gradient(3), 3.0, 1e-10);
 
-  delete comm;
+  
 }
 
 
@@ -837,17 +837,17 @@ TEST(DARCY_INVERSE_MASS_2D) {
 
   std::cout << "\nTest: Inverse mass matrix for Darcy, 2D" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Amanzi::getCommSelf();
 #endif
 
   MeshFactory factory(comm);
-  factory.preference(FrameworkPreference({MSTK}));
+  factory.set_preference(FrameworkPreference({MSTK}));
   // RCP<Mesh> mesh = factory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
   // RCP<Mesh> mesh = factory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3); 
-  // RCP<Mesh> mesh = factory("test/cube_triangulated.exo"); 
-  RCP<Mesh> mesh = factory("test/dodecahedron.exo"); 
+  // RCP<Mesh> mesh = factory.create("test/cube_triangulated.exo"); 
+  RCP<Mesh> mesh = factory.create("test/dodecahedron.exo"); 
  
   MFD3D_Diffusion mfd(mesh);
 
@@ -901,7 +901,7 @@ TEST(DARCY_INVERSE_MASS_2D) {
     CHECK_CLOSE(mfd.simplex_functional(), 60.0, 1e-2);
   }
 
-  delete comm;
+  
 }
 
 

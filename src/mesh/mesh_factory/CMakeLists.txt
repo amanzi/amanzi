@@ -115,9 +115,7 @@ if (BUILD_TESTS)
 
    # Do not call add_amanzi_test again with SOURCE and LINK_LIBS since the
    # previous call carries instructions to build the executable
-   # When n>1 procs used this test fails
-   #add_amanzi_test(mesh_factory_parallel test_mesh_factory NPROCS 2 KIND uint)
-   add_amanzi_test(mesh_factory_parallel test_mesh_factory KIND uint)
+   add_amanzi_test(mesh_factory_parallel test_mesh_factory NPROCS 2 KIND uint)
 
 endif()
    

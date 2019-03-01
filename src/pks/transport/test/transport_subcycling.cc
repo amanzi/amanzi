@@ -38,7 +38,7 @@ TEST(ADVANCE_WITH_SUBCYCLING) {
 
 std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
 #else
   Epetra_SerialComm* comm = new Epetra_SerialComm();
 #endif
@@ -50,7 +50,7 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
   /* create a mesh framework */
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
   FrameworkPreference pref;
   pref.clear();
@@ -58,8 +58,8 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
   pref.push_back(STKMESH);
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(pref);
-  RCP<const Mesh> mesh = meshfactory("test/rect2D_10x10_ss.exo", gm);
+  meshfactory.set_preference(pref);
+  RCP<const Mesh> mesh = meshfactory.create("test/rect2D_10x10_ss.exo", gm);
   
   /* create a simple state and populate it */
   std::vector<std::string> component_names;
@@ -135,7 +135,7 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
   for (int k = 0; k < 10; k++) 
     CHECK_CLOSE(1.0, (*tcc)[0][k], 1e-6);
 
-  delete comm;
+  
 }
 
 

@@ -6,7 +6,7 @@
 #include "MeshAudit.hh"
 
 #include "Epetra_Map.h"
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 #include "Epetra_Import.h"
 #include "Epetra_Vector.h"
 
@@ -19,22 +19,12 @@ TEST(MSTK_EXTFACE_MAP_4P)
   std::vector<int> facedirs(6);
   std::vector<Amanzi::AmanziGeometry::Point> ccoords(8), fcoords(4);
 
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
-			      
-
-  int rank, size;
-
-  int initialized;
-  MPI_Initialized(&initialized);
-  
-  if (!initialized)
-    MPI_Init(NULL,NULL);
-
-  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
-  MPI_Comm_size(MPI_COMM_WORLD,&size);
+  auto comm = Amanzi::getDefaultComm();
+  int rank = comm->MyPID();
+  int size = comm->NumProc();
   CHECK_EQUAL(4,size);
 
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_3x3x3_sets.exo",comm_.get()));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_3x3x3_sets.exo",comm));
 
   Epetra_Map face_map(mesh->face_map(false));
   Epetra_Map extface_map(mesh->exterior_face_map(false));

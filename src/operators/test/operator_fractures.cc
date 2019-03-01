@@ -44,8 +44,8 @@ void RunTest(int icase, bool gravity) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "\nTest: Darcy flow in fractures, gravity=" << gravity << std::endl;
 
@@ -56,24 +56,22 @@ void RunTest(int icase, bool gravity) {
 
   // create an SIMPLE mesh framework
   ParameterList region_list = plist.sublist("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({Framework::MSTK}));
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(FrameworkPreference({Framework::MSTK}));
   RCP<Mesh> surfmesh;
 
   if (icase == 0) {
-    RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, gm);
-    RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh);
+    RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, gm);
 
     // extract fractures mesh
     std::vector<std::string> setnames;
     setnames.push_back("fracture 1");
     setnames.push_back("fracture 2");
-
-    surfmesh = Teuchos::rcp(new Mesh_MSTK(&*mesh_mstk, setnames, AmanziMesh::FACE));
+    surfmesh = meshfactory.create(mesh, setnames, AmanziMesh::FACE);
   } else {
-    surfmesh = meshfactory("test/fractures.exo", gm);
+    surfmesh = meshfactory.create("test/fractures.exo", gm);
   }
 
   // modify diffusion coefficient

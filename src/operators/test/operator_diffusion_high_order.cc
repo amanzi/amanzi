@@ -45,8 +45,8 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART) {
   using namespace Amanzi::Operators;
   using namespace Amanzi::WhetStone;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, high-order Crouzier-Raviart" << std::endl;
 
   // read parameter list
@@ -56,11 +56,11 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART) {
 
   // create a mesh framework
   Teuchos::RCP<GeometricModel> gm;
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
-  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, gm, true, true);
-  RCP<const Mesh> mesh = meshfactory("test/median7x8_filtered.exo", gm, true, true);
-  // RCP<const Mesh> mesh = meshfactory("test/median15x16.exo", gm, true, true);
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(FrameworkPreference({MSTK, STKMESH}));
+  // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 4, gm, true, true);
+  RCP<const Mesh> mesh = meshfactory.create("test/median7x8_filtered.exo", gm, true, true);
+  // RCP<const Mesh> mesh = meshfactory.create("test/median15x16.exo", gm, true, true);
 
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
@@ -171,8 +171,8 @@ void RunHighOrderLagrange(std::string vem_name, bool polygonal_mesh) {
   using namespace Amanzi::Operators;
   using namespace Amanzi::WhetStone;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, high-order " << vem_name << std::endl;
 
   // read parameter list
@@ -182,13 +182,13 @@ void RunHighOrderLagrange(std::string vem_name, bool polygonal_mesh) {
 
   // create a mesh framework
   Teuchos::RCP<GeometricModel> gm;
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(FrameworkPreference({MSTK, STKMESH}));
   RCP<const Mesh> mesh;
   if (polygonal_mesh) {
-    mesh = meshfactory("test/median7x8_filtered.exo", gm, true, true);
+    mesh = meshfactory.create("test/median7x8_filtered.exo", gm, true, true);
   } else {
-    mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, gm, true, true);
+    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 4, gm, true, true);
   }
 
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);

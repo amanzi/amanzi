@@ -19,7 +19,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
-#include "TabularStringFunction.hh"
+#include "FunctionTabularString.hh"
 #include "TransportDomainFunction.hh"
 
 #ifdef ALQUIMIA_ENABLED
@@ -49,7 +49,7 @@ class TransportSourceFunction_Alquimia : public TransportDomainFunction {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
   // string function of geochemical conditions
-  Teuchos::RCP<TabularStringFunction> f_;
+  Teuchos::RCP<FunctionTabularString> f_;
 
   // Chemistry state and engine.
   Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk_;

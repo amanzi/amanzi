@@ -20,7 +20,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "factory.hh"
+#include "Factory.hh"
 
 #include "MultiscaleFlowPorosity.hh"
 #include "WRM.hh"

@@ -48,8 +48,8 @@ void TestDiffusionEdges(int dim, double tol, std::string filename)
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "\nTest: elliptic solver, edge discretization, d=" << dim 
                             << ", file: " << filename << std::endl;
@@ -61,15 +61,15 @@ void TestDiffusionEdges(int dim, double tol, std::string filename)
 
   // create an SIMPLE mesh framework
   Teuchos::RCP<GeometricModel> gm;
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(FrameworkPreference({MSTK, STKMESH}));
   RCP<const Mesh> mesh;
   if (dim == 2)
-    mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 6, 7, gm, true, true);
-    // mesh = meshfactory("test/median32x33.exo", gm, true, true);
+    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 6, 7, gm, true, true);
+    // mesh = meshfactory.create("test/median32x33.exo", gm, true, true);
   else 
-    mesh = meshfactory(filename, gm, true, true);
-    // mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 1, 1, gm, true, true);
+    mesh = meshfactory.create(filename, gm, true, true);
+    // mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 1, 1, gm, true, true);
   
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());

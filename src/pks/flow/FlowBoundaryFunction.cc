@@ -178,7 +178,10 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(
 
 #ifdef HAVE_MPI
   int gsize;
-  const MPI_Comm& comm = mesh->get_comm()->Comm();
+  Teuchos::RCP<const Comm_type> comm_p = mesh->get_comm();
+  Teuchos::RCP<const MpiComm_type> mpi_comm_p =
+      Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm_p);
+  const MPI_Comm& comm = mpi_comm_p->Comm();
   MPI_Comm_size(comm, &gsize);
   int* edge_counts = new int[gsize];
   MPI_Allgather(&nedges, 1, MPI_INT, edge_counts, 1, MPI_INT, comm);

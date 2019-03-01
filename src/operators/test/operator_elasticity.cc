@@ -43,8 +43,8 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "\nTest: 2D elasticity: exactness test" << std::endl;
 
   // read parameter list
@@ -58,9 +58,9 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   // create the MSTK mesh framework 
   // -- geometric model is not created. Instead, we specify boundary conditions
   // -- using centroids of mesh faces.
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 5, Teuchos::null);
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(FrameworkPreference({MSTK, STKMESH}));
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 5, Teuchos::null);
 
   // -- general information about mesh
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);

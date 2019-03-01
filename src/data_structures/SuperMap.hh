@@ -21,7 +21,7 @@
 #define AMANZI_OPERATORS_SUPER_MAP_HH_
 
 #include "Teuchos_RCP.hpp"
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 
 #include "dbc.hh"
 #include "Mesh.hh"
@@ -37,7 +37,7 @@ namespace Operators {
 class SuperMap {
  public:
   // Constructor
-  SuperMap(const Epetra_MpiComm& comm,
+  SuperMap(const Comm_ptr_type& comm,
            const std::vector<std::string>& compnames,
            const std::vector<int>& dofnums,
            const std::vector<Teuchos::RCP<const Epetra_Map> >& maps,

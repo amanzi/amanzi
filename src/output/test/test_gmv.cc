@@ -8,7 +8,7 @@ TEST(GMV) {
   using namespace std;
 
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 #else
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
@@ -22,9 +22,9 @@ TEST(GMV) {
   pref.push_back(Amanzi::AmanziMesh::Simple);
 
   Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
-  meshfactory.preference(pref);
+  meshfactory.set_preference(pref);
 
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> Mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> Mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1);
 
   unsigned int num_nodes = Mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
   unsigned int num_cells = Mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);

@@ -40,7 +40,7 @@ TEST(ADVANCE_WITH_3D_MESH) {
 
 std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
 #else
   Epetra_SerialComm* comm = new Epetra_SerialComm();
 #endif
@@ -52,21 +52,21 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
   /* create a mesh framework */
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
   FrameworkPreference pref;
   pref.clear();
   pref.push_back(MSTK);
   pref.push_back(STKMESH);
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(pref);
-  RCP<const Mesh> mesh = meshfactory("test/rect3D_50x50x1.exo", gm);
+  meshfactory.set_preference(pref);
+  RCP<const Mesh> mesh = meshfactory.create("test/rect3D_50x50x1.exo", gm);
 
   //Amanzi::MeshAudit audit(mesh);
   //audit.Verify();   
 
   /* create a simple state and populate it */
-  Amanzi::VerboseObject::hide_line_prefix = false;
+  Amanzi::VerboseObject::global_hide_line_prefix = false;
 
   std::vector<std::string> component_names;
   component_names.push_back("Component 0");
@@ -132,7 +132,7 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
     }
   }
  
-  delete comm;
+  
 }
 
 

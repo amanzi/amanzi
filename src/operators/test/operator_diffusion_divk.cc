@@ -47,16 +47,16 @@ using namespace Amanzi::Operators;
 ***************************************************************** */
 template<class UpwindClass>
 void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list) {
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 
   // parallel bug: twin component is used incorrectly in UpdateMatrices(). 
   // Scatter of little_k overrrides its ghost values. The subsequent 
   // algorithm uses the second item in the list returned by face_get_cells
   // as the twin component. We need to use global ids of cells for proper
   // ordering.  
-  if (upwind_list == "upwind second-order" && comm.NumProc() > 1) return;
+  if (upwind_list == "upwind second-order" && comm->NumProc() > 1) return;
 
-  int MyPID = comm.MyPID();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, divK discretization: \"" 
                             << diffusion_list << "\" + \"" << upwind_list << "\"\n";
 
@@ -67,11 +67,11 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist(diffusion_list);
 
   // create an SIMPLE mesh framework
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
-  // Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 10, Teuchos::null);
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(FrameworkPreference({MSTK, STKMESH}));
+  // Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10, Teuchos::null);
   std::string file = op_list.get<std::string>("file name", "test/random20.exo");
-  Teuchos::RCP<const Mesh> mesh = meshfactory(file, Teuchos::null);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(file, Teuchos::null);
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion tensor
@@ -213,8 +213,8 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "\nTest: 3D elliptic solver, divK discretization, average" << std::endl;
 
   // read parameter list
@@ -223,10 +223,10 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   Teuchos::ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, Teuchos::null);
-  // Teuchos::RCP<const Mesh> mesh = meshfactory("test/mesh.exo", Teuchos::null);
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(FrameworkPreference({MSTK, STKMESH}));
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, Teuchos::null);
+  // Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/mesh.exo", Teuchos::null);
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the nonlinear coefficient.

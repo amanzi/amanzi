@@ -17,7 +17,7 @@
 #include <mpi.h>
 #include <iostream>
 
-#include <Epetra_MpiComm.h>
+#include <AmanziComm.hh>
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
@@ -27,9 +27,9 @@
 TEST(MESH_GEOMETRY_PLANAR)
 {
 
-  Epetra_MpiComm comm_(MPI_COMM_WORLD);
-  const int nproc(comm_.NumProc());
-  const int me(comm_.MyPID());
+  auto comm = Amanzi::getDefaultComm();
+  const int nproc(comm->NumProc());
+  const int me(comm->MyPID());
 
   const Amanzi::AmanziMesh::Framework frameworks[] = {  
     Amanzi::AmanziMesh::MSTK
@@ -56,7 +56,7 @@ TEST(MESH_GEOMETRY_PLANAR)
 
     // Create the mesh
 
-    Amanzi::AmanziMesh::MeshFactory factory(&comm_);
+    Amanzi::AmanziMesh::MeshFactory factory(comm);
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
     int ierr = 0;
@@ -66,9 +66,9 @@ TEST(MESH_GEOMETRY_PLANAR)
       prefs.clear(); 
       prefs.push_back(the_framework);
 
-      factory.preference(prefs);
+      factory.set_preference(prefs);
 
-      mesh = factory(0.0,0.0,1.0,1.0,2,2);
+      mesh = factory.create(0.0,0.0,1.0,1.0,2,2);
 
     } catch (const Amanzi::AmanziMesh::Message& e) {
       std::cerr << ": mesh error: " << e.what() << std::endl;
@@ -78,7 +78,7 @@ TEST(MESH_GEOMETRY_PLANAR)
       ierr++;
     }
 
-    comm_.SumAll(&ierr, &aerr, 1);
+    comm->SumAll(&ierr, &aerr, 1);
 
     CHECK_EQUAL(aerr,0);
 
@@ -224,9 +224,9 @@ TEST(MESH_GEOMETRY_SURFACE)
  return;
 
 
-  Epetra_MpiComm comm_(MPI_COMM_WORLD);
-  const int nproc(comm_.NumProc());
-  const int me(comm_.MyPID());
+  auto comm = Amanzi::getDefaultComm();
+  const int nproc(comm->NumProc());
+  const int me(comm->MyPID());
 
   const Amanzi::AmanziMesh::Framework frameworks[] = {  
     Amanzi::AmanziMesh::MSTK
@@ -253,7 +253,7 @@ TEST(MESH_GEOMETRY_SURFACE)
 
     // Create the mesh
 
-    Amanzi::AmanziMesh::MeshFactory factory(&comm_);
+    Amanzi::AmanziMesh::MeshFactory factory(comm);
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
     int ierr = 0;
@@ -263,9 +263,9 @@ TEST(MESH_GEOMETRY_SURFACE)
       prefs.clear(); 
       prefs.push_back(the_framework);
 
-      factory.preference(prefs);
+      factory.set_preference(prefs);
 
-      mesh = factory("test/surfquad.exo");
+      mesh = factory.create("test/surfquad.exo");
 
     } catch (const Amanzi::AmanziMesh::Message& e) {
       std::cerr << ": mesh error: " << e.what() << std::endl;
@@ -275,7 +275,7 @@ TEST(MESH_GEOMETRY_SURFACE)
       ierr++;
     }
 
-    comm_.SumAll(&ierr, &aerr, 1);
+    comm->SumAll(&ierr, &aerr, 1);
 
     CHECK_EQUAL(aerr,0);
 
@@ -414,9 +414,9 @@ TEST(MESH_GEOMETRY_SURFACE)
 TEST(MESH_GEOMETRY_SOLID)
 {
 
-  Epetra_MpiComm comm_(MPI_COMM_WORLD);
-  const int nproc(comm_.NumProc());
-  const int me(comm_.MyPID());
+  auto comm = Amanzi::getDefaultComm();
+  const int nproc(comm->NumProc());
+  const int me(comm->MyPID());
 
   const Amanzi::AmanziMesh::Framework frameworks[] = {  
     Amanzi::AmanziMesh::STKMESH,
@@ -447,7 +447,7 @@ TEST(MESH_GEOMETRY_SOLID)
 
     // Create the mesh
 
-    Amanzi::AmanziMesh::MeshFactory factory(&comm_);
+    Amanzi::AmanziMesh::MeshFactory factory(comm);
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
     int ierr = 0;
@@ -457,9 +457,9 @@ TEST(MESH_GEOMETRY_SOLID)
       prefs.clear(); 
       prefs.push_back(the_framework);
 
-      factory.preference(prefs);
+      factory.set_preference(prefs);
 
-      mesh = factory(0.0,0.0,0.0,1.0,1.0,1.0,2,2,2);
+      mesh = factory.create(0.0,0.0,0.0,1.0,1.0,1.0,2,2,2);
 
     } catch (const Amanzi::AmanziMesh::Message& e) {
       std::cerr << ": mesh error: " << e.what() << std::endl;
@@ -469,7 +469,7 @@ TEST(MESH_GEOMETRY_SOLID)
       ierr++;
     }
 
-    comm_.SumAll(&ierr, &aerr, 1);
+    comm->SumAll(&ierr, &aerr, 1);
 
     CHECK_EQUAL(aerr,0);
 

@@ -13,8 +13,7 @@
 #define AMANZI_MESH_SIMPLE_HH_
 
 #include <Epetra_Map.h>
-#include <Epetra_MpiComm.h>
-#include <Epetra_SerialComm.h>
+#include <AmanziComm.hh>
 
 #include <memory>
 #include <vector>
@@ -29,7 +28,7 @@
 namespace Amanzi {
 namespace AmanziMesh {
 
-class GenerationSpec;
+//class GenerationSpec;
 
 class Mesh_simple : public virtual Mesh {
  public:
@@ -42,7 +41,8 @@ class Mesh_simple : public virtual Mesh {
   // blocking the implicit conversion.
   Mesh_simple(double x0, double y0, double z0,
               double x1, double y1, double z1,
-              int nx, int ny, int nz, const Epetra_MpiComm *comm_unicator,
+              int nx, int ny, int nz,
+              const Comm_ptr_type& comm,
               const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
               const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
               const bool request_faces = true,
@@ -50,58 +50,29 @@ class Mesh_simple : public virtual Mesh {
   
   Mesh_simple(double x0, double y0,
               double x1, double y1,
-              int nx, int ny, const Epetra_MpiComm *comm_unicator,
+              int nx, int ny,
+              const Comm_ptr_type& comm,
               const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
               const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
               const bool request_faces = true,
               const bool request_edges = false);
-  
-  Mesh_simple(const GenerationSpec& gspec,
-              const Epetra_MpiComm *comm_unicator,
-              const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
-              const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
-              const bool request_faces = true,
-              const bool request_edges = false,
-	      const Partitioner_type partitioner = PARTITIONER_DEFAULT);
 
-  Mesh_simple(Teuchos::ParameterList& parameter_list,
-              const Epetra_MpiComm *comm_unicator,
-              const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
-              const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
-              const bool request_faces = true,
-              const bool request_edges = false);
-  
   // Construct a mesh by extracting a subset of entities from another
   // mesh. In some cases like extracting a surface mesh from a volume
   // mesh, constructor can be asked to "flatten" the mesh to a lower
   // dimensional space or to extrude the mesh to give higher
   // dimensional cells
-  Mesh_simple(const Mesh *inmesh,
-              const std::vector<std::string>& setnames,
-              const Entity_kind setkind,
-              const bool flatten = false,
-              const bool extrude = false,
-              const bool request_faces = true,
-              const bool request_edges = false);
 
-  Mesh_simple(const Mesh& inmesh,
-              const std::vector<std::string>& setnames,
-              const Entity_kind setkind,
-              const bool flatten = false,
-              const bool extrude = false,
-              const bool request_faces = true,
-              const bool request_edges = false);
-
-  Mesh_simple(const Mesh& inmesh, 
+  Mesh_simple(const Comm_ptr_type& comm,
+              const Teuchos::RCP<const Mesh>& inmesh, 
               const std::vector<int>& entity_id_list, 
               const Entity_kind entity_kind,
               const bool flatten = false,
               const bool extrude = false,
               const bool request_faces = true,
               const bool request_edges = false);
-  
-  virtual ~Mesh_simple();
-  
+
+  virtual ~Mesh_simple() = default;  
   void update();
 
 
@@ -300,12 +271,12 @@ class Mesh_simple : public virtual Mesh {
              const bool move_vertical);  
 
  private:
-  void generate_(const GenerationSpec& g);
+  //  void generate_(const GenerationSpec& g);
   void update_internals_();
   void clear_internals_();
   void build_maps_();
 
-  Epetra_Map *cell_map_, *face_map_, *node_map_, *extface_map_;
+  Teuchos::RCP<Epetra_Map> cell_map_, face_map_, node_map_, extface_map_;
 
   std::vector<double> coordinates_;
 

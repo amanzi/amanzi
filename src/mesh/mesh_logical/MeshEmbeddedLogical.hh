@@ -3,7 +3,7 @@
 #define AMANZI_EMBEDDED_LOGICAL_MESH_H_
 
 #include <Epetra_Map.h>
-#include <Epetra_MpiComm.h>
+#include <AmanziComm.hh>
 #include <Epetra_SerialComm.h>
 
 #include <memory>
@@ -49,7 +49,7 @@ class MeshEmbeddedLogical : public Mesh {
   //                              face, points from cell 1 to 2 in
   //                              face_cell_list topology, magnitude
   //                              is area
-  MeshEmbeddedLogical(const Epetra_MpiComm* comm,
+  MeshEmbeddedLogical(const Comm_ptr_type& comm,
                       Teuchos::RCP<Mesh> bg_mesh,
                       Teuchos::RCP<Mesh> log_mesh,
                       const std::vector<std::vector<int> >& face_cell_list,

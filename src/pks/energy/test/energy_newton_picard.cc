@@ -16,7 +16,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 
 // Amanzi
 #include "GMVMesh.hh"
@@ -353,8 +353,8 @@ TEST(NKA) {
   using namespace Amanzi::Operators;
   using namespace Amanzi::Energy;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   // read parameter list 
   std::string xmlFileName = "test/energy_newton_picard.xml";
@@ -364,16 +364,16 @@ TEST(NKA) {
   // create a mesh framework
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, &comm));
+        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
  
   FrameworkPreference pref;
   pref.clear();
   pref.push_back(MSTK);
   pref.push_back(STKMESH);
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 3.0, 1.0, 60, 10, gm);
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(pref);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 3.0, 1.0, 60, 10, gm);
 
   // create problem
   for (int i = 0; i < 3; ++i) {

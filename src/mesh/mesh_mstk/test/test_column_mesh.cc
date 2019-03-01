@@ -17,7 +17,7 @@
 #include <mpi.h>
 #include <fstream>
 
-#include <Epetra_MpiComm.h>
+#include <AmanziComm.hh>
 
 #include "Geometry.hh"
 #include "../Mesh_MSTK.hh"
@@ -29,9 +29,9 @@
 TEST(COLUMN_MESH_3D)
 {
 
-  Epetra_MpiComm comm_(MPI_COMM_WORLD);
-  const int nproc(comm_.NumProc());
-  const int me(comm_.MyPID());
+  auto comm = Amanzi::getDefaultComm();
+  const int nproc(comm->NumProc());
+  const int me(comm->MyPID());
 
 
   int nx = 4, ny = 4, nz = 4;
@@ -58,7 +58,7 @@ TEST(COLUMN_MESH_3D)
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh =
       Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,
               lx,ly,lz,nx,ny,nz,
-              &comm_, gm));
+              comm, gm));
 
   CHECK_EQUAL(mesh->build_columns(), 1);
   
@@ -79,7 +79,7 @@ TEST(COLUMN_MESH_3D)
   CHECK_EQUAL(5, mesh->faces_of_column(10).size());
   
   // Create a column mesh from one of the columns
-  Amanzi::AmanziMesh::MeshColumn colmesh(*mesh,10);
+  Amanzi::AmanziMesh::MeshColumn colmesh(mesh,10);
 
   
   // Verify column mesh topology
@@ -203,9 +203,9 @@ TEST(COLUMN_MESH_3D)
 TEST(COLUMN_MESH_3D_FROM_SURFACE)
 {
 
-  Epetra_MpiComm comm_(MPI_COMM_WORLD);
-  const int nproc(comm_.NumProc());
-  const int me(comm_.MyPID());
+  auto comm = Amanzi::getDefaultComm();
+  const int nproc(comm->NumProc());
+  const int me(comm->MyPID());
 
 
   int nx = 4, ny = 4, nz = 4;
@@ -232,7 +232,7 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh =
       Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,
               lx,ly,lz,nx,ny,nz,
-              &comm_, gm));
+              comm, gm));
   mesh->build_columns("surface");
 
   int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,
@@ -244,7 +244,7 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   CHECK_EQUAL(5, mesh->faces_of_column(10).size());
   
   // Create a column mesh from one of the columns
-  Amanzi::AmanziMesh::MeshColumn colmesh(*mesh,10);
+  Amanzi::AmanziMesh::MeshColumn colmesh(mesh,10);
 
   
   // Verify column mesh topology

@@ -35,11 +35,11 @@ TEST(FACTORY_DISCRETIZATION_METHODS) {
   pref.clear();
   pref.push_back(MSTK);
 
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
   MeshFactory factory(comm);
-  factory.preference(pref);
-  // Teuchos::RCP<const Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  Teuchos::RCP<const Mesh> mesh = factory("test/one_pentagon.exo");
+  factory.set_preference(pref);
+  // Teuchos::RCP<const Mesh> mesh = factory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
+  Teuchos::RCP<const Mesh> mesh = factory.create("test/one_pentagon.exo");
 
   std::string names[8] = {"diffusion", "diffusion generalized", "elasticity",
                           "CrouzeixRaviart", "BernardiRaugel", "Lagrange serendipity",
@@ -54,7 +54,7 @@ TEST(FACTORY_DISCRETIZATION_METHODS) {
     CHECK(form != Teuchos::null);
   }
 
-  delete comm;
+  
 }
 
 

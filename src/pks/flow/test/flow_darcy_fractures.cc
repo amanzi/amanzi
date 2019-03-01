@@ -40,7 +40,7 @@ TEST(DARCY_TWO_FRACTURES) {
   using namespace Amanzi::AmanziGeometry;
 
   std::cout << "Test: Darcy PK in two fractures" << std::endl;
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
   // read parameter list
@@ -50,19 +50,18 @@ TEST(DARCY_TWO_FRACTURES) {
   // create a mesh framework
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({Framework::MSTK, Framework::STKMESH}));
-  RCP<const Mesh> mesh3D = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, gm);
+  meshfactory.set_preference(FrameworkPreference({Framework::MSTK, Framework::STKMESH}));
+  RCP<const Mesh> mesh3D = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, gm);
 
   // extract fractures mesh
   std::vector<std::string> setnames;
   setnames.push_back("fracture 1");
   setnames.push_back("fracture 2");
 
-  RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh3D);
-  RCP<const Mesh> mesh = Teuchos::rcp(new Mesh_MSTK(&*mesh_mstk, setnames, AmanziMesh::FACE));
+  RCP<const Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::FACE);
 
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
@@ -120,7 +119,7 @@ TEST(DARCY_TWO_FRACTURES) {
     GMV::close_data_file();
   }
 
-  delete comm;
+  
 }
 
 

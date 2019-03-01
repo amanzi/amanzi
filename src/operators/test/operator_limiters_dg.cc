@@ -47,14 +47,14 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "\nTest: Smoothness indicator and limiters for DG, basis=" << basis << std::endl;
 
   // create rectangular mesh
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<const Mesh> mesh = meshfactory(filename, Teuchos::null);
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(filename, Teuchos::null);
 
   // create and initialize cell-based field 
   int nk(6), dim(2);
@@ -221,14 +221,14 @@ TEST(LIMITER_GAUSS_POINTS)
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "\nTest: Limiters at Gauss points" << std::endl;
 
   // create rectangular mesh
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<const Mesh> mesh = meshfactory("test/circle_quad10.exo", Teuchos::null);
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/circle_quad10.exo", Teuchos::null);
 
   // create and initialize cell-based field 
   int nk(6), dim(2);

@@ -16,7 +16,7 @@
 #ifndef AMANZI_FLOW_POROSITY_EVALUATOR_HH_
 #define AMANZI_FLOW_POROSITY_EVALUATOR_HH_
 
-#include "factory.hh"
+#include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 #include "FracturePermModel.hh"

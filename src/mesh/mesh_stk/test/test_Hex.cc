@@ -18,7 +18,7 @@
 #include <iostream>
 #include <iomanip>
 #include <UnitTest++.h>
-#include <Epetra_MpiComm.h>
+#include <AmanziComm.hh>
 
 #include "../Mesh_STK_Impl.hh"
 #include "../Mesh_STK_factory.hh"

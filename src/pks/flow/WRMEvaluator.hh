@@ -15,7 +15,7 @@
 #ifndef AMANZI_FLOW_WRM_EVALUATOR_HH_
 #define AMANZI_FLOW_WRM_EVALUATOR_HH_
 
-#include "factory.hh"
+#include "Factory.hh"
 #include "secondary_variables_field_evaluator.hh"
 #include "WRM.hh"
 #include "WRMPartition.hh"

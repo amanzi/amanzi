@@ -12,8 +12,8 @@
 #include <iostream>
 #include <fstream>
 
-#include <Epetra_Comm.h>
-#include <Epetra_MpiComm.h>
+#include "Epetra_Comm.h"
+#include "Epetra_MpiComm.h"
 #include "Epetra_SerialComm.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
@@ -79,11 +79,11 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   // Teuchos::OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(mpi_comm);
-#else  
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Teuchos::rcp(new Amanzi::MpiComm_type(mpi_comm));
+#else
+  auto comm = Amanzi::getCommSelf();
 #endif
-
+  
   int rank, ierr, aerr, size;
   MPI_Comm_rank(mpi_comm,&rank);
   MPI_Comm_size(mpi_comm,&size);
@@ -108,7 +108,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   Teuchos::ParameterList& reg_params = plist_->sublist("regions");
 
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> geom_model =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, *comm));
 
   // Add the geometric model to the domain
   simdomain_ptr->Add_Geometric_Model(geom_model);
@@ -178,22 +178,22 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 	}
       }
 
-      bool partitioner_specified = expert_mesh_params.isParameter("partitioner");
-      if (partitioner_specified) {
-        std::string partitioner = expert_mesh_params.get<std::string>("partitioner");
-        if (partitioner == "METIS" || partitioner == "metis")
-          factory.set_partitioner(Amanzi::AmanziMesh::Partitioner_type::METIS);
-        else if (partitioner == "ZOLTAN_GRAPH" || partitioner == "zoltan_graph")
-          factory.set_partitioner(Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_GRAPH);
-        else if (partitioner == "ZOLTAN_RCB" || partitioner == "zoltan_rcb")
-          factory.set_partitioner(Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_RCB);
-      }
+      // bool partitioner_specified = expert_mesh_params.isParameter("partitioner");
+      // if (partitioner_specified) {
+      //   std::string partitioner = expert_mesh_params.get<std::string>("partitioner");
+      //   if (partitioner == "METIS" || partitioner == "metis")
+      //     factory.set_partitioner(Amanzi::AmanziMesh::Partitioner_type::METIS);
+      //   else if (partitioner == "ZOLTAN_GRAPH" || partitioner == "zoltan_graph")
+      //     factory.set_partitioner(Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_GRAPH);
+      //   else if (partitioner == "ZOLTAN_RCB" || partitioner == "zoltan_rcb")
+      //     factory.set_partitioner(Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_RCB);
+      // }
     }
 
     // Create a mesh factory with default or user preferences for a
     // mesh framework
     // prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::MSTK);
-    factory.preference(prefs);
+    factory.set_preference(prefs);
 
   } catch (const Teuchos::Exceptions::InvalidParameterName& e) {
     // do nothing, this means that the "framework" parameter was 
@@ -259,6 +259,10 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     try {
       // create the mesh by internal generation
       mesh = factory.create(gen_params, geom_model);
+      // It looks like this is moving toward a model where partitioner goes in
+      //the mesh_params/unstructured/expert list and not in the gen_params
+      //list, but for now I'm sticking with the existing, inconsistent layout.
+      //mesh = factory.create(gen_params, geom_model, mesh_params);
 
     } catch (const std::exception& e) {
       std::cerr << rank << ": error: " << e.what() << std::endl;
@@ -350,7 +354,6 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   // Clean up
   mesh.reset();
   delete simdomain_ptr;
-  delete comm;
       
   return Amanzi::Simulator::SUCCESS;
 }

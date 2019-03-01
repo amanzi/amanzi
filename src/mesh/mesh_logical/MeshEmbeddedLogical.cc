@@ -20,18 +20,17 @@ namespace AmanziMesh {
 //                              face, points from cell 1 to 2 in
 //                              face_cell_list topology, magnitude
 //                              is area
-MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* comm,
+MeshEmbeddedLogical::MeshEmbeddedLogical(const Comm_ptr_type& comm,
         Teuchos::RCP<Mesh> bg_mesh,
         Teuchos::RCP<Mesh> log_mesh,
         const std::vector<Entity_ID_List>& face_cell_ids,
         const std::vector<std::vector<double> >& face_cell_lengths,
         const std::vector<AmanziGeometry::Point>& face_area_normals,
         const Teuchos::RCP<const VerboseObject>& verbosity_obj)
-    : Mesh(verbosity_obj, true, false),
+    : Mesh(comm, Teuchos::null, verbosity_obj, true, false),
     bg_mesh_(bg_mesh),
     log_mesh_(log_mesh)
 {
-  set_comm(comm);
   set_space_dimension(3);
   set_manifold_dimension(3); // mixed?
 

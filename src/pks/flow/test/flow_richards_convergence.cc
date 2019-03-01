@@ -15,7 +15,7 @@
 #include <vector>
 
 // TPLs
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 #include "Epetra_SerialComm.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -39,7 +39,7 @@ using namespace Amanzi::AmanziGeometry;
 using namespace Amanzi::Flow;
 
 void RunTestConvergence(std::string input_xml) {
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout <<"\nSteady-state Richards: convergence analysis: " << input_xml << std::endl;
 
@@ -52,7 +52,7 @@ void RunTestConvergence(std::string input_xml) {
   for (int n = 40; n < 161; n*=2) {
     Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, comm));
+        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
     
     FrameworkPreference pref;
     pref.clear();
@@ -60,11 +60,11 @@ void RunTestConvergence(std::string input_xml) {
     pref.push_back(STKMESH);
 
     MeshFactory meshfactory(comm);
-    meshfactory.preference(pref);
-    Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, -10.0, 1.0, 1.0, 0.0, 1, 1, n, gm);
+    meshfactory.set_preference(pref);
+    Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, -10.0, 1.0, 1.0, 0.0, 1, 1, n, gm);
 
     /* create and populate flow state */
-    Amanzi::VerboseObject::hide_line_prefix = false;
+    Amanzi::VerboseObject::global_hide_line_prefix = false;
 
     Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("state");
     Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
@@ -119,7 +119,7 @@ void RunTestConvergence(std::string input_xml) {
   CHECK_CLOSE(1.9, p_rate, 0.2);
   CHECK(v_rate > 1.8);
 
-  delete comm;
+  
 }
 
 /* *****************************************************************

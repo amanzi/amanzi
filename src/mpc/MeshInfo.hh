@@ -18,7 +18,7 @@
 #include "Teuchos_Array.hpp"
 
 #include "State.hh"
-#include "checkpoint.hh"
+#include "Checkpoint.hh"
 
 #include "VerboseObject.hh"
 
@@ -28,7 +28,7 @@ namespace Amanzi {
 class MeshInfo : public Checkpoint {
 
 public:
-  MeshInfo(Teuchos::ParameterList& plist, Epetra_MpiComm *comm): Checkpoint (plist, comm) {};
+  MeshInfo(Teuchos::ParameterList& plist, const Comm_ptr_type& comm): Checkpoint (plist, comm) {};
   MeshInfo() : Checkpoint() {};
 
   void WriteMeshCentroids( const AmanziMesh::Mesh& mesh );

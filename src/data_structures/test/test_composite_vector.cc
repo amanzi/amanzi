@@ -23,16 +23,16 @@ using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 
 struct test_cv {
-  Epetra_MpiComm *comm;
+  Comm_ptr_type comm;
   Teuchos::RCP<Mesh> mesh;
 
   Teuchos::RCP<CompositeVectorSpace> x_space;
   Teuchos::RCP<CompositeVector> x;
 
   test_cv() {
-    comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-    MeshFactory mesh_fact(comm);
-    mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
+    comm = getDefaultComm();
+    MeshFactory meshfactory(comm);
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
     std::vector<Entity_kind> locations(2);
     locations[0] = CELL;
@@ -51,7 +51,7 @@ struct test_cv {
         ->SetComponents(names, locations, num_dofs);
     x = Teuchos::rcp(new CompositeVector(*x_space));
   }
-  ~test_cv() { delete comm; }
+  ~test_cv() {  }
 };
 
 

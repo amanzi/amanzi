@@ -40,8 +40,8 @@ TEST(FLOW_BOUNDARY_SOLVER) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Flow;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "Test: Richards, boundary solver" << std::endl;
 
   // read parameter list
@@ -51,7 +51,7 @@ TEST(FLOW_BOUNDARY_SOLVER) {
   // create a mesh framework
   Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, &comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
 
   FrameworkPreference pref;
@@ -59,11 +59,11 @@ TEST(FLOW_BOUNDARY_SOLVER) {
   pref.push_back(MSTK);
 
   double bottom = -0.5;
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
-  // Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, bottom, 1.0, 0.0, 1, 10, gm);
-  Teuchos::RCP<const Mesh> mesh1 = meshfactory("test/hex_2x2x1-1.exo", gm);
-  Teuchos::RCP<const Mesh> mesh2 = meshfactory("test/hex_2x2x1-2.exo", gm);
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(pref);
+  // Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, bottom, 1.0, 0.0, 1, 10, gm);
+  Teuchos::RCP<const Mesh> mesh1 = meshfactory.create("test/hex_2x2x1-1.exo", gm);
+  Teuchos::RCP<const Mesh> mesh2 = meshfactory.create("test/hex_2x2x1-2.exo", gm);
 
   // // create a simple state and populate it
   Teuchos::ParameterList state_list = plist->sublist("state");

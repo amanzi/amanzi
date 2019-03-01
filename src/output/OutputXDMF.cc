@@ -131,7 +131,7 @@ OutputXDMF::ReadAttribute(std::string& val, const std::string& name) const {
 void
 OutputXDMF::Init_(Teuchos::ParameterList& plist) {
   // create and set up the HDF5_MPI object
-  io_ = Teuchos::rcp(new HDF5_MPI(*mesh_->get_comm()));
+  io_ = Teuchos::rcp(new HDF5_MPI(mesh_->get_comm()));
   io_->setTrackXdmf(is_vis_);
   io_->setDynMesh(is_dynamic_);
   

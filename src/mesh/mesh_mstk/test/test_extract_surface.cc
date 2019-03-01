@@ -5,7 +5,7 @@
 
 
 #include "Epetra_Map.h"
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_Array.hpp"
@@ -18,7 +18,7 @@
 TEST(Extract_Surface_MSTK1)
 {
 
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  auto comm = Amanzi::getDefaultComm();
 
 
   Teuchos::ParameterList parameterlist;
@@ -48,16 +48,20 @@ TEST(Extract_Surface_MSTK1)
 
   //  Teuchos::writeParameterListToXmlOStream(parameterlist,std::cout);
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm_.get()));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, *comm));
 
   // Generate a mesh consisting of 3x3x3 elements 
-  Amanzi::AmanziMesh::Mesh_MSTK mesh(0,0,0,1,1,1,3,3,3,comm_.get(),gm);
+  auto mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(0,0,0,1,1,1,3,3,3,comm,gm));
 
   std::vector<std::string> setnames;
   setnames.push_back(std::string("Top Surface"));
   setnames.push_back(std::string("Right Surface"));
 
-  Amanzi::AmanziMesh::Mesh_MSTK surfmesh(&mesh,setnames,Amanzi::AmanziMesh::FACE);
+  Amanzi::AmanziMesh::Entity_ID_List ids1, ids2;
+  mesh->get_set_entities(setnames[0], Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED, &ids1);
+  mesh->get_set_entities(setnames[1], Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED, &ids2);
+  ids1.insert(ids1.end(), ids2.begin(), ids2.end());
+  Amanzi::AmanziMesh::Mesh_MSTK surfmesh(mesh->get_comm(), mesh,ids1,Amanzi::AmanziMesh::FACE);
 
 
   // Number of cells (quadrilaterals) in surface mesh
@@ -86,7 +90,7 @@ TEST(Extract_Surface_MSTK1)
     found[k] = 0;
     for (int kk = 0; kk < ncells_surf; kk++) {
       if (exp_parent_faces[kk] == parent) {        
-        Amanzi::AmanziGeometry::Point centroid1 = mesh.face_centroid(parent);
+        Amanzi::AmanziGeometry::Point centroid1 = mesh->face_centroid(parent);
         Amanzi::AmanziGeometry::Point centroid2 = surfmesh.cell_centroid(k);
         CHECK_ARRAY_EQUAL(centroid1,centroid2,3);
         found[k]++;
@@ -105,7 +109,7 @@ TEST(Extract_Surface_MSTK1)
 TEST(Extract_Surface_MSTK2)
 {
 
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  auto comm = Amanzi::getDefaultComm();
 
 
   Teuchos::ParameterList parameterlist;
@@ -129,22 +133,22 @@ TEST(Extract_Surface_MSTK2)
 
   //  Teuchos::writeParameterListToXmlOStream(parameterlist,std::cout);
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm_.get()));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, *comm));
 
   // Generate a mesh consisting of 3x3x3 elements 
-  Amanzi::AmanziMesh::Mesh_MSTK mesh(0.0,0.0,0.0,1.0,1.0,1.0,4,4,4,comm_.get(),gm);
+  auto mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,1.0,1.0,1.0,4,4,4,comm,gm));
 
 
   // Perturb some nodes
 
-  int nv = mesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int nv = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int i = 0; i < nv; i++) {
     Amanzi::AmanziGeometry::Point pt;
-    mesh.node_get_coordinates(i,&pt);
+    mesh->node_get_coordinates(i,&pt);
     if (pt[2] == 1.0) {
       pt[2] = pt[2]+pt[0];
-      mesh.node_set_coordinates(i,pt);
+      mesh->node_set_coordinates(i,pt);
     }
   }
   
@@ -152,8 +156,11 @@ TEST(Extract_Surface_MSTK2)
   std::vector<std::string> setnames;
   setnames.push_back(std::string("Top Surface"));
 
+  Amanzi::AmanziMesh::Entity_ID_List ids1;
+  mesh->get_set_entities(setnames[0], Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED, &ids1);
+
   // Extract surface mesh while projecting to 2D
-  Amanzi::AmanziMesh::Mesh_MSTK surfmesh(&mesh,setnames,Amanzi::AmanziMesh::FACE,true,false);
+  Amanzi::AmanziMesh::Mesh_MSTK surfmesh(mesh->get_comm(), mesh,ids1,Amanzi::AmanziMesh::FACE,true,false);
 
   CHECK_EQUAL(surfmesh.space_dimension(),2);
 
@@ -182,7 +189,7 @@ TEST(Extract_Surface_MSTK2)
     found[k] = 0;
     for (int kk = 0; kk < ncells_surf; kk++) {
       if (exp_parent_faces[kk] == parent) {        
-        Amanzi::AmanziGeometry::Point centroid1 = mesh.face_centroid(parent);
+        Amanzi::AmanziGeometry::Point centroid1 = mesh->face_centroid(parent);
         Amanzi::AmanziGeometry::Point centroid2 = surfmesh.cell_centroid(k);
         CHECK_EQUAL(2,centroid2.dim());
         CHECK_CLOSE(centroid1[0],centroid1[0],1.0e-10);
@@ -205,7 +212,7 @@ TEST(Extract_Surface_MSTK3)
 
   std::string filename("test/hex_3x3x3_sets.exo");
 
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  auto comm = Amanzi::getDefaultComm();
 
   Teuchos::ParameterList parameterlist;
 
@@ -232,16 +239,19 @@ TEST(Extract_Surface_MSTK3)
   side_surface_def.set<std::string>("entity","face");
 
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm_.get()));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, *comm));
 
   // Read a mesh from the file
-  Amanzi::AmanziMesh::Mesh_MSTK mesh(filename.c_str(),comm_.get(),gm);
+  auto mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(filename.c_str(),comm,gm));
 
 
   std::vector<std::string> setnames;
   setnames.push_back(std::string("Top Surface"));
 
-  Amanzi::AmanziMesh::Mesh_MSTK surfmesh(&mesh,setnames,Amanzi::AmanziMesh::FACE);
+  Amanzi::AmanziMesh::Entity_ID_List ids1;
+  mesh->get_set_entities(setnames[0], Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED, &ids1);
+
+  Amanzi::AmanziMesh::Mesh_MSTK surfmesh(mesh->get_comm(), mesh,ids1,Amanzi::AmanziMesh::FACE);
 
 
   // Number of cells (quadrilaterals) in surface mesh
@@ -269,7 +279,7 @@ TEST(Extract_Surface_MSTK3)
     found[k] = 0;
     for (int kk = 0; kk < ncells_surf; kk++) {
       if (exp_parent_faces[kk] == parent) {        
-        Amanzi::AmanziGeometry::Point centroid1 = mesh.face_centroid(parent);
+        Amanzi::AmanziGeometry::Point centroid1 = mesh->face_centroid(parent);
         Amanzi::AmanziGeometry::Point centroid2 = surfmesh.cell_centroid(k);
         CHECK_ARRAY_EQUAL(centroid1,centroid2,3);
         found[k]++;
@@ -302,7 +312,7 @@ TEST(Extract_Surface_MSTK3)
 TEST(Extract_Surface_MSTK4)
 {
 
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  auto comm = Amanzi::getDefaultComm();
 
 
   Teuchos::ParameterList parameterlist;
@@ -338,21 +348,21 @@ TEST(Extract_Surface_MSTK4)
   top_surface2D_def.set< Teuchos::Array<double> >("normal",dir2);
 
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm_.get()));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, *comm));
 
   // Generate a mesh consisting of 3x3x3 elements 
-  Amanzi::AmanziMesh::Mesh_MSTK mesh(0.0,0.0,0.0,1.0,1.0,1.0,4,4,4,comm_.get(),gm);
+  auto mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,1.0,1.0,1.0,4,4,4,comm,gm));
 
 
   // Perturb some nodes
-  int nv = mesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::OWNED);
+  int nv = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int i = 0; i < nv; i++) {
     Amanzi::AmanziGeometry::Point pt;
-    mesh.node_get_coordinates(i,&pt);
+    mesh->node_get_coordinates(i,&pt);
     if (pt[2] == 1.0) {
       pt[2] = pt[2]+pt[0];
-      mesh.node_set_coordinates(i,pt);
+      mesh->node_set_coordinates(i,pt);
     }
   }
   
@@ -362,8 +372,10 @@ TEST(Extract_Surface_MSTK4)
   // Extract top surface mesh 
 
   setnames.push_back(std::string("Top Surface"));
+  Amanzi::AmanziMesh::Entity_ID_List ids1;
+  mesh->get_set_entities(setnames[0], Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED, &ids1);
 
-  Amanzi::AmanziMesh::Mesh_MSTK surfmesh(&mesh,setnames,Amanzi::AmanziMesh::FACE,false,false);
+  auto surfmesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(mesh->get_comm(), mesh,ids1,Amanzi::AmanziMesh::FACE,false,false));
 
 
 
@@ -371,8 +383,10 @@ TEST(Extract_Surface_MSTK4)
 
   setnames.clear();
   setnames.push_back("Whole Surface");
+  Amanzi::AmanziMesh::Entity_ID_List ids2;
+  surfmesh->get_set_entities(setnames[0], Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED, &ids2);
 
-  Amanzi::AmanziMesh::Mesh_MSTK surfmesh2D(&surfmesh,setnames,Amanzi::AmanziMesh::CELL,true,false);
+  Amanzi::AmanziMesh::Mesh_MSTK surfmesh2D(surfmesh->get_comm(), surfmesh,ids2,Amanzi::AmanziMesh::CELL,true,false);
   
 
 
@@ -403,7 +417,7 @@ TEST(Extract_Surface_MSTK4)
     found[k] = 0;
     for (int kk = 0; kk < ncells_surf2D; kk++) {
       if (exp_parent_faces[kk] == parent) {        
-        Amanzi::AmanziGeometry::Point centroid1 = surfmesh.cell_centroid(parent);
+        Amanzi::AmanziGeometry::Point centroid1 = surfmesh->cell_centroid(parent);
         Amanzi::AmanziGeometry::Point centroid2 = surfmesh2D.cell_centroid(k);
         CHECK_EQUAL(2,centroid2.dim());
         CHECK_CLOSE(centroid1[0],centroid2[0],1.0e-10);

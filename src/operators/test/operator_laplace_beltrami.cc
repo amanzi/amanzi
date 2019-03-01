@@ -42,8 +42,8 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) {
     std::cout << "\nTest: Laplace Beltrami solver: ";
@@ -59,15 +59,21 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
 
   // create a mesh
   ParameterList region_list = plist.sublist("Regions Flat");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({Framework::MSTK}));
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, gm);
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(FrameworkPreference({Framework::MSTK}));
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, gm);
   RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh);
 
   // extract a manifold mesh
-  RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(&*mesh_mstk, surfaces, AmanziMesh::FACE));
+  Entity_ID_List ids;
+  for (auto s : surfaces) {
+    Entity_ID_List ids_l;
+    mesh_mstk->get_set_entities(s, AmanziMesh::FACE, Parallel_type::ALL, &ids_l);
+    ids.insert(ids.end(), ids_l.begin(), ids_l.end());
+  }
+  RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(mesh_mstk->get_comm(), mesh_mstk, ids, AmanziMesh::FACE));
 
   int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int ncells_wghost = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);

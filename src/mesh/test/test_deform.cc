@@ -17,7 +17,7 @@
 #include <mpi.h>
 #include <iostream>
 
-#include <Epetra_MpiComm.h>
+#include <AmanziComm.hh>
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
@@ -27,9 +27,9 @@
 TEST(MESH_DEFORM2D)
 {
 
-  Epetra_MpiComm comm_(MPI_COMM_WORLD);
-  const int nproc(comm_.NumProc());
-  const int me(comm_.MyPID());
+  auto comm = Amanzi::getDefaultComm();
+  const int nproc(comm->NumProc());
+  const int me(comm->MyPID());
 
   // We are not including MOAB since Mesh_MOAB.cc does not have
   // routines for generating a mesh
@@ -68,7 +68,7 @@ TEST(MESH_DEFORM2D)
 
     // Create the mesh
 
-    Amanzi::AmanziMesh::MeshFactory factory(&comm_);
+    Amanzi::AmanziMesh::MeshFactory factory(comm);
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
     int ierr = 0;
@@ -78,9 +78,9 @@ TEST(MESH_DEFORM2D)
       prefs.clear(); 
       prefs.push_back(the_framework);
 
-      factory.preference(prefs);
+      factory.set_preference(prefs);
 
-      mesh = factory(0.0,0.0,10.0,10.0,10,10);
+      mesh = factory.create(0.0,0.0,10.0,10.0,10,10);
 
     } catch (const Amanzi::AmanziMesh::Message& e) {
       std::cerr << ": mesh error: " << e.what() << std::endl;
@@ -90,7 +90,7 @@ TEST(MESH_DEFORM2D)
       ierr++;
     }
 
-    comm_.SumAll(&ierr, &aerr, 1);
+    comm->SumAll(&ierr, &aerr, 1);
 
     CHECK_EQUAL(aerr,0);
 
@@ -144,9 +144,9 @@ TEST(MESH_DEFORM2D)
 TEST(MESH_DEFORM3D)
 {
 
-  Epetra_MpiComm comm_(MPI_COMM_WORLD);
-  const int nproc(comm_.NumProc());
-  const int me(comm_.MyPID());
+  auto comm = Amanzi::getDefaultComm();
+  const int nproc(comm->NumProc());
+  const int me(comm->MyPID());
 
   // We are not including MOAB since Mesh_MOAB.cc does not have
   // routines for generating a mesh
@@ -178,7 +178,7 @@ TEST(MESH_DEFORM3D)
 
     // Create the mesh
 
-    Amanzi::AmanziMesh::MeshFactory factory(&comm_);
+    Amanzi::AmanziMesh::MeshFactory factory(comm);
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
     int ierr = 0;
@@ -188,9 +188,9 @@ TEST(MESH_DEFORM3D)
       prefs.clear(); 
       prefs.push_back(the_framework);
 
-      factory.preference(prefs);
+      factory.set_preference(prefs);
 
-      mesh = factory(0.0,0.0,0.0,1.0,1.0,1.0,10,10,10);
+      mesh = factory.create(0.0,0.0,0.0,1.0,1.0,1.0,10,10,10);
 
     } catch (const Amanzi::AmanziMesh::Message& e) {
       std::cerr << ": mesh error: " << e.what() << std::endl;
@@ -200,7 +200,7 @@ TEST(MESH_DEFORM3D)
       ierr++;
     }
 
-    comm_.SumAll(&ierr, &aerr, 1);
+    comm->SumAll(&ierr, &aerr, 1);
 
     CHECK_EQUAL(aerr,0);
 

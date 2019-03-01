@@ -60,7 +60,7 @@ NOTE: Lazy definition of the cache itself is necessarily "mutable".
 #include <string>
 
 #include "Epetra_Map.h"
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 #include "Epetra_Import.h"
 #include "nanoflann.hpp"
 
@@ -85,43 +85,42 @@ namespace AmanziMesh {
 class MeshEmbeddedLogical;
 
 class Mesh {
- public:
-  // constructor
-  Mesh(const Teuchos::RCP<const VerboseObject>& vo=Teuchos::null,
-       const bool request_faces=true,
-       const bool request_edges=false)
-  : space_dim_(-1),
+ protected:
+  // cannot create a Mesh without type
+  Mesh(const Comm_ptr_type& comm,
+       const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+       const Teuchos::RCP<const VerboseObject>& vo,
+       const bool request_faces,
+       const bool request_edges)
+  : comm_(comm),
+    geometric_model_(gm),
+    vo_(vo),
+    faces_requested_(request_faces),
+    edges_requested_(request_edges),
+    space_dim_(-1),
     manifold_dim_(-1),
     mesh_type_(GENERAL),
     cell_geometry_precomputed_(false),
     face_geometry_precomputed_(false),
     edge_geometry_precomputed_(false),
     columns_built_(false),
-    faces_requested_(request_faces),
-    edges_requested_(request_edges),
     cell2face_info_cached_(false),
     face2cell_info_cached_(false),
     cell2edge_info_cached_(false),
     face2edge_info_cached_(false),
     parent_(Teuchos::null),
-    geometric_model_(Teuchos::null),
     logical_(false),
-    vo_(vo),
-    comm_(NULL),
     kdtree_faces_initialized_(false) {};
 
+ public:
+  
   // virtual destructor
   virtual ~Mesh() {};
 
   //
   // Accessors and Mutators
   // ----------------------
-
-  // Get/set comm_unicator
-  void set_comm(const Epetra_MpiComm *incomm) {
-    comm_ = incomm;
-  }
-  const Epetra_MpiComm* get_comm() const {
+  Comm_ptr_type get_comm() const {
     return comm_;
   }
 
@@ -864,7 +863,7 @@ protected:
   void PrintMeshStatistics() const;
 
  protected:
-  const Epetra_MpiComm *comm_;
+  Comm_ptr_type comm_;
   Teuchos::RCP<const AmanziGeometry::GeometricModel> geometric_model_;
   Teuchos::RCP<const VerboseObject> vo_;
 

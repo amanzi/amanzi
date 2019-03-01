@@ -32,9 +32,9 @@ int main(int argc, char *argv[]) {
 
   MPI_Init(&argc, &argv);
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  const int nproc(comm.NumProc());
-  const int me(comm.MyPID());
+  auto comm = Amanzi::getDefaultComm();
+  const int nproc(comm->NumProc());
+  const int me(comm->MyPID());
 
 
   std::cerr << "Testing deformation code " << std::endl;
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
     std::cerr << "error: " << e.what() << std::endl;
     ierr++;
   }
-  comm.SumAll(&ierr, &aerr, 1);
+  comm->SumAll(&ierr, &aerr, 1);
   if (aerr > 0) return 1;
   
   if (parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED)
@@ -109,17 +109,16 @@ int main(int argc, char *argv[]) {
     exit(-1);
   }
 
-  Amanzi::AmanziMesh::MeshFactory factory(&comm);
+  Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
   try {
-    Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
+    Amanzi::AmanziMesh::FrameworkPreference prefs(meshfactory.preference());
     prefs.clear(); 
     prefs.push_back(the_framework);
+    meshfactory.set_preference(prefs);
 
-    factory.preference(prefs);
-
-    mesh = factory(mesh_filename);
+    mesh = meshfactory.create(mesh_filename);
 
   } catch (const Amanzi::AmanziMesh::Message& e) {
     std::cerr << ": mesh error: " << e.what() << std::endl;
@@ -129,7 +128,7 @@ int main(int argc, char *argv[]) {
     ierr++;
   }
 
-  comm.SumAll(&ierr, &aerr, 1);
+  comm->SumAll(&ierr, &aerr, 1);
 
   if (aerr > 0) return 1;
 

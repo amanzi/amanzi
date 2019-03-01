@@ -49,8 +49,8 @@ void OperatorDiffusionDG(std::string solver_name,
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "\nTest: 2D elliptic problem, dG method, solver: " << solver_name 
                             << ", basis=" << dg_basis << std::endl;
@@ -61,11 +61,11 @@ void OperatorDiffusionDG(std::string solver_name,
   ParameterList plist = xmlreader.getParameters();
 
   // create a mesh framework
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
-  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 2);
-  RCP<const Mesh> mesh = meshfactory("test/median7x8_filtered.exo");
-  // RCP<const Mesh> mesh = meshfactory("test/triangular8_clockwise.exo");
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(FrameworkPreference({MSTK,STKMESH}));
+  // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 2);
+  RCP<const Mesh> mesh = meshfactory.create("test/median7x8_filtered.exo");
+  // RCP<const Mesh> mesh = meshfactory.create("test/triangular8_clockwise.exo");
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);

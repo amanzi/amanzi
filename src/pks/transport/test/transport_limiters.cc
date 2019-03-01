@@ -35,7 +35,7 @@ TEST(LIMITER_BARTH_JESPERSEN) {
 
   std::cout << "Test: read transport XML file" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
 #else
   Epetra_SerialComm* comm = new Epetra_SerialComm();
 #endif
@@ -47,18 +47,18 @@ TEST(LIMITER_BARTH_JESPERSEN) {
   /* create an MSTK mesh framework */
   ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   FrameworkPreference pref;
   pref.clear();
   pref.push_back(MSTK);
 
   MeshFactory factory(comm);
-  factory.preference(pref);
+  factory.set_preference(pref);
   RCP<const Mesh> mesh = factory(0.0,0.0,0.0, 1.0,1.0,1.0, 3, 4, 7, gm); 
 
   /* create a simple state and populate it */
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   std::vector<std::string> component_names;
   component_names.push_back("Component 0");
@@ -117,7 +117,7 @@ TEST(LIMITER_BARTH_JESPERSEN) {
     CHECK_CLOSE(1.0, (*limiter)[c], 1e-6);
   }
  
-  delete comm;
+  
 }
 
 

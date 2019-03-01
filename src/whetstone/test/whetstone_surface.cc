@@ -34,14 +34,14 @@ TEST(DARCY_SURFACE) {
 
   std::cout << "Test: Mass matrix for surface Darcy" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Amanzi::getCommSelf();
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  RCP<Mesh> mesh = meshfactory("test/surface.exo"); 
+  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  RCP<Mesh> mesh = meshfactory.create("test/surface.exo"); 
  
   MFD3D_Diffusion mfd(mesh);
  
@@ -87,7 +87,7 @@ TEST(DARCY_SURFACE) {
     CHECK_CLOSE(vxy, 0.0, 1e-10);
   }
 
-  delete comm;
+  
 }
 
 

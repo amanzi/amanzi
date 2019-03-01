@@ -81,7 +81,7 @@ class SolverNKA_BT_ATS : public Solver<Vector, VectorSpace> {
   }
 
  private:
-  void Init_(const Epetra_Comm& comm);
+  void Init_();
   int NKA_BT_ATS_(const Teuchos::RCP<Vector>& u);
   int NKA_ErrorControl_(double error, double previous_error, double l2_error);
 
@@ -131,7 +131,7 @@ SolverNKA_BT_ATS<Vector,VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vecto
         const VectorSpace& map)
 {
   fn_ = fn;
-  Init_(map.Comm());
+  Init_();
 
   // Allocate the NKA space
   if (use_aa_) {
@@ -141,6 +141,9 @@ SolverNKA_BT_ATS<Vector,VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vecto
     nka_ = Teuchos::rcp(new NKA_Base<Vector, VectorSpace>(nka_dim_, nka_tol_, map));
     nka_->Init(plist_);
   }
+
+  // update the verbose options
+  vo_ = Teuchos::rcp(new VerboseObject(map.Comm(), "Solver::NKA_BT_ATS", plist_));
 }
 
 
@@ -148,7 +151,7 @@ SolverNKA_BT_ATS<Vector,VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vecto
  * Initialization of the NKA solver.
  ****************************************************************** */
 template<class Vector, class VectorSpace>
-void SolverNKA_BT_ATS<Vector, VectorSpace>::Init_(const Epetra_Comm& comm)
+void SolverNKA_BT_ATS<Vector, VectorSpace>::Init_()
 {
   tol_ = plist_.get<double>("nonlinear tolerance", 1.e-6);
   overflow_tol_ = plist_.get<double>("diverged tolerance", 1.0e10);
@@ -197,9 +200,6 @@ void SolverNKA_BT_ATS<Vector, VectorSpace>::Init_(const Epetra_Comm& comm)
   }
 
   residual_ = -1.0;
-
-  // update the verbose options
-  vo_ = Teuchos::rcp(new VerboseObject(comm, "Solver::NKA_BT_ATS", plist_));
 }
 
 

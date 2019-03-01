@@ -18,7 +18,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "VaporPressure_Base.hh"
-#include "factory.hh"
+#include "Factory.hh"
 
 namespace Amanzi {
 namespace EOS {

@@ -81,7 +81,7 @@ struct Problem {
       
   {}
 
-  ~Problem() { delete comm; }
+  ~Problem() { }
 
   void Setup() {
     MakeBCs();
@@ -626,7 +626,7 @@ struct Problem {
   Teuchos::RCP<AnalyticNonlinearCoupledBase> ana;
   std::string discretization;
 
-  const Epetra_MpiComm* comm;
+  Comm_ptr_type comm;
 };
 
 
@@ -638,7 +638,7 @@ Teuchos::RCP<Problem> getProblem(const std::string& discretization,
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 
   // create a mesh
   Teuchos::RCP<Mesh> mesh =

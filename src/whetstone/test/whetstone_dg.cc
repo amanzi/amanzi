@@ -38,11 +38,11 @@ TEST(DG2D_MASS_MATRIX) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "Test: DG2D mass matrices (tensors)" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.5, 0.5, 1, 1); 
+  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.5, 0.5, 1, 1); 
 
   DenseMatrix M;
   Tensor T(2, 1);
@@ -69,7 +69,7 @@ TEST(DG2D_MASS_MATRIX) {
     }
   }
 
-  delete comm;
+  
 }
 
 
@@ -82,11 +82,11 @@ TEST(DG3D_MASS_MATRIX) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: DG3D mass matrices (tensors and polynomials)" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2,
+  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2,
                                         Teuchos::null, true, true); 
 
   DenseMatrix M0, M1;
@@ -154,7 +154,7 @@ TEST(DG3D_MASS_MATRIX) {
     }
   }
 
-  delete comm;
+  
 }
 
 
@@ -167,12 +167,12 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: DG mass matrices (polynomials)" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  Teuchos::RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo");
+  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
  
   double tmp, integral[3];
   DenseMatrix M1, M2;
@@ -221,7 +221,7 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
   CHECK_CLOSE(20.2332916667, integral[0], 1e-10);
   CHECK(integral[0] < integral[1]);
 
-  delete comm;
+  
 }
 
 
@@ -234,11 +234,11 @@ void Run2DFluxMatrix(bool upwind, bool jump_on_test) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: DG2D flux matrices: upwind=" << upwind << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 2, 2); 
+  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 2, 2); 
  
   for (int k = 0; k < 3; k++) {
     Teuchos::ParameterList plist;
@@ -284,7 +284,7 @@ void Run2DFluxMatrix(bool upwind, bool jump_on_test) {
     CHECK_CLOSE(0.0, A0.NormInf(), 1e-12);
   }
 
-  delete comm;
+  
 }
 
 TEST(DG2D_FLUX_MATRIX) {
@@ -302,11 +302,11 @@ TEST(DG2D_FLUX_MATRIX_CONSERVATION) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: DG2D flux matrices based on gauss points" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 2, 2); 
+  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 2, 2); 
  
   for (int k = 0; k < 3; k++) {
     Teuchos::ParameterList plist;
@@ -341,7 +341,7 @@ TEST(DG2D_FLUX_MATRIX_CONSERVATION) {
     CHECK_CLOSE(0.0, b(0) + b(nk / 2), 1e-12); 
   }
 
-  delete comm;
+  
 }
 
 
@@ -354,11 +354,11 @@ TEST(DG3D_FLUX_MATRIX) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: DG3D flux matrices" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2,
+  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2,
                                         Teuchos::null, true, true); 
  
   for (int k = 0; k < 2; k++) {
@@ -406,7 +406,7 @@ TEST(DG3D_FLUX_MATRIX) {
     CHECK_CLOSE(0.0, A0.NormInf(), 1e-12);
   }
 
-  delete comm;
+  
 }
 
 
@@ -419,12 +419,12 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: DG2D advection matrices in cells" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 2, 2); 
-  Teuchos::RCP<Mesh> mesh = meshfactory("test/one_quad.exo"); 
+  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 2, 2); 
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_quad.exo"); 
 
   for (int k = 0; k < 3; k++) {
     Teuchos::ParameterList plist;
@@ -529,7 +529,7 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
     CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
   }
 
-  delete comm;
+  
 }
 
  
@@ -542,11 +542,11 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: DG3D advection matrices in cells" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2,
+  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2,
                                         Teuchos::null, true, true); 
 
   int d(3);
@@ -608,7 +608,7 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
     }
   }
 
-  delete comm;
+  
 }
 
  
@@ -621,11 +621,11 @@ TEST(DG_LEAST_SQUARE_MAP_CELL) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: Least-square polynomial approximation of map in cells." << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo");
+  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
 
   // extract polygon from the mesh
   Entity_ID_List nodes;
@@ -726,7 +726,7 @@ TEST(DG_LEAST_SQUARE_MAP_CELL) {
   CHECK_CLOSE(0.0, u[0](2, 0), 1e-14);
   CHECK_CLOSE(0.0, u[0](2, 2), 1e-14);
 
-  delete comm;
+  
 }
 
 

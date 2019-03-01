@@ -30,16 +30,15 @@ namespace AmanziMesh {
 //
 // Topological constructor of a MeshLogical splits topology from geometry.
 //
-MeshLogical::MeshLogical(const Epetra_MpiComm *comm,
+MeshLogical::MeshLogical(const Comm_ptr_type& comm,
                          const std::vector<Entity_ID_List>& face_cell_ids,
                          const std::vector<AmanziGeometry::Point>& face_normals,
                          const Teuchos::RCP<const VerboseObject>& verbosity_obj)
-    : Mesh(verbosity_obj, true, false)
+    : Mesh(comm, Teuchos::null, verbosity_obj, true, false)
 {
   logical_ = true;
   AMANZI_ASSERT(face_cell_ids.size() == face_normals.size());
 
-  set_comm(comm);
   set_space_dimension(3);
   set_manifold_dimension(1);
 
@@ -125,14 +124,14 @@ MeshLogical::MeshLogical(const Epetra_MpiComm *comm,
 //
 // Breaks standards following the rest of the mesh infrastructure.
 //
-MeshLogical::MeshLogical(const Epetra_MpiComm *comm,
+MeshLogical::MeshLogical(const Comm_ptr_type& comm,
                          const std::vector<double>& cell_volumes,
                          const std::vector<Entity_ID_List>& face_cell_ids,
                          const std::vector<std::vector<double> >& face_cell_lengths,
                          const std::vector<AmanziGeometry::Point>& face_area_normals,
                          const std::vector<AmanziGeometry::Point>* cell_centroids,
                          const Teuchos::RCP<const VerboseObject>& verbosity_obj)
-: Mesh(verbosity_obj, true, false) {
+: Mesh(comm, Teuchos::null, verbosity_obj, true, false) {
 
   logical_ = true;
   
@@ -156,7 +155,6 @@ MeshLogical::MeshLogical(const Epetra_MpiComm *comm,
   }
 
   
-  set_comm(comm);
   set_space_dimension(3);
   set_manifold_dimension(1);
 

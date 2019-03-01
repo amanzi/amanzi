@@ -26,8 +26,8 @@ TEST(OBSERVABLE_LINE_SEGMENT) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "Test: Obsevable Line Segment" << std::endl;
 
@@ -39,7 +39,7 @@ TEST(OBSERVABLE_LINE_SEGMENT) {
   // create an SIMPLE mesh framework
   Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, &comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
 
   Teuchos::ParameterList well_list = regions_list.get<Teuchos::ParameterList>("Well3012").get<Teuchos::ParameterList>("region: line segment");
@@ -58,12 +58,12 @@ TEST(OBSERVABLE_LINE_SEGMENT) {
   pref.push_back(MSTK);
   pref.push_back(STKMESH);
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 10.0, 10.0, 10.0, 5, 5, 5, gm);
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(pref);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 10.0, 10.0, 10.0, 5, 5, 5, gm);
 
   /* create a simple state and populate it */
-  Amanzi::VerboseObject::hide_line_prefix = false;
+  Amanzi::VerboseObject::global_hide_line_prefix = false;
 
   Teuchos::ParameterList state_list = plist->sublist("state");
   Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));

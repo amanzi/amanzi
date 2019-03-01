@@ -41,13 +41,13 @@ TEST(DG_MAP_DETERMINANT_CELL) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: Convergence of determinant." << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 
   // create two meshes
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<Mesh> mesh0 = meshfactory("test/one_pentagon.exo");
-  Teuchos::RCP<Mesh> mesh1 = meshfactory("test/one_pentagon.exo");
+  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<Mesh> mesh0 = meshfactory.create("test/one_pentagon.exo");
+  Teuchos::RCP<Mesh> mesh1 = meshfactory.create("test/one_pentagon.exo");
 
   // deform the second mesh
   int dim(2), cell(0), nnodes(5), nfaces(5);
@@ -109,7 +109,7 @@ TEST(DG_MAP_DETERMINANT_CELL) {
     }
   }
   
-  delete comm;
+  
 }
 
 
@@ -122,13 +122,13 @@ TEST(DG_MAP_LEAST_SQUARE_CELL) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: Comparison of reconstruction." << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 
   // create two meshes
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<Mesh> mesh0 = meshfactory("test/one_pentagon.exo");
-  Teuchos::RCP<Mesh> mesh1 = meshfactory("test/one_pentagon.exo");
+  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<Mesh> mesh0 = meshfactory.create("test/one_pentagon.exo");
+  Teuchos::RCP<Mesh> mesh1 = meshfactory.create("test/one_pentagon.exo");
 
   // deform the second mesh
   int d(2), cell(0), nnodes(5), nfaces(5);
@@ -195,7 +195,7 @@ TEST(DG_MAP_LEAST_SQUARE_CELL) {
   vc1 -= vc2;
   CHECK_CLOSE(0.0, vc1.NormInf(), 1e-12);
   
-  delete comm;
+  
 }
 
 
@@ -208,12 +208,12 @@ TEST(DG_MAP_GCL) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: GCL" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 
   // create 2D mesh
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo");
+  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
 
   // create a map
   Teuchos::ParameterList plist;
@@ -273,6 +273,6 @@ TEST(DG_MAP_GCL) {
     std::cout << "Piola compatibility condition error=" << err << std::endl;
   }
 
-  delete comm;
+  
 }
 

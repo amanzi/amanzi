@@ -36,15 +36,15 @@ TEST(ELASTICITY_STIFFNESS_2D) {
 
   std::cout << "\nTest: Stiffness matrix for elasticity in 2D" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Amanzi::getCommSelf();
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo"); 
+  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
+  RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo"); 
  
   Teuchos::ParameterList plist;
   MFD3D_Elasticity mfd(plist, mesh);
@@ -112,7 +112,7 @@ TEST(ELASTICITY_STIFFNESS_2D) {
     CHECK_CLOSE(0.0, vxy, 1e-10);
   }
 
-  delete comm;
+  
 }
 
 
@@ -126,15 +126,15 @@ TEST(ELASTICITY_STIFFNESS_3D) {
 
   std::cout << "\nTest: Stiffness matrix for Elasticity in 3D" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Amanzi::getCommSelf();
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
-  RCP<Mesh> mesh = meshfactory("test/one_trapezoid.exo"); 
+  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
+  RCP<Mesh> mesh = meshfactory.create("test/one_trapezoid.exo"); 
  
   Teuchos::ParameterList plist;
   MFD3D_Elasticity mfd(plist, mesh);
@@ -180,7 +180,7 @@ TEST(ELASTICITY_STIFFNESS_3D) {
   CHECK_CLOSE(vxx, volume, 1e-10);
   CHECK_CLOSE(vxy, 0.0, 1e-10);
 
-  delete comm;
+  
 }
 
 
