@@ -349,8 +349,10 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
     // io = Teuchos::rcp(new OutputXDMF(iolist, mesh1, true, false));
     io->InitializeCycle(t, iloop + 1);
     io->WriteVector(*p2c(0), "solution");
-    io->WriteVector(*p2c(1), "gradx");
-    io->WriteVector(*p2c(2), "grady");
+    if (order > 0) {
+      io->WriteVector(*p2c(1), "gradx");
+      io->WriteVector(*p2c(2), "grady");
+    }
     if (order > 1) {
       io->WriteVector(*p2c(3), "hesxx");
       io->WriteVector(*p2c(4), "hesxy");
