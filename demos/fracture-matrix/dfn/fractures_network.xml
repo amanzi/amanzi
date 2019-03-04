@@ -1,0 +1,158 @@
+<amanzi_input type="unstructured" version="2.3.0">
+  <model_description name="flow and transport in fractures">
+    <author>Konstantin Lipnikov</author>
+    <units>
+      <length_unit>m</length_unit>
+      <time_unit>s</time_unit>
+      <mass_unit>kg</mass_unit>
+      <conc_unit>molar</conc_unit>
+    </units>
+    <constants>
+      <numerical_constant name="X0" value="-0.5"/>
+      <numerical_constant name="Y0" value="-0.5"/>
+      <numerical_constant name="Z0" value="-0.5"/>
+
+      <numerical_constant name="X1" value="0.5"/>
+      <numerical_constant name="Y1" value="0.5"/>
+      <numerical_constant name="Z1" value="0.5"/>
+    </constants>
+  </model_description>
+
+  <definitions>
+    <macros>
+      <time_macro name="Steady State">
+        <time>0.0</time>
+      </time_macro>
+      <cycle_macro name="Every2Cycles">
+        <start>0</start>
+        <timestep_interval>2</timestep_interval>
+      </cycle_macro>
+    </macros>
+  </definitions>
+
+  <process_kernels>
+    <flow model="saturated" state="on" />
+    <transport state="on" />
+    <chemistry engine="none" state="off" />
+  </process_kernels>
+
+  <phases>
+    <liquid_phase name="water">
+      <eos>false</eos>
+      <viscosity>1.002E-03</viscosity>
+      <density>998.2</density>
+      <dissolved_components>
+        <solutes>
+          <solute coefficient_of_diffusion="1.0e-9">Tc-99</solute>
+        </solutes>
+      </dissolved_components>
+    </liquid_phase>
+  </phases>
+
+  <execution_controls>
+    <verbosity level="high" />
+    <execution_control_defaults method="bdf1" mode="steady" />
+    <execution_control end="0.0" init_dt="10.0 min" method="bdf1" mode="steady" start="0.0" />
+    <execution_control end="6 d" init_dt="10.0 min" max_dt="2 h" method="bdf1" mode="transient" start="0.0" />
+  </execution_controls>
+
+  <numerical_controls>
+    <unstructured_controls>
+      <unstr_steady-state_controls>
+        <unstr_initialization>
+          <method>darcy_solver</method>
+          <linear_solver>aztecoo</linear_solver>
+        </unstr_initialization>
+      </unstr_steady-state_controls>
+      <unstr_linear_solver>
+        <method>pcg</method>
+        <max_iterations>20</max_iterations>
+        <tolerance>1.0e-14</tolerance>
+      </unstr_linear_solver>
+      <unstr_transport_controls>
+        <algorithm>explicit first-order</algorithm>
+        <sub_cycling>on</sub_cycling>
+        <cfl>1</cfl>
+      </unstr_transport_controls>
+      <unstr_preconditioners>
+        <hypre_amg />
+      </unstr_preconditioners>
+    </unstructured_controls>
+  </numerical_controls>
+
+  <mesh framework="mstk">
+    <dimension>3</dimension>
+    <read>
+      <file>full_mesh.exo</file>
+      <format>exodus ii</format>
+    </read>
+  </mesh>
+
+  <regions>
+    <region name="Entire Domain">
+      <box high_coordinates="X0, Y0, Z0" low_coordinates="X1, Y1, Z1"/>
+    </region>
+    <region name="Left side">
+      <box low_coordinates="X0, Y0, Z0" high_coordinates="X0, Y1, Z1"/>
+    </region>
+    <region name="Right side">
+      <box low_coordinates="X1, Y0, Z0" high_coordinates="X1, Y1, Z1"/>
+    </region>
+  </regions>
+
+  <materials>
+    <material name="Homogeneous">
+      <mechanical_properties>
+        <porosity value="0.25" />
+      </mechanical_properties>
+      <permeability x="1.1847e-14" y="1.1847e-14" z="1.1847e-14" />
+      <fracture_permeability model="cubic law" aperture="1e-6" />
+      <assigned_regions>Entire Domain</assigned_regions>
+    </material>
+  </materials>
+
+  <initial_conditions>
+    <initial_condition name="Initial Condition">
+      <assigned_regions>Entire Domain</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure value="101325.0" />
+        </liquid_component>
+        <solute_component>
+          <aqueous_conc name="Tc-99" value="0.0"/>
+        </solute_component> 
+      </liquid_phase>
+    </initial_condition>
+  </initial_conditions>
+
+  <boundary_conditions>
+    <boundary_condition name="Left side">
+      <assigned_regions>Left side</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <hydrostatic function="constant" start="0.0" value="1.0" />
+        </liquid_component>
+        <solute_component>
+          <aqueous_conc name="Tc-99" value="1.0" function="constant" start="0.0"/>
+        </solute_component> 
+      </liquid_phase>
+    </boundary_condition>
+    <boundary_condition name="Right side">
+      <assigned_regions>Right side</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <hydrostatic function="constant" start="0.0" value="0.0" />
+        </liquid_component>
+      </liquid_phase>
+    </boundary_condition>
+  </boundary_conditions>
+
+  <output>
+    <vis>
+      <base_filename>plot</base_filename>
+      <num_digits>5</num_digits>
+      <cycle_macros>Every2Cycles</cycle_macros>
+    </vis>
+  </output>
+</amanzi_input>
+  
