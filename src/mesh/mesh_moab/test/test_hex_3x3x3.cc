@@ -21,9 +21,9 @@ TEST(MOAB_HEX_3x3x3)
   int NF = 108;
   int NC = 27;
 
-  std::shared_ptr<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  auto comm = Amanzi::getDefaultComm();
 
-  AmanziMesh::Mesh_MOAB mesh("test/hex_3x3x3_ss.exo",comm_.get());
+  AmanziMesh::Mesh_MOAB mesh("test/hex_3x3x3_ss.exo",comm);
 
   nf = mesh.num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(NF, nf);

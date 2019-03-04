@@ -343,6 +343,8 @@ struct FrameworkTraits {
 
   // this defines a type, there constructor of which is used to
   // instantiate a mesh when it's generated
+  //
+  // note MOAB does not generate
   typedef mpl::eval_if<
     mpl::bool_<M == Simple>
     , mpl::identity<Mesh_simple>
@@ -359,6 +361,8 @@ struct FrameworkTraits {
 
   // this defines a type, there constructor of which is used to
   // instantiate a mesh when it's read from a file or file set
+  //
+  // note SIMPLE does not generate
   typedef mpl::eval_if<
     mpl::bool_<M == MOAB>
     , mpl::identity<Mesh_MOAB>
@@ -374,24 +378,11 @@ struct FrameworkTraits {
     > read_mesh;
   
   // this defines a type, there constructor of which is used to
-  // instantiate a mesh from entity sets in another mesh 
-  typedef mpl::eval_if<
-    mpl::bool_<M == Simple>
-    , mpl::identity<Mesh_simple>
-    , mpl::eval_if<
-        mpl::bool_<M == MOAB>
-        , mpl::identity<Mesh_MOAB>
-        , mpl::eval_if<
-            mpl::bool_<M == STKMESH>
-            , mpl::identity<Mesh_STK>
-            , mpl::eval_if<
-                mpl::bool_<M == MSTK>
-                , mpl::identity<Mesh_MSTK>
-                , mpl::identity<bogus_mesh>
-                >
-            >
-        >
-    > extract_mesh;
+  // instantiate a mesh from entity sets in another mesh
+  //
+  // note only MSTK extracts
+  typedef mpl::eval_if<mpl::bool_<M == MSTK>, mpl::identity<Mesh_MSTK>,
+                       mpl::identity<bogus_mesh> >extract_mesh;
 
   
   // -------------------------------------------------------------

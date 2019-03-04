@@ -30,7 +30,7 @@ TEST(MOAB_HEX_3x3x3_4P)
   int NFghost[4] = {36,49,49,68};
   int NCghost[4] = {9,12,12,15};
 
-  std::shared_ptr<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD));			      
+  auto comm = Amanzi::getDefaultComm();			      
 
   int rank, size;
 
@@ -45,7 +45,7 @@ TEST(MOAB_HEX_3x3x3_4P)
 
   // Load a single hex from the hex1.exo file
 
-  AmanziMesh::Mesh_MOAB mesh("test/hex_3x3x3_ss_4P.h5m", comm.get());
+  AmanziMesh::Mesh_MOAB mesh("test/hex_3x3x3_ss_4P.h5m", comm);
 
   nv = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);  
   CHECK_EQUAL(NVowned[rank], nv);

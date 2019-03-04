@@ -36,10 +36,10 @@ TEST(MOAB_HEX1)
 				  {4,5,7,6}};
 
 
-  std::shared_ptr<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  auto comm = Amanzi::getDefaultComm();
 
   // Load a single hex-mesh
-  Amanzi::AmanziMesh::Mesh_MOAB mesh("test/hex_1x1x1_ss.exo",comm_.get());
+  Amanzi::AmanziMesh::Mesh_MOAB mesh("test/hex_1x1x1_ss.exo",comm);
 
   // Check number of nodes and their coordinates
   nv = mesh.num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);

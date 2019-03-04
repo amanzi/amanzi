@@ -55,21 +55,6 @@ class Mesh_MOAB : public Mesh {
             const bool request_faces = true,
             const bool request_edges = false);
 
-  // Construct a mesh by extracting a subset of entities from another
-  // mesh. The subset may be specified by a setname or a list of
-  // entities. In some cases like extracting a surface mesh from a
-  // volume mesh, constructor can be asked to "flatten" the mesh to a
-  // lower dimensional space or to extrude the mesh to give higher
-  // dimensional cells
-  Mesh_MOAB(const Comm_ptr_type& comm,
-            const Teuchos::RCP<const Mesh>& parent_mesh,
-            const Entity_ID_List& entity_ids, 
-            const Entity_kind entity_kind,
-            const bool flatten = false,
-            const bool extrude = false,
-            const bool request_faces = true,
-            const bool request_edges = false);
-
   ~Mesh_MOAB();
   
   void update();

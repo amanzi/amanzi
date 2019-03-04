@@ -12,6 +12,9 @@
 #include "dbc.hh"
 #include "errors.hh"
 
+#include "RegionLabeledSet.hh"
+#include "RegionPoint.hh"
+#include "RegionLogical.hh"
 #include "Mesh_MOAB.hh"
 
 using namespace moab;
@@ -45,14 +48,15 @@ Mesh_MOAB::Mesh_MOAB(const std::string& filename,
 
   if (comm_.get()) {
     auto mpi_comm = Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm_);
+    if (mpi_comm.get()) {    
+      // MOAB's parallel communicator
+      int mbcomm_id;
+      mbcomm_ = Teuchos::rcp(new ParallelComm(mbcore, mpi_comm->GetMpiComm(), &mbcomm_id));
 
-    // MOAB's parallel communicator
-    int mbcomm_id;
-    mbcomm_ = Teuchos::rcp(new ParallelComm(mbcore, mpi_comm->GetMpiComm(), &mbcomm_id));
-
-    if (!mbcomm_.get()) {
-      std::cerr << "Failed to initialize MOAB comm_unicator\n";
-      AMANZI_ASSERT(mbcomm_ == 0);
+      if (!mbcomm_.get()) {
+        Errors::Message message("Failed to initialize MOAB communicator");
+        Exceptions::amanzi_throw(message);
+      }
     }
   }
 
@@ -77,7 +81,7 @@ Mesh_MOAB::Mesh_MOAB(const std::string& filename,
     // that we are dealing with 3D meshes only
 
     result = mbcore->load_file(
-        filename, NULL,
+        filename.c_str(), NULL,
         "PARALLEL=READ_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;PARALLEL_GHOSTS=3.0.1.2",
         NULL, NULL, 0);
       
@@ -86,7 +90,7 @@ Mesh_MOAB::Mesh_MOAB(const std::string& filename,
   else {
     // Load serial mesh
     int block_id_list(1);
-    result = mbcore->load_file(filename, 0, 0, NULL, NULL, 0);
+    result = mbcore->load_file(filename.c_str(), 0, 0, NULL, NULL, 0);
 
     rank = 0;
   }
@@ -159,20 +163,6 @@ Mesh_MOAB::Mesh_MOAB(const std::string& filename,
 }
 
 
-Mesh_MOAB::Mesh_MOAB(const Comm_ptr_type& comm,
-            const Teuchos::RCP<const Mesh>& parent_mesh,
-            const Entity_ID_List& entity_ids, 
-            const Entity_kind entity_kind,
-            const bool flatten = false,
-            const bool extrude = false,
-            const bool request_faces = true,
-            const bool request_edges = false)
-{  
-  Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the MOAB mesh framework\n");
-  Exceptions::amanzi_throw(mesg);
-}
-
-
 //--------------------------------------------------------------------
 // Clean up 
 //--------------------------------------------------------------------
@@ -188,7 +178,6 @@ Mesh_MOAB::~Mesh_MOAB() {
   delete [] setids_;
   delete [] setdims_;
   delete [] faceflip;
-  delete mbcore;
 }
 
 
@@ -1489,7 +1478,6 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
   bool found(false);
   int celldim = Mesh::manifold_dimension();
   int space_dim_ = Mesh::space_dimension();
-  const Epetra_Comm *epcomm_ = get_comm();
 
   AMANZI_ASSERT(setents != NULL);
   
@@ -1577,7 +1565,7 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
 #ifdef DEBUG
   int nent_glob;
 
-  epcomm_->SumAll(&nent_loc, &nent_glob, 1);
+  get_comm()->SumAll(&nent_loc, &nent_glob, 1);
   if (nent_glob == 0) {
     std::stringstream mesg_stream;
     mesg_stream << "Could not retrieve any mesh entities for set " << setname << std::endl;
@@ -1635,7 +1623,7 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
   // Check if there were no entities left on any processor after
   // extracting the appropriate category of entities 
 #ifdef DEBUG
-  epcomm_->SumAll(&nent_loc, &nent_glob, 1);
+  get_comm()->SumAll(&nent_loc, &nent_glob, 1);
   
   if (nent_glob == 0) {
     std::stringstream mesg_stream;
@@ -1818,7 +1806,6 @@ void Mesh_MOAB::init_cell_map()
 {
   int *cell_gids;
   int ncell, result;
-  const Epetra_Comm *epcomm_ = Mesh::get_comm();
 
   if (!serial_run) {
     // For parallel runs create map without and with ghost cells included
@@ -1829,14 +1816,14 @@ void Mesh_MOAB::init_cell_map()
     ErrorCheck_(result, "Problem getting tag data");
     ncell = OwnedCells.size();
     
-    cell_map_wo_ghosts_ = new Epetra_Map(-1, ncell, cell_gids, 0, *epcomm_);
+    cell_map_wo_ghosts_ = new Epetra_Map(-1, ncell, cell_gids, 0, *get_comm());
     
     result = mbcore->tag_get_data(gid_tag, GhostCells, &(cell_gids[ncell]));
     ErrorCheck_(result, "Problem getting tag data");
     
     ncell += GhostCells.size();
 
-    cell_map_w_ghosts_ = new Epetra_Map(-1, ncell, cell_gids, 0, *epcomm_);
+    cell_map_w_ghosts_ = new Epetra_Map(-1, ncell, cell_gids, 0, *get_comm());
   }
   else {
     cell_gids = new int[AllCells.size()];
@@ -1845,7 +1832,7 @@ void Mesh_MOAB::init_cell_map()
     ErrorCheck_(result, "Problem getting tag data");
 
     ncell = AllCells.size();
-    cell_map_wo_ghosts_ = new Epetra_Map(-1, ncell, cell_gids, 0, *epcomm_);
+    cell_map_wo_ghosts_ = new Epetra_Map(-1, ncell, cell_gids, 0, *get_comm());
   }
 
   delete [] cell_gids;
@@ -1860,7 +1847,6 @@ void Mesh_MOAB::init_face_map()
 {
   int *face_gids, *extface_gids;
   int nface, result;
-  const Epetra_Comm *epcomm_ = Mesh::get_comm();
 
   if (!serial_run) {
     // For parallel runs create map without and with ghost cells included
@@ -1874,13 +1860,13 @@ void Mesh_MOAB::init_face_map()
     ErrorCheck_(result, "Problem getting tag data");
 
     nface = nowned;
-    face_map_wo_ghosts_ = new Epetra_Map(-1, nface, face_gids, 0, *epcomm_);
+    face_map_wo_ghosts_ = new Epetra_Map(-1, nface, face_gids, 0, *get_comm());
 
     result = mbcore->tag_get_data(gid_tag, NotOwnedFaces, &(face_gids[nface]));
     ErrorCheck_(result, "Problem getting tag data");
     
     nface += nnotowned;
-    face_map_w_ghosts_ = new Epetra_Map(-1, nface, face_gids, 0, *epcomm_);
+    face_map_w_ghosts_ = new Epetra_Map(-1, nface, face_gids, 0, *get_comm());
 
     // domain boundary faces: owned
     int n_extface_owned, n_extface = 0;
@@ -1897,7 +1883,7 @@ void Mesh_MOAB::init_face_map()
       if (f == nowned - 1) n_extface_owned = n_extface;
     }
 
-    extface_map_wo_ghosts_ = new Epetra_Map(-1, n_extface_owned, extface_gids, 0, *epcomm_);
+    extface_map_wo_ghosts_ = new Epetra_Map(-1, n_extface_owned, extface_gids, 0, *get_comm());
 
     // domain boundary faces: owned + ghost. We filter out incorrect ghost faces
     int n_extface_notowned = n_extface - n_extface_owned;
@@ -1910,7 +1896,7 @@ void Mesh_MOAB::init_face_map()
         extface_gids[n_extface++] = extface_gids[n_extface_owned + k];
     }
 
-    extface_map_w_ghosts_ = new Epetra_Map(-1, n_extface, extface_gids, 0, *epcomm_);
+    extface_map_w_ghosts_ = new Epetra_Map(-1, n_extface, extface_gids, 0, *get_comm());
   }
   else {
     // all faces
@@ -1920,7 +1906,7 @@ void Mesh_MOAB::init_face_map()
     result = mbcore->tag_get_data(gid_tag, AllFaces, face_gids);
     ErrorCheck_(result, "Problem getting tag data");
 
-    face_map_wo_ghosts_ = new Epetra_Map(-1, nface, face_gids, 0, *epcomm_);
+    face_map_wo_ghosts_ = new Epetra_Map(-1, nface, face_gids, 0, *get_comm());
 
     // boundary faces
     int n_extface = 0;
@@ -1933,7 +1919,7 @@ void Mesh_MOAB::init_face_map()
         extface_gids[++n_extface] = face_gids[f];
     }
 
-    extface_map_wo_ghosts_ = new Epetra_Map(-1, n_extface, extface_gids, 0, *epcomm_);
+    extface_map_wo_ghosts_ = new Epetra_Map(-1, n_extface, extface_gids, 0, *get_comm());
   }
 
   delete [] face_gids;
@@ -1949,7 +1935,6 @@ void Mesh_MOAB::init_node_map()
 {
   int *vert_gids;
   int nvert, result;
-  const Epetra_Comm *epcomm_ = Mesh::get_comm();
 
   if (!serial_run) {
     // For parallel runs create map without and with ghost verts included
@@ -1961,14 +1946,14 @@ void Mesh_MOAB::init_node_map()
 
     nvert = OwnedVerts.size();
     
-    node_map_wo_ghosts_ = new Epetra_Map(-1, nvert, vert_gids, 0, *epcomm_);
+    node_map_wo_ghosts_ = new Epetra_Map(-1, nvert, vert_gids, 0, *get_comm());
     
     result = mbcore->tag_get_data(gid_tag, NotOwnedVerts, &(vert_gids[nvert]));
     ErrorCheck_(result, "Problem getting tag data");
     
     nvert += NotOwnedVerts.size();
 
-    node_map_w_ghosts_ = new Epetra_Map(-1, nvert, vert_gids, 0, *epcomm_);
+    node_map_w_ghosts_ = new Epetra_Map(-1, nvert, vert_gids, 0, *get_comm());
   }
   else {
     vert_gids = new int[AllVerts.size()];
@@ -1977,7 +1962,7 @@ void Mesh_MOAB::init_node_map()
     ErrorCheck_(result, "Problem getting tag data");
 
     nvert = AllVerts.size();
-    node_map_wo_ghosts_ = new Epetra_Map(-1, nvert, vert_gids, 0, *epcomm_);
+    node_map_wo_ghosts_ = new Epetra_Map(-1, nvert, vert_gids, 0, *get_comm());
   }
 
   delete [] vert_gids;
