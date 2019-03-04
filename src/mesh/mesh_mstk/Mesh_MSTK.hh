@@ -94,14 +94,6 @@ class Mesh_MSTK : public Mesh {
 	    const bool request_edges = false);
 
   Mesh_MSTK(const Mesh& inmesh,
-            const std::vector<std::string>& setnames,
-            const Entity_kind entity_kind,
-            const bool flatten = false,
-            const bool extrude = false,
-	    const bool request_faces = true,
-	    const bool request_edges = false);
-
-  Mesh_MSTK(const Mesh& inmesh,
             const std::vector<int>& entity_list,
             const Entity_kind entity_kind,
             const bool flatten = false,
