@@ -61,6 +61,8 @@ cmake_archive_file=cmake-${cmake_version}.tar.gz
 # Build configuration
 parallel_jobs=2
 build_type=Release
+trilinos_build_type=Release
+tpls_build_type=Release
 
 # Compiler definitions
 build_c_compiler=
@@ -453,6 +455,8 @@ Link Flags
 
 Build configuration:
     build_type          ='"${build_type}"'
+    tpls_build_type     ='"${tpls_build_type}"'
+    trilinos_build_type ='"${trilinos_build_type}"'
     tpl_config_file     ='"${tpl_config_file}"'
     parallel            ='"${parallel_jobs}"'
     shared              ='"${shared}"'
@@ -522,12 +526,30 @@ function parse_argv()
       --opt)
                  build_type=Release
                  ;;
+      --opt_tpls)
+                 tpls_build_type=Release
+                 ;;
+      --opt_trilinos)
+                 trilinos_build_type=Release
+                 ;;
 
       --relwithdebinfo)
                  build_type=RelWithDebInfo
                  ;;
+      --relwithdebinfo_tpls)
+                 tpls_build_type=RelWithDebInfo
+                 ;;
+      --relwithdebinfo_trilinos)
+                 trilinos_build_type=RelWithDebInfo
+                 ;;
       --debug)
                  build_type=Debug
+                 ;;
+      --debug_tpls)
+                 tpls_build_type=Debug
+                 ;;
+      --debug_trilinos)
+                 trilinos_build_type=Debug
                  ;;
       --dry_run)
                  dry_run=${TRUE}
@@ -1345,7 +1367,7 @@ if [ ! -n "${mpi_root_dir}" ]; then
       -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
       -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
       -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
-      -DCMAKE_BUILD_TYPE:STRING=${build_type} \
+      -DCMAKE_BUILD_TYPE:STRING=${tpls_build_type} \
       -DCMAKE_C_COMPILER:FILEPATH=${build_c_compiler} \
       -DCMAKE_CXX_COMPILER:FILEPATH=${build_cxx_compiler} \
       -DCMAKE_Fortran_COMPILER:FILEPATH=${build_fort_compiler} \
@@ -1432,7 +1454,8 @@ if [ -z "${tpl_config_file}" ]; then
       -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
       -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
       -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
-      -DCMAKE_BUILD_TYPE:STRING=${build_type} \
+      -DCMAKE_BUILD_TYPE:STRING=${tpls_build_type} \
+      -DTRILINOS_BUILD_TYPE:STRING=${trilinos_build_type} \
       -DCMAKE_C_COMPILER:FILEPATH=${build_c_compiler} \
       -DCMAKE_CXX_COMPILER:FILEPATH=${build_cxx_compiler} \
       -DCMAKE_Fortran_COMPILER:FILEPATH=${build_fort_compiler} \
