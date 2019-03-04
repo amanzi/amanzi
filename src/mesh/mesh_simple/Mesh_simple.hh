@@ -48,29 +48,6 @@ class Mesh_simple : public virtual Mesh {
               const bool request_faces = true,
               const bool request_edges = false);
   
-  Mesh_simple(double x0, double y0,
-              double x1, double y1,
-              int nx, int ny,
-              const Comm_ptr_type& comm,
-              const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
-              const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
-              const bool request_faces = true,
-              const bool request_edges = false);
-
-  // Construct a mesh by extracting a subset of entities from another
-  // mesh. In some cases like extracting a surface mesh from a volume
-  // mesh, constructor can be asked to "flatten" the mesh to a lower
-  // dimensional space or to extrude the mesh to give higher
-  // dimensional cells
-
-  Mesh_simple(const Comm_ptr_type& comm,
-              const Teuchos::RCP<const Mesh>& inmesh, 
-              const std::vector<int>& entity_id_list, 
-              const Entity_kind entity_kind,
-              const bool flatten = false,
-              const bool extrude = false,
-              const bool request_faces = true,
-              const bool request_edges = false);
 
   virtual ~Mesh_simple() = default;  
   void update();

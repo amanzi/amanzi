@@ -1,36 +1,23 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-// -------------------------------------------------------------
-// file: MeshFileType.cc
-// -------------------------------------------------------------
-/**
- * @file   MeshFileType.cc
- * @author William A. Perkins
- * @date Thu Jul 28 14:16:00 2011
- * 
- * @brief  
- * 
- * 
- */
-// -------------------------------------------------------------
-// Created March 11, 2011 by William A. Perkins
-// Last Change: Thu Jul 28 14:16:00 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
-// -------------------------------------------------------------
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-static const char* SCCS_ID = "$Id$ Battelle PNL";
+  Authors: William Perkins, others
+*/
+
+//! Utility functions for working with various file formats and names.
 
 #include <regex>
+#include <fstream>
 
 #define BOOST_FILESYSTEM_NO_DEPRECATED
 #include <boost/filesystem.hpp>
-namespace bfs = boost::filesystem;
-
 #include <boost/format.hpp>
+using bfs = boost::filesystem;
 
-
-#include <fstream>
-
-#include "MeshFileType.hh"
-#include "MeshException.hh"
+#include "FileFormat.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -47,15 +34,18 @@ static const std::regex NemesisExt(".*\\.par$");
 // -------------------------------------------------------------
 // file_format_name
 // -------------------------------------------------------------
-std::string file_format_name(const Format& f)
+std::string fileFormatName(const FileFormat f)
 {
   std::string result;
   switch (f) {
-  case UnknownFormat:
+  case FileFormat::UNKNOWN:
   default:
     result = "Unknown";
     break;
-  case ExodusII:
+  case EXODUS_II:
+    result = "ExodusII";
+    break;
+  case NEMESIS:
     result = "ExodusII";
     break;
   case MOABHDF5:
@@ -68,53 +58,48 @@ std::string file_format_name(const Format& f)
 // -------------------------------------------------------------
 // file_format
 // -------------------------------------------------------------
-/** 
- * Collective
- *
- * This routine identifies the format of the mesh file specified by @c name.  
- *
- * Currently, this is very stupid.  Format is basically only
- * determined by file name extension, as follows: 
- *
- *   - @c .exo is ::ExodusII
- *   - @c .par.N.i is ::Nemesis, where N is # cpu and i is this process id
- *   - @c .h5m is ::MOABHDF5
- * 
- * This routine also makes sure the specified file is there and is readable.
- *
- * In parallel, all processes should perform this check, even if
- * it's only one file.
- *
- * If the file exists and can be opened, this routine returns a
- * Format. If anything goes wrong, a FileMessage is thrown.
- * 
- * @param name name of file to check
- * 
- * @return format type identifier (::UnknownFormat if something goes wrong)
+/*
+ Collective
+
+ This routine identifies the format of the mesh file specified by @c name.  
+
+ Currently, this is very stupid.  Format is basically only
+ determined by file name extension, as follows: 
+
+   - .exo is ::ExodusII
+   - .par.N.i is ::Nemesis, where N is # cpu and i is this process id
+   - .h5m is ::MOABHDF5
+ 
+ This routine also makes sure the specified file is there and is readable.
+
+ In parallel, all processes should perform this check, even if
+ it's only one file.
+
+ If the file exists and can be opened, this routine returns a
+ Format. If anything goes wrong, an exception is thrown.
  */
-Format file_format(const Epetra_Comm& comm_, const char *name) 
+FileFormat fileFormatFromFilename(const Comm_type& comm, std::string fname) 
 {
   const int np(comm_.NumProc());
   const int me(comm_.MyPID());
 
   // take a guess at the format using the file name
-  std::string fname(name);
-  Format result(UnknownFormat);
+  auto result = FileFormat::UNKNOWN;
 
   if (std::regex_match(fname, ExodusExt)) {
-    result = ExodusII;
+    result = FileFormat::EXODUS_II;
   } else if (std::regex_match(fname, HDF5Ext)) {
-    result = MOABHDF5;
+    result = MOAB_HDF5;
   } else if (std::regex_match(fname, NemesisExt)) {
-    result = Nemesis;
+    result = NEMESIS;
     int ndigits = (int)floor(log10(np)) + 1;
     std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
     fname = boost::str(boost::format(fmt) % 
-                       name % comm_.NumProc() % comm_.MyPID());
+                       name % np % me);
   }
 
   // check to see if there is actually a file first
-  FileMessage e(fname.c_str());
+  Errors::Message e(fname.c_str());
   bfs::path p(fname);
   if (!bfs::exists(p)) {
     e.add_data(": path not found");
@@ -165,7 +150,7 @@ Format file_format(const Epetra_Comm& comm_, const char *name)
     break;
   }
   if (!ok) {
-    amanzi_throw(e);
+    Exceptions::amanzi_throw(e);
   }
 
   return result;

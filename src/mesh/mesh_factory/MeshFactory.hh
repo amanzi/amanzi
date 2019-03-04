@@ -13,114 +13,142 @@
 
 #include <string>
 #include <vector>
-#include "AmanziComm.hh"
+
 #include "Teuchos_RCPDecl.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "MeshException.hh"
+#include "AmanziTypes.hh"
 #include "MeshFramework.hh"
-#include "Mesh.hh"
-
-#include "GeometricModel.hh"
 
 namespace Amanzi {
+
+namespace AmanziGeometry {
+class GeometricModel;
+}
+
 namespace AmanziMesh {
+class Mesh;
+
+
 
 // -------------------------------------------------------------
 //  class MeshFactory
 // -------------------------------------------------------------
 class MeshFactory {
+ public:
+  
+  // Constructor.
+  explicit MeshFactory(const Comm_ptr_type& comm, 
+                       const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm=Teuchos::null, 
+                       const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null);
+
+  // undefined copy constructor to avoid unwanted copies
+  MeshFactory(MeshFactory& old) = delete;
+  
+  // Destructor
+  ~MeshFactory() = default;
+
+  // Get/set the framework preference, an ordered list of available frameworks.
+  //
+  // During construction, the first framework that provides the needed
+  // capability is used (except in extraction -- see that documentation).  
+  const FrameworkPreference& preference() const { return preference_; }
+  void set_preference(const FrameworkPreference& pref);
+
+  // Get/set the geometric model
+  //
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> geometric_model() const {
+    return geometric_model_; }
+  void set_geometric_model(const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm);
+
+  // Creation methods
+  
+  // Create a mesh by reading the specified file (or set of files)
+  Teuchos::RCP<Mesh> create(const std::string& filename,
+                            const bool request_faces=true,
+                            const bool request_edges=false);
+
+  // Generate a mesh from parameters in a list
+  Teuchos::RCP<Mesh> create(const Teuchos::ParameterList& gen_plist,
+                            const bool request_faces=true,
+                            const bool request_edges=false);
+  
+  // Generate a hex mesh (3D)
+  //
+  // Generates a structured mesh covering [x0,x1] X [y0,y1] X [z0,z1] with
+  // (nx, ny, nz) cells.
+  Teuchos::RCP<Mesh> create(const double x0, const double y0, const double z0,
+                            const double x1, const double y1, const double z1,
+                            const int nx, const int ny, const int nz,
+                            const bool request_faces=true,
+                            const bool request_edges=false);
+                            
+    
+  // Generate a quad mesh (2D)
+  //
+  // Generates a structured mesh covering [x0,x1] X [y0,y1] with (nx, ny)
+  // cells.
+  Teuchos::RCP<Mesh> create(const double x0, const double y0,
+                            const double x1, const double y1,
+                            const int nx, const int ny,
+                            const bool request_faces=true,
+                            const bool request_edges=false);
+
+  // Extract a mesh from another mesh and a collection of entities
+  //
+  // Lifts setids of type setkind from the parent mesh and makes a new mesh
+  // out of those entities (and their closure).  If parent_mesh is 3D and
+  // setkind is FACE, the mesh may be flattened to form a 2D mesh.
+  //  
+  // Note that preference is ignored here in favor of the type of parent_mesh.
+  // Frameworks that extract often need to assume the parent_mesh is the same
+  // type as the constructed mesh in order to use internal information.  Note
+  // this could likely be relaxed, but is easiest to require for now.
+  Teuchos::RCP<Mesh> create(const Teuchos::RCP<const Mesh>& parent_mesh,
+                            const Entity_ID_List& setids,
+                            const Entity_kind setkind,
+                            const bool flatten=false,
+                            const bool request_faces=true,
+                            const bool request_edges=false);
+                            
+  
+  // Extract a mesh from another mesh and a set in that mesh.
+  //
+  // Lifts setids of type setkind from the parent mesh's sets named in
+  // setnames and make a new mesh out of those entities (and their closure).
+  // If parent_mesh is 3D and setkind is FACE, the mesh may be flattened to
+  // form a 2D mesh.
+  //
+  // Note that preference is ignored here in favor of the type of parent_mesh.
+  // Frameworks that extract often need to assume the parent_mesh is the same
+  // type as the constructed mesh in order to use internal information.  Note
+  // this could likely be relaxed, but is easiest to require for now.
+  Teuchos::RCP<Mesh> create(const Teuchos::RCP<const Mesh>& parent_mesh,
+                            const std::vector<std::string>& setnames,
+                            const Entity_kind setkind,
+                            const bool flatten=false,
+                            const bool request_faces=true,
+                            const bool request_edges=false);
+  
  protected:
 
   // The parallel environment
   Comm_ptr_type comm_;
 
   // A list of preferred mesh frameworks to consider
-  FrameworkPreference my_preference;
+  FrameworkPreference preference_;
 
- private:
-
-  // private, undefined copy constructor to avoid unwanted copies
-  MeshFactory(MeshFactory& old);
-
-  // Object encoding the level of verbosity and output stream for
-  // diagnostic messages
-
+  // Object encoding the level of verbosity and output stream for diagnostic
+  // messages, other control parameters that are NOT about construction.
   Teuchos::RCP<const Teuchos::ParameterList> plist_;
 
- public:
+  // The geometric model describing the space within which the mesh lives
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm_;
 
-  // Default constructor.
-  explicit MeshFactory(const Comm_ptr_type& comm, 
-                       const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null);
+  // Topological entities to keep within the framework.
+  bool request_faces_;
+  bool request_edges_;
 
-  // Destructor
-  ~MeshFactory() = default;
-
-  // Get the framework preference
-  const FrameworkPreference& preference(void) const
-  { return my_preference; }
-
-  // Set the framework preference
-  void set_preference(const FrameworkPreference& pref);
-
-  // Create a mesh by reading the specified file (or set of files)
-  Teuchos::RCP<Mesh> create(const std::string& filename, 
-                            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null, 
-                            const bool request_faces = true,
-                            const bool request_edges = false);
-
-  // Generate a mesh from parameters
-  Teuchos::RCP<Mesh> create(Teuchos::ParameterList& gen_plist,
-                            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null, 
-                            const bool request_faces = true,
-                            const bool request_edges = false);
-
-  
-
-  // Create a hexahedral mesh of the specified dimensions
-  Teuchos::RCP<Mesh> create(double x0, double y0, double z0,
-                            double x1, double y1, double z1,
-                            int nx, int ny, int nz, 
-                            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null, 
-                            const bool request_faces = true,
-                            const bool request_edges = false);
-
-    
-  // Create a quadrilateral mesh of the specified dimensions
-  Teuchos::RCP<Mesh> create(double x0, double y0,
-                            double x1, double y1,
-                            int nx, int ny,
-                            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null, 
-                            const bool request_faces = true,
-                            const bool request_edges = false);
-
-  /*    
-  // Create a quadrilateral/hexahedral mesh using the specified parameter list
-  Teuchos::RCP<Mesh> create(Teuchos::ParameterList& parameter_list, 
-                            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null, 
-                            const bool request_faces = true,
-                            const bool request_edges = false);
-  */
-
-  // Create a mesh by extract subsets of entities from an existing mesh
-  Teuchos::RCP<Mesh> create(const Teuchos::RCP<const Mesh>& parent_mesh,
-                            const Entity_ID_List& setids,
-                            const Entity_kind setkind,
-                            const bool flatten = false,
-                            const bool extrude = false,
-                            const bool request_faces = true,
-                            const bool request_edges = false);
-
-  // Create a mesh by extract subsets of entities from an existing mesh
-  Teuchos::RCP<Mesh> create(const Teuchos::RCP<const Mesh>& parent_mesh,
-                            const std::vector<std::string>& setnames,
-                            const Entity_kind setkind,
-                            const bool flatten = false,
-                            const bool extrude = false,
-                            const bool request_faces = true,
-                            const bool request_edges = false);
-  
 };
 
 } // namespace AmanziMesh

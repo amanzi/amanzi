@@ -27,9 +27,8 @@
 #include "MBParallelConventions.h"
 #include "ParallelComm.hpp"
 
-#include "Epetra_Map.h"
 #include "AmanziComm.hh"
-#include "Epetra_SerialComm.h"
+#include "Epetra_Map.h"
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"

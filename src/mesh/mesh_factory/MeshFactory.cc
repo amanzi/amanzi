@@ -78,7 +78,6 @@ MeshFactory::set_preference(const FrameworkPreference& pref)
  */
 Teuchos::RCP<Mesh> 
 MeshFactory::create(const std::string& filename, 
-                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                     const bool request_faces, 
                     const bool request_edges)
 {
@@ -86,40 +85,20 @@ MeshFactory::create(const std::string& filename,
   Format fmt = file_format(*comm_, filename);
 
   if (fmt == UnknownFormat) {
-    FileMessage 
-        e(boost::str(boost::format("%s: unknown file format") %
-                     filename).c_str());
+    FileMessage e(boost::str(boost::format("%s: unknown file format") % filename).c_str());
     Exceptions::amanzi_throw(e);
   }
       
-  Message e("MeshFactory::create: error: ");
-  int ierr[1], aerr[1];
-  ierr[0] = 0;
-  aerr[0] = 0;
-
-  Teuchos::RCP<Mesh> result;
-  for (FrameworkPreference::const_iterator i = my_preference.begin(); 
-       i != my_preference.end(); i++) {
-    if (framework_reads(*i, fmt, comm_->NumProc() > 1)) {
-      try {
-        result = framework_read(comm_, *i, filename, gm, plist_,
-                                request_faces, request_edges);
-        return result;
-      } catch (const Message& msg) {
-        ierr[0] += 1;
-        e.add_data(msg.what());
-      } catch (const std::exception& stde) {
-        ierr[0] += 1;
-        e.add_data("internal error: ");
-        e.add_data(stde.what());
-      }
-      comm_->SumAll(ierr, aerr, 1);
-      if (aerr[0] > 0) Exceptions::amanzi_throw(e);
-    }
+  for (auto p : preference_) {
+    int nproc;
+    comm_->NumProc(&nproc);
+    auto mesh_ptr = construct<Mesh_type<p> >(reads<p,nproc>(), filename, comm_, gm_,
+            plist_, request_faces, request_edges);
+    if (mesh_ptr != Teuchos::null) return mesh_ptr;
   }
-  e.add_data(boost::str(boost::format("%s: unable to read mesh file") %
-                        filename).c_str());
-  Exceptions::amanzi_throw(e);
+
+  Message m("No construct was found in preferences that is available and can read.");
+  Errors::amanzi_throw(m);
   return Teuchos::null;
 }
 
@@ -144,63 +123,24 @@ MeshFactory::create(const std::string& filename,
  * @return mesh instance
  */
 Teuchos::RCP<Mesh> 
-MeshFactory::create(double x0, double y0, double z0,
-                    double x1, double y1, double z1,
-                    int nx, int ny, int nz, 
-                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+MeshFactory::create(const double x0, const double y0, const double z0,
+                    const double x1, const double y1, const double z1,
+                    const int nx, const int ny, const int nz, 
                     const bool request_faces, 
                     const bool request_edges)
 {
-  Teuchos::RCP<Mesh> result;
-  Message e("MeshFactory::create: error: ");
-  int ierr[1], aerr[1];
-  ierr[0] = 0;
-  aerr[0] = 0;
-
-  unsigned int dim = 3;
-
-  if (nx <= 0 || ny <= 0 || nz <= 0) {
-    ierr[0] += 1;
-    e.add_data(boost::str(boost::format("invalid mesh cells requested: %d x %d x %d") %
-                          nx % ny % nz).c_str());
+  for (auto p : preference_) {
+    int nproc;
+    comm_->NumProc(&nproc);
+    auto mesh_ptr = construct<Mesh_type<p> >(generates<p,nproc,3>(),
+            x0, y0, z0, x1, y1, z1, nx, ny, nz, comm_, gm_, plist_, request_faces, request_edges);
+    if (mesh_ptr != Teuchos::null) return mesh_ptr;
   }
-  comm_->SumAll(ierr, aerr, 1);
-  if (aerr[0] > 0) Exceptions::amanzi_throw(e);
 
-  if (x1 - x0 <= 0.0 || y1 - y0 <= 0.0 || z1 - z0 <= 0.0) {
-    ierr[0] += 1;
-    e.add_data(boost::str(boost::format("invalid mesh dimensions requested: %.6g x %.6g x %.6g") %
-                          (x1 - x0) % (y1 - y0) % (z1 - z0)).c_str());
-  }
-  comm_->SumAll(ierr, aerr, 1);
-  if (aerr[0] > 0) Exceptions::amanzi_throw(e);
-      
-  for (FrameworkPreference::const_iterator i = my_preference.begin(); 
-       i != my_preference.end(); i++) {
-    if (framework_generates(*i, comm_->NumProc() > 1, dim)) {
-      try {
-        result = framework_generate(comm_, *i, 
-                                    x0, y0, z0, x1, y1, z1, 
-                                    nx, ny, nz,
-                                    gm, plist_,
-                                    request_faces, request_edges);
-        return result;
-      } catch (const Message& msg) {
-        ierr[0] += 1;
-        e.add_data(msg.what());
-      } catch (const std::exception& stde) {
-        ierr[0] += 1;
-        e.add_data("internal error: ");
-        e.add_data(stde.what());
-      }
-      comm_->SumAll(ierr, aerr, 1);
-      if (aerr[0] > 0) Exceptions::amanzi_throw(e);
-    }
-  }
-  e.add_data("unable to generate 3D mesh");
-  Exceptions::amanzi_throw(e);
+  Errors::amanzi_throw(Message("No construct was found in preferences that is available and can read."));
   return Teuchos::null;
 }
+
 
 /** 
  * Coellective
@@ -220,60 +160,22 @@ MeshFactory::create(double x0, double y0, double z0,
  * @return mesh instance
  */
 Teuchos::RCP<Mesh> 
-MeshFactory::create(double x0, double y0,
-                    double x1, double y1,
-                    int nx, int ny,
+MeshFactory::create(const double x0, const double y0,
+                    const double x1, const double y1,
+                    const int nx, const int ny,
                     const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                     const bool request_faces, 
                     const bool request_edges)
 {
-  Teuchos::RCP<Mesh> result;
-  Message e("MeshFactory::create: error: ");
-  int ierr[1], aerr[1];
-  ierr[0] = 0;
-  aerr[0] = 0;
-
-  unsigned int dim = 2;
-
-  if (nx <= 0 || ny <= 0) {
-    ierr[0] += 1;
-    e.add_data(boost::str(boost::format("invalid mesh cells requested: %d x %d") %
-                          nx % ny).c_str());
+  for (auto p : preference_) {
+    int nproc;
+    comm_->NumProc(&nproc);
+    auto mesh_ptr = construct<Mesh_type<p> >(generates<p,nproc,2>(),
+            x0, y0, x1, y1, nx, ny, comm_, gm_, plist_, request_faces, request_edges);
+    if (mesh_ptr != Teuchos::null) return mesh_ptr;
   }
-  comm_->SumAll(ierr, aerr, 1);
-  if (aerr[0] > 0) Exceptions::amanzi_throw(e);
 
-  if (x1 - x0 <= 0.0 || y1 - y0 <= 0.0) {
-    ierr[0] += 1;
-    e.add_data(boost::str(boost::format("invalid mesh dimensions requested: %.6g x %.6g") %
-                          (x1 - x0) % (y1 - y0)).c_str());
-  }
-  comm_->SumAll(ierr, aerr, 1);
-  if (aerr[0] > 0) Exceptions::amanzi_throw(e);
-      
-  for (auto i = my_preference.begin(); i != my_preference.end(); i++) {
-    if (framework_generates(*i, comm_->NumProc() > 1, dim)) {
-      try {
-        result = framework_generate(comm_, *i, 
-                                    x0, y0, x1, y1,
-                                    nx, ny,
-                                    gm, plist_,
-                                    request_faces, request_edges);
-        return result;
-      } catch (const Message& msg) {
-        ierr[0] += 1;
-        e.add_data(msg.what());
-      } catch (const std::exception& stde) {
-        ierr[0] += 1;
-        e.add_data("internal error: ");
-        e.add_data(stde.what());
-      }
-      comm_->SumAll(ierr, aerr, 1);
-      if (aerr[0] > 0) Exceptions::amanzi_throw(e);
-    }
-  }
-  e.add_data("unable to generate 2D mesh");
-  Exceptions::amanzi_throw(e);
+  Errors::amanzi_throw(Message("No construct was found in preferences that is available and can read."));
   return Teuchos::null;
 }
 
@@ -356,37 +258,20 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
                     const bool request_faces, 
                     const bool request_edges)
 {
-  Teuchos::RCP<Mesh> result;
-  Message e("MeshFactory::create: error: ");
-  int ierr[1], aerr[1];
-  ierr[0] = 0;
-  aerr[0] = 0;
+  for (auto p : preference_) {
+    int nproc;
+    comm_->NumProc(&nproc);
+    Teuchos::RCP<Mesh> result;
 
-  int dim = inmesh->manifold_dimension();
-
-  for (FrameworkPreference::const_iterator i = my_preference.begin(); 
-       i != my_preference.end(); i++) {
-    if (framework_extracts(*i, comm_->NumProc() > 1, dim)) {
-      try {
-        result = framework_extract(comm_, *i, inmesh, setids, setkind, 
-                                   flatten, extrude,
-                                   request_faces, request_edges);
-        return result;
-      } catch (const Message& msg) {
-        ierr[0] += 1;
-        e.add_data(msg.what());
-      } catch (const std::exception& stde) {
-        ierr[0] += 1;
-        e.add_data("internal error: ");
-        e.add_data(stde.what());
-      }
-      comm_->SumAll(ierr, aerr, 1);
-      if (aerr[0] > 0) Exceptions::amanzi_throw(e);
-    }
+    result = construct<Mesh_type<p> >(extracts<p,nproc>(),
+            comm_, inmesh, setids, setkind, flatten, extrude, request_faces, request_edges);
+               
+    if (mesh_ptr != Teuchos::null) return mesh_ptr;
   }
-  e.add_data("unable to extract mesh");
-  Exceptions::amanzi_throw(e);
+
+  Errors::amanzi_throw(Message("No construct was found in preferences that is available and can read."));
   return Teuchos::null;
+}
 }
 
 /** 
