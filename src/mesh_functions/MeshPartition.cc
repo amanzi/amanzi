@@ -172,7 +172,8 @@ void MeshPartition::Verify() const
 
   for (AmanziMesh::Entity_ID id = 0; id < map_->MyLength(); id++) {
     if ((*map_)[id] == default_value_) {
-      Errors::Message msg("MeshPartition regions do not cover the mesh.");
+      Errors::Message msg("The following mesh partition regions do not cover the mesh:");
+      for (auto it = regions_.begin(); it != regions_.end(); ++it) msg << " " << *it;
       Exceptions::amanzi_throw(msg);
     }
   }

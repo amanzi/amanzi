@@ -380,6 +380,7 @@
   </ParameterList>
   <ParameterList name="PKs">
     <ParameterList name="Flow Steady">
+      <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="Richards problem">
         <ParameterList name="physical models and assumptions">
           <Parameter name="water content model" type="string" value="constant density"/>
@@ -744,6 +745,7 @@
       <Parameter name="number of gaseous components" type="int" value="0"/>
     </ParameterList>
     <ParameterList name="flow">
+      <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="Richards problem">
         <ParameterList name="physical models and assumptions">
           <Parameter name="water content model" type="string" value="constant density"/>

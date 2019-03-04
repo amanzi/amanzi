@@ -670,6 +670,8 @@ void Darcy_PK::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
 ****************************************************************** */
 void Darcy_PK::FractureConservationLaw_()
 {
+  if (!S_->HasField("fracture-darcy_flux_fracture")) return;
+
   AmanziMesh::Entity_ID_List faces, cells;
   std::vector<int> dirs;
 

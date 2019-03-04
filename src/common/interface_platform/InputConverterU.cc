@@ -77,7 +77,8 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   out_list.sublist("analysis") = CreateAnalysis_();
   FilterEmptySublists_(out_list);
 
-  // post-processing (may go away)
+  // post-processing (some may go away)
+  FinalizeMPC_PKs_(out_list);
   MergeInitialConditionsLists_(out_list);
 
   // miscalleneous cross-list information

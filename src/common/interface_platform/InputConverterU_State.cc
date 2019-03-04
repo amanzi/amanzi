@@ -259,6 +259,38 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
     }
   }
 
+  // optional fracture network
+  node = GetUniqueElementByTagsString_("fracture_network, materials", flag);
+  if (flag) {
+    children = node->getChildNodes();
+
+    for (int i = 0; i < children->getLength(); i++) {
+      DOMNode* inode = children->item(i);
+      if (DOMNode::ELEMENT_NODE != inode->getNodeType()) continue;
+
+      node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
+      std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
+      std::string reg_str = CreateNameFromVector_(regions);
+
+      // material properties
+      // -- porosity
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
+      if (flag) {
+        TranslateFieldEvaluator_(node, "fracture-porosity", "-", reg_str, regions, out_ic, out_ev);
+      }
+
+      // -- aperture
+      node = GetUniqueElementByTagsString_(inode, "fracture_permeability", flag);
+      if (flag) {
+        TranslateFieldEvaluator_(node, "fracture-aperture", "m", reg_str, regions, out_ic, out_ev, "aperture");
+        TranslateFieldIC_(node, "fracture-normal_permeability", "-", reg_str, regions, out_ic, out_ev, "normal");
+      } else { 
+        msg << "fracture_permeability element must be specified for all materials in fracture network.";
+        Exceptions::amanzi_throw(msg);
+      }
+    }
+  }
+
   // initialization of fields via the initial_conditions list
   node_list = doc_->getElementsByTagName(mm.transcode("initial_conditions"));
   int nchildren(0);
@@ -527,7 +559,8 @@ void InputConverterU::TranslateFieldEvaluator_(
 void InputConverterU::TranslateFieldIC_(
     DOMNode* node, std::string field, std::string unit,
     const std::string& reg_str, const std::vector<std::string>& regions,
-    Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev)
+    Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev,
+    std::string data_key)
 {
   std::string type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
   if (type == "file") {
@@ -535,7 +568,7 @@ void InputConverterU::TranslateFieldIC_(
     Teuchos::ParameterList& field_ic = out_ic.sublist(field);
     field_ic.set<std::string>("restart file", filename);
   } else {
-    double val = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
+    double val = GetAttributeValueD_(node, data_key.c_str(), TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
 
     Teuchos::ParameterList& field_ic = out_ic.sublist(field);
     field_ic.sublist("function").sublist(reg_str)

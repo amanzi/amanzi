@@ -113,16 +113,17 @@ class InputConverterU : public InputConverter {
   void TranslateFieldIC_(
       DOMNode* node, std::string field, std::string unit,
       const std::string& reg_str, const std::vector<std::string>& regions,
-      Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev);
+      Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev,
+      std::string data_key = "value");
 
   // -- flow
-  Teuchos::ParameterList TranslateFlow_(const std::string& mode);
+  Teuchos::ParameterList TranslateFlow_(const std::string& mode, const std::string& domain);
   Teuchos::ParameterList TranslateWRM_();
   Teuchos::ParameterList TranslatePOM_();
   Teuchos::ParameterList TranslateFlowMSM_();
-  Teuchos::ParameterList TranslateFlowBCs_();
+  Teuchos::ParameterList TranslateFlowBCs_(const std::string& domain);
   Teuchos::ParameterList TranslateFlowSources_();
-  Teuchos::ParameterList TranslateFlowFractures_();
+  Teuchos::ParameterList TranslateFlowFractures_(const std::string& domain);
 
   // -- transport
   Teuchos::ParameterList TranslateTransport_();
@@ -150,10 +151,16 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateEnergy_();
   Teuchos::ParameterList TranslateEnergyBCs_();
 
+  // -- mpc pks
+  bool coupled_flow_;
+  std::vector<std::string> fracture_regions_;
+
   void ProcessMacros_(const std::string& prefix, char* text_content,
                       Teuchos::ParameterList& mPL, Teuchos::ParameterList& outPL);
 
   void RegisterPKsList_(Teuchos::ParameterList& pk_tree, Teuchos::ParameterList& pks_list);
+
+  void FinalizeMPC_PKs_(Teuchos::ParameterList& glist);
 
   Teuchos::ParameterList CreateAnalysis_();
   Teuchos::ParameterList CreateRegionAll_();

@@ -624,6 +624,11 @@ Mesh_MSTK::Mesh_MSTK(const Mesh *inmesh,
                     flatten, extrude, request_faces, request_edges);
 
   List_Delete(src_ents);
+
+  if (vo_.get() && vo_->os_OK(Teuchos::VERB_HIGH)) {
+    *(vo_->os()) << "\nExtracting a lower-dimensional mesh\n";
+    PrintMeshStatistics();
+  }
 }
 
 
@@ -2927,8 +2932,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
     else if (region->type() == AmanziGeometry::LABELEDSET) {
       // Just retrieve and return the set
 
-      Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
-          Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(region);
+      auto lsrgn = Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(region);
       std::string label = lsrgn->label();
       std::string entity_type = lsrgn->entity_str();
 
@@ -3345,7 +3349,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
                                           std::vector<double> *vofs) const
 {
   int idx, i, lid;
-  MSet_ptr mset(NULL), mset1(NULL);
+  MSet_ptr mset(NULL), mset1(NULL), mset2(NULL);
   MEntity_ptr ment;
   bool found(false);
   int celldim = Mesh::manifold_dimension();
@@ -3383,110 +3387,150 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
   // If region is of type labeled set and a mesh set should have been
   // initialized from the input file
   
-  if (rgn->type() == AmanziGeometry::LABELEDSET)
-    {
-      Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
-          Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
-      std::string label = lsrgn->label();
-      std::string entity_type = lsrgn->entity_str();
+  if (rgn->type() == AmanziGeometry::LABELEDSET && parent_mesh != NULL) {
+    auto lsrgn = Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
+    std::string label = lsrgn->label();
+    std::string entity_type = lsrgn->entity_str();
 
-      if ((kind == CELL && entity_type != "CELL") ||
-          (kind == FACE && entity_type != "FACE") ||
-          (kind == NODE && entity_type != "NODE"))
-        {
-          if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
-            *(verbobj->os()) << "Found labeled set region named " << setname 
-                             << " but it contains entities of type " << entity_type 
-                             << ", not the requested type\n";
-          }
-        } 
-      else {
-        mset1 = MESH_MSetByName(mesh,internal_name.c_str());
-      
-        if (!mset1 && kind == CELL) {
-          // Since both element blocks and cell sets are referenced
-          // with the region type 'Labeled Set' and Entity kind 'Cell'
-          // we have to account for both possibilities. NOTE: THIS
-          // MEANS THAT IF AN ELEMENT BLOCK AND ELEMENT SET HAVE THE
-          // SAME ID, ONLY THE ELEMENT BLOCK WILL GET PICKED UP - WE
-          // CHECKED FOR THIS IN BUILD SET
+    if (kind == CELL && entity_type != "FACE") {
+      if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+        *(verbobj->os()) << "Found labeled set region \"" << setname 
+                         << "\" but it contains entities of type " << entity_type 
+                         << ", not the requested type\n";
+      }
+    } 
+    else {
+      mset1 = MESH_MSetByName(mesh,internal_name.c_str());
+      if (!mset1) {
+        // Build set on a fly. This should be moved to build_set().
+        int ival;
+        double rval;
+        void *pval = nullptr;
+        MAttrib_ptr att = (manifold_dimension() == 3) ? rparentatt : fparentatt;
 
-          std::string internal_name2 = other_internal_name_of_set(rgn,kind);
-          mset1 = MESH_MSetByName(mesh,internal_name2.c_str());
+        std::string internal_parent_name = internal_name_of_set(rgn,FACE);
+        mset2 = MESH_MSetByName(parent_mesh->mesh,internal_parent_name.c_str());
+        mset1 = MSet_New(mesh,internal_name.c_str(),MREGION);
+
+        for (int c = 0; c < num_entities(CELL, Parallel_type::ALL); ++c) {
+          auto ment = cell_id_to_handle[c];
+          MEnt_Get_AttVal(ment,att,&ival,&rval,&pval);
+          if (MSet_Locate(mset2, pval) >= 0) MSet_Add(mset1, ment);
         }
+      }
 
-        /// Due to the parallel partitioning its possible that this
-        /// set is not on this processor
-      
-        if (!mset1) {
-          if (epcomm_->NumProc() == 1) {
-            Errors::Message msg;
-            msg << "Could not find labeled set \"" << label 
-                << "\" in mesh file to initialize mesh set \"" << setname 
-                << "\". Verify mesh file.";
-            amanzi_throw(msg);
-          }
+      // Due to the parallel partitioning its possible that this
+      // set is not on this processor
+
+      if (!mset1) {
+        if (epcomm_->NumProc() == 1) {
+          Errors::Message msg;
+          msg << "Could not find labeled set \"" << label 
+              << "\" in mesh file to initialize mesh set \"" << setname 
+              << "\". Verify mesh file.";
+          amanzi_throw(msg);
         }
       }
     }
+  }
+  else if (rgn->type() == AmanziGeometry::LABELEDSET) {
+    auto lsrgn = Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
+    std::string label = lsrgn->label();
+    std::string entity_type = lsrgn->entity_str();
 
-  else if ((rgn->type() == AmanziGeometry::BOX_VOF) || 
-           (rgn->type() == AmanziGeometry::LINE_SEGMENT))
-    {
-      // Call routine from the base class and exit.
-      Mesh::get_set_entities_box_vofs_(rgn, kind, ptype, setents, vofs);
-      return;
-    }
-  else
-    {
-      // Modify region/set name by prefixing it with the type of
-      // entity requested
-
+    if ((kind == CELL && entity_type != "CELL") ||
+        (kind == FACE && entity_type != "FACE") ||
+        (kind == NODE && entity_type != "NODE")) {
+      if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
+        *(verbobj->os()) << "Found labeled set region \"" << setname 
+                         << "\" but it contains entities of type " << entity_type 
+                         << ", not the requested type\n";
+      }
+    } 
+    else {
       mset1 = MESH_MSetByName(mesh,internal_name.c_str());
+      
+      if (!mset1 && kind == CELL) {
+        // Since both element blocks and cell sets are referenced
+        // with the region type 'Labeled Set' and Entity kind 'Cell'
+        // we have to account for both possibilities. NOTE: THIS
+        // MEANS THAT IF AN ELEMENT BLOCK AND ELEMENT SET HAVE THE
+        // SAME ID, ONLY THE ELEMENT BLOCK WILL GET PICKED UP - WE
+        // CHECKED FOR THIS IN BUILD SET
 
-      // Make sure we retrieved a mesh set with the right kind of entities
+        std::string internal_name2 = other_internal_name_of_set(rgn,kind);
+        mset1 = MESH_MSetByName(mesh,internal_name2.c_str());
+      }
 
-      MType entdim;
-
-      switch (kind)
-        {
-        case CELL:
-          if (celldim == 3)
-            entdim = MREGION;
-          else if (celldim == 2)
-            entdim = MFACE;
-          break;
-        case FACE:
-          if (celldim == 3)
-            entdim = MFACE;
-          else if (celldim == 2)
-            entdim = MEDGE;
-          break;
-        case NODE:
-          entdim = MVERTEX;
-          break;
-          default:
-          entdim = MUNKNOWNTYPE;
+      // Due to the parallel partitioning its possible that this
+      // set is not on this processor
+      
+      if (!mset1) {
+        if (epcomm_->NumProc() == 1) {
+          Errors::Message msg;
+          msg << "Could not find labeled set \"" << label 
+              << "\" in mesh file to initialize mesh set \"" << setname 
+              << "\". Verify mesh file.";
+          amanzi_throw(msg);
         }
-
-      // If not, can we find a mesh set with the right name and right
-      // kind of entities
-
-      char setname1[256];
-
-      if (mset1 && MSet_EntDim(mset1) != entdim) 
-        {
-          idx = 0;
-          while ((mset1 = MESH_Next_MSet(mesh,&idx))) 
-            {
-              MSet_Name(mset1,setname1);
-              
-              if (MSet_EntDim(mset1) == entdim &&
-                  strcmp(setname1,internal_name.c_str()) == 0)
-                break;
-            }
-        }
+      }
     }
+  }
+  else if ((rgn->type() == AmanziGeometry::BOX_VOF) || 
+           (rgn->type() == AmanziGeometry::LINE_SEGMENT)) {
+    // Call routine from the base class and exit.
+    Mesh::get_set_entities_box_vofs_(rgn, kind, ptype, setents, vofs);
+    return;
+  }
+  else {
+    // Modify region/set name by prefixing it with the type of
+    // entity requested
+
+    mset1 = MESH_MSetByName(mesh,internal_name.c_str());
+
+    // Make sure we retrieved a mesh set with the right kind of entities
+
+    MType entdim;
+
+    switch (kind) {
+    case CELL:
+      if (celldim == 3)
+        entdim = MREGION;
+      else if (celldim == 2)
+        entdim = MFACE;
+      break;
+
+    case FACE:
+      if (celldim == 3)
+        entdim = MFACE;
+      else if (celldim == 2)
+        entdim = MEDGE;
+      break;
+
+    case NODE:
+      entdim = MVERTEX;
+      break;
+
+    default:
+      entdim = MUNKNOWNTYPE;
+    }
+
+    // If not, can we find a mesh set with the right name and right
+    // kind of entities
+
+    char setname1[256];
+
+    if (mset1 && MSet_EntDim(mset1) != entdim) {
+      idx = 0;
+      while ((mset1 = MESH_Next_MSet(mesh,&idx))) {
+        MSet_Name(mset1,setname1);
+              
+        if (MSet_EntDim(mset1) == entdim &&
+            strcmp(setname1,internal_name.c_str()) == 0)
+          break;
+      }
+    }
+  }
 
   // All attempts to find the set failed so it must not exist - build it
 
@@ -3513,8 +3557,8 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
   
   setents->resize(nent_loc);
   Entity_ID_List::iterator it = setents->begin();
-  if (nent_loc) {
 
+  if (nent_loc) {
     nent_loc = 0; // reset and count to get the real number
 
     switch (ptype) {

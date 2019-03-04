@@ -154,15 +154,9 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
     col_pos = 0;
   }
 
-
   const std::vector<int>& cell_row_inds = map.GhostIndices(cell_name_row, row_pos);
   const std::vector<int>& cell_col_inds = map.GhostIndices(cell_name_col, col_pos);
 
-
-  
-  //for (auto s : cell_row_inds) std::cout<<s<<" "; std::cout<<"\n";
-  //for (auto s : cell_col_inds) std::cout<<s<<" "; std::cout<<"\n";  
-  
   int ierr(0);
   AmanziMesh::Entity_ID_List cells;
   for (int f = 0; f != nfaces_owned; ++f) {
@@ -176,7 +170,7 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
 
     ierr |= graph.InsertMyIndices(ncells, lid_r, ncells, lid_c);
   }
-  std::cout<<"\n";
+
   AMANZI_ASSERT(!ierr);
 }
 

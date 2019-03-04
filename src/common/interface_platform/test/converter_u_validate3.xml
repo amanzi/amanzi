@@ -310,6 +310,7 @@
 
   <ParameterList name="PKs">
     <ParameterList name="Flow Steady">
+      <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="Darcy problem">
         <ParameterList name="absolute permeability">
           <Parameter name="coordinate system" type="string" value="cartesian"/>
@@ -466,6 +467,7 @@
       <Parameter name="master PK index" type="int" value="0"/>
     </ParameterList>
     <ParameterList name="flow">
+      <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="Darcy problem">
         <ParameterList name="absolute permeability">
           <Parameter name="coordinate system" type="string" value="cartesian"/>

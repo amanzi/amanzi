@@ -1050,6 +1050,7 @@ framework_extracts(const Framework& f, const bool& parallel, const unsigned int&
       Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
     }
   }
+
   return result;
 }
 
@@ -1102,6 +1103,9 @@ framework_extract(const Epetra_MpiComm *comm_, const Framework& f,
       Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
     }
   }
+
+  result->PrintMeshStatistics();
+
   return result;
 }
 
@@ -1155,6 +1159,9 @@ framework_extract(const Epetra_MpiComm *comm_, const Framework& f,
       Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
     }
   }
+
+  result->PrintMeshStatistics();
+
   return result;
 }
 

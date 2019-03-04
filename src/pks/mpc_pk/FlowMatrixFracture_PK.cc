@@ -185,7 +185,6 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
       oplist, cvs_matrix, cvs_fracture, inds_matrix, inds_fracture));
   op_coupling01->Setup(values, -1.0);
   op_coupling01->UpdateMatrices(Teuchos::null, Teuchos::null);
-  
 
   auto op_coupling10 = Teuchos::rcp(new Operators::PDE_CouplingFlux(
       oplist, cvs_fracture, cvs_matrix, inds_fracture, inds_matrix));
