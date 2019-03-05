@@ -35,12 +35,12 @@ XERCES_CPP_NAMESPACE_USE
 /* ******************************************************************
 * Create transport list.
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateTransport_()
+Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& domain)
 {
   Teuchos::ParameterList out_list;
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-    *vo_->os() << "Translating transport" << std::endl;
+    *vo_->os() << "Translating transport, domain=" << domain << std::endl;
 
   MemoryManager mm;
 
@@ -48,6 +48,9 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   DOMNodeList *node_list, *children;
   DOMNode* node;
   DOMElement* element;
+
+  // create header
+  out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
 
   // process CFL number
   bool flag;
@@ -137,7 +140,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   bool dispersion = doc_->getElementsByTagName(mm.transcode("dispersion_tensor"))->getLength() > 0;
 
   // create dispersion list
-  if (dispersion) {
+  if (dispersion && domain == "matrix") {
     node_list = doc_->getElementsByTagName(mm.transcode("materials"));
 
     Teuchos::ParameterList& mat_list = out_list.sublist("material properties");

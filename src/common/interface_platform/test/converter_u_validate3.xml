@@ -618,6 +618,8 @@
     </ParameterList>
 
     <ParameterList name="transport">
+      <Parameter name="domain name" type="string" value="domain"/>
+
       <Parameter name="spatial discretization order" type="int" value="1"/>
       <Parameter name="temporal discretization order" type="int" value="1"/>
       <Parameter name="cfl" type="double" value="1.0e+00"/>

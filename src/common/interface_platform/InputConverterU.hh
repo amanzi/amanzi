@@ -126,7 +126,7 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateFlowFractures_(const std::string& domain);
 
   // -- transport
-  Teuchos::ParameterList TranslateTransport_();
+  Teuchos::ParameterList TranslateTransport_(const std::string& domain);
   Teuchos::ParameterList TranslateTransportMSM_();
   Teuchos::ParameterList TranslateTransportBCs_();
   void TranslateTransportBCsGroup_(
@@ -152,7 +152,7 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateEnergyBCs_();
 
   // -- mpc pks
-  bool coupled_flow_;
+  bool coupled_flow_, coupled_transport_;
   std::vector<std::string> fracture_regions_;
 
   void ProcessMacros_(const std::string& prefix, char* text_content,

@@ -54,6 +54,9 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   Teuchos::Array<double> gravity(dim_);
   for (int i = 0; i != dim_-1; ++i) gravity[i] = 0.0;
   gravity[dim_-1] = -GRAVITY_MAGNITUDE;
+  // --- redefine gravity (for developers primary)
+  auto it = constants_.find("gravity");
+  if (it != constants_.end()) gravity[dim_-1] = std::strtod(it->second.c_str(), NULL);
   out_ic.sublist("gravity").set<Teuchos::Array<double> >("value", gravity);
 
   // --- viscosity
@@ -493,8 +496,63 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
     }
   }
 
+  // initialization of fields via the initial_conditions in optional fracture network
+  node = GetUniqueElementByTagsString_("fracture_network, initial_conditions", flag);
+  if (flag) {
+    children = node->getChildNodes();
+
+    for (int i = 0; i < children->getLength(); i++) {
+      DOMNode* inode = children->item(i);
+      if (DOMNode::ELEMENT_NODE != inode->getNodeType()) continue;
+
+      node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
+      std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
+      std::string reg_str = CreateNameFromVector_(regions);
+
+      // -- total_component_concentration (liquid phase)
+      int ncomp_l = phases_["water"].size();
+
+      node = GetUniqueElementByTagsString_(inode, "liquid_phase, solute_component", flag);
+      if (flag && ncomp_l > 0) {
+        std::vector<double> vals(ncomp_l, 0.0);
+
+        DOMNodeList* children = node->getChildNodes();
+        for (int j = 0; j < children->getLength(); ++j) {
+          DOMNode* jnode = children->item(j);
+          tagname = mm.transcode(jnode->getNodeName());
+
+          if (strcmp(tagname, "uniform_conc") == 0) {
+            std::string unit, text;
+            text = GetAttributeValueS_(jnode, "name");
+            int m = GetPosition_(phases_["water"], text);
+            GetAttributeValueD_(jnode, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "molar");  // just a check
+            vals[m] = ConvertUnits_(GetAttributeValueS_(jnode, "value"), unit, solute_molar_mass_[text]);
+          }
+        }
+
+        Teuchos::ParameterList& tcc_ic = out_ic.sublist("fracture-total_component_concentration");
+        Teuchos::ParameterList& dof_list = tcc_ic.sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "cell")
+            .sublist("function")
+            .set<int>("number of dofs", ncomp_l)
+            .set<std::string>("function type", "composite function");
+
+        for (int k = 0; k < ncomp_l; k++) {
+          std::string name = phases_["water"][k];
+          std::stringstream dof_str;
+          dof_str << "dof " << k + 1 << " function";
+          dof_list.sublist(dof_str.str()).sublist("function-constant").set<double>("value", vals[k]);
+        }
+      }
+    }
+  }
+
   // atmospheric pressure
-  out_ic.sublist("atmospheric_pressure").set<double>("value", ATMOSPHERIC_PRESSURE);
+  double atm_pressure = ATMOSPHERIC_PRESSURE;
+  it = constants_.find("atmospheric_pressure");
+  if (it != constants_.end()) atm_pressure = std::strtod(it->second.c_str(), NULL);
+  out_ic.sublist("atmospheric_pressure").set<double>("value", atm_pressure);
 
   // add mesh partitions to the state list
   out_list.sublist("mesh partitions") = TranslateMaterialsPartition_();

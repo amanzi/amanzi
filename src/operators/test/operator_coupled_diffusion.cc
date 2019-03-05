@@ -1369,7 +1369,7 @@ void RunInverseTest(const std::string& discretization, bool upwind, bool multi_d
   std::cout << "x = np.array([\n";
   std::vector<std::pair<double,double> > l2s;
   for (int i=2; i<=129; i*=2) {
-    std::pair<double,double> l2 = RunInverseProblem(discretization, upwind, i, i, true, multi_domain);
+    std::pair<double,double> l2 = RunInverseProblem(discretization, upwind, i, i, false, multi_domain);
     l2s.push_back(l2);
   }
   std::cout << "])" << std::endl;

@@ -48,7 +48,6 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode, 
   std::string msm;
 
   // set up default values for some expert parameters
-  double atm_pres(ATMOSPHERIC_PRESSURE);
   std::string rel_perm("upwind-darcy_velocity"), rel_perm_out;
   std::string update_upwind("every timestep");
 

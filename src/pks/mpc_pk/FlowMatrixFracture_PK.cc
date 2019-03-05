@@ -208,6 +208,10 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   // Test SPD properties of the matrix.
   // VerificationTV ver(op_tree_);
   // ver.CheckMatrixSPD();
+
+  // stationary solve is moddled with large dt
+  double dt(1e+98), dt_solver;
+  time_stepper_->TimeStep(dt, dt_solver, solution_);
 }
 
 
