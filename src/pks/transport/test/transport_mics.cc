@@ -48,13 +48,13 @@ TEST(CONSTRUCTOR) {
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(Simple);
+  pref.push_back(Framework::SIMPLE);
 
-  MeshFactory meshfactory(comm);
+  MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(pref);
-  RCP<const Mesh> mesh = meshfactory.create(0.0,0.0,0.0, 1.0,1.0,1.0, 1, 2, 1, gm); 
+  RCP<const Mesh> mesh = meshfactory.create(0.0,0.0,0.0, 1.0,1.0,1.0, 1, 2, 1); 
  
   //MeshAudit audit(mesh);
   //audit.Verify();

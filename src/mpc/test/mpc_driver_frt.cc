@@ -42,14 +42,14 @@ using namespace Amanzi::AmanziGeometry;
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
    
   // create mesh
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
+  pref.push_back(Framework::MSTK);
+  pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(comm);
+  MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 100, 1, 1, gm);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 100, 1, 1);
   AMANZI_ASSERT(!mesh.is_null());
 
   // create dummy observation data object

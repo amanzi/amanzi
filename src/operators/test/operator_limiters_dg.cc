@@ -53,8 +53,8 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<const Mesh> mesh = meshfactory.create(filename, Teuchos::null);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(filename);
 
   // create and initialize cell-based field 
   int nk(6), dim(2);
@@ -227,8 +227,8 @@ TEST(LIMITER_GAUSS_POINTS)
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/circle_quad10.exo", Teuchos::null);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/circle_quad10.exo");
 
   // create and initialize cell-based field 
   int nk(6), dim(2);

@@ -52,7 +52,7 @@ using namespace std;
   Teuchos::ParameterList mesh_parameter_list = plist.sublist("mesh");
 
   // Create a mesh factory for this geometric model
-  Amanzi::AmanziMesh::MeshFactory meshfactory(comm, Teuchos::null);
+  Amanzi::AmanziMesh::MeshFactory meshfactory(comm, geom_model_ptr, Teuchos::null);
 
   // get the Mesh sublist
   ierr = 0;
@@ -71,7 +71,7 @@ using namespace std;
     
     try {
       // create the mesh by internal generation
-      mesh = meshfactory.create(gen_params, geom_model_ptr);
+      mesh = meshfactory.create(gen_params);
 
     } catch (const std::exception& e) {
       std::cerr << rank << ": error: " << e.what() << std::endl;

@@ -52,13 +52,13 @@ TEST(FLOW_2D_MULTISCALE) {
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm);
+  MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(pref);
-  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 6.0, 120.0, 3, 60, gm);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 6.0, 120.0, 3, 60);
 
   // create a simple state and populate it
   Teuchos::ParameterList state_list = plist->sublist("state");

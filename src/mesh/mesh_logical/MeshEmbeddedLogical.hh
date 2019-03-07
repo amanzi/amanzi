@@ -55,7 +55,7 @@ class MeshEmbeddedLogical : public Mesh {
                       const std::vector<std::vector<int> >& face_cell_list,
                       const std::vector<std::vector<double> >& face_cell_lengths,
                       const std::vector<AmanziGeometry::Point>& face_area_normals,
-                      const Teuchos::RCP<const VerboseObject>& verbosity_obj=Teuchos::null);
+                      const Teuchos::RCP<const Teuchos::ParameterList>& plist=Teuchos::null);
 
   // Get parallel type of entity - OWNED, GHOST, ALL (See MeshDefs.hh)
   virtual

@@ -49,9 +49,9 @@ TEST(LIMITER_BARTH_JESPERSEN) {
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
   MeshFactory factory(comm);
   factory.set_preference(pref);

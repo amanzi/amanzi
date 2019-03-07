@@ -267,11 +267,11 @@ main(int argc, char **argv)
   // generate a mesh
 
   Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
-  Amanzi::AmanziMesh::FrameworkPreference pref;
+  Amanzi::AmanziMesh::Preference pref;
   if (dosimple) {
-    pref.push_back(Amanzi::AmanziMesh::Simple);
+    pref.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
   } else {
-    pref.push_back(Amanzi::AmanziMesh::STKMESH);
+    pref.push_back(Amanzi::AmanziMesh::Framework::STK);
   }
   meshfactory.set_preference(pref);
 

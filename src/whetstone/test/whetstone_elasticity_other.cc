@@ -38,7 +38,7 @@ TEST(DIFFUSION_STOKES_2D) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  meshfactory.set_preference(Preference({Framework::MSTK}));
   // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
   RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo"); 
  
@@ -127,7 +127,7 @@ TEST(ADVECTION_NAVIER_STOKES_2D) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  meshfactory.set_preference(Preference({Framework::MSTK}));
   // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
   RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo"); 
  

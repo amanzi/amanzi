@@ -62,12 +62,12 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
 
   bool request_faces(true), request_edges(true);
-  // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3, gm, request_faces, request_edges);
-  RCP<const Mesh> mesh = meshfactory.create("test/hex_split_faces5.exo", gm, request_faces, request_edges);
+  // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3, request_faces, request_edges);
+  RCP<const Mesh> mesh = meshfactory.create("test/hex_split_faces5.exo", request_faces, request_edges);
 
   // create resistivity coefficient
   double time = 1.0;

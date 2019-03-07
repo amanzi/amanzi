@@ -59,9 +59,9 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
-  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 40, 40, gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 40, 40);
 
   // modify diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
@@ -182,9 +182,9 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
-  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 40, 40, gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 40, 40);
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());

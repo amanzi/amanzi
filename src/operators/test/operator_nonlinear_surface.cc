@@ -110,9 +110,9 @@ void RunTest(std::string op_list_name) {
   ParameterList region_list = plist.sublist("Regions Closed");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({Framework::MSTK}));
-  RCP<const Mesh> mesh = meshfactory.create("test/sphere.exo", gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  RCP<const Mesh> mesh = meshfactory.create("test/sphere.exo");
 
   // extract surface mesh
   std::vector<std::string> setnames;

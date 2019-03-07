@@ -1,28 +1,21 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-// -------------------------------------------------------------
-/**
- * @file   test_deform.cc
- * @author Rao V. Garimella
- * @date   Thu Apr 12, 2012
- * 
- * @brief  
- * 
- * 
- */
-// -------------------------------------------------------------
-// -------------------------------------------------------------
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Rao Garimella, others
+*/
 
 #include <UnitTest++.h>
 
-#include <mpi.h>
 #include <iostream>
 
-#include <AmanziComm.hh>
-
+#include "AmanziComm.hh"
+#include "Geometry.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "FrameworkTraits.hh"
-#include "Geometry.hh"
+#include "MeshException.hh"
 
 TEST(MESH_DEFORM2D)
 {
@@ -33,54 +26,32 @@ TEST(MESH_DEFORM2D)
 
   // We are not including MOAB since Mesh_MOAB.cc does not have
   // routines for generating a mesh
+  std::vector<Amanzi::AmanziMesh::Framework> frameworks;
+  std::vector<std::string> framework_names;
 
-  const Amanzi::AmanziMesh::Framework frameworks[] = {  
-    Amanzi::AmanziMesh::MSTK
-  };
-  const char *framework_names[] = {
-    "MSTK"
-  };
+  if (Amanzi::AmanziMesh::framework_enabled(Amanzi::AmanziMesh::Framework::MSTK)) {
+    frameworks.push_back(Amanzi::AmanziMesh::Framework::MSTK);
+    framework_names.push_back("MSTK");
+  }
 
-  // const Amanzi::AmanziMesh::Framework frameworks[] = {  
-  //   Amanzi::AmanziMesh::STKMESH, 
-  //   Amanzi::AmanziMesh::MSTK, 
-  //   Amanzi::AmanziMesh::Simple
-  // };
-  // const char *framework_names[] = {
-  //   "stk::mesh", "MSTK", "Simple"
-  // };
-
-  const int numframeworks = sizeof(frameworks)/sizeof(Amanzi::AmanziMesh::Framework);
-
-
-  Amanzi::AmanziMesh::Framework the_framework;
-  for (int i = 0; i < numframeworks; i++) {
-
-
+  for (int i = 0; i < frameworks.size(); i++) {
     // Set the framework
-
-    the_framework = frameworks[i];
-
-    if (!Amanzi::AmanziMesh::framework_available(the_framework)) continue;
-
     std::cerr << "Testing deformation with " << framework_names[i] << std::endl;
 
-
     // Create the mesh
-
-    Amanzi::AmanziMesh::MeshFactory factory(comm);
+    Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
     int ierr = 0;
     int aerr = 0;
     try {
-      Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
+      Amanzi::AmanziMesh::Preference prefs(meshfactory.preference());
       prefs.clear(); 
-      prefs.push_back(the_framework);
+      prefs.push_back(frameworks[i]);
 
-      factory.set_preference(prefs);
+      meshfactory.set_preference(prefs);
 
-      mesh = factory.create(0.0,0.0,10.0,10.0,10,10);
+      mesh = meshfactory.create(0.0,0.0,10.0,10.0,10,10);
 
     } catch (const Amanzi::AmanziMesh::Message& e) {
       std::cerr << ": mesh error: " << e.what() << std::endl;
@@ -151,46 +122,37 @@ TEST(MESH_DEFORM3D)
   // We are not including MOAB since Mesh_MOAB.cc does not have
   // routines for generating a mesh
 
-  const Amanzi::AmanziMesh::Framework frameworks[] = {  
-    Amanzi::AmanziMesh::STKMESH,
-    Amanzi::AmanziMesh::MSTK, 
-    Amanzi::AmanziMesh::Simple
-  };
-  const char *framework_names[] = {
-    "stk::mesh", "MSTK", "Simple"
-  };
+  // We are not including MOAB since Mesh_MOAB.cc does not have
+  // routines for generating a mesh
+  std::vector<Amanzi::AmanziMesh::Framework> frameworks;
+  std::vector<std::string> framework_names;
+
+  frameworks.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
+  framework_names.push_back("simple");
   
-  const int numframeworks = sizeof(frameworks)/sizeof(Amanzi::AmanziMesh::Framework);
+  if (Amanzi::AmanziMesh::framework_enabled(Amanzi::AmanziMesh::Framework::MSTK)) {
+    frameworks.push_back(Amanzi::AmanziMesh::Framework::MSTK);
+    framework_names.push_back("MSTK");
+  }
 
-
-  Amanzi::AmanziMesh::Framework the_framework;
-  for (int i = 0; i < numframeworks; i++) {
-
-
+  for (int i = 0; i < frameworks.size(); i++) {
     // Set the framework
-
-    the_framework = frameworks[i];
-
-    if (!Amanzi::AmanziMesh::framework_available(the_framework)) continue;
-
     std::cerr << "Testing deformation with " << framework_names[i] << std::endl;
 
-
     // Create the mesh
-
-    Amanzi::AmanziMesh::MeshFactory factory(comm);
+    Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
     int ierr = 0;
     int aerr = 0;
     try {
-      Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
+      Amanzi::AmanziMesh::Preference prefs(meshfactory.preference());
       prefs.clear(); 
-      prefs.push_back(the_framework);
+      prefs.push_back(frameworks[i]);
 
-      factory.set_preference(prefs);
+      meshfactory.set_preference(prefs);
 
-      mesh = factory.create(0.0,0.0,0.0,1.0,1.0,1.0,10,10,10);
+      mesh = meshfactory.create(0.0,0.0,0.0,1.0,1.0,1.0,10,10,10);
 
     } catch (const Amanzi::AmanziMesh::Message& e) {
       std::cerr << ": mesh error: " << e.what() << std::endl;

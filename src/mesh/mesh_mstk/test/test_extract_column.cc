@@ -59,8 +59,7 @@ TEST(Extract_Column_MSTK)
     }
   }
   
-  Amanzi::AmanziMesh::Mesh_MSTK column_mesh(Amanzi::getCommSelf(),
-      mesh,cell_list, Amanzi::AmanziMesh::CELL,false,false);
+  Amanzi::AmanziMesh::Mesh_MSTK column_mesh(mesh,cell_list, Amanzi::AmanziMesh::CELL,false,Amanzi::getCommSelf());
 
 
   

@@ -53,8 +53,8 @@ int main(int argc, char *argv[]) {
 
 
   const Amanzi::AmanziMesh::Framework frameworks[] = {  
-    Amanzi::AmanziMesh::STKMESH, 
-    Amanzi::AmanziMesh::MSTK, 
+    Amanzi::AmanziMesh::Framework::STK, 
+    Amanzi::AmanziMesh::Framework::MSTK, 
   };
   const char *framework_names[] = {
     "stk::mesh", "MSTK"
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
 
   const int numframeworks = sizeof(frameworks)/sizeof(Amanzi::AmanziMesh::Framework);
 
-  Amanzi::AmanziMesh::Framework the_framework(Amanzi::AmanziMesh::MSTK);
+  Amanzi::AmanziMesh::Framework the_framework(Amanzi::AmanziMesh::Framework::MSTK);
 
 
 
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
   try {
-    Amanzi::AmanziMesh::FrameworkPreference prefs(meshfactory.preference());
+    Amanzi::AmanziMesh::Preference prefs(meshfactory.preference());
     prefs.clear(); 
     prefs.push_back(the_framework);
     meshfactory.set_preference(prefs);

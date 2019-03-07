@@ -26,6 +26,7 @@
 #include "exceptions.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
+#include "MeshException.hh"
 
 // Flow
 #include "Darcy_PK.hh"
@@ -57,10 +58,10 @@ class DarcyProblem {
     comm = Amanzi::getDefaultComm();
     MyPID = comm->MyPID();    
 
-    framework[0] = MSTK;
-    framework[1] = STKMESH;
+    framework[0] = Framework::MSTK;
+    framework[1] = Framework::STK;
     framework_name.push_back("MSTK");
-    framework_name.push_back("STKMESH");
+    framework_name.push_back("stk:mesh");
   };
 
   ~DarcyProblem() {
@@ -69,7 +70,7 @@ class DarcyProblem {
   }
 
   int Init(const std::string xmlFileName, const char* meshExodus, const Framework& framework) {
-    if (framework == STKMESH && comm->NumProc() > 1) return 1;    
+    if (framework == Framework::STK && comm->NumProc() > 1) return 1;    
 
     // create a MSTK mesh framework
     plist = Teuchos::getParametersFromXmlFile(xmlFileName);
@@ -77,17 +78,15 @@ class DarcyProblem {
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
-    FrameworkPreference pref;
-    pref.clear();
-    pref.push_back(framework);
+    Preference pref({framework});
 
-    MeshFactory meshfactory(comm);
+    MeshFactory meshfactory(comm,gm);
     try {
       meshfactory.set_preference(pref);
     } catch (Message& e) {
       return 1;
     }
-    mesh = meshfactory.create(meshExodus, gm);
+    mesh = meshfactory.create(meshExodus);
 
     /* create Darcy process kernel */
     Teuchos::ParameterList state_list = plist->sublist("state");

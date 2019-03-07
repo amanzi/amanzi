@@ -264,8 +264,8 @@ class Mesh_MOAB : public Mesh {
    }
 
  private:
-  moab::Core *mbcore;
-  Teuchos::RCP<moab::ParallelComm> mbcomm_;
+  std::unique_ptr<moab::Core> mbcore_;
+  std::unique_ptr<moab::ParallelComm> mbcomm_;
 
   int serial_run;
 

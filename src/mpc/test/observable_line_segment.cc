@@ -53,14 +53,14 @@ TEST(OBSERVABLE_LINE_SEGMENT) {
   Teuchos::Array<double> xyz1_2 = well_list_2.get<Teuchos::Array<double> >("opposite end coordinate"); 
 
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
+  pref.push_back(Framework::MSTK);
+  pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(comm);
+  MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 10.0, 10.0, 10.0, 5, 5, 5, gm);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 10.0, 10.0, 10.0, 5, 5, 5);
 
   /* create a simple state and populate it */
   Amanzi::VerboseObject::global_hide_line_prefix = false;

@@ -41,14 +41,14 @@ TEST(NAVIER_STOKES_2D) {
   Teuchos::ParameterList regions_list = plist->sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, regions_list, *comm));
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm);
+  MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(pref);
   int nx = plist->get<int>("mesh resolution", 20);
-  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, nx, gm);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, nx);
 
   // create a simple state and populate it
   Teuchos::ParameterList state_list = plist->sublist("state");

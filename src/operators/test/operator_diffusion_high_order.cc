@@ -56,11 +56,11 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART) {
 
   // create a mesh framework
   Teuchos::RCP<GeometricModel> gm;
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK, STKMESH}));
-  // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 4, gm, true, true);
-  RCP<const Mesh> mesh = meshfactory.create("test/median7x8_filtered.exo", gm, true, true);
-  // RCP<const Mesh> mesh = meshfactory.create("test/median15x16.exo", gm, true, true);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 4, true, true);
+  RCP<const Mesh> mesh = meshfactory.create("test/median7x8_filtered.exo", true, true);
+  // RCP<const Mesh> mesh = meshfactory.create("test/median15x16.exo", true, true);
 
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
@@ -182,13 +182,13 @@ void RunHighOrderLagrange(std::string vem_name, bool polygonal_mesh) {
 
   // create a mesh framework
   Teuchos::RCP<GeometricModel> gm;
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK, STKMESH}));
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
   RCP<const Mesh> mesh;
   if (polygonal_mesh) {
-    mesh = meshfactory.create("test/median7x8_filtered.exo", gm, true, true);
+    mesh = meshfactory.create("test/median7x8_filtered.exo", true, true);
   } else {
-    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 4, gm, true, true);
+    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 4, true, true);
   }
 
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);

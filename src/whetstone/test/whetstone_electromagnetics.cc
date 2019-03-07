@@ -41,13 +41,12 @@ TEST(MASS_MATRIX_2D) {
   auto comm = Amanzi::getCommSelf();
 #endif
 
-  MeshFactory factory(comm);
-  factory.set_preference(FrameworkPreference({MSTK}));
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
 
   bool request_faces(true), request_edges(true);
-  // Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  // Teuchos::RCP<Mesh> mesh = factory.create(0.0, 0.0, 1.0, 1.0, 20, 20, gm, true, true); 
-  Teuchos::RCP<Mesh> mesh = factory.create("test/two_cell2.exo", Teuchos::null, request_faces, request_edges); 
+  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 20, 20, true, true); 
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/two_cell2.exo", request_faces, request_edges); 
  
   Teuchos::ParameterList plist;
   MFD3D_Electromagnetics mfd(plist, mesh);
@@ -131,13 +130,13 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
   auto comm = Amanzi::getCommSelf();
 #endif
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  MeshFactory meshmeshfactory(comm);
+  meshmeshfactory.set_preference(Preference({Framework::MSTK}));
 
   bool request_faces(true), request_edges(true);
 
-  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, Teuchos::null, true, true); 
-  RCP<Mesh> mesh = meshfactory.create(mesh_file, Teuchos::null, request_faces, request_edges); 
+  // RCP<Mesh> mesh = meshmeshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, true, true); 
+  RCP<Mesh> mesh = meshmeshfactory.create(mesh_file, request_faces, request_edges); 
  
   Teuchos::ParameterList plist;
   MFD3D_Electromagnetics mfd(plist, mesh);
@@ -237,12 +236,12 @@ TEST(STIFFNESS_MATRIX_2D) {
   auto comm = Amanzi::getCommSelf();
 #endif
 
-  MeshFactory factory(comm);
-  factory.set_preference(FrameworkPreference({MSTK}));
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
 
   bool request_faces(true), request_edges(true);
-  // Teuchos::RCP<Mesh> mesh = factory.create(0.0, 0.0, 1.0, 1.0, 1, 1, Teuchos::null, true, true); 
-  Teuchos::RCP<Mesh> mesh = factory.create("test/two_cell2.exo", Teuchos::null, request_faces, request_edges); 
+  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1, true, true); 
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/two_cell2.exo", request_faces, request_edges); 
  
   Teuchos::ParameterList plist;
   MFD3D_Electromagnetics mfd(plist, mesh);
@@ -323,13 +322,13 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
   auto comm = Amanzi::getCommSelf();
 #endif
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  MeshFactory meshmeshfactory(comm);
+  meshmeshfactory.set_preference(Preference({Framework::MSTK}));
 
   bool request_faces(true), request_edges(true);
 
-  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, Teuchos::null, true, true); 
-  RCP<Mesh> mesh = meshfactory.create(mesh_file, Teuchos::null, request_faces, request_edges); 
+  // RCP<Mesh> mesh = meshmeshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, true, true); 
+  RCP<Mesh> mesh = meshmeshfactory.create(mesh_file, request_faces, request_edges); 
  
   Teuchos::ParameterList plist;
   MFD3D_Electromagnetics mfd(plist, mesh);

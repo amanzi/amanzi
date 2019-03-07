@@ -58,10 +58,10 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({Framework::MSTK, Framework::STKMESH}));
-  // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 3.0, 1.0, 200, 10, gm);
-  RCP<const Mesh> mesh = meshfactory.create("test/marshak.exo", gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 3.0, 1.0, 200, 10);
+  RCP<const Mesh> mesh = meshfactory.create("test/marshak.exo");
 
   // Create nonlinear coefficient.
   Teuchos::RCP<HeatConduction> knc = Teuchos::rcp(new HeatConduction(mesh, TemperatureFloor));

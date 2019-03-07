@@ -127,7 +127,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   // Create a mesh factory for this geometric model
   auto mesh_params = Teuchos::sublist(plist_, "mesh", true);
   auto mesh_vo = Teuchos::rcp(new Amanzi::VerboseObject("Mesh", *mesh_params));
-  Amanzi::AmanziMesh::MeshFactory factory(comm, mesh_params);
+  Amanzi::AmanziMesh::MeshFactory meshfactory(comm, geom_model, mesh_params);
 
   // Prepare to read/create the mesh specification
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
@@ -148,7 +148,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   bool expert_params_specified = unstr_mesh_params.isSublist("expert");
 
   try {
-    Amanzi::AmanziMesh::FrameworkPreference prefs(Amanzi::AmanziMesh::default_preference());
+    Amanzi::AmanziMesh::Preference prefs(Amanzi::AmanziMesh::default_preference());
 
     if (expert_params_specified) {
       Teuchos::ParameterList expert_mesh_params = unstr_mesh_params.sublist("expert");  
@@ -162,14 +162,14 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
       if (framework_specified) {
 	std::string framework = expert_mesh_params.get<std::string>("framework");
 
-	if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::Simple)) {
-	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::Simple);
-	} else if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::MSTK)) {
-	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::MSTK);
-	} else if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::STKMESH)) {
-	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::STKMESH);
-	} else if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::MOAB)) {
-	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::MOAB);
+	if (framework == Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::SIMPLE)) {
+	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
+	} else if (framework == Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::MSTK)) {
+	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::Framework::MSTK);
+	} else if (framework == Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::STK)) {
+	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::Framework::STK);
+	} else if (framework == Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::MOAB)) {
+	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::Framework::MOAB);
 	// } else if (framework == "") {
 	} else {
           std::string s(framework);
@@ -177,23 +177,12 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
           amanzi_throw(Errors::Message(s));
 	}
       }
-
-      // bool partitioner_specified = expert_mesh_params.isParameter("partitioner");
-      // if (partitioner_specified) {
-      //   std::string partitioner = expert_mesh_params.get<std::string>("partitioner");
-      //   if (partitioner == "METIS" || partitioner == "metis")
-      //     factory.set_partitioner(Amanzi::AmanziMesh::Partitioner_type::METIS);
-      //   else if (partitioner == "ZOLTAN_GRAPH" || partitioner == "zoltan_graph")
-      //     factory.set_partitioner(Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_GRAPH);
-      //   else if (partitioner == "ZOLTAN_RCB" || partitioner == "zoltan_rcb")
-      //     factory.set_partitioner(Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_RCB);
-      // }
     }
 
-    // Create a mesh factory with default or user preferences for a
+    // Create a mesh meshfactory with default or user preferences for a
     // mesh framework
-    // prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::MSTK);
-    factory.set_preference(prefs);
+    // prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::Framework::MSTK);
+    meshfactory.set_preference(prefs);
 
   } catch (const Teuchos::Exceptions::InvalidParameterName& e) {
     // do nothing, this means that the "framework" parameter was 
@@ -239,7 +228,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
       ierr = 0;
       try {
         // create the mesh from the file
-	mesh = factory.create(file, geom_model);
+	mesh = meshfactory.create(file);
 	    
       } catch (const std::exception& e) {
 	std::cerr << rank << ": error: " << e.what() << std::endl;
@@ -258,11 +247,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     
     try {
       // create the mesh by internal generation
-      mesh = factory.create(gen_params, geom_model);
-      // It looks like this is moving toward a model where partitioner goes in
-      //the mesh_params/unstructured/expert list and not in the gen_params
-      //list, but for now I'm sticking with the existing, inconsistent layout.
-      //mesh = factory.create(gen_params, geom_model, mesh_params);
+      mesh = meshfactory.create(gen_params);
 
     } catch (const std::exception& e) {
       std::cerr << rank << ": error: " << e.what() << std::endl;

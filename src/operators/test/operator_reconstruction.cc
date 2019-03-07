@@ -47,7 +47,7 @@ TEST(RECONSTRUCTION_LINEAR_2D) {
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK,STKMESH}));
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
 
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 7, 7);
 
@@ -104,7 +104,7 @@ TEST(RECONSTRUCTION_LINEAR_3D) {
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK,STKMESH}));
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
 
   Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 7, 6, 5);
 

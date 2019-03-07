@@ -65,7 +65,7 @@ set(state_inc_files
   constant_variable_field_evaluator.hh
   deforming_cell_volume_evaluator.hh
   deforming_cell_volume_evaluator_reg.hh
-  checkpoint.hh
+  Checkpoint.hh
   chemistry_data.hh
   Field_CompositeVector.hh
   Field_ConstantVector.hh
@@ -84,7 +84,7 @@ set(state_inc_files
 
 add_amanzi_library(state 
                    SOURCE State.cc
-                          checkpoint.cc
+                          Checkpoint.cc
                           Observable.cc
                           chemistry_data.cc
                           cell_volume_evaluator.cc

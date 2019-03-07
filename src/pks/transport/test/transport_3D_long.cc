@@ -53,14 +53,14 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
+  pref.push_back(Framework::MSTK);
+  pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(comm);
+  MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(pref);
-  RCP<const Mesh> mesh = meshfactory.create("test/rect3D_50x50x1.exo", gm);
+  RCP<const Mesh> mesh = meshfactory.create("test/rect3D_50x50x1.exo");
 
   //Amanzi::MeshAudit audit(mesh);
   //audit.Verify();   

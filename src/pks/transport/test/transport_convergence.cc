@@ -67,9 +67,9 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
     ParameterList region_list = plist->sublist("regions");
     auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, *comm));
 
-    MeshFactory meshfactory(comm);
-    meshfactory.set_preference(FrameworkPreference({Framework::MSTK, Framework::Simple}));
-    RCP<const Mesh> mesh = meshfactory.create(0.0,0.0,0.0, 5.0,1.0,1.0, nx,2,2, gm);
+    MeshFactory meshfactory(comm,gm);
+    meshfactory.set_preference(Preference({Framework::MSTK, Framework::SIMPLE}));
+    RCP<const Mesh> mesh = meshfactory.create(0.0,0.0,0.0, 5.0,1.0,1.0, nx,2,2);
 
     /* create a simple state and populate it */
     Amanzi::VerboseObject::global_hide_line_prefix = false;
@@ -184,9 +184,9 @@ void ConvergenceBoxMeshes(int order, double tol, std::string limiter)
   std::vector<double> h, L1error, L2error;
 
   for (int nx = 20; nx < 320 / order + 1; nx *= 2) {
-    MeshFactory meshfactory(comm);
-    meshfactory.set_preference(FrameworkPreference({Framework::MSTK, Framework::Simple}));
-    RCP<const Mesh> mesh = meshfactory.create(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 2, 1, gm); 
+    MeshFactory meshfactory(comm,gm);
+    meshfactory.set_preference(Preference({Framework::MSTK, Framework::SIMPLE}));
+    RCP<const Mesh> mesh = meshfactory.create(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 2, 1); 
 
     // create state and populate it
     Amanzi::VerboseObject::global_hide_line_prefix = false;
@@ -319,15 +319,15 @@ void ConvergencePolyMeshes(int order, double tol, std::string limiter)
     ParameterList region_list = plist->sublist("regions");
     auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
-    MeshFactory meshfactory(comm);
-    meshfactory.set_preference(FrameworkPreference({Framework::MSTK, Framework::STKMESH}));
+    MeshFactory meshfactory(comm,gm);
+    meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
     RCP<const Mesh> mesh;
     if (loop == 0) {
-      mesh = meshfactory.create("test/median15x16.exo", gm);
+      mesh = meshfactory.create("test/median15x16.exo");
     } else if (loop == 1) {
-      mesh = meshfactory.create("test/median32x33.exo", gm);
+      mesh = meshfactory.create("test/median32x33.exo");
     } else if (loop == 2) {
-      mesh = meshfactory.create("test/median63x64.exo", gm);
+      mesh = meshfactory.create("test/median63x64.exo");
     }
 
     /* create a simple state and populate it */

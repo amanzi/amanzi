@@ -48,9 +48,9 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
-  RCP<const Mesh> mesh = meshfactory.create("test/hex_3x3x3_ss.exo", gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  RCP<const Mesh> mesh = meshfactory.create("test/hex_3x3x3_ss.exo");
   
   /* create a simple state and populate it */
   std::vector<std::string> component_names;

@@ -38,10 +38,10 @@ TEST(ELIM_DEGEN_INLINE_PARTITION)
   
   // create and register meshes
   Teuchos::ParameterList mesh_plist = plist->sublist("mesh");
-  Amanzi::AmanziMesh::MeshFactory factory(comm);
-  Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
+  Amanzi::AmanziMesh::MeshFactory meshfactory(comm, gm);
+  Amanzi::AmanziMesh::Preference prefs(meshfactory.preference());
   prefs.clear();
-  prefs.push_back(Amanzi::AmanziMesh::MSTK);
+  prefs.push_back(Amanzi::AmanziMesh::Framework::MSTK);
   
   // create the base mesh
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
@@ -78,7 +78,7 @@ TEST(ELIM_DEGEN_INLINE_PARTITION)
     Exceptions::amanzi_throw(msg);
   }
   std::cout << "Reading the mesh..." << std::endl;
-  mesh = factory.create(in_exo_file, gm);
+  mesh = meshfactory.create(in_exo_file);
   AMANZI_ASSERT(!mesh.is_null());
   
   // mesh verification
@@ -140,11 +140,11 @@ TEST(ELIM_DEGEN_INLINE_PARTITION)
     }
     
     if (mesh->manifold_dimension() == 3) {
-      surface3D_mesh = factory.create(mesh,setnames,Amanzi::AmanziMesh::FACE,false,false);
-      surface_mesh = factory.create(mesh,setnames,Amanzi::AmanziMesh::FACE,true,false);
+      surface3D_mesh = meshfactory.create(mesh,setnames,Amanzi::AmanziMesh::FACE,false);
+      surface_mesh = meshfactory.create(mesh,setnames,Amanzi::AmanziMesh::FACE,true);
     } else {
       surface3D_mesh = mesh;
-      surface_mesh = factory.create(mesh,setnames,Amanzi::AmanziMesh::CELL,true,false);
+      surface_mesh = meshfactory.create(mesh,setnames,Amanzi::AmanziMesh::CELL,true);
     }
     
     bool surf_verify = surface_plist.get<bool>("verify mesh", false);

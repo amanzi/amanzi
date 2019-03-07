@@ -33,9 +33,9 @@ struct test_cv_vandelay {
 
   test_cv_vandelay() {
     comm = getDefaultComm();
-    FrameworkPreference pref;
+    Preference pref;
     pref.clear();
-    pref.push_back(MSTK);
+    pref.push_back(Framework::MSTK);
 
     MeshFactory meshfactory(comm);
     meshfactory.set_preference(pref);

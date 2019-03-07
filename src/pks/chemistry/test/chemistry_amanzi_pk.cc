@@ -86,10 +86,10 @@ SUITE(GeochemistryTestsChemistryPK) {
     Teuchos::ParameterList region_parameter_list = glist_->sublist("regions");
     gm_ = Teuchos::rcp(new ag::GeometricModel(3, region_parameter_list, *comm_));
   
-    am::MeshFactory meshfactory(comm_);
-    meshfactory.set_preference(am::FrameworkPreference({am::Simple}));
+    am::MeshFactory meshfactory(comm_, gm_);
+    meshfactory.set_preference(am::Preference({am::Framework::SIMPLE}));
 
-    mesh_ = meshfactory.create(0.,0.,0.,1.,1.,1.,1,1,10, gm_);
+    mesh_ = meshfactory.create(0.,0.,0.,1.,1.,1.,1,1,10);
 
     // get the state parameter list and create the state object
     Teuchos::ParameterList state_parameter_list = glist_->sublist("state");

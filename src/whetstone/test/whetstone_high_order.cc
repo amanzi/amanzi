@@ -38,9 +38,8 @@ TEST(HIGH_ORDER_CROUZEIX_RAVIART) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
-  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.2, 1.1, 1, 1, Teuchos::null, true, false); 
-  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", Teuchos::null, true, false); 
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", true, false); 
  
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
@@ -103,10 +102,10 @@ void HighOrderCrouzeixRaviartSerendipity(std::string file_name) {
   std::cout << "\nTest: High-order Crouzeix Raviart Serendipity element in 2D, file=" << file_name << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, gm, true, false); 
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, false); 
  
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
@@ -168,11 +167,10 @@ void HighOrderLagrange(std::string file_name) {
   std::cout << "\nTest: High-order Lagrange element in 2D, file=" << file_name << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
-  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1, gm, true, true); 
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, Teuchos::null, true, true); 
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, true); 
  
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
@@ -246,11 +244,10 @@ void HighOrderLagrangeSerendipity(std::string file_name) {
   std::cout << "\nTest: High-order Lagrange Serendipity element in 2D, file=" << file_name << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
-  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 2.0, 2.0, 1, 1, gm, true, true); 
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, gm, true, true); 
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, true); 
  
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 

@@ -40,8 +40,9 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 # Library: mesh_factory
 #
 set(mesh_factory_files 
-    MeshFileType.cc MeshFramework.cc 
-    MeshFactory.cc FrameworkTraits.cc) 
+    FileFormat.cc
+    MeshFramework.cc
+    MeshFactory.cc) 
 file(GLOB mesh_factory_inc_files "*.hh")
 
 list(APPEND mesh_factory_frameworks simple_mesh)
@@ -104,7 +105,6 @@ if (BUILD_TESTS)
 		   SOURCE
                          test/Main.cc
                          test/test_mesh_file.cc 
-                         test/test_mesh_framework.cc
                          test/test_mesh_factory.cc
                    LINK_LIBS
 		         mesh_factory

@@ -61,14 +61,14 @@ TEST(DISPERSION) {
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm);
+  MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(pref);
   int nx = 20;
-  RCP<const Mesh> mesh = meshfactory.create(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 10, 1, gm); 
+  RCP<const Mesh> mesh = meshfactory.create(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 10, 1); 
 
   /* create a simple state and populate it */
   Amanzi::VerboseObject::global_hide_line_prefix = true;
@@ -167,13 +167,13 @@ TEST(DIFFUSION) {
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm);
+  MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(pref);
-  RCP<const Mesh> mesh = meshfactory.create(0.0,0.0, 1.0,1.0, 20, 20, gm); 
+  RCP<const Mesh> mesh = meshfactory.create(0.0,0.0, 1.0,1.0, 20, 20); 
 
   /* create a simple state and populate it */
   Amanzi::VerboseObject::global_hide_line_prefix = true;
@@ -271,13 +271,13 @@ TEST(GAS_DIFFUSION) {
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm);
+  MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(pref);
-  RCP<const Mesh> mesh = meshfactory.create(0.0,0.0, 1.0,1.0, 21, 21, gm); 
+  RCP<const Mesh> mesh = meshfactory.create(0.0,0.0, 1.0,1.0, 21, 21); 
 
   /* create a simple state and populate it */
   Amanzi::VerboseObject::global_hide_line_prefix = true;

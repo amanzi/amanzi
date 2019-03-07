@@ -56,7 +56,7 @@ TEST(Extract_Surface_MSTK1_4P)
   mesh->get_set_entities(setnames[0], Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED, &ids1);
   mesh->get_set_entities(setnames[1], Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED, &ids2);
   ids1.insert(ids1.end(), ids2.begin(), ids2.end());
-  Amanzi::AmanziMesh::Mesh_MSTK surfmesh(mesh->get_comm(), mesh,ids1,Amanzi::AmanziMesh::FACE);
+  Amanzi::AmanziMesh::Mesh_MSTK surfmesh(mesh,ids1,Amanzi::AmanziMesh::FACE, false, mesh->get_comm());
 
   // Number of cells (quadrilaterals) in surface mesh
   int ncells_surf = surfmesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::ALL);
@@ -142,7 +142,7 @@ TEST(Extract_Surface_MSTK2_4P)
   mesh->get_set_entities(setnames[0], Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED, &ids1);
 
   // Extract surface mesh while projecting to 2D
-  Amanzi::AmanziMesh::Mesh_MSTK surfmesh(mesh->get_comm(), mesh,ids1,Amanzi::AmanziMesh::FACE,true,false);
+  Amanzi::AmanziMesh::Mesh_MSTK surfmesh(mesh,ids1,Amanzi::AmanziMesh::FACE,true,mesh->get_comm());
 
   CHECK_EQUAL(surfmesh.space_dimension(),2);
 
@@ -229,7 +229,7 @@ TEST(Extract_Surface_MSTK3_4P)
   Amanzi::AmanziMesh::Entity_ID_List ids1;
   mesh->get_set_entities(setnames[0], Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED, &ids1);
 
-  Amanzi::AmanziMesh::Mesh_MSTK surfmesh(mesh->get_comm(), mesh,ids1,Amanzi::AmanziMesh::FACE);
+  Amanzi::AmanziMesh::Mesh_MSTK surfmesh(mesh,ids1,Amanzi::AmanziMesh::FACE, false, mesh->get_comm());
 
 
   // Number of cells (quadrilaterals) in surface mesh

@@ -76,8 +76,8 @@ struct reference_mesh
     Teuchos::RCP<AmanziGeometry::GeometricModel> 
         gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, regions, *comm));
     // Create the mesh
-    MeshFactory mesh_fact(comm);
-    mesh = mesh_fact.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2, gm);
+    MeshFactory mesh_fact(comm,gm);
+    mesh = mesh_fact.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
   }
 };
 

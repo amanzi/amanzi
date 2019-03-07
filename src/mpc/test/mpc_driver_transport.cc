@@ -40,14 +40,14 @@ using namespace Amanzi::AmanziGeometry;
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
   // create mesh
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
+  pref.push_back(Framework::MSTK);
+  pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(comm);
+  MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/mpc_driver_transport_mesh_10x10.exo", gm);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/mpc_driver_transport_mesh_10x10.exo");
   AMANZI_ASSERT(!mesh.is_null());
 
   // create dummy observation data object

@@ -194,15 +194,15 @@ SUITE(RESTART) {
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
         Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
-    Amanzi::AmanziMesh::FrameworkPreference pref;
+    Amanzi::AmanziMesh::Preference pref;
     pref.clear();
-    pref.push_back(Amanzi::AmanziMesh::MSTK);
-    pref.push_back(Amanzi::AmanziMesh::STKMESH);
-    pref.push_back(Amanzi::AmanziMesh::Simple);
+    pref.push_back(Amanzi::AmanziMesh::Framework::MSTK);
+    pref.push_back(Amanzi::AmanziMesh::Framework::STK);
+    pref.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
 
-    Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
+    Amanzi::AmanziMesh::MeshFactory meshfactory(comm,gm);
     meshfactory.set_preference(pref);
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> Mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, gm);
+    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> Mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1);
 
     Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("state");
     // now populate the parameter list...

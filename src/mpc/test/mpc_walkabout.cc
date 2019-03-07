@@ -35,10 +35,10 @@ using namespace Amanzi;
 
   // create mesh
   auto mesh_list = Teuchos::sublist(glist, "mesh");
-  AmanziMesh::MeshFactory meshfactory(comm, mesh_list);
+  AmanziMesh::MeshFactory meshfactory(comm, gm, mesh_list);
 
-  meshfactory.set_preference(AmanziMesh::FrameworkPreference({AmanziMesh::MSTK}));
-  auto mesh = meshfactory.create("test/mpc_walkabout_2D.exo", gm);
+  meshfactory.set_preference(AmanziMesh::Preference({AmanziMesh::Framework::MSTK}));
+  auto mesh = meshfactory.create("test/mpc_walkabout_2D.exo");
 
   // use cycle driver to create and initialize state
   ObservationData obs_data;    
@@ -124,12 +124,12 @@ using namespace Amanzi;
 
   // create mesh
   auto mesh_list = Teuchos::sublist(glist, "mesh");
-  AmanziMesh::MeshFactory meshfactory(comm, mesh_list);
+  AmanziMesh::MeshFactory meshfactory(comm, gm, mesh_list);
 
-  meshfactory.set_preference(AmanziMesh::FrameworkPreference({AmanziMesh::MSTK}));
-  auto mesh = meshfactory.create("test/mpc_walkabout_tet5.exo", gm);
-  // auto mesh = meshfactory.create("test/mpc_walkabout_aaa.par", gm);
-  // auto mesh = meshfactory.create("test/mpc_walkabout_bbb.par", gm);
+  meshfactory.set_preference(AmanziMesh::Preference({AmanziMesh::Framework::MSTK}));
+  auto mesh = meshfactory.create("test/mpc_walkabout_tet5.exo");
+  // auto mesh = meshfactory.create("test/mpc_walkabout_aaa.par");
+  // auto mesh = meshfactory.create("test/mpc_walkabout_bbb.par");
 
   // use cycle driver to create and initialize state
   ObservationData obs_data;    

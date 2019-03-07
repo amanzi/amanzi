@@ -17,9 +17,9 @@ TEST(GMV) {
   string gmv_datafile1 = "test_gmv1.gmv";
   string gmv_fullfile = "test_gmv_full.gmv";
 
-  Amanzi::AmanziMesh::FrameworkPreference pref;
+  Amanzi::AmanziMesh::Preference pref;
   pref.clear();
-  pref.push_back(Amanzi::AmanziMesh::Simple);
+  pref.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
 
   Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
   meshfactory.set_preference(pref);

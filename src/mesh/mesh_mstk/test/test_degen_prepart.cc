@@ -36,11 +36,11 @@ TEST(ELIM_DEGEN_PREPARTITION)
   
   // create and register meshes
   Teuchos::ParameterList mesh_plist = plist->sublist("mesh");
-  Amanzi::AmanziMesh::MeshFactory factory(comm);
-  Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
+  Amanzi::AmanziMesh::MeshFactory meshfactory(comm, gm);
+  Amanzi::AmanziMesh::Preference prefs(meshfactory.preference());
   prefs.clear();
-  prefs.push_back(Amanzi::AmanziMesh::MSTK);
-  factory.set_preference(prefs);
+  prefs.push_back(Amanzi::AmanziMesh::Framework::MSTK);
+  meshfactory.set_preference(prefs);
   
   // create and check the input plist
   std::string in_exo_file;
@@ -77,7 +77,7 @@ TEST(ELIM_DEGEN_PREPARTITION)
 
   // create the mesh
   std::cout << "Reading the mesh..." << std::endl;
-  auto mesh = factory.create(in_exo_file, gm);
+  auto mesh = meshfactory.create(in_exo_file);
   AMANZI_ASSERT(mesh.get());
   
   // mesh verification

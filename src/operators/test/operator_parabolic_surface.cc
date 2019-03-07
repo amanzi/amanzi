@@ -62,17 +62,14 @@ void RunTest(std::string op_list_name) {
   ParameterList region_list = plist.sublist("Regions Closed");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({Framework::MSTK}));
-  RCP<const Mesh> mesh = meshfactory.create("test/sphere.exo", gm);
-  RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  RCP<const Mesh> mesh = meshfactory.create("test/sphere.exo");
 
   // extract surface mesh
   std::vector<std::string> setnames;
   setnames.push_back(std::string("Top surface"));
-  Entity_ID_List ids;
-  mesh_mstk->get_set_entities(setnames[0], AmanziMesh::FACE, Parallel_type::ALL, &ids);
-  RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(mesh_mstk->get_comm(), mesh_mstk, ids, AmanziMesh::FACE));
+  RCP<Mesh> surfmesh = meshfactory.create(mesh, setnames, AmanziMesh::FACE);
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffsuion coefficient.

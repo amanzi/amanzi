@@ -12,6 +12,8 @@
 #ifndef AMANZI_MESH_FILE_TYPE_HH_
 #define AMANZI_MESH_FILE_TYPE_HH_
 
+#include "AmanziTypes.hh"
+
 namespace Amanzi {
 namespace AmanziMesh {
 
@@ -28,7 +30,7 @@ std::string fileFormatName(const FileFormat f);
 
 // Determine a file format from a file name, and perform sanity checks on that
 // filename.
-FileFormat fileFormatFromFilename(const Epetra_Comm& comm_, std::string name);
+FileFormat fileFormatFromFilename(const Comm_type& comm_, std::string name);
 
 } // namespace AmanziMesh
 } // namespace Amanzi

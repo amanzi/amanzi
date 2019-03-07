@@ -1,28 +1,18 @@
-// Emacs Mode Line: -*- Mode:c++;-*-
-// -------------------------------------------------------------
-/**
- * @file   MeshException.hh
- * @author William A. Perkins
- * @date Mon Mar 14 09:02:33 2011
- * 
- * @brief declaration of several exceptions used by MeshFactory and
- * related code
- * 
- * 
- */
-// -------------------------------------------------------------
-// -------------------------------------------------------------
-// Created March 12, 2011 by William A. Perkins
-// Last Change: Mon Mar 14 09:02:33 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
-// -------------------------------------------------------------
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-// SCCS ID: $Id$ Battelle PNL
+  Authors: William Perkins, others
+*/
 
-#ifndef _MeshException_hh_
-#define _MeshException_hh_
+//! Exceptions for MeshFactory
+
+#ifndef AMANZI_MESH_EXCEPTION_HH_
+#define AMANZI_MESH_EXCEPTION_HH_
 
 #include "errors.hh"
-#include "MeshFramework.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -36,44 +26,22 @@ class Message : public Errors::Message {
 };
 
 
-// A special exception to identify framework problems
-/**
- * This is only thrown if a specific framework is requested but
- * not available
- * 
- */
-class FrameworkMessage : public Message {
- protected:
-  Framework my_framework;
-  void initialize(void)
-  {
-    add_data(framework_name(my_framework).c_str());
-    add_data(": mesh framework not available");
-  }
-
- public:
-  explicit FrameworkMessage(const Framework& fw) : Message(), my_framework(fw) 
-  {
-    this->initialize();
-  }
-  explicit FrameworkMessage(const Framework& fw, const char* message) : 
-      Message(), my_framework(fw) 
-  { 
-    this->initialize();
-    add_data(": ");
-    add_data(message);
-  }
-  ~FrameworkMessage(void) throw() {};
-};
-    
 // A special exception to identify file problems
 class FileMessage : public Message {
  public:
   explicit FileMessage(void) : Message() {};
   explicit FileMessage(const char* message) : Message(message) {};
-  ~FileMessage(void) throw() {};
-};    
-    
+  virtual ~FileMessage(void) noexcept {};
+};  
+
+// A special exception to identify frameworks problems
+class FrameworkMessage : public Message {
+ public:
+  explicit FrameworkMessage(void) : Message() {};
+  explicit FrameworkMessage(const char* message) : Message(message) {};
+  virtual ~FrameworkMessage(void) noexcept {};
+};  
+
 }  // namespace AmanziMesh
 }  // namespace Amanzi
 

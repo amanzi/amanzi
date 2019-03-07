@@ -17,14 +17,12 @@ namespace AmanziMesh {
 // -----------------------------------------------------------------------------
 MeshColumn::MeshColumn(const Teuchos::RCP<const Mesh>& parent_mesh,
                        const int column_id, 
-                       const Teuchos::RCP<const VerboseObject>& vo) :
-    Mesh(Teuchos::rcp(new MpiComm_type(MPI_COMM_SELF)), parent_mesh->geometric_model(),
-         vo, true, false),
+                       const Teuchos::RCP<const Teuchos::ParameterList>& plist) :
+    Mesh(Teuchos::rcp(new MpiComm_type(MPI_COMM_SELF)), parent_mesh->geometric_model(), plist, true, false),
     parent_mesh_(parent_mesh),
     column_id_(column_id),
-    extracted_(Teuchos::rcp(new Mesh_MSTK(Teuchos::rcp(new MpiComm_type(MPI_COMM_SELF)),
-            parent_mesh, parent_mesh->cells_of_column(column_id), CELL,
-            false, false, true, false)))
+    extracted_(Teuchos::rcp(new Mesh_MSTK(parent_mesh, parent_mesh->cells_of_column(column_id), CELL, false,
+            Teuchos::rcp(new MpiComm_type(MPI_COMM_SELF)), parent_mesh->geometric_model(), plist, true, false)))
 {
   AMANZI_ASSERT(column_id_ >= 0 && column_id_ < parent_mesh->num_columns());
 

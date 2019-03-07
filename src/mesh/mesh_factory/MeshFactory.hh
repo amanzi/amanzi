@@ -18,6 +18,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "AmanziTypes.hh"
+#include "MeshDefs.hh"
 #include "MeshFramework.hh"
 
 namespace Amanzi {
@@ -52,15 +53,21 @@ class MeshFactory {
   //
   // During construction, the first framework that provides the needed
   // capability is used (except in extraction -- see that documentation).  
-  const FrameworkPreference& preference() const { return preference_; }
-  void set_preference(const FrameworkPreference& pref);
+  const Preference& preference() const { return preference_; }
+  void set_preference(const Preference& pref);
 
   // Get/set the geometric model
   //
   Teuchos::RCP<const AmanziGeometry::GeometricModel> geometric_model() const {
-    return geometric_model_; }
-  void set_geometric_model(const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm);
+    return gm_; }
+  void set_geometric_model(const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm) {
+    gm_ = gm; }
 
+  // Get/set the parameter list
+  //
+  Teuchos::RCP<const Teuchos::ParameterList> parameter_list() const { return plist_; }
+  void set_parameter_list(const Teuchos::RCP<const Teuchos::ParameterList>& plist);
+  
   // Creation methods
   
   // Create a mesh by reading the specified file (or set of files)
@@ -68,11 +75,6 @@ class MeshFactory {
                             const bool request_faces=true,
                             const bool request_edges=false);
 
-  // Generate a mesh from parameters in a list
-  Teuchos::RCP<Mesh> create(const Teuchos::ParameterList& gen_plist,
-                            const bool request_faces=true,
-                            const bool request_edges=false);
-  
   // Generate a hex mesh (3D)
   //
   // Generates a structured mesh covering [x0,x1] X [y0,y1] X [z0,z1] with
@@ -94,6 +96,12 @@ class MeshFactory {
                             const bool request_faces=true,
                             const bool request_edges=false);
 
+  // Generate a mesh from parameters in a list
+  Teuchos::RCP<Mesh> create(const Teuchos::ParameterList& gen_plist,
+                            const bool request_faces=true,
+                            const bool request_edges=false);
+  
+  
   // Extract a mesh from another mesh and a collection of entities
   //
   // Lifts setids of type setkind from the parent mesh and makes a new mesh
@@ -136,7 +144,7 @@ class MeshFactory {
   Comm_ptr_type comm_;
 
   // A list of preferred mesh frameworks to consider
-  FrameworkPreference preference_;
+  Preference preference_;
 
   // Object encoding the level of verbosity and output stream for diagnostic
   // messages, other control parameters that are NOT about construction.

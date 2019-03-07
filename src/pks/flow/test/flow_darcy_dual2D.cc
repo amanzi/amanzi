@@ -54,14 +54,14 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
+  pref.push_back(Framework::MSTK);
+  pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(comm);
+  MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(pref);
-  RCP<const Mesh> mesh = meshfactory.create("test/dual2D.exo", gm);
+  RCP<const Mesh> mesh = meshfactory.create("test/dual2D.exo");
 
   // create a state and populate it
   Teuchos::ParameterList state_list = plist->sublist("state");

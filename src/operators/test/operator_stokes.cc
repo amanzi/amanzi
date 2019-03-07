@@ -57,8 +57,8 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
 
   // create a simple rectangular mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK, STKMESH}));
-  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 16, 20, Teuchos::null);
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 16, 20);
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);

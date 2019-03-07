@@ -121,7 +121,7 @@ Mesh_MSTK::Mesh_MSTK(const std::string& filename,
                      const Teuchos::RCP<const Teuchos::ParameterList>& plist,
                      const bool request_faces,
                      const bool request_edges) :
-    Mesh(comm, gm, Teuchos::null,request_faces,request_edges),
+    Mesh(comm, gm, plist, request_faces, request_edges),
     meshxyz(nullptr), 
     faces_initialized(false), edges_initialized(false),
     target_cell_volumes_(nullptr), min_cell_volumes_(nullptr),
@@ -134,8 +134,6 @@ Mesh_MSTK::Mesh_MSTK(const std::string& filename,
   Partitioner_type partitioner = PARTITIONER_DEFAULT;
     
   if (plist != Teuchos::null) {
-    vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Mesh:MSTK", *plist)); 
-
     if (plist->isSublist("unstructured")) {
       const auto tmp = Teuchos::sublist(plist, "unstructured");
       if (tmp->isSublist("expert")) {
@@ -240,7 +238,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
                      const Teuchos::RCP<const Teuchos::ParameterList>& plist,
                      const bool request_faces,
                      const bool request_edges) :
-    Mesh(comm, gm, Teuchos::null,request_faces,request_edges), 
+    Mesh(comm, gm, plist, request_faces,request_edges), 
     meshxyz(nullptr), 
     faces_initialized(false), edges_initialized(false),
     target_cell_volumes_(nullptr), min_cell_volumes_(nullptr),
@@ -252,8 +250,6 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
   Partitioner_type partitioner = PARTITIONER_DEFAULT;
     
   if (plist != Teuchos::null) {
-    vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Mesh:MSTK", *plist)); 
-
     if (plist->isSublist("unstructured")) {
       const auto tmp = Teuchos::sublist(plist, "unstructured");
       if (tmp->isSublist("expert")) {
@@ -349,7 +345,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
                      const Teuchos::RCP<const Teuchos::ParameterList>& plist,
                      const bool request_faces,
                      const bool request_edges) :
-    Mesh(comm, gm, Teuchos::null,request_faces,request_edges), 
+    Mesh(comm, gm, plist, request_faces, request_edges), 
     meshxyz(nullptr), 
     faces_initialized(false), edges_initialized(false),
     target_cell_volumes_(nullptr), min_cell_volumes_(nullptr),
@@ -361,8 +357,6 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
   Partitioner_type partitioner = PARTITIONER_DEFAULT;
     
   if (plist != Teuchos::null) {
-    vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Mesh:MSTK", *plist)); 
-
     if (plist->isSublist("unstructured")) {
       const auto tmp = Teuchos::sublist(plist, "unstructured");
       if (tmp->isSublist("expert")) {
@@ -459,15 +453,18 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
 //---------------------------------------------------------
 // Extract MSTK entities from an ID list and make a new MSTK mesh
 //---------------------------------------------------------
-Mesh_MSTK::Mesh_MSTK(const Comm_ptr_type& comm,
-                     const Teuchos::RCP<const Mesh>& parent_mesh,
+Mesh_MSTK::Mesh_MSTK(const Teuchos::RCP<const Mesh>& parent_mesh,
                      const Entity_ID_List& entity_ids, 
                      const Entity_kind entity_kind,
                      const bool flatten,
-                     const bool extrude,
+                     const Comm_ptr_type& comm,
+                     const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+                     const Teuchos::RCP<const Teuchos::ParameterList>& plist,
                      const bool request_faces,
                      const bool request_edges) :
-    Mesh(comm, parent_mesh->geometric_model(), Teuchos::null, request_faces,request_edges),
+    Mesh(comm, gm == Teuchos::null ? parent_mesh->geometric_model() : gm,
+         plist == Teuchos::null ? parent_mesh->parameter_list() : plist,
+         request_faces, request_edges),
     parent_mesh_(Teuchos::rcp_dynamic_cast<const Mesh_MSTK>(parent_mesh)),
     extface_map_w_ghosts_(nullptr), extface_map_wo_ghosts_(nullptr),
     owned_to_extface_importer_(nullptr)
@@ -477,12 +474,6 @@ Mesh_MSTK::Mesh_MSTK(const Comm_ptr_type& comm,
     Exceptions::amanzi_throw(mesg);
   }
     
-  if (parent_mesh_->verbosity_obj().get()) {
-    Teuchos::ParameterList plist;
-    vo_ = Teuchos::rcp(new VerboseObject(comm,
-            parent_mesh_->verbosity_obj()->getLinePrefix()+" derived", plist));
-  }
-
   auto parent_mesh_mstk = parent_mesh_->mesh_;
 
   // store pointers to the MESH_XXXFromID functions so that they can
@@ -507,8 +498,7 @@ Mesh_MSTK::Mesh_MSTK(const Comm_ptr_type& comm,
     List_Add(src_ents,ent);
   }
   
-  extract_mstk_mesh(src_ents, entity_dim, flatten, extrude,
-                    request_faces, request_edges);
+  extract_mstk_mesh(src_ents, entity_dim, flatten, request_faces, request_edges);
 
   List_Delete(src_ents);
 }
@@ -587,7 +577,6 @@ Mesh_MSTK::other_internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::R
 void Mesh_MSTK::extract_mstk_mesh(List_ptr src_entities, 
                                   const MType entity_dim,
                                   const bool flatten,
-                                  const bool extrude,
                                   const bool request_faces,
                                   const bool request_edges)
 {
@@ -598,15 +587,10 @@ void Mesh_MSTK::extract_mstk_mesh(List_ptr src_entities,
   AMANZI_ASSERT(parent_mesh_.get());
   Mesh_ptr parent_mesh_mstk = parent_mesh_->mesh_;
 
-  if (extrude) {
-    Errors::Message mesg("Extrude option not implemented yet");
-    Exceptions::amanzi_throw(mesg);
-  }
-
   // Make sure Global ID searches are enabled
   MESH_Enable_GlobalIDSearch(parent_mesh_mstk);
 
-  if (flatten || extrude) {
+  if (flatten) {
     if (entity_dim == MREGION || entity_dim == MVERTEX) {
       Errors::Message mesg("Flattening or extruding allowed only for sets of FACEs in volume mesh or CELLs in surface meshes");
       Exceptions::amanzi_throw(mesg);
@@ -628,39 +612,28 @@ void Mesh_MSTK::extract_mstk_mesh(List_ptr src_entities,
   // What is the cell dimension of new mesh
   switch (entity_dim) {
   case MREGION:
-    if (extrude) {
-      Errors::Message mesg("Cannot extrude 3D cells");
-      Exceptions::amanzi_throw(mesg);
-    }
-    else 
-      set_manifold_dimension(3); // extract regions/cells from mesh
+    set_manifold_dimension(3); // extract regions/cells from mesh
     break;
     
   case MFACE:
-    if (extrude)
-      set_manifold_dimension(3); // extract faces and extrude them into regions/cells
-    else
-      set_manifold_dimension(2); // extract faces from mesh
+    set_manifold_dimension(2); // extract faces from mesh
     break;
-    
-  case MEDGE:
-    if (extrude)
-      set_manifold_dimension(2); // extract edges and extrude them into faces/cells
-    else {
-      Errors::Message mesg("Edge list passed into extract mesh. Cannot extract a wire or point mesh");
-      Exceptions::amanzi_throw(mesg);
-    }
+
+  case MEDGE: {
+    Errors::Message mesg("Edge list passed into extract mesh. Cannot extract a wire or point mesh");
+    Exceptions::amanzi_throw(mesg);
     break;
+  }
     
   case MVERTEX: {
     Errors::Message mesg("Vertex list passed into extract mesh. Cannot extract a point mesh");
     Exceptions::amanzi_throw(mesg);
     break;
   }
-
-  default:
+  default: {
     Errors::Message mesg1("Unrecognized Entity_kind");
     Exceptions::amanzi_throw(mesg1);
+  }
   }
 
   // Create new mesh in MSTK

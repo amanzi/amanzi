@@ -33,8 +33,8 @@ namespace AmanziMesh {
 MeshLogical::MeshLogical(const Comm_ptr_type& comm,
                          const std::vector<Entity_ID_List>& face_cell_ids,
                          const std::vector<AmanziGeometry::Point>& face_normals,
-                         const Teuchos::RCP<const VerboseObject>& verbosity_obj)
-    : Mesh(comm, Teuchos::null, verbosity_obj, true, false)
+                         const Teuchos::RCP<const Teuchos::ParameterList>& plist)
+    : Mesh(comm, Teuchos::null, plist, true, false)
 {
   logical_ = true;
   AMANZI_ASSERT(face_cell_ids.size() == face_normals.size());
@@ -130,8 +130,8 @@ MeshLogical::MeshLogical(const Comm_ptr_type& comm,
                          const std::vector<std::vector<double> >& face_cell_lengths,
                          const std::vector<AmanziGeometry::Point>& face_area_normals,
                          const std::vector<AmanziGeometry::Point>* cell_centroids,
-                         const Teuchos::RCP<const VerboseObject>& verbosity_obj)
-: Mesh(comm, Teuchos::null, verbosity_obj, true, false) {
+                         const Teuchos::RCP<const Teuchos::ParameterList>& plist)
+: Mesh(comm, Teuchos::null, plist, true, false) {
 
   logical_ = true;
   

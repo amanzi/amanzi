@@ -51,14 +51,14 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
+  pref.push_back(Framework::MSTK);
+  pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(comm);
+  MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(pref);
-  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 100.0, 50.0, 100, 50, gm); 
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 100.0, 50.0, 100, 50); 
 
   // create a simple state and populate it
   Amanzi::VerboseObject::global_hide_line_prefix = true;

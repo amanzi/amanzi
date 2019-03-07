@@ -64,13 +64,13 @@ void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre
   MeshFactory meshfactory(comm);
   RCP<const Mesh> mesh;
   if (dim == 2) {
-    meshfactory.set_preference(FrameworkPreference({MSTK, STKMESH}));
+    meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
     // mesh = meshfactory.create("test/median15x16.exo");
     mesh = meshfactory.create("test/circle_quad10.exo");
     // mesh = meshfactory.create("test/circle_poly10.exo");
   } else {
-    meshfactory.set_preference(FrameworkPreference({AmanziMesh::Simple}));
-    if (comm->NumProc() > 1) meshfactory.set_preference(FrameworkPreference({MSTK}));
+    meshfactory.set_preference(Preference({AmanziMesh::Framework::SIMPLE}));
+    if (comm->NumProc() > 1) meshfactory.set_preference(Preference({Framework::MSTK}));
     mesh = meshfactory.create(0.0,0.0,0.0, 1.0,1.0,1.0, 4, 5, 6);
   }
 
@@ -228,7 +228,7 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
 
   // create a geometric model and mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK, STKMESH}));
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
   RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 15, 8);
 
   // modify diffusion coefficient

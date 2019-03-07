@@ -51,17 +51,17 @@ TEST(FLOW_3D_RICHARDS) {
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
+  pref.push_back(Framework::MSTK);
+  pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(comm);
+  MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(pref);  
   // ParameterList mesh_list = plist->get<ParameterList>("mesh").get<ParameterList>("unstructured");
   // ParameterList factory_list = mesh_list.get<ParameterList>("generate mesh");
   // Teuchos::RCP<Mesh> mesh(factory(factory_list, gm));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.,0.,0.,64.5,1.0,103.2,1,1,516,gm);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.,0.,0.,64.5,1.0,103.2,1,1,516);
 
   /* create a simple state and populate it */
   Amanzi::VerboseObject::global_hide_line_prefix = true;

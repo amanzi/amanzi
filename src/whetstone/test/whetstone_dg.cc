@@ -41,7 +41,7 @@ TEST(DG2D_MASS_MATRIX) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  meshfactory.set_preference(Preference({Framework::MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.5, 0.5, 1, 1); 
 
   DenseMatrix M;
@@ -85,9 +85,8 @@ TEST(DG3D_MASS_MATRIX) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2,
-                                        Teuchos::null, true, true); 
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, true, true); 
 
   DenseMatrix M0, M1;
   Tensor T(3, 1);
@@ -170,8 +169,7 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
-  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
+  meshfactory.set_preference(Preference({Framework::MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
  
   double tmp, integral[3];
@@ -237,7 +235,7 @@ void Run2DFluxMatrix(bool upwind, bool jump_on_test) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  meshfactory.set_preference(Preference({Framework::MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 2, 2); 
  
   for (int k = 0; k < 3; k++) {
@@ -305,7 +303,7 @@ TEST(DG2D_FLUX_MATRIX_CONSERVATION) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  meshfactory.set_preference(Preference({Framework::MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 2, 2); 
  
   for (int k = 0; k < 3; k++) {
@@ -357,9 +355,8 @@ TEST(DG3D_FLUX_MATRIX) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2,
-                                        Teuchos::null, true, true); 
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, true, true); 
  
   for (int k = 0; k < 2; k++) {
     Teuchos::ParameterList plist;
@@ -422,8 +419,7 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
-  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 2, 2); 
+  meshfactory.set_preference(Preference({Framework::MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_quad.exo"); 
 
   for (int k = 0; k < 3; k++) {
@@ -545,9 +541,8 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2,
-                                        Teuchos::null, true, true); 
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, true, true); 
 
   int d(3);
   for (int k = 0; k < 2; k++) {
@@ -624,7 +619,7 @@ TEST(DG_LEAST_SQUARE_MAP_CELL) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  meshfactory.set_preference(Preference({Framework::MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
 
   // extract polygon from the mesh

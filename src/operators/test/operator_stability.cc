@@ -63,10 +63,10 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   Teuchos::ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
-  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 40, 40, gm);
-  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo", gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 40, 40);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // create diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
@@ -217,11 +217,11 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
   ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
-  RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo", gm);
-  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 5, 5, gm);
-  // RCP<const Mesh> mesh = meshfactory.create("test/median255x256.exo", gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
+  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 5, 5);
+  // RCP<const Mesh> mesh = meshfactory.create("test/median255x256.exo");
 
   // create diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.

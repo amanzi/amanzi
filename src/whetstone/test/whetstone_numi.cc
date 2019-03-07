@@ -34,10 +34,10 @@ TEST(NUMI_CELL_2D_EULER_FORMULA) {
   std::cout << "Test: Numerical integration: Euler's formula for polygon" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", gm, true, true); 
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", true, true); 
  
   NumericalIntegration numi(mesh);
 
@@ -75,10 +75,10 @@ TEST(NUMI_CELL_2D_QUADRATURE_POLYGON) {
   std::cout << "Test: Numerical integration: quadrature rules in 2D" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", gm, true, true); 
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", true, true); 
  
   NumericalIntegration numi(mesh);
 
@@ -132,9 +132,9 @@ TEST(NUMI_CELL_2D_QUADRATURE_SQUARE) {
   std::cout << "Test: Numerical integration: quadrature rule for square" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 2, 2); 
  
   NumericalIntegration numi(mesh);
@@ -174,10 +174,10 @@ TEST(NUMI_CELL_3D_QUADRATURE_POLYHEDRON) {
   std::cout << "Test: Numerical integration: quadrature rules in 3D" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/dodecahedron.exo", gm, true, true); 
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/dodecahedron.exo", true, true); 
  
   NumericalIntegration numi(mesh);
 
@@ -232,9 +232,9 @@ TEST(NUMI_CELL_3D_QUADRATURE_SQUARE) {
   std::cout << "Test: Numerical integration: quadrature rule for cube" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 2, 2, 2); 
  
   NumericalIntegration numi(mesh);

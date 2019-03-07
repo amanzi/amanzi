@@ -44,10 +44,10 @@ TEST(PROJECTORS_SQUARE_CR) {
   std::cout << "\nTest: Crouziex-Raviart harmonic projectors for square" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(-1.2, 0.0, 1.2, 1.1, 2, 1, gm, true, true); 
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(-1.2, 0.0, 1.2, 1.1, 2, 1, true, true); 
  
   int cell(1);
   AmanziGeometry::Point zero(2);
@@ -139,11 +139,11 @@ TEST(PROJECTORS_POLYGON_CR) {
   std::cout << "\nTest: Crouzeix-Raviart harmonic projector for pentagon" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", gm, true, true);
-  // Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_quad.exo", gm, true, true);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", true, true);
+  // Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_quad.exo", true, true);
  
   int cell(0), nfaces(5);
   AmanziGeometry::Point zero(2);
@@ -337,10 +337,10 @@ TEST(L2_PROJECTORS_SQUARE_CR) {
   std::cout << "\nTest: Crouzeix-Raviart L2 projector for square" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 2.0, 4.0, 1, 2, gm, true, true); 
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 2.0, 4.0, 1, 2, true, true); 
  
   int cell(1);
   AmanziGeometry::Point zero(2);
@@ -385,10 +385,10 @@ TEST(L2GRADIENT_PROJECTORS_SQUARE_CR) {
   std::cout << "\nTest: Crouzeix-Raviart L2 projector of gradient for square" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 4.0, 2.0, 2, 1, gm, true, true); 
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 4.0, 2.0, 2, 1, true, true); 
  
   int cell(1);
   AmanziGeometry::Point zero(2);
@@ -444,10 +444,10 @@ TEST(PROJECTORS_SQUARE_PK) {
   std::cout << "\nTest: HO Lagrange projectors for square (linear deformation)" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(-1.2, 0.0, 1.2, 1.1, 2, 1, gm, true, true); 
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(-1.2, 0.0, 1.2, 1.1, 2, 1, true, true); 
  
   int cell(1);
   AmanziGeometry::Point zero(2);
@@ -533,11 +533,11 @@ TEST(PROJECTORS_POLYGON_PK) {
   std::cout << "\nTest: HO Lagrange projectors for pentagon (linear deformation)" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", gm, true, true);
-  // Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_quad.exo", gm, true, true);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", true, true);
+  // Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_quad.exo", true, true);
  
   int cell(0), nfaces(5);
   AmanziGeometry::Point zero(2);
@@ -726,10 +726,10 @@ void SerendipityProjectorPolygon() {
   std::cout << "\nTest: HO Serendipity Lagrange projectors for pentagon (linear deformation)" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", gm, true, true);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", true, true);
  
   int cell(0), nfaces(5);
   AmanziGeometry::Point zero(2);

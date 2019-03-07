@@ -73,8 +73,8 @@ struct another_reference_mesh
 
     gm = Teuchos::rcp(new GeometricModel(3,regions,*comm));
     // Create the mesh
-    MeshFactory meshfactory(comm);
-    mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2, gm);
+    MeshFactory meshfactory(comm,gm);
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
   }
 };
 

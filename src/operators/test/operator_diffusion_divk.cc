@@ -68,10 +68,10 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
 
   // create an SIMPLE mesh framework
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK, STKMESH}));
-  // Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10, Teuchos::null);
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  // Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10);
   std::string file = op_list.get<std::string>("file name", "test/random20.exo");
-  Teuchos::RCP<const Mesh> mesh = meshfactory.create(file, Teuchos::null);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(file);
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion tensor
@@ -224,9 +224,9 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
 
   // create an SIMPLE mesh framework
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK, STKMESH}));
-  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, Teuchos::null);
-  // Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/mesh.exo", Teuchos::null);
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
+  // Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/mesh.exo");
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the nonlinear coefficient.

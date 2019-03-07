@@ -79,16 +79,16 @@ void AdvectionSteady(int dim, std::string filename, int nx,
 
   // create a mesh framework
   Teuchos::RCP<GeometricModel> gm;
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK,STKMESH}));
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
 
   double weak_sign = 1.0;
   std::string pk_name;
   RCP<const Mesh> mesh;
 
   if (dim == 2) {
-    // mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, nx, gm);
-    mesh = meshfactory.create(filename, gm, true, true);
+    // mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, nx);
+    mesh = meshfactory.create(filename, true, true);
     pk_name = "PK operator 2D";
 
     if (weak_form == "primal") {
@@ -101,7 +101,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
     }
   } else {
     bool request_faces(true), request_edges(true);
-    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx, gm, request_faces, request_edges);
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx, request_faces, request_edges);
     pk_name = "PK operator 3D";
   }
 

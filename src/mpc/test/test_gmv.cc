@@ -17,9 +17,9 @@ TEST(GMV) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
   
-  Amanzi::AmanziMesh::FrameworkPreference pref;
+  Amanzi::AmanziMesh::Preference pref;
   pref.clear();
-  pref.push_back(Amanzi::AmanziMesh::Simple);
+  pref.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
 
   Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
   meshfactory.set_preference(pref);

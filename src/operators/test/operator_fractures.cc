@@ -58,12 +58,12 @@ void RunTest(int icase, bool gravity) {
   ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({Framework::MSTK}));
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
   RCP<Mesh> surfmesh;
 
   if (icase == 0) {
-    RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, gm);
+    RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
 
     // extract fractures mesh
     std::vector<std::string> setnames;
@@ -71,7 +71,7 @@ void RunTest(int icase, bool gravity) {
     setnames.push_back("fracture 2");
     surfmesh = meshfactory.create(mesh, setnames, AmanziMesh::FACE);
   } else {
-    surfmesh = meshfactory.create("test/fractures.exo", gm);
+    surfmesh = meshfactory.create("test/fractures.exo");
   }
 
   // modify diffusion coefficient

@@ -107,7 +107,7 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   // create two meshes
   MeshFactory meshfactory(comm);
   //meshfactory.set_partitioner(AmanziMesh::Partitioner_type::ZOLTAN_RCB);
-  meshfactory.set_preference(FrameworkPreference({AmanziMesh::MSTK}));
+  meshfactory.set_preference(Preference({AmanziMesh::Framework::MSTK}));
 
   Teuchos::RCP<const Mesh> mesh0;
   Teuchos::RCP<Mesh> mesh1;
@@ -115,11 +115,11 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
     mesh0 = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, ny);
     mesh1 = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, ny);
   } else if (dim == 2) {
-    mesh0 = meshfactory.create(file_name, Teuchos::null);
-    mesh1 = meshfactory.create(file_name, Teuchos::null);
+    mesh0 = meshfactory.create(file_name);
+    mesh1 = meshfactory.create(file_name);
   } else { 
-    mesh0 = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, Teuchos::null, true, true);
-    mesh1 = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, Teuchos::null, true, true);
+    mesh0 = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, true, true);
+    mesh1 = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, true, true);
   }
 
   int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);

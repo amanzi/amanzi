@@ -14,61 +14,49 @@
 
 #include <UnitTest++.h>
 
-#include <mpi.h>
 #include <iostream>
 
-#include <AmanziComm.hh>
+#include "AmanziComm.hh"
 
+#include "Geometry.hh"
+#include "MeshException.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "FrameworkTraits.hh"
-#include "Geometry.hh"
 
 TEST(MESH_GEOMETRY_PLANAR)
 {
-
   auto comm = Amanzi::getDefaultComm();
   const int nproc(comm->NumProc());
   const int me(comm->MyPID());
 
-  const Amanzi::AmanziMesh::Framework frameworks[] = {  
-    Amanzi::AmanziMesh::MSTK
-  };
-  const char *framework_names[] = {
-    "MSTK"
-  };
-  
-  const int numframeworks = sizeof(frameworks)/sizeof(Amanzi::AmanziMesh::Framework);
 
+  // We are not including MOAB since Mesh_MOAB.cc does not have
+  // routines for generating a mesh
+  std::vector<Amanzi::AmanziMesh::Framework> frameworks;
+  std::vector<std::string> framework_names;
 
-  Amanzi::AmanziMesh::Framework the_framework;
-  for (int i = 0; i < numframeworks; i++) {
+  if (Amanzi::AmanziMesh::framework_enabled(Amanzi::AmanziMesh::Framework::MSTK)) {
+    frameworks.push_back(Amanzi::AmanziMesh::Framework::MSTK);
+    framework_names.push_back("MSTK");
+  }
 
-
+  for (int i = 0; i < frameworks.size(); i++) {
     // Set the framework
-
-    the_framework = frameworks[i];
-
-    if (!Amanzi::AmanziMesh::framework_available(the_framework)) continue;
-
     std::cerr << "Testing geometry operators with " << framework_names[i] << std::endl;
 
-
     // Create the mesh
-
-    Amanzi::AmanziMesh::MeshFactory factory(comm);
+    Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
     int ierr = 0;
     int aerr = 0;
     try {
-      Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
+      Amanzi::AmanziMesh::Preference prefs(meshfactory.preference());
       prefs.clear(); 
-      prefs.push_back(the_framework);
+      prefs.push_back(frameworks[i]);
+      meshfactory.set_preference(prefs);
 
-      factory.set_preference(prefs);
-
-      mesh = factory.create(0.0,0.0,1.0,1.0,2,2);
+      mesh = meshfactory.create(0.0,0.0,1.0,1.0,2,2);
 
     } catch (const Amanzi::AmanziMesh::Message& e) {
       std::cerr << ": mesh error: " << e.what() << std::endl;
@@ -228,44 +216,34 @@ TEST(MESH_GEOMETRY_SURFACE)
   const int nproc(comm->NumProc());
   const int me(comm->MyPID());
 
-  const Amanzi::AmanziMesh::Framework frameworks[] = {  
-    Amanzi::AmanziMesh::MSTK
-  };
-  const char *framework_names[] = {
-    "MSTK"
-  };
-  
-  const int numframeworks = sizeof(frameworks)/sizeof(Amanzi::AmanziMesh::Framework);
+  // We are not including MOAB since Mesh_MOAB.cc does not have
+  // routines for generating a mesh
+  std::vector<Amanzi::AmanziMesh::Framework> frameworks;
+  std::vector<std::string> framework_names;
 
+#ifdef HAVE_MSTK_MESH
+  frameworks.push_back(Amanzi::AmanziMesh::Framework::MSTK);
+  framework_names.push_back("MSTK");
+#endif
 
-  Amanzi::AmanziMesh::Framework the_framework;
-  for (int i = 0; i < numframeworks; i++) {
-
-
+  for (int i = 0; i < frameworks.size(); i++) {
     // Set the framework
-
-    the_framework = frameworks[i];
-
-    if (!Amanzi::AmanziMesh::framework_available(the_framework)) continue;
-
     std::cerr << "Testing geometry operators with " << framework_names[i] << std::endl;
 
-
     // Create the mesh
-
-    Amanzi::AmanziMesh::MeshFactory factory(comm);
+    Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
     int ierr = 0;
     int aerr = 0;
     try {
-      Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
+      Amanzi::AmanziMesh::Preference prefs(meshfactory.preference());
       prefs.clear(); 
-      prefs.push_back(the_framework);
+      prefs.push_back(frameworks[i]);
 
-      factory.set_preference(prefs);
+      meshfactory.set_preference(prefs);
 
-      mesh = factory.create("test/surfquad.exo");
+      mesh = meshfactory.create("test/surfquad.exo");
 
     } catch (const Amanzi::AmanziMesh::Message& e) {
       std::cerr << ": mesh error: " << e.what() << std::endl;
@@ -418,48 +396,37 @@ TEST(MESH_GEOMETRY_SOLID)
   const int nproc(comm->NumProc());
   const int me(comm->MyPID());
 
-  const Amanzi::AmanziMesh::Framework frameworks[] = {  
-    Amanzi::AmanziMesh::STKMESH,
-    Amanzi::AmanziMesh::MSTK,
-    Amanzi::AmanziMesh::Simple
-  };
-  const char *framework_names[] = {
-    "STKMesh",
-    "MSTK",
-    "Simple"
-  };
+  // We are not including MOAB since Mesh_MOAB.cc does not have
+  // routines for generating a mesh
+  std::vector<Amanzi::AmanziMesh::Framework> frameworks;
+  std::vector<std::string> framework_names;
+
+  frameworks.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
+  framework_names.push_back("Simple");
   
-  const int numframeworks = sizeof(frameworks)/sizeof(Amanzi::AmanziMesh::Framework);
-
-
-  Amanzi::AmanziMesh::Framework the_framework;
-  for (int i = 0; i < numframeworks; i++) {
-
-
+#ifdef HAVE_MSTK_MESH
+  frameworks.push_back(Amanzi::AmanziMesh::Framework::MSTK);
+  framework_names.push_back("MSTK");
+#endif
+  
+  for (int i = 0; i < frameworks.size(); i++) {
     // Set the framework
-
-    the_framework = frameworks[i];
-
-    if (!Amanzi::AmanziMesh::framework_available(the_framework)) continue;
-
     std::cerr << "Testing geometry operators with " << framework_names[i] << std::endl;
 
-
     // Create the mesh
-
-    Amanzi::AmanziMesh::MeshFactory factory(comm);
+    Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
     int ierr = 0;
     int aerr = 0;
     try {
-      Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
+      Amanzi::AmanziMesh::Preference prefs(meshfactory.preference());
       prefs.clear(); 
-      prefs.push_back(the_framework);
+      prefs.push_back(frameworks[i]);
 
-      factory.set_preference(prefs);
+      meshfactory.set_preference(prefs);
 
-      mesh = factory.create(0.0,0.0,0.0,1.0,1.0,1.0,2,2,2);
+      mesh = meshfactory.create(0.0,0.0,0.0,1.0,1.0,1.0,2,2,2);
 
     } catch (const Amanzi::AmanziMesh::Message& e) {
       std::cerr << ": mesh error: " << e.what() << std::endl;

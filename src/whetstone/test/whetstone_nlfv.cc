@@ -132,9 +132,9 @@ TEST(HARMONIC_AVERAGING_POINT_2D) {
 #endif
 
   // initialize a two-cell mesh (quad and triangle)
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(pref);

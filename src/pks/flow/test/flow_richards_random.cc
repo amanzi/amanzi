@@ -55,21 +55,21 @@ void RunTestConvergence(std::string input_xml) {
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
         Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
     
-    FrameworkPreference pref;
+    Preference pref;
     pref.clear();
-    pref.push_back(MSTK);
-    pref.push_back(STKMESH);
+    pref.push_back(Framework::MSTK);
+    pref.push_back(Framework::STK);
 
-    MeshFactory meshfactory(comm);
+    MeshFactory meshfactory(comm,gm);
     meshfactory.set_preference(pref);
     Teuchos::RCP<const Mesh> mesh;
     if (n == 0) {
-      //mesh = meshfactory.create("test/test_nice.exo", gm);
-      mesh = meshfactory.create("test/random_mesh1.exo", gm);
+      //mesh = meshfactory.create("test/test_nice.exo");
+      mesh = meshfactory.create("test/random_mesh1.exo");
     } else if (n == 1) {
-      mesh = meshfactory.create("test/random_mesh2.exo", gm);
+      mesh = meshfactory.create("test/random_mesh2.exo");
     } else if (n == 2) {
-      mesh = meshfactory.create("test/random_mesh3.exo", gm);
+      mesh = meshfactory.create("test/random_mesh3.exo");
     }
 
     /* create a simple state and populate it */

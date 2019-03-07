@@ -45,7 +45,7 @@ TEST(DG_MAP_DETERMINANT_CELL) {
 
   // create two meshes
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  meshfactory.set_preference(Preference({Framework::MSTK}));
   Teuchos::RCP<Mesh> mesh0 = meshfactory.create("test/one_pentagon.exo");
   Teuchos::RCP<Mesh> mesh1 = meshfactory.create("test/one_pentagon.exo");
 
@@ -126,7 +126,7 @@ TEST(DG_MAP_LEAST_SQUARE_CELL) {
 
   // create two meshes
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  meshfactory.set_preference(Preference({Framework::MSTK}));
   Teuchos::RCP<Mesh> mesh0 = meshfactory.create("test/one_pentagon.exo");
   Teuchos::RCP<Mesh> mesh1 = meshfactory.create("test/one_pentagon.exo");
 
@@ -212,7 +212,7 @@ TEST(DG_MAP_GCL) {
 
   // create 2D mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  meshfactory.set_preference(Preference({Framework::MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
 
   // create a map

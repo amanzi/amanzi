@@ -57,8 +57,8 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
 
   // create an MSTK mesh framework
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
-  // Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 4, Teuchos::null);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  // Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 4);
   Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/random10.exo");
 
   // modify diffusion coefficient
@@ -203,8 +203,8 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
 
   // create an MSTK mesh framework
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
-  //Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 4, Teuchos::null);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  //Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 4);
   Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/random10.exo");
 
   // modify diffusion coefficient

@@ -62,7 +62,7 @@ void OperatorDiffusionDG(std::string solver_name,
 
   // create a mesh framework
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK,STKMESH}));
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
   // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 2);
   RCP<const Mesh> mesh = meshfactory.create("test/median7x8_filtered.exo");
   // RCP<const Mesh> mesh = meshfactory.create("test/triangular8_clockwise.exo");

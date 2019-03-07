@@ -40,7 +40,7 @@ TEST(DARCY_SURFACE) {
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  meshfactory.set_preference(Preference({Framework::MSTK}));
   RCP<Mesh> mesh = meshfactory.create("test/surface.exo"); 
  
   MFD3D_Diffusion mfd(mesh);

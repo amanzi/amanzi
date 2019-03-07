@@ -42,7 +42,7 @@ TEST(ELASTICITY_STIFFNESS_2D) {
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  meshfactory.set_preference(Preference({Framework::MSTK}));
   // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
   RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo"); 
  
@@ -132,7 +132,7 @@ TEST(ELASTICITY_STIFFNESS_3D) {
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK}));
+  meshfactory.set_preference(Preference({Framework::MSTK}));
   // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
   RCP<Mesh> mesh = meshfactory.create("test/one_trapezoid.exo"); 
  

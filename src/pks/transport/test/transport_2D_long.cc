@@ -49,9 +49,9 @@ TEST(ADVANCE_WITH_2D_MESH) {
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK,STKMESH}));
-  RCP<const Mesh> mesh = meshfactory.create("test/rect2D_50x50_ss.exo", gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  RCP<const Mesh> mesh = meshfactory.create("test/rect2D_50x50_ss.exo");
   
   /* create a simple state and populate it */
   Amanzi::VerboseObject::global_hide_line_prefix = false;

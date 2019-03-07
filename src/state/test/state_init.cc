@@ -38,13 +38,13 @@ TEST(FIELD_INITIALIZATION) {
       Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   // create a mesh
-  AmanziMesh::FrameworkPreference pref;
+  AmanziMesh::Preference pref;
   pref.clear();
-  pref.push_back(AmanziMesh::MSTK);   
+  pref.push_back(AmanziMesh::Framework::MSTK);   
     
-  AmanziMesh::MeshFactory meshfactory(comm);
+  AmanziMesh::MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(pref);
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = meshfactory.create("test/cube3x3x3.exo", gm);
+  Teuchos::RCP<AmanziMesh::Mesh> mesh = meshfactory.create("test/cube3x3x3.exo");
 
   Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("state");
   Teuchos::Ptr<State> S = Teuchos::ptr(new State(state_list));

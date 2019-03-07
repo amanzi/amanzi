@@ -1,25 +1,12 @@
-// -------------------------------------------------------------
-/**
- * @file   test_mesh_file.cc
- * @author William A. Perkins
- * @date Mon May 16 14:03:23 2011
- * 
- * @brief  
- * 
- * 
- */
-// -------------------------------------------------------------
-// -------------------------------------------------------------
-// Battelle Memorial Institute
-// Pacific Northwest Laboratory
-// -------------------------------------------------------------
-// -------------------------------------------------------------
-// Created March 14, 2011 by William A. Perkins
-// Last Change: Mon May 16 14:03:23 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
-// -------------------------------------------------------------
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-
-static const char* SCCS_ID = "$Id$ Battelle PNL";
+  Authors: William Perkins
+*/
 
 #include <iostream>
 #include <UnitTest++.h>
@@ -27,7 +14,7 @@ static const char* SCCS_ID = "$Id$ Battelle PNL";
 #include <AmanziComm.hh>
 
 #include "dbc.hh"
-#include "../MeshFileType.hh"
+#include "../FileFormat.hh"
 #include "../MeshException.hh"
 
 SUITE (MeshFileType)
@@ -39,14 +26,14 @@ SUITE (MeshFileType)
     // EXODUS_TEST_FILE is macro defined by cmake
     std::string fname(EXODUS_TEST_FILE); 
 
-    Amanzi::AmanziMesh::Format f;
+    Amanzi::AmanziMesh::FileFormat f;
     try {
-      f = Amanzi::AmanziMesh::file_format(*comm, fname);
+      f = Amanzi::AmanziMesh::fileFormatFromFilename(*comm, fname);
     } catch (const Amanzi::AmanziMesh::Message& e) {
       throw e;
     }
 
-    CHECK(f == Amanzi::AmanziMesh::ExodusII);
+    CHECK(f == Amanzi::AmanziMesh::FileFormat::EXODUS_II);
   }
 
   TEST (Nemesis) 
@@ -56,19 +43,19 @@ SUITE (MeshFileType)
     // NEMESIS_TEST_FILE is macro defined by cmake
     std::string fname(NEMESIS_TEST_FILE); 
     
-    Amanzi::AmanziMesh::Format f;
+    Amanzi::AmanziMesh::FileFormat f;
     if (comm->NumProc() > 1 && comm->NumProc() <= 4) {
       int ierr[1];
       ierr[0] = 0;
       try {
-        f = Amanzi::AmanziMesh::file_format(*comm, fname);
+        f = Amanzi::AmanziMesh::fileFormatFromFilename(*comm, fname);
       } catch (const Amanzi::AmanziMesh::Message& e) {
         throw e;
       }
 
-      CHECK(f == Amanzi::AmanziMesh::Nemesis);
+      CHECK(f == Amanzi::AmanziMesh::FileFormat::NEMESIS);
     } else {
-      CHECK_THROW(f = Amanzi::AmanziMesh::file_format(*comm, fname), 
+      CHECK_THROW(f = Amanzi::AmanziMesh::fileFormatFromFilename(*comm, fname), 
                   Amanzi::AmanziMesh::FileMessage);
     }  
   }
@@ -80,14 +67,14 @@ SUITE (MeshFileType)
     // MOAB_TEST_FILE is macro defined by cmake
     std::string fname(MOAB_TEST_FILE); 
 
-    Amanzi::AmanziMesh::Format f;
+    Amanzi::AmanziMesh::FileFormat f;
     try {
-      f = Amanzi::AmanziMesh::file_format(*comm, fname);
+      f = Amanzi::AmanziMesh::fileFormatFromFilename(*comm, fname);
     } catch (const Amanzi::AmanziMesh::Message& e) {
       throw e;
     }
 
-    CHECK(f == Amanzi::AmanziMesh::MOABHDF5);
+    CHECK(f == Amanzi::AmanziMesh::FileFormat::MOAB_HDF5);
   }
 
   TEST (PathFailure) 
@@ -96,9 +83,9 @@ SUITE (MeshFileType)
 
     std::string fname("/some/bogus/path.exo"); 
 
-    Amanzi::AmanziMesh::Format f;
+    Amanzi::AmanziMesh::FileFormat f;
 
-    CHECK_THROW(Amanzi::AmanziMesh::file_format(*comm, fname), 
+    CHECK_THROW(Amanzi::AmanziMesh::fileFormatFromFilename(*comm, fname), 
                 Amanzi::AmanziMesh::FileMessage);
   }    
 
@@ -108,9 +95,9 @@ SUITE (MeshFileType)
 
     std::string fname(BOGUS_TEST_FILE); 
 
-    Amanzi::AmanziMesh::Format f;
+    Amanzi::AmanziMesh::FileFormat f;
 
-    CHECK_THROW(Amanzi::AmanziMesh::file_format(*comm, fname), 
+    CHECK_THROW(Amanzi::AmanziMesh::fileFormatFromFilename(*comm, fname), 
                 Amanzi::AmanziMesh::FileMessage);
   }
     

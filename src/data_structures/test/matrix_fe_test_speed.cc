@@ -60,14 +60,14 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs) {
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm);
+  MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000, gm);
-  //Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo", gm);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
+  //Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // grab the maps
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -157,14 +157,14 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs_Nonlocal) {
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm);
+  MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000, gm);
-  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo", gm);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
+  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // grab the maps
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -260,14 +260,14 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm);
+  MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000, gm);
-  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo", gm);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
+  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // grab the maps
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -357,14 +357,14 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 //   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
 //   GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
-//   FrameworkPreference pref;
+//   Preference pref;
 //   pref.clear();
-//   pref.push_back(MSTK);
+//   pref.push_back(Framework::MSTK);
 
-//   MeshFactory meshfactory(comm);
+//   MeshFactory meshfactory(comm,gm);
 //   meshfactory.set_preference(pref);
-//   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000, gm);
-//   //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo", gm);
+//   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
+//   //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
 //   // grab the maps
 //   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -437,14 +437,14 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 //   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
 //   GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
-//   FrameworkPreference pref;
+//   Preference pref;
 //   pref.clear();
-//   pref.push_back(MSTK);
+//   pref.push_back(Framework::MSTK);
 
-//   MeshFactory meshfactory(comm);
+//   MeshFactory meshfactory(comm,gm);
 //   meshfactory.set_preference(pref);
-//   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000, gm);
-//   //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo", gm);
+//   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
+//   //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
 //   // grab the maps
 //   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -521,14 +521,14 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 //   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
 //   GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
-//   FrameworkPreference pref;
+//   Preference pref;
 //   pref.clear();
-//   pref.push_back(MSTK);
+//   pref.push_back(Framework::MSTK);
 
-//   MeshFactory meshfactory(comm);
+//   MeshFactory meshfactory(comm,gm);
 //   meshfactory.set_preference(pref);
-//   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000, gm);
-//   //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo", gm);
+//   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
+//   //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
 //   // grab the maps
 //   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -599,14 +599,14 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix2) {
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm);
+  MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000, gm);
-  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo", gm);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
+  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // grab the maps
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -675,14 +675,14 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix_offproc2) {
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm);
+  MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000, gm);
-  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo", gm);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
+  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // grab the maps
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -753,14 +753,14 @@ TEST(FE_MATRIX_FACE_FACE_MatrixFE2) {
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(comm);
+  MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000, gm);
-  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo", gm);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
+  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // grab the maps
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);

@@ -61,15 +61,15 @@ void TestDiffusionEdges(int dim, double tol, std::string filename)
 
   // create an SIMPLE mesh framework
   Teuchos::RCP<GeometricModel> gm;
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK, STKMESH}));
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
   RCP<const Mesh> mesh;
   if (dim == 2)
-    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 6, 7, gm, true, true);
-    // mesh = meshfactory.create("test/median32x33.exo", gm, true, true);
+    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 6, 7, true, true);
+    // mesh = meshfactory.create("test/median32x33.exo", true, true);
   else 
-    mesh = meshfactory.create(filename, gm, true, true);
-    // mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 1, 1, gm, true, true);
+    mesh = meshfactory.create(filename, true, true);
+    // mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 1, 1, true, true);
   
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());

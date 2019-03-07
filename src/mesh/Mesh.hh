@@ -60,12 +60,13 @@ NOTE: Lazy definition of the cache itself is necessarily "mutable".
 #include <string>
 
 #include "Epetra_Map.h"
-#include "AmanziComm.hh"
 #include "Epetra_Import.h"
 #include "nanoflann.hpp"
 
 #include "errors.hh"
+#include "AmanziComm.hh"
 #include "VerboseObject.hh"
+#include "Key.hh"
 
 #include "GeometricModel.hh"
 #include "Point.hh"
@@ -89,33 +90,14 @@ class Mesh {
   // cannot create a Mesh without type
   Mesh(const Comm_ptr_type& comm,
        const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-       const Teuchos::RCP<const VerboseObject>& vo,
+       const Teuchos::RCP<const Teuchos::ParameterList>& plist,
        const bool request_faces,
-       const bool request_edges)
-  : comm_(comm),
-    geometric_model_(gm),
-    vo_(vo),
-    faces_requested_(request_faces),
-    edges_requested_(request_edges),
-    space_dim_(-1),
-    manifold_dim_(-1),
-    mesh_type_(GENERAL),
-    cell_geometry_precomputed_(false),
-    face_geometry_precomputed_(false),
-    edge_geometry_precomputed_(false),
-    columns_built_(false),
-    cell2face_info_cached_(false),
-    face2cell_info_cached_(false),
-    cell2edge_info_cached_(false),
-    face2edge_info_cached_(false),
-    parent_(Teuchos::null),
-    logical_(false),
-    kdtree_faces_initialized_(false) {};
+       const bool request_edges);
 
  public:
   
   // virtual destructor
-  virtual ~Mesh() {};
+  virtual ~Mesh() = default;
 
   //
   // Accessors and Mutators
@@ -165,6 +147,16 @@ class Mesh {
     return geometric_model_;
   }
 
+  // Get parameter list
+  void set_parameter_list(const Teuchos::RCP<const Teuchos::ParameterList>& plist) {
+    plist_ = plist;
+    if (vo_ == Teuchos::null)
+      vo_ = Teuchos::rcp(new VerboseObject(comm_,Keys::cleanPListName(plist->name()), *plist));
+  }
+  Teuchos::RCP<const Teuchos::ParameterList> parameter_list() const {
+    return plist_;
+  }
+  
   // Set/Get mesh type - RECTANGULAR, GENERAL (See MeshDefs.hh)
   void set_mesh_type(const Mesh_type mesh_type) {
     mesh_type_ = mesh_type;
@@ -865,6 +857,7 @@ protected:
  protected:
   Comm_ptr_type comm_;
   Teuchos::RCP<const AmanziGeometry::GeometricModel> geometric_model_;
+  Teuchos::RCP<const Teuchos::ParameterList> plist_;
   Teuchos::RCP<const VerboseObject> vo_;
 
   Mesh_type mesh_type_;

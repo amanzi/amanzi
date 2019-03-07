@@ -57,8 +57,8 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
 
   // create a mesh framework
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK,STKMESH}));
-  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 20, 20, Teuchos::null);
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 20, 20);
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion tensor

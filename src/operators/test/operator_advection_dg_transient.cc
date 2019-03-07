@@ -168,15 +168,15 @@ AdvectionFn<AnalyticDG>::AdvectionFn(
 
   // create auxiliary mesh
   auto comm = Amanzi::getDefaultComm();
-  AmanziMesh::MeshFactory meshfactory(comm);
+  AmanziMesh::MeshFactory meshfactory(comm, mesh_->geometric_model());
   //factory.set_partitioner(AmanziMesh::Partitioner_type::ZOLTAN_RCB);
-  meshfactory.set_preference(AmanziMesh::FrameworkPreference({AmanziMesh::MSTK}));
+  meshfactory.set_preference(AmanziMesh::Preference({AmanziMesh::Framework::MSTK}));
    
   std::string name = plist.get<std::string>("file name");
   if (name == "square")
-    mesh_new_ = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx_, nx_, mesh_->geometric_model());
+    mesh_new_ = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx_, nx_);
   else 
-    mesh_new_ = meshfactory.create(name, mesh_->geometric_model(), true, true);
+    mesh_new_ = meshfactory.create(name, true, true);
 
   // cotrol variables
   name = plist.get<std::string>("face velocity method");
@@ -666,14 +666,14 @@ void AdvectionTransient(std::string filename, int nx, int ny,
   ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
-  MeshFactory meshfactory(comm);
+  MeshFactory meshfactory(comm,gm);
   //meshfactory.set_partitioner(AmanziMesh::Partitioner_type::ZOLTAN_RCB);
-  meshfactory.set_preference(FrameworkPreference({MSTK,STKMESH}));
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
   RCP<const Mesh> mesh;
   if (nx == 0 || ny == 0)
-    mesh = meshfactory.create(filename, gm, true, true);
+    mesh = meshfactory.create(filename, true, true);
   else
-    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, ny, gm);
+    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, ny);
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);

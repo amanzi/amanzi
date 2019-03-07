@@ -52,14 +52,14 @@ std::cout << "Test: Subcycling on a 2D square mesh" << std::endl;
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
+  pref.push_back(Framework::MSTK);
+  pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(comm);
+  MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(pref);
-  RCP<const Mesh> mesh = meshfactory.create("test/rect2D_10x10_ss.exo", gm);
+  RCP<const Mesh> mesh = meshfactory.create("test/rect2D_10x10_ss.exo");
   
   /* create a simple state and populate it */
   std::vector<std::string> component_names;

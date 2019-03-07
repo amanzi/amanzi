@@ -62,8 +62,8 @@ TEST(MESH2D)
 
   Teuchos::RCP<AmanziGeometry::GeometricModel> 
       gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(2, regions, *comm));
-  MeshFactory factory(comm);
-  Teuchos::RCP<Mesh> mesh = factory.create(0.0, 0.0, 1.0, 1.0, 4, 4, gm);
+  MeshFactory meshfactory(comm,gm);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 4);
 
   // test first region
   std::vector<std::string> rgns;

@@ -61,15 +61,15 @@ class MeshLogical : public Mesh {
   MeshLogical(const Comm_ptr_type& comm,
               const std::vector<Entity_ID_List>& face_cell_ids,
               const std::vector<AmanziGeometry::Point>& face_normals,
-              const Teuchos::RCP<const VerboseObject>& verbosity_obj=Teuchos::null);
+              const Teuchos::RCP<const Teuchos::ParameterList>& plist=Teuchos::null);
 
   MeshLogical(const Comm_ptr_type& comm,
               const std::vector<double>& cell_volumes,
               const std::vector<Entity_ID_List>& face_cell_ids,
               const std::vector<std::vector<double> >& face_cell_lengths,
               const std::vector<AmanziGeometry::Point>& face_area_normals,
-              const std::vector<AmanziGeometry::Point>* cell_centroids=NULL,
-              const Teuchos::RCP<const VerboseObject>& verbosity_obj=Teuchos::null);
+              const std::vector<AmanziGeometry::Point>* cell_centroids=nullptr,
+              const Teuchos::RCP<const Teuchos::ParameterList>& plist=Teuchos::null);
 
   
   void get_logical_geometry(std::vector<double>* const cell_volumes,

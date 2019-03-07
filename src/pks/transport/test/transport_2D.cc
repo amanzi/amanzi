@@ -56,14 +56,14 @@ std::cout << "Test: Advance on a 2D square mesh: limiter=" << limiter
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
-  MeshFactory meshfactory(comm);
-  meshfactory.set_preference(FrameworkPreference({MSTK, STKMESH}));
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
 
   RCP<const Mesh> mesh;
   if (exofile != "")
-    mesh = meshfactory.create(exofile, gm);
+    mesh = meshfactory.create(exofile);
   else
-    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10, gm);
+    mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10);
 
   // create a simple state and populate it
   Amanzi::VerboseObject::global_hide_line_prefix = true;

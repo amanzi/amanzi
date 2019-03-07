@@ -54,16 +54,16 @@ TEST(FLOW_BOUNDARY_SOLVER) {
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
   double bottom = -0.5;
-  MeshFactory meshfactory(comm);
+  MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(pref);
-  // Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, bottom, 1.0, 0.0, 1, 10, gm);
-  Teuchos::RCP<const Mesh> mesh1 = meshfactory.create("test/hex_2x2x1-1.exo", gm);
-  Teuchos::RCP<const Mesh> mesh2 = meshfactory.create("test/hex_2x2x1-2.exo", gm);
+  // Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, bottom, 1.0, 0.0, 1, 10);
+  Teuchos::RCP<const Mesh> mesh1 = meshfactory.create("test/hex_2x2x1-1.exo");
+  Teuchos::RCP<const Mesh> mesh2 = meshfactory.create("test/hex_2x2x1-2.exo");
 
   // // create a simple state and populate it
   Teuchos::ParameterList state_list = plist->sublist("state");

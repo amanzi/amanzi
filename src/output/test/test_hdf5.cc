@@ -11,9 +11,9 @@ TEST(HDF5) {
   std::string hdf5_datafile1 = "new_data.h5";
   std::string hdf5_datafile2 = "new_restart.h5";
   
-  Amanzi::AmanziMesh::FrameworkPreference pref;
+  Amanzi::AmanziMesh::Preference pref;
   pref.clear();
-  pref.push_back(Amanzi::AmanziMesh::Simple);
+  pref.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
 
   Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
   meshfactory.set_preference(pref);

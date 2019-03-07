@@ -106,23 +106,23 @@ TEST(ENERGY_CONVERGENCE) {
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
         Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
     
-    FrameworkPreference pref;
+    Preference pref;
     pref.clear();
-    pref.push_back(MSTK);
-    pref.push_back(STKMESH);
+    pref.push_back(Framework::MSTK);
+    pref.push_back(Framework::STK);
 
-    MeshFactory meshfactory(comm);
+    MeshFactory meshfactory(comm,gm);
     meshfactory.set_preference(pref);
     Teuchos::RCP<const Mesh> mesh;
     if (n == 0) {
-      mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 20, 10, gm);
-      // mesh = meshfactory.create("test/random_mesh1.exo", gm);
+      mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 20, 10);
+      // mesh = meshfactory.create("test/random_mesh1.exo");
     } else if (n == 1) {
-      mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 40, 10, gm);
-      // mesh = meshfactory.create("test/random_mesh2.exo", gm);
+      mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 40, 10);
+      // mesh = meshfactory.create("test/random_mesh2.exo");
     } else if (n == 2) {
-      mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 80, 10, gm);
-      // mesh = meshfactory.create("test/random_mesh3.exo", gm);
+      mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 80, 10);
+      // mesh = meshfactory.create("test/random_mesh3.exo");
     }
 
     // create a simple state and populate it
@@ -218,16 +218,16 @@ TEST(ENERGY_PRECONDITIONER) {
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
         Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
     
-    FrameworkPreference pref;
+    Preference pref;
     pref.clear();
-    pref.push_back(MSTK);
-    pref.push_back(STKMESH);
+    pref.push_back(Framework::MSTK);
+    pref.push_back(Framework::STK);
 
-    MeshFactory meshfactory(comm);
+    MeshFactory meshfactory(comm,gm);
     meshfactory.set_preference(pref);
     Teuchos::RCP<const Mesh> mesh;
-    mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 30, 30, gm);
-    // mesh = meshfactory.create("test/random_mesh1.exo", gm);
+    mesh = meshfactory.create(1.0, 0.0, 2.0, 1.0, 30, 30);
+    // mesh = meshfactory.create("test/random_mesh1.exo");
 
     // create a simple state and populate it
     Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("state");

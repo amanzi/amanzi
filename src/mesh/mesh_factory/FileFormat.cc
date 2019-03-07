@@ -13,11 +13,12 @@
 #include <fstream>
 
 #define BOOST_FILESYSTEM_NO_DEPRECATED
-#include <boost/filesystem.hpp>
-#include <boost/format.hpp>
-using bfs = boost::filesystem;
+#include "boost/filesystem.hpp"
+#include "boost/format.hpp"
+namespace bfs = boost::filesystem;
 
 #include "FileFormat.hh"
+#include "MeshException.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -42,14 +43,14 @@ std::string fileFormatName(const FileFormat f)
   default:
     result = "Unknown";
     break;
-  case EXODUS_II:
+  case FileFormat::EXODUS_II:
     result = "ExodusII";
     break;
-  case NEMESIS:
+  case FileFormat::NEMESIS:
     result = "ExodusII";
     break;
-  case MOABHDF5:
-    result = "HDF5 (MOAB)";
+  case FileFormat::MOAB_HDF5:
+    result = "HDF5 (Framework::MOAB)";
     break;
   }
   return result;
@@ -68,7 +69,7 @@ std::string fileFormatName(const FileFormat f)
 
    - .exo is ::ExodusII
    - .par.N.i is ::Nemesis, where N is # cpu and i is this process id
-   - .h5m is ::MOABHDF5
+   - .h5m is ::MOAB_HDF5
  
  This routine also makes sure the specified file is there and is readable.
 
@@ -80,8 +81,8 @@ std::string fileFormatName(const FileFormat f)
  */
 FileFormat fileFormatFromFilename(const Comm_type& comm, std::string fname) 
 {
-  const int np(comm_.NumProc());
-  const int me(comm_.MyPID());
+  const int np(comm.NumProc());
+  const int me(comm.MyPID());
 
   // take a guess at the format using the file name
   auto result = FileFormat::UNKNOWN;
@@ -89,17 +90,17 @@ FileFormat fileFormatFromFilename(const Comm_type& comm, std::string fname)
   if (std::regex_match(fname, ExodusExt)) {
     result = FileFormat::EXODUS_II;
   } else if (std::regex_match(fname, HDF5Ext)) {
-    result = MOAB_HDF5;
+    result = FileFormat::MOAB_HDF5;
   } else if (std::regex_match(fname, NemesisExt)) {
-    result = NEMESIS;
+    result = FileFormat::NEMESIS;
     int ndigits = (int)floor(log10(np)) + 1;
     std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
     fname = boost::str(boost::format(fmt) % 
-                       name % np % me);
+                       fname % np % me);
   }
 
   // check to see if there is actually a file first
-  Errors::Message e(fname.c_str());
+  FileMessage e(fname.c_str());
   bfs::path p(fname);
   if (!bfs::exists(p)) {
     e.add_data(": path not found");
@@ -120,8 +121,11 @@ FileFormat fileFormatFromFilename(const Comm_type& comm, std::string fname)
   std::string fmagic;
   bool ok(false);
   switch (result) {
-  case (ExodusII):
-  case (Nemesis):
+  case (FileFormat::UNKNOWN):
+      Exceptions::amanzi_throw(e);
+      break;
+  case (FileFormat::EXODUS_II):
+  case (FileFormat::NEMESIS):
     fmagic.assign(buffer, NetCDFmagic1.size());
     if (fmagic == NetCDFmagic1) { 
       ok = true;
@@ -140,7 +144,7 @@ FileFormat fileFormatFromFilename(const Comm_type& comm, std::string fname)
       }
     } 
     break;
-  case (MOABHDF5):
+  case (FileFormat::MOAB_HDF5):
     fmagic.assign(buffer, HDF5magic.size());
     if (fmagic == HDF5magic) {
       ok = true;

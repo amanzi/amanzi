@@ -65,8 +65,8 @@ struct bits_and_pieces
         .set("point", corner_max).set("normal", top);
     gm = Teuchos::rcp(new GeometricModel(3, regions, *comm));
     // Create the mesh
-    MeshFactory meshfactory(comm);
-    mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2, gm);
+    MeshFactory meshfactory(comm,gm);
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
   }
 };
 
@@ -74,7 +74,7 @@ struct bits_and_pieces
 TEST_FIXTURE(bits_and_pieces, empty_parameter_list)
 {
   Comm_ptr_type comm = Amanzi::getDefaultComm();
-  MeshFactory meshfactory(comm);
+  MeshFactory meshfactory(comm,gm);
   Teuchos::RCP<Mesh> mesh(meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2));
 
   PK_DomainFunctionFactory<PK_DomainFunction> bc_fact(mesh);
