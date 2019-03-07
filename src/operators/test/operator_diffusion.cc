@@ -107,6 +107,7 @@ void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre
     if (xf[0] < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
+/*
     } else if (xf[1] < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_MIXED;
       bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
@@ -114,6 +115,7 @@ void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre
       double tmp = ana.pressure_exact(xf, 0.0);
       bc_mixed[f] = 1.0;
       bc_value[f] -= bc_mixed[f] * tmp;
+*/
     } else {
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_value[f] = ana.pressure_exact(xf, 0.0);
@@ -203,6 +205,7 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
 
 TEST(OPERATOR_DIFFUSION_MIXED_wGRAVITY) {
   RunTestDiffusionMixed(2, 0.1);
+exit(0);
 }
 
 

@@ -52,10 +52,9 @@ class Analytic02 : public AnalyticBase {
     return p * v_ - g_ * p[d_ - 1];
   }
 
+  // Gradient of potential, since the base class does not handle gravity. 
   Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-    auto tmp(v_);
-    tmp[d_ - 1] -= g_;
-    return tmp;
+    return v_;
   }
 
   Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
