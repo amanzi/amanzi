@@ -41,7 +41,7 @@ FlowMatrixFracture_PK::FlowMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
     plist_ = Teuchos::sublist(pks_list, name_); 
   } else {
     std::stringstream messagestream;
-    messagestream << "There is no sublist for PK "<<name_<<"in PKs list\n";
+    messagestream << "There is no sublist for PK " << name_ << "in PKs list\n";
     Errors::Message message(messagestream.str());
     Exceptions::amanzi_throw(message);
   }
@@ -91,13 +91,14 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // inform dependent PKs about coupling
   // -- flow (matrix)
-  Teuchos::ParameterList& mflow = glist_->sublist("PKs").sublist("flow matrix")
+  std::vector<std::string> pks = plist_->get<Teuchos::Array<std::string> >("PKs order").toVector();
+  Teuchos::ParameterList& mflow = glist_->sublist("PKs").sublist(pks[0])
                                          .sublist("Darcy problem")
                                          .sublist("physical models and assumptions");
   mflow.set<std::string>("coupled matrix fracture flow", "matrix");
 
   // -- flow (fracture)
-  Teuchos::ParameterList& fflow = glist_->sublist("PKs").sublist("flow fracture")
+  Teuchos::ParameterList& fflow = glist_->sublist("PKs").sublist(pks[1])
                                          .sublist("Darcy problem")
                                          .sublist("physical models and assumptions");
   fflow.set<std::string>("coupled matrix fracture flow", "fracture");

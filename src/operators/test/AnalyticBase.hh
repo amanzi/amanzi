@@ -149,7 +149,7 @@ void AnalyticBase::ComputeFaceError(
     l2_err += std::pow((tmp - u[0][f]) / area, 2.0);
     inf_err = std::max(inf_err, fabs(tmp - u[0][f]) / area);
     unorm += std::pow(tmp / area, 2.0);
-    // std::cout << f << " " << xf << " " << u[0][f] << " " << tmp << std::endl;
+    // std::cout << f << " xf=" << xf << " u=" << u[0][f] << " u_ex=" << tmp << std::endl;
   }
 #ifdef HAVE_MPI
   GlobalOp("sum", &unorm, 1);

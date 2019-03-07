@@ -873,6 +873,9 @@ void InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       }
       pk_list.sublist(name).sublist("time integrator") = 
           pk_list.sublist(flow_m).sublist("Darcy problem").sublist("time integrator");
+      
+      pk_list.sublist(name).sublist("time integrator").sublist("BDF1").sublist("nka parameters")
+         .set<std::string>("monitor", "monitor residual");
 
       auto& tmp_m = pk_list.sublist(flow_m).sublist("Darcy problem").sublist("time integrator");
       tmp_m.set<std::string>("time integration method", "none");

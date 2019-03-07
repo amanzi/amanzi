@@ -142,10 +142,11 @@ void TestDiffusionFracturedMatrix(double gravity) {
   solver.Init(lop_list);
 
   CompositeVector& rhs = *global_op->rhs();
-  CompositeVector solution(rhs);
-  solution.PutScalar(0.0);
+  Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(rhs));
+  Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(rhs));
+  solution->PutScalar(0.0);
 
-  int ierr = solver.ApplyInverse(rhs, solution);
+  int ierr = solver.ApplyInverse(rhs, *solution);
 
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
@@ -153,7 +154,7 @@ void TestDiffusionFracturedMatrix(double gravity) {
               << " code=" << solver.returned_code() << std::endl;
 
     // visualization
-    const Epetra_MultiVector& p = *solution.ViewComponent("cell");
+    const Epetra_MultiVector& p = *solution->ViewComponent("cell");
     GMV::open_data_file(*mesh, (std::string)"operators.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "solution");
@@ -163,15 +164,32 @@ void TestDiffusionFracturedMatrix(double gravity) {
   CHECK(solver.num_itrs() < 200);
 
   // compute pressure error
-  Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
-  double pnorm, pl2_err, pinf_err, ul2_err(0.0), uinf_err(0.0);
+  Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
+  double pnorm, pl2_err, pinf_err;
   ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
+
+  // calculate flux error. To reuse the standard tools, we need to
+  // collapse flux on fracture interface
+  Epetra_MultiVector& flx_long = *flux->ViewComponent("face", true);
+  Epetra_MultiVector flx_short(mesh->face_map(false), 1);
+  double unorm, ul2_err, uinf_err;
+
+  op->UpdateFlux(solution.ptr(), flux.ptr());
+
+  const auto& fmap = *flux->Map().Map("face", true);
+  for (int f = 0; f < nfaces; ++f) {
+    int g = fmap.FirstPointInElement(f);
+    flx_short[0][f] = flx_long[0][g];
+  }
+
+  ana.ComputeFaceError(flx_short, 0.0, unorm, ul2_err, uinf_err);
 
   if (MyPID == 0) {
     printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  itr=%3d\n",
         pl2_err, pinf_err, ul2_err, uinf_err, solver.num_itrs());
 
     CHECK(pl2_err < 1e-10);
+    if (gravity == 0) CHECK(ul2_err < 1e-10);
   }
 }
 

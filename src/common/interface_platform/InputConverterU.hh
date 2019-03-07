@@ -128,7 +128,7 @@ class InputConverterU : public InputConverter {
   // -- transport
   Teuchos::ParameterList TranslateTransport_(const std::string& domain);
   Teuchos::ParameterList TranslateTransportMSM_();
-  Teuchos::ParameterList TranslateTransportBCs_();
+  Teuchos::ParameterList TranslateTransportBCs_(const std::string& domain);
   void TranslateTransportBCsGroup_(
       std::string& bcname, std::vector<std::string>& regions,
       xercesc::DOMNodeList* solutes, Teuchos::ParameterList& out_list);

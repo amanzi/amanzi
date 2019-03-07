@@ -69,6 +69,7 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   Analytic ana(mesh, gravity);
+  Analytic ana_diff(mesh, 0.0);
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
@@ -91,9 +92,7 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
       double area = mesh->face_area(f);
       bc_model[f] = OPERATOR_BC_NEUMANN;
-      bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
-      // bc_model[f] = OPERATOR_BC_DIRICHLET;
-      // bc_value[f] = ana.pressure_exact(xf, 0.0);
+      bc_value[f] = ana_diff.velocity_exact(xf, 0.0) * normal / area;
     }
   }
 
@@ -163,7 +162,7 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
     op->UpdateFlux(solution.ptr(), flux.ptr());
     double unorm, ul2_err, uinf_err;
 
-    ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
+    ana_diff.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
     if (MyPID == 0) {
       pl2_err /= pnorm; 
@@ -214,6 +213,7 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   Analytic ana(mesh, gravity);
+  Analytic ana_diff(mesh, 0.0);
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
@@ -236,9 +236,7 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
       double area = mesh->face_area(f);
       bc_model[f] = OPERATOR_BC_NEUMANN;
-      bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
-      // bc_model[f] = OPERATOR_BC_DIRICHLET;
-      // bc_value[f] = ana.pressure_exact(xf, 0.0);
+      bc_value[f] = ana_diff.velocity_exact(xf, 0.0) * normal / area;
     }
   }
 
@@ -307,7 +305,7 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
     op->UpdateFlux(solution.ptr(), flux.ptr());
     double unorm, ul2_err, uinf_err;
 
-    ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
+    ana_diff.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
     if (MyPID == 0) {
       pl2_err /= pnorm; 
@@ -331,6 +329,7 @@ TEST(OPERATOR_DIFFUSION_NLFV_DMP_02) {
 
 TEST(OPERATOR_DIFFUSION_NLFV_wGravity) {
   RunTestDiffusionNLFV_DMP<Analytic02>(2.7, true);
+  exit(0);
 }
 
 TEST(OPERATOR_DIFFUSION_NLFV_DMP_01) {

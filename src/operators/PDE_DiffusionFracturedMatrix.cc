@@ -339,7 +339,7 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
       Wff.Multiply(w, aw, false);
 
       for (int n = 0; n < nfaces; n++) {
-        av(map[n]) += aw(n);
+        av(map[n]) -= aw(n);
       }
     }
 

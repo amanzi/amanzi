@@ -308,7 +308,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
   }
 
   // create the sources and boundary conditions lists
-  out_list.sublist("boundary conditions") = TranslateTransportBCs_();
+  out_list.sublist("boundary conditions") = TranslateTransportBCs_(domain);
   out_list.sublist("source terms") = TranslateTransportSources_();
 
   // remaining global parameters
@@ -421,7 +421,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportMSM_()
 /* ******************************************************************
 * Create list of transport BCs.
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
+Teuchos::ParameterList InputConverterU::TranslateTransportBCs_(const std::string& domain)
 {
   Teuchos::ParameterList out_list;
 
@@ -436,11 +436,16 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
   DOMNode *node, *phase;
   DOMElement* element;
 
-  node_list = doc_->getElementsByTagName(mm.transcode("boundary_conditions"));
-  if (node_list->getLength() == 0) return out_list;
+  bool flag;
+  if (domain == "matrix")
+    node = GetUniqueElementByTagsString_("boundary_conditions", flag);
+  else
+    node = GetUniqueElementByTagsString_("fracture_network, boundary_conditions", flag);
+  if (!flag) return out_list;
 
-  children = node_list->item(0)->getChildNodes();
+  children = node->getChildNodes();
   int nchildren = children->getLength();
+  if (nchildren == 0) return out_list;
 
   for (int i = 0; i < nchildren; ++i) {
     DOMNode* inode = children->item(i);
@@ -449,7 +454,6 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
     std::string bcname = GetAttributeValueS_(inode, "name");
 
     // read the assigned regions
-    bool flag;
     node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
     text = mm.transcode(node->getTextContent());
     std::vector<std::string> regions = CharToStrings_(text);

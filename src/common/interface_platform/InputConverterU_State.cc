@@ -56,7 +56,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   gravity[dim_-1] = -GRAVITY_MAGNITUDE;
   // --- redefine gravity (for developers primary)
   auto it = constants_.find("gravity");
-  if (it != constants_.end()) gravity[dim_-1] = std::strtod(it->second.c_str(), NULL);
+  if (it != constants_.end()) gravity[dim_-1] = -std::strtod(it->second.c_str(), NULL);
   out_ic.sublist("gravity").set<Teuchos::Array<double> >("value", gravity);
 
   // --- viscosity
@@ -508,6 +508,19 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
       std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
       std::string reg_str = CreateNameFromVector_(regions);
+
+      // -- uniform fracture pressure
+      node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, uniform_pressure", flag);
+      if (flag) {
+        double p = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX);
+
+        Teuchos::ParameterList& pressure_ic = out_ic.sublist("fracture-pressure");
+        pressure_ic.sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "cell")
+            .sublist("function").sublist("function-constant")
+            .set<double>("value", p);
+      }
 
       // -- total_component_concentration (liquid phase)
       int ncomp_l = phases_["water"].size();
