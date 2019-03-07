@@ -212,13 +212,13 @@ if (BUILD_TESTS)
 
     add_amanzi_test(operators_diffusion operators_diffusion
                     KIND unit
-                    SOURCE test/Main.cc #test/operator_diffusion.cc
-                                        #test/operator_diffusion_nodal.cc
-                                        #test/operator_diffusion_divk.cc
-                                        #test/operator_diffusion_nonsymmetric.cc
+                    SOURCE test/Main.cc test/operator_diffusion.cc
+                                        test/operator_diffusion_nodal.cc
+                                        test/operator_diffusion_divk.cc
+                                        test/operator_diffusion_nonsymmetric.cc
                                         test/operator_diffusion_nlfv.cc
-                                        #test/operator_diffusion_curved.cc
-                                        #test/operator_diffusion_edges.cc test/MFD3D_Diffusion_Edge.cc
+                                        test/operator_diffusion_curved.cc
+                                        test/operator_diffusion_edges.cc test/MFD3D_Diffusion_Edge.cc
                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
 

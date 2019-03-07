@@ -41,12 +41,14 @@ MeshFactory::MeshFactory(const Comm_ptr_type& comm,
   : comm_(comm),
     gm_(gm),
     plist_(plist),
-    preference_(default_preference())
+    preference_()
 {
   if (comm_ == Teuchos::null) {
     comm_ = Amanzi::getDefaultComm();
   }
 
+  set_preference(default_preference());
+  
   if (plist_ == Teuchos::null) {
     plist_ = Teuchos::rcp(new Teuchos::ParameterList());
   }
@@ -83,23 +85,24 @@ MeshFactory::create(const std::string& filename,
       
   for (auto p : preference_) {
     int nproc = comm_->NumProc();
-
-    if (false) {
-      // pass
-#ifdef HAVE_MSTK_MESH
-    } else if (p == Framework::MSTK) {
+    
+#ifdef HAVE_MSTK_MESH    
+    if (p == Framework::MSTK) {
       if ((nproc == 1 && fmt == FileFormat::EXODUS_II) ||
           (nproc > 1 && (fmt == FileFormat::EXODUS_II || fmt == FileFormat::NEMESIS))) {
         return Teuchos::rcp(new Mesh_MSTK(filename, comm_, gm_, plist_, request_faces, request_edges));
       }
+    }
 #endif
+
 #ifdef HAVE_MOAB_MESH
-    } else if (p == Framework::MOAB) {
+    if (p == Framework::MOAB) {
       if (fmt == FileFormat::MOAB_HDF5 || (nproc == 1 && fmt == FileFormat::EXODUS_II)) {
         return Teuchos::rcp(new Mesh_MOAB(filename, comm_, gm_, plist_, request_faces, request_edges));
       }
-#endif
     }
+#endif
+
   }
 
   Message m("No construct was found in preferences that is available and can read this file/file format.");
@@ -140,13 +143,14 @@ MeshFactory::create(const double x0, const double y0, const double z0,
     if (p == Framework::SIMPLE && nproc == 1) {
       return Teuchos::rcp(new Mesh_simple(x0,y0,z0,x1,y1,z1,nx,ny,nz,
               comm_, gm_, plist_, request_faces, request_edges));
+    }
 
 #ifdef HAVE_MSTK_MESH
-    } else if (p == Framework::MSTK) {
+    if (p == Framework::MSTK) {
       return Teuchos::rcp(new Mesh_MSTK(x0,y0,z0,x1,y1,z1,nx,ny,nz,
               comm_, gm_, plist_, request_faces, request_edges));
-#endif
     }
+#endif
   }
 
   Exceptions::amanzi_throw(Message("No construct was found in preferences that is available and can generate in 3D."));
