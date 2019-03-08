@@ -8,7 +8,7 @@
 #include "../RegionBoxVolumeFractions.hh"
 #include "../RegionFactory.hh"
 
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
@@ -17,7 +17,7 @@
 
 TEST(BOX_REGION_2D)
 {
-  Epetra_MpiComm ecomm(MPI_COMM_WORLD);
+  auto ecomm = Amanzi::getDefaultComm();
 
   // read the parameter list from input file
   std::string infilename = "test/boxregion_2D.xml";
@@ -32,7 +32,7 @@ TEST(BOX_REGION_2D)
   Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
     
   // Create a rectangular region
-  auto reg = Amanzi::AmanziGeometry::createRegion(reg_name, reg_id, reg_params, &ecomm);
+  auto reg = Amanzi::AmanziGeometry::createRegion(reg_name, reg_id, reg_params, *ecomm);
   
   // See if we retrieved the name and id correctly
   CHECK_EQUAL(reg->name(), reg_name);
@@ -95,7 +95,7 @@ TEST(BOX_REGION_2D)
 
 TEST(BOX_REGION_3D)
 {
-  Epetra_MpiComm ecomm(MPI_COMM_WORLD);
+  auto ecomm = Amanzi::getDefaultComm();
 
   // read the parameter list from input file
 
@@ -114,7 +114,7 @@ TEST(BOX_REGION_3D)
   // Create a rectangular region
   Teuchos::RCP<Amanzi::AmanziGeometry::Region> reg = 
     Amanzi::AmanziGeometry::createRegion(reg_spec.name(i), reg_id,
-					 reg_params, &ecomm);
+					 reg_params, *ecomm);
   
   // See if we retrieved the name and id correctly
   CHECK_EQUAL(reg->name(),reg_name);
@@ -218,7 +218,7 @@ TEST(BOXREGION_VOFS_2D_AREA)
 {
   using namespace Amanzi::AmanziGeometry;
 
-  Epetra_MpiComm ecomm(MPI_COMM_WORLD);
+  auto ecomm = Amanzi::getDefaultComm();
 
   // read the parameter list from input file
   std::string infilename = "test/boxregion_vofs.xml";
@@ -232,7 +232,7 @@ TEST(BOXREGION_VOFS_2D_AREA)
   Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
     
   Teuchos::RCP<Amanzi::AmanziGeometry::Region> reg = 
-    Amanzi::AmanziGeometry::createRegion(reg_name, reg_id, reg_params, &ecomm);
+    Amanzi::AmanziGeometry::createRegion(reg_name, reg_id, reg_params, *ecomm);
   
   Amanzi::AmanziGeometry::Point v1(2), v2(2), v3(2), vv(2);
   std::vector<Amanzi::AmanziGeometry::Point> polygon;
@@ -324,7 +324,7 @@ TEST(BOXREGION_VOFS_3D_VOLUME)
 
   std::cout << "\nVolume of intersection of a moving tet with the unit box\n\n";
 
-  Epetra_MpiComm ecomm(MPI_COMM_WORLD);
+  auto ecomm = Amanzi::getDefaultComm();
 
   // read the parameter list from input file
   std::string infilename = "test/boxregion_vofs_3D.xml";
@@ -338,7 +338,7 @@ TEST(BOXREGION_VOFS_3D_VOLUME)
   Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
     
   Teuchos::RCP<Amanzi::AmanziGeometry::Region> reg = 
-    Amanzi::AmanziGeometry::createRegion(reg_name, reg_id, reg_params, &ecomm);
+    Amanzi::AmanziGeometry::createRegion(reg_name, reg_id, reg_params, *ecomm);
   
   std::vector<Point> xyz;
   std::vector<std::vector<int> > faces(4);

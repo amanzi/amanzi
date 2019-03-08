@@ -487,18 +487,18 @@ void Field_CompositeVector::ReadVariableFromExodusII_(Teuchos::ParameterList& fi
       file_list.get<Teuchos::Array<std::string> >("attributes").toVector(); 
  
   // open ExodusII file 
-  const Epetra_Comm& comm = data_->Comm(); 
+  auto comm = data_->Comm();
  
-  if (comm.NumProc() > 1) { 
-    int ndigits = (int)floor(log10(comm.NumProc())) + 1;
+  if (comm->NumProc() > 1) { 
+    int ndigits = (int)floor(log10(comm->NumProc())) + 1;
     std::string fmt = boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
-    file_name = boost::str(boost::format(fmt) % file_name % comm.NumProc() % comm.MyPID());
+    file_name = boost::str(boost::format(fmt) % file_name % comm->NumProc() % comm->MyPID());
   } 
  
   int CPU_word_size(8), IO_word_size(0), ierr; 
   float version; 
   int exoid = ex_open(file_name.c_str(), EX_READ, &CPU_word_size, &IO_word_size, &version); 
-  if (comm.MyPID() == 0) {
+  if (comm->MyPID() == 0) {
     printf("Trying file: %s ws=%d %d  id=%d\n", file_name.c_str(), CPU_word_size, IO_word_size, exoid); 
   }
 
@@ -507,14 +507,14 @@ void Field_CompositeVector::ReadVariableFromExodusII_(Teuchos::ParameterList& fi
   int fail_tmp(fail);
   bool distributed_data(true);
 
-  comm.SumAll(&fail_tmp, &fail, 1);
-  if (fail == comm.NumProc()) {
+  comm->SumAll(&fail_tmp, &fail, 1);
+  if (fail == comm->NumProc()) {
     Errors::Message msg("Rao is working on new data layout which we need to proceed.");
     Exceptions::amanzi_throw(msg);
 
     file_name = file_list.get<std::string>("file"); 
     distributed_data = false;
-    if (comm.MyPID() == 0) {
+    if (comm->MyPID() == 0) {
       exoid = ex_open(file_name.c_str(), EX_READ, &CPU_word_size, &IO_word_size, &version); 
       printf("Opening file: %s ws=%d %d  id=%d\n", file_name.c_str(), CPU_word_size, IO_word_size, exoid); 
     }
@@ -524,7 +524,7 @@ void Field_CompositeVector::ReadVariableFromExodusII_(Teuchos::ParameterList& fi
   }
  
   // read database parameters 
-  if (comm.MyPID() == 0 || distributed_data) {  
+  if (comm->MyPID() == 0 || distributed_data) {  
     int dim, num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets; 
     char title[MAX_LINE_LENGTH + 1]; 
     ierr = ex_get_init(exoid, title, &dim, &num_nodes, &num_elem, 
@@ -573,7 +573,7 @@ void Field_CompositeVector::ReadVariableFromExodusII_(Teuchos::ParameterList& fi
           dat_f[k][c] = var_values[n]; 
         } 
         free(var_values); 
-        printf("MyPID=%d  ierr=%d  id=%d  ncells=%d\n", comm.MyPID(), ierr, ids[i], num_elem_this_blk); 
+        printf("MyPID=%d  ierr=%d  id=%d  ncells=%d\n", comm->MyPID(), ierr, ids[i], num_elem_this_blk); 
  
         offset += num_elem_this_blk; 
       } 

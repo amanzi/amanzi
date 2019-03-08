@@ -146,13 +146,13 @@ double TimestepControllerAdaptive<Vector>::get_timestep_base_(
   dTfactor = std::min(dTfactor, DT_CONTROLLER_ADAPTIVE_INCREASE);
   dTfactor = std::max(dTfactor, DT_CONTROLLER_ADAPTIVE_REDUCTION);
 
-#ifdef HAVE_MPI
   double dT_tmp = dTfactor;
-  udot_->Comm().MinAll(&dT_tmp, &dTfactor, 1);  // find the global minimum
+  auto comm = getCommWrapper(udot_->Comm());
+  comm->MinAll(&dT_tmp, &dTfactor, 1);
  
   double error_tmp = error_max;
-  udot_->Comm().MaxAll(&error_tmp, &error_max, 1);  // find the global maximum
-#endif
+  comm->MaxAll(&error_tmp, &error_max, 1);
+
   return std::min(dt * dTfactor, max_dt_);
 }
 

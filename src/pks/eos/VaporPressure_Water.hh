@@ -15,7 +15,7 @@
 #define AMANZI_EOS_VAPOR_PRESSURE_WATER_HH_
 
 #include "Teuchos_ParameterList.hpp"
-#include "factory.hh"
+#include "Factory.hh"
 #include "VaporPressure_Base.hh"
 
 namespace Amanzi {

@@ -19,8 +19,7 @@
 
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
-#include "Epetra_MpiComm.h"
-#include "Epetra_SerialComm.h"
+#include "AmanziComm.hh"
 
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
@@ -33,9 +32,9 @@ int main (int argc, char* argv[])
 {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  const int nproc(comm.NumProc());
-  const int me(comm.MyPID());
+  auto comm = Amanzi::getDefaultComm();
+  const int nproc(comm->NumProc());
+  const int me(comm->MyPID());
 
   // handle command line
 
@@ -43,20 +42,33 @@ int main (int argc, char* argv[])
   
   CLP.setDocString("reads mesh file or file set and does a series of checks\n");
 
-  const Amanzi::AmanziMesh::Framework frameworks[] = {  
-    Amanzi::AmanziMesh::STKMESH, 
-    Amanzi::AmanziMesh::MSTK, 
-    Amanzi::AmanziMesh::MOAB 
-  };
-  const char *framework_names[] = {
-    "stk::mesh", "MSTK", "MOAB"
-  };
+  std::vector<Amanzi::AmanziMesh::Framework> frameworks_avail;
+  std::vector<const char*> frameworks_avail_names;
 
-  const int numframeworks = sizeof(frameworks)/sizeof(Amanzi::AmanziMesh::Framework);
-  
-  Amanzi::AmanziMesh::Framework the_framework(Amanzi::AmanziMesh::STKMESH);
+  if (Amanzi::AmanziMesh::framework_enabled(
+          Amanzi::AmanziMesh::Framework::MSTK)) {
+    frameworks_avail.push_back(Amanzi::AmanziMesh::Framework::MSTK);
+    frameworks_avail_names.push_back(Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::MSTK).c_str());
+  }
+  if (Amanzi::AmanziMesh::framework_enabled(
+          Amanzi::AmanziMesh::Framework::MOAB)) {
+    frameworks_avail.push_back(Amanzi::AmanziMesh::Framework::MOAB);
+    frameworks_avail_names.push_back(Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::MOAB).c_str());
+  }
+  if (Amanzi::AmanziMesh::framework_enabled(
+          Amanzi::AmanziMesh::Framework::STK)) {
+    frameworks_avail.push_back(Amanzi::AmanziMesh::Framework::STK);
+    frameworks_avail_names.push_back(Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::STK).c_str());
+  }
+  if (frameworks_avail.size() == 0) {
+    std::cerr << "error: this build has no frameworks which can read mesh files." << std::endl;
+    return 1;
+  }
+
+  Amanzi::AmanziMesh::Framework the_framework = frameworks_avail[0];
   CLP.setOption("framework", &the_framework,
-                numframeworks, frameworks, framework_names,
+                frameworks_avail.size(), frameworks_avail.data(),
+                frameworks_avail_names.data(),
                 "mesh framework preference", false);
 
   std::string filename;
@@ -86,7 +98,7 @@ int main (int argc, char* argv[])
     ierr++;
   }
 
-  comm.SumAll(&ierr, &aerr, 1);
+  comm->SumAll(&ierr, &aerr, 1);
 
   if (aerr > 0) {
     return 1;
@@ -103,30 +115,33 @@ int main (int argc, char* argv[])
   // One command line argument is a file name. Three
   // types are supported depending on which frameworks are compiled in
 
-  // A second command line argument is the framework preference
+  // A second command line argument is the framework preference.
+  //
+  // Put the user's preference first, but then allow all possible frameworks
+  // in case they messed up.
+  Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
+  std::vector<Amanzi::AmanziMesh::Framework> frameworks;
+  frameworks.push_back(the_framework);
+  for (auto p : frameworks_avail) {
+    if (p != the_framework) frameworks.push_back(p);
+  }
+  Amanzi::AmanziMesh::Preference prefs(frameworks);
+    
 
-  Amanzi::AmanziMesh::MeshFactory factory(&comm);
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
   
   ierr = 0;
   aerr = 0;
   try {
-    Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
-    if (the_framework !=  Amanzi::AmanziMesh::Simple) {
-      prefs.clear(); 
-      prefs.push_back(the_framework);
-    } 
-
     if (me == 0) {
       std::cerr << "Attempting to read \"" << filename << "\" with ";
-      for (Amanzi::AmanziMesh::FrameworkPreference::iterator i = prefs.begin();
-           i != prefs.end(); i++) {
-        std::cerr << Amanzi::AmanziMesh::framework_name(*i) << ", ";
+      for (auto p : frameworks) {
+        std::cerr << "\"" << Amanzi::AmanziMesh::framework_names.at(p) << "\",";
       }
       std::cerr << std::endl;
     }
-    factory.preference(prefs);
-    mesh = factory(filename);
+    meshfactory.set_preference(prefs);
+    mesh = meshfactory.create(filename);
   } catch (const Amanzi::AmanziMesh::Message& e) {
     std::cerr << argv[0] << ": mesh error: " << e.what() << std::endl;
     ierr++;
@@ -135,7 +150,7 @@ int main (int argc, char* argv[])
     ierr++;
   }
 
-  comm.SumAll(&ierr, &aerr, 1);
+  comm->SumAll(&ierr, &aerr, 1);
 
   if (aerr > 0) {
     return 3;

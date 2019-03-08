@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
   int error = EXIT_SUCCESS;
 
   // if verbosity was specified on the command line, add the level
-  Amanzi::VerboseObject::hide_line_prefix = false;  // two default value
+  Amanzi::VerboseObject::global_hide_line_prefix = false;  // two default value
   Amanzi::VerboseObject::global_default_level = Teuchos::VERB_MEDIUM;
 
   Teuchos::ParameterList plist;

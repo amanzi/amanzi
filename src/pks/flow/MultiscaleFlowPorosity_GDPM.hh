@@ -25,7 +25,7 @@
 
 // Amanzi
 #include "DenseVector.hh"
-#include "factory.hh"
+#include "Factory.hh"
 #include "Mini_Diffusion1D.hh"
 #include "SolverNewton.hh"
 

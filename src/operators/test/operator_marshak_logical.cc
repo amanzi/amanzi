@@ -47,8 +47,8 @@ void RunTestMarshakLogical(std::string op_list_name) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "\nTest: Simulating nonlinear Marshak wave" << std::endl;
 
@@ -59,9 +59,9 @@ void RunTestMarshakLogical(std::string op_list_name) {
 
   // create a logical mesh
   ParameterList region_list = plist.sublist("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
-  MeshLogicalFactory fac(&comm, gm);
+  MeshLogicalFactory fac(comm, gm);
 
   AmanziGeometry::Point begin(0.,0.5,0.5), end(1.,0.5,0.5);
   AmanziMesh::Entity_ID_List cells,faces;

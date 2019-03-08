@@ -6,7 +6,7 @@
 
 
 #include "Epetra_Map.h"
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 
 #include "MeshAudit.hh"
 
@@ -22,12 +22,12 @@ TEST(MSTK_QUAD_GEN_3x3)
   int NF = 24;
   int NC = 9;
 
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  auto comm = Amanzi::getDefaultComm();
 
 
   // Load a mesh consisting of 3x3 elements
 
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,1.0,1.0,3,3,comm_.get()));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,1.0,1.0,3,3,comm));
 
   nv = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(NV,nv);

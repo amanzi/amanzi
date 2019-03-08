@@ -37,7 +37,7 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   using namespace Amanzi::AmanziGeometry;
 
   std::cout << "Test: second-order transport with parallel MSTK framework" << std::endl;
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
 
   // read parameter list
   std::string xmlFileName = "test/transport_parallel_mstk.xml";
@@ -46,11 +46,11 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   /* create an MSTK mesh framework */
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  RCP<const Mesh> mesh = meshfactory("test/hex_3x3x3_ss.exo", gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  RCP<const Mesh> mesh = meshfactory.create("test/hex_3x3x3_ss.exo");
   
   /* create a simple state and populate it */
   std::vector<std::string> component_names;
@@ -122,7 +122,7 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   for (int k = 0; k < ncells_owned; ++k) 
     CHECK_CLOSE(tcc[0][k], 1.0, 1e-6);
 
-  delete comm;
+  
 }
  
  

@@ -27,7 +27,7 @@ using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
   
   // read the main parameter list
   std::string xmlInFileName = "test/mpc_driver_transport.xml";
@@ -37,17 +37,17 @@ using namespace Amanzi::AmanziGeometry;
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, &comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
   // create mesh
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
+  pref.push_back(Framework::MSTK);
+  pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory("test/mpc_driver_transport_mesh_10x10.exo", gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(pref);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/mpc_driver_transport_mesh_10x10.exo");
   AMANZI_ASSERT(!mesh.is_null());
 
   // create dummy observation data object
@@ -55,7 +55,7 @@ using namespace Amanzi::AmanziGeometry;
 
   Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(plist));
 
-  Amanzi::CycleDriver cycle_driver(glist, mesh, &comm, obs_data);
+  Amanzi::CycleDriver cycle_driver(glist, mesh, comm, obs_data);
   cycle_driver.Go();
 }
 

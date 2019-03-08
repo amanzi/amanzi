@@ -17,7 +17,6 @@
 #include "UnitTest++.h"
 
 // Amanzi
-#include "FrameworkTraits.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
 
@@ -32,47 +31,60 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
   using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
-  std::vector<std::string> framework_name;
-  framework_name.push_back("MSTK");
-  framework_name.push_back("STK");
-  framework_name.push_back("SIMPLE");
-  framework_name.push_back("MOAB");
-  Framework framework[4] = {MSTK, STKMESH, Simple, MOAB};   
+  std::vector<std::string> framework_name = {"Simple"};
+  std::vector<Framework> framework = {Framework::SIMPLE};
 
-  for (int frm = 0; frm < 3; frm++) {
+  if (Amanzi::AmanziMesh::framework_enabled(
+          Amanzi::AmanziMesh::Framework::MSTK)) {
+    framework_name.push_back("MSTK");
+    framework.push_back(Framework::MSTK);
+  }
+  
+  if (Amanzi::AmanziMesh::framework_enabled(
+          Amanzi::AmanziMesh::Framework::STK)) {
+    framework_name.push_back("STK");
+    framework.push_back(Framework::STK);  
+  }
+  
+  if (Amanzi::AmanziMesh::framework_enabled(
+          Amanzi::AmanziMesh::Framework::MOAB)) {
+    framework_name.push_back("MOAB");
+    framework.push_back(Framework::MOAB);
+  }
+  
+  for (int frm = 0; frm < framework.size(); frm++) {
     std::cout << "Test: advance with framework " << framework_name[frm] << std::endl;
-    if(!framework_available(framework[frm])) continue;
 #ifdef HAVE_MPI
-    Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    Comm_ptr_type comm = Amanzi::getDefaultComm();
 #else
-    Epetra_SerialComm* comm = new Epetra_SerialComm();
+    Comm_ptr_type comm = Amanzi::getCommSelf();
 #endif
 
     // read parameter list
     std::string xmlFileName("test/transport_advance.xml");
-    if (frm == 2) xmlFileName = "test/transport_advance_simple.xml";
+    if (framework[frm] == Framework::SIMPLE) xmlFileName = "test/transport_advance_simple.xml";
     Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
     // create a mesh
     ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
+        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
-    FrameworkPreference pref;
+    Preference pref;
     pref.clear();
     pref.push_back(framework[frm]);
 
-    MeshFactory meshfactory(comm);
-    meshfactory.preference(pref);
+    MeshFactory meshfactory(comm,gm);
+    meshfactory.set_preference(pref);
     RCP<const Mesh> mesh;
-    if (frm == 2) {
-      mesh = meshfactory(0.0,0.0,0.0, 1.0,1.0,1.0, 20, 1, 1, gm); 
+    if (framework[frm] == Framework::SIMPLE) {
+      mesh = meshfactory.create(0.0,0.0,0.0,1.0,1.0,1.0, 20, 1, 1); 
     } else {
-      mesh = meshfactory("test/hex_3x3x3_ss.exo", gm);
+      mesh = meshfactory.create("test/hex_3x3x3_ss.exo");
     }
   
     // create a simple state and populate it
-    Amanzi::VerboseObject::hide_line_prefix = false;
+    Amanzi::VerboseObject::global_hide_line_prefix = false;
 
     std::vector<std::string> component_names;
     component_names.push_back("Component 0");
@@ -134,13 +146,13 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
     for (int k = 0; k < 4; k++) 
       CHECK_CLOSE((*tcc)[0][k], 1.0, 1e-6);
 
-    if (frm == 2) {
+    if (framework[frm] == Framework::SIMPLE) {
       for (int k = 0; k < 19; k++) {
          CHECK(((*tcc)[0][k] - (*tcc)[0][k+1]) > -1e-15);
       }
     }
 
-    delete comm;
+    
   }
 }
  

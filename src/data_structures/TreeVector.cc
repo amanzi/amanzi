@@ -23,7 +23,7 @@ TreeVector::TreeVector() :
     map_(Teuchos::rcp(new TreeVectorSpace()))
 {}
 
-TreeVector::TreeVector(const Epetra_MpiComm& comm) :
+TreeVector::TreeVector(const Comm_ptr_type& comm) :
     map_(Teuchos::rcp(new TreeVectorSpace(comm)))
 {}
 

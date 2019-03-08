@@ -14,8 +14,8 @@
 #include <vector>
 #include <map>
 
-#include <Epetra_Map.h>
-#include <Epetra_MpiComm.h>
+#include "Epetra_Map.h"
+#include "AmanziComm.hh"
 
 #include "Data.hh"
 #include "Region.hh"
@@ -47,7 +47,7 @@ class HexMeshGenerator
 public:
 
   /// (Collective) Default constructor.
-  HexMeshGenerator(const Epetra_Comm *comm_, 
+  HexMeshGenerator(const Comm_ptr_type& comm_, 
                    const unsigned int& ni, const unsigned int& nj, const unsigned int& nk,
                    const double& xorigin = 0.0, 
                    const double& yorigin = 0.0, 
@@ -94,7 +94,7 @@ protected:
     std::vector<int> connectivity;
   };
 
-  const Epetra_Comm *comm_;      /**< The parallel environment */
+  Comm_ptr_type comm_;;      /**< The parallel environment */
 
   const unsigned int ni_;       /**< Number of elements in the i-direction */
   const unsigned int nj_;       /**< Number of elements in the j-direction */

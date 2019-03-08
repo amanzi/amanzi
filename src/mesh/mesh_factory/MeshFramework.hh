@@ -1,56 +1,40 @@
-// Emacs Mode Line: -*- Mode:c++;-*-
-// -------------------------------------------------------------
-/**
- * @file   MeshFramework.hh
- * @author William A. Perkins
- * @date Tue May 17 11:37:06 2011
- * 
- * @brief  some typedefs to identify mesh frameworks
- * 
- * 
- */
-// -------------------------------------------------------------
-// -------------------------------------------------------------
-// Battelle Memorial Institute
-// Pacific Northwest Laboratory
-// -------------------------------------------------------------
-// -------------------------------------------------------------
-// Created March 11, 2011 by William A. Perkins
-// Last Change: Tue May 17 11:37:06 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
-// -------------------------------------------------------------
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-// SCCS ID: $Id$ Battelle PNL
+  Authors: William Perkins, others
+*/
 
-#ifndef _MeshFramework_hh_
-#define _MeshFramework_hh_
+#ifndef AMANZI_MESH_FRAMEWORK_HH_
+#define AMANZI_MESH_FRAMEWORK_HH_
 
 #include <string>
 #include <vector>
+#include <map>
 
 namespace Amanzi {
 namespace AmanziMesh {
 
-  /// A type to identify available mesh frameworks
-  enum Framework {
-    Simple = 1,
-    MOAB,
-    STKMESH,
-    MSTK
-  };
+enum struct Framework { SIMPLE=0, MSTK, MOAB, STK };
 
-  /// A type with which an ordered preference list of Framework 
-  typedef std::vector<Framework> FrameworkPreference;
+using Preference = std::vector<Framework>;
 
-  /// Get a name for a given framework
-  extern std::string framework_name(const Framework& fw);
+static const std::map<Framework,std::string> framework_names = {
+  {Framework::MSTK, std::string("MSTK")},
+  {Framework::MOAB, std::string("MOAB")},
+  {Framework::STK, std::string("stk:mesh")},
+  {Framework::SIMPLE, std::string("Simple")} };
 
-  /// Generate the default framework preferences
-  extern FrameworkPreference default_preference(void);
 
-  /// Modify framework preferences to get those available
-  extern FrameworkPreference available_preference(const FrameworkPreference& p);
+Preference default_preference();
+bool framework_enabled(Framework f);
+Preference filter_preference(const Preference& pref);
 
-} // close namespace AmanziMesh
-} // close namespace Amanzi
+
+} // namespace AmanziMesh
+} // namespace Amanzi
 
 #endif

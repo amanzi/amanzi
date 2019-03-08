@@ -100,7 +100,7 @@ TEST(VERBOSE_TWO_OBJECTS)
 
 
 TEST(VERBOSE_TWO_OBJECTS_NOTAB) {
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   Teuchos::ParameterList plist;
   Amanzi::VerboseObject vo1("my verb object 1", plist);

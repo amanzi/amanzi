@@ -23,7 +23,7 @@ using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 
 struct test_cv_vandelay {
-  Epetra_MpiComm *comm;
+  Comm_ptr_type comm;
   Teuchos::RCP<Mesh> mesh;
 
   Teuchos::RCP<CompositeVectorSpace> x_space;
@@ -32,15 +32,15 @@ struct test_cv_vandelay {
   Teuchos::RCP<CompositeVector> x2;
 
   test_cv_vandelay() {
-    comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-    FrameworkPreference pref;
+    comm = getDefaultComm();
+    Preference pref;
     pref.clear();
-    pref.push_back(MSTK);
+    pref.push_back(Framework::MSTK);
 
-    MeshFactory mesh_fact(comm);
-    mesh_fact.preference(pref);
+    MeshFactory meshfactory(comm);
+    meshfactory.set_preference(pref);
 
-    mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
     // mesh = Teuchos::rcp(new Mesh_MSTK(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2, comm, NULL));
 
     std::vector<Entity_kind> locations(2);
@@ -74,7 +74,7 @@ struct test_cv_vandelay {
     x = Teuchos::rcp(new CompositeVector(*x_space));
     x2 = Teuchos::rcp(new CompositeVector(*x2_space));
   }
-  ~test_cv_vandelay() { delete comm; }
+  ~test_cv_vandelay() {  }
 };
 
 

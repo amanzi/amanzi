@@ -18,7 +18,7 @@
 
 #include <sstream>
 #include <UnitTest++.h>
-#include <Epetra_MpiComm.h>
+#include <AmanziComm.hh>
 
 #include "Exodus_readers.hh"
 #include "Parallel_Exodus_file.hh"
@@ -39,11 +39,11 @@ class ReadFixture {
   Epetra_MpiComm comm_;
   const int nproc;
 
-  Amanzi::AmanziMesh::STK::Mesh_STK_factory mf;
+  Amanzi::AmanziMesh::Framework::STK::Mesh_STK_factory mf;
   Amanzi::AmanziMesh::Data::Fields nofields;
   Teuchos::RCP<Amanzi::AmanziMesh::Data::Data> meshdata;
-  Amanzi::AmanziMesh::STK::Mesh_STK_Impl_p mesh;
-  // Teuchos::RCP<Amanzi::AmanziMesh::STK::Mesh_maps_stk> maps;
+  Amanzi::AmanziMesh::Framework::STK::Mesh_STK_Impl_p mesh;
+  // Teuchos::RCP<Amanzi::AmanziMesh::Framework::STK::Mesh_maps_stk> maps;
   
   /// Default constructor.
   ReadFixture(void)
@@ -57,7 +57,7 @@ class ReadFixture {
     int ierr(0);
     try { 
       my_read(name);
-      // maps.reset(new Amanzi::AmanziMesh::STK::Mesh_maps_stk(mesh));
+      // maps.reset(new Amanzi::AmanziMesh::Framework::STK::Mesh_maps_stk(mesh));
     } catch (const std::exception& e) {
       std::cerr << comm_.MyPID() << ": error: " << e.what() << std::endl;
       ierr++;

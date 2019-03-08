@@ -431,7 +431,7 @@ double Richards_PK::ErrorNormSTOMP(const CompositeVector& u, const CompositeVect
 
 #ifdef HAVE_MPI
   double buf = error;
-  du.Comm().MaxAll(&buf, &error, 1);  // find the global maximum
+  du.Comm()->MaxAll(&buf, &error, 1);  // find the global maximum
 #endif
 
   // maximum error is printed out only on one processor

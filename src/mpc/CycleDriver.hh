@@ -43,7 +43,7 @@ class CycleDriver {
  public:
   CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
               Teuchos::RCP<AmanziMesh::Mesh>& mesh,
-              Epetra_MpiComm* comm,
+              const Comm_ptr_type& comm,
               Amanzi::ObservationData& observations_data);
 
   // PK methods
@@ -95,7 +95,7 @@ class CycleDriver {
   int time_period_id_;
 
   // Epetra communicator
-  Epetra_MpiComm* comm_;
+  Comm_ptr_type comm_;
 
   // observations
   Amanzi::ObservationData& observations_data_;

@@ -208,8 +208,8 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
 
   int dim = (nz == 0) ? 2 : 3;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   // read parameter list
   std::string xmlFileName = "test/operator_remap.xml";
@@ -256,11 +256,11 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   Teuchos::RCP<MeshCurved> mesh0, mesh1;
 
   if (dim == 2 && ny != 0) {
-    mesh0 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, &comm, mlist));
-    mesh1 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, &comm, mlist));
+    mesh0 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, comm, mlist));
+    mesh1 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, comm, mlist));
   } else if (ny == 0) {
-    mesh0 = Teuchos::rcp(new MeshCurved(file_name, &comm, mlist));
-    mesh1 = Teuchos::rcp(new MeshCurved(file_name, &comm, mlist));
+    mesh0 = Teuchos::rcp(new MeshCurved(file_name, comm, mlist));
+    mesh1 = Teuchos::rcp(new MeshCurved(file_name, comm, mlist));
   }
 
   int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);

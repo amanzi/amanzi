@@ -53,8 +53,8 @@ void MagneticDiffusion2D(double dt, double tend,
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "\nTest: Magnetic diffusion, TM mode, dt=" 
                             << dt << ", name: " << name << std::endl;
@@ -66,16 +66,16 @@ void MagneticDiffusion2D(double dt, double tend,
 
   // create a MSTK mesh framework
   ParameterList region_list = plist.sublist("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
 
   RCP<const Mesh> mesh;
   if (name == "structured") {
-    mesh = meshfactory(Xa, Ya, Xb, Yb, nx, ny, gm, true, true);
+    mesh = meshfactory.create(Xa, Ya, Xb, Yb, nx, ny, true, true);
   } else {
-    mesh = meshfactory(name, gm, true, true);
+    mesh = meshfactory.create(name, true, true);
   }
 
   // create resistivity coefficient
@@ -292,8 +292,8 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "\nTest: Magnetic diffusion 3D, dt=" 
                             << dt << ", name: " << name << std::endl;
@@ -305,18 +305,18 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
 
   // create a MSTK mesh framework
   ParameterList region_list = plist.sublist("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
 
   bool request_faces(true), request_edges(true);
   RCP<const Mesh> mesh;
   if (name == "structured") {
-    mesh = meshfactory(Xa, Ya, Za, Xb, Yb, Zb, nx, ny, nz, gm, request_faces, request_edges);
+    mesh = meshfactory.create(Xa, Ya, Za, Xb, Yb, Zb, nx, ny, nz, request_faces, request_edges);
   } else {
-    mesh = meshfactory(name, gm, request_faces, request_edges);
-    // mesh = meshfactory("test/hex_split_faces5.exo", gm, request_faces, request_edges);
+    mesh = meshfactory.create(name, request_faces, request_edges);
+    // mesh = meshfactory.create("test/hex_split_faces5.exo", request_faces, request_edges);
   }
 
   // create resistivity coefficient

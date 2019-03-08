@@ -11,7 +11,6 @@
   EffectivePressureEvaluator evaluates p_eff = max(p_atm, p_liquid).
 */
 
-#include "factory.hh"
 #include "EffectivePressureEvaluator.hh"
 
 namespace Amanzi {

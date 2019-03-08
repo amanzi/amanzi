@@ -19,7 +19,7 @@
 #include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
 
-#include <Epetra_MpiComm.h>
+#include <AmanziComm.hh>
 
 
 namespace Amanzi {

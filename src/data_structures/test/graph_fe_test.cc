@@ -21,8 +21,10 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
+#include "AmanziComm.hh"
+#include "VerboseObject.hh"
+#include "Mesh.hh"
 #include "MeshFactory.hh"
-
 #include "GraphFE.hh"
 
 /* *****************************************************************
@@ -34,8 +36,8 @@ TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "Test: FD like graph, null off-proc assembly" << std::endl;
 
@@ -44,20 +46,20 @@ TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA) {
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
 
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   // create a mesh 
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 10, gm);
-  //  Teuchos::RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(pref);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10);
+  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // grab the maps
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -110,8 +112,8 @@ TEST(FE_GRAPH_FACE_FACE) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "Test: FE like graph, off-proc assembly" << std::endl;
 
@@ -120,20 +122,20 @@ TEST(FE_GRAPH_FACE_FACE) {
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
 
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   // create a mesh 
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 10, gm);
-  //  Teuchos::RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(pref);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10);
+  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // grab the maps
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);

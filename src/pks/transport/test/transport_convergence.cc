@@ -10,7 +10,7 @@
 #include <vector>
 
 // TPLs
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
@@ -50,8 +50,8 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
   using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
-  Epetra_MpiComm comm = Epetra_MpiComm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0)
     std::cout << "\nTEST: convergence analysis, donor scheme, orthogonal meshes with subcycling" << std::endl;
 
@@ -65,14 +65,14 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
   for (int nx = 20; nx < 321; nx *= 2) {
     /* create a SIMPLE mesh framework */
     ParameterList region_list = plist->sublist("regions");
-    auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, &comm));
+    auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, *comm));
 
-    MeshFactory meshfactory(&comm);
-    meshfactory.preference(FrameworkPreference({Framework::MSTK, Framework::Simple}));
-    RCP<const Mesh> mesh = meshfactory(0.0,0.0,0.0, 5.0,1.0,1.0, nx,2,2, gm);
+    MeshFactory meshfactory(comm,gm);
+    meshfactory.set_preference(Preference({Framework::MSTK, Framework::SIMPLE}));
+    RCP<const Mesh> mesh = meshfactory.create(0.0,0.0,0.0, 5.0,1.0,1.0, nx,2,2);
 
     /* create a simple state and populate it */
-    Amanzi::VerboseObject::hide_line_prefix = false;
+    Amanzi::VerboseObject::global_hide_line_prefix = false;
     Amanzi::VerboseObject::global_default_level = Teuchos::VERB_NONE;
 
     std::vector<std::string> component_names;
@@ -168,8 +168,8 @@ void ConvergenceBoxMeshes(int order, double tol, std::string limiter)
   using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
-  Epetra_MpiComm comm = Epetra_MpiComm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) 
     std::cout << "\nTest: Convergence analysis on box meshes, order=" << order 
               << ", limiter=" << limiter << std::endl;
@@ -177,19 +177,19 @@ void ConvergenceBoxMeshes(int order, double tol, std::string limiter)
   // read parameter list
   auto plist = Teuchos::getParametersFromXmlFile("test/transport_convergence.xml");
   ParameterList region_list = plist->sublist("regions");
-  auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, &comm));
+  auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, *comm));
  
   // loop over refined meshes
   double dt0;
   std::vector<double> h, L1error, L2error;
 
   for (int nx = 20; nx < 320 / order + 1; nx *= 2) {
-    MeshFactory meshfactory(&comm);
-    meshfactory.preference(FrameworkPreference({Framework::MSTK, Framework::Simple}));
-    RCP<const Mesh> mesh = meshfactory(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 2, 1, gm); 
+    MeshFactory meshfactory(comm,gm);
+    meshfactory.set_preference(Preference({Framework::MSTK, Framework::SIMPLE}));
+    RCP<const Mesh> mesh = meshfactory.create(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 2, 1); 
 
     // create state and populate it
-    Amanzi::VerboseObject::hide_line_prefix = false;
+    Amanzi::VerboseObject::global_hide_line_prefix = false;
     Amanzi::VerboseObject::global_default_level = Teuchos::VERB_NONE;
 
     std::vector<std::string> component_names;
@@ -301,8 +301,8 @@ void ConvergencePolyMeshes(int order, double tol, std::string limiter)
   using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
-  Epetra_MpiComm comm = Epetra_MpiComm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0)
     std::cout << "\nTEST: convergence analysis on polygonal meshes, order=" << order 
               << ", limiter=" << limiter << std::endl;
@@ -317,21 +317,21 @@ void ConvergencePolyMeshes(int order, double tol, std::string limiter)
   for (int loop = 0; loop < 3; loop++) {
     /* create a mesh framework */
     ParameterList region_list = plist->sublist("regions");
-    auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, &comm));
+    auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
-    MeshFactory meshfactory(&comm);
-    meshfactory.preference(FrameworkPreference({Framework::MSTK, Framework::STKMESH}));
+    MeshFactory meshfactory(comm,gm);
+    meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
     RCP<const Mesh> mesh;
     if (loop == 0) {
-      mesh = meshfactory("test/median15x16.exo", gm);
+      mesh = meshfactory.create("test/median15x16.exo");
     } else if (loop == 1) {
-      mesh = meshfactory("test/median32x33.exo", gm);
+      mesh = meshfactory.create("test/median32x33.exo");
     } else if (loop == 2) {
-      mesh = meshfactory("test/median63x64.exo", gm);
+      mesh = meshfactory.create("test/median63x64.exo");
     }
 
     /* create a simple state and populate it */
-    Amanzi::VerboseObject::hide_line_prefix = false;
+    Amanzi::VerboseObject::global_hide_line_prefix = false;
     Amanzi::VerboseObject::global_default_level = Teuchos::VERB_NONE;
 
     std::vector<std::string> component_names;

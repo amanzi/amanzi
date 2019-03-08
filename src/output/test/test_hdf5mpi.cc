@@ -6,10 +6,7 @@
 TEST(HDF5_MPI) {
   
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-//#else
-//  Epetra_SerialComm *comm = new Epetra_SerialComm();
-//#endif
+  auto comm = Amanzi::getDefaultComm();
     
   std::string hdf5_meshfile  = "new_mesh_mpi";
   std::string hdf5_datafile1 = "new_data_mpi";
@@ -19,7 +16,7 @@ TEST(HDF5_MPI) {
   //  Mesh(new Amanzi::AmanziMesh::Mesh_STK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1,
   //                                        1, comm));
   
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh_MSTK> Mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, comm));
+  auto Mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, comm));
 
   unsigned int num_nodes = Mesh->num_entities(Amanzi::AmanziMesh::NODE, 
                                               Amanzi::AmanziMesh::Parallel_type::OWNED);
@@ -54,12 +51,12 @@ TEST(HDF5_MPI) {
   fake_pressure->ReplaceGlobalValues(4, fake_values, cell_index_list);
 
   // Write a file which contains both mesh and data.
-  Amanzi::HDF5_MPI *viz_output = new Amanzi::HDF5_MPI(*comm);
+  Amanzi::HDF5_MPI *viz_output = new Amanzi::HDF5_MPI(comm);
   viz_output->setTrackXdmf(true);
   viz_output->createMeshFile(Mesh, hdf5_meshfile);
   viz_output->createDataFile(hdf5_datafile1);
 
-  Amanzi::HDF5_MPI *restart_output = new Amanzi::HDF5_MPI(*comm);
+  Amanzi::HDF5_MPI *restart_output = new Amanzi::HDF5_MPI(comm);
   restart_output->setTrackXdmf(false);
   restart_output->createDataFile(hdf5_datafile2);
   // You can add mesh data to restart file, but is not necessary for valid restart
@@ -137,7 +134,7 @@ TEST(HDF5_MPI) {
   
   // test reading data back
   std::cout << "E>> create restart_input with file " << hdf5_datafile2 << ".h5" << std::endl;
-  Amanzi::HDF5_MPI *restart_input = new Amanzi::HDF5_MPI(*comm,hdf5_datafile2+".h5");
+  Amanzi::HDF5_MPI *restart_input = new Amanzi::HDF5_MPI(comm,hdf5_datafile2+".h5");
   std::cout << hdf5_datafile2+".h5" << std::endl;
   
   restart_input->open_h5file();

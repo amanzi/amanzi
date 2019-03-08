@@ -47,7 +47,7 @@ TEST(DISPERSION) {
 
   std::cout << "Test: dispersion" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
 #else
   Epetra_SerialComm* comm = new Epetra_SerialComm();
 #endif
@@ -59,19 +59,19 @@ TEST(DISPERSION) {
   /* create an MSTK mesh framework */
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  MeshFactory factory(comm);
-  factory.preference(pref);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(pref);
   int nx = 20;
-  RCP<const Mesh> mesh = factory(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 10, 1, gm); 
+  RCP<const Mesh> mesh = meshfactory.create(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 10, 1); 
 
   /* create a simple state and populate it */
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   std::vector<std::string> component_names;
   component_names.push_back("Component 0");
@@ -114,7 +114,7 @@ TEST(DISPERSION) {
   *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
   /* initialize a transport process kernel */
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
   TPK.Initialize(S.ptr());
 
   /* advance the state */
@@ -139,7 +139,7 @@ TEST(DISPERSION) {
     TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, 1e-12);
   }
  
-  delete comm;
+  
 }
 
 
@@ -153,7 +153,7 @@ TEST(DIFFUSION) {
 
   std::cout << "\nTest: diffusion" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
 #else
   Epetra_SerialComm* comm = new Epetra_SerialComm();
 #endif
@@ -165,18 +165,18 @@ TEST(DIFFUSION) {
   /* create an MSTK mesh framework */
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  MeshFactory factory(comm);
-  factory.preference(pref);
-  RCP<const Mesh> mesh = factory(0.0,0.0, 1.0,1.0, 20, 20, gm); 
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(pref);
+  RCP<const Mesh> mesh = meshfactory.create(0.0,0.0, 1.0,1.0, 20, 20); 
 
   /* create a simple state and populate it */
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   std::vector<std::string> component_names;
   component_names.push_back("Component 0");
@@ -213,7 +213,7 @@ TEST(DIFFUSION) {
   *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
   /* initialize a transport process kernel */
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
   TPK.Initialize(S.ptr());
 
   /* advance the state */
@@ -243,7 +243,7 @@ TEST(DIFFUSION) {
   GMV::write_cell_data(*tcc, 0, "Component_0");
   GMV::close_data_file();
 
-  delete comm;
+  
 }
 
 
@@ -257,7 +257,7 @@ TEST(GAS_DIFFUSION) {
 
   std::cout << "\nTest: gas diffusion" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
 #else
   Epetra_SerialComm* comm = new Epetra_SerialComm();
 #endif
@@ -269,18 +269,18 @@ TEST(GAS_DIFFUSION) {
   /* create an MSTK mesh framework */
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  MeshFactory factory(comm);
-  factory.preference(pref);
-  RCP<const Mesh> mesh = factory(0.0,0.0, 1.0,1.0, 21, 21, gm); 
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(pref);
+  RCP<const Mesh> mesh = meshfactory.create(0.0,0.0, 1.0,1.0, 21, 21); 
 
   /* create a simple state and populate it */
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   std::vector<std::string> component_names;
   component_names.push_back("Component 0");
@@ -318,7 +318,7 @@ TEST(GAS_DIFFUSION) {
   *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
   /* initialize a transport process kernel */
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
   TPK.Initialize(S.ptr());
 
   /* advance the state */
@@ -359,7 +359,7 @@ TEST(GAS_DIFFUSION) {
   GMV::write_cell_data(tcc, 1, "Component_1");
   GMV::close_data_file();
 
-  delete comm;
+  
 }
 
 

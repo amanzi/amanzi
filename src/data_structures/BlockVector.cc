@@ -24,7 +24,7 @@
 namespace Amanzi {
 
 // Constructor
-BlockVector::BlockVector(const Epetra_MpiComm& comm,
+BlockVector::BlockVector(const Comm_ptr_type& comm,
         std::vector<std::string>& names,
         std::vector<Teuchos::RCP<const Epetra_Map> >& maps,
         std::vector<int> num_dofs) :

@@ -38,8 +38,8 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Flow;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "Test: 2D Richards(FV), seepage boundary condition" << std::endl;
 
   // read parameter list
@@ -49,19 +49,19 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   // create a mesh framework
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, &comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
+  pref.push_back(Framework::MSTK);
+  pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 100.0, 50.0, 100, 50, gm); 
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(pref);
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 100.0, 50.0, 100, 50); 
 
   // create a simple state and populate it
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("state");
   RCP<State> S = rcp(new State(state_list));

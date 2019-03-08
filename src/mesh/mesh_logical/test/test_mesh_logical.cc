@@ -6,7 +6,7 @@
 #include <iostream>
 
 #include "Teuchos_RCP.hpp"
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 
 #include "RegionEnumerated.hh"
 #include "MeshLogical.hh"

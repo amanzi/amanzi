@@ -20,7 +20,7 @@
 using namespace Amanzi;
 
 struct test_data {
-  Epetra_MpiComm *comm;
+  Comm_ptr_type comm;
   Teuchos::RCP<AmanziMesh::Mesh> mesh;
 
   Teuchos::RCP<TreeVector> tv1;
@@ -57,7 +57,7 @@ struct test_data {
 
   }
 
-  ~test_Data() { delete comm; }
+  ~test_Data() {  }
 };
 
 

@@ -19,7 +19,7 @@
 
 #include <sstream>
 #include <UnitTest++.h>
-#include <Epetra_MpiComm.h>
+#include <AmanziComm.hh>
 
 #include "Exodus_readers.hh"
 #include "Parallel_Exodus_file.hh"
@@ -28,7 +28,7 @@
 #include "Auditor.hh"
 
 #include "Epetra_Map.h"
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
@@ -347,7 +347,7 @@ SUITE (STK_SETS)
     using namespace std;
 
 #ifdef HAVE_MPI
-    Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    auto comm = Amanzi::getDefaultComm();
 #else
     Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif

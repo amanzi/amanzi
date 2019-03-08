@@ -1,11 +1,23 @@
-#ifndef _AMANZI_MESH_MSTK_H_
-#define _AMANZI_MESH_MSTK_H_
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Rao Garimella, others
+*/
+
+//! Implementation of the Mesh interface leveraging MSTK.
+
+
+#ifndef AMANZI_MESH_MSTK_HH_
+#define AMANZI_MESH_MSTK_HH_
 
 #include <memory>
 #include <vector>
 #include <sstream>
 
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 #include "MSTK.h"
 
 #include "Mesh.hh"
@@ -14,7 +26,6 @@
 #include "GenerationSpec.hh"
 #include "dbc.hh"
 #include "errors.hh"
-#include "VerboseObject.hh"
 
 namespace Amanzi {
 
@@ -32,8 +43,9 @@ namespace AmanziMesh {
 
 class Mesh_MSTK : public Mesh {
  public:
+  Mesh_MSTK(const Mesh_MSTK& other) = delete;
+  
   // Constructors that read the mesh from a file
-
   // The request_faces and request_edges arguments have to be at the
   // end and not in the middle because if we omit them and specify a
   // pointer argument like gm or verbosity_obj, then there is implicit
@@ -41,8 +53,8 @@ class Mesh_MSTK : public Mesh {
   // of the call and making the pointer argument seem NULL. In C++11,
   // we could "delete" the illegal version of the call effectively
   // blocking the implicit conversion.
-  Mesh_MSTK(const char *filename,
-            const Epetra_MpiComm *incomm_,
+  Mesh_MSTK(const std::string& filename,
+            const Comm_ptr_type& comm,
             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
             const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
 	    const bool request_faces = true,
@@ -55,7 +67,7 @@ class Mesh_MSTK : public Mesh {
 	    const double x1, const double y1, const double z1,
 	    const unsigned int nx, const unsigned int ny, 
             const unsigned int nz, 
-            const Epetra_MpiComm *incomm_,
+            const Comm_ptr_type& comm,
             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
             const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
 	    const bool request_faces = true,
@@ -65,17 +77,9 @@ class Mesh_MSTK : public Mesh {
   Mesh_MSTK(const double x0, const double y0,
 	    const double x1, const double y1,
 	    const int nx, const int ny, 
-	    const Epetra_MpiComm *comm_,
+	    const Comm_ptr_type& comm_,
             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
             const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
-	    const bool request_faces = true,
-	    const bool request_edges = false);
-
-  // Construct a hexahedral mesh from specs 
-  Mesh_MSTK(const GenerationSpec& gspec,
-	    const Epetra_MpiComm *comm_,
-            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm =Teuchos::null,
-            const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	    const bool request_faces = true,
 	    const bool request_edges = false);
 
@@ -83,30 +87,14 @@ class Mesh_MSTK : public Mesh {
   // mesh. The subset may be specified by a setname or a list of
   // entities. In some cases like extracting a surface mesh from a
   // volume mesh, constructor can be asked to "flatten" the mesh to a
-  // lower dimensional space or to extrude the mesh to give higher
-  // dimensional cells
-  Mesh_MSTK(const Mesh *inmesh,
-            const std::vector<std::string>& setnames,
-            const Entity_kind entity_kind,
-            const bool flatten = false,
-            const bool extrude = false,
-	    const bool request_faces = true,
-	    const bool request_edges = false);
-
-  Mesh_MSTK(const Mesh& inmesh,
-            const std::vector<int>& entity_list,
-            const Entity_kind entity_kind,
-            const bool flatten = false,
-            const bool extrude = false,
-	    const bool request_faces = true,
-	    const bool request_edges = false);
-
-  Mesh_MSTK(const Epetra_MpiComm *comm_,
-            const Mesh& inmesh,
+  // lower dimensional space.
+  Mesh_MSTK(const Teuchos::RCP<const Mesh>& parent_mesh,
             const Entity_ID_List& entity_ids, 
             const Entity_kind entity_kind,
             const bool flatten = false,
-            const bool extrude = false,
+            const Comm_ptr_type& comm = Teuchos::null,
+            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+            const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
             const bool request_faces = true,
             const bool request_edges = false);
   
@@ -349,7 +337,7 @@ class Mesh_MSTK : public Mesh {
   MPI_Comm mpicomm_;
   int myprocid, numprocs;
 
-  Mesh_ptr mesh;
+  Mesh_ptr mesh_;
 
   int serial_run;
   bool contiguous_gids_;
@@ -426,25 +414,21 @@ class Mesh_MSTK : public Mesh {
   // another mesh
   MAttrib_ptr rparentatt, fparentatt, eparentatt, vparentatt;
 
-  const Mesh_MSTK *parent_mesh;
+  Teuchos::RCP<const Mesh_MSTK> parent_mesh_;
 
   // variables needed for mesh deformation
   double *meshxyz;
   double *target_cell_volumes_, *min_cell_volumes_, *target_weights;
 
-  // Teuchos Verbose Object to control how much diagnostic info is printed
-  Teuchos::RCP<const VerboseObject> verbose_obj_;
-  
   // Private methods
   // ---------------
   
   void clear_internals_();
 
-  void pre_create_steps_(const int space_dimension, const Epetra_MpiComm *incomm_, 
-                         const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm);
+  void pre_create_steps_(const int space_dimension);
   void post_create_steps_(const bool request_faces, const bool request_edges);
 
-  void init_mesh_from_file_(const std::string filename,
+  void init_mesh_from_file_(const std::string& filename,
                             const Partitioner_type partitioner = PARTITIONER_DEFAULT);
 
   void collapse_degen_edges();
@@ -490,12 +474,9 @@ class Mesh_MSTK : public Mesh {
   int generate_regular_mesh(Mesh_ptr mesh, double x0, double y0,
                             double x1, double y1, int nx, int ny);
 
-  void extract_mstk_mesh(const Epetra_MpiComm *incomm,
-                         const Mesh_MSTK& inmesh,
-                         const List_ptr entity_ids,
+  void extract_mstk_mesh(const List_ptr entity_ids,
                          const MType entity_dim,
                          const bool flatten = false,
-                         const bool extrude = false,
 			 const bool request_faces = true,
 			 const bool request_edges = false);
 

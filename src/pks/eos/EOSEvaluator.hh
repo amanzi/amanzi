@@ -15,7 +15,7 @@
 #define AMANZI_EOS_EVALUATOR_HH_
 
 #include "EOS.hh"
-#include "factory.hh"
+#include "Factory.hh"
 #include "secondary_variables_field_evaluator.hh"
 
 namespace Amanzi {

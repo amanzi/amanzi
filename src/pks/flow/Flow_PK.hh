@@ -26,7 +26,7 @@
 // Amanzi
 #include "BCs.hh"
 #include "BDFFnBase.hh"
-#include "checkpoint.hh"
+#include "Checkpoint.hh"
 #include "CompositeVectorSpace.hh"
 #include "independent_variable_field_evaluator_fromfunction.hh"
 #include "Key.hh"

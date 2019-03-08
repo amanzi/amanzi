@@ -45,8 +45,8 @@ void RunTestDiffusionCurved() {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "\nTest: elliptic solver, mesh with curved faces\n";
 
   // read parameter list
@@ -56,12 +56,12 @@ void RunTestDiffusionCurved() {
 
   // create a randomized mesh 
   ParameterList region_list = plist.sublist("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
-  // RCP<const Mesh> mesh = meshfactory(0.0,0.0,0.0, 1.0,1.0,1.0, 2,2,2, gm);
-  RCP<const Mesh> mesh = meshfactory("test/random3D_05.exo", gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  // RCP<const Mesh> mesh = meshfactory.create(0.0,0.0,0.0, 1.0,1.0,1.0, 2,2,2);
+  RCP<const Mesh> mesh = meshfactory.create("test/random3D_05.exo");
 
   // populate diffusion coefficient using the problem with analytic solution.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
@@ -170,7 +170,7 @@ void RunTestDiffusionCurved() {
     center += mesh->cell_centroid(c) * vol;
   }
   double tmp_in[4], tmp_out[4] = {totvol, center[0], center[1], center[2]};
-  comm.SumAll(tmp_out, tmp_in, 4);
+  comm->SumAll(tmp_out, tmp_in, 4);
   totvol = tmp_in[0];
   for (int i = 0; i < 3; ++i) center[i] = tmp_in[i + 1] / totvol;
   CHECK_CLOSE(1.0, totvol, 1e-12);

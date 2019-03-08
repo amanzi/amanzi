@@ -14,7 +14,7 @@
 #include "transport_parallel_read.hh"
 
 TEST(ADVANCE_WITH_STK_PARALLEL_READ) {
-  runTest(Amanzi::AmanziMesh::STKMESH);
+  runTest(Amanzi::AmanziMesh::Framework::STK);
 }
 
 

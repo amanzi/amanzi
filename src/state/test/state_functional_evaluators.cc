@@ -34,8 +34,7 @@ using namespace Amanzi::AmanziMesh;
 SUITE(EVALS) {
   TEST(EVALS_INDPENDENT_FROMFUNCTION) {
 
-    auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-    MeshFactory meshfac(comm);
+    auto comm = Amanzi::getDefaultComm();
 
     // Create the geometric model
     Teuchos::ParameterList regions;
@@ -44,8 +43,9 @@ SUITE(EVALS) {
     regions.sublist("ALL").sublist("region: box")
         .set<Teuchos::Array<double> >("low coordinate", low)
         .set<Teuchos::Array<double> >("high coordinate", high);
-    auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3,regions,comm));
-    auto mesh = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2, gm);
+    auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3,regions,*comm));
+    MeshFactory meshfactory(comm,gm);
+    auto mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
     auto S = Teuchos::rcp(new State());
     S->RegisterDomainMesh(mesh);
 
@@ -96,8 +96,7 @@ SUITE(EVALS) {
 
   TEST(EVALS_SECONDARY_FROMFUNCTION) {
 
-    auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-    MeshFactory meshfac(comm);
+    auto comm = Amanzi::getDefaultComm();
 
     // Create the geometric model
     Teuchos::ParameterList regions;
@@ -106,8 +105,9 @@ SUITE(EVALS) {
     regions.sublist("ALL").sublist("region: box")
         .set<Teuchos::Array<double> >("low coordinate", low)
         .set<Teuchos::Array<double> >("high coordinate", high);
-    auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3,regions,comm));
-    auto mesh = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2, gm);
+    auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3,regions,*comm));
+    MeshFactory meshfactory(comm,gm);
+    auto mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
     auto S = Teuchos::rcp(new State());
     S->RegisterDomainMesh(mesh);
 

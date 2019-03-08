@@ -24,7 +24,7 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Epetra_Map.h>
 #include <Epetra_CrsGraph.h>
-#include <Epetra_MpiComm.h>
+#include <AmanziComm.hh>
 #include <memory>
 
 #include "GeometricModel.hh"

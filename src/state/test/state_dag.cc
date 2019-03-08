@@ -317,9 +317,9 @@ class HEvaluator : public SecondaryVariableFieldEvaluator {
 class make_state {
  public:
   make_state() {
-    comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-    MeshFactory meshfac(comm);
-    mesh = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
+    comm = Amanzi::getDefaultComm();
+    MeshFactory meshfactory(comm);
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
     S = Teuchos::rcp(new State());
     S->RegisterDomainMesh(mesh);
 
@@ -376,10 +376,10 @@ class make_state {
     S->GetField("fg", "fg")->set_initialized();
     S->Initialize();
   }
-  ~make_state() { delete comm; }
+  ~make_state() { }
 
  public:
-  Epetra_MpiComm *comm;
+  Comm_ptr_type comm;
   Teuchos::RCP<Mesh> mesh;
 
   Teuchos::RCP<State> S;

@@ -15,7 +15,7 @@
 #include <vector>
 
 // TPLs
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 #include "Epetra_SerialComm.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -39,7 +39,7 @@ using namespace Amanzi::AmanziGeometry;
 using namespace Amanzi::Flow;
 
 void RunTestConvergence(std::string input_xml) {
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout <<"\nConvergence analysis on random meshes: " << input_xml << std::endl;
 
@@ -53,27 +53,27 @@ void RunTestConvergence(std::string input_xml) {
   for (int n = 0; n < nmeshes; n++) {  // Use "n < 3" for the full test
     Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, comm));
+        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
     
-    FrameworkPreference pref;
+    Preference pref;
     pref.clear();
-    pref.push_back(MSTK);
-    pref.push_back(STKMESH);
+    pref.push_back(Framework::MSTK);
+    pref.push_back(Framework::STK);
 
-    MeshFactory meshfactory(comm);
-    meshfactory.preference(pref);
+    MeshFactory meshfactory(comm,gm);
+    meshfactory.set_preference(pref);
     Teuchos::RCP<const Mesh> mesh;
     if (n == 0) {
-      //mesh = meshfactory("test/test_nice.exo", gm);
-      mesh = meshfactory("test/random_mesh1.exo", gm);
+      //mesh = meshfactory.create("test/test_nice.exo");
+      mesh = meshfactory.create("test/random_mesh1.exo");
     } else if (n == 1) {
-      mesh = meshfactory("test/random_mesh2.exo", gm);
+      mesh = meshfactory.create("test/random_mesh2.exo");
     } else if (n == 2) {
-      mesh = meshfactory("test/random_mesh3.exo", gm);
+      mesh = meshfactory.create("test/random_mesh3.exo");
     }
 
     /* create a simple state and populate it */
-    Amanzi::VerboseObject::hide_line_prefix = false;
+    Amanzi::VerboseObject::global_hide_line_prefix = false;
 
     Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("state");
     Teuchos::RCP<State> S = Teuchos::rcp(new State(state_list));
@@ -124,7 +124,7 @@ void RunTestConvergence(std::string input_xml) {
     delete RPK;
   }
 
-  delete comm;
+  
 }
 
 

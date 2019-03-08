@@ -19,7 +19,7 @@
 
 #include "PK.hh"
 #include "State.hh"
-#include "checkpoint.hh"
+#include "Checkpoint.hh"
 
 #include "TimeStepManager.hh"
 #include "VerboseObject.hh"
@@ -30,7 +30,7 @@ namespace Amanzi {
 class WalkaboutCheckpoint : public Checkpoint {
  public:
   WalkaboutCheckpoint(Teuchos::ParameterList& plist,
-                      Epetra_MpiComm *comm) : Checkpoint (plist, comm) {};
+                      const Comm_ptr_type& comm) : Checkpoint (plist, comm) {};
   WalkaboutCheckpoint() : Checkpoint() {};
 
   // output of fields

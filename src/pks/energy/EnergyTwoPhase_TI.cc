@@ -168,7 +168,7 @@ double EnergyTwoPhase_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
 #ifdef HAVE_MPI
   double buf = error;
-  du->Data()->Comm().MaxAll(&buf, &error, 1);  // find the global maximum
+  du->Data()->Comm()->MaxAll(&buf, &error, 1);  // find the global maximum
 #endif
 
   return error;

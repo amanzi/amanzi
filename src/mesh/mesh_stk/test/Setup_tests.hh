@@ -2,7 +2,7 @@
 #define _SETUP_TESTS_H_
 
 #include <stk_util/parallel/Parallel.hpp>
-#include <Epetra_MpiComm.h>
+#include <AmanziComm.hh>
 #include <Teuchos_RCP.hpp>
 
 #include "../Mesh_STK_Impl.hh"

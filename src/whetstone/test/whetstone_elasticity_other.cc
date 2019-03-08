@@ -35,12 +35,12 @@ TEST(DIFFUSION_STOKES_2D) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: Stiffness matrix for Stokes in 2D" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo"); 
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
+  RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo"); 
  
   Teuchos::ParameterList plist;
   MFD3D_BernardiRaugel mfd(plist, mesh);
@@ -109,7 +109,7 @@ TEST(DIFFUSION_STOKES_2D) {
   CHECK_CLOSE(vxx, volume, 1e-10);
   CHECK_CLOSE(vxy, 0.0, 1e-10);
 
-  delete comm;
+  
 }
 
 
@@ -124,12 +124,12 @@ TEST(ADVECTION_NAVIER_STOKES_2D) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "\nTest: Advection matrix for Navier-Stokes in 2D" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo"); 
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
+  RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo"); 
  
   Teuchos::ParameterList plist;
   MFD3D_BernardiRaugel mfd(plist, mesh);
