@@ -96,7 +96,9 @@ void CoupledTransport_PK::Setup(const Teuchos::Ptr<State>& S){
   WeakMPC::Setup(S);
 
   subsurf_pk_ = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[subsurf_id_]);
+  ASSERT(subsurf_pk_ != Teuchos::null);  
   surf_pk_ = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[surf_id_]);
+  ASSERT(surf_pk_ != Teuchos::null);  
   
 }
 
@@ -126,6 +128,10 @@ bool CoupledTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
   bool fail = false;
   double dt_MPC = S_->final_time() - S_->initial_time();
 
+  ASSERT(subsurf_pk_ != Teuchos::null);  
+  ASSERT(surf_pk_ != Teuchos::null);
+
+  
   // In the case of rain sources these rain source are mixed with solutes on the surface
   // to provide BC for subsurface domain
   surf_pk_ -> MixingSolutesWthSources(t_old, t_new);
