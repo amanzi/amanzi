@@ -150,6 +150,8 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- indices transmissibimility coefficients for matrix-fracture flux
   auto kn = *S_->GetFieldData("fracture-normal_permeability")->ViewComponent("cell");
+  double rho = *S->GetScalarData("fluid_density");
+  double mu = *S->GetScalarData("fluid_viscosity");
 
   int ncells_owned_f = mesh_fracture->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   auto inds_matrix = std::make_shared<std::vector<std::vector<int> > >(npoints_owned);
@@ -169,7 +171,7 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
       (*inds_matrix)[np][0] = first + k;
       (*inds_fracture)[np][0] = c;
 
-      (*values)[np] = kn[0][c] * area;
+      (*values)[np] = kn[0][c] * (rho / mu) * area;
       np++;
     }
   }
@@ -211,8 +213,11 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   // ver.CheckMatrixSPD();
 
   // stationary solve is moddled with large dt
+  bool fail;
   double dt(1e+98), dt_solver;
-  time_stepper_->TimeStep(dt, dt_solver, solution_);
+  fail = time_stepper_->TimeStep(dt, dt_solver, solution_);
+
+  if (fail) Exceptions::amanzi_throw("Solver for coupled Darcy flow did not converge.");
 }
 
 
@@ -232,6 +237,9 @@ bool FlowMatrixFracture_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 }
 
 
+/* ******************************************************************* 
+* Residual evaluation
+******************************************************************* */
 void FlowMatrixFracture_PK::FunctionalResidual(double t_old, double t_new,
                                                Teuchos::RCP<TreeVector> u_old,
                                                Teuchos::RCP<TreeVector> u_new,
@@ -251,6 +259,9 @@ void FlowMatrixFracture_PK::FunctionalResidual(double t_old, double t_new,
 }
 
 
+/* ******************************************************************* 
+* Preconditioner update
+******************************************************************* */
 void FlowMatrixFracture_PK::UpdatePreconditioner(double t,
                                                  Teuchos::RCP<const TreeVector> up,
                                                  double h, bool assemble)
@@ -275,6 +286,9 @@ void FlowMatrixFracture_PK::UpdatePreconditioner(double t,
 }
 
 
+/* ******************************************************************* 
+* Application of preconditioner
+******************************************************************* */
 int FlowMatrixFracture_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X, 
                                                Teuchos::RCP<TreeVector> Y)
 {

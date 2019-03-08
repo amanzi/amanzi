@@ -189,7 +189,7 @@ void TestDiffusionFracturedMatrix(double gravity) {
         pl2_err, pinf_err, ul2_err, uinf_err, solver.num_itrs());
 
     CHECK(pl2_err < 1e-10);
-    if (gravity == 0) CHECK(ul2_err < 1e-10);
+    CHECK(ul2_err < 1e-10);
   }
 }
 

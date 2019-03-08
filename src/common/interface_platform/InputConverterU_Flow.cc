@@ -364,7 +364,7 @@ Teuchos::ParameterList InputConverterU::TranslatePOM_()
     } else {
       pom_list.set<std::string>("porosity model", "compressible");
       pom_list.set<double>("undeformed soil porosity", phi);
-      pom_list.set<double>("reference pressure", ATMOSPHERIC_PRESSURE);
+      pom_list.set<double>("reference pressure", const_atm_pressure_);
       pom_list.set<double>("pore compressibility", compres);
       compressibility_ = true;
     }
@@ -478,7 +478,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
     } else {
       msm_list.set<std::string>("porosity model", "compressible");
       msm_list.set<double>("undeformed soil porosity", phi);
-      msm_list.set<double>("reference pressure", ATMOSPHERIC_PRESSURE);
+      msm_list.set<double>("reference pressure", const_atm_pressure_);
       msm_list.set<double>("pore compressibility", compres);
     }
 
@@ -736,8 +736,8 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& dom
       Teuchos::ParameterList& bc_tmp = bc.sublist("static head").sublist("function-static-head");
       bc_tmp.set<int>("space dimension", dim_)
             .set<double>("density", rho_)
-            .set<double>("gravity", GRAVITY_MAGNITUDE)
-            .set<double>("p0", ATMOSPHERIC_PRESSURE);
+            .set<double>("gravity", const_gravity_)
+            .set<double>("p0", const_atm_pressure_);
       bc_tmp.sublist(bcname) = bcfn;
       bc.remove(bcname);
 

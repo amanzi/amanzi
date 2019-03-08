@@ -53,10 +53,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   // --- gravity
   Teuchos::Array<double> gravity(dim_);
   for (int i = 0; i != dim_-1; ++i) gravity[i] = 0.0;
-  gravity[dim_-1] = -GRAVITY_MAGNITUDE;
-  // --- redefine gravity (for developers primary)
-  auto it = constants_.find("gravity");
-  if (it != constants_.end()) gravity[dim_-1] = -std::strtod(it->second.c_str(), NULL);
+  gravity[dim_-1] = -const_gravity_;
   out_ic.sublist("gravity").set<Teuchos::Array<double> >("value", gravity);
 
   // --- viscosity
@@ -170,9 +167,9 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       if (attr_names.size() > 0) file++;
 
       if (conductivity) {
-        kx *= viscosity / (rho_ * GRAVITY_MAGNITUDE);
-        ky *= viscosity / (rho_ * GRAVITY_MAGNITUDE);
-        kz *= viscosity / (rho_ * GRAVITY_MAGNITUDE);
+        kx *= viscosity / (rho_ * const_gravity_);
+        ky *= viscosity / (rho_ * const_gravity_);
+        kz *= viscosity / (rho_ * const_gravity_);
       }
 
       // Second, we copy collected data to XML file.
@@ -562,10 +559,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   }
 
   // atmospheric pressure
-  double atm_pressure = ATMOSPHERIC_PRESSURE;
-  it = constants_.find("atmospheric_pressure");
-  if (it != constants_.end()) atm_pressure = std::strtod(it->second.c_str(), NULL);
-  out_ic.sublist("atmospheric_pressure").set<double>("value", atm_pressure);
+  out_ic.sublist("atmospheric_pressure").set<double>("value", const_atm_pressure_);
 
   // add mesh partitions to the state list
   out_list.sublist("mesh partitions") = TranslateMaterialsPartition_();

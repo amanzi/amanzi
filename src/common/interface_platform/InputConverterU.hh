@@ -33,6 +33,8 @@ class InputConverterU : public InputConverter {
  public:
   explicit InputConverterU(const std::string& input_filename) :
       InputConverter(input_filename), 
+      const_gravity_(GRAVITY_MAGNITUDE),
+      const_atm_pressure_(ATMOSPHERIC_PRESSURE),
       vo_(NULL),
       flow_single_phase_(false),
       compressibility_(false),
@@ -73,6 +75,7 @@ class InputConverterU : public InputConverter {
   void VerifyXMLStructure_();
   void ParseSolutes_();
   void ParseModelDescription_();
+  void ModifyDefaultPhysicalConstants_();
 
   Teuchos::ParameterList TranslateVerbosity_();
   Teuchos::ParameterList TranslateUnits_();
@@ -189,6 +192,10 @@ class InputConverterU : public InputConverter {
   std::map<std::string, std::string> pk_model_;
   std::map<std::string, bool> pk_master_;
   std::map<std::string, double> dt_cut_, dt_inc_;
+
+  // global physical constants prefixed with "const"
+  double const_gravity_;
+  double const_atm_pressure_;
 
   // global flow constants
   std::string flow_model_;  // global value
