@@ -55,7 +55,7 @@ namespace Amanzi {
     surface_flux_key_ =  plist_->get<std::string>("flux_key", 
                                                   Keys::getKey(surface_name_, "mass_flux"));
 
-
+    
   }
 
 // -----------------------------------------------------------------------------
@@ -94,16 +94,17 @@ void CoupledTransport_PK::Setup(const Teuchos::Ptr<State>& S){
   //passwd_ = "coupled_transport";  // owner's password
 
   WeakMPC::Setup(S);
+
+  subsurf_pk_ = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[subsurf_id_]);
+  surf_pk_ = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[surf_id_]);
+  
 }
 
 void CoupledTransport_PK::Initialize(const Teuchos::Ptr<State>& S){
 
   WeakMPC::Initialize(S);
 
-  subsurf_pk_ = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[subsurf_id_]);
-  surf_pk_ = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[surf_id_]);
 }
-
 int CoupledTransport_PK::num_aqueous_component(){
 
   int num_aq_comp = subsurf_pk_ -> num_aqueous_component();
