@@ -379,8 +379,11 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   if (flow_on_manifold_)
       oplist.set<std::string>("nonlinear coefficient", "standard: cell");
 
+  double factor = rho_ * rho_ / mu;
+  if (coupled_to_fracture_) factor = rho_;
+
   Operators::PDE_DiffusionFactory opfactory;
-  op_diff_ = opfactory.Create(oplist, mesh_, op_bc_, rho_ * rho_ / mu, gravity_);
+  op_diff_ = opfactory.Create(oplist, mesh_, op_bc_, factor, gravity_);
   op_diff_->SetBCs(op_bc_, op_bc_);
 
   if (!flow_on_manifold_) {
