@@ -33,11 +33,7 @@ TEST(DARCY_MASS_2D) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "Test: Mass matrix for Darcy in 2D" << std::endl;
-#ifdef HAVE_MPI
   auto comm = Amanzi::getDefaultComm();
-#else
-  auto comm = Amanzi::getCommSelf();
-#endif
 
   MeshFactory meshmeshfactory(comm);
   meshmeshfactory.set_preference(Preference({Framework::MSTK}));

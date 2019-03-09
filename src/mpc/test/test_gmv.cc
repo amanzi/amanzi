@@ -3,7 +3,7 @@
 #include "math.h"
 #include "UnitTest++.h"
 #include "MeshFactory.hh"
-#include <Epetra_Comm.h>
+
 #include <Epetra_MpiComm.h>
 #include "Epetra_SerialComm.h"
 #include "State.hh"

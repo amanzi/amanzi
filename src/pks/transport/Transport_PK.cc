@@ -629,10 +629,7 @@ double Transport_PK::StableTimeStep()
 
   // communicate global time step
   double dt_tmp = dt_;
-#ifdef HAVE_MPI
-  const Epetra_Comm& comm = ws_prev->Comm();
-  comm.MinAll(&dt_tmp, &dt_, 1);
-#endif
+  ws_prev->Comm().MinAll(&dt_tmp, &dt_, 1);
 
   // incorporate developers and CFL constraints
   dt_ = std::min(dt_, dt_debug_);
@@ -642,10 +639,8 @@ double Transport_PK::StableTimeStep()
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     int cmin_dt_unique = (fabs(dt_tmp * cfl_ - dt_) < 1e-6 * dt_) ? cmin_dt : -1;
  
-#ifdef HAVE_MPI
     int cmin_dt_tmp = cmin_dt_unique;
-    comm.MaxAll(&cmin_dt_tmp, &cmin_dt_unique, 1);
-#endif
+    ws_prev->Comm().MaxAll(&cmin_dt_tmp, &cmin_dt_unique, 1);
     if (cmin_dt == cmin_dt_unique) {
       const AmanziGeometry::Point& p = mesh_->cell_centroid(cmin_dt);
 

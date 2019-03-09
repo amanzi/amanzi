@@ -56,9 +56,9 @@ add_subdirectory(exodus_reader)
 # Mesh Frameworks
 
 # STK (Trilinos Package)
-if (ENABLE_STK_Mesh)
-  add_subdirectory(mesh_stk)
-endif(ENABLE_STK_Mesh)    
+#if (ENABLE_STK_Mesh)
+#  add_subdirectory(mesh_stk)
+#endif(ENABLE_STK_Mesh)    
 
 # MOAB Mesh framework
 if (ENABLE_MOAB_Mesh)

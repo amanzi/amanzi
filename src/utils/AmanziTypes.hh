@@ -28,7 +28,7 @@
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_MpiComm.hpp"
 #else
-#include "Epetra_Comm.h"
+
 #include "Epetra_MpiComm.h"
 #endif
 

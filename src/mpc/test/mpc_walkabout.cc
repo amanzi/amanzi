@@ -2,7 +2,7 @@
 #include "stdlib.h"
 #include "math.h"
 
-#include <Epetra_Comm.h>
+
 #include <Epetra_MpiComm.h>
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
