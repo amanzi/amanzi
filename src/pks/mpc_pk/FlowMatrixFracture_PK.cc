@@ -151,7 +151,8 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   // -- indices transmissibimility coefficients for matrix-fracture flux
   auto kn = *S_->GetFieldData("fracture-normal_permeability")->ViewComponent("cell");
   double rho = *S->GetScalarData("fluid_density");
-  double mu = *S->GetScalarData("fluid_viscosity");
+  double gravity;
+  S->GetConstantVectorData("gravity")->Norm2(&gravity);
 
   int ncells_owned_f = mesh_fracture->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   auto inds_matrix = std::make_shared<std::vector<std::vector<int> > >(npoints_owned);
@@ -171,7 +172,7 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
       (*inds_matrix)[np][0] = first + k;
       (*inds_fracture)[np][0] = c;
 
-      (*values)[np] = kn[0][c] * area;
+      (*values)[np] = kn[0][c] * area / (rho * gravity);
       np++;
     }
   }
