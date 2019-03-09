@@ -171,7 +171,7 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
       (*inds_matrix)[np][0] = first + k;
       (*inds_fracture)[np][0] = c;
 
-      (*values)[np] = kn[0][c] * (rho / mu) * area;
+      (*values)[np] = kn[0][c] * area;
       np++;
     }
   }
