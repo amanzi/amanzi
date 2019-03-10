@@ -160,6 +160,7 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   auto values = std::make_shared<std::vector<double> >(npoints_owned);
 
   int np(0);
+  rho = 1;
   for (int c = 0; c < ncells_owned_f; ++c) {
     int f = mesh_fracture->entity_get_parent(AmanziMesh::CELL, c);
     double area = mesh_fracture->cell_volume(c);

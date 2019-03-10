@@ -3635,7 +3635,6 @@ Note that *reactive transport* is MPC-PK and hence its description is short.
   </ParameterList>
 
 
-
 Flow and energy PK
 ------------------
 
@@ -3727,7 +3726,7 @@ Coupled matrix-fracture Darcy flow PK
 Mathematical models
 ...................
 
-Let subscripts :math:`m` and :math:`m` correspond to matri and fracture, respectively.
+Let subscripts :math:`m` and :math:`f` correspond to matrix and fracture, respectively.
 The conceptual PDE model of the stationary coupled matrix-fracture flow is
 
 .. math::
@@ -3738,7 +3737,7 @@ The conceptual PDE model of the stationary coupled matrix-fracture flow is
   (\boldsymbol{\nabla} p_m - \rho_l \boldsymbol{g}) \\
   %
   -\boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_f) = 
-    -[[ \tilde{\boldsymbol{q}}_m \cdot \boldsymbol{n} ]],
+    -\rho_l [[ \tilde{\boldsymbol{q}}_m \cdot \boldsymbol{n} ]],
   \quad
   \boldsymbol{q}_f = -\frac{\boldsymbol{K}_f}{\mu} 
   (\boldsymbol{\nabla} p_f - \rho_l \boldsymbol{g}) \\
@@ -3780,6 +3779,50 @@ Main parameters and sublists
     <ParameterList name="time integrator">
       ...
     </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
+
+Coupled matrix-fracture tansport PK
+-----------------------------------
+
+Mathematical models
+...................
+
+Let subscripts :math:`m` and :math:`f` correspond to matrix and fracture, respectively.
+The conceptual PDE model of the coupled matrix-fracture advective transport is
+
+.. math::
+  \begin{array}{l}
+  \frac{\partial(\phi_m C_m)}{\partial t} = 
+    -\boldsymbol{\nabla} \cdot (\boldsymbol{q}_m C_m) = Q_m,\\
+  %
+  \frac{\partial(\varepsilon_f\phi_f C_f)}{\partial t} = 
+    -\boldsymbol{\nabla} \cdot (\boldsymbol{q}_f C_f)
+    +[[ \tilde{C} (\boldsymbol{q}_m \cdot \boldsymbol{n}) ]] + Q_f,
+  \end{array}
+
+subject to the  Dirichlet boundary conditions on the inflow part of the computational domain.
+Here
+:math:`\phi` is porosity [-],
+:math:`Q` is source or sink term,
+:math:`\boldsymbol{q}` is the Darcy velocity [m/s] for matrix domain and [m^2/s] for fracture domain,
+:math:`\varepsilon_f` is fracture cross-sectional length [m],
+and
+:math:`\tilde{C}` is concentration in fracture for outflow and in matrix for inflow.
+
+
+Main parameters and sublists 
+............................
+
+* `"PKs order`" [array(string)] defines user names for two transport PKs.
+
+.. code-block:: xml
+
+  <ParameterList name="PKs">  <!-- parent list -->
+  <ParameterList name="_COUPLED DARCY FLOW">
+    <Parameter name="PKs order" type="Array(string)" value="{_TRANSPORT MATRIX, _TRANSPORT FRACTURE}"/>
+    <Parameter name="master PK index" type="int" value="0"/>
   </ParameterList>
   </ParameterList>
 

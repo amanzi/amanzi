@@ -37,8 +37,7 @@ def plotSingleFractureObservations(Obs_xml, Obs_data, axes1):
     for obs in Obs_data.observations.itervalues():
         color = cmap[obs.region]
         legend = lmap[obs.region]
-        axes1.scatter(obs.times, obs.data, marker='s', s=25, c=color, label=legend)
-        pass
+        axes1.scatter(obs.times, numpy.log10(obs.data), marker='s', s=25, c=color, label=legend)
 
 
 if __name__ == "__main__":
@@ -62,7 +61,7 @@ if __name__ == "__main__":
        
         plotSingleFractureObservations(obs_xml,obs_data,axes1)
 
-        axes1.set_ylabel('Normalized concentration [-]')
+        axes1.set_ylabel('Integrated concentration [-]')
         axes1.set_xlabel('Simulation time [y]')
         axes1.set_title('Normalized concentation at the fracture outlet')
         axes1.legend(loc="lower right", fancybox=True, shadow=True)

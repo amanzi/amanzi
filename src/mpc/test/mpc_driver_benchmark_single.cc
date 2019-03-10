@@ -50,7 +50,7 @@ using namespace Amanzi::AmanziGeometry;
 
   factory.preference(FrameworkPreference({Framework::MSTK}));
   factory.set_partitioner(Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_GRAPH);
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory("test/single_fracture.exo", gm); 
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory("test/single_fracture_tet.exo", gm); 
   // std::string meshfile = plist->sublist("mesh").sublist("unstructured").sublist("read mesh file").get<std::string>("file");
   // Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory(meshfile, gm);
 
