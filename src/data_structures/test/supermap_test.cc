@@ -41,9 +41,9 @@ TEST(SUPERMAP_MANUAL) {
   using namespace Amanzi::AmanziGeometry;
   //  using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
-  int NumProc = comm.NumProc();
+  auto comm = getDefaultComm();
+  int MyPID = comm->MyPID();
+  int NumProc = comm->NumProc();
 
   if (MyPID == 0) std::cout << "Test: Manual test of SuperMap" << std::endl;
 
@@ -52,22 +52,22 @@ TEST(SUPERMAP_MANUAL) {
   for (int i=0; i!=3; ++i) {
     gids[i] = 3*MyPID + i;
   }
-  Teuchos::RCP<Epetra_Map> owned_map1 = Teuchos::rcp(new Epetra_Map(3*NumProc, 3, &gids[0], 0, comm));
+  Teuchos::RCP<Epetra_Map> owned_map1 = Teuchos::rcp(new Epetra_Map(3*NumProc, 3, &gids[0], 0, *comm));
 
   if (MyPID > 0) gids.push_back(3*MyPID-1);
   if (MyPID < NumProc-1) gids.push_back(3*(MyPID+1));
-  Teuchos::RCP<Epetra_Map> ghosted_map1 = Teuchos::rcp(new Epetra_Map(-1, gids.size(), &gids[0], 0, comm));
+  Teuchos::RCP<Epetra_Map> ghosted_map1 = Teuchos::rcp(new Epetra_Map(-1, gids.size(), &gids[0], 0, *comm));
 
   // make a ghosted and local map 2
   std::vector<int> gids2(5);
   for (int i=0; i!=5; ++i) {
     gids2[i] = 5*MyPID + i;
   }
-  Teuchos::RCP<Epetra_Map> owned_map2 = Teuchos::rcp(new Epetra_Map(5*NumProc, 5, &gids2[0], 0, comm));
+  Teuchos::RCP<Epetra_Map> owned_map2 = Teuchos::rcp(new Epetra_Map(5*NumProc, 5, &gids2[0], 0, *comm));
 
   if (MyPID > 0) gids2.push_back(5*MyPID-1);
   if (MyPID < NumProc-1) gids2.push_back(5*(MyPID+1));
-  Teuchos::RCP<Epetra_Map> ghosted_map2 = Teuchos::rcp(new Epetra_Map(-1, gids2.size(), &gids2[0], 0, comm));
+  Teuchos::RCP<Epetra_Map> ghosted_map2 = Teuchos::rcp(new Epetra_Map(-1, gids2.size(), &gids2[0], 0, *comm));
 
   // make the supermap
   std::vector<std::string> names; names.push_back("map1"); names.push_back("map2");
@@ -232,8 +232,8 @@ TEST(SUPERMAP_FROM_COMPOSITEVECTOR) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
 
@@ -242,20 +242,20 @@ TEST(SUPERMAP_FROM_COMPOSITEVECTOR) {
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
 
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   // create a mesh 
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 10, gm);
-  //  Teuchos::RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(pref);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10);
+  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // create a CVSpace
   CompositeVectorSpace cv;
@@ -275,8 +275,8 @@ TEST(SUPERMAP_FROM_TREEVECTOR) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
 
@@ -285,20 +285,20 @@ TEST(SUPERMAP_FROM_TREEVECTOR) {
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
 
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   // create a mesh 
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 10, gm);
-  //  Teuchos::RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(pref);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10);
+  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // create a CVSpace
   Teuchos::RCP<CompositeVectorSpace> cv = Teuchos::rcp(new CompositeVectorSpace());

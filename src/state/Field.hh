@@ -22,7 +22,7 @@
 #include "Epetra_Vector.h"
 
 // State
-#include "checkpoint.hh"
+#include "Checkpoint.hh"
 #include "CompositeVector.hh"
 #include "StateDefs.hh"
 #include "Visualization.hh"

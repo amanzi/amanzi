@@ -133,10 +133,10 @@ double Darcy_PK::ErrorEstimate_(double* dt_factor)
 
 #ifdef HAVE_MPI
     double dt_tmp = *dt_factor;
-    solution->Comm().MinAll(&dt_tmp, dt_factor, 1);  // find the global minimum
+    solution->Comm()->MinAll(&dt_tmp, dt_factor, 1);  // find the global minimum
  
     double error_tmp = error_max;
-    solution->Comm().MaxAll(&error_tmp, &error_max, 1);  // find the global maximum
+    solution->Comm()->MaxAll(&error_tmp, &error_max, 1);  // find the global maximum
 #endif
 
   return error_max;

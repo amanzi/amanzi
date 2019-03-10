@@ -5,7 +5,7 @@
 
 
 #include "Epetra_Map.h"
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_Array.hpp"
@@ -18,22 +18,22 @@
 TEST(Extract_Column_MSTK)
 {
 
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  auto comm = Amanzi::getDefaultComm();
 
   Teuchos::ParameterList reg_spec; // no regions declared here
   
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm_.get()));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, *comm));
 
   // Generate a mesh consisting of 3x3x3 elements 
-  Amanzi::AmanziMesh::Mesh_MSTK mesh(0,0,0,1,1,1,3,3,3,comm_.get(),gm);
+  auto mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(0,0,0,1,1,1,3,3,3,comm,gm));
 
-  CHECK_EQUAL(1, mesh.build_columns());
-  CHECK_EQUAL(9,mesh.num_columns());
+  CHECK_EQUAL(1, mesh->build_columns());
+  CHECK_EQUAL(9,mesh->num_columns());
 
   int cell0 = 0;
-  int colid = mesh.column_ID(cell0);
-  Amanzi::AmanziMesh::Entity_ID_List const& cell_list = mesh.cells_of_column(colid);
+  int colid = mesh->column_ID(cell0);
+  Amanzi::AmanziMesh::Entity_ID_List const& cell_list = mesh->cells_of_column(colid);
 
   CHECK_EQUAL(3,cell_list.size());
 
@@ -47,7 +47,7 @@ TEST(Extract_Column_MSTK)
   }
 
 
-  Amanzi::AmanziMesh::Entity_ID_List const& face_list = mesh.faces_of_column(colid);
+  Amanzi::AmanziMesh::Entity_ID_List const& face_list = mesh->faces_of_column(colid);
   CHECK_EQUAL(4,face_list.size());
 
   // check we are not doubling up on some faces (catches previous bug)
@@ -59,9 +59,7 @@ TEST(Extract_Column_MSTK)
     }
   }
   
-  Amanzi::AmanziMesh::Mesh_MSTK column_mesh(mesh,cell_list,
-                                            Amanzi::AmanziMesh::CELL,
-                                            false,false);
+  Amanzi::AmanziMesh::Mesh_MSTK column_mesh(mesh,cell_list, Amanzi::AmanziMesh::CELL,false,Amanzi::getCommSelf());
 
 
   

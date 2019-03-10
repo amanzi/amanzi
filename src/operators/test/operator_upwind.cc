@@ -66,8 +66,8 @@ using namespace Amanzi::Operators;
 
 template<class UpwindClass>
 void RunTestUpwind(std::string method) {
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "\nTest: 1st-order convergence for upwind \"" << method << "\"\n";
 
@@ -78,13 +78,13 @@ void RunTestUpwind(std::string method) {
 
   // create an SIMPLE mesh framework
   Teuchos::ParameterList region_list = plist.sublist("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(&comm, Teuchos::null);
-  meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
 
   for (int n = 4; n < 17; n *= 2) {
-    Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n, gm);
+    Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n);
 
     int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
@@ -174,7 +174,7 @@ void RunTestUpwind(std::string method) {
 #endif
     error = sqrt(error / nfaces_owned);
   
-    if (comm.MyPID() == 0)
+    if (comm->MyPID() == 0)
         printf("n=%2d %s=%8.4f\n", n, method.c_str(), error);
   }
 }

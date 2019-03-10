@@ -12,8 +12,8 @@
 #include <iostream>
 #include <fstream>
 
-#include <Epetra_Comm.h>
-#include <Epetra_MpiComm.h>
+#include "Epetra_Comm.h"
+#include "Epetra_MpiComm.h"
 #include "Epetra_SerialComm.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
@@ -80,11 +80,11 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   // Teuchos::OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(mpi_comm);
-#else  
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Teuchos::rcp(new Amanzi::MpiComm_type(mpi_comm));
+#else
+  auto comm = Amanzi::getCommSelf();
 #endif
-
+  
   int rank, ierr, aerr, size;
   MPI_Comm_rank(mpi_comm,&rank);
   MPI_Comm_size(mpi_comm,&size);
@@ -109,7 +109,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   Teuchos::ParameterList& reg_params = plist_->sublist("regions");
 
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> geom_model =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, *comm));
 
   // Add the geometric model to the domain
   simdomain_ptr->Add_Geometric_Model(geom_model);
@@ -128,7 +128,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   // Create a mesh factory for this geometric model
   auto mesh_params = Teuchos::sublist(plist_, "mesh", true);
   auto mesh_vo = Teuchos::rcp(new Amanzi::VerboseObject("Mesh", *mesh_params));
-  Amanzi::AmanziMesh::MeshFactory factory(comm, mesh_params);
+  Amanzi::AmanziMesh::MeshFactory meshfactory(comm, geom_model, mesh_params);
 
   // Prepare to read/create the mesh specification
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
@@ -149,7 +149,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   bool expert_params_specified = unstr_mesh_params.isSublist("expert");
 
   try {
-    Amanzi::AmanziMesh::FrameworkPreference prefs(Amanzi::AmanziMesh::default_preference());
+    Amanzi::AmanziMesh::Preference prefs(Amanzi::AmanziMesh::default_preference());
 
     if (expert_params_specified) {
       Teuchos::ParameterList expert_mesh_params = unstr_mesh_params.sublist("expert");  
@@ -163,35 +163,26 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
       if (framework_specified) {
 	std::string framework = expert_mesh_params.get<std::string>("framework");
 
-	if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::Simple)) {
-	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::Simple);
-	} else if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::MSTK)) {
-	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::MSTK);
-	} else if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::STKMESH)) {
-	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::STKMESH);
-	} else if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::MOAB)) {
-	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::MOAB);
+	if (framework == Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::SIMPLE)) {
+	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
+	} else if (framework == Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::MSTK)) {
+	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::Framework::MSTK);
+	} else if (framework == Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::STK)) {
+	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::Framework::STK);
+	} else if (framework == Amanzi::AmanziMesh::framework_names.at(Amanzi::AmanziMesh::Framework::MOAB)) {
+	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::Framework::MOAB);
+	// } else if (framework == "") {
 	} else {
           std::string s(framework);
           s += ": specified mesh framework preference not understood";
           amanzi_throw(Errors::Message(s));
 	}
       }
-
-      bool partitioner_specified = expert_mesh_params.isParameter("partitioner");
-      if (partitioner_specified) {
-        std::string partitioner = expert_mesh_params.get<std::string>("partitioner");
-        if (partitioner == "METIS" || partitioner == "metis")
-          factory.set_partitioner(Amanzi::AmanziMesh::Partitioner_type::METIS);
-        else if (partitioner == "ZOLTAN_GRAPH" || partitioner == "zoltan_graph")
-          factory.set_partitioner(Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_GRAPH);
-        else if (partitioner == "ZOLTAN_RCB" || partitioner == "zoltan_rcb")
-          factory.set_partitioner(Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_RCB);
-      }
     }
 
-    // Create a mesh factory with default or user preferences for a mesh framework
-    factory.preference(prefs);
+    // Create a mesh meshfactory with default or user preferences for a
+    // mesh framework
+    meshfactory.set_preference(prefs);
 
   } catch (const Teuchos::Exceptions::InvalidParameterName& e) {
     // do nothing, this means that the "framework" parameter was 
@@ -237,7 +228,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
       ierr = 0;
       try {
         // create the mesh from the file
-	mesh = factory.create(file, geom_model);
+	mesh = meshfactory.create(file);
 	    
       } catch (const std::exception& e) {
 	std::cerr << rank << ": error: " << e.what() << std::endl;
@@ -256,7 +247,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     
     try {
       // create the mesh by internal generation
-      mesh = factory.create(gen_params, geom_model);
+      mesh = meshfactory.create(gen_params);
 
     } catch (const std::exception& e) {
       std::cerr << rank << ": error: " << e.what() << std::endl;
@@ -379,7 +370,6 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   // Clean up
   mesh.reset();
   delete simdomain_ptr;
-  delete comm;
       
   return Amanzi::Simulator::SUCCESS;
 }

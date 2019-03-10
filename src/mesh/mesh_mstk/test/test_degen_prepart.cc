@@ -4,7 +4,7 @@
 
 #include <fstream>
 #include "Epetra_Map.h"
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -22,9 +22,9 @@ TEST(ELIM_DEGEN_PREPARTITION)
 {
   std::string xml_filename = "test/test_degen_prepart.xml";
   
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
-  int num_procs = comm_->NumProc();
-  int rank = comm_->MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int num_procs = comm->NumProc();
+  int rank = comm->MyPID();
   
   std::cout << "Reading the input file..." << std::endl;
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xml_filename);
@@ -32,18 +32,17 @@ TEST(ELIM_DEGEN_PREPARTITION)
   Teuchos::ParameterList reg_params = plist->sublist("regions");
   std::cout << "Creating the geometric model..." << std::endl;
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-  Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_params, comm_.get()));
+  Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_params, *comm));
   
   // create and register meshes
   Teuchos::ParameterList mesh_plist = plist->sublist("mesh");
-  Amanzi::AmanziMesh::MeshFactory factory(comm_.get());
-  Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
+  Amanzi::AmanziMesh::MeshFactory meshfactory(comm, gm);
+  Amanzi::AmanziMesh::Preference prefs(meshfactory.preference());
   prefs.clear();
-  prefs.push_back(Amanzi::AmanziMesh::MSTK);
+  prefs.push_back(Amanzi::AmanziMesh::Framework::MSTK);
+  meshfactory.set_preference(prefs);
   
-  // create the base mesh
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-  
+  // create and check the input plist
   std::string in_exo_file;
   if (mesh_plist.isSublist("read mesh file")) {
     Teuchos::ParameterList read_params = mesh_plist.sublist("read mesh file");
@@ -75,9 +74,11 @@ TEST(ELIM_DEGEN_PREPARTITION)
     Errors::Message msg("Must specify mesh sublist of type: \"read mesh file\".");
     Exceptions::amanzi_throw(msg);
   }
+
+  // create the mesh
   std::cout << "Reading the mesh..." << std::endl;
-  mesh = factory.create(in_exo_file, gm);
-  AMANZI_ASSERT(!mesh.is_null());
+  auto mesh = meshfactory.create(in_exo_file);
+  AMANZI_ASSERT(mesh.get());
   
   // mesh verification
   bool verify = mesh_plist.get<bool>("verify mesh", false);
@@ -105,7 +106,7 @@ TEST(ELIM_DEGEN_PREPARTITION)
       int status = mesh_auditor.Verify();        // check the mesh
       if (status != 0) ierr = 1;
       
-      comm_->SumAll(&ierr, &aerr, 1);
+      comm->SumAll(&ierr, &aerr, 1);
       if (aerr == 0) {
         if (rank == 0)
           std::cout << "Mesh Audit confirms that mesh is ok" << std::endl;
@@ -117,7 +118,6 @@ TEST(ELIM_DEGEN_PREPARTITION)
   }  // if verify
   
   std::cout << "Verifying the mesh using the internal MSTK check..." << std::endl;
-  Amanzi::AmanziMesh::Mesh_MSTK *mstk_mesh = 
-      dynamic_cast<Amanzi::AmanziMesh::Mesh_MSTK *>(mesh.get());
+  auto mstk_mesh = Teuchos::rcp_dynamic_cast<Amanzi::AmanziMesh::Mesh_MSTK>(mesh);
   CHECK(mstk_mesh->run_internal_mstk_checks());
 }

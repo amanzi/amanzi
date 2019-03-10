@@ -16,7 +16,7 @@
 #ifndef AMANZI_FAKE_MODEL_HH_
 #define AMANZI_FAKE_MODEL_HH_
 
-#include "factory.hh"
+#include "Factory.hh"
 
 #include "WRM.hh"
 

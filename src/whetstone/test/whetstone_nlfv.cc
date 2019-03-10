@@ -126,19 +126,19 @@ TEST(HARMONIC_AVERAGING_POINT_2D) {
 
   std::cout << "\nTest: Harmonic averagin point in 2D" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 #else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
+  auto comm = Amanzi::getCommSelf();
 #endif
 
   // initialize a two-cell mesh (quad and triangle)
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory("test/two_cell2_dist.exo"); 
+  meshfactory.set_preference(pref);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/two_cell2_dist.exo"); 
  
   // instantiate the toolset and populate data
   WhetStone::NLFV nlfv(mesh);

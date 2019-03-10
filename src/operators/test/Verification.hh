@@ -37,7 +37,7 @@ class Verification {
       a.Dot(ha, &aha);
       b.Dot(hb, &bhb);
 
-      if (a.Comm().MyPID() == 0) {
+      if (a.Comm()->MyPID() == 0) {
         std::cout << "Matrix:\n";
         if (symmetry)
             printf("  Symmetry test: %21.14e = %21.14e\n", ahb, bha);
@@ -66,7 +66,7 @@ class Verification {
     a.Dot(ha, &aha);
     b.Dot(hb, &bhb);
 
-    if (a.Comm().MyPID() == 0) {
+    if (a.Comm()->MyPID() == 0) {
       int size = (op_->A() != Teuchos::null) ? op_->A()->NumGlobalRows() : -1;
       std::cout << "Preconditioner: size=" << size << "\n";
       if (symmetry)

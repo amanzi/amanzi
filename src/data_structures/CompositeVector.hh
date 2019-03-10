@@ -167,7 +167,7 @@ public:
   name_iterator begin() const { return map_->begin(); }
   name_iterator end() const { return map_->end(); }
   unsigned int size() const { return map_->size(); }
-  const Epetra_MpiComm& Comm() const { return map_->Comm(); }
+  Comm_ptr_type Comm() const { return map_->Comm(); }
   Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return map_->Mesh(); }
   bool HasComponent(std::string name) const { return map_->HasComponent(name); }
   int NumComponents() const { return size(); }

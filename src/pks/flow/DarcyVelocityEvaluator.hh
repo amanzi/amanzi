@@ -15,7 +15,7 @@
 #ifndef AMANZI_FLOW_DARCY_VELOCITY_EVALUATOR_
 #define AMANZI_FLOW_DARCY_VELOCITY_EVALUATOR_
 
-// #include "factory.hh"
+// #include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {

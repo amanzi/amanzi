@@ -21,7 +21,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "factory.hh"
+#include "Factory.hh"
 #include "TCM_TwoPhase.hh"
 
 namespace Amanzi {

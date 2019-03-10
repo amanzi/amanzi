@@ -21,7 +21,7 @@
 namespace Amanzi {
 namespace Operators {
 
-SuperMap::SuperMap(const Epetra_MpiComm& comm,
+SuperMap::SuperMap(const Comm_ptr_type& comm,
                    const std::vector<std::string>& compnames,
                    const std::vector<int>& dofnums,
                    const std::vector<Teuchos::RCP<const Epetra_BlockMap> >& maps,
@@ -140,8 +140,8 @@ SuperMap::SuperMap(const Epetra_MpiComm& comm,
   }
 
   // create the maps
-  map_ = Teuchos::rcp(new Epetra_Map(n_global, n_local, &gids[0], 0, comm)); 
-  ghosted_map_ = Teuchos::rcp(new Epetra_Map(n_global_ghosted, n_local_ghosted, &gids[0], 0, comm));
+  map_ = Teuchos::rcp(new Epetra_Map(n_global, n_local, &gids[0], 0, *comm)); 
+  ghosted_map_ = Teuchos::rcp(new Epetra_Map(n_global_ghosted, n_local_ghosted, &gids[0], 0, *comm));
 }
 
 

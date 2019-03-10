@@ -22,6 +22,7 @@
 #include "Epetra_MpiComm.h"
 #include "Epetra_MultiVector.h"
 
+#include "AmanziComm.hh"
 #include "dbc.hh"
 #include "data_structures_types.hh"
 
@@ -31,7 +32,7 @@ class BlockVector {
 
 public:
   // Constructor
-  BlockVector(const Epetra_MpiComm& comm,
+  BlockVector(const Comm_ptr_type& comm,
               std::vector<std::string>& names,
               std::vector<Teuchos::RCP<const Epetra_BlockMap> >& maps,
               std::vector<int> num_dofs);
@@ -156,7 +157,7 @@ public:
 
   int Random();
 
-  const Epetra_MpiComm& Comm() const { return comm_; }
+  Comm_ptr_type Comm() const { return comm_; }
 
 private:
   int Index_(std::string name) const {
@@ -166,7 +167,7 @@ private:
   }
 
 private:
-  const Epetra_MpiComm comm_;
+  Comm_ptr_type comm_;
   std::map< std::string, int > indexmap_;
   int num_components_;
 

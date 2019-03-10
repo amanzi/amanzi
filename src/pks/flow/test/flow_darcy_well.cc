@@ -41,8 +41,8 @@ void RunTestDarcyWell(std::string controller) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Flow;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "\nTest: 2D well model: " << controller << std::endl;
 
   // read parameter list
@@ -52,16 +52,16 @@ void RunTestDarcyWell(std::string controller) {
   // create an MSTK mesh framework
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, &comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
+  pref.push_back(Framework::MSTK);
+  pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
-  RCP<const Mesh> mesh = meshfactory(-10.0, -5.0, 10.0, 0.0, 101, 50, gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(pref);
+  RCP<const Mesh> mesh = meshfactory.create(-10.0, -5.0, 10.0, 0.0, 101, 50);
 
   /*
   Teuchos::ParameterList mesh_info_list;
@@ -72,7 +72,7 @@ void RunTestDarcyWell(std::string controller) {
   */
 
   // create a simple state and populate it
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
@@ -176,8 +176,8 @@ void Run_3D_DarcyWell(std::string controller) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Flow;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "\nTest: 3D Darcy flow, two wells" << std::endl;
 
   // read parameter list
@@ -187,19 +187,19 @@ void Run_3D_DarcyWell(std::string controller) {
   // create an MSTK mesh framework
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, &comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
+  pref.push_back(Framework::MSTK);
+  pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
-  RCP<const Mesh> mesh = meshfactory(-10.0, -1.0, -5.0, 10.0, 1.0, 0.0, 101, 10, 25, gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(pref);
+  RCP<const Mesh> mesh = meshfactory.create(-10.0, -1.0, -5.0, 10.0, 1.0, 0.0, 101, 10, 25);
 
   // create a simple state and populate it
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));
@@ -278,8 +278,8 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Flow;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "\nTest: 3D Darcy flow, one well" << std::endl;
 
   // read parameter list
@@ -289,19 +289,19 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
   // create an MSTK mesh framework
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, &comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
+  pref.push_back(Framework::MSTK);
+  pref.push_back(Framework::STK);
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
-  RCP<const Mesh> mesh = meshfactory(-55.0, -55.0, -2., 55.0, 55.0, 0.0, 23, 23, 4, gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(pref);
+  RCP<const Mesh> mesh = meshfactory.create(-55.0, -55.0, -2., 55.0, 55.0, 0.0, 23, 23, 4);
 
   // create a simple state and populate it
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   Teuchos::ParameterList state_list = plist->sublist("state");
   RCP<State> S = rcp(new State(state_list));

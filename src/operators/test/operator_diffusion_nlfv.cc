@@ -45,8 +45,8 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, NLFV with DMP, g=" << gravity << std::endl;
 
   // read parameter list
@@ -56,10 +56,10 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
   Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator nlfv");
 
   // create an MSTK mesh framework
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  // Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, Teuchos::null);
-  Teuchos::RCP<const Mesh> mesh = meshfactory("test/random10.exo");
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  // Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 4);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/random10.exo");
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
@@ -187,8 +187,8 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, NLFVwithBndFaces with DMP, g=" << gravity << std::endl;
 
   // read parameter list
@@ -199,10 +199,10 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
                                         .sublist("diffusion operator nlfv");
 
   // create an MSTK mesh framework
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  //Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, Teuchos::null);
-  Teuchos::RCP<const Mesh> mesh = meshfactory("test/random10.exo");
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  //Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 4);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/random10.exo");
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());

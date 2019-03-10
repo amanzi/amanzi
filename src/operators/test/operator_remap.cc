@@ -67,8 +67,8 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
 
   int dim = (nz == 0) ? 2 : 3;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   // read parameter list
   std::string xmlFileName = "test/operator_remap.xml";
@@ -105,21 +105,21 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   }
 
   // create two meshes
-  MeshFactory meshfactory(&comm);
-  meshfactory.set_partitioner(AmanziMesh::Partitioner_type::ZOLTAN_RCB);
-  meshfactory.preference(FrameworkPreference({AmanziMesh::MSTK}));
+  MeshFactory meshfactory(comm);
+  //meshfactory.set_partitioner(AmanziMesh::Partitioner_type::ZOLTAN_RCB);
+  meshfactory.set_preference(Preference({AmanziMesh::Framework::MSTK}));
 
   Teuchos::RCP<const Mesh> mesh0;
   Teuchos::RCP<Mesh> mesh1;
   if (dim == 2 && ny != 0) {
-    mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-    mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
+    mesh0 = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, ny);
+    mesh1 = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, ny);
   } else if (dim == 2) {
-    mesh0 = meshfactory(file_name, Teuchos::null);
-    mesh1 = meshfactory(file_name, Teuchos::null);
+    mesh0 = meshfactory.create(file_name);
+    mesh1 = meshfactory.create(file_name);
   } else { 
-    mesh0 = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, Teuchos::null, true, true);
-    mesh1 = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, Teuchos::null, true, true);
+    mesh0 = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, true, true);
+    mesh1 = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, true, true);
   }
 
   int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);

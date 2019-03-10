@@ -10,7 +10,7 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "MultiFunction.hh"
-#include "ConstantFunction.hh"
+#include "FunctionConstant.hh"
 #include "CompositeVectorFunction.hh"
 #include "errors.hh"
 
@@ -29,7 +29,7 @@ int main (int argc, char *argv[])
 
 struct another_reference_mesh
 {
-  Epetra_MpiComm *comm;
+  Comm_ptr_type comm;
   Teuchos::RCP<Mesh> mesh;
   Teuchos::RCP<GeometricModel> gm;
   std::string LEFT, RIGHT, FRONT, BACK, BOTTOM, TOP, INVALID;
@@ -44,7 +44,7 @@ struct another_reference_mesh
     TOP    = "TOP";
     INVALID = "INVALID";
 
-    comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    comm = getDefaultComm();
     // Brick domain corners and outward normals to sides
     Teuchos::Array<double> corner_min(Teuchos::tuple(0.0, 0.0, 0.0));
     Teuchos::Array<double> corner_max(Teuchos::tuple(4.0, 4.0, 4.0));
@@ -71,10 +71,10 @@ struct another_reference_mesh
     regions.sublist("DOMAIN").sublist("region: box").
       set("low coordinate", corner_min).set("high coordinate", corner_max);
 
-    gm = Teuchos::rcp(new GeometricModel(3,regions,comm));
+    gm = Teuchos::rcp(new GeometricModel(3,regions,*comm));
     // Create the mesh
-    MeshFactory mesh_fact(comm);
-    mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2, gm);
+    MeshFactory meshfactory(comm,gm);
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
   }
 };
 
@@ -82,7 +82,7 @@ struct another_reference_mesh
 TEST_FIXTURE(another_reference_mesh, cv_function)
 {
   // make the mesh function
-  Teuchos::RCP<const Function> constant_func = Teuchos::rcp(new ConstantFunction(1.0));
+  Teuchos::RCP<const Function> constant_func = Teuchos::rcp(new FunctionConstant(1.0));
   std::vector<Teuchos::RCP<const Function> > constant_funcs(1,constant_func);
   Teuchos::RCP<MultiFunction> vector_func =
     Teuchos::rcp(new MultiFunction(constant_funcs));

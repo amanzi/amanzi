@@ -87,7 +87,7 @@ Example:
 #include "CompositeVectorSpace.hh"
 
 #include "Visualization.hh"
-#include "checkpoint.hh"
+#include "Checkpoint.hh"
 #include "ObservationData.hh"
 
 #include "Field.hh"
@@ -422,17 +422,17 @@ void WriteCheckpoint(const Teuchos::Ptr<Checkpoint>& ckp,
                      bool final = false,
                      Amanzi::ObservationData* obs_data = NULL);
 
-double ReadCheckpoint(Epetra_MpiComm* comm,
+double ReadCheckpoint(const Comm_ptr_type& comm,
                       const Teuchos::Ptr<State>& S,
                       std::string filename);
 
-double ReadCheckpointInitialTime(Epetra_MpiComm* comm,
+double ReadCheckpointInitialTime(const Comm_ptr_type& comm,
                                  std::string filename);
 
-int ReadCheckpointPosition(Epetra_MpiComm* comm,
+int ReadCheckpointPosition(const Comm_ptr_type& comm,
                            std::string filename);
 
-void ReadCheckpointObservations(Epetra_MpiComm* comm,
+void ReadCheckpointObservations(const Comm_ptr_type& comm,
                                 std::string filename,
                                 Amanzi::ObservationData& obs_data);
 

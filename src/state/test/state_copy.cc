@@ -26,14 +26,14 @@ using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 
 struct test_field {
-  Epetra_MpiComm *comm;
+  Comm_ptr_type comm;
   Teuchos::RCP<Mesh> mesh;
 
   Teuchos::RCP<Field_CompositeVector> field;
   test_field() {
-    comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-    MeshFactory mesh_fact(comm);
-    mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
+    comm = Amanzi::getDefaultComm();
+    MeshFactory meshfactory(comm);
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
     std::vector<Entity_kind> locations(2);
     locations[0] = CELL;
@@ -51,7 +51,7 @@ struct test_field {
         Teuchos::rcp(new CompositeVector(*data_sp));
     field = Teuchos::rcp(new Field_CompositeVector("fieldname", "owner", data));
   }
-  ~test_field() { delete comm; }
+  ~test_field() { }
 };
 
 double get_value(Teuchos::RCP<Field>& field) {
@@ -71,15 +71,15 @@ double get_value(const State& state) {
 };
 
 struct test_state {
-  Epetra_MpiComm *comm;
+  Comm_ptr_type comm;
   Teuchos::RCP<Mesh> mesh;
 
   Teuchos::RCP<State> state;
 
   test_state() {
-    comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-    MeshFactory mesh_fact(comm);
-    mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
+    comm = Amanzi::getDefaultComm();
+    MeshFactory meshfactory(comm);
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
     state = Teuchos::rcp(new State());
     state->RegisterDomainMesh(mesh);
 
@@ -100,7 +100,7 @@ struct test_state {
     state->GetField("fieldname", "owner")->set_initialized();
     state->Initialize();
   }
-  ~test_state() { delete comm; }
+  ~test_state() { }
 };
 
 

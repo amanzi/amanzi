@@ -14,7 +14,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "FieldEvaluator.hh"
-#include "factory.hh"
+#include "Factory.hh"
 
 namespace Amanzi {
 

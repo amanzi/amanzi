@@ -18,7 +18,7 @@
 #include "Teuchos_Array.hpp"
 #include "UnitTest++.h"
 
-#include "checkpoint.hh"
+#include "Checkpoint.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
 
@@ -37,8 +37,8 @@ SUITE(RESTART) {
     csps[2] = 10;
     plist.set<Teuchos::Array<int> >("cycles start period stop", csps);
 
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
-    Amanzi::Checkpoint R(plist, &comm);
+    auto comm = Amanzi::getDefaultComm();
+    Amanzi::Checkpoint R(plist, comm);
     
     // test the cycle stuff, the expected result is in cycles_ and 
     // we store the computed result in cycles
@@ -64,8 +64,8 @@ SUITE(RESTART) {
     csps[2] = -1;
     plist.set<Teuchos::Array<int> >("cycles start period stop", csps);    
 
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
-    Amanzi::Checkpoint R(plist, &comm);
+    auto comm = Amanzi::getDefaultComm();
+    Amanzi::Checkpoint R(plist, comm);
 
     // test the cycle stuff, the expected result is in cycles_ and 
     // we store the computed result in cycles
@@ -91,8 +91,8 @@ SUITE(RESTART) {
     csps[2] = -1;
     plist.set<Teuchos::Array<int> >("cycles start period stop", csps);    
 
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
-    Amanzi::Checkpoint R(plist, &comm);
+    auto comm = Amanzi::getDefaultComm();
+    Amanzi::Checkpoint R(plist, comm);
 
     // test the cycle stuff, the expected result is in cycles_ and 
     // we store the computed result in cycles
@@ -124,8 +124,8 @@ SUITE(RESTART) {
     cyc[2] = 4;
     plist.set<Teuchos::Array<int> >("cycles",cyc);
     
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
-    Amanzi::Checkpoint R(plist, &comm);
+    auto comm = Amanzi::getDefaultComm();
+    Amanzi::Checkpoint R(plist, comm);
 
     // test the cycle stuff, the expected result is in cycles_ and 
     // we store the computed result in cycles
@@ -158,8 +158,8 @@ SUITE(RESTART) {
     tim[2] = 4.0;
     plist.set<Teuchos::Array<double> >("times",tim);
     
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
-    Amanzi::Checkpoint R(plist, &comm);
+    auto comm = Amanzi::getDefaultComm();
+    Amanzi::Checkpoint R(plist, comm);
 
     // test the cycle stuff, the expected result is in cycles_ and 
     // we store the computed result in cycles
@@ -184,7 +184,7 @@ SUITE(RESTART) {
     // i1_.set<int>("End",10);
     // i1_.set<int>("Interval",1);
 
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    auto comm = Amanzi::getDefaultComm();
 
     std::string xmlFileName = "test/state_restart.xml";
     Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
@@ -192,17 +192,17 @@ SUITE(RESTART) {
 
     Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, &comm));
+        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
-    Amanzi::AmanziMesh::FrameworkPreference pref;
+    Amanzi::AmanziMesh::Preference pref;
     pref.clear();
-    pref.push_back(Amanzi::AmanziMesh::MSTK);
-    pref.push_back(Amanzi::AmanziMesh::STKMESH);
-    pref.push_back(Amanzi::AmanziMesh::Simple);
+    pref.push_back(Amanzi::AmanziMesh::Framework::MSTK);
+    pref.push_back(Amanzi::AmanziMesh::Framework::STK);
+    pref.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
 
-    Amanzi::AmanziMesh::MeshFactory meshfactory(&comm);
-    meshfactory.preference(pref);
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> Mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, gm);
+    Amanzi::AmanziMesh::MeshFactory meshfactory(comm,gm);
+    meshfactory.set_preference(pref);
+    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> Mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1);
 
     Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("state");
     // now populate the parameter list...
@@ -218,7 +218,7 @@ SUITE(RESTART) {
     S0->set_time(1.02);
 
     Teuchos::ParameterList checkpoint_list = plist.get<Teuchos::ParameterList>("checkpoint");
-    Teuchos::Ptr<Amanzi::Checkpoint> R = Teuchos::ptr( new Amanzi::Checkpoint(checkpoint_list, &comm));
+    Teuchos::Ptr<Amanzi::Checkpoint> R = Teuchos::ptr( new Amanzi::Checkpoint(checkpoint_list, comm));
 
     WriteCheckpoint(R, S0, 0.0);
 
@@ -232,7 +232,7 @@ SUITE(RESTART) {
     Epetra_MultiVector& s1p = *S1->GetFieldData("celldata", "state")->ViewComponent("cell", false); 
     s1p.Random();
 
-    ReadCheckpoint(&comm, S1, "restartdump00000.h5");
+    ReadCheckpoint(comm, S1, "restartdump00000.h5");
 
     Epetra_MultiVector& s0p = *S0->GetFieldData("celldata", "state")->ViewComponent("cell", false);     
 

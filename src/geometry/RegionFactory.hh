@@ -14,7 +14,7 @@
 #ifndef AMANZI_REGION_FACTORY_HH_
 #define AMANZI_REGION_FACTORY_HH_
 
-#include "Epetra_MpiComm.h"
+#include "AmanziTypes.hh"
 #include "Teuchos_ParameterList.hpp"
 
 #include "GeometryDefs.hh"
@@ -28,7 +28,7 @@ Teuchos::RCP<Region>
 createRegion(const std::string reg_name,
              int reg_id,
              Teuchos::ParameterList& reg_spec,
-             const Epetra_MpiComm *comm);
+             const Comm_type& comm);
 
 } // namespace AmanziGeometry
 } // namespace Amanzi

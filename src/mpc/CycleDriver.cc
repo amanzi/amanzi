@@ -30,7 +30,7 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 // Amanzi
-#include "checkpoint.hh"
+#include "Checkpoint.hh"
 #include "errors.hh"
 #include "PK.hh"
 #include "PK_Factory.hh"
@@ -74,7 +74,7 @@ double rss_usage() { // return ru_maxrss in MBytes
 ****************************************************************** */
 CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
                          Teuchos::RCP<Amanzi::State>& S,
-                         Epetra_MpiComm* comm,
+                         const Comm_ptr_type& comm,
                          Amanzi::ObservationData& observations_data) :
     glist_(glist),
     S_(S),

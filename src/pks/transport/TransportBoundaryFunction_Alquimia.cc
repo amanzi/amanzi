@@ -46,7 +46,7 @@ TransportBoundaryFunction_Alquimia::TransportBoundaryFunction_Alquimia(
   std::vector<std::string> conditions = plist.get<Teuchos::Array<std::string> >("geochemical conditions").toVector();
 
   // Function of geochemical conditions and the associates regions.
-  f_ = Teuchos::rcp(new TabularStringFunction(times, conditions));
+  f_ = Teuchos::rcp(new FunctionTabularString(times, conditions));
   Init_(regions);
 }
 

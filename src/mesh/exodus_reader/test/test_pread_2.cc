@@ -18,7 +18,7 @@
 #include <UnitTest++.h>
 
 #include <Epetra_Map.h>
-#include <Epetra_MpiComm.h>
+#include <AmanziComm.hh>
 
 #include "dbc.hh"
 #include "../Parallel_Exodus_file.hh"

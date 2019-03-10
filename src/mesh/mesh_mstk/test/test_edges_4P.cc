@@ -6,27 +6,18 @@
 #include "MeshAudit.hh"
 
 #include "Epetra_Map.h"
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 
 // Test edge functions in 2D
 
 TEST(MSTK_EDGES_2D)
 {
 
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
-			      
-  int rank, size;
-
-  int initialized;
-  MPI_Initialized(&initialized);
-  
-  if (!initialized)
-    MPI_Init(NULL,NULL);
-
-  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
-  MPI_Comm_size(MPI_COMM_WORLD,&size);
+  auto comm = Amanzi::getDefaultComm();
+  int rank = comm->MyPID();
+  int size = comm->NumProc();
   CHECK_EQUAL(4,size);
-
+  
   //  if (rank == 0) {
   int DebugWait = 0;
   while (DebugWait);
@@ -36,7 +27,7 @@ TEST(MSTK_EDGES_2D)
   
   bool request_faces = true, request_edges = true;
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
-    mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,2.0,1.0,4,4,comm_.get(),Teuchos::null,
+    mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,2.0,1.0,4,4,comm,Teuchos::null,
 					   Teuchos::null,request_faces,request_edges));
 
   // Check that we get the expected number of edges
@@ -131,18 +122,9 @@ TEST(MSTK_EDGES_2D)
 TEST(MSTK_EDGES_3D)
 {
 
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
-			      
-  int rank, size;
-
-  int initialized;
-  MPI_Initialized(&initialized);
-  
-  if (!initialized)
-    MPI_Init(NULL,NULL);
-
-  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
-  MPI_Comm_size(MPI_COMM_WORLD,&size);
+  auto comm = Amanzi::getDefaultComm();
+  int rank = comm->MyPID();
+  int size = comm->NumProc();
   CHECK_EQUAL(4,size);
 
   //  if (rank == 0) {
@@ -155,7 +137,7 @@ TEST(MSTK_EDGES_3D)
   bool request_faces = true, request_edges = true;
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
     mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,2.0,1.0,4.0,4,4,4,
-					   comm_.get(),Teuchos::null,Teuchos::null,request_faces,
+					   comm,Teuchos::null,Teuchos::null,request_faces,
 					   request_edges));
 
   // How many owned and used edges are there?

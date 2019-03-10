@@ -7,7 +7,7 @@
 
 #include "mpi.h"
 #include "UnitTest++.h"
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
@@ -20,7 +20,7 @@
 
 TEST(POLYGON_REGION2)
 {
-  Epetra_MpiComm ecomm(MPI_COMM_WORLD);
+  auto ecomm = Amanzi::getDefaultComm();
 
   // read the parameter list from input file
   std::string infilename = "test/polygonregion_2D.xml";
@@ -38,7 +38,7 @@ TEST(POLYGON_REGION2)
   // Create a rectangular region
   Teuchos::RCP<const Amanzi::AmanziGeometry::Region> reg = 
     Amanzi::AmanziGeometry::createRegion(reg_spec.name(i), reg_id,
-					 reg_params, &ecomm);
+					 reg_params, *ecomm);
   
   // See if we retrieved the name and id correctly
   CHECK_EQUAL(reg->name(),reg_name);
@@ -111,7 +111,7 @@ TEST(POLYGON_REGION2)
 
 TEST(POLYGON_REGION3)
 {
-  Epetra_MpiComm ecomm(MPI_COMM_WORLD);
+  auto ecomm = Amanzi::getDefaultComm();
 
   // read the parameter list from input file
 
@@ -131,7 +131,7 @@ TEST(POLYGON_REGION3)
   
   Teuchos::RCP<const Amanzi::AmanziGeometry::Region> reg = 
     Amanzi::AmanziGeometry::createRegion(reg_spec.name(i), reg_id,
-					 reg_params, &ecomm);
+					 reg_params, *ecomm);
   
   // See if we retrieved the name and id correctly
   CHECK_EQUAL(reg->name(),reg_name);

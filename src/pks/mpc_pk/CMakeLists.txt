@@ -83,11 +83,11 @@ if (BUILD_TESTS)
     # Add UnitTest include directoy
     include_directories(${UnitTest_INCLUDE_DIRS})
 
-    # Copy test directory files if an out of source build
-    if (NOT (${MPC_TREE_SOURCE_DIR} EQUAL ${MPC_TREE_BINARY_DIR}) )
-        execute_process(COMMAND ${CMAKE_COMMAND} -E 
-          copy_directory ${MPC_TREE_SOURCE_DIR}/test ${MPC_TREE_BINARY_DIR}/test) 
-    endif()
+    # # Copy test directory files if an out of source build
+    # if (NOT (${MPC_TREE_SOURCE_DIR} EQUAL ${MPC_TREE_BINARY_DIR}) )
+    #     execute_process(COMMAND ${CMAKE_COMMAND} -E 
+    #       copy_directory ${MPC_TREE_SOURCE_DIR}/test ${MPC_TREE_BINARY_DIR}/test) 
+    # endif()
 
     # Add the flow directory to the include paths
     include_directories(${MPC_TREE_SOURCE_DIR})

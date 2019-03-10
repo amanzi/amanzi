@@ -48,8 +48,8 @@ void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "\nTest: " << dim << "D elliptic solver, exactness test" 
                             << " for mixed discretization, g=" << gravity << std::endl;
 
@@ -61,17 +61,17 @@ void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre
 
   // provide at lest one framework to the mesh factory. The first available
   // -- framework will be used
-  MeshFactory meshfactory(&comm);
+  MeshFactory meshfactory(comm);
   RCP<const Mesh> mesh;
   if (dim == 2) {
-    meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
-    // mesh = meshfactory("test/median15x16.exo");
-    mesh = meshfactory("test/circle_quad10.exo");
-    // mesh = meshfactory("test/circle_poly10.exo");
+    meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+    // mesh = meshfactory.create("test/median15x16.exo");
+    mesh = meshfactory.create("test/circle_quad10.exo");
+    // mesh = meshfactory.create("test/circle_poly10.exo");
   } else {
-    meshfactory.preference(FrameworkPreference({AmanziMesh::Simple}));
-    if (comm.NumProc() > 1) meshfactory.preference(FrameworkPreference({MSTK}));
-    mesh = meshfactory(0.0,0.0,0.0, 1.0,1.0,1.0, 4, 5, 6);
+    meshfactory.set_preference(Preference({AmanziMesh::Framework::SIMPLE}));
+    if (comm->NumProc() > 1) meshfactory.set_preference(Preference({Framework::MSTK}));
+    mesh = meshfactory.create(0.0,0.0,0.0, 1.0,1.0,1.0, 4, 5, 6);
   }
 
   // modify diffusion coefficient
@@ -218,8 +218,8 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, exactness" 
                             << " test for cell-based discretization" << std::endl;
@@ -230,9 +230,9 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   ParameterList plist = xmlreader.getParameters();
 
   // create a geometric model and mesh
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 15, 8);
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 15, 8);
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());

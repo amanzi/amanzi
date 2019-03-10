@@ -71,31 +71,31 @@ set(dummy_inc_files
 
 add_install_include_file(${dummy_inc_files})
 
-if (BUILD_TESTS) 
-#if (0)
-  include_directories(${MESH_FACTORY_SOURCE_DIR})
+# if (BUILD_TESTS) 
+# #if (0)
+#   include_directories(${MESH_FACTORY_SOURCE_DIR})
 
-  # Add UnitTest includes
-  include_directories(${UnitTest_INCLUDE_DIRS})
+#   # Add UnitTest includes
+#   include_directories(${UnitTest_INCLUDE_DIRS})
 
-  # Add MPC include directory. Need to remove this required path. -- lpritch
-  include_directories(${MPC_SOURCE_DIR})
+#   # Add MPC include directory. Need to remove this required path. -- lpritch
+#   include_directories(${MPC_SOURCE_DIR})
 
-    # Copy test directory files if an out of source build
-    if (NOT (${DUMMYPK_SOURCE_DIR} EQUAL ${DUMMYPK_BINARY_DIR}) )
-        execute_process(COMMAND ${CMAKE_COMMAND} -E 
-          copy_directory ${DUMMYPK_SOURCE_DIR}/test ${DUMMYPK_BINARY_DIR}/test) 
-    endif()
+#     # Copy test directory files if an out of source build
+#     if (NOT (${DUMMYPK_SOURCE_DIR} EQUAL ${DUMMYPK_BINARY_DIR}) )
+#         execute_process(COMMAND ${CMAKE_COMMAND} -E 
+#           copy_directory ${DUMMYPK_SOURCE_DIR}/test ${DUMMYPK_BINARY_DIR}/test) 
+#     endif()
 
-  set(amanzi_libs mpc flow state  mesh_factory operators 
-                    geometry mesh_functions functions dummy pks)
+#   set(amanzi_libs mpc flow state  mesh_factory operators 
+#                     geometry mesh_functions functions dummy pks)
 
-  # Test: dummy_pk 
-#  add_amanzi_test(multiphase_simple multiphase_simple
-#                  KIND      int
-#                  SOURCE    test/Main.cc test/flow_multiphase_simple.cc
-#                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+#   # Test: dummy_pk 
+# #  add_amanzi_test(multiphase_simple multiphase_simple
+# #                  KIND      int
+# #                  SOURCE    test/Main.cc test/flow_multiphase_simple.cc
+# #                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
 
-endif()
+# endif()
 

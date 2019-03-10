@@ -5,12 +5,12 @@
 
 #include "errors.hh"
 
-#include "ConstantFunction.hh"
-#include "DistanceFunction.hh"
+#include "FunctionConstant.hh"
+#include "FunctionDistance.hh"
 #include "FunctionFactory.hh"
-#include "PolynomialFunction.hh"
-#include "SmoothStepFunction.hh"
-#include "TabularFunction.hh"
+#include "FunctionPolynomial.hh"
+#include "FunctionSmoothStep.hh"
+#include "FunctionTabular.hh"
 
 using namespace Amanzi;
 

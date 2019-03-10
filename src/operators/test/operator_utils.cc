@@ -42,9 +42,11 @@ using namespace Amanzi::AmanziGeometry;
 using namespace Amanzi::Operators;
 
 struct Maps {
-  Maps() : comm(MPI_COMM_WORLD) {
+  Maps() {
+    comm = Amanzi::getDefaultComm();
+    
     // create a mesh
-    mesh = Teuchos::rcp(new Mesh_MSTK(0.,0.,1.,1.,10,10, &comm));
+    mesh = Teuchos::rcp(new Mesh_MSTK(0.,0.,1.,1.,10,10, comm));
 
     // create a vector
     cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -64,7 +66,7 @@ struct Maps {
     
   }
 
-  Epetra_MpiComm comm;
+  Comm_ptr_type comm;
   Teuchos::RCP<Mesh> mesh;
   Teuchos::RCP<CompositeVectorSpace> cvs;
   Teuchos::RCP<TreeVectorSpace> tvs;

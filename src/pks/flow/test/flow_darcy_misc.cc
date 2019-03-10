@@ -15,7 +15,7 @@
 
 // TPLs
 #include "Epetra_SerialComm.h"
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
@@ -26,6 +26,7 @@
 #include "exceptions.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
+#include "MeshException.hh"
 
 // Flow
 #include "Darcy_PK.hh"
@@ -46,7 +47,7 @@ class DarcyProblem {
   double mu, rho;
   AmanziGeometry::Point gravity;
 
-  Epetra_MpiComm* comm;
+  Comm_ptr_type comm;
   int MyPID;
 
   Framework framework[2];
@@ -54,40 +55,38 @@ class DarcyProblem {
 
   DarcyProblem() {
     passwd = "flow"; 
-    comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    comm = Amanzi::getDefaultComm();
     MyPID = comm->MyPID();    
 
-    framework[0] = MSTK;
-    framework[1] = STKMESH;
+    framework[0] = Framework::MSTK;
+    framework[1] = Framework::STK;
     framework_name.push_back("MSTK");
-    framework_name.push_back("STKMESH");
+    framework_name.push_back("stk:mesh");
   };
 
   ~DarcyProblem() {
     delete DPK;
-    delete comm;
+    
   }
 
   int Init(const std::string xmlFileName, const char* meshExodus, const Framework& framework) {
-    if (framework == STKMESH && comm->NumProc() > 1) return 1;    
+    if (framework == Framework::STK && comm->NumProc() > 1) return 1;    
 
     // create a MSTK mesh framework
     plist = Teuchos::getParametersFromXmlFile(xmlFileName);
     Teuchos::ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
-    FrameworkPreference pref;
-    pref.clear();
-    pref.push_back(framework);
+    Preference pref({framework});
 
-    MeshFactory meshfactory(comm);
+    MeshFactory meshfactory(comm,gm);
     try {
-      meshfactory.preference(pref);
+      meshfactory.set_preference(pref);
     } catch (Message& e) {
       return 1;
     }
-    mesh = meshfactory(meshExodus, gm);
+    mesh = meshfactory.create(meshExodus);
 
     /* create Darcy process kernel */
     Teuchos::ParameterList state_list = plist->sublist("state");

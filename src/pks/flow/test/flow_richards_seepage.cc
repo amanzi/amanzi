@@ -39,8 +39,8 @@ void Flow2D_SeepageTest(std::string filename, bool deform)
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Flow;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "Test: 2D Richards, seepage boundary condition" << std::endl;
 
   // read parameter list and select left head
@@ -48,11 +48,11 @@ void Flow2D_SeepageTest(std::string filename, bool deform)
 
   // create a mesh framework
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
-  auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(2, regions_list, &comm));
+  auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
-  RCP<Mesh> mesh = meshfactory(0.0, 0.0, 100.0, 50.0, 50, 25, gm); 
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 100.0, 50.0, 50, 25); 
 
   // create an optional slop
   if (deform) {
@@ -71,7 +71,7 @@ void Flow2D_SeepageTest(std::string filename, bool deform)
   }
 
   // create a simple state and populate it
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   Teuchos::ParameterList state_list = plist->get<Teuchos::ParameterList>("state");
   RCP<State> S = rcp(new State(state_list));

@@ -7,7 +7,7 @@
 #include "Data_structures.hh"
 
 #include <Teuchos_RCP.hpp>
-#include <Epetra_MpiComm.h>
+#include <AmanziComm.hh>
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 //#include <stk_mesh/fem/FieldTraits.hpp>

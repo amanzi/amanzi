@@ -6,8 +6,8 @@ Teuchos::EVerbosityLevel Amanzi::VerboseObject::global_default_level =
     Teuchos::VERB_MEDIUM;
 
 // Show or hide line prefixes
-bool Amanzi::VerboseObject::hide_line_prefix = false;
+bool Amanzi::VerboseObject::global_hide_line_prefix = false;
 
 // Size of the left column of names.
-unsigned int Amanzi::VerboseObject::line_prefix_size = 18;
+unsigned int Amanzi::VerboseObject::global_line_prefix_size = 18;
 

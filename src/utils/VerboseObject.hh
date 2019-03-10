@@ -84,8 +84,7 @@ Example:
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
-
-class Epetra_Comm;
+#include "AmanziTypes.hh"
 
 namespace Amanzi {
 
@@ -94,8 +93,15 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   // Constructors
   VerboseObject(const std::string& name, const std::string& verbosity);
   VerboseObject(const std::string& name, Teuchos::ParameterList plist);
-  VerboseObject(const Epetra_Comm& comm, const std::string& name,
+  VerboseObject(const Comm_ptr_type& comm, const std::string& name,
                 Teuchos::ParameterList plist);
+
+  // this constructor is fragile and should be frowned upon, but is useful for
+  // maintaining backward compatibility with the Epetra stack
+  VerboseObject(const Comm_type& comm, const std::string& name,
+                Teuchos::ParameterList plist) :
+      VerboseObject(Teuchos::rcpFromRef(comm), name, plist) {}
+      
 
   // NOTE: Default destructor, copy construct should be ok.
 
@@ -117,10 +123,10 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   static Teuchos::EVerbosityLevel global_default_level;
 
   // Show or hide line prefixes
-  static bool hide_line_prefix;
+  static bool global_hide_line_prefix;
 
   // Size of the left column of names.
-  static unsigned int line_prefix_size;
+  static unsigned int global_line_prefix_size;
 
   // Color output for developers
   std::string color(const std::string& name) const;
@@ -131,7 +137,7 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
 
  protected:
   Teuchos::RCP<Teuchos::FancyOStream> out_;
-  Teuchos::RCP<Epetra_Comm> comm_;
+  Comm_ptr_type comm_;
 };
 
 

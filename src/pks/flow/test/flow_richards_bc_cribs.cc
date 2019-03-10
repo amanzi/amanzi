@@ -38,8 +38,8 @@ TEST(FLOW_3D_RICHARDS) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Flow;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "Test: 3D Richards, crib model" << std::endl;
 
   /* read parameter list */
@@ -49,21 +49,22 @@ TEST(FLOW_3D_RICHARDS) {
   // create a mesh framework
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, &comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
+  pref.push_back(Framework::MSTK);
+  pref.push_back(Framework::STK);
 
-  MeshFactory factory(&comm);
-  factory.preference(pref);  
-  ParameterList mesh_list = plist->get<ParameterList>("mesh").get<ParameterList>("unstructured");
-  ParameterList factory_list = mesh_list.get<ParameterList>("generate mesh");
-  Teuchos::RCP<Mesh> mesh(factory(factory_list, gm));
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(pref);  
+  // ParameterList mesh_list = plist->get<ParameterList>("mesh").get<ParameterList>("unstructured");
+  // ParameterList factory_list = mesh_list.get<ParameterList>("generate mesh");
+  // Teuchos::RCP<Mesh> mesh(factory(factory_list, gm));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.,0.,0.,64.5,1.0,103.2,1,1,516);
 
   /* create a simple state and populate it */
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   ParameterList state_list = plist->get<ParameterList>("state");
   RCP<State> S = rcp(new State(state_list));

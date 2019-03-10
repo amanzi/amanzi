@@ -31,7 +31,7 @@ using namespace Amanzi::Flow;
 
 struct bits_and_pieces
 {
-  Epetra_MpiComm *comm;
+  Comm_ptr_type comm;
   Teuchos::RCP<Mesh> mesh;
   Teuchos::RCP<GeometricModel> gm;
 
@@ -39,7 +39,7 @@ struct bits_and_pieces
 
   bits_and_pieces()
   {
-    comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    comm = Amanzi::getDefaultComm();
     // Brick domain corners and outward normals to sides
     Teuchos::Array<double> corner_min(Teuchos::tuple(0.0, 0.0, 0.0));
     Teuchos::Array<double> corner_max(Teuchos::tuple(4.0, 4.0, 4.0));
@@ -63,19 +63,19 @@ struct bits_and_pieces
         .set("point", corner_max).set("normal", back);
     regions.sublist("TOP").sublist("region: plane")
         .set("point", corner_max).set("normal", top);
-    gm = Teuchos::rcp(new GeometricModel(3, regions, comm));
+    gm = Teuchos::rcp(new GeometricModel(3, regions, *comm));
     // Create the mesh
-    MeshFactory mesh_fact(comm);
-    mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2, gm);
+    MeshFactory meshfactory(comm,gm);
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
   }
 };
 
 
 TEST_FIXTURE(bits_and_pieces, empty_parameter_list)
 {
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  MeshFactory mesh_fact(&comm);
-  Teuchos::RCP<Mesh> mesh(mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2));
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  MeshFactory meshfactory(comm,gm);
+  Teuchos::RCP<Mesh> mesh(meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2));
 
   PK_DomainFunctionFactory<PK_DomainFunction> bc_fact(mesh);
 

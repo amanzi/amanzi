@@ -37,11 +37,11 @@ TEST(DERHAM_COMPLEX_NODE) {
   using namespace Amanzi::WhetStone;
 
   std::cout << "Test: Mass matrix for nodes" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.5, 1.0, 1, 1); 
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.5, 1.0, 1, 1); 
  
   DeRham_Node drc(mesh);
 
@@ -85,7 +85,7 @@ TEST(DERHAM_COMPLEX_NODE) {
   CHECK_CLOSE(T(0,0) * volume, vxx, 1e-10);
   CHECK_CLOSE(T(0,0) * volume, vxy, 1e-10);
 
-  delete comm;
+  
 }
 
 

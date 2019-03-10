@@ -42,8 +42,8 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) {
     std::cout << "\nTest: Laplace Beltrami solver: ";
@@ -59,15 +59,14 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
 
   // create a mesh
   ParameterList region_list = plist.sublist("Regions Flat");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({Framework::MSTK}));
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, gm);
-  RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
 
   // extract a manifold mesh
-  RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(&*mesh_mstk, surfaces, AmanziMesh::FACE));
+  RCP<Mesh> surfmesh = meshfactory.create(mesh, surfaces, AmanziMesh::FACE);
 
   int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int ncells_wghost = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
@@ -78,7 +77,7 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
   // verify one-to-one map (2D-cell -> 3D-face)
   for (int c = 0; c < ncells_wghost; ++c) {
     int g = surfmesh->entity_get_parent(AmanziMesh::CELL, c);
-    double diff = AmanziGeometry::norm(surfmesh->cell_centroid(c) - mesh_mstk->face_centroid(g));
+    double diff = AmanziGeometry::norm(surfmesh->cell_centroid(c) - mesh->face_centroid(g));
     CHECK_CLOSE(0.0, diff, 1e-14); 
   }
 

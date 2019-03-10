@@ -46,8 +46,8 @@ void AdvectionDiffusion2D(int nx, double* error)
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "\nTest: Advection-duffusion in 2D" << std::endl;
 
@@ -58,11 +58,11 @@ void AdvectionDiffusion2D(int nx, double* error)
 
   // create an MSTK mesh framework
   ParameterList region_list = plist.sublist("regions");
-  auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(2, region_list, &comm));
+  auto gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(2, region_list, *comm));
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({Framework::MSTK}));
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, nx, nx, gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, nx);
 
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);

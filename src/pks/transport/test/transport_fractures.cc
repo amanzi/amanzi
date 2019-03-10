@@ -41,7 +41,7 @@ TEST(ADVANCE_TWO_FRACTURES) {
 
 std::cout << "Test: Advance on a 2D square mesh" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
 #else
   Epetra_SerialComm* comm = new Epetra_SerialComm();
 #endif
@@ -52,25 +52,24 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
 
   // create a mesh framework
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
-  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({Framework::MSTK, Framework::STKMESH}));
-  RCP<const Mesh> mesh3D = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  RCP<const Mesh> mesh3D = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
 
   // extract fractures mesh
   std::vector<std::string> setnames;
   setnames.push_back("fracture 1");
   setnames.push_back("fracture 2");
 
-  RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh3D);
-  RCP<const Mesh> mesh = Teuchos::rcp(new Mesh_MSTK(&*mesh_mstk, setnames, AmanziMesh::FACE));
+  RCP<const Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::FACE);
 
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
   // create a simple state and populate it
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   std::vector<std::string> component_names;
   component_names.push_back("Component 0");
@@ -155,7 +154,7 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   GMV::write_cell_data(tcc, 0, "Component_0");
   GMV::close_data_file();
 
-  delete comm;
+  
 }
 
 

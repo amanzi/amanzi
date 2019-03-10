@@ -18,7 +18,7 @@
 #include <iostream>
 #include <iomanip>
 #include <UnitTest++.h>
-#include <Epetra_MpiComm.h>
+#include <AmanziComm.hh>
 
 #include "../Mesh_STK_Impl.hh"
 #include "../Mesh_STK_factory.hh"
@@ -72,9 +72,9 @@ SUITE (HexMesh)
     CHECK_EQUAL(vmap->MaxAllGID(), (isize+1)*(jsize+1)*(ksize+1));
 
 
-    Amanzi::AmanziMesh::STK::Mesh_STK_factory mf(&comm_, 1000);
+    Amanzi::AmanziMesh::Framework::STK::Mesh_STK_factory mf(&comm_, 1000);
     Amanzi::AmanziMesh::Data::Fields nofields;
-    Amanzi::AmanziMesh::STK::Mesh_STK_Impl_p 
+    Amanzi::AmanziMesh::Framework::STK::Mesh_STK_Impl_p 
       mesh(mf.build_mesh(*meshdata, *cmap, *vmap, nofields, Teuchos::null));
 
     CHECK_EQUAL (mesh->rank_id (), me);
@@ -157,12 +157,12 @@ SUITE (HexMesh)
     Teuchos::RCP<Epetra_Map> cmap(g.cellmap(true));
     Teuchos::RCP<Epetra_Map> vmap(g.vertexmap(true));
 
-    Amanzi::AmanziMesh::STK::Mesh_STK_factory mf(&comm_, 1000);
+    Amanzi::AmanziMesh::Framework::STK::Mesh_STK_factory mf(&comm_, 1000);
     Amanzi::AmanziMesh::Data::Fields nofields;
-    Amanzi::AmanziMesh::STK::Mesh_STK_Impl_p 
+    Amanzi::AmanziMesh::Framework::STK::Mesh_STK_Impl_p 
       mesh(mf.build_mesh(*meshdata, *cmap, *vmap, nofields, Teuchos::null));
 
-    Amanzi::AmanziMesh::STK::Entity_vector e;
+    Amanzi::AmanziMesh::Framework::STK::Entity_vector e;
 
     int ncell(mesh->count_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::CELL), Amanzi::AmanziMesh::Parallel_type::OWNED));
 
@@ -211,7 +211,7 @@ SUITE (HexMesh)
 
       // for (int p = 0; p < nproc; p++) {
       //     if (me == p) {
-      //         Amanzi::AmanziMesh::STK::Entity_vector nodes;
+      //         Amanzi::AmanziMesh::Framework::STK::Entity_vector nodes;
       //         mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::NODE), Parallel_type::ALL, nodes);
       //         for (unsigned int i = 0; i < nodes.size(); i++) {
       //             unsigned int gid(nodes[i]->identifier());

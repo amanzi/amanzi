@@ -10,7 +10,7 @@
 
 #include "mpi.h"
 
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -24,7 +24,7 @@
 TEST(LABELEDSET_REGION)
 {
 
-  Epetra_MpiComm ecomm(MPI_COMM_WORLD);
+  auto ecomm = Amanzi::getDefaultComm();
 
   // read the parameter list from input file
 
@@ -42,7 +42,7 @@ TEST(LABELEDSET_REGION)
     // Create a Labeled Set Region
     Teuchos::RCP<const Amanzi::AmanziGeometry::Region> reg = 
       Amanzi::AmanziGeometry::createRegion(reg_spec.name(i), reg_id,
-					   reg_params, &ecomm);
+					   reg_params, *ecomm);
   
     // See if we retrieved the name and id correctly
     CHECK_EQUAL(reg->name(),reg_name);

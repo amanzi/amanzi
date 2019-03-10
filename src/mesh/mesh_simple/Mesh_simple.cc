@@ -18,175 +18,33 @@
 #include "dbc.hh"
 #include "errors.hh"
 
+
 namespace Amanzi {
 namespace AmanziMesh {
 
 Mesh_simple::Mesh_simple(double x0, double y0, double z0,
                          double x1, double y1, double z1,
                          int nx, int ny, int nz,
-                         const Epetra_MpiComm *comm_unicator,
+                         const Comm_ptr_type& comm,
                          const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                          const Teuchos::RCP<const Teuchos::ParameterList>& plist,
                          const bool request_faces,
                          const bool request_edges) 
-  : nx_(nx), ny_(ny), nz_(nz),
+    : Mesh(comm, gm, Teuchos::null, request_faces, request_edges),
+    nx_(nx), ny_(ny), nz_(nz),
     x0_(x0), x1_(x1),
     y0_(y0), y1_(y1),
-    z0_(z0), z1_(z1),
-    Mesh(Teuchos::null,request_faces,request_edges)
+    z0_(z0), z1_(z1)
 {
   // extract control parameters
   if (plist != Teuchos::null) {
     vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Mesh:Simple", *plist)); 
   }
 
-  Mesh::set_comm(comm_unicator);
   Mesh::set_mesh_type(RECTANGULAR);
   Mesh::set_space_dimension(3);
   Mesh::set_manifold_dimension(3);
   if (gm != Teuchos::null) Mesh::set_geometric_model(gm);
- 
-  update();
-}
-
-
-//--------------------------------------
-// Have to define this dummy routine because we are not able to
-// eliminate the need in FrameworkTraits.cc which uses boost
-// functionality extensively
-//--------------------------------------
-Mesh_simple::Mesh_simple(double x0, double y0,
-                         double x1, double y1,
-                         int nx, int ny, 
-                         const Epetra_MpiComm *comm_unicator,
-                         const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-                         const Teuchos::RCP<const Teuchos::ParameterList>& plist,
-                         const bool request_faces,
-                         const bool request_edges)
-{
-  Exceptions::amanzi_throw(Errors::Message("Simple mesh cannot generate 2D meshes"));
-}
-  
-
-
-Mesh_simple::Mesh_simple(Teuchos::ParameterList &parameter_list,
-                         const Epetra_MpiComm *comm_unicator,
-                         const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-                         const Teuchos::RCP<const Teuchos::ParameterList>& plist,
-                         const bool request_faces,
-                         const bool request_edges) 
-  : Mesh(Teuchos::null,request_faces,request_edges)
-{
-  // extract control parameters
-  if (plist != Teuchos::null) {
-    vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Mesh:Simple", *plist)); 
-  }
-
-  Mesh::set_comm(comm_unicator);
-  Mesh::set_mesh_type(RECTANGULAR);
-  if (gm != Teuchos::null)
-    Mesh::set_geometric_model(gm);
-
-  GenerationSpec gspec(parameter_list);
-  generate_(gspec);
-}
-
-
-Mesh_simple::Mesh_simple(const GenerationSpec& gspec,
-                         const Epetra_MpiComm *comm_unicator,
-                         const Teuchos::RCP<const AmanziGeometry::GeometricModel> &gm,
-                         const Teuchos::RCP<const VerboseObject>&verbosity_obj,
-                         const bool request_faces,
-                         const bool request_edges,
-                         const Partitioner_type partitioner)
-  : Mesh(verbosity_obj,request_faces,request_edges)
-{
-  Mesh::set_comm(comm_unicator);
-  Mesh::set_mesh_type(RECTANGULAR);
-  if (gm != Teuchos::null) 
-    Mesh::set_geometric_model(gm);
-
-  generate_(gspec);
-}
-
-
-//--------------------------------------
-// Constructor - Construct a new mesh from a subset of an existing mesh
-//--------------------------------------
-Mesh_simple::Mesh_simple(const Mesh *inmesh, 
-                         const std::vector<std::string>& setnames, 
-                         const Entity_kind setkind,
-                         const bool flatten,
-                         const bool extrude,
-                         const bool request_faces,
-                         const bool request_edges)
-{  
-  Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the Simple mesh framework\n");
-  Exceptions::amanzi_throw(mesg);
-}
-
-
-Mesh_simple::Mesh_simple(const Mesh& inmesh, 
-                         const std::vector<std::string>& setnames, 
-                         const Entity_kind setkind,
-                         const bool flatten,
-                         const bool extrude,
-                         const bool request_faces,
-                         const bool request_edges)
-{  
-  Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the Simple mesh framework\n");
-  Exceptions::amanzi_throw(mesg);
-}
-
-
-Mesh_simple::Mesh_simple(const Mesh& inmesh, 
-                         const std::vector<int>& entity_id_list, 
-                         const Entity_kind entity_kind,
-                         const bool flatten,
-                         const bool extrude,
-                         const bool request_faces,
-                         const bool request_edges)
-{  
-  Errors::Message mesg("Construction of new mesh from an existing mesh not yet implemented in the Simple mesh framework\n");
-  Exceptions::amanzi_throw(mesg);
-}
-
-
-Mesh_simple::~Mesh_simple()
-{
-  delete cell_map_;
-  delete face_map_;
-  delete node_map_;
-  delete extface_map_;
-}
-
-
-void 
-Mesh_simple::generate_(const GenerationSpec& gspec)
-{
-  // read the parameters from the specification
-
-  nx_ = gspec.xcells();
-  ny_ = gspec.ycells();
-  nz_ = gspec.zcells();
-  
-  x0_ = gspec.domain().point0().x();
-  x1_ = gspec.domain().point1().x();
-
-  y0_ = gspec.domain().point0().y();
-  y1_ = gspec.domain().point1().y();
-
-  z0_ = gspec.domain().point0().z();
-  z1_ = gspec.domain().point1().z();
-
-  if (nz_ == 0) {
-    Mesh::set_space_dimension(2);
-    Mesh::set_manifold_dimension(2);
-  } else {
-    Mesh::set_space_dimension(3);
-    Mesh::set_manifold_dimension(3);
-  }
-  
   update();
 }
 
@@ -451,7 +309,6 @@ void Mesh_simple::update_internals_()
 
 void Mesh_simple::build_maps_()
 {
-  const Epetra_Comm *epcomm_ = Mesh::get_comm();
   std::vector<int> cells(num_cells_);
   for (int i=0; i< num_cells_; i++) cells[i] = i;
   
@@ -479,10 +336,10 @@ void Mesh_simple::build_maps_()
       faces_bnd[i++] = yzface_index_(nx_,iy,iz);
     }
 
-  cell_map_ = new Epetra_Map(-1, num_cells_, &cells[0], 0, *epcomm_);
-  face_map_ = new Epetra_Map(-1, num_faces_, &faces[0], 0, *epcomm_);
-  node_map_ = new Epetra_Map(-1, num_nodes_, &nodes[0], 0, *epcomm_);
-  extface_map_ = new Epetra_Map(-1, num_faces_bnd_, &faces_bnd[0], 0, *epcomm_);
+  cell_map_ = Teuchos::rcp(new Epetra_Map(-1, num_cells_, &cells[0], 0, *get_comm()));
+  face_map_ = Teuchos::rcp(new Epetra_Map(-1, num_faces_, &faces[0], 0, *get_comm()));
+  node_map_ = Teuchos::rcp(new Epetra_Map(-1, num_nodes_, &nodes[0], 0, *get_comm()));
+  extface_map_ = Teuchos::rcp(new Epetra_Map(-1, num_faces_bnd_, &faces_bnd[0], 0, *get_comm()));
 }
 
 

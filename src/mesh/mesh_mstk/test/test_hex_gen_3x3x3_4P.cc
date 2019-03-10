@@ -5,7 +5,7 @@
 #include "../Mesh_MSTK.hh"
 
 #include "Epetra_Map.h"
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 
 #include "MeshAudit.hh"
 
@@ -19,23 +19,10 @@ TEST(MSTK_HEX_GEN_3x3x3_4P)
   std::vector<Amanzi::AmanziMesh::Entity_ID> faces(6), nodes(8);
   std::vector<Amanzi::AmanziGeometry::Point> ccoords(8), fcoords(4);
 
-			      
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
-			      
-
-  int rank, size;
-
-  int initialized;
-
-  MPI_Initialized(&initialized);
-  
-  if (!initialized)
-    MPI_Init(NULL,NULL);
-
-  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
-  MPI_Comm_size(MPI_COMM_WORLD,&size);
+  auto comm = Amanzi::getDefaultComm();
+  int rank = comm->MyPID();
+  int size = comm->NumProc();
   CHECK_EQUAL(4,size);
-
   if (size != 4) {
     std::cerr << "Test must be run with 4 processors" << std::endl;
     //    return;
@@ -48,7 +35,7 @@ TEST(MSTK_HEX_GEN_3x3x3_4P)
 
   // Create a 3x3x3 cell hex mesh
 
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,1.0,1.0,1.0,3,3,3,comm_.get()));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,1.0,1.0,1.0,3,3,3,comm));
 
 
   std::vector<Amanzi::AmanziMesh::Entity_ID>  c2f(6);

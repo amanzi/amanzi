@@ -4,7 +4,7 @@
 
 #include <fstream>
 #include "Epetra_Map.h"
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -24,9 +24,9 @@ TEST(ELIM_DEGEN_INLINE_PARTITION)
   std::string xml_filename = "test/po_test_pri.xml";
   std::string out_exo_filename = "test/po_mesh_out.exo";
   
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
-  int num_procs = comm_->NumProc();
-  int rank = comm_->MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int num_procs = comm->NumProc();
+  int rank = comm->MyPID();
   
   std::cout << "Reading the input file..." << std::endl;
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xml_filename);
@@ -34,14 +34,14 @@ TEST(ELIM_DEGEN_INLINE_PARTITION)
   Teuchos::ParameterList reg_params = plist->sublist("regions");
   std::cout << "Creating the geometric model..." << std::endl;
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-  Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_params, comm_.get()));
+  Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_params, *comm));
   
   // create and register meshes
   Teuchos::ParameterList mesh_plist = plist->sublist("mesh");
-  Amanzi::AmanziMesh::MeshFactory factory(comm_.get());
-  Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
+  Amanzi::AmanziMesh::MeshFactory meshfactory(comm, gm);
+  Amanzi::AmanziMesh::Preference prefs(meshfactory.preference());
   prefs.clear();
-  prefs.push_back(Amanzi::AmanziMesh::MSTK);
+  prefs.push_back(Amanzi::AmanziMesh::Framework::MSTK);
   
   // create the base mesh
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
@@ -78,7 +78,7 @@ TEST(ELIM_DEGEN_INLINE_PARTITION)
     Exceptions::amanzi_throw(msg);
   }
   std::cout << "Reading the mesh..." << std::endl;
-  mesh = factory.create(in_exo_file, gm);
+  mesh = meshfactory.create(in_exo_file);
   AMANZI_ASSERT(!mesh.is_null());
   
   // mesh verification
@@ -107,7 +107,7 @@ TEST(ELIM_DEGEN_INLINE_PARTITION)
       int status = mesh_auditor.Verify();        // check the mesh
       if (status != 0) ierr = 1;
       
-      comm_->SumAll(&ierr, &aerr, 1);
+      comm->SumAll(&ierr, &aerr, 1);
       if (aerr == 0) {
         if (rank == 0)
           std::cout << "Mesh Audit confirms that mesh is ok" << std::endl;
@@ -140,11 +140,11 @@ TEST(ELIM_DEGEN_INLINE_PARTITION)
     }
     
     if (mesh->manifold_dimension() == 3) {
-      surface3D_mesh = factory.create(&*mesh,setnames,Amanzi::AmanziMesh::FACE,false,false);
-      surface_mesh = factory.create(&*mesh,setnames,Amanzi::AmanziMesh::FACE,true,false);
+      surface3D_mesh = meshfactory.create(mesh,setnames,Amanzi::AmanziMesh::FACE,false);
+      surface_mesh = meshfactory.create(mesh,setnames,Amanzi::AmanziMesh::FACE,true);
     } else {
       surface3D_mesh = mesh;
-      surface_mesh = factory.create(&*mesh,setnames,Amanzi::AmanziMesh::CELL,true,false);
+      surface_mesh = meshfactory.create(mesh,setnames,Amanzi::AmanziMesh::CELL,true);
     }
     
     bool surf_verify = surface_plist.get<bool>("verify mesh", false);
@@ -172,7 +172,7 @@ TEST(ELIM_DEGEN_INLINE_PARTITION)
         int status = surf_mesh_auditor.Verify();        // check the mesh
         if (status != 0) ierr = 1;
         
-        comm_->SumAll(&ierr, &aerr, 1);
+        comm->SumAll(&ierr, &aerr, 1);
         if (aerr == 0) {
           if (rank == 0)
             std::cout << "Mesh Audit confirms that surface mesh is ok" << std::endl;
