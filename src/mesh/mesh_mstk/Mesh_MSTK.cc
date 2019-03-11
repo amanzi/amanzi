@@ -466,7 +466,8 @@ Mesh_MSTK::Mesh_MSTK(const Teuchos::RCP<const Mesh>& parent_mesh,
          plist == Teuchos::null ? parent_mesh->parameter_list() : plist,
          request_faces, request_edges),
     parent_mesh_(Teuchos::rcp_dynamic_cast<const Mesh_MSTK>(parent_mesh)),
-    extface_map_w_ghosts_(nullptr), extface_map_wo_ghosts_(nullptr),
+    extface_map_w_ghosts_(nullptr),
+    extface_map_wo_ghosts_(nullptr),
     owned_to_extface_importer_(nullptr)
 {  
   if (!parent_mesh_.get()) {
@@ -3127,7 +3128,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
   // If region is of type labeled set and a mesh set should have been
   // initialized from the input file
   
-  if (rgn->type() == AmanziGeometry::LABELEDSET && parent_mesh != NULL) {
+  if (rgn->type() == AmanziGeometry::LABELEDSET && parent_mesh_.get() != NULL) {
     auto lsrgn = Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
     std::string label = lsrgn->label();
     std::string entity_type = lsrgn->entity_str();
@@ -3140,7 +3141,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
       }
     } 
     else {
-      mset1 = MESH_MSetByName(mesh,internal_name.c_str());
+      mset1 = MESH_MSetByName(mesh_, internal_name.c_str());
       if (!mset1) {
         // Build set on a fly. This should be moved to build_set().
         int ival;
@@ -3149,8 +3150,8 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
         MAttrib_ptr att = (manifold_dimension() == 3) ? rparentatt : fparentatt;
 
         std::string internal_parent_name = internal_name_of_set(rgn,FACE);
-        mset2 = MESH_MSetByName(parent_mesh->mesh,internal_parent_name.c_str());
-        mset1 = MSet_New(mesh,internal_name.c_str(),MREGION);
+        mset2 = MESH_MSetByName(parent_mesh_->mesh_, internal_parent_name.c_str());
+        mset1 = MSet_New(mesh_, internal_name.c_str(),MREGION);
 
         for (int c = 0; c < num_entities(CELL, Parallel_type::ALL); ++c) {
           auto ment = cell_id_to_handle[c];
@@ -3163,7 +3164,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
       // set is not on this processor
 
       if (!mset1) {
-        if (epcomm_->NumProc() == 1) {
+        if (comm_->NumProc() == 1) {
           Errors::Message msg;
           msg << "Could not find labeled set \"" << label 
               << "\" in mesh file to initialize mesh set \"" << setname 
@@ -3188,7 +3189,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
       }
     } 
     else {
-      mset1 = MESH_MSetByName(mesh,internal_name.c_str());
+      mset1 = MESH_MSetByName(mesh_, internal_name.c_str());
       
       if (!mset1 && kind == CELL) {
         // Since both element blocks and cell sets are referenced
@@ -3199,14 +3200,14 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
         // CHECKED FOR THIS IN BUILD SET
 
         std::string internal_name2 = other_internal_name_of_set(rgn,kind);
-        mset1 = MESH_MSetByName(mesh,internal_name2.c_str());
+        mset1 = MESH_MSetByName(mesh_, internal_name2.c_str());
       }
 
       // Due to the parallel partitioning its possible that this
       // set is not on this processor
       
       if (!mset1) {
-        if (epcomm_->NumProc() == 1) {
+        if (comm_->NumProc() == 1) {
           Errors::Message msg;
           msg << "Could not find labeled set \"" << label 
               << "\" in mesh file to initialize mesh set \"" << setname 
@@ -3226,7 +3227,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
     // Modify region/set name by prefixing it with the type of
     // entity requested
 
-    mset1 = MESH_MSetByName(mesh,internal_name.c_str());
+    mset1 = MESH_MSetByName(mesh_, internal_name.c_str());
 
     // Make sure we retrieved a mesh set with the right kind of entities
 
@@ -3262,7 +3263,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
 
     if (mset1 && MSet_EntDim(mset1) != entdim) {
       idx = 0;
-      while ((mset1 = MESH_Next_MSet(mesh,&idx))) {
+      while ((mset1 = MESH_Next_MSet(mesh_, &idx))) {
         MSet_Name(mset1,setname1);
               
         if (MSet_EntDim(mset1) == entdim &&

@@ -131,7 +131,7 @@ using namespace Amanzi;
   AmanziMesh::MeshFactory meshfactory(comm, gm, mesh_list);
 
   meshfactory.set_preference(AmanziMesh::Preference({AmanziMesh::Framework::MSTK}));
-  auto mesh = meshfactory.create("test/mpc_walkabout_tet5.exo", gm);
+  auto mesh = meshfactory.create("test/mpc_walkabout_tet5.exo");
   
   Teuchos::ParameterList state_plist = glist->sublist("state");
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));

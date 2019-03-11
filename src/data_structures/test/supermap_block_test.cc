@@ -40,9 +40,9 @@ TEST(SUPERMAP_MANUAL) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
-  int NumProc = comm.NumProc();
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
+  int NumProc = comm->NumProc();
 
   if (MyPID == 0) std::cout << "Test: Manual test of SuperMap" << std::endl;
 
@@ -53,7 +53,7 @@ TEST(SUPERMAP_MANUAL) {
     size[i] = i+1;
   }
 
-  auto owned_map1 = Teuchos::rcp(new Epetra_BlockMap(3*NumProc, 3, &gids[0], &size[0], 0, comm));
+  auto owned_map1 = Teuchos::rcp(new Epetra_BlockMap(3*NumProc, 3, &gids[0], &size[0], 0, *comm));
 
   std::cout<< *owned_map1 << "\n";
   std::cout<< owned_map1->FirstPointInElement(0)<<"\n";
@@ -62,7 +62,7 @@ TEST(SUPERMAP_MANUAL) {
   
   if (MyPID > 0) gids.push_back(3*MyPID-1);
   if (MyPID < NumProc-1) gids.push_back(3*(MyPID+1));
-  auto ghosted_map1 = Teuchos::rcp(new Epetra_BlockMap(-1, gids.size(), &gids[0], &size[0], 0, comm));
+  auto ghosted_map1 = Teuchos::rcp(new Epetra_BlockMap(-1, gids.size(), &gids[0], &size[0], 0, *comm));
 
   // make a ghosted and local map 2
   std::vector<int> gids2(5), size2(5);
@@ -70,11 +70,11 @@ TEST(SUPERMAP_MANUAL) {
     gids2[i] = 5*MyPID + i;
     size2[i] = i%2 + 1;
   }
-  auto owned_map2 = Teuchos::rcp(new Epetra_BlockMap(5*NumProc, 5, &gids2[0], &size2[0], 0, comm));
+  auto owned_map2 = Teuchos::rcp(new Epetra_BlockMap(5*NumProc, 5, &gids2[0], &size2[0], 0, *comm));
 
   if (MyPID > 0) gids2.push_back(5*MyPID-1);
   if (MyPID < NumProc-1) gids2.push_back(5*(MyPID+1));
-  auto ghosted_map2 = Teuchos::rcp(new Epetra_BlockMap(-1, gids2.size(), &gids2[0],  &size2[0], 0, comm));
+  auto ghosted_map2 = Teuchos::rcp(new Epetra_BlockMap(-1, gids2.size(), &gids2[0],  &size2[0], 0, *comm));
 
   // make the supermap
   std::vector<std::string> names;

@@ -32,8 +32,8 @@ SuperMap::SuperMap(const Comm_ptr_type& comm,
   AMANZI_ASSERT(compnames.size() == maps.size());
   AMANZI_ASSERT(compnames.size() == ghosted_maps.size());
 
-  int MyPID = comm.MyPID();
-  int NumProc = comm.NumProc();
+  int MyPID = comm->MyPID();
+  int NumProc = comm->NumProc();
 
   int ncomps = compnames.size();
     
@@ -72,8 +72,8 @@ SuperMap::SuperMap(const Comm_ptr_type& comm,
     tmp_ghosted[MyPID * ncomps + i] = counts_[compnames[i]] + ghosted_counts_[compnames[i]];
   }
       
-  comm.SumAll(&tmp[0], &counts_all[0], NumProc * ncomps);
-  comm.SumAll(&tmp_ghosted[0], &counts_ghosted_all[0], NumProc * ncomps);
+  comm->SumAll(&tmp[0], &counts_all[0], NumProc * ncomps);
+  comm->SumAll(&tmp_ghosted[0], &counts_ghosted_all[0], NumProc * ncomps);
 
   for (int i=0; i!=ncomps; ++i) {
     int tmp_val = 0;

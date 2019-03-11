@@ -75,6 +75,7 @@
       </ParameterList>
       <ParameterList name="expert">
         <Parameter name="framework" type="string" value="MSTK"/>
+        <Parameter name="partitioner" type="string" value="zoltan_rcb"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -218,7 +219,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="4.0e-8"/>
+                <Parameter name="value" type="double" value="3.9240e-07"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -395,7 +396,7 @@
 
           <Parameter name="solver type" type="string" value="nka"/>
           <ParameterList name="nka parameters">
-            <Parameter name="nonlinear tolerance" type="double" value="1.0e-12"/>
+            <Parameter name="nonlinear tolerance" type="double" value="1.0e-9"/>
             <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
             <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
             <Parameter name="max divergent iterations" type="int" value="3"/>
@@ -403,7 +404,7 @@
             <Parameter name="limit iterations" type="int" value="100"/>
             <Parameter name="modify correction" type="bool" value="false"/>
             <ParameterList name="verbose object">
-              <Parameter name="verbosity level" type="string" value="extreme"/>
+              <Parameter name="verbosity level" type="string" value="high"/>
             </ParameterList>                        
           </ParameterList>
           <Parameter name="max preconditioner lag iterations" type="int" value="0"/>

@@ -16,7 +16,7 @@
 
 // Amanzi
 #include "CompositeVector.hh"
-#include "Mesh_MSTK.hh"
+#include "MeshFactory.hh"
 #include "Op_Cell_FaceCell.hh"
 #include "Operator_FaceCell.hh"
 #include "ParallelCommunication.hh"
@@ -31,12 +31,11 @@ namespace Operators {
 void PDE_DiffusionFracturedMatrix::Init(Teuchos::ParameterList& plist)
 {
   // extract mesh in fractures
-  std::vector<std::string> names = plist.get<Teuchos::Array<std::string> >("fracture").toVector();
+  AmanziMesh::MeshFactory meshfactory(mesh_->get_comm(), mesh_->geometric_model());
+  meshfactory.set_preference(AmanziMesh::Preference({AmanziMesh::Framework::MSTK}));
 
-  Teuchos::RCP<const AmanziMesh::Mesh_MSTK> mstk =
-      Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(mesh_);
-  Teuchos::RCP<const AmanziMesh::Mesh> fracture =
-      Teuchos::rcp(new AmanziMesh::Mesh_MSTK(&*mstk, names, AmanziMesh::FACE));
+  std::vector<std::string> names = plist.get<Teuchos::Array<std::string> >("fracture").toVector();
+  Teuchos::RCP<const AmanziMesh::Mesh> fracture = meshfactory.create(mesh_, names, AmanziMesh::FACE);
 
   // create global operator
   cvs_ = CreateFracturedMatrixCVS(mesh_, fracture);

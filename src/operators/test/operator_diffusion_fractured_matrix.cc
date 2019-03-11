@@ -46,8 +46,8 @@ void TestDiffusionFracturedMatrix(double gravity) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "\nTest: 3D fractured matrix problem: gravity=" << gravity << "\n";
 
@@ -57,12 +57,12 @@ void TestDiffusionFracturedMatrix(double gravity) {
   ParameterList plist = xmlreader.getParameters();
 
   ParameterList region_list = plist.sublist("regions");
-  auto gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
+  auto gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
   // create a mesh framework
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, gm);
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);

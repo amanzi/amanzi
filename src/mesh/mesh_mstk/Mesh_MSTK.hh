@@ -112,7 +112,7 @@ class Mesh_MSTK : public Mesh {
   Entity_ID entity_get_parent(const Entity_kind kind, const Entity_ID entid) const;
 
   virtual
-  Teuchos::RCP<const Mesh> parent() const { return Teuchos::rcp(parent_mesh, false); }
+  Teuchos::RCP<const Mesh> parent() const { return parent_mesh_; }
 
 
   //

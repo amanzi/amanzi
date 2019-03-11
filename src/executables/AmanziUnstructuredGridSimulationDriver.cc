@@ -347,17 +347,14 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   S->RegisterMesh("domain", mesh); 
   
   if (unstr_mesh_params.isSublist("extract fracture mesh")) {
-    if (factory.preference()[0] != Amanzi::AmanziMesh::MSTK) {
+    if (meshfactory.preference()[0] != Amanzi::AmanziMesh::Framework::MSTK) {
       std::cerr << "Cannot extract a mesh using a non-MSTK framework" << std::endl;
       return Amanzi::Simulator::FAIL;
     }
     const auto& extract_plist = unstr_mesh_params.sublist("extract fracture mesh");
     std::vector<std::string> names = extract_plist.get<Teuchos::Array<std::string> >("regions").toVector();
 
-    Teuchos::RCP<const Amanzi::AmanziMesh::Mesh_MSTK> mstk =
-        Teuchos::rcp_static_cast<const Amanzi::AmanziMesh::Mesh_MSTK>(mesh);
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_fracture =
-        Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(&*mstk, names, Amanzi::AmanziMesh::FACE));
+    auto mesh_fracture = meshfactory.create(mesh, names, Amanzi::AmanziMesh::FACE);
     S->RegisterMesh("fracture", mesh_fracture);
   }
 
