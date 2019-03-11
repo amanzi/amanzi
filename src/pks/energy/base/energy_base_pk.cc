@@ -107,7 +107,6 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   bc_adv_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
 
   bc_surf_temp_dependent_ = bc_plist.get<bool>("surface temperature dependence",false);
-  bc_surf_prescribed_ = bc_plist.get<bool>("surface temperature prescribed",false);
   // -- nonlinear coefficient
   std::string method_name = plist_->get<std::string>("upwind conductivity method",
           "arithmetic mean");
@@ -528,34 +527,32 @@ void EnergyBase::UpdateBoundaryConditions_(
     adv_values[n] = 0.0;
   }
 
+  
   // Dirichlet temperature boundary conditions
   for (Functions::BoundaryFunction::Iterator bc=bc_temperature_->begin();
        bc!=bc_temperature_->end(); ++bc) {
+    AmanziMesh::Entity_ID_List cells;
     int f = bc->first;
     markers[f] = Operators::OPERATOR_BC_DIRICHLET;
     values[f] = bc->second;
     adv_markers[f] = Operators::OPERATOR_BC_DIRICHLET;
-    
+
     if (key_ == "surface-temperature") {
       Epetra_MultiVector& temp_bf = *S->GetFieldData(key_,name_)->ViewComponent("boundary_face",false);
       const Epetra_Map& vandalay_map = mesh_->exterior_face_map(false);
       const Epetra_Map& face_map = mesh_->face_map(false);
       const Epetra_MultiVector& surf_temp = *S->GetFieldData("surface-temperature")->ViewComponent("cell",false);
-      const Epetra_MultiVector& surf_pres = *S->GetFieldData("surface-pressure")->ViewComponent("cell",false);
-      const Epetra_MultiVector& eta = *S->GetFieldData("surface-unfrozen_fraction")->ViewComponent("cell");
       int nbfaces = temp_bf.MyLength();
       
-      //int f = bc->first;
-      //mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      //int c = cells[0];
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      int c = cells[0];
+
       for (int bf=0; bf != nbfaces; ++bf) {
         AmanziMesh::Entity_ID f = face_map.LID(vandalay_map.GID(bf));
         if (adv_markers[f] == Operators::OPERATOR_BC_DIRICHLET) {
-          //          if (bc_surf_temp_dependent_ && surf_pres[0][0] > 101325.0 && surf_temp[0][0]>273.16)
-          //          if (bc_surf_temp_dependent_ && eta[0][0]>0.1)
-          if (bc_surf_temp_dependent_ && surf_temp[0][0]>273.15 && surf_pres[0][0] > 101325.0)
-            temp_bf[0][bf] = surf_temp[0][0];
-          else if (bc_surf_prescribed_)
+          if (bc_surf_temp_dependent_)
+            temp_bf[0][bf] = surf_temp[0][c];
+          else
             temp_bf[0][bf] = bc->second;
         }
       }
