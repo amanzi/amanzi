@@ -801,12 +801,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
         double h0 = (p0 - p_atm) / ((eta[0][c]*rho_l[0][c] + (1.-eta[0][c])*rho_i[0][c]) * gz);
 
         markers[f] = Operators::OPERATOR_BC_DIRICHLET;
-        //only allow water when the boundary cell is unfrozen
-        if (eta[0][c] == 0) {
-          values[f] = 0.0 + elevation[0][f];
-        } else {
-          values[f] = h0 + elevation[0][f];
-        }
+        values[f] = h0 + elevation[0][f];
       }
 
     } else {
