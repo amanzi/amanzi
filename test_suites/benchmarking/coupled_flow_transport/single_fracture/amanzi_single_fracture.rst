@@ -99,7 +99,7 @@ Schematic
 
 The domain, fracture location, and boundary conditions are shown in the schematic below.
 
-.. figure:: schematic/schematic.png
+.. figure:: schematic/single_fracture_schematic.png
     :figclass: align-center
     :width: 400 px
 
