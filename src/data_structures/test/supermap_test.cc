@@ -29,6 +29,8 @@
 
 #include "CompositeVectorSpace.hh"
 #include "TreeVectorSpace.hh"
+
+#define SUPERMAP_TESTING 1
 #include "SuperMap.hh"
 
 /* *****************************************************************

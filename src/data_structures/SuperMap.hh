@@ -1,13 +1,15 @@
 /*
-  Data Structures
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon (ecoon@lanl.gov)
+*/
 
+//! SuperMap class for blocking same-type maps into a single, common map.
+
+/*!
   Takes non-contiguous data structure spaces (CompositeVector, TreeVector)
   and converts them into a single map.
 
@@ -15,6 +17,10 @@
   two components share the same name, they share the same map.  This is
   obviously wrong when multple meshes are involved -- for instance a TV of
   surface + subsurface, both with "cell" components, would break miserably.
+
+  That said, this is a simple and well-posed class.  It stays, but users
+  should prefer to use the wrapper class, SuperMapWrapper, which deals with a
+  few shortcomings of this class.
 */
 
 #ifndef AMANZI_OPERATORS_SUPER_MAP_HH_
@@ -28,10 +34,6 @@
 
 
 namespace Amanzi {
-
-class CompositeVectorSpace;
-class TreeVectorSpace;
-
 namespace Operators {
 
 class SuperMap {
@@ -40,21 +42,12 @@ class SuperMap {
   SuperMap(const Comm_ptr_type& comm,
            const std::vector<std::string>& compnames,
            const std::vector<int>& dofnums,
-           const std::vector<Teuchos::RCP<const Epetra_Map> >& maps,
-           const std::vector<Teuchos::RCP<const Epetra_Map> >& ghost_maps);
+           const std::vector<Teuchos::RCP<const Epetra_BlockMap> >& maps,
+           const std::vector<Teuchos::RCP<const Epetra_BlockMap> >& ghost_maps);
 
   SuperMap(const SuperMap& other);  
   virtual ~SuperMap() = default;
   
-  // meta-data accessors
-  bool HasComponent(const std::string& compname) const;
-  int Offset(const std::string& compname) const { return offsets_.at(compname); }
-  int GhostedOffset(const std::string& compname) const { return ghosted_offsets_.at(compname); }
-  int NumOwnedElements(const std::string& compname) const { return counts_.at(compname); }
-  int NumUsedElements(const std::string& compname) const {
-    return counts_.at(compname) + ghosted_counts_.at(compname); }
-  int NumDofs(const std::string& compname) const { return num_dofs_.at(compname); }
-
   // map accessors
   Teuchos::RCP<const Epetra_Map> Map() const { return map_; }
   Teuchos::RCP<const Epetra_Map> GhostedMap() const { return ghosted_map_; }
@@ -68,37 +61,27 @@ class SuperMap {
   // int is the number of unique values, equal to
   // sum(NumDofs(comp) for comp in components), in this array.
   std::pair<int, Teuchos::RCP<std::vector<int> > > BlockIndices() const;
+
+#ifdef SUPERMAP_TESTING
+ public:
+#else
+ protected:
+#endif
   
+  // meta-data accessors
+  bool HasComponent(const std::string& compname) const;
+  int Offset(const std::string& compname) const { return offsets_.at(compname); }
+  int GhostedOffset(const std::string& compname) const { return ghosted_offsets_.at(compname); }
+  int NumOwnedElements(const std::string& compname) const { return counts_.at(compname); }
+  int NumUsedElements(const std::string& compname) const {
+    return counts_.at(compname) + ghosted_counts_.at(compname); }
+  int NumDofs(const std::string& compname) const { return num_dofs_.at(compname); }
+
   // iterate over compnames
   typedef std::vector<std::string>::const_iterator name_iterator;
   name_iterator begin() const { return compnames_.begin(); }
   name_iterator end() const { return compnames_.end(); }
   unsigned int size() const { return compnames_.size(); }
-
-  
-  // // block accessors
-  // void BlockIndices(const std::string& compname, int element_lid, std::vector<int>* indices) const {
-  //   int ndofs = NumDofs(compname);
-  //   int nelements = NumOwnedElements(compname);
-  //   indices->resize(ndofs);
-  //   int start = element_lid < nelements ? Offset(compname) + element_lid*ndofs :
-  //       GhostedOffset(compname) + (element_lid - nelements)*ndofs;
-  //   for (int i=0; i!=ndofs; ++i) (*indices)[i] = start+i;
-  //   return;
-  // }
-
-  // // block accessors -- copy into a location -- have some rope!
-  // void BlockIndices(const std::string& compname, int element_lid, int& nindices, int* indices) const {
-  //   int ndofs = NumDofs(compname);
-  //   AMANZI_ASSERT(nindices >= ndofs);
-  //   nindices = ndofs;
-  //   int nelements = NumOwnedElements(compname);
-
-  //   int start = element_lid < nelements ? Offset(compname) + element_lid*ndofs :
-  //       GhostedOffset(compname) + (element_lid - nelements)*ndofs;
-  //   for (int i=0; i!=ndofs; ++i) indices[i] = start+i;
-  //   return;
-  // }
 
  protected:
   virtual const std::vector<int>& CreateIndices_(const std::string& compname, int dofnum, bool ghosted) const;
@@ -118,14 +101,6 @@ class SuperMap {
   Teuchos::RCP<Epetra_Map> ghosted_map_;
 };
 
-
-// Nonmember helper function
-std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >
-getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location);
-
-// Nonmember contructors/factories
-Teuchos::RCP<SuperMap> createSuperMap(const CompositeVectorSpace& cv);
-Teuchos::RCP<SuperMap> createSuperMap(const TreeVectorSpace& cv);
 
 } // namespace Operators
 } // namespace Amanzi

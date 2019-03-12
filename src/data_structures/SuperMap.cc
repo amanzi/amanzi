@@ -24,8 +24,8 @@ namespace Operators {
 SuperMap::SuperMap(const Comm_ptr_type& comm,
                    const std::vector<std::string>& compnames,
                    const std::vector<int>& dofnums,
-                   const std::vector<Teuchos::RCP<const Epetra_Map> >& maps,
-                   const std::vector<Teuchos::RCP<const Epetra_Map> >& ghosted_maps) :
+                   const std::vector<Teuchos::RCP<const Epetra_BlockMap> >& maps,
+                   const std::vector<Teuchos::RCP<const Epetra_BlockMap> >& ghosted_maps) :
     compnames_(compnames)
 {
   AMANZI_ASSERT(compnames.size() == dofnums.size());
@@ -38,8 +38,8 @@ SuperMap::SuperMap(const Comm_ptr_type& comm,
   for (int i=0; i!=compnames.size(); ++i) {
     std::string compname = compnames[i];
     num_dofs_[compname] = dofnums[i];
-    counts_[compname] = maps[i]->NumMyElements();
-    ghosted_counts_[compname] = ghosted_maps[i]->NumMyElements() - counts_[compname];
+    counts_[compname] = maps[i]->NumMyPoints();
+    ghosted_counts_[compname] = ghosted_maps[i]->NumMyPoints() - counts_[compname];
     offsets_[compname] = offset;
 
     offset += dofnums[i]*counts_[compname];
@@ -198,30 +198,8 @@ SuperMap::CreateIndices_(const std::string& compname, int dofnum, bool ghosted) 
 
 std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >
 getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
-  switch(location) {
-    case AmanziMesh::CELL:
-      return std::make_pair(Teuchos::rcpFromRef(mesh.cell_map(false)),
-                            Teuchos::rcpFromRef(mesh.cell_map(true)));
-
-    case AmanziMesh::FACE:
-      return std::make_pair(Teuchos::rcpFromRef(mesh.face_map(false)),
-                            Teuchos::rcpFromRef(mesh.face_map(true)));
-
-    case AmanziMesh::EDGE:
-      return std::make_pair(Teuchos::rcpFromRef(mesh.edge_map(false)),
-                            Teuchos::rcpFromRef(mesh.edge_map(true)));
-
-    case AmanziMesh::NODE:
-      return std::make_pair(Teuchos::rcpFromRef(mesh.node_map(false)),
-                            Teuchos::rcpFromRef(mesh.node_map(true)));
-
-    case AmanziMesh::BOUNDARY_FACE:
-      return std::make_pair(Teuchos::rcpFromRef(mesh.exterior_face_map(false)),
-                            Teuchos::rcpFromRef(mesh.exterior_face_map(true)));
-    default:
-      AMANZI_ASSERT(false);
-      return std::make_pair(Teuchos::null, Teuchos::null);
-  }
+  return std::make_pair(Teuchos::rcpFromRef(mesh.map(location, false)),
+                        Teuchos::rcpFromRef(mesh.map(location, true)));
 }
 
 
