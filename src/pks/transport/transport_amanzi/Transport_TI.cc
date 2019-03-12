@@ -38,7 +38,7 @@ void Transport_PK_ATS::FunctionalTimeDerivative(double t,
   Teuchos::ParameterList plist = tp_list_->sublist("reconstruction");
   lifting_->Init(component_rcp, plist);
   lifting_->ComputeGradient();
-  Teuchos::RCP<CompositeVector> gradient = lifting_->gradient();
+
 
   // extract boundary conditions for the current component
   std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
@@ -72,7 +72,7 @@ void Transport_PK_ATS::FunctionalTimeDerivative(double t,
   double u, u1, u2, umin, umax, upwind_tcc, tcc_flux;
 
   f_component.PutScalar(0.0);
-  for (int f = 0; f < nfaces_wghost; f++) {
+  for (int f = 0; f < nfaces_wghost; f++) {  // loop over master and slave faces
     c1 = (*upwind_cell_)[f];
     c2 = (*downwind_cell_)[f];
   
@@ -106,6 +106,17 @@ void Transport_PK_ATS::FunctionalTimeDerivative(double t,
 
       tcc_flux = u * upwind_tcc;
       f_component[c1] -= tcc_flux;
+    } else if (c1 >= 0 && c1 < ncells_owned && (c2 < 0)) {
+      upwind_tcc = component[c1];
+      upwind_tcc = std::max(upwind_tcc, umin);
+      upwind_tcc = std::min(upwind_tcc, umax);
+
+      tcc_flux = u * upwind_tcc;
+      f_component[c1] -= tcc_flux;
+      //if (abs(tcc_flux) > 1e-9)
+      // if ((mesh_->face_centroid(f)[0]>9.5)&&(mesh_->face_centroid(f)[0]<10.5)&& (abs(mesh_->face_centroid(f)[1]-0.5)<1e-6))
+      //   std::cout<<mesh_->get_comm()->MyPID()<<" c "<<c1<<" mass "<<tcc_flux<<" "<<mesh_->face_centroid(f)<<"\n";
+      
     } else if (c1 >= ncells_owned && c2 >= 0 && c2 < ncells_owned) {
       upwind_tcc = limiter_->getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);

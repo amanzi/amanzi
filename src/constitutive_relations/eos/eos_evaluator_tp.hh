@@ -25,14 +25,14 @@ class EOSEvaluatorTP : public EOSEvaluator {
   EOSEvaluatorTP(Teuchos::ParameterList& plist);
 
   EOSEvaluatorTP(const EOSEvaluatorTP& other);
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
+  virtual Teuchos::RCP<FieldEvaluator> Clone() const override;
 
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
                               const std::vector<Teuchos::Ptr<CompositeVector> >& results) override;
   
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-                                               Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> >& results);
+                                               Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> >& results) override;
 
   Teuchos::RCP<EOS> get_EOS() { return eos_; }
  protected:

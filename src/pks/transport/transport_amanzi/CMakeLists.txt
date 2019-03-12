@@ -65,6 +65,7 @@ set(transport_inc_files
   MultiscaleTransportPorosityFactory.hh
   MultiscaleTransportPorosityPartition.hh
   MultiscaleTransportPorosity_DPM.hh
+  MultiscaleTransportPorosity_GDPM.hh  
   TransportDomainFunction.hh 
   TransportBoundaryFunction_Alquimia.hh
   TransportSourceFunction_Alquimia.hh
@@ -77,6 +78,7 @@ set(transport_src_files Transport_PK.cc Transport_TI.cc
                         MDM_Isotropic.cc MDM_Bear.cc MDM_BurnettFrind.cc MDM_LichtnerKelkarRobinson.cc
                         MDMPartition.cc MDMFactory.cc
                         MultiscaleTransportPorosityFactory.cc MultiscaleTransportPorosity_DPM.cc
+                        MultiscaleTransportPorosity_GDPM.cc
                         MultiscaleTransportPorosityPartition.cc
                         TransportBoundaryFunction_Alquimia.cc
                         TransportSourceFunction_Alquimia.cc)

@@ -19,7 +19,6 @@
 #include "Epetra_Import.h"
 #include "Teuchos_RCP.hpp"
 
-
 #include "BCs.hh"
 #include "errors.hh"
 #include "Explicit_TI_RK.hh"
@@ -87,16 +86,6 @@ Transport_PK_ATS::Transport_PK_ATS(Teuchos::ParameterList& pk_tree,
   nonlinear_solver_list_ = Teuchos::sublist(glist, "nonlinear solvers");
 
   subcycling_ = tp_list_->get<bool>("transport subcycling", false);
-
-
-  // Key domain = tp_list_->get<std::string>("domain name", "domain");
-  // Key key = Keys::readKey(*tp_list_, domain, "primary variable");  
-  // // set up the primary variable solution, and its evaluator
-  // Teuchos::ParameterList& FElist = S->FEList();
-  // Teuchos::ParameterList& pv_sublist = FElist.sublist(key);
-  // pv_sublist.set("evaluator name", key);
-  // pv_sublist.set("field evaluator type", "primary variable");
-
    
   // initialize io
   Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist, "units");
@@ -171,9 +160,9 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
   passwd_ = "state";  // owner's password
 
   domain_name_ = tp_list_->get<std::string>("domain name", "domain");
-
-  saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "saturation liquid", "");
-  prev_saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "previous saturation liquid", "");
+  
+  saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "saturation liquid", "saturation_liquid");
+  prev_saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "previous saturation liquid", "prev_saturation_liquid");
   flux_key_ = Keys::readKey(*tp_list_, domain_name_, "mass flux", "mass_flux");
   darcy_flux_key_ = Keys::readKey(*tp_list_, domain_name_, "darcy flux", "mass_flux");
   permeability_key_ = Keys::readKey(*tp_list_, domain_name_, "permeability", "permeability");
@@ -263,19 +252,19 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
 
   // require multiscale fields
   multiscale_porosity_ = false;
-  // if (multiscale_model == "dual porosity") {
-  //   multiscale_porosity_ = true;
-  //   Teuchos::RCP<Teuchos::ParameterList>
-  //       msp_list = Teuchos::sublist(tp_list_, "multiscale models", true);
-  //   msp_ = CreateMultiscaleTransportPorosityPartition(mesh_, msp_list);
+  if (multiscale_model == "dual porosity") {
+    multiscale_porosity_ = true;
+    Teuchos::RCP<Teuchos::ParameterList>
+        msp_list = Teuchos::sublist(tp_list_, "multiscale models", true);
+    msp_ = CreateMultiscaleTransportPorosityPartition(mesh_, msp_list);
 
-  //   std::vector<std::vector<std::string> > subfield_names(1);
-  //   subfield_names[0] = component_names_;
+    std::vector<std::vector<std::string> > subfield_names(1);
+    subfield_names[0] = component_names_;
 
-  //   S->RequireField(tcc_matrix_key_, passwd_, subfield_names)
-  //       ->SetMesh(mesh_)->SetGhosted(false)
-  //       ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
-  // }
+    S->RequireField(tcc_matrix_key_, passwd_, subfield_names)
+        ->SetMesh(mesh_)->SetGhosted(false)
+        ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
+  }
 }
 
 
@@ -327,7 +316,6 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
   mol_dens_subcycle_start = S->GetFieldCopyData(molar_density_key_, "subcycle_start",passwd_)->ViewComponent("cell");
   S->RequireFieldCopy(molar_density_key_, "subcycle_end", passwd_);
   mol_dens_subcycle_end = S->GetFieldCopyData(molar_density_key_, "subcycle_end", passwd_)->ViewComponent("cell");
-  
 
   // S->RequireFieldCopy(saturation_key_, "subcycle_start", passwd_);
   // ws_subcycle_start = S->GetFieldCopyData(saturation_key_, "subcycle_start",passwd_)
@@ -335,7 +323,6 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
   // S->RequireFieldCopy(saturation_key_, "subcycle_end", passwd_);
   // ws_subcycle_end = S->GetFieldCopyData(saturation_key_, "subcycle_end", passwd_)
   //   ->ViewComponent("cell");
-  
   S->RequireFieldCopy(flux_key_, "next_timestep", passwd_);
   flux_copy_ = S->GetFieldCopyData(flux_key_,  "next_timestep", passwd_)->ViewComponent("face", true);
   flux_copy_ -> PutScalar(0.);
@@ -361,8 +348,6 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
 
   
   phi_ = S->GetFieldData(porosity_key_) -> ViewComponent("cell", false);
-  
-  S->WriteStatistics(vo_);
 
   mol_dens_ = S -> GetFieldData(molar_density_key_) -> ViewComponent("cell", false);
   mol_dens_prev_ = S -> GetFieldData(molar_density_key_) -> ViewComponent("cell", false);

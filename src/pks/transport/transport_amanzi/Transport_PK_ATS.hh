@@ -47,7 +47,6 @@
 #include "MultiscaleTransportPorosityPartition.hh"
 #include "TransportDomainFunction.hh"
 #include "TransportDefs.hh"
-//#include "pk_physical_explicit_default.hh"
 
 
 /* ******************************************************************

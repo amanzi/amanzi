@@ -12,7 +12,7 @@
 */
 
 #ifndef ATS_AMANZI_MORPHOLOGY_PK_HH_
-#define ATS_AMANZI_MORPHOLOGY_PK_PK_HH_
+#define ATS_AMANZI_MORPHOLOGY_PK_HH_
 
 #include "Teuchos_RCP.hpp"
 
