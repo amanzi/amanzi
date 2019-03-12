@@ -137,8 +137,8 @@ class Transport_PK_ATS : public PK_Physical_Explicit_Default {
   void ComputeAddSourceTerms(double tp, double dtp, 
                              Epetra_MultiVector& tcc, int n0, int n1);
 
-  bool PopulateBoundaryData(std::vector<int>& bc_model,
-                            std::vector<double>& bc_value, int component);
+  bool ComputeBCs_(std::vector<int>& bc_model,
+                   std::vector<double>& bc_value, int component);
 
   // -- limiters 
   void LimiterBarthJespersen(const int component,

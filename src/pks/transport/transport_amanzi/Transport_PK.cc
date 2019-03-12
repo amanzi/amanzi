@@ -82,9 +82,9 @@ Transport_PK_ATS::Transport_PK_ATS(Teuchos::ParameterList& pk_tree,
     Exceptions::amanzi_throw(msg);
   }
   
-  preconditioner_list_ = Teuchos::sublist(glist, "Preconditioners");
-  linear_solver_list_ = Teuchos::sublist(glist, "Solvers");
-  nonlinear_solver_list_ = Teuchos::sublist(glist, "Nonlinear solvers");
+  preconditioner_list_ = Teuchos::sublist(glist, "preconditioners");
+  linear_solver_list_ = Teuchos::sublist(glist, "solvers");
+  nonlinear_solver_list_ = Teuchos::sublist(glist, "nonlinear solvers");
 
   subcycling_ = tp_list_->get<bool>("transport subcycling", false);
 
@@ -1036,8 +1036,8 @@ void Transport_PK_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new
     // default boundary conditions (none inside domain and Neumann on its boundary)
     auto& bc_model = bc_dummy->bc_model();
     auto& bc_value = bc_dummy->bc_value();
-    PopulateBoundaryData(bc_model, bc_value, -1);
-
+    ComputeBCs_(bc_model, bc_value, -1);
+   
     Operators::PDE_DiffusionFactory opfactory;
     Teuchos::RCP<Operators::PDE_Diffusion> op1 = opfactory.Create(op_list, mesh_, bc_dummy);
     op1->SetBCs(bc_dummy, bc_dummy);
@@ -1084,13 +1084,16 @@ void Transport_PK_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new
       if (sol.HasComponent("face")) {
         sol.ViewComponent("face")->PutScalar(0.0);
       }
-
+    
       if (flag_op1) {
         op->Init();
         Teuchos::RCP<std::vector<WhetStone::Tensor> > Dptr = Teuchos::rcpFromRef(D_);
         op1->Setup(Dptr, Teuchos::null, Teuchos::null);
         op1->UpdateMatrices(Teuchos::null, Teuchos::null);
 
+      // add boundary conditions 
+        ComputeBCs_(bc_model, bc_value, i);        
+        
         // add accumulation term
         Epetra_MultiVector& fac = *factor.ViewComponent("cell");
         for (int c = 0; c < ncells_owned; c++) {
@@ -1125,6 +1128,19 @@ void Transport_PK_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new
       for (int c = 0; c < ncells_owned; c++) {
         tcc_next[i][c] = sol_cell[0][c];
       }
+      if (sol.HasComponent("face")){
+        if (tcc_tmp -> HasComponent("boundary_face")){
+          Epetra_MultiVector& tcc_tmp_bf = *tcc_tmp -> ViewComponent("boundary_face",false);
+          Epetra_MultiVector& sol_faces = *sol.ViewComponent("face",false);
+          const Epetra_Map& vandalay_map = mesh_->exterior_face_map(false);
+          const Epetra_Map& face_map = mesh_->face_map(false);
+          int nbfaces = tcc_tmp_bf.MyLength();
+          for (int bf=0; bf!=nbfaces; ++bf) {
+            AmanziMesh::Entity_ID f = face_map.LID(vandalay_map.GID(bf));
+            tcc_tmp_bf[i][bf] =  sol_faces[i][f];
+          }
+        }
+      }
     }
 
     // Diffuse gaseous components. We ignore dispersion 
@@ -1156,7 +1172,7 @@ void Transport_PK_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new
       op1->UpdateMatrices(Teuchos::null, Teuchos::null);
 
       // add boundary conditions and sources for gaseous components
-      PopulateBoundaryData(bc_model, bc_value, i);
+      ComputeBCs_(bc_model, bc_value, i);
 
       Epetra_MultiVector& rhs_cell = *op->rhs()->ViewComponent("cell");
       ComputeAddSourceTerms(t_new, 1.0, rhs_cell, i, i);
@@ -1789,7 +1805,7 @@ void Transport_PK_ATS::Sinks2TotalOutFlux(Epetra_MultiVector& tcc,
 * Populates operators' boundary data for given component.
 * Returns true if at least one face was populated.
 ******************************************************************* */
-bool Transport_PK_ATS::PopulateBoundaryData(
+bool Transport_PK_ATS::ComputeBCs_(
     std::vector<int>& bc_model, std::vector<double>& bc_value, int component)
 {
   bool flag = false;
@@ -1812,7 +1828,6 @@ bool Transport_PK_ATS::PopulateBoundaryData(
     for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
       int f = it->first;
       std::vector<double>& values = it->second;
-
       for (int i = 0; i < ncomp; i++) {
         int k = tcc_index[i];
         if (k == component) {
