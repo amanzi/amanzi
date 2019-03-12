@@ -246,7 +246,7 @@ class Transport_PK_ATS : public PK_Physical_Explicit_Default {
     Key tcc_matrix_key_;
     Key molar_density_key_;
     Key solid_residue_mass_key_;
-
+    Key water_content_key_;
   
  
  private:
