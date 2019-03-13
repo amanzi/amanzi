@@ -78,124 +78,124 @@ TEST(SUPERMAP_BLOCKMAP) {
 
 
   
-// /* *****************************************************************
-//  * manually constructed test
-//  * **************************************************************** */
-// TEST(SUPERMAP_BLOCK_MANUAL) {
-//   using namespace Amanzi;
-//   using namespace Amanzi::AmanziMesh;
-//   using namespace Amanzi::AmanziGeometry;
+/* *****************************************************************
+ * manually constructed test
+ * **************************************************************** */
+TEST(SUPERMAP_BLOCK_MANUAL) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;
 
-//   Comm_ptr_type comm = Amanzi::getDefaultComm();
-//   int MyPID = comm->MyPID();
-//   int NumProc = comm->NumProc();
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
+  int NumProc = comm->NumProc();
 
-//   if (MyPID == 0) std::cout << "Test: Manual test of SuperMap with BLOCK maps" << std::endl;
+  if (MyPID == 0) std::cout << "Test: Manual test of SuperMap with BLOCK maps" << std::endl;
 
-//   // make a ghosted and local map 1
-//   std::vector<int> gids(3), size(3);
-//   for (int i=0; i!=3; ++i) {
-//     gids[i] = 3*MyPID + i;
-//     size[i] = i+1;
-//   }
+  // make a ghosted and local map 1
+  std::vector<int> gids(3), size(3);
+  for (int i=0; i!=3; ++i) {
+    gids[i] = 3*MyPID + i;
+    size[i] = i+1;
+  }
 
-//   auto owned_map1 = Teuchos::rcp(new Epetra_BlockMap(3*NumProc, 3, &gids[0], &size[0], 0, *comm));
+  auto owned_map1 = Teuchos::rcp(new Epetra_BlockMap(3*NumProc, 3, &gids[0], &size[0], 0, *comm));
 
-//   std::cout<< *owned_map1 << "\n";
-//   std::cout<< owned_map1->FirstPointInElement(0)<<"\n";
-//   std::cout<< owned_map1->FirstPointInElement(1)<<"\n";
-//   std::cout<< owned_map1->FirstPointInElement(2)<<"\n";
+  std::cout<< *owned_map1 << "\n";
+  std::cout<< owned_map1->FirstPointInElement(0)<<"\n";
+  std::cout<< owned_map1->FirstPointInElement(1)<<"\n";
+  std::cout<< owned_map1->FirstPointInElement(2)<<"\n";
   
-//   CHECK_EQUAL(owned_map1->FirstPointInElement(0) == 0);
-//   CHECK_EQUAL(owned_map1->FirstPointInElement(1) == 1);
-//   CHECK_EQUAL(owned_map1->FirstPointInElement(2) == 3);
+  CHECK_EQUAL(0, owned_map1->FirstPointInElement(0));
+  CHECK_EQUAL(1, owned_map1->FirstPointInElement(1));
+  CHECK_EQUAL(3, owned_map1->FirstPointInElement(2));
 
-//   if (MyPID > 0) {
-//     gids.push_back(3*MyPID-1);
-//     size.push_back(3);
-//   }
-//   if (MyPID < NumProc-1) {
-//     gids.push_back(3*(MyPID+1));
-//     size.push_back(1);
-//   }
+  if (MyPID > 0) {
+    gids.push_back(3*MyPID-1);
+    size.push_back(3);
+  }
+  if (MyPID < NumProc-1) {
+    gids.push_back(3*(MyPID+1));
+    size.push_back(1);
+  }
   
-//   auto ghosted_map1 = Teuchos::rcp(new Epetra_BlockMap(-1, gids.size(), &gids[0], &size[0], 0, *comm));
+  auto ghosted_map1 = Teuchos::rcp(new Epetra_BlockMap(-1, gids.size(), &gids[0], &size[0], 0, *comm));
 
-//   // make a ghosted and local map 2
-//   std::vector<int> gids2(5), size2(5);
-//   for (int i=0; i!=5; ++i) {
-//     gids2[i] = 5*MyPID + i;
-//     size2[i] = i%2 + 1;
-//   }
-//   auto owned_map2 = Teuchos::rcp(new Epetra_BlockMap(5*NumProc, 5, &gids2[0], &size2[0], 0, *comm));
+  // make a ghosted and local map 2
+  std::vector<int> gids2(5), size2(5);
+  for (int i=0; i!=5; ++i) {
+    gids2[i] = 5*MyPID + i;
+    size2[i] = i%2 + 1;
+  }
+  auto owned_map2 = Teuchos::rcp(new Epetra_BlockMap(5*NumProc, 5, &gids2[0], &size2[0], 0, *comm));
 
-//   if (MyPID > 0) {
-//     gids2.push_back(5*MyPID-1);
-//     size2.push_back(1);
-//   }
-//   if (MyPID < NumProc-1) {
-//     gids2.push_back(5*(MyPID+1));
-//     size2.push_back(1);
-//   }
-//   auto ghosted_map2 = Teuchos::rcp(new Epetra_BlockMap(-1, gids2.size(), &gids2[0],  &size2[0], 0, *comm));
+  if (MyPID > 0) {
+    gids2.push_back(5*MyPID-1);
+    size2.push_back(1);
+  }
+  if (MyPID < NumProc-1) {
+    gids2.push_back(5*(MyPID+1));
+    size2.push_back(1);
+  }
+  auto ghosted_map2 = Teuchos::rcp(new Epetra_BlockMap(-1, gids2.size(), &gids2[0],  &size2[0], 0, *comm));
 
-//   // make the supermap
-//   std::vector<std::string> names;
-//   names.push_back("map1");
-//   names.push_back("map2");
-//   std::vector<int> dofnums(2,1);
+  // make the supermap
+  std::vector<std::string> names;
+  names.push_back("map1");
+  names.push_back("map2");
+  std::vector<int> dofnums(2,1);
 
-//   std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps;
-//   maps.push_back(owned_map1);
-//   maps.push_back(owned_map2);
-//   std::vector<Teuchos::RCP<const Epetra_BlockMap> > gmaps;
-//   gmaps.push_back(ghosted_map1);
-//   gmaps.push_back(ghosted_map2);
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps;
+  maps.push_back(owned_map1);
+  maps.push_back(owned_map2);
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > gmaps;
+  gmaps.push_back(ghosted_map1);
+  gmaps.push_back(ghosted_map2);
 
-//   Operators::SuperMap map(comm, names, dofnums, maps, gmaps);
+  Operators::SuperMap map(comm, names, dofnums, maps, gmaps);
 
-//   std::cout << "======= Two Block Map =======" << std::endl;
-//   maps[0]->Print(std::cout);
-//   maps[1]->Print(std::cout);
-//   std::cout << "\n======= SuperMap =======" << std::endl;
-//   map.Map()->Print(std::cout);
+  std::cout << "======= Two Block Map =======" << std::endl;
+  maps[0]->Print(std::cout);
+  maps[1]->Print(std::cout);
+  std::cout << "\n======= SuperMap =======" << std::endl;
+  map.Map()->Print(std::cout);
   
-//   // check the offsets
-//   CHECK(map.Offset("map1") == 0);
-//   CHECK(map.Offset("map2") == 6);
+  // check the offsets
+  CHECK(map.Offset("map1") == 0);
+  CHECK(map.Offset("map2") == 6);
   
-//   // // check the indices
-//   {
-//     const std::vector<int>& inds_m1_d0 = map.Indices("map1", 0);
-//     //CHECK(inds_m1_d0.size() == 3);
-//     //    for (int i=0;i<3;i++) std::cout<<inds_m1_d0[i]<<" ";std::cout<<"\n";
-//     CHECK(inds_m1_d0[0] == 0);
-//     CHECK(inds_m1_d0[1] == 1);
-//     CHECK(inds_m1_d0[3] == 3);
+  // check the indices
+  {
+    const std::vector<int>& inds_m1_d0 = map.Indices("map1", 0);
+    //CHECK(inds_m1_d0.size() == 3);
+    //    for (int i=0;i<3;i++) std::cout<<inds_m1_d0[i]<<" ";std::cout<<"\n";
+    CHECK(inds_m1_d0[0] == 0);
+    CHECK(inds_m1_d0[1] == 1);
+    CHECK(inds_m1_d0[3] == 3);
 
-//     const std::vector<int>& inds_m2_d0 = map.Indices("map2", 0);
-//     //CHECK(inds_m2_d0.size() == 5);
-//     //for (int i=0;i<5;i++) std::cout<<inds_m2_d0[i]<<" ";std::cout<<"\n";
-//     CHECK(inds_m2_d0[0] == 6);
-//     CHECK(inds_m2_d0[1] == 7);
-//     CHECK(inds_m2_d0[3] == 9);
-//     CHECK(inds_m2_d0[4] == 10);
-//     CHECK(inds_m2_d0[6] == 12);
-//   }
+    const std::vector<int>& inds_m2_d0 = map.Indices("map2", 0);
+    //CHECK(inds_m2_d0.size() == 5);
+    //for (int i=0;i<5;i++) std::cout<<inds_m2_d0[i]<<" ";std::cout<<"\n";
+    CHECK(inds_m2_d0[0] == 6);
+    CHECK(inds_m2_d0[1] == 7);
+    CHECK(inds_m2_d0[3] == 9);
+    CHECK(inds_m2_d0[4] == 10);
+    CHECK(inds_m2_d0[6] == 12);
+  }
 
-//   {
-//     const std::vector<int>& inds_m1_d0 = map.GhostIndices("map1", 0);
-//     CHECK(inds_m1_d0[0] == 0);
-//     CHECK(inds_m1_d0[1] == 1);
-//     CHECK(inds_m1_d0[3] == 3);
+  {
+    const std::vector<int>& inds_m1_d0 = map.GhostIndices("map1", 0);
+    CHECK(inds_m1_d0[0] == 0);
+    CHECK(inds_m1_d0[1] == 1);
+    CHECK(inds_m1_d0[3] == 3);
 
-//     const std::vector<int>& inds_m2_d0 = map.GhostIndices("map2", 0);
-//     //CHECK(inds_m2_d0.size() == 5);
-//     //for (int i=0;i<5;i++) std::cout<<inds_m2_d0[i]<<" ";std::cout<<"\n";
-//     CHECK(inds_m2_d0[0] == 6);
-//     CHECK(inds_m2_d0[1] == 7);
-//     CHECK(inds_m2_d0[3] == 9);
-//     CHECK(inds_m2_d0[4] == 10);
-//     CHECK(inds_m2_d0[6] == 12);
-//   }
-// }
+    const std::vector<int>& inds_m2_d0 = map.GhostIndices("map2", 0);
+    //CHECK(inds_m2_d0.size() == 5);
+    //for (int i=0;i<5;i++) std::cout<<inds_m2_d0[i]<<" ";std::cout<<"\n";
+    CHECK(inds_m2_d0[0] == 6);
+    CHECK(inds_m2_d0[1] == 7);
+    CHECK(inds_m2_d0[3] == 9);
+    CHECK(inds_m2_d0[4] == 10);
+    CHECK(inds_m2_d0[6] == 12);
+  }
+}
