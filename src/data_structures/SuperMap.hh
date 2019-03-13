@@ -45,7 +45,7 @@ class SuperMap {
            const std::vector<Teuchos::RCP<const Epetra_BlockMap> >& maps,
            const std::vector<Teuchos::RCP<const Epetra_BlockMap> >& ghost_maps);
 
-  SuperMap(const SuperMap& other);  
+  SuperMap(const SuperMap& other) = delete;
   virtual ~SuperMap() = default;
 
   // meta-data
@@ -97,7 +97,20 @@ class SuperMap {
   unsigned int size() const { return compnames_.size(); }
 
  protected:
+
+  // Constructs and returns the vector of indices for a given component into the SuperMap
   virtual const std::vector<int>& CreateIndices_(const std::string& compname, int dofnum, bool ghosted) const;
+
+  // step one of the construction process
+  //
+  // After this, CreateIndices_() can be called
+  void CreateIndexing_();
+
+  // step two of the construction process
+  //
+  // This creates the SuperMap and uses CreateIndices_() to populate and
+  // create the ghosted SuperMap.
+  void CreateMap_(const Comm_ptr_type& comm);
 
  protected:
   std::vector<std::string> compnames_;
@@ -107,6 +120,9 @@ class SuperMap {
   std::map<std::string,int> ghosted_offsets_;
   std::map<std::string,int> ghosted_counts_;
 
+  int n_local_;
+  int n_local_ghosted_;
+  
   mutable std::map<std::string, std::map<int, std::vector<int> > > indices_;
   mutable std::map<std::string, std::map<int, std::vector<int> > > ghosted_indices_;
 
