@@ -32,6 +32,11 @@ SuperMap::SuperMap(const Comm_ptr_type& comm,
   AMANZI_ASSERT(compnames.size() == maps.size());
   AMANZI_ASSERT(compnames.size() == ghosted_maps.size());
 
+  for (int i=0; i!=compnames.size(); ++i) {
+    comp_maps_[compnames[i]] = maps[i];
+    comp_ghosted_maps_[compnames[i]] = ghosted_maps[i];
+  }
+  
   int offset = 0;
 
   // fill the offsets
@@ -63,7 +68,7 @@ SuperMap::SuperMap(const Comm_ptr_type& comm,
       int base = global_offset + ghosted_maps[i]->GID(j)*dofnums[i];
       for (int dof=0; dof!=dofnums[i]; ++dof) gids[n++] = base+dof;
     }
-    global_offset += maps[i]->NumGlobalElements() * dofnums[i];
+    global_offset += maps[i]->NumGlobalPoints() * dofnums[i];
   }
   int n_global = global_offset;
 
@@ -74,11 +79,11 @@ SuperMap::SuperMap(const Comm_ptr_type& comm,
       int base = global_offset + ghosted_maps[i]->GID(j)*dofnums[i];
       for (int dof=0; dof!=dofnums[i]; ++dof) gids[n++] = base+dof;
     }
-    global_offset += maps[i]->NumGlobalElements() * dofnums[i];
-    n_global_ghosted += ghosted_maps[i]->NumGlobalElements() * dofnums[i];
+    global_offset += maps[i]->NumGlobalPoints() * dofnums[i];
+    n_global_ghosted += ghosted_maps[i]->NumGlobalPoints() * dofnums[i];
   }
   
-  // create the maps
+  // create the maps.  Note these, unlike the inputs, are Maps, not BlockMaps!
   map_ = Teuchos::rcp(new Epetra_Map(n_global, n_local, &gids[0], 0, *comm)); 
   ghosted_map_ = Teuchos::rcp(new Epetra_Map(n_global_ghosted, n_local_ghosted, &gids[0], 0, *comm));
 }
@@ -195,71 +200,6 @@ SuperMap::CreateIndices_(const std::string& compname, int dofnum, bool ghosted) 
   }
 }
 
-
-std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >
-getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
-  return std::make_pair(Teuchos::rcpFromRef(mesh.map(location, false)),
-                        Teuchos::rcpFromRef(mesh.map(location, true)));
-}
-
-
-// Nonmember contructors/factories
-Teuchos::RCP<SuperMap> createSuperMap(const CompositeVectorSpace& cv) {
-  std::vector<std::string> names;
-  std::vector<int> dofnums;
-  std::vector<Teuchos::RCP<const Epetra_Map> > maps;
-  std::vector<Teuchos::RCP<const Epetra_Map> > ghost_maps;
-
-  for (CompositeVectorSpace::name_iterator it=cv.begin();
-       it!=cv.end(); ++it) {
-    names.push_back(*it);
-    dofnums.push_back(cv.NumVectors(*it));
-
-    auto meshmaps = getMaps(*cv.Mesh(), cv.Location(*it));
-    maps.push_back(meshmaps.first);
-    ghost_maps.push_back(meshmaps.second);
-  }
-
-  return Teuchos::rcp(new SuperMap(cv.Comm(), names, dofnums, maps, ghost_maps));
-}
-
-
-Teuchos::RCP<SuperMap> createSuperMap(const TreeVectorSpace& tv) {
-  std::vector<std::string> names;
-  std::vector<int> dofnums;
-  std::vector<Teuchos::RCP<const Epetra_Map> > maps;
-  std::vector<Teuchos::RCP<const Epetra_Map> > ghost_maps;
-
-  if (tv.Data() != Teuchos::null) {
-    // TV with only a CV inside
-    return createSuperMap(*tv.Data());
-  } else {
-    // multiple children
-    // grab the leaf nodes
-    std::vector<Teuchos::RCP<const TreeVectorSpace> > tvs =
-        collectTreeVectorLeaves_const<TreeVectorSpace>(tv);
-
-    // loop over nodes, finding unique component names on unique meshes
-    for (std::vector<Teuchos::RCP<const TreeVectorSpace> >::const_iterator it=tvs.begin();
-         it!=tvs.end(); ++it) {
-      for (CompositeVectorSpace::name_iterator compname=(*it)->Data()->begin();
-           compname!=(*it)->Data()->end(); ++compname) {
-        int index = std::find(names.begin(), names.end(), *compname) - names.begin();
-        if (index == names.size()) {
-          names.push_back(*compname);
-          dofnums.push_back(1);
-
-          auto meshmaps = getMaps(*(*it)->Data()->Mesh(), (*it)->Data()->Location(*compname));
-          maps.push_back(meshmaps.first);
-          ghost_maps.push_back(meshmaps.second);
-        } else {
-          dofnums[index]++;
-        }
-      }
-    }
-    return Teuchos::rcp(new SuperMap(tvs[0]->Data()->Comm(), names, dofnums, maps, ghost_maps));
-  }
-}
 
 } // namespace Operators
 } // namespace Amanzi

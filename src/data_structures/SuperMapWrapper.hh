@@ -23,23 +23,24 @@
 #ifndef AMANZI_OPERATORS_SUPER_MAP_WRAPPER_HH_
 #define AMANZI_OPERATORS_SUPER_MAP_WRAPPER_HH_
 
+#include <map>
+#include "Teuchos_RCP.hpp"
+#include "Epetra_Map.h"
+#include "Epetra_BlockMap.h"
+
+#include "SuperMap.hh"
 
 namespace Amanzi {
 
 class CompositeVectorSpace;
 class TreeVectorSpace;
 
+namespace AmanziMesh {
+class Mesh;
+}
+
+
 namespace Operators {
-
-
-// Nonmember contructors/factories
-Teuchos::RCP<SuperMapWrapper> createSuperMap(const CompositeVectorSpace& cv);
-Teuchos::RCP<SuperMapWrapper> createSuperMap(const TreeVectorSpace& cv);
-
-// Nonmember helper function
-std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >
-getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location);
-
 
 // wrapper class
 class SuperMapWrapper {
@@ -53,23 +54,37 @@ class SuperMapWrapper {
 
   // -- component map accessors
   Teuchos::RCP<const Epetra_BlockMap>
-  ComponentMap(int block_num, const std::string& compname, int dof_num);
+  ComponentMap(int block_num, const std::string& compname, int dof_num) const {
+    return smap_->ComponentMap(block_info_.at(std::make_tuple(block_num, compname, dof_num)).first);
+  }
 
   Teuchos::RCP<const Epetra_BlockMap>
-  ComponentGhostedMap(int block_num, const std::string& compname, int dof_num);
+  ComponentGhostedMap(int block_num, const std::string& compname, int dof_num) const {
+    return smap_->ComponentGhostedMap(block_info_.at(std::make_tuple(block_num, compname, dof_num)).first);
+  }
   
   // index accessors
   const std::vector<int>&
-  Indices(int block_num, const std::string& compname, int dof_num) const;
+  Indices(int block_num, const std::string& compname, int dof_num) const {
+    auto bi = block_info_.at(std::make_tuple(block_num, compname, dof_num));
+    return smap_->Indices(bi.first, bi.second);
+  }
+
   const std::vector<int>&
-  GhostIndices(int block_num, const std::string& compname, int dofnum) const;
+  GhostIndices(int block_num, const std::string& compname, int dof_num) const {
+    auto bi = block_info_.at(std::make_tuple(block_num, compname, dof_num));
+    return smap_->GhostIndices(bi.first, bi.second);
+  }
 
  protected:
   std::unique_ptr<SuperMap> smap_;
-
-
+  std::map< std::tuple<int,std::string,int>, std::pair<std::string,int> > block_info_;
 };
 
+
+// Nonmember contructors/factories
+Teuchos::RCP<SuperMapWrapper> createSuperMap(const CompositeVectorSpace& cv);
+Teuchos::RCP<SuperMapWrapper> createSuperMap(const TreeVectorSpace& cv);
 
 } // namespace
 } // namespace

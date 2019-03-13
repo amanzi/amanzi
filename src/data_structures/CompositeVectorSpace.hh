@@ -31,6 +31,11 @@ namespace Amanzi {
 
 class CompositeVector;
 
+// Nonmember helper function
+std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >
+getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location);
+
+
 class CompositeVectorSpace {
 
 public:

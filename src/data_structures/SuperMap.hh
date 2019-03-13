@@ -47,11 +47,25 @@ class SuperMap {
 
   SuperMap(const SuperMap& other);  
   virtual ~SuperMap() = default;
-  
+
+  // meta-data
+  bool HasComponent(const std::string& compname) const;
+
   // map accessors
   Teuchos::RCP<const Epetra_Map> Map() const { return map_; }
   Teuchos::RCP<const Epetra_Map> GhostedMap() const { return ghosted_map_; }
 
+  // -- component map accessors
+  Teuchos::RCP<const Epetra_BlockMap>
+  ComponentMap(const std::string& compname) const {
+    return comp_maps_.at(compname);
+  }
+
+  Teuchos::RCP<const Epetra_BlockMap>
+  ComponentGhostedMap(const std::string& compname) {
+    return comp_ghosted_maps_.at(compname);
+  }
+  
   // index accessors
   const std::vector<int>& Indices(const std::string& compname, int dofnum) const;
   const std::vector<int>& GhostIndices(const std::string& compname, int dofnum) const;
@@ -69,7 +83,6 @@ class SuperMap {
 #endif
   
   // meta-data accessors
-  bool HasComponent(const std::string& compname) const;
   int Offset(const std::string& compname) const { return offsets_.at(compname); }
   int GhostedOffset(const std::string& compname) const { return ghosted_offsets_.at(compname); }
   int NumOwnedElements(const std::string& compname) const { return counts_.at(compname); }
@@ -99,6 +112,10 @@ class SuperMap {
 
   Teuchos::RCP<Epetra_Map> map_;
   Teuchos::RCP<Epetra_Map> ghosted_map_;
+
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > comp_maps_;
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > comp_ghosted_maps_;
+
 };
 
 

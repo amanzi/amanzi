@@ -33,6 +33,8 @@
 #define SUPERMAP_TESTING 1
 #include "SuperMap.hh"
 
+#include "SuperMapWrapper.hh"
+
 /* *****************************************************************
  * manually constructed test
  * **************************************************************** */
@@ -73,8 +75,8 @@ TEST(SUPERMAP_MANUAL) {
   // make the supermap
   std::vector<std::string> names; names.push_back("map1"); names.push_back("map2");
   std::vector<int> dofnums(2,2);
-  std::vector<Teuchos::RCP<const Epetra_Map> > maps; maps.push_back(owned_map1); maps.push_back(owned_map2);
-  std::vector<Teuchos::RCP<const Epetra_Map> > gmaps; gmaps.push_back(ghosted_map1); gmaps.push_back(ghosted_map2);
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps; maps.push_back(owned_map1); maps.push_back(owned_map2);
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > gmaps; gmaps.push_back(ghosted_map1); gmaps.push_back(ghosted_map2);
   Operators::SuperMap map(comm, names, dofnums, maps, gmaps);
 
   // check the offsets
@@ -262,7 +264,7 @@ TEST(SUPERMAP_FROM_COMPOSITEVECTOR) {
   cv.SetMesh(mesh)->SetGhosted()->SetComponents(names, locs, dofs);
 
   // create a SuperMap from this space
-  Teuchos::RCP<SuperMap> map = createSuperMap(cv);
+  Teuchos::RCP<Operators::SuperMapWrapper> map = createSuperMap(cv);
 }
 
 
@@ -314,7 +316,7 @@ TEST(SUPERMAP_FROM_TREEVECTOR) {
   tv.PushBack(tv_ss2);
   
   // create a SuperMap from a singleton space
-  Teuchos::RCP<SuperMap> map_singleton = createSuperMap(*tv_ss1);
+  Teuchos::RCP<Operators::SuperMapWrapper> map_singleton = createSuperMap(*tv_ss1);
   // create a SuperMap from a tree space
-  Teuchos::RCP<SuperMap> map = createSuperMap(tv);
+  Teuchos::RCP<Operators::SuperMapWrapper> map = createSuperMap(tv);
 }

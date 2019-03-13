@@ -28,6 +28,13 @@
 
 namespace Amanzi {
 
+std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >
+getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
+  return std::make_pair(Teuchos::rcpFromRef(mesh.map(location, false)),
+                        Teuchos::rcpFromRef(mesh.map(location, true)));
+}
+
+
 // constructor
 CompositeVectorSpace::CompositeVectorSpace() :
   owned_(false), mesh_(Teuchos::null), ghosted_(false) {};
@@ -148,10 +155,9 @@ CompositeVectorSpace::AddComponents(const std::vector<std::string>& names,
   std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghostmaps;
 
   for (int i=0; i<locations.size(); ++i) {
-    Teuchos::RCP<const Epetra_BlockMap> master_mp(&mesh_->map(locations[i], false), false);
-    mastermaps[names[i]] = master_mp;
-    Teuchos::RCP<const Epetra_BlockMap> ghost_mp(&mesh_->map(locations[i], true), false);
-    ghostmaps[names[i]] = ghost_mp;
+    auto maps = getMaps(*mesh_, locations[i]);
+    mastermaps[names[i]] = maps.first;
+    ghostmaps[names[i]] = maps.second;
   }
        
   return AddComponents(names, locations, mastermaps, ghostmaps, num_dofs);
