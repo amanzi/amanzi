@@ -41,7 +41,8 @@
 * TBW 
 * **************************************************************** */
 template<class Analytic>
-void CurlCurl(double c_t, double tolerance, bool initial_guess) {
+void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
+              const std::string& disc_method = "mfd: default") {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -51,7 +52,8 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: Curl-curl operator, tol=" << tolerance << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: Curl-curl operator, tol=" << tolerance 
+                            << "  method=" << disc_method << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_electromagnetics.xml";
@@ -66,8 +68,11 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   meshfactory.set_preference(Preference({Framework::MSTK}));
 
   bool request_faces(true), request_edges(true);
-  // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3, request_faces, request_edges);
-  RCP<const Mesh> mesh = meshfactory.create("test/hex_split_faces5.exo", request_faces, request_edges);
+  RCP<const Mesh> mesh;
+  if (nx > 0) 
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx, request_faces, request_edges);
+  else
+    mesh = meshfactory.create("test/hex_split_faces5.exo", request_faces, request_edges);
 
   // create resistivity coefficient
   double time = 1.0;
@@ -118,6 +123,7 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
 
   // create electromagnetics operator
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("electromagnetics operator");
+  olist.set<std::string>("discretization primary", disc_method);
   Teuchos::RCP<PDE_Electromagnetics> op_curlcurl = Teuchos::rcp(new PDE_Electromagnetics(olist, mesh));
   op_curlcurl->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op_curlcurl->global_operator()->DomainMap();
@@ -213,7 +219,7 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
 
   if (MyPID == 0) {
     el2_err /= enorm;
-    printf("L2(e)=%10.7f  Inf(e)=%9.6f  itr=%3d  size=%d\n", el2_err, einf_err,
+    printf("L2(e)=%12.9f  Inf(e)=%9.6f  itr=%3d  size=%d\n", el2_err, einf_err,
             solver.num_itrs(), rhs.GlobalLength());
 
     CHECK(el2_err < tolerance);
@@ -222,13 +228,15 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
 
 
 TEST(CURL_CURL_LINEAR) {
-  CurlCurl<AnalyticElectromagnetics01>(1.0e-3, 1e-3, false);
+  CurlCurl<AnalyticElectromagnetics01>(1.0e-5, 0, 1e-5, false);
+  CurlCurl<AnalyticElectromagnetics01>(1.0e-5, 0, 1e-5, false, "mfd: generalized");
 }
 
 TEST(CURL_CURL_NONLINEAR) {
-  CurlCurl<AnalyticElectromagnetics02>(1.0e-3, 2e-1, false);
+  CurlCurl<AnalyticElectromagnetics02>(1.0e-5, 0, 2e-1, false);
 }
 
 TEST(CURL_CURL_TIME_DEPENDENT) {
-  CurlCurl<AnalyticElectromagnetics03>(1.0, 2e-3, true);
+  CurlCurl<AnalyticElectromagnetics03>(1.0, 0, 2e-3, true);
+  CurlCurl<AnalyticElectromagnetics03>(1.0, 0, 2e-3, true, "mfd: generalized");
 }

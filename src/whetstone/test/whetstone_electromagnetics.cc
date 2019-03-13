@@ -263,7 +263,7 @@ TEST(STIFFNESS_MATRIX_2D) {
     if (method == 0) {
       mfd.StiffnessMatrix(cell, T, A);
     } else if (method == 1) {
-      mfd.StiffnessMatrixExperimental(cell, T, A);
+      mfd.StiffnessMatrixGeneralized(cell, T, A);
     }
 
     printf("Stiffness matrix for cell %3d method=%d\n", cell, method);
@@ -302,8 +302,6 @@ TEST(STIFFNESS_MATRIX_2D) {
     }
     CHECK_CLOSE(4 * volume, vxx, 1e-10);
   }
-
-  
 }
 
 
@@ -353,7 +351,7 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
     if (method == 0) {
       mfd.StiffnessMatrix(cell, T, A);
     } else if (method == 1) {
-      mfd.StiffnessMatrixExperimental(cell, T, A);
+      mfd.StiffnessMatrixGeneralized(cell, T, A);
     }
 
     int m = std::min(nrows, max_row);

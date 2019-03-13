@@ -87,9 +87,10 @@ class Verification {
     op_->ApplyAssembled(x, r);
     r.Update(1.0, b, -1.0);
 
-    double tmp;
+    double tmp, xnorm;
     r.Dot(r, &tmp);
-    CHECK_CLOSE(0.0, tmp, tol * tol);
+    x.Dot(x, &xnorm);
+    CHECK_CLOSE(0.0, tmp, tol * tol * xnorm * xnorm);
   }
 
   void CheckResidual(const Vector x, double tol) {

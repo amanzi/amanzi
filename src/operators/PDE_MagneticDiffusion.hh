@@ -44,7 +44,7 @@ class PDE_MagneticDiffusion : public PDE_Electromagnetics {
     : PDE_Electromagnetics(plist, mesh)
   {
     operator_type_ = OPERATOR_MAGNETIC_DIFFUSION;
-    InitMagneticDiffusion_();
+    InitMagneticDiffusion_(plist);
   }
 
   // main virtual members
@@ -68,7 +68,7 @@ class PDE_MagneticDiffusion : public PDE_Electromagnetics {
   double CalculateDivergence(int c, const CompositeVector& B);
 
  private:
-  void InitMagneticDiffusion_();
+  void InitMagneticDiffusion_(Teuchos::ParameterList& plist);
 
  protected:
   std::vector<WhetStone::DenseMatrix> mass_op_;
