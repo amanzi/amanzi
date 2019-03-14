@@ -54,13 +54,13 @@ class SuperMapWrapper {
 
   // -- component map accessors
   Teuchos::RCP<const Epetra_BlockMap>
-  ComponentMap(int block_num, const std::string& compname, int dof_num) const {
-    return smap_->ComponentMap(block_info_.at(std::make_tuple(block_num, compname, dof_num)).first);
+  ComponentMap(int block_num, const std::string& compname) const {
+    return smap_->ComponentMap(block_info_.at(std::make_tuple(block_num, compname, 0)).first);
   }
 
   Teuchos::RCP<const Epetra_BlockMap>
-  ComponentGhostedMap(int block_num, const std::string& compname, int dof_num) const {
-    return smap_->ComponentGhostedMap(block_info_.at(std::make_tuple(block_num, compname, dof_num)).first);
+  ComponentGhostedMap(int block_num, const std::string& compname) const {
+    return smap_->ComponentGhostedMap(block_info_.at(std::make_tuple(block_num, compname, 0)).first);
   }
   
   // index accessors

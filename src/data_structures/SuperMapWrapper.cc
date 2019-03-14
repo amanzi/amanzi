@@ -69,8 +69,6 @@ SuperMapWrapper::SuperMapWrapper(const std::vector<CompositeVectorSpace>& cvss)
   int block_num = 0;
   for (auto& cvs : cvss) {
     for (auto compname : cvs) {
-      int dof_count = 0;
-
       // check if this component's map matches any previously accepted map
       auto this_map = cvs.Map(compname, false);
       int index = std::find_if(maps.begin(), maps.end(),
@@ -117,6 +115,7 @@ SuperMapWrapper::SuperMapWrapper(const std::vector<CompositeVectorSpace>& cvss)
         dofnums[index] += this_dofnum;
       }
     }
+    block_num++;
   }
 
   if (cvss.size() > 0) {

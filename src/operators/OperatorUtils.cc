@@ -247,8 +247,8 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schem
 {
   std::vector<std::string> compnames;
   std::vector<int> dofnums;
-  std::vector<Teuchos::RCP<const Epetra_Map> > maps;
-  std::vector<Teuchos::RCP<const Epetra_Map> > ghost_maps;
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps;
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > ghost_maps;
 
   if (schema & OPERATOR_SCHEMA_DOFS_FACE) {
     AMANZI_ASSERT(cvs.HasComponent("face"));
@@ -310,8 +310,8 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, Schema& s
 {
   std::vector<std::string> compnames;
   std::vector<int> dofnums;
-  std::vector<Teuchos::RCP<const Epetra_Map> > maps;
-  std::vector<Teuchos::RCP<const Epetra_Map> > ghost_maps;
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps;
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > ghost_maps;
 
   for (auto it = schema.begin(); it != schema.end(); ++it) {
     compnames.push_back(schema.KindToString(it->kind));
