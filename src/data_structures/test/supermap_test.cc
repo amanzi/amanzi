@@ -32,9 +32,9 @@
 #include "TreeVectorSpace.hh"
 
 #define SUPERMAP_TESTING 1
-#include "SuperMap.hh"
+#include "SuperMapLumped.hh"
 
-#include "SuperMapWrapper.hh"
+#include "SuperMap.hh"
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
@@ -95,7 +95,7 @@ TEST(SUPERMAP_MANUAL) {
   int MyPID = comm->MyPID();
   int NumProc = comm->NumProc();
 
-  if (MyPID == 0) std::cout << "Test: Manual test of SuperMap" << std::endl;
+  if (MyPID == 0) std::cout << "Test: Manual test of SuperMapLumped" << std::endl;
 
   // make a ghosted and local map 1
   std::vector<int> gids(3);
@@ -124,7 +124,7 @@ TEST(SUPERMAP_MANUAL) {
   std::vector<int> dofnums(2,2);
   std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps; maps.push_back(owned_map1); maps.push_back(owned_map2);
   std::vector<Teuchos::RCP<const Epetra_BlockMap> > gmaps; gmaps.push_back(ghosted_map1); gmaps.push_back(ghosted_map2);
-  Operators::SuperMap map(comm, names, dofnums, maps, gmaps);
+  Operators::SuperMapLumped map(comm, names, dofnums, maps, gmaps);
 
   // check the offsets
   CHECK(map.Offset("map1") == 0);
@@ -280,7 +280,7 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR) {
 
   auto comm = getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "Test: SuperMap from 1 CompositeVector with multiple components and multiple dofs" << std::endl;
+  if (MyPID == 0) std::cout << "Test: SuperMapLumped from 1 CompositeVector with multiple components and multiple dofs" << std::endl;
 
   auto mesh = getMesh(comm);
 
@@ -291,8 +291,8 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR) {
   std::vector<Entity_kind> locs; locs.push_back(CELL); locs.push_back(FACE);
   cv.SetMesh(mesh)->SetGhosted()->SetComponents(names, locs, dofs);
 
-  // create a SuperMap from this space
-  Teuchos::RCP<Operators::SuperMapWrapper> map = createSuperMap(cv);
+  // create a SuperMapLumped from this space
+  Teuchos::RCP<Operators::SuperMap> map = createSuperMap(cv);
 
   int ncells_owned = mesh->num_entities(CELL, Parallel_type::OWNED);
   int nfaces_owned = mesh->num_entities(FACE, Parallel_type::OWNED);
@@ -367,7 +367,7 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR_REPEATED_MAPS) {
 
   auto comm = getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "Test: SuperMap from 1 CompositeVector with multiple components which include repeated maps, should still interleave as if this were one map and two dofs" << std::endl;
+  if (MyPID == 0) std::cout << "Test: SuperMapLumped from 1 CompositeVector with multiple components which include repeated maps, should still interleave as if this were one map and two dofs" << std::endl;
 
   auto mesh = getMesh(comm);
 
@@ -378,8 +378,8 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR_REPEATED_MAPS) {
   std::vector<Entity_kind> locs; locs.push_back(CELL); locs.push_back(CELL);
   cv.SetMesh(mesh)->SetGhosted()->SetComponents(names, locs, dofs);
 
-  // create a SuperMap from this space
-  Teuchos::RCP<Operators::SuperMapWrapper> map = createSuperMap(cv);
+  // create a SuperMapLumped from this space
+  Teuchos::RCP<Operators::SuperMap> map = createSuperMap(cv);
 
   int ncells_owned = mesh->num_entities(CELL, Parallel_type::OWNED);
   int ncells_used = mesh->num_entities(CELL, Parallel_type::ALL);
@@ -430,8 +430,8 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR_REPEATED_MAPS) {
   std::vector<Entity_kind> locs2{CELL};
   cv2.SetMesh(mesh)->SetGhosted()->SetComponents(names2, locs2, dofs2);
 
-  // create a SuperMap from this space
-  Teuchos::RCP<Operators::SuperMapWrapper> map2 = createSuperMap(cv2);
+  // create a SuperMapLumped from this space
+  Teuchos::RCP<Operators::SuperMap> map2 = createSuperMap(cv2);
 
   CHECK(map->Map()->SameAs(*map2->Map()));
   CHECK(map->GhostedMap()->SameAs(*map2->GhostedMap()));
@@ -446,7 +446,7 @@ TEST(SUPERMAP_FROM_TWO_IDENTICAL_COMPOSITEVECTORS) {
 
   auto comm = getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "Test: SuperMap from 2 CompositeVectors with same map, single dof is same as 1 CompositeVector with two dofs" << std::endl;
+  if (MyPID == 0) std::cout << "Test: SuperMapLumped from 2 CompositeVectors with same map, single dof is same as 1 CompositeVector with two dofs" << std::endl;
 
   auto mesh = getMesh(comm);
 
@@ -456,13 +456,13 @@ TEST(SUPERMAP_FROM_TWO_IDENTICAL_COMPOSITEVECTORS) {
   CompositeVectorSpace cvB;
   cvB.SetMesh(mesh)->SetGhosted()->SetComponents({"cell"}, {CELL}, {1});
 
-  // create a SuperMap from this space
-  Teuchos::RCP<Operators::SuperMapWrapper> map = Teuchos::rcp(new SuperMapWrapper({cvA, cvB}));
+  // create a SuperMapLumped from this space
+  Teuchos::RCP<Operators::SuperMap> map = Teuchos::rcp(new SuperMap({cvA, cvB}));
 
   // now create another with one CV, 2 dofs
   CompositeVectorSpace cv2;
   cv2.SetMesh(mesh)->SetGhosted()->SetComponents({"cell"}, {CELL}, {2});
-  Teuchos::RCP<Operators::SuperMapWrapper> map2 = createSuperMap(cv2);
+  Teuchos::RCP<Operators::SuperMap> map2 = createSuperMap(cv2);
 
   // same map!
   CHECK(map->Map()->SameAs(*map2->Map()));
@@ -484,7 +484,7 @@ TEST(SUPERMAP_FROM_CELL_PLUS_FACE_IS_CELLFACE) {
 
   auto comm = getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "Test: SuperMap from 2 CompositeVectors with different maps, single dof is same as 1 CompositeVector with two components" << std::endl;
+  if (MyPID == 0) std::cout << "Test: SuperMapLumped from 2 CompositeVectors with different maps, single dof is same as 1 CompositeVector with two components" << std::endl;
 
   auto mesh = getMesh(comm);
 
@@ -496,9 +496,9 @@ TEST(SUPERMAP_FROM_CELL_PLUS_FACE_IS_CELLFACE) {
   CompositeVectorSpace cv2;
   cv2.SetMesh(mesh)->SetGhosted()->SetComponents( std::vector<std::string>{"cell","face"}, std::vector<Entity_kind>{CELL,FACE}, std::vector<int>{1,1} );
 
-  // create a SuperMap from this space
-  Teuchos::RCP<Operators::SuperMapWrapper> map = Teuchos::rcp(new SuperMapWrapper({cvA, cvB}));
-  Teuchos::RCP<Operators::SuperMapWrapper> map2 = Teuchos::rcp(new SuperMapWrapper({cv2}));
+  // create a SuperMapLumped from this space
+  Teuchos::RCP<Operators::SuperMap> map = Teuchos::rcp(new SuperMap({cvA, cvB}));
+  Teuchos::RCP<Operators::SuperMap> map2 = Teuchos::rcp(new SuperMap({cv2}));
 
   // same map!
   CHECK(map->Map()->SameAs(*map2->Map()));
@@ -520,7 +520,7 @@ TEST(SUPERMAP_FROM_SAME_NAME_DIFFERENT_MAP) {
 
   auto comm = getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "Test: SuperMap from 2 CompositeVectors with different maps but the same name, is same as 1 CompositeVector with two components" << std::endl;
+  if (MyPID == 0) std::cout << "Test: SuperMapLumped from 2 CompositeVectors with different maps but the same name, is same as 1 CompositeVector with two components" << std::endl;
 
   auto mesh = getMesh(comm);
 
@@ -532,9 +532,9 @@ TEST(SUPERMAP_FROM_SAME_NAME_DIFFERENT_MAP) {
   CompositeVectorSpace cv2;
   cv2.SetMesh(mesh)->SetGhosted()->SetComponents( std::vector<std::string>{"cell","face"}, std::vector<Entity_kind>{CELL,FACE}, std::vector<int>{1,1} );
 
-  // create a SuperMap from this space
-  Teuchos::RCP<Operators::SuperMapWrapper> map = Teuchos::rcp(new SuperMapWrapper({cvA, cvB}));
-  Teuchos::RCP<Operators::SuperMapWrapper> map2 = Teuchos::rcp(new SuperMapWrapper({cv2}));
+  // create a SuperMapLumped from this space
+  Teuchos::RCP<Operators::SuperMap> map = Teuchos::rcp(new SuperMap({cvA, cvB}));
+  Teuchos::RCP<Operators::SuperMap> map2 = Teuchos::rcp(new SuperMap({cv2}));
 
   // same map!
   CHECK(map->Map()->SameAs(*map2->Map()));
@@ -559,7 +559,7 @@ TEST(SUPERMAP_FROM_SAME_NAME_SAME_MAP_DIFFERENT_ELEMENTSIZE) {
 
   auto comm = getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "Test: SuperMap from 2 CompositeVectors with same elements but different element sizes in the same compname" << std::endl;
+  if (MyPID == 0) std::cout << "Test: SuperMapLumped from 2 CompositeVectors with same elements but different element sizes in the same compname" << std::endl;
 
   auto mesh = getMesh(comm);
   int ncells = mesh->num_entities(CELL, Parallel_type::OWNED);
@@ -589,8 +589,8 @@ TEST(SUPERMAP_FROM_SAME_NAME_SAME_MAP_DIFFERENT_ELEMENTSIZE) {
   CompositeVectorSpace cvB;
   cvB.SetMesh(mesh)->SetGhosted()->SetComponents({"cell"}, {CELL}, {{"cell",block_cell_map}}, {{"cell", block_cell_map_g}}, {1});
 
-  // create a SuperMap from this space
-  Teuchos::RCP<Operators::SuperMapWrapper> map = Teuchos::rcp(new SuperMapWrapper({cvA, cvB}));
+  // create a SuperMapLumped from this space
+  Teuchos::RCP<Operators::SuperMap> map = Teuchos::rcp(new SuperMap({cvA, cvB}));
 
   // not the same map!
   CHECK(map->Indices(0, "cell", 0).size() == ncells);
@@ -657,8 +657,8 @@ TEST(SUPERMAP_FROM_TREEVECTOR) {
   tv.PushBack(tv_ss1);
   tv.PushBack(tv_ss2);
   
-  // create a SuperMap from a singleton space
-  Teuchos::RCP<Operators::SuperMapWrapper> map_singleton = createSuperMap(*tv_ss1);
-  // create a SuperMap from a tree space
-  Teuchos::RCP<Operators::SuperMapWrapper> map = createSuperMap(tv);
+  // create a SuperMapLumped from a singleton space
+  Teuchos::RCP<Operators::SuperMap> map_singleton = createSuperMap(*tv_ss1);
+  // create a SuperMapLumped from a tree space
+  Teuchos::RCP<Operators::SuperMap> map = createSuperMap(tv);
 }

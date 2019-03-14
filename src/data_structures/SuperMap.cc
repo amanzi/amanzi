@@ -1,19 +1,28 @@
 /*
-  Data Structures
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon (ecoon@lanl.gov)
-
-  Takes non-contiguous data structure spaces (CompositeVector, TreeVector) 
-  and converts them into a single map.
 */
 
-#include "Epetra_IntVector.h"
+//! SuperMap class provides a convenient way of creating and using SuperMapLumped
 
+/*
+  Amanzi uses SuperMapLumped in a few different ways that make its natural interface
+  not that convenient.  SuperMapLumped also has a few limitations that simplify its
+  design and implementaiton a great deal.
+
+  This class is a Helper class in that it wraps a SuperMapLumped, providing a
+  related interface that is better designed for users.
+
+  It also enforces and mitigates the design limitations of SuperMapLumped itself.
+*/
+
+#include "UniqueHelpers.hh"
+#include "MeshDefs.hh"
+#include "Mesh.hh"
 #include "CompositeVectorSpace.hh"
 #include "TreeVectorSpace.hh"
 #include "TreeVector_Utils.hh"
@@ -22,224 +31,99 @@
 namespace Amanzi {
 namespace Operators {
 
-SuperMap::SuperMap(const Comm_ptr_type& comm,
-                   const std::vector<std::string>& compnames,
-                   const std::vector<int>& dofnums,
-                   const std::vector<Teuchos::RCP<const Epetra_BlockMap> >& maps,
-                   const std::vector<Teuchos::RCP<const Epetra_BlockMap> >& ghosted_maps) :
-    compnames_(compnames)
-{
-  AMANZI_ASSERT(compnames.size() == dofnums.size());
-  AMANZI_ASSERT(compnames.size() == maps.size());
-  AMANZI_ASSERT(compnames.size() == ghosted_maps.size());
 
-  for (int i=0; i!=compnames.size(); ++i) {
-    comp_maps_[compnames[i]] = maps[i];
-    comp_ghosted_maps_[compnames[i]] = ghosted_maps[i];
-    num_dofs_[compnames[i]] = dofnums[i];
-  }
-
-  CreateIndexing_();
-  CreateMap_(comm);
-}
-
-//
-// NOTE: After this is done, CreateIndices_() may be called.
-void
-SuperMap::CreateIndexing_()
-{
-  // fill the offsets
-  int offset = 0;
-  for (const auto& compname : compnames_) {
-    counts_[compname] = comp_maps_[compname]->NumMyPoints();
-    ghosted_counts_[compname] = comp_ghosted_maps_[compname]->NumMyPoints() - counts_[compname];
-    offsets_[compname] = offset;
-    offset += num_dofs_[compname]*counts_[compname];
-  }
-  n_local_ = offset;
-
-  // fill the ghosted offsets
-  for (const auto& compname : compnames_) {
-    ghosted_offsets_[compname] = offset;
-    offset += num_dofs_[compname]*ghosted_counts_[compname];
-  }
-  n_local_ghosted_ = offset;
+// Nonmember contructors/factories
+Teuchos::RCP<SuperMap> createSuperMap(const CompositeVectorSpace& cv) {
+  return Teuchos::rcp(new SuperMap({cv}));
 }
 
 
-// create the owned and ghosted SuperMaps
-//
-// NOTE: previous versions of this respected the GID ordering of the
-// incoming map.  There is no real reason to do this -- we're reordering
-// everything on purpose, so we can do whatever we want with the GIDs.  But
-// the previous version took advantage of the fact that we know, on process,
-// what our GID is, and therefore can set up ghost IDs for the SuperMap
-// without communication.  The BlockMap version doesn't seem to have a way
-// to get the Point location of a ghosted entity.  Since we seemingly can't
-// do this without communication, we might as well make it easier on
-// ourselves, by just making Epetra assign SuperMap's GIDs as it wants.
-void
-SuperMap::CreateMap_(const Comm_ptr_type& comm)
-{
-  // -- count the total owned points
-  int n_global = 0;
-  int n_global_ghosted = 0;
-  for (const auto& compname : compnames_) {
-    n_global += num_dofs_[compname] * comp_maps_[compname]->NumGlobalPoints();
-    n_global_ghosted += num_dofs_[compname] * comp_ghosted_maps_[compname]->NumGlobalPoints();
-  }
+Teuchos::RCP<SuperMap> createSuperMap(const TreeVectorSpace& tvs) {
+  if (tvs.Data() != Teuchos::null) {
+    // TVS with only a CVS inside
+    return createSuperMap(*tvs.Data());
+  } else {
+    // multiple children
+    // grab the leaf nodes
+    auto tvss = collectTreeVectorLeaves_const<TreeVectorSpace>(tvs);
 
-  // -- construct
-  map_ = Teuchos::rcp(new Epetra_Map(n_global, n_local_, 0, *comm));
+    std::vector<CompositeVectorSpace> cvss;
+    for (auto tvs : tvss) {
+      cvss.push_back(*tvs->Data());
+    }
+    return Teuchos::rcp(new SuperMap(cvss));
+  }
+}
+
+
+SuperMap::SuperMap(const std::vector<CompositeVectorSpace>& cvss)
+{
+  std::vector<std::string> names;
+  std::vector<int> dofnums;
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps;
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > ghost_maps;
+
+  // this groups maps by map equivalence, not component names.
   
-  // create the ghosted map via communication using the provided BlockMaps
-  //
-  // We need to know the ghost GIDs of the SuperMap, but the connections must
-  // be made to maintain the validity of the connection in the various
-  // component maps.  Therefore we use the component maps to scatter out their
-  // own GIDs in the supermap to the ghosted supermap.
-  std::vector<int> ghosted_gids(n_local_ghosted_, -1);
-  for (const auto& compname : compnames_) {
-    int n_dofs = num_dofs_[compname];
+  // loop over nodes, finding unique component names on unique meshes
+  int block_num = 0;
+  for (auto& cvs : cvss) {
+    for (auto compname : cvs) {
+      // check if this component's map matches any previously accepted map
+      auto this_map = cvs.Map(compname, false);
+      int index = std::find_if(maps.begin(), maps.end(),
+              [=](const Teuchos::RCP<const Epetra_BlockMap>& m)
+              { return this_map->SameBlockMapDataAs(*m); } ) - maps.begin();
+      if (index == names.size()) {
+        // new map with no previous matches, keep the map
+        maps.push_back(this_map);
+        ghost_maps.push_back(cvs.Map(compname, true));
 
-    const auto& comp_map = *comp_maps_[compname];
-    const auto& comp_ghosted_map = *comp_ghosted_maps_[compname];
+        // ensure this name is unique by appending the block_num
+        std::string compname_unique = compname+"-"+std::to_string(block_num);
+        names.push_back(compname_unique);
 
-    // Put the supermap GID into an IntVector on the (owned) component map
-    //
-    // this is a bit ugly, but it is guaranteed safe due to ordering of the
-    // construction.  A better way to do this would have CreateIndices_ make
-    // IntVectors directly.
-    //
-    // Also, newer versions of Epetra have Epetra_IntMultiVector, which would
-    // be useful here.
-    Epetra_Import importer(comp_ghosted_map, comp_map);
-    Epetra_IntVector owned_gids_c(comp_map);
-    Epetra_IntVector ghosted_gids_c(comp_ghosted_map);
+        // grab dof count as well
+        int this_dofnum = cvs.NumVectors(compname);
+        dofnums.push_back(this_dofnum);
 
-    for (int j=0; j!=n_dofs; ++j) {
-      const auto& owned_lids = CreateIndices_(compname, j, false);
-      for (int k=0; k!=owned_gids_c.MyLength(); ++k) {
-        owned_gids_c[k] = map_->GID(owned_lids[k]);
-      }
+        // map the block_num, compname, dof_num tuple to their corresponding
+        // values in the SuperMapLumped
+        for (int dnum=0; dnum!=this_dofnum; ++dnum) {
+          block_info_[std::make_tuple(block_num, compname, dnum)] =
+              std::make_pair(compname_unique, dnum);
+        }
 
-      // Scatter supermap GIDs to a ghosted component vector
-      ghosted_gids_c.Import(owned_gids_c, importer, Insert);
+      } else {
+        // previously found this map.
+        //
+        // If the master map is the same, the ghost map had better be the same
+        // too?  If this assert ever throws, it can be added to the above
+        // lambda, to ensure that both the owned map and the ghosted map are
+        // the same.
+        AMANZI_ASSERT(cvs.Map(compname, true)->SameBlockMapDataAs(*ghost_maps[index]));
 
-      // gids for the ghosted supermap
-      const auto& ghosted_inds = CreateIndices_(compname, j, true);
-      for (int k=0; k!=ghosted_gids_c.MyLength(); ++k) {
-        ghosted_gids[ghosted_inds[k]] = ghosted_gids_c[k];
+        // map the block_num, compname, dof_num tuple to their corresponding
+        // values in the SuperMapLumped
+        std::string compname_unique = names[index];
+        int this_dofnum = cvs.NumVectors(compname);
+        for (int dnum=0; dnum!=this_dofnum; ++dnum) {
+          block_info_[std::make_tuple(block_num, compname, dnum)] =
+              std::make_pair(compname_unique, dnum+dofnums[index]);
+        }
+
+        dofnums[index] += this_dofnum;
       }
     }
+    block_num++;
   }
 
-  // hopefully we found them all!
-  AMANZI_ASSERT(*std::min_element(ghosted_gids.begin(), ghosted_gids.end()) >= 0);
-
-  // -- construct
-  ghosted_map_ = Teuchos::rcp(new Epetra_Map(n_global_ghosted, n_local_ghosted_, ghosted_gids.data(), 0, *comm));
-}
-
-
-
-bool SuperMap::HasComponent(const std::string& key) const {
-  std::map<std::string,int>::const_iterator lb = offsets_.lower_bound(key);
-  if (lb != offsets_.end() && !(offsets_.key_comp()(key, lb->first))) {
-    return true;
-  } else {
-    return false;
+  if (cvss.size() > 0) {
+    smap_ = std::make_unique<SuperMapLumped>(cvss[0].Comm(), names, dofnums, maps, ghost_maps);
   }
 }
-  
-
-const std::vector<int>&
-SuperMap::Indices(const std::string& compname, int dofnum) const {
-  
-  if (indices_.count(compname)) {
-    if (indices_[compname].count(dofnum)) {
-      return indices_[compname][dofnum];
-    }
-  }
-  return CreateIndices_(compname, dofnum, false);
-}
 
 
-const std::vector<int>&
-SuperMap::GhostIndices(const std::string& compname, int dofnum) const {
-  if (ghosted_indices_.count(compname)) {
-    if (ghosted_indices_[compname].count(dofnum)) {
-      return ghosted_indices_[compname][dofnum];
-    }
-  }
-  return CreateIndices_(compname, dofnum, true);
-}
-
-
-std::pair<int, Teuchos::RCP<std::vector<int> > >
-SuperMap::BlockIndices() const {
-  auto block_indices = Teuchos::rcp(new std::vector<int>(Map()->NumMyElements()));
-  int block_id = 0;
-  for (const auto& comp : *this) {
-    int ndofs = NumDofs(comp);
-    for (int d=0; d!=ndofs; ++d) {
-      const auto& inds = Indices(comp, d);
-      for (int i=0; i!=inds.size(); ++i) (*block_indices)[inds[i]] = block_id;
-      block_id++;
-    }
-  }
-  return std::make_pair(block_id, block_indices);
-}
-
-
-const std::vector<int>&
-SuperMap::CreateIndices_(const std::string& compname, int dofnum, bool ghosted) const {
-  if (ghosted) {
-    if (ghosted_indices_.count(compname) == 0) {
-      ghosted_indices_[compname];
-    }
-
-    // create the vector
-    int nentities_owned = counts_.at(compname);
-    int nentities = nentities_owned + ghosted_counts_.at(compname);
-
-    std::vector<int> indices(nentities, -1);
-    int offset = offsets_.at(compname);
-    int num_dof = num_dofs_.at(compname);
-    for (int i=0; i!=nentities_owned; ++i) {
-      indices[i] = offset + dofnum + i*num_dof;
-    }
-
-    int ghosted_offset = ghosted_offsets_.at(compname);
-    for (int i=nentities_owned; i!=nentities; ++i) {
-      indices[i] = ghosted_offset + dofnum + (i-nentities_owned)*num_dof;
-    }
-
-    // move-assign, indices is no longer valid
-    ghosted_indices_[compname][dofnum] = std::move(indices);
-    return ghosted_indices_[compname][dofnum];
-
-  } else {
-    if (indices_.count(compname) == 0) {
-      indices_[compname];
-    }
-
-    // create the vector
-    int nentities = counts_.at(compname);
-
-    std::vector<int> indices(nentities, -1);
-    int offset = offsets_.at(compname);
-    int num_dof = num_dofs_.at(compname);
-    for (int i=0; i!=nentities; ++i) {
-      indices[i] = offset + dofnum + i*num_dof;
-    }
-
-    // move-assign, indices is no longer valid
-    indices_[compname][dofnum] = std::move(indices);
-
-    return indices_[compname][dofnum];
-  }
-}
 
 
 } // namespace Operators

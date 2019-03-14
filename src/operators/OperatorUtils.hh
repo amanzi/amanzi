@@ -28,26 +28,30 @@ class SuperMap;
 class Schema;
 
 // Nonmember CompositeVector to/from Super-vector
-// -- simple schema version
+// -- as a block in TreeVector
 int CopyCompositeVectorToSuperVector(const SuperMap& map, const CompositeVector& cv,
-                                     Epetra_Vector& sv, int dofnum = 0);
+        Epetra_Vector& sv, int block_num=0);
 int CopySuperVectorToCompositeVector(const SuperMap& map, const Epetra_Vector& sv,
-                                     CompositeVector& cv, int dofnum = 0);
+        CompositeVector& cv, int block_num=0);
 int AddSuperVectorToCompositeVector(const SuperMap& map, const Epetra_Vector& sv,
-                                    CompositeVector& cv, int dofnum = 0);
+        CompositeVector& cv, int block_num=0);
 
-// -- complex schema version
+
+// -- complex schema version (deprecated?)
 int CopyCompositeVectorToSuperVector(const SuperMap& map, const CompositeVector& cv,
-                                     Epetra_Vector& sv, const Schema& schema);
+        Epetra_Vector& sv, const Schema& schema, int block_num=0);
 int CopySuperVectorToCompositeVector(const SuperMap& map, const Epetra_Vector& sv,
-                                     CompositeVector& cv, const Schema& schema);
+        CompositeVector& cv, const Schema& schema, int block_num=0);
 
 
 // Nonmember TreeVector to/from Super-vector
 // -- simple schema version
-int CopyTreeVectorToSuperVector(const SuperMap& map, const TreeVector& cv, Epetra_Vector& sv);
-int CopySuperVectorToTreeVector(const SuperMap& map, const Epetra_Vector& sv, TreeVector& cv);
-int AddSuperVectorToTreeVector(const SuperMap& map, const Epetra_Vector& sv, TreeVector& cv);
+int CopyTreeVectorToSuperVector(const SuperMap& map,
+        const TreeVector& cv, Epetra_Vector& sv);
+int CopySuperVectorToTreeVector(const SuperMap& map,
+        const Epetra_Vector& sv, TreeVector& cv);
+int AddSuperVectorToTreeVector(const SuperMap& map,
+        const Epetra_Vector& sv, TreeVector& cv);
 
 
 // Supermap factory from CV and schema

@@ -13,11 +13,11 @@
 #define AMANZI_OPERATORS_SUPER_MAP_SURFACE_HH_
 
 
-#include "SuperMap.hh"
+#include "SuperMapLumped.hh"
 
 /*
 
-This is a class takes a SuperMap created on a subsurface mesh and allows it to
+This is a class takes a SuperMapLumped created on a subsurface mesh and allows it to
 be used by Operators defined on a surface mesh to assemble into the subsurface
 parent mesh's unknowns.
 
@@ -26,11 +26,11 @@ parent mesh's unknowns.
 namespace Amanzi {
 namespace Operators {
 
-class SuperMapSurface : public SuperMap {
+class SuperMapLumpedSurface : public SuperMapLumped {
   
  public:
   // Constructor
-  SuperMapSurface(const SuperMap& map,
+  SuperMapLumpedSurface(const SuperMapLumped& map,
                   const Teuchos::RCP<const AmanziMesh::Mesh>& surf_mesh);
 
  protected:

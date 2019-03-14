@@ -32,7 +32,7 @@
 #include "TreeVectorSpace.hh"
 
 #define SUPERMAP_TESTING 1
-#include "SuperMap.hh"
+#include "SuperMapLumped.hh"
 
 TEST(SUPERMAP_BLOCKMAP) {
   using namespace Amanzi;
@@ -43,7 +43,7 @@ TEST(SUPERMAP_BLOCKMAP) {
   int MyPID = comm->MyPID();
   int NumProc = comm->NumProc();
 
-  if (MyPID == 0) std::cout << "Test: SuperMap with BlockMap with variable element size" << std::endl;
+  if (MyPID == 0) std::cout << "Test: SuperMapLumped with BlockMap with variable element size" << std::endl;
 
   // make a ghosted and local map 1
   std::vector<int> gids(3), size(3);
@@ -72,7 +72,7 @@ TEST(SUPERMAP_BLOCKMAP) {
   auto dofnums = std::vector<int>{1};
   auto maps = std::vector<Teuchos::RCP<const Epetra_BlockMap> >{owned_map1};
   auto gmaps = std::vector<Teuchos::RCP<const Epetra_BlockMap> >{ghosted_map1};
-  Operators::SuperMap map(comm, names, dofnums, maps, gmaps);
+  Operators::SuperMapLumped map(comm, names, dofnums, maps, gmaps);
 
 }
 
@@ -90,7 +90,7 @@ TEST(SUPERMAP_BLOCK_MANUAL) {
   int MyPID = comm->MyPID();
   int NumProc = comm->NumProc();
 
-  if (MyPID == 0) std::cout << "Test: Manual test of SuperMap with BLOCK maps" << std::endl;
+  if (MyPID == 0) std::cout << "Test: Manual test of SuperMapLumped with BLOCK maps" << std::endl;
 
   // make a ghosted and local map 1
   std::vector<int> gids(3), size(3);
@@ -152,12 +152,12 @@ TEST(SUPERMAP_BLOCK_MANUAL) {
   gmaps.push_back(ghosted_map1);
   gmaps.push_back(ghosted_map2);
 
-  Operators::SuperMap map(comm, names, dofnums, maps, gmaps);
+  Operators::SuperMapLumped map(comm, names, dofnums, maps, gmaps);
 
   std::cout << "======= Two Block Map =======" << std::endl;
   maps[0]->Print(std::cout);
   maps[1]->Print(std::cout);
-  std::cout << "\n======= SuperMap =======" << std::endl;
+  std::cout << "\n======= SuperMapLumped =======" << std::endl;
   map.Map()->Print(std::cout);
   
   // check the offsets

@@ -207,7 +207,6 @@ private:
   std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghostmaps_;
   
   friend class CompositeVector;
-  friend class SuperMap;
 };
 
 } // namespace Amanzi

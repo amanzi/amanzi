@@ -30,7 +30,6 @@
 #include "Mesh_MSTK.hh"
 #include "TreeVector.hh"
 #include "SuperMap.hh"
-#include "SuperMapHelpers.hh"
 
 // Operators
 #include "OperatorDefs.hh"
@@ -71,7 +70,7 @@ struct Maps {
   Teuchos::RCP<Mesh> mesh;
   Teuchos::RCP<CompositeVectorSpace> cvs;
   Teuchos::RCP<TreeVectorSpace> tvs;
-  Teuchos::RCP<SuperMapWrapper> map;
+  Teuchos::RCP<SuperMap> map;
 };
 
 

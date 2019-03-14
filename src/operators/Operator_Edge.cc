@@ -126,8 +126,8 @@ void Operator_Edge::SymbolicAssembleMatrixOp(const Op_Cell_Edge& op,
   std::vector<int> lid_c(cell_max_edges);
 
   // ELEMENT: cell, DOFS: cell and edge
-  const std::vector<int>& edge_row_inds = map.GhostIndices("edge", my_block_row);
-  const std::vector<int>& edge_col_inds = map.GhostIndices("edge", my_block_col);
+  const std::vector<int>& edge_row_inds = map.GhostIndices(my_block_row, "edge", 0);
+  const std::vector<int>& edge_col_inds = map.GhostIndices(my_block_col, "edge", 0);
 
   int ierr(0);
   AmanziMesh::Entity_ID_List edges;
@@ -153,8 +153,8 @@ void Operator_Edge::SymbolicAssembleMatrixOp(const Op_Edge_Edge& op,
                                              const SuperMap& map, GraphFE& graph,
                                              int my_block_row, int my_block_col) const
 {
-  const std::vector<int>& edge_row_inds = map.GhostIndices("edge", my_block_row);
-  const std::vector<int>& edge_col_inds = map.GhostIndices("edge", my_block_col);
+  const std::vector<int>& edge_row_inds = map.GhostIndices(my_block_row, "edge", 0);
+  const std::vector<int>& edge_col_inds = map.GhostIndices(my_block_col, "edge", 0);
 
   int ierr(0);
   for (int e = 0; e != nedges_owned; ++e) {
@@ -181,8 +181,8 @@ void Operator_Edge::AssembleMatrixOp(const Op_Cell_Edge& op,
   std::vector<int> lid_c(cell_max_edges);
 
   // ELEMENT: cell, DOFS: edge and cell
-  const std::vector<int>& edge_row_inds = map.GhostIndices("edge", my_block_row);
-  const std::vector<int>& edge_col_inds = map.GhostIndices("edge", my_block_col);
+  const std::vector<int>& edge_row_inds = map.GhostIndices(my_block_row, "edge", 0);
+  const std::vector<int>& edge_col_inds = map.GhostIndices(my_block_col, "edge", 0);
 
   int ierr(0);
   AmanziMesh::Entity_ID_List edges;
@@ -211,8 +211,8 @@ void Operator_Edge::AssembleMatrixOp(const Op_Edge_Edge& op,
 {
   AMANZI_ASSERT(op.diag->NumVectors() == 1);
 
-  const std::vector<int>& edge_row_inds = map.GhostIndices("edge", my_block_row);
-  const std::vector<int>& edge_col_inds = map.GhostIndices("edge", my_block_col);
+  const std::vector<int>& edge_row_inds = map.GhostIndices(my_block_row, "edge", 0);
+  const std::vector<int>& edge_col_inds = map.GhostIndices(my_block_col, "edge", 0);
 
   int ierr(0);
   for (int e = 0; e != nedges_owned; ++e) {

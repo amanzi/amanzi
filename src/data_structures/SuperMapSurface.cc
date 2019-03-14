@@ -9,19 +9,19 @@
   Author: Ethan Coon (ecoon@lanl.gov)
 */
 
-#include "SuperMapSurface.hh"
+#include "SuperMapLumpedSurface.hh"
 
 namespace Amanzi {
 namespace Operators {
 
 // Constructor
-SuperMapSurface::SuperMapSurface(const SuperMap& map,
+SuperMapLumpedSurface::SuperMapLumpedSurface(const SuperMapLumped& map,
         const Teuchos::RCP<const AmanziMesh::Mesh>& surf_mesh):
     surf_mesh_(surf_mesh),
-    SuperMap(map) {}
+    SuperMapLumped(map) {}
 
 const std::vector<int>&
-SuperMapSurface::CreateIndices_(const std::string& surf_compname, int dofnum, bool ghosted) const
+SuperMapLumpedSurface::CreateIndices_(const std::string& surf_compname, int dofnum, bool ghosted) const
 {
   if (surf_compname == std::string("cell")) {
     std::string compname("face"); // surface cells correspond to subsurface faces
@@ -71,7 +71,7 @@ SuperMapSurface::CreateIndices_(const std::string& surf_compname, int dofnum, bo
     }
     
   } else {
-    Errors::Message msg("SuperMapSurface only provides CELL entities.");
+    Errors::Message msg("SuperMapLumpedSurface only provides CELL entities.");
     Exceptions::amanzi_throw(msg);
   }
 }
