@@ -157,6 +157,37 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   // -- clean up
   delete [] nodes;
 
+    // Get and write node coordinate info
+  // -- get coords
+  double *centroids = new double[ncells_local*3];
+  globaldims[0] = ncells_global;
+  globaldims[1] = 3;
+  localdims[0] = ncells_local;
+  localdims[1] = 3;
+
+  for (int i = 0; i < ncells_local; i++) {
+    xc = mesh_maps_->vis_mesh().cell_centroid(i);
+    // VisIt and ParaView require all mesh entities to be in 3D space
+    centroids[i*3+0] = xc[0];
+    centroids[i*3+1] = xc[1];
+    if (space_dim == 3) {
+      centroids[i*3+2] = xc[2];
+    } else {
+      centroids[i*3+2] = 0.0;
+    }
+  }
+
+  // -- write out coords
+  hdf5_path.str("");
+  hdf5_path << iteration << "/Mesh/Centroids";
+  // TODO(barker): add error handling: can't create/write
+  parallelIO_write_dataset(centroids, PIO_DOUBLE, 2, globaldims, localdims, mesh_file_,
+                           const_cast<char*>(hdf5_path.str().c_str()), &IOgroup_,
+                           NONUNIFORM_CONTIGUOUS_WRITE);
+
+  // -- clean up
+  delete [] centroids;
+
   // -- write out node map
   ids = new int[nmap.NumMyElements()];
   for (int i=0; i<nnodes_local; i++) {
