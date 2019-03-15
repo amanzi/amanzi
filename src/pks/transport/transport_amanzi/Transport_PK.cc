@@ -1742,21 +1742,14 @@ void Transport_PK_ATS::MixingSolutesWthSources(double told, double tnew)
         double consv_qty = tcc_prev_vec[imap][c]*vol_phi_ws_den + tcc_src_value;
 
 
-        // std::cout<<"cell "<<c<<" "<<vol_phi_ws_den<<" "<<add_water<<" qty "<<
-        //   tcc_prev_vec[imap][c]*vol_phi_ws_den << " "<<tcc_src_value<<" vol "<<
-        //   mesh_->cell_volume(c)<<"\n";
-
         if (vol_phi_ws_den + add_water > water_tolerance_){
           tcc_w_src_vec[imap][c] = consv_qty/(vol_phi_ws_den + add_water);
         }else{
-          if (vo_->getVerbLevel() > Teuchos::VERB_NONE) {
-            Teuchos::OSTab tab = vo_->getOSTab();
-            *vo_->os() << vo_->color("yellow") << "No liquid phase in the sources. No mixing occured." << vo_->reset() << std::endl;
-          }
+          // if (vo_->getVerbLevel() > Teuchos::VERB_HIGH) {
+          //   Teuchos::OSTab tab = vo_->getOSTab();
+          //   *vo_->os() << vo_->color("yellow") << "No liquid phase in the sources. No mixing occured." << vo_->reset() << std::endl;
+          // }
         }                       
-        // if (value != 0)
-        //   std::cout<<MyPID<<" "<<"Source name "<<srcs_[m]->name()<<" cell "<<c<<" dt "<<dtp<<" value "<<value<<" values[k] "<<values[k]<<
-        //     "  + "<<dtp * value<<" cntr "<<mesh_->cell_centroid(c)<<"\n";
       }
     }
   }
