@@ -32,10 +32,12 @@ int CopyCompositeVectorToSuperVector(const SuperMap& smap,
         const CompositeVector& cv, Epetra_Vector& sv, int block_num)
 {
   for (const auto& compname : cv) {
-    for (int dofnum=0; dofnum!=cv.NumVectors(compname); ++dofnum) {
-      const auto& inds = smap.Indices(block_num, compname, dofnum);
-      const auto& data = *cv.ViewComponent(compname, false);
-      for (int f=0; f!=data.MyLength(); ++f) sv[inds[f]] = data[dofnum][f];
+    if (smap.HasComponent(block_num, compname)) {
+      for (int dofnum=0; dofnum!=cv.NumVectors(compname); ++dofnum) {
+        const auto& inds = smap.Indices(block_num, compname, dofnum);
+        const auto& data = *cv.ViewComponent(compname, false);
+        for (int f=0; f!=data.MyLength(); ++f) sv[inds[f]] = data[dofnum][f];
+      }
     }
   }
   return 0;
@@ -49,10 +51,12 @@ int CopySuperVectorToCompositeVector(const SuperMap& smap,
         const Epetra_Vector& sv, CompositeVector& cv, int block_num)
 {
   for (const auto& compname : cv) {
-    for (int dofnum=0; dofnum!=cv.NumVectors(compname); ++dofnum) {
-      const auto& inds = smap.Indices(block_num, compname, dofnum);
-      auto& data = *cv.ViewComponent(compname, false);
-      for (int f=0; f!=data.MyLength(); ++f) data[dofnum][f] = sv[inds[f]];
+    if (smap.HasComponent(block_num, compname)) {
+      for (int dofnum=0; dofnum!=cv.NumVectors(compname); ++dofnum) {
+        const auto& inds = smap.Indices(block_num, compname, dofnum);
+        auto& data = *cv.ViewComponent(compname, false);
+        for (int f=0; f!=data.MyLength(); ++f) data[dofnum][f] = sv[inds[f]];
+      }
     }
   }
   return 0;
@@ -66,10 +70,12 @@ int AddSuperVectorToCompositeVector(const SuperMap& smap,
         const Epetra_Vector& sv, CompositeVector& cv, int block_num)
 {
   for (const auto& compname : cv) {
-    for (int dofnum=0; dofnum!=cv.NumVectors(compname); ++dofnum) {
-      const auto& inds = smap.Indices(block_num, compname, dofnum);
-      auto& data = *cv.ViewComponent(compname, false);
-      for (int f=0; f!=data.MyLength(); ++f) data[dofnum][f] += sv[inds[f]];
+    if (smap.HasComponent(block_num, compname)) { 
+      for (int dofnum=0; dofnum!=cv.NumVectors(compname); ++dofnum) {
+        const auto& inds = smap.Indices(block_num, compname, dofnum);
+        auto& data = *cv.ViewComponent(compname, false);
+        for (int f=0; f!=data.MyLength(); ++f) data[dofnum][f] += sv[inds[f]];
+      }
     }
   }
   return 0;

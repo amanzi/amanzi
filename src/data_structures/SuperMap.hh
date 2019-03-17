@@ -63,17 +63,35 @@ class SuperMap {
     return smap_->ComponentGhostedMap(block_info_.at(std::make_tuple(block_num, compname, 0)).first);
   }
   
+  // check if accessor is valid
+  bool
+  HasComponent(int block_num, const std::string& compname, int dof_num=0) const {
+    return block_info_.count(std::make_tuple(block_num, compname, dof_num)) != 0;
+  }
+
   // index accessors
   const std::vector<int>&
   Indices(int block_num, const std::string& compname, int dof_num) const {
-    auto bi = block_info_.at(std::make_tuple(block_num, compname, dof_num));
-    return smap_->Indices(bi.first, bi.second);
+    auto bi = block_info_.find(std::make_tuple(block_num, compname, dof_num));
+    if (bi == block_info_.end()) {
+      Errors::Message msg;
+      msg << "SuperMap does not have block component <" << block_num << ","
+          << compname << "," << dof_num;
+      Exceptions::amanzi_throw(msg);
+    }
+    return smap_->Indices(bi->second.first, bi->second.second);
   }
 
   const std::vector<int>&
   GhostIndices(int block_num, const std::string& compname, int dof_num) const {
-    auto bi = block_info_.at(std::make_tuple(block_num, compname, dof_num));
-    return smap_->GhostIndices(bi.first, bi.second);
+    auto bi = block_info_.find(std::make_tuple(block_num, compname, dof_num));
+    if (bi == block_info_.end()) {
+      Errors::Message msg;
+      msg << "SuperMap does not have block component <" << block_num << ","
+          << compname << "," << dof_num;
+      Exceptions::amanzi_throw(msg);
+    }
+    return smap_->GhostIndices(bi->second.first, bi->second.second);
   }
 
   // block indices.  This is an array of integers, length Map().MyLength(),
@@ -83,10 +101,11 @@ class SuperMap {
   std::pair<int, Teuchos::RCP<std::vector<int> > > BlockIndices() const {
     return smap_->BlockIndices();
   }
-  
+
  protected:
   std::unique_ptr<SuperMapLumped> smap_;
   std::map< std::tuple<int,std::string,int>, std::pair<std::string,int> > block_info_;
+
 };
 
 
