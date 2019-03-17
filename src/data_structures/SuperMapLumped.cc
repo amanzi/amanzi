@@ -135,7 +135,9 @@ SuperMapLumped::CreateMap_(const Comm_ptr_type& comm)
   }
 
   // hopefully we found them all!
-  AMANZI_ASSERT(*std::min_element(ghosted_gids.begin(), ghosted_gids.end()) >= 0);
+  if (n_local_ghosted_ > 0) {
+    AMANZI_ASSERT(*std::min_element(ghosted_gids.begin(), ghosted_gids.end()) >= 0);
+  }
 
   // -- construct
   ghosted_map_ = Teuchos::rcp(new Epetra_Map(n_global_ghosted, n_local_ghosted_, ghosted_gids.data(), 0, *comm));

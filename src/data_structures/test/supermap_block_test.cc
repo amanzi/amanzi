@@ -76,6 +76,79 @@ TEST(SUPERMAP_BLOCKMAP) {
 
 }
 
+TEST(SUPERMAP_BLOCKMAP_NULL_PROC) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;
+
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
+  int NumProc = comm->NumProc();
+
+  // only for parallel tests
+  if (NumProc > 1) {
+  
+    if (MyPID == 0) std::cout << "Test: SuperMapLumped with BlockMap with variable element size" << std::endl;
+
+    // make a ghosted and local map 1
+    std::vector<int> gids(3), size(3);
+    int n_cells;
+    if (MyPID != 1) {
+      for (int i=0; i!=3; ++i) {
+        if (MyPID == 0) {
+          gids[i] = 3*MyPID + i;
+          size[i] = i+1;
+        } else {
+          gids[i] = 3*(MyPID-1) + i;
+          size[i] = i+1;
+        }
+      }
+      n_cells = 3;
+    } else {
+      n_cells = 0;
+    }
+    
+    auto owned_map1 = Teuchos::rcp(new Epetra_BlockMap(3*(NumProc-1), n_cells, &gids[0], &size[0], 0, *comm));
+    if (MyPID != 1) {
+      CHECK_EQUAL(0, owned_map1->FirstPointInElement(0));
+      CHECK_EQUAL(1, owned_map1->FirstPointInElement(1));
+      CHECK_EQUAL(3, owned_map1->FirstPointInElement(2));
+    } else {
+      CHECK_EQUAL(-1, owned_map1->FirstPointInElement(0));
+      CHECK_EQUAL(-1, owned_map1->FirstPointInElement(1));
+      CHECK_EQUAL(-1, owned_map1->FirstPointInElement(2));
+    }
+
+    int n_cells_g = n_cells;
+    if (MyPID > 1) {
+      gids.push_back(3*(MyPID-1)-1);
+      size.push_back(3);
+      n_cells_g ++;
+    }
+    if ((MyPID < NumProc-1)) {
+      if (MyPID > 1) {
+        n_cells_g ++;
+        gids.push_back(3*MyPID);
+        size.push_back(1);
+      } else if (MyPID == 0) {
+        n_cells_g ++;
+        gids.push_back(3);
+        size.push_back(1);
+      }
+    }
+
+    auto ghosted_map1 = Teuchos::rcp(new Epetra_BlockMap(3*(NumProc-1) + 2*(NumProc - 2), n_cells_g, &gids[0], &size[0], 0, *comm));
+
+
+    auto names = std::vector<std::string>{"map1"};
+    auto dofnums = std::vector<int>{1};
+    auto maps = std::vector<Teuchos::RCP<const Epetra_BlockMap> >{owned_map1};
+    auto gmaps = std::vector<Teuchos::RCP<const Epetra_BlockMap> >{ghosted_map1};
+    Operators::SuperMapLumped map(comm, names, dofnums, maps, gmaps);
+  }
+
+}
+
 
   
 /* *****************************************************************
