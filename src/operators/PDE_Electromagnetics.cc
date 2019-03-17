@@ -66,7 +66,10 @@ void PDE_Electromagnetics::UpdateMatrices(
   
   for (int c = 0; c < ncells_owned; c++) {
     if (K_.get()) Kc = (*K_)[c];
-    mfd.StiffnessMatrix(c, Kc, Acell);
+    if (mfd_primary_ == WhetStone::ELECTROMAGNETICS_GENERALIZED)
+      mfd.StiffnessMatrixGeneralized(c, Kc, Acell);
+    else
+      mfd.StiffnessMatrix(c, Kc, Acell);
     local_op_->matrices[c] = Acell;
   }
 }
@@ -236,10 +239,10 @@ void PDE_Electromagnetics::Init_(Teuchos::ParameterList& plist)
   K_symmetric_ = (plist.get<std::string>("diffusion tensor", "symmetric") == "symmetric");
 
   // Primary discretization methods
-  if (primary == "mfd: optimized for sparsity") {
-    mfd_primary_ = WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY;
-  } else if (primary == "mfd: default") {
-    mfd_primary_ = WhetStone::DIFFUSION_POLYHEDRA_SCALED;
+  if (primary == "mfd: default") {
+    mfd_primary_ = WhetStone::ELECTROMAGNETICS_DEFAULT;
+  } else if (primary == "mfd: generalized") {
+    mfd_primary_ = WhetStone::ELECTROMAGNETICS_GENERALIZED;
   } else {
     Errors::Message msg;
     msg << "Electromagnetics: primary discretization method \"" << primary << "\" is not supported.";

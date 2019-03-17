@@ -140,7 +140,7 @@ using namespace Amanzi;
   // use cycle driver to create and initialize state
   ObservationData obs_data;    
   CycleDriver cycle_driver(glist, S, comm, obs_data);
-  S = cycle_driver.Go();
+  cycle_driver.Go();
 
   // verify velocity at all points
   // -- overwrite flow & pressure
