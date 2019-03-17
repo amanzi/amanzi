@@ -130,13 +130,13 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
   auto comm = Amanzi::getCommSelf();
 #endif
 
-  MeshFactory meshmeshfactory(comm);
-  meshmeshfactory.set_preference(Preference({Framework::MSTK}));
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
 
   bool request_faces(true), request_edges(true);
 
-  // RCP<Mesh> mesh = meshmeshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, true, true); 
-  RCP<Mesh> mesh = meshmeshfactory.create(mesh_file, request_faces, request_edges); 
+  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, true, true); 
+  RCP<Mesh> mesh = meshfactory.create(mesh_file, request_faces, request_edges); 
  
   Teuchos::ParameterList plist;
   MFD3D_Electromagnetics mfd(plist, mesh);
@@ -263,7 +263,7 @@ TEST(STIFFNESS_MATRIX_2D) {
     if (method == 0) {
       mfd.StiffnessMatrix(cell, T, A);
     } else if (method == 1) {
-      mfd.StiffnessMatrixExperimental(cell, T, A);
+      mfd.StiffnessMatrixGeneralized(cell, T, A);
     }
 
     printf("Stiffness matrix for cell %3d method=%d\n", cell, method);
@@ -302,8 +302,6 @@ TEST(STIFFNESS_MATRIX_2D) {
     }
     CHECK_CLOSE(4 * volume, vxx, 1e-10);
   }
-
-  
 }
 
 
@@ -322,13 +320,13 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
   auto comm = Amanzi::getCommSelf();
 #endif
 
-  MeshFactory meshmeshfactory(comm);
-  meshmeshfactory.set_preference(Preference({Framework::MSTK}));
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
 
   bool request_faces(true), request_edges(true);
 
-  // RCP<Mesh> mesh = meshmeshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, true, true); 
-  RCP<Mesh> mesh = meshmeshfactory.create(mesh_file, request_faces, request_edges); 
+  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, true, true); 
+  RCP<Mesh> mesh = meshfactory.create(mesh_file, request_faces, request_edges); 
  
   Teuchos::ParameterList plist;
   MFD3D_Electromagnetics mfd(plist, mesh);
@@ -353,7 +351,7 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
     if (method == 0) {
       mfd.StiffnessMatrix(cell, T, A);
     } else if (method == 1) {
-      mfd.StiffnessMatrixExperimental(cell, T, A);
+      mfd.StiffnessMatrixGeneralized(cell, T, A);
     }
 
     int m = std::min(nrows, max_row);

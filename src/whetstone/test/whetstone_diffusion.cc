@@ -35,9 +35,9 @@ TEST(DARCY_MASS_2D) {
   std::cout << "Test: Mass matrix for Darcy in 2D" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  MeshFactory meshmeshfactory(comm);
-  meshmeshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshmeshfactory.create(0.0, 0.0, 0.5, 1.0, 1, 1); 
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.5, 1.0, 1, 1); 
  
   MFD3D_Diffusion mfd(mesh);
   DeRham_Face drc(mfd);
@@ -120,9 +120,9 @@ TEST(DARCY_MASS_3D) {
   pref.clear();
   pref.push_back(Framework::SIMPLE);
 
-  MeshFactory meshmeshfactory(comm);
-  meshmeshfactory.set_preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshmeshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(pref);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
  
   MFD3D_Diffusion mfd(mesh);
   DeRham_Face drc(mfd);
@@ -192,11 +192,11 @@ TEST(DARCY_MASS_3D_GENERALIZED_POLYHEDRON) {
   std::cout << "\n\nTest: Mass matrix for generalized polyhedra" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
-  MeshFactory meshmeshfactory(comm);
-  meshmeshfactory.set_preference(Preference({Framework::MSTK}));
-  // Teuchos::RCP<Mesh> mesh = meshmeshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
-  Teuchos::RCP<Mesh> mesh = meshmeshfactory.create("test/hex_random.exo"); 
-  // Teuchos::RCP<Mesh> mesh = meshmeshfactory.create("test/random3D_05.exo"); 
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/hex_random.exo"); 
+  // Teuchos::RCP<Mesh> mesh = meshfactory.create("test/random3D_05.exo"); 
  
   Teuchos::ParameterList plist;
   MFD3D_Generalized_Diffusion mfd(plist, mesh);
@@ -523,10 +523,10 @@ TEST(DARCY_STIFFNESS_2D_NODE) {
   auto comm = Amanzi::getCommSelf();
 #endif
 
-  MeshFactory meshmeshfactory(comm);
-  meshmeshfactory.set_preference(Preference({Framework::MSTK}));
-  // RCP<Mesh> mesh = meshmeshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  RCP<Mesh> mesh = meshmeshfactory.create("test/one_pentagon.exo"); 
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
+  RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo"); 
  
   MFD3D_Diffusion mfd(mesh);
 
@@ -597,10 +597,10 @@ TEST(DARCY_STIFFNESS_2D_EDGE) {
   auto comm = Amanzi::getCommSelf();
 #endif
 
-  MeshFactory meshmeshfactory(comm);
-  meshmeshfactory.set_preference(Preference({Framework::MSTK}));
-  // RCP<Mesh> mesh = meshmeshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  RCP<Mesh> mesh = meshmeshfactory.create("test/one_pentagon.exo", true, true); 
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
+  RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", true, true); 
  
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
@@ -667,11 +667,11 @@ TEST(DARCY_STIFFNESS_3D) {
   auto comm = Amanzi::getCommSelf();
 #endif
 
-  MeshFactory meshmeshfactory(comm);
-  meshmeshfactory.set_preference(Preference({Framework::MSTK}));
-  // RCP<Mesh> mesh = meshmeshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
-  // RCP<Mesh> mesh = meshmeshfactory.create("test/one_trapezoid.exo"); 
-  RCP<Mesh> mesh = meshmeshfactory.create("test/dodecahedron.exo"); 
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
+  // RCP<Mesh> mesh = meshfactory.create("test/one_trapezoid.exo"); 
+  RCP<Mesh> mesh = meshfactory.create("test/dodecahedron.exo"); 
  
   MFD3D_Diffusion mfd(mesh);
 
@@ -734,9 +734,9 @@ TEST(RECOVER_GRADIENT_MIXED) {
   auto comm = Amanzi::getCommSelf();
 #endif
 
-  MeshFactory meshmeshfactory(comm);
-  meshmeshfactory.set_preference(Preference({Framework::MSTK}));
-  RCP<Mesh> mesh = meshmeshfactory.create("test/one_trapezoid.exo"); 
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  RCP<Mesh> mesh = meshfactory.create("test/one_trapezoid.exo"); 
  
   MFD3D_Diffusion mfd(mesh);
 
@@ -785,9 +785,9 @@ TEST(RECOVER_GRADIENT_NODAL) {
   auto comm = Amanzi::getCommSelf();
 #endif
 
-  MeshFactory meshmeshfactory(comm);
-  meshmeshfactory.set_preference(Preference({Framework::MSTK}));
-  RCP<Mesh> mesh = meshmeshfactory.create("test/one_trapezoid.exo"); 
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  RCP<Mesh> mesh = meshfactory.create("test/one_trapezoid.exo"); 
  
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1)

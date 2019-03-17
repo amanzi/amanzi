@@ -312,12 +312,11 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
 
   bool request_faces(true), request_edges(true);
   RCP<const Mesh> mesh;
-  if (name == "structured") {
+  if (name == "structured")
     mesh = meshfactory.create(Xa, Ya, Za, Xb, Yb, Zb, nx, ny, nz, request_faces, request_edges);
-  } else {
+  else
     mesh = meshfactory.create(name, request_faces, request_edges);
     // mesh = meshfactory.create("test/hex_split_faces5.exo", request_faces, request_edges);
-  }
 
   // create resistivity coefficient
   double told(0.0), tnew(dt);
@@ -575,10 +574,6 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
 }
 
 
-// TEST(MAGNETIC_DIFFUSION2D_TMP) {
-//   MagneticDiffusion3D<AnalyticElectromagnetics04>(0.1, 0.5, false, 30,30,50, -4.0,-4.0,-10.0, 4.0,4.0,10.0, "structured");
-// }
-
 TEST(MAGNETIC_DIFFUSION2D_RELAX) {
   MagneticDiffusion2D<AnalyticElectromagnetics04>(0.7, 5.9, 8,18, -4.0,-10.0, 4.0,10.0, "structured");
 }
@@ -595,6 +590,5 @@ TEST(MAGNETIC_DIFFUSION3D_RELAX) {
 TEST(MAGNETIC_DIFFUSION3D_CONVERGENCE) {
   // MagneticDiffusion3D<AnalyticElectromagnetics05>(0.01, 0.1, true, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
   MagneticDiffusion3D<AnalyticElectromagnetics05>(0.01, 0.1, true, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/kershaw08.exo");
-  // MagneticDiffusion3D<AnalyticElectromagnetics05>(0.01 / 2, 0.1, true, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/random3D_20.exo");
 }
 

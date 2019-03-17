@@ -62,15 +62,20 @@ class MFD3D_Electromagnetics : public MFD3D,
   int MassMatrixDiagonal(int c, const Tensor& T, DenseMatrix& M);
 
   int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A, DenseMatrix& M, DenseMatrix& C);
-  int StiffnessMatrixExperimental(int c, const Tensor& T, DenseMatrix& A);
+  int StiffnessMatrixGeneralized(int c, const Tensor& T, DenseMatrix& A);
+
+  // curl matrix
+  void CurlMatrix(int c, DenseMatrix& C);
 
   // boundary and surface methods
   int L2consistencyBoundary(int f, const Tensor& K, DenseMatrix& R, DenseMatrix& Mf);
   int MassMatrixBoundary(int f, const Tensor& K, DenseMatrix& M);
 
  private:
-  int H1consistency2DExperimental_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
-  int H1consistency3DExperimental_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
+  int H1consistency2D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
+  int H1consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
+
+  void AddGradientToProjector_(int c, DenseMatrix& N);
 
  private:
   static RegisteredFactory<MFD3D_Electromagnetics> factory_;

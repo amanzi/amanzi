@@ -128,8 +128,6 @@ using namespace Amanzi;
 
   meshfactory.set_preference(AmanziMesh::Preference({AmanziMesh::Framework::MSTK}));
   auto mesh = meshfactory.create("test/mpc_walkabout_tet5.exo");
-  // auto mesh = meshfactory.create("test/mpc_walkabout_aaa.par");
-  // auto mesh = meshfactory.create("test/mpc_walkabout_bbb.par");
 
   // use cycle driver to create and initialize state
   ObservationData obs_data;    
