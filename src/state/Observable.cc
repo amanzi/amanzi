@@ -31,9 +31,11 @@ double ObservableMin(double a, double b, double vol) { return std::min(a,b); }
 double ObservableMax(double a, double b, double vol) { return std::max(a,b); }
 
 
-Observable::Observable(Teuchos::ParameterList& plist, Epetra_MpiComm *comm) :
+Observable::Observable(Teuchos::ParameterList& plist) :
     IOEvent(plist),
-    count_(0) {
+    count_(0),
+    write_(false)
+{
   // process the spec
   name_ = plist.name();
   variable_ = plist.get<std::string>("variable");
@@ -82,30 +84,24 @@ Observable::Observable(Teuchos::ParameterList& plist, Epetra_MpiComm *comm) :
 
   // write mode
   interval_ = plist.get<int>("write interval", 0);
-  write_ = interval_ > 0;
-
-  if (write_) {
-    filenamebase_ = plist.get<std::string>("observation output filename");
-
-    // open file only on process 0
-    if (!comm->MyPID()) {
-      std::string safename(name_);
-      std::replace(safename.begin(), safename.end(), ' ', '_');
-      std::replace(safename.begin(), safename.end(), ':', '_');
-      std::stringstream filename;
-      filename << filenamebase_ << "_" << safename;
-      AMANZI_ASSERT(boost::filesystem::portable_file_name(filenamebase_));
-      out_ = Teuchos::rcp(new std::ofstream(filenamebase_.c_str()));
-    }
-  }
+  filenamebase_ = plist.get<std::string>("observation output filename");
 }
 
 void Observable::Update(const State& S,
                         Amanzi::ObservationData::DataQuadruple& data) {
-  if (count_ == 0) WriteHeader_();
-
-  ++count_;
   Update_(S, data);
+
+  // open the file if I am the writing process and it isn't already open
+  if (write_ && !out_.get()) {
+    std::string safename(name_);
+    std::replace(safename.begin(), safename.end(), ' ', '_');
+    std::replace(safename.begin(), safename.end(), ':', '_');
+    std::stringstream filename;
+    filename << filenamebase_ << "_" << safename;
+    AMANZI_ASSERT(boost::filesystem::portable_file_name(filenamebase_));
+    out_ = Teuchos::rcp(new std::ofstream(filenamebase_.c_str()));
+    WriteHeader_();
+  }
 
   if (out_.get()) {
     if (data.is_valid) {
@@ -116,6 +112,7 @@ void Observable::Update(const State& S,
 
     if (count_ % interval_ == 0) out_->flush();
   }
+  ++count_;
 }
 
 void Observable::Flush() {
@@ -143,15 +140,24 @@ void Observable::Update_(const State& S,
   Teuchos::RCP<const Field> field = S.GetField(variable_);
 
   if (field->type() == CONSTANT_SCALAR) {
+    // only write on MPI_COMM_WORLD rank 0
+    auto comm = Amanzi::getDefaultComm();
+    write_ = comm->MyPID() == 0;
+
     // scalars, just return the value
     data.value = *field->GetScalarData();
     data.is_valid = true;
 
+    
   } else if (field->type() == COMPOSITE_VECTOR_FIELD) {
     // vector field
     Teuchos::RCP<const CompositeVector> vec = field->GetFieldData();
     AMANZI_ASSERT(vec->HasComponent(location_));
 
+    // only write on field's comm's rank 0
+    write_ = vec->Mesh()->get_comm()->MyPID() == 0;
+
+    // get the region
     AmanziMesh::Entity_kind entity = vec->Location(location_);
     AmanziMesh::Entity_ID_List ids;
     vec->Mesh()->get_set_entities(region_, entity, AmanziMesh::Parallel_type::OWNED, &ids);
@@ -247,6 +253,7 @@ void Observable::Update_(const State& S,
       data.is_valid = false;
     }
   } else {
+    write_ = false;
     data.value = 0.;
     data.is_valid = false;
   }

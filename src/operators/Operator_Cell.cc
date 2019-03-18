@@ -108,8 +108,8 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
                                              const SuperMap& map, GraphFE& graph,
                                              int my_block_row, int my_block_col) const
 {
-  const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
-  const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
+  const std::vector<int>& cell_row_inds = map.GhostIndices(my_block_row, "cell", 0);
+  const std::vector<int>& cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);
 
   int ierr(0);
   for (int c = 0; c != ncells_owned; ++c) {
@@ -132,8 +132,8 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
   // ELEMENT: face, DOF: cell
   int lid_r[2];
   int lid_c[2];
-  const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
-  const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
+  const std::vector<int>& cell_row_inds = map.GhostIndices(my_block_row, "cell", 0);
+  const std::vector<int>& cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);
 
   int ierr(0);
   AmanziMesh::Entity_ID_List cells;
@@ -162,8 +162,8 @@ void Operator_Cell::AssembleMatrixOp(const Op_Cell_Cell& op,
 {
   AMANZI_ASSERT(op.diag->NumVectors() == 1);
 
-  const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
-  const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
+  const std::vector<int>& cell_row_inds = map.GhostIndices(my_block_row, "cell", 0);
+  const std::vector<int>& cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);
 
   int ierr(0);
   for (int c = 0; c != ncells_owned; ++c) {
@@ -185,8 +185,8 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
   // ELEMENT: face, DOF: cell
   int lid_r[2];
   int lid_c[2];
-  const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
-  const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
+  const std::vector<int>& cell_row_inds = map.GhostIndices(my_block_row, "cell", 0);
+  const std::vector<int>& cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);
 
   int ierr(0);
   AmanziMesh::Entity_ID_List cells;

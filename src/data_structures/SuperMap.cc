@@ -1,18 +1,28 @@
 /*
-  Data Structures
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon (ecoon@lanl.gov)
-
-  Takes non-contiguous data structure spaces (CompositeVector, TreeVector) 
-  and converts them into a single map.
 */
 
+//! SuperMap class provides a convenient way of creating and using SuperMapLumped
 
+/*
+  Amanzi uses SuperMapLumped in a few different ways that make its natural interface
+  not that convenient.  SuperMapLumped also has a few limitations that simplify its
+  design and implementaiton a great deal.
+
+  This class is a Helper class in that it wraps a SuperMapLumped, providing a
+  related interface that is better designed for users.
+
+  It also enforces and mitigates the design limitations of SuperMapLumped itself.
+*/
+
+#include "UniqueHelpers.hh"
+#include "MeshDefs.hh"
+#include "Mesh.hh"
 #include "CompositeVectorSpace.hh"
 #include "TreeVectorSpace.hh"
 #include "TreeVector_Utils.hh"
@@ -21,267 +31,100 @@
 namespace Amanzi {
 namespace Operators {
 
-SuperMap::SuperMap(const Comm_ptr_type& comm,
-                   const std::vector<std::string>& compnames,
-                   const std::vector<int>& dofnums,
-                   const std::vector<Teuchos::RCP<const Epetra_Map> >& maps,
-                   const std::vector<Teuchos::RCP<const Epetra_Map> >& ghosted_maps) :
-    compnames_(compnames)
-{
-  AMANZI_ASSERT(compnames.size() == dofnums.size());
-  AMANZI_ASSERT(compnames.size() == maps.size());
-  AMANZI_ASSERT(compnames.size() == ghosted_maps.size());
-
-  int offset = 0;
-
-  // fill the offsets
-  for (int i=0; i!=compnames.size(); ++i) {
-    std::string compname = compnames[i];
-    num_dofs_[compname] = dofnums[i];
-    counts_[compname] = maps[i]->NumMyElements();
-    ghosted_counts_[compname] = ghosted_maps[i]->NumMyElements() - counts_[compname];
-    offsets_[compname] = offset;
-
-    offset += dofnums[i]*counts_[compname];
-  }
-  int n_local = offset;
-
-  // fill the ghosted offsets
-  for (int i=0; i!=compnames.size(); ++i) {
-    std::string compname = compnames[i];
-    ghosted_offsets_[compname] = offset;
-    offset += dofnums[i]*ghosted_counts_[compname];
-  }
-  int n_local_ghosted = offset;
-
-  // populate the map GIDs
-  int global_offset = 0;
-  int n(0);
-  std::vector<int> gids(offset, -1);
-  for (int i=0; i!=compnames.size(); ++i) {
-    for (int j=0; j!=counts_[compnames[i]]; ++j) {
-      int base = global_offset + ghosted_maps[i]->GID(j)*dofnums[i];
-      for (int dof=0; dof!=dofnums[i]; ++dof) gids[n++] = base+dof;
-    }
-    global_offset += maps[i]->NumGlobalElements() * dofnums[i];
-  }
-  int n_global = global_offset;
-
-  int n_global_ghosted = 0;
-  global_offset = 0;
-  for (int i=0; i!=compnames.size(); ++i) {
-    for (int j=counts_[compnames[i]]; j!=(counts_[compnames[i]]+ghosted_counts_[compnames[i]]); ++j) {
-      int base = global_offset + ghosted_maps[i]->GID(j)*dofnums[i];
-      for (int dof=0; dof!=dofnums[i]; ++dof) gids[n++] = base+dof;
-    }
-    global_offset += maps[i]->NumGlobalElements() * dofnums[i];
-    n_global_ghosted += ghosted_maps[i]->NumGlobalElements() * dofnums[i];
-  }
-  
-  // create the maps
-  map_ = Teuchos::rcp(new Epetra_Map(n_global, n_local, &gids[0], 0, *comm)); 
-  ghosted_map_ = Teuchos::rcp(new Epetra_Map(n_global_ghosted, n_local_ghosted, &gids[0], 0, *comm));
-}
-
-
-// Copy constructor specifically does not copy indices and ghosted_indices.
-// These will be lazily recreated if needed.
-SuperMap::SuperMap(const SuperMap& other) :
-    compnames_(other.compnames_),
-    offsets_(other.offsets_),
-    num_dofs_(other.num_dofs_),
-    counts_(other.counts_),
-    ghosted_offsets_(other.ghosted_offsets_),
-    ghosted_counts_(other.ghosted_counts_),
-    map_(other.map_),
-    ghosted_map_(other.ghosted_map_) {};
-
-
-bool SuperMap::HasComponent(const std::string& key) const {
-  std::map<std::string,int>::const_iterator lb = offsets_.lower_bound(key);
-  if (lb != offsets_.end() && !(offsets_.key_comp()(key, lb->first))) {
-    return true;
-  } else {
-    return false;
-  }
-}
-  
-
-const std::vector<int>&
-SuperMap::Indices(const std::string& compname, int dofnum) const {
-  
-  if (indices_.count(compname)) {
-    if (indices_[compname].count(dofnum)) {
-      return indices_[compname][dofnum];
-    }
-  }
-  return CreateIndices_(compname, dofnum, false);
-}
-
-
-const std::vector<int>&
-SuperMap::GhostIndices(const std::string& compname, int dofnum) const {
-  if (ghosted_indices_.count(compname)) {
-    if (ghosted_indices_[compname].count(dofnum)) {
-      return ghosted_indices_[compname][dofnum];
-    }
-  }
-  return CreateIndices_(compname, dofnum, true);
-}
-
-
-std::pair<int, Teuchos::RCP<std::vector<int> > >
-SuperMap::BlockIndices() const {
-  auto block_indices = Teuchos::rcp(new std::vector<int>(Map()->NumMyElements()));
-  int block_id = 0;
-  for (const auto& comp : *this) {
-    int ndofs = NumDofs(comp);
-    for (int d=0; d!=ndofs; ++d) {
-      const auto& inds = Indices(comp, d);
-      for (int i=0; i!=inds.size(); ++i) (*block_indices)[inds[i]] = block_id;
-      block_id++;
-    }
-  }
-  return std::make_pair(block_id, block_indices);
-}
-
-
-const std::vector<int>&
-SuperMap::CreateIndices_(const std::string& compname, int dofnum, bool ghosted) const {
-  if (ghosted) {
-    if (ghosted_indices_.count(compname) == 0) {
-      ghosted_indices_[compname];
-    }
-
-    // create the vector
-    int nentities_owned = counts_.at(compname);
-    int nentities = nentities_owned + ghosted_counts_.at(compname);
-
-    std::vector<int> indices(nentities, -1);
-    int offset = offsets_.at(compname);
-    int num_dof = num_dofs_.at(compname);
-    for (int i=0; i!=nentities_owned; ++i) {
-      indices[i] = offset + dofnum + i*num_dof;
-    }
-
-    int ghosted_offset = ghosted_offsets_.at(compname);
-    for (int i=nentities_owned; i!=nentities; ++i) {
-      indices[i] = ghosted_offset + dofnum + (i-nentities_owned)*num_dof;
-    }
-
-    // assign
-    ghosted_indices_[compname][dofnum] = indices;
-    return ghosted_indices_[compname][dofnum];
-
-  } else {
-    if (indices_.count(compname) == 0) {
-      indices_[compname];
-    }
-
-    // create the vector
-    int nentities = counts_.at(compname);
-
-    std::vector<int> indices(nentities, -1);
-    int offset = offsets_.at(compname);
-    int num_dof = num_dofs_.at(compname);
-    for (int i=0; i!=nentities; ++i) {
-      indices[i] = offset + dofnum + i*num_dof;
-    }
-
-    // assign
-    indices_[compname][dofnum] = indices;
-
-    return indices_[compname][dofnum];
-  }
-}
-
-
-std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >
-getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
-  switch(location) {
-    case AmanziMesh::CELL:
-      return std::make_pair(Teuchos::rcpFromRef(mesh.cell_map(false)),
-                            Teuchos::rcpFromRef(mesh.cell_map(true)));
-
-    case AmanziMesh::FACE:
-      return std::make_pair(Teuchos::rcpFromRef(mesh.face_map(false)),
-                            Teuchos::rcpFromRef(mesh.face_map(true)));
-
-    case AmanziMesh::EDGE:
-      return std::make_pair(Teuchos::rcpFromRef(mesh.edge_map(false)),
-                            Teuchos::rcpFromRef(mesh.edge_map(true)));
-
-    case AmanziMesh::NODE:
-      return std::make_pair(Teuchos::rcpFromRef(mesh.node_map(false)),
-                            Teuchos::rcpFromRef(mesh.node_map(true)));
-
-    case AmanziMesh::BOUNDARY_FACE:
-      return std::make_pair(Teuchos::rcpFromRef(mesh.exterior_face_map(false)),
-                            Teuchos::rcpFromRef(mesh.exterior_face_map(true)));
-    default:
-      AMANZI_ASSERT(false);
-      return std::make_pair(Teuchos::null, Teuchos::null);
-  }
-}
-
 
 // Nonmember contructors/factories
 Teuchos::RCP<SuperMap> createSuperMap(const CompositeVectorSpace& cv) {
-  std::vector<std::string> names;
-  std::vector<int> dofnums;
-  std::vector<Teuchos::RCP<const Epetra_Map> > maps;
-  std::vector<Teuchos::RCP<const Epetra_Map> > ghost_maps;
-
-  for (CompositeVectorSpace::name_iterator it=cv.begin();
-       it!=cv.end(); ++it) {
-    names.push_back(*it);
-    dofnums.push_back(cv.NumVectors(*it));
-
-    auto meshmaps = getMaps(*cv.Mesh(), cv.Location(*it));
-    maps.push_back(meshmaps.first);
-    ghost_maps.push_back(meshmaps.second);
-  }
-
-  return Teuchos::rcp(new SuperMap(cv.Comm(), names, dofnums, maps, ghost_maps));
+  return Teuchos::rcp(new SuperMap({cv}));
 }
 
 
-Teuchos::RCP<SuperMap> createSuperMap(const TreeVectorSpace& tv) {
-  std::vector<std::string> names;
-  std::vector<int> dofnums;
-  std::vector<Teuchos::RCP<const Epetra_Map> > maps;
-  std::vector<Teuchos::RCP<const Epetra_Map> > ghost_maps;
-
-  if (tv.Data() != Teuchos::null) {
-    // TV with only a CV inside
-    return createSuperMap(*tv.Data());
+Teuchos::RCP<SuperMap> createSuperMap(const TreeVectorSpace& tvs) {
+  if (tvs.Data() != Teuchos::null) {
+    // TVS with only a CVS inside
+    return createSuperMap(*tvs.Data());
   } else {
     // multiple children
     // grab the leaf nodes
-    std::vector<Teuchos::RCP<const TreeVectorSpace> > tvs =
-        collectTreeVectorLeaves_const<TreeVectorSpace>(tv);
+    auto tvss = collectTreeVectorLeaves_const<TreeVectorSpace>(tvs);
 
-    // loop over nodes, finding unique component names on unique meshes
-    for (std::vector<Teuchos::RCP<const TreeVectorSpace> >::const_iterator it=tvs.begin();
-         it!=tvs.end(); ++it) {
-      for (CompositeVectorSpace::name_iterator compname=(*it)->Data()->begin();
-           compname!=(*it)->Data()->end(); ++compname) {
-        int index = std::find(names.begin(), names.end(), *compname) - names.begin();
-        if (index == names.size()) {
-          names.push_back(*compname);
-          dofnums.push_back(1);
-
-          auto meshmaps = getMaps(*(*it)->Data()->Mesh(), (*it)->Data()->Location(*compname));
-          maps.push_back(meshmaps.first);
-          ghost_maps.push_back(meshmaps.second);
-        } else {
-          dofnums[index]++;
-        }
-      }
+    std::vector<CompositeVectorSpace> cvss;
+    for (auto tvs : tvss) {
+      cvss.push_back(*tvs->Data());
     }
-    return Teuchos::rcp(new SuperMap(tvs[0]->Data()->Comm(), names, dofnums, maps, ghost_maps));
+    return Teuchos::rcp(new SuperMap(cvss));
   }
 }
+
+
+SuperMap::SuperMap(const std::vector<CompositeVectorSpace>& cvss)
+{
+  std::vector<std::string> names;
+  std::vector<int> dofnums;
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps;
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > ghost_maps;
+
+  // this groups maps by map equivalence, not component names.
+  
+  // loop over nodes, finding unique component names on unique meshes
+  int block_num = 0;
+  for (auto& cvs : cvss) {
+    for (auto compname : cvs) {
+      // check if this component's map matches any previously accepted map
+      auto this_map = cvs.Map(compname, false);
+      int index = std::find_if(maps.begin(), maps.end(),
+              [=](const Teuchos::RCP<const Epetra_BlockMap>& m)
+              { return this_map->SameBlockMapDataAs(*m); } ) - maps.begin();
+      if (index == names.size()) {
+        // new map with no previous matches, keep the map
+        maps.push_back(this_map);
+        ghost_maps.push_back(cvs.Map(compname, true));
+
+        // ensure this name is unique by appending the block_num
+        std::string compname_unique = compname+"-"+std::to_string(block_num);
+        names.push_back(compname_unique);
+
+        // grab dof count as well
+        int this_dofnum = cvs.NumVectors(compname);
+        dofnums.push_back(this_dofnum);
+
+        // map the block_num, compname, dof_num tuple to their corresponding
+        // values in the SuperMapLumped
+        for (int dnum=0; dnum!=this_dofnum; ++dnum) {
+          block_info_[std::make_tuple(block_num, compname, dnum)] =
+              std::make_pair(compname_unique, dnum);
+        }
+
+      } else {
+        // previously found this map.
+        //
+        // If the master map is the same, the ghost map had better be the same
+        // too?  If this assert ever throws, it can be added to the above
+        // lambda, to ensure that both the owned map and the ghosted map are
+        // the same.
+        AMANZI_ASSERT(cvs.Map(compname, true)->SameBlockMapDataAs(*ghost_maps[index]));
+
+        // map the block_num, compname, dof_num tuple to their corresponding
+        // values in the SuperMapLumped
+        std::string compname_unique = names[index];
+        int this_dofnum = cvs.NumVectors(compname);
+        for (int dnum=0; dnum!=this_dofnum; ++dnum) {
+          block_info_[std::make_tuple(block_num, compname, dnum)] =
+              std::make_pair(compname_unique, dnum+dofnums[index]);
+        }
+
+        dofnums[index] += this_dofnum;
+      }
+    }
+    block_num++;
+  }
+
+  if (cvss.size() > 0) {
+    smap_ = std::make_unique<SuperMapLumped>(cvss[0].Comm(), names, dofnums, maps, ghost_maps);
+  }
+}
+
+
+
 
 } // namespace Operators
 } // namespace Amanzi

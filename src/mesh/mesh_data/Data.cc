@@ -1,6 +1,13 @@
-#include "Data.hh"
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-#include "Utils.hh"
+  Authors: William Perkins
+*/
+
+#include "Data.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -34,11 +41,9 @@ Data* Data::build_from (Parameters* params,
 
 Data::~Data ()
 {
-
-  Utils::reclaim (element_blocks_);
-  Utils::reclaim (side_sets_);
-  Utils::reclaim (node_sets_);
-
+  reclaim(element_blocks_);
+  reclaim(side_sets_);
+  reclaim(node_sets_);
 }
 
 void Data::to_stream (std::ostream& stream, const bool& verbose) const

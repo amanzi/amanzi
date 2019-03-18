@@ -44,7 +44,7 @@ class MeshPartition {
   // access
   int operator[](AmanziMesh::Entity_ID id) const { return (*map_)[id]; }
   bool initialized() const { return initialized_; }
-  const std::vector<std::string>& regions() const { return regions_; } // return by copy
+  const std::vector<std::string>& regions() const { return regions_; }
 
  protected:
   AmanziMesh::Entity_kind kind_;

@@ -3,7 +3,7 @@
 #include "math.h"
 #include "UnitTest++.h"
 #include "../Mesh_simple.hh"
-#include <Epetra_Comm.h>
+
 #include <AmanziComm.hh>
 #include "Epetra_SerialComm.h"
 #include "GenerationSpec.hh"

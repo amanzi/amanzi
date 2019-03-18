@@ -12,6 +12,8 @@
   Collection of Observations on an unstructured mesh.
 */
 
+#include <map>
+
 #include "UnstructuredObservations.hh"
 
 #include "dbc.hh"
@@ -19,22 +21,19 @@
 #include "exceptions.hh"
 #include "State.hh"
 
-#include <map>
-
 namespace Amanzi {
 
 UnstructuredObservations::UnstructuredObservations(
     Teuchos::ParameterList& plist,
-    const Teuchos::RCP<ObservationData>& observation_data,
-    Epetra_MpiComm* comm) :
-    observation_data_(observation_data) {
-
+    const Teuchos::RCP<ObservationData>& observation_data)
+    : observation_data_(observation_data)
+{
   // interpret paramerter list
   // loop over the sublists and create an observation for each
   for (auto it = plist.begin(); it != plist.end(); it++) {
     if (plist.isSublist(plist.name(it))) {
       Teuchos::ParameterList sublist = plist.sublist(plist.name(it));
-      Teuchos::RCP<Observable> obs = Teuchos::rcp(new Observable(sublist, comm));
+      Teuchos::RCP<Observable> obs = Teuchos::rcp(new Observable(sublist));
 
       observations_.insert(std::make_pair(sublist.name(), obs));
     }
