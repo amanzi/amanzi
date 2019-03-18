@@ -29,7 +29,7 @@ void PK_PhysicalBDF_Default::Setup(const Teuchos::Ptr<State>& S) {
   // boundary conditions
   bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
   
-  // convergence criteria
+  // convergence criteria is based on a conserved quantity
   if (conserved_key_.empty()) {
     conserved_key_ = Keys::readKey(*plist_, domain_, "conserved quantity");
   }
@@ -37,6 +37,7 @@ void PK_PhysicalBDF_Default::Setup(const Teuchos::Ptr<State>& S) {
       ->AddComponent("cell",AmanziMesh::CELL,true);
   S->RequireFieldEvaluator(conserved_key_);
 
+  // cell volume used throughout
   if (cell_vol_key_.empty()) {
     cell_vol_key_ = Keys::readKey(*plist_, domain_, "cell volume", "cell_volume");
   }

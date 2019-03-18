@@ -12,7 +12,6 @@ from matplotlib import pyplot as plt
 import matplotlib.cm
 import parse_ats
 import itertools
-
 import colors
 
 def get_filename_base(base, suffix):
