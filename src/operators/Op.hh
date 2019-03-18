@@ -126,11 +126,11 @@ class Op {
 
   virtual void SymbolicAssembleMatrixOp(const Operator* assembler,
           const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col, bool multi_domain) const = 0;
+          int my_block_row, int my_block_col) const = 0;
 
   virtual void AssembleMatrixOp(const Operator* assembler,
           const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col, bool multi_domain) const = 0;
+          int my_block_row, int my_block_col) const = 0;
 
   // Mutators of local matrices.
   // -- rescale local matrices in the container using a CV

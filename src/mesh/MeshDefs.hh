@@ -12,8 +12,8 @@
  Various definitions needed by Mesh class.
 */
 
-#ifndef _MeshDefs_hh_
-#define _MeshDefs_hh_
+#ifndef AMANZI_MESH_DEFS_HH_
+#define AMANZI_MESH_DEFS_HH_
 
 #include <vector>
 #include <string>
@@ -49,8 +49,7 @@ enum Entity_kind
   FACE,
   CELL,
   BOUNDARY_FACE,
-  UNDEFINED
-
+  UNKNOWN
 };
 
 // Check if Entity_kind is valid

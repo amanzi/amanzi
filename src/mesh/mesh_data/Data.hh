@@ -1,5 +1,15 @@
-#ifndef _DATA_HH_
-#define _DATA_HH_
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: William Perkins
+*/
+
+
+#ifndef AMANZI_MESH_DATA_HH_
+#define AMANZI_MESH_DATA_HH_
 
 #include <iostream>
 #include <memory>
@@ -15,8 +25,23 @@ namespace Amanzi {
 namespace AmanziMesh {
 namespace Data {
 
+
+//
+// This is bad memory management and should be refactored. --etc
+//
+template <typename P>
+void reclaim(std::vector<P*>& v)
+{
+  for (typename std::vector<P*>::iterator it = v.begin(); it != v.end(); ++it)
+  delete *it;
+}
+
+
 class Data {
  private:
+
+  // Mixing raw pointers and unique_ptr?  Really?  Why?
+  // fixme --etc
   std::unique_ptr<Parameters> params_;
   std::unique_ptr<Coordinates<double> > coords_;
   std::vector<Element_block*> element_blocks_;

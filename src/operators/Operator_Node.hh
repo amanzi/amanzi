@@ -46,20 +46,20 @@ class Operator_Node : public Operator {
   // visit methods for symbolic assemble
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_Node& op,
           const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col, bool multi_domain) const override;
+          int my_block_row, int my_block_col) const override;
 
   virtual void SymbolicAssembleMatrixOp(const Op_Node_Node& op,
           const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col, bool multi_domain) const override;
+          int my_block_row, int my_block_col) const override;
   
   // visit methods for assemble
   virtual void AssembleMatrixOp(const Op_Cell_Node& op,
           const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col, bool multi_domain) const override;
+          int my_block_row, int my_block_col) const override;
 
   virtual void AssembleMatrixOp(const Op_Node_Node& op,
           const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col, bool multi_domain) const override;
+          int my_block_row, int my_block_col) const override;
 
  protected:
   int cell_max_nodes;

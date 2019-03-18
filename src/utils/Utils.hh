@@ -4,14 +4,8 @@
 #include <vector>
 #include <ostream>
 
+namespace Amanzi {
 namespace Utils {
-
-template <typename P>
-void reclaim(std::vector<P*>& v)
-{
-  for (typename std::vector<P*>::iterator it = v.begin(); it != v.end(); ++it)
-  delete *it;
-}
 
 template <typename M>
 std::ostream& dump_map(const M& map, std::ostream& stream)
@@ -34,5 +28,5 @@ std::ostream& dump_vector_as_map(const V& data, std::ostream& stream)
 }
 
 }  // namespace Utils
-
+}
 #endif

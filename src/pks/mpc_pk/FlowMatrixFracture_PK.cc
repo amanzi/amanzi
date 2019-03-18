@@ -79,7 +79,7 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
     S->RequireField("darcy_flux", "flow")->SetMesh(mesh_domain_)->SetGhosted(true) 
-      ->SetComponent(name, mmap, gmap, 1);
+      ->SetComponent(name, AmanziMesh::FACE, mmap, gmap, 1);
   }
 
   // Require additional fields and evaluators
@@ -141,9 +141,8 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   auto cvs_matrix = Teuchos::rcp(new CompositeVectorSpace());
   auto cvs_fracture = Teuchos::rcp(new CompositeVectorSpace());
 
-  std::string compname("face");
   cvs_matrix->SetMesh(mesh_matrix)->SetGhosted(true)
-            ->AddComponent(compname, Teuchos::rcpFromRef(mmap), Teuchos::rcpFromRef(gmap), 1);
+            ->AddComponent("face", AmanziMesh::FACE, Teuchos::rcpFromRef(mmap), Teuchos::rcpFromRef(gmap), 1);
 
   cvs_fracture->SetMesh(mesh_matrix)->SetGhosted(true)
               ->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -203,8 +202,6 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   op_tree_->SetOperatorBlock(0, 1, op_coupling01->global_operator());
   op_tree_->SetOperatorBlock(1, 0, op_coupling10->global_operator());
-
-  op_tree_->set_multi_domain(true);
 
   op_tree_->SymbolicAssembleMatrix();
   op_tree_->AssembleMatrix();

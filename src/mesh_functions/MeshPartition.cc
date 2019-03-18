@@ -37,53 +37,35 @@ void MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                const int default_value) 
 {
   default_value_ = default_value;
-  Teuchos::Ptr<const Epetra_BlockMap> mmap, mmap_ghost;
 
-  // Create the data
-  switch(kind_) {
-    case AmanziMesh::CELL:
-      mmap = Teuchos::ptr(&mesh->cell_map(false));
-      mmap_ghost = Teuchos::ptr(&mesh->cell_map(true));
-      break;
-    case AmanziMesh::FACE:
-      mmap = Teuchos::ptr(&mesh->face_map(false));
-      mmap_ghost = Teuchos::ptr(&mesh->face_map(true));
-      break;
-    case AmanziMesh::NODE:
-      mmap = Teuchos::ptr(&mesh->node_map(false));
-      mmap_ghost = Teuchos::ptr(&mesh->node_map(true));
-      break;
-    default:
-      Errors::Message msg("Invalid mesh Entity_kind in MeshPartition");
-      Exceptions::amanzi_throw(msg);
-  }
+  const Epetra_BlockMap mmap(mesh->map(kind_, false));
+  const Epetra_BlockMap mmap_ghost(mesh->map(kind_, true));
 
-  map_ = Teuchos::rcp(new Epetra_IntVector(*mmap_ghost, false));
-
-  // Initialize the data
+  // Create and initialize the data
+  map_ = Teuchos::rcp(new Epetra_IntVector(mmap_ghost, false));
   map_->PutValue(default_value);
 
   for (int lcv = 0; lcv != regions_.size(); ++lcv) {
     AmanziMesh::Entity_ID_List block;
     mesh->get_set_entities(regions_[lcv], kind_, AmanziMesh::Parallel_type::OWNED, &block);
 
-    for (AmanziMesh::Entity_ID_List::iterator id = block.begin(); id != block.end(); ++id) {
+    for (auto id : block) {
       // Check regions are non-overlapping
-      if ((*map_)[*id] >= 0) {
+      if ((*map_)[id] >= 0) {
         Errors::Message msg("MeshPartition regions are overlapping");
         Exceptions::amanzi_throw(msg);
       }
-      (*map_)[*id] = lcv;
+      (*map_)[id] = lcv;
     }
   }
 
 #ifdef HAVE_MPI
   // Scatter to ghost cells
-  Epetra_Import importer(*mmap_ghost, *mmap);
+  Epetra_Import importer(mmap_ghost, mmap);
 
   int* vdata;
   map_->ExtractView(&vdata);
-  Epetra_IntVector vv(View, *mmap, vdata);
+  Epetra_IntVector vv(View, mmap, vdata);
 
   map_->Import(vv, importer, Insert);
 #endif
@@ -102,30 +84,12 @@ void MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
 {
   kind_ = kind;
   default_value_ = default_value;
-  Teuchos::Ptr<const Epetra_BlockMap> mmap, mmap_ghost;
 
-  // Create the data
-  switch(kind_) {
-    case AmanziMesh::CELL:
-      mmap = Teuchos::ptr(&mesh->cell_map(false));
-      mmap_ghost = Teuchos::ptr(&mesh->cell_map(true));
-      break;
-    case AmanziMesh::FACE:
-      mmap = Teuchos::ptr(&mesh->face_map(false));
-      mmap_ghost = Teuchos::ptr(&mesh->face_map(true));
-      break;
-    case AmanziMesh::NODE:
-      mmap = Teuchos::ptr(&mesh->node_map(false));
-      mmap_ghost = Teuchos::ptr(&mesh->node_map(true));
-      break;
-    default:
-      Errors::Message msg("Invalid mesh Entity_kind in MeshPartition");
-      Exceptions::amanzi_throw(msg);
-  }
-
-  map_ = Teuchos::rcp(new Epetra_IntVector(*mmap_ghost, false));
+  const Epetra_BlockMap mmap(mesh->map(kind_, false));
+  const Epetra_BlockMap mmap_ghost(mesh->map(kind_, true));
 
   // Initialize the data
+  map_ = Teuchos::rcp(new Epetra_IntVector(mmap_ghost, false));
   map_->PutValue(default_value);
 
   for (int lcv = 0; lcv != regions.size(); ++lcv) {
@@ -134,23 +98,23 @@ void MeshPartition::Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
       AmanziMesh::Entity_ID_List block;
       mesh->get_set_entities(regs[r], kind_, AmanziMesh::Parallel_type::OWNED, &block);
 
-      for (AmanziMesh::Entity_ID_List::iterator id = block.begin(); id != block.end(); ++id) {
-        if ((*map_)[*id] >= 0) {
+      for (auto id : block) {
+        if ((*map_)[id] >= 0) {
           Errors::Message msg("MeshPartition regions are overlapping");
           Exceptions::amanzi_throw(msg);
         }
-        (*map_)[*id] = lcv;
+        (*map_)[id] = lcv;
       }
     }
   }
 
 #ifdef HAVE_MPI
   // Scatter to ghost cells
-  Epetra_Import importer(*mmap_ghost, *mmap);
+  Epetra_Import importer(mmap_ghost, mmap);
 
   int* vdata;
   map_->ExtractView(&vdata);
-  Epetra_IntVector vv(View, *mmap, vdata);
+  Epetra_IntVector vv(View, mmap, vdata);
 
   map_->Import(vv, importer, Insert);
 #endif

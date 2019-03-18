@@ -228,8 +228,8 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
 
 
 TEST(CURL_CURL_LINEAR) {
-  CurlCurl<AnalyticElectromagnetics01>(1.0e-5, 0, 1e-5, false);
-  CurlCurl<AnalyticElectromagnetics01>(1.0e-5, 0, 1e-5, false, "mfd: generalized");
+  CurlCurl<AnalyticElectromagnetics01>(1.0e-5, 0, 1e-4, false);
+  CurlCurl<AnalyticElectromagnetics01>(1.0e-5, 0, 1e-4, false, "mfd: generalized");
 }
 
 TEST(CURL_CURL_NONLINEAR) {

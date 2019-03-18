@@ -43,7 +43,7 @@ void PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
     for (auto it = global_schema_row_.begin(); it != global_schema_row_.end(); ++it) {
       std::string name(local_schema_row_.KindToString(it->kind));
       const auto& maps = getMaps(*mesh_, it->kind);
-      cvs->AddComponent(name, maps.first, maps.second, it->num);
+      cvs->AddComponent(name, it->kind, maps.first, maps.second, it->num);
     }
 
     global_op_ = Teuchos::rcp(new Operator_Schema(cvs, cvs, plist, global_schema_row_, global_schema_col_));

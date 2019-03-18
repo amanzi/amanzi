@@ -882,7 +882,6 @@ std::pair<double,double> RunInverseProblem(
   TreeVector X(*problem->tvs);
   TreeVector AX(*problem->tvs);
 
-  problem->op->set_multi_domain(multi_domain);
   // apply inverse
   problem->op->SymbolicAssembleMatrix();
   problem->op->AssembleMatrix();

@@ -46,8 +46,8 @@ class HeatConduction {
     auto cmap = Operators::getMaps(*mesh_, AmanziMesh::CELL);
     auto fmap = Operators::getMaps(*mesh_, AmanziMesh::FACE);
     cvs.SetMesh(mesh_)->SetGhosted(true)
-      ->AddComponent(std::string("cell"), cmap.first, cmap.second, 1)
-      ->AddComponent(std::string("face"), fmap.first, fmap.second, 1);
+      ->AddComponent("cell", AmanziMesh::CELL, cmap.first, cmap.second, 1)
+      ->AddComponent("face", AmanziMesh::FACE, fmap.first, fmap.second, 1);
 
     values_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
     derivatives_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));

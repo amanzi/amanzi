@@ -424,7 +424,7 @@ Teuchos::RCP<CompositeVectorSpace> CreateFracturedMatrixCVS(
   std::string compname("face");
   auto cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(mesh)->SetGhosted(true);
-  cvs->AddComponent(compname, mmap, gmap, 1);
+  cvs->AddComponent(compname, AmanziMesh::FACE, mmap, gmap, 1);
   cvs->AddComponent("cell", AmanziMesh::CELL, 1);
 
   return cvs;

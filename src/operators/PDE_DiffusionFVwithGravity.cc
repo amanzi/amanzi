@@ -292,11 +292,8 @@ void PDE_DiffusionFVwithGravity::ComputeTransmissibility_(
     gravity_face[0][f] = trans_face[0][f] * grav;
   }
 
-#ifdef HAVE_MPI
   transmissibility_->ScatterMasterToGhosted("face", true);
   g_cv->ScatterMasterToGhosted("face", true);
-#endif
-
   transmissibility_initialized_ = true;
 }
 

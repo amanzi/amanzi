@@ -41,7 +41,7 @@ class Operator_FaceCellSff : public Operator_FaceCell {
 
   // Special AssembleMatrix required to deal with schur complement
   virtual void AssembleMatrix(const SuperMap& map,
-                              MatrixFE& matrix, int my_block_row, int my_block_col, bool multi_domain) const;
+                              MatrixFE& matrix, int my_block_row, int my_block_col) const;
   
   // visit method for Apply -- this is identical to Operator_FaceCell's
   // version.
@@ -54,13 +54,13 @@ class Operator_FaceCellSff : public Operator_FaceCell {
   // visit method for sparsity structure of Schur complement
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
           const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col, bool multi_domain) const;
+          int my_block_row, int my_block_col) const;
 
   // visit method for sparsity structure of Schur complement
   // handled in Schur complement -- no cell dofs.
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
           const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col, bool multi_domain) const {};
+          int my_block_row, int my_block_col) const {};
 
  protected:
   mutable std::vector<Teuchos::RCP<Op_Cell_Face> > schur_ops_;

@@ -37,7 +37,6 @@ class Checkpoint;
 class State;
 class TreeVector;
 class PK;
-class UnstructuredObservations;
 
 class CycleDriver {
  public:

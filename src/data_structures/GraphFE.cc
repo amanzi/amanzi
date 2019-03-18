@@ -13,7 +13,8 @@ map, not the true row map.
 */
 
 #include <vector>
-#include "Epetra_Comm.h"
+
+#include "AmanziComm.hh"
 #include "Epetra_Map.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_Export.h"

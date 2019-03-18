@@ -117,14 +117,14 @@ int Operator_Node::ApplyMatrixFreeOp(const Op_Node_Node& op,
 ****************************************************************** */
 void Operator_Node::SymbolicAssembleMatrixOp(const Op_Cell_Node& op,
                                              const SuperMap& map, GraphFE& graph,
-                                             int my_block_row, int my_block_col, bool multi_domain) const
+                                             int my_block_row, int my_block_col) const
 {
   std::vector<int> lid_r(cell_max_nodes);
   std::vector<int> lid_c(cell_max_nodes);
 
   // ELEMENT: cell, DOFS: cell and node
-  const std::vector<int>& node_row_inds = map.GhostIndices("node", my_block_row);
-  const std::vector<int>& node_col_inds = map.GhostIndices("node", my_block_col);
+  const std::vector<int>& node_row_inds = map.GhostIndices(my_block_row, "node", 0);
+  const std::vector<int>& node_col_inds = map.GhostIndices(my_block_col, "node", 0);
 
   int ierr(0);
   AmanziMesh::Entity_ID_List nodes;
@@ -148,10 +148,10 @@ void Operator_Node::SymbolicAssembleMatrixOp(const Op_Cell_Node& op,
 ****************************************************************** */
 void Operator_Node::SymbolicAssembleMatrixOp(const Op_Node_Node& op,
                                              const SuperMap& map, GraphFE& graph,
-                                             int my_block_row, int my_block_col, bool multi_domain) const
+                                             int my_block_row, int my_block_col) const
 {
-  const std::vector<int>& node_row_inds = map.GhostIndices("node", my_block_row);
-  const std::vector<int>& node_col_inds = map.GhostIndices("node", my_block_col);
+  const std::vector<int>& node_row_inds = map.GhostIndices(my_block_row, "node", 0);
+  const std::vector<int>& node_col_inds = map.GhostIndices(my_block_col, "node", 0);
 
   int ierr(0);
   for (int v = 0; v != nnodes_owned; ++v) {
@@ -170,7 +170,7 @@ void Operator_Node::SymbolicAssembleMatrixOp(const Op_Node_Node& op,
 ****************************************************************** */
 void Operator_Node::AssembleMatrixOp(const Op_Cell_Node& op,
                                      const SuperMap& map, MatrixFE& mat,
-                                     int my_block_row, int my_block_col, bool multi_domain) const
+                                     int my_block_row, int my_block_col) const
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
@@ -178,8 +178,8 @@ void Operator_Node::AssembleMatrixOp(const Op_Cell_Node& op,
   std::vector<int> lid_c(cell_max_nodes);
 
   // ELEMENT: cell, DOFS: node and cell
-  const std::vector<int>& node_row_inds = map.GhostIndices("node", my_block_row);
-  const std::vector<int>& node_col_inds = map.GhostIndices("node", my_block_col);
+  const std::vector<int>& node_row_inds = map.GhostIndices(my_block_row, "node", 0);
+  const std::vector<int>& node_col_inds = map.GhostIndices(my_block_col, "node", 0);
 
   int ierr(0);
   AmanziMesh::Entity_ID_List nodes;
@@ -204,12 +204,12 @@ void Operator_Node::AssembleMatrixOp(const Op_Cell_Node& op,
 ****************************************************************** */
 void Operator_Node::AssembleMatrixOp(const Op_Node_Node& op,
                                      const SuperMap& map, MatrixFE& mat,
-                                     int my_block_row, int my_block_col, bool multi_domain) const
+                                     int my_block_row, int my_block_col) const
 {
   AMANZI_ASSERT(op.diag->NumVectors() == 1);
 
-  const std::vector<int>& node_row_inds = map.GhostIndices("node", my_block_row);
-  const std::vector<int>& node_col_inds = map.GhostIndices("node", my_block_col);
+  const std::vector<int>& node_row_inds = map.GhostIndices(my_block_row, "node", 0);
+  const std::vector<int>& node_col_inds = map.GhostIndices(my_block_col, "node", 0);
 
   int ierr(0);
   for (int v = 0; v != nnodes_owned; ++v) {

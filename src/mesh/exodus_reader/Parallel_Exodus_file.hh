@@ -1,29 +1,19 @@
-// Emacs Mode Line: -*- Mode:c++;-*-
-// -------------------------------------------------------------
-/**
- * @file   Parallel_Exodus_file.hh
- * @author William A. Perkins
- * @date Mon May  2 12:58:29 2011
- * 
- * @brief  
- * 
- * 
- */
-// -------------------------------------------------------------
-// -------------------------------------------------------------
-// Created November 15, 2010 by William A. Perkins
-// Last Change: Mon May  2 12:58:29 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
-// -------------------------------------------------------------
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-// SCCS ID: $Id$ Battelle PNL
+  Authors: William Perkins
+*/
 
-#ifndef _Parallel_Exodus_file_hh_
-#define _Parallel_Exodus_file_hh_
+#ifndef PARALLEL_EXODUS_FILE_HH_
+#define PARALLEL_EXODUS_FILE_HH_
 
-#include <Teuchos_RCP.hpp>
-#include <Epetra_Comm.h>
-#include <Epetra_Map.h>
+#include "Teuchos_RCP.hpp"
+#include "Epetra_Map.h"
 
+#include "AmanziTypes.hh"
 #include "Data.hh"
 #include "Exodus_file.hh"
 
@@ -34,7 +24,7 @@ namespace Exodus {
 // -------------------------------------------------------------
 //  class Parallel_Exodus_file
 // -------------------------------------------------------------
-/// A reader of partitioned ExodusII files.  
+// A reader of partitioned ExodusII files.  
 /**
  * This class reads a partitioned ExodusII file set and creates a
  * Mesh_data::Data instance representing the mesh.
@@ -45,38 +35,36 @@ namespace Exodus {
  * 
  */
 class Parallel_Exodus_file {
- protected:
-
-  
-  Teuchos::RCP<Epetra_Comm> my_comm_; /**< The parallel environment */
-  std::string my_basename;      /**< The Exodus files' base name */
-
-  Teuchos::RCP<Exodus_file> my_file; /**< The local Exodus file description */
-
-  Teuchos::RCP<AmanziMesh::Data::Data> my_mesh; /**< The local mesh */
-
-  /// Protected, unimplemented, copy constructor to avoid unwanted copies.
-  Parallel_Exodus_file(const Parallel_Exodus_file& old);
-
  public:
 
-  /// Default constructor.
-  Parallel_Exodus_file(const Epetra_Comm& comm_, const std::string& basename);
+  // Default constructor.
+  Parallel_Exodus_file(const Comm_ptr_type& comm, const std::string& basename);
 
-  /// Destructor
-  ~Parallel_Exodus_file(void);
+  // Destructor
+  ~Parallel_Exodus_file(void) = default;
 
-  /// Get the parallel environment
-  const Epetra_Comm& comm_() { return *my_comm_; }
-
-  /// Read the (local) mesh from the file
+  // Read the (local) mesh from the file
   Teuchos::RCP<AmanziMesh::Data::Data> read_mesh(void);
 
-  /// Construct a cell map for the file set (collective)
+  // Construct a cell map for the file set (collective)
   Teuchos::RCP<Epetra_Map> cellmap(void);
 
-  /// Construct a vertex map for the file set (collective)
+  // Construct a vertex map for the file set (collective)
   Teuchos::RCP<Epetra_Map> vertexmap(void);
+
+  Comm_ptr_type Comm() const { return comm_; }
+
+ protected:
+  Comm_ptr_type comm_;
+  std::string basename_;      /**< The Exodus files' base name */
+
+  Teuchos::RCP<Exodus_file> file_; /**< The local Exodus file description */
+
+  Teuchos::RCP<AmanziMesh::Data::Data> mesh_; /**< The local mesh */
+
+  Parallel_Exodus_file(const Parallel_Exodus_file& old) = delete;
+
+  
 };
 
 

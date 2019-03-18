@@ -75,14 +75,14 @@ int Operator_ConsistentFace::ApplyMatrixFreeOp(
 void Operator_ConsistentFace::SymbolicAssembleMatrixOp(
     const Op_Cell_FaceCell& op,
     const SuperMap& map, GraphFE& graph,
-    int my_block_row, int my_block_col, bool multi_domain) const
+    int my_block_row, int my_block_col) const
 {
   std::vector<int> lid_r(cell_max_faces);
   std::vector<int> lid_c(cell_max_faces);
 
   // ELEMENT: cell, DOFS: cell and face
-  const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
-  const std::vector<int>& face_col_inds = map.GhostIndices("face", my_block_col);
+  const std::vector<int>& face_row_inds = map.GhostIndices(my_block_row, "face", 0);
+  const std::vector<int>& face_col_inds = map.GhostIndices(my_block_col, "face", 0);
 
   int ierr(0);
   AmanziMesh::Entity_ID_List faces;
@@ -107,7 +107,7 @@ void Operator_ConsistentFace::SymbolicAssembleMatrixOp(
 void Operator_ConsistentFace::AssembleMatrixOp(
     const Op_Cell_FaceCell& op,
     const SuperMap& map, MatrixFE& mat,
-    int my_block_row, int my_block_col, bool multi_domain) const
+    int my_block_row, int my_block_col) const
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
@@ -116,8 +116,8 @@ void Operator_ConsistentFace::AssembleMatrixOp(
   std::vector<double> vals(cell_max_faces);
 
   // ELEMENT: cell, DOFS: face and cell
-  const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
-  const std::vector<int>& face_col_inds = map.GhostIndices("face", my_block_col);
+  const std::vector<int>& face_row_inds = map.GhostIndices(my_block_row, "face", 0);
+  const std::vector<int>& face_col_inds = map.GhostIndices(my_block_col, "face", 0);
 
   int ierr(0);
   AmanziMesh::Entity_ID_List faces;

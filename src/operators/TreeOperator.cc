@@ -35,8 +35,7 @@ namespace Operators {
 ****************************************************************** */
 TreeOperator::TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs) :
     tvs_(tvs),
-    block_diagonal_(false),
-    multi_domain_(false)
+    block_diagonal_(false)
 {
   // make sure we have the right kind of TreeVectorSpace -- it should be
   // one parent node with all leaf node children.
@@ -96,11 +95,11 @@ int TreeOperator::ApplyAssembled(const TreeVector& X, TreeVector& Y) const
   Epetra_Vector Ycopy(A_->RowMap());
   double x_norm, y_norm;
 
-  int ierr = CopyTreeVectorToSuperVector(*smap_, X, multi_domain_, Xcopy);
+  int ierr = CopyTreeVectorToSuperVector(*smap_, X, Xcopy);
 
   ierr |= A_->Apply(Xcopy, Ycopy);
 
-  ierr |= CopySuperVectorToTreeVector(*smap_, Ycopy, multi_domain_, Y);
+  ierr |= CopySuperVectorToTreeVector(*smap_, Ycopy, Y);
   AMANZI_ASSERT(!ierr);
 
   return ierr;
@@ -117,9 +116,9 @@ int TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
     Epetra_Vector Xcopy(A_->RowMap());
     Epetra_Vector Ycopy(A_->RowMap());
 
-    int ierr = CopyTreeVectorToSuperVector(*smap_, X, multi_domain_, Xcopy);
+    int ierr = CopyTreeVectorToSuperVector(*smap_, X, Xcopy);
     code = preconditioner_->ApplyInverse(Xcopy, Ycopy);
-    ierr |= CopySuperVectorToTreeVector(*smap_, Ycopy, multi_domain_, Y);
+    ierr |= CopySuperVectorToTreeVector(*smap_, Ycopy, Y);
 
     AMANZI_ASSERT(!ierr);
   } else {
@@ -163,36 +162,25 @@ void TreeOperator::SymbolicAssembleMatrix()
         AMANZI_ASSERT(blocks_[lcv_row][lcv_col] != Teuchos::null);
         cvs_vec.push_back(blocks_[lcv_row][lcv_col]->DomainMap());
         cvs_names.push_back(std::to_string(lcv_row));
-        if (!multi_domain_) {
-          int schema_tmp = blocks_[lcv_row][lcv_col]->schema();
-          schema |= schema_tmp;
-          AMANZI_ASSERT(schema == schema_tmp);
-        }
       }
     }
     AMANZI_ASSERT(is_block);
   }
 
   // create the supermap and graph
+  smap_ = createSuperMap(DomainMap());
 
-  int row_size;
-  if (multi_domain_) {
-    row_size = 10;
-    smap_ = CreateSuperMap(cvs_vec, cvs_names, multi_domain_);
-  } else {
-    row_size = MaxRowSize(*an_op->DomainMap().Mesh(), schema, n_blocks);
-    smap_ = CreateSuperMap(an_op->DomainMap(), schema, n_blocks);
-  }
-
-  Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->Map(),
-          smap_->GhostedMap(), smap_->GhostedMap(), row_size));
+  // NOTE: this probably needs to be fixed for differing meshes. -etc
+  int row_size = MaxRowSize(*an_op->DomainMap().Mesh(), schema, n_blocks);
+  auto graph = Teuchos::rcp(new GraphFE(smap_->Map(), 
+      smap_->GhostedMap(), smap_->GhostedMap(), row_size));
 
   // fill the graph
   for (int lcv_row = 0; lcv_row != n_blocks; ++lcv_row) {
     for (int lcv_col = 0; lcv_col != n_blocks; ++lcv_col) {
       Teuchos::RCP<const Operator> block = blocks_[lcv_row][lcv_col];
       if (block != Teuchos::null) {
-        block->SymbolicAssembleMatrix(*smap_, *graph, lcv_row, lcv_col, multi_domain_);
+        block->SymbolicAssembleMatrix(*smap_, *graph, lcv_row, lcv_col);
       }
     }
   }
@@ -219,7 +207,7 @@ void TreeOperator::AssembleMatrix() {
     for (int lcv_col = 0; lcv_col != n_blocks; ++lcv_col) {
       Teuchos::RCP<const Operator> block = blocks_[lcv_row][lcv_col];
       if (block != Teuchos::null) {
-        block->AssembleMatrix(*smap_, *Amat_, lcv_row, lcv_col, multi_domain_);
+        block->AssembleMatrix(*smap_, *Amat_, lcv_row, lcv_col);
       }
     }
   }
@@ -308,30 +296,17 @@ void TreeOperator::InitBlockDiagonalPreconditioner()
  
 
 /* ******************************************************************
-* Deep copy for building interfaces to TPLs, mainly to solvers.
-* We assume that domain = range, which is natural for solvers.
+* Copies to/from SuperVector for use by Amesos.
 ****************************************************************** */
-void TreeOperator::CopyVectorToSuperVector(const TreeVector& tv, Epetra_Vector& sv) const
+void TreeOperator::CopyVectorToSuperVector(const TreeVector& cv, Epetra_Vector& sv) const
 {
-  int ierr(0);
-  int my_dof = 0;
-  for (auto it = tv.begin(); it != tv.end(); ++it) {
-    ierr |= CopyCompositeVectorToSuperVector(*smap_, *(*it)->Data(), sv, multi_domain_, my_dof);
-    my_dof++;            
-  }
-  AMANZI_ASSERT(!ierr);
+  CopyTreeVectorToSuperVector(*smap_, cv, sv);
 }
 
 
-void TreeOperator::CopySuperVectorToVector(const Epetra_Vector& sv, TreeVector& tv) const
+void TreeOperator::CopySuperVectorToVector(const Epetra_Vector& sv, TreeVector& cv) const
 {
-  int ierr(0);
-  int my_dof = 0;
-  for (auto it = tv.begin(); it != tv.end(); ++it) {
-    ierr |= CopySuperVectorToCompositeVector(*smap_, sv, *(*it)->Data(), multi_domain_, my_dof);
-    my_dof++;            
-  }
-  AMANZI_ASSERT(!ierr);
+  CopySuperVectorToTreeVector(*smap_, sv, cv);
 }
 
 }  // namespace Operators
