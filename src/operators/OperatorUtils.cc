@@ -193,61 +193,6 @@ int AddSuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
 ****************************************************************** */
 Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schema, int n_dofs)
 {
-  // std::vector<std::string> compnames;
-  // std::vector<int> dofnums;
-  // std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps;
-  // std::vector<Teuchos::RCP<const Epetra_BlockMap> > ghost_maps;
-
-  // if (schema & OPERATOR_SCHEMA_DOFS_FACE) {
-  //   AMANZI_ASSERT(cvs.HasComponent("face"));
-  //   compnames.push_back("face");
-  //   dofnums.push_back(n_dofs);
-  //   auto meshmaps = getMaps(*cvs.Mesh(), AmanziMesh::FACE);
-  //   maps.push_back(meshmaps.first);
-  //   ghost_maps.push_back(meshmaps.second);
-  // }
-
-  // if (schema & OPERATOR_SCHEMA_DOFS_CELL) {
-  //   AMANZI_ASSERT(cvs.HasComponent("cell"));
-  //   compnames.push_back("cell");
-  //   dofnums.push_back(n_dofs);
-  //   auto meshmaps = getMaps(*cvs.Mesh(), AmanziMesh::CELL);
-  //   maps.push_back(meshmaps.first);
-  //   ghost_maps.push_back(meshmaps.second);
-  // }
-
-  // if (schema & OPERATOR_SCHEMA_DOFS_EDGE) {
-  //   AMANZI_ASSERT(cvs.HasComponent("edge"));
-  //   compnames.push_back("edge");
-  //   dofnums.push_back(n_dofs);
-  //   auto meshmaps = getMaps(*cvs.Mesh(), AmanziMesh::EDGE);
-  //   maps.push_back(meshmaps.first);
-  //   ghost_maps.push_back(meshmaps.second);
-  // }
-
-  // if (schema & OPERATOR_SCHEMA_DOFS_NODE) {
-  //   AMANZI_ASSERT(cvs.HasComponent("node"));
-  //   compnames.push_back("node");
-  //   dofnums.push_back(n_dofs);
-  //   auto meshmaps = getMaps(*cvs.Mesh(), AmanziMesh::NODE);
-  //   maps.push_back(meshmaps.first);
-  //   ghost_maps.push_back(meshmaps.second);
-  // }
-
-  // if (schema & OPERATOR_SCHEMA_DOFS_BNDFACE) {
-  //   AMANZI_ASSERT(cvs.HasComponent("boundary_face"));
-  //   compnames.push_back("boundary_face");
-  //   dofnums.push_back(n_dofs);
-
-  //   auto meshmaps = getMaps(*cvs.Mesh(), AmanziMesh::BOUNDARY_FACE);
-  //   auto facemaps = getMaps(*cvs.Mesh(), AmanziMesh::FACE);
-  //   auto new_bnd_map = CreateBoundaryMaps(cvs.Mesh(), facemaps, meshmaps);
-    
-  //   maps.push_back(new_bnd_map.first);
-  //   ghost_maps.push_back(new_bnd_map.second);
-  // }
-  
-  //return Teuchos::rcp(new SuperMap(cvs.Comm(), compnames, dofnums, maps, ghost_maps));
   std::vector<CompositeVectorSpace> cvss;
   for (int i=0; i!=n_dofs; ++i) cvss.push_back(cvs);
   return Teuchos::rcp(new SuperMap(cvss));
@@ -259,20 +204,6 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schem
 ****************************************************************** */
 Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, Schema& schema)
 {
-  // std::vector<std::string> compnames;
-  // std::vector<int> dofnums;
-  // std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps;
-  // std::vector<Teuchos::RCP<const Epetra_BlockMap> > ghost_maps;
-
-  // for (auto it = schema.begin(); it != schema.end(); ++it) {
-  //   compnames.push_back(schema.KindToString(it->kind));
-  //   dofnums.push_back(it->num);
-  //   auto meshmaps = getMaps(*cvs.Mesh(), it->kind);
-  //   maps.push_back(meshmaps.first);
-  //   ghost_maps.push_back(meshmaps.second);
-  // }
-
-  // return Teuchos::rcp(new SuperMap(cvs.Comm(), compnames, dofnums, maps, ghost_maps));
   return createSuperMap(cvs);
 }
 
