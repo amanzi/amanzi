@@ -9,8 +9,9 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#include "NavierStokes_PK.hh"
+#include "WhetStoneDefs.hh"
 
+#include "NavierStokes_PK.hh"
 
 namespace Amanzi {
 namespace NavierStokes {
@@ -170,7 +171,7 @@ void NavierStokes_PK::ComputeOperatorBCs()
       bc_model[n] = Operators::OPERATOR_BC_NONE;
     }
 
-    if (op_bcs_[i]->type() == Operators::DOF_Type::POINT) {
+    if (op_bcs_[i]->type() == WhetStone::DOF_Type::POINT) {
       mv = i;
       std::vector<AmanziGeometry::Point>& bc_value = op_bcs_[i]->bc_value_point();
       for (int n = 0; n < bc_value.size(); n++) {
@@ -183,7 +184,7 @@ void NavierStokes_PK::ComputeOperatorBCs()
   // velocity boundary conditions
   for (int i = 0; i < bcs_.size(); ++i) {
     if (bcs_[i]->bc_name() == "no slip" && 
-        bcs_[i]->type() == Operators::DOF_Type::POINT) {
+        bcs_[i]->type() == WhetStone::DOF_Type::POINT) {
       std::vector<int>& bc_model = op_bcs_[mv]->bc_model();
       std::vector<AmanziGeometry::Point>& bc_value = op_bcs_[mv]->bc_value_point();
 
@@ -198,7 +199,7 @@ void NavierStokes_PK::ComputeOperatorBCs()
     }
 
     if (bcs_[i]->bc_name() == "no slip" && 
-        bcs_[i]->type() == Operators::DOF_Type::NORMAL_COMPONENT) {
+        bcs_[i]->type() == WhetStone::DOF_Type::NORMAL_COMPONENT) {
       std::vector<int>& bc_model = op_bcs_[mf]->bc_model();
       std::vector<double>& bc_value = op_bcs_[mf]->bc_value();
 

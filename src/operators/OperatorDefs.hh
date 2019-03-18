@@ -32,12 +32,6 @@ typedef enum { OPERATOR_DIFFUSION_MFD,
                OPERATOR_ELECTROMAGNETICS,
                OPERATOR_MAGNETIC_DIFFUSION} OperatorType;
 
-enum class DOF_Type { SCALAR = 1,
-                      VECTOR,
-                      POINT,
-                      NORMAL_COMPONENT,
-                      MOMENT };
-
 // Constants in the next block must powers of 2.
 const int OPERATOR_SCHEMA_DOFS_FACE = 1;
 const int OPERATOR_SCHEMA_DOFS_CELL = 2;

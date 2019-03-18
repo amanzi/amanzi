@@ -38,6 +38,9 @@ class MFD3D_BernardiRaugel : public MFD3D {
   ~MFD3D_BernardiRaugel() {};
 
   // required methods
+  // -- schema
+  virtual std::vector<SchemaItem> schema() const override;
+
   // -- mass matrices
   virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override {
     Errors::Message msg("L2 consistency is not supported for Bernardi-Raugel space.");

@@ -223,13 +223,17 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
     lid_r.clear();
     lid_c.clear();
     for (auto it = op.schema_col_.begin(); it != op.schema_col_.end(); ++it) {
-      if (it->kind == AmanziMesh::NODE) {
+      int num;
+      AmanziMesh::Entity_kind kind;
+      std::tie(kind, std::ignore, num) = *it;
+
+      if (kind == AmanziMesh::NODE) {
         mesh_->cell_get_nodes(c, &nodes);
         int nnodes = nodes.size();
 
         for (int n = 0; n != nnodes; ++n) {
           int v = nodes[n];
-          for (int k = 0; k < it->num; ++k) {
+          for (int k = 0; k < num; ++k) {
             const std::vector<int>& col_inds = map.GhostIndices("node", k);
             const std::vector<int>& row_inds = map.GhostIndices("node", k);
 
@@ -239,13 +243,13 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
         }
       }
 
-      else if (it->kind == AmanziMesh::FACE) {
+      else if (kind == AmanziMesh::FACE) {
         mesh_->cell_get_faces(c, &faces);
         int nfaces = faces.size();
 
         for (int n = 0; n != nfaces; ++n) {
           int f = faces[n];
-          for (int k = 0; k < it->num; ++k) {
+          for (int k = 0; k < num; ++k) {
             const std::vector<int>& col_inds = map.GhostIndices("face", k);
             const std::vector<int>& row_inds = map.GhostIndices("face", k);
 
@@ -255,13 +259,13 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
         }
       }
 
-      else if (it->kind == AmanziMesh::EDGE) {
+      else if (kind == AmanziMesh::EDGE) {
         mesh_->cell_get_edges(c, &edges);
         int nedges = edges.size();
 
         for (int n = 0; n != nedges; ++n) {
           int e = edges[n];
-          for (int k = 0; k < it->num; ++k) {
+          for (int k = 0; k < num; ++k) {
             const std::vector<int>& col_inds = map.GhostIndices("edge", k);
             const std::vector<int>& row_inds = map.GhostIndices("edge", k);
 
@@ -271,8 +275,8 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
         }
       }
 
-      else if (it->kind == AmanziMesh::CELL) {
-        for (int k = 0; k < it->num; ++k) {
+      else if (kind == AmanziMesh::CELL) {
+        for (int k = 0; k < num; ++k) {
           const std::vector<int>& col_inds = map.GhostIndices("cell", k);
           const std::vector<int>& row_inds = map.GhostIndices("cell", k);
 
@@ -305,12 +309,16 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Face_Schema& op,
     lid_r.clear();
     lid_c.clear();
     for (auto it = op.schema_col_.begin(); it != op.schema_col_.end(); ++it) {
-      if (it->kind == AmanziMesh::CELL) {
+      int num;
+      AmanziMesh::Entity_kind kind;
+      std::tie(kind, std::ignore, num) = *it;
+
+      if (kind == AmanziMesh::CELL) {
         mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         int ncells = cells.size();
 
         for (int n = 0; n != ncells; ++n) {
-          for (int k = 0; k < it->num; ++k) {
+          for (int k = 0; k < num; ++k) {
             const std::vector<int>& col_inds = map.GhostIndices("cell", k);
             const std::vector<int>& row_inds = map.GhostIndices("cell", k);
 
@@ -370,13 +378,17 @@ void Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
     lid_r.clear();
     lid_c.clear();
     for (auto it = op.schema_col_.begin(); it != op.schema_col_.end(); ++it) {
-      if (it->kind == AmanziMesh::NODE) {
+      int num;
+      AmanziMesh::Entity_kind kind;
+      std::tie(kind, std::ignore, num) = *it;
+
+      if (kind == AmanziMesh::NODE) {
         mesh_->cell_get_nodes(c, &nodes);
         int nnodes = nodes.size();
 
         for (int n = 0; n != nnodes; ++n) {
           int v = nodes[n];
-          for (int k = 0; k < it->num; ++k) {
+          for (int k = 0; k < num; ++k) {
             const std::vector<int>& col_inds = map.GhostIndices("node", k);
             const std::vector<int>& row_inds = map.GhostIndices("node", k);
 
@@ -386,13 +398,13 @@ void Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
         }
       }
 
-      else if (it->kind == AmanziMesh::FACE) {
+      else if (kind == AmanziMesh::FACE) {
         mesh_->cell_get_faces(c, &faces);
         int nfaces = faces.size();
 
         for (int n = 0; n != nfaces; ++n) {
           int f = faces[n];
-          for (int k = 0; k < it->num; ++k) {
+          for (int k = 0; k < num; ++k) {
             const std::vector<int>& col_inds = map.GhostIndices("face", k);
             const std::vector<int>& row_inds = map.GhostIndices("face", k);
 
@@ -402,13 +414,13 @@ void Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
         }
       }
 
-      else if (it->kind == AmanziMesh::EDGE) {
+      else if (kind == AmanziMesh::EDGE) {
         mesh_->cell_get_edges(c, &edges);
         int nedges = edges.size();
 
         for (int n = 0; n != nedges; ++n) {
           int e = edges[n];
-          for (int k = 0; k < it->num; ++k) {
+          for (int k = 0; k < num; ++k) {
             const std::vector<int>& col_inds = map.GhostIndices("edge", k);
             const std::vector<int>& row_inds = map.GhostIndices("edge", k);
 
@@ -418,8 +430,8 @@ void Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
         }
       }
 
-      else if (it->kind == AmanziMesh::CELL) {
-        for (int k = 0; k < it->num; ++k) {
+      else if (kind == AmanziMesh::CELL) {
+        for (int k = 0; k < num; ++k) {
           const std::vector<int>& col_inds = map.GhostIndices("cell", k);
           const std::vector<int>& row_inds = map.GhostIndices("cell", k);
 
@@ -453,12 +465,16 @@ void Operator_Schema::AssembleMatrixOp(const Op_Face_Schema& op,
     lid_r.clear();
     lid_c.clear();
     for (auto it = op.schema_col_.begin(); it != op.schema_col_.end(); ++it) {
-      if (it->kind == AmanziMesh::CELL) {
+      int num;
+      AmanziMesh::Entity_kind kind;
+      std::tie(kind, std::ignore, num) = *it;
+
+      if (kind == AmanziMesh::CELL) {
         mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         int ncells = cells.size();
 
         for (int n = 0; n != ncells; ++n) {
-          for (int k = 0; k < it->num; ++k) {
+          for (int k = 0; k < num; ++k) {
             const std::vector<int>& col_inds = map.GhostIndices("cell", k);
             const std::vector<int>& row_inds = map.GhostIndices("cell", k);
 
@@ -514,49 +530,53 @@ void Operator_Schema::AssembleVectorCellOp(
 
   int m(0);
   for (auto it = schema.begin(); it != schema.end(); ++it) {
-    if (it->kind == AmanziMesh::NODE) {
+    int num;
+    AmanziMesh::Entity_kind kind;
+    std::tie(kind, std::ignore, num) = *it;
+
+    if (kind == AmanziMesh::NODE) {
       Epetra_MultiVector& Xn = *X.ViewComponent("node", true);
 
       mesh_->cell_get_nodes(c, &nodes);
       int nnodes = nodes.size();
 
       for (int n = 0; n != nnodes; ++n) {
-        for (int k = 0; k < it->num; ++k) {
+        for (int k = 0; k < num; ++k) {
           Xn[k][nodes[n]] += v(m++);
         }
       }
     }
 
-    else if (it->kind == AmanziMesh::FACE) {
+    else if (kind == AmanziMesh::FACE) {
       Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
 
       mesh_->cell_get_faces(c, &faces);
       int nfaces = faces.size();
 
       for (int n = 0; n != nfaces; ++n) {
-        for (int k = 0; k < it->num; ++k) {
+        for (int k = 0; k < num; ++k) {
           Xf[k][faces[n]] += v(m++);
         }
       }
     }
 
-    else if (it->kind == AmanziMesh::EDGE) {
+    else if (kind == AmanziMesh::EDGE) {
       Epetra_MultiVector& Xe = *X.ViewComponent("edge", true);
 
       mesh_->cell_get_edges(c, &edges);
       int nedges = edges.size();
 
       for (int n = 0; n != nedges; ++n) {
-        for (int k = 0; k < it->num; ++k) {
+        for (int k = 0; k < num; ++k) {
           Xe[k][edges[n]] += v(m++);
         }
       }
     }
 
-    else if (it->kind == AmanziMesh::CELL) {
+    else if (kind == AmanziMesh::CELL) {
       Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
 
-      for (int k = 0; k < it->num; ++k) {
+      for (int k = 0; k < num; ++k) {
         Xc[k][c] += v(m++);
       }
     }
@@ -579,14 +599,18 @@ void Operator_Schema::AssembleVectorFaceOp(
 
   int m(0);
   for (auto it = schema.begin(); it != schema.end(); ++it) {
-    if (it->kind == AmanziMesh::CELL) {
+    int num;
+    AmanziMesh::Entity_kind kind;
+    std::tie(kind, std::ignore, num) = *it;
+
+    if (kind == AmanziMesh::CELL) {
       Epetra_MultiVector& Xf = *X.ViewComponent("cell", true);
 
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       for (int n = 0; n != ncells; ++n) {
-        for (int k = 0; k < it->num; ++k) {
+        for (int k = 0; k < num; ++k) {
           Xf[k][cells[n]] += v(m++);
         }
       }
@@ -606,49 +630,53 @@ void Operator_Schema::ExtractVectorCellOp(
 
   int m(0);
   for (auto it = schema.begin(); it != schema.end(); ++it) {
-    if (it->kind == AmanziMesh::NODE) {
+    int num;
+    AmanziMesh::Entity_kind kind;
+    std::tie(kind, std::ignore, num) = *it;
+
+    if (kind == AmanziMesh::NODE) {
       const Epetra_MultiVector& Xn = *X.ViewComponent("node", true);
 
       mesh_->cell_get_nodes(c, &nodes);
       int nnodes = nodes.size();
 
       for (int n = 0; n != nnodes; ++n) {
-        for (int k = 0; k < it->num; ++k) {
+        for (int k = 0; k < num; ++k) {
           v(m++) = Xn[k][nodes[n]];
         }
       }
     }
 
-    else if (it->kind == AmanziMesh::FACE) {
+    else if (kind == AmanziMesh::FACE) {
       const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
 
       mesh_->cell_get_faces(c, &faces);
       int nfaces = faces.size();
 
       for (int n = 0; n != nfaces; ++n) {
-        for (int k = 0; k < it->num; ++k) {
+        for (int k = 0; k < num; ++k) {
           v(m++) = Xf[k][faces[n]];
         }
       }
     }
 
-    else if (it->kind == AmanziMesh::EDGE) {
+    else if (kind == AmanziMesh::EDGE) {
       const Epetra_MultiVector& Xe = *X.ViewComponent("edge", true);
 
       mesh_->cell_get_edges(c, &edges);
       int nedges = edges.size();
 
       for (int n = 0; n != nedges; ++n) {
-        for (int k = 0; k < it->num; ++k) {
+        for (int k = 0; k < num; ++k) {
           v(m++) = Xe[k][edges[n]];
         }
       }
     }
 
-    else if (it->kind == AmanziMesh::CELL) {
+    else if (kind == AmanziMesh::CELL) {
       const Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
 
-      for (int k = 0; k < it->num; ++k) {
+      for (int k = 0; k < num; ++k) {
         v(m++) = Xc[k][c];
       }
     }
@@ -671,14 +699,18 @@ void Operator_Schema::ExtractVectorFaceOp(
 
   int m(0);
   for (auto it = schema.begin(); it != schema.end(); ++it) {
-    if (it->kind == AmanziMesh::CELL) {
+    int num;
+    AmanziMesh::Entity_kind kind;
+    std::tie(kind, std::ignore, num) = *it;
+
+    if (kind == AmanziMesh::CELL) {
       const Epetra_MultiVector& Xf = *X.ViewComponent("cell", true);
 
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       for (int n = 0; n != ncells; ++n) {
-        for (int k = 0; k < it->num; ++k) {
+        for (int k = 0; k < num; ++k) {
           v(m++) = Xf[k][cells[n]];
         }
       }

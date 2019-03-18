@@ -26,11 +26,15 @@ namespace Operators {
 ****************************************************************** */
 void PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
 {
-  Teuchos::ParameterList& range = plist.sublist("schema");
+  // parse discretization  parameters
+  auto base = global_schema_row_.StringToKind(plist.get<std::string>("base"));
+
+  Teuchos::ParameterList& schema_list = plist.sublist("schema");
+  mfd_ = WhetStone::BilinearFormFactory::Create(schema_list, mesh_);
 
   if (global_op_ == Teuchos::null) {
     // constructor was given a mesh
-    local_schema_row_.Init(range, mesh_);
+    local_schema_row_.Init(mfd_, mesh_, base);
     global_schema_row_ = local_schema_row_;
 
     local_schema_col_ = local_schema_row_;
@@ -40,8 +44,12 @@ void PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
     cvs->SetMesh(mesh_)->SetGhosted(true);
 
     for (auto it = global_schema_row_.begin(); it != global_schema_row_.end(); ++it) {
-      std::string name(local_schema_row_.KindToString(it->kind));
-      cvs->AddComponent(name, it->kind, it->num);
+      int num;
+      AmanziMesh::Entity_kind kind;
+      std::tie(kind, std::ignore, num) = *it;
+
+      std::string name(local_schema_row_.KindToString(kind));
+      cvs->AddComponent(name, kind, num);
     }
 
     global_op_ = Teuchos::rcp(new Operator_Schema(cvs, cvs, plist, global_schema_row_, global_schema_col_));
@@ -53,7 +61,7 @@ void PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
     global_schema_col_ = global_op_->schema_col();
 
     mesh_ = global_op_->DomainMap().Mesh();
-    local_schema_row_.Init(range, mesh_);
+    local_schema_row_.Init(mfd_, mesh_, base);
     local_schema_col_ = local_schema_row_;
 
     local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
@@ -61,9 +69,6 @@ void PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
 
   // register the advection Op
   global_op_->OpPushBack(local_op_);
-
-  // parse discretization  parameters
-  mfd_ = WhetStone::BilinearFormFactory::Create(plist, mesh_);
 }
 
 

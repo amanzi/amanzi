@@ -479,9 +479,13 @@ void Operator::UpdateRHS(const CompositeVector& source, bool volume_included) {
 void Operator::CopyVectorToSuperVector(const CompositeVector& cv, Epetra_Vector& sv) const
 {
   for (auto it = schema_col_.begin(); it != schema_col_.end(); ++it) {
-    std::string name(schema_col_.KindToString(it->kind));
+    int num;
+    AmanziMesh::Entity_kind kind;
+    std::tie(kind, std::ignore, num) = *it;
 
-    for (int k = 0; k < it->num; ++k) {
+    std::string name(schema_col_.KindToString(kind));
+
+    for (int k = 0; k < num; ++k) {
       const std::vector<int>& inds = smap_->Indices(name, k);
       const Epetra_MultiVector& data = *cv.ViewComponent(name);
       for (int n = 0; n != data.MyLength(); ++n) sv[inds[n]] = data[k][n];
@@ -497,9 +501,13 @@ void Operator::CopyVectorToSuperVector(const CompositeVector& cv, Epetra_Vector&
 void Operator::CopySuperVectorToVector(const Epetra_Vector& sv, CompositeVector& cv) const
 {
   for (auto it = schema_col_.begin(); it != schema_col_.end(); ++it) {
-    std::string name(schema_col_.KindToString(it->kind));
+    int num;
+    AmanziMesh::Entity_kind kind;
+    std::tie(kind, std::ignore, num) = *it;
 
-    for (int k = 0; k < it->num; ++k) {
+    std::string name(schema_col_.KindToString(kind));
+
+    for (int k = 0; k < num; ++k) {
       const std::vector<int>& inds = smap_->Indices(name, k);
       Epetra_MultiVector& data = *cv.ViewComponent(name);
       for (int n = 0; n != data.MyLength(); ++n) data[k][n] = sv[inds[n]];

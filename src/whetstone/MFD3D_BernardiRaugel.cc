@@ -11,6 +11,7 @@
 */
 
 #include <cmath>
+#include <tuple>
 #include <vector>
 
 #include "Mesh.hh"
@@ -22,6 +23,18 @@
 
 namespace Amanzi {
 namespace WhetStone {
+
+/* ******************************************************************
+* Schema.
+****************************************************************** */
+std::vector<SchemaItem> MFD3D_BernardiRaugel::schema() const
+{
+  std::vector<SchemaItem> items;
+  items.push_back(std::make_tuple(AmanziMesh::NODE, DOF_Type::SCALAR, d_));
+  items.push_back(std::make_tuple(AmanziMesh::FACE, DOF_Type::NORMAL_COMPONENT, 1));
+  return items;
+}
+
 
 /* ******************************************************************
 * The stable discretization for Stokes: vectors at nodes plus normal

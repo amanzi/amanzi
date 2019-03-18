@@ -33,10 +33,17 @@ namespace Operators {
 ****************************************************************** */
 void PDE_DiffusionDG::Init_(Teuchos::ParameterList& plist)
 {
-  // create the local Op and register it with the global Operator
-  Schema my_schema;
   Teuchos::ParameterList& schema_list = plist.sublist("schema");
-  my_schema.Init(schema_list, mesh_);
+
+  // parameters
+  // -- discretization details
+  Schema my_schema;
+  auto base = my_schema.StringToKind(plist.get<std::string>("base"));
+  matrix_ = plist.get<std::string>("matrix type");
+  method_order_ = schema_list.get<int>("method order", 0);
+  
+  dg_ = Teuchos::rcp(new WhetStone::DG_Modal(schema_list, mesh_));
+  my_schema.Init(dg_, mesh_, base);
 
   local_schema_col_ = my_schema;
   local_schema_row_ = my_schema;
@@ -47,7 +54,9 @@ void PDE_DiffusionDG::Init_(Teuchos::ParameterList& plist)
     global_schema_row_ = my_schema;
 
     // build the CVS from the global schema
-    int nk = my_schema.begin()->num;
+    int nk;
+    std::tie(std::ignore, std::ignore, nk) = *my_schema.begin();
+
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->SetGhosted(true);
     cvs->AddComponent("cell", AmanziMesh::CELL, nk);
@@ -69,8 +78,7 @@ void PDE_DiffusionDG::Init_(Teuchos::ParameterList& plist)
   // -- continuity terms
   Schema tmp_schema;
   Teuchos::ParameterList schema_copy = schema_list;
-  schema_copy.set<std::string>("base", "face");
-  tmp_schema.Init(schema_copy, mesh_);
+  tmp_schema.Init(dg_, mesh_, AmanziMesh::FACE);
 
   jump_up_op_ = Teuchos::rcp(new Op_Face_Schema(tmp_schema, tmp_schema, mesh_));
   global_op_->OpPushBack(jump_up_op_);
@@ -81,14 +89,6 @@ void PDE_DiffusionDG::Init_(Teuchos::ParameterList& plist)
   // -- stability jump term
   penalty_op_ = Teuchos::rcp(new Op_Face_Schema(tmp_schema, tmp_schema, mesh_));
   global_op_->OpPushBack(penalty_op_);
-
-  // parameters
-  // -- discretization details
-  method_ = plist.get<std::string>("method");
-  method_order_ = plist.get<int>("method order", 0);
-  matrix_ = plist.get<std::string>("matrix type");
-  
-  dg_ = std::make_shared<WhetStone::DG_Modal>(plist, mesh_);
 }
 
 

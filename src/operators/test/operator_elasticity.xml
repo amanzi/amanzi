@@ -65,15 +65,12 @@
 
     <!-- NODE 2, FACE 1 scheme -->
     <ParameterList name="elasticity operator">
-      <Parameter name="method" type="string" value="BernardiRaugel"/>
-      <Parameter name="method order" type="int" value="1"/>
       <Parameter name="matrix type" type="string" value="stiffness"/>
-
+      <Parameter name="base" type="string" value="cell"/>
       <ParameterList name="schema">
+        <Parameter name="method" type="string" value="BernardiRaugel"/>
+        <Parameter name="method order" type="int" value="1"/>
         <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{node, face}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
-        <Parameter name="number" type="Array(int)" value="{2, 1}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

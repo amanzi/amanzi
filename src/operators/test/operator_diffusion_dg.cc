@@ -92,10 +92,10 @@ void OperatorDiffusionDG(std::string solver_name,
   // create boundary data. We use full Taylor expansion of boundary data in
   // the vicinity of domain boundary.
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator dg");
-  int order = op_list.get<int>("method order");
+  int order = op_list.sublist("schema").get<int>("method order");
   int nk = (order + 1) * (order + 2) / 2;
 
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::VECTOR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::VECTOR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(nk);
 
@@ -126,7 +126,7 @@ void OperatorDiffusionDG(std::string solver_name,
 
   // create diffusion operator 
   // -- primary term
-  op_list.set<std::string>("dg basis", dg_basis);
+  op_list.sublist("schema").set<std::string>("dg basis", dg_basis);
   Teuchos::RCP<PDE_DiffusionDG> op = Teuchos::rcp(new PDE_DiffusionDG(op_list, mesh));
   auto global_op = op->global_operator();
   const WhetStone::DG_Modal& dg = op->dg();

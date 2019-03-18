@@ -40,6 +40,9 @@ class MFD3D_CrouzeixRaviartSerendipity : public MFD3D_CrouzeixRaviart {
   ~MFD3D_CrouzeixRaviartSerendipity() {};
 
   // required methods
+  // -- schema
+  virtual std::vector<SchemaItem> schema() const override;
+
   // -- stiffness matrix
   virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override;
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;

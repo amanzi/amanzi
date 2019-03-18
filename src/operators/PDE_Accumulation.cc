@@ -242,7 +242,10 @@ void PDE_Accumulation::CalculateEntityVolume_(
 ****************************************************************** */
 void PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
 {
+  int num;
+  AmanziMesh::Entity_kind kind;
   Errors::Message msg;
+
 
   if (global_op_ == Teuchos::null) {
     // constructor was given a mesh 
@@ -250,11 +253,13 @@ void PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
     local_op_schema_ = schema;
 
     for (auto it = schema.begin(); it != schema.end(); ++it) {
+      std::tie(kind, std::ignore, num) = *it;
+
       Teuchos::RCP<Op> op;
       Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-      cvs->SetMesh(mesh_)->AddComponent(schema.KindToString(it->kind), it->kind, it->num);
+      cvs->SetMesh(mesh_)->AddComponent(schema.KindToString(kind), kind, num);
 
-      if (it->kind == AmanziMesh::CELL) {
+      if (kind == AmanziMesh::CELL) {
         int old_schema = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL;
         global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist_, old_schema));
         std::string name("CELL_CELL");
@@ -265,24 +270,24 @@ void PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
         }
 
       /*
-      } else if (it->kind == AmanziMesh::FACE) {
+      } else if (kind == AmanziMesh::FACE) {
         global_op_ = Teuchos::rcp(new Operator_Face(cvs, plist_));
         std::string name("FACE_FACE");
         op = Teuchos::rcp(new Op_Face_Face(name, mesh_));
       */
 
-      } else if (it->kind == AmanziMesh::EDGE) {
+      } else if (kind == AmanziMesh::EDGE) {
         global_op_ = Teuchos::rcp(new Operator_Edge(cvs, plist_));
         std::string name("EDGE_EDGE");
         op = Teuchos::rcp(new Op_Edge_Edge(name, mesh_));
 
-      } else if (it->kind == AmanziMesh::NODE) {
+      } else if (kind == AmanziMesh::NODE) {
         global_op_ = Teuchos::rcp(new Operator_Node(cvs, plist_));
         std::string name("NODE_NODE");
-        op = Teuchos::rcp(new Op_Node_Node(name, mesh_, it->num));
+        op = Teuchos::rcp(new Op_Node_Node(name, mesh_, num));
 
       } else {
-        msg << "Accumulation operator: Unknown kind \"" << schema.KindToString(it->kind) << "\".\n";
+        msg << "Accumulation operator: Unknown kind \"" << schema.KindToString(kind) << "\".\n";
         Exceptions::amanzi_throw(msg);
       }
 
@@ -296,10 +301,12 @@ void PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
     mesh_ = global_op_->DomainMap().Mesh();
 
     for (auto it = schema.begin(); it != schema.end(); ++it) {
+      std::tie(kind, std::ignore, num) = *it;
+
       int old_schema;
       Teuchos::RCP<Op> op;
 
-      if (it->kind == AmanziMesh::CELL) {
+      if (kind == AmanziMesh::CELL) {
         old_schema = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL;
         std::string name("CELL_CELL");
         if (surf) {
@@ -309,24 +316,24 @@ void PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
         }
 
       /*
-      } else if (it->kind == AmanziMesh::FACE) {
+      } else if (kind == AmanziMesh::FACE) {
         old_schema = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_FACE;
         std::string name("FACE_FACE");
         op = Teuchos::rcp(new Op_Face_Face(name, mesh_));
       */
 
-      } else if (it->kind == AmanziMesh::EDGE) {
+      } else if (kind == AmanziMesh::EDGE) {
         old_schema = OPERATOR_SCHEMA_BASE_EDGE | OPERATOR_SCHEMA_DOFS_EDGE;
         std::string name("EDGE_EDGE");
         op = Teuchos::rcp(new Op_Edge_Edge(name, mesh_));
 
-      } else if (it->kind == AmanziMesh::NODE) {
+      } else if (kind == AmanziMesh::NODE) {
         old_schema = OPERATOR_SCHEMA_BASE_NODE | OPERATOR_SCHEMA_DOFS_NODE;
         std::string name("NODE_NODE");
-        op = Teuchos::rcp(new Op_Node_Node(name, mesh_, it->num));
+        op = Teuchos::rcp(new Op_Node_Node(name, mesh_, num));
 
       } else {
-        msg << "Accumulation operator: Unknown kind \"" << schema.KindToString(it->kind) << "\".\n";
+        msg << "Accumulation operator: Unknown kind \"" << schema.KindToString(kind) << "\".\n";
         Exceptions::amanzi_throw(msg);
       }
 

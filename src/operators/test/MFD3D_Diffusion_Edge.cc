@@ -23,6 +23,7 @@
 
 #include "MFD3D_Diffusion_Edge.hh"
 #include "Tensor.hh"
+#include "WhetStoneDefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {

@@ -92,7 +92,7 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
 
   // create boundary data (no mixed bc)
   Entity_ID_List cells;
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 

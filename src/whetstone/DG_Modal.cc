@@ -12,6 +12,8 @@
   Discontinuous Galerkin methods.
 */
 
+#include <tuple>
+
 #include "Point.hh"
 
 #include "BasisFactory.hh"
@@ -53,6 +55,19 @@ DG_Modal::DG_Modal(const Teuchos::ParameterList& plist,
     basis_[c] = factory.Create(basis_name);
     basis_[c]->Init(mesh_, AmanziMesh::CELL, c, order_, monomial_integrals_[c]);
   }
+}
+
+
+/* ******************************************************************
+* Schema.
+****************************************************************** */
+std::vector<SchemaItem> DG_Modal::schema() const
+{
+  int nk = PolynomialSpaceDimension(d_, order_);
+  std::vector<SchemaItem> items;
+
+  items.push_back(std::make_tuple(AmanziMesh::CELL, DOF_Type::MOMENT, nk));
+  return items;
 }
 
 
