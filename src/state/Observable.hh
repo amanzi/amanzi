@@ -101,7 +101,6 @@ Example:
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Epetra_MpiComm.h"
 
 #include "Point.hh"
 #include "ObservationData.hh"
@@ -120,7 +119,7 @@ class Observable : public IOEvent {
 
  public:
 
-  Observable(Teuchos::ParameterList& plist, Epetra_MpiComm *comm);
+  Observable(Teuchos::ParameterList& plist);
 
   std::string name() { return name_; }
   std::string variable() { return variable_; }

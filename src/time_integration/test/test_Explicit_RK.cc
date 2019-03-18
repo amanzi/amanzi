@@ -3,10 +3,10 @@
 #include "Explicit_TI_FnBase.hh"
 #include "Explicit_TI_RK.hh"
 
+#include "Epetra_SerialComm.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Vector.h"
 #include "Epetra_SerialDenseMatrix.h"
-#include "Epetra_SerialComm.h"
 
 using namespace Amanzi;
 

@@ -167,7 +167,9 @@ void TreeOperator::SymbolicAssembleMatrix()
   }
 
   // create the supermap and graph
-  smap_ = CreateSuperMap(an_op->DomainMap(), schema, n_blocks);
+  smap_ = createSuperMap(DomainMap());
+
+  // NOTE: this probably needs to be fixed for differing meshes. -etc
   int row_size = MaxRowSize(*an_op->DomainMap().Mesh(), schema, n_blocks);
   Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->Map(),
           smap_->GhostedMap(), smap_->GhostedMap(), row_size));
@@ -289,31 +291,19 @@ void TreeOperator::InitBlockDiagonalPreconditioner()
 
 
 /* ******************************************************************
-* Deep copy for building interfaces to TPLs, mainly to solvers.
-* We assume that domain = range, which is natural for solvers.
+* Copies to/from SuperVector for use by Amesos.
 ****************************************************************** */
-void TreeOperator::CopyVectorToSuperVector(const TreeVector& tv, Epetra_Vector& sv) const
+void TreeOperator::CopyVectorToSuperVector(const TreeVector& cv, Epetra_Vector& sv) const
 {
-  int ierr(0);
-  int my_dof = 0;
-  for (auto it = tv.begin(); it != tv.end(); ++it) {
-    ierr |= CopyCompositeVectorToSuperVector(*smap_, *(*it)->Data(), sv, my_dof);
-    my_dof++;            
-  }
-  AMANZI_ASSERT(!ierr);
+  CopyTreeVectorToSuperVector(*smap_, cv, sv);
+}
+
+void TreeOperator::CopySuperVectorToVector(const Epetra_Vector& sv, TreeVector& cv) const
+{
+  CopySuperVectorToTreeVector(*smap_, sv, cv);
 }
 
 
-void TreeOperator::CopySuperVectorToVector(const Epetra_Vector& sv, TreeVector& tv) const
-{
-  int ierr(0);
-  int my_dof = 0;
-  for (auto it = tv.begin(); it != tv.end(); ++it) {
-    ierr |= CopySuperVectorToCompositeVector(*smap_, sv, *(*it)->Data(), my_dof);
-    my_dof++;            
-  }
-  AMANZI_ASSERT(!ierr);
-}
 
 }  // namespace Operators
 }  // namespace Amanzi

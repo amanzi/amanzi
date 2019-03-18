@@ -1,19 +1,22 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-   ATS
+/*
+  Data Structures
 
-   License: see $ATS_DIR/COPYRIGHT
-   Author: Ethan Coon
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-   Interface for BlockVector, an implementation of a slightly improved
-   Epetra_MultiVector which spans multiple simplices and knows how to
-   communicate itself.
+  Author: Ethan Coon (ecoon@lanl.gov)
 
-   NOTE: All BlockVector data is NOT initialized to zero!
-   ------------------------------------------------------------------------- */
+  Interface for BlockVector, an implementation of a slightly improved
+  Epetra_MultiVector which spans multiple simplices and knows how to
+  communicate itself.
+
+  NOTE: All BlockVector data is NOT initialized to zero!
+*/
 
 #include "Epetra_MpiComm.h"
-#include "Epetra_Map.h"
+#include "Epetra_BlockMap.h"
 #include "Epetra_Vector.h"
 
 #include "dbc.hh"
@@ -26,7 +29,7 @@ namespace Amanzi {
 // Constructor
 BlockVector::BlockVector(const Comm_ptr_type& comm,
         std::vector<std::string>& names,
-        std::vector<Teuchos::RCP<const Epetra_Map> >& maps,
+        std::vector<Teuchos::RCP<const Epetra_BlockMap> >& maps,
         std::vector<int> num_dofs) :
     names_(names),
     maps_(maps),

@@ -333,9 +333,9 @@ int Operator::ApplyAssembled(const CompositeVector& X, CompositeVector& Y, doubl
   Epetra_Vector Xcopy(A_->RowMap());
   Epetra_Vector Ycopy(A_->RowMap());
 
-  int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, 0);
+  int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy);
   ierr |= A_->Apply(Xcopy, Ycopy);
-  ierr |= AddSuperVectorToCompositeVector(*smap_, Ycopy, Y, 0);
+  ierr |= AddSuperVectorToCompositeVector(*smap_, Ycopy, Y);
 
   if (ierr) {
     Errors::Message msg;
@@ -358,7 +358,7 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 
   Epetra_Vector Xcopy(*smap_->Map());
   Epetra_Vector Ycopy(*smap_->Map());
-  ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, 0);
+  ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy);
 
   // dump the schur complement
   // std::stringstream filename_s2;
@@ -367,7 +367,7 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 
   ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
   
-  ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y, 0);
+  ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y);
 
   if (ierr) {
     Errors::Message msg("Operator: ApplyInverse failed.\n");
@@ -467,50 +467,6 @@ void Operator::UpdateRHS(const CompositeVector& source, bool volume_included) {
   for (auto it = rhs_->begin(); it != rhs_->end(); ++it) {
     if (source.HasComponent(*it)) {
       rhs_->ViewComponent(*it, false)->Update(1.0, *source.ViewComponent(*it, false), 1.0);
-    }
-  }
-}
-
-
-/* ******************************************************************
-* Deep copy for building interfaces to TPLs, mainly to solvers.
-* We assume that domain = range, which is natural for solvers.
-****************************************************************** */
-void Operator::CopyVectorToSuperVector(const CompositeVector& cv, Epetra_Vector& sv) const
-{
-  for (auto it = schema_col_.begin(); it != schema_col_.end(); ++it) {
-    int num;
-    AmanziMesh::Entity_kind kind;
-    std::tie(kind, std::ignore, num) = *it;
-
-    std::string name(schema_col_.KindToString(kind));
-
-    for (int k = 0; k < num; ++k) {
-      const std::vector<int>& inds = smap_->Indices(name, k);
-      const Epetra_MultiVector& data = *cv.ViewComponent(name);
-      for (int n = 0; n != data.MyLength(); ++n) sv[inds[n]] = data[k][n];
-    }
-  }
-}
-
-
-/* ******************************************************************
-* Deep copy for building interfaces to TPLs, mainly to solvers.
-* We assume that domain = range, which is natural for solvers.
-****************************************************************** */
-void Operator::CopySuperVectorToVector(const Epetra_Vector& sv, CompositeVector& cv) const
-{
-  for (auto it = schema_col_.begin(); it != schema_col_.end(); ++it) {
-    int num;
-    AmanziMesh::Entity_kind kind;
-    std::tie(kind, std::ignore, num) = *it;
-
-    std::string name(schema_col_.KindToString(kind));
-
-    for (int k = 0; k < num; ++k) {
-      const std::vector<int>& inds = smap_->Indices(name, k);
-      Epetra_MultiVector& data = *cv.ViewComponent(name);
-      for (int n = 0; n != data.MyLength(); ++n) data[k][n] = sv[inds[n]];
     }
   }
 }
@@ -656,6 +612,21 @@ void Operator::OpExtend(op_iterator begin, op_iterator end)
   ops_.insert(ops_.end(), begin, end);
   ops_properties_.resize(nnew, 0);  
 }
+
+
+/* ******************************************************************
+* Copies to/from SuperVector for use by Amesos.
+****************************************************************** */
+void Operator::CopyVectorToSuperVector(const CompositeVector& cv, Epetra_Vector& sv) const
+{
+  CopyCompositeVectorToSuperVector(*smap_, cv, sv);
+}
+
+void Operator::CopySuperVectorToVector(const Epetra_Vector& sv, CompositeVector& cv) const
+{
+  CopySuperVectorToCompositeVector(*smap_, sv, cv);
+}
+
 
 
 /* ******************************************************************

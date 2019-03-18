@@ -1,7 +1,7 @@
 
 #include "UnitTest++.h"
 #include "Teuchos_RCP.hpp"
-#include <Epetra_Comm.h>
+
 #include <AmanziComm.hh>
 #include "Epetra_SerialComm.h"
 

@@ -13,8 +13,8 @@ communicate itself.
 CompositeVectors are a collection of vectors defined on a common mesh and
 communicator.  Each vector, or component, has a name (used as a key), a mesh
 Entity_kind (CELL, FACE, NODE, or BOUNDARY_FACE), and a number of degrees of
-freedom (dofs).  This, along with the Epetra_Map provided from the mesh on a
-given Entity_kind, is enough to create an Epetra_MultiVector.
+freedom (dofs).  This, along with the Epetra_BlockMap provided by the mesh 
+on a given Entity_kind, is enough to create an Epetra_MultiVector.
 
 Note that construction of the CompositeVector does not allocate the
 Epetra_MultiVectors.  CreateData() must be called before usage.
@@ -159,46 +159,23 @@ CompositeVector::CompositeVector(const CompositeVector& other, bool ghosted,
 
 void CompositeVector::InitMap_(const CompositeVectorSpace& space) {
   // generate the master's maps
-  std::vector<Teuchos::RCP<const Epetra_Map> > mastermaps;
-  for (CompositeVectorSpace::name_iterator name=space.begin(); name!=space.end(); ++name) {
-    if (space.Location(*name) == AmanziMesh::CELL) {
-      mastermaps.push_back(Teuchos::rcpFromRef(Mesh()->cell_map(false)));
-    } else if (space.Location(*name) == AmanziMesh::FACE) {
-      mastermaps.push_back(Teuchos::rcpFromRef(Mesh()->face_map(false)));
-    } else if (space.Location(*name) == AmanziMesh::NODE) {
-      mastermaps.push_back(Teuchos::rcpFromRef(Mesh()->node_map(false)));
-    } else if (space.Location(*name) == AmanziMesh::EDGE) {
-      mastermaps.push_back(Teuchos::rcpFromRef(Mesh()->edge_map(false)));
-    } else if (space.Location(*name) == AmanziMesh::BOUNDARY_FACE) {
-      mastermaps.push_back(Teuchos::rcpFromRef(Mesh()->exterior_face_map(false)));
-    }
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > mastermaps;
+  for (CompositeVectorSpace::name_iterator name = space.begin(); name != space.end(); ++name) {
+    mastermaps.push_back(space.Map(*name, false));
   }
 
   // create the master BlockVector
-  mastervec_ = Teuchos::rcp(new BlockVector(Comm(), names_,
-          mastermaps, space.num_dofs_));
+  mastervec_ = Teuchos::rcp(new BlockVector(Comm(), names_, mastermaps, space.num_dofs_));
 
   // do the same for the ghosted Vector, if necessary
   if (space.Ghosted()) {
     // generate the ghost's maps
-    std::vector<Teuchos::RCP<const Epetra_Map> > ghostmaps;
+    std::vector<Teuchos::RCP<const Epetra_BlockMap> > ghostmaps;
     for (CompositeVectorSpace::name_iterator name=space.begin(); name!=space.end(); ++name) {
-      if (space.Location(*name) == AmanziMesh::CELL) {
-        ghostmaps.push_back(Teuchos::rcpFromRef(Mesh()->cell_map(true)));
-      } else if (space.Location(*name) == AmanziMesh::FACE) {
-        ghostmaps.push_back(Teuchos::rcpFromRef(Mesh()->face_map(true)));
-      } else if (space.Location(*name) == AmanziMesh::NODE) {
-        ghostmaps.push_back(Teuchos::rcpFromRef(Mesh()->node_map(true)));
-      } else if (space.Location(*name) == AmanziMesh::EDGE) {
-        ghostmaps.push_back(Teuchos::rcpFromRef(Mesh()->edge_map(true)));
-      } else if (space.Location(*name) == AmanziMesh::BOUNDARY_FACE) {
-        ghostmaps.push_back(Teuchos::rcpFromRef(Mesh()->exterior_face_map(true)));
-      }
+      ghostmaps.push_back(space.Map(*name, true));
     }
-
     // create the ghost BlockVector
-    ghostvec_ = Teuchos::rcp(new BlockVector(Comm(), names_,
-            ghostmaps, space.num_dofs_));
+    ghostvec_ = Teuchos::rcp(new BlockVector(Comm(), names_, ghostmaps, space.num_dofs_));
   } else {
     ghostvec_ = mastervec_;
   }
@@ -374,17 +351,14 @@ CompositeVector::ScatterMasterToGhosted(std::string name, bool force) const {
 #endif
     // check for and create the importer if needed
     if (importers_[Index_(name)] == Teuchos::null) {
-      Teuchos::RCP<const Epetra_Map> target_map = ghostvec_->ComponentMap(name);
-      Teuchos::RCP<const Epetra_Map> source_map = mastervec_->ComponentMap(name);
-      importers_[Index_(name)] =
-        Teuchos::rcp(new Epetra_Import(*target_map, *source_map));
+      Teuchos::RCP<const Epetra_BlockMap> target_map = ghostvec_->ComponentMap(name);
+      Teuchos::RCP<const Epetra_BlockMap> source_map = mastervec_->ComponentMap(name);
+      importers_[Index_(name)] = Teuchos::rcp(new Epetra_Import(*target_map, *source_map));
     }
 
     // communicate
-    Teuchos::RCP<Epetra_MultiVector> g_comp =
-      ghostvec_->ViewComponent(name);
-    Teuchos::RCP<const Epetra_MultiVector> m_comp =
-      mastervec_->ViewComponent(name);
+    Teuchos::RCP<Epetra_MultiVector> g_comp = ghostvec_->ViewComponent(name);
+    Teuchos::RCP<const Epetra_MultiVector> m_comp = mastervec_->ViewComponent(name);
     g_comp->Import(*m_comp, *importers_[Index_(name)], Insert);
 
 #if MANAGED_COMMUNICATION
@@ -425,24 +399,22 @@ CompositeVector::ScatterMasterToGhosted(Epetra_CombineMode mode) const {
 // This Scatter() is not managed, and is always done.  Tags changed.
 void
 CompositeVector::ScatterMasterToGhosted(std::string name,
-        Epetra_CombineMode mode) const {
+                                        Epetra_CombineMode mode) const {
   ChangedValue(name);
 
 #ifdef HAVE_MPI
   if (ghosted_) {
     // check for and create the importer if needed
     if (importers_[Index_(name)] == Teuchos::null) {
-      Teuchos::RCP<const Epetra_Map> target_map = ghostvec_->ComponentMap(name);
-      Teuchos::RCP<const Epetra_Map> source_map = mastervec_->ComponentMap(name);
+      Teuchos::RCP<const Epetra_BlockMap> target_map = ghostvec_->ComponentMap(name);
+      Teuchos::RCP<const Epetra_BlockMap> source_map = mastervec_->ComponentMap(name);
       importers_[Index_(name)] =
         Teuchos::rcp(new Epetra_Import(*target_map, *source_map));
     }
 
     // communicate
-    Teuchos::RCP<Epetra_MultiVector> g_comp =
-      ghostvec_->ViewComponent(name);
-    Teuchos::RCP<const Epetra_MultiVector> m_comp =
-      mastervec_->ViewComponent(name);
+    Teuchos::RCP<Epetra_MultiVector> g_comp = ghostvec_->ViewComponent(name);
+    Teuchos::RCP<const Epetra_MultiVector> m_comp = mastervec_->ViewComponent(name);
     g_comp->Import(*m_comp, *importers_[Index_(name)], Insert);
 
     // mark as communicated
@@ -465,14 +437,14 @@ void CompositeVector::GatherGhostedToMaster(Epetra_CombineMode mode) {
 
 
 void CompositeVector::GatherGhostedToMaster(std::string name,
-        Epetra_CombineMode mode) {
+                                            Epetra_CombineMode mode) {
   ChangedValue(name);
 #ifdef HAVE_MPI
   if (ghosted_) {
     // check for and create the importer if needed
     if (importers_[Index_(name)] == Teuchos::null) {
-      Teuchos::RCP<const Epetra_Map> target_map = ghostvec_->ComponentMap(name);
-      Teuchos::RCP<const Epetra_Map> source_map = mastervec_->ComponentMap(name);
+      Teuchos::RCP<const Epetra_BlockMap> target_map = ghostvec_->ComponentMap(name);
+      Teuchos::RCP<const Epetra_BlockMap> source_map = mastervec_->ComponentMap(name);
       importers_[Index_(name)] =
         Teuchos::rcp(new Epetra_Import(*target_map, *source_map));
     }
@@ -506,10 +478,9 @@ void CompositeVector::ApplyVandelay_() const {
 // return non-empty importer
 const Teuchos::RCP<Epetra_Import>& CompositeVector::importer(std::string name) {
   if (importers_[Index_(name)] == Teuchos::null) {
-    Teuchos::RCP<const Epetra_Map> target_map = ghostvec_->ComponentMap(name);
-    Teuchos::RCP<const Epetra_Map> source_map = mastervec_->ComponentMap(name);
-    importers_[Index_(name)] =
-      Teuchos::rcp(new Epetra_Import(*target_map, *source_map));
+    Teuchos::RCP<const Epetra_BlockMap> target_map = ghostvec_->ComponentMap(name);
+    Teuchos::RCP<const Epetra_BlockMap> source_map = mastervec_->ComponentMap(name);
+    importers_[Index_(name)] = Teuchos::rcp(new Epetra_Import(*target_map, *source_map));
   }
   return importers_[Index_(name)];
 }
@@ -677,8 +648,8 @@ void DeriveFaceValuesFromCellValues(CompositeVector& cv) {
     const Epetra_MultiVector& cv_c = *cv.ViewComponent("cell",true);
     Epetra_MultiVector& cv_f = *cv.ViewComponent("boundary_face",false);
 
-    const Epetra_Map& fb_map = cv.Mesh()->exterior_face_map(false);
-    const Epetra_Map& f_map = cv.Mesh()->face_map(false);
+    const Epetra_BlockMap& fb_map = cv.Mesh()->exterior_face_map(false);
+    const Epetra_BlockMap& f_map = cv.Mesh()->face_map(false);
 
     int fb_owned = cv_f.MyLength();
     for (int fb=0; fb!=fb_owned; ++fb) {

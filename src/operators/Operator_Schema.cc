@@ -234,8 +234,8 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
         for (int n = 0; n != nnodes; ++n) {
           int v = nodes[n];
           for (int k = 0; k < num; ++k) {
-            const std::vector<int>& col_inds = map.GhostIndices("node", k);
-            const std::vector<int>& row_inds = map.GhostIndices("node", k);
+            const std::vector<int>& col_inds = map.GhostIndices(my_block_col, "node", k);
+            const std::vector<int>& row_inds = map.GhostIndices(my_block_row, "node", k);
 
             lid_c.push_back(col_inds[v]);
             lid_r.push_back(row_inds[v]);
@@ -250,8 +250,8 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
         for (int n = 0; n != nfaces; ++n) {
           int f = faces[n];
           for (int k = 0; k < num; ++k) {
-            const std::vector<int>& col_inds = map.GhostIndices("face", k);
-            const std::vector<int>& row_inds = map.GhostIndices("face", k);
+            const std::vector<int>& col_inds = map.GhostIndices(my_block_col, "face", k);
+            const std::vector<int>& row_inds = map.GhostIndices(my_block_row, "face", k);
 
             lid_c.push_back(col_inds[f]);
             lid_r.push_back(row_inds[f]);
@@ -266,8 +266,8 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
         for (int n = 0; n != nedges; ++n) {
           int e = edges[n];
           for (int k = 0; k < num; ++k) {
-            const std::vector<int>& col_inds = map.GhostIndices("edge", k);
-            const std::vector<int>& row_inds = map.GhostIndices("edge", k);
+            const std::vector<int>& col_inds = map.GhostIndices(my_block_col, "edge", k);
+            const std::vector<int>& row_inds = map.GhostIndices(my_block_row, "edge", k);
 
             lid_c.push_back(col_inds[e]);
             lid_r.push_back(row_inds[e]);
@@ -277,8 +277,8 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
 
       else if (kind == AmanziMesh::CELL) {
         for (int k = 0; k < num; ++k) {
-          const std::vector<int>& col_inds = map.GhostIndices("cell", k);
-          const std::vector<int>& row_inds = map.GhostIndices("cell", k);
+          const std::vector<int>& col_inds = map.GhostIndices(my_block_col, "cell", k);
+          const std::vector<int>& row_inds = map.GhostIndices(my_block_row, "cell", k);
 
           lid_c.push_back(col_inds[c]);
           lid_r.push_back(row_inds[c]);
@@ -319,8 +319,8 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Face_Schema& op,
 
         for (int n = 0; n != ncells; ++n) {
           for (int k = 0; k < num; ++k) {
-            const std::vector<int>& col_inds = map.GhostIndices("cell", k);
-            const std::vector<int>& row_inds = map.GhostIndices("cell", k);
+            const std::vector<int>& col_inds = map.GhostIndices(my_block_col, "cell", k);
+            const std::vector<int>& row_inds = map.GhostIndices(my_block_row, "cell", k);
 
             lid_c.push_back(col_inds[cells[n]]);
             lid_r.push_back(row_inds[cells[n]]);
@@ -346,8 +346,8 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Node_Node& op,
                                                const SuperMap& map, GraphFE& graph,
                                                int my_block_row, int my_block_col) const
 {
-  const std::vector<int>& node_row_inds = map.GhostIndices("node", my_block_row);
-  const std::vector<int>& node_col_inds = map.GhostIndices("node", my_block_col);
+  const std::vector<int>& node_row_inds = map.GhostIndices(my_block_row, "node", 0);
+  const std::vector<int>& node_col_inds = map.GhostIndices(my_block_col, "node", 0);
 
   int ierr(0);
   for (int v = 0; v != nnodes_owned; ++v) {
@@ -389,8 +389,8 @@ void Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
         for (int n = 0; n != nnodes; ++n) {
           int v = nodes[n];
           for (int k = 0; k < num; ++k) {
-            const std::vector<int>& col_inds = map.GhostIndices("node", k);
-            const std::vector<int>& row_inds = map.GhostIndices("node", k);
+            const std::vector<int>& col_inds = map.GhostIndices(my_block_col, "node", k);
+            const std::vector<int>& row_inds = map.GhostIndices(my_block_row, "node", k);
 
             lid_c.push_back(col_inds[nodes[n]]);
             lid_r.push_back(row_inds[nodes[n]]);
@@ -405,8 +405,8 @@ void Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
         for (int n = 0; n != nfaces; ++n) {
           int f = faces[n];
           for (int k = 0; k < num; ++k) {
-            const std::vector<int>& col_inds = map.GhostIndices("face", k);
-            const std::vector<int>& row_inds = map.GhostIndices("face", k);
+            const std::vector<int>& col_inds = map.GhostIndices(my_block_col, "face", k);
+            const std::vector<int>& row_inds = map.GhostIndices(my_block_row, "face", k);
 
             lid_c.push_back(col_inds[f]);
             lid_r.push_back(row_inds[f]);
@@ -421,8 +421,8 @@ void Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
         for (int n = 0; n != nedges; ++n) {
           int e = edges[n];
           for (int k = 0; k < num; ++k) {
-            const std::vector<int>& col_inds = map.GhostIndices("edge", k);
-            const std::vector<int>& row_inds = map.GhostIndices("edge", k);
+            const std::vector<int>& col_inds = map.GhostIndices(my_block_col, "edge", k);
+            const std::vector<int>& row_inds = map.GhostIndices(my_block_row, "edge", k);
 
             lid_c.push_back(col_inds[e]);
             lid_r.push_back(row_inds[e]);
@@ -432,8 +432,8 @@ void Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
 
       else if (kind == AmanziMesh::CELL) {
         for (int k = 0; k < num; ++k) {
-          const std::vector<int>& col_inds = map.GhostIndices("cell", k);
-          const std::vector<int>& row_inds = map.GhostIndices("cell", k);
+          const std::vector<int>& col_inds = map.GhostIndices(my_block_col, "cell", k);
+          const std::vector<int>& row_inds = map.GhostIndices(my_block_row, "cell", k);
 
           lid_c.push_back(col_inds[c]);
           lid_r.push_back(row_inds[c]);
@@ -475,8 +475,8 @@ void Operator_Schema::AssembleMatrixOp(const Op_Face_Schema& op,
 
         for (int n = 0; n != ncells; ++n) {
           for (int k = 0; k < num; ++k) {
-            const std::vector<int>& col_inds = map.GhostIndices("cell", k);
-            const std::vector<int>& row_inds = map.GhostIndices("cell", k);
+            const std::vector<int>& col_inds = map.GhostIndices(my_block_col, "cell", k);
+            const std::vector<int>& row_inds = map.GhostIndices(my_block_row, "cell", k);
 
             lid_c.push_back(col_inds[cells[n]]);
             lid_r.push_back(row_inds[cells[n]]);
@@ -501,8 +501,8 @@ void Operator_Schema::AssembleMatrixOp(const Op_Node_Node& op,
                                        const SuperMap& map, MatrixFE& mat,
                                        int my_block_row, int my_block_col) const
 {
-  const std::vector<int>& node_row_inds = map.GhostIndices("node", my_block_row);
-  const std::vector<int>& node_col_inds = map.GhostIndices("node", my_block_col);
+  const std::vector<int>& node_row_inds = map.GhostIndices(my_block_row, "node", 0);
+  const std::vector<int>& node_col_inds = map.GhostIndices(my_block_col, "node", 0);
 
   int ierr(0);
   for (int v = 0; v != nnodes_owned; ++v) {

@@ -2,7 +2,7 @@
 #define __MESHAUDIT__
 
 #include "Teuchos_RCP.hpp"
-#include "Epetra_Comm.h"
+
 
 #include "Mesh.hh"
 
@@ -69,8 +69,8 @@ public:
 private:
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh;
+  Comm_ptr_type comm_;
 
-  const Epetra_Comm &comm_;
   const int MyPID;
   const int nnode;
   const int nface;
