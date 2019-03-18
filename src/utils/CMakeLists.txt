@@ -51,8 +51,7 @@ add_amanzi_library(atk
                            GlobalVerbosity.hh
                            IOEvent.hh
                            Iterators.hh
-                           factory.hh
-                           factory_with_state.hh
+                           Factory.hh
                            LeastSquare.hh
                            ObservationData.hh
                            Spline.hh
