@@ -337,38 +337,6 @@ CreateBoundaryMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
 
 
 /* ******************************************************************
-* TBW
-****************************************************************** */
-std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >
-getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
-  switch(location) {
-    case AmanziMesh::CELL:
-      return std::make_pair(Teuchos::rcpFromRef(mesh.cell_map(false)),
-                            Teuchos::rcpFromRef(mesh.cell_map(true)));
-
-    case AmanziMesh::FACE:
-      return std::make_pair(Teuchos::rcpFromRef(mesh.face_map(false)),
-                            Teuchos::rcpFromRef(mesh.face_map(true)));
-
-    case AmanziMesh::EDGE:
-      return std::make_pair(Teuchos::rcpFromRef(mesh.edge_map(false)),
-                            Teuchos::rcpFromRef(mesh.edge_map(true)));
-
-    case AmanziMesh::NODE:
-      return std::make_pair(Teuchos::rcpFromRef(mesh.node_map(false)),
-                            Teuchos::rcpFromRef(mesh.node_map(true)));
-
-    case AmanziMesh::BOUNDARY_FACE:
-      return std::make_pair(Teuchos::rcpFromRef(mesh.exterior_face_map(false)),
-                            Teuchos::rcpFromRef(mesh.exterior_face_map(true)));
-    default:
-      AMANZI_ASSERT(false);
-      return std::make_pair(Teuchos::null, Teuchos::null);
-  }
-}
-
-
-/* ******************************************************************
 * Generates a composite vestor space.
 ****************************************************************** */
 Teuchos::RCP<CompositeVectorSpace>

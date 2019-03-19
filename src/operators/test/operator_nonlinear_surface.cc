@@ -43,8 +43,8 @@ class HeatConduction {
  public:
   HeatConduction(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh) { 
     CompositeVectorSpace cvs;
-    auto cmap = Operators::getMaps(*mesh_, AmanziMesh::CELL);
-    auto fmap = Operators::getMaps(*mesh_, AmanziMesh::FACE);
+    auto cmap = Amanzi::getMaps(*mesh_, AmanziMesh::CELL);
+    auto fmap = Amanzi::getMaps(*mesh_, AmanziMesh::FACE);
     cvs.SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, cmap.first, cmap.second, 1)
       ->AddComponent("face", AmanziMesh::FACE, fmap.first, fmap.second, 1);

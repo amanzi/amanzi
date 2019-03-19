@@ -939,7 +939,11 @@ void State::Initialize(Teuchos::RCP<State> S) {
        f_it != fields_.end(); ++f_it) {
     Teuchos::RCP<Field> field = f_it->second;
     Teuchos::RCP<Field> copy = S->GetField_(field->fieldname());
-    *vo->os() << "processing field \"" << f_it->first << "\"\n";
+
+    if (vo->os_OK(Teuchos::VERB_HIGH)) {
+      Teuchos::OSTab tab = vo->getOSTab();
+      *vo->os() << "processing field \"" << f_it->first << "\"\n";
+    }
     
     if (copy != Teuchos::null) {
       if (field->type() != copy->type()) {

@@ -42,7 +42,7 @@ void PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
 
     for (auto it = global_schema_row_.begin(); it != global_schema_row_.end(); ++it) {
       std::string name(local_schema_row_.KindToString(it->kind));
-      const auto& maps = getMaps(*mesh_, it->kind);
+      const auto& maps = Amanzi::getMaps(*mesh_, it->kind);
       cvs->AddComponent(name, it->kind, maps.first, maps.second, it->num);
     }
 
