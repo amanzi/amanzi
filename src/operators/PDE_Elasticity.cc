@@ -73,9 +73,10 @@ void PDE_Elasticity::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u
 void PDE_Elasticity::Init_(Teuchos::ParameterList& plist)
 {
   // generate schema for the mimetic discretization method
-  Schema my_schema;
-  auto base = my_schema.StringToKind(plist.get<std::string>("base"));
   Teuchos::ParameterList& schema_list = plist.sublist("schema");
+
+  Schema my_schema;
+  auto base = my_schema.StringToKind(schema_list.get<std::string>("base"));
 
   mfd_ = WhetStone::BilinearFormFactory::Create(schema_list, mesh_);
   my_schema.Init(mfd_, mesh_, base);

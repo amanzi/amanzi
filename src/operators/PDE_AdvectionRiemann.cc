@@ -31,11 +31,9 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
   Teuchos::ParameterList& schema_list = plist.sublist("schema");
 
   // parse discretization parameters
-  // -- discretization method
+  auto base = global_schema_row_.StringToKind(schema_list.get<std::string>("base"));
   auto mfd = WhetStone::BilinearFormFactory::Create(schema_list, mesh_);
 
-  // -- matrices to build
-  auto base = global_schema_row_.StringToKind(plist.get<std::string>("base"));
   matrix_ = plist.get<std::string>("matrix type");
   method_ = schema_list.get<std::string>("method");
 

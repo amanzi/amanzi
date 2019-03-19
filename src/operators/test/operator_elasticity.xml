@@ -66,7 +66,6 @@
     <!-- NODE 2, FACE 1 scheme -->
     <ParameterList name="elasticity operator">
       <Parameter name="matrix type" type="string" value="stiffness"/>
-      <Parameter name="base" type="string" value="cell"/>
       <ParameterList name="schema">
         <Parameter name="method" type="string" value="BernardiRaugel"/>
         <Parameter name="method order" type="int" value="1"/>

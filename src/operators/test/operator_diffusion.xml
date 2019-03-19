@@ -110,18 +110,18 @@
     </ParameterList>
 
     <ParameterList name="diffusion operator Lagrange">
-      <Parameter name="base" type="string" value="cell"/>
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema">
+        <Parameter name="base" type="string" value="cell"/>
         <Parameter name="method" type="string" value="Lagrange"/>
         <Parameter name="method order" type="int" value="3"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="diffusion operator Lagrange serendipity">
-      <Parameter name="base" type="string" value="cell"/>
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema">
+        <Parameter name="base" type="string" value="cell"/>
         <Parameter name="method" type="string" value="Lagrange serendipity"/>
         <Parameter name="method order" type="int" value="3"/>
       </ParameterList>
@@ -129,18 +129,18 @@
 
     <!-- EDGE (nonconformal) MFD schemes -->
     <ParameterList name="diffusion operator edge">
-      <Parameter name="base" type="string" value="cell"/>
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema">
+        <Parameter name="base" type="string" value="cell"/>
         <Parameter name="method" type="string" value="diffusion edge"/>
         <Parameter name="method order" type="int" value="1"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="diffusion operator Crouzeix-Raviart">
-      <Parameter name="base" type="string" value="cell"/>
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema">
+        <Parameter name="base" type="string" value="cell"/>
         <Parameter name="method" type="string" value="CrouzeixRaviart"/>
         <Parameter name="method order" type="int" value="3"/>
       </ParameterList>
@@ -226,12 +226,12 @@
 
     <!-- DG (nonconformal) schemes -->
     <ParameterList name="diffusion operator dg">
-      <Parameter name="base" type="string" value="cell"/>
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema">
+        <Parameter name="base" type="string" value="cell"/>
         <Parameter name="method" type="string" value="dg modal"/>
-        <Parameter name="dg basis" type="string" value="regularized"/>
         <Parameter name="method order" type="int" value="2"/>
+        <Parameter name="dg basis" type="string" value="regularized"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

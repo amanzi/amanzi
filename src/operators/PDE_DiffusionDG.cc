@@ -38,7 +38,8 @@ void PDE_DiffusionDG::Init_(Teuchos::ParameterList& plist)
   // parameters
   // -- discretization details
   Schema my_schema;
-  auto base = my_schema.StringToKind(plist.get<std::string>("base"));
+  auto base = my_schema.StringToKind(schema_list.get<std::string>("base"));
+
   matrix_ = plist.get<std::string>("matrix type");
   method_order_ = schema_list.get<int>("method order", 0);
   

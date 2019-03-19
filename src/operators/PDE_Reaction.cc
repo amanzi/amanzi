@@ -26,10 +26,10 @@ namespace Operators {
 ****************************************************************** */
 void PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
 {
-  // parse discretization  parameters
-  auto base = global_schema_row_.StringToKind(plist.get<std::string>("base"));
-
   Teuchos::ParameterList& schema_list = plist.sublist("schema");
+
+  // parse discretization  parameters
+  auto base = global_schema_row_.StringToKind(schema_list.get<std::string>("base"));
   mfd_ = WhetStone::BilinearFormFactory::Create(schema_list, mesh_);
 
   if (global_op_ == Teuchos::null) {

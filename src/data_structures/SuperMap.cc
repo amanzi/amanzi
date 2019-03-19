@@ -123,8 +123,5 @@ SuperMap::SuperMap(const std::vector<CompositeVectorSpace>& cvss)
   }
 }
 
-
-
-
 } // namespace Operators
 } // namespace Amanzi

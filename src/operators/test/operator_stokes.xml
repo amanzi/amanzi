@@ -70,9 +70,8 @@
     <!-- NODE 2, FACE 1 scheme -->
     <ParameterList name="elasticity operator">
       <Parameter name="matrix type" type="string" value="stiffness"/>
-      <Parameter name="base" type="string" value="cell"/>
-
       <ParameterList name="schema">
+        <Parameter name="base" type="string" value="cell"/>
         <Parameter name="method" type="string" value="BernardiRaugel"/>
         <Parameter name="method order" type="int" value="1"/>
       </ParameterList>
@@ -80,16 +79,16 @@
 
     <ParameterList name="divergence operator">
       <Parameter name="matrix type" type="string" value="divergence"/>
-      <Parameter name="base" type="string" value="cell"/>
-
       <ParameterList name="schema domain">
+        <Parameter name="base" type="string" value="cell"/>
         <Parameter name="method" type="string" value="BernardiRaugel"/>
         <Parameter name="method order" type="int" value="1"/>
       </ParameterList>
       <ParameterList name="schema range">
+        <Parameter name="base" type="string" value="cell"/>
         <Parameter name="method" type="string" value="dg modal"/>
-        <Parameter name="dg basis" type="string" value="regularized"/>
         <Parameter name="method order" type="int" value="0"/>
+        <Parameter name="dg basis" type="string" value="regularized"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

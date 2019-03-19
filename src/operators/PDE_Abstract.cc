@@ -29,7 +29,6 @@ void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
 {
   // parse parameters
   // -- discretization details
-  auto base = global_schema_row_.StringToKind(plist.get<std::string>("base"));
   matrix_ = plist.get<std::string>("matrix type");
   grad_on_test_ = plist.get<bool>("gradient operator on test function", true);
 
@@ -54,8 +53,7 @@ void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
   }
 
   // discretization method:
-  // -- mfd for columns, aka try space, aka domain
-  // -- mfd_range for rows, aka test space, aka range
+  auto base = global_schema_row_.StringToKind(domain.get<std::string>("base"));
   mfd_ = WhetStone::BilinearFormFactory::Create(domain, mesh_);
   Teuchos::RCP<WhetStone::BilinearForm> mfd_range;
   if (!symmetric) 

@@ -36,12 +36,12 @@
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
     <ParameterList name="flux operator">
-      <Parameter name="base" type="string" value="face"/>
       <Parameter name="matrix type" type="string" value="flux"/>
       <Parameter name="flux formula" type="string" value="downwind"/>
       <Parameter name="jump operator on test function" type="bool" value="true"/>
 
       <ParameterList name="schema">
+        <Parameter name="base" type="string" value="face"/>
         <Parameter name="method" type="string" value="dg modal"/>
         <Parameter name="method order" type="int" value="1"/>
         <Parameter name="dg basis" type="string" value="orthonormalized"/>
@@ -49,11 +49,11 @@
     </ParameterList>
 
     <ParameterList name="advection operator">
-      <Parameter name="base" type="string" value="cell"/>
       <Parameter name="matrix type" type="string" value="advection"/>
       <Parameter name="gradient operator on test function" type="bool" value="true"/>
 
       <ParameterList name="schema">
+        <Parameter name="base" type="string" value="cell"/>
         <Parameter name="method" type="string" value="dg modal"/>
         <Parameter name="method order" type="int" value="1"/>
         <Parameter name="dg basis" type="string" value="orthonormalized"/>
@@ -61,10 +61,10 @@
     </ParameterList>
 
     <ParameterList name="reaction operator">
-      <Parameter name="base" type="string" value="cell"/>
       <Parameter name="matrix type" type="string" value="mass"/>
 
       <ParameterList name="schema">
+        <Parameter name="base" type="string" value="cell"/>
         <Parameter name="method" type="string" value="dg modal"/>
         <Parameter name="dg basis" type="string" value="orthonormalized"/>
         <Parameter name="method order" type="int" value="1"/>
@@ -72,10 +72,10 @@
     </ParameterList>
 
     <ParameterList name="divergence operator">
-      <Parameter name="base" type="string" value="cell"/>
       <Parameter name="matrix type" type="string" value="mass"/>
 
       <ParameterList name="schema">
+        <Parameter name="base" type="string" value="cell"/>
         <Parameter name="method" type="string" value="dg modal"/>
         <Parameter name="dg basis" type="string" value="orthonormalized"/>
         <Parameter name="method order" type="int" value="1"/>
