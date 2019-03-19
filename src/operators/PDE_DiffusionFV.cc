@@ -26,7 +26,7 @@ namespace Operators {
 /* ******************************************************************
 * Initialization
 ****************************************************************** */
-void PDE_DiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
+void PDE_DiffusionFV::Init_(Teuchos::ParameterList& plist)
 {
   // Define stencil for the FV diffusion method.
   local_op_schema_ = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL;
@@ -225,10 +225,10 @@ void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_TRUE && u.get()) {
     AMANZI_ASSERT(u != Teuchos::null);
 
-    if (k_ != Teuchos::null){
+    if (k_ != Teuchos::null) {
       if (k_->HasComponent("face")) k_->ScatterMasterToGhosted("face");
     }
-    if (dkdp_ != Teuchos::null){
+    if (dkdp_ != Teuchos::null) {
       if (dkdp_->HasComponent("face")) dkdp_->ScatterMasterToGhosted("face");
     }
 
@@ -245,10 +245,10 @@ void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_TRUE && u.get()) {
     AMANZI_ASSERT(u != Teuchos::null);
 
-    if (k_ != Teuchos::null){
+    if (k_ != Teuchos::null) {
       if (k_->HasComponent("face")) k_->ScatterMasterToGhosted("face");
     }
-    if (dkdp_ != Teuchos::null){
+    if (dkdp_ != Teuchos::null) {
       if (dkdp_->HasComponent("face")) dkdp_->ScatterMasterToGhosted("face");
     }
 

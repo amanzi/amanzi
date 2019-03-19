@@ -35,6 +35,7 @@
 #include "Op_Cell_Face.hh"
 #include "Op_Cell_Node.hh"
 #include "Op_Cell_Schema.hh"
+#include "Op_Diagonal.hh"
 #include "Op_Edge_Edge.hh"
 #include "Op_Face_Cell.hh"
 #include "Op_Face_CellBndFace.hh"
@@ -158,7 +159,7 @@ void Operator::SymbolicAssembleMatrix()
   // create the graph
   int row_size = MaxRowSize(*mesh_, schema(), 1);
   Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->Map(),
-          smap_->GhostedMap(), smap_->GhostedMap(), row_size));
+      smap_->GhostedMap(), smap_->GhostedMap(), row_size));
 
   // fill the graph
   SymbolicAssembleMatrix(*smap_, *graph, 0, 0);
@@ -277,9 +278,8 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar)
 
   apply_calls_++;
 
-  for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
+  for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it)
     (*it)->ApplyMatrixFreeOp(this, X, Y);
-  }
 
   return 0;
 }
@@ -358,15 +358,9 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 
   Epetra_Vector Xcopy(*smap_->Map());
   Epetra_Vector Ycopy(*smap_->Map());
+
   ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy);
-
-  // dump the schur complement
-  // std::stringstream filename_s2;
-  // filename_s2 << "schur_PC_" << 0 << ".txt";
-  // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *A_);
-
   ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
-  
   ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y);
 
   if (ierr) {
@@ -710,10 +704,10 @@ int Operator::ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
 
 
 int Operator::ApplyMatrixFreeOp(const Op_Face_Schema& op,
-                                const CompositeVector& X, CompositeVector& Y) const
-{
+                                const CompositeVector& X, CompositeVector& Y) const {
   return SchemaMismatch_(op.schema_string, schema_string_);
 }
+
 
 /* ******************************************************************
 * Visit methods for Apply: Edges
@@ -737,8 +731,7 @@ int Operator::ApplyMatrixFreeOp(const Op_Node_Node& op,
 * Visit methods for Apply: SurfaceCell
 ****************************************************************** */
 int Operator::ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
-                                const CompositeVector& X, CompositeVector& Y) const
-{
+                                const CompositeVector& X, CompositeVector& Y) const {
   return SchemaMismatch_(op.schema_string, schema_string_);
 }
 
@@ -747,8 +740,16 @@ int Operator::ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
 * Visit methods for Apply: SurfaceFace
 ****************************************************************** */
 int Operator::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
-                                const CompositeVector& X, CompositeVector& Y) const
-{
+                                const CompositeVector& X, CompositeVector& Y) const {
+  return SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+/* ******************************************************************
+* Visit methods for Apply: Coupling
+****************************************************************** */
+int Operator::ApplyMatrixFreeOp(const Op_Diagonal& op,
+                                const CompositeVector& X, CompositeVector& Y) const {
   return SchemaMismatch_(op.schema_string, schema_string_);
 }
 
@@ -889,6 +890,16 @@ void Operator::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
 
 
 /* ******************************************************************
+* Visit methods for symbolic assemble: Coupling
+****************************************************************** */
+void Operator::SymbolicAssembleMatrixOp(const Op_Diagonal& op,
+                                        const SuperMap& map, GraphFE& graph,
+                                        int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+/* ******************************************************************
 * Visit methods for assemble: Cell.
 ****************************************************************** */
 void Operator::AssembleMatrixOp(const Op_Cell_FaceCell& op,
@@ -1003,6 +1014,16 @@ void Operator::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
       << " cannot be used with a matrix on " << schema_string_;
   Errors::Message message(err.str());
   Exceptions::amanzi_throw(message);
+}
+
+
+/* ******************************************************************
+* Visit methods for assemble: Coupling
+****************************************************************** */
+void Operator::AssembleMatrixOp(const Op_Diagonal& op,
+                                const SuperMap& map, MatrixFE& mat,
+                                int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 

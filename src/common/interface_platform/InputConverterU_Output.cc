@@ -387,6 +387,8 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
                 } else if (strcmp(value, "mean") == 0) {
                   obPL.set<std::string>("functional", "observation data: mean");
                 }
+              } else if (strcmp(elem, "domain_name") == 0) {
+                obPL.set<std::string>("domain name", (strcmp(value, "matrix") == 0) ? "domain" : "fracture");
               } else if (strcmp(elem, "interpolation") == 0) {
                 if (strcmp(value, "constant") == 0) {
                   obPL.set<std::string>("interpolation", "constant");

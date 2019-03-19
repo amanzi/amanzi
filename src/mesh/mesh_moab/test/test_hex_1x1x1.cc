@@ -39,7 +39,7 @@ TEST(MOAB_HEX1)
   auto comm = Amanzi::getDefaultComm();
 
   // Load a single hex-mesh
-  Amanzi::AmanziMesh::Mesh_MOAB mesh("test/hex_1x1x1_ss.exo",comm);
+  Amanzi::AmanziMesh::Mesh_MOAB mesh("test/hex_1x1x1_ss.exo", comm);
 
   // Check number of nodes and their coordinates
   nv = mesh.num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
@@ -51,7 +51,6 @@ TEST(MOAB_HEX1)
     mesh.node_get_coordinates(i,&coords);
     CHECK_ARRAY_EQUAL(xyz[i],coords,3);
   }
-
 
   // Check number of cells and their face nodes and their face coordinates
   nc = mesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);

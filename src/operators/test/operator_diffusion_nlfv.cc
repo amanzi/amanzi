@@ -92,8 +92,6 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
       double area = mesh->face_area(f);
       bc_model[f] = OPERATOR_BC_NEUMANN;
       bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
-      // bc_model[f] = OPERATOR_BC_DIRICHLET;
-      // bc_value[f] = ana.pressure_exact(xf, 0.0);
     }
   }
 
@@ -117,7 +115,6 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
     src[0][c] = ana.source_exact(xc, 0.0);
-    //sol[0][c] = ana.pressure_exact(xc, 0.0);
   }
 
   // populate the diffusion operator
@@ -215,6 +212,7 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   Analytic ana(mesh, gravity);
+  Analytic ana_diff(mesh, 0.0);
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
@@ -237,19 +235,14 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
       double area = mesh->face_area(f);
       bc_model[f] = OPERATOR_BC_NEUMANN;
-      bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
-      // bc_model[f] = OPERATOR_BC_DIRICHLET;
-      // bc_value[f] = ana.pressure_exact(xf, 0.0);
+      bc_value[f] = ana_diff.velocity_exact(xf, 0.0) * normal / area;
     }
   }
-
-
 
   // create diffusion operator 
   double rho(1.0);
   AmanziGeometry::Point g(0.0, -gravity);
   Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFacesGravity(op_list, mesh, rho, g));
-  // Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFaces(op_list, mesh));
   Teuchos::RCP<Operator> global_op = op->global_operator();
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = global_op->DomainMap();
@@ -267,20 +260,7 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
     src[0][c] = ana.source_exact(xc, 0.0);
-    //sol[0][c] = ana.pressure_exact(xc, 0.0);
   }
-
-  // for (int f = 0; f < nfaces; f++) {
-  //   const Point& xf = mesh->face_centroid(f);
-  //   if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
-  //       fabs(xf[1]) < 1e-6) {
-  //     int bf = mesh->exterior_face_map(true).LID(mesh->face_map(false).GID(f));
-  //     sol_bnd[0][bf] = ana.pressure_exact(xf, 0.0);
-  //   } else if (fabs(xf[1] - 1.0) < 1e-6) {
-  //     int bf = mesh->exterior_face_map(true).LID(mesh->face_map(false).GID(f));
-  //     sol_bnd[0][bf] = ana.pressure_exact(xf, 0.0);
-  //   }
-  // }
 
   // populate the diffusion operator
   op->Setup(K, Teuchos::null, Teuchos::null);
@@ -292,7 +272,6 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
     op->ApplyBCs(true, true, true);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
-
 
     // create preconditoner using the base operator class
     Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
@@ -325,7 +304,7 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
     op->UpdateFlux(solution.ptr(), flux.ptr());
     double unorm, ul2_err, uinf_err;
 
-    ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
+    ana_diff.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
     if (MyPID == 0) {
       pl2_err /= pnorm; 
@@ -341,27 +320,26 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
       CHECK(solver.num_itrs() < 15);
     }
   }
-
 }
 
 TEST(OPERATOR_DIFFUSION_NLFV_DMP_02) {
   RunTestDiffusionNLFV_DMP<Analytic02>(0.0, true);
 }
 
-TEST(OPERATOR_DIFFUSION_NLFVwithBndFaces_DMP_02) {
-  RunTestDiffusionNLFVwithBndFaces_DMP<Analytic02>(0.0, true);
-}
-
 TEST(OPERATOR_DIFFUSION_NLFV_wGravity) {
   RunTestDiffusionNLFV_DMP<Analytic02>(2.7, true);
 }
 
-TEST(OPERATOR_DIFFUSION_NLFVwithBndFaces_wGravity) {
-  RunTestDiffusionNLFVwithBndFaces_DMP<Analytic02>(2.7, true);
-}
-
 TEST(OPERATOR_DIFFUSION_NLFV_DMP_01) {
   RunTestDiffusionNLFV_DMP<Analytic01>(2.7, false);
+}
+
+TEST(OPERATOR_DIFFUSION_NLFVwithBndFaces_DMP_02) {
+  RunTestDiffusionNLFVwithBndFaces_DMP<Analytic02>(0.0, true);
+}
+
+TEST(OPERATOR_DIFFUSION_NLFVwithBndFaces_wGravity) {
+  RunTestDiffusionNLFVwithBndFaces_DMP<Analytic02>(2.7, true);
 }
 
 TEST(OPERATOR_DIFFUSION_NLFVwithBndFaces_DMP_01) {

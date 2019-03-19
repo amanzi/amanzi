@@ -15,6 +15,7 @@
 
 #include "Op_Cell_Schema.hh"
 #include "OperatorDefs.hh"
+#include "OperatorUtils.hh"
 #include "Operator_Schema.hh"
 #include "PDE_Reaction.hh"
 
@@ -47,9 +48,10 @@ void PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
       int num;
       AmanziMesh::Entity_kind kind;
       std::tie(kind, std::ignore, num) = *it;
-
       std::string name(local_schema_row_.KindToString(kind));
-      cvs->AddComponent(name, kind, num);
+
+      const auto& maps = Amanzi::getMaps(*mesh_, kind);
+      cvs->AddComponent(name, kind, maps.first, maps.second, num);
     }
 
     global_op_ = Teuchos::rcp(new Operator_Schema(cvs, cvs, plist, global_schema_row_, global_schema_col_));

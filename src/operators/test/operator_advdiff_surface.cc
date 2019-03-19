@@ -102,8 +102,8 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
 
   // create diffusion operator
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("diffusion operator");
-  Teuchos::RCP<PDE_Diffusion> op_diff =
-      Teuchos::rcp(new PDE_DiffusionMFD(olist, (Teuchos::RCP<const AmanziMesh::Mesh>) surfmesh));
+  auto op_diff = Teuchos::rcp(new PDE_DiffusionMFD(olist, (Teuchos::RCP<const AmanziMesh::Mesh>) surfmesh));
+  op_diff->Init(olist);
   op_diff->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op_diff->global_operator()->DomainMap();
 

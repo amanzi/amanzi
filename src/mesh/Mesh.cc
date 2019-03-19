@@ -1115,13 +1115,16 @@ Mesh::valid_set_name(std::string name, Entity_kind kind) const
     auto lsrgn = Teuchos::rcp_dynamic_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
     std::string entity_type = lsrgn->entity_str();
 
-    if ((kind == CELL && entity_type == "CELL") ||
-        (kind == FACE && entity_type == "FACE") ||
-        (kind == EDGE && entity_type == "EDGE") ||
-        (kind == NODE && entity_type == "NODE"))
-      return true;
-    else
-      return false;
+    if (parent() == Teuchos::null) {
+      if ((kind == CELL && entity_type == "CELL") ||
+          (kind == FACE && entity_type == "FACE") ||
+          (kind == EDGE && entity_type == "EDGE") ||
+          (kind == NODE && entity_type == "NODE"))
+        return true;
+    } else {
+      if (kind == CELL && entity_type == "FACE") return true;
+    } 
+    return false;
   }
 
   // If we are looking for a cell set the region has to be

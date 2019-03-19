@@ -1908,7 +1908,7 @@ void Mesh_MOAB::init_face_map()
     for (int f = 0; f < nface; ++f) {
       face_get_cells_internal_(f, Parallel_type::ALL, &cellids);
       if (cellids.size() == 1)
-        extface_gids[++n_extface] = face_gids[f];
+        extface_gids[n_extface++] = face_gids[f];
     }
 
     extface_map_wo_ghosts_ = new Epetra_Map(-1, n_extface, extface_gids, 0, *get_comm());

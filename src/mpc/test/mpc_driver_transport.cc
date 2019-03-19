@@ -55,7 +55,11 @@ using namespace Amanzi::AmanziGeometry;
 
   Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(plist));
 
-  Amanzi::CycleDriver cycle_driver(glist, mesh, comm, obs_data);
+  Teuchos::ParameterList state_plist = glist->sublist("state");
+  Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
+  S->RegisterMesh("domain", mesh);
+
+  Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
   cycle_driver.Go();
 }
 

@@ -85,9 +85,10 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
 /* ******************************************************************
 * Insert each cells neighboring cells.
 ****************************************************************** */
-void Operator_CellBndFace::SymbolicAssembleMatrixOp(const Op_Face_CellBndFace& op,
-                                             const SuperMap& map, GraphFE& graph,
-                                             int my_block_row, int my_block_col) const
+void Operator_CellBndFace::SymbolicAssembleMatrixOp(
+    const Op_Face_CellBndFace& op,
+    const SuperMap& map, GraphFE& graph,
+    int my_block_row, int my_block_col) const
 {
   // ELEMENT: face, DOF: cell, bnd_face
   int lid_r[2];
@@ -123,9 +124,10 @@ void Operator_CellBndFace::SymbolicAssembleMatrixOp(const Op_Face_CellBndFace& o
 }
 
 
-void Operator_CellBndFace::AssembleMatrixOp(const Op_Face_CellBndFace& op,
-                                     const SuperMap& map, MatrixFE& mat,
-                                     int my_block_row, int my_block_col) const
+void Operator_CellBndFace::AssembleMatrixOp(
+    const Op_Face_CellBndFace& op,
+    const SuperMap& map, MatrixFE& mat,
+    int my_block_row, int my_block_col) const
 {
   AMANZI_ASSERT(op.matrices.size() == nfaces_owned);
   

@@ -53,7 +53,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   // --- gravity
   Teuchos::Array<double> gravity(dim_);
   for (int i = 0; i != dim_-1; ++i) gravity[i] = 0.0;
-  gravity[dim_-1] = -GRAVITY_MAGNITUDE;
+  gravity[dim_-1] = -const_gravity_;
   out_ic.sublist("gravity").set<Teuchos::Array<double> >("value", gravity);
 
   // --- viscosity
@@ -167,9 +167,9 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       if (attr_names.size() > 0) file++;
 
       if (conductivity) {
-        kx *= viscosity / (rho_ * GRAVITY_MAGNITUDE);
-        ky *= viscosity / (rho_ * GRAVITY_MAGNITUDE);
-        kz *= viscosity / (rho_ * GRAVITY_MAGNITUDE);
+        kx *= viscosity / (rho_ * const_gravity_);
+        ky *= viscosity / (rho_ * const_gravity_);
+        kz *= viscosity / (rho_ * const_gravity_);
       }
 
       // Second, we copy collected data to XML file.
@@ -255,6 +255,38 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
       if (flag) {
         TranslateFieldIC_(node, "porosity_matrix", "-", reg_str, regions, out_ic, out_ev);
+      }
+    }
+  }
+
+  // optional fracture network
+  node = GetUniqueElementByTagsString_("fracture_network, materials", flag);
+  if (flag) {
+    children = node->getChildNodes();
+
+    for (int i = 0; i < children->getLength(); i++) {
+      DOMNode* inode = children->item(i);
+      if (DOMNode::ELEMENT_NODE != inode->getNodeType()) continue;
+
+      node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
+      std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
+      std::string reg_str = CreateNameFromVector_(regions);
+
+      // material properties
+      // -- porosity
+      node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
+      if (flag) {
+        TranslateFieldEvaluator_(node, "fracture-porosity", "-", reg_str, regions, out_ic, out_ev);
+      }
+
+      // -- aperture
+      node = GetUniqueElementByTagsString_(inode, "fracture_permeability", flag);
+      if (flag) {
+        TranslateFieldEvaluator_(node, "fracture-aperture", "m", reg_str, regions, out_ic, out_ev, "aperture");
+        TranslateFieldIC_(node, "fracture-normal_permeability", "m^2*s/kg", reg_str, regions, out_ic, out_ev, "normal");
+      } else { 
+        msg << "fracture_permeability element must be specified for all materials in fracture network.";
+        Exceptions::amanzi_throw(msg);
       }
     }
   }
@@ -461,8 +493,73 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
     }
   }
 
+  // initialization of fields via the initial_conditions in optional fracture network
+  node = GetUniqueElementByTagsString_("fracture_network, initial_conditions", flag);
+  if (flag) {
+    children = node->getChildNodes();
+
+    for (int i = 0; i < children->getLength(); i++) {
+      DOMNode* inode = children->item(i);
+      if (DOMNode::ELEMENT_NODE != inode->getNodeType()) continue;
+
+      node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
+      std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
+      std::string reg_str = CreateNameFromVector_(regions);
+
+      // -- uniform fracture pressure
+      node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, uniform_pressure", flag);
+      if (flag) {
+        double p = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX);
+
+        Teuchos::ParameterList& pressure_ic = out_ic.sublist("fracture-pressure");
+        pressure_ic.sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "cell")
+            .sublist("function").sublist("function-constant")
+            .set<double>("value", p);
+      }
+
+      // -- total_component_concentration (liquid phase)
+      int ncomp_l = phases_["water"].size();
+
+      node = GetUniqueElementByTagsString_(inode, "liquid_phase, solute_component", flag);
+      if (flag && ncomp_l > 0) {
+        std::vector<double> vals(ncomp_l, 0.0);
+
+        DOMNodeList* children = node->getChildNodes();
+        for (int j = 0; j < children->getLength(); ++j) {
+          DOMNode* jnode = children->item(j);
+          tagname = mm.transcode(jnode->getNodeName());
+
+          if (strcmp(tagname, "uniform_conc") == 0) {
+            std::string unit, text;
+            text = GetAttributeValueS_(jnode, "name");
+            int m = GetPosition_(phases_["water"], text);
+            GetAttributeValueD_(jnode, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "molar");  // just a check
+            vals[m] = ConvertUnits_(GetAttributeValueS_(jnode, "value"), unit, solute_molar_mass_[text]);
+          }
+        }
+
+        Teuchos::ParameterList& tcc_ic = out_ic.sublist("fracture-total_component_concentration");
+        Teuchos::ParameterList& dof_list = tcc_ic.sublist("function").sublist(reg_str)
+            .set<Teuchos::Array<std::string> >("regions", regions)
+            .set<std::string>("component", "cell")
+            .sublist("function")
+            .set<int>("number of dofs", ncomp_l)
+            .set<std::string>("function type", "composite function");
+
+        for (int k = 0; k < ncomp_l; k++) {
+          std::string name = phases_["water"][k];
+          std::stringstream dof_str;
+          dof_str << "dof " << k + 1 << " function";
+          dof_list.sublist(dof_str.str()).sublist("function-constant").set<double>("value", vals[k]);
+        }
+      }
+    }
+  }
+
   // atmospheric pressure
-  out_ic.sublist("atmospheric_pressure").set<double>("value", ATMOSPHERIC_PRESSURE);
+  out_ic.sublist("atmospheric_pressure").set<double>("value", const_atm_pressure_);
 
   // add mesh partitions to the state list
   out_list.sublist("mesh partitions") = TranslateMaterialsPartition_();
@@ -527,7 +624,8 @@ void InputConverterU::TranslateFieldEvaluator_(
 void InputConverterU::TranslateFieldIC_(
     DOMNode* node, std::string field, std::string unit,
     const std::string& reg_str, const std::vector<std::string>& regions,
-    Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev)
+    Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev,
+    std::string data_key)
 {
   std::string type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
   if (type == "file") {
@@ -535,7 +633,7 @@ void InputConverterU::TranslateFieldIC_(
     Teuchos::ParameterList& field_ic = out_ic.sublist(field);
     field_ic.set<std::string>("restart file", filename);
   } else {
-    double val = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
+    double val = GetAttributeValueD_(node, data_key.c_str(), TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
 
     Teuchos::ParameterList& field_ic = out_ic.sublist(field);
     field_ic.sublist("function").sublist(reg_str)

@@ -99,7 +99,8 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
 
   // create diffusion operator 
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator nodal");
-  Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionMFD(op_list, mesh));
+  auto op = Teuchos::rcp(new PDE_DiffusionMFD(op_list, mesh));
+  op->Init(op_list);
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
@@ -245,7 +246,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
 
   for (int v = 0; v < nnodes_wghost; v++) {
     mesh->node_get_coordinates(v, &xv);
-    if(fabs(xv[0] - 1.0) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6) {
+    if (fabs(xv[0] - 1.0) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6) {
       bc_model_v[v] = OPERATOR_BC_DIRICHLET;
       bc_value_v[v] = ana.pressure_exact(xv, 0.0);
     }

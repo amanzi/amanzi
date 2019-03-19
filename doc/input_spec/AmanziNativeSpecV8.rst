@@ -21,7 +21,7 @@ at the beginning and end by the following statements:
 .. code-block:: xml
 
   <ParameterList name="transport">
-    various lists and sublists
+    various parameters and sublists
   </ParameterList>
 
 The value of *name* can be anything (*transport* in this example).  
@@ -116,8 +116,9 @@ code development and its daily usage in reasearch.
 * Camel-case names should *not* be used as names for fixed keywords (parameters and parameter lists).  
   The following is a short list of allowed exceptions. 
  
-  * The names crated by the user are not fixed keywords and are exempt from the above
-    rule.
+  * The names created by the user are not fixed/reserved keywords and are exempt from the above
+    rule. In this documents, we always prefix user-defined names with 
+    the underscore symbol.
 
   * Proper names such as an individual person, place, or organization, including their derivatives
     *should* be spelled using capital letters. Examples: *van Genuchten m*, *Brocks-Corey lambda*, 
@@ -126,12 +127,12 @@ code development and its daily usage in reasearch.
   * Names of chemical species (inside fixed keywords) should be capitalized. Examples: *CO2*, *H+*.
 
   * A few well-established abbreviations. Their complete list is here: *PK*, *MPC*, *BDF1*, *EOS*,
-    *IEM*, *PFloTran*, *pH*. Note that names of linear and nonlinear solvers and preconditioners are 
-    not included in this list. Thus, we have to use *pcg*, *gmres*, *nka*, *jfnk*, *amg*, *ml*, and *ilu*.
+    *IEM*, *PFloTran*, *pH*, *TP*. Note that names of linear and nonlinear solvers and preconditioners are 
+    not included in this list. Thus, we have to use *pcg*, *gmres*, *nka*, *amg*, *ml*, and *ilu*.
 
   * Units such as energy [J] and temperature [K].
 
-  * The Hilbert spaces *L2* and *H1*. Note that *L2* and *l2* are different spaces and shouldbe used
+  * The Hilbert spaces *L2* and *H1*. Note that *L2* and *l2* are different spaces and should be used
     appropriately.
 
   * Trilinos parameters. There are a few camel-case parameters that
@@ -193,12 +194,12 @@ Note: *cycle* here means the current time integration step and *not* the global 
 
 .. code-block:: xml
 
-   <ParameterList name="BDF1">  <!-- parent list -->
-     <ParameterList name="residual debugger">
-       <Parameter name="cycles start period stop" type="Array(int)" value="{0,100,-1}"/>
-       <Parameter name="cycles" type="Array(int)" value="{999,1001}"/>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="BDF1">  <!-- parent list -->
+  <ParameterList name="residual debugger">
+    <Parameter name="cycles start period stop" type="Array(int)" value="{0,100,-1}"/>
+    <Parameter name="cycles" type="Array(int)" value="{999,1001}"/>
+  </ParameterList>
+  </ParameterList>
    
 
 Units
@@ -211,14 +212,14 @@ Amanzi's internal default units are SI units except for the concentration.
 
 .. code-block:: xml
 
-   <ParameterList>  <!-- parent list -->
-     <ParameterList name="units">
-       <Parameter name="length" type="string" value="m"/>
-       <Parameter name="time" type="string" value="s"/>
-       <Parameter name="mass" type="string" value="kg"/>
-       <Parameter name="concentration" type="string" value="molar"/>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList>  <!-- parent list -->
+  <ParameterList name="units">
+    <Parameter name="length" type="string" value="m"/>
+    <Parameter name="time" type="string" value="s"/>
+    <Parameter name="mass" type="string" value="kg"/>
+    <Parameter name="concentration" type="string" value="molar"/>
+  </ParameterList>
+  </ParameterList>
 
 
 Cycle driver
@@ -266,43 +267,43 @@ to handle multiphysics process kernels (PKs) and multiple time periods.
 .. code-block:: xml
 
   <ParameterList>  <!-- parent list -->
-    <ParameterList name="cycle driver">
-      <Parameter name="component names" type="Array(string)" value="{H+, Na+, NO3-, Zn++}"/>
-      <Parameter name="component molar masses" type="Array(double)" value="{1.0e-3, 23.0e-3, 62.0e-3, 65.4e-3}"/>
-      <Parameter name="number of liquid components" type="int" value="4"/>
-      <ParameterList name="time periods">
-        <ParameterList name="TP 0">
-          <ParameterList name="PK tree">
-            <ParameterList name="FLOW and REACTIVE TRANSPORT">
-              <Parameter name="PK type" type="string" value="flow reactive transport"/>
-              <ParameterList name="REACTIVE TRANSPORT">
-                <Parameter name="PK type" type="string" value="reactive transport"/>
-                <ParameterList name="TRANSPORT">
-                  <Parameter name="PK type" type="string" value="transport"/>
-                </ParameterList>
-                <ParameterList name="CHEMISTRY">
-                  <Parameter name="PK type" type="string" value="chemistry"/>
-                </ParameterList>
+  <ParameterList name="cycle driver">
+    <Parameter name="component names" type="Array(string)" value="{H+, Na+, NO3-, Zn++}"/>
+    <Parameter name="component molar masses" type="Array(double)" value="{1.0e-3, 23.0e-3, 62.0e-3, 65.4e-3}"/>
+    <Parameter name="number of liquid components" type="int" value="4"/>
+    <ParameterList name="time periods">
+      <ParameterList name="TP 0">
+        <ParameterList name="PK tree">
+          <ParameterList name="_FLOW and REACTIVE TRANSPORT">
+            <Parameter name="PK type" type="string" value="flow reactive transport"/>
+            <ParameterList name="_REACTIVE TRANSPORT">
+              <Parameter name="PK type" type="string" value="reactive transport"/>
+              <ParameterList name="_TRANSPORT">
+                <Parameter name="PK type" type="string" value="transport"/>
               </ParameterList>
-              <ParameterList name="FLOW">
-                <Parameter name="PK type" type="string" value="darcy"/>
+              <ParameterList name="_CHEMISTRY">
+                <Parameter name="PK type" type="string" value="chemistry"/>
               </ParameterList>
             </ParameterList>
+            <ParameterList name="_FLOW">
+              <Parameter name="PK type" type="string" value="darcy"/>
+            </ParameterList>
           </ParameterList>
-          <Parameter name="start period time" type="double" value="0.0"/>
-          <Parameter name="end period time" type="double" value="1.5778463e+09"/>
-          <Parameter name="maximum cycle number" type="int" value="-1"/>
-          <Parameter name="initial time step" type="double" value="1.57680e+05"/>
         </ParameterList>
+        <Parameter name="start period time" type="double" value="0.0"/>
+        <Parameter name="end period time" type="double" value="1.5778463e+09"/>
+        <Parameter name="maximum cycle number" type="int" value="-1"/>
+        <Parameter name="initial time step" type="double" value="1.57680e+05"/>
+      </ParameterList>
 
-        <ParameterList name="TP 1">
-        ... 
-        </ParameterList>
+      <ParameterList name="TP 1">
+      ... 
       </ParameterList>
     </ParameterList>
   </ParameterList>
+  </ParameterList>
 
-In this simulation, we use the PK called *flow reactive transport*. It is
+In this simulation, we use the PK labeled as *flow reactive transport*. It is
 defined internally as sequential application of two PKs, *flow* and *reactive transport*.
 The latter is defined as sequential application of two PKs, *transport* and *chemistry*.
 Process kernel *reactive transport* can susbcycle with respect to *flow*.
@@ -326,15 +327,15 @@ This list must *NOT* include start times for time periods *TP #*.
 
 .. code-block:: xml
 
-   <ParameterList name="cycle driver">  <!-- parent list -->
-     <ParameterList name="time period control">
-       <Parameter name="start times" type="Array(double)" value="{3.16e+10, 6.32e+10}"/>
-       <Parameter name="initial time step" type="Array(double)" value="{100.0, 100.0}"/>
-       <Parameter name="maximum time step" type="Array(double)" value="{3.2e+8, 4e+17}"/>
-     </ParameterList>
+  <ParameterList name="cycle driver">  <!-- parent list -->
+  <ParameterList name="time period control">
+    <Parameter name="start times" type="Array(double)" value="{3.16e+10, 6.32e+10}"/>
+    <Parameter name="initial time step" type="Array(double)" value="{100.0, 100.0}"/>
+    <Parameter name="maximum time step" type="Array(double)" value="{3.2e+8, 4e+17}"/>
+   </ParameterList>
    </ParameterList>
 
-Between approximately 1000 [y] and 2000 [y], we limit the maximum time step to 10 [y]. 
+Between approximately 1000 and 2000 years, we limit the maximum time step to 10 years. 
 
 
 Restart from checkpoint data file
@@ -353,9 +354,9 @@ The value for the current time and current cycle is read from the checkpoint fil
 .. code-block:: xml
   
   <ParameterList name="cycle driver">  <!-- parent list -->
-    <ParameterList name="restart">
-      <Parameter name="file name" type="string" value="CHECK00123.h5"/>
-    </ParameterList>
+  <ParameterList name="restart">
+    <Parameter name="file name" type="string" value="_CHECK00123.h5"/>
+  </ParameterList>
   </ParameterList>
 
 In this example, Amanzi is restarted with all state data initialized from file
@@ -378,9 +379,9 @@ The initialization sublist of *State* is named *initial conditions*.
   By design, the second step allows us to overwrite only part for the
   field. There are several options available to initialize field using
   the sublist `"initial conditions`": `"restart file`" - read field
-  from existing hdf5 file, `"exodus file initialization`" - read field
-  from existing exodus file, `"cells from file`" - read cell
-  components from hdf5 file, `"constant`" - set field values to constant, `"initialize
+  from existing HDF55 file, `"exodus file initialization`" - read field
+  from existing Exodus file, `"cells from file`" - read cell
+  components from HDF5 file, `"constant`" - set field values to constant, `"initialize
   from 1D column`" - initialize 1D column from file and `"function`" -
   field is initialized by function.
 
@@ -388,16 +389,16 @@ The initialization sublist of *State* is named *initial conditions*.
 .. code-block:: xml
 
   <ParameterList>  <!-- parent list -->
-    <ParameterList name="state">
-      <Parameter name="initialization filename" type="string" value="CHECK00123.h5"/>
-      <ParameterList name="field evaluators">
-         ... list of field evaluators
-      </ParameterList>
-      <ParameterList name="initial conditions">
-         ... initialization of fields
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="state">
+    <Parameter name="initialization filename" type="string" value="_CHECK00123.h5"/>
+    <ParameterList name="field evaluators">
+       ... list of field evaluators
+    </ParameterList>
+    <ParameterList name="initial conditions">
+      ... initialization of fields
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 
 Primary and derived fields
@@ -406,7 +407,7 @@ Primary and derived fields
 * Primary fields [default units]
 
   * pressure [Pa]
-  * total component concentration [:math:`mol/L`] or [:math:`mol/m^3`]
+  * total component concentration [mol/L] or [mol/m^3]
   * temperature [K]
 
 * Derived fields
@@ -439,9 +440,9 @@ The evaluator has the following fields.
   and `"secondary variable`".
 
 * `"function`" [list] defines a piecewise continuous function for calculating the independent variable.
-  In may contain multiple sublists `"DOMAIN`" with identical structure.
+  In may contain multiple sublists `"_DOMAIN`" with identical structure.
   
-  * `"DOMAIN`" [list]
+  * `"_DOMAIN`" [list]
 
     * `"region`" [string] specifies domain of the function, a single region.
 
@@ -457,27 +458,26 @@ The evaluator has the following fields.
 .. code-block:: xml
 
   <ParameterList name="field_evaluators">  <!-- parent list -->
-    <ParameterList name="SATURATION_LIQUID">
-      <Parameter name="field evaluator type" type="string" value="independent variable"/>
-      <ParameterList name="function">
-        <ParameterList name="DOMAIN">
-          <Parameter name="region" type="string" value="COMPUTATIONAL DOMAIN"/>
-          <Parameter name="component" type="string" value="cell"/>
-          <ParameterList name="function">
-            <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="0.8"/>
-            </ParameterList>
+  <ParameterList name="saturation_liquid">
+    <Parameter name="field evaluator type" type="string" value="independent variable"/>
+    <ParameterList name="function">
+      <ParameterList name="_DOMAIN">
+        <Parameter name="region" type="string" value="_ALL DOMAIN"/>
+        <Parameter name="component" type="string" value="cell"/>
+        <ParameterList name="function">
+          <ParameterList name="function-constant">
+            <Parameter name="value" type="double" value="0.8"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="verbose object">
-        <Parameter name="verbosity level" type="string" value="extreme"/>
-      </ParameterList>
+    </ParameterList>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="extreme"/>
     </ParameterList>
   </ParameterList>
+  </ParameterList>
 
-The independent variable *SATURATION_LIQUID* is defined as a cell-based variable with
-constant value 0.8. 
+In this example field *saturation_liquid* is defined as a cell-based variable with constant value 0.8. 
 Note that the user-defined name for this field cannot have spaces.
 
 
@@ -506,22 +506,22 @@ data at specific time moments.
 .. code-block:: xml
 
   <ParameterList name="field_evaluators">  <!-- parent list -->
-    <ParameterList name="POROSITY">
-      <Parameter name="field evaluator type" type="string" value="independent variable from file"/>
-      <Parameter name="filename" type="string" value="DATA_FILE.h5"/>
-      <Parameter name="domain name" type="string" value="domain"/>
-      <Parameter name="variable name" type="string" value="porosity"/>
-      <Parameter name="component name" type="string" value="cell"/>
-      <Parameter name="mesh entity" type="string" value="cell"/>
-      <Parameter name="number of DoFs" type="int" value="1"/>
+  <ParameterList name="porosity">
+    <Parameter name="field evaluator type" type="string" value="independent variable from file"/>
+    <Parameter name="filename" type="string" value="_DATA_FILE.h5"/>
+    <Parameter name="domain name" type="string" value="domain"/>
+    <Parameter name="variable name" type="string" value="porosity"/>
+    <Parameter name="component name" type="string" value="cell"/>
+    <Parameter name="mesh entity" type="string" value="cell"/>
+    <Parameter name="number of DoFs" type="int" value="1"/>
 
-      <ParameterList name="time function">  
-        <Parameter name="times" type="Array(double)" value="{1.0, 2.0, 3.0}"/>
-      </ParameterList>
+    <ParameterList name="time function">  
+      <Parameter name="times" type="Array(double)" value="{1.0, 2.0, 3.0}"/>
     </ParameterList>
   </ParameterList>
+  </ParameterList>
 
-The independent variable *POROSITY* is defined as a cell-based variable and
+The field *porosity* is defined as a cell-based variable and
 interpolated between three time intervals.
 
 
@@ -535,25 +535,25 @@ has to be done in the initial conditions sublist of state.
 .. code-block:: xml
 
   <ParameterList name="initial conditions">  <!-- parent list -->
-    <ParameterList name="POROSITY"> 
-      <ParameterList name="function">
-        <ParameterList name="MESH BLOCK">
-          <Parameter name="regions" type="Array(string)" value="ALL"/>
-          <Parameter name="component" type="string" value="cell"/>
-          <ParameterList name="function">
-            <ParameterList name="function-constant">
-              <Parameter name="value" type="double" value="90000.0"/>
-            </ParameterList>
+  <ParameterList name="porosity"> 
+    <ParameterList name="function">
+      <ParameterList name="_ANY NAME">
+        <Parameter name="regions" type="Array(string)" value="_ALL DOMAIN"/>
+        <Parameter name="component" type="string" value="cell"/>
+        <ParameterList name="function">
+          <ParameterList name="function-constant">
+            <Parameter name="value" type="double" value="90000.0"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>
+  </ParameterList>
 
   <ParameterList name="field_evaluators">  <!-- parent list -->
-    <ParameterList name="POROSITY">
-      <Parameter name="field evaluator type" type="string" value="constant variable"/>
-    </ParameterList>
+  <ParameterList name="porosity">
+    <Parameter name="field evaluator type" type="string" value="constant variable"/>
+  </ParameterList>
   </ParameterList>
 
 
@@ -595,18 +595,18 @@ as custom parameters (see the examples).
 .. code-block:: xml
 
   <ParameterList name="field_evaluators">  <!-- parent list -->
-    <ParameterList name="molar_density_liquid">
-      <Parameter name="field evaluator type" type="string" value="eos"/>
-      <Parameter name="eos basis" type="string" value="both"/>
-      <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
-      <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
-      <ParameterList name="EOS parameters">
-        <Parameter name="eos type" type="string" value="liquid water"/>
-      </ParameterList>
-      <ParameterList name="verbose object">
-        <Parameter name="verbosity level" type="string" value="extreme"/>
-      </ParameterList>
+  <ParameterList name="molar_density_liquid">
+    <Parameter name="field evaluator type" type="string" value="eos"/>
+    <Parameter name="eos basis" type="string" value="both"/>
+    <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
+    <Parameter name="mass density key" type="string" value="mass_density_liquid"/>
+    <ParameterList name="EOS parameters">
+      <Parameter name="eos type" type="string" value="liquid water"/>
     </ParameterList>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="extreme"/>
+    </ParameterList>
+  </ParameterList>
   </ParameterList>
 
 In this example the molar density of liquid is evaluated using the *eos* evaluator.
@@ -619,17 +619,17 @@ The *eos* evaluator requires one-parameter list to select the proper model for e
 .. code-block:: xml
 
   <ParameterList name="field_evaluators">  <!-- parent list -->
-    <ParameterList name="internal_energy_rock">
-      <Parameter name="field evaluator type" type="string" value="iem"/>
-      <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
-      <ParameterList name="IEM parameters">
-        <Parameter name="iem type" type="string" value="linear"/>
-        <Parameter name="heat capacity [J/kg-K]" type="double" value="620.0"/>
-      </ParameterList>
-      <ParameterList name="verbose object">
-        <Parameter name="verbosity level" type="string" value="extreme"/>
-      </ParameterList>
+  <ParameterList name="internal_energy_rock">
+    <Parameter name="field evaluator type" type="string" value="iem"/>
+    <Parameter name="internal energy key" type="string" value="internal_energy_rock"/>
+    <ParameterList name="IEM parameters">
+      <Parameter name="iem type" type="string" value="linear"/>
+      <Parameter name="heat capacity [J/kg-K]" type="double" value="620.0"/>
     </ParameterList>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="extreme"/>
+    </ParameterList>
+  </ParameterList>
   </ParameterList>
 
 In this example, the secondary field *internal_energy_rock* is evaluated using one of the 
@@ -651,11 +651,11 @@ parameter *value*.
 
 .. code-block:: xml
 
-   <ParameterList name="initial conditions">  <!-- parent list -->
-     <ParameterList name="fluid_density">
-       <Parameter name="value" type="double" value="998.0"/>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="initial conditions">  <!-- parent list -->
+  <ParameterList name="fluid_density">
+    <Parameter name="value" type="double" value="998.0"/>
+  </ParameterList>
+  </ParameterList>
 
 
 Constant vector field
@@ -664,22 +664,22 @@ Constant vector field
 A constant vector field is the global (with respect to the mesh) vector constant. 
 At the moment, the set of such vector constants includes *gravity*.
 The initialization requires to provide a named sublist with a single
-parameter *value*. In two dimensions, it looks like
+parameter *value*. In three dimensions, it looks like
 
 .. code-block:: xml
 
-   <ParameterList name="initial conditions">  <!-- parent list -->
-     <ParameterList name="gravity">
-       <Parameter name="value" type="Array(double)" value="{0.0, -9.81}"/>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="initial conditions">  <!-- parent list -->
+  <ParameterList name="gravity">
+    <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -9.81}"/>
+  </ParameterList>
+  </ParameterList>
 
 
 A scalar field
 ..............
 
-A variable scalar field is defined by a few functions (labeled *MESH BLOCK #* in our
-example) with non-overlapping domains. 
+A variable scalar field is defined by a few functions (labeled with _MESH BLOCK #
+in our example) with non-overlapping domains. 
 The required parameters for each function are *region*, *component*,
 and *function*.
 
@@ -695,30 +695,32 @@ checkpoints of visualization files. Default values are *true*.
 
 .. code-block:: xml
 
-   <ParameterList name="initial conditions">  <!-- parent list -->
-     <ParameterList name="pressure"> 
-       <Parameter name="write checkpoint" type="bool" value ="false">   
-       <Parameter name="write vis" type="bool" value ="true">
-       <ParameterList name="function">
-         <ParameterList name="MESH BLOCK 1">
-           <Parameter name="regions" type="Array(string)" value="DOMAIN 1"/>
-           <Parameter name="component" type="string" value="cell"/>
-           <ParameterList name="function">
-             <ParameterList name="function-constant">
-               <Parameter name="value" type="double" value="90000.0"/>
-             </ParameterList>
-           </ParameterList>
-         </ParameterList>
-         <ParameterList name="MESH BLOCK 2">
-           ... 
-         </ParameterList>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="initial conditions">  <!-- parent list -->
+  <ParameterList name="pressure"> 
+    <Parameter name="write checkpoint" type="bool" value ="false">   
+    <Parameter name="write vis" type="bool" value ="true">
+    <ParameterList name="function">
+      <ParameterList name="_MESH BLOCK 1">
+        <Parameter name="regions" type="Array(string)" value="_DOMAIN 1"/>
+        <Parameter name="component" type="string" value="cell"/>
+        <ParameterList name="function">
+          <ParameterList name="function-constant">
+            <Parameter name="value" type="double" value="90000.0"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="_MESH BLOCK 2">
+        <Parameter name="regions" type="Array(string)" value="_DOMAIN 2, _DOMAIN 3"/>
+        ... 
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 In this example, the field *pressure* has constant value 90000 [Pa] in 
-each mesh cell of region *DOMAIN 1*. The second mesh block will define
+each mesh cell of the first region. The second mesh block will define
 the pressure in the second mesh region and so on.
+Note that the names of functions may coinsider with the names of regions.
 
 
 A vector or tensor field
@@ -743,34 +745,34 @@ checkpoints of vis files. Default values are *true*.
 
 .. code-block:: xml
 
-   <ParameterList name="initial conditions">  <!-- parent list -->
-     <ParameterList name="darcy_flux">
-       <Parameter name="write checkpoint" type="bool" value="true"/>
-       <Parameter name="write vis" type="bool" value="false"/>
-       <Parameter name="dot with normal" type="bool" value="true"/>
+  <ParameterList name="initial conditions">  <!-- parent list -->
+  <ParameterList name="darcy_flux">
+    <Parameter name="write checkpoint" type="bool" value="true"/>
+    <Parameter name="write vis" type="bool" value="false"/>
+    <Parameter name="dot with normal" type="bool" value="true"/>
 
-       <ParameterList name="function">
-         <ParameterList name="MESH BLOCK 1">
-           <Parameter name="regions" type="Array(string)" value="{ALL DOMAIN}"/>
-           <Parameter name="component" type="string" value="face"/>
-           <ParameterList name="function">
-             <Parameter name="number of dofs" type="int" value="2"/>
-             <Parameter name="function type" type="string" value="composite function"/>
-             <ParameterList name="dof 1 function">
-               <ParameterList name="function-constant">
-                 <Parameter name="value" type="double" value="0.002"/>
-               </ParameterList>
-             </ParameterList>
-             <ParameterList name="dof 2 function">
-               <ParameterList name="function-constant">
-                 <Parameter name="value" type="double" value="0.001"/>
-               </ParameterList>
-             </ParameterList>
-           </ParameterList>
-         </ParameterList>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+    <ParameterList name="function">
+      <ParameterList name="_MESH BLOCK 1">
+        <Parameter name="regions" type="Array(string)" value="{_ALL DOMAIN}"/>
+        <Parameter name="component" type="string" value="face"/>
+        <ParameterList name="function">
+          <Parameter name="number of dofs" type="int" value="2"/>
+          <Parameter name="function type" type="string" value="composite function"/>
+          <ParameterList name="dof 1 function">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="0.002"/>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="dof 2 function">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="0.001"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 In this example the constant Darcy velocity (0.002, 0.001) [m/s] is dotted with the face 
 normal producing one number per mesh face.
@@ -779,17 +781,17 @@ normal producing one number per mesh face.
 Geochemical constraint
 ......................
 
-We can define geochemical contraint as follows:
+We can define geochemical contraint as follows: 
 
 .. code-block:: xml
 
-   <ParameterList name="initial conditions">  <!-- parent list -->
-     <ParameterList name="geochemical conditions">
-       <ParameterList name="initial">
-         <Parameter name="regions" type="Array(string)" value="{ENTIRE_DOMAIN}"/>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="initial conditions">  <!-- parent list -->
+  <ParameterList name="geochemical conditions">
+    <ParameterList name="initial">
+      <Parameter name="regions" type="Array(string)" value="{_ENTIRE DOMAIN}"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 
 Initialization from Exodus II file
@@ -808,14 +810,14 @@ For a parallel run, it must be *.par*.
 
 .. code-block:: xml
 
-   <ParameterList name="initial conditions">  <!-- parent list -->
-     <ParameterList name="permeability">
-       <ParameterList name="exodus file initialization">
-         <Parameter name="file" type="string" value="mesh_with_data.exo"/>
-         <Parameter name="attributes" type="Array(string)" value="{permx, permx, permz}"/>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="initial conditions">  <!-- parent list -->
+  <ParameterList name="permeability">
+    <ParameterList name="exodus file initialization">
+      <Parameter name="file" type="string" value="_MESH_AND_DATA.exo"/>
+      <Parameter name="attributes" type="Array(string)" value="{permx, permx, permz}"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 
 Initialization from HDF5 file
@@ -829,14 +831,15 @@ only cell part of the field.
 
 .. code-block:: xml
 
-     <ParameterList name="initial conditions">  <!-- parent list -->
-         <ParameterList name="transport_porosity">
-           <Parameter name="restart file" type="string" value="test1.h5"/>
-         </ParameterList>
-         <ParameterList name="porosity">
-           <Parameter name="cells from file" type="string" value="test3.h5"/>
-         </ParameterList>
+  <ParameterList name="initial conditions">  <!-- parent list -->
+  <ParameterList name="transport_porosity">
+    <Parameter name="restart file" type="string" value="_TEST1.h5"/>
     </ParameterList>
+  <ParameterList name="porosity">
+    <Parameter name="cells from file" type="string" value="_TEST3.h5"/>
+  </ParameterList>
+  </ParameterList>
+
 
 Initialization of 1D column
 -----------------------------
@@ -845,17 +848,17 @@ It is possible to initialize only 1D column portion of a particular field.
 
 .. code-block:: xml
 
-     <ParameterList name="initial conditions">  <!-- parent list -->
-         <ParameterList name="field_name5">
-            <ParameterList name="initialize from 1D column" type="ParameterList">
-               <Parameter name="file" type="string" value="column_data.h5" />
-               <Parameter name="z header" type="string" value="/z" />
-               <Parameter name="f header" type="string" value="/temperature" />
-               <Parameter name="coordinate orientation" type="string" value="depth" />
-               <Parameter name="surface sideset" type="string" value="surface" />
-            </ParameterList>
-         </ParameterList>
+  <ParameterList name="initial conditions">  <!-- parent list -->
+  <ParameterList name="temperature">
+    <ParameterList name="initialize from 1D column">
+      <Parameter name="file" type="string" value="_COLUMN_DATA.h5"/>
+      <Parameter name="z header" type="string" value="/z"/>
+      <Parameter name="f header" type="string" value="/temperature"/>
+      <Parameter name="coordinate orientation" type="string" value="depth"/>
+      <Parameter name="surface sideset" type="string" value="surface"/>
     </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 
 Mesh partitioning
@@ -863,21 +866,22 @@ Mesh partitioning
 
 Amanzi's state has a number of tools to verify completeness of initial data.
 This is done using list *mesh partitions*. 
-Each sublist there must have parameter *region list* specifying
+Each sublist must have parameter *region list* specifying
 regions that define unique partition of the mesh.
 
 .. code-block:: xml
 
-   <ParameterList name="state">  <!-- parent list -->
-     <ParameterList name="mesh partitions">
-       <ParameterList name="MATERIALS">
-         <Parameter name="region list" type="Array(string)" value="{region1,region2,region3}"/>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="state">  <!-- parent list -->
+  <ParameterList name="mesh partitions">
+    <ParameterList name="_MATERIALS">
+      <Parameter name="region list" type="Array(string)" value="{_SAND1,_CLAY,_SAND2}"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
-In this example, we verify that three mesh regions cover completely the mesh without overlaps.
-If so, all material fields, such as *porosity*, will be initialized properly.
+In this example, we verify that three mesh regions representing sand and clay cover completely
+the mesh without overlaps.
+If so, all material fields, such as *porosity* and *permeability*, will be initialized properly.
 
 
 Data IO control
@@ -901,94 +905,94 @@ Example
 -------
 
 The complete example of a state initialization is below. Note that
-*MATERIAL 1* and *MATERIAL 2* must be labels of the existing regions.
-Here, we do not capitalize names of state fields such as *porosity*.
+_MATERIAL1 and _MATERIAL2 must be labels of the existing regions that cover
+the computational domain.
 The fields *porosity* and *pressure* are constant over the whole domain. 
 The field *permeability* is the piecewise constant diagonal tensor.
 
 .. code-block:: xml
 
   <ParameterList name="state">
-    <ParameterList name="field evaluators">
-      <ParameterList name="porosity">
-        <ParameterList name="function">
-          <ParameterList name="ALL">
-            <Parameter name="regions" type="Array(string)" value="{COMPUTATIONAL DOMAIN}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.408"/>
-              </ParameterList>
+  <ParameterList name="field evaluators">
+    <ParameterList name="porosity">
+      <ParameterList name="function">
+        <ParameterList name="_ANY NAME ">
+          <Parameter name="regions" type="Array(string)" value="{_ALL DOMAIN}"/>
+          <Parameter name="component" type="string" value="cell"/>
+          <ParameterList name="function">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="0.408"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="initial conditions">
+    <ParameterList name="fluid_density">
+      <Parameter name="value" type="double" value="998.0"/>
+    </ParameterList>
+
+    <ParameterList name="gravity">
+      <Parameter name="value" type="Array(double)" value="{0.0, -9.81}"/>
+    </ParameterList>
+
+    <ParameterList name="pressure">
+      <ParameterList name="function">
+        <ParameterList name="_ANY NAME">
+          <Parameter name="regions" type="Array(string)" value="{_ALL DOMAIN}"/>
+          <Parameter name="component" type="string" value="cell"/>
+          <ParameterList name="function">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="90000.0"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="initial conditions">
-      <ParameterList name="fluid_density">
-        <Parameter name="value" type="double" value="998.0"/>
-      </ParameterList>
-
-      <ParameterList name="gravity">
-        <Parameter name="value" type="Array(double)" value="{0.0, -9.81}"/>
-      </ParameterList>
-
-      <ParameterList name="pressure">
-        <ParameterList name="function">
-          <ParameterList name="domain">
-            <Parameter name="regions" type="Array(string)" value="{COMPUTATIONAL DOMAIN}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
+    <ParameterList name="permeability">
+      <ParameterList name="function">
+        <ParameterList name="_ANY NAME">
+          <Parameter name="regions" type="Array(string)" value="_MATERIAL1"/>
+          <Parameter name="component" type="string" value="cell"/>
+          <ParameterList name="function">
+            <Parameter name="function type" type="string" value="composite function"/>
+            <Parameter name="number of dofs" type="int" value="2"/>
+            <ParameterList name="dof 1 function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="90000.0"/>
+                <Parameter name="value" type="double" value="1e-12"/>
+              </ParameterList>
+            </ParameterList>
+            <ParameterList name="dof 2 function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1e-13"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
-      </ParameterList>
-
-      <ParameterList name="permeability">
-        <ParameterList name="function">
-          <ParameterList name="MESH BLOCK 1">
-            <Parameter name="regions" type="Array(string)" value="MATERIAL 1"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <Parameter name="function type" type="string" value="composite function"/>
-              <Parameter name="number of dofs" type="int" value="2"/>
-              <ParameterList name="dof 1 function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1e-12"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="dof 2 function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1e-13"/>
-                </ParameterList>
+        <ParameterList name="_ANY_NAME">
+          <Parameter name="regions" type="Array(string)" value="_MATERIAL2"/>
+          <Parameter name="component" type="string" value="cell"/>
+          <ParameterList name="function">
+            <Parameter name="function type" type="string" value="composite function"/>
+            <Parameter name="number of dofs" type="int" value="2"/>
+            <ParameterList name="dof 1 function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2e-13"/>
               </ParameterList>
             </ParameterList>
-          </ParameterList>
-          <ParameterList name="MESH BLOCK 2">
-            <Parameter name="regions" type="Array(string)" value="MATERIAL 2"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <Parameter name="function type" type="string" value="composite function"/>
-              <Parameter name="number of dofs" type="int" value="2"/>
-              <ParameterList name="dof 1 function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="2e-13"/>
-                </ParameterList>
-              </ParameterList>
-              <ParameterList name="dof 2 function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="2e-14"/>
-                </ParameterList>
+            <ParameterList name="dof 2 function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="2e-14"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
       </ParameterList>
     </ParameterList>
+  </ParameterList>
   </ParameterList>
 
 
@@ -1001,23 +1005,23 @@ The name of the PKs in this list must match *PKNAMEs* in *cycle driver* list.
 .. code-block:: xml
 
   <ParameterList>  <!-- parent list -->
-    <ParameterList name="PKs">
-      <ParameterList name="FLOW and TRANSPORT">
-        <Parameter name="PK type" type="string" value="flow reactive transport"/>      
-        <Parameter name="PKs order" type="Array(string)" value="{FLOW, TRANSPORT}"/> 
-        <Parameter name="master PK index" type="int" value="0"/>
-      </ParameterList>
-      <ParameterList name="FLOW">
-        ...
-        ... multiple flow parameters, lists, and sublists
-        ...
-      </ParameterList>
-      <ParameterList name="TRANSPORT">
-        ...
-        ... multiple transport parameters, lists, and sublists
-        ...
-      </ParameterList>
+  <ParameterList name="PKs">
+    <ParameterList name="_FLOW and TRANSPORT">
+      <Parameter name="PK type" type="string" value="flow reactive transport"/>      
+      <Parameter name="PKs order" type="Array(string)" value="{_FLOW, _TRANSPORT}"/> 
+      <Parameter name="master PK index" type="int" value="0"/>
     </ParameterList>
+    <ParameterList name="_FLOW">
+      ...
+      ... flow parameters, lists, and sublists
+      ...
+    </ParameterList>
+    <ParameterList name="_TRANSPORT">
+      ...
+      ... transport parameters, lists, and sublists
+      ...
+    </ParameterList>
+  </ParameterList>
   </ParameterList>
 
 
@@ -1220,11 +1224,11 @@ Structure of both sublists is quite similar.
 
 .. code-block:: xml
 
-   <ParameterList name="flow">  <!-- parent list -->
-     <ParameterList name="Richards problem">
-       ...
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="_FLOW">  <!-- parent list -->
+  <ParameterList name="Richards problem">
+     ...
+  </ParameterList>
+  </ParameterList>
 
 
 Model specifications and assumptions
@@ -1259,17 +1263,28 @@ Combination of both approaches may lead to a more efficient code.
   Available options are `"compressible: storativity coefficient`",
   `"compressible: pressure function`", and `"constant porosity`" (default).
 
+* `"coupled matrix fracture flow`" [string] specifies PK's role in the strong 
+  coupling of two flow PKs. The value is either `"matrix`" or `"fracture`".
+
 .. code-block:: xml
 
-   <ParameterList name="Richards problem">  <!-- parent list -->
-     <ParameterList name="physical models and assumptions">
-       <Parameter name="vapor diffusion" type="bool" value="false"/>
-       <Parameter name="water content model" type="string" value="constant density"/>
-       <Parameter name="viscosity model" type="string" value="constant viscosity"/>
-       <Parameter name="porosity model" type="string" value="compressible: pressure function"/>
-       <Parameter name="multiscale model" type="string" value="single porosity"/>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="physical models and assumptions">
+    <Parameter name="vapor diffusion" type="bool" value="false"/>
+    <Parameter name="water content model" type="string" value="constant density"/>
+    <Parameter name="viscosity model" type="string" value="constant viscosity"/>
+    <Parameter name="porosity model" type="string" value="compressible: pressure function"/>
+    <Parameter name="multiscale model" type="string" value="single porosity"/>
+    <Parameter name="coupled matrix fracture flow" type="string" value="matrix"/>
+  </ParameterList>
+  </ParameterList>
+
+
+Global parameters
+.................
+
+* `"domain name`" [string] specifies mesh name that defined domain of this PK.
+  Default is `"domain`".
 
 
 Water retention models
@@ -1315,35 +1330,35 @@ if the list *output* is provided. This list has two mandatory parameters:
 
 .. code-block:: xml
 
-   <ParameterList name="Richards problem">  <!-- parent list -->
-     <ParameterList name="water retention models">
-       <ParameterList name="SOIL_1">
-         <Parameter name="regions" type="Array(string)" value="{TOP HALF}"/>
-         <Parameter name="water retention model" type="string" value="van Genuchten"/>
-         <Parameter name="van Genuchten alpha" type="double" value="0.000194"/>
-         <Parameter name="van Genuchten m" type="double" value="0.28571"/>
-         <Parameter name="van Genuchten l" type="double" value="0.5"/>
-         <Parameter name="residual saturation" type="double" value="0.103"/>
-         <Parameter name="regularization interval" type="double" value="100.0"/>
-         <Parameter name="relative permeability model" type="string" value="Mualem"/>
-         <ParameterList name="output">
-           <Parameter name="file" type="string" value="soil1.txt"/>
-           <Parameter name="number of points" type="int" value="1000"/>
-         </ParameterList>
-       </ParameterList>
+  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="water retention models">
+    <ParameterList name="_SOIL_1">
+      <Parameter name="regions" type="Array(string)" value="{_TOP HALF}"/>
+      <Parameter name="water retention model" type="string" value="van Genuchten"/>
+      <Parameter name="van Genuchten alpha" type="double" value="0.000194"/>
+      <Parameter name="van Genuchten m" type="double" value="0.28571"/>
+      <Parameter name="van Genuchten l" type="double" value="0.5"/>
+      <Parameter name="residual saturation" type="double" value="0.103"/>
+      <Parameter name="regularization interval" type="double" value="100.0"/>
+      <Parameter name="relative permeability model" type="string" value="Mualem"/>
+      <ParameterList name="output">
+        <Parameter name="file" type="string" value="soil1.txt"/>
+        <Parameter name="number of points" type="int" value="1000"/>
+      </ParameterList>
+    </ParameterList>
 
-       <ParameterList name="SOIL_2">
-         <Parameter name="regions" type="Array(string)" value="{BOTTOM HALF}"/>
-         <Parameter name="water retention model" type="string" value="Brooks Corey"/>
-         <Parameter name="Brooks Corey lambda" type="double" value="0.0014"/>
-         <Parameter name="Brooks Corey alpha" type="double" value="0.000194"/>
-         <Parameter name="Brooks Corey l" type="double" value="0.51"/>
-         <Parameter name="residual saturation" type="double" value="0.103"/>
-         <Parameter name="regularization interval" type="double" value="0.0"/>
-         <Parameter name="relative permeability model" type="string" value="Burdine"/>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+    <ParameterList name="_SOIL_2">
+      <Parameter name="regions" type="Array(string)" value="{_BOTTOM HALF}"/>
+      <Parameter name="water retention model" type="string" value="Brooks Corey"/>
+      <Parameter name="Brooks Corey lambda" type="double" value="0.0014"/>
+      <Parameter name="Brooks Corey alpha" type="double" value="0.000194"/>
+      <Parameter name="Brooks Corey l" type="double" value="0.51"/>
+      <Parameter name="residual saturation" type="double" value="0.103"/>
+      <Parameter name="regularization interval" type="double" value="0.0"/>
+      <Parameter name="relative permeability model" type="string" value="Burdine"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 In this example, we define two different water retention models in two soils.
 
@@ -1352,8 +1367,8 @@ Porosity models
 ...............
 
 User defines porosity models in sublist *porosity models*. 
-It contains as many sublists, e.g. *SOIL_1*, *SOIL_2*, etc, as there are different soils. 
-The porosity models are associated with non-overlapping regions. Each of the sublists (e.g. *Soil 1*) 
+It contains as many sublists, e.g. _SOIL1 and _SOIL2, as there are different soils. 
+The porosity models are associated with non-overlapping regions. Each of the sublists (e.g. _SOIL1) 
 includes a few mandatory parameters: *regions names*, *model name*, and parameters for the selected model.
 
 * `"porosity model`" [string] specifies a model for the soil.
@@ -1367,23 +1382,23 @@ includes a few mandatory parameters: *regions names*, *model name*, and paramete
 
 .. code-block:: xml
 
-   <ParameterList name="Richards problem">  <!-- parent list -->
-     <ParameterList name="porosity models">
-       <ParameterList name="SOIL_1">
-         <Parameter name="regions" type="Array(string)" value="{TOP HALF}"/>
-         <Parameter name="porosity model" type="string" value="constant"/>
-         <Parameter name="value" type="double" value="0.2"/>
-       </ParameterList>
+  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="porosity models">
+    <ParameterList name="_SOIL1">
+      <Parameter name="regions" type="Array(string)" value="{_TOP HALF}"/>
+      <Parameter name="porosity model" type="string" value="constant"/>
+      <Parameter name="value" type="double" value="0.2"/>
+    </ParameterList>
 
-       <ParameterList name="SOIL_2">
-         <Parameter name="regions" type="Array(string)" value="{BOTTOM HALF}"/>
-         <Parameter name="porosity model" type="string" value="compressible"/>
-         <Parameter name="underformed soil porosity" type="double" value="0.2"/>
-         <Parameter name="reference pressure" type="double" value="101325.0"/>
-         <Parameter name="pore compressibility" type="double" value="1e-8"/>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+    <ParameterList name="_SOIL2">
+      <Parameter name="regions" type="Array(string)" value="{_BOTTOM HALF}"/>
+      <Parameter name="porosity model" type="string" value="compressible"/>
+      <Parameter name="underformed soil porosity" type="double" value="0.2"/>
+      <Parameter name="reference pressure" type="double" value="101325.0"/>
+      <Parameter name="pore compressibility" type="double" value="1e-8"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 In this example, we define two different porosity models in two soils.
 
@@ -1428,25 +1443,25 @@ Generalized dual porosity model
 
 .. code-block:: xml
 
-   <ParameterList name="Richards problem">  <!-- parent list -->
-     <ParameterList name="multiscale models"> 
-       <ParameterList name="SOIL_1">
-         <Parameter name="regions" type="Array(string)" value="{TOP HALF}"/>
-         <Parameter name="multiscale model" type="string" value="dual porosity"/> 
-         <ParameterList name="dual porosity parameters">
-           <Paramater name="mass transfer coefficient" type="double" value="4.0e-5"/>
-           <Paramater name="tolerance" type="double" value="1e-8"/>
-         </ParameterList>
+  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="multiscale models"> 
+    <ParameterList name="_SOIL1">
+      <Parameter name="regions" type="Array(string)" value="{_TOP HALF}"/>
+      <Parameter name="multiscale model" type="string" value="dual porosity"/> 
+      <ParameterList name="dual porosity parameters">
+        <Paramater name="mass transfer coefficient" type="double" value="4.0e-5"/>
+        <Paramater name="tolerance" type="double" value="1e-8"/>
+      </ParameterList>
 
-         <Parameter name="water retention model" type="string" value="van Genuchten"/>
-         <Parameter name="van Genuchten alpha" type="double" value="0.000194"/>
-         <Parameter name="van Genuchten m" type="double" value="0.28571"/>
-         <Parameter name="van Genuchten l" type="double" value="0.5"/>
-         <Parameter name="residual saturation" type="double" value="0.103"/>
-         <Parameter name="relative permeability model" type="string" value="Mualem"/>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+      <Parameter name="water retention model" type="string" value="van Genuchten"/>
+      <Parameter name="van Genuchten alpha" type="double" value="0.000194"/>
+      <Parameter name="van Genuchten m" type="double" value="0.28571"/>
+      <Parameter name="van Genuchten l" type="double" value="0.5"/>
+      <Parameter name="residual saturation" type="double" value="0.103"/>
+      <Parameter name="relative permeability model" type="string" value="Mualem"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 
 Absolute permeability
@@ -1461,12 +1476,12 @@ Absolute permeability
 
 .. code-block:: xml
 
-   <ParameterList name="Richards problem">  <!-- parent list -->
-     <ParameterList name="absolute permeability">
-       <Parameter name="coordinate system" type="string" value="cartesian"/>
-       <Parameter name="off-diagonal components" type="int" value="0"/>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="absolute permeability">
+    <Parameter name="coordinate system" type="string" value="cartesian"/>
+    <Parameter name="off-diagonal components" type="int" value="0"/>
+  </ParameterList>
+  </ParameterList>
 
 
 Relative permeability
@@ -1506,18 +1521,18 @@ relative permeability, density and viscosity.
 
 .. code-block:: xml
 
-   <ParameterList name="Richards problem">  <!-- parent list -->
-     <ParameterList name="relative permeability">
-       <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
-       <Parameter name="upwind frequency" type="string" value="every timestep"/>
-       <ParameterList name="upwind parameters">
-          <Parameter name="tolerance" type="double" value="1e-12"/>
-          <Parameter name="method" type="string" value="cell-based"/>
-          <Parameter name="polynomial order" type="int" value="1"/>
-          <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
-       </ParameterList>
-     </ParameterList>  
-   </ParameterList>  
+  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="relative permeability">
+    <Parameter name="upwind method" type="string" value="upwind: darcy velocity"/>
+    <Parameter name="upwind frequency" type="string" value="every timestep"/>
+    <ParameterList name="upwind parameters">
+       <Parameter name="tolerance" type="double" value="1e-12"/>
+       <Parameter name="method" type="string" value="cell-based"/>
+       <Parameter name="polynomial order" type="int" value="1"/>
+       <Parameter name="limiter" type="string" value="Barth-Jespersen"/>
+    </ParameterList>
+  </ParameterList>  
+  </ParameterList>  
 
 
 Diffusion operators
@@ -1545,25 +1560,25 @@ scheme, and selects assembling schemas for matrices and preconditioners.
 .. code-block:: xml
 
   <ParameterList name="Richards problem">  <!-- parent list -->
-    <ParameterList name="operators">
-      <ParameterList name="diffusion operator">
-        <ParameterList name="matrix">
-          <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
-          <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-          <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-          <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-          <Parameter name="gravity" type="bool" value="true"/>
-          <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
-        </ParameterList>
-        <ParameterList name="preconditioner">
-          <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
-          <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-          <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-          <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-          <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
-        </ParameterList>
+  <ParameterList name="operators">
+    <ParameterList name="diffusion operator">
+      <ParameterList name="matrix">
+        <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+        <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+        <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+        <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+        <Parameter name="gravity" type="bool" value="true"/>
+        <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
+      </ParameterList>
+      <ParameterList name="preconditioner">
+        <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+        <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+        <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+        <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+        <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
       </ParameterList>
     </ParameterList>
+  </ParameterList>
   </ParameterList>
 
 This example creates a p-lambda system, i.e. the pressure is
@@ -1651,71 +1666,71 @@ specified regions calculated using the folume fraction function.
 
 .. code-block:: xml
 
-   <ParameterList name="Richards problem">  <!-- parent list -->
-     <ParameterList name="boundary conditions">
-       <ParameterList name="pressure">
-         <ParameterList name="BC 0">
-           <Parameter name="regions" type="Array(string)" value="{WEST_SIDE}"/>
-           <Parameter name="spatial distribution method" type="string" value="none"/>
-           <ParameterList name="boundary pressure">
-             <ParameterList name="function-constant">
-               <Parameter name="value" type="double" value="101325.0"/>
-             </ParameterList>
-           </ParameterList>
-         </ParameterList>
-       </ParameterList>
+  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="boundary conditions">
+    <ParameterList name="pressure">
+      <ParameterList name="_BC 0">
+        <Parameter name="regions" type="Array(string)" value="{_WEST_SIDE}"/>
+        <Parameter name="spatial distribution method" type="string" value="none"/>
+        <ParameterList name="boundary pressure">
+          <ParameterList name="function-constant">
+            <Parameter name="value" type="double" value="101325.0"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
 
-       <ParameterList name="mass flux">
-         <ParameterList name="BC 1">
-           <Parameter name="regions" type="Array(string)" value="{NORTH_SIDE, SOUTH_SIDE}"/>
-           <Parameter name="spatial distribution method" type="string" value="area"/>
-           <Parameter name="rainfall" type="bool" value="false"/>
-           <ParameterList name="outward mass flux">
-             <ParameterList name="function-constant">
-               <Parameter name="value" type="double" value="0.0"/>
-             </ParameterList>
-           </ParameterList>
-         </ParameterList>
-       </ParameterList>
+    <ParameterList name="mass flux">
+      <ParameterList name="_BC 1">
+        <Parameter name="regions" type="Array(string)" value="{_NORTH_SIDE, _SOUTH_SIDE}"/>
+        <Parameter name="spatial distribution method" type="string" value="area"/>
+        <Parameter name="rainfall" type="bool" value="false"/>
+        <ParameterList name="outward mass flux">
+          <ParameterList name="function-constant">
+            <Parameter name="value" type="double" value="0.0"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
 
-       <ParameterList name="static head">
-         <ParameterList name="BC 2">
-           <Parameter name="regions" type="Array(string)" value="{EAST_SIDE}"/>
-           <Parameter name="spatial distribution method" type="string" value="none"/>
-           <Parameter name="relative to top" type="bool" value="true"/>
-           <Parameter name="relative to bottom" type="bool" value="true"/>
-           <ParameterList name="static head">
-             <ParameterList name="function-static-head">
-               <Parameter name="p0" type="double" value="101325.0"/>
-               <Parameter name="density" type="double" value="1000.0"/>
-               <Parameter name="gravity" type="double" value="9.8"/>
-               <Parameter name="space dimension" type="int" value="3"/>
-               <ParameterList name="water table elevation">
-                 <ParameterList name="function-constant">
-                   <Parameter name="value" type="double" value="10.0"/>
-                 </ParameterList>
-               </ParameterList>
-             </ParameterList>
-           </ParameterList>
-         </ParameterList>
-       </ParameterList>
+    <ParameterList name="static head">
+      <ParameterList name="_BC 2">
+        <Parameter name="regions" type="Array(string)" value="{_EAST_SIDE_TOP}"/>
+        <Parameter name="spatial distribution method" type="string" value="none"/>
+        <Parameter name="relative to top" type="bool" value="true"/>
+        <Parameter name="relative to bottom" type="bool" value="true"/>
+        <ParameterList name="static head">
+          <ParameterList name="function-static-head">
+            <Parameter name="p0" type="double" value="101325.0"/>
+            <Parameter name="density" type="double" value="1000.0"/>
+            <Parameter name="gravity" type="double" value="9.8"/>
+            <Parameter name="space dimension" type="int" value="3"/>
+            <ParameterList name="water table elevation">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="10.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
 
-       <ParameterList name="seepage face">
-         <ParameterList name="BC 3">
-           <Parameter name="regions" type="Array(string)" value="{EAST_SIDE_BOTTOM}"/>
-           <Parameter name="spatial distribution method" type="string" value="none"/>
-           <Parameter name="rainfall" type="bool" value="true"/>
-           <Parameter name="submodel" type="string" value="PFloTran"/>
-           <Parameter name="reference pressure" type="double" value="101325.0"/>
-           <ParameterList name="outward mass flux">
-             <ParameterList name="function-constant">
-               <Parameter name="value" type="double" value="1.0"/>
-             </ParameterList>
-           </ParameterList>
-         </ParameterList>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+    <ParameterList name="seepage face">
+      <ParameterList name="_BC 3">
+        <Parameter name="regions" type="Array(string)" value="{_EAST_SIDE_BOTTOM}"/>
+        <Parameter name="spatial distribution method" type="string" value="none"/>
+        <Parameter name="rainfall" type="bool" value="true"/>
+        <Parameter name="submodel" type="string" value="PFloTran"/>
+        <Parameter name="reference pressure" type="double" value="101325.0"/>
+        <ParameterList name="outward mass flux">
+          <ParameterList name="function-constant">
+            <Parameter name="value" type="double" value="1.0"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 This example includes all four types of boundary conditions. The boundary of a square domain 
 is split into six pieces. Constant function is used for simplicity and can be replaced by any
@@ -1759,60 +1774,59 @@ Again, constant functions can be replaced by any of the available functions.
 
 .. code-block:: xml
 
-   <ParameterList name="Richards problem">  <!-- parent list -->
-     <ParameterList name="source terms">
-       <ParameterList name="SRC 0">
-         <Parameter name="regions" type="Array(string)" value="{WELL_EAST}"/>
-         <Parameter name="spatial distribution method" type="string" value="volume"/>
-         <Parameter name="submodel" type="string" value="rate"/>
-         <ParameterList name="well">
-           <ParameterList name="function-constant">
-             <Parameter name="value" type="double" value="-0.1"/>
-           </ParameterList>
-         </ParameterList>
-       </ParameterList>
+  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="source terms">
+    <ParameterList name="_SRC 0">
+      <Parameter name="regions" type="Array(string)" value="{_WELL_EAST}"/>
+      <Parameter name="spatial distribution method" type="string" value="volume"/>
+      <Parameter name="submodel" type="string" value="rate"/>
+      <ParameterList name="well">
+        <ParameterList name="function-constant">
+          <Parameter name="value" type="double" value="-0.1"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
 
-       <ParameterList name="SRC 1">
-         <Parameter name="regions" type="Array(string)" value="{WELL_WEST}"/>
-         <Parameter name="spatial distribution method" type="string" value="permeability"/>
-         <ParameterList name="well">
-           <ParameterList name="function-constant">
-             <Parameter name="value" type="double" value="-0.2"/>
-           </ParameterList>
-         </ParameterList>
-       </ParameterList>
+    <ParameterList name="_SRC 1">
+      <Parameter name="regions" type="Array(string)" value="{_WELL_WEST}"/>
+      <Parameter name="spatial distribution method" type="string" value="permeability"/>
+      <ParameterList name="well">
+        <ParameterList name="function-constant">
+          <Parameter name="value" type="double" value="-0.2"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
 
-       <ParameterList name="SRC 2">
-         <Parameter name="regions" type="Array(string)" value="{WELL_NORTH}"/>
-           <Parameter name="spatial distribution method" type="string" value="simple well"/>    
-           <ParameterList name="well">
-             <Parameter name="submodel" type="string" value="bhp"/>
-             <Parameter name="depth" type="double" value="-2.5"/>
-             <Parameter name="well radius" type="double" value="0.1"/>
-             <ParameterList name="bhp">
-               <ParameterList name="function-constant">
-                 <Parameter name="value" type="double" value="10.0"/>
-               </ParameterList>
-             </ParameterList>
-           </ParameterList>
-         </ParameterList>
-       </ParameterList>
+    <ParameterList name="_SRC 2">
+      <Parameter name="regions" type="Array(string)" value="{_WELL_NORTH}"/>
+        <Parameter name="spatial distribution method" type="string" value="simple well"/>    
+        <ParameterList name="well">
+          <Parameter name="submodel" type="string" value="bhp"/>
+          <Parameter name="depth" type="double" value="-2.5"/>
+          <Parameter name="well radius" type="double" value="0.1"/>
+          <ParameterList name="bhp">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="10.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
 
-       <ParameterList name="SRC 3">
-         <Parameter name="regions" type="Array(string)" value="{WELL_SOUTH}"/>
-           <Parameter name="spatial distribution method" type="string" value="simple well"/>
-           <ParameterList name="well">
-             <Parameter name="submodel" type="string" value="rate"/>
-             <ParameterList name="rate">
-               <ParameterList name="function-constant">
-                 <Parameter name="value" type="double" value="100.0"/>
-               </ParameterList>
-             </ParameterList>
-           </ParameterList>
-         </ParameterList>
-       </ParameterList>
-
-     </ParameterList>
+    <ParameterList name="_SRC 3">
+      <Parameter name="regions" type="Array(string)" value="{_WELL_SOUTH}"/>
+        <Parameter name="spatial distribution method" type="string" value="simple well"/>
+        <ParameterList name="well">
+          <Parameter name="submodel" type="string" value="rate"/>
+          <ParameterList name="rate">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="100.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+   </ParameterList>
    </ParameterList>
 
 
@@ -1890,34 +1904,34 @@ Initialization and constraints
 
 .. code-block:: xml
 
-   <ParameterList name="Richards problem">  <!-- parent list -->
-     <ParameterList name="time integrator">
-       <Parameter name="error control options" type="Array(string)" value="{pressure, saturation}"/>
-       <Parameter name="linear solver" type="string" value="GMRES_with_AMG"/>
-       <Parameter name="preconditioner" type="string" value="HYPRE_AMG"/>
-       <Parameter name="preconditioner enhancement" type="string" value="none"/>
+  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="time integrator">
+    <Parameter name="error control options" type="Array(string)" value="{pressure, saturation}"/>
+    <Parameter name="linear solver" type="string" value="_GMRES_WITH_AMG"/>
+     <Parameter name="preconditioner" type="string" value="_HYPRE_AMG"/>
+     <Parameter name="preconditioner enhancement" type="string" value="none"/>
 
-       <ParameterList name="initialization">  <!-- first method -->
-         <Parameter name="method" type="string" value="saturated solver"/>
-         <Parameter name="linear solver" type="string" value="PCG_with_AMG"/>
-         <Parameter name="clipping pressure value" type="double" value="50000.0"/>
-       </ParameterList>
+     <ParameterList name="initialization">  <!-- first method -->
+       <Parameter name="method" type="string" value="saturated solver"/>
+       <Parameter name="linear solver" type="string" value="_PCG_WITH_AMG"/>
+       <Parameter name="clipping pressure value" type="double" value="50000.0"/>
+     </ParameterList>
 
-       <ParameterList name="initialization">  <!-- alternative method -->
-         <Parameter name="method" type="string" value="picard"/>
-         <Parameter name="linear solver" type="string" value="PCG_with_AMG"/>
-         <ParameterList name="picard parameters">
-           <Parameter name="convergence tolerance" type="double" value="1e-8"/> 
-           <Parameter name="maximum number of iterations" type="int" value="20"/> 
-         </ParameterList>
-       </ParameterList>
-
-       <ParameterList name="pressure-lambda constraints">
-         <Parameter name="method" type="string" value="projection"/>
-         <Parameter name="inflow krel correction" type="bool" value="false"/>
-         <Parameter name="linear solver" type="string" value="PCG_with_AMG"/>
+     <ParameterList name="initialization">  <!-- alternative method -->
+       <Parameter name="method" type="string" value="picard"/>
+       <Parameter name="linear solver" type="string" value="_PCG_WITH_AMG"/>
+       <ParameterList name="picard parameters">
+         <Parameter name="convergence tolerance" type="double" value="1e-8"/> 
+         <Parameter name="maximum number of iterations" type="int" value="20"/> 
        </ParameterList>
      </ParameterList>
+
+     <ParameterList name="pressure-lambda constraints">
+       <Parameter name="method" type="string" value="projection"/>
+       <Parameter name="inflow krel correction" type="bool" value="false"/>
+       <Parameter name="linear solver" type="string" value="_PCG_WITH_AMG"/>
+     </ParameterList>
+   </ParameterList>
    </ParameterList>
 
 
@@ -1932,59 +1946,58 @@ Amanzi supports a few nonlinear solvers described in details in a separate secti
 
 .. code-block:: xml
 
-   <ParameterList name="Richards problem">  <!-- parent list -->
-     <ParameterList name="time integrator">
-       <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
-       <Parameter name="extrapolate initial guess" type="bool" value="true"/>
-       <Parameter name="restart tolerance relaxation factor" type="double" value="1000.0"/>
-       <Parameter name="restart tolerance relaxation factor damping" type="double" value="0.9"/>
+  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="time integrator">
+    <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
+    <Parameter name="extrapolate initial guess" type="bool" value="true"/>
+    <Parameter name="restart tolerance relaxation factor" type="double" value="1000.0"/>
+    <Parameter name="restart tolerance relaxation factor damping" type="double" value="0.9"/>
 
-       <Parameter name="time integration method" type="string" value="BDF1"/>
-       <ParameterList name="BDF1">
-         <Parameter name="timestep controller type" type="string" value="standard"/>
-         <ParameterList name="timestep controller standard parameters">
-           <Parameter name="min iterations" type="int" value="10"/>
-           <Parameter name="max iterations" type="int" value="15"/>
-           <Parameter name="time step increase factor" type="double" value="1.2"/>
-           <Parameter name="time step reduction factor" type="double" value="0.5"/>
-           <Parameter name="max time step" type="double" value="1e+9"/>
-           <Parameter name="min time step" type="double" value="0.0"/>
-         </ParameterList>
+    <Parameter name="time integration method" type="string" value="BDF1"/>
+    <ParameterList name="BDF1">
+      <Parameter name="timestep controller type" type="string" value="standard"/>
+      <ParameterList name="timestep controller standard parameters">
+        <Parameter name="min iterations" type="int" value="10"/>
+        <Parameter name="max iterations" type="int" value="15"/>
+        <Parameter name="time step increase factor" type="double" value="1.2"/>
+        <Parameter name="time step reduction factor" type="double" value="0.5"/>
+        <Parameter name="max time step" type="double" value="1e+9"/>
+        <Parameter name="min time step" type="double" value="0.0"/>
+      </ParameterList>
 
-         <Parameter name="solver type" type="string" value="nka"/>
-         <ParameterList name="nka parameters">
-           <Parameter name="nonlinear tolerance" type="double" value="1e-5"/>
-           <Parameter name="limit iterations" type="int" value="30"/>
-           <Parameter name="diverged tolerance" type="double" value="1e+10"/>
-           <Parameter name="diverged l2 tolerance" type="double" value="1e+10"/>
-           <Parameter name="diverged pc tolerance" type="double" value="1e+10"/>
-           <Parameter name="max du growth factor" type="double" value="1e+5"/>
-           <Parameter name="max divergent iterations" type="int" value="3"/>
-           <Parameter name="max nka vectors" type="int" value="10"/>
-           <Parameter name="modify correction" type="bool" value="false"/>
-           <ParameterList name="verbose object">
-             <Parameter name="verbosity level" type="string" value="high"/>
-           </ParameterList>
-         </ParameterList>
+      <Parameter name="solver type" type="string" value="nka"/>
+      <ParameterList name="nka parameters">
+        <Parameter name="nonlinear tolerance" type="double" value="1e-5"/>
+        <Parameter name="limit iterations" type="int" value="30"/>
+        <Parameter name="diverged tolerance" type="double" value="1e+10"/>
+        <Parameter name="diverged l2 tolerance" type="double" value="1e+10"/>
+        <Parameter name="diverged pc tolerance" type="double" value="1e+10"/>
+        <Parameter name="max du growth factor" type="double" value="1e+5"/>
+        <Parameter name="max divergent iterations" type="int" value="3"/>
+        <Parameter name="max nka vectors" type="int" value="10"/>
+        <Parameter name="modify correction" type="bool" value="false"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
+        </ParameterList>
+      </ParameterList>
 
-         <!-- alternative solver 
-         <Parameter name="solver type" type="string" value="aa"/>
-         <ParameterList name="aa parameters">
-           <Parameter name="nonlinear tolerance" type="double" value="1e-5"/>
-           <Parameter name="limit iterations" type="int" value="30"/>
-           <Parameter name="diverged tolerance" type="double" value="1e+10"/>
-           <Parameter name="diverged l2 tolerance" type="double" value="1e+10"/>
-           <Parameter name="diverged pc tolerance" type="double" value="1e+10"/>
-           <Parameter name="max du growth factor" type="double" value="1e+5"/>
-           <Parameter name="max divergent iterations" type="int" value="3"/>
-           <Parameter name="max aa vectors" type="int" value="10"/>
-           <Parameter name="modify correction" type="bool" value="false"/>
-           <Parameter name="relaxation parameter" type="double" value="0.75"/>
-         </ParameterList-->
-
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+      <!-- alternative solver 
+      <Parameter name="solver type" type="string" value="aa"/>
+      <ParameterList name="aa parameters">
+        <Parameter name="nonlinear tolerance" type="double" value="1e-5"/>
+        <Parameter name="limit iterations" type="int" value="30"/>
+        <Parameter name="diverged tolerance" type="double" value="1e+10"/>
+        <Parameter name="diverged l2 tolerance" type="double" value="1e+10"/>
+        <Parameter name="diverged pc tolerance" type="double" value="1e+10"/>
+        <Parameter name="max du growth factor" type="double" value="1e+5"/>
+        <Parameter name="max divergent iterations" type="int" value="3"/>
+        <Parameter name="max aa vectors" type="int" value="10"/>
+        <Parameter name="modify correction" type="bool" value="false"/>
+        <Parameter name="relaxation parameter" type="double" value="0.75"/>
+      </ParameterList-->
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 In this example, the time step is increased by factor 1.2 when the nonlinear
 solver converges in 10 or less iterations. 
@@ -2012,15 +2025,15 @@ The remaining *flow* parameters are
 
 .. code-block:: xml
 
-   <ParameterList name="Richards problem">  <!-- parent list -->
-     <ParameterList name="clipping parameters">
-        <Parameter name="maximum saturation change" type="double" value="0.25"/>
-        <Parameter name="pressure damping factor" type="double" value="0.5"/>
-     </ParameterList>	
+  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="clipping parameters">
+     <Parameter name="maximum saturation change" type="double" value="0.25"/>
+     <Parameter name="pressure damping factor" type="double" value="0.5"/>
+  </ParameterList>	
 
-     <Parameter name="plot time history" type="bool" value="false"/>
-     <Parameter name="algebraic water content balance" type="bool" value="false"/>
-   </ParameterList>	
+  <Parameter name="plot time history" type="bool" value="false"/>
+  <Parameter name="algebraic water content balance" type="bool" value="false"/>
+  </ParameterList>	
 
 
 Explanation of verbose output
@@ -2169,14 +2182,14 @@ This list is often generated or extended by a high-level MPC PK.
 
 .. code-block:: xml
 
-   <ParameterList name="transport">  <!-- parent list -->
-     <ParameterList name="physical models and assumptions">
-       <Parameter name="gas diffusion" type="bool" value="false"/>
-       <Parameter name="permeability field is required" type="bool" value="false"/>
-       <Parameter name="multiscale model" type="string" value="single porosity"/>
-       <Parameter name="effective transport porosity" type="bool" value="false"/>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="_TRANSPORT">  <!-- parent list -->
+  <ParameterList name="physical models and assumptions">
+    <Parameter name="gas diffusion" type="bool" value="false"/>
+    <Parameter name="permeability field is required" type="bool" value="false"/>
+    <Parameter name="multiscale model" type="string" value="single porosity"/>
+    <Parameter name="effective transport porosity" type="bool" value="false"/>
+  </ParameterList>
+  </ParameterList>
 
 
 Global parameters
@@ -2187,6 +2200,10 @@ The transport component of Amanzi performs advection of aqueous and gaseous
 components and their dispersion and diffusion. 
 The main parameters control temporal stability, spatial 
 and temporal accuracy, and verbosity:
+
+
+* `"domain name`" [string] specifies mesh name that defined domain of this PK.
+  Default is `"domain`".
 
 * `"cfl`" [double] Time step limiter, a number less than 1. Default value is 1.
    
@@ -2214,23 +2231,24 @@ and temporal accuracy, and verbosity:
 .. code-block:: xml
 
   <ParameterList>  <!-- parent list -->
-    <ParameterList name="transport">
-      <Parameter name="cfl" type="double" value="1.0"/>
-      <Parameter name="spatial discretization order" type="int" value="1"/>
-      <Parameter name="temporal discretization order" type="int" value="1"/>
-      <Parameter name="solver" type="string" value="PCG_SOLVER"/>
+  <ParameterList name="_TRANSPORT">
+    <Parameter name="domain name" type="string" value="domain"/>
+    <Parameter name="cfl" type="double" value="1.0"/>
+    <Parameter name="spatial discretization order" type="int" value="1"/>
+    <Parameter name="temporal discretization order" type="int" value="1"/>
+    <Parameter name="solver" type="string" value="_PCG_SOLVER"/>
 
-      <ParameterList name="reconstruction">
-        <Parameter name="method" type="string" value="cell-based"/>
-        <Parameter name="polynomial order" type="int" value="1"/>
-        <Parameter name="limiter" type="string" value="tensorial"/>
-        <Parameter name="limiter extension for transport" type="bool" value="true"/>
-      </ParameterList>
+    <ParameterList name="reconstruction">
+      <Parameter name="method" type="string" value="cell-based"/>
+      <Parameter name="polynomial order" type="int" value="1"/>
+      <Parameter name="limiter" type="string" value="tensorial"/>
+      <Parameter name="limiter extension for transport" type="bool" value="true"/>
+    </ParameterList>
 
-      <ParameterList name="verbose object">
-        <Parameter name="verbosity level" type="string" value="high"/>
-      </ParameterList>
-    </ParameterList>  
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
+    </ParameterList>
+  </ParameterList>  
   </ParameterList>  
 
 
@@ -2242,7 +2260,7 @@ for aqueous and gaseous phases.
 The dispersivity is defined as a soil property. 
 The diffusivity is defined independently for each solute.
 
-* SOIL [list] Defines material properties.
+* _SOIL [list] Defines material properties.
   
   * `"region`" [Array(string)] Defines geometric regions for material SOIL.
   * `"model`" [string] Defines dispersivity model, choose exactly one of the following: `"scalar`", `"Bear`",
@@ -2283,31 +2301,31 @@ Three examples are below:
 
 .. code-block:: xml
 
-  <ParameterList name="transport">  <!-- parent list -->
-    <ParameterList name="material properties">
-      <ParameterList name="WHITE SOIL">
-        <Parameter name="regions" type="Array(string)" value="{TOP_REGION, BOTTOM_REGION}"/>
-        <Parameter name="model" type="string" value="Bear"/>
-        <ParameterList name="parameters for Bear">
-          <Parameter name="alpha_l" type="double" value="1e-2"/>
-          <Parameter name="alpha_t" type="double" value="1e-5"/>
-        <ParameterList>
-        <Parameter name="aqueous tortuosity" type="double" value="1.0"/>       
-        <Parameter name="gaseous tortuosity" type="double" value="1.0"/>       
-      </ParameterList>  
-     
-      <ParameterList name="GREY SOIL">
-        <Parameter name="regions" type="Array(string)" value="{MIDDLE_REGION}"/>
-        <Parameter name="model" type="string" value="Burnett-Frind"/>
-        <ParameterList name="parameters for Burnett-Frind">
-          <Parameter name="alpha_l" type="double" value="1e-2"/>
-          <Parameter name="alpha_th" type="double" value="1e-3"/>
-          <Parameter name="alpha_tv" type="double" value="2e-3"/>
-        <ParameterList>
-        <Parameter name="aqueous tortuosity" type="double" value="0.5"/>
-        <Parameter name="gaseous tortuosity" type="double" value="1.0"/>       
-      </ParameterList>  
+  <ParameterList name="_TRANSPORT">  <!-- parent list -->
+  <ParameterList name="material properties">
+    <ParameterList name="_WHITE SOIL">
+      <Parameter name="regions" type="Array(string)" value="{_TOP_REGION, _BOTTOM_REGION}"/>
+      <Parameter name="model" type="string" value="Bear"/>
+      <ParameterList name="parameters for Bear">
+        <Parameter name="alpha_l" type="double" value="1e-2"/>
+        <Parameter name="alpha_t" type="double" value="1e-5"/>
+      <ParameterList>
+      <Parameter name="aqueous tortuosity" type="double" value="1.0"/>       
+      <Parameter name="gaseous tortuosity" type="double" value="1.0"/>       
     </ParameterList>  
+     
+    <ParameterList name="_GREY SOIL">
+      <Parameter name="regions" type="Array(string)" value="{_MIDDLE_REGION}"/>
+      <Parameter name="model" type="string" value="Burnett-Frind"/>
+      <ParameterList name="parameters for Burnett-Frind">
+        <Parameter name="alpha_l" type="double" value="1e-2"/>
+        <Parameter name="alpha_th" type="double" value="1e-3"/>
+        <Parameter name="alpha_tv" type="double" value="2e-3"/>
+      <ParameterList>
+      <Parameter name="aqueous tortuosity" type="double" value="0.5"/>
+      <Parameter name="gaseous tortuosity" type="double" value="1.0"/>       
+    </ParameterList>  
+  </ParameterList>  
   </ParameterList>  
 
 
@@ -2316,15 +2334,15 @@ Three examples are below:
 
 .. code-block:: xml
 
-  <ParameterList name="transport">  <!-- parent list -->
-    <ParameterList name="molecular diffusion">
-      <Parameter name="aqueous names" type=Array(string)" value="{CO2(l),Tc-99}"/>
-      <Parameter name="aqueous values" type=Array(double)" value="{1e-8,1e-9}"/>
+  <ParameterList name="_TRANSPORT">  <!-- parent list -->
+  <ParameterList name="molecular diffusion">
+    <Parameter name="aqueous names" type=Array(string)" value="{CO2(l),Tc-99}"/>
+    <Parameter name="aqueous values" type=Array(double)" value="{1e-8,1e-9}"/>
 
-      <Parameter name="gaseous names" type=Array(string)" value="{CO2(g)}"/>
-      <Parameter name="gaseous values" type=Array(double)" value="{1e-8}"/>
-      <Parameter name="air-water partitioning coefficient" type=Array(double)" value="{0.03}"/> 
-    </ParameterList>  
+    <Parameter name="gaseous names" type=Array(string)" value="{CO2(g)}"/>
+    <Parameter name="gaseous values" type=Array(double)" value="{1e-8}"/>
+    <Parameter name="air-water partitioning coefficient" type=Array(double)" value="{0.03}"/> 
+  </ParameterList>  
   </ParameterList>  
 
 
@@ -2343,17 +2361,17 @@ scheme, and selects assembling schemas for matrices and preconditioners.
 
 .. code-block:: xml
 
-  <ParameterList name="transport">  <!-- parent list -->
-    <ParameterList name="operators">
-      <ParameterList name="diffusion operator">
-        <ParameterList name="matrix">
-          <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
-          <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
-          <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-          <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-        </ParameterList>
+  <ParameterList name="_TRANSPORT">  <!-- parent list -->
+  <ParameterList name="operators">
+    <ParameterList name="diffusion operator">
+      <ParameterList name="matrix">
+        <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+        <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
+        <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+        <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
       </ParameterList>
     </ParameterList>
+  </ParameterList>
   </ParameterList>
 
 This example creates a p-lambda system, i.e. the concentation is
@@ -2394,28 +2412,28 @@ Generalized dual porosity model
 
 .. code-block:: xml
 
-  <ParameterList name="transport">  <!-- parent list -->
-    <ParameterList name="multiscale models">
-      <ParameterList name="WHITE SOIL">
-        <Parameter name="multiscale model" type="string" value="dual porosity"/>
-        <Parameter name="regions" type="Array(string)" value="{TOP_REGION, BOTTOM_REGION}"/>
-        <ParameterList name="dual porosity parameters">
-          <Paramater name="Warren Root parameter" type="double" value="4.0e-5"/>
-          <Paramater name="matrix tortuosity" type="double" value="0.95"/>
-          <Paramater name="matrix volume fraction" type="double" value="0.9999"/>
-        </ParameterList>  
-      </ParameterList>  
-
-      <ParameterList name="GREY SOIL">
-        <Parameter name="multiscale model" type="string" value="generalized dual porosity"/>
-        <Parameter name="regions" type="Array(string)" value="{MIDDLE_REGION}"/>
-        <ParameterList name="generalized dual porosity parameters">
-          <Paramater name="number of matrix nodes" type="int" value="2"/>
-          <Paramater name="matrix depth" type="double" value="0.01"/>
-          <Paramater name="matrix tortuosity" type="double" value="1.0"/>
-        </ParameterList>  
+  <ParameterList name="_TRANSPORT">  <!-- parent list -->
+  <ParameterList name="multiscale models">
+    <ParameterList name="_WHITE SOIL">
+      <Parameter name="multiscale model" type="string" value="dual porosity"/>
+      <Parameter name="regions" type="Array(string)" value="{_TOP_REGION, _BOTTOM_REGION}"/>
+      <ParameterList name="dual porosity parameters">
+        <Paramater name="Warren Root parameter" type="double" value="4.0e-5"/>
+        <Paramater name="matrix tortuosity" type="double" value="0.95"/>
+        <Paramater name="matrix volume fraction" type="double" value="0.9999"/>
       </ParameterList>  
     </ParameterList>  
+
+    <ParameterList name="_GREY SOIL">
+      <Parameter name="multiscale model" type="string" value="generalized dual porosity"/>
+      <Parameter name="regions" type="Array(string)" value="{_MIDDLE_REGION}"/>
+      <ParameterList name="generalized dual porosity parameters">
+        <Paramater name="number of matrix nodes" type="int" value="2"/>
+        <Paramater name="matrix depth" type="double" value="0.01"/>
+        <Paramater name="matrix tortuosity" type="double" value="1.0"/>
+      </ParameterList>  
+    </ParameterList>  
+  </ParameterList>  
   </ParameterList>  
 
 
@@ -2432,10 +2450,10 @@ allows us to define spatially variable boundary conditions.
 
   * `"concentration`" [list] This is a reserved keyword.
    
-    * "COMP" [list] contains a few sublists (e.g. BC1, BC2) for boundary conditions.
-      The name *COMP* must be the name in the list of solutes.
+    * "_SOLUTE" [list] contains a few sublists (e.g. _EAST_CRIB) for boundary conditions.
+      The name _SOLUTE must be the name in the list of solutes.
  
-      * "BC1" [list] defines boundary conditions using arrays of boundary regions and attached
+      * "_BC1" [list] defines boundary conditions using arrays of boundary regions and attached
         functions.
    
       * `"regions`" [Array(string)] defines a list of boundary regions where a boundary condition
@@ -2449,29 +2467,29 @@ The example below sets constant boundary condition 1e-5 for the duration of tran
 
 .. code-block:: xml
 
-  <ParameterList name="transport">  <!-- parent list -->
-    <ParameterList name="boundary conditions">
-      <ParameterList name="concentration">
-        <ParameterList name="NO3-"> 
-          <ParameterList name="EAST CRIB">   <!-- user defined name -->
-            <Parameter name="regions" type="Array(string)" value="{TOP, LEFT}"/>
-            <Parameter name="spatial distribution method" type="string" value="none"/>
-            <ParameterList name="boundary concentration">
-              <ParameterList name="function-constant">  <!-- any time function -->
-                <Parameter name="value" type="double" value="1e-5"/>
-              </ParameterList>
+  <ParameterList name="_TRANSPORT">  <!-- parent list -->
+  <ParameterList name="boundary conditions">
+    <ParameterList name="concentration">
+      <ParameterList name="NO3-"> 
+        <ParameterList name="_EAST_CRIB">   <!-- user defined name -->
+          <Parameter name="regions" type="Array(string)" value="{_TOP, _LEFT}"/>
+          <Parameter name="spatial distribution method" type="string" value="none"/>
+          <ParameterList name="boundary concentration">
+            <ParameterList name="function-constant">  <!-- any time function -->
+              <Parameter name="value" type="double" value="1e-5"/>
             </ParameterList>
           </ParameterList>
-          <ParameterList name="WEST CRIB">   <!-- user defined name -->
-            ...
-          </ParameterList>
         </ParameterList>
-
-        <ParameterList name="CO2"> <!-- Next component --> 
+        <ParameterList name="_WEST CRIB">   <!-- user defined name -->
           ...
         </ParameterList>
       </ParameterList>
+
+      <ParameterList name="CO2"> <!-- Next component --> 
+        ...
+      </ParameterList>
     </ParameterList>
+  </ParameterList>
   </ParameterList>
 
 Geochemical boundary condition is the Dirichlet boundary condition
@@ -2482,15 +2500,15 @@ and geochemical conditions.
 .. code-block:: xml
 
   <ParameterList name="boundary conditions">  <!-- parent list -->
-    <ParameterList name="geochemical">
-      <ParameterList name="EAST CRIB">   <!-- user defined name -->
-        <Parameter name="solutes" type="Array(string)" value={H+,HCO3-,Ca++}"/>
-        <Parameter name="times" type="Array(double)" value="{0.0, 100.0}"/>
-        <Parameter name="geochemical conditions" type="Array(string)" value="{cond1, cond2}"/>
-        <Parameter name="time functions" type="Array(string)" value="{constant}"/>
-        <Parameter name="regions" type="Array(string)" value="{CRIB1}"/>
-      </ParameterList>
+  <ParameterList name="geochemical">
+    <ParameterList name="_EAST_CRIB">
+      <Parameter name="solutes" type="Array(string)" value={H+,HCO3-,Ca++}"/>
+      <Parameter name="times" type="Array(double)" value="{0.0, 100.0}"/>
+      <Parameter name="geochemical conditions" type="Array(string)" value="{cond1, cond2}"/>
+      <Parameter name="time functions" type="Array(string)" value="{constant}"/>
+      <Parameter name="regions" type="Array(string)" value="{EAST_CRIB}"/>
     </ParameterList>
+  </ParameterList>
   </ParameterList>
 
 
@@ -2508,9 +2526,10 @@ Note that the source values are set up separately for each component.
 
 * `"concentration`" [list] This is a reserved keyword.
 
- * "COMP" [list] contains a few sublists (e.g. SRC_1, SRC_2) for various sources and sinks.
+ * "_SOLUTE" [list] contains a few sublists (e.g. _SRC1 and _SRC2) for various sources and sinks.
+   The name _SOLUTE must exist in the list of solutes.
 
-  * "SRC_1" [list] defines a source using arrays of domain regions, a function, and 
+  * "_SRC1" [list] defines a source using arrays of domain regions, a function, and 
     a distribution method.
    
    * `"regions`" [Array(string)] defines a list of domain regions where a source term
@@ -2535,37 +2554,37 @@ This example defines one well and one sink.
 
 .. code-block:: xml
 
-   <ParameterList name="source terms"> <!-- parent list -->
-     <ParameterList name="concentration">
-       <ParameterList name="H+"> 
-         <ParameterList name="SOURCE: EAST WELL">   <!-- user defined name -->
-           <Parameter name="regions" type="Array(string)" value="{EAST_WELL}"/>
-           <Parameter name="spatial distribution method" type="string" value="volume"/>
-           <Parameter name="submodel" type="string" value="rate"/>
-           <ParameterList name="injector">   <!-- keyword, do not change -->
-             <ParameterList name="function-constant">
-               <Parameter name="value" type="double" value="0.01"/>
-             </ParameterList>
-           </ParameterList>
-         </ParameterList>
-         <ParameterList name="source for west well">
-            ...
-         </ParameterList>
-       </ParameterList>
+  <ParameterList name="source terms"> <!-- parent list -->
+  <ParameterList name="concentration">
+    <ParameterList name="H+"> 
+      <ParameterList name="_SOURCE: EAST WELL">   <!-- user defined name -->
+        <Parameter name="regions" type="Array(string)" value="{_EAST_WELL}"/>
+        <Parameter name="spatial distribution method" type="string" value="volume"/>
+        <Parameter name="submodel" type="string" value="rate"/>
+        <ParameterList name="injector">   <!-- reserved keyword -->
+          <ParameterList name="function-constant">
+            <Parameter name="value" type="double" value="0.01"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="_SOURCE: WEST_WELL">
+         ...
+      </ParameterList>
+    </ParameterList>
      
-       <ParameterList name="CO2(g)">   <!-- next component, a gas -->
-         <ParameterList name="SOURCE: WEST WELL">   <!-- user defined name -->
-           <Parameter name="regions" type="Array(string)" value="{WEST_WELL}"/>
-           <Parameter name="spatial distribution method" type="string" value="permeability"/>
-           <ParameterList name="injector">  
-             <ParameterList name="function-constant">
-               <Parameter name="value" type="double" value="0.02"/>
-             </ParameterList>
-           </ParameterList>
-         </ParameterList>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+    <ParameterList name="CO2(g)">   <!-- next component, a gas -->
+      <ParameterList name="_SOURCE: WEST WELL">   <!-- user defined name -->
+        <Parameter name="regions" type="Array(string)" value="{_WEST_WELL}"/>
+        <Parameter name="spatial distribution method" type="string" value="permeability"/>
+        <ParameterList name="injector">  
+          <ParameterList name="function-constant">
+            <Parameter name="value" type="double" value="0.02"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
     
 
 Developer parameters
@@ -2627,7 +2646,7 @@ The chemistry header includes three parameters:
 
 .. code-block:: xml
 
-  <ParameterList name="chemistry">
+  <ParameterList name="_CHEMISTRY">
     <Parameter name="chemistry model" type="string" value="Amanzi"/>
   </ParameterList>
 
@@ -2688,19 +2707,19 @@ Most details are provided in the trimmed PFloTran file *1d-tritium-trim.in*.
 .. code-block:: xml
 
   <ParameterList>  <!-- parent list -->
-    <ParameterList name="chemistry">
-      <Parameter name="engine" type="string" value="PFloTran"/>
-      <Parameter name="engine input file" type="string" value="1d-tritium-trim.in"/>
-      <Parameter name="minerals" type="Array(string)" value="{quartz, kaolinite, goethite, opal}"/>
-      <Parameter name="min time step (s)" type="double" value="1.5778463e-07"/>
-      <Parameter name="max time step (s)" type="double" value="1.5778463e+07"/>
-      <Parameter name="initial time step (s)" type="double" value="1.0e-02"/>
-      <Parameter name="time step control method" type="string" value="simple"/>
-      <Parameter name="time step cut threshold" type="int" value="8"/>
-      <Parameter name="time step cut factor" type="double" value="2.0"/>
-      <Parameter name="time step increase threshold" type="int" value="4"/>
-      <Parameter name="time step increase factor" type="double" value="1.2"/>
-    </ParameterList>
+  <ParameterList name="_CHEMISTRY">
+    <Parameter name="engine" type="string" value="PFloTran"/>
+    <Parameter name="engine input file" type="string" value="_TRITIUM.in"/>
+    <Parameter name="minerals" type="Array(string)" value="{quartz, kaolinite, goethite, opal}"/>
+    <Parameter name="min time step (s)" type="double" value="1.5778463e-07"/>
+    <Parameter name="max time step (s)" type="double" value="1.5778463e+07"/>
+    <Parameter name="initial time step (s)" type="double" value="1.0e-02"/>
+    <Parameter name="time step control method" type="string" value="simple"/>
+    <Parameter name="time step cut threshold" type="int" value="8"/>
+    <Parameter name="time step cut factor" type="double" value="2.0"/>
+    <Parameter name="time step increase threshold" type="int" value="4"/>
+    <Parameter name="time step increase factor" type="double" value="1.2"/>
+  </ParameterList>
   </ParameterList>
 
 
@@ -2735,19 +2754,19 @@ The Amanzi chemistry process kernel uses the following parameters.
 .. code-block:: xml
 
   <ParameterList>  <!-- parent list -->
-    <ParameterList name="chemistry">
-      <ParameterList name="thermodynamic database">
-        <Parameter name="file" type="string" value="tritium.bgd"/>
-        <Parameter name="format" type="string" value="simple"/>
-      </ParameterList>
-      <Parameter name="activity model" type="string" value="unit"/>
-      <Parameter name="tolerance" type="double" value="1.5e-12"/>
-      <Parameter name="maximum Newton iterations" type="int" value="25"/>
-      <Parameter name="max time step (s)" type="double" value="1.5e+07"/>
-      <Parameter name="auxiliary data" type="Array(string)" value="{pH}"/>
-      <Parameter name="number of component concentrations" type="int" value="1"/>
-      <Parameter name="time step control method" type="string" value="simple"/>
+  <ParameterList name="_CHEMISTRY">
+    <ParameterList name="thermodynamic database">
+      <Parameter name="file" type="string" value="_TRITIUM.bgd"/>
+      <Parameter name="format" type="string" value="simple"/>
     </ParameterList>
+    <Parameter name="activity model" type="string" value="unit"/>
+    <Parameter name="tolerance" type="double" value="1.5e-12"/>
+    <Parameter name="maximum Newton iterations" type="int" value="25"/>
+    <Parameter name="max time step (s)" type="double" value="1.5e+07"/>
+    <Parameter name="auxiliary data" type="Array(string)" value="{pH}"/>
+    <Parameter name="number of component concentrations" type="int" value="1"/>
+    <Parameter name="time step control method" type="string" value="simple"/>
+  </ParameterList>
   </ParameterList>
 
 
@@ -3210,12 +3229,14 @@ This list is often generated on a fly by a high-level MPC PK.
 
 .. code-block:: xml
 
-   <ParameterList name="energy">  <!-- parent list -->
-     <ParameterList name="physical models and assumptions">
-       <Parameter name="vapor diffusion" type="bool" value="false"/>
-       <Parameter name="water content model" type="string" value="constant density"/>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList>  <!-- parent list -->
+  <ParameterList name="_ENERGY"> 
+    <ParameterList name="physical models and assumptions">
+      <Parameter name="vapor diffusion" type="bool" value="false"/>
+      <Parameter name="water content model" type="string" value="constant density"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 
 Internal energy
@@ -3235,16 +3256,16 @@ in a variety of regimes, e.g. with or without gas phase.
 
 .. code-block:: xml
 
-   <ParameterList name="energy">  <!-- parent list -->
-     <ParameterList name="energy evaluator">
-       <Parameter name="energy key" type="string" value="energy"/>
-       <Parameter name="evaluator type" type="string" value="constant liquid density"/>
-       <Parameter name="vapor diffusion" type="bool" value="true"/>
-       <ParameterList name="verbose object">
-         <Parameter name="verbosity level" type="string" value="high"/>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="_ENERGY">  <!-- parent list -->
+  <ParameterList name="energy evaluator">
+    <Parameter name="energy key" type="string" value="energy"/>
+    <Parameter name="evaluator type" type="string" value="constant liquid density"/>
+    <Parameter name="vapor diffusion" type="bool" value="true"/>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 
 Molar enthalpy
@@ -3252,16 +3273,16 @@ Molar enthalpy
 
 .. code-block:: xml
 
-   <ParameterList name="energy">  <!-- parent list -->
-     <ParameterList name="enthalpy evaluator">
-       <Parameter name="enthalpy key" type="string" value="enthalpy_liquid"/>
-       <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
+  <ParameterList name="_ENERGY">  <!-- parent list -->
+  <ParameterList name="enthalpy evaluator">
+    <Parameter name="enthalpy key" type="string" value="enthalpy_liquid"/>
+    <Parameter name="internal energy key" type="string" value="internal_energy_liquid"/>
 
-       <Parameter name="include work term" type="bool" value="true"/>
-       <Parameter name="pressure key" type="string" value="pressure"/>
-       <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
-     </ParameterList>
-   </ParameterList>
+    <Parameter name="include work term" type="bool" value="true"/>
+    <Parameter name="pressure key" type="string" value="pressure"/>
+    <Parameter name="molar density key" type="string" value="molar_density_liquid"/>
+  </ParameterList>
+  </ParameterList>
 
 
 Thermal conductivity
@@ -3294,19 +3315,19 @@ The two-phase model accepts the following parameters.
 
 .. code-block:: xml
 
-   <ParameterList name="energy">  <!-- parent list -->
-     <ParameterList name="thermal conductivity evaluator">
-       <ParameterList name="thermal conductivity parameters">
-         <Parameter name="thermal conductivity type" type="string" value="two-phase Peters-Lidard"/>
-         <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
-         <Parameter name="thermal conductivity of gas" type="double" value="0.02"/>
-         <Parameter name="thermal conductivity of liquid" type="double" value="0.6065"/>
+  <ParameterList name="_ENERGY">  <!-- parent list -->
+  <ParameterList name="thermal conductivity evaluator">
+    <ParameterList name="thermal conductivity parameters">
+      <Parameter name="thermal conductivity type" type="string" value="two-phase Peters-Lidard"/>
+      <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
+      <Parameter name="thermal conductivity of gas" type="double" value="0.02"/>
+      <Parameter name="thermal conductivity of liquid" type="double" value="0.6065"/>
 
-         <Parameter name="unsaturated alpha" type="double" value="1.0"/>
-         <Parameter name="epsilon" type="double" value="1.e-10"/>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+      <Parameter name="unsaturated alpha" type="double" value="1.0"/>
+      <Parameter name="epsilon" type="double" value="1.e-10"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 The single-phase model accepts some of the parameters defined above (see the example) 
 and a few additional parameters.
@@ -3319,16 +3340,16 @@ and a few additional parameters.
 
 .. code-block:: xml
 
-   <ParameterList name="energy">  <!-- parent list -->
-     <ParameterList name="thermal conductivity evaluator">
-       <ParameterList name="thermal conductivity parameters">
-         <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
-         <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
-         <Parameter name="reference temperature" type="double" value="298.15"/>
-         <Parameter name="polynomial expansion" type="Array(double)" value="{-1.48445, 4.12292, -1.63866}"/>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="_ENERGY">  <!-- parent list -->
+  <ParameterList name="thermal conductivity evaluator">
+    <ParameterList name="thermal conductivity parameters">
+      <Parameter name="thermal conductivity type" type="string" value="one-phase polynomial"/>
+      <Parameter name="thermal conductivity of rock" type="double" value="0.2"/>
+      <Parameter name="reference temperature" type="double" value="298.15"/>
+      <Parameter name="polynomial expansion" type="Array(double)" value="{-1.48445, 4.12292, -1.63866}"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 
 Operators
@@ -3364,29 +3385,29 @@ scheme, and selects assembling schemas for matrices and preconditioners.
 
 .. code-block:: xml
 
-     <ParameterList name="operators">
-       <Parameter name="include enthalpy in preconditioner" type="boll" value="true"/>
-       <ParameterList name="diffusion operator">
-         <ParameterList name="matrix">
-           <Parameter name="discretization primary" type="string" value="mdf: optimized for monotonicity"/>
-           <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-           <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-           <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-           <Parameter name="gravity" type="bool" value="false"/>
-           <Parameter name="upwind method" type="string" value="standard: cell"/> 
-         </ParameterList>
-         <ParameterList name="preconditioner">
-           <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
-           <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-           <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-           <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-           <Parameter name="gravity" type="bool" value="true"/>
-           <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
-           <Parameter name="upwind method" type="string" value="standard: cell"/>
-         </ParameterList>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="operators">
+    <Parameter name="include enthalpy in preconditioner" type="boll" value="true"/>
+    <ParameterList name="diffusion operator">
+      <ParameterList name="matrix">
+        <Parameter name="discretization primary" type="string" value="mdf: optimized for monotonicity"/>
+        <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+        <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+        <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+        <Parameter name="gravity" type="bool" value="false"/>
+        <Parameter name="upwind method" type="string" value="standard: cell"/> 
+      </ParameterList>
+      <ParameterList name="preconditioner">
+        <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+        <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+        <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+        <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+        <Parameter name="gravity" type="bool" value="true"/>
+        <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
+        <Parameter name="upwind method" type="string" value="standard: cell"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 This example uses cell-centered discretization for 
 
@@ -3398,11 +3419,11 @@ This section to be written.
 
 .. code-block:: xml
 
-   <ParameterList name="operators">  <!-- parent list -->
-     <ParameterList name="advection operator">
-       <Parameter name="method" type="string" value="upwind"/>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="operators">  <!-- parent list -->
+  <ParameterList name="advection operator">
+    <Parameter name="method" type="string" value="upwind"/>
+  </ParameterList>
+  </ParameterList>
 
 
 Navier Stokes PK
@@ -3447,11 +3468,11 @@ This list is often generated on a fly by a high-level MPC PK.
 
 .. code-block:: xml
 
-   <ParameterList name="Navier Stokes">  <!-- parent list -->
-     <ParameterList name="physical models and assumptions">
-       <Parameter name="gravity" type="bool" value="false"/>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="_NAVIER_STOKES">  <!-- parent list -->
+  <ParameterList name="physical models and assumptions">
+    <Parameter name="gravity" type="bool" value="false"/>
+  </ParameterList>
+  </ParameterList>
 
 
 Operators
@@ -3468,17 +3489,17 @@ Elasticity operator
 
 .. code-block:: xml
 
-   <ParameterList name="operators">  <!-- parent list -->
-     <ParameterList name="elasticity operator">
-       <Parameter name="method" type="string" value="BernardiRaugel"/>
-       <ParameterList name="schema">
-         <Parameter name="base" type="string" value="cell"/>
-         <Parameter name="location" type="Array(string)" value="{node, face}"/>
-         <Parameter name="type" type="Array(string)" value="{vector, normal component}"/>
-         <Parameter name="number" type="Array(int)" value="{2, 1}"/>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="operators">  <!-- parent list -->
+  <ParameterList name="elasticity operator">
+    <Parameter name="method" type="string" value="BernardiRaugel"/>
+    <ParameterList name="schema">
+      <Parameter name="base" type="string" value="cell"/>
+      <Parameter name="location" type="Array(string)" value="{node, face}"/>
+      <Parameter name="type" type="Array(string)" value="{vector, normal component}"/>
+      <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 
 Convection operator
@@ -3488,11 +3509,11 @@ This section to be written.
 
 .. code-block:: xml
 
-   <ParameterList name="operators">  <!-- parent list -->
-     <ParameterList name="convection operator">
-       <Parameter name="flux formula" type="string" value="Rusanov"/>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="operators">  <!-- parent list -->
+  <ParameterList name="convection operator">
+    <Parameter name="flux formula" type="string" value="Rusanov"/>
+  </ParameterList>
+  </ParameterList>
 
 
 Divergence operator
@@ -3502,23 +3523,23 @@ This section to be written.
 
 .. code-block:: xml
 
-   <ParameterList name="operators">  <!-- parent list -->
-     <ParameterList name="divergence operator">
-       <Parameter name="method" type="string" value="BernardiRaugel"/>
-       <ParameterList name="schema domain">
-         <Parameter name="base" type="string" value="cell"/>
-         <Parameter name="location" type="Array(string)" value="{node, face}"/>
-         <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
-         <Parameter name="number" type="Array(int)" value="{2, 1}"/>
-       </ParameterList>
-       <ParameterList name="schema range">
-         <Parameter name="base" type="string" value="cell"/>
-         <Parameter name="location" type="Array(string)" value="{cell}"/>
-         <Parameter name="type" type="Array(string)" value="{scalar}"/>
-         <Parameter name="number" type="Array(int)" value="{1}"/>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="operators">  <!-- parent list -->
+  <ParameterList name="divergence operator">
+    <Parameter name="method" type="string" value="BernardiRaugel"/>
+    <ParameterList name="schema domain">
+      <Parameter name="base" type="string" value="cell"/>
+      <Parameter name="location" type="Array(string)" value="{node, face}"/>
+      <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+      <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+    </ParameterList>
+    <ParameterList name="schema range">
+      <Parameter name="base" type="string" value="cell"/>
+      <Parameter name="location" type="Array(string)" value="{cell}"/>
+      <Parameter name="type" type="Array(string)" value="{scalar}"/>
+      <Parameter name="number" type="Array(int)" value="{1}"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 
 Coupled process kernels
@@ -3537,20 +3558,20 @@ The input spec requires new keyword *reactive transport*.
 
 .. code-block:: xml
 
-   <ParameterList name="PK tree">  <!-- parent list -->
-     <ParameterList name="REACTIVE TRANSPORT">
-       <Parameter name="PK type" type="string" value="reactive transport"/>
-       <ParameterList name="TRANSPORT">
-         <Parameter name="PK type" type="string" value="transport"/>
-       </ParameterList>
-       <ParameterList name="CHEMISTRY">
-         <Parameter name="PK type" type="string" value="chemistry amanzi"/>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="PK tree">  <!-- parent list -->
+  <ParameterList name="_REACTIVE TRANSPORT">
+    <Parameter name="PK type" type="string" value="reactive transport"/>
+    <ParameterList name="_TRANSPORT">
+      <Parameter name="PK type" type="string" value="transport"/>
+    </ParameterList>
+    <ParameterList name="_CHEMISTRY">
+      <Parameter name="PK type" type="string" value="chemistry amanzi"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 
-Flow and Reactive transport PK
+Flow and reactive transport PK
 ------------------------------
 
 Amanzi uses operator splitting approach for coupled physical kernels.
@@ -3560,23 +3581,23 @@ The input spec requires new keyword *flow reactive transport*.
 
 .. code-block:: xml
 
-   <ParameterList name="PK tree">  <!-- parent list -->
-     <ParameterList name="FLOW and REACTIVE TRANSPORT">
-       <Parameter name="PK type" type="string" value="flow reactive transport"/>
-       <ParameterList name="FLOW">
-          <Parameter name="PK type" type="string" value="darcy"/>
-       </ParameterList>
-       <ParameterList name="REACTIVE TRANSPORT">
-         <Parameter name="PK type" type="string" value="reactive transport"/>
-         <ParameterList name="TRANSPORT">
-           <Parameter name="PK type" type="string" value="transport"/>
-         </ParameterList>
-         <ParameterList name="CHEMISTRY">
-           <Parameter name="PK type" type="string" value="chemistry amanzi"/>
-         </ParameterList>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="PK tree">  <!-- parent list -->
+  <ParameterList name="_FLOW and REACTIVE TRANSPORT">
+    <Parameter name="PK type" type="string" value="flow reactive transport"/>
+    <ParameterList name="_FLOW">
+      <Parameter name="PK type" type="string" value="darcy"/>
+    </ParameterList>
+    <ParameterList name="_REACTIVE TRANSPORT">
+      <Parameter name="PK type" type="string" value="reactive transport"/>
+      <ParameterList name="_TRANSPORT">
+      <Parameter name="PK type" type="string" value="transport"/>
+      </ParameterList>
+      <ParameterList name="_CHEMISTRY">
+        <Parameter name="PK type" type="string" value="chemistry amanzi"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 This example describe four PKs identified by keywords *darcy*, *reactive transport*,
 *transport*, and *chemistry amanzi*. 
@@ -3589,33 +3610,32 @@ Note that *reactive transport* is MPC-PK and hence its description is short.
 .. code-block:: xml
 
   <ParameterList name="PKs">
-    <ParameterList name="FLOW and REACTIVE TRANSPORT">
-      <Parameter name="PK type" type="string" value="flow reactive transport"/>
-      <Parameter name="PKs order" type="Array(string)" value="{FLOW, REACTIVE TRANSPORT}"/>
-      <Parameter name="master PK index" type="int" value="0"/>
-    </ParameterList>
+  <ParameterList name="_FLOW and REACTIVE TRANSPORT">
+    <Parameter name="PK type" type="string" value="flow reactive transport"/>
+    <Parameter name="PKs order" type="Array(string)" value="{_FLOW, _REACTIVE TRANSPORT}"/>
+    <Parameter name="master PK index" type="int" value="0"/>
+  </ParameterList>
 
-    <ParameterList name="REACTIVE TRANSPORT">
-      <Parameter name="PK type" type="string" value="reactive transport"/>
-      <Parameter name="PKs order" type="Array(string)" value="{CHEMISTRY, TRANSPORT}"/>
-    </ParameterList>
+  <ParameterList name="_REACTIVE TRANSPORT">
+    <Parameter name="PK type" type="string" value="reactive transport"/>
+    <Parameter name="PKs order" type="Array(string)" value="{_CHEMISTRY, _TRANSPORT}"/>
+  </ParameterList>
 
-    <ParameterList name="FLOW">
-      ...
-    </ParameterList>
+  <ParameterList name="_FLOW">
+    ...
+  </ParameterList>
 
-    <ParameterList name="TRANSPORT">
-      ...
-    </ParameterList>
+  <ParameterList name="_TRANSPORT">
+    ...
+  </ParameterList>
 
-    <ParameterList name="CHEMISTRY">
-      ...
-    </ParameterList>
+  <ParameterList name="_CHEMISTRY">
+    ...
+  </ParameterList>
   </ParameterList>
 
 
-
-Flow and Energy PK
+Flow and energy PK
 ------------------
 
 The conceptual PDE model of the coupled flow and energy equations is
@@ -3683,9 +3703,9 @@ Diffusion operator
 
 .. code-block:: xml
 
-   <ParameterList name="flow">  <!-- parent lists -->
-   <ParameterList name="operator"> 
-   <ParameterList name="diffusion operator">
+  <ParameterList name="_NAVIER_STOKES">  <!-- parent lists -->
+  <ParameterList name="operator"> 
+    <ParameterList name="diffusion operator">
      <ParameterList name="vapor matrix">
        <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
        <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
@@ -3698,7 +3718,113 @@ Diffusion operator
      </ParameterList>
    </ParameterList>
    </ParameterList>
-   </ParameterList>
+
+
+Coupled matrix-fracture Darcy flow PK
+-------------------------------------
+
+Mathematical models
+...................
+
+Let subscripts :math:`m` and :math:`f` correspond to matrix and fracture, respectively.
+The conceptual PDE model of the stationary coupled matrix-fracture flow is
+
+.. math::
+  \begin{array}{l}
+  - \boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_m) = Q_m,
+  \quad
+  \boldsymbol{q}_m = -\frac{\boldsymbol{K}_m}{\mu} 
+  (\boldsymbol{\nabla} p_m - \rho_l \boldsymbol{g}) \\
+  %
+  -\boldsymbol{\nabla} \cdot (\rho_l \boldsymbol{q}_f) = 
+    -\rho_l [[ \tilde{\boldsymbol{q}}_m \cdot \boldsymbol{n} ]],
+  \quad
+  \boldsymbol{q}_f = -\frac{\boldsymbol{K}_f}{\mu} 
+  (\boldsymbol{\nabla} p_f - \rho_l \boldsymbol{g}) \\
+  %
+  \tilde{\boldsymbol{q}}_m \cdot \boldsymbol{n} = k (p_f - p_m)
+  \end{array}
+
+subject to convential boundary conditions for both matrix and fracture domains expect for 
+the matrix-fracture boundary where the boundary condition is
+
+.. math::
+  \boldsymbol{q}_m \cdot \boldsymbol{n} = \tilde{\boldsymbol{q}}_m \cdot \boldsymbol{n}
+
+Here
+:math:`\rho_l` is fluid density [kg/m^3],
+:math:`p` is aqueous pressure [Pa],
+:math:`\boldsymbol{K}` is absolute permeability [m^2] for matrix domain and [m^3] for fracture domain,
+:math:`Q_m` is source or sink term,
+:math:`\boldsymbol{q}` is the Darcy velocity [m/s] for matrix domain and [m^2/s] for fracture domain,
+:math:`k` is effective normal premeability [m/s/Pa],
+and
+:math:`\boldsymbol{g}` is gravity.
+
+
+Main parameters and sublists 
+............................
+
+* `"PKs order`" [array(string)] defines user names for two flow PKs. The matrix PK should be
+  defined *first*.
+
+* `"time integrator`" [list] defines a generic time integrator used by the cycle driver. 
+
+.. code-block:: xml
+
+  <ParameterList name="PKs">  <!-- parent list -->
+  <ParameterList name="_COUPLED DARCY FLOW">
+    <Parameter name="PKs order" type="Array(string)" value="{_FLOW MATRIX, _FLOW FRACTURE}"/>
+    <Parameter name="master PK index" type="int" value="0"/>
+    <ParameterList name="time integrator">
+      ...
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
+
+
+Coupled matrix-fracture tansport PK
+-----------------------------------
+
+Mathematical models
+...................
+
+Let subscripts :math:`m` and :math:`f` correspond to matrix and fracture, respectively.
+The conceptual PDE model of the coupled matrix-fracture advective transport is
+
+.. math::
+  \begin{array}{l}
+  \frac{\partial(\phi_m C_m)}{\partial t} = 
+    -\boldsymbol{\nabla} \cdot (\boldsymbol{q}_m C_m) = Q_m,\\
+  %
+  \frac{\partial(\varepsilon_f\phi_f C_f)}{\partial t} = 
+    -\boldsymbol{\nabla} \cdot (\boldsymbol{q}_f C_f)
+    +[[ \tilde{C} (\boldsymbol{q}_m \cdot \boldsymbol{n}) ]] + Q_f,
+  \end{array}
+
+subject to the  Dirichlet boundary conditions on the inflow part of the computational domain.
+Here
+:math:`\phi` is porosity [-],
+:math:`Q` is source or sink term,
+:math:`\boldsymbol{q}` is the Darcy velocity [m/s] for matrix domain and [m^2/s] for fracture domain,
+:math:`\varepsilon_f` is fracture cross-sectional length [m],
+and
+:math:`\tilde{C}` is concentration in fracture for outflow and in matrix for inflow.
+
+
+Main parameters and sublists 
+............................
+
+* `"PKs order`" [array(string)] defines user names for two transport PKs.
+
+.. code-block:: xml
+
+  <ParameterList name="PKs">  <!-- parent list -->
+  <ParameterList name="_COUPLED DARCY FLOW">
+    <Parameter name="PKs order" type="Array(string)" value="{_TRANSPORT MATRIX, _TRANSPORT FRACTURE}"/>
+    <Parameter name="master PK index" type="int" value="0"/>
+  </ParameterList>
+  </ParameterList>
 
 
 Generic capabilities
@@ -3743,19 +3869,19 @@ A square operator may use either two identical schema lists or a single list cal
 
 .. code-block:: xml
 
-  <ParameterList name="OPERATOR_NAME">  <!-- parent list-->
-    <ParameterList name="schema domain">
-      <Parameter name="base" type="string" value="cell"/>
-      <Parameter name="location" type="Array(string)" value="{node, face}"/>
-      <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
-      <Parameter name="number" type="Array(int)" value="{2, 1}"/>
-    </ParameterList>
-    <ParameterList name="schema domain">
-      <Parameter name="base" type="string" value="cell"/>
-      <Parameter name="location" type="Array(string)" value="{node, face}"/>
-      <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
-      <Parameter name="number" type="Array(int)" value="{2, 1}"/>
-    </ParameterList>
+  <ParameterList name="pks operator name">  <!-- parent list-->
+  <ParameterList name="schema domain">
+    <Parameter name="base" type="string" value="cell"/>
+    <Parameter name="location" type="Array(string)" value="{node, face}"/>
+    <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+    <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+  </ParameterList>
+  <ParameterList name="schema domain">
+    <Parameter name="base" type="string" value="cell"/>
+    <Parameter name="location" type="Array(string)" value="{node, face}"/>
+    <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+    <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+  </ParameterList>
   </ParameterList>
 
 This example describes a square operator with two degrees of freedom per mesh node and one
@@ -3771,7 +3897,7 @@ Diffusion operator
 
 Diffusion is the most frequently used operator. It employs the old schema.
 
-* `"OPERATOR_NAME`" [list] a PK specific name for the diffusion operator.
+* `"pks operator name`" [list] a PK specific name for the diffusion operator.
 
   * `"discretization primary`" [string] specifies an advanced discretization method that
     has useful properties under some a priori conditions on the mesh and/or permeability tensor.
@@ -3837,27 +3963,30 @@ Diffusion is the most frequently used operator. It employs the old schema.
     equation in MFD by assembling and inverting the face-only system.  This is
     not currently used by any Amanzi PKs.
 
+  * `"fracture`" [Array(string)] provides list of regions that defines a fracture network.
+    This parameter is used only by the coupled flow PK.
+
 .. code-block:: xml
 
-    <ParameterList name="OPERATOR_NAME">
-      <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
-      <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
-      <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
-      <Parameter name="gravity" type="bool" value="true"/>
-      <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
-      <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
-      <Parameter name="Newton correction" type="string" value="true Jacobian"/>
+  <ParameterList name="pks operator name">
+    <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+    <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
+    <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+    <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+    <Parameter name="gravity" type="bool" value="true"/>
+    <Parameter name="gravity term discretization" type="string" value="hydraulic head"/>
+    <Parameter name="nonlinear coefficient" type="string" value="upwind: face"/>
+    <Parameter name="Newton correction" type="string" value="true Jacobian"/>
 
-      <ParameterList name="consistent faces">
-        <ParameterList name="linear solver">
-          ...
-        </ParameterList>
-        <ParameterList name="preconditioner">
-          ...
-        </ParameterList>
+    <ParameterList name="consistent faces">
+      <ParameterList name="linear solver">
+        ...
+      </ParameterList>
+      <ParameterList name="preconditioner">
+        ...
       </ParameterList>
     </ParameterList>
+  </ParameterList>
 
 This example creates a p-lambda system, i.e. the pressure is
 discretized in mesh cells and on mesh faces. 
@@ -3876,7 +4005,7 @@ volume and surface integrals. These two terms are discretixed using two operator
 matrix of types *advection* and *flux*, respectively.
 
 
-* `"OPERATOR_NAME`" [list] a PK specific name for the advection operator.
+* `"pks operator name`" [list] a PK specific name for the advection operator.
 
   * `"method`" [string] defines a discretization method. The available option is `"dg modal`".
 
@@ -3907,7 +4036,7 @@ matrix of types *advection* and *flux*, respectively.
 
 .. code-block:: xml
 
-  <ParameterList name="OPERATOR_NAME">
+  <ParameterList name="pks operator name">
     <Parameter name="method" type="string" value="dg modal"/>
     <Parameter name="method order" type="int" value="2"/>
     <Parameter name="flux formula" type="string" value="Rusanov"/>
@@ -3936,7 +4065,7 @@ It employes the old schema.
 
 .. code-block:: xml
 
-  <ParameterList name="OPERATOR_NAME">
+  <ParameterList name="pks operator name">
     <Parameter name="base" type="string" value="face"/>
     <Parameter name="schema" type="Array(string)" value="{cell}"/>
     <Parameter name="method order" type="int" value="0"/>
@@ -3951,7 +4080,7 @@ A reaction operator may represent either reaction of identity operator.
 It is symmetric so far and requires one schema.
 The structure of the schema is described in the previous section.
 
-* `"OPERATOR_NAME`" [list] a PK specific name for the advection operator.
+* `"pks operator name`" [list] a PK specific name for the advection operator.
 
   * `"method`" [string] defines a discretization method. The only supported
     option is `"dg nodal`".
@@ -3960,7 +4089,7 @@ The structure of the schema is described in the previous section.
 
 .. code-block:: xml
 
-  <ParameterList name="OPERATOR_NAME">
+  <ParameterList name="pks operator name">
     <Parameter name="method" type="string" value="dg modal"/>
     <Parameter name="method order" type="int" value="1"/>
     <Parameter name="matrix type" type="string" value="mass"/>
@@ -4023,19 +4152,19 @@ required by this factory and/or particular method in it.
 
 .. code-block:: xml
 
-    <ParameterList name="ABSTRACT OPERATOR">
-      <Parameter name="method" type="string" value="dg modal"/>
-      <Parameter name="method order" type="int" value="2"/>
-      <Parameter name="dg basis" type="string" value="regularized"/>
-      <Parameter name="matrix type" type="string" value="flux"/>
+  <ParameterList name="_ABSTRACT OPERATOR">
+    <Parameter name="method" type="string" value="dg modal"/>
+    <Parameter name="method order" type="int" value="2"/>
+    <Parameter name="dg basis" type="string" value="regularized"/>
+    <Parameter name="matrix type" type="string" value="flux"/>
 
-      <ParameterList name="schema domain">
-        ...
-      </ParameterList>
-      <ParameterList name="schema range">
-        ...
-      </ParameterList>
+    <ParameterList name="schema domain">
+      ...
     </ParameterList>
+    <ParameterList name="schema range">
+      ...
+    </ParameterList>
+  </ParameterList>
 
 
 
@@ -4196,27 +4325,27 @@ solutions which are enough different to cause doubt over their correctness.
     
 .. code-block:: xml
 
-   <ParameterList name="Richards problem">  <!-- parent list -->
-     <ParameterList name="time integrator">
-       <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
-       <Parameter name="extrapolate initial guess" type="bool" value="true"/>
-       <Parameter name="restart tolerance relaxation factor" type="double" value="1000.0"/>
-       <Parameter name="restart tolerance relaxation factor damping" type="double" value="0.9"/>
+  <ParameterList name="Richards problem">  <!-- parent list -->
+  <ParameterList name="time integrator">
+    <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
+    <Parameter name="extrapolate initial guess" type="bool" value="true"/>
+    <Parameter name="restart tolerance relaxation factor" type="double" value="1000.0"/>
+    <Parameter name="restart tolerance relaxation factor damping" type="double" value="0.9"/>
 
-       <Parameter name="time integration method" type="string" value="BDF1"/>
-       <ParameterList name="BDF1">
-         <Parameter name="timestep controller type" type="string" value="standard"/>
-         <ParameterList name="timestep controller standard parameters">
-           <Parameter name="min iterations" type="int" value="10"/>
-           <Parameter name="max iterations" type="int" value="15"/>
-           <Parameter name="time step increase factor" type="double" value="1.2"/>
-           <Parameter name="time step reduction factor" type="double" value="0.5"/>
-           <Parameter name="max time step" type="double" value="1e+9"/>
-           <Parameter name="min time step" type="double" value="0.0"/>
-         </ParameterList>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+    <Parameter name="time integration method" type="string" value="BDF1"/>
+    <ParameterList name="BDF1">
+      <Parameter name="timestep controller type" type="string" value="standard"/>
+      <ParameterList name="timestep controller standard parameters">
+        <Parameter name="min iterations" type="int" value="10"/>
+        <Parameter name="max iterations" type="int" value="15"/>
+        <Parameter name="time step increase factor" type="double" value="1.2"/>
+        <Parameter name="time step reduction factor" type="double" value="0.5"/>
+        <Parameter name="max time step" type="double" value="1e+9"/>
+        <Parameter name="min time step" type="double" value="0.0"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 In this example, the time step is increased by factor 1.2 when the nonlinear
 solver converges in 10 or less iterations. 
@@ -4237,7 +4366,7 @@ Each function is defined by a list:
 
 .. code-block:: xml
 
-  <ParameterList name="NAME">
+  <ParameterList name="function name">
     function-specification
   </ParameterList>
 
@@ -4292,9 +4421,9 @@ The default value for parameter *x coordinate* is *t*.
     <Parameter name="x values" type="Array(double)" value="{0.0, 1.0, 2.0, 3.0}"/>
     <Parameter name="x coordinate" type="string" value="t"/>
     <Parameter name="y values" type="Array(double)" value="{0.0, 1.0, 2.0, 2.0}"/>
-    <Parameter name="forms" type="Array(string)" value="{linear, constant, USER_FUNC}"/>
+    <Parameter name="forms" type="Array(string)" value="{linear, constant, _USER_FUNC}"/>
 
-    <ParameterList name="USER_FUNC">
+    <ParameterList name="_USER_FUNC">
       <ParameterList name="function-standard-math">
         <Parameter name="operator" type="string" value="sqrt"/>
       </ParameterList>
@@ -4330,7 +4459,7 @@ that vary in time and the x dimension.
 .. code-block:: xml
 
   <ParameterList name="function-bilinear">
-    <Parameter name="file" type="string" value="pressure_face.h5"/>
+    <Parameter name="file" type="string" value="_PRESSURE_FACE.h5"/>
     <Parameter name="row header" type="string" value="/time"/>
     <Parameter name="row coordinate" type="string" value="time"/>
     <Parameter name="column header" type="string" value="/x"/>
@@ -4608,9 +4737,9 @@ Boundary condition functions utilize a parameterized model for time variations t
 
 .. code-block:: xml
 
-   <Parameter name="times" type="Array(double)" value="{1, 2, 3}"/>
-   <Parameter name="time values" type="Array(double)" value="{10, 20, 30}"/>
-   <Parameter name="time functions" type="Array(string)" value="{Constant, Linear}"/>    
+  <Parameter name="times" type="Array(double)" value="{1, 2, 3}"/>
+  <Parameter name="time values" type="Array(double)" value="{10, 20, 30}"/>
+  <Parameter name="time functions" type="Array(string)" value="{constant, linear}"/>    
 
 This defines four time intervals: (-inf,1), (1,2), (2,3), (3,+inf).  
 By assumption the function is constant over the first and last intervals.
@@ -4644,26 +4773,25 @@ specify it here.
  
 .. code-block:: xml
 
-   <ParameterList>  <!-- parent list -->
-     <ParameterList name="solvers">
-       <ParameterList name="GMRES with HYPRE AMG">
-         <Parameter name="iterative method" type="string" value="gmres"/>
+  <ParameterList>  <!-- parent list -->
+  <ParameterList name="solvers">
+    <ParameterList name="_GMRES WITH HYPRE AMG">
+      <Parameter name="iterative method" type="string" value="gmres"/>
 
-         <ParameterList name="gmres parameters">
-           ...
-         </ParameterList>
-       </ParameterList>
+      <ParameterList name="gmres parameters">
+        ...
+      </ParameterList>
+    </ParameterList>
 
-       <ParameterList name="PCG with HYPRE AMG">
-         <Parameter name="iterative method" type="string" value="pcg"/>
-         <ParameterList name="pcg parameters">
-           ...
-         </ParameterList>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+    <ParameterList name="_PCG with HYPRE AMG">
+      <Parameter name="iterative method" type="string" value="pcg"/>
+      <ParameterList name="pcg parameters">
+        ...
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
-The names *GMRES with HYPRE AMG* and similar are chosen by the user.
 
 
 Generalized minimal residuals (GMRES)
@@ -4702,30 +4830,30 @@ Internal parameters for GMRES include
 
 .. code-block:: xml
 
-   <ParameterList name="GMRES with HYPRE AMG">  <!-- parent list -->
-     <ParameterList name="gmres parameters">
-       <Parameter name="error tolerance" type="double" value="1e-12"/>
-       <Parameter name="maximum number of iterations" type="int" value="400"/>
-       <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
-       <Parameter name="size of Krylov space" type="int" value="10"/>
-       <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
-       <Parameter name="maximum size of deflation space" type="int" value="0"/>
-       <Parameter name="preconditioning strategy`" type="string" value="left"/>
+  <ParameterList name="_GMRES with HYPRE AMG">  <!-- parent list -->
+  <ParameterList name="gmres parameters">
+    <Parameter name="error tolerance" type="double" value="1e-12"/>
+    <Parameter name="maximum number of iterations" type="int" value="400"/>
+    <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
+    <Parameter name="size of Krylov space" type="int" value="10"/>
+    <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
+    <Parameter name="maximum size of deflation space" type="int" value="0"/>
+    <Parameter name="preconditioning strategy`" type="string" value="left"/>
 
-       <ParameterList name="verbose object">
-         <Parameter name="verbosity level" type="string" value="high"/>
-       </ParameterList>
-     </ParameterList>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
+    </ParameterList>
+  </ParameterList>
 
-     <!-- Alternative implementation
-     <ParameterList name="belos gmres parameters">
-       <Parameter name="error tolerance" type="double" value="1e-12"/>
-       <Parameter name="maximum number of iterations" type="int" value="400"/>
-       <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
-       <Parameter name="size of Krylov space" type="int" value="10"/>
-       <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
-     </ParameterList-->
-   </ParameterList>
+  <!-- Alternative implementation
+  <ParameterList name="belos gmres parameters">
+    <Parameter name="error tolerance" type="double" value="1e-12"/>
+    <Parameter name="maximum number of iterations" type="int" value="400"/>
+    <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
+    <Parameter name="size of Krylov space" type="int" value="10"/>
+    <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
+  </ParameterList-->
+  </ParameterList>
 
 
 Preconditioner conjugate gradient (PCG)
@@ -4747,17 +4875,17 @@ Internal parameters for PCG include
 
 .. code-block:: xml
 
-  <ParameterList name="PCG with HYPRE AMG">  <!-- parent list -->
-    <ParameterList name="pcg parameters">
-      <Parameter name="error tolerance" type="double" value="1e-12"/>
-      <Parameter name="maximum number of iterations" type="int" value="400"/>
-      <Parameter name="convergence criteria" type="Array(string)" value="{relative residual,make one iteration}"/>
-      <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
+  <ParameterList name="_PCG with HYPRE AMG">  <!-- parent list -->
+  <ParameterList name="pcg parameters">
+    <Parameter name="error tolerance" type="double" value="1e-12"/>
+    <Parameter name="maximum number of iterations" type="int" value="400"/>
+    <Parameter name="convergence criteria" type="Array(string)" value="{relative residual,make one iteration}"/>
+    <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
 
-      <ParameterList name="verbose object">
-        <Parameter name="verbosity level" type="string" value="high"/>
-      </ParameterList>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
+  </ParameterList>
   </ParameterList>
 
 
@@ -4788,19 +4916,19 @@ Internal parameters for NKA include
 
 .. code-block:: xml
 
-  <ParameterList name="NKA">  <!-- parent list -->
-    <ParameterList name="nka parameters">
-      <Parameter name="error tolerance" type="double" value="1e-12"/>
-      <Parameter name="maximum number of iterations" type="int" value="400"/>
-      <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
-      <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
-      <Parameter name="max nka vectors" type="int" value="10"/>
-      <Parameter name="nka vector tolerance" type="double" value="0.05"/>
+  <ParameterList name="_NKA">  <!-- parent list -->
+  <ParameterList name="nka parameters">
+    <Parameter name="error tolerance" type="double" value="1e-12"/>
+    <Parameter name="maximum number of iterations" type="int" value="400"/>
+    <Parameter name="convergence criteria" type="Array(string)" value="{relative residual}"/>
+    <Parameter name="overflow tolerance" type="double" value="3.0e+50"/>
+    <Parameter name="max nka vectors" type="int" value="10"/>
+    <Parameter name="nka vector tolerance" type="double" value="0.05"/>
 
-      <ParameterList name="verbose object">
-        <Parameter name="verbosity level" type="string" value="high"/>
-      </ParameterList>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
+  </ParameterList>
   </ParameterList>
 
 
@@ -4821,12 +4949,12 @@ Additional parameters are:
 
 .. code-block:: xml
 
-  <ParameterList name="AMESOS KLU">  <!-- parent list -->
-    <Parameter name="direct method" type="string" value="amesos"/>
-    <ParameterList name="amesos parameters">
-      <Parameter name="solver name" type="string" value="Klu"/>
-      <Parameter name="amesos version" type="int" value="1"/>
-    </ParameterList>
+  <ParameterList name="_AMESOS KLU">  <!-- parent list -->
+  <Parameter name="direct method" type="string" value="amesos"/>
+  <ParameterList name="amesos parameters">
+    <Parameter name="solver name" type="string" value="Klu"/>
+    <Parameter name="amesos version" type="int" value="1"/>
+  </ParameterList>
   </ParameterList>
 
 
@@ -4898,27 +5026,27 @@ Newton-Krylov acceleration (NKA)
 .. code-block:: xml
 
   <ParameterList name="BDF1">  <!-- typical parent list -->
-    <Parameter name="solver type" type="string" value="nka"/>
-    <ParameterList name="nka parameters">
-      <Parameter name="nonlinear tolerance" type="double" value="1.0e-06"/>
-      <Parameter name="monitor" type="string" value="monitor update"/>
-      <Parameter name="limit iterations" type="int" value="20"/>
-      <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
-      <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
-      <Parameter name="diverged pc tolerance" type="double" value="1.0e+10"/>
-      <Parameter name="diverged residual tolerance" type="double" value="1.0e+10"/>
-      <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
-      <Parameter name="max error growth factor" type="double" value="1.0e+05"/>
-      <Parameter name="max divergent iterations" type="int" value="3"/>
-      <Parameter name="max nka vectors" type="int" value="10"/>
-      <Parameter name="nka vector tolerance" type="double" value="0.05"/>
-      <Parameter name="modify correction" type="bool" value="false"/>
-      <Parameter name="lag iterations" type="int" value="0"/>
+  <Parameter name="solver type" type="string" value="nka"/>
+  <ParameterList name="nka parameters">
+    <Parameter name="nonlinear tolerance" type="double" value="1.0e-06"/>
+    <Parameter name="monitor" type="string" value="monitor update"/>
+    <Parameter name="limit iterations" type="int" value="20"/>
+    <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+    <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
+    <Parameter name="diverged pc tolerance" type="double" value="1.0e+10"/>
+    <Parameter name="diverged residual tolerance" type="double" value="1.0e+10"/>
+    <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+    <Parameter name="max error growth factor" type="double" value="1.0e+05"/>
+    <Parameter name="max divergent iterations" type="int" value="3"/>
+    <Parameter name="max nka vectors" type="int" value="10"/>
+    <Parameter name="nka vector tolerance" type="double" value="0.05"/>
+    <Parameter name="modify correction" type="bool" value="false"/>
+    <Parameter name="lag iterations" type="int" value="0"/>
 
-      <ParameterList name="verbose object">
-        <Parameter name="verbosity level" type="string" value="high"/>
-      </ParameterList>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
+  </ParameterList>
   </ParameterList>
 
 
@@ -4966,18 +5094,18 @@ Internal parameters for AA include
 .. code-block:: xml
 
   <ParameterList name="BDF1">  <!-- typical parent list -->
-    <ParameterList name="aa parameters">
-      <Parameter name="nonlinear tolerance" type="double" value="1e-5"/>
-      <Parameter name="limit iterations" type="int" value="30"/>
-      <Parameter name="diverged tolerance" type="double" value="1e+10"/>
-      <Parameter name="diverged l2 tolerance" type="double" value="1e+10"/>
-      <Parameter name="diverged pc tolerance" type="double" value="1e+10"/>
-      <Parameter name="max du growth factor" type="double" value="1e+5"/>
-      <Parameter name="max divergent iterations" type="int" value="3"/>
-      <Parameter name="max aa vectors" type="int" value="10"/>
-      <Parameter name="modify correction" type="bool" value="false"/>
-      <Parameter name="relaxation parameter" type="double" value="0.75"/>
-    </ParameterList>
+  <ParameterList name="aa parameters">
+    <Parameter name="nonlinear tolerance" type="double" value="1e-5"/>
+    <Parameter name="limit iterations" type="int" value="30"/>
+    <Parameter name="diverged tolerance" type="double" value="1e+10"/>
+    <Parameter name="diverged l2 tolerance" type="double" value="1e+10"/>
+    <Parameter name="diverged pc tolerance" type="double" value="1e+10"/>
+    <Parameter name="max du growth factor" type="double" value="1e+5"/>
+    <Parameter name="max divergent iterations" type="int" value="3"/>
+    <Parameter name="max aa vectors" type="int" value="10"/>
+    <Parameter name="modify correction" type="bool" value="false"/>
+    <Parameter name="relaxation parameter" type="double" value="0.75"/>
+  </ParameterList>
   </ParameterList>
 
 
@@ -5022,15 +5150,15 @@ corresponds to a stable (e.g. upwind) discretization.
 .. code-block:: xml
 
   <ParameterList name="BDF1">  <!-- typical parent list -->
-    <Parameter name="solver type" type="string" value="Newton"/>
-    <ParameterList name="Newton parameters">
-      <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
-      <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
-      <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
-      <Parameter name="max divergent iterations" type="int" value="3"/>
-      <Parameter name="limit iterations" type="int" value="20"/>
-      <Parameter name="modify correction" type="bool" value="true"/>
-    </ParameterList>
+  <Parameter name="solver type" type="string" value="Newton"/>
+  <ParameterList name="Newton parameters">
+    <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
+    <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+    <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+    <Parameter name="max divergent iterations" type="int" value="3"/>
+    <Parameter name="limit iterations" type="int" value="20"/>
+    <Parameter name="modify correction" type="bool" value="true"/>
+  </ParameterList>
   </ParameterList>
 
 
@@ -5047,27 +5175,27 @@ Here is the list of selected parameters for the Newton-Picard solver.
 
 .. code-block:: xml
 
-   <ParameterList name="operators">
-     <ParameterList name="diffusion operator">
-       <ParameterList name="preconditioner">
-         <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
-         <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
-         <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
-         <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-         <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="operators">
+    <ParameterList name="diffusion operator">
+      <ParameterList name="preconditioner">
+        <Parameter name="discretization primary" type="string" value="mfd: optimized for monotonicity"/>
+        <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+        <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+        <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+        <Parameter name="Newton correction" type="string" value="approximate Jacobian"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
        
-   <Parameter name="solver type" type="string" value="Newton"/>
-   <ParameterList name="Newton parameters">
-     <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
-     <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
-     <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
-     <Parameter name="max divergent iterations" type="int" value="3"/>
-     <Parameter name="limit iterations" type="int" value="20"/>
-     <Parameter name="modify correction" type="bool" value="false"/>
-   </ParameterList>
+  <Parameter name="solver type" type="string" value="Newton"/>
+  <ParameterList name="Newton parameters">
+    <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
+    <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+    <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
+    <Parameter name="max divergent iterations" type="int" value="3"/>
+    <Parameter name="limit iterations" type="int" value="20"/>
+    <Parameter name="modify correction" type="bool" value="false"/>
+  </ParameterList>
 
 
 Jacobian-free Newton-Krylov (JFNK)
@@ -5093,30 +5221,30 @@ We describe parameters of the second sublist only.
 
 .. code-block:: xml
 
-   <Parameter name="solver type" type="string" value="JFNK"/>
-     <ParameterList name="JFNK parameters">
-       <Parameter name="typical solution value" type="double" value="1.0"/>
+  <Parameter name="solver type" type="string" value="JFNK"/>
+  <ParameterList name="JFNK parameters">
+    <Parameter name="typical solution value" type="double" value="1.0"/>
 
-       <ParameterList name="JF matrix parameters">
-         <Parameter name="finite difference epsilon" type="double" value="1.0e-8"/>
-         <Parameter name="method for epsilon" type="string" value="Knoll-Keyes L2"/>
-       </ParameterList>
+    <ParameterList name="JF matrix parameters">
+      <Parameter name="finite difference epsilon" type="double" value="1.0e-8"/>
+      <Parameter name="method for epsilon" type="string" value="Knoll-Keyes L2"/>
+    </ParameterList>
 
-       <ParameterList name="nonlinear solver">
-         <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
-         <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
-         <Parameter name="limit iterations" type="int" value="20"/>
-         <Parameter name="max divergent iterations" type="int" value="3"/>
-       </ParameterList>
+    <ParameterList name="nonlinear solver">
+      <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
+      <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+      <Parameter name="limit iterations" type="int" value="20"/>
+      <Parameter name="max divergent iterations" type="int" value="3"/>
+    </ParameterList>
 
-       <ParameterList name="linear operator">
-         <Parameter name="iterative method" type="string" value="gmres"/>
-         <ParameterList name="gmres parameters">
-           ...
-         </ParameterList>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+    <ParameterList name="linear operator">
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
+        ...
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 
 Nonlinear Object-Oriented Solution (NOX)
@@ -5126,30 +5254,30 @@ The interface to Trilinos NOX solver is as follows:
 
 .. code-block:: xml
 
-   <Parameter name="solver type" type="string" value="nox"/>
-     <ParameterList name="nox parameters">
-       <Parameter name="typical solution value" type="double" value="1.0"/>
+  <Parameter name="solver type" type="string" value="nox"/>
+    <ParameterList name="nox parameters">
+      <Parameter name="typical solution value" type="double" value="1.0"/>
 
-       <ParameterList name="JF matrix parameters">
-         <Parameter name="finite difference epsilon" type="double" value="1.0e-8"/>
-         <Parameter name="method for epsilon" type="string" value="Knoll-Keyes L2"/>
-       </ParameterList>
+      <ParameterList name="JF matrix parameters">
+        <Parameter name="finite difference epsilon" type="double" value="1.0e-8"/>
+        <Parameter name="method for epsilon" type="string" value="Knoll-Keyes L2"/>
+      </ParameterList>
 
-       <ParameterList name="nonlinear solver">
-         <Parameter name="solver type" type="string" value="Newton"/>
-         <ParameterList name="Newton parameters">
-           ...
-         </ParameterList>
-       </ParameterList>
+      <ParameterList name="nonlinear solver">
+        <Parameter name="solver type" type="string" value="Newton"/>
+        <ParameterList name="Newton parameters">
+          ...
+        </ParameterList>
+      </ParameterList>
 
-       <ParameterList name="linear operator">
-         <Parameter name="iterative method" type="string" value="gmres"/>
-         <ParameterList name="gmres parameters">
-           ...
-         </ParameterList>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+      <ParameterList name="linear operator">
+        <Parameter name="iterative method" type="string" value="gmres"/>
+        <ParameterList name="gmres parameters">
+          ...
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
 
 
 Preconditioners
@@ -5167,32 +5295,30 @@ preconditioner, and identity preconditioner.
  
 .. code-block:: xml
 
-   <ParameterList>  <!-- parent list -->
-     <ParameterList name="preconditioners">
-       <ParameterList name="TRILINOS ML">
-          <Parameter name="type" type="string" value="ml"/>
-          <ParameterList name="ml parameters">
-            ... 
-         </ParameterList>
-       </ParameterList>
+  <ParameterList>  <!-- parent list -->
+  <ParameterList name="preconditioners">
+    <ParameterList name="_TRILINOS ML">
+      <Parameter name="type" type="string" value="ml"/>
+      <ParameterList name="ml parameters">
+        ... 
+      </ParameterList>
+    </ParameterList>
 
-       <ParameterList name="HYPRE AMG">
-          <Parameter name="type" type="string" value="boomer amg"/>
-          <ParameterList name="boomer amg parameters">
-            ...
-          </ParameterList>
-       </ParameterList>
+    <ParameterList name="_HYPRE AMG">
+      <Parameter name="type" type="string" value="boomer amg"/>
+      <ParameterList name="boomer amg parameters">
+        ...
+      </ParameterList>
+    </ParameterList>
 
-       <ParameterList name="BLOCK ILU">
-          <Parameter name="type" type="string" value="block ilu"/>
-          <ParameterList name="block ilu parameters">
-            ...
-          </ParameterList>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
-
-Names *TRILINOS ML*, *HYPRE AMG*, and *BLOCK ILU* are chosen by the user.
+    <ParameterList name="_BLOCK ILU">
+      <Parameter name="type" type="string" value="block ilu"/>
+      <ParameterList name="block ilu parameters">
+        ...
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 
 Hypre's algebraic multigrid (AMG)
@@ -5258,17 +5384,17 @@ Internal parameters for Boomer AMG include
 
 .. code-block:: xml
 
-   <ParameterList name="HYPRE AMG">  <!-- parent list -->
-     <ParameterList name="boomer amg parameters">
-       <Parameter name="tolerance" type="double" value="0.0"/>
-       <Parameter name="smoother sweeps" type="int" value="3"/>
-       <Parameter name="cycle applications" type="int" value="5"/>
-       <Parameter name="coarsen type" type="int" value="0"/>
-       <Parameter name="strong threshold" type="double" value="0.5"/>
-       <Parameter name="relaxation type" type="int" value="3"/>
-       <Parameter name="verbosity" type="int" value="0"/>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="_HYPRE AMG">  <!-- parent list -->
+  <ParameterList name="boomer amg parameters">
+    <Parameter name="tolerance" type="double" value="0.0"/>
+    <Parameter name="smoother sweeps" type="int" value="3"/>
+    <Parameter name="cycle applications" type="int" value="5"/>
+    <Parameter name="coarsen type" type="int" value="0"/>
+    <Parameter name="strong threshold" type="double" value="0.5"/>
+    <Parameter name="relaxation type" type="int" value="3"/>
+    <Parameter name="verbosity" type="int" value="0"/>
+  </ParameterList>
+  </ParameterList>
 
 
 Euclid ILU
@@ -5296,14 +5422,14 @@ Internal parameters for this preconditioner include
 
 .. code-block:: xml
 
-   <ParameterList name="MY EUCLID">  <!-- parent list -->
-     <ParameterList name="euclid parameters">
-       <Parameter name="ilu(k) fill level" type="int" value="6"/>
-       <Parameter name="ilut drop tolerance" type="double" value="0.01"/>
-       <Parameter name="rescale rows" type="bool" value="true"/>
-       <Parameter name="verbosity" type="int" value="0"/>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="_MY EUCLID">  <!-- parent list -->
+  <ParameterList name="euclid parameters">
+    <Parameter name="ilu(k) fill level" type="int" value="6"/>
+    <Parameter name="ilut drop tolerance" type="double" value="0.01"/>
+    <Parameter name="rescale rows" type="bool" value="true"/>
+    <Parameter name="verbosity" type="int" value="0"/>
+  </ParameterList>
+  </ParameterList>
 
 
 Trilinos ML
@@ -5313,27 +5439,27 @@ Internal parameters for Trilinos ML include
 
 .. code-block:: xml
 
-   <ParameterList name="MY ML">  <!-- parent list -->
-     <ParameterList name="ml parameters">
-       <Parameter name="ML output" type="int" value="0"/>
-       <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
-       <Parameter name="aggregation: nodes per aggregate" type="int" value="3"/>
-       <Parameter name="aggregation: threshold" type="double" value="0.0"/>
-       <Parameter name="aggregation: type" type="string" value="Uncoupled"/>
-       <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
-       <Parameter name="coarse: max size" type="int" value="128"/>
-       <Parameter name="coarse: damping factor" type="double" value="1.0"/>
-       <Parameter name="cycle applications" type="int" value="2"/>
-       <Parameter name="eigen-analysis: iterations" type="int" value="10"/>
-       <Parameter name="eigen-analysis: type" type="string" value="cg"/>
-       <Parameter name="max levels" type="int" value="40"/>
-       <Parameter name="prec type" type="string" value="MGW"/>
-       <Parameter name="smoother: damping factor" type="double" value="1.0"/>
-       <Parameter name="smoother: pre or post" type="string" value="both"/>
-       <Parameter name="smoother: sweeps" type="int" value="2"/>
-       <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="_MY ML">  <!-- parent list -->
+  <ParameterList name="ml parameters">
+    <Parameter name="ML output" type="int" value="0"/>
+    <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
+    <Parameter name="aggregation: nodes per aggregate" type="int" value="3"/>
+    <Parameter name="aggregation: threshold" type="double" value="0.0"/>
+    <Parameter name="aggregation: type" type="string" value="Uncoupled"/>
+    <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
+    <Parameter name="coarse: max size" type="int" value="128"/>
+    <Parameter name="coarse: damping factor" type="double" value="1.0"/>
+    <Parameter name="cycle applications" type="int" value="2"/>
+    <Parameter name="eigen-analysis: iterations" type="int" value="10"/>
+    <Parameter name="eigen-analysis: type" type="string" value="cg"/>
+    <Parameter name="max levels" type="int" value="40"/>
+    <Parameter name="prec type" type="string" value="MGW"/>
+    <Parameter name="smoother: damping factor" type="double" value="1.0"/>
+    <Parameter name="smoother: pre or post" type="string" value="both"/>
+    <Parameter name="smoother: sweeps" type="int" value="2"/>
+    <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
+  </ParameterList>
+  </ParameterList>
 
 
 Block ILU
@@ -5343,16 +5469,16 @@ The internal parameters for block ILU are as follows:
 
 .. code-block:: xml
 
-   <ParameterList name="MY ILU">  <!-- parent list -->
-     <ParameterList name="block ilu parameters">
-       <Parameter name="fact: relax value" type="double" value="1.0"/>
-       <Parameter name="fact: absolute threshold" type="double" value="0.0"/>
-       <Parameter name="fact: relative threshold" type="double" value="1.0"/>
-       <Parameter name="fact: level-of-fill" type="int" value="0"/>
-       <Parameter name="overlap" type="int" value="0"/>
-       <Parameter name="schwarz: combine mode" type="string" value="Add"/>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="_MY ILU">  <!-- parent list -->
+  <ParameterList name="block ilu parameters">
+    <Parameter name="fact: relax value" type="double" value="1.0"/>
+    <Parameter name="fact: absolute threshold" type="double" value="0.0"/>
+    <Parameter name="fact: relative threshold" type="double" value="1.0"/>
+    <Parameter name="fact: level-of-fill" type="int" value="0"/>
+    <Parameter name="overlap" type="int" value="0"/>
+    <Parameter name="schwarz: combine mode" type="string" value="Add"/>
+  </ParameterList>
+  </ParameterList>
 
 
 Identity
@@ -5426,37 +5552,37 @@ Example of *Unstructured* mesh generated internally:
 
 .. code-block:: xml
 
-   <ParameterList>  <!-- parent list -->
-     <ParameterList name="mesh">
-       <ParameterList name="unstructured"/>
-         <ParameterList name="generate mesh"/>
-           <ParameterList name="uniform structured"/>
-             <Parameter name="number of cells" type="Array(int)" value="{100, 1, 100}"/>
-             <Parameter name="domain low corner" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
-             <Parameter name="domain high corner" type="Array(double)" value="{103.2, 1.0, 103.2}"/>
-           </ParameterList>   
-         </ParameterList>   
+  <ParameterList>  <!-- parent list -->
+  <ParameterList name="mesh">
+    <ParameterList name="unstructured"/>
+      <ParameterList name="generate mesh"/>
+        <ParameterList name="uniform structured"/>
+          <Parameter name="number of cells" type="Array(int)" value="{100, 1, 100}"/>
+          <Parameter name="domain low corner" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+          <Parameter name="domain high corner" type="Array(double)" value="{103.2, 1.0, 103.2}"/>
+        </ParameterList>   
+      </ParameterList>   
 
-         <ParameterList name="expert">
-           <Parameter name="framework" type="string" value="MSTK"/>
-           <Parameter name="partitioner" type="string" value="metis"/>
-         </ParameterList>
-       </ParameterList>   
-     </ParameterList>
-   </ParameterList>
+      <ParameterList name="expert">
+        <Parameter name="framework" type="string" value="MSTK"/>
+        <Parameter name="partitioner" type="string" value="metis"/>
+      </ParameterList>
+    </ParameterList>   
+  </ParameterList>
+  </ParameterList>
 
 Example of *Unstructured* mesh read from an external file:
 
 .. code-block:: xml
 
-   <ParameterList name="mesh">  <!-- parent list -->
-     <ParameterList name="unstructured">
-       <ParameterList name="read mesh file">
-         <Parameter name="file" type="string" value="mesh_filename"/>
-         <Parameter name="format" type="string" value="Exodus II"/>
-       </ParameterList>   
-     </ParameterList>   
-   </ParameterList>
+  <ParameterList name="mesh">  <!-- parent list -->
+  <ParameterList name="unstructured">
+    <ParameterList name="read mesh file">
+      <Parameter name="file" type="string" value="mesh_filename"/>
+      <Parameter name="format" type="string" value="Exodus II"/>
+    </ParameterList>   
+  </ParameterList>   
+  </ParameterList>
 
 
 Geometric model
@@ -5514,11 +5640,11 @@ Using this definition, cell sets encompassing this point are retrieved inside Am
 
 .. code-block:: xml
 
-   <ParameterList name="DOWN_WIND150"> <!-- parent list -->
-     <ParameterList name="region: point">
-       <Parameter name="coordinate" type="Array(double)" value="{-150.0, 0.0, 0.0}"/>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="_DOWNWIND"> <!-- parent list -->
+    <ParameterList name="region: point">
+      <Parameter name="coordinate" type="Array(double)" value="{-150.0, 0.0, 0.0}"/>
+    </ParameterList>
+  </ParameterList>
 
 
 Box
@@ -5534,12 +5660,12 @@ direction in which case they are equivalent to planes.
 
 .. code-block:: xml
 
-   <ParameterList name="WELL">  <!-- parent list -->
-     <ParameterList name="region: box">
-       <Parameter name="low coordinate" type="Array(double)" value="{-5.0,-5.0, -5.0}"/>
-       <Parameter name="high coordinate" type="Array(double)" value="{5.0, 5.0,  5.0}"/>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="_WELL">  <!-- parent list -->
+    <ParameterList name="region: box">
+      <Parameter name="low coordinate" type="Array(double)" value="{-5.0,-5.0, -5.0}"/>
+      <Parameter name="high coordinate" type="Array(double)" value="{5.0, 5.0,  5.0}"/>
+    </ParameterList>
+  </ParameterList>
 
 
 Plane
@@ -5553,15 +5679,15 @@ List *region: plane* defines a plane using a point lying on the plane and normal
 
 .. code-block:: xml
 
-   <ParameterList name="TOP_SECTION"> <!-- parent list -->
-     <ParameterList name="region: plane">
-       <Parameter name="point" type="Array(double)" value="{2, 3, 5}"/>
-       <Parameter name="normal" type="Array(double)" value="{1, 1, 0}"/>
-       <ParameterList name="expert parameters">
-         <Parameter name="tolerance" type="double" value="1.0e-05"/>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="_TOP_SECTION"> <!-- parent list -->
+    <ParameterList name="region: plane">
+      <Parameter name="point" type="Array(double)" value="{2, 3, 5}"/>
+      <Parameter name="normal" type="Array(double)" value="{1, 1, 0}"/>
+      <ParameterList name="expert parameters">
+        <Parameter name="tolerance" type="double" value="1.0e-05"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
 
 
 Labeled Set
@@ -5593,14 +5719,14 @@ associated with the entities in the indicated set.
 
 .. code-block:: xml
 
-   <ParameterList name="AQUIFER">
-     <ParameterList name="region: labeled set">
-       <Parameter name="entity" type="string" value="cell"/>
-       <Parameter name="file" type="string" value="porflow4_4.exo"/>
-       <Parameter name="format" type="string" value="Exodus II"/>
-       <Parameter name="label" type="string" value="1"/>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="_AQUIFER">
+    <ParameterList name="region: labeled set">
+      <Parameter name="entity" type="string" value="cell"/>
+      <Parameter name="file" type="string" value="porflow4_4.exo"/>
+      <Parameter name="format" type="string" value="Exodus II"/>
+      <Parameter name="label" type="string" value="1"/>
+    </ParameterList>
+  </ParameterList>
 
 
 Color function
@@ -5627,12 +5753,12 @@ function file.
 
 .. code-block:: xml
 
-   <ParameterList name="SOIL_TOP">
-     <ParameterList name="region: color function">
-       <Parameter name="file" type="string" value="geology_resamp_2D.tf3"/>
-       <Parameter name="value" type="int" value="1"/>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="SOIL_TOP">
+    <ParameterList name="region: color function">
+      <Parameter name="file" type="string" value="_GEOLOGY_RESAMP_2D.tf3"/>
+      <Parameter name="value" type="int" value="1"/>
+    </ParameterList>
+  </ParameterList>
 
 
 Polygon
@@ -5658,19 +5784,19 @@ are specified.
 
 .. code-block:: xml
 
-   <ParameterList name="XY_PENTAGON">
-     <ParameterList name="region: polygon">
-       <Parameter name="number of points" type="int" value="5"/>
-       <Parameter name="points" type="Array(double)" value="{-0.5, -0.5, -0.5, 
-                                                              0.5, -0.5, -0.5,
-                                                              0.8, 0.0, 0.0,
-                                                              0.5,  0.5, 0.5,
-                                                             -0.5, 0.5, 0.5}"/>
-       <ParameterList name="expert parameters">
-         <Parameter name="tolerance" type="double" value="1.0e-3"/>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="_XY_PENTAGON">
+    <ParameterList name="region: polygon">
+      <Parameter name="number of points" type="int" value="5"/>
+      <Parameter name="points" type="Array(double)" value="{-0.5, -0.5, -0.5, 
+                                                             0.5, -0.5, -0.5,
+                                                             0.8, 0.0, 0.0,
+                                                             0.5,  0.5, 0.5,
+                                                            -0.5, 0.5, 0.5}"/>
+      <ParameterList name="expert parameters">
+        <Parameter name="tolerance" type="double" value="1.0e-3"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
 
 
 Logical
@@ -5693,10 +5819,10 @@ Currently, multi-region booleans are not supported in the same expression.
 
 .. code-block:: xml
 
-  <ParameterList name="LOWER_LAYERs">
+  <ParameterList name="_LOWER_LAYERs">
     <ParameterList name="region: logical">
       <Parameter name="operation" type="string" value="union"/>
-      <Parameter name="regions" type="Array(string)" value="{Middle1, Middle2, Bottom}"/>
+      <Parameter name="regions" type="Array(string)" value="{_LAYER1, _LAYER2, _LAYER3}"/>
     </ParameterList>
   </ParameterList>
 
@@ -5711,11 +5837,11 @@ Using this definition, faces located on the domain boundary are extracted.
 
 .. code-block:: xml
 
-   <ParameterList name="DOMAIN_BOUNDARY"> <!-- parent list -->
-     <ParameterList name="region: boundary">
-       <Parameter name="entity" type="string" value="face"/>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="_DOMAIN_BOUNDARY"> <!-- parent list -->
+    <ParameterList name="region: boundary">
+      <Parameter name="entity" type="string" value="face"/>
+    </ParameterList>
+  </ParameterList>
 
 
 Enumerated set
@@ -5729,12 +5855,12 @@ of input global ids..
   
 .. code-block:: xml
 
-   <ParameterList name="WELL"> <!-- parent list -->
-     <ParameterList name="region: enumerated set">
-       <Parameter name="entity" type="string" value="face"/>
-       <Parameter name="entity gids" type="Array(int)" value="{1, 12, 23, 34}"/>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="_WELL"> <!-- parent list -->
+    <ParameterList name="region: enumerated set">
+      <Parameter name="entity" type="string" value="face"/>
+      <Parameter name="entity gids" type="Array(int)" value="{1, 12, 23, 34}"/>
+    </ParameterList>
+  </ParameterList>
 
 
 Box volume fractions
@@ -5755,15 +5881,15 @@ they are equivalent to rectangles on a plane or segments on a line.
 
 .. code-block:: xml
 
-   <ParameterList name="BASIN">  <!-- parent list -->
-     <ParameterList name="region: box volume fractions">
-       <Parameter name="corner coordinate" type="Array(double)" value="{-1.0,-1.0, 1.0}"/>
-       <Parameter name="opposite corner coordinate" type="Array(double)" value="{1.0, 1.0, 1.0}"/>
-       <Parameter name="normals" type="Array(double)" value="{1.0, 0.0, 0.0
-                                                              0.0, 2.0, 0.0,
-                                                              0.0, 0.0, 3.0}"/>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList name="_BASIN">  <!-- parent list -->
+    <ParameterList name="region: box volume fractions">
+      <Parameter name="corner coordinate" type="Array(double)" value="{-1.0,-1.0, 1.0}"/>
+      <Parameter name="opposite corner coordinate" type="Array(double)" value="{1.0, 1.0, 1.0}"/>
+      <Parameter name="normals" type="Array(double)" value="{1.0, 0.0, 0.0
+                                                             0.0, 2.0, 0.0,
+                                                             0.0, 0.0, 3.0}"/>
+    </ParameterList>
+  </ParameterList>
 
 This example defines a degenerate box, a square on a surface *z=1*.
 
@@ -5784,12 +5910,12 @@ points.
 
 .. code-block:: xml
 
-   <ParameterList name="WELL"> <!-- parent list -->
-      <ParameterList name="region: line segment">
-        <Parameter name="end coordinate" type="Array(double)" value="{497542.44, 5393755.77, 0.0}"/>
-        <Parameter name="opposite end coordinate" type="Array(double)" value="{497542.44, 5393755.77, 100.0}"/>
-      </ParameterList>
-    </ParameterList>     
+  <ParameterList name="_WELL"> <!-- parent list -->
+    <ParameterList name="region: line segment">
+      <Parameter name="end coordinate" type="Array(double)" value="{49754.44, 53937.77, 0.0}"/>
+      <Parameter name="opposite end coordinate" type="Array(double)" value="{49754.44, 53937.77, 100.0}"/>
+    </ParameterList>
+  </ParameterList>     
 
 
 All
@@ -5800,10 +5926,10 @@ mesh.  No parameters are required.
 
 .. code-block:: xml
 
-   <ParameterList name="ENTIRE MESH"> <!-- parent list -->
-      <ParameterList name="region: all">
-      </ParameterList>
-    </ParameterList>     
+  <ParameterList name="_ENTIRE MESH"> <!-- parent list -->
+    <ParameterList name="region: all">
+    </ParameterList>
+  </ParameterList>     
     
 
 Notes and example
@@ -5824,66 +5950,66 @@ Notes and example
 
 .. code-block:: xml
 
-   <ParameterList>  <!-- parent list -->
-     <ParameterList name="regions">
-       <ParameterList name="TOP SECTION">
-         <ParameterList name="region: box">
-           <Parameter name="low coordinate" type="Array(double)" value="{2, 3, 5}"/>
-           <Parameter name="high coordinate" type="Array(double)" value="{4, 5, 8}"/>
-         </ParameterList>
-       </ParameterList>
-       <ParameterList name="MIDDLE SECTION">
-         <ParameterList name="region: box">
-           <Parameter name="low coordinate" type="Array(double)" value="{2, 3, 3}"/>
-           <Parameter name="high coordinate" type="Array(double)" value="{4, 5, 5}"/>
-         </ParameterList>
-       </ParameterList>
-       <ParameterList name="BOTTOM SECTION">
-         <ParameterList name="region: box">
-           <Parameter name="low coordinate" type="Array(double)" value="{2, 3, 0}"/>
-           <Parameter name="high coordinate" type="Array(double)" value="{4, 5, 3}"/>
-         </ParameterList>
-       </ParameterList>
-       <ParameterList name="INFLOW SURFACE">
-         <ParameterList name="region: labeled set">
-           <Parameter name="label"  type="string" value="sideset_2"/>
-           <Parameter name="file"   type="string" value="F_area_mesh.exo"/>
-           <Parameter name="format" type="string" value="Exodus II"/>
-           <Parameter name="entity" type="string" value="face"/>
-         </ParameterList>
-       </ParameterList>
-       <ParameterList name="OUTFLOW PLANE">
-         <ParameterList name="region: plane">
-           <Parameter name="point" type="Array(double)" value="{0.5, 0.5, 0.5}"/>
-           <Parameter name="normal" type="Array(double)" value="{0, 0, 1}"/>
-         </ParameterList>
-       </ParameterList>
-       <ParameterList name="BLOODY SAND">
-         <ParameterList name="region: color function">
-           <Parameter name="file" type="string" value="F_area_col.txt"/>
-           <Parameter name="value" type="int" value="25"/>
-         </ParameterList>
-       </ParameterList>
-       <ParameterList name="FLUX PLANE">
-         <ParameterList name="region: polygon">
-           <Parameter name="number of points" type="int" value="5"/>
-           <Parameter name="points" type="Array(double)" value="{-0.5, -0.5, -0.5, 
-                                                                  0.5, -0.5, -0.5,
-                                                                  0.8, 0.0, 0.0,
-                                                                  0.5,  0.5, 0.5,
-                                                                 -0.5, 0.5, 0.5}"/>
-          </ParameterList>
-       </ParameterList>
-       <ParameterList name="ENTIRE MESH">
-         <ParameterList name="region: all"\>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList>  <!-- parent list -->
+  <ParameterList name="regions">
+    <ParameterList name="_TOP SECTION">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{2, 3, 5}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{4, 5, 8}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="_MIDDLE SECTION">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{2, 3, 3}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{4, 5, 5}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="_BOTTOM SECTION">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{2, 3, 0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{4, 5, 3}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="_INFLOW SURFACE">
+      <ParameterList name="region: labeled set">
+        <Parameter name="label"  type="string" value="_SIDESET2"/>
+        <Parameter name="file"   type="string" value="_MESH.exo"/>
+        <Parameter name="format" type="string" value="Exodus II"/>
+        <Parameter name="entity" type="string" value="face"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="_OUTFLOW PLANE">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.5, 0.5, 0.5}"/>
+        <Parameter name="normal" type="Array(double)" value="{0, 0, 1}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="_BLOODY SAND">
+      <ParameterList name="region: color function">
+        <Parameter name="file" type="string" value="_FAREA_COLOR.txt"/>
+        <Parameter name="value" type="int" value="25"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="_FLUX PLANE">
+      <ParameterList name="region: polygon">
+        <Parameter name="number of points" type="int" value="5"/>
+        <Parameter name="points" type="Array(double)" value="{-0.5, -0.5, -0.5, 
+                                                               0.5, -0.5, -0.5,
+                                                               0.8, 0.0, 0.0,
+                                                               0.5,  0.5, 0.5,
+                                                              -0.5, 0.5, 0.5}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="_ENTIRE MESH">
+      <ParameterList name="region: all"\>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
-In this example, *TOP SECTION*, *MIDDLE SECTION* and *BOTTOM SECTION*
-are three box-shaped volumetric regions. *INFLOW SURFACE* is a
+In this example, _TOP SECTION, _MIDDLE SECTION and _BOTTOM SECTION
+are three box-shaped volumetric regions. _INFLOW SURFACE is a
 surface region defined in an Exodus II-formatted labeled set
-file and *OUTFLOW PLANE* is a planar region. *BLOODY SAND* is a volumetric
+file and _OUTFLOW PLANE is a planar region. _BLOODY SAND is a volumetric
 region defined by the value 25 in color function file.
 
 
@@ -6006,25 +6132,25 @@ All of them operate on the variables identified.
 
 .. code-block:: xml
 
-   <ParameterList>  <!-- parent list -->
-     <ParameterList name="observation data">
-       <Parameter name="observation output filename" type="string" value="obs_output.out"/>
-       <Parameter name="precision" type="int" value="10"/>
-       <ParameterList name="SOME OBSERVATION NAME">
-         <Parameter name="region" type="string" value="some point region name"/>
-         <Parameter name="functional" type="string" value="observation data: point"/>
-         <Parameter name="variable" type="string" value="volumetric water content"/>
-         <Parameter name="times" type="Array(double)" value="{100000.0, 200000.0}"/>
+  <ParameterList>  <!-- parent list -->
+  <ParameterList name="observation data">
+    <Parameter name="observation output filename" type="string" value="_OUTPUT.out"/>
+    <Parameter name="precision" type="int" value="10"/>
+    <ParameterList name="_ANY OBSERVATION NAME">
+      <Parameter name="region" type="string" value="_REGION"/>
+      <Parameter name="functional" type="string" value="observation data: point"/>
+      <Parameter name="variable" type="string" value="volumetric water content"/>
+      <Parameter name="times" type="Array(double)" value="{100000.0, 200000.0}"/>
 
-         <Parameter name="cycles" type="Array(int)" value="{100000, 200000, 400000, 500000}"/>
-         <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}"/>
+      <Parameter name="cycles" type="Array(int)" value="{100000, 200000, 400000, 500000}"/>
+      <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}"/>
 
-         <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
-         <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
-         <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+      <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
+      <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
+      <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 
 Checkpoint file
@@ -6067,19 +6193,19 @@ frequency, by numerical cycle number.
 
 .. code-block:: xml
 
-   <ParameterList>  <!-- parent list -->
-     <ParameterList name="checkpoint data">
-       <Parameter name="file name base" type="string" value="chkpoint"/>
-       <Parameter name="file name digits" type="int" value="5"/>
+  <ParameterList>  <!-- parent list -->
+  <ParameterList name="checkpoint data">
+    <Parameter name="file name base" type="string" value="_CHKPOINT"/>
+    <Parameter name="file name digits" type="int" value="5"/>
 
-       <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}"/>
-       <Parameter name="cycles" type="Array(int)" value="{999, 1001}"/>
+    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}"/>
+    <Parameter name="cycles" type="Array(int)" value="{999, 1001}"/>
 
-       <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
-       <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
-       <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
-     </ParameterList>
-   </ParameterList>
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
+    <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
+    <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
+  </ParameterList>
+  </ParameterList>
 
 In this example, checkpoint data files are written when the cycle number is 
 a multiple of 100.
@@ -6143,25 +6269,25 @@ time step values or intervals corresponding to the cycle number; writes are cont
 
 .. code-block:: xml
 
-   <ParameterList>  <!-- parent list -->
-     <ParameterList name="visualization data">
-       <Parameter name="file name base" type="string" value="chk"/>
+  <ParameterList>  <!-- parent list -->
+  <ParameterList name="visualization data">
+    <Parameter name="file name base" type="string" value="_PLOT"/>
   
-       <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}"/>
-       <Parameter name="cycles" type="Array(int)" value="{999, 1001}"/>
+    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}"/>
+    <Parameter name="cycles" type="Array(int)" value="{999, 1001}"/>
 
-       <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
-       <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
-       <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
+    <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
+    <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
 
-       <Parameter name="dynamic mesh" type="bool" value="false"/>
+    <Parameter name="dynamic mesh" type="bool" value="false"/>
 
-       <ParameterList name="write regions">
-         <Parameter name="regions" type="Array(string)" value="{Obs_r1, Obs_r1, Obs_r3}"/>
-         <Parameter name="wells" type="Array(string)" value="{Obs_r1}"/>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+    <ParameterList name="write regions">
+      <Parameter name="regions" type="Array(string)" value="{_OBS1, _OBS2, _OBS3}"/>
+   A  <Parameter name="wells" type="Array(string)" value="{_OBS4}"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 
 Walkabout file
@@ -6210,25 +6336,25 @@ limited to file name generation and writing frequency, by numerical cycle number
 
 .. code-block:: xml
 
-   <ParameterList>  <!-- parent list -->
-     <ParameterList name="walkabout data">
-       <Parameter name="file name base" type="string" value="walkabout"/>
-       <Parameter name="file name digits" type="int" value="5"/>
+  <ParameterList>  <!-- parent list -->
+  <ParameterList name="walkabout data">
+    <Parameter name="file name base" type="string" value="_WALKABOUT"/>
+    <Parameter name="file name digits" type="int" value="5"/>
 
-       <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}"/>
-       <Parameter name="cycles" type="Array(int)" value="{999, 1001}"/>
+    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}"/>
+    <Parameter name="cycles" type="Array(int)" value="{999, 1001}"/>
 
-       <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
-       <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
-       <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
+    <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
+    <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
+    <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
 
-       <ParameterList name="write regions">
-         <Parameter name="region names" type="Array(string)" value="{REGION1, REGION2}"/>
-         <Parameter name="material names" type="Array(string)" value="{MAT1, MAT2}"/>
-         <Parameter name="material ids" type="Array(int)" value="{1000, 2000}"/>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+    <ParameterList name="write regions">
+      <Parameter name="region names" type="Array(string)" value="{_REGION1, _REGION2}"/>
+      <Parameter name="material names" type="Array(string)" value="{_MAT1, _MAT2}"/>
+      <Parameter name="material ids" type="Array(int)" value="{1000, 2000}"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
 
 In this example, walkabout data files are written when the cycle number is 
 a multiple of 100.
@@ -6260,16 +6386,16 @@ This list contains data collected by the input parser of a higher-level spec.
 
 .. code-block:: xml
 
-   <ParameterList>  <!-- parent list -->
-     <ParameterList name="analysis">
-       <Parameter name="used boundary condition regions" type="Array(string)" value="{region1,region2}"/>
-       <Parameter name="used source and sink regions" type="Array(string)" value="{region3,region4}"/>
-       <Parameter name="used observation regions" type="Array(string)" value="{region5}"/>
-       <ParameterList name="verbose object">
-         <Parameter name="verbosity level" type="string" value="high"/>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+  <ParameterList>  <!-- parent list -->
+  <ParameterList name="analysis">
+    <Parameter name="used boundary condition regions" type="Array(string)" value="{_REG1,_REG2}"/>
+    <Parameter name="used source and sink regions" type="Array(string)" value="{_REG3,_REG4}"/>
+    <Parameter name="used observation regions" type="Array(string)" value="{_REG5}"/>
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="high"/>
+    </ParameterList>
+  </ParameterList>
+  </ParameterList>
   
 
 Tabulated function file format

@@ -112,7 +112,7 @@ void AnalyticBase::ComputeCellError(
     double tmp = pressure_exact(xc, t);
     double volume = mesh_->cell_volume(c);
 
-    // std::cout << c << " " << tmp << " " << p[0][c] << std::endl;
+    // std::cout << c << " xc=" << xc << " p: " << tmp << " " << p[0][c] << std::endl;
     l2_err += std::pow(tmp - p[0][c], 2.0) * volume;
     inf_err = std::max(inf_err, fabs(tmp - p[0][c]));
     pnorm += std::pow(tmp, 2.0) * volume;
@@ -149,7 +149,7 @@ void AnalyticBase::ComputeFaceError(
     l2_err += std::pow((tmp - u[0][f]) / area, 2.0);
     inf_err = std::max(inf_err, fabs(tmp - u[0][f]) / area);
     unorm += std::pow(tmp / area, 2.0);
-    // std::cout << f << " " << xf << " " << u[0][f] << " " << tmp << std::endl;
+    // std::cout << f << " xf=" << xf << " u=" << u[0][f] << " u_ex=" << tmp << std::endl;
   }
 #ifdef HAVE_MPI
   GlobalOp("sum", &unorm, 1);

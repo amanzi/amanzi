@@ -132,6 +132,7 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
   // ELEMENT: face, DOF: cell
   int lid_r[2];
   int lid_c[2];
+
   const std::vector<int>& cell_row_inds = map.GhostIndices(my_block_row, "cell", 0);
   const std::vector<int>& cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);
 
@@ -148,6 +149,7 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
 
     ierr |= graph.InsertMyIndices(ncells, lid_r, ncells, lid_c);
   }
+
   AMANZI_ASSERT(!ierr);
 }
 
@@ -185,6 +187,7 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
   // ELEMENT: face, DOF: cell
   int lid_r[2];
   int lid_c[2];
+
   const std::vector<int>& cell_row_inds = map.GhostIndices(my_block_row, "cell", 0);
   const std::vector<int>& cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);
 

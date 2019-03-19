@@ -41,7 +41,7 @@ class CompositeVectorSpace {
 public:
   // Constructor
   CompositeVectorSpace();
-  CompositeVectorSpace(const CompositeVectorSpace& other);
+  CompositeVectorSpace(const CompositeVectorSpace& other) = default;
   CompositeVectorSpace(const CompositeVectorSpace& other, bool ghosted);
 
   // assignment

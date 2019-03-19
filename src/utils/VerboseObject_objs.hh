@@ -9,5 +9,5 @@ Teuchos::EVerbosityLevel Amanzi::VerboseObject::global_default_level =
 bool Amanzi::VerboseObject::global_hide_line_prefix = false;
 
 // Size of the left column of names.
-unsigned int Amanzi::VerboseObject::global_line_prefix_size = 16;
+unsigned int Amanzi::VerboseObject::global_line_prefix_size = 18;
 

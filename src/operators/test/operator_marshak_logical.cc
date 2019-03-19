@@ -97,10 +97,10 @@ void RunTestMarshakLogical(std::string op_list_name) {
     if (fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
       bc_value[f] = 0.0;
-    } else if(fabs(xf[0]) < 1e-6) {
+    } else if (fabs(xf[0]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_value[f] = knc->TemperatureSource;
-    } else if(fabs(xf[0] - 1.0) < 1e-6) {
+    } else if (fabs(xf[0] - 1.0) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
       bc_value[f] = knc->TemperatureFloor;
     }
@@ -146,7 +146,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
     // update bc
     for (int f = 0; f < nfaces_wghost; f++) {
       const Point& xf = mesh->face_centroid(f);
-      if(fabs(xf[0]) < 1e-6) bc_value[f] = knc->exact(T + dT, xf);
+      if (fabs(xf[0]) < 1e-6) bc_value[f] = knc->exact(T + dT, xf);
     }
 
     // upwind heat conduction coefficient

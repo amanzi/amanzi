@@ -224,10 +224,12 @@ void Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
   // process face-based quantaties (if any)
   if (pressure.HasComponent("face")) {
     const Epetra_MultiVector& pface = *pressure.ViewComponent("face");
+    const auto& fmap = *pressure.Map().Map("face", false);
 
     for (int f = 0; f < nfaces_owned; f++) {
       double z = mesh_->face_centroid(f)[dim - 1];              
-      double h = z + (pface[0][f] - atm_pressure_) / rho_g;
+      int g = fmap.FirstPointInElement(f);
+      double h = z + (pface[0][g] - atm_pressure_) / rho_g;
       vmax = std::max(vmax, h);
       vmin = std::min(vmin, h);
     }

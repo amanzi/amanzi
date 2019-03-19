@@ -105,7 +105,6 @@ class SuperMap {
  protected:
   std::unique_ptr<SuperMapLumped> smap_;
   std::map< std::tuple<int,std::string,int>, std::pair<std::string,int> > block_info_;
-
 };
 
 
@@ -115,7 +114,5 @@ Teuchos::RCP<SuperMap> createSuperMap(const TreeVectorSpace& cv);
 
 } // namespace
 } // namespace
-
-
 
 #endif

@@ -22,13 +22,14 @@
 
 #include "AmanziUnstructuredGridSimulationDriver.hh"
 #include "CycleDriver.hh"
-#include "MeshInfo.hh"
 #include "Domain.hh"
 #include "GeometricModel.hh"
-#include "InputConverterU.hh"
 #include "InputAnalysis.hh"
+#include "InputConverterU.hh"
 #include "MeshAudit.hh"
 #include "MeshFactory.hh"
+#include "MeshInfo.hh"
+#include "Mesh_MSTK.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
 #include "State.hh"
@@ -181,7 +182,6 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 
     // Create a mesh meshfactory with default or user preferences for a
     // mesh framework
-    // prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::Framework::MSTK);
     meshfactory.set_preference(prefs);
 
   } catch (const Teuchos::Exceptions::InvalidParameterName& e) {
@@ -276,7 +276,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   }
 
   if (expert_params_specified) {
-    Teuchos::ParameterList expert_mesh_params = unstr_mesh_params.sublist("expert");  
+    const auto& expert_mesh_params = unstr_mesh_params.sublist("expert");  
     bool verify_mesh_param = expert_mesh_params.isParameter("verify mesh");
     if (verify_mesh_param) {
       bool verify = expert_mesh_params.get<bool>("verify mesh");
@@ -321,18 +321,46 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
       Teuchos::RCP<Amanzi::MeshInfo> mesh_info = Teuchos::rcp(new Amanzi::MeshInfo(mesh_info_list, comm));
       mesh_info->WriteMeshCentroids(*mesh);
     }
-  }  // If expert_params_specified
+  }
 
 
   // -------------- ANALYSIS --------------------------------------------
-  Amanzi::InputAnalysis analysis(mesh);
-  analysis.Init(*plist_);
-  analysis.RegionAnalysis();
-  analysis.OutputBCs();
+  {
+    Amanzi::InputAnalysis analysis(mesh);
+    analysis.Init(*plist_);
+    analysis.RegionAnalysis();
+    analysis.OutputBCs();
+  }
+
+
+  // -------------- STATE -----------------------------------------------
+  Teuchos::RCP<Amanzi::State> S;
+  if (plist_->isSublist("state")) {
+    Teuchos::ParameterList state_plist = plist_->sublist("state");
+    S = Teuchos::rcp(new Amanzi::State(state_plist));
+  } else {
+    Errors::Message message("AmanziUnstructuredSimuluation: xml_file does not contain 'state' sublist\n");
+    Exceptions::amanzi_throw(message);
+  }
+
+  // Create meshes. This should be moved to a factory of meshes.
+  S->RegisterMesh("domain", mesh); 
+  
+  if (unstr_mesh_params.isSublist("extract fracture mesh")) {
+    if (meshfactory.preference()[0] != Amanzi::AmanziMesh::Framework::MSTK) {
+      std::cerr << "Cannot extract a mesh using a non-MSTK framework" << std::endl;
+      return Amanzi::Simulator::FAIL;
+    }
+    const auto& extract_plist = unstr_mesh_params.sublist("extract fracture mesh");
+    std::vector<std::string> names = extract_plist.get<Teuchos::Array<std::string> >("regions").toVector();
+
+    auto mesh_fracture = meshfactory.create(mesh, names, Amanzi::AmanziMesh::FACE);
+    S->RegisterMesh("fracture", mesh_fracture);
+  }
 
 
   // -------------- EXECUTION -------------------------------------------
-  Amanzi::CycleDriver cycle_driver(plist_, mesh, comm, observations_data);
+  Amanzi::CycleDriver cycle_driver(plist_, S, comm, observations_data);
 
   cycle_driver.Go();
 

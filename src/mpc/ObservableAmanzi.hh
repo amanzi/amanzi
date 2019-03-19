@@ -22,6 +22,7 @@
 #include "GeometryDefs.hh"
 #include "State.hh"
 #include "Units.hh"
+#include "Key.hh"
 
 namespace Amanzi{
 
@@ -32,7 +33,7 @@ class Observable : public IOEvent {
 	     std::string functional,
 	     Teuchos::ParameterList& plist,
 	     Teuchos::ParameterList& units_plist,
-	     Teuchos::RCP<AmanziMesh::Mesh> mesh)
+	     Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : variable_(variable),
       region_(region),
       functional_(functional),
@@ -43,6 +44,8 @@ class Observable : public IOEvent {
     ReadParameters_();
     
     units_.Init(units_plist);
+
+    domain_ = plist.get<std::string>("domain name", "domain");
 
     // for now we can only observe Integrals and Values
     if (functional_ != "observation data: integral"  &&
@@ -62,7 +65,7 @@ class Observable : public IOEvent {
 
  // protected:    
   const Teuchos::ParameterList& plist_;
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
   AmanziMesh::Entity_ID_List entity_ids_;
   int region_size_;
@@ -71,6 +74,7 @@ class Observable : public IOEvent {
   std::string region_;
   std::string functional_;
   double volume_;
+  Key domain_;
 
   Utils::Units units_;
 };

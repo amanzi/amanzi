@@ -15,7 +15,7 @@ class ObservableLineSegmentSolute : public ObservableSolute,
                               std::string functional,
                               Teuchos::ParameterList& plist,
                               Teuchos::ParameterList& units_plist,
-                              Teuchos::RCP<AmanziMesh::Mesh> mesh);
+                              Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
   virtual void ComputeObservation(State& S, double* value, double* volume, std::string& unit);
   virtual int ComputeRegionSize();
@@ -33,7 +33,7 @@ ObservableLineSegmentSolute::ObservableLineSegmentSolute(std::string variable,
                                                          std::string functional,
                                                          Teuchos::ParameterList& plist,
                                                          Teuchos::ParameterList& units_plist,
-                                                         Teuchos::RCP<AmanziMesh::Mesh> mesh) :
+                                                         Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
     Observable(variable, region, functional, plist, units_plist, mesh),
     ObservableSolute(variable, region, functional, plist, units_plist, mesh),
     ObservableLineSegment(variable, region, functional, plist, units_plist, mesh) {};

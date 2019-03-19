@@ -14,6 +14,7 @@
 
 #include "WhetStoneMeshUtils.hh"
 
+#include "OperatorUtils.hh"
 #include "Operator_Cell.hh"
 #include "Operator_Edge.hh"
 #include "Operator_Node.hh"
@@ -75,6 +76,60 @@ void PDE_Accumulation::AddAccumulationTerm(
     for (int k = 0; k < m; k++) {
       for (int i = 0; i < n; i++) {
         diag[k][i] += duc[k][i] / dT;
+      } 
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Modifier for diagonal operators and rhs.
+* Op  += alpha * s1 * vol
+* Rhs += alpha * s2 * vol
+****************************************************************** */
+void PDE_Accumulation::AddAccumulationRhs(
+    const CompositeVector& s1,
+    const CompositeVector& s2,
+    double alpha,
+    const std::string& name,
+    bool volume)
+{
+  Teuchos::RCP<Op> op = FindOp_(name);
+  Epetra_MultiVector& diag = *op->diag;
+
+  const Epetra_MultiVector& s1c = *s1.ViewComponent(name);
+  const Epetra_MultiVector& s2c = *s2.ViewComponent(name);  
+
+  int n = s1c.MyLength();
+  int m = s1c.NumVectors();
+
+  Epetra_MultiVector& rhs = *global_operator()->rhs()->ViewComponent(name);
+
+  AMANZI_ASSERT(s1c.MyLength() == s2c.MyLength());
+  AMANZI_ASSERT(s1c.MyLength() == diag.MyLength());  
+  AMANZI_ASSERT(s2c.MyLength() == rhs.MyLength());
+
+  AMANZI_ASSERT(s1c.NumVectors() == s2c.NumVectors());
+  AMANZI_ASSERT(s1c.NumVectors() == diag.NumVectors());  
+  AMANZI_ASSERT(s2c.NumVectors() == rhs.NumVectors());
+  
+  if (volume) {
+    CompositeVector vol(s1);
+    CalculateEntityVolume_(vol, name);
+    Epetra_MultiVector& volc = *vol.ViewComponent(name); 
+
+    for (int k = 0; k < m; k++) {
+      for (int i = 0; i < n; i++) {
+        diag[k][i] += volc[0][i] * s1c[k][i] * alpha;
+        rhs[k][i] += volc[0][i] * s2c[k][i] * alpha;
+      } 
+    }
+
+  } else {
+    for (int k = 0; k < m; k++) {
+      for (int i = 0; i < n; i++) {
+        diag[k][i] += s1c[k][i] * alpha;
+        rhs[k][i] += s2c[k][i] * alpha;        
       } 
     }
   }
@@ -256,8 +311,7 @@ void PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
       std::tie(kind, std::ignore, num) = *it;
 
       Teuchos::RCP<Op> op;
-      Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
-      cvs->SetMesh(mesh_)->AddComponent(schema.KindToString(kind), kind, num);
+      auto cvs = CreateCompositeVectorSpace(mesh_, schema.KindToString(kind), kind, num);
 
       if (kind == AmanziMesh::CELL) {
         int old_schema = OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL;

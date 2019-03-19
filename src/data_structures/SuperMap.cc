@@ -31,7 +31,6 @@
 namespace Amanzi {
 namespace Operators {
 
-
 // Nonmember contructors/factories
 Teuchos::RCP<SuperMap> createSuperMap(const CompositeVectorSpace& cv) {
   return Teuchos::rcp(new SuperMap({cv}));

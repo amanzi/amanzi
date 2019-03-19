@@ -67,14 +67,13 @@ TEST(SUPERMAP_BLOCKMAP) {
 
   auto ghosted_map1 = Teuchos::rcp(new Epetra_BlockMap(-1, gids.size(), &gids[0], &size[0], 0, *comm));
 
-
   auto names = std::vector<std::string>{"map1"};
   auto dofnums = std::vector<int>{1};
   auto maps = std::vector<Teuchos::RCP<const Epetra_BlockMap> >{owned_map1};
   auto gmaps = std::vector<Teuchos::RCP<const Epetra_BlockMap> >{ghosted_map1};
   Operators::SuperMapLumped map(comm, names, dofnums, maps, gmaps);
-
 }
+
 
 TEST(SUPERMAP_BLOCKMAP_NULL_PROC) {
   using namespace Amanzi;
@@ -139,21 +138,18 @@ TEST(SUPERMAP_BLOCKMAP_NULL_PROC) {
 
     auto ghosted_map1 = Teuchos::rcp(new Epetra_BlockMap(3*(NumProc-1) + 2*(NumProc - 2), n_cells_g, &gids[0], &size[0], 0, *comm));
 
-
     auto names = std::vector<std::string>{"map1"};
     auto dofnums = std::vector<int>{1};
     auto maps = std::vector<Teuchos::RCP<const Epetra_BlockMap> >{owned_map1};
     auto gmaps = std::vector<Teuchos::RCP<const Epetra_BlockMap> >{ghosted_map1};
     Operators::SuperMapLumped map(comm, names, dofnums, maps, gmaps);
   }
-
 }
-
 
   
 /* *****************************************************************
- * manually constructed test
- * **************************************************************** */
+* manually constructed test
+* *************************************************************** */
 TEST(SUPERMAP_BLOCK_MANUAL) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;

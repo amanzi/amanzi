@@ -30,8 +30,8 @@ double f_smooth(const Amanzi::AmanziGeometry::Point& x, double t) {
 }
 
 double f_cubic(const Amanzi::AmanziGeometry::Point& x, double t) {
-  if( x[0] < 1 + t ) return 1;
-  if( x[0] > 3 + t ) return 0;
+  if (x[0] < 1 + t) return 1;
+  if (x[0] > 3 + t) return 0;
   double z = (x[0]-1-t) / 2;
   return 2*z*z*z - 3*z*z + 1;
 }

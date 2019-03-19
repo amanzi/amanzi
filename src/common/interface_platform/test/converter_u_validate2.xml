@@ -345,6 +345,7 @@
   </ParameterList>
   <ParameterList name="PKs">
     <ParameterList name="flow">
+      <Parameter name="domain name" type="string" value="domain"/>
       <ParameterList name="Richards problem">
         <ParameterList name="physical models and assumptions">
           <Parameter name="water content model" type="string" value="constant density"/>
@@ -461,6 +462,7 @@
             <ParameterList name="nka parameters">
               <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
               <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+              <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
               <Parameter name="max du growth factor" type="double" value="1.000e+03"/>
               <Parameter name="max divergent iterations" type="int" value="3"/>
               <Parameter name="max nka vectors" type="int" value="10"/>
@@ -577,6 +579,7 @@
           <ParameterList name="nka parameters">
             <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
             <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+            <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
             <Parameter name="max du growth factor" type="double" value="1.000e+03"/>
             <Parameter name="max divergent iterations" type="int" value="3"/>
             <Parameter name="max nka vectors" type="int" value="10"/>
@@ -653,6 +656,7 @@
             <ParameterList name="nka parameters">
               <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
               <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
+              <Parameter name="diverged l2 tolerance" type="double" value="1.0e+10"/>
               <Parameter name="max du growth factor" type="double" value="1.000e+03"/>
               <Parameter name="max divergent iterations" type="int" value="3"/>
               <Parameter name="max nka vectors" type="int" value="10"/>

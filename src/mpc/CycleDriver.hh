@@ -41,7 +41,7 @@ class PK;
 class CycleDriver {
  public:
   CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
-              Teuchos::RCP<AmanziMesh::Mesh>& mesh,
+              Teuchos::RCP<Amanzi::State>& S,
               const Comm_ptr_type& comm,
               Amanzi::ObservationData& observations_data);
 
@@ -77,7 +77,7 @@ class CycleDriver {
 
   // states
   Teuchos::RCP<State> S_, S_old_;
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<TreeVector> soln_;
 
   // time step manager

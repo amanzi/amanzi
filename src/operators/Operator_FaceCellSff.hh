@@ -41,7 +41,7 @@ class Operator_FaceCellSff : public Operator_FaceCell {
 
   // Special AssembleMatrix required to deal with schur complement
   virtual void AssembleMatrix(const SuperMap& map,
-          MatrixFE& matrix, int my_block_row, int my_block_col) const;
+                              MatrixFE& matrix, int my_block_row, int my_block_col) const;
   
   // visit method for Apply -- this is identical to Operator_FaceCell's
   // version.

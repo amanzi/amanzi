@@ -111,6 +111,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
     solver = &test;
     solver->set<double>("nonlinear tolerance", NONLINEAR_TOLERANCE);
     solver->set<double>("diverged tolerance", NKA_DIVERG_TOL);
+    solver->set<double>("diverged l2 tolerance", NKA_DIVERG_TOL);
     solver->set<double>("max du growth factor", INC_DIVERG_FACTOR);
     solver->set<int>("max divergent iterations", MAX_DIVERG_ITERATIONS);
     solver->set<int>("max nka vectors", NKA_NUM_VECTORS);

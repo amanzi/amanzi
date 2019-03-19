@@ -64,7 +64,7 @@ class PDE_DiffusionFV : public virtual PDE_Diffusion {
       transmissibility_initialized_(false)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV;
-    InitDiffusion_(plist);
+    Init_(plist);
   }
 
   PDE_DiffusionFV(Teuchos::ParameterList& plist,
@@ -73,7 +73,7 @@ class PDE_DiffusionFV : public virtual PDE_Diffusion {
       transmissibility_initialized_(false)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV;
-    InitDiffusion_(plist);
+    Init_(plist);
   }
 
   PDE_DiffusionFV(Teuchos::ParameterList& plist,
@@ -82,7 +82,7 @@ class PDE_DiffusionFV : public virtual PDE_Diffusion {
       transmissibility_initialized_(false)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV;
-    InitDiffusion_(plist);
+    Init_(plist);
   }
 
   // main virtual members
@@ -132,7 +132,7 @@ class PDE_DiffusionFV : public virtual PDE_Diffusion {
       int mcells, int f, int face_dir_0to1, int bc_model, double bc_value,
       double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp);
 
-  virtual void InitDiffusion_(Teuchos::ParameterList& plist);
+  void Init_(Teuchos::ParameterList& plist);
   
  protected:
   Teuchos::RCP<CompositeVector> transmissibility_;

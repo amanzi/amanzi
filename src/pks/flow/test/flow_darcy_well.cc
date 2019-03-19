@@ -78,7 +78,8 @@ void RunTestDarcyWell(std::string controller) {
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S));
+  Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
+  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
   DPK->Setup(S.ptr());
   S->Setup();
   S->InitializeFields();
@@ -204,7 +205,8 @@ void Run_3D_DarcyWell(std::string controller) {
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S));
+  Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
+  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
   DPK->Setup(S.ptr());
   S->Setup();
   S->InitializeFields();
@@ -305,7 +307,8 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
 
-  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S));
+  Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
+  Teuchos::RCP<Darcy_PK> DPK = Teuchos::rcp(new Darcy_PK(plist, "flow", S, soln));
   DPK->Setup(S.ptr());
   S->Setup();
   S->InitializeFields();
