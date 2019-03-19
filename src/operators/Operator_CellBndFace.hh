@@ -35,28 +35,20 @@ class Operator_CellBndFace : public Operator_Cell {
     set_schema_string("CELLBNDFACE");
   }
 
+  // visit methods for apply
   virtual int ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
-      const CompositeVector& X, CompositeVector& Y) const;
-
-
-  // visit methods for symbolic assemble
-  virtual void SymbolicAssembleMatrixOp(const Op_Face_CellBndFace& op,
-          const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const;
-
-  
-  // visit methods for assemble
-  virtual void AssembleMatrixOp(const Op_Face_CellBndFace& op,
-          const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col) const;
-
+                                const CompositeVector& X, CompositeVector& Y) const;
 
   virtual int ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
                                 const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
                                 const CompositeVector& X, CompositeVector& Y) const;
 
-
+  // visit methods for symbolic assemble
+  virtual void SymbolicAssembleMatrixOp(const Op_Face_CellBndFace& op,
+                                        const SuperMap& map, GraphFE& graph,
+                                        int my_block_row, int my_block_col) const;
+  
   virtual void SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
                                         const SuperMap& map, GraphFE& graph,
                                         int my_block_row, int my_block_col) const;
@@ -64,15 +56,17 @@ class Operator_CellBndFace : public Operator_Cell {
                                         const SuperMap& map, GraphFE& graph,
                                         int my_block_row, int my_block_col) const;
   
+  // visit methods for assemble
+  virtual void AssembleMatrixOp(const Op_Face_CellBndFace& op,
+                                const SuperMap& map, MatrixFE& mat,
+                                int my_block_row, int my_block_col) const;
+
   virtual void AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
                                 const SuperMap& map, MatrixFE& mat,
                                 int my_block_row, int my_block_col) const;
-
   virtual void AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
                                 const SuperMap& map, MatrixFE& mat,
                                 int my_block_row, int my_block_col) const;
-
-
 };
 
 }  // namespace Operators

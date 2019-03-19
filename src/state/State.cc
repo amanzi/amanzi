@@ -932,10 +932,19 @@ void State::Initialize() {
 
 
 void State::Initialize(Teuchos::RCP<State> S) {
+  auto vo = Teuchos::rcp(new VerboseObject("State", state_plist_)); 
+  Teuchos::OSTab tab = vo->getOSTab();
+  
   for (FieldMap::iterator f_it = fields_.begin();
        f_it != fields_.end(); ++f_it) {
     Teuchos::RCP<Field> field = f_it->second;
     Teuchos::RCP<Field> copy = S->GetField_(field->fieldname());
+
+    if (vo->os_OK(Teuchos::VERB_HIGH)) {
+      Teuchos::OSTab tab = vo->getOSTab();
+      *vo->os() << "processing field \"" << f_it->first << "\"\n";
+    }
+    
     if (copy != Teuchos::null) {
       if (field->type() != copy->type()) {
         std::stringstream messagestream;

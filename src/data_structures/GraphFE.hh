@@ -45,32 +45,20 @@ class GraphFE {
   bool includes_offproc() const { return includes_ghosted_; }
   
   // accessors to maps
-  const Epetra_Map& DomainMap() const {
-    return *domain_map_; }
+  const Epetra_Map& DomainMap() const { return *domain_map_; }
+  const Epetra_Map& RangeMap() const { return *range_map_; }
 
-  const Epetra_Map& RangeMap() const {
-    return *range_map_; }
+  const Epetra_Map& RowMap() const { return *row_map_; }
+  const Epetra_Map& ColMap() const { return *col_map_; }
 
-  const Epetra_Map& RowMap() const {
-    return *row_map_; }
-
-  const Epetra_Map& GhostedRowMap() const {
-    return *ghosted_row_map_; }
-
-  const Epetra_Map& ColMap() const {
-    return *col_map_; }
+  const Epetra_Map& GhostedRowMap() const { return *ghosted_row_map_; }
 
   // accessor to the importer
-  const Epetra_Export& Exporter() const {
-    return *exporter_;
-  }
+  const Epetra_Export& Exporter() const { return *exporter_; }
 
   // accessor to graphs
-  const Epetra_CrsGraph& Graph() const {
-    return *graph_; }
-
-  const Epetra_CrsGraph& OffProcGraph() const {
-    return *offproc_graph_; }
+  const Epetra_CrsGraph& Graph() const { return *graph_; }
+  const Epetra_CrsGraph& OffProcGraph() const { return *offproc_graph_; }
 
   // fill graph
   int InsertMyIndices(int row, int count, int *indices);
@@ -82,9 +70,7 @@ class GraphFE {
   int FillComplete(const Teuchos::RCP<const Epetra_Map>& domain_map,
                    const Teuchos::RCP<const Epetra_Map>& range_map);
 
-
  protected:
-
   Teuchos::RCP<const Epetra_Map> row_map_;
   Teuchos::RCP<const Epetra_Map> ghosted_row_map_;
   Teuchos::RCP<const Epetra_Map> col_map_;
@@ -100,7 +86,6 @@ class GraphFE {
   int n_owned_;
   int n_used_;
   bool includes_ghosted_;
-  
 };
 
 

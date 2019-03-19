@@ -21,6 +21,7 @@
 #include "exceptions.hh"
 #include "LinearOperatorFactory.hh"
 #include "PDE_DiffusionFactory.hh"
+#include "PDE_DiffusionFracturedMatrix.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "TimestepControllerFactory.hh"
 #include "Tensor.hh"
@@ -57,12 +58,12 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
   Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_name, true);
   fp_list_ = Teuchos::sublist(flow_list, "Darcy problem", true);
 
-  // We also need iscaleneous sublists
+  // We also need miscaleneous sublists
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(fp_list_, "time integrator", true);
 
-  // domain name
+  // computational domain
   domain_ = flow_list->template get<std::string>("domain name", "domain");
 }
 
@@ -72,8 +73,10 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
 ****************************************************************** */
 Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
                    const std::string& pk_list_name,
-                   Teuchos::RCP<State> S) :
-    Flow_PK()
+                   Teuchos::RCP<State> S,
+                   const Teuchos::RCP<TreeVector>& soln) :
+    Flow_PK(),
+    soln_(soln)
 {
   S_ = S;
 
@@ -82,7 +85,7 @@ Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_list_name, true);
   fp_list_ = Teuchos::sublist(flow_list, "Darcy problem", true);
 
-  // We also need iscaleneous sublists
+  // We also need miscaleneous sublists
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(fp_list_, "time integrator", true);
@@ -116,6 +119,7 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
   darcy_velocity_key_ = Keys::getKey(domain_, "darcy_velocity"); 
+  darcy_flux_fracture_key_ = Keys::getKey(domain_, "darcy_flux_fracture"); 
 
   permeability_key_ = Keys::getKey(domain_, "permeability"); 
   porosity_key_ = Keys::getKey(domain_, "porosity"); 
@@ -124,6 +128,9 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   specific_storage_key_ = Keys::getKey(domain_, "specific_storage"); 
   saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
   prev_saturation_liquid_key_ = Keys::getKey(domain_, "prev_saturation_liquid"); 
+
+  // optional keys
+  pressure_head_key_ = Keys::getKey(domain_, "pressure_head"); 
 
   // set up the base class 
   Flow_PK::Setup(S);
@@ -137,29 +144,35 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
     msg << "Darcy PK supports only constant viscosity model.";
     Exceptions::amanzi_throw(msg);
   }
-  flow_in_fractures_ = physical_models->get<bool>("flow in fractures", false);
-  flow_in_fractures_ &= (mesh_->manifold_dimension() != mesh_->space_dimension());
+  // -- type of the flow (in matrix or on manifold)
+  flow_on_manifold_ = physical_models->get<bool>("flow in fractures", false);
+  flow_on_manifold_ &= (mesh_->manifold_dimension() != mesh_->space_dimension());
+
+  // -- coupling with other PKs
+  coupled_to_matrix_ = physical_models->get<std::string>("coupled matrix fracture flow", "") == "fracture";
+  coupled_to_fracture_ = physical_models->get<std::string>("coupled matrix fracture flow", "") == "matrix";
 
   // Require primary field for this PK.
-  std::vector<std::string> names;
-  std::vector<AmanziMesh::Entity_kind> locations;
-  std::vector<int> ndofs;
-
   Teuchos::RCP<Teuchos::ParameterList> list1 = Teuchos::sublist(fp_list_, "operators", true);
   Teuchos::RCP<Teuchos::ParameterList> list2 = Teuchos::sublist(list1, "diffusion operator", true);
   Teuchos::RCP<Teuchos::ParameterList> list3 = Teuchos::sublist(list2, "matrix", true);
   std::string name = list3->get<std::string>("discretization primary");
 
-  names.push_back("cell");
-  locations.push_back(AmanziMesh::CELL);
-  ndofs.push_back(1);
-  if (name != "fv: default" && name != "nlfv: default") {
-    names.push_back("face");
-    locations.push_back(AmanziMesh::FACE);
-    ndofs.push_back(1);
-  }
-
   if (!S->HasField(pressure_key_)) {
+    std::vector<std::string> names;
+    std::vector<AmanziMesh::Entity_kind> locations;
+    std::vector<int> ndofs;
+
+    names.push_back("cell");
+    locations.push_back(AmanziMesh::CELL);
+    ndofs.push_back(1);
+
+    if (name != "fv: default" && name != "nlfv: default") {
+      names.push_back("face");
+      locations.push_back(AmanziMesh::FACE);
+      ndofs.push_back(1);
+    }
+
     S->RequireField(pressure_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponents(names, locations, ndofs);
   }
@@ -188,7 +201,9 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   if (!S->HasField(darcy_flux_key_)) {
     S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
+  }
 
+  {
     Teuchos::ParameterList elist;
     elist.set<std::string>("evaluator name", darcy_flux_key_);
     darcy_flux_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
@@ -209,7 +224,7 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // -- effective fracture permeability
-  if (flow_in_fractures_) {
+  if (flow_on_manifold_) {
     if (!S->HasField(permeability_key_)) {
       S->RequireField(permeability_key_, permeability_key_)->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -224,6 +239,7 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
       Teuchos::RCP<FracturePermModelEvaluator> eval = Teuchos::rcp(new FracturePermModelEvaluator(elist, fpm));
       S->SetFieldEvaluator(permeability_key_, eval);
     }
+  // -- matrix absolute permeability
   } else {
     if (!S->HasField(permeability_key_)) {
       S->RequireField(permeability_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
@@ -260,6 +276,28 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
     cvs.SetOwned(false);
     cvs.AddComponent("offd", AmanziMesh::CELL, noff)->SetOwned(true);
   }
+
+  // Require additional field to couple PKs
+  if (coupled_to_matrix_) {
+    if (!S->HasField(darcy_flux_fracture_key_)) {
+      AMANZI_ASSERT(mesh_->cell_get_max_faces() > 0);
+      S->RequireField(darcy_flux_fracture_key_, "state")->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, mesh_->cell_get_max_faces());
+      S->GetField(darcy_flux_fracture_key_, "state")->set_io_vis(false);
+    }
+  }
+
+  // require optional fields
+  if (fp_list_->isParameter("optional fields")) {
+    std::vector<std::string> fields = fp_list_->get<Teuchos::Array<std::string> >("optional fields").toVector();
+    for (auto it = fields.begin(); it != fields.end(); ++it) {
+      Key optional_key = Keys::getKey(domain_, *it); 
+      if (!S->HasField(optional_key)) {
+        S->RequireField(optional_key, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+          ->SetComponent("cell", AmanziMesh::CELL, 1);
+      }
+    }
+  }
 }
 
 
@@ -282,7 +320,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   // Create verbosity object to print out initialization statisticsr.,
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = fp_list_->sublist("verbose object");
-  vo_ = Teuchos::rcp(new VerboseObject("FlowPK::Darcy", vlist)); 
+  vo_ = Teuchos::rcp(new VerboseObject("DarcyPK-" + domain_, vlist)); 
 
   // Initilize various base class data.
   Flow_PK::Initialize(S);
@@ -293,20 +331,25 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Create solution and auxiliary data for time history.
   solution = S->GetFieldData(pressure_key_, passwd_);
+  soln_->SetData(solution); 
 
   const Epetra_BlockMap& cmap = mesh_->cell_map(false);
   pdot_cells_prev = Teuchos::rcp(new Epetra_Vector(cmap));
   pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap));
   
   std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");
-  AMANZI_ASSERT(ti_method_name == "BDF1");
-  Teuchos::ParameterList& bdf1_list = ti_list_->sublist("BDF1");
+  if (ti_method_name == "BDF1") {
+    Teuchos::ParameterList& bdf1_list = ti_list_->sublist("BDF1");
 
-  error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;  // usually 1e-4;
+    error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;  // usually 1e-4;
 
-  // time step controller
-  TimestepControllerFactory<Epetra_MultiVector> fac;
-  ts_control_ = fac.Create(bdf1_list, pdot_cells, pdot_cells_prev);
+    // time step controller
+    TimestepControllerFactory<Epetra_MultiVector> fac;
+    ts_control_ = fac.Create(bdf1_list, pdot_cells, pdot_cells_prev);
+  } else {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "WARNING: BDF1 time integration list is missing..." << std::endl;
+  }
 
   // Initialize specific yield
   specific_yield_copy_ = Teuchos::null;
@@ -333,14 +376,17 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   Teuchos::ParameterList& oplist = fp_list_->sublist("operators")
                                             .sublist("diffusion operator")
                                             .sublist("matrix");
-  if (flow_in_fractures_)
+  if (flow_on_manifold_)
       oplist.set<std::string>("nonlinear coefficient", "standard: cell");
 
+  double factor = rho_ * rho_ / mu;
+  if (coupled_to_fracture_) factor = rho_;
+
   Operators::PDE_DiffusionFactory opfactory;
-  op_diff_ = opfactory.Create(oplist, mesh_, op_bc_, rho_ * rho_ / mu, gravity_);
+  op_diff_ = opfactory.Create(oplist, mesh_, op_bc_, factor, gravity_);
   op_diff_->SetBCs(op_bc_, op_bc_);
 
-  if (!flow_in_fractures_) {
+  if (!flow_on_manifold_) {
     SetAbsolutePermeabilityTensor();
     Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
     op_diff_->Setup(Kptr, Teuchos::null, Teuchos::null);
@@ -382,6 +428,9 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Verbose output of initialization statistics.
   InitializeStatistics_(init_darcy);
+
+  // for testing only
+  op_diff_->ApplyBCs(true, true, true);
 }
 
 
@@ -395,6 +444,7 @@ void Darcy_PK::InitializeFields_()
 
   InitializeField(S_.ptr(), passwd_, saturation_liquid_key_, 1.0);
   InitializeField(S_.ptr(), passwd_, prev_saturation_liquid_key_, 1.0);
+  InitializeField(S_.ptr(), "state", darcy_flux_fracture_key_, 0.0);
 }
 
 
@@ -405,13 +455,14 @@ void Darcy_PK::InitializeStatistics_(bool init_darcy)
 {
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     double mu = *S_->GetScalarData("fluid_viscosity");
-    std::string ti_method_name = ti_list_->get<std::string>("time integration method");
-    std::string dt_method_name = ti_list_->sublist("BDF1").get<std::string>("timestep controller type");
+    std::string ti_name = ti_list_->get<std::string>("time integration method", "none");
+    std::string ts_name = (ti_name == "BDF1") ? ti_list_->sublist(ti_name).get<std::string>("timestep controller type") 
+                                              : "timestep controller is not defined";
     std::string pc_name = ti_list_->get<std::string>("preconditioner");
 
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "\nTI:\"" << ti_method_name.c_str() << "\""
-               << " dt:" << dt_method_name
+    *vo_->os() << "\nTI:\"" << ti_name.c_str() << "\""
+               << " dt:" << ts_name
                << " LS:\"" << solver_name_.c_str() << "\""
                << " PC:\"" << pc_name.c_str() << "\"" << std::endl
                << "matrix: " << op_->PrintDiagnostics() << std::endl;
@@ -506,7 +557,8 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "pressure solver (" << solver->name()
-               << "): ||p,lambda||=" << pnorm << std::endl;
+               << "): ||p,lambda||=" << pnorm 
+               << "  itrs=" << solver->num_itrs() << std::endl;
     VV_PrintHeadExtrema(*solution);
   }
 
@@ -543,10 +595,12 @@ void Darcy_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>&
   flux->Scale(1.0 / rho_);
 
   // calculate Darcy mass flux in fractures
-  if (S->HasField("darcy_flux_fracture")) {
-    Teuchos::RCP<CompositeVector> flux_fracture = S->GetFieldData("darcy_flux_fracture", "state");
+  if (S->HasField(darcy_flux_fracture_key_)) {
+    Teuchos::RCP<CompositeVector> flux_fracture = S->GetFieldData(darcy_flux_fracture_key_, "state");
     op_diff_->UpdateFluxNonManifold(solution.ptr(), flux_fracture.ptr());
     flux_fracture->Scale(1.0 / rho_);
+
+    FractureConservationLaw_();
   }
 
   // update time derivative
@@ -611,6 +665,67 @@ void Darcy_PK::UpdateSpecificYield_()
 ****************************************************************** */
 void Darcy_PK::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
   UpdateLocalFields_(S.ptr());
+}
+
+
+/* ******************************************************************
+* TBW
+****************************************************************** */
+void Darcy_PK::FractureConservationLaw_()
+{
+  if (!S_->HasField("fracture-darcy_flux_fracture")) return;
+
+  AmanziMesh::Entity_ID_List faces, cells;
+  std::vector<int> dirs;
+
+  const auto& fracture_flux = *S_->GetFieldData("fracture-darcy_flux_fracture")->ViewComponent("cell");
+  const auto& matrix_flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);
+  auto flux_map = S_->GetFieldData("darcy_flux")->Map().Map("face", true);
+
+  auto mesh_matrix = S_->GetMesh("domain");
+  const Epetra_Map& cell_map = mesh_matrix->cell_map(true);
+
+  double err(0.0), flux_max(0.0);
+
+  for (int c = 0; c < ncells_owned; c++) {
+    double flux_sum(0.0);
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    for (int i = 0; i < faces.size(); i++) {
+      int f = faces[i];
+      flux_sum += fracture_flux[i][c];
+    }
+
+    // sum into fluxes from matrix
+    AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+    mesh_matrix->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    int pos = 0;
+    if (cells.size() == 2) {
+      pos = (cell_map.GID(cells[0]) < cell_map.GID(cells[1])) ? 0 : 1;
+    }
+
+    for (int j = 0; j != cells.size(); ++j) {
+      mesh_matrix->cell_get_faces_and_dirs(cells[j], &faces, &dirs);
+
+      for (int i = 0; i < faces.size(); i++) {
+        if (f == faces[i]) {
+          int f_loc_id = flux_map->FirstPointInElement(f);            
+          double fln = matrix_flux[0][f_loc_id + (pos + j)%2] * dirs[i];
+          flux_sum -= fln;
+          flux_max = std::max<double>(flux_max, std::fabs(fln));
+            
+          break;
+        }
+      }
+    }
+
+    err = std::max<double>(err, fabs(flux_sum));
+    // std::cout << "cell " << c << " sum of fluxes " << flux_sum << "\n";
+  }
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "maximum error in conservation law:" << err << " flux_max=" << flux_max << std::endl;
+  }
 }
 
 }  // namespace Flow

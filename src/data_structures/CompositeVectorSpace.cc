@@ -39,17 +39,6 @@ getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
 CompositeVectorSpace::CompositeVectorSpace() :
   owned_(false), mesh_(Teuchos::null), ghosted_(false) {};
 
-// copy constructor
-CompositeVectorSpace::CompositeVectorSpace(const CompositeVectorSpace& other) :
-    ghosted_(other.ghosted_),
-    owned_(other.owned_),
-    mesh_(other.mesh_),
-    names_(other.names_),
-    indexmap_(other.indexmap_),
-    locations_(other.locations_),
-    num_dofs_(other.num_dofs_),
-    mastermaps_(other.mastermaps_),
-    ghostmaps_(other.ghostmaps_) {};
 
 // copy constructor
 CompositeVectorSpace::CompositeVectorSpace(const CompositeVectorSpace& other,
@@ -324,7 +313,6 @@ void CompositeVectorSpace::InitIndexMap_() {
 }
 
 Teuchos::RCP<const Epetra_BlockMap> CompositeVectorSpace::Map(const std::string& name, bool ghost) const {
-
   if (std::find(names_.begin(), names_.end(), name) == names_.end()) {
     Errors::Message message("Map: Requested component ("+name+") doesn't exist in CompositeVectorSpace.");
     Exceptions::amanzi_throw(message);

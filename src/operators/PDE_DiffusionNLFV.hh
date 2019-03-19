@@ -44,7 +44,7 @@ class PDE_DiffusionNLFV : public virtual PDE_Diffusion {
       stencil_initialized_(false)
   {
     operator_type_ = OPERATOR_DIFFUSION_NLFV;
-    InitDiffusion_(plist);
+    Init_(plist);
   }
 
   PDE_DiffusionNLFV(Teuchos::ParameterList& plist,
@@ -53,7 +53,7 @@ class PDE_DiffusionNLFV : public virtual PDE_Diffusion {
       stencil_initialized_(false)
   {
     operator_type_ = OPERATOR_DIFFUSION_NLFV;
-    InitDiffusion_(plist);
+    Init_(plist);
   }
 
   PDE_DiffusionNLFV(Teuchos::ParameterList& plist,
@@ -62,7 +62,7 @@ class PDE_DiffusionNLFV : public virtual PDE_Diffusion {
       stencil_initialized_(false)
   {
     operator_type_ = OPERATOR_DIFFUSION_NLFV;
-    InitDiffusion_(plist);
+    Init_(plist);
   }
 
   // main virtual members
@@ -102,7 +102,7 @@ class PDE_DiffusionNLFV : public virtual PDE_Diffusion {
  protected:
   // virtual functions for derived clases
   // -- processing of control parameters 
-  virtual void InitDiffusion_(Teuchos::ParameterList& plist);
+  void Init_(Teuchos::ParameterList& plist);
   // -- solution can be modified on boundary faces. This reflects specifics
   //    of nonlinear FV schemes, see implementation in the derived classes.
   virtual double MapBoundaryValue_(int f, double u) { return u; }

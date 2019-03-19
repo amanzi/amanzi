@@ -85,7 +85,7 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6) {
       bc_model[f] = OPERATOR_BC_DIRICHLET;
       bc_value[f] = ana.pressure_exact(xf, 0.0);
-    } else if(fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+    } else if (fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
       double area = mesh->face_area(f);
       const Point& normal = mesh->face_normal(f);
       bc_model[f] = OPERATOR_BC_NEUMANN;
@@ -94,7 +94,8 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   }
 
   // create diffusion operator 
-  Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionMFD(op_list, mesh));
+  auto op = Teuchos::rcp(new PDE_DiffusionMFD(op_list, mesh));
+  op->Init(op_list);
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 

@@ -59,11 +59,11 @@ class PK_MPCStrong : virtual public PK_MPC<PK_Base>, public PK_BDF
   // -- computes the non-linear functional g = g(t,u,udot)
   //    By default this just calls each sub pk FunctionalResidual().
   virtual void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
-           Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
+                                  Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
 
   // -- enorm for the coupled system
   virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
-                       Teuchos::RCP<const TreeVector> du);
+                           Teuchos::RCP<const TreeVector> du);
 
   // PK_MPCStrong's preconditioner is, by default, just the block-diagonal
   // operator formed by placing the sub PK's preconditioners on the diagonal.

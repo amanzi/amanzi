@@ -123,7 +123,7 @@ class Flow_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Teuchos::ParameterList> ti_list_;
 
  protected:
-  Key domain_;
+  Key domain_;  // computational domain
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim;
 
@@ -158,9 +158,9 @@ class Flow_PK : public PK_PhysicalBDF {
   Key pressure_key_;
   Key darcy_flux_key_, specific_storage_key_, specific_yield_key_;
   Key saturation_liquid_key_, prev_saturation_liquid_key_;
-  Key porosity_key_, hydraulic_head_key_;
+  Key porosity_key_, hydraulic_head_key_, pressure_head_key_;
   Key permeability_key_;
-  Key darcy_velocity_key_;
+  Key darcy_flux_fracture_key_, darcy_velocity_key_;
 
   // io
   Utils::Units units_;

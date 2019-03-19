@@ -164,7 +164,8 @@ void AdvectionDiffusion2D(int nx, double* error)
 
   // create diffusion operator
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("diffusion operator");
-  Teuchos::RCP<PDE_Diffusion> op_diff = Teuchos::rcp(new PDE_DiffusionMFD(olist, mesh));
+  auto op_diff = Teuchos::rcp(new PDE_DiffusionMFD(olist, mesh));
+  op_diff->Init(olist);
   op_diff->SetBCs(bcd, bcd);
 
   // set up the diffusion operator

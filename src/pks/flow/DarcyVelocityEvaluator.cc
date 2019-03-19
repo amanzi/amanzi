@@ -55,17 +55,21 @@ void DarcyVelocityEvaluator::EvaluateField_(
   Key domain = plist_.get<std::string>("domain name");
   S->GetFieldData(darcy_flux_key_)->ScatterMasterToGhosted("face");
 
-  const Epetra_MultiVector& flux = *S->GetFieldData(darcy_flux_key_)->ViewComponent("face");
+  const Epetra_MultiVector& flux = *S->GetFieldData(darcy_flux_key_)->ViewComponent("face", true);
   Epetra_MultiVector& result_c = *(result->ViewComponent("cell", false));
 
+  const auto& fmap = *S->GetFieldData(darcy_flux_key_)->Map().Map("face", true);
+
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh(domain);
+  const auto& cmap = mesh->cell_map(true);
+
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int dim = mesh->space_dimension();
 
   WhetStone::MFD3D_Diffusion mfd(mesh);
 
   WhetStone::Polynomial gradient(dim, 1);
-  AmanziMesh::Entity_ID_List faces;
+  AmanziMesh::Entity_ID_List faces, cells;
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh->cell_get_faces(c, &faces);
@@ -74,8 +78,18 @@ void DarcyVelocityEvaluator::EvaluateField_(
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
+      int g = fmap.FirstPointInElement(f);
+
+      // the case of two DOFs on the face:
+      if (fmap.ElementSize(f) == 2) {
+        mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+        if (cells.size() == 2) {
+          int gid = cmap.GID(c);
+          g += (gid == std::min(cmap.GID(cells[0]), cmap.GID(cells[1]))) ? 0 : 1;
+        }
+      }
       solution[n].Reshape(dim, 0);
-      solution[n](0) = flux[0][f];
+      solution[n](0) = flux[0][g];
     }
   
     mfd.L2Cell(c, solution, NULL, gradient);

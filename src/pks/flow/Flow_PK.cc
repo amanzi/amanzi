@@ -181,6 +181,7 @@ void Flow_PK::InitializeFields_()
 
   InitializeField(S_.ptr(), passwd_, pressure_key_, 0.0);
   InitializeField(S_.ptr(), passwd_, hydraulic_head_key_, 0.0);
+  InitializeField(S_.ptr(), passwd_, pressure_head_key_, 0.0);
 
   InitializeField(S_.ptr(), passwd_, darcy_flux_key_, 0.0);
 }
@@ -192,8 +193,8 @@ void Flow_PK::InitializeFields_()
 void Flow_PK::UpdateLocalFields_(const Teuchos::Ptr<State>& S) 
 {
   Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    *vo_->os() << "Secondary fields: hydraulic head, darcy_velocity" << std::endl;  
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+    *vo_->os() << "Secondary fields: hydraulic head, darcy_velocity, etc." << std::endl;  
   }  
 
   Epetra_MultiVector& hydraulic_head = *(S->GetFieldData(hydraulic_head_key_, passwd_)->ViewComponent("cell"));
@@ -207,6 +208,15 @@ void Flow_PK::UpdateLocalFields_(const Teuchos::Ptr<State>& S)
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c); 
     double z = xc[dim - 1]; 
     hydraulic_head[0][c] = z + (pressure[0][c] - atm_pressure_) / (g * rho);
+  }
+
+  // calculate optional fields
+  Key optional_key = Keys::getKey(domain_, "pressure_head"); 
+  if (S->HasField(optional_key)) {
+    auto& field_c = *S->GetFieldData(optional_key, passwd_)->ViewComponent("cell");
+    for (int c = 0; c != ncells_owned; ++c) {
+      field_c[0][c] = pressure[0][c] / (g * rho);
+    }
   }
 
   // calculate full velocity vector
@@ -229,7 +239,7 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
   op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
 
   Teuchos::RCP<FlowBoundaryFunction> bc;
-  auto& bc_list = plist.sublist("boundary conditions", true);
+  auto& bc_list = plist.sublist("boundary conditions");
 
   bcs_.clear();
 
@@ -524,7 +534,8 @@ void Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
   int flag = flag_essential_bc;
   mesh_->get_comm()->MaxAll(&flag, &flag_essential_bc, 1);  // find the global maximum
 #endif
-  if (! flag_essential_bc && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
+  if (! flag_essential_bc &&
+      domain_ == "domain" && vo_->getVerbLevel() >= Teuchos::VERB_LOW) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "WARNING: no essential boundary conditions, solver may fail" << std::endl;
   }
@@ -657,16 +668,21 @@ void Flow_PK::DeriveFaceValuesFromCellValues(
     const Epetra_MultiVector& ucells, Epetra_MultiVector& ufaces)
 {
   AmanziMesh::Entity_ID_List cells;
+  auto& fmap = ufaces.Map(); 
+
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
   for (int f = 0; f < nfaces; f++) {
-    cells.clear();
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::OWNED, &cells);
     int ncells = cells.size();
 
     double face_value = 0.0;
     for (int n = 0; n < ncells; n++) face_value += ucells[0][cells[n]];
-    ufaces[0][f] = face_value / ncells;
+    double pmean = face_value / ncells;
+
+    int first = fmap.FirstPointInElement(f);
+    int ndofs = fmap.ElementSize(f);
+    for (int k = 0; k < ndofs; ++k) ufaces[0][first + k] = pmean;
   }
 }
 

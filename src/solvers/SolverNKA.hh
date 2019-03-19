@@ -183,12 +183,15 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
   Teuchos::RCP<Vector> du_tmp = Teuchos::rcp(new Vector(*u));
 
   // variables to monitor the progress of the nonlinear solver
+  double u_norm;
   double error(0.0), previous_error(0.0), l2_error(0.0);
   double l2_error_initial(0.0);
   double du_norm(0.0), previous_du_norm(0.0), du_tmp_norm_initial, r_norm_initial;
   int divergence_count(0);
   int prec_error;
   int db_write_iter = 0;
+
+  if (monitor_ == SOLVER_MONITOR_RESIDUAL) u->Norm2(&u_norm);
 
   do {
     // Check for too many nonlinear iterations.
@@ -222,9 +225,9 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
     // If monitoring the residual, check for convergence.
     if (monitor_ == SOLVER_MONITOR_RESIDUAL) {
       previous_error = error;
-      error = fn_->ErrorNorm(u, r);
-      residual_ = error;
-      r->Norm2(&l2_error);
+      r->Norm2(&l2_error);  
+      residual_ = l2_error;
+      error = l2_error / u_norm;
 
       // We attempt to catch non-convergence early.
       if (num_itrs_ == 1) {
@@ -357,9 +360,9 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
     // Monitor the PC'd residual.
     if (monitor_ == SOLVER_MONITOR_PCED_RESIDUAL) {
       previous_error = error;
-      error = fn_->ErrorNorm(u, du_tmp);
-      residual_ = error;
+      // error = fn_->ErrorNorm(u, du_tmp);
       du_tmp->Norm2(&l2_error);
+      error = residual_ = l2_error;
 
       int ierr = NKA_ErrorControl_(error, previous_error, l2_error);
       if (ierr == SOLVER_CONVERGED) return num_itrs_;

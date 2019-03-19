@@ -48,6 +48,7 @@ class Analytic01 : public AnalyticBase {
     return x * xy * xy + x * sin(2 * M_PI * xy) * sin(2 * M_PI * y) - g_ * y;
   }
 
+  // Gradient of potential, since the base class does not handle gravity. 
   Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
     double x = p[0];
     double y = p[1];
@@ -63,7 +64,7 @@ class Analytic01 : public AnalyticBase {
     t13 = cos(2*M_PI*y);
 
     px = 3*y*t01 + t03*(t02 + 2*M_PI*y*x*t12);
-    py = 2*x*t01 + x*2*M_PI*(x*t12*t03 + t02*t13) - g_;
+    py = 2*x*t01 + x*2*M_PI*(x*t12*t03 + t02*t13);
 
     return Amanzi::AmanziGeometry::Point(px, py);
   }

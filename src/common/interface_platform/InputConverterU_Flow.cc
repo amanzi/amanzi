@@ -34,13 +34,13 @@ XERCES_CPP_NAMESPACE_USE
 /* ******************************************************************
 * Create flow list.
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
+Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode, const std::string& domain)
 {
   Teuchos::ParameterList out_list;
   Teuchos::ParameterList* flow_list = nullptr;
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-    *vo_->os() << "Translating flow, mode=" << mode << std::endl;
+    *vo_->os() << "Translating flow, mode=" << mode << " domain=" << domain << std::endl;
 
   MemoryManager mm;
   DOMNode* node;
@@ -48,7 +48,6 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
   std::string msm;
 
   // set up default values for some expert parameters
-  double atm_pres(ATMOSPHERIC_PRESSURE);
   std::string rel_perm("upwind-darcy_velocity"), rel_perm_out;
   std::string update_upwind("every timestep");
 
@@ -65,9 +64,10 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
   replace(update_upwind.begin(), update_upwind.end(), '_', ' ');
 
   // create flow header
+  out_list.set<std::string>("domain name", (domain == "matrix") ? "domain" : domain);
   if (pk_model_["flow"] == "darcy") {
     Teuchos::ParameterList& darcy_list = out_list.sublist("Darcy problem");
-    darcy_list.sublist("fracture permeability models") = TranslateFlowFractures_();
+    darcy_list.sublist("fracture permeability models") = TranslateFlowFractures_(domain);
     if (darcy_list.sublist("fracture permeability models").numParams() > 0) {
       darcy_list.sublist("physical models and assumptions")
           .set<bool>("flow in fractures", true);
@@ -184,7 +184,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
   }
 
   // insert boundary conditions and source terms
-  flow_list->sublist("boundary conditions") = TranslateFlowBCs_();
+  flow_list->sublist("boundary conditions") = TranslateFlowBCs_(domain);
   flow_list->sublist("source terms") = TranslateFlowSources_();
 
   // models and default assumptions. 
@@ -364,7 +364,7 @@ Teuchos::ParameterList InputConverterU::TranslatePOM_()
     } else {
       pom_list.set<std::string>("porosity model", "compressible");
       pom_list.set<double>("undeformed soil porosity", phi);
-      pom_list.set<double>("reference pressure", ATMOSPHERIC_PRESSURE);
+      pom_list.set<double>("reference pressure", const_atm_pressure_);
       pom_list.set<double>("pore compressibility", compres);
       compressibility_ = true;
     }
@@ -478,7 +478,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
     } else {
       msm_list.set<std::string>("porosity model", "compressible");
       msm_list.set<double>("undeformed soil porosity", phi);
-      msm_list.set<double>("reference pressure", ATMOSPHERIC_PRESSURE);
+      msm_list.set<double>("reference pressure", const_atm_pressure_);
       msm_list.set<double>("pore compressibility", compres);
     }
 
@@ -523,7 +523,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
 /* ******************************************************************
 * Create list of flow BCs.
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
+Teuchos::ParameterList InputConverterU::TranslateFlowBCs_(const std::string& domain)
 {
   Teuchos::ParameterList out_list;
 
@@ -534,13 +534,21 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
   DOMNode *node;
   DOMElement *element;
 
-  node_list = doc_->getElementsByTagName(mm.transcode("boundary_conditions"));
-  if (!node_list) return out_list;
+  // correct list of boundary conditions for given domain
+  bool flag;
+  if (domain == "matrix")
+    node = GetUniqueElementByTagsString_("boundary_conditions", flag);
+  else
+    node = GetUniqueElementByTagsString_("fracture_network, boundary_conditions", flag);
+  if (!flag) return out_list;
 
+  node_list = node->getChildNodes();
+
+  // parse the list of BCs using non-intrusive first_child -> next_sibling loop
   std::set<std::string> active_bcs;  // for statistics
   int ibc(0);
 
-  DOMNode* inode = node_list->item(0)->getFirstChild();
+  DOMNode* inode = node_list->item(0);
   while (inode != NULL) {
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) {
       inode = inode->getNextSibling();
@@ -549,7 +557,6 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
     tagname = mm.transcode(inode->getNodeName());
 
     // read the assigned regions
-    bool flag;
     node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
     text = mm.transcode(node->getTextContent());
     std::vector<std::string> regions = CharToStrings_(text);
@@ -729,8 +736,8 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
       Teuchos::ParameterList& bc_tmp = bc.sublist("static head").sublist("function-static-head");
       bc_tmp.set<int>("space dimension", dim_)
             .set<double>("density", rho_)
-            .set<double>("gravity", GRAVITY_MAGNITUDE)
-            .set<double>("p0", ATMOSPHERIC_PRESSURE);
+            .set<double>("gravity", const_gravity_)
+            .set<double>("p0", const_atm_pressure_);
       bc_tmp.sublist(bcname) = bcfn;
       bc.remove(bcname);
 
@@ -875,7 +882,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
 /* ******************************************************************
 * Add optional fracture model to the list of physical models.
 ****************************************************************** */
-Teuchos::ParameterList InputConverterU::TranslateFlowFractures_()
+Teuchos::ParameterList InputConverterU::TranslateFlowFractures_(const std::string& domain)
 {
   Teuchos::ParameterList out_list;
 
@@ -888,11 +895,18 @@ Teuchos::ParameterList InputConverterU::TranslateFlowFractures_()
   DOMNode* node;
   DOMElement* element;
 
-  node_list = doc_->getElementsByTagName(mm.transcode("fracture_permeability"));
-  if (node_list->getLength() == 0) return out_list;
+  bool flag;
+  if (domain == "matrix") {
+    node_list = doc_->getElementsByTagName(mm.transcode("fracture_permeability"));
+    if (node_list->getLength() == 0) return out_list;
+    node_list = doc_->getElementsByTagName(mm.transcode("materials"));
+    element = static_cast<DOMElement*>(node_list->item(0));
+  } else {
+    node = GetUniqueElementByTagsString_("fracture_network, materials", flag);
+    if (!flag) return out_list;
+    element = static_cast<DOMElement*>(node);
+  }
 
-  node_list = doc_->getElementsByTagName(mm.transcode("materials"));
-  element = static_cast<DOMElement*>(node_list->item(0));
   children = element->getElementsByTagName(mm.transcode("material"));
 
   for (int i = 0; i < children->getLength(); ++i) {
@@ -902,6 +916,10 @@ Teuchos::ParameterList InputConverterU::TranslateFlowFractures_()
     bool flag;
     node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
     std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
+
+    if (domain == "fracture") {
+      for (int i = 0; i < regions.size(); i++) fracture_regions_.push_back(regions[i]);
+    }
 
     // get optional complessibility
     node = GetUniqueElementByTagsString_(inode, "fracture_permeability", flag);

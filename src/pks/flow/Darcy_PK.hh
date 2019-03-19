@@ -41,7 +41,8 @@ class Darcy_PK : public Flow_PK {
 
   Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
            const std::string& pk_list_name,
-           Teuchos::RCP<State> S);
+           Teuchos::RCP<State> S,
+           const Teuchos::RCP<TreeVector>& soln);
 
   ~Darcy_PK();
 
@@ -58,16 +59,16 @@ class Darcy_PK : public Flow_PK {
 
   virtual std::string name() override { return passwd_; }
 
-  // methods required for time integration interface: dummy routines for Darcy flow.
+  // methods required for time integration interface. It is not used by simple Darcy flow,
+  // however, coupled method may need the residual evaluation routine.
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
   void FunctionalResidual(const double t_old, double t_new, 
                   Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
-                  Teuchos::RCP<TreeVector> f) override {};
-  double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) override { return 0.0; }
-  void update_norm(double rtol, double atol) {};
+                  Teuchos::RCP<TreeVector> f) override;
+  double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) override;
 
   // -- preconditioner management
-  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu) override { return 0; }
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu) override;
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt) override {};
  
   // -- check the admissibility of a solution
@@ -96,12 +97,20 @@ class Darcy_PK : public Flow_PK {
   // other members of the PK linear solvers
   void SolveFullySaturatedProblem(CompositeVector& u, bool wells_on);
 
+  // access methods
+  Teuchos::RCP<Operators::Operator> op() { return op_; }
+
  private:
   void InitializeFields_();
   void UpdateSpecificYield_();
   double ErrorEstimate_(double* dTfactor);
   void InitializeStatistics_(bool init_darcy);
 
+  // support of coupled PKs
+  void UpdateMatrixBCsUsingFracture_();
+  void UpdateSourceUsingMatrix_();
+  void FractureConservationLaw_();
+  
  protected:
   Teuchos::RCP<TreeVector> soln_;
   
@@ -118,7 +127,8 @@ class Darcy_PK : public Flow_PK {
   bool initialize_with_darcy_;
   int num_itrs_;
 
-  bool flow_in_fractures_;
+  bool flow_on_manifold_;  // true for the DFN model
+  bool coupled_to_matrix_, coupled_to_fracture_;
 
   Teuchos::RCP<CompositeVector> solution;  // next pressure state
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure

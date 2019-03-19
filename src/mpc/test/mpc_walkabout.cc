@@ -40,10 +40,14 @@ using namespace Amanzi;
   meshfactory.set_preference(AmanziMesh::Preference({AmanziMesh::Framework::MSTK}));
   auto mesh = meshfactory.create("test/mpc_walkabout_2D.exo");
 
+  Teuchos::ParameterList state_plist = glist->sublist("state");
+  Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
+  S->RegisterMesh("domain", mesh);
+  
   // use cycle driver to create and initialize state
   ObservationData obs_data;    
-  CycleDriver cycle_driver(glist, mesh, comm, obs_data);
-  auto S = cycle_driver.Go();
+  CycleDriver cycle_driver(glist, S, comm, obs_data);
+  S = cycle_driver.Go();
 
   // verify no-flow at selected points using existing S
   std::cout << "Start test of 2D Walkabout\n";
@@ -128,11 +132,15 @@ using namespace Amanzi;
 
   meshfactory.set_preference(AmanziMesh::Preference({AmanziMesh::Framework::MSTK}));
   auto mesh = meshfactory.create("test/mpc_walkabout_tet5.exo");
-
+  
+  Teuchos::ParameterList state_plist = glist->sublist("state");
+  Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
+  S->RegisterMesh("domain", mesh);
+  
   // use cycle driver to create and initialize state
   ObservationData obs_data;    
-  CycleDriver cycle_driver(glist, mesh, comm, obs_data);
-  auto S = cycle_driver.Go();
+  CycleDriver cycle_driver(glist, S, comm, obs_data);
+  cycle_driver.Go();
 
   // verify velocity at all points
   // -- overwrite flow & pressure

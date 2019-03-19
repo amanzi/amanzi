@@ -73,24 +73,17 @@ double rss_usage() { // return ru_maxrss in MBytes
 * Constructor.
 ****************************************************************** */
 CycleDriver::CycleDriver(Teuchos::RCP<Teuchos::ParameterList> glist,
-                         Teuchos::RCP<AmanziMesh::Mesh>& mesh,
+                         Teuchos::RCP<Amanzi::State>& S,
                          const Comm_ptr_type& comm,
                          Amanzi::ObservationData& observations_data) :
     glist_(glist),
-    mesh_(mesh),
+    S_(S),
     comm_(comm),
     observations_data_(observations_data),
     restart_requested_(false) {
 
-  if (glist_->isSublist("state")) {
-    Teuchos::ParameterList state_plist = glist_->sublist("state");
-    S_ = Teuchos::rcp(new Amanzi::State(state_plist));
-    S_->RegisterMesh("domain", mesh_); 
-  } else{
-    Errors::Message message("CycleDriver: xml_file does not contain 'State' sublist\n");
-    Exceptions::amanzi_throw(message);
-  }
-
+  mesh_ = S_->GetMesh("domain");
+  
   // create and start the global timer
   CoordinatorInit_();
 
@@ -152,7 +145,7 @@ void CycleDriver::Setup() {
     Teuchos::RCP<Teuchos::ParameterList> obs_list = Teuchos::sublist(glist_, "observation data");
     Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist_, "units");
     observations_ = Teuchos::rcp(new Amanzi::FlexibleObservations(
-        coordinator_list_, obs_list, units_list, observations_data_, mesh_));
+        coordinator_list_, obs_list, units_list, observations_data_, S_));
 
     if (coordinator_list_->isParameter("component names")) {
       std::vector<std::string> names = coordinator_list_->get<Teuchos::Array<std::string> >("component names").toVector();
@@ -183,7 +176,7 @@ void CycleDriver::Setup() {
 
   // vis successful steps
   bool surface_done = false;
-  for (State::mesh_iterator mesh=S_->mesh_begin(); mesh!=S_->mesh_end(); ++mesh) {
+  for (auto mesh=S_->mesh_begin(); mesh!=S_->mesh_end(); ++mesh) {
     if (mesh->first == "surface_3d") {
       // pass
     } else if ((mesh->first == "surface") && surface_done) {
@@ -200,6 +193,7 @@ void CycleDriver::Setup() {
         Teuchos::ParameterList& vis_plist = glist_->sublist(plist_name);
         Teuchos::RCP<Visualization> vis = Teuchos::rcp(new Visualization(vis_plist));
         vis->set_mesh(mesh->second.first);
+        vis->set_name(mesh->first);
         vis->CreateFiles();
         visualization_.push_back(vis);
       }
@@ -404,7 +398,6 @@ void CycleDriver::ReadParameterList_() {
     tp_dt_[i] = time_periods_list.sublist(tp_name).get<double>("initial time step", 1.0);
     tp_max_dt_[i] = time_periods_list.sublist(tp_name).get<double>("maximum time step", 1.0e+99);
     tp_max_cycle_[i] = time_periods_list.sublist(tp_name).get<int>("maximum cycle number", -1);
-   
     i++;
   }
 
@@ -877,6 +870,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
 
       time_period_id_++;
       if (time_period_id_ < num_time_periods_) {
+        S_->WriteStatistics(vo_);
         ResetDriver(time_period_id_); 
         dt = get_dt(false);
       }      
@@ -903,7 +897,7 @@ Teuchos::RCP<State> CycleDriver::Go() {
   S_->WriteStatistics(vo_);
   ReportMemory();
   // Finalize();
-
+ 
   return S_;
 } 
 
@@ -918,14 +912,19 @@ void CycleDriver::ResetDriver(int time_pr_id) {
     *vo_->os() << "Reseting CD: TP " << time_pr_id - 1 << " -> TP " << time_pr_id << "." << std::endl;
   }
 
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(S_->GetMesh("domain"));
-
+  Teuchos::RCP<AmanziMesh::Mesh> mesh =
+    Teuchos::rcp_const_cast<AmanziMesh::Mesh>(S_->GetMesh("domain"));
+ 
   S_old_ = S_;
 
   Teuchos::ParameterList state_plist = glist_->sublist("state");
   S_ = Teuchos::rcp(new Amanzi::State(state_plist));
 
-  S_->RegisterMesh("domain", mesh);
+  for (auto mesh = S_old_->mesh_begin(); mesh != S_old_->mesh_end(); ++mesh) {
+    S_->RegisterMesh(mesh->first, mesh->second.first);
+  }    
+  
+  //  S_->RegisterMesh("domain", mesh);
   S_->set_cycle(S_old_->cycle());
   S_->set_time(tp_start_[time_pr_id]); 
   S_->set_position(TIME_PERIOD_START);

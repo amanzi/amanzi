@@ -31,6 +31,7 @@
 // Operators
 #include "Operator.hh"
 #include "OperatorDefs.hh"
+#include "OperatorUtils.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_DiffusionMFD.hh"
 
@@ -42,9 +43,11 @@ class HeatConduction {
  public:
   HeatConduction(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : mesh_(mesh) { 
     CompositeVectorSpace cvs;
+    auto cmap = Amanzi::getMaps(*mesh_, AmanziMesh::CELL);
+    auto fmap = Amanzi::getMaps(*mesh_, AmanziMesh::FACE);
     cvs.SetMesh(mesh_)->SetGhosted(true)
-      ->AddComponent("cell", AmanziMesh::CELL, 1)
-      ->AddComponent("face", AmanziMesh::FACE, 1);
+      ->AddComponent("cell", AmanziMesh::CELL, cmap.first, cmap.second, 1)
+      ->AddComponent("face", AmanziMesh::FACE, fmap.first, fmap.second, 1);
 
     values_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
     derivatives_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs, true));
@@ -173,6 +176,7 @@ void RunTest(std::string op_list_name) {
 
     Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);
     PDE_DiffusionMFD op(olist, surfmesh);
+    op.Init(olist);
     op.SetBCs(bc, bc);
 
     // get the global operator
