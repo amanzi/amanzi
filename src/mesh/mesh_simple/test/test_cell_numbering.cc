@@ -1,8 +1,8 @@
 
 #include "UnitTest++.h"
 #include "Teuchos_RCP.hpp"
-#include <Epetra_Comm.h>
-#include <Epetra_MpiComm.h>
+
+#include <AmanziComm.hh>
 #include "Epetra_SerialComm.h"
 
 #include "../Mesh_simple.hh"
@@ -11,12 +11,7 @@
 
 TEST(NUMBERING) {
 
-#ifdef HAVE_MPI
-  Epetra_MpiComm *comm_ = new Epetra_MpiComm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm *comm_ = new Epetra_SerialComm();
-#endif
-
+  auto comm = Amanzi::getDefaultComm();
 
   double expnodecoords[8][3] = {{0.0,0.0,0.0},
                                 {1.0,0.0,0.0},
@@ -41,7 +36,7 @@ TEST(NUMBERING) {
 
 
   // Create a single-cell mesh;
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, comm_));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, comm));
   
   //  State S(1,mesh);
   

@@ -1,8 +1,18 @@
-#include "VerboseObject.hh"
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Rao Garimella, Konstantin Lipnikov, others
+*/
+
+//! Implementation of the Mesh interface leveraging MSTK.
 
 #include "dbc.hh"
 #include "errors.hh"
 
+#include "VerboseObject.hh"
 #include "Point.hh"
 #include "GeometricModel.hh"
 
@@ -20,61 +30,61 @@ namespace AmanziMesh {
 
 char kind_to_string[4][256] = {"NODE","EDGE","FACE","CELL"};
 
-void Mesh_MSTK::init_mesh_from_file_(std::string const filename,
+void Mesh_MSTK::init_mesh_from_file_(const std::string& filename,
                                      const Partitioner_type partitioner) {
 
   int ok = 0;
 
-  mesh = MESH_New(F1);
+  mesh_ = MESH_New(F1);
 
   int len = filename.size();
   if (filename.find(".exo") != std::string::npos) {  // Exodus file
 
     // Read the mesh on processor 0
-    ok = MESH_ImportFromExodusII(mesh, filename.c_str(), NULL, mpicomm_);
+    ok = MESH_ImportFromExodusII(mesh_, filename.c_str(), NULL, mpicomm_);
 
     // Collapse any degenerate edges in the mesh
     collapse_degen_edges();  // Assumes its operating on member var 'mesh'
 
     // Renumber local IDs to be contiguous
-    MESH_Renumber(mesh, 0, MALLTYPE);
+    MESH_Renumber(mesh_, 0, MALLTYPE);
 
     if (numprocs > 1) {
       // Distribute the mesh to all the processors
-      int topo_dim = MESH_Num_Regions(mesh) ? 3 : 2;
+      int topo_dim = MESH_Num_Regions(mesh_) ? 3 : 2;
       int num_ghost_layers = 1;
       int with_attr = 1;  // Redistribute any attributes and sets
       int method = static_cast<int>(partitioner);
       int del_inmesh = 1;  // Delete input mesh (on P0) after distribution
       
-      Mesh_ptr globalmesh = mesh;
-      mesh = MESH_New(F1);
+      Mesh_ptr globalmesh = mesh_;
+      mesh_ = MESH_New(F1);
       
-      ok &= MSTK_Mesh_Distribute(globalmesh, &mesh, &topo_dim,
+      ok &= MSTK_Mesh_Distribute(globalmesh, &mesh_, &topo_dim,
                                  num_ghost_layers, with_attr, method,
                                  del_inmesh, mpicomm_);
       if (contiguous_gids_) {
-        ok &= MESH_Renumber_GlobalIDs(mesh, MALLTYPE, 0, NULL, mpicomm_);
+        ok &= MESH_Renumber_GlobalIDs(mesh_, MALLTYPE, 0, NULL, mpicomm_);
       }
     }
   } else if (filename.find(".par") != std::string::npos) {  // Nemesis file
 
     // Read the individual partitions on each processor
-    ok = MESH_ImportFromNemesisI(mesh, filename.c_str(), NULL, mpicomm_);
+    ok = MESH_ImportFromNemesisI(mesh_, filename.c_str(), NULL, mpicomm_);
 
     // Collapse any degenerate edges in the mesh
     collapse_degen_edges();
 
     // Renumber local IDs to be contiguous
-    MESH_Renumber(mesh, 0, MALLTYPE);
+    MESH_Renumber(mesh_, 0, MALLTYPE);
 
     // Weave the meshes together to form interprocessor connections
     int num_ghost_layers = 1;
     int input_type = 1;  // We are given partitioned meshes with a
     //                   // unique global ID on each mesh vertex
-    int topo_dim = MESH_Num_Regions(mesh) ? 3 : 2;
+    int topo_dim = MESH_Num_Regions(mesh_) ? 3 : 2;
 
-    ok &= MSTK_Weave_DistributedMeshes(mesh, topo_dim, num_ghost_layers,
+    ok &= MSTK_Weave_DistributedMeshes(mesh_, topo_dim, num_ghost_layers,
                                        input_type, mpicomm_);
 
     // Global IDs are discontinuous due to elimination of degeneracies
@@ -82,7 +92,7 @@ void Mesh_MSTK::init_mesh_from_file_(std::string const filename,
     // connectivity has been established
 
     if (contiguous_gids_) {
-      ok &= MESH_Renumber_GlobalIDs(mesh, MALLTYPE, 0, NULL, mpicomm_);
+      ok &= MESH_Renumber_GlobalIDs(mesh_, MALLTYPE, 0, NULL, mpicomm_);
     }
 
   } else {
@@ -90,7 +100,7 @@ void Mesh_MSTK::init_mesh_from_file_(std::string const filename,
     mesg_stream << "Cannot identify file type from extension of input file " <<
         filename << " on processor " << myprocid << std::endl;
     Errors::Message mesg(mesg_stream.str());
-    amanzi_throw(mesg);
+    Exceptions::amanzi_throw(mesg);
   }
 
   if (!ok) {
@@ -98,32 +108,32 @@ void Mesh_MSTK::init_mesh_from_file_(std::string const filename,
     mesg_stream << "Failed to load " << filename << " on processor " <<
         myprocid << std::endl;
     Errors::Message mesg(mesg_stream.str());
-    amanzi_throw(mesg);
+    Exceptions::amanzi_throw(mesg);
   }
 }
 
 //--------------------------------------
 // Constructor - load up mesh from file
 //--------------------------------------
-Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
+Mesh_MSTK::Mesh_MSTK(const std::string& filename,
+                     const Comm_ptr_type& comm,
                      const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                      const Teuchos::RCP<const Teuchos::ParameterList>& plist,
                      const bool request_faces,
                      const bool request_edges) :
-    Mesh(Teuchos::null,request_faces,request_edges), 
-    mpicomm_(incomm_->GetMpiComm()), meshxyz(NULL), 
+    Mesh(comm, gm, plist, request_faces, request_edges),
+    meshxyz(nullptr), 
     faces_initialized(false), edges_initialized(false),
-    target_cell_volumes_(NULL), min_cell_volumes_(NULL),
-    extface_map_w_ghosts_(NULL), extface_map_wo_ghosts_(NULL),
-    owned_to_extface_importer_(NULL)
+    target_cell_volumes_(nullptr), min_cell_volumes_(nullptr),
+    extface_map_w_ghosts_(nullptr), extface_map_wo_ghosts_(nullptr),
+    owned_to_extface_importer_(nullptr)
 {
+  
   // extract optional control parameters, but first specify defaults
   contiguous_gids_ = true;
   Partitioner_type partitioner = PARTITIONER_DEFAULT;
     
   if (plist != Teuchos::null) {
-    vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Mesh:MSTK", *plist)); 
-
     if (plist->isSublist("unstructured")) {
       const auto tmp = Teuchos::sublist(plist, "unstructured");
       if (tmp->isSublist("expert")) {
@@ -146,11 +156,8 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
     }
   }
 
-  int numprocs = incomm_->NumProc();
-
   // Assume three dimensional problem if constructor called without 
   // the space_dimension parameter
-
   int ok = 0;
 
 #ifdef DEBUG
@@ -160,25 +167,19 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
 #endif
 
   // Pre-processing (init, MPI queries etc)
-
   int space_dim = 3;
-  pre_create_steps_(space_dim, incomm_, gm);
-
-  if (myprocid == 0) {
-    int DebugWait=0;
-    while (DebugWait);
-  }
+  pre_create_steps_(space_dim);
 
   init_mesh_from_file_(filename, partitioner);
 
-  int cell_dim = MESH_Num_Regions(mesh) ? 3 : 2;
+  int cell_dim = MESH_Num_Regions(mesh_) ? 3 : 2;
   
   int max;
-  incomm_->MaxAll(&cell_dim,&max,1);
+  comm->MaxAll(&cell_dim,&max,1);
 
   if (max != cell_dim) {
     Errors::Message mesg("cell dimension on this processor is different from max cell dimension across all processors");
-    amanzi_throw(mesg);
+    Exceptions::amanzi_throw(mesg);
   }
 
   set_manifold_dimension(cell_dim);
@@ -188,7 +189,7 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
     // Check if this is a completely planar mesh 
     // in which case one can label the space dimension as 2
     
-    MVertex_ptr mv = nullptr, mv0 = MESH_Vertex(mesh,0);
+    MVertex_ptr mv = nullptr, mv0 = MESH_Vertex(mesh_,0);
     double vxyz[3], z0;
     
     MV_Coords(mv0,vxyz);
@@ -196,7 +197,7 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
     
     bool planar = true;
     int idx = 0;
-    while ((mv = MESH_Next_Vertex(mesh,&idx))) {
+    while ((mv = MESH_Next_Vertex(mesh_,&idx))) {
       MV_Coords(mv,vxyz);
       if (z0 != vxyz[2]) {
         planar = false;
@@ -207,7 +208,7 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
     if (planar)
       space_dim = 2;
 
-    incomm_->MaxAll(&space_dim,&max,1);
+    comm->MaxAll(&space_dim,&max,1);
 
     space_dim = max;
     set_space_dimension(space_dim);      
@@ -216,7 +217,7 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
   // Verify mesh and geometric model compatibility
 
   if (gm != Teuchos::null && gm->dimension() != space_dimension()) {
-    amanzi_throw(Errors::Message("Geometric model and mesh have different dimensions."));
+    Exceptions::amanzi_throw(Errors::Message("Geometric model and mesh have different dimensions."));
   }
 
   // Do all the processing required for setting up the mesh for Amanzi 
@@ -232,25 +233,23 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
                      const double x1, const double y1, const double z1,
                      const unsigned int nx, const unsigned int ny, 
                      const unsigned int nz, 
-                     const Epetra_MpiComm *incomm_,
+                     const Comm_ptr_type& comm,
                      const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                      const Teuchos::RCP<const Teuchos::ParameterList>& plist,
                      const bool request_faces,
                      const bool request_edges) :
-    Mesh(Teuchos::null,request_faces,request_edges), 
-    mpicomm_(incomm_->GetMpiComm()), meshxyz(NULL), 
+    Mesh(comm, gm, plist, request_faces,request_edges), 
+    meshxyz(nullptr), 
     faces_initialized(false), edges_initialized(false),
-    target_cell_volumes_(NULL), min_cell_volumes_(NULL),
-    extface_map_w_ghosts_(NULL), extface_map_wo_ghosts_(NULL),
-    owned_to_extface_importer_(NULL)
+    target_cell_volumes_(nullptr), min_cell_volumes_(nullptr),
+    extface_map_w_ghosts_(nullptr), extface_map_wo_ghosts_(nullptr),
+    owned_to_extface_importer_(nullptr)
 {
   // extract optional control parameters, but first specify defaults
   contiguous_gids_ = true;
   Partitioner_type partitioner = PARTITIONER_DEFAULT;
     
   if (plist != Teuchos::null) {
-    vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Mesh:MSTK", *plist)); 
-
     if (plist->isSublist("unstructured")) {
       const auto tmp = Teuchos::sublist(plist, "unstructured");
       if (tmp->isSublist("expert")) {
@@ -275,23 +274,19 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
 
   int ok;
   int space_dimension = 3;
-  pre_create_steps_(space_dimension, incomm_, gm);
+  pre_create_steps_(space_dimension);
 
-
-  Mesh::set_mesh_type(RECTANGULAR);   // Discretizations can use this info if they want
+  set_mesh_type(RECTANGULAR);   // Discretizations can use this info if they want
 
   if (serial_run) {
-
     // Load serial mesh
-
-    mesh = MESH_New(F1);
-    ok = generate_regular_mesh(mesh,x0,y0,z0,x1,y1,z1,nx,ny,nz);
+    mesh_ = MESH_New(F1);
+    ok = generate_regular_mesh(mesh_,x0,y0,z0,x1,y1,z1,nx,ny,nz);
 
     set_manifold_dimension(3);
 
     myprocid = 0;
-  }
-  else {
+  } else {
     Mesh_ptr globalmesh = nullptr;
     int topo_dim=3; // What is the topological dimension of the mesh
     int ring = 1; // One layer of ghost cells in parallel meshes
@@ -308,15 +303,15 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
       topo_dim = (MESH_Num_Regions(globalmesh) == 0) ? 2 : 3;
     }
     else {
-      globalmesh = NULL;
+      globalmesh = nullptr;
       ok = 1;
     }
 
 #ifdef MSTK_2_21rc1_OR_NEWER
-    ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,
+    ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh_,&topo_dim,ring,with_attr,
                                    method,del_inmesh,mpicomm_);
 #else
-    ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,
+    ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh_,&topo_dim,ring,with_attr,
                                    method,mpicomm_);
     if (myprocid == 0)
       MESH_Delete(globalmesh);
@@ -329,8 +324,8 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
     std::stringstream mesg_stream;
     mesg_stream << "Failed to generate mesh on processor " << myprocid;
     Errors::Message mesg(mesg_stream.str());
-    amanzi_throw(mesg);
-    assert(ok);
+    Exceptions::amanzi_throw(mesg);
+    AMANZI_ASSERT(ok);
   }
 
   // Do all the processing required for setting up the mesh for Amanzi 
@@ -345,25 +340,23 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
 Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
                      const double x1, const double y1,
                      const int nx, const int ny, 
-                     const Epetra_MpiComm *incomm_,
+                     const Comm_ptr_type& comm,
                      const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                      const Teuchos::RCP<const Teuchos::ParameterList>& plist,
                      const bool request_faces,
                      const bool request_edges) :
-    Mesh(Teuchos::null,request_faces,request_edges), 
-    mpicomm_(incomm_->GetMpiComm()), meshxyz(NULL), 
+    Mesh(comm, gm, plist, request_faces, request_edges), 
+    meshxyz(nullptr), 
     faces_initialized(false), edges_initialized(false),
-    target_cell_volumes_(NULL), min_cell_volumes_(NULL),
-    extface_map_w_ghosts_(NULL), extface_map_wo_ghosts_(NULL),
-    owned_to_extface_importer_(NULL)
+    target_cell_volumes_(nullptr), min_cell_volumes_(nullptr),
+    extface_map_w_ghosts_(nullptr), extface_map_wo_ghosts_(nullptr),
+    owned_to_extface_importer_(nullptr)
 {
   // extract optional control parameters, but first specify defaults
   contiguous_gids_ = true;
   Partitioner_type partitioner = PARTITIONER_DEFAULT;
     
   if (plist != Teuchos::null) {
-    vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Mesh:MSTK", *plist)); 
-
     if (plist->isSublist("unstructured")) {
       const auto tmp = Teuchos::sublist(plist, "unstructured");
       if (tmp->isSublist("expert")) {
@@ -388,22 +381,17 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
 
   int ok;
   int space_dim = 2;
-  pre_create_steps_(space_dim, incomm_, gm);
-
-  if (myprocid == 0) {
-    int DebugWait=0;
-    while (DebugWait);
-  }
+  pre_create_steps_(space_dim);
 
 #ifdef DEBUG
-  if (Mesh::verbosity_obj()) {
+  if (verbosity_obj()) {
     if (verbosity_obj()->os_OK(Teuchos::VERB_MEDIUM)) {
       verbosity_obj()->os() << "Testing Verbosity !!!! - Construct mesh from low/hi coords - 2D" << std::endl;
     }
   }
 #endif
 
-  Mesh::set_mesh_type(RECTANGULAR);   // Discretizations can use this info if they want
+  set_mesh_type(RECTANGULAR);   // Discretizations can use this info if they want
 
 
   int topo_dim=space_dim; // What is the topological dimension of the mesh
@@ -413,8 +401,8 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
 
     // Load serial mesh
 
-    mesh = MESH_New(F1);
-    ok = generate_regular_mesh(mesh,x0,y0,x1,y1,nx,ny);
+    mesh_ = MESH_New(F1);
+    ok = generate_regular_mesh(mesh_,x0,y0,x1,y1,nx,ny);
 
     myprocid = 0;
   }
@@ -433,15 +421,15 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
       topo_dim = (MESH_Num_Regions(globalmesh) == 0) ? 2 : 3;
     }
     else {
-      globalmesh = NULL;
+      globalmesh = nullptr;
       ok = 1;
     }
 
 #ifdef MSTK_2_21rc1_OR_NEWER
-    ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,
+    ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh_,&topo_dim,ring,with_attr,
                                    method,del_inmesh,mpicomm_);
 #else
-    ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,
+    ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh_,&topo_dim,ring,with_attr,
                                    method,mpicomm_);
     if (myprocid == 0)
       MESH_Delete(globalmesh);
@@ -453,204 +441,47 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
     std::stringstream mesg_stream;
     mesg_stream << "Failed to generate mesh on processor " << myprocid;
     Errors::Message mesg(mesg_stream.str());
-    amanzi_throw(mesg);
-    assert(ok);
+    Exceptions::amanzi_throw(mesg);
+    AMANZI_ASSERT(ok);
   }
 
   // Do all the processing required for setting up the mesh for Amanzi 
-  
   post_create_steps_(request_faces, request_edges);
-}
-
-
-//-------------------------------------- 
-// Construct a 2D or 3D regular mesh using input from the
-// GenerationSpec class 
-//--------------------------------------
-Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
-                     const Epetra_MpiComm *incomm_,
-                     const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
-                     const Teuchos::RCP<const VerboseObject>&verbobj,
-                     const bool request_faces,
-                     const bool request_edges) :
-    Mesh(verbobj,request_faces,request_edges), 
-    mpicomm_(incomm_->GetMpiComm()), meshxyz(NULL), 
-    faces_initialized(false), edges_initialized(false),
-    target_cell_volumes_(NULL), min_cell_volumes_(NULL),
-    extface_map_w_ghosts_(NULL), extface_map_wo_ghosts_(NULL),
-    owned_to_extface_importer_(NULL)
-{
-  int ok = 0;
-
-  // Get info about the domain from the generation specification class
-
-  AmanziGeometry::Point p0(gspec.domain().point0());
-  AmanziGeometry::Point p1(gspec.domain().point1());
-
-  int space_dim = p0.dim();
-  pre_create_steps_(space_dim, incomm_, gm);
-
-
-  Mesh::set_mesh_type(RECTANGULAR);   // Discretizations can use this info if they want
-
-
-  if (myprocid == 0) {
-    int DebugWait=0;
-    while (DebugWait);
-  }
-
-  int topo_dim=space_dim;
-  set_manifold_dimension(topo_dim);
-
-  if (serial_run) {
-
-    // Load serial mesh
-
-    mesh = MESH_New(F1);
-
-    if (topo_dim == 2) {
-      ok = generate_regular_mesh(mesh,p0.x(),p0.y(),p1.x(),p1.y(),
-                                 gspec.xcells(),gspec.ycells());
-    }
-    else if (topo_dim == 3) {
-      ok = generate_regular_mesh(mesh,p0.x(),p0.y(),p0.z(),p1.x(),p1.y(),p1.z(),
-                                 gspec.xcells(),gspec.ycells(),gspec.zcells());
-    }
-
-    myprocid = 0;
-  }
-  else {
-    Mesh_ptr globalmesh = nullptr;
-    int ring = 1; // One layer of ghost cells in parallel meshes
-    int with_attr = 1;  // update of attributes in parallel meshes
-    int del_inmesh = 1; // delete global mesh
-    int method = static_cast<int>(gspec.partitioner());
-    
-    if (myprocid == 0) {
-      globalmesh = MESH_New(F1);
-
-      if (topo_dim == 2) {
-        ok = generate_regular_mesh(globalmesh,p0.x(),p0.y(),p1.x(),p1.y(),
-                                   gspec.xcells(),gspec.ycells());
-      }
-      else if (topo_dim == 3) {
-        ok = generate_regular_mesh(globalmesh,
-                                   p0.x(),p0.y(),p0.z(),p1.x(),p1.y(),p1.z(),
-                                   gspec.xcells(),gspec.ycells(),gspec.zcells());
-      }
-    }
-    else {
-      globalmesh = NULL;
-      ok = 1;
-    }
-      
-#ifdef MSTK_2_21rc1_OR_NEWER
-    ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,
-                                   method,del_inmesh,mpicomm_);
-#else
-    ok = ok & MSTK_Mesh_Distribute(globalmesh,&mesh,&topo_dim,ring,with_attr,
-                                   method,mpicomm_);
-    if (myprocid == 0)
-      MESH_Delete(globalmesh);
-#endif
-  }
-
-  if (!ok) {
-    std::stringstream mesg_stream;
-    mesg_stream << "Failed to generate mesh on processor " << myprocid;
-    Errors::Message mesg(mesg_stream.str());
-    amanzi_throw(mesg);
-  }
-
-  // Do all the processing required for setting up the mesh for Amanzi 
-  
-  post_create_steps_(request_faces, request_edges);
-}
-
-
-//---------------------------------------------------------
-// Extract MSTK entities from a named set in an input mesh and make a
-// new MSTK mesh
-//---------------------------------------------------------
-Mesh_MSTK::Mesh_MSTK(const Mesh *inmesh, 
-                     const std::vector<std::string>& setnames, 
-                     const Entity_kind setkind,
-                     const bool flatten,
-                     const bool extrude,
-                     const bool request_faces,
-                     const bool request_edges) :
-    mpicomm_(inmesh->get_comm()->GetMpiComm()),
-    Mesh(inmesh->verbosity_obj(),request_faces,request_edges),
-    extface_map_w_ghosts_(NULL), extface_map_wo_ghosts_(NULL),
-    owned_to_extface_importer_(NULL)
-{  
-
-  Mesh_ptr inmesh_mstk = ((Mesh_MSTK *)inmesh)->mesh;
-
-  int mkid = MSTK_GetMarker();
-  List_ptr src_ents = List_New(10);
-  for (int i = 0; i < setnames.size(); ++i) {
-    MSet_ptr mset = nullptr;
-    
-    Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = inmesh->geometric_model();
-    Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setnames[i]);
-
-    // access the set in Amanzi so that the set gets created in 'inmesh'
-    // if it already does not exist
-
-    int setsize = ((Mesh_MSTK *) inmesh)->get_set_size(setnames[i],setkind,Parallel_type::OWNED);
-
-    // Now retrieve the entities in the set from MSTK
-
-    std::string internal_name = internal_name_of_set(rgn,setkind);
-
-    mset = MESH_MSetByName(inmesh_mstk,internal_name.c_str());
-
-    if (mset) {
-      int idx = 0;
-      MEntity_ptr ment = nullptr;
-      while ((ment = (MEntity_ptr) MSet_Next_Entry(mset,&idx))) {
-        if (!MEnt_IsMarked(ment,mkid) && MEnt_PType(ment) != PGHOST && MEnt_Dim(ment) != MDELETED) {
-          List_Add(src_ents,ment);
-          MEnt_Mark(ment,mkid);
-        }
-      }
-    }
-  }
-
-  MType entity_dim = ((Mesh_MSTK *) inmesh)->entity_kind_to_mtype(setkind);
-
-  extract_mstk_mesh(inmesh->get_comm(), *((Mesh_MSTK *) inmesh), src_ents, entity_dim,
-                    flatten, extrude, request_faces, request_edges);
-
-  List_Delete(src_ents);
 }
 
 
 //---------------------------------------------------------
 // Extract MSTK entities from an ID list and make a new MSTK mesh
 //---------------------------------------------------------
-Mesh_MSTK::Mesh_MSTK(const Mesh& inmesh, 
+Mesh_MSTK::Mesh_MSTK(const Teuchos::RCP<const Mesh>& parent_mesh,
                      const Entity_ID_List& entity_ids, 
                      const Entity_kind entity_kind,
                      const bool flatten,
-                     const bool extrude,
+                     const Comm_ptr_type& comm,
+                     const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+                     const Teuchos::RCP<const Teuchos::ParameterList>& plist,
                      const bool request_faces,
                      const bool request_edges) :
-    mpicomm_(inmesh.get_comm()->GetMpiComm()),
-    Mesh(inmesh.verbosity_obj(),request_faces,request_edges),
-    extface_map_w_ghosts_(NULL), extface_map_wo_ghosts_(NULL),
-    owned_to_extface_importer_(NULL)
+    Mesh(comm, gm == Teuchos::null ? parent_mesh->geometric_model() : gm,
+         plist == Teuchos::null ? parent_mesh->parameter_list() : plist,
+         request_faces, request_edges),
+    parent_mesh_(Teuchos::rcp_dynamic_cast<const Mesh_MSTK>(parent_mesh)),
+    extface_map_w_ghosts_(nullptr), extface_map_wo_ghosts_(nullptr),
+    owned_to_extface_importer_(nullptr)
 {  
-  Mesh_ptr inmesh_mstk = ((Mesh_MSTK&) inmesh).mesh;
+  if (!parent_mesh_.get()) {
+    Errors::Message mesg("Cannot extract an MSTK mesh from a non-MSTK mesh.");
+    Exceptions::amanzi_throw(mesg);
+  }
+    
+  auto parent_mesh_mstk = parent_mesh_->mesh_;
 
   // store pointers to the MESH_XXXFromID functions so that they can
   // be called without a switch statement 
-
   static MEntity_ptr (*MEntFromID[4])(Mesh_ptr,int) =
     {MESH_VertexFromID, MESH_EdgeFromID, MESH_FaceFromID, MESH_RegionFromID};
 
-  MType entity_dim = ((Mesh_MSTK&) inmesh).entity_kind_to_mtype(entity_kind);
+  MType entity_dim = parent_mesh_->entity_kind_to_mtype(entity_kind);
 
   // Also make sure that the mesh object can do fast queries on local IDs
   //
@@ -658,65 +489,16 @@ Mesh_MSTK::Mesh_MSTK(const Mesh& inmesh,
   // change and if the mesh has no modifications it is fast. Also, its
   // a one time setup cost but it would be good to enable it sometime
   //
-  // MESH_Enable_LocalIDSearch(inmesh_mstk);
+  // MESH_Enable_LocalIDSearch(parent_mesh_mstk);
 
   int nent = entity_ids.size();
   List_ptr src_ents = List_New(nent);
   for (int i = 0; i < nent; ++i) {
-    MEntity_ptr ent = MEntFromID[entity_dim](inmesh_mstk,entity_ids[i]+1);
+    MEntity_ptr ent = MEntFromID[entity_dim](parent_mesh_mstk,entity_ids[i]+1);
     List_Add(src_ents,ent);
   }
   
-  extract_mstk_mesh(inmesh.get_comm(), (Mesh_MSTK&) inmesh, src_ents, entity_dim, flatten, extrude,
-                    request_faces, request_edges);
-
-  List_Delete(src_ents);
-}
-
-
-//---------------------------------------------------------
-// Extract MSTK entities from an ID list and make a new MSTK mesh WITH A NEW COMM
-//---------------------------------------------------------
-Mesh_MSTK::Mesh_MSTK(const Epetra_MpiComm *comm_,
-                     const Mesh& inmesh, 
-                     const Entity_ID_List& entity_ids, 
-                     const Entity_kind entity_kind,
-                     const bool flatten,
-                     const bool extrude,
-                     const bool request_faces,
-                     const bool request_edges) :
-    mpicomm_(comm_->GetMpiComm()),
-    Mesh(inmesh.verbosity_obj(),request_faces,request_edges),
-    extface_map_w_ghosts_(NULL), extface_map_wo_ghosts_(NULL),
-    owned_to_extface_importer_(NULL)
-{  
-  Mesh_ptr inmesh_mstk = ((Mesh_MSTK&) inmesh).mesh;
-
-  // store pointers to the MESH_XXXFromID functions so that they can
-  // be called without a switch statement 
-
-  static MEntity_ptr (*MEntFromID[4])(Mesh_ptr,int) =
-    {MESH_VertexFromID, MESH_EdgeFromID, MESH_FaceFromID, MESH_RegionFromID};
-
-  MType entity_dim = ((Mesh_MSTK&) inmesh).entity_kind_to_mtype(entity_kind);
-
-  // Also make sure that the mesh object can do fast queries on local IDs
-  //
-  // Commented out for now to avoid another backwards incompatible
-  // change and if the mesh has no modifications it is fast. Also, its
-  // a one time setup cost but it would be good to enable it sometime
-  //
-  // MESH_Enable_LocalIDSearch(inmesh_mstk);
-
-  int nent = entity_ids.size();
-  List_ptr src_ents = List_New(nent);
-  for (int i = 0; i < nent; ++i) {
-    MEntity_ptr ent = MEntFromID[entity_dim](inmesh_mstk,entity_ids[i]+1);
-    List_Add(src_ents,ent);
-  }
-  
-  extract_mstk_mesh(comm_, (Mesh_MSTK&) inmesh, src_ents, entity_dim, flatten, extrude,
-                    request_faces, request_edges);
+  extract_mstk_mesh(src_ents, entity_dim, flatten, request_faces, request_edges);
 
   List_Delete(src_ents);
 }
@@ -792,12 +574,9 @@ Mesh_MSTK::other_internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::R
 // Extract a list of MSTK entities and make a new MSTK mesh
 // For private use of Mesh_MSTK class only
 //---------------------------------------------------------
-void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
-                                  const Mesh_MSTK& inmesh,
-                                  List_ptr src_entities, 
+void Mesh_MSTK::extract_mstk_mesh(List_ptr src_entities, 
                                   const MType entity_dim,
                                   const bool flatten,
-                                  const bool extrude,
                                   const bool request_faces,
                                   const bool request_edges)
 {
@@ -805,102 +584,69 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
   double rval = 0., xyz[3];
   void *pval;
 
-  Mesh_ptr inmesh_mstk = inmesh.mesh;
-
-  if (extrude) {
-    Errors::Message mesg("Extrude option not implemented yet");
-    amanzi_throw(mesg);
-  }
+  AMANZI_ASSERT(parent_mesh_.get());
+  Mesh_ptr parent_mesh_mstk = parent_mesh_->mesh_;
 
   // Make sure Global ID searches are enabled
+  MESH_Enable_GlobalIDSearch(parent_mesh_mstk);
 
-  MESH_Enable_GlobalIDSearch(inmesh_mstk);
-
-  if (flatten || extrude) {
+  if (flatten) {
     if (entity_dim == MREGION || entity_dim == MVERTEX) {
       Errors::Message mesg("Flattening or extruding allowed only for sets of FACEs in volume mesh or CELLs in surface meshes");
-      amanzi_throw(mesg);
+      Exceptions::amanzi_throw(mesg);
     }
   }
 
-
   if (entity_dim == MEDGE) {
     Errors::Message mesg("Requested mesh constructor produces 1D mesh which is not supported by Amanzi");
-    amanzi_throw(mesg);
+    Exceptions::amanzi_throw(mesg);
   }
 
 
   // Pre-processing (init, MPI queries etc)
-
   if (flatten)
-    pre_create_steps_(inmesh.space_dimension()-1, incomm, 
-                      inmesh.geometric_model());
+    pre_create_steps_(parent_mesh_->space_dimension()-1);
   else
-    pre_create_steps_(inmesh.space_dimension(), incomm,
-                      inmesh.geometric_model());
-
-  if (myprocid == 0) {
-    int DebugWait=0;
-    while (DebugWait);
-  }
-
-
-  // Set parent mesh
-  
-  parent_mesh = &inmesh;
+    pre_create_steps_(parent_mesh_->space_dimension());
 
   // What is the cell dimension of new mesh
-
   switch (entity_dim) {
   case MREGION:
-    if (extrude) {
-      Errors::Message mesg("Cannot extrude 3D cells");
-      amanzi_throw(mesg);
-    }
-    else 
-      set_manifold_dimension(3); // extract regions/cells from mesh
+    set_manifold_dimension(3); // extract regions/cells from mesh
     break;
     
   case MFACE:
-    if (extrude)
-      set_manifold_dimension(3); // extract faces and extrude them into regions/cells
-    else
-      set_manifold_dimension(2); // extract faces from mesh
+    set_manifold_dimension(2); // extract faces from mesh
     break;
-    
-  case MEDGE:
-    if (extrude)
-      set_manifold_dimension(2); // extract edges and extrude them into faces/cells
-    else {
-      Errors::Message mesg("Edge list passed into extract mesh. Cannot extract a wire or point mesh");
-      amanzi_throw(mesg);
-    }
+
+  case MEDGE: {
+    Errors::Message mesg("Edge list passed into extract mesh. Cannot extract a wire or point mesh");
+    Exceptions::amanzi_throw(mesg);
     break;
+  }
     
   case MVERTEX: {
     Errors::Message mesg("Vertex list passed into extract mesh. Cannot extract a point mesh");
-    amanzi_throw(mesg);
+    Exceptions::amanzi_throw(mesg);
     break;
   }
-
-  default:
+  default: {
     Errors::Message mesg1("Unrecognized Entity_kind");
-    amanzi_throw(mesg1);
+    Exceptions::amanzi_throw(mesg1);
+  }
   }
 
-
   // Create new mesh in MSTK
-
-  mesh = MESH_New(MESH_RepType(inmesh_mstk));
+  mesh_ = MESH_New(MESH_RepType(parent_mesh_mstk));
 
   // Have to do some additional work for extruding an extracted mesh
   // Extrusion applicable only in the case of entdim = MFACE/MEDGE
 
-  MAttrib_ptr copyatt = MAttrib_New(inmesh_mstk,"copyatt",POINTER,MALLTYPE);
-  vparentatt = MAttrib_New(mesh,"vparentatt",POINTER,MVERTEX);
-  eparentatt = MAttrib_New(mesh,"eparentatt",POINTER,MEDGE);
-  fparentatt = MAttrib_New(mesh,"fparentatt",POINTER,MFACE);
-  rparentatt = MAttrib_New(mesh,"rparentatt",POINTER,MREGION);
+  MAttrib_ptr copyatt = MAttrib_New(parent_mesh_mstk,"copyatt",POINTER,MALLTYPE);
+  vparentatt = MAttrib_New(mesh_,"vparentatt",POINTER,MVERTEX);
+  eparentatt = MAttrib_New(mesh_,"eparentatt",POINTER,MEDGE);
+  fparentatt = MAttrib_New(mesh_,"fparentatt",POINTER,MFACE);
+  rparentatt = MAttrib_New(mesh_,"rparentatt",POINTER,MREGION);
   
   switch (entity_dim) {
     case MREGION: {  // Extracting a subset of a solid mesh
@@ -932,7 +678,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
               if (pval)
                 fverts_new[j] = pval;
               else {
-                fverts_new[j] = MV_New(mesh);
+                fverts_new[j] = MV_New(mesh_);
                 MV_Coords(mv,xyz);
                 MV_Set_Coords(fverts_new[j],xyz);
                 MV_Set_GEntDim(fverts_new[j],MV_GEntDim(mv));
@@ -943,7 +689,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
             }
             List_Delete(fverts);
             
-            rfaces_new[i] = MF_New(mesh);
+            rfaces_new[i] = MF_New(mesh_);
             MF_Set_Vertices(rfaces_new[i],nfv,fverts_new);
             MF_Set_GEntDim(rfaces_new[i],MF_GEntDim(mf));
             MF_Set_GEntID(rfaces_new[i],MF_GEntID(mf));
@@ -955,7 +701,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
         }
         List_Delete(rfaces);
 
-        MRegion_ptr mr_new = MR_New(mesh);
+        MRegion_ptr mr_new = MR_New(mesh_);
         MR_Set_Faces(mr_new,nrf,rfaces_new,rfdirs_new);
         MR_Set_GEntID(mr_new,MR_GEntID(mr));
 
@@ -982,7 +728,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
           if (pval)
             fedges_new[j] = pval;
           else {
-            fedges_new[j] = ME_New(mesh);
+            fedges_new[j] = ME_New(mesh_);
 
             for (int k = 0; k < 2; ++k) {
               MVertex_ptr mv = ME_Vertex(me,k);
@@ -993,7 +739,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
               else {              
                 MV_Coords(mv,xyz);
                 if (flatten) xyz[2] = 0.0;
-                mv_new = MV_New(mesh);
+                mv_new = MV_New(mesh_);
                 MV_Set_Coords(mv_new,xyz);
                 MV_Set_GEntDim(mv_new,MV_GEntDim(mv));
                 MV_Set_GEntID(mv_new,MV_GEntID(mv));
@@ -1012,7 +758,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
         }
         List_Delete(fedges);
             
-        MFace_ptr mf_new = MF_New(mesh);
+        MFace_ptr mf_new = MF_New(mesh_);
         MF_Set_Edges(mf_new,nfe,fedges_new,fedirs);
         MF_Set_GEntDim(mf_new,2);  // This has to be surface mesh
         if (MF_GEntDim(mf) == 2)
@@ -1030,7 +776,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
       MEdge_ptr me = nullptr;
       while ((me = (MEdge_ptr) List_Next_Entry(src_entities,&idx))) {
 
-        MEdge_ptr me_new = ME_New(mesh);
+        MEdge_ptr me_new = ME_New(mesh_);
 
         for (int j = 0; j < 2; ++j)  {
           MVertex_ptr mv = ME_Vertex(me,j);
@@ -1046,7 +792,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
               xyz[1] = 0.0;
               xyz[2] = 0.0;
             }
-            mv_new = MV_New(mesh);
+            mv_new = MV_New(mesh_);
             MV_Set_Coords(mv_new,xyz);
             MV_Set_GEntDim(mv_new,MV_GEntDim(mv));
             MV_Set_GEntID(mv_new,MV_GEntID(mv));
@@ -1072,7 +818,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
       MVertex_ptr mv = nullptr;
       while ((mv = (MVertex_ptr) List_Next_Entry(src_entities,&idx))) {
 
-        MVertex_ptr mv_new = MV_New(mesh);
+        MVertex_ptr mv_new = MV_New(mesh_);
         MV_Set_Coords(mv_new,xyz);
         if (flatten) xyz[2] = 0.0;
         MV_Set_GEntDim(mv_new,MV_GEntDim(mv));
@@ -1086,7 +832,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
     }
     default: {
       Errors::Message mesg("Unknown entity type");
-      amanzi_throw(mesg);
+      Exceptions::amanzi_throw(mesg);
     }
   }
 
@@ -1096,21 +842,21 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
 
     int num_ghost_layers = 1; 
     int input_type = 0; /* No parallel info is given */
-    int status = MSTK_Weave_DistributedMeshes(mesh, manifold_dimension(),
+    int status = MSTK_Weave_DistributedMeshes(mesh_, manifold_dimension(),
                                               num_ghost_layers, input_type, mpicomm_);
 
     // Now we have to build parent information for global entities
 
-    MAttrib_ptr vparentgid_att = MAttrib_New(mesh,"vparent_gid",INT,MVERTEX);
-    MAttrib_ptr eparentgid_att = MAttrib_New(mesh,"eparent_gid",INT,MEDGE);
-    MAttrib_ptr fparentgid_att = MAttrib_New(mesh,"fparent_gid",INT,MFACE);
-    MAttrib_ptr rparentgid_att = MAttrib_New(mesh,"rparent_gid",INT,MREGION);
+    MAttrib_ptr vparentgid_att = MAttrib_New(mesh_,"vparent_gid",INT,MVERTEX);
+    MAttrib_ptr eparentgid_att = MAttrib_New(mesh_,"eparent_gid",INT,MEDGE);
+    MAttrib_ptr fparentgid_att = MAttrib_New(mesh_,"fparent_gid",INT,MFACE);
+    MAttrib_ptr rparentgid_att = MAttrib_New(mesh_,"rparent_gid",INT,MREGION);
 
     // Attach parent global ID info to entities used by other processors
 
     idx = 0;
     MVertex_ptr mv = nullptr;
-    while ((mv = (MVertex_ptr) MESH_Next_Vertex(mesh,&idx)))
+    while ((mv = (MVertex_ptr) MESH_Next_Vertex(mesh_,&idx)))
       if (MV_PType(mv) == POVERLAP) {
         MEnt_Get_AttVal(mv,vparentatt,&ival,&rval,&pval);
         MEnt_Set_AttVal(mv,vparentgid_att,MV_GlobalID((MVertex_ptr)pval),0.0,
@@ -1118,7 +864,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
       }
     idx = 0;
     MEdge_ptr me = nullptr;
-    while ((me = (MEdge_ptr) MESH_Next_Edge(mesh,&idx)))
+    while ((me = (MEdge_ptr) MESH_Next_Edge(mesh_,&idx)))
       if (ME_PType(me) == POVERLAP) {
         MEnt_Get_AttVal(me,eparentatt,&ival,&rval,&pval);
         MEnt_Set_AttVal(me,eparentgid_att,ME_GlobalID((MEdge_ptr)pval),0.0,
@@ -1126,7 +872,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
       }
     idx = 0;
     MFace_ptr mf = nullptr;
-    while ((mf = (MFace_ptr) MESH_Next_Face(mesh,&idx)))
+    while ((mf = (MFace_ptr) MESH_Next_Face(mesh_,&idx)))
       if (MF_PType(mf) == POVERLAP) {
         MEnt_Get_AttVal(mf,fparentatt,&ival,&rval,&pval);
         MEnt_Set_AttVal(mf,fparentgid_att,MF_GlobalID((MFace_ptr)pval),0.0,
@@ -1134,7 +880,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
       }
     idx = 0;
     MRegion_ptr mr = nullptr;
-    while ((mr = (MRegion_ptr) MESH_Next_Region(mesh,&idx)))
+    while ((mr = (MRegion_ptr) MESH_Next_Region(mesh_,&idx)))
       if (MR_PType(mr) == POVERLAP) {
         MEnt_Get_AttVal(mr,rparentatt,&ival,&rval,&pval);
         MEnt_Set_AttVal(mr,rparentgid_att,MR_GlobalID((MRegion_ptr)pval),0.0,
@@ -1144,51 +890,51 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
     // Update attributes on ghost entities - this will ensure that
     // ghost entities have their parent global ID information
 
-    status &= MESH_UpdateAttributes(mesh,mpicomm_);
+    status &= MESH_UpdateAttributes(mesh_,mpicomm_);
 
     // Now reverse engineer the parents of ghost entities from the global IDs
 
     idx = 0;
-    while ((mv = (MVertex_ptr) MESH_Next_GhostVertex(mesh,&idx))) {
+    while ((mv = (MVertex_ptr) MESH_Next_GhostVertex(mesh_,&idx))) {
       MEnt_Get_AttVal(mv,vparentgid_att,&ival,&rval,&pval);
-      MVertex_ptr mv_parent = MESH_VertexFromGlobalID(inmesh_mstk,ival);
+      MVertex_ptr mv_parent = MESH_VertexFromGlobalID(parent_mesh_mstk,ival);
       if (!mv_parent) {
         Errors::Message 
           mesg("Cannot find ghost vertex with given global ID");
-        amanzi_throw(mesg);
+        Exceptions::amanzi_throw(mesg);
       }
       MEnt_Set_AttVal(mv,vparentatt,0,0.0,mv_parent);
     }
     idx = 0;
-    while ((me = (MEdge_ptr) MESH_Next_GhostEdge(mesh,&idx))) {
+    while ((me = (MEdge_ptr) MESH_Next_GhostEdge(mesh_,&idx))) {
       MEnt_Get_AttVal(me,eparentgid_att,&ival,&rval,&pval);
-      MEdge_ptr me_parent = MESH_EdgeFromGlobalID(inmesh_mstk,ival);
+      MEdge_ptr me_parent = MESH_EdgeFromGlobalID(parent_mesh_mstk,ival);
       if (!me_parent) {
         Errors::Message 
           mesg("Cannot find ghost edge with given global ID");
-        amanzi_throw(mesg);
+        Exceptions::amanzi_throw(mesg);
       }
       MEnt_Set_AttVal(me,eparentatt,0,0.0,me_parent);
     }
     idx = 0;
-    while ((mf = (MFace_ptr) MESH_Next_GhostFace(mesh,&idx))) {
+    while ((mf = (MFace_ptr) MESH_Next_GhostFace(mesh_,&idx))) {
       MEnt_Get_AttVal(mf,fparentgid_att,&ival,&rval,&pval);
-      MFace_ptr mf_parent = MESH_FaceFromGlobalID(inmesh_mstk,ival);
+      MFace_ptr mf_parent = MESH_FaceFromGlobalID(parent_mesh_mstk,ival);
       if (!mf_parent) {
         Errors::Message 
           mesg("Cannot find ghost face with given global ID");
-        amanzi_throw(mesg);
+        Exceptions::amanzi_throw(mesg);
       }
       MEnt_Set_AttVal(mf,fparentatt,0,0.0,mf_parent);
     }
     idx = 0;
-    while ((mr = (MRegion_ptr) MESH_Next_GhostRegion(mesh,&idx))) {
+    while ((mr = (MRegion_ptr) MESH_Next_GhostRegion(mesh_,&idx))) {
       MEnt_Get_AttVal(mr,rparentgid_att,&ival,&rval,&pval);
-      MRegion_ptr mr_parent = MESH_RegionFromGlobalID(inmesh_mstk,ival);
+      MRegion_ptr mr_parent = MESH_RegionFromGlobalID(parent_mesh_mstk,ival);
       if (!mr_parent) {
         Errors::Message 
           mesg("Cannot find ghost region with given global ID");
-        amanzi_throw(mesg);
+        Exceptions::amanzi_throw(mesg);
       }
       MEnt_Set_AttVal(mr,rparentatt,0,0.0,mr_parent);
     }
@@ -1286,7 +1032,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
   }
   default: {
     Errors::Message mesg("Unknown entity type");
-    amanzi_throw(mesg);
+    Exceptions::amanzi_throw(mesg);
   }
   }
   
@@ -1333,7 +1079,7 @@ Mesh_MSTK::~Mesh_MSTK() {
   if (fparentatt) MAttrib_Delete(fparentatt);
   if (rparentatt) MAttrib_Delete(rparentatt);
 
-  MESH_Delete(mesh);
+  MESH_Delete(mesh_);
 }
 
 
@@ -1360,7 +1106,7 @@ unsigned int Mesh_MSTK::num_entities(const Entity_kind kind,
       return !serial_run ? MSet_Num_Entries(NotOwnedVerts) : 0;
       break;
     case Parallel_type::ALL:
-      return MESH_Num_Vertices(mesh);
+      return MESH_Num_Vertices(mesh_);
       break;
     default:
       return 0;
@@ -1369,7 +1115,7 @@ unsigned int Mesh_MSTK::num_entities(const Entity_kind kind,
 
   case EDGE:
 
-    assert(edges_initialized);
+    AMANZI_ASSERT(edges_initialized);
 
     switch (ptype) {
     case Parallel_type::OWNED:
@@ -1379,7 +1125,7 @@ unsigned int Mesh_MSTK::num_entities(const Entity_kind kind,
       return !serial_run ? MSet_Num_Entries(NotOwnedEdges) : 0;
       break;
     case Parallel_type::ALL:
-      return MESH_Num_Edges(mesh);
+      return MESH_Num_Edges(mesh_);
       break;
     default:
       return 0;
@@ -1389,7 +1135,7 @@ unsigned int Mesh_MSTK::num_entities(const Entity_kind kind,
 
   case FACE:
 
-    assert(faces_initialized);
+    AMANZI_ASSERT(faces_initialized);
 
     switch (ptype) {
     case Parallel_type::OWNED:
@@ -1399,7 +1145,7 @@ unsigned int Mesh_MSTK::num_entities(const Entity_kind kind,
       return !serial_run ? MSet_Num_Entries(NotOwnedFaces) : 0;
       break;
     case Parallel_type::ALL:
-      return (manifold_dimension() == 2 ? MESH_Num_Edges(mesh) : MESH_Num_Faces(mesh));
+      return (manifold_dimension() == 2 ? MESH_Num_Edges(mesh_) : MESH_Num_Faces(mesh_));
       break;
     default:
       return 0;
@@ -1417,7 +1163,7 @@ unsigned int Mesh_MSTK::num_entities(const Entity_kind kind,
       return !serial_run ? MSet_Num_Entries(GhostCells) : 0;
       break;
     case Parallel_type::ALL:
-      return ((manifold_dimension() == 2) ? MESH_Num_Faces(mesh) : MESH_Num_Regions(mesh));
+      return ((manifold_dimension() == 2) ? MESH_Num_Faces(mesh_) : MESH_Num_Regions(mesh_));
       break;
     default:
       return 0;
@@ -1616,7 +1362,7 @@ void Mesh_MSTK::cell_get_faces_and_dirs_unordered(const Entity_ID cellid,
 {
   MEntity_ptr cell;
 
-  AMANZI_ASSERT(faceids != NULL);
+  AMANZI_ASSERT(faceids != nullptr);
 
   cell = cell_id_to_handle[cellid];
 
@@ -1729,11 +1475,11 @@ void Mesh_MSTK::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
 void Mesh_MSTK::cell_get_edges_internal_(const Entity_ID cellid,
                                          Entity_ID_List *edgeids) const 
 {
-  assert(edges_initialized);
+  AMANZI_ASSERT(edges_initialized);
 
   MEntity_ptr cell;
 
-  AMANZI_ASSERT(edgeids != NULL);
+  AMANZI_ASSERT(edgeids != nullptr);
 
   cell = cell_id_to_handle[cellid];
 
@@ -1816,11 +1562,11 @@ void Mesh_MSTK::cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
     cell_get_edges(cellid, edgeids);
   else {
 
-    assert(edges_initialized);
+    AMANZI_ASSERT(edges_initialized);
     
     MEntity_ptr cell;
     
-    AMANZI_ASSERT(edgeids != NULL);
+    AMANZI_ASSERT(edgeids != nullptr);
     
     cell = cell_id_to_handle[cellid];
     
@@ -1882,7 +1628,7 @@ void Mesh_MSTK::cell_get_nodes(const Entity_ID cellid,
   MEntity_ptr cell;
   int nn, lid;
 
-  AMANZI_ASSERT(nodeids != NULL);
+  AMANZI_ASSERT(nodeids != nullptr);
 
   cell = cell_id_to_handle[cellid];
       
@@ -1938,7 +1684,7 @@ void Mesh_MSTK::face_get_edges_and_dirs_internal_(const Entity_ID faceid,
                                                   std::vector<int> *edge_dirs,
                                                   bool ordered) const
 {
-  AMANZI_ASSERT(edgeids != NULL);
+  AMANZI_ASSERT(edgeids != nullptr);
 
   AMANZI_ASSERT(faces_initialized);
   AMANZI_ASSERT(edges_initialized);
@@ -2025,7 +1771,7 @@ void Mesh_MSTK::face_get_nodes(const Entity_ID faceid,
 
   AMANZI_ASSERT(faces_initialized);
 
-  AMANZI_ASSERT(nodeids != NULL);
+  AMANZI_ASSERT(nodeids != nullptr);
 
   genface = face_id_to_handle[faceid];
   
@@ -2043,7 +1789,7 @@ void Mesh_MSTK::face_get_nodes(const Entity_ID faceid,
     */
 
     List_ptr fverts = MF_Vertices(genface,dir,0);
-    assert(fverts != NULL);
+    AMANZI_ASSERT(fverts != nullptr);
 
     nn = List_Num_Entries(fverts);
     nodeids->resize(nn);
@@ -2107,7 +1853,7 @@ void Mesh_MSTK::node_get_cells(const Entity_ID nodeid,
   List_ptr cell_list;
   MEntity_ptr ment;
 
-  AMANZI_ASSERT (cellids != NULL);
+  AMANZI_ASSERT (cellids != nullptr);
 
   MVertex_ptr mv = (MVertex_ptr) vtx_id_to_handle[nodeid];
   
@@ -2197,7 +1943,7 @@ void Mesh_MSTK::node_get_faces(const Entity_ID nodeid,
   MEntity_ptr ment;
 
   AMANZI_ASSERT(faces_initialized);
-  AMANZI_ASSERT(faceids != NULL);
+  AMANZI_ASSERT(faceids != nullptr);
 
   MVertex_ptr mv = (MVertex_ptr) vtx_id_to_handle[nodeid];
 
@@ -2288,7 +2034,7 @@ void Mesh_MSTK::node_get_cell_faces(const Entity_ID nodeid,
   MEdge_ptr me;
 
   AMANZI_ASSERT(faces_initialized);
-  AMANZI_ASSERT(faceids != NULL);
+  AMANZI_ASSERT(faceids != nullptr);
 
   MVertex_ptr mv = (MVertex_ptr) vtx_id_to_handle[nodeid];
 
@@ -2370,7 +2116,7 @@ void Mesh_MSTK::edge_get_cells(const Entity_ID edgeid,
   List_ptr cell_list;
   MEntity_ptr ment;
 
-  AMANZI_ASSERT (cellids != NULL);
+  AMANZI_ASSERT (cellids != nullptr);
 
   MEdge_ptr me = (MEdge_ptr) edge_id_to_handle[edgeid];
   
@@ -2423,7 +2169,7 @@ void Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid,
   int lid, n;
 
   AMANZI_ASSERT(faces_initialized);
-  AMANZI_ASSERT(cellids != NULL);
+  AMANZI_ASSERT(cellids != nullptr);
   cellids->clear();
   Entity_ID_List::iterator it = cellids->begin();
   n = 0;
@@ -2498,7 +2244,7 @@ void Mesh_MSTK::cell_get_face_adj_cells(const Entity_ID cellid,
 
   AMANZI_ASSERT(faces_initialized);
 
-  assert(fadj_cellids != NULL);
+  AMANZI_ASSERT(fadj_cellids != nullptr);
 
   fadj_cellids->clear();
 
@@ -2582,7 +2328,7 @@ void Mesh_MSTK::cell_get_node_adj_cells(const Entity_ID cellid,
   int lid, mkid;
   List_ptr cell_list;
 
-  assert(nadj_cellids != NULL);
+  AMANZI_ASSERT(nadj_cellids != nullptr);
 
   nadj_cellids->clear();
 
@@ -2676,7 +2422,7 @@ void Mesh_MSTK::node_get_coordinates(const Entity_ID nodeid,
   double coords[3];
   int spdim = space_dimension();
   
-  AMANZI_ASSERT(ncoords != NULL);
+  AMANZI_ASSERT(ncoords != nullptr);
 
   vtx = vtx_id_to_handle[nodeid];
 
@@ -2811,7 +2557,7 @@ void Mesh_MSTK::node_set_coordinates(const AmanziMesh::Entity_ID nodeid,
   MVertex_ptr v = vtx_id_to_handle[nodeid];
 
   double coordarray[3] = {0.0,0.0,0.0};
-  for (int i = 0; i < Mesh::space_dimension(); i++)
+  for (int i = 0; i < space_dimension(); i++)
     coordarray[i] = coords[i];
 
   MV_Set_Coords(v,(double *)coordarray);
@@ -2821,9 +2567,9 @@ void Mesh_MSTK::node_set_coordinates(const AmanziMesh::Entity_ID nodeid,
 MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& region,
                               const Entity_kind kind) const
 {
-  int celldim = Mesh::manifold_dimension();
-  int space_dim_ = Mesh::space_dimension();
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
+  int celldim = manifold_dimension();
+  int space_dim_ = space_dimension();
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = geometric_model();
 
   // Modify region/set name by prefixing it with the type of entity requested
 
@@ -2837,7 +2583,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
   case CELL:    // cellsets      
 
     enttype = (celldim == 3) ? MREGION : MFACE;
-    mset = MSet_New(mesh,internal_name.c_str(),enttype);
+    mset = MSet_New(mesh_,internal_name.c_str(),enttype);
       
     if (region->type() == AmanziGeometry::BOX ||
         region->type() == AmanziGeometry::COLORFUNCTION) {
@@ -2935,20 +2681,20 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         Errors::Message mesg;
         mesg << "Entity type of labeled set region \"" << region->name() 
              << "\" and build_set request (cell) do not match";
-        amanzi_throw(mesg);
+        Exceptions::amanzi_throw(mesg);
       }
 
-      mset = MESH_MSetByName(mesh,internal_name.c_str());
+      mset = MESH_MSetByName(mesh_,internal_name.c_str());
 
       std::string other_internal_name = other_internal_name_of_set(region,kind);
-      MSet_ptr mset2 = MESH_MSetByName(mesh,other_internal_name.c_str());
+      MSet_ptr mset2 = MESH_MSetByName(mesh_,other_internal_name.c_str());
 
       if (mset) {
         if (mset2) {
           std::stringstream mesg_stream;
           mesg_stream << "Exodus II file has element block and element set with the same ID " << label << " - Amanzi cannot handle this case.";
           Errors::Message mesg(mesg_stream.str());
-          amanzi_throw(mesg);
+          Exceptions::amanzi_throw(mesg);
         }
       } 
       else {
@@ -2958,7 +2704,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
           std::stringstream mesg_stream;
           mesg_stream << "Exodus II file has no labeled cell set with ID " << label;
           Errors::Message mesg(mesg_stream.str());
-          amanzi_throw(mesg);
+          Exceptions::amanzi_throw(mesg);
         }
       }
     }
@@ -2986,7 +2732,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
     //            }
 
     enttype = (celldim == 3) ? MFACE : MEDGE;
-    mset = MSet_New(mesh,internal_name.c_str(),enttype);
+    mset = MSet_New(mesh_,internal_name.c_str(),enttype);
 
     if (region->type() == AmanziGeometry::BOX) {
       int nface = num_entities(FACE, Parallel_type::ALL);
@@ -3056,10 +2802,10 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         Errors::Message mesg;
         mesg << "Entity type of labeled set region \"" << region->name() 
              << "\" and build_set request (face) do not match";
-        amanzi_throw(mesg);
+        Exceptions::amanzi_throw(mesg);
       }
 
-      mset = MESH_MSetByName(mesh,internal_name.c_str());
+      mset = MESH_MSetByName(mesh_,internal_name.c_str());
     }
     else if (region->type() == AmanziGeometry::LOGICAL) {
       // Will handle it later in the routine
@@ -3077,7 +2823,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       }
     }
     else {
-      Teuchos::RCP<const VerboseObject> verbobj = Mesh::verbosity_obj();
+      Teuchos::RCP<const VerboseObject> verbobj = verbosity_obj();
       if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_HIGH)) {
         Teuchos::OSTab tab = verbobj->getOSTab();
         *(verbobj->os()) << "Requested FACES on region " << region->name()
@@ -3091,7 +2837,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
   case NODE: // Nodesets
 
     enttype = MVERTEX;
-    mset = MSet_New(mesh,internal_name.c_str(),enttype);
+    mset = MSet_New(mesh_,internal_name.c_str(),enttype);
 
     if (region->type() == AmanziGeometry::BOX ||
         region->type() == AmanziGeometry::PLANE ||
@@ -3134,16 +2880,16 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         Errors::Message mesg;
         mesg << "Entity type of labeled set region \"" << region->name() 
              << "\" and build_set request (face) do not match";
-        amanzi_throw(mesg);
+        Exceptions::amanzi_throw(mesg);
       }
 
-      mset = MESH_MSetByName(mesh,internal_name.c_str());
+      mset = MESH_MSetByName(mesh_,internal_name.c_str());
     }
     else if (region->type() == AmanziGeometry::LOGICAL) {
       // We will handle it later in the routine
     }
     else {
-      Teuchos::RCP<const VerboseObject> verbobj = Mesh::verbosity_obj();
+      Teuchos::RCP<const VerboseObject> verbobj = verbosity_obj();
       if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_HIGH)) {
         Teuchos::OSTab tab = verbobj->getOSTab();
         *(verbobj->os()) << "Requested POINTS on region " << region->name() 
@@ -3179,11 +2925,11 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         mesg_stream << "Geometric model has no region named " << 
           region_names[r];
         Errors::Message mesg(mesg_stream.str());
-        amanzi_throw(mesg);
+        Exceptions::amanzi_throw(mesg);
       }
         
       internal_name = internal_name_of_set(rgn1,kind);
-      MSet_ptr mset1 = MESH_MSetByName(mesh,internal_name.c_str());
+      MSet_ptr mset1 = MESH_MSetByName(mesh_,internal_name.c_str());
       if (!mset1)        
         mset1 = build_set(rgn1,kind);  // Recursive call
 
@@ -3197,7 +2943,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       if (MSet_EntDim(msets[ms]) != enttype) {
         Errors::Message 
           mesg("Amanzi cannot operate on sets of different entity types");
-        amanzi_throw(mesg);               
+        Exceptions::amanzi_throw(mesg);               
       }
     
     int mkid = MSTK_GetMarker();
@@ -3211,24 +2957,24 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       switch (enttype) {
       case MREGION:
         MRegion_ptr mr;
-        while ((mr = MESH_Next_Region(mesh,&idx))) 
+        while ((mr = MESH_Next_Region(mesh_,&idx))) 
           if (!MEnt_IsMarked(mr,mkid))
             MSet_Add(mset,mr);
         break;        
       case MFACE: 
         MFace_ptr mf;
-        while ((mf = MESH_Next_Face(mesh,&idx))) 
+        while ((mf = MESH_Next_Face(mesh_,&idx))) 
           if (!MEnt_IsMarked(mf,mkid))
             MSet_Add(mset,mf);
         break;
       case MEDGE:
         MEdge_ptr me;
-        while ((me = MESH_Next_Edge(mesh,&idx))) 
+        while ((me = MESH_Next_Edge(mesh_,&idx))) 
           if (!MEnt_IsMarked(me,mkid))
             MSet_Add(mset,me);
       case MVERTEX:
         MVertex_ptr mv;
-        while ((mv = MESH_Next_Vertex(mesh,&idx))) 
+        while ((mv = MESH_Next_Vertex(mesh_,&idx))) 
           if (!MEnt_IsMarked(mv,mkid))
             MSet_Add(mset,mv);
         break;
@@ -3279,7 +3025,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
 
       /* Can't do this using markers alone - need attributes */
       
-      MAttrib_ptr matt = MAttrib_New(mesh,"XSECTATT",INT,MALLTYPE);
+      MAttrib_ptr matt = MAttrib_New(mesh_,"XSECTATT",INT,MALLTYPE);
       
       for (int ms = 0; ms < msets.size(); ms++) {
         MEntity_ptr ment;
@@ -3347,16 +3093,15 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
   MSet_ptr mset(NULL), mset1(NULL);
   MEntity_ptr ment;
   bool found(false);
-  int celldim = Mesh::manifold_dimension();
-  int space_dim_ = Mesh::space_dimension();
-  const Epetra_Comm *epcomm_ = get_comm();
-  Teuchos::RCP<const VerboseObject> verbobj = Mesh::verbosity_obj();
+  int celldim = manifold_dimension();
+  int space_dim_ = space_dimension();
+  Teuchos::RCP<const VerboseObject> verbobj = verbosity_obj();
 
   assert(setents != NULL);
   
   setents->clear();
 
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = geometric_model();
 
   // Is there an appropriate region by this name?
 
@@ -3373,7 +3118,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
     std::stringstream mesg_stream;
     mesg_stream << "Geometric model has no region named \"" << setname <<"\"\n";
     Errors::Message mesg(mesg_stream.str());
-    amanzi_throw(mesg);
+    Exceptions::amanzi_throw(mesg);
   }
 
 
@@ -3400,7 +3145,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
           }
         } 
       else {
-        mset1 = MESH_MSetByName(mesh,internal_name.c_str());
+        mset1 = MESH_MSetByName(mesh_,internal_name.c_str());
       
         if (!mset1 && kind == CELL) {
           // Since both element blocks and cell sets are referenced
@@ -3411,19 +3156,19 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
           // CHECKED FOR THIS IN BUILD SET
 
           std::string internal_name2 = other_internal_name_of_set(rgn,kind);
-          mset1 = MESH_MSetByName(mesh,internal_name2.c_str());
+          mset1 = MESH_MSetByName(mesh_,internal_name2.c_str());
         }
 
         /// Due to the parallel partitioning its possible that this
         /// set is not on this processor
       
         if (!mset1) {
-          if (epcomm_->NumProc() == 1) {
+          if (get_comm()->NumProc() == 1) {
             Errors::Message msg;
             msg << "Could not find labeled set \"" << label 
                 << "\" in mesh file to initialize mesh set \"" << setname 
                 << "\". Verify mesh file.";
-            amanzi_throw(msg);
+            Exceptions::amanzi_throw(msg);
           }
         }
       }
@@ -3433,7 +3178,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
            (rgn->type() == AmanziGeometry::LINE_SEGMENT))
     {
       // Call routine from the base class and exit.
-      Mesh::get_set_entities_box_vofs_(rgn, kind, ptype, setents, vofs);
+      get_set_entities_box_vofs_(rgn, kind, ptype, setents, vofs);
       return;
     }
   else
@@ -3441,7 +3186,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
       // Modify region/set name by prefixing it with the type of
       // entity requested
 
-      mset1 = MESH_MSetByName(mesh,internal_name.c_str());
+      mset1 = MESH_MSetByName(mesh_,internal_name.c_str());
 
       // Make sure we retrieved a mesh set with the right kind of entities
 
@@ -3476,7 +3221,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
       if (mset1 && MSet_EntDim(mset1) != entdim) 
         {
           idx = 0;
-          while ((mset1 = MESH_Next_MSet(mesh,&idx))) 
+          while ((mset1 = MESH_Next_MSet(mesh_,&idx))) 
             {
               MSet_Name(mset1,setname1);
               
@@ -3501,7 +3246,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
 #ifdef DEBUG
   int nent_glob;
 
-  epcomm_->SumAll(&nent_loc,&nent_glob,1);
+  get_comm()->SumAll(&nent_loc,&nent_glob,1);
   if (nent_glob == 0) {
     std::stringstream mesg_stream;
     mesg_stream << "Could not retrieve any mesh entities for set " << setname << std::endl;
@@ -3556,7 +3301,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
   // extracting the appropriate category of entities
     
 #ifdef DEBUG
-  epcomm_->SumAll(&nent_loc,&nent_glob,1);
+  get_comm()->SumAll(&nent_loc,&nent_glob,1);
   
   if (nent_glob == 0) {
     std::stringstream mesg_stream;
@@ -3623,7 +3368,6 @@ void Mesh_MSTK::init_cell_map()
   int *cell_gids;
   int ncell, idx, i;
   MEntity_ptr ment;
-  const Epetra_Comm *epcomm_ = get_comm();
 
   if (!serial_run) {
 
@@ -3641,7 +3385,7 @@ void Mesh_MSTK::init_cell_map()
     while ((ment = MSet_Next_Entry(OwnedCells,&idx)))
       cell_gids[i++] = MEnt_GlobalID(ment)-1;
 
-    cell_map_wo_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm_);
+    cell_map_wo_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*comm_);
     
 
     ncell += nnotowned;
@@ -3650,7 +3394,7 @@ void Mesh_MSTK::init_cell_map()
     while ((ment = MSet_Next_Entry(GhostCells,&idx)))
       cell_gids[i++] = MEnt_GlobalID(ment)-1;
     
-    cell_map_w_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm_);
+    cell_map_w_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*comm_);
 
   }
   else {    
@@ -3661,7 +3405,7 @@ void Mesh_MSTK::init_cell_map()
     while ((ment = MSet_Next_Entry(OwnedCells,&idx)))      
       cell_gids[i++] = MEnt_ID(ment)-1;
 
-    cell_map_wo_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm_);
+    cell_map_wo_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*comm_);
   }
 
   delete [] cell_gids;
@@ -3680,7 +3424,6 @@ void Mesh_MSTK::init_face_map()
   int *face_gids = nullptr, *extface_gids = nullptr;
   int nface = -1, n_extface = -1, idx, i = -1, j = -1;
   MEntity_ptr ment = nullptr;
-  const Epetra_Comm *epcomm_ = get_comm();
 
   if (!serial_run) {
 
@@ -3718,8 +3461,8 @@ void Mesh_MSTK::init_face_map()
     n_extface = j;
     nface = nowned;
     
-    face_map_wo_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm_);
-    extface_map_wo_ghosts_ = new Epetra_Map(-1,n_extface,extface_gids,0,*epcomm_);
+    face_map_wo_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*comm_);
+    extface_map_wo_ghosts_ = new Epetra_Map(-1,n_extface,extface_gids,0,*comm_);
 
    
     idx = 0;
@@ -3729,7 +3472,7 @@ void Mesh_MSTK::init_face_map()
     }
     nface += nnotowned;
 
-    face_map_w_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm_);
+    face_map_w_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*comm_);
 
     std::vector<int> gl_id(nnotowned), pr_id(nnotowned), lc_id(nnotowned);
 
@@ -3785,19 +3528,19 @@ void Mesh_MSTK::init_face_map()
       }
     }
     
-    extface_map_w_ghosts_ = new Epetra_Map(-1, n_extface_w_ghosts, global_id_ghosted.data(), 0, *epcomm_);
+    extface_map_w_ghosts_ = new Epetra_Map(-1, n_extface_w_ghosts, global_id_ghosted.data(), 0, *comm_);
         
   }
   else {
 
     if (manifold_dimension() == 3) {
 
-      nface = MESH_Num_Faces(mesh);
+      nface = MESH_Num_Faces(mesh_);
       face_gids = new int[nface];
       extface_gids = new int[nface];
       
       idx = 0; i = 0; j = 0;
-      while ((ment = MESH_Next_Face(mesh,&idx))) {
+      while ((ment = MESH_Next_Face(mesh_,&idx))) {
         int gid = MEnt_ID(ment);
         face_gids[i++] = gid-1;
         
@@ -3811,12 +3554,12 @@ void Mesh_MSTK::init_face_map()
     }
     else if (manifold_dimension() == 2) {
       
-      nface = MESH_Num_Edges(mesh);
+      nface = MESH_Num_Edges(mesh_);
       face_gids = new int[nface];
       extface_gids = new int[nface];
       
       idx = 0; i = 0; j = 0;
-      while ((ment = MESH_Next_Edge(mesh,&idx))) {
+      while ((ment = MESH_Next_Edge(mesh_,&idx))) {
         int gid = MEnt_ID(ment);
         face_gids[i++] = gid-1;
         
@@ -3829,8 +3572,8 @@ void Mesh_MSTK::init_face_map()
     }
     n_extface = j;
 
-    face_map_wo_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm_);
-    extface_map_wo_ghosts_ = new Epetra_Map(-1,n_extface,extface_gids,0,*epcomm_);
+    face_map_wo_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*comm_);
+    extface_map_wo_ghosts_ = new Epetra_Map(-1,n_extface,extface_gids,0,*comm_);
   }
 
   owned_to_extface_importer_ = new Epetra_Import(*extface_map_wo_ghosts_,*face_map_wo_ghosts_);
@@ -3852,7 +3595,6 @@ void Mesh_MSTK::init_edge_map()
   int *edge_gids;
   int nedge, idx, i;
   MEntity_ptr ment;
-  const Epetra_Comm *epcomm_ = get_comm();
 
   if (!serial_run) {
 
@@ -3872,7 +3614,7 @@ void Mesh_MSTK::init_edge_map()
     }
     nedge = nowned;
     
-    edge_map_wo_ghosts_ = new Epetra_Map(-1,nedge,edge_gids,0,*epcomm_);
+    edge_map_wo_ghosts_ = new Epetra_Map(-1,nedge,edge_gids,0,*comm_);
 
     idx = 0;
     while ((ment = MSet_Next_Entry(NotOwnedEdges,&idx))) 
@@ -3880,21 +3622,21 @@ void Mesh_MSTK::init_edge_map()
 
     nedge += nnotowned;
 
-    edge_map_w_ghosts_ = new Epetra_Map(-1,nedge,edge_gids,0,*epcomm_);
+    edge_map_w_ghosts_ = new Epetra_Map(-1,nedge,edge_gids,0,*comm_);
 
   }
   else {
 
-    nedge = MESH_Num_Edges(mesh);
+    nedge = MESH_Num_Edges(mesh_);
     edge_gids = new int[nedge];
       
     idx = 0; i = 0;
-    while ((ment = MESH_Next_Edge(mesh,&idx))) {
+    while ((ment = MESH_Next_Edge(mesh_,&idx))) {
       int gid = MEnt_ID(ment);
       edge_gids[i++] = gid-1;
     }
 
-    edge_map_wo_ghosts_ = new Epetra_Map(-1,nedge,edge_gids,0,*epcomm_);
+    edge_map_wo_ghosts_ = new Epetra_Map(-1,nedge,edge_gids,0,*comm_);
   }
 
   delete [] edge_gids;
@@ -3913,7 +3655,6 @@ void Mesh_MSTK::init_node_map()
   int *vert_gids;
   int nvert, idx, i;
   MEntity_ptr ment;
-  const Epetra_Comm *epcomm_ = get_comm();
 
   if (!serial_run) {
 
@@ -3931,7 +3672,7 @@ void Mesh_MSTK::init_node_map()
 
     nvert = nowned;
     
-    node_map_wo_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm_);
+    node_map_wo_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*comm_);
     
 
     idx = 0;
@@ -3940,7 +3681,7 @@ void Mesh_MSTK::init_node_map()
 
     nvert += nnotowned;
 
-    node_map_w_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm_);
+    node_map_w_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*comm_);
 
   }
   else {
@@ -3952,7 +3693,7 @@ void Mesh_MSTK::init_node_map()
     while ((ment = MSet_Next_Entry(OwnedVerts,&idx)))
       vert_gids[i++] = MEnt_ID(ment)-1;
 
-    node_map_wo_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm_);
+    node_map_wo_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*comm_);
   }
 
   delete [] vert_gids;
@@ -4012,7 +3753,7 @@ void Mesh_MSTK::post_create_steps_(const bool request_faces,
   if (request_faces) init_faces();
   init_cells();
 
-  if (Mesh::geometric_model() != Teuchos::null)
+  if (geometric_model() != Teuchos::null)
     init_set_info();
 
 }
@@ -4024,22 +3765,22 @@ void Mesh_MSTK::post_create_steps_(const bool request_faces,
 void Mesh_MSTK::clear_internals_() 
 { 
 
-  faceflip = NULL;
+  faceflip = nullptr;
 
-  cell_map_w_ghosts_ = cell_map_wo_ghosts_ = NULL;
-  edge_map_w_ghosts_ = edge_map_wo_ghosts_ = NULL;
-  face_map_w_ghosts_ = face_map_wo_ghosts_ = NULL;
-  node_map_w_ghosts_ = node_map_wo_ghosts_ = NULL;
+  cell_map_w_ghosts_ = cell_map_wo_ghosts_ = nullptr;
+  edge_map_w_ghosts_ = edge_map_wo_ghosts_ = nullptr;
+  face_map_w_ghosts_ = face_map_wo_ghosts_ = nullptr;
+  node_map_w_ghosts_ = node_map_wo_ghosts_ = nullptr;
 
-  mesh = NULL;
+  mesh_ = nullptr;
 
-  OwnedVerts = NotOwnedVerts = NULL;
-  OwnedEdges = NotOwnedEdges = NULL;
-  OwnedFaces = NotOwnedFaces = NULL;
-  OwnedCells = GhostCells = NULL;
+  OwnedVerts = NotOwnedVerts = nullptr;
+  OwnedEdges = NotOwnedEdges = nullptr;
+  OwnedFaces = NotOwnedFaces = nullptr;
+  OwnedCells = GhostCells = nullptr;
 
-  celltype_att = NULL;
-  rparentatt = fparentatt = eparentatt = vparentatt = NULL;
+  celltype_att = nullptr;
+  rparentatt = fparentatt = eparentatt = vparentatt = nullptr;
 }
 
 
@@ -4145,7 +3886,7 @@ void Mesh_MSTK::init_vertex_id2handle_maps()
   
   // Amanzi has IDs starting from 0, MSTK has IDs starting from 1
 
-  nv = MESH_Num_Vertices(mesh);
+  nv = MESH_Num_Vertices(mesh_);
 
   vtx_id_to_handle.resize(nv);
 
@@ -4178,7 +3919,7 @@ void Mesh_MSTK::init_edge_id2handle_maps()
   
   // Amanzi has IDs starting from 0, MSTK has IDs starting from 1
 
-  ne = MESH_Num_Edges(mesh);
+  ne = MESH_Num_Edges(mesh_);
 
   edge_id_to_handle.resize(ne);
 
@@ -4210,7 +3951,7 @@ void Mesh_MSTK::init_face_id2handle_maps()
   
   // Amanzi has IDs starting from 0, MSTK has IDs starting from 1
 
-  nf = (manifold_dimension() == 2) ? MESH_Num_Edges(mesh) : MESH_Num_Faces(mesh);
+  nf = (manifold_dimension() == 2) ? MESH_Num_Edges(mesh_) : MESH_Num_Faces(mesh_);
 
   face_id_to_handle.resize(nf);
 
@@ -4242,7 +3983,7 @@ void Mesh_MSTK::init_cell_id2handle_maps()
   
   // Amanzi has IDs starting from 0, MSTK has IDs starting from 1
 
-  nc = (manifold_dimension() == 2) ? MESH_Num_Faces(mesh) : MESH_Num_Regions(mesh);
+  nc = (manifold_dimension() == 2) ? MESH_Num_Faces(mesh_) : MESH_Num_Regions(mesh_);
 
   cell_id_to_handle.resize(nc);
 
@@ -4272,11 +4013,11 @@ void Mesh_MSTK::init_pvert_lists()
 
   // Get all vertices on this processor 
 
-  NotOwnedVerts = MSet_New(mesh,"NotOwnedVerts",MVERTEX);
-  OwnedVerts = MSet_New(mesh,"OwnedVerts",MVERTEX);
+  NotOwnedVerts = MSet_New(mesh_,"NotOwnedVerts",MVERTEX);
+  OwnedVerts = MSet_New(mesh_,"OwnedVerts",MVERTEX);
 
   idx = 0;
-  while ((vtx = MESH_Next_Vertex(mesh,&idx))) {
+  while ((vtx = MESH_Next_Vertex(mesh_,&idx))) {
     if (MV_PType(vtx) == PGHOST)
       MSet_Add(NotOwnedVerts,vtx);
     else
@@ -4295,11 +4036,11 @@ void Mesh_MSTK::init_pedge_lists()
 
   // Get all vertices on this processor 
 
-  NotOwnedEdges = MSet_New(mesh,"NotOwnedEdges",MEDGE);
-  OwnedEdges = MSet_New(mesh,"OwnedEdges",MEDGE);
+  NotOwnedEdges = MSet_New(mesh_,"NotOwnedEdges",MEDGE);
+  OwnedEdges = MSet_New(mesh_,"OwnedEdges",MEDGE);
 
   idx = 0;
-  while ((edge = MESH_Next_Edge(mesh,&idx))) {
+  while ((edge = MESH_Next_Edge(mesh_,&idx))) {
     if (ME_PType(edge) == PGHOST)
       MSet_Add(NotOwnedEdges,edge);
     else
@@ -4320,7 +4061,7 @@ void Mesh_MSTK::init_pedge_dirs() {
   int local_faceid0, local_faceid1;
   int remote_faceid0, remote_faceid1;
 
-  int ne = MESH_Num_Edges(mesh);
+  int ne = MESH_Num_Edges(mesh_);
 
   if (serial_run) {
     edgeflip = new bool[ne];
@@ -4331,12 +4072,12 @@ void Mesh_MSTK::init_pedge_dirs() {
     // are oriented the same way; if not, turn on flag to flip the directions
     // when returning to the application code
 
-    attev0 = MAttrib_New(mesh,"TMP_EV0_ATT",INT,MEDGE);
-    attev1 = MAttrib_New(mesh,"TMP_EV1_ATT",INT,MEDGE);
+    attev0 = MAttrib_New(mesh_,"TMP_EV0_ATT",INT,MEDGE);
+    attev1 = MAttrib_New(mesh_,"TMP_EV1_ATT",INT,MEDGE);
   
 
     idx = 0;
-    while ((edge = MESH_Next_Edge(mesh,&idx))) {
+    while ((edge = MESH_Next_Edge(mesh_,&idx))) {
       if (ME_PType(edge) != PINTERIOR) {
         MVertex_ptr vertex0 = ME_Vertex(edge,0);
         MVertex_ptr vertex1 = ME_Vertex(edge,1);
@@ -4347,7 +4088,7 @@ void Mesh_MSTK::init_pedge_dirs() {
     }  
 
 
-    MESH_UpdateAttributes(mesh,mpicomm_);
+    MESH_UpdateAttributes(mesh_,mpicomm_);
     
     
     edgeflip = new bool[ne];
@@ -4379,7 +4120,7 @@ void Mesh_MSTK::init_pedge_dirs() {
           std::stringstream mesg_stream;
           mesg_stream << "Edge vertices mismatch between master and ghost (processor " << myprocid << ")";
           Errors::Message mesg(mesg_stream.str());
-          amanzi_throw(mesg);
+          Exceptions::amanzi_throw(mesg);
         }
       }
     }
@@ -4400,11 +4141,11 @@ void Mesh_MSTK::init_pface_lists()
 
     MFace_ptr face;
 
-    NotOwnedFaces = MSet_New(mesh,"NotOwnedFaces",MFACE);
-    OwnedFaces = MSet_New(mesh,"OwnedFaces",MFACE);
+    NotOwnedFaces = MSet_New(mesh_,"NotOwnedFaces",MFACE);
+    OwnedFaces = MSet_New(mesh_,"OwnedFaces",MFACE);
 
     idx = 0;
-    while ((face = MESH_Next_Face(mesh,&idx))) {
+    while ((face = MESH_Next_Face(mesh_,&idx))) {
       if (MF_PType(face) == PGHOST)
         MSet_Add(NotOwnedFaces,face);
       else
@@ -4415,11 +4156,11 @@ void Mesh_MSTK::init_pface_lists()
 
     MEdge_ptr edge;
 
-    NotOwnedFaces = MSet_New(mesh,"NotOwnedFaces",MFACE);
-    OwnedFaces = MSet_New(mesh,"OwnedFaces",MFACE);
+    NotOwnedFaces = MSet_New(mesh_,"NotOwnedFaces",MFACE);
+    OwnedFaces = MSet_New(mesh_,"OwnedFaces",MFACE);
 
     idx = 0;
-    while ((edge = MESH_Next_Edge(mesh,&idx))) {
+    while ((edge = MESH_Next_Edge(mesh_,&idx))) {
       if (ME_PType(edge) == PGHOST)
         MSet_Add(NotOwnedFaces,edge);
       else
@@ -4438,7 +4179,7 @@ void Mesh_MSTK::init_pface_lists()
 
 void Mesh_MSTK::init_pface_dirs()
 {
-  int nf = (manifold_dimension() == 2) ? MESH_Num_Edges(mesh) : MESH_Num_Faces(mesh);
+  int nf = (manifold_dimension() == 2) ? MESH_Num_Edges(mesh_) : MESH_Num_Faces(mesh_);
 
   if (serial_run) {
     faceflip = new bool[nf];
@@ -4464,18 +4205,18 @@ void Mesh_MSTK::init_pface_dirs_3() {
   int local_regid0, local_regid1;
   int remote_regid0, remote_regid1;
   
-  int nf = MESH_Num_Faces(mesh);
+  int nf = MESH_Num_Faces(mesh_);
 
   // Do some additional processing to see if ghost faces and their masters
   // are oriented the same way; if not, turn on flag to flip the directions
   // when returning to the application code
   
   // attributes to store 
-  attfc0 = MAttrib_New(mesh,"TMP_FC0_ATT",INT,MFACE);
-  attfc1 = MAttrib_New(mesh,"TMP_FC1_ATT",INT,MFACE);
+  attfc0 = MAttrib_New(mesh_,"TMP_FC0_ATT",INT,MFACE);
+  attfc1 = MAttrib_New(mesh_,"TMP_FC1_ATT",INT,MFACE);
 
   idx = 0;
-  while ((face = MESH_Next_Face(mesh,&idx))) {
+  while ((face = MESH_Next_Face(mesh_,&idx))) {
     if (MF_PType(face) != PINTERIOR) {
       region0 = MF_Region(face,0);
       if (region0)
@@ -4487,7 +4228,7 @@ void Mesh_MSTK::init_pface_dirs_3() {
     }
   }    
   
-  MESH_UpdateAttributes(mesh,mpicomm_);
+  MESH_UpdateAttributes(mesh_,mpicomm_);
 
 
   faceflip = new bool[nf];
@@ -4520,7 +4261,7 @@ void Mesh_MSTK::init_pface_dirs_3() {
         std::stringstream mesg_stream;
         mesg_stream << "Face cells mismatch between master and ghost (processor " << myprocid << ")";
         Errors::Message mesg(mesg_stream.str());
-        amanzi_throw(mesg);
+        Exceptions::amanzi_throw(mesg);
       }
     }
   }
@@ -4537,17 +4278,17 @@ void Mesh_MSTK::init_pface_dirs_2() {
   MAttrib_ptr attev0, attev1;
   int idx;
 
-  int ne = MESH_Num_Edges(mesh);
+  int ne = MESH_Num_Edges(mesh_);
 
   // Do some additional processing to see if ghost faces and their masters
   // are oriented the same way; if not, turn on flag to flip the directions
   // when returning to the application code
   
-  attev0 = MAttrib_New(mesh,"TMP_EV0_ATT",INT,MEDGE);
-  attev1 = MAttrib_New(mesh,"TMP_EV1_ATT",INT,MEDGE);
+  attev0 = MAttrib_New(mesh_,"TMP_EV0_ATT",INT,MEDGE);
+  attev1 = MAttrib_New(mesh_,"TMP_EV1_ATT",INT,MEDGE);
 
   idx = 0;
-  while ((edge = MESH_Next_Edge(mesh,&idx))) {
+  while ((edge = MESH_Next_Edge(mesh_,&idx))) {
     if (ME_PType(edge) != PINTERIOR) {
       MVertex_ptr ev0 = ME_Vertex(edge, 0);
       MVertex_ptr ev1 = ME_Vertex(edge, 1);
@@ -4559,7 +4300,7 @@ void Mesh_MSTK::init_pface_dirs_2() {
     }
   }
 
-  MESH_UpdateAttributes(mesh,mpicomm_);
+  MESH_UpdateAttributes(mesh_,mpicomm_);
 
   faceflip = new bool[ne];
   for (int i = 0; i < ne; ++i) faceflip[i] = false;
@@ -4599,11 +4340,11 @@ void Mesh_MSTK::init_pcell_lists()
   if (manifold_dimension() == 3) {
     MRegion_ptr region;
 
-    OwnedCells = MSet_New(mesh,"OwnedCells",MREGION);
-    GhostCells = MSet_New(mesh,"GhostCells",MREGION);
+    OwnedCells = MSet_New(mesh_,"OwnedCells",MREGION);
+    GhostCells = MSet_New(mesh_,"GhostCells",MREGION);
 
     idx = 0;
-    while ((region = MESH_Next_Region(mesh,&idx))) {
+    while ((region = MESH_Next_Region(mesh_,&idx))) {
       if (MR_PType(region) == PGHOST)
         MSet_Add(GhostCells,region);
       else
@@ -4613,11 +4354,11 @@ void Mesh_MSTK::init_pcell_lists()
   else if (manifold_dimension() == 2) {
     MFace_ptr face;
 
-    OwnedCells = MSet_New(mesh,"OwnedCells",MFACE);
-    GhostCells = MSet_New(mesh,"GhostCells",MFACE);
+    OwnedCells = MSet_New(mesh_,"OwnedCells",MFACE);
+    GhostCells = MSet_New(mesh_,"GhostCells",MFACE);
 
     idx = 0;
-    while ((face = MESH_Next_Face(mesh,&idx))) {
+    while ((face = MESH_Next_Face(mesh_,&idx))) {
       if (MF_PType(face) == PGHOST)
         MSet_Add(GhostCells,face);
       else
@@ -4626,7 +4367,7 @@ void Mesh_MSTK::init_pcell_lists()
   }
   else {
     Errors::Message mesg("Implemented only for 2D and 3D");
-    amanzi_throw(mesg);
+    Exceptions::amanzi_throw(mesg);
   }
 
   return;
@@ -4638,11 +4379,11 @@ void Mesh_MSTK::init_set_info()
   MSet_ptr mset;
   char setname[256];
   
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = geometric_model();
 
   if (gm == Teuchos::null) { 
     Errors::Message mesg("Need region definitions to initialize sets");
-    amanzi_throw(mesg);
+    Exceptions::amanzi_throw(mesg);
   }
     
 
@@ -4668,26 +4409,26 @@ void Mesh_MSTK::init_set_info()
       else if (entity_type_str == "NODE")
         internal_name = internal_name_of_set(rgn,NODE);
 
-      mset = MESH_MSetByName(mesh,internal_name.c_str());
+      mset = MESH_MSetByName(mesh_,internal_name.c_str());
    
       if (!mset) {
         continue;  // Its possible some sets won't exist on some partitions
 
         //        Errors::Message mesg("Missing labeled set \"" + label + "\" or error in input");
-        //        amanzi_throw(mesg);
+        //        Exceptions::amanzi_throw(mesg);
       }
 
       entdim = MSet_EntDim(mset);
-      if (Mesh::manifold_dimension() == 3) {
+      if (manifold_dimension() == 3) {
 
         if ((entity_type_str == "CELL" && entdim != MREGION) ||
             (entity_type_str == "FACE" && entdim != MFACE) ||
             (entity_type_str == "NODE" && entdim != MVERTEX)) {
           Errors::Message mesg("Mismatch of entity type in labeled set region and mesh set");
-          amanzi_throw(mesg);
+          Exceptions::amanzi_throw(mesg);
         }
       }
-      else if (Mesh::manifold_dimension() == 2) {
+      else if (manifold_dimension() == 2) {
         if ((entity_type_str == "CELL" && entdim != MFACE) ||
             (entity_type_str == "FACE" && entdim != MEDGE) ||
             (entity_type_str == "NODE" && entdim != MVERTEX)) {
@@ -4717,7 +4458,7 @@ void Mesh_MSTK::init_set_info()
         
         std::string internal_name = internal_name_of_set(rgn,kind);
 
-        mset = MESH_MSetByName(mesh,internal_name.c_str());
+        mset = MESH_MSetByName(mesh_,internal_name.c_str());
 
         if (mset) {
           if (entities_deleted) {
@@ -4752,7 +4493,7 @@ void Mesh_MSTK::collapse_degen_edges()
   std::vector<int> merged_ents_info;
 
   idx = 0;
-  while ((edge = MESH_Next_Edge(mesh,&idx))) {
+  while ((edge = MESH_Next_Edge(mesh_,&idx))) {
 
     len2 = ME_Len(edge);
     
@@ -4801,7 +4542,7 @@ void Mesh_MSTK::collapse_degen_edges()
 
       if (!vkeep) {
         Errors::Message mesg("Could not collapse degenerate edge. Expect computational issues with connected elements");
-        amanzi_throw(mesg);
+        Exceptions::amanzi_throw(mesg);
       } 
       else {
         if (deleted_ents) {
@@ -4815,7 +4556,7 @@ void Mesh_MSTK::collapse_degen_edges()
       }
 #else
       Errors::Message mesg("Mesh contains a degenerate edge. MSTK version 3.0.0 or later is required to support collapsing of degenerate edges!");
-      amanzi_throw(mesg);
+      Exceptions::amanzi_throw(mesg);
 #endif
     }
   }
@@ -4850,7 +4591,7 @@ void Mesh_MSTK::collapse_degen_edges()
                  MPI_INT, mpicomm_);
 
   idx = 0;
-  while ((vertex = MESH_Next_Vertex(mesh, &idx))) {
+  while ((vertex = MESH_Next_Vertex(mesh_, &idx))) {
     if (MV_PType(vertex) == PGHOST) {
       int vgid = MV_GlobalID(vertex);
       for (int i = 0; i < nmerged_global; i++) {
@@ -4867,7 +4608,7 @@ void Mesh_MSTK::collapse_degen_edges()
 
 
   idx = 0;
-  while ((edge = MESH_Next_Edge(mesh, &idx))) {
+  while ((edge = MESH_Next_Edge(mesh_, &idx))) {
     if (ME_PType(edge) == PGHOST) {
       int egid = ME_GlobalID(edge);
       for (int i = 0; i < nmerged_global; i++) {
@@ -4884,7 +4625,7 @@ void Mesh_MSTK::collapse_degen_edges()
 
 
   idx = 0;
-  while ((face = MESH_Next_Face(mesh, &idx))) {
+  while ((face = MESH_Next_Face(mesh_, &idx))) {
     if (MF_PType(face) == PGHOST) {
       int fgid = MF_GlobalID(face);
       for (int i = 0; i < nmerged_global; i++) {
@@ -4907,14 +4648,14 @@ void Mesh_MSTK::collapse_degen_edges()
   // Go through all mesh sets and replace any merged entities
 
   MEntity_ptr delent, keepent;
-  int nsets = MESH_Num_MSets(mesh);
+  int nsets = MESH_Num_MSets(mesh_);
   idx = 0;
   while ((delent = List_Next_Entry(merged_entity_pairs_all, &idx))) {
     MEntity_ptr keepent = List_Next_Entry(merged_entity_pairs_all, &idx);
     int entdim = MEnt_Dim(keepent);
 
     for (int j = 0; j < nsets; j++) {
-      MSet_ptr mset = MESH_MSet(mesh, j);
+      MSet_ptr mset = MESH_MSet(mesh_, j);
       if (MSet_EntDim(mset) != entdim) continue;
 
       int iloc = MSet_Locate(mset, delent);
@@ -4931,7 +4672,7 @@ void Mesh_MSTK::collapse_degen_edges()
     int entdim = MEnt_OrigDim(delent);
 
     for (int j = 0; j < nsets; j++) {
-      MSet_ptr mset = MESH_MSet(mesh, j);
+      MSet_ptr mset = MESH_MSet(mesh_, j);
       if (MSet_EntDim(mset) != entdim) continue;
 
       int iloc = MSet_Locate(mset, delent);
@@ -4959,9 +4700,9 @@ void Mesh_MSTK::collapse_degen_edges()
 #endif
 
 #ifdef DEBUG
-  if (MESH_Num_Regions(mesh) > 0) {  // 3D mesh
+  if (MESH_Num_Regions(mesh_) > 0) {  // 3D mesh
     idx = 0;
-    while ((face = MESH_Next_Face(mesh, &idx))) {
+    while ((face = MESH_Next_Face(mesh_, &idx))) {
       List_ptr fregs = MF_Regions(face);
       if (fregs)
         List_Delete(fregs);
@@ -5066,14 +4807,14 @@ void Mesh_MSTK::label_celltype()
   MRegion_ptr region;
 
   if (manifold_dimension() == 2) 
-    celltype_att = MAttrib_New(mesh,"Cell_type",INT,MFACE);
+    celltype_att = MAttrib_New(mesh_,"Cell_type",INT,MFACE);
   else
-    celltype_att = MAttrib_New(mesh,"Cell_type",INT,MREGION);
+    celltype_att = MAttrib_New(mesh_,"Cell_type",INT,MREGION);
 
   if (manifold_dimension() == 2) {
 
     idx = 0;
-    while ((face = MESH_Next_Face(mesh,&idx))) {
+    while ((face = MESH_Next_Face(mesh_,&idx))) {
       ctype = MFace_Celltype(face);
       MEnt_Set_AttVal(face,celltype_att,ctype,0.0,NULL);
     }
@@ -5082,7 +4823,7 @@ void Mesh_MSTK::label_celltype()
   else if (manifold_dimension() == 3) {
 
     idx = 0;
-    while ((region = MESH_Next_Region(mesh,&idx))) {
+    while ((region = MESH_Next_Region(mesh_,&idx))) {
       ctype = MRegion_Celltype(region);
       MEnt_Set_AttVal(region,celltype_att,ctype,0.0,NULL);
     }
@@ -5544,27 +5285,26 @@ int Mesh_MSTK::generate_regular_mesh(Mesh_ptr mesh, double x0, double y0,
 }
 
 
-void Mesh_MSTK::pre_create_steps_(const int space_dimension, 
-                                  const Epetra_MpiComm *comm_, 
-                                  const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm) 
+void Mesh_MSTK::pre_create_steps_(const int space_dimension)
 {
   clear_internals_();
 
   MSTK_Init();
 
-  Mesh::set_comm(comm_);
-  Mesh::set_geometric_model(gm);
-
-  mpicomm_ = comm_->GetMpiComm();
-
   set_space_dimension(space_dimension);
 
-  MPI_Comm_rank(mpicomm_, &myprocid);
-  MPI_Comm_size(mpicomm_, &numprocs);
-
-  serial_run =  (!mpicomm_ || numprocs == 1) ? true : false;
-
-  parent_mesh = NULL;
+  auto mpicomm = Teuchos::rcp_dynamic_cast<const MpiComm_type>(get_comm());
+  if (!mpicomm.get()) {
+    mpicomm_ = MPI_COMM_SELF; // this should never be!
+    serial_run = false;
+    myprocid = 0;
+    numprocs = 1;
+  } else {
+    mpicomm_ = mpicomm->GetMpiComm();
+    myprocid = comm_->MyPID();
+    numprocs = comm_->NumProc();
+    serial_run = (numprocs == 1);
+  }
 
   edges_initialized = false;
   faces_initialized = false;
@@ -5588,22 +5328,22 @@ void Mesh_MSTK::inherit_labeled_sets(MAttrib_ptr copyatt,
   MSet_ptr mset;
   char setname[256];
   
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = geometric_model();
 
   if (gm == Teuchos::null) { 
     std::cerr << "Need region definitions to initialize sets" << std::endl;
     return;
   }
 
-  Mesh_ptr parent_mstk_mesh = parent_mesh->mesh;
+  Mesh_ptr parent_mstk_mesh = parent_mesh_->mesh_;
 
   // Difference in cell dimension of this mesh and its parent
   // Labeled set entity dimensions will be similarly dialed down
   
-  diffdim = parent_mesh->manifold_dimension() - manifold_dimension();
+  diffdim = parent_mesh_->manifold_dimension() - manifold_dimension();
   if (diffdim > 1) {
     Errors::Message mesg("Dimension of mesh and its parent differ by more than 1");
-    amanzi_throw(mesg);
+    Exceptions::amanzi_throw(mesg);
   }
     
   unsigned int ngr = gm->RegionSize();
@@ -5663,7 +5403,7 @@ void Mesh_MSTK::inherit_labeled_sets(MAttrib_ptr copyatt,
       else
         subentdim = (MType) (entdim-diffdim);
       
-      MSet_ptr mset = MSet_New(mesh,internal_name.c_str(),subentdim);
+      MSet_ptr mset = MSet_New(mesh_,internal_name.c_str(),subentdim);
 
 
       // Populate the set
@@ -5733,7 +5473,7 @@ void Mesh_MSTK::inherit_labeled_sets(MAttrib_ptr copyatt,
 //---------------------------------------------------------
 void
 Mesh_MSTK::write_to_exodus_file(const std::string filename) const {
-  MESH_ExportToExodusII(mesh,filename.c_str(),-1,NULL,NULL,mpicomm_);
+  MESH_ExportToExodusII(mesh_,filename.c_str(),-1,NULL,NULL,mpicomm_);
 }
 
 
@@ -5742,7 +5482,7 @@ Mesh_MSTK::write_to_exodus_file(const std::string filename) const {
 
 bool
 Mesh_MSTK::run_internal_mstk_checks() const {
-  return MESH_CheckTopo(mesh) && MESH_Parallel_Check(mesh, mpicomm_);
+  return MESH_CheckTopo(mesh_) && MESH_Parallel_Check(mesh_, mpicomm_);
 }
 
 

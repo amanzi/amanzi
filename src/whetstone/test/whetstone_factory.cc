@@ -29,17 +29,17 @@ TEST(FACTORY_DISCRETIZATION_METHODS) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "Test: factory of discretization methods" << std::endl;
+  std::cout << "Test: meshfactory of discretization methods" << std::endl;
  
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-  MeshFactory factory(comm);
-  factory.preference(pref);
-  // Teuchos::RCP<const Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  Teuchos::RCP<const Mesh> mesh = factory("test/one_pentagon.exo");
+  auto comm = Amanzi::getDefaultComm();
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(pref);
+  // Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
 
   std::string names[8] = {"diffusion", "diffusion generalized", "elasticity",
                           "CrouzeixRaviart", "BernardiRaugel", "Lagrange serendipity",
@@ -54,7 +54,7 @@ TEST(FACTORY_DISCRETIZATION_METHODS) {
     CHECK(form != Teuchos::null);
   }
 
-  delete comm;
+  
 }
 
 

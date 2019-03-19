@@ -200,7 +200,7 @@ modeled by three segments:
 
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_Map.h"
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 
 #include "MeshLogical.hh"
 #include "GeometricModel.hh"
@@ -223,10 +223,10 @@ class MeshLogicalFactory {
   };
 
   
-  MeshLogicalFactory(const Epetra_MpiComm* incomm_,
+  MeshLogicalFactory(const Comm_ptr_type& comm,
                      const Teuchos::RCP<AmanziGeometry::GeometricModel>& gm,
                      bool calculated_volume = true) :
-    comm_(incomm_),
+    comm_(comm),
     gm_(gm),
     calculated_volume_(calculated_volume),
     tracking_centroids_(false)    
@@ -313,7 +313,7 @@ class MeshLogicalFactory {
   std::vector<AmanziGeometry::Point> face_area_normals_;
   std::vector<AmanziGeometry::Point> cell_centroids_;
 
-  const Epetra_MpiComm* comm_;
+  Comm_ptr_type comm_;
   Teuchos::RCP<AmanziGeometry::GeometricModel> gm_;
 
   std::map<std::string, Entity_ID_List> seg_cells_;

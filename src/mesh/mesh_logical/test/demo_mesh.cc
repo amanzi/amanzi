@@ -5,7 +5,7 @@
 
 #include <cmath>
 
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
 #include "Mesh_MSTK.hh"
@@ -23,9 +23,9 @@ demoMeshLogicalSegmentRegularManual()
 {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
-  auto comm_ = new Epetra_MpiComm(MPI_COMM_WORLD);
-  const int nproc(comm_->NumProc());
-  const int me(comm_->MyPID());
+  auto comm = Amanzi::getDefaultComm();
+  const int nproc(comm->NumProc());
+  const int me(comm->MyPID());
 
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3));
   
@@ -62,7 +62,7 @@ demoMeshLogicalSegmentRegularManual()
   face_area_normals.resize(5,normal);
 
   Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical> mesh =
-    Teuchos::rcp(new MeshLogical(comm_,cell_volumes_,
+    Teuchos::rcp(new MeshLogical(comm,cell_volumes_,
 				 face_cell_list,
 				 face_cell_lengths,
 				 face_area_normals));
@@ -78,9 +78,9 @@ demoMeshLogicalSegmentIrregularManual() {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
-  auto comm_ = new Epetra_MpiComm(MPI_COMM_WORLD);
-  const int nproc(comm_->NumProc());
-  const int me(comm_->MyPID());
+  auto comm = Amanzi::getDefaultComm();
+  const int nproc(comm->NumProc());
+  const int me(comm->MyPID());
 
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3));
   
@@ -116,7 +116,7 @@ demoMeshLogicalSegmentIrregularManual() {
   face_area_normals.resize(4,normal);
 
   Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical> mesh =
-    Teuchos::rcp(new MeshLogical(comm_,cell_volumes_,
+    Teuchos::rcp(new MeshLogical(comm,cell_volumes_,
 				 face_cell_list,
 				 face_cell_lengths,
 				 face_area_normals));
@@ -130,9 +130,9 @@ demoMeshLogicalYManual() {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
-  auto comm_ = new Epetra_MpiComm(MPI_COMM_WORLD);
-  const int nproc(comm_->NumProc());
-  const int me(comm_->MyPID());
+  auto comm = Amanzi::getDefaultComm();
+  const int nproc(comm->NumProc());
+  const int me(comm->MyPID());
 
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3));
 
@@ -278,7 +278,7 @@ demoMeshLogicalYManual() {
 
   // make the mesh  
   Teuchos::RCP<MeshLogical> m =
-    Teuchos::rcp(new MeshLogical(comm_, cell_vols, face_cells, face_cell_lengths, face_normals, &cell_centroids_));
+    Teuchos::rcp(new MeshLogical(comm, cell_vols, face_cells, face_cell_lengths, face_normals, &cell_centroids_));
 
   // make sets
   // -- coarse roots
@@ -307,12 +307,12 @@ demoMeshLogicalYFromXML(const std::string& meshname) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
-  auto comm_ = new Epetra_MpiComm(MPI_COMM_WORLD);
-  const int nproc(comm_->NumProc());
-  const int me(comm_->MyPID());
+  auto comm = Amanzi::getDefaultComm();
+  const int nproc(comm->NumProc());
+  const int me(comm->MyPID());
 
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3));
-  MeshLogicalFactory fac(comm_, gm);
+  MeshLogicalFactory fac(comm, gm);
 
   // load the xml
   std::string xmlFileName = "test/demo_mesh_Y.xml";
@@ -348,9 +348,9 @@ demoMeshLogicalYEmbedded() {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
-  auto comm_ = new Epetra_MpiComm(MPI_COMM_WORLD);
-  const int nproc(comm_->NumProc());
-  const int me(comm_->MyPID());
+  auto comm = Amanzi::getDefaultComm();
+  const int nproc(comm->NumProc());
+  const int me(comm->MyPID());
   
   Teuchos::RCP<MeshLogical> m_log = demoMeshLogicalYManual();
 
@@ -360,7 +360,7 @@ demoMeshLogicalYEmbedded() {
 
   Teuchos::RCP<Mesh_MSTK> m_bg =
     Teuchos::rcp(new Mesh_MSTK(X0[0], X0[1],X0[2], X1[0], X1[1], X1[2],
-			       nx, ny, nz, comm_,
+			       nx, ny, nz, comm,
                                m_log->geometric_model(), Teuchos::null, true, false));
 
   // make the new connections, 1 per logical cell
@@ -397,7 +397,7 @@ demoMeshLogicalYEmbedded() {
   }
 
   Teuchos::RCP<MeshEmbeddedLogical> m =
-    Teuchos::rcp(new MeshEmbeddedLogical(comm_, m_bg, m_log,
+    Teuchos::rcp(new MeshEmbeddedLogical(comm, m_bg, m_log,
   					 face_cell_ids_, face_cell_lengths,
   					 face_area_normals));
   return m;

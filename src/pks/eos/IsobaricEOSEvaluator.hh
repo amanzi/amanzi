@@ -14,7 +14,7 @@
 #ifndef AMANZI_EOS_ISOBARIC_EOS_EVALUATOR_HH_
 #define AMANZI_EOS_ISOBARIC_EOS_EVALUATOR_HH_
 
-#include "factory.hh"
+#include "Factory.hh"
 #include "secondary_variables_field_evaluator.hh"
 
 #include "EOS.hh"

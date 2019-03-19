@@ -51,8 +51,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
 
   // This is a specialized function designed for columnar meshes so make sure
   // that we built the columns first
-
-  if (!Mesh::build_columns()) {
+  if (!build_columns()) {
     std::cerr << "Could not deform mesh as we could not build columns in mesh\n" << std::endl;
     return 0;
   }
@@ -97,7 +96,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
   double *newxyz = new double [3*nv];
 
   idx = 0;
-  while ((mv = MESH_Next_Vertex(mesh,&idx))) {
+  while ((mv = MESH_Next_Vertex(mesh_,&idx))) {
     id = MV_ID(mv);
     MV_Coords(mv,&(meshxyz[3*(id-1)]));
   }
@@ -134,7 +133,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
 
   List_ptr driven_verts = List_New(10);
   idx = 0;
-  while ((mv = MESH_Next_Vertex(mesh,&idx))) {
+  while ((mv = MESH_Next_Vertex(mesh_,&idx))) {
     if (MEnt_IsMarked(mv,fixedmk)) continue; // vertex is forbidden from moving
 
     List_ptr vcells = (celldim == 2) ? MV_Faces(mv) : MV_Regions(mv);
@@ -368,7 +367,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
     // vertices above to shift down.
     
     idx = 0;
-    while ((mv = MESH_Next_Vertex(mesh,&idx))) {
+    while ((mv = MESH_Next_Vertex(mesh_,&idx))) {
       id = MV_ID(mv);
       MV_Set_Coords(mv,&(meshxyz[3*(id-1)]));
     }
@@ -376,7 +375,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
     // Update ghost vertex values for parallel runs
 
     if (get_comm()->NumProc() > 1)
-      MESH_UpdateVertexCoords(mesh,mpicomm_);
+      MESH_UpdateVertexCoords(mesh_,mpicomm_);
 
     double meshsize_rms = sqrt(meshsizesqr_sum/nv);
     eps = 1.0e-06*meshsize_rms;
@@ -403,9 +402,9 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
   List_Delete(driven_verts);
 
   if (space_dimension() == 2)
-    MESH_ExportToGMV(mesh,"deformed2.gmv",0,NULL,NULL,MPI_COMM_NULL);
+    MESH_ExportToGMV(mesh_,"deformed2.gmv",0,NULL,NULL,MPI_COMM_NULL);
   else
-    MESH_ExportToGMV(mesh,"deformed3.gmv",0,NULL,NULL,MPI_COMM_NULL);
+    MESH_ExportToGMV(mesh_,"deformed3.gmv",0,NULL,NULL,MPI_COMM_NULL);
 
 
   // recompute all geometric quantities

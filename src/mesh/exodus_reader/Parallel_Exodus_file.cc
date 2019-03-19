@@ -1,24 +1,15 @@
-// -------------------------------------------------------------
-/**
- * @file   Parallel_Exodus_file.cc
- * @author William A. Perkins
- * @date Mon May  2 13:05:09 2011
- * 
- * @brief  
- * 
- * 
- */
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-// -------------------------------------------------------------
-// -------------------------------------------------------------
-// Created November 15, 2010 by William A. Perkins
-// Last Change: Mon May  2 13:05:09 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
-// -------------------------------------------------------------
+  Authors: William Perkins
+*/
 
 #include <algorithm>
-#include <exception>
 #include <boost/format.hpp>
-#include <exodusII.h>
+#include "exodusII.h"
 
 #include "Parallel_Exodus_file.hh"
 #include "Exodus_readers.hh"
@@ -43,14 +34,15 @@ namespace Exodus {
  * @param comm_ parallel environment
  * @param basename ExodusII file set base name
  */
-Parallel_Exodus_file::Parallel_Exodus_file(const Epetra_Comm& comm_, 
+Parallel_Exodus_file::Parallel_Exodus_file(const Comm_ptr_type& comm,
                                            const std::string& basename)
-  : my_comm_(comm_.Clone()), my_basename(basename)
+  : comm_(comm),
+    basename_(basename)
 {
-  const int np(my_comm_->NumProc());
-  const int me(my_comm_->MyPID());
+  const int np(comm_->NumProc());
+  const int me(comm_->MyPID());
 
-  std::string s(my_basename);
+  std::string s(basename_);
 
   // create the format string that pads me with the correct number of zeros
   int ndigits = (int)floor(log10(np)) + 1;
@@ -66,7 +58,7 @@ Parallel_Exodus_file::Parallel_Exodus_file(const Epetra_Comm& comm_,
   ExodusError ex_all;
 
   try {
-    my_file.reset(new Exodus_file(s.c_str()));
+    file_.reset(new Exodus_file(s.c_str()));
   } catch (const ExodusError& e) {
     std::string msg;
     msg = boost::str(boost::format("Process %d: error opening \"%s\": %s") %
@@ -77,16 +69,11 @@ Parallel_Exodus_file::Parallel_Exodus_file(const Epetra_Comm& comm_,
   }
 
   int gerr(0);
-  my_comm_->SumAll(&ierr, &gerr, 1);
+  comm_->SumAll(&ierr, &gerr, 1);
 
   if (gerr > 0) {
     Exceptions::amanzi_throw( ex_all );
   }
-}
-
-Parallel_Exodus_file::~Parallel_Exodus_file(void)
-{
-  // nothing to do
 }
 
 // -------------------------------------------------------------
@@ -96,39 +83,39 @@ Teuchos::RCP<AmanziMesh::Data::Data>
 Parallel_Exodus_file::read_mesh(void)
 {
 
-  my_mesh.reset(read_exodus_file(*my_file));
+  mesh_.reset(read_exodus_file(*file_));
 
   // Even though element blocks are defined in all local files, if the
   // local block is empty, it will not have a cell type specified, so
   // we need get that from the other processes
 
-  my_comm_->Barrier();
-  const int np(my_comm_->NumProc());
-  const int me(my_comm_->MyPID());
+  comm_->Barrier();
+  const int np(comm_->NumProc());
+  const int me(comm_->MyPID());
 
   std::vector<int> byproc(np);
-  int nblk(my_mesh->element_blocks());
+  int nblk(mesh_->element_blocks());
 
   // check the number of blocks; should be the same on all processes
 
   int ierr(0);
-  my_comm_->GatherAll(&nblk, &byproc[0], 1);
+  comm_->GatherAll(&nblk, &byproc[0], 1);
   for (int p = 1; p < np; p++) {
     if (byproc[p] != byproc[p-1]) ierr++;
   }
   int aerr(0);
-  my_comm_->SumAll(&ierr, &aerr, 1);
+  comm_->SumAll(&ierr, &aerr, 1);
 
   if (aerr) {
-    std::string msg(my_basename);
+    std::string msg(basename_);
     msg += ": mismatched numbers of element blocks";
     Exceptions::amanzi_throw( ExodusError(msg.c_str()) );
   }
 
   for (int b = 0; b < nblk; b++) {
-    int mytype(my_mesh->element_block(b).element_type());
+    int mytype(mesh_->element_block(b).element_type());
     std::vector<int> alltype(np, AmanziMesh::CELLTYPE_UNKNOWN);
-    my_comm_->GatherAll(&mytype, &alltype[0], 1);
+    comm_->GatherAll(&mytype, &alltype[0], 1);
 
     std::vector<int>::iterator junk;
     junk = std::remove(alltype.begin(), alltype.end(),
@@ -143,10 +130,10 @@ Parallel_Exodus_file::read_mesh(void)
       // type for this element block; this is OK as long as it's empty
       // on all processes.
 
-      if (my_mesh->element_block(b).num_elements() > 0) {
+      if (mesh_->element_block(b).num_elements() > 0) {
         std::string msg = 
           boost::str(boost::format("Process %d: %s: element block %d: block element type unknown") %
-                     me % my_basename %  my_mesh->element_block(b).id());
+                     me % basename_ %  mesh_->element_block(b).id());
         std::cerr << msg << std::endl;
         ierr++;
       }
@@ -158,7 +145,7 @@ Parallel_Exodus_file::read_mesh(void)
 
       std::string msg = 
         boost::str(boost::format("Process %d: %s: element block %d: block element type mismatch") %
-                   me % my_basename %  my_mesh->element_block(b).id());
+                   me % basename_ %  mesh_->element_block(b).id());
       std::cerr << msg << std::endl;
       ierr++;
 
@@ -167,20 +154,20 @@ Parallel_Exodus_file::read_mesh(void)
       AmanziMesh::Cell_type
         thetype(static_cast<AmanziMesh::Cell_type>(alltype.front()));
 
-      if (my_mesh->element_block(b).element_type() == AmanziMesh::CELLTYPE_UNKNOWN) {
-        my_mesh->element_block(b).element_type(thetype);
+      if (mesh_->element_block(b).element_type() == AmanziMesh::CELLTYPE_UNKNOWN) {
+        mesh_->element_block(b).element_type(thetype);
       }
     }
   }
 
-  my_comm_->SumAll(&ierr, &aerr, 1);
+  comm_->SumAll(&ierr, &aerr, 1);
   if (aerr) {
     std::string msg = 
-      boost::str(boost::format("%s: element block type errors") % my_basename);
+      boost::str(boost::format("%s: element block type errors") % basename_);
     Exceptions::amanzi_throw( ExodusError(msg.c_str()) );
   }
 
-  return my_mesh;
+  return mesh_;
 }
 
 // -------------------------------------------------------------
@@ -189,25 +176,25 @@ Parallel_Exodus_file::read_mesh(void)
 Teuchos::RCP<Epetra_Map>
 Parallel_Exodus_file::cellmap(void)
 {
-  if (my_mesh.is_null()) {
+  if (mesh_.is_null()) {
     read_mesh();
   }
   
-  int myelem(my_mesh->parameters().num_elements_);
+  int myelem(mesh_->parameters().num_elements_);
 
   std::vector<int> gids(myelem);
 
-  int ret_val = ex_get_id_map(my_file->id, EX_ELEM_MAP, &gids[0]);
+  int ret_val = ex_get_id_map(file_->id, EX_ELEM_MAP, &gids[0]);
   if (ret_val < 0) {
     std::string msg = 
       boost::str(boost::format("%s: error: cannot read element number map (%d)") %
-                 my_file->filename % ret_val);
+                 file_->filename % ret_val);
     Exceptions::amanzi_throw( ExodusError (msg.c_str()) );
   }
 
-  my_comm_->Barrier();
+  comm_->Barrier();
 
-  Teuchos::RCP<Epetra_Map> cmap(new Epetra_Map(-1, myelem, &gids[0], 1, *my_comm_));
+  Teuchos::RCP<Epetra_Map> cmap(new Epetra_Map(-1, myelem, &gids[0], 1, *comm_));
   
   return cmap;
 }
@@ -219,25 +206,25 @@ Parallel_Exodus_file::cellmap(void)
 Teuchos::RCP<Epetra_Map>
 Parallel_Exodus_file::vertexmap(void)
 {
-  if (my_mesh.is_null()) {
+  if (mesh_.is_null()) {
     read_mesh();
   }
   
-  int myvert(my_mesh->parameters().num_nodes_);
+  int myvert(mesh_->parameters().num_nodes_);
 
   std::vector<int> gids(myvert);
 
-  int ret_val = ex_get_id_map(my_file->id, EX_NODE_MAP, &gids[0]);
+  int ret_val = ex_get_id_map(file_->id, EX_NODE_MAP, &gids[0]);
   if (ret_val < 0) {
     std::string msg = 
       boost::str(boost::format("%s: error: cannot read vertex number map (%d)") %
-                 my_file->filename % ret_val);
+                 file_->filename % ret_val);
     Exceptions::amanzi_throw( ExodusError (msg.c_str()) );
   }
 
-  my_comm_->Barrier();
+  comm_->Barrier();
 
-  Teuchos::RCP<Epetra_Map> vmap(new Epetra_Map(-1, myvert, &gids[0], 1, *my_comm_));
+  Teuchos::RCP<Epetra_Map> vmap(new Epetra_Map(-1, myvert, &gids[0], 1, *comm_));
   
   return vmap;
 }

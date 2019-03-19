@@ -8,13 +8,13 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "BoundaryFunction.hh"
-#include "ConstantFunction.hh"
+#include "FunctionConstant.hh"
 #include "FunctionFactory.hh"
-#include "LinearFunction.hh"
+#include "FunctionLinear.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "PolynomialFunction.hh"
-#include "SeparableFunction.hh"
+#include "FunctionPolynomial.hh"
+#include "FunctionSeparable.hh"
 #include "errors.hh"
 
 #include "VerboseObject_objs.hh"
@@ -33,7 +33,7 @@ int main (int argc, char *argv[])
 
 struct reference_mesh
 {
-  Epetra_MpiComm *comm;
+  Comm_ptr_type comm;
   Teuchos::RCP<Mesh> mesh;
   std::string LEFT, RIGHT, FRONT, BACK, BOTTOM, TOP, INVALID;
 
@@ -47,7 +47,7 @@ struct reference_mesh
     TOP = "TOP";
     INVALID = "INVALID";
 
-    comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    comm = getDefaultComm();
 
     // Brick domain corners and outward normals to sides
     Teuchos::Array<double> corner_min(Teuchos::tuple(0.0, 0.0, 0.0));
@@ -74,10 +74,10 @@ struct reference_mesh
     regions.sublist("TOP").sublist("region: plane").
         set("point",corner_max).set("normal",top);
     Teuchos::RCP<AmanziGeometry::GeometricModel> 
-        gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, regions, comm));
+        gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, regions, *comm));
     // Create the mesh
-    MeshFactory mesh_fact(comm);
-    mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2, gm);
+    MeshFactory mesh_fact(comm,gm);
+    mesh = mesh_fact.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
   }
 };
 
@@ -92,7 +92,7 @@ TEST_FIXTURE(reference_mesh, empty)
 TEST_FIXTURE(reference_mesh, basic)
 {
   BoundaryFunction bf(mesh);
-  Teuchos::RCP<MultiFunction> f1 = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new ConstantFunction(1.0))));
+  Teuchos::RCP<MultiFunction> f1 = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new FunctionConstant(1.0))));
   // Add a definition for a single side.
   bf.Define(RIGHT, f1);
   // Add a definition for a couple other sides
@@ -110,9 +110,9 @@ TEST_FIXTURE(reference_mesh, basic)
 TEST_FIXTURE(reference_mesh, values1)
 {
   BoundaryFunction bf(mesh);
-  Teuchos::RCP<MultiFunction> f1 = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new ConstantFunction(1.0))));
-  Teuchos::RCP<MultiFunction> f2 = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new ConstantFunction(2.0))));
-  Teuchos::RCP<MultiFunction> f3 = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new ConstantFunction(3.0))));
+  Teuchos::RCP<MultiFunction> f1 = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new FunctionConstant(1.0))));
+  Teuchos::RCP<MultiFunction> f2 = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new FunctionConstant(2.0))));
+  Teuchos::RCP<MultiFunction> f3 = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new FunctionConstant(3.0))));
 
   bf.Define(RIGHT, std::move(f1));
   bf.Define(FRONT, std::move(f2));
@@ -142,13 +142,13 @@ TEST_FIXTURE(reference_mesh, values2)
   // Create the function f(t,x,y,z) = t * (x + 2y + 3z)
   std::vector<double> c(1,1.0);
   std::vector<int> p(1,1);
-  std::unique_ptr<Function> f1(new PolynomialFunction(c, p));
+  std::unique_ptr<Function> f1(new FunctionPolynomial(c, p));
   double g[3] = {1.0, 2.0, 3.0};
   std::vector<double> grad(g, g+3);
-  std::unique_ptr<Function> f2(new LinearFunction(0.0, grad));
+  std::unique_ptr<Function> f2(new FunctionLinear(0.0, grad));
 
   // Create the boundary function
-  Teuchos::RCP<MultiFunction> f3 = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new SeparableFunction(std::move(f1), std::move(f2)))));
+  Teuchos::RCP<MultiFunction> f3 = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new FunctionSeparable(std::move(f1), std::move(f2)))));
   BoundaryFunction bf(mesh);
   std::vector<std::string> regions(2); regions[0] = RIGHT; regions[1] = BACK;
   bf.Define(regions, f3);
@@ -171,7 +171,7 @@ TEST_FIXTURE(reference_mesh, values2)
 
 TEST_FIXTURE(reference_mesh, bad_input)
 {
-  Teuchos::RCP<MultiFunction> f = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new ConstantFunction(1.0))));
+  Teuchos::RCP<MultiFunction> f = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new FunctionConstant(1.0))));
   BoundaryFunction bf(mesh);
   //bf.Define(INVALID, f); // no such face set
   CHECK_THROW(bf.Define(INVALID, f), Errors::Message);

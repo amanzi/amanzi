@@ -244,8 +244,8 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
 
       std::vector<WhetStone::DenseMatrix>& mats = schur_op->matrices;
 
-      const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
-      const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
+      const std::vector<int>& cell_row_inds = map.GhostIndices(my_block_row, "cell", 0);
+      const std::vector<int>& cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);
       for (int f = 0; f < nfaces_owned; f++) {
         WhetStone::DenseMatrix& mat = mats[f];
 

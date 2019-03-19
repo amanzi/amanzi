@@ -226,6 +226,9 @@
   </ParameterList>
 
   <ParameterList name="state">
+    <ParameterList name="verbose object">
+      <Parameter name="verbosity level" type="string" value="low"/>
+    </ParameterList>
     <ParameterList name="field evaluators">
      <ParameterList name="porosity">
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
@@ -264,7 +267,7 @@
         <ParameterList name="function">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
-            <Parameter name="components" type="Array(string)" value="{cell,face}"/>
+            <Parameter name="components" type="Array(string)" value="{cell}"/>
             <ParameterList name="function">
               <ParameterList name="function-constant"> <!-- time component -->
                 <Parameter name="value" type="double" value="0."/>

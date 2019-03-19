@@ -24,7 +24,7 @@ using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 
 struct test_cv {
-  Epetra_MpiComm *comm;
+  Comm_ptr_type comm;
   Teuchos::RCP<Mesh> mesh;
 
   Teuchos::RCP<CompositeVector> x;
@@ -50,7 +50,7 @@ struct test_cv {
     x = Teuchos::rcp(new CompositeVector(mesh, names, locations, num_dofs, true));
     //    x2 = Teuchos::rcp(new CompositeVector(mesh, CELL, 1, true));
   }
-  ~test_cv() { delete comm; }
+  ~test_cv() {  }
 };
 
 SUITE(COMPOSITE_VECTOR) {

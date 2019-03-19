@@ -45,8 +45,8 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "\nTest: Commuting of advection-duffusion operators." << std::endl;
 
@@ -57,11 +57,11 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
 
   // create an SIMPLE mesh framework
   ParameterList region_list = plist.sublist("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 40, 40, gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 40, 40);
 
   // modify diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
@@ -168,8 +168,8 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "\nTest: Commuting of advection-duffusion operators." << std::endl;
 
@@ -180,11 +180,11 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
 
   // create an SIMPLE mesh framework
   ParameterList region_list = plist.sublist("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 40, 40, gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 40, 40);
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());

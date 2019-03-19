@@ -37,7 +37,7 @@ class Verification {
       a.Dot(ha, &aha);
       b.Dot(hb, &bhb);
 
-      if (a.Comm().MyPID() == 0) {
+      if (a.Comm()->MyPID() == 0) {
         std::cout << "Matrix:\n";
         if (symmetry)
             printf("  Symmetry test: %21.14e = %21.14e\n", ahb, bha);
@@ -66,7 +66,7 @@ class Verification {
     a.Dot(ha, &aha);
     b.Dot(hb, &bhb);
 
-    if (a.Comm().MyPID() == 0) {
+    if (a.Comm()->MyPID() == 0) {
       int size = (op_->A() != Teuchos::null) ? op_->A()->NumGlobalRows() : -1;
       std::cout << "Preconditioner: size=" << size << "\n";
       if (symmetry)
@@ -87,9 +87,10 @@ class Verification {
     op_->ApplyAssembled(x, r);
     r.Update(1.0, b, -1.0);
 
-    double tmp;
+    double tmp, xnorm;
     r.Dot(r, &tmp);
-    CHECK_CLOSE(0.0, tmp, tol * tol);
+    x.Dot(x, &xnorm);
+    CHECK_CLOSE(0.0, tmp, tol * tol * xnorm * xnorm);
   }
 
   void CheckResidual(const Vector x, double tol) {

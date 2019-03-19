@@ -62,6 +62,38 @@ namespace AmanziMesh {
 //
 // Sets up: cell_face_ids_, cell_face_dirs_, face_cell_ids_, face_cell_ptype_
 
+Mesh::Mesh(const Comm_ptr_type& comm,
+           const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+           const Teuchos::RCP<const Teuchos::ParameterList>& plist,
+           const bool request_faces,
+           const bool request_edges)
+    : comm_(comm),
+      geometric_model_(gm),
+      plist_(plist),
+      faces_requested_(request_faces),
+      edges_requested_(request_edges),
+      space_dim_(-1),
+      manifold_dim_(-1),
+      mesh_type_(GENERAL),
+      cell_geometry_precomputed_(false),
+      face_geometry_precomputed_(false),
+      edge_geometry_precomputed_(false),
+      columns_built_(false),
+      cell2face_info_cached_(false),
+      face2cell_info_cached_(false),
+      cell2edge_info_cached_(false),
+      face2edge_info_cached_(false),
+      parent_(Teuchos::null),
+      logical_(false),
+      kdtree_faces_initialized_(false) {
+  if (plist_ == Teuchos::null) {
+    plist_ = Teuchos::rcp(new Teuchos::ParameterList("Mesh"));
+  }
+  vo_ = Teuchos::rcp(new VerboseObject(comm_,
+          Keys::cleanPListName(plist_->name()), *plist_));
+};
+
+
 void
 Mesh::cache_cell_face_info_() const
 {

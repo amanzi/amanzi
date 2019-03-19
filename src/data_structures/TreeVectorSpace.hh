@@ -23,8 +23,8 @@ class CompositeVectorSpace;
 class TreeVectorSpace {
  public:
   // Constructor
-  TreeVectorSpace() : comm_(MPI_COMM_WORLD) {};
-  TreeVectorSpace(const Epetra_MpiComm& comm) : comm_(comm) {};
+  TreeVectorSpace() : comm_(Amanzi::getDefaultComm()) {};
+  TreeVectorSpace(const Comm_ptr_type& comm) : comm_(comm) {};
   TreeVectorSpace(const Teuchos::RCP<const CompositeVectorSpace>& cvfac) :
       data_(cvfac),
       comm_(cvfac->Comm()) {}
@@ -39,7 +39,7 @@ class TreeVectorSpace {
   void SetData(const Teuchos::RCP<const CompositeVectorSpace>& data) { data_ = data; }
 
   // Access to ANY communicator (this may be ill-posed!)
-  const Epetra_MpiComm& Comm() const { return comm_; }
+  Comm_ptr_type Comm() const { return comm_; }
 
   // Access to SubVectors
   typedef std::vector<Teuchos::RCP<TreeVectorSpace> > SubVectorsContainer;
@@ -66,7 +66,7 @@ class TreeVectorSpace {
  private:
   Teuchos::RCP<const CompositeVectorSpace> data_;
   std::vector<Teuchos::RCP<TreeVectorSpace> > subvecs_;
-  Epetra_MpiComm comm_;
+  Comm_ptr_type comm_;
 };
 
 } // namespace Amanzi

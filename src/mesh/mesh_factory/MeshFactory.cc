@@ -1,28 +1,32 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-// -------------------------------------------------------------
-// file: MeshFactory.cpp
-// -------------------------------------------------------------
-// -------------------------------------------------------------
-// Battelle Memorial Institute
-// Pacific Northwest Laboratory
-// -------------------------------------------------------------
-// -------------------------------------------------------------
-// Created March 10, 2011 by William A. Perkins
-// Last Change: Mon Aug  1 13:46:30 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
-// -------------------------------------------------------------
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
+  Authors: William Perkins, Ethan Coon
+*/
 
-static const char* SCCS_ID = "$Id$ Battelle PNL";
 
 #include <boost/format.hpp>
 
+#include "MeshException.hh"
 #include "MeshFactory.hh"
-#include "MeshFileType.hh"
-#include "FrameworkTraits.hh"
+#include "FileFormat.hh"
 
-namespace Amanzi{
+#include "Mesh_simple.hh"
+
+#ifdef HAVE_MSTK_MESH
+#include "Mesh_MSTK.hh"
+#endif
+#ifdef HAVE_MOAB_MESH
+#include "Mesh_MOAB.hh"
+#endif
+
+namespace Amanzi {
 namespace AmanziMesh {
-  
+
 
 // -------------------------------------------------------------
 //  class MeshFactory
@@ -31,103 +35,78 @@ namespace AmanziMesh {
 // -------------------------------------------------------------
 // MeshFactory:: constructors / destructor
 // -------------------------------------------------------------
-MeshFactory::MeshFactory(const Epetra_MpiComm *comm_unicator,
-                         const Teuchos::RCP<const Teuchos::ParameterList>& plist)
-  : my_comm_(comm_unicator),
+MeshFactory::MeshFactory(const Comm_ptr_type& comm,
+                         const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm, 
+                         const Teuchos::RCP<Teuchos::ParameterList>& plist)
+  : comm_(comm),
+    gm_(gm),
     plist_(plist),
-    my_preference(default_preference())
+    preference_()
 {
+  if (comm_ == Teuchos::null) {
+    comm_ = Amanzi::getDefaultComm();
+  }
+
+  set_preference(default_preference());
+  
+  if (plist_ == Teuchos::null) {
+    plist_ = Teuchos::rcp(new Teuchos::ParameterList());
+  }
 }
 
-MeshFactory::~MeshFactory(void)
-{
-}
 
 // -------------------------------------------------------------
 // MeshFactory::preference
 // -------------------------------------------------------------
-/** 
- * local -- but better be the same on all processes
- *
- * This routine populates the framework preference list, but only
- * with available frameworks.  If none of the preferred frameworks
- * are available, the preference list is left empty and an exception
- * is thrown.
- * 
- * @param pref list of mesh framework preferences
- */
 void
-MeshFactory::preference(const FrameworkPreference& pref)
+MeshFactory::set_preference(const Preference& pref)
 {
-  my_preference.clear();
-  my_preference = available_preference(pref);
-  if (my_preference.empty()) {
-    Message e("specified framework(s) not available: ");
-    for (FrameworkPreference::const_iterator i = pref.begin(); 
-         i != pref.end(); i++) {
-      e.add_data(framework_name(*i).c_str());
-      e.add_data(" ");
-      amanzi_throw(e);
-    }
+  preference_ = filter_preference(pref);
+  if (preference_.size() == 0) {
+    Exceptions::amanzi_throw(FrameworkMessage("Preference requested includes no frameworks that are enabled."));
   }
 }
 
 // -------------------------------------------------------------
 // MeshFactory::create
 // -------------------------------------------------------------
-/** 
- * Collective
- *
- * This creates a mesh by reading the specified file (or file set).  
- * 
- * @param filename mesh file to read
- * 
- * @return mesh instance
- */
 Teuchos::RCP<Mesh> 
 MeshFactory::create(const std::string& filename, 
-                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                     const bool request_faces, 
                     const bool request_edges)
 {
   // check the file format
-  Format fmt = file_format(*my_comm_, filename);
+  FileFormat fmt = fileFormatFromFilename(*comm_, filename);
 
-  if (fmt == UnknownFormat) {
-    FileMessage 
-        e(boost::str(boost::format("%s: unknown file format") %
-                     filename).c_str());
-    amanzi_throw(e);
+  if (fmt == FileFormat::UNKNOWN) {
+    FileMessage e(std::string(boost::str(boost::format("%s: unknown file format") % filename)).c_str());
+    Exceptions::amanzi_throw(e);
   }
       
-  Message e("MeshFactory::create: error: ");
-  int ierr[1], aerr[1];
-  ierr[0] = 0;
-  aerr[0] = 0;
-
-  Teuchos::RCP<Mesh> result;
-  for (FrameworkPreference::const_iterator i = my_preference.begin(); 
-       i != my_preference.end(); i++) {
-    if (framework_reads(*i, fmt, my_comm_->NumProc() > 1)) {
-      try {
-        result = framework_read(my_comm_, *i, filename, gm, plist_,
-                                request_faces, request_edges, partitioner_);
-        return result;
-      } catch (const Message& msg) {
-        ierr[0] += 1;
-        e.add_data(msg.what());
-      } catch (const std::exception& stde) {
-        ierr[0] += 1;
-        e.add_data("internal error: ");
-        e.add_data(stde.what());
+  for (auto p : preference_) {
+    int nproc = comm_->NumProc();
+    
+#ifdef HAVE_MSTK_MESH    
+    if (p == Framework::MSTK) {
+      if ((nproc == 1 && fmt == FileFormat::EXODUS_II) ||
+          (nproc > 1 && (fmt == FileFormat::EXODUS_II || fmt == FileFormat::NEMESIS))) {
+        return Teuchos::rcp(new Mesh_MSTK(filename, comm_, gm_, plist_, request_faces, request_edges));
       }
-      my_comm_->SumAll(ierr, aerr, 1);
-      if (aerr[0] > 0) amanzi_throw(e);
     }
+#endif
+
+#ifdef HAVE_MOAB_MESH
+    if (p == Framework::MOAB) {
+      if (fmt == FileFormat::MOAB_HDF5 || (nproc == 1 && fmt == FileFormat::EXODUS_II)) {
+        return Teuchos::rcp(new Mesh_MOAB(filename, comm_, gm_, plist_, request_faces, request_edges));
+      }
+    }
+#endif
+
   }
-  e.add_data(boost::str(boost::format("%s: unable to read mesh file") %
-                        filename).c_str());
-  Exceptions::amanzi_throw(e);
+
+  Message m("No construct was found in preferences that is available and can read this file/file format.");
+  Exceptions::amanzi_throw(m);
   return Teuchos::null;
 }
 
@@ -152,63 +131,32 @@ MeshFactory::create(const std::string& filename,
  * @return mesh instance
  */
 Teuchos::RCP<Mesh> 
-MeshFactory::create(double x0, double y0, double z0,
-                    double x1, double y1, double z1,
-                    int nx, int ny, int nz, 
-                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+MeshFactory::create(const double x0, const double y0, const double z0,
+                    const double x1, const double y1, const double z1,
+                    const int nx, const int ny, const int nz, 
                     const bool request_faces, 
                     const bool request_edges)
 {
-  Teuchos::RCP<Mesh> result;
-  Message e("MeshFactory::create: error: ");
-  int ierr[1], aerr[1];
-  ierr[0] = 0;
-  aerr[0] = 0;
+  int nproc = comm_->NumProc();
 
-  unsigned int dim = 3;
-
-  if (nx <= 0 || ny <= 0 || nz <= 0) {
-    ierr[0] += 1;
-    e.add_data(boost::str(boost::format("invalid mesh cells requested: %d x %d x %d") %
-                          nx % ny % nz).c_str());
-  }
-  my_comm_->SumAll(ierr, aerr, 1);
-  if (aerr[0] > 0) amanzi_throw(e);
-
-  if (x1 - x0 <= 0.0 || y1 - y0 <= 0.0 || z1 - z0 <= 0.0) {
-    ierr[0] += 1;
-    e.add_data(boost::str(boost::format("invalid mesh dimensions requested: %.6g x %.6g x %.6g") %
-                          (x1 - x0) % (y1 - y0) % (z1 - z0)).c_str());
-  }
-  my_comm_->SumAll(ierr, aerr, 1);
-  if (aerr[0] > 0) amanzi_throw(e);
-      
-  for (FrameworkPreference::const_iterator i = my_preference.begin(); 
-       i != my_preference.end(); i++) {
-    if (framework_generates(*i, my_comm_->NumProc() > 1, dim)) {
-      try {
-        result = framework_generate(my_comm_, *i, 
-                                    x0, y0, z0, x1, y1, z1, 
-                                    nx, ny, nz,
-                                    gm, plist_,
-                                    request_faces, request_edges);
-        return result;
-      } catch (const Message& msg) {
-        ierr[0] += 1;
-        e.add_data(msg.what());
-      } catch (const std::exception& stde) {
-        ierr[0] += 1;
-        e.add_data("internal error: ");
-        e.add_data(stde.what());
-      }
-      my_comm_->SumAll(ierr, aerr, 1);
-      if (aerr[0] > 0) amanzi_throw(e);
+  for (auto p : preference_) {
+    if (p == Framework::SIMPLE && nproc == 1) {
+      return Teuchos::rcp(new Mesh_simple(x0,y0,z0,x1,y1,z1,nx,ny,nz,
+              comm_, gm_, plist_, request_faces, request_edges));
     }
+
+#ifdef HAVE_MSTK_MESH
+    if (p == Framework::MSTK) {
+      return Teuchos::rcp(new Mesh_MSTK(x0,y0,z0,x1,y1,z1,nx,ny,nz,
+              comm_, gm_, plist_, request_faces, request_edges));
+    }
+#endif
   }
-  e.add_data("unable to generate 3D mesh");
-  Exceptions::amanzi_throw(e);
+
+  Exceptions::amanzi_throw(Message("No construct was found in preferences that is available and can generate in 3D."));
   return Teuchos::null;
 }
+
 
 /** 
  * Coellective
@@ -228,60 +176,24 @@ MeshFactory::create(double x0, double y0, double z0,
  * @return mesh instance
  */
 Teuchos::RCP<Mesh> 
-MeshFactory::create(double x0, double y0,
-                    double x1, double y1,
-                    int nx, int ny,
-                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+MeshFactory::create(const double x0, const double y0,
+                    const double x1, const double y1,
+                    const int nx, const int ny,
                     const bool request_faces, 
                     const bool request_edges)
 {
-  Teuchos::RCP<Mesh> result;
-  Message e("MeshFactory::create: error: ");
-  int ierr[1], aerr[1];
-  ierr[0] = 0;
-  aerr[0] = 0;
+  int nproc = comm_->NumProc();
 
-  unsigned int dim = 2;
-
-  if (nx <= 0 || ny <= 0) {
-    ierr[0] += 1;
-    e.add_data(boost::str(boost::format("invalid mesh cells requested: %d x %d") %
-                          nx % ny).c_str());
-  }
-  my_comm_->SumAll(ierr, aerr, 1);
-  if (aerr[0] > 0) amanzi_throw(e);
-
-  if (x1 - x0 <= 0.0 || y1 - y0 <= 0.0) {
-    ierr[0] += 1;
-    e.add_data(boost::str(boost::format("invalid mesh dimensions requested: %.6g x %.6g") %
-                          (x1 - x0) % (y1 - y0)).c_str());
-  }
-  my_comm_->SumAll(ierr, aerr, 1);
-  if (aerr[0] > 0) amanzi_throw(e);
-      
-  for (auto i = my_preference.begin(); i != my_preference.end(); i++) {
-    if (framework_generates(*i, my_comm_->NumProc() > 1, dim)) {
-      try {
-        result = framework_generate(my_comm_, *i, 
-                                    x0, y0, x1, y1,
-                                    nx, ny,
-                                    gm, plist_,
-                                    request_faces, request_edges);
-        return result;
-      } catch (const Message& msg) {
-        ierr[0] += 1;
-        e.add_data(msg.what());
-      } catch (const std::exception& stde) {
-        ierr[0] += 1;
-        e.add_data("internal error: ");
-        e.add_data(stde.what());
-      }
-      my_comm_->SumAll(ierr, aerr, 1);
-      if (aerr[0] > 0) amanzi_throw(e);
+  for (auto p : preference_) {
+#ifdef HAVE_MSTK_MESH
+    if (p == Framework::MSTK) {
+      return Teuchos::rcp(new Mesh_MSTK(x0,y0,x1,y1,nx,ny,
+              comm_, gm_, plist_, request_faces, request_edges));
     }
+#endif
   }
-  e.add_data("unable to generate 2D mesh");
-  Exceptions::amanzi_throw(e);
+
+  Exceptions::amanzi_throw(Message("No construct was found in preferences that is available and can generate in 2D."));
   return Teuchos::null;
 }
 
@@ -295,40 +207,96 @@ MeshFactory::create(double x0, double y0,
  * @return 
  */
 Teuchos::RCP<Mesh> 
-MeshFactory::create(Teuchos::ParameterList& parameter_list, 
-                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+MeshFactory::create(const Teuchos::ParameterList& parameter_list, 
                     const bool request_faces, 
                     const bool request_edges)
 {
-  Teuchos::RCP<Mesh> result;
   Message e("MeshFactory::create: error: ");
-  int ierr[1], aerr[1];
-  ierr[0] = 0;
-  aerr[0] = 0;
-
-  Teuchos::Array<int> ncells = parameter_list.get< Teuchos::Array<int> >("number of cells");
-  unsigned int dim = ncells.size();
-
-  for (auto i = my_preference.begin(); i != my_preference.end(); i++) {
-    if (framework_generates(*i, my_comm_->NumProc() > 1, dim)) {
-      try {
-        result = framework_generate(my_comm_, *i, parameter_list, gm, Teuchos::null,
-                                    request_faces, request_edges);
-        return result;
-      } catch (const Message& msg) {
-        ierr[0] += 1;
-        e.add_data(msg.what());
-      } catch (const std::exception& stde) {
-        ierr[0] += 1;
-        e.add_data("internal error: ");
-        e.add_data(stde.what());
-      }
-      my_comm_->SumAll(ierr, aerr, 1);
-      if (aerr[0] > 0) amanzi_throw(e);
-    }
+  if (!parameter_list.isParameter("number of cells")) {
+    e.add_data("missing \"number of cells\"");
+    Exceptions::amanzi_throw(e);
   }
-  e.add_data("unable to generate mesh");
-  Exceptions::amanzi_throw(e);
+  auto ncells = parameter_list.get<Teuchos::Array<int> >("number of cells");
+
+  if (!parameter_list.isParameter("domain low coordinate")) {
+    e.add_data("missing \"domain low coordinate\"");
+    Exceptions::amanzi_throw(e);
+  }
+  auto low = parameter_list.get<Teuchos::Array<double> >("domain low coordinate");
+
+  if (!parameter_list.isParameter("domain high coordinate")) {
+    e.add_data("missing \"domain high coordinate\"");
+    Exceptions::amanzi_throw(e);
+  }
+  auto high = parameter_list.get<Teuchos::Array<double> >("domain high coordinate");
+
+  if (!((ncells.size() == 2) || (ncells.size() == 3))) {
+    e.add_data("invalid size \"number of cells\", must be 2 or 3");
+    Exceptions::amanzi_throw(e);
+  }
+
+  if (low.size() != ncells.size()) {
+    e.add_data("invalid size \"domain low coordinate\", must match \"number of cells\"");
+    Exceptions::amanzi_throw(e);
+  }
+  if (high.size() != ncells.size()) {
+    e.add_data("invalid size \"domain high coordinate\", must match \"number of cells\"");
+    Exceptions::amanzi_throw(e);
+  }
+
+  if (ncells.size() == 2) {    
+    return create(low[0], low[1], high[0], high[1],
+                  ncells[0], ncells[1], request_faces, request_edges);
+  } else {
+    return create(low[0], low[1], low[2], high[0], high[1], high[2],
+                  ncells[0], ncells[1], ncells[2], request_faces, request_edges);
+  }
+}
+
+
+/** 
+ * This creates a mesh by extracting subsets of entities from an existing
+ * mesh possibly flattening it by removing the last dimension or (in the 
+ * future) extruding it when it makes sense
+ * 
+ * @param inmesh
+ * @param setids
+ * @param setkind
+ * @param flatten
+ * @param extrude
+ * 
+ * @return 
+ */
+Teuchos::RCP<Mesh> 
+MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh, 
+                    const Entity_ID_List& setids,
+                    const Entity_kind setkind,
+                    const bool flatten,
+                    const bool request_faces, 
+                    const bool request_edges)
+{
+  // we have sane defaults from the parent mesh for some things
+  auto gm = Teuchos::RCP<const AmanziGeometry::GeometricModel>(gm_);
+  if (gm == Teuchos::null) {
+    gm = inmesh->geometric_model();
+  }
+
+  auto comm = Comm_ptr_type(comm_);
+  if (comm == Teuchos::null) {
+    comm = inmesh->get_comm();
+  }
+
+  // extract
+  for (auto p : preference_) {
+#ifdef HAVE_MSTK_MESH      
+    if (p == Framework::MSTK) {
+      return Teuchos::rcp(new Mesh_MSTK(inmesh, setids, setkind, flatten,
+              comm, gm, plist_, request_faces, request_edges));
+    }
+#endif      
+  }
+
+  Exceptions::amanzi_throw(Message("No construct was found in preferences that is available and can extract."));
   return Teuchos::null;
 }
 
@@ -346,45 +314,20 @@ MeshFactory::create(Teuchos::ParameterList& parameter_list,
  * @return 
  */
 Teuchos::RCP<Mesh> 
-MeshFactory::create(const Mesh *inmesh, 
-                    const std::vector<std::string> setnames,
+MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh, 
+                    const std::vector<std::string>& setnames,
                     const Entity_kind setkind,
-                    const bool flatten, const bool extrude,
+                    const bool flatten,
                     const bool request_faces, 
                     const bool request_edges)
 {
-  Teuchos::RCP<Mesh> result;
-  Message e("MeshFactory::create: error: ");
-  int ierr[1], aerr[1];
-  ierr[0] = 0;
-  aerr[0] = 0;
-
-  int dim = inmesh->manifold_dimension();
-
-  for (FrameworkPreference::const_iterator i = my_preference.begin(); 
-       i != my_preference.end(); i++) {
-    if (framework_extracts(*i, my_comm_->NumProc() > 1, dim)) {
-      try {
-        result = framework_extract(my_comm_, *i, inmesh, setnames, setkind, 
-                                   flatten, extrude,
-                                   request_faces, request_edges);
-        return result;
-      } catch (const Message& msg) {
-        ierr[0] += 1;
-        e.add_data(msg.what());
-      } catch (const std::exception& stde) {
-        ierr[0] += 1;
-        e.add_data("internal error: ");
-        e.add_data(stde.what());
-      }
-      my_comm_->SumAll(ierr, aerr, 1);
-      if (aerr[0] > 0) amanzi_throw(e);
-    }
+  Entity_ID_List ids;
+  for (auto name : setnames) {
+    Entity_ID_List ids_l;
+    inmesh->get_set_entities(name, setkind, Parallel_type::OWNED, &ids_l);
+    ids.insert(ids.end(), ids_l.begin(), ids_l.end());
   }
-  e.add_data("unable to extract mesh");
-  Exceptions::amanzi_throw(e);
-  return Teuchos::null;
+  return create(inmesh, ids, setkind, flatten, request_faces, request_edges);
 }
-
 } // namespace AmanziMesh
 } // namespace Amanzi

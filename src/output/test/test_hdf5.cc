@@ -5,23 +5,19 @@
 
 TEST(HDF5) {
 
-#ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
-#endif
+  auto comm = Amanzi::getDefaultComm();
 
   std::string hdf5_meshfile  = "new_mesh.h5";
   std::string hdf5_datafile1 = "new_data.h5";
   std::string hdf5_datafile2 = "new_restart.h5";
   
-  Amanzi::AmanziMesh::FrameworkPreference pref;
+  Amanzi::AmanziMesh::Preference pref;
   pref.clear();
-  pref.push_back(Amanzi::AmanziMesh::Simple);
+  pref.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
 
   Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
-  meshfactory.preference(pref);
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> Mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1);
+  meshfactory.set_preference(pref);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> Mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1);
 
   unsigned int num_nodes = Mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
   unsigned int num_cells = Mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);

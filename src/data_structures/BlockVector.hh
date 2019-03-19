@@ -1,23 +1,28 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-   ATS
+/*
+  Data Structures
 
-   License: see $ATS_DIR/COPYRIGHT
-   Author: Ethan Coon
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-   Interface for BlockVector, an implementation of a slightly improved
-   Epetra_MultiVector which spans multiple simplices and knows how to
-   communicate itself.
-   ------------------------------------------------------------------------- */
+  Author: Ethan Coon (ecoon@lanl.gov)
+
+  Interface for BlockVector, an implementation of a slightly improved
+  Epetra_MultiVector which spans multiple simplices and knows how to
+  communicate itself.
+*/
 
 #ifndef AMANZI_BLOCKVECTOR_HH_
 #define AMANZI_BLOCKVECTOR_HH_
 
 #include <vector>
 #include "Teuchos_RCP.hpp"
+#include "Epetra_BlockMap.h"
 #include "Epetra_MpiComm.h"
 #include "Epetra_MultiVector.h"
 
+#include "AmanziComm.hh"
 #include "dbc.hh"
 #include "data_structures_types.hh"
 
@@ -27,9 +32,9 @@ class BlockVector {
 
 public:
   // Constructor
-  BlockVector(const Epetra_MpiComm& comm,
+  BlockVector(const Comm_ptr_type& comm,
               std::vector<std::string>& names,
-              std::vector<Teuchos::RCP<const Epetra_Map> >& maps,
+              std::vector<Teuchos::RCP<const Epetra_BlockMap> >& maps,
               std::vector<int> num_dofs);
 
   // copy constructor
@@ -55,7 +60,7 @@ public:
   int NumVectors(std::string name) const { return num_dofs_[Index_(name)]; }
   unsigned int size(std::string name) const { return sizes_[Index_(name)]; }
 
-  Teuchos::RCP<const Epetra_Map> ComponentMap(std::string name) const {
+  Teuchos::RCP<const Epetra_BlockMap> ComponentMap(std::string name) const {
     return maps_[Index_(name)]; }
 
   // Accessors to data.
@@ -152,7 +157,7 @@ public:
 
   int Random();
 
-  const Epetra_MpiComm& Comm() const { return comm_; }
+  Comm_ptr_type Comm() const { return comm_; }
 
 private:
   int Index_(std::string name) const {
@@ -162,13 +167,13 @@ private:
   }
 
 private:
-  const Epetra_MpiComm comm_;
+  Comm_ptr_type comm_;
   std::map< std::string, int > indexmap_;
   int num_components_;
 
   std::vector<std::string> names_;
   std::vector<int> num_dofs_;
-  std::vector<Teuchos::RCP<const Epetra_Map> > maps_;
+  std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps_;
   std::vector<unsigned int> sizes_;
   std::vector<Teuchos::RCP<Epetra_MultiVector> > data_;
 };

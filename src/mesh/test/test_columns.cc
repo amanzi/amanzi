@@ -1,75 +1,62 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-// -------------------------------------------------------------
-/**
- * @file   test_deform.cc
- * @author Rao V. Garimella
- * @date   Thu Apr 12, 2012
- * 
- * @brief  
- */
-// -------------------------------------------------------------
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-#include <UnitTest++.h>
+  Authors: Rao Garimella, others
+*/
 
-#include <mpi.h>
+#include <vector>
 #include <iostream>
 
-#include <Epetra_MpiComm.h>
+#include "UnitTest++.h"
 
+#include "AmanziComm.hh"
+#include "Geometry.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "FrameworkTraits.hh"
-#include "Geometry.hh"
+#include "MeshException.hh"
 
 
 TEST(MESH_COLUMNS)
 {
 
-  Epetra_MpiComm comm_(MPI_COMM_WORLD);
-  const int nproc(comm_.NumProc());
-  const int me(comm_.MyPID());
+  auto comm = Amanzi::getDefaultComm();
+  const int nproc(comm->NumProc());
+  const int me(comm->MyPID());
 
   // We are not including MOAB since Mesh_MOAB.cc does not have
   // routines for generating a mesh
+  std::vector<Amanzi::AmanziMesh::Framework> frameworks;
+  std::vector<std::string> framework_names;
 
-  const Amanzi::AmanziMesh::Framework frameworks[] = {  
-    Amanzi::AmanziMesh::MSTK
-  };
-  const char *framework_names[] = {
-    "MSTK"
-  };
-  
-  const int numframeworks = sizeof(frameworks)/sizeof(Amanzi::AmanziMesh::Framework);
+  if (Amanzi::AmanziMesh::framework_enabled(Amanzi::AmanziMesh::Framework::MSTK)) {
+    frameworks.push_back(Amanzi::AmanziMesh::Framework::MSTK);
+    framework_names.push_back("MSTK");
+  }
 
 
-  Amanzi::AmanziMesh::Framework the_framework;
-  for (int i = 0; i < numframeworks; i++) {
+  for (int i = 0; i < frameworks.size(); i++) {
 
     // Set the framework
-
-    the_framework = frameworks[i];
-
-    if (!Amanzi::AmanziMesh::framework_available(the_framework)) continue;
-
     std::cerr << "Testing columns with " << framework_names[i] << std::endl;
-
 
     // Create the mesh
 
-    Amanzi::AmanziMesh::MeshFactory factory(&comm_);
+    Amanzi::AmanziMesh::MeshFactory factory(comm);
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
     int ierr = 0;
     int aerr = 0;
     try {
-      Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
+      Amanzi::AmanziMesh::Preference prefs(factory.preference());
       prefs.clear(); 
-      prefs.push_back(the_framework);
+      prefs.push_back(frameworks[i]);
 
-      factory.preference(prefs);
-      factory.set_partitioner(Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_RCB);
+      factory.set_preference(prefs);
 
-      mesh = factory(0.0,0.0,0.0,1.0,1.0,1.0,4,4,4);
+      mesh = factory.create(0.0,0.0,0.0,1.0,1.0,1.0,4,4,4);
 
     } catch (const Amanzi::AmanziMesh::Message& e) {
       std::cerr << ": mesh error: " << e.what() << std::endl;
@@ -79,7 +66,7 @@ TEST(MESH_COLUMNS)
       ierr++;
     }
 
-    comm_.SumAll(&ierr, &aerr, 1);
+    comm->SumAll(&ierr, &aerr, 1);
 
     CHECK_EQUAL(aerr,0);
 

@@ -40,16 +40,16 @@ TEST(RECONSTRUCTION_LINEAR_2D) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "\nTest: Exactness on linear functions in 2D." << std::endl;
 
   // create rectangular mesh
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
 
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 7, 7);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 7, 7);
 
   // create and initialize cell-based field 
   Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));
@@ -97,16 +97,16 @@ TEST(RECONSTRUCTION_LINEAR_3D) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "\nTest: Exactness on linear functions in 3D." << std::endl;
 
   // create rectangular mesh
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
 
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 7, 6, 5);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 7, 6, 5);
 
   // create and initialize cell-based field 
   Teuchos::RCP<Epetra_MultiVector> field = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(true), 1));

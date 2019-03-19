@@ -7,7 +7,7 @@
 #include "MeshAudit.hh"
 
 #include "Epetra_Map.h"
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 
 
 TEST(MSTK_HEX_2x2x1)
@@ -48,12 +48,12 @@ TEST(MSTK_HEX_2x2x1)
 			      {0,3,2,1},
 			      {4,5,6,7}};
 
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD)); 
+  auto comm = Amanzi::getDefaultComm(); 
 
 
   // Load a simple 4 element hex mesh 
 
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_2x2x1_ss.exo",comm_.get()));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_2x2x1_ss.exo",comm));
   
   
   nv = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::OWNED);

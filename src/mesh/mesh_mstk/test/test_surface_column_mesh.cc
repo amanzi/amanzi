@@ -17,7 +17,7 @@
 #include <mpi.h>
 #include <fstream>
 
-#include <Epetra_MpiComm.h>
+#include "AmanziComm.hh"
 
 #include "Geometry.hh"
 #include "../Mesh_MSTK.hh"
@@ -31,9 +31,9 @@
 TEST(SURFACE_COLUMN_MESH_3D)
 {
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  const int nproc(comm.NumProc());
-  const int me(comm.MyPID());
+  auto comm = Amanzi::getDefaultComm();
+  const int nproc(comm->NumProc());
+  const int me(comm->MyPID());
 
 
   int nx = 4, ny = 4, nz = 4;
@@ -59,7 +59,7 @@ TEST(SURFACE_COLUMN_MESH_3D)
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh =
       Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,
               lx,ly,lz,nx,ny,nz,
-              &comm, gm));
+              comm, gm));
 
   CHECK_EQUAL(1, mesh->build_columns());
   
@@ -75,7 +75,7 @@ TEST(SURFACE_COLUMN_MESH_3D)
   }
 
   // Create a column mesh from one of the columns
-  Amanzi::AmanziMesh::MeshColumn colmesh(*mesh,10);
+  auto colmesh = Teuchos::rcp(new Amanzi::AmanziMesh::MeshColumn(mesh,10));
 
   // Extract the surface from this column
   Amanzi::AmanziMesh::MeshSurfaceCell col_surf(colmesh, "surface");
@@ -114,9 +114,9 @@ TEST(SURFACE_COLUMN_MESH_3D)
 TEST(SURFACE_COLUMN_MESH_3D_UNSTRUCTURED)
 {
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  const int nproc(comm.NumProc());
-  const int me(comm.MyPID());
+  auto comm = Amanzi::getDefaultComm();
+  const int nproc(comm->NumProc());
+  const int me(comm->MyPID());
 
   // create a geometric model with surface region
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
@@ -134,7 +134,7 @@ TEST(SURFACE_COLUMN_MESH_3D_UNSTRUCTURED)
 
   // Create the mesh
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh =
-      Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK("test/slab-0.05-5x4x25.exo", &comm, gm));
+      Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK("test/slab-0.05-5x4x25.exo", comm, gm));
 
   CHECK_EQUAL(20, mesh->get_set_size("surface",Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::ALL));
 
@@ -142,8 +142,8 @@ TEST(SURFACE_COLUMN_MESH_3D_UNSTRUCTURED)
   CHECK_EQUAL(1, mesh->build_columns());
   
   // Create a column mesh from one of the columns
-  Amanzi::AmanziMesh::MeshColumn colmesh(*mesh,10);
-  CHECK_EQUAL(1, colmesh.get_set_size("surface",Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::ALL));
+  auto colmesh = Teuchos::rcp(new Amanzi::AmanziMesh::MeshColumn(mesh,10));
+  CHECK_EQUAL(1, colmesh->get_set_size("surface",Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::ALL));
 
   // Extract the surface from this column
   Amanzi::AmanziMesh::MeshSurfaceCell col_surf(colmesh, "surface");

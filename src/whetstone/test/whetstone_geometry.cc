@@ -30,15 +30,15 @@ TEST(FACE_CENTROIDS) {
 
   std::cout << "Test: calculation of face centroids" << std::endl;
  
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-  MeshFactory factory(comm);
-  factory.preference(pref);
-  // Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  Teuchos::RCP<Mesh> mesh = factory("test/one_pentagon.exo");
+  auto comm = Amanzi::getDefaultComm();
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(pref);
+  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
  
   AmanziGeometry::Point p(2), xc(2);
   Entity_ID_List nodes;
@@ -57,7 +57,7 @@ TEST(FACE_CENTROIDS) {
   std::cout << xc << " = " << xm << std::endl;
   CHECK_CLOSE(0.0, norm(xc - xm), 1e-10);
 
-  delete comm;
+  
 }
 
 

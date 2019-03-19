@@ -3,7 +3,7 @@
 #include "UnitTest++.h"
 #include "TestReporterStdout.h"
 
-#include "ConstantFunction.hh"
+#include "FunctionConstant.hh"
 #include "MultiFunction.hh"
 #include "errors.hh"
 
@@ -14,8 +14,8 @@ int main (int argc, char *argv[]) {
 }
 
 TEST(basic_test) {
-  Teuchos::RCP<const Function> f1 = Teuchos::rcp(new ConstantFunction(1.0));
-  Teuchos::RCP<const Function> f2 = Teuchos::rcp(new ConstantFunction(2.0));
+  Teuchos::RCP<const Function> f1 = Teuchos::rcp(new FunctionConstant(1.0));
+  Teuchos::RCP<const Function> f2 = Teuchos::rcp(new FunctionConstant(2.0));
 
   std::vector<Teuchos::RCP<const Function> > functions;
   functions.push_back(f1);

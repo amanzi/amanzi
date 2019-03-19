@@ -62,8 +62,8 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   std::string problem = (conservative_form) ? ", conservative formulation" : "";
   if (MyPID == 0) std::cout << "\nTest: " << dim 
@@ -79,16 +79,16 @@ void AdvectionSteady(int dim, std::string filename, int nx,
 
   // create a mesh framework
   Teuchos::RCP<GeometricModel> gm;
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
 
   double weak_sign = 1.0;
   std::string pk_name;
   RCP<const Mesh> mesh;
 
   if (dim == 2) {
-    // mesh = meshfactory(0.0, 0.0, 1.0, 1.0, nx, nx, gm);
-    mesh = meshfactory(filename, gm, true, true);
+    // mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, nx);
+    mesh = meshfactory.create(filename, true, true);
     pk_name = "PK operator 2D";
 
     if (weak_form == "primal") {
@@ -101,7 +101,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
     }
   } else {
     bool request_faces(true), request_edges(true);
-    mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx, gm, request_faces, request_edges);
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx, request_faces, request_edges);
     pk_name = "PK operator 3D";
   }
 

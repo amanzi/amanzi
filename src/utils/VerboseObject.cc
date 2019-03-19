@@ -17,8 +17,6 @@
 #include <ctime>
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include "Epetra_Comm.h"
-
 #include "VerboseObject.hh"
 
 namespace Amanzi {
@@ -39,7 +37,7 @@ VerboseObject::VerboseObject(const std::string& name, const std::string& verbosi
 
   // out, tab
   out_ = getOStream();
-  out_->setShowLinePrefix(hide_line_prefix);
+  out_->setShowLinePrefix(global_hide_line_prefix);
 }
 
 
@@ -60,7 +58,7 @@ VerboseObject::VerboseObject(const std::string& name, Teuchos::ParameterList pli
   set_name(headername);
 
   // -- Show the line prefix
-  bool no_pre = plist.sublist("verbose object").get<bool>("hide line prefix", hide_line_prefix);
+  bool no_pre = plist.sublist("verbose object").get<bool>("hide line prefix", global_hide_line_prefix);
 
   // Override from ParameterList.
   Teuchos::ParameterList plist_out;
@@ -77,9 +75,9 @@ VerboseObject::VerboseObject(const std::string& name, Teuchos::ParameterList pli
 }
 
 
-VerboseObject::VerboseObject(const Epetra_Comm& comm, const std::string& name,
+VerboseObject::VerboseObject(const Comm_ptr_type& comm, const std::string& name,
                              Teuchos::ParameterList plist) :
-    comm_(Teuchos::rcp(comm.Clone()))
+    comm_(comm)
 {
   // Options from ParameterList
   int root = -1;
@@ -102,7 +100,7 @@ VerboseObject::VerboseObject(const Epetra_Comm& comm, const std::string& name,
   set_name(headername);
 
   // -- Show the line prefix
-  bool no_pre = plist.sublist("verbose object").get<bool>("hide line prefix", hide_line_prefix);
+  bool no_pre = plist.sublist("verbose object").get<bool>("hide line prefix", global_hide_line_prefix);
 
   // Override from ParameterList.
   Teuchos::ParameterList plist_out;
@@ -129,10 +127,10 @@ VerboseObject::VerboseObject(const Epetra_Comm& comm, const std::string& name,
     std::stringstream headerstream;
     headerstream << pid << ": " << getLinePrefix();
     std::string header = headerstream.str();
-    if (header.size() > line_prefix_size) {
-      header.erase(line_prefix_size);
-    } else if (header.size() < line_prefix_size) {
-      header.append(line_prefix_size - header.size(), ' ');
+    if (header.size() > global_line_prefix_size) {
+      header.erase(global_line_prefix_size);
+    } else if (header.size() < global_line_prefix_size) {
+      header.append(global_line_prefix_size - header.size(), ' ');
     }
 
     setLinePrefix(header);
@@ -145,10 +143,10 @@ VerboseObject::VerboseObject(const Epetra_Comm& comm, const std::string& name,
 void VerboseObject::set_name(const std::string& name)
 {
   std::string header(name);
-  if (header.size() > line_prefix_size) {
-    header.erase(line_prefix_size);
-  } else if (header.size() < line_prefix_size) {
-    header.append(line_prefix_size - header.size(), ' ');
+  if (header.size() > global_line_prefix_size) {
+    header.erase(global_line_prefix_size);
+  } else if (header.size() < global_line_prefix_size) {
+    header.append(global_line_prefix_size - header.size(), ' ');
   }
   setLinePrefix(header);
 }

@@ -14,6 +14,7 @@
 #ifndef AMANZI_EOS_EFFECTIVE_PRESSURE_EVALUATOR_HH_
 #define AMANZI_EOS_EFFECTIVE_PRESSURE_EVALUATOR_HH_
 
+#include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {

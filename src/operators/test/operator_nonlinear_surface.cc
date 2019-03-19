@@ -96,8 +96,8 @@ void RunTest(std::string op_list_name) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "\nTest: Singular-perturbed nonlinear Laplace Beltrami solver" << std::endl;
 
@@ -108,18 +108,17 @@ void RunTest(std::string op_list_name) {
 
   // create an MSTK mesh framework
   ParameterList region_list = plist.sublist("Regions Closed");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({Framework::MSTK}));
-  RCP<const Mesh> mesh = meshfactory("test/sphere.exo", gm);
-  RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  RCP<const Mesh> mesh = meshfactory.create("test/sphere.exo");
 
   // extract surface mesh
   std::vector<std::string> setnames;
   setnames.push_back(std::string("Top surface"));
 
-  RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(&*mesh_mstk, setnames, AmanziMesh::FACE));
+  RCP<Mesh> surfmesh = meshfactory.create(mesh, setnames, AmanziMesh::FACE);
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());

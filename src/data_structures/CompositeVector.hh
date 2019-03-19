@@ -11,8 +11,8 @@ communicate itself.
 CompositeVectors are a collection of vectors defined on a common mesh and
 communicator.  Each vector, or component, has a name (used as a key), a mesh
 Entity_kind (CELL, FACE, NODE, or BOUNDARY_FACE), and a number of degrees of
-freedom (dofs).  This, along with the Epetra_Map provided from the mesh on a
-given Entity_kind, is enough to create an Epetra_MultiVector.
+freedom (dofs).  This, along with the Epetra_BlockMap provided from the mesh 
+on a given Entity_kind, is enough to create an Epetra_MultiVector.
 
 Note that construction of the CompositeVector does not allocate the
 Epetra_MultiVectors.  CreateData() must be called before usage.
@@ -167,7 +167,7 @@ public:
   name_iterator begin() const { return map_->begin(); }
   name_iterator end() const { return map_->end(); }
   unsigned int size() const { return map_->size(); }
-  const Epetra_MpiComm& Comm() const { return map_->Comm(); }
+  Comm_ptr_type Comm() const { return map_->Comm(); }
   Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return map_->Mesh(); }
   bool HasComponent(std::string name) const { return map_->HasComponent(name); }
   int NumComponents() const { return size(); }
@@ -182,11 +182,10 @@ public:
   int GlobalLength() const { return mastervec_->GlobalLength(); }
   
   // Access the VectorSpace for each component.
-  Teuchos::RCP<const Epetra_Map> ComponentMap(std::string name,
+  Teuchos::RCP<const Epetra_BlockMap> ComponentMap(std::string name,
           bool ghosted=false) const {
     return ghosted ? ghostvec_->ComponentMap(name) : mastervec_->ComponentMap(name);
   }
-  CompositeVector(const Epetra_BlockMap& map) {};
 
   // -- View data. --
 

@@ -27,7 +27,7 @@ GeometricModel::GeometricModel(unsigned int dim)
 
 GeometricModel::GeometricModel(unsigned int dim,
                                Teuchos::ParameterList& gm_params,
-                               const Epetra_MpiComm *comm)
+                               const Comm_type& comm)
   : dim_(dim)
 {
   // Go through the parameter list and populate the geometric model with regions

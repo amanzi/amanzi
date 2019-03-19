@@ -3,7 +3,7 @@
 #include "math.h"
 #include "UnitTest++.h"
 
-#include <Epetra_Comm.h>
+
 #include <Epetra_MpiComm.h>
 #include "Epetra_SerialComm.h"
 
@@ -29,7 +29,7 @@ TEST(NEW_DRIVER_COUPLED_MULTIPHASE) {
 using namespace std;
 
 #ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  auto comm = Amanzi::getDefaultComm();
 #else  
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
@@ -44,25 +44,25 @@ using namespace std;
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, &comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
   // create mesh
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 8, 8, gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(pref);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 8, 8);
   AMANZI_ASSERT(!mesh.is_null());
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
   Teuchos::RCP<Teuchos::ParameterList> glist_rcp = Teuchos::rcp(new Teuchos::ParameterList(plist));
-  Amanzi::CycleDriver cycle_driver(glist_rcp, mesh, &comm, obs_data);
+  Amanzi::CycleDriver cycle_driver(glist_rcp, mesh, comm, obs_data);
   cycle_driver.Go();
 
-  delete comm;
+  
 }
 
 

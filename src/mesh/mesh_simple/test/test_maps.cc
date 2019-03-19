@@ -3,24 +3,19 @@
 #include "math.h"
 #include "UnitTest++.h"
 #include "../Mesh_simple.hh"
-#include <Epetra_Comm.h>
-#include <Epetra_MpiComm.h>
+
+#include <AmanziComm.hh>
 #include "Epetra_SerialComm.h"
 #include "GenerationSpec.hh"
 
 SUITE (MeshSimple) {
 TEST(MAPS) {
   
-using namespace std;
+  using namespace std;
 
-#ifdef HAVE_MPI
-  Epetra_MpiComm *comm_ = new Epetra_MpiComm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm *comm_ = new Epetra_SerialComm();
-#endif
+  auto comm = Amanzi::getDefaultComm();
 
-
-  Amanzi::AmanziMesh::Mesh_simple Mm(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, comm_); 
+  Amanzi::AmanziMesh::Mesh_simple Mm(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, comm); 
 
   double xc[] = { 2.0, 2.0, 2.0 };
   Mm.node_set_coordinates(7,xc);

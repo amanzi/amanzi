@@ -18,7 +18,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 // Amanzi
-#include "factory.hh"
+#include "Factory.hh"
 #include "Point.hh"
 #include "Tensor.hh"
 

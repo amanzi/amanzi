@@ -33,7 +33,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 add_amanzi_library(mesh SOURCE Mesh.cc 
                                Mesh_Sets.cc 
                                GenerationSpec.cc 
-                        LINK_LIBS geometry ${Epetra_LIBRARIES})
+                        LINK_LIBS geometry atk ${Epetra_LIBRARIES})
 
 #
 # Library: mesh_audit
@@ -56,9 +56,9 @@ add_subdirectory(exodus_reader)
 # Mesh Frameworks
 
 # STK (Trilinos Package)
-if (ENABLE_STK_Mesh)
-  add_subdirectory(mesh_stk)
-endif(ENABLE_STK_Mesh)    
+#if (ENABLE_STK_Mesh)
+#  add_subdirectory(mesh_stk)
+#endif(ENABLE_STK_Mesh)    
 
 # MOAB Mesh framework
 if (ENABLE_MOAB_Mesh)

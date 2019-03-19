@@ -26,7 +26,7 @@ namespace AmanziMesh {
 
 MeshLogicalAudit:: MeshLogicalAudit(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh_, std::ostream& os_) :
     mesh(mesh_),
-    comm_(*(mesh_->get_comm())),
+    comm_(mesh_->get_comm()),
     MyPID(mesh_->get_comm()->MyPID()),
     os(os_),
     nface(mesh_->face_map(true).NumMyElements()),
@@ -550,7 +550,7 @@ bool MeshLogicalAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &m
   error = global_any(error);
   if (error) return error;
 
-  if (comm_.NumProc() == 1)
+  if (comm_->NumProc() == 1)
   {
 
     // Serial or 1-process MPI
@@ -596,7 +596,7 @@ bool MeshLogicalAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &m
     map_own.RemoteIDList(num_ovl, gids, pids, lids);
     bad_map = false;
     for (int j = 0; j < num_ovl; ++j)
-      if (pids[j] < 0 || pids[j] == comm_.MyPID()) bad_map = true;
+      if (pids[j] < 0 || pids[j] == comm_->MyPID()) bad_map = true;
     if (bad_map) {
       os << "ERROR: invalid ghosts in overlap map." << std::endl;
       error = true;
@@ -779,7 +779,7 @@ void MeshLogicalAudit::write_list(const AmanziMesh::Entity_ID_List &list, unsign
 bool MeshLogicalAudit::global_any(bool value) const
 {
   int lval=value, gval;
-  comm_.MaxAll(&lval, &gval, 1);
+  comm_->MaxAll(&lval, &gval, 1);
   return gval;
 }
 

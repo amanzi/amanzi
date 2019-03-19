@@ -7,7 +7,7 @@
 #include "MeshAudit.hh"
 
 #include "Epetra_Map.h"
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -22,7 +22,7 @@
 TEST(MSTK_DEFORM_VOLS_2D)
 {
 
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  auto comm = Amanzi::getDefaultComm();
 
   // Define a box region to capture bottom boundary
   Teuchos::ParameterList param_list;
@@ -36,11 +36,11 @@ TEST(MSTK_DEFORM_VOLS_2D)
 
   //  Teuchos::writeParameterListToXmlOStream(param_list,std::cout);
 
-  if (comm_->NumProc() > 1) return;
+  if (comm->NumProc() > 1) return;
 
   // Create a geometric model from region spec
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, comm_.get()));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
   // Generate a mesh consisting of 3x3 elements 
   auto plist = Teuchos::rcp(new Teuchos::ParameterList());
@@ -48,7 +48,7 @@ TEST(MSTK_DEFORM_VOLS_2D)
   bool request_faces = true;
   bool request_edges = true;
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
-    mesh(new Amanzi::AmanziMesh::Mesh_MSTK(-5.0,0.0,5.0,10.0,10,10,comm_.get(),
+    mesh(new Amanzi::AmanziMesh::Mesh_MSTK(-5.0,0.0,5.0,10.0,10,10,comm,
 					   gm,plist,
 					   request_faces,request_edges));
 
@@ -109,7 +109,7 @@ TEST(MSTK_DEFORM_VOLS_2D)
 
 TEST(MSTK_DEFORM_VOLS_3D)
 {
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  auto comm = Amanzi::getDefaultComm();
 
   // Define a box region to capture bottom boundary
   Teuchos::ParameterList param_list;
@@ -124,7 +124,7 @@ TEST(MSTK_DEFORM_VOLS_3D)
   //  Teuchos::writeParameterListToXmlOStream(param_list,std::cout);
 
   // Create a geometric model from region spec
-  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, comm_.get()));
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
   // Generate a mesh consisting of 10x10 elements
   auto plist = Teuchos::rcp(new Teuchos::ParameterList());
@@ -133,7 +133,7 @@ TEST(MSTK_DEFORM_VOLS_3D)
   bool request_edges = true;
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
     mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,10.0,1.0,10.0,10,1,10,
-					   comm_.get(),gm,plist,
+					   comm,gm,plist,
 					   request_faces,request_edges));
 
   CHECK_EQUAL(mesh->build_columns(), 1);
@@ -197,7 +197,7 @@ TEST(MSTK_DEFORM_VOLS_3D)
       double diff = mesh->cell_volume(i)-min_volumes[i];
       std::cerr << "Cell Global ID " << mesh->GID(i,Amanzi::AmanziMesh::CELL)
                 << " Cell Local ID " << i 
-                << " Rank " << comm_->MyPID() 
+                << " Rank " << comm->MyPID() 
                 << ": Min volume = " << min_volumes[i] << "    "
                 << "Cell volume = " << mesh->cell_volume(i)  << "  Diff = "
                 << diff << std::endl;

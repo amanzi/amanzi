@@ -6,15 +6,13 @@
 
 
 #include "Epetra_Map.h"
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
 
 TEST(MSTK_HEX_3x3x3_SETS_4P)
 {
-  int rank, size;
-
   std::vector<std::string> expcsetnames{"Bottom LS", "Middle LS", "Top LS", 
                                  "Bottom+Middle Box", "Top Box",
         "Bottom ColFunc", "Middle ColFunc", "Top ColFunc", "Entire Mesh"};
@@ -31,17 +29,10 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
 
   int fsetsize;
 
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
-
-  
-  int initialized;
-  MPI_Initialized(&initialized);
-  
-  if (!initialized)
-    MPI_Init(NULL,NULL);
-
-  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
-  MPI_Comm_size(MPI_COMM_WORLD,&size);
+  auto comm = Amanzi::getDefaultComm();
+  int rank = comm->MyPID();
+  int size = comm->NumProc();
+  //  CHECK_EQUAL(4,size);
 
   // if (size != 4) {
   //   std::cerr << "Test must be run with 4 processors" << std::endl;
@@ -55,10 +46,10 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
   Teuchos::ParameterList reg_spec(xmlreader.getParameters());
 
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm_.get()));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, *comm));
 
   // Load a mesh consisting of 3x3x3 elements
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_3x3x3_sets.exo",comm_.get(),gm));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_3x3x3_sets.exo",comm,gm));
 
   Teuchos::ParameterList::ConstIterator i;
   for (i = reg_spec.begin(); i != reg_spec.end(); i++) {

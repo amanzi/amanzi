@@ -1,7 +1,7 @@
 #include <fstream>
 
 #include "Epetra_Map.h"
-#include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "UnitTest++.h"
@@ -13,7 +13,7 @@ TEST(MSTK_READ_NONMANIFOLD_SURFACES)
 {
   std::string expcsetnames[2] = {"FRACTURE 1", "FRACTURE 2"};
   
-  Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  auto comm = Amanzi::getDefaultComm();
 
   Teuchos::ParameterList parameterlist;
  
@@ -42,14 +42,14 @@ TEST(MSTK_READ_NONMANIFOLD_SURFACES)
 
 
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm_.get()));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, *comm));
 
 
   // Load a mesh consisting of quads representing two perpendicular
   // intersecting surfaces in 3 space. Each surface is meshed with 100
   // regular quads
 
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/fractures.exo",comm_.get(),3,gm));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/fractures.exo",comm,3,gm));
 
 
   CHECK_EQUAL(2, mesh->manifold_dimension());

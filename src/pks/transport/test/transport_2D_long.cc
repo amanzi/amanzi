@@ -35,7 +35,7 @@ TEST(ADVANCE_WITH_2D_MESH) {
 
   std::cout << "Test: 2D transport on a square mesh for long time" << std::endl;
 #ifdef HAVE_MPI
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
 #else
   Epetra_SerialComm* comm = new Epetra_SerialComm();
 #endif
@@ -47,14 +47,14 @@ TEST(ADVANCE_WITH_2D_MESH) {
   /* create a mesh framework */
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
-  MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
-  RCP<const Mesh> mesh = meshfactory("test/rect2D_50x50_ss.exo", gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  RCP<const Mesh> mesh = meshfactory.create("test/rect2D_50x50_ss.exo");
   
   /* create a simple state and populate it */
-  Amanzi::VerboseObject::hide_line_prefix = false;
+  Amanzi::VerboseObject::global_hide_line_prefix = false;
 
   std::vector<std::string> component_names;
   component_names.push_back("Component 0");
@@ -117,7 +117,7 @@ TEST(ADVANCE_WITH_2D_MESH) {
 
   TPK.VV_CheckTracerBounds(*tcc, 0, 0.0, 1.0, Transport::TRANSPORT_LIMITER_TOLERANCE);
  
-  delete comm;
+  
 }
 
 

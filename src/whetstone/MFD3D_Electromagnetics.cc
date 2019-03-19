@@ -36,18 +36,18 @@ int MFD3D_Electromagnetics::H1consistency(
 {
   int ok;
   if (d_ == 2) {
-    ok = H1consistency2DExperimental_(c, T, N, Ac);
+    ok = H1consistency2D_(c, T, N, Ac);
   } else {
-    ok = H1consistency3DExperimental_(c, T, N, Ac);
+    ok = H1consistency3D_(c, T, N, Ac);
   }
   return ok;
 }
 
 
 /* ******************************************************************
-* Stiffness matrix for edge-based discretization.
+* Consistency condition for a stiffness matrix.
 ****************************************************************** */
-int MFD3D_Electromagnetics::H1consistency2DExperimental_(
+int MFD3D_Electromagnetics::H1consistency2D_(
     int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac)
 {
   Entity_ID_List faces;
@@ -56,7 +56,7 @@ int MFD3D_Electromagnetics::H1consistency2DExperimental_(
   mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
   int nfaces = faces.size();
 
-  int nd = d_ * (d_ + 1) / 2;
+  int nd = 3; 
   N.Reshape(nfaces, nd);
   Ac.Reshape(nfaces, nfaces);
 
@@ -96,9 +96,9 @@ int MFD3D_Electromagnetics::H1consistency2DExperimental_(
 
 
 /* ******************************************************************
-* Stiffness matrix for edge-based discretization.
+* Consistency condition for a stiffness matrix.
 ****************************************************************** */
-int MFD3D_Electromagnetics::H1consistency3DExperimental_(
+int MFD3D_Electromagnetics::H1consistency3D_(
     int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac)
 {
   Entity_ID_List edges, fedges, faces;
@@ -110,7 +110,7 @@ int MFD3D_Electromagnetics::H1consistency3DExperimental_(
   mesh_->cell_get_edges(c, &edges);
   int nedges = edges.size();
 
-  int nd = d_ * (d_ + 1) / 2;
+  int nd = 6;  // order_ * (order_ + 2) * (order_ + 3) / 2;
   N.Reshape(nedges, nd);
   Ac.Reshape(nedges, nedges);
 
@@ -125,11 +125,9 @@ int MFD3D_Electromagnetics::H1consistency3DExperimental_(
   for (int i = 0; i < nfaces; ++i) {
     int f = faces[i];
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    double area = mesh_->face_area(f);
+    AmanziGeometry::Point normal = mesh_->face_normal(f);
+    normal /= mesh_->face_area(f);
 
-    v1 = xc - xf; 
- 
     mesh_->face_get_edges_and_dirs(f, &fedges, &edirs);
     int nfedges = fedges.size();
 
@@ -137,13 +135,13 @@ int MFD3D_Electromagnetics::H1consistency3DExperimental_(
 
     for (int m = 0; m < nfedges; ++m) {
       int e = fedges[m];
-
+      const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
       double len = mesh_->edge_length(e);
-      len *= 2 * fdirs[i] * edirs[m];
 
-      for (int k = 0; k < d_; ++k) {
-        N(map[m], k) += len * v1[k];
-      }
+      len *= 2 * fdirs[i] * edirs[m];
+      v2 = xe - xf;
+
+      for (int k = 0; k < d_; ++k) N(map[m], k) += len * v2[k];
     }
   }
   
@@ -162,17 +160,15 @@ int MFD3D_Electromagnetics::H1consistency3DExperimental_(
   for (int i = 0; i < nedges; i++) {
     int e = edges[i];
     const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
-    const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
+    AmanziGeometry::Point tau = mesh_->edge_vector(e);
     double len = mesh_->edge_length(e);
 
-    for (int k = 0; k < d_; ++k) N(i, k) = tau[k] / len;
-
+    tau /= len;
     v1 = xe - xc;
-    v2 = v1^tau;
+    v3 = tau ^ v1;
 
-    for (int k = 0; k < d_; ++k) {
-      N(i, k + d_) = v2[k] / len;
-    }
+    for (int k = 0; k < d_; ++k) N(i, k) = tau[k];
+    for (int k = 0; k < d_; ++k) N(i, d_ + k) = v3[k];
   }
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -247,32 +243,139 @@ int MFD3D_Electromagnetics::StiffnessMatrix(
 
 
 /* ******************************************************************
-* Stiffness matrix: the standard algorithm. Curl in 2D and 3D is 
-* defined using the exterior face normal.
+* Stiffness matrix: the standard algorithm. Curls in 2D and 3D are
+* defined using exterior face normals.
 ****************************************************************** */
 int MFD3D_Electromagnetics::StiffnessMatrix(
     int c, const Tensor& T, DenseMatrix& A, DenseMatrix& M, DenseMatrix& C)
 {
-  Entity_ID_List faces, nodes, fedges, edges;
-  std::vector<int> fdirs, edirs, map;
+  MFD3D_Diffusion diffusion(mesh_);
+  int ok = diffusion.MassMatrixScaledArea(c, T, M);
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
-  int nfaces = faces.size();
+  // populate curl matrix
+  CurlMatrix(c, C);
+  int nfaces = C.NumRows();
+  int nedges = C.NumCols();
+
+  A.Reshape(nedges, nedges);
+  DenseMatrix MC(nfaces, nedges);
+
+  MC.Multiply(M, C, false);
+  A.Multiply(C, MC, true); 
+
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Stiffness matrix: the algorithm based on new 
+****************************************************************** */
+int MFD3D_Electromagnetics::StiffnessMatrixGeneralized(
+    int c, const Tensor& T, DenseMatrix& A)
+{
+  DenseMatrix N;
+
+  int ok = H1consistency(c, T, N, A);
+  if (ok) return ok;
+
+  AddGradientToProjector_(c, N);
+
+  StabilityScalar_(N, A);
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
+* Stiffness matrix: the algorithm based on new 
+****************************************************************** */
+void MFD3D_Electromagnetics::AddGradientToProjector_(int c, DenseMatrix& N) 
+{
+  Entity_ID_List edges, nodes;
 
   mesh_->cell_get_edges(c, &edges);
   int nedges = edges.size();
 
-  A.Reshape(nedges, nedges);
-  M.Reshape(nfaces, nfaces);
+  mesh_->cell_get_nodes(c, &nodes);
+  int nnodes = nodes.size();
+
+  // reserve map: gid -> lid
+  std::map<int, int> lid;
+  for (int n = 0; n < nnodes; ++n) lid[nodes[n]] = n;
+
+  // populate discrete gradient
+  int v1, v2;
+  DenseMatrix G(nedges, nnodes);
+  G.PutScalar(0.0);
+
+  for (int m = 0; m < nedges; ++m) {
+    int e = edges[m];
+    double length = mesh_->edge_length(e);
+    mesh_->edge_get_nodes(e, &v1, &v2);
+
+    G(m, lid[v1]) += 1.0 / length;
+    G(m, lid[v2]) -= 1.0 / length;
+  } 
+
+  // create matrix [N G] with possibly linearly dependent vectors
+  int ncols = N.NumCols();
+  DenseMatrix NG(nedges, ncols + nnodes - 1);
+  for (int n = 0; n < ncols; ++n) {
+    for (int m = 0; m < nedges; ++m) NG(m, n) = N(m, n);
+  }
+  for (int n = 0; n < nnodes - 1; ++n) {
+    for (int m = 0; m < nedges; ++m) NG(m, ncols + n) = G(m, n);
+  }
+  
+  // identify linearly independent vectors by using the
+  // Gramm-Schmidt orthogonalization process
+  int ngcols = ncols + nnodes - 1;
+  double scale = G.Norm2();
+  double tol = 1e-24 * scale * scale;
+
+  std::vector<int> map;
+  for (int n = 0; n < ngcols; ++n) {
+    double l22 = 0.0;
+    for (int m = 0; m < nedges; m++) l22 += NG(m, n) * NG(m, n);
+
+    // skip column of matrix G
+    if (n >= ncols && l22 < tol) continue;
+
+    map.push_back(n);
+    l22 = 1.0 / sqrt(l22);
+    for (int m = 0; m < nedges; ++m) NG(m, n) *= l22;
+
+    for (int k = n + 1; k < ngcols; ++k) {
+      double s = 0.0;
+      for (int m = 0; m < nedges; ++m) s += NG(m, n) * NG(m, k);
+      for (int m = 0; m < nedges; ++m) NG(m, k) -= s * NG(m, n);
+    }
+  }
+
+  // create new matrix N
+  int nmap = map.size();
+  N.Reshape(nedges, nmap);
+  for (int n = 0; n < nmap; ++n) {
+    for (int m = 0; m < nedges; ++m) N(m, n) = NG(m, map[n]);
+  }
+}
+
+
+/* ******************************************************************
+* Curl matrix acts onto the space of total fluxes; hence, there is 
+* no face area scaling below.
+****************************************************************** */
+void MFD3D_Electromagnetics::CurlMatrix(int c, DenseMatrix& C)
+{
+  Entity_ID_List faces, nodes, fedges, edges;
+  std::vector<int> fdirs, edirs, map;
+
+  mesh_->cell_get_edges(c, &edges);
+  int nedges = edges.size();
+
+  mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+  int nfaces = faces.size();
+
   C.Reshape(nfaces, nedges);
-
-  DenseMatrix MC(nfaces, nedges);
-
-  MFD3D_Diffusion diffusion(mesh_);
-  int ok = diffusion.MassMatrixScaledArea(c, T, M);
-
-  // populate curl matrix. Curl acts to the space of total
-  // fluxes; hence, there is no face area scaling.
   C.PutScalar(0.0);
 
   if (d_ == 2) {
@@ -298,27 +401,6 @@ int MFD3D_Electromagnetics::StiffnessMatrix(
       }
     }
   }
-
-  MC.Multiply(M, C, false);
-  A.Multiply(C, MC, true); 
-
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
-}
-
-
-/* ******************************************************************
-* Stiffness matrix: the experimental algorithm.
-****************************************************************** */
-int MFD3D_Electromagnetics::StiffnessMatrixExperimental(
-    int c, const Tensor& T, DenseMatrix& A)
-{
-  DenseMatrix N;
-
-  int ok = H1consistency(c, T, N, A);
-  if (ok) return ok;
-
-  StabilityScalar_(N, A);
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
 }  // namespace WhetStone

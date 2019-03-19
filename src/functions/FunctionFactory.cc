@@ -4,22 +4,22 @@
 #include "errors.hh"
 #include "HDF5Reader.hh"
 
-#include "AdditiveFunction.hh"
-#include "BilinearFunction.hh"
-#include "CompositionFunction.hh"
-#include "ConstantFunction.hh"
-#include "DistanceFunction.hh"
-#include "SquareDistanceFunction.hh"
+#include "FunctionAdditive.hh"
+#include "FunctionBilinear.hh"
+#include "FunctionComposition.hh"
+#include "FunctionConstant.hh"
+#include "FunctionDistance.hh"
+#include "FunctionSquareDistance.hh"
 #include "FunctionFactory.hh"
-#include "LinearFunction.hh"
-#include "MonomialFunction.hh"
-#include "MultiplicativeFunction.hh"
-#include "PolynomialFunction.hh"
-#include "SeparableFunction.hh"
-#include "SmoothStepFunction.hh"
-#include "StandardMathFunction.hh"
-#include "StaticHeadFunction.hh"
-#include "TabularFunction.hh"
+#include "FunctionLinear.hh"
+#include "FunctionMonomial.hh"
+#include "FunctionMultiplicative.hh"
+#include "FunctionPolynomial.hh"
+#include "FunctionSeparable.hh"
+#include "FunctionSmoothStep.hh"
+#include "FunctionStandardMath.hh"
+#include "FunctionStaticHead.hh"
+#include "FunctionTabular.hh"
 
 namespace Amanzi {
 
@@ -96,7 +96,7 @@ Function* FunctionFactory::create_constant(Teuchos::ParameterList& params) const
   Function *f;
   try {
     double value = params.get<double>("value");
-    f = new ConstantFunction(value);
+    f = new FunctionConstant(value);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-constant parameter error: " << msg.what();
@@ -129,21 +129,21 @@ Function* FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
     reader.ReadData(y, vec_y);
     if (params.isParameter("forms")) {
       Teuchos::Array<std::string> form_strings(params.get<Teuchos::Array<std::string> >("forms"));
-      std::vector<TabularFunction::Form> form(form_strings.size());
+      std::vector<FunctionTabular::Form> form(form_strings.size());
       for (int i = 0; i < form_strings.size(); ++i) {
         if (form_strings[i] == "linear")
-          form[i] = TabularFunction::LINEAR;
+          form[i] = FunctionTabular::LINEAR;
         else if (form_strings[i] == "constant")
-          form[i] = TabularFunction::CONSTANT;
+          form[i] = FunctionTabular::CONSTANT;
         else {
           Errors::Message m;
           m << "unknown form \"" << form_strings[i].c_str() << "\"";
           Exceptions::amanzi_throw(m);
         }
       }
-      f = new TabularFunction(vec_x, vec_y, xi, form);
+      f = new FunctionTabular(vec_x, vec_y, xi, form);
     } else {
-      f = new TabularFunction(vec_x, vec_y, xi);
+      f = new FunctionTabular(vec_x, vec_y, xi);
     }
 
     // }
@@ -171,18 +171,18 @@ Function* FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
       if (params.isParameter("forms")) {
         Teuchos::Array<std::string> form_strings(params.get<Teuchos::Array<std::string> >("forms"));
         int nforms = form_strings.size();
-        std::vector<TabularFunction::Form> form(nforms);
+        std::vector<FunctionTabular::Form> form(nforms);
 
         bool flag_func(false);
         std::vector<Function* > func(nforms);
 
         for (int i = 0; i < nforms; ++i) {
           if (form_strings[i] == "linear")
-            form[i] = TabularFunction::LINEAR;
+            form[i] = FunctionTabular::LINEAR;
           else if (form_strings[i] == "constant")
-            form[i] = TabularFunction::CONSTANT;
+            form[i] = FunctionTabular::CONSTANT;
           else {
-            form[i] = TabularFunction::FUNCTION;
+            form[i] = FunctionTabular::FUNCTION;
             if (params.isSublist(form_strings[i])) {
               Teuchos::ParameterList& f1_params = params.sublist(form_strings[i]);
 
@@ -200,12 +200,12 @@ Function* FunctionFactory::create_tabular(Teuchos::ParameterList& params) const
           }
         }
         if (flag_func) {
-          f = new TabularFunction(x, y, xi, form, func);
+          f = new FunctionTabular(x, y, xi, form, func);
         } else {
-          f = new TabularFunction(x, y, xi, form);
+          f = new FunctionTabular(x, y, xi, form);
         } 
       } else {
-        f = new TabularFunction(x, y, xi);
+        f = new FunctionTabular(x, y, xi);
       }
     }
     catch (Teuchos::Exceptions::InvalidParameter& msg) {
@@ -230,7 +230,7 @@ Function* FunctionFactory::create_smooth_step(Teuchos::ParameterList& params) co
     double x1 = params.get<double>("x1");
     double y0 = params.get<double>("y0");
     double y1 = params.get<double>("y1");
-    f = new SmoothStepFunction(x0, y0, x1, y1);
+    f = new FunctionSmoothStep(x0, y0, x1, y1);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-smooth-step parameter error: " << msg.what();
@@ -250,7 +250,7 @@ Function* FunctionFactory::create_polynomial(Teuchos::ParameterList& params) con
     std::vector<double> c(params.get<Teuchos::Array<double> >("coefficients").toVector());
     std::vector<int> p(params.get<Teuchos::Array<int> >("exponents").toVector());
     double x0 = params.get<double>("reference point", 0.0);
-    f = new PolynomialFunction(c, p, x0);
+    f = new FunctionPolynomial(c, p, x0);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-polynomial parameter error: " << msg.what();
@@ -271,7 +271,7 @@ Function* FunctionFactory::create_monomial(Teuchos::ParameterList& params) const
     double c = params.get<double>("c");
     std::vector<double> x0(params.get<Teuchos::Array<double> >("x0").toVector());
     std::vector<int> p(params.get<Teuchos::Array<int> >("exponents").toVector());
-    f = new MonomialFunction(c, x0, p);
+    f = new FunctionMonomial(c, x0, p);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-monomial parameter error: " << msg.what();
@@ -293,7 +293,7 @@ Function* FunctionFactory::create_linear(Teuchos::ParameterList& params) const
     std::vector<double> grad(params.get<Teuchos::Array<double> >("gradient").toVector());
     Teuchos::Array<double> zero(grad.size(),0.0);
     std::vector<double> x0(params.get<Teuchos::Array<double> >("x0", zero).toVector());
-    f = new LinearFunction(y0, grad, x0);
+    f = new FunctionLinear(y0, grad, x0);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-linear parameter error: " << msg.what();
@@ -329,7 +329,7 @@ Function* FunctionFactory::create_separable(Teuchos::ParameterList& params) cons
       m << "missing sublist function2";
       Exceptions::amanzi_throw(m);
     }
-    f = new SeparableFunction(std::move(f1), std::move(f2));
+    f = new FunctionSeparable(std::move(f1), std::move(f2));
   } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-separable parameter error: " << msg.what();
@@ -360,7 +360,7 @@ Function* FunctionFactory::create_additive(Teuchos::ParameterList& params) const
       m << "missing sublist function2";
       Exceptions::amanzi_throw(m);
     }
-    f = new AdditiveFunction(std::move(f1), std::move(f2));
+    f = new FunctionAdditive(std::move(f1), std::move(f2));
   } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-additive parameter error: " << msg.what();
@@ -391,7 +391,7 @@ Function* FunctionFactory::create_multiplicative(Teuchos::ParameterList& params)
       m << "missing sublist function2";
       Exceptions::amanzi_throw(m);
     }
-    f = new MultiplicativeFunction(std::move(f1), std::move(f2));
+    f = new FunctionMultiplicative(std::move(f1), std::move(f2));
   } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-multiplicative parameter error: " << msg.what();
@@ -422,7 +422,7 @@ Function* FunctionFactory::create_composition(Teuchos::ParameterList& params) co
       m << "missing sublist function2";
       Exceptions::amanzi_throw(m);
     }
-    f = new CompositionFunction(std::move(f1), std::move(f2));
+    f = new FunctionComposition(std::move(f1), std::move(f2));
   } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-composition parameter error: " << msg.what();
@@ -443,7 +443,7 @@ Function* FunctionFactory::create_static_head(Teuchos::ParameterList& params) co
     if (params.isSublist("water table elevation")) {
       Teuchos::ParameterList& sublist = params.sublist("water table elevation");
       std::unique_ptr<Function> water_table(factory.Create(sublist));
-      f = new StaticHeadFunction(p0, density, gravity, std::move(water_table), dim);
+      f = new FunctionStaticHead(p0, density, gravity, std::move(water_table), dim);
     } else {
       Errors::Message m;
       m << "missing sublist \"water table elevation\"";
@@ -470,7 +470,7 @@ Function* FunctionFactory::create_standard_math(Teuchos::ParameterList& params) 
     double amplitude = params.get<double>("amplitude", 1.0);
     double param = params.get<double>("parameter", 1.0);
     double shift = params.get<double>("shift", 0.0);
-    f = new StandardMathFunction(op, amplitude, param, shift);
+    f = new FunctionStandardMath(op, amplitude, param, shift);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-standard-math parameter error: " << msg.what();
@@ -528,7 +528,7 @@ Function* FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
       reader.ReadData(x, vec_x);
       reader.ReadData(y, vec_y);
       reader.ReadMatData(v, mat_v);
-      f = new BilinearFunction(vec_x, vec_y, mat_v, xi, yi);
+      f = new FunctionBilinear(vec_x, vec_y, mat_v, xi, yi);
     } catch (Teuchos::Exceptions::InvalidParameter& msg) {
       Errors::Message m;
       m << "FunctionFactory: function-bilinear parameter error: " << msg.what();
@@ -552,7 +552,7 @@ Function* FunctionFactory::create_distance(Teuchos::ParameterList& params) const
   try {
     std::vector<double> x0(params.get<Teuchos::Array<double> >("x0").toVector());
     std::vector<double> metric(params.get<Teuchos::Array<double> >("metric").toVector());
-    f = new DistanceFunction(x0, metric);
+    f = new FunctionDistance(x0, metric);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-distance parameter error: " << msg.what();
@@ -572,7 +572,7 @@ Function* FunctionFactory::create_squaredistance(Teuchos::ParameterList& params)
   try {
     std::vector<double> x0(params.get<Teuchos::Array<double> >("x0").toVector());
     std::vector<double> metric(params.get<Teuchos::Array<double> >("metric").toVector());
-    f = new SquareDistanceFunction(x0, metric);
+    f = new FunctionSquareDistance(x0, metric);
   } catch (Teuchos::Exceptions::InvalidParameter& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-squaredistance parameter error: " << msg.what();

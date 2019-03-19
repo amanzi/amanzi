@@ -43,8 +43,8 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
 
@@ -54,20 +54,20 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs) {
   Teuchos::ParameterList plist = xmlreader.getParameters();
   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::getNewTimer("Cell FECrsMatrix");
 
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   // create a mesh 
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+  GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 100, 1000, gm);
-  //Teuchos::RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(pref);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
+  //Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // grab the maps
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -140,8 +140,8 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs_Nonlocal) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
 
@@ -151,20 +151,20 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs_Nonlocal) {
   Teuchos::ParameterList plist = xmlreader.getParameters();
   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::getNewTimer("Cell FECrsMatrix offproc");
 
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   // create a mesh 
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+  GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 100, 1000, gm);
-  //  Teuchos::RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(pref);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
+  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // grab the maps
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -243,8 +243,8 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
 
@@ -254,20 +254,20 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
   Teuchos::ParameterList plist = xmlreader.getParameters();
   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::getNewTimer("Cell MatrixFE");
 
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   // create a mesh 
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+  GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 100, 1000, gm);
-  //  Teuchos::RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(pref);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
+  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // grab the maps
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -340,8 +340,8 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 //   using namespace Amanzi::AmanziGeometry;
 //   using namespace Amanzi::Operators;
 
-//   Epetra_MpiComm comm(MPI_COMM_WORLD);
-//   int MyPID = comm.MyPID();
+//   auto comm = getDefaultComm();
+//   int MyPID = comm->MyPID();
 
 //   if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
 
@@ -351,20 +351,20 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 //   Teuchos::ParameterList plist = xmlreader.getParameters();
 //   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::getNewTimer("FF FECrsMatrix");
 
-//   Amanzi::VerboseObject::hide_line_prefix = true;
+//   Amanzi::VerboseObject::global_hide_line_prefix = true;
 
 //   // create a mesh 
 //   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-//   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+//   GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
-//   FrameworkPreference pref;
+//   Preference pref;
 //   pref.clear();
-//   pref.push_back(MSTK);
+//   pref.push_back(Framework::MSTK);
 
-//   MeshFactory meshfactory(&comm);
-//   meshfactory.preference(pref);
-//   Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 100, 1000, gm);
-//   //  Teuchos::RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
+//   MeshFactory meshfactory(comm,gm);
+//   meshfactory.set_preference(pref);
+//   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
+//   //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
 //   // grab the maps
 //   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -420,8 +420,8 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 //   using namespace Amanzi::AmanziGeometry;
 //   using namespace Amanzi::Operators;
 
-//   Epetra_MpiComm comm(MPI_COMM_WORLD);
-//   int MyPID = comm.MyPID();
+//   auto comm = getDefaultComm();
+//   int MyPID = comm->MyPID();
 
 //   if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
 
@@ -431,20 +431,20 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 //   Teuchos::ParameterList plist = xmlreader.getParameters();
 //   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::getNewTimer("FF FECrsMatrix offproc");
 
-//   Amanzi::VerboseObject::hide_line_prefix = true;
+//   Amanzi::VerboseObject::global_hide_line_prefix = true;
 
 //   // create a mesh 
 //   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-//   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+//   GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
-//   FrameworkPreference pref;
+//   Preference pref;
 //   pref.clear();
-//   pref.push_back(MSTK);
+//   pref.push_back(Framework::MSTK);
 
-//   MeshFactory meshfactory(&comm);
-//   meshfactory.preference(pref);
-//   Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 100, 1000, gm);
-//   //  Teuchos::RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
+//   MeshFactory meshfactory(comm,gm);
+//   meshfactory.set_preference(pref);
+//   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
+//   //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
 //   // grab the maps
 //   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -504,8 +504,8 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 //   using namespace Amanzi::AmanziGeometry;
 //   using namespace Amanzi::Operators;
 
-//   Epetra_MpiComm comm(MPI_COMM_WORLD);
-//   int MyPID = comm.MyPID();
+//   auto comm = getDefaultComm();
+//   int MyPID = comm->MyPID();
 
 //   if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
 
@@ -515,20 +515,20 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 //   Teuchos::ParameterList plist = xmlreader.getParameters();
 //   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::getNewTimer("FF MatrixFE");
 
-//   Amanzi::VerboseObject::hide_line_prefix = true;
+//   Amanzi::VerboseObject::global_hide_line_prefix = true;
 
 //   // create a mesh 
 //   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-//   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+//   GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
-//   FrameworkPreference pref;
+//   Preference pref;
 //   pref.clear();
-//   pref.push_back(MSTK);
+//   pref.push_back(Framework::MSTK);
 
-//   MeshFactory meshfactory(&comm);
-//   meshfactory.preference(pref);
-//   Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 100, 1000, gm);
-//   //  Teuchos::RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
+//   MeshFactory meshfactory(comm,gm);
+//   meshfactory.set_preference(pref);
+//   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
+//   //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
 //   // grab the maps
 //   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -582,8 +582,8 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix2) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
 
@@ -593,20 +593,20 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix2) {
   Teuchos::ParameterList plist = xmlreader.getParameters();
   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::getNewTimer("Block FECrsMatrix");
 
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   // create a mesh 
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+  GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 100, 1000, gm);
-  //  Teuchos::RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(pref);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
+  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // grab the maps
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -658,8 +658,8 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix_offproc2) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
 
@@ -669,20 +669,20 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix_offproc2) {
   Teuchos::ParameterList plist = xmlreader.getParameters();
   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::getNewTimer("Block FECrsMatrix offproc");
 
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   // create a mesh 
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+  GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 100, 1000, gm);
-  //  Teuchos::RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(pref);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
+  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // grab the maps
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -736,8 +736,8 @@ TEST(FE_MATRIX_FACE_FACE_MatrixFE2) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
 
@@ -747,20 +747,20 @@ TEST(FE_MATRIX_FACE_FACE_MatrixFE2) {
   Teuchos::ParameterList plist = xmlreader.getParameters();
   Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::getNewTimer("Block MatrixFE");
 
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   // create a mesh 
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
+  GeometricModelPtr gm = new GeometricModel(2, region_list, *comm);
 
-  FrameworkPreference pref;
+  Preference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 100, 1000, gm);
-  //  Teuchos::RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(pref);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 100, 1000);
+  //  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // grab the maps
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);

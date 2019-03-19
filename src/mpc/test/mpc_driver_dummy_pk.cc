@@ -3,7 +3,7 @@
 #include "math.h"
 #include "UnitTest++.h"
 
-#include <Epetra_Comm.h>
+
 #include <Epetra_MpiComm.h>
 #include "Epetra_SerialComm.h"
 
@@ -25,11 +25,7 @@ TEST(NEW_DRIVER_DUMMY_PK) {
 
 using namespace std;
 
-#ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-#else  
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
-#endif
+  auto comm = Amanzi::getDefaultComm();
   
   std::string xmlInFileName = "test/mpc_driver_dummy.xml";
 
@@ -43,7 +39,7 @@ using namespace std;
 
   int spdim = 2;
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> geom_model_ptr =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, *comm));
 
   Amanzi::AmanziGeometry::Domain *simdomain_ptr = new Amanzi::AmanziGeometry::Domain(spdim);
 
@@ -56,7 +52,7 @@ using namespace std;
   Teuchos::ParameterList mesh_parameter_list = plist.sublist("mesh");
 
   // Create a mesh factory for this geometric model
-  Amanzi::AmanziMesh::MeshFactory factory(comm, Teuchos::null);
+  Amanzi::AmanziMesh::MeshFactory meshfactory(comm, geom_model_ptr, Teuchos::null);
 
   // get the Mesh sublist
   ierr = 0;
@@ -75,7 +71,7 @@ using namespace std;
     
     try {
       // create the mesh by internal generation
-      mesh = factory.create(gen_params, geom_model_ptr);
+      mesh = meshfactory.create(gen_params);
 
     } catch (const std::exception& e) {
       std::cerr << rank << ": error: " << e.what() << std::endl;
@@ -107,7 +103,7 @@ using namespace std;
   dt_last = cycle_driver.get_dt();
   int cycle = S->cycle();
 
-  delete comm;
+  
 
   //std::cout<< cycle << " "<<dt_last<<"\n";
 

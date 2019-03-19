@@ -80,7 +80,7 @@ void AnalyticElectromagneticsBase::ComputeEdgeError(
     l2_err += std::pow(tmp - u[0][e], 2.0);
     inf_err = std::max(inf_err, fabs(tmp - u[0][e]));
     unorm += std::pow(tmp, 2.0);
-    // std::cout << e << " xe=" << xe << " " << u[0][e] << " " << tmp << std::endl;
+    // std::cout << e << " xe=" << xe << " E=" << u[0][e] << " Eex=" << tmp << " L2err=" << l2_err << std::endl;
   }
 #ifdef HAVE_MPI
   double tmp = unorm;

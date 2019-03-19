@@ -32,7 +32,7 @@ SUITE(VISUALIZATION) {
     // the mesh and data files are written
     Teuchos::ParameterList plist;
 
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    auto comm = Amanzi::getDefaultComm();
 
     std::string xmlFileName = "test/state_vis.xml";
     Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
@@ -40,15 +40,15 @@ SUITE(VISUALIZATION) {
 
     Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, &comm));
+        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
-    Amanzi::AmanziMesh::FrameworkPreference pref;
+    Amanzi::AmanziMesh::Preference pref;
     pref.clear();
-    pref.push_back(Amanzi::AmanziMesh::MSTK);   
+    pref.push_back(Amanzi::AmanziMesh::Framework::MSTK);   
     
-    Amanzi::AmanziMesh::MeshFactory meshfactory(&comm);
-    meshfactory.preference(pref);
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> Mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, gm);
+    Amanzi::AmanziMesh::MeshFactory meshfactory(comm,gm);
+    meshfactory.set_preference(pref);
+    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> Mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1);
 
     Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("state");
     Teuchos::Ptr<Amanzi::State> S0 = Teuchos::ptr(new Amanzi::State(state_list));

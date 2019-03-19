@@ -43,8 +43,8 @@ void RunTestGravity(std::string op_list_name) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "\nTest: check gravity induced rhs" << std::endl;
 
   // read parameter list
@@ -54,9 +54,9 @@ void RunTestGravity(std::string op_list_name) {
   Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist(op_list_name);
 
   // create a mesh framework
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
-  Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 3, 3, Teuchos::null);
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 3, 3);
 
   // create diffusion coefficient
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);

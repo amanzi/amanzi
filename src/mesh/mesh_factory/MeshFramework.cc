@@ -1,97 +1,58 @@
-// -------------------------------------------------------------
-/**
- * @file   MeshFramework.cc
- * @author William A. Perkins
- * @date Tue May 17 11:49:33 2011
- * 
- * @brief  
- * 
- * 
- */
-// -------------------------------------------------------------
-// -------------------------------------------------------------
-// Created March 11, 2011 by William A. Perkins
-// Last Change: Tue May 17 11:49:33 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
-// -------------------------------------------------------------
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-static const char* SCCS_ID = "$Id$ Battelle PNL";
+  Authors: William Perkins, Ethan Coon
+*/
 
 #include "MeshFramework.hh"
-#include "MeshException.hh"
-#include "FrameworkTraits.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
-  // -------------------------------------------------------------
-  // framework_name
-  // -------------------------------------------------------------
-  std::string
-  framework_name(const Framework& fw)
-  {
-    std::string result("unknown");
-    switch (fw) {
-    case (Simple):
-      result = "Simple";
-      break;
-    case (STKMESH):
-      result = "stk::mesh";
-      break;
-    case (MOAB):
-      result = "MOAB";
-      break;
-    case (MSTK):
-      result = "MSTK";
-      break;
+
+// -------------------------------------------------------------
+// A list of frameworks
+// -------------------------------------------------------------
+Preference default_preference() { return Preference{Framework::MSTK, Framework::MOAB, Framework::STK, Framework::SIMPLE}; }
+
+
+bool framework_enabled(Framework f) {
+  if (f == Framework::SIMPLE) {
+    return true;
+
+#ifdef HAVE_MSTK_MESH
+  } else if (f == Framework::MSTK) {
+    return true;
+#endif
+
+#ifdef HAVE_MOAB_MESH    
+  } else if (f == Framework::MOAB) {
+    return true;
+#endif    
+
+#ifdef HAVE_STK_MESH
+  } else if (f == Framework::STK) {
+    return true;
+#endif
+
+  }
+  return false;
+}
+
+
+Preference filter_preference(const Preference& pref) {
+  Preference result;
+  for (auto p : pref) {
+    if (framework_enabled(p)) {
+      result.push_back(p);
     }
-    return result;
   }
-
-  // -------------------------------------------------------------
-  // default_preference
-  // -------------------------------------------------------------
-  FrameworkPreference
-  default_preference(void)
-  {
-    FrameworkPreference result;
-
-    // order is important here, it is the order in which the framework
-    // is chosen, if there is a choice
-
-    if (framework_available(MSTK)) result.push_back(MSTK);
-    if (framework_available(STKMESH)) result.push_back(STKMESH);
-    if (framework_available(MOAB)) result.push_back(MOAB);
-    if (framework_available(Simple)) result.push_back(Simple);
-  
-    return result;
-  }
-
-  // -------------------------------------------------------------
-  // available_preference
-
-  // -------------------------------------------------------------
-  /** 
-   * This routine removes entries from the request preferences if they
-   * are not available.
-   * 
-   * @param request 
-   * 
-   * @return new preference list with only available frameworks
-   */  
-  FrameworkPreference
-  available_preference(const FrameworkPreference& request)
-  {
-    FrameworkPreference result;
-    FrameworkPreference defpref(default_preference());
-
-    for (FrameworkPreference::const_iterator i = request.begin();
-         i != request.end(); i++) {
-      if (std::find(defpref.begin(), defpref.end(), *i) != defpref.end()) {
-        result.push_back(*i);
-      }
-    }
-    return result;
-  }
-      
+  return result;
+}
+    
 
 } // namespace AmanziMesh
 } // namespace Amanzi

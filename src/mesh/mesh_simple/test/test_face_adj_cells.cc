@@ -3,20 +3,14 @@
 #include "math.h"
 #include "UnitTest++.h"
 #include "../Mesh_simple.hh"
-#include <Epetra_Comm.h>
-#include <Epetra_MpiComm.h>
+
+#include <AmanziComm.hh>
 #include "Epetra_SerialComm.h"
 
 TEST(FACE_ADJ_CELLS) {
   
   using namespace std;
-
-#ifdef HAVE_MPI
-  Epetra_MpiComm *comm_ = new Epetra_MpiComm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm *comm_ = new Epetra_SerialComm();
-#endif
-
+  auto comm = Amanzi::getDefaultComm();
   const unsigned int exp_ncell = 27, exp_nface = 108, exp_nnode = 64;
   const unsigned int exp_nadj[27] = {3,4,3, 4,5,4, 3,4,3,
 				     4,5,4, 5,6,5, 4,5,4,
@@ -52,7 +46,7 @@ TEST(FACE_ADJ_CELLS) {
 				   { 23, 25, 17, -1, -1, -1}};
 
 
-  Amanzi::AmanziMesh::Mesh_simple Mm(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3, comm_); 
+  Amanzi::AmanziMesh::Mesh_simple Mm(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3, comm); 
 
   CHECK_EQUAL(exp_ncell,Mm.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED));
   CHECK_EQUAL(exp_nface,Mm.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::OWNED));

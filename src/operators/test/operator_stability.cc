@@ -47,8 +47,8 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   using namespace Amanzi::Operators;
   using namespace Amanzi::AmanziSolvers;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "Test: 2D steady-state elliptic solver, mixed discretization" << std::endl;
 
@@ -57,16 +57,16 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
 
-  Amanzi::VerboseObject::hide_line_prefix = true;
+  Amanzi::VerboseObject::global_hide_line_prefix = true;
 
   // create a mesh 
   Teuchos::ParameterList region_list = plist.sublist("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 40, 40, gm);
-  Teuchos::RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 40, 40);
+  Teuchos::RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // create diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
@@ -204,8 +204,8 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
   using namespace Amanzi::Operators;
   using namespace Amanzi::AmanziSolvers;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  auto comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
   if (MyPID == 0) std::cout << "\nTest: 2D steady-state elliptic solver, nodal discretization" << std::endl;
 
   // read parameter list
@@ -215,13 +215,13 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
 
   // create an SIMPLE mesh framework
   ParameterList region_list = plist.sublist("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
-  // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 5, 5, gm);
-  // RCP<const Mesh> mesh = meshfactory("test/median255x256.exo", gm);
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
+  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 5, 5);
+  // RCP<const Mesh> mesh = meshfactory.create("test/median255x256.exo");
 
   // create diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
