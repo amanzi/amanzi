@@ -1179,19 +1179,18 @@ bool HDF5_MPI::readFieldData_(Epetra_Vector &x, std::string varname,
     return false;
   }
 
-
   int globaldims[ndims], localdims[ndims];
   parallelIO_get_dataset_dims(globaldims, data_file_, h5path, &IOgroup_);
   localdims[0] = x.MyLength();
   localdims[1] = globaldims[1];
-  std::vector<int> myidx(localdims[0],0);
-  int start = 0;
-  for (int i=0; i<localdims[0]; i++) myidx[i] = i+start;
 
   double *data = new double[localdims[0]*localdims[1]];
   parallelIO_read_dataset(data, type, ndims, globaldims, localdims,
                           data_file_, h5path, &IOgroup_, NONUNIFORM_CONTIGUOUS_READ);
-  x.ReplaceMyValues(localdims[0], &data[0], &myidx[0]);
+
+  // Trilinos' ReplaceMyValues() works with elements only and cannot 
+  // be used here for points
+  for (int i=0; i<localdims[0]; ++i) x[i] = data[i];
 
   delete [] data;
   delete [] h5path;

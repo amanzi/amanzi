@@ -54,6 +54,7 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
   
   for (int frm = 0; frm < framework.size(); frm++) {
     std::cout << "Test: advance with framework " << framework_name[frm] << std::endl;
+    if (!framework_enabled(framework[frm])) continue;
 #ifdef HAVE_MPI
     Comm_ptr_type comm = Amanzi::getDefaultComm();
 #else
@@ -67,14 +68,13 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
 
     // create a mesh
     ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
-    Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
+    auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
     Preference pref;
     pref.clear();
     pref.push_back(framework[frm]);
 
-    MeshFactory meshfactory(comm,gm);
+    MeshFactory meshfactory(comm, gm);
     meshfactory.set_preference(pref);
     RCP<const Mesh> mesh;
     if (framework[frm] == Framework::SIMPLE) {

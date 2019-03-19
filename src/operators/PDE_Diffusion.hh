@@ -107,7 +107,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   virtual void UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
                                      const Teuchos::Ptr<CompositeVector>& flux) = 0;
 
-  // -- matrix modification
+  // -- matrix modifications
   virtual void ModifyMatrices(const CompositeVector& u) = 0;
   virtual void ScaleMassMatrices(double s) = 0;
 

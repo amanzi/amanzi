@@ -50,6 +50,7 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   // parsing of miscalleneous lists
   ParseSolutes_();
   ParseConstants_();
+  ModifyDefaultPhysicalConstants_();
   ParseModelDescription_();
 
   out_list.set<bool>("Native Unstructured Input", "true");
@@ -77,7 +78,8 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   out_list.sublist("analysis") = CreateAnalysis_();
   FilterEmptySublists_(out_list);
 
-  // post-processing (may go away)
+  // post-processing (some may go away)
+  FinalizeMPC_PKs_(out_list);
   MergeInitialConditionsLists_(out_list);
 
   // miscalleneous cross-list information
@@ -202,6 +204,23 @@ void InputConverterU::ParseSolutes_()
       *vo_->os() << " solute: " << phases_["water"][i] << std::endl;
     }
   }
+}
+
+
+/* ******************************************************************
+* Adjust default values for physical constants
+****************************************************************** */
+void InputConverterU::ModifyDefaultPhysicalConstants_()
+{
+  // gravity magnitude
+  const_gravity_ = GRAVITY_MAGNITUDE;
+  auto it = constants_.find("gravity");
+  if (it != constants_.end()) const_gravity_ = std::strtod(it->second.c_str(), NULL);
+
+  // reference atmospheric pressure
+  const_atm_pressure_ = ATMOSPHERIC_PRESSURE;
+  it = constants_.find("atmospheric_pressure");
+  if (it != constants_.end()) const_atm_pressure_ = std::strtod(it->second.c_str(), NULL);
 }
 
 

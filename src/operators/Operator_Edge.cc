@@ -118,9 +118,10 @@ int Operator_Edge::ApplyMatrixFreeOp(const Op_Edge_Edge& op,
 * Visit methods for symbolic assemble.
 * Apply the local matrices directly as schemas match.
 ****************************************************************** */
-void Operator_Edge::SymbolicAssembleMatrixOp(const Op_Cell_Edge& op,
-                                             const SuperMap& map, GraphFE& graph,
-                                             int my_block_row, int my_block_col) const
+void Operator_Edge::SymbolicAssembleMatrixOp(
+    const Op_Cell_Edge& op,
+    const SuperMap& map, GraphFE& graph,
+    int my_block_row, int my_block_col) const
 {
   std::vector<int> lid_r(cell_max_edges);
   std::vector<int> lid_c(cell_max_edges);
@@ -149,9 +150,10 @@ void Operator_Edge::SymbolicAssembleMatrixOp(const Op_Cell_Edge& op,
 * Visit methods for symbolic assemble.
 * Insert the diagonal on edges
 ****************************************************************** */
-void Operator_Edge::SymbolicAssembleMatrixOp(const Op_Edge_Edge& op,
-                                             const SuperMap& map, GraphFE& graph,
-                                             int my_block_row, int my_block_col) const
+void Operator_Edge::SymbolicAssembleMatrixOp(
+    const Op_Edge_Edge& op,
+    const SuperMap& map, GraphFE& graph,
+   int my_block_row, int my_block_col) const
 {
   const std::vector<int>& edge_row_inds = map.GhostIndices(my_block_row, "edge", 0);
   const std::vector<int>& edge_col_inds = map.GhostIndices(my_block_col, "edge", 0);
@@ -171,9 +173,10 @@ void Operator_Edge::SymbolicAssembleMatrixOp(const Op_Edge_Edge& op,
 * Visit methods for assemble
 * Apply the local matrices directly as schemas match.
 ****************************************************************** */
-void Operator_Edge::AssembleMatrixOp(const Op_Cell_Edge& op,
-                                     const SuperMap& map, MatrixFE& mat,
-                                     int my_block_row, int my_block_col) const
+void Operator_Edge::AssembleMatrixOp(
+    const Op_Cell_Edge& op,
+    const SuperMap& map, MatrixFE& mat,
+    int my_block_row, int my_block_col) const
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
@@ -205,9 +208,10 @@ void Operator_Edge::AssembleMatrixOp(const Op_Cell_Edge& op,
 * Visit methods for assemble
 * Insert each diagonal values for edges.
 ****************************************************************** */
-void Operator_Edge::AssembleMatrixOp(const Op_Edge_Edge& op,
-                                     const SuperMap& map, MatrixFE& mat,
-                                     int my_block_row, int my_block_col) const
+void Operator_Edge::AssembleMatrixOp(
+    const Op_Edge_Edge& op,
+    const SuperMap& map, MatrixFE& mat,
+    int my_block_row, int my_block_col) const
 {
   AMANZI_ASSERT(op.diag->NumVectors() == 1);
 

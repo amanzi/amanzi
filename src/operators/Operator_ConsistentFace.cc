@@ -28,8 +28,8 @@ namespace Operators {
 * Apply the local matrices directly as schema is a subset of 
 * assembled schema.
 ****************************************************************** */
-int Operator_ConsistentFace::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
-                                     const CompositeVector& X, CompositeVector& Y) const
+int Operator_ConsistentFace::ApplyMatrixFreeOp(
+    const Op_Cell_FaceCell& op, const CompositeVector& X, CompositeVector& Y) const
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
@@ -72,9 +72,10 @@ int Operator_ConsistentFace::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
 * Visit methods for symbolic assemble.
 * Insert the diagonal on cells
 ****************************************************************** */
-void Operator_ConsistentFace::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
-                                             const SuperMap& map, GraphFE& graph,
-                                             int my_block_row, int my_block_col) const
+void Operator_ConsistentFace::SymbolicAssembleMatrixOp(
+    const Op_Cell_FaceCell& op,
+    const SuperMap& map, GraphFE& graph,
+    int my_block_row, int my_block_col) const
 {
   std::vector<int> lid_r(cell_max_faces);
   std::vector<int> lid_c(cell_max_faces);
@@ -103,9 +104,10 @@ void Operator_ConsistentFace::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& o
 * Visit methods for assemble
 * Insert each cells neighboring cells.
 ****************************************************************** */
-void Operator_ConsistentFace::AssembleMatrixOp(const Op_Cell_FaceCell& op,
-                                     const SuperMap& map, MatrixFE& mat,
-                                     int my_block_row, int my_block_col) const
+void Operator_ConsistentFace::AssembleMatrixOp(
+    const Op_Cell_FaceCell& op,
+    const SuperMap& map, MatrixFE& mat,
+    int my_block_row, int my_block_col) const
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 

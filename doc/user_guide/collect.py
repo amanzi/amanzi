@@ -300,9 +300,15 @@ benchmark['transport'] = {
   'index_entry' : 'transport/index.rst',
   'index' : { 'index_title' : 'Transport',
               'index_file' : 'doc/user_guide/benchmarking/transport/index.rst',
-              'index_list' : [ 'non_grid_aligned',
+              'index_list' : [ 'single_fracture',
+                               'non_grid_aligned',
                              ]
             },
+  'single_fracture' : {
+    'from_dir' : 'test_suites/benchmarking/coupled_flow_transport/single_fracture',
+    'dest_dir' : 'doc/user_guide/benchmarking/transport/single_fracture',
+    'index_entry' : 'single_fracture/amanzi_single_fracture.rst'
+  },
   'non_grid_aligned' : {
     'from_dir' : 'test_suites/benchmarking/chemistry/non_grid_aligned',
     'dest_dir' : 'doc/user_guide/benchmarking/transport/non_grid_aligned',

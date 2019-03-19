@@ -36,35 +36,23 @@ class MatrixFE {
   MatrixFE(const Teuchos::RCP<const GraphFE>& graph);
 
   // accessors to maps
-  const Epetra_Map& DomainMap() const {
-    return graph_->DomainMap(); }
+  const Epetra_Map& DomainMap() const { return graph_->DomainMap(); }
+  const Epetra_Map& RangeMap() const { return graph_->RangeMap(); }
 
-  const Epetra_Map& RangeMap() const {
-    return graph_->RangeMap(); }
+  const Epetra_Map& RowMap() const { return graph_->RowMap(); }
+  const Epetra_Map& ColMap() const { return graph_->ColMap(); }
 
-  const Epetra_Map& RowMap() const {
-    return graph_->RowMap(); }
-
-  const Epetra_Map& GhostedRowMap() const {
-    return graph_->GhostedRowMap(); }
-
-  const Epetra_Map& ColMap() const {
-    return graph_->ColMap(); }
+  const Epetra_Map& GhostedRowMap() const { return graph_->GhostedRowMap(); }
 
   // accessor to graphs
-  const GraphFE& Graph() const {
-    return *graph_; }
+  const GraphFE& Graph() const { return *graph_; }
 
   // accessor to matrices
-  Teuchos::RCP<const Epetra_CrsMatrix> Matrix() const {
-    return matrix_; }
-  Teuchos::RCP<Epetra_CrsMatrix> Matrix() {
-    return matrix_; }
+  Teuchos::RCP<const Epetra_CrsMatrix> Matrix() const { return matrix_; }
+  Teuchos::RCP<Epetra_CrsMatrix> Matrix() { return matrix_; }
 
-  Teuchos::RCP<const Epetra_CrsMatrix> OffProcMatrix() const {
-    return offproc_matrix_; }
-  Teuchos::RCP<Epetra_CrsMatrix> OffProcMatrix() {
-    return offproc_matrix_; }
+  Teuchos::RCP<const Epetra_CrsMatrix> OffProcMatrix() const { return offproc_matrix_; }
+  Teuchos::RCP<Epetra_CrsMatrix> OffProcMatrix() { return offproc_matrix_; }
 
   // zero to allow mation
   int Zero();

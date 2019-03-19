@@ -112,7 +112,6 @@ int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& 
 {
   for (auto it = schema.begin(); it != schema.end(); ++it) {
     std::string name(schema.KindToString(it->kind));
-
     for (int k = 0; k < it->num; ++k) {
       const std::vector<int>& inds = smap.Indices(block_num, name, k);
       Epetra_MultiVector& data = *cv.ViewComponent(name);
@@ -189,7 +188,7 @@ int AddSuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
 
 
 /* ******************************************************************
-* Create super map: compatibility version
+* TBW
 ****************************************************************** */
 Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schema, int n_dofs)
 {
@@ -234,6 +233,10 @@ unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n
     row_size += 8 * i;
   }
 
+  if (schema & OPERATOR_SCHEMA_INDICES) {
+    row_size += 1;
+  }
+
   return row_size * n_dofs;
 }    
 
@@ -264,6 +267,7 @@ unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, Schema& schema)
   return row_size;
 }
 
+
 /* ******************************************************************
 *  Create continuous boundary maps
 *
@@ -275,12 +279,11 @@ unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, Schema& schema)
 *  Results:
 *  pair of master and ghost continuous maps of boundary faces
 ****************************************************************** */
-  
 std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >
 CreateBoundaryMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                   std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >& face_maps,
-                   std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >& bnd_maps) {
-
+                   std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >& face_maps,
+                   std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >& bnd_maps)
+{
   int num_boundary_faces_owned = bnd_maps.first->NumMyElements();
 
   AMANZI_ASSERT(num_boundary_faces_owned > 0);
@@ -304,7 +307,6 @@ CreateBoundaryMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
   }
 
   bnd_maps.first->RemoteIDList(n_ghosted, gl_id.data(), pr_id.data(), lc_id.data());
-
 
   int n_ghosted_new = num_boundary_faces_owned;
   for (int i=0; i<n_ghosted; i++) {
@@ -333,6 +335,47 @@ CreateBoundaryMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
   return std::make_pair(boundary_map, boundary_map_ghosted);
 }
 
+
+/* ******************************************************************
+* Generates a composite vestor space.
+****************************************************************** */
+Teuchos::RCP<CompositeVectorSpace>
+CreateCompositeVectorSpace(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                           const std::vector<std::string>& names,
+                           const std::vector<AmanziMesh::Entity_kind>& locations,
+                           const std::vector<int>& num_dofs, bool ghosted)
+{
+  auto cvs = Teuchos::rcp(new CompositeVectorSpace());
+  cvs->SetMesh(mesh);
+  cvs->SetGhosted(ghosted);
+
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > mastermaps;
+  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghostmaps;
+
+  for (int i=0; i<locations.size(); ++i) {
+    Teuchos::RCP<const Epetra_BlockMap> master_mp(&mesh->map(locations[i], false), false);
+    mastermaps[names[i]] = master_mp;
+    Teuchos::RCP<const Epetra_BlockMap> ghost_mp(&mesh->map(locations[i], true), false);
+    ghostmaps[names[i]] = ghost_mp;
+  }
+       
+  cvs->SetComponents(names, locations, mastermaps, ghostmaps, num_dofs);
+  return cvs;
+}
+
+
+Teuchos::RCP<CompositeVectorSpace>
+CreateCompositeVectorSpace(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                           std::string name,
+                           AmanziMesh::Entity_kind location,
+                           int num_dof, bool ghosted)
+{
+  std::vector<std::string> names(1, name);
+  std::vector<AmanziMesh::Entity_kind> locations(1, location);
+  std::vector<int> num_dofs(1, num_dof);
+
+  return CreateCompositeVectorSpace(mesh, names, locations, num_dofs, ghosted);
+}
 
 }  // namespace Operators
 }  // namespace Amanzi

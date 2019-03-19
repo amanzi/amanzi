@@ -32,6 +32,7 @@
 #include "MeshFactory.hh"
 #include "MeshMapsFactory.hh"
 #include "NumericalIntegration.hh"
+#include "OperatorUtils.hh"
 #include "Tensor.hh"
 #include "VectorPolynomial.hh"
 
@@ -451,10 +452,9 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
   WhetStone::VectorPolynomial vvf(dim, dim, order_ - 1);
 
   int mk = WhetStone::PolynomialSpaceDimension(dim, order_ - 1);
-  CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh_)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, dim * mk);
+  auto cvs = Operators::CreateCompositeVectorSpace(mesh_, "face", AmanziMesh::FACE, dim * mk, true);
 
-  CompositeVector vecf(cvs);
+  CompositeVector vecf(*cvs);
   Epetra_MultiVector vecf_f = *vecf.ViewComponent("face", true);
   vecf.PutScalar(0.0);
 

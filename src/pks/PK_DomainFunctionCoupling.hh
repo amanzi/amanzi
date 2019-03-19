@@ -7,6 +7,13 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Daniil Svyatsky (dasvyat@lanl.gov)
+
+  This provide coupling of consistent fields located on manifold and
+  in space. For the space, the coupling creates a list of boundary
+  conditions. For the manifold, the coupling creates a list of sources.
+  
+  Typically the mesh provide the map manifold (cell) -> space (face).
+  In space, we need the reverse map.
 */
 
 #ifndef AMANZI_PK_DOMAIN_FUNCTION_COUPLING_HH_
@@ -49,6 +56,7 @@ class PK_DomainFunctionCoupling : public FunctionBase {
 
  protected:
   using FunctionBase::value_;
+  using FunctionBase::linear_term_;
   using FunctionBase::keyword_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -56,10 +64,13 @@ class PK_DomainFunctionCoupling : public FunctionBase {
   
  private:
   std::string submodel_;
+
   std::string flux_key_, copy_flux_key_;
   std::string field_out_key_, copy_field_out_key_;
   std::string field_in_key_, copy_field_in_key_;
+
   Teuchos::RCP<MeshIDs> entity_ids_; 
+  std::map<AmanziMesh::Entity_ID, AmanziMesh::Entity_ID> reverse_map_;
 };
 
 
@@ -81,48 +92,35 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(
     Exceptions::amanzi_throw(m);
   }
 
+  Teuchos::ParameterList slist;
+  try {
+    slist = plist.sublist(keyword_);
+  } catch (Errors::Message& msg) {
+    Errors::Message m;
+    m << "error in domain coupling sublist : " << msg.what();
+    Exceptions::amanzi_throw(m);
+  }
+
+  // get keys of owned (in) and exterior (out) fields
+  field_in_key_ = slist.get<std::string>("field_in_key", "none");
+  copy_field_in_key_ = slist.get<std::string>("copy_field_in_key", "default");
+
+  field_out_key_ = slist.get<std::string>("field_out_key");
+  copy_field_out_key_ = slist.get<std::string>("copy_field_out_key", "default");
+
   if (submodel_ == "rate") {
-    try {
-      Teuchos::ParameterList slist = plist.sublist("sink");
-      if (slist.isParameter("field_in_key"))
-        field_in_key_ = slist.get<std::string>("field_in_key");
-      copy_field_in_key_ = slist.get<std::string>("copy_field_in_key", "default");
-      if (slist.isParameter("field_out_key"))
-        field_out_key_ = slist.get<std::string>("field_out_key");
-      copy_field_out_key_ = slist.get<std::string>("copy_field_out_key", "default");
-      if (slist.isParameter("flux_key"))
-        flux_key_ = slist.get<std::string>("flux_key");
-      copy_flux_key_ = slist.get<std::string>("copy_flux_key", "default");
-    } catch (Errors::Message& msg) {
-      Errors::Message m;
-      m << "error in domain coupling sublist : " << msg.what();
-      Exceptions::amanzi_throw(m);
-    }
-  } else if (submodel_ == "field") {
-    try {
-      Teuchos::ParameterList blist = plist.sublist("boundary concentration");
-      if (blist.isParameter("field_out_key"))
-        field_out_key_ = blist.get<std::string>("field_out_key");
-      if (blist.isParameter("copy_field_out_key"))
-        copy_field_out_key_ = blist.get<std::string>("copy_field_out_key");
-      else
-        copy_field_out_key_ = "default";
-    } catch (Errors::Message& msg) {
-      Errors::Message m;
-      m << "error in domain coupling sublist : " << msg.what();
-      Exceptions::amanzi_throw(m);
-    }
+    flux_key_ = slist.get<std::string>("flux_key", "none");
+    copy_flux_key_ = slist.get<std::string>("copy_flux_key", "default");
   }
     
+  // create a list of domain ids
   RegionList regions = plist.get<Teuchos::Array<std::string> >("regions").toVector();
-  // Add this source specification to the domain function.
   Teuchos::RCP<Domain> domain= Teuchos::rcp(new Domain(regions, region_kind));
 
   entity_ids_ = Teuchos::rcp(new MeshIDs());
   AmanziMesh::Entity_kind kind = domain->second;
-  for (RegionList::const_iterator region = domain->first.begin();
-      region != domain->first.end(); ++region) {
-    // Get the ids from the mesh by region name and entity kind.
+
+  for (auto region = domain->first.begin(); region != domain->first.end(); ++region) {
     if (mesh_->valid_set_name(*region, kind)) {
       AmanziMesh::Entity_ID_List id_list;
       mesh_->get_set_entities(*region, kind, AmanziMesh::Parallel_type::ALL, &id_list);
@@ -145,75 +143,100 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
 {
   // create the input tuple (time + space)
   if (submodel_ == "rate") {
-    const Epetra_MultiVector& flux = 
-        *S_->GetFieldCopyData(flux_key_, copy_flux_key_)->ViewComponent("face", true);
+    const auto& flux = *S_->GetFieldCopyData(flux_key_, copy_flux_key_)->ViewComponent("face", true);
+    const auto& field_out = *S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ViewComponent("cell", true);
+    const auto& field_in = *S_->GetFieldCopyData(field_in_key_, copy_field_in_key_)->ViewComponent("cell", true);
 
-    const Epetra_MultiVector& field_out = 
-        // *S_->GetFieldCopyData(field_key_, "subcycling")->ViewComponent("cell", true);
-        *S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ViewComponent("cell", true);
+    Teuchos::RCP<const Epetra_BlockMap> flux_map = S_->GetFieldData(flux_key_)->Map().Map("face", true);
 
-    const Epetra_MultiVector& field_in = 
-        //*S_->GetFieldCopyData(field_surf_key_, "subcycling")->ViewComponent("cell", true);
-        *S_->GetFieldCopyData(field_in_key_, copy_field_in_key_)->ViewComponent("cell", true);
+    S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ScatterMasterToGhosted("cell");    
+    S_->GetFieldCopyData(field_in_key_, copy_field_in_key_)->ScatterMasterToGhosted("cell"); 
 
     if (field_in.NumVectors() != field_out.NumVectors()) {
       std::stringstream m;
-      m << "Mismatch of vector sizes in domain couplong function.\n";
+      m << "Mismatch of numbers of vectors in coupled fields.\n";
       Errors::Message message(m.str());
       Exceptions::amanzi_throw(message);
     }
     int num_vec = field_in.NumVectors();
-    std::vector<double> val(num_vec);
 
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh_out = S_->GetFieldData(field_out_key_)->Mesh();
     AmanziMesh::Entity_ID_List cells, faces;
     std::vector<int> dirs;
-
-    for (MeshIDs::const_iterator c = entity_ids_->begin(); c != entity_ids_->end(); ++c) {
-
+    auto mesh_out = S_->GetFieldData(field_out_key_)->Mesh();
+    const Epetra_Map& cell_map = mesh_out->cell_map(true);
+    
+    // loop over cells on the manifold
+    for (auto c = entity_ids_->begin(); c != entity_ids_->end(); ++c) {
       AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, *c);
 
       mesh_out->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    
-      if (cells.size() > 1) {
+
+      if (cells.size() != flux_map->ElementSize(f)) {
         std::stringstream m;
-        m << "Internal cell on the interface between coupled domains: cell_ids\"" << cells[0] << "\"";
+        m << "Number of flux DOF doesn't equal to the number of cell sharing the interface: cell_ids\"" << cells[0] << "\"";
         Errors::Message message(m.str());
         Exceptions::amanzi_throw(message);
       }
 
-      mesh_out->cell_get_faces_and_dirs(cells[0], &faces, &dirs);
+      double linear(0.0);
+      std::vector<double> val(num_vec, 0.0);
+      int pos = 0;
+      if (cells.size() == 2) {
+        pos = (cell_map.GID(cells[0]) < cell_map.GID(cells[1])) ? 0 : 1;
+      }
+      
+      for (int j = 0; j != cells.size(); ++j) {
+        mesh_out->cell_get_faces_and_dirs(cells[j], &faces, &dirs);
 
-      for (int i = 0; i < faces.size(); i++) {
-        if (f == faces[i]) {
-          double fln = flux[0][f]*dirs[i];         
-          if (fln >= 0) {        
-            for (int k=0; k<num_vec; ++k) {
-              val[k] = field_out[k][cells[0]] * fln;
+        for (int i = 0; i < faces.size(); i++) {
+          if (f == faces[i]) {
+            int g = flux_map->FirstPointInElement(f);            
+            double fln = flux[0][g + (pos + j)%2] * dirs[i];
+            
+            if (fln >= 0) {        
+              linear += fln;
+              for (int k = 0; k < num_vec; ++k) {
+                val[k] += field_out[k][cells[j]] * fln;
+              }
+            } else {       
+              for (int k = 0; k < num_vec; ++k) {
+                val[k] += field_in[k][*c] * fln;
+              }
             }
-          } else if (fln < 0) {       
-            for (int k=0; k<num_vec; ++k) {
-              val[k] = field_in[k][*c] * fln;
-            }
+            break;
           }
-          value_[*c] = val; 
-          break;
         }
       }
+      value_[*c] = val; 
+      linear_term_[*c] = linear;
     }
-  } else if (submodel_ == "field") {
-    const Epetra_MultiVector& field_out = 
-        *S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ViewComponent("cell", true);
+  }
+  else if (submodel_ == "field") {
+    // create reserse map from space (face) onto manifold (cell)
+    auto mesh_out = S_->GetFieldData(field_out_key_)->Mesh();
+
+    if (mesh_->space_dimension() == mesh_->manifold_dimension() && reverse_map_.size() == 0) {
+      const Epetra_Map& cell_map = mesh_out->cell_map(true);
+      for (int c = 0 ; c < cell_map.NumMyElements(); ++c) {
+        AmanziMesh::Entity_ID f = mesh_out->entity_get_parent(AmanziMesh::CELL, c);
+        reverse_map_[f] = c;
+      }
+    }
+
+    const auto& field_out = *S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ViewComponent("cell", true);
 
     int num_vec = field_out.NumVectors();
     std::vector<double> val(num_vec);
 
-    ///////CHECK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!????????????
-    int i(0);
-    for (MeshIDs::const_iterator c = entity_ids_->begin(); c != entity_ids_->end(); ++c) {
-      for (int k=0; k<num_vec; ++k) val[k] = field_out[k][i];            
-      value_[*c] = val;     
-      i++;
+    // Loop over faces (owned + ghosted) in the space restricted to the manifold.
+    // The set of these faces could be bigger then the set of manifold cells (owned + ghosted)
+    for (auto f = entity_ids_->begin(); f != entity_ids_->end(); ++f) {
+      auto it = reverse_map_.find(*f);
+      if (it == reverse_map_.end()) continue;
+
+      int c = it->second;
+      for (int k = 0; k < num_vec; ++k) val[k] = field_out[k][c]; 
+      value_[*f] = val;     
     }
   }
 }

@@ -95,9 +95,13 @@ using namespace std;
   Amanzi::ObservationData obs_data;
   Teuchos::RCP<Teuchos::ParameterList> glist_rcp = Teuchos::rcp(new Teuchos::ParameterList(plist));
 
-  Amanzi::CycleDriver cycle_driver(glist_rcp, mesh, comm, obs_data);
+  Teuchos::ParameterList state_plist = glist_rcp->sublist("state");
+  Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
+  S -> RegisterMesh("domain", mesh);
   
-  Teuchos::RCP<Amanzi::State> S = cycle_driver.Go();
+  Amanzi::CycleDriver cycle_driver(glist_rcp, S, comm, obs_data);
+  
+  S = cycle_driver.Go();
 
   double dt_last; 
   dt_last = cycle_driver.get_dt();
@@ -107,8 +111,8 @@ using namespace std;
 
   //std::cout<< cycle << " "<<dt_last<<"\n";
 
-
-  CHECK(cycle == 200 && fabs(dt_last- 1980.32)<1);
+  CHECK(cycle == 200);
+  CHECK(fabs(dt_last- 1980.32)<1);
   
 
 

@@ -285,15 +285,12 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
       }
 
       // assemble
-      diag_op->AssembleMatrixOp(this, map, matrix,
-              my_block_row, my_block_col);
+      diag_op->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);
       AMANZI_ASSERT(schur_op->matrices.size() == nfaces_owned);
-      schur_op->AssembleMatrixOp(this, map, matrix,
-              my_block_row, my_block_col);
+      schur_op->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);
       i_schur++;
     } else {
-      (*it)->AssembleMatrixOp(this, map, matrix,
-              my_block_row, my_block_col);
+      (*it)->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);
     }
   } // for
 }

@@ -93,9 +93,12 @@ int TreeOperator::ApplyAssembled(const TreeVector& X, TreeVector& Y) const
   Y.PutScalar(0.0);
   Epetra_Vector Xcopy(A_->RowMap());
   Epetra_Vector Ycopy(A_->RowMap());
+  double x_norm, y_norm;
 
   int ierr = CopyTreeVectorToSuperVector(*smap_, X, Xcopy);
+
   ierr |= A_->Apply(Xcopy, Ycopy);
+
   ierr |= CopySuperVectorToTreeVector(*smap_, Ycopy, Y);
   AMANZI_ASSERT(!ierr);
 
@@ -131,9 +134,8 @@ int TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
 
     
 /* ******************************************************************
-* Sumbolic assemble global matrix from elemental matrices of block 
-* operators. The algorithm is limited to the case the all blocks are
-* square matrices.
+* Symbolic assemble global matrix from elemental matrices of block 
+* operators. 
 ****************************************************************** */
 void TreeOperator::SymbolicAssembleMatrix()
 {
@@ -143,6 +145,8 @@ void TreeOperator::SymbolicAssembleMatrix()
   // May be ways to relax this a bit in the future, but it currently covers
   // all uses.
   int schema = 0;
+  std::vector<CompositeVectorSpace> cvs_vec;
+  std::vector<std::string> cvs_names;
 
   // Check that each row has at least one non-null operator block
   Teuchos::RCP<const Operator> an_op;
@@ -156,11 +160,8 @@ void TreeOperator::SymbolicAssembleMatrix()
 
       if (lcv_row == lcv_col) {
         AMANZI_ASSERT(blocks_[lcv_row][lcv_col] != Teuchos::null);
-        if (schema == 0) {
-          schema = blocks_[lcv_row][lcv_col]->schema();
-        } else {
-          AMANZI_ASSERT(schema == blocks_[lcv_row][lcv_col]->schema());
-        }
+        cvs_vec.push_back(blocks_[lcv_row][lcv_col]->DomainMap());
+        cvs_names.push_back(std::to_string(lcv_row));
       }
     }
     AMANZI_ASSERT(is_block);
@@ -171,8 +172,8 @@ void TreeOperator::SymbolicAssembleMatrix()
 
   // NOTE: this probably needs to be fixed for differing meshes. -etc
   int row_size = MaxRowSize(*an_op->DomainMap().Mesh(), schema, n_blocks);
-  Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->Map(),
-          smap_->GhostedMap(), smap_->GhostedMap(), row_size));
+  auto graph = Teuchos::rcp(new GraphFE(smap_->Map(), 
+      smap_->GhostedMap(), smap_->GhostedMap(), row_size));
 
   // fill the graph
   for (int lcv_row = 0; lcv_row != n_blocks; ++lcv_row) {
@@ -213,6 +214,10 @@ void TreeOperator::AssembleMatrix() {
 
   int ierr = Amat_->FillComplete();
   AMANZI_ASSERT(!ierr);
+
+  // std::stringstream filename_s2;
+  // filename_s2 << "assembled_matrix" << 0 << ".txt";
+  // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Amat_ ->Matrix());
 }
 
 
@@ -288,7 +293,7 @@ void TreeOperator::InitBlockDiagonalPreconditioner()
 {
   block_diagonal_ = true;
 }
-
+ 
 
 /* ******************************************************************
 * Copies to/from SuperVector for use by Amesos.
@@ -298,12 +303,11 @@ void TreeOperator::CopyVectorToSuperVector(const TreeVector& cv, Epetra_Vector& 
   CopyTreeVectorToSuperVector(*smap_, cv, sv);
 }
 
+
 void TreeOperator::CopySuperVectorToVector(const Epetra_Vector& sv, TreeVector& cv) const
 {
   CopySuperVectorToTreeVector(*smap_, sv, cv);
 }
-
-
 
 }  // namespace Operators
 }  // namespace Amanzi

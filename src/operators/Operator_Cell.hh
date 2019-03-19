@@ -48,8 +48,8 @@ class Operator_Cell : public Operator {
 
   // visit methods for symbolic assemble
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
-          const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const;
+                                        const SuperMap& map, GraphFE& graph,
+                                        int my_block_row, int my_block_col) const;
   virtual void SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;

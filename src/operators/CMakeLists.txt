@@ -23,7 +23,6 @@ project(OPERATORS)
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
-include_directories(${MSTK_INCLUDE_DIRS})
 include_directories(${Trilinos_INCLUDE_DIRS})
 
 # Amanzi include directories
@@ -33,8 +32,8 @@ include_directories(${DBC_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_LOGICAL_SOURCE_DIR})
-include_directories(${MSTK_SOURCE_DIR})
 include_directories(${MESH_FACTORY_SOURCE_DIR})
+include_directories(${MSTK_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
@@ -64,26 +63,29 @@ set(operators_inc_files
     Op_Cell_Node.hh
     Op_Cell_Edge.hh
     Op_Cell_Schema.hh
+    Op_Diagonal.hh
     Op_Face_Cell.hh
     Op_Face_CellBndFace.hh
     Op_Face_Schema.hh
     Op_Node_Node.hh
     Operator.hh
     Operator_Cell.hh
-    Operator_FaceCell.hh
     Operator_CellBndFace.hh
+    Operator_ConsistentFace.hh
+    Operator_Diagonal.hh
+    Operator_Edge.hh
+    Operator_FaceCell.hh
     Operator_FaceCellScc.hh
     Operator_FaceCellSff.hh
-    Operator_ConsistentFace.hh
-    Operator_Node.hh
-    Operator_Edge.hh
     Operator_Factory.hh
+    Operator_Node.hh
     BoundaryFlux.hh
     PDE_Abstract.hh
     PDE_Accumulation.hh
     PDE_Advection.hh
     PDE_AdvectionUpwind.hh
     PDE_AdvectionRiemann.hh
+    PDE_CouplingFlux.hh
     PDE_Diffusion.hh
     PDE_DiffusionWithGravity.hh
     PDE_DiffusionFactory.hh
@@ -95,6 +97,7 @@ set(operators_inc_files
     PDE_DiffusionNLFVwithBndFaces.hh
     PDE_DiffusionNLFVwithGravity.hh
     PDE_DiffusionDG.hh
+    PDE_DiffusionFracturedMatrix.hh
     PDE_Elasticity.hh
     PDE_Electromagnetics.hh
     PDE_MagneticDiffusion.hh
@@ -123,24 +126,25 @@ add_amanzi_library(operators
                           Mini_Operator1D.cc
                           OperatorUtils.cc
                           Operator.cc
-                          Operator_Node.cc
-                          Operator_Edge.cc
-                          Operator_Cell.cc
-                          Operator_CellBndFace.cc
-                          Operator_FaceCell.cc
-                          Operator_FaceCellScc.cc
-                          Operator_FaceCellSff.cc
                           Operator_ConsistentFace.cc
-                          Operator_Schema.cc
+                          Operator_Edge.cc
+                          Operator_Cell.cc Operator_CellBndFace.cc
+                          Operator_Diagonal.cc
+                          Operator_FaceCell.cc
+                          Operator_FaceCellScc.cc Operator_FaceCellSff.cc
                           Operator_Factory.cc
+                          Operator_Node.cc
+                          Operator_Schema.cc
                           PDE_Accumulation.cc
                           PDE_Abstract.cc
                           PDE_AdvectionUpwind.cc PDE_AdvectionRiemann.cc
+                          PDE_CouplingFlux.cc
                           PDE_DiffusionMFD.cc PDE_DiffusionMFDwithGravity.cc
                           PDE_DiffusionFV.cc PDE_DiffusionFVwithGravity.cc
                           PDE_DiffusionNLFV.cc PDE_DiffusionNLFVwithGravity.cc
                           PDE_DiffusionNLFVwithBndFaces.cc PDE_DiffusionNLFVwithBndFacesGravity.cc
                           PDE_DiffusionDG.cc
+                          PDE_DiffusionFracturedMatrix.cc
                           PDE_DiffusionFactory.cc                   
                           PDE_HelperDiscretization.cc
                           PDE_Elasticity.cc
@@ -152,8 +156,7 @@ add_amanzi_library(operators
                           ReconstructionCell.cc
                           RemapDG.cc RemapUtils.cc
                           HEADERS ${operators_inc_files}
-                   LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})                          
-
+                   LINK_LIBS geometry mesh mesh_factory error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})                          
 
 
 if (BUILD_TESTS)
@@ -235,6 +238,11 @@ if (BUILD_TESTS)
     add_amanzi_test(operators_diffusion_dg operators_diffusion_dg
                     KIND unit
                     SOURCE test/Main.cc test/operator_diffusion_dg.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(operators_diffusion_fractured_matrix operators_diffusion_fractured_matrix
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_diffusion_fractured_matrix.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(operators_commute operators_commute

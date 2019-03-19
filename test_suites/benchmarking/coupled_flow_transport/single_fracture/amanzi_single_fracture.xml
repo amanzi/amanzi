@@ -1,0 +1,238 @@
+<amanzi_input type="unstructured" version="2.3.0">
+  <model_description name="flow and transport in fractures">
+    <author>Konstantin Lipnikov</author>
+    <units>
+      <length_unit>m</length_unit>
+      <time_unit>s</time_unit>
+      <mass_unit>kg</mass_unit>
+      <conc_unit>SI</conc_unit>
+    </units>
+    <constants>
+      <numerical_constant name="X0" value="0.0"/>
+      <numerical_constant name="Y0" value="0.0"/>
+      <numerical_constant name="Z0" value="0.0"/>
+
+      <numerical_constant name="X1" value="100.0"/>
+      <numerical_constant name="Y1" value="100.0"/>
+      <numerical_constant name="Z1" value="100.0"/>
+
+      <numerical_constant name="KM1" value="1e-12"/>
+      <numerical_constant name="KM2" value="1e-13"/>
+      <numerical_constant name="KFN" value="20.0e-4 m^2*s/kg"/>
+      <numerical_constant name="KFT" value="3.4641e-05"/>
+      <!--numerical_constant name="KFT" value="1.095445115010332e-01"/-->
+
+      <constant name="gravity" type="none" value="10.0"/>
+      <constant name="atmospheric_pressure" type="none" value="101325"/>
+    </constants>
+  </model_description>
+
+  <definitions>
+    <macros>
+      <time_macro name="Steady State">
+        <time>0.0</time>
+      </time_macro>
+      <cycle_macro name="Every5000Cycles">
+        <start>0</start>
+        <timestep_interval>5000</timestep_interval>
+      </cycle_macro>
+      <time_macro name="EveryFewMonth">
+        <start>0</start>
+        <timestep_interval>1.0e+7</timestep_interval>
+      </time_macro>
+    </macros>
+  </definitions>
+
+  <process_kernels>
+    <flow model="constant" state="on" />
+    <transport state="on" />
+    <chemistry engine="none" state="off" />
+  </process_kernels>
+
+  <phases>
+    <liquid_phase name="water">
+      <eos>false</eos>
+      <viscosity>0.001</viscosity>
+      <density>1000.0</density>
+      <dissolved_components>
+        <solutes>
+          <solute coefficient_of_diffusion="0.0">tracer</solute>
+        </solutes>
+      </dissolved_components>
+    </liquid_phase>
+  </phases>
+
+  <execution_controls>
+    <verbosity level="high" />
+    <execution_control_defaults method="bdf1" increase_factor="1.0" mode="steady" />
+    <execution_control end="0 h" init_dt="1.0" max_dt="1.0" method="bdf1" mode="steady" start="0.0" />
+    <execution_control end="1.0e+9" init_dt="1.0e+4" max_dt="1.0e+7" method="bdf1" mode="transient" start="0.0" />
+  </execution_controls>
+
+  <numerical_controls>
+    <unstructured_controls>
+      <unstr_steady-state_controls>
+        <nonlinear_tolerance>1.0e-11</nonlinear_tolerance>
+        <unstr_initialization/>
+      </unstr_steady-state_controls>
+      <unstr_linear_solver>
+        <method>pcg</method>
+        <max_iterations>20</max_iterations>
+        <tolerance>1.0e-14</tolerance>
+      </unstr_linear_solver>
+      <unstr_flow_controls>
+        <preconditioning_strategy>linearized_operator</preconditioning_strategy>
+      </unstr_flow_controls>
+      <unstr_transport_controls>
+        <algorithm>explicit first-order</algorithm>
+        <sub_cycling>off</sub_cycling>
+        <cfl>0.9</cfl>
+      </unstr_transport_controls>
+      <unstr_preconditioners>
+        <hypre_amg />
+      </unstr_preconditioners>
+    </unstructured_controls>
+  </numerical_controls>
+
+  <mesh framework="mstk">
+    <dimension>3</dimension>
+    <read>
+      <file>single_fracture.exo</file>
+      <format>exodus ii</format>
+    </read>
+  </mesh>
+
+  <regions>
+    <region name="EntireDomain">
+      <box high_coordinates="X1, Y1, Z1" low_coordinates="X0, Y0, Z0"/>
+    </region>
+    <region name="RegionBottom">
+      <box high_coordinates="X1, Y1, 10.0" low_coordinates="X0, Y0, Z0"/>
+    </region>
+    <region name="RegionTop">
+      <box high_coordinates="X1, Y1, Z1" low_coordinates="X0, Y0, 10.0"/>
+    </region>
+    <region name="SurfaceInlet">
+      <box low_coordinates="X0, Y0, 90.0" high_coordinates="X0, Y1, Z1"/>
+    </region>
+    <region name="SurfaceOutlet">
+      <box low_coordinates="X0, Y0, Z0" high_coordinates="X1, Y0, 10.0"/>
+    </region>
+    <region name="fracture">
+      <region_file entity="face" format="exodus ii" label="100" name="single_fracture.exo" type="labeled set"/>
+    </region>
+  </regions>
+
+  <materials>
+    <material name="Bottom">
+      <mechanical_properties>
+        <porosity value="0.25" />
+      </mechanical_properties>
+      <permeability x="KM1" y="KM1" z="KM1" />
+      <assigned_regions>RegionBottom</assigned_regions>
+    </material>
+    <material name="Top">
+      <mechanical_properties>
+        <porosity value="0.2" />
+      </mechanical_properties>
+      <permeability x="KM2" y="KM2" z="KM2" />
+      <assigned_regions>RegionTop</assigned_regions>
+    </material>
+  </materials>
+
+  <initial_conditions>
+    <initial_condition name="Initial Condition">
+      <assigned_regions>EntireDomain</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure value="1.7" />
+        </liquid_component>
+        <solute_component>
+          <aqueous_conc name="tracer" value="0.0"/>
+        </solute_component> 
+      </liquid_phase>
+    </initial_condition>
+  </initial_conditions>
+
+  <boundary_conditions>
+    <boundary_condition name="FrontBC">
+      <assigned_regions>SurfaceInlet</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <!--uniform_pressure function="constant" start="0.0" value="4.0" /-->
+          <hydrostatic function="constant" start="0.0" value="4.0" />
+        </liquid_component>
+        <solute_component>
+          <aqueous_conc name="tracer" value="0.01" function="constant" start="0.0"/>
+        </solute_component> 
+      </liquid_phase>
+    </boundary_condition>
+    <boundary_condition name="BackBC">
+      <assigned_regions>SurfaceOutlet</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <!--uniform_pressure function="constant" start="0.0" value="1.0" /-->
+          <hydrostatic function="constant" start="0.0" value="1.0" />
+        </liquid_component>
+      </liquid_phase>
+    </boundary_condition>
+  </boundary_conditions>
+
+  <fracture_network>
+    <materials>
+      <material name="Uniform">
+        <mechanical_properties>
+          <porosity value="0.004"/>
+        </mechanical_properties>
+        <fracture_permeability model="cubic law" aperture="KFT" normal="KFN"/>
+        <assigned_regions>fracture</assigned_regions>
+      </material>
+    </materials>
+
+    <initial_conditions>
+      <initial_condition name="Initial Condition">
+        <assigned_regions>EntireDomain</assigned_regions>
+        <liquid_phase name="water">
+          <liquid_component name="water">
+            <uniform_pressure value="1.8" />
+          </liquid_component>
+          <solute_component>
+            <aqueous_conc name="tracer" value="0.0"/>
+          </solute_component> 
+        </liquid_phase>
+      </initial_condition>
+    </initial_conditions>
+  </fracture_network>
+
+  <output>
+    <vis>
+      <base_filename>plot</base_filename>
+      <num_digits>5</num_digits>
+      <cycle_macros>Every5000Cycles</cycle_macros>
+    </vis>
+    <observations>
+      <filename>observation.out</filename>
+      <liquid_phase name="water">
+        <aqueous_conc solute="tracer">
+          <domain_name>matrix</domain_name>
+          <assigned_regions>RegionBottom</assigned_regions>
+          <functional>integral</functional>
+          <time_macros>EveryFewMonth</time_macros>
+        </aqueous_conc>
+        <aqueous_conc solute="tracer">
+          <domain_name>fracture</domain_name>
+          <assigned_regions>EntireDomain</assigned_regions>
+          <functional>integral</functional>
+          <time_macros>EveryFewMonth</time_macros>
+        </aqueous_conc>
+        <solute_volumetric_flow_rate solute="tracer">
+          <domain_name>matrix</domain_name>
+          <assigned_regions>SurfaceOutlet</assigned_regions>
+          <functional>integral</functional>
+          <time_macros>EveryFewMonth</time_macros>
+        </solute_volumetric_flow_rate>
+      </liquid_phase>
+    </observations>
+  </output>
+</amanzi_input>
+ 

@@ -1046,8 +1046,8 @@ void PDE_DiffusionMFD::ModifyMatrices(const CompositeVector& u)
 
 /* ******************************************************************
 * WARNING: Since diffusive flux may be discontinuous (e.g. for
-* Richards equation), we derive it only once (using flag) and in 
-* exactly the same manner as other routines.
+* Richards equation), we derive it in exactly the same manner as 
+* in gravity routines.
 * **************************************************************** */
 void PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                                   const Teuchos::Ptr<CompositeVector>& flux)
@@ -1184,11 +1184,11 @@ void PDE_DiffusionMFD::CreateMassMatrices_()
       if (ok != WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK) {
         if (method == WhetStone::DIFFUSION_OPTIMIZED_FOR_SPARSITY) {
           ok = mfd.MassMatrixInverseOptimized(c, Kc, Wff);
-        } else if(method == WhetStone::DIFFUSION_TPFA) {
+        } else if (method == WhetStone::DIFFUSION_TPFA) {
           ok = mfd.MassMatrixInverseTPFA(c, Kc, Wff);
-        } else if(method == WhetStone::DIFFUSION_SUPPORT_OPERATOR) {
+        } else if (method == WhetStone::DIFFUSION_SUPPORT_OPERATOR) {
           ok = mfd.MassMatrixInverseSO(c, Kc, Wff);
-        } else if(method == WhetStone::DIFFUSION_POLYHEDRA_SCALED) {
+        } else if (method == WhetStone::DIFFUSION_POLYHEDRA_SCALED) {
           if (K_symmetric_) {
             ok = mfd.MassMatrixInverse(c, Kc, Wff);
           } else {
@@ -1224,7 +1224,7 @@ void PDE_DiffusionMFD::ScaleMassMatrices(double s)
 /* ******************************************************************
 * Put here stuff that has to be done in constructor.
 ****************************************************************** */
-void PDE_DiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
+void PDE_DiffusionMFD::ParsePList_(Teuchos::ParameterList& plist)
 {
   // Determine discretization
   std::string primary = plist.get<std::string>("discretization primary");
@@ -1300,29 +1300,36 @@ void PDE_DiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
   }
 
   // define stencil for the assembled matrix
-  int schema_prec_dofs = 0;
+  schema_prec_dofs_ = 0;
   if (plist.isParameter("preconditioner schema")) {
     names = plist.get<Teuchos::Array<std::string> > ("preconditioner schema").toVector();
     for (int i = 0; i < names.size(); i++) {
       if (names[i] == "cell") {
-        schema_prec_dofs += OPERATOR_SCHEMA_DOFS_CELL;
+        schema_prec_dofs_ += OPERATOR_SCHEMA_DOFS_CELL;
       } else if (names[i] == "node") {
-        schema_prec_dofs += OPERATOR_SCHEMA_DOFS_NODE;
+        schema_prec_dofs_ += OPERATOR_SCHEMA_DOFS_NODE;
       } else if (names[i] == "face") {
-        schema_prec_dofs += OPERATOR_SCHEMA_DOFS_FACE;
+        schema_prec_dofs_ += OPERATOR_SCHEMA_DOFS_FACE;
       }
     } 
   } else {
-    schema_prec_dofs = schema_dofs;
+    schema_prec_dofs_ = schema_dofs;
   }
+}
 
+
+/* ******************************************************************
+* Put here stuff that has to be done in constructor.
+****************************************************************** */
+void PDE_DiffusionMFD::Init(Teuchos::ParameterList& plist)
+{
   // create or check the existing Operator
-  int global_op_schema = schema_prec_dofs;  
+  int global_op_schema = schema_prec_dofs_;  
   if (global_op_ == Teuchos::null) {
     global_op_schema_ = global_op_schema;
 
     // build the CVS from the global schema
-    Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
+    auto cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->SetGhosted(true);
 
     if (global_op_schema & OPERATOR_SCHEMA_DOFS_CELL)
@@ -1333,20 +1340,19 @@ void PDE_DiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
       cvs->AddComponent("node", AmanziMesh::NODE, 1);
 
     // choose the Operator from the prec schema
-    Teuchos::ParameterList operator_list = plist.sublist("operator");
-    if (schema_prec_dofs == OPERATOR_SCHEMA_DOFS_NODE) {
+    if (schema_prec_dofs_ == OPERATOR_SCHEMA_DOFS_NODE) {
       global_op_ = Teuchos::rcp(new Operator_Node(cvs, plist));
     } 
-    else if (schema_prec_dofs == OPERATOR_SCHEMA_DOFS_CELL) {
+    else if (schema_prec_dofs_ == OPERATOR_SCHEMA_DOFS_CELL) {
       // cvs->AddComponent("face", AmanziMesh::FACE, 1);
       // global_op_ = Teuchos::rcp(new Operator_FaceCellScc(cvs, plist));
-      global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist, schema_prec_dofs));
+      global_op_ = Teuchos::rcp(new Operator_Cell(cvs, plist, schema_prec_dofs_));
     } 
-    else if (schema_prec_dofs == OPERATOR_SCHEMA_DOFS_FACE) {
+    else if (schema_prec_dofs_ == OPERATOR_SCHEMA_DOFS_FACE) {
       cvs->AddComponent("cell", AmanziMesh::CELL, 1);
       global_op_ = Teuchos::rcp(new Operator_FaceCellSff(cvs, plist));
     } 
-    else if (schema_prec_dofs == (OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
+    else if (schema_prec_dofs_ == (OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
       global_op_ = Teuchos::rcp(new Operator_FaceCell(cvs, plist));
     } 
     else {
@@ -1422,13 +1428,6 @@ void PDE_DiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
            little_k_ != OPERATOR_LITTLE_K_DIVK_TWIN);
   }
 
-  // DEPRECATED INPUT -- remove this error eventually --etc
-  if (plist.isParameter("newton correction")) {
-    Errors::Message msg;
-    msg << "DEPRECATED 05.24.16AD: \"newton correction\" has been removed in favor of \"Newton correction\"";
-    Exceptions::amanzi_throw(msg);
-  }
-  
   // Do we need to calculate Newton correction terms?
   std::string jacobian = plist.get<std::string>("Newton correction", "none");
   if (jacobian == "none") {
@@ -1439,7 +1438,7 @@ void PDE_DiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
     Exceptions::amanzi_throw(msg);
   } else if (jacobian == "approximate Jacobian") {
     // cannot do jacobian terms without cells
-    if (!(schema_prec_dofs & OPERATOR_SCHEMA_DOFS_CELL)) {
+    if (!(schema_prec_dofs_ & OPERATOR_SCHEMA_DOFS_CELL)) {
       Errors::Message msg("PDE_DiffusionMFD: incompatible options.  \"approximate Jacobian\" terms require CELL quantities, and the requested preconditioner schema does not include CELL.");
       Exceptions::amanzi_throw(msg);
     }
