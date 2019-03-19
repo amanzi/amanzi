@@ -86,7 +86,6 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
 
   shift_ = plist.get<double>("diagonal shift", 0.0);
 
-  variable_dofs_ = false;
   apply_calls_ = 0; 
 }
 
@@ -130,7 +129,6 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
 
   shift_ = plist.get<double>("diagonal shift", 0.0);
 
-  variable_dofs_ = false;
   apply_calls_ = 0; 
 }
 
@@ -280,13 +278,8 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar)
 
   apply_calls_++;
 
-  if (! variable_dofs_) {
-    for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it)
-      (*it)->ApplyMatrixFreeOp(this, X, Y);
-  } else {
-    for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it)
-      (*it)->ApplyMatrixFreeOpVariableDOFs(this, X, Y);
-  }
+  for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it)
+    (*it)->ApplyMatrixFreeOp(this, X, Y);
 
   return 0;
 }
@@ -757,22 +750,6 @@ int Operator::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
 ****************************************************************** */
 int Operator::ApplyMatrixFreeOp(const Op_Diagonal& op,
                                 const CompositeVector& X, CompositeVector& Y) const {
-  return SchemaMismatch_(op.schema_string, schema_string_);
-}
-
-
-/* ******************************************************************
-* Visit methods for Apply with variable DOFs: Cell.
-****************************************************************** */
-int Operator::ApplyMatrixFreeOpVariableDOFs(
-    const Op_Cell_FaceCell& op,
-    const CompositeVector& X, CompositeVector& Y) const {
-  return SchemaMismatch_(op.schema_string, schema_string_);
-}
-
-int Operator::ApplyMatrixFreeOpVariableDOFs(
-    const Op_Cell_Cell& op,
-    const CompositeVector& X, CompositeVector& Y) const {
   return SchemaMismatch_(op.schema_string, schema_string_);
 }
 

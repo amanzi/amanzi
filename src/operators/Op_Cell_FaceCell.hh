@@ -37,11 +37,6 @@ class Op_Cell_FaceCell : public Op {
     assembler->ApplyMatrixFreeOp(*this, X, Y);
   }
 
-  virtual void ApplyMatrixFreeOpVariableDOFs(const Operator* assembler,
-          const CompositeVector& X, CompositeVector& Y) const {
-    assembler->ApplyMatrixFreeOpVariableDOFs(*this, X, Y);
-  }
-
   virtual void ApplyTransposeMatrixFreeOp(const Operator* assembler,
           const CompositeVector& X, CompositeVector& Y) const {
     assembler->ApplyMatrixFreeOp(*this, X, Y);
