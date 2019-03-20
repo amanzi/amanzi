@@ -84,7 +84,7 @@ MeshFactory::create(const std::string& filename,
   }
       
   for (auto p : preference_) {
-    int nproc = comm_->NumProc();
+    int nproc = comm_->getSize();
     
 #ifdef HAVE_MSTK_MESH    
     if (p == Framework::MSTK) {
@@ -137,7 +137,7 @@ MeshFactory::create(const double x0, const double y0, const double z0,
                     const bool request_faces, 
                     const bool request_edges)
 {
-  int nproc = comm_->NumProc();
+  int nproc = comm_->getSize();
 
   for (auto p : preference_) {
     if (p == Framework::SIMPLE && nproc == 1) {
@@ -182,7 +182,7 @@ MeshFactory::create(const double x0, const double y0,
                     const bool request_faces, 
                     const bool request_edges)
 {
-  int nproc = comm_->NumProc();
+  int nproc = comm_->getSize();
 
   for (auto p : preference_) {
 #ifdef HAVE_MSTK_MESH

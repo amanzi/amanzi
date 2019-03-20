@@ -47,7 +47,7 @@ SUITE (MeshFramework)
   TEST (Generate3D)
   {
     auto comm = Amanzi::getDefaultComm();
-    bool parallel(comm->NumProc() > 1);
+    bool parallel(comm->getSize() > 1);
     
     Amanzi::AmanziMesh::Preference pref;
     Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
@@ -102,7 +102,7 @@ SUITE (MeshFramework)
   TEST (Generate2D)
   {
     auto comm = Amanzi::getDefaultComm();
-    bool parallel(comm->NumProc() > 1);
+    bool parallel(comm->getSize() > 1);
     
     Amanzi::AmanziMesh::Preference pref;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
@@ -152,7 +152,7 @@ SUITE (MeshFramework)
   TEST (ParameterGenerate3)
   {
     auto comm = Amanzi::getDefaultComm();
-    bool parallel(comm->NumProc() > 1);
+    bool parallel(comm->getSize() > 1);
     
     Amanzi::AmanziMesh::Preference pref;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
@@ -205,7 +205,7 @@ SUITE (MeshFramework)
   TEST (ParameterGenerate2)
   {
     auto comm = Amanzi::getDefaultComm();
-    bool parallel(comm->NumProc() > 1);
+    bool parallel(comm->getSize() > 1);
     
     Amanzi::AmanziMesh::Preference pref;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
@@ -255,7 +255,7 @@ SUITE (MeshFramework)
   // The Simple framework cannot read anything, even if it exists
   TEST (ReadSimple) {
     auto comm = Amanzi::getDefaultComm();
-    bool parallel(comm->NumProc() > 1);
+    bool parallel(comm->getSize() > 1);
     
     Amanzi::AmanziMesh::Preference pref;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
@@ -278,7 +278,7 @@ SUITE (MeshFramework)
   TEST (ReadMOABHDF5)
   {
     auto comm = Amanzi::getDefaultComm();
-    bool parallel(comm->NumProc() > 1);
+    bool parallel(comm->getSize() > 1);
 
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
     Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
@@ -296,7 +296,7 @@ SUITE (MeshFramework)
   TEST (ReadExodus) 
   {
     auto comm = Amanzi::getDefaultComm();
-    bool parallel(comm->NumProc() > 1);
+    bool parallel(comm->getSize() > 1);
 
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
     Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
@@ -324,7 +324,7 @@ SUITE (MeshFramework)
   TEST (ReadNemesis) 
   {
     auto comm = Amanzi::getDefaultComm();
-    bool parallel(comm->NumProc() > 1);
+    bool parallel(comm->getSize() > 1);
     
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
     Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
@@ -347,7 +347,7 @@ SUITE (MeshFramework)
   TEST (Extract3)
   {
     auto comm = Amanzi::getDefaultComm();
-    bool parallel(comm->NumProc() > 1);
+    bool parallel(comm->getSize() > 1);
     
     double x0( 0.0), y0( 0.0), z0( 0.0);
     double x1(10.0), y1(10.0), z1(10.0);

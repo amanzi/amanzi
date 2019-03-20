@@ -117,8 +117,8 @@ VerboseObject::VerboseObject(const Comm_ptr_type& comm, const std::string& name,
 
   // Set up a local FancyOStream
   if (root >= 0) {
-    int size = comm_->NumProc();
-    int pid = comm_->MyPID();
+    int size = comm_->getSize();
+    int pid = comm_->getRank();
     Teuchos::RCP<Teuchos::FancyOStream> newout = Teuchos::rcp(new Teuchos::FancyOStream(out_->getOStream()));
     newout->setProcRankAndSize(pid,size);
     newout->setOutputToRootOnly(root);

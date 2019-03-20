@@ -45,8 +45,8 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: Limiters for linear functions in 2D." << std::endl;
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "\nTest: Limiters for linear functions in 2D." << std::endl;
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
@@ -144,7 +144,7 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
     ComputeGradError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
     CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
 
-    if (MyPID == 0)
+    if (getRank == 0)
         printf("%9s: errors: %8.4f %8.4f\n", LIMITERS[i].c_str(), err_int, err_glb);
   }
 }
@@ -160,8 +160,8 @@ TEST(LIMITER_LINEAR_FUNCTION_3D) {
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: Limiters for linear functions in 3D." << std::endl;
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "\nTest: Limiters for linear functions in 3D." << std::endl;
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
@@ -268,7 +268,7 @@ TEST(LIMITER_LINEAR_FUNCTION_3D) {
     ComputeGradError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
     CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
 
-    if (MyPID == 0)
+    if (getRank == 0)
         printf("%9s: errors: %8.4f %8.4f\n", LIMITERS[i].c_str(), err_int, err_glb);
   }
 }
@@ -284,8 +284,8 @@ TEST(LIMITER_SMOOTH_FIELD_2D) {
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: Accuracy on a smooth field in 2D." << std::endl;
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "\nTest: Accuracy on a smooth field in 2D." << std::endl;
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
@@ -401,7 +401,7 @@ TEST(LIMITER_SMOOTH_FIELD_2D) {
 
       ComputeGradError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
 
-      if (MyPID == 0)
+      if (getRank == 0)
           printf("%9s: rel errors: %9.5f %9.5f\n", LIMITERS[i].c_str(), err_int, err_glb);
 
       CHECK(err_int + err_glb < 1.0 / n);
@@ -420,8 +420,8 @@ TEST(LIMITER_SMOOTH_FIELD_3D) {
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: Accuracy on a smooth field in 3D" << std::endl;
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "\nTest: Accuracy on a smooth field in 3D" << std::endl;
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
@@ -527,7 +527,7 @@ TEST(LIMITER_SMOOTH_FIELD_3D) {
 
       ComputeGradError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
 
-      if (MyPID == 0)
+      if (getRank == 0)
           printf("n=%d  %9s: rel errors: %9.5f %9.5f\n", n, LIMITERS[i].c_str(), err_int, err_glb);
 
       CHECK(err_int + err_glb < 1.0 / n);
@@ -547,8 +547,8 @@ void SmoothField2DPoly(double extension)
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: smooth field on a polygonal mesh, extension=" << extension << std::endl;
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "\nTest: smooth field on a polygonal mesh, extension=" << extension << std::endl;
 
   // load polygonal mesh
   Teuchos::ParameterList region_list;
@@ -666,7 +666,7 @@ void SmoothField2DPoly(double extension)
 
     ComputeGradError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
 
-    if (MyPID == 0)
+    if (getRank == 0)
         printf("%9s: rel errors: %9.5f %9.5f\n", LIMITERS[i].c_str(), err_int, err_glb);
   }
 }
@@ -687,8 +687,8 @@ TEST(LIMITER_LINEAR_FUNCTION_FRACTURES) {
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: Limiters for linear functions in fractures." << std::endl;
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "\nTest: Limiters for linear functions in fractures." << std::endl;
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
@@ -776,7 +776,7 @@ TEST(LIMITER_LINEAR_FUNCTION_FRACTURES) {
     ComputeGradError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
     CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
 
-    if (MyPID == 0)
+    if (getRank == 0)
         printf("%9s: errors: %8.4f %8.4f\n", LIMITERS[i].c_str(), err_int, err_glb);
   }
 }

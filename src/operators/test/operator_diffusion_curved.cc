@@ -46,8 +46,8 @@ void RunTestDiffusionCurved() {
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: elliptic solver, mesh with curved faces\n";
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "\nTest: elliptic solver, mesh with curved faces\n";
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion_curved.xml";
@@ -141,7 +141,7 @@ void RunTestDiffusionCurved() {
   // -- run PCG
   int ierr = solver.ApplyInverse(rhs, solution);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
               << " itr=" << solver.num_itrs()
               << " code=" << solver.returned_code() << std::endl;
@@ -175,7 +175,7 @@ void RunTestDiffusionCurved() {
   for (int i = 0; i < 3; ++i) center[i] = tmp_in[i + 1] / totvol;
   CHECK_CLOSE(1.0, totvol, 1e-12);
   
-  if (MyPID == 0) {
+  if (getRank == 0) {
     std::cout << "Domain center:" << center << std::endl;
     std::cout << "Volume error: " << 1.0 - totvol << std::endl;
 

@@ -41,9 +41,9 @@ TEST(RECONSTRUCTION_LINEAR_2D) {
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "\nTest: Exactness on linear functions in 2D." << std::endl;
+  if (getRank == 0) std::cout << "\nTest: Exactness on linear functions in 2D." << std::endl;
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
@@ -84,7 +84,7 @@ TEST(RECONSTRUCTION_LINEAR_2D) {
   ComputeGradError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
   CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
 
-  if (MyPID == 0) printf("errors (interior & global): %8.4f %8.4f\n", err_int, err_glb);
+  if (getRank == 0) printf("errors (interior & global): %8.4f %8.4f\n", err_int, err_glb);
 }
 
 
@@ -98,9 +98,9 @@ TEST(RECONSTRUCTION_LINEAR_3D) {
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "\nTest: Exactness on linear functions in 3D." << std::endl;
+  if (getRank == 0) std::cout << "\nTest: Exactness on linear functions in 3D." << std::endl;
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
@@ -142,7 +142,7 @@ TEST(RECONSTRUCTION_LINEAR_3D) {
   ComputeGradError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
   CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
 
-  if (MyPID == 0) printf("errors (interior & global): %8.4f %8.4f\n", err_int, err_glb);
+  if (getRank == 0) printf("errors (interior & global): %8.4f %8.4f\n", err_int, err_glb);
 }
 
 

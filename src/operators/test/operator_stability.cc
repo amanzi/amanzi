@@ -48,9 +48,9 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   using namespace Amanzi::AmanziSolvers;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "Test: 2D steady-state elliptic solver, mixed discretization" << std::endl;
+  if (getRank == 0) std::cout << "Test: 2D steady-state elliptic solver, mixed discretization" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_stability.xml";
@@ -174,7 +174,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     flux->ScatterMasterToGhosted();
     ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
-    if (MyPID == 0) {
+    if (getRank == 0) {
       pl2_err /= pnorm;
       ul2_err /= unorm;
       printf("scale=%7.4g  L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f itr=%3d\n", 
@@ -206,8 +206,8 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
   using namespace Amanzi::AmanziSolvers;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: 2D steady-state elliptic solver, nodal discretization" << std::endl;
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "\nTest: 2D steady-state elliptic solver, nodal discretization" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_stability.xml";
@@ -323,7 +323,7 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     double pnorm, pl2_err, pinf_err, hnorm, ph1_err;
     ana.ComputeNodeError(sol, 0.0, pnorm, pl2_err, pinf_err, hnorm, ph1_err);
 
-    if (MyPID == 0) {
+    if (getRank == 0) {
       pl2_err /= pnorm;
       ph1_err /= hnorm;
       double tmp = op2.nfailed_primary() * 100.0 / ncells_owned; 

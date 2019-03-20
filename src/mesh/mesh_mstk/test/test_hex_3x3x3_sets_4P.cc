@@ -30,8 +30,8 @@ TEST(MSTK_HEX_3x3x3_SETS_4P)
   int fsetsize;
 
   auto comm = Amanzi::getDefaultComm();
-  int rank = comm->MyPID();
-  int size = comm->NumProc();
+  int rank = comm->getRank();
+  int size = comm->getSize();
   //  CHECK_EQUAL(4,size);
 
   // if (size != 4) {

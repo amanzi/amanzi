@@ -50,9 +50,9 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "\nTest: Curl-curl operator, tol=" << tolerance 
+  if (getRank == 0) std::cout << "\nTest: Curl-curl operator, tol=" << tolerance 
                             << "  method=" << disc_method << std::endl;
 
   // read parameter list
@@ -206,7 +206,7 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   int num_itrs = solver.num_itrs();
   CHECK(num_itrs < 100);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     std::cout << "electric solver (pcg): ||r||=" << solver.residual() 
               << " itr=" << solver.num_itrs()
               << " code=" << solver.returned_code() << std::endl;
@@ -217,7 +217,7 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   double enorm, el2_err, einf_err;
   ana.ComputeEdgeError(E, time, enorm, el2_err, einf_err);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     el2_err /= enorm;
     printf("L2(e)=%12.9f  Inf(e)=%9.6f  itr=%3d  size=%d\n", el2_err, einf_err,
             solver.num_itrs(), rhs.GlobalLength());

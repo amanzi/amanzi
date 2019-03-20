@@ -142,7 +142,7 @@ void Observable::Update_(const State& S,
   if (field->type() == CONSTANT_SCALAR) {
     // only write on MPI_COMM_WORLD rank 0
     auto comm = Amanzi::getDefaultComm();
-    write_ = comm->MyPID() == 0;
+    write_ = comm->getRank() == 0;
 
     // scalars, just return the value
     data.value = *field->GetScalarData();
@@ -155,7 +155,7 @@ void Observable::Update_(const State& S,
     AMANZI_ASSERT(vec->HasComponent(location_));
 
     // only write on field's comm's rank 0
-    write_ = vec->Mesh()->get_comm()->MyPID() == 0;
+    write_ = vec->Mesh()->get_comm()->getRank() == 0;
 
     // get the region
     AmanziMesh::Entity_kind entity = vec->Location(location_);

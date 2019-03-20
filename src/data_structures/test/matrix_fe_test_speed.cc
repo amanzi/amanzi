@@ -44,9 +44,9 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs) {
   using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
+  if (getRank == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_convergence.xml";
@@ -141,9 +141,9 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs_Nonlocal) {
   using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
+  if (getRank == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_convergence.xml";
@@ -244,9 +244,9 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
   using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
+  if (getRank == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_convergence.xml";
@@ -341,9 +341,9 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 //   using namespace Amanzi::Operators;
 
 //   auto comm = getDefaultComm();
-//   int MyPID = comm->MyPID();
+//   int getRank = comm->getRank();
 
-//   if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
+//   if (getRank == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
 
 //   // read parameter list
 //   std::string xmlFileName = "test/operator_convergence.xml";
@@ -421,9 +421,9 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 //   using namespace Amanzi::Operators;
 
 //   auto comm = getDefaultComm();
-//   int MyPID = comm->MyPID();
+//   int getRank = comm->getRank();
 
-//   if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
+//   if (getRank == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
 
 //   // read parameter list
 //   std::string xmlFileName = "test/operator_convergence.xml";
@@ -505,9 +505,9 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 //   using namespace Amanzi::Operators;
 
 //   auto comm = getDefaultComm();
-//   int MyPID = comm->MyPID();
+//   int getRank = comm->getRank();
 
-//   if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
+//   if (getRank == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
 
 //   // read parameter list
 //   std::string xmlFileName = "test/operator_convergence.xml";
@@ -583,9 +583,9 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix2) {
   using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
+  if (getRank == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_convergence.xml";
@@ -659,9 +659,9 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix_offproc2) {
   using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
+  if (getRank == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_convergence.xml";
@@ -737,9 +737,9 @@ TEST(FE_MATRIX_FACE_FACE_MatrixFE2) {
   using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
+  if (getRank == 0) std::cout << "Test: FE like matrix, off-proc assembly" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_convergence.xml";

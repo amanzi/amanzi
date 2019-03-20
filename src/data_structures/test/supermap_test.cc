@@ -93,31 +93,31 @@ TEST(SUPERMAP_MANUAL) {
   //  using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
-  int MyPID = comm->MyPID();
-  int NumProc = comm->NumProc();
+  int getRank = comm->getRank();
+  int getSize = comm->getSize();
 
-  if (MyPID == 0) std::cout << "Test: Manual test of SuperMapLumped" << std::endl;
+  if (getRank == 0) std::cout << "Test: Manual test of SuperMapLumped" << std::endl;
 
   // make a ghosted and local map 1
   std::vector<int> gids(3);
   for (int i=0; i!=3; ++i) {
-    gids[i] = 3*MyPID + i;
+    gids[i] = 3*getRank + i;
   }
-  Teuchos::RCP<Epetra_Map> owned_map1 = Teuchos::rcp(new Epetra_Map(3*NumProc, 3, &gids[0], 0, *comm));
+  Teuchos::RCP<Epetra_Map> owned_map1 = Teuchos::rcp(new Epetra_Map(3*getSize, 3, &gids[0], 0, *comm));
 
-  if (MyPID > 0) gids.push_back(3*MyPID-1);
-  if (MyPID < NumProc-1) gids.push_back(3*(MyPID+1));
+  if (getRank > 0) gids.push_back(3*getRank-1);
+  if (getRank < getSize-1) gids.push_back(3*(getRank+1));
   Teuchos::RCP<Epetra_Map> ghosted_map1 = Teuchos::rcp(new Epetra_Map(-1, gids.size(), &gids[0], 0, *comm));
 
   // make a ghosted and local map 2
   std::vector<int> gids2(5);
   for (int i=0; i!=5; ++i) {
-    gids2[i] = 5*MyPID + i;
+    gids2[i] = 5*getRank + i;
   }
-  Teuchos::RCP<Epetra_Map> owned_map2 = Teuchos::rcp(new Epetra_Map(5*NumProc, 5, &gids2[0], 0, *comm));
+  Teuchos::RCP<Epetra_Map> owned_map2 = Teuchos::rcp(new Epetra_Map(5*getSize, 5, &gids2[0], 0, *comm));
 
-  if (MyPID > 0) gids2.push_back(5*MyPID-1);
-  if (MyPID < NumProc-1) gids2.push_back(5*(MyPID+1));
+  if (getRank > 0) gids2.push_back(5*getRank-1);
+  if (getRank < getSize-1) gids2.push_back(5*(getRank+1));
   Teuchos::RCP<Epetra_Map> ghosted_map2 = Teuchos::rcp(new Epetra_Map(-1, gids2.size(), &gids2[0], 0, *comm));
 
   // make the supermap
@@ -139,8 +139,8 @@ TEST(SUPERMAP_MANUAL) {
 
   // check the ghosted offsets
   CHECK(map.GhostedOffset("map1") == (2*3 + 2*5));
-  if (NumProc > 1) {
-    if (MyPID == 0 || MyPID == NumProc-1) {
+  if (getSize > 1) {
+    if (getRank == 0 || getRank == getSize-1) {
       CHECK(map.GhostedOffset("map2") == (2*3 + 2*5 + 2));
     } else {
       CHECK(map.GhostedOffset("map2") == (2*3 + 2*5 + 4));
@@ -154,8 +154,8 @@ TEST(SUPERMAP_MANUAL) {
   CHECK(map.NumOwnedElements("map2") == 5);
 
   // check num owned/used
-  if (NumProc > 1) {
-    if (MyPID == 0 || MyPID == NumProc-1) {
+  if (getSize > 1) {
+    if (getRank == 0 || getRank == getSize-1) {
       CHECK(map.NumUsedElements("map1") == 4);
       CHECK(map.NumUsedElements("map2") == 6);
     } else {  
@@ -243,8 +243,8 @@ TEST(SUPERMAP_MANUAL) {
     CHECK(inds_m2_d1[3] == 13);
     CHECK(inds_m2_d1[4] == 15);
 
-    if (NumProc > 1) {
-      if (MyPID == 0 || MyPID == NumProc-1) {
+    if (getSize > 1) {
+      if (getRank == 0 || getRank == getSize-1) {
         CHECK(inds_m1_d0.size() == 4);
         CHECK(inds_m1_d1.size() == 4);
         CHECK(inds_m2_d0.size() == 6);
@@ -286,8 +286,8 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR) {
   using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "Test: SuperMapLumped from 1 CompositeVector with multiple components and multiple dofs" << std::endl;
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "Test: SuperMapLumped from 1 CompositeVector with multiple components and multiple dofs" << std::endl;
 
   auto mesh = getMesh(comm);
 
@@ -350,7 +350,7 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR) {
 
 
   // check ghosts pick up at the end of owned and interleave
-  if (comm->NumProc() > 1) {
+  if (comm->getSize() > 1) {
     CHECK_EQUAL(2*ncells_owned + 2*nfaces_owned, inds_c0[ncells_owned]);
     CHECK_EQUAL(2*ncells_owned + 2*nfaces_owned+1, inds_c1[ncells_owned]);
     CHECK_EQUAL(2*ncells_owned + 2*nfaces_owned+2, inds_c0[ncells_owned+1]);
@@ -373,8 +373,8 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR_REPEATED_MAPS) {
   using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "Test: SuperMapLumped from 1 CompositeVector with multiple components which include repeated maps, should still interleave as if this were one map and two dofs" << std::endl;
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "Test: SuperMapLumped from 1 CompositeVector with multiple components which include repeated maps, should still interleave as if this were one map and two dofs" << std::endl;
 
   auto mesh = getMesh(comm);
 
@@ -423,7 +423,7 @@ TEST(SUPERMAP_FROM_SINGLE_COMPOSITEVECTOR_REPEATED_MAPS) {
   CHECK_EQUAL(3, inds_c1[1]);
 
   // check ghosts pick up at the end of owned and interleave
-  if (comm->NumProc() > 1) {
+  if (comm->getSize() > 1) {
     CHECK_EQUAL(2*ncells_owned, inds_c0[ncells_owned]);
     CHECK_EQUAL(2*ncells_owned+1, inds_c1[ncells_owned]);
     CHECK_EQUAL(2*ncells_owned+2, inds_c0[ncells_owned+1]);
@@ -452,8 +452,8 @@ TEST(SUPERMAP_FROM_TWO_IDENTICAL_COMPOSITEVECTORS) {
   using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "Test: SuperMapLumped from 2 CompositeVectors with same map, single dof is same as 1 CompositeVector with two dofs" << std::endl;
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "Test: SuperMapLumped from 2 CompositeVectors with same map, single dof is same as 1 CompositeVector with two dofs" << std::endl;
 
   auto mesh = getMesh(comm);
 
@@ -490,8 +490,8 @@ TEST(SUPERMAP_FROM_CELL_PLUS_FACE_IS_CELLFACE) {
   using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "Test: SuperMapLumped from 2 CompositeVectors with different maps, single dof is same as 1 CompositeVector with two components" << std::endl;
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "Test: SuperMapLumped from 2 CompositeVectors with different maps, single dof is same as 1 CompositeVector with two components" << std::endl;
 
   auto mesh = getMesh(comm);
 
@@ -526,8 +526,8 @@ TEST(SUPERMAP_FROM_SAME_NAME_DIFFERENT_MAP) {
   using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "Test: SuperMapLumped from 2 CompositeVectors with different maps but the same name, is same as 1 CompositeVector with two components" << std::endl;
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "Test: SuperMapLumped from 2 CompositeVectors with different maps but the same name, is same as 1 CompositeVector with two components" << std::endl;
 
   auto mesh = getMesh(comm);
 
@@ -565,8 +565,8 @@ TEST(SUPERMAP_FROM_SAME_NAME_SAME_MAP_DIFFERENT_ELEMENTSIZE) {
   using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "Test: SuperMapLumped from 2 CompositeVectors with same elements but different element sizes in the same compname" << std::endl;
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "Test: SuperMapLumped from 2 CompositeVectors with same elements but different element sizes in the same compname" << std::endl;
 
   auto mesh = getMesh(comm);
   int ncells = mesh->num_entities(CELL, Parallel_type::OWNED);
@@ -624,9 +624,9 @@ TEST(SUPERMAP_FROM_TREEVECTOR) {
   using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
+  if (getRank == 0) std::cout << "Test: FD like matrix, null off-proc assembly" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_convergence.xml";

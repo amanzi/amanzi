@@ -47,9 +47,9 @@ void AdvectionDiffusion2D(int nx, double* error)
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "\nTest: Advection-duffusion in 2D" << std::endl;
+  if (getRank == 0) std::cout << "\nTest: Advection-duffusion in 2D" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_advdiff.xml";
@@ -211,7 +211,7 @@ void AdvectionDiffusion2D(int nx, double* error)
   ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
   *error = pl2_err;
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     pl2_err /= pnorm; 
     printf("L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_err, pinf_err, solver.num_itrs());
 
@@ -220,7 +220,7 @@ void AdvectionDiffusion2D(int nx, double* error)
   }
 
   // visualization
-  if (MyPID == 0) {
+  if (getRank == 0) {
     std::cout << "pressure solver (gmres): ||r||=" << solver.residual() 
               << " itr=" << solver.num_itrs()
               << " code=" << solver.returned_code() << std::endl;

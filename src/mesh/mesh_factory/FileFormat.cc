@@ -81,8 +81,8 @@ std::string fileFormatName(const FileFormat f)
  */
 FileFormat fileFormatFromFilename(const Comm_type& comm, std::string fname) 
 {
-  const int np(comm.NumProc());
-  const int me(comm.MyPID());
+  const int np(comm.getSize());
+  const int me(comm.getRank());
 
   // take a guess at the format using the file name
   auto result = FileFormat::UNKNOWN;

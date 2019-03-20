@@ -44,8 +44,8 @@ void RunTestGravity(std::string op_list_name) {
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: check gravity induced rhs" << std::endl;
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "\nTest: check gravity induced rhs" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion.xml";
@@ -132,7 +132,7 @@ void RunTestGravity(std::string op_list_name) {
   rhs1.Norm2(&a1);
   rhs2.Norm2(&a2);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     std::cout << "||rhs1||=" << a1 << std::endl;
     std::cout << "||rhs2||=" << a2 << std::endl;
   }

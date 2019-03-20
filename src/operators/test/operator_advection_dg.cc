@@ -63,10 +63,10 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
   std::string problem = (conservative_form) ? ", conservative formulation" : "";
-  if (MyPID == 0) std::cout << "\nTest: " << dim 
+  if (getRank == 0) std::cout << "\nTest: " << dim 
                             << "D steady advection, dG method" << problem
                             << ", weak formulation=" << weak_form
                             << ", basis=" << dg_basis << std::endl;
@@ -285,7 +285,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
 
   int ierr = solver.ApplyInverse(rhs, solution);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     std::cout << "dG solver (gmres): ||r||=" << solver.residual() 
               << " itr=" << solver.num_itrs()
               << " code=" << solver.returned_code() 
@@ -312,7 +312,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   double pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean, pl2_int;
   ana.ComputeCellError(dg, p, 0.0, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean, pl2_int);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     sol.ChangeOrigin(AmanziGeometry::Point(2));
     std::cout << "\nEXACT solution: " << sol << std::endl;
     printf("Mean:     L2(p)=%12.9f  Inf(p)=%12.9f  itr=%3d\n", pl2_mean, pinf_mean, solver.num_itrs());

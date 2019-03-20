@@ -293,8 +293,8 @@ CreateBoundaryMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
   int n_ghosted = bnd_maps.second->NumMyElements() - num_boundary_faces_owned;
   std::vector<int> gl_id(n_ghosted), pr_id(n_ghosted), lc_id(n_ghosted);
 
-  int total_proc = mesh->get_comm()->NumProc();
-  int my_pid = mesh->get_comm()->MyPID();
+  int total_proc = mesh->get_comm()->getSize();
+  int my_pid = mesh->get_comm()->getRank();
   std::vector<int> min_global_id(total_proc, 0), tmp(total_proc, 0);
 
   tmp[my_pid] = boundary_map->GID(0);

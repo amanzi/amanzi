@@ -50,9 +50,9 @@ void OperatorDiffusionDG(std::string solver_name,
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "\nTest: 2D elliptic problem, dG method, solver: " << solver_name 
+  if (getRank == 0) std::cout << "\nTest: 2D elliptic problem, dG method, solver: " << solver_name 
                             << ", basis=" << dg_basis << std::endl;
 
   // read parameter list
@@ -202,7 +202,7 @@ void OperatorDiffusionDG(std::string solver_name,
 
   ver.CheckResidual(solution, 1.0e-11);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver->residual() 
               << " itr=" << solver->num_itrs()
               << " code=" << solver->returned_code() << std::endl;
@@ -226,7 +226,7 @@ void OperatorDiffusionDG(std::string solver_name,
   double pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean, pl2_int;
   ana.ComputeCellError(dg, p, 0.0, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean, pl2_int);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     printf("Mean:     L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_mean, pinf_mean, solver->num_itrs());
     printf("Total:    L2(p)=%9.6f  Inf(p)=%9.6f\n", pl2_err, pinf_err);
     printf("Integral: L2(p)=%9.6f\n", pl2_int);

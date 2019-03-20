@@ -27,7 +27,7 @@ namespace AmanziMesh {
 MeshLogicalAudit:: MeshLogicalAudit(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh_, std::ostream& os_) :
     mesh(mesh_),
     comm_(mesh_->get_comm()),
-    MyPID(mesh_->get_comm()->MyPID()),
+    getRank(mesh_->get_comm()->getRank()),
     os(os_),
     nface(mesh_->face_map(true).NumMyElements()),
     ncell(mesh_->cell_map(true).NumMyElements()),
@@ -550,7 +550,7 @@ bool MeshLogicalAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &m
   error = global_any(error);
   if (error) return error;
 
-  if (comm_->NumProc() == 1)
+  if (comm_->getSize() == 1)
   {
 
     // Serial or 1-process MPI
@@ -596,7 +596,7 @@ bool MeshLogicalAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &m
     map_own.RemoteIDList(num_ovl, gids, pids, lids);
     bad_map = false;
     for (int j = 0; j < num_ovl; ++j)
-      if (pids[j] < 0 || pids[j] == comm_->MyPID()) bad_map = true;
+      if (pids[j] < 0 || pids[j] == comm_->getRank()) bad_map = true;
     if (bad_map) {
       os << "ERROR: invalid ghosts in overlap map." << std::endl;
       error = true;

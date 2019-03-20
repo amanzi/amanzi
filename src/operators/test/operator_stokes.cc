@@ -47,8 +47,8 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: 2D Stokes: exactness test" << std::endl;
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "\nTest: 2D Stokes: exactness test" << std::endl;
 
   // read parameter list 
   std::string xmlFileName = "test/operator_stokes.xml";
@@ -224,7 +224,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   // op->AssembleMatrix();
   // ver1.CheckResidual(solution, rhs, 1.0e-12);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     std::cout << "elasticity solver (gmres): ||r||=" << solver.residual() 
               << " itr=" << solver.num_itrs()
               << " code=" << solver.returned_code() << std::endl;
@@ -239,7 +239,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   double pnorm, pl2_err, pinf_err;
   ana.ComputeCellError(*solution.SubVector(1)->Data(), 0.0, pnorm, pl2_err, pinf_err);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     ul2_err /= unorm;
     printf("L2(u)=%12.8g  Inf(u)=%12.8g  L2(p)=%12.8g  Inf(p)=%12.8g  itr=%3d\n",
         ul2_err, uinf_err, pl2_err, pinf_err, solver.num_itrs());
@@ -249,7 +249,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
     CHECK(solver.num_itrs() < 60);
   }
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     const Epetra_MultiVector& u = *solution.SubVector(0)->Data()->ViewComponent("node");
     GMV::open_data_file(*mesh, (std::string)"operators.gmv");
     GMV::start_data();

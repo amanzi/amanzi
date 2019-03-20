@@ -46,8 +46,8 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART) {
   using namespace Amanzi::WhetStone;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, high-order Crouzier-Raviart" << std::endl;
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "\nTest: 2D elliptic solver, high-order Crouzier-Raviart" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion.xml";
@@ -139,7 +139,7 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART) {
 
   int ierr = solver.ApplyInverse(rhs, solution);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
               << " itr=" << solver.num_itrs()
               << " code=" << solver.returned_code() << std::endl;
@@ -152,7 +152,7 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART) {
   double pnorm, pl2_err, pinf_err;
   ana.ComputeEdgeMomentsError(pf, 0.0, 3, pnorm, pl2_err, pinf_err);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     printf("L2(p)=%12.9f  Inf(p)=%12.9f  itr=%3d\n", pl2_err, pinf_err, solver.num_itrs());
 
     CHECK(pl2_err < 1e-10 && pinf_err < 1e-2);
@@ -172,8 +172,8 @@ void RunHighOrderLagrange(std::string vem_name, bool polygonal_mesh) {
   using namespace Amanzi::WhetStone;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, high-order " << vem_name << std::endl;
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "\nTest: 2D elliptic solver, high-order " << vem_name << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion.xml";
@@ -276,7 +276,7 @@ void RunHighOrderLagrange(std::string vem_name, bool polygonal_mesh) {
 
   int ierr = solver.ApplyInverse(rhs, solution);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
               << " itr=" << solver.num_itrs()
               << " code=" << solver.returned_code() << std::endl;
@@ -301,7 +301,7 @@ void RunHighOrderLagrange(std::string vem_name, bool polygonal_mesh) {
     ana.ComputeCellError(pc, 0.0, tmp, l2c_err, infc_err);
   }
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     printf("Node: L2(p)=%12.9f  H1(p)=%12.9f  itr=%3d\n", l2n_err, h1n_err, solver.num_itrs());
     printf("Edge: L2(p)=%12.9f  Inf(p)=%12.9f \n", l2f_err, inff_err);
     if (flag) printf("Cell: L2(p)=%12.9f  Inf(p)=%12.9f \n", l2c_err, infc_err);

@@ -14,8 +14,8 @@ TEST(MSTK_EDGES_2D)
 {
 
   auto comm = Amanzi::getDefaultComm();
-  int rank = comm->MyPID();
-  int size = comm->NumProc();
+  int rank = comm->getRank();
+  int size = comm->getSize();
   CHECK_EQUAL(4,size);
   
   //  if (rank == 0) {
@@ -123,8 +123,8 @@ TEST(MSTK_EDGES_3D)
 {
 
   auto comm = Amanzi::getDefaultComm();
-  int rank = comm->MyPID();
-  int size = comm->NumProc();
+  int rank = comm->getRank();
+  int size = comm->getSize();
   CHECK_EQUAL(4,size);
 
   //  if (rank == 0) {

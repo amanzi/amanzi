@@ -71,7 +71,7 @@ private:
   Teuchos::RCP<AmanziMesh::Mesh> mesh;
   Comm_ptr_type comm_;
 
-  const int MyPID;
+  const int getRank;
   const int nnode;
   const int nface;
   const int ncell;

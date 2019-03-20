@@ -39,8 +39,8 @@ Parallel_Exodus_file::Parallel_Exodus_file(const Comm_ptr_type& comm,
   : comm_(comm),
     basename_(basename)
 {
-  const int np(comm_->NumProc());
-  const int me(comm_->MyPID());
+  const int np(comm_->getSize());
+  const int me(comm_->getRank());
 
   std::string s(basename_);
 
@@ -90,8 +90,8 @@ Parallel_Exodus_file::read_mesh(void)
   // we need get that from the other processes
 
   comm_->Barrier();
-  const int np(comm_->NumProc());
-  const int me(comm_->MyPID());
+  const int np(comm_->getSize());
+  const int me(comm_->getRank());
 
   std::vector<int> byproc(np);
   int nblk(mesh_->element_blocks());

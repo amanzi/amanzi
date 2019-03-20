@@ -67,9 +67,9 @@ using namespace Amanzi::Operators;
 template<class UpwindClass>
 void RunTestUpwind(std::string method) {
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "\nTest: 1st-order convergence for upwind \"" << method << "\"\n";
+  if (getRank == 0) std::cout << "\nTest: 1st-order convergence for upwind \"" << method << "\"\n";
 
   // read parameter list
   std::string xmlFileName = "test/operator_upwind.xml";
@@ -174,7 +174,7 @@ void RunTestUpwind(std::string method) {
 #endif
     error = sqrt(error / nfaces_owned);
   
-    if (comm->MyPID() == 0)
+    if (comm->getRank() == 0)
         printf("n=%2d %s=%8.4f\n", n, method.c_str(), error);
   }
 }

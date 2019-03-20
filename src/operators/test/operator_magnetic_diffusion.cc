@@ -54,9 +54,9 @@ void MagneticDiffusion2D(double dt, double tend,
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "\nTest: Magnetic diffusion, TM mode, dt=" 
+  if (getRank == 0) std::cout << "\nTest: Magnetic diffusion, TM mode, dt=" 
                             << dt << ", name: " << name << std::endl;
 
   // read parameter list
@@ -242,7 +242,7 @@ void MagneticDiffusion2D(double dt, double tend,
     if (cycle == 1) divB0 = divB;
     CHECK_CLOSE(divB0, divB, 1e-8);
 
-    if (MyPID == 0) {
+    if (getRank == 0) {
       std::cout << "time: " << told << "  ||r||=" << solver.residual() 
                 << " itr=" << solver.num_itrs() << "  energy= " << energy 
                 << "  heat= " << heat
@@ -252,7 +252,7 @@ void MagneticDiffusion2D(double dt, double tend,
     }
 
     // visualization
-    if (MyPID == 0) {
+    if (getRank == 0) {
       GMV::open_data_file(*mesh, "operators.gmv");
       GMV::start_data();
       GMV::write_cell_data(sol, 0, "Bx");
@@ -268,7 +268,7 @@ void MagneticDiffusion2D(double dt, double tend,
   ana.ComputeNodeError(Ee, told - dt/2, enorm, el2_err, einf_err);
   ana.ComputeFaceError(Bf, told, bnorm, bl2_err, binf_err);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     if (enorm != 0.0) el2_err /= enorm; 
     if (bnorm != 0.0) bl2_err /= bnorm; 
     printf("nx=%d L2(e)=%10.7f  Inf(e)=%9.6f  L2(b)=%10.7f  Inf(b)=%9.6f\n",
@@ -293,9 +293,9 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "\nTest: Magnetic diffusion 3D, dt=" 
+  if (getRank == 0) std::cout << "\nTest: Magnetic diffusion 3D, dt=" 
                             << dt << ", name: " << name << std::endl;
 
   // read parameter list
@@ -533,7 +533,7 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
     if (cycle == 1) divB0 = divB;
     CHECK_CLOSE(divB0, divB, 1e-8);
 
-    if (MyPID == 0) {
+    if (getRank == 0) {
       std::cout << "time: " << told << "  ||r||=" << solver.residual() 
                 << " itr=" << solver.num_itrs() << "  energy= " << energy 
                 << "  heat= " << heat
@@ -543,7 +543,7 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
     }
 
     // visualization
-    if (MyPID == 0 && (cycle % 5 == 0)) {
+    if (getRank == 0 && (cycle % 5 == 0)) {
       GMV::open_data_file(*mesh, "operators.gmv");
       GMV::start_data();
       GMV::write_cell_data(sol_b, 0, "Bx");
@@ -564,7 +564,7 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
     ana.ComputeEdgeError(Ee, told - dt/2, enorm, el2_err, einf_err);
     ana.ComputeFaceError(Bf, told, bnorm, bl2_err, binf_err);
 
-    if (MyPID == 0) {
+    if (getRank == 0) {
       if (enorm != 0.0) el2_err /= enorm; 
       if (bnorm != 0.0) bl2_err /= bnorm; 
       printf("L2(e)=%10.7f  Inf(e)=%9.6f  L2(b)=%10.7f  Inf(b)=%9.6f\n",

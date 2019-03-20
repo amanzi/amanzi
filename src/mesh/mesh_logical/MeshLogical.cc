@@ -868,7 +868,7 @@ MeshLogical::compute_face_geometric_quantities_() const {
 // Note this works on Mesh, but is less useful for a general mesh
 // --------------------------------------------------------------------------------
 bool viewMeshLogical(const Mesh& m, std::ostream& os) {
-  if (m.get_comm()->NumProc() != 1) {
+  if (m.get_comm()->getSize() != 1) {
     return true;
   }
 

@@ -43,9 +43,9 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     std::cout << "\nTest: Laplace Beltrami solver: ";
     for (int i = 0; i < surfaces.size(); ++i)
       std::cout << "\"" << surfaces[i] << "\", ";
@@ -72,7 +72,7 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
   int ncells_wghost = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
-  std::cout << "pid=" << MyPID << " cells: " << ncells_owned << " " << ncells_wghost << std::endl;
+  std::cout << "pid=" << getRank << " cells: " << ncells_owned << " " << ncells_wghost << std::endl;
 
   // verify one-to-one map (2D-cell -> 3D-face)
   for (int c = 0; c < ncells_wghost; ++c) {
@@ -158,7 +158,7 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
     CHECK(p[0][c] > 0.0 && p[0][c] < 3.0);
   } 
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver->residual() << " itr=" << num_itrs
               << " code=" << solver->returned_code() << std::endl;
 

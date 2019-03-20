@@ -49,9 +49,9 @@ void TestDiffusionEdges(int dim, double tol, std::string filename)
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "\nTest: elliptic solver, edge discretization, d=" << dim 
+  if (getRank == 0) std::cout << "\nTest: elliptic solver, edge discretization, d=" << dim 
                             << ", file: " << filename << std::endl;
 
   // read parameter list
@@ -161,7 +161,7 @@ void TestDiffusionEdges(int dim, double tol, std::string filename)
 
   int ierr = solver.ApplyInverse(rhs, solution);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
               << " itr=" << solver.num_itrs()
               << " code=" << solver.returned_code() << std::endl;
@@ -175,7 +175,7 @@ void TestDiffusionEdges(int dim, double tol, std::string filename)
   double pnorm, pl2_err, pinf_err, hnorm, ph1_err;
   ana.ComputeEdgeError(p, 0.0, pnorm, pl2_err, pinf_err, hnorm, ph1_err);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     pl2_err /= pnorm;
     ph1_err /= hnorm;
     printf("L2(p)=%9.6f  H1(p)=%9.6f  itr=%3d\n", pl2_err, ph1_err, solver.num_itrs());

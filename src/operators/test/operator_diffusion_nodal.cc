@@ -48,9 +48,9 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, nodal discretization" << std::endl;
+  if (getRank == 0) std::cout << "\nTest: 2D elliptic solver, nodal discretization" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion.xml";
@@ -160,7 +160,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
 
   int ierr = solver.ApplyInverse(rhs, solution);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
               << " itr=" << solver.num_itrs()
               << " code=" << solver.returned_code() << std::endl;
@@ -182,7 +182,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   double pnorm, pl2_err, pinf_err, hnorm, ph1_err;
   ana.ComputeNodeError(p, 0.0, pnorm, pl2_err, pinf_err, hnorm, ph1_err);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     pl2_err /= pnorm;
     ph1_err /= hnorm;
     printf("L2(p)=%9.6f  H1(p)=%9.6f  itr=%3d\n", pl2_err, ph1_err, solver.num_itrs());
@@ -206,8 +206,8 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, exactness" 
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "\nTest: 2D elliptic solver, exactness" 
                             << " test for nodal discretization" << std::endl;
 
   // read parameter list
@@ -309,7 +309,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
 
   int ierr = solver.ApplyInverse(rhs, solution);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
               << " itr=" << solver.num_itrs()
               << " code=" << solver.returned_code() << std::endl;
@@ -322,7 +322,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   double pnorm, pl2_err, pinf_err, hnorm, ph1_err;
   ana.ComputeNodeError(p, 0.0, pnorm, pl2_err, pinf_err, hnorm, ph1_err);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     pl2_err /= pnorm;
     ph1_err /= hnorm;
     printf("L2(p)=%9.6f  H1(p)=%9.6f  itr=%3d\n", pl2_err, ph1_err, solver.num_itrs());

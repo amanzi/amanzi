@@ -49,9 +49,9 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "\nTest: Advection-duffusion on a surface" << std::endl;
+  if (getRank == 0) std::cout << "\nTest: Advection-duffusion on a surface" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_advdiff_surface.xml";
@@ -172,7 +172,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
 
   ver.CheckResidual(solution, 1.0e-12);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     std::cout << "pressure solver (gmres): ||r||=" << solver.residual() 
               << " itr=" << solver.num_itrs()
               << " code=" << solver.returned_code() << std::endl;

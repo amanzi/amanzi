@@ -3164,7 +3164,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
       // set is not on this processor
 
       if (!mset1) {
-        if (comm_->NumProc() == 1) {
+        if (comm_->getSize() == 1) {
           Errors::Message msg;
           msg << "Could not find labeled set \"" << label 
               << "\" in mesh file to initialize mesh set \"" << setname 
@@ -3207,7 +3207,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
       // set is not on this processor
       
       if (!mset1) {
-        if (comm_->NumProc() == 1) {
+        if (comm_->getSize() == 1) {
           Errors::Message msg;
           msg << "Could not find labeled set \"" << label 
               << "\" in mesh file to initialize mesh set \"" << setname 
@@ -5342,8 +5342,8 @@ void Mesh_MSTK::pre_create_steps_(const int space_dimension)
     numprocs = 1;
   } else {
     mpicomm_ = mpicomm->GetMpiComm();
-    myprocid = comm_->MyPID();
-    numprocs = comm_->NumProc();
+    myprocid = comm_->getRank();
+    numprocs = comm_->getSize();
     serial_run = (numprocs == 1);
   }
 

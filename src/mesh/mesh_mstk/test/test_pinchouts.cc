@@ -25,8 +25,8 @@ TEST(ELIM_DEGEN_INLINE_PARTITION)
   std::string out_exo_filename = "test/po_mesh_out.exo";
   
   auto comm = Amanzi::getDefaultComm();
-  int num_procs = comm->NumProc();
-  int rank = comm->MyPID();
+  int num_procs = comm->getSize();
+  int rank = comm->getRank();
   
   std::cout << "Reading the input file..." << std::endl;
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xml_filename);

@@ -209,7 +209,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   int dim = (nz == 0) ? 2 : 3;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
   // read parameter list
   std::string xmlFileName = "test/operator_remap.xml";
@@ -229,7 +229,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   const auto& limiter_list = plist.sublist("limiter");
   int vel_order = map_list.get<int>("method order");
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     std::string vel_method = map_list.get<std::string>("method");
     std::string vel_projector = map_list.get<std::string>("projector");
     std::string limiter = limiter_list.get<std::string>("limiter");
@@ -375,7 +375,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
 
   CHECK(l2_err < 0.2 / (order + 1));
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     printf("nx=%3d (orig) L2=%12.8g(mean) %12.8g  Inf=%12.8g %12.8g\n", 
         nx, l20_err, l2_err, inf0_err, inf_err);
   }
@@ -436,7 +436,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   ana.GlobalOp("sum", &gcl_err, 1);
   ana.GlobalOp("max", &gcl_inf, 1);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     printf("Conservation: dMass=%10.4g  dVolume=%10.6g  dVolLinear=%10.6g\n",
            mass1 - mass0, area1 - area, area0 - area1);
     printf("GCL: L1=%12.8g  Inf=%12.8g\n", gcl_err, gcl_inf);

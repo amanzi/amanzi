@@ -100,9 +100,9 @@ void RunTest(std::string op_list_name) {
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "\nTest: Singular-perturbed nonlinear Laplace Beltrami solver" << std::endl;
+  if (getRank == 0) std::cout << "\nTest: Singular-perturbed nonlinear Laplace Beltrami solver" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_laplace_beltrami.xml";
@@ -161,7 +161,7 @@ void RunTest(std::string op_list_name) {
   
   Epetra_MultiVector& src = *source.ViewComponent("cell");
   for (int c = 0; c < 20; c++) {
-    if (MyPID == 0) src[0][c] = 1.0;
+    if (getRank == 0) src[0][c] = 1.0;
   }
 
   // Create nonlinear coefficient.
@@ -224,7 +224,7 @@ void RunTest(std::string op_list_name) {
     int num_itrs = solver->num_itrs();
     CHECK(num_itrs > 5 && num_itrs < 15);
 
-    if (MyPID == 0) {
+    if (getRank == 0) {
       double a;
       rhs.Norm2(&a);
       std::cout << "pressure solver (gmres): ||r||=" << solver->residual() << " itr=" << num_itrs
@@ -239,7 +239,7 @@ void RunTest(std::string op_list_name) {
     source.PutScalar(0.0);
   }
  
-  if (MyPID == 0) {
+  if (getRank == 0) {
     // visualization
     const Epetra_MultiVector& p = *solution->ViewComponent("cell");
     GMV::open_data_file(*surfmesh, (std::string)"operators.gmv");

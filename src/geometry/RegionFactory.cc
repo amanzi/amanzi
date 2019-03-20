@@ -28,7 +28,7 @@
 #include "RegionPlane.hh"
 #include "RegionHalfSpace.hh"
 #include "RegionLabeledSet.hh"
-#include "RegionFunctionColor.hh"
+// #include "RegionFunctionColor.hh"
 #include "RegionPoint.hh"
 #include "RegionLogical.hh"
 #include "RegionPolygon.hh"
@@ -182,14 +182,14 @@ createRegion(const std::string reg_name,
     region = Teuchos::rcp(new RegionLabeledSet(reg_name, reg_id, entity_str,
                                                file, format, name, lifecycle));
 
-  } else if (shape == "region: color function") {
-    Teuchos::ParameterList colorfunc_params = reg_spec.sublist(shape);
+  // } else if (shape == "region: color function") {
+  //   Teuchos::ParameterList colorfunc_params = reg_spec.sublist(shape);
 
-    std::string file = colorfunc_params.get<std::string>("file");
-    int value = colorfunc_params.get<int>("value");
+  //   std::string file = colorfunc_params.get<std::string>("file");
+  //   int value = colorfunc_params.get<int>("value");
 
-    region = Teuchos::rcp(new RegionFunctionColor(reg_name, reg_id, file, 
-                                                  value, comm, lifecycle));
+  //   region = Teuchos::rcp(new RegionFunctionColor(reg_name, reg_id, file, 
+  //                                                 value, comm, lifecycle));
 
   } else if (shape == "region: point") {
     Teuchos::ParameterList point_params = reg_spec.sublist(shape);

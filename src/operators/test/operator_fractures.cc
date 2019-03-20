@@ -46,9 +46,9 @@ void RunTest(int icase, double gravity) {
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "\nTest: Darcy flow in fractures, gravity=" << gravity << std::endl;
+  if (getRank == 0) std::cout << "\nTest: Darcy flow in fractures, gravity=" << gravity << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_fractures.xml";
@@ -157,7 +157,7 @@ void RunTest(int icase, double gravity) {
 
   double a;
   rhs.Norm2(&a);
-  if (MyPID == 0) {
+  if (getRank == 0) {
     std::cout << "pressure solver (" << solver.name() 
               << "): ||r||=" << solver.residual() << " itr=" << solver.num_itrs()
               << "  ||f||=" << a 
@@ -171,7 +171,7 @@ void RunTest(int icase, double gravity) {
   ana.ComputeCellError(p, 0.0, pnorm, l2_err, inf_err);
   CHECK(l2_err < 1e-12);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     l2_err /= pnorm; 
     printf("L2(p)=%9.6f  Inf(p)=%9.6f\n", l2_err, inf_err);
   }
@@ -184,7 +184,7 @@ void RunTest(int icase, double gravity) {
     }
   }
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     GMV::open_data_file(*surfmesh, (std::string)"operators.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "solution");

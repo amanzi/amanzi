@@ -29,7 +29,7 @@ OutputSilo::OutputSilo(Teuchos::ParameterList& plist,
       fid_(NULL),
       count_(0)
 {
-  if (mesh_->vis_mesh().get_comm()->NumProc() > 1) {
+  if (mesh_->vis_mesh().get_comm()->getSize() > 1) {
     Errors::Message msg("OutputSilo does not yet support parallel runs.");
     Exceptions::amanzi_throw(msg);  
   }

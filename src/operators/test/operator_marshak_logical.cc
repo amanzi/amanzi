@@ -48,9 +48,9 @@ void RunTestMarshakLogical(std::string op_list_name) {
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "\nTest: Simulating nonlinear Marshak wave" << std::endl;
+  if (getRank == 0) std::cout << "\nTest: Simulating nonlinear Marshak wave" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_marshak_logical.xml";
@@ -200,7 +200,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
 
     solution.ViewComponent("cell")->Norm2(&snorm);
 
-    if (MyPID == 0) {
+    if (getRank == 0) {
       printf("%3d  ||r||=%11.6g  itr=%2d  ||sol||=%11.6g  T=%7.4f  dT=%7.4f\n",
           step, solver->residual(), solver->num_itrs(), snorm, T, dT);
     }

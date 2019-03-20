@@ -374,7 +374,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
 
     // Update ghost vertex values for parallel runs
 
-    if (get_comm()->NumProc() > 1)
+    if (get_comm()->getSize() > 1)
       MESH_UpdateVertexCoords(mesh_,mpicomm_);
 
     double meshsize_rms = sqrt(meshsizesqr_sum/nv);

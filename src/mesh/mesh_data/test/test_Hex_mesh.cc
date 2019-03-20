@@ -27,7 +27,7 @@ SUITE (HexMeshGenerator)
   {
     auto comm = Amanzi::getDefaultComm();
 
-    int me(comm->MyPID());
+    int me(comm->getRank());
 
     Amanzi::AmanziMesh::Data::HexMeshGenerator gen(comm, size*size, size, size);
     Amanzi::AmanziMesh::Data::Data *mesh;

@@ -61,9 +61,9 @@ TEST(BOUNDARYFLUX) {
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "\nTest: BoundaryFluxSolver" << std::endl;
+  if (getRank == 0) std::cout << "\nTest: BoundaryFluxSolver" << std::endl;
 
   // create model of nonlinearity
   Teuchos::RCP<const Model> model  = Teuchos::rcp(new Model());
@@ -86,7 +86,7 @@ TEST(BOUNDARYFLUX) {
   double face_value; 
   face_value = BndFaceSolver.FaceValue();
 
-  if (MyPID == 0) std::cout << "Face value " << face_value <<"\n";
+  if (getRank == 0) std::cout << "Face value " << face_value <<"\n";
 
   CHECK(fabs(face_value - 0.585786) < eps);
 }

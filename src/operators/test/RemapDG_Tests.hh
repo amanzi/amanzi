@@ -188,7 +188,7 @@ void RemapDG_Tests<AnalyticDG>::CollectStatistics(double t, const CompositeVecto
     xc.MaxValue(xmax);
     xc.MinValue(xmin);
 
-    if (mesh0_->get_comm()->MyPID() == 0) {
+    if (mesh0_->get_comm()->getRank() == 0) {
       printf("t=%8.5f  L2=%9.5g  nfnc=%5d  sharp=%5.1f%%  umax: ", tglob, l2norm_, nfun_, sharp_);
       for (int i = 0; i < std::min(nk, 4); ++i) printf("%9.5g ", xmax[i]);
       printf("  umin: %9.5g\n", xmin[0]);

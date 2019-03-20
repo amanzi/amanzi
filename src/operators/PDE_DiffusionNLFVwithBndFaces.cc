@@ -981,7 +981,7 @@ int PDE_DiffusionNLFVwithBndFaces::OrderCellsByGlobalId_(
 
   int ncells = cells.size();
   if (ncells == 1) return 0;
-  int my_pid = mesh_->get_comm()->MyPID();
+  int my_pid = mesh_->get_comm()->getRank();
   c2 = cells[1];
   if (mesh_->cell_map(true).GID(c1) > mesh_->cell_map(true).GID(c2)) {
     int c(c1);

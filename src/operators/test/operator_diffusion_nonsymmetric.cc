@@ -45,8 +45,8 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, non-symmetric tensor" << std::endl;
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "\nTest: 2D elliptic solver, non-symmetric tensor" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion.xml";
@@ -139,7 +139,7 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   CompositeVector& rhs = *global_op->rhs();
   int ierr = solver->ApplyInverse(rhs, *solution);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     std::cout << "pressure solver (belos gmres): ||r||=" << solver->residual()
               << " itr=" << solver->num_itrs()
               << " code=" << solver->returned_code() << std::endl;
@@ -158,7 +158,7 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   double unorm, ul2_err, uinf_err;
   ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     pl2_err /= pnorm; 
     ul2_err /= unorm;
     printf("L2(p)=%12.8g  Inf(p)=%12.8g  L2(u)=%12.8g  Inf(u)=%12.8g  itr=%3d\n",

@@ -9,8 +9,8 @@ TEST(OUT_OF_ORDER_GIDS) {
   // This tests our patches of Ifpack for Hypre.
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int numProcs = comm.NumProc();
-  int myRank = comm.MyPID();
+  int numProcs = comm.getSize();
+  int myRank = comm.getRank();
 
   //
   // Construct the map [0 0 1 1]

@@ -20,8 +20,8 @@ TEST(MSTK_HEX_GEN_3x3x3_4P)
   std::vector<Amanzi::AmanziGeometry::Point> ccoords(8), fcoords(4);
 
   auto comm = Amanzi::getDefaultComm();
-  int rank = comm->MyPID();
-  int size = comm->NumProc();
+  int rank = comm->getRank();
+  int size = comm->getSize();
   CHECK_EQUAL(4,size);
   if (size != 4) {
     std::cerr << "Test must be run with 4 processors" << std::endl;

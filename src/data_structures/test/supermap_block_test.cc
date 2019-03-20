@@ -40,28 +40,28 @@ TEST(SUPERMAP_BLOCKMAP) {
   using namespace Amanzi::AmanziGeometry;
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  int NumProc = comm->NumProc();
+  int getRank = comm->getRank();
+  int getSize = comm->getSize();
 
-  if (MyPID == 0) std::cout << "Test: SuperMapLumped with BlockMap with variable element size" << std::endl;
+  if (getRank == 0) std::cout << "Test: SuperMapLumped with BlockMap with variable element size" << std::endl;
 
   // make a ghosted and local map 1
   std::vector<int> gids(3), size(3);
   for (int i=0; i!=3; ++i) {
-    gids[i] = 3*MyPID + i;
+    gids[i] = 3*getRank + i;
     size[i] = i+1;
   }
-  auto owned_map1 = Teuchos::rcp(new Epetra_BlockMap(3*NumProc, 3, &gids[0], &size[0], 0, *comm));
+  auto owned_map1 = Teuchos::rcp(new Epetra_BlockMap(3*getSize, 3, &gids[0], &size[0], 0, *comm));
   CHECK_EQUAL(0, owned_map1->FirstPointInElement(0));
   CHECK_EQUAL(1, owned_map1->FirstPointInElement(1));
   CHECK_EQUAL(3, owned_map1->FirstPointInElement(2));
 
-  if (MyPID > 0) {
-    gids.push_back(3*MyPID-1);
+  if (getRank > 0) {
+    gids.push_back(3*getRank-1);
     size.push_back(3);
   }
-  if (MyPID < NumProc-1) {
-    gids.push_back(3*(MyPID+1));
+  if (getRank < getSize-1) {
+    gids.push_back(3*(getRank+1));
     size.push_back(1);
   }
 
@@ -81,24 +81,24 @@ TEST(SUPERMAP_BLOCKMAP_NULL_PROC) {
   using namespace Amanzi::AmanziGeometry;
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  int NumProc = comm->NumProc();
+  int getRank = comm->getRank();
+  int getSize = comm->getSize();
 
   // only for parallel tests
-  if (NumProc > 1) {
+  if (getSize > 1) {
   
-    if (MyPID == 0) std::cout << "Test: SuperMapLumped with BlockMap with variable element size" << std::endl;
+    if (getRank == 0) std::cout << "Test: SuperMapLumped with BlockMap with variable element size" << std::endl;
 
     // make a ghosted and local map 1
     std::vector<int> gids(3), size(3);
     int n_cells;
-    if (MyPID != 1) {
+    if (getRank != 1) {
       for (int i=0; i!=3; ++i) {
-        if (MyPID == 0) {
-          gids[i] = 3*MyPID + i;
+        if (getRank == 0) {
+          gids[i] = 3*getRank + i;
           size[i] = i+1;
         } else {
-          gids[i] = 3*(MyPID-1) + i;
+          gids[i] = 3*(getRank-1) + i;
           size[i] = i+1;
         }
       }
@@ -107,8 +107,8 @@ TEST(SUPERMAP_BLOCKMAP_NULL_PROC) {
       n_cells = 0;
     }
     
-    auto owned_map1 = Teuchos::rcp(new Epetra_BlockMap(3*(NumProc-1), n_cells, &gids[0], &size[0], 0, *comm));
-    if (MyPID != 1) {
+    auto owned_map1 = Teuchos::rcp(new Epetra_BlockMap(3*(getSize-1), n_cells, &gids[0], &size[0], 0, *comm));
+    if (getRank != 1) {
       CHECK_EQUAL(0, owned_map1->FirstPointInElement(0));
       CHECK_EQUAL(1, owned_map1->FirstPointInElement(1));
       CHECK_EQUAL(3, owned_map1->FirstPointInElement(2));
@@ -119,24 +119,24 @@ TEST(SUPERMAP_BLOCKMAP_NULL_PROC) {
     }
 
     int n_cells_g = n_cells;
-    if (MyPID > 1) {
-      gids.push_back(3*(MyPID-1)-1);
+    if (getRank > 1) {
+      gids.push_back(3*(getRank-1)-1);
       size.push_back(3);
       n_cells_g ++;
     }
-    if ((MyPID < NumProc-1)) {
-      if (MyPID > 1) {
+    if ((getRank < getSize-1)) {
+      if (getRank > 1) {
         n_cells_g ++;
-        gids.push_back(3*MyPID);
+        gids.push_back(3*getRank);
         size.push_back(1);
-      } else if (MyPID == 0) {
+      } else if (getRank == 0) {
         n_cells_g ++;
         gids.push_back(3);
         size.push_back(1);
       }
     }
 
-    auto ghosted_map1 = Teuchos::rcp(new Epetra_BlockMap(3*(NumProc-1) + 2*(NumProc - 2), n_cells_g, &gids[0], &size[0], 0, *comm));
+    auto ghosted_map1 = Teuchos::rcp(new Epetra_BlockMap(3*(getSize-1) + 2*(getSize - 2), n_cells_g, &gids[0], &size[0], 0, *comm));
 
     auto names = std::vector<std::string>{"map1"};
     auto dofnums = std::vector<int>{1};
@@ -156,19 +156,19 @@ TEST(SUPERMAP_BLOCK_MANUAL) {
   using namespace Amanzi::AmanziGeometry;
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  int NumProc = comm->NumProc();
+  int getRank = comm->getRank();
+  int getSize = comm->getSize();
 
-  if (MyPID == 0) std::cout << "Test: Manual test of SuperMapLumped with BLOCK maps" << std::endl;
+  if (getRank == 0) std::cout << "Test: Manual test of SuperMapLumped with BLOCK maps" << std::endl;
 
   // make a ghosted and local map 1
   std::vector<int> gids(3), size(3);
   for (int i=0; i!=3; ++i) {
-    gids[i] = 3*MyPID + i;
+    gids[i] = 3*getRank + i;
     size[i] = i+1;
   }
 
-  auto owned_map1 = Teuchos::rcp(new Epetra_BlockMap(3*NumProc, 3, &gids[0], &size[0], 0, *comm));
+  auto owned_map1 = Teuchos::rcp(new Epetra_BlockMap(3*getSize, 3, &gids[0], &size[0], 0, *comm));
 
   std::cout<< *owned_map1 << "\n";
   std::cout<< owned_map1->FirstPointInElement(0)<<"\n";
@@ -179,12 +179,12 @@ TEST(SUPERMAP_BLOCK_MANUAL) {
   CHECK_EQUAL(1, owned_map1->FirstPointInElement(1));
   CHECK_EQUAL(3, owned_map1->FirstPointInElement(2));
 
-  if (MyPID > 0) {
-    gids.push_back(3*MyPID-1);
+  if (getRank > 0) {
+    gids.push_back(3*getRank-1);
     size.push_back(3);
   }
-  if (MyPID < NumProc-1) {
-    gids.push_back(3*(MyPID+1));
+  if (getRank < getSize-1) {
+    gids.push_back(3*(getRank+1));
     size.push_back(1);
   }
   
@@ -193,17 +193,17 @@ TEST(SUPERMAP_BLOCK_MANUAL) {
   // make a ghosted and local map 2
   std::vector<int> gids2(5), size2(5);
   for (int i=0; i!=5; ++i) {
-    gids2[i] = 5*MyPID + i;
+    gids2[i] = 5*getRank + i;
     size2[i] = i%2 + 1;
   }
-  auto owned_map2 = Teuchos::rcp(new Epetra_BlockMap(5*NumProc, 5, &gids2[0], &size2[0], 0, *comm));
+  auto owned_map2 = Teuchos::rcp(new Epetra_BlockMap(5*getSize, 5, &gids2[0], &size2[0], 0, *comm));
 
-  if (MyPID > 0) {
-    gids2.push_back(5*MyPID-1);
+  if (getRank > 0) {
+    gids2.push_back(5*getRank-1);
     size2.push_back(1);
   }
-  if (MyPID < NumProc-1) {
-    gids2.push_back(5*(MyPID+1));
+  if (getRank < getSize-1) {
+    gids2.push_back(5*(getRank+1));
     size2.push_back(1);
   }
   auto ghosted_map2 = Teuchos::rcp(new Epetra_BlockMap(-1, gids2.size(), &gids2[0],  &size2[0], 0, *comm));

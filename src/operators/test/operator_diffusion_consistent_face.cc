@@ -46,8 +46,8 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, exactness" 
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "\nTest: 2D elliptic solver, exactness" 
                             << " test for mixed discretization" << std::endl;
 
   // read parameter list

@@ -20,8 +20,8 @@ TEST(MSTK_EXTFACE_MAP_4P)
   std::vector<Amanzi::AmanziGeometry::Point> ccoords(8), fcoords(4);
 
   auto comm = Amanzi::getDefaultComm();
-  int rank = comm->MyPID();
-  int size = comm->NumProc();
+  int rank = comm->getRank();
+  int size = comm->getSize();
   CHECK_EQUAL(4,size);
 
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK("test/hex_3x3x3_sets.exo",comm));

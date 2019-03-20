@@ -46,8 +46,8 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, NLFV with DMP, g=" << gravity << std::endl;
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "\nTest: 2D elliptic solver, NLFV with DMP, g=" << gravity << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion.xml";
@@ -163,7 +163,7 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
 
     ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
-    if (MyPID == 0) {
+    if (getRank == 0) {
       pl2_err /= pnorm; 
       ul2_err /= unorm;
       printf("L2(p)=%10.4e  Inf(p)=%10.4e  L2(u)=%10.4e  Inf(u)=%10.4e  (itr=%d ||r||=%10.4e code=%d)\n",
@@ -188,8 +188,8 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, NLFVwithBndFaces with DMP, g=" << gravity << std::endl;
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "\nTest: 2D elliptic solver, NLFVwithBndFaces with DMP, g=" << gravity << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion.xml";
@@ -306,7 +306,7 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
 
     ana_diff.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
-    if (MyPID == 0) {
+    if (getRank == 0) {
       pl2_err /= pnorm; 
       ul2_err /= unorm;
       printf("L2(p)=%10.4e  Inf(p)=%10.4e  L2(u)=%10.4e  Inf(u)=%10.4e  (itr=%d ||r||=%10.4e code=%d)\n",

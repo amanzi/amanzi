@@ -47,9 +47,9 @@ void TestDiffusionFracturedMatrix(double gravity) {
   using namespace Amanzi::Operators;
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "\nTest: 3D fractured matrix problem: gravity=" << gravity << "\n";
+  if (getRank == 0) std::cout << "\nTest: 3D fractured matrix problem: gravity=" << gravity << "\n";
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion_fractured_matrix.xml";
@@ -148,7 +148,7 @@ void TestDiffusionFracturedMatrix(double gravity) {
 
   int ierr = solver.ApplyInverse(rhs, *solution);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
               << " itr=" << solver.num_itrs()
               << " code=" << solver.returned_code() << std::endl;
@@ -184,7 +184,7 @@ void TestDiffusionFracturedMatrix(double gravity) {
 
   ana.ComputeFaceError(flx_short, 0.0, unorm, ul2_err, uinf_err);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  itr=%3d\n",
         pl2_err, pinf_err, ul2_err, uinf_err, solver.num_itrs());
 

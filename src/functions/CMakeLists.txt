@@ -72,19 +72,20 @@ if (BUILD_TESTS)
                   SOURCE test/FunctionFactoryTest.cc
                   LINK_LIBS functions ${UnitTest_LIBRARIES})
  
-  add_amanzi_test(function_concrete_color function_concrete_color
-                  KIND unit
-                  SOURCE test/AllColorFunctionTest.cc
-                  LINK_LIBS functions ${UnitTest_LIBRARIES})
+  # add_amanzi_test(function_concrete_color function_concrete_color
+  #                 KIND unit
+  #                 SOURCE test/AllColorFunctionTest.cc
+  #                 LINK_LIBS functions ${UnitTest_LIBRARIES})
 
-  add_amanzi_test(function_color_factory function_color_factory
-                  KIND unit
-                  SOURCE test/ColorFunctionFactoryTest.cc
-                  LINK_LIBS 
-                         functions
-                         ${UnitTest_LIBRARIES}
-                         ${Teuchos_LIBRARIES}
-                         ${Epetra_LIBRARIES})
+  # add_amanzi_test(function_color_factory function_color_factory
+  #                 KIND unit
+  #                 SOURCE test/ColorFunctionFactoryTest.cc
+  #                 LINK_LIBS 
+  #                        functions
+  #                        ${UnitTest_LIBRARIES}
+  #                        ${Teuchos_LIBRARIES}
+  #                        ${Epetra_LIBRARIES})
+
 
   add_amanzi_test(function_composite function_composite
                   KIND unit

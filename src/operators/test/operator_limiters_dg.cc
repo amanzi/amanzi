@@ -48,8 +48,8 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: Smoothness indicator and limiters for DG, basis=" << basis << std::endl;
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "\nTest: Smoothness indicator and limiters for DG, basis=" << basis << std::endl;
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
@@ -157,7 +157,7 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
     int nids, itmp = ids.size();
     mesh->get_comm()->SumAll(&itmp, &nids, 1);
     double fraction = 100.0 * nids / grad_c.GlobalLength();
-    if (MyPID == 0) 
+    if (getRank == 0) 
       printf("%9s: errors: %10.6f %10.6f  ||grad||=%8.4f  indicator=%5.1f%%\n",
           LIMITERS[i].c_str(), err_int, err_glb, gnorm, fraction);
     CHECK(fraction < 15.0);
@@ -194,7 +194,7 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
     mesh->get_comm()->SumAll(&tmp, &err, 1);
     tmp = l2norm;
     mesh->get_comm()->SumAll(&tmp, &l2norm, 1);
-    if (MyPID == 0) 
+    if (getRank == 0) 
       printf("       sol errors: %10.6f   ||u||=%8.4f\n", std::pow(err, 0.5), std::pow(l2norm, 0.5));
     CHECK(err < 0.02);
   }
@@ -222,8 +222,8 @@ TEST(LIMITER_GAUSS_POINTS)
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: Limiters at Gauss points" << std::endl;
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "\nTest: Limiters at Gauss points" << std::endl;
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
@@ -302,7 +302,7 @@ TEST(LIMITER_GAUSS_POINTS)
   mesh->get_comm()->MinAll(&tmp, &umin, 1);
   tmp = umax;
   mesh->get_comm()->MaxAll(&tmp, &umax, 1);
-  if (MyPID == 0) {
+  if (getRank == 0) {
     printf("function min/max: %10.6f %10.6f\n", umin, umax);
     printf("limiter min/avg/max: %10.6f %10.6f %10.6f\n", minlim, avglim, maxlim);
   }

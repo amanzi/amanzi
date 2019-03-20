@@ -106,7 +106,7 @@ void RankEvaluator::UpdateField_(const Teuchos::Ptr<State>& S) {
 
   // initialize from mesh
   for (int c=0; c!=rank_c.MyLength(); ++c) {
-    rank_c[0][c] = rank->Comm()->MyPID();
+    rank_c[0][c] = rank->Comm()->getRank();
   }
 }
 

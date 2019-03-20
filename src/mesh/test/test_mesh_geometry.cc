@@ -26,8 +26,8 @@
 TEST(MESH_GEOMETRY_PLANAR)
 {
   auto comm = Amanzi::getDefaultComm();
-  const int nproc(comm->NumProc());
-  const int me(comm->MyPID());
+  const int nproc(comm->getSize());
+  const int me(comm->getRank());
 
 
   // We are not including MOAB since Mesh_MOAB.cc does not have
@@ -213,8 +213,8 @@ TEST(MESH_GEOMETRY_SURFACE)
 
 
   auto comm = Amanzi::getDefaultComm();
-  const int nproc(comm->NumProc());
-  const int me(comm->MyPID());
+  const int nproc(comm->getSize());
+  const int me(comm->getRank());
 
   // We are not including MOAB since Mesh_MOAB.cc does not have
   // routines for generating a mesh
@@ -393,8 +393,8 @@ TEST(MESH_GEOMETRY_SOLID)
 {
 
   auto comm = Amanzi::getDefaultComm();
-  const int nproc(comm->NumProc());
-  const int me(comm->MyPID());
+  const int nproc(comm->getSize());
+  const int me(comm->getRank());
 
   // We are not including MOAB since Mesh_MOAB.cc does not have
   // routines for generating a mesh

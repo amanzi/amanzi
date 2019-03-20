@@ -37,7 +37,7 @@ class Verification {
       a.Dot(ha, &aha);
       b.Dot(hb, &bhb);
 
-      if (a.Comm()->MyPID() == 0) {
+      if (a.Comm()->getRank() == 0) {
         std::cout << "Matrix:\n";
         if (symmetry)
             printf("  Symmetry test: %21.14e = %21.14e\n", ahb, bha);
@@ -66,7 +66,7 @@ class Verification {
     a.Dot(ha, &aha);
     b.Dot(hb, &bhb);
 
-    if (a.Comm()->MyPID() == 0) {
+    if (a.Comm()->getRank() == 0) {
       int size = (op_->A() != Teuchos::null) ? op_->A()->NumGlobalRows() : -1;
       std::cout << "Preconditioner: size=" << size << "\n";
       if (symmetry)
@@ -136,8 +136,8 @@ class Verification {
       }
       cndavg /= matrices.size();
 
-      int MyPID = 0; 
-      if (MyPID == 0) {
+      int getRank = 0; 
+      if (getRank == 0) {
         printf("  Matrices:\n");
         printf("    eigenvalues (min,max) = %8.3g %8.3g\n", emin, emax); 
         printf("    conditioning (min,max,avg) = %8.2g %8.2g %8.2g\n", cndmin, cndmax, cndavg);

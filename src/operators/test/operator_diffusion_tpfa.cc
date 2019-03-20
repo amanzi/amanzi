@@ -50,8 +50,8 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, TPFA with zero permeability" << std::endl;
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "\nTest: 2D elliptic solver, TPFA with zero permeability" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion_strip.xml";

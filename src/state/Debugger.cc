@@ -48,7 +48,7 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
         Teuchos::ParameterList vo_plist;
         vo_plist.sublist("verbose object");
         vo_plist.sublist("verbose object") = plist.sublist("verbose object");
-        vo_plist.sublist("verbose object").set("write on rank", mesh->get_comm()->MyPID());
+        vo_plist.sublist("verbose object").set("write on rank", mesh->get_comm()->getRank());
         dcvo_.push_back(Teuchos::rcp(new VerboseObject(*mesh_->get_comm(), name, vo_plist)));
       }
     }
@@ -75,7 +75,7 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
           Teuchos::ParameterList vo_plist;
           vo_plist.sublist("verbose object");
           vo_plist.sublist("verbose object") = plist.sublist("verbose object");
-          vo_plist.sublist("verbose object").set("write on rank", mesh->get_comm()->MyPID());
+          vo_plist.sublist("verbose object").set("write on rank", mesh->get_comm()->getRank());
           dcvo_.push_back(Teuchos::rcp(new VerboseObject(*mesh_->get_comm(), name, vo_plist)));
         }
       }

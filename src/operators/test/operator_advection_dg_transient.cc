@@ -624,7 +624,7 @@ void AdvectionTransient(std::string filename, int nx, int ny,
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
   // read parameter list
   std::string xmlFileName = "test/operator_advection_dg_transient.xml";
@@ -642,7 +642,7 @@ void AdvectionTransient(std::string filename, int nx, int ny,
 
   { 
     std::string problem = (conservative_form) ? ", conservative PDE" : "";
-    if (MyPID == 0) {
+    if (getRank == 0) {
       std::cout << "\nTest: 2D dG transient advection: " << filename 
                 << ", order=" << order << problem 
                 << ", basis=" << basis 
@@ -718,7 +718,7 @@ void AdvectionTransient(std::string filename, int nx, int ny,
     // visualization
     if (std::fabs(t - tio) < dt/4) {
       tio = std::min(tio + 0.1, tend); 
-      if (MyPID == 0)
+      if (getRank == 0)
         printf("t=%9.6f |p|=%12.8g limiter min/mean: %8.4g %8.4g\n",
             t, fn.l2norm, fn.limiter_min, fn.limiter_mean);
 
@@ -744,7 +744,7 @@ void AdvectionTransient(std::string filename, int nx, int ny,
   double pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean, pl2_int;
   ana.ComputeCellError(*dg, p, tend, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean, pl2_int);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     printf("nx=%3d (mean) L2(p)=%9.6g  Inf(p)=%9.6g\n", nx, pl2_mean, pinf_mean);
     printf("      (total) L2(p)=%9.6g  Inf(p)=%9.6g\n", pl2_err, pinf_err);
     printf("   (integral) L2(p)=%9.6g\n", pl2_int);

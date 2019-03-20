@@ -45,9 +45,9 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "\nTest: Simulating nonlinear Marshak wave" << std::endl;
+  if (getRank == 0) std::cout << "\nTest: Simulating nonlinear Marshak wave" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_marshak.xml";
@@ -195,7 +195,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 
     solution->ViewComponent("cell")->Norm2(&snorm);
 
-    if (MyPID == 0) {
+    if (getRank == 0) {
       printf("%3d  ||r||=%11.6g  itr=%2d  ||sol||=%11.6g  t=%7.4f  dt=%7.4f\n",
           step, solver.residual(), solver.num_itrs(), snorm, t, dt);
     }
@@ -241,7 +241,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 
   CHECK_CLOSE(0.0, pl2_err, 0.1);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     GMV::open_data_file(*mesh, (std::string)"operators.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "solution");

@@ -49,8 +49,8 @@ void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: " << dim << "D elliptic solver, exactness test" 
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "\nTest: " << dim << "D elliptic solver, exactness test" 
                             << " for mixed discretization, g=" << gravity << std::endl;
 
   // read parameter list
@@ -70,7 +70,7 @@ void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre
     // mesh = meshfactory.create("test/circle_poly10.exo");
   } else {
     meshfactory.set_preference(Preference({AmanziMesh::Framework::SIMPLE}));
-    if (comm->NumProc() > 1) meshfactory.set_preference(Preference({Framework::MSTK}));
+    if (comm->getSize() > 1) meshfactory.set_preference(Preference({Framework::MSTK}));
     mesh = meshfactory.create(0.0,0.0,0.0, 1.0,1.0,1.0, 4, 5, 6);
   }
 
@@ -168,7 +168,7 @@ void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre
 
   int ierr = solver.ApplyInverse(rhs, *solution);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
               << " itr=" << solver.num_itrs()
               << " code=" << solver.returned_code() << std::endl;
@@ -186,7 +186,7 @@ void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre
   op->UpdateFlux(solution.ptr(), flux.ptr());
   ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     pl2_err /= pnorm; 
     ul2_err /= unorm;
     printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  itr=%3d\n",
@@ -219,9 +219,9 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, exactness" 
+  if (getRank == 0) std::cout << "\nTest: 2D elliptic solver, exactness" 
                             << " test for cell-based discretization" << std::endl;
 
   // read parameter list
@@ -314,7 +314,7 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
 
   int ierr = solver.ApplyInverse(rhs, solution);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
               << " itr=" << solver.num_itrs()
               << " code=" << solver.returned_code() << std::endl;
@@ -325,7 +325,7 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   double pnorm, pl2_err, pinf_err;
   ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     pl2_err /= pnorm; 
     printf("L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_err, pinf_err, solver.num_itrs());
 

@@ -44,8 +44,8 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: 2D elasticity: exactness test" << std::endl;
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "\nTest: 2D elasticity: exactness test" << std::endl;
 
   // read parameter list
   // -- it specifies details of the mesh, elasticity operator, and solver
@@ -169,7 +169,7 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
 
   ver.CheckResidual(solution, 1.0e-14);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     std::cout << "elasticity solver (pcg): ||r||=" << pcg.residual() 
               << " itr=" << pcg.num_itrs()
               << " code=" << pcg.returned_code() << std::endl;
@@ -179,7 +179,7 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   double unorm, ul2_err, uinf_err;
   ana.ComputeNodeError(solution, 0.0, unorm, ul2_err, uinf_err);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     ul2_err /= unorm;
     printf("L2(u)=%12.8g  Inf(u)=%12.8g  itr=%3d\n",
         ul2_err, uinf_err, pcg.num_itrs());

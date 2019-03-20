@@ -37,9 +37,9 @@ TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA) {
   using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "Test: FD like graph, null off-proc assembly" << std::endl;
+  if (getRank == 0) std::cout << "Test: FD like graph, null off-proc assembly" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_convergence.xml";
@@ -113,9 +113,9 @@ TEST(FE_GRAPH_FACE_FACE) {
   using namespace Amanzi::Operators;
 
   auto comm = getDefaultComm();
-  int MyPID = comm->MyPID();
+  int getRank = comm->getRank();
 
-  if (MyPID == 0) std::cout << "Test: FE like graph, off-proc assembly" << std::endl;
+  if (getRank == 0) std::cout << "Test: FE like graph, off-proc assembly" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_convergence.xml";

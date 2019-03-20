@@ -95,7 +95,7 @@ void HDF5_MPI::createMeshFile(Teuchos::RCP<const AmanziMesh::Mesh> mesh, std::st
   parallelIO_close_file(mesh_file_, &IOgroup_);
 
   // Store filenames
-  if (TrackXdmf() && viz_comm_->MyPID() == 0) {
+  if (TrackXdmf() && viz_comm_->getRank() == 0) {
     setxdmfMeshVisitFilename(filename + ".VisIt.xmf");
     // start xmf files xmlObjects stored inside functions
     createXdmfMeshVisit_();
@@ -187,11 +187,11 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   // -- get connectivity
   // nodes are written to h5 out of order, need info to map id to order in output
   int nnodes(nnodes_local);
-  std::vector<int> nnodesAll(viz_comm_->NumProc(),0);
+  std::vector<int> nnodesAll(viz_comm_->getSize(),0);
   viz_comm_->GatherAll(&nnodes, &nnodesAll[0], 1);
   int start(0);
-  std::vector<int> startAll(viz_comm_->NumProc(),0);
-  for (int i = 0; i < viz_comm_->MyPID(); i++) {
+  std::vector<int> startAll(viz_comm_->getSize(),0);
+  for (int i = 0; i < viz_comm_->getRank(); i++) {
     start += nnodesAll[i];
   }
   viz_comm_->GatherAll(&start, &startAll[0],1);
@@ -284,7 +284,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
 
       for (int i=0; i!=nodes.size(); ++i) {
 	if (nmap.MyLID(nodes[i])) {
-	  conn[lcv++] = nodes[i] + startAll[viz_comm_->MyPID()];
+	  conn[lcv++] = nodes[i] + startAll[viz_comm_->getRank()];
 	} else {
 	  conn[lcv++] = lid[nodes[i]] + startAll[pid[nodes[i]]];
 	}
@@ -304,7 +304,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
 
       for (int i=0; i!=nodes.size(); ++i) {
 	if (nmap.MyLID(nodes[i])) {
-	  conn[lcv++] = nodes[i] + startAll[viz_comm_->MyPID()];
+	  conn[lcv++] = nodes[i] + startAll[viz_comm_->getRank()];
 	} else {
 	  conn[lcv++] = lid[nodes[i]] + startAll[pid[nodes[i]]];
 	}
@@ -328,7 +328,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
 
 	for (int i=0; i!=nodes.size(); ++i) {
 	  if (nmap.MyLID(nodes[i])) {
-	    conn[lcv++] = nodes[i] + startAll[viz_comm_->MyPID()];
+	    conn[lcv++] = nodes[i] + startAll[viz_comm_->getRank()];
 	  } else {
 	    conn[lcv++] = lid[nodes[i]] + startAll[pid[nodes[i]]];
 	  }
@@ -371,7 +371,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   setConnLength(global_conn);
 
   // Create and write out accompanying Xdmf file
-  if (TrackXdmf() && viz_comm_->MyPID() == 0) {
+  if (TrackXdmf() && viz_comm_->getRank() == 0) {
     //TODO(barker): if implement type tracking, then update this as needed
 
     // This can be optimized in the case where all elements are of the same type
@@ -470,11 +470,11 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
   // -- get connectivity
   // nodes are written to h5 out of order, need info to map id to order in output
   int nnodes(nnodes_local);
-  std::vector<int> nnodesAll(viz_comm_->NumProc(),0);
+  std::vector<int> nnodesAll(viz_comm_->getSize(),0);
   viz_comm_->GatherAll(&nnodes, &nnodesAll[0], 1);
   int start(0);
-  std::vector<int> startAll(viz_comm_->NumProc(),0);
-  for (int i = 0; i < viz_comm_->MyPID(); i++) {
+  std::vector<int> startAll(viz_comm_->getSize(),0);
+  for (int i = 0; i < viz_comm_->getRank(); i++) {
     start += nnodesAll[i];
   }
   viz_comm_->GatherAll(&start, &startAll[0],1);
@@ -534,14 +534,14 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
       // store nodes in the correct order
       for (int i=0; i!=cells.size(); ++i) {
         if (nmap.MyLID(cells[i])) {
-          conn[lcv++] = cells[i] + startAll[viz_comm_->MyPID()];
+          conn[lcv++] = cells[i] + startAll[viz_comm_->getRank()];
         } else {
           conn[lcv++] = lid[cells[i]] + startAll[pid[cells[i]]];
         }
       }
 
       // store entity
-      entities[lcv_entity++] = startAll[viz_comm_->MyPID()] + internal_f;
+      entities[lcv_entity++] = startAll[viz_comm_->getRank()] + internal_f;
       internal_f++;
       
     // } else if (space_dim == 2) {
@@ -555,7 +555,7 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
 
     //   for (int i=0; i!=nodes.size(); ++i) {
     //     if (nmap.MyLID(nodes[i])) {
-    //       conn[lcv++] = nodes[i] + startAll[viz_comm_->MyPID()];
+    //       conn[lcv++] = nodes[i] + startAll[viz_comm_->getRank()];
     //     } else {
     //       conn[lcv++] = lid[nodes[i]] + startAll[pid[nodes[i]]];
     //     }
@@ -597,7 +597,7 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
   setConnLength(global_conn);
 
   // Create and write out accompanying Xdmf file
-  if (TrackXdmf() && viz_comm_->MyPID() == 0) {
+  if (TrackXdmf() && viz_comm_->getRank() == 0) {
     //TODO(barker): if implement type tracking, then update this as needed
 
     // This can be optimized in the case where all elements are of the same type
@@ -646,7 +646,7 @@ void HDF5_MPI::createDataFile(std::string soln_filename)
 
   // Store filenames
   setH5DataFilename(h5filename);
-  if (TrackXdmf() && viz_comm_->MyPID() == 0) {
+  if (TrackXdmf() && viz_comm_->getRank() == 0) {
     setxdmfVisitFilename(soln_filename + ".VisIt.xmf");
     // start xmf files xmlObjects stored inside functions
     createXdmfVisit_();
@@ -674,7 +674,7 @@ void HDF5_MPI::createTimestep(const double time, const int iteration)
 {
   std::ofstream of;
 
-  if (TrackXdmf() && viz_comm_->MyPID() == 0) {
+  if (TrackXdmf() && viz_comm_->getRank() == 0) {
     // create single step xdmf file
     Teuchos::XMLObject tmp("Xdmf");
     tmp.addChild(addXdmfHeaderLocal_("Mesh",time,iteration));
@@ -705,7 +705,7 @@ void HDF5_MPI::createTimestep(const double time, const int iteration)
 
 void HDF5_MPI::endTimestep()
 {
-  if (TrackXdmf() && viz_comm_->MyPID() == 0) {
+  if (TrackXdmf() && viz_comm_->getRank() == 0) {
     //std::ofstream of;
     //std::stringstream filename;
     //filename << H5DataFilename() << "." << Iteration() << ".xmf";
@@ -1120,7 +1120,7 @@ void HDF5_MPI::writeFieldData_(const Epetra_Vector &x, std::string varname,
   if (TrackXdmf() ) {
     // write the time value as an attribute to this dataset
     writeAttrReal(Time(), "Time", h5path.str());
-    if (viz_comm_->MyPID() == 0) {
+    if (viz_comm_->getRank() == 0) {
       // TODO(barker): get grid node, node.addChild(addXdmfAttribute)
       Teuchos::XMLObject node = findMeshNode_(xmlStep());
       node.addChild(addXdmfAttribute_(varname, loc, globaldims[0], h5path.str()));
@@ -1141,7 +1141,7 @@ bool HDF5_MPI::checkFieldData_(std::string varname)
   strcpy(h5path,varname.c_str());
   bool exists=false;
 
-  if (viz_comm_->MyPID() != 0) {
+  if (viz_comm_->getRank() != 0) {
     MPI_Bcast(&exists, 1, MPI_C_BOOL, 0, viz_comm_->Comm());
   } else {
     iofile_t *currfile;
@@ -1173,7 +1173,7 @@ bool HDF5_MPI::readFieldData_(Epetra_Vector &x, std::string varname,
   parallelIO_get_dataset_ndims(&ndims, data_file_, h5path, &IOgroup_);
   
   if (ndims < 0) {
-    if (viz_comm_->MyPID() == 0) {
+    if (viz_comm_->getRank() == 0) {
       std::cout<< "Dimension of the field "<<h5path<<" is negative.\n";
     }
     return false;

@@ -54,10 +54,10 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   // algorithm uses the second item in the list returned by face_get_cells
   // as the twin component. We need to use global ids of cells for proper
   // ordering.  
-  if (upwind_list == "upwind second-order" && comm->NumProc() > 1) return;
+  if (upwind_list == "upwind second-order" && comm->getSize() > 1) return;
 
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, divK discretization: \"" 
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "\nTest: 2D elliptic solver, divK discretization: \"" 
                             << diffusion_list << "\" + \"" << upwind_list << "\"\n";
 
   // read parameter list
@@ -167,7 +167,7 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   CompositeVector& rhs = *global_op->rhs();
   int ierr = solver.ApplyInverse(rhs, *solution);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
               << " itr=" << solver.num_itrs()
               << " code=" << solver.returned_code() << std::endl;
@@ -183,7 +183,7 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   double unorm, ul2_err, uinf_err;
   ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     pl2_err /= pnorm; 
     ul2_err /= unorm;
     printf("L2(p)=%12.8g  Inf(p)=%12.8g  L2(u)=%12.8g  Inf(u)=%12.8g  itr=%3d\n",
@@ -215,8 +215,8 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   using namespace Amanzi::Operators;
 
   auto comm = Amanzi::getDefaultComm();
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: 3D elliptic solver, divK discretization, average" << std::endl;
+  int getRank = comm->getRank();
+  if (getRank == 0) std::cout << "\nTest: 3D elliptic solver, divK discretization, average" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion.xml";
@@ -322,7 +322,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   CompositeVector rhs = *global_op->rhs();
   int ierr = solver.ApplyInverse(rhs, *solution);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
               << " itr=" << solver.num_itrs()
               << " code=" << solver.returned_code() << std::endl;
@@ -338,7 +338,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   double unorm, ul2_err, uinf_err;
   ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
-  if (MyPID == 0) {
+  if (getRank == 0) {
     pl2_err /= pnorm; 
     ul2_err /= unorm;
     printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  itr=%3d\n",

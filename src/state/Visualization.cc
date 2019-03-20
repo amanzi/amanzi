@@ -131,7 +131,7 @@ void Visualization::WritePartition() {
     // first make an Epetra_Vector to hold the partitions information
     Epetra_MultiVector reg(mesh_->cell_map(false),1,false);
     // loop over the regions and initialize the reg array
-    double part_index = static_cast<double>(mesh_->get_comm()->MyPID());
+    double part_index = static_cast<double>(mesh_->get_comm()->getRank());
     reg.PutScalar(part_index);
   
     std::vector<std::string> name; 

@@ -13,21 +13,10 @@ add_subdirectory(functions)
 # Geometry
 add_subdirectory(geometry)
 
-# Grid-option agnostic chemistry and interfaces
-add_subdirectory(common/chemistry)
-
-if (ENABLE_ALQUIMIA)
-  # Use Alquimia as a chemistry engine.
-  add_definitions(-DALQUIMIA_ENABLED)
-  add_subdirectory(common/alquimia)
-endif()
 
 if (ENABLE_Unstructured)
   # Mesh
   add_subdirectory(mesh)
-
-  # Debug helpers
-  add_subdirectory(debug)
 
   # Discretization
   add_subdirectory(whetstone)
@@ -54,26 +43,3 @@ if (ENABLE_Unstructured)
   add_subdirectory(state)
 endif()
 
-add_subdirectory(common/interface_platform)
-
-if (ENABLE_Unstructured)  
-  add_subdirectory(pks)
-
-  if (ENABLE_Physics)
-     # Multiprocess coordinator
-     add_subdirectory(mpc)
-
-     # unstructured grid simulation driver, and Amanzi binaries
-     add_subdirectory(executables)
-  endif()
-endif()
-
-# structured grid
-if (ENABLE_Structured AND ENABLE_Physics)
-  add_subdirectory(structured_grid)
-endif()
-
-# standalone driver (produces mesh-independent executable)
-if (ENABLE_Physics)
-  add_subdirectory(common/standalone_simulation_coordinator)
-endif()
