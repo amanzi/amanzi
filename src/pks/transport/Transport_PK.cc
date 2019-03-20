@@ -303,8 +303,11 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
   // require fracture fields
   if (mesh_->space_dimension() != mesh_->manifold_dimension()) {
     if (!S->HasField(darcy_flux_fracture_key_)) {
+      int nrows, tmp(mesh_->cell_get_max_faces());
+      mesh_->get_comm()->MaxAll(&tmp, &nrows, 1);  // global maximum
+
       S->RequireField(darcy_flux_fracture_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, mesh_->cell_get_max_faces());
+        ->SetComponent("cell", AmanziMesh::CELL, nrows);
       S->GetField(darcy_flux_fracture_key_, passwd_)->set_io_vis(false);
     }
   }
