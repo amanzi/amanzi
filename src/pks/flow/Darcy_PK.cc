@@ -280,9 +280,11 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   // Require additional field to couple PKs
   if (coupled_to_matrix_) {
     if (!S->HasField(darcy_flux_fracture_key_)) {
-      AMANZI_ASSERT(mesh_->cell_get_max_faces() > 0);
+      int nrows, tmp(mesh_->cell_get_max_faces());
+      mesh_->get_comm()->MaxAll(&tmp, &nrows, 1);  // global maximum
+
       S->RequireField(darcy_flux_fracture_key_, "state")->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, mesh_->cell_get_max_faces());
+        ->SetComponent("cell", AmanziMesh::CELL, nrows);
       S->GetField(darcy_flux_fracture_key_, "state")->set_io_vis(false);
     }
   }

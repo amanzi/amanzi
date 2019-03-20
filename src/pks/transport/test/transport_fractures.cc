@@ -153,8 +153,6 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   GMV::start_data();
   GMV::write_cell_data(tcc, 0, "Component_0");
   GMV::close_data_file();
-
-  
 }
 
 
