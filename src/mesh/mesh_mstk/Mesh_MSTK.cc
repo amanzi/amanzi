@@ -11,6 +11,7 @@
 
 #include "dbc.hh"
 #include "errors.hh"
+#include "Teuchos_CommHelpers.hpp"
 
 #include "VerboseObject.hh"
 #include "Point.hh"
@@ -175,7 +176,7 @@ Mesh_MSTK::Mesh_MSTK(const std::string& filename,
   int cell_dim = MESH_Num_Regions(mesh_) ? 3 : 2;
   
   int max;
-  comm->MaxAll(&cell_dim,&max,1);
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &cell_dim, &max);
 
   if (max != cell_dim) {
     Errors::Message mesg("cell dimension on this processor is different from max cell dimension across all processors");
@@ -208,7 +209,7 @@ Mesh_MSTK::Mesh_MSTK(const std::string& filename,
     if (planar)
       space_dim = 2;
 
-    comm->MaxAll(&space_dim,&max,1);
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &space_dim, &max);
 
     space_dim = max;
     set_space_dimension(space_dim);      
@@ -2805,10 +2806,10 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       const auto& fmap = *face_map(true); 
       const auto& map = *exterior_face_map(true); 
 
-      int nface = map.NumMyElements(); 
+      int nface = map.getNodeNumElements(); 
 
       for (int iface = 0; iface < nface; iface++) {
-        int lid = fmap.LID(map.GID(iface));
+        int lid = fmap.getLocalElement(map.getGlobalElement(iface));
         MSet_Add(mset,face_id_to_handle[lid]);
       }
     }
@@ -3276,7 +3277,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
 #ifdef DEBUG
   int nent_glob;
 
-  get_comm()->SumAll(&nent_loc,&nent_glob,1);
+  Teuchos::reduceAll(get_comm(), Teuchos::REDUCE_SUM, 1, &nent_loc, &nent_glob);
   if (nent_glob == 0) {
     std::stringstream mesg_stream;
     mesg_stream << "Could not retrieve any mesh entities for set " << setname << std::endl;
@@ -3331,7 +3332,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
   // extracting the appropriate category of entities
     
 #ifdef DEBUG
-  get_comm()->SumAll(&nent_loc,&nent_glob,1);
+  Teuchos::reduceAll(get_comm(), Teuchos::REDUCE_SUM, 1, &nent_loc, &nent_glob);
   
   if (nent_glob == 0) {
     std::stringstream mesg_stream;
@@ -3415,7 +3416,7 @@ void Mesh_MSTK::init_cell_map()
     while ((ment = MSet_Next_Entry(OwnedCells,&idx)))
       cell_gids[i++] = MEnt_GlobalID(ment)-1;
 
-    cell_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1,ncell,cell_gids,0,*comm_));
+    cell_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, cell_gids, ncell, 0, comm_));
     
 
     ncell += nnotowned;
@@ -3424,7 +3425,7 @@ void Mesh_MSTK::init_cell_map()
     while ((ment = MSet_Next_Entry(GhostCells,&idx)))
       cell_gids[i++] = MEnt_GlobalID(ment)-1;
     
-    cell_map_w_ghosts_ = Teuchos::rcp(new Map_type(-1,ncell,cell_gids,0,*comm_));
+    cell_map_w_ghosts_ = Teuchos::rcp(new Map_type(-1, cell_gids, ncell, 0, comm_));
 
   }
   else {    
@@ -3435,7 +3436,7 @@ void Mesh_MSTK::init_cell_map()
     while ((ment = MSet_Next_Entry(OwnedCells,&idx)))      
       cell_gids[i++] = MEnt_ID(ment)-1;
 
-    cell_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1,ncell,cell_gids,0,*comm_));
+    cell_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, cell_gids, ncell, 0, comm_));
   }
 
   delete [] cell_gids;
@@ -3491,8 +3492,8 @@ void Mesh_MSTK::init_face_map()
     n_extface = j;
     nface = nowned;
     
-    face_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1,nface,face_gids,0,*comm_));
-    extface_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1,n_extface,extface_gids,0,*comm_));
+    face_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, face_gids, nface, 0, comm_));
+    extface_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, extface_gids, n_extface, 0, comm_));
 
    
     idx = 0;
@@ -3502,7 +3503,7 @@ void Mesh_MSTK::init_face_map()
     }
     nface += nnotowned;
 
-    face_map_w_ghosts_ = Teuchos::rcp(new Map_type(-1,nface,face_gids,0,*comm_));
+    face_map_w_ghosts_ = Teuchos::rcp(new Map_type(-1, face_gids, nface, 0, comm_));
 
     std::vector<int> gl_id(nnotowned), pr_id(nnotowned), lc_id(nnotowned);
 
@@ -3532,10 +3533,12 @@ void Mesh_MSTK::init_face_map()
     // Get the local IDs of  (lc_id) copies of owned boundary faces on remote processors (pr_id).
     // In effect we are checking if a ghost face that claims to be on the boundary is in the
     // owned boundary face list on another processor (pr_id >= 0)
-    
-    extface_map_wo_ghosts_->RemoteIDList(nnotowned, gl_id.data(), pr_id.data(), lc_id.data());
+    auto gl_id_av = Teuchos::arrayView(gl_id.data(), nnotowned);
+    auto pr_id_av = Teuchos::arrayView(pr_id.data(), nnotowned);
+    auto lc_id_av = Teuchos::arrayView(lc_id.data(), nnotowned);
+    extface_map_wo_ghosts_->getRemoteIndexList(gl_id_av, pr_id_av, lc_id_av);
 
-    int n_extface_w_ghosts = extface_map_wo_ghosts_->NumMyElements();
+    int n_extface_w_ghosts = extface_map_wo_ghosts_->getNodeNumElements();
 
     // Add to maping only external faces (which belong to local mapping on other processors
     for (int k=0; k < nnotowned_bnd; k++) {
@@ -3558,7 +3561,7 @@ void Mesh_MSTK::init_face_map()
       }
     }
     
-    extface_map_w_ghosts_ = Teuchos::rcp(new Map_type(-1, n_extface_w_ghosts, global_id_ghosted.data(), 0, *comm_));
+    extface_map_w_ghosts_ = Teuchos::rcp(new Map_type(-1, global_id_ghosted.data(), n_extface_w_ghosts, 0, comm_));
         
   }
   else {
@@ -3602,11 +3605,11 @@ void Mesh_MSTK::init_face_map()
     }
     n_extface = j;
 
-    face_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1,nface,face_gids,0,*comm_));
-    extface_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1,n_extface,extface_gids,0,*comm_));
+    face_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, face_gids, nface, 0, comm_));
+    extface_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, extface_gids, n_extface, 0, comm_));
   }
 
-  owned_to_extface_importer_ = Teuchos::rcp(new Import_type(*extface_map_wo_ghosts_,*face_map_wo_ghosts_));
+  owned_to_extface_importer_ = Teuchos::rcp(new Import_type(extface_map_wo_ghosts_, face_map_wo_ghosts_));
 
   delete [] face_gids;
   delete [] extface_gids;
@@ -3644,7 +3647,7 @@ void Mesh_MSTK::init_edge_map()
     }
     nedge = nowned;
     
-    edge_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1,nedge,edge_gids,0,*comm_));
+    edge_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, edge_gids, nedge, 0, comm_));
 
     idx = 0;
     while ((ment = MSet_Next_Entry(NotOwnedEdges,&idx))) 
@@ -3652,7 +3655,7 @@ void Mesh_MSTK::init_edge_map()
 
     nedge += nnotowned;
 
-    edge_map_w_ghosts_ = Teuchos::rcp(new Map_type(-1,nedge,edge_gids,0,*comm_));
+    edge_map_w_ghosts_ = Teuchos::rcp(new Map_type(-1, edge_gids, nedge, 0, comm_));
 
   }
   else {
@@ -3666,7 +3669,7 @@ void Mesh_MSTK::init_edge_map()
       edge_gids[i++] = gid-1;
     }
 
-    edge_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1,nedge,edge_gids,0,*comm_));
+    edge_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, edge_gids, nedge, 0, comm_));
   }
 
   delete [] edge_gids;
@@ -3702,7 +3705,7 @@ void Mesh_MSTK::init_node_map()
 
     nvert = nowned;
     
-    node_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1,nvert,vert_gids,0,*comm_));
+    node_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, vert_gids, nvert, 0, comm_));
     
 
     idx = 0;
@@ -3711,7 +3714,7 @@ void Mesh_MSTK::init_node_map()
 
     nvert += nnotowned;
 
-    node_map_w_ghosts_ = Teuchos::rcp(new Map_type(-1,nvert,vert_gids,0,*comm_));
+    node_map_w_ghosts_ = Teuchos::rcp(new Map_type(-1, vert_gids, nvert, 0, comm_));
 
   }
   else {
@@ -3723,7 +3726,7 @@ void Mesh_MSTK::init_node_map()
     while ((ment = MSet_Next_Entry(OwnedVerts,&idx)))
       vert_gids[i++] = MEnt_ID(ment)-1;
 
-    node_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1,nvert,vert_gids,0,*comm_));
+    node_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, vert_gids, nvert, 0, comm_));
   }
 
   delete [] vert_gids;
@@ -5325,7 +5328,7 @@ void Mesh_MSTK::pre_create_steps_(const int space_dimension)
     myprocid = 0;
     numprocs = 1;
   } else {
-    mpicomm_ = mpicomm->GetMpiComm();
+    mpicomm_ = *mpicomm->getRawMpiComm();
     myprocid = comm_->getRank();
     numprocs = comm_->getSize();
     serial_run = (numprocs == 1);

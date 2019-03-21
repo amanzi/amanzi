@@ -299,7 +299,7 @@ CreateBoundaryMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
 
   tmp[my_pid] = boundary_map->GID(0);
 
-  mesh->get_comm()->SumAll(tmp.data(), min_global_id.data(), total_proc);
+  Teuchos::reduceAll(mesh->get_comm(), Teuchos::REDUCE_SUM, total_proc, tmp.data(), min_global_id.data());
   
   for (int n = num_boundary_faces_owned; n < bnd_maps.second->NumMyElements(); n++) {
     int f = face_maps.second->LID(bnd_maps.second->GID(n));

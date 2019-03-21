@@ -52,7 +52,6 @@
 #include "Teuchos_ParameterList.hpp"
 #include "AmanziMap.hh"
 #include "AmanziComm.hh"
-#include "Epetra_SerialComm.h"
 
 #include "dbc.hh"
 #include "errors.hh"

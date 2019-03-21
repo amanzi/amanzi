@@ -61,7 +61,7 @@ TEST(MESH_DEFORM2D)
       ierr++;
     }
 
-    comm->SumAll(&ierr, &aerr, 1);
+    Teuchos::reduceAll(comm, Teuchos::REDUCE_SUM, 1, &ierr, &aerr);
 
     CHECK_EQUAL(aerr,0);
 
@@ -162,7 +162,7 @@ TEST(MESH_DEFORM3D)
       ierr++;
     }
 
-    comm->SumAll(&ierr, &aerr, 1);
+    Teuchos::reduceAll(comm, Teuchos::REDUCE_SUM, 1, &ierr, &aerr);
 
     CHECK_EQUAL(aerr,0);
 

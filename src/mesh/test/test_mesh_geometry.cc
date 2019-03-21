@@ -66,7 +66,7 @@ TEST(MESH_GEOMETRY_PLANAR)
       ierr++;
     }
 
-    comm->SumAll(&ierr, &aerr, 1);
+    Teuchos::reduceAll(comm, Teuchos::REDUCE_SUM, 1, &ierr, &aerr);
 
     CHECK_EQUAL(aerr,0);
 
@@ -253,7 +253,7 @@ TEST(MESH_GEOMETRY_SURFACE)
       ierr++;
     }
 
-    comm->SumAll(&ierr, &aerr, 1);
+    Teuchos::reduceAll(comm, Teuchos::REDUCE_SUM, 1, &ierr, &aerr);
 
     CHECK_EQUAL(aerr,0);
 
@@ -436,7 +436,7 @@ TEST(MESH_GEOMETRY_SOLID)
       ierr++;
     }
 
-    comm->SumAll(&ierr, &aerr, 1);
+    Teuchos::reduceAll(comm, Teuchos::REDUCE_SUM, 1, &ierr, &aerr);
 
     CHECK_EQUAL(aerr,0);
 

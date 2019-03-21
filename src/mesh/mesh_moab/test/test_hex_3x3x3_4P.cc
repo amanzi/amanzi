@@ -96,7 +96,7 @@ TEST(MOAB_HEX_3x3x3_4P)
   {
     auto extface_map = mesh.exterior_face_map(false);
     int nfaces(extface_map->MaxLID() + 1), nall;
-    comm->SumAll(&nfaces, &nall, 1);
+    Teuchos::reduceAll(comm, Teuchos::REDUCE_SUM, 1, &nfaces, &nall);
     CHECK_EQUAL(nall, 54);
 
     for (int f = extface_map->MinLID(); f <= extface_map->MaxLID(); ++f) {

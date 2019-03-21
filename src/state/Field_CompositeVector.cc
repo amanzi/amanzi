@@ -507,7 +507,7 @@ void Field_CompositeVector::ReadVariableFromExodusII_(Teuchos::ParameterList& fi
   int fail_tmp(fail);
   bool distributed_data(true);
 
-  comm->SumAll(&fail_tmp, &fail, 1);
+  Teuchos::reduceAll(comm, Teuchos::REDUCE_SUM, 1, &fail_tmp, &fail);
   if (fail == comm->getSize()) {
     Errors::Message msg("Rao is working on new data layout which we need to proceed.");
     Exceptions::amanzi_throw(msg);

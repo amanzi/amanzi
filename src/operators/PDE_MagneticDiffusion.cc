@@ -184,7 +184,7 @@ double PDE_MagneticDiffusion::CalculateOhmicHeating(const CompositeVector& E)
 
   // parallel collective operation
   double tmp(energy);
-  mesh_->get_comm()->SumAll(&tmp, &energy, 1);
+  Teuchos::reduceAll(mesh_->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &energy);
 
   return energy;
 }
@@ -221,7 +221,7 @@ double PDE_MagneticDiffusion::CalculateMagneticEnergy(const CompositeVector& B)
 
   // parallel collective operation
   double tmp(energy);
-  mesh_->get_comm()->SumAll(&tmp, &energy, 1);
+  Teuchos::reduceAll(mesh_->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &energy);
 
   return energy / 2;
 }

@@ -18,6 +18,8 @@
 #include <string>
 #include <vector>
 
+#include "Teuchos_CommHelpers.hpp"
+
 #include "errors.hh"
 #include "Point.hh"
 #include "Region.hh"
@@ -155,7 +157,7 @@ void Mesh::get_set_entities_box_vofs_(
 
   // Check if no processor got any mesh entities
   int nents, nents_tmp = setents->size();
-  get_comm()->SumAll(&nents_tmp, &nents, 1);
+  Teuchos::reduceAll(*get_comm(), Teuchos::REDUCE_SUM, 1, &nents_tmp, &nents);
   if (nents == 0) {
     Errors::Message msg;
     msg << "Could not retrieve any mesh entities for set \"" << region->name() << "\".\n";

@@ -528,7 +528,7 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
 
     double err_in[2] = {errB, divB};
     double err_out[2];
-    mesh->get_comm()->SumAll(err_in, err_out, 2);
+    Teuchos::reduceAll(mesh->get_comm(), Teuchos::REDUCE_SUM, 2, err_in, err_out);
 
     if (cycle == 1) divB0 = divB;
     CHECK_CLOSE(divB0, divB, 1e-8);

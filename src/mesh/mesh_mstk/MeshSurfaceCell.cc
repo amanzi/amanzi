@@ -64,13 +64,13 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
   }
 
   // set the maps
-  cell_map_ = Teuchos::rcp(new Map_type(1, 0, *get_comm()));
-  face_map_ = Teuchos::rcp(new Map_type((int)nodes_.size(), 0, *get_comm()));
+  cell_map_ = Teuchos::rcp(new Map_type(1, 1, 0, get_comm()));
+  face_map_ = Teuchos::rcp(new Map_type((int)nodes_.size(), (int)nodes_.size(), 0, get_comm()));
   exterior_face_importer_ =
-      Teuchos::rcp(new Import_type(*face_map_,*face_map_));
+      Teuchos::rcp(new Import_type(face_map_,face_map_));
 
   // set the geometric model and sets
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = parent_mesh->geometric_model();
+  auto gm = parent_mesh->geometric_model();
 
   for (AmanziGeometry::GeometricModel::RegionConstIterator r=gm->RegionBegin();
        r!=gm->RegionEnd(); ++r) {

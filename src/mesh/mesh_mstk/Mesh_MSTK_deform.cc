@@ -384,7 +384,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
     int converged_onthisproc = 0;
     if (global_normdist2 < eps*eps)
       converged_onthisproc = 1;
-    get_comm()->MinAll(&converged_onthisproc,&converged_global,1);
+    Teuchos::reduceAll(*get_comm(), Teuchos::REDUCE_MIN, 1, &converged_onthisproc, &converged_global);
 
   } // while (!converged_global)
 

@@ -70,7 +70,7 @@ Parallel_Exodus_file::Parallel_Exodus_file(const Comm_ptr_type& comm,
   }
 
   int gerr(0);
-  comm_->SumAll(&ierr, &gerr, 1);
+  Teuchos::reduceAll(comm_, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
 
   if (gerr > 0) {
     Exceptions::amanzi_throw( ex_all );
@@ -105,7 +105,7 @@ Parallel_Exodus_file::read_mesh(void)
     if (byproc[p] != byproc[p-1]) ierr++;
   }
   int aerr(0);
-  comm_->SumAll(&ierr, &aerr, 1);
+  Teuchos::reduceAll(comm_, Teuchos::REDUCE_SUM, 1, &ierr, &aerr);
 
   if (aerr) {
     std::string msg(basename_);
@@ -161,7 +161,7 @@ Parallel_Exodus_file::read_mesh(void)
     }
   }
 
-  comm_->SumAll(&ierr, &aerr, 1);
+  Teuchos::reduceAll(comm_, Teuchos::REDUCE_SUM, 1, &ierr, &aerr);
   if (aerr) {
     std::string msg = 
       boost::str(boost::format("%s: element block type errors") % basename_);

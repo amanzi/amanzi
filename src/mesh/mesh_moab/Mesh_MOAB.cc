@@ -1544,7 +1544,7 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
 #ifdef DEBUG
   int nent_glob;
 
-  get_comm()->SumAll(&nent_loc, &nent_glob, 1);
+  Teuchos::reduceAll(get_comm(), Teuchos::REDUCE_SUM, 1, &nent_loc, &nent_glob);
   if (nent_glob == 0) {
     std::stringstream mesg_stream;
     mesg_stream << "Could not retrieve any mesh entities for set " << setname << std::endl;
@@ -1602,7 +1602,7 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
   // Check if there were no entities left on any processor after
   // extracting the appropriate category of entities 
 #ifdef DEBUG
-  get_comm()->SumAll(&nent_loc, &nent_glob, 1);
+  Teuchos::reduceAll(get_comm(), Teuchos::REDUCE_SUM, 1, &nent_loc, &nent_glob);
   
   if (nent_glob == 0) {
     std::stringstream mesg_stream;
@@ -1795,14 +1795,14 @@ void Mesh_MOAB::init_cell_map()
     ErrorCheck_(result, "Problem getting tag data");
     ncell = OwnedCells.size();
     
-    cell_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, ncell, cell_gids, 0, *get_comm()));
+    cell_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, cell_gids, ncell, 0, get_comm()));
     
     result = mbcore_->tag_get_data(gid_tag, GhostCells, &(cell_gids[ncell]));
     ErrorCheck_(result, "Problem getting tag data");
     
     ncell += GhostCells.size();
 
-    cell_map_w_ghosts_ = Teuchos::rcp(new Map_type(-1, ncell, cell_gids, 0, *get_comm()));
+    cell_map_w_ghosts_ = Teuchos::rcp(new Map_type(-1, cell_gids, ncell, 0, get_comm()));
   }
   else {
     cell_gids = new int[AllCells.size()];
@@ -1811,7 +1811,7 @@ void Mesh_MOAB::init_cell_map()
     ErrorCheck_(result, "Problem getting tag data");
 
     ncell = AllCells.size();
-    cell_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, ncell, cell_gids, 0, *get_comm()));
+    cell_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, cell_gids, ncell, 0, get_comm()));
   }
 
   delete [] cell_gids;
@@ -1839,13 +1839,13 @@ void Mesh_MOAB::init_face_map()
     ErrorCheck_(result, "Problem getting tag data");
 
     nface = nowned;
-    face_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, nface, face_gids, 0, *get_comm()));
+    face_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, face_gids, nface, 0, get_comm()));
 
     result = mbcore_->tag_get_data(gid_tag, NotOwnedFaces, &(face_gids[nface]));
     ErrorCheck_(result, "Problem getting tag data");
     
     nface += nnotowned;
-    face_map_w_ghosts_ = Teuchos::rcp(new Map_type(-1, nface, face_gids, 0, *get_comm()));
+    face_map_w_ghosts_ = Teuchos::rcp(new Map_type(-1, face_gids, nface, 0, get_comm()));
 
     // domain boundary faces: owned
     int n_extface_owned, n_extface = 0;
@@ -1862,7 +1862,7 @@ void Mesh_MOAB::init_face_map()
       if (f == nowned - 1) n_extface_owned = n_extface;
     }
 
-    extface_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, n_extface_owned, extface_gids, 0, *get_comm()));
+    extface_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, extface_gids, n_extface_owned, 0, get_comm()));
 
     // domain boundary faces: owned + ghost. We filter out incorrect ghost faces
     int n_extface_notowned = n_extface - n_extface_owned;
@@ -1875,7 +1875,7 @@ void Mesh_MOAB::init_face_map()
         extface_gids[n_extface++] = extface_gids[n_extface_owned + k];
     }
 
-    extface_map_w_ghosts_ = Teuchos::rcp(new Map_type(-1, n_extface, extface_gids, 0, *get_comm()));
+    extface_map_w_ghosts_ = Teuchos::rcp(new Map_type(-1, extface_gids, n_extface, 0, get_comm()));
   }
   else {
     // all faces
@@ -1885,7 +1885,7 @@ void Mesh_MOAB::init_face_map()
     result = mbcore_->tag_get_data(gid_tag, AllFaces, face_gids);
     ErrorCheck_(result, "Problem getting tag data");
 
-    face_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, nface, face_gids, 0, *get_comm()));
+    face_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, face_gids, nface, 0, get_comm()));
 
     // boundary faces
     int n_extface = 0;
@@ -1898,7 +1898,7 @@ void Mesh_MOAB::init_face_map()
         extface_gids[n_extface++] = face_gids[f];
     }
 
-    extface_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, n_extface, extface_gids, 0, *get_comm()));
+    extface_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, extface_gids, n_extface, 0, get_comm()));
   }
 
   delete [] face_gids;
@@ -1925,14 +1925,14 @@ void Mesh_MOAB::init_node_map()
 
     nvert = OwnedVerts.size();
     
-    node_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, nvert, vert_gids, 0, *get_comm()));
+    node_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, vert_gids, nvert, 0, get_comm()));
     
     result = mbcore_->tag_get_data(gid_tag, NotOwnedVerts, &(vert_gids[nvert]));
     ErrorCheck_(result, "Problem getting tag data");
     
     nvert += NotOwnedVerts.size();
 
-    node_map_w_ghosts_ = Teuchos::rcp(new Map_type(-1, nvert, vert_gids, 0, *get_comm()));
+    node_map_w_ghosts_ = Teuchos::rcp(new Map_type(-1, vert_gids, nvert, 0, get_comm()));
   }
   else {
     vert_gids = new int[AllVerts.size()];
@@ -1941,7 +1941,7 @@ void Mesh_MOAB::init_node_map()
     ErrorCheck_(result, "Problem getting tag data");
 
     nvert = AllVerts.size();
-    node_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, nvert, vert_gids, 0, *get_comm()));
+    node_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, vert_gids, nvert, 0, get_comm()));
   }
 
   delete [] vert_gids;

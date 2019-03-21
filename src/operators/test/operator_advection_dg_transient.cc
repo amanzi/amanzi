@@ -587,8 +587,8 @@ void AdvectionFn<AnalyticDG>::ApplyLimiter(std::string& name, CompositeVector& u
     tmp1 = std::min(tmp1, lim[c]);
     tmp2 += lim[c];
   }
-  mesh_->get_comm()->MinAll(&tmp1, &limiter_min, 1);
-  mesh_->get_comm()->SumAll(&tmp2, &limiter_mean, 1);
+  Teuchos::reduceAll(mesh_->get_comm(), Teuchos::REDUCE_MIN, 1, &tmp1, &limiter_min);
+  Teuchos::reduceAll(mesh_->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp2, &limiter_mean);
   limiter_mean /= lim.Map().MaxAllGID() + 1;
 }
 

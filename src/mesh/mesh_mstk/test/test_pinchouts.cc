@@ -107,7 +107,7 @@ TEST(ELIM_DEGEN_INLINE_PARTITION)
       int status = mesh_auditor.Verify();        // check the mesh
       if (status != 0) ierr = 1;
       
-      comm->SumAll(&ierr, &aerr, 1);
+      Teuchos::reduceAll(comm, Teuchos::REDUCE_SUM, 1, &ierr, &aerr);
       if (aerr == 0) {
         if (rank == 0)
           std::cout << "Mesh Audit confirms that mesh is ok" << std::endl;
@@ -172,7 +172,7 @@ TEST(ELIM_DEGEN_INLINE_PARTITION)
         int status = surf_mesh_auditor.Verify();        // check the mesh
         if (status != 0) ierr = 1;
         
-        comm->SumAll(&ierr, &aerr, 1);
+        Teuchos::reduceAll(comm, Teuchos::REDUCE_SUM, 1, &ierr, &aerr);
         if (aerr == 0) {
           if (rank == 0)
             std::cout << "Mesh Audit confirms that surface mesh is ok" << std::endl;

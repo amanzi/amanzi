@@ -223,7 +223,7 @@ void Observable::Update_(const State& S,
         functional_ == "observation data: extensive integral") {
       double local[2], global[2];
       local[0] = value; local[1] = volume;
-      S.GetMesh()->get_comm()->SumAll(local, global, 2);
+      S.Teuchos::reduceAll(GetMesh()->get_comm(), Teuchos::REDUCE_SUM, 2, local, global);
 
       if (global[1] > 0) {
         if (functional_ == "observation data: point") {
@@ -240,12 +240,12 @@ void Observable::Update_(const State& S,
       }
     } else if (functional_ == "observation data: minimum") {
       double global;
-      S.GetMesh()->get_comm()->MinAll(&value, &global, 1);
+      S.Teuchos::reduceAll(GetMesh()->get_comm(), Teuchos::REDUCE_MIN, 1, &value, &global);
       data.value = global;
       data.is_valid = true;
     } else if (functional_ == "observation data: maximum") {
       double global;
-      S.GetMesh()->get_comm()->MaxAll(&value, &global, 1);
+      S.Teuchos::reduceAll(GetMesh()->get_comm(), Teuchos::REDUCE_MAX, 1, &value, &global);
       data.value = global;
       data.is_valid = true;
     } else {

@@ -66,7 +66,7 @@ TEST(MESH_COLUMNS)
       ierr++;
     }
 
-    comm->SumAll(&ierr, &aerr, 1);
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &aerr);
 
     CHECK_EQUAL(aerr,0);
 

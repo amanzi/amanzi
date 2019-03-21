@@ -336,10 +336,10 @@ void Mesh_simple::build_maps_()
       faces_bnd[i++] = yzface_index_(nx_,iy,iz);
     }
 
-  cell_map_ = Teuchos::rcp(new Map_type(-1, num_cells_, &cells[0], 0, *get_comm()));
-  face_map_ = Teuchos::rcp(new Map_type(-1, num_faces_, &faces[0], 0, *get_comm()));
-  node_map_ = Teuchos::rcp(new Map_type(-1, num_nodes_, &nodes[0], 0, *get_comm()));
-  extface_map_ = Teuchos::rcp(new Map_type(-1, num_faces_bnd_, &faces_bnd[0], 0, *get_comm()));
+  cell_map_ = Teuchos::rcp(new Map_type(-1, cells.data(), num_cells_, 0, get_comm()));
+  face_map_ = Teuchos::rcp(new Map_type(-1, faces.data(), num_faces_, 0, get_comm()));
+  node_map_ = Teuchos::rcp(new Map_type(-1, nodes.data(), num_nodes_, 0, get_comm()));
+  extface_map_ = Teuchos::rcp(new Map_type(-1, faces_bnd.data(), num_faces_bnd_, 0, get_comm()));
 }
 
 

@@ -18,11 +18,11 @@ namespace AmanziMesh {
 MeshColumn::MeshColumn(const Teuchos::RCP<const Mesh>& parent_mesh,
                        const int column_id, 
                        const Teuchos::RCP<const Teuchos::ParameterList>& plist) :
-    Mesh(Teuchos::rcp(new MpiComm_type(MPI_COMM_SELF)), parent_mesh->geometric_model(), plist, true, false),
+    Mesh(getCommSelf(), parent_mesh->geometric_model(), plist, true, false),
     parent_mesh_(parent_mesh),
     column_id_(column_id),
     extracted_(Teuchos::rcp(new Mesh_MSTK(parent_mesh, parent_mesh->cells_of_column(column_id), CELL, false,
-            Teuchos::rcp(new MpiComm_type(MPI_COMM_SELF)), parent_mesh->geometric_model(), plist, true, false)))
+            getCommSelf(), parent_mesh->geometric_model(), plist, true, false)))
 {
   AMANZI_ASSERT(column_id_ >= 0 && column_id_ < parent_mesh->num_columns());
 
@@ -154,22 +154,19 @@ void MeshColumn::compute_special_node_coordinates_() {
 // processors and their dependencies (through global IDs).
 //
 // In this case since the columns are all on one processor, the map is
-// just a contiguous sequence of numbers and the comm_unicator is a serial
-// comm_unicator
+// just a contiguous sequence of numbers and the communicator is a serial
+// communicator
 // -----------------------------------------------------------------------------
 void MeshColumn::build_epetra_maps_() {
-  Epetra_SerialComm epcomm_;
-  int indexBase = 0;
-
   int nfaces = column_faces_.size();
-  face_map_ = Teuchos::rcp(new Map_type(nfaces,indexBase,epcomm_));
+  face_map_ = Teuchos::rcp(new Map_type(nfaces, nfaces, 0, get_comm()));
 
   std::vector<int> ext_gids(2,-1);
   ext_gids[0] = 0;
   ext_gids[1] = nfaces-1;
 
-  exterior_face_map_ = Teuchos::rcp(new Map_type(-1, 2, &ext_gids[0], 0, *get_comm()));
-  exterior_face_importer_ = Teuchos::rcp(new Epetra_Import(*exterior_face_map_, *face_map_));
+  exterior_face_map_ = Teuchos::rcp(new Map_type(2, ext_gids.data(), 2, 0, get_comm()));
+  exterior_face_importer_ = Teuchos::rcp(new Import_type(exterior_face_map_, face_map_));
 }
 
 }  // namespace AmanziMesh

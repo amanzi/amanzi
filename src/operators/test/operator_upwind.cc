@@ -168,9 +168,9 @@ void RunTestUpwind(std::string method) {
     }
 #ifdef HAVE_MPI
     double tmp = error;
-    mesh->get_comm()->SumAll(&tmp, &error, 1);
+    Teuchos::reduceAll(mesh->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &error);
     int itmp = nfaces_owned;
-    mesh->get_comm()->SumAll(&itmp, &nfaces_owned, 1);
+    Teuchos::reduceAll(mesh->get_comm(), Teuchos::REDUCE_SUM, 1, &itmp, &nfaces_owned);
 #endif
     error = sqrt(error / nfaces_owned);
   

@@ -323,7 +323,7 @@ void RemapDG::ApplyLimiter(double t, CompositeVector& x)
   }
 
   int nids, itmp = ids.size();
-  mesh0_->get_comm()->SumAll(&itmp, &nids, 1);
+  mesh0Teuchos::reduceAll(_->get_comm(), Teuchos::REDUCE_SUM, 1, &itmp, &nids);
   sharp_ = std::max(sharp_, 100.0 * nids / x.ViewComponent("cell")->GlobalLength());
 
   // apply limiter

@@ -1853,7 +1853,7 @@ void MeshAudit::write_list(const AmanziMesh::Entity_ID_List &list, unsigned int 
 bool MeshAudit::global_any(bool value) const
 {
   int lval=value, gval;
-  comm_->MaxAll(&lval, &gval, 1);
+  Teuchos::reduceAll(comm_, Teuchos::REDUCE_MAX, 1, &lval, &gval);
   return gval;
 }
 

@@ -44,6 +44,7 @@
 
 #include "AmanziMap.hh"
 #include "AmanziVector.hh"
+#include "Teuchos_CommHelpers.hpp"
 
 #include "dbc.hh"
 
@@ -1197,40 +1198,44 @@ Mesh::point_in_cell(const AmanziGeometry::Point &p, const Entity_ID cellid) cons
 
 
 // synchronize node positions across processors
+//
+// on host
 void
 Mesh::update_ghost_node_coordinates()
 {
-  int ndim = space_dimension();
+  Exceptions::amanzi_throw("not yet implemented in tpetra");
+  // int ndim = space_dimension();
 
-  Import_type importer(*node_map(true), *node_map(false));
+  // Import_type importer(node_map(true), node_map(false));
 
-  // change last arg to false after debugging
-  MultiVector_type owned_node_coords(*node_map(true), ndim, true);
+  // // change last arg to false after debugging
+  // MultiVector_type owned_node_coords(node_map(true), ndim, true);
+  
 
-  AmanziGeometry::Point pnt(ndim);
+  // AmanziGeometry::Point pnt(ndim);
 
-  // Fill the owned node coordinates
-  int nnodes_owned = num_entities(NODE, Parallel_type::OWNED);
-  for (int i = 0; i < nnodes_owned; i++) {
-    node_get_coordinates(i,&pnt);
-    for (int k = 0; k < ndim; k++)
-      owned_node_coords[k][i] = pnt[k];
-  }
+  // // Fill the owned node coordinates
+  // int nnodes_owned = num_entities(NODE, Parallel_type::OWNED);
+  // for (int i = 0; i < nnodes_owned; i++) {
+  //   node_get_coordinates(i,&pnt);
+  //   for (int k = 0; k < ndim; k++)
+  //     owned_node_coords[k][i] = pnt[k];
+  // }
 
-  double **data;
-  owned_node_coords.ExtractView(&data);
-  MultiVector_type used_node_coords(View, *node_map(false), data, ndim);
+  // double **data;
+  // owned_node_coords.ExtractView(&data);
+  // MultiVector_type used_node_coords(View, *node_map(false), data, ndim);
 
-  used_node_coords.Import(owned_node_coords, importer, Insert);
+  // used_node_coords.Import(owned_node_coords, importer, Insert);
 
-  int nnodes_used = num_entities(NODE,Parallel_type::ALL);
-  for (int i = nnodes_owned; i < nnodes_used; i++) {
-    double xyz[3];
-    for (int k = 0; k < ndim; k++)
-      xyz[k] = used_node_coords[k][i];
-    pnt.set(xyz);
-    node_set_coordinates(i, pnt);
-  }
+  // int nnodes_used = num_entities(NODE,Parallel_type::ALL);
+  // for (int i = nnodes_owned; i < nnodes_used; i++) {
+  //   double xyz[3];
+  //   for (int k = 0; k < ndim; k++)
+  //     xyz[k] = used_node_coords[k][i];
+  //   pnt.set(xyz);
+  //   node_set_coordinates(i, pnt);
+  // }
 }
 
 
@@ -1433,7 +1438,7 @@ Mesh::build_columns(const std::string& setname) const
   }
 
   int min_success;
-  get_comm()->MinAll(&success, &min_success, 1);
+  Teuchos::reduceAll(*get_comm(), Teuchos::REDUCE_MIN, 1, &success, &min_success);
   columns_built_ = (min_success == 1);
   return columns_built_ ? 1 : 0;
 }
@@ -1507,7 +1512,7 @@ Mesh::build_columns() const
   }
 
   int min_success;
-  get_comm()->MinAll(&success, &min_success, 1);
+  Teuchos::reduceAll(*get_comm(), Teuchos::REDUCE_MIN, 1, &success, &min_success);
   columns_built_ = (min_success == 1);
   return columns_built_ ? 1 : 0;
 }
@@ -1727,9 +1732,9 @@ void Mesh::PrintMeshStatistics() const
     int nfaces = num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
     int min_out[2], max_out[2], sum_out[2], tmp_in[2] = {ncells, nfaces};
-    get_comm()->MinAll(tmp_in, min_out, 2);
-    get_comm()->MaxAll(tmp_in, max_out, 2);
-    get_comm()->SumAll(tmp_in, sum_out, 2);
+    Teuchos::reduceAll(*get_comm(), Teuchos::REDUCE_MIN, 2, tmp_in, min_out);
+    Teuchos::reduceAll(*get_comm(), Teuchos::REDUCE_MAX, 2, tmp_in, max_out);
+    Teuchos::reduceAll(*get_comm(), Teuchos::REDUCE_SUM, 2, tmp_in, sum_out);
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "cells, tot/min/max: " << sum_out[0] << "/" << min_out[0] << "/" << max_out[0] << "\n";
