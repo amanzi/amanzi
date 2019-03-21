@@ -31,7 +31,7 @@ include_directories(${OUTPUT_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
-include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${Tpetra_INCLUDE_DIRS})
 include_directories(${HDF5_C_INCLUDE_DIR})
 include_directories(${ASCEMIO_INCLUDE_DIR})
 
@@ -45,7 +45,7 @@ endif(ENABLE_Silo)
 
 # GMV is always built
 file(GLOB output_source_files "gmv*.c" "GMV*.cc")
-set(output_tpl_list ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
+set(output_tpl_list ${Tpetra_LIBRARIES} ${Teuchos_LIBRARIES})
 
 # HDF5 serial test, HDF5 now required so always enables
 file(GLOB hdf5_source "HDF5Mesh*.cc")

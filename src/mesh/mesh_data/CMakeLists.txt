@@ -25,7 +25,7 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 
 # External (TPL) include directories
-include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${Tpetra_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
 
@@ -37,7 +37,7 @@ file(GLOB mesh_data_inc_files "*.hh")
 set(boost_libs_used ${Boost_SYSTEM_LIBRARIES} ${Boost_FILESYSTEM_LIBRARIES} ${Boost_REGEX_LIBRARIES})
 add_amanzi_library(mesh_data 
                    SOURCE ${mesh_data_source_files} HEADERS ${mesh_data_inc_files}
-                   LINK_LIBS error_handling geometry ${boost_libs_used} ${Epetra_LIBRARIES})
+                   LINK_LIBS error_handling geometry ${boost_libs_used} ${Tpetra_LIBRARIES})
 
 if (BUILD_TESTS)
 

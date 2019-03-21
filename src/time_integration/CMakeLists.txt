@@ -35,7 +35,7 @@ include_directories(${DBG_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
-include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${Tpetra_INCLUDE_DIRS})
 include_directories(${NOX_INCLUDE_DIRS})
 include_directories(${HDF5_C_INCLUDE_DIR})
 include_directories(${ASCEMIO_INCLUDE_DIR})
@@ -45,7 +45,7 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 #
 file(GLOB time_int_new_source_files "*.cc")
 file(GLOB time_int_new_inc_files "*.hh")
-set(time_int_new_tpl_libs ${DBC_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} )
+set(time_int_new_tpl_libs ${DBC_LIBRARIES} ${Teuchos_LIBRARIES} ${Tpetra_LIBRARIES} )
 list(REVERSE time_int_new_tpl_libs)
 list(REMOVE_DUPLICATES time_int_new_tpl_libs)
 list(REVERSE time_int_new_tpl_libs)
@@ -106,7 +106,7 @@ if (BUILD_TESTS)
 			  ${time_integration_link_libs}
 			  ${UnitTest_LIBRARIES}
 			  ${Teuchos_LIBRARIES}
-			  ${Epetra_LIBRARIES}
+			  ${Tpetra_LIBRARIES}
 			  ${time_integration_tpl_libs})
 
 endif()

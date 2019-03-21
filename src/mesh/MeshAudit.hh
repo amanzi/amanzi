@@ -68,15 +68,14 @@ public:
 
 private:
 
-  Teuchos::RCP<AmanziMesh::Mesh> mesh;
+  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   Comm_ptr_type comm_;
 
-  const int getRank;
   const int nnode;
   const int nface;
   const int ncell;
 
-  std::ostream& os;
+  std::ostream& os_;
   unsigned int MAX_OUT;
 
   bool distinct_values(const AmanziMesh::Entity_ID_List& list) const;
@@ -84,12 +83,12 @@ private:
   bool global_any(bool) const;
   int same_face(const AmanziMesh::Entity_ID_List, const AmanziMesh::Entity_ID_List) const;
   
-  bool check_maps(const Map_type&, const Map_type&) const;
+  bool check_maps(const Map_ptr_type&, const Map_ptr_type&) const;
   bool check_get_set_ids(AmanziMesh::Entity_kind) const;
   bool check_valid_set_id(AmanziMesh::Entity_kind) const;
-  bool check_sets(AmanziMesh::Entity_kind, const Map_type&, const Map_type&) const;
-  bool check_get_set(AmanziMesh::Set_ID, AmanziMesh::Entity_kind, AmanziMesh::Parallel_type, const Map_type&) const;
-  bool check_used_set(AmanziMesh::Set_ID, AmanziMesh::Entity_kind, const Map_type&, const Map_type&) const;
+  bool check_sets(AmanziMesh::Entity_kind, const Map_ptr_type&, const Map_ptr_type&) const;
+  bool check_get_set(AmanziMesh::Set_ID, AmanziMesh::Entity_kind, AmanziMesh::Parallel_type, const Map_ptr_type&) const;
+  bool check_used_set(AmanziMesh::Set_ID, AmanziMesh::Entity_kind, const Map_ptr_type&, const Map_ptr_type&) const;
   
   // This is the vertex type for the test dependency graph.
   typedef bool (MeshAudit::* Test)() const;

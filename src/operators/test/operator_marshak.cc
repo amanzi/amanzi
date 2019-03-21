@@ -231,9 +231,9 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     pnorm += p[0][c] * p[0][c];
   }
   double tmp = pl2_err;
-  Teuchos::reduceAll(mesh->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &pl2_err);
+  Teuchos::reduceAll(*mesh->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &pl2_err);
   tmp = pnorm;
-  Teuchos::reduceAll(mesh->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &pnorm);
+  Teuchos::reduceAll(*mesh->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &pnorm);
 
   pl2_err = std::pow(pl2_err / pnorm, 0.5);
   pnorm = std::pow(pnorm, 0.5);

@@ -106,7 +106,7 @@ TEST(ELIM_DEGEN_PREPARTITION)
       int status = mesh_auditor.Verify();        // check the mesh
       if (status != 0) ierr = 1;
       
-      Teuchos::reduceAll(comm, Teuchos::REDUCE_SUM, 1, &ierr, &aerr);
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &aerr);
       if (aerr == 0) {
         if (rank == 0)
           std::cout << "Mesh Audit confirms that mesh is ok" << std::endl;

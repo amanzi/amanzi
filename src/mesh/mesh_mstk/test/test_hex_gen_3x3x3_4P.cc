@@ -42,20 +42,20 @@ TEST(MSTK_HEX_GEN_3x3x3_4P)
   auto cell_map = mesh->cell_map(false);
   auto face_map = mesh->face_map(true);
 
-  for (int c=cell_map->MinLID(); c<=cell_map->MaxLID(); c++)
+  for (int c=cell_map->getMinLocalIndex(); c<=cell_map->getMaxLocalIndex(); c++)
     {
-      CHECK_EQUAL(cell_map->GID(c),mesh->GID(c,Amanzi::AmanziMesh::CELL));
+      CHECK_EQUAL(cell_map->getGlobalElement(c),mesh->getGlobalElement(c,Amanzi::AmanziMesh::CELL));
       mesh->cell_get_faces(c, &c2f, true);
 
       for (int j=0; j<6; j++)
 	{
-	  int f = face_map->LID(mesh->GID(c2f[j],Amanzi::AmanziMesh::FACE));
+	  int f = face_map->getLocalElement(mesh->getGlobalElement(c2f[j],Amanzi::AmanziMesh::FACE));
 	  CHECK_EQUAL( f,c2f[j] );
 	  if (f != c2f[j]) {
 	    std::cout << std::endl;
 	    std::cout << "Processor ID " << rank << std::endl;
-	    std::cout << "Cell ID " << cell_map->GID(c) << std::endl;
-	    std::cout << "Problem face c2f[j] = " << c2f[j] << " GID = " << mesh->GID(c2f[j],Amanzi::AmanziMesh::FACE) << " f = " << f << std::endl;
+	    std::cout << "Cell ID " << cell_map->getGlobalElement(c) << std::endl;
+	    std::cout << "Problem face c2f[j] = " << c2f[j] << " GID = " << mesh->getGlobalElement(c2f[j],Amanzi::AmanziMesh::FACE) << " f = " << f << std::endl;
 	    std::cout << std::endl;
 	  }
 	}

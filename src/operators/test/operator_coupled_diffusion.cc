@@ -57,8 +57,8 @@ double BoundaryFaceGetValue(Operators::BCs& bc, const CompositeVector& u, int f)
     if (u.HasComponent("face")) {
       return u("face",0,f);
     } else if (u.HasComponent("boundary_face")) {
-      int bf = u.Mesh()->exterior_face_map(false).LID(
-          u.Mesh()->face_map(false).GID(f));
+      int bf = u.Mesh()->exterior_face_map(false).getLocalElement(
+          u.Mesh()->face_map(false).getGlobalElement(f));
       return u("boundary_face", 0, bf);
     } else {
       return u("cell",0,BoundaryFaceGetCell(*u.Mesh(), f));
@@ -366,8 +366,8 @@ struct Problem {
       Epetra_MultiVector& v_f = *v.ViewComponent("boundary_face",false);
 
       for (int bf=0; bf!=nboundary_faces; ++bf) {
-        int f = mesh->face_map(false).LID(
-            mesh->exterior_face_map(false).GID(bf));
+        int f = mesh->face_map(false).getLocalElement(
+            mesh->exterior_face_map(false).getGlobalElement(bf));
 
         const AmanziGeometry::Point& xf = mesh->face_centroid(f);
         u_f[0][f] = ana->exact0(xf,0);

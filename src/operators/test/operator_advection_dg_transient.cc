@@ -587,9 +587,9 @@ void AdvectionFn<AnalyticDG>::ApplyLimiter(std::string& name, CompositeVector& u
     tmp1 = std::min(tmp1, lim[c]);
     tmp2 += lim[c];
   }
-  Teuchos::reduceAll(mesh_->get_comm(), Teuchos::REDUCE_MIN, 1, &tmp1, &limiter_min);
-  Teuchos::reduceAll(mesh_->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp2, &limiter_mean);
-  limiter_mean /= lim.Map().MaxAllGID() + 1;
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_MIN, 1, &tmp1, &limiter_min);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp2, &limiter_mean);
+  limiter_mean /= lim.Map().getMaxGlobalIndex() + 1;
 }
 
 }  // namespace Amanzi

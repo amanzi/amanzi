@@ -252,11 +252,11 @@ MeshEmbeddedLogical::init_maps() {
   // owned maps
   // -- cell map
   maps_owned_[CELL] =
-    Teuchos::rcp(new Map_type(-1, num_entities_owned_[CELL], 0, *comm_));
+    Teuchos::rcp(new Map_type(-1, num_entities_owned_[CELL], 0, comm_));
 
   // -- face map
   Teuchos::RCP<Epetra_Map> face_map =
-    Teuchos::rcp(new Map_type(-1, num_entities_owned_[FACE], 0, *comm_));
+    Teuchos::rcp(new Map_type(-1, num_entities_owned_[FACE], 0, comm_));
   maps_owned_[FACE] = face_map;
 
   // exterior face map and importer
@@ -264,13 +264,13 @@ MeshEmbeddedLogical::init_maps() {
   int nfaces_owned = num_entities_owned_[FACE];
   for (int f=0; f != nfaces_owned; ++f) {
     if (face_cell_ids_[f].size() == 1) {
-      extface_ids.push_back(face_map->GID(f));
+      extface_ids.push_back(face_map->getGlobalElement(f));
     }
   }
   maps_owned_[BOUNDARY_FACE] =
-    Teuchos::rcp(new Map_type(-1, extface_ids.size(), &extface_ids[0], 0, *comm_));
+      Teuchos::rcp(new Map_type(-1, extface_ids.data(), extface_ids.size(), 0, comm_));
   exterior_face_importer_ =
-    Teuchos::rcp(new Epetra_Import(*maps_owned_[BOUNDARY_FACE], *face_map));  
+    Teuchos::rcp(new Epetra_Import(maps_owned_[BOUNDARY_FACE], face_map));  
 
   // ghosted maps: use the bg mesh to communicate the new GIDs into their ghost values
   // CELL:
@@ -288,28 +288,27 @@ MeshEmbeddedLogical::init_maps() {
 
     const auto& my_cell_map = *maps_owned_[CELL];
     for (int c=0; c!=ncells_bg_owned; ++c) {
-      bg_gids_owned_c[c] = my_cell_map.GID(c+ncells_log);
+      bg_gids_owned_c[c] = my_cell_map.getGlobalElement(c+ncells_log);
     }
     
     // -- create the map from owned to used
-    Import_type cell_import(*bg_mesh_->cell_map(true), *bg_mesh_->cell_map(false));
+    Import_type cell_import(bg_mesh_->cell_map(true), bg_mesh_->cell_map(false));
 
     // -- create the used GIDs vector, comm_unicate
     IntVector_type bg_gids_used_c(*bg_mesh_->cell_map(true));
-    bg_gids_used_c.Import(bg_gids_owned_c, cell_import, Insert);
+    bg_gids_used_c.doImport(bg_gids_owned_c, cell_import, Tpetra::CombineMode::INSERT);
 
     // -- create a GID list of the used components
     Entity_ID_List cells_my_used(ncells_my_used);
     for (int c=0; c!=ncells_log; ++c) {
-      cells_my_used[c] = my_cell_map.GID(c);
+      cells_my_used[c] = my_cell_map.getGlobalElement(c);
     }
     for (int c=0; c!=ncells_bg_used; ++c) {
       cells_my_used[c+ncells_log] = bg_gids_used_c[c];
     }
 
     // -- create the map
-    maps_used_[CELL] = Teuchos::rcp(new Map_type(-1, ncells_my_used,
-            &cells_my_used[0], 0, *comm_));
+    maps_used_[CELL] = Teuchos::rcp(new Map_type(-1, cells_my_used.data(), ncells_my_used, 0, *comm_));
 
     // FACE:
     int nfaces_bg_owned = bg_mesh_->num_entities(FACE, Parallel_type::OWNED);
@@ -322,28 +321,27 @@ MeshEmbeddedLogical::init_maps() {
 
     const auto& my_face_map = *maps_owned_[FACE];
     for (int f=0; f!=nfaces_bg_owned; ++f) {
-      bg_gids_owned_f[f] = my_face_map.GID(f+nfaces_log_extra);
+      bg_gids_owned_f[f] = my_face_map.getGlobalElement(f+nfaces_log_extra);
     }
     
     // -- create the map from owned to used
-    Import_type face_import(*bg_mesh_->face_map(true), *bg_mesh_->face_map(false));
+    Import_type face_import(bg_mesh_->face_map(true), bg_mesh_->face_map(false));
 
     // -- create the used GIDs vector, comm_unicate
     IntVector_type bg_gids_used_f(*bg_mesh_->face_map(true));
-    bg_gids_used_f.Import(bg_gids_owned_f, face_import, Insert);
+    bg_gids_used_f.doImport(bg_gids_owned_f, face_import, Tpetra::CombineMode::INSERT);
 
     // -- create a GID list of the used components
     Entity_ID_List faces_my_used(nfaces_my_used);
     for (int f=0; f!=nfaces_log_extra; ++f) {
-      faces_my_used[f] = my_face_map.GID(f);
+      faces_my_used[f] = my_face_map.getGlobalElement(f);
     }
     for (int f=0; f!=nfaces_bg_used; ++f) {
       faces_my_used[f+nfaces_log_extra] = bg_gids_used_f[f];
     }
     
     // -- create the map
-    maps_used_[FACE] = Teuchos::rcp(new Map_type(-1, nfaces_my_used,
-            &faces_my_used[0], 0, *comm_));
+    maps_used_[FACE] = Teuchos::rcp(new Map_type(-1, faces_my_used.data(), nfaces_my_used, 0, comm_));
   }
 }
 
@@ -388,7 +386,7 @@ MeshEmbeddedLogical::num_entities(const Entity_kind kind,
 // Global ID of any entity
 Entity_ID
 MeshEmbeddedLogical::GID(const Entity_ID lid, const Entity_kind kind) const {
-  return maps_used_.at(kind)->GID(lid);
+  return maps_used_.at(kind)->getGlobalElement(lid);
 }
 
 

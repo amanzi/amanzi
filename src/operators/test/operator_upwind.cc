@@ -126,12 +126,12 @@ void RunTestUpwind(std::string method) {
     // add boundary face component
     const Epetra_Map& ext_face_map = mesh->exterior_face_map(true);
     const Epetra_Map& face_map = mesh->face_map(true);
-    for (int f=0; f!=face_map.NumMyElements(); ++f) {
+    for (int f=0; f!=face_map.getNodeNumElements(); ++f) {
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
         AmanziMesh::Entity_ID_List cells;
         mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         AMANZI_ASSERT(cells.size() == 1);
-        int bf = ext_face_map.LID(face_map.GID(f));
+        int bf = ext_face_map.getLocalElement(face_map.getGlobalElement(f));
         fbfs[0][bf] = model->Value(cells[0], bc_value[f]);
       }
     }
@@ -168,9 +168,9 @@ void RunTestUpwind(std::string method) {
     }
 #ifdef HAVE_MPI
     double tmp = error;
-    Teuchos::reduceAll(mesh->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &error);
+    Teuchos::reduceAll(*mesh->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &error);
     int itmp = nfaces_owned;
-    Teuchos::reduceAll(mesh->get_comm(), Teuchos::REDUCE_SUM, 1, &itmp, &nfaces_owned);
+    Teuchos::reduceAll(*mesh->get_comm(), Teuchos::REDUCE_SUM, 1, &itmp, &nfaces_owned);
 #endif
     error = sqrt(error / nfaces_owned);
   

@@ -25,7 +25,7 @@ include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 
 # External (TPL) directories
-include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${Tpetra_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
 
 #
@@ -38,7 +38,7 @@ set(mesh_logical_src MeshLogical.cc
                      )
 
 add_amanzi_library(mesh_logical SOURCE ${mesh_logical_src}
-				LINK_LIBS mesh geometry ${Epetra_LIBRARIES})
+				LINK_LIBS mesh geometry ${Tpetra_LIBRARIES})
 
 #
 # Install Header files

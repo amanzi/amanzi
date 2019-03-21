@@ -77,7 +77,7 @@ if (BUILD_TESTS)
 			  test/test_polygon_region.cc
                    LINK_LIBS 
                           geometry
-                          ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})  
+                          ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Tpetra_LIBRARIES})  
 
    # Test: test geometric model creation
    add_amanzi_test(geometry_geometric_model geometry_geometric_model
@@ -86,7 +86,7 @@ if (BUILD_TESTS)
                           test/test_geometric_model.cc
                    LINK_LIBS 
                           geometry
-                          ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})  
+                          ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Tpetra_LIBRARIES})  
 
 endif()
 

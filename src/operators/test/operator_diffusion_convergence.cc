@@ -143,7 +143,7 @@ std::pair<double, double> RunForwardProblem(const std::string& discretization,
     Epetra_MultiVector& u_f = *u.ViewComponent("boundary_face",false);
 
     for (int bf = 0; bf != nboundary_faces; ++bf) {
-      int f = mesh->face_map(false).LID(mesh->exterior_face_map(false).GID(bf));
+      int f = mesh->face_map(false).getLocalElement(mesh->exterior_face_map(false).getGlobalElement(bf));
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
       u_f[0][f] = ana.pressure_exact(xf, 0.0);
     }
@@ -270,8 +270,8 @@ std::pair<double, double> RunInverseProblem(const std::string& discretization,
     Epetra_MultiVector& u_f = *u.ViewComponent("boundary_face", false);
 
     for (int bf = 0; bf != nboundary_faces; ++bf) {
-      int f = mesh->face_map(false).LID(
-          mesh->exterior_face_map(false).GID(bf));
+      int f = mesh->face_map(false).getLocalElement(
+          mesh->exterior_face_map(false).getGlobalElement(bf));
 
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
       u_f[0][f] = ana.pressure_exact(xf, 0.0);

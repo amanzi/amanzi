@@ -705,11 +705,11 @@ void PDE_DiffusionNLFVwithBndFaces::OneSidedFluxCorrections_(
           sideflux += tmp * (uc[0][c] - uc[0][c3]);
         } else if (bc_model[f1] == OPERATOR_BC_DIRICHLET) {
           tmp = weight[i + k2][f];
-          int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f1));
+          int bf = mesh_->exterior_face_map(false).getLocalElement(mesh_->face_map(false).getGlobalElement(f1));
           sideflux += tmp * (uc[0][c] - ubnd[0][bf] );// * dir;
         } else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
           tmp = weight[i + k2][f];
-          int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f1));
+          int bf = mesh_->exterior_face_map(false).getLocalElement(mesh_->face_map(false).getGlobalElement(f1));
           sideflux += tmp * (uc[0][c] - ubnd[0][bf]) ;//* dir;
         } 
       }
@@ -748,7 +748,7 @@ void PDE_DiffusionNLFVwithBndFaces::OneSidedNeumannCorrections_(const CompositeV
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       AMANZI_ASSERT(cells.size()==1);
 
-      int my_bf_id = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f));
+      int my_bf_id = mesh_->exterior_face_map(false).getLocalElement(mesh_->face_map(false).getGlobalElement(f));
       int c = cells[0];
         
         
@@ -777,12 +777,12 @@ void PDE_DiffusionNLFVwithBndFaces::OneSidedNeumannCorrections_(const CompositeV
 
             } else if (bc_model[f1] == OPERATOR_BC_DIRICHLET) {
               tmp = weight[i + k2][f];
-              int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f1));
+              int bf = mesh_->exterior_face_map(false).getLocalElement(mesh_->face_map(false).getGlobalElement(f1));
               sideflux += tmp * ubnd[0][bf];
             
             } else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
               tmp = weight[i + k2][f];
-              int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f1));
+              int bf = mesh_->exterior_face_map(false).getLocalElement(mesh_->face_map(false).getGlobalElement(f1));
               sideflux += tmp * ubnd[0][bf];
             }         
           }
@@ -840,16 +840,16 @@ void PDE_DiffusionNLFVwithBndFaces::OneSidedWeightFluxes_(
           if (c3 >= 0) {
             sideflux +=  flux_data[i + k2][f] * (uc[0][c] - uc[0][c3]);
           } else if (bc_model[f1] == OPERATOR_BC_DIRICHLET) {
-            int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f1));
+            int bf = mesh_->exterior_face_map(false).getLocalElement(mesh_->face_map(false).getGlobalElement(f1));
             sideflux += flux_data[i + k2][f] * (uc[0][c] - ubnd[0][bf]);
           } else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
-            int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f1));
+            int bf = mesh_->exterior_face_map(false).getLocalElement(mesh_->face_map(false).getGlobalElement(f1));
             sideflux += flux_data[i + k2][f] * (uc[0][c] - ubnd[0][bf]);
           }
         }
         flux[k1][f] = sideflux;
       }else if (cells.size() == 1) {
-        int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f));
+        int bf = mesh_->exterior_face_map(false).getLocalElement(mesh_->face_map(false).getGlobalElement(f));
         flux[0][f] = flux_data[0][f] * uc[0][c] - flux_data[dim_][f]*ubnd[0][bf];
       }
     }
@@ -882,7 +882,7 @@ void PDE_DiffusionNLFVwithBndFaces::ApplyBCs(bool primary, bool eliminate, bool 
     if (bc_model[f] != OPERATOR_BC_NONE) {
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int c = cells[0];
-      int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f));
+      int bf = mesh_->exterior_face_map(false).getLocalElement(mesh_->face_map(false).getGlobalElement(f));
       
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
         WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
@@ -983,7 +983,7 @@ int PDE_DiffusionNLFVwithBndFaces::OrderCellsByGlobalId_(
   if (ncells == 1) return 0;
   int my_pid = mesh_->get_comm()->getRank();
   c2 = cells[1];
-  if (mesh_->cell_map(true).GID(c1) > mesh_->cell_map(true).GID(c2)) {
+  if (mesh_->cell_map(true).getGlobalElement(c1) > mesh_->cell_map(true).getGlobalElement(c2)) {
     int c(c1);
     c1 = c2;
     c2 = c;

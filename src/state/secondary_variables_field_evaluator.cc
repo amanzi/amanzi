@@ -99,7 +99,7 @@ bool SecondaryVariablesFieldEvaluator::HasFieldChanged(const Teuchos::Ptr<State>
   if (nonlocal_dependencies_) {
     int update_l = update;
     int update_g = 0;
-    S->GetFieldData(my_keys_[0]Teuchos::reduceAll()->Comm(), Teuchos::REDUCE_MAX, 1, &update_l, &update_g);
+    S->GetFieldData(my_keys_[0]Teuchos::reduceAll(*)->Comm(), Teuchos::REDUCE_MAX, 1, &update_l, &update_g);
     update |= update_g;
   }
   
@@ -170,7 +170,7 @@ bool SecondaryVariablesFieldEvaluator::HasFieldDerivativeChanged(
   if (nonlocal_dependencies_) {
     int update_l = update;
     int update_g = 0;
-    S->GetFieldData(my_keys_[0]Teuchos::reduceAll()->Comm(), Teuchos::REDUCE_MAX, 1, &update_l, &update_g);
+    S->GetFieldData(my_keys_[0]Teuchos::reduceAll(*)->Comm(), Teuchos::REDUCE_MAX, 1, &update_l, &update_g);
     update |= update_g;
   }
 

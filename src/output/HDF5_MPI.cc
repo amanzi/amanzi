@@ -125,13 +125,13 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
 
   // get num_nodes, num_cells
   const Epetra_Map &nmap = mesh_maps_->vis_mesh().node_map(false);
-  int nnodes_local = nmap.NumMyElements();
-  int nnodes_global = nmap.NumGlobalElements();
+  int nnodes_local = nmap.getNodeNumElements();
+  int nnodes_global = nmap.getGlobalNumElements();
   const Epetra_Map &ngmap = mesh_maps_->vis_mesh().node_map(true);
 
   const Epetra_Map &cmap = mesh_maps_->vis_mesh().cell_map(false);
-  int ncells_local = cmap.NumMyElements();
-  int ncells_global = cmap.NumGlobalElements();
+  int ncells_local = cmap.getNodeNumElements();
+  int ncells_global = cmap.getGlobalNumElements();
 
   // get space dimension
   int space_dim = mesh_maps_->vis_mesh().space_dimension();
@@ -169,9 +169,9 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   delete [] nodes;
 
   // -- write out node map
-  ids = new int[nmap.NumMyElements()];
+  ids = new int[nmap.getNodeNumElements()];
   for (int i=0; i<nnodes_local; i++) {
-    ids[i] = nmap.GID(i);
+    ids[i] = nmap.getGlobalElement(i);
   }
   globaldims[1] = 1;
   localdims[1] = 1;
@@ -188,19 +188,19 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   // nodes are written to h5 out of order, need info to map id to order in output
   int nnodes(nnodes_local);
   std::vector<int> nnodesAll(viz_comm_->getSize(),0);
-  viz_comm_->GatherAll(&nnodes, &nnodesAll[0], 1);
+  Teuchos::gatherAll(*viz_comm_, 1, &nnodes, &nnodesAll[0]);
   int start(0);
   std::vector<int> startAll(viz_comm_->getSize(),0);
   for (int i = 0; i < viz_comm_->getRank(); i++) {
     start += nnodesAll[i];
   }
-  viz_comm_->GatherAll(&start, &startAll[0],1);
+  Teuchos::gatherAll(*viz_comm_, 1, &start, &startAll[0]);
 
   std::vector<int> gid(nnodes_global);
   std::vector<int> pid(nnodes_global);
   std::vector<int> lid(nnodes_global);
   for (int i=0; i<nnodes_global; i++) {
-    gid[i] = ngmap.GID(i);
+    gid[i] = ngmap.getGlobalElement(i);
   }
   nmap.RemoteIDList(nnodes_global, &gid[0], &pid[0], &lid[0]);
 
@@ -258,7 +258,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   local_sizes[0] = local_conn; local_sizes[1] = local_entities;
   int *global_sizes = new int[2];
   global_sizes[0] = 0; global_sizes[1] = 0;
-  Teuchos::reduceAll(viz_comm_, Teuchos::REDUCE_SUM, 2, local_sizes, global_sizes);
+  Teuchos::reduceAll(*viz_comm_, Teuchos::REDUCE_SUM, 2, local_sizes, global_sizes);
   int global_conn = global_sizes[0];
   int global_entities = global_sizes[1];
   delete [] local_sizes;
@@ -291,7 +291,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
       }
 
       // store entity
-      entities[lcv_entity++] = cmap.GID(c);
+      entities[lcv_entity++] = cmap.getGlobalElement(c);
       
     } else if (space_dim == 2) {
       // store cell type id
@@ -311,7 +311,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
       }
 
       // store entity
-      entities[lcv_entity++] = cmap.GID(c);
+      entities[lcv_entity++] = cmap.getGlobalElement(c);
       
     } else {
       AmanziMesh::Entity_ID_List faces;
@@ -335,7 +335,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
 	}
 
 	// store entity
-	entities[lcv_entity++] = cmap.GID(c);
+	entities[lcv_entity++] = cmap.getGlobalElement(c);
       }
     }
   }
@@ -412,8 +412,8 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
 
   // get num_nodes, num_cells
   const Epetra_Map &nmap = mesh_maps_->vis_mesh().cell_map(false);
-  int nnodes_local = nmap.NumMyElements();
-  int nnodes_global = nmap.NumGlobalElements();
+  int nnodes_local = nmap.getNodeNumElements();
+  int nnodes_global = nmap.getGlobalNumElements();
   const Epetra_Map &ngmap = mesh_maps_->vis_mesh().cell_map(true);
 
   // get space dimension
@@ -452,9 +452,9 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
   delete [] nodes;
 
   // -- write out node map
-  ids = new int[nmap.NumMyElements()];
+  ids = new int[nmap.getNodeNumElements()];
   for (int i=0; i<nnodes_local; i++) {
-    ids[i] = nmap.GID(i);
+    ids[i] = nmap.getGlobalElement(i);
   }
   globaldims[1] = 1;
   localdims[1] = 1;
@@ -471,19 +471,19 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
   // nodes are written to h5 out of order, need info to map id to order in output
   int nnodes(nnodes_local);
   std::vector<int> nnodesAll(viz_comm_->getSize(),0);
-  viz_comm_->GatherAll(&nnodes, &nnodesAll[0], 1);
+  Teuchos::gatherAll(*viz_comm_, 1, &nnodes, &nnodesAll[0]);
   int start(0);
   std::vector<int> startAll(viz_comm_->getSize(),0);
   for (int i = 0; i < viz_comm_->getRank(); i++) {
     start += nnodesAll[i];
   }
-  viz_comm_->GatherAll(&start, &startAll[0],1);
+  Teuchos::gatherAll(*viz_comm_, 1, &start, &startAll[0]);
 
   std::vector<int> gid(nnodes_global);
   std::vector<int> pid(nnodes_global);
   std::vector<int> lid(nnodes_global);
   for (int i=0; i<nnodes_global; i++) {
-    gid[i] = ngmap.GID(i);
+    gid[i] = ngmap.getGlobalElement(i);
   }
   nmap.RemoteIDList(nnodes_global, &gid[0], &pid[0], &lid[0]);
 
@@ -493,8 +493,8 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
   int local_entities(0); // length of ElementMap (num_cells if non-POLYHEDRON mesh)
 
   const Epetra_Map &fmap = mesh_maps_->vis_mesh().face_map(false);
-  int nfaces_local = fmap.NumMyElements();
-  int nfaces_global = fmap.NumGlobalElements();
+  int nfaces_local = fmap.getNodeNumElements();
+  int nfaces_global = fmap.getGlobalNumElements();
 
   for (int f=0; f!=nfaces_local; ++f) {
     AmanziMesh::Entity_ID_List cells;
@@ -510,7 +510,7 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
   local_sizes[0] = local_conn; local_sizes[1] = local_entities;
   int *global_sizes = new int[2];
   global_sizes[0] = 0; global_sizes[1] = 0;
-  Teuchos::reduceAll(viz_comm_, Teuchos::REDUCE_SUM, 2, local_sizes, global_sizes);
+  Teuchos::reduceAll(*viz_comm_, Teuchos::REDUCE_SUM, 2, local_sizes, global_sizes);
   int global_conn = global_sizes[0];
   int global_entities = global_sizes[1];
   delete [] local_sizes;
@@ -562,7 +562,7 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
     //   }
 
     //   // store entity
-    //   entities[lcv_entity++] = cmap.GID(c);
+    //   entities[lcv_entity++] = cmap.getGlobalElement(c);
     }
   }
   

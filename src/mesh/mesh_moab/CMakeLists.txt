@@ -25,7 +25,7 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 
 # External (TPL) include directories
-include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${Tpetra_INCLUDE_DIRS})
 include_directories(${MOAB_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
 
@@ -43,7 +43,7 @@ file(GLOB moab_inc_files "*.hh")
 add_amanzi_library(moab_mesh
                    SOURCE ${moab_mesh_files} HEADERS ${moab_inc_files}
                    LINK_LIBS geometry mesh atk
-                             ${MOAB_LIBRARIES} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES}) 
+                             ${MOAB_LIBRARIES} ${Tpetra_LIBRARIES} ${Teuchos_LIBRARIES}) 
 
 if (BUILD_TESTS)
     # Add UnitTest include

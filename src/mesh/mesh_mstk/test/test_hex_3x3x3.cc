@@ -36,13 +36,13 @@ TEST(MSTK_HEX_3x3x3)
   std::vector<Amanzi::AmanziMesh::Entity_ID>  c2f(6);
   auto cell_map = mesh->cell_map(false);
   auto face_map = mesh->face_map(false);
-  for (int c=cell_map->MinLID(); c<=cell_map->MaxLID(); c++)
+  for (int c=cell_map->getMinLocalIndex(); c<=cell_map->getMaxLocalIndex(); c++)
     {
-      CHECK_EQUAL(cell_map->GID(c),mesh->GID(c,Amanzi::AmanziMesh::CELL));
+      CHECK_EQUAL(cell_map->getGlobalElement(c),mesh->getGlobalElement(c,Amanzi::AmanziMesh::CELL));
       mesh->cell_get_faces(c, &c2f, true);
       for (int j=0; j<6; j++)
 	{
-	  int f = face_map->LID(c2f[j]);
+	  int f = face_map->getLocalElement(c2f[j]);
 	  CHECK( f == c2f[j] );
 	}
 

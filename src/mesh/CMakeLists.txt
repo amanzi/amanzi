@@ -24,7 +24,7 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 
 # External (TPL) directories
-include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${Tpetra_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
 
 #
@@ -33,13 +33,13 @@ include_directories(${Boost_INCLUDE_DIRS})
 add_amanzi_library(mesh SOURCE Mesh.cc 
                                Mesh_Sets.cc 
                                GenerationSpec.cc 
-                        LINK_LIBS geometry atk ${Epetra_LIBRARIES})
+                        LINK_LIBS geometry atk ${Tpetra_LIBRARIES})
 
 #
 # Library: mesh_audit
 #
 add_amanzi_library(mesh_audit SOURCE MeshAudit.cc 
-	                      LINK_LIBS mesh error_handling ${Epetra_LIBRARIES})
+	                      LINK_LIBS mesh error_handling ${Tpetra_LIBRARIES})
 
 #
 # Install Header files
@@ -73,7 +73,7 @@ endif(ENABLE_MSTK_Mesh)
 
 # Factory class
 add_subdirectory(mesh_factory)
-add_subdirectory(mesh_logical)
+#add_subdirectory(mesh_logical)
 
 
 if (BUILD_TESTS)
@@ -81,7 +81,7 @@ if (BUILD_TESTS)
     include_directories(${MESH_SOURCE_DIR})
     include_directories(${MESH_FACTORY_SOURCE_DIR})
     include_directories(${GEOMETRY_SOURCE_DIR})
-    include_directories(${Epetra_INCLUDE_DIRS})
+    include_directories(${Tpetra_INCLUDE_DIRS})
     include_directories(${UnitTest_INCLUDE_DIRS})
 
     # Need to copy files for the tests 

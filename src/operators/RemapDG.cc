@@ -101,8 +101,8 @@ void RemapDG::InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg)
 
   const auto& fmap = mesh0_->face_map(true);
   const auto& bmap = mesh0_->exterior_face_map(true);
-  for (int bf = 0; bf < bmap.NumMyElements(); ++bf) {
-    int f = fmap.LID(bmap.GID(bf));
+  for (int bf = 0; bf < bmap.getNodeNumElements(); ++bf) {
+    int f = fmap.getLocalElement(bmap.getGlobalElement(bf));
     for (int i = 0; i < nk; ++i) bc_value[f][i] = 0.0;
     bc_model[f] = bc_type_;
   }
@@ -323,7 +323,7 @@ void RemapDG::ApplyLimiter(double t, CompositeVector& x)
   }
 
   int nids, itmp = ids.size();
-  mesh0Teuchos::reduceAll(_->get_comm(), Teuchos::REDUCE_SUM, 1, &itmp, &nids);
+  mesh0Teuchos::reduceAll(*_->get_comm(), Teuchos::REDUCE_SUM, 1, &itmp, &nids);
   sharp_ = std::max(sharp_, 100.0 * nids / x.ViewComponent("cell")->GlobalLength());
 
   // apply limiter

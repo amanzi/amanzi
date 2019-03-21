@@ -30,7 +30,7 @@ include_directories(${DBG_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
-include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${Tpetra_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
 
 #
@@ -88,7 +88,7 @@ add_amanzi_library(whetstone
                            WhetStoneDefs.hh
                            WhetStoneFunction.hh WhetStoneMeshUtils.hh
                            bilinear_form_registration.hh
-                   LINK_LIBS geometry mesh error_handling ${Epetra_LIBRARIES})
+                   LINK_LIBS geometry mesh error_handling ${Tpetra_LIBRARIES})
 
 
 if (BUILD_TESTS)

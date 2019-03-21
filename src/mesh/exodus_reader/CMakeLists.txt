@@ -29,7 +29,7 @@ include_directories(${MESH_DATA_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
-include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${Tpetra_INCLUDE_DIRS})
 include_directories(${SEACAS_INCLUDE_DIRS})
 
 #
@@ -41,7 +41,7 @@ add_amanzi_library(exodus_reader
                    SOURCE ${exo_source_files} HEADERS ${exo_inc_files}
                    LINK_LIBS 
                       error_handling mesh_data
-                      ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${SEACAS_LIBRARIES})
+                      ${Teuchos_LIBRARIES} ${Tpetra_LIBRARIES} ${SEACAS_LIBRARIES})
 
 #
 # Binary: exec_reader
@@ -68,7 +68,7 @@ if (BUILD_TESTS)
     copy_directory ${EXO_SOURCE_DIR}/test/test_files ${EXODUS_FILE_DIR}) 
 
     #  On Mac OSX, compiler complains about duplicates from Boost
-    #  These libraries are also listed in Epetra_LIBRARIES, Teuchos_LIBRARIES 
+    #  These libraries are also listed in Tpetra_LIBRARIES, Teuchos_LIBRARIES 
     #  Warnings go away when Boost_*_LIBRARY is removed. Does not impact
     #  test result may not have warnings on other systems. Error appears 
     #  for each test below. See ticket #333

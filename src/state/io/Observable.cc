@@ -195,7 +195,7 @@ void Observable::Update_(const State &S,
       double local[2], global[2];
       local[0] = value;
       local[1] = volume;
-      S.Teuchos::reduceAll(GetMesh()->get_comm(), Teuchos::REDUCE_SUM, 2, local, global);
+      Teuchos::reduceAll(*S.GetMesh()->get_comm(), Teuchos::REDUCE_SUM, 2, local, global);
 
       if (global[1] > 0) {
         if (functional_ == "observation data: point") {
@@ -212,12 +212,12 @@ void Observable::Update_(const State &S,
       }
     } else if (functional_ == "observation data: minimum") {
       double global;
-      S.Teuchos::reduceAll(GetMesh()->get_comm(), Teuchos::REDUCE_MIN, 1, &value, &global);
+      Teuchos::reduceAll(*S.GetMesh()->get_comm(), Teuchos::REDUCE_MIN, 1, &value, &global);
       data.value = global;
       data.is_valid = true;
     } else if (functional_ == "observation data: maximum") {
       double global;
-      S.Teuchos::reduceAll(GetMesh()->get_comm(), Teuchos::REDUCE_MAX, 1, &value, &global);
+      Teuchos::reduceAll(*S.GetMesh()->get_comm(), Teuchos::REDUCE_MAX, 1, &value, &global);
       data.value = global;
       data.is_valid = true;
     } else {

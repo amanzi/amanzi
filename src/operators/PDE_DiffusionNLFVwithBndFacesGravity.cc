@@ -43,7 +43,7 @@ void PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
     AmanziMesh::Entity_ID_List faces;
     mesh_->cell_get_faces(c, &faces);
     for (auto f : faces) {
-      int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f));
+      int bf = mesh_->exterior_face_map(false).getLocalElement(mesh_->face_map(false).getGlobalElement(f));
       if (bf >= 0) {
         double zf = (mesh_->face_centroid(f))[dim_ - 1];
         hh_bnd[0][bf] = u_bnd[0][bf] + rho_g*zf;
@@ -98,7 +98,7 @@ void PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
       //rhs_cell[0][c] -= Aface(0, 0) * (zc - zf) * rho_g;
       rhs_cell[0][c] -=  (Aface(0, 0)*zc + Aface(0, 1)*zf )* rho_g;
       
-      int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f));
+      int bf = mesh_->exterior_face_map(false).getLocalElement(mesh_->face_map(false).getGlobalElement(f));
       rhs_bnd[0][bf] -=  (Aface(1, 0)*zc + Aface(1, 1)*zf ) * rho_g;
 
     }
@@ -135,7 +135,7 @@ void PDE_DiffusionNLFVwithBndFacesGravity::UpdateFlux(const Teuchos::Ptr<const C
     AmanziMesh::Entity_ID_List faces;
     mesh_->cell_get_faces(c, &faces);
     for (auto f : faces) {
-      int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f));
+      int bf = mesh_->exterior_face_map(false).getLocalElement(mesh_->face_map(false).getGlobalElement(f));
       if (bf >= 0) {
         double zf = (mesh_->face_centroid(f))[dim_ - 1];
         hh_bnd[0][bf] = u_bnd[0][bf] + rho_g*zf;

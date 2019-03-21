@@ -22,7 +22,7 @@ project(OPERATORS)
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
-include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${Tpetra_INCLUDE_DIRS})
 include_directories(${Trilinos_INCLUDE_DIRS})
 
 # Amanzi include directories
@@ -156,7 +156,7 @@ add_amanzi_library(operators
                           ReconstructionCell.cc
                           RemapDG.cc RemapUtils.cc
                           HEADERS ${operators_inc_files}
-                   LINK_LIBS geometry mesh mesh_factory error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})                          
+                   LINK_LIBS geometry mesh mesh_factory error_handling whetstone solvers data_structures ${Tpetra_LIBRARIES})                          
 
 
 if (BUILD_TESTS)

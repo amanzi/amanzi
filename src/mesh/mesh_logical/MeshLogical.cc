@@ -323,10 +323,10 @@ void MeshLogical::set_logical_geometry(std::vector<double> const* const cell_vol
 void
 MeshLogical::init_maps() {
   // cell map
-  maps_[CELL] = Teuchos::rcp(new Map_type(-1, cell_face_ids_.size(), 0, *comm_));
+  maps_[CELL] = Teuchos::rcp(new Map_type(-1, cell_face_ids_.size(), 0, comm_));
 
   // face map
-  auto face_map = Teuchos::rcp(new Map_type(-1, face_cell_ids_.size(), 0, *comm_));
+  auto face_map = Teuchos::rcp(new Map_type(-1, face_cell_ids_.size(), 0, comm_));
   maps_[FACE] = face_map;
 
   // exterior face map
@@ -335,18 +335,18 @@ MeshLogical::init_maps() {
   for (std::vector<Entity_ID_List>::iterator f=face_cell_ids_.begin();
        f!=face_cell_ids_.end(); ++f) {
     if (f->size() == 1) {
-      extface_ids.push_back(face_map->GID(f_id));
+      extface_ids.push_back(face_map->getGlobalElement(f_id));
     }
     f_id++;
   }
-  maps_[BOUNDARY_FACE] = Teuchos::rcp(new Map_type(-1, extface_ids.size(), &extface_ids[0], 0, *comm_));
+  maps_[BOUNDARY_FACE] = Teuchos::rcp(new Map_type(-1, extface_ids.data(), extface_ids.size(), 0, comm_));
 
-  exterior_face_importer_ = Teuchos::rcp(new Import_type(*maps_[BOUNDARY_FACE], *face_map));
+  exterior_face_importer_ = Teuchos::rcp(new Import_type(maps_[BOUNDARY_FACE], face_map));
 
 
-  num_entities_[CELL] = maps_[CELL]->NumMyElements();
-  num_entities_[FACE] = maps_[FACE]->NumMyElements();
-  num_entities_[BOUNDARY_FACE] = maps_[BOUNDARY_FACE]->NumMyElements();
+  num_entities_[CELL] = maps_[CELL]->getNodeNumElements();
+  num_entities_[FACE] = maps_[FACE]->getNodeNumElements();
+  num_entities_[BOUNDARY_FACE] = maps_[BOUNDARY_FACE]->getNodeNumElements();
   num_entities_[NODE] = 0;
 }
 
@@ -434,7 +434,7 @@ MeshLogical::num_entities(const Entity_kind kind,
 // Global ID of any entity
 Entity_ID
 MeshLogical::GID(const Entity_ID lid, const Entity_kind kind) const {
-  return maps_.at(kind)->GID(lid);
+  return maps_.at(kind)->getGlobalElement(lid);
 }
 
 

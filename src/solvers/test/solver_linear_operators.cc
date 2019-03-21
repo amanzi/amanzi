@@ -36,7 +36,7 @@ class Matrix {
     
   // 5-point FD stencil
   virtual int Apply(const Epetra_Vector& v, Epetra_Vector& mv) const { 
-    int n = std::pow(v.Map().NumMyElements(), 0.5);
+    int n = std::pow(v.Map().getNodeNumElements(), 0.5);
     for (int i = 0; i < n; i++) {
       for (int j = 0; j < n; j++) {
         int k = j * n + i;
@@ -52,14 +52,14 @@ class Matrix {
   }
 
   virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const {
-    int n = v.Map().NumMyElements();
+    int n = v.Map().getNodeNumElements();
     for (int i = 0; i < n; i++) hv[i] = v[i];
     return 0;
   }
 
   // 3-point FD stencil
   void Init() {
-    int n = map_->NumMyElements();
+    int n = map_->getNodeNumElements();
     A_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *map_, *map_, 3));
     for (int i = 0; i < n; i++) {
       int indices[3];

@@ -32,7 +32,7 @@ project(MSTK)
 list(REVERSE MSTK_INCLUDE_DIRS)
 include_directories(BEFORE ${MSTK_INCLUDE_DIRS})
 
-include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${Tpetra_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
 
 # Amanzi include directories
@@ -65,7 +65,7 @@ set(mstk_mesh_files Mesh_MSTK.cc Mesh_MSTK_deform.cc MeshColumn.cc MeshSurfaceCe
 file(GLOB mstk_inc_files "*.hh")
 add_amanzi_library(mstk_mesh
                    SOURCE ${mstk_mesh_files} HEADERS ${mstk_inc_files}
-                   LINK_LIBS geometry mesh atk ${MSTK_LIBRARIES} ${Epetra_LIBRARIES}
+                   LINK_LIBS geometry mesh atk ${MSTK_LIBRARIES} ${Tpetra_LIBRARIES}
 		             ${Teuchos_LIBRARIES} ${Zoltan_LIBRARIES} ${HDF5_LIBRARIES})
 
 if (BUILD_TESTS)
@@ -131,7 +131,7 @@ if (BUILD_TESTS)
                          test/test_hex_gen_3x3x3_4P.cc
                          test/test_edges_4P.cc
                          test/test_extract_surface_4P.cc
-		         test/test_extface_map_4P.cc
+		         #test/test_extface_map_4P.cc
                          test/test_deform_vols.cc
                     LINK_LIBS mstk_mesh mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 

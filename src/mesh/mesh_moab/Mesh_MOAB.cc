@@ -1544,7 +1544,7 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
 #ifdef DEBUG
   int nent_glob;
 
-  Teuchos::reduceAll(get_comm(), Teuchos::REDUCE_SUM, 1, &nent_loc, &nent_glob);
+  Teuchos::reduceAll(*get_comm(), Teuchos::REDUCE_SUM, 1, &nent_loc, &nent_glob);
   if (nent_glob == 0) {
     std::stringstream mesg_stream;
     mesg_stream << "Could not retrieve any mesh entities for set " << setname << std::endl;
@@ -1602,7 +1602,7 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
   // Check if there were no entities left on any processor after
   // extracting the appropriate category of entities 
 #ifdef DEBUG
-  Teuchos::reduceAll(get_comm(), Teuchos::REDUCE_SUM, 1, &nent_loc, &nent_glob);
+  Teuchos::reduceAll(*get_comm(), Teuchos::REDUCE_SUM, 1, &nent_loc, &nent_glob);
   
   if (nent_glob == 0) {
     std::stringstream mesg_stream;

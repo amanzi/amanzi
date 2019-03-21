@@ -37,7 +37,7 @@ include_directories(${STATE_SOURCE_DIR}/io)
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
-include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${Tpetra_INCLUDE_DIRS})
 include_directories(${HDF5_INCLUDE_DIRS})
 include_directories(${ASCEMIO_INCLUDE_DIR})
 include_directories(${ExodusII_INCLUDE_DIR})
@@ -101,7 +101,7 @@ set(state_inc_files
 )
 
 
-set(state_tpl_list ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${ExodusII_LIBRARIES})
+set(state_tpl_list ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Tpetra_LIBRARIES} ${ExodusII_LIBRARIES})
 add_amanzi_library(state 
                    SOURCE
                       data/Data_Helpers.cc

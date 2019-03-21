@@ -85,8 +85,8 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   const auto& fmap = mesh->face_map(true);
   const auto& bmap = mesh->exterior_face_map(true);
 
-  for (int bf = 0; bf < bmap.NumMyElements(); ++bf) {
-    int f = fmap.LID(bmap.GID(bf));
+  for (int bf = 0; bf < bmap.getNodeNumElements(); ++bf) {
+    int f = fmap.getLocalElement(bmap.getGlobalElement(bf));
     AmanziMesh::Entity_ID_List nodes; 
     mesh->face_get_nodes(f, &nodes);
     for (int n = 0; n < nodes.size(); ++n) {

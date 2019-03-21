@@ -80,12 +80,12 @@ TEST(MOAB_HEX_3x3x3_4P)
   auto cell_map = mesh.cell_map(false);
   auto face_map = mesh.face_map(true);
 
-  for (int c = cell_map->MinLID(); c <= cell_map->MaxLID(); c++) {
-    CHECK_EQUAL(cell_map->GID(c), mesh.GID(c, AmanziMesh::CELL));
+  for (int c = cell_map->getMinLocalIndex(); c <= cell_map->getMaxLocalIndex(); c++) {
+    CHECK_EQUAL(cell_map->getGlobalElement(c), mesh.getGlobalElement(c, AmanziMesh::CELL));
     mesh.cell_get_faces_and_dirs(c, &c2f, &c2fdirs, true);
 
     for (int j = 0; j < 6; j++) {
-      int f = face_map->LID(mesh.GID(c2f[j], AmanziMesh::FACE));
+      int f = face_map->getLocalElement(mesh.getGlobalElement(c2f[j], AmanziMesh::FACE));
       CHECK_EQUAL(f, c2f[j]);
       CHECK_EQUAL(1, abs(c2fdirs[j]));
     }
@@ -95,13 +95,13 @@ TEST(MOAB_HEX_3x3x3_4P)
   int gid, g;
   {
     auto extface_map = mesh.exterior_face_map(false);
-    int nfaces(extface_map->MaxLID() + 1), nall;
-    Teuchos::reduceAll(comm, Teuchos::REDUCE_SUM, 1, &nfaces, &nall);
+    int nfaces(extface_map->getMaxLocalIndex() + 1), nall;
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &nfaces, &nall);
     CHECK_EQUAL(nall, 54);
 
-    for (int f = extface_map->MinLID(); f <= extface_map->MaxLID(); ++f) {
-      gid = extface_map->GID(f);
-      g = face_map->LID(gid);
+    for (int f = extface_map->getMinLocalIndex(); f <= extface_map->getMaxLocalIndex(); ++f) {
+      gid = extface_map->getGlobalElement(f);
+      g = face_map->getLocalElement(gid);
       const AmanziGeometry::Point& xf = mesh.face_centroid(g);
 
       CHECK(std::fabs(xf[0]) < 1e-7 || std::fabs(1.0 - xf[0]) < 1e-7 ||
@@ -113,9 +113,9 @@ TEST(MOAB_HEX_3x3x3_4P)
   // verify boundary maps: owned + ghost
   {
     auto extface_map = mesh.exterior_face_map(true);
-    for (int f = extface_map->MinLID(); f <= extface_map->MaxLID(); ++f) {
-      gid = extface_map->GID(f);
-      g = face_map->LID(gid);
+    for (int f = extface_map->getMinLocalIndex(); f <= extface_map->getMaxLocalIndex(); ++f) {
+      gid = extface_map->getGlobalElement(f);
+      g = face_map->getLocalElement(gid);
       const AmanziGeometry::Point& xf = mesh.face_centroid(g);
 
       CHECK(std::fabs(xf[0]) < 1e-7 || std::fabs(1.0 - xf[0]) < 1e-7 ||

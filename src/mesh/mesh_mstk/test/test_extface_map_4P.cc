@@ -30,49 +30,53 @@ TEST(MSTK_EXTFACE_MAP_4P)
 
   auto all_to_extface_importer = mesh->exterior_face_importer();
 
-  for (int f = extface_map->MinLID(); f <= extface_map->MaxLID(); f++)
+  for (int f = extface_map->getMinLocalIndex(); f <= extface_map->getMaxLocalIndex(); f++)
     {
-      int gid = extface_map->GID(f);
-      int f2 = face_map->LID(gid); // f2 is local face id in face_map
+      int gid = extface_map->getGlobalElement(f);
+      int f2 = face_map->getLocalElement(gid); // f2 is local face id in face_map
 
-      CHECK_EQUAL(face_map->GID(f2),gid);
+      CHECK_EQUAL(face_map->getGlobalElement(f2),gid);
 
       Amanzi::AmanziMesh::Entity_ID_List fcells;
       mesh->face_get_cells(f2, Amanzi::AmanziMesh::Parallel_type::OWNED, &fcells);
       CHECK_EQUAL(1,fcells.size());
     }
 
-  Amanzi::Vector_type allvec(*face_map);
-  Amanzi::Vector_type bdryvec(*extface_map);
+  Amanzi::Vector_type allvec(face_map);
+  Amanzi::Vector_type bdryvec(extface_map);
 
   // Insert the GlobalID of each face offsetted by 3 into the allvec
 
-  for (int f = face_map->MinLID(); f < face_map->MaxLID(); f++) 
-      allvec[f] = face_map->GID(f)+3;
+  for (int f = face_map->getMinLocalIndex(); f < face_map->getMaxLocalIndex(); f++) 
+      allvec[f] = face_map->getGlobalElement(f)+3;
 
-  bdryvec.Import(allvec, *all_to_extface_importer, Insert);
+  bdryvec.Import(allvec, *all_to_extface_importer, CombineMode::INSERT);
 
   // Check if the importer got the right values from allvec into bdryvec
   // by checking if the values in the bdryvec minus the offset correspond
   // to the correct global IDs.
 
-  for (int f = extface_map->MinLID(); f < extface_map->MaxLID(); f++) 
-    CHECK_EQUAL(extface_map->GID(f),bdryvec[f]-3);
+  for (int f = extface_map->getMinLocalIndex(); f < extface_map->getMaxLocalIndex(); f++) 
+    CHECK_EQUAL(extface_map->getGlobalElement(f),bdryvec[f]-3);
 
   // Check if ghostmap contains only boundary faces
 
   auto extface_map_wghost = mesh->exterior_face_map(true);
 
-  int nowned_bnd = extface_map->NumMyElements();
-  int nnotowned_bnd = extface_map_wghost->NumMyElements() - nowned_bnd;
+  int nowned_bnd = extface_map->getNodeNumElements();
+  int nnotowned_bnd = extface_map_wghost->getNodeNumElements() - nowned_bnd;
 
   std::vector<int> gl_id(nnotowned_bnd), pr_id(nnotowned_bnd), lc_id(nnotowned_bnd);
 
   for (int f=0; f<nnotowned_bnd; f++){
-    gl_id[f] = extface_map_wghost->GID(f + nowned_bnd);
+    gl_id[f] = extface_map_wghost->getGlobalElement(f + nowned_bnd);
   }
 
-  extface_map->RemoteIDList(nnotowned_bnd, gl_id.data(), pr_id.data(), lc_id.data());
+  auto gl_id_av = Teuchos::arrayView(gl_id.data(), nnotowned);
+  auto pr_id_av = Teuchos::arrayView(pr_id.data(), nnotowned);
+  auto lc_id_av = Teuchos::arrayView(lc_id.data(), nnotowned);
+  extface_map->getRemoteIndexList(gl_id_av, pr_id_av, lc_id_av);
+
 
   for (int f=0; f<nnotowned_bnd; f++){
     CHECK(pr_id[f] >= 0);

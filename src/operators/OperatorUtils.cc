@@ -284,26 +284,26 @@ CreateBoundaryMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                    std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >& face_maps,
                    std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >& bnd_maps)
 {
-  int num_boundary_faces_owned = bnd_maps.first->NumMyElements();
+  int num_boundary_faces_owned = bnd_maps.first->getNodeNumElements();
 
   AMANZI_ASSERT(num_boundary_faces_owned > 0);
   
   Teuchos::RCP<Epetra_Map> boundary_map = Teuchos::rcp(new Epetra_Map(-1, num_boundary_faces_owned, 0, bnd_maps.first->Comm()));
 
-  int n_ghosted = bnd_maps.second->NumMyElements() - num_boundary_faces_owned;
+  int n_ghosted = bnd_maps.second->getNodeNumElements() - num_boundary_faces_owned;
   std::vector<int> gl_id(n_ghosted), pr_id(n_ghosted), lc_id(n_ghosted);
 
   int total_proc = mesh->get_comm()->getSize();
   int my_pid = mesh->get_comm()->getRank();
   std::vector<int> min_global_id(total_proc, 0), tmp(total_proc, 0);
 
-  tmp[my_pid] = boundary_map->GID(0);
+  tmp[my_pid] = boundary_map->getGlobalElement(0);
 
-  Teuchos::reduceAll(mesh->get_comm(), Teuchos::REDUCE_SUM, total_proc, tmp.data(), min_global_id.data());
+  Teuchos::reduceAll(*mesh->get_comm(), Teuchos::REDUCE_SUM, total_proc, tmp.data(), min_global_id.data());
   
-  for (int n = num_boundary_faces_owned; n < bnd_maps.second->NumMyElements(); n++) {
-    int f = face_maps.second->LID(bnd_maps.second->GID(n));
-    gl_id[n - num_boundary_faces_owned] = face_maps.second->GID(f);
+  for (int n = num_boundary_faces_owned; n < bnd_maps.second->getNodeNumElements(); n++) {
+    int f = face_maps.second->getLocalElement(bnd_maps.second->getGlobalElement(n));
+    gl_id[n - num_boundary_faces_owned] = face_maps.second->getGlobalElement(f);
   }
 
   bnd_maps.first->RemoteIDList(n_ghosted, gl_id.data(), pr_id.data(), lc_id.data());
@@ -317,7 +317,7 @@ CreateBoundaryMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
   
   std::vector<int> global_id_ghosted(n_ghosted_new);
   for (int i=0; i<num_boundary_faces_owned; i++) {
-    global_id_ghosted[i] = boundary_map->GID(i);  
+    global_id_ghosted[i] = boundary_map->getGlobalElement(i);  
   }
 
   int j = num_boundary_faces_owned;

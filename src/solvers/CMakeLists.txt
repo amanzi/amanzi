@@ -31,7 +31,7 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
-include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${Tpetra_INCLUDE_DIRS})
 include_directories(${Belos_INCLUDE_DIRS})
 include_directories(${NOX_INCLUDE_DIRS})
 include_directories(${ASCEMIO_INCLUDE_DIRS})
@@ -50,7 +50,7 @@ set(solvers_source_files ResidualDebugger.cc
                          SolverFactory.cc)
 
 set(solvers_tpl_libs ${DBC_LIBRARIES}
-		     ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}
+		     ${Teuchos_LIBRARIES} ${Tpetra_LIBRARIES}
                      ${Belos_LIBRARIES} ${NOX_LIBRARIES} ${Amesos2_LIBRARIES}
                      ${HYPRE_LIBRARY})
 list(REVERSE solvers_tpl_libs)
@@ -69,7 +69,7 @@ add_amanzi_library(solvers
                    SOURCE ${solvers_source_files} 
                    HEADERS ${solvers_inc_files}
 		   LINK_LIBS data_structures output whetstone atk
-                             ${solver_depends} ${solvers_tpl_libs} ${Epetra_LIBRARIES})
+                             ${solver_depends} ${solvers_tpl_libs} ${Tpetra_LIBRARIES})
 
 
 if (BUILD_TESTS)

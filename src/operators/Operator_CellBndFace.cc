@@ -61,7 +61,7 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
         Yc[0][cells[n]] += av(n);
       }
     }else if (ncells==1) {
-      int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f));
+      int bf = mesh_->exterior_face_map(false).getLocalElement(mesh_->face_map(false).getGlobalElement(f));
 
       WhetStone::DenseVector v(2), av(2);
       v(0) = Xc[0][cells[0]];
@@ -112,7 +112,7 @@ void Operator_CellBndFace::SymbolicAssembleMatrixOp(
     }else if (ncells==1) {
       lid_r[0] = cell_row_inds[cells[0]];
       lid_c[0] = cell_col_inds[cells[0]];
-      int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f));
+      int bf = mesh_->exterior_face_map(false).getLocalElement(mesh_->face_map(false).getGlobalElement(f));
       lid_r[1] = bndface_row_inds[bf];
       lid_c[1] = bndface_col_inds[bf];
     }
@@ -153,7 +153,7 @@ void Operator_CellBndFace::AssembleMatrixOp(
     }else if (ncells==1) {
       lid_r[0] = cell_row_inds[cells[0]];
       lid_c[0] = cell_col_inds[cells[0]];
-      int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f));
+      int bf = mesh_->exterior_face_map(false).getLocalElement(mesh_->face_map(false).getGlobalElement(f));
       lid_r[1] = bndface_row_inds[bf];
       lid_c[1] = bndface_col_inds[bf];     
     }
@@ -174,7 +174,7 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op
   Epetra_MultiVector& Yf = *Y.ViewComponent("boundary_face", false);
   for (int sc = 0; sc != nsurf_cells; ++sc) {
     int f = op.surf_mesh->entity_get_parent(AmanziMesh::CELL, sc);
-    int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f));
+    int bf = mesh_->exterior_face_map(false).getLocalElement(mesh_->face_map(false).getGlobalElement(f));
     Yf[0][bf] += (*op.diag)[0][sc] * Xf[0][bf];
   } 
   return 0;  
@@ -203,7 +203,7 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op
     WhetStone::DenseVector v(ncells), av(ncells);
     for (int n = 0; n != ncells; ++n) {
       int f = op.surf_mesh->entity_get_parent(AmanziMesh::CELL, cells[n]);
-      int bf = mesh_->exterior_face_map(true).LID(mesh_->face_map(true).GID(f));
+      int bf = mesh_->exterior_face_map(true).getLocalElement(mesh_->face_map(true).getGlobalElement(f));
       v(n) = Xf[0][bf];
     }
 
@@ -212,7 +212,7 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op
 
     for (int n = 0; n != ncells; ++n) {
       int f = op.surf_mesh->entity_get_parent(AmanziMesh::CELL, cells[n]);
-      int bf = mesh_->exterior_face_map(true).LID(mesh_->face_map(true).GID(f));
+      int bf = mesh_->exterior_face_map(true).getLocalElement(mesh_->face_map(true).getGlobalElement(f));
       Yf[0][bf] += av(n);
     }
   } 
@@ -235,7 +235,7 @@ Operator_CellBndFace::SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell&
   int ierr = 0;
   for (int sc=0; sc!=nsurf_cells; ++sc) {
     int f = op.surf_mesh->entity_get_parent(AmanziMesh::CELL,sc);
-    int bf = mesh_->exterior_face_map(true).LID(mesh_->face_map(false).GID(f));
+    int bf = mesh_->exterior_face_map(true).getLocalElement(mesh_->face_map(false).getGlobalElement(f));
     int lid_r = face_row_inds[bf];
     int lid_c = face_col_inds[bf];
     ierr |= graph.InsertMyIndices(lid_r, 1, &lid_c);
@@ -264,7 +264,7 @@ Operator_CellBndFace::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell&
     int ncells = cells.size();
     for (int n=0; n!=ncells; ++n) {
       int f = op.surf_mesh->entity_get_parent(AmanziMesh::CELL,cells[n]);
-      int bf = mesh_->exterior_face_map(true).LID(mesh_->face_map(true).GID(f));
+      int bf = mesh_->exterior_face_map(true).getLocalElement(mesh_->face_map(true).getGlobalElement(f));
       lid_r[n] = face_row_inds[bf];
       lid_c[n] = face_col_inds[bf];
       
@@ -291,7 +291,7 @@ Operator_CellBndFace::AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
   int ierr = 0;
   for (int sc=0; sc!=nsurf_cells; ++sc) {
     int f = op.surf_mesh->entity_get_parent(AmanziMesh::CELL,sc);
-    int bf = mesh_->exterior_face_map(true).LID(mesh_->face_map(true).GID(f));
+    int bf = mesh_->exterior_face_map(true).getLocalElement(mesh_->face_map(true).getGlobalElement(f));
      
       int lid_r = face_row_inds[bf];
       int lid_c = face_col_inds[bf];
@@ -323,7 +323,7 @@ Operator_CellBndFace::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
     int ncells = cells.size();
     for (int n=0; n!=ncells; ++n) {
       int f = op.surf_mesh->entity_get_parent(AmanziMesh::CELL,cells[n]);
-      int bf = mesh_->exterior_face_map(true).LID(mesh_->face_map(true).GID(f));
+      int bf = mesh_->exterior_face_map(true).getLocalElement(mesh_->face_map(true).getGlobalElement(f));
       lid_r[n] = face_row_inds[bf];
       lid_c[n] = face_col_inds[bf];
     }

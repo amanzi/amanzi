@@ -86,7 +86,7 @@ void CompositeVectorFunction::Compute(double time,
           for (AmanziMesh::Entity_ID id=0; id!=nfaces; ++id) {
             mesh->face_get_cells(id, AmanziMesh::Parallel_type::ALL, &cells);
             if (cells.size() == 1) {
-              AmanziMesh::Entity_ID bf = vandelay_map.LID(face_map.GID(id));
+              AmanziMesh::Entity_ID bf = vandelay_map.getLocalElement(face_map.getGlobalElement(id));
               AMANZI_ASSERT(bf >= 0);
 
               // get the coordinate
@@ -142,7 +142,7 @@ void CompositeVectorFunction::Compute(double time,
                  id!=id_list.end(); ++id) {
               mesh->face_get_cells(*id, AmanziMesh::Parallel_type::ALL, &cells);
               if (cells.size() == 1) {
-                AmanziMesh::Entity_ID bf = vandelay_map.LID(face_map.GID(*id));
+                AmanziMesh::Entity_ID bf = vandelay_map.getLocalElement(face_map.getGlobalElement(*id));
                 AMANZI_ASSERT(bf >= 0);
 
 

@@ -170,7 +170,7 @@ void RunTestDiffusionCurved() {
     center += mesh->cell_centroid(c) * vol;
   }
   double tmp_in[4], tmp_out[4] = {totvol, center[0], center[1], center[2]};
-  Teuchos::reduceAll(comm, Teuchos::REDUCE_SUM, 4, tmp_out, tmp_in);
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 4, tmp_out, tmp_in);
   totvol = tmp_in[0];
   for (int i = 0; i < 3; ++i) center[i] = tmp_in[i + 1] / totvol;
   CHECK_CLOSE(1.0, totvol, 1e-12);

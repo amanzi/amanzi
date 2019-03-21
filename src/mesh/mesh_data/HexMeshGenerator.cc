@@ -474,8 +474,7 @@ HexMeshGenerator::cellmap(bool onebased)
   if (onebased)
     std::for_each(myidx.begin(), myidx.end(), bl::_1 += 1);
 
-  return Teuchos::rcp(new Map_type(ncell_, myidx.size(), &myidx[0], 
-          (onebased ? 1 : 0), *comm_));
+  return Teuchos::rcp(new Map_type(ncell_, &myidx[0], myidx.size(), (onebased ? 1 : 0), comm_));
 }
 
 // -------------------------------------------------------------
@@ -500,8 +499,7 @@ HexMeshGenerator::vertexmap(bool onebased)
   if (onebased)
     std::for_each(myidx.begin(), myidx.end(), bl::_1 += 1);
   
-  return Teuchos::rcp(new Map_type(-1, vertex_gidx_.size(), &myidx[0], 
-                                    (onebased ? 1 : 0), *comm_));
+  return Teuchos::rcp(new Map_type(-1, &myidx[0], vertex_gidx_.size(), (onebased ? 1 : 0), comm_));
 }
 
 } // namespace Data

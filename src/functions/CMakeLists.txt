@@ -30,7 +30,7 @@ include_directories(${DBC_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
-include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${Tpetra_INCLUDE_DIRS})
 include_directories(${HDF5_INCLUDE_DIRS})
 
 # Need to move this up to the root -- lpritch
@@ -44,7 +44,7 @@ file(GLOB inc_files "*.hh")
 add_amanzi_library(functions 
                    SOURCE ${src_files}
                    HEADERS ${inc_files}
-                   LINK_LIBS error_handling ${HDF5_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
+                   LINK_LIBS error_handling ${HDF5_LIBRARIES} ${Teuchos_LIBRARIES} ${Tpetra_LIBRARIES})
 
 # Define all tests at the of the file. BUILD_TESTS gates test building.
 if (BUILD_TESTS)
@@ -84,7 +84,7 @@ if (BUILD_TESTS)
   #                        functions
   #                        ${UnitTest_LIBRARIES}
   #                        ${Teuchos_LIBRARIES}
-  #                        ${Epetra_LIBRARIES})
+  #                        ${Tpetra_LIBRARIES})
 
 
   add_amanzi_test(function_composite function_composite

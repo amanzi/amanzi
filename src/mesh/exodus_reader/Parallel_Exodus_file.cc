@@ -70,7 +70,7 @@ Parallel_Exodus_file::Parallel_Exodus_file(const Comm_ptr_type& comm,
   }
 
   int gerr(0);
-  Teuchos::reduceAll(comm_, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
+  Teuchos::reduceAll(*comm_, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
 
   if (gerr > 0) {
     Exceptions::amanzi_throw( ex_all );
@@ -90,7 +90,7 @@ Parallel_Exodus_file::read_mesh(void)
   // local block is empty, it will not have a cell type specified, so
   // we need get that from the other processes
 
-  comm_->Barrier();
+  comm_->barrier();
   const int np(comm_->getSize());
   const int me(comm_->getRank());
 
@@ -100,12 +100,12 @@ Parallel_Exodus_file::read_mesh(void)
   // check the number of blocks; should be the same on all processes
 
   int ierr(0);
-  comm_->GatherAll(&nblk, &byproc[0], 1);
+  Teuchos::gatherAll(*comm_, 1, &nblk, (int)byproc.size(), byproc.data());
   for (int p = 1; p < np; p++) {
     if (byproc[p] != byproc[p-1]) ierr++;
   }
   int aerr(0);
-  Teuchos::reduceAll(comm_, Teuchos::REDUCE_SUM, 1, &ierr, &aerr);
+  Teuchos::reduceAll(*comm_, Teuchos::REDUCE_SUM, 1, &ierr, &aerr);
 
   if (aerr) {
     std::string msg(basename_);
@@ -116,7 +116,7 @@ Parallel_Exodus_file::read_mesh(void)
   for (int b = 0; b < nblk; b++) {
     int mytype(mesh_->element_block(b).element_type());
     std::vector<int> alltype(np, AmanziMesh::CELLTYPE_UNKNOWN);
-    comm_->GatherAll(&mytype, &alltype[0], 1);
+    Teuchos::gatherAll(*comm_, 1, &mytype, (int)alltype.size(), alltype.data());
 
     std::vector<int>::iterator junk;
     junk = std::remove(alltype.begin(), alltype.end(),
@@ -161,7 +161,7 @@ Parallel_Exodus_file::read_mesh(void)
     }
   }
 
-  Teuchos::reduceAll(comm_, Teuchos::REDUCE_SUM, 1, &ierr, &aerr);
+  Teuchos::reduceAll(*comm_, Teuchos::REDUCE_SUM, 1, &ierr, &aerr);
   if (aerr) {
     std::string msg = 
       boost::str(boost::format("%s: element block type errors") % basename_);
@@ -193,9 +193,9 @@ Parallel_Exodus_file::cellmap(void)
     Exceptions::amanzi_throw( ExodusError (msg.c_str()) );
   }
 
-  comm_->Barrier();
+  comm_->barrier();
 
-  return Teuchos::rcp(new Map_type(-1, myelem, &gids[0], 1, *comm_));
+  return Teuchos::rcp(new Map_type(-1, &gids[0], myelem, 1, comm_));
 }
 
 
@@ -221,9 +221,9 @@ Parallel_Exodus_file::vertexmap(void)
     Exceptions::amanzi_throw( ExodusError (msg.c_str()) );
   }
 
-  comm_->Barrier();
+  comm_->barrier();
 
-  return Teuchos::rcp(new Map_type(-1, myvert, &gids[0], 1, *comm_));
+  return Teuchos::rcp(new Map_type(-1, &gids[0], myvert, 1, comm_));
 }
 
 } // namespace Exodus

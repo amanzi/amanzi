@@ -219,7 +219,7 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
         mesh_->cell_get_faces(c, &faces);
         int nfaces = faces.size();
 
-        int c0 = cmap_wghost.GID(c);
+        int c0 = cmap_wghost.getGlobalElement(c);
         WhetStone::DenseMatrix& Acell = (*it)->matrices[c];
         for (int n = 0; n < nfaces; n++) {
           int f = faces[n];
@@ -228,8 +228,8 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
           if (cells.size() == 1) {
             Ttmp[0][f] = Acell(n, nfaces);
           } else {
-            int c1 = cmap_wghost.GID(cells[0]);
-            int c2 = cmap_wghost.GID(cells[1]);
+            int c1 = cmap_wghost.getGlobalElement(cells[0]);
+            int c2 = cmap_wghost.getGlobalElement(cells[1]);
             int i = (c0 == std::min(c1, c2)) ? 0 : 1;
             Ttmp[i][f] = Acell(n, nfaces);
           }
@@ -255,7 +255,7 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
         for (int n=0; n!=ncells; ++n) {
           lid_r[n] = cell_row_inds[cells[n]];
           lid_c[n] = cell_col_inds[cells[n]];
-          gid[n] = cmap_wghost.GID(cells[n]);
+          gid[n] = cmap_wghost.getGlobalElement(cells[n]);
         }
 
         a1 = Ttmp[0][f];

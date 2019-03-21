@@ -371,8 +371,8 @@ int PDE_DiffusionFracturedMatrix::FaceLocalIndex_(
   int idx = 0;
   mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
   if (cells.size() == 2) {
-     int gid = cmap.GID(c);
-     int gid_min = std::min(cmap.GID(cells[0]), cmap.GID(cells[1]));
+     int gid = cmap.getGlobalElement(c);
+     int gid_min = std::min(cmap.getGlobalElement(cells[0]), cmap.getGlobalElement(cells[1]));
      if (gid > gid_min) idx = 1;
   }
 
@@ -404,7 +404,7 @@ Teuchos::RCP<CompositeVectorSpace> CreateFracturedMatrixCVS(
 
   // create ghosted map with two points on each fracture face
   auto& gfmap = mesh->face_map(true);
-  int nlocal = gfmap.NumMyElements();
+  int nlocal = gfmap.getNodeNumElements();
 
   std::vector<int> gids(nlocal);
   gfmap.MyGlobalElements(&gids[0]);
@@ -415,7 +415,7 @@ Teuchos::RCP<CompositeVectorSpace> CreateFracturedMatrixCVS(
 
   // create master map with two points on each fracture face
   auto& mfmap = mesh->face_map(false);
-  nlocal = mfmap.NumMyElements();
+  nlocal = mfmap.getNodeNumElements();
 
   auto mmap = Teuchos::rcp(new Epetra_BlockMap(-1, nlocal, &gids[0], data, 0, mfmap.Comm()));
 

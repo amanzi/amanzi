@@ -195,7 +195,7 @@ TEST(MSTK_DEFORM_VOLS_3D)
     CHECK(mesh->cell_volume(i)+eps >= min_volumes[i]);
     if (!(mesh->cell_volume(i)+eps >= min_volumes[i])) {
       double diff = mesh->cell_volume(i)-min_volumes[i];
-      std::cerr << "Cell Global ID " << mesh->GID(i,Amanzi::AmanziMesh::CELL)
+      std::cerr << "Cell Global ID " << mesh->getGlobalElement(i,Amanzi::AmanziMesh::CELL)
                 << " Cell Local ID " << i 
                 << " Rank " << comm->getRank() 
                 << ": Min volume = " << min_volumes[i] << "    "

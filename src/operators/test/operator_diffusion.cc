@@ -97,8 +97,8 @@ void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre
   const auto& fmap = mesh->face_map(true);
   const auto& bmap = mesh->exterior_face_map(true);
 
-  for (int bf = 0; bf < bmap.NumMyElements(); ++bf) {
-    int f = fmap.LID(bmap.GID(bf));
+  for (int bf = 0; bf < bmap.getNodeNumElements(); ++bf) {
+    int f = fmap.getLocalElement(bmap.getGlobalElement(bf));
     const Point& xf = mesh->face_centroid(f);
     double area = mesh->face_area(f);
     bool flag;

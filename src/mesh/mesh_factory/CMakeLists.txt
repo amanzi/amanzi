@@ -24,7 +24,7 @@ project(MESH_FACTORY)
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
-include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${Tpetra_INCLUDE_DIRS})
 include_directories(${STK_INCLUDE_DIRS})
 include_directories(${SEACAS_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
@@ -110,7 +110,7 @@ if (BUILD_TESTS)
 		         mesh_factory
 			 ${UnitTest_LIBRARIES}
 			 ${Boost_LIBRARIES}
-                         ${Epetra_LIBRARIES}
+                         ${Tpetra_LIBRARIES}
 			 ${HDF5_LIBRARIES})
 
    # Do not call add_amanzi_test again with SOURCE and LINK_LIBS since the

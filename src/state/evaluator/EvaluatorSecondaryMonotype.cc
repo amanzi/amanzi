@@ -239,7 +239,7 @@ void EvaluatorSecondaryMonotype<CompositeVector,
       if (my_space.size() == 0) {
         my_space = fac;
       } else {
-        if (!my_space.SameAs(fac)) {
+        if (!my_space.isSameAs(fac)) {
           if ((consistency_policy == "take from child: intersection" &&
                fac.SubsetOf(my_space)) ||
               (consistency_policy == "take from child: union" &&

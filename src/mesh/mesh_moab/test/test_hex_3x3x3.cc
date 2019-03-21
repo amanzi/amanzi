@@ -34,17 +34,17 @@ TEST(MOAB_HEX_3x3x3)
   AmanziMesh::Entity_ID_List c2f;
   auto cell_map = mesh.cell_map(false);
   auto face_map = mesh.face_map(false);
-  for (int c = cell_map->MinLID(); c <= cell_map->MaxLID(); c++) {
+  for (int c = cell_map->getMinLocalIndex(); c <= cell_map->getMaxLocalIndex(); c++) {
     mesh.cell_get_faces( c, &c2f, true);
     for (int j = 0; j < 6; j++) {
-       int f = face_map->LID(c2f[j]);
+       int f = face_map->getLocalElement(c2f[j]);
        CHECK(f == c2f[j]);
     }
   }
   
   // verify boundary maps
   auto extface_map = mesh.exterior_face_map(false);
-  for (int f = extface_map->MinLID(); f <= extface_map->MaxLID(); ++f) {
+  for (int f = extface_map->getMinLocalIndex(); f <= extface_map->getMaxLocalIndex(); ++f) {
     const AmanziGeometry::Point& xf = mesh.face_centroid(f);
     CHECK(std::fabs(xf[0]) < 1e-7 || std::fabs(1.0 - xf[0]) < 1e-7 ||
           std::fabs(xf[1]) < 1e-7 || std::fabs(1.0 - xf[1]) < 1e-7 ||

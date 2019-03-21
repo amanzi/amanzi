@@ -32,7 +32,7 @@ file(GLOB simple_inc_files "*.hh")
 add_amanzi_library(simple_mesh
                    SOURCE ${simple_mesh_source_files} HEADERS ${simple_inc_files}
                    LINK_LIBS mesh geometry error_handling atk 
-                             ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
+                             ${Tpetra_LIBRARIES} ${Teuchos_LIBRARIES})
 
 if (BUILD_TESTS)
 
@@ -40,7 +40,7 @@ if (BUILD_TESTS)
     include_directories(${UnitTest_INCLUDE_DIRS})
 
     # Test uses Epetra
-    include_directories(${Epetra_INCLUDE_DIRS})
+    include_directories(${Tpetra_INCLUDE_DIRS})
 
    # Need to copy files for the tests 
     if (NOT (${MESH_SIMPLE_SOURCE_DIR} EQUAL ${MESH_SIMPLE_BINARY_DIR}))

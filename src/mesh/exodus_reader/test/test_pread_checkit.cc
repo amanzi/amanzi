@@ -24,20 +24,20 @@ checkit(Amanzi::Exodus::Parallel_Exodus_file & thefile)
   Teuchos::RCP<Amanzi::AmanziMesh::Data::Data> themesh(thefile.read_mesh());
   
   int lcell(themesh->parameters().num_elements_), gcell;
-  thefile.Teuchos::reduceAll(Comm(), Teuchos::REDUCE_SUM, 1, &lcell, &gcell);
+  Teuchos::reduceAll(*thefile.Comm(), Teuchos::REDUCE_SUM, 1, &lcell, &gcell);
 
   auto cmap = thefile.cellmap();
-  CHECK_EQUAL(cmap->NumGlobalElements(), gcell);
-  CHECK_EQUAL(cmap->NumMyElements(), lcell);
-  CHECK_EQUAL(cmap->MinAllGID(), 1);
-  CHECK_EQUAL(cmap->MaxAllGID(), gcell);
-  CHECK(cmap->IsOneToOne());
+  CHECK_EQUAL(cmap->getGlobalNumElements(), gcell);
+  CHECK_EQUAL(cmap->getNodeNumElements(), lcell);
+  CHECK_EQUAL(cmap->getMinGlobalIndex(), 1);
+  CHECK_EQUAL(cmap->getMaxGlobalIndex(), gcell);
+  CHECK(cmap->isOneToOne());
   
 
   int lvert(themesh->parameters().num_nodes_);
   auto vmap = thefile.vertexmap();
-  CHECK_EQUAL(vmap->NumMyElements(), lvert);
-  CHECK(cmap->IsOneToOne()); 
+  CHECK_EQUAL(vmap->getNodeNumElements(), lvert);
+  CHECK(cmap->isOneToOne()); 
 
   // FIXME: do some checking on global indexes, whatever that might me
 }

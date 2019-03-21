@@ -207,6 +207,8 @@ class Mesh {
   virtual
   Entity_ID GID(const Entity_ID lid, const Entity_kind kind) const = 0;
 
+  // should use this one (really should remove this functionality completely!
+  Entity_ID getGlobalElement(const Entity_ID lid, const Entity_kind kind) const { return GID(lid, kind); }
 
   //
   // Mesh Entity Adjacencies

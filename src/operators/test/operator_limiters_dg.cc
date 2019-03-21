@@ -106,8 +106,8 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
 
     const auto& fmap = mesh->face_map(true);
     const auto& bmap = mesh->exterior_face_map(true);
-    for (int bf = 0; bf < bmap.NumMyElements(); ++bf) {
-      int f = fmap.LID(bmap.GID(bf));
+    for (int bf = 0; bf < bmap.getNodeNumElements(); ++bf) {
+      int f = fmap.getLocalElement(bmap.getGlobalElement(bf));
       const auto& xf = mesh->face_centroid(f);
       bc_model[f] = OPERATOR_BC_DIRICHLET;
       bc_value[f] = ana.SolutionExact(xf, 0.0);
@@ -155,7 +155,7 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
     // CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
 
     int nids, itmp = ids.size();
-    Teuchos::reduceAll(mesh->get_comm(), Teuchos::REDUCE_SUM, 1, &itmp, &nids);
+    Teuchos::reduceAll(*mesh->get_comm(), Teuchos::REDUCE_SUM, 1, &itmp, &nids);
     double fraction = 100.0 * nids / grad_c.GlobalLength();
     if (getRank == 0) 
       printf("%9s: errors: %10.6f %10.6f  ||grad||=%8.4f  indicator=%5.1f%%\n",
@@ -191,9 +191,9 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
     }
 
     double tmp = err;
-    Teuchos::reduceAll(mesh->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &err);
+    Teuchos::reduceAll(*mesh->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &err);
     tmp = l2norm;
-    Teuchos::reduceAll(mesh->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &l2norm);
+    Teuchos::reduceAll(*mesh->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &l2norm);
     if (getRank == 0) 
       printf("       sol errors: %10.6f   ||u||=%8.4f\n", std::pow(err, 0.5), std::pow(l2norm, 0.5));
     CHECK(err < 0.02);
@@ -272,8 +272,8 @@ TEST(LIMITER_GAUSS_POINTS)
 
   const auto& fmap = mesh->face_map(true);
   const auto& bmap = mesh->exterior_face_map(true);
-  for (int bf = 0; bf < bmap.NumMyElements(); ++bf) {
-    int f = fmap.LID(bmap.GID(bf));
+  for (int bf = 0; bf < bmap.getNodeNumElements(); ++bf) {
+    int f = fmap.getLocalElement(bmap.getGlobalElement(bf));
     const auto& xf = mesh->face_centroid(f);
     bc_model[f] = OPERATOR_BC_DIRICHLET;
     bc_value[f] = ana.SolutionExact(xf, 0.0);
@@ -299,9 +299,9 @@ TEST(LIMITER_GAUSS_POINTS)
   }
 
   double tmp = umin;
-  Teuchos::reduceAll(mesh->get_comm(), Teuchos::REDUCE_MIN, 1, &tmp, &umin);
+  Teuchos::reduceAll(*mesh->get_comm(), Teuchos::REDUCE_MIN, 1, &tmp, &umin);
   tmp = umax;
-  Teuchos::reduceAll(mesh->get_comm(), Teuchos::REDUCE_MAX, 1, &tmp, &umax);
+  Teuchos::reduceAll(*mesh->get_comm(), Teuchos::REDUCE_MAX, 1, &tmp, &umax);
   if (getRank == 0) {
     printf("function min/max: %10.6f %10.6f\n", umin, umax);
     printf("limiter min/avg/max: %10.6f %10.6f %10.6f\n", minlim, avglim, maxlim);

@@ -772,7 +772,7 @@ int PDE_DiffusionNLFV::OrderCellsByGlobalId_(
   if (ncells == 1) return 0;
 
   c2 = cells[1];
-  if (mesh_->cell_map(true).GID(c1) > mesh_->cell_map(true).GID(c2)) {
+  if (mesh_->cell_map(true).getGlobalElement(c1) > mesh_->cell_map(true).getGlobalElement(c2)) {
     int c(c1);
     c1 = c2;
     c2 = c;

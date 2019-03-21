@@ -40,11 +40,11 @@ void AnalyticElectromagneticsBase::ComputeFaceError(
   }
 #ifdef HAVE_MPI
   double tmp = unorm;
-  Teuchos::reduceAll(mesh_->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &unorm);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &unorm);
   tmp = l2_err;
-  Teuchos::reduceAll(mesh_->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &l2_err);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &l2_err);
   tmp = inf_err;
-  Teuchos::reduceAll(mesh_->get_comm(), Teuchos::REDUCE_MAX, 1, &tmp, &inf_err);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_MAX, 1, &tmp, &inf_err);
 #endif
   unorm = sqrt(unorm);
   l2_err = sqrt(l2_err);
@@ -84,11 +84,11 @@ void AnalyticElectromagneticsBase::ComputeEdgeError(
   }
 #ifdef HAVE_MPI
   double tmp = unorm;
-  Teuchos::reduceAll(mesh_->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &unorm);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &unorm);
   tmp = l2_err;
-  Teuchos::reduceAll(mesh_->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &l2_err);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &l2_err);
   tmp = inf_err;
-  Teuchos::reduceAll(mesh_->get_comm(), Teuchos::REDUCE_MAX, 1, &tmp, &inf_err);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_MAX, 1, &tmp, &inf_err);
 #endif
   unorm = sqrt(unorm);
   l2_err = sqrt(l2_err);
@@ -130,11 +130,11 @@ void AnalyticElectromagneticsBase::ComputeNodeError(
   }
 #ifdef HAVE_MPI
   double tmp = unorm;
-  Teuchos::reduceAll(mesh_->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &unorm);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &unorm);
   tmp = l2_err;
-  Teuchos::reduceAll(mesh_->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &l2_err);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp, &l2_err);
   tmp = inf_err;
-  Teuchos::reduceAll(mesh_->get_comm(), Teuchos::REDUCE_MAX, 1, &tmp, &inf_err);
+  Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_MAX, 1, &tmp, &inf_err);
 #endif
   unorm = sqrt(unorm);
   l2_err = sqrt(l2_err);

@@ -56,8 +56,8 @@ TEST(MSTK_EDGES_2D)
     mesh->cell_get_faces_and_dirs(c,&cfaces,&cfdirs);
 
     for (int e = 0; e < cedges.size(); ++e) {
-      CHECK_EQUAL(mesh->GID(cedges[e],Amanzi::AmanziMesh::EDGE), 
-		  mesh->GID(cfaces[e],Amanzi::AmanziMesh::FACE));
+      CHECK_EQUAL(mesh->getGlobalElement(cedges[e],Amanzi::AmanziMesh::EDGE), 
+		  mesh->getGlobalElement(cfaces[e],Amanzi::AmanziMesh::FACE));
 
       // Also, see if the direction and vector we got for edges of 2D
       // cell is consistent with the direction and normal vector we
