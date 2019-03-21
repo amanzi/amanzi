@@ -59,12 +59,12 @@ NOTE: Lazy definition of the cache itself is necessarily "mutable".
 #include <vector>
 #include <string>
 
-#include "Epetra_Map.h"
-#include "Epetra_Import.h"
 #include "nanoflann.hpp"
 
 #include "errors.hh"
+#include "AmanziTypes.hh"
 #include "AmanziComm.hh"
+#include "AmanziMap.hh"
 #include "VerboseObject.hh"
 #include "Key.hh"
 
@@ -589,7 +589,7 @@ class Mesh {
   //
   // This is a rudimentary capability that requires ghosts nodes
   // also to be deformed. Amanzi does not have any built-in parallel 
-  // communication capabilities, other than Trilinos Epetra object
+  // communication capabilities, other than Trilinos object
   // communication or raw MPI. 
   virtual
   int deform(const Entity_ID_List& nodeids,
@@ -608,7 +608,7 @@ class Mesh {
   //
   // This is a rudimentary capability that requires ghosts nodes
   // also to be deformed. Amanzi does not have any built-in parallel 
-  // communication capabilities, other than Trilinos Epetra object
+  // communication capabilities, other than Trilinos object
   // communication or raw MPI. 
   virtual
   int deform(const Entity_ID_List& nodeids,
@@ -633,9 +633,9 @@ class Mesh {
 
 
   //
-  // Epetra maps
-  //------------
-  const Epetra_Map& map(Entity_kind kind, bool include_ghost) const {
+  // Linear algebra maps
+  // ----------------------------------------------------------------------
+  Map_ptr_type map(Entity_kind kind, bool include_ghost) const {
     if (kind == CELL) return cell_map(include_ghost);
     else if (kind == FACE) return face_map(include_ghost);
     else if (kind == EDGE) return edge_map(include_ghost);
@@ -648,16 +648,16 @@ class Mesh {
   
   // Get cell map
   virtual
-  const Epetra_Map& cell_map(bool include_ghost) const = 0;
+  Map_ptr_type cell_map(bool include_ghost) const = 0;
 
   // Get face map
   virtual
-  const Epetra_Map& face_map(bool include_ghost) const = 0;
+  Map_ptr_type face_map(bool include_ghost) const = 0;
 
   // Get edge map
   // dummy implementation so that frameworks can skip or overwrite
   virtual
-  const Epetra_Map& edge_map(bool include_ghost) const
+  Map_ptr_type edge_map(bool include_ghost) const
   {
     Errors::Message mesg("Edges are not implemented in this framework.");
     Exceptions::amanzi_throw(mesg);
@@ -666,17 +666,16 @@ class Mesh {
 
   // Get node map
   virtual
-  const Epetra_Map& node_map(bool include_ghost) const = 0;
+  Map_ptr_type node_map(bool include_ghost) const = 0;
 
   // Get map of only exterior faces
   virtual
-  const Epetra_Map& exterior_face_map(bool include_ghost) const = 0;
+  Map_ptr_type exterior_face_map(bool include_ghost) const = 0;
 
-  // Get Epetra importer that will allow apps to import values from a
-  // Epetra vector defined on all owned faces into an Epetra vector
-  // defined only on exterior faces
+  // Get importer that will allow apps to import values from a vector defined
+  // on all owned faces into a vector defined only on exterior faces
   virtual
-  const Epetra_Import& exterior_face_importer(void) const = 0;
+  Import_ptr_type exterior_face_importer(void) const = 0;
 
 
   //

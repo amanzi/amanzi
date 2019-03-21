@@ -5,7 +5,7 @@
 #include "../Mesh_MSTK.hh"
 
 
-#include "Epetra_Map.h"
+#include "AmanziMap.hh"
 #include "AmanziComm.hh"
 
 #include "MeshAudit.hh"
@@ -40,15 +40,15 @@ TEST(MSTK_QUAD_GEN_3x3)
 
 
   std::vector<Amanzi::AmanziMesh::Entity_ID>  c2f(6);
-  Epetra_Map cell_map(mesh->cell_map(false));
-  Epetra_Map face_map(mesh->face_map(false));
-  for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
+  auto cell_map = mesh->cell_map(false);
+  auto face_map = mesh->face_map(false);
+  for (int c=cell_map->MinLID(); c<=cell_map->MaxLID(); c++)
     {
-      CHECK_EQUAL(cell_map.GID(c),mesh->GID(c,Amanzi::AmanziMesh::CELL));
+      CHECK_EQUAL(cell_map->GID(c),mesh->GID(c,Amanzi::AmanziMesh::CELL));
       mesh->cell_get_faces(c, &c2f, true);
       for (int j=0; j<4; j++)
 	{
-	  int f = face_map.LID(c2f[j]);
+	  int f = face_map->LID(c2f[j]);
 	  CHECK( f == c2f[j] );
 	}
 

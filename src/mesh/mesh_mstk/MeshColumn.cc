@@ -40,14 +40,6 @@ MeshColumn::MeshColumn(const Teuchos::RCP<const Mesh>& parent_mesh,
 }
 
 
-MeshColumn::~MeshColumn() {
-  if (face_map_) delete face_map_;
-  if (exterior_face_map_) delete exterior_face_map_;
-  if (exterior_face_importer_) delete exterior_face_importer_;  
-}
-
-
-
 // Deform the mesh by moving given nodes to given coordinates
 // If the flag keep_valid is true, then the nodes are moved
 // only as much as possible without making the mesh invalid
@@ -170,14 +162,14 @@ void MeshColumn::build_epetra_maps_() {
   int indexBase = 0;
 
   int nfaces = column_faces_.size();
-  face_map_ = new Epetra_Map(nfaces,indexBase,epcomm_);
+  face_map_ = Teuchos::rcp(new Map_type(nfaces,indexBase,epcomm_));
 
   std::vector<int> ext_gids(2,-1);
   ext_gids[0] = 0;
   ext_gids[1] = nfaces-1;
 
-  exterior_face_map_ = new Epetra_Map(-1, 2, &ext_gids[0], 0, *get_comm());
-  exterior_face_importer_ = new Epetra_Import(*exterior_face_map_, *face_map_);
+  exterior_face_map_ = Teuchos::rcp(new Map_type(-1, 2, &ext_gids[0], 0, *get_comm()));
+  exterior_face_importer_ = Teuchos::rcp(new Epetra_Import(*exterior_face_map_, *face_map_));
 }
 
 }  // namespace AmanziMesh

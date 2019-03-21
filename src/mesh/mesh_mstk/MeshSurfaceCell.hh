@@ -25,7 +25,7 @@
 #include <algorithm>
 
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_Map.h"
+#include "AmanziMap.hh"
 #include "AmanziComm.hh"
 #include "Epetra_SerialComm.h"
 
@@ -242,17 +242,17 @@ class MeshSurfaceCell : public Mesh {
   // Epetra maps
   //------------
   virtual
-  const Epetra_Map& cell_map(bool include_ghost) const {
-    return *cell_map_;
+  Map_ptr_type cell_map(bool include_ghost) const {
+    return cell_map_;
   }
 
   virtual
-  const Epetra_Map& face_map(bool include_ghost) const {
-    return *face_map_;
+  Map_ptr_type face_map(bool include_ghost) const {
+    return face_map_;
   }
 
   // dummy implementation so that frameworks can skip or overwrite
-  const Epetra_Map& edge_map(bool include_ghost) const
+  Map_ptr_type edge_map(bool include_ghost) const
   {
     Errors::Message mesg("Edges not implemented in this framework");
     Exceptions::amanzi_throw(mesg);
@@ -260,13 +260,13 @@ class MeshSurfaceCell : public Mesh {
   };
 
   virtual
-  const Epetra_Map& node_map(bool include_ghost) const {
-    return *face_map_;
+  Map_ptr_type node_map(bool include_ghost) const {
+    return face_map_;
   }
 
   virtual
-  const Epetra_Map& exterior_face_map(bool include_ghost) const {
-    return *face_map_;
+  Map_ptr_type exterior_face_map(bool include_ghost) const {
+    return face_map_;
   }
 
 
@@ -274,8 +274,8 @@ class MeshSurfaceCell : public Mesh {
   // Epetra vector defined on all owned faces into an Epetra vector
   // defined only on exterior faces
   virtual
-  const Epetra_Import& exterior_face_importer(void) const {
-    return *exterior_face_importer_;
+  Import_ptr_type exterior_face_importer(void) const {
+    return exterior_face_importer_;
   }
 
 
@@ -364,9 +364,9 @@ class MeshSurfaceCell : public Mesh {
   Entity_ID parent_face_;
   Cell_type cell_type_;
 
-  Teuchos::RCP<Epetra_Map> cell_map_;
-  Teuchos::RCP<Epetra_Map> face_map_;
-  Teuchos::RCP<Epetra_Import> exterior_face_importer_;
+  Map_ptr_type cell_map_;
+  Map_ptr_type face_map_;
+  Import_ptr_type exterior_face_importer_;
 
 };
 

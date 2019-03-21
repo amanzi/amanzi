@@ -42,7 +42,8 @@
 // NOTE: Lazy definition of the cache itself is necessarily "mutable".
 //
 
-#include "Epetra_MultiVector.h"
+#include "AmanziMap.hh"
+#include "AmanziVector.hh"
 
 #include "dbc.hh"
 
@@ -1201,17 +1202,15 @@ Mesh::update_ghost_node_coordinates()
 {
   int ndim = space_dimension();
 
-  Epetra_Map owned_node_map = node_map(false);
-  Epetra_Map used_node_map = node_map(true);
-  Epetra_Import importer(used_node_map, owned_node_map);
+  Import_type importer(*node_map(true), *node_map(false));
 
   // change last arg to false after debugging
-  Epetra_MultiVector owned_node_coords(node_map(true),ndim,true);
+  MultiVector_type owned_node_coords(*node_map(true), ndim, true);
 
   AmanziGeometry::Point pnt(ndim);
 
   // Fill the owned node coordinates
-  int nnodes_owned = num_entities(NODE,Parallel_type::OWNED);
+  int nnodes_owned = num_entities(NODE, Parallel_type::OWNED);
   for (int i = 0; i < nnodes_owned; i++) {
     node_get_coordinates(i,&pnt);
     for (int k = 0; k < ndim; k++)
@@ -1220,7 +1219,7 @@ Mesh::update_ghost_node_coordinates()
 
   double **data;
   owned_node_coords.ExtractView(&data);
-  Epetra_MultiVector used_node_coords(View, owned_node_map, data, ndim);
+  MultiVector_type used_node_coords(View, *node_map(false), data, ndim);
 
   used_node_coords.Import(owned_node_coords, importer, Insert);
 

@@ -1,4 +1,4 @@
-#include "Epetra_IntVector.h"
+#include "AmanziVector.hh"
 
 #include "RegionEnumerated.hh"
 #include "MeshEmbeddedLogical.hh"
@@ -252,11 +252,11 @@ MeshEmbeddedLogical::init_maps() {
   // owned maps
   // -- cell map
   maps_owned_[CELL] =
-    Teuchos::rcp(new Epetra_Map(-1, num_entities_owned_[CELL], 0, *comm_));
+    Teuchos::rcp(new Map_type(-1, num_entities_owned_[CELL], 0, *comm_));
 
   // -- face map
   Teuchos::RCP<Epetra_Map> face_map =
-    Teuchos::rcp(new Epetra_Map(-1, num_entities_owned_[FACE], 0, *comm_));
+    Teuchos::rcp(new Map_type(-1, num_entities_owned_[FACE], 0, *comm_));
   maps_owned_[FACE] = face_map;
 
   // exterior face map and importer
@@ -268,7 +268,7 @@ MeshEmbeddedLogical::init_maps() {
     }
   }
   maps_owned_[BOUNDARY_FACE] =
-    Teuchos::rcp(new Epetra_Map(-1, extface_ids.size(), &extface_ids[0], 0, *comm_));
+    Teuchos::rcp(new Map_type(-1, extface_ids.size(), &extface_ids[0], 0, *comm_));
   exterior_face_importer_ =
     Teuchos::rcp(new Epetra_Import(*maps_owned_[BOUNDARY_FACE], *face_map));  
 
@@ -284,18 +284,18 @@ MeshEmbeddedLogical::init_maps() {
     int ncells_my_used = num_entities(CELL, Parallel_type::ALL);
   
     // -- create a populate the owned GIDs
-    Epetra_IntVector bg_gids_owned_c(bg_mesh_->cell_map(false));
+    IntVector_type bg_gids_owned_c(*bg_mesh_->cell_map(false));
 
-    Epetra_Map& my_cell_map = *maps_owned_[CELL];
+    const auto& my_cell_map = *maps_owned_[CELL];
     for (int c=0; c!=ncells_bg_owned; ++c) {
       bg_gids_owned_c[c] = my_cell_map.GID(c+ncells_log);
     }
     
     // -- create the map from owned to used
-    Epetra_Import cell_import(bg_mesh_->cell_map(true), bg_mesh_->cell_map(false));
+    Import_type cell_import(*bg_mesh_->cell_map(true), *bg_mesh_->cell_map(false));
 
     // -- create the used GIDs vector, comm_unicate
-    Epetra_IntVector bg_gids_used_c(bg_mesh_->cell_map(true));
+    IntVector_type bg_gids_used_c(*bg_mesh_->cell_map(true));
     bg_gids_used_c.Import(bg_gids_owned_c, cell_import, Insert);
 
     // -- create a GID list of the used components
@@ -308,7 +308,7 @@ MeshEmbeddedLogical::init_maps() {
     }
 
     // -- create the map
-    maps_used_[CELL] = Teuchos::rcp(new Epetra_Map(-1, ncells_my_used,
+    maps_used_[CELL] = Teuchos::rcp(new Map_type(-1, ncells_my_used,
             &cells_my_used[0], 0, *comm_));
 
     // FACE:
@@ -318,18 +318,18 @@ MeshEmbeddedLogical::init_maps() {
     int nfaces_log_extra = nfaces_my_used - nfaces_bg_used;
   
     // -- create a populate the owned GIDs
-    Epetra_IntVector bg_gids_owned_f(bg_mesh_->face_map(false));
+    IntVector_type bg_gids_owned_f(*bg_mesh_->face_map(false));
 
-    Epetra_Map& my_face_map = *maps_owned_[FACE];
+    const auto& my_face_map = *maps_owned_[FACE];
     for (int f=0; f!=nfaces_bg_owned; ++f) {
       bg_gids_owned_f[f] = my_face_map.GID(f+nfaces_log_extra);
     }
     
     // -- create the map from owned to used
-    Epetra_Import face_import(bg_mesh_->face_map(true), bg_mesh_->face_map(false));
+    Import_type face_import(*bg_mesh_->face_map(true), *bg_mesh_->face_map(false));
 
     // -- create the used GIDs vector, comm_unicate
-    Epetra_IntVector bg_gids_used_f(bg_mesh_->face_map(true));
+    IntVector_type bg_gids_used_f(*bg_mesh_->face_map(true));
     bg_gids_used_f.Import(bg_gids_owned_f, face_import, Insert);
 
     // -- create a GID list of the used components
@@ -342,7 +342,7 @@ MeshEmbeddedLogical::init_maps() {
     }
     
     // -- create the map
-    maps_used_[FACE] = Teuchos::rcp(new Epetra_Map(-1, nfaces_my_used,
+    maps_used_[FACE] = Teuchos::rcp(new Map_type(-1, nfaces_my_used,
             &faces_my_used[0], 0, *comm_));
   }
 }
@@ -578,35 +578,35 @@ MeshEmbeddedLogical::deform(const std::vector<double>& target_cell_volumes_in,
 //
 // Epetra maps
 //------------
-const Epetra_Map&
+Map_ptr_type
 MeshEmbeddedLogical::cell_map(bool include_ghost) const {
-  return include_ghost ? *maps_used_.at(CELL) : *maps_owned_.at(CELL);
+  return include_ghost ? maps_used_.at(CELL) : maps_owned_.at(CELL);
 }
 
-const Epetra_Map&
+Map_ptr_type
 MeshEmbeddedLogical::face_map(bool include_ghost) const {
-  return include_ghost ? *maps_used_.at(FACE) : *maps_owned_.at(FACE);
+  return include_ghost ? maps_used_.at(FACE) : maps_owned_.at(FACE);
 }  
 
-const Epetra_Map&
+Map_ptr_type
 MeshEmbeddedLogical::node_map(bool include_ghost) const {
   Errors::Message mesg("No nodes in MeshEmbeddedLogical.");
   Exceptions::amanzi_throw(mesg);
-  return include_ghost ? *maps_used_.at(NODE) : *maps_owned_.at(NODE);
+  return include_ghost ? maps_used_.at(NODE) : maps_owned_.at(NODE);
 }
 
 
-const Epetra_Map&
+Map_ptr_type
 MeshEmbeddedLogical::exterior_face_map(bool include_ghost) const {
-  return *maps_owned_.at(BOUNDARY_FACE);
+  return maps_owned_.at(BOUNDARY_FACE);
 }
 
 // Epetra importer that will allow apps to import values from a
 // Epetra vector defined on all owned faces into an Epetra vector
 // defined only on exterior faces
-const Epetra_Import&
+Import_ptr_type
 MeshEmbeddedLogical::exterior_face_importer (void) const {
-  return *exterior_face_importer_;
+  return exterior_face_importer_;
 }
 
 

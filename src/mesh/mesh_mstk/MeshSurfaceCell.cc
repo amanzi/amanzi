@@ -11,9 +11,7 @@
 #include <algorithm>
 
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_Map.h"
 #include "AmanziComm.hh"
-#include "Epetra_SerialComm.h"
 
 #include "VerboseObject.hh"
 #include "dbc.hh"
@@ -66,10 +64,10 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
   }
 
   // set the maps
-  cell_map_ = Teuchos::rcp(new Epetra_Map(1, 0, *get_comm()));
-  face_map_ = Teuchos::rcp(new Epetra_Map((int)nodes_.size(), 0, *get_comm()));
+  cell_map_ = Teuchos::rcp(new Map_type(1, 0, *get_comm()));
+  face_map_ = Teuchos::rcp(new Map_type((int)nodes_.size(), 0, *get_comm()));
   exterior_face_importer_ =
-      Teuchos::rcp(new Epetra_Import(*face_map_,*face_map_));
+      Teuchos::rcp(new Import_type(*face_map_,*face_map_));
 
   // set the geometric model and sets
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = parent_mesh->geometric_model();

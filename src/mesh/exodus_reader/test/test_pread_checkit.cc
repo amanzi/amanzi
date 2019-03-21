@@ -26,7 +26,7 @@ checkit(Amanzi::Exodus::Parallel_Exodus_file & thefile)
   int lcell(themesh->parameters().num_elements_), gcell;
   thefile.Comm()->SumAll(&lcell, &gcell, 1);
 
-  Teuchos::RCP<Epetra_Map> cmap(thefile.cellmap());
+  auto cmap = thefile.cellmap();
   CHECK_EQUAL(cmap->NumGlobalElements(), gcell);
   CHECK_EQUAL(cmap->NumMyElements(), lcell);
   CHECK_EQUAL(cmap->MinAllGID(), 1);
@@ -35,7 +35,7 @@ checkit(Amanzi::Exodus::Parallel_Exodus_file & thefile)
   
 
   int lvert(themesh->parameters().num_nodes_);
-  Teuchos::RCP<Epetra_Map> vmap(thefile.vertexmap());
+  auto vmap = thefile.vertexmap();
   CHECK_EQUAL(vmap->NumMyElements(), lvert);
   CHECK(cmap->IsOneToOne()); 
 

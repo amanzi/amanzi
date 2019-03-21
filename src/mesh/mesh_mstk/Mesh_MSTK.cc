@@ -1045,17 +1045,6 @@ void Mesh_MSTK::extract_mstk_mesh(List_ptr src_entities,
 // Destructor with cleanup
 //---------------------------------------------------------
 Mesh_MSTK::~Mesh_MSTK() {
-  delete cell_map_wo_ghosts_;
-  delete cell_map_w_ghosts_;
-  if (face_map_wo_ghosts_) delete face_map_wo_ghosts_;
-  if (face_map_w_ghosts_) delete face_map_w_ghosts_;
-  if (edge_map_wo_ghosts_) delete edge_map_wo_ghosts_;
-  if (edge_map_w_ghosts_) delete edge_map_w_ghosts_;
-  delete node_map_wo_ghosts_;
-  delete node_map_w_ghosts_;
-  if (extface_map_wo_ghosts_) delete extface_map_wo_ghosts_;
-  if (extface_map_w_ghosts_) delete extface_map_w_ghosts_;
-  if (owned_to_extface_importer_) delete owned_to_extface_importer_;
   delete [] faceflip;
 
   if (OwnedVerts) MSet_Delete(OwnedVerts);
@@ -2813,8 +2802,8 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
     }
     else if (region->type() == AmanziGeometry::BOUNDARY)  {
 
-      const Epetra_Map& fmap = face_map(true); 
-      const Epetra_Map& map = exterior_face_map(true); 
+      const auto& fmap = *face_map(true); 
+      const auto& map = *exterior_face_map(true); 
 
       int nface = map.NumMyElements(); 
 
@@ -3426,7 +3415,7 @@ void Mesh_MSTK::init_cell_map()
     while ((ment = MSet_Next_Entry(OwnedCells,&idx)))
       cell_gids[i++] = MEnt_GlobalID(ment)-1;
 
-    cell_map_wo_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*comm_);
+    cell_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1,ncell,cell_gids,0,*comm_));
     
 
     ncell += nnotowned;
@@ -3435,7 +3424,7 @@ void Mesh_MSTK::init_cell_map()
     while ((ment = MSet_Next_Entry(GhostCells,&idx)))
       cell_gids[i++] = MEnt_GlobalID(ment)-1;
     
-    cell_map_w_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*comm_);
+    cell_map_w_ghosts_ = Teuchos::rcp(new Map_type(-1,ncell,cell_gids,0,*comm_));
 
   }
   else {    
@@ -3446,7 +3435,7 @@ void Mesh_MSTK::init_cell_map()
     while ((ment = MSet_Next_Entry(OwnedCells,&idx)))      
       cell_gids[i++] = MEnt_ID(ment)-1;
 
-    cell_map_wo_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*comm_);
+    cell_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1,ncell,cell_gids,0,*comm_));
   }
 
   delete [] cell_gids;
@@ -3502,8 +3491,8 @@ void Mesh_MSTK::init_face_map()
     n_extface = j;
     nface = nowned;
     
-    face_map_wo_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*comm_);
-    extface_map_wo_ghosts_ = new Epetra_Map(-1,n_extface,extface_gids,0,*comm_);
+    face_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1,nface,face_gids,0,*comm_));
+    extface_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1,n_extface,extface_gids,0,*comm_));
 
    
     idx = 0;
@@ -3513,7 +3502,7 @@ void Mesh_MSTK::init_face_map()
     }
     nface += nnotowned;
 
-    face_map_w_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*comm_);
+    face_map_w_ghosts_ = Teuchos::rcp(new Map_type(-1,nface,face_gids,0,*comm_));
 
     std::vector<int> gl_id(nnotowned), pr_id(nnotowned), lc_id(nnotowned);
 
@@ -3569,7 +3558,7 @@ void Mesh_MSTK::init_face_map()
       }
     }
     
-    extface_map_w_ghosts_ = new Epetra_Map(-1, n_extface_w_ghosts, global_id_ghosted.data(), 0, *comm_);
+    extface_map_w_ghosts_ = Teuchos::rcp(new Map_type(-1, n_extface_w_ghosts, global_id_ghosted.data(), 0, *comm_));
         
   }
   else {
@@ -3613,11 +3602,11 @@ void Mesh_MSTK::init_face_map()
     }
     n_extface = j;
 
-    face_map_wo_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*comm_);
-    extface_map_wo_ghosts_ = new Epetra_Map(-1,n_extface,extface_gids,0,*comm_);
+    face_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1,nface,face_gids,0,*comm_));
+    extface_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1,n_extface,extface_gids,0,*comm_));
   }
 
-  owned_to_extface_importer_ = new Epetra_Import(*extface_map_wo_ghosts_,*face_map_wo_ghosts_);
+  owned_to_extface_importer_ = Teuchos::rcp(new Import_type(*extface_map_wo_ghosts_,*face_map_wo_ghosts_));
 
   delete [] face_gids;
   delete [] extface_gids;
@@ -3655,7 +3644,7 @@ void Mesh_MSTK::init_edge_map()
     }
     nedge = nowned;
     
-    edge_map_wo_ghosts_ = new Epetra_Map(-1,nedge,edge_gids,0,*comm_);
+    edge_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1,nedge,edge_gids,0,*comm_));
 
     idx = 0;
     while ((ment = MSet_Next_Entry(NotOwnedEdges,&idx))) 
@@ -3663,7 +3652,7 @@ void Mesh_MSTK::init_edge_map()
 
     nedge += nnotowned;
 
-    edge_map_w_ghosts_ = new Epetra_Map(-1,nedge,edge_gids,0,*comm_);
+    edge_map_w_ghosts_ = Teuchos::rcp(new Map_type(-1,nedge,edge_gids,0,*comm_));
 
   }
   else {
@@ -3677,7 +3666,7 @@ void Mesh_MSTK::init_edge_map()
       edge_gids[i++] = gid-1;
     }
 
-    edge_map_wo_ghosts_ = new Epetra_Map(-1,nedge,edge_gids,0,*comm_);
+    edge_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1,nedge,edge_gids,0,*comm_));
   }
 
   delete [] edge_gids;
@@ -3713,7 +3702,7 @@ void Mesh_MSTK::init_node_map()
 
     nvert = nowned;
     
-    node_map_wo_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*comm_);
+    node_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1,nvert,vert_gids,0,*comm_));
     
 
     idx = 0;
@@ -3722,7 +3711,7 @@ void Mesh_MSTK::init_node_map()
 
     nvert += nnotowned;
 
-    node_map_w_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*comm_);
+    node_map_w_ghosts_ = Teuchos::rcp(new Map_type(-1,nvert,vert_gids,0,*comm_));
 
   }
   else {
@@ -3734,7 +3723,7 @@ void Mesh_MSTK::init_node_map()
     while ((ment = MSet_Next_Entry(OwnedVerts,&idx)))
       vert_gids[i++] = MEnt_ID(ment)-1;
 
-    node_map_wo_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*comm_);
+    node_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1,nvert,vert_gids,0,*comm_));
   }
 
   delete [] vert_gids;
@@ -3807,11 +3796,6 @@ void Mesh_MSTK::clear_internals_()
 { 
 
   faceflip = nullptr;
-
-  cell_map_w_ghosts_ = cell_map_wo_ghosts_ = nullptr;
-  edge_map_w_ghosts_ = edge_map_wo_ghosts_ = nullptr;
-  face_map_w_ghosts_ = face_map_wo_ghosts_ = nullptr;
-  node_map_w_ghosts_ = node_map_wo_ghosts_ = nullptr;
 
   mesh_ = nullptr;
 
@@ -5353,10 +5337,6 @@ void Mesh_MSTK::pre_create_steps_(const int space_dimension)
   OwnedEdges = NotOwnedEdges = NULL;
   OwnedFaces = NotOwnedFaces = NULL;
   OwnedCells = GhostCells = NULL;
-  node_map_w_ghosts_ = node_map_wo_ghosts_ = NULL;
-  edge_map_w_ghosts_ = edge_map_wo_ghosts_ = NULL;
-  face_map_w_ghosts_ = face_map_wo_ghosts_ = NULL;
-  cell_map_w_ghosts_ = cell_map_wo_ghosts_ = NULL;
   deleted_vertices = deleted_edges = deleted_faces = deleted_regions = NULL;
   entities_deleted = false;
 }

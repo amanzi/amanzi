@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "Epetra_Map.h"
+#include "AmanziMap.hh"
 #include "AmanziComm.hh"
 #include "UnitTest++.h"
 

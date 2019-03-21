@@ -14,7 +14,7 @@
 #include <vector>
 #include <map>
 
-#include "Epetra_Map.h"
+#include "AmanziMap.hh"
 #include "AmanziComm.hh"
 
 #include "Data.hh"
@@ -39,7 +39,7 @@ namespace Data {
  * - hexahedron topology matches that of shards::Hexahedron<8> (and
  *   CGNS and others)
  * - Internally, all indexes are 0-based
- * - Epetra_Maps for global ID's can either be 0-based or 1-based
+ * - Map_ptr_types for global ID's can either be 0-based or 1-based
  * 
  */
 class HexMeshGenerator
@@ -78,11 +78,11 @@ public:
   /// (Collective) Generate the (local local part of the) mesh and fill a Data instance
   Data *generate(void);
 
-  /// (Collective) Generate a Epetra_Map for the cells
-  Epetra_Map *cellmap(bool onebased = false);
+  /// (Collective) Generate a Map_ptr_type for the cells
+  Map_ptr_type cellmap(bool onebased = false);
 
-  /// (Collective) Generate a Epetra_Map for the vertexes
-  Epetra_Map *vertexmap(bool onebased = false);
+  /// (Collective) Generate a Map_ptr_type for the vertexes
+  Map_ptr_type vertexmap(bool onebased = false);
 
 protected:
 

@@ -5,7 +5,7 @@
 #include "../Mesh_MSTK.hh"
 #include "MeshAudit.hh"
 
-#include "Epetra_Map.h"
+#include "AmanziMap.hh"
 #include "AmanziComm.hh"
 
 // Test edge functions in 2D

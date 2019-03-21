@@ -50,7 +50,7 @@
 #include <string>
 
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_Map.h"
+#include "AmanziMap.hh"
 #include "AmanziComm.hh"
 #include "Epetra_SerialComm.h"
 
@@ -70,7 +70,7 @@ class MeshColumn : public Mesh {
              const Teuchos::RCP<const Teuchos::ParameterList>& plist=Teuchos::null);
              
 
-  ~MeshColumn();
+  ~MeshColumn() = default;
 
   // reference for vis.
   virtual const Mesh& vis_mesh() const override {
@@ -335,17 +335,17 @@ class MeshColumn : public Mesh {
   // Epetra maps
   //------------
   virtual
-  const Epetra_Map& cell_map(const bool include_ghost) const override {
+  Map_ptr_type cell_map(const bool include_ghost) const override {
     return extracted_->cell_map(include_ghost);
   }
 
   virtual
-  const Epetra_Map& face_map(bool include_ghost) const override {
-    return *face_map_;
+  Map_ptr_type face_map(bool include_ghost) const override {
+    return face_map_;
   }
 
   // dummy implementation so that frameworks can skip or overwrite
-  const Epetra_Map& edge_map(bool include_ghost) const override
+  Map_ptr_type edge_map(bool include_ghost) const override
   {
     Errors::Message mesg("Edges not implemented in this framework");
     Exceptions::amanzi_throw(mesg);
@@ -353,13 +353,13 @@ class MeshColumn : public Mesh {
   }
 
   virtual
-  const Epetra_Map& node_map(const bool include_ghost) const override {
+  Map_ptr_type node_map(const bool include_ghost) const override {
     return extracted_->node_map(include_ghost);
   }
 
   virtual
-  const Epetra_Map& exterior_face_map(bool include_ghost) const override {
-    return *exterior_face_map_;
+  Map_ptr_type exterior_face_map(bool include_ghost) const override {
+    return exterior_face_map_;
   }
 
 
@@ -367,8 +367,8 @@ class MeshColumn : public Mesh {
   // Epetra vector defined on all owned faces into an Epetra vector
   // defined only on exterior faces
   virtual
-  const Epetra_Import& exterior_face_importer(void) const override {
-    return *exterior_face_importer_;
+  Import_ptr_type exterior_face_importer(void) const override {
+    return exterior_face_importer_;
   }
 
 
@@ -499,9 +499,9 @@ class MeshColumn : public Mesh {
   Entity_ID_List column_faces_;
   Entity_ID_List face_in_column_;
 
-  Epetra_Map *face_map_;
-  Epetra_Map *exterior_face_map_;
-  Epetra_Import *exterior_face_importer_;
+  Map_ptr_type face_map_;
+  Map_ptr_type exterior_face_map_;
+  Import_ptr_type exterior_face_importer_;
 };
 
 } // namespace AmanziMesh

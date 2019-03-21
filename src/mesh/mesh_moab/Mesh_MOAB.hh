@@ -28,7 +28,7 @@
 #include "ParallelComm.hpp"
 
 #include "AmanziComm.hh"
-#include "Epetra_Map.h"
+#include "AmanziMap.hh"
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
@@ -214,18 +214,18 @@ class Mesh_MOAB : public Mesh {
   // Epetra maps
   //------------
     
-  const Epetra_Map& cell_map(bool include_ghost) const;
+  Map_ptr_type cell_map(bool include_ghost) const;
     
-  const Epetra_Map& face_map(bool include_ghost) const; 
+  Map_ptr_type face_map(bool include_ghost) const; 
 
-  const Epetra_Map& node_map(bool include_ghost) const;
+  Map_ptr_type node_map(bool include_ghost) const;
     
-  const Epetra_Map& exterior_face_map(bool include_ghost) const; 
+  Map_ptr_type exterior_face_map(bool include_ghost) const; 
     
   // Epetra importer that will allow apps to import values from a
   // Epetra vector defined on all owned faces into an Epetra vector
   // defined only on exterior faces
-  const Epetra_Import& exterior_face_importer(void) const;
+  Import_ptr_type exterior_face_importer(void) const;
     
     
   //
@@ -316,9 +316,9 @@ class Mesh_MOAB : public Mesh {
   std::vector<moab::EntityHandle> cell_id_to_handle;
 
   // Maps
-  Epetra_Map *cell_map_wo_ghosts_, *face_map_wo_ghosts_, *node_map_wo_ghosts_;
-  Epetra_Map *cell_map_w_ghosts_, *face_map_w_ghosts_, *node_map_w_ghosts_;
-  Epetra_Map *extface_map_w_ghosts_, *extface_map_wo_ghosts_; // exterior faces (connected to only 1 cell)
+  Map_ptr_type cell_map_wo_ghosts_, face_map_wo_ghosts_, node_map_wo_ghosts_;
+  Map_ptr_type cell_map_w_ghosts_, face_map_w_ghosts_, node_map_w_ghosts_;
+  Map_ptr_type extface_map_w_ghosts_, extface_map_wo_ghosts_; // exterior faces (connected to only 1 cell)
 
   // Sets (material sets, sidesets, nodesets)
   // We store the number of sets in the whole problem regardless of whether

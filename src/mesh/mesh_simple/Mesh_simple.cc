@@ -11,7 +11,7 @@
 
 #include <algorithm>
 
-#include <Teuchos_RCP.hpp>
+#include "Teuchos_RCP.hpp"
 
 #include "Mesh_simple.hh"
 #include "GenerationSpec.hh"
@@ -336,10 +336,10 @@ void Mesh_simple::build_maps_()
       faces_bnd[i++] = yzface_index_(nx_,iy,iz);
     }
 
-  cell_map_ = Teuchos::rcp(new Epetra_Map(-1, num_cells_, &cells[0], 0, *get_comm()));
-  face_map_ = Teuchos::rcp(new Epetra_Map(-1, num_faces_, &faces[0], 0, *get_comm()));
-  node_map_ = Teuchos::rcp(new Epetra_Map(-1, num_nodes_, &nodes[0], 0, *get_comm()));
-  extface_map_ = Teuchos::rcp(new Epetra_Map(-1, num_faces_bnd_, &faces_bnd[0], 0, *get_comm()));
+  cell_map_ = Teuchos::rcp(new Map_type(-1, num_cells_, &cells[0], 0, *get_comm()));
+  face_map_ = Teuchos::rcp(new Map_type(-1, num_faces_, &faces[0], 0, *get_comm()));
+  node_map_ = Teuchos::rcp(new Map_type(-1, num_nodes_, &nodes[0], 0, *get_comm()));
+  extface_map_ = Teuchos::rcp(new Map_type(-1, num_faces_bnd_, &faces_bnd[0], 0, *get_comm()));
 }
 
 
@@ -675,27 +675,27 @@ void Mesh_simple::cell_get_node_adj_cells(const AmanziMesh::Entity_ID cellid,
 }
 
     
-const Epetra_Map& Mesh_simple::cell_map(bool include_ghost) const
+Map_ptr_type Mesh_simple::cell_map(bool include_ghost) const
 {
-  return *cell_map_;
+  return cell_map_;
 }
 
 
-const Epetra_Map& Mesh_simple::face_map(bool include_ghost) const
+Map_ptr_type Mesh_simple::face_map(bool include_ghost) const
 {
-  return *face_map_;
+  return face_map_;
 }
 
 
-const Epetra_Map& Mesh_simple::node_map(bool include_ghost) const
+Map_ptr_type Mesh_simple::node_map(bool include_ghost) const
 {
-  return *node_map_;
+  return node_map_;
 }
 
 
-const Epetra_Map& Mesh_simple::exterior_face_map(bool include_ghost) const
+Map_ptr_type Mesh_simple::exterior_face_map(bool include_ghost) const
 {
-  return *extface_map_;
+  return extface_map_;
 }
 
 
@@ -704,10 +704,11 @@ const Epetra_Map& Mesh_simple::exterior_face_map(bool include_ghost) const
 // vector defined on all owned faces into an Epetra vector defined
 // only on exterior faces
 //--------------------------------------
-const Epetra_Import& Mesh_simple::exterior_face_importer(void) const
+Import_ptr_type Mesh_simple::exterior_face_importer(void) const
 {
   Errors::Message mesg("exterior face importer is not implemented");
   amanzi_throw(mesg);
+  return Teuchos::null;
 }
 
 

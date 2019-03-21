@@ -17,6 +17,7 @@
 #include "boost/format.hpp"
 namespace bfs = boost::filesystem;
 
+#include "AmanziComm.hh"
 #include "FileFormat.hh"
 #include "MeshException.hh"
 

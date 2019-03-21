@@ -5,7 +5,7 @@
 #include "../Mesh_MOAB.hh"
 
 
-#include "Epetra_Map.h"
+#include "AmanziMap.hh"
 #include "AmanziComm.hh"
 
 #include "mpi.h"
@@ -131,15 +131,15 @@ TEST(MOAB_HEX_2x2x1)
 
   // verify global IDs
   Amanzi::AmanziMesh::Entity_ID_List c2f;
-  Epetra_Map cell_map(mesh.cell_map(true));
-  Epetra_Map face_map(mesh.face_map(false));
+  auto cell_map = mesh.cell_map(true);
+  auto face_map = mesh.face_map(false);
 
-  for (int c = cell_map.MinLID(); c <= cell_map.MaxLID(); c++) {
-    CHECK_EQUAL(cell_map.GID(c),mesh.GID(c,Amanzi::AmanziMesh::CELL));
+  for (int c = cell_map->MinLID(); c <= cell_map->MaxLID(); c++) {
+    CHECK_EQUAL(cell_map->GID(c),mesh.GID(c,Amanzi::AmanziMesh::CELL));
 
     mesh.cell_get_faces( c, &c2f, true );
     for (int j = 0; j < 6; ++j) {
-      int f = face_map.LID(mesh.GID(c2f[j],Amanzi::AmanziMesh::FACE));
+      int f = face_map->LID(mesh.GID(c2f[j],Amanzi::AmanziMesh::FACE));
       CHECK(f == c2f[j]);
     }
   }

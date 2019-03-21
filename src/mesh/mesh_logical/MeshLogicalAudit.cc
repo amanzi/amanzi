@@ -29,8 +29,8 @@ MeshLogicalAudit:: MeshLogicalAudit(const Teuchos::RCP<const AmanziMesh::Mesh> &
     comm_(mesh_->get_comm()),
     getRank(mesh_->get_comm()->getRank()),
     os(os_),
-    nface(mesh_->face_map(true).NumMyElements()),
-    ncell(mesh_->cell_map(true).NumMyElements()),
+    nface(mesh_->face_map(true)->NumMyElements()),
+    ncell(mesh_->cell_map(true)->NumMyElements()),
     MAX_OUT(5)
 { create_test_dependencies(); }
 
@@ -176,7 +176,7 @@ bool MeshLogicalAudit::check_entity_counts() const
 
   // Check the number of owned faces.
   n = mesh->num_entities(AmanziMesh::FACE,AmanziMesh::Parallel_type::OWNED);
-  nref = mesh->face_map(false).NumMyElements();
+  nref = mesh->face_map(false)->NumMyElements();
   if (n != nref) {
     os << "ERROR: num_entities(FACE,OWNED)=" << n << "; should be " << nref << std::endl;
     error = true;
@@ -184,7 +184,7 @@ bool MeshLogicalAudit::check_entity_counts() const
 
   // Check the number of used faces.
   n = mesh->num_entities(AmanziMesh::FACE,AmanziMesh::Parallel_type::ALL);
-  nref = mesh->face_map(true).NumMyElements();
+  nref = mesh->face_map(true)->NumMyElements();
   if (n != nref) {
     os << "ERROR: num_entities(FACE,ALL)=" << n << "; should be " << nref << std::endl;
     error = true;
@@ -192,7 +192,7 @@ bool MeshLogicalAudit::check_entity_counts() const
 
   // Check the number of owned cells.
   n = mesh->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED);
-  nref = mesh->cell_map(false).NumMyElements();
+  nref = mesh->cell_map(false)->NumMyElements();
   if (n != nref) {
     os << "ERROR: num_entities(CELL,OWNED)=" << n << "; should be " << nref << std::endl;
     error = true;
@@ -200,7 +200,7 @@ bool MeshLogicalAudit::check_entity_counts() const
 
   // Check the number of used cells.
   n = mesh->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::ALL);
-  nref = mesh->cell_map(true).NumMyElements();
+  nref = mesh->cell_map(true)->NumMyElements();
   if (n != nref) {
     os << "ERROR: num_entities(CELL,ALL)=" << n << "; should be " << nref << std::endl;
     error = true;
@@ -509,22 +509,22 @@ bool MeshLogicalAudit::check_cell_maps() const
   return check_maps(mesh->cell_map(false), mesh->cell_map(true));
 }
 
-bool MeshLogicalAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &map_use) const
+bool MeshLogicalAudit::check_maps(const Map_ptr_type& map_own, const Map_ptr_type& map_use) const
 {
   bool error = false;
 
   // Local index should start at 0.
-  if (map_own.IndexBase() != 0) {
+  if (map_own->IndexBase() != 0) {
     os << "ERROR: the owned map's index base is not 0." << std::endl;
     error = true;
   }
-  if (map_use.IndexBase() != 0) {
+  if (map_use->IndexBase() != 0) {
     os << "ERROR: the overlap map's index base is not 0." << std::endl;
     error = true;
   }
 
   // Check that the owned map is 1-1.
-  if (!map_own.UniqueGIDs()) {
+  if (!map_own->UniqueGIDs()) {
     os << "ERROR: owned map is not 1-to-1" << std::endl;
     error = true;
   }
@@ -532,12 +532,12 @@ bool MeshLogicalAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &m
   // Check that the global ID space is contiguously divided (but not
   // necessarily uniformly) across all processers
 
-  std::vector<int> owned_GIDs(map_own.NumMyElements());
-  for (int i = 0; i < map_own.NumMyElements(); i++)
-    owned_GIDs[i] = map_own.GID(i);
+  std::vector<int> owned_GIDs(map_own->NumMyElements());
+  for (int i = 0; i < map_own->NumMyElements(); i++)
+    owned_GIDs[i] = map_own->GID(i);
   std::sort(owned_GIDs.begin(), owned_GIDs.end());
 
-  for (int i = 0; i < map_own.NumMyElements()-1; i++) {
+  for (int i = 0; i < map_own->NumMyElements()-1; i++) {
     int diff = owned_GIDs[i+1]-owned_GIDs[i];
     if (diff > 1) {
       os << "ERROR: owned map is not contiguous" << std::endl;
@@ -555,7 +555,7 @@ bool MeshLogicalAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &m
 
     // Serial or 1-process MPI
 
-    if (!map_use.SameAs(map_own)) {
+    if (!map_use->SameAs(*map_own)) {
       os << "ERROR: the overlap map differs from the owned map (single process)." << std::endl;
       error = true;
     }
@@ -568,8 +568,8 @@ bool MeshLogicalAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &m
 
     // Multi-process MPI
 
-    int num_own = map_own.NumMyElements();
-    int num_use = map_use.NumMyElements();
+    int num_own = map_own->NumMyElements();
+    int num_use = map_use->NumMyElements();
     int num_ovl = num_use - num_own;
 
     // Verify that the used map extends the owned map.
@@ -578,7 +578,7 @@ bool MeshLogicalAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &m
       bad_map = true;
     else {
       for (int j = 0; j < num_own; ++j)
-        if (map_use.GID(j) != map_own.GID(j)) bad_map = true;
+        if (map_use->GID(j) != map_own->GID(j)) bad_map = true;
     }
     if (bad_map) {
       os << "ERROR: overlap map does not extend the owned map." << std::endl;
@@ -592,8 +592,8 @@ bool MeshLogicalAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &m
     int *gids = new int[num_ovl];
     int *pids = new int[num_ovl];
     int *lids = new int[num_ovl];
-    for (int j = 0; j < num_ovl; ++j) gids[j] = map_use.GID(j+num_own);
-    map_own.RemoteIDList(num_ovl, gids, pids, lids);
+    for (int j = 0; j < num_ovl; ++j) gids[j] = map_use->GID(j+num_own);
+    map_own->RemoteIDList(num_ovl, gids, pids, lids);
     bad_map = false;
     for (int j = 0; j < num_ovl; ++j)
       if (pids[j] < 0 || pids[j] == comm_->getRank()) bad_map = true;
@@ -629,12 +629,12 @@ bool MeshLogicalAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &m
 
 bool MeshLogicalAudit::check_cell_to_faces_ghost_data() const
 {
-  const Epetra_Map &face_map = mesh->face_map(true);
-  const Epetra_Map &cell_map_own = mesh->cell_map(false);
-  const Epetra_Map &cell_map_use = mesh->cell_map(true);
+  auto face_map = mesh->face_map(true);
+  auto cell_map_own = mesh->cell_map(false);
+  auto cell_map_use = mesh->cell_map(true);
 
-  int ncell_own = cell_map_own.NumMyElements();
-  int ncell_use = cell_map_use.NumMyElements();
+  int ncell_own = cell_map_own->NumMyElements();
+  int ncell_use = cell_map_use->NumMyElements();
 
   AmanziMesh::Entity_ID_List cface;
   AmanziMesh::Entity_ID_List bad_cells;
@@ -651,16 +651,16 @@ bool MeshLogicalAudit::check_cell_to_faces_ghost_data() const
   for (AmanziMesh::Entity_ID j = 0; j < ncell_own; ++j) {
     mesh->cell_get_faces(j, &cface);
     for (int k = 0; k < cface.size(); ++k)
-      gids(j,k) = face_map.GID(cface[k]);
+      gids(j,k) = face_map->GID(cface[k]);
     for (int k = cface.size(); k < maxfaces; ++k)
       gids(j,k) = 0;
   }
 
   // Import these GIDs to all used cells; sets values on ghost cells.
-  Epetra_Import importer(cell_map_use, cell_map_own);
+  Import_type importer(*cell_map_use, *cell_map_own);
   for (int k = 0; k < maxfaces; ++k) {
-    Epetra_IntVector kgids_own(View, cell_map_own, gids[k]);
-    Epetra_IntVector kgids_use(View, cell_map_use, gids[k]);
+    IntVector_type kgids_own(View, *cell_map_own, gids[k]);
+    IntVector_type kgids_use(View, *cell_map_use, gids[k]);
     kgids_use.Import(kgids_own, importer, Insert);
   }
 
@@ -669,7 +669,7 @@ bool MeshLogicalAudit::check_cell_to_faces_ghost_data() const
     mesh->cell_get_faces(j, &cface);
     bool bad_data = false;
     for (int k = 0; k < cface.size(); ++k)
-      if (face_map.GID(cface[k]) != gids(j,k)) bad_data = true;
+      if (face_map->GID(cface[k]) != gids(j,k)) bad_data = true;
     if (bad_data) bad_cells.push_back(j);
   }
 
@@ -701,14 +701,14 @@ bool MeshLogicalAudit::check_face_partition() const
   bool owned[nface];
   for (int j = 0; j < nface; ++j) owned[j] = false;
   AmanziMesh::Entity_ID_List cface;
-  for (AmanziMesh::Entity_ID j = 0; j < mesh->cell_map(false).NumMyElements(); ++j) {
+  for (AmanziMesh::Entity_ID j = 0; j < mesh->cell_map(false)->NumMyElements(); ++j) {
     mesh->cell_get_faces(j, &cface);
     for (int k = 0; k < cface.size(); ++k) owned[cface[k]] = true;
   }
 
   // Verify that every owned face has been marked as belonging to an owned cell.
   AmanziMesh::Entity_ID_List bad_faces;
-  for (AmanziMesh::Entity_ID j = 0; j < mesh->face_map(false).NumMyElements(); ++j)
+  for (AmanziMesh::Entity_ID j = 0; j < mesh->face_map(false)->NumMyElements(); ++j)
     if (!owned[j]) bad_faces.push_back(j);
 
   if (!bad_faces.empty()) {

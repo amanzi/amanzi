@@ -2,14 +2,14 @@
 #ifndef AMANZI_EMBEDDED_LOGICAL_MESH_H_
 #define AMANZI_EMBEDDED_LOGICAL_MESH_H_
 
-#include <Epetra_Map.h>
-#include <AmanziComm.hh>
-#include <Epetra_SerialComm.h>
-
 #include <memory>
 #include <vector>
 
 #include "Teuchos_ParameterList.hpp"
+
+#include "AmanziComm.hh"
+#include "AmanziMap.hh"
+
 #include "Mesh.hh"
 #include "Region.hh"
 
@@ -237,23 +237,23 @@ class MeshEmbeddedLogical : public Mesh {
   // Epetra maps
   //------------
   virtual
-  const Epetra_Map& cell_map(bool include_ghost) const;
+  Map_ptr_type cell_map(bool include_ghost) const;
 
   virtual
-  const Epetra_Map& face_map(bool include_ghost) const;
+  Map_ptr_type face_map(bool include_ghost) const;
 
   virtual
-  const Epetra_Map& node_map(bool include_ghost) const;
+  Map_ptr_type node_map(bool include_ghost) const;
 
   virtual
-  const Epetra_Map& exterior_face_map(bool include_ghost) const;
+  Map_ptr_type exterior_face_map(bool include_ghost) const;
 
   // Epetra importer that will allow apps to import values from a
   // Epetra vector defined on all owned faces into an Epetra vector
   // defined only on exterior faces
 
   virtual
-  const Epetra_Import& exterior_face_importer(void) const;
+  Import_ptr_type exterior_face_importer(void) const;
 
 
   //
@@ -354,12 +354,12 @@ class MeshEmbeddedLogical : public Mesh {
  protected:
   bool initialized_;
 
-  std::map<Entity_kind,Entity_ID> num_entities_owned_;
-  std::map<Entity_kind,Entity_ID> num_entities_used_;
-  std::map<Entity_kind,Teuchos::RCP<Epetra_Map> > maps_owned_;
-  std::map<Entity_kind,Teuchos::RCP<Epetra_Map> > maps_used_;
-  std::map<Set_ID,std::vector<int> > regions_;
-  Teuchos::RCP<Epetra_Import> exterior_face_importer_;
+  std::map<Entity_kind, Entity_ID> num_entities_owned_;
+  std::map<Entity_kind, Entity_ID> num_entities_used_;
+  std::map<Entity_kind, Map_ptr_type> maps_owned_;
+  std::map<Entity_kind, Map_ptr_type> maps_used_;
+  std::map<Set_ID, std::vector<int> > regions_;
+  Import_ptr_type exterior_face_importer_;
   std::vector<std::vector<AmanziGeometry::Point> > cell_face_bisectors_;
 
   Teuchos::RCP<Mesh> bg_mesh_; // background mesh, typically a Mesh_MSTK

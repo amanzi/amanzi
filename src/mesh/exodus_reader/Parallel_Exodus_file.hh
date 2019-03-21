@@ -11,7 +11,7 @@
 #define PARALLEL_EXODUS_FILE_HH_
 
 #include "Teuchos_RCP.hpp"
-#include "Epetra_Map.h"
+#include "AmanziMap.hh"
 
 #include "AmanziTypes.hh"
 #include "Data.hh"
@@ -47,10 +47,10 @@ class Parallel_Exodus_file {
   Teuchos::RCP<AmanziMesh::Data::Data> read_mesh(void);
 
   // Construct a cell map for the file set (collective)
-  Teuchos::RCP<Epetra_Map> cellmap(void);
+  Map_ptr_type cellmap(void);
 
   // Construct a vertex map for the file set (collective)
-  Teuchos::RCP<Epetra_Map> vertexmap(void);
+  Map_ptr_type vertexmap(void);
 
   Comm_ptr_type Comm() const { return comm_; }
 

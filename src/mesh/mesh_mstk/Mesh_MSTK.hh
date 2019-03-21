@@ -250,17 +250,17 @@ class Mesh_MSTK : public Mesh {
   // Epetra maps
   //------------
     
-  const Epetra_Map& cell_map(bool include_ghost) const;
+  Map_ptr_type cell_map(bool include_ghost) const;
     
-  const Epetra_Map& face_map(bool include_ghost) const; 
+  Map_ptr_type face_map(bool include_ghost) const; 
 
-  const Epetra_Map& edge_map(bool include_ghost) const;
+  Map_ptr_type edge_map(bool include_ghost) const;
     
-  const Epetra_Map& node_map(bool include_ghost) const;
+  Map_ptr_type node_map(bool include_ghost) const;
     
-  const Epetra_Map& exterior_face_map(bool include_ghost) const; 
+  Map_ptr_type exterior_face_map(bool include_ghost) const; 
     
-  const Epetra_Import& exterior_face_importer(void) const;
+  Import_ptr_type exterior_face_importer(void) const;
     
     
   //
@@ -391,16 +391,16 @@ class Mesh_MSTK : public Mesh {
 
 
   // Maps
-  Epetra_Map *cell_map_w_ghosts_, *cell_map_wo_ghosts_;
-  mutable Epetra_Map *face_map_w_ghosts_, *face_map_wo_ghosts_;
-  mutable Epetra_Map *edge_map_w_ghosts_, *edge_map_wo_ghosts_;
-  Epetra_Map *node_map_w_ghosts_, *node_map_wo_ghosts_;
-  Epetra_Map *extface_map_w_ghosts_, *extface_map_wo_ghosts_; // exterior faces (connected to only 1 cell)
+  Map_ptr_type cell_map_w_ghosts_, cell_map_wo_ghosts_;
+  mutable Map_ptr_type face_map_w_ghosts_, face_map_wo_ghosts_;
+  mutable Map_ptr_type edge_map_w_ghosts_, edge_map_wo_ghosts_;
+  Map_ptr_type node_map_w_ghosts_, node_map_wo_ghosts_;
+  Map_ptr_type extface_map_w_ghosts_, extface_map_wo_ghosts_; // exterior faces (connected to only 1 cell)
 
   // Epetra importer that will allow apps to import values from a Epetra
   // vector defined on all owned faces into an Epetra vector defined
   // only on exterior faces
-  Epetra_Import *owned_to_extface_importer_; 
+  Import_ptr_type owned_to_extface_importer_; 
   
   // flag whether to flip a face dir or not when returning nodes of a
   // face (relevant only on partition boundaries)
@@ -593,52 +593,52 @@ class Mesh_MSTK : public Mesh {
 //------------
     
 inline 
-const Epetra_Map& Mesh_MSTK::cell_map(bool include_ghost) const {
+Map_ptr_type Mesh_MSTK::cell_map(bool include_ghost) const {
   if (serial_run)
-    return *cell_map_wo_ghosts_;
+    return cell_map_wo_ghosts_;
   else
-    return (include_ghost ? *cell_map_w_ghosts_ : *cell_map_wo_ghosts_);
+    return (include_ghost ? cell_map_w_ghosts_ : cell_map_wo_ghosts_);
 }
     
 
 inline 
-const Epetra_Map& Mesh_MSTK::face_map(bool include_ghost) const {
+Map_ptr_type Mesh_MSTK::face_map(bool include_ghost) const {
   if (serial_run)
-    return *face_map_wo_ghosts_;
+    return face_map_wo_ghosts_;
   else
-    return (include_ghost ? *face_map_w_ghosts_ : *face_map_wo_ghosts_);
+    return (include_ghost ? face_map_w_ghosts_ : face_map_wo_ghosts_);
 }
     
 
 inline 
-const Epetra_Map& Mesh_MSTK::edge_map(bool include_ghost) const {
+Map_ptr_type Mesh_MSTK::edge_map(bool include_ghost) const {
   if (serial_run)
-    return *edge_map_wo_ghosts_;
+    return edge_map_wo_ghosts_;
   else
-    return (include_ghost ? *edge_map_w_ghosts_ : *edge_map_wo_ghosts_);
+    return (include_ghost ? edge_map_w_ghosts_ : edge_map_wo_ghosts_);
 }
     
 
 inline 
-const Epetra_Map& Mesh_MSTK::node_map(bool include_ghost) const {
+Map_ptr_type Mesh_MSTK::node_map(bool include_ghost) const {
   if (serial_run)
-    return *node_map_wo_ghosts_;
+    return node_map_wo_ghosts_;
   else
-    return (include_ghost ? *node_map_w_ghosts_ : *node_map_wo_ghosts_);
+    return (include_ghost ? node_map_w_ghosts_ : node_map_wo_ghosts_);
 }
 
 inline
-const Epetra_Map& Mesh_MSTK::exterior_face_map(bool include_ghost) const {
+Map_ptr_type Mesh_MSTK::exterior_face_map(bool include_ghost) const {
   if (serial_run)
-    return *extface_map_wo_ghosts_;
+    return extface_map_wo_ghosts_;
   else
-    return (include_ghost ? *extface_map_w_ghosts_ : *extface_map_wo_ghosts_);
+    return (include_ghost ? extface_map_w_ghosts_ : extface_map_wo_ghosts_);
 }
 
 
 inline
-const Epetra_Import& Mesh_MSTK::exterior_face_importer(void) const {
-  return *owned_to_extface_importer_;
+Import_ptr_type Mesh_MSTK::exterior_face_importer(void) const {
+  return owned_to_extface_importer_;
 }
 
 

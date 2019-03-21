@@ -11,6 +11,7 @@
 #include <boost/format.hpp>
 #include "exodusII.h"
 
+#include "AmanziComm.hh"
 #include "Parallel_Exodus_file.hh"
 #include "Exodus_readers.hh"
 
@@ -173,7 +174,7 @@ Parallel_Exodus_file::read_mesh(void)
 // -------------------------------------------------------------
 // Parallel_Exodus_file::cellmap
 // -------------------------------------------------------------
-Teuchos::RCP<Epetra_Map>
+Map_ptr_type
 Parallel_Exodus_file::cellmap(void)
 {
   if (mesh_.is_null()) {
@@ -194,16 +195,14 @@ Parallel_Exodus_file::cellmap(void)
 
   comm_->Barrier();
 
-  Teuchos::RCP<Epetra_Map> cmap(new Epetra_Map(-1, myelem, &gids[0], 1, *comm_));
-  
-  return cmap;
+  return Teuchos::rcp(new Map_type(-1, myelem, &gids[0], 1, *comm_));
 }
 
 
 // -------------------------------------------------------------
 // Parallel_Exodus_file::vertexmap
 // -------------------------------------------------------------
-Teuchos::RCP<Epetra_Map>
+Map_ptr_type
 Parallel_Exodus_file::vertexmap(void)
 {
   if (mesh_.is_null()) {
@@ -224,9 +223,7 @@ Parallel_Exodus_file::vertexmap(void)
 
   comm_->Barrier();
 
-  Teuchos::RCP<Epetra_Map> vmap(new Epetra_Map(-1, myvert, &gids[0], 1, *comm_));
-  
-  return vmap;
+  return Teuchos::rcp(new Map_type(-1, myvert, &gids[0], 1, *comm_));
 }
 
 } // namespace Exodus
