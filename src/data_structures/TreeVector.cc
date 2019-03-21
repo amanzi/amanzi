@@ -335,23 +335,23 @@ int TreeVector::Multiply(double scalarAB, const TreeVector& A, const TreeVector&
   return ierr;
 };
 
-int TreeVector::ReciprocalMultiply(double scalarAB, const TreeVector& A,
-        const TreeVector& B, double scalarThis) {
-  //  AMANZI_ASSERT(map_->SubsetOf(*A.map_));
-  //  AMANZI_ASSERT(map_->SubsetOf(*B.map_));
+// int TreeVector::ReciprocalMultiply(double scalarAB, const TreeVector& A,
+//         const TreeVector& B, double scalarThis) {
+//   //  AMANZI_ASSERT(map_->SubsetOf(*A.map_));
+//   //  AMANZI_ASSERT(map_->SubsetOf(*B.map_));
 
-  int ierr = 0;
-  if (data_ != Teuchos::null) {
-    ierr = data_->ReciprocalMultiply(scalarAB, *A.data_, *B.data_, scalarThis);
-    if (ierr) return ierr;
-  }
+//   int ierr = 0;
+//   if (data_ != Teuchos::null) {
+//     ierr = data_->ReciprocalMultiply(scalarAB, *A.data_, *B.data_, scalarThis);
+//     if (ierr) return ierr;
+//   }
 
-  for (unsigned int i = 0; i != subvecs_.size(); ++i) {
-    ierr = subvecs_[i]->ReciprocalMultiply(scalarAB, *A.subvecs_[i], *B.subvecs_[i], scalarThis);
-    if (ierr) return ierr;
-  }
-  return ierr;
-};
+//   for (unsigned int i = 0; i != subvecs_.size(); ++i) {
+//     ierr = subvecs_[i]->ReciprocalMultiply(scalarAB, *A.subvecs_[i], *B.subvecs_[i], scalarThis);
+//     if (ierr) return ierr;
+//   }
+//   return ierr;
+// };
 
 Teuchos::RCP<TreeVector> TreeVector::SubVector(int index) {
   // Get a pointer to the sub-vector by index

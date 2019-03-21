@@ -18,6 +18,7 @@
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
 
+#include "AmanziComm.hh"
 #include "Mesh.hh"
 #include "Point.hh"
 

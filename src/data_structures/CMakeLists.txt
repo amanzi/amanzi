@@ -50,9 +50,9 @@ set(data_structures_src_files BlockVector.cc
                               NoxVector.cc
                               TreeVectorSpace.cc
                               TreeVector.cc
-                              ParallelCommunication.cc
-                              GraphFE.cc
-                              MatrixFE.cc
+                              #ParallelCommunication.cc
+                              #GraphFE.cc
+                              #MatrixFE.cc
                               SuperMapLumped.cc
                               SuperMap.cc)
 
@@ -100,19 +100,19 @@ if (BUILD_TESTS)
                            # test/test_thyra_wrappers.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
 
-    # Test: tests for FE graph and matrices
-    add_amanzi_test(graph_fe_test graph_fe_test
-                    KIND unit
-                    SOURCE test/Main.cc test/graph_fe_test.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
+    # # Test: tests for FE graph and matrices
+    # add_amanzi_test(graph_fe_test graph_fe_test
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/graph_fe_test.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
 
-    add_amanzi_test(matrix_fe_test matrix_fe_test
-                    KIND unit
-                    SOURCE test/Main.cc test/matrix_fe_test.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
+    # add_amanzi_test(matrix_fe_test matrix_fe_test
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/matrix_fe_test.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
 
-    add_amanzi_test(matrix_fe_test_np2 matrix_fe_test NPROCS 2 KIND unit)
-    add_amanzi_test(matrix_fe_test_np4 matrix_fe_test NPROCS 4 KIND unit)
+    # add_amanzi_test(matrix_fe_test_np2 matrix_fe_test NPROCS 2 KIND unit)
+    # add_amanzi_test(matrix_fe_test_np4 matrix_fe_test NPROCS 4 KIND unit)
 
     add_amanzi_test(supermap_test supermap_test 
                     KIND unit

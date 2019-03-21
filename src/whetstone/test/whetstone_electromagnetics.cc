@@ -18,6 +18,7 @@
 #include "Teuchos_LAPACK.hpp"
 #include "UnitTest++.h"
 
+#include "AmanziComm.hh"
 #include "MeshFactory.hh"
 #include "Mesh.hh"
 #include "Point.hh"

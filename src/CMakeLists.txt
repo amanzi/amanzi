@@ -37,7 +37,7 @@ if (ENABLE_Unstructured)
   add_subdirectory(time_integration)
 
   # Operators
-  add_subdirectory(operators)
+  #add_subdirectory(operators)
 
   # Build State
   add_subdirectory(state)

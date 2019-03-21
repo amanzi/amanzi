@@ -12,6 +12,7 @@
 #include <iostream>
 
 #include "AmanziComm.hh"
+#include "AmanziMap.hh"
 #include "Geometry.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"

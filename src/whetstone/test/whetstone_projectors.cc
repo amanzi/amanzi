@@ -19,6 +19,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "AmanziComm.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "Point.hh"

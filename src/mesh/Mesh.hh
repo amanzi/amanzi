@@ -63,8 +63,6 @@ NOTE: Lazy definition of the cache itself is necessarily "mutable".
 
 #include "errors.hh"
 #include "AmanziTypes.hh"
-#include "AmanziComm.hh"
-#include "AmanziMap.hh"
 #include "VerboseObject.hh"
 #include "Key.hh"
 

@@ -20,6 +20,7 @@
 #include "Teuchos_RCP.hpp"
 #include "UnitTest++.h"
 
+#include "AmanziComm.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "Point.hh"

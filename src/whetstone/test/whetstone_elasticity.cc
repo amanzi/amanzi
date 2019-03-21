@@ -16,6 +16,7 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_LAPACK.hpp"
 
+#include "AmanziComm.hh"
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
 

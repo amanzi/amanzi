@@ -13,6 +13,8 @@
 
 #include <vector>
 #include "Teuchos_RCP.hpp"
+
+#include "AmanziComm.hh"
 #include "Iterators.hh"
 #include "Mesh.hh"
 

@@ -1,5 +1,6 @@
 //#include <Teuchos_RCP.hpp>
 
+#include "AmanziMap.hh"
 #include "dbc.hh"
 #include "errors.hh"
 #include "Geometry.hh"

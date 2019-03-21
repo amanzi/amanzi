@@ -13,6 +13,7 @@
 #include "errors.hh"
 #include "Teuchos_CommHelpers.hpp"
 
+#include "AmanziMap.hh"
 #include "VerboseObject.hh"
 #include "Point.hh"
 #include "GeometricModel.hh"

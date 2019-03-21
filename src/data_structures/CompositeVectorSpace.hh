@@ -32,7 +32,7 @@ namespace Amanzi {
 class CompositeVector;
 
 // Nonmember helper function
-std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >
+std::pair<Map_ptr_type, Map_ptr_type>
 getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location);
 
 
@@ -92,7 +92,7 @@ public:
   AmanziMesh::Entity_kind Location(const std::string& name) const {
     return locations_[Index_(name)]; }
 
-  Teuchos::RCP<const Epetra_BlockMap> Map(const std::string& name, bool ghost=false) const;
+  BlockMap_ptr_type Map(const std::string& name, bool ghost=false) const;
 
   // Update all specs from another space's specs.
   // Useful for PKs to maintain default factories that apply to multiple CVs.
@@ -115,15 +115,15 @@ public:
   CompositeVectorSpace*
   AddComponent(const std::string& name,
                AmanziMesh::Entity_kind location,
-               Teuchos::RCP<const Epetra_BlockMap> mastermap,
-               Teuchos::RCP<const Epetra_BlockMap> ghostmap,
+               const BlockMap_ptr_type& mastermap,
+               const BlockMap_ptr_type& ghostmap,
                int num_dofs);
 
   CompositeVectorSpace*
   AddComponents(const std::vector<std::string>& names,
                 const std::vector<AmanziMesh::Entity_kind>& locations,
-                std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > mastermaps,
-                std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghostmaps,
+                const std::map<std::string, BlockMap_ptr_type>& mastermaps,
+                const std::map<std::string, BlockMap_ptr_type>& ghostmaps,
                 const std::vector<int>& num_dofs);
 
   // Set methods fix the component specs, checking to make sure all previously
@@ -141,15 +141,15 @@ public:
   CompositeVectorSpace*
   SetComponent(const std::string& name,
                AmanziMesh::Entity_kind location,
-               Teuchos::RCP<const Epetra_BlockMap> mastermap,
-               Teuchos::RCP<const Epetra_BlockMap> ghostmap,
+               const BlockMap_ptr_type& mastermap,
+               const BlockMap_ptr_type& ghostmap,
                int num_dof);
 
   CompositeVectorSpace*
   SetComponents(const std::vector<std::string>& names,
-                const std::vector<AmanziMesh::Entity_kind> locations,
-                std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > mastermaps,
-                std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghostmaps,
+                const std::vector<AmanziMesh::Entity_kind>& locations,
+                const std::map<std::string, BlockMap_ptr_type>& mastermaps,
+                const std::map<std::string, BlockMap_ptr_type>& ghostmaps,
                 const std::vector<int>& num_dofs);
 
 private:
@@ -183,13 +183,13 @@ private:
   bool UnionAndConsistent_(const std::vector<std::string>& names1,
                            const std::vector<AmanziMesh::Entity_kind>& locations1,
                            const std::vector<int>& num_dofs1,
-                           std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> >& mastermaps1,
-                           std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> >& ghostmaps1,
+                           const std::map<std::string, BlockMap_ptr_type>& mastermaps1,
+                           const std::map<std::string, BlockMap_ptr_type>& ghostmaps1,
                            std::vector<std::string>& names2,
                            std::vector<AmanziMesh::Entity_kind>& locations2,
                            std::vector<int>& num_dofs2,
-                           std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> >& mastermaps2,
-                           std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> >& ghostmaps2);
+                           std::map<std::string, BlockMap_ptr_type>& mastermaps2,
+                           std::map<std::string, BlockMap_ptr_type>& ghostmaps2);
 
 private:
   bool ghosted_;
@@ -203,8 +203,8 @@ private:
   std::vector<AmanziMesh::Entity_kind> locations_;
   
   std::vector<int> num_dofs_;
-  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > mastermaps_;
-  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > ghostmaps_;
+  std::map<std::string, BlockMap_ptr_type> mastermaps_;
+  std::map<std::string, BlockMap_ptr_type> ghostmaps_;
   
   friend class CompositeVector;
 };

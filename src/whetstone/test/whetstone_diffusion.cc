@@ -13,6 +13,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "UnitTest++.h"
+#include "AmanziComm.hh"
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"

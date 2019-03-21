@@ -18,9 +18,7 @@
 
 #include <vector>
 #include "Teuchos_RCP.hpp"
-#include "Epetra_BlockMap.h"
-#include "Epetra_MpiComm.h"
-#include "Epetra_MultiVector.h"
+#include "AmanziTypes.hh"
 
 #include "AmanziComm.hh"
 #include "dbc.hh"
@@ -34,7 +32,7 @@ public:
   // Constructor
   BlockVector(const Comm_ptr_type& comm,
               std::vector<std::string>& names,
-              std::vector<Teuchos::RCP<const Epetra_BlockMap> >& maps,
+              std::vector<Map_ptr_type>& maps,
               std::vector<int> num_dofs);
 
   // copy constructor
@@ -60,7 +58,7 @@ public:
   int NumVectors(std::string name) const { return num_dofs_[Index_(name)]; }
   unsigned int size(std::string name) const { return sizes_[Index_(name)]; }
 
-  Teuchos::RCP<const Epetra_BlockMap> ComponentMap(std::string name) const {
+  Map_ptr_type ComponentMap(const std::string& name) const {
     return maps_[Index_(name)]; }
 
   // Accessors to data.
@@ -69,43 +67,28 @@ public:
   }
 
   // -- Access a view of a single component's data.
-  Teuchos::RCP<const Epetra_MultiVector>
-  ViewComponent(std::string name) const;
+  Teuchos::RCP<const MultiVector_type>
+  GetComponent(std::string name) const;
 
-  Teuchos::RCP<Epetra_MultiVector>
-  ViewComponent(std::string name);
-
-  // -- View entries in the vectors.
-  double operator()(std::string name, int i, int j) const {
-    return (*data_[Index_(name)])[i][j];
-  }
-  double operator()(std::string name, int j) const {
-    return (*data_[Index_(name)])[0][j];
-  }
+  MultiVector_ptr_type
+  GetComponent(std::string name);
 
   // Mutators of data
   // -- Set entries in the vectors.
-  void SetComponent(std::string name, const Teuchos::RCP<Epetra_MultiVector>& data);
-
-  // double& operator()(std::string name, int i, int j) {
-  //   return (*data_[Index_(name)])[i][j];
-  // }
-  // double& operator()(std::string name, int j) {
-  //   return (*data_[Index_(name)])[0][j];
-  // }
+  void SetComponent(std::string name, const MultiVector_ptr_type& data);
 
   // Vector operations.
   // Insert value into data.
   int PutScalar(double scalar);
 
   // Insert values into data, by DOF, not by component!
-  int PutScalar(std::vector<double> scalar);
+  //int PutScalar(std::vector<double> scalar);
 
   // Insert value into component [name].
   int PutScalar(std::string name, double scalar);
 
   // Insert values into component [name].
-  int PutScalar(std::string name, std::vector<double> scalar);
+  //int PutScalar(std::string name, std::vector<double> scalar);
 
   // this <- abs(this)
   int Abs(const BlockVector& other);
@@ -140,17 +123,17 @@ public:
                double scalarThis);
 
   // this <- scalarAB * B/A + scalarThis*this  (/ is the elementwise division
-  int ReciprocalMultiply(double scalarAB, const BlockVector& A, const BlockVector& B,
-                         double scalarThis);
+  // int ReciprocalMultiply(double scalarAB, const BlockVector& A, const BlockVector& B,
+  //                        double scalarThis);
 
   // Norms.
   int NormInf(double* norm) const;
   int Norm1(double* norm) const;
   int Norm2(double* norm) const;
 
-  int MinValue(double* value) const;
-  int MaxValue(double* value) const;
-  int MeanValue(double* value) const;
+  // int MinValue(double* value) const;
+  // int MaxValue(double* value) const;
+  // int MeanValue(double* value) const;
 
   // Extras
   void Print(std::ostream &os, bool data_io = true) const;
@@ -173,9 +156,9 @@ private:
 
   std::vector<std::string> names_;
   std::vector<int> num_dofs_;
-  std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps_;
+  std::vector<Map_ptr_type > maps_;
   std::vector<unsigned int> sizes_;
-  std::vector<Teuchos::RCP<Epetra_MultiVector> > data_;
+  std::vector<MultiVector_ptr_type> data_;
 };
 
 } // namespace
