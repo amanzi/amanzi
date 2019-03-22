@@ -31,6 +31,7 @@
 #include "PDE_Diffusion.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "State.hh"
+#include "WhetStoneDefs.hh"
 
 /* **************************************************************** 
 * Generates a preconditioner for the implicit discretization of
@@ -104,7 +105,7 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
 
   // create boundary data
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
   

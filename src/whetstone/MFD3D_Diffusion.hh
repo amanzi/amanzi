@@ -31,6 +31,7 @@
 #include "DeRham_Face.hh"
 #include "Tensor.hh"
 #include "MFD3D.hh"
+#include "WhetStoneDefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -49,6 +50,11 @@ class MFD3D_Diffusion : public MFD3D,
   ~MFD3D_Diffusion() {};
 
   // main methods 
+  // -- schema
+  virtual std::vector<SchemaItem> schema() const override {
+   return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, 1));
+  }
+
   // -- default Derahm complex for the mass matrix is not used by Amanzi
   //    but we have to tell compiler a proper member function
   using DeRham_Face::MassMatrix;

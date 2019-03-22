@@ -21,6 +21,18 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
+* Schema.
+****************************************************************** */
+std::vector<SchemaItem> MFD3D_Generalized_Diffusion::schema() const
+{
+  std::vector<SchemaItem> items;
+  items.push_back(std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, d_));
+  items.push_back(std::make_tuple(AmanziMesh::CELL, DOF_Type::SCALAR, 1));
+  return items;
+}
+
+
+/* ******************************************************************
 * Consistency condition for inner product on a generized polyhedron.
 ****************************************************************** */
 int MFD3D_Generalized_Diffusion::L2consistency(

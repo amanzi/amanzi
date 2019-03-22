@@ -10,11 +10,12 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Serendipity CrouzeixRaviart-type element: degrees of freedom are 
-  moments on edges, faces and inside cell. The number of later is 
+  moments on faces and inside cell. The number of later is 
   reduced significantly for polytopal cells. 
 */
 
 #include <cmath>
+#include <tuple>
 #include <vector>
 
 #include "Mesh.hh"
@@ -30,6 +31,24 @@
 
 namespace Amanzi {
 namespace WhetStone {
+
+/* ******************************************************************
+* Schema.
+****************************************************************** */
+std::vector<SchemaItem> MFD3D_CrouzeixRaviartSerendipity::schema() const
+{
+  int nk = PolynomialSpaceDimension(d_ - 1, order_ - 1);
+  std::vector<SchemaItem> items;
+  items.push_back(std::make_tuple(AmanziMesh::FACE, DOF_Type::MOMENT, nk));
+
+  if (order_ > 3) {
+    nk = PolynomialSpaceDimension(d_, order_ - 4);
+    items.push_back(std::make_tuple(AmanziMesh::CELL, DOF_Type::MOMENT, nk));
+  }
+
+  return items;
+}
+
 
 /* ******************************************************************
 * High-order consistency condition for the stiffness matrix. 

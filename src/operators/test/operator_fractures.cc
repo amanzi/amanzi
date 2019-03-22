@@ -27,6 +27,7 @@
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
 #include "Tensor.hh"
+#include "WhetStoneDefs.hh"
 
 // Amanzi::Operators
 #include "Analytic02.hh"
@@ -90,7 +91,7 @@ void RunTest(int icase, double gravity) {
   Analytic02 ana(surfmesh, v, gravity);
 
   // create boundary data (no mixed bc)
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 

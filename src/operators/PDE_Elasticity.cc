@@ -72,10 +72,14 @@ void PDE_Elasticity::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u
 ****************************************************************** */
 void PDE_Elasticity::Init_(Teuchos::ParameterList& plist)
 {
-  // Read schema for the mimetic discretization method.
-  Schema my_schema;
+  // generate schema for the mimetic discretization method
   Teuchos::ParameterList& schema_list = plist.sublist("schema");
-  my_schema.Init(schema_list, mesh_);
+
+  Schema my_schema;
+  auto base = my_schema.StringToKind(schema_list.get<std::string>("base"));
+
+  mfd_ = WhetStone::BilinearFormFactory::Create(schema_list, mesh_);
+  my_schema.Init(mfd_, mesh_, base);
 
   // create or check the existing Operator
   local_schema_col_ = my_schema;
@@ -90,8 +94,12 @@ void PDE_Elasticity::Init_(Teuchos::ParameterList& plist)
     cvs->SetMesh(mesh_)->SetGhosted(true);
 
     for (auto it = my_schema.begin(); it != my_schema.end(); ++it) {
-      std::string name(my_schema.KindToString(it->kind));
-      cvs->AddComponent(name, it->kind, it->num);
+      int num;
+      AmanziMesh::Entity_kind kind;
+      std::tie(kind, std::ignore, num) = *it;
+
+      std::string name(my_schema.KindToString(kind));
+      cvs->AddComponent(name, kind, num);
     }
 
     global_op_ = Teuchos::rcp(new Operator_Schema(cvs, plist, my_schema));
@@ -107,9 +115,6 @@ void PDE_Elasticity::Init_(Teuchos::ParameterList& plist)
   global_op_->OpPushBack(local_op_);
   
   K_ = Teuchos::null;
-
-  // parse discretization  parameters
-  mfd_ = WhetStone::BilinearFormFactory::Create(plist, mesh_);
 }
 
 }  // namespace Operators

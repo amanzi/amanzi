@@ -17,6 +17,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
+#include "WhetStoneDefs.hh"
 
 #include "OperatorDefs.hh"
 
@@ -108,7 +109,7 @@ class BCs {
   // -- point is a vector DOF which has mesh dimension (example: fluid velocity)
   // -- vector is a general vector DOF (example: moments of pressure)
   // -- normal-component is a geometric DOF (example: normal component of fluid velocity)
-  BCs(Teuchos::RCP<const AmanziMesh::Mesh> mesh, AmanziMesh::Entity_kind kind, DOF_Type type) : 
+  BCs(Teuchos::RCP<const AmanziMesh::Mesh> mesh, AmanziMesh::Entity_kind kind, WhetStone::DOF_Type type) : 
       mesh_(mesh),
       kind_(kind),
       type_(type) {};
@@ -117,7 +118,7 @@ class BCs {
   // access
   Teuchos::RCP<const AmanziMesh::Mesh> mesh() const { return mesh_; }
   AmanziMesh::Entity_kind kind() const { return kind_; }
-  DOF_Type type() const { return type_; }
+  WhetStone::DOF_Type type() const { return type_; }
 
   std::vector<int>& bc_model() { 
     if (bc_model_.size() == 0) {
@@ -172,7 +173,7 @@ class BCs {
   
  private:
   AmanziMesh::Entity_kind kind_;
-  DOF_Type type_;
+  WhetStone::DOF_Type type_;
 
   std::vector<int> bc_model_;
   std::vector<double> bc_value_;

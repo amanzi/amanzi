@@ -90,9 +90,13 @@ int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector
         Epetra_Vector& sv, const Schema& schema, int block_num)
 {
   for (auto it = schema.begin(); it != schema.end(); ++it) {
-    std::string name(schema.KindToString(it->kind));
+    int num;
+    AmanziMesh::Entity_kind kind;
+    std::tie(kind, std::ignore, num) = *it;
 
-    for (int k = 0; k < it->num; ++k) {
+    std::string name(schema.KindToString(kind));
+
+    for (int k = 0; k < num; ++k) {
       const std::vector<int>& inds = smap.Indices(block_num, name, k);
       const Epetra_MultiVector& data = *cv.ViewComponent(name);
       for (int n = 0; n != data.MyLength(); ++n) sv[inds[n]] = data[k][n];
@@ -111,8 +115,13 @@ int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& 
         CompositeVector& cv, const Schema& schema, int block_num)
 {
   for (auto it = schema.begin(); it != schema.end(); ++it) {
-    std::string name(schema.KindToString(it->kind));
-    for (int k = 0; k < it->num; ++k) {
+    int num;
+    AmanziMesh::Entity_kind kind;
+    std::tie(kind, std::ignore, num) = *it;
+
+    std::string name(schema.KindToString(kind));
+
+    for (int k = 0; k < num; ++k) {
       const std::vector<int>& inds = smap.Indices(block_num, name, k);
       Epetra_MultiVector& data = *cv.ViewComponent(name);
       for (int n = 0; n != data.MyLength(); ++n) data[k][n] = sv[inds[n]];
@@ -186,27 +195,6 @@ int AddSuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
 }
 
 
-
-/* ******************************************************************
-* TBW
-****************************************************************** */
-Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schema, int n_dofs)
-{
-  std::vector<CompositeVectorSpace> cvss;
-  for (int i=0; i!=n_dofs; ++i) cvss.push_back(cvs);
-  return Teuchos::rcp(new SuperMap(cvss));
-}
-
-
-/* ******************************************************************
-* Create super map: general version
-****************************************************************** */
-Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, Schema& schema)
-{
-  return createSuperMap(cvs);
-}
-
-
 /* ******************************************************************
 * Estimate size of the matrix graph.
 ****************************************************************** */
@@ -250,18 +238,21 @@ unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, Schema& schema)
   int dim = mesh.space_dimension();
 
   for (auto it = schema.begin(); it != schema.end(); ++it) {
-    int ndofs;
-    if (it->kind == AmanziMesh::FACE) {
+    int num, ndofs;
+    AmanziMesh::Entity_kind kind;
+    std::tie(kind, std::ignore, num) = *it;
+
+    if (kind == AmanziMesh::FACE) {
       ndofs = (dim == 2) ? OPERATOR_QUAD_FACES : OPERATOR_HEX_FACES;
-    } else if (it->kind == AmanziMesh::CELL) {
+    } else if (kind == AmanziMesh::CELL) {
       ndofs = 1;
-    } else if (it->kind == AmanziMesh::NODE) {
+    } else if (kind == AmanziMesh::NODE) {
       ndofs = (dim == 2) ? OPERATOR_QUAD_NODES : OPERATOR_HEX_NODES;
-    } else if (it->kind == AmanziMesh::EDGE) {
+    } else if (kind == AmanziMesh::EDGE) {
       ndofs = (dim == 2) ? OPERATOR_QUAD_EDGES : OPERATOR_HEX_EDGES;
     }
 
-    row_size += ndofs * it->num;
+    row_size += ndofs * num;
   }
 
   return row_size;

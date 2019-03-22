@@ -17,6 +17,7 @@
 */
 
 #include <cmath>
+#include <tuple>
 #include <vector>
 
 // Amanzi
@@ -47,6 +48,31 @@ MFD3D_Lagrange::MFD3D_Lagrange(const Teuchos::ParameterList& plist,
   order_ = plist.get<int>("method order");
   if (plist.isParameter("use low-order scheme")) 
     use_lo_ = plist.get<bool>("use low-order scheme");
+}
+
+
+/* ******************************************************************
+* Schema.
+****************************************************************** */
+std::vector<SchemaItem> MFD3D_Lagrange::schema() const
+{
+  std::vector<SchemaItem> items;
+  items.push_back(std::make_tuple(AmanziMesh::NODE, DOF_Type::SCALAR, 1));
+
+  if (order_ > 1) {
+    int nk = PolynomialSpaceDimension(d_ - 1, order_ - 2);
+    items.push_back(std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, nk));
+
+    if (d_ == 3) {
+      nk = PolynomialSpaceDimension(d_ - 2, order_ - 2);
+      items.push_back(std::make_tuple(AmanziMesh::EDGE, DOF_Type::MOMENT, nk));
+    }
+
+    nk = PolynomialSpaceDimension(d_, order_ - 2);
+    items.push_back(std::make_tuple(AmanziMesh::CELL, DOF_Type::MOMENT, nk));
+  }
+
+  return items;
 }
 
 

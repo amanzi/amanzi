@@ -13,6 +13,7 @@
 #ifndef AMANZI_WHETSTONE_DEFS_HH_
 #define AMANZI_WHETSTONE_DEFS_HH_
 
+#include <tuple>
 #include <vector>
 
 #include "GeometryDefs.hh"
@@ -30,11 +31,18 @@ enum class ProjectorType {
   LS   // least square
 };
 
+enum class DOF_Type { SCALAR = 1,
+                      VECTOR,
+                      POINT,
+                      NORMAL_COMPONENT,
+                      MOMENT };
+
 #ifdef AMANZI_CODE
 typedef AmanziGeometry::Entity_ID Entity_ID;
 typedef std::vector<Entity_ID> Entity_ID_List;
 typedef AmanziMesh::Parallel_type Parallel_type;
 typedef AmanziMesh::Entity_kind Entity_kind;
+typedef std::tuple<AmanziMesh::Entity_kind, DOF_Type, int> SchemaItem;
 
 const int NODE = AmanziMesh::NODE;
 const int EDGE = AmanziMesh::EDGE;
@@ -53,6 +61,8 @@ enum Entity_kind {
   CELL,
   BOUNDARY_FACE
 };
+
+typedef tuple<Entity_kind, DOF_Type, int> SchemaItem;
 
 enum class Parallel_type {
   OWNED = 1;  // Owned by this processor

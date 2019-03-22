@@ -29,12 +29,12 @@
 #include "LinearOperatorDefs.hh"
 #include "LinearOperatorFactory.hh"
 #include "Mesh.hh"
-#include "OperatorDefs.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_Diffusion.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "PK_Utils.hh"
+#include "WhetStoneDefs.hh"
 
 // amanzi::Transport
 #include "MultiscaleTransportPorosityFactory.hh"
@@ -863,7 +863,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
     // default boundary conditions (none inside domain and Neumann on its boundary)
     Teuchos::RCP<Operators::BCs> bc_dummy = 
-        Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
+        Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
 
     std::vector<int>& bc_model = bc_dummy->bc_model();
     std::vector<double>& bc_value = bc_dummy->bc_value();

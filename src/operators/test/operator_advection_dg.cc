@@ -34,6 +34,7 @@
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
 #include "VectorPolynomial.hh"
+#include "WhetStoneDefs.hh"
 
 // Operators
 #include "AnalyticDG02.hh"
@@ -113,24 +114,24 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   // create global operator 
   // -- flux term
   ParameterList op_list = plist.sublist(pk_name).sublist("flux operator");
-  op_list.set<std::string>("dg basis", dg_basis);
+  op_list.sublist("schema").set<std::string>("dg basis", dg_basis);
   auto op_flux = Teuchos::rcp(new PDE_AdvectionRiemann(op_list, mesh));
   auto global_op = op_flux->global_operator();
   const WhetStone::DG_Modal& dg = op_flux->dg();
 
   // -- volumetric advection term
   op_list = plist.sublist(pk_name).sublist("advection operator");
-  op_list.set<std::string>("dg basis", dg_basis);
+  op_list.sublist("schema").set<std::string>("dg basis", dg_basis);
   auto op_adv = Teuchos::rcp(new PDE_Abstract(op_list, global_op));
 
   // -- reaction term
   op_list = plist.sublist(pk_name).sublist("reaction operator");
-  op_list.set<std::string>("dg basis", dg_basis);
+  op_list.sublist("schema").set<std::string>("dg basis", dg_basis);
   auto op_reac = Teuchos::rcp(new PDE_Reaction(op_list, global_op));
   double Kreac = op_list.get<double>("coef");
 
   // analytic solution
-  int order = op_list.get<int>("method order");
+  int order = op_list.sublist("schema").get<int>("method order");
   int nk = (dim == 2) ? (order + 1) * (order + 2) / 2 :
                         (order + 1) * (order + 2) * (order + 3) / 6;
 
@@ -219,7 +220,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   }
 
   // -- boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::VECTOR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::VECTOR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(nk);
 
