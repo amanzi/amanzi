@@ -9,7 +9,7 @@
   Author Ethan Coon
 
   Function applied to a mesh component, along with meta-data to store the values
-  of this function in a ComposteVector.
+  of this function in a CompositeVector.
 */
 
 #include "errors.hh"
@@ -25,9 +25,6 @@ CompositeVectorFunction::CompositeVectorFunction(
     func_(func) {
 
   AMANZI_ASSERT(names.size() == func->size());
-
-  // TODO: This is horrid.  Google won't tell me if STL has python's zip()
-  // functionality, so this is probably bad C++.
 
   // Zip the two iterators, adding the resulting "tuple" to the container of pairs.
   std::vector<std::string>::const_iterator name = names.begin();
@@ -65,7 +62,7 @@ void CompositeVectorFunction::Compute(double time,
     done[compname] = true;
 #endif
     
-    Epetra_MultiVector& compvec = *cv->ViewComponent(compname,false);
+    auto compvec = cv->ViewComponent<AmanziDefaultHost>(compname,false);
     Teuchos::RCP<MeshFunction::Spec> spec = (*cv_spec)->second;
 
     AmanziMesh::Entity_kind kind = spec->first->second;
@@ -78,8 +75,8 @@ void CompositeVectorFunction::Compute(double time,
       if (*region == std::string("ENTIRE_MESH_REGION")) {
         if (kind == AmanziMesh::BOUNDARY_FACE) {
           unsigned int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-          const Epetra_Map& vandelay_map = mesh->exterior_face_map(false);
-          const Epetra_Map& face_map = mesh->face_map(false);
+          const auto& vandelay_map = *mesh->exterior_face_map(false);
+          const auto& face_map = *mesh->face_map(false);
 
           // loop over indices
           AmanziMesh::Entity_ID_List cells;
@@ -96,7 +93,7 @@ void CompositeVectorFunction::Compute(double time,
               // evaluate the functions and stuff the result into the CV
               double *value = (*spec->second)(args);
               for (int i=0; i!=(*spec->second).size(); ++i) {
-                compvec[i][bf] = value[i];
+                compvec(i,bf) = value[i];
               }
             }
           }
@@ -120,7 +117,7 @@ void CompositeVectorFunction::Compute(double time,
             // evaluate the functions and stuff the result into the CV
             double *value = (*spec->second)(args);
             for (int i=0; i!=(*spec->second).size(); ++i) {
-              compvec[i][id] = value[i];
+              compvec(i,id) = value[i];
             }
           }
         }
@@ -133,8 +130,8 @@ void CompositeVectorFunction::Compute(double time,
             AmanziMesh::Entity_ID_List id_list;
             mesh->get_set_entities(*region, AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &id_list);
 
-            const Epetra_Map& face_map = mesh->face_map(false);
-            const Epetra_Map& vandelay_map = mesh->exterior_face_map(false);
+            const auto& face_map = *mesh->face_map(false);
+            const auto& vandelay_map = *mesh->exterior_face_map(false);
 
             // loop over indices
             AmanziMesh::Entity_ID_List cells;
@@ -153,7 +150,7 @@ void CompositeVectorFunction::Compute(double time,
                 // evaluate the functions and stuff the result into the CV
                 double *value = (*spec->second)(args);
                 for (int i=0; i!=(*spec->second).size(); ++i) {
-                  compvec[i][bf] = value[i];
+                  compvec(i,bf) = value[i];
                 }
               }
             }
@@ -171,16 +168,15 @@ void CompositeVectorFunction::Compute(double time,
             mesh->get_set_entities(*region, kind, AmanziMesh::Parallel_type::OWNED, &id_list);
 
             // loop over indices
-            for (AmanziMesh::Entity_ID_List::const_iterator id=id_list.begin();
-                 id!=id_list.end(); ++id) {
+            for (auto id : id_list) {
               // get the coordinate
               AmanziGeometry::Point xc;
               if (kind == AmanziMesh::CELL) {
-                xc = mesh->cell_centroid(*id);
+                xc = mesh->cell_centroid(id);
               } else if (kind == AmanziMesh::FACE) {
-                xc = mesh->face_centroid(*id);
+                xc = mesh->face_centroid(id);
               } else if (kind == AmanziMesh::NODE) {
-                mesh->node_get_coordinates(*id, &xc);
+                mesh->node_get_coordinates(id, &xc);
               } else {
                 AMANZI_ASSERT(0);
               }
@@ -189,7 +185,7 @@ void CompositeVectorFunction::Compute(double time,
               // evaluate the functions and stuff the result into the CV
               double *value = (*spec->second)(args);
               for (int i=0; i!=(*spec->second).size(); ++i) {
-                compvec[i][*id] = value[i];
+                compvec(i,id) = value[i];
               }
             }
           } else {

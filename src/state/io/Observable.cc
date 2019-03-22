@@ -15,7 +15,7 @@ Observable data object
 
 #include <boost/filesystem/operations.hpp>
 
-#include "Field.hh"
+//#include "Field.hh"
 #include "Mesh.hh"
 #include "State.hh"
 #include "errors.hh"
@@ -82,7 +82,7 @@ Observable::Observable(Teuchos::ParameterList &plist, Epetra_MpiComm *comm)
 }
 
 void Observable::Update(const State &S,
-                        Amanzi::ObservationData::DataTriple &data) {
+                        Amanzi::ObservationData::DataQuadruple &data) {
   if (count_ == 0)
     WriteHeader_();
 
@@ -122,112 +122,112 @@ void Observable::WriteHeader_() {
 }
 
 void Observable::Update_(const State &S,
-                         Amanzi::ObservationData::DataTriple &data) {
-  data.time = S.time();
+                         Amanzi::ObservationData::DataQuadruple &data) {
+  // data.time = S.time();
 
-  Teuchos::RCP<const Field> field = S.GetField(variable_);
+  // Teuchos::RCP<const Field> field = S.GetField(variable_);
 
-  if (field->type() == CONSTANT_SCALAR) {
-    // scalars, just return the value
-    data.value = *field->GetScalarData();
-    data.is_valid = true;
+  // if (field->type() == CONSTANT_SCALAR) {
+  //   // scalars, just return the value
+  //   data.value = *field->GetScalarData();
+  //   data.is_valid = true;
 
-  } else if (field->type() == COMPOSITE_VECTOR_FIELD) {
-    // vector field
-    Teuchos::RCP<const CompositeVector> vec = field->GetFieldData();
-    AMANZI_ASSERT(vec->HasComponent(location_));
+  // } else if (field->type() == COMPOSITE_VECTOR_FIELD) {
+  //   // vector field
+  //   Teuchos::RCP<const CompositeVector> vec = field->GetFieldData();
+  //   AMANZI_ASSERT(vec->HasComponent(location_));
 
-    AmanziMesh::Entity_kind entity = vec->Location(location_);
-    AmanziMesh::Entity_ID_List ids;
-    vec->Mesh()->get_set_entities(region_, entity, AmanziMesh::Parallel_type::OWNED, &ids);
+  //   AmanziMesh::Entity_kind entity = vec->Location(location_);
+  //   AmanziMesh::Entity_ID_List ids;
+  //   vec->Mesh()->get_set_entities(region_, entity, AmanziMesh::Parallel_type::OWNED, &ids);
 
-    double value(0.);
-    if (functional_ == "observation data: minimum") {
-      value = 1.e20;
-    } else if (functional_ == "observation data: maximum") {
-      value = -1.e20;
-    }
+  //   double value(0.);
+  //   if (functional_ == "observation data: minimum") {
+  //     value = 1.e20;
+  //   } else if (functional_ == "observation data: maximum") {
+  //     value = -1.e20;
+  //   }
 
-    double volume(0.);
-    const Epetra_MultiVector &subvec = *vec->ViewComponent(location_, false);
+  //   double volume(0.);
+  //   const Epetra_MultiVector &subvec = *vec->ViewComponent(location_, false);
 
-    if (entity == AmanziMesh::CELL) {
-      for (AmanziMesh::Entity_ID_List::const_iterator id = ids.begin();
-           id != ids.end(); ++id) {
-        double vol = vec->Mesh()->cell_volume(*id);
-        value = (*function_)(value, subvec[0][*id], vol);
-        volume += vol;
-      }
-    } else if (entity == AmanziMesh::FACE) {
-      for (AmanziMesh::Entity_ID_List::const_iterator id = ids.begin();
-           id != ids.end(); ++id) {
-        double vol = vec->Mesh()->face_area(*id);
+  //   if (entity == AmanziMesh::CELL) {
+  //     for (AmanziMesh::Entity_ID_List::const_iterator id = ids.begin();
+  //          id != ids.end(); ++id) {
+  //       double vol = vec->Mesh()->cell_volume(*id);
+  //       value = (*function_)(value, subvec[0][*id], vol);
+  //       volume += vol;
+  //     }
+  //   } else if (entity == AmanziMesh::FACE) {
+  //     for (AmanziMesh::Entity_ID_List::const_iterator id = ids.begin();
+  //          id != ids.end(); ++id) {
+  //       double vol = vec->Mesh()->face_area(*id);
 
-        // hack to orient flux to outward-normal along a boundary only
-        int sign = 1;
-        if (flux_normalize_) {
-          AmanziMesh::Entity_ID_List cells;
-          vec->Mesh()->face_get_cells(*id, AmanziMesh::Parallel_type::ALL, &cells);
-          AMANZI_ASSERT(cells.size() == 1);
-          AmanziMesh::Entity_ID_List faces;
-          std::vector<int> dirs;
-          vec->Mesh()->cell_get_faces_and_dirs(cells[0], &faces, &dirs);
-          int i = std::find(faces.begin(), faces.end(), *id) - faces.begin();
-          sign = dirs[i];
-        }
+  //       // hack to orient flux to outward-normal along a boundary only
+  //       int sign = 1;
+  //       if (flux_normalize_) {
+  //         AmanziMesh::Entity_ID_List cells;
+  //         vec->Mesh()->face_get_cells(*id, AmanziMesh::Parallel_type::ALL, &cells);
+  //         AMANZI_ASSERT(cells.size() == 1);
+  //         AmanziMesh::Entity_ID_List faces;
+  //         std::vector<int> dirs;
+  //         vec->Mesh()->cell_get_faces_and_dirs(cells[0], &faces, &dirs);
+  //         int i = std::find(faces.begin(), faces.end(), *id) - faces.begin();
+  //         sign = dirs[i];
+  //       }
 
-        value = (*function_)(value, sign * subvec[0][*id], vol);
-        volume += std::abs(vol);
-      }
-    } else if (entity == AmanziMesh::NODE) {
-      for (AmanziMesh::Entity_ID_List::const_iterator id = ids.begin();
-           id != ids.end(); ++id) {
-        double vol = 1.0;
-        value = (*function_)(value, subvec[0][*id], vol);
-        volume += vol;
-      }
-    }
+  //       value = (*function_)(value, sign * subvec[0][*id], vol);
+  //       volume += std::abs(vol);
+  //     }
+  //   } else if (entity == AmanziMesh::NODE) {
+  //     for (AmanziMesh::Entity_ID_List::const_iterator id = ids.begin();
+  //          id != ids.end(); ++id) {
+  //       double vol = 1.0;
+  //       value = (*function_)(value, subvec[0][*id], vol);
+  //       volume += vol;
+  //     }
+  //   }
 
-    // syncronize the result across processors
-    if (functional_ == "observation data: point" ||
-        functional_ == "observation data: integral" ||
-        functional_ == "observation data: extensive integral") {
-      double local[2], global[2];
-      local[0] = value;
-      local[1] = volume;
-      Teuchos::reduceAll(*S.GetMesh()->get_comm(), Teuchos::REDUCE_SUM, 2, local, global);
+  //   // syncronize the result across processors
+  //   if (functional_ == "observation data: point" ||
+  //       functional_ == "observation data: integral" ||
+  //       functional_ == "observation data: extensive integral") {
+  //     double local[2], global[2];
+  //     local[0] = value;
+  //     local[1] = volume;
+  //     S.GetMesh()->get_comm()->SumAll(local, global, 2);
 
-      if (global[1] > 0) {
-        if (functional_ == "observation data: point") {
-          data.value = global[0] / global[1];
-          data.is_valid = true;
-        } else if (functional_ == "observation data: integral" ||
-                   functional_ == "observation data: extensive integral") {
-          data.value = global[0];
-          data.is_valid = true;
-        }
-      } else {
-        data.value = 0.;
-        data.is_valid = false;
-      }
-    } else if (functional_ == "observation data: minimum") {
-      double global;
-      Teuchos::reduceAll(*S.GetMesh()->get_comm(), Teuchos::REDUCE_MIN, 1, &value, &global);
-      data.value = global;
-      data.is_valid = true;
-    } else if (functional_ == "observation data: maximum") {
-      double global;
-      Teuchos::reduceAll(*S.GetMesh()->get_comm(), Teuchos::REDUCE_MAX, 1, &value, &global);
-      data.value = global;
-      data.is_valid = true;
-    } else {
-      data.value = 0.;
-      data.is_valid = false;
-    }
-  } else {
-    data.value = 0.;
-    data.is_valid = false;
-  }
+  //     if (global[1] > 0) {
+  //       if (functional_ == "observation data: point") {
+  //         data.value = global[0] / global[1];
+  //         data.is_valid = true;
+  //       } else if (functional_ == "observation data: integral" ||
+  //                  functional_ == "observation data: extensive integral") {
+  //         data.value = global[0];
+  //         data.is_valid = true;
+  //       }
+  //     } else {
+  //       data.value = 0.;
+  //       data.is_valid = false;
+  //     }
+  //   } else if (functional_ == "observation data: minimum") {
+  //     double global;
+  //     S.GetMesh()->get_comm()->MinAll(&value, &global, 1);
+  //     data.value = global;
+  //     data.is_valid = true;
+  //   } else if (functional_ == "observation data: maximum") {
+  //     double global;
+  //     S.GetMesh()->get_comm()->MaxAll(&value, &global, 1);
+  //     data.value = global;
+  //     data.is_valid = true;
+  //   } else {
+  //     data.value = 0.;
+  //     data.is_valid = false;
+  //   }
+  // } else {
+  //   data.value = 0.;
+  //   data.is_valid = false;
+  // }
 }
 
 } // namespace Amanzi

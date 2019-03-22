@@ -10,7 +10,8 @@
            Ethan Coon (ecoon@lanl.gov)
 */
 
-#include "Epetra_MpiComm.h"
+//#include "Epetra_MpiComm.h"
+#include "Teuchos_GlobalMPISession.hpp"
 #include "Epetra_MultiVector.h"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -37,7 +38,11 @@ SUITE(RESTART) {
     csps[2] = 10;
     plist.set<Teuchos::Array<int>>("cycles start period stop", csps);
 
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+    //    auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+    //    Comm_ptr_type comm = Teuchos::rcp( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+    //    Comm_ptr_type comm = Teuchos::rcp(new Teuchos::MpiComma)
+    //Epetra_MpiComm comm(MPI_COMM_WORLD);
     Amanzi::Checkpoint R(plist, comm);
 
     // test the cycle stuff, the expected result is in cycles_ and
@@ -63,7 +68,8 @@ SUITE(RESTART) {
     csps[2] = -1;
     plist.set<Teuchos::Array<int>>("cycles start period stop", csps);
 
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+    //    Epetra_MpiComm comm(MPI_COMM_WORLD);
     Amanzi::Checkpoint R(plist, comm);
 
     // test the cycle stuff, the expected result is in cycles_ and
@@ -89,7 +95,7 @@ SUITE(RESTART) {
     csps[2] = -1;
     plist.set<Teuchos::Array<int>>("cycles start period stop", csps);
 
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    auto comm = Comm_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     Amanzi::Checkpoint R(plist, comm);
 
     // test the cycle stuff, the expected result is in cycles_ and
@@ -121,7 +127,7 @@ SUITE(RESTART) {
     cyc[2] = 4;
     plist.set<Teuchos::Array<int>>("cycles", cyc);
 
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     Amanzi::Checkpoint R(plist, comm);
 
     // test the cycle stuff, the expected result is in cycles_ and
@@ -153,7 +159,7 @@ SUITE(RESTART) {
     tim[2] = 4.0;
     plist.set<Teuchos::Array<double>>("times", tim);
 
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     Amanzi::Checkpoint R(plist, comm);
 
     // test the cycle stuff, the expected result is in cycles_ and
@@ -177,7 +183,7 @@ SUITE(RESTART) {
     // i1_.set<int>("End",10);
     // i1_.set<int>("Interval",1);
 
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    auto comm = Comm_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
     std::string xmlFileName = "test/state_restart.xml";
     Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
@@ -234,14 +240,14 @@ SUITE(RESTART) {
     S1.InitializeFields();
 
     // fill with random data before reading checkpoint
-    Epetra_MultiVector &s1p =
+    MultiVector_type &s1p =
         *S1.GetW<Amanzi::CompositeVector>("celldata", "state_restart")
              .ViewComponent("cell", false);
     s1p.Random();
 
     ReadCheckpoint(comm, S1, "restartdump00000.h5");
 
-    Epetra_MultiVector &s0p =
+    MultiVector_type &s0p =
         *S0.GetW<Amanzi::CompositeVector>("celldata", "state_restart")
              .ViewComponent("cell", false);
 

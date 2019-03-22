@@ -27,8 +27,8 @@
 #define AMANZI_OPERATORS_SUPER_MAP_HH_
 
 #include "Teuchos_RCP.hpp"
-#include "AmanziComm.hh"
 
+#include "AmanziTypes.hh"
 #include "dbc.hh"
 #include "Mesh.hh"
 
@@ -45,8 +45,8 @@ class SuperMapLumped {
   SuperMapLumped(const Comm_ptr_type& comm,
            const std::vector<std::string>& compnames,
            const std::vector<int>& dofnums,
-           const std::vector<Teuchos::RCP<const Epetra_BlockMap> >& maps,
-           const std::vector<Teuchos::RCP<const Epetra_BlockMap> >& ghost_maps);
+           const std::vector<BlockMap_ptr_type>& maps,
+           const std::vector<BlockMap_ptr_type>& ghost_maps);
 
   SuperMapLumped(const SuperMapLumped& other) = delete;
   virtual ~SuperMapLumped() = default;
@@ -59,12 +59,12 @@ class SuperMapLumped {
   Teuchos::RCP<const Epetra_Map> GhostedMap() const { return ghosted_map_; }
 
   // -- component map accessors
-  Teuchos::RCP<const Epetra_BlockMap>
+  BlockMap_ptr_type
   ComponentMap(const std::string& compname) const {
     return comp_maps_.at(compname);
   }
 
-  Teuchos::RCP<const Epetra_BlockMap>
+  BlockMap_ptr_type
   ComponentGhostedMap(const std::string& compname) {
     return comp_ghosted_maps_.at(compname);
   }
@@ -132,8 +132,8 @@ class SuperMapLumped {
   Teuchos::RCP<Epetra_Map> map_;
   Teuchos::RCP<Epetra_Map> ghosted_map_;
 
-  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > comp_maps_;
-  std::map<std::string, Teuchos::RCP<const Epetra_BlockMap> > comp_ghosted_maps_;
+  std::map<std::string, BlockMap_ptr_type> comp_maps_;
+  std::map<std::string, BlockMap_ptr_type> comp_ghosted_maps_;
 
 };
 

@@ -53,8 +53,9 @@ set(data_structures_src_files BlockVector.cc
                               #ParallelCommunication.cc
                               #GraphFE.cc
                               #MatrixFE.cc
-                              SuperMapLumped.cc
-                              SuperMap.cc)
+                              #SuperMapLumped.cc
+                              #SuperMap.cc
+                              )
 
 file(GLOB data_structures_inc_files "*.hh")
 
@@ -90,15 +91,15 @@ if (BUILD_TESTS)
 
     set(amanzi_libs data_structures geometry mstk_mesh mesh_factory mesh)
 
-    add_amanzi_test(data_structures test_data_structures 
-                    KIND unit
-                    NPROCS 2
-		    SOURCE test/Main.cc 
-			   test/test_composite_vector.cc
-			   test/test_tree_vector.cc
-                           test/test_vandelay.cc
-                           # test/test_thyra_wrappers.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
+    # add_amanzi_test(data_structures test_data_structures 
+    #                 KIND unit
+    #                 NPROCS 2
+    #     	    SOURCE test/Main.cc 
+    #     		   test/test_composite_vector.cc
+    #     		   test/test_tree_vector.cc
+    #                        test/test_vandelay.cc
+    #                        # test/test_thyra_wrappers.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
 
     # # Test: tests for FE graph and matrices
     # add_amanzi_test(graph_fe_test graph_fe_test
@@ -114,17 +115,17 @@ if (BUILD_TESTS)
     # add_amanzi_test(matrix_fe_test_np2 matrix_fe_test NPROCS 2 KIND unit)
     # add_amanzi_test(matrix_fe_test_np4 matrix_fe_test NPROCS 4 KIND unit)
 
-    add_amanzi_test(supermap_test supermap_test 
-                    KIND unit
-                    SOURCE test/Main.cc test/supermap_test.cc test/supermap_block_test.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
-    add_amanzi_test(supermap_test_np3 supermap_test NPROCS 3 KIND unit)
-    add_amanzi_test(supermap_test_np5 supermap_test NPROCS 5 KIND unit)
+    # add_amanzi_test(supermap_test supermap_test 
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/supermap_test.cc test/supermap_block_test.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
+    # add_amanzi_test(supermap_test_np3 supermap_test NPROCS 3 KIND unit)
+    # add_amanzi_test(supermap_test_np5 supermap_test NPROCS 5 KIND unit)
 
-    add_amanzi_test(supermap_block_test supermap_block_test
-                    KIND unit
-                    SOURCE test/Main.cc test/supermap_block_test.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
+    # add_amanzi_test(supermap_block_test supermap_block_test
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/supermap_block_test.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
 
     # add_amanzi_test(matrix_fe_test_speed matrix_fe_test_speed
     #                 KIND unit

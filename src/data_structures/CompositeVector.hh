@@ -1,8 +1,13 @@
-/* -------------------------------------------------------------------------
-ATS & Amanzi
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon
+*/
+
+/*
 
 Interface for CompositeVector, an implementation of a block Tpetra
 vector which spans multiple simplices and knows how to communicate
@@ -24,7 +29,8 @@ This vector provides the duck-type interface Vec and may be used with time
 integrators/nonlinear solvers.
 
 DOCUMENT VANDELAY HERE! FIX ME --etc
-------------------------------------------------------------------------- */
+
+*/
 
 #ifndef AMANZI_COMPOSITEVECTOR_HH_
 #define AMANZI_COMPOSITEVECTOR_HH_
@@ -47,6 +53,13 @@ DOCUMENT VANDELAY HERE! FIX ME --etc
 
 namespace Amanzi {
 
+//
+// typedef'd views for return values of ViewComponent
+//
+// These are bad names and need to be updated -- they suggest that they are a
+// vector, and not a view into a vector, which is confusing.  Especially when
+// we have typedefs for Vector_type and MultiVector_type which ARE the vector.
+// -----------------------------------------------------------------------------
 template<class DeviceType>
 using OutputVector_type = Kokkos::View<double*, Kokkos::LayoutLeft, DeviceType>; // layout depends on Tpetra fix later
 
@@ -59,12 +72,15 @@ using OutputMultiVector_type = Kokkos::View<double**, Kokkos::LayoutLeft, Device
 template<class DeviceType>
 using InputMultiVector_type = Kokkos::View<const double**, Kokkos::LayoutLeft, DeviceType>;
 
+//
+// Class interface
+//
 class CompositeVector {
 
 public:
   // -- Constructors --
 
-  // Constructor from a CompositeVectorSpace (which is like a VectorSpace).
+  // Constructor from a CompositeVectorSpace (which is like a Map).
   CompositeVector(const CompositeVectorSpace& space);
   CompositeVector(const CompositeVectorSpace& space, bool ghosted);
 
@@ -120,22 +136,17 @@ public:
     return VectorHarness::getMultiVector(VectorHarness::readOnly(GetComponent_(name,ghosted)).on(memory_space()));
   }
 
+  //
+  // Access a slice of a single component's data, at a specific dof num.
+  //
+  // Const access.
   template<class DeviceType=AmanziDefaultDevice>
   InputVector_type<DeviceType>
   ViewComponent(const std::string& name, int dof, bool ghosted=false) const {
     using memory_space = typename DeviceType::memory_space;
+    // CHECK THIS -- should 0 --> dof?
     return Kokkos::subview(ViewComponent<DeviceType>(name, ghosted), Kokkos::ALL(), 0);
   }
-
-  // View entries in the vectors
-  //
-  // Return-by-value, this does not tag as changed.
-  // double operator()(const std::string& name, int i, int j) const {
-  //   return (*ghostvec_)(name,i,j);
-  // }
-  // double operator()(const std::string& name, int j) const {
-  //   return (*ghostvec_)(name,0,j);
-  // }
 
   // -- Set data. --
 
@@ -149,41 +160,19 @@ public:
     return VectorHarness::getMultiVector(VectorHarness::readWrite(GetComponent_(name,ghosted)).on(memory_space()));
   }
 
+  //
+  // Access a slice of a single component's data, at a specific dof num.
+  //
+  // Non-const access.
   template<class DeviceType=AmanziDefaultDevice>
   OutputVector_type<DeviceType>
   ViewComponent(const std::string& name, int dof, bool ghosted=false) {
     using memory_space = typename DeviceType::memory_space;
+    // CHECK THIS -- should 0 --> dof?
     return Kokkos::subview(ViewComponent<DeviceType>(name, ghosted), Kokkos::ALL(), 0);
   }
 
-
-  // template<class DeviceType>
-  // OutputVector_type<DeviceType>
-  // ViewComponent(const std::string& name, int dof, bool ghosted=false) {
-  //   return OutputVector_Harness();
-  // }
-
-#if CV_ENABLE_SET_FROM_OPERATOR
-  // Set entries in the vectors.
-  //
-  // Using these is VERY STRONGLY DISCOURAGED.  Instead, call ViewComponent()
-  // and set entries in the MultiVector.  THESE ARE VERY VERY SLOW (But they
-  // can be handy in debugging.)  Tags changed.
-  double& operator()(const std::string& name, int i, int j) {
-    return (*ghostvec_)(name,i,j);
-  }
-
-  // Set entries in the 0th vector.
-  //
-  // Using these is VERY STRONGLY DISCOURAGED.  Instead, call ViewComponent()
-  // and set entries in the MultiVector.  THESE ARE VERY VERY SLOW (But they
-  // can be handy in debugging.)  Tags changed.
-  double& operator()(const std::string& name, int j) {
-    return (*ghostvec_)(name,0,j);
-  }
-#endif
-
-
+  
   // Set block by pointer if possible, copy if not?????? FIX ME --etc
   void SetComponent(const std::string& name, MultiVector_ptr_type data);
 

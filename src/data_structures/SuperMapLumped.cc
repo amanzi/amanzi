@@ -12,7 +12,9 @@
   and converts them into a single map.
 */
 
-#include "Epetra_IntVector.h"
+
+#include "AmanziComm.hh"
+#include "AmanziMap.hh"
 
 #include "CompositeVectorSpace.hh"
 #include "TreeVectorSpace.hh"
@@ -25,8 +27,8 @@ namespace Operators {
 SuperMapLumped::SuperMapLumped(const Comm_ptr_type& comm,
                    const std::vector<std::string>& compnames,
                    const std::vector<int>& dofnums,
-                   const std::vector<Teuchos::RCP<const Epetra_BlockMap> >& maps,
-                   const std::vector<Teuchos::RCP<const Epetra_BlockMap> >& ghosted_maps) :
+                   const std::vector<BlockMap_ptr_type>& maps,
+                   const std::vector<BlockMap_ptr_type>& ghosted_maps) :
     compnames_(compnames)
 {
   AMANZI_ASSERT(compnames.size() == dofnums.size());
@@ -249,7 +251,7 @@ Teuchos::RCP<SuperMapLumped>
 createSuperMapLumped(const CompositeVectorSpace& cv) {
   std::vector<std::string> names;
   std::vector<int> dofnums;
-  std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps, ghostmaps;
+  std::vector<BlockMap_ptr_type> maps, ghostmaps;
 
   for (const auto& name : cv) {
     names.push_back(name);

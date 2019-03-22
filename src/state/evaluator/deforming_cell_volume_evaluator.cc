@@ -85,7 +85,7 @@ void DeformingCellVolumeEvaluator::EnsureCompatibility(
 void DeformingCellVolumeEvaluator::EvaluateField_(
     const Teuchos::Ptr<State> &S, const Teuchos::Ptr<CompositeVector> &result) {
   // NOTE: CellVolumeEvaluator owns its own data.
-  Epetra_MultiVector &cv =
+  MultiVector_type &cv =
       *S->GetFieldData(my_key_, my_key_)->ViewComponent("cell", false);
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh(my_mesh_);

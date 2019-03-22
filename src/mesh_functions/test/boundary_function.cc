@@ -7,6 +7,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "AmanziComm.hh"
 #include "BoundaryFunction.hh"
 #include "FunctionConstant.hh"
 #include "FunctionFactory.hh"

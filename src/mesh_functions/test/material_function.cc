@@ -7,6 +7,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "UnitTest++.h"
 
+#include "AmanziComm.hh"
 #include "errors.hh"
 #include "FunctionConstant.hh"
 #include "Mesh.hh"

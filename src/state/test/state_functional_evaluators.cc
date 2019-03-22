@@ -90,7 +90,7 @@ SUITE(EVALS) {
     // calculate field A
     std::cout << "Calculate field A:" << std::endl;
     fa_eval->HasFieldChanged(S.ptr(), "main");
-    const Epetra_MultiVector &fa =
+    const MultiVector_type &fa =
         *S->GetFieldData("fa")->ViewComponent("cell");
 
     // eval point of 0th cell is:
@@ -188,7 +188,7 @@ SUITE(EVALS) {
     // calculate field B
     std::cout << "Calculate field B:" << std::endl;
     fb_eval->HasFieldChanged(S.ptr(), "main");
-    const Epetra_MultiVector &fb =
+    const MultiVector_type &fb =
         *S->GetFieldData("fb")->ViewComponent("cell");
 
     // eval point of 0th cell is:

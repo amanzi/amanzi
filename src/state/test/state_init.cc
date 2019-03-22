@@ -27,8 +27,8 @@
 TEST(FIELD_INITIALIZATION) {
   using namespace Amanzi;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-
+  //Epetra_MpiComm comm(MPI_COMM_WORLD);
+  auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   std::string xmlFileName = "test/state_init.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
@@ -77,7 +77,7 @@ TEST(FIELD_INITIALIZATION) {
   // check state's fields
   // -- porosity (simple field)
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  const Epetra_MultiVector &phi =
+  const MultiVector_type &phi =
       *S.Get<CompositeVector>("porosity").ViewComponent("cell");
   for (int c = 0; c < ncells; ++c) {
     CHECK_EQUAL(0.25, phi[0][c]);

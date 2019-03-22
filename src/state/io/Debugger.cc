@@ -31,7 +31,7 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
     Teuchos::Array<int> dcs = plist.get<Teuchos::Array<int>>("debug cells");
     for (Teuchos::Array<int>::const_iterator c = dcs.begin(); c != dcs.end();
          ++c) {
-      AmanziMesh::Entity_ID lc = mesh->cell_map(false).getLocalElement(*c);
+      AmanziMesh::Entity_ID lc = mesh->cell_map(false).LID(*c);
       if (lc >= 0) {
         // include the LID
         dc_.push_back(lc);
@@ -54,7 +54,7 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
     Teuchos::Array<int> dfs = plist.get<Teuchos::Array<int>>("debug faces");
     for (Teuchos::Array<int>::const_iterator f = dfs.begin(); f != dfs.end();
          ++f) {
-      AmanziMesh::Entity_ID lf = mesh->face_map(true).getLocalElement(*f);
+      AmanziMesh::Entity_ID lf = mesh->face_map(true).LID(*f);
       if (lf >= 0) {
         // debug the neighboring cells
         AmanziMesh::Entity_ID_List cells;
@@ -64,7 +64,7 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
              lc != cells.end(); ++lc) {
           // include the LID
           dc_.push_back(*lc);
-          dc_gid_.push_back(mesh->cell_map(false).getGlobalElement(*lc));
+          dc_gid_.push_back(mesh->cell_map(false).GID(*lc));
 
           // make a verbose object for each case
           Teuchos::ParameterList vo_plist;
@@ -172,7 +172,7 @@ void Debugger::WriteCellInfo(bool include_faces) {
 
         if (dcvo_[i]->os_OK(verb_level_)) {
           for (unsigned int n = 0; n != fnums0.size(); ++n) {
-            AmanziMesh::Entity_ID f_gid = mesh_->face_map(true).getGlobalElement(fnums0[n]);
+            AmanziMesh::Entity_ID f_gid = mesh_->face_map(true).GID(fnums0[n]);
             AmanziGeometry::Point f_centroid = mesh_->face_centroid(fnums0[n]);
             *dcvo_[i]->os()
                 << "  neighbor face(" << f_gid << ") [dir=" << dirs[n]
@@ -297,8 +297,8 @@ void Debugger::WriteBoundaryConditions(const std::vector<int> &flag,
   }
 }
 
-// call MPI_Comm_barrier() to sync between writing steps
-void Debugger::barrier() { mesh_->get_comm()->barrier(); }
+// call MPI_Comm_Barrier to sync between writing steps
+void Debugger::Barrier() { mesh_->get_comm()->Barrier(); }
 
 // write a line of ----
 void Debugger::WriteDivider() {

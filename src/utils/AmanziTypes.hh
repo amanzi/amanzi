@@ -41,6 +41,7 @@ using AmanziDefaultDevice = Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>;
 using AmanziDefaultDevice = Kokkos::Serial;
 #endif
 
+using AmanziDefaultHost = Kokkos::Serial; // ????
 #else
 
 class Epetra_Comm;

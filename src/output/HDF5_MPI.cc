@@ -8,11 +8,13 @@
 
   Author: Erin Baker
 */
-
-#include "Element_types.hh"
-
-#include "HDF5_MPI.hh"
 #include <iostream>
+
+#include "Teuchos_CommHelpers.hpp"
+
+#include "AmanziComm.hh"
+#include "AmanziMap.hh"
+#include "HDF5_MPI.hh"
 
 //TODO(barker): clean up debugging output
 //TODO(barker): check that close file is always getting called
@@ -30,7 +32,7 @@ HDF5_MPI::HDF5_MPI(const Comm_ptr_type &comm)
   AMANZI_ASSERT(viz_comm_.get());
   info_ = MPI_INFO_NULL;
   IOconfig_.numIOgroups = 1;
-  IOconfig_.commIncoming = viz_comm_->Comm();
+  IOconfig_.commIncoming = *viz_comm_->getRawMpiComm();
   parallelIO_IOgroup_init(&IOconfig_, &IOgroup_);
   mesh_maps_ = Teuchos::null;
   NumNodes_ = 0;
@@ -50,7 +52,7 @@ HDF5_MPI::HDF5_MPI(const Comm_ptr_type &comm, std::string dataFilename)
   H5DataFilename_ = dataFilename;
   info_ = MPI_INFO_NULL;
   IOconfig_.numIOgroups = 1;
-  IOconfig_.commIncoming = viz_comm_->Comm();
+  IOconfig_.commIncoming = *viz_comm_->getRawMpiComm();
   parallelIO_IOgroup_init(&IOconfig_, &IOgroup_);
   mesh_maps_ = Teuchos::null;
   NumNodes_ = 0;
@@ -124,12 +126,12 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   mesh_file_ = parallelIO_open_file(h5Filename_.c_str(), &IOgroup_, FILE_READWRITE);
 
   // get num_nodes, num_cells
-  const Epetra_Map &nmap = mesh_maps_->vis_mesh().node_map(false);
+  const auto& nmap = *mesh_maps_->vis_mesh().node_map(false);
   int nnodes_local = nmap.getNodeNumElements();
   int nnodes_global = nmap.getGlobalNumElements();
-  const Epetra_Map &ngmap = mesh_maps_->vis_mesh().node_map(true);
+  const auto& ngmap = *mesh_maps_->vis_mesh().node_map(true);
 
-  const Epetra_Map &cmap = mesh_maps_->vis_mesh().cell_map(false);
+  const auto& cmap = *mesh_maps_->vis_mesh().cell_map(false);
   int ncells_local = cmap.getNodeNumElements();
   int ncells_global = cmap.getGlobalNumElements();
 
@@ -188,21 +190,21 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   // nodes are written to h5 out of order, need info to map id to order in output
   int nnodes(nnodes_local);
   std::vector<int> nnodesAll(viz_comm_->getSize(),0);
-  Teuchos::gatherAll(*viz_comm_, 1, &nnodes, &nnodesAll[0]);
+  Teuchos::gatherAll(*viz_comm_, 1, &nnodes, (int)nnodesAll.size(), nnodesAll.data());
   int start(0);
   std::vector<int> startAll(viz_comm_->getSize(),0);
   for (int i = 0; i < viz_comm_->getRank(); i++) {
     start += nnodesAll[i];
   }
-  Teuchos::gatherAll(*viz_comm_, 1, &start, &startAll[0]);
+  Teuchos::gatherAll(*viz_comm_, 1, &start, (int)startAll.size(), startAll.data());
 
-  std::vector<int> gid(nnodes_global);
-  std::vector<int> pid(nnodes_global);
-  std::vector<int> lid(nnodes_global);
+  Teuchos::Array<int> gid(nnodes_global);
+  Teuchos::Array<int> pid(nnodes_global);
+  Teuchos::Array<int> lid(nnodes_global);
   for (int i=0; i<nnodes_global; i++) {
     gid[i] = ngmap.getGlobalElement(i);
   }
-  nmap.RemoteIDList(nnodes_global, &gid[0], &pid[0], &lid[0]);
+  nmap.getRemoteIndexList(gid, pid, lid);
 
   // -- determine size of connectivity vector
   // The element connectivity vector is given in the following form (XDMF spec):
@@ -283,11 +285,11 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
       mesh_maps_->vis_mesh().cell_get_nodes(c, &nodes);
 
       for (int i=0; i!=nodes.size(); ++i) {
-	if (nmap.MyLID(nodes[i])) {
-	  conn[lcv++] = nodes[i] + startAll[viz_comm_->getRank()];
-	} else {
-	  conn[lcv++] = lid[nodes[i]] + startAll[pid[nodes[i]]];
-	}
+        // if (nmap.MyLID(nodes[i])) {
+        //    conn[lcv++] = nodes[i] + startAll[viz_comm_->getRank()];
+	// } else {
+        conn[lcv++] = lid[nodes[i]] + startAll[pid[nodes[i]]];
+	// }
       }
 
       // store entity
@@ -303,11 +305,11 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
       conn[lcv++] = nodes.size();
 
       for (int i=0; i!=nodes.size(); ++i) {
-	if (nmap.MyLID(nodes[i])) {
-	  conn[lcv++] = nodes[i] + startAll[viz_comm_->getRank()];
-	} else {
-	  conn[lcv++] = lid[nodes[i]] + startAll[pid[nodes[i]]];
-	}
+	// if (nmap.MyLID(nodes[i])) {
+	//   conn[lcv++] = nodes[i] + startAll[viz_comm_->getRank()];
+	// } else {
+        conn[lcv++] = lid[nodes[i]] + startAll[pid[nodes[i]]];
+	// }
       }
 
       // store entity
@@ -327,11 +329,11 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
 	conn[lcv++] = nodes.size();
 
 	for (int i=0; i!=nodes.size(); ++i) {
-	  if (nmap.MyLID(nodes[i])) {
-	    conn[lcv++] = nodes[i] + startAll[viz_comm_->getRank()];
-	  } else {
-	    conn[lcv++] = lid[nodes[i]] + startAll[pid[nodes[i]]];
-	  }
+	  // if (nmap.MyLID(nodes[i])) {
+	  //   conn[lcv++] = nodes[i] + startAll[viz_comm_->getRank()];
+	  // } else {
+          conn[lcv++] = lid[nodes[i]] + startAll[pid[nodes[i]]];
+	  // }
 	}
 
 	// store entity
@@ -411,10 +413,10 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
   mesh_file_ = parallelIO_open_file(h5Filename_.c_str(), &IOgroup_, FILE_READWRITE);
 
   // get num_nodes, num_cells
-  const Epetra_Map &nmap = mesh_maps_->vis_mesh().cell_map(false);
+  const auto& nmap = *mesh_maps_->vis_mesh().cell_map(false);
   int nnodes_local = nmap.getNodeNumElements();
   int nnodes_global = nmap.getGlobalNumElements();
-  const Epetra_Map &ngmap = mesh_maps_->vis_mesh().cell_map(true);
+  const auto& ngmap = *mesh_maps_->vis_mesh().cell_map(true);
 
   // get space dimension
   int space_dim = mesh_maps_->vis_mesh().space_dimension();
@@ -471,28 +473,28 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
   // nodes are written to h5 out of order, need info to map id to order in output
   int nnodes(nnodes_local);
   std::vector<int> nnodesAll(viz_comm_->getSize(),0);
-  Teuchos::gatherAll(*viz_comm_, 1, &nnodes, &nnodesAll[0]);
+  Teuchos::gatherAll(*viz_comm_, 1, &nnodes, (int)nnodesAll.size(), nnodesAll.data());
   int start(0);
   std::vector<int> startAll(viz_comm_->getSize(),0);
   for (int i = 0; i < viz_comm_->getRank(); i++) {
     start += nnodesAll[i];
   }
-  Teuchos::gatherAll(*viz_comm_, 1, &start, &startAll[0]);
+  Teuchos::gatherAll(*viz_comm_, 1, &start, (int)startAll.size(), startAll.data());
 
-  std::vector<int> gid(nnodes_global);
-  std::vector<int> pid(nnodes_global);
-  std::vector<int> lid(nnodes_global);
+  Teuchos::Array<int> gid(nnodes_global);
+  Teuchos::Array<int> pid(nnodes_global);
+  Teuchos::Array<int> lid(nnodes_global);
   for (int i=0; i<nnodes_global; i++) {
     gid[i] = ngmap.getGlobalElement(i);
   }
-  nmap.RemoteIDList(nnodes_global, &gid[0], &pid[0], &lid[0]);
+  nmap.getRemoteIndexList(gid, pid, lid);
 
   // -- pass 1: count total connections, total entities
   // For the dual, connections are all faces with > 1 cells.
   int local_conn(0); // length of MixedElements
   int local_entities(0); // length of ElementMap (num_cells if non-POLYHEDRON mesh)
 
-  const Epetra_Map &fmap = mesh_maps_->vis_mesh().face_map(false);
+  const auto& fmap = *mesh_maps_->vis_mesh().face_map(false);
   int nfaces_local = fmap.getNodeNumElements();
   int nfaces_global = fmap.getGlobalNumElements();
 
@@ -533,11 +535,11 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
 
       // store nodes in the correct order
       for (int i=0; i!=cells.size(); ++i) {
-        if (nmap.MyLID(cells[i])) {
-          conn[lcv++] = cells[i] + startAll[viz_comm_->getRank()];
-        } else {
-          conn[lcv++] = lid[cells[i]] + startAll[pid[cells[i]]];
-        }
+        // if (nmap.MyLID(cells[i])) {
+        //   conn[lcv++] = cells[i] + startAll[viz_comm_->getRank()];
+        // } else {
+        conn[lcv++] = lid[cells[i]] + startAll[pid[cells[i]]];
+        // }
       }
 
       // store entity
@@ -1142,7 +1144,7 @@ bool HDF5_MPI::checkFieldData_(std::string varname)
   bool exists=false;
 
   if (viz_comm_->getRank() != 0) {
-    MPI_Bcast(&exists, 1, MPI_C_BOOL, 0, viz_comm_->Comm());
+    MPI_Bcast(&exists, 1, MPI_C_BOOL, 0, *viz_comm_->getRawMpiComm());
   } else {
     iofile_t *currfile;
     currfile = IOgroup_.file[data_file_];
@@ -1152,7 +1154,7 @@ bool HDF5_MPI::checkFieldData_(std::string varname)
       std::cout<< "Field "<<h5path<<" is not found in hdf5 file.\n";
     }
 
-    MPI_Bcast(&exists, 1, MPI_C_BOOL, 0, viz_comm_->Comm()); 
+    MPI_Bcast(&exists, 1, MPI_C_BOOL, 0, *viz_comm_->getRawMpiComm());
   } 
   
   delete[] h5path;

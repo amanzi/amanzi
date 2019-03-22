@@ -49,9 +49,7 @@ add_install_include_file(${mesh_inc_files})
 
 
 # Derived and support classes
-add_subdirectory(mesh_data)
 add_subdirectory(mesh_simple)
-add_subdirectory(exodus_reader)
 
 # Mesh Frameworks
 

@@ -14,7 +14,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "Evaluator.hh"
-#include "factory.hh"
+#include "Factory.hh"
 
 namespace Amanzi {
 
