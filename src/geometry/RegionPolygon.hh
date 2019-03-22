@@ -67,9 +67,9 @@ class RegionPolygon : public Region {
                 const LifeCycleType lifecycle=PERMANENT);
 
   typedef std::vector<AmanziGeometry::Point>::const_iterator PointIterator;
-  std::size_t PointsSize() const { return points_.size(); }
-  PointIterator PointsBegin() const { return points_.begin(); }
-  PointIterator PointsEnd() const { return points_.end(); }
+  std::size_t size() const { return points_.size(); }
+  PointIterator begin() const { return points_.begin(); }
+  PointIterator end() const { return points_.end(); }
 
   const Point& normal() const { return normal_; }
 

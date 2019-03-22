@@ -286,14 +286,14 @@ demoMeshLogicalYManual() {
   for (int lcv=0; lcv!=3; ++lcv) coarse_cells.push_back(lcv);
   Teuchos::RCP<AmanziGeometry::RegionEnumerated> coarse_rgn =
       Teuchos::rcp(new AmanziGeometry::RegionEnumerated("coarse_root",
-              gm->RegionSize(), "CELL", coarse_cells));
+              gm->size(), "CELL", coarse_cells));
   gm->AddRegion(coarse_rgn);
 
   Entity_ID_List fine_cells;
   for (int lcv=3; lcv!=11; ++lcv) fine_cells.push_back(lcv);
   Teuchos::RCP<AmanziGeometry::RegionEnumerated> fine_rgn =
       Teuchos::rcp(new AmanziGeometry::RegionEnumerated("fine_root",
-              gm->RegionSize(), "CELL", fine_cells));
+              gm->size(), "CELL", fine_cells));
   gm->AddRegion(fine_rgn);
 
   m->set_geometric_model(gm);

@@ -43,9 +43,9 @@ class GeometricModel {
 
   // Region iterators
   typedef std::vector<Teuchos::RCP<const Region> >::const_iterator RegionConstIterator;
-  std::size_t RegionSize() const { return regions_.size(); }
-  RegionConstIterator RegionBegin() const { return regions_.begin(); }
-  RegionConstIterator RegionEnd() const { return regions_.end(); }
+  std::size_t size() const { return regions_.size(); }
+  RegionConstIterator begin() const { return regions_.begin(); }
+  RegionConstIterator end() const { return regions_.end(); }
   
   // Get a region by its ID
   Teuchos::RCP<const Region>

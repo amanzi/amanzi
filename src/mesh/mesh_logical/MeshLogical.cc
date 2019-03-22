@@ -885,12 +885,11 @@ bool viewMeshLogical(const Mesh& m, std::ostream& os) {
   }
 
   os << "cell_sets =" << std::endl;
-  auto gm = m.geometric_model();
-  for (auto r = gm->RegionBegin(); r!=gm->RegionEnd(); ++r) {
-    if ((*r)->type() == AmanziGeometry::ENUMERATED) {
+  for (auto& r : *m.geometric_model()) {
+    if (r->type() == AmanziGeometry::ENUMERATED) {
       AmanziMesh::Entity_ID_List set;
-      m.get_set_entities((*r)->id(), AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &set);
-      os << (*r)->name() << " ";
+      m.get_set_entities(r->id(), AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &set);
+      os << r->name() << " ";
       for (auto e : set) os << e << " ";
       os << std::endl;
     }

@@ -753,10 +753,10 @@ MeshLogicalFactory::AddSet(const std::string& set_name,
   // create the region
   // - these are destroyed when the gm is destroyed
   Teuchos::RCP<AmanziGeometry::RegionEnumerated> enum_rgn = 
-      Teuchos::rcp(new AmanziGeometry::RegionEnumerated(set_name, gm_->RegionSize(),
+      Teuchos::rcp(new AmanziGeometry::RegionEnumerated(set_name, gm_->size(),
               ent, ents));
   gm_->AddRegion(enum_rgn);
-  return gm_->RegionSize() - 1;
+  return gm_->size() - 1;
 }
   
 

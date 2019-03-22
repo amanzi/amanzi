@@ -26,22 +26,32 @@
 
 
 #ifdef TRILINOS_TPETRA_STACK
+
 #ifdef HAVE_MPI
 #include "Teuchos_MpiComm.hpp"
 #else
 #include "Teuchos_SerialComm.hpp"
 #endif
-#else
+
+#else // Epetra stack
+
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #else
 #include "Epetra_SerialComm.h"
 #endif
-#endif
 
+#endif // trilinos stack
+
+
+//
+// Comm Helper functions
+// -----------------------------------------------------------------------------
 namespace Amanzi {
 
-// used by tests!
+//
+// Get a default communicator, based on MPI_COMM_WORLD if possible.
+// -----------------------------------------------------------------------------
 inline
 Comm_ptr_type getDefaultComm() {
 #ifdef TRILINOS_TPETRA_STACK
@@ -59,6 +69,9 @@ Comm_ptr_type getDefaultComm() {
 #endif
 }
 
+//
+// Get a serial communicator, based on MPI_COMM_SELF if possible.
+// -----------------------------------------------------------------------------
 inline
 Comm_ptr_type getCommSelf() {
 #ifdef TRILINOS_TPETRA_STACK
@@ -78,6 +91,10 @@ Comm_ptr_type getCommSelf() {
 }
 
 
+//
+// Wraps a communicator for providing MinAll and MaxAll, as needed in Amesos2
+// solvers.
+// -----------------------------------------------------------------------------
 template<typename Comm>
 class CommWrapper {
  public:

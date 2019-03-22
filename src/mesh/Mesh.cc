@@ -1020,7 +1020,7 @@ Mesh::set_id_from_name(const std::string setname) const
 {
   if (!geometric_model_.get()) return 0;
 
-  unsigned int ngr = geometric_model_->RegionSize();
+  unsigned int ngr = geometric_model_->size();
   for (int i = 0; i < ngr; i++) {
     Teuchos::RCP<const AmanziGeometry::Region> rgn = geometric_model_->FindRegion(i);
 
@@ -1040,7 +1040,7 @@ Mesh::set_name_from_id(const int setid) const
 
   if (!geometric_model_.get()) return nullname;
 
-  unsigned int ngr = geometric_model_->RegionSize();
+  unsigned int ngr = geometric_model_->size();
   for (int i = 0; i < ngr; i++) {
     Teuchos::RCP<const AmanziGeometry::Region> rgn = geometric_model_->FindRegion(i);
 
@@ -1058,7 +1058,7 @@ Mesh::valid_set_id(Set_ID id, Entity_kind kind) const
 {
   if (!geometric_model_.get()) return false;
 
-  unsigned int ngr = geometric_model_->RegionSize();
+  unsigned int ngr = geometric_model_->size();
   for (int i = 0; i < ngr; i++) {
     Teuchos::RCP<const AmanziGeometry::Region> rgn = geometric_model_->FindRegion(i);
 
