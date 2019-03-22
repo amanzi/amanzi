@@ -48,6 +48,9 @@ class DG_Modal : public BilinearForm {
   ~DG_Modal() {};
 
   // basic member functions
+  // -- schema
+  virtual std::vector<SchemaItem> schema() const override;
+
   // -- mass matrices
   virtual int MassMatrix(int c, const Tensor& K, DenseMatrix& M) override;
   virtual int MassMatrix(int c, const VectorPolynomial& K, DenseMatrix& M) override {

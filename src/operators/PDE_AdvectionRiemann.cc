@@ -28,68 +28,14 @@ namespace Operators {
 ****************************************************************** */
 void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
 {
-  Teuchos::ParameterList& range = plist.sublist("schema range");
-  Teuchos::ParameterList& domain = plist.sublist("schema domain");
-
-  if (global_op_ == Teuchos::null) {
-    // constructor was given a mesh
-    // -- range schema and cvs
-    local_schema_row_.Init(range, mesh_);
-    global_schema_row_ = local_schema_row_;
-
-    Teuchos::RCP<CompositeVectorSpace> cvs_row = Teuchos::rcp(new CompositeVectorSpace());
-    cvs_row->SetMesh(mesh_)->SetGhosted(true);
-
-    for (auto it = global_schema_row_.begin(); it != global_schema_row_.end(); ++it) {
-      std::string name(local_schema_row_.KindToString(it->kind));
-      cvs_row->AddComponent(name, it->kind, it->num);
-    }
-
-    // -- domain schema and cvs
-    local_schema_col_.Init(domain, mesh_);
-    global_schema_col_ = local_schema_col_;
-
-    Teuchos::RCP<CompositeVectorSpace> cvs_col = Teuchos::rcp(new CompositeVectorSpace());
-    cvs_col->SetMesh(mesh_)->SetGhosted(true);
-
-    for (auto it = global_schema_col_.begin(); it != global_schema_col_.end(); ++it) {
-      std::string name(local_schema_col_.KindToString(it->kind));
-      cvs_col->AddComponent(name, it->kind, it->num);
-    }
-
-    global_op_ = Teuchos::rcp(new Operator_Schema(cvs_row, cvs_col, plist, global_schema_row_, global_schema_col_));
-    if (local_schema_col_.base() == AmanziMesh::CELL) {
-      local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
-    } else if (local_schema_col_.base() == AmanziMesh::FACE) {
-      local_op_ = Teuchos::rcp(new Op_Face_Schema(global_schema_row_, global_schema_col_, mesh_));
-    }
-
-  } else {
-    // constructor was given an Operator
-    global_schema_row_ = global_op_->schema_row();
-    global_schema_col_ = global_op_->schema_col();
-
-    mesh_ = global_op_->DomainMap().Mesh();
-    local_schema_row_.Init(range, mesh_);
-    local_schema_col_.Init(domain, mesh_);
-
-    if (local_schema_col_.base() == AmanziMesh::CELL) {
-      local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
-    } else if (local_schema_col_.base() == AmanziMesh::FACE) {
-      local_op_ = Teuchos::rcp(new Op_Face_Schema(global_schema_row_, global_schema_col_, mesh_));
-    }
-  }
-
-  // register the advection Op
-  global_op_->OpPushBack(local_op_);
+  Teuchos::ParameterList& schema_list = plist.sublist("schema");
 
   // parse discretization parameters
-  // -- discretization method
-  auto mfd = WhetStone::BilinearFormFactory::Create(plist, mesh_);
+  auto base = global_schema_row_.StringToKind(schema_list.get<std::string>("base"));
+  auto mfd = WhetStone::BilinearFormFactory::Create(schema_list, mesh_);
 
-  // -- matrices to build
   matrix_ = plist.get<std::string>("matrix type");
-  method_ = plist.get<std::string>("method");
+  method_ = schema_list.get<std::string>("method");
 
   if (method_ == "dg modal") {
     dg_ = Teuchos::rcp_dynamic_cast<WhetStone::DG_Modal>(mfd);
@@ -102,6 +48,62 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
   // -- fluxes
   flux_ = plist.get<std::string>("flux formula", "Rusavov");
   jump_on_test_ = plist.get<bool>("jump operator on test function", true);
+
+  // constructor was given a mesh
+  if (global_op_ == Teuchos::null) {
+    local_schema_row_.Init(mfd, mesh_, base);
+    global_schema_row_ = local_schema_row_;
+
+    Teuchos::RCP<CompositeVectorSpace> cvs_row = Teuchos::rcp(new CompositeVectorSpace());
+    cvs_row->SetMesh(mesh_)->SetGhosted(true);
+
+    int num;
+    AmanziMesh::Entity_kind kind;
+
+    for (auto it = global_schema_row_.begin(); it != global_schema_row_.end(); ++it) {
+      std::tie(kind, std::ignore, num) = *it;
+      std::string name(local_schema_row_.KindToString(kind));
+      cvs_row->AddComponent(name, kind, num);
+    }
+
+    // -- domain schema and cvs
+    local_schema_col_.Init(mfd, mesh_, base);
+    global_schema_col_ = local_schema_col_;
+
+    Teuchos::RCP<CompositeVectorSpace> cvs_col = Teuchos::rcp(new CompositeVectorSpace());
+    cvs_col->SetMesh(mesh_)->SetGhosted(true);
+
+    for (auto it = global_schema_col_.begin(); it != global_schema_col_.end(); ++it) {
+      std::tie(kind, std::ignore, num) = *it;
+      std::string name(local_schema_col_.KindToString(kind));
+      cvs_col->AddComponent(name, kind, num);
+    }
+
+    global_op_ = Teuchos::rcp(new Operator_Schema(cvs_row, cvs_col, plist, global_schema_row_, global_schema_col_));
+    if (local_schema_col_.base() == AmanziMesh::CELL) {
+      local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
+    } else if (local_schema_col_.base() == AmanziMesh::FACE) {
+      local_op_ = Teuchos::rcp(new Op_Face_Schema(global_schema_row_, global_schema_col_, mesh_));
+    }
+
+  // constructor was given an Operator
+  } else {
+    global_schema_row_ = global_op_->schema_row();
+    global_schema_col_ = global_op_->schema_col();
+
+    mesh_ = global_op_->DomainMap().Mesh();
+    local_schema_row_.Init(mfd, mesh_, base);
+    local_schema_col_.Init(mfd, mesh_, base);
+
+    if (local_schema_col_.base() == AmanziMesh::CELL) {
+      local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
+    } else if (local_schema_col_.base() == AmanziMesh::FACE) {
+      local_op_ = Teuchos::rcp(new Op_Face_Schema(global_schema_row_, global_schema_col_, mesh_));
+    }
+  }
+
+  // register the advection Op
+  global_op_->OpPushBack(local_op_);
 }
 
 

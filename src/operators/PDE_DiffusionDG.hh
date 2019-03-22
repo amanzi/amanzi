@@ -71,7 +71,7 @@ class PDE_DiffusionDG : public PDE_HelperDiscretization {
   virtual void Init_(Teuchos::ParameterList& plist);
 
  private:
-  std::string method_, matrix_;
+  std::string matrix_;
   int method_order_;
 
   std::shared_ptr<std::vector<WhetStone::Tensor> > Kc_;
@@ -84,7 +84,7 @@ class PDE_DiffusionDG : public PDE_HelperDiscretization {
   // other operators
   Teuchos::RCP<Op> jump_up_op_, jump_pu_op_, penalty_op_;
 
-  std::shared_ptr<WhetStone::DG_Modal> dg_;
+  Teuchos::RCP<WhetStone::DG_Modal> dg_;
 };
 
 }  // namespace Operators

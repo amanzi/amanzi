@@ -17,6 +17,7 @@
 #include "Epetra_Vector.h"
 
 #include "RemapDG.hh"
+#include "WhetStoneDefs.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -40,7 +41,8 @@ RemapDG::RemapDG(
   nfaces_wghost_ = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   auto& pklist = plist_.sublist("PK operator");
-  order_ = pklist.sublist("flux operator").template get<int>("method order");
+  order_ = pklist.sublist("flux operator")
+                 .sublist("schema").template get<int>("method order");
 
   // other control variable
   bc_type_ = OPERATOR_BC_NONE;
@@ -95,7 +97,7 @@ void RemapDG::InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg)
 
   // boundary data
   int nk = WhetStone::PolynomialSpaceDimension(dim_, order_);
-  auto bc = Teuchos::rcp(new BCs(mesh0_, AmanziMesh::FACE, Operators::DOF_Type::VECTOR));
+  auto bc = Teuchos::rcp(new BCs(mesh0_, AmanziMesh::FACE, WhetStone::DOF_Type::VECTOR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(nk);
 

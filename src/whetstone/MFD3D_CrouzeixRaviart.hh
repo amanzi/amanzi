@@ -39,6 +39,9 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
   ~MFD3D_CrouzeixRaviart() {};
 
   // required methods
+  // -- schema
+  virtual std::vector<SchemaItem> schema() const override;
+
   // -- mass matrices
   virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override {
     Errors::Message msg("L2 consistency is not implemented for Crouzeix-Raviart space.");

@@ -76,7 +76,8 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   Teuchos::ParameterList plist = xmlreader.getParameters();
 
   int order = plist.sublist("PK operator")
-                   .sublist("flux operator").get<int>("method order");
+                   .sublist("flux operator")
+                   .sublist("schema").get<int>("method order");
 
   int nk = WhetStone::PolynomialSpaceDimension(dim, order);
 
@@ -135,7 +136,8 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   Epetra_MultiVector& p2c = *p2.ViewComponent("cell");
 
   // we need dg to use correct scaling of basis functions
-  Teuchos::ParameterList dglist = plist.sublist("PK operator").sublist("flux operator");
+  Teuchos::ParameterList dglist = plist.sublist("PK operator")
+                                       .sublist("flux operator").sublist("schema");
   auto dg = Teuchos::rcp(new WhetStone::DG_Modal(dglist, mesh0));
 
   AnalyticDG04 ana(mesh0, order, true);

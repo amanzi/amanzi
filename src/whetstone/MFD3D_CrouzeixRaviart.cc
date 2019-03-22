@@ -14,6 +14,7 @@
 */
 
 #include <cmath>
+#include <tuple>
 #include <vector>
 
 // Amanzi
@@ -42,6 +43,24 @@ MFD3D_CrouzeixRaviart::MFD3D_CrouzeixRaviart(const Teuchos::ParameterList& plist
     use_always_ho_(false)
 {
   order_ = plist.get<int>("method order");
+}
+
+
+/* ******************************************************************
+* Schema.
+****************************************************************** */
+std::vector<SchemaItem> MFD3D_CrouzeixRaviart::schema() const
+{
+  int nk = PolynomialSpaceDimension(d_ - 1, order_ - 1);
+  std::vector<SchemaItem> items;
+  items.push_back(std::make_tuple(AmanziMesh::FACE, DOF_Type::MOMENT, nk));
+
+  if (order_ > 1) {
+    nk = PolynomialSpaceDimension(d_, order_ - 2);
+    items.push_back(std::make_tuple(AmanziMesh::CELL, DOF_Type::MOMENT, nk));
+  }
+
+  return items;
 }
 
 

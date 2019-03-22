@@ -89,7 +89,7 @@ void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre
   }
 
   // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
   std::vector<double>& bc_mixed = bc->bc_mixed();
@@ -253,7 +253,7 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   }
 
   // create boundary data.
-  Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc_f->bc_model();
   std::vector<double>& bc_value = bc_f->bc_value();
 

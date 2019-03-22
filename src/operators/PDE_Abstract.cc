@@ -27,8 +27,16 @@ namespace Operators {
 ****************************************************************** */
 void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
 {
+  // parse parameters
+  // -- discretization details
+  matrix_ = plist.get<std::string>("matrix type");
+  grad_on_test_ = plist.get<bool>("gradient operator on test function", true);
+
+  // domain and rang of the operator
+  bool symmetric(true);
   Teuchos::ParameterList range, domain;
   if (plist.isSublist("schema range") && plist.isSublist("schema domain")) {
+    symmetric = false;
     range = plist.sublist("schema range");
     domain = plist.sublist("schema domain");
   }
@@ -44,30 +52,44 @@ void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
     Exceptions::amanzi_throw(msg);
   }
 
+  // discretization method:
+  auto base = global_schema_row_.StringToKind(domain.get<std::string>("base"));
+  mfd_ = WhetStone::BilinearFormFactory::Create(domain, mesh_);
+  Teuchos::RCP<WhetStone::BilinearForm> mfd_range;
+  if (!symmetric) 
+    mfd_range = WhetStone::BilinearFormFactory::Create(range, mesh_);
+  else
+    mfd_range = mfd_;
+
   if (global_op_ == Teuchos::null) {
     // constructor was given a mesh
     // -- range schema and cvs
-    local_schema_row_.Init(range, mesh_);
+    local_schema_row_.Init(mfd_range, mesh_, base);
     global_schema_row_ = local_schema_row_;
 
     Teuchos::RCP<CompositeVectorSpace> cvs_row = Teuchos::rcp(new CompositeVectorSpace());
     cvs_row->SetMesh(mesh_)->SetGhosted(true);
 
+    int num;
+    AmanziMesh::Entity_kind kind;
+
     for (auto it = global_schema_row_.begin(); it != global_schema_row_.end(); ++it) {
-      std::string name(local_schema_row_.KindToString(it->kind));
-      cvs_row->AddComponent(name, it->kind, it->num);
+      std::tie(kind, std::ignore, num) = *it;
+      std::string name(local_schema_row_.KindToString(kind));
+      cvs_row->AddComponent(name, kind, num);
     }
 
     // -- domain schema and cvs
-    local_schema_col_.Init(domain, mesh_);
+    local_schema_col_.Init(mfd_, mesh_, base);
     global_schema_col_ = local_schema_col_;
 
     Teuchos::RCP<CompositeVectorSpace> cvs_col = Teuchos::rcp(new CompositeVectorSpace());
     cvs_col->SetMesh(mesh_)->SetGhosted(true);
 
     for (auto it = global_schema_col_.begin(); it != global_schema_col_.end(); ++it) {
-      std::string name(local_schema_col_.KindToString(it->kind));
-      cvs_col->AddComponent(name, it->kind, it->num);
+      std::tie(kind, std::ignore, num) = *it;
+      std::string name(local_schema_col_.KindToString(kind));
+      cvs_col->AddComponent(name, kind, num);
     }
 
     global_op_ = Teuchos::rcp(new Operator_Schema(cvs_row, cvs_col, plist, global_schema_row_, global_schema_col_));
@@ -81,22 +103,14 @@ void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
     global_schema_col_ = global_op_->schema_col();
 
     mesh_ = global_op_->DomainMap().Mesh();
-    local_schema_row_.Init(range, mesh_);
-    local_schema_col_.Init(domain, mesh_);
+    local_schema_row_.Init(mfd_range, mesh_, base);
+    local_schema_col_.Init(mfd_, mesh_, base);
 
     local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
   }
 
   // register the advection Op
   global_op_->OpPushBack(local_op_);
-
-  // parse parameters
-  // -- discretization details
-  matrix_ = plist.get<std::string>("matrix type");
-  grad_on_test_ = plist.get<bool>("gradient operator on test function", true);
-
-  // discretization method
-  mfd_ = WhetStone::BilinearFormFactory::Create(plist, mesh_);
 }
 
 

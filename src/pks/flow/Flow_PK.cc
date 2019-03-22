@@ -21,6 +21,7 @@
 #include "PK_DomainFunctionFactory.hh"
 #include "PK_Utils.hh"
 #include "State.hh"
+#include "WhetStoneDefs.hh"
 
 #include "Flow_PK.hh"
 
@@ -236,7 +237,7 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 
   // Create BC objects
   // -- memory
-  op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
+  op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
 
   Teuchos::RCP<FlowBoundaryFunction> bc;
   auto& bc_list = plist.sublist("boundary conditions");

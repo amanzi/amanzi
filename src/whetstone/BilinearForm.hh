@@ -27,6 +27,7 @@
 #include "InnerProductH1.hh"
 #include "Tensor.hh"
 #include "VectorPolynomial.hh"
+#include "WhetStoneDefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -38,6 +39,9 @@ class BilinearForm : public virtual InnerProductL2,
  public:
   explicit BilinearForm() : order_(1) {};
   virtual ~BilinearForm() {};
+
+  // schema
+  virtual std::vector<SchemaItem> schema() const = 0;
 
   // additional members
   // -- low-order schemes require typically constant vector/tensor coefficients

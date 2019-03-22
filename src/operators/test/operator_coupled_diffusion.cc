@@ -29,6 +29,7 @@
 #include "Mesh_MSTK.hh"
 #include "LinearOperatorFactory.hh"
 #include "Tensor.hh"
+#include "WhetStoneDefs.hh"
 
 // Operators
 #include "BCs.hh"
@@ -225,11 +226,11 @@ struct Problem {
   }
 
   void MakeBCs() {
-    bc0 = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
+    bc0 = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
     std::vector<int>& bc_model0 = bc0->bc_model();
     std::vector<double>& bc_value0 = bc0->bc_value();
 
-    bc1 = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
+    bc1 = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
     std::vector<int>& bc_model1 = bc1->bc_model();
     std::vector<double>& bc_value1 = bc1->bc_value();
   
