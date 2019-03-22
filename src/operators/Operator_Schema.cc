@@ -187,7 +187,7 @@ void Operator_Schema::SymbolicAssembleMatrix()
 {
   // Create the supermap given a space (set of possible schemas) and a
   // specific schema (assumed/checked to be consistent with the space).
-  smap_ = CreateSuperMap(*cvs_col_, schema_col_);
+  smap_ = createSuperMap(*cvs_col_);
 
   // create the graph
   int row_size = MaxRowSize(*mesh_, schema_col_);

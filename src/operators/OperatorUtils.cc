@@ -195,27 +195,6 @@ int AddSuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
 }
 
 
-
-/* ******************************************************************
-* TBW
-****************************************************************** */
-Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schema, int n_dofs)
-{
-  std::vector<CompositeVectorSpace> cvss;
-  for (int i=0; i!=n_dofs; ++i) cvss.push_back(cvs);
-  return Teuchos::rcp(new SuperMap(cvss));
-}
-
-
-/* ******************************************************************
-* Create super map: general version
-****************************************************************** */
-Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, Schema& schema)
-{
-  return createSuperMap(cvs);
-}
-
-
 /* ******************************************************************
 * Estimate size of the matrix graph.
 ****************************************************************** */

@@ -154,7 +154,7 @@ void Operator::SymbolicAssembleMatrix()
 {
   // Create the supermap given a space (set of possible schemas) and a
   // specific schema (assumed/checked to be consistent with the space).
-  smap_ = CreateSuperMap(*cvs_col_, schema(), 1);
+  smap_ = createSuperMap(*cvs_col_);
 
   // create the graph
   int row_size = MaxRowSize(*mesh_, schema(), 1);
@@ -410,7 +410,7 @@ void Operator::InitializePreconditioner(Teuchos::ParameterList& plist)
   if (smap_.get() == NULL) {
     if (plist.isParameter("preconditioner type") &&
         plist.get<std::string>("preconditioner type") == "identity") {
-      smap_ = CreateSuperMap(*cvs_col_, schema(), 1);
+      smap_ = createSuperMap(*cvs_col_);
     } else {
       Errors::Message msg("Operator has no super map to be initialized.\n");
       Exceptions::amanzi_throw(msg);
