@@ -31,9 +31,9 @@ namespace Amanzi {
 
 // Constructor
 BlockVector::BlockVector(const Comm_ptr_type& comm,
-        std::vector<std::string>& names,
-        std::vector<Map_ptr_type >& maps,
-        std::vector<int> num_dofs) :
+        const std::vector<std::string>& names,
+        const std::vector<Map_ptr_type >& maps,
+        const std::vector<int> num_dofs) :
     names_(names),
     maps_(maps),
     num_dofs_(num_dofs),
@@ -73,38 +73,38 @@ BlockVector::BlockVector(const BlockVector& other) :
 };
 
 
-// Assigment.
-BlockVector& BlockVector::operator=(const BlockVector& other) {
-  if (this != &other) {
+// // Assigment.
+// BlockVector& BlockVector::operator=(const BlockVector& other) {
+//   if (this != &other) {
 
-#ifdef ENABLE_DBC
-    if (num_components_ != other.num_components_) {
-      Errors::Message message("Attempted assignment of non-compatible BlockVectors.");
-      Exceptions::amanzi_throw(message);
-    }
+// #ifdef ENABLE_DBC
+//     if (num_components_ != other.num_components_) {
+//       Errors::Message message("Attempted assignment of non-compatible BlockVectors.");
+//       Exceptions::amanzi_throw(message);
+//     }
 
-    for (int i = 0; i != num_components_; ++i) {
-      if ((names_[i] != other.names_[i]) ||
-          (num_dofs_[i] != other.num_dofs_[i]) ||
-          (maps_[i] != other.maps_[i])) {
-        Errors::Message message("Attempted assignment of non-compatible BlockVectors.");
-        Exceptions::amanzi_throw(message);
-      }
-    }
-#endif // ENABLE_DBC
+//     for (int i = 0; i != num_components_; ++i) {
+//       if ((names_[i] != other.names_[i]) ||
+//           (num_dofs_[i] != other.num_dofs_[i]) ||
+//           (maps_[i] != other.maps_[i])) {
+//         Errors::Message message("Attempted assignment of non-compatible BlockVectors.");
+//         Exceptions::amanzi_throw(message);
+//       }
+//     }
+// #endif // ENABLE_DBC
 
-    for (int i = 0; i != num_components_; ++i) {
-      if (other.data_[i] == Teuchos::null) {
-        data_[i] = Teuchos::null;
-      } else if (data_[i] == Teuchos::null) {
-        data_[i] = Teuchos::rcp(new MultiVector_type(*other.data_[i], Teuchos::Copy));
-      } else {
-        *data_[i] = *other.data_[i];
-      }
-    }
-  }
-  return *this;
-};
+//     for (int i = 0; i != num_components_; ++i) {
+//       if (other.data_[i] == Teuchos::null) {
+//         data_[i] = Teuchos::null;
+//       } else if (data_[i] == Teuchos::null) {
+//         data_[i] = Teuchos::rcp(new MultiVector_type(*other.data_[i], Teuchos::Copy));
+//       } else {
+//         *data_[i] = *other.data_[i];
+//       }
+//     }
+//   }
+//   return *this;
+// };
 
 
 // Returns the length of this blockvector
@@ -393,20 +393,20 @@ int BlockVector::Norm2(double* norm) const {
 // };
 
 
-// // Debugging?
-// void BlockVector::Print(std::ostream& os, bool data_io) const {
-//   os << "Block Vector" << std::endl;
-//   os << "  components: ";
-//   for (int i = 0; i != num_components_; ++i) {
-//     os << names_[i] << "(" << data_[i]->NumVectors() << ") ";
-//   }
-//   os << std::endl;
-//   if (data_io) {
-//     for (int i = 0; i != num_components_; ++i) {
-//       data_[i]->Print(os);
-//     }
-//   }
-// };
+// Debugging?
+void BlockVector::Print(std::ostream& os, bool data_io) const {
+  os << "Block Vector" << std::endl;
+  os << "  components: ";
+  for (int i = 0; i != num_components_; ++i) {
+    os << names_[i] << "(" << data_[i]->getNumVectors() << ") ";
+  }
+  os << std::endl;
+  if (data_io) {
+    for (int i = 0; i != num_components_; ++i) {
+      data_[i]->print(os);
+    }
+  }
+};
 
 
 // Populate by random numbers between -1 and 1. 

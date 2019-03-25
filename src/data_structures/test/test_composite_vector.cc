@@ -32,7 +32,7 @@ struct test_cv {
   test_cv() {
     comm = getDefaultComm();
     MeshFactory meshfactory(comm);
-    mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 8, 1, 1);
 
     std::vector<Entity_kind> locations(2);
     locations[0] = CELL;
@@ -62,57 +62,91 @@ SUITE(COMPOSITE_VECTOR) {
     CHECK(x->Map().SameAs(space));
     CHECK_EQUAL(2, x->NumComponents());
     int size = comm->getSize();
-    if (size == 1)
-      CHECK_EQUAL(8, x->size("cell"));
+    if (size == 1) CHECK_EQUAL(8, x->size("cell"));
     CHECK_EQUAL(2, x->NumVectors("cell"));
     CHECK(x->Map().NumComponents() == x->NumComponents());
     CHECK(x->Map().SameAs(x->Map()));
+    CHECK(x->ComponentMap("cell", false)->isSameAs(*mesh->map(CELL, false)));
+    CHECK(x->ComponentMap("cell", true)->isSameAs(*mesh->map(CELL, true)));
+
+    if (size == 2) {
+      CHECK_EQUAL(4, x->ComponentMap("cell", false)->getNodeNumElements());
+      CHECK_EQUAL(5, x->ComponentMap("cell", true)->getNodeNumElements());
+    } else {
+      CHECK_EQUAL(8, x->ComponentMap("cell", false)->getNodeNumElements());
+      CHECK_EQUAL(8, x->ComponentMap("cell", true)->getNodeNumElements());
+    }
   }
 
-  // test the vector's putscalar
-  TEST_FIXTURE(test_cv, CVPutScalar) {
+  TEST_FIXTURE(test_cv, CVSetGet) {
+    // check putscalar
     x->PutScalar(2.0);
-    CHECK_CLOSE((*x)("cell",0,0), 2.0, 0.00001);
-    CHECK_CLOSE((*x)("cell",1,0), 2.0, 0.00001);
-    CHECK_CLOSE((*x)("face",0,0), 2.0, 0.00001);
+    {
+      // check on owned
+      auto v1 = x->ViewComponent<AmanziDefaultHost>("cell", false);
+      CHECK_CLOSE(2.0, v1(0,0), 0.00001);
+      CHECK_CLOSE(2.0, v1(0,1), 0.00001);
 
-    std::vector<double> vals(2);
-    vals[0] = 4.0; vals[1] = 5.0;
-    x->PutScalar("cell", vals);
-    x->PutScalar("face", 3.0);
-    CHECK_CLOSE((*x)("cell",0,0), 4.0, 0.00001);
-    CHECK_CLOSE((*x)("cell",1,0), 5.0, 0.00001);
-    CHECK_CLOSE((*x)("face",0,0), 3.0, 0.00001);
+      auto v2 = x->ViewComponent<AmanziDefaultHost>("face", 0, false);
+      CHECK_CLOSE(2.0, v2(0), 0.00001);
+    }
+
+
+    {
+      // check on ghosted
+      auto v1 = x->ViewComponent<AmanziDefaultHost>("cell", true);
+      CHECK_CLOSE(2.0, v1(0,0), 0.00001);
+      CHECK_CLOSE(2.0, v1(0,1), 0.00001);
+
+      auto v2 = x->ViewComponent<AmanziDefaultHost>("face", 0, true);
+      CHECK_CLOSE(2.0, v2(0), 0.00001);
+    }
+
+    // PutScalar by component
+    // Not yet implemented, but when it is, this should work.
+    // 
+    // std::vector<double> vals(2);
+    // vals[0] = 4.0; vals[1] = 5.0;
+    // x->PutScalar("cell", vals);
+    // x->PutScalar("face", 3.0);
+    // {
+    //   // check on owned
+    //   auto v1 = x->ViewComponent<AmanziDefaultHost>("cell", false);
+    //   CHECK_CLOSE(4.0, v1(0,0), 0.00001);
+    //   CHECK_CLOSE(5.0, v1(0,1), 0.00001);
+
+    //   auto v2 = x->ViewComponent<AmanziDefaultHost>("face", false);
+    //   CHECK_CLOSE(3.0, v2(0,0), 0.00001);
+    // }
+    // {
+    //   // check on ghosted
+    //   auto v1 = x->ViewComponent<AmanziDefaultHost>("cell", true);
+    //   CHECK_CLOSE(4.0, v1(0,0), 0.00001);
+    //   CHECK_CLOSE(5.0, v1(0,1), 0.00001);
+
+    //   auto v2 = x->ViewComponent<AmanziDefaultHost>("face", true);
+    //   CHECK_CLOSE(3.0, v2(0,0), 0.00001);
+    // }
+
+
+    // check set by view
+    {
+      // set the value, then destroy the view
+      auto v1 = x->ViewComponent<AmanziDefaultHost>("cell", 0, false);
+      v1(0,0) = 16.0;
+    }
+    {
+      // check set by view on owned
+      auto v1 = x->ViewComponent<AmanziDefaultHost>("cell", 0, false);
+      CHECK_CLOSE(16.0, v1(0), 0.00001);
+    }
+    {
+      // check set by view on ghosted
+      auto v1 = x->ViewComponent<AmanziDefaultHost>("cell", 0, true);
+      CHECK_CLOSE(16.0, v1(0), 0.00001);
+    }
   }
 
-  // test the vector's set value/operator()
-  TEST_FIXTURE(test_cv, CVSetValue) {
-    Epetra_MultiVector& x_c = *x->ViewComponent("cell",false);
-    x_c[0][0] = 2.;
-    x_c[1][0] = 3.;
-    Epetra_MultiVector& x_f = *x->ViewComponent("face",false);
-    x_f[0][0] = 4;
-
-    CHECK_CLOSE((*x)("cell",0,0), 2.0, 0.00001);
-    CHECK_CLOSE((*x)("cell",1,0), 3.0, 0.00001);
-    CHECK_CLOSE((*x)("face",0,0), 4.0, 0.00001);
-  }
-
-  // test the vector's view mechanisms
-  TEST_FIXTURE(test_cv, CVViews) {
-    x->PutScalar(2.0);
-
-    // check the values got set correctly and we can access them from views
-    CHECK_CLOSE((*x->ViewComponent("cell", true))[0][0], 2.0, 0.00001);
-    CHECK_CLOSE((*x->ViewComponent("cell", false))[0][0], 2.0, 0.00001);
-    CHECK_CLOSE((*x->ViewComponent("cell"))[0][0], 2.0, 0.00001);
-
-    // change the non-ghosted view and check the ghosted view
-    x->ViewComponent("cell", false)->PutScalar(3.0);
-    CHECK_CLOSE((*x->ViewComponent("cell", true))[0][0], 3.0, 0.00001);
-    CHECK_CLOSE((*x->ViewComponent("cell", false))[0][0], 3.0, 0.00001);
-    CHECK_CLOSE((*x->ViewComponent("cell"))[0][0], 3.0, 0.00001);
-  }
 
   // test the vector's copy constructor
   TEST_FIXTURE(test_cv, CVCopy) {
@@ -120,12 +154,16 @@ SUITE(COMPOSITE_VECTOR) {
 
     CompositeVector y(*x);
     y.PutScalar(4.0);
-    CHECK_CLOSE((*x)("cell",0,0), 2.0, 0.00001);
-    CHECK_CLOSE((*x)("cell",1,0), 2.0, 0.00001);
-    CHECK_CLOSE((*x)("face",0,0), 2.0, 0.00001);
-    CHECK_CLOSE(y("cell",0,0), 4.0, 0.00001);
-    CHECK_CLOSE(y("cell",1,0), 4.0, 0.00001);
-    CHECK_CLOSE(y("face",0,0), 4.0, 0.00001);
+
+    {
+      // check set by view on owned
+      auto v1 = x->ViewComponent<AmanziDefaultHost>("cell", 0, false);
+      CHECK_CLOSE(2.0, v1(0), 0.00001);
+
+      // check set by view on owned
+      auto v2 = y.ViewComponent<AmanziDefaultHost>("cell", 0, false);
+      CHECK_CLOSE(4.0, v2(0), 0.00001);
+    }
   }
 
   // test the vector's operator=
@@ -137,57 +175,28 @@ SUITE(COMPOSITE_VECTOR) {
 
     // operator= and check vals
     y = *x;
-    CHECK_CLOSE((*x)("cell",0,0), 2.0, 0.00001);
-    CHECK_CLOSE((*x)("cell",1,0), 2.0, 0.00001);
-    CHECK_CLOSE((*x)("face",0,0), 2.0, 0.00001);
-    CHECK_CLOSE(y("cell",0,0), 2.0, 0.00001);
-    CHECK_CLOSE(y("cell",1,0), 2.0, 0.00001);
-    CHECK_CLOSE(y("face",0,0), 2.0, 0.00001);
+    {
+      // check set by view on owned
+      auto v1 = x->ViewComponent<AmanziDefaultHost>("cell", 0, false);
+      CHECK_CLOSE(2.0, v1(0), 0.00001);
+
+      // check set by view on owned
+      auto v2 = y.ViewComponent<AmanziDefaultHost>("cell", 0, false);
+      CHECK_CLOSE(2.0, v2(0), 0.00001);
+    }
 
     // ensure operator= did not copy pointers
     x->PutScalar(4.0);
-    CHECK_CLOSE((*x)("cell",0,0), 4.0, 0.00001);
-    CHECK_CLOSE((*x)("cell",1,0), 4.0, 0.00001);
-    CHECK_CLOSE((*x)("face",0,0), 4.0, 0.00001);
-    CHECK_CLOSE(y("cell",0,0), 2.0, 0.00001);
-    CHECK_CLOSE(y("cell",1,0), 2.0, 0.00001);
-    CHECK_CLOSE(y("face",0,0), 2.0, 0.00001);
+    {
+      // check set by view on owned
+      auto v1 = x->ViewComponent<AmanziDefaultHost>("cell", 0, false);
+      CHECK_CLOSE(4.0, v1(0), 0.00001);
+
+      // check set by view on owned
+      auto v2 = y.ViewComponent<AmanziDefaultHost>("cell", 0, false);
+      CHECK_CLOSE(2.0, v2(0), 0.00001);
+    }
   }
-
-  // test the vector's view of local vals
-  TEST_FIXTURE(test_cv, CVView) {
-    x->PutScalar(2.0);
-
-    // get a non-ghosted view
-    Teuchos::RCP<Epetra_MultiVector> cells = x->ViewComponent("cell", false);
-    CHECK_CLOSE((*cells)[0][0], 2.0, 0.00001);
-
-    // alter the view, communicate, and check the ghosted view
-    cells->PutScalar(4.0);
-    x->ScatterMasterToGhosted();
-    CHECK_CLOSE((*x)("cell",0,0), 4.0, 0.00001);
-    CHECK_CLOSE((*x)("face",0,0), 2.0, 0.00001);
-  }
-
-  // DEPRECATED FEATURE
-  // // test the vector's conversion to a packed SuperVector
-  // TEST_FIXTURE(test_cv, CVSuperVector) {
-  //   x->ViewComponent("cell", true)->PutScalar(2.0);
-  //   x->ViewComponent("face", true)->PutScalar(3.0);
-
-  //   // create a supervector and check the values
-  //   Teuchos::RCP<Epetra_Vector> y = x->CreateSuperVector();
-  //   x->CopyToSuperVector(y);
-  //   CHECK_CLOSE((*y)[0], 2.0, 0.00001);
-  //   CHECK_CLOSE((*y)[43], 3.0, 0.00001);
-
-  //   // copy construct the supervector and get new values back
-  //   Epetra_Vector z(*y);
-  //   z.PutScalar(5.0);
-  //   x->DataFromSuperVector(z);
-  //   CHECK_CLOSE((*x)("cell",0,0), 5.0, 0.00001);
-  //   CHECK_CLOSE((*x)("face",0,0), 5.0, 0.00001);
-  // }
 
   // test the communication routines
   TEST_FIXTURE(test_cv, CVScatter) {
@@ -195,123 +204,51 @@ SUITE(COMPOSITE_VECTOR) {
     int size = comm->getSize();
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
-    { // scope for x_c
-      Epetra_MultiVector& x_c = *x->ViewComponent("cell",false);
-      for (int c=0; c!=ncells; ++c) {
-        x_c[0][c] = rank+1.0;
-      }
-      x->ScatterMasterToGhosted("cell");
-    }
+    x->PutScalar(rank+1);
+    x->ScatterMasterToGhosted("cell");
 
     if (size == 2) {
+      auto x_c = x->ViewComponent<AmanziDefaultHost>("cell", 0, true);
       if (rank == 0) {
-        CHECK_CLOSE(1.0, (*x)("cell",0), 0.00001);
-        CHECK_CLOSE(2.0, (*x)("cell",5), 0.00001);
+        CHECK_CLOSE(1.0, x_c(0), 0.00001);
+        CHECK_CLOSE(2.0, x_c(4), 0.00001);
       } else if (rank == 1) {
-        CHECK_CLOSE(2.0, (*x)("cell",0), 0.00001);
-        CHECK_CLOSE(1.0, (*x)("cell",5), 0.00001);
+        CHECK_CLOSE(2.0, x_c(0), 0.00001);
+        CHECK_CLOSE(1.0, x_c(4), 0.00001);
       }
     } else {
-      std::cout << "Test CVScatter requires 2 procs" << std::endl;
-    }
-
-    { // scope for x_f
-      int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-      Epetra_MultiVector& x_f = *x->ViewComponent("face",false);
-      for (int f=0; f!=nfaces; ++f) {
-        x_f[0][f] = rank+1.0;
-      }
-      x->ScatterMasterToGhosted("face");
+      auto x_c = x->ViewComponent<AmanziDefaultHost>("cell", 0, true);
+      CHECK_CLOSE(rank+1, x_c(0), 0.00001);
     }
   }
 
   TEST_FIXTURE(test_cv, CVGather) {
     int rank = comm->getRank();
+    int size = comm->getSize();
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-    Epetra_MultiVector& x_c = *x->ViewComponent("cell",true);
-    for (int c=0; c!=ncells; ++c) {
-      x_c[0][c] = rank + 1;
+
+    { // scope for x_c
+      auto x_c = x->ViewComponent<AmanziDefaultHost>("cell", 0, true);
+      for (int c=0; c!=ncells; ++c) {
+        x_c(c) = rank+1;
+      }
     }
     x->GatherGhostedToMaster("cell");
 
-    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-    Epetra_MultiVector& x_f = *x->ViewComponent("face",true);
-    for (int f=0; f!=nfaces; ++f) {
-      x_f[0][f] = rank + 1;
-    }
-    x->GatherGhostedToMaster("face");
-  }
-
-  TEST_FIXTURE(test_cv, CVManageCommSmoke) {
-    // Ensures that Communication happens after a change.
-    int rank = comm->getRank();
-    int size = comm->getSize();
-    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    Epetra_MultiVector& x_c = *x->ViewComponent("cell",false);
-    for (int c=0; c!=ncells; ++c) {
-      x_c[0][c] = rank+1.0;
-    }
-    x->ScatterMasterToGhosted("cell");
-
-    x->PutScalar(100.);
-    x->ScatterMasterToGhosted("cell");
-
     if (size == 2) {
+      auto x_c = x->ViewComponent<AmanziDefaultHost>("cell",0,false);
       if (rank == 0) {
-        CHECK_CLOSE(100.0, (*x)("cell",0), 0.00001);
-        CHECK_CLOSE(100.0, (*x)("cell",5), 0.00001);
+        CHECK_CLOSE(1.0, x_c(0), 0.00001);
+        CHECK_CLOSE(3.0, x_c(3), 0.00001);
       } else if (rank == 1) {
-        CHECK_CLOSE(100.0, (*x)("cell",0), 0.00001);
-        CHECK_CLOSE(100.0, (*x)("cell",5), 0.00001);
+        CHECK_CLOSE(3.0, x_c(0), 0.00001);
+        CHECK_CLOSE(2.0, x_c(3), 0.00001);
       }
     } else {
-      std::cout << "Test CVScatter requires 2 procs" << std::endl;
-    }
+      auto x_c = x->ViewComponent<AmanziDefaultHost>("cell",0,false);
+      CHECK_CLOSE(1, x_c(0), 0.00001);
+      CHECK_CLOSE(1, x_c(7), 0.00001);
+    }    
   }
 
-  TEST_FIXTURE(test_cv, CVManageCommNoComm) {
-    // Ensures that Communication DOESN"T happen if it isn't needed 
-    // Does not work
-    int rank = comm->getRank();
-    int size = comm->getSize();
-    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-
-    Epetra_MultiVector& x_c = *x->ViewComponent("cell",false);
-    for (int c=0; c!=ncells; ++c) {
-      x_c[0][c] = rank+1.0;
-    }
-    x->ScatterMasterToGhosted("cell");
-    if (size == 2) {
-      if (rank == 0) {
-        CHECK_CLOSE(1.0, (*x)("cell",0), 0.00001);
-        CHECK_CLOSE(2.0, (*x)("cell",5), 0.00001);
-      } else if (rank == 1) {
-        CHECK_CLOSE(2.0, (*x)("cell",0), 0.00001);
-        CHECK_CLOSE(1.0, (*x)("cell",5), 0.00001);
-      }
-    } else {
-      std::cout << "Test CVScatter requires 2 procs" << std::endl;
-    }
-
-    // by changing the values using the same vector ref, we can cheat the
-    // system
-    for (int c=0; c!=ncells; ++c) {
-      x_c[0][c] = rank+100;
-    }
-    x->ScatterMasterToGhosted("cell"); // this call should NOT communicate
-    if (size == 2) {
-      if (rank == 0) {
-        CHECK_CLOSE(100.0, (*x)("cell",0), 0.00001);
-        // CHECK_CLOSE(2.0, (*x)("cell",5), 0.00001);
-        CHECK_CLOSE(101.0, (*x)("cell",5), 0.00001);
-      } else if (rank == 1) {
-        CHECK_CLOSE(101.0, (*x)("cell",0), 0.00001);
-        // CHECK_CLOSE(1.0, (*x)("cell",5), 0.00001);
-        CHECK_CLOSE(100.0, (*x)("cell",5), 0.00001);
-      }
-    } else {
-      std::cout << "Test CVScatter requires 2 procs" << std::endl;
-    }
-  }
 }
-

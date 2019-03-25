@@ -63,22 +63,32 @@ struct test_tv {
 };
 
 
+// NOTE: this is backwards notation, with dof_num first, as was the case in
+// Epetra.
+double get_value(const CompositeVector& cv, const std::string& cname,
+                 int dof_num, int lid) {
+  auto vec = cv.ViewComponent<AmanziDefaultHost>(cname, true);
+  return vec(lid, dof_num);
+}
+  
+
 SUITE(TREE_VECTOR) {
 
   // test the vector's putscalar
   TEST_FIXTURE(test_tv, TVPutScalar) {
     x->PutScalar(2.0);
-    CHECK_CLOSE((*x->Data())("cell",0,0), 2.0, 0.00001);
-    CHECK_CLOSE((*x->Data())("cell",1,0), 2.0, 0.00001);
-    CHECK_CLOSE((*x->Data())("face",0,0), 2.0, 0.00001);
+    
+    CHECK_CLOSE(get_value(*x->Data(),"cell",0,0), 2.0, 0.00001);
+    CHECK_CLOSE(get_value(*x->Data(),"cell",1,0), 2.0, 0.00001);
+    CHECK_CLOSE(get_value(*x->Data(),"face",0,0), 2.0, 0.00001);
 
     x2->PutScalar(3.0);
-    CHECK_CLOSE((*x->Data())("cell",0,0), 3.0, 0.00001); // x2 created via PushBack(x), ensure this stores a pointer, not copy
-    CHECK_CLOSE((*x->Data())("cell",1,0), 3.0, 0.00001);
-    CHECK_CLOSE((*x->Data())("face",0,0), 3.0, 0.00001);
-    CHECK_CLOSE((*x2->SubVector(0)->Data())("cell",0,0), 3.0, 0.00001);
-    CHECK_CLOSE((*x2->SubVector(0)->Data())("cell",1,0), 3.0, 0.00001);
-    CHECK_CLOSE((*x2->SubVector(0)->Data())("face",0,0), 3.0, 0.00001);
+    CHECK_CLOSE(get_value(*x->Data(),"cell",0,0), 3.0, 0.00001); // x2 created via PushBack(x), ensure this stores a pointer, not copy
+    CHECK_CLOSE(get_value(*x->Data(),"cell",1,0), 3.0, 0.00001);
+    CHECK_CLOSE(get_value(*x->Data(),"face",0,0), 3.0, 0.00001);
+    CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"cell",0,0), 3.0, 0.00001);
+    CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"cell",1,0), 3.0, 0.00001);
+    CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"face",0,0), 3.0, 0.00001);
   }
 
   // test the vector's copy constructor
@@ -88,43 +98,43 @@ SUITE(TREE_VECTOR) {
     TreeVector y(*x);
     CHECK(y.Map().SameAs(x->Map()));
     y.PutScalar(4.0);
-    CHECK_CLOSE((*x->Data())("cell",0,0), 2.0, 0.00001);
-    CHECK_CLOSE((*x->Data())("cell",1,0), 2.0, 0.00001);
-    CHECK_CLOSE((*x->Data())("face",0,0), 2.0, 0.00001);
-    CHECK_CLOSE((*y.Data())("cell",0,0), 4.0, 0.00001);
-    CHECK_CLOSE((*y.Data())("cell",1,0), 4.0, 0.00001);
-    CHECK_CLOSE((*y.Data())("face",0,0), 4.0, 0.00001);
+    CHECK_CLOSE(get_value(*x->Data(),"cell",0,0), 2.0, 0.00001);
+    CHECK_CLOSE(get_value(*x->Data(),"cell",1,0), 2.0, 0.00001);
+    CHECK_CLOSE(get_value(*x->Data(),"face",0,0), 2.0, 0.00001);
+    CHECK_CLOSE(get_value(*y.Data(),"cell",0,0), 4.0, 0.00001);
+    CHECK_CLOSE(get_value(*y.Data(),"cell",1,0), 4.0, 0.00001);
+    CHECK_CLOSE(get_value(*y.Data(),"face",0,0), 4.0, 0.00001);
 
     TreeVector z(x->Map());
     CHECK(z.Map().SameAs(x->Map()));
     z.PutScalar(4.0);
-    CHECK_CLOSE((*x->Data())("cell",0,0), 2.0, 0.00001);
-    CHECK_CLOSE((*x->Data())("cell",1,0), 2.0, 0.00001);
-    CHECK_CLOSE((*x->Data())("face",0,0), 2.0, 0.00001);
-    CHECK_CLOSE((*z.Data())("cell",0,0), 4.0, 0.00001);
-    CHECK_CLOSE((*z.Data())("cell",1,0), 4.0, 0.00001);
-    CHECK_CLOSE((*z.Data())("face",0,0), 4.0, 0.00001);
+    CHECK_CLOSE(get_value(*x->Data(),"cell",0,0), 2.0, 0.00001);
+    CHECK_CLOSE(get_value(*x->Data(),"cell",1,0), 2.0, 0.00001);
+    CHECK_CLOSE(get_value(*x->Data(),"face",0,0), 2.0, 0.00001);
+    CHECK_CLOSE(get_value(*z.Data(),"cell",0,0), 4.0, 0.00001);
+    CHECK_CLOSE(get_value(*z.Data(),"cell",1,0), 4.0, 0.00001);
+    CHECK_CLOSE(get_value(*z.Data(),"face",0,0), 4.0, 0.00001);
 
     x2->PutScalar(2.0);
     TreeVector y2(*x2);
     CHECK(y2.Map().SameAs(x2->Map()));
     y2.PutScalar(5.0);
-    CHECK_CLOSE((*x2->SubVector(0)->Data())("cell",0,0), 2.0, 0.00001);
-    CHECK_CLOSE((*x2->SubVector(0)->Data())("cell",1,0), 2.0, 0.00001);
-    CHECK_CLOSE((*x2->SubVector(0)->Data())("face",0,0), 2.0, 0.00001);
-    CHECK_CLOSE((*y2.SubVector(0)->Data())("cell",0,0), 5.0, 0.00001);
-    CHECK_CLOSE((*y2.SubVector(0)->Data())("cell",1,0), 5.0, 0.00001);
-    CHECK_CLOSE((*y2.SubVector(0)->Data())("face",0,0), 5.0, 0.00001);
+    CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"cell",0,0), 2.0, 0.00001);
+    CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"cell",1,0), 2.0, 0.00001);
+    CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"face",0,0), 2.0, 0.00001);
+    CHECK_CLOSE(get_value(*y2.SubVector(0)->Data(),"cell",0,0), 5.0, 0.00001);
+    CHECK_CLOSE(get_value(*y2.SubVector(0)->Data(),"cell",1,0), 5.0, 0.00001);
+    CHECK_CLOSE(get_value(*y2.SubVector(0)->Data(),"face",0,0), 5.0, 0.00001);
 
     TreeVector z2(x2->Map());
     CHECK(z2.Map().SameAs(x2->Map()));
     z2.PutScalar(6.0);
-    CHECK_CLOSE((*x2->SubVector(0)->Data())("cell",0,0), 2.0, 0.00001);
-    CHECK_CLOSE((*x2->SubVector(0)->Data())("cell",1,0), 2.0, 0.00001);
-    CHECK_CLOSE((*x2->SubVector(0)->Data())("face",0,0), 2.0, 0.00001);
-    CHECK_CLOSE((*z2.SubVector(0)->Data())("cell",0,0), 6.0, 0.00001);
-    CHECK_CLOSE((*z2.SubVector(0)->Data())("cell",1,0), 6.0, 0.00001);
-    CHECK_CLOSE((*z2.SubVector(0)->Data())("face",0,0), 6.0, 0.00001);
+    CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"cell",0,0), 2.0, 0.00001);
+    CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"cell",1,0), 2.0, 0.00001);
+    CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"face",0,0), 2.0, 0.00001);
+    CHECK_CLOSE(get_value(*z2.SubVector(0)->Data(),"cell",0,0), 6.0, 0.00001);
+    CHECK_CLOSE(get_value(*z2.SubVector(0)->Data(),"cell",1,0), 6.0, 0.00001);
+    CHECK_CLOSE(get_value(*z2.SubVector(0)->Data(),"face",0,0), 6.0, 0.00001);
   }
 
 
@@ -137,21 +147,21 @@ SUITE(TREE_VECTOR) {
 
     // operator= and check vals
     y = *x;
-    CHECK_CLOSE((*x->Data())("cell",0,0), 2.0, 0.00001);
-    CHECK_CLOSE((*x->Data())("cell",1,0), 2.0, 0.00001);
-    CHECK_CLOSE((*x->Data())("face",0,0), 2.0, 0.00001);
-    CHECK_CLOSE((*y.Data())("cell",0,0), 2.0, 0.00001);
-    CHECK_CLOSE((*y.Data())("cell",1,0), 2.0, 0.00001);
-    CHECK_CLOSE((*y.Data())("face",0,0), 2.0, 0.00001);
+    CHECK_CLOSE(get_value(*x->Data(),"cell",0,0), 2.0, 0.00001);
+    CHECK_CLOSE(get_value(*x->Data(),"cell",1,0), 2.0, 0.00001);
+    CHECK_CLOSE(get_value(*x->Data(),"face",0,0), 2.0, 0.00001);
+    CHECK_CLOSE(get_value(*y.Data(),"cell",0,0), 2.0, 0.00001);
+    CHECK_CLOSE(get_value(*y.Data(),"cell",1,0), 2.0, 0.00001);
+    CHECK_CLOSE(get_value(*y.Data(),"face",0,0), 2.0, 0.00001);
 
     // ensure operator= did not copy pointers
     x->PutScalar(4.0);
-    CHECK_CLOSE((*x->Data())("cell",0,0), 4.0, 0.00001);
-    CHECK_CLOSE((*x->Data())("cell",1,0), 4.0, 0.00001);
-    CHECK_CLOSE((*x->Data())("face",0,0), 4.0, 0.00001);
-    CHECK_CLOSE((*y.Data())("cell",0,0), 2.0, 0.00001);
-    CHECK_CLOSE((*y.Data())("cell",1,0), 2.0, 0.00001);
-    CHECK_CLOSE((*y.Data())("face",0,0), 2.0, 0.00001);
+    CHECK_CLOSE(get_value(*x->Data(),"cell",0,0), 4.0, 0.00001);
+    CHECK_CLOSE(get_value(*x->Data(),"cell",1,0), 4.0, 0.00001);
+    CHECK_CLOSE(get_value(*x->Data(),"face",0,0), 4.0, 0.00001);
+    CHECK_CLOSE(get_value(*y.Data(),"cell",0,0), 2.0, 0.00001);
+    CHECK_CLOSE(get_value(*y.Data(),"cell",1,0), 2.0, 0.00001);
+    CHECK_CLOSE(get_value(*y.Data(),"face",0,0), 2.0, 0.00001);
 
     x2->PutScalar(5.0);
     TreeVector y2(*x2);
@@ -160,21 +170,21 @@ SUITE(TREE_VECTOR) {
     // operator= and check vals
     y2 = *x2;
 
-    CHECK_CLOSE((*x2->SubVector(0)->Data())("cell",0,0), 5.0, 0.00001);
-    CHECK_CLOSE((*x2->SubVector(0)->Data())("cell",1,0), 5.0, 0.00001);
-    CHECK_CLOSE((*x2->SubVector(0)->Data())("face",0,0), 5.0, 0.00001);
-    CHECK_CLOSE((*y2.SubVector(0)->Data())("cell",0,0), 5.0, 0.00001);
-    CHECK_CLOSE((*y2.SubVector(0)->Data())("cell",1,0), 5.0, 0.00001);
-    CHECK_CLOSE((*y2.SubVector(0)->Data())("face",0,0), 5.0, 0.00001);
+    CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"cell",0,0), 5.0, 0.00001);
+    CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"cell",1,0), 5.0, 0.00001);
+    CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"face",0,0), 5.0, 0.00001);
+    CHECK_CLOSE(get_value(*y2.SubVector(0)->Data(),"cell",0,0), 5.0, 0.00001);
+    CHECK_CLOSE(get_value(*y2.SubVector(0)->Data(),"cell",1,0), 5.0, 0.00001);
+    CHECK_CLOSE(get_value(*y2.SubVector(0)->Data(),"face",0,0), 5.0, 0.00001);
 
     // ensure operator= did not copy pointers
     x2->PutScalar(6.0);
-    CHECK_CLOSE((*x2->SubVector(0)->Data())("cell",0,0), 6.0, 0.00001);
-    CHECK_CLOSE((*x2->SubVector(0)->Data())("cell",1,0), 6.0, 0.00001);
-    CHECK_CLOSE((*x2->SubVector(0)->Data())("face",0,0), 6.0, 0.00001);
-    CHECK_CLOSE((*y2.SubVector(0)->Data())("cell",0,0), 5.0, 0.00001);
-    CHECK_CLOSE((*y2.SubVector(0)->Data())("cell",1,0), 5.0, 0.00001);
-    CHECK_CLOSE((*y2.SubVector(0)->Data())("face",0,0), 5.0, 0.00001);
+    CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"cell",0,0), 6.0, 0.00001);
+    CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"cell",1,0), 6.0, 0.00001);
+    CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"face",0,0), 6.0, 0.00001);
+    CHECK_CLOSE(get_value(*y2.SubVector(0)->Data(),"cell",0,0), 5.0, 0.00001);
+    CHECK_CLOSE(get_value(*y2.SubVector(0)->Data(),"cell",1,0), 5.0, 0.00001);
+    CHECK_CLOSE(get_value(*y2.SubVector(0)->Data(),"face",0,0), 5.0, 0.00001);
 
 
   }

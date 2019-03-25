@@ -233,21 +233,21 @@ int TreeVector::Scale(double value) {
   return ierr;
 };
 
-int TreeVector::Shift(double value) {
-  // this <- this + scalarA
-  int ierr = 0;
-  if (data_ != Teuchos::null) {
-    ierr = data_->Shift(value);
-    if (ierr) return ierr;
-  }
+// int TreeVector::Shift(double value) {
+//   // this <- this + scalarA
+//   int ierr = 0;
+//   if (data_ != Teuchos::null) {
+//     ierr = data_->Shift(value);
+//     if (ierr) return ierr;
+//   }
 
-  for (std::vector< Teuchos::RCP<TreeVector> >::iterator subvec = subvecs_.begin();
-       subvec != subvecs_.end(); ++subvec) {
-    ierr = (*subvec)->Shift(value);
-    if (ierr) return ierr;
-  }
-  return ierr;
-};
+//   for (std::vector< Teuchos::RCP<TreeVector> >::iterator subvec = subvecs_.begin();
+//        subvec != subvecs_.end(); ++subvec) {
+//     ierr = (*subvec)->Shift(value);
+//     if (ierr) return ierr;
+//   }
+//   return ierr;
+// };
 
 
 // this <- element-wise reciprocal(this)

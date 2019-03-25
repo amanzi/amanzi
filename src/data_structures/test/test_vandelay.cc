@@ -83,12 +83,23 @@ SUITE(VANDELAY_COMPOSITE_VECTOR) {
   TEST_FIXTURE(test_cv_vandelay, CVVandelay) {
     std::cout << "X has " << x->NumComponents() << " components" << std::endl;
     x->PutScalar(2.0);
-    CHECK_CLOSE((*x)("cell",0,0), 2.0, 0.00001);
-    CHECK_CLOSE((*x)("cell",1,0), 2.0, 0.00001);
-    CHECK_CLOSE((*x)("face",0,0), 2.0, 0.00001);
 
-    *x2->ViewComponent("boundary_face",false) = *x->ViewComponent("boundary_face",false);
-    CHECK_CLOSE((*x2)("boundary_face",0,0), 2.0, 0.00001);
+    {
+      auto v_c = x->ViewComponent<AmanziDefaultHost>("cell", true);
+      CHECK_CLOSE(2., v_c(0,0), 0.00001);
+      CHECK_CLOSE(2., v_c(0,1), 0.00001);
+
+      auto v_f = x->ViewComponent<AmanziDefaultHost>("face", 0, true);
+      CHECK_CLOSE(2.0, v_f(0), 0.00001);
+    }
+
+    // use the vandelay map to get the boundary_face from face component
+    x2->ViewComponent<AmanziDefaultHost>("boundary_face",false) = x->ViewComponent<AmanziDefaultHost>("boundary_face",false);
+
+    {
+      auto v_bf = x2->ViewComponent<AmanziDefaultHost>("boundary_face", 0, false);
+      CHECK_CLOSE(2.0, v_bf(0), 0.00001);
+    }
   }
 }
 

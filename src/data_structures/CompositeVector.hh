@@ -35,8 +35,6 @@ DOCUMENT VANDELAY HERE! FIX ME --etc
 #ifndef AMANZI_COMPOSITEVECTOR_HH_
 #define AMANZI_COMPOSITEVECTOR_HH_
 
-#define CV_ENABLE_SET_FROM_OPERATOR 0
-
 #include <vector>
 #include "Teuchos_RCP.hpp"
 #include "AmanziTypes.hh"
@@ -144,8 +142,7 @@ public:
   InputVector_type<DeviceType>
   ViewComponent(const std::string& name, int dof, bool ghosted=false) const {
     using memory_space = typename DeviceType::memory_space;
-    // CHECK THIS -- should 0 --> dof?
-    return Kokkos::subview(ViewComponent<DeviceType>(name, ghosted), Kokkos::ALL(), 0);
+    return Kokkos::subview(ViewComponent<DeviceType>(name, ghosted), Kokkos::ALL(), dof);
   }
 
   // -- Set data. --
@@ -168,8 +165,7 @@ public:
   OutputVector_type<DeviceType>
   ViewComponent(const std::string& name, int dof, bool ghosted=false) {
     using memory_space = typename DeviceType::memory_space;
-    // CHECK THIS -- should 0 --> dof?
-    return Kokkos::subview(ViewComponent<DeviceType>(name, ghosted), Kokkos::ALL(), 0);
+    return Kokkos::subview(ViewComponent<DeviceType>(name, ghosted), Kokkos::ALL(), dof);
   }
 
   
@@ -264,11 +260,11 @@ public:
   // this(name,:,:) <- scalar*this(name,:,:)
   int Scale(const std::string& name, double scalar);
 
-  // this <- this + scalar
-  int Shift(double scalar);
+  // // this <- this + scalar
+  // int Shift(double scalar);
 
-  // this(name,:,:) <- scalar + this(name,:,:)
-  int Shift(const std::string& name, double scalar);
+  // // this(name,:,:) <- scalar + this(name,:,:)
+  // int Shift(const std::string& name, double scalar);
 
   // this <- element wise reciprocal(this)
   int Reciprocal(const CompositeVector& other);
@@ -417,15 +413,15 @@ CompositeVector::Scale(const std::string& name, double scalar) {
   return mastervec_->Scale(name, scalar);
 }
 
-inline int
-CompositeVector::Shift(double scalar) {
-  return mastervec_->Shift(scalar);
-}
+// inline int
+// CompositeVector::Shift(double scalar) {
+//   return mastervec_->Shift(scalar);
+// }
 
-inline int
-CompositeVector::Shift(const std::string& name, double scalar) {
-  return mastervec_->Shift(name, scalar);
-}
+// inline int
+// CompositeVector::Shift(const std::string& name, double scalar) {
+//   return mastervec_->Shift(name, scalar);
+// }
 
 inline int
 CompositeVector::Reciprocal(const CompositeVector& other) {

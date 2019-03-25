@@ -31,9 +31,9 @@ class BlockVector {
 public:
   // Constructor
   BlockVector(const Comm_ptr_type& comm,
-              std::vector<std::string>& names,
-              std::vector<Map_ptr_type>& maps,
-              std::vector<int> num_dofs);
+              const std::vector<std::string>& names,
+              const std::vector<Map_ptr_type>& maps,
+              const std::vector<int> num_dofs);
 
   // copy constructor
   BlockVector(const BlockVector& other);
@@ -42,7 +42,7 @@ public:
   void CreateData();
 
   // assignment
-  BlockVector& operator=(const BlockVector& other);
+  BlockVector& operator=(const BlockVector& other) = delete;
 
   // Accessors
 
@@ -67,7 +67,7 @@ public:
   }
 
   // -- Access a view of a single component's data.
-  Teuchos::RCP<const MultiVector_type>
+  cMultiVector_ptr_type
   GetComponent(std::string name) const;
 
   MultiVector_ptr_type
@@ -99,11 +99,11 @@ public:
   // Scale() applied to component name.
   int Scale(std::string name, double scalarThis);
 
-  // this <- this + scalarA
-  int Shift(double scalarA);
+  // // this <- this + scalarA
+  // int Shift(double scalarA);
 
-  // Shift() applied to component name.
-  int Shift(std::string name, double scalarA);
+  // // Shift() applied to component name.
+  // int Shift(std::string name, double scalarA);
 
   // this <- element wise reciprocal(this)
   int Reciprocal(const BlockVector& other);

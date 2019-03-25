@@ -177,19 +177,19 @@ CompositeVector& CompositeVector::operator=(const CompositeVector& other) {
     AMANZI_ASSERT(Map().SubsetOf(other.Map()));
 
     if (Ghosted() && other.Ghosted()) {
-      // If both are ghosted, copy the ghosted vector.
+      // If both are ghosted, DEEP copy the ghosted vector.
       for (name_iterator name=begin(); name!=end(); ++name) {
         auto& comp = GetComponent_(*name, true);
         const auto& othercomp = other.GetComponent_(*name, true);
-        comp = othercomp;
+        comp.assign(othercomp); // note operator= is shallow copy, this is deep
       }
 
     } else {
-      // Copy the non-ghosted data.  NOTE: any ghosted data is undefined!
+      // DEEP Copy the non-ghosted data.  NOTE: any ghosted data is undefined!
       for (name_iterator name=begin(); name!=end(); ++name) {
         auto& comp = GetComponent_(*name, false);
         const auto& othercomp = other.GetComponent_(*name, false);
-        comp = othercomp;
+        comp.assign(othercomp); // note operator= is shallow copy, this is deep
       }
     }
   }
