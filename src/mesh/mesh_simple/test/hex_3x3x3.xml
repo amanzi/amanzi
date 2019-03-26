@@ -17,6 +17,7 @@
       <Parameter name="high coordinate" type="Array(double)" value="{0.66,1.0,1.0}"/>
     </ParameterList>
   </ParameterList>
+  <!--
   <ParameterList name="Bottom ColFunc">
     <ParameterList name="region: color function">
       <Parameter name="file" type="string" value="test/colfunc.txt"/>
@@ -35,7 +36,8 @@
       <Parameter name="value" type="int" value="10"/>
     </ParameterList>
   </ParameterList>
-
+  -->
+  
   <!-- sidesets -->
   <ParameterList name="ZLO FACE Plane">
     <ParameterList name="region: plane">

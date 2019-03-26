@@ -40,6 +40,7 @@
       <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
     </ParameterList>
   </ParameterList>
+  <!--
   <ParameterList name="Bottom ColFunc">
     <ParameterList name="region: color function">
       <Parameter name="file" type="string" value="test/colorfunc.txt"/>
@@ -58,7 +59,8 @@
       <Parameter name="value" type="int" value="10"/>
     </ParameterList>
   </ParameterList>
-
+  -->
+  
   <!-- sidesets -->
   <ParameterList name="Face 101">
     <ParameterList name="region: labeled set">

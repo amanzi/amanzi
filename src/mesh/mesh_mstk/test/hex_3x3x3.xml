@@ -64,6 +64,7 @@
       <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0,1.0}"/>
     </ParameterList>
   </ParameterList>
+  <!--
   <ParameterList name="Bottom ColFunc">
     <ParameterList name="region: color function">
       <Parameter name="file" type="string" value="test/colorfunc.txt"/>
@@ -82,6 +83,7 @@
       <Parameter name="value" type="int" value="10"/>
     </ParameterList>
   </ParameterList>
+  -->
   <ParameterList name="BOTTOM_LS+MIDDLE_LS+TOP_LS">
     <ParameterList name="region: logical">
       <Parameter name="operation" type="string" value="union"/>
