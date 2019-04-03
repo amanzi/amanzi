@@ -9,9 +9,9 @@
 */
 
 #include <iostream>
-#include <UnitTest++.h>
+#include "UnitTest++.h"
 
-#include <AmanziComm.hh>
+#include "AmanziComm.hh"
 
 #include "dbc.hh"
 #include "../FileFormat.hh"

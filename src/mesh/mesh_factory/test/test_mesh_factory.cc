@@ -19,22 +19,10 @@
 #include "../MeshException.hh"
 
 // Check to see if we have some files to read
-
-#ifndef BOGUS_TEST_FILE
-#define BOGUS_TEST_FILE "bogus.file"
-#endif
-
-#ifndef EXODUS_TEST_FILE
-#error EXODUS_TEST_FILE must be defined
-#endif
-
-#ifndef NEMESIS_TEST_FILE
-#error EXODUS_TEST_FILE must be defined
-#endif
-
-#ifndef MOAB_TEST_FILE
-#error EXODUS_TEST_FILE must be defined
-#endif
+#define BOGUS_TEST_FILE "test/bogus.exo"
+#define EXODUS_TEST_FILE "test/hex_3x3x3_ss.exo"
+#define NEMESIS_TEST_FILE "test/split1/hex_10x10x10_ss.par"
+#define MOAB_TEST_FILE "test/hex_3x3x3_ss_4P.h5m"
 
 // -------------------------------------------------------------
 // check_preference
