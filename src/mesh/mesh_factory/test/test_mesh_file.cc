@@ -17,6 +17,12 @@
 #include "../FileFormat.hh"
 #include "../MeshException.hh"
 
+#define BOGUS_TEST_FILE "test/bogus.exo"
+#define EXODUS_TEST_FILE "test/hex_3x3x3_ss.exo"
+#define NEMESIS_TEST_FILE "test/hex_10x10x10_ss.par"
+#define MOAB_TEST_FILE "test/hex_3x3x3_ss_4P.h5m"
+
+
 SUITE (MeshFileType)
 {
   TEST (ExodusII)

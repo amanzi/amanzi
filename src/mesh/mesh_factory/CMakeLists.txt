@@ -81,12 +81,6 @@ if (BUILD_TESTS)
         file(COPY ${DataFiles} DESTINATION ${MESH_FACTORY_BINARY_DIR}/test/)
     endif()
 
-    set_source_files_properties(test/test_mesh_file.cc PROPERTIES 
-                                COMPILE_FLAGS ${test_file_flags})
-
-    set_source_files_properties(test/test_mesh_factory.cc PROPERTIES 
-                                COMPILE_FLAGS ${test_file_flags})
-   
    # Add UnitTest include directories
    include_directories(${UnitTest_INCLUDE_DIRS})
 
