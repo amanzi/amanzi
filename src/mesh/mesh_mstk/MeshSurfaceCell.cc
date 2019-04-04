@@ -74,29 +74,27 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
   // set the geometric model and sets
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = parent_mesh->geometric_model();
 
-  for (AmanziGeometry::GeometricModel::RegionConstIterator r=gm->RegionBegin();
-       r!=gm->RegionEnd(); ++r) {
-
+  for (auto& r : *gm) {
     // set to false as default
-    sets_[(*r)->id()] = false;
+    sets_[r->id()] = false;
       
     // determine if true
-    if ((*r)->type() == AmanziGeometry::LABELEDSET
-        || (*r)->type() == AmanziGeometry::ENUMERATED) {
+    if (r->type() == AmanziGeometry::LABELEDSET
+        || r->type() == AmanziGeometry::ENUMERATED) {
       // label pulled from parent
       Entity_ID_List faces_in_set;
       std::vector<double> vofs;
-      parent_mesh->get_set_entities_and_vofs((*r)->name(), FACE, Parallel_type::OWNED, &faces_in_set, &vofs);
-      sets_[(*r)->id()] = std::find(faces_in_set.begin(), faces_in_set.end(),
+      parent_mesh->get_set_entities_and_vofs(r->name(), FACE, Parallel_type::OWNED, &faces_in_set, &vofs);
+      sets_[r->id()] = std::find(faces_in_set.begin(), faces_in_set.end(),
               parent_face_) != faces_in_set.end();
 
-    } else if ((*r)->is_geometric()) {
+    } else if (r->is_geometric()) {
       // check containment
-      if ((*r)->space_dimension() == 3) {
-        sets_[(*r)->id()] = (*r)->inside(parent_mesh->face_centroid(parent_face_));
+      if (r->space_dimension() == 3) {
+        sets_[r->id()] = r->inside(parent_mesh->face_centroid(parent_face_));
 
-      } else if ((*r)->space_dimension() == 2 && flatten) {
-        sets_[(*r)->id()] = (*r)->inside(cell_centroid(0));
+      } else if (r->space_dimension() == 2 && flatten) {
+        sets_[r->id()] = r->inside(cell_centroid(0));
       }
     }      
   }

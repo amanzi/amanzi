@@ -103,7 +103,7 @@ class Verification {
     double emin = 1e+99, emax = -1e+99;
     double cndmin = 1e+99, cndmax = 1.0, cndavg = 0.0;
 
-    for (auto it = op_->OpBegin(); it != op_->OpEnd(); ++it) {
+    for (auto it = op_->begin(); it != op_->end(); ++it) {
       auto& matrices = (*it)->matrices;
       for (int i = 0; i < matrices.size(); i++) {
         Amanzi::WhetStone::DenseMatrix Acell(matrices[i]);

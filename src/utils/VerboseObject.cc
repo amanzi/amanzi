@@ -17,6 +17,7 @@
 #include <ctime>
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "AmanziComm.hh"
 #include "VerboseObject.hh"
 
 namespace Amanzi {

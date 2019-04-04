@@ -2,6 +2,7 @@
 #include <sstream>
 #include <iomanip>
 
+#include "AmanziComm.hh"
 #include "FunctionColorFactory.hh"
 #include "FunctionColor.hh"
 #include "FunctionGridColor.hh"

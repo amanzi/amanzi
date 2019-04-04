@@ -57,7 +57,7 @@ int Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector
   // lump Aff
   AmanziMesh::Entity_ID_List faces;
 
-  for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
+  for (const_op_iterator it = begin(); it != end(); ++it) {
     if ((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL |
                                OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
       for (int c = 0; c != ncells_owned; c++) {
@@ -79,7 +79,7 @@ int Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector
   T.ScatterMasterToGhosted("face");
   X.ScatterMasterToGhosted("face");
 
-  for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
+  for (const_op_iterator it = begin(); it != end(); ++it) {
     if ((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL |
                                OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
       for (int c = 0; c < ncells_owned; c++) {
@@ -108,7 +108,7 @@ int Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector
     Epetra_MultiVector& Yf = *Y.ViewComponent("face", true);
     Yf = Xf;
 
-    for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
+    for (const_op_iterator it = begin(); it != end(); ++it) {
       if ((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL |
                                  OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
         for (int c = 0; c < ncells_owned; c++) {
@@ -142,7 +142,7 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
 {
   // first check preconditions -- Scc must have exactly one face-based schema (a FACE+CELL)
   int num_with_faces = 0;
-  for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
+  for (const_op_iterator it = begin(); it != end(); ++it) {
     if ((*it)->schema_old_ & OPERATOR_SCHEMA_DOFS_FACE) {
       num_with_faces++;
     }
@@ -156,7 +156,7 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
   // schur complement can be split into a CELL_CELL schema, Acc, and a
   // FACE_CELL schema, -Acf*(Aff^-1)*Afc.
   int i_schur = 0;
-  for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
+  for (const_op_iterator it = begin(); it != end(); ++it) {
     if ((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL |
                                OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
       AMANZI_ASSERT((*it)->matrices.size() == ncells_owned);

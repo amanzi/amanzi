@@ -77,8 +77,8 @@ void PDE_HelperDiscretization::set_local_matrices(const Teuchos::RCP<Op>& op)
 {
   if (global_op_.get()) {
     if (local_op_.get()) {
-      auto index = std::find(global_op_->OpBegin(), global_op_->OpEnd(), local_op_) - global_op_->OpBegin();
-      if (index != global_op_->OpSize()) {
+      auto index = std::find(global_op_->begin(), global_op_->end(), local_op_) - global_op_->begin();
+      if (index != global_op_->size()) {
         global_op_->OpPushBack(op);
       } else {
         global_op_->OpReplace(op, index);

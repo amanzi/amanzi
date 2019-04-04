@@ -40,7 +40,7 @@ RegionPolygon::RegionPolygon(const std::string& name,
 
 
 void RegionPolygon::Init_() {
-  if (PointsSize() < manifold_dimension()) {
+  if (size() < manifold_dimension()) {
     Errors::Message mesg;
     mesg << "Polygons of dimension " << (int) manifold_dimension() << 
       " need to be specified by at least " << (int) manifold_dimension() << 
@@ -63,8 +63,8 @@ void RegionPolygon::Init_() {
     normal_ /= norm(normal_);
 
     for (int i = 3; i!=points_.size(); ++i) {
-      vec0 = points_[(i+1)%PointsSize()]-points_[i];
-      vec1 = points_[(i-1+PointsSize())%PointsSize()]-points_[i];
+      vec0 = points_[(i+1)%size()]-points_[i];
+      vec1 = points_[(i-1+size())%size()]-points_[i];
       Point nrml = vec0^vec1;
       nrml /= norm(nrml);
 
@@ -178,8 +178,8 @@ RegionPolygon::inside(const Point& p) const
     double u, v;
     u = p[d0]; v = p[d1];
     
-    for (int i = 0; i!=PointsSize(); ++i) {
-      int iplus1 = (i+1)%PointsSize();
+    for (int i = 0; i!=size(); ++i) {
+      int iplus1 = (i+1)%size();
       double u_i = points_[i][d0];
       double v_i = points_[i][d1];
       double u_iplus1 = points_[iplus1][d0];
@@ -198,9 +198,9 @@ RegionPolygon::inside(const Point& p) const
 
     if (!result) { 
 
-      for (int i = 0; i < PointsSize(); i++) {
+      for (int i = 0; i < size(); i++) {
 
-        int iplus1 = (i+1)%PointsSize();
+        int iplus1 = (i+1)%size();
 
         Point p_i(2);
         p_i.set(points_[i][d0],points_[i][d1]);
