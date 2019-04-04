@@ -33,15 +33,15 @@
 namespace Amanzi {
 namespace WhetStone {
 
+template <class MyMesh>
 class Basis { 
  public:
   Basis() {};
   virtual ~Basis() {};
 
   // initialization
-  virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                    AmanziMesh::Entity_ID id, int c, int order,
-                    Polynomial& integrals) = 0;
+  virtual void Init(const Teuchos::RCP<const MyMesh>& mesh,
+                    int c, int order, Polynomial& integrals) = 0;
 
   // transformation of bilinear form
   virtual void BilinearFormNaturalToMy(DenseMatrix& A) const = 0;
@@ -56,7 +56,7 @@ class Basis {
   virtual void ChangeBasisNaturalToMy(DenseVector& v) const = 0;
 
   // recover polynomial in the natural basis
-  virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+  virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const MyMesh>& mymesh,
                                          int c, int order, DenseVector& coefs) const = 0;
 
   // assess 

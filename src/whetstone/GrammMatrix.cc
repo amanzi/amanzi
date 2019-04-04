@@ -24,7 +24,7 @@ namespace WhetStone {
 ****************************************************************** */
 void GrammMatrix(
     const Polynomial& poly, const PolynomialOnMesh& integrals,
-    const Basis_Regularized& basis, DenseMatrix& G)
+    const Basis_Regularized<AmanziMesh::Mesh>& basis, DenseMatrix& G)
 {
   int nd = poly.size();
   int d = poly.dimension();
@@ -57,7 +57,7 @@ void GrammMatrix(
 void GrammMatrixGradients(
     const Tensor& K, 
     const Polynomial& poly, const PolynomialOnMesh& integrals,
-    const Basis_Regularized& basis, DenseMatrix& G)
+    const Basis_Regularized<AmanziMesh::Mesh>& basis, DenseMatrix& G)
 {
   int nd = poly.size();
   int d = poly.dimension();

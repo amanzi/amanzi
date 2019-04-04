@@ -245,7 +245,7 @@ void AdvectionFn<AnalyticDG>::FunctionalTimeDerivative(
 
   WhetStone::Polynomial sol, src, pc(2, order_);
   WhetStone::DenseVector data(pc.size());
-  WhetStone::NumericalIntegration numi(mesh_);
+  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
 
   CompositeVector& rhs = *global_op_->rhs();
   Epetra_MultiVector& rhs_c = *rhs.ViewComponent("cell");

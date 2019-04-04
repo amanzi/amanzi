@@ -15,12 +15,12 @@
 
 #include "Point.hh"
 
-#include "CoordinateSystems.hh"
 #include "DenseMatrix.hh"
 #include "MeshMaps.hh"
 #include "MFD3D_LagrangeSerendipity.hh"
 #include "NumericalIntegration.hh"
 #include "Polynomial.hh"
+#include "SurfaceCoordinateSystem.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -38,8 +38,8 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
 
   // local coordinate system
   const AmanziGeometry::Point& normal = mesh0_->face_normal(f);
-  std::vector<AmanziGeometry::Point> tau(d_ - 1);
-  FaceCoordinateSystem(normal, tau);
+  SurfaceCoordinateSystem coordsys(normal);
+  const auto& tau = *coordsys.tau();
 
   // polynomial is converted from local to global coordinate system
   AmanziMesh::Entity_ID_List nodes;
@@ -310,7 +310,7 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
   Polynomial moments(d_, 0);
 
   if (order == 2) {
-    NumericalIntegration numi(mesh1_);
+    NumericalIntegration<AmanziMesh::Mesh> numi(mesh1_);
     double mass = numi.IntegratePolynomialCell(c, poly);
 
     moments(0) = mass / mesh1_->cell_volume(c);

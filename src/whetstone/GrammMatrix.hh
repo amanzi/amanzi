@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "Basis_Regularized.hh"
+#include "Mesh.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
@@ -30,13 +31,13 @@ class PolynomialOnMesh;
 // Gramm matrix for polynomials
 void GrammMatrix(
     const Polynomial& poly, const PolynomialOnMesh& integrals,
-    const Basis_Regularized& basis, DenseMatrix& G);
+    const Basis_Regularized<AmanziMesh::Mesh>& basis, DenseMatrix& G);
 
 // Gramm matrix for gradient of polynomials with tensorial weight
 void GrammMatrixGradients(
     const Tensor& K, 
     const Polynomial& poly, const PolynomialOnMesh& integrals,
-    const Basis_Regularized& basis, DenseMatrix& G);
+    const Basis_Regularized<AmanziMesh::Mesh>& basis, DenseMatrix& G);
 
 }  // namespace WhetStone
 }  // namespace Amanzi

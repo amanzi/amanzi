@@ -140,7 +140,7 @@ void OperatorDiffusionDG(std::string solver_name,
   Epetra_MultiVector& src_c = *src.ViewComponent("cell");
 
   WhetStone::Polynomial pc(2, order);
-  WhetStone::NumericalIntegration numi(mesh);
+  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
 
   for (int c = 0; c < ncells; ++c) {
     const Point& xc = mesh->cell_centroid(c);

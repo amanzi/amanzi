@@ -112,7 +112,7 @@ class DG_Modal : public BilinearForm {
   int order() { return order_; }
 
   // -- access
-  const Basis& cell_basis(int c) const { return *basis_[c]; }
+  const Basis<AmanziMesh::Mesh>& cell_basis(int c) const { return *basis_[c]; }
   Polynomial& monomial_integrals(int c) { return monomial_integrals_[c]; }
 
  private:
@@ -124,11 +124,11 @@ class DG_Modal : public BilinearForm {
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  NumericalIntegration numi_;
+  NumericalIntegration<AmanziMesh::Mesh> numi_;
   int order_, d_;
 
   std::vector<Polynomial> monomial_integrals_;  // integrals of non-normalized monomials
-  std::vector<std::shared_ptr<Basis> > basis_;
+  std::vector<std::shared_ptr<Basis<AmanziMesh::Mesh> > > basis_;
 
   static RegisteredFactory<DG_Modal> factory_;
 };

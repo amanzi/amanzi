@@ -62,7 +62,7 @@ enum Entity_kind {
   BOUNDARY_FACE
 };
 
-typedef tuple<Entity_kind, DOF_Type, int> SchemaItem;
+typedef std::tuple<Entity_kind, DOF_Type, int> SchemaItem;
 
 enum class Parallel_type {
   OWNED = 1;  // Owned by this processor

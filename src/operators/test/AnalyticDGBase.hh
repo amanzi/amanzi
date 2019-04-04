@@ -127,7 +127,7 @@ void AnalyticDGBase::InitialGuess(
       if (! inside(xc)) continue;
 
     Amanzi::WhetStone::Polynomial coefs;
-    const Amanzi::WhetStone::Basis& basis = dg.cell_basis(c);
+    const Amanzi::WhetStone::Basis<Amanzi::AmanziMesh::Mesh>& basis = dg.cell_basis(c);
 
     SolutionTaylor(xc, t, coefs);
     Amanzi::WhetStone::DenseVector data = coefs.coefs();
@@ -152,7 +152,7 @@ void AnalyticDGBase::ComputeCellError(
   l2_err = l2_mean = l2_int = 0.0;
   inf_err = inf_mean = 0.0;
 
-  Amanzi::WhetStone::NumericalIntegration numi(mesh_);
+  Amanzi::WhetStone::NumericalIntegration<Amanzi::AmanziMesh::Mesh> numi(mesh_);
 
   int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < ncells; c++) {
@@ -170,7 +170,7 @@ void AnalyticDGBase::ComputeCellError(
     SolutionTaylor(xc, t, sol);
     data = sol.coefs();
 
-    const Amanzi::WhetStone::Basis& basis = dg.cell_basis(c);
+    const Amanzi::WhetStone::Basis<Amanzi::AmanziMesh::Mesh>& basis = dg.cell_basis(c);
     basis.ChangeBasisNaturalToMy(data);
     for (int i = 0; i < nk; ++i) sol(i) = data(i);
 
@@ -244,7 +244,7 @@ void AnalyticDGBase::ComputeCellErrorRemap(
 
     double err;
     if (p_location == 0) {
-      const Amanzi::WhetStone::Basis& basis = dg.cell_basis(c);
+      const Amanzi::WhetStone::Basis<Amanzi::AmanziMesh::Mesh>& basis = dg.cell_basis(c);
       poly = basis.CalculatePolynomial(mesh0, c, order_, data);
       err = poly.Value(xc) - SolutionExact(yc, t);
     } else {

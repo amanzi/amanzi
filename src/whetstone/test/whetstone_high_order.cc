@@ -29,7 +29,9 @@
 #include "Tensor.hh"
 
 
-/* **************************************************************** */
+/* ******************************************************************
+* Crouzier-Raviart 2D and 3D elements
+****************************************************************** */
 void HighOrderCrouzeixRaviart(int dim, std::string file_name) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -104,7 +106,9 @@ TEST(HIGH_ORDER_CROUZEIX_RAVIART) {
 } 
 
 
-/* **************************************************************** */
+/* ******************************************************************
+* Incorrect Serendipity Crouzier-Raviart 2D element (for testing)
+****************************************************************** */
 void HighOrderCrouzeixRaviartSerendipity(int dim, std::string file_name) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -172,7 +176,9 @@ TEST(HIGH_ORDER_CROUZEIX_RAVIART_SERENDIPITY) {
 } 
 
 
-/* **************************************************************** */
+/* ******************************************************************
+* Lagrange 2D and 3D element
+****************************************************************** */
 void HighOrderLagrange(std::string file_name) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -249,7 +255,9 @@ TEST(HIGH_ORDER_LAGRANGE) {
 } 
 
 
-/* **************************************************************** */
+/* ******************************************************************
+* Serendipity 32D and 3D Lagrange elements
+****************************************************************** */
 void HighOrderLagrangeSerendipity(std::string file_name) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -325,5 +333,39 @@ void HighOrderLagrangeSerendipity(std::string file_name) {
 TEST(HIGH_ORDER_LAGRANGE_SERENDIPITY) {
   HighOrderLagrangeSerendipity("test/two_cell2_dist.exo");
   HighOrderLagrangeSerendipity("test/one_pentagon.exo");
+  // HighOrderLagrangeSerendipity("test/cube_unit.exo");
 } 
 
+
+/* ******************************************************************
+* Surface Lagrange element
+****************************************************************** */
+TEST(HIGH_ORDER_LAGRANGE_SURFACE) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: High-order Lagrange element on surface"<< std::endl;
+  auto comm = Amanzi::getDefaultComm();
+
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/cube_unit.exo", true, true); 
+ 
+  Teuchos::ParameterList plist; 
+  plist.set<int>("method order", 1);
+
+  MFD3D_LagrangeAnyOrder mfd_ho(plist, mesh);
+
+  Tensor T(2, 1);
+  T(0, 0) = 1.0;
+
+  // 1st-order scheme
+  DenseMatrix N, A;
+  mfd_ho.set_order(2);
+  mfd_ho.StiffnessMatrixSurface(0, T, A);
+
+  printf("Stiffness matrix for order=2, size=%d\n", A.NumRows());
+  PrintMatrix(A, "%8.4f ");
+}

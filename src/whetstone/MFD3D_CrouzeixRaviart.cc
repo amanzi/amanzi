@@ -24,7 +24,7 @@
 
 // WhetStone
 #include "Basis_Regularized.hh"
-#include "CoordinateSystems.hh"
+#include "SurfaceCoordinateSystem.hh"
 #include "GrammMatrix.hh"
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "NumericalIntegration.hh"

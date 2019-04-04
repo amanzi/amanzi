@@ -51,14 +51,13 @@ add_amanzi_library(whetstone
                           MFD3D_LagrangeSerendipity.cc
                           DG_Modal.cc
                           BilinearFormFactory.cc
-                          Basis_Regularized.cc Basis_Normalized.cc Basis_Orthonormalized.cc
                           nlfv.cc 
                           Tensor.cc DenseMatrix.cc DenseVector.cc
                           Polynomial.cc VectorPolynomial.cc MatrixPolynomial.cc
-                          NumericalIntegration.cc
                           MeshMaps.cc
                           MeshMaps_FEM.cc MeshMaps_VEM.cc MeshMaps_PEM.cc
                           GrammMatrix.cc
+                          SurfaceCoordinateSystem.cc
                    HEADERS DenseMatrix.hh DenseVector.hh
                            DG_Modal.hh
                            Basis.hh BasisFactory.hh
@@ -85,8 +84,9 @@ add_amanzi_library(whetstone
                            Quadrature1D.hh Quadrature2D.hh Quadrature3D.hh
                            MeshMaps.hh MeshMapsFactory.hh
                            MeshMaps_FEM.hh MeshMaps_VEM.hh MeshMaps_VEM.hh
-                           CoordinateSystems.hh
                            Monomial.hh Polynomial.hh PolynomialIterator.hh PolynomialBase.hh
+                           SurfaceCoordinateSystem.hh
+                           SurfaceMiniMesh.hh
                            VectorPolynomial.hh MatrixPolynomial.hh PolynomialOnMesh.hh
                            Tensor.hh
                            WhetStoneDefs.hh

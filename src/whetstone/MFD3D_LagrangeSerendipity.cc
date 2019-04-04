@@ -23,11 +23,11 @@
 #include "errors.hh"
 
 #include "Basis_Regularized.hh"
-#include "CoordinateSystems.hh"
 #include "GrammMatrix.hh"
 #include "MFD3D_LagrangeAnyOrder.hh"
 #include "MFD3D_LagrangeSerendipity.hh"
 #include "NumericalIntegration.hh"
+#include "SurfaceCoordinateSystem.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
@@ -104,12 +104,12 @@ int MFD3D_LagrangeSerendipity::H1consistency(
   MFD3D_LagrangeAnyOrder::H1consistency(c, K, Nf, Af);
 
   // pre-calculate integrals of monomials 
-  NumericalIntegration numi(mesh_);
+  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
   numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
   // selecting regularized basis
-  Basis_Regularized basis;
-  basis.Init(mesh_, AmanziMesh::CELL, c, order_, integrals_.poly());
+  Basis_Regularized<AmanziMesh::Mesh> basis;
+  basis.Init(mesh_, c, order_, integrals_.poly());
 
   // Dot-product matrix for polynomials and Laplacian of polynomials
   DenseMatrix M(nd, nd);
@@ -194,8 +194,8 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
 {
   // selecting regularized basis
   Polynomial ptmp;
-  Basis_Regularized basis;
-  basis.Init(mesh_, AmanziMesh::CELL, c, order_, ptmp);
+  Basis_Regularized<AmanziMesh::Mesh> basis;
+  basis.Init(mesh_, c, order_, ptmp);
 
   // calculate stiffness matrix
   Tensor T(d_, 1);
@@ -255,7 +255,7 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
     DenseMatrix M;
     Polynomial poly(d_, order_);
 
-    NumericalIntegration numi(mesh_);
+    NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
     numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
     GrammMatrix(poly, integrals_, basis, M);
@@ -279,7 +279,7 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
     DenseMatrix M, M2;
     Polynomial poly(d_, order_);
 
-    NumericalIntegration numi(mesh_);
+    NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
     numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
     GrammMatrix(poly, integrals_, basis, M);
@@ -320,7 +320,7 @@ void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
   int nfaces = faces.size();
 
   std::vector<const PolynomialBase*> polys(2);
-  NumericalIntegration numi(mesh_);
+  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
 
   AmanziGeometry::Point xv(d_);
   std::vector<AmanziGeometry::Point> tau(d_ - 1);
@@ -353,7 +353,8 @@ void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
 
       // local coordinate system with origin at face centroid
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      FaceCoordinateSystem(normal, tau);
+      SurfaceCoordinateSystem coordsys(normal);
+      const auto& tau = *coordsys.tau();
 
       polys[0] = &(vf[n]);
 

@@ -24,10 +24,10 @@
 
 // WhetStone
 #include "Basis_Regularized.hh"
-#include "CoordinateSystems.hh"
 #include "GrammMatrix.hh"
 #include "MFD3D_CrouzeixRaviartAnyOrder.hh"
 #include "NumericalIntegration.hh"
+#include "SurfaceCoordinateSystem.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
@@ -96,11 +96,11 @@ int MFD3D_CrouzeixRaviartAnyOrder::H1consistency(
 
   // select regularized basis
   Polynomial ptmp;
-  Basis_Regularized basis;
-  basis.Init(mesh_, AmanziMesh::CELL, c, order_, ptmp);
+  Basis_Regularized<AmanziMesh::Mesh> basis;
+  basis.Init(mesh_, c, order_, ptmp);
 
   // pre-calculate integrals of natural monomials 
-  NumericalIntegration numi(mesh_);
+  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
   numi.UpdateMonomialIntegralsCell(c, 2 * order_ - 2, integrals_);
 
   // populate matrices N and R
@@ -131,7 +131,8 @@ int MFD3D_CrouzeixRaviartAnyOrder::H1consistency(
 
       // local coordinate system with origin at face centroid
       AmanziGeometry::Point normal = mesh_->face_normal(f);
-      FaceCoordinateSystem(normal, tau);
+      SurfaceCoordinateSystem coordsys(normal);
+      const auto& tau = *coordsys.tau();
       normal *= dirs[i];
 
       auto conormal = K * normal;
@@ -258,12 +259,12 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorCell_(
 
   // calculate DOFs for boundary polynomial
   DenseVector vdof(ndof);
-  NumericalIntegration numi(mesh_);
+  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
 
   // selecting regularized basis
   Polynomial ptmp;
-  Basis_Regularized basis;
-  basis.Init(mesh_, AmanziMesh::CELL, c, order_, ptmp);
+  Basis_Regularized<AmanziMesh::Mesh> basis;
+  basis.Init(mesh_, c, order_, ptmp);
 
   // populate matrices N and R
   int row(0);
@@ -324,7 +325,7 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorCell_(
     DenseMatrix M, M2;
     DenseVector v6(nd - ndof_c);
     Polynomial poly(d_, order_);
-    NumericalIntegration numi(mesh_);
+    NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
 
     numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
     GrammMatrix(poly, integrals_, basis, M);
@@ -392,12 +393,12 @@ void MFD3D_CrouzeixRaviartAnyOrder::ProjectorGradientCell_(
   uc.Reshape(d_, dim, d_, order_ - 1, true);
 
   std::vector<const PolynomialBase*> polys(2);
-  NumericalIntegration numi(mesh_);
+  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
 
   // selecting regularized basis
   Polynomial ptmp;
-  Basis_Regularized basis;
-  basis.Init(mesh_, AmanziMesh::CELL, c, order_, ptmp);
+  Basis_Regularized<AmanziMesh::Mesh> basis;
+  basis.Init(mesh_, c, order_, ptmp);
 
   for (int i = 0; i < dim; ++i) {
     for (int j = 0; j < d_; ++j) {
@@ -460,23 +461,22 @@ void MFD3D_CrouzeixRaviartAnyOrder::CalculateFaceDOFs_(
     DenseVector& vdof, int& row)
 {
   std::vector<const PolynomialBase*> polys(2);
-  std::vector<AmanziGeometry::Point> tau(d_ - 1);
 
-  NumericalIntegration numi(mesh_);
+  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
 
   const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
   double area = mesh_->face_area(f);
 
   // local coordinate system with origin at face centroid
   const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-  FaceCoordinateSystem(normal, tau);
+  SurfaceCoordinateSystem coordsys(normal);
 
   polys[0] = &vf;
 
   for (auto it = pf.begin(); it < pf.end(); ++it) {
     const int* index = it.multi_index();
     Polynomial fmono(d_ - 1, index, 1.0);
-    fmono.InverseChangeCoordinates(xf, tau);  
+    fmono.InverseChangeCoordinates(xf, *coordsys.tau());  
 
     polys[1] = &fmono;
 
