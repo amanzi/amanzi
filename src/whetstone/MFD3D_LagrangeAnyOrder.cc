@@ -27,11 +27,11 @@
 
 // WhetStone
 #include "Basis_Regularized.hh"
-#include "SurfaceCoordinateSystem.hh"
 #include "GrammMatrix.hh"
 #include "MFD3D_LagrangeAnyOrder.hh"
-#include "SurfaceMiniMesh.hh"
 #include "NumericalIntegration.hh"
+#include "SurfaceCoordinateSystem.hh"
+#include "SurfaceMiniMesh.hh"
 #include "Tensor.hh"
 #include "WhetStoneDefs.hh"
 

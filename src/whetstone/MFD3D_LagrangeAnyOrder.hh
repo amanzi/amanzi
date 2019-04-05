@@ -186,14 +186,11 @@ int MFD3D_LagrangeAnyOrder::H1consistency2D_(
     int row(nnodes);
 
     AmanziGeometry::Point xv(d);
-std::cout << cmono << std::endl;
     for (int i = 0; i < nnodes; i++) {
       int v = nodes[i];
       mymesh->node_get_coordinates(v, &xv);
-std::cout << i << " " << xv << std::endl;
       N(i, col) = cmono.Value(xv);
     }
-std::cout << N << std::endl;
 
     // N and R: degrees of freedom on faces 
     for (int i = 0; i < nfaces; i++) {
@@ -313,7 +310,6 @@ std::cout << N << std::endl;
       }
     }
   }
-std::cout << N << std::endl;
 
   // Gramm matrix for gradients of polynomials
   G_.Multiply(N, R_, true);

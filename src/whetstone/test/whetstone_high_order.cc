@@ -351,21 +351,28 @@ TEST(HIGH_ORDER_LAGRANGE_SURFACE) {
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
   MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/cube_unit.exo", true, true); 
+  Teuchos::RCP<Mesh> mesh2d = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1);
+  Teuchos::RCP<Mesh> mesh3d = meshfactory.create("test/cube_unit.exo", true, true); 
  
   Teuchos::ParameterList plist; 
-  plist.set<int>("method order", 1);
+  plist.set<int>("method order", 2);
 
-  MFD3D_LagrangeAnyOrder mfd_ho(plist, mesh);
+  MFD3D_LagrangeAnyOrder mfd_2d(plist, mesh2d);
+  MFD3D_LagrangeAnyOrder mfd_ho(plist, mesh3d);
 
   Tensor T(2, 1);
   T(0, 0) = 1.0;
 
   // 1st-order scheme
-  DenseMatrix N, A;
-  mfd_ho.set_order(2);
-  mfd_ho.StiffnessMatrixSurface(0, T, A);
+  DenseMatrix A2d, A3d;
+  mfd_ho.StiffnessMatrixSurface(0, T, A3d);
 
-  printf("Stiffness matrix for order=2, size=%d\n", A.NumRows());
-  PrintMatrix(A, "%8.4f ");
+  printf("Stiffness matrix for order=2, size=%d\n", A3d.NumRows());
+  PrintMatrix(A3d, "%8.4f ");
+
+  // compare with flat construction
+  mfd_2d.StiffnessMatrix(0, T, A2d);
+
+  A3d -= A2d;
+  CHECK(A3d.NormInf() <= 1e-12 * A2d.NormInf());
 }
