@@ -35,6 +35,8 @@
 #ifndef AMANZI_WHETSTONE_MFD3D_DIFFUSION_EDGE_HH_
 #define AMANZI_WHETSTONE_MFD3D_DIFFUSION_EDGE_HH_
 
+#include <tuple>
+
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
@@ -42,8 +44,9 @@
 
 #include "BilinearFormFactory.hh"
 #include "DenseMatrix.hh"
-#include "Tensor.hh"
 #include "MFD3D.hh"
+#include "Tensor.hh"
+#include "WhetStoneDefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -57,17 +60,22 @@ class MFD3D_Diffusion_Edge : public MFD3D {
   ~MFD3D_Diffusion_Edge() {};
 
   // main methods 
+  // -- symmetric schema
+  virtual std::vector<SchemaItem> schema() const override {
+    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::EDGE, DOF_Type::SCALAR, 1));
+  }
+
   // -- mass matrices (not implemented)
-  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) { return -1; }
-  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) { return -1; } 
+  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override { return -1; }
+  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override { return -1; } 
 
   // -- inverse mass matrix (not implemented)
-  virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) { return -1; }
-  virtual int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W) { return -1; } 
+  virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) override { return -1; }
+  virtual int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W) override { return -1; } 
 
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac);
-  virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A);
+  virtual int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac) override;
+  virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A) override;
 
  private:
   static RegisteredFactory<MFD3D_Diffusion_Edge> factory_;

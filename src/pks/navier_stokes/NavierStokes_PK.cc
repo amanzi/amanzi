@@ -233,9 +233,13 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
 
         auto schema = op_preconditioner_elas_->global_schema_col();
         for (auto it = schema.begin(); it != schema.end(); ++it) {
-          bc = bc_factory.Create(spec, "no slip", it->kind, Teuchos::null);
+          AmanziMesh::Entity_kind kind;
+          WhetStone::DOF_Type type;
+          std::tie(kind, type, std::ignore) = *it;
+
+          bc = bc_factory.Create(spec, "no slip", kind, Teuchos::null);
           bc->set_bc_name("no slip");
-          bc->set_type(it->type);
+          bc->set_type(type);
           bcs_.push_back(bc);
         }
       }
@@ -255,7 +259,11 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_bcs_.clear();
   schema = op_matrix_elas_->schema_col();
   for (auto it = schema.begin(); it != schema.end(); ++it) {
-    auto bcx = Teuchos::rcp(new Operators::BCs(mesh_, it->kind, it->type));
+    AmanziMesh::Entity_kind kind;
+    WhetStone::DOF_Type type;
+    std::tie(kind, type, std::ignore) = *it;
+
+    auto bcx = Teuchos::rcp(new Operators::BCs(mesh_, kind, type));
     op_matrix_elas_->AddBCs(bcx, bcx);
     op_matrix_conv_->AddBCs(bcx, bcx);
     op_matrix_acc_->AddBCs(bcx, bcx);

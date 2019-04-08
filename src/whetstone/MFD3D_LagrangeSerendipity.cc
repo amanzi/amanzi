@@ -15,6 +15,7 @@
 */
 
 #include <cmath>
+#include <tuple>
 #include <vector>
 
 #include "Mesh.hh"
@@ -41,6 +42,29 @@ MFD3D_LagrangeSerendipity::MFD3D_LagrangeSerendipity(
     MFD3D_Lagrange(plist, mesh)
 {
   order_ = plist.get<int>("method order");
+}
+
+
+/* ******************************************************************
+* Schema.
+****************************************************************** */
+std::vector<SchemaItem> MFD3D_LagrangeSerendipity::schema() const
+{
+  std::vector<SchemaItem> items;
+  items.push_back(std::make_tuple(AmanziMesh::NODE, DOF_Type::SCALAR, 1));
+
+  if (order_ > 1) {
+    int nk = PolynomialSpaceDimension(d_ - 1, order_ - 2);
+    items.push_back(std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, nk));
+  }
+
+  // this should be calculated FIXME
+  if (order_ > 3) {
+    int nk = PolynomialSpaceDimension(d_, order_ - 4);
+    items.push_back(std::make_tuple(AmanziMesh::CELL, DOF_Type::SCALAR, nk));
+  }
+
+  return items;
 }
 
 

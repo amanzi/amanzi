@@ -243,14 +243,14 @@ class Operator {
 
   // block access
   typedef std::vector<Teuchos::RCP<Op> >::const_iterator const_op_iterator;
-  const_op_iterator OpBegin() const { return ops_.begin(); }
-  const_op_iterator OpEnd() const { return ops_.end(); }
+  std::size_t size() const { return ops_.size(); }
+  const_op_iterator begin() const { return ops_.begin(); }
+  const_op_iterator end() const { return ops_.end(); }
   const_op_iterator FindMatrixOp(int schema_dofs, int matching_rule, bool action) const;
 
   typedef std::vector<Teuchos::RCP<Op> >::iterator op_iterator;
-  op_iterator OpBegin() { return ops_.begin(); }
-  op_iterator OpEnd() { return ops_.end(); }
-  int OpSize() { return ops_.size(); }
+  op_iterator begin() { return ops_.begin(); }
+  op_iterator end() { return ops_.end(); }
   op_iterator FindMatrixOp(int schema_dofs, int matching_rule, bool action);
 
   // block mutate

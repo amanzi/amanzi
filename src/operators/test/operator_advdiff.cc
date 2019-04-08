@@ -105,7 +105,7 @@ void AdvectionDiffusion2D(int nx, double* error)
   // Neumann on outflow boundary is needed for perator's positive-definitness
   bool flag;
   double diff_flux, adv_flux;
-  auto bcd = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
+  auto bcd = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   {
     std::vector<int>& bc_model = bcd->bc_model();
     std::vector<double>& bc_value = bcd->bc_value();
@@ -140,7 +140,7 @@ void AdvectionDiffusion2D(int nx, double* error)
   // Dirichlet on the outlow boundary is ignored by upwind operator
   // Neumann condition on inflow violates monotonicity; it generates negative 
   //   contribution to diagonal
-  auto bca = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
+  auto bca = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   {
     std::vector<int>& bc_model = bca->bc_model();
     std::vector<double>& bc_value = bca->bc_value();

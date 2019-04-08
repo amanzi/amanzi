@@ -67,6 +67,8 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
 
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  std::cout << "pid=" << comm->MyPID() << " cells: " << ncells_owned 
+                                       << " faces: " << nfaces_owned << std::endl;
 
   // create a simple state and populate it
   Amanzi::VerboseObject::global_hide_line_prefix = true;
@@ -79,6 +81,8 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
   S->set_time(0.0);
   S->set_intermediate_time(0.0);
+  S->set_initial_time(0.0);
+  S->set_final_time(0.0);
 
   Transport_PK TPK(plist, S, "transport", component_names);
   TPK.Setup(S.ptr());

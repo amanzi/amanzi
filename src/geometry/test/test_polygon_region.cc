@@ -67,13 +67,13 @@ TEST(POLYGON_REGION2)
   Teuchos::RCP<const Amanzi::AmanziGeometry::RegionPolygon> poly =
     Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionPolygon>(reg);
 
-  int np = poly->PointsSize();
+  int np = poly->size();
   CHECK_EQUAL(numpoints,np);
 
   int lcv=0;
   int dim = 0;
-  for (Amanzi::AmanziGeometry::RegionPolygon::PointIterator p=poly->PointsBegin();
-       p!=poly->PointsEnd(); ++lcv,++p) {
+  for (Amanzi::AmanziGeometry::RegionPolygon::PointIterator p=poly->begin();
+       p!=poly->end(); ++lcv,++p) {
     dim = p->dim();
     for (int j = 0; j < dim; j++)
       CHECK_EQUAL((*p)[j],in_xyz[dim*lcv+j]);
@@ -154,13 +154,13 @@ TEST(POLYGON_REGION3)
   Teuchos::RCP<const Amanzi::AmanziGeometry::RegionPolygon> poly =
     Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionPolygon>(reg);
 
-  int np = poly->PointsSize();
+  int np = poly->size();
   CHECK_EQUAL(numpoints,np);
  
   int lcv=0;
   int dim = 0;
-  for (Amanzi::AmanziGeometry::RegionPolygon::PointIterator p=poly->PointsBegin();
-       p!=poly->PointsEnd(); ++lcv,++p) {
+  for (Amanzi::AmanziGeometry::RegionPolygon::PointIterator p=poly->begin();
+       p!=poly->end(); ++lcv,++p) {
     dim = p->dim();
     for (int j = 0; j < dim; j++)
       CHECK_EQUAL((*p)[j],in_xyz[dim*lcv+j]);

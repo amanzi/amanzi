@@ -43,7 +43,11 @@ class MFD3D_Elasticity : public MFD3D {
   ~MFD3D_Elasticity() {};
 
   // required methods
-  // most methods use edge-based DOFs (part of DeRham complex) 
+  // -- schema
+  virtual std::vector<SchemaItem> schema() const override {
+    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::NODE, DOF_Type::SCALAR, d_));
+  }
+
   // -- mass matrices
   virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override;
   virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override {

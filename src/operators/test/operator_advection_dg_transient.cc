@@ -35,6 +35,7 @@
 #include "OperatorUtils.hh"
 #include "Tensor.hh"
 #include "VectorPolynomial.hh"
+#include "WhetStoneDefs.hh"
 
 // Operators
 #include "AnalyticDG02b.hh"
@@ -276,7 +277,7 @@ void AdvectionFn<AnalyticDG>::FunctionalTimeDerivative(
   }
 
   // -- boundary data
-  auto bc = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::DOF_Type::VECTOR));
+  auto bc = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::VECTOR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(nk);
 
@@ -636,8 +637,10 @@ void AdvectionTransient(std::string filename, int nx, int ny,
   if (weak_form == "gauss points") pk_name = "PK operator: gauss points";
 
   int order = plist.sublist(pk_name)
-                   .sublist("flux operator").get<int>("method order");
-  Teuchos::ParameterList dg_list = plist.sublist(pk_name).sublist("flux operator");
+                   .sublist("flux operator")
+                   .sublist("schema").get<int>("method order");
+  Teuchos::ParameterList dg_list = plist.sublist(pk_name)
+                                        .sublist("flux operator").sublist("schema");
   std::string basis = dg_list.get<std::string>("dg basis");
 
   { 

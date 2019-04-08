@@ -27,6 +27,7 @@
 #include "SolverFactory.hh"
 #include "SolverFnBase.hh"
 #include "UpwindFlux.hh"
+#include "WhetStoneDefs.hh"
 
 // Amanzi::Energy
 #include "Energy_PK.hh"
@@ -142,7 +143,7 @@ void HeatConduction::Init(
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
-  bc_ = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
+  bc_ = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc_->bc_model();
   std::vector<double>& bc_value = bc_->bc_value();
 

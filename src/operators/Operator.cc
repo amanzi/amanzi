@@ -154,7 +154,7 @@ void Operator::SymbolicAssembleMatrix()
 {
   // Create the supermap given a space (set of possible schemas) and a
   // specific schema (assumed/checked to be consistent with the space).
-  smap_ = CreateSuperMap(*cvs_col_, schema(), 1);
+  smap_ = createSuperMap(*cvs_col_);
 
   // create the graph
   int row_size = MaxRowSize(*mesh_, schema(), 1);
@@ -181,8 +181,8 @@ void Operator::SymbolicAssembleMatrix(const SuperMap& map, GraphFE& graph,
                                       int my_block_row, int my_block_col) const
 {
   // first of double dispatch via Visitor pattern
-  for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    (*it)->SymbolicAssembleMatrixOp(this, map, graph, my_block_row, my_block_col);
+  for (auto& it : *this) {
+    it->SymbolicAssembleMatrixOp(this, map, graph, my_block_row, my_block_col);
   }
 }
 
@@ -219,8 +219,8 @@ void Operator::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
                               int my_block_row, int my_block_col) const
 {
   // first of double dispatch via Visitor pattern
-  for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    (*it)->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);
+  for (auto& it : *this) {
+    it->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);
   }
 }
 
@@ -278,8 +278,7 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar)
 
   apply_calls_++;
 
-  for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it)
-    (*it)->ApplyMatrixFreeOp(this, X, Y);
+  for (auto& it : *this) it->ApplyMatrixFreeOp(this, X, Y);
 
   return 0;
 }
@@ -304,8 +303,8 @@ int Operator::ApplyTranspose(const CompositeVector& X, CompositeVector& Y, doubl
 
   apply_calls_++;
 
-  for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    (*it)->ApplyTransposeMatrixFreeOp(this, X, Y);
+  for (auto& it : *this) {
+    it->ApplyTransposeMatrixFreeOp(this, X, Y);
   }
 
   return 0;
@@ -410,7 +409,7 @@ void Operator::InitializePreconditioner(Teuchos::ParameterList& plist)
   if (smap_.get() == NULL) {
     if (plist.isParameter("preconditioner type") &&
         plist.get<std::string>("preconditioner type") == "identity") {
-      smap_ = CreateSuperMap(*cvs_col_, schema(), 1);
+      smap_ = createSuperMap(*cvs_col_);
     } else {
       Errors::Message msg("Operator has no super map to be initialized.\n");
       Exceptions::amanzi_throw(msg);
@@ -458,9 +457,9 @@ void Operator::UpdatePreconditioner()
 * Note that derived classes may reimplement this with a volume term.
 ****************************************************************** */
 void Operator::UpdateRHS(const CompositeVector& source, bool volume_included) {
-  for (auto it = rhs_->begin(); it != rhs_->end(); ++it) {
-    if (source.HasComponent(*it)) {
-      rhs_->ViewComponent(*it, false)->Update(1.0, *source.ViewComponent(*it, false), 1.0);
+  for (auto& it : *rhs_) {
+    if (source.HasComponent(it)) {
+      rhs_->ViewComponent(it, false)->Update(1.0, *source.ViewComponent(it, false), 1.0);
     }
   }
 }
@@ -471,9 +470,7 @@ void Operator::UpdateRHS(const CompositeVector& source, bool volume_included) {
 ****************************************************************** */
 void Operator::Rescale(double scaling)
 {
-  for (op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    (*it)->Rescale(scaling);
-  }
+  for (auto& it : *this) it->Rescale(scaling);
 }
 
 
@@ -483,9 +480,7 @@ void Operator::Rescale(double scaling)
 void Operator::Rescale(const CompositeVector& scaling)
 {
   scaling.ScatterMasterToGhosted();
-  for (op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    (*it)->Rescale(scaling);
-  }
+  for (auto& it : *this) it->Rescale(scaling);
 }
 
 
@@ -521,8 +516,8 @@ void Operator::RestoreCheckPoint()
   *rhs_ = *rhs_checkpoint_;
 
   // restore local matrices without boundary conditions
-  for (op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    (*it)->RestoreCheckPoint();
+  for (auto& it : *this) {
+    it->RestoreCheckPoint();
   }
 }
 
@@ -546,7 +541,7 @@ int Operator::CopyShadowToMaster(int iops)
 Operator::const_op_iterator
 Operator::FindMatrixOp(int schema_dofs, int matching_rule, bool action) const
 {
-  for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
+  for (const_op_iterator it = begin(); it != end(); ++it) {
     if ((*it)->Matches(schema_dofs, matching_rule)) {
       return it;
     }
@@ -558,7 +553,7 @@ Operator::FindMatrixOp(int schema_dofs, int matching_rule, bool action) const
     Exceptions::amanzi_throw(msg);
   }
 
-  return OpEnd();
+  return end();
 }
 
 
@@ -568,7 +563,7 @@ Operator::FindMatrixOp(int schema_dofs, int matching_rule, bool action) const
 Operator::op_iterator
 Operator::FindMatrixOp(int schema_dofs, int matching_rule, bool action)
 {
-  for (op_iterator it = OpBegin(); it != OpEnd(); ++it) {
+  for (op_iterator it = begin(); it != end(); ++it) {
     if ((*it)->Matches(schema_dofs, matching_rule)) {
       return it;
     }
@@ -580,7 +575,7 @@ Operator::FindMatrixOp(int schema_dofs, int matching_rule, bool action)
     Exceptions::amanzi_throw(msg);
   }
 
-  return OpEnd();
+  return end();
 }
 
 
@@ -642,7 +637,7 @@ int Operator::SchemaMismatch_(const std::string& schema1, const std::string& sch
 std::string Operator::PrintDiagnostics() const
 {
   std::stringstream msg;
-  for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
+  for (const_op_iterator it = begin(); it != end(); ++it) {
     msg << "<" << (*it)->schema_string << "> ";
   }
   return msg.str();

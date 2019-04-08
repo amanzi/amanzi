@@ -1,6 +1,4 @@
 /*
-  Output
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -9,10 +7,13 @@
   Author: Erin Baker
 */
 
-#include "Element_types.hh"
+/*
+  Writes data structures to HDF5 files in parallel.
+
+*/
+#include <iostream>
 
 #include "HDF5_MPI.hh"
-#include <iostream>
 
 //TODO(barker): clean up debugging output
 //TODO(barker): check that close file is always getting called

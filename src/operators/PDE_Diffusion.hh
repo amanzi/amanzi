@@ -139,9 +139,9 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   void set_jacobian_matrices(const Teuchos::RCP<Op>& op) {
     if (global_operator().get()) {
       if (local_matrices().get()) {
-        auto index = std::find(global_operator()->OpBegin(), global_operator()->OpEnd(), jac_op_)
-                     - global_operator()->OpBegin();
-        if (index != global_operator()->OpSize()) {
+        auto index = std::find(global_operator()->begin(), global_operator()->end(), jac_op_)
+                     - global_operator()->begin();
+        if (index != global_operator()->size()) {
           global_operator()->OpPushBack(op);
         } else {
           global_operator()->OpReplace(op, index);

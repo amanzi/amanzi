@@ -19,6 +19,7 @@
 #include "PK_DomainFunctionFactory.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "State.hh"
+#include "WhetStoneDefs.hh"
 
 #include "Energy_PK.hh"
 
@@ -110,7 +111,7 @@ void Energy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Create BCs objects
   // -- memory
-  op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
+  op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
 
   Teuchos::RCP<Teuchos::ParameterList>
       bc_list = Teuchos::rcp(new Teuchos::ParameterList(ep_list->sublist("boundary conditions", true)));

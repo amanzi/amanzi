@@ -36,6 +36,9 @@ class MFD3D_Generalized_Diffusion : public MFD3D {
   ~MFD3D_Generalized_Diffusion() {};
 
   // required member functions
+  // -- schema for this element
+  virtual std::vector<SchemaItem> schema() const override;
+
   // -- mass matrices
   virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override;
   virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override; 

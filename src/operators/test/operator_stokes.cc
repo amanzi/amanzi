@@ -78,7 +78,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
 
   // populate boundary data for Bernardi-Raugel-type element
   // -- Dirichlet condition on faces for the normal velocity component
-  Teuchos::RCP<BCs> bcf = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bcf = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bcf_model = bcf->bc_model();
   std::vector<double>& bcf_value = bcf->bc_value();
 
@@ -96,7 +96,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
 
   // -- Dirichlet condition at nodes for the normal velocity component
   Point xv(2);
-  Teuchos::RCP<BCs> bcv = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, DOF_Type::POINT));
+  Teuchos::RCP<BCs> bcv = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, WhetStone::DOF_Type::POINT));
   std::vector<int>& bcv_model = bcv->bc_model();
   std::vector<Point>& bcv_value = bcv->bc_value_point();
 

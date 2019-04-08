@@ -22,12 +22,13 @@
 #include "UnitTest++.h"
 
 // Amanzi
-#include "GMVMesh.hh"
 #include "CompositeVector.hh"
+#include "GMVMesh.hh"
 #include "LinearOperatorPCG.hh"
 #include "MeshFactory.hh"
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
+#include "WhetStoneDefs.hh"
 
 // Operators
 #include "Analytic02.hh"
@@ -83,7 +84,7 @@ void TestDiffusionFracturedMatrix(double gravity) {
   // create boundary data.
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator");
 
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 

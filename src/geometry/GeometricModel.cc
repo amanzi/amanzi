@@ -70,7 +70,7 @@ GeometricModel::AddRegion(const Teuchos::RCP<Region>& reg)
     Exceptions::amanzi_throw(mesg);
   }
 
-  reg->set_id(RegionSize());
+  reg->set_id(size());
   regions_.push_back(reg);
   regions_name_[reg->name()] = reg;
   regions_id_[reg->id()] = reg;

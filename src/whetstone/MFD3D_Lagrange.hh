@@ -40,6 +40,9 @@ class MFD3D_Lagrange : public MFD3D {
   ~MFD3D_Lagrange() {};
 
   // required methods
+  // -- schema
+  virtual std::vector<SchemaItem> schema() const override;
+
   // -- mass matrices
   virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override {
     Errors::Message msg("L2 consistency is not implemented for Lagrange element.");

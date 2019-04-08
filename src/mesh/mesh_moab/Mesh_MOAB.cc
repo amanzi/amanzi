@@ -589,7 +589,7 @@ void Mesh_MOAB::init_set_info()
     amanzi_throw(mesg);
   }
     
-  unsigned int ngr = gm->RegionSize();
+  unsigned int ngr = gm->size();
 
   for (int i = 0; i < ngr; i++) {
     Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(i);

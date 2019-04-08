@@ -13,6 +13,8 @@
 
 #include "errors.hh"
 
+#include "WhetStoneDefs.hh"
+
 #include "PDE_HelperDiscretization.hh"
 
 namespace Amanzi {
@@ -75,8 +77,8 @@ void PDE_HelperDiscretization::set_local_matrices(const Teuchos::RCP<Op>& op)
 {
   if (global_op_.get()) {
     if (local_op_.get()) {
-      auto index = std::find(global_op_->OpBegin(), global_op_->OpEnd(), local_op_) - global_op_->OpBegin();
-      if (index != global_op_->OpSize()) {
+      auto index = std::find(global_op_->begin(), global_op_->end(), local_op_) - global_op_->begin();
+      if (index != global_op_->size()) {
         global_op_->OpPushBack(op);
       } else {
         global_op_->OpReplace(op, index);
@@ -96,15 +98,15 @@ void PDE_HelperDiscretization::set_local_matrices(const Teuchos::RCP<Op>& op)
 void PDE_HelperDiscretization::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
   for (auto bc : bcs_trial_) {
-    if (bc->type() == DOF_Type::SCALAR ||
-        bc->type() == DOF_Type::NORMAL_COMPONENT ||
-        bc->type() == DOF_Type::MOMENT) {
+    if (bc->type() == WhetStone::DOF_Type::SCALAR ||
+        bc->type() == WhetStone::DOF_Type::NORMAL_COMPONENT ||
+        bc->type() == WhetStone::DOF_Type::MOMENT) {
       ApplyBCs_Cell_Scalar_(*bc, local_op_, primary, eliminate, essential_eqn);
     } 
-    else if (bc->type() == DOF_Type::POINT) {
+    else if (bc->type() == WhetStone::DOF_Type::POINT) {
       ApplyBCs_Cell_Point_(*bc, local_op_, primary, eliminate, essential_eqn);
     }
-    else if (bc->type() == DOF_Type::VECTOR) {
+    else if (bc->type() == WhetStone::DOF_Type::VECTOR) {
       ApplyBCs_Cell_Vector_(*bc, local_op_, primary, eliminate, essential_eqn);
     }
     else {
@@ -169,8 +171,12 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
 
     bool flag(true);
     int item(0);
+    AmanziMesh::Entity_kind itkind;
+
     for (auto it = op->schema_row_.begin(); it != op->schema_row_.end(); ++it, ++item) {
-      if (it->kind == kind) {
+      std::tie(itkind, std::ignore, std::ignore) = *it;
+
+      if (itkind == kind) {
         for (int n = 0; n != nents; ++n) {
           int x = entities[n];
           if (bc_model[x] == OPERATOR_BC_DIRICHLET) {
@@ -190,7 +196,9 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
 
     item = 0;
     for (auto it = op->schema_col_.begin(); it != op->schema_col_.end(); ++it, ++item) {
-      if (it->kind == kind) {
+      std::tie(itkind, std::ignore, std::ignore) = *it;
+
+      if (itkind == kind) {
         for (int n = 0; n != nents; ++n) {
           int x = entities[n];
           double value = bc_value[x];
@@ -281,8 +289,12 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Point_(
 
     bool flag(true);
     int item(0);
+    AmanziMesh::Entity_kind itkind;
+
     for (auto it = op->schema_row_.begin(); it != op->schema_row_.end(); ++it, ++item) {
-      if (it->kind == AmanziMesh::NODE) {
+      std::tie(itkind, std::ignore, std::ignore) = *it;
+
+      if (itkind == AmanziMesh::NODE) {
         for (int n = 0; n != nnodes; ++n) {
           int v = nodes[n];
           if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
@@ -304,7 +316,9 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Point_(
 
     item = 0;
     for (auto it = op->schema_col_.begin(); it != op->schema_col_.end(); ++it, ++item) {
-      if (it->kind == AmanziMesh::NODE) {
+      std::tie(itkind, std::ignore, std::ignore) = *it;
+
+      if (itkind == AmanziMesh::NODE) {
         for (int n = 0; n != nnodes; ++n) {
           int v = nodes[n];
           AmanziGeometry::Point value = bc_value[v];
@@ -393,8 +407,12 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(
 
     bool flag(true);
     int item(0);
+    AmanziMesh::Entity_kind itkind;
+
     for (auto it = op->schema_row_.begin(); it != op->schema_row_.end(); ++it, ++item) {
-      if (it->kind == kind) {
+      std::tie(itkind, std::ignore, std::ignore) = *it;
+
+      if (itkind == kind) {
         for (int n = 0; n != nents; ++n) {
           int f = entities[n];
           if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
@@ -417,7 +435,9 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(
 
     item = 0;
     for (auto it = op->schema_col_.begin(); it != op->schema_col_.end(); ++it, ++item) {
-      if (it->kind == kind) {
+      std::tie(itkind, std::ignore, std::ignore) = *it;
+
+      if (itkind == kind) {
         for (int n = 0; n != nents; ++n) {
           int f = entities[n];
           const std::vector<double>& value = bc_value[f];
