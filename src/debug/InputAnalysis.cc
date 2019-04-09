@@ -106,8 +106,19 @@ void InputAnalysis::RegionAnalysis()
         vofs_min = std::min(vofs_min, vofs[n]);
         vofs_max = std::max(vofs_max, vofs[n]);
       }
+
+      // verify that all faces are boundary faces
+      int bc_flag(1);
+      AmanziMesh::Entity_ID_List cells;
+
+      for (int n = 0; n < nblock; ++n) {
+        area += mesh_->face_area(block[n]) * frac;
+        mesh_->face_get_cells(block[n], AmanziMesh::Parallel_type::ALL, &cells);
+        if (cells.size() != 1) bc_flag = 0;
+      }
+
 #ifdef HAVE_MPI
-      int nblock_tmp(nblock), nvofs_tmp(nvofs);
+      int nblock_tmp(nblock), nvofs_tmp(nvofs), bc_flag_tmp(bc_flag);
       double area_tmp(area), vofs_min_tmp(vofs_min), vofs_max_tmp(vofs_max);
 
       mesh_->get_comm()->SumAll(&nblock_tmp, &nblock, 1);
@@ -115,6 +126,7 @@ void InputAnalysis::RegionAnalysis()
       mesh_->get_comm()->SumAll(&area_tmp, &area, 1);
       mesh_->get_comm()->MinAll(&vofs_min_tmp, &vofs_min, 1);
       mesh_->get_comm()->MaxAll(&vofs_max_tmp, &vofs_max, 1);
+      mesh_->get_comm()->MinAll(&bc_flag_tmp, &bc_flag, 1);
 #endif
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
         std::string name(regions[i]);
@@ -126,9 +138,13 @@ void InputAnalysis::RegionAnalysis()
       }
 
       if (nblock == 0) {
-        msg << "Used boundary condition region is empty.";
+        msg << "Used boundary region is empty.";
         Exceptions::amanzi_throw(msg);
       } 
+      if (bc_flag == 0) {
+        msg << "Used boundary region has non-boundary entries.";
+        Exceptions::amanzi_throw(msg);
+      }
     }
   }
 
