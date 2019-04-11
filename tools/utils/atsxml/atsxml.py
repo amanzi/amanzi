@@ -244,7 +244,7 @@ def replace_regions(toatsxml,fromatsxml,mapping=None):
     newgridoption = get_value(toatsxml,'grid_option')
     replace_by_name(toatsxml,'grid_option',newgridoption)
 
-def run(xml, ats_exe=None, proc=1, mpiexec='mpiexec', run_file_name='run.xml',stdout=None,stderr=None,hostname=None,cpuset=None):
+def run(xml, ats_exe=None, nproc=1, mpiexec='mpiexec', run_file_name='run.xml',stdout=None,stderr=None,hostname=None,cpuset=None):
     ''' Run ats model based on tpl_xml_file using parameters defined in pars dictionary '''
 
     # ensure that ATS's executable exists and that it's module is loaded
@@ -260,7 +260,6 @@ def run(xml, ats_exe=None, proc=1, mpiexec='mpiexec', run_file_name='run.xml',st
     write_xml(xml,run_file_name)
     
     try:
-        #print ' '.join([mpiexec,'-n',str(nproc),ats_exe,"--xml_file="+run_file_name])
         outfile = open(stdout,'w')
         if not stderr is None:
             errfile = open(stderr,'w')

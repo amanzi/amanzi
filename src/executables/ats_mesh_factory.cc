@@ -160,7 +160,9 @@ createMesh(Teuchos::ParameterList& mesh_plist,
   } else if (mesh_type == "column surface") {
     Teuchos::ParameterList& column_list = mesh_plist.sublist("column surface parameters");
     std::string surface_setname = column_list.get<std::string>("subgrid set name", "surface");
-    std::string parent_domain_name = mesh_plist.name().substr(8,mesh_plist.name().size());
+
+    std::size_t pos = mesh_plist.name().find('_');
+    std::string parent_domain_name = mesh_plist.name().substr(pos+1,mesh_plist.name().size());
     auto parent = S.GetMesh(parent_domain_name);
     auto mesh = Teuchos::rcp(new Amanzi::AmanziMesh::MeshSurfaceCell(*parent, surface_setname));
 

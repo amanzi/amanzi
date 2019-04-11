@@ -27,14 +27,14 @@ SurfaceRelPermEvaluator::SurfaceRelPermEvaluator(Teuchos::ParameterList& plist) 
     domain = Keys::getDomain(my_key_);
 
   // set up the height dependency
-  h_key_ = plist_.get<std::string>("ponded depth key", Keys::getKey(domain,"ponded_depth"));
+  h_key_ = Keys::readKey(plist_, domain, "pressure key", "pressure");
 
   dependencies_.insert(h_key_);
 
   // set up the temperature dependency
   is_temp_ = model_->TemperatureDependent();
   if (is_temp_) {
-    uf_key_ = plist_.get<std::string>("unfrozen fraction key", Keys::getKey(domain, "unfrozen_fraction"));
+    uf_key_ = Keys::readKey(plist_, domain, "unfrozen fraction", "unfrozen_fraction");
     dependencies_.insert(uf_key_);
   }
 

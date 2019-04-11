@@ -22,9 +22,11 @@ namespace Transport {
  * Routine takes a parallel overlapping vector C and returns a parallel
  * overlapping vector F(C).
  ****************************************************************** */
+
 void Transport_PK_ATS::FunctionalTimeDerivative(double t,
                                                 const Epetra_Vector& component,
                                                 Epetra_Vector& f_component)
+
 {
 
   // distribute vector
@@ -38,7 +40,6 @@ void Transport_PK_ATS::FunctionalTimeDerivative(double t,
   Teuchos::ParameterList plist = tp_list_->sublist("reconstruction");
   lifting_->Init(component_rcp, plist);
   lifting_->ComputeGradient();
-
 
   // extract boundary conditions for the current component
   std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
@@ -63,6 +64,7 @@ void Transport_PK_ATS::FunctionalTimeDerivative(double t,
 
   limiter_->Init(plist, flux_);
   limiter_->ApplyLimiter(component_rcp, 0, lifting_->gradient(), bc_model, bc_value);
+
   limiter_->gradient()->ScatterMasterToGhosted("cell");
 
   // ADVECTIVE FLUXES
@@ -99,7 +101,9 @@ void Transport_PK_ATS::FunctionalTimeDerivative(double t,
       tcc_flux = u * upwind_tcc;
       f_component[c1] -= tcc_flux;
       f_component[c2] += tcc_flux;
+
     } else if (c1 >= 0 && c1 < ncells_owned && (c2 >= ncells_owned || c2 < 0)) {
+
       upwind_tcc = limiter_->getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);

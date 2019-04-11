@@ -28,13 +28,15 @@ class PredictorDelegateBCFlux {
                           const Teuchos::RCP<Operators::PDE_Diffusion>& matrix,
                           const Teuchos::RCP<Flow::WRMPartition>& wrms,
                           std::vector<int>* bc_markers,
-                          std::vector<double>* bc_values) :
+                          std::vector<double>* bc_values,
+                          const std::string& uw_kr_key) :
       S_next_(S_next),
       mesh_(mesh),
       matrix_(matrix),
       wrms_(wrms),
       bc_markers_(bc_markers),
-      bc_values_(bc_values)
+      bc_values_(bc_values),
+      uw_kr_key_(uw_kr_key)
   {}
 
   bool ModifyPredictor(double h, Teuchos::RCP<TreeVector> u) {
@@ -118,6 +120,7 @@ class PredictorDelegateBCFlux {
 
   std::vector<int>* bc_markers_;
   std::vector<double>* bc_values_;
+  std::string uw_kr_key_;
 
 };
 

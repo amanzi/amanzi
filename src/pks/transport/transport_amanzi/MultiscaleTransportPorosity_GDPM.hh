@@ -23,9 +23,9 @@
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "Factory.hh"
-#include "Mini_Diffusion1D.hh"
 
+#include "factory.hh"
+#include "Mini_Diffusion1D.hh"
 #include "MultiscaleTransportPorosity.hh"
 
 namespace Amanzi {

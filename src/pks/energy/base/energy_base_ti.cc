@@ -220,11 +220,20 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
       acc_c[0][c] = pres[0][c] >= patm ? de_dT[0][c] / h : 0.;
     }
   } else {
-    for (unsigned int c=0; c!=ncells; ++c) {
-      //      AMANZI_ASSERT(de_dT[0][c] > 1.e-10);
-      // ?? Not using e_bar anymore apparently, though I didn't think we were ever.  Need a nonzero here to ensure not singlar.
-      acc_c[0][c] = std::max(de_dT[0][c], 1.e-12) / h;
-    }
+    if (precon_used_) {
+      for (unsigned int c=0; c!=ncells; ++c) {
+        //      AMANZI_ASSERT(de_dT[0][c] > 1.e-10);
+        // ?? Not using e_bar anymore apparently, though I didn't think we were ever.  Need a nonzero here to ensure not singlar.
+        acc_c[0][c] = std::max(de_dT[0][c], 1.e-12) / h;
+      }
+    } else {
+      for (unsigned int c=0; c!=ncells; ++c) {
+        //      AMANZI_ASSERT(de_dT[0][c] > 1.e-10);
+        // ?? Not using e_bar anymore apparently, though I didn't think we were ever.  Need a nonzero here to ensure not singlar.
+        // apply a diagonal shift manually for coupled problems
+        acc_c[0][c] = de_dT[0][c] / h + 1.e-6;
+      }
+    }      
   }
   preconditioner_acc_->AddAccumulationTerm(acc, "cell");
 
@@ -241,7 +250,8 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
     preconditioner_adv_->SetBCs(bc_adv_, bc_adv_);
     preconditioner_adv_->UpdateMatrices(mass_flux.ptr(), dhdT.ptr());
     ApplyDirichletBCsToEnthalpy_(S_next_.ptr());
-    preconditioner_adv_->ApplyBCs(true, false, true);
+    preconditioner_adv_->ApplyBCs(false, true, false);
+
   }
 
   // Apply boundary conditions.
@@ -250,6 +260,109 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
     preconditioner_->AssembleMatrix();
     preconditioner_->UpdatePreconditioner();
   }
+};
+
+// -----------------------------------------------------------------------------
+// Default enorm that uses an abs and rel tolerance to monitor convergence.
+// -----------------------------------------------------------------------------
+double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
+        Teuchos::RCP<const TreeVector> du) {
+  // Abs tol based on old conserved quantity -- we know these have been vetted
+  // at some level whereas the new quantity is some iterate, and may be
+  // anything from negative to overflow.
+  S_inter_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_inter_.ptr(), name_);
+  const Epetra_MultiVector& energy = *S_inter_->GetFieldData(energy_key_)
+      ->ViewComponent("cell",true);
+
+  S_inter_->GetFieldEvaluator(wc_key_)->HasFieldChanged(S_inter_.ptr(), name_);
+  const Epetra_MultiVector& wc = *S_inter_->GetFieldData(wc_key_)
+      ->ViewComponent("cell",true);
+
+  const Epetra_MultiVector& cv = *S_inter_->GetFieldData(cell_vol_key_)
+      ->ViewComponent("cell",true);
+
+  // VerboseObject stuff.
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+    *vo_->os() << "ENorm (Infnorm) of: " << conserved_key_ << ": " << std::endl;
+
+  Teuchos::RCP<const CompositeVector> dvec = du->Data();
+  double h = S_next_->time() - S_inter_->time();
+
+  double enorm_val = 0.0;
+  for (CompositeVector::name_iterator comp=dvec->begin();
+       comp!=dvec->end(); ++comp) {
+    double enorm_comp = 0.0;
+    int enorm_loc = -1;
+    const Epetra_MultiVector& dvec_v = *dvec->ViewComponent(*comp, false);
+
+    if (*comp == std::string("cell")) {
+      // error done in two parts, relative to mass but absolute in
+      // energy since it doesn't make much sense to be relative to
+      // energy
+      int ncells = dvec->size(*comp,false);
+      for (unsigned int c=0; c!=ncells; ++c) {
+        double mass = std::max(mass_atol_, wc[0][c] / cv[0][c]);
+        double enorm_c = std::abs(h * dvec_v[0][c]) / (atol_*mass*cv[0][c]);
+
+        if (enorm_c > enorm_comp) {
+          enorm_comp = enorm_c;
+          enorm_loc = c;
+        }
+      }
+      
+    } else if (*comp == std::string("face")) {
+      // error in flux -- relative to cell's extensive conserved quantity
+      int nfaces = dvec->size(*comp, false);
+
+      for (unsigned int f=0; f!=nfaces; ++f) {
+        AmanziMesh::Entity_ID_List cells;
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::OWNED, &cells);
+        double cv_min = cells.size() == 1 ? cv[0][cells[0]]
+            : std::min(cv[0][cells[0]],cv[0][cells[1]]);
+        double mass_min = cells.size() == 1 ? wc[0][cells[0]]/cv[0][cells[0]]
+          : std::min(wc[0][cells[0]]/cv[0][cells[0]], wc[0][cells[1]]/cv[0][cells[1]]);
+        mass_min = std::max(mass_min, mass_atol_);
+      
+        double enorm_f = fluxtol_ * h * std::abs(dvec_v[0][f])
+          / (atol_*mass_min*cv_min);
+        if (enorm_f > enorm_comp) {
+          enorm_comp = enorm_f;
+          enorm_loc = f;
+        }
+      }
+
+    } else {
+      double norm;
+      dvec_v.Norm2(&norm);
+      AMANZI_ASSERT(norm < 1.e-15);
+    }
+
+    // Write out Inf norms too.
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+      double infnorm(0.);
+      dvec_v.NormInf(&infnorm);
+
+      ENorm_t err;
+      ENorm_t l_err;
+      l_err.value = enorm_comp;
+      l_err.gid = dvec_v.Map().GID(enorm_loc);
+
+      int ierr;
+      ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
+      AMANZI_ASSERT(!ierr);
+      *vo_->os() << "  ENorm (" << *comp << ") = " << err.value << "[" << err.gid << "] (" << infnorm << ")" << std::endl;
+    }
+
+    enorm_val = std::max(enorm_val, enorm_comp);
+  }
+
+  double enorm_val_l = enorm_val;
+
+  int ierr;
+  ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, mesh_->get_comm()->Comm());
+  AMANZI_ASSERT(!ierr);
+  return enorm_val;
 };
 
 

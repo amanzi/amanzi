@@ -43,6 +43,7 @@
 #endif
 
 // Transport
+#include "LimiterCell.hh"
 #include "MDMPartition.hh"
 #include "MultiscaleTransportPorosityPartition.hh"
 #include "TransportDomainFunction.hh"
@@ -162,8 +163,6 @@ class Transport_PK_ATS : public PK_Physical_Explicit_Default {
   // time integration members
   void FunctionalTimeDerivative(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
   void FunctionalTimeDerivative(const double t, const TreeVector& component, TreeVector& f_component){};
-  //  void Functional(const double t, const Epetra_Vector& component, TreeVector& f_component);
-
   void IdentifyUpwindCells();
 
   void InterpolateCellVector(

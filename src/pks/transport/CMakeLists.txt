@@ -112,6 +112,11 @@ register_evaluator_with_factory(
   LISTNAME   MSM_TRANSPORT_REGISTRATIONS
   )
 
+register_evaluator_with_factory(
+  HEADERFILE transport_amanzi/MultiscaleTransportPorosity_GDPM_reg.hh
+  LISTNAME   MSM_TRANSPORT_REGISTRATIONS
+  )
+
 generate_evaluators_registration_header( 
   HEADERFILE multiscale_transport_registration.hh   
   LISTNAME   MSM_TRANSPORT_REGISTRATIONS

@@ -117,7 +117,7 @@ MPCCoupledWater::set_states(const Teuchos::RCP<const State>& S,
 
 
 // -- computes the non-linear functional g = g(t,u,udot)
-//    By default this just calls each sub pk Functional().
+//    By default this just calls each sub pk FunctionalResidual().
 void
 MPCCoupledWater::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                             Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {

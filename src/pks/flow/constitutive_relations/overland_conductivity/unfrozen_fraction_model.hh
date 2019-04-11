@@ -17,13 +17,14 @@ namespace Flow {
 class UnfrozenFractionModel {
  public:
   UnfrozenFractionModel(Teuchos::ParameterList& list);
-
+  
   double UnfrozenFraction(double temp) const;
   double DUnfrozenFractionDT(double temp) const;
 
  protected:
   double halfwidth_;
   double T0_;
+  double min_uf_;
   const double pi_;
 
   Teuchos::ParameterList plist_;

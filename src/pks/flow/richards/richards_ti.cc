@@ -85,14 +85,13 @@ void Richards::FunctionalResidual(double t_old,
   if (S_next_->HasField(sat_ice_key_)) {
     vnames.push_back("si_old");
     vnames.push_back("si_new");
-    vnames.push_back("mass_den");
-    vnames.push_back("perm_K");
     vecs.push_back(S_inter_->GetFieldData(Keys::getKey(domain_,"saturation_ice")).ptr());
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"saturation_ice")).ptr());
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"mass_density_liquid")).ptr());
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"permeability")).ptr());
   }
-
+  vnames.push_back("poro");
+  vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"porosity")).ptr());
+  vnames.push_back("perm_K");
+  vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"permeability")).ptr());
   vnames.push_back("k_rel");
   vecs.push_back(S_next_->GetFieldData(coef_key_).ptr());
   vnames.push_back("wind");

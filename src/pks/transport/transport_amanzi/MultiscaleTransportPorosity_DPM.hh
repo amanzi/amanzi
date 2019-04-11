@@ -20,7 +20,8 @@
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "Factory.hh"
+
+#include "factory.hh"
 #include "DenseVector.hh"
 
 #include "MultiscaleTransportPorosity.hh"

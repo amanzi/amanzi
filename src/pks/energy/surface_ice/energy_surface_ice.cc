@@ -42,15 +42,10 @@ EnergySurfaceIce::EnergySurfaceIce(Teuchos::ParameterList& FElist,
     standalone_mode_(false),
     is_energy_source_term_(false),
     is_mass_source_term_(false),
-    is_air_conductivity_(false) {
-
-
-  if(!plist_->isParameter("conserved quanity suffix"))
-    plist_->set("conserved quantity suffix", "energy");
-
-  //plist_->set("primary variable key", "surface-temperature");
-  //plist_->set("domain name", "surface");
-  plist_->set("conserved quantity key", Keys::getKey(domain_,"energy"));
+    is_air_conductivity_(false)
+{
+  if(!plist_->isParameter("conserved quantity key suffix"))
+    plist_->set("conserved quantity key suffix", "energy");
 }
 
 
@@ -109,12 +104,6 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     // -- energy source term from subsurface
     S->RequireField("surface_subsurface_energy_flux")
         ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
-  }
-
-  // Many quantities are based upon face areas, which are not the cell volume,
-  // as the surface mesh has been flattened.
-  if (!standalone_mode_) {
-    S->RequireFieldEvaluator("surface_3d_cell_volume");
   }
 }
 

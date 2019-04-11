@@ -60,6 +60,12 @@ class MPCPermafrost4 : public MPCSubsurface {
   Teuchos::RCP<const AmanziMesh::Mesh> domain_mesh_;
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_;
 
+  // Primary variable evaluators for exchange fluxes
+  Key mass_exchange_key_;
+  Key energy_exchange_key_;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> mass_exchange_pvfe_;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> energy_exchange_pvfe_;
+  
   // off-diagonal terms
   Teuchos::RCP<Operators::PDE_Accumulation> dE_dp_surf_;
 

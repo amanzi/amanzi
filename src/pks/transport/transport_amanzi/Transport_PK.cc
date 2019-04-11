@@ -379,6 +379,7 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
  
   // reconstruction initialization
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
+  limiter_ = Teuchos::rcp(new Operators::LimiterCell(mesh_));
   lifting_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
 
   // mechanical dispersion
@@ -1210,6 +1211,7 @@ void Transport_PK_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new
 void Transport_PK_ATS::AddMultiscalePorosity_(
     double t_old, double t_new, double t_int1, double t_int2)
 {
+
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell");
   Epetra_MultiVector& tcc_matrix = 
      *S_->GetFieldData("total_component_concentration_matrix", passwd_)->ViewComponent("cell");
@@ -1256,6 +1258,7 @@ void Transport_PK_ATS::AddMultiscalePorosity_(
 
     tmp0 = a * wcm1 + (1.0 - a) * wcm0;
     tmp1 = b * wcm1 + (1.0 - b) * wcm0;
+
 
     double phim = phi_matrix[0][c];
 
@@ -1336,7 +1339,7 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
   tmp1 = mass_start;
   mesh_->get_comm()->SumAll(&tmp1, &mass_start, 1);
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME){
     if (domain_name_ == "surface")  *vo_->os()<<std::setprecision(10)<<"Surface mass start "<<mass_start<<"\n";
     else  *vo_->os()<<std::setprecision(10)<<"Subsurface mass start "<<mass_start<<"\n";
   }

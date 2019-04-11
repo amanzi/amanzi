@@ -197,13 +197,15 @@ protected:
   bool standalone_mode_; // domain mesh == surface mesh
   FluxUpdateMode update_flux_;
   Operators::UpwindMethod upwind_method_;
+
   bool is_source_term_;
+  Key source_key_;
   bool source_in_meters_;
+  bool source_only_if_unfrozen_;
+  
   bool modify_predictor_with_consistent_faces_;
   bool symmetric_;
   bool perm_update_required_;
-  bool source_only_if_unfrozen_;
-  bool subgrid_model_;
   
   double p_limit_;
   double patm_limit_;
@@ -212,7 +214,6 @@ protected:
   // coupling term
   bool coupled_to_subsurface_via_head_;
   bool coupled_to_subsurface_via_flux_;
-  Key mass_source_key_;
 
   // newton correction
   bool jacobian_;

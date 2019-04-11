@@ -73,10 +73,6 @@ EOSEvaluator::EOSEvaluator(Teuchos::ParameterList& plist) :
   // temp_key_ = Keys::readKey(plist_, domain_name, "temperature", "temperature");
   // dependencies_.insert(temp_key_);
 
-  // // -- pressure
-  // pres_key_ = Keys::readKey(plist_, domain_name, "pressure", "effective_pressure");
-  // dependencies_.insert(pres_key_);
-
   // -- logging
   // if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
   //   Teuchos::OSTab tab = vo_->getOSTab();

@@ -57,7 +57,8 @@ void AdvectionDiffusion::AddAdvection_(const Teuchos::RCP<State> S,
   matrix_adv_->Setup(*mass_flux);
   matrix_adv_->SetBCs(bc_, bc_);
   matrix_adv_->UpdateMatrices(mass_flux.ptr());
-  matrix_adv_->ApplyBCs(true, false, true);
+  matrix_adv_->ApplyBCs(false, true, false);
+
 
   // apply
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData("temperature");

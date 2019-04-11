@@ -111,7 +111,8 @@ void AdvectionDiffusion::UpdatePreconditioner(double t, Teuchos::RCP<const TreeV
     preconditioner_adv_->Setup(*mass_flux);
     preconditioner_adv_->SetBCs(bc_,bc_);
     preconditioner_adv_->UpdateMatrices(mass_flux.ptr());
-    preconditioner_adv_->ApplyBCs(true, false, true);
+    preconditioner_adv_->ApplyBCs(false, true, false);
+
   }
   
   // assemble and create PC

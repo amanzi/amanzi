@@ -3,8 +3,6 @@
 
 import sys,os
 import numpy as np
-import matplotlib.collections
-from matplotlib import pyplot as plt
 import h5py
 import mesh
 import colors
@@ -146,6 +144,8 @@ def transect_data(varnames, keys='all', directory=".", filename="visdump_data.h5
 def plot(dataset, ax, cax=None, vmin=None, vmax=None, cmap="jet",
          label=None, mesh_filename="visdump_mesh.h5", directory=".", y_coord=0.0):
     """Draws a dataset on an ax."""
+    import matplotlib.collections
+
     if vmin is None:
         vmin = dataset.min()
     if vmax is None:

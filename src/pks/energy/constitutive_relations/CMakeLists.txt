@@ -13,6 +13,7 @@ list(APPEND subdirs energy enthalpy internal_energy source_terms thermal_conduct
 
 set(sources "")
 
+
 # include all subdirectories
 foreach(lcv IN LISTS subdirs)
   include_directories($lcv)

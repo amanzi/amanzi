@@ -48,34 +48,39 @@ public:
 
   // EnergyBase is a PK
   // -- Setup data
-  virtual void Setup(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S) override;
 
   // -- Initialize owned (dependent) variables.
-  virtual void Initialize(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S) override;
 
   // -- Commit any secondary (dependent) variables.
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
 
   // -- Calculate any diagnostics prior to doing vis
-  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S);
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) override;
 
+  // Default implementations of BDFFnBase methods.
+  // -- Compute a norm on u-du and return the result.
+  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
+                       Teuchos::RCP<const TreeVector> du) override;
 
   // EnergyBase is a BDFFnBase
   // computes the non-linear functional f = f(t,u,udot)
   virtual void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
-                   Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f);
+                   Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) override;
+
 
   // applies preconditioner to u and returns the result in Pu
-  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) override;
 
   // updates the preconditioner
-  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) override;
 
   // problems with temperatures -- setting a range of admissible temps
-  virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up);
+  virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up) override;
 
   virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
-          Teuchos::RCP<TreeVector> u);
+          Teuchos::RCP<TreeVector> u) override;
     
   // evaluating consistent faces for given BCs and cell values
   virtual void CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u);
@@ -83,7 +88,7 @@ public:
   virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
   ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
                    Teuchos::RCP<const TreeVector> u,
-                   Teuchos::RCP<TreeVector> du);
+                   Teuchos::RCP<TreeVector> du) override;
 
  protected:
   // These must be provided by the deriving PK.
@@ -156,6 +161,8 @@ public:
   bool modify_predictor_for_freezing_;
   bool modify_correction_for_freezing_;
   bool is_source_term_;
+  bool is_source_term_differentiable_;
+  bool is_source_term_finite_differentiable_;
   bool is_mass_source_term_;
   bool implicit_advection_;
   bool implicit_advection_in_pc_;
@@ -166,6 +173,7 @@ public:
   bool compute_boundary_values_;
   
   double T_limit_;
+  double mass_atol_;
   
   bool coupled_to_subsurface_via_temp_;
   bool coupled_to_subsurface_via_flux_;
@@ -174,6 +182,7 @@ public:
 
   // Keys
   Key energy_key_;
+  Key wc_key_;
   Key enthalpy_key_;
   Key flux_key_;
   Key energy_flux_key_;
