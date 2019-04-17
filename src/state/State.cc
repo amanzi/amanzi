@@ -862,6 +862,8 @@ State::GetModelParameters(std::string modelname) {
 // Initialize data, allowing values to be specified here or in the owning PK.
 // All independent variables must be initialized here.
 void State::Setup() {
+  auto vo = Teuchos::rcp(new VerboseObject("State", state_plist_)); 
+  Teuchos::OSTab tab = vo->getOSTab();
   // State-required data
   if (state_plist_.isParameter("visualize mesh ranks")) {
     for (mesh_iterator mesh_it=meshes_.begin();
@@ -890,6 +892,10 @@ void State::Setup() {
       Errors::Message message(messagestream.str());
       Exceptions::amanzi_throw(message);
     }
+    if (vo->os_OK(Teuchos::VERB_HIGH)) {
+      Teuchos::OSTab tab = vo->getOSTab();
+      *vo->os() << "Ensure compatibility  for evaluator \"" << evaluator->first << "\"\n";
+    }
     evaluator->second->EnsureCompatibility(Teuchos::ptr(this));
   }
 
@@ -906,6 +912,13 @@ void State::Setup() {
     if (!f_it->second->initialized()) {
       f_it->second->CreateData();
     }
+    // std::cout<<"Field "<<f_it->first<<": ";
+    // if ( f_it->second->type() == Amanzi::COMPOSITE_VECTOR_FIELD){
+    //   auto com_vec = f_it->second->GetFieldData();
+    //     for (CompositeVector::name_iterator comp=com_vec->begin();
+    //          comp!=com_vec->end(); ++comp) std::cout<<*comp<<" ";
+    //   std::cout<<"\n";
+    // }
   }
 };
 

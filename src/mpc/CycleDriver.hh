@@ -93,7 +93,7 @@ class CycleDriver {
   int num_time_periods_;
   int time_period_id_;
 
-  // Epetra communicator
+  // Amanzi communicator
   Comm_ptr_type comm_;
 
   // observations
