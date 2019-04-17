@@ -503,7 +503,8 @@ void MPCPermafrostSplitFluxColumns::init_(const Teuchos::RCP<State>& S)
   // create the column PKs
   for (int i=1; i!=npks; ++i) {
     // create the solution vector
-    auto pk_soln = Teuchos::rcp(new TreeVector(Epetra_MpiComm(MPI_COMM_SELF)));
+    //auto pk_soln = Teuchos::rcp(new TreeVector(Epetra_MpiComm(MPI_COMM_SELF)));
+    auto pk_soln = Teuchos::rcp(new TreeVector());
     solution_->PushBack(pk_soln);
 
     // create the PK

@@ -56,8 +56,8 @@ MPCCoupledWater::Setup(const Teuchos::Ptr<State>& S) {
   precon_surf_ = surf_flow_pk_->preconditioner();
 
   // -- push the surface local ops into the subsurface global operator
-  for (Operators::Operator::op_iterator op = precon_surf_->OpBegin();
-       op != precon_surf_->OpEnd(); ++op) {
+  for (Operators::Operator::op_iterator op = precon_surf_->begin();
+       op != precon_surf_->end(); ++op) {
     precon_->OpPushBack(*op);
   }
 
@@ -278,7 +278,7 @@ MPCCoupledWater::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
 
   // -- accumulate globally
   int n_modified_l = n_modified;
-  u->SubVector(0)->Data()->Comm().SumAll(&n_modified_l, &n_modified, 1);
+  u->SubVector(0)->Data()->Comm()->SumAll(&n_modified_l, &n_modified, 1);
   bool modified = (n_modified > 0) || (damping < 1.);
 
   // -- calculate consistent subsurface cells

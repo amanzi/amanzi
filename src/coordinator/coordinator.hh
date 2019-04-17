@@ -73,6 +73,8 @@ Example:
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_MpiComm.h"
+#include "AmanziComm.hh"
+#include "AmanziTypes.hh"
 
 #include "VerboseObject.hh"
 
@@ -95,7 +97,7 @@ class Coordinator {
 public:
   Coordinator(Teuchos::ParameterList& parameter_list,
               Teuchos::RCP<Amanzi::State>& S,
-              Epetra_MpiComm* comm );
+              Amanzi::Comm_ptr_type comm);
               //              Amanzi::ObservationData& output_observations);
 
   // PK methods
@@ -137,7 +139,7 @@ private:
   int cycle0_, cycle1_;
 
   // Epetra communicator
-  Epetra_MpiComm* comm_;
+  Amanzi::Comm_ptr_type comm_;
 
   // observations
   //  ObservationData& output_observations_;

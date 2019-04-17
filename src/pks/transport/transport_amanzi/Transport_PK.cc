@@ -209,7 +209,7 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
 
   if (!S->HasField(porosity_key_)){
     S->RequireField(porosity_key_, porosity_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator(porosity_key_);
   }
 
@@ -224,7 +224,7 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
 
   if (!S->HasField(molar_density_key_)){
     S->RequireField(molar_density_key_, molar_density_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator(molar_density_key_);
   }
   
@@ -1019,7 +1019,7 @@ void Transport_PK_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new
         tp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
 
     Teuchos::RCP<Operators::BCs> bc_dummy = 
-        Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
+        Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
     
     // default boundary conditions (none inside domain and Neumann on its boundary)
     auto& bc_model = bc_dummy->bc_model();

@@ -83,12 +83,12 @@ void OverlandPressureFlow::Setup(const Teuchos::Ptr<State>& S) {
   // set up the meshes
   standalone_mode_ = S->GetMesh() == S->GetMesh(domain_);
 
+  PK_PhysicalBDF_Default::Setup(S);
+  
   // -- water content
   S->RequireField(Keys::getKey(domain_,"water_content"))->SetMesh(mesh_)->SetGhosted()
     ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(Keys::getKey(domain_,"water_content"));
-
-  PK_PhysicalBDF_Default::Setup(S);
 
 
   // add _bar evaluators
@@ -416,7 +416,6 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
 
   Teuchos::RCP<CompositeVector> pres_cv = S->GetFieldData(key_, name_);
 
-
   // initial condition is tricky
   if (!S->GetField(key_)->initialized()) {
     if (!plist_->isSublist("initial condition")) {
@@ -430,7 +429,7 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
 
   // Initialize BDF stuff and physical domain stuff.
   PK_PhysicalBDF_Default::Initialize(S);
-
+ 
   if (!S->GetField(key_)->initialized()) {
     // -- set the cell initial condition if it is taken from the subsurface
     Teuchos::ParameterList ic_plist = plist_->sublist("initial condition");
@@ -492,6 +491,8 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
     }
 
   }
+
+  
   // Initialize BC values
   bc_head_->Compute(S->time());
   bc_pressure_->Compute(S->time());
@@ -516,6 +517,8 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
   S->GetField(Keys::getKey(domain_,"mass_flux_direction"), name_)->set_initialized();
   S->GetFieldData(Keys::getKey(domain_,"velocity"), name_)->PutScalar(0.);
   S->GetField(Keys::getKey(domain_,"velocity"), name_)->set_initialized();
+ 
+  
  };
 
 

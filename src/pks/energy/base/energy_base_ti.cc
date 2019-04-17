@@ -284,6 +284,12 @@ double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   Teuchos::RCP<const CompositeVector> dvec = du->Data();
   double h = S_next_->time() - S_inter_->time();
 
+  Teuchos::RCP<const Comm_type> comm_p = mesh_->get_comm();
+  Teuchos::RCP<const MpiComm_type> mpi_comm_p =
+    Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm_p);
+  const MPI_Comm& comm = mpi_comm_p->Comm();
+
+  
   double enorm_val = 0.0;
   for (CompositeVector::name_iterator comp=dvec->begin();
        comp!=dvec->end(); ++comp) {
@@ -333,6 +339,7 @@ double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       AMANZI_ASSERT(norm < 1.e-15);
     }
 
+
     // Write out Inf norms too.
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       double infnorm(0.);
@@ -344,7 +351,7 @@ double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       l_err.gid = dvec_v.Map().GID(enorm_loc);
 
       int ierr;
-      ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
+      ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, comm);
       AMANZI_ASSERT(!ierr);
       *vo_->os() << "  ENorm (" << *comp << ") = " << err.value << "[" << err.gid << "] (" << infnorm << ")" << std::endl;
     }
@@ -355,7 +362,7 @@ double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   double enorm_val_l = enorm_val;
 
   int ierr;
-  ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, mesh_->get_comm()->Comm());
+  ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, comm);
   AMANZI_ASSERT(!ierr);
   return enorm_val;
 };

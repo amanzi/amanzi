@@ -71,7 +71,8 @@ include_evaluators_directories(LISTNAME TRANSPORT_AMANZI_REG_INCLUDES)
   
 
 
-add_executable(ats main.cc plant_1D_mesh.cc ats_mesh_factory.cc simulation_driver.cc )
+#add_executable(ats main.cc plant_1D_mesh.cc ats_mesh_factory.cc simulation_driver.cc )
+add_executable(ats main.cc ats_mesh_factory.cc simulation_driver.cc )
 
 
 set(ATS_LIBS
@@ -91,7 +92,7 @@ set(ATS_LIBS
                       pk_flow_overland_pressure
                       pk_flow_icy_overland
                       pk_transport
-#                      pk_coupled_transport
+                      pk_coupled_transport
 	              # pk_prescribed_deformation
 #                      pk_prescribed_volumetric_deformation
                       pk_volumetric_deformation
@@ -143,7 +144,8 @@ install(TARGETS ats DESTINATION bin)
 
 
 message("build tests = ${BUILD_TESTS}")
-if ( BUILD_TESTS )
+#if ( BUILD_TESTS )
+if ( 0 )  
     include_directories(${Amanzi_TPL_UnitTest_INCLUDE_DIRS})
     include_directories(".")
 
