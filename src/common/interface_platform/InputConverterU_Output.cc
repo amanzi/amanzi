@@ -263,6 +263,9 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
       } else if (strcmp(tagname, "cycle_macros") == 0 ||
                  strcmp(tagname, "cycle_macro") == 0) {
         ProcessMacros_("cycles", text, cmPL, chkPL);
+      } else if (strcmp(tagname, "time_macros") == 0 ||
+                 strcmp(tagname, "time_macro") == 0) {
+        ProcessMacros_("times", text, tmPL, chkPL);
       }
     }
 
@@ -492,8 +495,8 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
 
 
 /* ******************************************************************
-* Converts macros and macro to multiple SPS parameters orthe single
-* values parameter.
+* Converts macros and macro to multiple SPS parameters or the single
+* value parameter.
 ****************************************************************** */
 void InputConverterU::ProcessMacros_(
     const std::string& prefix, char* text_content,
