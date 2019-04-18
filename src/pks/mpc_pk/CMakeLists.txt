@@ -46,36 +46,69 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 #
 # Library: mpc_tree
 #
-set(mpc_tree_src_files 
-    PK_MPCWeak.cc 
-    PK_MPCSequential.cc 
-    PK_MPCSubcycled.cc 
-    FlowEnergy_PK.cc
-    FlowMatrixFracture_PK.cc
-    TransportMatrixFracture_PK.cc        
-    FlowReactiveTransport_PK.cc
-    ReactiveTransport_PK.cc)
-
-set(mpc_tree_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
-add_amanzi_library(mpc_tree SOURCE ${mpc_tree_src_files}
-                   LINK_LIBS pks flow transport time_integration data_structures state
-                             ${mpc_tree_tpl_libs})
-
 #
 # Install Targets
 #
-set(mpc_tree_inc_files
-    PK_MPCStrong.hh
-    PK_MPCWeak.hh
-    PK_MPCSequential.hh
-    PK_MPCSubcycled.hh
-    PK_MPC.hh
-    PK_MPCAdditive.hh
-    FlowEnergy_PK.hh
-    FlowMatrixFracture_PK.hh
-    TransportMatrixFracture_PK.hh    
-    FlowReactiveTransport_PK.hh
-    ReactiveTransport_PK.hh)
+if (ENABLE_Physics)
+  set(mpc_tree_inc_files
+      PK_MPCStrong.hh
+      PK_MPCWeak.hh
+      PK_MPCSequential.hh
+      PK_MPCSubcycled.hh
+      PK_MPC.hh
+      PK_MPCAdditive.hh
+      FlowEnergy_PK.hh
+      FlowMatrixFracture_PK.hh
+      TransportMatrixFracture_PK.hh    
+      FlowReactiveTransport_PK.hh
+      ReactiveTransport_PK.hh)
+
+  set(mpc_tree_src_files 
+      PK_MPCWeak.cc 
+      PK_MPCSequential.cc 
+      PK_MPCSubcycled.cc 
+      FlowEnergy_PK.cc
+      FlowMatrixFracture_PK.cc
+      TransportMatrixFracture_PK.cc        
+      FlowReactiveTransport_PK.cc
+      ReactiveTransport_PK.cc)
+
+   set(mpc_tree_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
+   add_amanzi_library(mpc_tree SOURCE ${mpc_tree_src_files}
+                   LINK_LIBS pks flow transport time_integration data_structures state
+                             ${mpc_tree_tpl_libs})
+
+else()
+
+  set(mpc_tree_inc_files
+      PK_MPCStrong.hh
+      PK_MPCWeak.hh
+      PK_MPCSequential.hh
+      PK_MPCSubcycled.hh
+      PK_MPC.hh
+      PK_MPCAdditive.hh
+      TransportMatrixFracture_PK.hh    
+      ReactiveTransport_PK.hh)
+
+  set(mpc_tree_src_files 
+      PK_MPCWeak.cc 
+      PK_MPCSequential.cc 
+      PK_MPCSubcycled.cc 
+      TransportMatrixFracture_PK.cc        
+      ReactiveTransport_PK.cc)
+
+   set(mpc_tree_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
+   add_amanzi_library(mpc_tree SOURCE ${mpc_tree_src_files}
+                   LINK_LIBS pks transport time_integration data_structures state
+                             ${mpc_tree_tpl_libs})
+
+
+endif()
+
+
+      
+
+
 
 add_install_include_file(${mpc_tree_inc_files} mpc_pks_registration.hh)
 
@@ -95,9 +128,11 @@ if (BUILD_TESTS)
     set(amanzi_libs geometry mesh mesh_audit mesh_factory state energy operators whetstone data_structures)
 
     # Test: 1
-    #add_amanzi_test(energy_test energy_test
-    #                KIND int
-    #                SOURCE test/Main.cc test/energy_test.cc
-    #                LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    #if (ENABLE_Physics) 
+    #  add_amanzi_test(energy_test energy_test
+    #                  KIND int
+    #                  SOURCE test/Main.cc test/energy_test.cc
+    #                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    #endif()
 endif()
 
