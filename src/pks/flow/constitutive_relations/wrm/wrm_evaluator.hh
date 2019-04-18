@@ -32,7 +32,7 @@ Evaluates a set of WRMs on a partition of the mesh.
 #include "wrm_partition.hh"
 #include "wrm.hh"
 #include "secondary_variables_field_evaluator.hh"
-#include "factory.hh"
+#include "Factory.hh"
 
 namespace Amanzi {
 namespace Flow {

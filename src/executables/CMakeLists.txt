@@ -3,6 +3,7 @@
 # Need this define. Errors from MSTK include files 
 # about MPI_COMM_WORLD. --lpritch
 add_definitions("-DMSTK_HAVE_MPI")
+add_definitions("-DDISABLE_PHYSICS")
 
 if (WITH_MSTK_2_20rc1_OR_NEWER)
   add_definitions("-DMSTK_2_20rc1_OR_NEWER")
@@ -30,16 +31,8 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/transport)
 include_directories(${ATS_SOURCE_DIR}/src/pks/transport/transport_amanzi)
 include_directories(${ATS_SOURCE_DIR}/src/pks/chemistry)
 include_directories(${ATS_SOURCE_DIR}/src/pks/chemistry/chemistry_amanzi)
-include_directories(${ATS_SOURCE_DIR}/src/factory)
+
 include_directories(${ATS_SOURCE_DIR}/src/coordinator)
-
-#------------------------------------------------------------------------------#
-# ATS F90 includes.
-#------------------------------------------------------------------------------#
-
-include_directories(${ATS_SOURCE_DIR}/src/xlib/c)
-include_directories(${ATS_BINARY_DIR}/src/xlib/fc)
-include_directories(${ATS_BINARY_DIR}/src/xlib)
 
 
 include_evaluators_directories(LISTNAME ATS_POROSITY_EVAL_INCLUDES)

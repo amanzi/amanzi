@@ -8,7 +8,7 @@
 #ifndef AMANZI_SURFACEBALANCE_EVALUATOR_VPL_HH_
 #define AMANZI_SURFACEBALANCE_EVALUATOR_VPL_HH_
 
-#include "factory.hh"
+#include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 

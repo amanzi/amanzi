@@ -8,7 +8,6 @@
 add_subdirectory(models)
 
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/wrm/models)
-include_directories(${ATS_SOURCE_DIR}/src/factory)
 
 add_library(flow_relations_wrm
   wrm_partition.cc

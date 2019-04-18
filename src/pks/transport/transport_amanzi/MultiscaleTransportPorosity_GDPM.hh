@@ -23,7 +23,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "factory.hh"
+#include "Factory.hh"
 #include "Mini_Diffusion1D.hh"
 
 #include "MultiscaleTransportPorosity.hh"

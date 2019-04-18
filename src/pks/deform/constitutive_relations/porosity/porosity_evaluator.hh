@@ -9,7 +9,7 @@
 #ifndef AMANZI_DEFORMRELATIONS_POROSITY_EVALUATOR_
 #define AMANZI_DEFORMRELATIONS_POROSITY_EVALUATOR_
 
-#include "factory.hh"
+#include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 

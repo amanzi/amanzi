@@ -6,7 +6,6 @@
 
 include_directories(${ATS_SOURCE_DIR}/src/constitutive_relations/surface_subsurface_fluxes)
 include_directories(${ATS_SOURCE_DIR}/src/pks)
-include_directories(${ATS_SOURCE_DIR}/src/factory)
 include_directories(constitutive_relations/SEB)
 include_directories(constitutive_relations/litter)
 include_directories(base)

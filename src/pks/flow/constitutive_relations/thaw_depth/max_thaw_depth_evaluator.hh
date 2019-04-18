@@ -9,7 +9,7 @@
 #ifndef AMANZI_FLOWRELATIONS_MAX_THAWDEPTH_EVALUATOR_
 #define AMANZI_FLOWRELATIONS_MAX_THAWDEPTH_EVALUATOR_
 
-#include "factory.hh"
+#include "Factory.hh"
 //#include "thaw_depth_evaluator.hh"
 #include "secondary_variable_field_evaluator.hh"
 

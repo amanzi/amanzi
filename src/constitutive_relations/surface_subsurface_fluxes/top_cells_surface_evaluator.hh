@@ -10,7 +10,7 @@
 #ifndef AMANZI_RELATIONS_TOP_CELLS_SURFACE_EVALUATOR_
 #define AMANZI_RELATIONS_TOP_CELLS_SURFACE_EVALUATOR_
 
-#include "factory.hh"
+#include "Factory.hh"
 
 #include "secondary_variable_field_evaluator.hh"
 

@@ -33,7 +33,7 @@ Units: ????
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "factory.hh"
+#include "Factory.hh"
 #include "thermal_conductivity_twophase.hh"
 
 namespace Amanzi {

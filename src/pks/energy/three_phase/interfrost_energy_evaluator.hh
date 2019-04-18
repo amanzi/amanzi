@@ -23,7 +23,7 @@ This is simply the conserved quantity in the energy equation.
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "factory.hh"
+#include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
