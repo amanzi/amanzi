@@ -19,7 +19,7 @@
 namespace Amanzi {
 namespace Relations {
 
-class EOSFactory : public Utils::Factory<EOS> {
+class EOSFactory : public Amanzi::Utils::Factory<EOS> {
 
 public:
   Teuchos::RCP<EOS> createEOS(Teuchos::ParameterList& plist);

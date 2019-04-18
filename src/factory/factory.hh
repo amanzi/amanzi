@@ -73,8 +73,8 @@
    it and copy it.
    ------------------------------------------------------------------------- */
 
-#ifndef _ATS_FACTORY_HH_
-#define _ATS_FACTORY_HH_
+#ifndef AMANZI_FACTORY_HH_
+#define AMANZI_FACTORY_HH_
 
 #include <iostream>
 #include <map>

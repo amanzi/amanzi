@@ -12,6 +12,7 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/inte
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/overland_conductivity)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/overland_pressure)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/icy_overland)
+include_directories(${ATS_SOURCE_DIR}/src/factory)
 
 add_library(relations_ewc
 #  thermal_richards_model.cc

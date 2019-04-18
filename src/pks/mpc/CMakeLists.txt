@@ -31,6 +31,8 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/energy/two_phase)
 include_directories(${ATS_SOURCE_DIR}/src/pks/transport/transport_amanzi)
 include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
+include_directories(${ATS_SOURCE_DIR}/src/factory)
+
 
 add_library(mpc
   weak_mpc.cc

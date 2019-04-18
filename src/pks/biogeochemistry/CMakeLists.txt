@@ -4,6 +4,7 @@
 #  long/showtwave radiation, precip, etc etc etc
 
 
+include_directories(${ATS_SOURCE_DIR}/src/factory)
 include_directories(${ATS_SOURCE_DIR}/src/pks)
 
 add_library(pk_BGC

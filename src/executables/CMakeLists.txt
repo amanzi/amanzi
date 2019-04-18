@@ -30,7 +30,7 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/transport)
 include_directories(${ATS_SOURCE_DIR}/src/pks/transport/transport_amanzi)
 include_directories(${ATS_SOURCE_DIR}/src/pks/chemistry)
 include_directories(${ATS_SOURCE_DIR}/src/pks/chemistry/chemistry_amanzi)
-
+include_directories(${ATS_SOURCE_DIR}/src/factory)
 include_directories(${ATS_SOURCE_DIR}/src/coordinator)
 
 #------------------------------------------------------------------------------#
@@ -130,7 +130,7 @@ set(AMANZI_LIBS
                       amanzi_output
                       amanzi_mstk_mesh
 		      amanzi_mesh_logical
-              amanzi_geochemrxns
+                      amanzi_geochemrxns
 		      amanzi_geochembase
 		      amanzi_geochemutil
 		      amanzi_geochemsolvers

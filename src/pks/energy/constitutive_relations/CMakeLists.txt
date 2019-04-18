@@ -7,6 +7,8 @@
 
 
 include_directories(${Amanzi_TPL_MSTK_INCLUDE_DIRS})
+include_directories(${ATS_SOURCE_DIR}/src/factory)
+
 add_definitions("-DMSTK_HAVE_MPI")
 
 list(APPEND subdirs energy enthalpy internal_energy source_terms thermal_conductivity)
