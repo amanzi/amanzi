@@ -38,6 +38,9 @@ struct GroundProperties {
   double saturation_gas;                // [-]
   double roughness;                     // [m] surface roughness of a bare domain
   double ponded_depth;                  // [m] thickness of ponded water
+  double fractional_area;               // [-] not used by SEB, but useful for later bookkeeping
+  double snow_death_rate;               // [kg/m^2/s] snow that must die this timestep, make it melt!
+  double unfrozen_fraction;		// [-] fraction of ground water that is unfrozen
 
   GroundProperties() :
       temp(MY_LOCAL_NAN),
@@ -48,7 +51,10 @@ struct GroundProperties {
       albedo(MY_LOCAL_NAN),
       emissivity(MY_LOCAL_NAN),
       saturation_gas(MY_LOCAL_NAN),
-      roughness(MY_LOCAL_NAN)
+      roughness(MY_LOCAL_NAN),
+      fractional_area(0.),
+      snow_death_rate(0.),
+      unfrozen_fraction(0.)
   {}
 
   void UpdateVaporPressure();
@@ -59,8 +65,6 @@ struct GroundProperties {
 struct SnowProperties {
   double height;                // snow depth [m] (NOT SWE!)
   double density;               // snow density [ kg / m^3 ]
-  double age;                   // snow age [days]
-  double SWE;                   // SNOW WATER EQUIVALANCE [m]
   double temp;                  // snow temperature [K]
   double albedo;                // [-]
   double emissivity;            // [-]
@@ -69,8 +73,6 @@ struct SnowProperties {
   SnowProperties() :
       height(MY_LOCAL_NAN),
       density(MY_LOCAL_NAN),
-      age(MY_LOCAL_NAN),
-      SWE(MY_LOCAL_NAN),
       temp(MY_LOCAL_NAN),
       albedo(MY_LOCAL_NAN),
       emissivity(MY_LOCAL_NAN),
@@ -118,7 +120,8 @@ struct ModelParams {
       VKc(0.41),                // Von Karman Constant -------------- [-]
       stephB(0.00000005670373), // Stephan-Boltzmann constant ------- [W/m^2 K^4]
       Apa(101.325),             // atmospheric pressure ------------- [kPa]
-      evap_transition_width(0.02), // transition on evaporation from surface to evaporation from subsurface [m]
+      water_ground_transition_depth(0.02),
+      evap_transition_width(100.), // transition on evaporation from surface to evaporation from subsurface [m]
       gravity(9.807),
       Clapp_Horn_b(1.),          // Clapp and Hornberger "b" [-]
       R_ideal_gas(461.52)       // ideal gas law R? [Pa m^3 kg^-1 K^-1]
@@ -139,6 +142,7 @@ struct ModelParams {
   // other constants
   double Apa;
   double evap_transition_width;
+  double water_ground_transition_depth;
   double gravity;
 
 };
@@ -157,12 +161,6 @@ struct EnergyBalance {
   double fQm;           // energy available for melting snow
   double error;         // imbalance!
 
-  // terms in latent and sensible heat
-  double Dhe;           // special constant for use in e and h, precalculated for efficiency
-  double Evap_Resistance;  // Rair + Rsoil See Sakaguchi & Zeng 2009
-  double Sqig;          // some form of stability function
-  double Evap_potential_difference; // vapor_pressure_air - vapor_pressure_skin
-
   EnergyBalance() :
       fQswIn(MY_LOCAL_NAN),
       fQlwIn(MY_LOCAL_NAN),
@@ -171,8 +169,8 @@ struct EnergyBalance {
       fQe(MY_LOCAL_NAN),
       fQc(MY_LOCAL_NAN),
       fQm(MY_LOCAL_NAN),
-      Dhe(MY_LOCAL_NAN),
-      Evap_Resistance(MY_LOCAL_NAN) {}
+      error(MY_LOCAL_NAN)
+  {}
 };
 
 
@@ -192,9 +190,10 @@ struct MassBalance {    // all are in [m/s] of WATER, i.e. snow are in SWE
 // Struct collecting final output fluxes
 struct FluxBalance {
   double M_surf; // [m/s], mass to surface system
-  double M_sub; // [m/s], mass to subsurface system
   double E_surf; // [W/m^2], energy to surface system
-  double E_sub; // [W/m^2], energy to subsurface system
+  double M_subsurf; // [m/s], mass to/from subsurface system
+  double E_subsurf; // [W/m^2], energy to/from subsurface system
+  double M_snow; // [m/s], mass swe to snow system
 };
 
 

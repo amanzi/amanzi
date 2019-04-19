@@ -31,20 +31,14 @@ void PK_PhysicalBDF_Default::Setup(const Teuchos::Ptr<State>& S) {
   
   // convergence criteria
   if (conserved_key_.empty()) {
-    if (plist_->isParameter("conserved quantity suffix")) {
-      Key conserved_default = Keys::getKey(domain_, plist_->get<std::string>("conserved quantity suffix"));
-      conserved_key_ = plist_->get<std::string>("conserved quantity key", conserved_default);
-    } else {
-      conserved_key_ = plist_->get<std::string>("conserved quantity key");
-    }
+    conserved_key_ = Keys::readKey(*plist_, domain_, "conserved quantity");
   }
   S->RequireField(conserved_key_)->SetMesh(mesh_)
       ->AddComponent("cell",AmanziMesh::CELL,true);
   S->RequireFieldEvaluator(conserved_key_);
 
   if (cell_vol_key_.empty()) {
-    cell_vol_key_ = plist_->get<std::string>("cell volume key",
-            Keys::getKey(domain_, "cell_volume"));
+    cell_vol_key_ = Keys::readKey(*plist_, domain_, "cell volume", "cell_volume");
   }
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
       ->AddComponent("cell",AmanziMesh::CELL,true);
@@ -74,10 +68,13 @@ void PK_PhysicalBDF_Default::Initialize(const Teuchos::Ptr<State>& S) {
 // -----------------------------------------------------------------------------
 double PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
         Teuchos::RCP<const TreeVector> du) {
-  S_next_->GetFieldEvaluator(conserved_key_)->HasFieldChanged(S_next_.ptr(), name_);
-  const Epetra_MultiVector& conserved = *S_->GetFieldData(conserved_key_)
+  // Abs tol based on old conserved quantity -- we know these have been vetted
+  // at some level whereas the new quantity is some iterate, and may be
+  // anything from negative to overflow.
+  S_inter_->GetFieldEvaluator(conserved_key_)->HasFieldChanged(S_inter_.ptr(), name_);
+  const Epetra_MultiVector& conserved = *S_inter_->GetFieldData(conserved_key_)
       ->ViewComponent("cell",true);
-  const Epetra_MultiVector& cv = *S_->GetFieldData(cell_vol_key_)
+  const Epetra_MultiVector& cv = *S_inter_->GetFieldData(cell_vol_key_)
       ->ViewComponent("cell",true);
 
   // VerboseObject stuff.

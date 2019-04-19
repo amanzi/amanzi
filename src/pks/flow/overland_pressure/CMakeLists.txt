@@ -15,8 +15,8 @@ add_library(pk_flow_overland_pressure
         overland_pressure_pk.cc overland_pressure_ti.cc overland_pressure_physics.cc
         height_evaluator.cc
 	volumetric_height_evaluator.cc	
+	volumetric_height_subgrid_evaluator.cc	
         effective_height_evaluator.cc
-        overland_pressure_water_content_evaluator.cc
-	overland_subgrid_water_content_evaluator.cc)
+        overland_pressure_water_content_evaluator.cc)
 
 install(TARGETS pk_flow_overland_pressure DESTINATION lib)

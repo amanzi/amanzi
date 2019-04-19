@@ -50,9 +50,13 @@ add_library(mpc
   mpc_delegate_water.cc
   mpc_coupled_water.cc
   mpc_coupled_water_split_flux.cc
+  mpc_permafrost_split_flux.cc
+  mpc_permafrost_split_flux_columns.cc
+  mpc_permafrost_split_flux_columns_subcycled.cc
 #  mpc_coupled_water_neumann_splitting.cc
 #  mpc_coupled_water_dirichlet_splitting.cc
   mpc_subsurface.cc
+  mpc_surface.cc
 ##  mpc_permafrost3.cc
   mpc_permafrost4.cc
 ##  mpc_coupled_transport.cc
@@ -104,6 +108,11 @@ register_evaluator_with_factory(
   )
 
 register_evaluator_with_factory(
+  HEADERFILE mpc_surface_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
+
+register_evaluator_with_factory(
   HEADERFILE mpc_coupled_cells_reg.hh
   LISTNAME   MPC_PK_FAC
   )
@@ -120,6 +129,21 @@ register_evaluator_with_factory(
 
 register_evaluator_with_factory(
   HEADERFILE mpc_coupled_water_split_flux_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE mpc_permafrost_split_flux_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE mpc_permafrost_split_flux_columns_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE mpc_permafrost_split_flux_columns_subcycled_reg.hh
   LISTNAME   MPC_PK_FAC
   )
 

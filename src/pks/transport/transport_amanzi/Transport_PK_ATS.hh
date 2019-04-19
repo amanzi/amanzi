@@ -43,11 +43,11 @@
 #endif
 
 // Transport
+#include "LimiterCell.hh"
 #include "MDMPartition.hh"
 #include "MultiscaleTransportPorosityPartition.hh"
 #include "TransportDomainFunction.hh"
 #include "TransportDefs.hh"
-//#include "pk_physical_explicit_default.hh"
 
 
 /* ******************************************************************
@@ -163,8 +163,6 @@ class Transport_PK_ATS : public PK_Physical_Explicit_Default {
   // time integration members
   void FunctionalTimeDerivative(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
   void FunctionalTimeDerivative(const double t, const TreeVector& component, TreeVector& f_component){};
-  //  void Functional(const double t, const Epetra_Vector& component, TreeVector& f_component);
-
   void IdentifyUpwindCells();
 
   void InterpolateCellVector(
@@ -246,7 +244,7 @@ class Transport_PK_ATS : public PK_Physical_Explicit_Default {
     Key tcc_matrix_key_;
     Key molar_density_key_;
     Key solid_residue_mass_key_;
-
+    Key water_content_key_;
   
  
  private:

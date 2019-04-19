@@ -40,7 +40,6 @@ void PK_Explicit_Default::Initialize(const Teuchos::Ptr<State>& S) {
     Teuchos::ParameterList& ti_plist = plist_->sublist("time integrator");
     ti_plist.set("initial time", S->time());
     time_stepper_ = Teuchos::rcp(new Explicit_TI::RK<TreeVector>(*this, ti_plist, *solution_));
-    //time_stepper_ = Teuchos::rcp(new Explicit_TI::RK<EpetraVector>(*this, ti_plist, *solution_));
 
     solution_old_ = Teuchos::rcp(new TreeVector(*solution_));
   }

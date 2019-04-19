@@ -141,6 +141,11 @@ register_evaluator_with_factory(
   LISTNAME CONSTITUTIVE_RELATIONS_GENERIC_EVALUATORS
   )
 
+register_evaluator_with_factory(
+  HEADERFILE generic_evaluators/SubgridDisaggregateEvaluator_reg.hh
+  LISTNAME CONSTITUTIVE_RELATIONS_GENERIC_EVALUATORS
+  )
+
 generate_evaluators_registration_header(
   HEADERFILE constitutive_relations_generic_evaluators_registration.hh
   LISTNAME   CONSTITUTIVE_RELATIONS_GENERIC_EVALUATORS

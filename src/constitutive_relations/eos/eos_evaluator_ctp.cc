@@ -19,11 +19,9 @@ EOSEvaluatorCTP::EOSEvaluatorCTP(Teuchos::ParameterList& plist) :
   Key name = plist_.get<std::string>("evaluator name");
   // Set up my dependencies.
   Key domain_name = Keys::getDomain(name);
-
-  std::cout<<"\n"<<plist_;
   
   // -- pressure
-  pres_key_ = Keys::readKey(plist_, domain_name, "pressure", "effective_pressure");
+  pres_key_ = Keys::readKey(plist_, domain_name, "pressure", "pressure");
   dependencies_.insert(pres_key_);
   
   // -- temperature
@@ -31,7 +29,6 @@ EOSEvaluatorCTP::EOSEvaluatorCTP(Teuchos::ParameterList& plist) :
   dependencies_.insert(temp_key_);
 
   // -- concentration
-  //conc_key_ = Keys::readKey(plist_, domain_name, "concentration", "effective_concentration");
   conc_key_ = Keys::readKey(plist_, domain_name, "concentration", "total_component_concentration");  
   dependencies_.insert(conc_key_);  
 

@@ -41,7 +41,7 @@ class OneUFRelPermModel : public SurfaceRelPermModel {
 
   int alpha_; // must be an even integer
   const double pi_;
-  double h_cutoff_;
+  double h_cutoff_up_, h_cutoff_dn_;
 
  private:
   static Utils::RegisteredFactory<SurfaceRelPermModel,OneUFRelPermModel> reg_;

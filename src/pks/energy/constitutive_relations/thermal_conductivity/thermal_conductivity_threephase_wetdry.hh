@@ -60,7 +60,7 @@ private:
   double alpha_u_;
   double k_sat_u_;
   double k_dry_;
-
+  double beta_sat_f_; 
 private:
   static Utils::RegisteredFactory<ThermalConductivityThreePhase,
                                   ThermalConductivityThreePhaseWetDry> factory_;

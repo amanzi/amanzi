@@ -24,6 +24,10 @@ namespace Relations {
 RootingDepthFractionEvaluator::RootingDepthFractionEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist)
 {
+  if (!plist_.isSublist("rooting_depth_fraction parameters")) {
+    Errors::Message message("RootingDepthFractionEvaluator: changed spec -- now must be list of models to match list of PFTs.");
+    Exceptions::amanzi_throw(message);
+  }
   Teuchos::ParameterList& sublist = plist_.sublist("rooting_depth_fraction parameters");
   for (auto p : sublist) {
     if (!sublist.isSublist(p.first)) {

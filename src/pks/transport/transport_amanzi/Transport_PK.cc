@@ -19,7 +19,6 @@
 #include "Epetra_Import.h"
 #include "Teuchos_RCP.hpp"
 
-
 #include "BCs.hh"
 #include "errors.hh"
 #include "Explicit_TI_RK.hh"
@@ -87,16 +86,6 @@ Transport_PK_ATS::Transport_PK_ATS(Teuchos::ParameterList& pk_tree,
   nonlinear_solver_list_ = Teuchos::sublist(glist, "nonlinear solvers");
 
   subcycling_ = tp_list_->get<bool>("transport subcycling", false);
-
-
-  // Key domain = tp_list_->get<std::string>("domain name", "domain");
-  // Key key = Keys::readKey(*tp_list_, domain, "primary variable");  
-  // // set up the primary variable solution, and its evaluator
-  // Teuchos::ParameterList& FElist = S->FEList();
-  // Teuchos::ParameterList& pv_sublist = FElist.sublist(key);
-  // pv_sublist.set("evaluator name", key);
-  // pv_sublist.set("field evaluator type", "primary variable");
-
    
   // initialize io
   Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist, "units");
@@ -171,9 +160,9 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
   passwd_ = "state";  // owner's password
 
   domain_name_ = tp_list_->get<std::string>("domain name", "domain");
-
-  saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "saturation liquid", "");
-  prev_saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "previous saturation liquid", "");
+  
+  saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "saturation liquid", "saturation_liquid");
+  prev_saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "previous saturation liquid", "prev_saturation_liquid");
   flux_key_ = Keys::readKey(*tp_list_, domain_name_, "mass flux", "mass_flux");
   darcy_flux_key_ = Keys::readKey(*tp_list_, domain_name_, "darcy flux", "mass_flux");
   permeability_key_ = Keys::readKey(*tp_list_, domain_name_, "permeability", "permeability");
@@ -183,6 +172,11 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
   tcc_matrix_key_ = Keys::readKey(*tp_list_, domain_name_, "tcc matrix", "total_component_concentration_matrix");
   solid_residue_mass_key_ =  Keys::readKey(*tp_list_, domain_name_, "solid residue", "solid_residue_mass");
 
+  water_content_key_ = Keys::getKey(domain_, "water_content"); 
+
+
+
+  
   water_tolerance_ = tp_list_->get<double>("water tolerance", 1e-3);
   max_tcc_ = tp_list_->get<double>("maximal concentration", 0.9);
 
@@ -258,19 +252,19 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
 
   // require multiscale fields
   multiscale_porosity_ = false;
-  // if (multiscale_model == "dual porosity") {
-  //   multiscale_porosity_ = true;
-  //   Teuchos::RCP<Teuchos::ParameterList>
-  //       msp_list = Teuchos::sublist(tp_list_, "multiscale models", true);
-  //   msp_ = CreateMultiscaleTransportPorosityPartition(mesh_, msp_list);
+  if (multiscale_model == "dual porosity") {
+    multiscale_porosity_ = true;
+    Teuchos::RCP<Teuchos::ParameterList>
+        msp_list = Teuchos::sublist(tp_list_, "multiscale models", true);
+    msp_ = CreateMultiscaleTransportPorosityPartition(mesh_, msp_list);
 
-  //   std::vector<std::vector<std::string> > subfield_names(1);
-  //   subfield_names[0] = component_names_;
+    std::vector<std::vector<std::string> > subfield_names(1);
+    subfield_names[0] = component_names_;
 
-  //   S->RequireField(tcc_matrix_key_, passwd_, subfield_names)
-  //       ->SetMesh(mesh_)->SetGhosted(false)
-  //       ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
-  // }
+    S->RequireField(tcc_matrix_key_, passwd_, subfield_names)
+        ->SetMesh(mesh_)->SetGhosted(false)
+        ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
+  }
 }
 
 
@@ -322,7 +316,6 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
   mol_dens_subcycle_start = S->GetFieldCopyData(molar_density_key_, "subcycle_start",passwd_)->ViewComponent("cell");
   S->RequireFieldCopy(molar_density_key_, "subcycle_end", passwd_);
   mol_dens_subcycle_end = S->GetFieldCopyData(molar_density_key_, "subcycle_end", passwd_)->ViewComponent("cell");
-  
 
   // S->RequireFieldCopy(saturation_key_, "subcycle_start", passwd_);
   // ws_subcycle_start = S->GetFieldCopyData(saturation_key_, "subcycle_start",passwd_)
@@ -330,7 +323,6 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
   // S->RequireFieldCopy(saturation_key_, "subcycle_end", passwd_);
   // ws_subcycle_end = S->GetFieldCopyData(saturation_key_, "subcycle_end", passwd_)
   //   ->ViewComponent("cell");
-  
   S->RequireFieldCopy(flux_key_, "next_timestep", passwd_);
   flux_copy_ = S->GetFieldCopyData(flux_key_,  "next_timestep", passwd_)->ViewComponent("face", true);
   flux_copy_ -> PutScalar(0.);
@@ -356,8 +348,6 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
 
   
   phi_ = S->GetFieldData(porosity_key_) -> ViewComponent("cell", false);
-  
-  S->WriteStatistics(vo_);
 
   mol_dens_ = S -> GetFieldData(molar_density_key_) -> ViewComponent("cell", false);
   mol_dens_prev_ = S -> GetFieldData(molar_density_key_) -> ViewComponent("cell", false);
@@ -389,6 +379,7 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
  
   // reconstruction initialization
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
+  limiter_ = Teuchos::rcp(new Operators::LimiterCell(mesh_));
   lifting_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
 
   // mechanical dispersion
@@ -732,18 +723,6 @@ double Transport_PK_ATS::StableTimeStep()
   }
 
   Sinks2TotalOutFlux(tcc_prev, total_outflux, 0, num_aqueous - 1);
-
-  // modify estimate for other models
-  if (multiscale_porosity_) {
-    const Epetra_MultiVector& wcm_prev = *S_next_->GetFieldData("prev_water_content_matrix")->ViewComponent("cell");
-    const Epetra_MultiVector& wcm = *S_next_->GetFieldData("water_content_matrix")->ViewComponent("cell");
-
-    double dtg = S_->final_time() - S_->initial_time();
-    for (int c = 0; c < ncells_owned; ++c) {
-      double flux_liquid = (wcm[0][c] - wcm_prev[0][c]) / dtg;
-      msp_->second[(*msp_->first)[c]]->UpdateStabilityOutflux(flux_liquid, &total_outflux[c]);
-    }
-  }
 
   // loop over cells and calculate minimal time step
   double vol, outflux, dt_cell;
@@ -1232,21 +1211,32 @@ void Transport_PK_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new
 void Transport_PK_ATS::AddMultiscalePorosity_(
     double t_old, double t_new, double t_int1, double t_int2)
 {
-  const Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
-  Epetra_MultiVector& tcc = *tcc_tmp->ViewComponent("cell");
+
+  Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell");
   Epetra_MultiVector& tcc_matrix = 
-     *S_->GetFieldData(tcc_matrix_key_, passwd_)->ViewComponent("cell");
+     *S_->GetFieldData("total_component_concentration_matrix", passwd_)->ViewComponent("cell");
 
-  const Epetra_MultiVector& wcf_prev = *S_next_->GetFieldData("prev_water_content")->ViewComponent("cell");
-  const Epetra_MultiVector& wcf = *S_next_->GetFieldData("water_content")->ViewComponent("cell");
+  const Epetra_MultiVector& wcf_prev = *S_->GetFieldData(water_content_key_)->ViewComponent("cell");
+  const Epetra_MultiVector& wcf = *S_next_ -> GetFieldData(water_content_key_)->ViewComponent("cell");
 
-  const Epetra_MultiVector& wcm_prev = *S_next_->GetFieldData("prev_water_content_matrix")->ViewComponent("cell");
-  const Epetra_MultiVector& wcm = *S_next_->GetFieldData("water_content_matrix")->ViewComponent("cell");
+  const Epetra_MultiVector& wcm_prev = *S_->GetFieldData("water_content_matrix")->ViewComponent("cell");
+  const Epetra_MultiVector& wcm = *S_next_ -> GetFieldData("water_content_matrix")->ViewComponent("cell");
 
-  double flux_solute, flux_liquid, f1, f2, f3;
+  // multi-node matrix requires more input data
+  const Epetra_MultiVector& phi_matrix = *S_->GetFieldData("porosity_matrix")->ViewComponent("cell");
+
+  int nnodes(1);
+  Teuchos::RCP<Epetra_MultiVector> tcc_matrix_aux;
+  if (S_->HasField("total_component_concentration_matrix_aux")) {
+    tcc_matrix_aux = S_->GetFieldData("total_component_concentration_matrix_aux", passwd_)->ViewComponent("cell");
+    nnodes = tcc_matrix_aux->NumVectors() + 1; 
+  }
+  WhetStone::DenseVector tcc_m(nnodes);
+
+  double flux_liquid, flux_solute, wcm0, wcm1, wcf0, wcf1;
+  double dtg, dts, t1, t2, tmp0, tmp1, tfp0, tfp1, a, b;
   std::vector<AmanziMesh::Entity_ID> block;
 
-  double dtg, dts, t1, t2, wcm0, wcm1, wcf0, wcf1,tmp0, tmp1, a, b;
   dtg = t_new - t_old;
   dts = t_int2 - t_int1;
   t1 = t_int1 - t_old;
@@ -1260,22 +1250,34 @@ void Transport_PK_ATS::AddMultiscalePorosity_(
     wcf0 = wcf_prev[0][c];
     wcf1 = wcf[0][c];
   
-    a = t2 / dtg;
-    tmp1 = a * wcf1 + (1.0 - a) * wcf0;
-    f1 = dts / tmp1;
+    a = t1 / dtg;
+    b = t2 / dtg;
 
-    b = t1 / dtg;
-    tmp0 = b * wcm1 + (1.0 - b) * wcm0;
-    tmp1 = a * wcm1 + (1.0 - a) * wcm0;
+    tfp0 = a * wcf1 + (1.0 - a) * wcf0;
+    tfp1 = b * wcf1 + (1.0 - b) * wcf0;
 
-    f2 = dts / tmp1;
-    f3 = tmp0 / tmp1;
+    tmp0 = a * wcm1 + (1.0 - a) * wcm0;
+    tmp1 = b * wcm1 + (1.0 - b) * wcm0;
+
+
+    double phim = phi_matrix[0][c];
 
     for (int i = 0; i < num_aqueous; ++i) {
+      tcc_m(0) = tcc_matrix[i][c];
+      if (tcc_matrix_aux != Teuchos::null) {
+        for (int n = 0; n < nnodes - 1; ++n) 
+          tcc_m(n + 1) = (*tcc_matrix_aux)[n][c];
+      }
+
       flux_solute = msp_->second[(*msp_->first)[c]]->ComputeSoluteFlux(
-          flux_liquid, tcc_prev[i][c], tcc_matrix[i][c]);
-      tcc[i][c] -= flux_solute * f1;
-      tcc_matrix[i][c] = tcc_matrix[i][c] * f3 + flux_solute * f2;
+          flux_liquid, tcc_next[i][c], tcc_m, 
+          i, dts, tfp0, tfp1, tmp0, tmp1, phim);
+
+      tcc_matrix[i][c] = tcc_m(0);
+      if (tcc_matrix_aux != Teuchos::null) {
+        for (int n = 0; n < nnodes - 1; ++n) 
+          (*tcc_matrix_aux)[n][c] = tcc_m(n + 1);
+      }
     }
   }
 }
@@ -1337,7 +1339,7 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
   tmp1 = mass_start;
   mesh_->get_comm()->SumAll(&tmp1, &mass_start, 1);
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME){
     if (domain_name_ == "surface")  *vo_->os()<<std::setprecision(10)<<"Surface mass start "<<mass_start<<"\n";
     else  *vo_->os()<<std::setprecision(10)<<"Subsurface mass start "<<mass_start<<"\n";
   }

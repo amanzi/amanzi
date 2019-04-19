@@ -61,7 +61,6 @@ Richards::Richards(Teuchos::ParameterList& pk_tree,
     upwind_from_prev_flux_(false),
     precon_wc_(false),
     dynamic_mesh_(false),
-    clobber_surf_kr_(false),
     clobber_boundary_flux_dir_(false),
     vapor_diffusion_(false),
     perm_scale_(1.),
@@ -70,8 +69,8 @@ Richards::Richards(Teuchos::ParameterList& pk_tree,
     iter_(0),
     iter_counter_time_(0.)
 {
-  if (!plist_->isParameter("conserved quantity suffix"))
-    plist_->set("conserved quantity suffix", "water_content");
+  if (!plist_->isParameter("conserved quantity key suffix"))
+    plist_->set("conserved quantity key suffix", "water_content");
   
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance"))
@@ -139,7 +138,17 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   
   // -- nonlinear coefficients/upwinding
   Teuchos::ParameterList& wrm_plist = plist_->sublist("water retention evaluator");
-  clobber_surf_kr_ = plist_->get<bool>("clobber surface rel perm", false);
+  if (plist_->isParameter("surface rel perm strategy")) {
+    clobber_policy_ = plist_->get<std::string>("surface rel perm strategy");
+  } else if (plist_->get<bool>("clobber surface rel perm", false)) {
+    clobber_policy_ = "clobber";
+  } else if (plist_->get<bool>("max surface rel perm", false)) {
+    clobber_policy_ = "max";
+  } else if (plist_->get<bool>("unsaturated clobber surface rel perm", false)) {
+    clobber_policy_ = "unsaturated";
+  } else {
+    clobber_policy_ = "none";
+  }
   clobber_boundary_flux_dir_ = plist_->get<bool>("clobber boundary flux direction for upwinding", false);
 
   std::string method_name = plist_->get<std::string>("relative permeability method", "upwind with Darcy flux");
@@ -292,7 +301,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   is_source_term_ = plist_->get<bool>("source term", false);
   if (is_source_term_) {
     if (source_key_.empty()) {
-      source_key_ = Keys::readKey(*plist_, domain_, "mass source", "mass_source");
+      source_key_ = Keys::readKey(*plist_, domain_, "source", "mass_source");
     }
 
     source_term_is_differentiable_ =
@@ -611,7 +620,7 @@ Richards::ValidStep() {
   if (sat_change_limit_ > 0.0) {
     const Epetra_MultiVector& sl_new = *S_next_->GetFieldData(sat_key_)
         ->ViewComponent("cell",false);
-    const Epetra_MultiVector& sl_old = *S_->GetFieldData(sat_key_)
+    const Epetra_MultiVector& sl_old = *S_inter_->GetFieldData(sat_key_)
         ->ViewComponent("cell",false);
     Epetra_MultiVector dsl(sl_new);
     dsl.Update(-1., sl_old, 1.);
@@ -619,7 +628,7 @@ Richards::ValidStep() {
     dsl.NormInf(&change);
 
     if (change > sat_change_limit_) {
-      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+      if (vo_->os_OK(Teuchos::VERB_LOW))
         *vo_->os() << "Invalid time step, max sl change="
                    << change << " > limit=" << sat_change_limit_ << std::endl;
       return false;
@@ -628,7 +637,7 @@ Richards::ValidStep() {
   if (sat_ice_change_limit_ > 0.0) {
     const Epetra_MultiVector& si_new = *S_next_->GetFieldData(sat_ice_key_)
         ->ViewComponent("cell",false);
-    const Epetra_MultiVector& si_old = *S_->GetFieldData(sat_ice_key_)
+    const Epetra_MultiVector& si_old = *S_inter_->GetFieldData(sat_ice_key_)
         ->ViewComponent("cell",false);
     Epetra_MultiVector dsi(si_new);
     dsi.Update(-1., si_old, 1.);
@@ -636,7 +645,7 @@ Richards::ValidStep() {
     dsi.NormInf(&change);
 
     if (change > sat_ice_change_limit_) {
-      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+      if (vo_->os_OK(Teuchos::VERB_LOW))
         *vo_->os() << "Invalid time step, max si change="
                    << change << " > limit=" << sat_ice_change_limit_ << std::endl;
       return false;
@@ -756,9 +765,37 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     // Upwind, only overwriting boundary faces if the wind says to do so.
     upwinding_->Update(S);
 
-    if (clobber_surf_kr_) {
+    if (clobber_policy_ == "clobber") {
       Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);
       uw_rel_perm_f.Export(rel_perm_bf, vandelay, Insert);
+    } else if (clobber_policy_ == "max") {
+      Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);
+      const auto& fmap = mesh_->face_map(true);
+      const auto& bfmap = mesh_->exterior_face_map(true);
+      for (int bf=0; bf!=rel_perm_bf.MyLength(); ++bf) {
+        auto f = fmap.LID(bfmap.GID(bf));
+        if (rel_perm_bf[0][bf] > uw_rel_perm_f[0][f]) {
+          uw_rel_perm_f[0][f] = rel_perm_bf[0][bf];
+        }
+      }      
+    } else if (clobber_policy_ == "unsaturated") {
+      // clobber only when the interior cell is unsaturated
+      Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);
+      const Epetra_MultiVector& pres = *S->GetFieldData(key_)->ViewComponent("cell",false);
+      const auto& fmap = mesh_->face_map(true);
+      const auto& bfmap = mesh_->exterior_face_map(true);
+      for (int bf=0; bf!=rel_perm_bf.MyLength(); ++bf) {
+        auto f = fmap.LID(bfmap.GID(bf));
+        AmanziMesh::Entity_ID_List fcells;
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &fcells);
+        AMANZI_ASSERT(fcells.size() == 1);
+        if (pres[0][fcells[0]] < 101225.) {
+          uw_rel_perm_f[0][f] = rel_perm_bf[0][bf];
+        } else if (pres[0][fcells[0]] < 101325.) {
+          double frac = (101325. - pres[0][fcells[0]])/100.;
+          uw_rel_perm_f[0][f] = rel_perm_bf[0][bf] * frac + uw_rel_perm_f[0][f] * (1-frac);
+        }
+      }      
     }
 
     if (uw_rel_perm->HasComponent("face"))
@@ -1163,7 +1200,7 @@ bool Richards::ModifyPredictorFluxBCs_(double h, Teuchos::RCP<TreeVector> u) {
 
   if (flux_predictor_ == Teuchos::null) {
     flux_predictor_ = Teuchos::rcp(new PredictorDelegateBCFlux(S_next_, mesh_, matrix_diff_,
-            wrms_, &markers, &values));
+            wrms_, &markers, &values, uw_coef_key_));
   }
 
   UpdatePermeabilityData_(S_next_.ptr());

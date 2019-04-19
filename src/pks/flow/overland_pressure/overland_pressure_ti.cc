@@ -66,8 +66,8 @@ void OverlandPressureFlow::FunctionalResidual( double t_old,
   vnames.push_back("h_old");
   vnames.push_back("h_new");
   vnames.push_back("h+z");
-  if(plist_->get<bool>("subgrid model", false)){
-    vnames.push_back("pdd");
+  if (plist_->get<bool>("subgrid model", false)) {
+    vnames.push_back("pd - dd");
     vnames.push_back("frac_cond"); 
   }
 
@@ -80,14 +80,18 @@ void OverlandPressureFlow::FunctionalResidual( double t_old,
   vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"ponded_depth")).ptr());
   vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"pres_elev")).ptr());
 
-  if(plist_->get<bool>("subgrid model", false)){
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"ponded_depression_depth")).ptr());
+  if (plist_->get<bool>("subgrid model", false)) {
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"ponded_depth_minus_depression_depth")).ptr());
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"fractional_conductance")).ptr());
   }
 
   db_->WriteVectors(vnames, vecs, true);
 #endif
 
+  db_->WriteVector("uw_dir", S_next_->GetFieldData(Keys::getKey(domain_,"mass_flux_direction")).ptr(), true);
+  db_->WriteVector("k_s", S_next_->GetFieldData(Keys::getKey(domain_,"overland_conductivity")).ptr(), true);
+  db_->WriteVector("k_s_uw", S_next_->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity")).ptr(), true);
+  
   // update boundary conditions
   bc_head_->Compute(S_next_->time());
   bc_pressure_->Compute(S_next_->time());
@@ -115,8 +119,10 @@ void OverlandPressureFlow::FunctionalResidual( double t_old,
     db_->WriteVectors(vnames, vecs, false);
   }
 
+  db_->WriteVector("uw_dir", S_next_->GetFieldData(Keys::getKey(domain_,"mass_flux_direction")).ptr(), true);
+  db_->WriteVector("k_s", S_next_->GetFieldData(Keys::getKey(domain_,"overland_conductivity")).ptr(), true);
+  db_->WriteVector("k_s_uw", S_next_->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity")).ptr(), true);
   db_->WriteVector("q_s", S_next_->GetFieldData(Keys::getKey(domain_,"mass_flux")).ptr(), true);
-  db_->WriteVector("k_s", S_next_->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity")).ptr(), true);
   db_->WriteVector("res (diff)", res.ptr(), true);
 #endif
 
@@ -277,10 +283,10 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
   preconditioner_acc_->AddAccumulationTerm(dwc_dh, "cell");
   
   // // -- update the source term derivatives
-  // if (S_next_->GetFieldEvaluator(mass_source_key_)->IsDependency(S_next_.ptr(), key_)) {
-  //   S_next_->GetFieldEvaluator(mass_source_key_)
+  // if (S_next_->GetFieldEvaluator(source_key_)->IsDependency(S_next_.ptr(), key_)) {
+  //   S_next_->GetFieldEvaluator(source_key_)
   //       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-  //   std::string dkey = std::string("d")+mass_source_key_+std::string("_d")+key_;
+  //   std::string dkey = std::string("d")+source_key_+std::string("_d")+key_;
   //   const Epetra_MultiVector& dq_dp = *S_next_->GetFieldData(dkey)
   //       ->ViewComponent("cell",false);
 
@@ -300,7 +306,7 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
   //     const Epetra_MultiVector& nliq1_s =
   //       *S_next_->GetFieldData("surface-source_molar_density")
   //         ->ViewComponent("cell",false);
-  //     const Epetra_MultiVector& q = *S_next_->GetFieldData(mass_source_key_)
+  //     const Epetra_MultiVector& q = *S_next_->GetFieldData(source_key_)
   //         ->ViewComponent("cell",false);
 
   //     for (int c=0; c!=cv.MyLength(); ++c) {
@@ -352,7 +358,8 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
   preconditioner_diff_->ApplyBCs(true, true, true);
   
   // 3.d: Rescale to use as a pressure matrix if used in a coupler
-  if (coupled_to_subsurface_via_head_ || coupled_to_subsurface_via_flux_) {
+  //  if (coupled_to_subsurface_via_head_ || coupled_to_subsurface_via_flux_) {
+  if (!precon_used_) {
     // Scale Spp by dh/dp (h, NOT h_bar), clobbering rows with p < p_atm
     std::string pd_key = Keys::getKey(domain_,"ponded_depth");
     std::string pd_deriv_key = Keys::getDerivKey(pd_key,key_);

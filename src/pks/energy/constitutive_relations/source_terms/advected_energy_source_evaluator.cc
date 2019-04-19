@@ -125,12 +125,9 @@ AdvectedEnergySourceEvaluator::InitializeFromPlist_() {
   }
   std::string domain = Keys::getDomain(my_key_);
 
-  internal_enthalpy_key_ = plist_.get<std::string>("internal enthalpy key",
-          Keys::getKey(domain, "enthalpy"));
-  external_enthalpy_key_ = plist_.get<std::string>("external enthalpy key",
-          Keys::getKey(domain, "mass_source_enthalpy"));
-  mass_source_key_ = plist_.get<std::string>("mass source key",
-          Keys::getKey(domain, "mass_source"));
+  internal_enthalpy_key_ = Keys::readKey(plist_, domain, "internal enthalpy", "enthalpy");
+  external_enthalpy_key_ = Keys::readKey(plist_, domain, "external enthalpy", "mass_source_enthalpy");
+  mass_source_key_ = Keys::readKey(plist_, domain, "mass source", "mass_source");
 
   dependencies_.insert(internal_enthalpy_key_);
   dependencies_.insert(external_enthalpy_key_);

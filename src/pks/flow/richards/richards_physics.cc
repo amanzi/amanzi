@@ -165,7 +165,7 @@ void Richards::SetAbsolutePermeabilityTensor_(const Teuchos::Ptr<State>& S) {
 
 void
 Richards::UpdateVelocity_(const Teuchos::Ptr<State>& S) {
-  const Epetra_MultiVector& flux = *S_->GetFieldData(flux_key_)
+  const Epetra_MultiVector& flux = *S->GetFieldData(flux_key_)
       ->ViewComponent("face", true);
 
   S->GetFieldEvaluator(molar_dens_key_)->HasFieldChanged(S.ptr(), name_);

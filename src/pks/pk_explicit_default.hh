@@ -61,8 +61,8 @@ PK_Explicit_Default(Teuchos::ParameterList& pk_tree,
 virtual ~PK_Explicit_Default(){};
 
     // Default implementations of PK methods.
-  // // -- setup
-  virtual void Setup(const Teuchos::Ptr<State>& S);
+  // -- setup
+    virtual void Setup(const Teuchos::Ptr<State>& S);
 
     // -- initialize
     virtual void Initialize(const Teuchos::Ptr<State>& S);
