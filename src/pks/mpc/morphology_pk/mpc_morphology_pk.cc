@@ -298,7 +298,7 @@ bool Morphology_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
   
   bool chg = S_next_ -> GetFieldEvaluator(elev_key)->HasFieldChanged(S_next_.ptr(), elev_key);
   Epetra_MultiVector& elev_cell = *S_next_->GetFieldData(elev_key, elev_key)->ViewComponent("cell",false);
-  for (int c=0; c<15; c++) std::cout<<c<<" "<<dz[0][c]<<" "<<(*dz_accumul_)[0][c]<<" "<<elev_cell[0][c] <<"\n";
+  //for (int c=0; c<15; c++) std::cout<<c<<" "<<dz[0][c]<<" "<<(*dz_accumul_)[0][c]<<" "<<elev_cell[0][c] <<"\n";
 
   return fail;
 
