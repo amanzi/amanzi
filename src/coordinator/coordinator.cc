@@ -312,8 +312,8 @@ void Coordinator::initialize() {
   // set the states in the PKs Passing null for S_ allows for safer subcycling
   // -- PKs can't use it, so it is guaranteed to be pristinely the old
   // timestep.  This comes at the expense of an increase in memory footprint.
-  //pk_->set_states(Teuchos::null, S_inter_, S_next_);  
-  pk_->set_states(S_, S_inter_, S_next_);
+  pk_->set_states(Teuchos::null, S_inter_, S_next_);  
+  //pk_->set_states(S_, S_inter_, S_next_);
 
 }
 
