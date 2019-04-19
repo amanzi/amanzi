@@ -185,7 +185,7 @@ void SedimentTransport_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   if (!S->HasField(porosity_key_)){
-    S->RequireField(porosity_key_,porosity_key_)->SetMesh(mesh_)->SetGhosted(false)->SetComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireField(porosity_key_,porosity_key_)->SetMesh(mesh_)->SetGhosted(false)->AddComponent("cell", AmanziMesh::CELL, 1);
     //S->RequireFieldEvaluator(porosity_key_);
   }
 
@@ -203,7 +203,7 @@ void SedimentTransport_PK::Setup(const Teuchos::Ptr<State>& S)
 
   if (!S->HasField(molar_density_key_)){
     S->RequireField(molar_density_key_, molar_density_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator(molar_density_key_);
   }
   
