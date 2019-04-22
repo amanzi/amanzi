@@ -138,15 +138,20 @@ set(Trilinos_CMAKE_EXTRA_ARGS
     "-DNOX_ENABLE_THYRA_EPETRA_ADAPTERS:BOOL=OFF"    
     )
 
-if (CMAKE_BUILD_TYPE)
+if (TRILINOS_BUILD_TYPE)
+  list(APPEND Trilinos_CMAKE_EXTRA_ARGS
+              "-DCMAKE_BUILD_TYPE:STRING=${TRILINOS_BUILD_TYPE}")
+  if ( ${TRILINOS_BUILD_TYPE} STREQUAL "Debug" )
+    list(APPEND Trilinos_CMAKE_EXTRA_ARGS
+              "-DEpetra_ENABLE_FATAL_MESSAGES:BOOL=ON")
+  endif()
+elseif(CMAKE_BUILD_TYPE)           
   list(APPEND Trilinos_CMAKE_EXTRA_ARGS
               "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}")
-
   if ( ${CMAKE_BUILD_TYPE} STREQUAL "Debug" )
     list(APPEND Trilinos_CMAKE_EXTRA_ARGS
               "-DEpetra_ENABLE_FATAL_MESSAGES:BOOL=ON")
   endif()
-  #message(DEBUG ": Trilinos_CMAKE_EXTRA_ARGS = ${Trilinos_CMAKE_EXTRA_ARGS}")
 endif()
 
 if (BUILD_SHARED_LIBS)
@@ -165,10 +170,33 @@ if (Trilinos_Build_Config_File)
 endif()    
 
 
+# - Architecture Args.... these will need work.
+set(Trilinos_CMAKE_ARCH_ARGS
+        "-DKokkos_ENABLE_Serial:BOOL=ON"
+        "-DKokkos_ENABLE_OpenMP:BOOL=OFF"
+        "-DKokkos_ENABLE_Pthread:BOOL=OFF"
+        )
+
+if ( ${AMANZI_ARCH} STREQUAL "Summit" )
+   message("GOT SUMMIT! : ${AMANZI_ARCH}")
+   list(APPEND Trilinos_CMAKE_ARCH_ARGS
+        "-DKokkos_ENABLE_Cuda:BOOL=ON"
+        "-DKokkos_ENABLE_Cuda_UVM:BOOL=ON"
+        "-DKOKKOS_ENABLE_CUDA_UVM:BOOL=ON"
+        "-DKokkos_ENABLE_Cuda_Lambda:BOOL=ON"
+        "-DKokkos_ENABLE_Cuda_Relocatable_Device_Code:BOOL=ON"
+        "-DTPL_ENABLE_CUDA:BOOL=ON"
+        "-DKOKKOS_ARCH:STRING=Power9,Volta70")
+ else()
+   list(APPEND Trilinos_CMAKE_ARCH_ARGS
+        "-DKokkos_ENABLE_CUDA:BOOL=OFF")               
+ endif()   
+
 #  - Final Trilinos CMake Arguments 
 set(Trilinos_CMAKE_ARGS 
    ${Trilinos_CMAKE_PACKAGE_ARGS}
    ${Trilinos_CMAKE_TPL_ARGS}
+   ${Trilinos_CMAKE_ARCH_ARGS}
    ${Trilinos_CMAKE_EXTRA_ARGS}
    )
 
@@ -256,17 +284,7 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     SOURCE_DIR    ${Trilinos_source_dir}           # Source directory
                     CMAKE_ARGS        ${Trilinos_Config_File_ARGS}
                     CMAKE_CACHE_ARGS  ${Trilinos_CMAKE_ARGS}
-                                      -DKokkos_ENABLE_Serial:BOOL=ON
-                                      -DKokkos_ENABLE_OpenMP:BOOL=OFF
-                                      -DKokkos_ENABLE_Pthread:BOOL=OFF
-                                      -DKokkos_ENABLE_Cuda:BOOL=ON
-                                      -DKokkos_ENABLE_Cuda_UVM:BOOL=ON
-                                      -DKOKKOS_ENABLE_CUDA_UVM:BOOL=ON
-                                      -DKokkos_ENABLE_Cuda_Lambda:BOOL=ON
-                                      -DKokkos_ENABLE_Cuda_Relocatable_Device_Code:BOOL=ON 
 				      -DTpetraCore_ENABLE_TESTS:BOOL=ON
-				      -DTPL_ENABLE_CUDA:BOOL=ON 
-				      -DKOKKOS_ARCH:STRING=Power9,Volta70
                                       -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}
                                       -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
                                       -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}

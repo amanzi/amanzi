@@ -211,6 +211,9 @@ if (NOT ENABLE_Unstructured)
   set(ENABLE_MOAB_Mesh FALSE)
 endif()
 
+# optional arch flag
+option(AMANZI_ARCH "Set an optional arch (currently accepts only Summit)" "NONE")
+
 # Amanzi Test Suite
 option(ENABLE_TESTS "Build the Amanzi Test Suite" TRUE)
 
@@ -220,6 +223,9 @@ option(ENABLE_XSDK "Use xSDK Libraries" FALSE)
 # Use Spack package manager
 option(ENABLE_SPACK "Build with the Spack package manager where appropriate" FALSE)
 option(BUILD_SPACK "Clone spack from git and treat as a TPL that needs to be built" FALSE)
+
+# Trilinos build type
+option(TRILINOS_BUILD_TYPE "Build type for Trilinos TPL" ${CMAKE_BUILD_TYPE})
 
 
 # ############################################################################ #
