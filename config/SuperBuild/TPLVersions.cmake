@@ -117,6 +117,8 @@
 #                - update OpenMPI to 3.1.1
 #   0.95.6       - added new package nanoflann 1.3.0
 #   0.95.7       - update MSTK to 3.1.0
+#
+#                - update Trilinos 12.14.1 
 
 include(CMakeParseArguments)
 
@@ -169,7 +171,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 95)
-set(AMANZI_TPLS_VERSION_PATCH 7)
+set(AMANZI_TPLS_VERSION_PATCH 7_tpetra)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -431,14 +433,13 @@ set(PETSc_MD5_SUM        ce207f60800e19cfb55a2d7a879ca42c)
 # TPL: Trilinos
 #
 set(Trilinos_VERSION_MAJOR 12)
-set(Trilinos_VERSION_MINOR 15)
-set(Trilinos_VERSION_PATCH d0a8f5e2bc674318a8579187c23112f26e092ce1)
-
+set(Trilinos_VERSION_MINOR 14)
+set(Trilinos_VERSION_PATCH 1)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}-${Trilinos_VERSION_MINOR}-${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "https://github.com/trilinos/Trilinos/archive")
-set(Trilinos_ARCHIVE_FILE   trilinos-${Trilinos_VERSION}.tar.gz)
+set(Trilinos_ARCHIVE_FILE   trilinos-release-${Trilinos_VERSION}.tar.gz)
 set(Trilinos_SAVEAS_FILE    ${Trilinos_ARCHIVE_FILE})
-set(Trilinos_MD5_SUM        2c0d10c59841e3d1deb900135849a841)
+set(Trilinos_MD5_SUM        de912cca43c2ca3b74aa08528ac39dbd)
 
 #
 # TPL: SEACAS
