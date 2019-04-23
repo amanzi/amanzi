@@ -1,9 +1,14 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-ATS / Amanzi
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon
+*/
+
+/*
 
 Interface for TreeVector, a nested, hierarchical data structure for PK
 hiearchies.  This vector allows each physical PK to use CompositeVectors to
@@ -16,7 +21,8 @@ integrators/nonlinear solvers.
 Note that a TreeVector may have EITHER subvecs OR data (in the form of a
 CompositeVector), but NOT BOTH!  Nothing HERE precludes this, but it is
 assumed in several places.
-------------------------------------------------------------------------- */
+
+*/
 
 #ifndef DATA_STRUCTURES_TREEVECTOR_HH_
 #define DATA_STRUCTURES_TREEVECTOR_HH_

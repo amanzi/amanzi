@@ -46,23 +46,26 @@ TEST(MSTK_EXTFACE_MAP_4P)
   Amanzi::Vector_type bdryvec(extface_map);
 
   // Insert the GlobalID of each face offsetted by 3 into the allvec
+  {
+    auto allvec_v = allvec.getDataNonConst();
+    for (int f = face_map->getMinLocalIndex(); f < face_map->getMaxLocalIndex(); f++) 
+      allvec_v[f] = face_map->getGlobalElement(f)+3;
+  }
 
-  for (int f = face_map->getMinLocalIndex(); f < face_map->getMaxLocalIndex(); f++) 
-      allvec[f] = face_map->getGlobalElement(f)+3;
-
-  bdryvec.Import(allvec, *all_to_extface_importer, CombineMode::INSERT);
+  bdryvec.doImport(allvec, *all_to_extface_importer, Tpetra::CombineMode::INSERT);
 
   // Check if the importer got the right values from allvec into bdryvec
   // by checking if the values in the bdryvec minus the offset correspond
   // to the correct global IDs.
-
-  for (int f = extface_map->getMinLocalIndex(); f < extface_map->getMaxLocalIndex(); f++) 
-    CHECK_EQUAL(extface_map->getGlobalElement(f),bdryvec[f]-3);
+  bdryvec.sync_host();
+  {
+    auto bdryvec_v = bdryvec.getData();
+    for (int f = extface_map->getMinLocalIndex(); f < extface_map->getMaxLocalIndex(); f++) 
+      CHECK_EQUAL(extface_map->getGlobalElement(f),bdryvec_v[f]-3);
+  }
 
   // Check if ghostmap contains only boundary faces
-
   auto extface_map_wghost = mesh->exterior_face_map(true);
-
   int nowned_bnd = extface_map->getNodeNumElements();
   int nnotowned_bnd = extface_map_wghost->getNodeNumElements() - nowned_bnd;
 
@@ -72,9 +75,9 @@ TEST(MSTK_EXTFACE_MAP_4P)
     gl_id[f] = extface_map_wghost->getGlobalElement(f + nowned_bnd);
   }
 
-  auto gl_id_av = Teuchos::arrayView(gl_id.data(), nnotowned);
-  auto pr_id_av = Teuchos::arrayView(pr_id.data(), nnotowned);
-  auto lc_id_av = Teuchos::arrayView(lc_id.data(), nnotowned);
+  auto gl_id_av = Teuchos::arrayView(gl_id.data(), nnotowned_bnd);
+  auto pr_id_av = Teuchos::arrayView(pr_id.data(), nnotowned_bnd);
+  auto lc_id_av = Teuchos::arrayView(lc_id.data(), nnotowned_bnd);
   extface_map->getRemoteIndexList(gl_id_av, pr_id_av, lc_id_av);
 
 

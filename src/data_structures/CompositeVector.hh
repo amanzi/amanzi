@@ -54,10 +54,6 @@ namespace Amanzi {
 //
 // typedef'd views for return values of ViewComponent
 //
-// These are bad names and need to be updated -- they suggest that they are a
-// vector, and not a view into a vector, which is confusing.  Especially when
-// we have typedefs for Vector_type and MultiVector_type which ARE the vector.
-// -----------------------------------------------------------------------------
 template<class DeviceType>
 using OutputVector_type = Kokkos::View<double*, Kokkos::LayoutLeft, DeviceType>; // layout depends on Tpetra fix later
 
@@ -86,6 +82,8 @@ public:
   CompositeVector(const CompositeVector& other, InitMode mode=INIT_MODE_COPY);
   CompositeVector(const CompositeVector& other, bool ghosted,
                   InitMode mode=INIT_MODE_COPY);
+
+  ~CompositeVector() = default;
 
   // Assignment operator.
   CompositeVector& operator=(const CompositeVector& other);
@@ -154,7 +152,8 @@ public:
   OutputMultiVector_type<DeviceType>
   ViewComponent(const std::string& name, bool ghosted=false) {
     using memory_space = typename DeviceType::memory_space;
-    return VectorHarness::getMultiVector(VectorHarness::readWrite(GetComponent_(name,ghosted)).on(memory_space()));
+    auto& mv = GetComponent_(name,ghosted);
+    return VectorHarness::getMultiVector(VectorHarness::readWrite(mv).on(memory_space()));
   }
 
   //
@@ -167,10 +166,6 @@ public:
     using memory_space = typename DeviceType::memory_space;
     return Kokkos::subview(ViewComponent<DeviceType>(name, ghosted), Kokkos::ALL(), dof);
   }
-
-  
-  // Set block by pointer if possible, copy if not?????? FIX ME --etc
-  void SetComponent(const std::string& name, MultiVector_ptr_type data);
 
   // Scatter master values to ghosted values, on all components (INSERT mode).
   //

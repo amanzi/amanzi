@@ -25,11 +25,8 @@ using namespace Amanzi::AmanziMesh;
 struct test_cv_vandelay {
   Comm_ptr_type comm;
   Teuchos::RCP<Mesh> mesh;
-
   Teuchos::RCP<CompositeVectorSpace> x_space;
-  Teuchos::RCP<CompositeVectorSpace> x2_space;
   Teuchos::RCP<CompositeVector> x;
-  Teuchos::RCP<CompositeVector> x2;
 
   test_cv_vandelay() {
     comm = getDefaultComm();
@@ -66,13 +63,7 @@ struct test_cv_vandelay {
     x_space = Teuchos::rcp(new CompositeVectorSpace());
     x_space->SetMesh(mesh)->SetGhosted()
         ->SetComponents(names, locations, num_dofs);
-
-    x2_space = Teuchos::rcp(new CompositeVectorSpace());
-    x2_space->SetMesh(mesh)->SetGhosted()
-        ->SetComponents(names_v, locations_v, num_dofs);
-
     x = Teuchos::rcp(new CompositeVector(*x_space));
-    x2 = Teuchos::rcp(new CompositeVector(*x2_space));
   }
   ~test_cv_vandelay() {  }
 };
@@ -85,19 +76,16 @@ SUITE(VANDELAY_COMPOSITE_VECTOR) {
     x->PutScalar(2.0);
 
     {
-      auto v_c = x->ViewComponent<AmanziDefaultHost>("cell", true);
+      auto v_c = x->ViewComponent<AmanziDefaultHost>("cell", false);
       CHECK_CLOSE(2., v_c(0,0), 0.00001);
       CHECK_CLOSE(2., v_c(0,1), 0.00001);
 
-      auto v_f = x->ViewComponent<AmanziDefaultHost>("face", 0, true);
+      auto v_f = x->ViewComponent<AmanziDefaultHost>("face", 0, false);
       CHECK_CLOSE(2.0, v_f(0), 0.00001);
     }
 
-    // use the vandelay map to get the boundary_face from face component
-    x2->ViewComponent<AmanziDefaultHost>("boundary_face",false) = x->ViewComponent<AmanziDefaultHost>("boundary_face",false);
-
     {
-      auto v_bf = x2->ViewComponent<AmanziDefaultHost>("boundary_face", 0, false);
+      auto v_bf = x->ViewComponent<AmanziDefaultHost>("boundary_face", 0, false);
       CHECK_CLOSE(2.0, v_bf(0), 0.00001);
     }
   }

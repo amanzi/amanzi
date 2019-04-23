@@ -1,14 +1,17 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-   ATS
-   Author: Ethan Coon
+  Authors: Ethan Coon
+*/
 
-   Self-registering factory for FIELD_EVALUATOR implementations.
-   ------------------------------------------------------------------------- */
+//! Self-registering factory for FIELD_EVALUATOR implementations.
 
-#include "Evaluator_Factory.hh"
 #include <string>
+#include "Evaluator_Factory.hh"
 
 namespace Amanzi {
 

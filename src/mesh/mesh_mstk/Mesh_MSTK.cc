@@ -3610,7 +3610,7 @@ void Mesh_MSTK::init_face_map()
     extface_map_wo_ghosts_ = Teuchos::rcp(new Map_type(-1, extface_gids, n_extface, 0, comm_));
   }
 
-  owned_to_extface_importer_ = Teuchos::rcp(new Import_type(extface_map_wo_ghosts_, face_map_wo_ghosts_));
+  owned_to_extface_importer_ = Teuchos::rcp(new Import_type(face_map_wo_ghosts_, extface_map_wo_ghosts_));
 
   delete [] face_gids;
   delete [] extface_gids;

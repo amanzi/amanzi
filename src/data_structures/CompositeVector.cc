@@ -203,16 +203,13 @@ CompositeVector& CompositeVector::operator=(const CompositeVector& other) {
 // lazily generated.
 const MultiVector_type&
 CompositeVector::GetComponent_(const std::string& name, bool ghosted) const {
-
-/* -- FIXME EPETRA --> TPETRA
   if (name == std::string("boundary_face")) {
     if (!mastervec_->HasComponent("boundary_face") &&
         mastervec_->HasComponent("face")) {
       ApplyVandelay_();
-      return vandelay_vector_;
+      return *vandelay_vector_;
     }
   }
-  -- END FIXME EPETRA --> TPETRA */
   if (ghosted) {
     return *ghostvec_->GetComponent(name);
   } else {
@@ -223,39 +220,17 @@ CompositeVector::GetComponent_(const std::string& name, bool ghosted) const {
 
 MultiVector_type&
 CompositeVector::GetComponent_(const std::string& name, bool ghosted) {
-/* -- FIXME EPETRA --> TPETRA
   if (name == std::string("boundary_face")) {
     if (!mastervec_->HasComponent("boundary_face") &&
         mastervec_->HasComponent("face")) {
       ApplyVandelay_();
-      return vandelay_vector_;
+      return *vandelay_vector_;
     }
   }
-  -- END FIXME EPETRA --> TPETRA */
   if (ghosted) {
     return *ghostvec_->GetComponent(name);
   } else {
     return *mastervec_->GetComponent(name);
-  }
-};
-
-
-// Set data by pointer if possible, otherwise by copy.
-void CompositeVector::SetComponent(const std::string& name,
-        MultiVector_ptr_type data) {
-  if (ghostvec_->ComponentMap(name)->isSameAs(*data->getMap())) {
-    // setting the ghost vec -- drop in the data in the ghost
-    ghostvec_->SetComponent(name, data);
-
-    // and create a new view for the master
-    auto m_comp = data->offsetViewNonConst(mastervec_->ComponentMap(name),0);
-    mastervec_->SetComponent(name, m_comp);
-
-  } else if (mastervec_->ComponentMap(name)->isSameAs(*data->getMap())) {
-    *mastervec_->GetComponent(name) = *data;
-  } else {
-    Errors::Message message("Attempted set of non-compatible Component.");
-    Exceptions::amanzi_throw(message);
   }
 };
 
@@ -363,8 +338,7 @@ void CompositeVector::GatherGhostedToMaster(const std::string& name,
     if (importers_[Index_(name)] == Teuchos::null) {
       auto target_map = ghostvec_->ComponentMap(name);
       auto source_map = mastervec_->ComponentMap(name);
-      importers_[Index_(name)] =
-        Teuchos::rcp(new Tpetra::Import<>(source_map, target_map));
+      importers_[Index_(name)] = Teuchos::rcp(new Tpetra::Import<>(source_map, target_map));
     }
 
     // communicate
@@ -379,15 +353,15 @@ void CompositeVector::GatherGhostedToMaster(const std::string& name,
 // Vandelay operations
 void CompositeVector::CreateVandelay_() const {
   vandelay_importer_ = Mesh()->exterior_face_importer();
-  vandelay_vector_ = Teuchos::rcp(new MultiVector_type(Mesh()->exterior_face_map(false),
-          mastervec_->NumVectors("face"), false));
+  vandelay_vector_ = Teuchos::rcp(new MultiVector_type(Mesh()->exterior_face_map(false), mastervec_->NumVectors("face"), true));
 }
 
 void CompositeVector::ApplyVandelay_() const {
   if (vandelay_importer_ == Teuchos::null) {
     CreateVandelay_();
   }
-  vandelay_vector_->doImport(GetComponent_("face",false), *vandelay_importer_, Tpetra::INSERT);
+  const auto& fv = GetComponent_("face", false);
+  vandelay_vector_->doImport(fv, *vandelay_importer_, Tpetra::INSERT);
 }
 
 
@@ -397,8 +371,7 @@ CompositeVector::importer(const std::string& name) {
   if (importers_[Index_(name)] == Teuchos::null) {
     Teuchos::RCP<const Map_type> target_map = ghostvec_->ComponentMap(name);
     Teuchos::RCP<const Map_type> source_map = mastervec_->ComponentMap(name);
-    importers_[Index_(name)] =
-      Teuchos::rcp(new Tpetra::Import<>(source_map, target_map));
+    importers_[Index_(name)] = Teuchos::rcp(new Tpetra::Import<>(source_map, target_map));
   }
   return importers_[Index_(name)];
 }

@@ -98,7 +98,7 @@ if (BUILD_TESTS)
                            test/test_communication.cc
         		   test/test_composite_vector.cc
         		   test/test_tree_vector.cc
-                           #test/test_vandelay.cc
+                           test/test_vandelay.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
 
     # # Test: tests for FE graph and matrices
