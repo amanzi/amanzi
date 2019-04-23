@@ -1,160 +1,106 @@
-# -*- mode: cmake -*-
+# -*- mode: cmake -*-------------------------------------------
+# file: CMakeLists.txt
+#
+# Amanzi
+#   Mesh Factory
+# -------------------------------------------------------------
+# -------------------------------------------------------------
+# Created March 11, 2011 by William A. Perkins
+# Last Change: Wed Sep 28 09:07:13 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+# -------------------------------------------------------------
+# Amanzi module, include files found in AMANZI_MODULE_PATH
+include(TestManager)
+include(PrintVariable)
+
 
 #
-# Amanzi 
-#       Root CMakeLists.txt file
+# Define a project name
+# After this command the following varaibles are defined
+#   MESH_FACTORY_SOURCE_DIR
+#   MESH_FACTORY_BINARY_DIR
+# Other projects (subdirectories) can reference this directory
+# through these variables.
+project(MESH_FACTORY)
+
+# External (TPL) include directories
+include_directories(${Teuchos_INCLUDE_DIRS})
+include_directories(${Tpetra_INCLUDE_DIRS})
+include_directories(${STK_INCLUDE_DIRS})
+include_directories(${SEACAS_INCLUDE_DIRS})
+include_directories(${Boost_INCLUDE_DIRS})
+
+# Amanzi include directories
+include_directories(${DBC_SOURCE_DIR})
+include_directories(${MESH_SOURCE_DIR})
+include_directories(${MESH_SIMPLE_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
+
+
 #
-
-# Require cmake version same as the version used to buildg TPLs 
-#(see SuperBuild/CMakeLists.txt)
-cmake_minimum_required(VERSION 3.6.1)
-
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-#set(CMAKE_CXX_EXTENSIONS OFF)
-
-# Enable testing, ctest needs this
-# all add_test commands are ignored unless this is called!
-enable_testing()
-
-# Define the project name
-# This command will define
-#     AMANZI_SOURCE_DIR
-#     AMANZI_BINARY_DIR
-project(AMANZI)
-
-message(STATUS "\n-------------------------------------------")
-message(STATUS "\n-- CMake: Configuring Amanzi build/install.\n--")
-message(STATUS "----------------------------------------")
-
-# Useful variables pointing to directories in the source tree
-set(AMANZI_SOURCE_SRC_DIR      "${AMANZI_SOURCE_DIR}/src")
-set(AMANZI_SOURCE_TOOLS_DIR    "${AMANZI_SOURCE_DIR}/tools")
-set(AMANZI_SOURCE_EXAMPLES_DIR "${AMANZI_SOURCE_DIR}/examples")
-set(AMANZI_PYTHON_DIR          "${AMANZI_SOURCE_DIR}/tools/py_lib")
-
-# Set the module search path so find_package and include commands
-# can locate files in <root source tree>/tools/cmake
-set(AMANZI_MODULE_PATH "${AMANZI_SOURCE_TOOLS_DIR}/cmake")
-set(CMAKE_MODULE_PATH 
-    ${AMANZI_MODULE_PATH}
-    ${AMANZI_MODULE_PATH}/Modules
-    ${AMANZI_MODULE_PATH}/Utils)
-
-# Code version defined
-include(AmanziVersion)
-
-# Addtional build options
-include(AmanziOptions)
-
-# Find required Amanzi TPL
-include(AmanziTPL)
-# The following line allows us to link third-party libraries not explicitly 
-# found by the logic in AmanziTPL.cmake.
+# Library: mesh_factory
 #
-# ETC: this is wrong, should point to TPLs, but not necessarily installed here, meaning that lots of ld warnings show up.
-#link_directories(${CMAKE_INSTALL_PREFIX}/tpls/lib)
+set(mesh_factory_files 
+    FileFormat.cc
+    MeshFramework.cc
+    MeshFactory.cc) 
+file(GLOB mesh_factory_inc_files "*.hh")
 
-# shared libraries tweaks: enforcing absolute path
-if (BUILD_SHARED_LIBS)
-  set(CMAKE_SKIP_BUILD_RPATH FALSE)
-  set(CMAKE_SKIP_INSTALL_RPATH FALSE)
-  set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE) 
-  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-  set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_RPATH}")
-else()
-  SET(CMAKE_SKIP_INSTALL_RPATH ON CACHE BOOL "Turn off for static install." FORCE)
-  SET(CMAKE_SKIP_RPATH ON CACHE BOOL "Turn off for static install." FORCE)
+list(APPEND mesh_factory_frameworks simple_mesh)
+
+if (ENABLE_STK_Mesh)
+    include_directories(${STK_INCLUDE_DIR} ${STK_SOURCE_DIR})
+    list(APPEND mesh_factory_frameworks stk_mesh exodus_reader mesh_data)
+    add_definitions("-DHAVE_STK_MESH")
 endif()
 
-# Check the mesh framework choice
-if ((ENABLE_Unstructured)  AND
-    (NOT ENABLE_STK_Mesh)  AND
-    (NOT ENABLE_MOAB_Mesh) AND
-    (NOT ENABLE_MSTK_Mesh))
-  message(FATAL_ERROR "Missing a mesh framework\n"
-                      "Please enable at least one of the following mesh frameworks\n"
-                      "-D ENABLE_MOAB_Mesh:BOOL=ON\n"
-                      "-D ENABLE_STK_Mesh:BOOL=ON\n"
-                      "-D ENABLE_MSTK_Mesh:BOOL=ON\n")
-endif()    
-
-
-# A property for accumulating the a global amanzi link line.
-set_property(GLOBAL PROPERTY AMANZI_LINK_LINE "-L${CMAKE_INSTALL_PREFIX}/lib")
-
-# A property for accumulating amanzi library targets
-set_property(GLOBAL PROPERTY AMANZI_LIBRARY_TARGETS)
-set(AMANZI_LINK_LINE_FILE "${AMANZI_BINARY_DIR}/link_line")  # A filename to write link-line to.
-include(InstallManager)
-
-# Source files for all binaries and libraries found under src
-add_subdirectory(src)
-
-# Examples added as tests
-# add_subdirectory(examples) 
-
-# Adding verification tests
-# EIB - uncommenting this will include the verification/benchmarking tests
-include(CTest)
-if (ENABLE_Regression_Tests)
-  find_package(PythonInterp)
-  add_subdirectory(test_suites) 
+if (ENABLE_MOAB_Mesh)
+    include_directories(${MOAB_INCLUDE_DIR} ${MOAB_SOURCE_DIR})
+    list(APPEND mesh_factory_frameworks moab_mesh)
+    add_definitions("-DHAVE_MOAB_MESH")
 endif()
 
+if (ENABLE_MSTK_Mesh)
+    include_directories(${MSTK_INCLUDE_DIR} ${MSTK_SOURCE_DIR})
+    list(APPEND mesh_factory_frameworks mstk_mesh)
+    add_definitions("-DHAVE_MSTK_MESH -DMSTK_HAVE_MPI")
+endif()
 
-# Python modules
-add_subdirectory(tools/py_lib)
+add_amanzi_library(mesh_factory
+                   SOURCE ${mesh_factory_files} HEADERS ${mesh_factory_inc_files}
+                   LINK_LIBS ${mesh_factory_frameworks} ${Boost_LIBRARIES})
 
-# Define a list of all enabled TPLs. Must do this AFTER all the 
-# CMakelist.txt files have been processed!
-get_property(AMANZI_ENABLED_TPLS GLOBAL PROPERTY PACKAGES_FOUND)
+if (BUILD_TESTS)
 
-# Make the exports only _after_ doing the build
-create_exports()
+    # Need to copy files for the tests 
+    if (NOT (${MESH_FACTORY_SOURCE_DIR} EQUAL ${MESH_FACTORY_BINARY_DIR}))
+        file(GLOB DataFiles "${MESH_FACTORY_SOURCE_DIR}/test/*.xml"
+                            "${MESH_FACTORY_SOURCE_DIR}/test/*.txt"
+                            "${MESH_FACTORY_SOURCE_DIR}/test/*.h5m"
+                            "${MESH_FACTORY_SOURCE_DIR}/test/*.exo"
+                            "${MESH_FACTORY_SOURCE_DIR}/test/*.par.*")
+        file(COPY ${DataFiles} DESTINATION ${MESH_FACTORY_BINARY_DIR}/test/)
+    endif()
 
-option(ENABLE_Config_Report "Print out detailed information at the end of a configuration")
-set(AMANZI_CONFIG_LOG "${AMANZI_BINARY_DIR}/amanzi-config.log"
-    CACHE string "Amanzi configuration log file")
-include(AmanziConfigReport)
-if (ENABLE_Config_Report)
-  set(cat_exec "cat")
-  if (WIN32)
-    if (NOT UNIX)
-      set(cat_exec "type")
-    endif(NOT UNIX)
-  endif(WIN32)
+   # Add UnitTest include directories
+   include_directories(${UnitTest_INCLUDE_DIRS})
 
-  execute_process(COMMAND "${cat_exec}" "${AMANZI_CONFIG_LOG}" OUTPUT_VARIABLE config_output)
-  print_variable(cat_exec)
-  print_variable(AMANZI_CONFIG_LOG)
-  print_variable(config_output)
-  message(STATUS "********************************************************************************")
-  message(STATUS "begin configuration output --\n${config_output}")
-  message(STATUS "end configuration output --")
-  message(STATUS "********************************************************************************")
-endif() 
+   # Test: test_mesh_factory
+   add_amanzi_test(mesh_factory test_mesh_factory
+                   KIND unit
+		   SOURCE
+                         test/Main.cc
+                         test/test_mesh_file.cc 
+                         test/test_mesh_factory.cc
+                   LINK_LIBS
+		         mesh_factory
+			 ${UnitTest_LIBRARIES}
+			 ${Boost_LIBRARIES}
+                         ${Tpetra_LIBRARIES}
+			 ${HDF5_LIBRARIES})
 
-#
-#  Create source package
-# 
-#  - use the TGZ generator
-#  - use our existing CMake / Mercurial hooks to get version information
-#  - include the generated amanzi_version.hh in the package
-#
-SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Amanzi flow and reactive transport simulator.")
-SET(CPACK_PACKAGE_VENDOR "Amanzi Development Team (LANL, LBNL, PNNL)")
-SET(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
-SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYRIGHT")
-SET(CPACK_PACKAGE_VERSION_MAJOR ${AMANZI_VERSION_MAJOR})
-SET(CPACK_PACKAGE_VERSION_MINOR ${AMANZI_VERSION_MINOR})
-SET(CPACK_PACKAGE_VERSION_PATCH ${AMANZI_VERSION_PATCH}_${AMANZI_VERSION_HASH})
-SET(CPACK_SOURCE_PACKAGE_FILE_NAME "amanzi-${AMANZI_VERSION}")
-SET(CPACK_SOURCE_GENERATOR "TGZ")
-SET(CPACK_SOURCE_IGNORE_FILES ".hg;.hgtags")
-SET(CPACK_SOURCE_INSTALLED_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR};/") 
-# Copy over extra files: stash them first and then they are copied as part of "make package_source"
-LIST(APPEND CPACK_SOURCE_INSTALLED_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR}/extras .)
+   # Do not call add_amanzi_test again with SOURCE and LINK_LIBS since the
+   # previous call carries instructions to build the executable
+   add_amanzi_test(mesh_factory_parallel test_mesh_factory NPROCS 2 KIND uint)
 
-INCLUDE(CPack)
+endif()
+   
