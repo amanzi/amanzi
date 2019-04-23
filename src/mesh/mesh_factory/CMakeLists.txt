@@ -73,6 +73,19 @@ if (BUILD_TESTS)
    # Add UnitTest include directories
    include_directories(${UnitTest_INCLUDE_DIRS})
 
+    # Add Data_structures include directory.
+    include_directories(${MESH_FACTORY_SOURCE_DIR})
+
+    # Copy test subdirectory for out of source builds
+    if (NOT (DATA_STRUCTURES_SOURCE_DIR STREQUAL DATA_STRUCTURES_BINARY_DIR))
+        file(GLOB DataFiles "${MESH_FACTORY_SOURCE_DIR}/test/*.h5m"
+                            "${MESH_FACTORY_SOURCE_DIR}/test/*.exo"
+			    "${MESH_FACTORY_SOURCE_DIR}/test/*.par.2.0"
+                            "${MESH_FACTORY_SOURCE_DIR}/test/*.par.2.1")
+
+        file(COPY ${DataFiles} DESTINATION ${MESH_FACTORY_BINARY_DIR}/test/)
+    endif()
+
    # Test: test_mesh_factory
    add_amanzi_test(mesh_factory test_mesh_factory
                    KIND unit
