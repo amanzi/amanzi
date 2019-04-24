@@ -276,8 +276,9 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     STAMP_DIR ${Trilinos_stamp_dir}                   # Timestamp and log directory
                     # -- Download and URL definitions
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}                  # Download directory
-                    URL          ${Trilinos_URL}                      # URL may be a web site OR a local file
-                    URL_MD5      ${Trilinos_MD5_SUM}                  # md5sum of the archive file
+		    GIT_REPOSITORY ${Trilinos_GIT_REPOSITORY}                    
+		    #URL          ${Trilinos_URL}                      # URL may be a web site OR a local file
+                    #URL_MD5      ${Trilinos_MD5_SUM}                  # md5sum of the archive file
                     # -- Patch
                     PATCH_COMMAND ${Trilinos_PATCH_COMMAND}
                     # -- Configure
