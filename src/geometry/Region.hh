@@ -152,7 +152,6 @@ class Point;
 
 class Region {
  public:
-  // Destructor
   virtual ~Region() {};
 
   // Dimension of the subdomain
@@ -201,6 +200,9 @@ class Region {
     return lifecycle_;
   }
 
+  // Tolerance for geometic operations
+  void set_tolerance(double tol) { tol_ = tol; }
+
   // Is the specified point inside the closure of the Region
   virtual bool inside(const Point& p) const = 0;
 
@@ -208,15 +210,14 @@ class Region {
   // is defined when the object and Region have same dimensionality.
   //
   // -- counter clockwise ordered polygon does not require faces
-  double intersect(const std::vector<Point>& polytope) const
-  {
+  double intersect(const std::vector<Point>& polytope) const {
     std::vector<std::vector<int> > faces;
     return intersect(polytope, faces);
   }
 
   // Polyhedron with counter clockwise ordered faces (wrt normals)
   virtual double intersect(const std::vector<Point>& polytope, 
-                           const std::vector<std::vector<int> >& faces) const{
+                           const std::vector<std::vector<int> >& faces) const {
     return -1.0;
   }
 
@@ -256,6 +257,9 @@ class Region {
 
   // Geometric or enumerated?
   bool geometric_;
+
+  // Tolerance for geometric operations
+  double tol_;
 
  private:
   Region(const Region& other);  // prevent copy constructor

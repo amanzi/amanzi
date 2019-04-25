@@ -5622,9 +5622,10 @@ User-defined regions are constructed using the following syntax
  * `"regions`" [list] can accept a number of lists for named regions (REGION)
 
    * Shape [list] Geometric model primitive, choose exactly one of the following: 
-     `"region: point`", `"region: box`", `"region: plane`", `"region: labeled set`", 
-     `"region: layer`", `"region: surface`", `"region: boundary`",
-     `"region: box volume fractions`", `"region: line segment"`, or `"region: all"`.
+     `"region: point`", `"region: box`", `"region: plane`", `"region: halfspace`",
+     `"region: cylinder`", `"region: labeled set`", `"region: layer`", `"region: surface`",
+     `"region: boundary`", `"region: box volume fractions`", `"region: line segment"`, 
+     or `"region: all"`.
 
 Amanzi supports parameterized forms for a number of analytic shapes, as well as more complex 
 definitions based on triangulated surface files.  
@@ -5681,6 +5682,30 @@ List *region: plane* defines a plane using a point lying on the plane and normal
 
   <ParameterList name="_TOP_SECTION"> <!-- parent list -->
     <ParameterList name="region: plane">
+      <Parameter name="point" type="Array(double)" value="{2, 3, 5}"/>
+      <Parameter name="normal" type="Array(double)" value="{1, 1, 0}"/>
+      <ParameterList name="expert parameters">
+        <Parameter name="tolerance" type="double" value="1.0e-05"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+
+Halfspace
+.........
+
+List *region: halfspace* defines a half-space using a point lying on the plane 
+and outward normal to the plane. Single expert parameter provides tolerance
+for geometric predicates.
+
+* `"normal`" [Array(double)] Normal to the plane.
+
+* `"point`" [Array(double)] Point in space.
+
+.. code-block:: xml
+
+  <ParameterList name="_TOP_SECTION"> <!-- parent list -->
+    <ParameterList name="region: halfspace">
       <Parameter name="point" type="Array(double)" value="{2, 3, 5}"/>
       <Parameter name="normal" type="Array(double)" value="{1, 1, 0}"/>
       <ParameterList name="expert parameters">
@@ -5794,6 +5819,32 @@ are specified.
                                                             -0.5, 0.5, 0.5}"/>
       <ParameterList name="expert parameters">
         <Parameter name="tolerance" type="double" value="1.0e-3"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+
+Cylinder
+........
+
+List *region: cylinder* defines a oblique cylinder using the axis of symmetry, 
+a point lying on this axis, and radius.
+
+* `"axis`" [Array(double)] Axis of symmetry.
+
+* `"point`" [Array(double)] Point on the axis of symmetry.
+
+* `"radius`" [double] Radius of the cylinder.
+
+.. code-block:: xml
+
+  <ParameterList name="_TOP_SECTION"> <!-- parent list -->
+    <ParameterList name="region: halfspace">
+      <Parameter name="point" type="Array(double)" value="{2, 3, 5}"/>
+      <Parameter name="axis" type="Array(double)" value="{1, 1, 0}"/>
+      <Parameter name="radius" type="double" value="1.4"/>
+      <ParameterList name="expert parameters">
+        <Parameter name="tolerance" type="double" value="1.0e-05"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

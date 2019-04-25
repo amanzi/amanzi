@@ -1,4 +1,3 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /*
   A halfspace (infinite) region in space, defined by a plane.
 
@@ -26,10 +25,10 @@ namespace AmanziGeometry {
 // RegionHalfSpace:: constructors / destructor
 // -------------------------------------------------------------
 RegionHalfSpace::RegionHalfSpace(const std::string& name, 
-                         const int id,
-                         const Point& p,
-                         const Point& normal,
-                         const LifeCycleType lifecycle)
+                                 const int id,
+                                 const Point& p,
+                                 const Point& normal,
+                                 const LifeCycleType lifecycle)
     : Region(name, id, true, PLANE, p.dim()-1, p.dim(), lifecycle),
       p_(p),
       n_(normal/norm(normal))
@@ -49,23 +48,13 @@ RegionHalfSpace::RegionHalfSpace(const std::string& name,
 bool
 RegionHalfSpace::inside(const Point& p) const
 {
-#ifdef ENABLE_DBC
-  if (p_.dim() != n_.dim()) {
-    Errors::Message mesg;
-    mesg << "Mismatch in point dimension of RegionHalfSpace \""
-         << Region::name() << "\" and query point.";
-    Exceptions::amanzi_throw(mesg);
-  }
-#endif
-
-  
   double res(0.0);
  
-  for (int i=0; i!=p.dim(); ++i) {
-    res += n_[i]*(p[i] - p_[i]);
+  for (int i = 0; i != p.dim(); ++i) {
+    res += n_[i] * (p[i] - p_[i]);
   }
 
-  return res > TOL ? false : true;
+  return res > tol_ ? false : true;
 }
 
 } // namespace AmanziGeometry

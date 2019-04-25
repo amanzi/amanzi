@@ -8,25 +8,27 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Rao Garimella
-           Ethan Coon (ecoon@lanl.gov)
+           Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 /*!
-List *region: halfspace* defines a halfspace determined by a plane and 
-outward normal to the plane.
+List *region: cylinder* defines an infinite cylinder determined by 
+a symmetry axis, point on this axis and radius.
 
-* `"normal`" ``[Array(double)]`` Normal to the plane.
+* `"axis`" ``[Array(double)]`` symmetry axis
 
-* `"point`" ``[Array(double)]`` Point in space.
+* `"point`" ``[Array(double)]`` point on a symmetry axis
+
+* `"radius`" ``[double]`` cylinder radius
 
 Example:
 
 .. code-block:: xml
 
    <ParameterList name="TOP_SECTION"> <!-- parent list -->
-     <ParameterList name="region: halfspace">
-       <Parameter name="point" type="Array(double)" value="{2, 3, 5}"/>
+     <ParameterList name="region: cylinder">
        <Parameter name="normal" type="Array(double)" value="{1, 1, 0}"/>
+       <Parameter name="axis" type="Array(double)" value="{0, 0, 1}"/>
        <ParameterList name="expert parameters">
          <Parameter name="tolerance" type="double" value="1.0e-05"/>
        </ParameterList>
@@ -36,37 +38,33 @@ Example:
 */
 
 
-#ifndef AMANZI_REGION_HALFSPACE_HH_
-#define AMANZI_REGION_HALFSPACE_HH_
+#ifndef AMANZI_REGION_CYLINDER_HH_
+#define AMANZI_REGION_CYLINDER_HH_
 
 #include "Region.hh"
 
 namespace Amanzi {
 namespace AmanziGeometry {
 
-class RegionHalfSpace : public Region {
+class RegionCylinder : public Region {
 
  public:
   // Default constructor uses point and normal
-  RegionHalfSpace(const std::string& name,
-                  const int id,
-                  const Point& p, 
-                  const Point& normal,
-                  const LifeCycleType lifecycle=PERMANENT);
+  RegionCylinder(const std::string& name,
+                 const int id,
+                 const Point& axis,
+                 const Point& p, 
+                 double radius,
+                 const LifeCycleType lifecycle = PERMANENT);
   
-  // Get the point defining the plane
-  const Point& point() const { return p_; }
-
-  // Get the normal point defining the plane
-  const Point& normal() const { return n_; }
-
   // Is the specified point inside this region - in this case it
   // means on the plane
   bool inside(const Point& p) const;
 
 protected:
-  const Point p_;  /* point on the plane */
-  const Point n_;  /* normal to the plane */
+  const Point p_;  // point on the plane
+  const Point axis_;  // axis of symmetry
+  double rad2_;
 };
 
 } // namespace AmanziGeometry

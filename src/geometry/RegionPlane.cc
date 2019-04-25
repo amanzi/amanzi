@@ -65,7 +65,7 @@ RegionPlane::inside(const Point& p) const
   }
   res -= d;
 
-  return std::abs(res) <= TOL ? true : false;
+  return std::abs(res) <= tol_ ? true : false;
 }
 
 } // namespace AmanziGeometry

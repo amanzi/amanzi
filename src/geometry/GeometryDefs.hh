@@ -36,6 +36,7 @@ typedef enum {
   BOUNDARY,
   BOX_VOF,
   LINE_SEGMENT,
+  CYLINDER,
   ALL
 } RegionType;
 

@@ -74,6 +74,7 @@ if (BUILD_TESTS)
                           test/test_enumeratedset.cc
                           test/test_colorfunc_region.cc
 			  test/test_polygon_region.cc
+			  test/test_cylinder_region.cc
                    LINK_LIBS 
                           geometry
                           ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})  

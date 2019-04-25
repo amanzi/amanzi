@@ -309,6 +309,17 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
            .set<Teuchos::Array<double> >("normal", dir);
       }
 
+      else if (strcmp(node_name, "halfspace") == 0) {
+        tree_["regions"].push_back(reg_name);
+        
+        std::vector<double> loc = GetAttributeVectorD_(reg_elem, "location", dim_, "m");
+        std::vector<double> dir = GetAttributeVectorD_(reg_elem, "normal", dim_, "m");
+
+        out_list.sublist(reg_name).sublist("region: halfspace")
+           .set<Teuchos::Array<double> >("point", loc)
+           .set<Teuchos::Array<double> >("normal", dir);
+      }
+
       else if (strcmp(node_name,"region_file") == 0) {
         tree_["regions"].push_back(reg_name);
 

@@ -1,0 +1,13 @@
+<ParameterList name="regions">
+  <ParameterList name="Top Section">
+    <ParameterList name="region: cylinder">
+      <Parameter name="axis" type="Array(double)" value="{0, 0, 2}"/>
+      <Parameter name="point" type="Array(double)" value="{0, 0, 0}"/>
+      <Parameter name="radius" type="double" value="2.0"/>
+
+      <ParameterList name="expert parameters">
+	<Parameter name="tolerance" type="double" value="1e-06"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>
