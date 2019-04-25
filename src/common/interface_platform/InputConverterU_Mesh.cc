@@ -309,6 +309,19 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
            .set<Teuchos::Array<double> >("normal", dir);
       }
 
+      else if (strcmp(node_name, "cylinder") == 0) {
+        tree_["regions"].push_back(reg_name);
+        
+        std::vector<double> loc = GetAttributeVectorD_(reg_elem, "location", dim_, "m");
+        std::vector<double> dir = GetAttributeVectorD_(reg_elem, "axis", dim_, "m");
+        double rad = GetAttributeValueD_(reg_elem, "radius", TYPE_NUMERICAL, 0.0, DVAL_MAX, "-");
+
+        out_list.sublist(reg_name).sublist("region: cylinder")
+           .set<Teuchos::Array<double> >("point", loc)
+           .set<Teuchos::Array<double> >("axis", dir)
+           .set<double>("radius", rad);
+      }
+
       else if (strcmp(node_name, "halfspace") == 0) {
         tree_["regions"].push_back(reg_name);
         

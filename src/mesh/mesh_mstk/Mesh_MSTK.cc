@@ -2587,6 +2587,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
     mset = MSet_New(mesh_,internal_name.c_str(),enttype);
       
     if (region->type() == AmanziGeometry::BOX ||
+        region->type() == AmanziGeometry::CYLINDER ||
         region->type() == AmanziGeometry::COLORFUNCTION) {
 
       int ncell = num_entities(CELL, Parallel_type::ALL);              
@@ -2735,7 +2736,8 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
     enttype = (celldim == 3) ? MFACE : MEDGE;
     mset = MSet_New(mesh_,internal_name.c_str(),enttype);
 
-    if (region->type() == AmanziGeometry::BOX) {
+    if (region->type() == AmanziGeometry::BOX ||
+        region->type() == AmanziGeometry::CYLINDER) {
       int nface = num_entities(FACE, Parallel_type::ALL);
 
       if (nface > 0) { 
@@ -2843,6 +2845,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
     if (region->type() == AmanziGeometry::BOX ||
         region->type() == AmanziGeometry::PLANE ||
         region->type() == AmanziGeometry::POLYGON ||
+        region->type() == AmanziGeometry::CYLINDER ||
         region->type() == AmanziGeometry::POINT) {
 
       int nnode = num_entities(NODE, Parallel_type::ALL);
