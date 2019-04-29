@@ -453,10 +453,11 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
         // -- get the surface cell's equivalent subsurface face and neighboring cell
         AmanziMesh::Entity_ID f =
           mesh_->entity_get_parent(AmanziMesh::CELL, c);
-
         pres[0][c] = subsurf_pres[0][f];
-
       }
+
+      // -- Update faces from cells if there
+      DeriveFaceValuesFromCellValues_(pres_cv.ptr());
 
       // mark as initialized
       if (ic_plist.get<bool>("initialize surface head from subsurface",false)) {
