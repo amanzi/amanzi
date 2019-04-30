@@ -318,14 +318,9 @@ void Coordinator::initialize() {
 }
 
 void Coordinator::finalize() {
-  // Force checkpoint at the end of simulation.
-  // Only do if the checkpoint was not already written, or we would be writing
-  // the same file twice.
-  // This really should be removed, but for now is left to help stupid developers.
-  if (!checkpoint_->DumpRequested(S_next_->cycle(), S_next_->time())) {
-    pk_->CalculateDiagnostics(S_next_);
-    WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr(), 0.0);
-  }
+  // Force checkpoint at the end of simulation, and copy to checkpoint_final
+  pk_->CalculateDiagnostics(S_next_);
+  WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr(), 0.0, true);
 
   // flush observations to make sure they are saved
   observations_->Flush();
