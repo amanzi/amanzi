@@ -497,7 +497,7 @@
             <Parameter name="max nka vectors" type="int" value="300"/>
             <Parameter name="limit iterations" type="int" value="150000"/>
             <Parameter name="modify correction" type="bool" value="false"/>
-            <Parameter name="monitor" type="string" value="monitor residual"/>
+            <Parameter name="monitor" type="string" value="monitor l2 residual"/>
             <ParameterList name="verbose object">
               <Parameter name="verbosity level" type="string" value="high"/>
             </ParameterList>

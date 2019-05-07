@@ -28,6 +28,9 @@ enum BacktrackMonitor {
   BT_MONITOR_EITHER   // accept decrease in either of the above
 };
 
+const int SOLVER_NORM_LINF = 0;
+const int SOLVER_NORM_L2 = 1;
+
 const int SOLVER_CONTINUE = 1;
 const int SOLVER_CONVERGED = 0;
 
