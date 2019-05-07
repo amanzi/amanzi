@@ -581,7 +581,7 @@ MPCPermafrost3::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r,
 
   // -- accumulate globally
   int n_modified_l = n_modified;
-  u->SubVector(0)->Data()->Comm().SumAll(&n_modified_l, &n_modified, 1);
+  u->SubVector(0)->Data()->Comm()->SumAll(&n_modified_l, &n_modified, 1);
   bool modified = (n_modified > 0) || (damping < 1.);
 
   // -- calculate consistent subsurface cells
