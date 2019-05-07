@@ -4974,8 +4974,9 @@ Newton-Krylov acceleration (NKA)
   The error is calculated by a PK. Default is 1e-6. 
 
 * `"monitor`" [string] specifies control of the nonlinear residual. The available 
-  options are `"monitor update`" (default), `"monitor residual`", and 
-  `"monitor preconditioned residual`".
+  options are `"monitor update`" (default), `"monitor residual`", 
+  `"monitor preconditioned residual`", `"monitor l2 residual`", and 
+  `"monitor preconditioned l2 residual`".
 
 * `"limit iterations`" [int] defines the maximum allowed number of iterations.
   Default is 20.
