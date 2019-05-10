@@ -261,7 +261,7 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 // Default enorm that uses an abs and rel tolerance to monitor convergence.
 // -----------------------------------------------------------------------------
 double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
-        Teuchos::RCP<const TreeVector> du) {
+        Teuchos::RCP<const TreeVector> res) {
   // Abs tol based on old conserved quantity -- we know these have been vetted
   // at some level whereas the new quantity is some iterate, and may be
   // anything from negative to overflow.
@@ -281,14 +281,13 @@ double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   if (vo_->os_OK(Teuchos::VERB_MEDIUM))
     *vo_->os() << "ENorm (Infnorm) of: " << conserved_key_ << ": " << std::endl;
 
-  Teuchos::RCP<const CompositeVector> dvec = du->Data();
+  Teuchos::RCP<const CompositeVector> dvec = res->Data();
   double h = S_next_->time() - S_inter_->time();
 
   Teuchos::RCP<const Comm_type> comm_p = mesh_->get_comm();
   Teuchos::RCP<const MpiComm_type> mpi_comm_p =
     Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm_p);
   const MPI_Comm& comm = mpi_comm_p->Comm();
-
   
   double enorm_val = 0.0;
   for (CompositeVector::name_iterator comp=dvec->begin();
@@ -334,6 +333,7 @@ double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       }
 
     } else {
+      // boundary face components had better be effectively identically 0
       double norm;
       dvec_v.Norm2(&norm);
       AMANZI_ASSERT(norm < 1.e-15);
