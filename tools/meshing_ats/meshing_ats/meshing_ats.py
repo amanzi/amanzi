@@ -286,10 +286,10 @@ class Mesh2D(object):
         return cls(points, gons)
             
     @classmethod
-    def from_Transect(cls, x, z):
+    def from_Transect(cls, x, z, width=1):
         """Creates a 2D surface strip mesh from transect data"""
         # coordinates
-        y = np.array([0,1])
+        y = np.array([0,width])
         Xc, Yc = np.meshgrid(x, y)
         Xc = Xc.flatten()
         Yc = Yc.flatten()
