@@ -938,7 +938,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
     
     const Epetra_MultiVector& h_c = *S->GetFieldData(Keys::getKey(domain_,"ponded_depth"))->ViewComponent("cell");
     const Epetra_MultiVector& nliq_c = *S->GetFieldData(Keys::getKey(domain_,"molar_density_liquid"))
-    ->ViewComponent("cell");
+                                       ->ViewComponent("cell");
     double gz = -(*S->GetConstantVectorData("gravity"))[2];
     
     for (Functions::BoundaryFunction::Iterator bc = bc_critical_depth_->begin();
@@ -1020,7 +1020,6 @@ void OverlandPressureFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
   auto& values = bc_values();
 
   // Now we can safely calculate q = -k grad z for zero-gradient problems
-
   Teuchos::RCP<const CompositeVector> elev = S->GetFieldData(Keys::getKey(domain_,"elevation"));
 
   elev->ScatterMasterToGhosted();
@@ -1034,7 +1033,6 @@ void OverlandPressureFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
        bc!=bc_zero_gradient_->end(); ++bc) {
-
     int f = bc->first;
 
     AmanziMesh::Entity_ID_List cells;
@@ -1147,13 +1145,6 @@ bool OverlandPressureFlow::ModifyPredictor(double h, Teuchos::RCP<const TreeVect
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Modifying predictor:" << std::endl;
 
-  // if (modify_predictor_with_consistent_faces_) {
-  //   if (vo_->os_OK(Teuchos::VERB_EXTREME))
-  //     *vo_->os() << "  modifications for consistent face pressures." << std::endl;
-  //   CalculateConsistentFaces(u->Data().ptr());
-  //   return true;
-  // }
-
   return false;
 };
 
@@ -1220,7 +1211,6 @@ OverlandPressureFlow::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> 
       *vo_->os() << "Linf, L2 pressure correction (" << *comp << ") = " << max << ", " << l2 << std::endl;
     }
   }
-  
 
   // limit by capping corrections when they cross atmospheric pressure
   // (where pressure derivatives are discontinuous)
@@ -1268,13 +1258,13 @@ OverlandPressureFlow::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> 
   }
 
   // debugging -- remove me! --etc
-  for (CompositeVector::name_iterator comp=du->Data()->begin();
-       comp!=du->Data()->end(); ++comp) {
-    Epetra_MultiVector& du_c = *du->Data()->ViewComponent(*comp,false);
-    double max, l2;
-    du_c.NormInf(&max);
-    du_c.Norm2(&l2);
-    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    for (CompositeVector::name_iterator comp=du->Data()->begin();
+         comp!=du->Data()->end(); ++comp) {
+      Epetra_MultiVector& du_c = *du->Data()->ViewComponent(*comp,false);
+      double max, l2;
+      du_c.NormInf(&max);
+      du_c.Norm2(&l2);
       *vo_->os() << "Linf, L2 pressure correction (" << *comp << ") = " << max << ", " << l2 << std::endl;
     }
   }

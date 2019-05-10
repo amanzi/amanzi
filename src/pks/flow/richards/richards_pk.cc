@@ -477,13 +477,6 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S) {
     S->GetField(duw_coef_key_,name_)->set_initialized();
   }
 
-  // if (vapor_diffusion_){
-  //   S->GetFieldData("vapor_diffusion_pressure",name_)->PutScalar(1.0);
-  //   S->GetField("vapor_diffusion_pressure",name_)->set_initialized();
-  //   S->GetFieldData("vapor_diffusion_temperature",name_)->PutScalar(1.0);
-  //   S->GetField("vapor_diffusion_temperature",name_)->set_initialized();
-  // }
-
   S->GetFieldData(flux_key_, name_)->PutScalar(0.0);
   S->GetField(flux_key_, name_)->set_initialized();
   S->GetFieldData(flux_dir_key_, name_)->PutScalar(0.0);

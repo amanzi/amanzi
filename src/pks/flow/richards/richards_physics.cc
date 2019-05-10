@@ -42,15 +42,14 @@ void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   // matrix_diff_->SetScalarCoefficient(Teuchos::null, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, pres.ptr());
 
+  // apply boundary conditions
+  matrix_diff_->ApplyBCs(true, true, true);
+
   // derive fluxes
   Teuchos::RCP<CompositeVector> flux =
       S->GetFieldData(flux_key_, name_);
+  flux->PutScalar(0.);
   matrix_diff_->UpdateFlux(pres.ptr(), flux.ptr());
-
-
-
-  // apply boundary conditions
-  matrix_diff_->ApplyBCs(true, true, true);
 
   // calculate the residual
   matrix_->ComputeNegativeResidual(*pres, *g);

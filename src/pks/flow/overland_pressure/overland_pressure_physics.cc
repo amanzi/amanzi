@@ -28,16 +28,15 @@ void OverlandPressureFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   matrix_diff_->SetScalarCoefficient(cond, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  // update the potential
-
-  S->GetFieldEvaluator(Keys::getKey(domain_,"pres_elev"))->HasFieldChanged(S.ptr(), name_);
-
   // Patch up BCs for zero-gradient
   FixBCsForOperator_(S_next_.ptr());
 
+  // assemble the stiffness matrix
+  matrix_diff_->ApplyBCs(true, true, true);
+
   // derive fluxes -- this gets done independently fo update as precon does
   // not calculate fluxes.
-
+  S->GetFieldEvaluator(Keys::getKey(domain_,"pres_elev"))->HasFieldChanged(S.ptr(), name_);
   Teuchos::RCP<const CompositeVector> pres_elev = S->GetFieldData(Keys::getKey(domain_,"pres_elev"));
   if (update_flux_ == UPDATE_FLUX_ITERATION) {
     Teuchos::RCP<CompositeVector> flux =
@@ -45,9 +44,6 @@ void OverlandPressureFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
 
     matrix_diff_->UpdateFlux(pres_elev.ptr(), flux.ptr());
   }
-
-  // assemble the stiffness matrix
-  matrix_diff_->ApplyBCs(true, true, true);
 
   // calculate the residual
   matrix_->ComputeNegativeResidual(*pres_elev, *g);
