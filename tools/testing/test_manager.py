@@ -31,6 +31,7 @@ import time
 import traceback
 import distutils.spawn
 import numpy
+import collections
 
 class NoCatchException(Exception):
     def __init__(self,*args,**kwargs):
@@ -741,7 +742,7 @@ class RegressionTestManager(object):
         self._file_status = TestStatus()
         self._config_filename = None
         self._default_test_criteria = {}
-        self._available_tests = {}
+        self._available_tests = collections.OrderedDict() # ordered to preserve ordering in config files
         self._available_suites = {}
         self._tests = []
         self._txtwrap = textwrap.TextWrapper(width=78, subsequent_indent=4*" ")
@@ -1164,7 +1165,7 @@ class RegressionTestManager(object):
             for test in self._available_suites[suite].split():
                 all_tests.append(test)
 
-        for test in sorted(all_tests):
+        for test in all_tests:
             #try:
             new_test = RegressionTest(suffix)
             criteria = self._default_test_criteria.copy()

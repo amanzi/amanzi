@@ -142,9 +142,11 @@ def transect_data(varnames, keys='all', directory=".", filename="visdump_data.h5
 
 
 def plot(dataset, ax, cax=None, vmin=None, vmax=None, cmap="jet",
-         label=None, mesh_filename="visdump_mesh.h5", directory=".", y_coord=0.0):
+         label=None, mesh_filename="visdump_mesh.h5", directory=".", y_coord=0.0,
+         linewidths=1):
     """Draws a dataset on an ax."""
     import matplotlib.collections
+    from matplotlib import pyplot as plt
 
     if vmin is None:
         vmin = dataset.min()
@@ -187,7 +189,7 @@ def plot(dataset, ax, cax=None, vmin=None, vmax=None, cmap="jet",
         c2 = np.array(sorted(c,angle))
         coords2[i] = c2
 
-    polygons = matplotlib.collections.PolyCollection(coords2, edgecolor='k', cmap=cmap)
+    polygons = matplotlib.collections.PolyCollection(coords2, edgecolor='k', cmap=cmap, linewidths=linewidths)
     polygons.set_array(dataset)
     polygons.set_clim(vmin,vmax)
     ax.add_collection(polygons)

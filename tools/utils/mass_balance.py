@@ -422,9 +422,11 @@ class MassBalanceFromVis(object):
 
 
 # plotting functions
-def get_axs():
+def get_axs(figsize=None):
     """Gets a list of axes for use in mass balance plots."""
-    fig, axs = plt.subplots(3,2, figsize=(10,12))
+    if figsize is None:
+        figsize = (10,12)
+    fig, axs = plt.subplots(3,2, figsize=figsize)
     return axs.flatten()
 
 def plot(sim, axs, color='b', symbol=None, label=None, derived_runoff=True, derived_seepage=True):
