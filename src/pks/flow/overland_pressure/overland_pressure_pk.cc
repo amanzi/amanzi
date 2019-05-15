@@ -141,7 +141,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 
   upwinding_ = upwfactory.Create(cond_plist, name_,
        Keys::getKey(domain_,"overland_conductivity"), Keys::getKey(domain_,"upwind_overland_conductivity"),
-                                 Keys::getKey(domain_,"mass_flux_direction"));
+                                 Keys::getKey(domain_,"mass_flux"));
 
   // -- require the data on appropriate locations
   std::string coef_location = upwinding_->CoefficientLocation();
@@ -235,7 +235,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
       upwinding_dkdp_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
                                     Keys::getDerivKey(Keys::getKey(domain_,"overland_conductivity"),Keys::getKey(domain_,"ponded_depth")),
                                     Keys::getDerivKey(Keys::getKey(domain_,"upwind_overland_conductivity"),Keys::getKey(domain_,"ponded_depth")),
-                                    Keys::getKey(domain_,"mass_flux_direction"),1.e-8));
+                                    Keys::getKey(domain_,"mass_flux"),1.e-12));
     }
   }
   
@@ -568,9 +568,11 @@ void OverlandPressureFlow::CommitStep(double t_old, double t_new, const Teuchos:
   FixBCsForOperator_(S.ptr());
   
   // derive the fluxes
+    
   Teuchos::RCP<const CompositeVector> potential = S->GetFieldData(Keys::getKey(domain_,"pres_elev"));
   Teuchos::RCP<CompositeVector> flux = S->GetFieldData(Keys::getKey(domain_,"mass_flux"), name_);
   matrix_diff_->UpdateFlux(potential.ptr(), flux.ptr());
+  
 };
 
 
@@ -1040,10 +1042,19 @@ void OverlandPressureFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
   // Now we can safely calculate q = -k grad z for zero-gradient problems
 
   Teuchos::RCP<const CompositeVector> elev = S->GetFieldData(Keys::getKey(domain_,"elevation"));
+  Teuchos::RCP<const CompositeVector> upw_conductivity =
+    S->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity"));
+  Teuchos::RCP<const CompositeVector> conductivity =
+       S->GetFieldData(Keys::getKey(domain_,"overland_conductivity"));
+  Teuchos::RCP<const CompositeVector> flux =
+       S->GetFieldData(Keys::getKey(domain_,"mass_flux"));
 
   elev->ScatterMasterToGhosted();
   const Epetra_MultiVector& elevation_f = *elev->ViewComponent("face",false);
   const Epetra_MultiVector& elevation_c = *elev->ViewComponent("cell",false);
+  const Epetra_MultiVector& upw_cond_f = *upw_conductivity -> ViewComponent("face",false);
+  const Epetra_MultiVector& cond_c = *conductivity -> ViewComponent("cell",false);
+  const Epetra_MultiVector& flux_f = *flux -> ViewComponent("face",false);  
 
   std::vector<WhetStone::DenseMatrix>& Aff =
       matrix_diff_->local_matrices()->matrices;
@@ -1066,6 +1077,17 @@ void OverlandPressureFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
 
       markers[f] = Operators::OPERATOR_BC_NEUMANN;
       values[f] = bc_val / mesh_->face_area(f);
+      
+      // std::cout <<"BC zero grad "<<"dz "<< dp<<" Aff "<<Aff[f](0,0)<<"  values[f] "<<  values[f]<<" cond f "<<upw_cond_f[0][f]<<
+      //   " cond_c "<<cond_c[0][c]<<" flux "<<flux_f[0][f]<<"\n";      
+      // AmanziMesh::Entity_ID_List faces;
+      // mesh_->cell_get_faces(c, &faces);
+      // int nfaces = faces.size();
+      // for (int i=0; i<nfaces; i++){
+      //   int ff = faces[i];
+      //   std::cout << "face : "<<ff<<" flux "<<flux_f[0][ff]<<" cond f "<<upw_cond_f[0][f]<<"\n";
+      // }      
+
     }
   }
 };
