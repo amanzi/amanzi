@@ -115,9 +115,7 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
     int dw = downwind_cell[f];
     AMANZI_ASSERT(!((uw == -1) && (dw == -1)));
 
-    if (f==410)
-      std::cout<<"uw "<<uw<<" dw "<<dw<<" "<<" flux_v[0][f] "<<flux_v[0][f]<<"\n";
-    
+   
     // Teuchos::RCP<VerboseObject> dcvo_dw = Teuchos::null;
     // Teuchos::RCP<VerboseObject> dcvo_uw = Teuchos::null;
 
