@@ -97,6 +97,7 @@ void CoupledTransport_PK::Setup(const Teuchos::Ptr<State>& S){
   //passwd_ = "state";  // owner's password
 
   WeakMPC::Setup(S);
+  
 }
 
 void CoupledTransport_PK::Initialize(const Teuchos::Ptr<State>& S){
@@ -160,36 +161,24 @@ void CoupledTransport_PK::Initialize(const Teuchos::Ptr<State>& S){
 bool CoupledTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
   bool fail = false;
 
-  double dt_MPC = S_->final_time() - S_->initial_time();
-
-
-  /* At the moment with multiple State object next step fluxes are stored in S_next.
-     To comibine them in one State copying has to be done.
-     It will be removed when we convert to one State
-  */
-
-  // Teuchos::RCP<const CompositeVector> next_darcy = S_next_->GetFieldData(subsurface_flux_key_);
-  // Key flux_owner = S_next_->GetField(subsurface_flux_key_)->owner();
-  // Teuchos::RCP<CompositeVector>  next_darcy_copy = S_copy -> GetFieldCopyData(subsurface_flux_key_, "next_timestep", flux_owner);
-  // *next_darcy_copy = *next_darcy;
-
-  // Teuchos::RCP<const CompositeVector> next_sur_flux = S_next_->GetFieldData(surface_flux_key_);
-  // flux_owner = S_next_->GetField(surface_flux_key_)->owner();
-  // Teuchos::RCP<CompositeVector>  next_sur_flux_copy = S_copy -> GetFieldCopyData(surface_flux_key_, "next_timestep", flux_owner);
-  // *next_sur_flux_copy = *next_sur_flux;
+  //double dt_MPC = S_->final_time() - S_->initial_time();
 
 
   sub_pks_[subsurf_id_]->AdvanceStep(t_old, t_new, reinit);
+  *vo_->os() <<"Subsurface step successful\n";
   sub_pks_[surf_id_]->AdvanceStep(t_old, t_new, reinit);
+  *vo_->os() <<"Overland step successful\n";
+
 
   const Epetra_MultiVector& surf_tcc = *S_->GetFieldCopyData("surface-total_component_concentration", "subcycling")->ViewComponent("cell",false);  
   const Epetra_MultiVector& tcc = *S_->GetFieldCopyData("total_component_concentration", "subcycling")->ViewComponent("cell",false);
 
   const std::vector<std::string>&  component_names_sub =
     Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[subsurf_id_])->component_names();
-  
+
   int num_components =  Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[subsurf_id_]) -> num_aqueous_component();
-  std::vector<double> mass_subsurface(num_components, 0.), mass_surface(num_components, 0.);
+   std::vector<double> mass_subsurface(num_components, 0.), mass_surface(num_components, 0.);
+
   
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM){
     for (int i=0; i<num_components; i++){
@@ -206,6 +195,7 @@ bool CoupledTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
   }
   
   return fail;
+  
 
 }
 
