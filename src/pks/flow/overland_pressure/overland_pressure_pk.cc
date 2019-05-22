@@ -213,6 +213,13 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   if (!mfd_pc_plist.isParameter("schema") && mfd_plist.isParameter("schema"))
     mfd_pc_plist.set("schema",
                      mfd_plist.get<Teuchos::Array<std::string> >("schema"));
+  if (mfd_pc_plist.get<bool>("include Newton correction", false)) {
+    if (mfd_pc_plist.get<std::string>("discretization primary") == "fv: default") {
+      mfd_pc_plist.set("Newton correction", "true Jacobian");
+    } else {
+      mfd_pc_plist.set("Newton correction", "approximate Jacobian");
+    }
+  }
 
   preconditioner_diff_ = opfactory.Create(mfd_pc_plist, mesh_, bc_);
   preconditioner_diff_->SetTensorCoefficient(Teuchos::null);
@@ -553,19 +560,17 @@ void OverlandPressureFlow::CommitStep(double t_old, double t_new, const Teuchos:
 
   // Update flux if rel perm or h + Z has changed.
   bool update = UpdatePermeabilityData_(S.ptr());
-
   update |= S->GetFieldEvaluator(Keys::getKey(domain_,"pres_elev"))->HasFieldChanged(S.ptr(), name_);
 
   // update the stiffness matrix with the new rel perm
-  Teuchos::RCP<const CompositeVector> conductivity =
-    S->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity"));
+  auto cond = S->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity"));
 
+  // update the stiffness matrix
   matrix_->Init();
-  matrix_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
+  matrix_diff_->SetScalarCoefficient(cond, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-
-  // Patch up BCs for zero-gradient
-  FixBCsForOperator_(S.ptr());
+  FixBCsForOperator_(S.ptr()); // deals with zero gradient case
+  matrix_diff_->ApplyBCs(true, true, true);
   
   // derive the fluxes
   Teuchos::RCP<const CompositeVector> potential = S->GetFieldData(Keys::getKey(domain_,"pres_elev"));
@@ -585,15 +590,15 @@ void OverlandPressureFlow::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
   // update the cell velocities
   UpdateBoundaryConditions_(S.ptr());
 
-  Teuchos::RCP<const CompositeVector> conductivity =
-S->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity"));
+  Teuchos::RCP<const CompositeVector> conductivity = S->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity"));
 
   // update the stiffness matrix
   matrix_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  FixBCsForOperator_(S.ptr()); // deals with zero gradient case
+  matrix_diff_->ApplyBCs(true, true, true);
 
   // derive fluxes
-
   Teuchos::RCP<const CompositeVector> potential = S->GetFieldData(Keys::getKey(domain_,"pres_elev"));
   Teuchos::RCP<CompositeVector> flux = S->GetFieldData(Keys::getKey(domain_,"mass_flux"), name_);
   matrix_diff_->UpdateFlux(potential.ptr(), flux.ptr());
@@ -994,7 +999,6 @@ OverlandPressureFlow::ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVecto
     }
   } else if (u->HasComponent("boundary_face")) {
     const Epetra_MultiVector& elevation = *elev->ViewComponent("face");
-
     const Epetra_Map& vandalay_map = mesh_->exterior_face_map(false);
     const Epetra_Map& face_map = mesh_->face_map(false);
 
@@ -1199,6 +1203,12 @@ OverlandPressureFlow::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> 
                  Teuchos::RCP<TreeVector> du) {
   Teuchos::OSTab tab = vo_->getOSTab();
 
+  // if the primary variable has boundary face, this is for upwinding rel
+  // perms and is never actually used.  Make sure it does not go to undefined
+  // pressures.
+  if (du->Data()->HasComponent("boundary_face")) {
+    du->Data()->ViewComponent("boundary_face")->PutScalar(0.);
+  }
 
   // debugging -- remove me! --etc
   for (CompositeVector::name_iterator comp=du->Data()->begin();

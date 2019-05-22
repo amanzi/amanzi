@@ -19,31 +19,21 @@ void OverlandPressureFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
 
   // update the rel perm according to the scheme of choice.
   UpdatePermeabilityData_(S_next_.ptr());
+  auto cond = S_next_->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity"), name_);
 
   // update the stiffness matrix
   matrix_->Init();
-  Teuchos::RCP<const CompositeVector> cond =
-    S_next_->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity"), name_);
-
   matrix_diff_->SetScalarCoefficient(cond, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-
-  // Patch up BCs for zero-gradient
-  FixBCsForOperator_(S_next_.ptr());
-
-  // assemble the stiffness matrix
+  FixBCsForOperator_(S_next_.ptr()); // deals with zero gradient case
   matrix_diff_->ApplyBCs(true, true, true);
 
   // derive fluxes -- this gets done independently fo update as precon does
   // not calculate fluxes.
   S->GetFieldEvaluator(Keys::getKey(domain_,"pres_elev"))->HasFieldChanged(S.ptr(), name_);
-  Teuchos::RCP<const CompositeVector> pres_elev = S->GetFieldData(Keys::getKey(domain_,"pres_elev"));
-  if (update_flux_ == UPDATE_FLUX_ITERATION) {
-    Teuchos::RCP<CompositeVector> flux =
-      S->GetFieldData(Keys::getKey(domain_,"mass_flux"), name_);
-
-    matrix_diff_->UpdateFlux(pres_elev.ptr(), flux.ptr());
-  }
+  auto pres_elev = S->GetFieldData(Keys::getKey(domain_,"pres_elev"));
+  auto flux = S->GetFieldData(Keys::getKey(domain_,"mass_flux"), name_);
+  matrix_diff_->UpdateFlux(pres_elev.ptr(), flux.ptr());
 
   // calculate the residual
   matrix_->ComputeNegativeResidual(*pres_elev, *g);
