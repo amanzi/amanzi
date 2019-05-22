@@ -98,6 +98,8 @@ void Richards::FunctionalResidual(double t_old,
   vecs.push_back(S_next_->GetFieldData(flux_dir_key_).ptr());
   vnames.push_back("uw_k_rel");
   vecs.push_back(S_next_->GetFieldData(uw_coef_key_).ptr());
+  vnames.push_back("flux");
+  vecs.push_back(S_next_->GetFieldData(flux_key_).ptr());
   db_->WriteVectors(vnames,vecs,true);
 
   db_->WriteVector("res (diff)", res.ptr(), true);
@@ -198,24 +200,13 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   // create local matrices
   preconditioner_diff_->SetScalarCoefficient(rel_perm, dkrdp);
   preconditioner_diff_->UpdateMatrices(Teuchos::null, up->Data().ptr());
+  preconditioner_diff_->ApplyBCs(true, true, true);
 
   if (jacobian_ && iter_ >= jacobian_lag_) {// && preconditioner_->RangeMap().HasComponent("face")) {
     Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData(flux_key_, name_);
     preconditioner_diff_->UpdateFlux(up->Data().ptr(), flux.ptr());
     preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), up->Data().ptr());
   }
-  
-  // if (vapor_diffusion_){
-  //   Teuchos::RCP<CompositeVector> vapor_diff_pres = S_next_->GetFieldData("vapor_diffusion_pressure", name_);
-  //   ComputeVaporDiffusionCoef(S_next_.ptr(), vapor_diff_pres, "pressure");   
-
-  // // update the stiffness matrix
-    // matrix_vapor_->CreateMFDstiffnessMatrices(vapor_diff_pres.ptr());    
-    // mfd_preconditioner_->Add2MFDstiffnessMatrices(&matrix_vapor_->Acc_cells(),
-    //                                               &matrix_vapor_->Aff_cells(),
-    //                                               &matrix_vapor_->Acf_cells(),
-    //                                               &matrix_vapor_->Afc_cells());
-  // }
 
   // Update the preconditioner with accumulation terms.
   // -- update the accumulation derivatives
@@ -236,9 +227,6 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
   // -- update preconditioner with source term derivatives if needed
   AddSourcesToPrecon_(S_next_.ptr(), h);
   
-  // -- apply BCs
-  preconditioner_diff_->ApplyBCs(true, true, true);
-
   if (precon_used_) {
     preconditioner_->AssembleMatrix();
     preconditioner_->UpdatePreconditioner();

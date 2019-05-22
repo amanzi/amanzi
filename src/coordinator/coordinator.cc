@@ -302,7 +302,7 @@ void Coordinator::initialize() {
   // we know it has succeeded.
   S_next_ = Teuchos::rcp(new Amanzi::State(*S_));
   *S_next_ = *S_;
-  if (parameter_list_->get<bool>("support subcycling", true)) {
+  if (parameter_list_->get<bool>("support subcycling", false)) {
     S_inter_ = Teuchos::rcp(new Amanzi::State(*S_));
     *S_inter_ = *S_;
   } else {
@@ -312,8 +312,8 @@ void Coordinator::initialize() {
   // set the states in the PKs Passing null for S_ allows for safer subcycling
   // -- PKs can't use it, so it is guaranteed to be pristinely the old
   // timestep.  This comes at the expense of an increase in memory footprint.
-  //pk_->set_states(Teuchos::null, S_inter_, S_next_);  
-  pk_->set_states(S_, S_inter_, S_next_);
+  pk_->set_states(Teuchos::null, S_inter_, S_next_);  
+  //pk_->set_states(S_, S_inter_, S_next_);
 
 }
 

@@ -55,9 +55,7 @@ public:
 
   // -- Commit any secondary (dependent) variables.
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
-
-  // -- Calculate any diagnostics prior to doing vis
-  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) override;
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) override {}
 
   // Default implementations of BDFFnBase methods.
   // -- Compute a norm on u-du and return the result.
@@ -173,6 +171,7 @@ public:
   
   double T_limit_;
   double mass_atol_;
+  double soil_atol_;
   
   bool coupled_to_subsurface_via_temp_;
   bool coupled_to_subsurface_via_flux_;

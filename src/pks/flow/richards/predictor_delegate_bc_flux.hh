@@ -3,6 +3,8 @@
 /*
   Delegate for modifying the predictor in the case of infiltration into dry soil.
 
+  NOTE this uses only a domain, and assumes standard variable names.
+  
   License: BSD
   Authors: Ethan Coon (ATS version) (ecoon@lanl.gov)
 */
@@ -28,15 +30,13 @@ class PredictorDelegateBCFlux {
                           const Teuchos::RCP<Operators::PDE_Diffusion>& matrix,
                           const Teuchos::RCP<Flow::WRMPartition>& wrms,
                           std::vector<int>* bc_markers,
-                          std::vector<double>* bc_values,
-                          const std::string& uw_kr_key) :
+                          std::vector<double>* bc_values) :
       S_next_(S_next),
       mesh_(mesh),
       matrix_(matrix),
       wrms_(wrms),
       bc_markers_(bc_markers),
-      bc_values_(bc_values),
-      uw_kr_key_(uw_kr_key)
+      bc_values_(bc_values)
   {}
 
   bool ModifyPredictor(double h, Teuchos::RCP<TreeVector> u) {
@@ -65,25 +65,17 @@ class PredictorDelegateBCFlux {
 
     double operator()(double face_p) {
       (*lambda_)[face_index_] = face_p;
-      double Krel = wrm_->k_relative(wrm_->saturation(patm_ - face_p));
-      //      std::cout << "Fluxes: " << std::endl;
-      double q = flux_();
-      //      std::cout << "  K grad p = " << q << ", K grad gz = " << g_flux_*Krel << ", bc = " << bc_flux_ << std::endl;
-      return flux_() + g_flux_*Krel - bc_flux_;
+      double s = wrm_->saturation(patm_ - face_p);
+      double Krel = wrm_->k_relative(s);
+
+      double q = 0;
+      for (unsigned int n=0; n!=lambda_->size(); ++n)
+        q += (*Aff_)[n] * (cell_p_ - (*lambda_)[n]);
+
+      return (q + g_flux_)*Krel - bc_flux_;
     }
 
    protected:
-
-    double flux_() {
-      double s = 0.;
-      double Krel = wrm_->k_relative(wrm_->saturation(patm_ - (*lambda_)[face_index_]));
-
-      //      std::cout << "  Krel = " << Krel << std::endl;
-      //      std::cout << "  lambda_bc = " << (*lambda_)[face_index_] << std::endl;
-      for (unsigned int n=0; n!=lambda_->size(); ++n)
-        s += (*Aff_)[n] * Krel * (cell_p_ - (*lambda_)[n]);
-      return s;
-    }
 
    protected:
     Teuchos::RCP< std::vector<double> > Aff_;
@@ -120,7 +112,6 @@ class PredictorDelegateBCFlux {
 
   std::vector<int>* bc_markers_;
   std::vector<double>* bc_values_;
-  std::string uw_kr_key_;
 
 };
 

@@ -124,7 +124,7 @@ TranspirationDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       for (auto c : subsurf_mesh.cells_of_column(sc)) {
         new_col_total += result_v[pft][c] * cv[0][c];
       }
-      AMANZI_ASSERT(std::abs(new_col_total - trans_total[pft][sc]) < 1.e-8);
+      AMANZI_ASSERT(std::abs(new_col_total - trans_total[pft][sc]*surf_cv[0][sc]) < 1.e-8);
 #endif
     }
   }

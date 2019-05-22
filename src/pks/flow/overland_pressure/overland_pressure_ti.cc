@@ -105,6 +105,9 @@ void OverlandPressureFlow::FunctionalResidual( double t_old,
   // diffusion term, treated implicitly
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 
+  // debug after, as we need local matrices to calculate zero gradient BCs
+  db_->WriteBoundaryConditions(bc_markers(), bc_values());
+  
 #if DEBUG_FLAG
 
   if (S_next_->HasField(Keys::getKey(domain_,"unfrozen_fraction"))) {
@@ -395,11 +398,10 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
 double OverlandPressureFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
                                Teuchos::RCP<const TreeVector> res) {
 
-  S_next_->GetFieldEvaluator(conserved_key_)->HasFieldChanged(S_next_.ptr(), name_);
-  const Epetra_MultiVector& conserved = *S_next_->GetFieldData(conserved_key_)
+  S_inter_->GetFieldEvaluator(conserved_key_)->HasFieldChanged(S_inter_.ptr(), name_);
+  const Epetra_MultiVector& conserved = *S_inter_->GetFieldData(conserved_key_)
       ->ViewComponent("cell",true);
-
-  const Epetra_MultiVector& cv = *S_next_->GetFieldData(Keys::getKey(domain_,"cell_volume"))
+  const Epetra_MultiVector& cv = *S_inter_->GetFieldData(Keys::getKey(domain_,"cell_volume"))
       ->ViewComponent("cell",true);
   
   // VerboseObject stuff.
@@ -410,12 +412,10 @@ double OverlandPressureFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   Teuchos::RCP<const CompositeVector> dvec = res->Data();
   double h = S_next_->time() - S_inter_->time();
 
-
   Teuchos::RCP<const Comm_type> comm_p = mesh_->get_comm();
   Teuchos::RCP<const MpiComm_type> mpi_comm_p =
     Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm_p);
   const MPI_Comm& comm = mpi_comm_p->Comm();
-
   
   double enorm_val = 0.0;
   for (CompositeVector::name_iterator comp=dvec->begin();
@@ -438,6 +438,8 @@ double OverlandPressureFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       }
       
     } else if (*comp == std::string("face")) {
+      // DEPRECATED: this was used in MFD on the surface only? --etc
+
       // error in flux -- relative to cell's extensive conserved quantity
       int nfaces = dvec->size(*comp, false);
       bool scaled_constraint = plist_->sublist("diffusion").get<bool>("scaled constraint equation", true);
@@ -464,6 +466,7 @@ double OverlandPressureFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       }
       
     } else {
+      // boundary face components had better be effectively identically 0
       double norm;
       dvec_v.Norm2(&norm);
       AMANZI_ASSERT(norm < 1.e-15);

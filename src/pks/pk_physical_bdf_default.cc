@@ -68,7 +68,7 @@ void PK_PhysicalBDF_Default::Initialize(const Teuchos::Ptr<State>& S) {
 // Default enorm that uses an abs and rel tolerance to monitor convergence.
 // -----------------------------------------------------------------------------
 double PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
-        Teuchos::RCP<const TreeVector> du) {
+        Teuchos::RCP<const TreeVector> res) {
   // Abs tol based on old conserved quantity -- we know these have been vetted
   // at some level whereas the new quantity is some iterate, and may be
   // anything from negative to overflow.
@@ -83,7 +83,7 @@ double PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   if (vo_->os_OK(Teuchos::VERB_MEDIUM))
     *vo_->os() << "ENorm (Infnorm) of: " << conserved_key_ << ": " << std::endl;
 
-  Teuchos::RCP<const CompositeVector> dvec = du->Data();
+  Teuchos::RCP<const CompositeVector> dvec = res->Data();
   double h = S_next_->time() - S_inter_->time();
 
   Teuchos::RCP<const Comm_type> comm_p = mesh_->get_comm();

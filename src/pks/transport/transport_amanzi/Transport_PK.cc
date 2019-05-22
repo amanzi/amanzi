@@ -358,7 +358,6 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
 
   mol_dens_ = S->GetFieldData(molar_density_key_) -> ViewComponent("cell", false);
   mol_dens_prev_ = S->GetFieldData(molar_density_key_) -> ViewComponent("cell", false);
-  
 
   tcc = S->GetFieldData(tcc_key_, passwd_);
 
@@ -839,11 +838,11 @@ bool Transport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
   
   // calculate stable time step    
   double dt_shift = 0.0, dt_global = dt_MPC;
-  double time = S_->intermediate_time();
+  double time = S_inter_->intermediate_time();
   if (time >= 0.0) { 
     t_physics_ = time;
-    dt_shift = time - S_->initial_time();
-    dt_global = S_->final_time() - S_->initial_time();
+    dt_shift = time - S_inter_->initial_time();
+    dt_global = S_inter_->final_time() - S_inter_->initial_time();
   }
 
   StableTimeStep();
@@ -854,7 +853,7 @@ bool Transport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
 
   //if ((dt_shift >1e-12) || (dt_stable < dt_global)) interpolate_ws = 1;
 
-  if ((t_old > S_->initial_time())||(t_new < S_->final_time())) interpolate_ws = 1;
+  if ((t_old > S_inter_->initial_time())||(t_new < S_inter_->final_time())) interpolate_ws = 1;
 
   // *vo_->os() << "DOMAIN "<<domain_name_<<" dt_ "<<dt_<<" dt_MPC "<<dt_MPC<<" dt_global "<<dt_global<<" time "<<time<<" initial "
   //            <<S_inter_->initial_time()<<" final "<<S_inter_->final_time()<<" interpolate "<<interpolate_ws<<"\n";
@@ -1285,8 +1284,8 @@ void Transport_PK_ATS::CommitStep(double t_old, double t_new, const Teuchos::RCP
   InitializeFieldFromField_(prev_saturation_key_, saturation_key_, S.ptr(), false, true);
 
   // Copy to S_ as well
-  //tcc = S_->GetFieldData(tcc_key_, passwd_);
-  //*tcc = *tcc_tmp;
+  tcc = S->GetFieldData(tcc_key_, passwd_);
+  *tcc = *tcc_tmp;
 }
 
 

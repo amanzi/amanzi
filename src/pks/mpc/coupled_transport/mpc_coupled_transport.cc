@@ -170,8 +170,8 @@ bool CoupledTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
   *vo_->os() <<"Overland step successful\n";
 
 
-  const Epetra_MultiVector& surf_tcc = *S_->GetFieldCopyData("surface-total_component_concentration", "subcycling")->ViewComponent("cell",false);  
-  const Epetra_MultiVector& tcc = *S_->GetFieldCopyData("total_component_concentration", "subcycling")->ViewComponent("cell",false);
+  const Epetra_MultiVector& surf_tcc = *S_inter_->GetFieldCopyData("surface-total_component_concentration", "subcycling")->ViewComponent("cell",false);  
+  const Epetra_MultiVector& tcc = *S_inter_->GetFieldCopyData("total_component_concentration", "subcycling")->ViewComponent("cell",false);
 
   const std::vector<std::string>&  component_names_sub =
     Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[subsurf_id_])->component_names();
