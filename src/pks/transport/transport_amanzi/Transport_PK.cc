@@ -356,9 +356,8 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
   
   phi_ = S->GetFieldData(porosity_key_) -> ViewComponent("cell", false);
 
-  mol_dens_ = S_inter_->GetFieldData(molar_density_key_) -> ViewComponent("cell", false);
-  mol_dens_prev_ = S_inter_->GetFieldData(molar_density_key_) -> ViewComponent("cell", false);
-  
+  mol_dens_ = S->GetFieldData(molar_density_key_) -> ViewComponent("cell", false);
+  mol_dens_prev_ = S->GetFieldData(molar_density_key_) -> ViewComponent("cell", false);
 
   tcc = S->GetFieldData(tcc_key_, passwd_);
 
@@ -1285,7 +1284,7 @@ void Transport_PK_ATS::CommitStep(double t_old, double t_new, const Teuchos::RCP
   InitializeFieldFromField_(prev_saturation_key_, saturation_key_, S.ptr(), false, true);
 
   // Copy to S_ as well
-  tcc = S_inter_->GetFieldData(tcc_key_, passwd_);
+  tcc = S->GetFieldData(tcc_key_, passwd_);
   *tcc = *tcc_tmp;
 }
 
