@@ -26,8 +26,14 @@ OneUFRelPermModel::OneUFRelPermModel(Teuchos::ParameterList& plist) :
     Exceptions::amanzi_throw(message);
   }
 
-  h_cutoff_up_ = plist_.get<double>("unfrozen rel perm cutoff pressure", 10.);
-  h_cutoff_dn_ = plist_.get<double>("unfrozen rel perm cutoff pressure, below", 0.);
+  h_cutoff_up_ = plist_.get<double>("unfrozen rel perm cutoff pressure [Pa]", 10.);
+  h_cutoff_dn_ = plist_.get<double>("unfrozen rel perm cutoff pressure, below [Pa]", 0.);
+
+  if (plist_.isParameter("unfrozen rel perm cutoff pressure") ||
+      plist_.isParameter("unfrozen rel perm cutoff height")) {
+    Errors::Message message("surface-relative_permeability: old-style parameters detected, please use \"surface rel perm cutoff pressure [Pa]\" and \"surface rel perm cutoff pressure, below [Pa]\", not \"surface rel perm cutoff height\" or \"surface rel perm cutoff pressure\"");
+    Exceptions::amanzi_throw(message);
+  }    
 }
 
 double
