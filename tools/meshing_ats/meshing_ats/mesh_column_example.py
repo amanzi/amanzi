@@ -19,7 +19,7 @@ except ImportError:
 try:
     import meshing_ats
 except ImportError:
-    sys.path.append(os.path.join(os.environ['ATS_SRC_DIR'],'tools','meshing_ats'))
+    sys.path.append(os.path.join(os.environ['ATS_SRC_DIR'],'tools','meshing_ats', 'meshing_ats'))
     import meshing_ats
 
 # set up the surface mesh, which is a single cell

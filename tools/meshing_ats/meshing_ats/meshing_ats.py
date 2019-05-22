@@ -591,6 +591,8 @@ class Mesh3D(object):
                 
         # helper data and functions for mapping indices from 2D to 3D
         # ------------------------------------------------------------------
+        if min(ncells_per_layer) < 0:
+            raise RuntimeError("Invalid number of cells, negative value provided.")
         ncells_tall = sum(ncells_per_layer)
         ncells_total = ncells_tall * mesh2D.num_cells()
         nfaces_total = (ncells_tall+1) * mesh2D.num_cells() + ncells_tall * mesh2D.num_edges()
