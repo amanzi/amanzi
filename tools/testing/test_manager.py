@@ -23,6 +23,7 @@ if sys.hexversion < 0x02070000:
 
 import datetime
 import os
+import glob
 #import pprint
 import shutil
 import subprocess
@@ -32,6 +33,39 @@ import traceback
 import distutils.spawn
 import numpy
 import collections
+import h5py
+
+
+aliases = dict()
+
+
+def get_git_hash(directory):
+    """Helper function to return the git hash of a repo."""
+    import subprocess
+    return subprocess.check_output(['git', 'describe', '--always'], cwd=directory).strip()
+
+def version(executable):
+    """Helper function to pull a version number from an executable.
+    
+    For now this is hard-coded and assumes standard ATS locations,
+    which is VERY fragile, and may even provide incorrect info.
+    This needs to be fixed to take the output of ats --version
+    (which doesn't yet work, see ats ticket #12
+    """
+
+    try:
+        ats_label = get_git_hash(os.environ['ATS_SRC_DIR'])
+    except KeyError:
+        ats_label = 'unknown'
+
+    try:
+        amanzi_label = get_git_hash(os.environ['AMANZI_SRC_DIR'])
+    except KeyError:
+        amanzi_label = 'unknown'
+    v = "ATS: {0}\nAmanzi: {1}".format(ats_label, amanzi_label)
+    return v
+
+
 
 class NoCatchException(Exception):
     def __init__(self,*args,**kwargs):
@@ -82,20 +116,21 @@ class RegressionTest(object):
     # ways to measure what to compare
     _NORM = numpy.inf
 
-    def __init__(self, suffix=None):
-        self._EXECUTABLE = "ats"
-        self._SUCCESS = 0
-        self._RESERVED = [self._TIME, self._TIMESTEPS]
-
+    _SUCCESS = 0
+    _RESERVED = [_TIME, _TIMESTEPS]
+    
+    def __init__(self, executable='ats', mpiexec=None, version=None, suffix=None):
         if suffix is not None:
-            self._SUFFIX = "."+suffix
+            self._suffix = "."+suffix
         else:
-            self._SUFFIX = ".regression"
+            self._suffix = ".regression"
         
         # misc test parameters
         #        self._pprint = pprint.PrettyPrinter(indent=2)
         self._txtwrap = textwrap.TextWrapper(width=78, subsequent_indent=4*" ")
-        self._executable = None
+        self._executable = executable
+        self._mpiexec = mpiexec
+        self._version = version
         self._input_arg = "--xml_file="
         self._input_suffix = "xml"
         self._np = None
@@ -111,23 +146,20 @@ class RegressionTest(object):
         # max_threshold) then compare values. By default we use the
         # python definitions for this platform
         self._default_tolerance = {}
-        self._default_tolerance[self._TIME] = [5.0, self._PERCENT, \
+        self._default_tolerance[self._TIME] = [1.e-12, self._ABSOLUTE, \
                                                0.0, sys.float_info.max]
-        self._default_tolerance[self._TIMESTEPS] = [5, self._RELATIVE, \
-                                                    0, sys.maxsize]
         self._default_tolerance[self._DISCRETE] = [0, self._ABSOLUTE, 0, sys.maxsize]
         
-        self._default_tolerance[self._DEFAULT] = [1.0e-12, self._RELATIVE, \
+        self._default_tolerance[self._DEFAULT] = [1.0e-10, self._RELATIVE, \
                                                   0.0, sys.float_info.max]
         self._eps = 1.e-14
 
-        self._checkpoint = None
-        
         # dictionary indexed by domain, each of which is a dictionary of
         # (key, tolerance) pairs
         self._criteria = {}
-        self._file_format_with_domain = "visdump_{0}_data.h5"        
-        self._file_format_no_domain = "visdump_data.h5"        
+        self._file_prefix = "checkpoint"
+        self._file_suffix = ".h5"
+        self._file_format = self._file_prefix + "{0:05d}" + self._file_suffix
 
     def __str__(self):
         message = "  {0} :\n".format(self.name())
@@ -144,8 +176,7 @@ class RegressionTest(object):
                     key, tol[0], tol[1], tol[2], tol[3])
         return message
 
-    def setup(self, cfg_criteria, test_data,
-              timeout, check_performance, testlog):
+    def setup(self, cfg_criteria, test_data, timeout, check_performance, testlog):
         """
         Setup the test object
 
@@ -165,23 +196,17 @@ class RegressionTest(object):
         if timeout is not None:
             self._timeout = float(timeout[0])
 
-        # check whether this is a checkpoint
-        checkpoint = test_data.pop('checkpoint',
-                                   cfg_criteria.pop('checkpoint', None))
-        if checkpoint is not None: 
-            self._checkpoint = checkpoint
-        
         # pop a default and/or default discrete
         default = test_data.pop(self._DEFAULT,
                                 cfg_criteria.pop(self._DEFAULT, None))
         if default is not None:
-            tol = self._validate_tolerance(self._DEFAULT, self._DEFAULT, default)
+            tol = self._validate_tolerance(self._DEFAULT, default)
             self._default_tolerance[self._DEFAULT] = tol
 
         discrete = test_data.pop(self._DISCRETE,
                                 cfg_criteria.pop(self._DISCRETE, None))
         if discrete is not None:
-            tol = self._validate_tolerance(self._DISCRETE, self._DISCRETE, discrete)
+            tol = self._validate_tolerance(self._DISCRETE, discrete)
             self._default_tolerance[self._DISCRETE] = tol
             
         # requested criteria, skipping time and timesteps
@@ -189,47 +214,34 @@ class RegressionTest(object):
             if key != self._TIME and key != self._TIMESTEPS:
                 self._set_criteria(key, cfg_criteria, test_data)
 
-        # criteria defaults
-        # - time exists on all domains, but must make sure it is on a valid one
-        if self._check_performance:
-            self._set_criteria("({0})".format(self._criteria.keys()[0])+self._TIME,
-                               cfg_criteria, test_data)
+        # always check that write simulation time are the same
+        self._set_criteria(self._TIME, cfg_criteria, test_data)
 
-        # - timestep exists on all domains, but must make sure it is on a valid one
-        if self._checkpoint is None and len(self._criteria.keys()) > 0:
-            self._set_criteria("({0})".format(self._criteria.keys()[0])+self._TIMESTEPS,
-                               cfg_criteria, test_data)
-                
     def name(self):
         return self._test_name
 
     def dirname(self, gold=False):
-        suffix = self._SUFFIX
+        suffix = self._suffix
         if gold:
             suffix = suffix + ".gold"
         return self.name() + suffix        
 
-    def filename(self, domain, gold=False):
-        if self._checkpoint is not None:
-            return os.path.join(self.dirname(gold),
-                            self._checkpoint)
-        else:
-            if domain == "":
-                return os.path.join(self.dirname(gold),
-                                    self._file_format_no_domain)
-            else:
-                return os.path.join(self.dirname(gold),
-                                    self._file_format_with_domain.format(domain))
+    def filenames(self, dirname):
+        fname_list = sorted(glob.glob(os.path.join(dirname, self._file_prefix+"*"+self._file_suffix)))
+        final_name = os.path.join(dirname, 'checkpoint_final.h5')
+        if final_name in fname_list:
+            fname_list.remove(final_name)
+        return fname_list
 
-    def run(self, mpiexec, executable, dry_run, status, testlog):
+    def run(self, dry_run, status, testlog):
         """
         Run the test.
         """
         self._cleanup_generated_files()
-        self._run_test(mpiexec, executable, self.name(), dry_run, status,
+        self._run_test(self.name(), dry_run, status,
                        testlog)
 
-    def _run_test(self, mpiexec, executable, test_name, dry_run, status, testlog):
+    def _run_test(self, test_name, dry_run, status, testlog):
         """
         Build up the run command, including mpiexec, np, ats,
         input file, output file. Then run the job as a subprocess.
@@ -243,8 +255,8 @@ class RegressionTest(object):
         """
         command = []
         if self._np is not None:
-            if mpiexec:
-                command.append(mpiexec)
+            if self._mpiexec:
+                command.append(self._mpiexec)
                 command.append("-np")
                 command.append(self._np)
             else:
@@ -257,13 +269,15 @@ class RegressionTest(object):
                 status.skipped = 1
                 return None
 
-        command.append(executable)
+        command.append(self._executable)
         command.append("{0}../{1}.{2}".format(self._input_arg,test_name,self._input_suffix))
 
         test_directory = os.getcwd()
         run_directory = os.path.join(test_directory, self.dirname())
         os.mkdir(run_directory)
         os.chdir(run_directory)
+        with open('ats_version.txt', 'w') as fid:
+            fid.write(self._version)
         
         print("    cd {0}".format(run_directory), file=testlog)
         print("    {0}".format(" ".join(command)), file=testlog)
@@ -296,7 +310,7 @@ class RegressionTest(object):
                     "code ({status}) indicating the simulation may have "
                     "failed. Please check '{name}.stdout' "
                     "for error messages (included below).".format(
-                        execute=self._EXECUTABLE, name=test_name, status=ierr_status))
+                        execute=self._executable, name=test_name, status=ierr_status))
 
                 print("".join(['\n', message, '\n']), file=testlog)
                 print("~~~~~ {0}.stdout ~~~~~".format(test_name), file=testlog)
@@ -321,9 +335,7 @@ class RegressionTest(object):
         """
         Check the test results against the gold standard
         """
-
-        for domain in self._criteria.keys():
-            self._check_gold(status, domain, testlog)
+        self._check_gold(status, testlog)
 
     def update(self, status, testlog):
         """
@@ -351,15 +363,13 @@ class RegressionTest(object):
 
         # check that the regression file was created in the regression directory
         if (not status.error and not status.fail):
-            for domain in self._criteria.keys():
-                reg_name = self.filename(domain, False)
-
-                if not os.path.isfile(reg_name):
-                    print("ERROR: run for "
-                          "test '{0}' did not create the needed regression file "
-                          "'{1}', not updating!".format(self.name(),
-                                                        reg_name), file=testlog)
-                    status.fail = 1
+            reg_filenames = self.filenames(run_dir)
+            if len(reg_filenames) == 0:
+                print("ERROR: run for "
+                      "test '{0}' did not create the needed regression file(s), "
+                      "not updating!".format(self.name(),
+                                             reg_name), file=testlog)
+                status.fail = 1
 
         if not status.error and not status.fail:
             # remove old-old gold
@@ -428,15 +438,13 @@ class RegressionTest(object):
         
         # verify that the run directory created good files
         if (not status.error and not status.fail):
-            for domain in self._criteria.keys():
-                reg_name = self.filename(domain, False)
-
-                if not os.path.isfile(reg_name):
-                    print("ERROR: run for "
-                          "test '{0}' did not create the needed regression file "
-                          "'{1}', not making new gold!".format(self.name(),
-                                                    reg_name), file=testlog)
-                    status.fail = 1
+            reg_filenames = self.filenames(run_dir)
+            if len(reg_filenames) == 0:
+                print("ERROR: run for "
+                      "test '{0}' did not create the needed regression file "
+                      "'{1}', not making new gold!".format(self.name(),
+                                                           reg_name), file=testlog)
+                status.fail = 1
 
         # move the run to gold
         if not status.error and not status.fail:
@@ -456,7 +464,7 @@ class RegressionTest(object):
         print("done", file=testlog)
 
 
-    def _check_gold(self, status, domain, testlog):
+    def _check_gold(self, status, testlog):
         """
         Test the output from the run against the known "gold standard"
         output and determine if the test succeeded or failed.
@@ -464,103 +472,117 @@ class RegressionTest(object):
         We return zero on success, one on failure so that the test
         manager can track how many tests succeeded and failed.
         """
-        import ats_h5
-        
         if self._skip_check_gold:
             message = "    Skipping comparison to regression gold file (only test if model runs to completion)."
             print("".join(['\n', message, '\n']), file=testlog)
             return
 
-        gold_filename = self.filename(domain, True)
-        if not os.path.isfile(gold_filename):
+        # get all gold checkpoint files
+        gold_dirname = self.dirname(True)
+        gold_files = self.filenames(gold_dirname)
+
+        # get all regression checkpoint files
+        reg_dirname = self.dirname(False)
+        reg_files = self.filenames(reg_dirname)
+
+        # check that at least one gold file exists
+        if len(gold_files) is 0:
             message = self._txtwrap.fill(
-                "FAIL: could not find regression test gold file "
+                "FAIL: could not find checkpoint files in regression "
+                "test gold directory "
                 "'{0}'. If this is a new test, please create "
-                "it with '--new-test'.".format(gold_filename))
+                "it with '--new-test'.".format(gold_dirname))
             print("".join(['\n', message, '\n']), file=testlog)
             status.fail = 1
             return
 
-        current_filename = self.filename(domain, False)
-        if not os.path.isfile(current_filename):
+        # check that gold and regression have same number of files
+        if len(gold_files) != len(reg_files):
             message = self._txtwrap.fill(
-                "FAIL: could not find regression test file '{0}'."
-                " Please check the standard output file for "
-                "errors.".format(current_filename))
+                "FAIL: differing number of checkpoint files in "
+                "gold '{0}' and regression '{1}' directories.".format(gold_dirname, reg_dirname))
             print("".join(['\n', message, '\n']), file=testlog)
             status.fail = 1
             return
 
-        try:
-            h5_current = ats_h5.File(current_filename)
-        except Exception as e:
-            print("    FAIL: Could not open file: '{0}'".format(current_filename), file=testlog)
-            status.fail = 1
-            h5_current = None
+        for gold_file, reg_file in zip(gold_files, reg_files):
+            try:
+                h5_reg = h5py.File(reg_file)
+            except Exception as e:
+                print("    FAIL: Could not open file: '{0}'".format(reg_file), file=testlog)
+                status.fail = 1
+                h5_reg = None
 
-        try:
-            h5_gold = ats_h5.File(gold_filename)
-        except Exception as e:
-            print("    FAIL: Could not open file: '{0}'".format(gold_filename), file=testlog)
-            status.fail = 1
-            h5_gold = None
+            try:
+                h5_gold = h5py.File(gold_file)
+            except Exception as e:
+                print("    FAIL: Could not open file: '{0}'".format(gold_file), file=testlog)
+                status.fail = 1
+                h5_gold = None
 
-        if h5_gold is not None and h5_current is not None:
-            self._compare(h5_current, h5_gold, domain, status, testlog)
+            if h5_reg is not None and h5_gold is not None:
+                self._compare(h5_reg, h5_gold, status, testlog)
 
-        h5_gold.close()
-        h5_current.close()
+            if h5_reg is not None: h5_reg.close()
+            if h5_gold is not None: h5_gold.close()
+        return
         
-    def _compare(self, h5_current, h5_gold, domain, status, testlog):
+    def _compare(self, h5_current, h5_gold, status, testlog):
         """Check that output hdf5 file has not changed from the baseline.
         """
-        for key, tolerance in self._criteria[domain].iteritems():
+        for key, tolerance in self._criteria.iteritems():
             if key == self._TIME:
-                self._compare_time(h5_current, h5_gold, tolerance,
-                                   status, testlog)
-            elif key == self._TIMESTEPS:
-                self._compare_timesteps(h5_current, h5_gold, tolerance,
-                                        status, testlog)
+                self._check_tolerance(h5_current.attrs['time'], h5_gold.attrs['time'],
+                                      self._TIME, tolerance, status, testlog)
+
             else:
-                self._compare_values(h5_current, h5_gold, key, tolerance,
-                                     status, testlog)
+                # find all matches of this key
+                reg_matches = []
+                if len(key.split('.')) == 1:
+                    for k in h5_current.keys():
+                        if k.split('.')[0] == key:
+                            reg_matches.append(k)
+                elif len(key.split('.')) == 2:
+                    for k in h5_current.keys():
+                        if '.'.join(k.split('.')[0:2]) == key:
+                            reg_matches.append(k)
+                else:
+                    for k in h5_current.keys():
+                        if k == key:
+                            reg_matches.append(k)
+
+                # find the corresponding matches from gold
+                gold_matches = []
+                for key in reg_matches:
+                    if key in h5_gold.keys():
+                        gold_matches.append(key)
+                    else:
+                        found_match = False
+                        key_split = key.split('.')
+                        try:
+                            my_aliases = aliases[key_split[0]]
+                        except KeyError:
+                            pass
+                        else:
+                            for alias in my_aliases:
+                                if '.'.join([alias,]+key_split[1:]) in h5_gold.keys():
+                                    gold_matches.append(key)
+                                    found_match = True
+                                    break
+                        if not found_match:
+                            status.fail = 1
+                            print("    FAIL: Cannot find {0} or aliased version in the regression.".format(key),
+                                  file=testlog)
+                            return
+
+                # we should not get here if this is not true
+                assert(len(gold_matches) == len(reg_matches))
+
+                for (g, r) in zip(gold_matches, reg_matches):
+                    self._check_tolerance(h5_current[r][:], h5_gold[g][:], r, tolerance, status, testlog)
+
         if status.fail == 0:
             print("    Passed tests.", file=testlog)
-
-    def _compare_time(self, h5_current, h5_gold, tolerance, status, testlog):
-        self._check_tolerance(h5_current.simulationTime(), h5_gold.simulationTime(),
-                              self._TIME, tolerance, status, testlog)
-
-    def _compare_timesteps(self, h5_current, h5_gold, tolerance, status, testlog):
-        self._check_tolerance(h5_current.numSteps(), h5_gold.numSteps(),
-                              self._TIMESTEPS, tolerance, status, testlog)
-
-    def _compare_values(self, h5_current, h5_gold, key, tolerance, status, testlog):
-        if len(set(h5_current.matches(key))) != len(set(h5_gold.matches(key))):
-            status.fail = 1
-            print("    FAIL: {0} : {1} :".format(self.name(), key), file=testlog)
-            print("        gold matches: {0}".format(";".join(h5_gold.matches(key))),
-                  file=testlog)
-            print("        current matches: {0}".format(";".join(h5_current.matches(key))),
-                  file=testlog)
-            
-        elif (len(h5_gold.matches(key)) == 0):
-            status.fail = 1
-            print("    FAIL: Could not find gold variable match for: '{0}'".format(key), file=testlog)
-
-        else:
-            if self._checkpoint is not None:
-                for k1,k2 in zip(h5_gold.matches(key),h5_current.matches(key)):
-                    self._check_tolerance(h5_current[k2][:], h5_gold[k1][:],
-                                          k2, tolerance, status, testlog)
-            else:
-                for k1,k2 in zip(h5_gold.matches(key),h5_current.matches(key)):
-                    for i_current, i_gold in zip(h5_current.steps(), h5_gold.steps()):
-                        key_with_index = "{0} [{1}]".format(k1, i_gold)
-                        self._check_tolerance(h5_current[k2][i_current][:],
-                                              h5_gold[k1][i_gold][:],
-                                              key_with_index, tolerance,
-                                              status, testlog)
 
     def _norm(self, diff):
         """
@@ -627,45 +649,32 @@ class RegressionTest(object):
         (2) config-file wide defaults
         (3) hard coded class default
         """
-        # strip the domain prefix
-        if key.startswith("("):
-            domain,varname = key[1:].split(")")
-        elif "-" in key:
-            domain = key.split("-")[0]
-            varname = key            
-        else:
-            domain = ""
-            varname = key
-
         # parse the criteria
-        if key in test_data:
-            criteria = domain, varname, self._validate_tolerance(key, varname, test_data[key])
-        elif key in cfg_criteria:
-            criteria = domain, varname, self._validate_tolerance(key, varname, cfg_criteria[key])
-        elif varname == self._TIME:
-            criteria = domain, self._TIME, self._default_tolerance[self._TIME]
-        elif varname == self._TIMESTEPS:
-            criteria = domain, self._TIMESTEPS, self._default_tolerance[self._TIMESTEPS]
+        if key in test_data.keys():
+            criteria = key, self._validate_tolerance(key, test_data[key])
+        elif key in cfg_criteria.keys():
+            criteria = key, self._validate_tolerance(key, cfg_criteria[key])
+        elif key == self._TIME:
+            criteria = self._TIME, self._default_tolerance[self._TIME]
         else:
-            criteria = domain, varname, self._default_tolerance[self._DEFAULT]
+            criteria = key, self._default_tolerance[self._DEFAULT]
 
         if criteria is not None:
-            domain,varname,tol = criteria
+            key,tol = criteria
             if tol is not None:
-                domain_dict = self._criteria.setdefault(domain,dict())
-                domain_dict[varname] = tol
+                self._criteria[key] = tol
 
-    def _validate_tolerance(self, key, varname, test_data):
+    def _validate_tolerance(self, key, test_data):
         """
         Validate the tolerance string from a config file.
 
         Valid input configurations are:
         
-        * (domain)varname = 
-        * (domain)varname = default
-        * (domain)varname = no
-        * (domain)varname = tolerance type
-        * (domain)varname = tolerance type [, min_threshold value] [, max_threshold value]
+        * key = 
+        * key = default
+        * key = no
+        * key = tolerance type
+        * key = tolerance type [, min_threshold value] [, max_threshold value]
 
         where the first two use defaults, the third turns the test
         off, and the last two specify the tolerance explicitly, where
@@ -723,7 +732,6 @@ class RegressionTest(object):
         return criteria
 
 
-            
 class RegressionTestManager(object):
     """
     Class to open a configuration file, process it into a group of
@@ -737,7 +745,10 @@ class RegressionTestManager(object):
 
     """
 
-    def __init__(self, suffix=None):
+    def __init__(self, executable=None, mpiexec=None, suffix=None):
+        self._executable = executable
+        self._mpiexec = mpiexec
+        self._version = version(executable)
         self._debug = False
         self._file_status = TestStatus()
         self._config_filename = None
@@ -773,6 +784,7 @@ class RegressionTestManager(object):
 
     def generate_tests(self, config_file, user_suites, user_tests,
                        timeout, check_performance, testlog):
+
         """
         Read the config file, validate the input and generate the test objects.
         """
@@ -780,11 +792,9 @@ class RegressionTestManager(object):
         self._validate_suites()
         user_suites, user_tests = self._validate_user_lists(user_suites,
                                                             user_tests, testlog)
-        self._create_tests(user_suites, user_tests, timeout, check_performance,
-                           self._suffix, testlog)
+        self._create_tests(user_suites, user_tests, timeout, check_performance, testlog)
 
-    def run_tests(self, mpiexec, executable,
-                  dry_run, update, new_test, check_only, run_only, testlog):
+    def run_tests(self, dry_run, update, new_test, check_only, run_only, testlog):
         """
         Run the tests specified in the config file.
 
@@ -806,19 +816,19 @@ class RegressionTestManager(object):
         """
         if self.num_tests() > 0:
             if new_test:
-                self._run_new(mpiexec, executable, dry_run, testlog)
+                self._run_new(dry_run, testlog)
             elif update:
-                self._run_update(mpiexec, executable, dry_run, testlog)
+                self._run_update(dry_run, testlog)
             elif check_only:
                 self._check_only(dry_run, testlog)
             elif run_only:
-                self._run_only(mpiexec, executable, dry_run, testlog)
+                self._run_only(dry_run, testlog)
             else:
-                self._run_check(mpiexec, executable, dry_run, testlog)
+                self._run_check(dry_run, testlog)
         else:
             self._file_status.test_count = 0
 
-    def _run_only(self, mpiexec, executable, dry_run, testlog):
+    def _run_only(self, dry_run, testlog):
         """
         Run the test and check the results.
         """
@@ -831,7 +841,7 @@ class RegressionTestManager(object):
             status = TestStatus()
             self._test_header(test.name(), testlog)
 
-            test.run(mpiexec, executable, dry_run, status, testlog)
+            test.run(dry_run, status, testlog)
 
             self._add_to_file_status(status)
 
@@ -840,7 +850,7 @@ class RegressionTestManager(object):
 
         self._print_file_summary(dry_run, "passed", "failed", testlog)
 
-    def _run_check(self, mpiexec, executable, dry_run, testlog):
+    def _run_check(self, dry_run, testlog):
         """
         Run the test and check the results.
         """
@@ -853,7 +863,7 @@ class RegressionTestManager(object):
             status = TestStatus()
             self._test_header(test.name(), testlog)
 
-            test.run(mpiexec, executable, dry_run, status, testlog)
+            test.run(dry_run, status, testlog)
 
             if not dry_run and status.skipped == 0:
                 test.check(status, testlog)
@@ -889,7 +899,7 @@ class RegressionTestManager(object):
 
         self._print_file_summary(dry_run, "passed", "failed", testlog)
 
-    def _run_new(self, mpiexec, executable, dry_run, testlog):
+    def _run_new(self, dry_run, testlog):
         """
         Run the tests and create new gold files.
         """
@@ -903,7 +913,7 @@ class RegressionTestManager(object):
             status = TestStatus()
             self._test_header(test.name(), testlog)
 	    
-            test.run(mpiexec, executable, dry_run, status, testlog)
+            test.run(dry_run, status, testlog)
 
             if not dry_run and status.skipped == 0:
                 test.new_test(status, testlog)
@@ -913,7 +923,7 @@ class RegressionTestManager(object):
 
         self._print_file_summary(dry_run, "created", "could not be created", testlog)
 
-    def _run_update(self, mpiexec, executable, dry_run, testlog):
+    def _run_update(self, dry_run, testlog):
         """
         Run the tests and update the gold file with the current output
         """
@@ -925,7 +935,7 @@ class RegressionTestManager(object):
         for test in self._tests:
             status = TestStatus()
             self._test_header(test.name(), testlog)
-            test.run(mpiexec, executable, dry_run, status, testlog)
+            test.run(dry_run, status, testlog)
 
             if not dry_run and status.skipped == 0:
                 test.update(status, testlog)
@@ -1156,7 +1166,7 @@ class RegressionTestManager(object):
         return u_suites, u_tests
 
     def _create_tests(self, user_suites, user_tests, timeout, check_performance,
-                      suffix, testlog):
+                      testlog):
         """
         Create the test objects for all user specified suites and tests.
         """
@@ -1167,7 +1177,7 @@ class RegressionTestManager(object):
 
         for test in all_tests:
             #try:
-            new_test = RegressionTest(suffix)
+            new_test = RegressionTest(self._executable, self._mpiexec, self._version, self._suffix)
             criteria = self._default_test_criteria.copy()
             new_test.setup(criteria,
                            self._available_tests[test], timeout,
@@ -1274,7 +1284,13 @@ def check_for_executable(options, testlog):
         print(message, file=sys.stdout)
         print(message, file=testlog)
         executable = "/usr/bin/false"
-        
+    else:
+        # try to log some info about executable
+        print("ATS information :", file=testlog)
+        print("-----------------", file=testlog)
+        version_info = version(executable)
+        print(version_info, file=testlog)
+        print("\n\n", file=testlog)
     return executable
 
 

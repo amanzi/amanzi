@@ -104,7 +104,7 @@ def main(options):
             if options.debug:
                 print("Changed to working directory: {0}".format(test_dir))
 
-            tm = test_manager.RegressionTestManager('demo')
+            tm = test_manager.RegressionTestManager(executable, mpiexec, 'demo')
 
             if options.debug:
                 tm.debug(True)
@@ -129,9 +129,7 @@ def main(options):
             if options.list_tests:
                 tm.display_available_tests()
 
-            tm.run_tests(mpiexec,
-                         executable,
-                         options.dry_run,
+            tm.run_tests(options.dry_run,
                          False,
                          False,
                          False,
