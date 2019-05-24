@@ -112,6 +112,8 @@ struct ModelParams {
       density_freshsnow(100.),  // [kg/m^3]
       density_frost(200.),      // [kg/m^3]
       density_water(1000.),     // [kg/m^3]
+      thermalK_freshsnow(0.029),// thermal conductivity of fresh snow [W/m K]
+      thermalK_snow_exp(2),     // exponent in thermal conductivity of snow model [-]
       Hf(333500.0),             // Heat of fusion for melting snow -- [J/kg]
       Ls(2834000.0),            // Latent heat of sublimation ------- [J/kg]
       Le(2497848.),             // Latent heat of vaporization ------ [J/kg]
@@ -127,10 +129,19 @@ struct ModelParams {
       R_ideal_gas(461.52)       // ideal gas law R? [Pa m^3 kg^-1 K^-1]
   {}         // gravity [kg m / s^2]
 
+  ModelParams(Teuchos::ParameterList& plist) :
+      ModelParams() {
+    thermalK_freshsnow = plist_.get<double>("thermal conductivity of fresh snow [W m^-1 K^-1]", thermalK_freshsnow);
+    thermalK_snow_exp = plist_.get<double>("thermal conductivity of snow aging exponent [-]", thermalK_snow_exp);
+  }
+  
   double density_air;
   double density_freshsnow;
   double density_frost;
   double density_water;
+  double thermalK_freshsnow;
+  double thermalK_snow_exp;
+  
   double Hf, Ls, Le, Cp_air, Cv_water;
   double R_ideal_gas;
 
