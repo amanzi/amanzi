@@ -109,9 +109,10 @@ struct ModelParams {
 
   ModelParams() :
       density_air(1.275),       // [kg/m^3]
+      density_water(1000.),     // [kg/m^3]
       density_freshsnow(100.),  // [kg/m^3]
       density_frost(200.),      // [kg/m^3]
-      density_water(1000.),     // [kg/m^3]
+      density_snow_max(325.),   // [kg/m^3] // based on observations at Barrow, AK
       thermalK_freshsnow(0.029),// thermal conductivity of fresh snow [W/m K]
       thermalK_snow_exp(2),     // exponent in thermal conductivity of snow model [-]
       Hf(333500.0),             // Heat of fusion for melting snow -- [J/kg]
@@ -133,12 +134,14 @@ struct ModelParams {
       ModelParams() {
     thermalK_freshsnow = plist_.get<double>("thermal conductivity of fresh snow [W m^-1 K^-1]", thermalK_freshsnow);
     thermalK_snow_exp = plist_.get<double>("thermal conductivity of snow aging exponent [-]", thermalK_snow_exp);
+    density_snow_max = plist_.get<double>("max density of snow [kg m^-3]", density_snow_max);
   }
   
   double density_air;
+  double density_water;
   double density_freshsnow;
   double density_frost;
-  double density_water;
+  double density_snow_max;
   double thermalK_freshsnow;
   double thermalK_snow_exp;
   
