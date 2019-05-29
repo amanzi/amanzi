@@ -184,7 +184,7 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   preconditioner_->Init();
   preconditioner_diff_->SetScalarCoefficient(conductivity, dKdT);
   preconditioner_diff_->UpdateMatrices(Teuchos::null, temp.ptr());
-  // preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  preconditioner_diff_->ApplyBCs(true, true, true);
 
   if (jacobian_) {
     Teuchos::RCP<CompositeVector> flux = Teuchos::null;
@@ -266,10 +266,15 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 // Default enorm that uses an abs and rel tolerance to monitor convergence.
 // -----------------------------------------------------------------------------
 double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
-        Teuchos::RCP<const TreeVector> du) {
+        Teuchos::RCP<const TreeVector> res) {
   // Abs tol based on old conserved quantity -- we know these have been vetted
   // at some level whereas the new quantity is some iterate, and may be
   // anything from negative to overflow.
+  int cycle = S_next_->cycle();
+  if (cycle == 32) {
+    std::cout << "we is here" << std::endl;
+  }
+  
   S_inter_->GetFieldEvaluator(energy_key_)->HasFieldChanged(S_inter_.ptr(), name_);
   const Epetra_MultiVector& energy = *S_inter_->GetFieldData(energy_key_)
       ->ViewComponent("cell",true);
@@ -286,9 +291,14 @@ double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   if (vo_->os_OK(Teuchos::VERB_MEDIUM))
     *vo_->os() << "ENorm (Infnorm) of: " << conserved_key_ << ": " << std::endl;
 
-  Teuchos::RCP<const CompositeVector> dvec = du->Data();
+  Teuchos::RCP<const CompositeVector> dvec = res->Data();
   double h = S_next_->time() - S_inter_->time();
 
+  Teuchos::RCP<const Comm_type> comm_p = mesh_->get_comm();
+  Teuchos::RCP<const MpiComm_type> mpi_comm_p =
+    Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm_p);
+  const MPI_Comm& comm = mpi_comm_p->Comm();
+  
   double enorm_val = 0.0;
   for (CompositeVector::name_iterator comp=dvec->begin();
        comp!=dvec->end(); ++comp) {
@@ -303,7 +313,8 @@ double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       int ncells = dvec->size(*comp,false);
       for (unsigned int c=0; c!=ncells; ++c) {
         double mass = std::max(mass_atol_, wc[0][c] / cv[0][c]);
-        double enorm_c = std::abs(h * dvec_v[0][c]) / (atol_*mass*cv[0][c]);
+        double energy = mass * atol_ + soil_atol_;
+        double enorm_c = std::abs(h * dvec_v[0][c]) / (energy*cv[0][c]);
 
         if (enorm_c > enorm_comp) {
           enorm_comp = enorm_c;
@@ -323,9 +334,11 @@ double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
         double mass_min = cells.size() == 1 ? wc[0][cells[0]]/cv[0][cells[0]]
           : std::min(wc[0][cells[0]]/cv[0][cells[0]], wc[0][cells[1]]/cv[0][cells[1]]);
         mass_min = std::max(mass_min, mass_atol_);
-      
+
+        double energy = mass_min * atol_ + soil_atol_;
         double enorm_f = fluxtol_ * h * std::abs(dvec_v[0][f])
-          / (atol_*mass_min*cv_min);
+          / (energy * cv_min);
+
         if (enorm_f > enorm_comp) {
           enorm_comp = enorm_f;
           enorm_loc = f;
@@ -333,10 +346,12 @@ double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       }
 
     } else {
+      // boundary face components had better be effectively identically 0
       double norm;
       dvec_v.Norm2(&norm);
       AMANZI_ASSERT(norm < 1.e-15);
     }
+
 
     // Write out Inf norms too.
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
@@ -349,7 +364,7 @@ double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       l_err.gid = dvec_v.Map().GID(enorm_loc);
 
       int ierr;
-      ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
+      ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, comm);
       AMANZI_ASSERT(!ierr);
       *vo_->os() << "  ENorm (" << *comp << ") = " << err.value << "[" << err.gid << "] (" << infnorm << ")" << std::endl;
     }
@@ -360,7 +375,7 @@ double EnergyBase::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   double enorm_val_l = enorm_val;
 
   int ierr;
-  ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, mesh_->get_comm()->Comm());
+  ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, comm);
   AMANZI_ASSERT(!ierr);
   return enorm_val;
 };

@@ -19,7 +19,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
-#include "TabularStringFunction.hh"
+#include "FunctionTabularString.hh"
 #include "TransportDomainFunction.hh"
 
 #ifdef ALQUIMIA_ENABLED

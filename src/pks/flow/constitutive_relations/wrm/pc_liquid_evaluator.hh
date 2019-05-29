@@ -11,7 +11,7 @@
 #define AMANZI_RELATIONS_PC_LIQUID_EVALUATOR_HH_
 
 #include "secondary_variable_field_evaluator.hh"
-#include "factory.hh"
+#include "Factory.hh"
 
 namespace Amanzi {
 namespace Flow {

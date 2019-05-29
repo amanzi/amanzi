@@ -7,7 +7,6 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#include "factory.hh"
 #include "effective_pressure_evaluator.hh"
 
 namespace Amanzi {

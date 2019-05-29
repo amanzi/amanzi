@@ -16,7 +16,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "factory.hh"
+#include "Factory.hh"
 #include "eos_constant_molar_mass.hh"
 
 namespace Amanzi {

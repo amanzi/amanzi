@@ -20,13 +20,15 @@ including Vis and restart/checkpoint dumps.  It contains one and only one PK
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "AmanziComm.hh"
+#include "AmanziTypes.hh"
 
 
 #include "InputAnalysis.hh"
 #include "Units.hh"
 #include "TimeStepManager.hh"
 #include "Visualization.hh"
-#include "checkpoint.hh"
+#include "Checkpoint.hh"
 #include "UnstructuredObservations.hh"
 #include "State.hh"
 #include "PK.hh"
@@ -41,7 +43,7 @@ namespace ATS {
 
 Coordinator::Coordinator(Teuchos::ParameterList& parameter_list,
                          Teuchos::RCP<Amanzi::State>& S,
-                         Epetra_MpiComm* comm ) :
+                         Amanzi::Comm_ptr_type comm ) :
     parameter_list_(Teuchos::rcp(new Teuchos::ParameterList(parameter_list))),
     S_(S),
     comm_(comm),
@@ -89,19 +91,17 @@ void Coordinator::coordinator_init() {
   // create the checkpointing
 
   Teuchos::ParameterList& chkp_plist = parameter_list_->sublist(check.str());
-  if (parameter_list_->sublist("mesh").isSublist("column") && size >1){
-    MPI_Comm mpi_comm_self(MPI_COMM_SELF);
-    Epetra_MpiComm *comm_self = new Epetra_MpiComm(mpi_comm_self);
-    checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_self));
-  }
-  else
-    checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
+  //if (parameter_list_->sublist("mesh").isSublist("column") && size >1){
+  //   checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
+  // }
+  // else
+  checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
   
 
   // create the observations
   Teuchos::ParameterList& observation_plist = parameter_list_->sublist("observations");
   observations_ = Teuchos::rcp(new Amanzi::UnstructuredObservations(observation_plist,
-          Teuchos::null, comm_));
+          Teuchos::null));
 
   // check whether meshes are deformable, and if so require a nodal position
   for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
@@ -172,32 +172,32 @@ void Coordinator::initialize() {
 
   //---
   if (restart_) {
-    if (parameter_list_->sublist("mesh").isSublist("column") && size >1){
-      MPI_Comm mpi_comm_self(MPI_COMM_SELF);
-      Epetra_MpiComm *comm_self = new Epetra_MpiComm(mpi_comm_self);
-      t0_ = Amanzi::ReadCheckpointInitialTime(comm_self, restart_filename_);
-      S_->set_time(t0_);
-    }
-    else{
-      t0_ = Amanzi::ReadCheckpointInitialTime(comm_, restart_filename_);
-      S_->set_time(t0_);
-    }
+    // if (parameter_list_->sublist("mesh").isSublist("column") && size >1){
+    //   MPI_Comm mpi_comm_self(MPI_COMM_SELF);
+    //   Epetra_MpiComm *comm_self = new Epetra_MpiComm(mpi_comm_self);
+    //   t0_ = Amanzi::ReadCheckpointInitialTime(comm_self, restart_filename_);
+    //   S_->set_time(t0_);
+    // }
+    // else{
+    t0_ = Amanzi::ReadCheckpointInitialTime(comm_, restart_filename_);
+    S_->set_time(t0_);
+    // }
   }
 
   // Restart from checkpoint, part 2.
   if (restart_) {
-    if (parameter_list_->sublist("mesh").isSublist("column") && size >1){
-      MPI_Comm mpi_comm_self(MPI_COMM_SELF);
-      Epetra_MpiComm *comm_self = new Epetra_MpiComm(mpi_comm_self);
-      ReadCheckpoint(comm_self, S_.ptr(), restart_filename_);
-      t0_ = S_->time();
-      cycle0_ = S_->cycle();
-    }
-    else{
-      ReadCheckpoint(comm_, S_.ptr(), restart_filename_);
-      t0_ = S_->time();
-      cycle0_ = S_->cycle();
-    }
+    // if (parameter_list_->sublist("mesh").isSublist("column") && size >1){
+    //   MPI_Comm mpi_comm_self(MPI_COMM_SELF);
+    //   Epetra_MpiComm *comm_self = new Epetra_MpiComm(mpi_comm_self);
+    //   ReadCheckpoint(comm_self, S_.ptr(), restart_filename_);
+    //   t0_ = S_->time();
+    //   cycle0_ = S_->cycle();
+    // }
+    // else{
+    ReadCheckpoint(comm_, S_.ptr(), restart_filename_);
+    t0_ = S_->time();
+    cycle0_ = S_->cycle();
+    //}
     
     for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
          mesh!=S_->mesh_end(); ++mesh) {
@@ -225,22 +225,20 @@ void Coordinator::initialize() {
   S_->GetField("dt","coordinator")->set_initialized();
 
   S_->InitializeFields();
+  //S_->WriteStatistics(vo_);
 
   S_->WriteStatistics(vo_);
 
   // Initialize the process kernels (initializes all independent variables)
   pk_->Initialize(S_.ptr());
+  //S_->WriteStatistics(vo_);
 
-  S_->WriteStatistics(vo_);
-
- // Final checks.
   S_->CheckNotEvaluatedFieldsInitialized();
-
   S_->InitializeEvaluators();
+  //  S_->WriteStatistics(vo_);
 
 
   S_->CheckAllFieldsInitialized();
-
   S_->WriteStatistics(vo_);
 
 
@@ -330,18 +328,15 @@ void Coordinator::initialize() {
   // set the states in the PKs Passing null for S_ allows for safer subcycling
   // -- PKs can't use it, so it is guaranteed to be pristinely the old
   // timestep.  This comes at the expense of an increase in memory footprint.
-  pk_->set_states(Teuchos::null, S_inter_, S_next_);
+  pk_->set_states(Teuchos::null, S_inter_, S_next_);  
+  //pk_->set_states(S_, S_inter_, S_next_);
+
 }
 
 void Coordinator::finalize() {
-  // Force checkpoint at the end of simulation.
-  // Only do if the checkpoint was not already written, or we would be writing
-  // the same file twice.
-  // This really should be removed, but for now is left to help stupid developers.
-  if (!checkpoint_->DumpRequested(S_next_->cycle(), S_next_->time())) {
-    pk_->CalculateDiagnostics(S_next_);
-    WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr(), 0.0);
-  }
+  // Force checkpoint at the end of simulation, and copy to checkpoint_final
+  pk_->CalculateDiagnostics(S_next_);
+  WriteCheckpoint(checkpoint_.ptr(), S_next_.ptr(), 0.0, true);
 
   // flush observations to make sure they are saved
   observations_->Flush();

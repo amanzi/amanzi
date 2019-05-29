@@ -237,7 +237,7 @@ int SurfaceBalanceBase::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
     db_->WriteVector("PC*p_res", Pu->Data().ptr(), true);
   } else {
     *Pu = *u;
-    Pu->Scale(S_next_->time() - S_->time());
+    Pu->Scale(S_next_->time() - S_inter_->time());
   }
   
   return 0;

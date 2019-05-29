@@ -57,7 +57,9 @@ class TransportDomainFunction {
   Iterator begin() { return value_.begin(); }
   Iterator end() { return value_.end(); }
   std::map<int, std::vector<double> >::size_type size() { return value_.size(); }
-  
+
+    // derivatives
+  const std::map<int, double>& linear_term() const { return linear_term_; }
 
 protected:
 
@@ -65,6 +67,8 @@ protected:
   std::map<int, std::vector<double> > value_;  // tcc values on boundary faces
   std::string keyword_;
   Teuchos::RCP<const State> S_; 
+
+  std::map<int, double> linear_term_;  // linearized term, e.g. [mol / s] for sources
 
   std::vector<std::string> tcc_names_;  // list of component names
   std::vector<int> tcc_index_;  // index of component in the global list
