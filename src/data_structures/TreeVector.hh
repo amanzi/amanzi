@@ -34,7 +34,7 @@ assumed in several places.
 #include "Epetra_Vector.h"
 
 #include "Iterators.hh"
-#include "data_structures_types.hh"
+#include "DataStructuresHelpers.hh"
 
 #include "CompositeVector.hh"
 #include "CompositeVectorSpace.hh"

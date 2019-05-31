@@ -59,8 +59,8 @@ SuperMap::SuperMap(const std::vector<CompositeVectorSpace>& cvss)
 {
   std::vector<std::string> names;
   std::vector<int> dofnums;
-  std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps;
-  std::vector<Teuchos::RCP<const Epetra_BlockMap> > ghost_maps;
+  std::vector<const BlockMap_ptr_type> maps;
+  std::vector<const BlockMap_ptr_type> ghost_maps;
 
   // this groups maps by map equivalence, not component names.
   
@@ -71,8 +71,8 @@ SuperMap::SuperMap(const std::vector<CompositeVectorSpace>& cvss)
       // check if this component's map matches any previously accepted map
       auto this_map = cvs.Map(compname, false);
       int index = std::find_if(maps.begin(), maps.end(),
-              [=](const Teuchos::RCP<const Epetra_BlockMap>& m)
-              { return this_map->SameBlockMapDataAs(*m); } ) - maps.begin();
+              [=](const BlockMap_ptr_type& m)
+              { return this_map->locallySameAs(*m); } ) - maps.begin();
       if (index == names.size()) {
         // new map with no previous matches, keep the map
         maps.push_back(this_map);
@@ -100,7 +100,7 @@ SuperMap::SuperMap(const std::vector<CompositeVectorSpace>& cvss)
         // too?  If this assert ever throws, it can be added to the above
         // lambda, to ensure that both the owned map and the ghosted map are
         // the same.
-        AMANZI_ASSERT(cvs.Map(compname, true)->SameBlockMapDataAs(*ghost_maps[index]));
+        AMANZI_ASSERT(cvs.Map(compname, true)->locallySameAs(*ghost_maps[index]));
 
         // map the block_num, compname, dof_num tuple to their corresponding
         // values in the SuperMapLumped
@@ -118,7 +118,18 @@ SuperMap::SuperMap(const std::vector<CompositeVectorSpace>& cvss)
   }
 
   if (cvss.size() > 0) {
-    smap_ = std::make_unique<SuperMapLumped>(cvss[0].Comm(), names, dofnums, maps, ghost_maps);
+    CompositeVectorSpace full_cvs;
+    full_cvs.SetMesh(cvss[0].Mesh());
+    std::vector<AmanziMesh::Entity_kind> locations(dofnums.size(), AmanziMesh::Entity_kind::UNKNOWN);
+
+    std::map<std::string, BlockMap_ptr_type> maps_map;
+    std::map<std::string, BlockMap_ptr_type> ghost_maps_map;
+    for (int index=0; index!=maps.size(); ++index) {
+      maps_map[names[index]] = maps[index];
+      ghost_maps_map[names[index]] = ghost_maps[index];
+    }
+    full_cvs.SetComponents(names, locations, maps_map, ghost_maps_map, dofnums);    
+    smap_ = std::make_unique<SuperMapLumped>(full_cvs);
   }
 }
 

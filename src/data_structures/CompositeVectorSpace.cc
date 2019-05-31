@@ -23,6 +23,7 @@
 #include "dbc.hh"
 #include "errors.hh"
 
+#include "Mesh.hh"
 #include "CompositeVectorSpace.hh"
 #include "CompositeVector.hh"
 
@@ -38,50 +39,30 @@ getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
 CompositeVectorSpace::CompositeVectorSpace() :
   owned_(false), mesh_(Teuchos::null), ghosted_(false) {};
 
-
-// copy constructor
-CompositeVectorSpace::CompositeVectorSpace(const CompositeVectorSpace& other,
-        bool ghosted) :
-    ghosted_(ghosted),
-    owned_(other.owned_),
-    mesh_(other.mesh_),
-    names_(other.names_),
-    indexmap_(other.indexmap_),
-    locations_(other.locations_),
-    num_dofs_(other.num_dofs_),
-    mastermaps_(other.mastermaps_),
-    ghostmaps_(other.ghostmaps_) {};
-
-// CompositeVectorSpace is a factory of CompositeVectors
-Teuchos::RCP<CompositeVector>
-CompositeVectorSpace::Create() const {
-  return Teuchos::rcp(new CompositeVector(*this));
-}
-
 // Check equivalence of spaces.
 bool
 CompositeVectorSpace::SameAs(const CompositeVectorSpace& other) const {
-  if (NumComponents() != other.NumComponents()) return false;
-  if (mesh_ != other.mesh_) return false;
-  for (name_iterator name=begin(); name!=end(); ++name) {
-    if (!other.HasComponent(*name)) return false;
-    if (NumVectors(*name) != other.NumVectors(*name)) return false;
-    if (Location(*name) !=other.Location(*name)) return false;
-  }
-  return true;
+  auto cvs = this->Map();
+  auto other_cvs = other.Map();
+  if (cvs != Teuchos::null && other_cvs != Teuchos::null) return cvs->SameAs(*other_cvs);
+  return SubsetOf(other) && other.SubsetOf(*this);
 }
 
 // Check subset of spaces.
 bool
 CompositeVectorSpace::SubsetOf(const CompositeVectorSpace& other) const {
   if (mesh_ != other.mesh_) return false;
-  for (name_iterator name=begin(); name!=end(); ++name) {
-    if (!other.HasComponent(*name)) return false;
-    if (NumVectors(*name) != other.NumVectors(*name)) return false;
-    if (Location(*name) !=other.Location(*name)) return false;
+  for (const auto& name : *this) {
+    if (!other.HasComponent(name)) return false;
+    if (NumVectors(name) != other.NumVectors(name)) return false;
+    if (Location(name) !=other.Location(name)) return false;
   }
   return true;
 }
+
+
+Comm_ptr_type
+CompositeVectorSpace::Comm() const { return mesh_->get_comm(); }
 
 // -------------------------------------
 // Specs for the construction of CVs
@@ -526,5 +507,24 @@ bool CompositeVectorSpace::UnionAndConsistent_(
   }
   return true;
 };
+
+
+Teuchos::RCP<const CompositeMap>
+CompositeVectorSpace::Map() const
+{
+  std::map<std::string,std::size_t> num_dofs;
+  for (std::size_t i=0; i!=names_.size(); ++i) {
+    AMANZI_ASSERT(num_dofs_[i] > 0);
+    num_dofs[names_[i]] = (std::size_t) num_dofs_[i];
+  }
+  return createCompositeMap(Comm(), names_, mastermaps_, ghostmaps_, num_dofs);
+}
+
+
+Teuchos::RCP<CompositeVector>
+CompositeVectorSpace::Create() const {
+  return Teuchos::rcp(new CompositeVector(Map()));
+}
+
 
 } // namespace Amanzi

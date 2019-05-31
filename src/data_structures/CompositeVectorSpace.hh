@@ -18,18 +18,26 @@
   This class is very light weight as it maintains only meta-data.
 */
 
-#ifndef AMANZI_COMPOSITEVECTOR_SPACE_HH_
-#define AMANZI_COMPOSITEVECTOR_SPACE_HH_
+#ifndef AMANZI_COMPOSITE_VECTOR_SPACE_HH_
+#define AMANZI_COMPOSITE_VECTOR_SPACE_HH_
 
 #include <vector>
 #include "Teuchos_RCP.hpp"
 
 #include "dbc.hh"
-#include "Mesh.hh"
+#include "AmanziTypes.hh"
+#include "MeshDefs.hh"
 
 namespace Amanzi {
 
-class CompositeVector;
+namespace AmanziMesh {
+class Mesh;
+}
+class CompositeMap;
+
+template<typename Scalar> class CompositeVector_;
+using CompositeVector = CompositeVector_<double>;
+
 
 // Nonmember helper function
 std::pair<Map_ptr_type, Map_ptr_type>
@@ -41,13 +49,12 @@ class CompositeVectorSpace {
 public:
   // Constructor
   CompositeVectorSpace();
-  CompositeVectorSpace(const CompositeVectorSpace& other) = default;
-  CompositeVectorSpace(const CompositeVectorSpace& other, bool ghosted);
 
-  // assignment
+  CompositeVectorSpace(const CompositeVectorSpace& other) = default;
   CompositeVectorSpace& operator=(const CompositeVectorSpace&) = default;
+  ~CompositeVectorSpace() = default;
   
-  // CompositeVectorSpace is a factory of CompositeVectors
+  // CompositeVectorSpace is a factory for CompositeVectors
   Teuchos::RCP<CompositeVector> Create() const;
   
   // Checks equality
@@ -58,8 +65,8 @@ public:
   // Specs for the construction of CVs
   // -------------------------------------
 
-  // CompositeVectors exist on a single communicator.
-  Comm_ptr_type Comm() const { return mesh_->get_comm(); }
+  // Mesheds exist on a single communicator.
+  Comm_ptr_type Comm() const;
 
   // mesh specification
   Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return mesh_; }
@@ -82,7 +89,7 @@ public:
 
   bool HasComponent(const std::string& name) const {
     return indexmap_.find(name) != indexmap_.end(); }
-  int NumComponents() const { return size(); }
+  std::size_t NumComponents() const { return size(); }
 
   // Each component has a number of Degrees of Freedom.
   int NumVectors(const std::string& name) const {
@@ -152,10 +159,15 @@ public:
                 const std::map<std::string, BlockMap_ptr_type>& ghostmaps,
                 const std::vector<int>& num_dofs);
 
+  //
+  // Spec to create the CompositeMap
+  Teuchos::RCP<const CompositeMap> Map() const;
+
+  
 private:
-  // Indexing of name->int
-  int Index_(const std::string& name) const {
-    std::map<std::string, int>::const_iterator item = indexmap_.find(name);
+  // Indexing of name->std::size_t
+  std::size_t Index_(const std::string& name) const {
+    std::map<std::string, std::size_t>::const_iterator item = indexmap_.find(name);
     AMANZI_ASSERT(item != indexmap_.end());
     return item->second;
   }
@@ -198,7 +210,7 @@ private:
   bool owned_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   std::vector<std::string> names_;
-  std::map<std::string, int> indexmap_;
+  std::map<std::string, std::size_t> indexmap_;
 
   std::vector<AmanziMesh::Entity_kind> locations_;
   
@@ -206,7 +218,7 @@ private:
   std::map<std::string, BlockMap_ptr_type> mastermaps_;
   std::map<std::string, BlockMap_ptr_type> ghostmaps_;
   
-  friend class CompositeVector;
+  template<typename Scalar> friend class MeshedVector_;
 };
 
 } // namespace Amanzi

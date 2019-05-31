@@ -51,7 +51,7 @@ struct test_tv {
     x_vec_space = Teuchos::rcp(new CompositeVectorSpace());
     x_vec_space->SetMesh(mesh)->SetGhosted()
         ->SetComponents(names, locations, num_dofs);
-    x_vec = Teuchos::rcp(new CompositeVector(*x_vec_space));
+    x_vec = x_vec_space->Create();
     x = Teuchos::rcp(new TreeVector());
     x->SetData(x_vec);
 

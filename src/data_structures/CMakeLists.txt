@@ -44,12 +44,13 @@ add_definitions("-DMSTK_HAVE_MPI")
 # Library: data_structures
 #
 #file(GLOB data_structures_src_files "*.cc")
-set(data_structures_src_files BlockVector.cc
+set(data_structures_src_files CompMap.cc
+                              CompositeMap.cc
                               CompositeVectorSpace.cc
-                              CompositeVector.cc
-                              NoxVector.cc
-                              TreeVectorSpace.cc
-                              TreeVector.cc
+                              #CompositeVector.cc
+                              #NoxVector.cc
+                              #TreeVectorSpace.cc
+                              #TreeVector.cc
                               #ParallelCommunication.cc
                               #GraphFE.cc
                               #MatrixFE.cc
@@ -97,6 +98,7 @@ if (BUILD_TESTS)
         	    SOURCE test/Main.cc
                            test/test_communication.cc
         		   test/test_composite_vector.cc
+        		   test/test_int_composite_vector.cc
         		   test/test_tree_vector.cc
                            test/test_vandelay.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
@@ -115,9 +117,9 @@ if (BUILD_TESTS)
     # add_amanzi_test(matrix_fe_test_np2 matrix_fe_test NPROCS 2 KIND unit)
     # add_amanzi_test(matrix_fe_test_np4 matrix_fe_test NPROCS 4 KIND unit)
 
-    # add_amanzi_test(supermap_test supermap_test 
+    # add_amanzi_test(supermap test_supermap
     #                 KIND unit
-    #                 SOURCE test/Main.cc test/supermap_test.cc test/supermap_block_test.cc
+    #                 SOURCE test/Main.cc test/test_supermap.cc test/test_block_supermap.cc
     #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
     # add_amanzi_test(supermap_test_np3 supermap_test NPROCS 3 KIND unit)
     # add_amanzi_test(supermap_test_np5 supermap_test NPROCS 5 KIND unit)

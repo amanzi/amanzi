@@ -24,10 +24,7 @@
 #define AMANZI_OPERATORS_SUPER_MAP_WRAPPER_HH_
 
 #include <map>
-#include "Teuchos_RCP.hpp"
-#include "Epetra_Map.h"
-#include "Epetra_BlockMap.h"
-
+#include "AmanziTypes.hh"
 #include "SuperMapLumped.hh"
 
 namespace Amanzi {
@@ -49,16 +46,16 @@ class SuperMap {
 
   // map accessors
   // -- global map accessors
-  Teuchos::RCP<const Epetra_Map> Map() const { return smap_->Map(); }
-  Teuchos::RCP<const Epetra_Map> GhostedMap() const { return smap_->GhostedMap(); }
+  Map_ptr_type Map() const { return smap_->Map(); }
+  Map_ptr_type GhostedMap() const { return smap_->GhostedMap(); }
 
   // -- component map accessors
-  Teuchos::RCP<const Epetra_BlockMap>
+  BlockMap_ptr_type
   ComponentMap(int block_num, const std::string& compname) const {
     return smap_->ComponentMap(block_info_.at(std::make_tuple(block_num, compname, 0)).first);
   }
 
-  Teuchos::RCP<const Epetra_BlockMap>
+  BlockMap_ptr_type
   ComponentGhostedMap(int block_num, const std::string& compname) const {
     return smap_->ComponentGhostedMap(block_info_.at(std::make_tuple(block_num, compname, 0)).first);
   }
@@ -70,7 +67,8 @@ class SuperMap {
   }
 
   // index accessors
-  const std::vector<int>&
+  template<class DeviceType>
+  cVectorView_type_<DeviceType,LO> 
   Indices(int block_num, const std::string& compname, int dof_num) const {
     auto bi = block_info_.find(std::make_tuple(block_num, compname, dof_num));
     if (bi == block_info_.end()) {
@@ -79,10 +77,11 @@ class SuperMap {
           << compname << "," << dof_num;
       Exceptions::amanzi_throw(msg);
     }
-    return smap_->Indices(bi->second.first, bi->second.second);
+    return smap_->Indices<DeviceType>(bi->second.first, bi->second.second);
   }
 
-  const std::vector<int>&
+  template<class DeviceType>
+  cVectorView_type_<DeviceType,LO> 
   GhostIndices(int block_num, const std::string& compname, int dof_num) const {
     auto bi = block_info_.find(std::make_tuple(block_num, compname, dof_num));
     if (bi == block_info_.end()) {
@@ -91,16 +90,16 @@ class SuperMap {
           << compname << "," << dof_num;
       Exceptions::amanzi_throw(msg);
     }
-    return smap_->GhostIndices(bi->second.first, bi->second.second);
+    return smap_->GhostIndices<DeviceType>(bi->second.first, bi->second.second);
   }
 
   // block indices.  This is an array of integers, length Map().MyLength(),
   // where each dof and component have a unique integer value.  The returned
   // int is the number of unique values, equal to
   // sum(NumDofs(comp) for comp in components), in this array.
-  std::pair<int, Teuchos::RCP<std::vector<int> > > BlockIndices() const {
-    return smap_->BlockIndices();
-  }
+  // std::pair<int, Teuchos::RCP<std::vector<int> > > BlockIndices() const {
+  //   return smap_->BlockIndices();
+  // }
 
  protected:
   std::unique_ptr<SuperMapLumped> smap_;

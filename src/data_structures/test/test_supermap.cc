@@ -103,31 +103,31 @@ TEST(SUPERMAP_MANUAL) {
   for (int i=0; i!=3; ++i) {
     gids[i] = 3*getRank + i;
   }
-  Teuchos::RCP<Epetra_Map> owned_map1 = Teuchos::rcp(new Epetra_Map(3*getSize, 3, &gids[0], 0, *comm));
+  auto owned_map1 = Teuchos::rcp(new Map_type(3*getSize, gids.data(), 3, 0, *comm));
 
   if (getRank > 0) gids.push_back(3*getRank-1);
   if (getRank < getSize-1) gids.push_back(3*(getRank+1));
-  Teuchos::RCP<Epetra_Map> ghosted_map1 = Teuchos::rcp(new Epetra_Map(-1, gids.size(), &gids[0], 0, *comm));
+  auto ghosted_map1 = Teuchos::rcp(new Map_type(-1, gids.data(), gids.size(), 0, *comm));
 
   // make a ghosted and local map 2
   std::vector<int> gids2(5);
   for (int i=0; i!=5; ++i) {
     gids2[i] = 5*getRank + i;
   }
-  Teuchos::RCP<Epetra_Map> owned_map2 = Teuchos::rcp(new Epetra_Map(5*getSize, 5, &gids2[0], 0, *comm));
+  auto owned_map2 = Teuchos::rcp(new Map_type(5*getSize, gids2.data(), 5, 0, *comm));
 
   if (getRank > 0) gids2.push_back(5*getRank-1);
   if (getRank < getSize-1) gids2.push_back(5*(getRank+1));
-  Teuchos::RCP<Epetra_Map> ghosted_map2 = Teuchos::rcp(new Epetra_Map(-1, gids2.size(), &gids2[0], 0, *comm));
+  auto ghosted_map2 = Teuchos::rcp(new Map_type(-1, gids2.data(), gids2.size(), 0, *comm));
 
   // make the supermap
   std::vector<std::string> names; names.push_back("map1"); names.push_back("map2");
   std::vector<int> dofnums(2,2);
 
-  std::vector<Teuchos::RCP<const Epetra_BlockMap> > maps;
+  std::vector<Teuchos::RCP<const BlockMap_type> > maps;
   maps.push_back(owned_map1);
   maps.push_back(owned_map2);
-  std::vector<Teuchos::RCP<const Epetra_BlockMap> > gmaps;
+  std::vector<Teuchos::RCP<const BlockMap_type> > gmaps;
   gmaps.push_back(ghosted_map1);
   gmaps.push_back(ghosted_map2);
 
