@@ -141,7 +141,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 
   upwinding_ = upwfactory.Create(cond_plist, name_,
        Keys::getKey(domain_,"overland_conductivity"), Keys::getKey(domain_,"upwind_overland_conductivity"),
-                                 Keys::getKey(domain_,"mass_flux"));
+                                 Keys::getKey(domain_,"mass_flux_direction"));
 
   // -- require the data on appropriate locations
   std::string coef_location = upwinding_->CoefficientLocation();
@@ -242,7 +242,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
       upwinding_dkdp_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
                                     Keys::getDerivKey(Keys::getKey(domain_,"overland_conductivity"),Keys::getKey(domain_,"ponded_depth")),
                                     Keys::getDerivKey(Keys::getKey(domain_,"upwind_overland_conductivity"),Keys::getKey(domain_,"ponded_depth")),
-                                    Keys::getKey(domain_,"mass_flux"),1.e-12));
+                                    Keys::getKey(domain_,"mass_flux_direction"),1.e-12));
     }
   }
   

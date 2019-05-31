@@ -94,7 +94,7 @@ set(ATS_LIBS
 #                      pk_prescribed_volumetric_deformation
                       pk_volumetric_deformation
                       pk_surface_balance_SEB
-#                      pk_BGC
+                      pk_BGC
                       pk_bases
                       #deform_relations_porosity
                       energy_relations

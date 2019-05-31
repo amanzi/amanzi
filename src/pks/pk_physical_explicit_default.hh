@@ -17,13 +17,12 @@ domains/meshes of PKPhysicalBase and Explicit methods of PKExplicitBase.
 #include "PK.hh"
 #include "pk_explicit_default.hh"
 #include "pk_physical_default.hh"
-#include "Epetra_Vector.h"
 
 
 namespace Amanzi {
 
 
-class  PK_Physical_Explicit_Default : public PK_Explicit_Default, public PK_Physical_Default {
+class  PK_Physical_Explicit_Default : virtual public PK_Explicit_Default, public PK_Physical_Default {
 
 public:
   PK_Physical_Explicit_Default(Teuchos::ParameterList& pk_tree,

@@ -21,8 +21,7 @@ Explicit.
 
 namespace Amanzi {
 
-  class TreeVector;
-  //class Epetra_Vector;
+class TreeVector;
 class PK_Explicit_Default: public PK_Explicit<TreeVector>{
 
 public:

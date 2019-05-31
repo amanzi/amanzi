@@ -35,8 +35,8 @@
 //#include "multiscale_transport_registration.hh"
 #include "mdm_transport_registration.hh"
 
-//#include "surface_balance_SEB_registration.hh"
-//#include "BGC_registration.hh"
+#include "surface_balance_SEB_registration.hh"
+#include "BGC_registration.hh"
 
 //#include "chemistry_amanzi_registration.hh"
 //#include "pks_chemistry_registration.hh"

@@ -27,7 +27,7 @@ Teuchos::RCP<Upwinding> UpwindFluxFactory::Create(Teuchos::ParameterList& oplist
   AMANZI_ASSERT(oplist.isSublist("overland conductivity model"));
   Teuchos::ParameterList sublist = oplist.sublist("overland conductivity model");
   std::string model_type = sublist.get<std::string>("overland conductivity type", "manning");
-  double flux_eps = sublist.get<double>("upwind flux epsilon", 1.e-12);
+  double flux_eps = sublist.get<double>("upwind flux epsilon", 1.e-8);
 
   if (model_type == "manning") {
     return Teuchos::rcp(new UpwindTotalFlux(pkname, cell_coef, face_coef, flux, flux_eps));

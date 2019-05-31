@@ -51,12 +51,12 @@ Transport_PK_ATS::Transport_PK_ATS(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<TreeVector>& soln) :
   PK(pk_tree, glist,  S, soln),
-  PK_Physical_Explicit_Default(pk_tree, glist, S, soln),
-  S_(S)
-  
+  PK_Explicit_Default(pk_tree, glist, S, soln),
+  PK_Physical_Explicit_Default(pk_tree, glist, S, soln)
+    
 {
   name_ = Keys::cleanPListName(pk_tree.name());
-
+  S_ = S;
  
   // Create miscaleneous lists.
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
