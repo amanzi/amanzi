@@ -1,6 +1,4 @@
 /*
-  Data Structures
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -8,14 +6,10 @@
 
   Authors: Ethan Coon
            Daniil Svyatsky (dasvyat@lanl.gov)
+*/
 
-  Factory for a CompositeVector on an Amanzi mesh.
-
-  This should be thought of as a vector-space: it lays out data components as a
-  mesh along with entities on the mesh.  This meta-data can be used with the
-  mesh's *_map() methods to create the data.
-
-  This class is very light weight as it maintains only meta-data.
+/*
+  Factory for a CompositeSpace, which is then used to create CompositeVectors.
 */
 
 #include <algorithm>
@@ -29,28 +23,54 @@
 
 namespace Amanzi {
 
-std::pair<Map_ptr_type, Map_ptr_type>
-getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
-  return std::make_pair(mesh.map(location, false), mesh.map(location, true));
-}
-
 
 // constructor
 CompositeVectorSpace::CompositeVectorSpace() :
   owned_(false), mesh_(Teuchos::null), ghosted_(false) {};
 
+// constructor from Space
+CompositeVectorSpace::CompositeVectorSpace(const CompositeSpace& map)
+    : owned_(false),
+      mesh_(map.Mesh()),
+      ghosted_(map.ghosted_)
+{
+  for (const auto& name : map) {
+    names_.emplace_back(name);
+    locations_.emplace_back(map.Location(name));
+    num_vectors_.emplace_back(map.NumVectors(name));
+    mastermaps_[name] = map.ComponentMap(name, false);
+    ghostmaps_[name] = map.ComponentMap(name, true);
+  }
+
+  // idiot check!
+  AMANZI_ASSERT(CreateSpace()->SameAs(map));
+}
+
+
 // Check equivalence of spaces.
 bool
-CompositeVectorSpace::SameAs(const CompositeVectorSpace& other) const {
-  auto cvs = this->Map();
-  auto other_cvs = other.Map();
+CompositeVectorSpace::SameAs(const CompositeVectorSpace& other) const
+{
+  auto cvs = this->CreateSpace();
+  auto other_cvs = other.CreateSpace();
   if (cvs != Teuchos::null && other_cvs != Teuchos::null) return cvs->SameAs(*other_cvs);
+  return SubsetOf(other) && other.SubsetOf(*this);
+}
+
+// Check equivalence of spaces.
+bool
+CompositeVectorSpace::LocallySameAs(const CompositeVectorSpace& other) const
+{
+  auto cvs = this->CreateSpace();
+  auto other_cvs = other.CreateSpace();
+  if (cvs != Teuchos::null && other_cvs != Teuchos::null) return cvs->LocallySameAs(*other_cvs);
   return SubsetOf(other) && other.SubsetOf(*this);
 }
 
 // Check subset of spaces.
 bool
-CompositeVectorSpace::SubsetOf(const CompositeVectorSpace& other) const {
+CompositeVectorSpace::SubsetOf(const CompositeVectorSpace& other) const
+{
   if (mesh_ != other.mesh_) return false;
   for (const auto& name : *this) {
     if (!other.HasComponent(name)) return false;
@@ -61,8 +81,38 @@ CompositeVectorSpace::SubsetOf(const CompositeVectorSpace& other) const {
 }
 
 
+// Create just the CompositeSpace
+Teuchos::RCP<const CompositeSpace>
+CompositeVectorSpace::CreateSpace() const
+{
+  if (mesh_ == Teuchos::null) {
+    Errors::Message message("CompositeVectorSpace: Cannot create a Space prior to setting a Mesh.");
+    throw(message);
+  }
+  if (size() == 0) {
+    std::cout << "CompositeVectorSpace: WARNING: Creating an empty map?" << std::endl;
+  }
+
+  // TODO: really need to refactor and update the internal data, but for now just reorganize. --etc
+  std::map<std::string, AmanziMesh::Entity_kind> map_locs;
+  std::map<std::string, std::size_t> map_num_vecs;
+  for (std::size_t i=0; i!=size(); ++i) {
+    map_locs[names_[i]] = locations_[i];
+    map_num_vecs[names_[i]] = num_vectors_[i];
+  }
+
+  // Create the map
+  return Teuchos::rcp(new CompositeSpace(mesh_, names_, map_locs, mastermaps_, ghostmaps_, map_num_vecs, ghosted_));
+}
+
+
+
 Comm_ptr_type
-CompositeVectorSpace::Comm() const { return mesh_->get_comm(); }
+CompositeVectorSpace::Comm() const
+{
+  if (mesh_ == Teuchos::null) return Teuchos::null;
+  else return mesh_->get_comm();
+}
 
 // -------------------------------------
 // Specs for the construction of CVs
@@ -74,7 +124,7 @@ CompositeVectorSpace*
 CompositeVectorSpace::Update(const CompositeVectorSpace& other) {
 
   if (this != &other) {
-    AddComponents(other.names_, other.locations_, other.mastermaps_, other.ghostmaps_, other.num_dofs_);    
+    AddComponents(other.names_, other.locations_, other.mastermaps_, other.ghostmaps_, other.num_vectors_);    
     SetMesh(other.mesh_);
   }
   return this;
@@ -172,7 +222,7 @@ CompositeVectorSpace::AddComponents(const std::vector<std::string>& names,
     // Factory's specs are not yet fixed.  Form the union (checking
     // consistency) and save this as the factory's new specs.
     if (!UnionAndConsistent_(names, locations, num_dofs, mastermaps, ghostmaps,
-                             names_, locations_, num_dofs_, mastermaps_, ghostmaps_)) {
+                             names_, locations_, num_vectors_, mastermaps_, ghostmaps_)) {
       Errors::Message message("Requested components are not consistent with previous request.");
       Exceptions::amanzi_throw(message);
     }
@@ -244,7 +294,7 @@ CompositeVectorSpace::SetComponents(
   
   if (owned_) {
     // check equal
-    if (names != names_ || num_dofs != num_dofs_) {
+    if (names != names_ || num_dofs != num_vectors_) {
       Errors::Message message("SetComponent() called on an owned space with a differing spec.");
       Exceptions::amanzi_throw(message);
     }
@@ -258,7 +308,7 @@ CompositeVectorSpace::SetComponents(
   }
 
   // Make sure the specs are consistent.
-  if (!CheckConsistent_(names_, locations_, num_dofs_,
+  if (!CheckConsistent_(names_, locations_, num_vectors_,
                         names, locations, num_dofs)) {
       Errors::Message message("CompositeVector's components are not consistent with a previous request.");
       Exceptions::amanzi_throw(message);
@@ -267,7 +317,7 @@ CompositeVectorSpace::SetComponents(
   // Re-spec to the new spec and declare ourselves owned.
   names_ = names;
   locations_ = locations;
-  num_dofs_ = num_dofs;
+  num_vectors_ = num_dofs;
   mastermaps_ = mastermaps;
   ghostmaps_ = ghostmaps;
 
@@ -508,23 +558,6 @@ bool CompositeVectorSpace::UnionAndConsistent_(
   return true;
 };
 
-
-Teuchos::RCP<const CompositeMap>
-CompositeVectorSpace::Map() const
-{
-  std::map<std::string,std::size_t> num_dofs;
-  for (std::size_t i=0; i!=names_.size(); ++i) {
-    AMANZI_ASSERT(num_dofs_[i] > 0);
-    num_dofs[names_[i]] = (std::size_t) num_dofs_[i];
-  }
-  return createCompositeMap(Comm(), names_, mastermaps_, ghostmaps_, num_dofs);
-}
-
-
-Teuchos::RCP<CompositeVector>
-CompositeVectorSpace::Create() const {
-  return Teuchos::rcp(new CompositeVector(Map()));
-}
 
 
 } // namespace Amanzi

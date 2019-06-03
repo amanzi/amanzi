@@ -17,10 +17,7 @@
 namespace Amanzi {
 
 // Controls initialization in copy constructor.
-typedef enum { INIT_MODE_NONE,
-               INIT_MODE_ZERO,
-               INIT_MODE_COPY,
-               INIT_MODE_NOALLOC} InitMode;
+enum class InitMode { NONE, ZERO, COPY, NOALLOC};
 
 // same as
 template<class Map>
@@ -32,6 +29,20 @@ SameAs(const Map& one, const Map& two) {
 template<>
 inline bool
 SameAs<BlockMap_type>(const BlockMap_type& one, const BlockMap_type& two) {
+  return one.isSameAs(two);
+}
+
+
+// same as
+template<class Map>
+bool
+LocallySameAs(const Map& one, const Map& two) {
+  return one.LocallySameAs(two);
+}
+
+template<>
+inline bool
+LocallySameAs<BlockMap_type>(const BlockMap_type& one, const BlockMap_type& two) {
   return one.locallySameAs(two);
 }
 

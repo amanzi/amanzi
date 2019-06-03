@@ -5,7 +5,7 @@
    License: see $AMANZI_DIR/COPYRIGHT
    Author: Ethan Coon
 
-   Unit tests for the composite vector.
+   Unit tests for the block vector.
 ------------------------------------------------------------------------- */
 
 #include <vector>
@@ -17,48 +17,53 @@
 
 #include "MeshFactory.hh"
 #include "Mesh_simple.hh"
-#include "CompositeVector.hh"
-#include "CompositeVectorSpace.hh"
+#include "BlockVector.hh"
+#include "BlockSpace.hh"
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 
-struct test_cv {
+using BlockVector_d = Amanzi::BlockVector<double>;
+
+struct test_bv {
   Comm_ptr_type comm;
   Teuchos::RCP<Mesh> mesh;
 
-  Teuchos::RCP<CompositeVectorSpace> x_space;
-  Teuchos::RCP<CompositeVector> x;
+  Teuchos::RCP<BlockSpace> x_space;
+  Teuchos::RCP<BlockVector_d> x;
 
-  test_cv() {
+  test_bv() {
     comm = getDefaultComm();
+
     MeshFactory meshfactory(comm);
     mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 8, 1, 1);
-
-    std::vector<Entity_kind> locations(2);
-    locations[0] = CELL;
-    locations[1] = FACE;
 
     std::vector<std::string> names(2);
     names[0] = "cell";
     names[1] = "face";
 
-    std::vector<int> num_dofs(2);
-    num_dofs[0] = 2;
-    num_dofs[1] = 1;
+    std::map<std::string, std::size_t> num_dofs;
+    num_dofs["cell"] = 2;
+    num_dofs["face"] = 1;
 
-    x_space = Teuchos::rcp(new CompositeVectorSpace());
-    x_space->SetMesh(mesh)->SetGhosted()
-        ->SetComponents(names, locations, num_dofs);
-    x = x_space->Create();
+    std::map<std::string, BlockMap_ptr_type> master_maps;
+    std::map<std::string, BlockMap_ptr_type> ghost_maps;
+
+    master_maps["cell"] = mesh->map(Entity_kind::CELL, false);
+    master_maps["face"] = mesh->map(Entity_kind::FACE, false);
+    ghost_maps["cell"] = mesh->map(Entity_kind::CELL, true);
+    ghost_maps["face"] = mesh->map(Entity_kind::FACE, true);
+
+    x_space = Teuchos::rcp(new BlockSpace(comm, names, master_maps, ghost_maps, num_dofs));;
+    x = Teuchos::rcp(new BlockVector_d(x_space));
   }
-  ~test_cv() {  }
+  ~test_bv() {  }
 };
 
 
-SUITE(COMPOSITE_VECTOR) {
+SUITE(_VECTOR) {
   // test basic setup and construction
-  TEST_FIXTURE(test_cv, CVConstruction) {
+  TEST_FIXTURE(test_bv, CVConstruction) {
     CHECK_EQUAL(2, x->size());
     int size = comm->getSize();
     if (size == 1) CHECK_EQUAL(8, x->MyLength("cell"));
@@ -77,7 +82,7 @@ SUITE(COMPOSITE_VECTOR) {
     }
   }
 
-  TEST_FIXTURE(test_cv, CVSetGet) {
+  TEST_FIXTURE(test_bv, CVSetGet) {
     // check putscalar
     x->PutScalar(2.0);
     {
@@ -148,10 +153,10 @@ SUITE(COMPOSITE_VECTOR) {
 
 
   // test the vector's copy constructor
-  TEST_FIXTURE(test_cv, CVCopy) {
+  TEST_FIXTURE(test_bv, CVCopy) {
     x->PutScalar(2.0);
 
-    CompositeVector y(*x);
+    BlockVector_d y(*x);
     y.PutScalar(4.0);
 
     {
@@ -166,10 +171,10 @@ SUITE(COMPOSITE_VECTOR) {
   }
 
   // test the vector's operator=
-  TEST_FIXTURE(test_cv, CVOperatorEqual) {
+  TEST_FIXTURE(test_bv, CVOperatorEqual) {
     x->PutScalar(2.0);
 
-    CompositeVector y(*x);
+    BlockVector_d y(*x);
     y.PutScalar(0.0);
 
     // operator= and check vals
@@ -198,7 +203,7 @@ SUITE(COMPOSITE_VECTOR) {
   }
 
   // test the communication routines
-  TEST_FIXTURE(test_cv, CVScatter) {
+  TEST_FIXTURE(test_bv, CVScatter) {
     int rank = comm->getRank();
     int size = comm->getSize();
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -221,7 +226,7 @@ SUITE(COMPOSITE_VECTOR) {
     }
   }
 
-  TEST_FIXTURE(test_cv, CVGather) {
+  TEST_FIXTURE(test_bv, CVGather) {
     int rank = comm->getRank();
     int size = comm->getSize();
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);

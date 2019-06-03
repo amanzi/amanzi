@@ -44,10 +44,9 @@ add_definitions("-DMSTK_HAVE_MPI")
 # Library: data_structures
 #
 #file(GLOB data_structures_src_files "*.cc")
-set(data_structures_src_files CompMap.cc
-                              CompositeMap.cc
+set(data_structures_src_files BlockSpace.cc
+                              CompositeSpace.cc
                               CompositeVectorSpace.cc
-                              #CompositeVector.cc
                               #NoxVector.cc
                               #TreeVectorSpace.cc
                               #TreeVector.cc
@@ -97,10 +96,11 @@ if (BUILD_TESTS)
                     NPROCS 2
         	    SOURCE test/Main.cc
                            test/test_communication.cc
+        		   test/test_block_vector.cc
         		   test/test_composite_vector.cc
-        		   test/test_int_composite_vector.cc
-        		   test/test_tree_vector.cc
-                           test/test_vandelay.cc
+        		   #test/test_int_composite_vector.cc
+        		   #test/test_tree_vector.cc
+                           #test/test_vandelay.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
 
     # # Test: tests for FE graph and matrices
