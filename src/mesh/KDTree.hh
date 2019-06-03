@@ -1,12 +1,12 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov
 
-  The wrapper fot a prticula KD search algorithm. It uses class PointCloud 
+  The wrapper fot a prticula KD search algorithm. It uses class PointCloud
   that provides interface to the cloud of points.
 */
 
@@ -18,10 +18,12 @@
 
 #include "Point.hh"
 
+#include "Kokkos_Core.hpp"
+
 namespace Amanzi {
 namespace AmanziMesh {
 
-// Interface class for nanoflann. 
+// Interface class for nanoflann.
 // Note that it does not own any data.
 class PointCloud {
  public:
@@ -30,10 +32,10 @@ class PointCloud {
 
   // Interface for nanoflann
   // -- must return the number of points in the cloud
-  inline size_t kdtree_get_point_count() const { return points_->size(); }
+  inline size_t kdtree_get_point_count() const { return points_.extent(0); }
 
   // -- must return the i-th component of the n-th point
-  inline double kdtree_get_pt(const size_t n, const size_t i) const { return (*points_)[n][i]; }
+  inline double kdtree_get_pt(const size_t n, const size_t i) const { return points_(n)[i]; }
 
   // -- must return optional bounding-box status:
   //    false to default to a standard bounding box computation loop.
@@ -42,10 +44,10 @@ class PointCloud {
   template <class BoundingBox>
   bool kdtree_get_bbox(BoundingBox& bb) const { return false; }
 
-  void Init(const std::vector<AmanziGeometry::Point>* points) { points_ = points; }
+  void Init(const Kokkos::View<AmanziGeometry::Point*> points) { points_ = points; }
 
  private:
-  const std::vector<AmanziGeometry::Point>* points_;
+  Kokkos::View<AmanziGeometry::Point*> points_;
 };
 
 
@@ -59,14 +61,14 @@ class KDTree {
   ~KDTree() {};
 
   // main member function
-  void Init(const std::vector<AmanziGeometry::Point>* points) {
-    int d = (*points)[0].dim();
+  void Init(const Kokkos::View<AmanziGeometry::Point*> points) {
+    int d = points(0).dim();
     cloud_.Init(points);
     tree_ = std::make_shared<KDTree_L2Adaptor>(d, cloud_, nanoflann::KDTreeSingleIndexAdaptorParams(10));
     tree_->buildIndex();
   }
 
-  // find the first n points closest to the given point p 
+  // find the first n points closest to the given point p
   std::vector<size_t> SearchNearest(const AmanziGeometry::Point& p,
                                     std::vector<double>& dist_sqr, int n = 1) {
     AMANZI_ASSERT(tree_ != NULL);
@@ -86,7 +88,7 @@ class KDTree {
     return idx;
   }
 
-  // find all points in the sphere of centered to the given point p 
+  // find all points in the sphere of centered to the given point p
   std::vector<size_t> SearchInSphere(const AmanziGeometry::Point& p,
                                      std::vector<double>& dist_sqr, double radius_sqr) {
     AMANZI_ASSERT(tree_ != NULL);
@@ -110,7 +112,7 @@ class KDTree {
 
     return idx;
   }
-  
+
  private:
   PointCloud cloud_;
   std::shared_ptr<KDTree_L2Adaptor> tree_;
@@ -120,4 +122,3 @@ class KDTree {
 } // namespace Amanzi
 
 #endif
-

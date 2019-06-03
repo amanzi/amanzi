@@ -1,9 +1,9 @@
 /*
   Geometry
 
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Rao Garimella
@@ -17,6 +17,7 @@
 #include <vector>
 #include <cmath>
 
+#include "Kokkos_Core.hpp"
 #include "dbc.hh"
 
 namespace Amanzi {
@@ -24,7 +25,7 @@ namespace AmanziGeometry {
 
 class Point {
  public:
-  Point() {
+  KOKKOS_INLINE_FUNCTION Point() {
     d = 0;
     xyz[0] = xyz[1] = xyz[2] = 0.0;
   }
@@ -34,7 +35,7 @@ class Point {
   }
   explicit Point(const int N) {
     d = N;
-    xyz[0] = xyz[1] = xyz[2] = 0.0;    
+    xyz[0] = xyz[1] = xyz[2] = 0.0;
   }
   Point(const double& x, const double& y) {
     d = 2;
@@ -47,7 +48,7 @@ class Point {
     xyz[1] = y;
     xyz[2] = z;
   }
-  ~Point() {};
+  KOKKOS_INLINE_FUNCTION ~Point() {};
 
   // main members
   void set(const double& val) {
@@ -93,9 +94,11 @@ class Point {
   int dim() const { return d; }
 
   // operators
-  Point& operator=(const Point& p) {
+  KOKKOS_INLINE_FUNCTION Point& operator=(const Point& p) {
     d = p.d;
-    std::copy(p.xyz, p.xyz+d, xyz);
+    this->xyz[0] = p.xyz[0];
+    this->xyz[1] = p.xyz[1];
+    this->xyz[2] = p.xyz[2];
     return *this;
   }
 
@@ -121,7 +124,7 @@ class Point {
   }
   friend Point operator*(const Point& p, const double& r) { return r*p; }
   friend double operator*(const Point& p, const Point& q) {
-    double s = 0.0; 
+    double s = 0.0;
     for (int i = 0; i < p.d; i++ ) s += p[i]*q[i];
     return s;
   }
@@ -168,7 +171,7 @@ inline double norm(const Point& p) { return sqrt(p*p); }
 
 inline bool operator==(const Point& p, const Point& q) {
   if (p.dim() != q.dim()) return false;
-  for (int i = 0; i < p.dim(); ++i) 
+  for (int i = 0; i < p.dim(); ++i)
     if (p[i] != q[i]) return false;
   return true;
 }
@@ -181,4 +184,3 @@ inline bool operator!=(const Point& p, const Point& q) {
 }  // namespace Amanzi
 
 #endif
-

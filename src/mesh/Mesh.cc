@@ -308,7 +308,7 @@ void Mesh::face_get_cells(const Entity_ID faceid, const Parallel_type ptype,
 
     if (ptype == Parallel_type::ALL || ptype == cell_ptype)
       cellids->push_back(c);
-  } 
+  }
 
 #else  // Non-cached version
   Entity_ID_List fcells;
@@ -450,16 +450,16 @@ Mesh::compute_cell_geometric_quantities_() const
 {
   int ncells = num_entities(CELL,Parallel_type::ALL);
 
-  cell_volumes_.resize(ncells);
-  cell_centroids_.resize(ncells);
+  Kokkos::resize(cell_volumes_,ncells);
+  Kokkos::resize(cell_centroids_,ncells);
   for (int i = 0; i < ncells; i++) {
     double volume;
     AmanziGeometry::Point centroid(space_dim_);
 
     compute_cell_geometry_(i,&volume,&centroid);
 
-    cell_volumes_[i] = volume;
-    cell_centroids_[i] = centroid;
+    cell_volumes_(i) = volume;
+    cell_centroids_(i) = centroid;
   }
 
   cell_geometry_precomputed_ = true;
@@ -479,9 +479,11 @@ Mesh::compute_face_geometric_quantities_() const
 
   int nfaces = num_entities(FACE,Parallel_type::ALL);
 
-  face_areas_.resize(nfaces);
-  face_centroids_.resize(nfaces);
-  face_normals_.resize(nfaces);
+  Kokkos::resize(face_areas_,nfaces);
+  Kokkos::resize(face_centroids_,nfaces);
+
+  Kokkos::resize(face_normals_,nfaces);
+  //face_normals_.resize(nfaces);
 
   for (int i = 0; i < nfaces; i++) {
     double area;
@@ -494,8 +496,8 @@ Mesh::compute_face_geometric_quantities_() const
     // cells do not exist, then the normal is the null vector.
     compute_face_geometry_(i, &area, &centroid, &normals);
 
-    face_areas_[i] = area;
-    face_centroids_[i] = centroid;
+    face_areas_(i) = area;
+    face_centroids_(i) = centroid;
     face_normals_[i] = normals;
   }
 
@@ -510,8 +512,8 @@ Mesh::compute_edge_geometric_quantities_() const
 {
   int nedges = num_entities(EDGE,Parallel_type::ALL);
 
-  edge_vectors_.resize(nedges);
-  edge_lengths_.resize(nedges);
+  Kokkos::resize(edge_vectors_,nedges);
+  Kokkos::resize(edge_lengths_,nedges);
 
   for (int i = 0; i < nedges; i++) {
     double length;
@@ -519,8 +521,8 @@ Mesh::compute_edge_geometric_quantities_() const
 
     compute_edge_geometry_(i,&length,&evector);
 
-    edge_lengths_[i] = length;
-    edge_vectors_[i] = evector;
+    edge_lengths_(i) = length;
+    edge_vectors_(i) = evector;
   }
 
   edge_geometry_precomputed_ = true;
@@ -734,7 +736,7 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
 
         AMANZI_ASSERT(found);
 
-        AmanziGeometry::Point cvec = fcoords[0]-cell_centroids_[cellids[i]];
+        AmanziGeometry::Point cvec = fcoords[0]-cell_centroids_(cellids[i]);
         AmanziGeometry::Point trinormal = cvec^evec;
 
         AmanziGeometry::Point normal = evec^trinormal;
@@ -781,7 +783,7 @@ Mesh::cell_volume(const Entity_ID cellid, const bool recompute) const
 {
   if (!cell_geometry_precomputed_) {
     compute_cell_geometric_quantities_();
-    return cell_volumes_[cellid];
+    return cell_volumes_(cellid);
   }
   else {
     if (recompute) {
@@ -791,7 +793,7 @@ Mesh::cell_volume(const Entity_ID cellid, const bool recompute) const
       return volume;
     }
     else
-      return cell_volumes_[cellid];
+      return cell_volumes_(cellid);
   }
 }
 
@@ -803,7 +805,7 @@ double Mesh::face_area(const Entity_ID faceid, const bool recompute) const
 
   if (!face_geometry_precomputed_) {
     compute_face_geometric_quantities_();
-    return face_areas_[faceid];
+    return face_areas_(faceid);
   }
   else {
     if (recompute) {
@@ -814,7 +816,7 @@ double Mesh::face_area(const Entity_ID faceid, const bool recompute) const
       return area;
     }
     else
-      return face_areas_[faceid];
+      return face_areas_(faceid);
   }
 }
 
@@ -827,7 +829,7 @@ Mesh::edge_length(const Entity_ID edgeid, const bool recompute) const
 
   if (!edge_geometry_precomputed_) {
     compute_edge_geometric_quantities_();
-    return edge_lengths_[edgeid];
+    return edge_lengths_(edgeid);
   }
   else {
     if (recompute) {
@@ -837,7 +839,7 @@ Mesh::edge_length(const Entity_ID edgeid, const bool recompute) const
       return length;
     }
     else
-      return edge_lengths_[edgeid];
+      return edge_lengths_(edgeid);
   }
 }
 
@@ -849,7 +851,7 @@ Mesh::cell_centroid(const Entity_ID cellid,
 {
   if (!cell_geometry_precomputed_) {
     compute_cell_geometric_quantities_();
-    return cell_centroids_[cellid];
+    return cell_centroids_(cellid);
   }
   else {
     if (recompute) {
@@ -859,7 +861,7 @@ Mesh::cell_centroid(const Entity_ID cellid,
       return centroid;
     }
     else
-      return cell_centroids_[cellid];
+      return cell_centroids_(cellid);
   }
 }
 
@@ -872,7 +874,7 @@ Mesh::face_centroid(const Entity_ID faceid, const bool recompute) const
 
   if (!face_geometry_precomputed_) {
     compute_face_geometric_quantities_();
-    return face_centroids_[faceid];
+    return face_centroids_(faceid);
   }
   else {
     if (recompute) {
@@ -883,7 +885,7 @@ Mesh::face_centroid(const Entity_ID faceid, const bool recompute) const
       return centroid;
     }
     else
-      return face_centroids_[faceid];
+      return face_centroids_(faceid);
   }
 }
 
@@ -996,7 +998,7 @@ Mesh::edge_vector(const Entity_ID edgeid,
     // evector_ref already points to evector
   }
   else
-    evector_ref = edge_vectors_[edgeid];
+    evector_ref = edge_vectors_(edgeid);
 
   if (orientation) *orientation = 1;
 
@@ -1125,7 +1127,7 @@ Mesh::valid_set_name(std::string name, Entity_kind kind) const
         return true;
     } else {
       if (kind == CELL && entity_type == "FACE") return true;
-    } 
+    }
     return false;
   }
 
@@ -1210,7 +1212,7 @@ Mesh::update_ghost_node_coordinates()
 
   // // change last arg to false after debugging
   // MultiVector_type owned_node_coords(node_map(true), ndim, true);
-  
+
 
   // AmanziGeometry::Point pnt(ndim);
 
