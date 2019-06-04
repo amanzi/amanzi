@@ -29,7 +29,7 @@ class Point {
     d = 0;
     xyz[0] = xyz[1] = xyz[2] = 0.0;
   }
-  Point(const Point& p) {
+  KOKKOS_INLINE_FUNCTION Point(const Point& p) {
     d = p.d;
     std::copy(p.xyz, p.xyz+d, xyz);
   }

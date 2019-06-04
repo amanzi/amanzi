@@ -482,24 +482,38 @@ Mesh::compute_face_geometric_quantities_() const
   Kokkos::resize(face_areas_,nfaces);
   Kokkos::resize(face_centroids_,nfaces);
 
-  Kokkos::resize(face_normals_,nfaces);
+  // Temporary views
+  Kokkos::View<Kokkos::Crs<AmanziGeometry::Point,Kokkos::HostSpace>::size_type*> normals_count("",nfaces+1);
+  normals_count(0) = 0;
+  Kokkos::View<AmanziGeometry::Point*> normals_rows;
+
+  //Kokkos::resize(face_normals_,nfaces);
   //face_normals_.resize(nfaces);
 
   for (int i = 0; i < nfaces; i++) {
     double area;
     AmanziGeometry::Point centroid(space_dim_);
-    std::vector<AmanziGeometry::Point> normals;
+    Kokkos::View<AmanziGeometry::Point*> normals;
 
     // normal0 and normal1 are outward normals of the face with
     // respect to the cell0 and cell1 of the face. The natural normal
     // of the face points out of cell0 and into cell1. If one of these
     // cells do not exist, then the normal is the null vector.
-    compute_face_geometry_(i, &area, &centroid, &normals);
+    compute_face_geometry_(i, &area, &centroid, normals);
 
     face_areas_(i) = area;
     face_centroids_(i) = centroid;
-    face_normals_[i] = normals;
+
+    Kokkos::resize(normals_rows,normals_count(i)+normals.size());
+    for(int j = 0 ; j < normals.size(); ++j){
+      normals_rows(normals_count(i)+j) = normals[j];
+    }
+    normals_count(i+1) = normals.size()+normals_count(i);
+
+    //face_normals_[i] = normals;
   }
+
+  face_normals_ = Kokkos::Crs<AmanziGeometry::Point,Kokkos::HostSpace>(normals_count,normals_rows);
 
   face_geometry_precomputed_ = true;
 
@@ -620,10 +634,10 @@ Mesh::compute_cell_geometry_(const Entity_ID cellid, double *volume,
 int
 Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
                              AmanziGeometry::Point *centroid,
-                             std::vector<AmanziGeometry::Point> *normals) const
+                             Kokkos::View<AmanziGeometry::Point*>& normals) const
 {
   AmanziGeometry::Point_List fcoords;
-  normals->clear();
+  //normals->clear();
 
   if (manifold_dim_ == 3) {
     // 3D Elements with possibly curved faces
@@ -637,7 +651,8 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
     face_get_cells(faceid, Parallel_type::ALL, &cellids);
     AMANZI_ASSERT(cellids.size() <= 2);
 
-    normals->resize(cellids.size(), AmanziGeometry::Point(0.0, 0.0, 0.0));
+    Kokkos::resize(normals,cellids.size());
+    //normals->resize(cellids.size(), AmanziGeometry::Point(0.0, 0.0, 0.0));
     for (int i = 0; i < cellids.size(); i++) {
       Entity_ID_List cellfaceids;
       std::vector<int> cellfacedirs;
@@ -656,7 +671,7 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
 
       AMANZI_ASSERT(found);
 
-      (*normals)[i] = (dir == 1) ? normal : -normal;
+      normals(i) = (dir == 1) ? normal : -normal;
     }
 
     return 1;
@@ -676,7 +691,8 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
       face_get_cells(faceid, Parallel_type::ALL, &cellids);
       AMANZI_ASSERT(cellids.size() <= 2);
 
-      normals->resize(cellids.size(), AmanziGeometry::Point(0.0, 0.0));
+      Kokkos::resize(normals,cellids.size());
+      //normals->resize(cellids.size(), AmanziGeometry::Point(0.0, 0.0));
       for (int i = 0; i < cellids.size(); i++) {
         Entity_ID_List cellfaceids;
         std::vector<int> cellfacedirs;
@@ -695,7 +711,7 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
 
         AMANZI_ASSERT(found);
 
-        (*normals)[i] = (dir == 1) ? normal : -normal;
+        normals(i) = (dir == 1) ? normal : -normal;
       }
 
       return 1;
@@ -717,7 +733,8 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
       Entity_ID_List cellids;
       face_get_cells(faceid, Parallel_type::ALL, &cellids);
 
-      normals->resize(cellids.size(), AmanziGeometry::Point(0.0, 0.0, 0.0));
+      Kokkos::resize(normals,cellids.size());
+      //normals->resize(cellids.size(), AmanziGeometry::Point(0.0, 0.0, 0.0));
       for (int i = 0; i < cellids.size(); i++) {
         Entity_ID_List cellfaceids;
         std::vector<int> cellfacedirs;
@@ -745,7 +762,7 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
         normal /= len;
         normal *= *area;
 
-        (*normals)[i] = normal;  // Always an outward normal as calculated
+        normals(i) = normal;  // Always an outward normal as calculated
       }
 
       return 1;
@@ -811,8 +828,8 @@ double Mesh::face_area(const Entity_ID faceid, const bool recompute) const
     if (recompute) {
       double area;
       AmanziGeometry::Point centroid(space_dim_);
-      std::vector<AmanziGeometry::Point> normals;
-      compute_face_geometry_(faceid, &area, &centroid, &normals);
+      Kokkos::View<AmanziGeometry::Point*> normals;
+      compute_face_geometry_(faceid, &area, &centroid, normals);
       return area;
     }
     else
@@ -880,8 +897,8 @@ Mesh::face_centroid(const Entity_ID faceid, const bool recompute) const
     if (recompute) {
       double area;
       AmanziGeometry::Point centroid(space_dim_);
-      std::vector<AmanziGeometry::Point> normals;
-      compute_face_geometry_(faceid, &area, &centroid, &normals);
+      Kokkos::View<AmanziGeometry::Point*> normals;
+      compute_face_geometry_(faceid, &area, &centroid, normals);
       return centroid;
     }
     else
@@ -929,26 +946,28 @@ Mesh::face_normal(const Entity_ID faceid,
 {
   AMANZI_ASSERT(faces_requested_);
 
-  std::vector<AmanziGeometry::Point> *fnormals = nullptr;
-  std::vector<AmanziGeometry::Point> fnormals_new;
+  Kokkos::View<AmanziGeometry::Point*> fnormals, fnormals_new;
 
   if (!face_geometry_precomputed_) {
     compute_face_geometric_quantities_();
 
-    fnormals = &(face_normals_[faceid]);
+    fnormals = Kokkos::subview(face_normals_.entries,
+      std::make_pair(face_normals_.row_map(faceid),face_normals_.row_map(faceid+1)));
+
   }
   else {
     if (recompute) {
       double area;
       AmanziGeometry::Point centroid(space_dim_);
-      compute_face_geometry_(faceid, &area, &centroid, &fnormals_new);
-      fnormals = &fnormals_new;
+      compute_face_geometry_(faceid, &area, &centroid, fnormals_new);
+      fnormals = fnormals_new;
     }
     else
-      fnormals = &(face_normals_[faceid]);
+      fnormals = Kokkos::subview(face_normals_.entries,
+        std::make_pair(face_normals_.row_map(faceid),face_normals_.row_map(faceid+1)));
   }
 
-  AMANZI_ASSERT(fnormals->size() > 0);
+  AMANZI_ASSERT(fnormals.extent(0) > 0);
 
   if (cellid == -1) {
     // Return the natural normal. This is the normal with respect to
@@ -956,7 +975,7 @@ Mesh::face_normal(const Entity_ID faceid,
     // face is pointing into the cell (-ve cell id) or out
 
     int c = face_cell_ids_[faceid][0];
-    return std::signbit(c) ? -(*fnormals)[0] : (*fnormals)[0];
+    return std::signbit(c) ? -fnormals(0) : fnormals(0);
   } else {
     // Find the index of 'cellid' in list of cells connected to face
 
@@ -972,7 +991,7 @@ Mesh::face_normal(const Entity_ID faceid,
     }
     AMANZI_ASSERT(irefcell < nfc);
     if (orientation) *orientation = dir;  // if orientation was requested
-    return (*fnormals)[irefcell];
+    return fnormals(irefcell);
   }
 }
 
@@ -1400,13 +1419,18 @@ Mesh::build_columns(const std::string& setname) const
   int nc = num_entities(CELL,Parallel_type::ALL);
   int nc_owned = num_entities(CELL,Parallel_type::OWNED);
 
-  columnID_.resize(nc);
-  cell_cellbelow_.resize(nc);
-  cell_cellbelow_.assign(nc,-1);
-  cell_cellabove_.resize(nc);
-  cell_cellabove_.assign(nc,-1);
-  node_nodeabove_.resize(nn);
-  node_nodeabove_.assign(nn,-1);
+  Kokkos::resize(columnID_,nc);
+  Kokkos::resize(cell_cellbelow_,nc);
+  Kokkos::resize(cell_cellabove_,nc);
+  Kokkos::resize(node_nodeabove_,nn);
+
+  Kokkos::parallel_for(nc, KOKKOS_LAMBDA(const int &i){
+    cell_cellbelow_(i) = -1;
+    cell_cellabove_(i) = -1;
+  });
+  Kokkos::parallel_for(nn, KOKKOS_LAMBDA(const int &i){
+    node_nodeabove_(i) = -1;
+  });
 
   Entity_ID_List top_faces;
   get_set_entities(setname, FACE, Parallel_type::ALL, &top_faces);
@@ -1470,13 +1494,18 @@ Mesh::build_columns() const
   int nc = num_entities(CELL,Parallel_type::ALL);
   int nc_owned = num_entities(CELL, Parallel_type::OWNED);
 
-  columnID_.resize(nc);
-  cell_cellbelow_.resize(nc);
-  cell_cellbelow_.assign(nc,-1);
-  cell_cellabove_.resize(nc);
-  cell_cellabove_.assign(nc,-1);
-  node_nodeabove_.resize(nn);
-  node_nodeabove_.assign(nn,-1);
+  Kokkos::resize(columnID_,nc);
+  Kokkos::resize(cell_cellbelow_,nc);
+  Kokkos::resize(cell_cellabove_,nc);
+  Kokkos::resize(node_nodeabove_,nn);
+
+  Kokkos::parallel_for(nc, KOKKOS_LAMBDA(const int &i){
+    cell_cellbelow_(i) = -1;
+    cell_cellabove_(i) = -1;
+  });
+  Kokkos::parallel_for(nn, KOKKOS_LAMBDA(const int &i){
+    node_nodeabove_(i) = -1;
+  });
 
   // Find the faces at the top of the domain. We assume that these are all
   // the boundary faces whose normal points in the positive z-direction
@@ -1551,7 +1580,7 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
       break;
 
     }
-    columnID_[cur_cell] = colnum;
+    columnID_(cur_cell) = colnum;
     colcells.push_back(cur_cell);
     colfaces.push_back(top_face);
 
@@ -1589,20 +1618,20 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
     // record the cell above and cell below
     face_get_cells(bot_face,Parallel_type::ALL,&fcells2);
     if (fcells2.size() == 2) {
-      if (cell_cellbelow_[cur_cell] != -1) {  // intersecting column of cells
+      if (cell_cellbelow_(cur_cell) != -1) {  // intersecting column of cells
         std::cerr << "Intersecting column of cells\n";
         success = 0;
         break;
       }
 
       if (fcells2[0] == cur_cell) {
-        cell_cellbelow_[cur_cell] = fcells2[1];
-        cell_cellabove_[fcells2[1]] = cur_cell;
+        cell_cellbelow_(cur_cell) = fcells2[1];
+        cell_cellabove_(fcells2[1]) = cur_cell;
         cur_cell = fcells2[1];
       }
       else if (fcells2[1] == cur_cell) {
-        cell_cellbelow_[cur_cell] = fcells2[0];
-        cell_cellabove_[fcells2[0]] = cur_cell;
+        cell_cellbelow_(cur_cell) = fcells2[0];
+        cell_cellabove_(fcells2[0]) = cur_cell;
         cur_cell = fcells2[0];
       }
       else {
@@ -1673,7 +1702,7 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
       int bot_i = (ind+even_odd*k)%nfvtop;
       if (bot_i < 0) bot_i += nfvtop;
       Entity_ID botnode = botnodes[bot_i];
-      node_nodeabove_[botnode] = topnode;
+      node_nodeabove_(botnode) = topnode;
 
       // AMANZI_ASSERT used in debugging
       // AmanziGeometry::Point bc;

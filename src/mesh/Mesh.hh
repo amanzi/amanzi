@@ -843,7 +843,7 @@ protected:
   int compute_face_geometry_(const Entity_ID faceid,
                              double *area,
                              AmanziGeometry::Point *centroid,
-                             std::vector<AmanziGeometry::Point> *normals) const;
+                             Kokkos::View<AmanziGeometry::Point*>& normals) const;
 
   virtual
   int compute_edge_geometry_(const Entity_ID edgeid,
@@ -880,10 +880,10 @@ protected:
   mutable Kokkos::View<AmanziGeometry::Point*> edge_vectors_;
 
   // -- column information, only created if columns are requested
-  mutable Entity_ID_List cell_cellabove_, cell_cellbelow_, node_nodeabove_;
+  mutable Kokkos::View<Entity_ID*> cell_cellabove_, cell_cellbelow_, node_nodeabove_;
   mutable std::vector<Entity_ID_List> column_cells_;
   mutable std::vector<Entity_ID_List> column_faces_;
-  mutable std::vector<Entity_ID> columnID_;
+  mutable Kokkos::View<Entity_ID*> columnID_;
   mutable int num_owned_cols_;
   mutable bool columns_built_;
 
