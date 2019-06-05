@@ -456,7 +456,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
 // Extract MSTK entities from an ID list and make a new MSTK mesh
 //---------------------------------------------------------
 Mesh_MSTK::Mesh_MSTK(const Teuchos::RCP<const Mesh>& parent_mesh,
-                     const Entity_ID_List& entity_ids,
+                     const Kokkos::View<Entity_ID*>& entity_ids,
                      const Entity_kind entity_kind,
                      const bool flatten,
                      const Comm_ptr_type& comm,
@@ -3078,7 +3078,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
 void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
                                           const Entity_kind kind,
                                           const Parallel_type ptype,
-                                          std::vector<Entity_ID> *setents,
+                                          Kokkos::View<Entity_ID*> &setents,
                                           std::vector<double> *vofs) const
 {
   int idx, i, lid;
@@ -3089,9 +3089,6 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
   int space_dim_ = space_dimension();
   Teuchos::RCP<const VerboseObject> verbobj = verbosity_obj();
 
-  assert(setents != NULL);
-
-  setents->clear();
 
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = geometric_model();
 
@@ -3287,8 +3284,9 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
   }
 #endif
 
-  setents->resize(nent_loc);
-  Entity_ID_List::iterator it = setents->begin();
+  Kokkos::resize(setents,nent_loc);
+  size_t it = 0;
+  //Entity_ID_List::iterator it = setents->begin();
 
   if (nent_loc) {
     nent_loc = 0; // reset and count to get the real number
@@ -3298,7 +3296,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
       idx = 0;
       while ((ment = MSet_Next_Entry(mset1,&idx))) {
         if (MEnt_PType(ment) != PGHOST) {
-          *it = MEnt_ID(ment)-1;  // assign to next spot by dereferencing iterator
+          setents(it) = MEnt_ID(ment)-1;  // assign to next spot by dereferencing iterator
           ++it;
           ++nent_loc;
         }
@@ -3308,7 +3306,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
       idx = 0;
       while ((ment = MSet_Next_Entry(mset1,&idx))) {
         if (MEnt_PType(ment) == PGHOST) {
-          *it = MEnt_ID(ment)-1;  // assign to next spot by dereferencing iterator
+          setents(it) = MEnt_ID(ment)-1;  // assign to next spot by dereferencing iterator
           ++it;
           ++nent_loc;
         }
@@ -3317,7 +3315,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
     case Parallel_type::ALL:
       idx = 0;
       while ((ment = MSet_Next_Entry(mset1,&idx))) {
-        *it = MEnt_ID(ment)-1;  // assign to next spot by dereferencing iterator
+        setents(it) = MEnt_ID(ment)-1;  // assign to next spot by dereferencing iterator
         ++it;
         ++nent_loc;
       }
@@ -3326,7 +3324,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
       {}
     }
 
-    setents->resize(nent_loc);
+    Kokkos::resize(setents,nent_loc);
   }
 
   // Check if there were no entities left on any processor after

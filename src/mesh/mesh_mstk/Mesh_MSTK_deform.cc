@@ -33,7 +33,7 @@ double c1=1.0, c2=1.0, c3=1.0, k1=1.0, k2=1.0, k3=0.0;
 
 int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
                       const std::vector<double>& min_cell_volumes_in,
-                      const Entity_ID_List& fixed_nodes,
+                      const Kokkos::View<Entity_ID*>& fixed_nodes,
                       const bool move_vertical,
                       const double min_vol_const1,
                       const double min_vol_const2,
@@ -56,7 +56,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
     std::cerr << "Could not deform mesh as we could not build columns in mesh\n" << std::endl;
     return 0;
   }
-  
+
   // Initialize the deformation function constants
 
   k1 = min_vol_const1;
@@ -65,21 +65,20 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
   c2 = target_vol_const2;
   k3 = quality_func_const1;
   c3 = quality_func_const2;
- 
+
   if (!move_vertical) {
     Errors::Message mesg("Only vertical movement permitted in deformation");
     amanzi_throw(mesg);
   }
 
-  int nv = num_entities(NODE, Parallel_type::ALL);  
+  int nv = num_entities(NODE, Parallel_type::ALL);
 
   // ---- Begin code by ETC ----
   int fixedmk = MSTK_GetMarker();
   List_ptr fixed_verts = List_New(0);
-  for (Entity_ID_List::const_iterator v=fixed_nodes.begin();
-       v!=fixed_nodes.end(); ++v) {
-    if (*v < nv) {
-      MVertex_ptr mv = vtx_id_to_handle[*v];
+  for (int i = 0 ; i < fixed_nodes.extent(0); ++i){
+    if (fixed_nodes(i) < nv) {
+      MVertex_ptr mv = vtx_id_to_handle[fixed_nodes(i)];
       if (!MEnt_IsMarked(mv,fixedmk)) {
         List_Add(fixed_verts,mv);
         MEnt_Mark(mv,fixedmk);
@@ -105,18 +104,18 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
 
 
   // copy the target and min volumes for cells from the input
- 
+
   int nc = num_entities(CELL, Parallel_type::ALL);
   target_cell_volumes_ = new double[nc];     // class variable
   min_cell_volumes_    = new double[nc];     // class variable
- 
-  std::copy(&(target_cell_volumes_in[0]), &(target_cell_volumes_in[nc]), 
+
+  std::copy(&(target_cell_volumes_in[0]), &(target_cell_volumes_in[nc]),
             target_cell_volumes_);
-  std::copy(&(min_cell_volumes_in[0]), &(min_cell_volumes_in[nc]), 
+  std::copy(&(min_cell_volumes_in[0]), &(min_cell_volumes_in[nc]),
             min_cell_volumes_);
 
 
-  // if the target cell volume is the same as the current volume, then 
+  // if the target cell volume is the same as the current volume, then
   // assume that the cell volume is unconstrained down to the min volume
 
   for (int i = 0; i < nc; ++i) {
@@ -141,7 +140,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
     int nvcells = List_Num_Entries(vcells);
     for (int i = 0; i < nvcells; i++) {
       MEntity_ptr ent = List_Entry(vcells,i);
-      int id = MEnt_ID(ent); 
+      int id = MEnt_ID(ent);
 
       if (target_cell_volumes_[id-1] > 0.0) {
         // At least one cell connected to node/vertex needs to meet
@@ -175,10 +174,10 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
     idx = 0;
     while ((mv = List_Next_Entry(driven_verts,&idx))) {
       int gtype = MV_GEntDim(mv);
-      
+
       id = MV_ID(mv);
 
-      // Get an estimate of the mesh size around this vertex to 
+      // Get an estimate of the mesh size around this vertex to
       // form a tolerance for node movement
 
       double minlen2=1.0e+14;
@@ -205,18 +204,18 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
       // Initial value of function at start of local optimization
 
       double fcur = deform_function(id-1, vxyzcur);
-      
+
       int iter_local=0, maxiter_local=1;
       bool node_moved = false;
       while (iter_local < maxiter_local) {
         iter_local++;
-             
+
         // ******** Get Z component of the gradient ********
-        
+
         double gradient_z = 0.0;
-        
+
         double f0 = fcur, f1, f2;
-        
+
         double xyz[3];
         for (int i = 0; i < ndim; i++) xyz[i] = vxyzcur[i];
 
@@ -232,17 +231,17 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
         gradient_z = (f1-f0)/h;
 
         if (fabs(gradient_z) < eps*eps) continue; // too small
-        
+
         if (gradient_z < 0.0) continue; // don't allow upward movement
 
 
         // ********* Get the ZZ component of the Hessian ****
-      
+
         double hessian_zz = 0.0;
 
         h = 100*sqrt_macheps*fabs(xyz[ndim-1]);
         h = (h > 100*sqrt_macheps) ? h : 100*sqrt_macheps;
-        
+
         xyz[ndim-1] += h;
         f1 = deform_function(id-1, xyz);
         xyz[ndim-1] = vxyzcur[ndim-1];
@@ -250,7 +249,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
         xyz[ndim-1] -= h;
         f2 = deform_function(id-1, xyz);
         xyz[ndim-1] = vxyzcur[ndim-1];
-        
+
         hessian_zz = (f2 - 2*f0 + f1)/(h*h);
 
 
@@ -258,46 +257,46 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
         for (int i = 0; i < ndim; i++) vxyznew[i] = vxyzcur[i];
 
         double update[3]={0.0,0.0,0.0};
-        update[ndim-1] -= damping_factor*gradient_z/hessian_zz;  
-        vxyznew[ndim-1] = vxyzcur[ndim-1] + update[ndim-1];                    
+        update[ndim-1] -= damping_factor*gradient_z/hessian_zz;
+        vxyznew[ndim-1] = vxyzcur[ndim-1] + update[ndim-1];
 
-        
+
         // ****** value of function with updated coordinates
-          
-        double fnew = deform_function(id-1, vxyznew);
-          
 
-        // Check the Armijo condition (the step size should 
-        // produce a decrease in the function) 
-          
+        double fnew = deform_function(id-1, vxyznew);
+
+
+        // Check the Armijo condition (the step size should
+        // produce a decrease in the function)
+
         double alpha = 1.0;
         while ((fnew >= fcur) && (alpha >= 1.0e-02)) {
-          vxyznew[ndim-1] = vxyzcur[ndim-1] + alpha*update[ndim-1];        
-            
+          vxyznew[ndim-1] = vxyzcur[ndim-1] + alpha*update[ndim-1];
+
           fnew = deform_function(id-1, vxyznew);
           if (fnew >= fcur)
             alpha *= 0.8;
         }
-          
-        if (alpha < 1.0e-02) { // if movement is too little, dont move at all 
+
+        if (alpha < 1.0e-02) { // if movement is too little, dont move at all
           for (int i = 0; i < ndim; i++)
             vxyznew[i] = vxyzcur[i];
           fnew = fcur;
         }
-        else  {     
+        else  {
           node_moved = true;
 
-          // Update current coordinates to the newly calculated coordinates 
+          // Update current coordinates to the newly calculated coordinates
           for (int i = 0; i < ndim; i++) vxyzcur[i] = vxyznew[i];
         }
       } // while (iter_local < maxiter_local)
-        
+
       if (!node_moved) continue;
 
       double delta_z =  vxyzcur[ndim-1]-vxyzold[ndim-1];
       global_dist2 += delta_z*delta_z;
-      
-      // update the new xyz values for this vertex 
+
+      // update the new xyz values for this vertex
       for (int i = 0; i < 3; i++)
         newxyz[3*(id-1)+i] = vxyzcur[i];
 
@@ -310,7 +309,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
       // WILL BE ON A SINGLE PROCESSOR. THEREFORE, WHEN A NODE DROPS
       // TO MATCH A TARGET VOLUME, ALL NODES ABOVE IT ARE EXPECTED
       // TO BE ON THE SAME PROCESSOR AND CAN BE MOVED DOWN. IF THIS
-      // ASSUMPTION IS NOT TRUE, THEN THE UPDATE OF THE COLUMN 
+      // ASSUMPTION IS NOT TRUE, THEN THE UPDATE OF THE COLUMN
       // HAS TO HAPPEN DIFFERENTLY
 
       int curid = id-1;
@@ -324,11 +323,11 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
         double vxyz_above[3];
         std::copy(&(newxyz[3*nextid]),&(newxyz[3*nextid+ndim]),vxyz_above);
 
-        double fcur_above = deform_function(nextid, vxyz_above); 
+        double fcur_above = deform_function(nextid, vxyz_above);
 
         double alpha = 1.0;
-        vxyz_above[ndim-1] += alpha*delta_z; // 'add' delta_z (which is -ve) 
-        
+        vxyz_above[ndim-1] += alpha*delta_z; // 'add' delta_z (which is -ve)
+
         double fnew_above = deform_function(nextid, vxyz_above);
 
         // If the new function value w.r.t. nextid increases
@@ -343,7 +342,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
           fnew_above = deform_function(nextid, vxyz_above);
         }
 
-        if (alpha <= 1.0e-02) 
+        if (alpha <= 1.0e-02)
           vxyz_above[ndim-1] = newxyz[3*nextid+ndim-1];
 
         // Update the coordinates
@@ -352,7 +351,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
 
         curid = nextid;
       }
-      
+
     } // while (mv = ...)
 
     // an iteration over all vertices is over
@@ -366,7 +365,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
     // vertices not just vertices explicitly driven by optimization
     // since the downward movement of driven vertices can cause the
     // vertices above to shift down.
-    
+
     idx = 0;
     while ((mv = MESH_Next_Vertex(mesh_,&idx))) {
       id = MV_ID(mv);
@@ -391,13 +390,13 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
 
   //  if (iter_global >= maxiter_global)
   //    std::cerr << "INCREASE MAXITER_GLOBAL....!!" << std::endl;
-    
+
   delete [] meshxyz;
   delete [] target_cell_volumes_;
   delete [] min_cell_volumes_;
 
   List_Unmark(fixed_verts,fixedmk);
-  List_Delete(fixed_verts);  
+  List_Delete(fixed_verts);
   MSTK_FreeMarker(fixedmk);
 
   List_Delete(driven_verts);
@@ -409,7 +408,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
 
 
   // recompute all geometric quantities
-  
+
   compute_cell_geometric_quantities_();
   if (faces_initialized) compute_face_geometric_quantities_();
   if (edges_initialized) compute_edge_geometric_quantities_();
@@ -475,39 +474,39 @@ double Tet_Volume(double *xyz0, double *xyz1, double *xyz2, double *xyz3) {
 double Poly_Area(int n, double (*xyz)[3]) {
   int i, j;
   double pcen[3], txyz[3][3], area = 0.0;
-  
+
   if (n < 3)
     return 0;
-  
+
   /* This is based on Green's Theorem in the Plane - Works for all
-     3D polygons 
-       
+     3D polygons
+
      Area = 0.5*Sum_over_i(a_i);
      a_i = x(i)*y(i+1)-x(i+1)*y(i);
-       
+
      However, if the coordinates are very large, then a*b-c*d can
      result in roundoff error. To improve accuracy, we will make
-     all coordinates relative to x0,y0. But what if xi is very close 
+     all coordinates relative to x0,y0. But what if xi is very close
      to x0? Then xi-x0 will also generate high error. Which is better?
 
 */
 
-  if (fabs(xyz[0][0]) > 1000.0 || fabs(xyz[0][1]) > 1000.0) { 
+  if (fabs(xyz[0][0]) > 1000.0 || fabs(xyz[0][1]) > 1000.0) {
     for (i = 0; i < n; i++)
-      area += ((xyz[i][0]-xyz[0][0])*(xyz[(i+1)%n][1]-xyz[0][1]) - 
+      area += ((xyz[i][0]-xyz[0][0])*(xyz[(i+1)%n][1]-xyz[0][1]) -
                (xyz[(i+1)%n][0]-xyz[0][0])*(xyz[i][1]-xyz[0][1]));
   }
   else {
     for (i = 0; i < n; i++)
       area += ((xyz[i][0])*(xyz[(i+1)%n][1]) - (xyz[(i+1)%n][0])*(xyz[i][1]));
   }
-  
+
   area = 0.5*area;
-  
-  return area;  
+
+  return area;
 }
 
-double func_modcn_corner3d(double *xyz0, double *xyz1, double *xyz2, 
+double func_modcn_corner3d(double *xyz0, double *xyz1, double *xyz2,
                            double *xyz3) {
   double evec0[3], evec1[3], evec2[3], cpvec[3], a, b, vol6, val;
   double loc_delta;
@@ -515,7 +514,7 @@ double func_modcn_corner3d(double *xyz0, double *xyz1, double *xyz2,
   VDiff3(xyz1,xyz0,evec0);
   VDiff3(xyz2,xyz0,evec1);
   VDiff3(xyz3,xyz0,evec2);
-        
+
   a = VLenSqr3(evec0) + VLenSqr3(evec1) + VLenSqr3(evec2);
   VCross3(evec0,evec2,cpvec);
   b = VDot3(cpvec,cpvec);
@@ -535,14 +534,14 @@ double func_modcn_corner3d(double *xyz0, double *xyz1, double *xyz2,
 // Compute the value of the LOCAL component of the GLOBAL
 // deformation objective function given a new position 'nodexyz' for
 // node 'nodeid' i.e. only those terms in the global function that
-// are affected by the movement of this node. 
+// are affected by the movement of this node.
 //
 
 ////////////////////////////////////////////////////////////////////////////
 // THIS VERSION USES CACHING OF DATA - USE IT IF THE ABOVE CODE IS TOO SLOW
 ////////////////////////////////////////////////////////////////////////////
 
-double Mesh_MSTK::deform_function(const int nodeid, 
+double Mesh_MSTK::deform_function(const int nodeid,
                                   double const * const nodexyz) const {
 
   double func = 0.0, func1 = 0.0, func2 = 0.0, delta=1.0e-3;
@@ -563,7 +562,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
   static int (*fvid)[MAXPV2], *vfids;
   static int (*rvid)[MAXPV3], *vrids;
   static int (*rfvlocid)[MAXPF3][MAXPV2];
-  
+
   static int use_subtets_4all=1;
   static int use_face_centers=1;
 
@@ -588,7 +587,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
 
       if (last_v == NULL) {
 	maxf = nf;
-	fverts = 
+	fverts =
           (MVertex_ptr (*)[MAXPV2]) malloc(maxf*sizeof(MVertex_ptr [MAXPV2]));
 	nfv = (int *) malloc(maxf*sizeof(int));
 	fvid = (int (*)[MAXPV2]) malloc(maxf*sizeof(int [MAXPV2]));
@@ -596,13 +595,13 @@ double Mesh_MSTK::deform_function(const int nodeid,
       }
       else if (nf > maxf) {
 	maxf = 2*nf;
-	fverts = 
+	fverts =
           (MVertex_ptr (*)[MAXPV2]) realloc(fverts,maxf*sizeof(MVertex_ptr [MAXPV2]));
 	nfv = (int *) realloc(nfv,maxf*sizeof(int));
 	fvid = (int (*)[MAXPV2]) realloc(fvid,maxf*sizeof(int [MAXPV2]));
         vfids = (int *) realloc(vfids,maxf*sizeof(int));
       }
-      
+
       for (k = 0, jf = 0; k < nf; k++) {
 	MFace_ptr f = List_Entry(flist,k);
 
@@ -615,7 +614,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
 	  fvid[jf][i] = MV_ID(fverts[jf][i]);
 	}
 	List_Delete(fvlist);
-	
+
 	jf++;
       }
       List_Delete(flist);
@@ -629,23 +628,23 @@ double Mesh_MSTK::deform_function(const int nodeid,
       if (last_v == NULL) {
 	maxr = nr;
 	nrv = (int *) malloc(maxr*sizeof(int));
-	rverts = 
+	rverts =
           (MVertex_ptr (*)[MAXPV3]) malloc(maxr*sizeof(MVertex_ptr [MAXPV3]));
 	rvid = (int (*)[MAXPV3]) malloc(maxr*sizeof(int [MAXPV3]));
         nrf = (int *) malloc(maxr*sizeof(int));
-        rfvlocid = 
+        rfvlocid =
           (int (*)[MAXPF3][MAXPV2]) malloc(maxr*sizeof(int [MAXPF3][MAXPV2]));
         nrfv = (int (*)[MAXPF3]) malloc(maxr*sizeof(int [MAXPF3]));
         vrids = (int *) malloc(maxr*sizeof(int));
       }
       else if (nr > maxr) {
 	maxr = 2*nr;
-	rverts = 
+	rverts =
           (MVertex_ptr (*)[MAXPV3]) realloc(rverts,maxr*sizeof(MVertex_ptr [MAXPV3]));
 	nrv = (int *) realloc(nrv,maxr*sizeof(int));
 	rvid = (int (*)[MAXPV3]) realloc(rvid,maxr*sizeof(int [MAXPV3]));
         nrf = (int *) realloc(nrf,maxr*sizeof(int));
-        rfvlocid = 
+        rfvlocid =
           (int (*)[MAXPF3][MAXPV2]) realloc(rfvlocid,maxr*sizeof(int [MAXPF3][MAXPV2]));
         nrfv = (int (*)[MAXPF3]) realloc(nrfv,maxr*sizeof(int [MAXPF3]));
         vrids = (int *) realloc(vrids,maxr*sizeof(int));
@@ -656,7 +655,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
       for (jr = 0; jr < maxr; jr++)
         for (jf = 0; jf < MAXPF3; jf++)
           nrfv[jr][jf] = 0;
-      
+
       for (jr = 0; jr < nr; jr++) {
 	MRegion_ptr r = List_Entry(rlist,jr);
 
@@ -673,11 +672,11 @@ double Mesh_MSTK::deform_function(const int nodeid,
 
         List_ptr rflist = MR_Faces(r);
         nrf[jr] = List_Num_Entries(rflist);
-        
-        if (nrv[jr] == 4 || 
-            (!use_subtets_4all && 
+
+        if (nrv[jr] == 4 ||
+            (!use_subtets_4all &&
              ((nrv[jr] == 6 && nrf[jr] == 5) || (nrv[jr] == 8 && nrf[jr] == 6)))
-            ) { 
+            ) {
           List_Delete(rvlist);
           continue;
         }
@@ -686,15 +685,15 @@ double Mesh_MSTK::deform_function(const int nodeid,
         for (jf = 0; jf < nrf[jr]; jf++) {
           MFace_ptr rf = List_Entry(rflist,jf);
           int rfdir = MR_FaceDir_i(r,jf);
-            
+
           List_ptr rfvlist = MF_Vertices(rf,!rfdir,0);
           nrfv[jr][jf] = List_Num_Entries(rfvlist);
-            
+
           int nfv = nrfv[jr][jf];
           for (j = 0; j < nfv; j++) {
             int rvidx;
             rv = List_Entry(rfvlist,j);
-              
+
             /* find local index of face vertex in element vertex list */
             for (k = 0, found = 0; k < nrv[jr] && !found; k++)
               if (rv == rverts[jr][k]) {
@@ -712,8 +711,8 @@ double Mesh_MSTK::deform_function(const int nodeid,
 
             /* if this vertex is a neighbor of v, add it to neighbor list */
 
-            if (v == List_Entry(rfvlist,(j+1)%nfv) || 
-                v == List_Entry(rfvlist,(j-1+nfv)%nfv)) { 
+            if (v == List_Entry(rfvlist,(j+1)%nfv) ||
+                v == List_Entry(rfvlist,(j-1+nfv)%nfv)) {
               for (k = 0, found = 0; !found && k < nnbrsgen; k++)
                 found = (rverts[vnbrsgen[k]] == rv) ? 1 : 0;
               if (!found)
@@ -722,9 +721,9 @@ double Mesh_MSTK::deform_function(const int nodeid,
           }
           List_Delete(rfvlist);
         } /* for jf = each face in element */
-          
+
         List_Delete(rflist);
-        List_Delete(rvlist);          
+        List_Delete(rvlist);
       }
       List_Delete(rlist);
     }
@@ -740,7 +739,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
 
     for (jf =  0; jf < nf; jf++) {
       int fid = vfids[jf];
-      
+
       for (i = 0; i < nfv[jf]; i++) {
         fv = fverts[jf][i];
         if (fv != v) {
@@ -750,7 +749,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
         else
           xyz[i] = nodexyz_copy;
       }
-      
+
       // for (i = 0; i < nfv[jf]; i++) {
 
       //   if (i > 1 && i < nfv[jf]-1)
@@ -768,27 +767,27 @@ double Mesh_MSTK::deform_function(const int nodeid,
 
       //   VDiff3(xyz1[2],xyz1[0],evec1);
       //   L20_sqr = VLenSqr3(evec1);
-      
+
       //   if (L20_sqr < 1e-12)
       //     L20_sqr = 1e-12;
-      
+
       //   a = L10_sqr+L20_sqr;
 
       //   if (space_dimension() == 3) {
       //     /* if we are dealing with volume mesh or a pure surface mesh
       //        then it is hard to define what inverted means on the
       //        surface. So we will use an unsigned area */
-        
+
       //     double areavec[3];
       //     VCross3(evec0,evec1,areavec);
       //     A = VLen3(areavec);
       //   }
       //   else {
       //     /* This is a planar mesh - compute the signed area */
-        
-      //     A =  0.5*( xyz1[2][0]*xyz1[0][1] + xyz1[0][0]*xyz1[1][1] + 
-      //                xyz1[1][0]*xyz1[2][1] - xyz1[1][0]*xyz1[0][1] - 
-      //                xyz1[2][0]*xyz1[1][1] - xyz1[0][0]*xyz1[2][1]);	
+
+      //     A =  0.5*( xyz1[2][0]*xyz1[0][1] + xyz1[0][0]*xyz1[1][1] +
+      //                xyz1[1][0]*xyz1[2][1] - xyz1[1][0]*xyz1[0][1] -
+      //                xyz1[2][0]*xyz1[1][1] - xyz1[0][0]*xyz1[2][1]);
       //   }
       //   delta = 1.0/(1+exp(A));
       //   condfunc += 2*a/(A+sqrt(A*A+delta*delta));
@@ -796,7 +795,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
       // }
 
       double (*pxyz)[3] = (double (*)[3]) malloc(nfv[jf]*sizeof(double [3]));
-      for (k = 0; k < nfv[jf]; k++) 
+      for (k = 0; k < nfv[jf]; k++)
         std::copy(xyz[k],xyz[k]+3,pxyz[k]);
       double face_area = Poly_Area(nfv[jf], pxyz);
       free(pxyz);
@@ -827,9 +826,9 @@ double Mesh_MSTK::deform_function(const int nodeid,
       int rid = vrids[jr];
       double region_volume=0;
 
-      if ( 
-          (nrv[jr] == 4) || 
-          (!use_subtets_4all && 
+      if (
+          (nrv[jr] == 4) ||
+          (!use_subtets_4all &&
            ((nrv[jr] == 6 && nrf[jr] == 5) || (nrv[jr] == 8 && nrf[jr] == 6)))
            ) {
         /* tet, or (prism or hex using CN at their original corners) */
@@ -845,12 +844,12 @@ double Mesh_MSTK::deform_function(const int nodeid,
             vind = i;
           }
         }
-      
+
         /* indices of vertices at which condition number must be computed */
         /* This is the index of the vertex and its edge connected neighbors */
         /* Also make general list of neighbors of the involved vertices */
-      
-        // ind[0] = vind;    
+
+        // ind[0] = vind;
         // switch (nrv[jr]) {
         // case 4:
         //   for (i = 0; i < 3; i++)
@@ -861,7 +860,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
         //       nbrs[i][k] = tetidx[j][k];
         //   }
         //   break;
-        // case 6:      
+        // case 6:
         //   for (i = 0; i < 3; i++)
         //     ind[i+1] = prsmidx[vind][i];
         //   for (i = 0; i < 4; i++) {
@@ -872,7 +871,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
         //   break;
         // case 8:
         //   for (i = 0; i < 3; i++)
-        //     ind[i+1] = hexidx[vind][i];      
+        //     ind[i+1] = hexidx[vind][i];
         //   for (i = 0; i < 4; i++) {
         //     j = ind[i];
         //     for (k = 0; k < 3; k++)
@@ -880,13 +879,13 @@ double Mesh_MSTK::deform_function(const int nodeid,
         //   }
         //   break;
         // }
-      
+
         // for (i = 0; i < 4; i++) {
         //   /* For each relevant corner ind[i], compute condition number */
-        
+
         //   /* coordinates of vertex ind[i] itself */
         //   xyz1[0] = xyz[ind[i]];
-        
+
         //   /* coordinates of its edge connected neighbors */
         //   for (j = 0; j < 3; j++) {
         //     m = nbrs[i][j]; /* j'th neighbor of ind[i] */
@@ -900,7 +899,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
         // AND SO CODE WILL COME HERE ONLY FOR TETS
         region_volume += Tet_Volume(xyz[0], xyz[1], xyz[2], xyz[3]);
       }
-      else { 
+      else {
         /* general polyhedron with possibly non-trivalent corners or
            hex/prism for which we will use a tet decomposition */
 
@@ -912,7 +911,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
            consistent way of dealing with non-trivalent corners. It will
            also ensure that, in the end, every tetrahedron in the
            polyhedral decomposition is valid and well shaped */
-      
+
         /* compute the central point of the element */
         double rcen[3] = {0.0,0.0,0.0};
         for (i = 0; i < nrv[jr]; i++) {
@@ -923,14 +922,14 @@ double Mesh_MSTK::deform_function(const int nodeid,
           }
           else
             xyz[i] = nodexyz_copy;
-        
+
           for (k = 0; k < 3; k++)
             rcen[k] += xyz[i][k];
         }
         for (k = 0; k < 3; k++) rcen[k] /= nrv[jr];
-      
+
         /* compute central point of faces containing v in element */
-      
+
         for (jf = 0; jf < nrf[jr]; jf++) {
 
           int nfv = nrfv[jr][jf];
@@ -942,13 +941,13 @@ double Mesh_MSTK::deform_function(const int nodeid,
               for (k = 0; k < 3; k++)
                 fcen[k] += xyz[rvlid][k];
             }
-            for (k = 0; k < 3; k++) fcen[k] /= nfv;        
+            for (k = 0; k < 3; k++) fcen[k] /= nfv;
           }
-          
+
           for (j = 0; j < nfv; j++) {
             int rvlid = rfvlocid[jr][jf][j];
             int rvlid1;
-          
+
             /* Volume of this tet */
 
             rvlid1 = rfvlocid[jr][jf][(j+1)%nfv];
@@ -958,14 +957,14 @@ double Mesh_MSTK::deform_function(const int nodeid,
 
             /* Condition number at corners of this tet if it is relevant */
             /* Is face vertex either v or one of its edge connected nbrs? */
-          
+
             // found = 0;
             // if (rverts[rvlid] == v) found = 1;
             // for (k = 0; !found && k < nnbrsgen; k++)
             //   if (rvlid == vnbrsgen[k]) found = 1;
-          
+
             // if (!found) continue;
-        
+
             // if (use_face_centers == 1) {
             //   /* form virtual tets using the central face point, central
             //      element point and edges of the element - compute condition
@@ -976,30 +975,30 @@ double Mesh_MSTK::deform_function(const int nodeid,
             //      will compute the condition numbers only at vertices we would
             //      have computed them at if we were not using a virtual
             //      decomposition of the element */
-            
-            //   rvlid1 = rfvlocid[jr][jf][(j-1+nfv)%nfv];            
+
+            //   rvlid1 = rfvlocid[jr][jf][(j-1+nfv)%nfv];
             //   condfunc += func_modcn_corner3d(xyz[rvlid],fcen,xyz[rvlid1],rcen);
 
             //   rvlid1 = rfvlocid[jr][jf][(j+1)%nfv];
             //   condfunc += func_modcn_corner3d(xyz[rvlid],xyz[rvlid1],fcen,rcen);
             // }
-            // else {            
+            // else {
             //   int rvlid1;
             //   rvlid1 = rfvlocid[jr][jf][(j-1+nfv)%nfv];
             //   int rvlid2 = rfvlocid[jr][jf][(j+1)%nfv];
-            //   condfunc += func_modcn_corner3d(xyz[rvlid], xyz[rvlid2], 
+            //   condfunc += func_modcn_corner3d(xyz[rvlid], xyz[rvlid2],
             //                                    xyz[rvlid1], rcen);
             // }
-          
+
           } // nfv
         } // jf
       } // else
 
 
       // IF ANY OF THE COMPONENT TETS HAD A NEGATIVE VOLUME, MAKE SURE THAT
-      // THE REGION VOLUME IS MADE NEGATIVE (IT MAY HAVE BEEN CANCELLED OUT 
+      // THE REGION VOLUME IS MADE NEGATIVE (IT MAY HAVE BEEN CANCELLED OUT
       // BY A MULTITUDE OF POSITIVE VOLUME TETS).
-      
+
       region_volume = negvol_factor*fabs(region_volume);
 
       // If the target_volume is 0, it indicates that we don't care
@@ -1007,7 +1006,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
       // this function value 0
 
       double target_volume = target_cell_volumes_[rid-1];
-      double volume_diff = (target_volume > 0) ? 
+      double volume_diff = (target_volume > 0) ?
           (region_volume-target_volume)/target_volume : 0.0;
       volfunc += volume_diff*volume_diff;
 
@@ -1034,7 +1033,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
   // tag such nodes which don't need to be explicitly moved and not
   // try to move them at all
 
-  double inlogexpr = volfunc > 0.0 ? 
+  double inlogexpr = volfunc > 0.0 ?
       k1*exp(c1*barrierfunc) + k2*exp(c2*volfunc) + k3*exp(c3*condfunc) : 1;
   func =  (inlogexpr > 0.0 && negvol_factor > 0) ? log(inlogexpr) : 1e+10;
   return func;
@@ -1044,8 +1043,8 @@ double Mesh_MSTK::deform_function(const int nodeid,
 
 // Finite difference gradient of deformation objective function
 
-void Mesh_MSTK::deform_gradient(const int nodeid, 
-                                double const * const nodexyz, 
+void Mesh_MSTK::deform_gradient(const int nodeid,
+                                double const * const nodexyz,
                                 double *gradient) const {
 
   static const double macheps = 2.2e-16;
@@ -1059,7 +1058,7 @@ void Mesh_MSTK::deform_gradient(const int nodeid,
   double f0 = deform_function(nodeid, xyz);
 
   // For now we assume we are getting a full 2D/3D gradient for every vertex
-  
+
   for (int i = 0; i < ndim; i++) {
     gradient[i] = 0.0;
 
@@ -1077,12 +1076,12 @@ void Mesh_MSTK::deform_gradient(const int nodeid,
     // Restore i'th coordinate
     xyz[i] = nodexyz[i];
   }
-  
+
 }
 
 // Finite difference hessian of deformation objective function in 2D
 
-void Mesh_MSTK::deform_hessian(const int nodeid, double const * const nodexyz, 
+void Mesh_MSTK::deform_hessian(const int nodeid, double const * const nodexyz,
                                double hessian[3][3]) const {
 
   static const double macheps = 2.2e-16;
@@ -1095,21 +1094,21 @@ void Mesh_MSTK::deform_hessian(const int nodeid, double const * const nodexyz,
      average of all the coordinates w.r.t. which we will take
      derivatives */
   /* Also, if we are dealing with very small numbers, eps2_sqr
-     can be below machine precision. To guard against this 
+     can be below machine precision. To guard against this
      lets multiply the initial estimate of eps2 by 100 and if
      it is still less than 100*sqrt_macheps, reject the estimate
      and just use 10*sqrt_macheps */
-  
+
   if (ndim == 2) {
     double xyz[3]={0.0,0.0,0.0};
     std::copy(nodexyz,nodexyz+ndim,xyz);
-  
+
     double f0, f1, f2, f3, f4, f5, f6;
-    
-    h = 100*sqrt_macheps*(fabs(xyz[0])+fabs(xyz[1]))/2.0; 
+
+    h = 100*sqrt_macheps*(fabs(xyz[0])+fabs(xyz[1]))/2.0;
     h = (h > 100*sqrt_macheps) ? h : 100*sqrt_macheps;
     h_sqr = h*h;
-    
+
 
     f0 = deform_function(nodeid, xyz); // f(x,y)
 
@@ -1123,7 +1122,7 @@ void Mesh_MSTK::deform_hessian(const int nodeid, double const * const nodexyz,
 
     // fxx or H[0][0]
     hessian[0][0] = (f2 - 2*f0 + f1)/h_sqr;
-      
+
 
 
     xyz[1] += h;                       // y+h
@@ -1158,14 +1157,14 @@ void Mesh_MSTK::deform_hessian(const int nodeid, double const * const nodexyz,
        average of all the coordinates w.r.t. which we will take
        derivatives */
     /* Also, if we are dealing with very small numbers, eps2_sqr
-       can be below machine precision. To guard against this 
+       can be below machine precision. To guard against this
        lets multiply the initial estimate of eps2 by 100 and if
        it is still less than 100*sqrt_macheps, reject the estimate
        and just use 10*sqrt_macheps */
-  
+
     double xyz[3]={0.0,0.0,0.0};
     std::copy(nodexyz,nodexyz+ndim,xyz);
-  
+
     double f0, f1, f2, f3, f4;
 
     /* Since we have mixed derivatives, it is not clear what the 'x'
@@ -1173,13 +1172,13 @@ void Mesh_MSTK::deform_hessian(const int nodeid, double const * const nodexyz,
        average of all the coordinates w.r.t. which we will take
        derivatives */
 
-    h = 100*sqrt_macheps*(fabs(xyz[0])+fabs(xyz[1])+fabs(xyz[2]))/3.0; 
+    h = 100*sqrt_macheps*(fabs(xyz[0])+fabs(xyz[1])+fabs(xyz[2]))/3.0;
     h = (h < 100*sqrt_macheps) ? 100*sqrt_macheps : h;
     h_sqr = h*h;
-    
+
 
     f0 = deform_function(nodeid, xyz); // f(x,y,z)
-   
+
     xyz[0] += h;                       // x+h
     f1= deform_function(nodeid, xyz);  // f(x+h,y,z)
     std::copy(nodexyz,nodexyz+ndim,xyz); // reset
@@ -1302,33 +1301,33 @@ double Mesh_MSTK::mineigenvalue(const double A[3][3]) const {
     double eye[3][3]={ {1,0,0}, {0,1,0}, {0,0,1}};
     double B[3][3];
     double eigenvalues[3];
-    
+
     int i,j;
-    
+
     p = A[0][1]*A[0][1] + A[0][2]*A[0][2] + A[1][2]*A[1][2];
     if (p == 0) {
       eigenvalues[0]=A[0][0];
       eigenvalues[1]=A[1][1];
-      eigenvalues[2]=A[2][2];        
+      eigenvalues[2]=A[2][2];
     }
     else {
       q= ( A[0][0] + A[1][1] + A[2][2] )/ 3.0;
       p= (A[0][0]-q)*(A[0][0]-q) + (A[1][1]-q)*(A[1][1]-q) +
         (A[2][2]-q)*(A[2][2]-q) + 2.0*p;
       p = sqrt(p/6.0);
-      
+
       for (i=0; i<3; i++)
         eye[i][i] = q*eye[i][i];
-      
+
       for (i=0; i<3; i++)
         for (j=0; j<3; j++)
           B[i][j]=(A[i][j]-eye[i][j])/p;
-      
-      
-      r =  B[0][0]*B[1][1]*B[2][2] + B[0][1]*B[1][2]*B[2][0] + 
-        B[0][2]*B[1][0]*B[2][1] - B[0][2]*B[1][1]*B[2][0] - 
+
+
+      r =  B[0][0]*B[1][1]*B[2][2] + B[0][1]*B[1][2]*B[2][0] +
+        B[0][2]*B[1][0]*B[2][1] - B[0][2]*B[1][1]*B[2][0] -
         B[0][1]*B[1][0]*B[2][2] - B[0][0]*B[1][2]*B[2][1];
-      
+
       r = r/2.0;
       if ( r <= -1)
         phi = pi/3.0;
@@ -1336,16 +1335,16 @@ double Mesh_MSTK::mineigenvalue(const double A[3][3]) const {
         phi = 0;
       else
         phi = acos(r)/3.0;
-      
+
       eigenvalues[0] = q + 2*p*cos(phi);
       eigenvalues[1] = q + 2*p*cos(phi+pi*2/3.0);
-      eigenvalues[2] = 3*q - eigenvalues[0] - eigenvalues[1];   
-      
-      min = (eigenvalues[0] < eigenvalues[1]) ? eigenvalues[0] : 
+      eigenvalues[2] = 3*q - eigenvalues[0] - eigenvalues[1];
+
+      min = (eigenvalues[0] < eigenvalues[1]) ? eigenvalues[0] :
         eigenvalues[1];
       min = (min < eigenvalues[2]) ? min : eigenvalues[2];
     }
-  } 
+  }
 
   return min;
 }
@@ -1366,7 +1365,7 @@ int Mesh_MSTK::hessian_inverse(const double H[3][3], double iH[3][3]) const {
   }
   else {
     // Code from DSP Design Performance page by Dr. Jeffrey Tafts
-    // http://www.nauticom.net/www/jdtaft/FortranMatrix.htm 
+    // http://www.nauticom.net/www/jdtaft/FortranMatrix.htm
 
     double alpha, beta;
     int i, j, k, n2;
@@ -1391,12 +1390,12 @@ int Mesh_MSTK::hessian_inverse(const double H[3][3], double iH[3][3]) const {
         //        Errors::Message mesg("hessian_inverse: Singular Hessian Matrix");
         //        amanzi_throw(mesg);
       }
-    
+
       for (j = 0; j < n2; j++)
         D[i][j] = D[i][j]/alpha;
-         
+
       for (k = 0; k < ndim; k++) {
-        if ((k-i)== 0) 
+        if ((k-i)== 0)
           continue;
 
         beta = D[k][i];
@@ -1404,7 +1403,7 @@ int Mesh_MSTK::hessian_inverse(const double H[3][3], double iH[3][3]) const {
           D[k][j] = D[k][j] - beta*D[i][j];
       }
     }
-       
+
     /* copy result into output matrix */
     for (i = 0; i < ndim; i++)
       for (j = 0; j < ndim; j++)
@@ -1417,7 +1416,7 @@ int Mesh_MSTK::hessian_inverse(const double H[3][3], double iH[3][3]) const {
 // Compute the value of the LOCAL component of the GLOBAL
 // deformation objective function given a new position 'nodexyz' for
 // node 'nodeid' i.e. only those terms in the global function that
-// are affected by the movement of this node. The deformation objective 
+// are affected by the movement of this node. The deformation objective
 // function in each element is given as
 //                             (volume_diff)^2
 //         f =  -----------------------------------------------------
@@ -1429,14 +1428,14 @@ int Mesh_MSTK::hessian_inverse(const double H[3][3], double iH[3][3]) const {
 //         delta = a very small number (order of 1e-6 or so)
 //
 
-// double Mesh_MSTK::deform_function(const int nodeid, 
+// double Mesh_MSTK::deform_function(const int nodeid,
 //                                   double const * const nodexyz) const {
 
 //   double volfunc = 0.0, barrierfunc = 0.0, delta=1.0e-6;
 //   MVertex_ptr v = vtx_id_to_handle[nodeid];
 
 //   if (space_dimension() == 2) {
-    
+
 //     List_ptr vfaces = MV_Faces(v);
 
 //     MFace_ptr vf;
@@ -1453,7 +1452,7 @@ int Mesh_MSTK::hessian_inverse(const double H[3][3], double iH[3][3]) const {
 //         MVertex_ptr fv = List_Entry(fverts,i);
 //         int fvid = MV_ID(fv);
 //         fvxyz = &(meshxyz[3*(fvid-1)]);
-        
+
 //         AmanziGeometry::Point vcoord(2);
 //         if (fv == v)
 //           vcoord.set(nodexyz[0],nodexyz[1]);
@@ -1469,8 +1468,8 @@ int Mesh_MSTK::hessian_inverse(const double H[3][3], double iH[3][3]) const {
 //                                                        &centroid,&normal);
 
 //       // compute the function value for this face - the function is set up
-//       // such that it increases dramatically but does not blow up when 
-//       // it approaches the minimum volume. 
+//       // such that it increases dramatically but does not blow up when
+//       // it approaches the minimum volume.
 //       // In the following area_diff is the deviation from the target area,
 //       // min_area_diff is the deviation from the minimum area and delta
 //       // is some small parameter chosen relative to cell size or problem size
@@ -1488,11 +1487,11 @@ int Mesh_MSTK::hessian_inverse(const double H[3][3], double iH[3][3]) const {
 //       barrierfunc += 1/(1+exp(10*min_area_diff));
 //     }
 
-//     List_Delete(vfaces);    
+//     List_Delete(vfaces);
 
 //   }
 //   else {
-    
+
 //     List_ptr vregions = MV_Regions(v);
 
 //     MRegion_ptr vr;
@@ -1515,7 +1514,7 @@ int Mesh_MSTK::hessian_inverse(const double H[3][3], double iH[3][3]) const {
 //         int dir = MR_FaceDir_i(vr,i);
 
 //         List_ptr fverts = MF_Vertices(rf,!dir,0);
-//         int nfv = List_Num_Entries(fverts);        
+//         int nfv = List_Num_Entries(fverts);
 //         nfnodes.push_back(nfv);
 
 //         for (int j = 0; j < nfv; j++) {
@@ -1524,7 +1523,7 @@ int Mesh_MSTK::hessian_inverse(const double H[3][3], double iH[3][3]) const {
 //           MVertex_ptr fv = List_Entry(fverts,j);
 //           int fvid = MV_ID(fv);
 //           fvxyz = &(meshxyz[3*(fvid-1)]);
-        
+
 //           AmanziGeometry::Point vcoord(3);
 //           if (fv == v)
 //             vcoord.set(nodexyz[0],nodexyz[1],nodexyz[2]);
@@ -1553,8 +1552,8 @@ int Mesh_MSTK::hessian_inverse(const double H[3][3], double iH[3][3]) const {
 //                                                &volume,&centroid);
 
 //       // compute the function value for this face - the function is set up
-//       // such that it increases dramatically but does not blow up when 
-//       // it approaches the minimum volume. 
+//       // such that it increases dramatically but does not blow up when
+//       // it approaches the minimum volume.
 //       // In the following area_diff is the deviation from the target area,
 //       // min_area_diff is the deviation from the minimum area and delta
 //       // is some small parameter chosen relative to cell size or problem size
@@ -1572,7 +1571,7 @@ int Mesh_MSTK::hessian_inverse(const double H[3][3], double iH[3][3]) const {
 //       barrierfunc += 1/(1+exp(10*min_volume_diff));
 //     }
 
-//     List_Delete(vregions);    
+//     List_Delete(vregions);
 
 //   }
 

@@ -24,16 +24,16 @@ TEST(MSTK_HEX_GEN_3x3x3)
 
   auto comm = Amanzi::getDefaultComm();
 
-  // Generate a mesh consisting of 3x3x3 elements 
+  // Generate a mesh consisting of 3x3x3 elements
 
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,1.0,1.0,1.0,3,3,3,comm));
 
   nv = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(NV,nv);
-  
+
   nf = mesh->num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(NF,nf);
-  
+
   nc = mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(NC,nc);
 
@@ -52,11 +52,9 @@ TEST(MSTK_HEX_GEN_3x3x3)
 	}
 
     }
-  
+
   std::ofstream outfile("test/mstk_hex_gen_3x3x3.out");
   Amanzi::MeshAudit auditor(mesh,outfile);
   auditor.Verify();
 
-
 }
-

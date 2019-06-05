@@ -1,9 +1,9 @@
 /*
   Mesh Functions
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov
@@ -20,7 +20,7 @@ namespace Amanzi {
 namespace Functions {
 
 /* ******************************************************************
-* Ensure uniqueness of the spec and create the set of IDs contained 
+* Ensure uniqueness of the spec and create the set of IDs contained
 * in the Domain of the spec togher with volume fractions.
 ****************************************************************** */
 void MaterialMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec)
@@ -36,15 +36,15 @@ void MaterialMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec)
 
     // Get the ids from the mesh by region name and entity kind.
     if (mesh_->valid_set_name(*region, kind)) {
-      AmanziMesh::Entity_ID_List ids;
+      Kokkos::View<AmanziMesh::Entity_ID*> ids;
       std::vector<double> vofs;
-      mesh_->get_set_entities_and_vofs(*region, kind, AmanziMesh::Parallel_type::ALL, &ids, &vofs);
+      mesh_->get_set_entities_and_vofs(*region, kind, AmanziMesh::Parallel_type::ALL, ids, &vofs);
 
       // populating default volume fractions (move this to mesh framework?)
-      if (vofs.size() == 0) vofs.resize(ids.size(), 1.0);
+      if (vofs.size() == 0) vofs.resize(ids.extent(0), 1.0);
 
-      for (int i = 0; i < ids.size(); ++i) {
-        AmanziMesh::Entity_ID id = ids[i];
+      for (int i = 0; i < ids.extent(0); ++i) {
+        AmanziMesh::Entity_ID id = ids(i);
         it = mat_mesh->find(id);
         if (it == mat_mesh->end()) {
           (*mat_mesh)[id] = vofs[i];
@@ -86,4 +86,3 @@ void MaterialMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec)
 
 }  // namespace Functions
 }  // namespace Amanzi
-

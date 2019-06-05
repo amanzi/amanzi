@@ -1,7 +1,7 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon (ecoon@lanl.gov)
@@ -70,21 +70,21 @@ class MeshLogical : public Mesh {
               const std::vector<AmanziGeometry::Point>* cell_centroids=nullptr,
               const Teuchos::RCP<const Teuchos::ParameterList>& plist=Teuchos::null);
 
-  
+
   void get_logical_geometry(std::vector<double>* const cell_volumes,
                             std::vector<std::vector<double> >* const cell_face_lengths,
                             std::vector<double>* const face_areas,
                             std::vector<AmanziGeometry::Point>* const cell_centroids) const;
-      
+
   void set_logical_geometry(std::vector<double> const* const cell_volumes,
                             std::vector<std::vector<double> > const* const cell_face_lengths,
                             std::vector<double> const* const face_areas,
                             std::vector<AmanziGeometry::Point> const* const cell_centroids=NULL);
-      
+
 
   // for testing
   bool operator==(const MeshLogical& other);
-  
+
   // Get parallel type of entity - OWNED, GHOST, ALL (See MeshDefs.hh)
   virtual
   Parallel_type entity_get_ptype(const Entity_kind kind,
@@ -113,7 +113,7 @@ class MeshLogical : public Mesh {
   virtual
   Entity_ID GID(const Entity_ID lid, const Entity_kind kind) const override;
 
-  
+
   //
   // Mesh Entity Adjacencies
   //-------------------------
@@ -300,7 +300,7 @@ class MeshLogical : public Mesh {
   void get_set_entities_and_vofs(const std::string setname,
                                  const Entity_kind kind,
                                  const Parallel_type ptype,
-                                 Entity_ID_List *entids,
+                                 Kokkos::View<Entity_ID*> &entids,
                                  std::vector<double> *vofs) const override;
 
 

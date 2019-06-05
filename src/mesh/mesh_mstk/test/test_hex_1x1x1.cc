@@ -27,7 +27,7 @@ TEST(MSTK_HEX1)
 		       {0, 1, 0},
 		       {1, 1, 0},
 		       {0, 0, 1},
-		       {1, 0, 1}, 
+		       {1, 0, 1},
 		       {0, 1, 1},
 		       {1, 1, 1}};
   Amanzi::AmanziMesh::Entity_ID local_cellnodes[8] = {0,1,2,3,4,5,6,7};
@@ -62,7 +62,7 @@ TEST(MSTK_HEX1)
 
 
   // Check number of cells and their face nodes and their face coordinates
-  
+
   nc = mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(NC,nc);
 
@@ -71,13 +71,13 @@ TEST(MSTK_HEX1)
 
   mesh->cell_get_nodes(0,&cellnodes);
   mesh->cell_get_coordinates(0,&ccoords);
-    
+
   for (j = 0; j < 8; j++) {
     CHECK_ARRAY_EQUAL(xyz[cellnodes[j]],ccoords[j],3);
   }
 
 
-    
+
   mesh->cell_get_faces_and_dirs(0,&faces,&facedirs,true);
 
   for (j = 0; j < 6; j++) {
@@ -101,7 +101,7 @@ TEST(MSTK_HEX1)
       }
     }
 
-    CHECK_EQUAL(found,1); 
+    CHECK_EQUAL(found,1);
 
     if (facedirs[j] == 1) {
       for (k = 0; k < 4; k++) {
@@ -117,6 +117,4 @@ TEST(MSTK_HEX1)
     }
 
   }
-      
 }
-

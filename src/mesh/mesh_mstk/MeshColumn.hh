@@ -1,8 +1,8 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Rao Garimella, others
@@ -67,7 +67,7 @@ class MeshColumn : public Mesh {
   MeshColumn(const Teuchos::RCP<const Mesh>& parent_mesh,
              const int column_id,
              const Teuchos::RCP<const Teuchos::ParameterList>& plist=Teuchos::null);
-             
+
 
   ~MeshColumn() = default;
 
@@ -327,7 +327,7 @@ class MeshColumn : public Mesh {
   virtual
   int deform(const std::vector<double>& target_cell_volumes_in,
              const std::vector<double>& min_cell_volumes_in,
-             const Entity_ID_List& fixed_nodes,
+             const Kokkos::View<Entity_ID*>& fixed_nodes,
              const bool move_vertical) override;
 
   //
@@ -382,16 +382,18 @@ class MeshColumn : public Mesh {
   void get_set_entities_and_vofs(const std::string setname,
                                  const Entity_kind kind,
                                  const Parallel_type ptype,
-                                 Entity_ID_List *entids,
+                                 Kokkos::View<Entity_ID*> &entids,
                                  std::vector<double> *vofs) const override {
     switch (kind) {
       case FACE: {
-        Entity_ID_List faces;
-        extracted_->get_set_entities(setname, kind, ptype, &faces);
+        Kokkos::View<Entity_ID*> faces;
+        extracted_->get_set_entities(setname, kind, ptype, faces);
 
-        for (Entity_ID_List::const_iterator f=faces.begin();
-             f!=faces.end(); ++f) {
-          if (face_in_column_[*f] >= 0) entids->push_back(face_in_column_[*f]);
+        for (int i = 0 ; i < faces.extent(0); ++i) {
+          if (face_in_column_[faces(i)] >= 0){
+            Kokkos::resize(entids,entids.extent(0)+1);
+            entids(entids.extent(0)) = face_in_column_[faces(i)];
+          }
         }
         break;
       }

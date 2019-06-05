@@ -487,9 +487,6 @@ Mesh::compute_face_geometric_quantities_() const
   normals_count(0) = 0;
   Kokkos::View<AmanziGeometry::Point*> normals_rows;
 
-  //Kokkos::resize(face_normals_,nfaces);
-  //face_normals_.resize(nfaces);
-
   for (int i = 0; i < nfaces; i++) {
     double area;
     AmanziGeometry::Point centroid(space_dim_);
@@ -509,8 +506,6 @@ Mesh::compute_face_geometric_quantities_() const
       normals_rows(normals_count(i)+j) = normals[j];
     }
     normals_count(i+1) = normals.size()+normals_count(i);
-
-    //face_normals_[i] = normals;
   }
 
   face_normals_ = Kokkos::Crs<AmanziGeometry::Point,Kokkos::HostSpace>(normals_count,normals_rows);
@@ -1432,8 +1427,11 @@ Mesh::build_columns(const std::string& setname) const
     node_nodeabove_(i) = -1;
   });
 
-  Entity_ID_List top_faces;
-  get_set_entities(setname, FACE, Parallel_type::ALL, &top_faces);
+  Kokkos::resize(column_cells_.row_map,1);
+  column_cells_.row_map(0) = 0;
+
+  Kokkos::View<Entity_ID*> top_faces;
+  get_set_entities(setname, FACE, Parallel_type::ALL, top_faces);
 
   int ncolumns = top_faces.size();
   num_owned_cols_ = get_set_size(setname, FACE, Parallel_type::OWNED);
@@ -1506,6 +1504,9 @@ Mesh::build_columns() const
   Kokkos::parallel_for(nn, KOKKOS_LAMBDA(const int &i){
     node_nodeabove_(i) = -1;
   });
+
+  Kokkos::resize(column_cells_.row_map,1);
+  column_cells_.row_map(0) = 0;
 
   // Find the faces at the top of the domain. We assume that these are all
   // the boundary faces whose normal points in the positive z-direction
@@ -1703,17 +1704,6 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
       if (bot_i < 0) bot_i += nfvtop;
       Entity_ID botnode = botnodes[bot_i];
       node_nodeabove_(botnode) = topnode;
-
-      // AMANZI_ASSERT used in debugging
-      // AmanziGeometry::Point bc;
-      // AmanziGeometry::Point tc;
-      // node_get_coordinates(topnode, &bc);
-      // node_get_coordinates(botnode, &tc);
-      // double horiz_dist = 0.;
-      // for (int m=0; m!=space_dim_-1; ++m) {
-      //   horiz_dist += std::abs(bc[m]-tc[m]);
-      // }
-      // AMANZI_ASSERT(horz_dist < 1.e-10);
     }
 
     top_face = bot_face;
@@ -1721,7 +1711,17 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
 
   if (success) {
     colfaces.push_back(bot_face);
-    column_cells_.push_back(colcells);
+
+    int size_column_cells = column_cells_.row_map.extent(0);
+    Kokkos::resize(column_cells_.row_map,size_column_cells+1);
+    column_cells_.row_map(size_column_cells) =
+      column_cells_.row_map(size_column_cells-1)+colcells.size();
+    Kokkos::resize(column_cells_.entries,
+      column_cells_.row_map(size_column_cells));
+    for(int cc = 0 ; cc < colcells.size(); ++cc)
+      column_cells_.entries(cc+column_cells_.row_map(size_column_cells-1)) =
+        colcells[cc];
+
     column_faces_.push_back(colfaces);
   }
 

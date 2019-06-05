@@ -271,7 +271,7 @@ class MeshEmbeddedLogical : public Mesh {
   void get_set_entities_and_vofs(const std::string setname,
                                  const Entity_kind kind,
                                  const Parallel_type ptype,
-                                 Entity_ID_List *entids,
+                                 Kokkos::View<Entity_ID*> &entids,
                                  std::vector<double> *vofs) const;
 
   // Miscellaneous functions

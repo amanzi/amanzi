@@ -442,7 +442,7 @@ class Mesh {
   int num_columns(bool ghosted=false) const;
 
   // Given a column ID, get the cells of the column - must call build_columns before calling
-  const Entity_ID_List& cells_of_column(const int columnID_) const;
+  Kokkos::View<Entity_ID*> cells_of_column(const int columnID_) const;
 
   // Given a column ID, get the cells of the column - must call build_columns before calling
   const Entity_ID_List& faces_of_column(const int columnID_) const;
@@ -624,7 +624,7 @@ class Mesh {
   virtual
   int deform(const std::vector<double>& target_cell_volumes_in,
              const std::vector<double>& min_cell_volumes_in,
-             const Entity_ID_List& fixed_nodes,
+             const Kokkos::View<Entity_ID*>& fixed_nodes,
              const bool move_vertical) = 0;
 
 
@@ -713,14 +713,14 @@ class Mesh {
   void get_set_entities(const std::string setname,
                         const Entity_kind kind,
                         const Parallel_type ptype,
-                        Entity_ID_List *entids) const;
+                        Kokkos::View<Entity_ID*>& entids) const;
 
   // -- deprecated interface
   virtual
   void get_set_entities(const Set_ID setid,
                         const Entity_kind kind,
                         const Parallel_type ptype,
-                        Entity_ID_List *entids) const;
+                        Kokkos::View<Entity_ID*>& entids) const;
 
   // -- new interface. Since not all regions support volume fractions
   // (vofs), this vector is optional and could be empty.
@@ -728,7 +728,7 @@ class Mesh {
   void get_set_entities_and_vofs(const std::string setname,
                                  const Entity_kind kind,
                                  const Parallel_type ptype,
-                                 Entity_ID_List *entids,
+                                 Kokkos::View<Entity_ID*> &entids,
                                  std::vector<double> *vofs) const = 0;
 
   //
@@ -759,7 +759,7 @@ protected:
       Teuchos::RCP<const AmanziGeometry::Region> region,
       const Entity_kind kind,
       const Parallel_type ptype,
-      std::vector<Entity_ID>* setents,
+      Kokkos::View<Entity_ID*>& setents,
       std::vector<double> *vofs) const;
 
 
@@ -881,7 +881,7 @@ protected:
 
   // -- column information, only created if columns are requested
   mutable Kokkos::View<Entity_ID*> cell_cellabove_, cell_cellbelow_, node_nodeabove_;
-  mutable std::vector<Entity_ID_List> column_cells_;
+  mutable Kokkos::Crs<Entity_ID,Kokkos::HostSpace> column_cells_;
   mutable std::vector<Entity_ID_List> column_faces_;
   mutable Kokkos::View<Entity_ID*> columnID_;
   mutable int num_owned_cols_;

@@ -1,9 +1,9 @@
 /*
   Mesh Functions
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon
@@ -22,9 +22,9 @@ namespace Functions {
 
 // Overload the AddSpec method to check uniqueness.
 void UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec) {
-  // Ensure uniqueness of the spec and create the set of IDs contained in 
+  // Ensure uniqueness of the spec and create the set of IDs contained in
   // the domain of the spec.
-  
+
   Teuchos::RCP<Domain>& domain = spec->first;
   AmanziMesh::Entity_kind kind = domain->second;
 
@@ -33,9 +33,10 @@ void UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec) {
   for (auto region = domain->first.begin(); region != domain->first.end(); ++region) {
     // Get all region IDs by the region name and entity kind.
     if (mesh_->valid_set_name(*region, kind)) {
-      AmanziMesh::Entity_ID_List id_list;
-      mesh_->get_set_entities(*region, kind, AmanziMesh::Parallel_type::ALL, &id_list);
-      this_spec_ids->insert(id_list.begin(), id_list.end());
+      Kokkos::View<AmanziMesh::Entity_ID*> id_list;
+      mesh_->get_set_entities(*region, kind, AmanziMesh::Parallel_type::ALL, id_list);
+      for(int i = 0 ; i < id_list.extent(0); ++i)
+        this_spec_ids->insert(id_list(i));
     } else {
       std::stringstream m;
       m << "Unknown region in processing mesh function spec: \"" << *region << "\"";
@@ -74,4 +75,3 @@ void UniqueMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec) {
 
 } // namespace Functions
 } // namespace Amanzi
-

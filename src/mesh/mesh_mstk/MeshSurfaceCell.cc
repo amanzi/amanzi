@@ -39,11 +39,11 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
   set_manifold_dimension(2);
 
   // set my cells
-  Entity_ID_List my_cells;
-  parent_mesh->get_set_entities(setname, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED, &my_cells);
-  AMANZI_ASSERT(my_cells.size() == 1);
-  parent_face_ = my_cells[0];
-  
+  Kokkos::View<Entity_ID*> my_cells;
+  parent_mesh->get_set_entities(setname, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED, my_cells);
+  AMANZI_ASSERT(my_cells.extent(0) == 1);
+  parent_face_ = my_cells(0);
+
   // set my nodes
   Entity_ID_List my_nodes;
   parent_mesh->face_get_nodes(parent_face_, &my_nodes);
@@ -77,16 +77,23 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
 
     // set to false as default
     sets_[(*r)->id()] = false;
-      
+
     // determine if true
     if ((*r)->type() == AmanziGeometry::LABELEDSET
         || (*r)->type() == AmanziGeometry::ENUMERATED) {
       // label pulled from parent
-      Entity_ID_List faces_in_set;
+      Kokkos::View<Entity_ID*> faces_in_set;
       std::vector<double> vofs;
-      parent_mesh->get_set_entities_and_vofs((*r)->name(), FACE, Parallel_type::OWNED, &faces_in_set, &vofs);
-      sets_[(*r)->id()] = std::find(faces_in_set.begin(), faces_in_set.end(),
-              parent_face_) != faces_in_set.end();
+      parent_mesh->get_set_entities_and_vofs((*r)->name(), FACE, Parallel_type::OWNED, faces_in_set, &vofs);
+      sets_[(*r)->id()] = 0;
+      for(int i = 0 ; i < faces_in_set.extent(0); ++i){
+        if(faces_in_set(i) == parent_face_){
+          sets_[(*r)->id()] = 1;
+          break;
+        }
+      }
+      //sets_[(*r)->id()] = std::find(faces_in_set.begin(), faces_in_set.end(),
+      //        parent_face_) != faces_in_set.end();
 
     } else if ((*r)->is_geometric()) {
       // check containment
@@ -96,7 +103,7 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
       } else if ((*r)->space_dimension() == 2 && flatten) {
         sets_[(*r)->id()] = (*r)->inside(cell_centroid(0));
       }
-    }      
+    }
   }
 
   // set the cell type
@@ -117,7 +124,7 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
 
 // Number of entities of any kind (cell, face, node) and in a
 // particular category (OWNED, GHOST, ALL)
-  
+
 unsigned int MeshSurfaceCell::num_entities(const Entity_kind kind,
         const Parallel_type ptype) const {
   int count;
@@ -263,7 +270,7 @@ void MeshSurfaceCell::cell_get_node_adj_cells(const Entity_ID cellid,
 // Nodes in any set in the fixed_sets will not be permitted to move.
 int MeshSurfaceCell::deform(const std::vector<double>& target_cell_volumes_in,
                             const std::vector<double>& min_cell_volumes_in,
-                            const Entity_ID_List& fixed_nodes,
+                            const Kokkos::View<Entity_ID*>& fixed_nodes,
                             const bool move_vertical) {
   Errors::Message mesg("Not implemented");
   Exceptions::amanzi_throw(mesg);
@@ -300,23 +307,23 @@ MeshSurfaceCell::get_set_size(const std::string setname,
 void MeshSurfaceCell::get_set_entities(const Set_ID setid,
         const Entity_kind kind,
         const Parallel_type ptype,
-        Entity_ID_List *entids) const {
+        Kokkos::View<Entity_ID*>& entids) const {
   if (sets_.at(setid)) {
     if (kind == CELL) {
-      entids->resize(1,0);
+      Kokkos::resize(entids,1);
     } else {
-      entids->resize(nodes_.size());
-      for (int i=0; i!=nodes_.size(); ++i) (*entids)[i] = i;
+      Kokkos::resize(entids,nodes_.size());
+      for (int i=0; i!=nodes_.size(); ++i) entids(i) = i;
     }
   } else {
-    entids->resize(0);
+    Kokkos::resize(entids,0);
   }
 }
 
 void MeshSurfaceCell::get_set_entities_and_vofs(const std::string setname,
         const Entity_kind kind,
         const Parallel_type ptype,
-        Entity_ID_List *entids,
+        Kokkos::View<Entity_ID*>& entids,
         std::vector<double> *vofs) const {
   return get_set_entities(geometric_model()->FindRegion(setname)->id(),
                           kind, ptype, entids);
@@ -386,7 +393,3 @@ void MeshSurfaceCell::cell_2D_get_edges_and_dirs_internal_(const Entity_ID celli
 
 } // close namespace AmanziMesh
 } // close namespace Amanzi
-
-
-
-

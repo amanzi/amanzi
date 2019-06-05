@@ -42,7 +42,7 @@ include_directories(${MESH_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 
 
-# Need this define. Errors from MSTK include files 
+# Need this define. Errors from MSTK include files
 # about MPI_COMM_WORLD. --lpritch
 add_definitions("-DMSTK_HAVE_MPI")
 
@@ -61,7 +61,7 @@ endif ()
 #
 # Library: mstk_mesh
 #
-set(mstk_mesh_files Mesh_MSTK.cc Mesh_MSTK_deform.cc MeshColumn.cc MeshSurfaceCell.cc) 
+set(mstk_mesh_files Mesh_MSTK.cc Mesh_MSTK_deform.cc MeshColumn.cc MeshSurfaceCell.cc)
 file(GLOB mstk_inc_files "*.hh")
 add_amanzi_library(mstk_mesh
                    SOURCE ${mstk_mesh_files} HEADERS ${mstk_inc_files}
@@ -69,10 +69,10 @@ add_amanzi_library(mstk_mesh
 		             ${Teuchos_LIBRARIES} ${Zoltan_LIBRARIES} ${HDF5_LIBRARIES})
 
 if (BUILD_TESTS)
-    
+
     include_directories(${UnitTest_INCLUDE_DIRS})
 
-    # Need to copy files for the tests 
+    # Need to copy files for the tests
     if (NOT (${MSTK_SOURCE_DIR} EQUAL ${MSTK_BINARY_DIR}))
         file(GLOB DataFiles "${MSTK_SOURCE_DIR}/test/*.xml"
                             "${MSTK_SOURCE_DIR}/test/*.txt"
@@ -105,7 +105,7 @@ if (BUILD_TESTS)
     add_amanzi_test(mstk_mesh_basis mstk_mesh_basis
                     KIND int
                     SOURCE
-                         test/Main.cc 
+                         test/Main.cc
                          test/test_hex_1x1x1.cc
                          test/test_hex_2x2x1.cc
                          test/test_hex_3x3x3.cc
@@ -113,9 +113,9 @@ if (BUILD_TESTS)
                          test/test_hex_gen_3x3x3.cc
                          test/test_quad_gen_3x3.cc
                          test/test_extract_surface.cc
- 			 test/test_extract_column.cc
+ 			                   test/test_extract_column.cc
                          test/test_deform_vols.cc
-                    LINK_LIBS mstk_mesh mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}) 
+                    LINK_LIBS mstk_mesh mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
 
     # Test: mstk_mesh_parallel
@@ -139,16 +139,15 @@ if (BUILD_TESTS)
     add_amanzi_test(mstk_column_mesh mstk_column_mesh
                     KIND unit
                     SOURCE
-                          test/Main.cc 
-                          test/test_column_mesh.cc 
+                          test/Main.cc
+                          test/test_column_mesh.cc
 			  LINK_LIBS mstk_mesh geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
     # Test: extracted surface from column_mesh
     add_amanzi_test(mstk_surface_column_mesh mstk_surface_column_mesh
                     KIND unit
                     SOURCE
-                          test/Main.cc 
-                          test/test_surface_column_mesh.cc 
+                          test/Main.cc
+                          test/test_surface_column_mesh.cc
                     LINK_LIBS mstk_mesh geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
 endif()
-

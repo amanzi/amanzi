@@ -4,10 +4,10 @@
  * @file   test_column_mesh.cc
  * @author Rao V. Garimella
  * @date   Thu Mar 18, 2015
- * 
- * @brief  
- * 
- * 
+ *
+ * @brief
+ *
+ *
  */
 // -------------------------------------------------------------
 // -------------------------------------------------------------
@@ -54,7 +54,7 @@ TEST(SURFACE_COLUMN_MESH_3D)
   p3[0] = 4.; p3[1] = 4.;
   auto r1 = Teuchos::rcp(new Amanzi::AmanziGeometry::RegionBox("surface_domain", -1, p2, p3));
   gm->AddRegion(r1);
-  
+
   // Create the mesh
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh =
       Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,
@@ -62,11 +62,11 @@ TEST(SURFACE_COLUMN_MESH_3D)
               comm, gm));
 
   CHECK_EQUAL(1, mesh->build_columns());
-  
+
   // Perturb the nodes above the base layer just a bit
   int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,
           Amanzi::AmanziMesh::Parallel_type::OWNED);
-    
+
   for (int n = 0; n < nnodes; n++) {
     Amanzi::AmanziGeometry::Point xyz(3);
     mesh->node_get_coordinates(n,&xyz);
@@ -91,24 +91,24 @@ TEST(SURFACE_COLUMN_MESH_3D)
   CHECK_EQUAL(2, node.dim());
 
   // -- check sets
-  Amanzi::AmanziMesh::Entity_ID_List cells_in_surf;
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells_in_surf;
   col_surf.get_set_entities_and_vofs("surface", Amanzi::AmanziMesh::CELL,
                                      Amanzi::AmanziMesh::Parallel_type::OWNED,
-                                     &cells_in_surf, NULL);
-  CHECK_EQUAL(1, cells_in_surf.size());
-  CHECK_EQUAL(0, cells_in_surf[0]);
+                                     cells_in_surf, NULL);
+  CHECK_EQUAL(1, cells_in_surf.extent(0));
+  CHECK_EQUAL(0, cells_in_surf(0));
 
-  Amanzi::AmanziMesh::Entity_ID_List cells_in_surf_2D;
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells_in_surf_2D;
   col_surf.get_set_entities_and_vofs("surface_domain", Amanzi::AmanziMesh::CELL,
                                      Amanzi::AmanziMesh::Parallel_type::OWNED,
-                                     &cells_in_surf_2D, NULL);
-  CHECK_EQUAL(1, cells_in_surf.size());
-  CHECK_EQUAL(0, cells_in_surf[0]);
+                                     cells_in_surf_2D, NULL);
+  CHECK_EQUAL(1, cells_in_surf_2D.extent(0));
+  CHECK_EQUAL(0, cells_in_surf_2D(0));
 
-  // -- check volumes  
+  // -- check volumes
   CHECK_CLOSE(1.0, col_surf.cell_volume(0), 1.e-9);
   CHECK_CLOSE(1.0, col_surf.face_area(3), 1.e-9);
-  
+
 }
 
 TEST(SURFACE_COLUMN_MESH_3D_UNSTRUCTURED)
@@ -140,7 +140,7 @@ TEST(SURFACE_COLUMN_MESH_3D_UNSTRUCTURED)
 
   // Build columns in the mesh
   CHECK_EQUAL(1, mesh->build_columns());
-  
+
   // Create a column mesh from one of the columns
   auto colmesh = Teuchos::rcp(new Amanzi::AmanziMesh::MeshColumn(mesh,10));
   CHECK_EQUAL(1, colmesh->get_set_size("surface",Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::ALL));
@@ -152,21 +152,21 @@ TEST(SURFACE_COLUMN_MESH_3D_UNSTRUCTURED)
   CHECK_EQUAL(4, col_surf.num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED));
   CHECK_EQUAL(4, col_surf.num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED));
 
-  Amanzi::AmanziMesh::Entity_ID_List cells_in_surf;
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells_in_surf;
   col_surf.get_set_entities_and_vofs("surface", Amanzi::AmanziMesh::CELL,
                                      Amanzi::AmanziMesh::Parallel_type::OWNED,
-                                     &cells_in_surf, NULL);
-  CHECK_EQUAL(1, cells_in_surf.size());
-  CHECK_EQUAL(0, cells_in_surf[0]);
+                                     cells_in_surf, NULL);
+  CHECK_EQUAL(1, cells_in_surf.extent(0));
+  CHECK_EQUAL(0, cells_in_surf(0));
 
-  Amanzi::AmanziMesh::Entity_ID_List cells_in_surf_2D;
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells_in_surf_2D;
   col_surf.get_set_entities_and_vofs("surface_domain", Amanzi::AmanziMesh::CELL,
                                      Amanzi::AmanziMesh::Parallel_type::OWNED,
-                                     &cells_in_surf_2D, NULL);
-  CHECK_EQUAL(1, cells_in_surf.size());
-  CHECK_EQUAL(0, cells_in_surf[0]);
-  
+                                     cells_in_surf_2D, NULL);
+  CHECK_EQUAL(1, cells_in_surf.extent(0));
+  CHECK_EQUAL(0, cells_in_surf(0));
+
   CHECK_CLOSE(6400.0, col_surf.cell_volume(0), 1.e-9);
   CHECK_CLOSE(80.0, col_surf.face_area(3), 1.e-9);
-  
+
 }

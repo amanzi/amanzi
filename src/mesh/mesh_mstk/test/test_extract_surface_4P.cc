@@ -20,14 +20,14 @@ TEST(Extract_Surface_MSTK1_4P)
 
   Teuchos::ParameterList parameterlist;
 
- 
+
   // create a sublist name Regions and put a reference to it in
   // reg_spec and other sublists as references. Turns out it is
   // important to define reg_spec and other lists below as references
   // - otherwise, a new copy is made of the sublist that is retrieved
 
-  Teuchos::ParameterList& reg_spec = parameterlist.sublist("regions"); 
-  
+  Teuchos::ParameterList& reg_spec = parameterlist.sublist("regions");
+
   Teuchos::ParameterList& top_surface = reg_spec.sublist("Top Surface");
   Teuchos::ParameterList& top_surface_def = top_surface.sublist("region: plane");
   Teuchos::Array<double> loc1 = Teuchos::tuple(0.0,0.0,1.0);
@@ -45,27 +45,29 @@ TEST(Extract_Surface_MSTK1_4P)
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, *comm));
 
-  // Generate a mesh consisting of 4x4x4 elements 
+  // Generate a mesh consisting of 4x4x4 elements
   auto mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(0,0,0,1,1,1,4,4,4,comm,gm));
 
   std::vector<std::string> setnames;
   setnames.push_back(std::string("Top Surface"));
   setnames.push_back(std::string("Right Surface"));
 
-  Amanzi::AmanziMesh::Entity_ID_List ids1, ids2;
-  mesh->get_set_entities(setnames[0], Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED, &ids1);
-  mesh->get_set_entities(setnames[1], Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED, &ids2);
-  ids1.insert(ids1.end(), ids2.begin(), ids2.end());
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> ids1, ids2;
+  mesh->get_set_entities(setnames[0], Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED, ids1);
+  mesh->get_set_entities(setnames[1], Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED, ids2);
+
+  ids1 = ids2;
+
   Amanzi::AmanziMesh::Mesh_MSTK surfmesh(mesh,ids1,Amanzi::AmanziMesh::FACE, false, mesh->get_comm());
 
   // Number of cells (quadrilaterals) in surface mesh
   int ncells_surf = surfmesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::ALL);
-      
+
   // Check if centroid of the surface mesh cell is the same as its
   // parent (face) in the volume mesh
   for (int k = 0; k < ncells_surf; k++) {
     Amanzi::AmanziMesh::Entity_ID parent = surfmesh.entity_get_parent(Amanzi::AmanziMesh::CELL,k);
-        
+
     Amanzi::AmanziGeometry::Point centroid1 = mesh->face_centroid(parent);
     Amanzi::AmanziGeometry::Point centroid2 = surfmesh.cell_centroid(k);
     CHECK_ARRAY_EQUAL(centroid1,centroid2,3);
@@ -98,13 +100,13 @@ TEST(Extract_Surface_MSTK2_4P)
 
   Teuchos::ParameterList parameterlist;
 
- 
+
   // create a sublist name Regions and put a reference to it in
   // reg_spec and other sublists as references. Turns out it is
   // important to define reg_spec and other lists below as references
   // - otherwise, a new copy is made of the sublist that is retrieved
 
-  Teuchos::ParameterList& reg_spec = parameterlist.sublist("regions"); 
+  Teuchos::ParameterList& reg_spec = parameterlist.sublist("regions");
 
   Teuchos::ParameterList& top_surface = reg_spec.sublist("Top Surface");
   Teuchos::ParameterList& top_surface_def = top_surface.sublist("region: plane");
@@ -117,7 +119,7 @@ TEST(Extract_Surface_MSTK2_4P)
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, *comm));
 
-  // Generate a mesh consisting of 4x4x4 elements 
+  // Generate a mesh consisting of 4x4x4 elements
   auto mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,1.0,1.0,1.0,4,4,4,comm,gm));
 
 
@@ -133,13 +135,13 @@ TEST(Extract_Surface_MSTK2_4P)
       mesh->node_set_coordinates(i,pt);
     }
   }
-  
+
 
   std::vector<std::string> setnames;
   setnames.push_back(std::string("Top Surface"));
 
-  Amanzi::AmanziMesh::Entity_ID_List ids1;
-  mesh->get_set_entities(setnames[0], Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED, &ids1);
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> ids1;
+  mesh->get_set_entities(setnames[0], Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED, ids1);
 
   // Extract surface mesh while projecting to 2D
   Amanzi::AmanziMesh::Mesh_MSTK surfmesh(mesh,ids1,Amanzi::AmanziMesh::FACE,true,mesh->get_comm());
@@ -155,7 +157,7 @@ TEST(Extract_Surface_MSTK2_4P)
 
   for (int k = 0; k < ncells_surf; k++) {
     Amanzi::AmanziMesh::Entity_ID parent = surfmesh.entity_get_parent(Amanzi::AmanziMesh::CELL,k);
-        
+
     Amanzi::AmanziGeometry::Point centroid1 = mesh->face_centroid(parent);
     Amanzi::AmanziGeometry::Point centroid2 = surfmesh.cell_centroid(k);
     CHECK_EQUAL(2,centroid2.dim());
@@ -184,7 +186,7 @@ TEST(Extract_Surface_MSTK2_4P)
     CHECK_CLOSE(coord1[0],coord2[0],1.0e-10);
     CHECK_CLOSE(coord1[1],coord2[1],1.0e-10);
   }
-  
+
 }
 
 
@@ -199,21 +201,21 @@ TEST(Extract_Surface_MSTK3_4P)
 
   Teuchos::ParameterList parameterlist;
 
- 
+
   // create a sublist name Regions and put a reference to it in
   // reg_spec and other sublists as references. Turns out it is
   // important to define reg_spec and other lists below as references
   // - otherwise, a new copy is made of the sublist that is retrieved
 
-  Teuchos::ParameterList& reg_spec = parameterlist.sublist("regions"); 
-  
+  Teuchos::ParameterList& reg_spec = parameterlist.sublist("regions");
+
   Teuchos::ParameterList& top_surface = reg_spec.sublist("Top Surface");
   Teuchos::ParameterList& top_surface_def = top_surface.sublist("region: labeled set");
   top_surface_def.set<std::string>("label","106");
   top_surface_def.set<std::string>("file",filename.c_str());
   top_surface_def.set<std::string>("format","Exodus II");
   top_surface_def.set<std::string>("entity","face");
-  
+
 
 //  Teuchos::writeParameterListToXmlOStream(parameterlist,std::cout);
 
@@ -226,8 +228,8 @@ TEST(Extract_Surface_MSTK3_4P)
 
   std::vector<std::string> setnames;
   setnames.push_back(std::string("Top Surface"));
-  Amanzi::AmanziMesh::Entity_ID_List ids1;
-  mesh->get_set_entities(setnames[0], Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED, &ids1);
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> ids1;
+  mesh->get_set_entities(setnames[0], Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED, ids1);
 
   Amanzi::AmanziMesh::Mesh_MSTK surfmesh(mesh,ids1,Amanzi::AmanziMesh::FACE, false, mesh->get_comm());
 
@@ -235,18 +237,18 @@ TEST(Extract_Surface_MSTK3_4P)
   // Number of cells (quadrilaterals) in surface mesh
 
   int ncells_surf = surfmesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::ALL);
-      
+
   // Check if centroid of the surface mesh cell is the same as its
   // parent (face) in the volume mesh
 
   for (int k = 0; k < ncells_surf; k++) {
     Amanzi::AmanziMesh::Entity_ID parent = surfmesh.entity_get_parent(Amanzi::AmanziMesh::CELL,k);
-        
+
     Amanzi::AmanziGeometry::Point centroid1 = mesh->face_centroid(parent);
     Amanzi::AmanziGeometry::Point centroid2 = surfmesh.cell_centroid(k);
     CHECK_ARRAY_EQUAL(centroid1,centroid2,3);
   }
-  
+
   // Number of nodes in surface mesh
 
   int nnodes_surf = surfmesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::ALL);
@@ -267,7 +269,6 @@ TEST(Extract_Surface_MSTK3_4P)
     CHECK_CLOSE(coord1[0],coord2[0],1.0e-10);
     CHECK_CLOSE(coord1[1],coord2[1],1.0e-10);
   }
-  
+
+
 }
-
-

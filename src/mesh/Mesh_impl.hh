@@ -28,19 +28,20 @@ Mesh::num_columns(bool ghosted) const
     Errors::Message mesg("num_columns called before calling build_columns");
     Exceptions::amanzi_throw(mesg);
   }
-  return ghosted ? column_cells_.size() : num_owned_cols_; // number of vector of vectors
+  return ghosted ? column_cells_.row_map.extent(0)-1 : num_owned_cols_; // number of vector of vectors
 }
 
 
 inline
-const Entity_ID_List&
+Kokkos::View<Entity_ID*>
 Mesh::cells_of_column(const int columnID) const
 {
   if (!columns_built_) {
     Errors::Message mesg("cells_of_column called before calling build_columns");
     Exceptions::amanzi_throw(mesg);
   }
-  return column_cells_[columnID];
+  return Kokkos::subview(column_cells_.entries,
+    std::make_pair(column_cells_.row_map(columnID),column_cells_.row_map(columnID+1)));
 }
 
 
@@ -112,10 +113,8 @@ void
 Mesh::get_set_entities(const std::string setname,
                        const Entity_kind kind,
                        const Parallel_type ptype,
-                       Entity_ID_List *entids) const
+                       Kokkos::View<Entity_ID*> &entids) const
 {
   std::vector<double> vofs;
   get_set_entities_and_vofs(setname, kind, ptype, entids, &vofs);
 }
-
-

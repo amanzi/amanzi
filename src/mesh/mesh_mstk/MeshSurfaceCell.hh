@@ -1,8 +1,8 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon
@@ -43,7 +43,7 @@ class MeshSurfaceCell : public Mesh {
   MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
                   const std::string& setname,
                   bool flatten=true);
-  
+
   ~MeshSurfaceCell() = default;
 
   // Get parallel type of entity - OWNED, GHOST, ALL (See MeshDefs.hh)
@@ -221,7 +221,7 @@ class MeshSurfaceCell : public Mesh {
   virtual
   void node_set_coordinates(const Entity_ID nodeid,
                             const double *ncoord) {
-    
+
     Errors::Message mesg("Not implemented");
     Exceptions::amanzi_throw(mesg);
   }
@@ -235,7 +235,7 @@ class MeshSurfaceCell : public Mesh {
   virtual
   int deform(const std::vector<double>& target_cell_volumes_in,
              const std::vector<double>& min_cell_volumes_in,
-             const Entity_ID_List& fixed_nodes,
+             const Kokkos::View<Entity_ID*>& fixed_nodes,
              const bool move_vertical);
   //
   // Epetra maps
@@ -293,19 +293,19 @@ class MeshSurfaceCell : public Mesh {
   unsigned int get_set_size(const std::string setname,
                             const Entity_kind kind,
                             const Parallel_type ptype) const;
-  
+
   // Get list of entities of type 'category' in set
   virtual
   void get_set_entities(const Set_ID setid,
                         const Entity_kind kind,
                         const Parallel_type ptype,
-                        Entity_ID_List *entids) const;
+                        Kokkos::View<Entity_ID*>& entids) const;
 
   virtual
   void get_set_entities_and_vofs(const std::string setname,
           const Entity_kind kind,
           const Parallel_type ptype,
-          Entity_ID_List *entids,
+          Kokkos::View<Entity_ID*> & entids,
           std::vector<double> *vofs) const;
 
 
