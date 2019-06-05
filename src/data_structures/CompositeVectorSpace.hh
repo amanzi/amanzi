@@ -1,6 +1,4 @@
 /*
-  Data Structures
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -8,58 +6,65 @@
 
   Authors: Ethan Coon
            Daniil Svyatsky (dasvyat@lanl.gov)
-
-  Factory for a CompositeVector on an Amanzi mesh.
-
-  This should be thought of as a vector-space: it lays out data components as a
-  mesh along with entities on the mesh.  This meta-data can be used with the
-  mesh's *_map() methods to create the data.
-
-  This class is very light weight as it maintains only meta-data.
 */
 
-#ifndef AMANZI_COMPOSITEVECTOR_SPACE_HH_
-#define AMANZI_COMPOSITEVECTOR_SPACE_HH_
+/*
+  Factory for a CompositeSpace, which is then used to create CompositeVectors.
+*/
+
+#ifndef AMANZI_COMPOSITE_VECTOR_SPACE_HH_
+#define AMANZI_COMPOSITE_VECTOR_SPACE_HH_
 
 #include <vector>
 #include "Teuchos_RCP.hpp"
 
 #include "dbc.hh"
-#include "Mesh.hh"
+#include "AmanziTypes.hh"
+#include "MeshDefs.hh"
 
 namespace Amanzi {
 
-class CompositeVector;
+namespace AmanziMesh {
+class Mesh;
+}
 
-// Nonmember helper function
-std::pair<Map_ptr_type, Map_ptr_type>
-getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location);
+class CompositeSpace;
+template<typename Scalar> class CompositeVector_;
+using CompositeVector = CompositeVector_<double>;
 
 
 class CompositeVectorSpace {
-
-public:
+ public:
   // Constructor
   CompositeVectorSpace();
-  CompositeVectorSpace(const CompositeVectorSpace& other) = default;
-  CompositeVectorSpace(const CompositeVectorSpace& other, bool ghosted);
+  explicit CompositeVectorSpace(const CompositeSpace& map);
 
-  // assignment
+
+  CompositeVectorSpace(const CompositeVectorSpace& other) = default;
   CompositeVectorSpace& operator=(const CompositeVectorSpace&) = default;
-  
-  // CompositeVectorSpace is a factory of CompositeVectors
-  Teuchos::RCP<CompositeVector> Create() const;
+  ~CompositeVectorSpace() = default;
   
   // Checks equality
   bool SameAs(const CompositeVectorSpace& other) const;
+  bool LocallySameAs(const CompositeVectorSpace& other) const;
   bool SubsetOf(const CompositeVectorSpace& other) const;
 
-  // -------------------------------------
-  // Specs for the construction of CVs
-  // -------------------------------------
 
-  // CompositeVectors exist on a single communicator.
-  Comm_ptr_type Comm() const { return mesh_->get_comm(); }
+  //
+  // CompositeVectorSpace is primarily a factory.
+  // -------------------------------------------------
+  // Create a CompositeVector 
+  template<typename Scalar=double>
+  Teuchos::RCP<CompositeVector_<Scalar> > Create() const;
+
+  // Create just the CompositeSpace
+  Teuchos::RCP<const CompositeSpace> CreateSpace() const;
+  
+  //
+  // Specs for the construction of the space
+  // -------------------------------------------------
+  // Meshes exist on a single communicator.
+  Comm_ptr_type Comm() const;
 
   // mesh specification
   Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return mesh_; }
@@ -71,22 +76,21 @@ public:
 
   // Is this space and the resulting CV owned by a PK?
   bool Owned() const { return owned_; }
-  void SetOwned(bool owned=true) { owned_ = owned; }
+  CompositeVectorSpace* SetOwned(bool owned=true);
 
   // Components are refered to by names.
   // -- Iteration over names of the space
-  typedef std::vector<std::string>::const_iterator name_iterator;
+  using name_iterator = std::vector<std::string>::const_iterator;
   name_iterator begin() const { return names_.begin(); }
   name_iterator end() const { return names_.end(); }
-  unsigned int size() const { return names_.size(); }
+  std::size_t size() const { return names_.size(); }
 
   bool HasComponent(const std::string& name) const {
     return indexmap_.find(name) != indexmap_.end(); }
-  int NumComponents() const { return size(); }
 
-  // Each component has a number of Degrees of Freedom.
+  // Each component has a number of vectors
   int NumVectors(const std::string& name) const {
-    return num_dofs_[Index_(name)]; }
+    return num_vectors_[Index_(name)]; }
 
   // Each component exists on a mesh entity kind. (CELL, FACE, NODE, etc)
   AmanziMesh::Entity_kind Location(const std::string& name) const {
@@ -96,6 +100,7 @@ public:
 
   // Update all specs from another space's specs.
   // Useful for PKs to maintain default factories that apply to multiple CVs.
+  // Is this different from operator=?  Document how!  --etc
   CompositeVectorSpace* Update(const CompositeVectorSpace& other);
 
   // component specification
@@ -153,9 +158,9 @@ public:
                 const std::vector<int>& num_dofs);
 
 private:
-  // Indexing of name->int
-  int Index_(const std::string& name) const {
-    std::map<std::string, int>::const_iterator item = indexmap_.find(name);
+  // Indexing of name->std::size_t
+  std::size_t Index_(const std::string& name) const {
+    std::map<std::string, std::size_t>::const_iterator item = indexmap_.find(name);
     AMANZI_ASSERT(item != indexmap_.end());
     return item->second;
   }
@@ -193,21 +198,30 @@ private:
 
 private:
   bool ghosted_;
-
-  // data
   bool owned_;
+
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+
   std::vector<std::string> names_;
-  std::map<std::string, int> indexmap_;
+  std::map<std::string, std::size_t> indexmap_;
 
   std::vector<AmanziMesh::Entity_kind> locations_;
-  
-  std::vector<int> num_dofs_;
+  std::vector<int> num_vectors_;
+
   std::map<std::string, BlockMap_ptr_type> mastermaps_;
   std::map<std::string, BlockMap_ptr_type> ghostmaps_;
-  
-  friend class CompositeVector;
 };
+
+
+// Create things.
+template<typename Scalar>
+Teuchos::RCP<CompositeVector_<Scalar> >
+CompositeVectorSpace::Create() const
+{
+  return Teuchos::rcp(new CompositeVector_<Scalar>(CreateSpace()));
+}
+
+
 
 } // namespace Amanzi
 

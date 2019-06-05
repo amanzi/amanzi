@@ -24,15 +24,12 @@
 #define AMANZI_OPERATORS_SUPER_MAP_WRAPPER_HH_
 
 #include <map>
-#include "Teuchos_RCP.hpp"
-#include "Epetra_Map.h"
-#include "Epetra_BlockMap.h"
-
+#include "AmanziTypes.hh"
 #include "SuperMapLumped.hh"
 
 namespace Amanzi {
 
-class CompositeVectorSpace;
+class CompositeSpace;
 class TreeVectorSpace;
 
 namespace AmanziMesh {
@@ -45,62 +42,64 @@ namespace Operators {
 // wrapper class
 class SuperMap {
  public:
-  SuperMap(const std::vector<CompositeVectorSpace>& cvss);
+  SuperMap(const Comm_ptr_type& comm, const std::vector<Teuchos::Ptr<const BlockSpace> >& cvss);
 
   // map accessors
   // -- global map accessors
-  Teuchos::RCP<const Epetra_Map> Map() const { return smap_->Map(); }
-  Teuchos::RCP<const Epetra_Map> GhostedMap() const { return smap_->GhostedMap(); }
+  Map_ptr_type Map() const { return smap_->Map(); }
+  Map_ptr_type GhostedMap() const { return smap_->GhostedMap(); }
 
   // -- component map accessors
-  Teuchos::RCP<const Epetra_BlockMap>
-  ComponentMap(int block_num, const std::string& compname) const {
+  BlockMap_ptr_type
+  ComponentMap(std::size_t block_num, const std::string& compname) const {
     return smap_->ComponentMap(block_info_.at(std::make_tuple(block_num, compname, 0)).first);
   }
 
-  Teuchos::RCP<const Epetra_BlockMap>
-  ComponentGhostedMap(int block_num, const std::string& compname) const {
+  BlockMap_ptr_type
+  ComponentGhostedMap(std::size_t block_num, const std::string& compname) const {
     return smap_->ComponentGhostedMap(block_info_.at(std::make_tuple(block_num, compname, 0)).first);
   }
   
   // check if accessor is valid
   bool
-  HasComponent(int block_num, const std::string& compname, int dof_num=0) const {
+  HasComponent(std::size_t block_num, const std::string& compname, std::size_t dof_num=0) const {
     return block_info_.count(std::make_tuple(block_num, compname, dof_num)) != 0;
   }
 
   // index accessors
-  const std::vector<int>&
-  Indices(int block_num, const std::string& compname, int dof_num) const {
+  template<class DeviceType>
+  cVectorView_type_<DeviceType,LO> 
+  Indices(std::size_t block_num, const std::string& compname, std::size_t dof_num) const {
     auto bi = block_info_.find(std::make_tuple(block_num, compname, dof_num));
     if (bi == block_info_.end()) {
       Errors::Message msg;
-      msg << "SuperMap does not have block component <" << block_num << ","
-          << compname << "," << dof_num;
+      msg << "SuperMap does not have block component <" << (int) block_num << ","
+          << compname << "," << (int) dof_num;
       Exceptions::amanzi_throw(msg);
     }
-    return smap_->Indices(bi->second.first, bi->second.second);
+    return smap_->Indices<DeviceType>(bi->second.first, bi->second.second);
   }
 
-  const std::vector<int>&
-  GhostIndices(int block_num, const std::string& compname, int dof_num) const {
+  template<class DeviceType>
+  cVectorView_type_<DeviceType,LO> 
+  GhostIndices(std::size_t block_num, const std::string& compname, std::size_t dof_num) const {
     auto bi = block_info_.find(std::make_tuple(block_num, compname, dof_num));
     if (bi == block_info_.end()) {
       Errors::Message msg;
-      msg << "SuperMap does not have block component <" << block_num << ","
-          << compname << "," << dof_num;
+      msg << "SuperMap does not have block component <" << (int) block_num << ","
+          << compname << "," << (int) dof_num;
       Exceptions::amanzi_throw(msg);
     }
-    return smap_->GhostIndices(bi->second.first, bi->second.second);
+    return smap_->GhostIndices<DeviceType>(bi->second.first, bi->second.second);
   }
 
   // block indices.  This is an array of integers, length Map().MyLength(),
   // where each dof and component have a unique integer value.  The returned
   // int is the number of unique values, equal to
   // sum(NumDofs(comp) for comp in components), in this array.
-  std::pair<int, Teuchos::RCP<std::vector<int> > > BlockIndices() const {
-    return smap_->BlockIndices();
-  }
+  // std::pair<int, Teuchos::RCP<std::vector<int> > > BlockIndices() const {
+  //   return smap_->BlockIndices();
+  // }
 
  protected:
   std::unique_ptr<SuperMapLumped> smap_;
@@ -109,7 +108,7 @@ class SuperMap {
 
 
 // Nonmember contructors/factories
-Teuchos::RCP<SuperMap> createSuperMap(const CompositeVectorSpace& cv);
+Teuchos::RCP<SuperMap> createSuperMap(const Teuchos::Ptr<const BlockSpace>& cv);
 Teuchos::RCP<SuperMap> createSuperMap(const TreeVectorSpace& cv);
 
 } // namespace

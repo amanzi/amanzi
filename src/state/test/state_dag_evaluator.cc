@@ -29,8 +29,8 @@ using namespace Amanzi::AmanziMesh;
 template<class DeviceType>
 class AModel {
  public:
-  AModel(OutputVector_type<DeviceType> A, InputVector_type<DeviceType> B, InputVector_type<DeviceType> C, 
-	 InputVector_type<DeviceType> E, InputVector_type<DeviceType> H, Teuchos::ParameterList &plist) :
+  AModel(VectorView_type<DeviceType> A, cVectorView_type<DeviceType> B, cVectorView_type<DeviceType> C, 
+	 cVectorView_type<DeviceType> E, cVectorView_type<DeviceType> H, Teuchos::ParameterList &plist) :
     A_(A), B_(B), C_(C), E_(E), H_(H) {}
 
   KOKKOS_INLINE_FUNCTION void operator() (const int i) const {
@@ -57,11 +57,11 @@ class AModel {
   }
 
 private:
-  OutputVector_type<DeviceType> A_;
-  InputVector_type<DeviceType> B_;
-  InputVector_type<DeviceType> C_;
-  InputVector_type<DeviceType> E_;
-  InputVector_type<DeviceType> H_;
+  VectorView_type<DeviceType> A_;
+  cVectorView_type<DeviceType> B_;
+  cVectorView_type<DeviceType> C_;
+  cVectorView_type<DeviceType> E_;
+  cVectorView_type<DeviceType> H_;
 };
 
 
