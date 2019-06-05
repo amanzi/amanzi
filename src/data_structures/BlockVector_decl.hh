@@ -53,8 +53,8 @@ public:
   bool HasComponent(const std::string& name) const { return map_->HasComponent(name); }
 
   using name_iterator = BlockSpace::name_iterator;
-  name_iterator begin() { return Map()->begin(); }
-  name_iterator end() { return Map()->end(); }
+  name_iterator begin() const { return Map()->begin(); }
+  name_iterator end() const { return Map()->end(); }
   std::size_t size() const { return Map()->size(); }
 
   std::size_t NumVectors(const std::string& name) const { return Map()->NumVectors(name); }
@@ -64,8 +64,8 @@ public:
   // ---------------------------------------------
 
   // -- Access a component vector
-  cMultiVector_ptr_type_<Scalar> GetComponent(const std::string& name, bool ghosted) const;
-  MultiVector_ptr_type_<Scalar> GetComponent(const std::string& name, bool ghosted);
+  cMultiVector_ptr_type_<Scalar> GetComponent(const std::string& name, bool ghosted=false) const;
+  MultiVector_ptr_type_<Scalar> GetComponent(const std::string& name, bool ghosted=false);
 
   // -- View a component vector
   template<class DeviceType=AmanziDefaultDevice>
@@ -176,9 +176,9 @@ public:
   void Print(std::ostream &os, bool ghosted=false, bool data_io=true) const;
 
  protected:
-  cMultiVector_ptr_type_<Scalar> GetComponent_(const std::string& name, bool ghosted=false) const {
+  virtual cMultiVector_ptr_type_<Scalar> GetComponent_(const std::string& name, bool ghosted=false) const {
     return ghosted ? ghost_data_.at(name) : master_data_.at(name); }
-  MultiVector_ptr_type_<Scalar> GetComponent_(const std::string& name, bool ghosted=false) {
+  virtual MultiVector_ptr_type_<Scalar> GetComponent_(const std::string& name, bool ghosted=false) {
     return ghosted ? ghost_data_.at(name) : master_data_.at(name); }
 
   void SetComponent_(const std::string& name, bool ghosted, const MultiVector_ptr_type_<Scalar>& v) {

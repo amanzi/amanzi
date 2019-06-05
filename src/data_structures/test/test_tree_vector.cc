@@ -15,8 +15,8 @@
 #include "Teuchos_RCP.hpp"
 
 #include "MeshFactory.hh"
-#include "Mesh_simple.hh"
 #include "CompositeVector.hh"
+#include "CompositeVectorSpace.hh"
 #include "TreeVector.hh"
 
 using namespace Amanzi;
@@ -70,10 +70,14 @@ double get_value(const CompositeVector& cv, const std::string& cname,
   auto vec = cv.ViewComponent<AmanziDefaultHost>(cname, true);
   return vec(lid, dof_num);
 }
-  
+
 
 SUITE(TREE_VECTOR) {
+  TEST_FIXTURE(test_tv, TVDefaultZero) {
+    CHECK_CLOSE(get_value(*x->Data(), "cell",0,0), 0.0, 1.e-10);
+  }
 
+  
   // test the vector's putscalar
   TEST_FIXTURE(test_tv, TVPutScalar) {
     x->PutScalar(2.0);

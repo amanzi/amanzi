@@ -50,7 +50,7 @@ struct test_int_cv {
     x_space = Teuchos::rcp(new CompositeVectorSpace());
     x_space->SetMesh(mesh)->SetGhosted()
         ->SetComponents(names, locations, num_dofs);
-    x = Teuchos::rcp(new CompositeVector_<int>(x_space->Map()));
+    x = x_space->Create<int>();
   }
   ~test_int_cv() {  }
 };
@@ -59,21 +59,21 @@ struct test_int_cv {
 SUITE(COMPOSITE_VECTOR_INT) {
   // test basic setup and construction
   TEST_FIXTURE(test_int_cv, CVConstruction) {
-    CHECK_EQUAL(2, x->NumComponents());
+    CHECK_EQUAL(2, x->size());
     int size = comm->getSize();
     if (size == 1) CHECK_EQUAL(8, x->MyLength("cell"));
     CHECK_EQUAL(2, x->NumVectors("cell"));
-    CHECK(x->Map()->NumComponents() == x->NumComponents());
+    CHECK(x->Map()->size() == x->size());
     CHECK(x->Map()->SameAs(*x->Map()));
-    CHECK(x->ComponentMap("cell", false)->isSameAs(*mesh->map(CELL, false)));
-    CHECK(x->ComponentMap("cell", true)->isSameAs(*mesh->map(CELL, true)));
+    CHECK(x->Map()->ComponentMap("cell", false)->isSameAs(*mesh->map(CELL, false)));
+    CHECK(x->Map()->ComponentMap("cell", true)->isSameAs(*mesh->map(CELL, true)));
 
     if (size == 2) {
-      CHECK_EQUAL(4, x->ComponentMap("cell", false)->getNodeNumElements());
-      CHECK_EQUAL(5, x->ComponentMap("cell", true)->getNodeNumElements());
+      CHECK_EQUAL(4, x->Map()->ComponentMap("cell", false)->getNodeNumElements());
+      CHECK_EQUAL(5, x->Map()->ComponentMap("cell", true)->getNodeNumElements());
     } else {
-      CHECK_EQUAL(8, x->ComponentMap("cell", false)->getNodeNumElements());
-      CHECK_EQUAL(8, x->ComponentMap("cell", true)->getNodeNumElements());
+      CHECK_EQUAL(8, x->Map()->ComponentMap("cell", false)->getNodeNumElements());
+      CHECK_EQUAL(8, x->Map()->ComponentMap("cell", true)->getNodeNumElements());
     }
   }
 

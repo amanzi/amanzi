@@ -5,8 +5,9 @@
  *      Author: amklinv
  */
 
-#include<NoxVector.hh>
-#include<TreeVector.hh>
+#include "NoxVector.hh"
+#include "TreeVector.hh"
+#include "DataStructuresHelpers.hh"
 
 namespace Amanzi
 {
@@ -15,13 +16,13 @@ namespace Amanzi
   {
     switch (type) {
       case NOX::DeepCopy:
-        vec_ = Teuchos::rcp(new VectorClass(*other.vec_, INIT_MODE_COPY));
+        vec_ = Teuchos::rcp(new VectorClass(*other.vec_, InitMode::COPY));
         break;
       case NOX::ShapeCopy:
-        vec_ = Teuchos::rcp(new VectorClass(*other.vec_, INIT_MODE_NONE));
+        vec_ = Teuchos::rcp(new VectorClass(*other.vec_, InitMode::NONE));
         break;
       default:
-        vec_ = Teuchos::rcp(new VectorClass(*other.vec_, INIT_MODE_NONE));
+        vec_ = Teuchos::rcp(new VectorClass(*other.vec_, InitMode::NONE));
         break;
     }
   }
@@ -31,13 +32,13 @@ namespace Amanzi
   {
     switch (type) {
       case NOX::DeepCopy:
-        vec_ = Teuchos::rcp(new CompositeVector(*other.vec_, INIT_MODE_COPY));
+        vec_ = Teuchos::rcp(new CompositeVector(*other.vec_, InitMode::COPY));
         break;
       case NOX::ShapeCopy:
-        vec_ = Teuchos::rcp(new CompositeVector(*other.vec_, INIT_MODE_NONE));
+        vec_ = Teuchos::rcp(new CompositeVector(*other.vec_, InitMode::NONE));
         break;
       default:
-        vec_ = Teuchos::rcp(new CompositeVector(*other.vec_, INIT_MODE_NONE));
+        vec_ = Teuchos::rcp(new CompositeVector(*other.vec_, InitMode::NONE));
         break;
     }
   }
@@ -47,13 +48,13 @@ namespace Amanzi
   {
     switch (type) {
       case NOX::DeepCopy:
-        vec_ = Teuchos::rcp(new TreeVector(*other.vec_, INIT_MODE_COPY));
+        vec_ = Teuchos::rcp(new TreeVector(*other.vec_, InitMode::COPY));
         break;
       case NOX::ShapeCopy:
-        vec_ = Teuchos::rcp(new TreeVector(*other.vec_, INIT_MODE_NONE));
+        vec_ = Teuchos::rcp(new TreeVector(*other.vec_, InitMode::NONE));
         break;
       default:
-        vec_ = Teuchos::rcp(new TreeVector(*other.vec_, INIT_MODE_NONE));
+        vec_ = Teuchos::rcp(new TreeVector(*other.vec_, InitMode::NONE));
         break;
     }
   }

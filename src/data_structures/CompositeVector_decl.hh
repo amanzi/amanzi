@@ -70,8 +70,8 @@ public:
   
  protected:
 
-  cMultiVector_ptr_type_<Scalar> GetComponent_(const std::string& name, bool ghosted=false) const;
-  MultiVector_ptr_type_<Scalar> GetComponent_(const std::string& name, bool ghosted=false);
+  virtual cMultiVector_ptr_type_<Scalar> GetComponent_(const std::string& name, bool ghosted=false) const override;
+  virtual MultiVector_ptr_type_<Scalar> GetComponent_(const std::string& name, bool ghosted=false) override;
   
   // The Vandelay is an Importer/Exporter which allows face unknowns
   // to be spoofed as boundary face unknowns.
@@ -82,7 +82,6 @@ public:
   Teuchos::RCP<const CompositeSpace> cvs_;
 
   // importer and vector for boundary data
-  mutable Import_ptr_type vandelay_importer_;
   mutable MultiVector_ptr_type_<Scalar> vandelay_vector_;
 };
 

@@ -68,6 +68,15 @@ bool BlockSpace::SameAs(const BlockSpace& other) const
   return true;
 }
 
+bool BlockSpace::SubsetOf(const BlockSpace& other) const
+{
+  for (const auto& name : *this) {
+    if (!other.HasComponent(name)) return false;
+    if (!other.ComponentMap(name,false)->locallySameAs(*ComponentMap(name,false))) return false;
+  }
+  return true;                                       
+}
+
 
 GO BlockSpace::GlobalLength(bool ghosted) const
 {

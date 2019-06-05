@@ -32,7 +32,7 @@ DOCUMENT VANDELAY HERE! FIX ME --etc
 #ifndef AMANZI_COMPOSITEVECTOR_IMPL_HH_
 #define AMANZI_COMPOSITEVECTOR_IMPL_HH_
 
-
+#include "Mesh.hh"
 #include "CompositeSpace.hh"
 
 namespace Amanzi {
@@ -84,21 +84,15 @@ CompositeVector_<Scalar>::operator=(const CompositeVector_<Scalar>& other)
 
 
 
-//
-// Vandelay functionality
-// -----------------------------------------------------------------------------
-
 // -- Access a view of a single component's data.
 // Ghosted views are simply the vector itself, while non-ghosted views are
 // lazily generated.
 template<typename Scalar>
 cMultiVector_ptr_type_<Scalar>
 CompositeVector_<Scalar>::GetComponent_(const std::string& name, bool ghosted) const {
-  if (name == std::string("boundary_face")) {
-    if (!this->HasComponent("boundary_face") && this->HasComponent("face")) {
-      ApplyVandelay_();
-      return *vandelay_vector_;
-    }
+  if (name == std::string("boundary_face") && !this->HasComponent("boundary_face") && this->HasComponent("face")) {
+    ApplyVandelay_();
+    return vandelay_vector_;
   }
   return BlockVector<Scalar>::GetComponent_(name,ghosted);
 };
@@ -107,15 +101,32 @@ CompositeVector_<Scalar>::GetComponent_(const std::string& name, bool ghosted) c
 template<typename Scalar>
 MultiVector_ptr_type_<Scalar>
 CompositeVector_<Scalar>::GetComponent_(const std::string& name, bool ghosted) {
-  if (name == std::string("boundary_face")) {
-    if (!this->master_data_->HasComponent("boundary_face") &&
-        this->master_data_->HasComponent("face")) {
-      ApplyVandelay_();
-      return *vandelay_vector_;
-    }
+  if (name == std::string("boundary_face") && !this->HasComponent("boundary_face") && this->HasComponent("face")) {
+    ApplyVandelay_();
+    return vandelay_vector_;
   }
   return BlockVector<Scalar>::GetComponent_(name,ghosted);
 };
+
+
+//
+// Vandelay functionality
+// -----------------------------------------------------------------------------
+template<typename Scalar>
+void
+CompositeVector_<Scalar>::CreateVandelay_() const
+{
+  vandelay_vector_ = Teuchos::rcp(new MultiVector_type_<Scalar>(Mesh()->exterior_face_map(false), this->NumVectors("face"), false));
+}
+
+
+template<typename Scalar>
+void
+CompositeVector_<Scalar>::ApplyVandelay_() const
+{
+  if (vandelay_vector_ == Teuchos::null) CreateVandelay_();
+  vandelay_vector_->doImport(*GetComponent_("face",false), *Mesh()->exterior_face_importer(), Tpetra::INSERT);
+}
 
 
 } // namespace

@@ -39,6 +39,7 @@ class BlockSpace {
   // equality via approximate SameAs()
   bool SameAs(const BlockSpace& other) const;
   bool LocallySameAs(const BlockSpace& other) const;
+  bool SubsetOf(const BlockSpace& other) const;
 
   Comm_ptr_type Comm() const { return comm_; }
 

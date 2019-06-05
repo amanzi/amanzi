@@ -31,20 +31,21 @@
 #include "AmanziTypes.hh"
 #include "dbc.hh"
 #include "Mesh.hh"
-
+#include "CompositeSpace.hh"
+#include "BlockVector.hh"
 
 namespace Amanzi {
 
-class CompositeVectorSpace;
+//template<typename Scalar> class BlockVector;
 
 namespace Operators {
 
 class SuperMapLumped {
  public:
-  explicit SuperMapLumped(const CompositeVectorSpace& maps);
+  explicit SuperMapLumped(const Teuchos::RCP<const BlockSpace>& maps);
 
   SuperMapLumped(const SuperMapLumped& other) = delete;
-  virtual ~SuperMapLumped() = default;
+  ~SuperMapLumped();
 
   // meta-data
   bool HasComponent(const std::string& compname) const;
@@ -56,24 +57,24 @@ class SuperMapLumped {
   // -- component map accessors
   BlockMap_ptr_type
   ComponentMap(const std::string& compname) const {
-    return comp_maps_->Map(compname, false);
+    return comp_maps_->ComponentMap(compname, false);
   }
 
   BlockMap_ptr_type
   ComponentGhostedMap(const std::string& compname) {
-    return comp_maps_->Map(compname, true);
+    return comp_maps_->ComponentMap(compname, true);
   }
   
   // index accessors
-  template<class DeviceType>
+  template<class DeviceType=AmanziDefaultDevice>
   cVectorView_type_<DeviceType,LO> Indices(const std::string& compname, int dofnum) const;
-  template<class DeviceType>
+  template<class DeviceType=AmanziDefaultDevice>
   cVectorView_type_<DeviceType,LO> GhostIndices(const std::string& compname, int dofnum) const;
 
   // block indices.  This is an array of integers, length Map().MyLength(),
   // where each dof and component have a unique integer value.  The returned
   // int is the number of unique values, equal to
-  // sum(NumDofs(comp) for comp in components), in this array.
+  // sum(NumVectors(comp) for comp in components), in this array.
   //  std::pair<int, Teuchos::RCP<std::vector<int> > > BlockIndices() const;
 
 #ifdef SUPERMAP_TESTING
@@ -88,21 +89,19 @@ class SuperMapLumped {
   LO NumOwnedElements(const std::string& compname) const { return counts_.at(compname); }
   LO NumUsedElements(const std::string& compname) const {
     return counts_.at(compname) + ghosted_counts_.at(compname); }
-  int NumDofs(const std::string& compname) const { return num_dofs_.at(compname); }
+  int NumVectors(const std::string& compname) const { return comp_maps_->NumVectors(compname); }
 
   // iterate over compnames
   using name_iterator = std::vector<std::string>::const_iterator;
-  name_iterator begin() const { return compnames_.begin(); }
-  name_iterator end() const { return compnames_.end(); }
-  std::size_t size() const { return compnames_.size(); }
+  name_iterator begin() const { return comp_maps_->begin(); }
+  name_iterator end() const { return comp_maps_->end(); }
+  std::size_t size() const { return comp_maps_->size(); }
 
  protected:
   void CreateIndexing_();
 
  protected:
-  std::vector<std::string> compnames_;
   std::map<std::string,LO> offsets_;
-  std::map<std::string,int> num_dofs_;
   std::map<std::string,LO> counts_;
   std::map<std::string,LO> ghosted_offsets_;
   std::map<std::string,LO> ghosted_counts_;
@@ -110,8 +109,8 @@ class SuperMapLumped {
   LO n_local_;
   LO n_local_ghosted_;
   
-  std::unique_ptr<CompositeVector_<LO> > indices_;
-  Teuchos::RCP<const CompositeVectorSpace> comp_maps_;
+  std::unique_ptr<BlockVector<LO> > indices_;
+  Teuchos::RCP<const BlockSpace> comp_maps_;
 
   Map_ptr_type map_; // the supermap
   Map_ptr_type ghosted_map_; // the ghosted supermap
@@ -119,7 +118,22 @@ class SuperMapLumped {
 };
 
 
-Teuchos::RCP<SuperMapLumped> createSuperMapLumped(const CompositeVectorSpace& cv);
+Teuchos::RCP<SuperMapLumped> createSuperMapLumped(const BlockSpace& cv);
+
+// implementation of templated member functions
+template<class DeviceType>
+cVectorView_type_<DeviceType, LO>
+SuperMapLumped::Indices(const std::string& compname, int dofnum) const {
+  return indices_->ViewComponent<DeviceType>(compname, dofnum, false);
+}
+
+
+template<class DeviceType>
+cVectorView_type_<DeviceType, LO>
+SuperMapLumped::GhostIndices(const std::string& compname, int dofnum) const {
+  return indices_->ViewComponent<DeviceType>(compname, dofnum, true);
+}
+
 
 
 } // namespace Operators

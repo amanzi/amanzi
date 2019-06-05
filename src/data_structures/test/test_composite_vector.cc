@@ -75,6 +75,10 @@ SUITE(COMPOSITE_VECTOR) {
       CHECK_EQUAL(8, x->Map()->ComponentMap("cell", false)->getNodeNumElements());
       CHECK_EQUAL(8, x->Map()->ComponentMap("cell", true)->getNodeNumElements());
     }
+
+    // check zero initialization
+    auto v1 = x->ViewComponent<AmanziDefaultHost>("cell", false);
+    CHECK_CLOSE(0.0, v1(0,0), 0.00001);
   }
 
   TEST_FIXTURE(test_cv, CVSetGet) {

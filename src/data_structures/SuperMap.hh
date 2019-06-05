@@ -29,7 +29,7 @@
 
 namespace Amanzi {
 
-class CompositeVectorSpace;
+class CompositeSpace;
 class TreeVectorSpace;
 
 namespace AmanziMesh {
@@ -42,7 +42,7 @@ namespace Operators {
 // wrapper class
 class SuperMap {
  public:
-  SuperMap(const std::vector<CompositeVectorSpace>& cvss);
+  SuperMap(const Comm_ptr_type& comm, const std::vector<Teuchos::Ptr<const BlockSpace> >& cvss);
 
   // map accessors
   // -- global map accessors
@@ -51,30 +51,30 @@ class SuperMap {
 
   // -- component map accessors
   BlockMap_ptr_type
-  ComponentMap(int block_num, const std::string& compname) const {
+  ComponentMap(std::size_t block_num, const std::string& compname) const {
     return smap_->ComponentMap(block_info_.at(std::make_tuple(block_num, compname, 0)).first);
   }
 
   BlockMap_ptr_type
-  ComponentGhostedMap(int block_num, const std::string& compname) const {
+  ComponentGhostedMap(std::size_t block_num, const std::string& compname) const {
     return smap_->ComponentGhostedMap(block_info_.at(std::make_tuple(block_num, compname, 0)).first);
   }
   
   // check if accessor is valid
   bool
-  HasComponent(int block_num, const std::string& compname, int dof_num=0) const {
+  HasComponent(std::size_t block_num, const std::string& compname, std::size_t dof_num=0) const {
     return block_info_.count(std::make_tuple(block_num, compname, dof_num)) != 0;
   }
 
   // index accessors
   template<class DeviceType>
   cVectorView_type_<DeviceType,LO> 
-  Indices(int block_num, const std::string& compname, int dof_num) const {
+  Indices(std::size_t block_num, const std::string& compname, std::size_t dof_num) const {
     auto bi = block_info_.find(std::make_tuple(block_num, compname, dof_num));
     if (bi == block_info_.end()) {
       Errors::Message msg;
-      msg << "SuperMap does not have block component <" << block_num << ","
-          << compname << "," << dof_num;
+      msg << "SuperMap does not have block component <" << (int) block_num << ","
+          << compname << "," << (int) dof_num;
       Exceptions::amanzi_throw(msg);
     }
     return smap_->Indices<DeviceType>(bi->second.first, bi->second.second);
@@ -82,12 +82,12 @@ class SuperMap {
 
   template<class DeviceType>
   cVectorView_type_<DeviceType,LO> 
-  GhostIndices(int block_num, const std::string& compname, int dof_num) const {
+  GhostIndices(std::size_t block_num, const std::string& compname, std::size_t dof_num) const {
     auto bi = block_info_.find(std::make_tuple(block_num, compname, dof_num));
     if (bi == block_info_.end()) {
       Errors::Message msg;
-      msg << "SuperMap does not have block component <" << block_num << ","
-          << compname << "," << dof_num;
+      msg << "SuperMap does not have block component <" << (int) block_num << ","
+          << compname << "," << (int) dof_num;
       Exceptions::amanzi_throw(msg);
     }
     return smap_->GhostIndices<DeviceType>(bi->second.first, bi->second.second);
@@ -108,7 +108,7 @@ class SuperMap {
 
 
 // Nonmember contructors/factories
-Teuchos::RCP<SuperMap> createSuperMap(const CompositeVectorSpace& cv);
+Teuchos::RCP<SuperMap> createSuperMap(const Teuchos::Ptr<const BlockSpace>& cv);
 Teuchos::RCP<SuperMap> createSuperMap(const TreeVectorSpace& cv);
 
 } // namespace
