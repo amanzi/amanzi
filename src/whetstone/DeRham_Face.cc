@@ -2,9 +2,9 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -26,11 +26,11 @@ namespace WhetStone {
 int DeRham_Face::L2consistency(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
-  Entity_ID_List faces;
-  std::vector<int> dirs;
+  Kokkos::View<Entity_ID*> faces;
+  Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-  int nfaces = faces.size();
+  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  int nfaces = faces.extent(0);
 
   N.Reshape(nfaces, d_);
   Mc.Reshape(nfaces, nfaces);
@@ -44,14 +44,14 @@ int DeRham_Face::L2consistency(
   Kinv.Transpose();
 
   for (int i = 0; i < nfaces; i++) {
-    int f = faces[i];
+    int f = faces(i);
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
     double a1 = mesh_->face_area(f);
     v2 = Kinv * (fm - cm);
 
     int i0 = (symmetry ? i : 0);
     for (int j = i0; j < nfaces; j++) {
-      f = faces[j];
+      f = faces(j);
       const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
       double a2 = mesh_->face_area(f);
       v1 = fm - cm;
@@ -60,10 +60,10 @@ int DeRham_Face::L2consistency(
   }
 
   for (int i = 0; i < nfaces; i++) {
-    int f = faces[i];
+    int f = faces(i);
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
     double area = mesh_->face_area(f);
-    for (int k = 0; k < d_; k++) N(i, k) = normal[k] * dirs[i] / area;
+    for (int k = 0; k < d_; k++) N(i, k) = normal[k] * dirs(i) / area;
   }
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
@@ -94,11 +94,11 @@ int DeRham_Face::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 int DeRham_Face::L2consistencyInverse(
     int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry)
 {
-  Entity_ID_List faces;
-  std::vector<int> dirs;
+  Kokkos::View<Entity_ID*> faces;
+  Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-  int nfaces = faces.size();
+  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  int nfaces = faces.extent(0);
 
   R.Reshape(nfaces, d_);
   Wc.Reshape(nfaces, nfaces);
@@ -106,7 +106,7 @@ int DeRham_Face::L2consistencyInverse(
   // calculate areas of possibly curved faces
   std::vector<double> areas(nfaces, 0.0);
   for (int i = 0; i < nfaces; i++) {
-    int f = faces[i];
+    int f = faces(i);
     areas[i] = norm(mesh_->face_normal(f));
   }
 
@@ -115,15 +115,15 @@ int DeRham_Face::L2consistencyInverse(
   double volume = mesh_->cell_volume(c);
 
   for (int i = 0; i < nfaces; i++) {
-    int f = faces[i];
+    int f = faces(i);
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
     v1 = K * normal;
 
     for (int j = i; j < nfaces; j++) {
-      f = faces[j];
+      f = faces(j);
       const AmanziGeometry::Point& v2 = mesh_->face_normal(f);
-      Wc(i, j) = (v1 * v2) / (dirs[i] * dirs[j] * volume * areas[i] * areas[j]);
+      Wc(i, j) = (v1 * v2) / (dirs(i) * dirs(j) * volume * areas[i] * areas[j]);
     }
   }
 
@@ -131,12 +131,12 @@ int DeRham_Face::L2consistencyInverse(
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
 
   for (int i = 0; i < nfaces; i++) {
-    int f = faces[i];
+    int f = faces(i);
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
     for (int k = 0; k < d_; k++) R(i, k) = (fm[k] - cm[k]) * areas[i];
   }
 
-  /* Internal verification 
+  /* Internal verification
   DenseMatrix NtR(d, d);
   for (int i = 0; i < d; i++) {
     for (int j = 0; j < d; j++) {
@@ -161,7 +161,7 @@ int DeRham_Face::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
 
   int ok = L2consistencyInverse(c, K, R, W, true);
   if (ok) return ok;
- 
+
   StabilityScalar_(R, W);
 
   return ok;
@@ -169,5 +169,3 @@ int DeRham_Face::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
 
 }  // namespace WhetStone
 }  // namespace Amanzi
-
-

@@ -2,14 +2,14 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Base class for maps between mesh objects located on different 
+  Base class for maps between mesh objects located on different
   meshes, e.g. two states of a deformable mesh.
 */
 
@@ -79,7 +79,7 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
       v[i](2) = 2 * y0[i] + 2 * y1[i] - 4 * points1[0][i];
     }
 
-    v[i].InverseChangeCoordinates(xf, tau);  
+    v[i].InverseChangeCoordinates(xf, tau);
     v[i].ChangeOrigin(AmanziGeometry::Point(d_));
   }
 }
@@ -98,11 +98,11 @@ void MeshMaps::NansonFormula(
   cn.resize(d_);
   auto grad = Gradient(map[0]);
   cn[1] = grad[0] * normal[1] - grad[1] * normal[0];
-  cn[1](0) += normal[1]; 
+  cn[1](0) += normal[1];
 
   grad = Gradient(map[1]);
   cn[0] = grad[1] * normal[0] - grad[0] * normal[1];
-  cn[0](0) += normal[0]; 
+  cn[0](0) += normal[0];
 }
 
 
@@ -186,12 +186,12 @@ void MeshMaps::Determinant(const MatrixPolynomial& J, VectorPolynomial& det) con
     }
     else if (d_ == 3) {
       int m2 = m0 + 2;
-      det[n] = J(m0, 0) * J(m1, 1) * J(m2, 2) 
-             + J(m2, 0) * J(m0, 1) * J(m1, 2) 
-             + J(m1, 0) * J(m2, 1) * J(m0, 2) 
-             - J(m2, 0) * J(m1, 1) * J(m0, 2) 
-             - J(m1, 0) * J(m0, 1) * J(m2, 2) 
-             - J(m0, 0) * J(m2, 1) * J(m1, 2); 
+      det[n] = J(m0, 0) * J(m1, 1) * J(m2, 2)
+             + J(m2, 0) * J(m0, 1) * J(m1, 2)
+             + J(m1, 0) * J(m2, 1) * J(m0, 2)
+             - J(m2, 0) * J(m1, 1) * J(m0, 2)
+             - J(m1, 0) * J(m0, 1) * J(m2, 2)
+             - J(m0, 0) * J(m2, 1) * J(m1, 2);
     }
   }
 }
@@ -202,7 +202,7 @@ void MeshMaps::Determinant(const MatrixPolynomial& J, VectorPolynomial& det) con
 * We assume that vectors of vertices have a proper length.
 ****************************************************************** */
 int MeshMaps::LeastSquareFit(int order,
-                             const std::vector<AmanziGeometry::Point>& x1, 
+                             const std::vector<AmanziGeometry::Point>& x1,
                              const std::vector<AmanziGeometry::Point>& x2,
                              VectorPolynomial& v) const
 {
@@ -226,7 +226,7 @@ int MeshMaps::LeastSquareFit(int order,
       psi(n, i) = val;
     }
   }
-      
+
   // form linear system
   DenseMatrix A(nk, nk);
 
@@ -237,7 +237,7 @@ int MeshMaps::LeastSquareFit(int order,
   DenseVector b(nk), u(nk);
 
   v.resize(d_);
-  for (int k = 0; k < d_; ++k) { 
+  for (int k = 0; k < d_; ++k) {
     v[k].Reshape(d_, order);
     v[k].set_origin(AmanziGeometry::Point(d_));
 
@@ -266,16 +266,17 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
 {
   int order = poly.order();
 
-  WhetStone::Entity_ID_List faces, nodes;
+  WhetStone::Entity_ID_List nodes;
+  Kokkos::View<WhetStone::Entity_ID*> faces;
 
-  mesh0_->cell_get_faces(c, &faces);
-  int nfaces = faces.size();  
+  mesh0_->cell_get_faces(c, faces);
+  int nfaces = faces.extent(0);
 
   AmanziGeometry::Point v0(d_), v1(d_);
   std::vector<Polynomial> vvf;
 
   for (int i = 0; i < nfaces; ++i) {
-    int f = faces[i];
+    int f = faces(i);
     const AmanziGeometry::Point& xf = mesh1_->face_centroid(f);
     mesh0_->face_get_nodes(f, &nodes);
 
@@ -287,8 +288,8 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
     WhetStone::Polynomial vf(d_ - 1, 1);
     vf.Reshape(d_ - 1, order);
     if (order == 1) {
-      vf(0, 0) = (f0 + f1) / 2; 
-      vf(1, 0) = f1 - f0; 
+      vf(0, 0) = (f0 + f1) / 2;
+      vf(1, 0) = f1 - f0;
     } else if (order == 2) {
       double f2 = poly.Value((v0 + v1) / 2);
       vf(0, 0) = f2;
@@ -325,4 +326,3 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
 
 }  // namespace WhetStone
 }  // namespace Amanzi
-

@@ -2,14 +2,14 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Maps between mesh objects located on different meshes, e.g. two states 
+  Maps between mesh objects located on different meshes, e.g. two states
   of a deformable mesh: polygonal finite element implementation.
 */
 
@@ -25,14 +25,15 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Calculate piecewise polynomial mesh velocity in cell c. 
+* Calculate piecewise polynomial mesh velocity in cell c.
 ****************************************************************** */
 void MeshMaps_PEM::VelocityCell(
     int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
   AMANZI_ASSERT(d_ == 2);
 
-  Entity_ID_List faces, nodes;
+  Entity_ID_List nodes;
+  Kokkos::View<Entity_ID*> faces;
   AmanziGeometry::Point p(d_), q(d_);
   Tensor T0(d_, d_), T1(d_, d_);
 
@@ -41,13 +42,13 @@ void MeshMaps_PEM::VelocityCell(
   AmanziGeometry::Point x0 = mesh0_->cell_centroid(c);
   AmanziGeometry::Point x1 = mesh1_->cell_centroid(c);
 
-  mesh0_->cell_get_faces(c, &faces);
-  int nfaces = faces.size();
+  mesh0_->cell_get_faces(c, faces);
+  int nfaces = faces.extent(0);
 
   int m(0);
   vc.resize(nfaces * d_);
   for (int n = 0; n < nfaces; ++n) {
-    int f = faces[n];
+    int f = faces(n);
     int m = n * d_;
 
     // calculate 2x2 map F(X) = q + J * X
@@ -55,7 +56,7 @@ void MeshMaps_PEM::VelocityCell(
     for (int i = 0; i < 2; ++i) {
       mesh0_->node_get_coordinates(nodes[i], &p);
       mesh1_->node_get_coordinates(nodes[i], &q);
-    
+
       T0.SetColumn(i, p - x0);
       T1.SetColumn(i, q - x1);
     }
@@ -81,4 +82,3 @@ void MeshMaps_PEM::VelocityCell(
 
 }  // namespace WhetStone
 }  // namespace Amanzi
-

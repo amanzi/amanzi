@@ -421,26 +421,26 @@ class MeshColumn : public Mesh {
   // cell_get_faces_and_dirs method of this class
   virtual
   void cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
-                                         Entity_ID_List *faceids,
-                                         std::vector<int> *face_dirs,
+                                         Kokkos::View<Entity_ID*>& faceids,
+                                         Kokkos::View<int*> *face_dirs,
                                          const bool ordered=false) const override {
 
-    faceids->resize(2);
-    face_dirs->resize(2);
+    Kokkos::resize(faceids,2);
+    Kokkos::resize(*face_dirs,2);
 
     // NOTE: the face directions with respect to the cell may be at
     // odds with how it is in the parent mesh but within this mesh its
     // consistent - so we think everything will work as it should
-    Entity_ID_List faceids_extracted;
-    std::vector<int> face_dirs_extracted;
-    extracted_->cell_get_faces_and_dirs(cellid, &faceids_extracted,
+    Kokkos::View<Entity_ID*> faceids_extracted;
+    Kokkos::View<int*> face_dirs_extracted;
+    extracted_->cell_get_faces_and_dirs(cellid, faceids_extracted,
             &face_dirs_extracted, ordered);
 
     int count = 0;
-    for (int i=0; i!=faceids_extracted.size(); ++i) {
-      if (face_in_column_[faceids_extracted[i]] >= 0) {
-        (*faceids)[count] = face_in_column_[faceids_extracted[i]];
-        (*face_dirs)[count] = face_dirs_extracted[i];
+    for (int i=0; i!=faceids_extracted.extent(0); ++i) {
+      if (face_in_column_[faceids_extracted(i)] >= 0) {
+        faceids(count) = face_in_column_[faceids_extracted(i)];
+        (*face_dirs)(count) = face_dirs_extracted(i);
         count++;
       }
     }
@@ -497,7 +497,7 @@ class MeshColumn : public Mesh {
   Teuchos::RCP<Mesh_MSTK> extracted_;
   int nfnodes_;
   int column_id_;
-  Entity_ID_List column_faces_;
+  Kokkos::View<Entity_ID*> column_faces_;
   Entity_ID_List face_in_column_;
 
   Map_ptr_type face_map_;

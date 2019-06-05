@@ -15,8 +15,9 @@ TEST(MSTK_HEX1)
 {
 
   int i, j, k, err, nc, nv;
-  std::vector<Amanzi::AmanziMesh::Entity_ID> faces(6), facenodes(4), cellnodes(8), expfacenodes(4);
-  std::vector<int> facedirs(6);
+  std::vector<Amanzi::AmanziMesh::Entity_ID> facenodes(4), cellnodes(8), expfacenodes(4);
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> faces("",6);
+  Kokkos::View<int*> facedirs("",6);
   std::vector<Amanzi::AmanziGeometry::Point> ccoords(8), fcoords(4);
 
   int NV = 8;
@@ -78,11 +79,11 @@ TEST(MSTK_HEX1)
 
 
 
-  mesh->cell_get_faces_and_dirs(0,&faces,&facedirs,true);
+  mesh->cell_get_faces_and_dirs(0,faces,&facedirs,true);
 
   for (j = 0; j < 6; j++) {
-    mesh->face_get_nodes(faces[j],&facenodes);
-    mesh->face_get_coordinates(faces[j],&fcoords);
+    mesh->face_get_nodes(faces(j),&facenodes);
+    mesh->face_get_coordinates(faces(j),&fcoords);
 
 
     for (k = 0; k < 4; k++)
@@ -103,7 +104,7 @@ TEST(MSTK_HEX1)
 
     CHECK_EQUAL(found,1);
 
-    if (facedirs[j] == 1) {
+    if (facedirs(j) == 1) {
       for (k = 0; k < 4; k++) {
 	CHECK_EQUAL(expfacenodes[(k0+k)%4],facenodes[k]);
 	CHECK_ARRAY_EQUAL(xyz[expfacenodes[(k0+k)%4]],fcoords[k],3);

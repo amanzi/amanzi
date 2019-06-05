@@ -2,9 +2,9 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -39,17 +39,17 @@ int DeRham_Edge::L2consistency(int c, const Tensor& T,
 
 
 /* ******************************************************************
-* 2D consistency condition for the mass matrix. Only the upper 
-* triangular part of Mc = R (R^T N)^{-1} R^T is calculated. 
+* 2D consistency condition for the mass matrix. Only the upper
+* triangular part of Mc = R (R^T N)^{-1} R^T is calculated.
 ****************************************************************** */
 int DeRham_Edge::L2consistency2D_(int c, const Tensor& T,
                                   DenseMatrix& N, DenseMatrix& Mc)
 {
-  Entity_ID_List faces;
-  std::vector<int> dirs;
+  Kokkos::View<Entity_ID*> faces;
+  Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-  int nfaces = faces.size();
+  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  int nfaces = faces.extent(0);
 
   N.Reshape(nfaces, d_);
   Mc.Reshape(nfaces, nfaces);
@@ -67,18 +67,18 @@ int DeRham_Edge::L2consistency2D_(int c, const Tensor& T,
     Tinv(1, 0) = -tmp;
 
     tmp = Tinv(0, 0);
-    Tinv(0, 0) = Tinv(1, 1);  
+    Tinv(0, 0) = Tinv(1, 1);
     Tinv(1, 1) = tmp;
   }
 
   for (int i = 0; i < nfaces; i++) {
-    int f = faces[i];
+    int f = faces(i);
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     double a1 = mesh_->face_area(f);
     v2 = Tinv * (xf - xc);
 
     for (int j = i; j < nfaces; j++) {
-      f = faces[j];
+      f = faces(j);
       const AmanziGeometry::Point& yf = mesh_->face_centroid(f);
       double a2 = mesh_->face_area(f);
 
@@ -87,17 +87,17 @@ int DeRham_Edge::L2consistency2D_(int c, const Tensor& T,
     }
   }
 
-  // Rows of matrix N are oriented tangent vectors. Since N goes to 
+  // Rows of matrix N are oriented tangent vectors. Since N goes to
   // the Gramm-Schmidt orthogonalizetion procedure, we can skip scaling
   // tensorial factor T.
   for (int i = 0; i < nfaces; i++) {
-    int f = faces[i];
+    int f = faces(i);
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
     double a = mesh_->face_area(f);
 
     for (int k = 0; k < d_; k++) {
       a = -a;
-      N(i, k) = normal[1 - k] * dirs[i] / a; 
+      N(i, k) = normal[1 - k] * dirs(i) / a;
     }
   }
 
@@ -106,17 +106,19 @@ int DeRham_Edge::L2consistency2D_(int c, const Tensor& T,
 
 
 /* ******************************************************************
-* 3D consistency condition for the mass matrix. Only the upper 
-* triangular part of Mc = R (R^T N)^{-1} R^T is calculated. 
+* 3D consistency condition for the mass matrix. Only the upper
+* triangular part of Mc = R (R^T N)^{-1} R^T is calculated.
 ****************************************************************** */
 int DeRham_Edge::L2consistency3D_(int c, const Tensor& T,
                                   DenseMatrix& N, DenseMatrix& Mc)
 {
-  Entity_ID_List edges, fedges, faces;
-  std::vector<int> fdirs, edirs, map;
+  Entity_ID_List edges, fedges;
+  Kokkos::View<Entity_ID*> faces;
+  std::vector<int> edirs, map;
+  Kokkos::View<int*> fdirs;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
-  int nfaces = faces.size();
+  mesh_->cell_get_faces_and_dirs(c, faces, &fdirs);
+  int nfaces = faces.extent(0);
 
   mesh_->cell_get_edges(c, &edges);
   int nedges = edges.size();
@@ -134,13 +136,13 @@ int DeRham_Edge::L2consistency3D_(int c, const Tensor& T,
   double volume = mesh_->cell_volume(c);
 
   for (int i = 0; i < nfaces; ++i) {
-    int f = faces[i];
+    int f = faces(i);
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
     double area = mesh_->face_area(f);
 
-    v1 = xc - xf; 
- 
+    v1 = xc - xf;
+
     double a1 = normal * v1;
     for (int k = 0; k < d_; ++k) {
       vv[k].set(normal[k] * v1);
@@ -155,11 +157,11 @@ int DeRham_Edge::L2consistency3D_(int c, const Tensor& T,
     for (int m = 0; m < nfedges; ++m) {
       int e = fedges[m];
       const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
- 
+
       v3 = xe - xf;
 
       double len = mesh_->edge_length(e);
-      len /= 2.0 * area * area * fdirs[i] * edirs[m];
+      len /= 2.0 * area * area * fdirs(i) * edirs[m];
 
       for (int k = 0; k < d_; ++k) {
         N(map[m], k) -= len * ((vv[k]^v3) * normal);
@@ -167,7 +169,7 @@ int DeRham_Edge::L2consistency3D_(int c, const Tensor& T,
     }
   }
 
-  // calculate Mc = R (R^T N)^{-1} R^T 
+  // calculate Mc = R (R^T N)^{-1} R^T
   Tensor Tinv(T);
   Tinv.Inverse();
 
@@ -228,17 +230,17 @@ int DeRham_Edge::L2consistencyInverse(
 
 
 /* ******************************************************************
-* 2D consistency condition for inverse of the mass matrix. Only upper 
+* 2D consistency condition for inverse of the mass matrix. Only upper
 * triangular part of matrix Wc = N (N^T R)^{-1} N^T is calculated.
 ****************************************************************** */
 int DeRham_Edge::L2consistencyInverse2D_(
     int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
 {
-  Entity_ID_List faces;
-  std::vector<int> dirs;
+  Kokkos::View<Entity_ID*> faces;
+  Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-  int nfaces = faces.size();
+  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  int nfaces = faces.extent(0);
 
   R.Reshape(nfaces, d_);
   Wc.Reshape(nfaces, nfaces);
@@ -255,28 +257,28 @@ int DeRham_Edge::L2consistencyInverse2D_(
     Trot(1, 0) = -Trot(1, 0);
 
     double tmp = Trot(0, 0);
-    Trot(0, 0) = Trot(1, 1);  
+    Trot(0, 0) = Trot(1, 1);
     Trot(1, 1) = tmp;
   }
 
   for (int i = 0; i < nfaces; i++) {
-    int f = faces[i];
+    int f = faces(i);
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
     double a1 = mesh_->face_area(f);
 
     v1 = Trot * normal;
 
     for (int j = i; j < nfaces; j++) {
-      f = faces[j];
+      f = faces(j);
       const AmanziGeometry::Point& v2 = mesh_->face_normal(f);
       double a2 = mesh_->face_area(f);
-      Wc(i, j) = (v1 * v2) / (a1 * a2 * dirs[i] * dirs[j] * volume);
+      Wc(i, j) = (v1 * v2) / (a1 * a2 * dirs(i) * dirs(j) * volume);
     }
   }
 
   // matrix R
   for (int i = 0; i < nfaces; i++) {
-    int f = faces[i];
+    int f = faces(i);
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     double len = mesh_->face_area(f);
 
@@ -293,17 +295,19 @@ int DeRham_Edge::L2consistencyInverse2D_(
 
 /* ******************************************************************
 * 3D consistency condition for inverse of the mass matrix. Only upper
-* triangular part of matrix Wc = N (N^T R)^{-1} N^T is calculated. 
+* triangular part of matrix Wc = N (N^T R)^{-1} N^T is calculated.
 * Recall that N^T R = |c| T.
 ****************************************************************** */
 int DeRham_Edge::L2consistencyInverse3D_(
     int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
 {
-  Entity_ID_List edges, faces;
-  std::vector<int> fdirs, edirs, map;
+  Entity_ID_List edges;
+  Kokkos::View<Entity_ID*> faces;
+  std::vector<int> edirs, map;
+  Kokkos::View<int*> fdirs;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
-  int nfaces = faces.size();
+  mesh_->cell_get_faces_and_dirs(c, faces, &fdirs);
+  int nfaces = faces.extent(0);
 
   mesh_->cell_get_edges(c, &edges);
   int nedges = edges.size();
@@ -337,13 +341,13 @@ int DeRham_Edge::L2consistencyInverse3D_(
   R.PutScalar(0.0);
 
   for (int i = 0; i < nfaces; ++i) {
-    int f = faces[i];
+    int f = faces(i);
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
     double area = mesh_->face_area(f);
 
-    v1 = xc - xf; 
- 
+    v1 = xc - xf;
+
     double a1 = normal * v1;
     for (int k = 0; k < d_; ++k) {
       vv[k].set(normal[k] * v1);
@@ -358,11 +362,11 @@ int DeRham_Edge::L2consistencyInverse3D_(
     for (int m = 0; m < nedges; ++m) {
       int e = edges[m];
       const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
- 
+
       v3 = xe - xf;
 
       double len = mesh_->edge_length(e);
-      len /= 2.0 * area * area * fdirs[i] * edirs[m];
+      len /= 2.0 * area * area * fdirs(i) * edirs[m];
 
       for (int k = 0; k < d_; ++k) {
         R(map[m], k) -= len * ((vv[k]^v3) * normal);
@@ -390,4 +394,3 @@ int DeRham_Edge::MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W)
 
 }  // namespace WhetStone
 }  // namespace Amanzi
-

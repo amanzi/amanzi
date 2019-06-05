@@ -2,9 +2,9 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -28,17 +28,17 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Consistency condition for mass matrix in mechanics. 
+* Consistency condition for mass matrix in mechanics.
 * Only the upper triangular part of Ac is calculated.
 * Requires mesh_get_edges to complete the implementation.
 ****************************************************************** */
 int MFD3D_Elasticity::L2consistency(int c, const Tensor& T,
                                     DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
-  Entity_ID_List faces;
+  Kokkos::View<Entity_ID*> faces;
 
-  mesh_->cell_get_faces(c, &faces);
-  int nfaces = faces.size();
+  mesh_->cell_get_faces(c, faces);
+  int nfaces = faces.extent(0);
 
   N.Reshape(nfaces, d_);
   Mc.Reshape(nfaces, nfaces);
@@ -52,7 +52,7 @@ int MFD3D_Elasticity::L2consistency(int c, const Tensor& T,
   Tinv.Inverse();
 
   for (int i = 0; i < nfaces; i++) {
-    int f = faces[i];
+    int f = faces(i);
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
@@ -66,20 +66,21 @@ int MFD3D_Elasticity::L2consistency(int c, const Tensor& T,
 
 
 /* ******************************************************************
-* Consistency condition for stiffness matrix in mechanics. 
+* Consistency condition for stiffness matrix in mechanics.
 * Only the upper triangular part of Ac is calculated.
 ****************************************************************** */
 int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
                                     DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List nodes, faces;
-  std::vector<int> dirs;
+  Entity_ID_List nodes;
+  Kokkos::View<Entity_ID*> faces;
+  Kokkos::View<int*> dirs;
 
   mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-  int nfaces = faces.size();
+  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  int nfaces = faces.extent(0);
 
   int nrows = d_ * nnodes;
   int md = d_ * (d_ + 1);
@@ -111,7 +112,7 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
   R.PutScalar(0.0);
 
   for (int i = 0; i < nfaces; i++) {
-    int f = faces[i];
+    int f = faces(i);
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
     double area = mesh_->face_area(f);
@@ -125,7 +126,7 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
       double u(0.5);
 
       if (d_ == 2) {
-        u = 0.5 * dirs[i]; 
+        u = 0.5 * dirs(i);
       } else {
         int jnext = (j + 1) % num_face_nodes;
         int jprev = (j + num_face_nodes - 1) % num_face_nodes;
@@ -140,7 +141,7 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
         v1 = pprev - pnext;
         v2 = p - fm;
         v3 = v1^v2;
-        u = dirs[i] * norm(v3) / (4 * area);
+        u = dirs(i) * norm(v3) / (4 * area);
       }
 
       int pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
@@ -292,6 +293,3 @@ void MFD3D_Elasticity::MatrixMatrixProduct_(
 
 }  // namespace WhetStone
 }  // namespace Amanzi
-
-
-

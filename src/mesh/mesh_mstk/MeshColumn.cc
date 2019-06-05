@@ -98,7 +98,7 @@ void MeshColumn::compute_special_node_coordinates_() {
   extracted_->build_columns();
 
   // Get the ordered face indexes of the column
-  const Entity_ID_List& colfaces = extracted_->faces_of_column(0);
+  Kokkos::View<Entity_ID*> colfaces = extracted_->faces_of_column(0);
   column_faces_ = colfaces;
 
   // mask for face index in the column of faces
@@ -106,28 +106,28 @@ void MeshColumn::compute_special_node_coordinates_() {
 
   // How many nodes each "horizontal" face has in the column
   Entity_ID_List face_nodes;
-  extracted_->face_get_nodes(column_faces_[0],&face_nodes);
+  extracted_->face_get_nodes(column_faces_(0),&face_nodes);
   nfnodes_ = face_nodes.size();
 
   // Set up the new node coordinates This is done in two passes, which may be
   // unnecessary, but I'm not sure if face_centroid() would break if done in
   // one.
   int space_dim_ = space_dimension(); // from parent mesh
-  int nfaces = column_faces_.size();
+  int nfaces = column_faces_.extent(0);
   int nnodes = nfaces*nfnodes_;
   AmanziGeometry::Point p(space_dim_);
   std::vector<AmanziGeometry::Point> node_coordinates(nnodes, p);
 
   for (int j=0; j!=nfaces; ++j) {
     // set the mask
-    face_in_column_[column_faces_[j]] = j;
+    face_in_column_[column_faces_(j)] = j;
 
     // calculate node coordinates
     std::vector<AmanziGeometry::Point> face_coordinates;
-    extracted_->face_get_nodes(column_faces_[j], &face_nodes);
-    extracted_->face_get_coordinates(column_faces_[j], &face_coordinates);
+    extracted_->face_get_nodes(column_faces_(j), &face_nodes);
+    extracted_->face_get_coordinates(column_faces_(j), &face_coordinates);
 
-    AmanziGeometry::Point fcen = extracted_->face_centroid(column_faces_[j]);
+    AmanziGeometry::Point fcen = extracted_->face_centroid(column_faces_(j));
 
     for (int i=0; i!=nfnodes_; ++i) {
       AmanziGeometry::Point coords(space_dim_);
@@ -158,7 +158,7 @@ void MeshColumn::compute_special_node_coordinates_() {
 // communicator
 // -----------------------------------------------------------------------------
 void MeshColumn::build_epetra_maps_() {
-  int nfaces = column_faces_.size();
+  int nfaces = column_faces_.extent(0);
   face_map_ = Teuchos::rcp(new Map_type(nfaces, nfaces, 0, get_comm()));
 
   std::vector<int> ext_gids(2,-1);

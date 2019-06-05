@@ -388,19 +388,19 @@ unsigned int Mesh_simple::num_entities(AmanziMesh::Entity_kind kind,
 
 
 void Mesh_simple::cell_get_faces_and_dirs_internal_(const AmanziMesh::Entity_ID cellid,
-                                                    AmanziMesh::Entity_ID_List *faceids,
-                                                    std::vector<int> *cfacedirs,
+                                                    Kokkos::View<AmanziMesh::Entity_ID*>& faceids,
+                                                    Kokkos::View<int*> *cfacedirs,
                                                     const bool ordered) const
 {
   unsigned int offset = (unsigned int) 6*cellid;
 
-  faceids->clear();
-  if (cfacedirs) cfacedirs->clear();
+  Kokkos::resize(faceids,6);
+  if (cfacedirs) Kokkos::resize(*cfacedirs,6);
 
   for (int i = 0; i < 6; i++) {
-    faceids->push_back(*(cell_to_face_.begin()+offset));
+    faceids(i) = *(cell_to_face_.begin()+offset);
     if (cfacedirs)
-      cfacedirs->push_back(*(cell_to_face_dirs_.begin()+offset));
+      (*cfacedirs)(i) = *(cell_to_face_dirs_.begin()+offset);
     offset++;
   }
 }

@@ -2,14 +2,14 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Maps between mesh objects located on different meshes, e.g. two states 
+  Maps between mesh objects located on different meshes, e.g. two states
   of a deformable mesh: virtual element implementation.
 */
 
@@ -46,7 +46,7 @@ void MeshMaps_VEM::VelocityCell(
       for (int n = 0; n < vf.size(); ++n) {
         vvf.push_back(vf[n][i]);
       }
-    
+
       if (projector_ == "H1") {
         mfd->H1Cell(c, vvf, NULL, vc[i]);
       }
@@ -136,11 +136,12 @@ void MeshMaps_VEM::LeastSquareProjector_Cell_(
   AMANZI_ASSERT(order == 1 || order == 2);
 
   vc.Reshape(d_, d_, order);
-  
+
   AmanziGeometry::Point px1, px2;
   std::vector<AmanziGeometry::Point> x1, x2;
 
-  Entity_ID_List nodes, faces;
+  Entity_ID_List nodes;
+  Kokkos::View<Entity_ID*> faces;
   mesh0_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
@@ -154,15 +155,15 @@ void MeshMaps_VEM::LeastSquareProjector_Cell_(
 
   // FIXME
   if (order > 1) {
-    mesh0_->cell_get_faces(c, &faces);
-    int nfaces = faces.size();
+    mesh0_->cell_get_faces(c, faces);
+    int nfaces = faces.extent(0);
 
     for (int n = 0; n < nfaces; ++n) {
-      const auto& xf = mesh0_->face_centroid(faces[n]);
+      const auto& xf = mesh0_->face_centroid(faces(n));
       x1.push_back(xf);
 
       for (int i = 0; i < d_; ++i)  {
-        px2[i] = vf[n][i].Value(xf); 
+        px2[i] = vf[n][i].Value(xf);
       }
       x2.push_back(px2);
     }
@@ -185,4 +186,3 @@ void MeshMaps_VEM::ParseInputParameters_(const Teuchos::ParameterList& plist)
 
 }  // namespace WhetStone
 }  // namespace Amanzi
-

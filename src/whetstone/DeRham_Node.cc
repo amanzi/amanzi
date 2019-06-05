@@ -2,9 +2,9 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -27,7 +27,8 @@ namespace WhetStone {
 int DeRham_Node::L2consistency(int c, const Tensor& T,
                                DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
-  Entity_ID_List nodes, faces, face_nodes;
+  Entity_ID_List nodes, face_nodes;
+  Kokkos::View<Entity_ID*> faces;
 
   mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
@@ -35,8 +36,8 @@ int DeRham_Node::L2consistency(int c, const Tensor& T,
   N.Reshape(nnodes, 1);
   Mc.Reshape(nnodes, nnodes);
 
-  mesh_->cell_get_faces(c, &faces);
-  int nfaces = faces.size();
+  mesh_->cell_get_faces(c, faces);
+  int nfaces = faces.extent(0);
 
   double volume = mesh_->cell_volume(c);
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -45,7 +46,7 @@ int DeRham_Node::L2consistency(int c, const Tensor& T,
   N.PutScalar(0.0);
 
   for (int n = 0; n < nfaces; ++n) {
-    int f = faces[n];
+    int f = faces(n);
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
@@ -59,7 +60,7 @@ int DeRham_Node::L2consistency(int c, const Tensor& T,
   }
 
   // calculate upper part of R T R^T / volume
-  for (int i = 0; i < nnodes; i++) { 
+  for (int i = 0; i < nnodes; i++) {
     double a = N(i, 0) * T(0, 0) / volume;
     for (int j = i; j < nnodes; j++) {
       Mc(i, j) = a * N(j, 0);
@@ -92,4 +93,3 @@ int DeRham_Node::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
 
 }  // namespace WhetStone
 }  // namespace Amanzi
-

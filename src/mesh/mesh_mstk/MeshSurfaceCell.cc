@@ -342,13 +342,13 @@ void MeshSurfaceCell::write_to_exodus_file(const std::string filename) const {
 // cached or it can be called directly by the
 // cell_get_faces_and_dirs method of this class
 void MeshSurfaceCell::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
-        Entity_ID_List *faceids,
-        std::vector<int> *face_dirs,
+        Kokkos::View<Entity_ID*>& faceids,
+        Kokkos::View<int*> *face_dirs,
         const bool ordered) const {
   AMANZI_ASSERT(cellid == 0);
-  faceids->resize(nodes_.size());
-  for (int i=0; i!=nodes_.size(); ++i) (*faceids)[i] = i;
-  face_dirs->resize(nodes_.size(),1);
+  Kokkos::resize(faceids,nodes_.size());
+  for (int i=0; i!=nodes_.size(); ++i) faceids(i) = i;
+  Kokkos::resize(*face_dirs,nodes_.size());
 }
 
 

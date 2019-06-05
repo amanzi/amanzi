@@ -2,9 +2,9 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -39,16 +39,17 @@ double NumericalIntegration::IntegrateFunctionsTriangulatedCell(
 {
   double integral(0.0);
 
-  AmanziMesh::Entity_ID_List faces, nodes;
-  std::vector<AmanziGeometry::Point> xy(d_ + 1); 
+  Kokkos::View<AmanziMesh::Entity_ID*> faces;
+  AmanziMesh::Entity_ID_List nodes;
+  std::vector<AmanziGeometry::Point> xy(d_ + 1);
 
-  mesh_->cell_get_faces(c, &faces);
-  int nfaces = faces.size();
+  mesh_->cell_get_faces(c, faces);
+  int nfaces = faces.extent(0);
 
   xy[0] = mesh_->cell_centroid(c);
 
   for (int n = 0; n < nfaces; ++n) {
-    int f = faces[n];
+    int f = faces(n);
     mesh_->face_get_nodes(f, &nodes);
     int nnodes = nodes.size();
 
@@ -82,10 +83,11 @@ double NumericalIntegration::IntegrateFunctionsTriangulatedFace(
 {
   double integral(0.0);
   AmanziGeometry::Point x1(d_), x2(d_);
-  AmanziMesh::Entity_ID_List faces, nodes;
+  AmanziMesh::Entity_ID_List nodes;
+  Kokkos::View<AmanziMesh::Entity_ID*> faces;
 
   if (d_ == 3) {
-    std::vector<AmanziGeometry::Point> xy(d_ + 1); 
+    std::vector<AmanziGeometry::Point> xy(d_ + 1);
 
     mesh_->face_get_nodes(f, &nodes);
     int nnodes = nodes.size();
@@ -125,7 +127,7 @@ double NumericalIntegration::IntegrateFunctionsEdge(
   AmanziGeometry::Point xm(d_);
 
   double integral(0.0);
-  for (int n = 0; n <= m; ++n) { 
+  for (int n = 0; n <= m; ++n) {
     double q1d(q1d_points[m][n]);
     for (int i = 0; i < d_; ++i) {
       xm[i] = x1[i] * q1d + x2[i] * (1.0 - q1d);
@@ -135,7 +137,7 @@ double NumericalIntegration::IntegrateFunctionsEdge(
     for (int i = 0; i < funcs.size(); ++i) {
       a *= funcs[i]->Value(xm);
     }
-    integral += a;      
+    integral += a;
   }
 
   return integral * norm(x2 - x1);
@@ -169,7 +171,7 @@ double NumericalIntegration::IntegratePolynomialCell(int c, const Polynomial& po
 
 
 /* ******************************************************************
-* Integrate product of polynomials and monomials over cells c. They 
+* Integrate product of polynomials and monomials over cells c. They
 * may have different origins.
 ****************************************************************** */
 double NumericalIntegration::IntegratePolynomialsCell(
@@ -188,7 +190,7 @@ double NumericalIntegration::IntegratePolynomialsCell(
     tmp.ChangeOrigin(xc);
     product *= tmp;
   }
-  
+
   // calculate integrals of monomials centered at cell centroid
   int order = product.order();
   Polynomial integrals(d_, order);
@@ -209,7 +211,7 @@ double NumericalIntegration::IntegratePolynomialsCell(
 
 /* ******************************************************************
 * Integrate over face f the product of polynomials and monomials that
-* may have different origins. 
+* may have different origins.
 ****************************************************************** */
 double NumericalIntegration::IntegratePolynomialsFace(
     int f, const std::vector<const PolynomialBase*>& polys) const
@@ -242,7 +244,7 @@ double NumericalIntegration::IntegratePolynomialsFace(
     tmp.ChangeOrigin(xf);
     product *= tmp;
   }
-  
+
   // Apply Euler theorem to each monomial
   double sum(0.0);
   Entity_ID_List edges;
@@ -270,7 +272,7 @@ double NumericalIntegration::IntegratePolynomialsFace(
     }
 
     // integrate along edge
-    int n0, n1; 
+    int n0, n1;
     mesh_->edge_get_nodes(e, &n0, &n1);
     mesh_->node_get_coordinates(n0, &x1);
     mesh_->node_get_coordinates(n1, &x2);
@@ -302,14 +304,14 @@ double NumericalIntegration::IntegratePolynomialsEdge(
   AmanziGeometry::Point xm(d_);
 
   double integral(0.0);
-  for (int n = 0; n <= m; ++n) { 
+  for (int n = 0; n <= m; ++n) {
     xm = x1 * q1d_points[m][n] + x2 * (1.0 - q1d_points[m][n]);
 
     double a(q1d_weights[m][n]);
     for (int i = 0; i < polys.size(); ++i) {
       a *= polys[i]->Value(xm);
     }
-    integral += a;      
+    integral += a;
   }
 
   return integral * norm(x2 - x1);
@@ -323,7 +325,7 @@ double NumericalIntegration::IntegrateFunctionsTriangle_(
     const std::vector<AmanziGeometry::Point>& xy,
     const std::vector<const WhetStoneFunction*>& funcs, int order) const
 {
-  // calculate minimal quadrature rule 
+  // calculate minimal quadrature rule
   int m(order);
   AMANZI_ASSERT(m < 10);
 
@@ -334,14 +336,14 @@ double NumericalIntegration::IntegrateFunctionsTriangle_(
   AmanziGeometry::Point y2 = xy[2] - xy[0];
 
   double integral(0.0);
-  for (int n = n1; n < n2; ++n) { 
+  for (int n = n1; n < n2; ++n) {
     auto ym = xy[0] + y1 * q2d_points[n][1] + y2 * q2d_points[n][2];
 
     double a(q2d_weights[n]);
     for (int i = 0; i < funcs.size(); ++i) {
       a *= funcs[i]->Value(ym);
     }
-    integral += a;      
+    integral += a;
   }
 
   double area = norm(y1^y2) / 2;
@@ -357,7 +359,7 @@ double NumericalIntegration::IntegrateFunctionsTetrahedron_(
     const std::vector<AmanziGeometry::Point>& xy,
     const std::vector<const WhetStoneFunction*>& funcs, int order) const
 {
-  // calculate minimal quadrature rule 
+  // calculate minimal quadrature rule
   int m(order);
   AMANZI_ASSERT(m < 7);
 
@@ -370,14 +372,14 @@ double NumericalIntegration::IntegrateFunctionsTetrahedron_(
   AmanziGeometry::Point y3 = xy[3] - xy[0];
 
   double integral(0.0);
-  for (int n = n1; n < n2; ++n) { 
+  for (int n = n1; n < n2; ++n) {
     ym = xy[0] + y1 * q3d_points[n][1] + y2 * q3d_points[n][2] + y3 * q3d_points[n][3];
 
     double a(q3d_weights[n]);
     for (int i = 0; i < funcs.size(); ++i) {
       a *= funcs[i]->Value(ym);
     }
-    integral += a;      
+    integral += a;
   }
 
   double volume = std::fabs(((y1^y2) * y3) / 6);
@@ -438,20 +440,21 @@ void NumericalIntegration::IntegrateMonomialsCell(int c, int k, Polynomial& inte
     integrals(nk + i) = 0.0;
   }
 
-  Entity_ID_List faces, nodes;
-  std::vector<int> dirs;
+  Entity_ID_List nodes;
+  Kokkos::View<Entity_ID*> faces;
+  Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-  int nfaces = faces.size();
+  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  int nfaces = faces.extent(0);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
   for (int n = 0; n < nfaces; ++n) {
-    int f = faces[n];
+    int f = faces(n);
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    double tmp = dirs[n] * ((xf - xc) * normal) / (k + d_);
-    
+    double tmp = dirs(n) * ((xf - xc) * normal) / (k + d_);
+
     if (d_ == 3) {
       tmp /= mesh_->face_area(f);
       IntegrateMonomialsFace_(c, f, tmp, k, integrals);
@@ -525,7 +528,7 @@ void NumericalIntegration::IntegrateMonomialsFace_(
       }
 
       // integrate along edge
-      int n0, n1; 
+      int n0, n1;
       mesh_->edge_get_nodes(e, &n0, &n1);
       mesh_->node_get_coordinates(n0, &x1);
       mesh_->node_get_coordinates(n1, &x2);
@@ -539,7 +542,7 @@ void NumericalIntegration::IntegrateMonomialsFace_(
 
 /* ******************************************************************
 * Integrate over edge (x1,x2) a group of non-normalized monomials of
-* the same order k centered at zero. 
+* the same order k centered at zero.
 ****************************************************************** */
 void NumericalIntegration::IntegrateMonomialsEdge_(
     const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
@@ -556,14 +559,14 @@ void NumericalIntegration::IntegrateMonomialsEdge_(
     const int* idx = it.multi_index();
     int l = it.MonomialSetPosition();
 
-    for (int n = 0; n <= m; ++n) { 
+    for (int n = 0; n <= m; ++n) {
       double a1(factor), q1d(q1d_points[m][n]);
       for (int i = 0; i < d_; ++i) {
         double tmp = x1[i] * q1d + x2[i] * (1.0 - q1d);
         a1 *= std::pow(tmp, idx[i]);
       }
 
-      integrals(nk + l) += a1 * q1d_weights[m][n];      
+      integrals(nk + l) += a1 * q1d_weights[m][n];
     }
   }
 }
@@ -587,7 +590,7 @@ double NumericalIntegration::PolynomialMaxValue(int f, const Polynomial& poly)
     mesh_->node_get_coordinates(nodes[1], &x2);
 
     pmax = std::max(fabs(poly.Value(x1)), fabs(poly.Value(x2)));
-    for (int n = 0; n <= m; ++n) { 
+    for (int n = 0; n <= m; ++n) {
       xm = x1 * q1d_points[m][n] + x2 * (1.0 - q1d_points[m][n]);
       pmax = std::max(pmax, fabs(poly.Value(xm)));
     }
@@ -604,4 +607,3 @@ double NumericalIntegration::PolynomialMaxValue(int f, const Polynomial& poly)
 
 }  // namespace WhetStone
 }  // namespace Amanzi
-

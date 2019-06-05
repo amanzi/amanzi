@@ -1205,8 +1205,8 @@ Cell_type Mesh_MSTK::cell_get_type(const Entity_ID cellid) const
 // direction as the cell polygon, and -1 otherwise
 //---------------------------------------------------------
 void Mesh_MSTK::cell_get_faces_and_dirs_ordered(const Entity_ID cellid,
-                                                Entity_ID_List *faceids,
-                                                std::vector<int> *face_dirs) const
+                                                Kokkos::View<Entity_ID*>& faceids,
+                                                Kokkos::View<int*> *face_dirs) const
 {
 
   MEntity_ptr cell = nullptr;
@@ -1223,9 +1223,9 @@ void Mesh_MSTK::cell_get_faces_and_dirs_ordered(const Entity_ID cellid,
       List_ptr rfaces = MR_Faces((MRegion_ptr)cell);
       nf = List_Num_Entries(rfaces);
 
-      faceids->resize(nf);
+      Kokkos::resize(faceids,nf);
       if (face_dirs)
-        face_dirs->resize(nf);
+        Kokkos::resize(*face_dirs,nf);
 
       /* base face */
 
@@ -1282,12 +1282,12 @@ void Mesh_MSTK::cell_get_faces_and_dirs_ordered(const Entity_ID cellid,
             if (MF_UsesEntity(fadj,fe,MEDGE)) {
 
               lid = MEnt_ID(fadj);
-              (*faceids)[nf] = lid-1;
+              faceids(nf) = lid-1;
 
               if (face_dirs) {
                 int fdir = (MR_FaceDir_i((MRegion_ptr)cell,i) == 1) ? 1 : -1;
                 if (faceflip[lid-1]) fdir *= -1;
-                (*face_dirs)[nf] = fdir;
+                (*face_dirs)(nf) = fdir;
               }
 
               MEnt_Mark(fadj,mkid);
@@ -1302,12 +1302,12 @@ void Mesh_MSTK::cell_get_faces_and_dirs_ordered(const Entity_ID cellid,
       /* Add the base face */
 
       lid = MEnt_ID(face0);
-      (*faceids)[nf] = lid-1;
+      faceids(nf) = lid-1;
 
       if (face_dirs) {
         fdir0 = fdir0 ? 1 : -1;
         if (faceflip[lid-1]) fdir0 *= -1;
-        (*face_dirs)[nf] = fdir0;
+        (*face_dirs)(nf) = fdir0;
       }
       nf++;
 
@@ -1320,12 +1320,12 @@ void Mesh_MSTK::cell_get_faces_and_dirs_ordered(const Entity_ID cellid,
         if (fopp != face0 && !MEnt_IsMarked(fopp,mkid)) {
 
           lid = MEnt_ID(fopp);
-          (*faceids)[nf] = lid-1;
+          faceids(nf) = lid-1;
 
           if (face_dirs) {
             int fdir = (MR_FaceDir_i((MRegion_ptr)cell,i) == 1) ? 1 : -1;
             if (faceflip[lid-1]) fdir *= -1;
-            (*face_dirs)[nf] = fdir;
+            (*face_dirs)(nf) = fdir;
           }
           nf++;
           break;
@@ -1349,12 +1349,10 @@ void Mesh_MSTK::cell_get_faces_and_dirs_ordered(const Entity_ID cellid,
 
 
 void Mesh_MSTK::cell_get_faces_and_dirs_unordered(const Entity_ID cellid,
-                                                  Entity_ID_List *faceids,
-                                                  std::vector<int> *face_dirs) const
+                                                  Kokkos::View<Entity_ID*>& faceids,
+                                                  Kokkos::View<int*> *face_dirs) const
 {
   MEntity_ptr cell;
-
-  AMANZI_ASSERT(faceids != nullptr);
 
   cell = cell_id_to_handle[cellid];
 
@@ -1364,14 +1362,13 @@ void Mesh_MSTK::cell_get_faces_and_dirs_unordered(const Entity_ID cellid,
 
     rfaces = MR_Faces((MRegion_ptr)cell);
     nrf = List_Num_Entries(rfaces);
-    faceids->resize(nrf);
+    Kokkos::resize(faceids,nrf);
 
-    Entity_ID_List::iterator itf = faceids->begin();
+    size_t j = 0;
     for (int i = 0; i < nrf; ++i) {
       MFace_ptr face = List_Entry(rfaces,i);
       int lid = MEnt_ID(face);
-      *itf = lid-1;  // assign to next spot by dereferencing iterator
-      ++itf;
+      faceids(j++) = lid-1;  // assign to next spot by dereferencing iterator
     }
 
     List_Delete(rfaces);
@@ -1389,15 +1386,14 @@ void Mesh_MSTK::cell_get_faces_and_dirs_unordered(const Entity_ID cellid,
     */
 
     if (face_dirs) {
-      face_dirs->resize(nrf);
+      Kokkos::resize(*face_dirs,nrf);
 
-      std::vector<int>::iterator itd = face_dirs->begin();
+      size_t j = 0;
       for (int i = 0; i < nrf; ++i) {
-        int lid = (*faceids)[i];
+        int lid = faceids(i);
         int fdir = 2*MR_FaceDir_i((MRegion_ptr)cell,i) - 1;
         fdir = faceflip[lid] ? -fdir : fdir;
-        *itd = fdir;  // assign to next spot by dereferencing iterator
-        ++itd;
+        (*face_dirs)(j++) = fdir;  // assign to next spot by dereferencing iterator
       }
     }
 
@@ -1409,14 +1405,13 @@ void Mesh_MSTK::cell_get_faces_and_dirs_unordered(const Entity_ID cellid,
     fedges = MF_Edges((MFace_ptr)cell,1,0);
     nfe = List_Num_Entries(fedges);
 
-    faceids->resize(nfe);
+    Kokkos::resize(faceids,nfe);
 
-    Entity_ID_List::iterator itf = faceids->begin();
+    size_t j = 0;
     for (int i = 0; i < nfe; ++i) {
       MEdge_ptr edge = List_Entry(fedges,i);
       int lid = MEnt_ID(edge);
-      *itf = lid-1;  // assign to next spot by dereferencing iterator
-      ++itf;
+      faceids(j++) = lid-1;  // assign to next spot by dereferencing iterator
     }
 
     List_Delete(fedges);
@@ -1435,14 +1430,13 @@ void Mesh_MSTK::cell_get_faces_and_dirs_unordered(const Entity_ID cellid,
     */
 
     if (face_dirs) {
-      face_dirs->resize(nfe);
-      std::vector<int>::iterator itd = face_dirs->begin();
+      Kokkos::resize(*face_dirs,nfe);
+      size_t j = 0;
       for (int i = 0; i < nfe; ++i) {
-        int lid = (*faceids)[i];
+        int lid = faceids(i);
         int fdir = 2*MF_EdgeDir_i((MFace_ptr)cell,i) - 1;
         fdir = faceflip[lid] ? -fdir : fdir;
-        *itd = fdir;  // assign to next spot by dereferencing iterator
-        itd++;
+        (*face_dirs)(j++) = fdir;  // assign to next spot by dereferencing iterator
       }
     }
 
@@ -1451,8 +1445,8 @@ void Mesh_MSTK::cell_get_faces_and_dirs_unordered(const Entity_ID cellid,
 
 
 void Mesh_MSTK::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
-                                                  Entity_ID_List *faceids,
-                                                  std::vector<int> *face_dirs,
+                                                  Kokkos::View<Entity_ID*>& faceids,
+                                                  Kokkos::View<int*> *face_dirs,
                                                   const bool ordered) const
 {
   AMANZI_ASSERT(faces_initialized);

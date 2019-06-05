@@ -2,9 +2,9 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -50,13 +50,13 @@ int MFD3D_Electromagnetics::H1consistency(
 int MFD3D_Electromagnetics::H1consistency2D_(
     int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List faces;
-  std::vector<int> fdirs;
+  Kokkos::View<Entity_ID*> faces;
+  Kokkos::View<int*> fdirs;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
-  int nfaces = faces.size();
+  mesh_->cell_get_faces_and_dirs(c, faces, &fdirs);
+  int nfaces = faces.extent(0);
 
-  int nd = 3; 
+  int nd = 3;
   N.Reshape(nfaces, nd);
   Ac.Reshape(nfaces, nfaces);
 
@@ -66,19 +66,19 @@ int MFD3D_Electromagnetics::H1consistency2D_(
   double volume = mesh_->cell_volume(c);
 
   for (int i = 0; i < nfaces; ++i) {
-    int f = faces[i];
+    int f = faces(i);
     double a1 = mesh_->face_area(f);
 
     for (int j = i; j < nfaces; ++j) {
-      f = faces[j];
+      f = faces(j);
       double a2 = mesh_->face_area(f);
-      Ac(i, j) = a1 * a2 / (T00 * fdirs[i] * fdirs[j] * volume);
+      Ac(i, j) = a1 * a2 / (T00 * fdirs(i) * fdirs(j) * volume);
     }
   }
 
   // Matrix N(:, 1:2) are simply tangents
   for (int i = 0; i < nfaces; i++) {
-    int f = faces[i];
+    int f = faces(i);
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     double len = mesh_->face_area(f);
@@ -88,7 +88,7 @@ int MFD3D_Electromagnetics::H1consistency2D_(
       N(i, k) = normal[1 - k] / len;
     }
 
-    N(i, d_) = (xf - xc) * normal / len; 
+    N(i, d_) = (xf - xc) * normal / len;
   }
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -101,11 +101,13 @@ int MFD3D_Electromagnetics::H1consistency2D_(
 int MFD3D_Electromagnetics::H1consistency3D_(
     int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List edges, fedges, faces;
-  std::vector<int> fdirs, edirs, map;
+  Entity_ID_List edges, fedges;
+  Kokkos::View<Entity_ID*> faces;
+  std::vector<int> edirs, map;
+  Kokkos::View<int*> fdirs;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
-  int nfaces = faces.size();
+  mesh_->cell_get_faces_and_dirs(c, faces, &fdirs);
+  int nfaces = faces.extent(0);
 
   mesh_->cell_get_edges(c, &edges);
   int nedges = edges.size();
@@ -123,7 +125,7 @@ int MFD3D_Electromagnetics::H1consistency3D_(
   double volume = mesh_->cell_volume(c);
 
   for (int i = 0; i < nfaces; ++i) {
-    int f = faces[i];
+    int f = faces(i);
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     AmanziGeometry::Point normal = mesh_->face_normal(f);
     normal /= mesh_->face_area(f);
@@ -138,13 +140,13 @@ int MFD3D_Electromagnetics::H1consistency3D_(
       const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
       double len = mesh_->edge_length(e);
 
-      len *= 2 * fdirs[i] * edirs[m];
+      len *= 2 * fdirs(i) * edirs[m];
       v2 = xe - xf;
 
       for (int k = 0; k < d_; ++k) N(map[m], k) += len * v2[k];
     }
   }
-  
+
   // calculate Ac = R (R^T N)^{+} R^T
   for (int i = 0; i < nedges; i++) {
     for (int k = 0; k < d_; ++k) v1[k] = N(i, k);
@@ -261,14 +263,14 @@ int MFD3D_Electromagnetics::StiffnessMatrix(
   DenseMatrix MC(nfaces, nedges);
 
   MC.Multiply(M, C, false);
-  A.Multiply(C, MC, true); 
+  A.Multiply(C, MC, true);
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
 
 /* ******************************************************************
-* Stiffness matrix: the algorithm based on new 
+* Stiffness matrix: the algorithm based on new
 ****************************************************************** */
 int MFD3D_Electromagnetics::StiffnessMatrixGeneralized(
     int c, const Tensor& T, DenseMatrix& A)
@@ -286,9 +288,9 @@ int MFD3D_Electromagnetics::StiffnessMatrixGeneralized(
 
 
 /* ******************************************************************
-* Stiffness matrix: the algorithm based on new 
+* Stiffness matrix: the algorithm based on new
 ****************************************************************** */
-void MFD3D_Electromagnetics::AddGradientToProjector_(int c, DenseMatrix& N) 
+void MFD3D_Electromagnetics::AddGradientToProjector_(int c, DenseMatrix& N)
 {
   Entity_ID_List edges, nodes;
 
@@ -314,7 +316,7 @@ void MFD3D_Electromagnetics::AddGradientToProjector_(int c, DenseMatrix& N)
 
     G(m, lid[v1]) += 1.0 / length;
     G(m, lid[v2]) -= 1.0 / length;
-  } 
+  }
 
   // create matrix [N G] with possibly linearly dependent vectors
   int ncols = N.NumCols();
@@ -325,7 +327,7 @@ void MFD3D_Electromagnetics::AddGradientToProjector_(int c, DenseMatrix& N)
   for (int n = 0; n < nnodes - 1; ++n) {
     for (int m = 0; m < nedges; ++m) NG(m, ncols + n) = G(m, n);
   }
-  
+
   // identify linearly independent vectors by using the
   // Gramm-Schmidt orthogonalization process
   int ngcols = ncols + nnodes - 1;
@@ -361,19 +363,21 @@ void MFD3D_Electromagnetics::AddGradientToProjector_(int c, DenseMatrix& N)
 
 
 /* ******************************************************************
-* Curl matrix acts onto the space of total fluxes; hence, there is 
+* Curl matrix acts onto the space of total fluxes; hence, there is
 * no face area scaling below.
 ****************************************************************** */
 void MFD3D_Electromagnetics::CurlMatrix(int c, DenseMatrix& C)
 {
-  Entity_ID_List faces, nodes, fedges, edges;
-  std::vector<int> fdirs, edirs, map;
+  Entity_ID_List nodes, fedges, edges;
+  std::vector<int> edirs, map;
+  Kokkos::View<Entity_ID*> faces;
+  Kokkos::View<int*> fdirs;
 
   mesh_->cell_get_edges(c, &edges);
   int nedges = edges.size();
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
-  int nfaces = faces.size();
+  mesh_->cell_get_faces_and_dirs(c, faces, &fdirs);
+  int nfaces = faces.extent(0);
 
   C.Reshape(nfaces, nedges);
   C.PutScalar(0.0);
@@ -388,16 +392,16 @@ void MFD3D_Electromagnetics::CurlMatrix(int c, DenseMatrix& C)
     }
   } else {
     for (int i = 0; i < nfaces; ++i) {
-      int f = faces[i];
+      int f = faces(i);
 
       mesh_->face_to_cell_edge_map(f, c, &map);
       mesh_->face_get_edges_and_dirs(f, &fedges, &edirs);
       int nfedges = fedges.size();
 
       for (int j = 0; j < nfedges; ++j) {
-        int e = fedges[j]; 
+        int e = fedges[j];
         double len = mesh_->edge_length(e);
-        C(i, map[j]) = len * edirs[j] * fdirs[i];
+        C(i, map[j]) = len * edirs[j] * fdirs(i);
       }
     }
   }
@@ -405,6 +409,3 @@ void MFD3D_Electromagnetics::CurlMatrix(int c, DenseMatrix& C)
 
 }  // namespace WhetStone
 }  // namespace Amanzi
-
-
-

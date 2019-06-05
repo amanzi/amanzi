@@ -310,8 +310,8 @@ class Mesh_simple : public virtual Mesh {
   // direction as the cell polygon, and -1 otherwise
 
   void cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
-                                         Entity_ID_List *faceids,
-                                         std::vector<int> *face_dirs,
+                                         Kokkos::View<Entity_ID*>& faceids,
+                                         Kokkos::View<int*> *face_dirs,
                                          const bool ordered=false) const;
 
   // Cells connected to a face

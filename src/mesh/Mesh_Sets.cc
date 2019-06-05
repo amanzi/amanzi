@@ -60,8 +60,9 @@ void Mesh::get_set_entities_box_vofs_(
       int ncells = num_entities(CELL, ptype);
       double volume;
 
-      Entity_ID_List faces, cnodes, fnodes;
-      std::vector<int> dirs;
+      Entity_ID_List cnodes, fnodes;
+      Kokkos::View<Entity_ID*> faces;
+      Kokkos::View<int*> dirs;
       std::vector<AmanziGeometry::Point> polytope_nodes;
       std::vector<std::vector<int> > polytope_faces;
 
@@ -70,17 +71,17 @@ void Mesh::get_set_entities_box_vofs_(
 
         if (space_dimension() == 3) {
           cell_get_nodes(c, &cnodes);
-          cell_get_faces_and_dirs(c, &faces, &dirs);
-          int nfaces = faces.size();
+          cell_get_faces_and_dirs(c, faces, &dirs);
+          int nfaces = faces.extent(0);
 
           polytope_faces.clear();
           polytope_faces.resize(nfaces);
           for (int n = 0; n < nfaces; ++n) {
-            face_get_nodes(faces[n], &fnodes);
+            face_get_nodes(faces(n), &fnodes);
             int nnodes = fnodes.size();
 
             for (int i = 0; i < nnodes; ++i) {
-              int j = (dirs[n] > 0) ? i : nnodes - i - 1;
+              int j = (dirs(n) > 0) ? i : nnodes - i - 1;
               int pos = std::distance(cnodes.begin(), std::find(cnodes.begin(), cnodes.end(), fnodes[j]));
               polytope_faces[n].push_back(pos);
             }

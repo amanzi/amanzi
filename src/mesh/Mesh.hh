@@ -245,7 +245,7 @@ class Mesh {
   // effect of this is that master and ghost entities will have the same
   // hierarchical topology.
   void cell_get_faces(const Entity_ID cellid,
-                      Entity_ID_List *faceids,
+                      Kokkos::View<Entity_ID*>& faceids,
                       const bool ordered=false) const;
 
   // Get faces of a cell and directions in which the cell uses the face
@@ -261,14 +261,14 @@ class Mesh {
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
   void cell_get_faces_and_dirs(const Entity_ID cellid,
-                               Entity_ID_List *faceids,
-                               std::vector<int> *face_dirs,
+                               Kokkos::View<Entity_ID*>& faceids,
+                               Kokkos::View<int*>* face_dirs,
                                const bool ordered=false) const;
 
   // Get the bisectors, i.e. vectors from cell centroid to face centroids.
   virtual
   void cell_get_faces_and_bisectors(const Entity_ID cellid,
-                                    Entity_ID_List *faceids,
+                                    Kokkos::View<Entity_ID*>& faceids,
                                     std::vector<AmanziGeometry::Point> *bisectors,
                                     const bool ordered=false) const;
 
@@ -445,7 +445,7 @@ class Mesh {
   Kokkos::View<Entity_ID*> cells_of_column(const int columnID_) const;
 
   // Given a column ID, get the cells of the column - must call build_columns before calling
-  const Entity_ID_List& faces_of_column(const int columnID_) const;
+  Kokkos::View<Entity_ID*> faces_of_column(const int columnID_) const;
 
   // Given a cell, get its column ID - must call build_columns before calling
   int column_ID(const Entity_ID cellid) const;
@@ -799,8 +799,8 @@ protected:
   // Get faces of a cell and directions in which it is used.
   virtual
   void cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
-                                         Entity_ID_List *faceids,
-                                         std::vector<int> *face_dirs,
+                                         Kokkos::View<Entity_ID*>& faceids,
+                                         Kokkos::View<int*>* face_dirs,
                                          const bool ordered=false) const = 0;
 
   // Cells connected to a face
@@ -882,14 +882,14 @@ protected:
   // -- column information, only created if columns are requested
   mutable Kokkos::View<Entity_ID*> cell_cellabove_, cell_cellbelow_, node_nodeabove_;
   mutable Kokkos::Crs<Entity_ID,Kokkos::HostSpace> column_cells_;
-  mutable std::vector<Entity_ID_List> column_faces_;
+  mutable Kokkos::Crs<Entity_ID,Kokkos::HostSpace> column_faces_;
   mutable Kokkos::View<Entity_ID*> columnID_;
   mutable int num_owned_cols_;
   mutable bool columns_built_;
 
   // -- topology
-  mutable std::vector<Entity_ID_List> cell_face_ids_;
-  mutable std::vector< std::vector<int> > cell_face_dirs_;  // 1 or -1
+  mutable Kokkos::Crs<Entity_ID,Kokkos::HostSpace> cell_face_ids_;
+  mutable Kokkos::Crs<int,Kokkos::HostSpace> cell_face_dirs_;  // 1 or -1
 
   // 1s complement if face is pointing out of cell; cannot use 0 as
   // cellid can be 0

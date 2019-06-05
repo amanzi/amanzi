@@ -14,8 +14,9 @@ TEST(MSTK_HEX_2x2x1)
 {
 
   int i, j, k, err, nc, nf, nv;
-  std::vector<Amanzi::AmanziMesh::Entity_ID> faces(6), cnodes(8), fnodes(6), expfacenodes(4);
-  std::vector<int> facedirs(6);
+  std::vector<Amanzi::AmanziMesh::Entity_ID> cnodes(8), fnodes(6), expfacenodes(4);
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> faces("",6);
+  Kokkos::View<int*> facedirs("",6);
   std::vector<Amanzi::AmanziGeometry::Point> ccoords(8), fcoords(4);
 
   int NV = 18;
@@ -79,12 +80,12 @@ TEST(MSTK_HEX_2x2x1)
 
   for (i = 0; i < nc; i++) {
     mesh->cell_get_nodes(i,&cnodes);
-    mesh->cell_get_faces_and_dirs(i,&faces,&facedirs,true);
+    mesh->cell_get_faces_and_dirs(i,faces,&facedirs,true);
 
     for (j = 0; j < 6; j++) {
 
-      mesh->face_get_nodes(faces[j],&fnodes);
-      mesh->face_get_coordinates(faces[j],&fcoords);
+      mesh->face_get_nodes(faces(j),&fnodes);
+      mesh->face_get_coordinates(faces(j),&fcoords);
 
 
       for (k = 0; k < 4; k++)
@@ -105,7 +106,7 @@ TEST(MSTK_HEX_2x2x1)
 
       CHECK_EQUAL(found,1);
 
-      if (facedirs[j] == 1) {
+      if (facedirs(j) == 1) {
 	for (k = 0; k < 4; k++) {
 	  CHECK_EQUAL(expfacenodes[(k0+k)%4],fnodes[k]);
 	  CHECK_ARRAY_EQUAL(xyz[expfacenodes[(k0+k)%4]],fcoords[k],3);
@@ -127,17 +128,17 @@ TEST(MSTK_HEX_2x2x1)
   }
 
 
-  std::vector<Amanzi::AmanziMesh::Entity_ID>  c2f(6);
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*>  c2f("",6);
   auto cell_map = mesh->cell_map(true);
   auto face_map = mesh->face_map(false);
 
   for (int c=cell_map->getMinLocalIndex(); c<=cell_map->getMaxLocalIndex(); c++) {
     CHECK_EQUAL(cell_map->getGlobalElement(c),mesh->getGlobalElement(c,Amanzi::AmanziMesh::CELL));
-    mesh->cell_get_faces(c, &c2f);
+    mesh->cell_get_faces(c, c2f);
 
     for (int j=0; j<6; j++) {
-      int f = face_map->getLocalElement(mesh->getGlobalElement(c2f[j],Amanzi::AmanziMesh::FACE));
-      CHECK( f == c2f[j] );
+      int f = face_map->getLocalElement(mesh->getGlobalElement(c2f(j),Amanzi::AmanziMesh::FACE));
+      CHECK( f == c2f(j) );
     }
   }
 

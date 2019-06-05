@@ -419,14 +419,14 @@ bool MeshAudit::check_cell_to_faces() const
   AmanziMesh::Entity_ID_List bad_cells, bad_cells1;
   AmanziMesh::Entity_ID_List bad_faces;
   AmanziMesh::Entity_ID_List free_faces;
-  AmanziMesh::Entity_ID_List cface;
+  Kokkos::View<AmanziMesh::Entity_ID*> cface;
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
     try {
-      mesh_->cell_get_faces(j, &cface); // this may fail
+      mesh_->cell_get_faces(j, cface); // this may fail
       bool invalid_refs = false;
-      for (int k = 0; k < cface.size(); ++k) {
-        if (cface[k] >= nface) invalid_refs = true;
+      for (int k = 0; k < cface.extent(0); ++k) {
+        if (cface(k) >= nface) invalid_refs = true;
       }
       if (invalid_refs) bad_cells.push_back(j);
     } catch (...) {
@@ -458,12 +458,12 @@ bool MeshAudit::check_cell_to_faces() const
 
 bool MeshAudit::check_face_refs_by_cells() const
 {
-  AmanziMesh::Entity_ID_List cface;
+  Kokkos::View<AmanziMesh::Entity_ID*> cface;
   vector<unsigned int> refs(nface, 0);
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
-    mesh_->cell_get_faces(j, &cface);
-    for (int k = 0; k < cface.size(); ++k) (refs[cface[k]])++;
+    mesh_->cell_get_faces(j, cface);
+    for (int k = 0; k < cface.extent(0); ++k) (refs[cface(k)])++;
   }
 
   AmanziMesh::Entity_ID_List free_faces;
@@ -570,17 +570,17 @@ bool MeshAudit::check_node_refs_by_faces() const
 
 bool MeshAudit::check_cell_to_face_dirs() const
 {
-  AmanziMesh::Entity_ID_List faces;
-  vector<int> fdirs;
+  Kokkos::View<AmanziMesh::Entity_ID*> faces;
+  Kokkos::View<int*> fdirs;
   AmanziMesh::Entity_ID_List bad_cells, bad_cells_exc;
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
-    fdirs.assign(6, INT_MAX);
+    //fdirs.assign(6, INT_MAX);
     try {
-      mesh_->cell_get_faces_and_dirs(j, &faces, &fdirs);  // this may fail
+      mesh_->cell_get_faces_and_dirs(j, faces, &fdirs);  // this may fail
       bool bad_data = false;
-      for (int k = 0; k < fdirs.size(); ++k)
-        if (fdirs[k] != -1 && fdirs[k] != 1) bad_data = true;
+      for (int k = 0; k < fdirs.extent(0); ++k)
+        if (fdirs(k) != -1 && fdirs(k) != 1) bad_data = true;
       if (bad_data) bad_cells.push_back(j);
     } catch (...) {
       bad_cells_exc.push_back(j);
@@ -644,10 +644,10 @@ bool MeshAudit::check_cell_degeneracy() const
 bool MeshAudit::check_cell_to_faces_to_nodes() const
 {
   AmanziMesh::Entity_ID_List cnode;
-  AmanziMesh::Entity_ID_List cface;
+  Kokkos::View<AmanziMesh::Entity_ID*> cface;
   AmanziMesh::Entity_ID_List fnode_ref;
   AmanziMesh::Entity_ID_List fnode;
-  vector<int> fdirs;
+  Kokkos::View<int*> fdirs;
   AmanziMesh::Entity_ID_List bad_cells0;
   AmanziMesh::Entity_ID_List bad_cells1;
 
@@ -664,18 +664,18 @@ bool MeshAudit::check_cell_to_faces_to_nodes() const
 
     mesh_->cell_get_nodes(j, &cnode); // this should not fail
 
-    mesh_->cell_get_faces_and_dirs(j, &cface, &fdirs, true); // this should not fail
+    mesh_->cell_get_faces_and_dirs(j, cface, &fdirs, true); // this should not fail
 
     bool bad_face = false;
     bool bad_dir  = false;
 
-    if (cface.size() != AmanziMesh::nface_std[ctype])
+    if (cface.extent(0) != AmanziMesh::nface_std[ctype])
       bad_face = true;
     else {
 
-      for (int k = 0; k < cface.size(); ++k) {
+      for (int k = 0; k < cface.extent(0); ++k) {
 
-	mesh_->face_get_nodes(cface[k], &fnode); // this should not fail
+	mesh_->face_get_nodes(cface(k), &fnode); // this should not fail
 
 	int nfn = AmanziMesh::nfnodes_std[ctype][k];
 
@@ -695,7 +695,7 @@ bool MeshAudit::check_cell_to_faces_to_nodes() const
 	  bad_face = true;
 	  break;
 	}
-	else if (dir != fdirs[k]) { // right face but wrong dir value
+	else if (dir != fdirs(k)) { // right face but wrong dir value
 	  bad_dir = true;
 	  break;
 	}
@@ -1611,8 +1611,8 @@ bool MeshAudit::check_get_set(AmanziMesh::Set_ID sid,
 
   // Check that all values were assigned.
   bool bad_data = false;
-  for (int j = 0; j < set.size(); ++j)
-    if (set[j] == UINT_MAX) bad_data = true;
+  for (int j = 0; j < set.extent(0); ++j)
+    if (set(j) == UINT_MAX) bad_data = true;
   if (bad_data) {
     os_ << "  ERROR: not all values assigned by get_set()" << std::endl;
     return true;
@@ -1637,7 +1637,7 @@ bool MeshAudit::check_get_set(AmanziMesh::Set_ID sid,
     // it would be nice to output the duplicates
     return true;
   }
-  #endif 
+  #endif
 
   return false;
 }
@@ -1753,10 +1753,10 @@ bool MeshAudit::check_face_partition() const
   // Mark all the faces contained by owned cells.
   bool owned[nface];
   for (int j = 0; j < nface; ++j) owned[j] = false;
-  AmanziMesh::Entity_ID_List cface;
+  Kokkos::View<AmanziMesh::Entity_ID*> cface;
   for (AmanziMesh::Entity_ID j = 0; j < mesh_->cell_map(false)->getNodeNumElements(); ++j) {
-    mesh_->cell_get_faces(j, &cface);
-    for (int k = 0; k < cface.size(); ++k) owned[cface[k]] = true;
+    mesh_->cell_get_faces(j, cface);
+    for (int k = 0; k < cface.extent(0); ++k) owned[cface(k)] = true;
   }
 
   // Verify that every owned face has been marked as belonging to an owned cell.

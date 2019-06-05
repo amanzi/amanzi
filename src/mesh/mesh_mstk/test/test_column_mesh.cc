@@ -96,11 +96,11 @@ TEST(COLUMN_MESH_3D)
   CHECK_EQUAL(20,nnodes);
 
   for (int j = 0; j < ncells; j++) {
-    Amanzi::AmanziMesh::Entity_ID_List cfaces;
-    std::vector<int> cfdirs;
-    colmesh.cell_get_faces_and_dirs(j,&cfaces,&cfdirs);
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces;
+    Kokkos::View<int*> cfdirs;
+    colmesh.cell_get_faces_and_dirs(j,cfaces,&cfdirs);
 
-    CHECK_EQUAL(2,cfaces.size());
+    CHECK_EQUAL(2,cfaces.extent(0));
   }
 
   for (int j = 0; j < nfaces; j++) {
@@ -172,12 +172,12 @@ TEST(COLUMN_MESH_3D)
   // face of the cell and the upper face of the cell
 
   for (int j = 0; j < ncells; j++) {
-    Amanzi::AmanziMesh::Entity_ID_List cfaces;
-    colmesh.cell_get_faces(j,&cfaces);
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces;
+    colmesh.cell_get_faces(j,cfaces);
 
     Amanzi::AmanziGeometry::Point locen(3), hicen(3);
-    locen = colmesh.face_centroid(cfaces[0]);
-    hicen = colmesh.face_centroid(cfaces[1]);
+    locen = colmesh.face_centroid(cfaces(0));
+    hicen = colmesh.face_centroid(cfaces(1));
 
     double height = norm(hicen-locen);
 
@@ -261,11 +261,11 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   CHECK_EQUAL(20,nnodes);
 
   for (int j = 0; j < ncells; j++) {
-    Amanzi::AmanziMesh::Entity_ID_List cfaces;
-    std::vector<int> cfdirs;
-    colmesh.cell_get_faces_and_dirs(j,&cfaces,&cfdirs);
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces;
+    Kokkos::View<int*> cfdirs;
+    colmesh.cell_get_faces_and_dirs(j,cfaces,&cfdirs);
 
-    CHECK_EQUAL(2,cfaces.size());
+    CHECK_EQUAL(2,cfaces.extent(0));
   }
 
   for (int j = 0; j < nfaces; j++) {
@@ -337,12 +337,12 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   // face of the cell and the upper face of the cell
 
   for (int j = 0; j < ncells; j++) {
-    Amanzi::AmanziMesh::Entity_ID_List cfaces;
-    colmesh.cell_get_faces(j,&cfaces);
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces;
+    colmesh.cell_get_faces(j,cfaces);
 
     Amanzi::AmanziGeometry::Point locen(3), hicen(3);
-    locen = colmesh.face_centroid(cfaces[0]);
-    hicen = colmesh.face_centroid(cfaces[1]);
+    locen = colmesh.face_centroid(cfaces(0));
+    hicen = colmesh.face_centroid(cfaces(1));
 
     double height = norm(hicen-locen);
 

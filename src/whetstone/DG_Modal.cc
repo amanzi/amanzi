@@ -2,9 +2,9 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -57,7 +57,7 @@ DG_Modal::DG_Modal(const Teuchos::ParameterList& plist,
 
 
 /* ******************************************************************
-* Mass matrix for Taylor basis functions. 
+* Mass matrix for Taylor basis functions.
 ****************************************************************** */
 int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 {
@@ -65,7 +65,7 @@ int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 
   // extend (optionally) the list of integrals of non-normalized monomials
   numi_.UpdateMonomialIntegralsCell(c, 2 * order_, monomial_integrals_[c]);
-   
+
   // copy integrals to mass matrix
   int multi_index[3];
   Polynomial p(d_, order_);
@@ -80,7 +80,7 @@ int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
     for (auto jt = it; jt < p.end(); ++jt) {
       const int* idx_q = jt.multi_index();
       int l = jt.PolynomialPosition();
-      
+
       for (int i = 0; i < d_; ++i) {
         multi_index[i] = idx_p[i] + idx_q[i];
       }
@@ -96,7 +96,7 @@ int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 
 
 /* ******************************************************************
-* Mass matrix for Taylor basis functions. 
+* Mass matrix for Taylor basis functions.
 ****************************************************************** */
 int DG_Modal::MassMatrix(
     int c, const Tensor& K, PolynomialOnMesh& integrals, DenseMatrix& M)
@@ -106,7 +106,7 @@ int DG_Modal::MassMatrix(
 
   // extend list of integrals of monomials
   numi_.UpdateMonomialIntegralsCell(c, 2 * order_, integrals);
-   
+
   // copy integrals to mass matrix
   int multi_index[3];
   Polynomial p(d_, order_);
@@ -121,7 +121,7 @@ int DG_Modal::MassMatrix(
     for (auto jt = it; jt < p.end(); ++jt) {
       const int* idx_q = jt.multi_index();
       int l = jt.PolynomialPosition();
-      
+
       for (int i = 0; i < d_; ++i) {
         multi_index[i] = idx_p[i] + idx_q[i];
       }
@@ -184,7 +184,7 @@ int DG_Modal::MassMatrixPoly_(int c, const Polynomial& K, DenseMatrix& M)
   // symmetric part of mass matrix
   for (int k = 0; k < nrows; ++k) {
     for (int l = k + 1; l < nrows; ++l) {
-      M(l, k) = M(k, l); 
+      M(l, k) = M(k, l);
     }
   }
 
@@ -200,9 +200,10 @@ int DG_Modal::MassMatrixPoly_(int c, const Polynomial& K, DenseMatrix& M)
 int DG_Modal::MassMatrixPiecewisePoly_(
     int c, const VectorPolynomial& K, DenseMatrix& M)
 {
-  AmanziMesh::Entity_ID_List faces, nodes;
-  mesh_->cell_get_faces(c, &faces);
-  int nfaces = faces.size();
+  AmanziMesh::Entity_ID_List nodes;
+  Kokkos::View<AmanziMesh::Entity_ID*> faces;
+  mesh_->cell_get_faces(c, faces);
+  int nfaces = faces.extent(0);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
@@ -214,7 +215,7 @@ int DG_Modal::MassMatrixPiecewisePoly_(
 
   std::vector<const WhetStoneFunction*> polys(3);
 
-  std::vector<AmanziGeometry::Point> xy(3); 
+  std::vector<AmanziGeometry::Point> xy(3);
   // xy[0] = cell_geometric_center(*mesh_, c);
   xy[0] = mesh_->cell_centroid(c);
 
@@ -240,7 +241,7 @@ int DG_Modal::MassMatrixPiecewisePoly_(
 
       // sum up local contributions
       for (auto n = 0; n < nfaces; ++n) {
-        int f = faces[n];
+        int f = faces(n);
         mesh_->face_get_nodes(f, &nodes);
         mesh_->node_get_coordinates(nodes[0], &(xy[1]));
         mesh_->node_get_coordinates(nodes[1], &(xy[2]));
@@ -255,7 +256,7 @@ int DG_Modal::MassMatrixPiecewisePoly_(
   // symmetric part of mass matrix
   for (int k = 0; k < nrows; ++k) {
     for (int l = k + 1; l < nrows; ++l) {
-      M(l, k) = M(k, l); 
+      M(l, k) = M(k, l);
     }
   }
 
@@ -266,7 +267,7 @@ int DG_Modal::MassMatrixPiecewisePoly_(
 
 
 /* ******************************************************************
-* Stiffness matrix for Taylor basis functions. 
+* Stiffness matrix for Taylor basis functions.
 ****************************************************************** */
 int DG_Modal::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 {
@@ -294,7 +295,7 @@ int DG_Modal::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
     for (auto jt = it; jt < p.end(); ++jt) {
       const int* jndex = jt.multi_index();
       int l = jt.PolynomialPosition();
-      
+
       int multi_index[3];
       for (int i = 0; i < d_; ++i) {
         multi_index[i] = index[i] + jndex[i];
@@ -307,7 +308,7 @@ int DG_Modal::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
             multi_index[i]--;
             multi_index[j]--;
 
-            tmp = monomial_integrals_[c](PolynomialPosition(d_, multi_index)); 
+            tmp = monomial_integrals_[c](PolynomialPosition(d_, multi_index));
             sum += Ktmp(i, j) * tmp * index[i] * jndex[j];
 
             multi_index[i]++;
@@ -316,7 +317,7 @@ int DG_Modal::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
         }
       }
 
-      A(l, k) = A(k, l) = sum; 
+      A(l, k) = A(k, l) = sum;
     }
   }
 
@@ -396,9 +397,10 @@ int DG_Modal::AdvectionMatrixPoly_(
 int DG_Modal::AdvectionMatrixPiecewisePoly_(
     int c, const VectorPolynomial& u, DenseMatrix& A, bool grad_on_test)
 {
-  AmanziMesh::Entity_ID_List faces, nodes;
-  mesh_->cell_get_faces(c, &faces);
-  int nfaces = faces.size();
+  AmanziMesh::Entity_ID_List nodes;
+  Kokkos::View<Entity_ID*> faces;
+  mesh_->cell_get_faces(c, faces);
+  int nfaces = faces.extent(0);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
@@ -415,7 +417,7 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
 
   std::vector<const WhetStoneFunction*> polys(2);
 
-  std::vector<AmanziGeometry::Point> xy(3); 
+  std::vector<AmanziGeometry::Point> xy(3);
   // xy[0] = cell_geometric_center(*mesh_, c);
   xy[0] = mesh_->cell_centroid(c);
 
@@ -441,7 +443,7 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
 
       // sum-up integrals to the advection matrix
       for (int n = 0; n < nfaces; ++n) {
-        int f = faces[n];
+        int f = faces(n);
         mesh_->face_get_nodes(f, &nodes);
         mesh_->node_get_coordinates(nodes[0], &(xy[1]));
         mesh_->node_get_coordinates(nodes[1], &(xy[2]));
@@ -470,15 +472,15 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
 
 
 /* ******************************************************************
-* Upwind/downwind matrix for Taylor basis and normal velocity u.n. 
+* Upwind/downwind matrix for Taylor basis and normal velocity u.n.
 * The normal in u.n is scaled by the face area. If jump_on_test=true,
 * we calculate
-* 
+*
 *   a \Int { (u.n) \rho^* [\psi] } dS
-* 
-* where star means upwind/downwind, \psi is a test function, \rho is 
+*
+* where star means upwind/downwind, \psi is a test function, \rho is
 * a solution, a=-1 for upwind, a=1 for downwind. Otherwise, we
-* calculate 
+* calculate
 *
 *   a \Int { (u.n) \psi^* [\rho] } dS
 ****************************************************************** */
@@ -496,8 +498,8 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
   A.Reshape(nrows, nrows);
   A.PutScalar(0.0);
 
-  // identify index of upwind/downwind cell (id) 
-  int dir, id(0); 
+  // identify index of upwind/downwind cell (id)
+  int dir, id(0);
   mesh_->face_normal(f, false, cells[0], &dir);
   const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
@@ -552,14 +554,14 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
       // downwind-downwind integral
       double vel1 = numi_.IntegratePolynomialsFace(f, polys);
       vel1 /= mesh_->face_area(f);
-      vel1 *= dir;  
+      vel1 *= dir;
 
       // upwind-downwind integral
       polys[1] = &p1;
 
       double vel0 = numi_.IntegratePolynomialsFace(f, polys);
       vel0 /= mesh_->face_area(f);
-      vel0 *= dir;  
+      vel0 *= dir;
 
       if (ncells == 1) {
         A(k, l) = vel1;
@@ -577,7 +579,7 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
 
   if (ncells == 1) {
     basis_[cells[0]]->BilinearFormNaturalToMy(A);
-  } else { 
+  } else {
     basis_[cells[0]]->BilinearFormNaturalToMy(basis_[cells[0]], basis_[cells[1]], A);
   }
 
@@ -587,14 +589,14 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
 
 /* ******************************************************************
 * Upwind/downwind at Gauss points to calculate matrix for the Taylor
-* basis and normal velocity u.n. The normal in u.n is scaled by the 
+* basis and normal velocity u.n. The normal in u.n is scaled by the
 * face area. If jump_on_test=true, we calculate
-* 
+*
 *   a \Int { (u.n) \rho^* [\psi] } dS
-* 
-* where star means upwind/downwind, \psi is a test function, \rho is 
+*
+* where star means upwind/downwind, \psi is a test function, \rho is
 * a solution, a=-1 for upwind, and a=1 for downwind. Otherwise, we
-* calculate 
+* calculate
 *
 *   a \Int { (u.n) \psi^* [\rho] } dS
 ****************************************************************** */
@@ -613,8 +615,8 @@ int DG_Modal::FluxMatrixGaussPoints(
   A.Reshape(nrows, nrows);
   A.PutScalar(0.0);
 
-  // identify index of upwind/downwind cell (id) 
-  int dir; 
+  // identify index of upwind/downwind cell (id)
+  int dir;
   double area = mesh_->face_area(f);
   mesh_->face_normal(f, false, cells[0], &dir);
   const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
@@ -703,7 +705,7 @@ int DG_Modal::FluxMatrixGaussPoints(
 
   if (ncells == 1) {
     basis_[cells[0]]->BilinearFormNaturalToMy(A);
-  } else { 
+  } else {
     basis_[cells[0]]->BilinearFormNaturalToMy(basis_[cells[0]], basis_[cells[1]], A);
   }
 
@@ -712,9 +714,9 @@ int DG_Modal::FluxMatrixGaussPoints(
 
 
 /* ******************************************************************
-* Rusanov flux matrix for Taylor basis and normal velocity u.n. 
+* Rusanov flux matrix for Taylor basis and normal velocity u.n.
 * Velocities are given in the face-based Taylor basis. We calculate
-* 
+*
 *   \Int { (u.n \rho)^* [\psi] } dS
 *
 * where (u.n \rho)^* is the Rusanov flux.
@@ -736,7 +738,7 @@ int DG_Modal::FluxMatrixRusanov(
   if (ncells == 1) return 0;  // FIXME
 
   // identify index of downwind cell (id)
-  int dir; 
+  int dir;
   AmanziGeometry::Point normal = mesh_->face_normal(f, false, cells[0], &dir);
   const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
@@ -989,4 +991,3 @@ int DG_Modal::FaceMatrixPenalty(int f, double Kf, DenseMatrix& A)
 
 }  // namespace WhetStone
 }  // namespace Amanzi
-

@@ -5,12 +5,13 @@
 // Inline implementations
 //
 
+#include "Kokkos_Core.hpp"
 
 // Downward Adjacencies
 //---------------------
 inline
 void
-Mesh::cell_get_faces(const Entity_ID cellid, Entity_ID_List *faceids,
+Mesh::cell_get_faces(const Entity_ID cellid, Kokkos::View<Entity_ID*>& faceids,
                      const bool ordered) const
 {
   cell_get_faces_and_dirs(cellid, faceids, NULL, ordered);
@@ -46,14 +47,15 @@ Mesh::cells_of_column(const int columnID) const
 
 
 inline
-const Entity_ID_List&
+Kokkos::View<Entity_ID*>
 Mesh::faces_of_column(const int columnID) const
 {
   if (!columns_built_) {
     Errors::Message mesg("faces_of_columns called before calling build_columns");
     Exceptions::amanzi_throw(mesg);
   }
-  return column_faces_[columnID];
+  return Kokkos::subview(column_faces_.entries,
+    std::make_pair(column_faces_.row_map(columnID),column_faces_.row_map(columnID+1)));
 }
 
 

@@ -46,14 +46,14 @@ TEST(Extract_Column_MSTK)
   }
 
 
-  Amanzi::AmanziMesh::Entity_ID_List const& face_list = mesh->faces_of_column(colid);
-  CHECK_EQUAL(4,face_list.size());
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> face_list = mesh->faces_of_column(colid);
+  CHECK_EQUAL(4,face_list.extent(0));
 
   // check we are not doubling up on some faces (catches previous bug)
   for (int i=0; i!=4; ++i) {
     for (int j=0; j!=4; ++j) {
       if (i != j) {
-        CHECK(face_list[i] != face_list[j]);
+        CHECK(face_list(i) != face_list(j));
       }
     }
   }
