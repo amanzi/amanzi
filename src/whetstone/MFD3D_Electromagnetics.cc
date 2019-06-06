@@ -101,16 +101,15 @@ int MFD3D_Electromagnetics::H1consistency2D_(
 int MFD3D_Electromagnetics::H1consistency3D_(
     int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List edges;
-  Kokkos::View<Entity_ID*> faces, fedges;
+  Kokkos::View<Entity_ID*> faces, fedges, edges;
   std::vector<int> map;
   Kokkos::View<int*> fdirs, edirs;
 
   mesh_->cell_get_faces_and_dirs(c, faces, &fdirs);
   int nfaces = faces.extent(0);
 
-  mesh_->cell_get_edges(c, &edges);
-  int nedges = edges.size();
+  mesh_->cell_get_edges(c, edges);
+  int nedges = edges.extent(0);
 
   int nd = 6;  // order_ * (order_ + 2) * (order_ + 3) / 2;
   N.Reshape(nedges, nd);
@@ -160,7 +159,7 @@ int MFD3D_Electromagnetics::H1consistency3D_(
 
   // Matrix N(:, 1:3) are simply tangents
   for (int i = 0; i < nedges; i++) {
-    int e = edges[i];
+    int e = edges(i);
     const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
     AmanziGeometry::Point tau = mesh_->edge_vector(e);
     double len = mesh_->edge_length(e);
@@ -217,13 +216,13 @@ int MFD3D_Electromagnetics::MassMatrixDiagonal(
 {
   double volume = mesh_->cell_volume(c);
 
-  Entity_ID_List edges;
-  mesh_->cell_get_edges(c, &edges);
-  int nedges = edges.size();
+  Kokkos::View<Entity_ID*> edges;
+  mesh_->cell_get_edges(c, edges);
+  int nedges = edges.extent(0);
 
   M.PutScalar(0.0);
   for (int n = 0; n < nedges; n++) {
-    int e = edges[n];
+    int e = edges(n);
     M(n, n) = d_ * volume / (nedges * T(0, 0));
   }
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -292,10 +291,11 @@ int MFD3D_Electromagnetics::StiffnessMatrixGeneralized(
 ****************************************************************** */
 void MFD3D_Electromagnetics::AddGradientToProjector_(int c, DenseMatrix& N)
 {
-  Entity_ID_List edges, nodes;
+  Entity_ID_List nodes;
+  Kokkos::View<Entity_ID*> edges;
 
-  mesh_->cell_get_edges(c, &edges);
-  int nedges = edges.size();
+  mesh_->cell_get_edges(c, edges);
+  int nedges = edges.extent(0);
 
   mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
@@ -310,7 +310,7 @@ void MFD3D_Electromagnetics::AddGradientToProjector_(int c, DenseMatrix& N)
   G.PutScalar(0.0);
 
   for (int m = 0; m < nedges; ++m) {
-    int e = edges[m];
+    int e = edges(m);
     double length = mesh_->edge_length(e);
     mesh_->edge_get_nodes(e, &v1, &v2);
 
@@ -368,13 +368,13 @@ void MFD3D_Electromagnetics::AddGradientToProjector_(int c, DenseMatrix& N)
 ****************************************************************** */
 void MFD3D_Electromagnetics::CurlMatrix(int c, DenseMatrix& C)
 {
-  Entity_ID_List nodes, edges;
   std::vector<int> map;
-  Kokkos::View<Entity_ID*> faces, fedges;
+  Entity_ID_List nodes; 
+  Kokkos::View<Entity_ID*> faces, fedges, edges;
   Kokkos::View<int*> fdirs, edirs;
 
-  mesh_->cell_get_edges(c, &edges);
-  int nedges = edges.size();
+  mesh_->cell_get_edges(c, edges);
+  int nedges = edges.extent(0);
 
   mesh_->cell_get_faces_and_dirs(c, faces, &fdirs);
   int nfaces = faces.extent(0);

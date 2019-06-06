@@ -472,7 +472,7 @@ class MeshColumn : public Mesh {
   // framework. The results are cached in the base class.
   virtual
   void cell_get_edges_internal_(const Entity_ID cellid,
-                                Entity_ID_List *edgeids) const override {
+                                Kokkos::View<Entity_ID*> &edgeids) const override {
     Errors::Message mesg("Not implemented");
     Exceptions::amanzi_throw(mesg);
   }
@@ -482,8 +482,8 @@ class MeshColumn : public Mesh {
   // in each mesh framework. The results are cached in the base class.
   virtual
   void cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
-                                            Entity_ID_List *edgeids,
-                                            std::vector<int> *edge_dirs) const override {
+                                            Kokkos::View<Entity_ID*> &edgeids,
+                                            Kokkos::View<int*> *edge_dirs) const override {
     Errors::Message mesg("Not implemented");
     Exceptions::amanzi_throw(mesg);
   }

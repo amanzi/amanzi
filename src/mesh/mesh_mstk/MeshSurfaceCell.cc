@@ -375,7 +375,7 @@ void MeshSurfaceCell::face_get_edges_and_dirs_internal_(const Entity_ID faceid,
 // edges of a cell - this function is implemented in each mesh
 // framework. The results are cached in the base class.
 void MeshSurfaceCell::cell_get_edges_internal_(const Entity_ID cellid,
-        Entity_ID_List *edgeids) const {
+        Kokkos::View<Entity_ID*> &edgeids) const {
   Errors::Message mesg("Not implemented");
   Exceptions::amanzi_throw(mesg);
 }
@@ -384,8 +384,8 @@ void MeshSurfaceCell::cell_get_edges_internal_(const Entity_ID cellid,
 // edges and directions of a 2D cell - this function is implemented
 // in each mesh framework. The results are cached in the base class.
 void MeshSurfaceCell::cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
-        Entity_ID_List *edgeids,
-        std::vector<int> *edge_dirs) const {
+        Kokkos::View<Entity_ID*> &edgeids,
+        Kokkos::View<int*> *edge_dirs) const {
   Errors::Message mesg("Not implemented");
   Exceptions::amanzi_throw(mesg);
 }

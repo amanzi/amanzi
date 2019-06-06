@@ -207,17 +207,39 @@ void
 Mesh::cache_cell2edge_info_() const
 {
   int ncells = num_entities(CELL,Parallel_type::ALL);
-  cell_edge_ids_.resize(ncells);
+  Kokkos::resize(cell_edge_ids_.row_map,ncells+1);
 
   if (space_dim_ == 2) {
-    cell_2D_edge_dirs_.resize(ncells);
-    for (int c = 0; c < ncells; c++)
-      cell_2D_get_edges_and_dirs_internal_(c, &(cell_edge_ids_[c]),
-              &(cell_2D_edge_dirs_[c]));
+    Kokkos::resize(cell_2D_edge_dirs_.row_map,ncells+1);
+    for (int c = 0; c < ncells; c++){
+      Kokkos::View<Entity_ID*> cell_edge_ids_tmp;
+      Kokkos::View<int*> cell_2D_edge_dirs_tmp;
+      cell_2D_get_edges_and_dirs_internal_(c, cell_edge_ids_tmp,
+        &cell_2D_edge_dirs_tmp);
+      cell_edge_ids_.row_map(c+1) = cell_edge_ids_.row_map(c)+cell_edge_ids_tmp.extent(0);
+      cell_2D_edge_dirs_.row_map(c+1) = cell_2D_edge_dirs_.row_map(c)+cell_2D_edge_dirs_tmp.extent(0);
+      Kokkos::resize(cell_edge_ids_.entries,
+        cell_edge_ids_.entries.extent(0)+cell_edge_ids_tmp.extent(0));
+      Kokkos::resize(cell_2D_edge_dirs_.entries,
+        cell_2D_edge_dirs_.entries.extent(0)+cell_2D_edge_dirs_tmp.extent(0));
+      for(int i = 0 ; i < cell_edge_ids_tmp.extent(0); ++i){
+        cell_edge_ids_.entries(cell_edge_ids_.row_map(c)+i) = cell_edge_ids_tmp(i);
+        cell_2D_edge_dirs_.entries(cell_2D_edge_dirs_.row_map(c)+i) = cell_2D_edge_dirs_tmp(i);
+      }
+
+    }
   }
   else
-    for (int c = 0; c < ncells; c++)
-      cell_get_edges_internal_(c, &(cell_edge_ids_[c]));
+    for (int c = 0; c < ncells; c++){
+      Kokkos::View<Entity_ID*> cell_edge_ids_tmp;
+      cell_get_edges_internal_(c, cell_edge_ids_tmp);
+      cell_edge_ids_.row_map(c+1) = cell_edge_ids_.row_map(c)+cell_edge_ids_tmp.extent(0);
+      Kokkos::resize(cell_edge_ids_.entries,
+        cell_edge_ids_.entries.extent(0)+cell_edge_ids_tmp.extent(0));
+      for(int i = 0 ; i < cell_edge_ids_tmp.extent(0); ++i){
+        cell_edge_ids_.entries(cell_edge_ids_.row_map(c)+i) = cell_edge_ids_tmp(i);
+      }
+    }
 
   cell2edge_info_cached_ = true;
 }
@@ -285,9 +307,9 @@ Mesh::cell_get_max_edges() const
   if (edges_requested_) {
     int ncells = num_entities(CELL, Parallel_type::OWNED);
     for (int c = 0; c < ncells; ++c) {
-      AmanziMesh::Entity_ID_List edges;
-      cell_get_edges(c, &edges);
-      n = std::max(n, (unsigned int) edges.size());
+      Kokkos::View<AmanziMesh::Entity_ID*> edges;
+      cell_get_edges(c, edges);
+      n = std::max(n, (unsigned int) edges.extent(0));
     }
   }
   return n;
@@ -452,8 +474,9 @@ Mesh::face_to_cell_edge_map(const Entity_ID faceid,
   for (int f = 0; f < faceid_size; ++f) {
     Entity_ID fedge = face_edge_ids_.entries(face_edge_ids_.row_map(faceid)+f);
 
-    for (int c = 0; c < cell_edge_ids_[cellid].size(); ++c) {
-      if (fedge == cell_edge_ids_[cellid][c]) {
+    size_t cellid_size = cell_edge_ids_.row_map(cellid+1)-cell_edge_ids_.row_map(cellid);
+    for (int c = 0; c < cellid_size; ++c) {
+      if (fedge == cell_edge_ids_.entries(cell_edge_ids_.row_map(cellid)+c)) {
         (*map)[f] = c;
         break;
       }
@@ -462,18 +485,18 @@ Mesh::face_to_cell_edge_map(const Entity_ID faceid,
 
 #else // non-cached version
 
-  Entity_ID_List fedgeids, cedgeids;
-  std::vector<int> fedgedirs;
+  Kokkos::View<Entity_ID*> fedgeids, cedgeids;
+  Kokkos::View<int*> fedgedirs;
 
-  face_get_edges_and_dirs(faceid, &fedgeids, &fedgedirs, true);
-  cell_get_edges(cellid, &cedgeids);
+  face_get_edges_and_dirs(faceid, fedgeids, &fedgedirs, true);
+  cell_get_edges(cellid, cedgeids);
 
-  map->resize(fedgeids.size(),-1);
-  for (int f = 0; f < fedgeids.size(); ++f) {
-    Entity_ID fedge = fedgeids[f];
+  map->resize(fedgeids.extent(0),-1);
+  for (int f = 0; f < fedgeids.extent(0); ++f) {
+    Entity_ID fedge = fedgeids(f);
 
-    for (int c = 0; c < cedgeids.size(); ++c) {
-      if (fedge == cedgeids[c]) {
+    for (int c = 0; c < cedgeids.extent(0); ++c) {
+      if (fedge == cedgeids(c)) {
         (*map)[f] = c;
         break;
       }
@@ -486,13 +509,15 @@ Mesh::face_to_cell_edge_map(const Entity_ID faceid,
 
 void
 Mesh::cell_get_edges(const Entity_ID cellid,
-                     Entity_ID_List *edgeids) const
+                     Kokkos::View<Entity_ID*> &edgeids) const
 {
 #if AMANZI_MESH_CACHE_VARS != 0
   if (!cell2edge_info_cached_) cache_cell2edge_info_();
 
-  Entity_ID_List &cedgeids = cell_edge_ids_[cellid];
-  *edgeids = cell_edge_ids_[cellid]; // copy operation
+  edgeids = Kokkos::subview(cell_edge_ids_.entries,
+    std::make_pair(cell_edge_ids_.row_map(cellid),cell_edge_ids_.row_map(cellid+1)));
+  //Entity_ID_List &cedgeids = cell_edge_ids_[cellid];
+  //*edgeids = cell_edge_ids_[cellid]; // copy operation
 
 #else  // Non-cached version
   cell_get_edges_internal_(cellid, edgeids);
@@ -503,14 +528,19 @@ Mesh::cell_get_edges(const Entity_ID cellid,
 
 void
 Mesh::cell_2D_get_edges_and_dirs(const Entity_ID cellid,
-                                 Entity_ID_List *edgeids,
-                                 std::vector<int> *edgedirs) const
+                                 Kokkos::View<Entity_ID*> &edgeids,
+                                 Kokkos::View<int*> *edgedirs) const
 {
 #if AMANZI_MESH_CACHE_VARS != 0
   if (!cell2edge_info_cached_) cache_cell2edge_info_();
 
-  *edgeids = cell_edge_ids_[cellid]; // copy operation
-  *edgedirs = cell_2D_edge_dirs_[cellid];
+  edgeids = Kokkos::subview(cell_edge_ids_.entries,
+    std::make_pair(cell_edge_ids_.row_map(cellid),cell_edge_ids_.row_map(cellid+1)));
+  *edgedirs = Kokkos::subview(cell_2D_edge_dirs_.entries,
+    std::make_pair(cell_2D_edge_dirs_.row_map(cellid),cell_2D_edge_dirs_.row_map(cellid+1)));
+
+  //*edgeids = cell_edge_ids_[cellid]; // copy operation
+  //*edgedirs = cell_2D_edge_dirs_[cellid];
 
 #else  // Non-cached version
   cell_2D_get_edges_and_dirs_internal_(cellid, edgeids, edgedirs);

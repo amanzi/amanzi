@@ -266,16 +266,16 @@ int MFD3D_Lagrange::H1consistency2D_(
 int MFD3D_Lagrange::H1consistency3D_(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List nodes, edges, fedges, fnodes;
-  Kokkos::View<Entity_ID*> faces;
+  Entity_ID_List nodes, fnodes;
+  Kokkos::View<Entity_ID*> faces, edges;
   std::vector<int> map;
   Kokkos::View<int*> dirs;
 
   mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
-  mesh_->cell_get_edges(c, &edges);
-  int nedges = edges.size();
+  mesh_->cell_get_edges(c, edges);
+  int nedges = edges.extent(0);
 
   mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
   int nfaces = faces.extent(0);

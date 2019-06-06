@@ -344,15 +344,15 @@ class MeshSurfaceCell : public Mesh {
   // framework. The results are cached in the base class.
   virtual
   void cell_get_edges_internal_(const Entity_ID cellid,
-          Entity_ID_List *edgeids) const;
+          Kokkos::View<Entity_ID*> &edgeids) const;
 
 
   // edges and directions of a 2D cell - this function is implemented
   // in each mesh framework. The results are cached in the base class.
   virtual
   void cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
-          Entity_ID_List *edgeids,
-          std::vector<int> *edge_dirs) const;
+          Kokkos::View<Entity_ID*> &edgeids,
+          Kokkos::View<int*> *edge_dirs) const;
 
  protected:
 

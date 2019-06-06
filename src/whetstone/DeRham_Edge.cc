@@ -112,16 +112,15 @@ int DeRham_Edge::L2consistency2D_(int c, const Tensor& T,
 int DeRham_Edge::L2consistency3D_(int c, const Tensor& T,
                                   DenseMatrix& N, DenseMatrix& Mc)
 {
-  Entity_ID_List edges;
-  Kokkos::View<Entity_ID*> faces, fedges;
+  Kokkos::View<Entity_ID*> faces, fedges, edges;
   std::vector<int> map;
   Kokkos::View<int*> fdirs, edirs;
 
   mesh_->cell_get_faces_and_dirs(c, faces, &fdirs);
   int nfaces = faces.extent(0);
 
-  mesh_->cell_get_edges(c, &edges);
-  int nedges = edges.size();
+  mesh_->cell_get_edges(c, edges);
+  int nedges = edges.extent(0);
 
   N.Reshape(nedges, d_);
   Mc.Reshape(nedges, nedges);
@@ -301,16 +300,15 @@ int DeRham_Edge::L2consistencyInverse2D_(
 int DeRham_Edge::L2consistencyInverse3D_(
     int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
 {
-  Entity_ID_List edges;
-  Kokkos::View<Entity_ID*> faces, fedges;
+  Kokkos::View<Entity_ID*> faces, fedges, edges;
   std::vector<int> map;
   Kokkos::View<int*> fdirs, edirs;
 
   mesh_->cell_get_faces_and_dirs(c, faces, &fdirs);
   int nfaces = faces.extent(0);
 
-  mesh_->cell_get_edges(c, &edges);
-  int nedges = edges.size();
+  mesh_->cell_get_edges(c, edges);
+  int nedges = edges.extent(0);
 
   R.Reshape(nedges, d_);
   Wc.Reshape(nedges, nedges);
@@ -324,13 +322,13 @@ int DeRham_Edge::L2consistencyInverse3D_(
   double volume = mesh_->cell_volume(c);
 
   for (int i = 0; i < nedges; i++) {
-    int e1 = edges[i];
+    int e1 = edges(i);
     const AmanziGeometry::Point& v1 = mesh_->edge_vector(e1);
     double a1 = mesh_->edge_length(e1);
     v3 = T * v1;
 
     for (int j = i; j < nedges; j++) {
-      int e2 = edges[j];
+      int e2 = edges(j);
       const AmanziGeometry::Point& v2 = mesh_->edge_vector(e2);
       double a2 = mesh_->edge_length(e2);
       Wc(i, j) = (v2 * v3) / (a1 * a2 * volume);

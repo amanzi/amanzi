@@ -53,10 +53,10 @@ TEST(MASS_MATRIX_2D) {
   MFD3D_Electromagnetics mfd(plist, mesh);
 
   int cell = 0;
-  AmanziMesh::Entity_ID_List edges;
-  mesh->cell_get_edges(cell, &edges);
+  Kokkos::View<AmanziMesh::Entity_ID*> edges;
+  mesh->cell_get_edges(cell, edges);
 
-  int nedges = edges.size();
+  int nedges = edges.extent(0);
   int nrows = nedges;
 
   Tensor T(2, 2);
@@ -93,14 +93,14 @@ TEST(MASS_MATRIX_2D) {
     double xi, yi, xj;
     double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell);
     for (int i = 0; i < nedges; i++) {
-      int e1 = edges[i];
+      int e1 = edges(i);
       const AmanziGeometry::Point& t1 = mesh->edge_vector(e1);
       double a1 = mesh->edge_length(e1);
 
       xi = t1[0] / a1;
       yi = t1[1] / a1;
       for (int j = 0; j < nedges; j++) {
-        int e2 = edges[j];
+        int e2 = edges(j);
         const AmanziGeometry::Point& t2 = mesh->edge_vector(e2);
         double a2 = mesh->edge_length(e2);
         xj = t2[0] / a2;
@@ -143,10 +143,10 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
   MFD3D_Electromagnetics mfd(plist, mesh);
 
   int cell = 0;
-  AmanziMesh::Entity_ID_List edges;
-  mesh->cell_get_edges(cell, &edges);
+  Kokkos::View<AmanziMesh::Entity_ID*> edges;
+  mesh->cell_get_edges(cell, edges);
 
-  int nedges = edges.size();
+  int nedges = edges.extent(0);
   int nrows = nedges;
 
   Tensor T(3, 2);
@@ -186,14 +186,14 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
     double xi, yi, xj;
     double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell);
     for (int i = 0; i < nedges; i++) {
-      int e1 = edges[i];
+      int e1 = edges(i);
       const AmanziGeometry::Point& t1 = mesh->edge_vector(e1);
       double a1 = mesh->edge_length(e1);
 
       xi = t1[0] / a1;
       yi = t1[1] / a1;
       for (int j = 0; j < nedges; j++) {
-        int e2 = edges[j];
+        int e2 = edges(j);
         const AmanziGeometry::Point& t2 = mesh->edge_vector(e2);
         double a2 = mesh->edge_length(e2);
         xj = t2[0] / a2;
@@ -333,10 +333,10 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
   MFD3D_Electromagnetics mfd(plist, mesh);
 
   int cell = 0;
-  AmanziMesh::Entity_ID_List edges;
-  mesh->cell_get_edges(cell, &edges);
+  Kokkos::View<AmanziMesh::Entity_ID*> edges;
+  mesh->cell_get_edges(cell, edges);
 
-  int nedges = edges.size();
+  int nedges = edges.extent(0);
   int nrows = nedges;
 
   Tensor T(3, 2);
@@ -373,7 +373,7 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
     AmanziGeometry::Point v1(3);
 
     for (int i = 0; i < nedges; i++) {
-      int e1 = edges[i];
+      int e1 = edges(i);
       const AmanziGeometry::Point& xe = mesh->edge_centroid(e1);
       const AmanziGeometry::Point& t1 = mesh->edge_vector(e1);
       double a1 = mesh->edge_length(e1);
@@ -382,7 +382,7 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
       xi = v1[0] / a1;
 
       for (int j = 0; j < nedges; j++) {
-        int e2 = edges[j];
+        int e2 = edges(j);
         const AmanziGeometry::Point& ye = mesh->edge_centroid(e2);
         const AmanziGeometry::Point& t2 = mesh->edge_vector(e2);
         double a2 = mesh->edge_length(e2);

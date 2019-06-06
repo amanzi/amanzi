@@ -1459,13 +1459,13 @@ void Mesh_MSTK::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
 
 
 void Mesh_MSTK::cell_get_edges_internal_(const Entity_ID cellid,
-                                         Entity_ID_List *edgeids) const
+                                         Kokkos::View<Entity_ID*> &edgeids) const
 {
   AMANZI_ASSERT(edges_initialized);
 
   MEntity_ptr cell;
 
-  AMANZI_ASSERT(edgeids != nullptr);
+  //AMANZI_ASSERT(edgeids != nullptr);
 
   cell = cell_id_to_handle[cellid];
 
@@ -1475,14 +1475,13 @@ void Mesh_MSTK::cell_get_edges_internal_(const Entity_ID cellid,
 
     redges = MR_Edges((MRegion_ptr)cell);
     nre = List_Num_Entries(redges);
-    edgeids->resize(nre);
+    Kokkos::resize(edgeids,nre);
 
-    Entity_ID_List::iterator ite = edgeids->begin();
+    size_t ite = 0;
     for (int i = 0; i < nre; ++i) {
       MEdge_ptr edge = List_Entry(redges,i);
       int lid = MEnt_ID(edge);
-      *ite = lid-1;  // assign to next spot by dereferencing iterator
-      ++ite;
+      edgeids(ite++) = lid-1;  // assign to next spot by dereferencing iterator
     }
 
     List_Delete(redges);
@@ -1506,15 +1505,13 @@ void Mesh_MSTK::cell_get_edges_internal_(const Entity_ID cellid,
     List_ptr fedges;
     fedges = MF_Edges((MFace_ptr)cell,1,0);
     nfe = List_Num_Entries(fedges);
+    Kokkos::resize(edgeids,nfe);
 
-    edgeids->resize(nfe);
-
-    Entity_ID_List::iterator ite = edgeids->begin();
+    size_t ite = 0;
     for (int i = 0; i < nfe; ++i) {
       MEdge_ptr edge = List_Entry(fedges,i);
       int lid = MEnt_ID(edge);
-      *ite = lid-1;  // assign to next spot by dereferencing iterator
-      ++ite;
+      edgeids(ite++) = lid-1;  // assign to next spot by dereferencing iterator
     }
 
     List_Delete(fedges);
@@ -1539,8 +1536,8 @@ void Mesh_MSTK::cell_get_edges_internal_(const Entity_ID cellid,
 // For 2D cells, get edges and directions in which edges are used in cell
 //---------------------------------------------------------
 void Mesh_MSTK::cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
-                                                     Entity_ID_List *edgeids,
-                                                     std::vector<int> *edgedirs) const
+                                                     Kokkos::View<Entity_ID*> &edgeids,
+                                                     Kokkos::View<int*> *edgedirs) const
 {
   AMANZI_ASSERT(manifold_dimension() == 2);
 
@@ -1552,7 +1549,7 @@ void Mesh_MSTK::cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
 
     MEntity_ptr cell;
 
-    AMANZI_ASSERT(edgeids != nullptr);
+    //AMANZI_ASSERT(edgeids != nullptr);
 
     cell = cell_id_to_handle[cellid];
 
@@ -1561,19 +1558,16 @@ void Mesh_MSTK::cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
     List_ptr fedges;
     fedges = MF_Edges((MFace_ptr)cell,1,0);
     nfe = List_Num_Entries(fedges);
+    Kokkos::resize(edgeids,nfe);
+    Kokkos::resize(*edgedirs,nfe);
 
-    edgeids->resize(nfe);
-    edgedirs->resize(nfe);
-
-    Entity_ID_List::iterator ite = edgeids->begin();
-    std::vector<int>::iterator itd = edgedirs->begin();
+    size_t ite = 0;
+    size_t itd = 0;
     for (int i = 0; i < nfe; ++i) {
       MEdge_ptr edge = List_Entry(fedges,i);
       int lid = MEnt_ID(edge);
-      *ite = lid-1;  // assign to next spot by dereferencing iterator
-      ++ite;
-      *itd = 2*MF_EdgeDir_i((MFace_ptr)cell,i) - 1; // convert [0,1] to [-1,1]
-      ++itd;
+      edgeids(ite++) = lid-1;  // assign to next spot by dereferencing iterator
+      (*edgedirs)(itd++) = 2*MF_EdgeDir_i((MFace_ptr)cell,i) - 1; // convert [0,1] to [-1,1]
     }
 
     List_Delete(fedges);

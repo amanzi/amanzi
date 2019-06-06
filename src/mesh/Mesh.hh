@@ -273,7 +273,7 @@ class Mesh {
                                     const bool ordered=false) const;
 
   // Get edges of a cell
-  void cell_get_edges(const Entity_ID cellid, Entity_ID_List *edgeids) const;
+  void cell_get_edges(const Entity_ID cellid, Kokkos::View<Entity_ID*> &edgeids) const;
 
   // Get edges and dirs of a 2D cell.
   //
@@ -282,8 +282,8 @@ class Mesh {
   // face information is more cumbersome (one would have to take the face
   // normals, rotate them and then get a consistent edge vector)
   void cell_2D_get_edges_and_dirs(const Entity_ID cellid,
-                                  Entity_ID_List *edgeids,
-                                  std::vector<int> *edge_dirs) const;
+                                  Kokkos::View<Entity_ID*> &edgeids,
+                                  Kokkos::View<int*> *edge_dirs) const;
 
   // Get nodes of a cell
   virtual
@@ -820,14 +820,14 @@ protected:
   // edges of a cell
   virtual
   void cell_get_edges_internal_(const Entity_ID cellid,
-                                Entity_ID_List *edgeids) const = 0;
+                                Kokkos::View<Entity_ID*> &edgeids) const = 0;
 
   // edges and directions of a 2D cell
   virtual
   void cell_2D_get_edges_and_dirs_internal_(
       const Entity_ID cellid,
-      Entity_ID_List *edgeids,
-      std::vector<int> *edge_dirs) const = 0;
+      Kokkos::View<Entity_ID*> &edgeids,
+      Kokkos::View<int*> *edge_dirs) const = 0;
 
   // Virtual methods to fill the cache with geometric quantities.
   //
@@ -896,8 +896,8 @@ protected:
   mutable Kokkos::Crs<Entity_ID,Kokkos::HostSpace> face_cell_ids_;
 
   mutable Kokkos::Crs<Parallel_type,Kokkos::HostSpace> face_cell_ptype_;
-  mutable std::vector<Entity_ID_List> cell_edge_ids_;
-  mutable std::vector< std::vector<int> > cell_2D_edge_dirs_;
+  mutable Kokkos::Crs<Entity_ID,Kokkos::HostSpace> cell_edge_ids_;
+  mutable Kokkos::Crs<int,Kokkos::HostSpace> cell_2D_edge_dirs_;
   mutable Kokkos::Crs<Entity_ID,Kokkos::HostSpace> face_edge_ids_;
   mutable Kokkos::Crs<int,Kokkos::HostSpace> face_edge_dirs_;
 

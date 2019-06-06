@@ -624,8 +624,8 @@ TEST(DARCY_STIFFNESS_2D_EDGE) {
     for (int i=0; i<nedges; i++) CHECK(A(i, i) > 0.0);
 
     // verify exact integration property
-    AmanziMesh::Entity_ID_List edges;
-    mesh->cell_get_edges(cell, &edges);
+    Kokkos::View<AmanziMesh::Entity_ID*> edges;
+    mesh->cell_get_edges(cell, edges);
 
     int d = mesh->space_dimension();
     Point p(d);
@@ -633,12 +633,12 @@ TEST(DARCY_STIFFNESS_2D_EDGE) {
     double xi, yi, xj;
     double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell);
     for (int i = 0; i < nedges; i++) {
-      int e = edges[i];
+      int e = edges(i);
       const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
       xi = xe[0];
       yi = xe[1];
       for (int j = 0; j < nedges; j++) {
-        e = edges[j];
+        e = edges(j);
         const AmanziGeometry::Point& ye = mesh->edge_centroid(e);
         xj = ye[0];
         vxx += A(i, j) * xi * xj;

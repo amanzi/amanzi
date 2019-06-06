@@ -49,27 +49,25 @@ TEST(MSTK_EDGES_2D)
 				    Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < nc_owned; ++c) {
-    Amanzi::AmanziMesh::Entity_ID_List cedges;
-    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> fedges, cfaces;
-    Kokkos::View<int*> cfdirs, fedirs;
-    std::vector<int> cedirs;
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> fedges, cfaces, cedges;
+    Kokkos::View<int*> cfdirs, fedirs, cedirs;
 
-    mesh->cell_2D_get_edges_and_dirs(c,&cedges,&cedirs);
+    mesh->cell_2D_get_edges_and_dirs(c,cedges,&cedirs);
     mesh->cell_get_faces_and_dirs(c,cfaces,&cfdirs);
 
-    for (int e = 0; e < cedges.size(); ++e) {
-      CHECK_EQUAL(mesh->getGlobalElement(cedges[e],Amanzi::AmanziMesh::EDGE),
+    for (int e = 0; e < cedges.extent(0); ++e) {
+      CHECK_EQUAL(mesh->getGlobalElement(cedges(e),Amanzi::AmanziMesh::EDGE),
 		  mesh->getGlobalElement(cfaces(e),Amanzi::AmanziMesh::FACE));
 
       // Also, see if the direction and vector we got for edges of 2D
       // cell is consistent with the direction and normal vector we
       // got for the faces of the cell
 
-      CHECK_EQUAL(cedirs[e],cfdirs(e));
+      CHECK_EQUAL(cedirs(e),cfdirs(e));
 
       Amanzi::AmanziGeometry::Point evec(2), fnormal(2), ftangent(2);
 
-      evec = mesh->edge_vector(cedges[e])*cedirs[e];
+      evec = mesh->edge_vector(cedges(e))*cedirs(e);
 
       fnormal = mesh->face_normal(cfaces(e))*cfdirs(e);
       ftangent.set(-fnormal[1],fnormal[0]);
@@ -92,7 +90,7 @@ TEST(MSTK_EDGES_2D)
       mesh->face_to_cell_edge_map(cfaces(f),c,&map);
 
       for (int e = 0; e < fedges.extent(0); ++e)
-	CHECK_EQUAL(fedges(e),cedges[map[e]]);
+	CHECK_EQUAL(fedges(e),cedges(map[e]));
     }
   }
 
@@ -163,11 +161,10 @@ TEST(MSTK_EDGES_3D)
 				    Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < nc_owned; ++c) {
-    Amanzi::AmanziMesh::Entity_ID_List cedges;
-    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces, fedges;
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces, fedges, cedges;
     Kokkos::View<int*> cfdirs, fedirs;
 
-    mesh->cell_get_edges(c,&cedges);
+    mesh->cell_get_edges(c,cedges);
     mesh->cell_get_faces_and_dirs(c,cfaces,&cfdirs);
 
     for (int f = 0; f < cfaces.extent(0); ++f) {
@@ -179,7 +176,7 @@ TEST(MSTK_EDGES_3D)
       mesh->face_to_cell_edge_map(cfaces(f),c,&map);
 
       for (int e = 0; e < fedges.extent(0); ++e)
-	CHECK_EQUAL(fedges(e),cedges[map[e]]);
+	CHECK_EQUAL(fedges(e),cedges(map[e]));
     }
   }
 
