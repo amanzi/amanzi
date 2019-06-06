@@ -305,8 +305,8 @@ class Mesh {
   // this direction cannot be relied upon to compute, say, a contour
   // integral around the 2D cell.
   void face_get_edges_and_dirs(const Entity_ID faceid,
-                               Entity_ID_List *edgeids,
-                               std::vector<int> *edge_dirs,
+                               Kokkos::View<Entity_ID*> &edgeids,
+                               Kokkos::View<int*> *edge_dirs,
                                const bool ordered=false) const;
 
   // Get the local index of a face edge in a cell edge list
@@ -382,7 +382,7 @@ class Mesh {
   // processors
   void face_get_cells(const Entity_ID faceid,
                       const Parallel_type ptype,
-                      Entity_ID_List *cellids) const;
+                      Kokkos::View<Entity_ID*>& cellids) const;
 
 
   // Same level adjacencies
@@ -807,14 +807,14 @@ protected:
   virtual
   void face_get_cells_internal_(const Entity_ID faceid,
                                 const Parallel_type ptype,
-                                Entity_ID_List *cellids) const = 0;
+                                Kokkos::View<Entity_ID*> &cellids) const = 0;
 
   // edges of a face
   virtual
   void face_get_edges_and_dirs_internal_(
       const Entity_ID faceid,
-      Entity_ID_List *edgeids,
-      std::vector<int> *edge_dirs,
+      Kokkos::View<Entity_ID*> &edgeids,
+      Kokkos::View<int*> *edge_dirs,
       const bool ordered=true) const = 0;
 
   // edges of a cell
@@ -893,13 +893,13 @@ protected:
 
   // 1s complement if face is pointing out of cell; cannot use 0 as
   // cellid can be 0
-  mutable std::vector<Entity_ID_List> face_cell_ids_;
+  mutable Kokkos::Crs<Entity_ID,Kokkos::HostSpace> face_cell_ids_;
 
-  mutable std::vector< std::vector<Parallel_type> > face_cell_ptype_;
+  mutable Kokkos::Crs<Parallel_type,Kokkos::HostSpace> face_cell_ptype_;
   mutable std::vector<Entity_ID_List> cell_edge_ids_;
   mutable std::vector< std::vector<int> > cell_2D_edge_dirs_;
-  mutable std::vector<Entity_ID_List> face_edge_ids_;
-  mutable std::vector< std::vector<int> > face_edge_dirs_;
+  mutable Kokkos::Crs<Entity_ID,Kokkos::HostSpace> face_edge_ids_;
+  mutable Kokkos::Crs<int,Kokkos::HostSpace> face_edge_dirs_;
 
   // -- flags to indicate what part of cache is up-to-date
   mutable bool cell2face_info_cached_, face2cell_info_cached_;

@@ -334,11 +334,11 @@ void MFD3D_CrouzeixRaviart::H1Face(
     int f, const AmanziGeometry::Point& p0,
     const std::vector<VectorPolynomial>& ve, VectorPolynomial& uf) const
 {
-  Entity_ID_List edges;
-  std::vector<int> dirs;
+  Kokkos::View<Entity_ID*> edges;
+  Kokkos::View<int*> dirs;
 
-  mesh_->face_get_edges_and_dirs(f, &edges, &dirs);
-  int nedges = edges.size();
+  mesh_->face_get_edges_and_dirs(f, edges, &dirs);
+  int nedges = edges.extent(0);
 
   double area = mesh_->face_area(f);
   AmanziGeometry::Point fnormal = mesh_->face_normal(f);
@@ -353,14 +353,14 @@ void MFD3D_CrouzeixRaviart::H1Face(
   AmanziGeometry::Point enormal(d_);
 
   for (int n = 0; n < nedges; ++n) {
-    int e = edges[n];
+    int e = edges(n);
     const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
     const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
 
     enormal = tau^fnormal;
 
     for (int i = 0; i < d_; ++i) {
-      double tmp = ve[n][i].Value(xe) * dirs[n] / area;
+      double tmp = ve[n][i].Value(xe) * dirs(n) / area;
 
       for (int j = 0; j < d_; ++j) {
         uf[i](1, j) += tmp * enormal[j];

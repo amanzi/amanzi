@@ -584,16 +584,17 @@ void Mesh_simple::node_get_cell_faces(const AmanziMesh::Entity_ID nodeid,
 //--------------------------------------
 void Mesh_simple::face_get_cells_internal_(const AmanziMesh::Entity_ID faceid,
                                            const AmanziMesh::Parallel_type ptype,
-                                           AmanziMesh::Entity_ID_List *cellids) const
+                                           Kokkos::View<AmanziMesh::Entity_ID*> &cellids) const
 {
   unsigned int offset = (unsigned int) 2*faceid;
-
-  cellids->clear();
+  Kokkos::resize(cellids,1);
 
   if (face_to_cell_[offset] != -1)
-    cellids->push_back(face_to_cell_[offset]);
+    cellids(0) = face_to_cell_[offset];
   if (face_to_cell_[offset+1] != -1)
-    cellids->push_back(face_to_cell_[offset+1]);
+    cellids(0) = face_to_cell_[offset+1];
+
+
 }
 
 

@@ -112,10 +112,10 @@ int DeRham_Edge::L2consistency2D_(int c, const Tensor& T,
 int DeRham_Edge::L2consistency3D_(int c, const Tensor& T,
                                   DenseMatrix& N, DenseMatrix& Mc)
 {
-  Entity_ID_List edges, fedges;
-  Kokkos::View<Entity_ID*> faces;
-  std::vector<int> edirs, map;
-  Kokkos::View<int*> fdirs;
+  Entity_ID_List edges;
+  Kokkos::View<Entity_ID*> faces, fedges;
+  std::vector<int> map;
+  Kokkos::View<int*> fdirs, edirs;
 
   mesh_->cell_get_faces_and_dirs(c, faces, &fdirs);
   int nfaces = faces.extent(0);
@@ -149,19 +149,19 @@ int DeRham_Edge::L2consistency3D_(int c, const Tensor& T,
       vv[k][k] -= a1;
     }
 
-    mesh_->face_get_edges_and_dirs(f, &fedges, &edirs);
-    int nfedges = fedges.size();
+    mesh_->face_get_edges_and_dirs(f, fedges, &edirs);
+    int nfedges = fedges.extent(0);
 
     mesh_->face_to_cell_edge_map(f, c, &map);
 
     for (int m = 0; m < nfedges; ++m) {
-      int e = fedges[m];
+      int e = fedges(m);
       const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
 
       v3 = xe - xf;
 
       double len = mesh_->edge_length(e);
-      len /= 2.0 * area * area * fdirs(i) * edirs[m];
+      len /= 2.0 * area * area * fdirs(i) * edirs(m);
 
       for (int k = 0; k < d_; ++k) {
         N(map[m], k) -= len * ((vv[k]^v3) * normal);
@@ -302,9 +302,9 @@ int DeRham_Edge::L2consistencyInverse3D_(
     int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
 {
   Entity_ID_List edges;
-  Kokkos::View<Entity_ID*> faces;
-  std::vector<int> edirs, map;
-  Kokkos::View<int*> fdirs;
+  Kokkos::View<Entity_ID*> faces, fedges;
+  std::vector<int> map;
+  Kokkos::View<int*> fdirs, edirs;
 
   mesh_->cell_get_faces_and_dirs(c, faces, &fdirs);
   int nfaces = faces.extent(0);
@@ -354,19 +354,19 @@ int DeRham_Edge::L2consistencyInverse3D_(
       vv[k][k] -= a1;
     }
 
-    mesh_->face_get_edges_and_dirs(f, &edges, &edirs);
-    int nedges = edges.size();
+    mesh_->face_get_edges_and_dirs(f, fedges, &edirs);
+    int nedges = fedges.extent(0);
 
     mesh_->face_to_cell_edge_map(f, c, &map);
 
     for (int m = 0; m < nedges; ++m) {
-      int e = edges[m];
+      int e = fedges(m);
       const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
 
       v3 = xe - xf;
 
       double len = mesh_->edge_length(e);
-      len /= 2.0 * area * area * fdirs(i) * edirs[m];
+      len /= 2.0 * area * area * fdirs(i) * edirs(m);
 
       for (int k = 0; k < d_; ++k) {
         R(map[m], k) -= len * ((vv[k]^v3) * normal);

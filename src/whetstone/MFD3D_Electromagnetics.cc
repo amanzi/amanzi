@@ -101,10 +101,10 @@ int MFD3D_Electromagnetics::H1consistency2D_(
 int MFD3D_Electromagnetics::H1consistency3D_(
     int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List edges, fedges;
-  Kokkos::View<Entity_ID*> faces;
-  std::vector<int> edirs, map;
-  Kokkos::View<int*> fdirs;
+  Entity_ID_List edges;
+  Kokkos::View<Entity_ID*> faces, fedges;
+  std::vector<int> map;
+  Kokkos::View<int*> fdirs, edirs;
 
   mesh_->cell_get_faces_and_dirs(c, faces, &fdirs);
   int nfaces = faces.extent(0);
@@ -130,17 +130,17 @@ int MFD3D_Electromagnetics::H1consistency3D_(
     AmanziGeometry::Point normal = mesh_->face_normal(f);
     normal /= mesh_->face_area(f);
 
-    mesh_->face_get_edges_and_dirs(f, &fedges, &edirs);
-    int nfedges = fedges.size();
+    mesh_->face_get_edges_and_dirs(f, fedges, &edirs);
+    int nfedges = fedges.extent(0);
 
     mesh_->face_to_cell_edge_map(f, c, &map);
 
     for (int m = 0; m < nfedges; ++m) {
-      int e = fedges[m];
+      int e = fedges(m);
       const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
       double len = mesh_->edge_length(e);
 
-      len *= 2 * fdirs(i) * edirs[m];
+      len *= 2 * fdirs(i) * edirs(m);
       v2 = xe - xf;
 
       for (int k = 0; k < d_; ++k) N(map[m], k) += len * v2[k];
@@ -368,10 +368,10 @@ void MFD3D_Electromagnetics::AddGradientToProjector_(int c, DenseMatrix& N)
 ****************************************************************** */
 void MFD3D_Electromagnetics::CurlMatrix(int c, DenseMatrix& C)
 {
-  Entity_ID_List nodes, fedges, edges;
-  std::vector<int> edirs, map;
-  Kokkos::View<Entity_ID*> faces;
-  Kokkos::View<int*> fdirs;
+  Entity_ID_List nodes, edges;
+  std::vector<int> map;
+  Kokkos::View<Entity_ID*> faces, fedges;
+  Kokkos::View<int*> fdirs, edirs;
 
   mesh_->cell_get_edges(c, &edges);
   int nedges = edges.size();
@@ -395,13 +395,13 @@ void MFD3D_Electromagnetics::CurlMatrix(int c, DenseMatrix& C)
       int f = faces(i);
 
       mesh_->face_to_cell_edge_map(f, c, &map);
-      mesh_->face_get_edges_and_dirs(f, &fedges, &edirs);
-      int nfedges = fedges.size();
+      mesh_->face_get_edges_and_dirs(f, fedges, &edirs);
+      int nfedges = fedges.extent(0);
 
       for (int j = 0; j < nfedges; ++j) {
-        int e = fedges[j];
+        int e = fedges(j);
         double len = mesh_->edge_length(e);
-        C(i, map[j]) = len * edirs[j] * fdirs(i);
+        C(i, map[j]) = len * edirs(j) * fdirs(i);
       }
     }
   }

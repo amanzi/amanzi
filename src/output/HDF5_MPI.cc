@@ -499,10 +499,10 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
   int nfaces_global = fmap.getGlobalNumElements();
 
   for (int f=0; f!=nfaces_local; ++f) {
-    AmanziMesh::Entity_ID_List cells;
-    mesh_maps_->vis_mesh().face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    if (cells.size() > 1) {
-      local_conn += cells.size();
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells;
+    mesh_maps_->vis_mesh().face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+    if (cells.extent(0) > 1) {
+      local_conn += cells.extent(0);
       local_entities++;
     }
   }
@@ -527,18 +527,18 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
   int lcv_entity = 0;
   int internal_f = 0;
   for (int f=0; f!=nfaces_local; ++f) {
-    AmanziMesh::Entity_ID_List cells;
-    mesh_maps_->vis_mesh().face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    if (cells.size() > 1) {
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells;
+    mesh_maps_->vis_mesh().face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+    if (cells.extent(0) > 1) {
       // store cell type id
       //      conn[lcv++] = 2;
 
       // store nodes in the correct order
-      for (int i=0; i!=cells.size(); ++i) {
+      for (int i=0; i!=cells.extent(0); ++i) {
         // if (nmap.MyLID(cells[i])) {
         //   conn[lcv++] = cells[i] + startAll[viz_comm_->getRank()];
         // } else {
-        conn[lcv++] = lid[cells[i]] + startAll[pid[cells[i]]];
+        conn[lcv++] = lid[cells(i)] + startAll[pid[cells(i)]];
         // }
       }
 

@@ -356,16 +356,17 @@ void MeshSurfaceCell::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
 // mesh framework. The results are cached in the base class
 void MeshSurfaceCell::face_get_cells_internal_(const Entity_ID faceid,
         const Parallel_type ptype,
-        Entity_ID_List *cellids) const {
-  cellids->resize(1,0);
+        Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> &cellids) const {
+  Kokkos::resize(cellids,1);
+  cellids(0) = 0;
 }
 
 
 // edges of a face - this function is implemented in each mesh
 // framework. The results are cached in the base class
 void MeshSurfaceCell::face_get_edges_and_dirs_internal_(const Entity_ID faceid,
-        Entity_ID_List *edgeids,
-        std::vector<int> *edge_dirs,
+        Kokkos::View<Entity_ID*> &edgeids,
+        Kokkos::View<int*> *edge_dirs,
         const bool ordered) const {
   Errors::Message mesg("Not implemented");
   Exceptions::amanzi_throw(mesg);

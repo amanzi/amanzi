@@ -524,7 +524,7 @@ class Mesh_MSTK : public Mesh {
   // Cells connected to a face
   void face_get_cells_internal_(const Entity_ID faceid,
                                 const Parallel_type ptype,
-                                Entity_ID_List *cellids) const;
+                                Kokkos::View<Entity_ID*> &cellids) const;
 
 
   // Get edges of a cell
@@ -538,8 +538,8 @@ class Mesh_MSTK : public Mesh {
 
   // Edges and edge directions of a face
   void face_get_edges_and_dirs_internal_(const Entity_ID cellid,
-					 Entity_ID_List *edgeids,
-					 std::vector<int> *edgedirs,
+					 Kokkos::View<Entity_ID*> &edgeids,
+					 Kokkos::View<int*> *edgedirs,
 					 bool ordered=true) const;
 
   // Map from Amanzi's mesh entity kind to MSTK's mesh type.

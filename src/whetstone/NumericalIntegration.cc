@@ -247,14 +247,14 @@ double NumericalIntegration::IntegratePolynomialsFace(
 
   // Apply Euler theorem to each monomial
   double sum(0.0);
-  Entity_ID_List edges;
-  std::vector<int> dirs;
+  Kokkos::View<Entity_ID*> edges;
+  Kokkos::View<int*> dirs;
 
-  mesh_->face_get_edges_and_dirs(f, &edges, &dirs);
-  int nedges = edges.size();
+  mesh_->face_get_edges_and_dirs(f, edges, &dirs);
+  int nedges = edges.extent(0);
 
   for (int n = 0; n < nedges; ++n) {
-    int e = edges[n];
+    int e = edges(n);
     const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
     const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
     double length = mesh_->edge_length(e);
@@ -262,7 +262,7 @@ double NumericalIntegration::IntegratePolynomialsFace(
     enormal = tau^fnormal;
 
     // rescale polynomial coefficients
-    double tmp = dirs[n] * ((xe - xf) * enormal) / length;
+    double tmp = dirs(n) * ((xe - xf) * enormal) / length;
 
     Polynomial q(product);
     for (auto it = q.begin(); it < q.end(); ++it) {
@@ -503,14 +503,14 @@ void NumericalIntegration::IntegrateMonomialsFace_(
     mono.set_origin(xc);
     Polynomial poly = integrals.ChangeOrigin(mono, xf);
 
-    Entity_ID_List edges;
-    std::vector<int> dirs;
+    Kokkos::View<Entity_ID*> edges;
+    Kokkos::View<int*> dirs;
 
-    mesh_->face_get_edges_and_dirs(f, &edges, &dirs);
-    int nedges = edges.size();
+    mesh_->face_get_edges_and_dirs(f, edges, &dirs);
+    int nedges = edges.extent(0);
 
     for (int n = 0; n < nedges; ++n) {
-      int e = edges[n];
+      int e = edges(n);
       const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
       const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
       double length = mesh_->edge_length(e);
@@ -518,7 +518,7 @@ void NumericalIntegration::IntegrateMonomialsFace_(
       fnormal = tau^normal;
 
       // rescale polynomial coefficients
-      double tmp = (factor * dirs[n]) * ((xe - xf) * fnormal) / length;
+      double tmp = (factor * dirs(n)) * ((xe - xf) * fnormal) / length;
 
       Polynomial q(poly);
       for (auto jt = poly.begin(); jt < poly.end(); ++jt) {

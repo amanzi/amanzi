@@ -317,7 +317,7 @@ class Mesh_simple : public virtual Mesh {
   // Cells connected to a face
   void face_get_cells_internal_(const Entity_ID faceid,
                                 const Parallel_type ptype,
-                                std::vector<Entity_ID> *cellids) const;
+                                Kokkos::View<Entity_ID*> &cellids) const;
 
 
   // Edges of a cell
@@ -339,8 +339,8 @@ class Mesh_simple : public virtual Mesh {
 
   // Edges and edge directions of a face
   void face_get_edges_and_dirs_internal_(const Entity_ID cellid,
-                                         Entity_ID_List *edgeids,
-                                         std::vector<int> *edgedirs,
+                                         Kokkos::View<Entity_ID*> &edgeids,
+                                         Kokkos::View<int*> *edgedirs,
                                          bool ordered=true) const
   {
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");

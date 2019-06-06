@@ -106,8 +106,10 @@ Mesh::cache_cell_face_info_() const
   cell_face_dirs_.row_map(0) = 0;
 
   int nfaces = num_entities(FACE, Parallel_type::ALL);
-  face_cell_ids_.resize(nfaces);
-  face_cell_ptype_.resize(nfaces);
+  Kokkos::resize(face_cell_ids_.row_map,nfaces+1);
+  Kokkos::resize(face_cell_ptype_.row_map,nfaces+1);
+  face_cell_ids_.row_map(0) = 0;
+  face_cell_ptype_.row_map(0) = 0;
 
   for (int c = 0; c < ncells; c++) {
     Kokkos::View<Entity_ID*> cell_face_ids_view;
@@ -115,11 +117,12 @@ Mesh::cache_cell_face_info_() const
     cell_get_faces_and_dirs_internal_(c, cell_face_ids_view,
             &cell_face_dirs_view, false);
     int nf = cell_face_ids_view.extent(0);
+
     for (int jf = 0; jf < nf; jf++) {
       Entity_ID f = cell_face_ids_view(jf);
       int dir = cell_face_dirs_view(jf);
-      face_cell_ids_[f].push_back(dir > 0 ? c : ~c); // store 1s complement of c if dir is -ve
-      face_cell_ptype_[f].push_back(entity_get_ptype(CELL, c));
+      face_cell_ids_.row_map(f)++;
+      face_cell_ptype_.row_map(f)++;
     }
 
     // Save to the CRS
@@ -135,6 +138,31 @@ Mesh::cache_cell_face_info_() const
     }
   }
 
+  // Prefix sum
+  Entity_ID tmp1 = face_cell_ids_.row_map(0);
+  face_cell_ids_.row_map(0) = 0;
+  for(int f = 0 ; f < nfaces; ++f){
+    Entity_ID tmp2 = face_cell_ids_.row_map(f+1);
+    face_cell_ids_.row_map(f+1) = face_cell_ids_.row_map(f)+tmp1;
+    tmp1 = tmp2;
+  }
+  Kokkos::deep_copy(face_cell_ptype_.row_map,face_cell_ids_.row_map);
+  Kokkos::resize(face_cell_ids_.entries,face_cell_ids_.row_map(face_cell_ids_.row_map.extent(0)-1));
+  Kokkos::resize(face_cell_ptype_.entries,face_cell_ptype_.row_map(face_cell_ptype_.row_map.extent(0)-1));
+
+
+  Kokkos::View<int*> offset("",nfaces);
+
+  for (int c = 0; c < ncells; c++) {
+    int nf = cell_face_ids_.row_map(c+1)-cell_face_ids_.row_map(c);
+    for (int jf = 0; jf < nf; jf++) {
+      Entity_ID f = cell_face_ids_.entries(jf+cell_face_ids_.row_map(c));
+      int dir = cell_face_dirs_.entries(jf+cell_face_dirs_.row_map(c));
+      face_cell_ids_.entries(face_cell_ids_.row_map(f)+offset(f)) = dir > 0 ? c : ~ c;
+      face_cell_ptype_.entries(face_cell_ptype_.row_map(f)+offset(f)++) = entity_get_ptype(CELL, c);
+    }
+  }
+
   cell2face_info_cached_ = true;
   face2cell_info_cached_ = true;
   faces_requested_ = true;
@@ -146,15 +174,26 @@ void
 Mesh::cache_face2edge_info_() const
 {
   int nfaces = num_entities(FACE,Parallel_type::ALL);
-  face_edge_ids_.resize(nfaces);
-  face_edge_dirs_.resize(nfaces);
+  Kokkos::resize(face_edge_ids_.row_map,nfaces+1);
+  Kokkos::resize(face_edge_dirs_.row_map,nfaces+1);
+  face_edge_ids_.row_map(0) = 0;
+  face_edge_dirs_.row_map(0) = 0;
 
   for (int f = 0; f < nfaces; f++) {
-    Entity_ID_List fedgeids;
-    std::vector<int> fedgedirs;
+    Kokkos::View<Entity_ID*> fedgeids;
+    Kokkos::View<int*> fedgedirs;
 
-    face_get_edges_and_dirs_internal_(f, &(face_edge_ids_[f]),
-            &(face_edge_dirs_[f]), true);
+    face_get_edges_and_dirs_internal_(f, fedgeids, &fedgedirs, true);
+    face_edge_ids_.row_map(f+1) = face_edge_ids_.row_map(f)+fedgeids.extent(0);
+    face_edge_dirs_.row_map(f+1) = face_edge_dirs_.row_map(f)+fedgedirs.extent(0);
+    Kokkos::resize(face_edge_ids_.entries,
+      face_edge_ids_.entries.extent(0)+fedgeids.extent(0));
+    Kokkos::resize(face_edge_dirs_.entries,
+      face_edge_dirs_.entries.extent(0)+fedgedirs.extent(0));
+    for(int i = 0 ; i < fedgeids.extent(0); ++i){
+      face_edge_ids_.entries(face_edge_ids_.row_map(f)+i) = fedgeids(i);
+      face_edge_dirs_.entries(face_edge_dirs_.row_map(f)+i) = fedgedirs(i);
+    }
   }
 
   face2edge_info_cached_ = true;
@@ -267,15 +306,17 @@ Mesh::cell_get_faces_and_dirs(const Entity_ID cellid,
   if (ordered)
     cell_get_faces_and_dirs_internal_(cellid, faceids, face_dirs, ordered);
   else {
-    Kokkos::View<Entity_ID*> faceids_tmp = Kokkos::subview(cell_face_ids_.entries,
+    //Kokkos::View<Entity_ID*> faceids_tmp;
+    faceids = Kokkos::subview(cell_face_ids_.entries,
       std::make_pair(cell_face_ids_.row_map(cellid),cell_face_ids_.row_map(cellid+1)));
-    Kokkos::resize(faceids,faceids_tmp.extent(0));
-    Kokkos::deep_copy(faceids,faceids_tmp); // deep copy
+    //Kokkos::resize(faceids,faceids_tmp.extent(0));
+    //Kokkos::deep_copy(faceids,faceids_tmp); // deep copy
     if (face_dirs) {
-      Kokkos::View<int*> face_dirs_tmp = Kokkos::subview(cell_face_dirs_.entries,
+      //Kokkos::View<int*> face_dirs_tmp;
+      *face_dirs = Kokkos::subview(cell_face_dirs_.entries,
         std::make_pair(cell_face_dirs_.row_map(cellid),cell_face_dirs_.row_map(cellid+1)));
-      Kokkos::resize(*face_dirs,face_dirs_tmp.extent(0));
-      Kokkos::deep_copy(*face_dirs,face_dirs_tmp); // deep copy
+      //Kokkos::resize(*face_dirs,face_dirs_tmp.extent(0));
+      //Kokkos::deep_copy(*face_dirs,face_dirs_tmp); // deep copy
     }
   }
 
@@ -309,23 +350,33 @@ void Mesh::cell_get_faces_and_bisectors(
 // Cells connected to a face - cache the results the first time it
 // is called and then return the cached results subsequently
 void Mesh::face_get_cells(const Entity_ID faceid, const Parallel_type ptype,
-                          Entity_ID_List *cellids) const
+                          Kokkos::View<Entity_ID*>& cellids) const
 {
 #if AMANZI_MESH_CACHE_VARS != 0
   if (!face2cell_info_cached_) cache_cell_face_info_();
 
-  cellids->clear();
-  int n = face_cell_ptype_[faceid].size();
+  int ncellids = 0;
+  int n = face_cell_ptype_.row_map(faceid+1)-face_cell_ptype_.row_map(faceid);
 
   for (int i = 0; i < n; i++) {
-    Parallel_type cell_ptype = face_cell_ptype_[faceid][i];
+    Parallel_type cell_ptype = face_cell_ptype_.entries(face_cell_ptype_.row_map(faceid)+i);
     if (cell_ptype == Parallel_type::PTYPE_UNKNOWN) continue;
+    int c = face_cell_ids_.entries(face_cell_ids_.row_map(faceid)+i);
+    if (std::signbit(c)) c = ~c;  // strip dir info by taking 1s complement
+    if (ptype == Parallel_type::ALL || ptype == cell_ptype) ++ncellids;
+  }
 
-    int c = face_cell_ids_[faceid][i];
+  Kokkos::resize(cellids,ncellids);
+  ncellids = 0;
+
+  for (int i = 0; i < n; i++) {
+    Parallel_type cell_ptype = face_cell_ptype_.entries(face_cell_ptype_.row_map(faceid)+i);
+    if (cell_ptype == Parallel_type::PTYPE_UNKNOWN) continue;
+    int c = face_cell_ids_.entries(face_cell_ids_.row_map(faceid)+i);
     if (std::signbit(c)) c = ~c;  // strip dir info by taking 1s complement
 
     if (ptype == Parallel_type::ALL || ptype == cell_ptype)
-      cellids->push_back(c);
+      cellids(ncellids++) = c;
   }
 
 #else  // Non-cached version
@@ -361,18 +412,22 @@ void Mesh::face_get_cells(const Entity_ID faceid, const Parallel_type ptype,
 
 void
 Mesh::face_get_edges_and_dirs(const Entity_ID faceid,
-                              Entity_ID_List *edgeids,
-                              std::vector<int> *edge_dirs,
+                              Kokkos::View<Entity_ID*> &edgeids,
+                              Kokkos::View<int*> *edge_dirs,
                               const bool ordered) const
 {
 #if AMANZI_MESH_CACHE_VARS != 0
   if (!face2edge_info_cached_) cache_face2edge_info_();
 
-  *edgeids = face_edge_ids_[faceid]; // copy operation
+  edgeids = Kokkos::subview(face_edge_ids_.entries,
+    std::make_pair(face_edge_ids_.row_map(faceid),face_edge_ids_.row_map(faceid+1)));
+  //*edgeids = face_edge_ids_[faceid]; // copy operation
 
   if (edge_dirs) {
-    std::vector<int> &fedgedirs = face_edge_dirs_[faceid];
-    *edge_dirs = fedgedirs; // copy operation
+    *edge_dirs = Kokkos::subview(face_edge_dirs_.entries,
+      std::make_pair(face_edge_dirs_.row_map(faceid),face_edge_dirs_.row_map(faceid+1)));
+    //std::vector<int> &fedgedirs = face_edge_dirs_[faceid];
+    //*edge_dirs = fedgedirs; // copy operation
   }
 
 #else  // Non-cached version
@@ -392,9 +447,10 @@ Mesh::face_to_cell_edge_map(const Entity_ID faceid,
   if (!face2edge_info_cached_) cache_face2edge_info_();
   if (!cell2edge_info_cached_) cache_cell2edge_info_();
 
-  map->resize(face_edge_ids_[faceid].size());
-  for (int f = 0; f < face_edge_ids_[faceid].size(); ++f) {
-    Entity_ID fedge = face_edge_ids_[faceid][f];
+  size_t faceid_size = face_edge_ids_.row_map(faceid+1)-face_edge_ids_.row_map(faceid);
+  map->resize(faceid_size);
+  for (int f = 0; f < faceid_size; ++f) {
+    Entity_ID fedge = face_edge_ids_.entries(face_edge_ids_.row_map(faceid)+f);
 
     for (int c = 0; c < cell_edge_ids_[cellid].size(); ++c) {
       if (fedge == cell_edge_ids_[cellid][c]) {
@@ -660,18 +716,18 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
     AmanziGeometry::Point normal(3);
     AmanziGeometry::polygon_get_area_centroid_normal(fcoords,area,centroid,&normal);
 
-    Entity_ID_List cellids;
-    face_get_cells(faceid, Parallel_type::ALL, &cellids);
-    AMANZI_ASSERT(cellids.size() <= 2);
+    Kokkos::View<Entity_ID*> cellids;
+    face_get_cells(faceid, Parallel_type::ALL, cellids);
+    AMANZI_ASSERT(cellids.extent(0) <= 2);
 
-    Kokkos::resize(normals,cellids.size());
+    Kokkos::resize(normals,cellids.extent(0));
     //normals->resize(cellids.size(), AmanziGeometry::Point(0.0, 0.0, 0.0));
-    for (int i = 0; i < cellids.size(); i++) {
+    for (int i = 0; i < cellids.extent(0); i++) {
       Kokkos::View<Entity_ID*> cellfaceids;
       Kokkos::View<int*> cellfacedirs;
       int dir = 1;
 
-      cell_get_faces_and_dirs(cellids[i], cellfaceids, &cellfacedirs);
+      cell_get_faces_and_dirs(cellids(i), cellfaceids, &cellfacedirs);
 
       bool found = false;
       for (int j = 0; j < cellfaceids.extent(0); j++) {
@@ -700,18 +756,18 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
 
       AmanziGeometry::Point normal(evec[1],-evec[0]);
 
-      Entity_ID_List cellids;
-      face_get_cells(faceid, Parallel_type::ALL, &cellids);
-      AMANZI_ASSERT(cellids.size() <= 2);
+      Kokkos::View<Entity_ID*> cellids;
+      face_get_cells(faceid, Parallel_type::ALL, cellids);
+      AMANZI_ASSERT(cellids.extent(0) <= 2);
 
-      Kokkos::resize(normals,cellids.size());
+      Kokkos::resize(normals,cellids.extent(0));
       //normals->resize(cellids.size(), AmanziGeometry::Point(0.0, 0.0));
-      for (int i = 0; i < cellids.size(); i++) {
+      for (int i = 0; i < cellids.extent(0); i++) {
         Kokkos::View<Entity_ID*> cellfaceids;
         Kokkos::View<int*> cellfacedirs;
         int dir = 1;
 
-        cell_get_faces_and_dirs(cellids[i], cellfaceids, &cellfacedirs);
+        cell_get_faces_and_dirs(cellids(i), cellfaceids, &cellfacedirs);
 
         bool found = false;
         for (int j = 0; j < cellfaceids.extent(0); j++) {
@@ -743,17 +799,17 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
 
       *centroid = 0.5*(fcoords[0]+fcoords[1]);
 
-      Entity_ID_List cellids;
-      face_get_cells(faceid, Parallel_type::ALL, &cellids);
+      Kokkos::View<Entity_ID*> cellids;
+      face_get_cells(faceid, Parallel_type::ALL, cellids);
 
-      Kokkos::resize(normals,cellids.size());
+      Kokkos::resize(normals,cellids.extent(0));
       //normals->resize(cellids.size(), AmanziGeometry::Point(0.0, 0.0, 0.0));
-      for (int i = 0; i < cellids.size(); i++) {
+      for (int i = 0; i < cellids.extent(0); i++) {
         Kokkos::View<Entity_ID*> cellfaceids;
         Kokkos::View<int*> cellfacedirs;
         int dir = 1;
 
-        cell_get_faces_and_dirs(cellids[i], cellfaceids, &cellfacedirs);
+        cell_get_faces_and_dirs(cellids(i), cellfaceids, &cellfacedirs);
 
         bool found = false;
         for (int j = 0; j < cellfaceids.extent(0); j++) {
@@ -766,7 +822,7 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
 
         AMANZI_ASSERT(found);
 
-        AmanziGeometry::Point cvec = fcoords[0]-cell_centroids_(cellids[i]);
+        AmanziGeometry::Point cvec = fcoords[0]-cell_centroids_(cellids(i));
         AmanziGeometry::Point trinormal = cvec^evec;
 
         AmanziGeometry::Point normal = evec^trinormal;
@@ -987,16 +1043,16 @@ Mesh::face_normal(const Entity_ID faceid,
     // the first cell, appropriately adjusted according to whether the
     // face is pointing into the cell (-ve cell id) or out
 
-    int c = face_cell_ids_[faceid][0];
+    int c = face_cell_ids_.entries(face_cell_ids_.row_map(faceid)+0);
     return std::signbit(c) ? -fnormals(0) : fnormals(0);
   } else {
     // Find the index of 'cellid' in list of cells connected to face
 
     int dir;
     int irefcell;
-    int nfc = face_cell_ids_[faceid].size();
+    int nfc = face_cell_ids_.row_map(faceid+1)-face_cell_ids_.row_map(faceid);
     for (irefcell = 0; irefcell < nfc; irefcell++) {
-      int c = face_cell_ids_[faceid][irefcell];
+      int c = face_cell_ids_.entries(face_cell_ids_.row_map(faceid)+irefcell);
       if (c == cellid || ~c == cellid) {
         dir = std::signbit(c) ? -1 : 1;
         break;
@@ -1457,18 +1513,18 @@ Mesh::build_columns(const std::string& setname) const
   int success = 1;
   for (int i = 0; i < ncolumns; i++) {
     Entity_ID f = top_faces[i];
-    Entity_ID_List fcells;
-    face_get_cells(f,Parallel_type::ALL,&fcells);
+    Kokkos::View<Entity_ID*> fcells;
+    face_get_cells(f,Parallel_type::ALL,fcells);
 
     // not a boundary face?
-    if (fcells.size() != 1) {
+    if (fcells.extent(0) != 1) {
       std::cerr << "Mesh: Provided set for build_columns() includes faces that are not exterior faces.\n";
       success = 0;
       break;
     }
 
     // check that the normal points upward
-    AmanziGeometry::Point normal = face_normal(f,false,fcells[0]);
+    AmanziGeometry::Point normal = face_normal(f,false,fcells(0));
     normal /= norm(normal);
     if (normal[2] < 1.e-10) {
       std::cerr << "Mesh: Provided set for build_columns() includes faces that don't point upward.\n";
@@ -1536,14 +1592,14 @@ Mesh::build_columns() const
   int ncolumns = 0;
   num_owned_cols_ = 0;
   for (int i = 0; i < nf; i++) {
-    Entity_ID_List fcells;
-    face_get_cells(i,Parallel_type::ALL,&fcells);
+    Kokkos::View<Entity_ID*> fcells;
+    face_get_cells(i,Parallel_type::ALL,fcells);
 
     // Is it a boundary face?
-    if (fcells.size() != 1) continue;
+    if (fcells.extent(0) != 1) continue;
 
     // Is it pointing up?
-    AmanziGeometry::Point normal = face_normal(i,false,fcells[0]);
+    AmanziGeometry::Point normal = face_normal(i,false,fcells(0));
     normal /= norm(normal);
 
     AmanziGeometry::Point zvec(space_dim_);
@@ -1574,15 +1630,15 @@ Mesh::build_columns() const
 int
 Mesh::build_single_column_(int colnum, Entity_ID top_face) const
 {
-  Entity_ID_List fcells;
-  face_get_cells(top_face,Parallel_type::ALL,&fcells);
+  Kokkos::View<Entity_ID*> fcells;
+  face_get_cells(top_face,Parallel_type::ALL,fcells);
 
   // Walk through the cells until we get to the bottom of the domain
-  Entity_ID cur_cell = fcells[0];
+  Entity_ID cur_cell = fcells(0);
   bool is_ghost_column = (entity_get_ptype(CELL, cur_cell) == Parallel_type::GHOST);
   Entity_ID bot_face = -1;
-  Entity_ID_List fcells2, colcells, colfaces;
-  Kokkos::View<Entity_ID*> cfaces;
+  Entity_ID_List colcells, colfaces;
+  Kokkos::View<Entity_ID*> cfaces, fcells2;
   Kokkos::View<int*> cfdirs;
 
   AmanziGeometry::Point negzvec(space_dim_);
@@ -1639,23 +1695,23 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
     AMANZI_ASSERT(bot_face != -1);
 
     // record the cell above and cell below
-    face_get_cells(bot_face,Parallel_type::ALL,&fcells2);
-    if (fcells2.size() == 2) {
+    face_get_cells(bot_face,Parallel_type::ALL,fcells2);
+    if (fcells2.extent(0) == 2) {
       if (cell_cellbelow_(cur_cell) != -1) {  // intersecting column of cells
         std::cerr << "Intersecting column of cells\n";
         success = 0;
         break;
       }
 
-      if (fcells2[0] == cur_cell) {
-        cell_cellbelow_(cur_cell) = fcells2[1];
-        cell_cellabove_(fcells2[1]) = cur_cell;
-        cur_cell = fcells2[1];
+      if (fcells2(0) == cur_cell) {
+        cell_cellbelow_(cur_cell) = fcells2(1);
+        cell_cellabove_(fcells2(1)) = cur_cell;
+        cur_cell = fcells2(1);
       }
-      else if (fcells2[1] == cur_cell) {
-        cell_cellbelow_(cur_cell) = fcells2[0];
-        cell_cellabove_(fcells2[0]) = cur_cell;
-        cur_cell = fcells2[0];
+      else if (fcells2(1) == cur_cell) {
+        cell_cellbelow_(cur_cell) = fcells2(0);
+        cell_cellabove_(fcells2(0)) = cur_cell;
+        cur_cell = fcells2(0);
       }
       else {
         std::cerr << "Unlikely problem in face to cell connectivity\n";

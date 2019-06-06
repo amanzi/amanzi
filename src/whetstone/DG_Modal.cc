@@ -487,9 +487,9 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
 int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
                          bool upwind, bool jump_on_test)
 {
-  AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-  int ncells = cells.size();
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells;
+  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+  int ncells = cells.extent(0);
 
   Polynomial poly(d_, order_);
   int size = poly.size();
@@ -500,7 +500,7 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
 
   // identify index of upwind/downwind cell (id)
   int dir, id(0);
-  mesh_->face_normal(f, false, cells[0], &dir);
+  mesh_->face_normal(f, false, cells(0), &dir);
   const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
   if (ncells > 1) {
@@ -519,12 +519,12 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
 
   // Calculate upwind/downwind cells
   int c1, c2;
-  c1 = cells[id];
+  c1 = cells(id);
 
   if (ncells == 1) {
     c2 = c1;
   } else {
-    c2 = cells[1 - id];
+    c2 = cells(1 - id);
   }
 
   // integrate traces of polynomials on face f
@@ -578,9 +578,9 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
   }
 
   if (ncells == 1) {
-    basis_[cells[0]]->BilinearFormNaturalToMy(A);
+    basis_[cells(0)]->BilinearFormNaturalToMy(A);
   } else {
-    basis_[cells[0]]->BilinearFormNaturalToMy(basis_[cells[0]], basis_[cells[1]], A);
+    basis_[cells(0)]->BilinearFormNaturalToMy(basis_[cells(0)], basis_[cells(1)], A);
   }
 
   return 0;
@@ -603,9 +603,9 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
 int DG_Modal::FluxMatrixGaussPoints(
     int f, const Polynomial& un, DenseMatrix& A, bool upwind, bool jump_on_test)
 {
-  AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-  int ncells = cells.size();
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells;
+  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+  int ncells = cells.extent(0);
 
   Polynomial poly(d_, order_);
   int size = poly.size();
@@ -618,7 +618,7 @@ int DG_Modal::FluxMatrixGaussPoints(
   // identify index of upwind/downwind cell (id)
   int dir;
   double area = mesh_->face_area(f);
-  mesh_->face_normal(f, false, cells[0], &dir);
+  mesh_->face_normal(f, false, cells(0), &dir);
   const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
   // Calculate integrals needed for scaling
@@ -629,12 +629,12 @@ int DG_Modal::FluxMatrixGaussPoints(
   }
 
   if (dir > 0) {
-    c1 = cells[0];
-    c2 = cells[ncells - 1];
+    c1 = cells(0);
+    c2 = cells(ncells - 1);
     pos0 = 0;
   } else {
-    c1 = cells[ncells - 1];
-    c2 = cells[0];
+    c1 = cells(ncells - 1);
+    c2 = cells(0);
     pos0 = size;
   }
   pos1 = size - pos0;
@@ -704,9 +704,9 @@ int DG_Modal::FluxMatrixGaussPoints(
   }
 
   if (ncells == 1) {
-    basis_[cells[0]]->BilinearFormNaturalToMy(A);
+    basis_[cells(0)]->BilinearFormNaturalToMy(A);
   } else {
-    basis_[cells[0]]->BilinearFormNaturalToMy(basis_[cells[0]], basis_[cells[1]], A);
+    basis_[cells(0)]->BilinearFormNaturalToMy(basis_[cells(0)], basis_[cells(1)], A);
   }
 
   return 0;
@@ -725,9 +725,10 @@ int DG_Modal::FluxMatrixRusanov(
     int f, const VectorPolynomial& uc1, const VectorPolynomial& uc2,
     const Polynomial& uf, DenseMatrix& A)
 {
-  AmanziMesh::Entity_ID_List cells, nodes;
-  mesh_->face_get_cells(f, Parallel_type::ALL, &cells);
-  int ncells = cells.size();
+  AmanziMesh::Entity_ID_List nodes;
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells;
+  mesh_->face_get_cells(f, Parallel_type::ALL, cells);
+  int ncells = cells.extent(0);
 
   Polynomial poly(d_, order_);
   int size = poly.size();
@@ -739,12 +740,12 @@ int DG_Modal::FluxMatrixRusanov(
 
   // identify index of downwind cell (id)
   int dir;
-  AmanziGeometry::Point normal = mesh_->face_normal(f, false, cells[0], &dir);
+  AmanziGeometry::Point normal = mesh_->face_normal(f, false, cells(0), &dir);
   const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
   // Calculate integrals needed for scaling
-  int c1 = cells[0];
-  int c2 = cells[1];
+  int c1 = cells(0);
+  int c2 = cells(1);
 
   // integrate traces of polynomials on face f
   normal *= -1;
@@ -810,7 +811,7 @@ int DG_Modal::FluxMatrixRusanov(
     }
   }
 
-  basis_[cells[0]]->BilinearFormNaturalToMy(basis_[cells[0]], basis_[cells[1]], A);
+  basis_[cells(0)]->BilinearFormNaturalToMy(basis_[cells(0)], basis_[cells(1)], A);
 
   return 0;
 }
@@ -823,9 +824,9 @@ int DG_Modal::FluxMatrixRusanov(
 ****************************************************************** */
 int DG_Modal::FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMatrix& A)
 {
-  AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(f, Parallel_type::ALL, &cells);
-  int ncells = cells.size();
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells;
+  mesh_->face_get_cells(f, Parallel_type::ALL, cells);
+  int ncells = cells.extent(0);
 
   Polynomial poly(d_, order_);
   int size = poly.size();
@@ -834,8 +835,8 @@ int DG_Modal::FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMat
   A.Reshape(nrows, nrows);
 
   // Calculate integrals needed for scaling
-  int c1 = cells[0];
-  int c2 = (ncells > 1) ? cells[1] : -1;
+  int c1 = cells(0);
+  int c2 = (ncells > 1) ? cells(1) : -1;
 
   // Calculate co-normals
   int dir;
@@ -921,9 +922,9 @@ int DG_Modal::FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMat
 ****************************************************************** */
 int DG_Modal::FaceMatrixPenalty(int f, double Kf, DenseMatrix& A)
 {
-  AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(f, Parallel_type::ALL, &cells);
-  int ncells = cells.size();
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells;
+  mesh_->face_get_cells(f, Parallel_type::ALL, cells);
+  int ncells = cells.extent(0);
 
   Polynomial poly(d_, order_);
   int size = poly.size();
@@ -932,8 +933,8 @@ int DG_Modal::FaceMatrixPenalty(int f, double Kf, DenseMatrix& A)
   A.Reshape(nrows, nrows);
 
   // Calculate integrals needed for scaling
-  int c1 = cells[0];
-  int c2 = (ncells > 1) ? cells[1] : -1;
+  int c1 = cells(0);
+  int c2 = (ncells > 1) ? cells(1) : -1;
 
   // integrate traces of polynomials on face f
   double coef00, coef01, coef11;

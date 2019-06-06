@@ -49,10 +49,10 @@ TEST(MSTK_EDGES_2D)
 				    Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < nc_owned; ++c) {
-    Amanzi::AmanziMesh::Entity_ID_List cedges, fedges;
-    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces;
-    Kokkos::View<int*> cfdirs;
-    std::vector<int> fedirs, cedirs;
+    Amanzi::AmanziMesh::Entity_ID_List cedges;
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> fedges, cfaces;
+    Kokkos::View<int*> cfdirs, fedirs;
+    std::vector<int> cedirs;
 
     mesh->cell_2D_get_edges_and_dirs(c,&cedges,&cedirs);
     mesh->cell_get_faces_and_dirs(c,cfaces,&cfdirs);
@@ -80,10 +80,10 @@ TEST(MSTK_EDGES_2D)
 
 
     for (int f = 0; f < cfaces.extent(0); ++f) {
-      mesh->face_get_edges_and_dirs(cfaces(f),&fedges,&fedirs);
+      mesh->face_get_edges_and_dirs(cfaces(f),fedges,&fedirs);
 
-      CHECK_EQUAL(1,fedges.size()); // face is same as edge in 2D
-      CHECK_EQUAL(1,fedirs[0]); // direction is always 1
+      CHECK_EQUAL(1,fedges.extent(0)); // face is same as edge in 2D
+      CHECK_EQUAL(1,fedirs(0)); // direction is always 1
 
       // check the face-edges to cell-edges map
 
@@ -91,8 +91,8 @@ TEST(MSTK_EDGES_2D)
 
       mesh->face_to_cell_edge_map(cfaces(f),c,&map);
 
-      for (int e = 0; e < fedges.size(); ++e)
-	CHECK_EQUAL(fedges[e],cedges[map[e]]);
+      for (int e = 0; e < fedges.extent(0); ++e)
+	CHECK_EQUAL(fedges(e),cedges[map[e]]);
     }
   }
 
@@ -163,24 +163,23 @@ TEST(MSTK_EDGES_3D)
 				    Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < nc_owned; ++c) {
-    Amanzi::AmanziMesh::Entity_ID_List cedges, fedges;
-    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces;
-    std::vector<int> fedirs;
-    Kokkos::View<int*> cfdirs;
+    Amanzi::AmanziMesh::Entity_ID_List cedges;
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces, fedges;
+    Kokkos::View<int*> cfdirs, fedirs;
 
     mesh->cell_get_edges(c,&cedges);
     mesh->cell_get_faces_and_dirs(c,cfaces,&cfdirs);
 
     for (int f = 0; f < cfaces.extent(0); ++f) {
-      mesh->face_get_edges_and_dirs(cfaces(f),&fedges,&fedirs);
+      mesh->face_get_edges_and_dirs(cfaces(f),fedges,&fedirs);
 
       // check the face-edges to cell-edges map
 
       std::vector<int> map;
       mesh->face_to_cell_edge_map(cfaces(f),c,&map);
 
-      for (int e = 0; e < fedges.size(); ++e)
-	CHECK_EQUAL(fedges[e],cedges[map[e]]);
+      for (int e = 0; e < fedges.extent(0); ++e)
+	CHECK_EQUAL(fedges(e),cedges[map[e]]);
     }
   }
 

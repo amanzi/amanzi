@@ -104,17 +104,17 @@ TEST(COLUMN_MESH_3D)
   }
 
   for (int j = 0; j < nfaces; j++) {
-    Amanzi::AmanziMesh::Entity_ID_List fcells;
-    colmesh.face_get_cells(j,Amanzi::AmanziMesh::Parallel_type::OWNED,&fcells);
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> fcells;
+    colmesh.face_get_cells(j,Amanzi::AmanziMesh::Parallel_type::OWNED,fcells);
 
     if (j == 0) {
-      CHECK_EQUAL(1,fcells.size());
+      CHECK_EQUAL(1,fcells.extent(0));
     }
     else if (j == nfaces-1) {
-      CHECK_EQUAL(1,fcells.size());
+      CHECK_EQUAL(1,fcells.extent(0));
     }
     else {
-      CHECK_EQUAL(2,fcells.size());
+      CHECK_EQUAL(2,fcells.extent(0));
     }
   }
 
@@ -269,17 +269,17 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   }
 
   for (int j = 0; j < nfaces; j++) {
-    Amanzi::AmanziMesh::Entity_ID_List fcells;
-    colmesh.face_get_cells(j,Amanzi::AmanziMesh::Parallel_type::OWNED,&fcells);
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> fcells;
+    colmesh.face_get_cells(j,Amanzi::AmanziMesh::Parallel_type::OWNED,fcells);
 
     if (j == 0) {
-      CHECK_EQUAL(1,fcells.size());
+      CHECK_EQUAL(1,fcells.extent(0));
     }
     else if (j == nfaces-1) {
-      CHECK_EQUAL(1,fcells.size());
+      CHECK_EQUAL(1,fcells.extent(0));
     }
     else {
-      CHECK_EQUAL(2,fcells.size());
+      CHECK_EQUAL(2,fcells.extent(0));
     }
   }
 

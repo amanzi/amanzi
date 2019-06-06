@@ -452,7 +452,7 @@ class MeshColumn : public Mesh {
   virtual
   void face_get_cells_internal_(const Entity_ID faceid,
                                 const Parallel_type ptype,
-                                Entity_ID_List *cellids) const override {
+                                Kokkos::View<Entity_ID*> &cellids) const override {
     extracted_->face_get_cells(column_faces_[faceid], ptype, cellids);
   }
 
@@ -461,8 +461,8 @@ class MeshColumn : public Mesh {
   // framework. The results are cached in the base class
   virtual
   void face_get_edges_and_dirs_internal_(const Entity_ID faceid,
-                                         Entity_ID_List *edgeids,
-                                         std::vector<int> *edge_dirs,
+                                         Kokkos::View<Entity_ID*> &edgeids,
+                                         Kokkos::View<int*> *edge_dirs,
                                          const bool ordered=true) const override {
     Errors::Message mesg("Not implemented");
     Exceptions::amanzi_throw(mesg);

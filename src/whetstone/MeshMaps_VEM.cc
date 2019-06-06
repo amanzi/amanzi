@@ -66,11 +66,11 @@ void MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
   if (d_ == 2) {
     MeshMaps::VelocityFace(f, vf);
   } else {
-    AmanziMesh::Entity_ID_List edges;
-    std::vector<int> dirs;
+    Kokkos::View<AmanziMesh::Entity_ID*> edges;
+    Kokkos::View<int*> dirs;
 
-    mesh0_->face_get_edges_and_dirs(f, &edges, &dirs);
-    int nedges = edges.size();
+    mesh0_->face_get_edges_and_dirs(f, edges, &dirs);
+    int nedges = edges.extent(0);
 
     Teuchos::ParameterList plist;
     plist.set<std::string>("method", method_)
@@ -83,7 +83,7 @@ void MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
 
     for (int i = 0; i < d_; ++i) {
       for (int n = 0; n < nedges; ++n) {
-        int e = edges[n];
+        int e = edges(n);
         VelocityEdge_(e, v);
         ve.push_back(v[i]);
       }

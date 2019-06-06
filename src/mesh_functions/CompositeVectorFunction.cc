@@ -79,10 +79,10 @@ void CompositeVectorFunction::Compute(double time,
           const auto& face_map = *mesh->face_map(false);
 
           // loop over indices
-          AmanziMesh::Entity_ID_List cells;
+          Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells;
           for (AmanziMesh::Entity_ID id=0; id!=nfaces; ++id) {
-            mesh->face_get_cells(id, AmanziMesh::Parallel_type::ALL, &cells);
-            if (cells.size() == 1) {
+            mesh->face_get_cells(id, AmanziMesh::Parallel_type::ALL, cells);
+            if (cells.extent(0) == 1) {
               AmanziMesh::Entity_ID bf = vandelay_map.getLocalElement(face_map.getGlobalElement(id));
               AMANZI_ASSERT(bf >= 0);
 
@@ -134,10 +134,10 @@ void CompositeVectorFunction::Compute(double time,
             const auto& vandelay_map = *mesh->exterior_face_map(false);
 
             // loop over indices
-            AmanziMesh::Entity_ID_List cells;
+            Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells;
             for (int i = 0 ; i < id_list.extent(0); ++i) {
-              mesh->face_get_cells(id_list(i), AmanziMesh::Parallel_type::ALL, &cells);
-              if (cells.size() == 1) {
+              mesh->face_get_cells(id_list(i), AmanziMesh::Parallel_type::ALL, cells);
+              if (cells.extent(0) == 1) {
                 AmanziMesh::Entity_ID bf = vandelay_map.getLocalElement(face_map.getGlobalElement(id_list(i)));
                 AMANZI_ASSERT(bf >= 0);
 
