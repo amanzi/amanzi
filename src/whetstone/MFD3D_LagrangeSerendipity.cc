@@ -51,9 +51,9 @@ MFD3D_LagrangeSerendipity::MFD3D_LagrangeSerendipity(
 int MFD3D_LagrangeSerendipity::H1consistency(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List nodes;
-  mesh_->cell_get_nodes(c, &nodes);
-  int nnodes = nodes.size();
+  Kokkos::View<Entity_ID*> nodes;
+  mesh_->cell_get_nodes(c, nodes);
+  int nnodes = nodes.extent(0);
 
   int nfaces = mesh_->cell_get_num_faces(c);
 
@@ -286,11 +286,10 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
 void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
     int c, const std::vector<Polynomial>& vf, DenseVector& vdof)
 {
-  Entity_ID_List nodes;
-  Kokkos::View<Entity_ID*> faces;
+  Kokkos::View<Entity_ID*> nodes, faces;
 
-  mesh_->cell_get_nodes(c, &nodes);
-  int nnodes = nodes.size();
+  mesh_->cell_get_nodes(c, nodes);
+  int nnodes = nodes.extent(0);
 
   mesh_->cell_get_faces(c, faces);
   int nfaces = faces.extent(0);
@@ -311,15 +310,19 @@ void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
   for (int n = 0; n < nfaces; ++n) {
     int f = faces(n);
 
-    Entity_ID_List face_nodes;
-    mesh_->face_get_nodes(f, &face_nodes);
-    int nfnodes = face_nodes.size();
+    Kokkos::View<Entity_ID*> face_nodes;
+    mesh_->face_get_nodes(f, face_nodes);
+    int nfnodes = face_nodes.extent(0);
 
     for (int j = 0; j < nfnodes; j++) {
-      int v = face_nodes[j];
+      int v = face_nodes(j);
       mesh_->node_get_coordinates(v, &xv);
-
-      int pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
+      int pos;
+      for(pos = 0 ; pos < nodes.extent(0); ++pos){
+        if(nodes(pos) == v){
+          break;
+        }
+      }
       vdof(pos) = vf[n].Value(xv);
     }
 

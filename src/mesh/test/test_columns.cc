@@ -1,7 +1,7 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Rao Garimella, others
@@ -52,7 +52,7 @@ TEST(MESH_COLUMNS)
     int aerr = 0;
     try {
       Amanzi::AmanziMesh::Preference prefs(factory.preference());
-      prefs.clear(); 
+      prefs.clear();
       prefs.push_back(frameworks[i]);
 
       factory.set_preference(prefs);
@@ -81,24 +81,24 @@ TEST(MESH_COLUMNS)
     double dz = 0.25;  // difference in height between cell centroids
                        // or between node points
 
-    // Identify cell above and cell below 
+    // Identify cell above and cell below
 
     for (int c = 0; c < ncells; c++) {
       Amanzi::AmanziGeometry::Point ccen = mesh->cell_centroid(c);
-      
+
       int expcellabove = -1, expcellbelow = -1;
       bool found_above = false, found_below = false;
 
       if (fabs(ccen[2] - dz/2.0) < 1.e-10) found_below = true;  // bottom layer
       if (fabs(ccen[2] - (1.0-dz/2.0)) < 1.e-10) found_above = true;  // top layer
 
-      std::vector<int> adjcells;
-      mesh->cell_get_node_adj_cells(c, Amanzi::AmanziMesh::Parallel_type::OWNED, &adjcells);
-      int nadjcells = adjcells.size();
+      Kokkos::View<int*> adjcells;
+      mesh->cell_get_node_adj_cells(c, Amanzi::AmanziMesh::Parallel_type::OWNED, adjcells);
+      int nadjcells = adjcells.extent(0);
       for (int k = 0; k < nadjcells && (!found_above || !found_below); k++) {
-        int c2 = adjcells[k];
+        int c2 = adjcells(k);
         if (c == c2) continue;
-        
+
         Amanzi::AmanziGeometry::Point ccen2 = mesh->cell_centroid(c2);
 
         if (fabs(ccen2[0]-ccen[0]) > 1.0e-10 ||
@@ -120,7 +120,7 @@ TEST(MESH_COLUMNS)
       CHECK_EQUAL(expcellbelow,mesh->cell_get_cell_below(c));
     }
 
-    
+
     int nnodes = mesh->num_entities(Amanzi::AmanziMesh::CELL,
                                     Amanzi::AmanziMesh::Parallel_type::OWNED);
 
@@ -138,24 +138,24 @@ TEST(MESH_COLUMNS)
 
       // Get connected cells of node, and check if one of their nodes
       // qualifies as the node above or node below
-      
-      std::vector<int> nodecells;
-      mesh->node_get_cells(n, Amanzi::AmanziMesh::Parallel_type::OWNED, &nodecells);
-      int nnodecells = nodecells.size();
-      
-      for (int k = 0; k < nnodecells && !found_above; k++) {
-        int c = nodecells[k];
 
-        std::vector<int> cnodes;
-        mesh->cell_get_nodes(c, &cnodes);
-        int ncnodes = cnodes.size();
+      Kokkos::View<int*> nodecells;
+      mesh->node_get_cells(n, Amanzi::AmanziMesh::Parallel_type::OWNED, nodecells);
+      int nnodecells = nodecells.extent(0);
+
+      for (int k = 0; k < nnodecells && !found_above; k++) {
+        int c = nodecells(k);
+
+        Kokkos::View<int*> cnodes;
+        mesh->cell_get_nodes(c, cnodes);
+        int ncnodes = cnodes.extent(0);
         for (int l = 0; l < ncnodes && !found_above; l++) {
-          int n2 = cnodes[l];
+          int n2 = cnodes(l);
           if (n == n2) continue;
-          
+
           Amanzi::AmanziGeometry::Point coord2;
           mesh->node_get_coordinates(n2, &coord2);
-          
+
           if (fabs(coord[0] - coord2[0]) > 1e-10 ||
               fabs(coord[1] - coord2[1]) > 1e-10) continue;
 
@@ -166,10 +166,10 @@ TEST(MESH_COLUMNS)
         }
       }
       CHECK(found_above);
-          
+
       CHECK_EQUAL(expnodeabove,mesh->node_get_node_above(n));
     }
-      
+
   } // for each framework i
 
 }

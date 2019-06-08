@@ -30,14 +30,13 @@ namespace WhetStone {
 int MFD3D_BernardiRaugel::H1consistency(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List nodes;
-  Kokkos::View<Entity_ID*> faces;
+  Kokkos::View<Entity_ID*> faces, nodes;
   Kokkos::View<int*> dirs;
 
   AmanziGeometry::Point xv(d_), tau(d_), v1(d_);
 
-  mesh_->cell_get_nodes(c, &nodes);
-  int nnodes = nodes.size();
+  mesh_->cell_get_nodes(c, nodes);
+  int nnodes = nodes.extent(0);
 
   mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
   int nfaces = faces.extent(0);
@@ -83,8 +82,8 @@ int MFD3D_BernardiRaugel::H1consistency(
     for (int n = 0; n < nnodes; n++) {
       int m = (n + 1) % nnodes;
 
-      mesh_->node_get_coordinates(nodes[n], &xv);
-      mesh_->node_get_coordinates(nodes[m], &v1);
+      mesh_->node_get_coordinates(nodes(n), &xv);
+      mesh_->node_get_coordinates(nodes(m), &v1);
 
       tau = v1 - xv;
       double length = norm(tau);
@@ -142,7 +141,7 @@ int MFD3D_BernardiRaugel::H1consistency(
   N.PutScalar(0.0);
 
   for (int n = 0; n < nnodes; n++) {
-    int v = nodes[n];
+    int v = nodes(n);
     mesh_->node_get_coordinates(v, &xv);
     xv -= xm;
 
@@ -235,15 +234,14 @@ int MFD3D_BernardiRaugel::AdvectionMatrix(
 {
   AMANZI_ASSERT(d_ == 2);
 
-  Entity_ID_List nodes;
-  Kokkos::View<Entity_ID*> faces;
+  Kokkos::View<Entity_ID*> faces, nodes;
   Kokkos::View<int*> dirs;
 
   mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
   int nfaces = faces.extent(0);
 
-  mesh_->cell_get_nodes(c, &nodes);
-  int nnodes = nodes.size();
+  mesh_->cell_get_nodes(c, nodes);
+  int nnodes = nodes.extent(0);
 
   // calculate corner normals and weigths
   std::vector<double> w(nnodes, 0.0);
@@ -260,7 +258,7 @@ int MFD3D_BernardiRaugel::AdvectionMatrix(
     N[i] += normal * dirs(i) / 2.0;
     N[j] += normal * dirs(i) / 2.0;
 
-    int v = nodes[i];
+    int v = nodes(i);
     mesh_->node_get_coordinates(v, &xv);
     double tmp = ((xv - xc) * normal) * dirs(i) / 6.0;
     w[i] += tmp;
@@ -293,15 +291,14 @@ int MFD3D_BernardiRaugel::AdvectionMatrix(
 ****************************************************************** */
 int MFD3D_BernardiRaugel::DivergenceMatrix(int c, DenseMatrix& A)
 {
-  Entity_ID_List nodes;
-  Kokkos::View<Entity_ID*> faces;
+  Kokkos::View<Entity_ID*> faces, nodes;
   Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_nodes(c, &nodes);
+  mesh_->cell_get_nodes(c, nodes);
   mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
   int nfaces = faces.extent(0);
 
-  int n1 = d_ * nodes.size();
+  int n1 = d_ * nodes.extent(0);
   A.Reshape(1, n1 + nfaces);
 
   for (int n = 0; n < n1; ++n) A(0, n) = 0.0;

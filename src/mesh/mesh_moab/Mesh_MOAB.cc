@@ -1451,7 +1451,7 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
                                           const Entity_kind kind,
                                           const Parallel_type ptype,
                                           Kokkos::View<Entity_ID*>& *setents,
-                                          std::vector<double> *vofs) const
+                                          Kokkos::View<double*> *vofs) const
 {
   int idx, i, lid, one=1;
   bool found(false);

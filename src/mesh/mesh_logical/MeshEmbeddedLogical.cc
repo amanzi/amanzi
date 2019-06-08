@@ -656,7 +656,7 @@ MeshEmbeddedLogical::get_set_entities_and_vofs(
     const Entity_kind kind,
     const Parallel_type ptype,
     Kokkos::View<Entity_ID*> &entids,
-    std::vector<double> *vofs) const {
+    Kokkos::View<double*> *vofs) const {
   get_set_entities(geometric_model_->FindRegion(setname)->id(), kind, ptype, entids);
   return;
 }

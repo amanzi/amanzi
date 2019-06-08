@@ -8,7 +8,7 @@
 #include "Epetra_SerialComm.h"
 
 TEST(FACE_ADJ_CELLS) {
-  
+
   using namespace std;
   auto comm = Amanzi::getDefaultComm();
   const unsigned int exp_ncell = 27, exp_nface = 108, exp_nnode = 64;
@@ -24,7 +24,7 @@ TEST(FACE_ADJ_CELLS) {
 				   {  3,  7, 15, -1, -1, -1},
 				   {  4,  8,  6, 16, -1, -1},
 				   {  5,  7, 17, -1, -1, -1},
-				   
+
 				   { 10, 12,  0, 18, -1, -1},
 				   { 11, 13,  9,  1, 19, -1},
 				   { 14, 10,  2, 20, -1, -1},
@@ -34,7 +34,7 @@ TEST(FACE_ADJ_CELLS) {
 				   { 12, 16,  6, 24, -1, -1},
 				   { 13, 17, 15,  7, 25, -1},
 					    { 14, 16,  8, 26, -1, -1},
-				   
+
 				   { 19, 21,  9, -1, -1, -1},
 				   { 20, 22, 18, 10, -1, -1},
 				   { 23, 19, 11, -1, -1, -1},
@@ -46,7 +46,7 @@ TEST(FACE_ADJ_CELLS) {
 				   { 23, 25, 17, -1, -1, -1}};
 
 
-  Amanzi::AmanziMesh::Mesh_simple Mm(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3, comm); 
+  Amanzi::AmanziMesh::Mesh_simple Mm(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3, comm);
 
   CHECK_EQUAL(exp_ncell,Mm.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED));
   CHECK_EQUAL(exp_nface,Mm.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::OWNED));
@@ -55,16 +55,15 @@ TEST(FACE_ADJ_CELLS) {
 
   for (int i = 0; i < exp_ncell; i++)
     {
-      Amanzi::AmanziMesh::Entity_ID_List adjcells;
+      Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> adjcells;
 
-      Mm.cell_get_face_adj_cells(i, Amanzi::AmanziMesh::Parallel_type::OWNED,&adjcells);
+      Mm.cell_get_face_adj_cells(i, Amanzi::AmanziMesh::Parallel_type::OWNED,adjcells);
 
-      unsigned int nadj = adjcells.size();
+      unsigned int nadj = adjcells.extent(0);
       CHECK_EQUAL(exp_nadj[i],nadj);
-      
+
       for (int j = 0; j < nadj; j++)
-	CHECK_EQUAL(exp_adjcells[i][j],adjcells[j]);
+	       CHECK_EQUAL(exp_adjcells[i][j],adjcells(j));
     }
 
 }
-

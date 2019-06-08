@@ -39,8 +39,7 @@ double NumericalIntegration::IntegrateFunctionsTriangulatedCell(
 {
   double integral(0.0);
 
-  Kokkos::View<AmanziMesh::Entity_ID*> faces;
-  AmanziMesh::Entity_ID_List nodes;
+  Kokkos::View<AmanziMesh::Entity_ID*> faces, nodes;
   std::vector<AmanziGeometry::Point> xy(d_ + 1);
 
   mesh_->cell_get_faces(c, faces);
@@ -50,22 +49,22 @@ double NumericalIntegration::IntegrateFunctionsTriangulatedCell(
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces(n);
-    mesh_->face_get_nodes(f, &nodes);
-    int nnodes = nodes.size();
+    mesh_->face_get_nodes(f, nodes);
+    int nnodes = nodes.extent(0);
 
     if (d_ == 3) {
       xy[1] = mesh_->face_centroid(f);
 
       for (int k = 0; k < nnodes; ++k) {
         int l = (k + 1) % nnodes;
-        mesh_->node_get_coordinates(nodes[k], &(xy[2]));
-        mesh_->node_get_coordinates(nodes[l], &(xy[3]));
+        mesh_->node_get_coordinates(nodes(k), &(xy[2]));
+        mesh_->node_get_coordinates(nodes(l), &(xy[3]));
 
         integral += IntegrateFunctionsTetrahedron_(xy, funcs, order);
       }
     } else if (d_ == 2) {
-      mesh_->node_get_coordinates(nodes[0], &(xy[1]));
-      mesh_->node_get_coordinates(nodes[1], &(xy[2]));
+      mesh_->node_get_coordinates(nodes(0), &(xy[1]));
+      mesh_->node_get_coordinates(nodes(1), &(xy[2]));
 
       integral += IntegrateFunctionsTriangle_(xy, funcs, order);
     }
@@ -83,29 +82,28 @@ double NumericalIntegration::IntegrateFunctionsTriangulatedFace(
 {
   double integral(0.0);
   AmanziGeometry::Point x1(d_), x2(d_);
-  AmanziMesh::Entity_ID_List nodes;
-  Kokkos::View<AmanziMesh::Entity_ID*> faces;
+  Kokkos::View<AmanziMesh::Entity_ID*> faces, nodes;
 
   if (d_ == 3) {
     std::vector<AmanziGeometry::Point> xy(d_ + 1);
 
-    mesh_->face_get_nodes(f, &nodes);
-    int nnodes = nodes.size();
+    mesh_->face_get_nodes(f, nodes);
+    int nnodes = nodes.extent(0);
 
     xy[0] = mesh_->face_centroid(f);
 
     for (int k = 0; k < nnodes; ++k) {
       int l = (k + 1) % nnodes;
-      mesh_->node_get_coordinates(nodes[k], &(xy[1]));
-      mesh_->node_get_coordinates(nodes[l], &(xy[2]));
+      mesh_->node_get_coordinates(nodes(k), &(xy[1]));
+      mesh_->node_get_coordinates(nodes(l), &(xy[2]));
 
       integral += IntegrateFunctionsTriangle_(xy, funcs, order);
     }
   } else if (d_ == 2) {
-    mesh_->face_get_nodes(f, &nodes);
+    mesh_->face_get_nodes(f, nodes);
 
-    mesh_->node_get_coordinates(nodes[0], &x1);
-    mesh_->node_get_coordinates(nodes[1], &x2);
+    mesh_->node_get_coordinates(nodes(0), &x1);
+    mesh_->node_get_coordinates(nodes(1), &x2);
 
     integral += IntegrateFunctionsEdge(x1, x2, funcs, order);
   }
@@ -219,11 +217,11 @@ double NumericalIntegration::IntegratePolynomialsFace(
   AmanziGeometry::Point enormal(d_), x1(d_), x2(d_);
 
   if (d_ == 2) {
-    Entity_ID_List nodes;
-    mesh_->face_get_nodes(f, &nodes);
+    Kokkos::View<Entity_ID*> nodes;
+    mesh_->face_get_nodes(f, nodes);
 
-    mesh_->node_get_coordinates(nodes[0], &x1);
-    mesh_->node_get_coordinates(nodes[1], &x2);
+    mesh_->node_get_coordinates(nodes(0), &x1);
+    mesh_->node_get_coordinates(nodes(1), &x2);
     return IntegratePolynomialsEdge(x1, x2, polys);
   }
 
@@ -440,8 +438,7 @@ void NumericalIntegration::IntegrateMonomialsCell(int c, int k, Polynomial& inte
     integrals(nk + i) = 0.0;
   }
 
-  Entity_ID_List nodes;
-  Kokkos::View<Entity_ID*> faces;
+  Kokkos::View<Entity_ID*> faces, nodes;
   Kokkos::View<int*> dirs;
 
   mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
@@ -459,11 +456,11 @@ void NumericalIntegration::IntegrateMonomialsCell(int c, int k, Polynomial& inte
       tmp /= mesh_->face_area(f);
       IntegrateMonomialsFace_(c, f, tmp, k, integrals);
     } else if (d_ == 2) {
-      mesh_->face_get_nodes(f, &nodes);
+      mesh_->face_get_nodes(f, nodes);
 
       AmanziGeometry::Point x1(d_), x2(d_);
-      mesh_->node_get_coordinates(nodes[0], &x1);
-      mesh_->node_get_coordinates(nodes[1], &x2);
+      mesh_->node_get_coordinates(nodes(0), &x1);
+      mesh_->node_get_coordinates(nodes(1), &x2);
 
       x1 -= xc;  // simple change of origin
       x2 -= xc;
@@ -582,12 +579,12 @@ double NumericalIntegration::PolynomialMaxValue(int f, const Polynomial& poly)
   double pmax;
   AmanziGeometry::Point x1(d_), x2(d_), xm(d_);
 
-  Entity_ID_List nodes;
-  mesh_->face_get_nodes(f, &nodes);
+  Kokkos::View<Entity_ID*> nodes;
+  mesh_->face_get_nodes(f, nodes);
 
   if (d_ == 2) {
-    mesh_->node_get_coordinates(nodes[0], &x1);
-    mesh_->node_get_coordinates(nodes[1], &x2);
+    mesh_->node_get_coordinates(nodes(0), &x1);
+    mesh_->node_get_coordinates(nodes(1), &x2);
 
     pmax = std::max(fabs(poly.Value(x1)), fabs(poly.Value(x2)));
     for (int n = 0; n <= m; ++n) {
@@ -596,8 +593,8 @@ double NumericalIntegration::PolynomialMaxValue(int f, const Polynomial& poly)
     }
   } else {
     pmax = -1.0e+99;
-    for (int i = 0; i < nodes.size(); ++i) {
-      mesh_->node_get_coordinates(nodes[i], &xm);
+    for (int i = 0; i < nodes.extent(0); ++i) {
+      mesh_->node_get_coordinates(nodes(i), &xm);
       pmax = std::max(pmax, fabs(poly.Value(xm)));
     }
   }

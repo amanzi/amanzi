@@ -2,9 +2,9 @@
 //! RegionBoxVolumeFractions: A rectangular region in space, defined by two corner points and normals to sides.
 
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Lipnikov Konstantin (lipnikov@lanl.gov)
@@ -13,9 +13,9 @@
 
 /*!
 
-List *region: box volume fraction* defines a region bounded by a box *not* 
-aligned with coordinate axes. 
-Boxes are allowed to be of zero thickness in only one direction in which case 
+List *region: box volume fraction* defines a region bounded by a box *not*
+aligned with coordinate axes.
+Boxes are allowed to be of zero thickness in only one direction in which case
 they are equivalent to rectangles on a plane or segments on a line.
 
 * `"corner coordinate`" ``[Array(double)]`` Location of one box corner.
@@ -63,7 +63,7 @@ class RegionBoxVolumeFractions : public Region {
   // and vector of normals (order is important).
   RegionBoxVolumeFractions(const std::string& name,
                            const int id,
-                           const Point& p0, 
+                           const Point& p0,
                            const Point& p1,
                            const std::vector<Point>& normals,
                            const LifeCycleType lifecycle=PERMANENT);
@@ -75,7 +75,7 @@ class RegionBoxVolumeFractions : public Region {
   // is well defined when the polytope and box have same dimensionality.
   //
   // Polyhedron with counter clockwise ordered faces (wrt normals)
-  double intersect(const std::vector<Point>& polytope, 
+  double intersect(const Kokkos::View<Point*>& polytope, 
                    const std::vector<std::vector<int> >& faces) const;
 
  protected:
@@ -90,9 +90,9 @@ class RegionBoxVolumeFractions : public Region {
 
 
 struct ClippedFace {
-  ClippedFace() { 
+  ClippedFace() {
     new_edge = std::make_pair(-1, -1);
-    edge_flag = 0; 
+    edge_flag = 0;
   }
 
   std::list<int> nodes;

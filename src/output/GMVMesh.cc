@@ -44,17 +44,17 @@ static inline void write_mesh_to_file_(const AmanziMesh::Mesh &mesh, std::string
   unsigned int *yh = new unsigned int[72];
 
   for (int i=0; i<num_cells; i++) {
-    AmanziMesh::Entity_ID_List cnodes;
-    mesh.cell_get_nodes(i, &cnodes);
+    Kokkos::View<AmanziMesh::Entity_ID*> cnodes;
+    mesh.cell_get_nodes(i, cnodes);
 
-    int nnodes = cnodes.size();
-    for (int j=0; j<nnodes; j++) xh[j] = cnodes[j] + 1;
+    int nnodes = cnodes.extent(0);
+    for (int j=0; j<nnodes; j++) xh[j] = cnodes(j) + 1;
 
     if (dim == 3 && dim_cell == 3) {
       if (nnodes == 8) {
         gmvwrite_cell_type((char*) "phex8", 8, xh);
       } else {
-        AmanziMesh::Entity_ID_List fnodes;
+        Kokkos::View<AmanziMesh::Entity_ID*> fnodes;
         Kokkos::View<AmanziMesh::Entity_ID*> cfaces;
         Kokkos::View<int*> fdirs;
 
@@ -62,9 +62,9 @@ static inline void write_mesh_to_file_(const AmanziMesh::Mesh &mesh, std::string
         int nfaces = cfaces.extent(0);
 
         for (int j=0, n=0; j<nfaces; j++) {
-          mesh.face_get_nodes(cfaces(j), &fnodes);
-          nverts[j] = fnodes.size();
-          for (int k=0; k<nverts[j]; k++) yh[n++] = fnodes[k] + 1;
+          mesh.face_get_nodes(cfaces(j), fnodes);
+          nverts[j] = fnodes.extent(0);
+          for (int k=0; k<nverts[j]; k++) yh[n++] = fnodes(k) + 1;
         }
         gmvwrite_general_cell_type((char*) "general", nverts, nfaces, yh);
       }

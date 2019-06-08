@@ -26,6 +26,8 @@
 
 TEST(MESH_GEOMETRY_PLANAR)
 {
+
+  std::cout<<"MESH_GEOMETRY_PLANAR TEST"<<std::endl;
   auto comm = Amanzi::getDefaultComm();
   const int nproc(comm->getSize());
   const int me(comm->getRank());
@@ -201,6 +203,7 @@ TEST(MESH_GEOMETRY_PLANAR)
     }
 
   } // for each framework i
+  std::cout<<"MESH_GEOMETRY_PLANAR TEST DONE"<<std::endl;
 
 }
 
@@ -392,6 +395,8 @@ TEST(MESH_GEOMETRY_SURFACE)
 
 TEST(MESH_GEOMETRY_SOLID)
 {
+
+  std::cout<<"MESH_GEOMETRY_SOLID TEST"<<std::endl;
 
   auto comm = Amanzi::getDefaultComm();
   const int nproc(comm->getSize());
@@ -660,5 +665,6 @@ TEST(MESH_GEOMETRY_SOLID)
     }
 
   } // for each framework i
+  std::cout<<"MESH_GEOMETRY_SOLID TEST DONE"<<std::endl;
 
 }

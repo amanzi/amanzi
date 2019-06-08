@@ -34,18 +34,18 @@ namespace WhetStone {
 ****************************************************************** */
 inline
 void PolygonCentroidWeights(
-    const AmanziMesh::Mesh& mesh, const AmanziMesh::Entity_ID_List& nodes,
+    const AmanziMesh::Mesh& mesh, const Kokkos::View<AmanziMesh::Entity_ID*>& nodes,
     double area, std::vector<double>& weights)
 {
   int d = mesh.space_dimension();
-  int nnodes = nodes.size();
+  int nnodes = nodes.extent(0);
 
   weights.assign(nnodes, 1.0 / (3 * nnodes));
   AmanziGeometry::Point p1(d), p2(d), p3(d), xg(d);
 
   // geometric center
   for (int i = 0; i < nnodes; ++i) {
-    mesh.node_get_coordinates(nodes[i], &p1);
+    mesh.node_get_coordinates(nodes(i), &p1);
     xg += p1;
   }
   xg /= nnodes;
@@ -53,8 +53,8 @@ void PolygonCentroidWeights(
   // corner volume contributions
   for (int i1 = 0; i1 < nnodes; ++i1) {
     int i2 = (i1 + 1) % nnodes;
-    mesh.node_get_coordinates(nodes[i1], &p1);
-    mesh.node_get_coordinates(nodes[i2], &p2);
+    mesh.node_get_coordinates(nodes(i1), &p1);
+    mesh.node_get_coordinates(nodes(i2), &p2);
 
     p3 = (p1 - xg)^(p2 - xg);
     double tmp = norm(p3) / (6 * area);
@@ -106,12 +106,12 @@ AmanziGeometry::Point cell_geometric_center(const AmanziMesh::Mesh& mesh, int c)
   int d = mesh.space_dimension();
   AmanziGeometry::Point v(d), xg(d);
 
-  AmanziMesh::Entity_ID_List nodes;
-  mesh.cell_get_nodes(c, &nodes);
-  int nnodes = nodes.size();
+  Kokkos::View<AmanziMesh::Entity_ID*> nodes;
+  mesh.cell_get_nodes(c, nodes);
+  int nnodes = nodes.extent(0);
 
   for (int i = 0; i < nnodes; ++i) {
-    mesh.node_get_coordinates(nodes[i], &v);
+    mesh.node_get_coordinates(nodes(i), &v);
     xg += v;
   }
   xg /= nnodes;

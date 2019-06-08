@@ -1,9 +1,9 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 //!  Region: a geometric or discrete subdomain (abstract)
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: William Perkins
@@ -21,7 +21,7 @@ domain will be a three-dimensional region bounded by a set of two-dimensional
 regions.  If the simulation domain is N-dimensional, the boundary conditions
 must be specified over a set of regions are (N-1)-dimensional.
 
-Amanzi automatically defines the special region labeled *All*, which is the 
+Amanzi automatically defines the special region labeled *All*, which is the
 entire simulation domain. Currently, the unstructured framework does
 not support the *All* region, but it is expected to do so in the
 near future.
@@ -67,7 +67,7 @@ Notes:
   nodes in the surface fall outside the domain, the elements they
   define are ignored.
 
-  Examples of surface files are given in the *Exodus II* file 
+  Examples of surface files are given in the *Exodus II* file
   format here.
 
 - Region names must NOT be repeated.
@@ -119,7 +119,7 @@ Example:
        <ParameterList name="FLUX PLANE">
          <ParameterList name="region: polygon">
            <Parameter name="number of points" type="int" value="5"/>
-           <Parameter name="points" type="Array(double)" value="{-0.5, -0.5, -0.5, 
+           <Parameter name="points" type="Array(double)" value="{-0.5, -0.5, -0.5,
                                                                   0.5, -0.5, -0.5,
                                                                   0.8, 0.0, 0.0,
                                                                   0.5,  0.5, 0.5,
@@ -170,7 +170,7 @@ class Region {
   void set_space_dimension(unsigned int dimension) {
     space_dimension_ = dimension;
   }
-  
+
   // Name of the region -- no setter (set by constructor)
   std::string name() const {
     return name_;
@@ -188,7 +188,7 @@ class Region {
   bool is_geometric() const {
     return geometric_;
   }
-  
+
   // Type of the region
   RegionType type() const {
     return type_;
@@ -208,14 +208,14 @@ class Region {
   // is defined when the object and Region have same dimensionality.
   //
   // -- counter clockwise ordered polygon does not require faces
-  double intersect(const std::vector<Point>& polytope) const
+  double intersect(const Kokkos::View<Point*>& polytope) const
   {
     std::vector<std::vector<int> > faces;
     return intersect(polytope, faces);
   }
 
   // Polyhedron with counter clockwise ordered faces (wrt normals)
-  virtual double intersect(const std::vector<Point>& polytope, 
+  virtual double intersect(const Kokkos::View<Point*>& polytope,
                            const std::vector<std::vector<int> >& faces) const{
     return -1.0;
   }
@@ -240,7 +240,7 @@ class Region {
  protected:
   // Lifecycle (Temporary or Permanent)
   LifeCycleType lifecycle_;
-  
+
   // Topological dimension of region (0, 1, 2, 3)
   unsigned int manifold_dimension_;
   unsigned int space_dimension_;
@@ -269,4 +269,3 @@ typedef std::vector<Teuchos::RCP<Region> > RegionVector;
 }  // namespace Amanzi
 
 #endif
-

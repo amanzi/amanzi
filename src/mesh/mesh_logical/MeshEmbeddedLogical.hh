@@ -272,7 +272,7 @@ class MeshEmbeddedLogical : public Mesh {
                                  const Entity_kind kind,
                                  const Parallel_type ptype,
                                  Kokkos::View<Entity_ID*> &entids,
-                                 std::vector<double> *vofs) const;
+                                 Kokkos::View<double*> *vofs) const;
 
   // Miscellaneous functions
   virtual

@@ -237,7 +237,7 @@ class Mesh_MOAB : public Mesh {
                                  const Entity_kind kind,
                                  const Parallel_type ptype,
                                  Kokkos::View<Entity_ID*> &entids,
-                                 std::vector<double> *vofs) const;
+                                 Kokkos::View<double*> *vofs) const;
 
   // Deform a mesh so that cell volumes conform as closely as possible
   // to target volumes without dropping below the minimum volumes.  If

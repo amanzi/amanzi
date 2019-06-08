@@ -42,18 +42,18 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
   FaceCoordinateSystem(normal, tau);
 
   // polynomial is converted from local to global coordinate system
-  AmanziMesh::Entity_ID_List nodes;
+  Kokkos::View<AmanziMesh::Entity_ID*> nodes;
   AmanziGeometry::Point x0, x1, y0, y1;
 
   const AmanziGeometry::Point& xf = mesh0_->face_centroid(f);
   AmanziGeometry::Point yf = mesh1_->face_centroid(f);
 
-  mesh0_->face_get_nodes(f, &nodes);
-  mesh0_->node_get_coordinates(nodes[0], &x0);
-  mesh0_->node_get_coordinates(nodes[1], &x1);
+  mesh0_->face_get_nodes(f, nodes);
+  mesh0_->node_get_coordinates(nodes(0), &x0);
+  mesh0_->node_get_coordinates(nodes(1), &x1);
 
-  mesh1_->node_get_coordinates(nodes[0], &y0);
-  mesh1_->node_get_coordinates(nodes[1], &y1);
+  mesh1_->node_get_coordinates(nodes(0), &y0);
+  mesh1_->node_get_coordinates(nodes(1), &y1);
 
   // velocity at points defining the polynomial
   y0 -= x0;
@@ -266,8 +266,7 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
 {
   int order = poly.order();
 
-  WhetStone::Entity_ID_List nodes;
-  Kokkos::View<WhetStone::Entity_ID*> faces;
+  Kokkos::View<WhetStone::Entity_ID*> faces, nodes;
 
   mesh0_->cell_get_faces(c, faces);
   int nfaces = faces.extent(0);
@@ -278,10 +277,10 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
   for (int i = 0; i < nfaces; ++i) {
     int f = faces(i);
     const AmanziGeometry::Point& xf = mesh1_->face_centroid(f);
-    mesh0_->face_get_nodes(f, &nodes);
+    mesh0_->face_get_nodes(f, nodes);
 
-    mesh0_->node_get_coordinates(nodes[0], &v0);
-    mesh0_->node_get_coordinates(nodes[1], &v1);
+    mesh0_->node_get_coordinates(nodes(0), &v0);
+    mesh0_->node_get_coordinates(nodes(1), &v1);
     double f0 = poly.Value(v0);
     double f1 = poly.Value(v1);
 
@@ -299,8 +298,8 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
       AMANZI_ASSERT(0);
     }
 
-    mesh1_->node_get_coordinates(nodes[0], &v0);
-    mesh1_->node_get_coordinates(nodes[1], &v1);
+    mesh1_->node_get_coordinates(nodes(0), &v0);
+    mesh1_->node_get_coordinates(nodes(1), &v1);
 
     std::vector<AmanziGeometry::Point> tau;
     tau.push_back(v1 - v0);

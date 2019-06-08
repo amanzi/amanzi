@@ -46,14 +46,13 @@ TEST(DIFFUSION_STOKES_2D) {
   Teuchos::ParameterList plist;
   MFD3D_BernardiRaugel mfd(plist, mesh);
 
-  AmanziMesh::Entity_ID_List nodes;
-  Kokkos::View<Entity_ID*> faces;
+  Kokkos::View<Entity_ID*> faces, nodes;
   Kokkos::View<int*> dirs;
 
   // extract single cell
   int cell(0);
-  mesh->cell_get_nodes(cell, &nodes);
-  int nnodes = nodes.size();
+  mesh->cell_get_nodes(cell, nodes);
+  int nnodes = nodes.extent(0);
 
   mesh->cell_get_faces_and_dirs(cell, faces, &dirs);
   int nfaces = faces.extent(0);
@@ -84,7 +83,7 @@ TEST(DIFFUSION_STOKES_2D) {
   ax.PutScalar(0.0);
   ay.PutScalar(0.0);
   for (int i = 0; i < nnodes; i++) {
-    int v = nodes[i];
+    int v = nodes(i);
     mesh->node_get_coordinates(v, &p);
     ax(2*i) = p[0];
     ay(2*i + 1) = p[1];
@@ -139,11 +138,10 @@ TEST(ADVECTION_NAVIER_STOKES_2D) {
   // extract single cell
   int cell(0);
   Kokkos::View<int*> dirs;
-  Kokkos::View<Entity_ID*> faces;
-  AmanziMesh::Entity_ID_List nodes;
+  Kokkos::View<Entity_ID*> faces, nodes;
 
-  mesh->cell_get_nodes(cell, &nodes);
-  int nnodes = nodes.size();
+  mesh->cell_get_nodes(cell, nodes);
+  int nnodes = nodes.extent(0);
 
   mesh->cell_get_faces_and_dirs(cell, faces, &dirs);
   int nfaces = faces.extent(0);

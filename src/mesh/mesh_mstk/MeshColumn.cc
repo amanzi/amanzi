@@ -45,10 +45,10 @@ MeshColumn::MeshColumn(const Teuchos::RCP<const Mesh>& parent_mesh,
 // only as much as possible without making the mesh invalid
 // The final positions of the nodes is returned in final_positions
 int
-MeshColumn::deform(const Entity_ID_List& nodeids,
+MeshColumn::deform(const Kokkos::View<Entity_ID*>& nodeids,
                    const AmanziGeometry::Point_List& new_positions,
                    const bool keep_valid,
-                   AmanziGeometry::Point_List *final_positions) {
+                   Kokkos::View<AmanziGeometry::Point*> &final_positions) {
   int ierr = extracted_->deform(nodeids, new_positions, keep_valid, final_positions);
 
   // recompute all geometric quantities
@@ -105,9 +105,9 @@ void MeshColumn::compute_special_node_coordinates_() {
   face_in_column_.resize(extracted_->num_entities(FACE, AmanziMesh::Parallel_type::ALL), -1);
 
   // How many nodes each "horizontal" face has in the column
-  Entity_ID_List face_nodes;
-  extracted_->face_get_nodes(column_faces_(0),&face_nodes);
-  nfnodes_ = face_nodes.size();
+  Kokkos::View<Entity_ID*> face_nodes;
+  extracted_->face_get_nodes(column_faces_(0),face_nodes);
+  nfnodes_ = face_nodes.extent(0);
 
   // Set up the new node coordinates This is done in two passes, which may be
   // unnecessary, but I'm not sure if face_centroid() would break if done in
@@ -123,9 +123,9 @@ void MeshColumn::compute_special_node_coordinates_() {
     face_in_column_[column_faces_(j)] = j;
 
     // calculate node coordinates
-    std::vector<AmanziGeometry::Point> face_coordinates;
-    extracted_->face_get_nodes(column_faces_(j), &face_nodes);
-    extracted_->face_get_coordinates(column_faces_(j), &face_coordinates);
+    Kokkos::View<AmanziGeometry::Point*> face_coordinates;
+    extracted_->face_get_nodes(column_faces_(j), face_nodes);
+    extracted_->face_get_coordinates(column_faces_(j), face_coordinates);
 
     AmanziGeometry::Point fcen = extracted_->face_centroid(column_faces_(j));
 
@@ -137,9 +137,9 @@ void MeshColumn::compute_special_node_coordinates_() {
 
       // remain coordinates are coordinates of the corresponding node on
       // the bottom face
-      for (int d=0; d!=space_dim_-1; ++d) coords[d] = face_coordinates[i][d];
+      for (int d=0; d!=space_dim_-1; ++d) coords[d] = face_coordinates(i)[d];
 
-      node_coordinates[face_nodes[i]] = coords;
+      node_coordinates[face_nodes(i)] = coords;
     }
   }
 

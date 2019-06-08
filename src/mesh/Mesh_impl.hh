@@ -117,6 +117,6 @@ Mesh::get_set_entities(const std::string setname,
                        const Parallel_type ptype,
                        Kokkos::View<Entity_ID*> &entids) const
 {
-  std::vector<double> vofs;
+  Kokkos::View<double*> vofs;
   get_set_entities_and_vofs(setname, kind, ptype, entids, &vofs);
 }

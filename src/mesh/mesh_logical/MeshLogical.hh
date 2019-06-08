@@ -301,7 +301,7 @@ class MeshLogical : public Mesh {
                                  const Entity_kind kind,
                                  const Parallel_type ptype,
                                  Kokkos::View<Entity_ID*> &entids,
-                                 std::vector<double> *vofs) const override;
+                                 Kokkos::View<double*> *vofs) const override;
 
 
   // Miscellaneous functions

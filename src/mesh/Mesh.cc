@@ -291,9 +291,9 @@ Mesh::cell_get_max_nodes() const
   unsigned int n(0);
   int ncells = num_entities(CELL, Parallel_type::OWNED);
   for (int c = 0; c < ncells; ++c) {
-    AmanziMesh::Entity_ID_List nodes;
-    cell_get_nodes(c, &nodes);
-    n = std::max(n, (unsigned int) nodes.size());
+    Kokkos::View<Entity_ID*> nodes;
+    cell_get_nodes(c, nodes);
+    n = std::max(n, (unsigned int) nodes.extent(0));
   }
   return n;
 }
@@ -353,16 +353,16 @@ Mesh::cell_get_faces_and_dirs(const Entity_ID cellid,
 void Mesh::cell_get_faces_and_bisectors(
     const Entity_ID cellid,
     Kokkos::View<Entity_ID*>& faceids,
-    std::vector<AmanziGeometry::Point> *bisectors,
+    Kokkos::View<AmanziGeometry::Point*> *bisectors,
     const bool ordered) const
 {
   cell_get_faces(cellid, faceids, ordered);
 
   AmanziGeometry::Point cc = cell_centroid(cellid);
   if (bisectors) {
-    bisectors->resize(faceids.extent(0));
+    Kokkos::resize(*bisectors,faceids.extent(0));
     for (int i=0; i!=faceids.extent(0); ++i) {
-      (*bisectors)[i] = face_centroid(faceids(i)) - cc;
+      (*bisectors)(i) = face_centroid(faceids(i)) - cc;
     }
   }
   return;
@@ -661,7 +661,7 @@ Mesh::compute_cell_geometry_(const Entity_ID cellid, double *volume,
     Kokkos::View<Entity_ID*> faces;
     std::vector<unsigned int> nfnodes;
     Kokkos::View<int*> fdirs;
-    std::vector<AmanziGeometry::Point> ccoords, cfcoords, fcoords;
+    Kokkos::View<AmanziGeometry::Point*> fcoords, ccoords,cfcoords;
 
     cell_get_faces_and_dirs(cellid,faces,&fdirs);
 
@@ -678,11 +678,11 @@ Mesh::compute_cell_geometry_(const Entity_ID cellid, double *volume,
       /* compute volume on the assumption that the top and bottom faces form
          a vertical columnar cell or in other words a polygonal prism */
 
-      face_get_coordinates(faces(0),&fcoords);
+      face_get_coordinates(faces(0),fcoords);
       AmanziGeometry::polygon_get_area_centroid_normal(fcoords,&farea,
               &fcentroid0,&normal);
 
-      face_get_coordinates(faces(1),&fcoords);
+      face_get_coordinates(faces(1),fcoords);
       AmanziGeometry::polygon_get_area_centroid_normal(fcoords,&farea,
               &fcentroid1,&normal);
 
@@ -693,21 +693,26 @@ Mesh::compute_cell_geometry_(const Entity_ID cellid, double *volume,
     }
     else { /* general case */
 
+      size_t cfcoords_size = 0;
       for (int j = 0; j < nf; j++) {
-        face_get_coordinates(faces(j),&fcoords);
-        nfnodes[j] = fcoords.size();
+        face_get_coordinates(faces(j),fcoords);
+        nfnodes[j] = fcoords.extent(0);
 
         if (fdirs(j) == 1) {
-          for (int k = 0; k < nfnodes[j]; k++)
-            cfcoords.push_back(fcoords[k]);
+          for (int k = 0; k < nfnodes[j]; k++){
+            Kokkos::resize(cfcoords,cfcoords.extent(0)+1);
+            cfcoords(cfcoords_size++) = fcoords(k);
+          }
         }
         else {
-          for (int k = nfnodes[j]-1; k >=0; k--)
-            cfcoords.push_back(fcoords[k]);
+          for (int k = nfnodes[j]-1; k >=0; k--){
+            Kokkos::resize(cfcoords,cfcoords.extent(0)+1);
+            cfcoords(cfcoords_size++) = fcoords(k);
+          }
         }
       }
 
-      cell_get_coordinates(cellid,&ccoords);
+      cell_get_coordinates(cellid,ccoords);
 
       AmanziGeometry::polyhed_get_vol_centroid(ccoords,nf,nfnodes,
                                                cfcoords,volume,
@@ -716,8 +721,8 @@ Mesh::compute_cell_geometry_(const Entity_ID cellid, double *volume,
     return 1;
   }
   else if (manifold_dim_ == 2) {
-    std::vector<AmanziGeometry::Point> ccoords;
-    cell_get_coordinates(cellid,&ccoords);
+    Kokkos::View<AmanziGeometry::Point*> ccoords;
+    cell_get_coordinates(cellid,ccoords);
 
     AmanziGeometry::Point normal(space_dim_);
 
@@ -735,13 +740,13 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
                              AmanziGeometry::Point *centroid,
                              Kokkos::View<AmanziGeometry::Point*>& normals) const
 {
-  AmanziGeometry::Point_List fcoords;
+  Kokkos::View<AmanziGeometry::Point*> fcoords;
   //normals->clear();
 
   if (manifold_dim_ == 3) {
     // 3D Elements with possibly curved faces
 
-    face_get_coordinates(faceid,&fcoords);
+    face_get_coordinates(faceid,fcoords);
 
     AmanziGeometry::Point normal(3);
     AmanziGeometry::polygon_get_area_centroid_normal(fcoords,area,centroid,&normal);
@@ -777,12 +782,12 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
   }
   else if (manifold_dim_ == 2) {
     if (space_dim_ == 2) {   // 2D mesh
-      face_get_coordinates(faceid,&fcoords);
+      face_get_coordinates(faceid,fcoords);
 
-      AmanziGeometry::Point evec = fcoords[1]-fcoords[0];
+      AmanziGeometry::Point evec = fcoords(1)-fcoords(0);
       *area = sqrt(evec*evec);
 
-      *centroid = 0.5*(fcoords[0]+fcoords[1]);
+      *centroid = 0.5*(fcoords(0)+fcoords(1));
 
       AmanziGeometry::Point normal(evec[1],-evec[0]);
 
@@ -822,12 +827,12 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
       // have to compute an outward normal to the edge with respect to
       // each face
 
-      face_get_coordinates(faceid,&fcoords);
+      face_get_coordinates(faceid,fcoords);
 
-      AmanziGeometry::Point evec = fcoords[1]-fcoords[0];
+      AmanziGeometry::Point evec = fcoords(1)-fcoords(0);
       *area = sqrt(evec*evec);
 
-      *centroid = 0.5*(fcoords[0]+fcoords[1]);
+      *centroid = 0.5*(fcoords(0)+fcoords(1));
 
       Kokkos::View<Entity_ID*> cellids;
       face_get_cells(faceid, Parallel_type::ALL, cellids);
@@ -852,7 +857,7 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
 
         AMANZI_ASSERT(found);
 
-        AmanziGeometry::Point cvec = fcoords[0]-cell_centroids_(cellids(i));
+        AmanziGeometry::Point cvec = fcoords(0)-cell_centroids_(cellids(i));
         AmanziGeometry::Point trinormal = cvec^evec;
 
         AmanziGeometry::Point normal = evec^trinormal;
@@ -1269,7 +1274,7 @@ Mesh::valid_set_name(std::string name, Entity_kind kind) const
 bool
 Mesh::point_in_cell(const AmanziGeometry::Point &p, const Entity_ID cellid) const
 {
-  std::vector<AmanziGeometry::Point> ccoords;
+  Kokkos::View<AmanziGeometry::Point*> ccoords;
 
   if (manifold_dim_ == 3) {
     // 3D Elements with possibly curved faces
@@ -1280,36 +1285,39 @@ Mesh::point_in_cell(const AmanziGeometry::Point &p, const Entity_ID cellid) cons
     Kokkos::View<Entity_ID*> faces;
     std::vector<unsigned int> nfnodes;
     Kokkos::View<int*> fdirs;
-    std::vector<AmanziGeometry::Point> cfcoords;
+    Kokkos::View<AmanziGeometry::Point*> cfcoords;
 
     cell_get_faces_and_dirs(cellid,faces,&fdirs);
 
     nf = faces.extent(0);
     nfnodes.resize(nf);
 
+    size_t cfcoords_size = 0;
     for (int j = 0; j < nf; j++) {
-      std::vector<AmanziGeometry::Point> fcoords;
-
-      face_get_coordinates(faces(j),&fcoords);
-      nfnodes[j] = fcoords.size();
-
+      Kokkos::View<AmanziGeometry::Point*> fcoords;
+      face_get_coordinates(faces(j),fcoords);
+      nfnodes[j] = fcoords.extent(0);
       if (fdirs(j) == 1) {
-        for (int k = 0; k < nfnodes[j]; k++)
-          cfcoords.push_back(fcoords[k]);
+        for (int k = 0; k < nfnodes[j]; k++){
+          Kokkos::resize(cfcoords,cfcoords.extent(0)+1);
+          cfcoords(cfcoords_size++) = fcoords(k);
+        }
       }
       else {
-        for (int k = nfnodes[j]-1; k >=0; k--)
-          cfcoords.push_back(fcoords[k]);
+        for (int k = nfnodes[j]-1; k >=0; k--){
+          Kokkos::resize(cfcoords,cfcoords.extent(0)+1);
+          cfcoords(cfcoords_size++) = fcoords(k);
+        }
       }
     }
 
-    cell_get_coordinates(cellid,&ccoords);
+    cell_get_coordinates(cellid,ccoords);
 
     return AmanziGeometry::point_in_polyhed(p,ccoords,nf,nfnodes,cfcoords);
 
   }
   else if (manifold_dim_ == 2) {
-    cell_get_coordinates(cellid,&ccoords);
+    cell_get_coordinates(cellid,ccoords);
     return AmanziGeometry::point_in_polygon(p,ccoords);
   }
 
@@ -1366,13 +1374,13 @@ Mesh::update_ghost_node_coordinates()
 // CAVEAT: this is not parallel, and so all deformations must be consistent
 // across ghost entities, and provided for ghost nodes.  User beware!
 int
-Mesh::deform(const Entity_ID_List& nodeids,
-             const AmanziGeometry::Point_List& new_positions) {
-  AMANZI_ASSERT(nodeids.size() == new_positions.size());
+Mesh::deform(const Kokkos::View<Entity_ID*>& nodeids,
+             const Kokkos::View<AmanziGeometry::Point*> &new_positions) {
+  AMANZI_ASSERT(nodeids.extent(0) == new_positions.extent(0));
 
-  int nn = nodeids.size();
+  int nn = nodeids.extent(0);
   for (int j=0; j!=nn; ++j) {
-    node_set_coordinates(nodeids[j], new_positions[j]);
+    node_set_coordinates(nodeids(j), new_positions(j));
   }
 
   // recompute all geometric quantities
@@ -1395,22 +1403,21 @@ Mesh::deform(const Entity_ID_List& nodeids,
 // CAVEAT: this is not parallel, and so all deformations must be consistent
 // across ghost entities, and provided for ghost nodes.  User beware!
 int
-Mesh::deform(const Entity_ID_List& nodeids,
+Mesh::deform(const Kokkos::View<Entity_ID*>& nodeids,
              const AmanziGeometry::Point_List& new_positions,
              const bool keep_valid,
-             AmanziGeometry::Point_List *final_positions)
+             Kokkos::View<AmanziGeometry::Point*> &final_positions)
 {
   int status = 1;
 
-  AMANZI_ASSERT(nodeids.size() == new_positions.size());
-  AMANZI_ASSERT(final_positions != NULL);
+  AMANZI_ASSERT(nodeids.extent(0) == new_positions.size());
 
   // Once we start moving nodes around, the precomputed/cached
   // geometric quantities are no longer valid. So any geometric calls
   // must use the "recompute=true" option until the end of this routine
   // where we once again call compute_geometric_quantities
-  int nn = nodeids.size();
-  final_positions->resize(nn);
+  int nn = nodeids.extent(0);
+  Kokkos::resize(final_positions,nn);
 
   bool done_outer = false;
   int iter = 0, maxiter = 5;
@@ -1419,16 +1426,16 @@ Mesh::deform(const Entity_ID_List& nodeids,
     double totdisp2 = 0.0;
 
     for (int j = 0; j < nn; j++) {
-      Entity_ID node = nodeids[j];
+      Entity_ID node = nodeids(j);
 
       AmanziGeometry::Point oldcoords, newcoords, dispvec;
-      Entity_ID_List cells;
+      Kokkos::View<Entity_ID*> cells;
 
       node_get_coordinates(node,&oldcoords);
       dispvec = new_positions[j]-oldcoords;
 
-      node_get_cells(node,Parallel_type::ALL,&cells);
-      int nc = cells.size();
+      node_get_cells(node,Parallel_type::ALL,cells);
+      int nc = cells.extent(0);
 
       double mult = 1.0;
       bool done = false;
@@ -1442,7 +1449,7 @@ Mesh::deform(const Entity_ID_List& nodeids,
         if (keep_valid) { // check if the cells remain valid
           allvalid = true;
           for (int k = 0; k < nc; k++)
-            if (cell_volume(cells[k],true) < 0.0) {
+            if (cell_volume(cells(k),true) < 0.0) {
               allvalid = false;
               break;
             }
@@ -1476,12 +1483,12 @@ Mesh::deform(const Entity_ID_List& nodeids,
 
 
   for (int j = 0; j < nn; j++) {
-    Entity_ID node = nodeids[j];
+    Entity_ID node = nodeids(j);
 
     AmanziGeometry::Point newcoords;
 
     node_get_coordinates(node,&newcoords);
-    (*final_positions)[j] = newcoords;
+    final_positions(j) = newcoords;
   }
 
   // recompute all geometric quantities
@@ -1755,15 +1762,16 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
 
     // record the node below for each of the top face nodes
     // start node of bottom face
-    Entity_ID_List botnodes, topnodes, sidenodes;
+    Entity_ID_List sidenodes;
+    Kokkos::View<Entity_ID*> topnodes, botnodes;
 
-    face_get_nodes(top_face,&topnodes);
-    Entity_ID topnode0 = topnodes[0];
+    face_get_nodes(top_face,topnodes);
+    Entity_ID topnode0 = topnodes(0);
 
     // nodes of the top face
-    face_get_nodes(bot_face,&botnodes);
+    face_get_nodes(bot_face,botnodes);
 
-    if (topnodes.size() != botnodes.size()) {
+    if (topnodes.extent(0) != botnodes.extent(0)) {
       std::cerr << "Top and bottom face of columnar cell have different number of nodes.\n";
       success = 0;
       break;
@@ -1772,14 +1780,14 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
     // match a node below to a node above
     bool found = false;
     int ind = -1;
-    int nfvtop = topnodes.size();
+    int nfvtop = topnodes.extent(0);
 
     AmanziGeometry::Point topnode0c;
     node_get_coordinates(topnode0, &topnode0c);
 
     for (int k = 0; k < nfvtop; k++) {
       AmanziGeometry::Point kc;
-      node_get_coordinates(botnodes[k], &kc);
+      node_get_coordinates(botnodes(k), &kc);
 
       double horiz_dist = 0.;
       for (int m=0; m!=space_dim_-1; ++m) {
@@ -1807,10 +1815,10 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
     int even_odd = even_odd_product >= 0. ? 1 : -1;
 
     for (int k = 0; k < nfvtop; k++) {
-      Entity_ID topnode = topnodes[k];
+      Entity_ID topnode = topnodes(k);
       int bot_i = (ind+even_odd*k)%nfvtop;
       if (bot_i < 0) bot_i += nfvtop;
-      Entity_ID botnode = botnodes[bot_i];
+      Entity_ID botnode = botnodes(bot_i);
       node_nodeabove_(botnode) = topnode;
     }
 

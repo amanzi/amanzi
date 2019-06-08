@@ -200,8 +200,7 @@ int DG_Modal::MassMatrixPoly_(int c, const Polynomial& K, DenseMatrix& M)
 int DG_Modal::MassMatrixPiecewisePoly_(
     int c, const VectorPolynomial& K, DenseMatrix& M)
 {
-  AmanziMesh::Entity_ID_List nodes;
-  Kokkos::View<AmanziMesh::Entity_ID*> faces;
+  Kokkos::View<AmanziMesh::Entity_ID*> faces, nodes;
   mesh_->cell_get_faces(c, faces);
   int nfaces = faces.extent(0);
 
@@ -242,9 +241,9 @@ int DG_Modal::MassMatrixPiecewisePoly_(
       // sum up local contributions
       for (auto n = 0; n < nfaces; ++n) {
         int f = faces(n);
-        mesh_->face_get_nodes(f, &nodes);
-        mesh_->node_get_coordinates(nodes[0], &(xy[1]));
-        mesh_->node_get_coordinates(nodes[1], &(xy[2]));
+        mesh_->face_get_nodes(f, nodes);
+        mesh_->node_get_coordinates(nodes(0), &(xy[1]));
+        mesh_->node_get_coordinates(nodes(1), &(xy[2]));
 
         polys[2] = &(K[n]);
 
@@ -397,8 +396,7 @@ int DG_Modal::AdvectionMatrixPoly_(
 int DG_Modal::AdvectionMatrixPiecewisePoly_(
     int c, const VectorPolynomial& u, DenseMatrix& A, bool grad_on_test)
 {
-  AmanziMesh::Entity_ID_List nodes;
-  Kokkos::View<Entity_ID*> faces;
+  Kokkos::View<Entity_ID*> faces, nodes;
   mesh_->cell_get_faces(c, faces);
   int nfaces = faces.extent(0);
 
@@ -444,9 +442,9 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
       // sum-up integrals to the advection matrix
       for (int n = 0; n < nfaces; ++n) {
         int f = faces(n);
-        mesh_->face_get_nodes(f, &nodes);
-        mesh_->node_get_coordinates(nodes[0], &(xy[1]));
-        mesh_->node_get_coordinates(nodes[1], &(xy[2]));
+        mesh_->face_get_nodes(f, nodes);
+        mesh_->node_get_coordinates(nodes(0), &(xy[1]));
+        mesh_->node_get_coordinates(nodes(1), &(xy[2]));
 
         Polynomial tmp(d_, 0);
         tmp.set_origin(xc);

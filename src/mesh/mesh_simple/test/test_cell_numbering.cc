@@ -52,19 +52,23 @@ TEST(NUMBERING) {
   }
 
   // Write face-node connectivity
-  Amanzi::AmanziMesh::Entity_ID_List fnode;
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> fnode;
   for (Amanzi::AmanziMesh::Entity_ID j = 0; j < 6; ++j) {
-    mesh->face_get_nodes(j, &fnode);
-    CHECK_EQUAL(4,fnode.size());
-    CHECK_ARRAY_EQUAL(expfacenodes[j],fnode,fnode.size());
+    mesh->face_get_nodes(j, fnode);
+    CHECK_EQUAL(4,fnode.extent(0));
+    for(int k = 0 ; k < fnode.extent(0); ++k){
+      CHECK_EQUAL(expfacenodes[j][k],fnode(k));
+    }
   }
 
   // Write cell-node connectivity
-  Amanzi::AmanziMesh::Entity_ID_List cnode;
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cnode;
   for (Amanzi::AmanziMesh::Entity_ID j = 0; j < 1; ++j) {
-    mesh->cell_get_nodes(j, &cnode);
-    CHECK_EQUAL(8,cnode.size());
-    CHECK_ARRAY_EQUAL(expcellnodes,cnode,cnode.size());
+    mesh->cell_get_nodes(j, cnode);
+    CHECK_EQUAL(8,cnode.extent(0));
+    for(int k = 0 ; k < cnode.extent(0); ++k){
+      CHECK_EQUAL(expcellnodes[k],cnode(k));
+    }
   }
 
   // Write cell face-node connectivity

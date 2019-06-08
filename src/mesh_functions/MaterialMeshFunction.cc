@@ -37,19 +37,19 @@ void MaterialMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec)
     // Get the ids from the mesh by region name and entity kind.
     if (mesh_->valid_set_name(*region, kind)) {
       Kokkos::View<AmanziMesh::Entity_ID*> ids;
-      std::vector<double> vofs;
+      Kokkos::View<double*> vofs;
       mesh_->get_set_entities_and_vofs(*region, kind, AmanziMesh::Parallel_type::ALL, ids, &vofs);
 
       // populating default volume fractions (move this to mesh framework?)
-      if (vofs.size() == 0) vofs.resize(ids.extent(0), 1.0);
+      if (vofs.extent(0) == 0) Kokkos::resize(vofs,ids.extent(0), 1.0);
 
       for (int i = 0; i < ids.extent(0); ++i) {
         AmanziMesh::Entity_ID id = ids(i);
         it = mat_mesh->find(id);
         if (it == mat_mesh->end()) {
-          (*mat_mesh)[id] = vofs[i];
+          (*mat_mesh)[id] = vofs(i);
         } else {
-          it->second = std::max(it->second + vofs[i], 1.0);
+          it->second = std::max(it->second + vofs(i), 1.0);
         }
       }
     } else {

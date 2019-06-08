@@ -554,8 +554,8 @@ TEST(DARCY_STIFFNESS_2D_NODE) {
     for (int i=0; i<nnodes; i++) CHECK(A(i, i) > 0.0);
 
     // verify exact integration property
-    AmanziMesh::Entity_ID_List nodes;
-    mesh->cell_get_nodes(cell, &nodes);
+    Kokkos::View<AmanziMesh::Entity_ID*> nodes;
+    mesh->cell_get_nodes(cell, nodes);
 
     int d = mesh->space_dimension();
     Point p(d);
@@ -563,12 +563,12 @@ TEST(DARCY_STIFFNESS_2D_NODE) {
     double xi, yi, xj;
     double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell);
     for (int i = 0; i < nnodes; i++) {
-      int v = nodes[i];
+      int v = nodes(i);
       mesh->node_get_coordinates(v, &p);
       xi = p[0];
       yi = p[1];
       for (int j = 0; j < nnodes; j++) {
-        v = nodes[j];
+        v = nodes(j);
         mesh->node_get_coordinates(v, &p);
         xj = p[0];
         vxx += A(i, j) * xi * xj;
@@ -692,8 +692,8 @@ TEST(DARCY_STIFFNESS_3D) {
   for (int i=0; i<nnodes; i++) CHECK(A(i, i) > 0.0);
 
   // verify exact integration property
-  AmanziMesh::Entity_ID_List nodes;
-  mesh->cell_get_nodes(cell, &nodes);
+  Kokkos::View<AmanziMesh::Entity_ID*> nodes;
+  mesh->cell_get_nodes(cell, nodes);
 
   int d = mesh->space_dimension();
   Point p(d);
@@ -701,12 +701,12 @@ TEST(DARCY_STIFFNESS_3D) {
   double xi, yi, xj;
   double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell);
   for (int i = 0; i < nnodes; i++) {
-    int v = nodes[i];
+    int v = nodes(i);
     mesh->node_get_coordinates(v, &p);
     xi = p[0];
     yi = p[1];
     for (int j = 0; j < nnodes; j++) {
-      v = nodes[j];
+      v = nodes(j);
       mesh->node_get_coordinates(v, &p);
       xj = p[0];
       vxx += A(i, j) * xi * xj;
@@ -796,16 +796,16 @@ TEST(RECOVER_GRADIENT_NODAL) {
   MFD3D_Lagrange mfd(plist, mesh);
 
   // create pressure solution
-  AmanziMesh::Entity_ID_List nodes;
+  Kokkos::View<AmanziMesh::Entity_ID*> nodes;
   int nnodes = 8, cell = 0;
-  mesh->cell_get_nodes(cell, &nodes);
+  mesh->cell_get_nodes(cell, nodes);
 
   Point slope(1.0, 2.0, 3.0);
   std::vector<Polynomial> solution(nnodes);
   Point xv(3);
 
   for (int n = 0; n < nnodes; n++) {
-    int v = nodes[n];
+    int v = nodes(n);
     mesh->node_get_coordinates(v, &xv);
     solution[n].Reshape(3, 0);
     solution[n](0) = slope * xv;

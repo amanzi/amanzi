@@ -26,19 +26,19 @@ TEST(BOX_REGION_2D)
   Teuchos::ParameterList reg_spec(xmlreader.getParameters());
 
   Teuchos::ParameterList::ConstIterator i = reg_spec.begin();
-  const std::string reg_name = reg_spec.name(i);     
+  const std::string reg_name = reg_spec.name(i);
   const unsigned int reg_id = 9959;                   // something arbitrary
 
   Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
-    
+
   // Create a rectangular region
   auto reg = Amanzi::AmanziGeometry::createRegion(reg_name, reg_id, reg_params, *ecomm);
-  
+
   // See if we retrieved the name and id correctly
   CHECK_EQUAL(reg->name(), reg_name);
   CHECK_EQUAL(reg->id(), reg_id);
   CHECK_EQUAL(reg_spec.isSublist(reg_spec.name(i)), true);
-  
+
   // Get the min-max bounds of the region from the XML specification
   Teuchos::Array<double> in_min_xyz, in_max_xyz;
 
@@ -46,13 +46,13 @@ TEST(BOX_REGION_2D)
   Teuchos::ParameterList box_params = reg_params.sublist(reg_params.name(j));
   in_min_xyz = box_params.get< Teuchos::Array<double> >("low coordinate");
   in_max_xyz = box_params.get< Teuchos::Array<double> >("high coordinate");
- 
+
   // Make sure that the region type is a BOX
   CHECK_EQUAL(reg->type(), Amanzi::AmanziGeometry::BOX);
 
   // Make sure that the region dimension is 2
   CHECK_EQUAL(reg->manifold_dimension(), 2);
-  
+
   // See if the min-max of the region were correctly retrieved
   Amanzi::AmanziGeometry::Point pmin, pmax;
   auto rect = Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionBox>(reg);
@@ -106,21 +106,21 @@ TEST(BOX_REGION_3D)
 
 
   Teuchos::ParameterList::ConstIterator i = reg_spec.begin();
-  const std::string reg_name = reg_spec.name(i);     
+  const std::string reg_name = reg_spec.name(i);
   const unsigned int reg_id = 9959;  // something arbitrary
-  
+
   Teuchos::ParameterList reg_params = reg_spec.sublist(reg_spec.name(i));
-  
+
   // Create a rectangular region
-  Teuchos::RCP<Amanzi::AmanziGeometry::Region> reg = 
+  Teuchos::RCP<Amanzi::AmanziGeometry::Region> reg =
     Amanzi::AmanziGeometry::createRegion(reg_spec.name(i), reg_id,
 					 reg_params, *ecomm);
-  
+
   // See if we retrieved the name and id correctly
   CHECK_EQUAL(reg->name(),reg_name);
   CHECK_EQUAL(reg->id(),reg_id);
-  CHECK_EQUAL(reg_spec.isSublist(reg_spec.name(i)),true);  
-  
+  CHECK_EQUAL(reg_spec.isSublist(reg_spec.name(i)),true);
+
   // Get the min-max bounds of the region from the XML specification
   Teuchos::Array<double> in_min_xyz, in_max_xyz;
 
@@ -128,13 +128,13 @@ TEST(BOX_REGION_3D)
   Teuchos::ParameterList box_params = reg_params.sublist(reg_params.name(j));
   in_min_xyz = box_params.get< Teuchos::Array<double> >("low coordinate");
   in_max_xyz = box_params.get< Teuchos::Array<double> >("high coordinate");
- 
+
   // Make sure that the region type is a BOX
   CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::BOX);
 
   // Make sure that the region dimension is 3
   CHECK_EQUAL(reg->manifold_dimension(),3);
-  
+
   // See if the min-max of the region were correctly retrieved
   Amanzi::AmanziGeometry::Point pmin, pmax;
   auto rect = Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionBox>(reg);
@@ -153,7 +153,7 @@ TEST(BOX_REGION_3D)
   CHECK_EQUAL(pmax.x(),in_max_xyz[0]);
   CHECK_EQUAL(pmax.y(),in_max_xyz[1]);
   CHECK_EQUAL(pmax.z(),in_max_xyz[2]);
- 
+
   // test the functionality of the region
   std::vector<Amanzi::AmanziGeometry::Point> pin;
   pin.push_back(Amanzi::AmanziGeometry::Point(2.,3.,5.));
@@ -177,7 +177,7 @@ TEST(BOX_REGION_3D)
        p!=pout.end(); ++p) {
     CHECK(!reg->inside(*p));
   }
-}  
+}
 
 
 TEST(BOXREGION_VOFS_2D_INTERSECTION)
@@ -227,15 +227,15 @@ TEST(BOXREGION_VOFS_2D_AREA)
 
   // create a rectangular region
   Teuchos::ParameterList::ConstIterator i = reg_spec.begin();
-  std::string reg_name = reg_spec.name(i);     
+  std::string reg_name = reg_spec.name(i);
   unsigned int reg_id = 9959;  // something arbitrary
   Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
-    
-  Teuchos::RCP<Amanzi::AmanziGeometry::Region> reg = 
+
+  Teuchos::RCP<Amanzi::AmanziGeometry::Region> reg =
     Amanzi::AmanziGeometry::createRegion(reg_name, reg_id, reg_params, *ecomm);
-  
+
   Amanzi::AmanziGeometry::Point v1(2), v2(2), v3(2), vv(2);
-  std::vector<Amanzi::AmanziGeometry::Point> polygon;
+  Kokkos::View<Amanzi::AmanziGeometry::Point*> polygon;
 
   v1.set(0.0, 0.0);
   v2.set(1.0, 0.0);
@@ -245,10 +245,10 @@ TEST(BOXREGION_VOFS_2D_AREA)
   double area_exact[5] = {0.5, 0.46, 0.34, 0.16, 0.04};
   for (double d = 0.0; d <= 0.8; d += 0.2) {
     vv.set(d, d);
-    polygon.clear();
-    polygon.push_back(vv + v1);
-    polygon.push_back(vv + v2);
-    polygon.push_back(vv + v3);
+    Kokkos::resize(polygon,3);
+    polygon(0) = (vv + v1);
+    polygon(1) = (vv + v2);
+    polygon(2) = (vv + v3);
 
     double area = reg->intersect(polygon);
     CHECK_CLOSE(area_exact[n++], area, 1e-6);
@@ -333,25 +333,25 @@ TEST(BOXREGION_VOFS_3D_VOLUME)
 
   // create a rectangular region
   Teuchos::ParameterList::ConstIterator i = reg_spec.begin();
-  std::string reg_name = reg_spec.name(i);     
+  std::string reg_name = reg_spec.name(i);
   unsigned int reg_id = 9959;  // something arbitrary
   Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
-    
-  Teuchos::RCP<Amanzi::AmanziGeometry::Region> reg = 
+
+  Teuchos::RCP<Amanzi::AmanziGeometry::Region> reg =
     Amanzi::AmanziGeometry::createRegion(reg_name, reg_id, reg_params, *ecomm);
-  
-  std::vector<Point> xyz;
+
+  Kokkos::View<Point*> xyz;
   std::vector<std::vector<int> > faces(4);
 
   int n(0);
   double volume_exact[5] = {0.5, 0.46, 0.34, 0.16, 0.04};
   for (double d = 0.0; d <= 0.8; d += 0.2) {
     Point vv(d, d, d);
-    xyz.clear();
-    xyz.push_back(vv + Point(0.0, 0.0, 0.0));
-    xyz.push_back(vv + Point(1.0, 0.0, 0.0));
-    xyz.push_back(vv + Point(0.0, 1.0, 0.0));
-    xyz.push_back(vv + Point(0.0, 0.0, 1.0));
+    Kokkos::resize(xyz,4);
+    xyz(0) = (vv + Point(0.0, 0.0, 0.0));
+    xyz(1) = (vv + Point(1.0, 0.0, 0.0));
+    xyz(2) = (vv + Point(0.0, 1.0, 0.0));
+    xyz(3) = (vv + Point(0.0, 0.0, 1.0));
 
     for (int i = 0; i < 4; ++i) faces[i].clear();
     faces[0].push_back(0);
@@ -374,5 +374,3 @@ TEST(BOXREGION_VOFS_3D_VOLUME)
     std::cout << "volume=" << volume << std::endl;
   }
 }
-
-

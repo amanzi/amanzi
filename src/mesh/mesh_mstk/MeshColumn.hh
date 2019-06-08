@@ -151,7 +151,7 @@ class MeshColumn : public Mesh {
   // Get nodes of a cell
   virtual
   void cell_get_nodes(const Entity_ID cellid,
-                      Entity_ID_List *nodeids) const override {
+                      Kokkos::View<Entity_ID*> &nodeids) const override {
     extracted_->cell_get_nodes(cellid, nodeids);
   }
 
@@ -164,7 +164,7 @@ class MeshColumn : public Mesh {
   // In 2D, nfnodes is 2
   virtual
   void face_get_nodes(const Entity_ID faceid,
-                      Entity_ID_List *nodeids) const override {
+                      Kokkos::View<Entity_ID*> &nodeids) const override {
     extracted_->face_get_nodes(column_faces_[faceid], nodeids);
   }
 
@@ -187,7 +187,7 @@ class MeshColumn : public Mesh {
   virtual
   void node_get_cells(const Entity_ID nodeid,
                       const Parallel_type ptype,
-                      Entity_ID_List *cellids) const override {
+                      Kokkos::View<Entity_ID*> &cellids) const override {
     extracted_->node_get_cells(nodeid, ptype, cellids);
   }
 
@@ -198,7 +198,7 @@ class MeshColumn : public Mesh {
   virtual
   void node_get_faces(const Entity_ID nodeid,
                       const Parallel_type ptype,
-                      Entity_ID_List *faceids) const override {
+                      Kokkos::View<Entity_ID*> &faceids) const override {
     Errors::Message mesg("Not implemented");
     amanzi_throw(mesg);
   }
@@ -211,7 +211,7 @@ class MeshColumn : public Mesh {
   void node_get_cell_faces(const Entity_ID nodeid,
                            const Entity_ID cellid,
                            const Parallel_type ptype,
-                           Entity_ID_List *faceids) const override {
+                           Kokkos::View<Entity_ID*> &faceids) const override {
     Errors::Message mesg("Not implemented");
     amanzi_throw(mesg);
   }
@@ -222,7 +222,7 @@ class MeshColumn : public Mesh {
   virtual
   void edge_get_cells(const Entity_ID edgeid,
                       const Parallel_type ptype,
-                      Entity_ID_List *cellids) const override {
+                      Kokkos::View<Entity_ID*> &cellids) const override {
     Errors::Message mesg("Not implemented");
     amanzi_throw(mesg);
   }
@@ -241,7 +241,7 @@ class MeshColumn : public Mesh {
   virtual
   void cell_get_face_adj_cells(const Entity_ID cellid,
                                const Parallel_type ptype,
-                               Entity_ID_List *fadj_cellids) const override {
+                               Kokkos::View<Entity_ID*> &fadj_cellids) const override {
     extracted_->cell_get_face_adj_cells(cellid, ptype, fadj_cellids);
   }
 
@@ -252,7 +252,7 @@ class MeshColumn : public Mesh {
   virtual
   void cell_get_node_adj_cells(const Entity_ID cellid,
                                const Parallel_type ptype,
-                               Entity_ID_List *nadj_cellids) const override {
+                               Kokkos::View<Entity_ID*> &nadj_cellids) const override {
     extracted_->cell_get_node_adj_cells(cellid, ptype, nadj_cellids);
   }
 
@@ -274,7 +274,7 @@ class MeshColumn : public Mesh {
   // Number of nodes is the vector size divided by number of spatial dimensions
   virtual
   void face_get_coordinates(const Entity_ID faceid,
-                            std::vector<AmanziGeometry::Point> *fcoords) const override {
+                            Kokkos::View<AmanziGeometry::Point*> &fcoords) const override {
     extracted_->face_get_coordinates(column_faces_[faceid], fcoords);
   }
 
@@ -285,7 +285,7 @@ class MeshColumn : public Mesh {
   // Number of nodes is vector size divided by number of spatial dimensions
   virtual
   void cell_get_coordinates(const Entity_ID cellid,
-                            std::vector<AmanziGeometry::Point> *ccoords) const override {
+                            Kokkos::View<AmanziGeometry::Point*> &ccoords) const override {
     extracted_->cell_get_coordinates(cellid, ccoords);
   }
 
@@ -314,10 +314,10 @@ class MeshColumn : public Mesh {
   // only as much as possible without making the mesh invalid
   // The final positions of the nodes is returned in final_positions
   virtual
-  int deform(const Entity_ID_List& nodeids,
+  int deform(const Kokkos::View<Entity_ID*>& nodeids,
              const AmanziGeometry::Point_List& new_positions,
              const bool keep_valid,
-             AmanziGeometry::Point_List *final_positions) override;
+             Kokkos::View<AmanziGeometry::Point*> &final_positions) override;
 
   // Deform a mesh so that cell volumes conform as closely as possible
   // to target volumes without dropping below the minimum volumes.  If
@@ -383,7 +383,7 @@ class MeshColumn : public Mesh {
                                  const Entity_kind kind,
                                  const Parallel_type ptype,
                                  Kokkos::View<Entity_ID*> &entids,
-                                 std::vector<double> *vofs) const override {
+                                 Kokkos::View<double*> *vofs) const override {
     switch (kind) {
       case FACE: {
         Kokkos::View<Entity_ID*> faces;

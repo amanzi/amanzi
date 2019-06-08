@@ -56,12 +56,11 @@ MFD3D_Lagrange::MFD3D_Lagrange(const Teuchos::ParameterList& plist,
 int MFD3D_Lagrange::H1consistency2D_(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List nodes;
-  Kokkos::View<Entity_ID*> faces;
+  Kokkos::View<Entity_ID*> faces, nodes;
   Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_nodes(c, &nodes);
-  int nnodes = nodes.size();
+  mesh_->cell_get_nodes(c, nodes);
+  int nnodes = nodes.extent(0);
 
   mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
   int nfaces = faces.extent(0);
@@ -117,7 +116,7 @@ int MFD3D_Lagrange::H1consistency2D_(
 
     AmanziGeometry::Point xv(d_);
     for (int i = 0; i < nnodes; i++) {
-      int v = nodes[i];
+      int v = nodes(i);
       mesh_->node_get_coordinates(v, &xv);
       N(i, col) = cmono.Value(xv);
     }
@@ -135,14 +134,19 @@ int MFD3D_Lagrange::H1consistency2D_(
 
       AmanziGeometry::Point conormal = K * normal;
 
-      Entity_ID_List face_nodes;
-      mesh_->face_get_nodes(f, &face_nodes);
-      int nfnodes = face_nodes.size();
+      Kokkos::View<Entity_ID*> face_nodes;
+      mesh_->face_get_nodes(f, face_nodes);
+      int nfnodes = face_nodes.extent(0);
 
       if (order_ == 1 && col > 0) {
         for (int j = 0; j < nfnodes; j++) {
-          int v = face_nodes[j];
-          int pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
+          int v = face_nodes(j);
+          int pos = 0;
+          for(pos = 0; pos < nodes.extent(0); ++pos){
+            if(nodes(pos) == v){
+              break;
+            }
+          }
           R_(pos, col) += factor * conormal[col - 1] / 2;
         }
       } else if (col > 0) {
@@ -151,12 +155,20 @@ int MFD3D_Lagrange::H1consistency2D_(
 
         Polynomial tmp = grad * conormal;
 
-        v = face_nodes[0];
-        pos0 = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
+        v = face_nodes(0);
+        for(pos0 = 0; pos0 < nodes.extent(0); ++pos0){
+          if(nodes(pos0) == v){
+            break;
+          }
+        }
         mesh_->node_get_coordinates(v, &x0);
 
-        v = face_nodes[1];
-        pos1 = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
+        v = face_nodes(1);
+        for(pos1 = 0; pos1 < nodes.extent(0); ++pos1){
+          if(nodes(pos1) == v){
+            break;
+          }
+        }
         mesh_->node_get_coordinates(v, &x1);
 
         if (order_ == 2) {
@@ -266,13 +278,12 @@ int MFD3D_Lagrange::H1consistency2D_(
 int MFD3D_Lagrange::H1consistency3D_(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List nodes, fnodes;
-  Kokkos::View<Entity_ID*> faces, edges;
+  Kokkos::View<Entity_ID*> faces, edges, nodes, fnodes;
   std::vector<int> map;
   Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_nodes(c, &nodes);
-  int nnodes = nodes.size();
+  mesh_->cell_get_nodes(c, nodes);
+  int nnodes = nodes.extent(0);
 
   mesh_->cell_get_edges(c, edges);
   int nedges = edges.extent(0);
@@ -336,7 +347,7 @@ int MFD3D_Lagrange::H1consistency3D_(
 
     AmanziGeometry::Point xv(d_);
     for (int i = 0; i < nnodes; i++) {
-      int v = nodes[i];
+      int v = nodes(i);
       mesh_->node_get_coordinates(v, &xv);
       N(i, col) = cmono.Value(xv);
     }
@@ -517,11 +528,10 @@ void MFD3D_Lagrange::ProjectorCell_(
 {
   AMANZI_ASSERT(d_ == 2);
 
-  Entity_ID_List nodes;
-  Kokkos::View<Entity_ID*> faces;
+  Kokkos::View<Entity_ID*> faces, nodes;
 
-  mesh_->cell_get_nodes(c, &nodes);
-  int nnodes = nodes.size();
+  mesh_->cell_get_nodes(c, nodes);
+  int nnodes = nodes.extent(0);
 
   mesh_->cell_get_faces(c, faces);
   int nfaces = faces.extent(0);
@@ -566,15 +576,20 @@ void MFD3D_Lagrange::ProjectorCell_(
   for (int n = 0; n < nfaces; ++n) {
     int f = faces(n);
 
-    Entity_ID_List face_nodes;
-    mesh_->face_get_nodes(f, &face_nodes);
-    int nfnodes = face_nodes.size();
+    Kokkos::View<Entity_ID*> face_nodes;
+    mesh_->face_get_nodes(f, face_nodes);
+    int nfnodes = face_nodes.extent(0);
 
     for (int j = 0; j < nfnodes; j++) {
-      int v = face_nodes[j];
+      int v = face_nodes(j);
       mesh_->node_get_coordinates(v, &xv);
 
-      int pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
+      int pos = 0;
+      for(pos = 0; pos < nodes.extent(0); ++pos){
+        if(nodes(pos) == v){
+          break;
+        }
+      }
       vdof(pos) = vf[n].Value(xv);
     }
 
@@ -686,12 +701,11 @@ void MFD3D_Lagrange::ProjectorCell_(
 void MFD3D_Lagrange::ProjectorCell_LO_(
     int c, const std::vector<Polynomial>& vf, Polynomial& uc)
 {
-  Entity_ID_List nodes;
-  Kokkos::View<Entity_ID*> faces;
+  Kokkos::View<Entity_ID*> faces, nodes;
   Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_nodes(c, &nodes);
-  int nnodes = nodes.size();
+  mesh_->cell_get_nodes(c, nodes);
+  int nnodes = nodes.extent(0);
 
   mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
   int num_faces = faces.extent(0);
@@ -707,9 +721,9 @@ void MFD3D_Lagrange::ProjectorCell_LO_(
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
     double area = mesh_->face_area(f);
 
-    Entity_ID_List face_nodes;
-    mesh_->face_get_nodes(f, &face_nodes);
-    int num_face_nodes = face_nodes.size();
+    Kokkos::View<Entity_ID*> face_nodes;
+    mesh_->face_get_nodes(f, face_nodes);
+    int num_face_nodes = face_nodes.extent(0);
 
     for (int j = 0; j < num_face_nodes; j++) {
       int v = face_nodes[j];
@@ -721,8 +735,8 @@ void MFD3D_Lagrange::ProjectorCell_LO_(
         int jnext = (j + 1) % num_face_nodes;
         int jprev = (j + num_face_nodes - 1) % num_face_nodes;
 
-        int vnext = face_nodes[jnext];
-        int vprev = face_nodes[jprev];
+        int vnext = face_nodes(jnext);
+        int vprev = face_nodes(jprev);
 
         mesh_->node_get_coordinates(v, &p);
         mesh_->node_get_coordinates(vnext, &pnext);
@@ -733,8 +747,12 @@ void MFD3D_Lagrange::ProjectorCell_LO_(
         v3 = v1^v2;
         u = dirs(i) * norm(v3) / (4 * area);
       }
-
-      int pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
+      int pos = 0;
+      for(pos = 0; pos < nodes.extent(0); ++pos){
+        if(nodes(pos) == v){
+          break;
+        }
+      }
       for (int k = 0; k < d_; k++) R(pos, k) += normal[k] * u;
     }
   }

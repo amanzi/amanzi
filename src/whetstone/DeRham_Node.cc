@@ -27,11 +27,11 @@ namespace WhetStone {
 int DeRham_Node::L2consistency(int c, const Tensor& T,
                                DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
-  Entity_ID_List nodes, face_nodes;
-  Kokkos::View<Entity_ID*> faces;
+  Entity_ID_List face_nodes;
+  Kokkos::View<Entity_ID*> faces, nodes;
 
-  mesh_->cell_get_nodes(c, &nodes);
-  int nnodes = nodes.size();
+  mesh_->cell_get_nodes(c, nodes);
+  int nnodes = nodes.extent(0);
 
   N.Reshape(nnodes, 1);
   Mc.Reshape(nnodes, nnodes);

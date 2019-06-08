@@ -14,10 +14,10 @@ TEST(MSTK_HEX_2x2x1)
 {
 
   int i, j, k, err, nc, nf, nv;
-  std::vector<Amanzi::AmanziMesh::Entity_ID> cnodes(8), fnodes(6), expfacenodes(4);
-  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> faces("",6);
+  std::vector<Amanzi::AmanziMesh::Entity_ID> expfacenodes(4);
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> faces("",6), cnodes("",8), fnodes("",6);
   Kokkos::View<int*> facedirs("",6);
-  std::vector<Amanzi::AmanziGeometry::Point> ccoords(8), fcoords(4);
+  Kokkos::View<Amanzi::AmanziGeometry::Point*> fcoords("",4), ccoords("",8);
 
   int NV = 18;
   int NF = 20;
@@ -79,17 +79,17 @@ TEST(MSTK_HEX_2x2x1)
   CHECK_EQUAL(NC,nc);
 
   for (i = 0; i < nc; i++) {
-    mesh->cell_get_nodes(i,&cnodes);
+    mesh->cell_get_nodes(i,cnodes);
     mesh->cell_get_faces_and_dirs(i,faces,&facedirs,true);
 
     for (j = 0; j < 6; j++) {
 
-      mesh->face_get_nodes(faces(j),&fnodes);
-      mesh->face_get_coordinates(faces(j),&fcoords);
+      mesh->face_get_nodes(faces(j),fnodes);
+      mesh->face_get_coordinates(faces(j),fcoords);
 
 
       for (k = 0; k < 4; k++)
-	expfacenodes[k] = cnodes[cfstd[j][k]];
+	expfacenodes[k] = cnodes(cfstd[j][k]);
 
       // The order of nodes returned may be different from what we expected
       // So make sure we have a matching node to start with
@@ -97,7 +97,7 @@ TEST(MSTK_HEX_2x2x1)
       int k0 = -1;
       int found = 0;
       for (k = 0; k < 4; k++) {
-	if (expfacenodes[k] == fnodes[0]) {
+	if (expfacenodes[k] == fnodes(0)) {
 	  k0 = k;
 	  found = 1;
 	  break;
@@ -108,23 +108,23 @@ TEST(MSTK_HEX_2x2x1)
 
       if (facedirs(j) == 1) {
 	for (k = 0; k < 4; k++) {
-	  CHECK_EQUAL(expfacenodes[(k0+k)%4],fnodes[k]);
-	  CHECK_ARRAY_EQUAL(xyz[expfacenodes[(k0+k)%4]],fcoords[k],3);
+	  CHECK_EQUAL(expfacenodes[(k0+k)%4],fnodes(k));
+	  CHECK_ARRAY_EQUAL(xyz[expfacenodes[(k0+k)%4]],fcoords(k),3);
 	}
       }
       else {
 	for (k = 0; k < 4; k++) {
-	  CHECK_EQUAL(expfacenodes[(k0+4-k)%4],fnodes[k]);
-	  CHECK_ARRAY_EQUAL(xyz[expfacenodes[(k0+4-k)%4]],fcoords[k],3);
+	  CHECK_EQUAL(expfacenodes[(k0+4-k)%4],fnodes(k));
+	  CHECK_ARRAY_EQUAL(xyz[expfacenodes[(k0+4-k)%4]],fcoords(k),3);
 	}
       }
     }
 
 
-    mesh->cell_get_coordinates(i,&ccoords);
+    mesh->cell_get_coordinates(i,ccoords);
 
     for (j = 0; j < 8; j++)
-      CHECK_ARRAY_EQUAL(xyz[cnodes[cnstd[j]]],ccoords[j],3);
+      CHECK_ARRAY_EQUAL(xyz[cnodes(cnstd[j])],ccoords(j),3);
   }
 
 

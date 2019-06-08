@@ -26,8 +26,7 @@ namespace WhetStone {
 int MFD3D_Generalized_Diffusion::L2consistency(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
-  Entity_ID_List nodes;
-  Kokkos::View<Entity_ID*> faces;
+  Kokkos::View<Entity_ID*> faces, nodes;
   Kokkos::View<int*> dirs;
   mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
 
@@ -107,8 +106,7 @@ int MFD3D_Generalized_Diffusion::MassMatrix(int c, const Tensor& K, DenseMatrix&
 int MFD3D_Generalized_Diffusion::L2consistencyInverse(
     int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry)
 {
-  Entity_ID_List nodes;
-  Kokkos::View<Entity_ID*> faces;
+  Kokkos::View<Entity_ID*> faces, nodes;
   Kokkos::View<int*> dirs;
   mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
 
@@ -283,13 +281,13 @@ void MFD3D_Generalized_Diffusion::CurvedFaceGeometry_(
   vv[0] *= dirs;  // exterior average normal
 
   // geometric center. We cannot use face_centroid
-  Entity_ID_List nodes;
-  mesh_->face_get_nodes(f, &nodes);
-  int nnodes = nodes.size();
+  Kokkos::View<Entity_ID*> nodes;
+  mesh_->face_get_nodes(f, nodes);
+  int nnodes = nodes.extent(0);
 
   xf.set(0.0);
   for (int n = 0; n < nnodes; ++n) {
-    mesh_->node_get_coordinates(nodes[n], &p1);
+    mesh_->node_get_coordinates(nodes(n), &p1);
     xf += p1;
   }
   xf /= nnodes;
@@ -304,8 +302,8 @@ void MFD3D_Generalized_Diffusion::CurvedFaceGeometry_(
   for (int n = 0; n < nnodes; ++n) {
     int m = (n + 1) % nnodes;
 
-    mesh_->node_get_coordinates(nodes[n], &p1);
-    mesh_->node_get_coordinates(nodes[m], &p2);
+    mesh_->node_get_coordinates(nodes(n), &p1);
+    mesh_->node_get_coordinates(nodes(m), &p2);
 
     v1 = xf - p1;
     v2 = xf - p2;

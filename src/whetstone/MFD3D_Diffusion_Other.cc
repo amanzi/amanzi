@@ -116,9 +116,9 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
   mesh_->cell_get_faces_and_dirs(c, faces, &fdirs);
   int num_faces = faces.extent(0);
 
-  Entity_ID_List nodes, corner_faces;
-  mesh_->cell_get_nodes(c, &nodes);
-  int nnodes = nodes.size();
+  Kokkos::View<Entity_ID*> nodes, corner_faces;
+  mesh_->cell_get_nodes(c, nodes);
+  int nnodes = nodes.extent(0);
 
   Tensor Kinv(K);
   Kinv.Inverse();
@@ -130,9 +130,9 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
   Tensor N(d_, 2), NK(d_, 2), Mv_tmp(d_, 2);
 
   for (int n = 0; n < nnodes; n++) {
-    int v = nodes[n];
-    mesh_->node_get_cell_faces(v, c, Parallel_type::ALL, &corner_faces);
-    int nfaces = corner_faces.size();
+    int v = nodes(n);
+    mesh_->node_get_cell_faces(v, c, Parallel_type::ALL, corner_faces);
+    int nfaces = corner_faces.extent(0);
     if (nfaces < d_) {
       Errors::Message msg;
       msg << "WhetStone MFD3D_Diffusion: number of faces forming a corner is small.";
@@ -140,7 +140,7 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
     }
 
     for (int i = 0; i < d_; i++) {
-      int f = corner_faces[i];
+      int f = corner_faces(i);
       N.SetColumn(i, mesh_->face_normal(f));
     }
     double cwgt_tmp = fabs(N.Det());
@@ -153,7 +153,7 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
     Mv.push_back(Mv_tmp);
 
     for (int i = 0; i < d_; i++) {
-      int f = corner_faces[i];
+      int f = corner_faces(i);
       cwgt_tmp /= mesh_->face_area(f);
     }
     cwgt.push_back(cwgt_tmp);
@@ -170,19 +170,19 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
   W.Reshape(num_faces, num_faces);
   W.PutScalar(0.0);
   for (int n = 0; n < nnodes; n++) {
-    int v = nodes[n];
-    mesh_->node_get_cell_faces(v, c, Parallel_type::ALL, &corner_faces);
+    int v = nodes(n);
+    mesh_->node_get_cell_faces(v, c, Parallel_type::ALL, corner_faces);
 
     Tensor& Mv_tmp = Mv[n];
     for (int i = 0; i < d_; i++) {
       int k = 0;
       for(int f = 0 ; f < num_faces; ++f){
-        if(faces(f) == corner_faces[i]){ k = f; break; }
+        if(faces(f) == corner_faces(i)){ k = f; break; }
       }
       for (int j = i; j < d_; j++) {
         int l = 0;
         for(int f = 0 ; f < num_faces; ++f){
-          if(faces(f) == corner_faces[j]){ l = f; break; }
+          if(faces(f) == corner_faces(j)){ l = f; break; }
         }
         W(k, l) += Mv_tmp(i, j) * cwgt[n] * fdirs(k) * fdirs(l);
         W(l, k) = W(k, l);

@@ -72,12 +72,11 @@ int MFD3D_Elasticity::L2consistency(int c, const Tensor& T,
 int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
                                     DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List nodes;
-  Kokkos::View<Entity_ID*> faces;
+  Kokkos::View<Entity_ID*> faces,nodes;
   Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_nodes(c, &nodes);
-  int nnodes = nodes.size();
+  mesh_->cell_get_nodes(c, nodes);
+  int nnodes = nodes.extent(0);
 
   mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
   int nfaces = faces.extent(0);
@@ -117,12 +116,12 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
     double area = mesh_->face_area(f);
 
-    Entity_ID_List face_nodes;
-    mesh_->face_get_nodes(f, &face_nodes);
-    int num_face_nodes = face_nodes.size();
+    Kokkos::View<Entity_ID*> face_nodes;
+    mesh_->face_get_nodes(f, face_nodes);
+    int num_face_nodes = face_nodes.extent(0);
 
     for (int j = 0; j < num_face_nodes; j++) {
-      int v = face_nodes[j];
+      int v = face_nodes(j);
       double u(0.5);
 
       if (d_ == 2) {
@@ -131,8 +130,8 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
         int jnext = (j + 1) % num_face_nodes;
         int jprev = (j + num_face_nodes - 1) % num_face_nodes;
 
-        int vnext = face_nodes[jnext];
-        int vprev = face_nodes[jprev];
+        int vnext = face_nodes(jnext);
+        int vprev = face_nodes(jprev);
 
         mesh_->node_get_coordinates(v, &p);
         mesh_->node_get_coordinates(vnext, &pnext);
@@ -144,7 +143,12 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
         u = dirs(i) * norm(v3) / (4 * area);
       }
 
-      int pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
+      int pos = 0;
+      for(pos = 0 ; pos < nodes.extent(0); ++pos){
+        if(nodes(pos) == v){
+          break;
+        }
+      }
       for (int k = 0; k < nd; k++) {
         v1 = TE[k] * normal;
         for (int l = 0; l < d_; l++) R(l * nnodes + pos, k) += v1[l] * u;
@@ -180,7 +184,7 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
 
   for (int i = 0; i < nnodes; i++) {
-    int v = nodes[i];
+    int v = nodes(i);
     mesh_->node_get_coordinates(v, &p);
     v1 = p - cm;
 

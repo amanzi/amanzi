@@ -140,16 +140,15 @@ void MeshMaps_VEM::LeastSquareProjector_Cell_(
   AmanziGeometry::Point px1, px2;
   std::vector<AmanziGeometry::Point> x1, x2;
 
-  Entity_ID_List nodes;
-  Kokkos::View<Entity_ID*> faces;
-  mesh0_->cell_get_nodes(c, &nodes);
-  int nnodes = nodes.size();
+  Kokkos::View<Entity_ID*> faces, nodes;
+  mesh0_->cell_get_nodes(c, nodes);
+  int nnodes = nodes.extent(0);
 
   for (int n = 0; n < nnodes; ++n) {
-    mesh0_->node_get_coordinates(nodes[n], &px1);
+    mesh0_->node_get_coordinates(nodes(n), &px1);
     x1.push_back(px1);
 
-    mesh1_->node_get_coordinates(nodes[n], &px2);
+    mesh1_->node_get_coordinates(nodes(n), &px2);
     x2.push_back(px2 - px1);
   }
 

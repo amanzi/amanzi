@@ -41,17 +41,17 @@ TEST(MAPS) {
   CHECK_EQUAL(6,Mm.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::OWNED));
   CHECK_EQUAL(8,Mm.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::OWNED));
 
-  vector<Amanzi::AmanziGeometry::Point> x(8);
-  vector<Amanzi::AmanziMesh::Entity_ID> nodes(8);
+  Kokkos::View<Amanzi::AmanziGeometry::Point*> x("",8);
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> nodes("",8);
   Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> faces("",6);
 
   for (auto i=0; i<Mm.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED); i++) {
-    Mm.cell_get_nodes(i, &nodes);
+    Mm.cell_get_nodes(i, nodes);
 
-    CHECK_EQUAL(8,nodes.size());
-    CHECK_ARRAY_EQUAL(expcellnodes,nodes,8);
+    CHECK_EQUAL(8,nodes.extent(0));
 
     for (int j=0; j<8; j++) {
+      CHECK_EQUAL(expcellnodes[j],nodes(j));
       Mm.node_get_coordinates(nodes[j],&(x[j]));
       CHECK_ARRAY_EQUAL(expnodecoords[expcellnodes[j]],x[j],3);
     }
@@ -59,22 +59,24 @@ TEST(MAPS) {
     Mm.cell_get_faces(i, faces, true);
     double xx[4][3];
     for (int j=0; j<6; j++) {
-      Amanzi::AmanziMesh::Entity_ID_List fnodes;
+      Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> fnodes;
 
-      Mm.face_get_nodes(faces(j),&fnodes);
-      CHECK_ARRAY_EQUAL(expfacenodes[faces(j)],fnodes,4);
+      Mm.face_get_nodes(faces(j),fnodes);
+      for(int k = 0 ; k < 4; ++k){
+        CHECK_EQUAL(expfacenodes[faces(j)][k],fnodes(k));
+      }
 
-      Mm.face_get_coordinates(faces(j),&x);
+      Mm.face_get_coordinates(faces(j),x);
 
       for (int k=0; k<4; k++) {
-        CHECK_ARRAY_EQUAL(expnodecoords[expfacenodes[faces(j)][k]],x[k],3);
+        CHECK_ARRAY_EQUAL(expnodecoords[expfacenodes[faces(j)][k]],x(k),3);
       }
     }
 
-    Mm.cell_get_coordinates(i, &x);
-    CHECK_EQUAL(8,x.size());
+    Mm.cell_get_coordinates(i, x);
+    CHECK_EQUAL(8,x.extent(0));
     for (int k = 0; k < 8; k++)
-      CHECK_ARRAY_EQUAL(expnodecoords[expcellnodes[k]],x[k],3);
+      CHECK_ARRAY_EQUAL(expnodecoords[expcellnodes[k]],x(k),3);
   }
 }
 

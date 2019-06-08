@@ -232,24 +232,24 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   for (int c=0; c!=ncells_local; ++c) {
     AmanziMesh::Cell_type ctype = mesh_maps_->vis_mesh().cell_get_type(c);
     if (getCellTypeID_(ctype) != getCellTypeID_(AmanziMesh::POLYGON)) {
-      AmanziMesh::Entity_ID_List nodes;
-      mesh_maps_->vis_mesh().cell_get_nodes(c,&nodes);
-      local_conn += nodes.size() + 1;
+      Kokkos::View<AmanziMesh::Entity_ID*> nodes;
+      mesh_maps_->vis_mesh().cell_get_nodes(c,nodes);
+      local_conn += nodes.extent(0) + 1;
       local_entities++;
 
     } else if (space_dim == 2) {
-      AmanziMesh::Entity_ID_List nodes;
-      mesh_maps_->vis_mesh().cell_get_nodes(c,&nodes);
-      local_conn += nodes.size() + 2;
+      Kokkos::View<AmanziMesh::Entity_ID*> nodes;
+      mesh_maps_->vis_mesh().cell_get_nodes(c,nodes);
+      local_conn += nodes.extent(0) + 2;
       local_entities++;
 
     } else {
       Kokkos::View<AmanziMesh::Entity_ID*> faces;
       mesh_maps_->vis_mesh().cell_get_faces(c,faces);
       for (int i=0; i!=faces.extent(0); ++i) {
-	AmanziMesh::Entity_ID_List nodes;
-	mesh_maps_->vis_mesh().face_get_nodes(faces(i), &nodes);
-	local_conn += nodes.size() + 2;
+	Kokkos::View<AmanziMesh::Entity_ID*> nodes;
+	mesh_maps_->vis_mesh().face_get_nodes(faces(i), nodes);
+	local_conn += nodes.extent(0) + 2;
       }
       local_entities += faces.extent(0);
     }
@@ -281,14 +281,14 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
       conn[lcv++] = getCellTypeID_(ctype);
 
       // store nodes in the correct order
-      AmanziMesh::Entity_ID_List nodes;
-      mesh_maps_->vis_mesh().cell_get_nodes(c, &nodes);
+      Kokkos::View<AmanziMesh::Entity_ID*> nodes;
+      mesh_maps_->vis_mesh().cell_get_nodes(c, nodes);
 
-      for (int i=0; i!=nodes.size(); ++i) {
+      for (int i=0; i!=nodes.extent(0); ++i) {
         // if (nmap.MyLID(nodes[i])) {
         //    conn[lcv++] = nodes[i] + startAll[viz_comm_->getRank()];
 	// } else {
-        conn[lcv++] = lid[nodes[i]] + startAll[pid[nodes[i]]];
+        conn[lcv++] = lid[nodes(i)] + startAll[pid[nodes(i)]];
 	// }
       }
 
@@ -300,15 +300,15 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
       conn[lcv++] = getCellTypeID_(ctype);
 
       // store node count, then nodes in the correct order
-      AmanziMesh::Entity_ID_List nodes;
-      mesh_maps_->vis_mesh().cell_get_nodes(c, &nodes);
-      conn[lcv++] = nodes.size();
+      Kokkos::View<AmanziMesh::Entity_ID*> nodes;
+      mesh_maps_->vis_mesh().cell_get_nodes(c, nodes);
+      conn[lcv++] = nodes.extent(0);
 
-      for (int i=0; i!=nodes.size(); ++i) {
+      for (int i=0; i!=nodes.extent(0); ++i) {
 	// if (nmap.MyLID(nodes[i])) {
 	//   conn[lcv++] = nodes[i] + startAll[viz_comm_->getRank()];
 	// } else {
-        conn[lcv++] = lid[nodes[i]] + startAll[pid[nodes[i]]];
+        conn[lcv++] = lid[nodes(i)] + startAll[pid[nodes(i)]];
 	// }
       }
 
@@ -324,15 +324,15 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
 	conn[lcv++] = getCellTypeID_(ctype);
 
 	// store node count, then nodes in the correct order
-	AmanziMesh::Entity_ID_List nodes;
-	mesh_maps_->vis_mesh().face_get_nodes(faces(j), &nodes);
-	conn[lcv++] = nodes.size();
+	Kokkos::View<AmanziMesh::Entity_ID*> nodes;
+	mesh_maps_->vis_mesh().face_get_nodes(faces(j), nodes);
+	conn[lcv++] = nodes.extent(0);
 
-	for (int i=0; i!=nodes.size(); ++i) {
+	for (int i=0; i!=nodes.extent(0); ++i) {
 	  // if (nmap.MyLID(nodes[i])) {
 	  //   conn[lcv++] = nodes[i] + startAll[viz_comm_->getRank()];
 	  // } else {
-          conn[lcv++] = lid[nodes[i]] + startAll[pid[nodes[i]]];
+          conn[lcv++] = lid[nodes(i)] + startAll[pid[nodes(i)]];
 	  // }
 	}
 

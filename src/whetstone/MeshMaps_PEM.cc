@@ -32,8 +32,7 @@ void MeshMaps_PEM::VelocityCell(
 {
   AMANZI_ASSERT(d_ == 2);
 
-  Entity_ID_List nodes;
-  Kokkos::View<Entity_ID*> faces;
+  Kokkos::View<Entity_ID*> faces, nodes;
   AmanziGeometry::Point p(d_), q(d_);
   Tensor T0(d_, d_), T1(d_, d_);
 
@@ -52,10 +51,10 @@ void MeshMaps_PEM::VelocityCell(
     int m = n * d_;
 
     // calculate 2x2 map F(X) = q + J * X
-    mesh0_->face_get_nodes(f, &nodes);
+    mesh0_->face_get_nodes(f, nodes);
     for (int i = 0; i < 2; ++i) {
-      mesh0_->node_get_coordinates(nodes[i], &p);
-      mesh1_->node_get_coordinates(nodes[i], &q);
+      mesh0_->node_get_coordinates(nodes(i), &p);
+      mesh1_->node_get_coordinates(nodes(i), &q);
 
       T0.SetColumn(i, p - x0);
       T1.SetColumn(i, q - x1);

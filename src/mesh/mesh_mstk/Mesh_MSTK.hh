@@ -147,7 +147,7 @@ class Mesh_MSTK : public Mesh {
   // In 2D, the nodes of the polygon will be returned in ccw order
   // consistent with the face normal
   void cell_get_nodes(const Entity_ID cellid,
-		      Entity_ID_List *nodeids) const;
+		      Kokkos::View<Entity_ID*> &nodeids) const;
 
 
   // Get nodes of face
@@ -157,7 +157,7 @@ class Mesh_MSTK : public Mesh {
   // with the face normal
   // In 2D, nfnodes is 2
   void face_get_nodes(const Entity_ID faceid,
-		      Entity_ID_List *nodeids) const;
+		      Kokkos::View<Entity_ID*> &nodeids) const;
 
 
   // Get nodes of edge On a distributed mesh all nodes (OWNED or
@@ -173,24 +173,24 @@ class Mesh_MSTK : public Mesh {
   // Cells of type 'ptype' connected to a node
   void node_get_cells(const Entity_ID nodeid,
 		      const Parallel_type ptype,
-		      Entity_ID_List *cellids) const;
+		      Kokkos::View<Entity_ID*> &cellids) const;
 
   // Faces of type 'ptype' connected to a node
   void node_get_faces(const Entity_ID nodeid,
 		      const Parallel_type ptype,
-		      Entity_ID_List *faceids) const;
+		      Kokkos::View<Entity_ID*> &faceids) const;
 
   // Get faces of ptype of a particular cell that are connected to the
   // given node
   void node_get_cell_faces(const Entity_ID nodeid,
 			   const Entity_ID cellid,
 			   const Parallel_type ptype,
-			   Entity_ID_List *faceids) const;
+			   Kokkos::View<Entity_ID*> &faceids) const;
 
   // Cells of type 'ptype' connected to an edge
   void edge_get_cells(const Entity_ID edgeid,
                       const Parallel_type ptype,
-                      Entity_ID_List *cellids) const;
+                      Kokkos::View<Entity_ID*> &cellids) const;
 
 
   //
@@ -206,7 +206,7 @@ class Mesh_MSTK : public Mesh {
   // faces given by cell_get_faces
   void cell_get_face_adj_cells(const Entity_ID cellid,
 			       const Parallel_type ptype,
-			       Entity_ID_List *fadj_cellids) const;
+			       Kokkos::View<Entity_ID*> &fadj_cellids) const;
 
 
   // Node connected neighboring cells of given cell
@@ -214,7 +214,7 @@ class Mesh_MSTK : public Mesh {
   // The cells are returned in no particular order
   void cell_get_node_adj_cells(const Entity_ID cellid,
 			       const Parallel_type ptype,
-			       Entity_ID_List *nadj_cellids) const;
+			       Kokkos::View<Entity_ID*> &nadj_cellids) const;
 
 
   //
@@ -229,7 +229,7 @@ class Mesh_MSTK : public Mesh {
   // Face coordinates - conventions same as face_to_nodes call
   // Number of nodes is the vector size divided by number of spatial dimensions
   void face_get_coordinates(const Entity_ID faceid,
-			    std::vector<AmanziGeometry::Point> *fcoords) const;
+			    Kokkos::View<AmanziGeometry::Point*> &fcoords) const;
 
   // Coordinates of cells in standard order (Exodus  II convention)
   // STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES IN 3D
@@ -237,7 +237,7 @@ class Mesh_MSTK : public Mesh {
   // arbitrary order
   // Number of nodes is vector size divided by number of spatial dimensions
   void cell_get_coordinates(const Entity_ID cellid,
-			    std::vector<AmanziGeometry::Point> *ccoords) const;
+			    Kokkos::View<AmanziGeometry::Point*> &ccoords) const;
 
   // Modify the coordinates of a node
   void node_set_coordinates(const Entity_ID nodeid,
@@ -275,7 +275,7 @@ class Mesh_MSTK : public Mesh {
                                  const Entity_kind kind,
                                  const Parallel_type ptype,
                                  Kokkos::View<Entity_ID*> &entids,
-                                 std::vector<double> *vofs) const;
+                                 Kokkos::View<double*> *vofs) const;
 
 
   using Mesh::deform; // note this pulls back the node-based deform as well, so that it can be called when referencing a Mesh_MSTK object

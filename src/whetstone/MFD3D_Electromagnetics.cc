@@ -291,18 +291,17 @@ int MFD3D_Electromagnetics::StiffnessMatrixGeneralized(
 ****************************************************************** */
 void MFD3D_Electromagnetics::AddGradientToProjector_(int c, DenseMatrix& N)
 {
-  Entity_ID_List nodes;
-  Kokkos::View<Entity_ID*> edges;
+  Kokkos::View<Entity_ID*> edges,nodes;
 
   mesh_->cell_get_edges(c, edges);
   int nedges = edges.extent(0);
 
-  mesh_->cell_get_nodes(c, &nodes);
-  int nnodes = nodes.size();
+  mesh_->cell_get_nodes(c, nodes);
+  int nnodes = nodes.extent(0);
 
   // reserve map: gid -> lid
   std::map<int, int> lid;
-  for (int n = 0; n < nnodes; ++n) lid[nodes[n]] = n;
+  for (int n = 0; n < nnodes; ++n) lid[nodes(n)] = n;
 
   // populate discrete gradient
   int v1, v2;
@@ -369,8 +368,7 @@ void MFD3D_Electromagnetics::AddGradientToProjector_(int c, DenseMatrix& N)
 void MFD3D_Electromagnetics::CurlMatrix(int c, DenseMatrix& C)
 {
   std::vector<int> map;
-  Entity_ID_List nodes; 
-  Kokkos::View<Entity_ID*> faces, fedges, edges;
+  Kokkos::View<Entity_ID*> faces, fedges, edges, nodes;
   Kokkos::View<int*> fdirs, edirs;
 
   mesh_->cell_get_edges(c, edges);
@@ -383,7 +381,7 @@ void MFD3D_Electromagnetics::CurlMatrix(int c, DenseMatrix& C)
   C.PutScalar(0.0);
 
   if (d_ == 2) {
-    mesh_->cell_get_nodes(c, &nodes);
+    mesh_->cell_get_nodes(c, nodes);
 
     for (int i = 0; i < nfaces; ++i) {
       int j = (i + 1) % nfaces;

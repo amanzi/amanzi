@@ -10,9 +10,6 @@
 
 SUITE (MeshSimple) {
 TEST(SETS) {
-
-  Kokkos::initialize();
-
   using namespace std;
 
   auto comm = Amanzi::getDefaultComm();
@@ -305,6 +302,5 @@ TEST(SETS) {
       CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);
     }
   }
-  Kokkos::finalize(); 
 }
 }
