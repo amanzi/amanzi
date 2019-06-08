@@ -31,7 +31,7 @@ if (ENABLE_Unstructured)
   add_subdirectory(output)
 
   # Solvers
-  add_subdirectory(solvers)
+  #add_subdirectory(solvers)
 
   # Time integration
   # add_subdirectory(time_integration)
