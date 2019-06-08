@@ -50,8 +50,8 @@ set(data_structures_src_files BlockSpace.cc
                               NoxVector.cc
                               TreeVectorSpace.cc
                               TreeVector.cc
-                              #GraphFE.cc
-                              #MatrixFE.cc
+                              GraphFE.cc
+                              MatrixFE.cc
                               SuperMapLumped.cc
                               SuperMap.cc
                               )
@@ -102,26 +102,26 @@ if (BUILD_TESTS)
                            test/test_vandelay.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    # # Test: tests for FE graph and matrices
-    # add_amanzi_test(graph_fe_test graph_fe_test
-    #                 KIND unit
-    #                 SOURCE test/Main.cc test/graph_fe_test.cc
-    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    # Test: tests for FE graph and matrices
+    add_amanzi_test(graph_fe test_graph_fe
+                    KIND unit
+                    SOURCE test/Main.cc test/test_graph_fe.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    # add_amanzi_test(matrix_fe_test matrix_fe_test
-    #                 KIND unit
-    #                 SOURCE test/Main.cc test/matrix_fe_test.cc
-    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(matrix_fe test_matrix_fe
+                    KIND unit
+                    SOURCE test/Main.cc test/test_matrix_fe.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    # add_amanzi_test(matrix_fe_test_np2 matrix_fe_test NPROCS 2 KIND unit)
-    # add_amanzi_test(matrix_fe_test_np4 matrix_fe_test NPROCS 4 KIND unit)
+    add_amanzi_test(matrix_fe_np2 test_matrix_fe NPROCS 2 KIND unit)
+    add_amanzi_test(matrix_fe_np4 test_matrix_fe NPROCS 4 KIND unit)
 
     add_amanzi_test(supermap test_supermap
                     KIND unit
                     SOURCE test/Main.cc test/test_supermap.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-    add_amanzi_test(test_supermap_np3 test_supermap NPROCS 3 KIND unit)
-    add_amanzi_test(test_supermap_np5 test_supermap NPROCS 5 KIND unit)
+    add_amanzi_test(supermap_np3 test_supermap NPROCS 3 KIND unit)
+    add_amanzi_test(supermap_np5 test_supermap NPROCS 5 KIND unit)
 
     # add_amanzi_test(block_supermap test_block_supermap
     #                 KIND unit

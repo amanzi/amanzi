@@ -31,8 +31,11 @@
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Tpetra_Map_fwd.hpp"
 #include "Tpetra_Import_fwd.hpp"
+#include "Tpetra_Export_fwd.hpp"
 #include "Tpetra_Vector_fwd.hpp"
 #include "Tpetra_MultiVector_fwd.hpp"
+#include "Tpetra_CrsGraph_fwd.hpp"
+#include "Tpetra_CrsMatrix_fwd.hpp"
 
 #include "Kokkos_Core.hpp"
 #ifdef HAVE_CUDA
@@ -62,6 +65,15 @@ namespace Amanzi {
 
 #ifdef TRILINOS_TPETRA_STACK
 
+// -- default specializations -- NOTE: this is the ony place here and in data
+//    structures where these types are defined!
+using double_type = double;
+using int_type = int;
+using LO = int;
+using GO = int;
+
+
+
 // Tpetra uses Teuchos Comm
 typedef Teuchos::Comm<int> Comm_type;
 #ifdef HAVE_MPI
@@ -69,9 +81,11 @@ typedef Teuchos::MpiComm<int> MpiComm_type;
 #endif
 
 // Tpetra maps and importers
-typedef Tpetra::Map<> Map_type;
-typedef Tpetra::Map<> BlockMap_type; // is there a Tpetra block map?
-typedef Tpetra::Import<> Import_type;
+typedef Tpetra::Map<LO,GO> Map_type;
+typedef Tpetra::Map<LO,GO> BlockMap_type; // is there a Tpetra block map?
+typedef Tpetra::Import<LO,GO> Import_type;
+typedef Tpetra::Export<LO,GO> Export_type;
+
 
 // Tpetra vectors
 // -- alias
@@ -89,13 +103,6 @@ template<typename Scalar>
 using MultiVector_ptr_type_ = Teuchos::RCP<MultiVector_type_<Scalar> >;
 template<typename Scalar>
 using cMultiVector_ptr_type_ = Teuchos::RCP<const MultiVector_type_<Scalar> >;
-
-// -- default specializations -- NOTE: this is the ony place here and in data
-//    structures where these types are defined!
-using double_type = double;
-using int_type = int;
-using LO = int;
-using GO = int;
 
 using Vector_type = Vector_type_<double_type>;
 using MultiVector_type = MultiVector_type_<double_type>;
@@ -134,6 +141,9 @@ using IntMultiVectorView_type = MultiVectorView_type_<Device_type, int_type>;
 template<class Device_type>
 using cIntMultiVectorView_type = cMultiVectorView_type_<Device_type, int_type>;
 
+// Graphs and Matrices
+using Graph_type = Tpetra::CrsGraph<LO,GO>;
+using Matrix_type = Tpetra::CrsMatrix<double_type, LO,GO>;
 
 #else // Trilinos Epetra stack
 
@@ -161,7 +171,8 @@ typedef Epetra_MultiVector MultiVector_type;
 typedef Teuchos::RCP<const Comm_type> Comm_ptr_type;
 typedef Teuchos::RCP<const Map_type> Map_ptr_type;
 typedef Teuchos::RCP<const BlockMap_type> BlockMap_ptr_type;
-typedef Teuchos::RCP<const Import_type> Import_ptr_type;
+using Import_ptr_type = Teuchos::RCP<const Import_type>;
+using Export_ptr_type = Teuchos::RCP<const Export_type>;
 
 // non-const
 typedef Teuchos::RCP<Vector_type> Vector_ptr_type;
@@ -171,6 +182,9 @@ typedef Teuchos::RCP<MultiVector_type> MultiVector_ptr_type;
 typedef Teuchos::RCP<const Vector_type> cVector_ptr_type;
 typedef Teuchos::RCP<const MultiVector_type> cMultiVector_ptr_type;
 
+using Graph_ptr_type = Teuchos::RCP<Graph_type>;
+using Matrix_ptr_type = Teuchos::RCP<Matrix_type>;
+using cMatrix_ptr_type = Teuchos::RCP<const Matrix_type>;
 
 
 } // namespace Amanzi
