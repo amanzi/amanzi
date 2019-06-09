@@ -63,6 +63,7 @@ parallel_jobs=2
 build_type=Release
 trilinos_build_type=Release
 tpls_build_type=Release
+AMANZI_ARCH=""
 
 # Compiler definitions
 build_c_compiler=
@@ -313,7 +314,9 @@ Configuration:
   --nersc                 use cmake options required on NERSC machines ['"${nersc}"']
 
   --dry_run               show the configuration commands (but do not execute them) ['"${dry_run}"']
-  
+
+  --arch                  define the architecture for the build, only Summit available
+
 
 Build features:
 Each feature listed here can be enabled/disabled with --[enable|disable]-[feature]
@@ -464,6 +467,7 @@ Build configuration:
     nersc               ='"${nersc}"'
     static_libs_prefer  ='"${prefer_static}"'
     static_executables  ='"${exec_static}"'
+    AMANZI_ARCH         ='"${AMANZI_ARCH}"'
 
 Build Features:   
     structured          ='"${structured}"'
@@ -518,6 +522,10 @@ function parse_argv()
                  tmp=`parse_option_with_equal "${opt}" 'prefix'`
 		 prefix=`make_fullpath ${tmp}`
                  ;;
+
+      --arch=*)
+                 AMANZI_ARCH=`parse_option_with_equal "${opt}" 'arch'`
+		 ;;
 
       --parallel=[0-9]*)
                  parallel_jobs=`parse_option_with_equal "${opt}" 'parallel'`
@@ -1375,6 +1383,7 @@ if [ ! -n "${mpi_root_dir}" ]; then
       -DTOOLS_INSTALL_PREFIX:STRING=${tools_install_prefix} \
       -DTOOLS_DOWNLOAD_DIR:FILEPATH=${tools_download_dir} \
       -DTOOLS_PARALLEL_JOBS:INT=${parallel_jobs} \
+      -DTOOLS_AMANZI_ARCH:STRING=${AMANZI_ARCH} \
       ${tools_build_src_dir}
 
   if [ $? -ne 0 ]; then
@@ -1482,6 +1491,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DBUILD_SHARED_LIBS:BOOL=${shared} \
       -DTPL_DOWNLOAD_DIR:FILEPATH=${tpl_download_dir} \
       -DTPL_PARALLEL_JOBS:INT=${parallel_jobs} \
+      -DAMANZI_ARCH:STRING=${AMANZI_ARCH} \
       ${nersc_tpl_opts} \
       ${tpl_build_src_dir}"
 
@@ -1587,6 +1597,7 @@ cmd_configure="${cmake_binary} \
     -DCCSE_BL_SPACEDIM:INT=${spacedim} \
     -DENABLE_Regression_Tests:BOOL=${reg_tests} \
     -DMPI_EXEC_GLOBAL_ARGS:STRING=${tools_mpi_exec_args} \
+    -DAMANZI_ARCH:STRING=${AMANZI_ARCH} \
     ${nersc_amanzi_opts} \
     ${amanzi_source_dir}"
 

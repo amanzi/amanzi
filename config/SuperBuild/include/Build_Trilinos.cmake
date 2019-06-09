@@ -179,21 +179,28 @@ set(Trilinos_CMAKE_ARCH_ARGS
 
 if ( ${AMANZI_ARCH} STREQUAL "Summit" )
    message("GOT SUMMIT! : ${AMANZI_ARCH}")
+   set(NVCC_WRAPPER_DEFAULT_COMPILER "${CMAKE_CXX_COMPILER}")
+   set(OMPI_CXX "${Trilinos_source_dir}/packages/kokkos/bin/nvcc_wrapper")
+   set(CUDA_LAUNCH_BLOCKING "1")
+   message("Wrapper: ${OMPI_CXX}")
+   message("Defalut NVCC: ${NVCC_WRAPPER_DEFAULT_COMPILER}")
    list(APPEND Trilinos_CMAKE_ARCH_ARGS
-        "-DKokkos_ENABLE_Cuda:BOOL=ON"
+        "-DCMAKE_CXX_COMPILER:STRING=${OMPI_CXX}"
+	"-DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS} -g -lineinfo -Xcudafe --diag_suppress=conversion_function_not_usable -Xcudafe --diag_suppress=cc_clobber_ignored -Xcudafe --diag_suppress=code_is_unreachable -Xcudafe "
+	"-DTPL_ENABLE_MPI:BOOL=ON"
+	"-DTPL_ENABLE_CUDA:BOLL=ON"
+	"-DKokkos_ENABLE_Cuda:BOOL=ON"
         "-DKokkos_ENABLE_Cuda_UVM:BOOL=ON"
-        "-DKOKKOS_ENABLE_CUDA_UVM:BOOL=ON"
         "-DKokkos_ENABLE_Cuda_Lambda:BOOL=ON"
-        "-DKokkos_ENABLE_Cuda_Relocatable_Device_Code:BOOL=ON"
-        "-DTPL_ENABLE_CUDA:BOOL=ON"
+   #     "-DKokkos_ENABLE_Cuda_Relocatable_Device_Code:BOOL=ON"
         "-DKOKKOS_ARCH:STRING=Power9,Volta70")
  else()
    list(APPEND Trilinos_CMAKE_ARCH_ARGS
-        "-DKokkos_ENABLE_CUDA:BOOL=OFF")               
- endif()   
+        "-DKokkos_ENABLE_CUDA:BOOL=OFF")
+ endif()
 
-#  - Final Trilinos CMake Arguments 
-set(Trilinos_CMAKE_ARGS 
+#  - Final Trilinos CMake Arguments
+set(Trilinos_CMAKE_ARGS
    ${Trilinos_CMAKE_PACKAGE_ARGS}
    ${Trilinos_CMAKE_TPL_ARGS}
    ${Trilinos_CMAKE_ARCH_ARGS}
