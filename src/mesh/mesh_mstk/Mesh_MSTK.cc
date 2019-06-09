@@ -354,6 +354,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
     extface_map_w_ghosts_(nullptr), extface_map_wo_ghosts_(nullptr),
     owned_to_extface_importer_(nullptr)
 {
+
   // extract optional control parameters, but first specify defaults
   contiguous_gids_ = true;
   Partitioner_type partitioner = PARTITIONER_DEFAULT;
@@ -402,7 +403,6 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
   if (serial_run) {
 
     // Load serial mesh
-
     mesh_ = MESH_New(F1);
     ok = generate_regular_mesh(mesh_,x0,y0,x1,y1,nx,ny);
 
@@ -494,10 +494,10 @@ Mesh_MSTK::Mesh_MSTK(const Teuchos::RCP<const Mesh>& parent_mesh,
   //
   // MESH_Enable_LocalIDSearch(parent_mesh_mstk);
 
-  int nent = entity_ids.size();
+  int nent = entity_ids.extent(0);
   List_ptr src_ents = List_New(nent);
   for (int i = 0; i < nent; ++i) {
-    MEntity_ptr ent = MEntFromID[entity_dim](parent_mesh_mstk,entity_ids[i]+1);
+    MEntity_ptr ent = MEntFromID[entity_dim](parent_mesh_mstk,entity_ids(i)+1);
     List_Add(src_ents,ent);
   }
 
@@ -3264,8 +3264,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
       idx = 0;
       while ((ment = MSet_Next_Entry(mset1,&idx))) {
         if (MEnt_PType(ment) != PGHOST) {
-          setents(it) = MEnt_ID(ment)-1;  // assign to next spot by dereferencing iterator
-          ++it;
+          setents(it++) = MEnt_ID(ment)-1;  // assign to next spot by dereferencing iterator
           ++nent_loc;
         }
       }
@@ -3274,8 +3273,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
       idx = 0;
       while ((ment = MSet_Next_Entry(mset1,&idx))) {
         if (MEnt_PType(ment) == PGHOST) {
-          setents(it) = MEnt_ID(ment)-1;  // assign to next spot by dereferencing iterator
-          ++it;
+          setents(it++) = MEnt_ID(ment)-1;  // assign to next spot by dereferencing iterator
           ++nent_loc;
         }
       }
@@ -3283,8 +3281,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
     case Parallel_type::ALL:
       idx = 0;
       while ((ment = MSet_Next_Entry(mset1,&idx))) {
-        setents(it) = MEnt_ID(ment)-1;  // assign to next spot by dereferencing iterator
-        ++it;
+        setents(it++) = MEnt_ID(ment)-1;  // assign to next spot by dereferencing iterator
         ++nent_loc;
       }
       break;
@@ -3425,7 +3422,7 @@ void Mesh_MSTK::init_face_map()
 
   if (!serial_run) {
 
-    // For parallel runs create map without and with ghost cells included
+    // For parallel runs -- map without and with ghost cells included
     // Also, put in owned cells before the ghost cells
     // Additionally, create a map of exterior faces only
 

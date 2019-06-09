@@ -36,7 +36,7 @@ class DomainFunction : public MaterialMeshFunction {
   ~DomainFunction() {};
 
   // access specs
-  const std::map<AmanziMesh::Entity_ID, double> get_ids(const AmanziMesh::Entity_kind& kind) { 
+  const std::map<AmanziMesh::Entity_ID, double> get_ids(const AmanziMesh::Entity_kind& kind) {
     std::vector<Teuchos::RCP<MaterialSpec> >& ms_list = *material_specs_[kind];
     Teuchos::RCP<MaterialSpec>& ms = *ms_list.begin();
     return *ms->second;
@@ -61,7 +61,7 @@ TEST(MESH2D)
       .set("low coordinate", corner_min)
       .set("high coordinate", corner_max);
 
-  Teuchos::RCP<AmanziGeometry::GeometricModel> 
+  Teuchos::RCP<AmanziGeometry::GeometricModel>
       gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(2, regions, *comm));
   MeshFactory meshfactory(comm,gm);
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 4, 4);
@@ -69,7 +69,7 @@ TEST(MESH2D)
   // test first region
   std::vector<std::string> rgns;
   rgns.push_back("RGN1");
-  AmanziMesh::Entity_kind kind = AmanziMesh::CELL;  
+  AmanziMesh::Entity_kind kind = AmanziMesh::CELL;
 
   Teuchos::RCP<MultiFunction> f = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new FunctionConstant(1.0))));
   Teuchos::RCP<MeshFunction::Domain> domain = Teuchos::rcp(new MeshFunction::Domain(rgns, kind));
@@ -78,7 +78,7 @@ TEST(MESH2D)
   {
     DomainFunction df(mesh);
     df.AddSpec(spec);
-    const std::map<AmanziMesh::Entity_ID, double>& ids = df.get_ids(kind); 
+    const std::map<AmanziMesh::Entity_ID, double>& ids = df.get_ids(kind);
 
     double vofs[4] = {1.0, 0.2, 0.2, 0.04};
     int n(0);
@@ -97,7 +97,7 @@ TEST(MESH2D)
   {
     DomainFunction df(mesh);
     df.AddSpec(spec);
-    const std::map<AmanziMesh::Entity_ID, double>& ids = df.get_ids(kind); 
+    const std::map<AmanziMesh::Entity_ID, double>& ids = df.get_ids(kind);
 
     for (std::map<AmanziMesh::Entity_ID, double>::const_iterator it = ids.begin(); it != ids.end(); ++it) {
       CHECK_CLOSE(it->second, 1.0, 1e-10);
@@ -105,4 +105,3 @@ TEST(MESH2D)
   }
 
 }
-

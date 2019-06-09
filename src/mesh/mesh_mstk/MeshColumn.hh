@@ -392,7 +392,7 @@ class MeshColumn : public Mesh {
         for (int i = 0 ; i < faces.extent(0); ++i) {
           if (face_in_column_[faces(i)] >= 0){
             Kokkos::resize(entids,entids.extent(0)+1);
-            entids(entids.extent(0)) = face_in_column_[faces(i)];
+            entids(entids.extent(0)-1) = face_in_column_[faces(i)];
           }
         }
         break;

@@ -47,19 +47,19 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
   // set my nodes
   Kokkos::View<Entity_ID*> my_nodes;
   parent_mesh->face_get_nodes(parent_face_, my_nodes);
-  nodes_.resize(my_nodes.size());
+  nodes_.resize(my_nodes.extent(0));
   if (flatten) {
-    for (int i=0; i!=my_nodes.size(); ++i) {
+    for (int i=0; i!=my_nodes.extent(0); ++i) {
       AmanziGeometry::Point parent_node;
-      parent_mesh->node_get_coordinates(my_nodes[i], &parent_node);
+      parent_mesh->node_get_coordinates(my_nodes(i), &parent_node);
       AmanziGeometry::Point child_node(2);
       child_node[0] = parent_node[0];
       child_node[1] = parent_node[1];
       nodes_[i] = child_node;
     }
   } else {
-    for (int i=0; i!=my_nodes.size(); ++i) {
-      parent_mesh->node_get_coordinates(my_nodes[i], &nodes_[i]);
+    for (int i=0; i!=my_nodes.extent(0); ++i) {
+      parent_mesh->node_get_coordinates(my_nodes(i), &nodes_[i]);
     }
   }
 

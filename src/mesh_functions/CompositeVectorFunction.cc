@@ -135,15 +135,15 @@ void CompositeVectorFunction::Compute(double time,
 
             // loop over indices
             Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells;
-            for (int i = 0 ; i < id_list.extent(0); ++i) {
-              mesh->face_get_cells(id_list(i), AmanziMesh::Parallel_type::ALL, cells);
+            for (int id = 0 ; id < id_list.extent(0); ++id) {
+              mesh->face_get_cells(id_list(id), AmanziMesh::Parallel_type::ALL, cells);
               if (cells.extent(0) == 1) {
-                AmanziMesh::Entity_ID bf = vandelay_map.getLocalElement(face_map.getGlobalElement(id_list(i)));
+                AmanziMesh::Entity_ID bf = vandelay_map.getLocalElement(face_map.getGlobalElement(id_list(id)));
                 AMANZI_ASSERT(bf >= 0);
 
 
                 // get the coordinate
-                AmanziGeometry::Point xf = mesh->face_centroid(id_list(i));
+                AmanziGeometry::Point xf = mesh->face_centroid(id_list(id));
                 for (int i=0; i!=dim; ++i) args[i+1] = xf[i];
 
                 // evaluate the functions and stuff the result into the CV
@@ -167,15 +167,15 @@ void CompositeVectorFunction::Compute(double time,
             mesh->get_set_entities(*region, kind, AmanziMesh::Parallel_type::OWNED, id_list);
 
             // loop over indices
-            for (int i = 0 ; i < id_list.extent(0); ++i) {
+            for (int id = 0 ; id < id_list.extent(0); ++id) {
               // get the coordinate
               AmanziGeometry::Point xc;
               if (kind == AmanziMesh::CELL) {
-                xc = mesh->cell_centroid(id_list(i));
+                xc = mesh->cell_centroid(id_list(id));
               } else if (kind == AmanziMesh::FACE) {
-                xc = mesh->face_centroid(id_list(i));
+                xc = mesh->face_centroid(id_list(id));
               } else if (kind == AmanziMesh::NODE) {
-                mesh->node_get_coordinates(id_list(i), &xc);
+                mesh->node_get_coordinates(id_list(id), &xc);
               } else {
                 AMANZI_ASSERT(0);
               }
@@ -184,7 +184,7 @@ void CompositeVectorFunction::Compute(double time,
               // evaluate the functions and stuff the result into the CV
               double *value = (*spec->second)(args);
               for (int i=0; i!=(*spec->second).size(); ++i) {
-                compvec(i,id_list(i)) = value[i];
+                compvec(i,id_list(id)) = value[i];
               }
             }
           } else {

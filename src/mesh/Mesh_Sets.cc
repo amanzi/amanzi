@@ -101,7 +101,7 @@ void Mesh::get_set_entities_box_vofs_(
 
         if ((volume = region->intersect(polytope_nodes, polytope_faces)) > 0.0) {
           Kokkos::resize(setents,setents.extent(0)+1);
-          setents(setents.extent(0)) = c; ;
+          setents(setents.extent(0)-1) = c; ;
           if (region->type()==AmanziGeometry::LINE_SEGMENT){
             Kokkos::resize(*volume_fractions,(*volume_fractions).extent(0)+1);
             (*volume_fractions)(volume_fractions_size++) = volume;
@@ -147,7 +147,7 @@ void Mesh::get_set_entities_box_vofs_(
         face_get_coordinates(f, polygon);
         if ((area = region->intersect(polygon)) > 0.0) {
           Kokkos::resize(setents,setents.extent(0)+1);
-          setents(setents.extent(0)) = f;
+          setents(setents.extent(0)-1) = f;
           (*volume_fractions)(volume_fractions_size++) = area / face_area(f);
         }
       }
@@ -170,7 +170,7 @@ void Mesh::get_set_entities_box_vofs_(
     for (int e = 0; e < nedges; ++e) {
       if (region->inside(edge_centroid(e))) {
         Kokkos::resize(setents,setents.extent(0)+1);
-        setents(setents.extent(0)) = e;
+        setents(setents.extent(0)-1) = e;
       }
     }
     break;
@@ -186,7 +186,7 @@ void Mesh::get_set_entities_box_vofs_(
       node_get_coordinates(v, &xv);
       if (region->inside(xv)) {
         Kokkos::resize(setents,setents.extent(0)+1);
-        setents(setents.extent(0)) = v;
+        setents(setents.extent(0)-1) = v;
       }
     }
     break;

@@ -159,7 +159,8 @@ Mesh::cache_cell_face_info_() const
       Entity_ID f = cell_face_ids_.entries(jf+cell_face_ids_.row_map(c));
       int dir = cell_face_dirs_.entries(jf+cell_face_dirs_.row_map(c));
       face_cell_ids_.entries(face_cell_ids_.row_map(f)+offset(f)) = dir > 0 ? c : ~ c;
-      face_cell_ptype_.entries(face_cell_ptype_.row_map(f)+offset(f)++) = entity_get_ptype(CELL, c);
+      face_cell_ptype_.entries(face_cell_ptype_.row_map(f)+offset(f)) = entity_get_ptype(CELL, c);
+      offset(f)++;
     }
   }
 
@@ -587,9 +588,8 @@ Mesh::compute_face_geometric_quantities_() const
   Kokkos::resize(face_centroids_,nfaces);
 
   // Temporary views
-  Kokkos::View<Kokkos::Crs<AmanziGeometry::Point,Kokkos::HostSpace>::size_type*> normals_count("",nfaces+1);
-  normals_count(0) = 0;
-  Kokkos::View<AmanziGeometry::Point*> normals_rows;
+  Kokkos::resize(face_normals_.row_map,nfaces+1);
+  face_normals_.row_map(0) = 0;
 
   for (int i = 0; i < nfaces; i++) {
     double area;
@@ -605,14 +605,12 @@ Mesh::compute_face_geometric_quantities_() const
     face_areas_(i) = area;
     face_centroids_(i) = centroid;
 
-    Kokkos::resize(normals_rows,normals_count(i)+normals.size());
+    Kokkos::resize(face_normals_.entries,face_normals_.row_map(i)+normals.size());
     for(int j = 0 ; j < normals.size(); ++j){
-      normals_rows(normals_count(i)+j) = normals[j];
+      face_normals_.entries(face_normals_.row_map(i)+j) = normals[j];
     }
-    normals_count(i+1) = normals.size()+normals_count(i);
+    face_normals_.row_map(i+1) = normals.size()+face_normals_.row_map(i);
   }
-
-  face_normals_ = Kokkos::Crs<AmanziGeometry::Point,Kokkos::HostSpace>(normals_count,normals_rows);
 
   face_geometry_precomputed_ = true;
 
@@ -1544,12 +1542,12 @@ Mesh::build_columns(const std::string& setname) const
   Kokkos::View<Entity_ID*> top_faces;
   get_set_entities(setname, FACE, Parallel_type::ALL, top_faces);
 
-  int ncolumns = top_faces.size();
+  int ncolumns = top_faces.extent(0);
   num_owned_cols_ = get_set_size(setname, FACE, Parallel_type::OWNED);
 
   int success = 1;
   for (int i = 0; i < ncolumns; i++) {
-    Entity_ID f = top_faces[i];
+    Entity_ID f = top_faces(i);
     Kokkos::View<Entity_ID*> fcells;
     face_get_cells(f,Parallel_type::ALL,fcells);
 
