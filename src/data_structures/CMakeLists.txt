@@ -142,4 +142,9 @@ if (BUILD_TESTS)
     #	                        geometry mesh_factory
     #                           simple_mesh
     #	                        ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(common_patterns, test_common_patterns
+                    KIND unit
+                    SOURCE test/Main.cc test/test_common_patterns.cc
+                    LINK_LIBS data_structures mesh geometry mesh_factory simple_mesh ${UnitTest_LIBRARIES})
 endif()
