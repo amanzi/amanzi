@@ -292,7 +292,6 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     SOURCE_DIR    ${Trilinos_source_dir}           # Source directory
                     CMAKE_ARGS        ${Trilinos_Config_File_ARGS}
                     CMAKE_CACHE_ARGS  ${Trilinos_CMAKE_ARGS}
-				      -DTpetraCore_ENABLE_TESTS:BOOL=ON
                                       -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}
                                       -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
                                       -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}

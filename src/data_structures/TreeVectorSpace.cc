@@ -9,17 +9,22 @@
    ------------------------------------------------------------------------- */
 
 #include "errors.hh"
-#include "CompositeVectorSpace.hh"
+#include "CompositeSpace.hh"
 #include "TreeVectorSpace.hh"
 
 namespace Amanzi {
+
+// Constructor from data
+TreeVectorSpace::TreeVectorSpace(const Teuchos::RCP<const CompositeSpace>& cvfac) :
+    data_(cvfac),
+    comm_(cvfac->Comm()) {}
 
 // Copy constructor
 TreeVectorSpace::TreeVectorSpace(const TreeVectorSpace& other) :
   comm_(other.comm_)
 {
   if (other.data_ != Teuchos::null) {
-    data_ = Teuchos::rcp(new CompositeVectorSpace(*other.data_));
+    data_ = Teuchos::rcp(new CompositeSpace(*other.data_));
   }
 
   for (auto other_subvec : other) {

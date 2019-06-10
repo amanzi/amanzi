@@ -16,8 +16,10 @@
 #include "Epetra_Vector.h"
 
 // #include "Mesh_MSTK.hh"
+#include "AmanziComm.hh"
 #include "MeshFactory.hh"
 #include "CompositeVector.hh"
+#include "CompositeVectorSpace.hh"
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
@@ -40,30 +42,18 @@ struct test_cv_vandelay {
     mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
     // mesh = Teuchos::rcp(new Mesh_MSTK(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2, comm, NULL));
 
-    std::vector<Entity_kind> locations(2);
-    locations[0] = CELL;
-    locations[1] = FACE;
+    std::vector<Entity_kind> locations = {CELL, FACE};
+    std::vector<std::string> names = {"cell", "face"};
 
-    std::vector<Entity_kind> locations_v(2);
-    locations_v[0] = CELL;
-    locations_v[1] = BOUNDARY_FACE;
+    // std::vector<Entity_kind> locations_v = {CELL, BOUNDARY_FACE};
+    // std::vector<std::string> names_v = {"cell", "boundary_face"};
 
-    std::vector<std::string> names(2);
-    names[0] = "cell";
-    names[1] = "face";
-
-    std::vector<std::string> names_v(2);
-    names_v[0] = "cell";
-    names_v[1] = "boundary_face";
-
-    std::vector<int> num_dofs(2);
-    num_dofs[0] = 2;
-    num_dofs[1] = 1;
+    std::vector<int> num_dofs = {2,1};
 
     x_space = Teuchos::rcp(new CompositeVectorSpace());
     x_space->SetMesh(mesh)->SetGhosted()
         ->SetComponents(names, locations, num_dofs);
-    x = Teuchos::rcp(new CompositeVector(*x_space));
+    x = x_space->Create();
   }
   ~test_cv_vandelay() {  }
 };
@@ -72,7 +62,7 @@ struct test_cv_vandelay {
 SUITE(VANDELAY_COMPOSITE_VECTOR) {
   // test the vector's putscalar
   TEST_FIXTURE(test_cv_vandelay, CVVandelay) {
-    std::cout << "X has " << x->NumComponents() << " components" << std::endl;
+    std::cout << "X has " << x->size() << " components" << std::endl;
     x->PutScalar(2.0);
 
     {

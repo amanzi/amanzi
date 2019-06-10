@@ -44,17 +44,16 @@ add_definitions("-DMSTK_HAVE_MPI")
 # Library: data_structures
 #
 #file(GLOB data_structures_src_files "*.cc")
-set(data_structures_src_files BlockVector.cc
+set(data_structures_src_files BlockSpace.cc
+                              CompositeSpace.cc
                               CompositeVectorSpace.cc
-                              CompositeVector.cc
                               NoxVector.cc
                               TreeVectorSpace.cc
                               TreeVector.cc
-                              #ParallelCommunication.cc
                               #GraphFE.cc
                               #MatrixFE.cc
-                              #SuperMapLumped.cc
-                              #SuperMap.cc
+                              SuperMapLumped.cc
+                              SuperMap.cc
                               )
 
 file(GLOB data_structures_inc_files "*.hh")
@@ -63,7 +62,7 @@ add_amanzi_library(data_structures
                    SOURCE ${data_structures_src_files}
                    HEADERS ${data_structures_inc_files}
 		   LINK_LIBS mesh error_handling 
-                             ${Teuchos_Libraries} ${Epetra_Libraries}
+                             ${Teuchos_Libraries} ${Tpetra_Libraries}
                              ${Thyra_Libraries} ${NOX_LIBRARIES})
 
 #
@@ -96,36 +95,40 @@ if (BUILD_TESTS)
                     NPROCS 2
         	    SOURCE test/Main.cc
                            test/test_communication.cc
+        		   test/test_block_vector.cc
         		   test/test_composite_vector.cc
+        		   test/test_int_composite_vector.cc
         		   test/test_tree_vector.cc
                            test/test_vandelay.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # # Test: tests for FE graph and matrices
     # add_amanzi_test(graph_fe_test graph_fe_test
     #                 KIND unit
     #                 SOURCE test/Main.cc test/graph_fe_test.cc
-    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # add_amanzi_test(matrix_fe_test matrix_fe_test
     #                 KIND unit
     #                 SOURCE test/Main.cc test/matrix_fe_test.cc
-    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # add_amanzi_test(matrix_fe_test_np2 matrix_fe_test NPROCS 2 KIND unit)
     # add_amanzi_test(matrix_fe_test_np4 matrix_fe_test NPROCS 4 KIND unit)
 
-    # add_amanzi_test(supermap_test supermap_test 
-    #                 KIND unit
-    #                 SOURCE test/Main.cc test/supermap_test.cc test/supermap_block_test.cc
-    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
-    # add_amanzi_test(supermap_test_np3 supermap_test NPROCS 3 KIND unit)
-    # add_amanzi_test(supermap_test_np5 supermap_test NPROCS 5 KIND unit)
+    add_amanzi_test(supermap test_supermap
+                    KIND unit
+                    SOURCE test/Main.cc test/test_supermap.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(test_supermap_np3 test_supermap NPROCS 3 KIND unit)
+    add_amanzi_test(test_supermap_np5 test_supermap NPROCS 5 KIND unit)
 
-    # add_amanzi_test(supermap_block_test supermap_block_test
+    # add_amanzi_test(block_supermap test_block_supermap
     #                 KIND unit
-    #                 SOURCE test/Main.cc test/supermap_block_test.cc
-    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
+    #                 SOURCE test/Main.cc test/test_block_supermap.cc
+    #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    # add_amanzi_test(test_block_supermap_np3 test_block_supermap NPROCS 3 KIND unit)
+    # add_amanzi_test(test_block_supermap_np5 test_block_supermap NPROCS 5 KIND unit)
 
     # add_amanzi_test(matrix_fe_test_speed matrix_fe_test_speed
     #                 KIND unit

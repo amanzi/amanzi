@@ -74,10 +74,65 @@ typedef Tpetra::Map<> BlockMap_type; // is there a Tpetra block map?
 typedef Tpetra::Import<> Import_type;
 
 // Tpetra vectors
-typedef Tpetra::Vector<> Vector_type;
-typedef Tpetra::Vector<int> IntVector_type;
-typedef Tpetra::MultiVector<> MultiVector_type;
-typedef Tpetra::MultiVector<int> IntMultiVector_type;
+// -- alias
+template<typename Scalar>
+using Vector_type_ = Tpetra::Vector<Scalar>;
+
+template<typename Scalar>
+using MultiVector_type_ = Tpetra::MultiVector<Scalar>;
+
+template<typename Scalar>
+using Vector_ptr_type_ = Teuchos::RCP<Vector_type_<Scalar> >;
+template<typename Scalar>
+using cVector_ptr_type_ = Teuchos::RCP<const Vector_type_<Scalar> >;
+template<typename Scalar>
+using MultiVector_ptr_type_ = Teuchos::RCP<MultiVector_type_<Scalar> >;
+template<typename Scalar>
+using cMultiVector_ptr_type_ = Teuchos::RCP<const MultiVector_type_<Scalar> >;
+
+// -- default specializations -- NOTE: this is the ony place here and in data
+//    structures where these types are defined!
+using double_type = double;
+using int_type = int;
+using LO = int;
+using GO = int;
+
+using Vector_type = Vector_type_<double_type>;
+using MultiVector_type = MultiVector_type_<double_type>;
+using IntVector_type = Vector_type_<int_type>;
+using IntMultiVector_type = MultiVector_type_<int_type>;
+
+// Kokkos Views into vectors
+template<class Device_type, typename Scalar>
+using VectorView_type_ = Kokkos::View<Scalar*, Kokkos::LayoutLeft, Device_type>; // MH: layout depends on Tpetra fix later
+
+template<class Device_type, typename Scalar>
+using cVectorView_type_ = Kokkos::View<const Scalar*, Kokkos::LayoutLeft, Device_type>;
+
+template<class Device_type, typename Scalar>
+using MultiVectorView_type_ = Kokkos::View<Scalar**, Kokkos::LayoutLeft, Device_type>;
+
+template<class Device_type, typename Scalar>
+using cMultiVectorView_type_ = Kokkos::View<const Scalar**, Kokkos::LayoutLeft, Device_type>;
+
+// and some defaults
+template<class Device_type>
+using VectorView_type = VectorView_type_<Device_type, double_type>;
+template<class Device_type>
+using cVectorView_type = cVectorView_type_<Device_type, double_type>;
+template<class Device_type>
+using MultiVectorView_type = MultiVectorView_type_<Device_type, double_type>;
+template<class Device_type>
+using cMultiVectorView_type = cMultiVectorView_type_<Device_type, double_type>;
+
+template<class Device_type>
+using IntVectorView_type = VectorView_type_<Device_type, int_type>;
+template<class Device_type>
+using cIntVectorView_type = cVectorView_type_<Device_type, int_type>;
+template<class Device_type>
+using IntMultiVectorView_type = MultiVectorView_type_<Device_type, int_type>;
+template<class Device_type>
+using cIntMultiVectorView_type = cMultiVectorView_type_<Device_type, int_type>;
 
 
 #else // Trilinos Epetra stack
@@ -111,14 +166,11 @@ typedef Teuchos::RCP<const Import_type> Import_ptr_type;
 // non-const
 typedef Teuchos::RCP<Vector_type> Vector_ptr_type;
 typedef Teuchos::RCP<MultiVector_type> MultiVector_ptr_type;
-typedef Teuchos::RCP<IntVector_type> IntVector_ptr_type;
-//typedef Teuchos::RCP<MultiIntVector_type> MultiIntVector_ptr_type;
 
 // const
 typedef Teuchos::RCP<const Vector_type> cVector_ptr_type;
 typedef Teuchos::RCP<const MultiVector_type> cMultiVector_ptr_type;
-typedef Teuchos::RCP<const IntVector_type> cIntVector_ptr_type;
-//typedef Teuchos::RCP<const MultiIntVector_type> cMultiIntVector_ptr_type;
+
 
 
 } // namespace Amanzi
