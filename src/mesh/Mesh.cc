@@ -1123,6 +1123,7 @@ Mesh::valid_set_name(std::string name, Entity_kind kind) const
         return true;
     } else {
       if (kind == CELL && entity_type == "FACE") return true;
+      if (kind == FACE && entity_type == "FACE") return true;
     } 
     return false;
   }
