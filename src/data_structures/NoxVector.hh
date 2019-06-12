@@ -11,8 +11,6 @@
 #include "Epetra_Vector.h"
 #include "NOX_Abstract_Vector.H"
 
-#include "data_structures_types.hh"
-
 namespace Amanzi {
 
 template<class VectorClass>

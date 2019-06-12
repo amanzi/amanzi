@@ -34,10 +34,9 @@ assumed in several places.
 #include "Epetra_Vector.h"
 
 #include "Iterators.hh"
-#include "data_structures_types.hh"
+#include "DataStructuresHelpers.hh"
 
 #include "CompositeVector.hh"
-#include "CompositeVectorSpace.hh"
 #include "TreeVectorSpace.hh"
 
 namespace Amanzi {
@@ -50,11 +49,11 @@ class TreeVector {
   // Basic constructors of a TreeVector
   TreeVector();
   TreeVector(const Comm_ptr_type& comm);
-  explicit TreeVector(const TreeVectorSpace& space, InitMode mode=INIT_MODE_NONE);
-  explicit TreeVector(const Teuchos::RCP<TreeVectorSpace>& space, InitMode mode=INIT_MODE_NONE);
+  explicit TreeVector(const TreeVectorSpace& space, InitMode mode=InitMode::ZERO);
+  explicit TreeVector(const Teuchos::RCP<TreeVectorSpace>& space, InitMode mode=InitMode::ZERO);
 
   // copy constructors
-  TreeVector(const TreeVector& other, InitMode mode=INIT_MODE_COPY);
+  TreeVector(const TreeVector& other, InitMode mode=InitMode::COPY);
 
   // Assignment operator.
   TreeVector& operator=(const TreeVector& other);
