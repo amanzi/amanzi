@@ -1411,6 +1411,12 @@ if [ ! -n "${mpi_root_dir}" ]; then
   build_c_compiler=${tools_install_prefix}/bin/mpicc
   build_cxx_compiler=${tools_install_prefix}/bin/mpicxx
   build_fort_compiler=${tools_install_prefix}/bin/mpif90
+
+  # Setting environment varibles
+  if [ "${AMANZI_ARCH}" = "Summit" ]; then 
+    export CUDA_LAUNCH_BLOCKING=1
+    export NVCC_WRAPPER_DEFAULT_COMPILER=${build_cxx_compiler}
+  fi 
       
   cd ${pwd_save}
       

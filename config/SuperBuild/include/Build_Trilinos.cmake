@@ -169,6 +169,7 @@ if (Trilinos_Build_Config_File)
     message(DEBUG "Trilinos_CMAKE_EXTRA_ARGS = ${Trilinos_CMAKE_EXTRA_ARGS}")
 endif()    
 
+set(Trilinos_CMAKE_CXX_FLAGS ${Amanzi_COMMON_CXXFLAGS})
 
 # - Architecture Args.... these will need work.
 set(Trilinos_CMAKE_ARCH_ARGS
@@ -179,21 +180,22 @@ set(Trilinos_CMAKE_ARCH_ARGS
 
 if ( ${AMANZI_ARCH} STREQUAL "Summit" )
    message("GOT SUMMIT! : ${AMANZI_ARCH}")
-   set(NVCC_WRAPPER_DEFAULT_COMPILER "${CMAKE_CXX_COMPILER}")
-   set(OMPI_CXX "${Trilinos_source_dir}/packages/kokkos/bin/nvcc_wrapper")
-   set(CUDA_LAUNCH_BLOCKING "1")
-   message("Wrapper: ${OMPI_CXX}")
-   message("Defalut NVCC: ${NVCC_WRAPPER_DEFAULT_COMPILER}")
+   #set(NVCC_WRAPPER_DEFAULT_COMPILER "${CMAKE_CXX_COMPILER}")
+   set(NVCC_WRAPPER_PATH "${Trilinos_source_dir}/packages/kokkos/bin/nvcc_wrapper")
+   set(Trilinos_CMAKE_CXX_FLAGS "${Trilinos_CMAKE_CXX_FLAGS} -Wno-deprecated-declarations -lineinfo -Xcudafe --diag_suppress=conversion_function_not_usable -Xcudafe --diag_suppress=cc_clobber_ignored -Xcudafe --diag_suppress=code_is_unreachable")
+   #set(CUDA_LAUNCH_BLOCKING "1")
+   message("Defalut NVCC: $ENV{NVCC_WRAPPER_DEFAULT_COMPILER}")
+   message("Wrapper: ${NVCC_WRAPPER_PATH}")
+   message("COMPILR: ${CMAKE_CXX_COMPILER}")
+   message("FLAGS: ${Trilinos_CMAKE_CXX_FLAGS}")
    list(APPEND Trilinos_CMAKE_ARCH_ARGS
-        "-DCMAKE_CXX_COMPILER:STRING=${OMPI_CXX}"
-	"-DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS} -g -lineinfo -Xcudafe --diag_suppress=conversion_function_not_usable -Xcudafe --diag_suppress=cc_clobber_ignored -Xcudafe --diag_suppress=code_is_unreachable -Xcudafe "
 	"-DTPL_ENABLE_MPI:BOOL=ON"
 	"-DTPL_ENABLE_CUDA:BOLL=ON"
+	"-DTPL_ENABLE_MPI:BOLL=ON"
 	"-DKokkos_ENABLE_Cuda:BOOL=ON"
         "-DKokkos_ENABLE_Cuda_UVM:BOOL=ON"
         "-DKokkos_ENABLE_Cuda_Lambda:BOOL=ON"
-   #     "-DKokkos_ENABLE_Cuda_Relocatable_Device_Code:BOOL=ON"
-        "-DKOKKOS_ARCH:STRING=Power9,Volta70")
+        "-DKOKKOS_ARCH:STRING=Power9;Volta70")
  else()
    list(APPEND Trilinos_CMAKE_ARCH_ARGS
         "-DKokkos_ENABLE_CUDA:BOOL=OFF")
@@ -292,15 +294,17 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     SOURCE_DIR    ${Trilinos_source_dir}           # Source directory
                     CMAKE_ARGS        ${Trilinos_Config_File_ARGS}
                     CMAKE_CACHE_ARGS  ${Trilinos_CMAKE_ARGS}
+			              -DCMAKE_CXX_COMPILER:STRING=${NVCC_WRAPPER_PATH}
 				      -DTpetraCore_ENABLE_TESTS:BOOL=ON
                                       -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}
-                                      -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
+                                      -DCMAKE_CXX_FLAGS:STRING=${Trilinos_CMAKE_CXX_FLAGS}
                                       -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
                                       -DCMAKE_INSTALL_PREFIX:PATH=${Trilinos_install_dir}
                                       -DTrilinos_ENABLE_Stratimikos:BOOL=FALSE
                                       -DTrilinos_ENABLE_SEACAS:BOOL=FALSE
                                       -DCMAKE_INSTALL_RPATH:PATH=${Trilinos_install_dir}/lib
                                       -DCMAKE_INSTALL_NAME_DIR:PATH=${Trilinos_install_dir}/lib
+				      -DSTK_ENABLE_TESTS:BOOL=FALSE
                     # -- Build
                     BINARY_DIR       ${Trilinos_build_dir}        # Build directory 
                     BUILD_COMMAND    $(MAKE)                      # $(MAKE) enables parallel builds through make
