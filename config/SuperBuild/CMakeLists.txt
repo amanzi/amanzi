@@ -728,6 +728,33 @@ if (ENABLE_MSTK_Mesh)
              -DMSTK_LIBRARY_DIR:PATH=${MSTK_LIBRARY_DIR})
 endif()
 
+# ############################################################################ #
+# CUDA 
+# ############################################################################ #
+if(${AMANZI_ARCH} STREQUAL "Summit")
+  find_package(CUDA REQUIRED)
+  message(STATUS ">>> CUDA_INCLUDE   = ${CUDA_INCLUDE_DIRS}")
+  message(STATUS ">>> CUDA_LIBRARIES = ${CUDA_LIBRARIES}")
+  include_directories(${CUDA_INCLUDE_DIRS})
+  append_set(Amanzi_TPL_CMAKE_ARGS
+           -DENABLE_CUDA:BOOL=ON
+           -DCUDA_INCLUDE_DIR:PATH=${CUDA_INCLUDE_DIRS}
+           -DCUDA_LIBRARY_DIR:PATH=${CUDA_LIBRARIES})
+endif()
+
+
+# ############################################################################ #
+# KOKKOS 
+# ############################################################################ #
+if(${AMANZI_ARCH} STREQUAL "Summit")
+  message(STATUS ">>> KOKKOS_INCLUDE   = ${Trilinos_INSTALL_PREFIX}/include")
+  message(STATUS ">>> KOKKOS_LIBRARIES = ${Trilinos_INSTALL_PREFIX}/lib")
+  append_set(Amanzi_TPL_CMAKE_ARGS
+           -DENABLE_KOKKOS:BOOL=ON
+           -DKOKKOS_INCLUDE_DIR:PATH="${Trilinos_INSTALL_PREFIX}/include"
+           -DKOKKOS_LIBRARY_DIR:PATH="${Trilinos_INSTALL_PREFIX}/lib")
+endif()
+
 # Silo
 if (ENABLE_Silo)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_Silo.cmake)

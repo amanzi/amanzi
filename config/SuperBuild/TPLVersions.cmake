@@ -441,6 +441,7 @@ set(Trilinos_ARCHIVE_FILE   trilinos-release-${Trilinos_VERSION}.tar.gz)
 set(Trilinos_SAVEAS_FILE    ${Trilinos_ARCHIVE_FILE})
 set(Trilinos_MD5_SUM        de912cca43c2ca3b74aa08528ac39dbd)
 set(Trilinos_GIT_REPOSITORY "https://github.com/trilinos/Trilinos")
+set(Trilinos_GIT_TAG        "0bf557717ec1cf692828e250f95c1dcaba4f01c9")
 
 #
 # TPL: SEACAS

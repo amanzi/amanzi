@@ -64,6 +64,24 @@ if ( NOT MPI_WRAPPERS_IN_USE )
 endif()
 
 ##############################################################################
+# CUDA
+##############################################################################
+if(${AMANZI_ARCH} STREQUAL "Summit")
+  find_package(CUDA REQUIRED)
+
+  message(STATUS "CUDA Package information")
+  message(STATUS "\tCUDA_DIR          = ${CUDA_DIR}")
+  message(STATUS "\tCUDA_INCLUDE_DIR  = ${CUDA_INCLUDE_DIR}")
+  message(STATUS "\tCUDA_INCLUDE_DIRS = ${CUDA_INCLUDE_DIRS}")
+  message(STATUS "\tCUDA_LIBRARY_DIR  = ${CUDA_LIBRARY_DIR}")
+  message(STATUS "\tCUDA_LIBRARY      = ${CUDA_LIBRARY}")
+  message(STATUS "\tCUDA_LIBRARIES    = ${CUDA_LIBRARIES}")
+  message(STATUS "")
+
+endif()
+
+
+##############################################################################
 # ZLIB
 ##############################################################################
 

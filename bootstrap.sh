@@ -1414,10 +1414,9 @@ if [ ! -n "${mpi_root_dir}" ]; then
 
   # Setting environment varibles
   if [ "${AMANZI_ARCH}" = "Summit" ]; then 
-    export CUDA_LAUNCH_BLOCKING=1
-    export NVCC_WRAPPER_DEFAULT_COMPILER=${build_cxx_compiler}
+    kokkos="ON"
+    cuda="ON"
   fi 
-      
   cd ${pwd_save}
       
   status_message "Tools build complete: new MPI root=${mpi_root_dir}"
@@ -1498,6 +1497,8 @@ if [ -z "${tpl_config_file}" ]; then
       -DTPL_DOWNLOAD_DIR:FILEPATH=${tpl_download_dir} \
       -DTPL_PARALLEL_JOBS:INT=${parallel_jobs} \
       -DAMANZI_ARCH:STRING=${AMANZI_ARCH} \
+      -DENABLE_KOKKOS:BOOL=${kokkos} \
+      -DENABLE_CUDA:BOOL=${cuda} \
       ${nersc_tpl_opts} \
       ${tpl_build_src_dir}"
 
@@ -1576,6 +1577,14 @@ fi
 
 status_message "Build Amanzi with configure file ${tpl_config_file}"
 
+# Setting environment varibles
+if [ "${AMANZI_ARCH}" = "Summit" ]; then 
+  export CUDA_LAUNCH_BLOCKING=1
+  export NVCC_WRAPPER_DEFAULT_COMPILER=${build_cxx_compiler}
+  build_cxx_compiler=${tpl_install_prefix}/trilinos-12-14-1_master/bin/nvcc_wrapper
+fi 
+ 
+
 # Configure the Amanzi build
 cmd_configure="${cmake_binary} \
     -C${tpl_config_file} \
@@ -1604,6 +1613,8 @@ cmd_configure="${cmake_binary} \
     -DENABLE_Regression_Tests:BOOL=${reg_tests} \
     -DMPI_EXEC_GLOBAL_ARGS:STRING=${tools_mpi_exec_args} \
     -DAMANZI_ARCH:STRING=${AMANZI_ARCH} \
+    -DENABLE_KOKKOS:BOOL=${kokkos} \
+    -DENABLE_CUDA:BOOL=${cuda} \
     ${nersc_amanzi_opts} \
     ${amanzi_source_dir}"
 
