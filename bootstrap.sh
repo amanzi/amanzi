@@ -1413,7 +1413,9 @@ if [ ! -n "${mpi_root_dir}" ]; then
   build_fort_compiler=${tools_install_prefix}/bin/mpif90
 
   # Setting environment varibles
-  if [ "${AMANZI_ARCH}" = "Summit" ]; then 
+  if [ "${AMANZI_ARCH}" = "Summit" ]; then
+    export CUDA_LAUNCH_BLOCKING=1
+    export NVCC_WRAPPER_DEFAULT_COMPILER=${build_cxx_compiler}
     kokkos="ON"
     cuda="ON"
   fi 
@@ -1579,8 +1581,6 @@ status_message "Build Amanzi with configure file ${tpl_config_file}"
 
 # Setting environment varibles
 if [ "${AMANZI_ARCH}" = "Summit" ]; then 
-  export CUDA_LAUNCH_BLOCKING=1
-  export NVCC_WRAPPER_DEFAULT_COMPILER=${build_cxx_compiler}
   build_cxx_compiler=${tpl_install_prefix}/trilinos-12-14-1_master/bin/nvcc_wrapper
 fi 
  
