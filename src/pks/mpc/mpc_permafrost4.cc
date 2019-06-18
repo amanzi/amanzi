@@ -37,6 +37,12 @@ MPCPermafrost4::MPCPermafrost4(Teuchos::ParameterList& pk_tree,
   // propagate domain information down to delegates
   plist_->sublist("surface ewc delegate").set("domain name", domain_surf_);
   plist_->sublist("ewc delegate").set("domain name", domain_subsurf_);
+
+  // exchange flux keys and evaluators
+  mass_exchange_key_ = Keys::readKey(*plist_, domain_surf_, "mass exchange flux", "surface_subsurface_flux");
+  energy_exchange_key_ = Keys::readKey(*plist_, domain_surf_, "energy exchange flux", "surface_subsurface_energy_flux");
+  S->FEList().sublist(mass_exchange_key_).set("field evaluator type", "primary variable");
+  S->FEList().sublist(energy_exchange_key_).set("field evaluator type", "primary variable");
 }
 
 
@@ -95,11 +101,19 @@ MPCPermafrost4::Setup(const Teuchos::Ptr<State>& S) {
 
 
   // require the coupling fields, claim ownership
+  S->RequireField(mass_exchange_key_, name_)
+      ->SetMesh(surf_mesh_)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  Teuchos::RCP<FieldEvaluator> fe = S->RequireFieldEvaluator(mass_exchange_key_);
+  mass_exchange_pvfe_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fe);
+  AMANZI_ASSERT(mass_exchange_pvfe_.get());
 
-  S->RequireField(Keys::getKey(domain_surf_,"surface_subsurface_flux"), name_)
-    ->SetMesh(surf_mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireField(Keys::getKey(domain_surf_,"surface_subsurface_energy_flux"), name_)
-    ->SetMesh(surf_mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireField(energy_exchange_key_, name_)
+      ->SetMesh(surf_mesh_)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  fe = S->RequireFieldEvaluator(energy_exchange_key_);
+  energy_exchange_pvfe_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fe);
+  AMANZI_ASSERT(energy_exchange_pvfe_.get());
   
   if (precon_type_ != PRECON_NONE) {  
     // Add the (diagonal) surface blocks into the subsurface blocks.
@@ -174,21 +188,29 @@ MPCPermafrost4::Setup(const Teuchos::Ptr<State>& S) {
 void
 MPCPermafrost4::Initialize(const Teuchos::Ptr<State>& S) {
   // initialize coupling terms
-
-  S->GetFieldData(Keys::getKey(domain_surf_,"surface_subsurface_flux"), name_)->PutScalar(0.);
-  S->GetField(Keys::getKey(domain_surf_,"surface_subsurface_flux"), name_)->set_initialized();
-  S->GetFieldData(Keys::getKey(domain_surf_,"surface_subsurface_energy_flux"), name_)->PutScalar(0.);
-  S->GetField(Keys::getKey(domain_surf_,"surface_subsurface_energy_flux"), name_)->set_initialized();
+  S->GetFieldData(mass_exchange_key_, name_)->PutScalar(0.);
+  S->GetField(mass_exchange_key_, name_)->set_initialized();
+  S->GetFieldData(energy_exchange_key_, name_)->PutScalar(0.);
+  S->GetField(energy_exchange_key_, name_)->set_initialized();
 
   // Initialize all sub PKs.
-
   MPCSubsurface::Initialize(S);
 
-  // ensure continuity of ICs... surface takes precedence.
-  CopySurfaceToSubsurface(*S->GetFieldData(Keys::getKey(domain_surf_,"pressure"), surf_flow_pk_->name()),
-                          S->GetFieldData(Keys::getKey(domain_subsurf_,"pressure"), domain_flow_pk_->name()).ptr());
-  CopySurfaceToSubsurface(*S->GetFieldData(Keys::getKey(domain_surf_,"temperature"), surf_energy_pk_->name()),
-                          S->GetFieldData(Keys::getKey(domain_subsurf_,"temperature"), domain_energy_pk_->name()).ptr());
+  // ensure continuity of ICs... surface takes precedence if it was initialized
+  if (S->GetField(Keys::getKey(domain_surf_, "pressure"))->initialized()) {
+    CopySurfaceToSubsurface(*S->GetFieldData(Keys::getKey(domain_surf_,"pressure"), surf_flow_pk_->name()),
+                            S->GetFieldData(Keys::getKey(domain_subsurf_,"pressure"), domain_flow_pk_->name()).ptr());
+  } else {
+    CopySubsurfaceToSurface(*S->GetFieldData(Keys::getKey(domain_subsurf_,"pressure"), domain_flow_pk_->name()),
+                            S->GetFieldData(Keys::getKey(domain_surf_,"pressure"), surf_flow_pk_->name()).ptr());
+  }
+  if (S->GetField(Keys::getKey(domain_surf_, "temperature"))->initialized()) {
+    CopySurfaceToSubsurface(*S->GetFieldData(Keys::getKey(domain_surf_,"temperature"), surf_energy_pk_->name()),
+                            S->GetFieldData(Keys::getKey(domain_subsurf_,"temperature"), domain_energy_pk_->name()).ptr());
+  } else {
+    CopySubsurfaceToSurface(*S->GetFieldData(Keys::getKey(domain_subsurf_,"temperature"), domain_energy_pk_->name()),
+                            S->GetFieldData(Keys::getKey(domain_surf_,"temperature"), surf_energy_pk_->name()).ptr());
+  }
 }
 
 
@@ -203,23 +225,23 @@ MPCPermafrost4::set_states(const Teuchos::RCP<const State>& S,
 
 // Compute the non-linear functional g = g(t,u,udot)
 void
-MPCPermafrost4::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+MPCPermafrost4::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                            Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   // propagate updated info into state
   Solution_to_State(*u_new, S_next_);
 
   // Evaluate the surface flow residual
-  surf_flow_pk_->Functional(t_old, t_new, u_old->SubVector(2),
+  surf_flow_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(2),
                             u_new->SubVector(2), g->SubVector(2));
 
   // The residual of the surface flow equation provides the mass flux from
   // subsurface to surface.
-  Epetra_MultiVector& source = *S_next_->GetFieldData(Keys::getKey(domain_surf_,"surface_subsurface_flux"),
-          name_)->ViewComponent("cell",false);
+  Epetra_MultiVector& source = *S_next_->GetFieldData(mass_exchange_key_, name_)->ViewComponent("cell",false);
   source = *g->SubVector(2)->Data()->ViewComponent("cell",false);
+  mass_exchange_pvfe_->SetFieldAsChanged(S_next_.ptr());
 
   // Evaluate the subsurface residual, which uses this flux as a Neumann BC.
-  domain_flow_pk_->Functional(t_old, t_new, u_old->SubVector(0),
+  domain_flow_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(0),
           u_new->SubVector(0), g->SubVector(0));
 
   // All surface to subsurface fluxes have been taken by the subsurface.
@@ -227,18 +249,18 @@ MPCPermafrost4::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> 
 
   // Now that mass fluxes are done, do energy.
   // Evaluate the surface energy residual
-  surf_energy_pk_->Functional(t_old, t_new, u_old->SubVector(3),
+  surf_energy_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(3),
           u_new->SubVector(3), g->SubVector(3));
 
   // The residual of the surface energy equation provides the diffusive energy
   // flux from subsurface to surface.
   Epetra_MultiVector& esource =
-    *S_next_->GetFieldData(Keys::getKey(domain_surf_,"surface_subsurface_energy_flux"), name_)
-      ->ViewComponent("cell",false);
+      *S_next_->GetFieldData(energy_exchange_key_, name_)->ViewComponent("cell",false);
   esource = *g->SubVector(3)->Data()->ViewComponent("cell",false);
+  energy_exchange_pvfe_->SetFieldAsChanged(S_next_.ptr());
 
   // Evaluate the subsurface energy residual.
-  domain_energy_pk_->Functional(t_old, t_new, u_old->SubVector(1),
+  domain_energy_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(1),
           u_new->SubVector(1), g->SubVector(1));
 
   // All energy fluxes have been taken by the subsurface.

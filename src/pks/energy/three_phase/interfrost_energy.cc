@@ -127,7 +127,7 @@ InterfrostEnergy::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> 
     preconditioner_adv_->Setup(*mass_flux);
     preconditioner_adv_->UpdateMatrices(*mass_flux, *dhdT);
     ApplyDirichletBCsToEnthalpy_(S_next_.ptr());
-    preconditioner_adv_->ApplyBCs(bc_adv_, true, true);
+    preconditioner_adv_->ApplyBCs(false, true, false);
   }
 
   // Apply boundary conditions.

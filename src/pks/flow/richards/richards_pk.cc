@@ -70,8 +70,8 @@ Richards::Richards(Teuchos::ParameterList& pk_tree,
     iter_(0),
     iter_counter_time_(0.)
 {
-  if (!plist_->isParameter("conserved quantity suffix"))
-    plist_->set("conserved quantity suffix", "water_content");
+  if (!plist_->isParameter("conserved quantity key suffix"))
+    plist_->set("conserved quantity key suffix", "water_content");
   
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance"))
@@ -292,7 +292,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   is_source_term_ = plist_->get<bool>("source term", false);
   if (is_source_term_) {
     if (source_key_.empty()) {
-      source_key_ = Keys::readKey(*plist_, domain_, "mass source", "mass_source");
+      source_key_ = Keys::readKey(*plist_, domain_, "source", "mass_source");
     }
 
     source_term_is_differentiable_ =
@@ -709,7 +709,12 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
       face_matrix_diff_->UpdateMatrices(Teuchos::null, pres.ptr());
 
+
       if ((!pres->HasComponent("face")) || (!pres->HasComponent("boundary face")))
+
+      //face_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+    
+      if (!pres->HasComponent("face"))
         face_matrix_diff_->ApplyBCs(true, true, true);
 
       face_matrix_diff_->UpdateFlux(pres.ptr(), flux_dir.ptr());

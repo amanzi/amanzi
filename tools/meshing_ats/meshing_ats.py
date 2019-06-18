@@ -75,6 +75,8 @@ Excecute the configure script from your SEACAS_BUILD_DIR, then
 ```make``` and ```make install```
 """
 
+from __future__ import print_function
+
 import sys,os
 import numpy as np
 import collections
@@ -858,11 +860,11 @@ def commandline_options():
     
 
     if os.path.isfile(options.outfile):
-        print 'Output file "%s" exists, cowardly not overwriting.'%options.outfile
+        print('Output file "%s" exists, cowardly not overwriting.'%options.outfile)
         sys.exit(1)
 
     if not os.path.isfile(options.infile):
-        print 'No input file provided'        
+        print('No input file provided')
         parser.print_usage()
         sys.exit(1)
 

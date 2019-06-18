@@ -56,8 +56,8 @@ public:
   
   // StrongMPC is a BDFFnBase
   // -- computes the non-linear functional g = g(t,u,udot)
-  //    By default this just calls each sub pk Functional().
-  virtual void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+  //    By default this just calls each sub pk FunctionalResidual().
+  virtual void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
            Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
 
   // -- enorm for the coupled system
@@ -179,7 +179,7 @@ void StrongMPC<PK_t>::set_states(const Teuchos::RCP<const State>& S,
 // Compute the non-linear functional g = g(t,u,udot).
 // -----------------------------------------------------------------------------
 template<class PK_t>
-void StrongMPC<PK_t>::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+void StrongMPC<PK_t>::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                     Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
 
   Solution_to_State(*u_new, S_next_);
@@ -211,7 +211,7 @@ void StrongMPC<PK_t>::Functional(double t_old, double t_new, Teuchos::RCP<TreeVe
     }
 
     // fill the nonlinear function with each sub-PKs contribution
-    sub_pks_[i]->Functional(t_old, t_new, pk_u_old, pk_u_new, pk_g);
+    sub_pks_[i]->FunctionalResidual(t_old, t_new, pk_u_old, pk_u_new, pk_g);
   }
 };
 

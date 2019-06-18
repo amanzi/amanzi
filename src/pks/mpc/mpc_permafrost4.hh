@@ -27,8 +27,8 @@ class MPCPermafrost4 : public MPCSubsurface {
                           const Teuchos::RCP<State>& S_next);
 
   // -- computes the non-linear functional g = g(t,u,udot)
-  //    By default this just calls each sub pk Functional().
-  virtual void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+  //    By default this just calls each sub pk FunctionalResidual().
+  virtual void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
            Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
 
   // -- Apply preconditioner to r and returns the result in Pr.
@@ -60,6 +60,12 @@ class MPCPermafrost4 : public MPCSubsurface {
   Teuchos::RCP<const AmanziMesh::Mesh> domain_mesh_;
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_;
 
+  // Primary variable evaluators for exchange fluxes
+  Key mass_exchange_key_;
+  Key energy_exchange_key_;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> mass_exchange_pvfe_;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> energy_exchange_pvfe_;
+  
   // off-diagonal terms
   Teuchos::RCP<Operators::PDE_Accumulation> dE_dp_surf_;
 

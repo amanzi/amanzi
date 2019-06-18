@@ -229,15 +229,15 @@ MPCPermafrost3::commit_state(double dt, const Teuchos::RCP<State>& S) {
 
 
 // -- computes the non-linear functional g = g(t,u,udot)
-//    By default this just calls each sub pk Functional().
+//    By default this just calls each sub pk FunctionalResidual().
 void
-MPCPermafrost3::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+MPCPermafrost3::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                            Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   // propagate updated info into state
   solution_to_state(*u_new, S_next_);
 
   // Evaluate the surface flow residual
-  surf_flow_pk_->Functional(t_old, t_new, u_old->SubVector(2),
+  surf_flow_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(2),
                             u_new->SubVector(2), g->SubVector(2));
 
   // The residual of the surface flow equation provides the mass flux from
@@ -247,7 +247,7 @@ MPCPermafrost3::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> 
   source = *g->SubVector(2)->Data()->ViewComponent("cell",false);
 
   // Evaluate the subsurface residual, which uses this flux as a Neumann BC.
-  domain_flow_pk_->Functional(t_old, t_new, u_old->SubVector(0),
+  domain_flow_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(0),
           u_new->SubVector(0), g->SubVector(0));
 
   // All surface to subsurface fluxes have been taken by the subsurface.
@@ -255,7 +255,7 @@ MPCPermafrost3::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> 
 
   // Now that mass fluxes are done, do energy.
   // Evaluate the surface energy residual
-  surf_energy_pk_->Functional(t_old, t_new, u_old->SubVector(3),
+  surf_energy_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(3),
           u_new->SubVector(3), g->SubVector(3));
 
   // The residual of the surface energy equation provides the diffusive energy
@@ -266,7 +266,7 @@ MPCPermafrost3::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> 
   esource = *g->SubVector(3)->Data()->ViewComponent("cell",false);
 
   // Evaluate the subsurface energy residual.
-  domain_energy_pk_->Functional(t_old, t_new, u_old->SubVector(1),
+  domain_energy_pk_->FunctionalResidual(t_old, t_new, u_old->SubVector(1),
           u_new->SubVector(1), g->SubVector(1));
 
   // All energy fluxes have been taken by the subsurface.

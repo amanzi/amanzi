@@ -41,7 +41,7 @@ get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
 ##include_directories(${STATE_SOURCE_DIR})
 ##include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 ##include_directories(${WHETSTONE_SOURCE_DIR})
-
+include_directories(${ATS_SOURCE_DIR}/src/pks)
 include_directories(${Amanzi_TPL_MSTK_INCLUDE_DIRS})
 
 #
@@ -65,6 +65,7 @@ set(transport_inc_files
   MultiscaleTransportPorosityFactory.hh
   MultiscaleTransportPorosityPartition.hh
   MultiscaleTransportPorosity_DPM.hh
+  MultiscaleTransportPorosity_GDPM.hh  
   TransportDomainFunction.hh 
   TransportBoundaryFunction_Alquimia.hh
   TransportSourceFunction_Alquimia.hh
@@ -77,6 +78,7 @@ set(transport_src_files Transport_PK.cc Transport_TI.cc
                         MDM_Isotropic.cc MDM_Bear.cc MDM_BurnettFrind.cc MDM_LichtnerKelkarRobinson.cc
                         MDMPartition.cc MDMFactory.cc
                         MultiscaleTransportPorosityFactory.cc MultiscaleTransportPorosity_DPM.cc
+                        MultiscaleTransportPorosity_GDPM.cc
                         MultiscaleTransportPorosityPartition.cc
                         TransportBoundaryFunction_Alquimia.cc
                         TransportSourceFunction_Alquimia.cc)

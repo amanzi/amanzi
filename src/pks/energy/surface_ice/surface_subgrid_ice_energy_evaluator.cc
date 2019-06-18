@@ -24,7 +24,6 @@ namespace Energy {
 SurfaceSubgridIceEnergyEvaluator::SurfaceSubgridIceEnergyEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
  
-  
   sg_model_ = plist.get<bool>("subgrid model",true);
   assert(sg_model_);
 
@@ -62,21 +61,20 @@ SurfaceSubgridIceEnergyEvaluator::SurfaceSubgridIceEnergyEvaluator(Teuchos::Para
 
   dependencies_.insert(height_key_);
 
-  vpd_key_ = plist.get<std::string>("volumetric height key", Keys::getKey(domain,"volumetric_ponded_depth"));
-  
+  //vpd_key_ = plist.get<std::string>("volumetric height key", Keys::getKey(domain,"volumetric_ponded_depth"));
+  vpd_key_ = Keys::readKey(plist_, domain, "volumetric height key", "volumetric_ponded_depth");
   dependencies_.insert(vpd_key_);
   
-  delta_max_key_ = plist_.get<std::string>("maximum ponded depth key", Keys::getKey(domain,"maximum_ponded_depth"));
+  //delta_max_key_ = plist_.get<std::string>("maximum ponded depth key", Keys::getKey(domain,"maximum_ponded_depth"));
+  delta_max_key_ = Keys::readKey(plist_, domain, "microtopographic relief", "microtopographic_relief"); 
   dependencies_.insert(delta_max_key_);
 
-  delta_ex_key_ = plist_.get<std::string>("excluded volume key", Keys::getKey(domain,"excluded_volume"));
+  //delta_ex_key_ = plist_.get<std::string>("excluded volume key", Keys::getKey(domain,"excluded_volume"));
+  delta_ex_key_ = Keys::readKey(plist_, domain, "excluded volume key", "excluded_volume"); 
   dependencies_.insert(delta_ex_key_);
-  //delta_max_ = plist_.get<double>("maximum ponded depth");
-  //delta_ex_ = plist_.get<double>("excluded volume");
 
   cv_key_ = plist.get<std::string>("cell volume key",
           Keys::getKey(domain, "cell_volume"));
-  //assert(delta_max_ > 0);
 
 };
 

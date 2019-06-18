@@ -49,8 +49,8 @@ EnergyBase::EnergyBase(Teuchos::ParameterList& FElist,
     flux_exists_(true),
     implicit_advection_(true) {
 
-  if (!plist_->isParameter("conserved quantity suffix"))
-    plist_->set("conserved quantity suffix", "energy");
+  if (!plist_->isParameter("conserved quantity key suffix"))
+    plist_->set("conserved quantity key suffix", "energy");
 
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance")) {
@@ -87,9 +87,6 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   adv_energy_flux_key_ = Keys::readKey(*plist_, domain_, "advected energy flux", "advected_energy_flux");
   conductivity_key_ = Keys::readKey(*plist_, domain_, "thermal conductivity", "thermal_conductivity");
   uw_conductivity_key_ = Keys::readKey(*plist_, domain_, "upwinded thermal conductivity", "upwind_thermal_conductivity");
-  source_key_ = Keys::readKey(*plist_, domain_, "energy source", "total_energy_source");
-
-
 
   // Get data for special-case entities.
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
@@ -147,6 +144,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   // -- create the forward operator for the advection term
   Teuchos::ParameterList advect_plist = plist_->sublist("advection");
   matrix_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(advect_plist, mesh_));
+  matrix_adv_->SetBCs(bc_adv_, bc_adv_);
   
   // -- create the operators for the preconditioner
   //    diffusion
@@ -208,6 +206,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
     if (implicit_advection_in_pc_) {
       Teuchos::ParameterList advect_plist = plist_->sublist("advection preconditioner");
       preconditioner_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(advect_plist, preconditioner_));
+      preconditioner_adv_->SetBCs(bc_adv_, bc_adv_);
     }
   }
 
@@ -240,7 +239,10 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
 
   // source terms
   is_source_term_ = plist_->get<bool>("source term");
+  is_source_term_differentiable_ = plist_->get<bool>("source term is differentiable", true);
+  is_source_term_finite_differentiable_ = plist_->get<bool>("source term finite difference", false);
   if (is_source_term_) {
+    source_key_ = Keys::readKey(*plist_, domain_, "source", "total_energy_source");
     S->RequireField(source_key_)->SetMesh(mesh_)
         ->AddComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator(source_key_);

@@ -31,8 +31,8 @@ class MPCPermafrost3 : public StrongMPC<PKPhysicalBDFBase> {
   virtual void commit_state(double dt, const Teuchos::RCP<State>& S);
 
   // -- computes the non-linear functional g = g(t,u,udot)
-  //    By default this just calls each sub pk Functional().
-  virtual void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+  //    By default this just calls each sub pk FunctionalResidual().
+  virtual void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
            Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
 
   // -- Apply preconditioner to r and returns the result in Pr.

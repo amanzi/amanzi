@@ -19,6 +19,7 @@
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
+#include "LimiterCell.hh"
 #include "CompositeVector.hh"
 #include "DiffusionPhase.hh"
 #include "Explicit_TI_FnBase.hh"
@@ -32,6 +33,7 @@
 #include "VerboseObject.hh"
 #include "PK_PhysicalExplicit.hh"
 #include "DenseVector.hh"
+#include "pk_physical_explicit_default.hh"
 
 #include <string>
 
@@ -41,6 +43,7 @@
 #endif
 
 // Transport
+#include "LimiterCell.hh"
 #include "MDMPartition.hh"
 #include "MultiscaleTransportPorosityPartition.hh"
 #include "TransportDomainFunction.hh"
@@ -61,7 +64,8 @@ namespace Transport {
 typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
   // class Transport_PK : public PK, public Explicit_TI::fnBase<Epetra_Vector> {
-  class Transport_PK_ATS : public PK_PhysicalExplicit<Epetra_Vector> {
+  // class Transport_PK_ATS : public PK_PhysicalExplicit<Epetra_Vector> {
+class Transport_PK_ATS : public PK_Physical_Explicit_Default {
 
   public:
     Transport_PK_ATS(Teuchos::ParameterList& pk_tree,
@@ -133,8 +137,8 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   void ComputeAddSourceTerms(double tp, double dtp, 
                              Epetra_MultiVector& tcc, int n0, int n1);
 
-  bool PopulateBoundaryData(std::vector<int>& bc_model,
-                            std::vector<double>& bc_value, int component);
+  bool ComputeBCs_(std::vector<int>& bc_model,
+                   std::vector<double>& bc_value, int component);
 
   // -- limiters 
   void LimiterBarthJespersen(const int component,
@@ -157,9 +161,8 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   void Advance_Dispersion_Diffusion(double t_old, double t_new);
 
   // time integration members
-  void Functional(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
-    //  void Functional(const double t, const Epetra_Vector& component, TreeVector& f_component);
-
+  void FunctionalTimeDerivative(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
+  void FunctionalTimeDerivative(const double t, const TreeVector& component, TreeVector& f_component){};
   void IdentifyUpwindCells();
 
   void InterpolateCellVector(
@@ -229,7 +232,6 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
 
  protected:
-    Teuchos::RCP<TreeVector> soln_;
 
     Key domain_name_;
     Key saturation_key_;
@@ -242,7 +244,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
     Key tcc_matrix_key_;
     Key molar_density_key_;
     Key solid_residue_mass_key_;
-
+    Key water_content_key_;
   
  
  private:
@@ -277,6 +279,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
   int current_component_;  // data for lifting
   Teuchos::RCP<Operators::ReconstructionCell> lifting_;
+  Teuchos::RCP<Operators::LimiterCell> limiter_;
 
   std::vector<Teuchos::RCP<TransportDomainFunction> > srcs_;  // Source or sink for components
   std::vector<Teuchos::RCP<TransportDomainFunction> > bcs_;  // influx BC for components

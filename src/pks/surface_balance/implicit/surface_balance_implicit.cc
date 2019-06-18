@@ -31,8 +31,8 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(Teuchos::ParameterList& pk_tree,
   PK_PhysicalBDF_Default(pk_tree, global_list,  S, solution),
   modify_predictor_advance_(false)
 {
-  if (!plist_->isParameter("conserved quantity suffix"))
-    plist_->set("conserved quantity suffix", "snow_depth");
+  if (!plist_->isParameter("conserved quantity key suffix"))
+    plist_->set("conserved quantity key suffix", "snow_depth");
 
   Teuchos::ParameterList& FElist = S->FEList();
 
@@ -74,6 +74,7 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(Teuchos::ParameterList& pk_tree,
   // min wind speed
   min_wind_speed_ = plist_->get<double>("minimum wind speed [m/s]?", 1.0);
   wind_speed_ref_ht_ = plist_->get<double>("wind speed reference height [m]", 2.0);
+  desiccated_zone_thickness_ = plist_->get<double>("desiccated zone thickness [m]", 0.025);
 
   // roughness parameters, default to 4 cm for soil, 4 mm for snow
   roughness_bare_ground_ = plist_->get<double>("roughness length of bare ground [m]", 0.04);
@@ -332,7 +333,7 @@ SurfaceBalanceImplicit::Initialize(const Teuchos::Ptr<State>& S) {
 
 // computes the non-linear functional g = g(t,u,udot)
 void
-SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+SurfaceBalanceImplicit::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                             Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   Teuchos::OSTab tab = vo_->getOSTab();
   double dt = t_new - t_old;
@@ -523,7 +524,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       AMANZI_ASSERT(cells.size() == 1);
       seb_surf.saturation_gas = saturation_gas[0][cells[0]];
       seb_surf.density_w = seb_params.density_water; // NOTE: could update this to use true density! --etc
-      seb_surf.dz = subsurf_mesh_->cell_volume(cells[0]) / subsurf_mesh_->face_area(subsurf_f) / 2.0;
+      seb_surf.dz = desiccated_zone_thickness_;
       AMANZI_ASSERT(seb_surf.dz > 0.);
       
       SEBPhysics::Partition al_part = SEBPhysics::Partitioner()
@@ -635,7 +636,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       AMANZI_ASSERT(cells.size() == 1);
       seb_surf.saturation_gas = saturation_gas[0][cells[0]];
       seb_surf.density_w = seb_params.density_water; // NOTE: could update this to use true density! --etc
-      seb_surf.dz = subsurf_mesh_->cell_volume(cells[0]) / subsurf_mesh_->face_area(subsurf_f) / 2.0;
+      seb_surf.dz = desiccated_zone_thickness_;
       AMANZI_ASSERT(seb_surf.dz > 0.);
       
       SEBPhysics::Partition al_part = SEBPhysics::Partitioner()
@@ -904,7 +905,7 @@ SurfaceBalanceImplicit::ModifyPredictor(double h, Teuchos::RCP<const TreeVector>
   if (modify_predictor_advance_) {
     Teuchos::RCP<TreeVector> res = Teuchos::rcp(new TreeVector(*u));
     Teuchos::RCP<TreeVector> u0_nc = Teuchos::rcp_const_cast<TreeVector>(u0);
-    Functional(S_next_->time()-h, S_next_->time(), u0_nc, u, res);
+    FunctionalResidual(S_next_->time()-h, S_next_->time(), u0_nc, u, res);
   }
 
   return true;

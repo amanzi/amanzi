@@ -41,19 +41,24 @@ void Transport_PK_ATS::CalculateDispersionTensor_(
   AmanziGeometry::Point velocity(dim);
   AmanziMesh::Entity_ID_List faces;
   WhetStone::MFD3D_Diffusion mfd3d(mesh_);
+  WhetStone::Polynomial poly(dim, 1);
 
   for (int c = 0; c < ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
-    std::vector<double> flux(nfaces);
-    for (int n = 0; n < nfaces; n++) flux[n] = darcy_flux[0][faces[n]];
-    mfd3d.RecoverGradient_MassMatrix(c, flux, velocity);
+    std::vector<WhetStone::Polynomial> flux(nfaces);
+    for (int n = 0; n < nfaces; n++) {
+      flux[n].Reshape(dim, 0);
+      flux[n](0) = darcy_flux[0][faces[n]];
+    }
+    mfd3d.L2Cell(c, flux, NULL, poly);
 
+    for (int k = 0; k < dim; ++k) velocity[k] = poly(k + 1);
     D_[c] = mdm_->second[(*mdm_->first)[c]]->mech_dispersion(
         velocity, axi_symmetry_[c], saturation[0][c], porosity[0][c]);
-    // double mol_den = mol_density[0][c];
-    // D_[c] *= mol_den;
+    double mol_den = mol_density[0][c];
+    D_[c] *= mol_den;
   }
 }
 
@@ -83,14 +88,14 @@ void Transport_PK_ATS::CalculateDiffusionTensor_(
       if (phase == TRANSPORT_PHASE_LIQUID) {
         for (c = block.begin(); c != block.end(); c++) {
           D_[*c] += md * spec->tau[phase] * porosity[0][*c] * saturation[0][*c];
-          // double mol_den = mol_density[0][c];
-          // D_[*c] *= mol_den;
+          double mol_den = mol_density[0][*c];
+          D_[*c] *= mol_den;
         }
       } else if (phase == TRANSPORT_PHASE_GAS) {
         for (c = block.begin(); c != block.end(); c++) {
           D_[*c] += md * spec->tau[phase] * porosity[0][*c] * (1.0 - saturation[0][*c]);
-          // double mol_den = mol_density[0][c];
-          // D_[*c] *= mol_den;
+          double mol_den = mol_density[0][*c];
+          D_[*c] *= mol_den;
         }
       }
 

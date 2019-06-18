@@ -30,7 +30,8 @@ FractionalConductanceEvaluator::FractionalConductanceEvaluator(Teuchos::Paramete
   pdd_key_ = plist_.get<std::string>("ponded depression depth key", Keys::getKey(domain,"ponded_depression_depth"));
   dependencies_.insert(pdd_key_);
   
-  delta_max_key_ = plist_.get<std::string>("maximum ponded depth key", Keys::getKey(domain,"maximum_ponded_depth"));
+  delta_max_key_ = Keys::readKey(plist_, domain, "microtopographic relief", "microtopographic_relief");
+  //delta_max_key_ = plist_.get<std::string>("maximum ponded depth key", Keys::getKey(domain,"maximum_ponded_depth"));
   dependencies_.insert(delta_max_key_);
   delta_ex_key_ = plist_.get<std::string>("excluded volume key", Keys::getKey(domain,"excluded_volume"));
   dependencies_.insert(delta_ex_key_);

@@ -1,22 +1,30 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  Evaluator for determining height( rho, head )
+  License: see $ATS_DIR/COPYRIGHT
+  Authors: Ahmad Jan (jana@ornl.gov)
+           Ethan Coon (ecoon@ornl.gov)
+*/
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+//! Determine the volumetric ponded depth from ponded depth and subgrid parameters.
+/*!
+
+* `"maximum relief key`" ``[string]`` **DOMAIN-maximum_relief**
+         The name of del_max, the max microtopography value.
+* `"excluded volume key`" ``[string]`` **DOMAIN-excluded_volume**
+         The name of del_excluded, the integral of the microtopography.
+* `"ponded depth key`" ``[string]`` **DOMAIN-ponded_depth**
+         The true height of the water surface.
+
 */
 
 #ifndef AMANZI_FLOW_RELATIONS_VOLUMETRIC_HEIGHT_EVALUATOR_
 #define AMANZI_FLOW_RELATIONS_VOLUMETRIC_HEIGHT_EVALUATOR_
 
-//#include "height_evaluator.hh"
 #include "secondary_variable_field_evaluator.hh"
 #include "factory.hh"
 
 namespace Amanzi {
 namespace Flow {
-
-class VolumetricHeightModel;
 
 class VolumetricHeightEvaluator : public SecondaryVariableFieldEvaluator {
 
@@ -24,16 +32,13 @@ class VolumetricHeightEvaluator : public SecondaryVariableFieldEvaluator {
   // constructor format for all derived classes
   explicit
   VolumetricHeightEvaluator(Teuchos::ParameterList& plist);
-  VolumetricHeightEvaluator(const VolumetricHeightEvaluator& other);
+  VolumetricHeightEvaluator(const VolumetricHeightEvaluator& other) = default;
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
-
-  Teuchos::RCP<VolumetricHeightModel> get_VolumetricModel() { return vol_model_; }
+  virtual Teuchos::RCP<FieldEvaluator> Clone() const {
+    return Teuchos::rcp(new VolumetricHeightEvaluator(*this));
+  }
 
  protected:
-//  void InitializeFromPlist_();
-
-  // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& result);
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
@@ -42,10 +47,24 @@ class VolumetricHeightEvaluator : public SecondaryVariableFieldEvaluator {
  protected:
   Key pd_key_;
   Key delta_max_key_, delta_ex_key_;
-  Teuchos::RCP<VolumetricHeightModel> vol_model_;
+
+  // TODO: put these functions into a model and share them across evaluators:
+  //  - this one
+  //  - overland_subgrid_water_content_evaluator
+  //  - volumetric_ponded_depth evaluator --etc
+  double f_(double delta, double del_max, double del_ex) {
+    return delta >= del_max ? delta - del_ex:
+        std::pow(delta/del_max, 2) * (2*del_max - 3*del_ex)
+        + std::pow(delta/del_max,3) * (2*del_ex - del_max);
+  }
+  double f_prime_(double delta, double del_max, double del_ex) {
+    return delta >= del_max ? 1 :
+        2 * delta/del_max * (2*del_max - 3*del_ex) / del_max
+        + 3 * std::pow(delta/del_max,2) * (2*del_ex - del_max) / del_max;
+  }
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,VolumetricHeightEvaluator> factory_;
+  static Utils::RegisteredFactory<FieldEvaluator,VolumetricHeightEvaluator> reg_;
 
 };
 

@@ -5,7 +5,7 @@ namespace Transport {
 
 // Methods for the BDF integrator
 // -- residual
-void PassiveTracer::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+void PassiveTracer::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
         Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   S_inter_->set_time(t_old);
   S_next_->set_time(t_new);

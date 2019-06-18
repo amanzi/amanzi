@@ -15,6 +15,9 @@ Distributes transpiration based upon a rooting depth and a wilting-point water-p
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
+
+class Function;
+
 namespace Flow {
 namespace Relations {
 
@@ -23,7 +26,7 @@ class TranspirationDistributionEvaluator : public SecondaryVariableFieldEvaluato
  public:
   explicit
   TranspirationDistributionEvaluator(Teuchos::ParameterList& plist);
-  TranspirationDistributionEvaluator(const TranspirationDistributionEvaluator& other);
+  TranspirationDistributionEvaluator(const TranspirationDistributionEvaluator& other) = default;
 
   virtual Teuchos::RCP<FieldEvaluator> Clone() const;
 
@@ -46,6 +49,8 @@ class TranspirationDistributionEvaluator : public SecondaryVariableFieldEvaluato
   Key surf_cv_key_;
   int npfts_;
 
+  Teuchos::RCP<Function> limiter_;
+  
  private:
   static Utils::RegisteredFactory<FieldEvaluator,TranspirationDistributionEvaluator> reg_;
 
