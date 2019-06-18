@@ -8,7 +8,7 @@
 #define AMANZI_BIOMASS_EVALUATOR
 
 #include "secondary_variables_field_evaluator.hh"
-#include "factory.hh"
+#include "Factory.hh"
 
 namespace Amanzi {
 

@@ -7,7 +7,7 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#include "factory.hh"
+#include "Factory.hh"
 #include "effective_concentration_evaluator.hh"
 
 namespace Amanzi {
