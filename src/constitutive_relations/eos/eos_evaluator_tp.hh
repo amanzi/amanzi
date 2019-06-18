@@ -11,7 +11,7 @@
 #define AMANZI_RELATIONS_EOS_EVALUATOR_TP_HH_
 
 #include "eos.hh"
-#include "factory.hh"
+#include "Factory.hh"
 #include "eos_evaluator.hh"
 
 namespace Amanzi {

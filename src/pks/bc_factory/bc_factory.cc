@@ -103,7 +103,16 @@ BCFactory::CreateDynamicFunction(std::string list_name) const{
           bc = Teuchos::rcp(new Functions::BoundaryFunction(mesh_));         
           if (list.isParameter( bc_types[i] )) {
             if (list.isSublist( bc_types[i] )) {
-              ProcessListWithFunction_(list.sublist(bc_types[i]), bc_functions[i], bc);
+              if ((bc_types[i]=="pressure")||
+                  (bc_types[i]=="mass flux")||
+                  (bc_types[i]=="seepage face pressure")||
+                  (bc_types[i]=="seepage face head")||
+                  (bc_types[i]=="head")||
+                  (bc_types[i]=="fixed level")){
+                ProcessListWithFunction_(list.sublist(bc_types[i]), bc_functions[i], bc);
+              }else{
+                ProcessListWithoutFunction_(list.sublist(bc_types[i]), bc);
+              }                            
             } else {
               std::stringstream mstream;
               mstream << "BCFactory: " << list_name << " sublist error: not a sublist.";
