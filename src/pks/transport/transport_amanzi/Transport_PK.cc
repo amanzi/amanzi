@@ -157,9 +157,9 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
   passwd_ = "state";  // owner's password
 
   domain_name_ = tp_list_->get<std::string>("domain name", "domain");
-
-  saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "saturation liquid", "");
-  prev_saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "previous saturation liquid", "");
+  
+  saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "saturation liquid", "saturation_liquid");
+  prev_saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "previous saturation liquid", "prev_saturation_liquid");
   flux_key_ = Keys::readKey(*tp_list_, domain_name_, "mass flux", "mass_flux");
   darcy_flux_key_ = Keys::readKey(*tp_list_, domain_name_, "darcy flux", "mass_flux");
   permeability_key_ = Keys::readKey(*tp_list_, domain_name_, "permeability", "permeability");
@@ -209,7 +209,7 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
 
   if (!S->HasField(porosity_key_)){
     S->RequireField(porosity_key_, porosity_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator(porosity_key_);
   }
 
@@ -224,7 +224,7 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
 
   if (!S->HasField(molar_density_key_)){
     S->RequireField(molar_density_key_, molar_density_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator(molar_density_key_);
   }
   
@@ -356,9 +356,8 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
   
   phi_ = S->GetFieldData(porosity_key_) -> ViewComponent("cell", false);
 
-  mol_dens_ = S_->GetFieldData(molar_density_key_) -> ViewComponent("cell", false);
-  mol_dens_prev_ = S_->GetFieldData(molar_density_key_) -> ViewComponent("cell", false);
-  
+  mol_dens_ = S->GetFieldData(molar_density_key_) -> ViewComponent("cell", false);
+  mol_dens_prev_ = S->GetFieldData(molar_density_key_) -> ViewComponent("cell", false);
 
   tcc = S->GetFieldData(tcc_key_, passwd_);
 
@@ -387,6 +386,7 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
  
   // reconstruction initialization
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
+  limiter_ = Teuchos::rcp(new Operators::LimiterCell(mesh_));
   lifting_ = Teuchos::rcp(new Operators::ReconstructionCell(mesh_));
 
   // mechanical dispersion
@@ -708,7 +708,7 @@ double Transport_PK_ATS::StableTimeStep()
 
   // double flux_next_norm=0., flux_norm=0.;
   // flux_->NormInf(&flux_next_norm);
-  // S_->GetFieldData(flux_key_)->ViewComponent("face", true)->NormInf(&flux_norm);
+  // S_inter_->GetFieldData(flux_key_)->ViewComponent("face", true)->NormInf(&flux_norm);
   
   // if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME){
   //   if (flux_key_=="surface-mass_flux"){
@@ -718,7 +718,7 @@ double Transport_PK_ATS::StableTimeStep()
   
   IdentifyUpwindCells();
 
-  tcc = S_->GetFieldData(tcc_key_, passwd_);
+  tcc = S_inter_->GetFieldData(tcc_key_, passwd_);
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
 
   // loop over faces and accumulate upwinding fluxes
@@ -829,7 +829,7 @@ bool Transport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
   solid_qty_ = S_next_->GetFieldData(solid_residue_mass_key_, passwd_)->ViewComponent("cell", false);
 
   // We use original tcc and make a copy of it later if needed.
-  tcc = S_->GetFieldData(tcc_key_, passwd_);
+  tcc = S_inter_->GetFieldData(tcc_key_, passwd_);
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
 
   // tcc_prev.Norm2(&norm_old);
@@ -838,11 +838,11 @@ bool Transport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
   
   // calculate stable time step    
   double dt_shift = 0.0, dt_global = dt_MPC;
-  double time = S_->intermediate_time();
+  double time = S_inter_->intermediate_time();
   if (time >= 0.0) { 
     t_physics_ = time;
-    dt_shift = time - S_->initial_time();
-    dt_global = S_->final_time() - S_->initial_time();
+    dt_shift = time - S_inter_->initial_time();
+    dt_global = S_inter_->final_time() - S_inter_->initial_time();
   }
 
   StableTimeStep();
@@ -853,10 +853,10 @@ bool Transport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
 
   //if ((dt_shift >1e-12) || (dt_stable < dt_global)) interpolate_ws = 1;
 
-  if ((t_old > S_->initial_time())||(t_new < S_->final_time())) interpolate_ws = 1;
+  if ((t_old > S_inter_->initial_time())||(t_new < S_inter_->final_time())) interpolate_ws = 1;
 
   // *vo_->os() << "DOMAIN "<<domain_name_<<" dt_ "<<dt_<<" dt_MPC "<<dt_MPC<<" dt_global "<<dt_global<<" time "<<time<<" initial "
-  //            <<S_->initial_time()<<" final "<<S_->final_time()<<" interpolate "<<interpolate_ws<<"\n";
+  //            <<S_inter_->initial_time()<<" final "<<S_inter_->final_time()<<" interpolate "<<interpolate_ws<<"\n";
 
     // start subcycling
   double dt_sum = 0.0;
@@ -1018,7 +1018,7 @@ void Transport_PK_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new
         tp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
 
     Teuchos::RCP<Operators::BCs> bc_dummy = 
-        Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
+        Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
     
     // default boundary conditions (none inside domain and Neumann on its boundary)
     auto& bc_model = bc_dummy->bc_model();
@@ -1205,21 +1205,21 @@ void Transport_PK_ATS::AddMultiscalePorosity_(
 {
    Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell");
   Epetra_MultiVector& tcc_matrix = 
-     *S_->GetFieldData("total_component_concentration_matrix", passwd_)->ViewComponent("cell");
+     *S_inter_->GetFieldData("total_component_concentration_matrix", passwd_)->ViewComponent("cell");
 
-  const Epetra_MultiVector& wcf_prev = *S_->GetFieldData("prev_water_content")->ViewComponent("cell");
-  const Epetra_MultiVector& wcf = *S_->GetFieldData("water_content")->ViewComponent("cell");
+  const Epetra_MultiVector& wcf_prev = *S_inter_->GetFieldData("prev_water_content")->ViewComponent("cell");
+  const Epetra_MultiVector& wcf = *S_inter_->GetFieldData("water_content")->ViewComponent("cell");
 
-  const Epetra_MultiVector& wcm_prev = *S_->GetFieldData("prev_water_content_matrix")->ViewComponent("cell");
-  const Epetra_MultiVector& wcm = *S_->GetFieldData("water_content_matrix")->ViewComponent("cell");
+  const Epetra_MultiVector& wcm_prev = *S_inter_->GetFieldData("prev_water_content_matrix")->ViewComponent("cell");
+  const Epetra_MultiVector& wcm = *S_inter_->GetFieldData("water_content_matrix")->ViewComponent("cell");
 
   // multi-node matrix requires more input data
-  const Epetra_MultiVector& phi_matrix = *S_->GetFieldData("porosity_matrix")->ViewComponent("cell");
+  const Epetra_MultiVector& phi_matrix = *S_inter_->GetFieldData("porosity_matrix")->ViewComponent("cell");
 
   int nnodes(1);
   Teuchos::RCP<Epetra_MultiVector> tcc_matrix_aux;
-  if (S_->HasField("total_component_concentration_matrix_aux")) {
-    tcc_matrix_aux = S_->GetFieldData("total_component_concentration_matrix_aux", passwd_)->ViewComponent("cell");
+  if (S_inter_->HasField("total_component_concentration_matrix_aux")) {
+    tcc_matrix_aux = S_inter_->GetFieldData("total_component_concentration_matrix_aux", passwd_)->ViewComponent("cell");
     nnodes = tcc_matrix_aux->NumVectors() + 1; 
   }
   WhetStone::DenseVector tcc_m(nnodes);
@@ -1284,7 +1284,7 @@ void Transport_PK_ATS::CommitStep(double t_old, double t_new, const Teuchos::RCP
   InitializeFieldFromField_(prev_saturation_key_, saturation_key_, S.ptr(), false, true);
 
   // Copy to S_ as well
-  tcc = S_->GetFieldData(tcc_key_, passwd_);
+  tcc = S->GetFieldData(tcc_key_, passwd_);
   *tcc = *tcc_tmp;
 }
 
@@ -1475,7 +1475,7 @@ void Transport_PK_ATS::AdvanceSecondOrderUpwindRK1(double dt_cycle)
   Epetra_Vector f_component(cmap_wghost);
 
   // distribute vector of concentrations
-  S_->GetFieldData(tcc_key_)->ScatterMasterToGhosted("cell");
+  S_inter_->GetFieldData(tcc_key_)->ScatterMasterToGhosted("cell");
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
 
@@ -1544,7 +1544,7 @@ void Transport_PK_ATS::AdvanceSecondOrderUpwindRK2(double dt_cycle)
   Epetra_Vector f_component(cmap_wghost);//,  f_component2(cmap_wghost);
 
   // distribute old vector of concentrations
-  S_->GetFieldData(tcc_key_)->ScatterMasterToGhosted("cell");
+  S_inter_->GetFieldData(tcc_key_)->ScatterMasterToGhosted("cell");
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
 
@@ -1633,7 +1633,7 @@ void Transport_PK_ATS::AdvanceSecondOrderUpwindRK2(double dt_cycle)
 // {
 //   dt_ = dt_cycle;  // overwrite the maximum stable transport step
 
-//   S_->GetFieldData("total_component_concentration")->ScatterMasterToGhosted("cell");
+//   S_inter_->GetFieldData("total_component_concentration")->ScatterMasterToGhosted("cell");
 //   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
 //   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
 
@@ -1751,7 +1751,7 @@ void Transport_PK_ATS::Sinks2TotalOutFlux(Epetra_MultiVector& tcc,
 
   std::vector<double> sink_add(ncells_wghost, 0.0);
   //Assumption that there is only one sink per component per cell
-  double t0 = S_->intermediate_time();
+  double t0 = S_inter_->intermediate_time();
   int num_vectors = tcc.NumVectors();
   int nsrcs = srcs_.size();
 

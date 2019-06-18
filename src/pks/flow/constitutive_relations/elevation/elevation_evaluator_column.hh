@@ -32,7 +32,7 @@ Example:
 #ifndef AMANZI_FLOWRELATIONS_ELEVATION_EVALUATOR_COLUMN_
 #define AMANZI_FLOWRELATIONS_ELEVATION_EVALUATOR_COLUMN_
 
-#include "factory.hh"
+#include "Factory.hh"
 #include "elevation_evaluator.hh"
 
 namespace Amanzi {

@@ -114,8 +114,8 @@ MPCPermafrost4::Setup(const Teuchos::Ptr<State>& S) {
     if (precon_type_ != PRECON_NO_FLOW_COUPLING) {
       Teuchos::RCP<Operators::Operator> surf_flow_pc = surf_flow_pk_->preconditioner();
       Teuchos::RCP<Operators::Operator> domain_flow_pc = domain_flow_pk_->preconditioner();
-      for (Operators::Operator::op_iterator op = surf_flow_pc->OpBegin();
-           op != surf_flow_pc->OpEnd(); ++op) {
+      for (Operators::Operator::op_iterator op = surf_flow_pc->begin();
+           op != surf_flow_pc->end(); ++op) {
         domain_flow_pc->OpPushBack(*op);
       }
     }
@@ -123,8 +123,8 @@ MPCPermafrost4::Setup(const Teuchos::Ptr<State>& S) {
     // -- surface energy
     Teuchos::RCP<Operators::Operator> surf_energy_pc = surf_energy_pk_->preconditioner();
     Teuchos::RCP<Operators::Operator> domain_energy_pc = domain_energy_pk_->preconditioner();
-    for (Operators::Operator::op_iterator op = surf_energy_pc->OpBegin();
-         op != surf_energy_pc->OpEnd(); ++op) {
+    for (Operators::Operator::op_iterator op = surf_energy_pc->begin();
+         op != surf_energy_pc->end(); ++op) {
       domain_energy_pc->OpPushBack(*op);
     }
 
@@ -148,8 +148,8 @@ MPCPermafrost4::Setup(const Teuchos::Ptr<State>& S) {
       dE_dp_plist.set("entity kind", "cell");
       dE_dp_surf_ = Teuchos::rcp(new Operators::PDE_Accumulation(dE_dp_plist, surf_mesh_));
 
-      for (Operators::Operator::op_iterator op = dE_dp_surf_->global_operator()->OpBegin();
-           op != dE_dp_surf_->global_operator()->OpEnd(); ++op) {
+      for (Operators::Operator::op_iterator op = dE_dp_surf_->global_operator()->begin();
+           op != dE_dp_surf_->global_operator()->end(); ++op) {
         dE_dp_block_->OpPushBack(*op);
       }
     }
@@ -388,6 +388,19 @@ MPCPermafrost4::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
   Teuchos::OSTab tab = vo_->getOSTab();
   bool modified = false;
 
+  // HACK to allow for predictor use in subcycling, but then trash the history
+  // if operator splitting coupler has overwritten our OLD time's value
+  S_next_->GetFieldEvaluator(Keys::getKey(domain_subsurf_, "water_content"))
+    ->HasFieldChanged(S_next_.ptr(), name_);
+  if (S_inter_->GetFieldEvaluator(Keys::getKey(domain_subsurf_, "water_content"))
+      ->HasFieldChanged(S_inter_.ptr(), name_)) {
+    *u = *u0;
+    ChangedSolution();
+    S_next_->GetFieldEvaluator(Keys::getKey(domain_subsurf_, "water_content"))
+      ->HasFieldChanged(S_next_.ptr(), name_);
+    return false; // intentionally lieing -- true here triggers another call of ChangedSolution() which we want to avoid
+  }
+  
   // write predictor
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "Extrapolated Prediction (surface):" << std::endl;
@@ -561,7 +574,7 @@ MPCPermafrost4::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r,
   
     // -- accumulate globally
     int n_modified_l = n_modified;
-    u->SubVector(0)->Data()->Comm().SumAll(&n_modified_l, &n_modified, 1);
+    u->SubVector(0)->Data()->Comm()->SumAll(&n_modified_l, &n_modified, 1);
   }
   bool modified = (n_modified > 0) || (damping < 1.);
 

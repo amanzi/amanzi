@@ -57,8 +57,17 @@ public:
     // get my parameter list
     plist_ = Teuchos::sublist(pks_list_, name_);
 
+    // set the verbose object list if need be
+    if (plist_->isSublist(name_ + " verbose object")) {
+      plist_->set("verbose object", plist_->sublist(name_ + " verbose object"));
+      std::cout << "Overwriting VO with name = " << name_ << std::endl;
+    } else {
+      std::cout << "Default VO with name = " << name_ << std::endl;
+    }
+
+
     // verbose object
-    vo_ = Teuchos::rcp(new VerboseObject(name_, *plist_));
+    vo_ = Teuchos::rcp(new VerboseObject(solution->Comm(), name_, *plist_));
   }
 
   // Virtual destructor
@@ -177,6 +186,9 @@ void MPC<PK_t>::Solution_to_State(const TreeVector& soln,
 // -----------------------------------------------------------------------------
 template <class PK_t>
 void MPC<PK_t>::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "commiting step" << std::endl;
   for (typename SubPKList::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
     (*pk)->CommitStep(t_old, t_new, S);
@@ -189,6 +201,9 @@ void MPC<PK_t>::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>
 // -----------------------------------------------------------------------------
 template <class PK_t>
 void MPC<PK_t>::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "calculating diagnostics" << std::endl;
   for (typename SubPKList::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
     (*pk)->CalculateDiagnostics(S);
@@ -201,11 +216,20 @@ void MPC<PK_t>::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
 // -----------------------------------------------------------------------------
 template <class PK_t>
 bool MPC<PK_t>::ValidStep() {
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "Validating time step." << std::endl;
+
   bool valid(true);
   for (typename SubPKList::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
     bool is_valid = (*pk)->ValidStep();
-    if (!is_valid) valid = is_valid;
+    if (!is_valid) {
+      valid = is_valid;
+      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+        *vo_->os() << "Invalid time step, sub_pk: " << (*pk)->name()
+                   << " is invalid." << std::endl;
+    }
   }
   return valid;
 };
@@ -252,7 +276,7 @@ void MPC<PK_t>::init_(const Teuchos::RCP<State>& S)
   int npks = pk_order.size();
   for (int i=0; i!=npks; ++i) {
     // create the solution vector
-    Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector());
+    Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector(solution_->Comm()));
     solution_->PushBack(pk_soln);
 
     // create the PK

@@ -175,10 +175,10 @@ void ElevationEvaluatorColumn::EnsureCompatibility(const Teuchos::Ptr<State>& S)
       base_por_key_ = Keys::readKey(plist_, name.str(), "base porosity", "base_porosity");
       dependencies_.insert(base_por_key_);
     }
-    } /*else {
+  } else {
     Errors::Message msg("ElevationEvaluatorColumn: this evaluator should be used for columnar meshes only.");
     Exceptions::amanzi_throw(msg);
-    }  */ // keep it for a while!!
+  }
 
   ElevationEvaluator::EnsureCompatibility(S.ptr());
 }

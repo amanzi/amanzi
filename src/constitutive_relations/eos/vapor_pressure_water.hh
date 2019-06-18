@@ -13,7 +13,7 @@
 
 
 #include "Teuchos_ParameterList.hpp"
-#include "factory.hh"
+#include "Factory.hh"
 #include "vapor_pressure_relation.hh"
 
 namespace Amanzi {

@@ -27,17 +27,14 @@ EnthalpyEvaluator::EnthalpyEvaluator(Teuchos::ParameterList& plist) :
 
   // -- pressure
   if (include_work_) {
-    pres_key_ = plist_.get<std::string>("pressure key",
-            Keys::getKey(domain_name, "pressure"));
+    pres_key_ = Keys::readKey(plist_, domain_name, "pressure", "pressure");
     dependencies_.insert(pres_key_);
 
-    dens_key_ = plist_.get<std::string>("molar density key",
-            Keys::getKey(domain_name, "molar_density_liquid"));
+    dens_key_ = Keys::readKey(plist_, domain_name, "molar density liquid", "molar_density_liquid");
     dependencies_.insert(dens_key_);
   }
 
-  ie_key_ = plist_.get<std::string>("internal energy key",
-          Keys::getKey(domain_name, "internal_energy_liquid"));
+  ie_key_ = Keys::readKey(plist_, domain_name, "internal energy liquid", "internal_energy_liquid");
   dependencies_.insert(ie_key_);
 
 };

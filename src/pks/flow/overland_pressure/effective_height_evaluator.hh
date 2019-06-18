@@ -11,7 +11,7 @@
 #define AMANZI_FLOW_RELATIONS_EFFECTIVE_HEIGHT_EVALUATOR_
 
 #include "secondary_variable_field_evaluator.hh"
-#include "factory.hh"
+#include "Factory.hh"
 
 namespace Amanzi {
 namespace Flow {

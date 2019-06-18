@@ -168,11 +168,9 @@ void SnowDistribution::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 // -------------------------------------------------------------
 void SnowDistribution::Initialize(const Teuchos::Ptr<State>& S) {
   // Initialize BDF stuff and physical domain stuff.
-  //PKPhysicalBDFBase::initialize(S);
   PK_PhysicalBDF_Default::Initialize(S);
 
   // Set extra fields as initialized -- these don't currently have evaluators.
-
   S->GetFieldData(Keys::getKey(domain_,"upwind_conductivity"),name_)->PutScalar(1.0);
   S->GetField(Keys::getKey(domain_,"upwind_conductivity"),name_)->set_initialized();
 

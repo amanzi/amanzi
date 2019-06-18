@@ -12,7 +12,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 #include "dbc.hh"
-#include "factory.hh"
+#include "Factory.hh"
 #include "surface_relperm_model.hh"
 
 namespace Amanzi {
@@ -41,7 +41,7 @@ class OneUFRelPermModel : public SurfaceRelPermModel {
 
   int alpha_; // must be an even integer
   const double pi_;
-  double h_cutoff_;
+  double h_cutoff_up_, h_cutoff_dn_;
 
  private:
   static Utils::RegisteredFactory<SurfaceRelPermModel,OneUFRelPermModel> reg_;

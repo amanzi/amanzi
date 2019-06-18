@@ -15,11 +15,11 @@
 namespace Amanzi {
 namespace Flow {
 
-#define DEBUG_FLAG 1
+#define DEBUG_FLAG 0
 
 bool PredictorDelegateBCFlux::ModifyPredictor(const Teuchos::Ptr<CompositeVector>& u) {
   Epetra_MultiVector& u_f = *u->ViewComponent("face",false);
-
+  
   int nfaces = bc_values_->size();
   for (int f=0; f!=nfaces; ++f) {
     if ((*bc_markers_)[f] == Operators::OPERATOR_BC_NEUMANN) {
@@ -39,7 +39,7 @@ bool PredictorDelegateBCFlux::ModifyPredictor(const Teuchos::Ptr<CompositeVector
 Teuchos::RCP<PredictorDelegateBCFlux::FluxBCFunctor>
 PredictorDelegateBCFlux::CreateFunctor_(int f,
         const Teuchos::Ptr<const CompositeVector>& pres) {
-  // inner cell
+  // inner cell and its water retention model
   AmanziMesh::Entity_ID_List cells;
   mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
   AMANZI_ASSERT(cells.size() == 1);
@@ -54,24 +54,31 @@ PredictorDelegateBCFlux::CreateFunctor_(int f,
   unsigned int n = std::find(faces.begin(), faces.end(), f) - faces.begin();
   AMANZI_ASSERT(n != faces.size());
 
+  // local matrix row, vector
   Teuchos::RCP< std::vector<double> > Aff = Teuchos::rcp(new std::vector<double>());
   Aff->resize(faces.size());
   Teuchos::RCP< std::vector<double> > lambda = Teuchos::rcp(new std::vector<double>());
   lambda->resize(faces.size());
 
-  // unscale the Aff for my cell with the rel perm that was used to calculate it
-  double Krel = (*S_next_->GetFieldData("upwind_relative_permeability")
-                 ->ViewComponent("face",false))[0][f];
+  // collect physics
+  const auto& wrm = wrms_->second[(*wrms_->first)[c]];
+  const auto& pres_f = *pres->ViewComponent("face", false);
+  const auto& pres_c = *pres->ViewComponent("cell", false);
+  const auto& rhs_f = *matrix_->global_operator()->rhs()->ViewComponent("face",false);
+  
+  // unscale the Aff for my cell with rel perm
+  double Krel = wrm->k_relative(wrm->saturation(101325. - pres_f[0][f]));
 
   // fill the arrays
+  const auto& Aff_g = matrix_->local_matrices()->matrices[c];
   for (unsigned int i=0; i!=faces.size(); ++i) {
-    (*Aff)[i] = matrix_->local_matrices()->matrices[c](n,i) / Krel;
-    (*lambda)[i] = (*pres)("face",faces[i]);
+    (*Aff)[i] = Aff_g(n,i) / Krel;
+    (*lambda)[i] = pres_f[0][faces[i]];
   }
 
   // gravity flux
   double bc_flux = mesh_->face_area(f) * (*bc_values_)[f];
-  double gflux = ((*matrix_->global_operator()->rhs()->ViewComponent("face",false))[0][faces[n]] + bc_flux) / Krel;
+  double gflux = rhs_f[0][faces[n]] / Krel;
 
 #if DEBUG_FLAG
   std::cout << "   Aff = ";
@@ -84,8 +91,8 @@ PredictorDelegateBCFlux::CreateFunctor_(int f,
 #endif
 
   // create and return
-  return Teuchos::rcp(new FluxBCFunctor(Aff, lambda, n, (*pres)("cell",c),
-          bc_flux, gflux, dirs[n], 101325.0, wrms_->second[(*wrms_->first)[c]]));
+  return Teuchos::rcp(new FluxBCFunctor(Aff, lambda, n, pres_c[0][c],
+          bc_flux, gflux, dirs[n], 101325.0, wrm));
 }
 
 int PredictorDelegateBCFlux::CalculateLambdaToms_(int f,
@@ -112,7 +119,12 @@ int PredictorDelegateBCFlux::CalculateLambdaToms_(int f,
   double lres = 0.;
   double rres = 0.;
 
-  if (res == 0) return 0;
+  if (std::abs(res) < eps) {
+#if DEBUG_FLAG
+  std::cout << "  Converged to " << lambda << " in " << 0 << " steps." << std::endl;
+#endif
+    return 0;
+  }
     
 
   if (res > 0.) {
@@ -129,11 +141,9 @@ int PredictorDelegateBCFlux::CalculateLambdaToms_(int f,
     right = lambda;
     rres = res;
 
-    std::cout << "RIGHT = " << right << ", " << rres << std::endl;
     left = std::min(101325., lambda);
     lres = (*func)(left);
     while (lres < 0.) {
-      std::cout << "LEFT = " << left << ", " << lres << std::endl;
       left -= 101325.;
       lres = (*func)(left);
     }

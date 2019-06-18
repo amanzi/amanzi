@@ -5,7 +5,7 @@ Authors: Neil Carlson (versions 1 & 2)  (nnc@lanl.gov)
          Ethan Coon (ATS version)
 */
 
-#include "ConstantFunction.hh"
+#include "FunctionConstant.hh"
 #include "FunctionFactory.hh"
 #include "MultiFunction.hh"
 #include "errors.hh"
@@ -194,7 +194,7 @@ void BCFactory::ProcessSpecWithoutFunction_(const Teuchos::ParameterList& list,
   }
 
   // Make the boundary pressure function.
-  Teuchos::RCP<Function> f = Teuchos::rcp(new ConstantFunction(0.));
+  Teuchos::RCP<Function> f = Teuchos::rcp(new FunctionConstant(0.));
 
   // A bit hacky -- this entire code needs to be revisited in light of the new
   // options for mesh_functions.

@@ -37,9 +37,21 @@ ImplicitSubgrid::ImplicitSubgrid(Teuchos::ParameterList& pk_tree,
   Teuchos::ParameterList& FElist = S->FEList();
 
   // set up keys
+  Key domain_surf;
+  if (domain_ == "snow") {
+    domain_surf = "surface";
+  } else if (boost::starts_with(domain_, "snow_")) {
+    domain_surf = std::string("surface_") + domain_.substr(5,domain_.size());
+  } else {
+    Errors::Message message("SurfaceBalance::ImplicitSubgrid PK cannot deduce surface domain name.");
+    Exceptions::amanzi_throw(message);
+  }
+  
   snow_dens_key_ = Keys::readKey(*plist_, domain_, "snow density", "density");
   snow_age_key_ = Keys::readKey(*plist_, domain_, "snow age", "age");
   new_snow_key_ = Keys::readKey(*plist_, domain_, "new snow source", "source");
+  area_frac_key_ = Keys::readKey(*plist_, domain_surf, "area fractions", "fractional_areas");
+  snow_death_rate_key_ = Keys::readKey(*plist_, domain_, "snow death rate", "death_rate");
   
   // set up additional primary variables -- this is very hacky, and can become an evaluator in new-state
   // -- snow density
@@ -48,6 +60,12 @@ ImplicitSubgrid::ImplicitSubgrid(Teuchos::ParameterList& pk_tree,
   snow_dens_sublist.set("field evaluator type", "primary variable");
   S->FEList().set(snow_dens_key_, snow_dens_sublist);
 
+  // -- snow death rate
+  Teuchos::ParameterList& snow_death_rate_sublist = FElist.sublist(snow_death_rate_key_);
+  snow_death_rate_sublist.set("evaluator name", snow_death_rate_key_);
+  snow_death_rate_sublist.set("field evaluator type", "primary variable");
+  S->FEList().set(snow_death_rate_key_, snow_death_rate_sublist);
+  
   // set the error tolerance for snow
   plist_->set("absolute error tolerance", 0.01);
 }
@@ -75,10 +93,28 @@ ImplicitSubgrid::Setup(const Teuchos::Ptr<State>& S) {
     Exceptions::amanzi_throw(message);
   }
 
+  S->RequireField(snow_death_rate_key_, name_)->SetMesh(mesh_)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator(snow_death_rate_key_);
+  fm = S->GetFieldEvaluator(snow_death_rate_key_);
+  pvfe_snow_death_rate_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
+  if (pvfe_snow_death_rate_ == Teuchos::null) {
+    Errors::Message message("SurfaceBalanceSEB: error, failure to initialize primary variable");
+    Exceptions::amanzi_throw(message);
+  }
+  
   // requirements: internally we must track snow age, this should become an
   // evaluator with snow_density.
   S->RequireField(snow_age_key_, name_)->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
+
+  // requirements: area fractions will be updated by us to make sure the old
+  // time's value is used.  It is likely an error if anything else depends
+  // upon area fractions except for the seb_evaluator (which explicitly
+  // comments out the dependency) and us (which manage when we update it to
+  // not do it until commit state when we update to the new value.
+  // :ISSUE:#8
+  S->RequireFieldEvaluator(area_frac_key_);
 }
 
 // -- Initialize owned (dependent) variables.
@@ -95,17 +131,32 @@ ImplicitSubgrid::Initialize(const Teuchos::Ptr<State>& S) {
       // initialize density, age from restart file
       S->GetField(snow_dens_key_, name_)->Initialize(ic_list);
       S->GetField(snow_dens_key_, name_)->set_initialized();
-      S->GetField(snow_age_key_, name_)->Initialize(ic_list);
-      S->GetField(snow_age_key_, name_)->set_initialized();
+    } else if (plist_->isSublist("initial condition snow density")) {
+      S->GetField(snow_dens_key_, name_)->Initialize(plist_->sublist("initial condition snow density"));
     } else {
       // initialize density to fresh powder, age to 0
       SEBPhysics::ModelParams params;
       S->GetFieldData(snow_dens_key_,name_)->PutScalar(params.density_freshsnow);
       S->GetField(snow_dens_key_, name_)->set_initialized();
+    }
+  }
+
+  if (!S->GetField(snow_age_key_)->initialized()) {
+    if (ic_list.isParameter("restart file")) {
+      // initialize density, age from restart file
+      S->GetField(snow_age_key_, name_)->Initialize(ic_list);
+      S->GetField(snow_age_key_, name_)->set_initialized();
+    } else if (plist_->isSublist("initial condition snow age")) {
+      S->GetField(snow_age_key_, name_)->Initialize(plist_->sublist("initial condition snow age"));
+    } else {
+      // initialize age to fresh powder, age to 0
       S->GetFieldData(snow_age_key_,name_)->PutScalar(0.);
       S->GetField(snow_age_key_, name_)->set_initialized();
     }
   }
+
+  S->GetFieldData(snow_death_rate_key_,name_)->PutScalar(0.);
+  S->GetField(snow_death_rate_key_, name_)->set_initialized();
 }
 
 
@@ -113,12 +164,36 @@ bool
 ImplicitSubgrid::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
         Teuchos::RCP<TreeVector> u) {
   Epetra_MultiVector& u_vec = *u->Data()->ViewComponent("cell",false);
-  unsigned int ncells = u_vec.MyLength();
-  for (unsigned int c=0; c!=ncells; ++c) {
+  for (int c=0; c!=u_vec.MyLength(); ++c) {
     u_vec[0][c] = std::max(0., u_vec[0][c]);
   }
   return true;
 }
+
+
+// -- Modify the correction.
+AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
+ImplicitSubgrid::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+        Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
+  Teuchos::OSTab tab = vo_->getOSTab();
+
+  // modify correction to enforce nonnegativity
+  int n_modified = 0;
+  const Epetra_MultiVector& snow_depth = *u->Data()->ViewComponent("cell",false);
+  Epetra_MultiVector& dsnow_depth = *du->Data()->ViewComponent("cell",false);
+  for (int c=0; c!=snow_depth.MyLength(); ++c) {
+    if (snow_depth[0][c] - dsnow_depth[0][c] < 0.) {
+      dsnow_depth[0][c] = snow_depth[0][c];
+      n_modified++;
+    }
+  }
+
+  // -- accumulate globally
+  //  int n_modified_l = n_modified;
+  //  u->Data()->Comm().SumAll(&n_modified_l, &n_modified, 1);
+  return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED; // ok to backtrack on this
+}
+
 
 
 // computes the non-linear functional g = g(t,u,udot)
@@ -128,11 +203,28 @@ ImplicitSubgrid::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<Tre
   int cycle = S_next_->cycle();
 
   AMANZI_ASSERT(S_next_->GetFieldEvaluator(new_snow_key_).get() == S_next_->GetFieldEvaluator(source_key_).get());
+
+  // first calculate the "snow death rate", or rate of snow SWE that must melt over this
+  // timestep if the snow is to go to zero.
+  auto& snow_death_rate = *S_next_->GetFieldData(snow_death_rate_key_, name_)->ViewComponent("cell",false);
+  S_next_->GetFieldEvaluator(cell_vol_key_)->HasFieldChanged(S_next_.ptr(), name_);
+  const auto& cell_volume = *S_next_->GetFieldData(cell_vol_key_)->ViewComponent("cell",false);
+  snow_death_rate.PutScalar(0.);
+  S_inter_->GetFieldEvaluator(conserved_key_)->HasFieldChanged(S_inter_.ptr(), name_);
+  S_next_->GetFieldEvaluator(conserved_key_)->HasFieldChanged(S_next_.ptr(), name_);
+  const auto& swe_old_v = *S_inter_->GetFieldData(conserved_key_)->ViewComponent("cell", false);
+  const auto& swe_new_v = *S_next_->GetFieldData(conserved_key_)->ViewComponent("cell", false);
+  for (int c=0; c!=snow_death_rate.MyLength(); ++c) {
+    if (swe_new_v[0][c] <= 0.) {
+      snow_death_rate[0][c] = swe_old_v[0][c] / (t_new - t_old) / cell_volume[0][c];
+    }
+  }
+  pvfe_snow_death_rate_->SetFieldAsChanged(S_next_.ptr());
   
   // update the residual
   SurfaceBalanceBase::FunctionalResidual(t_old, t_new, u_old, u_new, g);  
 
-  // first fill the role of age/density evaluator, as these depend upon old and new values
+  // now fill the role of age/density evaluator, as these depend upon old and new values
   const auto& snow_swe_old = *S_inter_->GetFieldData(conserved_key_)->ViewComponent("cell",false);
   const auto& cell_vol = *S_next_->GetFieldData(cell_vol_key_)->ViewComponent("cell",false);
 
@@ -150,7 +242,7 @@ ImplicitSubgrid::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<Tre
 
   SEBPhysics::ModelParams params;
   double dt_days = (t_new - t_old) / 86400.;
-  for (unsigned int c=0; c!=snow_dens_new.MyLength(); ++c) {
+  for (int c=0; c!=snow_dens_new.MyLength(); ++c) {
     double swe_added = new_snow[0][c] * (t_new - t_old) * cell_vol[0][c];
     double swe_lost = (new_snow[0][c] - source[0][c] ) * (t_new - t_old) * cell_vol[0][c];
     double swe_old = snow_swe_old[0][c];
@@ -178,7 +270,6 @@ ImplicitSubgrid::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<Tre
   }
   pvfe_snow_dens_->SetFieldAsChanged(S_next_.ptr());
 
-
   // debugging
   std::vector<std::string> vnames;
   vnames.push_back("snow age");
@@ -191,6 +282,13 @@ ImplicitSubgrid::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<Tre
   
 }
 
+void
+ImplicitSubgrid::CommitStep(double t_old, double t_new,  const Teuchos::RCP<State>& S)
+{
+  // now update area frac
+  S->GetFieldEvaluator(area_frac_key_)->HasFieldChanged(S.ptr(), name_);
+  SurfaceBalanceBase::CommitStep(t_old, t_new, S);
+}
 
 } // namespace
 } // namespace

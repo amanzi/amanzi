@@ -30,27 +30,17 @@ void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   // update the matrix
   matrix_->Init();
 
-  Teuchos::RCP<const CompositeVector> pres =
-      S->GetFieldData(key_, name_);
   S->GetFieldEvaluator(mass_dens_key_)->HasFieldChanged(S, name_);
-  Teuchos::RCP<const CompositeVector> rho = S->GetFieldData(mass_dens_key_);
-  matrix_diff_->SetDensity(rho);
+  matrix_diff_->SetDensity(S->GetFieldData(mass_dens_key_));
+  matrix_diff_->SetScalarCoefficient(S->GetFieldData(uw_coef_key_), Teuchos::null);
 
-  Teuchos::RCP<const CompositeVector> rel_perm =
-    S->GetFieldData(uw_coef_key_);
-  matrix_diff_->SetScalarCoefficient(rel_perm, Teuchos::null);
-  // matrix_diff_->SetScalarCoefficient(Teuchos::null, Teuchos::null);
+  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_, name_);
   matrix_diff_->UpdateMatrices(Teuchos::null, pres.ptr());
+  matrix_diff_->ApplyBCs(true, true, true);
 
   // derive fluxes
-  Teuchos::RCP<CompositeVector> flux =
-      S->GetFieldData(flux_key_, name_);
+  Teuchos::RCP<CompositeVector> flux = S->GetFieldData(flux_key_, name_);
   matrix_diff_->UpdateFlux(pres.ptr(), flux.ptr());
-
-
-
-  // apply boundary conditions
-  matrix_diff_->ApplyBCs(true, true, true);
 
   // calculate the residual
   matrix_->ComputeNegativeResidual(*pres, *g);
@@ -165,7 +155,7 @@ void Richards::SetAbsolutePermeabilityTensor_(const Teuchos::Ptr<State>& S) {
 
 void
 Richards::UpdateVelocity_(const Teuchos::Ptr<State>& S) {
-  const Epetra_MultiVector& flux = *S_->GetFieldData(flux_key_)
+  const Epetra_MultiVector& flux = *S->GetFieldData(flux_key_)
       ->ViewComponent("face", true);
 
   S->GetFieldEvaluator(molar_dens_key_)->HasFieldChanged(S.ptr(), name_);

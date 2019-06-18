@@ -30,8 +30,22 @@ void SnowDistribution::FunctionalResidual( double t_old,
 
   // bookkeeping
   double h = t_new - t_old;
-  AMANZI_ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
-  AMANZI_ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
+  bool asserting = false;
+  if (!(std::abs(S_inter_->time() - t_old) < 1.e-4*h)) {
+    Errors::Message message;
+    message << "SnowDistribution PK: ASSERT!: inter_time = " << S_inter_->time() << ", t_old = " << t_old 
+            << " --> diff = " << std::abs(S_inter_->time() - t_old) << " relative to " << h*1.e-4
+            << "  Maybe you checkpoint-restarted from a checkpoint file that was not on an even day?  This breaks the snow distribution!";
+    Exceptions::amanzi_throw(message);
+  }
+  if (!(std::abs(S_next_->time() - t_new) < 1.e-4*h)) {
+    Errors::Message message;
+    message << "SnowDistribution PK: ASSERT!: inter_time = " << S_next_->time() << ", t_new = " << t_new
+            << " --> diff = " << std::abs(S_next_->time() - t_new) << " relative to " << h*1.e-4
+            << "  Maybe you checkpoint-restarted from a checkpoint file that was not on an even day?  This breaks the snow distribution!";
+    Exceptions::amanzi_throw(message);
+  }
+
 
   Teuchos::RCP<CompositeVector> u = u_new->Data();
 
@@ -272,6 +286,7 @@ SnowDistribution::AdvanceStep(double t_old, double t_new, bool reinit) {
     
     S_next_->set_time(my_t_new);
     S_next_->set_last_time(my_t_old);
+    
     bool failed = PK_PhysicalBDF_Default::AdvanceStep(my_t_old, my_t_new, false);
 
     if (failed) {

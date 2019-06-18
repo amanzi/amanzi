@@ -295,18 +295,13 @@ void VolumetricDeformation::Initialize(const Teuchos::Ptr<State>& S) {
 
 
 bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit) {
-  double dt = t_new -t_old;
+  double dt = t_new - t_old;
   Teuchos::OSTab out = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "----------------------------------------------------------------" << std::endl
-               << "Advancing: t0 = " << S_inter_->time()
-               << " t1 = " << S_next_->time() << " h = " << dt << std::endl
+               << "Advancing: t0 = " << t_old
+               << " t1 = " << t_new << " h = " << dt << std::endl
                << "----------------------------------------------------------------" << std::endl;
-
-  std::vector<double> ss(1,S_next_->time());
-  double ss0 = S_->time();
-  double dT = ss[0] - ss0;
-  double T_mid = (ss[0] + ss0) / 2.;
 
   // Collect data from state
   Teuchos::RCP<CompositeVector> dcell_vol_vec =
@@ -316,8 +311,8 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
   // Calculate the change in cell volumes
   switch (deform_mode_) {
     case (DEFORM_MODE_DVDT): {
-      deform_func_->Compute(T_mid, dcell_vol_vec.ptr());
-      dcell_vol_vec->Scale(dT);
+      deform_func_->Compute((t_old + t_new)/2., dcell_vol_vec.ptr());
+      dcell_vol_vec->Scale(dt);
       break;
     }
 
@@ -392,7 +387,7 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
           ->HasFieldChanged(S_next_.ptr(), name_);
 
       const Epetra_MultiVector& cv =
-          *S_->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",true);
+          *S_inter_->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",true);
       const Epetra_MultiVector& s_liq =
         *S_next_->GetFieldData(Keys::getKey(domain_,"saturation_liquid"))->ViewComponent("cell",false);
       const Epetra_MultiVector& s_ice =
@@ -405,12 +400,13 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
         *S_next_->GetFieldData(Keys::getKey(domain_,"base_porosity"))->ViewComponent("cell",false);
 
       Epetra_MultiVector& dcell_vol_c = *dcell_vol_vec->ViewComponent("cell",false);
+      dcell_vol_c.PutScalar(0.);
       int dim = mesh_->space_dimension();
 
       AmanziMesh::Entity_ID_List cells;
       mesh_->get_set_entities(deform_region_, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &cells);
 
-      double time_factor = dT > time_scale_ ? 1 : dT / time_scale_;
+      double time_factor = dt > time_scale_ ? 1 : dt / time_scale_;
       for (AmanziMesh::Entity_ID_List::const_iterator c=cells.begin(); c!=cells.end(); ++c) {
 	double fs = 1-poro[0][*c];
 	double fi = poro[0][*c] * s_ice[0][*c];
@@ -556,7 +552,7 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
 
       const Epetra_MultiVector& dcell_vol_c =
 	*dcell_vol_vec->ViewComponent("cell",true);
-      Teuchos::RCP<const CompositeVector> cv_vec = S_->GetFieldData(Keys::getKey(domain_,"cell_volume"));
+      Teuchos::RCP<const CompositeVector> cv_vec = S_inter_->GetFieldData(Keys::getKey(domain_,"cell_volume"));
       const Epetra_MultiVector& cv = *cv_vec->ViewComponent("cell");
       
 
@@ -671,7 +667,7 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   
-  Teuchos::RCP<const CompositeVector> cv_vec = S_->GetFieldData(Keys::getKey(domain_,"cell_volume"));
+  Teuchos::RCP<const CompositeVector> cv_vec = S_inter_->GetFieldData(Keys::getKey(domain_,"cell_volume"));
   //cv_vec->ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& cv = *cv_vec->ViewComponent("cell",true);
 
@@ -758,7 +754,7 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
   cv_vec->ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& cv_new = *cv_vec_new->ViewComponent("cell",false);
 
-  Teuchos::RCP<const CompositeVector> base_poro_vec_old = S_->GetFieldData(key_);
+  Teuchos::RCP<const CompositeVector> base_poro_vec_old = S_inter_->GetFieldData(key_);
   const Epetra_MultiVector& base_poro_old = *base_poro_vec_old->ViewComponent("cell");
   // Output
   Epetra_MultiVector& base_poro = *S_next_->GetFieldData(key_, name_)->ViewComponent("cell");

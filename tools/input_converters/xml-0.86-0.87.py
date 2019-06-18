@@ -325,6 +325,7 @@ def update(xml):
     fixEvaluator(xml, "unfrozen_fraction", "surface-unfrozen_fraction")
     fixEvaluator(xml, "unfrozen_effective_depth", "surface-unfrozen_effective_depth")
     fixEvaluator(xml, "incoming_shortwave_radiation", "surface-incoming_shortwave_radiation")
+    fixEvaluator(xml, "co2_concentration", "surface-co2_concentration")
     fixEvaluator(xml, "precipitation_snow", "surface-precipitation_snow")
     fixEvaluator(xml, "precipitation_rain", "surface-precipitation_rain")
     fixEvaluator(xml, "relative_humidity", "surface-relative_humidity")
@@ -342,6 +343,9 @@ def update(xml):
     snow_depth(xml)
     snow_distribution(xml)
     seb(xml)
+
+    import verbose_object
+    verbose_object.fixVerboseObject(xml)
 
 if __name__ == "__main__":
     import argparse

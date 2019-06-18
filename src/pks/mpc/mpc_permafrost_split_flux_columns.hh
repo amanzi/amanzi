@@ -68,6 +68,8 @@ class MPCPermafrostSplitFluxColumns : public MPC<PK> {
   // -- advance each sub pk dt.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit);
 
+  virtual bool ValidStep();
+  
   virtual void set_dt(double dt);
 
   virtual void CommitStep(double t_old, double t_new,
@@ -78,6 +80,15 @@ class MPCPermafrostSplitFluxColumns : public MPC<PK> {
   virtual void CopyStarToPrimary(double dt);
 
  protected:
+
+  void init_(const Teuchos::RCP<State>& S);
+
+  virtual void CopyStarToPrimaryPressure_(double dt);
+  virtual void CopyStarToPrimaryFlux_(double dt);
+  virtual void CopyStarToPrimaryHybrid_(double dt);
+  
+ protected:
+  
   Key p_primary_variable_suffix_;
   Key p_primary_variable_star_;
   Key p_conserved_variable_star_;
@@ -92,6 +103,8 @@ class MPCPermafrostSplitFluxColumns : public MPC<PK> {
   std::vector<Teuchos::RCP<PrimaryVariableFieldEvaluator> > p_eval_pvfes_;
   std::vector<Teuchos::RCP<PrimaryVariableFieldEvaluator> > T_eval_pvfes_;
   std::vector<std::string> col_domains_;
+
+  std::string coupling_;
   
  private:
   // factory registration

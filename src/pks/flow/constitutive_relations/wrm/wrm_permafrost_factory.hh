@@ -14,7 +14,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "wrm_permafrost_model.hh"
-#include "factory.hh"
+#include "Factory.hh"
 
 namespace Amanzi {
 namespace Flow {

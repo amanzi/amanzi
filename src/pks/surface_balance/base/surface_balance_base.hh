@@ -38,23 +38,21 @@ class SurfaceBalanceBase : public PK_PhysicalBDF_Default {
 
   // main methods
   // -- Setup data.
-  virtual void Setup(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S) override;
 
   // -- Update diagnostics for vis.
-  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) {}
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) override {}
 
   // ConstantTemperature is a BDFFnBase
   // computes the non-linear functional g = g(t,u,udot)
   virtual void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
-                          Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
+                          Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) override;
   // updates the preconditioner
-  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) override;
 
   // applies preconditioner to u and returns the result in Pu
-  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) override;
 
-  virtual void set_dt(double dt) {dt_ = dt;}
-  
  protected:
 
   Key layer_;

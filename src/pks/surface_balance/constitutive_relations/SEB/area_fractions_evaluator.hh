@@ -17,7 +17,7 @@ Requires the following dependencies:
 #ifndef AMANZI_SURFACE_BALANCE_AREA_FRACTIONS_EVALUATOR_HH_
 #define AMANZI_SURFACE_BALANCE_AREA_FRACTIONS_EVALUATOR_HH_
 
-#include "factory.hh"
+#include "Factory.hh"
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
