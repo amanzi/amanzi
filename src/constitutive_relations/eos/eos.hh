@@ -2,6 +2,7 @@
 
 /*
   EOS -- purely virtual base class for an EOS.
+  std::vector<double> params contains parameters which define EOS.
 
   License: BSD
   Authors: Ethan Coon (ecoon@lanl.gov)

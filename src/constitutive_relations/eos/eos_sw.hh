@@ -1,7 +1,8 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
-  EOS -- purely virtual base class for an EOS.
+
+  EOS for salt water (does not implement viscosity at this point!)
 
   License: BSD
   Authors: Ethan Coon (ecoon@lanl.gov)
@@ -26,14 +27,14 @@ class EOS_SW : public EOS {
   // Virtual methods that form the EOS
   virtual double MassDensity(std::vector<double>& params);
   virtual double DMassDensityDC(std::vector<double>& params);  
-  virtual double DMassDensityDT(std::vector<double>& params){return 0.;}
-  virtual double DMassDensityDp(std::vector<double>& params){return 0.;}
+  virtual double DMassDensityDT(std::vector<double>& params);
+  virtual double DMassDensityDp(std::vector<double>& params);
 
 
   virtual double MolarDensity(std::vector<double>& params);
   virtual double DMolarDensityDC(std::vector<double>& params);  
-  virtual double DMolarDensityDT(std::vector<double>& params){return 0.;}
-  virtual double DMolarDensityDp(std::vector<double>& params){return 0.;}
+  virtual double DMolarDensityDT(std::vector<double>& params);
+  virtual double DMolarDensityDp(std::vector<double>& params);
 
 
   // If molar mass is constant, we can take some shortcuts if we need both

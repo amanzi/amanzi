@@ -4,6 +4,7 @@
   ATS
 
   EOS for salt water (does not implement viscosity at this point!)
+  For this model dependcy on concentration is only assumed.
 
   Authors: Daniil Svyatsky (dasvyat@lanl.gov)
 */
@@ -29,8 +30,15 @@ double EOS_SW::MassDensity(std::vector<double>& params) {
 
 double EOS_SW::DMassDensityDC(std::vector<double>& params) {
   return E_;
-
 };
+
+double EOS_SW::DMassDensityDT(std::vector<double>& params){
+  return 0.;
+}
+
+double EOS_SW::DMassDensityDp(std::vector<double>& params){
+  return 0.;
+}    
 
 double EOS_SW::MolarDensity(std::vector<double>& params) {
   double C = params[0];
@@ -45,6 +53,15 @@ double EOS_SW::DMolarDensityDC(std::vector<double>& params) {
   return (DMassDensityDC(params)*b - MassDensity(params)*(M_salt_ - M_water_)) / (b*b);
 };    
 
+double EOS_SW:: DMolarDensityDT(std::vector<double>& params){
+  return 0.;
+}
+
+double EOS_SW:: DMolarDensityDp(std::vector<double>& params){
+  return 0.;
+}         
+
+  
 void EOS_SW::InitializeFromPlist_() {
 
   E_ = eos_plist_.get<double>("sea water density coefficient", 750);
