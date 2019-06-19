@@ -39,12 +39,12 @@ add_library(mpc
   weak_mpc_semi_coupled_deform.cc
   mpc_coupled_cells.cc
   pk_mpcsubcycled_ats.cc
-#  mpc_flowreactivetransport_pk.cc
-#  mpc_reactivetransport_pk.cc
   mpc_surface_subsurface_helpers.cc
   weak_mpc_semi_coupled_helper.cc
   mpc_weak_subgrid.cc
   mpc_delegate_ewc.cc
+  mpc_reactivetransport_pk.cc
+  mpc_flowreactivetransport_pk.cc
 ##  mpc_delegate_ewc_surface.cc
   mpc_delegate_ewc_subsurface.cc
   mpc_delegate_water.cc
@@ -52,12 +52,12 @@ add_library(mpc
   mpc_coupled_water_split_flux.cc
   mpc_permafrost_split_flux.cc
   mpc_permafrost_split_flux_columns.cc
+  mpc_permafrost_split_flux_columns_subcycled.cc
 #  mpc_coupled_water_neumann_splitting.cc
 #  mpc_coupled_water_dirichlet_splitting.cc
   mpc_subsurface.cc
-##  mpc_permafrost3.cc
+  mpc_surface.cc
   mpc_permafrost4.cc
-##  mpc_coupled_transport.cc
 )
 
 install(TARGETS mpc DESTINATION lib)
@@ -89,19 +89,24 @@ register_evaluator_with_factory(
   LISTNAME   MPC_PK_FAC
   )
 
-# register_evaluator_with_factory(
-#   HEADERFILE mpc_flowreactivetransport_pk_reg.hh
-#   LISTNAME   MPC_PK_FAC
-#   )
+register_evaluator_with_factory(
+   HEADERFILE mpc_flowreactivetransport_pk_reg.hh
+   LISTNAME   MPC_PK_FAC
+   )
 
-# register_evaluator_with_factory(
-#   HEADERFILE mpc_reactivetransport_pk_reg.hh
-#   LISTNAME   MPC_PK_FAC
-#   )
+register_evaluator_with_factory(
+   HEADERFILE mpc_reactivetransport_pk_reg.hh
+   LISTNAME   MPC_PK_FAC
+   )
 
     
 register_evaluator_with_factory(
   HEADERFILE mpc_subsurface_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE mpc_surface_reg.hh
   LISTNAME   MPC_PK_FAC
   )
 
@@ -135,6 +140,11 @@ register_evaluator_with_factory(
   LISTNAME   MPC_PK_FAC
   )
 
+register_evaluator_with_factory(
+  HEADERFILE mpc_permafrost_split_flux_columns_subcycled_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
+
 # register_evaluator_with_factory(
 #   HEADERFILE mpc_coupled_water_neumann_splitting_reg.hh
 #   LISTNAME   MPC_PK_FAC
@@ -145,10 +155,10 @@ register_evaluator_with_factory(
 #   LISTNAME   MPC_PK_FAC
 #   )
 
-# register_evaluator_with_factory(
-#    HEADERFILE coupled_transport/mpc_coupled_transport_reg.hh
-#    LISTNAME   MPC_PK_FAC
-#   )
+register_evaluator_with_factory(
+    HEADERFILE coupled_transport/mpc_coupled_transport_reg.hh
+    LISTNAME   MPC_PK_FAC
+   )
 
 
 register_evaluator_with_factory(
@@ -190,5 +200,5 @@ include_evaluators_directories(LISTNAME ENERGY_THREE_PHASE_REG_INCLUDES)
 include_evaluators_directories(LISTNAME MPC_PK_FAC_INCLUDES)
 
 
-#add_subdirectory(coupled_transport)
+add_subdirectory(coupled_transport)
 

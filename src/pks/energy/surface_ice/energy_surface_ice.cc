@@ -163,10 +163,8 @@ void EnergySurfaceIce::Initialize(const Teuchos::Ptr<State>& S) {
         }
       }
 
-      // -- Update faces from cells if needed.
-      if (ic_plist.get<bool>("initialize faces from cells", false)) {
-        DeriveFaceValuesFromCellValues_(surf_temp_cv.ptr());
-      }
+      // -- Update faces from cells if there
+      DeriveFaceValuesFromCellValues_(surf_temp_cv.ptr());
 
       // mark as initialized
       S->GetField(key_,name_)->set_initialized();

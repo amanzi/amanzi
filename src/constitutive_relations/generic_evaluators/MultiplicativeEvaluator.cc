@@ -2,6 +2,7 @@
   MultiplicativeEvaluator is the generic evaluator for multipying two vectors.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
+
 */
 
 #include "MultiplicativeEvaluator.hh"
@@ -21,18 +22,14 @@ MultiplicativeEvaluator::MultiplicativeEvaluator(Teuchos::ParameterList& plist) 
       }
     } else {
       Errors::Message msg;
-      msg << "AdditiveEvaluator for: \"" << my_key_ << "\" has no dependencies.";
+      msg << "MultiplicativeEvaluator for: \"" << my_key_ << "\" has no dependencies.";
       Exceptions::amanzi_throw(msg);
     }
   }
 
   coef_ = plist_.get<double>("coefficient", 1.0);
+  positive_ = plist_.get<bool>("enforce positivity", false);
 }
-
-MultiplicativeEvaluator::MultiplicativeEvaluator(const MultiplicativeEvaluator& other) :
-    SecondaryVariableFieldEvaluator(other),
-    coef_(other.coef_)
-{}
 
 Teuchos::RCP<FieldEvaluator>
 MultiplicativeEvaluator::Clone() const
@@ -52,13 +49,16 @@ MultiplicativeEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   result->Scale(coef_);
   key++;
 
-  for (; key!=dependencies_.end(); ++key) {
-    Teuchos::RCP<const CompositeVector> dep = S->GetFieldData(*key);
-    for (CompositeVector::name_iterator lcv=result->begin(); lcv!=result->end(); ++lcv) {
-      Epetra_MultiVector& res_c = *result->ViewComponent(*lcv, false);
-      const Epetra_MultiVector& dep_c = *dep->ViewComponent(*lcv, false);
-
+  for (auto lcv_name : *result) {
+    auto& res_c = *result->ViewComponent(lcv_name, false);
+    for (; key!=dependencies_.end(); ++key) {
+      const auto& dep_c = *S->GetFieldData(*key)->ViewComponent(lcv_name, false);
       for (int c=0; c!=res_c.MyLength(); ++c) res_c[0][c] *= dep_c[0][c];
+    }
+    if (positive_) {
+      for (int c=0; c!=res_c.MyLength(); ++c) {
+        res_c[0][c] = std::max(res_c[0][c], 0.);
+      }
     }
   }
 }

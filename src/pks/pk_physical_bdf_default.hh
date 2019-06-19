@@ -75,31 +75,31 @@ class PK_PhysicalBDF_Default : public PK_BDF_Default,
 
   virtual void set_states(const Teuchos::RCP<const State>& S,
                           const Teuchos::RCP<State>& S_inter,
-                          const Teuchos::RCP<State>& S_next);
+                          const Teuchos::RCP<State>& S_next) override;
     
-  virtual void Setup(const Teuchos::Ptr<State>& S);
+  virtual void Setup(const Teuchos::Ptr<State>& S) override;
 
-  virtual void set_dt(double dt) { dt_ = dt; }
+  virtual void set_dt(double dt) override { dt_ = dt; }
 
   // initialize.  Note both BDFBase and PhysicalBase have initialize()
   // methods, so we need a unique overrider.
-  virtual void Initialize(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S) override;
 
   // Default preconditioner is Picard
-  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) override {
     *Pu = *u;
     return 0;
   }
 
   // updates the preconditioner, default does nothing
-  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {}
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) override {}
 
   // Default implementations of BDFFnBase methods.
   // -- Compute a norm on u-du and return the result.
   virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
-                       Teuchos::RCP<const TreeVector> du);
+                       Teuchos::RCP<const TreeVector> du) override;
 
-  virtual bool ValidStep() {
+  virtual bool ValidStep() override {
     return PK_Physical_Default::ValidStep() && PK_BDF_Default::ValidStep();
   }
   
@@ -107,9 +107,9 @@ class PK_PhysicalBDF_Default : public PK_BDF_Default,
   //    integration scheme is changing the value of the solution in
   //    state.
 
-  virtual void ChangedSolution(const Teuchos::Ptr<State>& S);
+  virtual void ChangedSolution(const Teuchos::Ptr<State>& S) override;
 
-  virtual void ChangedSolution();
+  virtual void ChangedSolution() override;
 
   virtual double BoundaryValue(const Teuchos::RCP<const Amanzi::CompositeVector>& solution, int face_id);
   virtual int BoundaryDirection(int face_id);

@@ -74,7 +74,7 @@ EOSEvaluator::EOSEvaluator(Teuchos::ParameterList& plist) :
   dependencies_.insert(temp_key_);
 
   // -- pressure
-  pres_key_ = Keys::readKey(plist_, domain_name, "pressure", "effective_pressure");
+  pres_key_ = Keys::readKey(plist_, domain_name, "pressure", "pressure");
   dependencies_.insert(pres_key_);
 
   // -- logging

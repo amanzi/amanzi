@@ -18,7 +18,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "MDM.hh"
-#include "factory.hh"
+#include "Factory.hh"
 
 namespace Amanzi {
 namespace Transport {

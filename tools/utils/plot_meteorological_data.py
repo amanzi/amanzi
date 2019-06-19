@@ -41,7 +41,9 @@ def plot_met(fname, axs, color='b', end_time_in_years=np.inf, style='-'):
         else:
             names = names1
             precip = precip1
-            
+
+        time = np.squeeze(time)            
+
         if end_time_in_years > time[-1]:
             end = len(time)
         else:
@@ -49,12 +51,12 @@ def plot_met(fname, axs, color='b', end_time_in_years=np.inf, style='-'):
         
         for i,n in enumerate(names):
             if n in fid.keys():
-                axs[i].plot(time[0:end], fid[n][0:end], style, color=color)
+                axs[i].plot(time[0:end], np.squeeze(fid[n][0:end]), style, color=color)
             axs[i].set_title(n)
 
         for p, s2 in zip(precip, ['-','--']):
             if p in fid.keys():
-                axs[i+1].plot(time[0:end], fid[p][0:end], s2, color=color)
+                axs[i+1].plot(time[0:end], np.squeeze(fid[p][0:end]), s2, color=color)
         axs[i+1].set_title("precip (solid=rain, dash=snow) [m SWE s^-1]")
 
 

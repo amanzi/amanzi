@@ -9,8 +9,8 @@ add_library(pk_energy_advection_diffusion advection_diffusion_pk.cc advection_di
 
 install(TARGETS pk_energy_advection_diffusion DESTINATION lib)
 
-if ( BUILD_TESTS )
-#if (0)
+#if ( BUILD_TESTS )
+if (0)
   # Add UnitTest includes
   include_directories(${Amanzi_TPL_UnitTest_INCLUDE_DIRS})
 

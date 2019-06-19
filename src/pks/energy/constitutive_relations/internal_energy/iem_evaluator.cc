@@ -50,8 +50,7 @@ void IEMEvaluator::InitializeFromPlist_() {
   std::string domain_name = Keys::getDomain(my_key_);
 
   // -- temperature
-  temp_key_ = plist_.get<std::string>("temperature key",
-          Keys::getKey(domain_name, "temperature"));
+  temp_key_ = Keys::readKey(plist_, domain_name, "temperature", "temperature");
   dependencies_.insert(temp_key_);
 }
 

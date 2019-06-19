@@ -18,15 +18,15 @@ EOSIdealGas::EOSIdealGas(Teuchos::ParameterList& eos_plist) : eos_plist_(eos_pli
 };
 
 double EOSIdealGas::MolarDensity(double T, double p) {
-  return p / (R_*T);
+  return std::max(p,101325.) / (R_*T);
 };
 
 double EOSIdealGas::DMolarDensityDT(double T, double p) {
-  return -p / (R_*T*T);
+  return -std::max(p,101325.) / (R_*T*T);
 };
 
 double EOSIdealGas::DMolarDensityDp(double T, double p) {
-  return 1.0 / (R_*T);
+  return p >= 101325. ? 1.0 / (R_*T) : 0.;
 };
 
 

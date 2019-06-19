@@ -54,7 +54,9 @@ void Transport_PK_ATS::CalculateDispersionTensor_(
     }
     mfd3d.L2Cell(c, flux, NULL, poly);
 
+
     for (int k = 0; k < dim; ++k) velocity[k] = poly(k + 1);
+    
     D_[c] = mdm_->second[(*mdm_->first)[c]]->mech_dispersion(
         velocity, axi_symmetry_[c], saturation[0][c], porosity[0][c]);
     double mol_den = mol_density[0][c];

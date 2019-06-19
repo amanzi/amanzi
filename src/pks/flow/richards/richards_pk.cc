@@ -61,7 +61,6 @@ Richards::Richards(Teuchos::ParameterList& pk_tree,
     upwind_from_prev_flux_(false),
     precon_wc_(false),
     dynamic_mesh_(false),
-    clobber_surf_kr_(false),
     clobber_boundary_flux_dir_(false),
     vapor_diffusion_(false),
     perm_scale_(1.),
@@ -139,7 +138,17 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   
   // -- nonlinear coefficients/upwinding
   Teuchos::ParameterList& wrm_plist = plist_->sublist("water retention evaluator");
-  clobber_surf_kr_ = plist_->get<bool>("clobber surface rel perm", false);
+  if (plist_->isParameter("surface rel perm strategy")) {
+    clobber_policy_ = plist_->get<std::string>("surface rel perm strategy");
+  } else if (plist_->get<bool>("clobber surface rel perm", false)) {
+    clobber_policy_ = "clobber";
+  } else if (plist_->get<bool>("max surface rel perm", false)) {
+    clobber_policy_ = "max";
+  } else if (plist_->get<bool>("unsaturated clobber surface rel perm", false)) {
+    clobber_policy_ = "unsaturated";
+  } else {
+    clobber_policy_ = "none";
+  }
   clobber_boundary_flux_dir_ = plist_->get<bool>("clobber boundary flux direction for upwinding", false);
 
   std::string method_name = plist_->get<std::string>("relative permeability method", "upwind with Darcy flux");
@@ -216,6 +225,13 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     mfd_pc_plist.set("discretization secondary", mfd_plist.get<std::string>("discretization secondary"));
   if (!mfd_pc_plist.isParameter("schema") && mfd_plist.isParameter("schema"))
     mfd_pc_plist.set("schema", mfd_plist.get<Teuchos::Array<std::string> >("schema"));
+  if (mfd_pc_plist.get<bool>("include Newton correction", false)) {
+    if (mfd_pc_plist.get<std::string>("discretization primary") == "fv: default") {
+      mfd_pc_plist.set("Newton correction", "true Jacobian");
+    } else {
+      mfd_pc_plist.set("Newton correction", "approximate Jacobian");
+    }
+  }
 
   preconditioner_diff_ = opfactory.CreateWithGravity(mfd_pc_plist, mesh_, bc_);
   preconditioner_ = preconditioner_diff_->global_operator();
@@ -469,13 +485,6 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S) {
     S->GetField(duw_coef_key_,name_)->set_initialized();
   }
 
-  // if (vapor_diffusion_){
-  //   S->GetFieldData("vapor_diffusion_pressure",name_)->PutScalar(1.0);
-  //   S->GetField("vapor_diffusion_pressure",name_)->set_initialized();
-  //   S->GetFieldData("vapor_diffusion_temperature",name_)->PutScalar(1.0);
-  //   S->GetField("vapor_diffusion_temperature",name_)->set_initialized();
-  // }
-
   S->GetFieldData(flux_key_, name_)->PutScalar(0.0);
   S->GetField(flux_key_, name_)->set_initialized();
   S->GetFieldData(flux_dir_key_, name_)->PutScalar(0.0);
@@ -523,34 +532,33 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S) {
 //   secondary variables have been updated to be consistent with the new
 //   solution.
 // -----------------------------------------------------------------------------
-  void Richards::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
+void Richards::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
 
-    double dt = t_new - t_old;
-    Teuchos::OSTab tab = vo_->getOSTab();
-    if (vo_->os_OK(Teuchos::VERB_EXTREME))
-      *vo_->os() << "Commiting state." << std::endl;
+  double dt = t_new - t_old;
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "Commiting state." << std::endl;
 
-    PK_PhysicalBDF_Default::CommitStep(t_old, t_new, S);
+  PK_PhysicalBDF_Default::CommitStep(t_old, t_new, S);
   
   // update BCs, rel perm
   UpdateBoundaryConditions_(S.ptr());
   bool update = UpdatePermeabilityData_(S.ptr());
-
   update |= S->GetFieldEvaluator(key_)->HasFieldChanged(S.ptr(), name_);
   update |= S->GetFieldEvaluator(mass_dens_key_)->HasFieldChanged(S.ptr(), name_);
 
   if (update) {
-    // update the stiffness matrix
-    Teuchos::RCP<const CompositeVector> rel_perm =
-      S->GetFieldData(uw_coef_key_);
+    // update the stiffness matrix and derive fluxes
+    Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData(uw_coef_key_);
     Teuchos::RCP<const CompositeVector> rho = S->GetFieldData(mass_dens_key_);
-    // derive fluxes
     Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
 
     matrix_->Init();
     matrix_diff_->SetDensity(rho);
     matrix_diff_->SetScalarCoefficient(rel_perm, Teuchos::null);
     matrix_diff_->UpdateMatrices(Teuchos::null, pres.ptr());
+    matrix_diff_->ApplyBCs(true, true, true);
+
 
     // derive fluxes
     Teuchos::RCP<CompositeVector> flux = S->GetFieldData(flux_key_, name_);
@@ -612,7 +620,7 @@ Richards::ValidStep() {
   if (sat_change_limit_ > 0.0) {
     const Epetra_MultiVector& sl_new = *S_next_->GetFieldData(sat_key_)
         ->ViewComponent("cell",false);
-    const Epetra_MultiVector& sl_old = *S_->GetFieldData(sat_key_)
+    const Epetra_MultiVector& sl_old = *S_inter_->GetFieldData(sat_key_)
         ->ViewComponent("cell",false);
     Epetra_MultiVector dsl(sl_new);
     dsl.Update(-1., sl_old, 1.);
@@ -620,7 +628,7 @@ Richards::ValidStep() {
     dsl.NormInf(&change);
 
     if (change > sat_change_limit_) {
-      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+      if (vo_->os_OK(Teuchos::VERB_LOW))
         *vo_->os() << "Invalid time step, max sl change="
                    << change << " > limit=" << sat_change_limit_ << std::endl;
       return false;
@@ -629,7 +637,7 @@ Richards::ValidStep() {
   if (sat_ice_change_limit_ > 0.0) {
     const Epetra_MultiVector& si_new = *S_next_->GetFieldData(sat_ice_key_)
         ->ViewComponent("cell",false);
-    const Epetra_MultiVector& si_old = *S_->GetFieldData(sat_ice_key_)
+    const Epetra_MultiVector& si_old = *S_inter_->GetFieldData(sat_ice_key_)
         ->ViewComponent("cell",false);
     Epetra_MultiVector dsi(si_new);
     dsi.Update(-1., si_old, 1.);
@@ -637,7 +645,7 @@ Richards::ValidStep() {
     dsi.NormInf(&change);
 
     if (change > sat_ice_change_limit_) {
-      if (vo_->os_OK(Teuchos::VERB_MEDIUM))
+      if (vo_->os_OK(Teuchos::VERB_LOW))
         *vo_->os() << "Invalid time step, max si change="
                    << change << " > limit=" << sat_ice_change_limit_ << std::endl;
       return false;
@@ -660,14 +668,13 @@ void Richards::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
   UpdateBoundaryConditions_(S.ptr());
 
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
-  Teuchos::RCP<const CompositeVector> rel_perm =
-      S->GetFieldData(uw_coef_key_);
-  Teuchos::RCP<const CompositeVector> rho =
-      S->GetFieldData(mass_dens_key_);
+  Teuchos::RCP<const CompositeVector> rel_perm = S->GetFieldData(uw_coef_key_);
+  Teuchos::RCP<const CompositeVector> rho = S->GetFieldData(mass_dens_key_);
   // update the stiffness matrix
   matrix_diff_->SetDensity(rho);
   matrix_diff_->SetScalarCoefficient(rel_perm, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, pres.ptr());
+  matrix_diff_->ApplyBCs(true, true, true);
 
   // derive fluxes
   Teuchos::RCP<CompositeVector> flux = S->GetFieldData(flux_key_, name_);
@@ -701,26 +708,15 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     if (update_dir) {
       // update the direction of the flux -- note this is NOT the flux
       Teuchos::RCP<const CompositeVector> rho = S->GetFieldData(mass_dens_key_);
-      face_matrix_diff_->SetDensity(rho);
-
       Teuchos::RCP<CompositeVector> flux_dir = S->GetFieldData(flux_dir_key_, name_);
       Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
 
 
+      face_matrix_diff_->SetDensity(rho);
       face_matrix_diff_->UpdateMatrices(Teuchos::null, pres.ptr());
-
-
-      if ((!pres->HasComponent("face")) || (!pres->HasComponent("boundary face")))
-
-      //face_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-    
-      if (!pres->HasComponent("face"))
-        face_matrix_diff_->ApplyBCs(true, true, true);
-
+      //if (!pres->HasComponent("face"))
+      face_matrix_diff_->ApplyBCs(true, true, true);
       face_matrix_diff_->UpdateFlux(pres.ptr(), flux_dir.ptr());
-
-
-
 
       if (clobber_boundary_flux_dir_) {
         Epetra_MultiVector& flux_dir_f = *flux_dir->ViewComponent("face",false);
@@ -761,9 +757,37 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
     // Upwind, only overwriting boundary faces if the wind says to do so.
     upwinding_->Update(S);
 
-    if (clobber_surf_kr_) {
+    if (clobber_policy_ == "clobber") {
       Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);
       uw_rel_perm_f.Export(rel_perm_bf, vandelay, Insert);
+    } else if (clobber_policy_ == "max") {
+      Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);
+      const auto& fmap = mesh_->face_map(true);
+      const auto& bfmap = mesh_->exterior_face_map(true);
+      for (int bf=0; bf!=rel_perm_bf.MyLength(); ++bf) {
+        auto f = fmap.LID(bfmap.GID(bf));
+        if (rel_perm_bf[0][bf] > uw_rel_perm_f[0][f]) {
+          uw_rel_perm_f[0][f] = rel_perm_bf[0][bf];
+        }
+      }      
+    } else if (clobber_policy_ == "unsaturated") {
+      // clobber only when the interior cell is unsaturated
+      Epetra_MultiVector& uw_rel_perm_f = *uw_rel_perm->ViewComponent("face",false);
+      const Epetra_MultiVector& pres = *S->GetFieldData(key_)->ViewComponent("cell",false);
+      const auto& fmap = mesh_->face_map(true);
+      const auto& bfmap = mesh_->exterior_face_map(true);
+      for (int bf=0; bf!=rel_perm_bf.MyLength(); ++bf) {
+        auto f = fmap.LID(bfmap.GID(bf));
+        AmanziMesh::Entity_ID_List fcells;
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &fcells);
+        AMANZI_ASSERT(fcells.size() == 1);
+        if (pres[0][fcells[0]] < 101225.) {
+          uw_rel_perm_f[0][f] = rel_perm_bf[0][bf];
+        } else if (pres[0][fcells[0]] < 101325.) {
+          double frac = (101325. - pres[0][fcells[0]])/100.;
+          uw_rel_perm_f[0][f] = rel_perm_bf[0][bf] * frac + uw_rel_perm_f[0][f] * (1-frac);
+        }
+      }      
     }
 
     if (uw_rel_perm->HasComponent("face"))
@@ -1132,10 +1156,11 @@ bool Richards::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
   bc_pressure_->Compute(S_next_->time());
   bc_head_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
-  UpdateBoundaryConditions_(S_next_.ptr(), false); // without rel perm
+  UpdateBoundaryConditions_(S_next_.ptr());
+  db_->WriteBoundaryConditions(bc_markers(), bc_values());
   
   // push Dirichlet data into predictor
-  if (u->Data()->HasComponent("boundary_cell")) {
+  if (u->Data()->HasComponent("boundary_face")) {
     ApplyBoundaryConditions_(u->Data().ptr());
   }
   
@@ -1181,7 +1206,7 @@ bool Richards::ModifyPredictorFluxBCs_(double h, Teuchos::RCP<TreeVector> u) {
   Teuchos::RCP<const CompositeVector> pres = S_next_->GetFieldData(key_);
   matrix_diff_->SetDensity(rho);
   matrix_diff_->UpdateMatrices(Teuchos::null, pres.ptr());
-  matrix_diff_->ApplyBCs(true, true, true);
+  //matrix_diff_->ApplyBCs(true, true, true);
 
   flux_predictor_->ModifyPredictor(h, u);
   ChangedSolution(); // mark the solution as changed, as modifying with
@@ -1352,7 +1377,13 @@ bool Richards::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     *vo_->os() << "    Admissible p? (min/max): " << minT << ",  " << maxT << std::endl;
   }
-  
+
+
+  Teuchos::RCP<const Comm_type> comm_p = mesh_->get_comm();
+    Teuchos::RCP<const MpiComm_type> mpi_comm_p =
+      Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm_p);
+    const MPI_Comm& comm = mpi_comm_p->Comm();
+    
   if (minT < -1.e9 || maxT > 1.e8) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       *vo_->os() << " is not admissible, as it is not within bounds of constitutive models:" << std::endl;
@@ -1364,8 +1395,8 @@ bool Richards::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
       local_maxT_c.value = maxT_c;
       local_maxT_c.gid = pres_c.Map().GID(max_c);
 
-      MPI_Allreduce(&local_minT_c, &global_minT_c, 1, MPI_DOUBLE_INT, MPI_MINLOC, mesh_->get_comm()->Comm());
-      MPI_Allreduce(&local_maxT_c, &global_maxT_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
+      MPI_Allreduce(&local_minT_c, &global_minT_c, 1, MPI_DOUBLE_INT, MPI_MINLOC, comm);
+      MPI_Allreduce(&local_maxT_c, &global_maxT_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, comm);
       *vo_->os() << "   cells (min/max): [" << global_minT_c.gid << "] " << global_minT_c.value
                  << ", [" << global_maxT_c.gid << "] " << global_maxT_c.value << std::endl;
 
@@ -1379,8 +1410,8 @@ bool Richards::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
         local_maxT_f.value = maxT_f;
         local_maxT_f.gid = pres_f.Map().GID(max_f);
         
-        MPI_Allreduce(&local_minT_f, &global_minT_f, 1, MPI_DOUBLE_INT, MPI_MINLOC, mesh_->get_comm()->Comm());
-        MPI_Allreduce(&local_maxT_f, &global_maxT_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
+        MPI_Allreduce(&local_minT_f, &global_minT_f, 1, MPI_DOUBLE_INT, MPI_MINLOC, comm);
+        MPI_Allreduce(&local_maxT_f, &global_maxT_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, comm);
         *vo_->os() << "   cells (min/max): [" << global_minT_f.gid << "] " << global_minT_f.value
                    << ", [" << global_maxT_f.gid << "] " << global_maxT_f.value << std::endl;
       }

@@ -91,15 +91,11 @@ void EnergyBase::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   matrix_diff_->global_operator()->Init();
   matrix_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, temp.ptr());
-  //matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  matrix_diff_->ApplyBCs(true, true, true);
 
-
-  // update the flux if needed
+  // update the flux
   Teuchos::RCP<CompositeVector> flux = S->GetFieldData(energy_flux_key_, name_);
   matrix_diff_->UpdateFlux(temp.ptr(), flux.ptr());
-
-  // finish assembly of the stiffness matrix
-  matrix_diff_->ApplyBCs(true, true, true);
 
   // calculate the residual
   matrix_diff_->global_operator()->ComputeNegativeResidual(*temp, *g);
@@ -149,7 +145,7 @@ void EnergyBase::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {
       S->GetFieldEvaluator(source_key_)->HasFieldDerivativeChanged(S, name_, key_);
       dsource_dT = S->GetFieldData(Keys::getDerivKey(source_key_, key_));
     } else {
-      // evaluate the derivative through fniite differences
+      // evaluate the derivative through finite differences
       double eps = 1.e-8;
       S->GetFieldData(key_, name_)->Shift(eps);
       ChangedSolution();

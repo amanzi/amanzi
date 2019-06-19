@@ -106,7 +106,7 @@ MPCDelegateWater::ModifyCorrection_WaterSpurtDamp(double h, Teuchos::RCP<const T
   
   Teuchos::RCP<const CompositeVector> domain_u = u->SubVector(i_domain_)->Data();
   Teuchos::RCP<CompositeVector> domain_Pu = Pu->SubVector(i_domain_)->Data();
-  
+  Epetra_MultiVector& domain_Pu_c = *domain_Pu->ViewComponent("cell",false);
 
   // Approach 2
   double damp = 1.;
@@ -128,7 +128,7 @@ MPCDelegateWater::ModifyCorrection_WaterSpurtDamp(double h, Teuchos::RCP<const T
     }
 
     double proc_damp = damp;
-    domain_Pu->Comm().MinAll(&proc_damp, &damp, 1);
+    domain_Pu_c.Comm().MinAll(&proc_damp, &damp, 1);
     if (damp < 1.0) {
       if (vo_->os_OK(Teuchos::VERB_HIGH))
         *vo_->os() << "  DAMPING THE SPURT!, coef = " << damp << std::endl;
@@ -288,7 +288,7 @@ MPCDelegateWater::ModifyPredictor_Heuristic(double h, const Teuchos::RCP<TreeVec
         u->SubVector(i_surf_)->Data()->Mesh();
 
     const Epetra_MultiVector& surf_u_prev_c =
-        *S_->GetFieldData("surface_pressure")->ViewComponent("cell",false);
+        *S_inter_->GetFieldData("surface_pressure")->ViewComponent("cell",false);
     const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
     int ncells = surf_u_c.MyLength();
     for (int c=0; c!=ncells; ++c) {
@@ -347,6 +347,7 @@ MPCDelegateWater::ModifyPredictor_WaterSpurtDamp(double h,
 
     Key key_ss = Keys::getKey(domain_ss_,"pressure");
 
+
     Teuchos::RCP<const CompositeVector> domain_pold = S_->GetFieldData(key_ss);
     // const Epetra_MultiVector& domain_pold_f =
     //     *S_->GetFieldData(key_ss)->ViewComponent("face",false);
@@ -376,14 +377,21 @@ MPCDelegateWater::ModifyPredictor_WaterSpurtDamp(double h,
     }
 
     double proc_damp = damp;
-    domain_pnew->Comm().MinAll(&proc_damp, &damp, 1);
+    if (domain_pnew->HasComponent("face")){
+      Epetra_MultiVector& domain_pnew_f = *domain_pnew -> ViewComponent("face",false);
+      domain_pnew_f.Comm().MinAll(&proc_damp, &damp, 1);
+    } else if (domain_pnew->HasComponent("face")){
+      Epetra_MultiVector& domain_pnew_f = *domain_pnew -> ViewComponent("boundary face",false);
+      domain_pnew_f.Comm().MinAll(&proc_damp, &damp, 1);
+    }
+    
     if (damp < 1.0) {
       if (vo_->os_OK(Teuchos::VERB_HIGH))
         *vo_->os() << "  DAMPING THE SPURT!, coef = " << damp << std::endl;
 
       // apply the damping
 
-      Teuchos::RCP<const CompositeVector> domain_pold = S_->GetFieldData(key_ss);
+      Teuchos::RCP<const CompositeVector> domain_pold = S_inter_->GetFieldData(key_ss);
 
       Teuchos::RCP<CompositeVector> domain_pnew = u->SubVector(i_domain_)->Data();
       db_->WriteVector("p_old", domain_pold.ptr());
@@ -446,17 +454,18 @@ MPCDelegateWater::ModifyPredictor_TempFromSource(double h, const Teuchos::RCP<Tr
     Epetra_MultiVector& surf_pnew_c = *u->SubVector(i_surf_)->Data()
         ->ViewComponent("cell",false);
 
+
     // Epetra_MultiVector& domain_pnew_f = *u->SubVector(i_domain_)->Data()
     //     ->ViewComponent("face",false);
     Teuchos::RCP<CompositeVector> domain_pnew = u->SubVector(i_domain_)->Data();
     
-    const Epetra_MultiVector& Told = *S_->GetFieldData("surface_temperature")
+    const Epetra_MultiVector& Told = *S_inter_->GetFieldData("surface_temperature")
         ->ViewComponent("cell",false);
     const Epetra_MultiVector& Tsource = *S_next_->GetFieldData("surface_mass_source_temperature")
         ->ViewComponent("cell",false);
-    const Epetra_MultiVector& hold = *S_->GetFieldData("ponded_depth")
+    const Epetra_MultiVector& hold = *S_inter_->GetFieldData("ponded_depth")
         ->ViewComponent("cell",false);
-    const Epetra_MultiVector& dhsource = *S_->GetFieldData("surface_mass_source")
+    const Epetra_MultiVector& dhsource = *S_inter_->GetFieldData("surface_mass_source")
         ->ViewComponent("cell",false);
 
     Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh =

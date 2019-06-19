@@ -344,13 +344,14 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
   Teuchos::RCP<const CompositeVector> cv;
 
   ws_ = S->GetFieldData(saturation_key_)->ViewComponent("cell", false); 
-  ws_prev_ = S -> GetFieldData(prev_saturation_key_) -> ViewComponent("cell", false);
+  ws_prev_ = S->GetFieldData(prev_saturation_key_) -> ViewComponent("cell", false);
 
   
   phi_ = S->GetFieldData(porosity_key_) -> ViewComponent("cell", false);
 
-  mol_dens_ = S -> GetFieldData(molar_density_key_) -> ViewComponent("cell", false);
-  mol_dens_prev_ = S -> GetFieldData(molar_density_key_) -> ViewComponent("cell", false);
+
+  mol_dens_ = S->GetFieldData(molar_density_key_) -> ViewComponent("cell", false);
+  mol_dens_prev_ = S->GetFieldData(molar_density_key_) -> ViewComponent("cell", false);
   
   tcc = S->GetFieldData(tcc_key_, passwd_);
 
@@ -1009,7 +1010,7 @@ void Transport_PK_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new
         tp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
 
     Teuchos::RCP<Operators::BCs> bc_dummy = 
-        Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
+        Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
     
     // default boundary conditions (none inside domain and Neumann on its boundary)
     auto& bc_model = bc_dummy->bc_model();

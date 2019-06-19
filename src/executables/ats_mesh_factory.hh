@@ -256,14 +256,14 @@ checkVerifyMesh(Teuchos::ParameterList& mesh_plist,
 
 void
 createMesh(Teuchos::ParameterList& plist,
-           const Teuchos::RCP<Epetra_MpiComm>& comm,
+           const Amanzi::Comm_ptr_type& comm,
            const Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel>& gm,
            Amanzi::State& s);
 
 
 void
 createMeshes(Teuchos::ParameterList& plist,
-             const Teuchos::RCP<Epetra_MpiComm>& comm,
+             const Amanzi::Comm_ptr_type& comm,             
              const Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel>& gm,
              Amanzi::State& s);
 
