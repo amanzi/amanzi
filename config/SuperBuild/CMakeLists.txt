@@ -747,12 +747,14 @@ endif()
 # KOKKOS 
 # ############################################################################ #
 if(${AMANZI_ARCH} STREQUAL "Summit")
-  message(STATUS ">>> KOKKOS_INCLUDE   = ${Trilinos_INSTALL_PREFIX}/include")
-  message(STATUS ">>> KOKKOS_LIBRARIES = ${Trilinos_INSTALL_PREFIX}/lib")
+ set(KOKKOS_INCLUDE_DIR "${Trilinos_INSTALL_PREFIX}/include" CACHE PATH "KOKKOS include dirrectory")
+  set(KOKKOS_LIBRARY_DIR "${Trilinos_INSTALL_PREFIX}/lib" CACHE PATH "KOKKOS librariesi directory")
+  message(STATUS ">>> KOKKOS_INCLUDE   = ${KOKKOS_INCLUDE_DIR}")
+  message(STATUS ">>> KOKKOS_LIBRARIES = ${KOKKOS_LIBRARY_DIR}")
   append_set(Amanzi_TPL_CMAKE_ARGS
            -DENABLE_KOKKOS:BOOL=ON
-           -DKOKKOS_INCLUDE_DIR:PATH="${Trilinos_INSTALL_PREFIX}/include"
-           -DKOKKOS_LIBRARY_DIR:PATH="${Trilinos_INSTALL_PREFIX}/lib")
+           -DKOKKOS_INCLUDE_DIR:PATH=${KOKKOS_INCLUDE_DIR}
+           -DKOKKOS_LIBRARY_DIR:PATH=${KOKKOS_LIBRARY_DIR})
 endif()
 
 # Silo

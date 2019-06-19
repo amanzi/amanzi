@@ -124,9 +124,10 @@ double RegionBoxVolumeFractions::intersect(
     const std::vector<std::vector<int> >& faces) const
 {
   double volume(0.0);
-  int mdim, sdim;
+  //int mdim; un-used
+  int sdim;
 
-  mdim = manifold_dimension();
+  //mdim = manifold_dimension();
   sdim = polytope(0).dim();
 
 

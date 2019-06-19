@@ -547,12 +547,12 @@ double Mesh_MSTK::deform_function(const int nodeid,
   double func = 0.0, func1 = 0.0, func2 = 0.0, delta=1.0e-3;
   MVertex_ptr v = vtx_id_to_handle[nodeid];
   double *xyz[MAXPV3], L10_sqr, L20_sqr, L21_sqr, A;
-  double val=0.0, *xyz1[4];
+  double *xyz1[4];
   double evec0[3], evec1[3], evec2[3], a, b, cpvec[3], vol6;
   double nodexyz_copy[3]={0.0,0.0,0.0};
   double condfunc=0.0, volfunc=0.0, barrierfunc=0.0;
   int i, j, k, m, id, jr, jf, nf0, found;
-  int vind=-1, ind[4], nbrs[4][3];
+  int ind[4], nbrs[4][3];
   MVertex_ptr fv, rv;
   List_ptr fvlist, rvlist;
   static MVertex_ptr last_v=NULL;
@@ -572,7 +572,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
                              {7,5,2},{6,4,3}};
   static int prsmidx[6][3] = {{1,2,3},{2,0,4},{0,1,5},{0,4,5},{1,3,5},{2,3,4}};
 
-  val = 0.0;
+  //val = 0.0;
 
   std::copy(nodexyz,nodexyz+space_dimension(),nodexyz_copy);
 
@@ -841,7 +841,7 @@ double Mesh_MSTK::deform_function(const int nodeid,
           }
           else {
             xyz[i] = nodexyz_copy;
-            vind = i;
+            //vind = i;
           }
         }
 

@@ -68,6 +68,30 @@ else()
   SET(CMAKE_SKIP_RPATH ON CACHE BOOL "Turn off for static install." FORCE)
 endif()
 
+#get_cmake_property(_variableNames VARIABLES)
+#list (SORT _variableNames)
+#foreach (_variableName ${_variableNames})
+#    message(STATUS "${_variableName}=${${_variableName}}")
+#endforeach()
+
+# Change CMAKE COMPILER if KOKKOS used
+if(${AMANZI_ARCH} STREQUAL "Summit") 
+  set(ENV{NVCC_WRAPPER_DEFAULT_COMPILER} ${CXX_DEFAULT_COMPILER})
+  set(ENV{CMAKE_CXX_COMPILER} ${Trilinos_INSTALL_PREFIX}/bin/nvcc_wrapper)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
+    -Wno-deprecated-declarations -lineinfo \
+    -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored \
+    -Xcudafe --diag_suppress=conversion_function_not_usable \
+    -Xcudafe --diag_suppress=cc_clobber_ignored \
+    -Xcudafe --diag_suppress=code_is_unreachable \
+    -Xcudafe --diag_suppress=declared_but_not_referenced \
+    -Xcudafe --diag_suppress=integer_sign_change \
+    -Xcudafe --diag_suppress=partial_override \
+    --expt-extended-lambda")
+  message(STATUS "NVCC_WRAPPER_DEFAULT_COMPILER: $ENV{NVCC_WRAPPER_DEFAULT_COMPILER}")
+  message(STATUS "CMAKE_CXX_COMPILER $ENV{CMAKE_CXX_COMPILER}")
+endif()
+
 # Check the mesh framework choice
 if ((ENABLE_Unstructured)  AND
     (NOT ENABLE_STK_Mesh)  AND

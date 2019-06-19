@@ -343,8 +343,8 @@ TEST(BOXREGION_VOFS_3D_VOLUME)
   Kokkos::View<Point*> xyz;
   std::vector<std::vector<int> > faces(4);
 
-  int n(0);
-  double volume_exact[5] = {0.5, 0.46, 0.34, 0.16, 0.04};
+  // int n(0); un-used
+  //double volume_exact[5] = {0.5, 0.46, 0.34, 0.16, 0.04}; //un-used
   for (double d = 0.0; d <= 0.8; d += 0.2) {
     Point vv(d, d, d);
     Kokkos::resize(xyz,4);

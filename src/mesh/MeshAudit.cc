@@ -1591,9 +1591,9 @@ bool MeshAudit::check_get_set(AmanziMesh::Set_ID sid,
   return false;
 
   // Get the size of the set.
-  int n;
+  //int n;
   try {
-    n = mesh_->get_set_size(sid, kind, ptype); // this may fail
+    mesh_->get_set_size(sid, kind, ptype); // this may fail
   } catch (...) {
     os_ << "  ERROR: caught exception from get_set_size()" << std::endl;
     return true;

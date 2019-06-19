@@ -4503,7 +4503,7 @@ void Mesh_MSTK::collapse_degen_edges()
          same for master and slave edges and their nodes, we will not
          have conflict between processors */
 
-      int vdelid=0;
+      //int vdelid=0; un-used
 
       ev0 = ME_Vertex(edge,0); evgid0 = MEnt_GlobalID(ev0);
       ev1 = ME_Vertex(edge,1); evgid1 = MEnt_GlobalID(ev1);
@@ -4511,12 +4511,12 @@ void Mesh_MSTK::collapse_degen_edges()
       if (evgid0 < evgid1) {
         vkeep = ev0;
         vdel = ev1;
-        vdelid = MV_ID(vdel);
+        MV_ID(vdel);
       }
       else {
         vkeep = ev1;
         vdel = ev0;
-        vdelid = MV_ID(vdel);
+        MV_ID(vdel);
       }
 
       List_ptr deleted_ents = NULL, merged_entity_pairs = NULL;
@@ -4526,7 +4526,7 @@ void Mesh_MSTK::collapse_degen_edges()
       if (!vkeep) {
         vkeep = vdel;
         vdel = (vkeep == ev0) ? ev1 : ev0;
-        vdelid = MV_ID(vdel);
+        MV_ID(vdel);
 
         vkeep = ME_Collapse(edge, vkeep, topoflag, &deleted_ents,
                             &merged_entity_pairs);

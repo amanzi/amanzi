@@ -875,31 +875,31 @@ protected:
   // it. Therefore, we have to store as many normals for a face as
   // there are cells connected to it. For a given face, its normal to
   // face_get_cells()[i] is face_normals_[i]
-  mutable Kokkos::Crs<AmanziGeometry::Point,Kokkos::HostSpace> face_normals_;
+  mutable Kokkos::Crs<AmanziGeometry::Point,Kokkos::DefaultExecutionSpace> face_normals_;
 
   mutable Kokkos::View<AmanziGeometry::Point*> edge_vectors_;
 
   // -- column information, only created if columns are requested
   mutable Kokkos::View<Entity_ID*> cell_cellabove_, cell_cellbelow_, node_nodeabove_;
-  mutable Kokkos::Crs<Entity_ID,Kokkos::HostSpace> column_cells_;
-  mutable Kokkos::Crs<Entity_ID,Kokkos::HostSpace> column_faces_;
+  mutable Kokkos::Crs<Entity_ID,Kokkos::DefaultExecutionSpace> column_cells_;
+  mutable Kokkos::Crs<Entity_ID,Kokkos::DefaultExecutionSpace> column_faces_;
   mutable Kokkos::View<Entity_ID*> columnID_;
   mutable int num_owned_cols_;
   mutable bool columns_built_;
 
   // -- topology
-  mutable Kokkos::Crs<Entity_ID,Kokkos::HostSpace> cell_face_ids_;
-  mutable Kokkos::Crs<int,Kokkos::HostSpace> cell_face_dirs_;  // 1 or -1
+  mutable Kokkos::Crs<Entity_ID,Kokkos::DefaultExecutionSpace> cell_face_ids_;
+  mutable Kokkos::Crs<int,Kokkos::DefaultExecutionSpace> cell_face_dirs_;  // 1 or -1
 
   // 1s complement if face is pointing out of cell; cannot use 0 as
   // cellid can be 0
-  mutable Kokkos::Crs<Entity_ID,Kokkos::HostSpace> face_cell_ids_;
+  mutable Kokkos::Crs<Entity_ID,Kokkos::DefaultExecutionSpace> face_cell_ids_;
 
-  mutable Kokkos::Crs<Parallel_type,Kokkos::HostSpace> face_cell_ptype_;
-  mutable Kokkos::Crs<Entity_ID,Kokkos::HostSpace> cell_edge_ids_;
-  mutable Kokkos::Crs<int,Kokkos::HostSpace> cell_2D_edge_dirs_;
-  mutable Kokkos::Crs<Entity_ID,Kokkos::HostSpace> face_edge_ids_;
-  mutable Kokkos::Crs<int,Kokkos::HostSpace> face_edge_dirs_;
+  mutable Kokkos::Crs<Parallel_type,Kokkos::DefaultExecutionSpace> face_cell_ptype_;
+  mutable Kokkos::Crs<Entity_ID,Kokkos::DefaultExecutionSpace> cell_edge_ids_;
+  mutable Kokkos::Crs<int,Kokkos::DefaultExecutionSpace> cell_2D_edge_dirs_;
+  mutable Kokkos::Crs<Entity_ID,Kokkos::DefaultExecutionSpace> face_edge_ids_;
+  mutable Kokkos::Crs<int,Kokkos::DefaultExecutionSpace> face_edge_dirs_;
 
   // -- flags to indicate what part of cache is up-to-date
   mutable bool cell2face_info_cached_, face2cell_info_cached_;

@@ -31,7 +31,9 @@ class Point {
   }
   KOKKOS_INLINE_FUNCTION Point(const Point& p) {
     d = p.d;
-    std::copy(p.xyz, p.xyz+d, xyz);
+    xyz[0] = p.xyz[0]; 
+    xyz[1] = p.xyz[1]; 
+    xyz[2] = p.xyz[2]; 
   }
   explicit Point(const int N) {
     d = N;

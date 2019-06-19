@@ -840,7 +840,7 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
       for (int i = 0; i < cellids.extent(0); i++) {
         Kokkos::View<Entity_ID*> cellfaceids;
         Kokkos::View<int*> cellfacedirs;
-        int dir = 1;
+        //int dir = 1; un-used
 
         cell_get_faces_and_dirs(cellids(i), cellfaceids, &cellfacedirs);
 
@@ -848,7 +848,7 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
         for (int j = 0; j < cellfaceids.extent(0); j++) {
           if (cellfaceids(j) == faceid) {
             found = true;
-            dir = cellfacedirs(j);
+            cellfacedirs(j);
             break;
           }
         }

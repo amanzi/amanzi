@@ -183,7 +183,8 @@ set(Trilinos_CMAKE_ARCH_ARGS
 
 if ( ${AMANZI_ARCH} STREQUAL "Summit" )
    message("GOT SUMMIT! : ${AMANZI_ARCH}")
-   #set(NVCC_WRAPPER_DEFAULT_COMPILER "${CMAKE_CXX_COMPILER}")
+   set(CUDA_LAUNCH_BLOCKING 1)
+   set(NVCC_WRAPPER_DEFAULT_COMPILER=${CMAKE_CXX_COMPILER})
    set(NVCC_WRAPPER_PATH "${Trilinos_source_dir}/packages/kokkos/bin/nvcc_wrapper")
    set(Trilinos_CMAKE_CXX_FLAGS "${Trilinos_CMAKE_CXX_FLAGS} -Wno-deprecated-declarations -lineinfo -Xcudafe --diag_suppress=conversion_function_not_usable -Xcudafe --diag_suppress=cc_clobber_ignored -Xcudafe --diag_suppress=code_is_unreachable")
    #set(CUDA_LAUNCH_BLOCKING "1")

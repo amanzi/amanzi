@@ -503,10 +503,10 @@ void Mesh_simple::node_set_coordinates(const AmanziMesh::Entity_ID local_node_id
   unsigned int offset = (unsigned int) 3*local_node_id;
 
   std::vector<double>::iterator destination_begin = coordinates_.begin() + offset;
-  double coordarray[3] = {0.0,0.0,0.0};
+  //double coordarray[3] = {0.0,0.0,0.0}; // un-used
   int spdim = Mesh::space_dimension();
-  for (int i = 0; i < spdim; i++)
-    coordarray[i] = ncoord[i];
+  //for (int i = 0; i < spdim; i++)
+  //  coordarray[i] = ncoord[i];
 
   for (int i = 0; i < spdim; i++) {
     *destination_begin = ncoord[i];

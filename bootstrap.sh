@@ -1412,8 +1412,6 @@ if [ ! -n "${mpi_root_dir}" ]; then
 
   # Setting environment varibles
   if [ "${AMANZI_ARCH}" = "Summit" ]; then
-    export CUDA_LAUNCH_BLOCKING=1
-    export NVCC_WRAPPER_DEFAULT_COMPILER=${build_cxx_compiler}
     kokkos="ON"
     cuda="ON"
   fi 
@@ -1577,7 +1575,9 @@ fi
 status_message "Build Amanzi with configure file ${tpl_config_file}"
 
 # Setting environment varibles
-if [ "${AMANZI_ARCH}" = "Summit" ]; then 
+cxx_default_compiler=""
+if [ "${AMANZI_ARCH}" = "Summit" ]; then
+  cxx_default_compiler=${build_cxx_compiler} 
   build_cxx_compiler=${tpl_install_prefix}/trilinos-12-14-1_master/bin/nvcc_wrapper
 fi 
  
@@ -1594,6 +1594,7 @@ cmd_configure="${cmake_binary} \
     -DCMAKE_C_COMPILER:FILEPATH=${build_c_compiler} \
     -DCMAKE_CXX_COMPILER:FILEPATH=${build_cxx_compiler} \
     -DCMAKE_Fortran_COMPILER:FILEPATH=${build_fort_compiler} \
+    -DCXX_DEFAULT_COMPILER:STRING=${cxx_default_compiler} \
     -DENABLE_Structured:BOOL=${structured} \
     -DENABLE_Unstructured:BOOL=${unstructured} \
     -DENABLE_STK_Mesh:BOOL=${stk_mesh} \
