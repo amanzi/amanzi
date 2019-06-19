@@ -1362,7 +1362,6 @@ if [ ! -z "${amanzi_branch}" ]; then
   git_change_branch ${amanzi_branch}
 fi
 
-
 # ---------------------------------------------------------------------------- #
 # Configure tools
 # ---------------------------------------------------------------------------- #
@@ -1383,7 +1382,6 @@ if [ ! -n "${mpi_root_dir}" ]; then
       -DTOOLS_INSTALL_PREFIX:STRING=${tools_install_prefix} \
       -DTOOLS_DOWNLOAD_DIR:FILEPATH=${tools_download_dir} \
       -DTOOLS_PARALLEL_JOBS:INT=${parallel_jobs} \
-      -DTOOLS_AMANZI_ARCH:STRING=${AMANZI_ARCH} \
       ${tools_build_src_dir}
 
   if [ $? -ne 0 ]; then
@@ -1497,7 +1495,6 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_XSDK:BOOL=${xsdk} \
       -DBUILD_SHARED_LIBS:BOOL=${shared} \
       -DTPL_DOWNLOAD_DIR:FILEPATH=${tpl_download_dir} \
-      -DTPL_PARALLEL_JOBS:INT=${parallel_jobs} \
       -DAMANZI_ARCH:STRING=${AMANZI_ARCH} \
       -DENABLE_KOKKOS:BOOL=${kokkos} \
       -DENABLE_CUDA:BOOL=${cuda} \

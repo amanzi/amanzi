@@ -80,9 +80,9 @@ if (NOT CMAKE_Fortran_COMPILER)
   message(WARNING "Fortran compiler not specified. CMake will guess!")
 endif()
 
-#if (NOT SPACK_BINARY)
-#  message(WARNING "Spack binary not defined. Disabling spack builds.")
-#endif()
+if (NOT SPACK_BINARY)
+  message(WARNING "Spack binary not defined. Disabling spack builds.")
+endif()
 
 # ############################################################################ #
 # Define Amanzi directories 
@@ -504,9 +504,9 @@ include(DefineExternalProjectArgs)
 set(Amanzi_TPL_CMAKE_ARGS)
 
 # --- Begin the build definitions
-#if (BUILD_SPACK)
-#  include(${SuperBuild_BUILD_FILES_DIR}/Build_Spack.cmake)
-#endif()
+if (BUILD_SPACK)
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_Spack.cmake)
+endif()
 
 
 if (ENABLE_XSDK)    
