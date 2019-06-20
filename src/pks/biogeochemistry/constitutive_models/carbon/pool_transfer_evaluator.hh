@@ -9,7 +9,7 @@
 #ifndef AMANZI_BGCRELATIONS_POOL_DECOMP_HH_
 #define AMANZI_BGCRELATIONS_POOL_DECOMP_HH_
 
-#include "factory.hh"
+#include "Factory.hh"
 #include "secondary_variables_field_evaluator.hh"
 
 class Epetra_SerialDenseVector;

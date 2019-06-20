@@ -83,12 +83,12 @@ void OverlandPressureFlow::Setup(const Teuchos::Ptr<State>& S) {
   // set up the meshes
   standalone_mode_ = S->GetMesh() == S->GetMesh(domain_);
 
+  PK_PhysicalBDF_Default::Setup(S);
+  
   // -- water content
   S->RequireField(Keys::getKey(domain_,"water_content"))->SetMesh(mesh_)->SetGhosted()
     ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(Keys::getKey(domain_,"water_content"));
-
-  PK_PhysicalBDF_Default::Setup(S);
 
 
   // add _bar evaluators
@@ -213,6 +213,13 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   if (!mfd_pc_plist.isParameter("schema") && mfd_plist.isParameter("schema"))
     mfd_pc_plist.set("schema",
                      mfd_plist.get<Teuchos::Array<std::string> >("schema"));
+  if (mfd_pc_plist.get<bool>("include Newton correction", false)) {
+    if (mfd_pc_plist.get<std::string>("discretization primary") == "fv: default") {
+      mfd_pc_plist.set("Newton correction", "true Jacobian");
+    } else {
+      mfd_pc_plist.set("Newton correction", "approximate Jacobian");
+    }
+  }
 
   preconditioner_diff_ = opfactory.Create(mfd_pc_plist, mesh_, bc_);
   preconditioner_diff_->SetTensorCoefficient(Teuchos::null);
@@ -416,7 +423,6 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
 
   Teuchos::RCP<CompositeVector> pres_cv = S->GetFieldData(key_, name_);
 
-
   // initial condition is tricky
   if (!S->GetField(key_)->initialized()) {
     if (!plist_->isSublist("initial condition")) {
@@ -430,7 +436,7 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
 
   // Initialize BDF stuff and physical domain stuff.
   PK_PhysicalBDF_Default::Initialize(S);
-
+ 
   if (!S->GetField(key_)->initialized()) {
     // -- set the cell initial condition if it is taken from the subsurface
     Teuchos::ParameterList ic_plist = plist_->sublist("initial condition");
@@ -454,10 +460,11 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
         // -- get the surface cell's equivalent subsurface face and neighboring cell
         AmanziMesh::Entity_ID f =
           mesh_->entity_get_parent(AmanziMesh::CELL, c);
-
         pres[0][c] = subsurf_pres[0][f];
-
       }
+
+      // -- Update faces from cells if there
+      DeriveFaceValuesFromCellValues_(pres_cv.ptr());
 
       // mark as initialized
       if (ic_plist.get<bool>("initialize surface head from subsurface",false)) {
@@ -492,6 +499,8 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
     }
 
   }
+
+  
   // Initialize BC values
   bc_head_->Compute(S->time());
   bc_pressure_->Compute(S->time());
@@ -516,6 +525,8 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
   S->GetField(Keys::getKey(domain_,"mass_flux_direction"), name_)->set_initialized();
   S->GetFieldData(Keys::getKey(domain_,"velocity"), name_)->PutScalar(0.);
   S->GetField(Keys::getKey(domain_,"velocity"), name_)->set_initialized();
+ 
+  
  };
 
 
@@ -549,19 +560,17 @@ void OverlandPressureFlow::CommitStep(double t_old, double t_new, const Teuchos:
 
   // Update flux if rel perm or h + Z has changed.
   bool update = UpdatePermeabilityData_(S.ptr());
-
   update |= S->GetFieldEvaluator(Keys::getKey(domain_,"pres_elev"))->HasFieldChanged(S.ptr(), name_);
 
   // update the stiffness matrix with the new rel perm
-  Teuchos::RCP<const CompositeVector> conductivity =
-    S->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity"));
+  auto cond = S->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity"));
 
+  // update the stiffness matrix
   matrix_->Init();
-  matrix_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
+  matrix_diff_->SetScalarCoefficient(cond, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-
-  // Patch up BCs for zero-gradient
-  FixBCsForOperator_(S.ptr());
+  FixBCsForOperator_(S.ptr()); // deals with zero gradient case
+  matrix_diff_->ApplyBCs(true, true, true);
   
   // derive the fluxes
   Teuchos::RCP<const CompositeVector> potential = S->GetFieldData(Keys::getKey(domain_,"pres_elev"));
@@ -581,15 +590,15 @@ void OverlandPressureFlow::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
   // update the cell velocities
   UpdateBoundaryConditions_(S.ptr());
 
-  Teuchos::RCP<const CompositeVector> conductivity =
-S->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity"));
+  Teuchos::RCP<const CompositeVector> conductivity = S->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity"));
 
   // update the stiffness matrix
   matrix_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  FixBCsForOperator_(S.ptr()); // deals with zero gradient case
+  matrix_diff_->ApplyBCs(true, true, true);
 
   // derive fluxes
-
   Teuchos::RCP<const CompositeVector> potential = S->GetFieldData(Keys::getKey(domain_,"pres_elev"));
   Teuchos::RCP<CompositeVector> flux = S->GetFieldData(Keys::getKey(domain_,"mass_flux"), name_);
   matrix_diff_->UpdateFlux(potential.ptr(), flux.ptr());
@@ -934,7 +943,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
     
     const Epetra_MultiVector& h_c = *S->GetFieldData(Keys::getKey(domain_,"ponded_depth"))->ViewComponent("cell");
     const Epetra_MultiVector& nliq_c = *S->GetFieldData(Keys::getKey(domain_,"molar_density_liquid"))
-    ->ViewComponent("cell");
+                                       ->ViewComponent("cell");
     double gz = -(*S->GetConstantVectorData("gravity"))[2];
     
     for (Functions::BoundaryFunction::Iterator bc = bc_critical_depth_->begin();
@@ -990,7 +999,6 @@ OverlandPressureFlow::ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVecto
     }
   } else if (u->HasComponent("boundary_face")) {
     const Epetra_MultiVector& elevation = *elev->ViewComponent("face");
-
     const Epetra_Map& vandalay_map = mesh_->exterior_face_map(false);
     const Epetra_Map& face_map = mesh_->face_map(false);
 
@@ -1016,7 +1024,6 @@ void OverlandPressureFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
   auto& values = bc_values();
 
   // Now we can safely calculate q = -k grad z for zero-gradient problems
-
   Teuchos::RCP<const CompositeVector> elev = S->GetFieldData(Keys::getKey(domain_,"elevation"));
 
   elev->ScatterMasterToGhosted();
@@ -1030,7 +1037,6 @@ void OverlandPressureFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
        bc!=bc_zero_gradient_->end(); ++bc) {
-
     int f = bc->first;
 
     AmanziMesh::Entity_ID_List cells;
@@ -1143,13 +1149,6 @@ bool OverlandPressureFlow::ModifyPredictor(double h, Teuchos::RCP<const TreeVect
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "Modifying predictor:" << std::endl;
 
-  // if (modify_predictor_with_consistent_faces_) {
-  //   if (vo_->os_OK(Teuchos::VERB_EXTREME))
-  //     *vo_->os() << "  modifications for consistent face pressures." << std::endl;
-  //   CalculateConsistentFaces(u->Data().ptr());
-  //   return true;
-  // }
-
   return false;
 };
 
@@ -1204,6 +1203,12 @@ OverlandPressureFlow::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> 
                  Teuchos::RCP<TreeVector> du) {
   Teuchos::OSTab tab = vo_->getOSTab();
 
+  // if the primary variable has boundary face, this is for upwinding rel
+  // perms and is never actually used.  Make sure it does not go to undefined
+  // pressures.
+  if (du->Data()->HasComponent("boundary_face")) {
+    du->Data()->ViewComponent("boundary_face")->PutScalar(0.);
+  }
 
   // debugging -- remove me! --etc
   for (CompositeVector::name_iterator comp=du->Data()->begin();
@@ -1216,7 +1221,6 @@ OverlandPressureFlow::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> 
       *vo_->os() << "Linf, L2 pressure correction (" << *comp << ") = " << max << ", " << l2 << std::endl;
     }
   }
-  
 
   // limit by capping corrections when they cross atmospheric pressure
   // (where pressure derivatives are discontinuous)
@@ -1264,13 +1268,13 @@ OverlandPressureFlow::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> 
   }
 
   // debugging -- remove me! --etc
-  for (CompositeVector::name_iterator comp=du->Data()->begin();
-       comp!=du->Data()->end(); ++comp) {
-    Epetra_MultiVector& du_c = *du->Data()->ViewComponent(*comp,false);
-    double max, l2;
-    du_c.NormInf(&max);
-    du_c.Norm2(&l2);
-    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    for (CompositeVector::name_iterator comp=du->Data()->begin();
+         comp!=du->Data()->end(); ++comp) {
+      Epetra_MultiVector& du_c = *du->Data()->ViewComponent(*comp,false);
+      double max, l2;
+      du_c.NormInf(&max);
+      du_c.Norm2(&l2);
       *vo_->os() << "Linf, L2 pressure correction (" << *comp << ") = " << max << ", " << l2 << std::endl;
     }
   }

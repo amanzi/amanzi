@@ -52,17 +52,20 @@ EnergyBase::EnergyBase(Teuchos::ParameterList& FElist,
   if (!plist_->isParameter("conserved quantity key suffix"))
     plist_->set("conserved quantity key suffix", "energy");
 
-  // set a default absolute tolerance
+  // set a default error tolerance
   if (domain_.find("surface") != std::string::npos) {
     mass_atol_ = plist_->get<double>("mass absolute error tolerance",
                                      .01 * 55000.);
+    soil_atol_ = 0.;
   } else {
     mass_atol_ = plist_->get<double>("mass absolute error tolerance",
                                      .5 * .1 * 55000.);
+    soil_atol_ = 0.5 * 2000. * 620.e-6;  // porosity * particle density soil * heat capacity soil * 1 degree
+                    // or, dry bulk density soil * heat capacity soil * 1 degree, in MJ
   }
 
   if (!plist_->isParameter("absolute error tolerance")) {
-    plist_->set("absolute error tolerance", 76.e-6); // energy of 1 degree C of water per mass_atol
+    plist_->set("absolute error tolerance", 76.e-6); // energy of 1 degree C of water per mass_atol, in MJ/mol water
   }
 }
 
@@ -104,7 +107,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   bc_diff_flux_ = bc_factory.CreateDiffusiveFlux();
   bc_flux_ = bc_factory.CreateTotalFlux();
 
-  bc_adv_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
+  bc_adv_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
 
   bc_surf_temp_dependent_ = bc_plist.get<bool>("surface temperature dependence",false);
   // -- nonlinear coefficient
@@ -381,45 +384,40 @@ void EnergyBase::CommitStep(double t_old, double t_new, const Teuchos::RCP<State
   
   niter_ = 0;
   bool update = UpdateConductivityData_(S.ptr());
+  update |= S->GetFieldEvaluator(key_)->HasFieldChanged(S.ptr(), name_);
 
-  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);
-  // if (update_flux_ == UPDATE_FLUX_TIMESTEP ||
-  //     (update_flux_ == UPDATE_FLUX_ITERATION && update)) {
-  Teuchos::RCP<const CompositeVector> conductivity =
-      S->GetFieldData(uw_conductivity_key_);
-  matrix_diff_->global_operator()->Init();
-  matrix_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
-  matrix_diff_->UpdateMatrices(Teuchos::null, temp.ptr());
-  //matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  if (update) {
+    Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);
+    Teuchos::RCP<const CompositeVector> conductivity = S->GetFieldData(uw_conductivity_key_);
+    matrix_diff_->global_operator()->Init();
+    matrix_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
+    matrix_diff_->UpdateMatrices(Teuchos::null, temp.ptr());
+    matrix_diff_->ApplyBCs(true, true, true);
 
+    Teuchos::RCP<CompositeVector> eflux = S->GetFieldData(energy_flux_key_, name_);
+    matrix_diff_->UpdateFlux(temp.ptr(), eflux.ptr());
 
-  Teuchos::RCP<CompositeVector> eflux = S->GetFieldData(energy_flux_key_, name_);
-  matrix_diff_->UpdateFlux(temp.ptr(), eflux.ptr());
-  //  }
+    // calculate the advected energy as a diagnostic
+    Teuchos::RCP<const CompositeVector> flux = S->GetFieldData(flux_key_);
+    matrix_adv_->Setup(*flux);
+    S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S.ptr(), name_);
+    Teuchos::RCP<const CompositeVector> enth = S->GetFieldData(enthalpy_key_);;
+    ApplyDirichletBCsToEnthalpy_(S.ptr());
 
-  // calculate the advected energy as a diagnostic
-  Teuchos::RCP<const CompositeVector> flux = S->GetFieldData(flux_key_);
-  matrix_adv_->Setup(*flux);
-  S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S.ptr(), name_);
-  Teuchos::RCP<const CompositeVector> enth = S->GetFieldData(enthalpy_key_);;
-  ApplyDirichletBCsToEnthalpy_(S.ptr());
-
-  Teuchos::RCP<CompositeVector> adv_energy = S->GetFieldData(adv_energy_flux_key_, name_);  
-  matrix_adv_->UpdateFlux(enth.ptr(), flux.ptr(), bc_adv_, adv_energy.ptr());
+    Teuchos::RCP<CompositeVector> adv_energy = S->GetFieldData(adv_energy_flux_key_, name_);  
+    matrix_adv_->UpdateFlux(enth.ptr(), flux.ptr(), bc_adv_, adv_energy.ptr());
   
-
-  if (compute_boundary_values_){
-    Epetra_MultiVector& temp_bf = *S->GetFieldData(key_, name_)->ViewComponent("boundary_face",false);
-    const Epetra_Map& vandalay_map = mesh_->exterior_face_map(false);
-    const Epetra_Map& face_map = mesh_->face_map(false);
-    int nbfaces = temp_bf.MyLength();
-    for (int bf=0; bf!=nbfaces; ++bf) {
-      AmanziMesh::Entity_ID f = face_map.LID(vandalay_map.GID(bf));
-      temp_bf[0][bf] =  BoundaryFaceValue(f, *temp);
+    if (compute_boundary_values_){
+      Epetra_MultiVector& temp_bf = *S->GetFieldData(key_, name_)->ViewComponent("boundary_face",false);
+      const Epetra_Map& vandalay_map = mesh_->exterior_face_map(false);
+      const Epetra_Map& face_map = mesh_->face_map(false);
+      int nbfaces = temp_bf.MyLength();
+      for (int bf=0; bf!=nbfaces; ++bf) {
+        AmanziMesh::Entity_ID f = face_map.LID(vandalay_map.GID(bf));
+        temp_bf[0][bf] =  BoundaryFaceValue(f, *temp);
+      }
     }
-  }      
-
-
+  }
 };
 
 /* ******************************************************************
@@ -457,12 +455,6 @@ double EnergyBase::BoundaryFaceValue(int f, const CompositeVector& u)
     }
   }
   return face_value;
-}
-
-
-
-// -- Calculate any diagnostics prior to doing vis
-void EnergyBase::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
 }
 
 
@@ -707,6 +699,13 @@ bool EnergyBase::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
     *vo_->os() << "    Admissible T? (min/max): " << minT << ",  " << maxT << std::endl;
   }
 
+  Teuchos::RCP<const Comm_type> comm_p = mesh_->get_comm();
+  Teuchos::RCP<const MpiComm_type> mpi_comm_p =
+    Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm_p);
+  const MPI_Comm& comm = mpi_comm_p->Comm();
+
+
+  
   if (minT < 200.0 || maxT > 300.0) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
       *vo_->os() << " is not admissible, as it is not within bounds of constitutive models:" << std::endl;
@@ -718,8 +717,8 @@ bool EnergyBase::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
       local_maxT_c.value = maxT_c;
       local_maxT_c.gid = temp_c.Map().GID(max_c);
 
-      MPI_Allreduce(&local_minT_c, &global_minT_c, 1, MPI_DOUBLE_INT, MPI_MINLOC, mesh_->get_comm()->Comm());
-      MPI_Allreduce(&local_maxT_c, &global_maxT_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
+      MPI_Allreduce(&local_minT_c, &global_minT_c, 1, MPI_DOUBLE_INT, MPI_MINLOC, comm);
+      MPI_Allreduce(&local_maxT_c, &global_maxT_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, comm);
 
       *vo_->os() << "   cells (min/max): [" << global_minT_c.gid << "] " << global_minT_c.value
                  << ", [" << global_maxT_c.gid << "] " << global_maxT_c.value << std::endl;
@@ -735,8 +734,8 @@ bool EnergyBase::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
         local_maxT_f.gid = temp_f.Map().GID(max_f);
         
 
-        MPI_Allreduce(&local_minT_f, &global_minT_f, 1, MPI_DOUBLE_INT, MPI_MINLOC, mesh_->get_comm()->Comm());
-        MPI_Allreduce(&local_maxT_f, &global_maxT_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
+        MPI_Allreduce(&local_minT_f, &global_minT_f, 1, MPI_DOUBLE_INT, MPI_MINLOC, comm);
+        MPI_Allreduce(&local_maxT_f, &global_maxT_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, comm);
         *vo_->os() << "   cells (min/max): [" << global_minT_f.gid << "] " << global_minT_f.value
                    << ", [" << global_maxT_f.gid << "] " << global_maxT_f.value << std::endl;
       }

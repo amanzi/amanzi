@@ -18,6 +18,8 @@ Author: Ethan Coon (ecoon@lanl.gov)
 
 #include "GlobalVerbosity.hh"
 #include "VerboseObject.hh"
+#include "AmanziComm.hh"
+#include "AmanziTypes.hh"
 
 #include "GeometricModel.hh"
 #include "coordinator.hh"
@@ -33,7 +35,12 @@ Author: Ethan Coon (ecoon@lanl.gov)
 int SimulationDriver::Run(
     const MPI_Comm& mpi_comm, Teuchos::ParameterList& plist) {
 
-  Teuchos::RCP<Epetra_MpiComm> comm = Teuchos::rcp(new Epetra_MpiComm(mpi_comm));
+  
+  #ifdef HAVE_MPI
+  auto comm = Teuchos::rcp(new Amanzi::MpiComm_type(mpi_comm));
+  #else
+  auto comm = Amanzi::getCommSelf();
+  #endif
   
   // verbosity settings
   setDefaultVerbLevel(Amanzi::VerbosityLevel::level_);
@@ -42,8 +49,12 @@ int SimulationDriver::Run(
   Teuchos::OSTab tab = getOSTab(); // This sets the line prefix and adds one tab
 
   // size, rank
-  int rank = comm->MyPID();
-  int size = comm->NumProc();
+  //int rank = comm->MyPID();
+  //int size = comm->NumProc();
+
+  int rank, size;
+  MPI_Comm_rank(mpi_comm,&rank);
+  MPI_Comm_size(mpi_comm,&size);
 
   // print header material
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
@@ -57,8 +68,11 @@ int SimulationDriver::Run(
 
   // create the geometric model and regions
   Teuchos::ParameterList reg_params = plist.sublist("regions");
+
+
+  
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_params, comm.get()));
+    Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, reg_params, *comm) );
 
   // Create the state.
   Teuchos::ParameterList state_plist = plist.sublist("state");
@@ -67,10 +81,10 @@ int SimulationDriver::Run(
   // create and register meshes
   //ATS::createMeshes(plist.sublist("mesh"), comm, gm, *S);
   ATS::createMeshes(plist, comm, gm, *S);
-  
+ 
   // create the top level Coordinator
-  ATS::Coordinator coordinator(plist, S, comm.get());
-
+  ATS::Coordinator coordinator(plist, S, comm);
+  
   // run the simulation
   coordinator.cycle_driver();
   return 0;

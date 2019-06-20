@@ -43,6 +43,7 @@ def plot_met(fname, axs, color='b', end_time_in_years=np.inf, style='-'):
             precip = precip1
 
         time = np.squeeze(time)            
+
         if end_time_in_years > time[-1]:
             end = len(time)
         else:

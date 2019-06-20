@@ -198,19 +198,36 @@ void PK_Physical_Default::DeriveFaceValuesFromCellValues_(const Teuchos::Ptr<Com
   cv->ScatterMasterToGhosted("cell");
   Teuchos::Ptr<const CompositeVector> cv_const(cv);
   const Epetra_MultiVector& cv_c = *cv_const->ViewComponent("cell",true);
-  Epetra_MultiVector& cv_f = *cv->ViewComponent("face",false);
 
-  int f_owned = cv_f.MyLength();
-  for (int f=0; f!=f_owned; ++f) {
-    AmanziMesh::Entity_ID_List cells;
-    cv->Mesh()->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    int ncells = cells.size();
+  if (cv->HasComponent("face")) {
+    Epetra_MultiVector& cv_f = *cv->ViewComponent("face",false);
 
-    double face_value = 0.0;
-    for (int n=0; n!=ncells; ++n) {
-      face_value += cv_c[0][cells[n]];
+    int f_owned = cv_f.MyLength();
+    for (int f=0; f!=f_owned; ++f) {
+      AmanziMesh::Entity_ID_List cells;
+      cv->Mesh()->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      int ncells = cells.size();
+
+      double face_value = 0.0;
+      for (int n=0; n!=ncells; ++n) {
+        face_value += cv_c[0][cells[n]];
+      }
+      cv_f[0][f] = face_value / ncells;
     }
-    cv_f[0][f] = face_value / ncells;
+  } else if (cv->HasComponent("boundary_face")) {
+    Epetra_MultiVector& cv_bf = *cv->ViewComponent("boundary_face",false);
+    const auto& bfmap = cv->Mesh()->exterior_face_map(false);
+    const auto& fmap = cv->Mesh()->face_map(false);
+
+    int bf_owned = cv_bf.MyLength();
+    for (int bf=0; bf!=bf_owned; ++bf) {
+      auto f = fmap.LID(bfmap.GID(bf));
+      AmanziMesh::Entity_ID_List cells;
+      cv->Mesh()->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      int ncells = cells.size();
+      AMANZI_ASSERT(ncells == 1);
+      cv_bf[0][bf] = cv_c[0][cells[0]];
+    }
   }
 };
 

@@ -15,7 +15,7 @@
 #define AMANZI_RELATIONS_VISCOSITY_CONSTANT_HH_
 
 #include "Teuchos_ParameterList.hpp"
-#include "factory.hh"
+#include "Factory.hh"
 #include "dbc.hh"
 #include "viscosity_relation.hh"
 

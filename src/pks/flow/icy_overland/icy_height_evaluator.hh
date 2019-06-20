@@ -10,7 +10,7 @@
 #define AMANZI_FLOW_RELATIONS_ICY_HEIGHT_EVALUATOR_
 
 #include "height_evaluator.hh"
-#include "factory.hh"
+#include "Factory.hh"
 
 namespace Amanzi {
 namespace Flow {
