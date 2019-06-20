@@ -167,7 +167,7 @@ void
 SEBEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
                              const std::vector<Teuchos::Ptr<CompositeVector> >& results)
 {
-  const SEBPhysics::ModelParams params;
+  const SEBPhysics::ModelParams params(plist_);
   double snow_eps = 1.e-5;
 
   // collect met data
