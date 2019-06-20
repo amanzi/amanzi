@@ -286,10 +286,8 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
     Exceptions::amanzi_throw(message);
   }
 
-  compute_boundary_values_ = plist_->get<bool>("compute boundary values", false);
- 
   CompositeVectorSpace matrix_cvs = matrix_->RangeMap();
-  if (compute_boundary_values_) matrix_cvs.AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1); 
+  matrix_cvs.AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1); 
 
   // -- primary variable
   S->RequireField(key_, name_)->Update(matrix_cvs)->SetGhosted();
@@ -406,17 +404,6 @@ void EnergyBase::CommitStep(double t_old, double t_new, const Teuchos::RCP<State
 
     Teuchos::RCP<CompositeVector> adv_energy = S->GetFieldData(adv_energy_flux_key_, name_);  
     matrix_adv_->UpdateFlux(enth.ptr(), flux.ptr(), bc_adv_, adv_energy.ptr());
-  
-    if (compute_boundary_values_){
-      Epetra_MultiVector& temp_bf = *S->GetFieldData(key_, name_)->ViewComponent("boundary_face",false);
-      const Epetra_Map& vandalay_map = mesh_->exterior_face_map(false);
-      const Epetra_Map& face_map = mesh_->face_map(false);
-      int nbfaces = temp_bf.MyLength();
-      for (int bf=0; bf!=nbfaces; ++bf) {
-        AmanziMesh::Entity_ID f = face_map.LID(vandalay_map.GID(bf));
-        temp_bf[0][bf] =  BoundaryFaceValue(f, *temp);
-      }
-    }
   }
 };
 
@@ -431,30 +418,27 @@ int EnergyBase::BoundaryFaceGetCell(int f) const
 }
 
 /* ******************************************************************
-* Returns either known pressure face value or calculates it using
-* the two-point flux approximation (FV) scheme.
+* For FV methods, set the boundary face temp.
 ****************************************************************** */
-double EnergyBase::BoundaryFaceValue(int f, const CompositeVector& u)
+void EnergyBase::ApplyDirichletBCsToBoundaryFace_(const Teuchos::Ptr<CompositeVector>& temp)
 {
-  double face_value;
+  Epetra_MultiVector& temp_bf = temp->ViewComponent("boundary_face", true);
+  const Epetra_MultiVector& temp_c = temp->ViewComponent("cell", true);
+  const Epetra_Map& vandalay_map = mesh_->exterior_face_map(false);
+  const Epetra_Map& face_map = mesh_->face_map(false);
 
-  if (u.HasComponent("face")) {
-    const Epetra_MultiVector& u_face = *u.ViewComponent("face");
-    face_value = u_face[0][f];
-  } else {
-    int c = BoundaryFaceGetCell(f);
-    const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
-    const std::vector<int>& bc_model = bc_->bc_model();
-    const std::vector<double>& bc_value = bc_->bc_value();
-
-    if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
-      face_value =  bc_value[f];
-    }else{
-      face_value = u_cell[0][c];
-    // face_value = DeriveBoundaryFaceValue(f, u, wrms_->second[(*wrms_->first)[c]]);
+  const std::vector<int>& bc_model = bc_->bc_model();
+  const std::vector<double>& bc_value = bc_->bc_value();
+  
+  int nbfaces = temp_bf.MyLength();
+  for (int bf=0; bf!=nbfaces; ++bf) {
+    AmanziMesh::Entity_ID f = face_map.LID(vandalay_map.GID(bf));
+    if (bc_model[f] == Operator::OPERATOR_BC_DIRICHLET) {
+      temp_bf[0][bf] = bc_value[f];
+    } else {
+      temp_bf[0][bf] = temp_c[0][BoundaryFaceGetCell(f)];
     }
   }
-  return face_value;
 }
 
 
@@ -519,7 +503,6 @@ void EnergyBase::UpdateBoundaryConditions_(
     adv_values[n] = 0.0;
   }
 
-  
   // Dirichlet temperature boundary conditions
   for (Functions::BoundaryFunction::Iterator bc=bc_temperature_->begin();
        bc!=bc_temperature_->end(); ++bc) {
@@ -528,28 +511,6 @@ void EnergyBase::UpdateBoundaryConditions_(
     markers[f] = Operators::OPERATOR_BC_DIRICHLET;
     values[f] = bc->second;
     adv_markers[f] = Operators::OPERATOR_BC_DIRICHLET;
-
-    if (key_ == "surface-temperature") {
-      Epetra_MultiVector& temp_bf = *S->GetFieldData(key_,name_)->ViewComponent("boundary_face",false);
-      const Epetra_Map& vandalay_map = mesh_->exterior_face_map(false);
-      const Epetra_Map& face_map = mesh_->face_map(false);
-      const Epetra_MultiVector& surf_temp = *S->GetFieldData("surface-temperature")->ViewComponent("cell",false);
-      int nbfaces = temp_bf.MyLength();
-      
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      int c = cells[0];
-
-      for (int bf=0; bf != nbfaces; ++bf) {
-        AmanziMesh::Entity_ID f = face_map.LID(vandalay_map.GID(bf));
-        if (adv_markers[f] == Operators::OPERATOR_BC_DIRICHLET) {
-          if (bc_surf_temp_dependent_)
-            temp_bf[0][bf] = surf_temp[0][c];
-          else
-            temp_bf[0][bf] = bc->second;
-        }
-      }
-    }
-    
   }
 
   // Neumann flux boundary conditions
@@ -559,11 +520,10 @@ void EnergyBase::UpdateBoundaryConditions_(
     markers[f] = Operators::OPERATOR_BC_NEUMANN;
     values[f] = bc->second;
     adv_markers[f] = Operators::OPERATOR_BC_NEUMANN;
-    adv_values[f] = 0.;
     // push all onto diffusion, assuming that the incoming enthalpy is 0 (likely mass flux is 0)
   }
 
-  // Zero diffusive flux, potentially advective flux
+  // Neumann diffusive flux, not Neumann TOTAL flux.  Potentially advective flux.
   for (Functions::BoundaryFunction::Iterator bc=bc_diff_flux_->begin();
        bc!=bc_diff_flux_->end(); ++bc) {
     int f = bc->first;
@@ -589,7 +549,6 @@ void EnergyBase::UpdateBoundaryConditions_(
       markers[f] = Operators::OPERATOR_BC_DIRICHLET;
       values[f] = temp[0][c];
       adv_markers[f] = Operators::OPERATOR_BC_DIRICHLET;
-
     }
   }
 
@@ -631,12 +590,15 @@ void EnergyBase::UpdateBoundaryConditions_(
         markers[f] = Operators::OPERATOR_BC_NEUMANN;
         values[f] = 0.0;
         adv_markers[f] = Operators::OPERATOR_BC_DIRICHLET;
-        adv_values[f] = 0.0;
       }
     }
   }
-  
 
+  // set the face temperature on boundary faces
+  auto temp = S->GetFieldData(key_, name_);
+  if (temp->HasComponent("boundary_face")) {
+    ApplyDirichletBCsToBoundaryFace_(temp.ptr());
+  }
 };
 
 
