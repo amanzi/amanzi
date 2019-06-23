@@ -362,6 +362,13 @@ class MeshColumn : public Mesh {
     return *exterior_face_map_;
   }
 
+  virtual
+  const Epetra_Map& exterior_node_map(bool include_ghost) const override {
+    Errors::Message mesg("Exterior node map is not implemented in this framework");
+    Exceptions::amanzi_throw(mesg);
+    throw(mesg);
+  }
+
 
   // Epetra importer that will allow apps to import values from a
   // Epetra vector defined on all owned faces into an Epetra vector

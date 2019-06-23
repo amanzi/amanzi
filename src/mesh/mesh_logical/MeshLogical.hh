@@ -276,6 +276,9 @@ class MeshLogical : public Mesh {
   virtual
   const Epetra_Map& exterior_face_map(bool include_ghost) const override;
 
+  virtual
+  const Epetra_Map& exterior_node_map(bool include_ghost) const override;
+
   // Epetra importer that will allow apps to import values from a
   // Epetra vector defined on all owned faces into an Epetra vector
   // defined only on exterior faces

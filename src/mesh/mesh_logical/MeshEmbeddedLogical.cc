@@ -610,6 +610,14 @@ MeshEmbeddedLogical::exterior_face_importer (void) const {
 }
 
 
+const Epetra_Map&
+MeshEmbeddedLogical::exterior_node_map(bool include_ghost) const {
+  Errors::Message mesg("No exterior node map in MeshEmbeddedLogical.");
+  Exceptions::amanzi_throw(mesg);
+  throw(mesg);
+}
+
+
 //
 // Mesh Sets for ICs, BCs, Material Properties and whatever else
 //--------------------------------------------------------------
