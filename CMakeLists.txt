@@ -87,6 +87,9 @@ if(${AMANZI_ARCH} STREQUAL "Summit")
     -Xcudafe --diag_suppress=declared_but_not_referenced \
     -Xcudafe --diag_suppress=integer_sign_change \
     -Xcudafe --diag_suppress=partial_override \
+    -Xcudafe --diag_suppress=virtual_function_decl_hidden \
+    -Xcudafe --diag_suppress=probable_guiding_friend \
+    -Xcudafe --display_error_number \
     --expt-extended-lambda")
   message(STATUS "NVCC_WRAPPER_DEFAULT_COMPILER: $ENV{NVCC_WRAPPER_DEFAULT_COMPILER}")
   message(STATUS "CMAKE_CXX_COMPILER $ENV{CMAKE_CXX_COMPILER}")
