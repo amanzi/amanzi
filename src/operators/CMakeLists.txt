@@ -164,6 +164,8 @@ if (BUILD_TESTS)
     include_directories(${UnitTest_INCLUDE_DIRS})
     include_directories(${MESH_SIMPLE_SOURCE_DIR})
 
+    message(DEBUG "hdf5lib=${HDF5_LIBRARIES}")
+    
     # Copy test directory files if an out of source build
     if (NOT (${OPERATORS_SOURCE_DIR} EQUAL ${OPERATORS_BINARY_DIR}))
         file(GLOB DataFiles "${OPERATORS_SOURCE_DIR}/test/*.xml"
@@ -227,12 +229,12 @@ if (BUILD_TESTS)
     add_amanzi_test(operators_diffusion_dg operators_diffusion_dg
                     KIND unit
                     SOURCE test/Main.cc test/operator_diffusion_dg.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(operators_diffusion_fractured_matrix operators_diffusion_fractured_matrix
                     KIND unit
                     SOURCE test/Main.cc test/operator_diffusion_fractured_matrix.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(operators_commute operators_commute
                     KIND unit
@@ -344,7 +346,7 @@ if (BUILD_TESTS)
     add_amanzi_test(operators_diffusion_high_order operators_diffusion_high_order
                     KIND unit
                     SOURCE test/Main.cc test/operator_diffusion_high_order.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # DG advection test
     add_amanzi_test(operators_advection_dg operators_advection_dg
@@ -352,7 +354,7 @@ if (BUILD_TESTS)
                     NPROCS 3
                     SOURCE test/Main.cc test/operator_advection_dg.cc
                                         test/operator_advection_dg_transient
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: mini PDEs
     add_amanzi_test(operators_mini1D operators_mini1D
