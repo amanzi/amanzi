@@ -262,6 +262,8 @@ class Mesh_MSTK : public Mesh {
     
   const Epetra_Import& exterior_face_importer(void) const;
     
+  const Epetra_Map& exterior_node_map(bool include_ghost) const; 
+    
     
   //
   // Boundary Conditions or Sets
@@ -396,6 +398,7 @@ class Mesh_MSTK : public Mesh {
   mutable Epetra_Map *edge_map_w_ghosts_, *edge_map_wo_ghosts_;
   Epetra_Map *node_map_w_ghosts_, *node_map_wo_ghosts_;
   Epetra_Map *extface_map_w_ghosts_, *extface_map_wo_ghosts_; // exterior faces (connected to only 1 cell)
+  Epetra_Map *extnode_map_w_ghosts_, *extnode_map_wo_ghosts_; // exterior node
 
   // Epetra importer that will allow apps to import values from a Epetra
   // vector defined on all owned faces into an Epetra vector defined
@@ -486,6 +489,7 @@ class Mesh_MSTK : public Mesh {
   MSet_ptr build_set(const Teuchos::RCP<const AmanziGeometry::Region>& region,
                      const Entity_kind kind) const;
 
+  bool is_boundary_node_(const MEntity_ptr ment) const;
 
   //
   // Downward Adjacencies
@@ -627,6 +631,7 @@ const Epetra_Map& Mesh_MSTK::node_map(bool include_ghost) const {
     return (include_ghost ? *node_map_w_ghosts_ : *node_map_wo_ghosts_);
 }
 
+
 inline
 const Epetra_Map& Mesh_MSTK::exterior_face_map(bool include_ghost) const {
   if (serial_run)
@@ -639,6 +644,15 @@ const Epetra_Map& Mesh_MSTK::exterior_face_map(bool include_ghost) const {
 inline
 const Epetra_Import& Mesh_MSTK::exterior_face_importer(void) const {
   return *owned_to_extface_importer_;
+}
+
+
+inline
+const Epetra_Map& Mesh_MSTK::exterior_node_map(bool include_ghost) const {
+  if (serial_run)
+    return *extnode_map_wo_ghosts_;
+  else
+    return (include_ghost ? *extnode_map_w_ghosts_ : *extnode_map_wo_ghosts_);
 }
 
 

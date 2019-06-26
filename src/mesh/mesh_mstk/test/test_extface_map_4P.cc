@@ -16,7 +16,6 @@ TEST(MSTK_EXTFACE_MAP_4P)
 
   int i, j, k, err, nc, nf, nv;
   std::vector<Amanzi::AmanziMesh::Entity_ID> faces(6), nodes(8);
-  std::vector<int> facedirs(6);
   std::vector<Amanzi::AmanziGeometry::Point> ccoords(8), fcoords(4);
 
   auto comm = Amanzi::getDefaultComm();
@@ -64,20 +63,19 @@ TEST(MSTK_EXTFACE_MAP_4P)
 
   Epetra_Map extface_map_wghost(mesh->exterior_face_map(true));
 
-  int nowned_bnd = extface_map. NumMyElements();
+  int nowned_bnd = extface_map.NumMyElements();
   int nnotowned_bnd = extface_map_wghost.NumMyElements() - nowned_bnd;
 
   std::vector<int> gl_id(nnotowned_bnd), pr_id(nnotowned_bnd), lc_id(nnotowned_bnd);
 
-  for (int f=0; f<nnotowned_bnd; f++){
+  for (int f = 0; f < nnotowned_bnd; f++) {
     gl_id[f] = extface_map_wghost.GID(f + nowned_bnd);
   }
 
   extface_map.RemoteIDList(nnotowned_bnd, gl_id.data(), pr_id.data(), lc_id.data());
 
-  for (int f=0; f<nnotowned_bnd; f++){
+  for (int f = 0; f < nnotowned_bnd; f++) {
     CHECK(pr_id[f] >= 0);
   }
-
 }
 

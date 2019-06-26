@@ -50,7 +50,7 @@ class MeshSurfaceCell : public Mesh {
   // Get parallel type of entity - OWNED, GHOST, ALL (See MeshDefs.hh)
   virtual
   Parallel_type entity_get_ptype(const Entity_kind kind,
-          const Entity_ID entid) const {
+          const Entity_ID entid) const override {
     return Parallel_type::OWNED;
   }
 
@@ -267,6 +267,13 @@ class MeshSurfaceCell : public Mesh {
   virtual
   const Epetra_Map& exterior_face_map(bool include_ghost) const {
     return *face_map_;
+  }
+
+  virtual
+  const Epetra_Map& exterior_node_map(bool include_ghost) const override {
+    Errors::Message mesg("Exterior node map is not implemented in this framework");
+    Exceptions::amanzi_throw(mesg);
+    throw(mesg);
   }
 
 

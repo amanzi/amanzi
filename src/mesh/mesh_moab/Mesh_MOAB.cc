@@ -2053,6 +2053,16 @@ const Epetra_Import& Mesh_MOAB::exterior_face_importer(void) const
 
 
 //--------------------------------------------------------------------
+// TBW
+//--------------------------------------------------------------------
+const Epetra_Map& Mesh_MOAB::exterior_node_map(bool include_ghost) const {
+  Errors::Message mesg("Exterior node map is not implemented");
+  Exceptions::amanzi_throw(mesg);
+  throw(mesg);
+}
+
+
+//--------------------------------------------------------------------
 // Get parallel type of enetity
 //--------------------------------------------------------------------
 Parallel_type Mesh_MOAB::entity_get_ptype(const Entity_kind kind, 

@@ -126,6 +126,7 @@ Mesh_MSTK::Mesh_MSTK(const std::string& filename,
     faces_initialized(false), edges_initialized(false),
     target_cell_volumes_(nullptr), min_cell_volumes_(nullptr),
     extface_map_w_ghosts_(nullptr), extface_map_wo_ghosts_(nullptr),
+    extnode_map_w_ghosts_(nullptr), extnode_map_wo_ghosts_(nullptr),
     owned_to_extface_importer_(nullptr)
 {
   
@@ -243,6 +244,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
     faces_initialized(false), edges_initialized(false),
     target_cell_volumes_(nullptr), min_cell_volumes_(nullptr),
     extface_map_w_ghosts_(nullptr), extface_map_wo_ghosts_(nullptr),
+    extnode_map_w_ghosts_(nullptr), extnode_map_wo_ghosts_(nullptr),
     owned_to_extface_importer_(nullptr)
 {
   // extract optional control parameters, but first specify defaults
@@ -350,6 +352,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
     faces_initialized(false), edges_initialized(false),
     target_cell_volumes_(nullptr), min_cell_volumes_(nullptr),
     extface_map_w_ghosts_(nullptr), extface_map_wo_ghosts_(nullptr),
+    extnode_map_w_ghosts_(nullptr), extnode_map_wo_ghosts_(nullptr),
     owned_to_extface_importer_(nullptr)
 {
   // extract optional control parameters, but first specify defaults
@@ -466,8 +469,8 @@ Mesh_MSTK::Mesh_MSTK(const Teuchos::RCP<const Mesh>& parent_mesh,
          plist == Teuchos::null ? parent_mesh->parameter_list() : plist,
          request_faces, request_edges),
     parent_mesh_(Teuchos::rcp_dynamic_cast<const Mesh_MSTK>(parent_mesh)),
-    extface_map_w_ghosts_(nullptr),
-    extface_map_wo_ghosts_(nullptr),
+    extface_map_w_ghosts_(nullptr), extface_map_wo_ghosts_(nullptr),
+    extnode_map_w_ghosts_(nullptr), extnode_map_wo_ghosts_(nullptr),
     owned_to_extface_importer_(nullptr)
 {  
   if (!parent_mesh_.get()) {
@@ -1056,6 +1059,8 @@ Mesh_MSTK::~Mesh_MSTK() {
   if (extface_map_wo_ghosts_) delete extface_map_wo_ghosts_;
   if (extface_map_w_ghosts_) delete extface_map_w_ghosts_;
   if (owned_to_extface_importer_) delete owned_to_extface_importer_;
+  if (extnode_map_wo_ghosts_) delete extnode_map_wo_ghosts_;
+  if (extnode_map_w_ghosts_) delete extnode_map_w_ghosts_;
   delete [] faceflip;
 
   if (OwnedVerts) MSet_Delete(OwnedVerts);
@@ -2892,6 +2897,18 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
     else if (region->type() == AmanziGeometry::LOGICAL) {
       // We will handle it later in the routine
     }
+    else if (region->type() == AmanziGeometry::BOUNDARY)  {
+
+      const Epetra_Map& vmap = node_map(true); 
+      const Epetra_Map& map = exterior_node_map(true); 
+
+      int nnode = map.NumMyElements(); 
+
+      for (int inode = 0; inode < nnode; inode++) {
+        int lid = vmap.LID(map.GID(inode));
+        MSet_Add(mset,vtx_id_to_handle[lid]);
+      }
+    }
     else {
       Teuchos::RCP<const VerboseObject> verbobj = verbosity_obj();
       if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_HIGH)) {
@@ -3518,12 +3535,13 @@ void Mesh_MSTK::init_face_map()
 
     face_map_w_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*comm_);
 
-    std::vector<int> gl_id(nnotowned), pr_id(nnotowned), lc_id(nnotowned);
-
-    // Build a list of global IDs of ghost faces with only one cell attached - may be on exterior or processor boundary
+    // Build a list of global IDs of ghost faces on a boundary which may be
+    // wither exterior or on-processor boundary
     
     idx = 0;
     int nnotowned_bnd = 0;
+    std::vector<int> gl_id(nnotowned), pr_id(nnotowned), lc_id(nnotowned);
+
     while ((ment = MSet_Next_Entry(NotOwnedFaces,&idx))) {
       int gid = MEnt_GlobalID(ment);
       if (manifold_dimension() == 3) {
@@ -3563,7 +3581,7 @@ void Mesh_MSTK::init_face_map()
       global_id_ghosted[k] = extface_gids[k];  
     }
 
-    //Add to maping only external faces (which belong to local mapping on other processors
+    // Add to maping only external faces (which belong to local mapping on other processors
     int l=0;
     for (int k=0; k < nnotowned_bnd; k++) {
       if (pr_id[k] >= 0) {
@@ -3696,51 +3714,111 @@ void Mesh_MSTK::init_edge_map()
 //---------------------------------------------------------
 void Mesh_MSTK::init_node_map()
 {
-  int *vert_gids;
-  int nvert, idx, i;
+  int *node_gids, *extnode_gids;
+  int nnode, n_extnode, idx, i, j;
   MEntity_ptr ment;
 
   if (!serial_run) {
 
-    // For parallel runs create map without and with ghost verts included
-    // Also, put in owned cells before the ghost verts
+    // For parallel runs create map without and with ghost nodes included
+    // Also, put in owned nodes before the ghost nodes
 
     int nowned = MSet_Num_Entries(OwnedVerts);
     int nnotowned = MSet_Num_Entries(NotOwnedVerts);
 
-    vert_gids = new int[nowned+nnotowned];
+    node_gids = new int[nowned+nnotowned];
+    extnode_gids = new int[nowned+nnotowned]; // Exterior nodes
     
-    idx = 0; i = 0;
-    while ((ment = MSet_Next_Entry(OwnedVerts,&idx)))
-      vert_gids[i++] = MEnt_GlobalID(ment)-1;
+    idx = 0; i = 0; j = 0;
+    while ((ment = MSet_Next_Entry(OwnedVerts,&idx))) {
+      int gid = MEnt_GlobalID(ment);
+      node_gids[i++] = gid-1;
 
-    nvert = nowned;
+      if (is_boundary_node_(ment))
+        extnode_gids[j++] = gid-1;
+    }
+    n_extnode = j;
+    nnode = nowned;
     
-    node_map_wo_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*comm_);
+    node_map_wo_ghosts_ = new Epetra_Map(-1,nnode,node_gids,0,*comm_);
+    extnode_map_wo_ghosts_ = new Epetra_Map(-1,n_extnode,extnode_gids,0,*comm_);
     
 
     idx = 0;
-    while ((ment = MSet_Next_Entry(NotOwnedVerts,&idx)))
-      vert_gids[i++] = MEnt_GlobalID(ment)-1;
+    while ((ment = MSet_Next_Entry(NotOwnedVerts,&idx))) {
+      node_gids[i++] = MEnt_GlobalID(ment)-1;
+    }
+    nnode += nnotowned;
 
-    nvert += nnotowned;
+    node_map_w_ghosts_ = new Epetra_Map(-1,nnode,node_gids,0,*comm_);
 
-    node_map_w_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*comm_);
 
+    // Build a list of global IDs of ghost nodes on the boundary which may be 
+    // either exterior or processor boundary
+    
+    idx = 0;
+    int nnotowned_bnd = 0;
+    std::vector<int> gl_id(nnotowned), pr_id(nnotowned), lc_id(nnotowned);
+
+    while ((ment = MSet_Next_Entry(NotOwnedVerts,&idx))) {
+      int gid = MEnt_GlobalID(ment);
+      if (is_boundary_node_(ment))
+        gl_id[nnotowned_bnd++] = gid-1;
+    }
+
+    // Get the local IDs of (lc_id) copies of owned boundary nodes on remote processors (pr_id).
+    // In effect we are checking if a ghost node that claims to be on the boundary is in the
+    // owned boundary node list on another processor (pr_id >= 0)
+    
+    extnode_map_wo_ghosts_->RemoteIDList(nnotowned, gl_id.data(), pr_id.data(), lc_id.data());
+
+    int n_extnode_w_ghosts = extnode_map_wo_ghosts_->NumMyElements();
+
+    // Add to maping only external faces (which belong to local mapping on other processors
+    for (int k=0; k < nnotowned_bnd; k++) {
+      if (pr_id[k] >= 0) {
+        n_extnode_w_ghosts++;
+      }
+    }
+
+    std::vector<int> global_id_ghosted(n_extnode_w_ghosts);
+    for (int k=0; k<n_extnode; k++)  {
+      global_id_ghosted[k] = extnode_gids[k];  
+    }
+
+    //Add to maping only external faces (which belong to local mapping on other processors
+    int l=0;
+    for (int k=0; k < nnotowned_bnd; k++) {
+      if (pr_id[k] >= 0) {
+        global_id_ghosted[n_extnode + l] = gl_id[k];
+        l++;
+      }
+    }
+
+    extnode_map_w_ghosts_ = new Epetra_Map(-1, n_extnode_w_ghosts, global_id_ghosted.data(), 0, *comm_);
+
+  } else {
+    nnode = MSet_Num_Entries(OwnedVerts);
+
+    node_gids = new int[nnode];
+    extnode_gids = new int[nnode];
+
+    idx = 0; i = 0; j = 0;
+    while ((ment = MSet_Next_Entry(OwnedVerts,&idx))) {
+      int gid = MEnt_ID(ment);
+      node_gids[i++] = gid-1;
+
+      if (is_boundary_node_(ment))
+        extnode_gids[j++] = gid-1;
+    }
+    n_extnode = j;
+
+    node_map_wo_ghosts_ = new Epetra_Map(-1,nnode,node_gids,0,*comm_);
+    extnode_map_wo_ghosts_ = new Epetra_Map(-1,n_extnode,extnode_gids,0,*comm_);
   }
-  else {
-    nvert = MSet_Num_Entries(OwnedVerts);
 
-    vert_gids = new int[nvert];
-
-    idx = 0; i = 0;
-    while ((ment = MSet_Next_Entry(OwnedVerts,&idx)))
-      vert_gids[i++] = MEnt_ID(ment)-1;
-
-    node_map_wo_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*comm_);
-  }
-
-  delete [] vert_gids;
+  delete [] node_gids;
+  delete [] extnode_gids;
 }
 
 
@@ -5529,6 +5607,47 @@ Mesh_MSTK::run_internal_mstk_checks() const {
   return MESH_CheckTopo(mesh_) && MESH_Parallel_Check(mesh_, mpicomm_);
 }
 
+
+//---------------------------------------------------------
+// Check if node is a boundary (physical or on-processor) node.
+//---------------------------------------------------------
+bool
+Mesh_MSTK::is_boundary_node_(const MEntity_ptr ment) const
+{
+  if (manifold_dimension() == 3) {
+    List_ptr vfaces = MV_Faces((MVertex_ptr) ment);
+    if (vfaces) {
+      int nvfaces = List_Num_Entries(vfaces);
+      for (int k = 0; k < nvfaces; ++k) {
+        List_ptr fregs = MF_Regions((MFace_ptr) List_Entry(vfaces, k));
+        if (fregs) {
+          int nfregs = List_Num_Entries(fregs);
+          List_Delete(fregs);
+          if (nfregs == 1) return true;
+        }
+      }
+      List_Delete(vfaces);
+    }
+  }
+
+  else if (manifold_dimension() == 2) {
+    List_ptr vedges = MV_Edges((MVertex_ptr) ment);
+    if (vedges) {
+      int nvedges = List_Num_Entries(vedges);
+      for (int k = 0; k < nvedges; ++k) {
+        List_ptr efaces = ME_Faces((MEdge_ptr) List_Entry(vedges, k));
+        if (efaces) {
+          int nefaces = List_Num_Entries(efaces);
+          List_Delete(efaces);
+          if (nefaces == 1) return true;
+        }
+      }
+      List_Delete(vedges);
+    }
+  }
+
+  return false;
+}
 
 }  // namespace AmanziMesh
 }  // namespace Amanzi

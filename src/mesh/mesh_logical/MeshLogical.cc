@@ -677,6 +677,14 @@ MeshLogical::exterior_face_map(bool include_ghost) const {
 }
 
 
+const Epetra_Map&
+MeshLogical::exterior_node_map(bool include_ghost) const {
+  Errors::Message mesg("No exterior node map in MeshLogical.");
+  Exceptions::amanzi_throw(mesg);
+  throw(mesg);
+}
+
+
 // Epetra importer that will allow apps to import values from a
 // Epetra vector defined on all owned faces into an Epetra vector
 // defined only on exterior faces

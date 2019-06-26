@@ -115,6 +115,7 @@ if (BUILD_TESTS)
                          test/test_extract_surface.cc
  			 test/test_extract_column.cc
                          test/test_deform_vols.cc
+		         test/test_extnode_map.cc
                     LINK_LIBS mstk_mesh mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}) 
 
 
@@ -132,6 +133,7 @@ if (BUILD_TESTS)
                          test/test_edges_4P.cc
                          test/test_extract_surface_4P.cc
 		         test/test_extface_map_4P.cc
+		         test/test_extnode_map.cc
                          test/test_deform_vols.cc
                     LINK_LIBS mstk_mesh mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
@@ -142,6 +144,7 @@ if (BUILD_TESTS)
                           test/Main.cc 
                           test/test_column_mesh.cc 
 			  LINK_LIBS mstk_mesh geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     # Test: extracted surface from column_mesh
     add_amanzi_test(mstk_surface_column_mesh mstk_surface_column_mesh
                     KIND unit

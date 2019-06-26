@@ -678,6 +678,9 @@ class Mesh {
   virtual
   const Epetra_Import& exterior_face_importer(void) const = 0;
 
+  // Get map of only exterior nodes
+  virtual
+  const Epetra_Map& exterior_node_map(bool include_ghost) const = 0;
 
   //
   // Mesh Sets for ICs, BCs, Material Properties and whatever else

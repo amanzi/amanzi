@@ -100,6 +100,11 @@ double Darcy_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   }
   */
 
+#ifdef HAVE_MPI
+    double tmp = error;
+    u->Comm()->MaxAll(&tmp, &error, 1);
+#endif
+
   return error;
 }
 
