@@ -66,7 +66,7 @@ endif()
 ##############################################################################
 # CUDA
 ##############################################################################
-if(${AMANZI_ARCH} STREQUAL "Summit")
+if("${AMANZI_ARCH}" STREQUAL "Summit")
   find_package(CUDA REQUIRED)
 
   message(STATUS "CUDA Package information")

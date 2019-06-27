@@ -37,9 +37,6 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 
 # List of packages enabled in the Trilinos build
 set(Trilinos_PACKAGE_LIST Teuchos Epetra EpetraExt Amesos Amesos2 Belos NOX Ifpack AztecOO Tpetra Ifpack2 Zoltan2 MueLu)
-if(${AMANZI_ARCH} STREQUAL "Summit")
-  list(APPEND Trilinos_PACKAGE_LIST Kokkos)
-endif()
 if (ENABLE_STK_Mesh)
   list(APPEND Trilinos_PACKAGE_LIST STK)
 endif()
@@ -181,14 +178,22 @@ set(Trilinos_CMAKE_ARCH_ARGS
         "-DKokkos_ENABLE_Pthread:BOOL=OFF"
         )
 
-if ( ${AMANZI_ARCH} STREQUAL "Summit" )
-   message("GOT SUMMIT! : ${AMANZI_ARCH}")
-   set(CUDA_LAUNCH_BLOCKING 1)
-   set(NVCC_WRAPPER_DEFAULT_COMPILER=${CMAKE_CXX_COMPILER})
+# By default compiler with the standard mpi compiler 
+set(Trilinos_CXX_COMPILER ${CMAKE_CXX_COMPILER})
+message(STATUS "Trilinos COMPILER: ${Trilinos_CXX_COMPILER}")
+
+if ( "${AMANZI_ARCH}" STREQUAL "Summit" )
+   message("AMANZI_ARCH: : ${AMANZI_ARCH}")
+   if(NOT DEFINED ENV{CUDA_LAUNCH_BLOCKING}) 
+     message(FATAL_ERROR "Environment CUDA_LAUNCH_BLOCKING have to be set to 1 to continue")
+   endif() 
+   message(STATUS "NVCC_WRAPPER_DEFAULT_COMPILER=${NVCC_WRAPPER_DEFAULT_COMPILER}")
    set(NVCC_WRAPPER_PATH "${Trilinos_source_dir}/packages/kokkos/bin/nvcc_wrapper")
-   set(Trilinos_CMAKE_CXX_FLAGS "${Trilinos_CMAKE_CXX_FLAGS} -Wno-deprecated-declarations -lineinfo -Xcudafe --diag_suppress=conversion_function_not_usable -Xcudafe --diag_suppress=cc_clobber_ignored -Xcudafe --diag_suppress=code_is_unreachable")
-   #set(CUDA_LAUNCH_BLOCKING "1")
-   message("Defalut NVCC: $ENV{NVCC_WRAPPER_DEFAULT_COMPILER}")
+   set(Trilinos_CMAKE_CXX_FLAGS "${Trilinos_CMAKE_CXX_FLAGS} \
+        -Wno-deprecated-declarations -lineinfo \
+        -Xcudafe --diag_suppress=conversion_function_not_usable \
+        -Xcudafe --diag_suppress=cc_clobber_ignored \
+        -Xcudafe --diag_suppress=code_is_unreachable")
    message("Wrapper: ${NVCC_WRAPPER_PATH}")
    message("COMPILR: ${CMAKE_CXX_COMPILER}")
    message("FLAGS: ${Trilinos_CMAKE_CXX_FLAGS}")
@@ -197,10 +202,10 @@ if ( ${AMANZI_ARCH} STREQUAL "Summit" )
 	"-DTPL_ENABLE_CUDA:BOOL=ON"
 	"-DKokkos_ENABLE_Cuda:BOOL=ON"
         "-DKokkos_ENABLE_Cuda_UVM:BOOL=ON"
-        #"-DKOKKOS_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE:BOOL=ON"
         "-DKokkos_ENABLE_Cuda_Lambda:BOOL=ON"
-
-        "-DKOKKOS_ARCH:STRING=Power9;Volta70")
+        "-DKOKKOS_ARCH:STRING=Power9;Volta70") 
+   # Change the default compiler for Trilinos to use nvcc_wrapper 
+   set(Trilinos_CXX_COMPILER ${NVCC_WRAPPER_PATH})
  else()
    list(APPEND Trilinos_CMAKE_ARCH_ARGS
         "-DKokkos_ENABLE_CUDA:BOOL=OFF")
@@ -213,7 +218,6 @@ set(Trilinos_CMAKE_ARGS
    ${Trilinos_CMAKE_ARCH_ARGS}
    ${Trilinos_CMAKE_EXTRA_ARGS}
    )
-
 
 #  --- Define the Trilinos patch step
 #
@@ -235,8 +239,6 @@ endif()
 # --- Define the Trilinos location
 set(Trilinos_install_dir ${TPL_INSTALL_PREFIX}/${Trilinos_BUILD_TARGET}-${Trilinos_VERSION})
 
-message(STATUS "GIT_TAG ${Trilinos_GIT_TAG}")
-
 # --- Add external project build and tie to the Trilinos build target
 ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     DEPENDS   ${Trilinos_PACKAGE_DEPENDS}             # Package dependency target
@@ -250,7 +252,7 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     SOURCE_DIR    ${Trilinos_source_dir}           # Source directory
                     CMAKE_ARGS        ${Trilinos_Config_File_ARGS}
                     CMAKE_CACHE_ARGS  ${Trilinos_CMAKE_ARGS}
-			              -DCMAKE_CXX_COMPILER:STRING=${NVCC_WRAPPER_PATH}
+			              -DCMAKE_CXX_COMPILER:STRING=${Trilinos_CXX_COMPILER}
 				      -DTpetraCore_ENABLE_TESTS:BOOL=ON
                                       -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}
                                       -DCMAKE_CXX_FLAGS:STRING=${Trilinos_CMAKE_CXX_FLAGS}

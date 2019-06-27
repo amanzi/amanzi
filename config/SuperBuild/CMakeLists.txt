@@ -731,7 +731,7 @@ endif()
 # ############################################################################ #
 # CUDA 
 # ############################################################################ #
-if(${AMANZI_ARCH} STREQUAL "Summit")
+if("${AMANZI_ARCH}" STREQUAL "Summit")
   find_package(CUDA REQUIRED)
   message(STATUS ">>> CUDA_INCLUDE   = ${CUDA_INCLUDE_DIRS}")
   message(STATUS ">>> CUDA_LIBRARIES = ${CUDA_LIBRARIES}")
@@ -740,21 +740,6 @@ if(${AMANZI_ARCH} STREQUAL "Summit")
            -DENABLE_CUDA:BOOL=ON
            -DCUDA_INCLUDE_DIR:PATH=${CUDA_INCLUDE_DIRS}
            -DCUDA_LIBRARY_DIR:PATH=${CUDA_LIBRARIES})
-endif()
-
-
-# ############################################################################ #
-# KOKKOS 
-# ############################################################################ #
-if(${AMANZI_ARCH} STREQUAL "Summit")
- set(KOKKOS_INCLUDE_DIR "${Trilinos_INSTALL_PREFIX}/include" CACHE PATH "KOKKOS include dirrectory")
-  set(KOKKOS_LIBRARY_DIR "${Trilinos_INSTALL_PREFIX}/lib" CACHE PATH "KOKKOS librariesi directory")
-  message(STATUS ">>> KOKKOS_INCLUDE   = ${KOKKOS_INCLUDE_DIR}")
-  message(STATUS ">>> KOKKOS_LIBRARIES = ${KOKKOS_LIBRARY_DIR}")
-  append_set(Amanzi_TPL_CMAKE_ARGS
-           -DENABLE_KOKKOS:BOOL=ON
-           -DKOKKOS_INCLUDE_DIR:PATH=${KOKKOS_INCLUDE_DIR}
-           -DKOKKOS_LIBRARY_DIR:PATH=${KOKKOS_LIBRARY_DIR})
 endif()
 
 # Silo

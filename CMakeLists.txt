@@ -23,6 +23,8 @@ enable_testing()
 #     AMANZI_BINARY_DIR
 project(AMANZI)
 
+message(STATUS "IN TOP CMAKELIST --------------------------------------##################")
+
 message(STATUS "\n-------------------------------------------")
 message(STATUS "\n-- CMake: Configuring Amanzi build/install.\n--")
 message(STATUS "----------------------------------------")
@@ -75,7 +77,7 @@ endif()
 #endforeach()
 
 # Change CMAKE COMPILER if KOKKOS used
-if(${AMANZI_ARCH} STREQUAL "Summit") 
+if("${AMANZI_ARCH}" STREQUAL "Summit") 
   set(ENV{NVCC_WRAPPER_DEFAULT_COMPILER} ${CXX_DEFAULT_COMPILER})
   set(ENV{CMAKE_CXX_COMPILER} ${Trilinos_INSTALL_PREFIX}/bin/nvcc_wrapper)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \

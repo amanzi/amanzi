@@ -1410,12 +1410,7 @@ if [ ! -n "${mpi_root_dir}" ]; then
   build_cxx_compiler=${tools_install_prefix}/bin/mpicxx
   build_fort_compiler=${tools_install_prefix}/bin/mpif90
 
-  # Setting environment varibles
-  if [ "${AMANZI_ARCH}" = "Summit" ]; then
-    kokkos="ON"
-    cuda="ON"
-  fi 
-  cd ${pwd_save}
+ cd ${pwd_save}
       
   status_message "Tools build complete: new MPI root=${mpi_root_dir}"
   status_message "  new MPI root=${mpi_root_dir}"
@@ -1459,7 +1454,18 @@ if [ -z "${tpl_config_file}" ]; then
   if [ "${tpls_only}" -eq "${TRUE}" ]; then
     status_message "Only building TPLs, stopping before building Amanzi itself"
   fi
-
+ 
+  # Setting environment varibles
+  NVCC_WRAPPER_DEFAULT_COMPILER=""
+  if [ "${AMANZI_ARCH}" = "Summit" ]; then
+    kokkos="ON"
+    cuda="ON"
+    NVCC_WRAPPER_DEFAULT_COMPILER=${build_cxx_compiler}
+  else 
+    kokkos="ON"
+    cuda="OFF"
+  fi 
+ 
   # Configure the TPL build
   cmd_configure="${cmake_binary} \
       -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
@@ -1494,6 +1500,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DBUILD_SHARED_LIBS:BOOL=${shared} \
       -DTPL_DOWNLOAD_DIR:FILEPATH=${tpl_download_dir} \
       -DAMANZI_ARCH:STRING=${AMANZI_ARCH} \
+      -DNVCC_WRAPPER_DEFAULT_COMPILER:STRING=${NVCC_WRAPPER_DEFAULT_COMPILER} \
       -DENABLE_KOKKOS:BOOL=${kokkos} \
       -DENABLE_CUDA:BOOL=${cuda} \
       ${nersc_tpl_opts} \
@@ -1574,10 +1581,8 @@ fi
 
 status_message "Build Amanzi with configure file ${tpl_config_file}"
 
-# Setting environment varibles
-cxx_default_compiler=""
+# Replace default compiler to NVCC_WRAPPER to build with CUDA/Kokkos 
 if [ "${AMANZI_ARCH}" = "Summit" ]; then
-  cxx_default_compiler=${build_cxx_compiler} 
   build_cxx_compiler=${tpl_install_prefix}/trilinos-12-14-1_master/bin/nvcc_wrapper
 fi 
  
@@ -1613,6 +1618,7 @@ cmd_configure="${cmake_binary} \
     -DAMANZI_ARCH:STRING=${AMANZI_ARCH} \
     -DENABLE_KOKKOS:BOOL=${kokkos} \
     -DENABLE_CUDA:BOOL=${cuda} \
+    -DNVCC_WRAPPER_DEFAULT_COMPILER=${NVCC_WRAPPER_DEFAULT_COMPILER} \
     ${nersc_amanzi_opts} \
     ${amanzi_source_dir}"
 
