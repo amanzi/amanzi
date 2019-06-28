@@ -211,7 +211,7 @@ void Chemistry_PK::Initialize(const Teuchos::Ptr<State>& S)
 
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
           Teuchos::OSTab tab = vo_->getOSTab();
-          *vo_->os() << "initilized \" "<<free_ion_species_key_<<"\" to 10% of \" "<<
+          *vo_->os() << "initialized \" "<<free_ion_species_key_<<"\" to 10% of \" "<<
             tcc_key_<<"\"\n";  
         }
       }
@@ -293,7 +293,7 @@ void Chemistry_PK::InitializeField_(const Teuchos::Ptr<State>& S, std::string fi
       S->GetFieldData(fieldname, passwd_)->PutScalar(default_val);
       S->GetField(fieldname, passwd_)->set_initialized();
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-         *vo_->os() << "initilized \"" << fieldname << "\" to value " << default_val << std::endl;  
+         *vo_->os() << "initialized \"" << fieldname << "\" to value " << default_val << std::endl;  
     }
   }
 }

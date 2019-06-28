@@ -141,7 +141,7 @@ void Flow_PK::InitializeFields_()
       S_->GetField("fluid_density", passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initilized fluid_density to default value 1000.0" << std::endl;  
+          *vo_->os() << "initialized fluid_density to default value 1000.0" << std::endl;  
     }
   }
 
@@ -151,7 +151,7 @@ void Flow_PK::InitializeFields_()
       S_->GetField("fluid_viscosity", passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initilized fluid_viscosity to default value 1.002e-3" << std::endl;  
+          *vo_->os() << "initialized fluid_viscosity to default value 1.002e-3" << std::endl;  
     }
   }
 
@@ -161,7 +161,7 @@ void Flow_PK::InitializeFields_()
       S_->GetField("atmospheric_pressure", passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initilized atmospheric_pressure to default value " << FLOW_PRESSURE_ATMOSPHERIC << std::endl;  
+          *vo_->os() << "initialized atmospheric_pressure to default value " << FLOW_PRESSURE_ATMOSPHERIC << std::endl;  
     }
   }
 
@@ -172,7 +172,7 @@ void Flow_PK::InitializeFields_()
     S_->GetField("gravity", "state")->set_initialized();
 
     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-        *vo_->os() << "initilized gravity to default value -9.8" << std::endl;  
+        *vo_->os() << "initialized gravity to default value -9.8" << std::endl;  
   }
 
   InitializeField(S_.ptr(), porosity_key_, porosity_key_, 0.2);

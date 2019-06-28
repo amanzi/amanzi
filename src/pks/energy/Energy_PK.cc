@@ -146,7 +146,7 @@ void Energy_PK::Initialize(const Teuchos::Ptr<State>& S)
     }
   }
 
-  // initilized fields
+  // initialized fields
   InitializeFields_();
 
   // other parameters
@@ -168,7 +168,7 @@ void Energy_PK::InitializeFields_()
     S_->GetField(temperature_key_, passwd_)->set_initialized();
 
     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-        *vo_->os() << "initilized temperature to default value 298 K." << std::endl;  
+        *vo_->os() << "initialized temperature to default value 298 K." << std::endl;  
   }
 
   if (S_->GetField("darcy_flux")->owner() == passwd_) {
@@ -177,7 +177,7 @@ void Energy_PK::InitializeFields_()
       S_->GetField("darcy_flux", passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initilized darcy_flux to default value 0.0" << std::endl;  
+          *vo_->os() << "initialized darcy_flux to default value 0.0" << std::endl;  
     }
   }
 }

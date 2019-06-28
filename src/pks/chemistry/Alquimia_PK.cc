@@ -280,7 +280,7 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
   // verbose message
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << vo_->color("green") << "Initalization of PK was successful, T="
+    *vo_->os() << vo_->color("green") << "Initialization of PK was successful, T="
         << S->time() << vo_->reset() << std::endl << std::endl;
   }
 

@@ -164,8 +164,6 @@ if (BUILD_TESTS)
     include_directories(${UnitTest_INCLUDE_DIRS})
     include_directories(${MESH_SIMPLE_SOURCE_DIR})
 
-    message(DEBUG "hdf5lib=${HDF5_LIBRARIES}")
-    
     # Copy test directory files if an out of source build
     if (NOT (${OPERATORS_SOURCE_DIR} EQUAL ${OPERATORS_BINARY_DIR}))
         file(GLOB DataFiles "${OPERATORS_SOURCE_DIR}/test/*.xml"

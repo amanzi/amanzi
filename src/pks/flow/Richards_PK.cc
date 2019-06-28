@@ -844,7 +844,7 @@ void Richards_PK::InitializeStatistics_()
       relperm_->PlotWRMcurves();
     }
 
-    *vo_->os() << vo_->color("green") << "Initalization of PK is complete, T=" 
+    *vo_->os() << vo_->color("green") << "Initialization of PK is complete, T=" 
                << units_.OutputTime(S_->time()) << vo_->reset() << std::endl << std::endl;
   }
 }

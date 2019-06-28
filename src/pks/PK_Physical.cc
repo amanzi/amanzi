@@ -85,7 +85,7 @@ void PK_Physical::InitializeField(const Teuchos::Ptr<State>& S,
         S->GetField(fieldname, passwd)->set_initialized();
 
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-           *vo_->os() << "initilized \"" << fieldname << "\" to value " << default_val << std::endl;  
+           *vo_->os() << "initialized \"" << fieldname << "\" to value " << default_val << std::endl;  
       }
     }
   }

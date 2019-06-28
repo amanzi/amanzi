@@ -548,14 +548,14 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
                << "cfl=" << cfl_ << " spatial/temporal discretization: " 
                << spatial_disc_order << " " << temporal_disc_order << std::endl
                << "using transport porosity: " << use_transport_porosity_ << std::endl;
-    *vo_->os() << vo_->color("green") << "Initalization of PK is complete." 
+    *vo_->os() << vo_->color("green") << "Initialization of PK is complete." 
                << vo_->reset() << std::endl << std::endl;
   }
 }
 
 
 /* ******************************************************************
-* Initalized fields not touched by State and other PKs.
+* Initialized fields not touched by State and other PKs.
 ****************************************************************** */
 void Transport_PK::InitializeFields_()
 {
