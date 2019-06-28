@@ -1,6 +1,8 @@
 #ifndef AMANZI_INPUT_ANALYSIS_HH_
 #define AMANZI_INPUT_ANALYSIS_HH_
 
+#include <string>
+
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
@@ -13,7 +15,8 @@ namespace Amanzi {
 
 class InputAnalysis {
  public:
-  InputAnalysis(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : vo_(NULL), mesh_(mesh) {};
+  InputAnalysis(Teuchos::RCP<const AmanziMesh::Mesh> mesh, const std::string& domain) 
+    : vo_(NULL), mesh_(mesh), domain_(domain) {};
   ~InputAnalysis() {
     if (vo_ != NULL) delete vo_;
   };
@@ -30,6 +33,7 @@ class InputAnalysis {
  private:
   Teuchos::ParameterList* plist_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  std::string domain_;
   VerboseObject* vo_;
 };
 

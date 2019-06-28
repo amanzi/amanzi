@@ -18,7 +18,7 @@ void InputAnalysis::Init(Teuchos::ParameterList& plist)
 
   if (plist.isSublist("analysis")) {
     Teuchos::ParameterList vo_list = plist.sublist("analysis");
-    vo_ = new VerboseObject("InputAnalysis", vo_list); 
+    vo_ = new VerboseObject("InputAnalysis:" + domain_, vo_list); 
   } 
 }
 
@@ -29,7 +29,7 @@ void InputAnalysis::Init(Teuchos::ParameterList& plist)
 void InputAnalysis::RegionAnalysis() 
 {
   if (!plist_->isSublist("analysis")) return;
-  Teuchos::ParameterList alist = plist_->sublist("analysis");
+  Teuchos::ParameterList alist = plist_->sublist("analysis").sublist(domain_);
 
   Errors::Message msg;
   Teuchos::OSTab tab = vo_->getOSTab();

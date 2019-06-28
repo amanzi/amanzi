@@ -835,9 +835,11 @@
   </ParameterList>
 
   <ParameterList name="analysis">
-    <Parameter name="used boundary condition regions" type="Array(string)" value="{Bottom Surface, Crib, Total_Recharge, Bottom Surface, Crib, Total_Recharge, Bottom Surface, Crib, Total_Recharge}"/>
-    <Parameter name="used source regions" type="Array(string)" value="{Well, Well, Well}"/>
-    <Parameter name="used observation regions" type="Array(string)" value="{}"/>
+    <ParameterList name="domain">
+      <Parameter name="used boundary condition regions" type="Array(string)" value="{Bottom Surface, Crib, Total_Recharge, Bottom Surface, Crib, Total_Recharge, Bottom Surface, Crib, Total_Recharge}"/>
+      <Parameter name="used source regions" type="Array(string)" value="{Well, Well, Well}"/>
+      <Parameter name="used observation regions" type="Array(string)" value="{}"/>
+    </ParameterList>
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>
