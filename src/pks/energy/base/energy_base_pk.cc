@@ -413,7 +413,7 @@ void EnergyBase::CommitStep(double t_old, double t_new, const Teuchos::RCP<State
 int EnergyBase::BoundaryFaceGetCell(int f) const
 {
   AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::GHOST, &cells);
+  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
   return cells[0];
 }
 
@@ -422,8 +422,9 @@ int EnergyBase::BoundaryFaceGetCell(int f) const
 ****************************************************************** */
 void EnergyBase::ApplyDirichletBCsToBoundaryFace_(const Teuchos::Ptr<CompositeVector>& temp)
 {
-  Epetra_MultiVector& temp_bf = temp->ViewComponent("boundary_face", true);
-  const Epetra_MultiVector& temp_c = temp->ViewComponent("cell", true);
+
+  Epetra_MultiVector& temp_bf = *temp->ViewComponent("boundary_face", false);
+  const Epetra_MultiVector& temp_c = *temp->ViewComponent("cell", false);
   const Epetra_Map& vandalay_map = mesh_->exterior_face_map(false);
   const Epetra_Map& face_map = mesh_->face_map(false);
 
@@ -431,9 +432,10 @@ void EnergyBase::ApplyDirichletBCsToBoundaryFace_(const Teuchos::Ptr<CompositeVe
   const std::vector<double>& bc_value = bc_->bc_value();
   
   int nbfaces = temp_bf.MyLength();
+
   for (int bf=0; bf!=nbfaces; ++bf) {
     AmanziMesh::Entity_ID f = face_map.LID(vandalay_map.GID(bf));
-    if (bc_model[f] == Operator::OPERATOR_BC_DIRICHLET) {
+    if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
       temp_bf[0][bf] = bc_value[f];
     } else {
       temp_bf[0][bf] = temp_c[0][BoundaryFaceGetCell(f)];
