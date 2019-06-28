@@ -152,7 +152,7 @@ SEBEvaluator::SEBEvaluator(Teuchos::ParameterList& plist) :
   // parameters
   min_wind_speed_ = plist.get<double>("minimum wind speed [m/s]?", 1.0);
   wind_speed_ref_ht_ = plist.get<double>("wind speed reference height [m]", 2.0);
-  dessicated_zone_thickness_ = plist.get<double>("dessicated zone thickness [m]", 0.025);
+  dessicated_zone_thickness_ = plist.get<double>("dessicated zone thickness [m]", 0.1);
   AMANZI_ASSERT(dessicated_zone_thickness_ > 0.);
 
   ss_topcell_based_evap_ = plist.get<bool>("subsurface top cell based evaporation", false);

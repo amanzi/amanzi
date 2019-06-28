@@ -195,7 +195,7 @@ void UpdateEnergyBalanceWithSnow_Inner(const GroundProperties& surf,
                       params.Apa);
 
   // conducted heat
-  eb.fQc = ConductedHeatIfSnow(surf.temp, snow);
+  eb.fQc = ConductedHeatIfSnow(surf.temp, snow, params);
 
   // balance of energy goes into melting
   eb.fQm = eb.fQswIn + eb.fQlwIn - eb.fQlwOut + eb.fQh - eb.fQc + eb.fQe;

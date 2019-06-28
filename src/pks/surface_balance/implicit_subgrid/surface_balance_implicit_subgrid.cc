@@ -226,7 +226,6 @@ ImplicitSubgrid::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<Tre
   SurfaceBalanceBase::FunctionalResidual(t_old, t_new, u_old, u_new, g);  
 
   // now fill the role of age/density evaluator, as these depend upon old and new values
-  const auto& swe_old_v = *S_inter_->GetFieldData(conserved_key_)->ViewComponent("cell", false);
   const auto& cell_vol = *S_next_->GetFieldData(cell_vol_key_)->ViewComponent("cell",false);
 
   const auto& snow_age_old = *S_inter_->GetFieldData(snow_age_key_)->ViewComponent("cell",false);
@@ -267,7 +266,7 @@ ImplicitSubgrid::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<Tre
                            / (std::max(swe_old - swe_lost,0.) + swe_added);
       snow_dens_new[0][c] = (dens_settled * std::max(swe_old - swe_lost,0.) + params.density_freshsnow * swe_added)
                             / (std::max(swe_old - swe_lost,0.) + swe_added);
-      snow_dens_new[0][c] = std::min(snow_dens_new, params.density_snow_max);
+      snow_dens_new[0][c] = std::min(snow_dens_new[0][c], params.density_snow_max);
     }
   }
   pvfe_snow_dens_->SetFieldAsChanged(S_next_.ptr());
