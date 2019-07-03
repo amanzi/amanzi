@@ -70,11 +70,15 @@ SUITE(COMMON_MESH_OPERATIONS) {
       auto sl_view = sl_c->ViewComponent<AmanziDefaultDevice>("cell", 0, false);
       auto poro_view = poro_c->ViewComponent<AmanziDefaultDevice>("cell", 0, false);
       auto wc_view = wc->ViewComponent<AmanziDefaultDevice>("cell", 0, false);
+      auto cv_view = mesh->cell_volumes(); 
 
-      typedef Kokkos::RangePolicy<AmanziDefaultDevice, LO> Policy_type;
-      Kokkos::parallel_for(Policy_type(0, sl_view.extent(0)),
-                           KOKKOS_LAMBDA(const LO& i) {
-                             wc_view[i] = sl_view[i] * poro_view[i] * mesh->cell_volume(i);
+      std::cout<<"cv: "<<cv_view.extent(0)<<"sl: "<<sl_view.extent(0)<<std::endl; 
+      assert(cv_view.extent(0) >= sl_view.extent(0)); 
+      
+      //typedef Kokkos::RangePolicy<AmanziDefaultDevice, LO> Policy_type;
+      Kokkos::parallel_for(sl_view.extent(0),
+                           KOKKOS_LAMBDA(const LO i) {
+                             wc_view[i] = sl_view[i] * poro_view[i] * cv_view(i);
                            });
     }
 

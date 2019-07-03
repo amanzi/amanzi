@@ -35,13 +35,8 @@
 #include "Tpetra_MultiVector_fwd.hpp"
 
 #include "Kokkos_Core.hpp"
-#ifdef HAVE_CUDA
 using AmanziDefaultDevice = Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>;
-#else
-using AmanziDefaultDevice = Kokkos::Serial;
-#endif
-
-using AmanziDefaultHost = Kokkos::Serial; // ????
+using AmanziDefaultHost = Kokkos::Device<Kokkos::Serial, Kokkos::CudaUVMSpace>; //Kokkos::Serial; // ????
 #else
 
 class Epetra_Comm;

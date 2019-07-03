@@ -485,7 +485,10 @@ class Mesh {
                             Kokkos::View<AmanziGeometry::Point*> &ccoords) const = 0;
 
   // Volume/Area of cell
-  double cell_volume(const Entity_ID cellid, const bool recompute=false) const;
+  double cell_volume(const Entity_ID cellid, const bool recompute) const;
+  KOKKOS_INLINE_FUNCTION double cell_volume(const Entity_ID cellid) const{
+    return cell_volumes_(cellid); 
+  }
 
   // Area/length of face
   double face_area(const Entity_ID faceid, const bool recompute=false) const;
@@ -852,6 +855,8 @@ protected:
 
  public:
   void PrintMeshStatistics() const;
+
+  Kokkos::View<double*> cell_volumes() const {return cell_volumes_;}
 
  protected:
   Comm_ptr_type comm_;

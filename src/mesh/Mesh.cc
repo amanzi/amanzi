@@ -895,7 +895,6 @@ Mesh::compute_edge_geometry_(const Entity_ID edgeid, double *edge_length,
   return 0;
 }
 
-
 // Volume/Area of cell
 double
 Mesh::cell_volume(const Entity_ID cellid, const bool recompute) const
