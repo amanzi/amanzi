@@ -72,7 +72,7 @@ void RemapDG_Tests<AnalyticDG>::InitializeConsistentJacobianDeterminant()
   op_reac_->Setup(det_);
   op_reac_->UpdateMatrices(Teuchos::null);
 
-  auto& matrices = op_reac_->local_matrices()->matrices;
+  auto& matrices = op_reac_->local_op()->matrices;
   for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
 
   op_flux_->Setup(velc_, velf_);
@@ -175,7 +175,7 @@ void RemapDG_Tests<AnalyticDG>::CollectStatistics(double t, const CompositeVecto
   double tglob = global_time(t);
   if (tglob >= tprint_) {
     op_reac_->UpdateMatrices(Teuchos::null);
-    auto& matrices = op_reac_->local_matrices()->matrices;
+    auto& matrices = op_reac_->local_op()->matrices;
     for (int n = 0; n < matrices.size(); ++n) matrices[n].Inverse();
 
     auto& rhs = *op_reac_->global_operator()->rhs();
