@@ -355,9 +355,11 @@ Teuchos::ParameterList InputConverterU::TranslateUnits_()
 Teuchos::ParameterList InputConverterU::CreateAnalysis_()
 {
   Teuchos::ParameterList out_list;
-  out_list.set<Teuchos::Array<std::string> >("used boundary condition regions", vv_bc_regions_);
-  out_list.set<Teuchos::Array<std::string> >("used source regions", vv_src_regions_);
-  out_list.set<Teuchos::Array<std::string> >("used observation regions", vv_obs_regions_);
+  auto& domain_list = out_list.sublist("domain");
+
+  domain_list.set<Teuchos::Array<std::string> >("used boundary condition regions", vv_bc_regions_);
+  domain_list.set<Teuchos::Array<std::string> >("used source regions", vv_src_regions_);
+  domain_list.set<Teuchos::Array<std::string> >("used observation regions", vv_obs_regions_);
 
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
 

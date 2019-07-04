@@ -500,7 +500,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
     Teuchos::ParameterList oplist_vapor = tmp_list.sublist("vapor matrix");
     op_vapor_diff_ = opfactory.Create(oplist_vapor, mesh_, op_bc_);
     op_vapor_ = op_vapor_diff_->global_operator();
-    op_preconditioner_->OpPushBack(op_vapor_diff_->local_matrices(),
+    op_preconditioner_->OpPushBack(op_vapor_diff_->local_op(),
                                    Operators::OPERATOR_PROPERTY_DATA_READ_ONLY);
   }
 
@@ -844,7 +844,7 @@ void Richards_PK::InitializeStatistics_()
       relperm_->PlotWRMcurves();
     }
 
-    *vo_->os() << vo_->color("green") << "Initalization of PK is complete, T=" 
+    *vo_->os() << vo_->color("green") << "Initialization of PK is complete, T=" 
                << units_.OutputTime(S_->time()) << vo_->reset() << std::endl << std::endl;
   }
 }

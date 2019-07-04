@@ -914,9 +914,11 @@
   </ParameterList>
 
   <ParameterList name="analysis">
-    <Parameter name="used boundary condition regions" type="Array(string)" value="{-X_Boundary, +X_Boundary, -X_Boundary, +X_Boundary, -X_Boundary, +X_Boundary}"/>
-    <Parameter name="used source regions" type="Array(string)" value="{}"/>
-    <Parameter name="used observation regions" type="Array(string)" value="{}"/>
+    <ParameterList name="domain">
+      <Parameter name="used boundary condition regions" type="Array(string)" value="{-X_Boundary, +X_Boundary, -X_Boundary, +X_Boundary, -X_Boundary, +X_Boundary}"/>
+      <Parameter name="used source regions" type="Array(string)" value="{}"/>
+      <Parameter name="used observation regions" type="Array(string)" value="{}"/>
+    </ParameterList>
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="high"/>
     </ParameterList>

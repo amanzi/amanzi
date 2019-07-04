@@ -73,7 +73,7 @@ void PDE_HelperDiscretization::PopulateDimensions_()
 /* ******************************************************************
 * Replace container of local matrices with another container.
 ****************************************************************** */
-void PDE_HelperDiscretization::set_local_matrices(const Teuchos::RCP<Op>& op)
+void PDE_HelperDiscretization::set_local_op(const Teuchos::RCP<Op>& op)
 {
   if (global_op_.get()) {
     if (local_op_.get()) {

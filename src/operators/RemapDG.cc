@@ -194,7 +194,7 @@ void RemapDG::ModifySolution(double t, CompositeVector& u)
   op_reac_->UpdateMatrices(Teuchos::null);
 
   // solve the problem with the mass matrix
-  auto& matrices = op_reac_->local_matrices()->matrices;
+  auto& matrices = op_reac_->local_op()->matrices;
   for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
   op_reac_->global_operator()->Apply(u, *field_);
 
@@ -397,7 +397,7 @@ void RemapDG::ConservativeToNonConservative(
   op_reac_->Setup(det_);
   op_reac_->UpdateMatrices(Teuchos::null);
 
-  auto& matrices = op_reac_->local_matrices()->matrices;
+  auto& matrices = op_reac_->local_op()->matrices;
   for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
 
   op_reac_->global_operator()->Apply(u, v);

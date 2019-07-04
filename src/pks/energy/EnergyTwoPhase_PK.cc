@@ -176,7 +176,7 @@ void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << std::endl << vo_->color("green")
-               << "Initalization of TP is complete, T=" << t_old 
+               << "Initialization of TP is complete, T=" << t_old 
                << " dT=" << dt_ << vo_->reset() << std::endl;
   }
 }
@@ -201,7 +201,7 @@ void EnergyTwoPhase_PK::InitializeFields_()
       S_->GetField(prev_energy_key_, passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initilized prev_energy to previous energy" << std::endl;  
+          *vo_->os() << "initialized prev_energy to previous energy" << std::endl;  
     }
   }
 }

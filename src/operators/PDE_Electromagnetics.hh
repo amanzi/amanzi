@@ -77,9 +77,6 @@ class PDE_Electromagnetics : public PDE_HelperDiscretization {
 
   // access
   int schema_prec_dofs() { return global_op_schema_; }
-
-  Teuchos::RCP<const Op> local_matrices() const { return local_op_; }
-  Teuchos::RCP<Op> local_matrices() { return local_op_; }
   int schema_dofs() { return local_op_schema_; }
 
  protected:

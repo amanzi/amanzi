@@ -134,24 +134,9 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   int schema_prec_dofs() { return global_op_schema_; }
   int schema_dofs() { return local_op_schema_; }
 
-  Teuchos::RCP<const Op> jacobian_matrices() const { return jac_op_; }
-  Teuchos::RCP<Op> jacobian_matrices() { return jac_op_; }
-  void set_jacobian_matrices(const Teuchos::RCP<Op>& op) {
-    if (global_operator().get()) {
-      if (local_matrices().get()) {
-        auto index = std::find(global_operator()->begin(), global_operator()->end(), jac_op_)
-                     - global_operator()->begin();
-        if (index != global_operator()->size()) {
-          global_operator()->OpPushBack(op);
-        } else {
-          global_operator()->OpReplace(op, index);
-        }
-      } else {
-        global_operator()->OpPushBack(op);
-      }
-    }
-    jac_op_ = op;
-  }
+  Teuchos::RCP<const Op> jacobian_op() const { return jac_op_; }
+  Teuchos::RCP<Op> jacobian_op() { return jac_op_; }
+  void set_jacobian_op(const Teuchos::RCP<Op>& op);
   int schema_jacobian() { return jac_op_schema_; }
 
   int little_k() const { return little_k_; }
@@ -190,6 +175,28 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   Teuchos::RCP<Op> jac_op_;
   int global_op_schema_, local_op_schema_, jac_op_schema_;
 };
+
+
+/* ******************************************************************
+* Initialization of the operator, scalar coefficient.
+****************************************************************** */
+inline
+void PDE_Diffusion::set_jacobian_op(const Teuchos::RCP<Op>& op)
+{
+  if (global_operator().get()) {
+    if (local_op().get()) {
+      auto index = std::find(global_operator()->begin(), global_operator()->end(), jac_op_)
+                   - global_operator()->begin();
+      if (index != global_operator()->size())
+        global_operator()->OpPushBack(op);
+      else
+        global_operator()->OpReplace(op, index);
+    } else {
+      global_operator()->OpPushBack(op);
+    }
+  }
+  jac_op_ = op;
+}
 
 }  // namespace Operators
 }  // namespace Amanzi

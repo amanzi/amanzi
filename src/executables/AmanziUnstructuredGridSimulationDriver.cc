@@ -326,7 +326,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 
   // -------------- ANALYSIS --------------------------------------------
   {
-    Amanzi::InputAnalysis analysis(mesh);
+    Amanzi::InputAnalysis analysis(mesh, "domain");
     analysis.Init(*plist_);
     analysis.RegionAnalysis();
     analysis.OutputBCs();
@@ -356,6 +356,13 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
 
     auto mesh_fracture = meshfactory.create(mesh, names, Amanzi::AmanziMesh::FACE);
     S->RegisterMesh("fracture", mesh_fracture);
+
+    {
+      Amanzi::InputAnalysis analysis(mesh_fracture, "fracture");
+      analysis.Init(*plist_);
+      analysis.RegionAnalysis();
+      analysis.OutputBCs();
+    }
   }
 
 
