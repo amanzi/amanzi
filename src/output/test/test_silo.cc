@@ -55,9 +55,9 @@ TEST(SILO_STRUCTURED) {
     
     // write time step data
     io.InitializeCycle(time,i);
-    io.WriteVector(*cell_quantity, "cell_quantity");
-    io.WriteVector(*fake_pressure, "pressure");
-    io.WriteVector(*node_quantity, "node_quantity");
+    io.WriteVector(*cell_quantity, "cell_quantity", Amanzi::AmanziMesh::CELL);
+    io.WriteVector(*fake_pressure, "pressure", Amanzi::AmanziMesh::CELL);
+    io.WriteVector(*node_quantity, "node_quantity", Amanzi::AmanziMesh::NODE);
 
     // advance time and values
     time += 2.0;
@@ -131,9 +131,9 @@ TEST(SILO_POLYGONAL) {
     
     // write time step data
     io.InitializeCycle(time,i);
-    io.WriteVector(*cell_quantity, "cell_quantity");
-    io.WriteVector(*fake_pressure, "pressure");
-    io.WriteVector(*node_quantity, "node_quantity");
+    io.WriteVector(*cell_quantity, "cell_quantity", Amanzi::AmanziMesh::CELL);
+    io.WriteVector(*fake_pressure, "pressure", Amanzi::AmanziMesh::CELL);
+    io.WriteVector(*node_quantity, "node_quantity", Amanzi::AmanziMesh::NODE);
 
     // advance time and values
     time += 2.0;

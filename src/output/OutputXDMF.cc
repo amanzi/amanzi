@@ -17,9 +17,9 @@
 namespace Amanzi {
 
 OutputXDMF::OutputXDMF(Teuchos::ParameterList& plist,
-		       const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-		       bool is_vis,
-		       bool is_dynamic)
+                       const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                       bool is_vis,
+                       bool is_dynamic)
   : is_vis_(is_vis),
     is_dynamic_(is_dynamic),
     mesh_(mesh),
@@ -51,25 +51,30 @@ OutputXDMF::FinalizeCycle() {
 
 // write data to file
 void
-OutputXDMF::WriteVector(const Epetra_Vector& vec,
-			const std::string& name) const {
+OutputXDMF::WriteVector(const Epetra_Vector& vec, const std::string& name,
+                        const AmanziMesh::Entity_kind& kind) const {
   if (mesh_->is_logical()) {
     io_->writeNodeDataReal(vec, name);
-  } else {
+  } else if (kind == AmanziMesh::CELL) {
     io_->writeCellDataReal(vec, name);
+  } else if (kind == AmanziMesh::NODE) {
+    io_->writeNodeDataReal(vec, name);
   }
 }
 
   
 void
 OutputXDMF::WriteMultiVector(const Epetra_MultiVector& vec,
-			     const std::vector<std::string>& names) const {
+                             const std::vector<std::string>& names,
+                             const AmanziMesh::Entity_kind& kind) const {
   AMANZI_ASSERT(names.size() == vec.NumVectors());
   for (int i=0; i!=vec.NumVectors(); ++i) {
     if (mesh_->is_logical()) {
       io_->writeNodeDataReal(*vec(i), names[i]);
-    } else {
+    } else if (kind == AmanziMesh::CELL) {
       io_->writeCellDataReal(*vec(i), names[i]);
+    } else if (kind == AmanziMesh::NODE) {
+      io_->writeNodeDataReal(*vec(i), names[i]);
     }
   }
 }
@@ -102,7 +107,7 @@ OutputXDMF::ReadVector(Epetra_Vector& vec, const std::string& name) const {
   
 void
 OutputXDMF::ReadMultiVector(Epetra_MultiVector& vec,
-			    const std::vector<std::string>& names) const {
+                            const std::vector<std::string>& names) const {
   AMANZI_ASSERT(names.size() == vec.NumVectors());
   for (int i=0; i!=vec.NumVectors(); ++i) {
     io_->readData(*vec(i), names[i]);

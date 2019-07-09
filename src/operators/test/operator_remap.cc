@@ -295,8 +295,8 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   OutputXDMF io(iolist, mesh1, true, false);
 
   io.InitializeCycle(t, 1);
-  io.WriteVector(*p2c(0), "solution");
-  io.WriteVector(*q2c(0), "solution-prj");
+  io.WriteVector(*p2c(0), "solution", AmanziMesh::CELL);
+  io.WriteVector(*q2c(0), "solution-prj", AmanziMesh::CELL);
   io.FinalizeCycle();
 }
 

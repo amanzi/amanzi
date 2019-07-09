@@ -168,14 +168,14 @@ OutputSilo::FinalizeCycle() {
 
 // write data to file
 void
-OutputSilo::WriteVector(const Epetra_Vector& vec,
-                        const std::string& name) const {
-  if (vec.MyLength() == mesh_->vis_mesh().num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED)) {
+OutputSilo::WriteVector(const Epetra_Vector& vec, const std::string& name,
+                        const AmanziMesh::Entity_kind& kind) const {
+  if (kind == AmanziMesh::CELL) {
     int ierr = DBPutUcdvar1(fid_, FixName_(name).c_str(), "mesh",
                             (void*)&vec[0], vec.MyLength(), NULL, 0,
                             DB_DOUBLE, DB_ZONECENT, NULL);
     AMANZI_ASSERT(!ierr);
-  } else if (vec.MyLength() == mesh_->vis_mesh().num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED)) {
+  } else if (kind == AmanziMesh::NODE) {
     int ierr = DBPutUcdvar1(fid_, FixName_(name).c_str(), "mesh",
                             (void*)&vec[0], vec.MyLength(), NULL, 0,
                             DB_DOUBLE, DB_NODECENT, NULL);
@@ -188,11 +188,11 @@ OutputSilo::WriteVector(const Epetra_Vector& vec,
 
 
 void
-OutputSilo::WriteMultiVector(const Epetra_MultiVector& vec,
-                             const std::vector<std::string>& names) const {
+OutputSilo::WriteMultiVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names,
+                             const AmanziMesh::Entity_kind& kind) const {
   AMANZI_ASSERT(vec.NumVectors() == names.size());
   for (int i=0; i!=vec.NumVectors(); ++i) {
-    WriteVector(*vec(i), names[i]);
+    WriteVector(*vec(i), names[i], kind);
   }
 }
 

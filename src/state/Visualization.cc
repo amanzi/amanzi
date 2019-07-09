@@ -77,8 +77,8 @@ void Visualization::ReadParameters_() {
 // -----------------------------------------------------------------------------
 // Write a multivector
 // -----------------------------------------------------------------------------
-void Visualization::WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names ) const {
-  visualization_output_->WriteMultiVector(vec, names);
+void Visualization::WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names) const {
+  visualization_output_->WriteMultiVector(vec, names, AmanziMesh::CELL);
 }
 
 
@@ -86,7 +86,7 @@ void Visualization::WriteVector(const Epetra_MultiVector& vec, const std::vector
 // Write a vector
 // -----------------------------------------------------------------------------
 void Visualization::WriteVector(const Epetra_Vector& vec, const std::string& name) const {
-  visualization_output_->WriteVector(vec ,name);
+  visualization_output_->WriteVector(vec ,name, AmanziMesh::CELL);
 }
 
 

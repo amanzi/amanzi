@@ -64,7 +64,7 @@ class Checkpoint : public IOEvent {
   // public interface for coordinator clients
   void CreateFile(int cycle);
   void CreateFinalFile(int cycle);
-  void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names ) const;
+  void WriteVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names) const;
   void WriteAttributes(double time, double dt, int cycle, int pos) const;
   void WriteAttributes(double time, double dt, int cycle) const;
   void WriteAttributes(double time, int cycle) const;

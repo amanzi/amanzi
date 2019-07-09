@@ -728,7 +728,7 @@ void AdvectionTransient(std::string filename, int nx, int ny,
       const Epetra_MultiVector& p = *sol.ViewComponent("cell");
   
       io.InitializeCycle(t, nstep);
-      io.WriteVector(*p(0), "solution");
+      io.WriteVector(*p(0), "solution", AmanziMesh::CELL);
       io.FinalizeCycle();
     }
 
@@ -839,6 +839,7 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   /*
   double dT(0.01), T1(6.2832);
   auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
+  AdvectionTransient<AnalyticDG08>("square", 64,64, dT/4,T1, rk_order, true, "dual", "high order", "none");
   AdvectionTransient<AnalyticDG08>("square", 160,160, dT/8,T1, rk_order, true, "dual", "high order", "none");
   AdvectionTransient<AnalyticDG08>("test/median127x128.exo", 128,0, dT/8,T1, rk_order, true, "dual", "high order", "none");
   */
