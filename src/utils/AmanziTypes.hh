@@ -35,10 +35,25 @@
 #include "Tpetra_MultiVector_fwd.hpp"
 
 #include "Kokkos_Core.hpp"
-using AmanziDefaultDevice = Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>;
-using AmanziDefaultHost = Kokkos::Device<Kokkos::Serial, Kokkos::CudaUVMSpace>; //Kokkos::Serial; // ????
-#else
 
+// host execution space 
+#ifdef KOKKOS_ENANLE_OPENMP
+using AmanziHostExecutionSpace = Kokkos::OpenMP; 
+#elif KOKKOS_ENABLE_THREADS
+using AmanziHostExecutionSpace = Kokkos::Threads; 
+#else 
+using AmanziHostExecutionSpace = Kokkos::Serial; 
+#endif // KOKKOS_HOST 
+
+#ifdef KOKKOS_ENABLE_CUDA 
+// Default CUDA using UVM
+using AmanziDefaultDevice = Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>;
+using AmanziDefaultHost = Kokkos::Device<AmanziHostExecutionSpace, Kokkos::CudaUVMSpace>; //Kokkos::Serial; // ????
+#else
+using AmanziDefaultHost = AmanziHostExecutionSpace; 
+#endif // KOKKOS_ENABLE_CUDA
+
+#else // TRILINOS_TPETRA_STACK
 class Epetra_Comm;
 class Epetra_MpiComm;
 class Epetra_Map;
@@ -48,8 +63,7 @@ class Epetra_Vector;
 class Epetra_IntVector;
 class Epetra_MultiVector;
 //class Epetra_MultiIntVector; // defined in trilinos > 12.??
-
-#endif
+#endif // TRILINOS_TPETRA_STACK
 
 
 
