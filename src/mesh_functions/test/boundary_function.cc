@@ -28,7 +28,10 @@ using namespace Amanzi::Functions;
 int main (int argc, char *argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  return UnitTest::RunAllTests();
+  Kokkos::initialize(argc,argv); 
+  auto status = UnitTest::RunAllTests();
+  Kokkos::finalize(); 
+  return status; 
 }
 
 
@@ -110,7 +113,6 @@ TEST_FIXTURE(reference_mesh, basic)
 
 TEST_FIXTURE(reference_mesh, values1)
 {
-  Kokkos::initialize();
   BoundaryFunction bf(mesh);
   Teuchos::RCP<MultiFunction> f1 = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new FunctionConstant(1.0))));
   Teuchos::RCP<MultiFunction> f2 = Teuchos::rcp(new MultiFunction(Teuchos::rcp(new FunctionConstant(2.0))));
@@ -137,7 +139,6 @@ TEST_FIXTURE(reference_mesh, values1)
   for (int i = 0 ; i < face_list.extent(0); ++i)
     CHECK_EQUAL(3.0, bf.find(face_list(i))->second);
 
-  Kokkos::finalize(); 
 }
 
 

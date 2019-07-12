@@ -44,7 +44,7 @@ void Operator_Edge::UpdateRHS(const CompositeVector& source, bool volume_include
       mesh_->cell_get_edges(c, &edges);
       int nedges = edges.size();
 
-      double volume = mesh_->cell_volume(c);
+      double volume = mesh_->cell_volume(c,false);
       for (int n = 0; n < nedges; ++n) {
         int e = edges[n];
         rhs_e[0][e] += source_e[0][e] * volume / nedges;

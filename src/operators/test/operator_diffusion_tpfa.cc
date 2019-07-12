@@ -88,7 +88,7 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
-    double volume = mesh->cell_volume(c);
+    double volume = mesh->cell_volume(c,false);
     src[0][c] = ana.source_exact(xc, 0.0) * volume;
   }
 

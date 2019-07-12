@@ -114,8 +114,8 @@ void UpwindDivK<Model>::Compute(
         double tmp(0.5);
         int c2 = WhetStone::cell_get_face_adj_cell(*mesh_, c, f);
         if (c2 >= 0) { 
-          double v1 = mesh_->cell_volume(c);
-          double v2 = mesh_->cell_volume(c2);
+          double v1 = mesh_->cell_volume(c,false);
+          double v2 = mesh_->cell_volume(c2,false);
           tmp = v2 / (v1 + v2);
         }
         upw_face[0][f] += kc * tmp; 

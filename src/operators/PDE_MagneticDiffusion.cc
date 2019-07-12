@@ -246,7 +246,7 @@ double PDE_MagneticDiffusion::CalculateDivergence(
     int f = faces[n];
     div += Bf[0][f] * dirs[n] * mesh_->face_area(f);
   }
-  div /= mesh_->cell_volume(c);
+  div /= mesh_->cell_volume(c,false);
 
   return div;
 }

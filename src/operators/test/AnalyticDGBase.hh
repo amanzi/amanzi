@@ -157,7 +157,7 @@ void AnalyticDGBase::ComputeCellError(
   int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < ncells; c++) {
     const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    double volume = mesh_->cell_volume(c);
+    double volume = mesh_->cell_volume(c,false);
 
     int nk = p.NumVectors();
     Amanzi::WhetStone::DenseVector data(nk);
@@ -235,7 +235,7 @@ void AnalyticDGBase::ComputeCellErrorRemap(
   for (int c = 0; c < ncells; ++c) {
     const Amanzi::AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
     const Amanzi::AmanziGeometry::Point& yc = mesh1->cell_centroid(c);
-    double volume = mesh1->cell_volume(c);
+    double volume = mesh1->cell_volume(c,false);
 
     int nk = p.NumVectors();
     Amanzi::WhetStone::DenseVector data(nk);

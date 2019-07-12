@@ -64,7 +64,7 @@ TEST(DG2D_MASS_MATRIX) {
       printf("\n");
     }
 
-    double area = mesh->cell_volume(0);
+    double area = mesh->cell_volume(0,false);
     for (int i = 0; i < nk; ++i) {
       CHECK_CLOSE(M(i, i), area, 1e-12);
     }
@@ -482,7 +482,7 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
     DenseVector v1(nk), v2(nk), v3(nk);
     if (k > 0) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(0);
-      double scale = std::pow(mesh->cell_volume(0), 0.5);
+      double scale = std::pow(mesh->cell_volume(0,false), 0.5);
 
       v1.PutScalar(0.0);
       v1(0) = 2 + xc[0] + 3 * xc[1];
@@ -587,7 +587,7 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
     DenseVector v1(nk), v2(nk), v3(nk);
     if (k > 0) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(0);
-      double scale = std::pow(mesh->cell_volume(0), 1.0 / 3);
+      double scale = std::pow(mesh->cell_volume(0,false), 1.0 / 3);
 
       v1.PutScalar(0.0);
       v1(0) = 2 + xc[0] + 3 * xc[1];

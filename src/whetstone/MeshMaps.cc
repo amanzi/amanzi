@@ -313,7 +313,7 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
     NumericalIntegration numi(mesh1_);
     double mass = numi.IntegratePolynomialCell(c, poly);
 
-    moments(0) = mass / mesh1_->cell_volume(c);
+    moments(0) = mass / mesh1_->cell_volume(c,false);
   }
 
   Teuchos::ParameterList plist;

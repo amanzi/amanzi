@@ -117,8 +117,8 @@ void UpwindGravity<Model>::Compute(
 
       // We average field on almost vertical faces. 
       if (fabs(flx_face) <= tolerance_) { 
-        double v1 = mesh_->cell_volume(c1);
-        double v2 = mesh_->cell_volume(c2);
+        double v1 = mesh_->cell_volume(c1,false);
+        double v2 = mesh_->cell_volume(c2,false);
 
         double tmp = v2 / (v1 + v2);
         upw_face[0][f] = kc1 * tmp + kc2 * (1.0 - tmp); 

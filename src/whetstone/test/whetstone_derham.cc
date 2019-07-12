@@ -65,7 +65,7 @@ TEST(DERHAM_COMPLEX_NODE) {
   mesh->cell_get_nodes(cell, nodes);
 
   double xi, yi, xj, yj;
-  double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell);
+  double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell,false);
   AmanziGeometry::Point p1(2), p2(2);
 
   for (int i = 0; i < nnodes; i++) {

@@ -91,7 +91,7 @@ TEST(MASS_MATRIX_2D) {
 
     // verify exact integration property
     double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell);
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell,false);
     for (int i = 0; i < nedges; i++) {
       int e1 = edges(i);
       const AmanziGeometry::Point& t1 = mesh->edge_vector(e1);
@@ -184,7 +184,7 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
 
     // verify exact integration property
     double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell);
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell,false);
     for (int i = 0; i < nedges; i++) {
       int e1 = edges(i);
       const AmanziGeometry::Point& t1 = mesh->edge_vector(e1);
@@ -281,7 +281,7 @@ TEST(STIFFNESS_MATRIX_2D) {
     AmanziGeometry::Point p1(2), p2(2);
 
     const AmanziGeometry::Point& xc = mesh->cell_centroid(cell);
-    double volume = mesh->cell_volume(cell);
+    double volume = mesh->cell_volume(cell,false);
 
     for (int i = 0; i < nrows; i++) {
       int f1 = faces(i);
@@ -369,7 +369,7 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
     // verify exact integration property
     int n1, n2;
     double xi, xj, yj;
-    double vxx(0.0), vxy(0.0), volume = mesh->cell_volume(cell);
+    double vxx(0.0), vxy(0.0), volume = mesh->cell_volume(cell,false);
     AmanziGeometry::Point v1(3);
 
     for (int i = 0; i < nedges; i++) {

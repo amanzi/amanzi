@@ -75,7 +75,7 @@ TEST(DARCY_MASS_2D) {
     mesh->cell_get_faces_and_dirs(cell, faces, &dirs);
 
     double xi, yi, xj, yj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell);
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell,false);
     for (int i = 0; i < nfaces; i++) {
       int f1 = faces(i);
       for (int j = 0; j < nfaces; j++) {
@@ -153,7 +153,7 @@ TEST(DARCY_MASS_3D) {
     mesh->cell_get_faces_and_dirs(cell, faces, &dirs);
 
     double xi, yi, xj, yj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell);
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell,false);
     for (int i = 0; i < nfaces; i++) {
       int f1 = faces(i);
       for (int j = 0; j < nfaces; j++) {
@@ -203,7 +203,7 @@ TEST(DARCY_MASS_3D_GENERALIZED_POLYHEDRON) {
   MFD3D_Generalized_Diffusion mfd(plist, mesh);
 
   int nfaces = 6, cell = 0;
-  double volume = mesh->cell_volume(cell);
+  double volume = mesh->cell_volume(cell,false);
   DenseMatrix N, R, M;
   DenseMatrix B(3, 3);
 
@@ -294,7 +294,7 @@ TEST(DARCY_INVERSE_MASS_3D) {
     mesh->cell_get_faces_and_dirs(cell, faces, &dirs);
 
     double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell);
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell,false);
     for (int i = 0; i < nfaces; i++) {
       int f1 = faces(i);
       for (int j = 0; j < nfaces; j++) {
@@ -389,7 +389,7 @@ TEST(DARCY_FULL_TENSOR_2D) {
 
       AmanziGeometry::Point v(1.0, 2.0);
       double xi, xj;
-      double vxx = 0.0, volume = mesh->cell_volume(cell);
+      double vxx = 0.0, volume = mesh->cell_volume(cell,false);
       for (int i = 0; i < nfaces; i++) {
         xi = (v * mesh->face_normal(faces(i))) * dirs(i);
         for (int j = 0; j < nfaces; j++) {
@@ -485,7 +485,7 @@ TEST(DARCY_FULL_TENSOR_3D) {
 
     AmanziGeometry::Point v(1.0, 2.0, 3.0);
     double xi, xj;
-    double vxx = 0.0, volume = mesh->cell_volume(cell);
+    double vxx = 0.0, volume = mesh->cell_volume(cell,false);
     for (int i = 0; i < nfaces; i++) {
       int f1 = faces(i);
       for (int j = 0; j < nfaces; j++) {
@@ -561,7 +561,7 @@ TEST(DARCY_STIFFNESS_2D_NODE) {
     Point p(d);
 
     double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell);
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell,false);
     for (int i = 0; i < nnodes; i++) {
       int v = nodes(i);
       mesh->node_get_coordinates(v, &p);
@@ -631,7 +631,7 @@ TEST(DARCY_STIFFNESS_2D_EDGE) {
     Point p(d);
 
     double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell);
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell,false);
     for (int i = 0; i < nedges; i++) {
       int e = edges(i);
       const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
@@ -699,7 +699,7 @@ TEST(DARCY_STIFFNESS_3D) {
   Point p(d);
 
   double xi, yi, xj;
-  double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell);
+  double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell,false);
   for (int i = 0; i < nnodes; i++) {
     int v = nodes(i);
     mesh->node_get_coordinates(v, &p);
@@ -881,7 +881,7 @@ TEST(DARCY_INVERSE_MASS_2D) {
     mesh->cell_get_faces_and_dirs(cell, faces, &dirs);
 
     double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell);
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell,false);
     for (int i = 0; i < nfaces; i++) {
       int f = faces(i);
       xi = mesh->face_normal(f)[0] * dirs(i);

@@ -56,7 +56,7 @@ int DeRham_Edge::L2consistency2D_(int c, const Tensor& T,
 
   AmanziGeometry::Point v1(d_), v2(d_);
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
 
   Tensor Tinv(T);
   Tinv.Inverse();
@@ -132,7 +132,7 @@ int DeRham_Edge::L2consistency3D_(int c, const Tensor& T,
   N.PutScalar(0.0);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
 
   for (int i = 0; i < nfaces; ++i) {
     int f = faces(i);
@@ -246,7 +246,7 @@ int DeRham_Edge::L2consistencyInverse2D_(
 
   AmanziGeometry::Point v1(d_);
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
 
   // Since N is scaled by T, N = N0 * T, we use tensor T in the
   // inverse L2 consistency term.
@@ -319,7 +319,7 @@ int DeRham_Edge::L2consistencyInverse3D_(
   // Since the matrix N is the matrix of scaled tangent vextors,
   // N = N0 T, we use the tensor T.
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
 
   for (int i = 0; i < nedges; i++) {
     int e1 = edges(i);

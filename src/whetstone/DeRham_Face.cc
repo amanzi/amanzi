@@ -37,7 +37,7 @@ int DeRham_Face::L2consistency(
 
   AmanziGeometry::Point v1(d_), v2(d_);
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
 
   Tensor Kinv(K);
   Kinv.Inverse();
@@ -112,7 +112,7 @@ int DeRham_Face::L2consistencyInverse(
 
   // populate matrix W_0
   AmanziGeometry::Point v1(d_);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
 
   for (int i = 0; i < nfaces; i++) {
     int f = faces(i);

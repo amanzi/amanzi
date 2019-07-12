@@ -41,7 +41,7 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
   Wc.Reshape(nfaces, nfaces);
 
   int dir;
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
 
   // calculate cell normal
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);

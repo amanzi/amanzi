@@ -107,7 +107,7 @@ void Mesh::get_set_entities_box_vofs_(
             (*volume_fractions)(volume_fractions_size++) = volume;
           } else {
             Kokkos::resize(*volume_fractions,(*volume_fractions).extent(0)+1);
-            (*volume_fractions)(volume_fractions_size++) = volume /cell_volume(c);
+            (*volume_fractions)(volume_fractions_size++) = volume /cell_volume(c,false);
            }
         }
       }

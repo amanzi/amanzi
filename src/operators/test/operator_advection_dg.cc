@@ -189,7 +189,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   Epetra_MultiVector& rhs_c = *global_op->rhs()->ViewComponent("cell");
   for (int c = 0; c < ncells; ++c) {
     const Point& xc = mesh->cell_centroid(c);
-    double volume = mesh->cell_volume(c);
+    double volume = mesh->cell_volume(c,false);
 
     v.ChangeOrigin(xc);
     divv.ChangeOrigin(xc);

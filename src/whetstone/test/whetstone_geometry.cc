@@ -45,7 +45,7 @@ TEST(FACE_CENTROIDS) {
   Kokkos::View<Entity_ID*> nodes;
   std::vector<double> weights;
 
-  double area = mesh->cell_volume(0);
+  double area = mesh->cell_volume(0,false);
   mesh->cell_get_nodes(0, nodes);
   PolygonCentroidWeights(*mesh, nodes, area, weights);
 

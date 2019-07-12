@@ -103,7 +103,7 @@ TEST(MESH_DEFORM2D)
                                     Amanzi::AmanziMesh::Parallel_type::ALL);
 
     for (int j = 0; j < ncells; j++) {
-      double volume = mesh->cell_volume(j);
+      double volume = mesh->cell_volume(j,false);
       CHECK_EQUAL(volume,0.5);
     }
 

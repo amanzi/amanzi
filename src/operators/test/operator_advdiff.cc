@@ -89,7 +89,7 @@ void AdvectionDiffusion2D(int nx, double* error)
 
   for (int c = 0; c < ncells_owned; c++) {
     const auto& xc = mesh->cell_centroid(c);
-    src[0][c] = ana.source_exact(xc, 0.0) * mesh->cell_volume(c);
+    src[0][c] = ana.source_exact(xc, 0.0) * mesh->cell_volume(c,false);
   }
 
   // create flux field

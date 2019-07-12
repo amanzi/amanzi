@@ -39,7 +39,7 @@ int DeRham_Node::L2consistency(int c, const Tensor& T,
   mesh_->cell_get_faces(c, faces);
   int nfaces = faces.extent(0);
 
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
   // to calculate matrix R, we use temporary matrix N

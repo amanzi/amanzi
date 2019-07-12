@@ -112,7 +112,7 @@ void AnalyticElectromagneticsBase::ComputeNodeError(
   int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells; c++) {
-    double volume = mesh_->cell_volume(c);
+    double volume = mesh_->cell_volume(c,false);
 
     mesh_->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();

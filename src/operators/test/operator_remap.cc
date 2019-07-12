@@ -232,7 +232,7 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
 
   for (int c = 0; c < ncells_owned; ++c) {
     double vol1 = numi.IntegratePolynomialCell(c, det[c][0]);
-    double vol2 = mesh1->cell_volume(c);
+    double vol2 = mesh1->cell_volume(c,false);
 
     area += vol1;
     area1 += vol2;

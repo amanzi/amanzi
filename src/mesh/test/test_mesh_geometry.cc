@@ -108,7 +108,7 @@ TEST(MESH_GEOMETRY_PLANAR)
             fabs(exp_cell_centroid[j][1]-centroid[1]) < 1.0e-10) {
 
           found = true;
-          CHECK_EQUAL(exp_cell_volume[j],mesh->cell_volume(i));
+          CHECK_EQUAL(exp_cell_volume[j],mesh->cell_volume(i,false));
           break;
 
         }
@@ -295,7 +295,7 @@ TEST(MESH_GEOMETRY_SURFACE)
             fabs(exp_cell_centroid[j][2]-centroid[2]) < 1.0e-10) {
 
           found = true;
-          CHECK_EQUAL(exp_cell_volume[j],mesh->cell_volume(i));
+          CHECK_EQUAL(exp_cell_volume[j],mesh->cell_volume(i,false));
           break;
 
         }
@@ -530,7 +530,7 @@ TEST(MESH_GEOMETRY_SOLID)
             fabs(exp_cell_centroid[j][2]-centroid[2]) < 1.0e-10) {
 
           found = true;
-          CHECK_EQUAL(exp_cell_volume[j],mesh->cell_volume(i));
+          CHECK_EQUAL(exp_cell_volume[j],mesh->cell_volume(i,false));
           break;
 
         }

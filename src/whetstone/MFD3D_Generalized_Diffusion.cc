@@ -37,7 +37,7 @@ int MFD3D_Generalized_Diffusion::L2consistency(
   Mc.Reshape(nx, nx);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
 
   AmanziGeometry::Point v1(d_), v2(d_);
   std::vector<AmanziGeometry::Point> vv(3), xm(3);
@@ -117,7 +117,7 @@ int MFD3D_Generalized_Diffusion::L2consistencyInverse(
   Wc.Reshape(nx, nx);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
 
   AmanziGeometry::Point v1(d_), v2(d_);
   std::vector<AmanziGeometry::Point> vv(3), xm(3);

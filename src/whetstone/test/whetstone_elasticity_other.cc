@@ -99,7 +99,7 @@ TEST(DIFFUSION_STOKES_2D) {
   }
 
   double vxx(0.0), vxy(0.0);
-  double volume = mesh->cell_volume(cell);
+  double volume = mesh->cell_volume(cell,false);
 
   for (int i = 0; i < nrows; i++) {
     for (int j = 0; j < nrows; j++) {

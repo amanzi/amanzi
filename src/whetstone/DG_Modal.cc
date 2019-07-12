@@ -45,7 +45,7 @@ DG_Modal::DG_Modal(const Teuchos::ParameterList& plist,
 
   for (int c = 0; c < ncells_wghost; ++c) {
     monomial_integrals_[c].Reshape(d_, 0);
-    monomial_integrals_[c](0) = mesh_->cell_volume(c);
+    monomial_integrals_[c](0) = mesh_->cell_volume(c,false);
   }
 
   BasisFactory factory;

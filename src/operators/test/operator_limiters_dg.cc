@@ -170,7 +170,7 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
     l2norm = 0.0;
     for (int n = 0; n < ids.size(); ++n) {
       int c = ids[n];
-      double volume = mesh->cell_volume(c);
+      double volume = mesh->cell_volume(c,false);
 
       for (int i = 0; i < nk; ++i) data2(i) = (*field_c)[i][c];
 

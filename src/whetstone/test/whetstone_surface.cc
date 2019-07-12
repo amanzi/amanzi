@@ -72,7 +72,7 @@ TEST(DARCY_SURFACE) {
     W.Inverse();
 
     double xj, yi, yj;
-    double vyy = 0.0, vxy = 0.0, volume = mesh->cell_volume(c);
+    double vyy = 0.0, vxy = 0.0, volume = mesh->cell_volume(c,false);
     for (int i = 0; i < nfaces; i++) {
       int f = faces(i);
       yi = mesh->face_normal(f)[1] * dirs(i);

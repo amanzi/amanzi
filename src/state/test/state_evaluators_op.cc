@@ -46,7 +46,7 @@ public:
 
 protected:
   virtual void Update_(State &s) override {
-    double cv = s.GetMesh()->cell_volume(0);
+    double cv = s.GetMesh()->cell_volume(0,false);
     s.GetW<CompositeVector>(my_key_, my_tag_, my_key_).PutScalar(-4. * cv);
   }
 };

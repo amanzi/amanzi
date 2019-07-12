@@ -1387,7 +1387,7 @@ Mesh::deform(const Kokkos::View<Entity_ID*>& nodeids,
 
   int nc = num_entities(CELL,Parallel_type::ALL);
   for (int c=0; c!=nc; ++c) {
-    if (cell_volume(c) < 0.) return 0;
+    if (cell_volume(c,false) < 0.) return 0;
   }
   return 1;
 }

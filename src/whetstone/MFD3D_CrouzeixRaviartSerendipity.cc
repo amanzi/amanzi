@@ -219,7 +219,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
 
     vdof.Reshape(ndof_f + ndof_c);
     for (int n = ndof_cs; n < ndof_c; ++n) {
-      vdof(ndof_f + n) = v4(n) / mesh_->cell_volume(c);
+      vdof(ndof_f + n) = v4(n) / mesh_->cell_volume(c,false);
     }
 
     R_.Multiply(vdof, v4, true);
@@ -244,7 +244,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
 
     const DenseVector& v3 = moments->coefs();
     for (int n = 0; n < ndof_cs; ++n) {
-      v4(n) = v3(n) * mesh_->cell_volume(c);
+      v4(n) = v3(n) * mesh_->cell_volume(c,false);
     }
 
     for (int n = 0; n < nd - ndof_cs; ++n) {

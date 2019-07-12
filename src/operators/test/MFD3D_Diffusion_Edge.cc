@@ -50,7 +50,7 @@ int MFD3D_Diffusion_Edge::H1consistency(
   Ac.Reshape(nedges, nedges);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
 
   // calculate matrix R (we re-use matrix N)
   if (d_ == 3) N.PutScalar(0.0);

@@ -63,7 +63,7 @@ int MFD3D_Electromagnetics::H1consistency2D_(
   // calculate Ac = R (R^T N)^{+} R^T
   double T00 = T(0, 0);
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
 
   for (int i = 0; i < nfaces; ++i) {
     int f = faces(i);
@@ -121,7 +121,7 @@ int MFD3D_Electromagnetics::H1consistency3D_(
   AmanziGeometry::Point v1(d_), v2(d_), v3(d_);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
 
   for (int i = 0; i < nfaces; ++i) {
     int f = faces(i);
@@ -214,7 +214,7 @@ int MFD3D_Electromagnetics::MassMatrixInverseOptimized(
 int MFD3D_Electromagnetics::MassMatrixDiagonal(
     int c, const Tensor& T, DenseMatrix& M)
 {
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
 
   Kokkos::View<Entity_ID*> edges;
   mesh_->cell_get_edges(c, edges);

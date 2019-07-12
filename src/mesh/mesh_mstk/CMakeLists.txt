@@ -89,13 +89,15 @@ if (BUILD_TESTS)
 
     #Test: eliminate degeneracies in parallel mesh created from inline partitioning
     add_amanzi_test(mstk_pinchout_test_par mstk_pinchout_test_par
-                    KIND int
+                    --kokkos-ndevices=4
+		    KIND int
 		    NPROCS 4
                     SOURCE test/Main.cc test/test_pinchouts.cc
                     LINK_LIBS mstk_mesh mesh_factory mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     #Test: eliminate degeneracies in pre-partitioned parallel mesh
     add_amanzi_test(mstk_pinchout_test_prepart mstk_pinchout_test_prepart
+		    --kokkos-ndevices=4
                     KIND int
 		    NPROCS 4
                     SOURCE test/Main.cc test/test_degen_prepart.cc
@@ -113,13 +115,14 @@ if (BUILD_TESTS)
                          test/test_hex_gen_3x3x3.cc
                          test/test_quad_gen_3x3.cc
                          test/test_extract_surface.cc
- 			                   test/test_extract_column.cc
+			 test/test_extract_column.cc
                          test/test_deform_vols.cc
                     LINK_LIBS mstk_mesh mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
 
     # Test: mstk_mesh_parallel
     add_amanzi_test(mstk_mesh_parallel mstk_mesh_parallel
+		    --kokkos-ndevices=4
                     KIND unit
                     NPROCS 4
                     SOURCE

@@ -66,7 +66,7 @@ int MFD3D_Lagrange::H1consistency2D_(
   int nfaces = faces.extent(0);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
 
   // calculate degrees of freedom
   Polynomial poly(d_, order_), pf, pc;
@@ -292,7 +292,7 @@ int MFD3D_Lagrange::H1consistency3D_(
   int nfaces = faces.extent(0);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
 
   // calculate degrees of freedom
   Polynomial poly(d_, order_), pf, pe, pc;
@@ -537,7 +537,7 @@ void MFD3D_Lagrange::ProjectorCell_(
   int nfaces = faces.extent(0);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
 
   // calculate stiffness matrix.
   Tensor T(d_, 1);
@@ -677,7 +677,7 @@ void MFD3D_Lagrange::ProjectorCell_(
 
     const DenseVector& v3 = moments->coefs();
     for (int n = 0; n < ndof_c; ++n) {
-      v4(n) = v3(n) * mesh_->cell_volume(c);
+      v4(n) = v3(n) * mesh_->cell_volume(c,false);
     }
 
     for (int n = 0; n < nd - ndof_c; ++n) {
@@ -763,7 +763,7 @@ void MFD3D_Lagrange::ProjectorCell_LO_(
       uc(k + 1) += R(i, k) * vf[i](0);
     }
   }
-  uc *= 1.0 / mesh_->cell_volume(c);
+  uc *= 1.0 / mesh_->cell_volume(c,false);
 }
 
 
@@ -781,7 +781,7 @@ void MFD3D_Lagrange::ProjectorCellFromDOFs_(
   int ndof = R_.NumRows();
   AMANZI_ASSERT(ndof == dofs.NumRows() && nd > 0);
 
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
   Kokkos::View<Entity_ID*> faces;

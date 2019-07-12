@@ -43,7 +43,7 @@ int MFD3D_Elasticity::L2consistency(int c, const Tensor& T,
   N.Reshape(nfaces, d_);
   Mc.Reshape(nfaces, nfaces);
 
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
 
   AmanziGeometry::Point v1(d_), v2(d_);
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
@@ -160,7 +160,7 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
   Tensor Tinv(T);
   Tinv.Inverse();
 
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
   Tinv *= 1.0 / volume;
 
   DenseMatrix RT(nrows, nd);

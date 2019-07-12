@@ -120,7 +120,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
 
   for (int i = 0; i < nc; ++i) {
     if (target_cell_volumes_[i] > 0.0) {
-      double vol = cell_volume(i);
+      double vol = cell_volume(i,false);
       if (vol == target_cell_volumes_[i])
         target_cell_volumes_[i] = 0.0;
     }

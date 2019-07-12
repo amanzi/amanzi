@@ -47,7 +47,7 @@ int MFD3D_BernardiRaugel::H1consistency(
   Ac.Reshape(nrows, nrows);
 
   const AmanziGeometry::Point& xm = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
 
   // convolute tensors for non-zero modes
   std::vector<Tensor> vT, vKT;

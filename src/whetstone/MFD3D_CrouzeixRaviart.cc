@@ -73,7 +73,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyLO_(
 
   // calculate R K R^T / volume
   AmanziGeometry::Point v1(d_), v2(d_);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
   for (int n = 0; n < nfaces; ++n) {
     for (int k = 0; k < d_; k++) v1[k] = R_(n, k);
     v2 = K * v1;
@@ -126,7 +126,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
   int nfaces = faces.extent(0);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
 
   // calculate degrees of freedom
   Polynomial poly(d_, order_), pf(d_ - 1, order_ - 1), pc;
@@ -285,7 +285,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_LO_(
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double vol = mesh_->cell_volume(c);
+  double vol = mesh_->cell_volume(c,false);
 
   // create zero vector polynomial
   uc.Reshape(d_, 1, true);
@@ -393,7 +393,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
   int nfaces = faces.extent(0);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
 
   // calculate stiffness matrix
   Tensor T(d_, 1);
@@ -489,7 +489,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
 
     const DenseVector& v3 = moments->coefs();
     for (int n = 0; n < ndof_c; ++n) {
-      v4(n) = v3(n) * mesh_->cell_volume(c);
+      v4(n) = v3(n) * mesh_->cell_volume(c,false);
     }
 
     for (int n = 0; n < nd - ndof_c; ++n) {
@@ -524,7 +524,7 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
   int nfaces = faces.extent(0);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
 
   // calculate stiffness matrix
   Tensor T(d_, 1);

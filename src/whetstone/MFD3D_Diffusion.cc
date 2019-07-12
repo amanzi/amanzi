@@ -44,7 +44,7 @@ int MFD3D_Diffusion::L2consistencyScaledArea(
   N.Reshape(nfaces, d_);
   Mc.Reshape(nfaces, nfaces);
 
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
 
   AmanziGeometry::Point v1(d_), v2(d_);
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
@@ -96,7 +96,7 @@ int MFD3D_Diffusion::L2consistencyInverseScaledArea(
   Wc.Reshape(nfaces, nfaces);
 
   AmanziGeometry::Point v1(d_);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
 
   Tensor Kt(K);
   Kt.Transpose();
@@ -148,7 +148,7 @@ int MFD3D_Diffusion::H1consistency(
 
   mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
 
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
   AmanziGeometry::Point p(d_), pnext(d_), pprev(d_), v1(d_), v2(d_), v3(d_);
 
   // to calculate matrix R, we use temporary matrix N
@@ -351,7 +351,7 @@ void MFD3D_Diffusion::L2Cell(int c, const std::vector<Polynomial>& vf,
     }
   }
 
-  vc *= -1.0 / mesh_->cell_volume(c);
+  vc *= -1.0 / mesh_->cell_volume(c,false);
 }
 
 
@@ -405,7 +405,7 @@ int MFD3D_Diffusion::L2consistencyInverseDivKScaled(
 
   // populate matrix W_0
   AmanziGeometry::Point v1(d_), v2(d_);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
 
   for (int i = 0; i < nfaces; i++) {
     int f = faces(i);
@@ -658,7 +658,7 @@ int MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M
   }
 
   // add stability term D_ik T1_kl D_il
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
   for (int i = 0; i < nrows; i++) {
     i1 = i / 2;
     k = map[i];

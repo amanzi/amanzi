@@ -243,7 +243,7 @@ void PDE_Accumulation::CalculateEntityVolume_(
     Epetra_MultiVector& vol = *volume.ViewComponent(name); 
 
     for (int c = 0; c != ncells_owned; ++c) {
-      vol[0][c] = mesh_->cell_volume(c); 
+      vol[0][c] = mesh_->cell_volume(c,false); 
     }
 
   } else if (name == "face" && volume.HasComponent("face")) {
@@ -259,7 +259,7 @@ void PDE_Accumulation::CalculateEntityVolume_(
       int nedges = edges.size();
 
       for (int i = 0; i < nedges; i++) {
-        vol[0][edges[i]] += mesh_->cell_volume(c) / nedges; 
+        vol[0][edges[i]] += mesh_->cell_volume(c,false) / nedges; 
       }
     }
     volume.GatherGhostedToMaster(name);
@@ -272,7 +272,7 @@ void PDE_Accumulation::CalculateEntityVolume_(
       mesh_->cell_get_nodes(c, &nodes);
       int nnodes = nodes.size();
 
-      double cellvolume = mesh_->cell_volume(c);
+      double cellvolume = mesh_->cell_volume(c,false);
       std::vector<double> weights(nnodes, 1.0 / nnodes);
 
       if (mesh_->space_dimension() == 2) {

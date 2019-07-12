@@ -183,7 +183,7 @@ TEST(COLUMN_MESH_3D)
 
     double expvolume = fareabase*height;
 
-    double volume = colmesh.cell_volume(j);
+    double volume = colmesh.cell_volume(j,false);
 
     CHECK_CLOSE(expvolume,volume,1.0e-08);
   }
@@ -348,7 +348,7 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
 
     double expvolume = fareabase*height;
 
-    double volume = colmesh.cell_volume(j);
+    double volume = colmesh.cell_volume(j,false);
 
     CHECK_CLOSE(expvolume,volume,1.0e-08);
   }

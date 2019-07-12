@@ -80,7 +80,7 @@ TEST(DG_MAP_DETERMINANT_CELL) {
   std::vector<const char*> list = {"SerendipityPk"};
 
   for (auto name : list) {
-    double fac(0.5), volume = mesh1->cell_volume(cell);
+    double fac(0.5), volume = mesh1->cell_volume(cell,false);
     for (int k = 1; k < 4; ++k) {
       // collect geometric data
       Teuchos::ParameterList plist;

@@ -36,7 +36,7 @@ void Operator_Cell::UpdateRHS(const CompositeVector& source,
     Epetra_MultiVector& rhs_c = *rhs_->ViewComponent("cell", false);
     const Epetra_MultiVector& source_c = *source.ViewComponent("cell", false);
     for (int c = 0; c != ncells_owned; ++c) {
-      rhs_c[0][c] += source_c[0][c] * mesh_->cell_volume(c);
+      rhs_c[0][c] += source_c[0][c] * mesh_->cell_volume(c,false);
     }
   }
 }

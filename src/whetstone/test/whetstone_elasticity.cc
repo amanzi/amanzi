@@ -102,7 +102,7 @@ TEST(ELASTICITY_STIFFNESS_2D) {
     }
 
     double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell);
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell,false);
     for (int i = 0; i < nnodes; i++) {
       for (int j = 0; j < nnodes; j++) {
         vxx += A(i, j) * xx[i] * xx[j];
@@ -164,7 +164,7 @@ TEST(ELASTICITY_STIFFNESS_3D) {
   Point p(d);
 
   double xi, yi, xj;
-  double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell);
+  double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell,false);
   for (int i = 0; i < nnodes; i++) {
     int v = nodes(i);
     mesh->node_get_coordinates(v, &p);

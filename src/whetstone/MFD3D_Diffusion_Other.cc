@@ -87,7 +87,7 @@ double MFD3D_Diffusion::Transmissibility(int f, int c, const Tensor& K)
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixInverseDiagonal(int c, const Tensor& K, DenseMatrix& W)
 {
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
 
   Kokkos::View<Entity_ID*> faces;
   mesh_->cell_get_faces(c, faces);
@@ -162,7 +162,7 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
   // rescale corner weights
   double factor = 0.0;
   for (int n = 0; n < nnodes; n++) factor += cwgt[n];
-  factor = mesh_->cell_volume(c) / factor;
+  factor = mesh_->cell_volume(c,false) / factor;
 
   for (int n = 0; n < nnodes; n++) cwgt[n] *= factor;
 

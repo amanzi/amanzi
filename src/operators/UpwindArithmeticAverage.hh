@@ -102,8 +102,8 @@ void UpwindArithmeticAverage<Model>::Compute(
       c2 = cells[1];
       kc2 = fld_cell[0][c2];
 
-      double v1 = mesh_->cell_volume(c1);
-      double v2 = mesh_->cell_volume(c2);
+      double v1 = mesh_->cell_volume(c1,false);
+      double v2 = mesh_->cell_volume(c2,false);
 
       double tmp = v2 / (v1 + v2);
       upw_face[0][f] = kc1 * tmp + kc2 * (1.0 - tmp); 

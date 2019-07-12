@@ -884,7 +884,7 @@ bool MeshAudit::check_cell_geometry() const
   AmanziMesh::Entity_ID_List bad_cells;
 
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
-    hvol = mesh_->cell_volume(j);
+    hvol = mesh_->cell_volume(j,false);
 
     if (hvol <= 0.0) bad_cells.push_back(j);
   }

@@ -23,7 +23,7 @@ test_segment_regular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
 
   CHECK_EQUAL(4, m->num_entities(CELL, Parallel_type::ALL));
   CHECK_EQUAL(5, m->num_entities(FACE, Parallel_type::ALL));
-  CHECK_EQUAL(0.25, m->cell_volume(0));
+  CHECK_EQUAL(0.25, m->cell_volume(0,false));
   CHECK_EQUAL(1.0, m->face_area(0));
 
   CHECK_EQUAL(1.0, m->face_normal(3)[0]);

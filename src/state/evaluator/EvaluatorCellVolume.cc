@@ -21,7 +21,7 @@ EvaluatorCellVolume::Update_(State &S) {
       int ncells = vec.Mesh()->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED);
       auto& vec_c = *vec.ViewComponent("cell", false);
       for (int c=0; c!=ncells; ++c) {
-        vec_c[0][c] = vec.Mesh()->cell_volume(c);
+        vec_c[0][c] = vec.Mesh()->cell_volume(c,false);
       }
     } else if (comp == "face") {
       int nfaces = vec.Mesh()->num_entities(AmanziMesh::FACE,AmanziMesh::Parallel_type::OWNED);

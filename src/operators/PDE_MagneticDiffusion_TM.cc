@@ -229,7 +229,7 @@ double PDE_MagneticDiffusion_TM::CalculateOhmicHeating(const CompositeVector& E)
     mesh_->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();
 
-    double volume = mesh_->cell_volume(c);
+    double volume = mesh_->cell_volume(c,false);
     double tmp = volume / (*K_)[c](0, 0) / nnodes;
     for (int n = 0; n < nnodes; ++n) {
       int v = nodes[n];

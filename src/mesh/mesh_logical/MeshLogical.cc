@@ -871,7 +871,7 @@ bool viewMeshLogical(const Mesh& m, std::ostream& os) {
 
   os << "cell_centroids, volumes =" << std::endl;
   for (int c=0; c!=m.num_entities(CELL, Parallel_type::OWNED); ++c) {
-    os << m.cell_centroid(c) << " " << m.cell_volume(c) << std::endl;
+    os << m.cell_centroid(c) << " " << m.cell_volume(c,false) << std::endl;
   }
   os << "face_connections, areas =" << std::endl;
   for (int f=0; f!=m.num_entities(FACE, Parallel_type::OWNED); ++f) {

@@ -27,7 +27,7 @@ test_segment_regular(const Teuchos::RCP<const Amanzi::AmanziMesh::Mesh>& m,
   
   CHECK_EQUAL(4, m->num_entities(CELL, Parallel_type::ALL));
   CHECK_EQUAL(5, m->num_entities(FACE, Parallel_type::ALL));
-  CHECK_EQUAL(0.25, m->cell_volume(0));
+  CHECK_EQUAL(0.25, m->cell_volume(0,false));
   CHECK_EQUAL(1.0, m->face_area(0));
 
   CHECK_EQUAL(1.0, m->face_normal(3)[0]);
@@ -146,9 +146,9 @@ test_Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   CHECK_EQUAL(5, branch_faces.size());
 
 
-  CHECK_CLOSE(1.e-4, m->cell_volume(0), 1.e-8);
-  CHECK_CLOSE(1.e-4, m->cell_volume(2), 1.e-8);
-  CHECK_CLOSE(0.75*0.25e-4, m->cell_volume(3), 1.e-8);
+  CHECK_CLOSE(1.e-4, m->cell_volume(0,false), 1.e-8);
+  CHECK_CLOSE(1.e-4, m->cell_volume(2,false), 1.e-8);
+  CHECK_CLOSE(0.75*0.25e-4, m->cell_volume(3,false), 1.e-8);
 
   CHECK_CLOSE(1.e-4, m->face_area(2), 1.e-8);
   CHECK_CLOSE(.25e-4, m->face_area(3), 1.e-8);
@@ -225,7 +225,7 @@ TEST(MESH_LOGICAL_Y_DEFORMED)
   mesh->set_logical_geometry(&cv, &cf_lens, &fa, NULL);
 
   CHECK_CLOSE(1.5e-4, mesh->face_area(0), 1.e-10);
-  CHECK_CLOSE(2.0 * 2.0 * 0.25*1.e-4, mesh->cell_volume(0), 1.e-10);
+  CHECK_CLOSE(2.0 * 2.0 * 0.25*1.e-4, mesh->cell_volume(0,false), 1.e-10);
 }
 
 

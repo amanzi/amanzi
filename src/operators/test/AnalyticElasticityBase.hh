@@ -61,7 +61,7 @@ class AnalyticElasticityBase {
       int nnodes = nodes.size();
 
       for (int i = 0; i < nnodes; i++) {
-        vol_node[0][nodes[i]] += mesh_->cell_volume(c) / nnodes; 
+        vol_node[0][nodes[i]] += mesh_->cell_volume(c,false) / nnodes; 
       }
     }
     vol.GatherGhostedToMaster("node");
@@ -105,7 +105,7 @@ class AnalyticElasticityBase {
 
     for (int c = 0; c < ncells_owned; ++c) {
       const Amanzi::AmanziGeometry::Point& xm = mesh_->cell_centroid(c);
-      double area = mesh_->cell_volume(c);
+      double area = mesh_->cell_volume(c,false);
 
       double pexact = pressure_exact(xm, t);
       double tmp = fabs(p_cell[0][c] - pexact);

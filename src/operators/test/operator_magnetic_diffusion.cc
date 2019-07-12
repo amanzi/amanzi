@@ -219,7 +219,7 @@ void MagneticDiffusion2D(double dt, double tend,
 
     double avgB(0.0), divB(0.0), errB(0.0);
     for (int c = 0; c < ncells_owned; ++c) {
-      double vol = mesh->cell_volume(c);
+      double vol = mesh->cell_volume(c,false);
       const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
       int nfaces = faces.size();
@@ -473,7 +473,7 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
 
     double avgB(0.0), divB(0.0), errB(0.0);
     for (int c = 0; c < ncells_owned; ++c) {
-      double vol = mesh->cell_volume(c);
+      double vol = mesh->cell_volume(c,false);
       const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
       int nfaces = faces.size();
@@ -520,7 +520,7 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
       mfd.L2consistencyInverse(c, Ic, R, W, true);
       R.Multiply(v1, v2, true);
 
-      double vol = mesh->cell_volume(c);
+      double vol = mesh->cell_volume(c,false);
       for (int k = 0; k < 3; ++k) {
         sol_e[k][c] = v2(k) / vol;
       }
