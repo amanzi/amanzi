@@ -101,6 +101,8 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
         sets_[(*r)->id()] = (*r)->inside(parent_mesh->face_centroid(parent_face_));
 
       } else if ((*r)->space_dimension() == 2 && flatten) {
+        if(!cell_geometry_precomputed_)
+          build_cell_centroid(); 
         sets_[(*r)->id()] = (*r)->inside(cell_centroid(0));
       }
     }

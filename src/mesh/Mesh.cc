@@ -323,30 +323,18 @@ Mesh::cell_get_faces_and_dirs(const Entity_ID cellid,
                               Kokkos::View<int*> *face_dirs,
                               const bool ordered) const
 {
-#if AMANZI_MESH_CACHE_VARS != 0
   if (!cell2face_info_cached_) cache_cell_face_info_();
 
   if (ordered)
     cell_get_faces_and_dirs_internal_(cellid, faceids, face_dirs, ordered);
   else {
-    //Kokkos::View<Entity_ID*> faceids_tmp;
     faceids = Kokkos::subview(cell_face_ids_.entries,
       std::make_pair(cell_face_ids_.row_map(cellid),cell_face_ids_.row_map(cellid+1)));
-    //Kokkos::resize(faceids,faceids_tmp.extent(0));
-    //Kokkos::deep_copy(faceids,faceids_tmp); // deep copy
     if (face_dirs) {
-      //Kokkos::View<int*> face_dirs_tmp;
       *face_dirs = Kokkos::subview(cell_face_dirs_.entries,
         std::make_pair(cell_face_dirs_.row_map(cellid),cell_face_dirs_.row_map(cellid+1)));
-      //Kokkos::resize(*face_dirs,face_dirs_tmp.extent(0));
-      //Kokkos::deep_copy(*face_dirs,face_dirs_tmp); // deep copy
     }
   }
-
-#else // Non-cached version
-  cell_get_faces_and_dirs_internal_(cellid, faceids, face_dirs, ordered);
-
-#endif
 }
 
 
@@ -358,7 +346,8 @@ void Mesh::cell_get_faces_and_bisectors(
     const bool ordered) const
 {
   cell_get_faces(cellid, faceids, ordered);
-
+  if(!cell_geometry_precomputed_)
+    build_cell_centroid(); 
   AmanziGeometry::Point cc = cell_centroid(cellid);
   if (bisectors) {
     Kokkos::resize(*bisectors,faceids.extent(0));
@@ -963,24 +952,11 @@ Mesh::edge_length(const Entity_ID edgeid, const bool recompute) const
 
 
 // Centroid of cell
-AmanziGeometry::Point
-Mesh::cell_centroid(const Entity_ID cellid,
-                    const bool recompute) const
+void 
+Mesh::build_cell_centroid() const
 {
-  if (!cell_geometry_precomputed_) {
-    compute_cell_geometric_quantities_();
-    return cell_centroids_(cellid);
-  }
-  else {
-    if (recompute) {
-      double volume;
-      AmanziGeometry::Point centroid(space_dim_);
-      compute_cell_geometry_(cellid, &volume, &centroid);
-      return centroid;
-    }
-    else
-      return cell_centroids_(cellid);
-  }
+  assert(!cell_geometry_precomputed_); 
+  compute_cell_geometric_quantities_();
 }
 
 

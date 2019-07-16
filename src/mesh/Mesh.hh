@@ -504,8 +504,12 @@ class Mesh {
   // formed by connecting the cell center (average of cell nodes), a
   // face center (average of face nodes) and the two nodes of an edge
   // of the face
-  AmanziGeometry::Point cell_centroid(const Entity_ID cellid,
-                                      const bool recompute=false) const;
+  void build_cell_centroid() const;  
+  
+  KOKKOS_INLINE_FUNCTION AmanziGeometry::Point cell_centroid(const Entity_ID cellid) const{
+    assert(cell_geometry_precomputed_); 
+    return cell_centroids_(cellid); 
+  }
 
   // Centroid of face (center of gravity not just the average of node coordinates)
   //
@@ -924,6 +928,9 @@ protected:
   // fast search tools
   mutable bool kdtree_faces_initialized_;
   mutable KDTree kdtree_faces_;
+
+  mutable double a_[1000000];  
+
 };
 
 

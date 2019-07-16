@@ -24,7 +24,10 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
-TEST(MESH_GEOMETRY_PLANAR)
+struct test{};
+
+//TEST(MESH_GEOMETRY_PLANAR)
+TEST_FIXTURE(test,MESH_GEOMETRY_PLANAR)
 {
 
   auto comm = Amanzi::getDefaultComm();
@@ -88,33 +91,60 @@ TEST(MESH_GEOMETRY_PLANAR)
                                        {1.0,0.25},{0.75,0.5},
                                        {1.0,0.75},{0.75,1.0}};
 
-    int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
-    int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::ALL);
-    int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::ALL);
+    const int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
+    const int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::ALL);
+    const int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::ALL);
+ 
+    mesh->build_cell_centroid(); 
+    
+    {
+      Kokkos::View<Amanzi::AmanziGeometry::Point*> exp_cell_centroid_view("ccv",4);
+      exp_cell_centroid_view(0) = {0.25,0.25}; 
+      exp_cell_centroid_view(1) = {0.25,0.75}; 
+      exp_cell_centroid_view(2) = {0.75,0.25}; 
+      exp_cell_centroid_view(3) = {0.75,0.75}; 
+      Kokkos::View<double*> exp_cell_volume_view("cvv",4);
+      exp_cell_volume_view(0) = {0.25};  
+      exp_cell_volume_view(1) = {0.25};  
+      exp_cell_volume_view(2) = {0.25};  
+      exp_cell_volume_view(3) = {0.25};  
 
-    int space_dim_ = 2;
-
-    for (int i = 0; i < ncells; i++) {
-
-      Amanzi::AmanziGeometry::Point centroid = mesh->cell_centroid(i);
-
-      // Search for a cell with the same centroid in the
-      // expected list of centroid
-
-      bool found = false;
-
-      for (int j = 0; j < ncells; j++) {
-        if (fabs(exp_cell_centroid[j][0]-centroid[0]) < 1.0e-10 &&
-            fabs(exp_cell_centroid[j][1]-centroid[1]) < 1.0e-10) {
-
-          found = true;
-          CHECK_EQUAL(exp_cell_volume[j],mesh->cell_volume(i,false));
-          break;
-
+      Amanzi::AmanziMesh::Mesh * m = mesh.get(); 
+      // Perform tests on GPU 
+      Kokkos::View<bool*> result_cv("result cv",ncells); 
+      Kokkos::View<bool*> result_found("result found",1); 
+      Kokkos::parallel_for(ncells,KOKKOS_LAMBDA(const Amanzi::LO& i){
+        Amanzi::AmanziGeometry::Point centroid = m->cell_centroid(i); 
+        for(int j = 0; j < ncells; ++j){
+          if(fabs(exp_cell_centroid_view(j)[0]-centroid[0]) < 1.0e-10&&
+             fabs(exp_cell_centroid_view(j)[1]-centroid[1]) < 1.0e-10){
+            result_found(0) = true; 
+            assert(exp_cell_volume_view(j) == m->cell_volume(i)); 
+            break; 
+          }
         }
-      }
+        assert(result_found(0) == true);
 
-      CHECK_EQUAL(found,true);
+#if 0 
+
+        Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces; 
+        Amanzi::AmanziGeometry::Point normal_sum(2), normal(2); 
+        m->cell_get_faces(i,cfaces); 
+        normal_sum.set(0.0); 
+        for(int j = 0 ; j < cfaces.extent(0); ++j){
+          normal = m->face_normal(cfaces(j),false,i); 
+          normal_sum += normal; 
+        }
+
+        double val = L22(normal_sum);
+        assert(val-0.0 < 1.0e-20);  
+#endif 
+      });
+
+    }
+    
+    int space_dim_ = 2;
+    for (int i = 0; i < ncells; i++) {
 
       Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces;
       Amanzi::AmanziGeometry::Point normal_sum(2), normal(2);
@@ -158,22 +188,6 @@ TEST(MESH_GEOMETRY_PLANAR)
             int dir;
             Amanzi::AmanziGeometry::Point normal_wrt_cell =
               mesh->face_normal(i,false,cellids(k),&dir);
-
-            //            Amanzi::AmanziMesh::Entity_ID_List cellfaces;
-            //            std::vector<int> cellfacedirs;
-            //            mesh->cell_get_faces_and_dirs(cellids[k],&cellfaces,&cellfacedirs);
-            //
-            //            bool found2 = false;
-            //            int dir = 1;
-            //            for (int m = 0; m < cellfaces.size(); m++) {
-            //              if (cellfaces[m] == i) {
-            //                found2 = true;
-            //                dir = cellfacedirs[m];
-            //                break;
-            //              }
-            //            }
-            //
-            //            CHECK_EQUAL(found2,true);
 
             Amanzi::AmanziGeometry::Point normal1(normal);
             normal1 *= dir;
@@ -279,6 +293,8 @@ TEST(MESH_GEOMETRY_SURFACE)
     int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::ALL);
 
     int space_dim_ = 3;
+
+    mesh->build_cell_centroid();
 
     for (int i = 0; i < ncells; i++) {
 
@@ -514,6 +530,7 @@ TEST(MESH_GEOMETRY_SOLID)
     int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::ALL);
 
     int space_dim_ = 3;
+    mesh->build_cell_centroid(); 
 
     for (int i = 0; i < ncells; i++) {
 
