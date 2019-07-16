@@ -229,6 +229,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
       try {
         // create the mesh from the file
 	mesh = meshfactory.create(file);
+        mesh->PrintMeshStatistics();
 	    
       } catch (const std::exception& e) {
 	std::cerr << rank << ": error: " << e.what() << std::endl;
@@ -248,6 +249,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     try {
       // create the mesh by internal generation
       mesh = meshfactory.create(gen_params);
+      mesh->PrintMeshStatistics();
 
     } catch (const std::exception& e) {
       std::cerr << rank << ": error: " << e.what() << std::endl;
@@ -355,6 +357,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     std::vector<std::string> names = extract_plist.get<Teuchos::Array<std::string> >("regions").toVector();
 
     auto mesh_fracture = meshfactory.create(mesh, names, Amanzi::AmanziMesh::FACE);
+    mesh_fracture->PrintMeshStatistics();
     S->RegisterMesh("fracture", mesh_fracture);
 
     {
