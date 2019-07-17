@@ -2549,10 +2549,6 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
 
       int ncell = num_entities(CELL, Parallel_type::ALL);
 
-      // Build the cache if necessary 
-      if(!cell_geometry_precomputed_)
-        build_cell_centroid(); 
-
       for (int icell = 0; icell < ncell; icell++)
         if (region->inside(cell_centroid(icell)))
           MSet_Add(mset,cell_id_to_handle[icell]);

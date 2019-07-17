@@ -83,6 +83,7 @@ MeshFactory::create(const std::string& filename,
     Exceptions::amanzi_throw(e);
   }
 
+  Teuchos::RCP<Mesh> mesh = Teuchos::null; 
   for (auto p : preference_) {
     int nproc = comm_->getSize();
 
@@ -90,7 +91,8 @@ MeshFactory::create(const std::string& filename,
     if (p == Framework::MSTK) {
       if ((nproc == 1 && fmt == FileFormat::EXODUS_II) ||
           (nproc > 1 && (fmt == FileFormat::EXODUS_II || fmt == FileFormat::NEMESIS))) {
-        return Teuchos::rcp(new Mesh_MSTK(filename, comm_, gm_, plist_, request_faces, request_edges));
+        mesh = Teuchos::rcp(new Mesh_MSTK(filename, comm_, gm_, plist_, request_faces, request_edges));
+        break; 
       }
     }
 #endif
@@ -98,11 +100,17 @@ MeshFactory::create(const std::string& filename,
 #ifdef HAVE_MOAB_MESH
     if (p == Framework::MOAB) {
       if (fmt == FileFormat::MOAB_HDF5 || (nproc == 1 && fmt == FileFormat::EXODUS_II)) {
-        return Teuchos::rcp(new Mesh_MOAB(filename, comm_, gm_, plist_, request_faces, request_edges));
+        mesh = Teuchos::rcp(new Mesh_MOAB(filename, comm_, gm_, plist_, request_faces, request_edges));
+        break; 
       }
     }
 #endif
+  }
 
+  if(mesh != Teuchos::null){ 
+    // Initialize the cache after constructing the mesh 
+    mesh->init_cache(); 
+    return mesh; 
   }
 
   Message m("No construct was found in preferences that is available and can read this file/file format.");
@@ -139,18 +147,28 @@ MeshFactory::create(const double x0, const double y0, const double z0,
 {
   int nproc = comm_->getSize();
 
+  Teuchos::RCP<Mesh> mesh = Teuchos::null; 
+
   for (auto p : preference_) {
     if (p == Framework::SIMPLE && nproc == 1) {
-      return Teuchos::rcp(new Mesh_simple(x0,y0,z0,x1,y1,z1,nx,ny,nz,
+      mesh = Teuchos::rcp(new Mesh_simple(x0,y0,z0,x1,y1,z1,nx,ny,nz,
               comm_, gm_, plist_, request_faces, request_edges));
+      break; 
     }
 
 #ifdef HAVE_MSTK_MESH
     if (p == Framework::MSTK) {
-      return Teuchos::rcp(new Mesh_MSTK(x0,y0,z0,x1,y1,z1,nx,ny,nz,
+      mesh = Teuchos::rcp(new Mesh_MSTK(x0,y0,z0,x1,y1,z1,nx,ny,nz,
               comm_, gm_, plist_, request_faces, request_edges));
+      break; 
     }
 #endif
+  }
+
+  if(mesh != Teuchos::null){ 
+    // Initialize the cache after constructing the mesh 
+    mesh->init_cache(); 
+    return mesh; 
   }
 
   Exceptions::amanzi_throw(Message("No construct was found in preferences that is available and can generate in 3D."));
@@ -184,13 +202,22 @@ MeshFactory::create(const double x0, const double y0,
 {
   int nproc = comm_->getSize();
 
+  Teuchos::RCP<Mesh> mesh = Teuchos::null; 
+
   for (auto p : preference_) {
 #ifdef HAVE_MSTK_MESH
     if (p == Framework::MSTK) {
-      return Teuchos::rcp(new Mesh_MSTK(x0,y0,x1,y1,nx,ny,
+      mesh = Teuchos::rcp(new Mesh_MSTK(x0,y0,x1,y1,nx,ny,
               comm_, gm_, plist_, request_faces, request_edges));
+      break; 
     }
 #endif
+  }
+
+  if(mesh != Teuchos::null){ 
+    // Initialize the cache after constructing the mesh 
+    mesh->init_cache(); 
+    return mesh; 
   }
 
   Exceptions::amanzi_throw(Message("No construct was found in preferences that is available and can generate in 2D."));
@@ -286,6 +313,7 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
     comm = inmesh->get_comm();
   }
 
+  Teuchos::RCP<Mesh> mesh = Teuchos::null; 
   // extract
   for (auto p : preference_) {
 #ifdef HAVE_MSTK_MESH
@@ -294,6 +322,12 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
               comm, gm, plist_, request_faces, request_edges));
     }
 #endif
+  }
+
+  if(mesh != Teuchos::null){ 
+    // Initialize the cache after constructing the mesh 
+    mesh->init_cache(); 
+    return mesh; 
   }
 
   Exceptions::amanzi_throw(Message("No construct was found in preferences that is available and can extract."));

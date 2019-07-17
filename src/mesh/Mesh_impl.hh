@@ -9,9 +9,8 @@
 
 // Downward Adjacencies
 //---------------------
-inline
 void
-Mesh::cell_get_faces(const Entity_ID cellid, Kokkos::View<Entity_ID*>& faceids,
+KOKKOS_INLINE_FUNCTION Mesh::cell_get_faces(const Entity_ID cellid, Kokkos::View<Entity_ID*>& faceids,
                      const bool ordered) const
 {
   cell_get_faces_and_dirs(cellid, faceids, NULL, ordered);

@@ -94,8 +94,6 @@ TEST_FIXTURE(test,MESH_GEOMETRY_PLANAR)
     const int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
     const int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::ALL);
     const int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::ALL);
- 
-    mesh->build_cell_centroid(); 
     
     {
       Kokkos::View<Amanzi::AmanziGeometry::Point*> exp_cell_centroid_view("ccv",4);
@@ -125,8 +123,6 @@ TEST_FIXTURE(test,MESH_GEOMETRY_PLANAR)
         }
         assert(result_found(0) == true);
 
-#if 0 
-
         Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces; 
         Amanzi::AmanziGeometry::Point normal_sum(2), normal(2); 
         m->cell_get_faces(i,cfaces); 
@@ -138,7 +134,6 @@ TEST_FIXTURE(test,MESH_GEOMETRY_PLANAR)
 
         double val = L22(normal_sum);
         assert(val-0.0 < 1.0e-20);  
-#endif 
       });
 
     }
@@ -294,7 +289,6 @@ TEST(MESH_GEOMETRY_SURFACE)
 
     int space_dim_ = 3;
 
-    mesh->build_cell_centroid();
 
     for (int i = 0; i < ncells; i++) {
 
@@ -403,7 +397,7 @@ TEST(MESH_GEOMETRY_SURFACE)
 
 }
 
-
+#if 0 
 
 
 TEST(MESH_GEOMETRY_SOLID)
@@ -530,7 +524,6 @@ TEST(MESH_GEOMETRY_SOLID)
     int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::ALL);
 
     int space_dim_ = 3;
-    mesh->build_cell_centroid(); 
 
     for (int i = 0; i < ncells; i++) {
 
@@ -678,3 +671,5 @@ TEST(MESH_GEOMETRY_SOLID)
 
   } // for each framework i
 }
+
+#endif

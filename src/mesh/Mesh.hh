@@ -179,6 +179,12 @@ class Mesh {
   virtual
   bool valid_edges() const { return false; }
 
+  //
+  // Initialization of the mesh cache 
+  // --------------------------------
+  // Calls all the function to initialize the mesh cache 
+  // this is called in the meshfactory once the mesh is created 
+  void init_cache();
 
   //
   // Entity meta-data
@@ -244,7 +250,7 @@ class Mesh {
   // send-receive protocols and mesh query operators are designed, a side
   // effect of this is that master and ghost entities will have the same
   // hierarchical topology.
-  void cell_get_faces(const Entity_ID cellid,
+  KOKKOS_INLINE_FUNCTION void cell_get_faces(const Entity_ID cellid,
                       Kokkos::View<Entity_ID*>& faceids,
                       const bool ordered=false) const;
 
@@ -260,10 +266,20 @@ class Mesh {
   // and -1 if face normal points into cell
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
-  void cell_get_faces_and_dirs(const Entity_ID cellid,
-                               Kokkos::View<Entity_ID*>& faceids,
-                               Kokkos::View<int*>* face_dirs,
-                               const bool ordered=false) const;
+  KOKKOS_INLINE_FUNCTION void cell_get_faces_and_dirs(const Entity_ID cellid,
+                              Kokkos::View<Entity_ID*>& faceids,
+                              Kokkos::View<int*> *face_dirs,
+                              const bool ordered = false) const
+  { 
+    assert(ordered==false); 
+    assert(cell2face_info_cached_); 
+    faceids = Kokkos::subview(cell_face_ids_.entries,
+      Kokkos::make_pair(cell_face_ids_.row_map(cellid),cell_face_ids_.row_map(cellid+1)));
+    if (face_dirs) {
+      *face_dirs = Kokkos::subview(cell_face_dirs_.entries,
+      Kokkos::make_pair(cell_face_dirs_.row_map(cellid),cell_face_dirs_.row_map(cellid+1)));
+    }
+  }
 
   // Get the bisectors, i.e. vectors from cell centroid to face centroids.
   virtual
@@ -525,31 +541,47 @@ class Mesh {
   AmanziGeometry::Point edge_centroid(const Entity_ID edgeid) const;
 
 
-  // Normal to face
-  //
-  // The vector is normalized and then weighted by the area of the face
-  //
-  // If recompute is TRUE, then the normal is recalculated using current
-  // face coordinates but not stored. (If the recomputed normal must be
-  // stored, then call recompute_geometric_quantities).
-  //
-  // If cellid is not specified, the normal is the natural normal of
-  // the face. This means that at boundaries, the normal may point in
-  // or out of the domain depending on how the face is defined. On the
-  // other hand, if cellid is specified, the normal is the outward
-  // normal with respect to the cell. In planar and solid meshes, the
-  // normal with respect to the cell on one side of the face is just
-  // the negative of the normal with respect to the cell on the other
-  // side. In general surfaces meshes, this will not be true at C1
-  // discontinuities
-  //
-  // if cellid is specified, then orientation returns the direction of
-  // the natural normal of the face with respect to the cell (1 is
-  // pointing out of the cell and -1 pointing in)
-  AmanziGeometry::Point face_normal(const Entity_ID faceid,
-                                    const bool recompute=false,
-                                    const Entity_ID cellid=-1,
-                                    int *orientation=NULL) const;
+  KOKKOS_INLINE_FUNCTION 
+  AmanziGeometry::Point
+  face_normal(const Entity_ID faceid,
+                    const bool recompute =false,
+                    const Entity_ID cellid = -1,
+                    int *orientation = NULL) const
+  {
+    assert(recompute == false); 
+    assert(faces_requested_);
+
+    Kokkos::View<AmanziGeometry::Point*> fnormals, fnormals_new;
+    fnormals = Kokkos::subview(face_normals_.entries,
+      Kokkos::make_pair(face_normals_.row_map(faceid),face_normals_.row_map(faceid+1)));
+
+    assert(fnormals.extent(0) > 0);
+
+    if (cellid == -1) {
+      // Return the natural normal. This is the normal with respect to
+      // the first cell, appropriately adjusted according to whether the
+      // face is pointing into the cell (-ve cell id) or out
+
+      int c = face_cell_ids_.entries(face_cell_ids_.row_map(faceid)+0);
+      return c<0 ? -fnormals(0) : fnormals(0);
+    } else {
+      // Find the index of 'cellid' in list of cells connected to face
+
+      int dir;
+      int irefcell;
+      int nfc = face_cell_ids_.row_map(faceid+1)-face_cell_ids_.row_map(faceid);
+      for (irefcell = 0; irefcell < nfc; irefcell++) {
+        int c = face_cell_ids_.entries(face_cell_ids_.row_map(faceid)+irefcell);
+        if (c == cellid || ~c == cellid) {
+          dir = c<0 ? -1 : 1;
+          break;
+        }
+      }
+      assert(irefcell < nfc);
+      if (orientation) *orientation = dir;  // if orientation was requested
+      return fnormals(irefcell);
+    }
+  }
 
   // Edge vector
   //
