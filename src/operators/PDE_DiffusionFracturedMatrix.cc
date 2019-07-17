@@ -74,6 +74,8 @@ void PDE_DiffusionFracturedMatrix::UpdateMatrices(
   Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
   Epetra_MultiVector& rhs_face = *global_op_->rhs()->ViewComponent("face", true);
 
+  global_op_->rhs()->PutScalarGhosted(0.0);
+
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
@@ -132,6 +134,8 @@ void PDE_DiffusionFracturedMatrix::UpdateMatrices(
       }
     }
   }
+
+  global_op_->rhs()->GatherGhostedToMaster("face", Add);
 }
 
 
