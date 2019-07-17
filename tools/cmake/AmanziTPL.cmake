@@ -40,12 +40,21 @@ if (NOT ${AMANZI_TPLS_VERSION} STREQUAL ${AMANZI_TPLS_VERSION_REQUIRED})
   message(WARNING "TPL version does not match the required version.")
 endif()
 
+# List of directories for step 1 in CMAKe's search path for command find_library(). 
+# By default it is empty. We set it to non-standard location of MPI. 
+# Probably, it would be appropriate to add also the path to TPL libraties
+set(CMAKE_LIBRARY_PATH ${MPI_PREFIX}/lib)
+
 
 # Amanzi CMake modules see <root source>/tools/cmake
 include(CheckMPISourceCompiles)
 include(TrilinosMacros)
 include(PrintVariable)
 include(AddImportedLibrary)
+
+message(STATUS "CMAKE information")
+message(STATUS "\tCMAKE_SYSTEM_LIBRARY_PATH = ${CMAKE_SYSTEM_LIBRARY_PATH}")
+message(STATUS "\tCMAKE_LIBRARY_PATH = ${CMAKE_LIBRARY_PATH}")
 
 
 ##############################################################################

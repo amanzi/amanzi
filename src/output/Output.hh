@@ -35,10 +35,10 @@ class Output {
   virtual void FinalizeCycle() = 0;
 
   // write data to file
-  virtual void WriteVector(const Epetra_Vector& vec,
-			   const std::string& name) const = 0;
-  virtual void WriteMultiVector(const Epetra_MultiVector& vec,
-				const std::vector<std::string>& names) const = 0;
+  virtual void WriteVector(const Epetra_Vector& vec, const std::string& name,
+                           const AmanziMesh::Entity_kind& kind) const = 0;
+  virtual void WriteMultiVector(const Epetra_MultiVector& vec, const std::vector<std::string>& names,
+                                const AmanziMesh::Entity_kind& kind) const = 0;
 
   // can we template this?
   virtual void WriteAttribute(const double& val, const std::string& name) const = 0;
@@ -47,8 +47,7 @@ class Output {
 
   // read data from file
   virtual void ReadVector(Epetra_Vector& vec, const std::string& name) const = 0;
-  virtual void ReadMultiVector(Epetra_MultiVector& vec,
-			       const std::vector<std::string>& names) const = 0;
+  virtual void ReadMultiVector(Epetra_MultiVector& vec, const std::vector<std::string>& names) const = 0;
 
   virtual void ReadAttribute(double& val, const std::string& name) const = 0;
   virtual void ReadAttribute(int& val, const std::string& name) const = 0;

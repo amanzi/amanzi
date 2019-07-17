@@ -124,8 +124,8 @@ void Flow2D_SeepageTest(std::string filename, bool deform)
   iolist.get<std::string>("file name base", "plot");
   OutputXDMF io(iolist, mesh, true, false);
   io.InitializeCycle(ti_specs.T1, 1);
-  io.WriteVector(*p(0), "pressure");
-  io.WriteVector(*ws(0), "saturation");
+  io.WriteVector(*p(0), "pressure", AmanziMesh::CELL);
+  io.WriteVector(*ws(0), "saturation", AmanziMesh::CELL);
   io.FinalizeCycle();
 
   /*

@@ -293,7 +293,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   p2c = *p1->ViewComponent("cell");
 
   io->InitializeCycle(0.0, 0);
-  io->WriteVector(*p2c(0), "solution");
+  io->WriteVector(*p2c(0), "solution", AmanziMesh::CELL);
   io->FinalizeCycle();
 
   // initial mass
@@ -349,15 +349,15 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
     // visualize solution on mesh1
     // io = Teuchos::rcp(new OutputXDMF(iolist, mesh1, true, false));
     io->InitializeCycle(t, iloop + 1);
-    io->WriteVector(*p2c(0), "solution");
+    io->WriteVector(*p2c(0), "solution", AmanziMesh::CELL);
     if (order > 0) {
-      io->WriteVector(*p2c(1), "gradx");
-      io->WriteVector(*p2c(2), "grady");
+      io->WriteVector(*p2c(1), "gradx", AmanziMesh::CELL);
+      io->WriteVector(*p2c(2), "grady", AmanziMesh::CELL);
     }
     if (order > 1) {
-      io->WriteVector(*p2c(3), "hesxx");
-      io->WriteVector(*p2c(4), "hesxy");
-      io->WriteVector(*p2c(5), "hesyy");
+      io->WriteVector(*p2c(3), "hesxx", AmanziMesh::CELL);
+      io->WriteVector(*p2c(4), "hesxy", AmanziMesh::CELL);
+      io->WriteVector(*p2c(5), "hesyy", AmanziMesh::CELL);
     }
     io->FinalizeCycle();
   }
