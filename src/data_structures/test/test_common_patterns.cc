@@ -93,6 +93,45 @@ SUITE(COMMON_MESH_OPERATIONS) {
     }
 
   }
+
+
+
+  // TEST_FIXTURE(TestHarness, CALC_TRANSMISSIBILITY) {
+  //   // Computes transmissibility through flat parallelism
+  //   auto trans = CreateVec("face", Entity_kind::FACE, 1);
+  //   {
+  //     auto trans_view = trans->ViewComponent<AmanziDefaultDevice>("face",0,false);
+
+  //     typedef Kokkos::RangePolicy<AmanziDefaultDevice, LO> Policy_type;
+  //     Kokkos::parallel_for(Policy_type(0, trans_view.extent(0)),
+  //                          KOKKOS_LAMBDA(const LO& f) {
+  //                            // face info
+  //                            const auto& fc = mesh->face_centroid(f);
+  //                            const auto& f_normal = mesh->face_normal(f);
+  //                            double area = mesh->face_area(f);
+
+  //                            // neighbor cells
+  //                            Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cellids;
+  //                            mesh->face_get_cells(f, Parallel_type::ALL, cellids);
+
+  //                            // this could be a kokkos reduction...
+  //                            for (int i=0; i!=cellids.extent(0); ++i) {
+  //                              const auto& cc = mesh->cell_centroid(cellids(i));
+  //                              auto bisector = fc - cc;
+  //                              double s = area / norm(bisector);
+
+  //                              // cancellation here, but not in the real
+  //                              // usage, so please don't remove the
+  //                              // cancellation...
+  //                              double perm = (bisector * f_normal) *  s;
+  //                              double dxn = bisector * f_normal;
+  //                              trans_view(f) += fabs(dxn / perm);
+  //                            }
+  //                            trans_view(f) = 1.0 / trans_view(f);
+  //                          });
+  //   }
+  // }
+  
 }
     
     
