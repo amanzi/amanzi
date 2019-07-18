@@ -457,7 +457,11 @@ CompositeVector::PutScalarGhosted(double scalar) {
     Epetra_MultiVector& vec = *ghostvec_->ViewComponent(names_[lcv_comp]);
     for (int j = 0; j != vec.NumVectors(); ++j) {
       for (int i = size_owned; i != size_ghosted; ++i) {
-        vec[j][i] = scalar;
+        int first = vec.Map().FirstPointInElement(i);
+        int ndofs = vec.Map().ElementSize(i);
+        for (int k = 0; k < ndofs; ++k) {
+          vec[j][first + k] = scalar;
+        }
       }
     }
   }
