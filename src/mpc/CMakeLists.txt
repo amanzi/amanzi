@@ -150,6 +150,7 @@ if (BUILD_TESTS)
     # Test: mpc driver for coupled matrix-fracture flow and transport
     add_amanzi_test(mpc_driver_coupled_flow mpc_driver_coupled_flow
                     KIND      int
+                    NPROCS    2
                     SOURCE    test/Main.cc test/mpc_driver_coupled_flow.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
