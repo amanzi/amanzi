@@ -99,6 +99,7 @@ class Darcy_PK : public Flow_PK {
 
   // access methods
   Teuchos::RCP<Operators::Operator> op() { return op_; }
+  Teuchos::RCP<Operators::PDE_Diffusion> op_diff() { return op_diff_; }
 
  private:
   void InitializeFields_();

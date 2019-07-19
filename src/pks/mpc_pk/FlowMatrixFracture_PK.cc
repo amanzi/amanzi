@@ -206,6 +206,9 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_tree_->SetOperatorBlock(0, 1, op_coupling01->global_operator());
   op_tree_->SetOperatorBlock(1, 0, op_coupling10->global_operator());
 
+  // create a global problem
+  pk_matrix->op_diff()->ApplyBCs(true, true, true);
+
   op_tree_->SymbolicAssembleMatrix();
   op_tree_->AssembleMatrix();
   matrix_assembled_ = true;
