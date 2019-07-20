@@ -32,7 +32,7 @@
 
 
 /* *********************************************************************
-* Two tests with different time step controllers.
+* Two tests with different time step controllers. 
 ********************************************************************* */
 void RunTestDarcyWell(std::string controller, bool fit) {
   using namespace Teuchos;
@@ -155,6 +155,7 @@ void RunTestDarcyWell(std::string controller, bool fit) {
       if (fit) {
         const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
         if (fabs(xc[0]) < 0.05 && fabs(xc[1] + 2.475) < 0.05) {
+          // use quadratic approximation in time. This may capture bugs in the well model.
           double quad = -0.00068556 * (n - 4) * (n - 9) + 0.021082 * n * (n - 9) - 0.032341 * n * (n - 4);
           CHECK_CLOSE(p[0][c], quad, fabs(quad) * 0.1);
         }

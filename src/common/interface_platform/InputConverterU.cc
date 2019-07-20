@@ -14,8 +14,6 @@
 #include <fstream>
 
 // TPLs
-#include "boost/algorithm/string.hpp"
-
 #include "Teuchos_ParameterList.hpp"
 
 #include "InputConverterU.hh"
