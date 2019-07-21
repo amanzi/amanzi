@@ -8,7 +8,7 @@
 
   Authors: Daniil Svyatskiy
 
-  PK for coupling of Flow_PK with Transport_PK and Chemestry_PK
+  PK for coupling of Flow_PK with Transport_PK and Chemistry_PK
 */
 
 #include "FlowReactiveTransport_PK.hh"
