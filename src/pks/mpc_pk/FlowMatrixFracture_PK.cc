@@ -217,9 +217,11 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   // VerificationTV ver(op_tree_);
   // ver.CheckMatrixSPD();
 
-  // stationary solve is moddled with large dt
+  // stationary solve is modelled with large dt. To pick the correct
+  // boundary conditions, dt is negative. This assumes that we are at
+  // the beginning of simulation.
   bool fail;
-  double dt(1e+98), dt_solver;
+  double dt(-1e+98), dt_solver;
   fail = time_stepper_->TimeStep(dt, dt_solver, solution_);
 
   if (fail) Exceptions::amanzi_throw("Solver for coupled Darcy flow did not converge.");
