@@ -67,7 +67,7 @@ We neglect transverse dispersion, so that the dispersion tensor is diagonal:
   0      & D_{yy}
   \end{pmatrix},
   \qquad
-  D_{xx} = \alpha_L v_x, \quad \D_{yy} = 0.
+  D_{xx} = \alpha_L v_x, \quad D_{yy} = 0.
   
 
 Problem Specification
