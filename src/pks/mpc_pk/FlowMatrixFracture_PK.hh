@@ -49,11 +49,7 @@ class FlowMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
                           Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) ;
   
   // updates the preconditioner
-  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {
-    UpdatePreconditioner(t, up, h, true);
-  }
-
-  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h, bool assemble);
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);
   
   // // preconditioner application
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
@@ -64,7 +60,7 @@ class FlowMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   // virtual void CalculateDiagnostics() {};
   Teuchos::RCP<const Teuchos::ParameterList> linear_operator_list_;
   Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
-  Teuchos::RCP<const Teuchos::ParameterList> ti_list_;
+  Teuchos::RCP<Teuchos::ParameterList> ti_list_;
   
  private:
   const Teuchos::RCP<Teuchos::ParameterList>& glist_;
@@ -72,7 +68,6 @@ class FlowMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
 
   Teuchos::RCP<Operators::TreeOperator> op_tree_;
   Teuchos::RCP<TreeVector> op_tree_rhs_;
-  bool matrix_assembled_, dump_;
 
   // Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> matrix_bc;
   // Teuchos::RCP<IndependentVariableFieldEvaluatorFromFunction> fracture_src;
