@@ -266,20 +266,10 @@ class Mesh {
   // and -1 if face normal points into cell
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
-  KOKKOS_INLINE_FUNCTION void cell_get_faces_and_dirs(const Entity_ID cellid,
+  KOKKOS_FUNCTION void cell_get_faces_and_dirs(const Entity_ID cellid,
                               Kokkos::View<Entity_ID*>& faceids,
                               Kokkos::View<int*> *face_dirs,
-                              const bool ordered = false) const
-  { 
-    assert(ordered==false); 
-    assert(cell2face_info_cached_); 
-    faceids = Kokkos::subview(cell_face_ids_.entries,
-      Kokkos::make_pair(cell_face_ids_.row_map(cellid),cell_face_ids_.row_map(cellid+1)));
-    if (face_dirs) {
-      *face_dirs = Kokkos::subview(cell_face_dirs_.entries,
-      Kokkos::make_pair(cell_face_dirs_.row_map(cellid),cell_face_dirs_.row_map(cellid+1)));
-    }
-  }
+                              const bool ordered = false) const;
 
   // Get the bisectors, i.e. vectors from cell centroid to face centroids.
   virtual
@@ -396,9 +386,34 @@ class Mesh {
   // The cells are returned in no particular order. Also, the order of cells
   // is not guaranteed to be the same for corresponding faces on different
   // processors
-  void face_get_cells(const Entity_ID faceid,
-                      const Parallel_type ptype,
-                      Kokkos::View<Entity_ID*>& cellids) const;
+  KOKKOS_FUNCTION void face_get_cells(const Entity_ID faceid, const Parallel_type ptype,
+                            Kokkos::View<Entity_ID*>& cellids) const
+  {
+    int ncellids = 0;
+    int n = face_cell_ptype_.row_map(faceid+1)-face_cell_ptype_.row_map(faceid);
+
+    for (int i = 0; i < n; i++) {
+      Parallel_type cell_ptype = face_cell_ptype_.entries(face_cell_ptype_.row_map(faceid)+i);
+      if (cell_ptype == Parallel_type::PTYPE_UNKNOWN) continue;
+      int c = face_cell_ids_.entries(face_cell_ids_.row_map(faceid)+i);
+      if (c<0) c = ~c;  // strip dir info by taking 1s complement
+      if (ptype == Parallel_type::ALL || ptype == cell_ptype) ++ncellids;
+    }
+
+    Kokkos::View<Entity_ID*> cellids_tmp("cellids_tmp",ncellids); 
+    //Kokkos::resize(cellids,ncellids);
+    ncellids = 0;
+
+    for (int i = 0; i < n; i++) {
+      Parallel_type cell_ptype = face_cell_ptype_.entries(face_cell_ptype_.row_map(faceid)+i);
+      if (cell_ptype == Parallel_type::PTYPE_UNKNOWN) continue;
+      int c = face_cell_ids_.entries(face_cell_ids_.row_map(faceid)+i);
+      if (c<0) c = ~c;  // strip dir info by taking 1s complement
+
+      if (ptype == Parallel_type::ALL || ptype == cell_ptype)
+        cellids(ncellids++) = c;
+    }
+  }
 
 
   // Same level adjacencies
@@ -507,7 +522,9 @@ class Mesh {
   }
 
   // Area/length of face
-  double face_area(const Entity_ID faceid, const bool recompute=false) const;
+  KOKKOS_INLINE_FUNCTION double face_area(const Entity_ID faceid, const bool recompute=false) const{
+     return face_areas_(faceid);
+  }
 
   // Length of edge
   double edge_length(const Entity_ID edgeid, const bool recompute=false) const;
@@ -534,8 +551,11 @@ class Mesh {
   // decomposition of the face. Each triangular facet is formed by the
   // connecting the face center (average of face nodes) to the two
   // nodes of an edge of the face
-  AmanziGeometry::Point face_centroid(const Entity_ID faceid,
-                                      const bool recompute=false) const;
+  KOKKOS_INLINE_FUNCTION AmanziGeometry::Point face_centroid(const Entity_ID faceid,
+                                      const bool recompute=false) const
+  {
+    return face_centroids_(faceid);
+  }
 
   // Centroid of edge
   AmanziGeometry::Point edge_centroid(const Entity_ID edgeid) const;
@@ -936,7 +956,7 @@ protected:
   // cellid can be 0
   mutable Kokkos::Crs<Entity_ID,Kokkos::DefaultExecutionSpace> face_cell_ids_;
 
-  mutable Kokkos::Crs<Parallel_type,Kokkos::DefaultExecutionSpace> face_cell_ptype_;
+  mutable Kokkos::Crs<Entity_ID,Kokkos::DefaultExecutionSpace> face_cell_ptype_;
   mutable Kokkos::Crs<Entity_ID,Kokkos::DefaultExecutionSpace> cell_edge_ids_;
   mutable Kokkos::Crs<int,Kokkos::DefaultExecutionSpace> cell_2D_edge_dirs_;
   mutable Kokkos::Crs<Entity_ID,Kokkos::DefaultExecutionSpace> face_edge_ids_;
@@ -959,9 +979,7 @@ protected:
 
   // fast search tools
   mutable bool kdtree_faces_initialized_;
-  mutable KDTree kdtree_faces_;
-
-  mutable double a_[1000000];  
+  mutable KDTree kdtree_faces_; 
 
 };
 

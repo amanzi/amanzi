@@ -96,7 +96,8 @@ enum class Parallel_type {
   PTYPE_UNKNOWN = 0,
   OWNED = 1,  // Owned by this processor
   GHOST = 2,  // Owned by another processor
-  ALL = 3     // OWNED + GHOST 
+  ALL = 3,     // OWNED + GHOST 
+  PARALLEL_TYPE_SIZE = 4 // Keep this element last for the size of enum 
 };
 
 // Check if Parallel_type is valid

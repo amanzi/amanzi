@@ -326,7 +326,7 @@ Mesh::init_cache(){
   cell_geometry_precomputed_ = true; 
   assert(!face_geometry_precomputed_);
   compute_face_geometric_quantities_();
-  face_geometry_precomputed_ = true; 
+  face_geometry_precomputed_ = true;
 }
 
 // Get the bisectors, i.e. vectors from cell centroid to face centroids.
@@ -347,70 +347,6 @@ void Mesh::cell_get_faces_and_bisectors(
   }
   return;
 }
-
-
-// Cells connected to a face - cache the results the first time it
-// is called and then return the cached results subsequently
-void Mesh::face_get_cells(const Entity_ID faceid, const Parallel_type ptype,
-                          Kokkos::View<Entity_ID*>& cellids) const
-{
-#if AMANZI_MESH_CACHE_VARS != 0
-  if (!face2cell_info_cached_) cache_cell_face_info_();
-
-  int ncellids = 0;
-  int n = face_cell_ptype_.row_map(faceid+1)-face_cell_ptype_.row_map(faceid);
-
-  for (int i = 0; i < n; i++) {
-    Parallel_type cell_ptype = face_cell_ptype_.entries(face_cell_ptype_.row_map(faceid)+i);
-    if (cell_ptype == Parallel_type::PTYPE_UNKNOWN) continue;
-    int c = face_cell_ids_.entries(face_cell_ids_.row_map(faceid)+i);
-    if (std::signbit(c)) c = ~c;  // strip dir info by taking 1s complement
-    if (ptype == Parallel_type::ALL || ptype == cell_ptype) ++ncellids;
-  }
-
-  Kokkos::resize(cellids,ncellids);
-  ncellids = 0;
-
-  for (int i = 0; i < n; i++) {
-    Parallel_type cell_ptype = face_cell_ptype_.entries(face_cell_ptype_.row_map(faceid)+i);
-    if (cell_ptype == Parallel_type::PTYPE_UNKNOWN) continue;
-    int c = face_cell_ids_.entries(face_cell_ids_.row_map(faceid)+i);
-    if (std::signbit(c)) c = ~c;  // strip dir info by taking 1s complement
-
-    if (ptype == Parallel_type::ALL || ptype == cell_ptype)
-      cellids(ncellids++) = c;
-  }
-
-#else  // Non-cached version
-  Entity_ID_List fcells;
-  face_get_cells_internal_(faceid, Parallel_type::ALL, &fcells);
-
-  cellids->clear();
-  int n = face_cell_ptype_[faceid].size();
-
-  switch (ptype) {
-    case Parallel_type::ALL:
-      for (int i = 0; i < n; i++)
-        if (entity_get_ptype(CELL,fcells[i]) != PTYPE_UNKNOWN)
-          cellids->push_back(fcells[i]);
-      break;
-    case Parallel_type::OWNED:
-      for (int i = 0; i < n; i++)
-        if (entity_get_ptype(CELL,fcells[i]) == Parallel_type::OWNED)
-          cellids->push_back(fcells[i]);
-      break;
-    case Parallel_type::GHOST:
-      for (int i = 0; i < n; i++)
-        if (entity_get_ptype(CELL,fcells[i]) == Parallel_type::GHOST)
-          cellids->push_back(fcells[i]);
-      break;
-    default:
-      break;
-  }
-
-#endif
-}
-
 
 void
 Mesh::face_get_edges_and_dirs(const Entity_ID faceid,
@@ -518,9 +454,6 @@ Mesh::cell_2D_get_edges_and_dirs(const Entity_ID cellid,
     std::make_pair(cell_edge_ids_.row_map(cellid),cell_edge_ids_.row_map(cellid+1)));
   *edgedirs = Kokkos::subview(cell_2D_edge_dirs_.entries,
     std::make_pair(cell_2D_edge_dirs_.row_map(cellid),cell_2D_edge_dirs_.row_map(cellid+1)));
-
-  //*edgeids = cell_edge_ids_[cellid]; // copy operation
-  //*edgedirs = cell_2D_edge_dirs_[cellid];
 
 #else  // Non-cached version
   cell_2D_get_edges_and_dirs_internal_(cellid, edgeids, edgedirs);
@@ -711,6 +644,20 @@ Mesh::compute_cell_geometry_(const Entity_ID cellid, double *volume,
   return 0;
 }
 
+KOKKOS_FUNCTION void Mesh::cell_get_faces_and_dirs(const Entity_ID cellid,
+                              Kokkos::View<Entity_ID*>& faceids,
+                              Kokkos::View<int*> *face_dirs,
+                              const bool ordered) const
+{ 
+  assert(ordered==false); 
+  assert(cell2face_info_cached_); 
+  faceids = Kokkos::subview(cell_face_ids_.entries,
+    Kokkos::make_pair(cell_face_ids_.row_map(cellid),cell_face_ids_.row_map(cellid+1)));
+  if (face_dirs) {
+    *face_dirs = Kokkos::subview(cell_face_dirs_.entries,
+    Kokkos::make_pair(cell_face_dirs_.row_map(cellid),cell_face_dirs_.row_map(cellid+1)));
+  }
+}
 
 int
 Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
@@ -894,30 +841,6 @@ Mesh::cell_volume(const Entity_ID cellid, const bool recompute) const
   }
 }
 
-
-// Area/length of face
-double Mesh::face_area(const Entity_ID faceid, const bool recompute) const
-{
-  AMANZI_ASSERT(faces_requested_);
-
-  if (!face_geometry_precomputed_) {
-    compute_face_geometric_quantities_();
-    return face_areas_(faceid);
-  }
-  else {
-    if (recompute) {
-      double area;
-      AmanziGeometry::Point centroid(space_dim_);
-      Kokkos::View<AmanziGeometry::Point*> normals;
-      compute_face_geometry_(faceid, &area, &centroid, normals);
-      return area;
-    }
-    else
-      return face_areas_(faceid);
-  }
-}
-
-
 // Length of an edge
 double
 Mesh::edge_length(const Entity_ID edgeid, const bool recompute) const
@@ -939,30 +862,6 @@ Mesh::edge_length(const Entity_ID edgeid, const bool recompute) const
       return edge_lengths_(edgeid);
   }
 }
-
-// Centroid of face
-AmanziGeometry::Point
-Mesh::face_centroid(const Entity_ID faceid, const bool recompute) const
-{
-  AMANZI_ASSERT(faces_requested_);
-
-  if (!face_geometry_precomputed_) {
-    compute_face_geometric_quantities_();
-    return face_centroids_(faceid);
-  }
-  else {
-    if (recompute) {
-      double area;
-      AmanziGeometry::Point centroid(space_dim_);
-      Kokkos::View<AmanziGeometry::Point*> normals;
-      compute_face_geometry_(faceid, &area, &centroid, normals);
-      return centroid;
-    }
-    else
-      return face_centroids_(faceid);
-  }
-}
-
 
 // Centroid of edge
 AmanziGeometry::Point
