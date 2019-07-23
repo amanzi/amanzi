@@ -399,7 +399,6 @@ class Mesh {
   KOKKOS_INLINE_FUNCTION void face_get_cells(const Entity_ID faceid, const Parallel_type ptype,
                             Kokkos::View<Entity_ID*>& cellids) const
   {
-    printf("face get cells. face_cell_ptype size: %d \n",face_cell_ptype_.row_map.extent(0)); 
     int ncellids = 0;
     int csr_start = face_cell_ptype_.row_map(faceid);
     int csr_end = face_cell_ptype_.row_map(faceid+1);
@@ -424,10 +423,12 @@ class Mesh {
         }
       }
     }else if (ptype == Parallel_type::PTYPE_UNKNOWN){
+      assert(false); 
       printf("Searching for ptype_unknown\n");
       return; 
     }else{
       printf("Real search\n"); 
+      assert(false); 
       bool done = false;
       int i = csr_start;  
       while(!done && i < csr_end){
@@ -439,7 +440,7 @@ class Mesh {
     }
     // Generte the subview 
     cellids = Kokkos::subview(face_cell_ids_.entries,
-    Kokkos::make_pair(face_cell_ids_.row_map(faceid)+start,face_cell_ids_.row_map(faceid)+stop));
+    Kokkos::make_pair(start,stop));
 
     // Revert eventual cells 
     for(int i = 0 ; i < cellids.extent(0); ++i){
@@ -618,7 +619,7 @@ class Mesh {
       // the first cell, appropriately adjusted according to whether the
       // face is pointing into the cell (-ve cell id) or out
 
-      int c = face_cell_ids_.entries(face_cell_ids_.row_map(faceid)+0);
+      int c = face_cell_ids_.entries(face_cell_ids_.row_map(faceid));
       return c<0 ? -fnormals(0) : fnormals(0);
     } else {
       // Find the index of 'cellid' in list of cells connected to face

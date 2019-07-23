@@ -132,7 +132,7 @@ TEST_FIXTURE(test,MESH_GEOMETRY_PLANAR)
     exp_face_centroid_view(10) = {1.0,0.25}; 
     exp_face_centroid_view(11) = {0.75,1.0}; 
 
-    int space_dim_ = 2;
+    const int space_dim_ = 2;
 
     Amanzi::AmanziMesh::Mesh * m = mesh.get(); 
     
@@ -153,8 +153,6 @@ TEST_FIXTURE(test,MESH_GEOMETRY_PLANAR)
       }
       assert(result_found(0) == true);
 
-
-
       Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces; 
       Amanzi::AmanziGeometry::Point normal_sum(2), normal(2); 
       m->cell_get_faces(i,cfaces); 
@@ -166,14 +164,15 @@ TEST_FIXTURE(test,MESH_GEOMETRY_PLANAR)
 
       double val = L22(normal_sum);
       assert(val-0.0 < 1.0e-20);  
+    });
 
+    Kokkos::parallel_for(nfaces,KOKKOS_LAMBDA(const Amanzi::LO& i){
+      Amanzi::AmanziGeometry::Point centroid = m->face_centroid(i); 
       bool found = false;
 
-#if 0
       for (int j = 0; j < nfaces; j++) {
         if (fabs(exp_face_centroid_view(j)[0]-centroid[0]) < 1.0e-10 &&
             fabs(exp_face_centroid_view(j)[1]-centroid[1]) < 1.0e-10) {
-
           found = true;
 
           assert(exp_face_area_view[j] == m->face_area(i));
@@ -189,12 +188,13 @@ TEST_FIXTURE(test,MESH_GEOMETRY_PLANAR)
             Amanzi::AmanziGeometry::Point normal_wrt_cell =
               m->face_normal(i,false,cellids(k),&dir);
 
-
             Amanzi::AmanziGeometry::Point normal1(normal);
             normal1 *= dir;
 
-            for(int dim = 0 ; dim < space_dim_; ++dim)
-              assert(&(normal1[0])==&(normal_wrt_cell[0])); 
+            for(int dim = 0 ; dim < space_dim_; ++dim){
+              printf("n: %.4f nw: %.4f dim: %d \n",normal1[dim],normal_wrt_cell[dim],dim); 
+              assert(normal1[dim]==normal_wrt_cell[dim]);
+            } 
 
             Amanzi::AmanziGeometry::Point cellcentroid = m->cell_centroid(cellids(k));
             Amanzi::AmanziGeometry::Point facecentroid = m->face_centroid(i);
@@ -213,7 +213,6 @@ TEST_FIXTURE(test,MESH_GEOMETRY_PLANAR)
         }
       }
       assert(found==true);
-      #endif 
     });
     
     for (int i = 0; i < ncells; i++) {

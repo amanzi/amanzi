@@ -166,12 +166,6 @@ Mesh::cache_cell_face_info_() const
 
   // Sort the cells based on parallel type 
   // Basic select sort for now \TODO improve the sort 
-  std::cout<<"Before sort: "<<std::endl;
-  for(int c = 0; c < face_cell_ptype_.row_map(face_cell_ptype_.row_map.extent(0)-1); ++c){
-    std::cout<<static_cast<int>(face_cell_ptype_.entries(c))<<"("<<static_cast<int>(face_cell_ids_.entries(c)) <<") ";
-  }
-  std::cout<<std::endl;
-
   for (int f = 0; f < nfaces; f++) {
     int begin = face_cell_ids_.row_map(f);
     int end = face_cell_ids_.row_map(f+1);
@@ -189,13 +183,6 @@ Mesh::cache_cell_face_info_() const
     }
     assert(pos <= end); 
   }
-
-  std::cout<<"After sort: "<<std::endl;
-  for(int c = 0; c < face_cell_ptype_.row_map(face_cell_ptype_.row_map.extent(0)-1); ++c){
-    std::cout<<static_cast<int>(face_cell_ptype_.entries(c))<<"("<<static_cast<int>(face_cell_ids_.entries(c)) <<") ";
-  }
-  std::cout<<std::endl;
-
   cell2face_info_cached_ = true;
   face2cell_info_cached_ = true;
   faces_requested_ = true;
@@ -530,9 +517,6 @@ Mesh::compute_face_geometric_quantities_() const
   Kokkos::resize(face_areas_,nfaces);
   Kokkos::resize(face_centroids_,nfaces);
 
-  std::cout<<"Generating normals informations"<<std::endl;
-  std::cout<<"nfaces: "<<nfaces<<std::endl;
-
   // Temporary views
   Kokkos::resize(face_normals_.row_map,nfaces+1);
   face_normals_.row_map(0) = 0;
@@ -547,8 +531,6 @@ Mesh::compute_face_geometric_quantities_() const
     // of the face points out of cell0 and into cell1. If one of these
     // cells do not exist, then the normal is the null vector.
     compute_face_geometry_(i, &area, &centroid, normals);
-    std::cout<<"face "<<i<<" normals: "<<normals.extent(0)<<std::endl;
-
     face_areas_(i) = area;
     face_centroids_(i) = centroid;
 
@@ -685,7 +667,6 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
                              AmanziGeometry::Point *centroid,
                              Kokkos::View<AmanziGeometry::Point*>& normals) const
 {
-  std::cout<<"Compute face geometry"<<std::endl;
   Kokkos::View<AmanziGeometry::Point*> fcoords;
   //normals->clear();
 
@@ -727,7 +708,6 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
   }
   else if (manifold_dim_ == 2) {
     if (space_dim_ == 2) {   // 2D mesh
-      std::cout<<"2D"<<std::endl;
 
       face_get_coordinates(faceid,fcoords);
 
@@ -740,7 +720,6 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
 
       Kokkos::View<Entity_ID*> cellids;
       face_get_cells(faceid, Parallel_type::ALL, cellids);
-      std::cout<<"face_get_cells: "<<cellids.extent(0)<<std::endl;
       AMANZI_ASSERT(cellids.extent(0) <= 2);
 
       Kokkos::resize(normals,cellids.extent(0));
@@ -752,11 +731,8 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
 
         cell_get_faces_and_dirs(cellids(i), cellfaceids, &cellfacedirs);
 
-        std::cout<<"normals: "<<cellids.extent(0)<<" cellfaceids: "<<cellfaceids.extent(0)<<std::endl;
-
         bool found = false;
         for (int j = 0; j < cellfaceids.extent(0); j++) {
-          std::cout<<faceid<<" == "<<cellfaceids(j)<<std::endl;
           if (cellfaceids(j) == faceid) {
             found = true;
             dir = cellfacedirs(j);
