@@ -266,10 +266,20 @@ class Mesh {
   // and -1 if face normal points into cell
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
-  KOKKOS_FUNCTION void cell_get_faces_and_dirs(const Entity_ID cellid,
+  KOKKOS_INLINE_FUNCTION void cell_get_faces_and_dirs(const Entity_ID cellid,
                               Kokkos::View<Entity_ID*>& faceids,
                               Kokkos::View<int*> *face_dirs,
-                              const bool ordered = false) const;
+                              const bool ordered = false) const
+  {
+    assert(ordered==false); 
+    assert(cell2face_info_cached_); 
+    faceids = Kokkos::subview(cell_face_ids_.entries,
+      Kokkos::make_pair(cell_face_ids_.row_map(cellid),cell_face_ids_.row_map(cellid+1)));
+    if (face_dirs) {
+      *face_dirs = Kokkos::subview(cell_face_dirs_.entries,
+      Kokkos::make_pair(cell_face_dirs_.row_map(cellid),cell_face_dirs_.row_map(cellid+1)));
+    }
+  }
 
   // Get the bisectors, i.e. vectors from cell centroid to face centroids.
   virtual
@@ -386,34 +396,61 @@ class Mesh {
   // The cells are returned in no particular order. Also, the order of cells
   // is not guaranteed to be the same for corresponding faces on different
   // processors
-  KOKKOS_FUNCTION void face_get_cells(const Entity_ID faceid, const Parallel_type ptype,
+  KOKKOS_INLINE_FUNCTION void face_get_cells(const Entity_ID faceid, const Parallel_type ptype,
                             Kokkos::View<Entity_ID*>& cellids) const
   {
+    printf("face get cells. face_cell_ptype size: %d \n",face_cell_ptype_.row_map.extent(0)); 
     int ncellids = 0;
-    int n = face_cell_ptype_.row_map(faceid+1)-face_cell_ptype_.row_map(faceid);
+    int csr_start = face_cell_ptype_.row_map(faceid);
+    int csr_end = face_cell_ptype_.row_map(faceid+1);
 
-    for (int i = 0; i < n; i++) {
-      Parallel_type cell_ptype = face_cell_ptype_.entries(face_cell_ptype_.row_map(faceid)+i);
-      if (cell_ptype == Parallel_type::PTYPE_UNKNOWN) continue;
-      int c = face_cell_ids_.entries(face_cell_ids_.row_map(faceid)+i);
-      if (c<0) c = ~c;  // strip dir info by taking 1s complement
-      if (ptype == Parallel_type::ALL || ptype == cell_ptype) ++ncellids;
+    // Create a subview 
+    int start = -1; 
+    int stop = -1;  
+    // Return all cells except the UNKNOWN
+    if(ptype == Parallel_type::ALL){
+      printf("Get all \n");
+      bool done = false; 
+      int i = csr_start; 
+      stop = csr_end; 
+      while(!done && i < csr_end){
+        Parallel_type cell_ptype = face_cell_ptype_.entries(i);
+        if (cell_ptype == Parallel_type::PTYPE_UNKNOWN) {
+          ++i; 
+          continue;
+        }else{
+          start = i;
+          done = true;
+        }
+      }
+    }else if (ptype == Parallel_type::PTYPE_UNKNOWN){
+      printf("Searching for ptype_unknown\n");
+      return; 
+    }else{
+      printf("Real search\n"); 
+      bool done = false;
+      int i = csr_start;  
+      while(!done && i < csr_end){
+        Parallel_type cell_ptype = face_cell_ptype_.entries(i);
+        if (cell_ptype == Parallel_type::PTYPE_UNKNOWN){ ++i; continue; }
+        if(cell_ptype == ptype && start == -1){ start = i; }
+        if(cell_ptype != ptype && start != -1){ stop = i;  }
+      }
     }
+    // Generte the subview 
+    cellids = Kokkos::subview(face_cell_ids_.entries,
+    Kokkos::make_pair(face_cell_ids_.row_map(faceid)+start,face_cell_ids_.row_map(faceid)+stop));
 
-    Kokkos::View<Entity_ID*> cellids_tmp("cellids_tmp",ncellids); 
-    //Kokkos::resize(cellids,ncellids);
-    ncellids = 0;
-
-    for (int i = 0; i < n; i++) {
-      Parallel_type cell_ptype = face_cell_ptype_.entries(face_cell_ptype_.row_map(faceid)+i);
-      if (cell_ptype == Parallel_type::PTYPE_UNKNOWN) continue;
-      int c = face_cell_ids_.entries(face_cell_ids_.row_map(faceid)+i);
-      if (c<0) c = ~c;  // strip dir info by taking 1s complement
-
-      if (ptype == Parallel_type::ALL || ptype == cell_ptype)
-        cellids(ncellids++) = c;
-    }
+    // Revert eventual cells 
+    for(int i = 0 ; i < cellids.extent(0); ++i){
+      if(cellids(i) < 0) 
+        cellids(i) = ~cellids(i); 
+      printf("%d ",cellids(i)); 
+    } 
+    printf("\n");
+    printf("[%d,%d] in [%d,%d]\n",start,stop,csr_start,csr_end); 
   }
+
 
 
   // Same level adjacencies
@@ -560,14 +597,13 @@ class Mesh {
   // Centroid of edge
   AmanziGeometry::Point edge_centroid(const Entity_ID edgeid) const;
 
-
-  KOKKOS_INLINE_FUNCTION 
-  AmanziGeometry::Point
-  face_normal(const Entity_ID faceid,
+  KOKKOS_INLINE_FUNCTION AmanziGeometry::Point face_normal(
+                    const Entity_ID faceid,
                     const bool recompute =false,
                     const Entity_ID cellid = -1,
                     int *orientation = NULL) const
   {
+    assert(face_geometry_precomputed_);
     assert(recompute == false); 
     assert(faces_requested_);
 
@@ -602,6 +638,7 @@ class Mesh {
       return fnormals(irefcell);
     }
   }
+
 
   // Edge vector
   //
@@ -956,7 +993,7 @@ protected:
   // cellid can be 0
   mutable Kokkos::Crs<Entity_ID,Kokkos::DefaultExecutionSpace> face_cell_ids_;
 
-  mutable Kokkos::Crs<Entity_ID,Kokkos::DefaultExecutionSpace> face_cell_ptype_;
+  mutable Kokkos::Crs<Parallel_type,Kokkos::DefaultExecutionSpace> face_cell_ptype_;
   mutable Kokkos::Crs<Entity_ID,Kokkos::DefaultExecutionSpace> cell_edge_ids_;
   mutable Kokkos::Crs<int,Kokkos::DefaultExecutionSpace> cell_2D_edge_dirs_;
   mutable Kokkos::Crs<Entity_ID,Kokkos::DefaultExecutionSpace> face_edge_ids_;

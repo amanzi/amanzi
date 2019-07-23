@@ -92,7 +92,7 @@ std::string entity_kind_string(Entity_kind kind)
 }
 
 // Parallel status of entity 
-enum class Parallel_type {
+enum class Parallel_type: int {
   PTYPE_UNKNOWN = 0,
   OWNED = 1,  // Owned by this processor
   GHOST = 2,  // Owned by another processor
