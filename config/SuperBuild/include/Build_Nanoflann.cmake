@@ -22,8 +22,9 @@ ExternalProject_Add(${Nanoflann_BUILD_TARGET}
                     STAMP_DIR ${Nanoflann_stamp_dir}       # Timestamp and log directory
                     # -- Download and URL definitions
                     DOWNLOAD_DIR  ${TPL_DOWNLOAD_DIR}      
-                    URL           ${Nanoflann_URL}         # URL may be a web site OR a local file
-                    URL_MD5       ${Nanoflanno_MD5_SUM}    # md5sum of the archive file
+                    URL           ${Nanoflann_URL}          # URL may be a web site OR a local file
+                    URL_MD5       ${Nanoflann_MD5_SUM}      # md5sum of the archive file
+                    DOWNLOAD_NAME ${Nanoflann_SAVEAS_FILE}  # file name to store (if not end of URL)
                     # -- Configure
                     SOURCE_DIR    ${Nanoflann_source_dir}  # Source directory
                     CMAKE_ARGS   -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
