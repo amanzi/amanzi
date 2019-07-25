@@ -65,10 +65,12 @@ PETEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     double hf_ground = HeatFluxDensity(air_temp_inter[0][c], air_temp[0][c]);
 
     double s1 = vp_slope / (vp_slope + ps_const);
-    double sw_rad =11.63/24 * swr[0][c];
+    // old -- double sw_rad =11.63/24 * swr[0][c];
+    double sw_rad = 2.064 * swr[0][c];
     double s2 = sw_rad / 23.88 - hf_ground;
 
-    res[0][c] = 0.001* pt_alpha_ * (1./lh_vap) * s1 * s2; // convert mm to m
+    //    res[0][c] = 0.001* pt_alpha_ * (1./lh_vap) * s1 * s2 / 86400.; // convert mm to m, and per day to per second
+    res[0][c] = 0.24* pt_alpha_ * (1./lh_vap) * s1 * s2 / 86400.; // convert mm to m, and per day to per second
   }
 
 }
@@ -77,16 +79,16 @@ double
 PETEvaluator::LatentHeatVaporization(double temp) 
 {
   // convert temperature to Fahrenheit
-  double temp_c = 1.8 * (temp - 273.15) + 32;
-  return 597.3 - (0.5653 * temp_c);
+  double temp_f = 1.8 * (temp - 273.15) + 32;
+  return 597.3 - (0.5653 * temp_f);
 }
 
 double  
 PETEvaluator::PsychrometricConstant(double lh_vap, double elev) 
 {
   // convert elevation [m] to elevation [ft]
-  double elev_c = elev * 3.281;
-  return 1.6286 * (101.3 - (0.003215 * elev_c)) / lh_vap;
+  double elev_ft = elev * 3.281;
+  return 1.6286 * (101.3 - (0.003215 * elev_ft)) / lh_vap;
 }
 
 double
