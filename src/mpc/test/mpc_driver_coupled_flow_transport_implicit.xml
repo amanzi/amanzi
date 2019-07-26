@@ -624,7 +624,6 @@
 
     
     <ParameterList name="transport matrix">
-      <Parameter name="PK type" type="string" value="transport"/>
       <Parameter name="domain name" type="string" value="domain"/>      
       <Parameter name="cfl" type="double" value="0.5"/>   
       <Parameter name="spatial discretization order" type="int" value="1"/>   
@@ -687,7 +686,6 @@
     </ParameterList>      
       
     <ParameterList name="transport fracture">
-      <Parameter name="PK type" type="string" value="transport"/>
       <Parameter name="domain name" type="string" value="fracture"/>      
       <Parameter name="cfl" type="double" value="0.5"/>   
       <Parameter name="spatial discretization order" type="int" value="1"/>   

@@ -132,9 +132,9 @@ set(transport_inc_files
   TransportSourceFunction_Alquimia.hh
   TransportDefs.hh
   Transport_PK.hh
-  Transport_Implicit_PK.hh)
+  TransportImplicit_PK.hh)
 
-set(transport_src_files Transport_PK.cc Transport_Implicit_PK.cc Transport_TI.cc 
+set(transport_src_files Transport_PK.cc TransportImplicit_PK.cc Transport_TI.cc 
                         Transport_VandV.cc Transport_Initialize.cc 
                         Transport_Dispersion.cc Transport_HenryLaw.cc
                         MDM_Isotropic.cc MDM_Bear.cc MDM_BurnettFrind.cc MDM_LichtnerKelkarRobinson.cc

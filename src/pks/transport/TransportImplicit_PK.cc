@@ -40,7 +40,7 @@
 
 // amanzi::Transport
 #include "MultiscaleTransportPorosityFactory.hh"
-#include "Transport_Implicit_PK.hh"
+#include "TransportImplicit_PK.hh"
 #include "TransportBoundaryFunction_Alquimia.hh"
 #include "TransportDomainFunction.hh"
 #include "TransportSourceFunction_Alquimia.hh"
@@ -51,32 +51,30 @@ namespace Transport {
 /* ******************************************************************
 * New constructor compatible with new MPC framework.
 ****************************************************************** */
-Transport_Implicit_PK::Transport_Implicit_PK(Teuchos::ParameterList& pk_tree,
+TransportImplicit_PK::TransportImplicit_PK(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<Teuchos::ParameterList>& glist,
                            const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<TreeVector>& soln) :
   Transport_PK(pk_tree, glist, S, soln)
 {
-
 }
 
-void Transport_Implicit_PK::Initialize(const Teuchos::Ptr<State>& S)  {
 
+void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
+{
   Transport_PK::Initialize(S);
 
   Teuchos::ParameterList& oplist = tp_list_->sublist("operators")
                                             .sublist("advection operator")
                                             .sublist("matrix");
 
-  
-  op_matrix_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(oplist, mesh_));
+  op_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(oplist, mesh_));
+  op_ = op_adv_->global_operator();
 
   Teuchos::RCP<const CompositeVector> flux = S->GetFieldData(darcy_flux_key_);
-  op_matrix_adv_ -> Setup(*flux);
-  op_matrix_adv_ -> UpdateMatrices(flux.ptr());
+  op_adv_->Setup(*flux);
+  op_adv_->UpdateMatrices(flux.ptr());
   
-  op_ = op_matrix_adv_ -> global_operator();
-
   op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_));
   acc_term_ = Teuchos::rcp(new CompositeVector(*(S->GetFieldData(tcc_key_))));
 
@@ -102,8 +100,6 @@ void Transport_Implicit_PK::Initialize(const Teuchos::Ptr<State>& S)  {
   // std::string name = ti_list_->get<std::string>("preconditioner");
   // Teuchos::ParameterList pc_list = preconditioner_list_->sublist(name);
   // op_->InitializePreconditioner(pc_list);
-
-
 }
 
 }

@@ -10,13 +10,13 @@
 */
 
 #include "Transport_PK.hh"
-#include "Transport_Implicit_PK.hh"
+#include "TransportImplicit_PK.hh"
 
 namespace Amanzi {
 namespace Transport {
 
 RegisteredPKFactory<Transport_PK> Transport_PK::reg_("transport");
-RegisteredPKFactory<Transport_Implicit_PK> Transport_Implicit_PK::reg_("transport implicit");  
+RegisteredPKFactory<TransportImplicit_PK> TransportImplicit_PK::reg_("transport implicit");  
 
 }  // namespace Transport
 }  // namespace Amanzi
