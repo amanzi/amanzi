@@ -1503,34 +1503,34 @@ void Transport_PK::AdvanceSecondOrderUpwindRKn(double dt_cycle)
 {
   dt_ = dt_cycle;  // overwrite the maximum stable transport step
 
-  S_->GetFieldData(tcc_key_)->ScatterMasterToGhosted("cell");
-  Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
-  Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
+  // S_->GetFieldData(tcc_key_)->ScatterMasterToGhosted("cell");
+  // Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
+  // Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
 
-  // define time integration method
-  auto ti_method = Explicit_TI::forward_euler;
-  if (temporal_disc_order == 2) {
-    ti_method = Explicit_TI::heun_euler;
-  } else if (temporal_disc_order == 3) {
-    ti_method = Explicit_TI::tvd_3rd_order;
-  } else if (temporal_disc_order == 4) {
-    ti_method = Explicit_TI::runge_kutta_4th_order;
-  }
+  // // define time integration method
+  // auto ti_method = Explicit_TI::forward_euler;
+  // if (temporal_disc_order == 2) {
+  //   ti_method = Explicit_TI::heun_euler;
+  // } else if (temporal_disc_order == 3) {
+  //   ti_method = Explicit_TI::tvd_3rd_order;
+  // } else if (temporal_disc_order == 4) {
+  //   ti_method = Explicit_TI::runge_kutta_4th_order;
+  // }
 
-  // We interpolate ws using dt which becomes local time.
-  double T = 0.0; 
-  // We advect only aqueous components.
-  int ncomponents = num_aqueous;
+  // // We interpolate ws using dt which becomes local time.
+  // double T = 0.0; 
+  // // We advect only aqueous components.
+  // int ncomponents = num_aqueous;
 
-  for (int i = 0; i < ncomponents; i++) {
-    current_component_ = i;  // it is needed in BJ called inside RK:fun
+  // for (int i = 0; i < ncomponents; i++) {
+  //   current_component_ = i;  // it is needed in BJ called inside RK:fun
 
-    Epetra_Vector*& component_prev = tcc_prev(i);
-    Epetra_Vector*& component_next = tcc_next(i);
+  //   Epetra_Vector*& component_prev = tcc_prev(i);
+  //   Epetra_Vector*& component_next = tcc_next(i);
 
-    Explicit_TI::RK<Epetra_Vector> TVD_RK(*this, ti_method, *component_prev);
-    TVD_RK.TimeStep(T, dt_, *component_prev, *component_next);
-  }
+  //   Explicit_TI::RK<Epetra_Vector> TVD_RK(*this, ti_method, *component_prev);
+  //   TVD_RK.TimeStep(T, dt_, *component_prev, *component_next);
+  // }
 }
 
 

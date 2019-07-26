@@ -40,20 +40,23 @@ using namespace Amanzi::AmanziGeometry;
   
   // setup a piecewice linear solution with a jump
 
-  std::string xmlInFileName = "test/mpc_driver_benchmark_regular_0.xml";
+
+  //  std::string xmlInFileName = "test/mpc_driver_benchmark_regular_0.xml";
+  std::string xmlInFileName = "mpc_driver_benchmark_regular.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
   
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, &comm));
   std::string meshfile = plist->sublist("mesh").sublist("unstructured").sublist("read mesh file").get<std::string>("file");
+  
   // create mesh
   MeshFactory factory(&comm);
   factory.preference(FrameworkPreference({Framework::MSTK}));
-
   //Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory("test/regular_fracture_ref2.exo", gm);
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory(meshfile, gm);
-  
+
+
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
   
