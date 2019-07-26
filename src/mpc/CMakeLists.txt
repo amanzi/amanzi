@@ -140,7 +140,7 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/mpc_driver_thermal_richards.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # Test: mpc-new driver richards reactive transport
+    # Test: mpc driver for flow and reactive transport
     add_amanzi_test(mpc_driver_flow_reactive_transport mpc_driver_flow_reactive_transport
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_driver_frt.cc
@@ -158,6 +158,11 @@ if (BUILD_TESTS)
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_driver_coupled_flow_transport.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                  
+
+    add_amanzi_test(mpc_driver_coupled_flow_transport_implicit mpc_driver_coupled_flow_transport_implicit
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_driver_coupled_flow_transport_implicit.cc
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: mpc driver for coupled matrix-fracture flow and transport: benchmarks
     add_amanzi_test(mpc_driver_benchmark_single mpc_driver_benchmark_single
