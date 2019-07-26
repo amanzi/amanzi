@@ -27,17 +27,6 @@
 
 namespace Amanzi {
 
-namespace Transport {
-class TransportImplicit_PK : public Transport_PK {
- public:
-  Teuchos::RCP<Operators::Operator> op() { return op_; }
-  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_adv() { return op_adv_; }
- private:
-  Teuchos::RCP<Operators::Operator> op_;
-  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_adv_;
-};
-}
-
 class TransportMatrixFractureImplicit_PK : public PK_MPCStrong<PK_BDF> {
  public:
   TransportMatrixFractureImplicit_PK(Teuchos::ParameterList& pk_tree,

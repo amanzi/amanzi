@@ -17,7 +17,7 @@
 #include "Op_Diagonal.hh"
 #include "PDE_CouplingFlux.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
-#include "Transport_PK.hh"
+#include "Transport_Implicit_PK.hh"
 #include "TreeOperator.hh"
 
 #include "TransportMatrixFractureImplicit_PK.hh"
@@ -64,8 +64,8 @@ void TransportMatrixFractureImplicit_PK::Setup(const Teuchos::Ptr<State>& S)
   PK_MPCStrong::Setup(S);
 
   // diagonal blocks in tree operator are the Transport Implicit PKs
-  auto pk_matrix = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[0]);
-  auto pk_fracture = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[1]);
+  auto pk_matrix = Teuchos::rcp_dynamic_cast<Transport::Transport_Implicit_PK>(sub_pks_[0]);
+  auto pk_fracture = Teuchos::rcp_dynamic_cast<Transport::Transport_Implicit_PK>(sub_pks_[1]);
 
   auto tvs = Teuchos::rcp(new TreeVectorSpace(solution_->Map()));
   op_tree_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
@@ -177,8 +177,8 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
 {
   double dt = t_new - t_old;
 
-  auto pk_matrix = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[0]);
-  auto pk_fracture = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[1]);
+  auto pk_matrix = Teuchos::rcp_dynamic_cast<Transport::Transport_Implicit_PK>(sub_pks_[0]);
+  auto pk_fracture = Teuchos::rcp_dynamic_cast<Transport::Transport_Implicit_PK>(sub_pks_[1]);
 
   // update coupling terms
   int np = Teuchos::rcp_dynamic_cast<Operators::Op_Diagonal>(op_coupling00_->local_op())->row_inds().size();

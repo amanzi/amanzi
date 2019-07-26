@@ -39,7 +39,7 @@
 namespace Amanzi {
 namespace Transport {
 
-typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
+// typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
 class Transport_Implicit_PK : public Transport_PK {
   public:
@@ -48,15 +48,10 @@ class Transport_Implicit_PK : public Transport_PK {
                  const Teuchos::RCP<State>& S,
                  const Teuchos::RCP<TreeVector>& soln);
 
-    Transport_Implicit_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                 Teuchos::RCP<State> S,
-                 const std::string& pk_list_name,
-                 std::vector<std::string>& component_names);
-
     ~Transport_Implicit_PK();
 
   virtual void Initialize(const Teuchos::Ptr<State>& S);  
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) { return true; }
   
   // Forbidden.
   Transport_Implicit_PK(const Transport_Implicit_PK&);
