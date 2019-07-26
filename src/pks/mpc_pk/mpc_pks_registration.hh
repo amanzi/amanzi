@@ -6,7 +6,7 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
- FLowReactiveTransport_PK registration
+  Registration of MPC PKs.
 */
 
 #ifndef DISABLE_PHYSICS
@@ -15,8 +15,9 @@
 #include "FlowReactiveTransport_PK.hh"
 #endif
 
-#include "TransportMatrixFracture_PK.hh"
 #include "ReactiveTransport_PK.hh"
+#include "TransportMatrixFracture_PK.hh"
+#include "TransportMatrixFractureImplicit_PK.hh"
 
 namespace Amanzi {
 
@@ -26,8 +27,10 @@ RegisteredPKFactory<FlowReactiveTransport_PK> FlowReactiveTransport_PK::reg_("fl
 RegisteredPKFactory<FlowMatrixFracture_PK> FlowMatrixFracture_PK::reg_("darcy matrix fracture");
 #endif
 
-RegisteredPKFactory<TransportMatrixFracture_PK> TransportMatrixFracture_PK::reg_("transport matrix fracture");  
 RegisteredPKFactory<ReactiveTransport_PK> ReactiveTransport_PK::reg_("reactive transport");
+
+RegisteredPKFactory<TransportMatrixFracture_PK> TransportMatrixFracture_PK::reg_("transport matrix fracture");  
+RegisteredPKFactory<TransportMatrixFractureImplicit_PK> TransportMatrixFractureImplicit_PK::reg_("transport matrix fracture implicit");  
 
 }  // namespace Amanzi
 
