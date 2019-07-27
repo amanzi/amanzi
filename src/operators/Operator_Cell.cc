@@ -102,7 +102,7 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
 
 /* ******************************************************************
 * Visit methods for symbolic assemble.
-* Insert the diagonal on cells
+* Insert cell-based diagonal matrix.
 ****************************************************************** */
 void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
                                              const SuperMap& map, GraphFE& graph,
@@ -123,13 +123,12 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
 
 
 /* ******************************************************************
-* Insert each cells neighboring cells.
+* Insert each face neighboring cells (ELEMENT/BASE=face, DOFs=cell)
 ****************************************************************** */
 void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
                                              const SuperMap& map, GraphFE& graph,
                                              int my_block_row, int my_block_col) const
 {
-  // ELEMENT: face, DOF: cell
   int lid_r[2];
   int lid_c[2];
 
