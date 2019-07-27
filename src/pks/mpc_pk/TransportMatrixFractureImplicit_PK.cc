@@ -94,16 +94,26 @@ void TransportMatrixFractureImplicit_PK::Initialize(const Teuchos::Ptr<State>& S
 
   // -- indices are fluxes on matrix-fracture interface
   int ncells_owned_f = mesh_fracture_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  auto inds_matrix = std::make_shared<std::vector<std::vector<int> > >(ncells_owned_f);
-  auto inds_fracture = std::make_shared<std::vector<std::vector<int> > >(ncells_owned_f);
-  auto values = std::make_shared<std::vector<double> >(ncells_owned_f, 0.0);
+  auto inds_matrix = std::make_shared<std::vector<std::vector<int> > >(2 * ncells_owned_f);
+  auto inds_fracture = std::make_shared<std::vector<std::vector<int> > >(2 * ncells_owned_f);
+  auto values = std::make_shared<std::vector<double> >(2 * ncells_owned_f, 0.0);
+
+  int np(0);
+  AmanziMesh::Entity_ID_List cells;
 
   for (int c = 0; c < ncells_owned_f; ++c) {
     int f = mesh_fracture_->entity_get_parent(AmanziMesh::CELL, c);
-    (*inds_matrix)[c].resize(1);
-    (*inds_fracture)[c].resize(1);
-    (*inds_matrix)[c][0] = f;
-    (*inds_fracture)[c][0] = c;
+    mesh_domain_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    int ncells = cells.size();
+    AMANZI_ASSERT(ncells == 2);
+
+    for (int k = 0; k < ncells; ++k) {
+      (*inds_matrix)[np].resize(1);
+      (*inds_fracture)[np].resize(1);
+      (*inds_matrix)[np][0] = cells[k];
+      (*inds_fracture)[np][0] = c;
+      np++;
+    }
   }
 
   // -- operators
@@ -155,24 +165,37 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
 
   // update coupling terms
   int ncells_owned_f = mesh_fracture_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  auto values1 = std::make_shared<std::vector<double> >(ncells_owned_f, 0.0);
-  auto values2 = std::make_shared<std::vector<double> >(ncells_owned_f, 0.0);
+  auto values1 = std::make_shared<std::vector<double> >(2 * ncells_owned_f, 0.0);
+  auto values2 = std::make_shared<std::vector<double> >(2 * ncells_owned_f, 0.0);
 
+  int np(0), dir, shift;
+  AmanziMesh::Entity_ID_List cells;
   const auto& flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face");
-  auto mmap = flux.Map();
+  const auto& mmap = flux.Map();
+  const auto& cmap = mesh_domain_->cell_map(true);
 
   for (int c = 0; c < ncells_owned_f; ++c) {
     int f = mesh_fracture_->entity_get_parent(AmanziMesh::CELL, c);
     double area = mesh_fracture_->cell_volume(c);
     int first = mmap.FirstPointInElement(f);
-    int ndofs = mmap.ElementSize(f);
 
-    for (int k = 0; k < ndofs; ++k) {
-      double tmp = flux[0][first + k] * area * dt;
+    mesh_domain_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    int ncells = cells.size();
+    mesh_domain_->face_normal(f, false, cells[0], &dir);
+    shift = FaceLocalIndex_(cells[0], f, cmap);
+
+    for (int k = 0; k < ncells; ++k) {
+      // since cells are ordered differenty than points, we need a map
+      double tmp = flux[0][first + shift] * area * dt * dir;
+
       if (tmp > 0) 
-        (*values1)[c] = tmp;
+        (*values1)[np] = tmp;
       else 
-        (*values2)[c] = tmp;
+        (*values2)[np] = -tmp;
+
+      dir = -dir;
+      shift = 1 - shift;
+      np++;
     }
   }
 
@@ -215,6 +238,26 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
   }
 
   return fail;
+}
+
+
+/* ******************************************************************
+* Local index of DOF for internal face f corresponding to cell c
+****************************************************************** */
+int TransportMatrixFractureImplicit_PK::FaceLocalIndex_(
+    int c, int f, const Epetra_BlockMap& cmap)
+{
+  AmanziMesh::Entity_ID_List cells;
+
+  int idx = 0;
+  mesh_domain_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+  if (cells.size() == 2) {
+     int gid = cmap.GID(c);
+     int gid_min = std::min(cmap.GID(cells[0]), cmap.GID(cells[1]));
+     if (gid > gid_min) idx = 1;
+  }
+
+  return idx;
 }
 
 }  // namespace Amanzi

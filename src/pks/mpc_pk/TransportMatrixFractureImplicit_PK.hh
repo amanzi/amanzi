@@ -16,6 +16,7 @@
 #ifndef AMANZI_TRANSPORT_MATRIX_FRACTURE_IMPLICIT_PK_HH_
 #define AMANZI_TRANSPORT_MATRIX_FRACTURE_IMPLICIT_PK_HH_
 
+#include "Epetra_BlockMap.h"
 #include "Teuchos_RCP.hpp"
 
 #include "PK_MPCStrong.hh"
@@ -44,6 +45,9 @@ class TransportMatrixFractureImplicit_PK : public PK_MPCStrong<PK_BDF> {
 
   // miscaleneous methods
   virtual std::string name() { return "coupled transport implicit"; } 
+
+ private:
+  int FaceLocalIndex_(int c, int f, const Epetra_BlockMap& cmap);
 
  private:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
