@@ -26,6 +26,7 @@
 #include "TransportDefs.hh"
 #include "TransportDomainFunction.hh"
 
+#include "BCs.hh"
 #include "BDF1_TI.hh"
 #include "PDE_Accumulation.hh"
 #include "PDE_AdvectionUpwind.hh"
@@ -91,6 +92,7 @@ class TransportImplicit_PK : public Transport_PK, public PK_BDF {
   // access
   Teuchos::RCP<Operators::Operator> op() { return op_; }
   Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_adv() { return op_adv_; }
+  Teuchos::RCP<Operators::BCs> op_bc() { return op_bc_; }
   
   // Forbidden.
   TransportImplicit_PK(const TransportImplicit_PK&);
@@ -103,6 +105,7 @@ class TransportImplicit_PK : public Transport_PK, public PK_BDF {
   Teuchos::RCP<Operators::Operator> op_;
   Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_adv_;
   Teuchos::RCP<Operators::PDE_Accumulation> op_acc_;
+  Teuchos::RCP<Operators::BCs> op_bc_;
   std::string solver_name_, solver_name_constraint_;
   
   // factory registration

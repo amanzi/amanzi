@@ -205,6 +205,10 @@ class Transport_PK : public PK_Physical {
   Teuchos::RCP<const Epetra_MultiVector> ws_start, ws_end;  // data for subcycling 
   Teuchos::RCP<Epetra_MultiVector> ws_subcycle_start, ws_subcycle_end;
 
+  std::vector<Teuchos::RCP<TransportDomainFunction> > srcs_;  // Sources and sinks
+  std::vector<Teuchos::RCP<TransportDomainFunction> > bcs_;
+  Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
+
     
  private:
   Key domain_;
@@ -229,9 +233,6 @@ class Transport_PK : public PK_Physical {
   Teuchos::RCP<Operators::ReconstructionCell> lifting_;
   Teuchos::RCP<Operators::LimiterCell> limiter_;
 
-  std::vector<Teuchos::RCP<TransportDomainFunction> > srcs_;  // Sources and sinks
-  std::vector<Teuchos::RCP<TransportDomainFunction> > bcs_;
-  Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
 
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;

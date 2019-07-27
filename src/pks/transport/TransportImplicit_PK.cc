@@ -64,11 +64,33 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   Transport_PK::Initialize(S);
 
+
+  op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+
+  auto values = op_bc_->bc_value();
+  auto models = op_bc_->bc_model();
+
+  for (int i = 0; i < bcs_.size(); i++) {
+
+    std::vector<int>& tcc_index = bcs_[i]->tcc_index();
+    int ncomp = tcc_index.size();
+    
+    for (auto bc= bcs_[i]->begin(); bc!=bcs_[i]->end(); ++bc) {
+      int f = bc->first;
+      models[f] = Operators::OPERATOR_BC_DIRICHLET;
+      std::vector<double>& bcval = bc->second;             
+      values[f] = bcval[0]; // Only for one component at the moment
+    }
+  }
+
+  
   Teuchos::ParameterList& oplist = tp_list_->sublist("operators")
                                             .sublist("advection operator")
                                             .sublist("matrix");
 
   op_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(oplist, mesh_));
+  op_adv_->SetBCs(op_bc_, op_bc_);
+  
   op_ = op_adv_->global_operator();
 
   Teuchos::RCP<const CompositeVector> flux = S->GetFieldData(darcy_flux_key_);
@@ -86,6 +108,8 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   op_acc_->AddAccumulationTerm(*acc_term_, "cell");
 
+
+  
   op_->SymbolicAssembleMatrix();
   op_->CreateCheckPoint();
 
