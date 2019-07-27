@@ -62,7 +62,17 @@ void TransportMatrixFractureImplicit_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetComponent("face", AmanziMesh::FACE, mmap, gmap, 1);
   }
 
+  // process other PKs
   PK_MPCStrong<PK_BDF>::Setup(S);
+}
+
+
+/* ******************************************************************* 
+* Initialization creates a tree operator to assemble global matrix
+******************************************************************* */
+void TransportMatrixFractureImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
+{
+  PK_MPCStrong<PK_BDF>::Initialize(S);
 
   // diagonal blocks in tree operator are the Transport Implicit PKs
   auto pk_matrix = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[0]);
@@ -76,51 +86,25 @@ void TransportMatrixFractureImplicit_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // off-diagonal blocks are coupled PDEs
   // -- minimum composite vector spaces containing the coupling term
-  auto mesh_matrix = S_->GetMesh("domain");
-  auto mesh_fracture = S_->GetMesh("fracture");
-
-  auto& mmap = solution_->SubVector(0)->Data()->ViewComponent("face", false)->Map();
-  auto& gmap = solution_->SubVector(0)->Data()->ViewComponent("face", true)->Map();
-  int npoints_owned = mmap.NumMyPoints();
-
   auto cvs_matrix = Teuchos::rcp(new CompositeVectorSpace());
   auto cvs_fracture = Teuchos::rcp(new CompositeVectorSpace());
 
-  cvs_matrix->SetMesh(mesh_matrix)->SetGhosted(true)
-            ->AddComponent("face", AmanziMesh::FACE, Teuchos::rcpFromRef(mmap), Teuchos::rcpFromRef(gmap), 1);
+  cvs_matrix->SetMesh(mesh_domain_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
+  cvs_fracture->SetMesh(mesh_domain_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  cvs_fracture->SetMesh(mesh_matrix)->SetGhosted(true)
-              ->AddComponent("cell", AmanziMesh::CELL, 1);
+  // -- indices are fluxes on matrix-fracture interface
+  int ncells_owned_f = mesh_fracture_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  auto inds_matrix = std::make_shared<std::vector<std::vector<int> > >(ncells_owned_f);
+  auto inds_fracture = std::make_shared<std::vector<std::vector<int> > >(ncells_owned_f);
+  auto values = std::make_shared<std::vector<double> >(ncells_owned_f, 0.0);
 
-  // -- indices transmissibimility coefficients for matrix-fracture flux
-  const auto& flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face");
-
-  int ncells_owned_f = mesh_fracture->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  auto inds_matrix = std::make_shared<std::vector<std::vector<int> > >(npoints_owned);
-  auto inds_fracture = std::make_shared<std::vector<std::vector<int> > >(npoints_owned);
-  auto values = std::make_shared<std::vector<double> >(npoints_owned, 0.0);
-
-  int np(0);
   for (int c = 0; c < ncells_owned_f; ++c) {
-    int f = mesh_fracture->entity_get_parent(AmanziMesh::CELL, c);
-    double area = mesh_fracture->cell_volume(c);
-    int first = mmap.FirstPointInElement(f);
-    int ndofs = mmap.ElementSize(f);
-
-    for (int k = 0; k < ndofs; ++k) {
-      (*inds_matrix)[np].resize(1);
-      (*inds_fracture)[np].resize(1);
-      (*inds_matrix)[np][0] = first + k;
-      (*inds_fracture)[np][0] = c;
-
-      (*values)[np] = flux[0][f] * area;
-      np++;
-    }
+    int f = mesh_fracture_->entity_get_parent(AmanziMesh::CELL, c);
+    (*inds_matrix)[c].resize(1);
+    (*inds_fracture)[c].resize(1);
+    (*inds_matrix)[c][0] = f;
+    (*inds_fracture)[c][0] = c;
   }
-
-  inds_matrix->resize(np);
-  inds_fracture->resize(np);
-  values->resize(np);
 
   // -- operators
   Teuchos::ParameterList oplist;
@@ -160,18 +144,6 @@ void TransportMatrixFractureImplicit_PK::Setup(const Teuchos::Ptr<State>& S)
 
 
 /* ******************************************************************* 
-* Initialization creates a tree operator to assemble global matrix
-******************************************************************* */
-void TransportMatrixFractureImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
-{
-  PK_MPCStrong<PK_BDF>::Initialize(S);
-
-  auto tvs = Teuchos::rcp(new TreeVectorSpace(solution_->Map()));
-  op_tree_ = Teuchos::rcp(new Operators::TreeOperator(tvs));
-}
-
-
-/* ******************************************************************* 
 * Performs one time step.
 ******************************************************************* */
 bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
@@ -182,15 +154,13 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
   auto pk_fracture = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[1]);
 
   // update coupling terms
-  int np = Teuchos::rcp_dynamic_cast<Operators::Op_Diagonal>(op_coupling00_->local_op())->row_inds().size();
-  auto values1 = std::make_shared<std::vector<double> >(np, 0.0);
-  auto values2 = std::make_shared<std::vector<double> >(np, 0.0);
-
   int ncells_owned_f = mesh_fracture_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  auto values1 = std::make_shared<std::vector<double> >(ncells_owned_f, 0.0);
+  auto values2 = std::make_shared<std::vector<double> >(ncells_owned_f, 0.0);
+
   const auto& flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face");
   auto mmap = flux.Map();
 
-  np = 0;
   for (int c = 0; c < ncells_owned_f; ++c) {
     int f = mesh_fracture_->entity_get_parent(AmanziMesh::CELL, c);
     double area = mesh_fracture_->cell_volume(c);
@@ -200,10 +170,9 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
     for (int k = 0; k < ndofs; ++k) {
       double tmp = flux[0][first + k] * area * dt;
       if (tmp > 0) 
-        (*values1)[np] = tmp;
+        (*values1)[c] = tmp;
       else 
-        (*values2)[np] = tmp;
-      np++;
+        (*values2)[c] = tmp;
     }
   }
 
@@ -227,7 +196,7 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
 
   // create solver
   Teuchos::ParameterList slist = glist_->sublist("solvers")
-                                        .sublist("AztecOO CG").sublist("pcg parameters");
+                                        .sublist("PCG with Hypre AMG").sublist("pcg parameters");
   AmanziSolvers::LinearOperatorPCG<Operators::TreeOperator, TreeVector, TreeVectorSpace>
       solver(op_tree_, op_tree_);
   solver.Init(slist);
