@@ -174,6 +174,10 @@ class InputConverterU : public InputConverter {
   void FilterEmptySublists_(Teuchos::ParameterList& plist);
   void MergeInitialConditionsLists_(Teuchos::ParameterList& plist);
 
+  // -- sort functions
+  template<class Iterator>
+  Iterator SelectUniqueEntries(Iterator first, Iterator last);
+
   // -- miscalleneous
   bool FindNameInVector_(const std::string& name, const std::vector<std::string>& list); 
   std::string CreateNameFromVector_(const std::vector<std::string>& list); 
@@ -241,6 +245,21 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList verb_list_;
   VerboseObject* vo_;
 };
+
+
+/* ******************************************************************
+* Selects unique entries and places them in [first, last)
+****************************************************************** */
+template<class Iterator>
+Iterator InputConverterU::SelectUniqueEntries(Iterator first, Iterator last)
+{
+  while (first != last) {
+    Iterator next(first);
+    last = std::remove(++next, last, *first);
+    first = next;
+  }
+  return last;
+}
 
 }  // namespace AmanziInput
 }  // namespace Amanzi
