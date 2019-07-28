@@ -74,6 +74,9 @@ void TransportMatrixFractureImplicit_PK::Initialize(const Teuchos::Ptr<State>& S
 {
   PK_MPCStrong<PK_BDF>::Initialize(S);
 
+  // set a huge time step that will be limited by advance step
+  set_dt(1e+98);
+
   // diagonal blocks in tree operator are the Transport Implicit PKs
   auto pk_matrix = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[0]);
   auto pk_fracture = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[1]);
