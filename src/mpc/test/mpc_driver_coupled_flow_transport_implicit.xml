@@ -125,7 +125,7 @@
 	</ParameterList>
 	<Parameter name="initial time step" type="double" value="1.0e+5"/>
 	<Parameter name="start period time" type="double" value="3.0e+6"/>
-	<Parameter name="end period time" type="double" value="4.0e+6"/>
+	<Parameter name="end period time" type="double" value="1.0e+7"/>
         <Parameter name="maximum time step" type="double" value="5e+5"/>
         <Parameter name="maximum cycle number" type="int" value="200"/>        
       </ParameterList>
@@ -496,7 +496,7 @@
               <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
               <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-              <Parameter name="gravity" type="bool" value="false"/>
+              <Parameter name="gravity" type="bool" value="true"/>
               <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
             </ParameterList>
           </ParameterList>
@@ -579,7 +579,7 @@
               <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
               <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
-              <Parameter name="gravity" type="bool" value="false"/>
+              <Parameter name="gravity" type="bool" value="true"/>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -623,6 +623,9 @@
           <ParameterList name="nka parameters">
           </ParameterList>
         </ParameterList>
+      </ParameterList>
+      <ParameterList name="verbose object">
+        <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
     </ParameterList>
 

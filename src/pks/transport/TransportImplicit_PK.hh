@@ -92,6 +92,7 @@ class TransportImplicit_PK : public Transport_PK, public PK_BDF {
   // access
   Teuchos::RCP<Operators::Operator> op() { return op_; }
   Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_adv() { return op_adv_; }
+  Teuchos::RCP<Operators::PDE_Accumulation> op_acc() { return op_acc_; }
   Teuchos::RCP<Operators::BCs> op_bc() { return op_bc_; }
   
   // Forbidden.

@@ -38,7 +38,7 @@ TransportMatrixFractureImplicit_PK::TransportMatrixFractureImplicit_PK(
     Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln)
 {
   Teuchos::ParameterList vlist;
-  vo_ = Teuchos::rcp(new VerboseObject("TransportMatrixFractureImplicit_PK", vlist)); 
+  vo_ = Teuchos::rcp(new VerboseObject("TranCoupledImplicit_PK", vlist)); 
 }
 
 
@@ -186,7 +186,7 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
 
     for (int k = 0; k < ncells; ++k) {
       // since cells are ordered differenty than points, we need a map
-      double tmp = flux[0][first + shift] * area * dt * dir;
+      double tmp = flux[0][first + shift] * area * dir;
 
       if (tmp > 0) 
         (*values1)[np] = tmp;
@@ -199,9 +199,23 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
     }
   }
 
+  // update accumulation term and the right-hand side
+  const auto& phi_m = *S_->GetFieldData("porosity");
+  const auto& phi_f = *S_->GetFieldData("fracture-porosity");
+  const auto& tcc_m = *S_->GetFieldData("total_component_concentration");
+  const auto& tcc_f = *S_->GetFieldData("fracture-total_component_concentration");
+
+  pk_matrix->op()->rhs()->PutScalar(0.0);
+  pk_matrix->op_acc()->local_op(0)->Rescale(0.0);
+  pk_matrix->op_acc()->AddAccumulationDelta(tcc_m, phi_m, phi_m, dt, "cell");
+
+  pk_fracture->op()->rhs()->PutScalar(0.0);
+  pk_fracture->op_acc()->local_op(0)->Rescale(0.0);
+  pk_fracture->op_acc()->AddAccumulationDelta(tcc_f, phi_f, phi_f, dt, "cell");
+
   // assemble the operators
+  pk_matrix->op_adv()->UpdateMatrices(S_->GetFieldData("darcy_flux").ptr());
   pk_matrix->op_adv()->ApplyBCs(true, true, true);
-  pk_fracture->op_adv()->ApplyBCs(true, true, true);
 
   op_coupling00_->Setup(values1, 1.0);
   op_coupling00_->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -216,6 +230,10 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
   op_coupling11_->UpdateMatrices(Teuchos::null, Teuchos::null);  
 
   op_tree_->AssembleMatrix();
+
+  // create preconditioner
+  auto pc_list = glist_->sublist("preconditioners").sublist("Hypre AMG");
+  op_tree_->InitPreconditioner(pc_list);
 
   // create solver
   Teuchos::ParameterList slist = glist_->sublist("solvers")
@@ -237,7 +255,25 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
     *vo_->os() << "Step failed." << std::endl;
   }
 
+  // output 
+  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    pk_matrix->VV_PrintSoluteExtrema(*solution_->SubVector(0)->Data()->ViewComponent("cell"), dt);
+    pk_fracture->VV_PrintSoluteExtrema(*solution_->SubVector(1)->Data()->ViewComponent("cell"), dt);
+  }
+
   return fail;
+}
+
+
+/* ******************************************************************
+* Spezialized implementation of implicit transport
+****************************************************************** */
+void TransportMatrixFractureImplicit_PK::CommitStep(
+    double t_old, double t_new, const Teuchos::RCP<State>& S)
+{
+  *S->GetFieldData("total_component_concentration", "state") = *solution_->SubVector(0)->Data();
+  *S->GetFieldData("fracture-total_component_concentration", "state") = *solution_->SubVector(1)->Data();
 }
 
 

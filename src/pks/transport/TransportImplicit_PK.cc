@@ -84,9 +84,8 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
   
   // boundary conditions
   op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
-
-  auto values = op_bc_->bc_value();
-  auto models = op_bc_->bc_model();
+  auto& values = op_bc_->bc_value();
+  auto& models = op_bc_->bc_model();
 
   for (int i = 0; i < bcs_.size(); i++) {
     std::vector<int>& tcc_index = bcs_[i]->tcc_index();

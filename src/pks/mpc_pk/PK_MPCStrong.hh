@@ -420,10 +420,10 @@ bool PK_MPCStrong<PK_Base>::ModifyPredictor(double h, Teuchos::RCP<const TreeVec
 // }
 
 
-//  template<class PK_Base>
-//  void PK_MPCStrong<PK_Base>::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
-//    PK_MPC<PK_Base>::CalculateDiagnostics(S);
-//  };
+// template<class PK_Base>
+// void PK_MPCStrong<PK_Base>::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
+//   PK_MPC<PK_Base>::CalculateDiagnostics(S);
+// };
 
 
 // -----------------------------------------------------------------------------

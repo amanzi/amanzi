@@ -356,15 +356,6 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar)
 
 
 /* ******************************************************************
-* Visit methods for Apply: Coupling
-****************************************************************** */
-int Operator::ApplyMatrixFreeOp(const Op_Diagonal& op,
-                                const CompositeVector& X, CompositeVector& Y) const {
-  return SchemaMismatch_(op.schema_string, schema_string_);
-}
-
-
-/* ******************************************************************
 * Parallel matvec product Y = A^T * X.
 ******************************************************************* */
 int Operator::ApplyTranspose(const CompositeVector& X, CompositeVector& Y, double scalar) const
@@ -448,6 +439,32 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
   }
 
   return ierr;
+}
+
+
+/* ******************************************************************
+* Defaultvisit method for apply 
+****************************************************************** */
+int Operator::ApplyMatrixFreeOp(const Op_Diagonal& op,
+                                const CompositeVector& X, CompositeVector& Y) const
+{
+  AMANZI_ASSERT(cvs_col_->HasComponent(op.col_compname()));
+  AMANZI_ASSERT(cvs_row_->HasComponent(op.row_compname()));
+
+  const Epetra_MultiVector& Xf = *X.ViewComponent(op.col_compname(), true);
+  Epetra_MultiVector& Yf = *Y.ViewComponent(op.row_compname(), true);
+  
+  const auto& col_lids = op.col_inds();
+  const auto& row_lids = op.row_inds();
+
+  int ierr(0);
+  for (int n = 0; n != col_lids.size(); ++n) {
+    int ndofs = col_lids[n].size();
+    AMANZI_ASSERT(ndofs == 1);
+
+    Yf[0][row_lids[n][0]] += op.matrices[n](0, 0) * Xf[0][col_lids[n][0]];
+  }
+  return 0;
 }
 
 
