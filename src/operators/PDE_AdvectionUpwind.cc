@@ -278,6 +278,7 @@ void PDE_AdvectionUpwind::IdentifyUpwindCells_(const CompositeVector& u)
 {
   u.ScatterMasterToGhosted("face");
   const Epetra_MultiVector& uf = *u.ViewComponent("face", true);
+  const auto& gmap = uf.Map();
 
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
   upwind_cell_ = Teuchos::rcp(new Epetra_IntVector(fmap_wghost));
@@ -296,7 +297,9 @@ void PDE_AdvectionUpwind::IdentifyUpwindCells_(const CompositeVector& u)
 
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];
-      if (uf[0][f] * fdirs[i] >= 0) {
+      int g = gmap.FirstPointInElement(f);
+
+      if (uf[0][g] * fdirs[i] >= 0) {
         (*upwind_cell_)[f] = c;
       } else {
         (*downwind_cell_)[f] = c;
