@@ -69,11 +69,12 @@ using namespace Amanzi::AmanziGeometry;
   double mu = 0.001002;
   double K1 = 1.0e-11;
   double kn = 4.0e-8;
-  double L = 60.0;
+  double L = 120.0;
   double q0 = -2.0e-3;
+  double g = 9.81;
 
   K1 *= rho / mu;
-  double pf_exact = p0 - q0 * (L / K1 / 2 + 1.0 / kn);
+  double pf_exact = p0 - q0 * (L / K1 / 2 + 1.0 / kn) - g * rho * L / 2;
 
   double pf = (*S->GetFieldData("fracture-pressure")->ViewComponent("cell"))[0][0];
   std::cout << "Fracture pressure: " << pf << ",  exact: " << pf_exact << std::endl;

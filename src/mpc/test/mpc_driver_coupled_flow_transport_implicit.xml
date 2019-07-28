@@ -182,7 +182,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.5"/>
+                <Parameter name="value" type="double" value="0.2"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -248,7 +248,7 @@
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="4.0e-8"/>
+                <Parameter name="value" type="double" value="3.9240e-07"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
