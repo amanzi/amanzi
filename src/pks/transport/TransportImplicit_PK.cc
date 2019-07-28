@@ -111,9 +111,15 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
   Teuchos::RCP<const CompositeVector> flux = S->GetFieldData(darcy_flux_key_);
   op_adv_->Setup(*flux);
   op_adv_->UpdateMatrices(flux.ptr());
-  
+
+  Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
+  cvs->SetMesh(mesh_)->SetGhosted(true);
+  cvs->AddComponent("cell", AmanziMesh::CELL, 1);
+
+
+  acc_term_ = Teuchos::rcp(new CompositeVector(*cvs));
   op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_));
-  acc_term_ = Teuchos::rcp(new CompositeVector(*(S->GetFieldData(tcc_key_))));
+
 
   Epetra_MultiVector& acc_term_c = *acc_term_->ViewComponent("cell");
 
@@ -121,6 +127,8 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
     acc_term_c[0][c] = mesh_->cell_volume(c) * (*phi)[0][c];  // * (*ws_start)[0][c];
   }
 
+  int m = acc_term_c.NumVectors();
+  
   op_acc_->AddAccumulationTerm(*acc_term_, "cell");
 
   op_->SymbolicAssembleMatrix();
