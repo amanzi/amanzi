@@ -129,6 +129,8 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
                                              const SuperMap& map, GraphFE& graph,
                                              int my_block_row, int my_block_col) const
 {
+  AMANZI_ASSERT(op.matrices.size() == nfaces_owned);
+
   int lid_r[2];
   int lid_c[2];
 

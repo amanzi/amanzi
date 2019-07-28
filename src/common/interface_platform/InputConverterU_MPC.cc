@@ -241,6 +241,14 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   }
 
   // -- create PK tree for transient TP
+  std::string implicit("");
+  node = GetUniqueElementByTagsString_(
+      "numerical_controls, unstructured_controls, unstr_transport_controls, algorithm", flag);
+  if (flag) {
+    std::string algorithm = TrimString_(mm.transcode(node->getTextContent()));
+    if (algorithm == "implicit") implicit = " implicit";
+  }
+
   std::string submodel;
   std::map<double, std::string>::iterator it = tp_mode.begin();
   while (it != tp_mode.end()) {
@@ -304,9 +312,9 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
           }
           {
             Teuchos::ParameterList& aux_list = tmp_list.sublist("coupled transport");
-            aux_list.set<std::string>("PK type", "transport matrix fracture");
-            aux_list.sublist("transport matrix").set<std::string>("PK type", "transport");
-            aux_list.sublist("transport fracture").set<std::string>("PK type", "transport");
+            aux_list.set<std::string>("PK type", "transport matrix fracture" + implicit);
+            aux_list.sublist("transport matrix").set<std::string>("PK type", "transport" + implicit);
+            aux_list.sublist("transport fracture").set<std::string>("PK type", "transport" + implicit);
           }
         }
         break;

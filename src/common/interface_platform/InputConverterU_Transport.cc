@@ -37,7 +37,7 @@ XERCES_CPP_NAMESPACE_USE
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& domain)
 {
-  Teuchos::ParameterList out_list;
+  Teuchos::ParameterList out_list, adv_list;
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << "Translating transport, domain=" << domain << std::endl;
@@ -110,6 +110,13 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
       out_list.set<int>("spatial discretization order", nspace);
       out_list.set<int>("temporal discretization order", ntime);
       out_list.set<bool>("generic RK implementation", true);
+      poly_order = 1;
+    } else if (order == "implicit") {
+      std::vector<std::string> dofs({"cell"});
+      adv_list.sublist("matrix")
+              .set<Teuchos::Array<std::string> >("schema", dofs)
+              .set<int>("method order", 0)
+              .set<std::string>("matrix type", "advection");
       poly_order = 1;
     }
   }
@@ -323,6 +330,11 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_(const std::string& d
       .set<bool>("permeability field is required", transport_permeability_);
 
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
+
+  // merging sublist
+  if (adv_list.numParams() > 0)
+    out_list.sublist("operators").sublist("advection operator") = adv_list;
+
   return out_list;
 }
 
