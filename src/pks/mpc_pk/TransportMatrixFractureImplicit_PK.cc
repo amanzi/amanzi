@@ -13,7 +13,7 @@
   using implicit scheme.
 */
 
-#include "LinearOperatorPCG.hh"
+#include "LinearOperatorGMRES.hh"
 #include "Op_Diagonal.hh"
 #include "PK_BDF.hh"
 #include "PDE_CouplingFlux.hh"
@@ -237,8 +237,8 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
 
   // create solver
   Teuchos::ParameterList slist = glist_->sublist("solvers")
-                                        .sublist("PCG with Hypre AMG").sublist("pcg parameters");
-  AmanziSolvers::LinearOperatorPCG<Operators::TreeOperator, TreeVector, TreeVectorSpace>
+                                        .sublist("GMRES with Hypre AMG").sublist("gmres parameters");
+  AmanziSolvers::LinearOperatorGMRES<Operators::TreeOperator, TreeVector, TreeVectorSpace>
       solver(op_tree_, op_tree_);
   solver.Init(slist);
 
