@@ -246,7 +246,8 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
       "numerical_controls, unstructured_controls, unstr_transport_controls, algorithm", flag);
   if (flag) {
     std::string algorithm = TrimString_(mm.transcode(node->getTextContent()));
-    if (algorithm == "implicit") implicit = " implicit";
+    transport_implicit_ = (algorithm == "implicit");
+    if (transport_implicit_) implicit = " implicit";
   }
 
   std::string submodel;
@@ -762,6 +763,9 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
       *vo_->os() << "Translating process kernels" << std::endl;
   Teuchos::OSTab tab = vo_->getOSTab();
 
+  bool flag;
+  DOMNode* node;
+
   // create PKs list
   Teuchos::ParameterList tp_list = cd_list.sublist("time periods");
 
@@ -772,7 +776,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
         std::string name = pk_tree.begin()->first;
-        *vo_->os() << "PK name=\"" << name << "\", factory: \"" 
+        *vo_->os() << "TP: PK name=\"" << name << "\", factory: \"" 
                    << pk_tree.sublist(name).get<std::string>("PK type") << "\"" << std::endl;
       }
     }
@@ -780,6 +784,9 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
 
   // parse list of supported PKs
   for (auto it = out_list.begin(); it != out_list.end(); ++it) {
+    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+        *vo_->os() << "Next PK is \"" << it->first << "\"" << std::endl;
+
     if ((it->second).isList()) {
       // -- flow PKs
       if (it->first == "Flow Steady" || it->first == "flow matrix steady") {
@@ -829,6 +836,19 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
         pk_names.push_back("transport fracture");
         out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
         out_list.sublist(it->first).set<int>("master PK index", 0);
+
+        // implicit PK derived from a strongly coupled MPC needs a time integrator 
+        if (transport_implicit_) {
+          std::string err_options("residual"), mode("transient");
+          std::string nonlinear_solver("nka"), tags_default("unstructured_controls, unstr_nonlinear_solver");
+
+          node = GetUniqueElementByTagsString_(tags_default, flag);
+          if (flag) nonlinear_solver = GetAttributeValueS_(node, "name", TYPE_NONE, false, "nka"); 
+
+          out_list.sublist(it->first).sublist("time integrator") = TranslateTimeIntegrator_(
+              err_options, nonlinear_solver, false, tags_default,
+              dt_cut_[mode], dt_inc_[mode]);
+        }
       }
       else if (it->first == "reactive transport") {
         Teuchos::Array<std::string> pk_names;
