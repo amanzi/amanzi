@@ -5,7 +5,7 @@ diff -ruNbB netcdf-4.6.1/CMakeLists.txt netcdf-4.6.1-source/CMakeLists.txt
      # Do that by checking for the targets H5Pget_fapl_mpiposx and
      # H5Pget_fapl_mpio in ${HDF5_LIB}.
  
-+    SET(CMAKE_REQUIRED_LIBRARIES "dl;z;m")
++    SET(CMAKE_REQUIRED_LIBRARIES "dl;${ZLIB_LIBRARY};m")
      CHECK_LIBRARY_EXISTS(${HDF5_C_LIBRARY_hdf5} H5Pget_fapl_mpiposix "" HDF5_IS_PARALLEL_MPIPOSIX)
      CHECK_LIBRARY_EXISTS(${HDF5_C_LIBRARY_hdf5} H5Pget_fapl_mpio "" HDF5_IS_PARALLEL_MPIO)
      IF(HDF5_IS_PARALLEL_MPIPOSIX OR HDF5_IS_PARALLEL_MPIO)

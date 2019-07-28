@@ -919,6 +919,8 @@ Teuchos::ParameterList InputConverterU::TranslateFlowFractures_(const std::strin
 
     if (domain == "fracture") {
       for (int i = 0; i < regions.size(); i++) fracture_regions_.push_back(regions[i]);
+      fracture_regions_.erase(SelectUniqueEntries(fracture_regions_.begin(), fracture_regions_.end()),
+                              fracture_regions_.end());
     }
 
     // get optional complessibility
