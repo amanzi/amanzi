@@ -655,6 +655,7 @@
             <Parameter name="schema" type="Array(string)" value="{cell}"/>
             <Parameter name="method order" type="int" value="0"/>
             <Parameter name="matrix type" type="string" value="advection"/>
+            <Parameter name="fracture" type="Array(string)" value="{fracture}"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>

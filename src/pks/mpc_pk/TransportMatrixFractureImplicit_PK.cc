@@ -179,7 +179,6 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
 
   for (int c = 0; c < ncells_owned_f; ++c) {
     int f = mesh_fracture_->entity_get_parent(AmanziMesh::CELL, c);
-    double area = mesh_fracture_->cell_volume(c);
     int first = mmap.FirstPointInElement(f);
 
     mesh_domain_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
@@ -189,7 +188,7 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
 
     for (int k = 0; k < ncells; ++k) {
       // since cells are ordered differenty than points, we need a map
-      double tmp = flux[0][first + shift] * area * dir;
+      double tmp = flux[0][first + shift] * dir;
 
       if (tmp > 0) 
         (*values1)[np] = tmp;
@@ -223,10 +222,10 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
   op_coupling00_->Setup(values1, 1.0);
   op_coupling00_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  op_coupling01_->Setup(values1, -1.0);
+  op_coupling01_->Setup(values2, -1.0);
   op_coupling01_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  op_coupling10_->Setup(values2, -1.0);
+  op_coupling10_->Setup(values1, -1.0);
   op_coupling10_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   op_coupling11_->Setup(values2, 1.0);
