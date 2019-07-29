@@ -30,8 +30,8 @@
 #include "LinearOperatorFactory.hh"
 #include "Mesh.hh"
 #include "PDE_Accumulation.hh"
-#include "PDE_Advection.hh"
 #include "PDE_AdvectionUpwind.hh"
+#include "PDE_AdvectionUpwindFracturedMatrix.hh"
 #include "PDE_Diffusion.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PK_DomainFunctionFactory.hh"
@@ -103,10 +103,13 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
                                             .sublist("advection operator")
                                             .sublist("matrix");
 
-  op_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(oplist, mesh_));
-  op_adv_->SetBCs(op_bc_, op_bc_);
-  
+  if (oplist.isParameter("fracture"))
+    op_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwindFracturedMatrix(oplist, mesh_));
+  else
+    op_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(oplist, mesh_));
+
   op_ = op_adv_->global_operator();
+  op_adv_->SetBCs(op_bc_, op_bc_);
 
   Teuchos::RCP<const CompositeVector> flux = S->GetFieldData(darcy_flux_key_);
   op_adv_->Setup(*flux);

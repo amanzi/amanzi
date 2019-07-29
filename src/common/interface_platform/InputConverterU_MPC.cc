@@ -943,6 +943,11 @@ void InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
 
       mesh_list.sublist("extract fracture mesh").set<Teuchos::Array<std::string> >("regions", fracture_regions_);
     }
+
+    if (name == "coupled transport" && transport_implicit_) {
+      pk_list.sublist("transport matrix").sublist("operators").sublist("advection operator")
+             .sublist("matrix").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
+    }
   }
 }
 

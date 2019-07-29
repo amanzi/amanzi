@@ -80,7 +80,7 @@ class PDE_AdvectionUpwind : public PDE_Advection {
   void InitAdvection_(Teuchos::ParameterList& plist);
   void IdentifyUpwindCells_(const CompositeVector& u);
 
- private:
+ protected:
   Teuchos::RCP<Epetra_IntVector> upwind_cell_, downwind_cell_;
 };
 

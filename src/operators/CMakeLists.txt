@@ -84,6 +84,7 @@ set(operators_inc_files
     PDE_Accumulation.hh
     PDE_Advection.hh
     PDE_AdvectionUpwind.hh
+    PDE_AdvectionUpwindFracturedMatrix.hh
     PDE_AdvectionRiemann.hh
     PDE_CouplingFlux.hh
     PDE_Diffusion.hh
@@ -137,7 +138,7 @@ add_amanzi_library(operators
                           Operator_Schema.cc
                           PDE_Accumulation.cc
                           PDE_Abstract.cc
-                          PDE_AdvectionUpwind.cc PDE_AdvectionRiemann.cc
+                          PDE_AdvectionUpwind.cc PDE_AdvectionRiemann.cc PDE_AdvectionUpwindFracturedMatrix.cc
                           PDE_CouplingFlux.cc
                           PDE_DiffusionMFD.cc PDE_DiffusionMFDwithGravity.cc
                           PDE_DiffusionFV.cc PDE_DiffusionFVwithGravity.cc
