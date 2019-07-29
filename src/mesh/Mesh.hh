@@ -408,7 +408,6 @@ class Mesh {
     int stop = -1;  
     // Return all cells except the UNKNOWN
     if(ptype == Parallel_type::ALL){
-      printf("Get all \n");
       bool done = false; 
       int i = csr_start; 
       stop = csr_end; 
@@ -424,10 +423,8 @@ class Mesh {
       }
     }else if (ptype == Parallel_type::PTYPE_UNKNOWN){
       assert(false); 
-      printf("Searching for ptype_unknown\n");
       return; 
     }else{
-      printf("Real search\n"); 
       assert(false); 
       bool done = false;
       int i = csr_start;  
@@ -439,17 +436,13 @@ class Mesh {
       }
     }
     // Generte the subview 
-    cellids = Kokkos::subview(face_cell_ids_.entries,
-    Kokkos::make_pair(start,stop));
+    cellids = Kokkos::subview(face_cell_ids_dirs_,
+      Kokkos::make_pair(start,stop));
 
     // Revert eventual cells 
     for(int i = 0 ; i < cellids.extent(0); ++i){
-      if(cellids(i) < 0) 
-        cellids(i) = ~cellids(i); 
-      printf("%d ",cellids(i)); 
+      assert(cellids(i) >= 0);
     } 
-    printf("\n");
-    printf("[%d,%d] in [%d,%d]\n",start,stop,csr_start,csr_end); 
   }
 
 
@@ -594,6 +587,9 @@ class Mesh {
   {
     return face_centroids_(faceid);
   }
+
+    void display_cache(); 
+
 
   // Centroid of edge
   AmanziGeometry::Point edge_centroid(const Entity_ID edgeid) const;
@@ -900,6 +896,7 @@ protected:
                                          Kokkos::View<int*>* face_dirs,
                                          const bool ordered=false) const = 0;
 
+  
   // Cells connected to a face
   virtual
   void face_get_cells_internal_(const Entity_ID faceid,
@@ -993,6 +990,7 @@ protected:
   // 1s complement if face is pointing out of cell; cannot use 0 as
   // cellid can be 0
   mutable Kokkos::Crs<Entity_ID,Kokkos::DefaultExecutionSpace> face_cell_ids_;
+  mutable Kokkos::View<Entity_ID*> face_cell_ids_dirs_; 
 
   mutable Kokkos::Crs<Parallel_type,Kokkos::DefaultExecutionSpace> face_cell_ptype_;
   mutable Kokkos::Crs<Entity_ID,Kokkos::DefaultExecutionSpace> cell_edge_ids_;

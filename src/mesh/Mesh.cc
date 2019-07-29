@@ -163,7 +163,7 @@ Mesh::cache_cell_face_info_() const
       offset(f)++;
     }
   }
-
+ 
   // Sort the cells based on parallel type 
   // Basic select sort for now \TODO improve the sort 
   for (int f = 0; f < nfaces; f++) {
@@ -183,9 +183,85 @@ Mesh::cache_cell_face_info_() const
     }
     assert(pos <= end); 
   }
+
+  // Copy to the dirs 
+  Kokkos::resize(face_cell_ids_dirs_,face_cell_ids_.entries.extent(0)); 
+  for(int i = 0 ; i < face_cell_ids_.entries.extent(0); ++i){
+    if(face_cell_ids_.entries(i) < 0)
+      face_cell_ids_dirs_(i) = ~face_cell_ids_.entries(i); 
+    else 
+      face_cell_ids_dirs_(i) = face_cell_ids_.entries(i); 
+  }
+
   cell2face_info_cached_ = true;
   face2cell_info_cached_ = true;
   faces_requested_ = true;
+}
+
+void Mesh::display_cache(){
+  std::cout<<std::endl;
+  if(!cell2face_info_cached_)
+    cache_cell_face_info_(); 
+  if(!cell_geometry_precomputed_)
+    compute_cell_geometric_quantities_();
+  if(!face_geometry_precomputed_)
+    compute_face_geometric_quantities_();
+  // Display all cache 
+  std::cout<<"face_centroid: "<<std::endl;
+  for(int i = 0 ; i < face_centroids_.extent(0); ++i)
+    std::cout<<face_centroids_(i)[0]<<" "<<face_centroids_(i)[1]<<" "<<face_centroids_(i)[2]<<std::endl; 
+  std::cout<<std::endl;
+
+  std::cout<<"face_normal: "<<std::endl;
+  for(int i = 0 ; i < face_normals_.row_map.extent(0)-1; ++i){
+    std::cout<<i<<": ";
+    for(int j = face_normals_.row_map(i); j < face_normals_.row_map(i+1); ++j){
+      std::cout<<face_normals_.entries(j)<<" "; 
+    }
+    std::cout<<std::endl;
+  }
+  std::cout<<std::endl;
+
+  std::cout<<"face_cell_ptype_: "<<std::endl;
+  for(int i = 0 ; i < face_cell_ptype_.row_map.extent(0)-1; ++i){
+    std::cout<<i<<": ";
+    for(int j = face_cell_ptype_.row_map(i); j < face_cell_ptype_.row_map(i+1); ++j){
+      std::cout<<static_cast<int>(face_cell_ptype_.entries(j))<<" "; 
+    }
+    std::cout<<std::endl;
+  }
+  std::cout<<std::endl;
+
+
+  std::cout<<"face_cell_ids_: "<<std::endl;
+  for(int i = 0 ; i < face_cell_ids_.row_map.extent(0)-1; ++i){
+    std::cout<<i<<": ";
+    for(int j = face_cell_ids_.row_map(i); j < face_cell_ids_.row_map(i+1); ++j){
+      std::cout<<face_cell_ids_.entries(j)<<" "; 
+    }
+    std::cout<<std::endl;
+  }
+  std::cout<<std::endl;
+
+  std::cout<<"cell_face_ids_: "<<std::endl;
+  for(int i = 0 ; i < cell_face_ids_.row_map.extent(0)-1; ++i){
+    std::cout<<i<<": ";
+    for(int j = cell_face_ids_.row_map(i); j < cell_face_ids_.row_map(i+1); ++j){
+      std::cout<<cell_face_ids_.entries(j)<<" "; 
+    }
+    std::cout<<std::endl;
+  }
+  std::cout<<std::endl;
+
+  std::cout<<"cell_face_dirs_: "<<std::endl;
+  for(int i = 0 ; i < cell_face_dirs_.row_map.extent(0)-1; ++i){
+    std::cout<<i<<": ";
+    for(int j = cell_face_dirs_.row_map(i); j < cell_face_dirs_.row_map(i+1); ++j){
+      std::cout<<cell_face_dirs_.entries(j)<<" "; 
+    }
+    std::cout<<std::endl;
+  }
+  std::cout<<std::endl;
 }
 
 // Gather and cache face to edge connectivity info.

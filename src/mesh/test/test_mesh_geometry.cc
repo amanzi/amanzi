@@ -118,7 +118,7 @@ TEST_FIXTURE(test,MESH_GEOMETRY_PLANAR)
 
     const int space_dim_ = 2;
 
-    Amanzi::AmanziMesh::Mesh * m = mesh.get(); 
+    Amanzi::AmanziMesh::Mesh * m = mesh.get();
     
     // Perform tests on GPU 
     Kokkos::View<bool*> result_cv("result cv",ncells); 
@@ -150,14 +150,12 @@ TEST_FIXTURE(test,MESH_GEOMETRY_PLANAR)
       assert(val < 1.0e-20);  
     });
 
-    //Kokkos::parallel_for(nfaces,KOKKOS_LAMBDA(const Amanzi::LO& i){
-    for(int i = 0; i < nfaces; ++i){
-      printf("FACE: %d\n",i); 
+    Kokkos::parallel_for(nfaces,KOKKOS_LAMBDA(const Amanzi::LO& i){
+    //for(int i = 0; i < nfaces; ++i){
       Amanzi::AmanziGeometry::Point centroid = m->face_centroid(i); 
       bool found = false;
 
       for (int j = 0; j < nfaces; j++) {
-        printf("face: %d\n",j); 
         if (fabs(exp_face_centroid_view(j)[0]-centroid[0]) < 1.0e-10 &&
             fabs(exp_face_centroid_view(j)[1]-centroid[1]) < 1.0e-10) {
           found = true;
@@ -171,14 +169,12 @@ TEST_FIXTURE(test,MESH_GEOMETRY_PLANAR)
           m->face_get_cells(i,Amanzi::AmanziMesh::Parallel_type::ALL,cellids);
 
           for (int k = 0; k < cellids.extent(0); k++) {
-            printf("k= %d\n",k); 
             int dir;
             Amanzi::AmanziGeometry::Point normal_wrt_cell =
               m->face_normal(i,false,cellids(k),&dir);
             Amanzi::AmanziGeometry::Point normal1(normal);
             normal1 *= dir;
             for(int dim = 0 ; dim < space_dim_; ++dim){
-              printf("n: %.4f nw: %.4f dim: %d \n",normal1[dim],normal_wrt_cell[dim],dim); 
               assert(normal1[dim]==normal_wrt_cell[dim]);
             } 
             Amanzi::AmanziGeometry::Point cellcentroid = m->cell_centroid(cellids(k));
@@ -188,16 +184,11 @@ TEST_FIXTURE(test,MESH_GEOMETRY_PLANAR)
             dp /= (norm(outvec)*norm(normal_wrt_cell));
             assert(dp-1.0<1e-10);
           }
-          printf("break\n");
-
           break;
         }
       }
-      printf("assert %d\n",found); 
       assert(found==true);
-      printf("DONE: %d \n",i); 
-    //});
-    }
+    });
   } // for each framework i
 }
 
@@ -387,9 +378,8 @@ TEST(MESH_GEOMETRY_SURFACE)
 }
 #endif 
 
-
-#if 0 
-TEST(MESH_GEOMETRY_SOLID)
+//TEST(MESH_GEOMETRY_SOLID)
+TEST_FIXTURE(test,MESH_GEOMETRY_SOLID)
 {
 
   auto comm = Amanzi::getDefaultComm();
@@ -440,73 +430,72 @@ TEST(MESH_GEOMETRY_SOLID)
 
     CHECK_EQUAL(aerr,0);
 
+    Kokkos::View<double*> exp_cell_volume_view("ecvv",8);
+    exp_cell_volume_view(0) = 0.125; 
+    exp_cell_volume_view(1) = 0.125;
+    exp_cell_volume_view(2) = 0.125;
+    exp_cell_volume_view(3) = 0.125;
+    exp_cell_volume_view(4) = 0.125;
+    exp_cell_volume_view(5) = 0.125;
+    exp_cell_volume_view(6) = 0.125;
+    exp_cell_volume_view(7) = 0.125;
+    Kokkos::View<Amanzi::AmanziGeometry::Point*> exp_cell_centroid_view("eccv",8);
+    exp_cell_centroid_view(0) = {0.25,0.25,0.25}; 
+    exp_cell_centroid_view(1) = {0.75,0.25,0.25}; 
+    exp_cell_centroid_view(2) = {0.25,0.75,0.25}; 
+    exp_cell_centroid_view(3) = {0.75,0.75,0.25}; 
+    exp_cell_centroid_view(4) = {0.25,0.25,0.75}; 
+    exp_cell_centroid_view(5) = {0.75,0.25,0.75}; 
+    exp_cell_centroid_view(6) = {0.25,0.75,0.75}; 
+    exp_cell_centroid_view(7) = {0.75,0.75,0.75}; 
+    Kokkos::View<double*> exp_face_area_view("efav",36);
+    for(int i = 0 ; i < 36; ++i)
+      exp_face_area_view(i) = 0.25;
+    Kokkos::View<Amanzi::AmanziGeometry::Point*> exp_face_centroid_view("efcv",36);
+    exp_face_centroid_view(0) = {0.0,0.25,0.25};
+    exp_face_centroid_view(1) = {0.0,0.75,0.25};
+    exp_face_centroid_view(2) = {0.0,0.25,0.75};
+    exp_face_centroid_view(3) = {0.0,0.75,0.75};
 
-    double exp_cell_volume[8] = {0.125,0.125,0.125,0.125,
-                                 0.125,0.125,0.125,0.125};
-    double exp_cell_centroid[8][3] = {{0.25,0.25,0.25},
-                                      {0.75,0.25,0.25},
-                                      {0.25,0.75,0.25},
-                                      {0.75,0.75,0.25},
-                                      {0.25,0.25,0.75},
-                                      {0.75,0.25,0.75},
-                                      {0.25,0.75,0.75},
-                                      {0.75,0.75,0.75}};
-    double exp_face_area[36] = {0.25,0.25,0.25,0.25,
-                                0.25,0.25,0.25,0.25,
-                                0.25,0.25,0.25,0.25,
-                                0.25,0.25,0.25,0.25,
-                                0.25,0.25,0.25,0.25,
-                                0.25,0.25,0.25,0.25,
-                                0.25,0.25,0.25,0.25,
-                                0.25,0.25,0.25,0.25,
-                                0.25,0.25,0.25,0.25};
-    double exp_face_centroid[36][3] = {{0.0,0.25,0.25},
-                                       {0.0,0.75,0.25},
-                                       {0.0,0.25,0.75},
-                                       {0.0,0.75,0.75},
+    exp_face_centroid_view(4) = {0.5,0.25,0.25};
+    exp_face_centroid_view(5) = {0.5,0.75,0.25};
+    exp_face_centroid_view(6) = {0.5,0.25,0.75};
+    exp_face_centroid_view(7) = {0.5,0.75,0.75};
 
-                                       {0.5,0.25,0.25},
-                                       {0.5,0.75,0.25},
-                                       {0.5,0.25,0.75},
-                                       {0.5,0.75,0.75},
+    exp_face_centroid_view(8) = {1.0,0.25,0.25};
+    exp_face_centroid_view(9) = {1.0,0.75,0.25};
+    exp_face_centroid_view(10) = {1.0,0.25,0.75};
+    exp_face_centroid_view(11) = {1.0,0.75,0.75};
 
-                                       {1.0,0.25,0.25},
-                                       {1.0,0.75,0.25},
-                                       {1.0,0.25,0.75},
-                                       {1.0,0.75,0.75},
+    exp_face_centroid_view(12) = {0.25,0.0,0.25};
+    exp_face_centroid_view(13) = {0.75,0.0,0.25};
+    exp_face_centroid_view(14) = {0.25,0.0,0.75};
+    exp_face_centroid_view(15) = {0.75,0.0,0.75};
 
-                                       {0.25,0.0,0.25},
-                                       {0.75,0.0,0.25},
-                                       {0.25,0.0,0.75},
-                                       {0.75,0.0,0.75},
+    exp_face_centroid_view(16) = {0.25,0.5,0.25};
+    exp_face_centroid_view(17) = {0.75,0.5,0.25};
+    exp_face_centroid_view(18) = {0.25,0.5,0.75};
+    exp_face_centroid_view(19) = {0.75,0.5,0.75};
 
-                                       {0.25,0.5,0.25},
-                                       {0.75,0.5,0.25},
-                                       {0.25,0.5,0.75},
-                                       {0.75,0.5,0.75},
+    exp_face_centroid_view(20) = {0.25,1.0,0.25};
+    exp_face_centroid_view(21) = {0.75,1.0,0.25};
+    exp_face_centroid_view(22) = {0.25,1.0,0.75};
+    exp_face_centroid_view(23) = {0.75,1.0,0.75};
 
-                                       {0.25,1.0,0.25},
-                                       {0.75,1.0,0.25},
-                                       {0.25,1.0,0.75},
-                                       {0.75,1.0,0.75},
+    exp_face_centroid_view(24) = {0.25,0.25,0.0};
+    exp_face_centroid_view(25) = {0.75,0.25,0.0};
+    exp_face_centroid_view(26) = {0.25,0.75,0.0};
+    exp_face_centroid_view(27) = {0.75,0.75,0.0};
 
-                                       {0.25,0.25,0.0},
-                                       {0.75,0.25,0.0},
-                                       {0.25,0.75,0.0},
-                                       {0.75,0.75,0.0},
+    exp_face_centroid_view(28) = {0.25,0.25,0.5};
+    exp_face_centroid_view(29) = {0.75,0.25,0.5};
+    exp_face_centroid_view(30) = {0.25,0.75,0.5};
+    exp_face_centroid_view(31) = {0.75,0.75,0.5};
 
-                                       {0.25,0.25,0.5},
-                                       {0.75,0.25,0.5},
-                                       {0.25,0.75,0.5},
-                                       {0.75,0.75,0.5},
-
-                                       {0.25,0.25,1.0},
-                                       {0.75,0.25,1.0},
-                                       {0.25,0.75,1.0},
-                                       {0.75,0.75,1.0},
-
-    };
-
+    exp_face_centroid_view(32) = {0.25,0.25,1.0};
+    exp_face_centroid_view(33) = {0.75,0.25,1.0};
+    exp_face_centroid_view(34) = {0.25,0.75,1.0};
+    exp_face_centroid_view(35) = {0.75,0.75,1.0};
 
     int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
     int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::ALL);
@@ -514,136 +503,115 @@ TEST(MESH_GEOMETRY_SOLID)
 
     int space_dim_ = 3;
 
-    for (int i = 0; i < ncells; i++) {
+    Amanzi::AmanziMesh::Mesh * m = mesh.get(); 
 
-      Amanzi::AmanziGeometry::Point centroid = mesh->cell_centroid(i);
-
+    Kokkos::parallel_for(ncells,KOKKOS_LAMBDA(const int& i){
+      Amanzi::AmanziGeometry::Point centroid = m->cell_centroid(i);
       // Search for a cell with the same centroid in the
       // expected list of centroid
-
       bool found = false;
-
       for (int j = 0; j < ncells; j++) {
-        if (fabs(exp_cell_centroid[j][0]-centroid[0]) < 1.0e-10 &&
-            fabs(exp_cell_centroid[j][1]-centroid[1]) < 1.0e-10 &&
-            fabs(exp_cell_centroid[j][2]-centroid[2]) < 1.0e-10) {
-
+        if (fabs(exp_cell_centroid_view(j)[0]-centroid[0]) < 1.0e-10 &&
+            fabs(exp_cell_centroid_view(j)[1]-centroid[1]) < 1.0e-10 &&
+            fabs(exp_cell_centroid_view(j)[2]-centroid[2]) < 1.0e-10) {
           found = true;
-          CHECK_EQUAL(exp_cell_volume[j],mesh->cell_volume(i,false));
+          assert(exp_cell_volume_view(j) == m->cell_volume(i));
           break;
-
         }
       }
-
-      CHECK_EQUAL(found,true);
+      assert(found == true);
 
       Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces;
       Amanzi::AmanziGeometry::Point normal_sum(3), normal(3);
 
-      mesh->cell_get_faces(i,cfaces);
+      m->cell_get_faces(i,cfaces);
       normal_sum.set(0.0);
 
       for (int j = 0; j < cfaces.extent(0); j++) {
-        normal = mesh->face_normal(cfaces(j),false,i);
+        normal = m->face_normal(cfaces(j),false,i);
         normal_sum += normal;
       }
 
       double val = L22(normal_sum);
-      CHECK_CLOSE(val,0.0,1.0e-20);
-    }
+      assert(val < 1.0e-20);
+    });
 
-    for (int i = 0; i < nfaces; i++) {
-      Amanzi::AmanziGeometry::Point centroid = mesh->face_centroid(i);
+        
+    //for(int i = 0 ; i < nfaces; ++i){
+    Kokkos::parallel_for(nfaces,KOKKOS_LAMBDA(const int& i){
+      Amanzi::AmanziGeometry::Point centroid = m->face_centroid(i);
 
       bool found = false;
 
       for (int j = 0; j < nfaces; j++) {
-        if (fabs(exp_face_centroid[j][0]-centroid[0]) < 1.0e-10 &&
-            fabs(exp_face_centroid[j][1]-centroid[1]) < 1.0e-10 &&
-            fabs(exp_face_centroid[j][2]-centroid[2]) < 1.0e-10) {
+        if (fabs(exp_face_centroid_view(j)[0]-centroid[0]) < 1.0e-10 &&
+            fabs(exp_face_centroid_view(j)[1]-centroid[1]) < 1.0e-10 &&
+            fabs(exp_face_centroid_view(j)[2]-centroid[2]) < 1.0e-10) {
 
           found = true;
-
-          CHECK_EQUAL(exp_face_area[j],mesh->face_area(i));
-
+          assert(exp_face_area_view(j) == m->face_area(i));
           // Check the natural normal
-
-          Amanzi::AmanziGeometry::Point normal = mesh->face_normal(i);
-
-
+          Amanzi::AmanziGeometry::Point normal = m->face_normal(i);
           // Check the normal with respect to each connected cell
-
           Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cellids;
-          mesh->face_get_cells(i,Amanzi::AmanziMesh::Parallel_type::ALL,cellids);
+          m->face_get_cells(i,Amanzi::AmanziMesh::Parallel_type::ALL,cellids);
 
           for (int k = 0; k < cellids.extent(0); k++) {
             int dir;
             Amanzi::AmanziGeometry::Point normal_wrt_cell =
-              mesh->face_normal(i,false,cellids(k),&dir);
-
-
+              m->face_normal(i,false,cellids(k),&dir);
             Amanzi::AmanziGeometry::Point normal1(normal);
             normal1 *= dir;
 
-            CHECK_ARRAY_EQUAL(&(normal1[0]),&(normal_wrt_cell[0]),space_dim_);
+            for(int sd = 0 ; sd < space_dim_; ++sd)
+              assert(normal1[sd]==normal_wrt_cell[sd]); 
 
-
-            Amanzi::AmanziGeometry::Point cellcentroid = mesh->cell_centroid(cellids(k));
-            Amanzi::AmanziGeometry::Point facecentroid = mesh->face_centroid(i);
-
+            Amanzi::AmanziGeometry::Point cellcentroid = m->cell_centroid(cellids(k));
+            Amanzi::AmanziGeometry::Point facecentroid = m->face_centroid(i);
             Amanzi::AmanziGeometry::Point outvec = facecentroid-cellcentroid;
-
             double dp = outvec*normal_wrt_cell;
             dp /= (norm(outvec)*norm(normal_wrt_cell));
-
-
-            CHECK_CLOSE(dp,1.0,1e-10);
+            assert(fabs(dp-1.0)<1e-10);
           }
-
           break;
         }
       }
-
-      CHECK_EQUAL(found,true);
-    }
-
-
+      assert(found == true);
+    }); 
+  
     // Now deform the mesh a little and verify that the sum of the
     // outward normals of all faces of cell is still zero
 
     Amanzi::AmanziGeometry::Point ccoords(3);
-    mesh->node_get_coordinates(13,&ccoords); // central node
+    m->node_get_coordinates(13,&ccoords); // central node
 
     // Lets be sure this is the central node
-    CHECK_EQUAL(ccoords[0],0.5);
-    CHECK_EQUAL(ccoords[1],0.5);
-    CHECK_EQUAL(ccoords[2],0.5);
+    assert(ccoords[0] == 0.5);
+    assert(ccoords[1] == 0.5);
+    assert(ccoords[2] == 0.5);
 
     // Perturb it
     ccoords.set(0.7,0.7,0.7);
-    mesh->node_set_coordinates(13,ccoords);
+    m->node_set_coordinates(13,ccoords);
 
     // Now check the normals
 
-    for (int i = 0; i < ncells; i++) {
+    Kokkos::parallel_for(ncells, KOKKOS_LAMBDA(const int& i){
 
       Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces;
       Amanzi::AmanziGeometry::Point normal_sum(3), normal(3);
 
-      mesh->cell_get_faces(i,cfaces);
+      m->cell_get_faces(i,cfaces);
       normal_sum.set(0.0);
 
       for (int j = 0; j < cfaces.extent(0); j++) {
-        normal = mesh->face_normal(cfaces(j),false,i);
+        normal = m->face_normal(cfaces(j),false,i);
         normal_sum += normal;
       }
 
       double val = L22(normal_sum);
-      CHECK_CLOSE(val,0.0,1.0e-20);
-
-    }
+      assert(val < 1.0e-20);
+    }); 
 
   } // for each framework i
 }
-
-#endif 
