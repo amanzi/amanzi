@@ -233,6 +233,8 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
 
   op_tree_->AssembleMatrix();
 
+
+
   // create preconditioner
   auto pc_list = glist_->sublist("preconditioners").sublist("Hypre AMG");
   op_tree_->InitPreconditioner(pc_list);
@@ -245,10 +247,11 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
   solver.Init(slist);
   solver.add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
 
-  TreeVector rhs(*solution_);
+  TreeVector rhs(*solution_); 
   *rhs.SubVector(0)->Data() = *pk_matrix->op()->rhs();
   *rhs.SubVector(1)->Data() = *pk_fracture->op()->rhs();
 
+ 
   int ierr = solver.ApplyInverse(rhs, *solution_);
 
   // process error code
@@ -257,6 +260,7 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "Step failed." << std::endl;
   }
+
 
   // output 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {

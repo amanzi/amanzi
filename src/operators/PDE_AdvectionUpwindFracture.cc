@@ -23,6 +23,8 @@
 namespace Amanzi {
 namespace Operators {
 
+  
+
 /* ******************************************************************
 * Advection requires a velocity field.
 ****************************************************************** */
@@ -39,6 +41,11 @@ void PDE_AdvectionUpwindFracture::Setup(const CompositeVector& u)
 ****************************************************************** */
 void PDE_AdvectionUpwindFracture::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux)
 {
+
+  // PDE_AdvectionUpwind::UpdateMatrices(flux);
+
+  // return;
+  
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
 
@@ -54,12 +61,12 @@ void PDE_AdvectionUpwindFracture::UpdateMatrices(const Teuchos::Ptr<const Compos
     Aface.PutScalar(0.0);
 
     double flux_in(0.0);
-    std::vector<int> upwind_loc(upwind_flux_[f].size());
+    std::vector<int> upwind_loc(upwind_flux_new_[f].size());
 
     
-    for (int n=0; n<upwind_flux_[f].size(); n++){
-      c = upwind_cells_[f][n];
-      u = upwind_flux_[f][n];      
+    for (int n=0; n<upwind_flux_new_[f].size(); n++){
+      c = upwind_cells_new_[f][n];
+      u = upwind_flux_new_[f][n];      
       for (int j=0; j<cells.size(); j++){
         if (cells[j]==c){
           upwind_loc[n] = j;
@@ -69,20 +76,20 @@ void PDE_AdvectionUpwindFracture::UpdateMatrices(const Teuchos::Ptr<const Compos
       }      
     }
 
-    for (int n = 0; n < downwind_cells_[f].size(); ++n) {
-      flux_in -= downwind_flux_[f][n];
+    for (int n = 0; n < downwind_cells_new_[f].size(); ++n) {
+      flux_in -= downwind_flux_new_[f][n];
     }
     if (flux_in == 0.0) flux_in = 1e-12;
     
-    for (int n = 0; n < downwind_cells_[f].size(); ++n) {
-      int c = downwind_cells_[f][n];
-      u = downwind_flux_[f][n];
+    for (int n = 0; n < downwind_cells_new_[f].size(); ++n) {
+      int c = downwind_cells_new_[f][n];
+      u = downwind_flux_new_[f][n];
 
       
       if (c < ncells_owned) {
         double tmp = u / flux_in;
-        for (int m=0; m<upwind_flux_[f].size(); m++){
-          double v = upwind_flux_[f][m];
+        for (int m=0; m<upwind_flux_new_[f].size(); m++){
+          double v = upwind_flux_new_[f][m];
           for (int j=0; j<cells.size(); j++){
             if (cells[j]==c){
               Aface(j, upwind_loc[m]) = (u / flux_in)*v;
@@ -92,6 +99,8 @@ void PDE_AdvectionUpwindFracture::UpdateMatrices(const Teuchos::Ptr<const Compos
         }
       }
     }
+
+    matrix[f] = Aface;    
 
   }
 
@@ -180,17 +189,19 @@ void PDE_AdvectionUpwindFracture::UpdateMatrices(const Teuchos::Ptr<const Compos
 void PDE_AdvectionUpwindFracture::IdentifyUpwindCells_(const CompositeVector& u)
 {
 
-  upwind_cells_.clear();
-  downwind_cells_.clear();
+  //PDE_AdvectionUpwind::IdentifyUpwindCells_(u);
 
-  upwind_cells_.resize(nfaces_wghost);
-  downwind_cells_.resize(nfaces_wghost);
+  upwind_cells_new_.clear();
+  downwind_cells_new_.clear();
 
-  upwind_flux_.clear();
-  downwind_flux_.clear();
+  upwind_cells_new_.resize(nfaces_wghost);
+  downwind_cells_new_.resize(nfaces_wghost);
 
-  upwind_flux_.resize(nfaces_wghost);
-  downwind_flux_.resize(nfaces_wghost);
+  upwind_flux_new_.clear();
+  downwind_flux_new_.clear();
+
+  upwind_flux_new_.resize(nfaces_wghost);
+  downwind_flux_new_.resize(nfaces_wghost);
 
   AmanziMesh::Entity_ID_List faces, cells;
   std::vector<int> dirs;
@@ -210,14 +221,22 @@ void PDE_AdvectionUpwindFracture::IdentifyUpwindCells_(const CompositeVector& u)
       int f = faces[i];
       double u = flux_c[i][c];
       if (u >= 0.0) {
-        upwind_cells_[f].push_back(c);
-        upwind_flux_[f].push_back(u);
+        upwind_cells_new_[f].push_back(c);
+        upwind_flux_new_[f].push_back(u);
       } else {
-        downwind_cells_[f].push_back(c);
-        downwind_flux_[f].push_back(u);
+        downwind_cells_new_[f].push_back(c);
+        downwind_flux_new_[f].push_back(u);
       }      
     }
+    // std::cout<<"cell "<<c<<" ";
+    // for (int i = 0; i < faces.size(); i++) std::cout<<flux_c[i][c]<<"\n";
   }
+
+  // std::cout<<"Face 1:\n"<<"upwind"<<"\n";
+  // int f =1;
+  // for (int i=0; i<upwind_cells_new_[f].size(); i++) std::cout<<upwind_cells_new_[f][i]<<" "<<upwind_flux_new_[f][i]<<"\n";
+  // std::cout<<"downwind\n";
+  // for (int i=0; i<downwind_cells_new_[f].size(); i++) std::cout<<downwind_cells_new_[f][i]<<" "<<downwind_flux_new_[f][i]<<"\n";
   
 }
 
