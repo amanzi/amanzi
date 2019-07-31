@@ -115,65 +115,65 @@ if (BUILD_TESTS)
                     geometry whetstone mesh_functions functions)
 
     # Test: mpc driver for flow
-    add_amanzi_test(mpc_driver_flow mpc_driver_flow
+    add_amanzi_test(mpc_flow mpc_flow
                     KIND      int
-                    SOURCE    test/Main.cc test/mpc_driver_flow.cc
+                    SOURCE    test/Main.cc test/mpc_flow.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
 
     # Test: mpc driver for transport
-    add_amanzi_test(mpc_driver_transport mpc_driver_transport
+    add_amanzi_test(mpc_transport mpc_transport
                     KIND      int
-                    SOURCE    test/Main.cc test/mpc_driver_transport.cc
+                    SOURCE    test/Main.cc test/mpc_transport.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: mpc driver for reactive transport
-    add_amanzi_test(mpc_driver_reactive_transport mpc_driver_reactive_transport
+    add_amanzi_test(mpc_reactive_transport mpc_reactive_transport
                     KIND      int
-                    SOURCE    test/Main.cc test/mpc_driver_reactive_transport.cc
+                    SOURCE    test/Main.cc test/mpc_reactive_transport.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
 
     # Test: mpc driver for thermal richards
-    add_amanzi_test(mpc_driver_thermal_richards mpc_driver_thermal_richards
+    add_amanzi_test(mpc_thermal_richards mpc_thermal_richards
                     KIND      int
-                    SOURCE    test/Main.cc test/mpc_driver_thermal_richards.cc
+                    SOURCE    test/Main.cc test/mpc_thermal_richards.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: mpc driver for flow and reactive transport
-    add_amanzi_test(mpc_driver_flow_reactive_transport mpc_driver_flow_reactive_transport
+    add_amanzi_test(mpc_flow_reactive_transport mpc_flow_reactive_transport
                     KIND      int
-                    SOURCE    test/Main.cc test/mpc_driver_frt.cc
+                    SOURCE    test/Main.cc test/mpc_flow_reactive_transport.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})
 
     # Test: mpc driver for coupled matrix-fracture flow and transport
-    add_amanzi_test(mpc_driver_coupled_flow mpc_driver_coupled_flow
+    add_amanzi_test(mpc_coupled_flow mpc_coupled_flow
                     KIND      int
                     NPROCS    2
-                    SOURCE    test/Main.cc test/mpc_driver_coupled_flow.cc
+                    SOURCE    test/Main.cc test/mpc_coupled_flow.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    add_amanzi_test(mpc_driver_coupled_flow_transport mpc_driver_coupled_flow_transport
+    add_amanzi_test(mpc_coupled_flow_transport mpc_coupled_flow_transport
                     KIND      int
-                    SOURCE    test/Main.cc test/mpc_driver_coupled_flow_transport.cc
+                    SOURCE    test/Main.cc test/mpc_coupled_flow_transport.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                  
 
-    add_amanzi_test(mpc_driver_coupled_flow_transport_implicit mpc_driver_coupled_flow_transport_implicit
+    add_amanzi_test(mpc_coupled_flow_transport_implicit mpc_coupled_flow_transport_implicit
                     KIND      int
-                    SOURCE    test/Main.cc test/mpc_driver_coupled_flow_transport_implicit.cc
+                    SOURCE    test/Main.cc test/mpc_coupled_flow_transport_implicit.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: mpc driver for coupled matrix-fracture flow and transport: benchmarks
-    add_amanzi_test(mpc_driver_benchmark_single mpc_driver_benchmark_single
+    add_amanzi_test(mpc_benchmark_single mpc_benchmark_single
                     KIND      int
-                    SOURCE    test/Main.cc test/mpc_driver_benchmark_single.cc
+                    SOURCE    test/Main.cc test/mpc_benchmark_single.cc
         	    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                  
 
     # Test: mpc-new driver dummy
-    add_amanzi_test(mpc_driver_dummy mpc_driver_dummy
+    add_amanzi_test(mpc_dummy mpc_dummy
                     KIND      int
-                    SOURCE    test/Main.cc test/mpc_driver_dummy_pk.cc
+                    SOURCE    test/Main.cc test/mpc_dummy_pk.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: observable_line_segment

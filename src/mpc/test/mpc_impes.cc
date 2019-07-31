@@ -34,7 +34,7 @@ using namespace std;
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
   
-  std::string xmlInFileName = "test/mpc_driver_impes.xml";
+  std::string xmlInFileName = "test/mpc_impes.xml";
 
   // read the main parameter list
   Teuchos::ParameterList driver_parameter_list;

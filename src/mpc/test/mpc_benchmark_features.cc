@@ -30,7 +30,7 @@
 #include "wrm_flow_registration.hh"
 
 
-TEST(MPC_DRIVER_BENCHMARK_FIELD) {
+TEST(MPC_DRIVER_FLOW_MATRIX_FRACTURE) {
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
@@ -39,21 +39,23 @@ using namespace Amanzi::AmanziGeometry;
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   
   // setup a piecewice linear solution with a jump
-  std::string xmlInFileName = "mpc_driver_benchmark_field.xml";
+  std::string xmlInFileName = "test/mpc_benchmark_features.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
 
-  std::string meshfile = plist->sublist("mesh").sublist("unstructured").sublist("read mesh file").get<std::string>("file");
-  
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, &comm));
 
   // create mesh
-  MeshFactory factory(&comm);
-  factory.preference(FrameworkPreference({Framework::MSTK}));
-  factory.set_partitioner(Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_GRAPH);
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory(meshfile, gm);
+  FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(Framework::MSTK);
 
+  MeshFactory factory(&comm);
+  factory.preference(pref);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory("test/small_features_ref0.exo", gm);
+  // std::string meshfile = plist->sublist("mesh").sublist("unstructured").sublist("read mesh file").get<std::string>("file");
+  // Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = factory(meshfile, gm);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
@@ -62,14 +64,13 @@ using namespace Amanzi::AmanziGeometry;
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
 
-  /*
-  Amanzi::MeshAudit mesh_auditor(mesh);
-  int status = mesh_auditor.Verify();
-  if (status != 0) {
-    Errors::Message msg("Mesh Audit could not verify correctness of mesh.");
-    Exceptions::amanzi_throw(msg);
-  }
-  */
+  // Amanzi::MeshAudit mesh_auditor(mesh);
+  // int status = mesh_auditor.Verify();
+  // if (status != 0) {
+  //   Errors::Message msg("Mesh Audit could not verify correctness of mesh.");
+  //   Exceptions::amanzi_throw(msg);
+  // }
+  
   
   //create additional mesh for fracture
   std::vector<std::string> names;
@@ -82,14 +83,13 @@ using namespace Amanzi::AmanziGeometry;
 
   S->RegisterMesh("fracture", mesh_fracture);
 
+  // -------------- ANALYSIS --------------------------------------------
+  Amanzi::InputAnalysis analysis(mesh_fracture);
+  analysis.Init(*plist);
+  analysis.RegionAnalysis();
+  //  analysis.OutputBCs();
 
-      // -------------- ANALYSIS --------------------------------------------
-  // Amanzi::InputAnalysis analysis(mesh_fracture);
-  // analysis.Init(*plist);
-  // analysis.RegionAnalysis();
-
-  // exit(0);
-
+  
   Amanzi::CycleDriver cycle_driver(plist, S, &comm, obs_data);
   cycle_driver.Go();
 }

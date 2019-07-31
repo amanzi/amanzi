@@ -92,9 +92,9 @@ using namespace Amanzi::AmanziGeometry;
 
 
 TEST(MPC_DRIVER_REACTIVE_TRANSPORT_NATIVE) {
-  RunTestReactiveTransport("test/mpc_driver_reactive_transport.xml");
+  RunTestReactiveTransport("test/mpc_reactive_transport.xml");
 }
 
 //TEST(MPC_DRIVER_REACTIVE_TRANSPORT_ALQUIMIA) {
-//  RunTestReactiveTransport("test/mpc_driver_alquimia_transport.xml");
+//  RunTestReactiveTransport("test/mpc_alquimia_transport.xml");
 //}

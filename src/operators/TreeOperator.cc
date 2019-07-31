@@ -236,9 +236,18 @@ void TreeOperator::InitPreconditioner(
 /* ******************************************************************
 * Create preconditioner using name and a factory.
 ****************************************************************** */
-void TreeOperator::InitPreconditioner(
-    Teuchos::ParameterList& plist)
+void TreeOperator::InitPreconditioner(Teuchos::ParameterList& plist)
 {
+  // provide block ids for block strategies.
+  if (plist.isParameter("preconditioner type") &&
+      plist.get<std::string>("preconditioner type") == "boomer amg" &&
+      plist.isSublist("boomer amg parameters")) {
+
+    auto block_ids = smap_->BlockIndices();
+    plist.sublist("boomer amg parameters").set("number of unique block indices", block_ids.first);
+    plist.sublist("boomer amg parameters").set("block indices", block_ids.second);
+  }
+
   AmanziPreconditioners::PreconditionerFactory factory;
   preconditioner_ = factory.Create(plist);
   preconditioner_->Update(A_);
