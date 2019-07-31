@@ -53,7 +53,7 @@ TranspirationDistributionEvaluator::InitializeFromPlist_()
   
   // - pull Keys from plist
   // dependency: pressure
-  f_wp_key_ = Keys::readKey(plist_, domain_name, "water potential fraction", "relative_permeability");
+  f_wp_key_ = Keys::readKey(plist_, domain_name, "water potential fraction", "saturation_liquid");
   dependencies_.insert(f_wp_key_);
 
   // dependency: rooting_depth_fraction
@@ -61,8 +61,8 @@ TranspirationDistributionEvaluator::InitializeFromPlist_()
   dependencies_.insert(f_root_key_);
 
   // dependency: transpiration
-  trans_total_key_ = Keys::readKey(plist_, surface_name, "total transpiration", "transpiration");
-  dependencies_.insert(trans_total_key_);
+  potential_trans_key_ = Keys::readKey(plist_, surface_name, "potential transpiration", "potential_transpiration");
+  dependencies_.insert(potential_trans_key_);
 
   // dependency: cell volume, surface cell volume
   cv_key_ = Keys::readKey(plist_, domain_name, "cell volume", "cell_volume");
@@ -84,7 +84,7 @@ TranspirationDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   const Epetra_MultiVector& cv = *S->GetFieldData(cv_key_)->ViewComponent("cell", false);
 
   // on the surface
-  const Epetra_MultiVector& trans_total = *S->GetFieldData(trans_total_key_)->ViewComponent("cell", false);
+  const Epetra_MultiVector& potential_trans = *S->GetFieldData(potential_trans_key_)->ViewComponent("cell", false);
   const Epetra_MultiVector& surf_cv = *S->GetFieldData(surf_cv_key_)->ViewComponent("cell", false);
 
   double p_atm = *S->GetScalarData("atmospheric_pressure");
@@ -92,23 +92,26 @@ TranspirationDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   // result, on the subsurface
   const AmanziMesh::Mesh& subsurf_mesh = *result->Mesh();
   Epetra_MultiVector& result_v = *result->ViewComponent("cell", false);
-  
+  double count_ss = 0;
   for (int pft=0; pft!=result_v.NumVectors(); ++pft) {
-    for (int sc=0; sc!=trans_total.MyLength(); ++sc) {
+    for (int sc=0; sc!=potential_trans.MyLength(); ++sc) {
       double column_total = 0.;
       double f_root_total = 0.;
       double f_wp_total = 0.;
+      double var_dz = 0.;
       for (auto c : subsurf_mesh.cells_of_column(sc)) {
         column_total += f_wp[0][c] * f_root[pft][c] * cv[0][c];
         result_v[pft][c] = f_wp[0][c] * f_root[pft][c];
+	if (f_wp[0][c] * f_root[pft][c] > 0)
+	  var_dz += cv[0][c];
       }
-      if (column_total <= 0. && trans_total[pft][sc] > 0.) {
+      if (column_total <= 0. && potential_trans[pft][sc] > 0.) {
         Errors::Message message("TranspirationDistributionEvaluator: Broken run, non-zero transpiration draw but no cells with some roots are above the wilting point.");
         Exceptions::amanzi_throw(message);
       }
     
       if (column_total > 0.) {
-        double coef = trans_total[pft][sc] * surf_cv[0][sc] / column_total;
+        double coef = potential_trans[pft][sc] * surf_cv[0][sc] / column_total;
         if (limiter_.get()) {
           auto column_total_vector = std::vector<double>(1, column_total / surf_cv[0][sc]);
           double limiting_factor = (*limiter_)(column_total_vector);
@@ -121,10 +124,13 @@ TranspirationDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
           result_v[pft][c] = result_v[pft][c] * coef;
           if (limiter_local_) {
             result_v[pft][c] *= f_wp[0][c];
+	    count_ss += result_v[pft][c] * cv[0][c]/surf_cv[0][0];
           }
-        }
+	}
+	
       }
 
+      //assert (result_v[0][0] <= potential_trans[0][0]);
 // THIS ENFORCES no limiter
 // #ifdef ENABLE_DBC
 //       double new_col_total = 0.;
@@ -181,7 +187,7 @@ TranspirationDistributionEvaluator::EnsureCompatibility(const Teuchos::Ptr<State
   surf_fac.SetMesh(S->GetMesh(Keys::getDomain(surf_cv_key_)))
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, npfts_);
-  S->RequireField(trans_total_key_)->Update(surf_fac);
+  S->RequireField(potential_trans_key_)->Update(surf_fac);
 
   CompositeVectorSpace surf_fac_one;
   surf_fac_one.SetMesh(S->GetMesh(Keys::getDomain(surf_cv_key_)))

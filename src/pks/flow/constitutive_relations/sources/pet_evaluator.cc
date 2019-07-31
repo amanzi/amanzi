@@ -71,6 +71,7 @@ PETEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
     //    res[0][c] = 0.001* pt_alpha_ * (1./lh_vap) * s1 * s2 / 86400.; // convert mm to m, and per day to per second
     res[0][c] = 0.24* pt_alpha_ * (1./lh_vap) * s1 * s2 / 86400.; // convert mm to m, and per day to per second
+    res[0][c] = std::max(res[0][c],0.0);
   }
 
 }
