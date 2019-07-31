@@ -131,24 +131,26 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
 {
   AMANZI_ASSERT(op.matrices.size() == nfaces_owned);
 
-  int lid_r[2];
-  int lid_c[2];
+  std::vector<int> lid_r;
+  std::vector<int> lid_c;
 
   const std::vector<int>& cell_row_inds = map.GhostIndices(my_block_row, "cell", 0);
   const std::vector<int>& cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);
 
   int ierr(0);
-  AmanziMesh::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_List cells; 
   for (int f = 0; f != nfaces_owned; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     
     int ncells = cells.size();
+    lid_r.resize(ncells);
+    lid_c.resize(ncells);    
     for (int n = 0; n != ncells; ++n) {
       lid_r[n] = cell_row_inds[cells[n]];
       lid_c[n] = cell_col_inds[cells[n]];
     }
 
-    ierr |= graph.InsertMyIndices(ncells, lid_r, ncells, lid_c);
+    ierr |= graph.InsertMyIndices(ncells, lid_r.data(), ncells, lid_c.data());
   }
 
   AMANZI_ASSERT(!ierr);
@@ -204,14 +206,8 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
       lid_r[n] = cell_row_inds[cells[n]];
       lid_c[n] = cell_col_inds[cells[n]];
     }
-
-    // std::cout<<"ncells_owned "<<ncells_owned<<"\n";
-    // for (auto a : lid_r) std::cout<<" "<<a; std::cout<<"\n";
-    // for (auto a : lid_c) std::cout<<" "<<a; std::cout<<"\n";
-    // std::cout<<op.matrices[f]<<"\n";
-    
+   
     ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[f]);
-    // std::cout<<"ierr="<<ierr<<"\n";
     AMANZI_ASSERT(ierr>=0);
   }
   AMANZI_ASSERT(ierr>=0);
