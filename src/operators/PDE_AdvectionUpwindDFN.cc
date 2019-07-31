@@ -6,6 +6,8 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
+  Upwind operator on a network of fractures
+
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
           Ethan Coon (ecoon@lanl.gov)
 */
@@ -18,17 +20,15 @@
 #include "Operator_Cell.hh"
 #include "Op_Face_Cell.hh"
 #include "Op_SurfaceFace_SurfaceCell.hh"
-#include "PDE_AdvectionUpwindFracture.hh"
+#include "PDE_AdvectionUpwindDFN.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-  
-
 /* ******************************************************************
 * Advection requires a velocity field.
 ****************************************************************** */
-void PDE_AdvectionUpwindFracture::Setup(const CompositeVector& u)
+void PDE_AdvectionUpwindDFN::Setup(const CompositeVector& u)
 {
   IdentifyUpwindCells_(u);
 }
@@ -39,13 +39,8 @@ void PDE_AdvectionUpwindFracture::Setup(const CompositeVector& u)
 * Advection operator is of the form: div (u C), where u is the given
 * velocity field and C is the advected field.
 ****************************************************************** */
-void PDE_AdvectionUpwindFracture::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux)
+void PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux)
 {
-
-  // PDE_AdvectionUpwind::UpdateMatrices(flux);
-
-  // return;
-  
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
 
@@ -54,7 +49,6 @@ void PDE_AdvectionUpwindFracture::UpdateMatrices(const Teuchos::Ptr<const Compos
   double u;
  
   for (int f = 0; f < nfaces_owned; ++f) {
-   
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
@@ -63,12 +57,11 @@ void PDE_AdvectionUpwindFracture::UpdateMatrices(const Teuchos::Ptr<const Compos
     double flux_in(0.0);
     std::vector<int> upwind_loc(upwind_flux_new_[f].size());
 
-    
-    for (int n=0; n<upwind_flux_new_[f].size(); n++){
+    for (int n = 0; n < upwind_flux_new_[f].size(); n++) {
       c = upwind_cells_new_[f][n];
       u = upwind_flux_new_[f][n];      
-      for (int j=0; j<cells.size(); j++){
-        if (cells[j]==c){
+      for (int j = 0; j < cells.size(); j++) {
+        if (cells[j] == c) {
           upwind_loc[n] = j;
           Aface(j,j) = u;
           break;
@@ -84,15 +77,14 @@ void PDE_AdvectionUpwindFracture::UpdateMatrices(const Teuchos::Ptr<const Compos
     for (int n = 0; n < downwind_cells_new_[f].size(); ++n) {
       int c = downwind_cells_new_[f][n];
       u = downwind_flux_new_[f][n];
-
       
       if (c < ncells_owned) {
         double tmp = u / flux_in;
-        for (int m=0; m<upwind_flux_new_[f].size(); m++){
+        for (int m=0; m<upwind_flux_new_[f].size(); m++) {
           double v = upwind_flux_new_[f][m];
-          for (int j=0; j<cells.size(); j++){
-            if (cells[j]==c){
-              Aface(j, upwind_loc[m]) = (u / flux_in)*v;
+          for (int j = 0; j < cells.size(); j++){
+            if (cells[j] == c) {
+              Aface(j, upwind_loc[m]) = (u / flux_in) * v;
               break;
             }
           }
@@ -101,12 +93,8 @@ void PDE_AdvectionUpwindFracture::UpdateMatrices(const Teuchos::Ptr<const Compos
     }
 
     matrix[f] = Aface;    
-
   }
-
-  
 }
-
 
 
 /* *******************************************************************
@@ -134,7 +122,7 @@ void PDE_AdvectionUpwindFracture::UpdateMatrices(const Teuchos::Ptr<const Compos
 *
 * FIXME: So far we support the case bc_test = bc_trial
 ******************************************************************* */
-// void PDE_AdvectionUpwindFracture::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
+// void PDE_AdvectionUpwindDFN::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 // {
 //   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
 //   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
@@ -181,16 +169,12 @@ void PDE_AdvectionUpwindFracture::UpdateMatrices(const Teuchos::Ptr<const Compos
 // }
 
 
-
 /* *******************************************************************
 * Identify flux direction based on orientation of the face normal 
 * and sign of the  Darcy velocity.                               
 ******************************************************************* */
-void PDE_AdvectionUpwindFracture::IdentifyUpwindCells_(const CompositeVector& u)
+void PDE_AdvectionUpwindDFN::IdentifyUpwindCells_(const CompositeVector& u)
 {
-
-  //PDE_AdvectionUpwind::IdentifyUpwindCells_(u);
-
   upwind_cells_new_.clear();
   downwind_cells_new_.clear();
 
@@ -208,7 +192,7 @@ void PDE_AdvectionUpwindFracture::IdentifyUpwindCells_(const CompositeVector& u)
 
   const Epetra_Map& cmap = mesh_->cell_map(true);
 
- // desinged for $domain-darcy_flux_fracture
+  // desinged for $domain-darcy_flux_fracture
 
   u.ScatterMasterToGhosted();
 
@@ -228,16 +212,7 @@ void PDE_AdvectionUpwindFracture::IdentifyUpwindCells_(const CompositeVector& u)
         downwind_flux_new_[f].push_back(u);
       }      
     }
-    // std::cout<<"cell "<<c<<" ";
-    // for (int i = 0; i < faces.size(); i++) std::cout<<flux_c[i][c]<<"\n";
   }
-
-  // std::cout<<"Face 1:\n"<<"upwind"<<"\n";
-  // int f =1;
-  // for (int i=0; i<upwind_cells_new_[f].size(); i++) std::cout<<upwind_cells_new_[f][i]<<" "<<upwind_flux_new_[f][i]<<"\n";
-  // std::cout<<"downwind\n";
-  // for (int i=0; i<downwind_cells_new_[f].size(); i++) std::cout<<downwind_cells_new_[f][i]<<" "<<downwind_flux_new_[f][i]<<"\n";
-  
 }
 
 }  // namespace Operators

@@ -22,15 +22,15 @@
 namespace Amanzi {
 namespace Operators {
 
-class PDE_AdvectionUpwindFracture : public PDE_AdvectionUpwind {
+class PDE_AdvectionUpwindDFN : public PDE_AdvectionUpwind {
  public:
-  PDE_AdvectionUpwindFracture(Teuchos::ParameterList& plist,
-                              Teuchos::RCP<Operator> global_op) :
+  PDE_AdvectionUpwindDFN(Teuchos::ParameterList& plist,
+                         Teuchos::RCP<Operator> global_op) :
     PDE_AdvectionUpwind(plist, global_op) {
   }
 
-  PDE_AdvectionUpwindFracture(Teuchos::ParameterList& plist,
-                              Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+  PDE_AdvectionUpwindDFN(Teuchos::ParameterList& plist,
+                         Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
     PDE_AdvectionUpwind(plist, mesh) {
   }
   
