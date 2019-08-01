@@ -1012,7 +1012,6 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
     AmanziMesh::Entity_ID c = cells[0];
       
     if (f < nfaces_owned) {
-      // std::cout << "face : "<<f<<" flux "<<flux_f[0][f]<<" cond f "<<upw_cond_f[0][f]<<"\n";
       if ((ponded_c[0][c] < 0.1)&& (flux_f[0][f]<-1e-10) ) {      
           
         markers[f] = Operators::OPERATOR_BC_NEUMANN;
@@ -1045,8 +1044,6 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
         markers[f] = Operators::OPERATOR_BC_NEUMANN;
         values[f] = 0.0;
     }
-    if (abs(values[f]) > 1e-4) std::cout<<"BC: "<<f<<" val "<<values[f]<<" marker "<<markers[f]<<"\n";
-
   }
   
 
@@ -1156,7 +1153,6 @@ void OverlandPressureFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
     AmanziMesh::Entity_ID c = cells[0];
                                            
     if (f < nfaces_owned) {
-      // std::cout << "face : "<<f<<" flux "<<flux_f[0][f]<<" cond f "<<upw_cond_f[0][f]<<"\n";
       if ((ponded_c[0][c] < 0.1)&& (flux_f[0][f]<-1e-10) ) {
         double dp = elevation_f[0][f] - elevation_c[0][c];        
         double bc_val = -dp * Aff[f](0,0);
@@ -1174,7 +1170,7 @@ void OverlandPressureFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
       }
 
     }
-    std::cout<<"BC Tidal: "<<f<<" pond "<<ponded_c[0][c]<<" flux "<<flux_f[0][f]<<" marker "<<markers[f]<<" values "<<values[f]<<"\n";    
+    //std::cout<<"BC Tidal: "<<f<<" pond "<<ponded_c[0][c]<<" flux "<<flux_f[0][f]<<" marker "<<markers[f]<<" values "<<values[f]<<"\n";    
   }
 
   
