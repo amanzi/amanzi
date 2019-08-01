@@ -113,6 +113,7 @@ set(operators_inc_files
     TreeOperator.hh
     Reconstruction.hh
     ReconstructionCell.hh
+    UniqueLocalIndex.hh
     Upwind.hh
     UpwindArithmeticAverage.hh
     UpwindDivK.hh
@@ -158,6 +159,7 @@ add_amanzi_library(operators
                           TreeOperator.cc
                           ReconstructionCell.cc
                           RemapDG.cc RemapUtils.cc
+                          UniqueLocalIndex.cc
                           HEADERS ${operators_inc_files}
                    LINK_LIBS geometry mesh mesh_factory error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})                          
 

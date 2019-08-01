@@ -48,9 +48,6 @@ class TransportMatrixFractureImplicit_PK : public PK_MPCStrong<PK_BDF> {
   virtual std::string name() { return "coupled transport implicit"; } 
 
  private:
-  int FaceLocalIndex_(int c, int f, const Epetra_BlockMap& cmap);
-
- private:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
   Teuchos::RCP<VerboseObject> vo_;
 

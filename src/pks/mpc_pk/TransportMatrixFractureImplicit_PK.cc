@@ -20,6 +20,7 @@
 #include "PDE_DiffusionFracturedMatrix.hh"
 #include "TransportImplicit_PK.hh"
 #include "TreeOperator.hh"
+#include "UniqueLocalIndex.hh"
 
 #include "TransportMatrixFractureImplicit_PK.hh"
 
@@ -175,7 +176,6 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
   AmanziMesh::Entity_ID_List cells;
   const auto& flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face");
   const auto& mmap = flux.Map();
-  const auto& cmap = mesh_domain_->cell_map(true);
 
   for (int c = 0; c < ncells_owned_f; ++c) {
     int f = mesh_fracture_->entity_get_parent(AmanziMesh::CELL, c);
@@ -184,7 +184,7 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
     mesh_domain_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
     mesh_domain_->face_normal(f, false, cells[0], &dir);
-    shift = FaceLocalIndex_(cells[0], f, cmap);
+    shift = Operators::UniqueIndexFaceToCells(*mesh_domain_, f, cells[0]);
 
     for (int k = 0; k < ncells; ++k) {
       // since cells are ordered differenty than points, we need a map
@@ -281,26 +281,6 @@ void TransportMatrixFractureImplicit_PK::CommitStep(
 {
   *S->GetFieldData("total_component_concentration", "state") = *solution_->SubVector(0)->Data();
   *S->GetFieldData("fracture-total_component_concentration", "state") = *solution_->SubVector(1)->Data();
-}
-
-
-/* ******************************************************************
-* Local index of DOF for internal face f corresponding to cell c
-****************************************************************** */
-int TransportMatrixFractureImplicit_PK::FaceLocalIndex_(
-    int c, int f, const Epetra_BlockMap& cmap)
-{
-  AmanziMesh::Entity_ID_List cells;
-
-  int idx = 0;
-  mesh_domain_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-  if (cells.size() == 2) {
-     int gid = cmap.GID(c);
-     int gid_min = std::min(cmap.GID(cells[0]), cmap.GID(cells[1]));
-     if (gid > gid_min) idx = 1;
-  }
-
-  return idx;
 }
 
 }  // namespace Amanzi

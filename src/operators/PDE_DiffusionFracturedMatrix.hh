@@ -54,9 +54,6 @@ class PDE_DiffusionFracturedMatrix : public PDE_DiffusionMFD {
                           const Teuchos::Ptr<CompositeVector>& flux) override;
 
  private:
-  int FaceLocalIndex_(int c, int f, const Epetra_BlockMap& cmap);
-
- private:
   Teuchos::RCP<CompositeVectorSpace> cvs_;
 
   double rho_;

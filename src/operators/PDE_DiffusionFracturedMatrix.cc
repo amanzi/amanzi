@@ -21,6 +21,7 @@
 #include "Operator_FaceCell.hh"
 #include "ParallelCommunication.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
+#include "UniqueLocalIndex.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -67,7 +68,6 @@ void PDE_DiffusionFracturedMatrix::UpdateMatrices(
   PDE_DiffusionMFD::UpdateMatrices(flux, u);
 
   AmanziMesh::Entity_ID_List faces;
-  const auto& cmap = mesh_->cell_map(true);
   const auto& fmap = *cvs_->Map("face", true);
 
   int dim = mesh_->space_dimension();
@@ -90,7 +90,7 @@ void PDE_DiffusionFracturedMatrix::UpdateMatrices(
       int ndofs = fmap.ElementSize(f);
 
       int shift(0);
-      if (ndofs == 2) shift = FaceLocalIndex_(c, f, cmap); 
+      if (ndofs == 2) shift = UniqueIndexFaceToCells(*mesh_, f, c); 
 
       map[n] = np + shift;
       lid[n] = first + shift;
@@ -167,7 +167,6 @@ void PDE_DiffusionFracturedMatrix::ApplyBCs(
   Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
 
   const auto& fmap = *cvs_->Map("face", true);
-  const auto& cmap = mesh_->cell_map(true);
 
   for (int c = 0; c != ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
@@ -188,7 +187,7 @@ void PDE_DiffusionFracturedMatrix::ApplyBCs(
       int ndofs = fmap.ElementSize(f);
 
       int shift(0);
-      if (ndofs == 2) shift = FaceLocalIndex_(c, f, cmap); 
+      if (ndofs == 2) shift = UniqueIndexFaceToCells(*mesh_, f, c); 
 
       for (int k = 0; k < ndofs; ++k) {
         lid[np] = first + k;
@@ -280,7 +279,6 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
 
   int dim = mesh_->space_dimension();
   const auto& fmap = *cvs_->Map("face", true);
-  const auto& cmap = mesh_->cell_map(true);
 
   int ndofs_owned = flux->ViewComponent("face")->MyLength();
   int ndofs_wghost = flux_data.MyLength();
@@ -306,7 +304,7 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
       int ndofs = fmap.ElementSize(f);
 
       int shift(0);
-      if (ndofs == 2) shift = FaceLocalIndex_(c, f, cmap); 
+      if (ndofs == 2) shift = UniqueIndexFaceToCells(*mesh_, f, c); 
       map[n] = np + shift;
 
       for (int k = 0; k < ndofs; ++k) {
@@ -361,26 +359,6 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
   }
 
   flux->GatherGhostedToMaster();
-}
-
-
-/* ******************************************************************
-* Local index of DOF on internal face
-****************************************************************** */
-int PDE_DiffusionFracturedMatrix::FaceLocalIndex_(
-    int c, int f, const Epetra_BlockMap& cmap)
-{
-  AmanziMesh::Entity_ID_List cells;
-
-  int idx = 0;
-  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-  if (cells.size() == 2) {
-     int gid = cmap.GID(c);
-     int gid_min = std::min(cmap.GID(cells[0]), cmap.GID(cells[1]));
-     if (gid > gid_min) idx = 1;
-  }
-
-  return idx;
 }
 
 
