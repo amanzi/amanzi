@@ -203,7 +203,7 @@ void OverlandFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
   const Epetra_MultiVector& cv =
       *S_next_->GetFieldData("surface-cell_volume")->ViewComponent("cell",false);
 
-  std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
+  std::vector<double>& Acc_cells = preconditioner_acc_->local_op()->vals;
   unsigned int ncells = Acc_cells.size();
   for (unsigned int c=0; c!=ncells; ++c) {
     Acc_cells[c] += cv[0][c] / h;

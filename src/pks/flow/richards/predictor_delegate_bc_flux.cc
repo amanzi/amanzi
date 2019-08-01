@@ -70,7 +70,7 @@ PredictorDelegateBCFlux::CreateFunctor_(int f,
   double Krel = wrm->k_relative(wrm->saturation(101325. - pres_f[0][f]));
 
   // fill the arrays
-  const auto& Aff_g = matrix_->local_matrices()->matrices[c];
+  const auto& Aff_g = matrix_->local_op()->matrices[c];
   for (unsigned int i=0; i!=faces.size(); ++i) {
     (*Aff)[i] = Aff_g(n,i) / Krel;
     (*lambda)[i] = pres_f[0][faces[i]];

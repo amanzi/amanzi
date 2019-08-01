@@ -30,7 +30,7 @@ void OverlandPressureFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   matrix_diff_->SetScalarCoefficient(cond, Teuchos::null);
 
   std::vector<WhetStone::DenseMatrix>& Aff =
-    matrix_diff_->local_matrices()->matrices;
+    matrix_diff_->local_op()->matrices;
    
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   FixBCsForOperator_(S_next_.ptr()); // deals with zero gradient case

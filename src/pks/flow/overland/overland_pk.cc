@@ -601,7 +601,7 @@ void OverlandFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
   const Epetra_MultiVector& elevation_c = *elev->ViewComponent("cell",false);
 
   std::vector<WhetStone::DenseMatrix>& Aff =
-      matrix_diff_->local_matrices()->matrices;
+      matrix_diff_->local_op()->matrices;
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);

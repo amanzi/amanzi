@@ -149,7 +149,7 @@ Interfrost::UpdatePreconditioner(double t,
       *S_next_->GetFieldData("cell_volume")->ViewComponent("cell",false);
   
   // -- update the cell-cell block
-  std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
+  std::vector<double>& Acc_cells = preconditioner_acc_->local_op()->vals;
   unsigned int ncells = dwc_dp.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
     Acc_cells[c] += dwc_dp[0][c] / h + cv[0][c] * dThdp_coef[0][c] / h

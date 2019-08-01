@@ -105,7 +105,7 @@ InterfrostEnergy::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> 
 #endif
 
   // -- get the matrices/rhs that need updating
-  std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
+  std::vector<double>& Acc_cells = preconditioner_acc_->local_op()->vals;
 
   // -- update the diagonal
   unsigned int ncells = T0.MyLength();

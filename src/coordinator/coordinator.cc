@@ -127,7 +127,7 @@ void Coordinator::coordinator_init() {
 
   // -------------- ANALYSIS --------------------------------------------
     if (parameter_list_->isSublist("analysis")){
-      Amanzi::InputAnalysis analysis(mesh->second.first);
+      Amanzi::InputAnalysis analysis(mesh->second.first, mesh->first);
       //analysis.Init(parameter_list_->sublist(mesh->first));
       // std::cout<<mesh->first<<"\n";
       // std::cout<<parameter_list_->sublist("analysis").sublist(mesh->first)<<"\n";
