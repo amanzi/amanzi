@@ -23,7 +23,8 @@ TEST(MSTK_HEX1)
   int NV = 8;
   int NF = 6;
   int NC = 1;
-  double xyz[12][3] = {{0, 0, 0},
+  double xyz[12][3] = 
+          {{0, 0, 0},
 		       {1, 0, 0},
 		       {0, 1, 0},
 		       {1, 1, 0},
@@ -79,7 +80,7 @@ TEST(MSTK_HEX1)
 
 
 
-  mesh->cell_get_faces_and_dirs(0,faces,&facedirs,true);
+  mesh->cell_get_faces_and_dirs(0,faces,facedirs);
 
   for (j = 0; j < 6; j++) {
     mesh->face_get_nodes(faces(j),facenodes);

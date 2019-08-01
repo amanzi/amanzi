@@ -38,7 +38,7 @@ int MFD3D_BernardiRaugel::H1consistency(
   mesh_->cell_get_nodes(c, nodes);
   int nnodes = nodes.extent(0);
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.extent(0);
 
   int nrows = d_ * nnodes + nfaces;
@@ -237,7 +237,7 @@ int MFD3D_BernardiRaugel::AdvectionMatrix(
   Kokkos::View<Entity_ID*> faces, nodes;
   Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.extent(0);
 
   mesh_->cell_get_nodes(c, nodes);
@@ -295,7 +295,7 @@ int MFD3D_BernardiRaugel::DivergenceMatrix(int c, DenseMatrix& A)
   Kokkos::View<int*> dirs;
 
   mesh_->cell_get_nodes(c, nodes);
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.extent(0);
 
   int n1 = d_ * nodes.extent(0);

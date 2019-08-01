@@ -225,6 +225,8 @@ Mesh_MSTK::Mesh_MSTK(const std::string& filename,
   // Do all the processing required for setting up the mesh for Amanzi
 
   post_create_steps_(request_faces, request_edges);
+  init_cache(); 
+
 }
 
 
@@ -333,6 +335,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
   // Do all the processing required for setting up the mesh for Amanzi
 
   post_create_steps_(request_faces, request_edges);
+  init_cache(); 
 }
 
 
@@ -449,6 +452,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
 
   // Do all the processing required for setting up the mesh for Amanzi
   post_create_steps_(request_faces, request_edges);
+  init_cache(); 
 }
 
 
@@ -504,6 +508,7 @@ Mesh_MSTK::Mesh_MSTK(const Teuchos::RCP<const Mesh>& parent_mesh,
   extract_mstk_mesh(src_ents, entity_dim, flatten, request_faces, request_edges);
 
   List_Delete(src_ents);
+  init_cache(); 
 }
 
 
@@ -1206,7 +1211,7 @@ Cell_type Mesh_MSTK::cell_get_type(const Entity_ID cellid) const
 //---------------------------------------------------------
 void Mesh_MSTK::cell_get_faces_and_dirs_ordered(const Entity_ID cellid,
                                                 Kokkos::View<Entity_ID*>& faceids,
-                                                Kokkos::View<int*> *face_dirs) const
+                                                Kokkos::View<int*> &face_dirs) const
 {
 
   MEntity_ptr cell = nullptr;
@@ -1224,8 +1229,7 @@ void Mesh_MSTK::cell_get_faces_and_dirs_ordered(const Entity_ID cellid,
       nf = List_Num_Entries(rfaces);
 
       Kokkos::resize(faceids,nf);
-      if (face_dirs)
-        Kokkos::resize(*face_dirs,nf);
+      Kokkos::resize(face_dirs,nf);
 
       /* base face */
 
@@ -1284,11 +1288,10 @@ void Mesh_MSTK::cell_get_faces_and_dirs_ordered(const Entity_ID cellid,
               lid = MEnt_ID(fadj);
               faceids(nf) = lid-1;
 
-              if (face_dirs) {
-                int fdir = (MR_FaceDir_i((MRegion_ptr)cell,i) == 1) ? 1 : -1;
-                if (faceflip[lid-1]) fdir *= -1;
-                (*face_dirs)(nf) = fdir;
-              }
+            
+              int fdir = (MR_FaceDir_i((MRegion_ptr)cell,i) == 1) ? 1 : -1;
+              if (faceflip[lid-1]) fdir *= -1;
+              face_dirs(nf) = fdir;
 
               MEnt_Mark(fadj,mkid);
               nf++;
@@ -1304,11 +1307,9 @@ void Mesh_MSTK::cell_get_faces_and_dirs_ordered(const Entity_ID cellid,
       lid = MEnt_ID(face0);
       faceids(nf) = lid-1;
 
-      if (face_dirs) {
-        fdir0 = fdir0 ? 1 : -1;
-        if (faceflip[lid-1]) fdir0 *= -1;
-        (*face_dirs)(nf) = fdir0;
-      }
+      fdir0 = fdir0 ? 1 : -1;
+      if (faceflip[lid-1]) fdir0 *= -1;
+      face_dirs(nf) = fdir0;
       nf++;
 
       /* If there is a last remaining face, it is the top face */
@@ -1322,11 +1323,9 @@ void Mesh_MSTK::cell_get_faces_and_dirs_ordered(const Entity_ID cellid,
           lid = MEnt_ID(fopp);
           faceids(nf) = lid-1;
 
-          if (face_dirs) {
-            int fdir = (MR_FaceDir_i((MRegion_ptr)cell,i) == 1) ? 1 : -1;
-            if (faceflip[lid-1]) fdir *= -1;
-            (*face_dirs)(nf) = fdir;
-          }
+          int fdir = (MR_FaceDir_i((MRegion_ptr)cell,i) == 1) ? 1 : -1;
+          if (faceflip[lid-1]) fdir *= -1;
+          face_dirs(nf) = fdir;
           nf++;
           break;
 
@@ -1350,7 +1349,7 @@ void Mesh_MSTK::cell_get_faces_and_dirs_ordered(const Entity_ID cellid,
 
 void Mesh_MSTK::cell_get_faces_and_dirs_unordered(const Entity_ID cellid,
                                                   Kokkos::View<Entity_ID*>& faceids,
-                                                  Kokkos::View<int*> *face_dirs) const
+                                                  Kokkos::View<int*>& face_dirs) const
 {
   MEntity_ptr cell;
 
@@ -1385,16 +1384,14 @@ void Mesh_MSTK::cell_get_faces_and_dirs_unordered(const Entity_ID cellid,
     }
     */
 
-    if (face_dirs) {
-      Kokkos::resize(*face_dirs,nrf);
+    Kokkos::resize(face_dirs,nrf);
 
-      size_t j = 0;
-      for (int i = 0; i < nrf; ++i) {
-        int lid = faceids(i);
-        int fdir = 2*MR_FaceDir_i((MRegion_ptr)cell,i) - 1;
-        fdir = faceflip[lid] ? -fdir : fdir;
-        (*face_dirs)(j++) = fdir;  // assign to next spot by dereferencing iterator
-      }
+    j = 0;
+    for (int i = 0; i < nrf; ++i) {
+      int lid = faceids(i);
+      int fdir = 2*MR_FaceDir_i((MRegion_ptr)cell,i) - 1;
+      fdir = faceflip[lid] ? -fdir : fdir;
+      face_dirs(j++) = fdir;  // assign to next spot by dereferencing iterator
     }
 
   }
@@ -1429,32 +1426,24 @@ void Mesh_MSTK::cell_get_faces_and_dirs_unordered(const Entity_ID cellid,
     }
     */
 
-    if (face_dirs) {
-      Kokkos::resize(*face_dirs,nfe);
-      size_t j = 0;
-      for (int i = 0; i < nfe; ++i) {
-        int lid = faceids(i);
-        int fdir = 2*MF_EdgeDir_i((MFace_ptr)cell,i) - 1;
-        fdir = faceflip[lid] ? -fdir : fdir;
-        (*face_dirs)(j++) = fdir;  // assign to next spot by dereferencing iterator
-      }
+    Kokkos::resize(face_dirs,nfe);
+    j = 0;
+    for (int i = 0; i < nfe; ++i) {
+      int lid = faceids(i);
+      int fdir = 2*MF_EdgeDir_i((MFace_ptr)cell,i) - 1;
+      fdir = faceflip[lid] ? -fdir : fdir;
+      face_dirs(j++) = fdir;  // assign to next spot by dereferencing iterator
     }
-
   }
 }
 
 
 void Mesh_MSTK::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
                                                   Kokkos::View<Entity_ID*>& faceids,
-                                                  Kokkos::View<int*> *face_dirs,
-                                                  const bool ordered) const
+                                                  Kokkos::View<int*>& face_dirs) const
 {
   AMANZI_ASSERT(faces_initialized);
-
-  if (ordered)
-    cell_get_faces_and_dirs_ordered(cellid, faceids, face_dirs);
-  else
-    cell_get_faces_and_dirs_unordered(cellid, faceids, face_dirs);
+  cell_get_faces_and_dirs_unordered(cellid, faceids, face_dirs);
 }
 
 

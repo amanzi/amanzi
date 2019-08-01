@@ -109,7 +109,6 @@ MeshFactory::create(const std::string& filename,
 
   if(mesh != Teuchos::null){ 
     // Initialize the cache after constructing the mesh 
-    mesh->init_cache(); 
     return mesh; 
   }
 
@@ -167,7 +166,6 @@ MeshFactory::create(const double x0, const double y0, const double z0,
 
   if(mesh != Teuchos::null){ 
     // Initialize the cache after constructing the mesh 
-    mesh->init_cache(); 
     return mesh; 
   }
 
@@ -216,7 +214,6 @@ MeshFactory::create(const double x0, const double y0,
 
   if(mesh != Teuchos::null){ 
     // Initialize the cache after constructing the mesh 
-    mesh->init_cache(); 
     return mesh; 
   }
 
@@ -326,7 +323,6 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
 
   if(mesh != Teuchos::null){ 
     // Initialize the cache after constructing the mesh 
-    mesh->init_cache(); 
     return mesh; 
   }
 

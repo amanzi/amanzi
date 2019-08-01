@@ -58,7 +58,7 @@ static inline void write_mesh_to_file_(const AmanziMesh::Mesh &mesh, std::string
         Kokkos::View<AmanziMesh::Entity_ID*> cfaces;
         Kokkos::View<int*> fdirs;
 
-        mesh.cell_get_faces_and_dirs(i, cfaces, &fdirs);
+        mesh.cell_get_faces_and_dirs(i, cfaces, fdirs);
         int nfaces = cfaces.extent(0);
 
         for (int j=0, n=0; j<nfaces; j++) {

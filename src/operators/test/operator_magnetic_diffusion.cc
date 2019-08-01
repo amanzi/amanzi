@@ -221,7 +221,7 @@ void MagneticDiffusion2D(double dt, double tend,
     for (int c = 0; c < ncells_owned; ++c) {
       double vol = mesh->cell_volume(c,false);
       const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
+      mesh->cell_get_faces_and_dirs(c, &faces, dirs);
       int nfaces = faces.size();
 
       double tmp(0.0);
@@ -475,7 +475,7 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
     for (int c = 0; c < ncells_owned; ++c) {
       double vol = mesh->cell_volume(c,false);
       const Amanzi::AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
+      mesh->cell_get_faces_and_dirs(c, &faces, dirs);
       int nfaces = faces.size();
 
       double tmp(0.0);

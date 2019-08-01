@@ -28,7 +28,7 @@ int MFD3D_Generalized_Diffusion::L2consistency(
 {
   Kokkos::View<Entity_ID*> faces, nodes;
   Kokkos::View<int*> dirs;
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
 
   int nfaces = faces.extent(0);
   int nx(d_ * nfaces);
@@ -108,7 +108,7 @@ int MFD3D_Generalized_Diffusion::L2consistencyInverse(
 {
   Kokkos::View<Entity_ID*> faces, nodes;
   Kokkos::View<int*> dirs;
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
 
   int nfaces = faces.extent(0);
   int nx(d_ * nfaces);
@@ -184,7 +184,7 @@ int MFD3D_Generalized_Diffusion::StiffnessMatrix(
 
   Kokkos::View<Entity_ID*> faces;
   Kokkos::View<int*> dirs;
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
 
   int nfaces = faces.extent(0);
   int nx(d_ * nfaces);
@@ -235,7 +235,7 @@ int MFD3D_Generalized_Diffusion::DivergenceMatrix(int c, DenseMatrix& A)
   Kokkos::View<Entity_ID*> faces;
   Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.extent(0);
 
   A.Reshape(1, d_ * nfaces);

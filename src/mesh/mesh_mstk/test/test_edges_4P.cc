@@ -53,7 +53,7 @@ TEST(MSTK_EDGES_2D)
     Kokkos::View<int*> cfdirs, fedirs, cedirs;
 
     mesh->cell_2D_get_edges_and_dirs(c,cedges,&cedirs);
-    mesh->cell_get_faces_and_dirs(c,cfaces,&cfdirs);
+    mesh->cell_get_faces_and_dirs(c,cfaces,cfdirs);
 
     for (int e = 0; e < cedges.extent(0); ++e) {
       CHECK_EQUAL(mesh->getGlobalElement(cedges(e),Amanzi::AmanziMesh::EDGE),
@@ -165,7 +165,7 @@ TEST(MSTK_EDGES_3D)
     Kokkos::View<int*> cfdirs, fedirs;
 
     mesh->cell_get_edges(c,cedges);
-    mesh->cell_get_faces_and_dirs(c,cfaces,&cfdirs);
+    mesh->cell_get_faces_and_dirs(c,cfaces,cfdirs);
 
     for (int f = 0; f < cfaces.extent(0); ++f) {
       mesh->face_get_edges_and_dirs(cfaces(f),fedges,&fedirs);

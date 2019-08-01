@@ -55,7 +55,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyLO_(
   Kokkos::View<Entity_ID*> faces;
   Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.extent(0);
 
   N.Reshape(nfaces, d_ + 1);
@@ -122,7 +122,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
   Kokkos::View<Entity_ID*> faces;
   Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.extent(0);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -281,7 +281,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_LO_(
   Kokkos::View<Entity_ID*> faces;
   Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -520,7 +520,7 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
   Kokkos::View<Entity_ID*> faces;
   Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.extent(0);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);

@@ -53,7 +53,7 @@ int MFD3D_Electromagnetics::H1consistency2D_(
   Kokkos::View<Entity_ID*> faces;
   Kokkos::View<int*> fdirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &fdirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, fdirs);
   int nfaces = faces.extent(0);
 
   int nd = 3;
@@ -105,7 +105,7 @@ int MFD3D_Electromagnetics::H1consistency3D_(
   std::vector<int> map;
   Kokkos::View<int*> fdirs, edirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &fdirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, fdirs);
   int nfaces = faces.extent(0);
 
   mesh_->cell_get_edges(c, edges);
@@ -374,7 +374,7 @@ void MFD3D_Electromagnetics::CurlMatrix(int c, DenseMatrix& C)
   mesh_->cell_get_edges(c, edges);
   int nedges = edges.extent(0);
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &fdirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, fdirs);
   int nfaces = faces.extent(0);
 
   C.Reshape(nfaces, nedges);

@@ -154,6 +154,7 @@ Mesh_MOAB::Mesh_MOAB(const std::string& filename,
   // Initialize some info about the global number of sets, global set
   // IDs and set types
   if (geometric_model() != Teuchos::null) init_set_info();
+  init_cache(); 
 }
 
 

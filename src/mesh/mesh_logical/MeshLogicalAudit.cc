@@ -362,7 +362,7 @@ bool MeshLogicalAudit::check_cell_to_face_dirs() const
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
     fdirs.assign(6, INT_MAX);
     try {
-      mesh->cell_get_faces_and_dirs(j, &faces, &fdirs);  // this may fail
+      mesh->cell_get_faces_and_dirs(j, &faces, fdirs);  // this may fail
       bool bad_data = false;
       for (int k = 0; k < fdirs.size(); ++k)
         if (fdirs[k] != -1 && fdirs[k] != 1) bad_data = true;

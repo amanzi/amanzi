@@ -40,7 +40,7 @@ int MFD3D_Diffusion_Edge::H1consistency(
   Entity_ID_List faces, edges, fedges;
   std::vector<int> dirs, edirs, map;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, &faces, dirs);
   int nfaces = faces.size();
 
   mesh_->cell_get_edges(c, &edges);

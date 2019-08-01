@@ -84,7 +84,8 @@ if (BUILD_TESTS)
     #Test: eliminate degeneracies for serial mesh
     add_amanzi_test(mstk_pinchout_test mstk_pinchout_test
                     KIND int
-                    SOURCE test/Main.cc test/test_pinchouts.cc
+                    SOURCE test/Main.cc 
+                    test/test_pinchouts.cc
                     LINK_LIBS mstk_mesh mesh_factory mesh_audit ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     #Test: eliminate degeneracies in parallel mesh created from inline partitioning

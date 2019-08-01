@@ -98,7 +98,7 @@ TEST(COLUMN_MESH_3D)
   for (int j = 0; j < ncells; j++) {
     Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces;
     Kokkos::View<int*> cfdirs;
-    colmesh.cell_get_faces_and_dirs(j,cfaces,&cfdirs);
+    colmesh.cell_get_faces_and_dirs(j,cfaces,cfdirs);
 
     CHECK_EQUAL(2,cfaces.extent(0));
   }
@@ -263,7 +263,7 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   for (int j = 0; j < ncells; j++) {
     Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces;
     Kokkos::View<int*> cfdirs;
-    colmesh.cell_get_faces_and_dirs(j,cfaces,&cfdirs);
+    colmesh.cell_get_faces_and_dirs(j,cfaces,cfdirs);
 
     CHECK_EQUAL(2,cfaces.extent(0));
   }

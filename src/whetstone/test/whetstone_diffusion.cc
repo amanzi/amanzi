@@ -72,7 +72,7 @@ TEST(DARCY_MASS_2D) {
     // verify exact integration property
     Kokkos::View<AmanziMesh::Entity_ID*> faces;
     Kokkos::View<int*> dirs;
-    mesh->cell_get_faces_and_dirs(cell, faces, &dirs);
+    mesh->cell_get_faces_and_dirs(cell, faces, dirs);
 
     double xi, yi, xj, yj;
     double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell,false);
@@ -150,7 +150,7 @@ TEST(DARCY_MASS_3D) {
     // verify exact integration property
     Kokkos::View<AmanziMesh::Entity_ID*> faces;
     Kokkos::View<int*> dirs;
-    mesh->cell_get_faces_and_dirs(cell, faces, &dirs);
+    mesh->cell_get_faces_and_dirs(cell, faces, dirs);
 
     double xi, yi, xj, yj;
     double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell,false);
@@ -291,7 +291,7 @@ TEST(DARCY_INVERSE_MASS_3D) {
 
     Kokkos::View<AmanziMesh::Entity_ID*> faces;
     Kokkos::View<int*> dirs;
-    mesh->cell_get_faces_and_dirs(cell, faces, &dirs);
+    mesh->cell_get_faces_and_dirs(cell, faces, dirs);
 
     double xi, yi, xj;
     double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell,false);
@@ -385,7 +385,7 @@ TEST(DARCY_FULL_TENSOR_2D) {
 
       Kokkos::View<AmanziMesh::Entity_ID*> faces;
       Kokkos::View<int*> dirs;
-      mesh->cell_get_faces_and_dirs(cell, faces, &dirs);
+      mesh->cell_get_faces_and_dirs(cell, faces, dirs);
 
       AmanziGeometry::Point v(1.0, 2.0);
       double xi, xj;
@@ -481,7 +481,7 @@ TEST(DARCY_FULL_TENSOR_3D) {
 
     Kokkos::View<AmanziMesh::Entity_ID*> faces;
     Kokkos::View<int*> dirs;
-    mesh->cell_get_faces_and_dirs(cell, faces, &dirs);
+    mesh->cell_get_faces_and_dirs(cell, faces, dirs);
 
     AmanziGeometry::Point v(1.0, 2.0, 3.0);
     double xi, xj;
@@ -878,7 +878,7 @@ TEST(DARCY_INVERSE_MASS_2D) {
 
     Kokkos::View<AmanziMesh::Entity_ID*> faces;
     Kokkos::View<int*> dirs;
-    mesh->cell_get_faces_and_dirs(cell, faces, &dirs);
+    mesh->cell_get_faces_and_dirs(cell, faces, dirs);
 
     double xi, yi, xj;
     double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell,false);

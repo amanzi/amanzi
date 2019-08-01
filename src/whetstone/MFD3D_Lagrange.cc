@@ -62,7 +62,7 @@ int MFD3D_Lagrange::H1consistency2D_(
   mesh_->cell_get_nodes(c, nodes);
   int nnodes = nodes.extent(0);
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.extent(0);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -288,7 +288,7 @@ int MFD3D_Lagrange::H1consistency3D_(
   mesh_->cell_get_edges(c, edges);
   int nedges = edges.extent(0);
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.extent(0);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -707,7 +707,7 @@ void MFD3D_Lagrange::ProjectorCell_LO_(
   mesh_->cell_get_nodes(c, nodes);
   int nnodes = nodes.extent(0);
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int num_faces = faces.extent(0);
 
   // populate matrix R (should be a separate routine lipnikov@lanl.gv)

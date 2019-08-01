@@ -48,7 +48,7 @@ int DeRham_Edge::L2consistency2D_(int c, const Tensor& T,
   Kokkos::View<Entity_ID*> faces;
   Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.extent(0);
 
   N.Reshape(nfaces, d_);
@@ -116,7 +116,7 @@ int DeRham_Edge::L2consistency3D_(int c, const Tensor& T,
   std::vector<int> map;
   Kokkos::View<int*> fdirs, edirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &fdirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, fdirs);
   int nfaces = faces.extent(0);
 
   mesh_->cell_get_edges(c, edges);
@@ -238,7 +238,7 @@ int DeRham_Edge::L2consistencyInverse2D_(
   Kokkos::View<Entity_ID*> faces;
   Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.extent(0);
 
   R.Reshape(nfaces, d_);
@@ -304,7 +304,7 @@ int DeRham_Edge::L2consistencyInverse3D_(
   std::vector<int> map;
   Kokkos::View<int*> fdirs, edirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &fdirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, fdirs);
   int nfaces = faces.extent(0);
 
   mesh_->cell_get_edges(c, edges);

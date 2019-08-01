@@ -53,7 +53,7 @@ TEST(DARCY_SURFACE) {
     Kokkos::View<Amanzi::WhetStone::Entity_ID*> faces;
     Kokkos::View<int*> dirs;
 
-    mesh->cell_get_faces_and_dirs(c, faces, &dirs);
+    mesh->cell_get_faces_and_dirs(c, faces, dirs);
     int nfaces = faces.extent(0);
 
     DenseMatrix W(nfaces, nfaces);

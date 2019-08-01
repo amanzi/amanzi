@@ -76,7 +76,7 @@ void Mesh::get_set_entities_box_vofs_(
 
         if (space_dimension() == 3) {
           cell_get_nodes(c, cnodes);
-          cell_get_faces_and_dirs(c, faces, &dirs);
+          cell_get_faces_and_dirs(c, faces, dirs);
           int nfaces = faces.extent(0);
 
           polytope_faces.clear();

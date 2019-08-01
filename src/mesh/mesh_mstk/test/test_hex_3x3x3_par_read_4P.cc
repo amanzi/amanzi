@@ -45,7 +45,7 @@ TEST(MSTK_HEX_3x3x3_PAR_READ_4P)
   for (int c=cell_map->getMinLocalIndex(); c<=cell_map->getMaxLocalIndex(); c++)
     {
       CHECK_EQUAL(cell_map->getGlobalElement(c),mesh->getGlobalElement(c,Amanzi::AmanziMesh::CELL));
-      mesh->cell_get_faces(c, c2f, true);
+      mesh->cell_get_faces(c, c2f);
 
       for (int j=0; j<6; j++)
 	{

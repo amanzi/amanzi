@@ -41,7 +41,7 @@ void PDE_MagneticDiffusion_TM::ModifyMatrices(
     const WhetStone::DenseMatrix& Mcell = mass_op_[c];
     const WhetStone::DenseMatrix& Ccell = curl_op_[c];
 
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces_and_dirs(c, &faces, dirs);
     mesh_->cell_get_nodes(c, &nodes);
 
     int nfaces = faces.size();
@@ -84,7 +84,7 @@ void PDE_MagneticDiffusion_TM::ModifyFields(
   for (int c = 0; c < ncells_owned; ++c) {
     const WhetStone::DenseMatrix& Ccell = curl_op_[c];
 
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces_and_dirs(c, &faces, dirs);
     mesh_->cell_get_nodes(c, &nodes);
 
     int nfaces = faces.size();

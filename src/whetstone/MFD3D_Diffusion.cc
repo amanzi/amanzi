@@ -38,7 +38,7 @@ int MFD3D_Diffusion::L2consistencyScaledArea(
   Kokkos::View<Entity_ID*> faces;
   Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.extent(0);
 
   N.Reshape(nfaces, d_);
@@ -89,7 +89,7 @@ int MFD3D_Diffusion::L2consistencyInverseScaledArea(
   Kokkos::View<Entity_ID*> faces;
   Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.extent(0);
 
   R.Reshape(nfaces, d_);
@@ -146,7 +146,7 @@ int MFD3D_Diffusion::H1consistency(
   N.Reshape(nnodes, d_ + 1);
   Ac.Reshape(nnodes, nnodes);
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
 
   double volume = mesh_->cell_volume(c,false);
   AmanziGeometry::Point p(d_), pnext(d_), pprev(d_), v1(d_), v2(d_), v3(d_);
@@ -337,7 +337,7 @@ void MFD3D_Diffusion::L2Cell(int c, const std::vector<Polynomial>& vf,
   Kokkos::View<Entity_ID*> faces;
   Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int num_faces = faces.extent(0);
 
   vc.Reshape(d_, 1, true);
@@ -363,7 +363,7 @@ int MFD3D_Diffusion::DivergenceMatrix(int c, DenseMatrix& A)
   Kokkos::View<Entity_ID*> faces;
   Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.extent(0);
 
   A.Reshape(1, nfaces);
@@ -390,7 +390,7 @@ int MFD3D_Diffusion::L2consistencyInverseDivKScaled(
   Kokkos::View<Entity_ID*> faces, nodes;
   Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.extent(0);
 
   R.Reshape(nfaces, d_);
@@ -589,7 +589,7 @@ int MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M
 
   Kokkos::View<Entity_ID*> faces;
   Kokkos::View<int*> dirs;
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
 
   int i1, i2, k, l;
   double s1, s2, area1, area2;

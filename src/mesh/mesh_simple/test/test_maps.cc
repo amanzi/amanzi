@@ -56,7 +56,7 @@ TEST(MAPS) {
       CHECK_ARRAY_EQUAL(expnodecoords[expcellnodes[j]],x[j],3);
     }
 
-    Mm.cell_get_faces(i, faces, true);
+    Mm.cell_get_faces(i, faces);
     double xx[4][3];
     for (int j=0; j<6; j++) {
       Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> fnodes;

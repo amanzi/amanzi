@@ -250,7 +250,7 @@ TEST(STIFFNESS_MATRIX_2D) {
   int cell = 0;
   Kokkos::View<AmanziMesh::Entity_ID*> faces;
   Kokkos::View<int*> dirs;
-  mesh->cell_get_faces_and_dirs(cell, faces, &dirs);
+  mesh->cell_get_faces_and_dirs(cell, faces, dirs);
 
   int nfaces = faces.extent(0);
   int nrows = nfaces;

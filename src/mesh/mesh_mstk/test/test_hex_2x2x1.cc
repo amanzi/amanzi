@@ -22,7 +22,8 @@ TEST(MSTK_HEX_2x2x1)
   int NV = 18;
   int NF = 20;
   int NC = 4;
-  double xyz[18][3] = {{-0.5,-0.5, 0.25},
+  double xyz[18][3] = {
+           {-0.5,-0.5, 0.25},
 		       {-0.5,-0.5,-0.25},
 		       {-0.5, 0,  -0.25},
 		       {-0.5, 0,   0.25},
@@ -80,7 +81,7 @@ TEST(MSTK_HEX_2x2x1)
 
   for (i = 0; i < nc; i++) {
     mesh->cell_get_nodes(i,cnodes);
-    mesh->cell_get_faces_and_dirs(i,faces,&facedirs,true);
+    mesh->cell_get_faces_and_dirs(i,faces,facedirs);
 
     for (j = 0; j < 6; j++) {
 

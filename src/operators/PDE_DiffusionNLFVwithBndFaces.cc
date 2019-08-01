@@ -233,7 +233,7 @@ void PDE_DiffusionNLFVwithBndFaces::InitStencils_()
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
     // calculate list of candidate vectors
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces_and_dirs(c, &faces, dirs);
     int nfaces = faces.size();
 
     WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
@@ -280,7 +280,7 @@ void PDE_DiffusionNLFVwithBndFaces::InitStencils_()
       int c = cells[0];
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
       const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      mesh_->cell_get_faces_and_dirs(c, &faces, dirs);
       int nfaces = faces.size();
 
       WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
@@ -392,7 +392,7 @@ void PDE_DiffusionNLFVwithBndFaces::UpdateMatrices(
   flux_data.PutScalar(0.0);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces_and_dirs(c, &faces, dirs);
     int nfaces = faces.size();
     
     for (int n = 0; n < nfaces; ++n) {
@@ -675,7 +675,7 @@ void PDE_DiffusionNLFVwithBndFaces::OneSidedFluxCorrections_(
   flux_cv.PutScalarMasterAndGhosted(0.0);
   
   for (int c = 0; c < ncells_owned; ++c) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces_and_dirs(c, &faces, dirs);
     int nfaces = faces.size();
     
     for (int n = 0; n < nfaces; ++n) {
@@ -820,7 +820,7 @@ void PDE_DiffusionNLFVwithBndFaces::OneSidedWeightFluxes_(
 
   flux_cv.PutScalarMasterAndGhosted(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces_and_dirs(c, &faces, dirs);
     int nfaces = faces.size();
     
     for (int n = 0; n < nfaces; ++n) {

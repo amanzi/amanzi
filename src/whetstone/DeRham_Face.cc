@@ -29,7 +29,7 @@ int DeRham_Face::L2consistency(
   Kokkos::View<Entity_ID*> faces;
   Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.extent(0);
 
   N.Reshape(nfaces, d_);
@@ -97,7 +97,7 @@ int DeRham_Face::L2consistencyInverse(
   Kokkos::View<Entity_ID*> faces;
   Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.extent(0);
 
   R.Reshape(nfaces, d_);

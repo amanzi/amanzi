@@ -101,8 +101,6 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
         sets_[(*r)->id()] = (*r)->inside(parent_mesh->face_centroid(parent_face_));
 
       } else if ((*r)->space_dimension() == 2 && flatten) {
-        if(!cell_geometry_precomputed_)
-          build_cell_centroid(); 
         sets_[(*r)->id()] = (*r)->inside(cell_centroid(0));
       }
     }
@@ -345,12 +343,11 @@ void MeshSurfaceCell::write_to_exodus_file(const std::string filename) const {
 // cell_get_faces_and_dirs method of this class
 void MeshSurfaceCell::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
         Kokkos::View<Entity_ID*>& faceids,
-        Kokkos::View<int*> *face_dirs,
-        const bool ordered) const {
+        Kokkos::View<int*>& face_dirs) const {
   AMANZI_ASSERT(cellid == 0);
   Kokkos::resize(faceids,nodes_.size());
   for (int i=0; i!=nodes_.size(); ++i) faceids(i) = i;
-  Kokkos::resize(*face_dirs,nodes_.size());
+  Kokkos::resize(face_dirs,nodes_.size());
 }
 
 

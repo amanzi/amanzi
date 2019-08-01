@@ -441,7 +441,7 @@ void NumericalIntegration::IntegrateMonomialsCell(int c, int k, Polynomial& inte
   Kokkos::View<Entity_ID*> faces, nodes;
   Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.extent(0);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);

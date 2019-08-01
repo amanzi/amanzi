@@ -115,7 +115,7 @@ Mesh::cache_cell_face_info_() const
     Kokkos::View<Entity_ID*> cell_face_ids_view;
     Kokkos::View<int*> cell_face_dirs_view;
     cell_get_faces_and_dirs_internal_(c, cell_face_ids_view,
-            &cell_face_dirs_view, false);
+            cell_face_dirs_view);
     int nf = cell_face_ids_view.extent(0);
 
     for (int jf = 0; jf < nf; jf++) {
@@ -427,10 +427,9 @@ Mesh::init_cache(){
 void Mesh::cell_get_faces_and_bisectors(
     const Entity_ID cellid,
     Kokkos::View<Entity_ID*>& faceids,
-    Kokkos::View<AmanziGeometry::Point*> *bisectors,
-    const bool ordered) const
+    Kokkos::View<AmanziGeometry::Point*> *bisectors) const
 {
-  cell_get_faces(cellid, faceids, ordered);
+  cell_get_faces(cellid, faceids);
 
   AmanziGeometry::Point cc = cell_centroid(cellid);
   if (bisectors) {
@@ -666,7 +665,7 @@ Mesh::compute_cell_geometry_(const Entity_ID cellid, double *volume,
     Kokkos::View<int*> fdirs;
     Kokkos::View<AmanziGeometry::Point*> fcoords, ccoords,cfcoords;
 
-    cell_get_faces_and_dirs(cellid,faces,&fdirs);
+    cell_get_faces_and_dirs(cellid,faces, fdirs);
 
     int nf = faces.extent(0);
     nfnodes.resize(nf);
@@ -764,7 +763,7 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
       Kokkos::View<int*> cellfacedirs;
       int dir = 1;
 
-      cell_get_faces_and_dirs(cellids(i), cellfaceids, &cellfacedirs);
+      cell_get_faces_and_dirs(cellids(i), cellfaceids, cellfacedirs);
 
       bool found = false;
       for (int j = 0; j < cellfaceids.extent(0); j++) {
@@ -805,7 +804,7 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
         Kokkos::View<int*> cellfacedirs;
         int dir = 1;
 
-        cell_get_faces_and_dirs(cellids(i), cellfaceids, &cellfacedirs);
+        cell_get_faces_and_dirs(cellids(i), cellfaceids, cellfacedirs);
 
         bool found = false;
         for (int j = 0; j < cellfaceids.extent(0); j++) {
@@ -847,7 +846,7 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
         Kokkos::View<int*> cellfacedirs;
         //int dir = 1; un-used
 
-        cell_get_faces_and_dirs(cellids(i), cellfaceids, &cellfacedirs);
+        cell_get_faces_and_dirs(cellids(i), cellfaceids, cellfacedirs);
 
         bool found = false;
         for (int j = 0; j < cellfaceids.extent(0); j++) {
@@ -1143,7 +1142,7 @@ Mesh::point_in_cell(const AmanziGeometry::Point &p, const Entity_ID cellid) cons
     Kokkos::View<int*> fdirs;
     Kokkos::View<AmanziGeometry::Point*> cfcoords;
 
-    cell_get_faces_and_dirs(cellid,faces,&fdirs);
+    cell_get_faces_and_dirs(cellid,faces,fdirs);
 
     nf = faces.extent(0);
     nfnodes.resize(nf);
@@ -1557,7 +1556,7 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
     colfaces.push_back(top_face);
 
     // Faces of current cell
-    cell_get_faces_and_dirs(cur_cell,cfaces,&cfdirs);
+    cell_get_faces_and_dirs(cur_cell,cfaces,cfdirs);
 
     // Find the bottom face of the cell as the face whose outward
     // normal from the current cell is most aligned with the -Z

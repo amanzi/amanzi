@@ -251,8 +251,11 @@ class Mesh {
   // effect of this is that master and ghost entities will have the same
   // hierarchical topology.
   KOKKOS_INLINE_FUNCTION void cell_get_faces(const Entity_ID cellid,
-                      Kokkos::View<Entity_ID*>& faceids,
-                      const bool ordered=false) const;
+                      Kokkos::View<Entity_ID*>& faceids) const{
+    assert(cell2face_info_cached_); 
+    faceids = Kokkos::subview(cell_face_ids_.entries,
+      Kokkos::make_pair(cell_face_ids_.row_map(cellid),cell_face_ids_.row_map(cellid+1)));
+  }
 
   // Get faces of a cell and directions in which the cell uses the face
   //
@@ -268,25 +271,20 @@ class Mesh {
   // direction as the cell polygon, and -1 otherwise
   KOKKOS_INLINE_FUNCTION void cell_get_faces_and_dirs(const Entity_ID cellid,
                               Kokkos::View<Entity_ID*>& faceids,
-                              Kokkos::View<int*> *face_dirs,
-                              const bool ordered = false) const
+                              Kokkos::View<int*>& face_dirs) const
   {
-    assert(ordered==false); 
     assert(cell2face_info_cached_); 
     faceids = Kokkos::subview(cell_face_ids_.entries,
       Kokkos::make_pair(cell_face_ids_.row_map(cellid),cell_face_ids_.row_map(cellid+1)));
-    if (face_dirs) {
-      *face_dirs = Kokkos::subview(cell_face_dirs_.entries,
+    face_dirs = Kokkos::subview(cell_face_dirs_.entries,
       Kokkos::make_pair(cell_face_dirs_.row_map(cellid),cell_face_dirs_.row_map(cellid+1)));
-    }
   }
 
   // Get the bisectors, i.e. vectors from cell centroid to face centroids.
   virtual
   void cell_get_faces_and_bisectors(const Entity_ID cellid,
                                     Kokkos::View<Entity_ID*>& faceids,
-                                    Kokkos::View<AmanziGeometry::Point*> *bisectors,
-                                    const bool ordered=false) const;
+                                    Kokkos::View<AmanziGeometry::Point*> *bisectors) const;
 
   // Get edges of a cell
   void cell_get_edges(const Entity_ID cellid, Kokkos::View<Entity_ID*> &edgeids) const;
@@ -893,8 +891,7 @@ protected:
   virtual
   void cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
                                          Kokkos::View<Entity_ID*>& faceids,
-                                         Kokkos::View<int*>* face_dirs,
-                                         const bool ordered=false) const = 0;
+                                         Kokkos::View<int*>& face_dirs) const = 0;
 
   
   // Cells connected to a face

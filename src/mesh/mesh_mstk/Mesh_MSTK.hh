@@ -509,16 +509,15 @@ class Mesh_MSTK : public Mesh {
 
   void cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
                                         Kokkos::View<Entity_ID*>& faceids,
-                                        Kokkos::View<int*> *face_dirs,
-                                        const bool ordered=false) const;
+                                        Kokkos::View<int*>& face_dirs) const;
 
   void cell_get_faces_and_dirs_ordered(const Entity_ID cellid,
                                        Kokkos::View<Entity_ID*>& faceids,
-                                       Kokkos::View<int*> *face_dirs) const;
+                                       Kokkos::View<int*> &face_dirs) const;
 
   void cell_get_faces_and_dirs_unordered(const Entity_ID cellid,
                                        Kokkos::View<Entity_ID*>& faceids,
-                                       Kokkos::View<int*> *face_dirs) const;
+                                       Kokkos::View<int*> &face_dirs) const;
 
 
   // Cells connected to a face

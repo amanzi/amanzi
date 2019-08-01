@@ -577,7 +577,7 @@ bool MeshAudit::check_cell_to_face_dirs() const
   for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
     //fdirs.assign(6, INT_MAX);
     try {
-      mesh_->cell_get_faces_and_dirs(j, faces, &fdirs);  // this may fail
+      mesh_->cell_get_faces_and_dirs(j, faces, fdirs);  // this may fail
       bool bad_data = false;
       for (int k = 0; k < fdirs.extent(0); ++k)
         if (fdirs(k) != -1 && fdirs(k) != 1) bad_data = true;
@@ -664,7 +664,7 @@ bool MeshAudit::check_cell_to_faces_to_nodes() const
 
     mesh_->cell_get_nodes(j, cnode); // this should not fail
 
-    mesh_->cell_get_faces_and_dirs(j, cface, &fdirs, true); // this should not fail
+    mesh_->cell_get_faces_and_dirs(j, cface, fdirs); // this should not fail
 
     bool bad_face = false;
     bool bad_dir  = false;
@@ -1386,7 +1386,7 @@ bool MeshAudit::check_get_set_ids(AmanziMesh::Entity_kind kind) const
   os_ << "WARNING: Checks on sets disabled until MeshAudit handles new set specification methods (Tkt #686)" << std::endl;
   return false;
 
-  bool error = false;
+  //bool error = false;
 
   // // Get the number of sets.
   // int nset;
@@ -1463,7 +1463,7 @@ bool MeshAudit::check_get_set_ids(AmanziMesh::Entity_kind kind) const
   //   }
   // }
 
-  return global_any(error);
+  //return global_any(error);
 }
 
 // Check that valid_set_id() returns the correct results.
@@ -1508,7 +1508,7 @@ bool MeshAudit::check_valid_set_id(AmanziMesh::Entity_kind kind) const
   //   if (!valid[n] && mesh_->valid_set_id(n, kind)) bad_sids2.push_back(n);
   // }
 
-  bool error = false;
+  //bool error = false;
 
   // if (!bad_sids1.empty()) {
   //   os_ << "ERROR: valid_set_id() returned false for valid set IDs:";
@@ -1522,7 +1522,7 @@ bool MeshAudit::check_valid_set_id(AmanziMesh::Entity_kind kind) const
   //   error = true;
   // }
 
-  return global_any(error);
+  //return global_any(error);
 }
 
 // For each set, check that get_set successfully returns valid references to
@@ -1550,7 +1550,7 @@ bool MeshAudit::check_sets(AmanziMesh::Entity_kind kind,
   os_ << "WARNING: Checks on sets disabled until MeshAudit handles new set specification methods (Tkt #686)" << std::endl;
   return false;
 
-  bool error = false;
+  //bool error = false;
 
   // // Get the list of set IDs.
   // int nset = mesh_->num_sets(kind);
@@ -1575,7 +1575,7 @@ bool MeshAudit::check_sets(AmanziMesh::Entity_kind kind,
   //   if (bad_set) error = true;
   // }
 
-  return error;
+  //return error;
 }
 
 // Basic sanity check on set values: no duplicates, and all LID values belong
@@ -1754,8 +1754,9 @@ bool MeshAudit::check_face_partition() const
   bool owned[nface];
   for (int j = 0; j < nface; ++j) owned[j] = false;
   Kokkos::View<AmanziMesh::Entity_ID*> cface;
+  Kokkos::View<int*> dfaces; 
   for (AmanziMesh::Entity_ID j = 0; j < mesh_->cell_map(false)->getNodeNumElements(); ++j) {
-    mesh_->cell_get_faces(j, cface);
+    mesh_->cell_get_faces_and_dirs(j, cface,dfaces);
     for (int k = 0; k < cface.extent(0); ++k) owned[cface(k)] = true;
   }
 

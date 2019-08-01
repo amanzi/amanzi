@@ -71,23 +71,28 @@ void CompositeVectorFunction::Compute(double time,
     for (MeshFunction::RegionList::const_iterator region=spec->first->first.begin();
          region!=spec->first->first.end(); ++region) {
 
-      // region ENTIRE_MESH_REGION
-      if (*region == std::string("ENTIRE_MESH_REGION")) {
-        if (kind == AmanziMesh::BOUNDARY_FACE) {
-          unsigned int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-          const auto& vandelay_map = *mesh->exterior_face_map(false);
+     
+      // special case for BOUNDARY_FACE
+      if (kind == AmanziMesh::BOUNDARY_FACE) {
+        if (mesh->valid_set_name(*region, AmanziMesh::FACE)) {
+          // get the indices of the domain.
+          Kokkos::View<AmanziMesh::Entity_ID*> id_list;
+          mesh->get_set_entities(*region, AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, id_list);
+
           const auto& face_map = *mesh->face_map(false);
+          const auto& vandelay_map = *mesh->exterior_face_map(false);
 
           // loop over indices
           Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells;
-          for (AmanziMesh::Entity_ID id=0; id!=nfaces; ++id) {
-            mesh->face_get_cells(id, AmanziMesh::Parallel_type::ALL, cells);
+          for (int id = 0 ; id < id_list.extent(0); ++id) {
+            mesh->face_get_cells(id_list(id), AmanziMesh::Parallel_type::ALL, cells);
             if (cells.extent(0) == 1) {
-              AmanziMesh::Entity_ID bf = vandelay_map.getLocalElement(face_map.getGlobalElement(id));
+              AmanziMesh::Entity_ID bf = vandelay_map.getLocalElement(face_map.getGlobalElement(id_list(id)));
               AMANZI_ASSERT(bf >= 0);
 
+
               // get the coordinate
-              AmanziGeometry::Point xf = mesh->face_centroid(id);
+              AmanziGeometry::Point xf = mesh->face_centroid(id_list(id));
               for (int i=0; i!=dim; ++i) args[i+1] = xf[i];
 
               // evaluate the functions and stuff the result into the CV
@@ -98,100 +103,43 @@ void CompositeVectorFunction::Compute(double time,
             }
           }
         } else {
-          unsigned int nentities = mesh->num_entities(kind, AmanziMesh::Parallel_type::OWNED);
-          for (AmanziMesh::Entity_ID id=0; id!=nentities; ++id) {
+          std::stringstream m;
+          m << "CV: unknown boundary region: \"" << *region << "\"";
+          Errors::Message message(m.str());
+          Exceptions::amanzi_throw(message);
+        }
+
+      } else {
+        if (mesh->valid_set_name(*region, kind)) {
+          // get the indices of the domain.
+          Kokkos::View<AmanziMesh::Entity_ID*> id_list;
+          mesh->get_set_entities(*region, kind, AmanziMesh::Parallel_type::OWNED, id_list);
+
+          // loop over indices
+          for (int id = 0 ; id < id_list.extent(0); ++id) {
+            // get the coordinate
             AmanziGeometry::Point xc;
             if (kind == AmanziMesh::CELL) {
-              xc = mesh->cell_centroid(id);
+              xc = mesh->cell_centroid(id_list(id));
             } else if (kind == AmanziMesh::FACE) {
-              xc = mesh->face_centroid(id);
+              xc = mesh->face_centroid(id_list(id));
             } else if (kind == AmanziMesh::NODE) {
-              mesh->node_get_coordinates(id, &xc);
+              mesh->node_get_coordinates(id_list(id), &xc);
             } else {
-              Errors::Message msg;
-              msg << "In CompositeVectorFunction: unknown mesh kind: \"" << kind << "\"";
-              Exceptions::amanzi_throw(msg);
+              AMANZI_ASSERT(0);
             }
             for (int i=0; i!=dim; ++i) args[i+1] = xc[i];
 
             // evaluate the functions and stuff the result into the CV
             double *value = (*spec->second)(args);
             for (int i=0; i!=(*spec->second).size(); ++i) {
-              compvec(i,id) = value[i];
+              compvec(i,id_list(id)) = value[i];
             }
           }
-        }
-
-      } else {
-        // special case for BOUNDARY_FACE
-        if (kind == AmanziMesh::BOUNDARY_FACE) {
-          if (mesh->valid_set_name(*region, AmanziMesh::FACE)) {
-            // get the indices of the domain.
-            Kokkos::View<AmanziMesh::Entity_ID*> id_list;
-            mesh->get_set_entities(*region, AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, id_list);
-
-            const auto& face_map = *mesh->face_map(false);
-            const auto& vandelay_map = *mesh->exterior_face_map(false);
-
-            // loop over indices
-            Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells;
-            for (int id = 0 ; id < id_list.extent(0); ++id) {
-              mesh->face_get_cells(id_list(id), AmanziMesh::Parallel_type::ALL, cells);
-              if (cells.extent(0) == 1) {
-                AmanziMesh::Entity_ID bf = vandelay_map.getLocalElement(face_map.getGlobalElement(id_list(id)));
-                AMANZI_ASSERT(bf >= 0);
-
-
-                // get the coordinate
-                AmanziGeometry::Point xf = mesh->face_centroid(id_list(id));
-                for (int i=0; i!=dim; ++i) args[i+1] = xf[i];
-
-                // evaluate the functions and stuff the result into the CV
-                double *value = (*spec->second)(args);
-                for (int i=0; i!=(*spec->second).size(); ++i) {
-                  compvec(i,bf) = value[i];
-                }
-              }
-            }
-          } else {
-            std::stringstream m;
-            m << "CV: unknown boundary region: \"" << *region << "\"";
-            Errors::Message message(m.str());
-            Exceptions::amanzi_throw(message);
-          }
-
         } else {
-          if (mesh->valid_set_name(*region, kind)) {
-            // get the indices of the domain.
-            Kokkos::View<AmanziMesh::Entity_ID*> id_list;
-            mesh->get_set_entities(*region, kind, AmanziMesh::Parallel_type::OWNED, id_list);
-
-            // loop over indices
-            for (int id = 0 ; id < id_list.extent(0); ++id) {
-              // get the coordinate
-              AmanziGeometry::Point xc;
-              if (kind == AmanziMesh::CELL) {
-                xc = mesh->cell_centroid(id_list(id));
-              } else if (kind == AmanziMesh::FACE) {
-                xc = mesh->face_centroid(id_list(id));
-              } else if (kind == AmanziMesh::NODE) {
-                mesh->node_get_coordinates(id_list(id), &xc);
-              } else {
-                AMANZI_ASSERT(0);
-              }
-              for (int i=0; i!=dim; ++i) args[i+1] = xc[i];
-
-              // evaluate the functions and stuff the result into the CV
-              double *value = (*spec->second)(args);
-              for (int i=0; i!=(*spec->second).size(); ++i) {
-                compvec(i,id_list(id)) = value[i];
-              }
-            }
-          } else {
-            Errors::Message message;
-            message << "CV: unknown region \"" << *region << "\"";
-            Exceptions::amanzi_throw(message);
-          }
+          Errors::Message message;
+          message << "CV: unknown region \"" << *region << "\"";
+          Exceptions::amanzi_throw(message);
         }
       }
     }

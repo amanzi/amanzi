@@ -224,7 +224,7 @@ void PDE_DiffusionNLFV::InitStencils_()
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
     // calculate list of candidate vectors
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces_and_dirs(c, &faces, dirs);
     int nfaces = faces.size();
 
     tau.clear();

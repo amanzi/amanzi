@@ -33,7 +33,7 @@ int MFD3D_Diffusion::MassMatrixInverseTPFA(int c, const Tensor& K, DenseMatrix& 
   Kokkos::View<Entity_ID*> faces;
   Kokkos::View<int*> dirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.extent(0);
 
   W.Reshape(nfaces, nfaces);
@@ -113,7 +113,7 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
   Kokkos::View<Entity_ID*> faces;
   Kokkos::View<int*> fdirs;
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &fdirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, fdirs);
   int num_faces = faces.extent(0);
 
   Kokkos::View<Entity_ID*> nodes, corner_faces;

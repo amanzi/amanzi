@@ -311,8 +311,7 @@ class Mesh_simple : public virtual Mesh {
 
   void cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
                                          Kokkos::View<Entity_ID*>& faceids,
-                                         Kokkos::View<int*> *face_dirs,
-                                         const bool ordered=false) const;
+                                         Kokkos::View<int*> &face_dirs) const;
 
   // Cells connected to a face
   void face_get_cells_internal_(const Entity_ID faceid,

@@ -337,7 +337,7 @@ void PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solu
   std::vector<int> flag(nfaces_wghost, 0);
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces_and_dirs(c, &faces, dirs);
     int nfaces = faces.size();
 
     for (int n = 0; n < nfaces; n++) {
@@ -432,7 +432,7 @@ void PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
     // find the face direction from cell 0 to cell 1
     AmanziMesh::Entity_ID_List cfaces;
     std::vector<int> fdirs;
-    mesh_->cell_get_faces_and_dirs(cells[0], &cfaces, &fdirs);
+    mesh_->cell_get_faces_and_dirs(cells[0], &cfaces, fdirs);
     int f_index = std::find(cfaces.begin(), cfaces.end(), f) - cfaces.begin();
     ComputeJacobianLocal_(mcells, f, fdirs[f_index], bc_model[f], bc_value[f],
                           pres, dkdp, Aface);

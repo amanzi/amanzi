@@ -82,7 +82,7 @@ TEST(MOAB_HEX_3x3x3_4P)
 
   for (int c = cell_map->getMinLocalIndex(); c <= cell_map->getMaxLocalIndex(); c++) {
     CHECK_EQUAL(cell_map->getGlobalElement(c), mesh.getGlobalElement(c, AmanziMesh::CELL));
-    mesh.cell_get_faces_and_dirs(c, &c2f, &c2fdirs, true);
+    mesh.cell_get_faces_and_dirs(c, &c2f, c2fdirs);
 
     for (int j = 0; j < 6; j++) {
       int f = face_map->getLocalElement(mesh.getGlobalElement(c2f[j], AmanziMesh::FACE));

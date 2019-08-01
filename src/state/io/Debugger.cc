@@ -168,7 +168,7 @@ void Debugger::WriteCellInfo(bool include_faces) {
       if (include_faces) {
         AmanziMesh::Entity_ID_List fnums0;
         std::vector<int> dirs;
-        mesh_->cell_get_faces_and_dirs(c0, &fnums0, &dirs);
+        mesh_->cell_get_faces_and_dirs(c0, &fnums0, dirs);
 
         if (dcvo_[i]->os_OK(verb_level_)) {
           for (unsigned int n = 0; n != fnums0.size(); ++n) {
@@ -213,7 +213,7 @@ void Debugger::WriteVector(const std::string &name,
       if (include_faces && vec_f != Teuchos::null) {
         AmanziMesh::Entity_ID_List fnums0;
         std::vector<int> dirs;
-        mesh_->cell_get_faces_and_dirs(c0, &fnums0, &dirs);
+        mesh_->cell_get_faces_and_dirs(c0, &fnums0, dirs);
 
         for (unsigned int n = 0; n != fnums0.size(); ++n)
           if (fnums0[n] < nfaces_valid)
@@ -260,7 +260,7 @@ void Debugger::WriteVectors(
         if (include_faces && vec_f != Teuchos::null) {
           AmanziMesh::Entity_ID_List fnums0;
           std::vector<int> dirs;
-          mesh_->cell_get_faces_and_dirs(c0, &fnums0, &dirs);
+          mesh_->cell_get_faces_and_dirs(c0, &fnums0, dirs);
 
           for (unsigned int n = 0; n != fnums0.size(); ++n)
             *dcvo_[i]->os() << " " << Format_((*vec_f)[0][fnums0[n]]);
@@ -287,7 +287,7 @@ void Debugger::WriteBoundaryConditions(const std::vector<int> &flag,
       *dcvo_[i]->os() << FormatHeader_("BCs", c0_gid);
       AmanziMesh::Entity_ID_List fnums0;
       std::vector<int> dirs;
-      mesh_->cell_get_faces_and_dirs(c0, &fnums0, &dirs);
+      mesh_->cell_get_faces_and_dirs(c0, &fnums0, dirs);
 
       for (unsigned int n = 0; n != fnums0.size(); ++n)
         *dcvo_[i]->os() << " " << flag[fnums0[n]] << "("

@@ -46,6 +46,7 @@ void HDF5::createMeshFile(AmanziMesh::Mesh &mesh_maps, std::string filename) {
                       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   status = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL,
                     H5P_DEFAULT, nodes);
+  assert(status >= 0); 
   delete[] nodes;
   H5Dclose(dataset);
   H5Sclose(dataspace);
@@ -478,9 +479,10 @@ void HDF5::readFieldData_(Epetra_Vector &x, std::string varname) {
   strcpy(h5path,varname.c_str());
   int ndims;
   hid_t file = H5Fopen(H5DataFilename().c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
-  int globaldims[2], localdims[2];
-  globaldims[0] = x.GlobalLength();
-  globaldims[1] = 1;
+  //int globaldims[2];
+  int localdims[2];
+  //globaldims[0] = x.GlobalLength();
+  //globaldims[1] = 1;
   localdims[0] = x.MyLength();
   localdims[1] = 1;
   std::vector<int> myidx(localdims[0],0);

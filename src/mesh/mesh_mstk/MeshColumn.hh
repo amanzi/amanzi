@@ -422,11 +422,10 @@ class MeshColumn : public Mesh {
   virtual
   void cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
                                          Kokkos::View<Entity_ID*>& faceids,
-                                         Kokkos::View<int*> *face_dirs,
-                                         const bool ordered=false) const override {
+                                         Kokkos::View<int*>& face_dirs) const override {
 
     Kokkos::resize(faceids,2);
-    Kokkos::resize(*face_dirs,2);
+    Kokkos::resize(face_dirs,2);
 
     // NOTE: the face directions with respect to the cell may be at
     // odds with how it is in the parent mesh but within this mesh its
@@ -434,13 +433,13 @@ class MeshColumn : public Mesh {
     Kokkos::View<Entity_ID*> faceids_extracted;
     Kokkos::View<int*> face_dirs_extracted;
     extracted_->cell_get_faces_and_dirs(cellid, faceids_extracted,
-            &face_dirs_extracted, ordered);
+            face_dirs_extracted);
 
     int count = 0;
     for (int i=0; i!=faceids_extracted.extent(0); ++i) {
       if (face_in_column_[faceids_extracted(i)] >= 0) {
         faceids(count) = face_in_column_[faceids_extracted(i)];
-        (*face_dirs)(count) = face_dirs_extracted(i);
+        face_dirs(count) = face_dirs_extracted(i);
         count++;
       }
     }

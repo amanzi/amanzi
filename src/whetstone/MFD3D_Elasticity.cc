@@ -78,7 +78,7 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
   mesh_->cell_get_nodes(c, nodes);
   int nnodes = nodes.extent(0);
 
-  mesh_->cell_get_faces_and_dirs(c, faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, faces, dirs);
   int nfaces = faces.extent(0);
 
   int nrows = d_ * nnodes;

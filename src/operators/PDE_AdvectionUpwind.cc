@@ -290,7 +290,7 @@ void PDE_AdvectionUpwind::IdentifyUpwindCells_(const CompositeVector& u)
   std::vector<int> fdirs;
 
   for (int c = 0; c < ncells_wghost; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+    mesh_->cell_get_faces_and_dirs(c, &faces, fdirs);
 
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];

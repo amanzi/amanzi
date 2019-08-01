@@ -54,7 +54,7 @@ TEST(DIFFUSION_STOKES_2D) {
   mesh->cell_get_nodes(cell, nodes);
   int nnodes = nodes.extent(0);
 
-  mesh->cell_get_faces_and_dirs(cell, faces, &dirs);
+  mesh->cell_get_faces_and_dirs(cell, faces, dirs);
   int nfaces = faces.extent(0);
 
   // calcualte stiffness matrix
@@ -143,7 +143,7 @@ TEST(ADVECTION_NAVIER_STOKES_2D) {
   mesh->cell_get_nodes(cell, nodes);
   int nnodes = nodes.extent(0);
 
-  mesh->cell_get_faces_and_dirs(cell, faces, &dirs);
+  mesh->cell_get_faces_and_dirs(cell, faces, dirs);
   int nfaces = faces.extent(0);
 
   // setup velocity

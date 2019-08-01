@@ -37,7 +37,7 @@ test_segment_regular(const Teuchos::RCP<const Amanzi::AmanziMesh::Mesh>& m,
   Entity_ID_List faces;
   std::vector<int> dirs;
   std::vector<Point> bisectors;
-  m->cell_get_faces_and_dirs(2, &faces, &dirs);
+  m->cell_get_faces_and_dirs(2, &faces, dirs);
   CHECK_EQUAL(2, faces.size());
   CHECK_EQUAL(2, faces[0]);
   CHECK_EQUAL(3, faces[1]);
@@ -142,7 +142,7 @@ test_Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
 
   Entity_ID_List branch_faces;
   std::vector<int> dirs;
-  m->cell_get_faces_and_dirs(2, &branch_faces, &dirs);
+  m->cell_get_faces_and_dirs(2, &branch_faces, dirs);
   CHECK_EQUAL(5, branch_faces.size());
 
 
@@ -207,7 +207,7 @@ TEST(MESH_LOGICAL_Y_DEFORMED)
 
   Amanzi::AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
-  mesh->cell_get_faces_and_dirs(0, &faces, &dirs);
+  mesh->cell_get_faces_and_dirs(0, &faces, dirs);
   CHECK_EQUAL(2, faces.size());
   CHECK_EQUAL(2, cf_lens[0].size());
       
