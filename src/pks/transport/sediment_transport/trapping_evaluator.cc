@@ -83,7 +83,12 @@ void TrappingRateEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       double n_s = bio_n[j][c];
     
       double u_abs = sqrt(vel[0][c] * vel[0][c] + vel[1][c] * vel[1][c]);
-      double eps = alpha_ * std::pow(u_abs*d_s/visc_, beta_) * std::pow(d_p_/d_s, gamma_);
+      double eps;
+      if (d_s > 1e-12){
+        eps = alpha_ * std::pow(u_abs*d_s/visc_, beta_) * std::pow(d_p_/d_s, gamma_);
+      }else{
+        eps = 0.;
+      }      
 
       result_c[0][c] += tcc[0][c] * u_abs * eps * d_s * n_s * std::min(depth[0][c], h_s);
     }
