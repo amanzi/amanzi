@@ -246,6 +246,7 @@ protected:
   Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_pressure_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_critical_depth_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_level_;
+  Teuchos::RCP<Functions::BoundaryFunction> bc_tidal_;
   Teuchos::RCP<Functions::DynamicBoundaryFunction> bc_dynamic_;
   
   // needed physical models

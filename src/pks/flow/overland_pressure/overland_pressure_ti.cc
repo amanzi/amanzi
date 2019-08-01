@@ -102,6 +102,8 @@ void OverlandPressureFlow::FunctionalResidual( double t_old,
   bc_seepage_pressure_->Compute(S_next_->time());
   bc_critical_depth_->Compute(S_next_->time());
   bc_dynamic_->Compute(S_next_->time());
+  bc_tidal_->Compute(S_next_->time());
+  
   UpdateBoundaryConditions_(S_next_.ptr());
 
   // diffusion term, treated implicitly

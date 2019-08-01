@@ -332,6 +332,10 @@ public:
     return CreateWithFunction("seepage face head", "boundary head");
   }
 
+  Teuchos::RCP<Functions::BoundaryFunction> CreateTidalHead() const {
+    return CreateWithFunction("tidal head", "boundary head");
+  }
+  
   Teuchos::RCP<Functions::BoundaryFunction> CreateSeepageFacePressure() const {
     return CreateWithFunction("seepage face pressure", "boundary pressure");
   }
