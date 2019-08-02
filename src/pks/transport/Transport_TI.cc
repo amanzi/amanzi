@@ -14,6 +14,7 @@
 #include "ReconstructionCell.hh"
 #include "OperatorDefs.hh"
 #include "Transport_PK.hh"
+#include "UniqueLocalIndex.hh"
 
 namespace Amanzi {
 namespace Transport {
@@ -126,6 +127,8 @@ void Transport_PK::FunctionalTimeDerivative(
   }
 
   // BOUNDARY CONDITIONS for ADVECTION
+  const auto& flux_map = S_->GetFieldData(darcy_flux_key_)->Map().Map("face", true);
+
   for (int m = 0; m < bcs_.size(); m++) {
     std::vector<int>& tcc_index = bcs_[m]->tcc_index();
     int ncomp = tcc_index.size();
@@ -138,11 +141,13 @@ void Transport_PK::FunctionalTimeDerivative(
           std::vector<double>& values = it->second;
 
           if (downwind_cells_[f].size() > 0 && f < nfaces_owned) {
-            for (int k=0;k<downwind_cells_[f].size(); k++) {
+            for (int k = 0; k < downwind_cells_[f].size(); k++) {
               c2 = downwind_cells_[f][k];
+              int g = flux_map->FirstPointInElement(f);
+              g += Operators::UniqueIndexFaceToCells(*mesh_, f, c2);
+
               if (c2 >=0) {
-                int f_loc_id = flux_map_->FirstPointInElement(f);
-                u = fabs((*darcy_flux)[0][f_loc_id + k]);
+                u = fabs((*darcy_flux)[0][g]);
                 double vol_phi_ws = mesh_->cell_volume(c2) * (*phi)[0][c2] * (*ws_start)[0][c2];
                 tcc_flux = u * values[i];
                 f_component[c2] += tcc_flux / vol_phi_ws;

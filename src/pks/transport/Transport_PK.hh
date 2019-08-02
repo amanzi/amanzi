@@ -188,7 +188,7 @@ class Transport_PK : public PK_Physical {
   // names of state fields 
 
   Key tcc_key_;
-  Key darcy_flux_key_, darcy_flux_fracture_key_;
+  Key darcy_flux_key_;
   Key porosity_key_, transport_porosity_key_, permeability_key_;
   Key saturation_liquid_key_, prev_saturation_liquid_key_;
   Key water_content_key_, prev_water_content_key_;
@@ -245,9 +245,6 @@ class Transport_PK : public PK_Physical {
   std::vector<int> axi_symmetry_;  // axi-symmetry direction of permeability tensor
   std::string dispersion_preconditioner, dispersion_solver;
 
-  Teuchos::RCP<const Epetra_BlockMap> flux_map_;
-
-  
   std::vector<Teuchos::RCP<MaterialProperties> > mat_properties_;  // vector of materials
   std::vector<Teuchos::RCP<DiffusionPhase> > diffusion_phase_;   // vector of phases
 

@@ -44,16 +44,20 @@ void TransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
   mesh_domain_ = S->GetMesh();
   mesh_fracture_ = S->GetMesh("fracture");
 
-  // primary and secondary fields for matrix affected by non-uniform
-  // distribution of DOFs
-  auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
-
-  // -- darcy flux
+  // darcy fluxes use non-uniform distribution of DOFs
+  // -- darcy flux for matrix
   if (!S->HasField("darcy_flux")) {
+    auto cvs = Operators::CreateFracturedMatrixCVS(mesh_domain_, mesh_fracture_);
     auto mmap = cvs->Map("face", false);
     auto gmap = cvs->Map("face", true);
     S->RequireField("darcy_flux", "transport")->SetMesh(mesh_domain_)->SetGhosted(true) 
       ->SetComponent("face", AmanziMesh::FACE, mmap, gmap, 1);
+  }
+
+  // -- darcy flux for fracture
+  if (!S->HasField("fracture-darcy_flux")) {
+    auto cvs = Operators::CreateNonManifoldCVS(mesh_fracture_);
+    *S->RequireField("fracture-darcy_flux", "transport")->SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs;
   }
 
   // add boundary condition to transport in matrix list

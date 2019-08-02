@@ -61,12 +61,6 @@ class PDE_DiffusionFracturedMatrix : public PDE_DiffusionMFD {
   AmanziGeometry::Point g_;
 };
 
-
-// non-member functions
-Teuchos::RCP<CompositeVectorSpace> CreateFracturedMatrixCVS(
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-    const Teuchos::RCP<const AmanziMesh::Mesh>& fracture);
-
 }  // namespace Operators
 }  // namespace Amanzi
 

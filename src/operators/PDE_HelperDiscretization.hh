@@ -103,6 +103,15 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
   int nedges_owned, nedges_wghost;
 };
 
+
+// non-member functions
+Teuchos::RCP<CompositeVectorSpace> CreateFracturedMatrixCVS(
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& fracture);
+
+Teuchos::RCP<CompositeVectorSpace> CreateNonManifoldCVS(
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+
 }  // namespace Operators
 }  // namespace Amanzi
 

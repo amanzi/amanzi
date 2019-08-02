@@ -34,6 +34,7 @@
 #include "PDE_DiffusionFactory.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "PK_Utils.hh"
+#include "UniqueLocalIndex.hh"
 #include "WhetStoneDefs.hh"
 
 // amanzi::Transport
@@ -179,7 +180,6 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
   transport_porosity_key_ = Keys::getKey(domain_, "transport_porosity"); 
 
   darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
-  darcy_flux_fracture_key_ = Keys::getKey(domain_, "darcy_flux_fracture");
 
   saturation_liquid_key_ = Keys::getKey(domain_, "saturation_liquid"); 
   prev_saturation_liquid_key_ = Keys::getKey(domain_, "prev_saturation_liquid"); 
@@ -187,13 +187,13 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
   water_content_key_ = Keys::getKey(domain_, "water_content"); 
   prev_water_content_key_ = Keys::getKey(domain_, "prev_water_content"); 
 
-
   // cross-coupling of PKs
   Teuchos::RCP<Teuchos::ParameterList> physical_models =
       Teuchos::sublist(tp_list_, "physical models and assumptions");
   bool abs_perm = physical_models->get<bool>("permeability field is required", false);
   std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single continuum");
   use_transport_porosity_ = physical_models->get<bool>("effective transport porosity", false);
+  bool transport_on_manifold = physical_models->get<bool>("transport in fractures", false);
 
   // require state fields when Flow PK is off
   if (!S->HasField(permeability_key_) && abs_perm) {
@@ -201,8 +201,13 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetComponent("cell", AmanziMesh::CELL, dim);
   }
   if (!S->HasField(darcy_flux_key_)) {
-    S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::FACE, 1);
+    if (transport_on_manifold) {
+      auto cvs = Operators::CreateNonManifoldCVS(mesh_);
+      *S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true) = *cvs;
+    } else {
+      S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("face", AmanziMesh::FACE, 1);
+    }
   }
   if (!S->HasField(saturation_liquid_key_)) {
     S->RequireField(saturation_liquid_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
@@ -299,18 +304,6 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
     }
   }
-
-  // require fracture fields
-  if (mesh_->space_dimension() != mesh_->manifold_dimension()) {
-    if (!S->HasField(darcy_flux_fracture_key_)) {
-      int nrows, tmp(mesh_->cell_get_max_faces());
-      mesh_->get_comm()->MaxAll(&tmp, &nrows, 1);  // global maximum
-
-      S->RequireField(darcy_flux_fracture_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, nrows);
-      S->GetField(darcy_flux_fracture_key_, passwd_)->set_io_vis(false);
-    }
-  }
 }
 
 
@@ -369,9 +362,6 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
     transport_phi = phi;
   }
 
-  flux_map_ = S_->GetFieldData(darcy_flux_key_)->Map().Map("face", true);
-
-  
   tcc = S->GetFieldData(tcc_key_, passwd_);
 
   // memory for new components
@@ -563,7 +553,6 @@ void Transport_PK::InitializeFields_()
 
   // set popular default values when flow PK is off
   InitializeField(S_.ptr(), passwd_, saturation_liquid_key_, 1.0);
-  InitializeField(S_.ptr(), passwd_, darcy_flux_fracture_key_, 0.0);
 
   InitializeFieldFromField_(water_content_key_, porosity_key_, false);
   InitializeFieldFromField_(prev_water_content_key_, water_content_key_, false);
@@ -1174,7 +1163,7 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
       tcc_next[i][c] = tcc_prev[i][c] * vol_phi_ws;
   }
 
-  auto flux_map = S_->GetFieldData(darcy_flux_key_)->Map().Map("face", true);
+  const auto& flux_map = S_->GetFieldData(darcy_flux_key_)->Map().Map("face", true);
  
   // advance all components at once
   for (int f = 0; f < nfaces_wghost; f++) {  // loop over master and slave faces
@@ -1633,6 +1622,7 @@ bool Transport_PK::ComputeBCs_(
 void Transport_PK::IdentifyUpwindCells()
 {
   S_->GetFieldData(darcy_flux_key_)->ScatterMasterToGhosted("face");
+  const auto& map = S_->GetFieldData(darcy_flux_key_)->Map().Map("face", true);
 
   upwind_cells_.clear();
   downwind_cells_.clear();
@@ -1649,11 +1639,11 @@ void Transport_PK::IdentifyUpwindCells()
   AmanziMesh::Entity_ID_List faces, cells;
   std::vector<int> dirs;
 
+  // the case of fluxes that use unique face normal even if there
+  // exists more than one flux on a face
   if (mesh_->space_dimension() == mesh_->manifold_dimension()) {
-    const Epetra_Map& cmap = mesh_->cell_map(true);
-
     for (int f = 0; f < nfaces_wghost; f++) {
-      int ndofs = flux_map_->ElementSize(f);
+      int ndofs = map->ElementSize(f);
       upwind_cells_[f].assign(ndofs, -1);
       downwind_cells_[f].assign(ndofs, -1);
       upwind_flux_[f].assign(ndofs, 0.0);
@@ -1667,16 +1657,12 @@ void Transport_PK::IdentifyUpwindCells()
         int f = faces[i];
         mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
 
-        int g = flux_map_->FirstPointInElement(f);
-        int ndofs = flux_map_->ElementSize(f);
+        int g = map->FirstPointInElement(f);
+        int ndofs = map->ElementSize(f);
 
         // We assume that two DOFs are placed only on internal faces
         if (ndofs == 2) {
-          // define local position of DOF that the current cell controls
-          int pos(0);
-          int gid = cmap.GID(c);
-          int gid_min = std::min(cmap.GID(cells[0]), cmap.GID(cells[1]));
-          if (gid > gid_min) pos = 1;
+          int pos = Operators::UniqueIndexFaceToCells(*mesh_, f, c);
 
           // define only upwind cell
           double tmp = (*darcy_flux)[0][g + pos] * dirs[i];
@@ -1708,16 +1694,19 @@ void Transport_PK::IdentifyUpwindCells()
       }
     }
 
+  // the case of fluxes that use the external face normal for each
+  // flux (could be more than one) on a face
   } else {
-    const Epetra_MultiVector& flux = *S_->GetFieldData(darcy_flux_fracture_key_)->ViewComponent("cell", true);
-    S_->GetFieldData(darcy_flux_fracture_key_, passwd_)->ScatterMasterToGhosted();
-
     for (int c = 0; c < ncells_wghost; c++) {
-      mesh_->cell_get_faces(c, &faces);
+      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
 
       for (int i = 0; i < faces.size(); i++) {
         int f = faces[i];
-        double u = flux[i][c];
+        int g = map->FirstPointInElement(f);
+        int ndofs = map->ElementSize(f);
+        if (ndofs > 1) g += Operators::UniqueIndexFaceToCells(*mesh_, f, c);
+
+        double u = (*darcy_flux)[0][g] * dirs[i];  // external flux for cell c
         if (u >= 0.0) {
           upwind_cells_[f].push_back(c);
           upwind_flux_[f].push_back(u);

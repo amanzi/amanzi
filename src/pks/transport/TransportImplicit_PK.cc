@@ -112,12 +112,7 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_ = op_adv_->global_operator();
   op_adv_->SetBCs(op_bc_, op_bc_);
 
-  Teuchos::RCP<const CompositeVector> flux;
-  if (oplist.isParameter("fracture"))
-    flux = S->GetFieldData(darcy_flux_key_);
-  else
-    flux = S->GetFieldData(darcy_flux_fracture_key_);
-  
+  auto flux = S->GetFieldData(darcy_flux_key_);
   op_adv_->Setup(*flux);
   op_adv_->UpdateMatrices(flux.ptr());
 

@@ -20,7 +20,9 @@
 #include "Operator_Cell.hh"
 #include "Op_Face_Cell.hh"
 #include "Op_SurfaceFace_SurfaceCell.hh"
+#include "ParallelCommunication.hh"
 #include "PDE_AdvectionUpwindDFN.hh"
+#include "UniqueLocalIndex.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -190,26 +192,26 @@ void PDE_AdvectionUpwindDFN::IdentifyUpwindCells_(const CompositeVector& u)
   AmanziMesh::Entity_ID_List faces, cells;
   std::vector<int> dirs;
 
-  const Epetra_Map& cmap = mesh_->cell_map(true);
-
-  // desinged for $domain-darcy_flux_fracture
-
   u.ScatterMasterToGhosted();
-
-  const Epetra_MultiVector& flux_c = *u.ViewComponent("cell");
+  const Epetra_MultiVector& u_f = *u.ViewComponent("face", true);
+  const auto& map = u.Map().Map("face", true);
   
   for (int c = 0; c < ncells_wghost; c++) {
-    mesh_->cell_get_faces(c, &faces);
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];
-      double u = flux_c[i][c];
-      if (u >= 0.0) {
+      int g = map->FirstPointInElement(f);
+      int ndofs = map->ElementSize(f);
+      if (ndofs > 1) g += Operators::UniqueIndexFaceToCells(*mesh_, f, c);
+
+      double flux = u_f[0][g] * dirs[i];
+      if (flux >= 0.0) {
         upwind_cells_new_[f].push_back(c);
-        upwind_flux_new_[f].push_back(u);
+        upwind_flux_new_[f].push_back(flux);
       } else {
         downwind_cells_new_[f].push_back(c);
-        downwind_flux_new_[f].push_back(u);
+        downwind_flux_new_[f].push_back(flux);
       }      
     }
   }

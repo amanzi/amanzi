@@ -15,6 +15,7 @@
 
 #include "WhetStoneDefs.hh"
 
+#include "ParallelCommunication.hh"
 #include "PDE_HelperDiscretization.hh"
 
 namespace Amanzi {
@@ -474,6 +475,104 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(
   } 
 
   rhs.GatherGhostedToMaster(Add);
+}
+
+
+/* ******************************************************************
+* Composite vector space with one face component having multiple DOFs 
+* and one regular cell component
+****************************************************************** */
+Teuchos::RCP<CompositeVectorSpace> CreateFracturedMatrixCVS(
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& fracture)
+{
+  AmanziMesh::Entity_ID_List cells;
+  int ncells_f = fracture->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+
+  auto points = Teuchos::rcp(new Epetra_IntVector(mesh->face_map(true)));
+  points->PutValue(1);
+
+  for (int c = 0; c < ncells_f; ++c) {
+    int f = fracture->entity_get_parent(AmanziMesh::CELL, c);
+    mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    (*points)[f] = cells.size();
+  }
+
+  ParallelCommunication pp(mesh);
+  pp.CopyMasterFace2GhostFace(*points);
+
+  // create ghosted map with two points on each fracture face
+  auto& gfmap = mesh->face_map(true);
+  int nlocal = gfmap.NumMyElements();
+
+  std::vector<int> gids(nlocal);
+  gfmap.MyGlobalElements(&gids[0]);
+
+  int* data; 
+  points->ExtractView(&data);
+  auto gmap = Teuchos::rcp(new Epetra_BlockMap(-1, nlocal, &gids[0], data, 0, gfmap.Comm()));
+
+  // create master map with two points on each fracture face
+  auto& mfmap = mesh->face_map(false);
+  nlocal = mfmap.NumMyElements();
+
+  auto mmap = Teuchos::rcp(new Epetra_BlockMap(-1, nlocal, &gids[0], data, 0, mfmap.Comm()));
+
+  // create meta data
+  std::string compname("face");
+  auto cvs = Teuchos::rcp(new CompositeVectorSpace());
+  cvs->SetMesh(mesh)->SetGhosted(true);
+  cvs->AddComponent(compname, AmanziMesh::FACE, mmap, gmap, 1);
+  cvs->AddComponent("cell", AmanziMesh::CELL, 1);
+
+  return cvs;
+}
+
+
+/* ******************************************************************
+* Composite vector space with one face component having multiple DOFs
+****************************************************************** */
+Teuchos::RCP<CompositeVectorSpace> CreateNonManifoldCVS(
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+{
+  AmanziMesh::Entity_ID_List cells;
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+
+  auto points = Teuchos::rcp(new Epetra_IntVector(mesh->face_map(true)));
+  points->PutValue(1);
+
+  for (int f = 0; f < nfaces; ++f) {
+    mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    (*points)[f] = cells.size();
+  }
+
+  ParallelCommunication pp(mesh);
+  pp.CopyMasterFace2GhostFace(*points);
+
+  // create ghosted map with multiple points on each fracture face
+  auto& gfmap = mesh->face_map(true);
+  int nlocal = gfmap.NumMyElements();
+
+  std::vector<int> gids(nlocal);
+  gfmap.MyGlobalElements(&gids[0]);
+
+  int* data; 
+  points->ExtractView(&data);
+  auto gmap = Teuchos::rcp(new Epetra_BlockMap(-1, nlocal, &gids[0], data, 0, gfmap.Comm()));
+
+  // create master map with multiple points on each fracture face
+  auto& mfmap = mesh->face_map(false);
+  nlocal = mfmap.NumMyElements();
+
+  auto mmap = Teuchos::rcp(new Epetra_BlockMap(-1, nlocal, &gids[0], data, 0, mfmap.Comm()));
+
+  // create meta data
+  std::string compname("face");
+  auto cvs = Teuchos::rcp(new CompositeVectorSpace());
+  cvs->SetMesh(mesh)->SetGhosted(true);
+  cvs->AddComponent(compname, AmanziMesh::FACE, mmap, gmap, 1);
+
+  return cvs;
 }
 
 }  // namespace Operators
