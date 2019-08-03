@@ -25,12 +25,12 @@ namespace Operators {
 class PDE_AdvectionUpwindDFN : public PDE_AdvectionUpwind {
  public:
   PDE_AdvectionUpwindDFN(Teuchos::ParameterList& plist,
-                         Teuchos::RCP<Operator> global_op) :
+                         const Teuchos::RCP<Operator>& global_op) :
     PDE_AdvectionUpwind(plist, global_op) {
   }
 
   PDE_AdvectionUpwindDFN(Teuchos::ParameterList& plist,
-                         Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+                         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
     PDE_AdvectionUpwind(plist, mesh) {
   }
   
@@ -46,19 +46,15 @@ class PDE_AdvectionUpwindDFN : public PDE_AdvectionUpwind {
                           const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::RCP<BCs>& bc,
                           const Teuchos::Ptr<CompositeVector>& flux) override {};
-  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override {};
+  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
  private:
-  //void InitAdvection_(Teuchos::ParameterList& plist);
   void IdentifyUpwindCells_(const CompositeVector& u);
 
- private:
-  std::vector<std::string> fractures_;
-
  protected:
-  std::vector<std::vector<int> > upwind_cells_new_;  // fracture friendly 
-  std::vector<std::vector<int> > downwind_cells_new_;
-  std::vector<std::vector<double> > upwind_flux_new_, downwind_flux_new_;  
+  std::vector<std::vector<int> > upwind_cells_dfn_;  // fracture friendly 
+  std::vector<std::vector<int> > downwind_cells_dfn_;
+  std::vector<std::vector<double> > upwind_flux_dfn_, downwind_flux_dfn_;  
 };
 
 }  // namespace Operators

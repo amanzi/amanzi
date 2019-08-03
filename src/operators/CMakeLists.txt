@@ -256,11 +256,16 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/operator_advdiff.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # Test: matrices for surface
+    # Test: matrices for surface and fractures
     add_amanzi_test(operators_surface operators_surface
                     KIND unit
                     SOURCE test/Main.cc test/operator_advdiff_surface.cc
-                                        test/operator_fractures.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(operators_dfn operators_dfn
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_advection_dfn.cc
+                                        test/operator_diffusion_dfn.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: electromagnetics 

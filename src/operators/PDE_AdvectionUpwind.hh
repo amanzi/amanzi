@@ -37,14 +37,14 @@ namespace Operators {
 class PDE_AdvectionUpwind : public PDE_Advection {
  public:
   PDE_AdvectionUpwind(Teuchos::ParameterList& plist,
-                      Teuchos::RCP<Operator> global_op) :
+                      const Teuchos::RCP<Operator>& global_op) :
       PDE_Advection(plist, global_op)
   {
     InitAdvection_(plist);
   }
 
   PDE_AdvectionUpwind(Teuchos::ParameterList& plist,
-                      Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+                      const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       PDE_Advection(plist, mesh)
   {
     InitAdvection_(plist);
