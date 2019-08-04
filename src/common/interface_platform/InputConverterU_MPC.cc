@@ -262,9 +262,9 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
         pk_tree_list.sublist("transport").set<std::string>("PK type", "transport");
       } else {
         Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("coupled transport");
-        tmp_list.set<std::string>("PK type", "transport matrix fracture");
-        tmp_list.sublist("transport matrix").set<std::string>("PK type", "transport");
-        tmp_list.sublist("transport fracture").set<std::string>("PK type", "transport");
+        tmp_list.set<std::string>("PK type", "transport matrix fracture" + implicit);
+        tmp_list.sublist("transport matrix").set<std::string>("PK type", "transport" + implicit);
+        tmp_list.sublist("transport fracture").set<std::string>("PK type", "transport" + implicit);
       }
       break;
     case 3:
