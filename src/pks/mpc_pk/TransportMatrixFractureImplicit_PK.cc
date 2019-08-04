@@ -38,6 +38,14 @@ TransportMatrixFractureImplicit_PK::TransportMatrixFractureImplicit_PK(
     Amanzi::PK_MPC<PK_BDF>(pk_tree, glist, S, soln),
     Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln)
 {
+  std::string pk_name = pk_tree.name();
+  auto found = pk_name.rfind("->");
+  if (found != std::string::npos) pk_name.erase(0, found + 2);
+
+  // We need the flow list
+  auto pk_list = Teuchos::sublist(glist, "PKs", true);
+  tp_list_ = Teuchos::sublist(pk_list, pk_name, true);
+
   Teuchos::ParameterList vlist;
   vo_ = Teuchos::rcp(new VerboseObject("TranCoupledImplicit_PK", vlist)); 
 }
@@ -83,6 +91,10 @@ void TransportMatrixFractureImplicit_PK::Initialize(const Teuchos::Ptr<State>& S
 
   // set a huge time step that will be limited by advance step
   set_dt(1e+98);
+
+  TimestepControllerFactory<TreeVector> factory;
+  auto ts_list = tp_list_->sublist("time integrator").sublist("BDF1");
+  ts_control_ = factory.Create(ts_list, Teuchos::null, Teuchos::null);
 
   // diagonal blocks in tree operator are the Transport Implicit PKs
   auto pk_matrix = Teuchos::rcp_dynamic_cast<Transport::TransportImplicit_PK>(sub_pks_[0]);
@@ -239,8 +251,6 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
 
   op_tree_->AssembleMatrix();
 
-
-
   // create preconditioner
   auto pc_list = glist_->sublist("preconditioners").sublist("Hypre AMG");
   op_tree_->InitPreconditioner(pc_list);
@@ -267,13 +277,14 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
     *vo_->os() << "Step failed." << std::endl;
   }
 
-
   // output 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     pk_matrix->VV_PrintSoluteExtrema(*solution_->SubVector(0)->Data()->ViewComponent("cell"), dt);
     pk_fracture->VV_PrintSoluteExtrema(*solution_->SubVector(1)->Data()->ViewComponent("cell"), dt);
   }
+
+  dt_ = ts_control_->get_timestep(dt_, 1);
 
   return fail;
 }

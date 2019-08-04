@@ -49,6 +49,7 @@ class TransportMatrixFractureImplicit_PK : public PK_MPCStrong<PK_BDF> {
 
  private:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
+  Teuchos::RCP<Teuchos::ParameterList> tp_list_;
   Teuchos::RCP<VerboseObject> vo_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain_, mesh_fracture_;
@@ -56,6 +57,8 @@ class TransportMatrixFractureImplicit_PK : public PK_MPCStrong<PK_BDF> {
   Teuchos::RCP<Operators::PDE_CouplingFlux> op_coupling00_, op_coupling01_;
   Teuchos::RCP<Operators::PDE_CouplingFlux> op_coupling10_, op_coupling11_;
   Teuchos::RCP<Operators::TreeOperator> op_tree_;
+
+  Teuchos::RCP<TimestepController> ts_control_;
 
   // factory registration
   static RegisteredPKFactory<TransportMatrixFractureImplicit_PK> reg_;
