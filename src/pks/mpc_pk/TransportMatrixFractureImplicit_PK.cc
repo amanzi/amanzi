@@ -267,7 +267,6 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
   *rhs.SubVector(0)->Data() = *pk_matrix->op()->rhs();
   *rhs.SubVector(1)->Data() = *pk_fracture->op()->rhs();
 
- 
   int ierr = solver.ApplyInverse(rhs, *solution_);
 
   // process error code
