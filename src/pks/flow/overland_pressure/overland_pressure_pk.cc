@@ -300,7 +300,9 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   p_limit_ = plist_->get<double>("limit correction to pressure change [Pa]", -1.);
   patm_limit_ = plist_->get<double>("limit correction when crossing atmospheric pressure [Pa]", -1.);
   patm_hard_limit_ = plist_->get<bool>("allow no negative ponded depths", false);
-  min_ponded_depth_ = plist_->get<double>("min ponded depth for velocity calculation", 1e-2);
+  min_vel_ponded_depth_ = plist_->get<double>("min ponded depth for velocity calculation", 1e-2);
+  min_tidal_bc_ponded_depth_ = plist_->get<double>("min ponded depth for tidal bc", 0.02);  
+  
   
 };
 
@@ -657,7 +659,7 @@ void OverlandPressureFlow::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
     lapack.POSV('U', d, 1, matrix.values(), d, rhs, d, &info);
 
     // NOTE this is probably wrong in the frozen case?  pd --> uf*pd?
-    for (int i=0; i!=d; ++i) velocity[i][c] = pd_c[0][c] > min_ponded_depth_ ? rhs[i] / (nliq_c[0][c] * pd_c[0][c]) : 0.;
+    for (int i=0; i!=d; ++i) velocity[i][c] = pd_c[0][c] > min_vel_ponded_depth_ ? rhs[i] / (nliq_c[0][c] * pd_c[0][c]) : 0.;
   }
 
 
@@ -1006,22 +1008,32 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
 
     int f = bc->first;
 
-    AmanziMesh::Entity_ID_List cells;
+    AmanziMesh::Entity_ID_List cells, faces;
+    std::vector<int> fdirs;
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     AMANZI_ASSERT(cells.size() == 1);
     AmanziMesh::Entity_ID c = cells[0];
       
     if (f < nfaces_owned) {
-      if ((ponded_c[0][c] < 0.1)&& (flux_f[0][f]<-1e-10) ) {      
+      mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+      int j=0;
+      for (j=0; j<faces.size(); j++){
+        if (faces[j] == f) break;
+      }
+      if (j >= faces.size()) {
+        Errors::Message message("Overland_pressure PK: boundary face is not found in the boundary cell.");
+        Exceptions::amanzi_throw(message);
+      }
+      double h0 = bc->second;
+      
+      if ((h0 - elevation_f[0][f]  < min_tidal_bc_ponded_depth_) ) {      
           
         markers[f] = Operators::OPERATOR_BC_NEUMANN;
         values[f] = 0.;
         
-      }else{
-        
-        double h0 = bc->second;      
+      }else{        
         markers[f] = Operators::OPERATOR_BC_DIRICHLET;
-        values[f] = h0 + elevation_f[0][f];
+        values[f] = h0;
         
       }
     }
@@ -1147,13 +1159,26 @@ void OverlandPressureFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
     int f = bc->first;
 
 
-    AmanziMesh::Entity_ID_List cells;
+    AmanziMesh::Entity_ID_List cells, faces;
+    std::vector<int> fdirs;
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     AMANZI_ASSERT(cells.size() == 1);
     AmanziMesh::Entity_ID c = cells[0];
-                                           
+                                               
     if (f < nfaces_owned) {
-      if ((ponded_c[0][c] < 0.1)&& (flux_f[0][f]<-1e-10) ) {
+
+      mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+      int j=0;
+      for (j=0; j<faces.size(); j++){
+        if (faces[j] == f) break;
+      }
+      if (j >= faces.size()) {
+        Errors::Message message("Overland_pressure PK: boundary face is not found in the boundary cell.");
+        Exceptions::amanzi_throw(message);
+      }
+      double h0 = bc->second;
+      
+      if ((h0 - elevation_f[0][f] < min_tidal_bc_ponded_depth_)) {
         double dp = elevation_f[0][f] - elevation_c[0][c];        
         double bc_val = -dp * Aff[f](0,0);
 
@@ -1162,15 +1187,15 @@ void OverlandPressureFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
         
       }else{
         
-        double h0 = bc->second;
-      
         markers[f] = Operators::OPERATOR_BC_DIRICHLET;
-        values[f] = h0 + elevation_f[0][f];
+        values[f] = h0;
         
       }
+      //std::cout<<"tidal bc"<<" face "<<f<<": "<< values[f] <<" "<<markers[f]<<" val h "<<bc->second<<" flux "<<flux_f[0][f]*fdirs[j]<<" elev "<<elevation_f[0][f]<<" pond " <<
+      //  ponded_c[0][c] <<" "<< min_tidal_bc_ponded_depth_<<"\n";
 
+      
     }
-    //std::cout<<"BC Tidal: "<<f<<" pond "<<ponded_c[0][c]<<" flux "<<flux_f[0][f]<<" marker "<<markers[f]<<" values "<<values[f]<<"\n";    
   }
 
   

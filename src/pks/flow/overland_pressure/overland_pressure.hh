@@ -210,7 +210,7 @@ protected:
   double p_limit_;
   double patm_limit_;
   bool patm_hard_limit_;
-  double min_ponded_depth_;
+  double min_vel_ponded_depth_, min_tidal_bc_ponded_depth_;
 
   // coupling term
   bool coupled_to_subsurface_via_head_;
