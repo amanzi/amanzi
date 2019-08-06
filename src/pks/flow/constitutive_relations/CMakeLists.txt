@@ -27,7 +27,6 @@ generate_evaluators_registration_header(
   INSTALL    True
   )
 
-
 # collect all sources
 foreach(lcv IN LISTS subdirs)
   file(GLOB subdir_sources "./${lcv}/*.cc")
