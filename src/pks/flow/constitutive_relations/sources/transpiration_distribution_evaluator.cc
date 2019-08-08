@@ -53,7 +53,7 @@ TranspirationDistributionEvaluator::InitializeFromPlist_()
   
   // - pull Keys from plist
   // dependency: pressure
-  f_wp_key_ = Keys::readKey(plist_, domain_name, "water potential fraction", "saturation_liquid");
+  f_wp_key_ = Keys::readKey(plist_, domain_name, "plant wilting factor", "plant_wilting_factor");
   dependencies_.insert(f_wp_key_);
 
   // dependency: rooting_depth_fraction
@@ -105,10 +105,10 @@ TranspirationDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 	if (f_wp[0][c] * f_root[pft][c] > 0)
 	  var_dz += cv[0][c];
       }
-      if (column_total <= 0. && potential_trans[pft][sc] > 0.) {
-        Errors::Message message("TranspirationDistributionEvaluator: Broken run, non-zero transpiration draw but no cells with some roots are above the wilting point.");
-        Exceptions::amanzi_throw(message);
-      }
+      // if (column_total <= 0. && potential_trans[pft][sc] > 0.) {
+      //   Errors::Message message("TranspirationDistributionEvaluator: Broken run, non-zero transpiration draw but no cells with some roots are above the wilting point.");
+      //   Exceptions::amanzi_throw(message);
+      // }
     
       if (column_total > 0.) {
         double coef = potential_trans[pft][sc] * surf_cv[0][sc] / column_total;
@@ -128,6 +128,10 @@ TranspirationDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
           }
 	}
 	
+      } else {
+        for (auto c : subsurf_mesh.cells_of_column(sc)) {
+          result_v[pft][c] = 0.;
+        }
       }
 
       //assert (result_v[0][0] <= potential_trans[0][0]);
