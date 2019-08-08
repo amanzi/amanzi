@@ -24,14 +24,15 @@ namespace Relations {
 OnePFTRootingDepthFractionEvaluator::OnePFTRootingDepthFractionEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist)
 {
-  Teuchos::ParameterList& sublist = plist_.sublist("rooting_depth_fraction models");
+  Teuchos::ParameterList& sublist = plist_.sublist("rooting_depth_fraction parameters");
   for (auto p : sublist) {
     if (!sublist.isSublist(p.first)) {
       Errors::Message message("OnePFTRootingDepthFractionEvaluator: expected list of models.");
       Exceptions::amanzi_throw(message);
     }
-    models_.push_back(std::make_pair(Keys::cleanPListName(p.first),
-            Teuchos::rcp(new RootingDepthFractionModel(sublist.sublist(p.first)))));
+    auto& model_plist = sublist.sublist(p.first);
+    models_.emplace_back(std::make_pair(model_plist.get<std::string>("region"),
+            Teuchos::rcp(new RootingDepthFractionModel(model_plist))));
   }
   InitializeFromPlist_();
 }
