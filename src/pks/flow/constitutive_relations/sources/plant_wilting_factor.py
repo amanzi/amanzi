@@ -21,6 +21,8 @@ params = [("pc_o", "double", "capillary pressure at fully open stomates [Pa]"),
 import sympy
 z = sympy.var("pc")
 pc_o_, pc_c_ = sympy.var("pc_o_,pc_c_")
+
+# FIXME -- needs a max of 1, min of 0!
 expression = (pc_c_ - pc) / (pc_c_ - pc_o_)
 
 generate_evaluator("plant_wilting_factor", "Flow",

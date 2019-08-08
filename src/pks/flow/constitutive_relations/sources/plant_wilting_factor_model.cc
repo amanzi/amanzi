@@ -45,13 +45,13 @@ PlantWiltingFactorModel::InitializeFromPlist_(Teuchos::ParameterList& plist)
 double
 PlantWiltingFactorModel::PlantWiltingFactor(double pc) const
 {
-  return (-pc + pc_c_)/(pc_c_ - pc_o_);
+  return pc_c_ < pc ? 0. : (pc < pc_o_ ? 1. : ((-pc + pc_c_)/(pc_c_ - pc_o_)));
 }
 
 double
 PlantWiltingFactorModel::DPlantWiltingFactorDCapillaryPressureGasLiq(double pc) const
 {
-  return -1/(pc_c_ - pc_o_);
+  return pc_c_ < pc ? 0. : (pc < pc_o_ ? 0. : (-1/(pc_c_ - pc_o_)));
 }
 
 } //namespace
