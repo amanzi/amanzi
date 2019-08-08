@@ -50,7 +50,7 @@ SnowMeltRateEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   for (int c=0; c!=res.MyLength(); ++c) {
     double melt_rate = melt_rate_ * 0.001 / 86400.; // convert mm/day to m/s 
     if (air_temp[0][c] > 273.15) {
-      res[0][c] = melt_rate * (air_temp[0][c] - 273.15)
+      res[0][c] = melt_rate * (air_temp[0][c] - 273.15);
     }
     else {
       res[0][c] = 0.0;
@@ -59,7 +59,6 @@ SnowMeltRateEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   }
 
 }
-xs
 
 } //namespace
 } //namespace
