@@ -14,19 +14,8 @@
 #include <fstream>
 #include <string>
 #include <algorithm>
-#include <boost/lambda/lambda.hpp>
-#include <boost/bind.hpp>
-#include <boost/algorithm/string.hpp>
-
-#include "errors.hh"
-#include "exceptions.hh"
-#include "dbc.hh"
 
 #define  BOOST_FILESYTEM_NO_DEPRECATED
-#include "boost/filesystem/operations.hpp"
-#include "boost/filesystem/path.hpp"
-#include "boost/format.hpp"
-#include "boost/lexical_cast.hpp"
 
 // TPLs
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -35,8 +24,11 @@
 
 // Amanzi's
 #include "ErrorHandler.hpp"
-#include "InputConverterU.hh"
+#include "errors.hh"
+#include "exceptions.hh"
+#include "dbc.hh"
 
+#include "InputConverterU.hh"
 
 namespace Amanzi {
 namespace AmanziInput {

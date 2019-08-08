@@ -288,10 +288,27 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
       }
     case 6:
       {
-        Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("flow and transport");
-        tmp_list.set<std::string>("PK type", "flow reactive transport");
-        tmp_list.sublist("flow").set<std::string>("PK type", pk_model_["flow"]);
-        tmp_list.sublist("transport").set<std::string>("PK type", "transport");
+        if (!coupled_flow_) {
+          Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("flow and transport");
+          tmp_list.set<std::string>("PK type", "flow reactive transport");
+          tmp_list.sublist("flow").set<std::string>("PK type", pk_model_["flow"]);
+          tmp_list.sublist("transport").set<std::string>("PK type", "transport");
+        } else {
+          Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("flow and transport in matrix fracture");
+          tmp_list.set<std::string>("PK type", "flow reactive transport");
+          {
+            Teuchos::ParameterList& aux_list = tmp_list.sublist("coupled flow");
+            aux_list.set<std::string>("PK type", "darcy matrix fracture");
+            aux_list.sublist("flow matrix").set<std::string>("PK type", "darcy");
+            aux_list.sublist("flow fracture").set<std::string>("PK type", "darcy");
+          }
+          {
+            Teuchos::ParameterList& aux_list = tmp_list.sublist("coupled transport");
+            aux_list.set<std::string>("PK type", "transport matrix fracture");
+            aux_list.sublist("transport matrix").set<std::string>("PK type", "transport");
+            aux_list.sublist("transport fracture").set<std::string>("PK type", "transport");
+          }
+        }
         break;
       }
     case 7:
@@ -847,6 +864,13 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
               TI_TS_REDUCTION_FACTOR, TI_TS_INCREASE_FACTOR);  
           out_list.sublist(it->first).sublist("verbose object") = verb_list_.sublist("verbose object");
         }
+      }
+      else if (it->first == "flow and transport in matrix fracture") {
+        Teuchos::Array<std::string> pk_names;
+        pk_names.push_back("coupled flow");
+        pk_names.push_back("coupled transport");
+        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
+        out_list.sublist(it->first).set<int>("master PK index", 0);
       }
     }
   }

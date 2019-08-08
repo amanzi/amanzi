@@ -21,8 +21,6 @@
 #include "boost/lexical_cast.hpp"
 
 #define  BOOST_FILESYTEM_NO_DEPRECATED
-#include "boost/filesystem/operations.hpp"
-#include "boost/filesystem/path.hpp"
 #include "boost/format.hpp"
 
 // Xerces

@@ -23,7 +23,6 @@
 // TPLs
 #define BOOST_FILESYSTEM_NO_DEPRECATED
 #include "boost/filesystem/operations.hpp"
-#include "boost/filesystem/path.hpp"
 
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"

@@ -186,6 +186,29 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
 
 
 /* ******************************************************************
+* visit method for apply surface cells into subsurface faces
+****************************************************************** */
+int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Diagonal& op,
+                                         const CompositeVector& X, CompositeVector& Y) const
+{
+  const Epetra_MultiVector& Xf = *X.ViewComponent(op.col_compname(), true);
+  Epetra_MultiVector& Yf = *Y.ViewComponent(op.row_compname(), true);
+  
+  const auto& col_lids = op.col_inds();
+  const auto& row_lids = op.row_inds();
+
+  int ierr(0);
+  for (int n = 0; n != col_lids.size(); ++n) {
+    int ndofs = col_lids[n].size();
+    AMANZI_ASSERT(ndofs == 1);
+
+    Yf[0][row_lids[n][0]] += op.matrices[n](0, 0) * Xf[0][col_lids[n][0]];
+  }
+  return 0;
+}
+
+
+/* ******************************************************************
 * Visit methods for symbolic assemble: FaceCell
 ****************************************************************** */
 void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
@@ -341,9 +364,6 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Diagonal& op,
                                                  const SuperMap& map, GraphFE& graph,
                                                  int my_block_row, int my_block_col) const
 {
-  std::string row_name = op.row_compname();
-  std::string col_name = op.col_compname();
-
   const std::vector<int>& row_gids = map.GhostIndices(my_block_row, op.row_compname(), 0);
   const std::vector<int>& col_gids = map.GhostIndices(my_block_col, op.col_compname(), 0);
 

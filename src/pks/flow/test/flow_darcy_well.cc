@@ -32,9 +32,9 @@
 
 
 /* *********************************************************************
-* Two tests with different time step controllers.
+* Two tests with different time step controllers. 
 ********************************************************************* */
-void RunTestDarcyWell(std::string controller) {
+void RunTestDarcyWell(std::string controller, bool fit) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -139,8 +139,8 @@ void RunTestDarcyWell(std::string controller) {
 
     t_old = t_new;
 
+    const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
     if (MyPID == 0) {
-      const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
       // filename = controller.replace(controller.size()-5, 5, "_flow2D.gmv");
       // GMV::open_data_file(*mesh, filename);
       GMV::open_data_file(*mesh, (std::string)"flow2D.gmv");
@@ -150,26 +150,36 @@ void RunTestDarcyWell(std::string controller) {
     }
 
     dt = DPK->get_dt();
+
+    for (int c = 0; c < K.MyLength(); c++) {
+      if (fit) {
+        const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+        if (fabs(xc[0]) < 0.05 && fabs(xc[1] + 2.475) < 0.05) {
+          // use quadratic approximation in time. This may capture bugs in the well model.
+          double quad = -0.00068556 * (n - 4) * (n - 9) + 0.021082 * n * (n - 9) - 0.032341 * n * (n - 4);
+          CHECK_CLOSE(p[0][c], quad, fabs(quad) * 0.1);
+        }
+      }
+    }
   }
 }
 
 
 TEST(FLOW_2D_DARCY_WELL_STANDARD) {
-  RunTestDarcyWell("test/flow_darcy_well.xml");
+  RunTestDarcyWell("test/flow_darcy_well.xml", true);
 }
 
 TEST(FLOW_2D_DARCY_WELL_FROMFILE) {
-  RunTestDarcyWell("test/flow_darcy_well_fromfile.xml");
+  RunTestDarcyWell("test/flow_darcy_well_fromfile.xml", false);
 }
 
 TEST(FLOW_2D_DARCY_WELL_ADAPRIVE) {
-  RunTestDarcyWell("test/flow_darcy_well_adaptive.xml");
+  RunTestDarcyWell("test/flow_darcy_well_adaptive.xml", false);
 }
 
 
 /* **************************************************************** */
 void Run_3D_DarcyWell(std::string controller) {
-
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;

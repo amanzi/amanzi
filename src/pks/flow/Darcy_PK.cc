@@ -430,9 +430,6 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Verbose output of initialization statistics.
   InitializeStatistics_(init_darcy);
-
-  // for testing only
-  op_diff_->ApplyBCs(true, true, true);
 }
 
 

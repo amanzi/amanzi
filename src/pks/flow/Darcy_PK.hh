@@ -69,7 +69,7 @@ class Darcy_PK : public Flow_PK {
 
   // -- preconditioner management
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu) override;
-  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt) override {};
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double dt) override;
  
   // -- check the admissibility of a solution
   //    override with the actual admissibility check
@@ -99,6 +99,7 @@ class Darcy_PK : public Flow_PK {
 
   // access methods
   Teuchos::RCP<Operators::Operator> op() { return op_; }
+  Teuchos::RCP<Operators::PDE_Diffusion> op_diff() { return op_diff_; }
 
  private:
   void InitializeFields_();

@@ -286,6 +286,15 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
     comm = inmesh->get_comm();
   }
 
+  // check that ids are unique
+  for (auto it1 = setids.begin(); it1 != setids.end(); ++it1) {
+    for (auto it2 = it1 + 1; it2 != setids.end(); ++it2) {
+      if (*it2 == *it1) {
+        Exceptions::amanzi_throw(Message("Extrated mesh has geometrically identical elements."));
+      }
+    }
+  }
+
   // extract
   for (auto p : preference_) {
 #ifdef HAVE_MSTK_MESH      

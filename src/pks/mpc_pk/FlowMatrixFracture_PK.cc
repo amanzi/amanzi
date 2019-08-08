@@ -30,7 +30,7 @@ FlowMatrixFracture_PK::FlowMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
                                              const Teuchos::RCP<Teuchos::ParameterList>& glist,
                                              const Teuchos::RCP<State>& S,
                                              const Teuchos::RCP<TreeVector>& soln) :
-    glist_(glist), matrix_assembled_(false),
+    glist_(glist), 
     Amanzi::PK_MPC<PK_BDF>(pk_tree, glist, S, soln),
     Amanzi::PK_MPCStrong<PK_BDF>(pk_tree, glist, S, soln)
 {
@@ -46,8 +46,6 @@ FlowMatrixFracture_PK::FlowMatrixFracture_PK(Teuchos::ParameterList& pk_tree,
     Exceptions::amanzi_throw(message);
   }
   
-  dump_ = plist_->get<bool>("dump preconditioner", false);
-
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   ti_list_ = Teuchos::sublist(plist_, "time integrator", true);  
@@ -102,6 +100,9 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
                                          .sublist("Darcy problem")
                                          .sublist("physical models and assumptions");
   fflow.set<std::string>("coupled matrix fracture flow", "fracture");
+
+  // modify time integrator
+  ti_list_->sublist("BDF1").set<bool>("freeze preconditioner", true);
 
   // process other PKs.
   PK_MPCStrong<PK_BDF>::Setup(S);
@@ -206,17 +207,21 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_tree_->SetOperatorBlock(0, 1, op_coupling01->global_operator());
   op_tree_->SetOperatorBlock(1, 0, op_coupling10->global_operator());
 
+  // create a global problem
+  pk_matrix->op_diff()->ApplyBCs(true, true, true);
+
   op_tree_->SymbolicAssembleMatrix();
   op_tree_->AssembleMatrix();
-  matrix_assembled_ = true;
 
   // Test SPD properties of the matrix.
   // VerificationTV ver(op_tree_);
   // ver.CheckMatrixSPD();
 
-  // stationary solve is moddled with large dt
+  // stationary solve is modelled with large dt. To pick the correct
+  // boundary conditions, dt is negative. This assumes that we are at
+  // the beginning of simulation.
   bool fail;
-  double dt(1e+98), dt_solver;
+  double dt(-1e+98), dt_solver;
   fail = time_stepper_->TimeStep(dt, dt_solver, solution_);
 
   if (fail) Exceptions::amanzi_throw("Solver for coupled Darcy flow did not converge.");
@@ -247,8 +252,12 @@ void FlowMatrixFracture_PK::FunctionalResidual(double t_old, double t_new,
                                                Teuchos::RCP<TreeVector> u_new,
                                                Teuchos::RCP<TreeVector> f)
 {
-  double norm, sol;
-  
+  // generate local matrices and apply sources and boundary conditions
+  // although, residual calculation can be completed using off-diagonal
+  // blocks, we use global matrix-vector multiplication instead.
+  PK_MPCStrong<PK_BDF>::FunctionalResidual(t_old, t_new, u_old, u_new, f);
+  op_tree_->AssembleMatrix();
+
   int ierr = op_tree_->ApplyAssembled(*u_new, *f);
   AMANZI_ASSERT(!ierr);
   
@@ -266,25 +275,13 @@ void FlowMatrixFracture_PK::FunctionalResidual(double t_old, double t_new,
 ******************************************************************* */
 void FlowMatrixFracture_PK::UpdatePreconditioner(double t,
                                                  Teuchos::RCP<const TreeVector> up,
-                                                 double h, bool assemble)
+                                                 double h)
 {
-  if (assemble) {
-    op_tree_->AssembleMatrix();
-    if (dump_) {
-      std::stringstream filename;
-      filename << "FlowMatrixFracture_PC_.txt";
-      EpetraExt::RowMatrixToMatlabFile(filename.str().c_str(), *op_tree_->A());
-    }
-    
-    std::string name = ti_list_->get<std::string>("preconditioner");
-    Teuchos::ParameterList pc_list = preconditioner_list_->sublist(name);
+  // EpetraExt::RowMatrixToMatlabFile("FlowMatrixFracture_PC_.txt", *op_tree_->A());
+  std::string name = ti_list_->get<std::string>("preconditioner");
+  Teuchos::ParameterList pc_list = preconditioner_list_->sublist(name);
 
-    op_tree_->InitPreconditioner(pc_list);
-
-    // Test SPD properties of the preconditioner.
-    // VerificationTV ver(op_tree_);
-    // ver.CheckPreconditionerSPD();
-  }
+  op_tree_->InitPreconditioner(pc_list);
 }
 
 

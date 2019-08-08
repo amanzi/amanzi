@@ -17,7 +17,6 @@
 namespace Amanzi {
 namespace Flow {
 
-typedef boost::array<double, 2> bc_tuple;
 typedef std::pair<double, double> dt_tuple;
 
 }  // namespace Flow
