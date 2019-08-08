@@ -32,22 +32,26 @@ class SnowMeltRateEvaluator : public SecondaryVariableFieldEvaluator {
   SnowMeltRateEvaluator(Teuchos::ParameterList& plist);
   SnowMeltRateEvaluator(const SnowMeltRateEvaluator& other) = default;
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const {
+  virtual Teuchos::RCP<FieldEvaluator> Clone() const override {
     return Teuchos::rcp(new SnowMeltRateEvaluator(*this));
   }
 
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& result);
+          const Teuchos::Ptr<CompositeVector>& result) override;
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
+          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) override {
     Exceptions::amanzi_throw("NotImplemented: SnowMeltRateEvaluator currently does not provide derivatives.");
   }
 
  protected:
-
-  Key at_key_, precip_snow_key_;
+  
+  Key at_key_, snow_key_;
   double melt_rate_;
+  double snow_transition_depth_;
+
+  Key domain_, domain_surf_;
+  bool compatibility_checked_;
   
  private:
   static Utils::RegisteredFactory<FieldEvaluator,SnowMeltRateEvaluator> reg_;
