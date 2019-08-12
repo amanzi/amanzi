@@ -27,7 +27,7 @@ SnowMeltRateEvaluator::SnowMeltRateEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist),
     compatibility_checked_(false)
 {
-  melt_rate_ = plist.get<double>("snow melt rate [mm/(day C)]", 2.74);
+  melt_rate_ = plist.get<double>("snow melt rate [mm day^-1 C^-1]", 2.74) * 0.001 / 86400.; // convert mm/day to m/s 
   snow_transition_depth_ = plist.get<double>("snow-ground transition depth [m]", 0.02);
 
   domain_ = Keys::getDomain(my_key_);
@@ -57,9 +57,8 @@ SnowMeltRateEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   auto& res = *result->ViewComponent("cell", false);
   
   for (int c=0; c!=res.MyLength(); ++c) {
-    double melt_rate = melt_rate_ * 0.001 / 86400.; // convert mm/day to m/s 
     if (air_temp[0][c] > 273.15) {
-      res[0][c] = melt_rate * (air_temp[0][c] - 273.15);
+      res[0][c] = melt_rate_ * (air_temp[0][c] - 273.15);
 
       if (swe[0][c] < snow_transition_depth_) {
         res[0][c] *= swe[0][c] / snow_transition_depth_;
@@ -67,6 +66,38 @@ SnowMeltRateEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       
     } else {
       res[0][c] = 0.0;
+    }
+  }
+}
+
+// Required methods from SecondaryVariableFieldEvaluator
+void
+SnowMeltRateEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
+          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
+{
+  const auto& air_temp = *S->GetFieldData(at_key_)->ViewComponent("cell", false);
+  const auto& swe = *S->GetFieldData(snow_key_)->ViewComponent("cell", false);
+  auto& res = *result->ViewComponent("cell", false);
+
+  if (wrt_key == at_key_) {
+    for (int c=0; c!=res.MyLength(); ++c) {
+      if (air_temp[0][c] > 273.15) {
+        res[0][c] = melt_rate_;
+        if (swe[0][c] < snow_transition_depth_) {
+          res[0][c] *= swe[0][c] / snow_transition_depth_;
+        }
+      } else {
+        res[0][c] = 0.0;
+      }
+    }
+
+  } else if (wrt_key == snow_key_) {
+    for (int c=0; c!=res.MyLength(); ++c) {
+      if (swe[0][c] < snow_transition_depth_ && air_temp[0][c] > 273.15) {
+        res[0][c] = melt_rate_ * (air_temp[0][c] - 273.15) / snow_transition_depth_;
+      } else {
+        res[0][c] = 0.0;
+      }
     }
   }
 }
