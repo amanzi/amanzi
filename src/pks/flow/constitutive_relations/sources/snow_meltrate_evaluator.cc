@@ -61,7 +61,7 @@ SnowMeltRateEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       res[0][c] = melt_rate_ * (air_temp[0][c] - 273.15);
 
       if (swe[0][c] < snow_transition_depth_) {
-        res[0][c] *= swe[0][c] / snow_transition_depth_;
+        res[0][c] *= std::max(0., swe[0][c] / snow_transition_depth_);
       }
       
     } else {
@@ -84,7 +84,7 @@ SnowMeltRateEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>
       if (air_temp[0][c] > 273.15) {
         res[0][c] = melt_rate_;
         if (swe[0][c] < snow_transition_depth_) {
-          res[0][c] *= swe[0][c] / snow_transition_depth_;
+          res[0][c] *= std::max(0., swe[0][c] / snow_transition_depth_);
         }
       } else {
         res[0][c] = 0.0;

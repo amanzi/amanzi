@@ -71,8 +71,10 @@ TranspirationDistributionEvaluator::InitializeFromPlist_()
   dependencies_.insert(surf_cv_key_);
 
   npfts_ = plist_.get<int>("number of PFTs", 1);
-  trans_on_date_ = plist_.get<double>("transpiration turn on date",111.); //days after winter solstice, PRMS defaults
-  trans_off_date_ = plist_.get<double>("transpiration turn off date",264); // days after winter solstice, PRMS defaults
+  trans_on_date_ = plist_.get<double>("transpiration turn on date",111.) //days after winter solstice, PRMS defaults
+                   - 10; // converted to days after Jan 1
+  trans_off_date_ = plist_.get<double>("transpiration turn off date",264) // days after winter solstice, PRMS defaults
+                    - 10; // converted to days after Jan 1
 }
 
 
@@ -90,8 +92,13 @@ TranspirationDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   const Epetra_MultiVector& surf_cv = *S->GetFieldData(surf_cv_key_)->ViewComponent("cell", false);
 
   double p_atm = *S->GetScalarData("atmospheric_pressure");
-  double time = S->time();
 
+  // check for winter (FIXME -- evergreens!)
+  if (!TranspirationPeriod(S->time())) {
+    result->PutScalar(0.);
+    return;
+  }
+    
   // result, on the subsurface
   const AmanziMesh::Mesh& subsurf_mesh = *result->Mesh();
   Epetra_MultiVector& result_v = *result->ViewComponent("cell", false);
@@ -128,11 +135,6 @@ TranspirationDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
           if (limiter_local_) {
             result_v[pft][c] *= f_wp[0][c];
           }
-	  if (!TranspirationPeriod(time)) { //if not transpiration period
-	    result_v[pft][c] = 0;
-	  }
-	    
-	    
 	}
 	
       } else {
@@ -216,13 +218,9 @@ TranspirationDistributionEvaluator::EnsureCompatibility(const Teuchos::Ptr<State
 
 bool
 TranspirationDistributionEvaluator::TranspirationPeriod(double time) {
-
-  double date = fmod(std::floor(time),365.);
-  double trans_on_date = trans_on_date_ - 10.; //counting starts based on January 1
-  double trans_off_date = trans_off_date_ - 10.; //counting starts based on January 1
-  if ( date >= trans_on_date_  && date <= trans_off_date)
-    return 1;
-  return 0;
+  double doy = fmod(time/86400.,365.);
+  if (doy >= trans_on_date_  && doy <= trans_off_date_) return true;
+  else return false;
 }
 
 } //namespace
