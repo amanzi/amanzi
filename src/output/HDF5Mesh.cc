@@ -46,27 +46,28 @@ void HDF5::createMeshFile(AmanziMesh::Mesh &mesh_maps, std::string filename) {
                       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   status = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL,
                     H5P_DEFAULT, nodes);
+  assert(status >= 0); 
   delete[] nodes;
   H5Dclose(dataset);
   H5Sclose(dataspace);
 
   // get number of nodes per element and element type
-  ctype_ = mesh_maps.cell_get_type(0); 
+  ctype_ = mesh_maps.cell_get_type(0);
   cname_ = mesh_maps.cell_type_to_name(ctype_);
-  AmanziMesh::Entity_ID_List nodeids;
+  Kokkos::View<AmanziMesh::Entity_ID*> nodeids;
   unsigned int cellid = 0;
-  mesh_maps.cell_get_nodes(cellid,&nodeids);
+  mesh_maps.cell_get_nodes(cellid,nodeids);
   conn_ = nodeids.size();
-    
+
   // get connectivity
   int *ielem = new int[num_elems*conn_];
   //std::vector<unsigned int> xh(8);
 
   for (unsigned int i = 0; i < num_elems; i++) {
     //mesh_maps.cell_to_nodes(i, xh.begin(), xh.end());
-    mesh_maps.cell_get_nodes(i,&nodeids);
+    mesh_maps.cell_get_nodes(i,nodeids);
     for (int j = 0; j < conn_; j++) {
-      ielem[i*conn_+j] = nodeids[j];
+      ielem[i*conn_+j] = nodeids(j);
     }
   }
 
@@ -182,10 +183,10 @@ void HDF5::writeCellData(const Epetra_Vector &x, const std::string varname) {
 void HDF5::writeNodeData(const Epetra_Vector &x, const std::string varname) {
   writeFieldData_(x, varname, "Node");
 }
-  
+
 void HDF5::writeData(const Epetra_Vector &x, const std::string varname) {
   writeFieldData_(x, varname, "None");
-} 
+}
 void HDF5::readData(Epetra_Vector &x, const std::string varname) {
   readFieldData_(x, varname);
 }
@@ -384,15 +385,15 @@ Teuchos::XMLObject HDF5::findGridNode_(Teuchos::XMLObject xmlobject) {
       }
     }
   }
-  
+
   // TODO(barker): return some error indicator
   return node;
 }
 
 Teuchos::XMLObject HDF5::findMeshNode_(Teuchos::XMLObject xmlobject) {
-  
+
   Teuchos::XMLObject node, tmp;
-  
+
   // Step down to child tag==Domain
   for (int i = 0; i < xmlobject.numChildren(); i++) {
     if (xmlobject.getChild(i).getTag() == "Domain") {
@@ -473,14 +474,15 @@ void HDF5::writeFieldData_(const Epetra_Vector &x, std::string varname,
 }
 
 void HDF5::readFieldData_(Epetra_Vector &x, std::string varname) {
-    
+
   char *h5path = new char [varname.size()+1];
   strcpy(h5path,varname.c_str());
   int ndims;
   hid_t file = H5Fopen(H5DataFilename().c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
-  int globaldims[2], localdims[2];
-  globaldims[0] = x.GlobalLength();
-  globaldims[1] = 1;
+  //int globaldims[2];
+  int localdims[2];
+  //globaldims[0] = x.GlobalLength();
+  //globaldims[1] = 1;
   localdims[0] = x.MyLength();
   localdims[1] = 1;
   std::vector<int> myidx(localdims[0],0);
@@ -488,15 +490,15 @@ void HDF5::readFieldData_(Epetra_Vector &x, std::string varname) {
   for (int i=0; i<localdims[0]; i++) myidx[i] = i+start;
   double *data;
   int err = x.ExtractView(&data);
-    
+
   hid_t dataset = H5Dopen(file, h5path, H5P_DEFAULT);
   herr_t status = H5Dread(dataset, H5T_NATIVE_DOUBLE,  H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
   x.ReplaceMyValues(localdims[0], &data[0], &myidx[0]);
-    
+
   status = H5Dclose(dataset);
   status = H5Fclose(file);
 }
-  
+
 Teuchos::XMLObject HDF5::addXdmfAttribute_(std::string varname,
                                            std::string location,
                                            int length,

@@ -318,7 +318,7 @@ TEST(PROJECTORS_POLYGON_CR) {
       poly.ChangeOrigin(mesh->cell_centroid(cell));
       poly *= mono;
 
-      double val = numi.IntegratePolynomialCell(cell, poly) / mesh->cell_volume(cell);
+      double val = numi.IntegratePolynomialCell(cell, poly) / mesh->cell_volume(cell,false);
       int n = it.PolynomialPosition();
       if (n == 0) CHECK_CLOSE(1.0, val, 1e-12);
       if (n >= 1) CHECK(fabs(val - (1.0 + n)) > 0.05);
@@ -705,11 +705,11 @@ TEST(PROJECTORS_POLYGON_PK) {
 
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, &moments, uc);
-    double tmp = numi.IntegratePolynomialCell(cell, uc) / mesh->cell_volume(cell);
+    double tmp = numi.IntegratePolynomialCell(cell, uc) / mesh->cell_volume(cell,false);
     CHECK_CLOSE(1.0, tmp, 1e-12);
 
     mfd.L2Cell(cell, vf, &moments, uc);
-    tmp = numi.IntegratePolynomialCell(cell, uc) / mesh->cell_volume(cell);
+    tmp = numi.IntegratePolynomialCell(cell, uc) / mesh->cell_volume(cell,false);
     CHECK_CLOSE(1.0, tmp, 1e-12);
   }
 

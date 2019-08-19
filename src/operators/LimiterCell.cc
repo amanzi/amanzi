@@ -796,7 +796,7 @@ void LimiterCell::IdentifyUpwindCells_()
   std::vector<int> dirs;
 
   for (int c = 0; c < ncells_wghost; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces_and_dirs(c, &faces, dirs);
 
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];

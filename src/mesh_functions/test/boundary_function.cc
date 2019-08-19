@@ -28,7 +28,10 @@ using namespace Amanzi::Functions;
 int main (int argc, char *argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  return UnitTest::RunAllTests();
+  Kokkos::initialize(argc,argv); 
+  auto status = UnitTest::RunAllTests();
+  Kokkos::finalize(); 
+  return status; 
 }
 
 
@@ -74,7 +77,7 @@ struct reference_mesh
         set("point",corner_max).set("normal",back);
     regions.sublist("TOP").sublist("region: plane").
         set("point",corner_max).set("normal",top);
-    Teuchos::RCP<AmanziGeometry::GeometricModel> 
+    Teuchos::RCP<AmanziGeometry::GeometricModel>
         gm = Teuchos::rcp(new AmanziGeometry::GeometricModel(3, regions, *comm));
     // Create the mesh
     MeshFactory mesh_fact(comm,gm);
@@ -123,18 +126,19 @@ TEST_FIXTURE(reference_mesh, values1)
   CHECK_EQUAL(12, bf.size());
   bf.Compute(0.0);
 
-  Entity_ID_List face_list;
-  mesh->get_set_entities(RIGHT, FACE, Parallel_type::ALL, &face_list);
-  for (Entity_ID_List::iterator f = face_list.begin(); f != face_list.end(); ++f)
-    CHECK_EQUAL(1.0, bf.find(*f)->second);
+  Kokkos::View<Entity_ID*> face_list;
+  mesh->get_set_entities(RIGHT, FACE, Parallel_type::ALL, face_list);
+  for (int i = 0 ; i < face_list.extent(0); ++i)
+    CHECK_EQUAL(1.0, bf.find(face_list(i))->second);
 
-  mesh->get_set_entities(FRONT, FACE, Parallel_type::ALL, &face_list);
-  for (Entity_ID_List::iterator f = face_list.begin(); f != face_list.end(); ++f)
-    CHECK_EQUAL(2.0, bf.find(*f)->second);
+  mesh->get_set_entities(FRONT, FACE, Parallel_type::ALL, face_list);
+  for (int i = 0 ; i < face_list.extent(0); ++i)
+    CHECK_EQUAL(2.0, bf.find(face_list(i))->second);
 
-  mesh->get_set_entities(BACK, FACE, Parallel_type::ALL, &face_list);
-  for (Entity_ID_List::iterator f = face_list.begin(); f != face_list.end(); ++f)
-    CHECK_EQUAL(3.0, bf.find(*f)->second);
+  mesh->get_set_entities(BACK, FACE, Parallel_type::ALL, face_list);
+  for (int i = 0 ; i < face_list.extent(0); ++i)
+    CHECK_EQUAL(3.0, bf.find(face_list(i))->second);
+
 }
 
 

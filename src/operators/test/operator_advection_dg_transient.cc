@@ -252,7 +252,7 @@ void AdvectionFn<AnalyticDG>::FunctionalTimeDerivative(
 
   for (int c = 0; c < ncells; ++c) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    double volume = mesh_->cell_volume(c);
+    double volume = mesh_->cell_volume(c,false);
 
     ana_.SourceTaylor(xc, t, src);
 

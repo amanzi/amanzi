@@ -91,6 +91,7 @@ if (BUILD_TESTS)
     set(amanzi_libs data_structures geometry mstk_mesh mesh_factory mesh)
 
     add_amanzi_test(data_structures test_data_structures 
+    		    --kokkos-ndevices=1
                     KIND unit
                     NPROCS 2
         	    SOURCE test/Main.cc
@@ -120,8 +121,8 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/test_supermap.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-    add_amanzi_test(test_supermap_np3 test_supermap NPROCS 3 KIND unit)
-    add_amanzi_test(test_supermap_np5 test_supermap NPROCS 5 KIND unit)
+    add_amanzi_test(test_supermap_np3 test_supermap --kokkos-ndevices=1 NPROCS 3 KIND unit)
+    add_amanzi_test(test_supermap_np5 test_supermap --kokkos-ndevices=1 NPROCS 5 KIND unit)
 
     # add_amanzi_test(block_supermap test_block_supermap
     #                 KIND unit
@@ -142,4 +143,9 @@ if (BUILD_TESTS)
     #	                        geometry mesh_factory
     #                           simple_mesh
     #	                        ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(common_patterns, test_common_patterns
+                    KIND unit
+                    SOURCE test/Main.cc test/test_common_patterns.cc
+                    LINK_LIBS data_structures mesh geometry mesh_factory simple_mesh ${UnitTest_LIBRARIES})
 endif()

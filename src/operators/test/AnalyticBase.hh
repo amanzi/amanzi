@@ -110,7 +110,7 @@ void AnalyticBase::ComputeCellError(
   for (int c = 0; c < ncells; c++) {
     const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     double tmp = pressure_exact(xc, t);
-    double volume = mesh_->cell_volume(c);
+    double volume = mesh_->cell_volume(c,false);
 
     // std::cout << c << " xc=" << xc << " p: " << tmp << " " << p[0][c] << std::endl;
     l2_err += std::pow(tmp - p[0][c], 2.0) * volume;
@@ -188,7 +188,7 @@ void AnalyticBase::ComputeNodeError(
   int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells; c++) {
-    double volume = mesh_->cell_volume(c);
+    double volume = mesh_->cell_volume(c,false);
 
     mesh_->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();
@@ -256,7 +256,7 @@ void AnalyticBase::ComputeEdgeError(
   int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells; c++) {
-    double volume = mesh_->cell_volume(c);
+    double volume = mesh_->cell_volume(c,false);
 
     mesh_->cell_get_edges(c, &edges);
     int nedges = edges.size();
@@ -304,7 +304,7 @@ void AnalyticBase::ComputeEdgeMomentsError(
   int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells; c++) {
-    double volume = mesh_->cell_volume(c);
+    double volume = mesh_->cell_volume(c,false);
 
     mesh_->cell_get_edges(c, &edges);
     int nedges = edges.size();

@@ -76,7 +76,7 @@ void PDE_MagneticDiffusion::ModifyMatrices(
     const WhetStone::DenseMatrix& Mcell = mass_op_[c];
     const WhetStone::DenseMatrix& Ccell = curl_op_[c];
 
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces_and_dirs(c, &faces, dirs);
     mesh_->cell_get_edges(c, &edges);
 
     int nfaces = faces.size();
@@ -125,7 +125,7 @@ void PDE_MagneticDiffusion::ModifyFields(
   for (int c = 0; c < ncells_owned; ++c) {
     const WhetStone::DenseMatrix& Ccell = curl_op_[c];
 
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces_and_dirs(c, &faces, dirs);
     mesh_->cell_get_edges(c, &edges);
 
     int nfaces = faces.size();
@@ -203,7 +203,7 @@ double PDE_MagneticDiffusion::CalculateMagneticEnergy(const CompositeVector& B)
 
   double energy(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces_and_dirs(c, &faces, dirs);
     int nfaces = faces.size();
 
     const WhetStone::DenseMatrix& Mcell = mass_op_[c];
@@ -238,7 +238,7 @@ double PDE_MagneticDiffusion::CalculateDivergence(
   std::vector<int> dirs;
   AmanziMesh::Entity_ID_List faces;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, &faces, dirs);
   int nfaces = faces.size();
 
   double div(0.0);
@@ -246,7 +246,7 @@ double PDE_MagneticDiffusion::CalculateDivergence(
     int f = faces[n];
     div += Bf[0][f] * dirs[n] * mesh_->face_area(f);
   }
-  div /= mesh_->cell_volume(c);
+  div /= mesh_->cell_volume(c,false);
 
   return div;
 }

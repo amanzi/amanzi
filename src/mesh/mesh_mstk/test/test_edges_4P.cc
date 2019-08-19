@@ -17,16 +17,16 @@ TEST(MSTK_EDGES_2D)
   int rank = comm->getRank();
   int size = comm->getSize();
   CHECK_EQUAL(4,size);
-  
+
   //  if (rank == 0) {
   int DebugWait = 0;
   while (DebugWait);
   //  }
 
   // Generate a 4x4 quad mesh distributed over four processors
-  
+
   bool request_faces = true, request_edges = true;
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh>
     mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,2.0,1.0,4,4,comm,Teuchos::null,
 					   Teuchos::null,request_faces,request_edges));
 
@@ -49,27 +49,27 @@ TEST(MSTK_EDGES_2D)
 				    Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < nc_owned; ++c) {
-    Amanzi::AmanziMesh::Entity_ID_List cedges, cfaces, fedges;
-    std::vector<int> cfdirs, fedirs, cedirs;    
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> fedges, cfaces, cedges;
+    Kokkos::View<int*> cfdirs, fedirs, cedirs;
 
-    mesh->cell_2D_get_edges_and_dirs(c,&cedges,&cedirs);
-    mesh->cell_get_faces_and_dirs(c,&cfaces,&cfdirs);
+    mesh->cell_2D_get_edges_and_dirs(c,cedges,&cedirs);
+    mesh->cell_get_faces_and_dirs(c,cfaces,cfdirs);
 
-    for (int e = 0; e < cedges.size(); ++e) {
-      CHECK_EQUAL(mesh->getGlobalElement(cedges[e],Amanzi::AmanziMesh::EDGE), 
-		  mesh->getGlobalElement(cfaces[e],Amanzi::AmanziMesh::FACE));
+    for (int e = 0; e < cedges.extent(0); ++e) {
+      CHECK_EQUAL(mesh->getGlobalElement(cedges(e),Amanzi::AmanziMesh::EDGE),
+		  mesh->getGlobalElement(cfaces(e),Amanzi::AmanziMesh::FACE));
 
       // Also, see if the direction and vector we got for edges of 2D
       // cell is consistent with the direction and normal vector we
       // got for the faces of the cell
-      
-      CHECK_EQUAL(cedirs[e],cfdirs[e]);
+
+      CHECK_EQUAL(cedirs(e),cfdirs(e));
 
       Amanzi::AmanziGeometry::Point evec(2), fnormal(2), ftangent(2);
 
-      evec = mesh->edge_vector(cedges[e])*cedirs[e];
+      evec = mesh->edge_vector(cedges(e))*cedirs(e);
 
-      fnormal = mesh->face_normal(cfaces[e])*cfdirs[e];
+      fnormal = mesh->face_normal(cfaces(e))*cfdirs(e);
       ftangent.set(-fnormal[1],fnormal[0]);
 
       CHECK_EQUAL(evec[0],ftangent[0]);
@@ -77,24 +77,24 @@ TEST(MSTK_EDGES_2D)
     }
 
 
-    for (int f = 0; f < cfaces.size(); ++f) {
-      mesh->face_get_edges_and_dirs(cfaces[f],&fedges,&fedirs);
+    for (int f = 0; f < cfaces.extent(0); ++f) {
+      mesh->face_get_edges_and_dirs(cfaces(f),fedges,&fedirs);
 
-      CHECK_EQUAL(1,fedges.size()); // face is same as edge in 2D
-      CHECK_EQUAL(1,fedirs[0]); // direction is always 1
-      
+      CHECK_EQUAL(1,fedges.extent(0)); // face is same as edge in 2D
+      CHECK_EQUAL(1,fedirs(0)); // direction is always 1
+
       // check the face-edges to cell-edges map
 
       std::vector<int> map;
 
-      mesh->face_to_cell_edge_map(cfaces[f],c,&map);
+      mesh->face_to_cell_edge_map(cfaces(f),c,&map);
 
-      for (int e = 0; e < fedges.size(); ++e)
-	CHECK_EQUAL(fedges[e],cedges[map[e]]);
+      for (int e = 0; e < fedges.extent(0); ++e)
+	CHECK_EQUAL(fedges(e),cedges(map[e]));
     }
   }
 
-  // owing to how we constructed the mesh, the length of horizontal edges 
+  // owing to how we constructed the mesh, the length of horizontal edges
   // should be 0.5 and vertical edges 0.25
 
   for (int e = 0; e < ne_owned; ++e) {
@@ -133,9 +133,9 @@ TEST(MSTK_EDGES_3D)
   //  }
 
   // Generate a 4x4x4 quad mesh distributed over four processors
-  
+
   bool request_faces = true, request_edges = true;
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh>
     mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,2.0,1.0,4.0,4,4,4,
 					   comm,Teuchos::null,Teuchos::null,request_faces,
 					   request_edges));
@@ -150,7 +150,7 @@ TEST(MSTK_EDGES_3D)
   // Check that we got a non-zero number
 
   CHECK(ne_owned != 0);
-  CHECK(ne_all != 0);  
+  CHECK(ne_all != 0);
 
 
   // Go through the cells and retrieve their edges to make sure it
@@ -161,22 +161,22 @@ TEST(MSTK_EDGES_3D)
 				    Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < nc_owned; ++c) {
-    Amanzi::AmanziMesh::Entity_ID_List cedges, cfaces, fedges;
-    std::vector<int> cfdirs, fedirs;    
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces, fedges, cedges;
+    Kokkos::View<int*> cfdirs, fedirs;
 
-    mesh->cell_get_edges(c,&cedges);
-    mesh->cell_get_faces_and_dirs(c,&cfaces,&cfdirs);
+    mesh->cell_get_edges(c,cedges);
+    mesh->cell_get_faces_and_dirs(c,cfaces,cfdirs);
 
-    for (int f = 0; f < cfaces.size(); ++f) {
-      mesh->face_get_edges_and_dirs(cfaces[f],&fedges,&fedirs);
+    for (int f = 0; f < cfaces.extent(0); ++f) {
+      mesh->face_get_edges_and_dirs(cfaces(f),fedges,&fedirs);
 
       // check the face-edges to cell-edges map
 
       std::vector<int> map;
-      mesh->face_to_cell_edge_map(cfaces[f],c,&map);
+      mesh->face_to_cell_edge_map(cfaces(f),c,&map);
 
-      for (int e = 0; e < fedges.size(); ++e)
-	CHECK_EQUAL(fedges[e],cedges[map[e]]);
+      for (int e = 0; e < fedges.extent(0); ++e)
+	CHECK_EQUAL(fedges(e),cedges(map[e]));
     }
   }
 
@@ -205,4 +205,3 @@ TEST(MSTK_EDGES_3D)
   }
 
 }
-

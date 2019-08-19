@@ -135,7 +135,7 @@ OutputSilo::InitializeCycle(double time, int cycle) {
   for (int c=0; c!=ncells; ++c) {
     AmanziMesh::Entity_ID_List cfaces;
     std::vector<int> dirs;
-    mesh_->vis_mesh().cell_get_faces_and_dirs(c, &cfaces, &dirs, false);
+    mesh_->vis_mesh().cell_get_faces_and_dirs(c, &cfaces, dirs);
     for (int i=0; i!=cfaces.size(); ++i) {
       if (dirs[i] < 0) cfaces[i] = ~cfaces[i];
     }

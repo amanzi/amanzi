@@ -106,7 +106,7 @@ TEST(MOAB_HEX_2x2x1)
     
   for (i = 0; i < nc; i++) {
     mesh.cell_get_nodes(i,&cnodes);
-    mesh.cell_get_faces_and_dirs(i,&faces,&facedirs,true);
+    mesh.cell_get_faces_and_dirs(i,&faces,facedirs);
 
     CHECK_ARRAY_EQUAL(cellfaces[i],faces,6);
     CHECK_ARRAY_EQUAL(cellfacedirs[i],facedirs,6);

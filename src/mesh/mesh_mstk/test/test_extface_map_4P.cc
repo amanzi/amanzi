@@ -37,9 +37,9 @@ TEST(MSTK_EXTFACE_MAP_4P)
 
       CHECK_EQUAL(face_map->getGlobalElement(f2),gid);
 
-      Amanzi::AmanziMesh::Entity_ID_List fcells;
-      mesh->face_get_cells(f2, Amanzi::AmanziMesh::Parallel_type::OWNED, &fcells);
-      CHECK_EQUAL(1,fcells.size());
+      Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> fcells;
+      mesh->face_get_cells(f2, Amanzi::AmanziMesh::Parallel_type::OWNED, fcells);
+      CHECK_EQUAL(1,fcells.extent(0));
     }
 
   Amanzi::Vector_type allvec(face_map);
@@ -48,7 +48,7 @@ TEST(MSTK_EXTFACE_MAP_4P)
   // Insert the GlobalID of each face offsetted by 3 into the allvec
   {
     auto allvec_v = allvec.getDataNonConst();
-    for (int f = face_map->getMinLocalIndex(); f < face_map->getMaxLocalIndex(); f++) 
+    for (int f = face_map->getMinLocalIndex(); f < face_map->getMaxLocalIndex(); f++)
       allvec_v[f] = face_map->getGlobalElement(f)+3;
   }
 
@@ -60,7 +60,7 @@ TEST(MSTK_EXTFACE_MAP_4P)
   bdryvec.sync_host();
   {
     auto bdryvec_v = bdryvec.getData();
-    for (int f = extface_map->getMinLocalIndex(); f < extface_map->getMaxLocalIndex(); f++) 
+    for (int f = extface_map->getMinLocalIndex(); f < extface_map->getMaxLocalIndex(); f++)
       CHECK_EQUAL(extface_map->getGlobalElement(f),bdryvec_v[f]-3);
   }
 
@@ -86,4 +86,3 @@ TEST(MSTK_EXTFACE_MAP_4P)
   }
 
 }
-

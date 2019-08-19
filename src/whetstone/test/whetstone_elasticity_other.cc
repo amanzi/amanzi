@@ -40,22 +40,22 @@ TEST(DIFFUSION_STOKES_2D) {
 
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo"); 
- 
+  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1);
+  RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
+
   Teuchos::ParameterList plist;
   MFD3D_BernardiRaugel mfd(plist, mesh);
 
-  AmanziMesh::Entity_ID_List nodes, faces;
-  std::vector<int> dirs;
+  Kokkos::View<Entity_ID*> faces, nodes;
+  Kokkos::View<int*> dirs;
 
   // extract single cell
   int cell(0);
-  mesh->cell_get_nodes(cell, &nodes);
-  int nnodes = nodes.size();
+  mesh->cell_get_nodes(cell, nodes);
+  int nnodes = nodes.extent(0);
 
-  mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
-  int nfaces = faces.size();
+  mesh->cell_get_faces_and_dirs(cell, faces, dirs);
+  int nfaces = faces.extent(0);
 
   // calcualte stiffness matrix
   Tensor T(2, 1);
@@ -68,7 +68,7 @@ TEST(DIFFUSION_STOKES_2D) {
 
   printf("Stiffness matrix for cell %3d\n", cell);
   for (int i = 0; i < nrows; i++) {
-    for (int j = 0; j < nrows; j++ ) printf("%7.4f ", A(i, j)); 
+    for (int j = 0; j < nrows; j++ ) printf("%7.4f ", A(i, j));
     printf("\n");
   }
 
@@ -83,13 +83,13 @@ TEST(DIFFUSION_STOKES_2D) {
   ax.PutScalar(0.0);
   ay.PutScalar(0.0);
   for (int i = 0; i < nnodes; i++) {
-    int v = nodes[i];
+    int v = nodes(i);
     mesh->node_get_coordinates(v, &p);
     ax(2*i) = p[0];
     ay(2*i + 1) = p[1];
   }
   for (int i = 0; i < nfaces; i++) {
-    int f = faces[i];
+    int f = faces(i);
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
     const AmanziGeometry::Point& xf = mesh->face_centroid(f);
     double area = mesh->face_area(f);
@@ -98,8 +98,8 @@ TEST(DIFFUSION_STOKES_2D) {
     ay(2*nnodes + i) = xf[1] * normal[1] / area;
   }
 
-  double vxx(0.0), vxy(0.0); 
-  double volume = mesh->cell_volume(cell);
+  double vxx(0.0), vxy(0.0);
+  double volume = mesh->cell_volume(cell,false);
 
   for (int i = 0; i < nrows; i++) {
     for (int j = 0; j < nrows; j++) {
@@ -110,7 +110,7 @@ TEST(DIFFUSION_STOKES_2D) {
   CHECK_CLOSE(vxx, volume, 1e-10);
   CHECK_CLOSE(vxy, 0.0, 1e-10);
 
-  
+
 }
 
 
@@ -129,22 +129,22 @@ TEST(ADVECTION_NAVIER_STOKES_2D) {
 
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo"); 
- 
+  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1);
+  RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
+
   Teuchos::ParameterList plist;
   MFD3D_BernardiRaugel mfd(plist, mesh);
 
   // extract single cell
   int cell(0);
-  std::vector<int> dirs;
-  AmanziMesh::Entity_ID_List nodes, faces;
+  Kokkos::View<int*> dirs;
+  Kokkos::View<Entity_ID*> faces, nodes;
 
-  mesh->cell_get_nodes(cell, &nodes);
-  int nnodes = nodes.size();
+  mesh->cell_get_nodes(cell, nodes);
+  int nnodes = nodes.extent(0);
 
-  mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
-  int nfaces = faces.size();
+  mesh->cell_get_faces_and_dirs(cell, faces, dirs);
+  int nfaces = faces.extent(0);
 
   // setup velocity
   std::vector<AmanziGeometry::Point> u(nnodes);
@@ -158,8 +158,7 @@ TEST(ADVECTION_NAVIER_STOKES_2D) {
 
   printf("Advection matrix for cell %3d\n", cell);
   for (int i = 0; i < 2*nnodes; i++) {
-    for (int j = 0; j < 2*nnodes; j++ ) printf("%8.5f ", A(i, j)); 
+    for (int j = 0; j < 2*nnodes; j++ ) printf("%8.5f ", A(i, j));
     printf("\n");
   }
 }
-

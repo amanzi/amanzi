@@ -40,7 +40,7 @@ void ComputeGradError(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
     if (cells.size() == 1 && flag[c] == 0) {
       for (int i = 0; i < dim; ++i) {
         double tmp = grad[i][c] - grad_exact[i][c];
-        err_bnd += tmp * tmp * mesh->cell_volume(c);
+        err_bnd += tmp * tmp * mesh->cell_volume(c,false);
       }
       flag[c] = 1;
     }
@@ -49,7 +49,7 @@ void ComputeGradError(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
   gnorm = 0.0;
   err_glb = 0.0;
   for (int c = 0; c < ncells_owned; ++c) {
-    double volume = mesh->cell_volume(c);
+    double volume = mesh->cell_volume(c,false);
     for (int i = 0; i < dim; ++i) {
       double tmp = grad[i][c] - grad_exact[i][c];
       err_glb += tmp * tmp * volume;

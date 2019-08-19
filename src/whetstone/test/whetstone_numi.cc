@@ -51,7 +51,7 @@ TEST(NUMI_CELL_2D_EULER_FORMULA) {
   val = numi.IntegratePolynomialCell(cell, poly);
 
   printf("order=0  value=%10.6g\n", val);
-  CHECK_CLOSE(val, mesh->cell_volume(cell), 1e-10);
+  CHECK_CLOSE(val, mesh->cell_volume(cell,false), 1e-10);
  
   // 1st-order polynomial
   poly.Reshape(2, 1);
@@ -61,7 +61,7 @@ TEST(NUMI_CELL_2D_EULER_FORMULA) {
   val = numi.IntegratePolynomialCell(cell, poly);
 
   printf("order=1  value=%10.6g\n", val);
-  CHECK_CLOSE(val, mesh->cell_volume(cell), 1e-10);
+  CHECK_CLOSE(val, mesh->cell_volume(cell,false), 1e-10);
  
   
 }

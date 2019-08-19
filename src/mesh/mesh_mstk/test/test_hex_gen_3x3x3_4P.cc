@@ -38,24 +38,24 @@ TEST(MSTK_HEX_GEN_3x3x3_4P)
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,1.0,1.0,1.0,3,3,3,comm));
 
 
-  std::vector<Amanzi::AmanziMesh::Entity_ID>  c2f(6);
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*>  c2f("",6);
   auto cell_map = mesh->cell_map(false);
   auto face_map = mesh->face_map(true);
 
   for (int c=cell_map->getMinLocalIndex(); c<=cell_map->getMaxLocalIndex(); c++)
     {
       CHECK_EQUAL(cell_map->getGlobalElement(c),mesh->getGlobalElement(c,Amanzi::AmanziMesh::CELL));
-      mesh->cell_get_faces(c, &c2f, true);
+      mesh->cell_get_faces(c, c2f);
 
       for (int j=0; j<6; j++)
 	{
-	  int f = face_map->getLocalElement(mesh->getGlobalElement(c2f[j],Amanzi::AmanziMesh::FACE));
-	  CHECK_EQUAL( f,c2f[j] );
-	  if (f != c2f[j]) {
+	  int f = face_map->getLocalElement(mesh->getGlobalElement(c2f(j),Amanzi::AmanziMesh::FACE));
+	  CHECK_EQUAL( f,c2f(j) );
+	  if (f != c2f(j)) {
 	    std::cout << std::endl;
 	    std::cout << "Processor ID " << rank << std::endl;
 	    std::cout << "Cell ID " << cell_map->getGlobalElement(c) << std::endl;
-	    std::cout << "Problem face c2f[j] = " << c2f[j] << " GID = " << mesh->getGlobalElement(c2f[j],Amanzi::AmanziMesh::FACE) << " f = " << f << std::endl;
+	    std::cout << "Problem face c2f[j] = " << c2f(j) << " GID = " << mesh->getGlobalElement(c2f(j),Amanzi::AmanziMesh::FACE) << " f = " << f << std::endl;
 	    std::cout << std::endl;
 	  }
 	}
@@ -66,7 +66,6 @@ TEST(MSTK_HEX_GEN_3x3x3_4P)
   fname << "test/mstk_hex_gen_3x3x3_4P." << rank << ".out";
   std::ofstream fout(fname.str().c_str());
   Amanzi::MeshAudit auditor(mesh,fname);
-  auditor.Verify();  
+  auditor.Verify();
 
 }
-

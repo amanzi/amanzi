@@ -165,7 +165,7 @@ void RunTestDiffusionCurved() {
   double totvol(0.0);
   AmanziGeometry::Point center(3);
   for (int c = 0; c < ncells_owned; c++) {
-    double vol = mesh->cell_volume(c);
+    double vol = mesh->cell_volume(c,false);
     totvol += vol;
     center += mesh->cell_centroid(c) * vol;
   }

@@ -1,7 +1,7 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Rao Garimella, others
@@ -47,7 +47,7 @@ TEST(MESH_DEFORM2D)
     int aerr = 0;
     try {
       Amanzi::AmanziMesh::Preference prefs(meshfactory.preference());
-      prefs.clear(); 
+      prefs.clear();
       prefs.push_back(frameworks[i]);
 
       meshfactory.set_preference(prefs);
@@ -69,40 +69,41 @@ TEST(MESH_DEFORM2D)
 
     // Deform the mesh
 
-    Amanzi::AmanziMesh::Entity_ID_List nodeids;
-    Amanzi::AmanziGeometry::Point_List newpos, finpos;
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> nodeids;
+    Kokkos::View<Amanzi::AmanziGeometry::Point*> finpos;
+    Amanzi::AmanziGeometry::Point_List newpos;
 
     int status, nnodes;
 
     nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,
                                 Amanzi::AmanziMesh::Parallel_type::OWNED);
-    
+    Kokkos::resize(nodeids,nnodes);
     for (int j = 0; j < nnodes; j++) {
-      nodeids.push_back(j);
-      
+      nodeids(j) = j;
+
       Amanzi::AmanziGeometry::Point oldcoord(2),newcoord(2);
-      
+
       mesh->node_get_coordinates(j,&oldcoord);
-      
+
       newcoord.set(oldcoord[0],0.5*oldcoord[1]);
-      
+
       newpos.push_back(newcoord);
     }
-    
-    status = mesh->deform(nodeids,newpos,false,&finpos);
-    
-    
+
+    status = mesh->deform(nodeids,newpos,false,finpos);
+
+
     CHECK_EQUAL(status,1);
-    
-    
+
+
     // If the deformation was successful, the cell volumes should be half
     // of what they were
-    
+
     int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL,
                                     Amanzi::AmanziMesh::Parallel_type::ALL);
 
     for (int j = 0; j < ncells; j++) {
-      double volume = mesh->cell_volume(j);
+      double volume = mesh->cell_volume(j,false);
       CHECK_EQUAL(volume,0.5);
     }
 
@@ -130,7 +131,7 @@ TEST(MESH_DEFORM3D)
 
   frameworks.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
   framework_names.push_back("simple");
-  
+
   if (Amanzi::AmanziMesh::framework_enabled(Amanzi::AmanziMesh::Framework::MSTK)) {
     frameworks.push_back(Amanzi::AmanziMesh::Framework::MSTK);
     framework_names.push_back("MSTK");
@@ -148,7 +149,7 @@ TEST(MESH_DEFORM3D)
     int aerr = 0;
     try {
       Amanzi::AmanziMesh::Preference prefs(meshfactory.preference());
-      prefs.clear(); 
+      prefs.clear();
       prefs.push_back(frameworks[i]);
 
       meshfactory.set_preference(prefs);
@@ -170,18 +171,19 @@ TEST(MESH_DEFORM3D)
 
     // Deform the mesh
 
-    Amanzi::AmanziMesh::Entity_ID_List nodeids;
-    Amanzi::AmanziGeometry::Point_List newpos, finpos;
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> nodeids;
+    Amanzi::AmanziGeometry::Point_List newpos;
+    Kokkos::View<Amanzi::AmanziGeometry::Point*> finpos;
 
     int status, nnodes;
     if (nproc == 1) {
 
       nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,
                                  Amanzi::AmanziMesh::Parallel_type::OWNED);
-
+      Kokkos::resize(nodeids,nnodes);
       for (int j = 0; j < nnodes; j++) {
         double pi = 3.1415926;
-        nodeids.push_back(j);
+        nodeids(j) = j;
 
         Amanzi::AmanziGeometry::Point oldcoord(3),newcoord(3);
 
@@ -193,10 +195,10 @@ TEST(MESH_DEFORM3D)
         newpos.push_back(newcoord);
       }
 
-      status = mesh->deform(nodeids,newpos,false,&finpos);
-      
+      status = mesh->deform(nodeids,newpos,false,finpos);
+
     } else {
-      
+
       std::cerr << "Parallel deformation not implemented" << std::endl;
       status = 0;
 

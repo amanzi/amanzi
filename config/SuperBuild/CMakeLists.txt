@@ -80,9 +80,9 @@ if (NOT CMAKE_Fortran_COMPILER)
   message(WARNING "Fortran compiler not specified. CMake will guess!")
 endif()
 
-#if (NOT SPACK_BINARY)
-#  message(WARNING "Spack binary not defined. Disabling spack builds.")
-#endif()
+if (NOT SPACK_BINARY)
+  message(WARNING "Spack binary not defined. Disabling spack builds.")
+endif()
 
 # ############################################################################ #
 # Define Amanzi directories 
@@ -504,9 +504,9 @@ include(DefineExternalProjectArgs)
 set(Amanzi_TPL_CMAKE_ARGS)
 
 # --- Begin the build definitions
-#if (BUILD_SPACK)
-#  include(${SuperBuild_BUILD_FILES_DIR}/Build_Spack.cmake)
-#endif()
+if (BUILD_SPACK)
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_Spack.cmake)
+endif()
 
 
 if (ENABLE_XSDK)    
@@ -726,6 +726,20 @@ if (ENABLE_MSTK_Mesh)
              -DENABLE_MSTK_Mesh:BOOL=${ENABLE_MSTK_Mesh}
              -DMSTK_INCLUDE_DIR:PATH=${MSTK_INCLUDE_DIR}
              -DMSTK_LIBRARY_DIR:PATH=${MSTK_LIBRARY_DIR})
+endif()
+
+# ############################################################################ #
+# CUDA 
+# ############################################################################ #
+if("${AMANZI_ARCH}" STREQUAL "Summit")
+  find_package(CUDA REQUIRED)
+  message(STATUS ">>> CUDA_INCLUDE   = ${CUDA_INCLUDE_DIRS}")
+  message(STATUS ">>> CUDA_LIBRARIES = ${CUDA_LIBRARIES}")
+  include_directories(${CUDA_INCLUDE_DIRS})
+  append_set(Amanzi_TPL_CMAKE_ARGS
+           -DENABLE_CUDA:BOOL=ON
+           -DCUDA_INCLUDE_DIR:PATH=${CUDA_INCLUDE_DIRS}
+           -DCUDA_LIBRARY_DIR:PATH=${CUDA_LIBRARIES})
 endif()
 
 # Silo

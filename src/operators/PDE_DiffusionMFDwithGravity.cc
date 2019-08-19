@@ -69,7 +69,7 @@ void PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
         !(little_k_ & OPERATOR_LITTLE_K_DIVK_BASE);
 
     for (int c = 0; c < ncells_owned; c++) {
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      mesh_->cell_get_faces_and_dirs(c, &faces, dirs);
       int nfaces = faces.size();
       double zc = (mesh_->cell_centroid(c))[dim - 1];
 

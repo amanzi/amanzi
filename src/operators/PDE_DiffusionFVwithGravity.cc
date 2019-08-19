@@ -76,7 +76,7 @@ void PDE_DiffusionFVwithGravity::UpdateMatrices(
     }
 
     for (int c = 0; c != ncells_owned; ++c) {
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      mesh_->cell_get_faces_and_dirs(c, &faces, dirs);
       int nfaces = faces.size();
 
       for (int n = 0; n != nfaces; ++n) {

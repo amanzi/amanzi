@@ -1,9 +1,9 @@
 /*
   Geometry
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Daniil Svyatsky (dasvyat@lanl.gov)
@@ -37,7 +37,7 @@ RegionLineSegment::RegionLineSegment(
   set_manifold_dimension(3);
   //line_points_.clear();
   //line_frac_.clear();
-  
+
   Errors::Message msg;
   if (p0_.dim() != p1_.dim()) {
     msg << "Mismatch in dimensions of end points of RegionLineSegment \""
@@ -47,7 +47,7 @@ RegionLineSegment::RegionLineSegment(
 
   double eps = 1e-15;
   if (norm(p0_ - p1_) < eps) {
-    msg <<" Zero length line segment \""<< Region::name() <<"\" is NOT allowed."; 
+    msg <<" Zero length line segment \""<< Region::name() <<"\" is NOT allowed.";
     Exceptions::amanzi_throw(msg);
   }
 }
@@ -66,16 +66,16 @@ bool RegionLineSegment::inside(const Point& p) const
 
 // -------------------------------------------------------------------
 // Implementation of a virtual member function.
-// We have to analyze 
+// We have to analyze
 // -------------------------------------------------------------------
 double RegionLineSegment::intersect(
-    const std::vector<Point>& polytope,
+    const Kokkos::View<Point*>& polytope,
     const std::vector<std::vector<int> >& faces) const
 {
   int mdim, sdim;
 
   mdim = manifold_dimension();
-  sdim = polytope[0].dim();
+  sdim = polytope(0).dim();
 
   if ((mdim == 3)&&(sdim==3)) {
     std::vector<Point> line(2);
@@ -84,37 +84,37 @@ double RegionLineSegment::intersect(
     line[0] = p0_;
     line[1] = p1_;
     std::vector<Point> inter_pnts(2);
-    Point v1(p0_.dim()), vp(p0_.dim());  
+    Point v1(p0_.dim()), vp(p0_.dim());
     double tau[2]={0., 0.};
     int num_int = 0;
     int num_line_int = 0;
     for (int i=0; i<faces.size(); i++) {
       intersct = false;
-      std::vector<Point> plane(faces[i].size());
-      for (int j=0;j<plane.size();j++) plane[j] = polytope[faces[i][j]];
+      Kokkos::View<Point*> plane("",faces[i].size());
+      for (int j=0;j<plane.extent(0);j++) plane(j) = polytope(faces[i][j]);
       double t = PlaneLineIntersection(plane, line);
 
       v1 = p0_ + t*(p1_ - p0_);
       double diff_x = 0., diff_y = 0.;
-      for (int j=0; j<plane.size(); j++) {
-        diff_x += fabs(plane[j].x() - v1.x());
-        diff_y += fabs(plane[j].y() - v1.y());
+      for (int j=0; j<plane.extent(0); j++) {
+        diff_x += fabs(plane(j).x() - v1.x());
+        diff_y += fabs(plane(j).y() - v1.y());
       }
       if (diff_x < eps) { // projection to plane y-z
         vp[0] = v1[1]; vp[1] = v1[2];
-        for (int j=0; j<plane.size(); j++) {
-          plane[j][0] = plane[j][1];
-          plane[j][1] = plane[j][2];
+        for (int j=0; j<plane.extent(0); j++) {
+          plane(j)[0] = plane(j)[1];
+          plane(j)[1] = plane(j)[2];
         }
       } else if (diff_y < eps) { //projection to plane x-z
         vp[0] = v1[0]; vp[1] = v1[2];
-        for (int j=0; j<plane.size(); j++) {         
-          plane[j][1] = plane[j][2];
+        for (int j=0; j<plane.extent(0); j++) {
+          plane(j)[1] = plane(j)[2];
         }
       } else {
         vp = v1;
       }
-          
+
       intersct = point_in_polygon(vp, plane);
 
       if (intersct) {
@@ -133,7 +133,7 @@ double RegionLineSegment::intersect(
         if (tau[0]*tau[1]<0) {
           len = norm(p1_ - p0_);
           return len;
-        }       
+        }
       }
       return 0.;
     }
@@ -141,7 +141,7 @@ double RegionLineSegment::intersect(
       len = 0.;
       if ((tau[0]<0)||(tau[1]<0)) {
         // v1 = 0.5*(p0_ + inter_pnts[0]);
-        len = norm(p0_ - inter_pnts[0]);        
+        len = norm(p0_ - inter_pnts[0]);
       } else if ((tau[0]>=0) && (tau[1]>=0)) {
         //v1 = 0.5*(p1_ + inter_pnts[0]);
         len = norm(p1_ - inter_pnts[0]);
@@ -151,7 +151,7 @@ double RegionLineSegment::intersect(
       len = norm(inter_pnts[1] - inter_pnts[0]);
       return len;
     } else {
-      Errors::Message mesg("More than two intersection points in RegionLineSegment intersect function"); 
+      Errors::Message mesg("More than two intersection points in RegionLineSegment intersect function");
       Exceptions::amanzi_throw(mesg);
     }
   }
@@ -176,35 +176,35 @@ void RegionLineSegment::ComputeInterLinePoints(const std::vector<Point>& polytop
     line[0] = p0_;
     line[1] = p1_;
     std::vector<Point> inter_pnts(2);
-    Point v1(p0_.dim()), vp(p0_.dim());    
+    Point v1(p0_.dim()), vp(p0_.dim());
     int num_int = 0;
     double tau[2]={0., 0.};
-    int num_line_int = 0;    
+    int num_line_int = 0;
 
 
     for (int i=0; i<faces.size(); i++) {
       intersct = false;
-      std::vector<Point> plane(faces[i].size());
-      for (int j=0;j<plane.size();j++) plane[j] = polytope[faces[i][j]];
+      Kokkos::View<Point*> plane("",faces[i].size());
+      for (int j=0;j<plane.extent(0);j++) plane(j) = polytope[faces[i][j]];
       double t = PlaneLineIntersection(plane, line);
       //if ((t<0)||(t>1)) continue;
 
       v1 = p0_ + t*(p1_ - p0_);
       double diff_x = 0., diff_y = 0.;
-      for (int j=0; j<plane.size(); j++) {
-        diff_x += fabs(plane[j].x() - v1.x());
-        diff_y += fabs(plane[j].y() - v1.y());
+      for (int j=0; j<plane.extent(0); j++) {
+        diff_x += fabs(plane(j).x() - v1.x());
+        diff_y += fabs(plane(j).y() - v1.y());
       }
       if (diff_x < eps) { // projection to plane y-z
         vp[0] = v1[1]; vp[1] = v1[2];
-        for (int j=0; j<plane.size(); j++) {
-          plane[j][0] = plane[j][1];
-          plane[j][1] = plane[j][2];
+        for (int j=0; j<plane.extent(0); j++) {
+          plane(j)[0] = plane(j)[1];
+          plane(j)[1] = plane(j)[2];
         }
       } else if (diff_y < eps) { //projection to plane x-z
         vp[0] = v1[0]; vp[1] = v1[2];
-        for (int j=0; j<plane.size(); j++) {         
-          plane[j][1] = plane[j][2];
+        for (int j=0; j<plane.extent(0); j++) {
+          plane(j)[1] = plane(j)[2];
         }
       } else {
         vp = v1;
@@ -222,11 +222,11 @@ void RegionLineSegment::ComputeInterLinePoints(const std::vector<Point>& polytop
         }
       }
     }
-    double len;
+    //double len; un-used
     if (num_int == 0) {
       res_point = 0.5*(p1_ + p0_);
       return;
-      //Errors::Message mesg("No intersection points in RegionLineSegment"); 
+      //Errors::Message mesg("No intersection points in RegionLineSegment");
       //Exceptions::amanzi_throw(mesg);
     }
     else if (num_int == 1) {
@@ -237,22 +237,22 @@ void RegionLineSegment::ComputeInterLinePoints(const std::vector<Point>& polytop
       }
       return;
     } else if (num_int == 2) {
-      res_point =0.5*(inter_pnts[1] + inter_pnts[0]); 
+      res_point =0.5*(inter_pnts[1] + inter_pnts[0]);
       return;
     }
     else {
-      Errors::Message mesg("More than two intersection points in RegionLineSegment intersect function"); 
+      Errors::Message mesg("More than two intersection points in RegionLineSegment intersect function");
       Exceptions::amanzi_throw(mesg);
     }
   }
 }
 
 
-/* 
-   Compute intersection of line and plane which defined 
+/*
+   Compute intersection of line and plane which defined
    by 3 points of a face.
 */
-double PlaneLineIntersection(const std::vector<Point>& plane,
+double PlaneLineIntersection(const Kokkos::View<Point*>& plane,
                              const std::vector<Point>& line)
 {
   std::vector<double> row1(4, 1.), row2(4,1);
@@ -263,8 +263,8 @@ double PlaneLineIntersection(const std::vector<Point>& plane,
   int k=0;
   for (int i=0; i<3; i++) {
     for (int j=0; j<3; j++) {
-      smatr1[k] = plane[i][j];
-      smatr2[k] = plane[i][j];
+      smatr1[k] = plane(i)[j];
+      smatr2[k] = plane(i)[j];
       k++;
     }
   }
@@ -275,7 +275,7 @@ double PlaneLineIntersection(const std::vector<Point>& plane,
     k++;
   }
 
-  
+
   double t1 = det_aux(row1, smatr1);
   double t2 = det_aux(row2, smatr2);
 
@@ -312,7 +312,7 @@ double det_aux(const std::vector<double>& first_row,
                const std::vector<double>& submatr)
 {
   if ((first_row.size()<4)||(submatr.size()<12)) {
-    Errors::Message mesg("Incorrect parameters in det_aux"); 
+    Errors::Message mesg("Incorrect parameters in det_aux");
     Exceptions::amanzi_throw(mesg);
   }
 

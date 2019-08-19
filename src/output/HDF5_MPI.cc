@@ -1,9 +1,9 @@
 /*
   Output
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Erin Baker
@@ -232,26 +232,26 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
   for (int c=0; c!=ncells_local; ++c) {
     AmanziMesh::Cell_type ctype = mesh_maps_->vis_mesh().cell_get_type(c);
     if (getCellTypeID_(ctype) != getCellTypeID_(AmanziMesh::POLYGON)) {
-      AmanziMesh::Entity_ID_List nodes;
-      mesh_maps_->vis_mesh().cell_get_nodes(c,&nodes);
-      local_conn += nodes.size() + 1;
+      Kokkos::View<AmanziMesh::Entity_ID*> nodes;
+      mesh_maps_->vis_mesh().cell_get_nodes(c,nodes);
+      local_conn += nodes.extent(0) + 1;
       local_entities++;
 
     } else if (space_dim == 2) {
-      AmanziMesh::Entity_ID_List nodes;
-      mesh_maps_->vis_mesh().cell_get_nodes(c,&nodes);
-      local_conn += nodes.size() + 2;
+      Kokkos::View<AmanziMesh::Entity_ID*> nodes;
+      mesh_maps_->vis_mesh().cell_get_nodes(c,nodes);
+      local_conn += nodes.extent(0) + 2;
       local_entities++;
 
     } else {
-      AmanziMesh::Entity_ID_List faces;
-      mesh_maps_->vis_mesh().cell_get_faces(c,&faces);
-      for (int i=0; i!=faces.size(); ++i) {
-	AmanziMesh::Entity_ID_List nodes;
-	mesh_maps_->vis_mesh().face_get_nodes(faces[i], &nodes);
-	local_conn += nodes.size() + 2;
+      Kokkos::View<AmanziMesh::Entity_ID*> faces;
+      mesh_maps_->vis_mesh().cell_get_faces(c,faces);
+      for (int i=0; i!=faces.extent(0); ++i) {
+	Kokkos::View<AmanziMesh::Entity_ID*> nodes;
+	mesh_maps_->vis_mesh().face_get_nodes(faces(i), nodes);
+	local_conn += nodes.extent(0) + 2;
       }
-      local_entities += faces.size();
+      local_entities += faces.extent(0);
     }
   }
 
@@ -281,58 +281,58 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
       conn[lcv++] = getCellTypeID_(ctype);
 
       // store nodes in the correct order
-      AmanziMesh::Entity_ID_List nodes;
-      mesh_maps_->vis_mesh().cell_get_nodes(c, &nodes);
+      Kokkos::View<AmanziMesh::Entity_ID*> nodes;
+      mesh_maps_->vis_mesh().cell_get_nodes(c, nodes);
 
-      for (int i=0; i!=nodes.size(); ++i) {
+      for (int i=0; i!=nodes.extent(0); ++i) {
         // if (nmap.MyLID(nodes[i])) {
         //    conn[lcv++] = nodes[i] + startAll[viz_comm_->getRank()];
 	// } else {
-        conn[lcv++] = lid[nodes[i]] + startAll[pid[nodes[i]]];
+        conn[lcv++] = lid[nodes(i)] + startAll[pid[nodes(i)]];
 	// }
       }
 
       // store entity
       entities[lcv_entity++] = cmap.getGlobalElement(c);
-      
+
     } else if (space_dim == 2) {
       // store cell type id
       conn[lcv++] = getCellTypeID_(ctype);
 
       // store node count, then nodes in the correct order
-      AmanziMesh::Entity_ID_List nodes;
-      mesh_maps_->vis_mesh().cell_get_nodes(c, &nodes);
-      conn[lcv++] = nodes.size();
+      Kokkos::View<AmanziMesh::Entity_ID*> nodes;
+      mesh_maps_->vis_mesh().cell_get_nodes(c, nodes);
+      conn[lcv++] = nodes.extent(0);
 
-      for (int i=0; i!=nodes.size(); ++i) {
+      for (int i=0; i!=nodes.extent(0); ++i) {
 	// if (nmap.MyLID(nodes[i])) {
 	//   conn[lcv++] = nodes[i] + startAll[viz_comm_->getRank()];
 	// } else {
-        conn[lcv++] = lid[nodes[i]] + startAll[pid[nodes[i]]];
+        conn[lcv++] = lid[nodes(i)] + startAll[pid[nodes(i)]];
 	// }
       }
 
       // store entity
       entities[lcv_entity++] = cmap.getGlobalElement(c);
-      
-    } else {
-      AmanziMesh::Entity_ID_List faces;
-      mesh_maps_->vis_mesh().cell_get_faces(c,&faces);
 
-      for (int j=0; j!=faces.size(); ++j) {
+    } else {
+      Kokkos::View<AmanziMesh::Entity_ID*> faces;
+      mesh_maps_->vis_mesh().cell_get_faces(c,faces);
+
+      for (int j=0; j!=faces.extent(0); ++j) {
 	// store cell type id
 	conn[lcv++] = getCellTypeID_(ctype);
 
 	// store node count, then nodes in the correct order
-	AmanziMesh::Entity_ID_List nodes;
-	mesh_maps_->vis_mesh().face_get_nodes(faces[j], &nodes);
-	conn[lcv++] = nodes.size();
+	Kokkos::View<AmanziMesh::Entity_ID*> nodes;
+	mesh_maps_->vis_mesh().face_get_nodes(faces(j), nodes);
+	conn[lcv++] = nodes.extent(0);
 
-	for (int i=0; i!=nodes.size(); ++i) {
+	for (int i=0; i!=nodes.extent(0); ++i) {
 	  // if (nmap.MyLID(nodes[i])) {
 	  //   conn[lcv++] = nodes[i] + startAll[viz_comm_->getRank()];
 	  // } else {
-          conn[lcv++] = lid[nodes[i]] + startAll[pid[nodes[i]]];
+          conn[lcv++] = lid[nodes(i)] + startAll[pid[nodes(i)]];
 	  // }
 	}
 
@@ -341,7 +341,7 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
       }
     }
   }
-  
+
   // write out connectivity
   hdf5_path.str("");
   hdf5_path << iteration << "/Mesh/MixedElements";
@@ -499,10 +499,10 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
   int nfaces_global = fmap.getGlobalNumElements();
 
   for (int f=0; f!=nfaces_local; ++f) {
-    AmanziMesh::Entity_ID_List cells;
-    mesh_maps_->vis_mesh().face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    if (cells.size() > 1) {
-      local_conn += cells.size();
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells;
+    mesh_maps_->vis_mesh().face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+    if (cells.extent(0) > 1) {
+      local_conn += cells.extent(0);
       local_entities++;
     }
   }
@@ -527,25 +527,25 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
   int lcv_entity = 0;
   int internal_f = 0;
   for (int f=0; f!=nfaces_local; ++f) {
-    AmanziMesh::Entity_ID_List cells;
-    mesh_maps_->vis_mesh().face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    if (cells.size() > 1) {
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells;
+    mesh_maps_->vis_mesh().face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+    if (cells.extent(0) > 1) {
       // store cell type id
       //      conn[lcv++] = 2;
 
       // store nodes in the correct order
-      for (int i=0; i!=cells.size(); ++i) {
+      for (int i=0; i!=cells.extent(0); ++i) {
         // if (nmap.MyLID(cells[i])) {
         //   conn[lcv++] = cells[i] + startAll[viz_comm_->getRank()];
         // } else {
-        conn[lcv++] = lid[cells[i]] + startAll[pid[cells[i]]];
+        conn[lcv++] = lid[cells(i)] + startAll[pid[cells(i)]];
         // }
       }
 
       // store entity
       entities[lcv_entity++] = startAll[viz_comm_->getRank()] + internal_f;
       internal_f++;
-      
+
     // } else if (space_dim == 2) {
     //   // store cell type id
     //   conn[lcv++] = getCellTypeID_(ctype);
@@ -567,7 +567,7 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
     //   entities[lcv_entity++] = cmap.getGlobalElement(c);
     }
   }
-  
+
   // write out connectivity
   hdf5_path.str("");
   hdf5_path << iteration << "/Mesh/MixedElements";
@@ -668,7 +668,7 @@ void HDF5_MPI::open_h5file()
 
 
 void HDF5_MPI::close_h5file() {
-  parallelIO_close_file(data_file_, &IOgroup_); 
+  parallelIO_close_file(data_file_, &IOgroup_);
 }
 
 
@@ -684,7 +684,7 @@ void HDF5_MPI::createTimestep(const double time, const int iteration)
     filename << H5DataFilename() << "." << iteration << ".xmf";
     of_timestep_.open(filename.str().c_str());
     // we don't close it here, it will be closed when the endTimestep() is called
-    //of.close(); 
+    //of.close();
     setxdmfStepFilename(filename.str());
 
     // update VisIt xdmf files
@@ -874,7 +874,7 @@ void HDF5_MPI::readAttrString(std::string &value, const std::string attrname)
   strcpy(loc_h5path,h5path.c_str());
 
   char *loc_value;
-  
+
   parallelIO_read_simple_attr(loc_attrname,
                               reinterpret_cast<void**>(&loc_value),
                               PIO_STRING,
@@ -901,7 +901,7 @@ void HDF5_MPI::readAttrReal(double &value, const std::string attrname)
   strcpy(loc_h5path,h5path.c_str());
 
   double *loc_value;
-  
+
   parallelIO_read_simple_attr(loc_attrname,
                               reinterpret_cast<void**>(&loc_value),
                               PIO_DOUBLE,
@@ -915,7 +915,7 @@ void HDF5_MPI::readAttrReal(double &value, const std::string attrname)
   delete [] loc_h5path;
   delete [] loc_attrname;
 }
-  
+
 
 void HDF5_MPI::readAttrReal(double **value, int *ndim, const std::string attrname)
 {
@@ -930,7 +930,7 @@ void HDF5_MPI::readAttrReal(double **value, int *ndim, const std::string attrnam
   double *loc_value;
   int *pdims;
   int ndims;
-  
+
   parallelIO_read_attr(loc_attrname,
                        reinterpret_cast<void**>(&loc_value),
                        PIO_DOUBLE,
@@ -960,7 +960,7 @@ void HDF5_MPI::readAttrInt(int &value, const std::string attrname)
   strcpy(loc_h5path,h5path.c_str());
 
   int *loc_value;
-  
+
   parallelIO_read_simple_attr(loc_attrname,
                               reinterpret_cast<void**>(&loc_value),
                               PIO_INTEGER,
@@ -988,7 +988,7 @@ void HDF5_MPI::readAttrInt(int **value, int *ndim, const std::string attrname)
 
   int *loc_value, *pdims;
   int ndims;
-  
+
   parallelIO_read_attr(loc_attrname,
                        reinterpret_cast<void**>(&loc_value),
                        PIO_INTEGER,
@@ -1155,8 +1155,8 @@ bool HDF5_MPI::checkFieldData_(std::string varname)
     }
 
     MPI_Bcast(&exists, 1, MPI_C_BOOL, 0, *viz_comm_->getRawMpiComm());
-  } 
-  
+  }
+
   delete[] h5path;
 
   return exists;
@@ -1173,7 +1173,7 @@ bool HDF5_MPI::readFieldData_(Epetra_Vector &x, std::string varname,
 
   int ndims;
   parallelIO_get_dataset_ndims(&ndims, data_file_, h5path, &IOgroup_);
-  
+
   if (ndims < 0) {
     if (viz_comm_->getRank() == 0) {
       std::cout<< "Dimension of the field "<<h5path<<" is negative.\n";
@@ -1190,7 +1190,7 @@ bool HDF5_MPI::readFieldData_(Epetra_Vector &x, std::string varname,
   parallelIO_read_dataset(data, type, ndims, globaldims, localdims,
                           data_file_, h5path, &IOgroup_, NONUNIFORM_CONTIGUOUS_READ);
 
-  // Trilinos' ReplaceMyValues() works with elements only and cannot 
+  // Trilinos' ReplaceMyValues() works with elements only and cannot
   // be used here for points
   for (int i=0; i<localdims[0]; ++i) x[i] = data[i];
 

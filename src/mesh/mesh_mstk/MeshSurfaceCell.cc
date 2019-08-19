@@ -39,27 +39,27 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
   set_manifold_dimension(2);
 
   // set my cells
-  Entity_ID_List my_cells;
-  parent_mesh->get_set_entities(setname, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED, &my_cells);
-  AMANZI_ASSERT(my_cells.size() == 1);
-  parent_face_ = my_cells[0];
-  
+  Kokkos::View<Entity_ID*> my_cells;
+  parent_mesh->get_set_entities(setname, AmanziMesh::Entity_kind::FACE, AmanziMesh::Parallel_type::OWNED, my_cells);
+  AMANZI_ASSERT(my_cells.extent(0) == 1);
+  parent_face_ = my_cells(0);
+
   // set my nodes
-  Entity_ID_List my_nodes;
-  parent_mesh->face_get_nodes(parent_face_, &my_nodes);
-  nodes_.resize(my_nodes.size());
+  Kokkos::View<Entity_ID*> my_nodes;
+  parent_mesh->face_get_nodes(parent_face_, my_nodes);
+  nodes_.resize(my_nodes.extent(0));
   if (flatten) {
-    for (int i=0; i!=my_nodes.size(); ++i) {
+    for (int i=0; i!=my_nodes.extent(0); ++i) {
       AmanziGeometry::Point parent_node;
-      parent_mesh->node_get_coordinates(my_nodes[i], &parent_node);
+      parent_mesh->node_get_coordinates(my_nodes(i), &parent_node);
       AmanziGeometry::Point child_node(2);
       child_node[0] = parent_node[0];
       child_node[1] = parent_node[1];
       nodes_[i] = child_node;
     }
   } else {
-    for (int i=0; i!=my_nodes.size(); ++i) {
-      parent_mesh->node_get_coordinates(my_nodes[i], &nodes_[i]);
+    for (int i=0; i!=my_nodes.extent(0); ++i) {
+      parent_mesh->node_get_coordinates(my_nodes(i), &nodes_[i]);
     }
   }
 
@@ -77,16 +77,23 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
 
     // set to false as default
     sets_[(*r)->id()] = false;
-      
+
     // determine if true
     if ((*r)->type() == AmanziGeometry::LABELEDSET
         || (*r)->type() == AmanziGeometry::ENUMERATED) {
       // label pulled from parent
-      Entity_ID_List faces_in_set;
-      std::vector<double> vofs;
-      parent_mesh->get_set_entities_and_vofs((*r)->name(), FACE, Parallel_type::OWNED, &faces_in_set, &vofs);
-      sets_[(*r)->id()] = std::find(faces_in_set.begin(), faces_in_set.end(),
-              parent_face_) != faces_in_set.end();
+      Kokkos::View<Entity_ID*> faces_in_set;
+      Kokkos::View<double*> vofs;
+      parent_mesh->get_set_entities_and_vofs((*r)->name(), FACE, Parallel_type::OWNED, faces_in_set, &vofs);
+      sets_[(*r)->id()] = 0;
+      for(int i = 0 ; i < faces_in_set.extent(0); ++i){
+        if(faces_in_set(i) == parent_face_){
+          sets_[(*r)->id()] = 1;
+          break;
+        }
+      }
+      //sets_[(*r)->id()] = std::find(faces_in_set.begin(), faces_in_set.end(),
+      //        parent_face_) != faces_in_set.end();
 
     } else if ((*r)->is_geometric()) {
       // check containment
@@ -96,7 +103,7 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
       } else if ((*r)->space_dimension() == 2 && flatten) {
         sets_[(*r)->id()] = (*r)->inside(cell_centroid(0));
       }
-    }      
+    }
   }
 
   // set the cell type
@@ -117,7 +124,7 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
 
 // Number of entities of any kind (cell, face, node) and in a
 // particular category (OWNED, GHOST, ALL)
-  
+
 unsigned int MeshSurfaceCell::num_entities(const Entity_kind kind,
         const Parallel_type ptype) const {
   int count;
@@ -144,11 +151,11 @@ unsigned int MeshSurfaceCell::num_entities(const Entity_kind kind,
 
 // Get nodes of a cell
 void MeshSurfaceCell::cell_get_nodes(const Entity_ID cellid,
-        Entity_ID_List *nodeids) const {
+        Kokkos::View<Entity_ID*> &nodeids) const {
   AMANZI_ASSERT(cellid == 0);
-  AMANZI_ASSERT(nodeids);
-  nodeids->resize(nodes_.size());
-  for (int i=0; i!=nodes_.size(); ++i) (*nodeids)[i] = i;
+  //AMANZI_ASSERT(nodeids);
+  Kokkos::resize(nodeids,nodes_.size());
+  for (int i=0; i!=nodes_.size(); ++i) nodeids(i) = i;
 }
 
 
@@ -159,11 +166,11 @@ void MeshSurfaceCell::cell_get_nodes(const Entity_ID cellid,
 // with the face normal
 // In 2D, nfnodes is 2
 void MeshSurfaceCell::face_get_nodes(const Entity_ID faceid,
-        Entity_ID_List *nodeids) const {
+        Kokkos::View<Entity_ID*> &nodeids) const {
   AMANZI_ASSERT(faceid < nodes_.size());
-  nodeids->resize(2);
-  (*nodeids)[0] = faceid;
-  (*nodeids)[1] = (faceid + 1) % nodes_.size();
+  Kokkos::resize(nodeids,2);
+  nodeids(0) = faceid;
+  nodeids(1) = (faceid + 1) % nodes_.size();
 }
 
 
@@ -183,9 +190,9 @@ void MeshSurfaceCell::edge_get_nodes(const Entity_ID edgeid,
 // different processors
 void MeshSurfaceCell::node_get_cells(const Entity_ID nodeid,
         const Parallel_type ptype,
-        Entity_ID_List *cellids) const {
-  cellids->resize(1);
-  (*cellids)[0] = 0;
+        Kokkos::View<Entity_ID*> &cellids) const {
+  Kokkos::resize(cellids,1);
+  cellids(0) = 0;
 }
 
 
@@ -194,7 +201,7 @@ void MeshSurfaceCell::node_get_cells(const Entity_ID nodeid,
 // different processors
 void MeshSurfaceCell::node_get_faces(const Entity_ID nodeid,
         const Parallel_type ptype,
-        Entity_ID_List *faceids) const {
+        Kokkos::View<Entity_ID*> &faceids) const {
   Errors::Message mesg("Not implemented");
   amanzi_throw(mesg);
 }
@@ -206,7 +213,7 @@ void MeshSurfaceCell::node_get_faces(const Entity_ID nodeid,
 void MeshSurfaceCell::node_get_cell_faces(const Entity_ID nodeid,
         const Entity_ID cellid,
         const Parallel_type ptype,
-        Entity_ID_List *faceids) const {
+        Kokkos::View<Entity_ID*> &faceids) const {
   Errors::Message mesg("Not implemented");
   amanzi_throw(mesg);
 }
@@ -214,7 +221,7 @@ void MeshSurfaceCell::node_get_cell_faces(const Entity_ID nodeid,
 // Cells of type 'ptype' connected to an edges
 void MeshSurfaceCell::edge_get_cells(const Entity_ID edgeid,
         const Parallel_type ptype,
-        Entity_ID_List *cellids) const {
+        Kokkos::View<Entity_ID*> &cellids) const {
   Errors::Message mesg("Not implemented");
   amanzi_throw(mesg);
 }
@@ -232,8 +239,8 @@ void MeshSurfaceCell::edge_get_cells(const Entity_ID edgeid,
 // faces given by cell_get_faces
 void MeshSurfaceCell::cell_get_face_adj_cells(const Entity_ID cellid,
         const Parallel_type ptype,
-        Entity_ID_List *fadj_cellids) const {
-  fadj_cellids->resize(0);
+        Kokkos::View<Entity_ID*> &fadj_cellids) const {
+  Kokkos::resize(fadj_cellids,0);
 }
 
 
@@ -242,8 +249,8 @@ void MeshSurfaceCell::cell_get_face_adj_cells(const Entity_ID cellid,
 // The cells are returned in no particular order
 void MeshSurfaceCell::cell_get_node_adj_cells(const Entity_ID cellid,
         const Parallel_type ptype,
-        Entity_ID_List *nadj_cellids) const {
-  nadj_cellids->resize(0);
+        Kokkos::View<Entity_ID*> &nadj_cellids) const {
+  Kokkos::resize(nadj_cellids,0);
 }
 
 
@@ -263,7 +270,7 @@ void MeshSurfaceCell::cell_get_node_adj_cells(const Entity_ID cellid,
 // Nodes in any set in the fixed_sets will not be permitted to move.
 int MeshSurfaceCell::deform(const std::vector<double>& target_cell_volumes_in,
                             const std::vector<double>& min_cell_volumes_in,
-                            const Entity_ID_List& fixed_nodes,
+                            const Kokkos::View<Entity_ID*>& fixed_nodes,
                             const bool move_vertical) {
   Errors::Message mesg("Not implemented");
   Exceptions::amanzi_throw(mesg);
@@ -300,24 +307,24 @@ MeshSurfaceCell::get_set_size(const std::string setname,
 void MeshSurfaceCell::get_set_entities(const Set_ID setid,
         const Entity_kind kind,
         const Parallel_type ptype,
-        Entity_ID_List *entids) const {
+        Kokkos::View<Entity_ID*>& entids) const {
   if (sets_.at(setid)) {
     if (kind == CELL) {
-      entids->resize(1,0);
+      Kokkos::resize(entids,1);
     } else {
-      entids->resize(nodes_.size());
-      for (int i=0; i!=nodes_.size(); ++i) (*entids)[i] = i;
+      Kokkos::resize(entids,nodes_.size());
+      for (int i=0; i!=nodes_.size(); ++i) entids(i) = i;
     }
   } else {
-    entids->resize(0);
+    Kokkos::resize(entids,0);
   }
 }
 
 void MeshSurfaceCell::get_set_entities_and_vofs(const std::string setname,
         const Entity_kind kind,
         const Parallel_type ptype,
-        Entity_ID_List *entids,
-        std::vector<double> *vofs) const {
+        Kokkos::View<Entity_ID*>& entids,
+        Kokkos::View<double*> *vofs) const {
   return get_set_entities(geometric_model()->FindRegion(setname)->id(),
                           kind, ptype, entids);
 }
@@ -335,13 +342,12 @@ void MeshSurfaceCell::write_to_exodus_file(const std::string filename) const {
 // cached or it can be called directly by the
 // cell_get_faces_and_dirs method of this class
 void MeshSurfaceCell::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
-        Entity_ID_List *faceids,
-        std::vector<int> *face_dirs,
-        const bool ordered) const {
+        Kokkos::View<Entity_ID*>& faceids,
+        Kokkos::View<int*>& face_dirs) const {
   AMANZI_ASSERT(cellid == 0);
-  faceids->resize(nodes_.size());
-  for (int i=0; i!=nodes_.size(); ++i) (*faceids)[i] = i;
-  face_dirs->resize(nodes_.size(),1);
+  Kokkos::resize(faceids,nodes_.size());
+  for (int i=0; i!=nodes_.size(); ++i) faceids(i) = i;
+  Kokkos::resize(face_dirs,nodes_.size());
 }
 
 
@@ -349,16 +355,17 @@ void MeshSurfaceCell::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
 // mesh framework. The results are cached in the base class
 void MeshSurfaceCell::face_get_cells_internal_(const Entity_ID faceid,
         const Parallel_type ptype,
-        Entity_ID_List *cellids) const {
-  cellids->resize(1,0);
+        Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> &cellids) const {
+  Kokkos::resize(cellids,1);
+  cellids(0) = 0;
 }
 
 
 // edges of a face - this function is implemented in each mesh
 // framework. The results are cached in the base class
 void MeshSurfaceCell::face_get_edges_and_dirs_internal_(const Entity_ID faceid,
-        Entity_ID_List *edgeids,
-        std::vector<int> *edge_dirs,
+        Kokkos::View<Entity_ID*> &edgeids,
+        Kokkos::View<int*> *edge_dirs,
         const bool ordered) const {
   Errors::Message mesg("Not implemented");
   Exceptions::amanzi_throw(mesg);
@@ -367,7 +374,7 @@ void MeshSurfaceCell::face_get_edges_and_dirs_internal_(const Entity_ID faceid,
 // edges of a cell - this function is implemented in each mesh
 // framework. The results are cached in the base class.
 void MeshSurfaceCell::cell_get_edges_internal_(const Entity_ID cellid,
-        Entity_ID_List *edgeids) const {
+        Kokkos::View<Entity_ID*> &edgeids) const {
   Errors::Message mesg("Not implemented");
   Exceptions::amanzi_throw(mesg);
 }
@@ -376,8 +383,8 @@ void MeshSurfaceCell::cell_get_edges_internal_(const Entity_ID cellid,
 // edges and directions of a 2D cell - this function is implemented
 // in each mesh framework. The results are cached in the base class.
 void MeshSurfaceCell::cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
-        Entity_ID_List *edgeids,
-        std::vector<int> *edge_dirs) const {
+        Kokkos::View<Entity_ID*> &edgeids,
+        Kokkos::View<int*> *edge_dirs) const {
   Errors::Message mesg("Not implemented");
   Exceptions::amanzi_throw(mesg);
 }
@@ -386,7 +393,3 @@ void MeshSurfaceCell::cell_2D_get_edges_and_dirs_internal_(const Entity_ID celli
 
 } // close namespace AmanziMesh
 } // close namespace Amanzi
-
-
-
-

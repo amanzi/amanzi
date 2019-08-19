@@ -27,7 +27,7 @@ test_segment_regular(const Teuchos::RCP<const Amanzi::AmanziMesh::Mesh>& m,
   
   CHECK_EQUAL(4, m->num_entities(CELL, Parallel_type::ALL));
   CHECK_EQUAL(5, m->num_entities(FACE, Parallel_type::ALL));
-  CHECK_EQUAL(0.25, m->cell_volume(0));
+  CHECK_EQUAL(0.25, m->cell_volume(0,false));
   CHECK_EQUAL(1.0, m->face_area(0));
 
   CHECK_EQUAL(1.0, m->face_normal(3)[0]);
@@ -37,7 +37,7 @@ test_segment_regular(const Teuchos::RCP<const Amanzi::AmanziMesh::Mesh>& m,
   Entity_ID_List faces;
   std::vector<int> dirs;
   std::vector<Point> bisectors;
-  m->cell_get_faces_and_dirs(2, &faces, &dirs);
+  m->cell_get_faces_and_dirs(2, &faces, dirs);
   CHECK_EQUAL(2, faces.size());
   CHECK_EQUAL(2, faces[0]);
   CHECK_EQUAL(3, faces[1]);
@@ -142,13 +142,13 @@ test_Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
 
   Entity_ID_List branch_faces;
   std::vector<int> dirs;
-  m->cell_get_faces_and_dirs(2, &branch_faces, &dirs);
+  m->cell_get_faces_and_dirs(2, &branch_faces, dirs);
   CHECK_EQUAL(5, branch_faces.size());
 
 
-  CHECK_CLOSE(1.e-4, m->cell_volume(0), 1.e-8);
-  CHECK_CLOSE(1.e-4, m->cell_volume(2), 1.e-8);
-  CHECK_CLOSE(0.75*0.25e-4, m->cell_volume(3), 1.e-8);
+  CHECK_CLOSE(1.e-4, m->cell_volume(0,false), 1.e-8);
+  CHECK_CLOSE(1.e-4, m->cell_volume(2,false), 1.e-8);
+  CHECK_CLOSE(0.75*0.25e-4, m->cell_volume(3,false), 1.e-8);
 
   CHECK_CLOSE(1.e-4, m->face_area(2), 1.e-8);
   CHECK_CLOSE(.25e-4, m->face_area(3), 1.e-8);
@@ -207,7 +207,7 @@ TEST(MESH_LOGICAL_Y_DEFORMED)
 
   Amanzi::AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
-  mesh->cell_get_faces_and_dirs(0, &faces, &dirs);
+  mesh->cell_get_faces_and_dirs(0, &faces, dirs);
   CHECK_EQUAL(2, faces.size());
   CHECK_EQUAL(2, cf_lens[0].size());
       
@@ -225,7 +225,7 @@ TEST(MESH_LOGICAL_Y_DEFORMED)
   mesh->set_logical_geometry(&cv, &cf_lens, &fa, NULL);
 
   CHECK_CLOSE(1.5e-4, mesh->face_area(0), 1.e-10);
-  CHECK_CLOSE(2.0 * 2.0 * 0.25*1.e-4, mesh->cell_volume(0), 1.e-10);
+  CHECK_CLOSE(2.0 * 2.0 * 0.25*1.e-4, mesh->cell_volume(0,false), 1.e-10);
 }
 
 

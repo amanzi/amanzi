@@ -154,7 +154,7 @@ void Observable::Update_(const State &S,
   //   if (entity == AmanziMesh::CELL) {
   //     for (AmanziMesh::Entity_ID_List::const_iterator id = ids.begin();
   //          id != ids.end(); ++id) {
-  //       double vol = vec->Mesh()->cell_volume(*id);
+  //       double vol = vec->Mesh()->cell_volume(*id,false);
   //       value = (*function_)(value, subvec[0][*id], vol);
   //       volume += vol;
   //     }

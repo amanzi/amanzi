@@ -83,10 +83,10 @@ if (BUILD_TESTS)
                   LINK_LIBS mesh_functions mesh_factory data_structures
                             ${UnitTest_LIBRARIES} ${NOX_LIBRARIES} ${HDF5_LIBRARIES})
 
-  # add_amanzi_test(cv_function cv_function
-  #                 KIND unit
-  #                 SOURCE test/composite_vector_function.cc
-  #                 LINK_LIBS  mesh_functions mesh_factory data_structures 
-  #                            ${UnitTest_LIBRARIES} ${Boost_LIBRARIES} 
-  #                            ${MSTK_LIBRARIES} ${NOX_LIBRARIES} ${HDF5_LIBRARIES})
+  #add_amanzi_test(cv_function cv_function
+  #                KIND unit
+  #                SOURCE test/composite_vector_function.cc
+  #                LINK_LIBS  mesh_functions mesh_factory data_structures 
+  #                           ${UnitTest_LIBRARIES} ${Boost_LIBRARIES} 
+  #                           ${MSTK_LIBRARIES} ${NOX_LIBRARIES} ${HDF5_LIBRARIES})
 endif()

@@ -43,6 +43,10 @@ set(ENABLE_MOAB_Mesh @ENABLE_MOAB_Mesh@ CACHE BOOL "Enable MOAB Unstructured Mes
 set(AMANZI_TPLS_VERSION @AMANZI_TPLS_VERSION@ CACHE STRING "TPLs version")
 set(CMAKE_PREFIX_PATH @TPL_INSTALL_PREFIX@ CACHE STRING "search path for TPLs")
 
+# Kokkos variables and flags 
+set(ENABLE_CUDA @ENABLE_CUDA@ CACHE BOOL "Enable CUDA library for GPU support") 
+set(ENABLE_KOKKOS @ENABLE_KOKKOS@ CACHE BOOL "Enable Kokkos library")
+set(NVCC_WRAPPER_DEFAULT_COMPILER @NVCC_WRAPPER_DEFAULT_COMPILER@ CACHE STRING "Default compiler used by nvcc_wrapper")
 
 # --------------------------------------------------------------------------- #
 # Third Party Libraries (TPL)

@@ -286,7 +286,7 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
   std::vector<int> hits(ndofs_wghost, 0);
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces_and_dirs(c, &faces, dirs);
     int nfaces = faces.size();
     double zc = mesh_->cell_centroid(c)[dim - 1];
 

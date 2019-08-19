@@ -14,7 +14,6 @@
 
 TEST(MSTK_QUAD_GEN_3x3)
 {
-
   int i, j, k, err, nc, nf, nv;
   Amanzi::AmanziMesh::Set_ID faces[6], nodes[8];
 
@@ -31,25 +30,25 @@ TEST(MSTK_QUAD_GEN_3x3)
 
   nv = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(NV,nv);
-  
+
   nf = mesh->num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(NF,nf);
-  
+
   nc = mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(NC,nc);
 
 
-  std::vector<Amanzi::AmanziMesh::Entity_ID>  c2f(6);
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*>  c2f("",6);
   auto cell_map = mesh->cell_map(false);
   auto face_map = mesh->face_map(false);
   for (int c=cell_map->getMinLocalIndex(); c<=cell_map->getMaxLocalIndex(); c++)
     {
       CHECK_EQUAL(cell_map->getGlobalElement(c),mesh->getGlobalElement(c,Amanzi::AmanziMesh::CELL));
-      mesh->cell_get_faces(c, &c2f, true);
+      mesh->cell_get_faces(c, c2f);
       for (int j=0; j<4; j++)
 	{
-	  int f = face_map->getLocalElement(c2f[j]);
-	  CHECK( f == c2f[j] );
+	  int f = face_map->getLocalElement(c2f(j));
+	  CHECK( f == c2f(j) );
 	}
 
     }
@@ -57,6 +56,4 @@ TEST(MSTK_QUAD_GEN_3x3)
   std::ofstream fout("test/mstk_quad_gen_4x4.out");
   Amanzi::MeshAudit auditor(mesh,fout);
   auditor.Verify();
-
 }
-

@@ -139,7 +139,7 @@ void PDE_Electromagnetics::ApplyBCs_Edge_(
       const std::vector<int>& bc_model = bc_f->bc_model();
       const std::vector<AmanziGeometry::Point>& bc_value = bc_f->bc_value_point();
 
-      mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+      mesh_->cell_get_faces_and_dirs(c, &faces, fdirs);
       int nfaces = faces.size();
 
       for (int n = 0; n != nfaces; ++n) {

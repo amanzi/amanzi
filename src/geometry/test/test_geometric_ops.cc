@@ -22,7 +22,7 @@ TEST(Geometric_Ops)
   //         0-----------1
 
 
-  std::vector<Amanzi::AmanziGeometry::Point> ccoords3, fcoords3;
+  Kokkos::View<Amanzi::AmanziGeometry::Point*> ccoords3, fcoords3;
 
   int nf = 6;
 
@@ -44,27 +44,26 @@ TEST(Geometric_Ops)
                                     {0.0,-1.0,0.0},
                                     {0.0,1.0,0.0}};
 
-
+  Kokkos::resize(ccoords3,8);
   for (int i = 0; i < 8; i++) {
     Amanzi::AmanziGeometry::Point xyz3(3);
-    
     xyz3.set(hex_ccoords1[i][0],hex_ccoords1[i][1],hex_ccoords1[i][2]);
-
-    ccoords3.push_back(xyz3);
+    ccoords3(i) = xyz3;
   }
 
-
   for (int i = 0; i < nf; i++) {
-    std::vector<Amanzi::AmanziGeometry::Point> locfcoords3;
+
+    Kokkos::View<Amanzi::AmanziGeometry::Point*> locfcoords3;
+    Kokkos::resize(locfcoords3,nfnodes[i]);
 
     for (int j = 0; j < nfnodes[i]; j++) {
       Amanzi::AmanziGeometry::Point xyz3(3);
-      
+
       int k = hex_fnodes[i][j];
       xyz3.set(hex_ccoords1[k][0],hex_ccoords1[k][1],hex_ccoords1[k][2]);
-
-      locfcoords3.push_back(xyz3);
-      fcoords3.push_back(xyz3);
+      locfcoords3(j) = xyz3;
+      Kokkos::resize(fcoords3,fcoords3.extent(0)+1);
+      fcoords3(fcoords3.extent(0)-1) = xyz3;
     }
 
     double farea;
@@ -76,6 +75,9 @@ TEST(Geometric_Ops)
     CHECK_EQUAL(exp_hex_fnormals1[i][2],normal.z());
   }
 
+  std::cout<<"H3"<<std::endl;
+
+
   Amanzi::AmanziGeometry::Point inpnt3(3), outpnt3(3);
 
   inpnt3.set(0.3,0.4,0.6);
@@ -83,6 +85,9 @@ TEST(Geometric_Ops)
 
   CHECK_EQUAL(true,Amanzi::AmanziGeometry::point_in_polyhed(inpnt3,ccoords3,nf,nfnodes,fcoords3));
   CHECK_EQUAL(false,Amanzi::AmanziGeometry::point_in_polyhed(outpnt3,ccoords3,nf,nfnodes,fcoords3));
+
+
+  std::cout<<"H4"<<std::endl;
 
   double volume, exp_volume = 1.0;
   Amanzi::AmanziGeometry::Point centroid(3), exp_centroid(3);
@@ -97,5 +102,4 @@ TEST(Geometric_Ops)
   CHECK_EQUAL(exp_centroid.y(),centroid.y());
   CHECK_EQUAL(exp_centroid.z(),centroid.z());
 
-}  
-
+}

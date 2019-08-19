@@ -33,24 +33,24 @@ TEST(MSTK_QUAD_GEN_3x3_4P)
 
 
 
-  std::vector<Amanzi::AmanziMesh::Entity_ID>  c2f(4);
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*>  c2f("",4);
   auto cell_map = mesh->cell_map(false);
   auto face_map = mesh->face_map(true);
 
   for (int c=cell_map->getMinLocalIndex(); c<=cell_map->getMaxLocalIndex(); c++)
     {
       CHECK_EQUAL(cell_map->getGlobalElement(c),mesh->getGlobalElement(c,Amanzi::AmanziMesh::CELL));
-      mesh->cell_get_faces(c, &c2f, true);
+      mesh->cell_get_faces(c, c2f);
 
       for (int j=0; j<4; j++)
 	{
-	  int f = face_map->getLocalElement(mesh->getGlobalElement(c2f[j],Amanzi::AmanziMesh::FACE));
-	  CHECK_EQUAL( f,c2f[j] );
-	  if (f != c2f[j]) {
+	  int f = face_map->getLocalElement(mesh->getGlobalElement(c2f(j),Amanzi::AmanziMesh::FACE));
+	  CHECK_EQUAL( f,c2f(j) );
+	  if (f != c2f(j)) {
 	    std::cout << std::endl;
 	    std::cout << "Processor ID " << rank << std::endl;
 	    std::cout << "Cell ID " << cell_map->getGlobalElement(c) << std::endl;
-	    std::cout << "Problem face c2f[j] = " << c2f[j] << " GID = " << mesh->getGlobalElement(c2f[j],Amanzi::AmanziMesh::FACE) << " f = " << f << std::endl;
+	    std::cout << "Problem face c2f[j] = " << c2f(j) << " GID = " << mesh->getGlobalElement(c2f(j),Amanzi::AmanziMesh::FACE) << " f = " << f << std::endl;
 	    std::cout << std::endl;
 	  }
 	}
@@ -65,4 +65,3 @@ TEST(MSTK_QUAD_GEN_3x3_4P)
 
 
 }
-

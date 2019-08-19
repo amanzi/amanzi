@@ -111,7 +111,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
-    double volume = mesh->cell_volume(c);
+    double volume = mesh->cell_volume(c,false);
 
     AmanziMesh::Entity_ID_List nodes;
     mesh->cell_get_nodes(c, &nodes);

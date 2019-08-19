@@ -1,7 +1,7 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon (ecoon@lanl.gov)
@@ -105,7 +105,7 @@ MeshLogical::MeshLogical(const Comm_ptr_type& comm,
   // build epetra maps
   init_maps();
 }
-  
+
 
 //
 // MeshLogical constructor includes geometry.
@@ -134,7 +134,7 @@ MeshLogical::MeshLogical(const Comm_ptr_type& comm,
 : Mesh(comm, Teuchos::null, plist, true, false) {
 
   logical_ = true;
-  
+
   if (face_cell_ids.size() != face_cell_lengths.size()) {
     Errors::Message mesg("MeshLogical created with bad data");
     Exceptions::amanzi_throw(mesg);
@@ -154,7 +154,7 @@ MeshLogical::MeshLogical(const Comm_ptr_type& comm,
     }
   }
 
-  
+
   set_space_dimension(3);
   set_manifold_dimension(1);
 
@@ -724,8 +724,8 @@ void
 MeshLogical::get_set_entities_and_vofs(const std::string setname,
                                        const Entity_kind kind,
                                        const Parallel_type ptype,
-                                       Entity_ID_List *entids,
-                                       std::vector<double> *vofs) const {
+                                       Kokkos::View<Entity_ID*> &entids,
+                                       Kokkos::View<double*> *vofs) const {
   get_set_entities(geometric_model_->FindRegion(setname)->id(), kind, ptype, entids);
   return;
 }
@@ -871,7 +871,7 @@ bool viewMeshLogical(const Mesh& m, std::ostream& os) {
 
   os << "cell_centroids, volumes =" << std::endl;
   for (int c=0; c!=m.num_entities(CELL, Parallel_type::OWNED); ++c) {
-    os << m.cell_centroid(c) << " " << m.cell_volume(c) << std::endl;
+    os << m.cell_centroid(c) << " " << m.cell_volume(c,false) << std::endl;
   }
   os << "face_connections, areas =" << std::endl;
   for (int f=0; f!=m.num_entities(FACE, Parallel_type::OWNED); ++f) {
@@ -894,9 +894,9 @@ bool viewMeshLogical(const Mesh& m, std::ostream& os) {
   }
 
   return false;
-  
+
 }
-  
+
 
 
 }  // namespace AmanziMesh

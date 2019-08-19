@@ -40,7 +40,7 @@ int MFD3D_Diffusion_Edge::H1consistency(
   Entity_ID_List faces, edges, fedges;
   std::vector<int> dirs, edirs, map;
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  mesh_->cell_get_faces_and_dirs(c, &faces, dirs);
   int nfaces = faces.size();
 
   mesh_->cell_get_edges(c, &edges);
@@ -50,7 +50,7 @@ int MFD3D_Diffusion_Edge::H1consistency(
   Ac.Reshape(nedges, nedges);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c);
+  double volume = mesh_->cell_volume(c,false);
 
   // calculate matrix R (we re-use matrix N)
   if (d_ == 3) N.PutScalar(0.0);

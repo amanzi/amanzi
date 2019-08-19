@@ -33,7 +33,7 @@ void Basis_Regularized::Init(
     order_ = order;
     d_ = mesh->space_dimension();
     if (id == AmanziMesh::CELL) {
-      volume = mesh->cell_volume(c);
+      volume = mesh->cell_volume(c,false);
       dim = d_;
     } else if (id == AmanziMesh::FACE) {
       volume = mesh->face_area(c);

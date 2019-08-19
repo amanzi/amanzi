@@ -135,7 +135,7 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   for (int c = 0; c < ncells_owned; c++) {
     mesh->cell_get_edges(c, &edges);
     int nedges = edges.size();
-    double vol = 3.0 * mesh->cell_volume(c) / nedges;
+    double vol = 3.0 * mesh->cell_volume(c,false) / nedges;
 
     for (int n = 0; n < nedges; ++n) {
       int e = edges[n];

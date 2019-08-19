@@ -14,8 +14,8 @@
 
 // NOTE: WHEN THESE TESTS ARE RUN IN PARALLEL, THE CELLS ABOVE THE
 // DEFORMED CELLS WILL NOT SHIFT DOWN CORRECTLY BECAUSE THE COLUMNS
-// ARE NOT ALL ON ONE PROCESSOR. IN A REAL SUBSURFACE DEFORMATION 
-// SIMULATION, THE PARALLEL PARTITIONING WILL BE IN THE LATERAL DIRECTION 
+// ARE NOT ALL ON ONE PROCESSOR. IN A REAL SUBSURFACE DEFORMATION
+// SIMULATION, THE PARALLEL PARTITIONING WILL BE IN THE LATERAL DIRECTION
 // ONLY AND EACH COLUMN WILL BE ON A SINGLE PROCESSOR, SO THE DEFORMATION
 // OF CELLS WILL BE PROPERLY COMMUNICATED TO THE LAYERS ABOVE IT
 
@@ -42,19 +42,19 @@ TEST(MSTK_DEFORM_VOLS_2D)
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, *comm));
 
-  // Generate a mesh consisting of 3x3 elements 
+  // Generate a mesh consisting of 3x3 elements
   auto plist = Teuchos::rcp(new Teuchos::ParameterList());
   plist->sublist("unstructured").sublist("expert").set<std::string>("partitioner", "zoltan_rcb");
   bool request_faces = true;
   bool request_edges = true;
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh>
     mesh(new Amanzi::AmanziMesh::Mesh_MSTK(-5.0,0.0,5.0,10.0,10,10,comm,
 					   gm,plist,
 					   request_faces,request_edges));
 
   CHECK_EQUAL(mesh->build_columns(), 1);
-  
-  int nc = 
+
+  int nc =
     mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::ALL);
 
   // Request target volume of 50% for some cells at the bottom of the center column
@@ -66,8 +66,8 @@ TEST(MSTK_DEFORM_VOLS_2D)
   target_weights.reserve(nc);
   min_volumes.reserve(nc);
 
-  for (int i = 0; i < nc; i++) {    
-    orig_volumes[i] = mesh->cell_volume(i);
+  for (int i = 0; i < nc; i++) {
+    orig_volumes[i] = mesh->cell_volume(i,false);
     // target_volumes[i] = orig_volumes[i];
     target_volumes[i] = 0.0;
     min_volumes[i] = 0.25*orig_volumes[i];
@@ -78,9 +78,9 @@ TEST(MSTK_DEFORM_VOLS_2D)
         target_volumes[i] = 0.90*orig_volumes[i];
   }
 
-  Amanzi::AmanziMesh::Entity_ID_List fixed_nodes;
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> fixed_nodes;
   mesh->get_set_entities("Bottom Region", Amanzi::AmanziMesh::NODE,
-                         Amanzi::AmanziMesh::Parallel_type::ALL, &fixed_nodes);
+                         Amanzi::AmanziMesh::Parallel_type::ALL, fixed_nodes);
 
   bool move_vertical = true;
   int status = mesh->deform(target_volumes,min_volumes,fixed_nodes,
@@ -89,26 +89,28 @@ TEST(MSTK_DEFORM_VOLS_2D)
 
   for (int i = 0; i < nc; i++) {
     if (target_volumes[i] > 0.0 && target_volumes[i] < orig_volumes[i]) {
-      double voldiff = 
-        (mesh->cell_volume(i)-target_volumes[i])/target_volumes[i];
-    
+      double voldiff =
+        (mesh->cell_volume(i,false)-target_volumes[i])/target_volumes[i];
+
       // Check if volume difference is with 5% of target volume
       CHECK_CLOSE(0,voldiff,5.0e-02);
     }
 
     // Check that we didn't fall below the minimum prescribed volume
-    if (mesh->cell_volume(i) < min_volumes[i])
-      std::cerr << "Cell volume = " << mesh->cell_volume(i) << 
+    if (mesh->cell_volume(i,false) < min_volumes[i])
+      std::cerr << "Cell volume = " << mesh->cell_volume(i,false) <<
           " is less than min volume = " << min_volumes[i] << std::endl;
-    //    CHECK(mesh->cell_volume(i) >= min_volumes[i]);
+    //    CHECK(mesh->cell_volume(i,false) >= min_volumes[i]);
   }
 
   mesh->write_to_exodus_file("deformed2.exo");
+
 }
 
 
 TEST(MSTK_DEFORM_VOLS_3D)
 {
+
   auto comm = Amanzi::getDefaultComm();
 
   // Define a box region to capture bottom boundary
@@ -131,16 +133,16 @@ TEST(MSTK_DEFORM_VOLS_3D)
   plist->sublist("unstructured").sublist("expert").set<std::string>("partitioner", "zoltan_rcb");
   bool request_faces = true;
   bool request_edges = true;
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh>
     mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,10.0,1.0,10.0,10,1,10,
 					   comm,gm,plist,
 					   request_faces,request_edges));
 
   CHECK_EQUAL(mesh->build_columns(), 1);
-  
-  int ncused = 
+
+  int ncused =
     mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::ALL);
-  int ncowned = 
+  int ncowned =
     mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   // Request target volume of 50% for some cells at the bottom of the center column
@@ -152,10 +154,10 @@ TEST(MSTK_DEFORM_VOLS_3D)
   target_weights.reserve(ncused);
   min_volumes.reserve(ncused);
 
-  for (int i = 0; i < ncused; i++) {    
-    orig_volumes[i] = mesh->cell_volume(i);
+  for (int i = 0; i < ncused; i++) {
+    orig_volumes[i] = mesh->cell_volume(i,false);
     target_volumes[i] = orig_volumes[i];
-    min_volumes[i] = 0.90*orig_volumes[i]; 
+    min_volumes[i] = 0.90*orig_volumes[i];
 
     Amanzi::AmanziGeometry::Point ccen = mesh->cell_centroid(i);
     if (ccen[0] > 2.0 && ccen[0] < 8.0) { // row of cells along x axis
@@ -169,9 +171,9 @@ TEST(MSTK_DEFORM_VOLS_3D)
     }
   }
 
-  Amanzi::AmanziMesh::Entity_ID_List fixed_nodes;
+  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> fixed_nodes;
   mesh->get_set_entities_and_vofs("Bottom Region", Amanzi::AmanziMesh::NODE,
-                                  Amanzi::AmanziMesh::Parallel_type::ALL, &fixed_nodes, NULL);
+                                  Amanzi::AmanziMesh::Parallel_type::ALL, fixed_nodes, NULL);
 
   bool move_vertical = true;
   int status = mesh->deform(target_volumes,min_volumes,fixed_nodes,
@@ -180,8 +182,8 @@ TEST(MSTK_DEFORM_VOLS_3D)
 
   for (int i = 0; i < ncowned; i++) {
     if (target_volumes[i] > 0.0 && target_volumes[i] < orig_volumes[i]) {
-      double voldiff = (mesh->cell_volume(i)-target_volumes[i])/target_volumes[i];
-    
+      double voldiff = (mesh->cell_volume(i,false)-target_volumes[i])/target_volumes[i];
+
       // Check if volume difference is with 5% of target volume
       CHECK_CLOSE(0,voldiff,5e-02);
     }
@@ -192,18 +194,18 @@ TEST(MSTK_DEFORM_VOLS_3D)
     // give some margin of numerical error
 
     double eps = 1.0e-6*orig_volumes[i];
-    CHECK(mesh->cell_volume(i)+eps >= min_volumes[i]);
-    if (!(mesh->cell_volume(i)+eps >= min_volumes[i])) {
-      double diff = mesh->cell_volume(i)-min_volumes[i];
+    CHECK(mesh->cell_volume(i,false)+eps >= min_volumes[i]);
+    if (!(mesh->cell_volume(i,false)+eps >= min_volumes[i])) {
+      double diff = mesh->cell_volume(i,false)-min_volumes[i];
       std::cerr << "Cell Global ID " << mesh->getGlobalElement(i,Amanzi::AmanziMesh::CELL)
-                << " Cell Local ID " << i 
-                << " Rank " << comm->getRank() 
+                << " Cell Local ID " << i
+                << " Rank " << comm->getRank()
                 << ": Min volume = " << min_volumes[i] << "    "
-                << "Cell volume = " << mesh->cell_volume(i)  << "  Diff = "
+                << "Cell volume = " << mesh->cell_volume(i,false)  << "  Diff = "
                 << diff << std::endl;
     }
   }
 
   mesh->write_to_exodus_file("deformed3.exo");
-}
 
+}

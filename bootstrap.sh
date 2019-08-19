@@ -63,6 +63,7 @@ parallel_jobs=2
 build_type=Release
 trilinos_build_type=Release
 tpls_build_type=Release
+AMANZI_ARCH=""
 
 # Compiler definitions
 build_c_compiler=
@@ -313,7 +314,9 @@ Configuration:
   --nersc                 use cmake options required on NERSC machines ['"${nersc}"']
 
   --dry_run               show the configuration commands (but do not execute them) ['"${dry_run}"']
-  
+
+  --arch                  define the architecture for the build, only Summit available
+
 
 Build features:
 Each feature listed here can be enabled/disabled with --[enable|disable]-[feature]
@@ -464,6 +467,7 @@ Build configuration:
     nersc               ='"${nersc}"'
     static_libs_prefer  ='"${prefer_static}"'
     static_executables  ='"${exec_static}"'
+    AMANZI_ARCH         ='"${AMANZI_ARCH}"'
 
 Build Features:   
     structured          ='"${structured}"'
@@ -518,6 +522,10 @@ function parse_argv()
                  tmp=`parse_option_with_equal "${opt}" 'prefix'`
 		 prefix=`make_fullpath ${tmp}`
                  ;;
+
+      --arch=*)
+                 AMANZI_ARCH=`parse_option_with_equal "${opt}" 'arch'`
+		 ;;
 
       --parallel=[0-9]*)
                  parallel_jobs=`parse_option_with_equal "${opt}" 'parallel'`
@@ -1354,7 +1362,6 @@ if [ ! -z "${amanzi_branch}" ]; then
   git_change_branch ${amanzi_branch}
 fi
 
-
 # ---------------------------------------------------------------------------- #
 # Configure tools
 # ---------------------------------------------------------------------------- #
@@ -1402,8 +1409,8 @@ if [ ! -n "${mpi_root_dir}" ]; then
   build_c_compiler=${tools_install_prefix}/bin/mpicc
   build_cxx_compiler=${tools_install_prefix}/bin/mpicxx
   build_fort_compiler=${tools_install_prefix}/bin/mpif90
-      
-  cd ${pwd_save}
+
+ cd ${pwd_save}
       
   status_message "Tools build complete: new MPI root=${mpi_root_dir}"
   status_message "  new MPI root=${mpi_root_dir}"
@@ -1447,7 +1454,18 @@ if [ -z "${tpl_config_file}" ]; then
   if [ "${tpls_only}" -eq "${TRUE}" ]; then
     status_message "Only building TPLs, stopping before building Amanzi itself"
   fi
-
+ 
+  # Setting environment varibles
+  NVCC_WRAPPER_DEFAULT_COMPILER=""
+  if [ "${AMANZI_ARCH}" = "Summit" ]; then
+    kokkos="ON"
+    cuda="ON"
+    NVCC_WRAPPER_DEFAULT_COMPILER=${build_cxx_compiler}
+  else 
+    kokkos="ON"
+    cuda="OFF"
+  fi 
+ 
   # Configure the TPL build
   cmd_configure="${cmake_binary} \
       -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
@@ -1481,7 +1499,10 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_XSDK:BOOL=${xsdk} \
       -DBUILD_SHARED_LIBS:BOOL=${shared} \
       -DTPL_DOWNLOAD_DIR:FILEPATH=${tpl_download_dir} \
-      -DTPL_PARALLEL_JOBS:INT=${parallel_jobs} \
+      -DAMANZI_ARCH:STRING=${AMANZI_ARCH} \
+      -DNVCC_WRAPPER_DEFAULT_COMPILER:STRING=${NVCC_WRAPPER_DEFAULT_COMPILER} \
+      -DENABLE_KOKKOS:BOOL=${kokkos} \
+      -DENABLE_CUDA:BOOL=${cuda} \
       ${nersc_tpl_opts} \
       ${tpl_build_src_dir}"
 
@@ -1560,6 +1581,12 @@ fi
 
 status_message "Build Amanzi with configure file ${tpl_config_file}"
 
+# Replace default compiler to NVCC_WRAPPER to build with CUDA/Kokkos 
+if [ "${AMANZI_ARCH}" = "Summit" ]; then
+  build_cxx_compiler=${tpl_install_prefix}/trilinos-12-14-1_master/bin/nvcc_wrapper
+fi 
+ 
+
 # Configure the Amanzi build
 cmd_configure="${cmake_binary} \
     -C${tpl_config_file} \
@@ -1572,6 +1599,7 @@ cmd_configure="${cmake_binary} \
     -DCMAKE_C_COMPILER:FILEPATH=${build_c_compiler} \
     -DCMAKE_CXX_COMPILER:FILEPATH=${build_cxx_compiler} \
     -DCMAKE_Fortran_COMPILER:FILEPATH=${build_fort_compiler} \
+    -DCXX_DEFAULT_COMPILER:STRING=${cxx_default_compiler} \
     -DENABLE_Structured:BOOL=${structured} \
     -DENABLE_Unstructured:BOOL=${unstructured} \
     -DENABLE_STK_Mesh:BOOL=${stk_mesh} \
@@ -1587,6 +1615,10 @@ cmd_configure="${cmake_binary} \
     -DCCSE_BL_SPACEDIM:INT=${spacedim} \
     -DENABLE_Regression_Tests:BOOL=${reg_tests} \
     -DMPI_EXEC_GLOBAL_ARGS:STRING=${tools_mpi_exec_args} \
+    -DAMANZI_ARCH:STRING=${AMANZI_ARCH} \
+    -DENABLE_KOKKOS:BOOL=${kokkos} \
+    -DENABLE_CUDA:BOOL=${cuda} \
+    -DNVCC_WRAPPER_DEFAULT_COMPILER=${NVCC_WRAPPER_DEFAULT_COMPILER} \
     ${nersc_amanzi_opts} \
     ${amanzi_source_dir}"
 

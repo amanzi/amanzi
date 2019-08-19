@@ -107,7 +107,7 @@ class AnalyticNonlinearCoupledBase {
       const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
       double u_tmp = exact0(xc, t);
       double v_tmp = exact1(xc, t);
-      double volume = mesh_->cell_volume(c);
+      double volume = mesh_->cell_volume(c,false);
 
       // std::cout << c << " " << tmp << " " << p[0][c] << std::endl;
       l2_err += std::pow(u_tmp - u[0][c], 2.0) * volume;
