@@ -44,10 +44,16 @@ class TransportImplicit_PK : public Transport_PK, public PK_BDF {
                         const Teuchos::RCP<State>& S,
                         const Teuchos::RCP<TreeVector>& soln);
 
+  TransportImplicit_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                       Teuchos::RCP<State> S, 
+                       const std::string& pk_list_name,
+                       std::vector<std::string>& component_names);
+
+  
   ~TransportImplicit_PK() {};
 
   virtual void Initialize(const Teuchos::Ptr<State>& S) override;  
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) override { return true; }
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) override ; 
 
   // methods required for time integration interface
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
@@ -89,6 +95,9 @@ class TransportImplicit_PK : public Transport_PK, public PK_BDF {
   //    scheme is changing the value of the solution in state.
   virtual void ChangedSolution() override {};
 
+  void UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVector& u);
+
+  
   // access
   Teuchos::RCP<Operators::Operator> op() { return op_; }
   Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_adv() { return op_adv_; }
@@ -108,6 +117,11 @@ class TransportImplicit_PK : public Transport_PK, public PK_BDF {
   Teuchos::RCP<Operators::PDE_Accumulation> op_acc_;
   Teuchos::RCP<Operators::BCs> op_bc_;
   std::string solver_name_, solver_name_constraint_;
+
+  Teuchos::RCP<const Teuchos::ParameterList> linear_operator_list_;
+  Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
+  Teuchos::RCP<Teuchos::ParameterList> ti_list_;
+
   
   // factory registration
   static RegisteredPKFactory<TransportImplicit_PK> reg_;

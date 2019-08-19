@@ -113,7 +113,7 @@ class Transport_PK : public PK_Physical {
                              Teuchos::RCP<CompositeVector>& gradient, 
                              Teuchos::RCP<Epetra_Vector>& limiter);
 
- private:
+ protected:
   void InitializeFields_();
 
   // sources and sinks for components from n0 to n1 including
@@ -209,8 +209,10 @@ class Transport_PK : public PK_Physical {
   std::vector<Teuchos::RCP<TransportDomainFunction> > bcs_;
   Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
 
+
+  double cfl_, dt_, dt_debug_, t_physics_;  
     
- private:
+
   Key domain_;
   Teuchos::RCP<State> S_;
   std::string passwd_;
@@ -257,7 +259,6 @@ class Transport_PK : public PK_Physical {
   bool multiscale_porosity_;
   Teuchos::RCP<MultiscaleTransportPorosityPartition> msp_;
  
-  double cfl_, dt_, dt_debug_, t_physics_;  
 
   std::vector<double> mass_solutes_exact_, mass_solutes_source_;  // mass for all solutes
   std::vector<std::string> runtime_solutes_;  // names of trached solutes

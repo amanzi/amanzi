@@ -221,6 +221,11 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/transport_3D_long.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+    add_amanzi_test(transport_implicit transport_implicit
+                    KIND unit
+                    SOURCE test/Main.cc test/transport_implicit.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     add_amanzi_test(transport_subcycling transport_subcycling
                     KIND unit
                     SOURCE test/Main.cc test/transport_subcycling.cc
