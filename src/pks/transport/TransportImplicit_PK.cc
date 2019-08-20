@@ -57,14 +57,15 @@ TransportImplicit_PK::TransportImplicit_PK(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<TreeVector>& soln) :
     Transport_PK(pk_tree, glist, S, soln)
 {
-  std::string pk_name = pk_tree.name();
-  auto found = pk_name.rfind("->");
-  if (found != std::string::npos) pk_name.erase(0, found + 2);
+  // std::string pk_name = pk_tree.name();
+  // auto found = pk_name.rfind("->");
+  // if (found != std::string::npos) pk_name.erase(0, found + 2);
 
-  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  tp_list_ = Teuchos::sublist(pk_list, pk_name, true);
+  // Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
+  // tp_list_ = Teuchos::sublist(pk_list, pk_name, true);
 
-  ti_list_ = Teuchos::sublist(tp_list_, "time integrator", true);
+  if (tp_list_ -> isSublist("time integrator"))
+    ti_list_ = Teuchos::sublist(tp_list_, "time integrator", true);
 
   // We also need miscaleneous sublists
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
@@ -85,12 +86,12 @@ TransportImplicit_PK::TransportImplicit_PK(const Teuchos::RCP<Teuchos::Parameter
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   tp_list_ = Teuchos::sublist(pk_list, pk_list_name, true);
 
-  ti_list_ = Teuchos::sublist(tp_list_, "time integrator", true);
 
   // We also need miscaleneous sublists
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
-
+  if (tp_list_ -> isSublist("time integrator"))
+    ti_list_ = Teuchos::sublist(tp_list_, "time integrator", true);
   
 }
 
@@ -108,7 +109,7 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Create pointers to the primary solution field pressure.
   const auto& solution = S->GetFieldData(tcc_key_, "state");
-  //soln_->SetData(solution); 
+  soln_->SetData(solution); 
   
   // boundary conditions
   op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
@@ -149,21 +150,21 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   op_->SymbolicAssembleMatrix();
   op_->CreateCheckPoint();
-  
   //op_->AssembleMatrix(); 
 
   // generic linear solver
-  
-  if (ti_list_->isParameter("linear solver"))
-    solver_name_ = ti_list_->get<std::string>("linear solver");
+  if (ti_list_ != Teuchos::null){
+    if (ti_list_->isParameter("linear solver"))
+      solver_name_ = ti_list_->get<std::string>("linear solver");
 
-  // preconditioner
-  if (ti_list_->isParameter("preconditioner")){
-    std::string name = ti_list_->get<std::string>("preconditioner");
-    Teuchos::ParameterList pc_list = preconditioner_list_->sublist(name);
-    op_->InitializePreconditioner(pc_list);
+    // preconditioner
+    if (ti_list_->isParameter("preconditioner")){
+      std::string name = ti_list_->get<std::string>("preconditioner");
+      Teuchos::ParameterList pc_list = preconditioner_list_->sublist(name);
+      op_->InitializePreconditioner(pc_list);
+    }
   }
-
+  
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << vo_->color("green") << "Initialization of PK is complete." 
@@ -196,16 +197,19 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   op_acc_ -> AddAccumulationDelta(*tcc, *acc_term_, *acc_term_, dt_, "cell");
 
-  //Add Source  
   // refresh data BC and source data  
-  UpdateSourceBoundaryData(t_old, t_new, *tcc);
+  UpdateBoundaryData(t_old, t_new, *tcc);
 
   CompositeVector& rhs = *op_->rhs();
+  Epetra_MultiVector& rhs_cell = *rhs.ViewComponent("cell");
   
   //ApplyBC
   op_adv_ -> UpdateMatrices(S_->GetFieldData(darcy_flux_key_).ptr());
   op_adv_ -> ApplyBCs(true,true,true);
 
+  //Add Source  
+  ComputeSources_(t_new, t_new-t_old, rhs_cell, *tcc->ViewComponent("cell"), 0, 0);
+  
   // Assemble Matrix
   op_->AssembleMatrix();
   op_->UpdatePreconditioner();
@@ -217,23 +221,19 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   *tcc_tmp = *tcc;  
   
-    solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
+  solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
   solver->ApplyInverse(rhs, *tcc_tmp);
 
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+    double sol_norm;
+    tcc_tmp->Norm2(&sol_norm);
 
-  // // statistics
-  // num_itrs_++;
-
-  // if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-  //   double sol_norm;
-  //   solution->Norm2(&sol_norm);
-
-  //   Teuchos::OSTab tab = vo_->getOSTab();
-  //   *vo_->os() << "transport solver (" << solver->name()
-  //              << "): ||sol||=" << sol_norm 
-  //              << "  itrs=" << solver->num_itrs() << std::endl;
-  //   VV_PrintSoluteExtrema(*solution);
-  // }
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "transport solver (" << solver->name()
+               << "): ||sol||=" << sol_norm 
+               << "  itrs=" << solver->num_itrs() << std::endl;
+    VV_PrintSoluteExtrema(*tcc->ViewComponent("cell"), t_new-t_old);
+  }
 
   // // estimate time multiplier
   // //dt_desirable_ = ts_control_->get_timestep(dt_MPC, 1);
@@ -246,7 +246,7 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   return fail;
 }
 
-void TransportImplicit_PK::UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVector& u)
+void TransportImplicit_PK::UpdateBoundaryData(double t_old, double t_new, const CompositeVector& u)
 {
 
   for (int i = 0; i < bcs_.size(); i++) {
@@ -257,10 +257,6 @@ void TransportImplicit_PK::UpdateSourceBoundaryData(double t_old, double t_new, 
   auto& models = op_bc_->bc_model();
 
   ComputeBCs_(models, values, 0); // only for one component at the moment
-
-  for (int i = 0; i < srcs_.size(); ++i) {
-    srcs_[i]->Compute(t_old, t_new); 
-  }
 
 }
 

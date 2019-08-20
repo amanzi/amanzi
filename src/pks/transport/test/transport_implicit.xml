@@ -17,7 +17,17 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
+  
+  <ParameterList name="cycle driver">
+    <ParameterList name="PK tree">
+      <ParameterList name="transport implicit">
+        <Parameter name="PK type" type="string" value="transport implicit"/>
+      </ParameterList>
+    </ParameterList>
+    <Parameter name="component names" type="Array(string)" value="{Component 0}"/>
+  </ParameterList>
 
+  
   <ParameterList name="PKs">
     <ParameterList name="transport implicit">
       <Parameter name="cfl" type="double" value="0.5"/>   
@@ -60,7 +70,7 @@
 
       
       <ParameterList name="verbose object">
-        <Parameter name="verbosity level" type="string" value="medium"/>
+        <Parameter name="verbosity level" type="string" value="extreme"/>
       </ParameterList>
 
       <ParameterList name="boundary conditions">
@@ -79,7 +89,8 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
-      </ParameterList>        
+      </ParameterList>
+      
     </ParameterList>
   </ParameterList>
 

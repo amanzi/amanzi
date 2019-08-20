@@ -70,18 +70,23 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
   component_names.push_back("Component 0");
 
 
-  Teuchos::ParameterList state_list = plist->sublist("state");
+  Teuchos::ParameterList state_list = plist->sublist("state");  
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
   S->set_time(0.0);
   S->set_intermediate_time(0.0);
 
-  TransportImplicit_PK TPK(plist, S, "transport implicit", component_names);
+  Teuchos::ParameterList pk_tree = plist->sublist("cycle driver").sublist("pk_tree")
+                                        .sublist("transport implicit");
+// create the global solution vector
+  Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
+  TransportImplicit_PK TPK(pk_tree, plist, S, soln);
+
+  
   TPK.Setup(S.ptr());
   TPK.CreateDefaultState(mesh, 2);
   S->InitializeFields();
   S->InitializeEvaluators();
-  std::cout << state_list<<"\n";
 
   // modify the default state for the problem at hand
   std::string passwd("state"); 

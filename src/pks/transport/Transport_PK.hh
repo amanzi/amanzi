@@ -278,7 +278,7 @@ class Transport_PK : public PK_Physical {
 
  private:
   // factory registration
-  static RegisteredPKFactory<Transport_PK> reg_;
+  //static RegisteredPKFactory<Transport_PK> reg_;
 };
 
 }  // namespace Transport

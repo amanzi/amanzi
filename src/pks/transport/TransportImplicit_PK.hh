@@ -95,7 +95,7 @@ class TransportImplicit_PK : public Transport_PK, public PK_BDF {
   //    scheme is changing the value of the solution in state.
   virtual void ChangedSolution() override {};
 
-  void UpdateSourceBoundaryData(double t_old, double t_new, const CompositeVector& u);
+  void UpdateBoundaryData(double t_old, double t_new, const CompositeVector& u);
 
   
   // access
@@ -122,6 +122,7 @@ class TransportImplicit_PK : public Transport_PK, public PK_BDF {
   Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
   Teuchos::RCP<Teuchos::ParameterList> ti_list_;
 
+  
   
   // factory registration
   static RegisteredPKFactory<TransportImplicit_PK> reg_;
