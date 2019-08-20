@@ -36,22 +36,26 @@
 
 #include "Kokkos_Core.hpp"
 
-// host execution space 
-#ifdef KOKKOS_ENANLE_OPENMP
-using AmanziHostExecutionSpace = Kokkos::OpenMP; 
-#elif KOKKOS_ENABLE_THREADS
-using AmanziHostExecutionSpace = Kokkos::Threads; 
-#else 
-using AmanziHostExecutionSpace = Kokkos::Serial; 
-#endif // KOKKOS_HOST 
+// // host execution space 
+// #ifdef KOKKOS_ENANLE_OPENMP
+// using AmanziHostExecutionSpace = Kokkos::OpenMP; 
+// #elif KOKKOS_ENABLE_THREADS
+// using AmanziHostExecutionSpace = Kokkos::Threads; 
+// #else 
+// using AmanziHostExecutionSpace = Kokkos::Serial; 
+// #endif // KOKKOS_HOST 
 
-#ifdef KOKKOS_ENABLE_CUDA 
-// Default CUDA using UVM
-using AmanziDefaultDevice = Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>;
-using AmanziDefaultHost = Kokkos::Device<AmanziHostExecutionSpace, Kokkos::CudaUVMSpace>; //Kokkos::Serial; // ????
-#else
-using AmanziDefaultHost = AmanziHostExecutionSpace; 
-#endif // KOKKOS_ENABLE_CUDA
+// #ifdef KOKKOS_ENABLE_CUDA 
+// // Default CUDA using UVM
+// using AmanziDefaultDevice = Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>;
+// using AmanziDefaultHost = Kokkos::Device<AmanziHostExecutionSpace, Kokkos::CudaUVMSpace>; //Kokkos::Serial; // ????
+// #else
+// using AmanziDefaultHost = AmanziHostExecutionSpace; 
+// #endif // KOKKOS_ENABLE_CUDA
+
+using AmanziDefaultDevice = Kokkos::Device<Kokkos::DefaultExecutionSpace, Kokkos::DefaultExecutionSpace::memory_space>;
+using AmanziDefaultHost = Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::DefaultHostExecutionSpace::memory_space>;
+
 
 #else // TRILINOS_TPETRA_STACK
 class Epetra_Comm;
