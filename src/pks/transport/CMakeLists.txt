@@ -132,10 +132,10 @@ set(transport_inc_files
   TransportSourceFunction_Alquimia.hh
   TransportDefs.hh
   Transport_PK.hh
-  TransportImplicit_PK.hh)
+  TransportImplicit_PK.hh  TransportExplicit_PK.hh)
 
-set(transport_src_files Transport_PK.cc TransportImplicit_PK.cc Transport_TI.cc 
-                        Transport_VandV.cc Transport_Initialize.cc 
+set(transport_src_files Transport_PK.cc TransportImplicit_PK.cc TransportExplicit_PK.cc
+                        Transport_TI.cc Transport_VandV.cc Transport_Initialize.cc 
                         Transport_Dispersion.cc Transport_HenryLaw.cc
                         MDM_Isotropic.cc MDM_Bear.cc MDM_BurnettFrind.cc MDM_LichtnerKelkarRobinson.cc
                         MDMPartition.cc MDMFactory.cc
@@ -185,7 +185,7 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/transport_advance.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    #add_amanzi_test(transport_limiters transport_limiters
+    # add_amanzi_test(transport_limiters transport_limiters
     #                KIND unit
     #                SOURCE test/Main.cc test/transport_limiters.cc
     #                LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})

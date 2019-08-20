@@ -23,7 +23,6 @@
 // Amanzi
 #include "BCs.hh"
 #include "errors.hh"
-#include "Explicit_TI_RK.hh"
 #include "FieldEvaluator.hh"
 #include "GMVMesh.hh"
 #include "LinearOperatorDefs.hh"
@@ -791,20 +790,20 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     if (mesh_->space_dimension() == mesh_->manifold_dimension()) {
       if (spatial_disc_order == 1) {
         AdvanceDonorUpwind(dt_cycle);
-      } else if (spatial_disc_order == 2 && genericRK_) {
-        AdvanceSecondOrderUpwindRKn(dt_cycle);
+        //} else if (spatial_disc_order == 2 && genericRK_) {
+        //AdvanceSecondOrderUpwindRKn(dt_cycle);
       /* DEPRECATED 
       } else if (spatial_disc_order == 2 && temporal_disc_order == 1) {
         AdvanceSecondOrderUpwindRK1(dt_cycle);
       */
-      } else if (spatial_disc_order == 2 && temporal_disc_order == 2) {
-        AdvanceSecondOrderUpwindRK2(dt_cycle);
+      // } else if (spatial_disc_order == 2 && temporal_disc_order == 2) {
+      //   AdvanceSecondOrderUpwindRK2(dt_cycle);
       }
     } else {  // transport on intersecting manifolds
       if (spatial_disc_order == 1) {
         AdvanceDonorUpwindNonManifold(dt_cycle);
-      } else {
-        AdvanceSecondOrderUpwindRKn(dt_cycle);
+      // } else {
+      //   AdvanceSecondOrderUpwindRKn(dt_cycle);
       }
     }
 
@@ -1419,108 +1418,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dt_cycle)
 */
 
 
-/* ******************************************************************* 
-* Advance each component independently due to different field
-* reconstructions. This routine uses custom implementation of the 
-* second-order predictor-corrector time integration scheme. 
-******************************************************************* */
-void Transport_PK::AdvanceSecondOrderUpwindRK2(double dt_cycle)
-{
-  dt_ = dt_cycle;  // overwrite the maximum stable transport step
-  mass_solutes_source_.assign(num_aqueous + num_gaseous, 0.0);
 
-  // work memory
-  const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
-  Epetra_Vector f_component(cmap_wghost);
-
-  // distribute old vector of concentrations
-  S_->GetFieldData(tcc_key_)->ScatterMasterToGhosted("cell");
-  Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
-  Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
-
-  Epetra_Vector ws_ratio(Copy, *ws_start, 0);
-  for (int c = 0; c < ncells_owned; c++) ws_ratio[c] /= (*ws_end)[0][c];
-
-  // We advect only aqueous components.
-  int num_advect = num_aqueous;
-
-  // predictor step
-  for (int i = 0; i < num_advect; i++) {
-    current_component_ = i;  // needed by BJ 
-
-    double T = t_physics_;
-    Epetra_Vector*& component = tcc_prev(i);
-    DudtOld(T, *component, f_component);
-
-    for (int c = 0; c < ncells_owned; c++) {
-      tcc_next[i][c] = (tcc_prev[i][c] + dt_ * f_component[c]) * ws_ratio[c];
-    }
-  }
-
-  tcc_tmp->ScatterMasterToGhosted("cell");
-
-  // corrector step
-  for (int i = 0; i < num_advect; i++) {
-    current_component_ = i;  // needed in BJ for BCs
-
-    double T = t_physics_;
-    Epetra_Vector*& component = tcc_next(i);
-    DudtOld(T, *component, f_component);
-
-    for (int c = 0; c < ncells_owned; c++) {
-      double value = (tcc_prev[i][c] + dt_ * f_component[c]) * ws_ratio[c];
-      tcc_next[i][c] = (tcc_next[i][c] + value) / 2;
-    }
-  }
-
-  // update mass balance
-  for (int i = 0; i < num_aqueous + num_gaseous; i++) {
-    mass_solutes_exact_[i] += mass_solutes_source_[i] * dt_ / 2;
-  }
-
-  if (internal_tests_) {
-    VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
-  }
-}
-
-
-/* ******************************************************************* 
-* Advance each component independently due to different field
-* reconstructions. This routine uses generic explicit time integrator. 
-******************************************************************* */
-void Transport_PK::AdvanceSecondOrderUpwindRKn(double dt_cycle)
-{
-  dt_ = dt_cycle;  // overwrite the maximum stable transport step
-
-  // S_->GetFieldData(tcc_key_)->ScatterMasterToGhosted("cell");
-  // Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
-  // Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
-
-  // // define time integration method
-  // auto ti_method = Explicit_TI::forward_euler;
-  // if (temporal_disc_order == 2) {
-  //   ti_method = Explicit_TI::heun_euler;
-  // } else if (temporal_disc_order == 3) {
-  //   ti_method = Explicit_TI::tvd_3rd_order;
-  // } else if (temporal_disc_order == 4) {
-  //   ti_method = Explicit_TI::runge_kutta_4th_order;
-  // }
-
-  // // We interpolate ws using dt which becomes local time.
-  // double T = 0.0; 
-  // // We advect only aqueous components.
-  // int ncomponents = num_aqueous;
-
-  // for (int i = 0; i < ncomponents; i++) {
-  //   current_component_ = i;  // it is needed in BJ called inside RK:fun
-
-  //   Epetra_Vector*& component_prev = tcc_prev(i);
-  //   Epetra_Vector*& component_next = tcc_next(i);
-
-  //   Explicit_TI::RK<Epetra_Vector> TVD_RK(*this, ti_method, *component_prev);
-  //   TVD_RK.TimeStep(T, dt_, *component_prev, *component_next);
-  // }
-}
 
 
 /* ******************************************************************

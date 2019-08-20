@@ -21,7 +21,7 @@
 #include "State.hh"
 
 // Transport
-#include "Transport_PK.hh"
+#include "TransportExplicit_PK.hh"
 
 
 TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
@@ -96,7 +96,7 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
     S->set_time(0.0);
     S->set_intermediate_time(0.0);
 
-    Transport_PK TPK(plist, S, "transport", component_names);
+    TransportExplicit_PK TPK(plist, S, "transport", component_names);
     TPK.Setup(S.ptr());
     TPK.CreateDefaultState(mesh, 2);
     S->InitializeFields();

@@ -23,7 +23,6 @@
 // Amanzi
 #include "BCs.hh"
 #include "errors.hh"
-#include "Explicit_TI_RK.hh"
 #include "FieldEvaluator.hh"
 #include "GMVMesh.hh"
 #include "LinearOperatorDefs.hh"

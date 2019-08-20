@@ -124,15 +124,15 @@ class Transport_PK : public PK_Physical {
   // advection members
   // -- advection in volume
   void AdvanceDonorUpwind(double dT);
-  void AdvanceSecondOrderUpwindRKn(double dT);
-  void AdvanceSecondOrderUpwindRK1(double dT);
-  void AdvanceSecondOrderUpwindRK2(double dT);
+  //void AdvanceSecondOrderUpwindRKn(double dT);
+  //void AdvanceSecondOrderUpwindRK1(double dT);
+  //void AdvanceSecondOrderUpwindRK2(double dT);
   // -- advection on non-manifolds
   void AdvanceDonorUpwindNonManifold(double dT);
 
   // time integration members
-  void DudtOld(double t, const Epetra_Vector& component, Epetra_Vector& f_component);
-  void FunctionalTimeDerivative(double t, const Epetra_Vector& component, Epetra_Vector& f_component);
+  //void DudtOld(double t, const Epetra_Vector& component, Epetra_Vector& f_component);
+  //void FunctionalTimeDerivative(double t, const Epetra_Vector& component, Epetra_Vector& f_component);
 
   void IdentifyUpwindCells();
 

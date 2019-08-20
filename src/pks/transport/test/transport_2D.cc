@@ -29,7 +29,7 @@
 #include "State.hh"
 
 // Transport
-#include "Transport_PK.hh"
+#include "TransportExplicit_PK.hh"
 
 /* **************************************************************** */
 void runTest(double switch_time, std::string xmlfile, std::string exofile,
@@ -80,7 +80,7 @@ std::cout << "Test: Advance on a 2D square mesh: limiter=" << limiter
   plist->sublist("PKs").sublist("transport").sublist("reconstruction")
         .set<std::string>("limiter", limiter)
         .set<std::string>("limiter stencil", stencil);
-  Transport_PK TPK(plist, S, "transport", component_names);
+  TransportExplicit_PK TPK(plist, S, "transport", component_names);
   TPK.Setup(S.ptr());
   TPK.CreateDefaultState(mesh, 2);
   S->InitializeFields();
