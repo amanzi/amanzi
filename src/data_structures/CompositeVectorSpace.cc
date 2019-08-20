@@ -90,7 +90,8 @@ CompositeVectorSpace::CreateSpace() const
     throw(message);
   }
   if (size() == 0) {
-    std::cout << "CompositeVectorSpace: WARNING: Creating an empty map?" << std::endl;
+    Errors::Message message("CompositeVectorSpace: Cowardly refusing to make an empty map.");
+    throw(message);
   }
 
   // TODO: really need to refactor and update the internal data, but for now just reorganize. --etc

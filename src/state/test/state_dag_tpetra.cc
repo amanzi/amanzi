@@ -16,6 +16,7 @@
 #include "Teuchos_RCP.hpp"
 #include "UnitTest++.h"
 
+#include "AmanziComm.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
@@ -59,9 +60,8 @@ using namespace Amanzi::AmanziMesh;
 template<class DeviceType>
 class AEvaluator : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
 public:
-  AEvaluator(OutputVector_type<DeviceType> A, InputVector_type<DeviceType> B, InputVector_type<DeviceType> C, 
-	     InputVector_type<DeviceType> E, InVector_type<DeviceType> H, Teuchos::ParameterList &plist)
-    : EvaluatorSecondaryMonotype<CompositeVector,CompositeVectorSpace>(A, B, C, E, H, plist) {
+  AEvaluator(Teuchos::ParameterList &plist)
+    : EvaluatorSecondaryMonotype<CompositeVector,CompositeVectorSpace>(plist) {
     dependencies_.emplace_back(std::make_pair(Key("fb"), Key()));
     dependencies_.emplace_back(std::make_pair(Key("fc"), Key()));
     dependencies_.emplace_back(std::make_pair(Key("fe"), Key()));
@@ -73,39 +73,42 @@ public:
   }
 
   virtual void Evaluate_(const State &S, const std::vector<CompositeVector*> &results) override {
-    auto &result_c = *results[0]->ViewComponent("cell",false);
-    const auto &fb_c = *S.Get<CompositeVector>("fb").ViewComponent("cell",false);
-    const auto &fc_c = *S.Get<CompositeVector>("fc").ViewComponent("cell",false);
-    const auto &fe_c = *S.Get<CompositeVector>("fe").ViewComponent("cell",false);
-    const auto &fh_c = *S.Get<CompositeVector>("fh").ViewComponent("cell",false);
-    result_c[0][0] = 2 * fb_c[0][0] + fc_c[0][0] * fe_c[0][0] * fh_c[0][0];    
+    auto result_c = results[0]->ViewComponent("cell",false);
+    const auto &fb_c = S.Get<CompositeVector>("fb").ViewComponent("cell",false);
+    const auto &fc_c = S.Get<CompositeVector>("fc").ViewComponent("cell",false);
+    const auto &fe_c = S.Get<CompositeVector>("fe").ViewComponent("cell",false);
+    const auto &fh_c = S.Get<CompositeVector>("fh").ViewComponent("cell",false);
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i) {
+      result_c(i,0) = 2 * fb_c(i,0) + fc_c(i,0) * fe_c(i,0) * fh_c(i,0);
+    });
   }
   
   virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
                                           const Key &wrt_tag,
                                           const std::vector<CompositeVector*> &results) override {
-    MultiVector_type &result_c = *results[0]->ViewComponent("cell",false);
-    const MultiVector_type &fc_c = *S.Get<CompositeVector>("fc").ViewComponent("cell");
-    const MultiVector_type &fe_c = *S.Get<CompositeVector>("fe").ViewComponent("cell");
-    const MultiVector_type &fh_c = *S.Get<CompositeVector>("fh").ViewComponent("cell");
+    auto result_c = results[0]->ViewComponent("cell",false);
+    const auto fc_c = S.Get<CompositeVector>("fc").ViewComponent("cell");
+    const auto fe_c = S.Get<CompositeVector>("fe").ViewComponent("cell");
+    const auto fh_c = S.Get<CompositeVector>("fh").ViewComponent("cell");
 
     if (wrt_key == "fb") {
-      result_c[0][0] = 2.0;
+      Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i) {
+        result_c(i,0) = 2.0;
+      });
     } else if (wrt_key == "fc") {
-      result_c[0][0] = fe_c[0][0] * fh_c[0][0];
+      Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i) {
+        result_c(i,0) = fe_c(i,0) * fh_c(i,0);
+      });
     } else if (wrt_key == "fe") {
-      result_c[0][0] = fc_c[0][0] * fh_c[0][0];
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i) {
+      result_c(i,0) = fc_c(i,0) * fh_c(i,0);
+    });
     } else if (wrt_key == "fh") {
-      result_c[0][0] = fc_c[0][0] * fe_c[0][0];
+    Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int i) {
+      result_c(i,0) = fc_c(i,0) * fe_c(i,0);
+    });
     }
   }
-
-private:
-  OutputVector_type<DeviceType> A_;
-  InputVector_type<DeviceType> B_;
-  InputVector_type<DeviceType> C_;
-  InputVector_type<DeviceType> E_;
-  InputVector_type<DeviceType> H_;
 };
 
 /* ******************************************************************
@@ -124,20 +127,26 @@ public:
   }
 
   virtual void Evaluate_(const State &S, const std::vector<CompositeVector*> &results) override {
-    MultiVector_type &result_c = *results[0]->ViewComponent("cell",false);
-    const MultiVector_type &fd_c = *S.Get<CompositeVector>("fd").ViewComponent("cell",false);
-    const MultiVector_type &fg_c = *S.Get<CompositeVector>("fg").ViewComponent("cell",false);
-    result_c[0][0] = 2 * fd_c[0][0] + fg_c[0][0];
+    auto result_c = results[0]->ViewComponent("cell",false);
+    const auto fd_c = S.Get<CompositeVector>("fd").ViewComponent("cell",false);
+    const auto fg_c = S.Get<CompositeVector>("fg").ViewComponent("cell",false);
+    Kokkos::parallel_for(result_c.extent(0), KOKKOS_LAMBDA(const int i) {
+    result_c(i,0) = 2 * fd_c(i,0) + fg_c(i,0);
+    });
   }
 
   virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
                                           const Key &wrt_tag,
                                           const std::vector<CompositeVector*> &results) override {
-    MultiVector_type &result_c = *results[0]->ViewComponent("cell",false);
+    auto result_c = results[0]->ViewComponent("cell",false);
     if (wrt_key == "fd") {
-      result_c[0][0] = 2.;
+    Kokkos::parallel_for(result_c.extent(0), KOKKOS_LAMBDA(const int i) {
+      result_c(i,0) = 2.;
+    });
     } else if (wrt_key == "fg") {
-      result_c[0][0] = 1.;
+    Kokkos::parallel_for(result_c.extent(0), KOKKOS_LAMBDA(const int i) {
+      result_c(i,0) = 1.;
+    });
     }
   }
 };
@@ -157,17 +166,21 @@ public:
   }
 
   virtual void Evaluate_(const State &S, const std::vector<CompositeVector*> &results) override {
-    MultiVector_type &result_c = *results[0]->ViewComponent("cell",false);
-    const MultiVector_type &fg_c = *S.Get<CompositeVector>("fg").ViewComponent("cell",false);
-    result_c[0][0] = 2 * fg_c[0][0];
+    auto result_c = results[0]->ViewComponent("cell",false);
+    const auto fg_c = S.Get<CompositeVector>("fg").ViewComponent("cell",false);
+    Kokkos::parallel_for(result_c.extent(0), KOKKOS_LAMBDA(const int i) {
+    result_c(i,0) = 2 * fg_c(i,0);
+    });
   }
 
   virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
                                           const Key &wrt_tag,
                                           const std::vector<CompositeVector*> &results) override {
-    MultiVector_type &result_c = *results[0]->ViewComponent("cell",false);
+    auto result_c = results[0]->ViewComponent("cell",false);
     if (wrt_key == "fg") {
-      result_c[0][0] = 2.;
+    Kokkos::parallel_for(result_c.extent(0), KOKKOS_LAMBDA(const int i) {
+      result_c(i,0) = 2.;
+    });
     }
   }
 };
@@ -188,23 +201,29 @@ public:
   }
 
   virtual void Evaluate_(const State &S, const std::vector<CompositeVector*> &results) override {
-    MultiVector_type &result_c = *results[0]->ViewComponent("cell",false);
-    const MultiVector_type &fd_c = *S.Get<CompositeVector>("fd").ViewComponent("cell",false);
-    const MultiVector_type &ff_c = *S.Get<CompositeVector>("ff").ViewComponent("cell",false);
-    result_c[0][0] = fd_c[0][0] * ff_c[0][0];
+    auto result_c = results[0]->ViewComponent("cell",false);
+    const auto fd_c = S.Get<CompositeVector>("fd").ViewComponent("cell",false);
+    const auto ff_c = S.Get<CompositeVector>("ff").ViewComponent("cell",false);
+    Kokkos::parallel_for(result_c.extent(0), KOKKOS_LAMBDA(const int i) {
+    result_c(i,0) = fd_c(i,0) * ff_c(i,0);
+    });
   }
 
   virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
                                           const Key &wrt_tag,
                                           const std::vector<CompositeVector*> &results) override {
-    MultiVector_type &result_c = *results[0]->ViewComponent("cell",false);
-    const MultiVector_type &fd_c = *S.Get<CompositeVector>("fd").ViewComponent("cell",false);
-    const MultiVector_type &ff_c = *S.Get<CompositeVector>("ff").ViewComponent("cell",false);
+    auto result_c = results[0]->ViewComponent("cell",false);
+    const auto fd_c = S.Get<CompositeVector>("fd").ViewComponent("cell",false);
+    const auto ff_c = S.Get<CompositeVector>("ff").ViewComponent("cell",false);
 
     if (wrt_key == "fd") {
-      result_c[0][0] = ff_c[0][0];
+    Kokkos::parallel_for(result_c.extent(0), KOKKOS_LAMBDA(const int i) {
+      result_c(i,0) = ff_c(i,0);
+    });
     } else if (wrt_key == "ff") {
-      result_c[0][0] = fd_c[0][0];
+    Kokkos::parallel_for(result_c.extent(0), KOKKOS_LAMBDA(const int i) {
+      result_c(i,0) = fd_c(i,0);
+    });
     }
   }
 };
@@ -224,17 +243,21 @@ public:
   }
 
   virtual void Evaluate_(const State &S, const std::vector<CompositeVector*> &results) override {
-    MultiVector_type &result_c = *results[0]->ViewComponent("cell",false);
-    const MultiVector_type &fg_c = *S.Get<CompositeVector>("fg").ViewComponent("cell",false);
-    result_c[0][0] = 2 * fg_c[0][0];
+    auto result_c = results[0]->ViewComponent("cell",false);
+    const auto fg_c = S.Get<CompositeVector>("fg").ViewComponent("cell",false);
+    Kokkos::parallel_for(result_c.extent(0), KOKKOS_LAMBDA(const int i) {
+    result_c(i,0) = 2 * fg_c(i,0);
+    });
   }
 
   virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
                                           const Key &wrt_tag,
                                           const std::vector<CompositeVector*> &results) override {
-    MultiVector_type &result_c = *results[0]->ViewComponent("cell",false);
+    auto result_c = results[0]->ViewComponent("cell",false);
     if (wrt_key == "fg") {
-      result_c[0][0] = 2.;
+    Kokkos::parallel_for(result_c.extent(0), KOKKOS_LAMBDA(const int i) {
+      result_c(i,0) = 2.;
+    });
     }
   }
 };
@@ -254,17 +277,21 @@ public:
   }
 
   virtual void Evaluate_(const State &S, const std::vector<CompositeVector*> &results) override {
-    MultiVector_type &result_c = *results[0]->ViewComponent("cell",false);
-    const MultiVector_type &ff_c = *S.Get<CompositeVector>("ff").ViewComponent("cell",false);
-    result_c[0][0] = 2. * ff_c[0][0];
+    auto result_c = results[0]->ViewComponent("cell",false);
+    const auto ff_c = S.Get<CompositeVector>("ff").ViewComponent("cell",false);
+    Kokkos::parallel_for(result_c.extent(0), KOKKOS_LAMBDA(const int i) {
+    result_c(i,0) = 2. * ff_c(i,0);
+    });
   }
 
   virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
                                           const Key &wrt_tag,
                                           const std::vector<CompositeVector*> &results) override {
-    MultiVector_type &result_c = *results[0]->ViewComponent("cell",false);
+    auto result_c = results[0]->ViewComponent("cell",false);
     if (wrt_key == "ff") {
-      result_c[0][0] = 2.;
+    Kokkos::parallel_for(result_c.extent(0), KOKKOS_LAMBDA(const int i) {
+      result_c(i,0) = 2.;
+    });
     }
   }
 };
@@ -280,10 +307,9 @@ public:
 
 
     // create a mesh
-    auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-    //AmanziMesh::MeshFactory fac(comm);
+    auto comm = Amanzi::getDefaultComm();
     MeshFactory meshfac(comm);
-    auto mesh = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
+    auto mesh = meshfac.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
     // create a state
     //State S;
@@ -299,7 +325,7 @@ public:
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S.RequireDerivative<CompositeVector,CompositeVectorSpace>("fa", "", "fb", "");
     S.RequireDerivative<CompositeVector,CompositeVectorSpace>("fa", "", "fg", "");
-    fa_eval = Teuchos::rcp(new AEvaluator(es_list));
+    fa_eval = Teuchos::rcp(new AEvaluator<AmanziDefaultDevice>(es_list));
     S.SetEvaluator("fa", fa_eval);
 
     // --  C and its evaluator
@@ -379,7 +405,7 @@ public:
 
 public:
   State S;
-  Teuchos::RCP<AEvaluator> fa_eval;
+  Teuchos::RCP<AEvaluator<AmanziDefaultDevice>> fa_eval;
   Teuchos::RCP<CEvaluator> fc_eval;
   Teuchos::RCP<DEvaluator> fd_eval;
   Teuchos::RCP<EEvaluator> fe_eval;
@@ -391,35 +417,35 @@ public:
 SUITE(DAG) {
   TEST_FIXTURE(make_state, DAG_TWO_FIELDS) {
     // check initialized properly
-    CHECK_CLOSE(2.0, (*S.Get<CompositeVector>("fb").ViewComponent("cell",false))[0][0], 1e-12);
-    CHECK_CLOSE(3.0, (*S.Get<CompositeVector>("fg").ViewComponent("cell",false))[0][0], 1e-12);
+    CHECK_CLOSE(2.0, (S.Get<CompositeVector>("fb").ViewComponent<AmanziDefaultHost>("cell",false))(0,0), 1e-12);
+    CHECK_CLOSE(3.0, (S.Get<CompositeVector>("fg").ViewComponent<AmanziDefaultHost>("cell",false))(0,0), 1e-12);
     
     // calculate field A
     std::cout << "Calculate field A:" << std::endl;
     bool changed = fa_eval->Update(S, "main");
-    CHECK_CLOSE(6484.0, (*S.Get<CompositeVector>("fa").ViewComponent("cell",false))[0][0], 1e-12);
+    CHECK_CLOSE(6484.0, (S.Get<CompositeVector>("fa").ViewComponent<AmanziDefaultHost>("cell",false))(0,0), 1e-12);
     CHECK(changed);
 
     
     // check intermediate steps got updated too
-    CHECK_CLOSE(6.0, (*S.Get<CompositeVector>("fd").ViewComponent("cell", false))[0][0], 1e-12);
+    CHECK_CLOSE(6.0, (S.Get<CompositeVector>("fd").ViewComponent<AmanziDefaultHost>("cell", false))(0,0), 1e-12);
     
     // calculate dA/dB
     std::cout << "Calculate derivative of field A wrt field B:" << std::endl;
     changed = fa_eval->UpdateDerivative(S, "fa", "fb", "");
-    CHECK_CLOSE(2.0, (*S.GetDerivative<CompositeVector>("fa", "", "fb", "").ViewComponent("cell",false))[0][0], 1e-12);
+    CHECK_CLOSE(2.0, (S.GetDerivative<CompositeVector>("fa", "", "fb", "").ViewComponent<AmanziDefaultHost>("cell",false))(0,0), 1e-12);
     CHECK(changed);
     
     // calculate dA/dG
     std::cout << "Calculate derivative of field A wrt field G:" << std::endl;
     changed = fa_eval->UpdateDerivative(S, "fa", "fg", "");
-    CHECK_CLOSE(8640.0, (*S.GetDerivative<CompositeVector>("fa", "", "fg", "").ViewComponent("cell",false))[0][0], 1e-12);
+    CHECK_CLOSE(8640.0, (S.GetDerivative<CompositeVector>("fa", "", "fg", "").ViewComponent<AmanziDefaultHost>("cell",false))(0,0), 1e-12);
     CHECK(changed);
 
     // calculate dE/dG:
     std::cout << "Calculate derivative of field E wrt field G:" << std::endl;
     changed = fe_eval->UpdateDerivative(S, "fe", "fg", "");
-    CHECK_CLOSE(24.0, (*S.GetDerivative<CompositeVector>("fe", "", "fg", "").ViewComponent("cell",false))[0][0], 1e-12);
+    CHECK_CLOSE(24.0, (S.GetDerivative<CompositeVector>("fe", "", "fg", "").ViewComponent<AmanziDefaultHost>("cell",false))(0,0), 1e-12);
     CHECK(changed);
 
     // Now we repeat some calculations. Since no primary fields changed,
@@ -427,13 +453,13 @@ SUITE(DAG) {
     // calculate dA/dG
     std::cout << "Calculate derivative of field A wrt field G:" << std::endl;
     changed = fa_eval->UpdateDerivative(S, "fa", "fg", "");
-    CHECK_CLOSE(8640.0, (*S.GetDerivative<CompositeVector>("fa", "", "fg", "").ViewComponent("cell",false))[0][0], 1e-12);
+    CHECK_CLOSE(8640.0, (S.GetDerivative<CompositeVector>("fa", "", "fg", "").ViewComponent<AmanziDefaultHost>("cell",false))(0,0), 1e-12);
     CHECK(!changed);
 
     std::cout << "Calculate derivative of field A wrt field G:" << std::endl;
     fb_eval->SetChanged();
     changed = fa_eval->UpdateDerivative(S, "fa", "fg", "");
-    CHECK_CLOSE(8640.0, (*S.GetDerivative<CompositeVector>("fa", "", "fg", "").ViewComponent("cell",false))[0][0], 1e-12);
+    CHECK_CLOSE(8640.0, (S.GetDerivative<CompositeVector>("fa", "", "fg", "").ViewComponent<AmanziDefaultHost>("cell",false))(0,0), 1e-12);
     CHECK(changed);
   }
 }

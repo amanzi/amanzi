@@ -22,7 +22,7 @@ project(STATE)
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
 #include_directories(${OPERATORS_SOURCE_DIR})
-#-include_directories(${WHETSTONE_SOURCE_DIR})
+#include_directories(${WHETSTONE_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
@@ -46,12 +46,6 @@ if(ENABLE_Silo)
   add_definitions(-DENABLE_Silo)
 endif(ENABLE_Silo)
 
-# This state library will move to a new location 
-# once Markus has created the data manager.
-# I use global properties since all the PROJECT_NAME
-# variables in this directory are tied to the MPC.
-# These properties will be replaced with the appropriate
-# directory project name once it is moved.
 #
 # Library: state
 #
@@ -144,7 +138,7 @@ register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorPrimary_reg.hh LIS
 # register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorIndependentFunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 # register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorIndependentTensorFunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 # register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorIndependentFromFile_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
-#-register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_OperatorApply_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+#register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_OperatorApply_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 #register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_PDE_Diffusion_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 #register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_PDE_Accumulation_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 # register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_BCs_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
@@ -175,31 +169,31 @@ if (BUILD_TESTS)
           copy_directory ${STATE_SOURCE_DIR}/test ${STATE_BINARY_DIR}/test) 
     endif()
 
-#-    add_amanzi_test(data_factory data_factory
-#      KIND unit
-#      SOURCE test/Main.cc test/data_factory.cc
-#      LINK_LIBS error_handling atk mesh data_structures mesh_functions state ${state_tpl_list} ${UnitTest_LIBRARIES})
-#      LINK_LIBS error_handling atk mesh operators data_structures mesh_functions state ${state_tpl_list} ${UnitTest_LIBRARIES})
+    add_amanzi_test(data_factory data_factory
+                    KIND unit
+                    SOURCE test/Main.cc test/data_factory.cc
+                    LINK_LIBS error_handling atk mesh data_structures mesh_functions state ${state_tpl_list} ${UnitTest_LIBRARIES})
+                    # LINK_LIBS error_handling atk mesh operators data_structures mesh_functions state ${state_tpl_list} ${UnitTest_LIBRARIES})
 
 
-##-    add_amanzi_test(record record
-##      KIND unit
-##      SOURCE test/Main.cc test/record.cc
-##      LINK_LIBS atk mesh data_structures mesh_functions state ${state_tpl_list} ${UnitTest_LIBRARIES})
+    add_amanzi_test(record record
+                    KIND unit
+                    SOURCE test/Main.cc test/record.cc
+                    LINK_LIBS atk mesh data_structures mesh_functions state ${state_tpl_list} ${UnitTest_LIBRARIES})
 #      LINK_LIBS atk mesh operators data_structures mesh_functions state ${state_tpl_list} ${UnitTest_LIBRARIES})
 
 
-##-    add_amanzi_test(state_mesh state_mesh
-##      KIND unit
-##      SOURCE test/Main.cc test/state_mesh.cc
-##      LINK_LIBS atk mesh_factory mesh data_structures mesh_functions state ${state_tpl_list} ${UnitTest_LIBRARIES}) 
+    add_amanzi_test(state_mesh state_mesh
+                    KIND unit
+                    SOURCE test/Main.cc test/state_mesh.cc
+                    LINK_LIBS atk mesh_factory mesh data_structures mesh_functions state ${state_tpl_list} ${UnitTest_LIBRARIES}) 
 #      LINK_LIBS atk mesh_factory mesh operators data_structures mesh_functions state ${state_tpl_list} ${UnitTest_LIBRARIES})
 
 
     add_amanzi_test(state_as_container state_as_container
-      KIND unit
-      SOURCE test/Main.cc test/state_container.cc
-      LINK_LIBS state data_structures mesh_factory simple_mesh mesh geometry functions atk error_handling ${Tpetra_LIBRARIES} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}) 
+                    KIND unit
+                    SOURCE test/Main.cc test/state_container.cc
+                    LINK_LIBS state data_structures mesh_factory simple_mesh mesh geometry functions atk error_handling ${Tpetra_LIBRARIES} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}) 
 
 
 #--    add_amanzi_test(state_vis state_vis
@@ -223,41 +217,41 @@ if (BUILD_TESTS)
 #      LINK_LIBS state mesh_factory mesh operators data_structures mesh_functions functions ${state_tpl_list} ${UnitTest_LIBRARIES})
 
 
-##    add_amanzi_test(state_extensibility state_extensibility
-#      KIND int
-#      SOURCE test/Main.cc test/state_extensibility.cc
-#      LINK_LIBS state mesh_factory mesh  data_structures mesh_functions functions ${state_tpl_list} ${UnitTest_LIBRARIES}) 
+    add_amanzi_test(state_extensibility state_extensibility
+                    KIND int
+                    SOURCE test/Main.cc test/state_extensibility.cc
+                    LINK_LIBS state mesh_factory mesh  data_structures mesh_functions functions ${state_tpl_list} ${UnitTest_LIBRARIES}) 
 #      LINK_LIBS state mesh_factory mesh operators data_structures mesh_functions functions ${state_tpl_list} ${UnitTest_LIBRARIES})
 
     
 
-#     add_amanzi_test(state_evaluators state_evaluators
-#       KIND int
-#       SOURCE test/Main.cc test/state_evaluators.cc
-#       LINK_LIBS state data_structures mesh_factory simple_mesh mesh geometry functions atk error_handling ${Tpetra_LIBRARIES} 
-#       ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+    add_amanzi_test(state_evaluators state_evaluators
+                    KIND int
+                    SOURCE test/Main.cc test/state_evaluators.cc
+                    LINK_LIBS state data_structures mesh_factory simple_mesh mesh geometry functions atk error_handling ${Tpetra_LIBRARIES} 
+                              ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 # #      LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
 # #      LINK_LIBS state mesh_factory mesh operators data_structures mesh_functions functions ${UnitTest_LIBRARIES})
 
 
 
-#     add_amanzi_test(state_evaluators_cv state_evaluators_cv
-#      KIND int
-#       SOURCE test/Main.cc test/state_evaluators_cv.cc 
-#       LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
+    add_amanzi_test(state_evaluators_cv state_evaluators_cv
+                    KIND int
+                    SOURCE test/Main.cc test/state_evaluators_cv.cc 
+                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
 # #      LINK_LIBS state mesh_factory mesh operators data_structures mesh_functions functions ${UnitTest_LIBRARIES})
 
 
-##    add_amanzi_test(state_dag state_dag
-#      KIND int
-#      SOURCE test/Main.cc test/state_dag.cc
-#      LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
+    add_amanzi_test(state_dag state_dag
+                    KIND int
+                    SOURCE test/Main.cc test/state_dag.cc
+                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
 #      LINK_LIBS state mesh_factory operators mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
 
-##    add_amanzi_test(state_dag_epetra state_dag_epetra 
-#      KIND int
-#      SOURCE test/Main.cc test/state_dag_epetra.cc
-#      LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions  ${state_tpl_list} ${UnitTest_LIBRARIES}) 
+    add_amanzi_test(state_dag_tpetra state_dag_tpetra 
+          KIND int
+          SOURCE test/Main.cc test/state_dag_tpetra.cc
+          LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions  ${state_tpl_list} ${UnitTest_LIBRARIES}) 
 
 
     add_amanzi_test(state_dag_evaluator state_dag_evaluator

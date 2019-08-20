@@ -15,7 +15,7 @@ TEST(STATE_CREATION) {
   using namespace Amanzi;
   auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   AmanziMesh::MeshFactory fac(comm);
-  auto mesh = fac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
+  auto mesh = fac.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
   State s;
   s.RegisterDomainMesh(mesh);
