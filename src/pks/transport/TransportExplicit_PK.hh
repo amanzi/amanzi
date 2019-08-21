@@ -55,14 +55,13 @@ class TransportExplicit_PK : public Transport_PK,  public PK_Explicit<Epetra_Vec
   TransportExplicit_PK(const TransportExplicit_PK&);
   TransportExplicit_PK& operator=(const TransportExplicit_PK&);
 
-  bool AdvanceStep(double t_old, double t_new, bool reinit=false);
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit=false) override;
 
-  void FunctionalTimeDerivative(double t, const Epetra_Vector& component,
-                                Epetra_Vector& f_component);
+  virtual void FunctionalTimeDerivative(double t, const Epetra_Vector& component,
+                                        Epetra_Vector& f_component) override;
   void DudtOld(double t, const Epetra_Vector& component, Epetra_Vector& f_component);
 
-private:
-
+ private:
   void AdvanceSecondOrderUpwindRKn(double dt_cycle);
   void AdvanceSecondOrderUpwindRK2(double dt_cycle);
   

@@ -6,7 +6,8 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Author: Daniil Svyatsiyy
+          Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Major transport algorithms.
 */
@@ -24,7 +25,6 @@
 #include "BCs.hh"
 #include "errors.hh"
 #include "FieldEvaluator.hh"
-#include "GMVMesh.hh"
 #include "LinearOperatorDefs.hh"
 #include "LinearOperatorFactory.hh"
 #include "Mesh.hh"
@@ -38,7 +38,7 @@
 #include "PK_Utils.hh"
 #include "WhetStoneDefs.hh"
 
-// amanzi::Transport
+// Amanzi::Transport
 #include "MultiscaleTransportPorosityFactory.hh"
 #include "TransportImplicit_PK.hh"
 #include "TransportBoundaryFunction_Alquimia.hh"
