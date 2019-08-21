@@ -1,5 +1,6 @@
 /*
-  State
+  Extensive testing for secondary variable evaluators "EnsureConsistency"
+  method, which propagates vector meta-data up and down the DAG.
 
   Authors: Ethan Coon
 */

@@ -1,5 +1,5 @@
 /*
-  State
+  Tests the functionality of a simple DAG, executed on a device.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
   Amanzi is released under the three-clause BSD License.

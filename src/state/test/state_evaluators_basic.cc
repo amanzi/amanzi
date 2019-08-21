@@ -1,5 +1,6 @@
 /*
-  State
+  Tests the functionality of the base class evaluators, primary, secondary,
+  and independent.
 
   Authors: Ethan Coon
 */

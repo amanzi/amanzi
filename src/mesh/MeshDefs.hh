@@ -19,6 +19,7 @@
 #include <string>
 #include "boost/algorithm/string.hpp"
 
+#include "AmanziTypes.hh"
 #include "errors.hh"
 
 namespace Amanzi {
@@ -26,9 +27,10 @@ namespace AmanziMesh {
 
 // Necessary typedefs and enumerations
 typedef int Set_ID;
-typedef int Entity_ID;
+typedef LO Entity_ID;
 typedef std::vector<Entity_ID> Entity_ID_List;
-  
+typedef Kokkos::View<Entity_ID*> Entity_ID_View;
+
 // Recongnize special meshes
 enum Mesh_type
 {
