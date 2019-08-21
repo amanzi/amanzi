@@ -1,3 +1,17 @@
+/*
+  Transport PK 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Daniil Svyatsky (dasvyat@lanl.gov)
+           Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Implementation of implicit time integration algorithms.
+*/
+
 #ifndef AMANZI_TRANSPORT_IMPLICIT_PK_HH_
 #define AMANZI_TRANSPORT_IMPLICIT_PK_HH_
 
@@ -37,7 +51,8 @@
 namespace Amanzi {
 namespace Transport {
 
-class TransportImplicit_PK : public Transport_PK, public PK_BDF {
+class TransportImplicit_PK : public Transport_PK,
+                             public PK_BDF {
  public:
   TransportImplicit_PK(Teuchos::ParameterList& pk_tree,
                         const Teuchos::RCP<Teuchos::ParameterList>& glist,
@@ -49,7 +64,6 @@ class TransportImplicit_PK : public Transport_PK, public PK_BDF {
                        const std::string& pk_list_name,
                        std::vector<std::string>& component_names);
 
-  
   ~TransportImplicit_PK() {};
 
   virtual void Initialize(const Teuchos::Ptr<State>& S) override;  
@@ -97,7 +111,6 @@ class TransportImplicit_PK : public Transport_PK, public PK_BDF {
 
   void UpdateBoundaryData(double t_old, double t_new, const CompositeVector& u);
 
-  
   // access
   Teuchos::RCP<Operators::Operator> op() { return op_; }
   Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_adv() { return op_adv_; }
@@ -122,14 +135,11 @@ class TransportImplicit_PK : public Transport_PK, public PK_BDF {
   Teuchos::RCP<const Teuchos::ParameterList> preconditioner_list_;
   Teuchos::RCP<Teuchos::ParameterList> ti_list_;
 
-  
-  
   // factory registration
   static RegisteredPKFactory<TransportImplicit_PK> reg_;
 };
 
 }  // namespace Transport
 }  // namespace Amanzi
-
 
 #endif

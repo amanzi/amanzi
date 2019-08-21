@@ -1,3 +1,17 @@
+/*
+  Transport PK 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+           Daniil Svyatsky (dasvyat@lanl.gov)
+
+  Implementation of explicit time integration algorithms.
+*/
+
 #ifndef AMANZI_TRANSPORT_EXPLICIT_PK_HH_
 #define AMANZI_TRANSPORT_EXPLICIT_PK_HH_
 
@@ -36,7 +50,8 @@
 namespace Amanzi {
 namespace Transport {
 
-class TransportExplicit_PK : public Transport_PK,  public PK_Explicit<Epetra_Vector> {
+class TransportExplicit_PK : public Transport_PK,
+                             public PK_Explicit<Epetra_Vector> {
  public:
   TransportExplicit_PK(Teuchos::ParameterList& pk_tree,
                         const Teuchos::RCP<Teuchos::ParameterList>& glist,
@@ -47,7 +62,6 @@ class TransportExplicit_PK : public Transport_PK,  public PK_Explicit<Epetra_Vec
                        Teuchos::RCP<State> S, 
                        const std::string& pk_list_name,
                        std::vector<std::string>& component_names);
-
   
   ~TransportExplicit_PK() {};
   

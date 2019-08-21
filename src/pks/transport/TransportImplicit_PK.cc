@@ -92,7 +92,6 @@ TransportImplicit_PK::TransportImplicit_PK(const Teuchos::RCP<Teuchos::Parameter
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
   if (tp_list_ -> isSublist("time integrator"))
     ti_list_ = Teuchos::sublist(tp_list_, "time integrator", true);
-  
 }
 
   
@@ -116,7 +115,6 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
   auto& values = op_bc_->bc_value();
   auto& models = op_bc_->bc_model();
 
-      
   Teuchos::ParameterList& oplist = tp_list_->sublist("operators")
                                             .sublist("advection operator")
                                             .sublist("matrix");
@@ -153,12 +151,12 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
   //op_->AssembleMatrix(); 
 
   // generic linear solver
-  if (ti_list_ != Teuchos::null){
+  if (ti_list_ != Teuchos::null) {
     if (ti_list_->isParameter("linear solver"))
       solver_name_ = ti_list_->get<std::string>("linear solver");
 
     // preconditioner
-    if (ti_list_->isParameter("preconditioner")){
+    if (ti_list_->isParameter("preconditioner")) {
       std::string name = ti_list_->get<std::string>("preconditioner");
       Teuchos::ParameterList pc_list = preconditioner_list_->sublist(name);
       op_->InitializePreconditioner(pc_list);
@@ -171,6 +169,7 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
                << vo_->reset() << std::endl << std::endl;
   }
 }
+
 
 /* ******************************************************************* 
 * Performs one time step from t_old to t_new. The boundary conditions
@@ -193,7 +192,6 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   for (int c = 0; c < ncells_owned; c++) {
     acc_term_c[0][c] = (*phi)[0][c] * (*ws)[0][c];
   }
-  
 
   op_acc_ -> AddAccumulationDelta(*tcc, *acc_term_, *acc_term_, dt_, "cell");
 
@@ -238,17 +236,15 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // // estimate time multiplier
   // //dt_desirable_ = ts_control_->get_timestep(dt_MPC, 1);
 
-  // // Assume TransportImplicit_PK always takes the suggested time step and cannot fail
-  // dt_tuple times(t_new, dt_MPC);
-  // dt_history_.push_back(times);
-  
-//
   return fail;
 }
 
+
+/* ******************************************************************* 
+* Boundary data
+******************************************************************* */
 void TransportImplicit_PK::UpdateBoundaryData(double t_old, double t_new, const CompositeVector& u)
 {
-
   for (int i = 0; i < bcs_.size(); i++) {
     bcs_[i]->Compute(t_old, t_new);
   }
@@ -256,8 +252,7 @@ void TransportImplicit_PK::UpdateBoundaryData(double t_old, double t_new, const 
   auto& values = op_bc_->bc_value();
   auto& models = op_bc_->bc_model();
 
-  ComputeBCs_(models, values, 0); // only for one component at the moment
-
+  ComputeBCs_(models, values, 0);  // only for one component at the moment
 }
 
 }  // namespace Transport

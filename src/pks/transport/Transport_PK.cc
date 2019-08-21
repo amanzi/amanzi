@@ -120,7 +120,6 @@ Transport_PK::Transport_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   units_.Init(*units_list);
 
   vo_ = Teuchos::null;
-
 }
 
 
@@ -1028,58 +1027,6 @@ void Transport_PK::AdvanceDonorUpwindNonManifold(double dt_cycle)
     mass_solutes_exact_[i] += mass_solutes_source_[i] * dt_;
   }
 }
-
-
-/* ******************************************************************* 
-*                         DEPRECATED
-* Advance each component independently due to different field 
-* reconstruction. This routine uses first-order time integrator. 
-******************************************************************* */
-/*
-void Transport_PK::AdvanceSecondOrderUpwindRK1(double dt_cycle)
-{
-  dt_ = dt_cycle;  // overwrite the maximum stable transport step
-  mass_solutes_source_.assign(num_aqueous + num_gaseous, 0.0);
-
-  // work memory
-  const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
-  Epetra_Vector f_component(cmap_wghost);
-
-  // distribute vector of concentrations
-  S_->GetFieldData(tcc_key_)->ScatterMasterToGhosted("cell");
-  Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
-  Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
-
-  // We advect only aqueous components.
-  int num_advect = num_aqueous;
-
-  for (int i = 0; i < num_advect; i++) {
-    current_component_ = i;  // needed by BJ 
-
-    double T = t_physics_;
-    Epetra_Vector*& component = tcc_prev(i);
-    DudtOld(T, *component, f_component);
-
-    double ws_ratio;
-    for (int c = 0; c < ncells_owned; c++) {
-      ws_ratio = (*ws_start)[0][c] / (*ws_end)[0][c];
-      tcc_next[i][c] = (tcc_prev[i][c] + dt_ * f_component[c]) * ws_ratio;
-    }
-  }
-
-  // update mass balance
-  for (int i = 0; i < num_aqueous + num_gaseous; i++) {
-    mass_solutes_exact_[i] += mass_solutes_source_[i] * dt_;
-  }
-
-  if (internal_tests_) {
-    VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
-  }
-}
-*/
-
-
-
 
 
 /* ******************************************************************

@@ -6,9 +6,10 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+           Daniil Svyatsky (dasvyat@lanl.gov)
 
-  Major transport algorithms.
+  Implementation of explicit time integration algorithms.
 */
 
 #include <algorithm>
@@ -25,7 +26,6 @@
 #include "errors.hh"
 #include "Explicit_TI_RK.hh"
 #include "FieldEvaluator.hh"
-#include "GMVMesh.hh"
 #include "LinearOperatorDefs.hh"
 #include "LinearOperatorFactory.hh"
 #include "Mesh.hh"
@@ -138,8 +138,6 @@ void TransportExplicit_PK::AdvanceSecondOrderUpwindRK2(double dt_cycle)
 }
 
 
-
-  
 /* ******************************************************************* 
 * Advance each component independently due to different field
 * reconstructions. This routine uses generic explicit time integrator. 
@@ -177,6 +175,7 @@ void TransportExplicit_PK::AdvanceSecondOrderUpwindRKn(double dt_cycle)
     TVD_RK.TimeStep(T, dt_, *component_prev, *component_next);
   }
 }
+
 
 /* ******************************************************************* 
 * MPC will call this function to advance the transport state.
@@ -514,8 +513,6 @@ bool TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   return failed;
 }
-
-
 
 }  // namespace Transport
 }  // namespace Amazni
