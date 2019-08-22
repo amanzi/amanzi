@@ -117,6 +117,8 @@
 #                - update OpenMPI to 3.1.1
 #   0.95.6       - added new package nanoflann 1.3.0
 #   0.95.7       - update MSTK to 3.1.0
+#   0.95.8       - update NetCDF-Fortran to 4.4.5
+#   0.95.9       - update NetCDF-C to 4.7.0
 
 include(CMakeParseArguments)
 
@@ -169,7 +171,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 95)
-set(AMANZI_TPLS_VERSION_PATCH 7)
+set(AMANZI_TPLS_VERSION_PATCH 9)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -297,13 +299,13 @@ set(HDF5_MD5_SUM        dd2148b740713ca0295442ec683d7b1c)
 # TPL: NetCDF
 #
 set(NetCDF_VERSION_MAJOR 4)
-set(NetCDF_VERSION_MINOR 6)
-set(NetCDF_VERSION_PATCH 1)
+set(NetCDF_VERSION_MINOR 7)
+set(NetCDF_VERSION_PATCH 0)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
 set(NetCDF_URL_STRING     "https://github.com/Unidata/netcdf-c/archive/")
 set(NetCDF_ARCHIVE_FILE   v${NetCDF_VERSION}.tar.gz)
 set(NetCDF_SAVEAS_FILE    netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_MD5_SUM        e35e98e2478271caa8c1d8569ac9835b)
+set(NetCDF_MD5_SUM        37134a12a49e80c45fb58777aa3e9e3b)
 
 
 #
@@ -311,13 +313,13 @@ set(NetCDF_MD5_SUM        e35e98e2478271caa8c1d8569ac9835b)
 #
 set(NetCDF_Fortran_VERSION_MAJOR 4)
 set(NetCDF_Fortran_VERSION_MINOR 4)
-set(NetCDF_Fortran_VERSION_PATCH 4)
+set(NetCDF_Fortran_VERSION_PATCH 5)
 set(NetCDF_Fortran_VERSION ${NetCDF_Fortran_VERSION_MAJOR}.${NetCDF_Fortran_VERSION_MINOR}.${NetCDF_Fortran_VERSION_PATCH})
 set(NetCDF_Fortran_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(NetCDF_Fortran_URL_STRING     "https://github.com/Unidata/netcdf-fortran/archive/")
 set(NetCDF_Fortran_ARCHIVE_FILE   v${NetCDF_Fortran_VERSION}.tar.gz)
 set(NetCDF_Fortran_SAVEAS_FILE    netcdf-fortran-${NetCDF_Fortran_VERSION}.tar.gz)
-set(NetCDF_Fortran_MD5_SUM        418c7e998e63e6d76b2da14019fa9c8f) 
+set(NetCDF_Fortran_MD5_SUM        8b5df466425a209b773c8343fe32e371) 
 
 #
 # ASCEM-IO
