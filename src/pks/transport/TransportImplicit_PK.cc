@@ -57,13 +57,6 @@ TransportImplicit_PK::TransportImplicit_PK(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<TreeVector>& soln) :
     Transport_PK(pk_tree, glist, S, soln)
 {
-  // std::string pk_name = pk_tree.name();
-  // auto found = pk_name.rfind("->");
-  // if (found != std::string::npos) pk_name.erase(0, found + 2);
-
-  // Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
-  // tp_list_ = Teuchos::sublist(pk_list, pk_name, true);
-
   if (tp_list_ -> isSublist("time integrator"))
     ti_list_ = Teuchos::sublist(tp_list_, "time integrator", true);
 
@@ -137,14 +130,8 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
   cvs->SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
 
   acc_term_ = Teuchos::rcp(new CompositeVector(*cvs));
+  acc_term_prev_ = Teuchos::rcp(new CompositeVector(*cvs));
   op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_));
-
-  Epetra_MultiVector& acc_term_c = *acc_term_->ViewComponent("cell");
-
-  for (int c = 0; c < ncells_owned; c++) {
-    acc_term_c[0][c] = mesh_->cell_volume(c) * (*phi)[0][c] ; //* (*ws_end)[0][c];
-  }
-  op_acc_->AddAccumulationTerm(*acc_term_, "cell");
 
   op_->SymbolicAssembleMatrix();
   op_->CreateCheckPoint();
@@ -188,12 +175,15 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   op_acc_->local_op(0)->Rescale(0.0);
   
   // AddAccumulation term
-  Epetra_MultiVector& acc_term_c = *acc_term_->ViewComponent("cell");  
+  Epetra_MultiVector& acc_term_c = *acc_term_->ViewComponent("cell");
+  Epetra_MultiVector& acc_term_prev_c = *acc_term_prev_->ViewComponent("cell");
+  
   for (int c = 0; c < ncells_owned; c++) {
     acc_term_c[0][c] = (*phi)[0][c] * (*ws)[0][c];
+    acc_term_prev_c[0][c] = (*phi)[0][c] * (*ws_prev)[0][c];    
   }
 
-  op_acc_ -> AddAccumulationDelta(*tcc, *acc_term_, *acc_term_, dt_, "cell");
+  op_acc_ -> AddAccumulationDelta(*tcc, *acc_term_prev_, *acc_term_, dt_, "cell");
 
   // refresh data BC and source data  
   UpdateBoundaryData(t_old, t_new, *tcc);
