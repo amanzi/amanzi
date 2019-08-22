@@ -353,12 +353,15 @@ int Operator::ApplyAssembled(const CompositeVector& X, CompositeVector& Y, doubl
 ******************************************************************* */
 int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
-  int ierr(1);
+  if (preconditioner_.get() == nullptr) {
+    Errors::Message msg("Operator did not initialize a preconditioner.\n");
+    Exceptions::amanzi_throw(msg);
+  }
 
   Epetra_Vector Xcopy(*smap_->Map());
   Epetra_Vector Ycopy(*smap_->Map());
 
-  ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy);
+  int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy);
   ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
   ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y);
 
