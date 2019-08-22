@@ -38,16 +38,15 @@ namespace Amanzi {
 namespace AmanziSolvers {
 
 template<class Matrix, class Vector, class VectorSpace>
-class LinearOperator : public Matrix {
+class LinearOperator {
  public:
   LinearOperator(const Teuchos::RCP<const Matrix>& m,
                  const Teuchos::RCP<const Matrix>& h) :
-      Matrix(),
       m_(m),
       h_(h)
   {};
 
-  virtual ~LinearOperator() {};
+  virtual ~LinearOperator() = default;
 
   virtual void Init(Teuchos::ParameterList& plist) = 0;
   void Init() { 
@@ -56,11 +55,15 @@ class LinearOperator : public Matrix {
   }
 
   // standard interface recommended in MatrixBase.hh
-  virtual int Apply(const Vector& v, Vector& mv) const { return m_->Apply(v, mv); }
-  virtual int ApplyInverse(const Vector& v, Vector& hv) const = 0;
+  virtual int apply(const Vector& v, Vector& mv) const {
+    std::cout << "In LinOp::Apply: v = " << v.norm2();
+    return m_->apply(v, mv);
+    std::cout << " mv = " << mv.norm2() << std::endl;
+  }
+  virtual int applyInverse(const Vector& v, Vector& hv) const = 0;
 
-  virtual const VectorSpace& DomainMap() const { return m_->DomainMap(); }
-  virtual const VectorSpace& RangeMap() const { return m_->RangeMap(); }
+  virtual const Teuchos::RCP<const VectorSpace>& getDomainMap() const { return this->m_->getDomainMap(); }
+  virtual const Teuchos::RCP<const VectorSpace>& getRangeMap() const { return this->m_->getRangeMap(); }
 
   double TrueResidual(const Vector& f, const Vector& v) const {
     Vector r(f);

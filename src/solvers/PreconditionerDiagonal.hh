@@ -28,72 +28,24 @@ class PreconditionerDiagonal : public Preconditioner<Matrix,Vector> {
   ~PreconditionerDiagonal() {};
 
   void Init(const std::string& name, const Teuchos::ParameterList& plist) override {};
-  void Update(const Teuchos::RCP<const Matrix>& A) override;
+  void Update(const Teuchos::RCP<const Matrix>& A) override {
+    work_vec_ = Teuchos::rcp(new Vector(A->getRowMap()));
+    A->getLocalDiagCopy(*work_vec_);
+    work_vec_->reciprocal(*work_vec_);
+  }
+    
   void Destroy() override {};
-  int ApplyInverse(const Vector& v, Vector& hv) const override;
+  int ApplyInverse(const Vector& v, Vector& hv) const override {
+    hv.elementWiseMultiply(1., v, *work_vec_, 0.);
+    return 0;
+  }
   int returned_code() override { return 0; }
 
  private:
   Teuchos::RCP<Vector> work_vec_;
 };
 
-}  // namespace AmanziPreconditioners
-}  // namespace Amanzi
-
-
-//#ifdef HAVE_EPETRA_PRECONDITIONERS
-#include "Epetra_RowMatrix.h"
-#include "Epetra_MultiVector.h"
-
-namespace Amanzi {
-namespace AmanziPreconditioners {
-
-template<>
-void
-PreconditionerDiagonal<Epetra_RowMatrix, Epetra_MultiVector>::Update(const Teuchos::RCP<const Epetra_RowMatrix>& matrix)
-{
-  work_vec_ = Teuchos::rcp(new Epetra_MultiVector(matrix->Map(), 1));
-  matrix->ExtractDiagonalCopy(*(*work_vec_)(0));
-}
-
-template<>
-int
-PreconditionerDiagonal<Epetra_RowMatrix, Epetra_MultiVector>::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv) const
-{
-  return hv.ReciprocalMultiply(1.0, *work_vec_, v, 0.0); 
-}
-
-//#endif 
 } // namespace
 } // namespace
-
-//#ifdef HAVE_TPETRA_PRECONDITIONERS
-
-#include "VectorWrapper.hh"
-#include "AmanziVector.hh"
-#include "AmanziMatrix.hh"
-
-namespace Amanzi {
-namespace AmanziPreconditioners {
-
-template<>
-void
-PreconditionerDiagonal<Matrix_type, VectorWrapper<Vector_type> >::Update(const Teuchos::RCP<const Matrix_type>& matrix)
-{
-  work_vec_ = Teuchos::rcp(new VectorWrapper<Vector_type>(Teuchos::rcp(new Vector_type(matrix->getRowMap()))));
-  matrix->getLocalDiagCopy(*work_vec_->get());
-}
-
-template<>
-int
-PreconditionerDiagonal<Matrix_type, VectorWrapper<Vector_type> >::ApplyInverse(const VectorWrapper<Vector_type>& v, VectorWrapper<Vector_type>& hv) const
-{
-  return hv.ReciprocalMultiply(1.0, *work_vec_, v, 0.0); 
-  return 0;
-}
-
-} // namespace
-} // namespace
-//#endif
 
 #endif

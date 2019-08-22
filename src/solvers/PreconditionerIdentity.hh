@@ -31,44 +31,17 @@ class PreconditionerIdentity : public Preconditioner<Matrix,Vector> {
   void Update(const Teuchos::RCP<const Matrix>& A) override {};
   void Destroy() override {};
 
-  inline int ApplyInverse(const Vector& v, Vector& hv) const override;
+  int ApplyInverse(const Vector& v, Vector& hv) const override {
+    hv.assign(v);
+    return 0;
+  }
 
   int returned_code() override { return 0; }
 };
 
 
-template<class Matrix,class Vector>
-int
-PreconditionerIdentity<Matrix,Vector>::ApplyInverse(const Vector& v, Vector& hv) const
-{
-  hv = v;
-  return 0;
-}
 
 }  // namespace AmanziPreconditioners
 }  // namespace Amanzi
-
-
-// #ifdef HAVE_TPETRA_PRECONDITIONERS
-
-#include "AmanziTypes.hh"
-#include "AmanziVector.hh"
-
-namespace Amanzi {
-namespace AmanziPreconditioners {
-
-template<>
-int
-PreconditionerIdentity<Matrix_type,Vector_type>::ApplyInverse(const Vector_type& v, Vector_type& hv) const
-{
-  hv.assign(v);
-  return 0;
-}
-
-}  // namespace AmanziPreconditioners
-}  // namespace Amanzi
-
-// #endif // HAVE_TPETRA_PRECONDITIONERS
-
 
 #endif

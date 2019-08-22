@@ -19,9 +19,9 @@ include(TestManager)
 project(SOLVERS)
 
 # compile options
-set(HAVE_TRILINOS_PRECONDITIONERS TRUE)
+set(HAVE_TRILINOS_PRECONDITIONERS FALSE)
 set(HAVE_TRILINOS_SOLVERS FALSE)
-set(HAVE_HYPRE_PRECONDITIONERS ${ENABLE_HYPRE})
+set(HAVE_HYPRE_PRECONDITIONERS FALSE)
 
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
@@ -128,20 +128,15 @@ if (BUILD_TESTS)
     # Add the solvers directory to the include paths
     include_directories(${SOLVERS_SOURCE_DIR})
 
-    add_amanzi_test(solver_preconditioners solver_preconditioners
-                    KIND unit
-                    SOURCE test/Main.cc test/solver_preconditioners.cc
-                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
-
     add_amanzi_test(solver_preconditioners_tpetra solver_preconditioners_tpetra
                     KIND unit
                     SOURCE test/Main.cc test/solver_preconditioners_tpetra.cc
                     LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
-    # add_amanzi_test(solver_linear_operators solver_linear_operators
-    #                 KIND unit
-    #                 SOURCE test/Main.cc test/solver_linear_operators.cc
-    #                 LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+    add_amanzi_test(solver_linear_operators solver_linear_operators
+                    KIND unit
+                    SOURCE test/Main.cc test/solver_linear_operators.cc
+                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
 
     # add_amanzi_test(solver_preconditioner_noncontiguous solver_preconditioner_noncontiguous
