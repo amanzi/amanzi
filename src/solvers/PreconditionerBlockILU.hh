@@ -47,25 +47,25 @@ Example:
 namespace Amanzi {
 namespace AmanziPreconditioners {
 
-class PreconditionerBlockILU : public Preconditioner {
+class PreconditionerBlockILU : public Preconditioner<Epetra_RowMatrix,Epetra_MultiVector> {
  public:
   PreconditionerBlockILU() {};
   ~PreconditionerBlockILU() {};
 
-  void Init(const std::string& name, const Teuchos::ParameterList& list);
-  void Update(const Teuchos::RCP<Epetra_RowMatrix>& A);
-  void Destroy();
+  void Init(const std::string& name, const Teuchos::ParameterList& list) override;
+  void Update(const Teuchos::RCP<const Epetra_RowMatrix>& A) override;
+  void Destroy() override;
 
-  int ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv);
+  int ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv) const override;
 
-  int returned_code() { return returned_code_; }
+  int returned_code() override { return returned_code_; }
 
  private:
   Teuchos::ParameterList list_;
   Teuchos::RCP<Ifpack_Preconditioner> IfpILU_;
 
   bool initialized_;
-  int returned_code_;
+  mutable int returned_code_;
 };
 
 }  // namespace AmanziPreconditioners

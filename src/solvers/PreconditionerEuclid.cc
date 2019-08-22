@@ -23,7 +23,7 @@ namespace AmanziPreconditioners {
 /* ******************************************************************
  * Apply the preconditioner.
  ****************************************************************** */
-int PreconditionerEuclid::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv)
+int PreconditionerEuclid::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv) const
 {
   returned_code_ = IfpHypre_->ApplyInverse(v, hv);
   return returned_code_;
@@ -36,7 +36,6 @@ int PreconditionerEuclid::ApplyInverse(const Epetra_MultiVector& v, Epetra_Multi
 void PreconditionerEuclid::Init(const std::string& name, const Teuchos::ParameterList& list)
 {
   plist_ = list;
-#ifdef HAVE_HYPRE
   funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_EuclidSetStats,
           plist_.get<int>("verbosity", 0))));
 
@@ -53,20 +52,16 @@ void PreconditionerEuclid::Init(const std::string& name, const Teuchos::Paramete
   if (plist_.isParameter("ilut drop tolerance"))
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_EuclidSetILUT,
             plist_.get<double>("ilut drop tolerance"))));
-#else
-  Errors::Message msg("Hypre (Euclid) is not available in this installation of Amanzi.  To use Hypre, please reconfigure.");
-  Exceptions::amanzi_throw(msg);
-#endif
 }
 
 
 /* ******************************************************************
  * Rebuild the preconditioner suing the given matrix A.
  ****************************************************************** */
-void PreconditionerEuclid::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
+void PreconditionerEuclid::Update(const Teuchos::RCP<const Epetra_RowMatrix>& A)
 {
-#ifdef HAVE_HYPRE
-  IfpHypre_ = Teuchos::rcp(new Ifpack_Hypre(&*A));
+  auto A_nc = Teuchos::rcp_const_cast<Epetra_RowMatrix>(A);  
+  IfpHypre_ = Teuchos::rcp(new Ifpack_Hypre(&*A_nc));
 
   Teuchos::ParameterList hypre_list("Preconditioner List");
   hypre_list.set("Preconditioner", Euclid);
@@ -78,7 +73,6 @@ void PreconditionerEuclid::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
   IfpHypre_->SetParameters(hypre_list);
   IfpHypre_->Initialize();
   IfpHypre_->Compute();
-#endif
 }
 
 }  // namespace AmanziPreconditioners

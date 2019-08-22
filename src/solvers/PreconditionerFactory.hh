@@ -22,17 +22,22 @@
 namespace Amanzi {
 namespace AmanziPreconditioners {
 
+template<class Matrix, class Vector>
 class PreconditionerFactory {
  public:
   PreconditionerFactory() {};
   ~PreconditionerFactory() {};
 
-  Teuchos::RCP<Preconditioner> Create(const std::string& name,
+  Teuchos::RCP<Preconditioner<Matrix,Vector> > Create(const std::string& name,
           const Teuchos::ParameterList& prec_list);
-  Teuchos::RCP<Preconditioner> Create(Teuchos::ParameterList& prec_list);
+  Teuchos::RCP<Preconditioner<Matrix,Vector> > Create(Teuchos::ParameterList& prec_list);
 };
 
 }  // namespace AmanziPreconditioners
 }  // namespace Amanzi
+
+
+#include "PreconditionerFactory_impl.hh"
+
 
 #endif

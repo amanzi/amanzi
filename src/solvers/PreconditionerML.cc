@@ -23,7 +23,7 @@ namespace AmanziPreconditioners {
  * Apply the preconditioner. 
  * ML's return code is set to 0 if successful, see Trilinos webpages. 
  ****************************************************************** */
-int PreconditionerML::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv)
+int PreconditionerML::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv) const
 {
   returned_code_ = ML_->ApplyInverse(v, hv);
   return returned_code_;
@@ -43,7 +43,7 @@ void PreconditionerML::Init(const std::string& name, const Teuchos::ParameterLis
 /* ******************************************************************
  * Rebuild the preconditioner suing the given matrix A.
  ****************************************************************** */
-void PreconditionerML::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
+void PreconditionerML::Update(const Teuchos::RCP<const Epetra_RowMatrix>& A)
 {
   if (initialized_) ML_->DestroyPreconditioner();
   ML_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*A, list_, false));

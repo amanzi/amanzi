@@ -33,6 +33,7 @@
 #include "Tpetra_Import_fwd.hpp"
 #include "Tpetra_Vector_fwd.hpp"
 #include "Tpetra_MultiVector_fwd.hpp"
+#include "Tpetra_RowMatrix_fwd.hpp"
 
 #include "Kokkos_Core.hpp"
 
@@ -114,6 +115,10 @@ using Vector_type = Vector_type_<double_type>;
 using MultiVector_type = MultiVector_type_<double_type>;
 using IntVector_type = Vector_type_<int_type>;
 using IntMultiVector_type = MultiVector_type_<int_type>;
+
+using Matrix_type = Tpetra::RowMatrix<double_type, LO, GO>;
+using Matrix_ptr_type = Teuchos::RCP<Matrix_type>;
+using cMatrix_ptr_type = Teuchos::RCP<const Matrix_type>;
 
 // Kokkos Views into vectors
 template<class Device_type, typename Scalar>

@@ -86,7 +86,7 @@ Example:
 namespace Amanzi {
 namespace AmanziPreconditioners {
 
-class PreconditionerBoomerAMG : public Preconditioner {
+class PreconditionerBoomerAMG : public Preconditioner<Epetra_RowMatrix,Epetra_MultiVector> {
  public:
   PreconditionerBoomerAMG() :
       num_blocks_(0),
@@ -94,13 +94,13 @@ class PreconditionerBoomerAMG : public Preconditioner {
       IfpHypre_(Teuchos::null) {}
   ~PreconditionerBoomerAMG() {};
 
-  void Init(const std::string& name, const Teuchos::ParameterList& list);
-  void Update(const Teuchos::RCP<Epetra_RowMatrix>& A);
-  void Destroy() {};
+  void Init(const std::string& name, const Teuchos::ParameterList& list) override;
+  void Update(const Teuchos::RCP<const Epetra_RowMatrix>& A) override;
+  void Destroy() override {};
 
-  int ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv);
+  int ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv) const override;
 
-  int returned_code() { return returned_code_; }
+  int returned_code() override { return returned_code_; }
 
  private:
   Teuchos::ParameterList plist_;
@@ -109,7 +109,7 @@ class PreconditionerBoomerAMG : public Preconditioner {
   int num_blocks_;
   int block_index_function_index_;
   
-  int returned_code_;
+  mutable int returned_code_;
   Teuchos::RCP<Ifpack_Hypre> IfpHypre_;
 };
 

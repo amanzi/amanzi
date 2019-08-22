@@ -14,8 +14,6 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_MultiVector.h"
-#include "Epetra_RowMatrix.h"
 
 #include "exceptions.hh"
 #include "Preconditioner.hh"
@@ -23,26 +21,54 @@
 namespace Amanzi {
 namespace AmanziPreconditioners {
 
-class PreconditionerIdentity : public Preconditioner {
+template<class Matrix,class Vector>
+class PreconditionerIdentity : public Preconditioner<Matrix,Vector> {
  public:
   PreconditionerIdentity() {};
   ~PreconditionerIdentity() {};
 
-  void Init(const std::string& name, const Teuchos::ParameterList& list) {};
-  void Update(const Teuchos::RCP<Epetra_RowMatrix>& A) {};
-  void Destroy() {};
+  void Init(const std::string& name, const Teuchos::ParameterList& list) override {};
+  void Update(const Teuchos::RCP<const Matrix>& A) override {};
+  void Destroy() override {};
 
-  int ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv) {
-    hv = v;
-    return 0;
-  }
+  inline int ApplyInverse(const Vector& v, Vector& hv) const override;
 
-  int returned_code() { return 0; }
+  int returned_code() override { return 0; }
 };
+
+
+template<class Matrix,class Vector>
+int
+PreconditionerIdentity<Matrix,Vector>::ApplyInverse(const Vector& v, Vector& hv) const
+{
+  hv = v;
+  return 0;
+}
 
 }  // namespace AmanziPreconditioners
 }  // namespace Amanzi
 
+
+// #ifdef HAVE_TPETRA_PRECONDITIONERS
+
+#include "AmanziTypes.hh"
+#include "AmanziVector.hh"
+
+namespace Amanzi {
+namespace AmanziPreconditioners {
+
+template<>
+int
+PreconditionerIdentity<Matrix_type,Vector_type>::ApplyInverse(const Vector_type& v, Vector_type& hv) const
+{
+  hv.assign(v);
+  return 0;
+}
+
+}  // namespace AmanziPreconditioners
+}  // namespace Amanzi
+
+// #endif // HAVE_TPETRA_PRECONDITIONERS
 
 
 #endif

@@ -25,7 +25,7 @@ namespace AmanziPreconditioners {
 * According to IfPack documentation, the error code is set to 0 if 
 * the inversion was successful. 
 ****************************************************************** */
-int PreconditionerBlockILU::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv)
+int PreconditionerBlockILU::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv) const
 {
   returned_code_ = IfpILU_->ApplyInverse(v, hv);
   return returned_code_;
@@ -45,7 +45,7 @@ void PreconditionerBlockILU::Init(const std::string& name, const Teuchos::Parame
 /* ******************************************************************
  * Rebuild the preconditioner suing the given matrix A.
  ****************************************************************** */
-void PreconditionerBlockILU::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
+void PreconditionerBlockILU::Update(const Teuchos::RCP<const Epetra_RowMatrix>& A)
 {
   Ifpack factory;
   std::string type("ILU");
@@ -53,7 +53,9 @@ void PreconditionerBlockILU::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
   int overlap = list_.get<int>("overlap", 0);
   list_.set<std::string>("schwarz: combine mode", "Add");
 
-  IfpILU_ = Teuchos::rcp(factory.Create(type, &*A, overlap));
+  // probably a mistake in Ifpack that this is not const.  Confirm! --etc
+  auto A_nc = Teuchos::rcp_const_cast<Epetra_RowMatrix>(A);  
+  IfpILU_ = Teuchos::rcp(factory.Create(type, &*A_nc, overlap));
 
   IfpILU_->SetParameters(list_);
   IfpILU_->Initialize();

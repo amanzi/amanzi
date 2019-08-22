@@ -58,14 +58,14 @@ class ResidualDebugger : public IOEvent {
 };
 
 
-template <>
-void ResidualDebugger::StartIteration<TreeVectorSpace>(double time, int cycle, int attempt,
-                                                       const TreeVectorSpace& space);
-template <>
-void ResidualDebugger::WriteVector<TreeVector>(int iter,
-              const TreeVector& res,
-              const Teuchos::Ptr<const TreeVector>& u,
-              const Teuchos::Ptr<const TreeVector>& du);
+// template <>
+// void ResidualDebugger::StartIteration<TreeVectorSpace>(double time, int cycle, int attempt,
+//                                                        const TreeVectorSpace& space);
+// template <>
+// void ResidualDebugger::WriteVector<TreeVector>(int iter,
+//               const TreeVector& res,
+//               const Teuchos::Ptr<const TreeVector>& u,
+//               const Teuchos::Ptr<const TreeVector>& du);
 
   
 

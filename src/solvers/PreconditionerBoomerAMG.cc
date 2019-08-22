@@ -26,7 +26,7 @@ namespace AmanziPreconditioners {
 /* ******************************************************************
 * Apply the preconditioner.
 ****************************************************************** */
-int PreconditionerBoomerAMG::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv)
+int PreconditionerBoomerAMG::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv) const
 {
   returned_code_ = IfpHypre_->ApplyInverse(v, hv);
   // returned_code_ = 0 means success. This is the only code returned by IfPack.
@@ -40,7 +40,6 @@ int PreconditionerBoomerAMG::ApplyInverse(const Epetra_MultiVector& v, Epetra_Mu
 void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::ParameterList& list)
 {
   plist_ = list;
-#ifdef HAVE_HYPRE
   // check for old input spec and error
   if (plist_.isParameter("number of cycles")) {
     Errors::Message msg("\"boomer amg\" ParameterList uses old style, \"number of cycles\".  Please update to the new style using \"cycle applications\" and \"smoother sweeps\"");
@@ -165,20 +164,14 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
       }
     }
   }
-
-#else
-  Errors::Message msg("Hypre (BoomerAMG) is not available in this installation of Amanzi.  To use Hypre, please reconfigure.");
-  Exceptions::amanzi_throw(msg);
-#endif
 }
 
 
 /* ******************************************************************
 * Rebuild the preconditioner using the given matrix A.
 ****************************************************************** */
-void PreconditionerBoomerAMG::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
+void PreconditionerBoomerAMG::Update(const Teuchos::RCP<const Epetra_RowMatrix>& A)
 {
-#ifdef HAVE_HYPRE
   // if (!IfpHypre_.get()) { // this should be sufficient, but since
   // Ifpack_Hypre destroys the Hypre instance in each Compute(), which
   // destroys block indices, we MUST new the block indices every time
@@ -186,7 +179,8 @@ void PreconditionerBoomerAMG::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
   // object each time, only the block data, but Ifpack doesn't allow that.
   // For now, we'll comment this out and regenerate, but the next step is a
   // reimplemented Ifpack_Hypre. --etc
-  IfpHypre_ = Teuchos::rcp(new Ifpack_Hypre(&*A));
+  auto A_nc = Teuchos::rcp_const_cast<Epetra_RowMatrix>(A);  
+  IfpHypre_ = Teuchos::rcp(new Ifpack_Hypre(&*A_nc));
 
   // must reset the paramters every time to reset the block index
   Teuchos::ParameterList hypre_list("Preconditioner List");
@@ -215,7 +209,6 @@ void PreconditionerBoomerAMG::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
   // } // see above --etc
     
   IfpHypre_->Compute();
-#endif
 }
 
 }  // namespace AmanziPreconditioners

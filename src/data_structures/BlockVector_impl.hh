@@ -383,7 +383,7 @@ BlockVector<Scalar>::Dot(const BlockVector<Scalar>& other, Scalar* result) const
   for (const auto& name : *this) {
     Teuchos::Array<Scalar> intermediate_result(NumVectors(name));
     GetComponent_(name)->dot(*(other.GetComponent_(name)), intermediate_result);
-    *result += std::accumulate(intermediate_result.begin(), intermediate_result.end(), 0);
+    *result += std::accumulate(intermediate_result.begin(), intermediate_result.end(), (Scalar) 0);
   }
   return 0;
 };
@@ -467,7 +467,7 @@ BlockVector<Scalar>::Norm1(Scalar* norm) const {
   for (const auto& name : *this) {
     Teuchos::Array<Scalar> norm_locs(GetComponent_(name)->getNumVectors());
     GetComponent_(name)->norm1(norm_locs());
-    *norm += std::accumulate(norm_locs.begin(), norm_locs.end(), 0);
+    *norm += std::accumulate(norm_locs.begin(), norm_locs.end(), (Scalar) 0);
   }
   return 0;
 };
@@ -483,7 +483,7 @@ BlockVector<Scalar>::Norm2(Scalar* norm) const {
   for (const auto& name : *this) {
     Teuchos::Array<Scalar> norm_locs(GetComponent_(name)->getNumVectors());
     GetComponent_(name)->norm2(norm_locs());
-    *norm += std::accumulate(norm_locs.begin(), norm_locs.end(), 0, [](Scalar x, Scalar y) { return x + y*y; } );
+    *norm += std::accumulate(norm_locs.begin(), norm_locs.end(), (Scalar) 0, [](Scalar x, Scalar y) { return x + y*y; } );
   }
   *norm = sqrt(*norm);
   return 0;

@@ -5,9 +5,13 @@
 #include "omp.h"
 #endif
 
+#define HAVE_EPETRA_PRECONDITIONERS
+#define HAVE_TRILINOS_PRECONDITIONERS
+#define HAVE_HYPRE_PRECONDITIONERS
+
 #include "Teuchos_RCP.hpp"
 #include "Epetra_MpiComm.h"
-#include "Epetra_Vector.h"
+#include "Epetra_MultiVector.h"
 #include "Epetra_CrsMatrix.h"
 #include "UnitTest++.h"
 
@@ -36,11 +40,11 @@ class Matrix {
     Teuchos::ParameterList& tmp = plist.sublist(params.append(" parameters"));
 
     if (name == "diagonal") {
-      preconditioner_ = Teuchos::rcp(new PreconditionerDiagonal());
+      preconditioner_ = Teuchos::rcp(new PreconditionerDiagonal<Epetra_RowMatrix,Epetra_MultiVector>());
     } else if (name == "identity") {
-      preconditioner_ = Teuchos::rcp(new PreconditionerIdentity());
+      preconditioner_ = Teuchos::rcp(new PreconditionerIdentity<Epetra_RowMatrix,Epetra_MultiVector>());
     } else if (name == "ml") {
-      PreconditionerFactory factory;
+      PreconditionerFactory<Epetra_RowMatrix,Epetra_MultiVector> factory;
       tmp.set<int>("coarse: max size", 5);
       tmp.set<int>("cycle applications", 2);
       tmp.set<int>("ML output", 0);
@@ -49,7 +53,7 @@ class Matrix {
       tmp.set<int>("max coarse size", 5);
       tmp.set<int>("cycle applications", 1);
       tmp.set<int>("verbosity", 0);
-      PreconditionerFactory factory;
+      PreconditionerFactory<Epetra_RowMatrix,Epetra_MultiVector> factory;
       preconditioner_ = factory.Create(plist);
     }
     A_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, map, map, 3));
@@ -63,10 +67,10 @@ class Matrix {
     preconditioner_->Update(A_);
   };    
 
-  virtual int Apply(const Epetra_Vector& v, Epetra_Vector& mv) const { 
+  virtual int Apply(const Epetra_MultiVector& v, Epetra_MultiVector& mv) const { 
     return A_->Apply(v, mv);
   }
-  virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const {
+  virtual int ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv) const {
     return preconditioner_->ApplyInverse(v, hv);
   }
 
@@ -76,15 +80,15 @@ class Matrix {
  private:
   Teuchos::RCP<Epetra_Map> map_;
   Teuchos::RCP<Epetra_CrsMatrix> A_;
-  Teuchos::RCP<Preconditioner> preconditioner_;
+  Teuchos::RCP<Preconditioner<Epetra_RowMatrix,Epetra_MultiVector> > preconditioner_;
 };
 
 
 TEST(DIAGONAL_PRECONDITIONER) {
   std::cout << "\nComparison of preconditioners for N=125" << std::endl;
 
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
-  Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(N, 0, *comm));
+  Epetra_MpiComm comm(MPI_COMM_SELF);
+  Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(N, 0, comm));
 
   // create the pcg operator
   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
@@ -113,7 +117,6 @@ TEST(DIAGONAL_PRECONDITIONER) {
     CHECK_CLOSE(10.53249773994628, v[1], 1e-6);
   }
 
-  delete comm;
 };
 
 
@@ -121,8 +124,8 @@ TEST(DIAGONAL_PRECONDITIONER) {
 TEST(DIAGONAL_PRECONDITIONER_OPENMP) {
   std::cout << "\nComparison of preconditioners for N=125 using OpenMP directives" << std::endl;
 
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
-  Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(N, 0, *comm));
+  Epetra_MpiComm comm(MPI_COMM_SELF);
+  Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(N, 0, comm));
 
   Teuchos::ParameterList plist;
   plist.sublist("verbose object").set<std::string>("verbosity level", "low");
@@ -176,7 +179,6 @@ TEST(DIAGONAL_PRECONDITIONER_OPENMP) {
   cpu1 = omp_get_wtime();
   std::cout << "CPU (serial):   " << cpu1 - cpu0 << " [sec] " << std::endl;
 
-  delete comm;
 };
 #endif
 

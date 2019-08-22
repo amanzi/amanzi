@@ -34,6 +34,7 @@
 namespace Amanzi {
 namespace AmanziPreconditioners {
 
+template<class Matrix, class Vector>
 class Preconditioner {
  public:
   virtual ~Preconditioner() = default;
@@ -44,14 +45,14 @@ class Preconditioner {
                     const Teuchos::ParameterList& list) = 0;
 
   // Rebuild the preconditioner using the given matrix A.
-  virtual void Update(const Teuchos::RCP<Epetra_RowMatrix>& A) = 0;
+  virtual void Update(const Teuchos::RCP<const Matrix>& A) = 0;
 
   // Destroy the preconditioner and auxiliary data structures.
   virtual void Destroy() = 0;
 
   // Apply the preconditioner.
-  virtual int ApplyInverse(const Epetra_MultiVector& v,
-                           Epetra_MultiVector& hv) = 0;
+  virtual int ApplyInverse(const Vector& v,
+                           Vector& hv) const = 0;
 
   virtual int returned_code() = 0;
 };
