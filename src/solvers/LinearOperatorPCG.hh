@@ -103,7 +103,7 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  Vector r(f.getMap()), p(f.getMap()), v(f.getMap());  // construct empty vectors
+  Vector r(f.getMap());
   num_itrs_ = 0;
 
   double fnorm = f.norm2();
@@ -155,6 +155,7 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
     return criteria;  // Convergence for all criteria
   }
 
+  Vector p(f.getMap());
   h_->applyInverse(r, p);  // gamma = (H r,r)
   double gamma0 = p.dot(r);
   if (gamma0 <= 0) {
@@ -163,6 +164,7 @@ int LinearOperatorPCG<Matrix, Vector, VectorSpace>::PCG_(
     return LIN_SOLVER_NON_SPD_APPLY_INVERSE;
   }
 
+  Vector v(f.getMap());
   for (int i = 0; i < max_itrs; i++) {
     m_->apply(p, v);
     double alpha = v.dot(p);

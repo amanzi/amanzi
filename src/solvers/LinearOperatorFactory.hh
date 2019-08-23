@@ -132,13 +132,13 @@ LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
       lin_op->Init(gmres_list);
       lin_op->set_name(method_name);
       return lin_op;
-    } else if (method_name == "belos gmres") {
-      Teuchos::ParameterList gmres_list = slist.sublist("belos gmres parameters");
-      Teuchos::RCP<LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace> >
-          lin_op = Teuchos::rcp(new LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace>(m, h));
-      lin_op->Init(gmres_list);
-      lin_op->set_name(method_name);
-      return lin_op;
+    // } else if (method_name == "belos gmres") {
+    //   Teuchos::ParameterList gmres_list = slist.sublist("belos gmres parameters");
+    //   Teuchos::RCP<LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace> >
+    //       lin_op = Teuchos::rcp(new LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace>(m, h));
+    //   lin_op->Init(gmres_list);
+    //   lin_op->set_name(method_name);
+    //   return lin_op;
     } else if (method_name == "nka") {
       Teuchos::ParameterList nka_list = slist.sublist("nka parameters");
       Teuchos::RCP<LinearOperatorNKA<Matrix, Vector, VectorSpace> >
@@ -150,18 +150,18 @@ LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
       Errors::Message msg("LinearOperatorFactory: wrong value of parameter \"iterative method\"");
       Exceptions::amanzi_throw(msg);
     }
-  }
-  else if (slist.isParameter("direct method")) {
-    std::string method_name = slist.get<std::string>("direct method");
+  // }
+  // else if (slist.isParameter("direct method")) {
+  //   std::string method_name = slist.get<std::string>("direct method");
 
-    std::string tmp(method_name);
-    tmp.append(" parameters");
+  //   std::string tmp(method_name);
+  //   tmp.append(" parameters");
 
-    Teuchos::ParameterList amesos_list = slist.sublist(tmp);
-    Teuchos::RCP<LinearOperatorAmesos<Matrix, Vector, VectorSpace> >
-       lin_op = Teuchos::rcp(new LinearOperatorAmesos<Matrix, Vector, VectorSpace>(m, h));
-    lin_op->Init(amesos_list);
-    return lin_op;
+  //   Teuchos::ParameterList amesos_list = slist.sublist(tmp);
+  //   Teuchos::RCP<LinearOperatorAmesos<Matrix, Vector, VectorSpace> >
+  //      lin_op = Teuchos::rcp(new LinearOperatorAmesos<Matrix, Vector, VectorSpace>(m, h));
+  //   lin_op->Init(amesos_list);
+  //   return lin_op;
   } else {
     Errors::Message msg("LinearOperatorFactory: parameter \"iterative method\" or \"direct method\" not found");
     Exceptions::amanzi_throw(msg);

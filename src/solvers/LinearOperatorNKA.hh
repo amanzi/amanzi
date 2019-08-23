@@ -47,7 +47,7 @@ class LinearOperatorNKA : public LinearOperator<Matrix, Vector, VectorSpace> {
   void Init(Teuchos::ParameterList& plist);
   void Init() { LinearOperator<Matrix,Vector,VectorSpace>::Init(); }
 
-  int ApplyInverse(const Vector& v, Vector& hv) const {
+  int applyInverse(const Vector& v, Vector& hv) const {
     if (!initialized_) {
       Errors::Message msg("LinearOperatorNKA: has not been initialized.");
       Exceptions::amanzi_throw(msg);
@@ -99,35 +99,32 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
     const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
   Teuchos::OSTab tab = vo_->getOSTab();
-
-  //  AMANZI_ASSERT(f.Map().SameAs(m_->RangeMap()));
-  //  AMANZI_ASSERT(x.Map().SameAs(m_->DomainMap()));
   nka_->Restart();
 
   residual_ = 0.0;
   num_itrs_ = 0;
 
-  Teuchos::RCP<Vector> dx  = Teuchos::rcp(new Vector(x));
-  Teuchos::RCP<Vector> dxp = Teuchos::rcp(new Vector(x));  // preconditioned correction
-  Teuchos::RCP<Vector> r   = Teuchos::rcp(new Vector(x));
+  Vector dx(x.getMap());
+  Vector dxp(x.getMap());
+  Vector r(x.getMap());
 
   double fnorm, xnorm;
-  f.Norm2(&fnorm);
+  fnorm = f.norm2();
   if (fnorm == 0.0) {
-    x.PutScalar(0.0);
+    x.putScalar(0.0);
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
       *vo_->os() << "Converged, itr = " << num_itrs_ << ", ||r|| = " << residual_ << std::endl;
     return criteria;  // Zero solution satifies all criteria.
   }
 
-  x.Norm2(&xnorm);
+  xnorm = x.norm2();
 
-  int ierr = m_->Apply(x, *r);  // r = f - A * x
+  int ierr = m_->apply(x, r);  // r = f - A * x
   AMANZI_ASSERT(!ierr);
-  r->Update(1.0, f, -1.0);
+  r.update(1.0, f, -1.0);
 
   double rnorm0;
-  r->Norm2(&rnorm0);
+  rnorm0 = r.norm2();
   residual_ = rnorm0;
 
   if (initialized_) {
@@ -151,18 +148,17 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
 
   bool done = false;
   while (!done) {
-    ierr = h_->ApplyInverse(*r, *dxp);
+    ierr = h_->applyInverse(r, dxp);
     AMANZI_ASSERT(!ierr);
 
-    nka_->Correction(*dxp, *dx);
-    x.Update(1.0, *dx, 1.0);
+    nka_->Correction(dxp, dx);
+    x.update(1.0, dx, 1.0);
 
-    ierr = m_->Apply(x, *r);  // r = f - A * x
+    ierr = m_->apply(x, r);  // r = f - A * x
     AMANZI_ASSERT(!ierr);
-    r->Update(1.0, f, -1.0);
+    r.update(1.0, f, -1.0);
 
-    double rnorm;
-    r->Norm2(&rnorm);
+    double rnorm = r.norm2();
     residual_ = rnorm;
 
     num_itrs_++;
@@ -257,7 +253,7 @@ void LinearOperatorNKA<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList
   nka_tol_ = plist.get<double>("nka vector tolerance", 0.05);
 
   // NKA
-  nka_ = Teuchos::rcp(new NKA_Base<Vector,VectorSpace>(nka_dim_, nka_tol_, m_->DomainMap()));
+  nka_ = Teuchos::rcp(new NKA_Base<Vector,VectorSpace>(nka_dim_, nka_tol_, m_->getDomainMap()));
   nka_->Init(plist);
 
   initialized_ = true;

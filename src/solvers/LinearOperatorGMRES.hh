@@ -49,7 +49,7 @@ class LinearOperatorGMRES : public LinearOperator<Matrix, Vector, VectorSpace> {
   void Init(Teuchos::ParameterList& plist);
   void Init() { LinearOperator<Matrix, Vector, VectorSpace>::Init(); }
 
-  int ApplyInverse(const Vector& v, Vector& hv) const {
+  int applyInverse(const Vector& v, Vector& hv) const {
     if (!initialized_) {
       Errors::Message msg("LinearOperatorGMRES: has not been initialized.");
       Exceptions::amanzi_throw(msg);
@@ -177,36 +177,34 @@ template<class Matrix, class Vector, class VectorSpace>
 int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
     const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
-  Vector w(f), r(f), p(f);  // construct empty vectors
+  Vector p(f.getMap()), r(f.getMap()), w(f.getMap());
 
   double s[krylov_dim_ + 1], cs[krylov_dim_ + 1], sn[krylov_dim_ + 1];
   WhetStone::DenseMatrix T(krylov_dim_ + 1, krylov_dim_);
   num_itrs_ = 0;
 
   double fnorm;
-  // h_->ApplyInverse(f, r);
-  // r.Dot(fnorm, f);  This is the preconditioned norm of the residual.
-  f.Norm2(&fnorm);
+  fnorm = f.norm2();
   fnorm_ = fnorm;
 
   // initial residual is r = f - M x for the right preconditioner
   // and r = H (f - M x)  for the left preconditioner
   if (left_pc_) {
-    m_->Apply(x, p);
-    p.Update(1.0, f, -1.0);
-    h_->ApplyInverse(p, r);
+    m_->apply(x, p);
+    p.update(1.0, f, -1.0);
+    h_->applyInverse(p, r);
   } else {
-    m_->Apply(x, r);
-    r.Update(1.0, f, -1.0);
+    m_->apply(x, r);
+    r.update(1.0, f, -1.0);
   }
 
   double rnorm0;
-  r.Norm2(&rnorm0);
+  rnorm0 = r.norm2();
   residual_ = rnorm0;
   if (rnorm0_ < 0.0) rnorm0_ = rnorm0;
 
   if (fnorm == 0.0) {
-    x.PutScalar(0.0);
+    x.putScalar(0.0);
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
       *vo_->os() << "Converged, itr=" << num_itrs_total_ << " ||r||=" << rnorm0 << std::endl;
     return criteria;  // Zero solution satifies all criteria.
@@ -218,8 +216,8 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
     if (ierr != 0) return ierr;
   }
 
-  v_[0] = Teuchos::rcp(new Vector(r));
-  v_[0]->Update(0.0, r, 1.0 / rnorm0);
+  v_[0] = Teuchos::rcp(new Vector(r, Teuchos::DataAccess::Copy));
+  v_[0]->scale(1.0 / rnorm0);
 
   s[0] = rnorm0;
 
@@ -227,20 +225,20 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
     // calculate H M v_i for the left preconditioner
     //       and M H v_i for the right preconditioner
     if (left_pc_) {
-      m_->Apply(*(v_[i]), p);
-      h_->ApplyInverse(p, w);
+      m_->apply(*(v_[i]), p);
+      h_->applyInverse(p, w);
     } else {
-      h_->ApplyInverse(*(v_[i]), p);
-      m_->Apply(p, w);
+      h_->applyInverse(*(v_[i]), p);
+      m_->apply(p, w);
     }
 
     double tmp(0.0);
     for (int k = 0; k <= i; k++) {  // Arnoldi algorithm
-      w.Dot(*(v_[k]), &tmp);
-      w.Update(-tmp, *(v_[k]), 1.0);
+      tmp = w.dot(*(v_[k]));
+      w.update(-tmp, *(v_[k]), 1.0);
       T(k, i) = tmp;
     }
-    w.Norm2(&tmp);
+    tmp = w.norm2();
     T(i + 1, i) = tmp;
     s[i + 1] = 0.0;
 
@@ -288,9 +286,9 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_(
     }
 
     if (i < krylov_dim_ - 1) {
-      v_[i + 1] = Teuchos::rcp(new Vector(w));
+      v_[i + 1] = Teuchos::rcp(new Vector(w, Teuchos::DataAccess::Copy));
       if (tmp != 0.0) {  // zero occurs in exact arithmetic
-        v_[i + 1]->Update(0.0, r, 1.0 / tmp);
+        v_[i + 1]->scale(1.0 / tmp);
       }
     }
   }
@@ -307,32 +305,32 @@ template<class Matrix, class Vector, class VectorSpace>
 int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
     const Vector& f, Vector& x, double tol, int max_itrs, int criteria) const
 {
-  Vector p(f), r(f), w(f);
+  Vector p(f.getMap()), r(f.getMap()), w(f.getMap());
   WhetStone::DenseVector d(krylov_dim_ + 1), g(krylov_dim_);
   WhetStone::DenseMatrix T(krylov_dim_ + 1, krylov_dim_);
 
   double fnorm;
-  f.Norm2(&fnorm);
+  fnorm = f.norm2();
   fnorm_ = fnorm;
 
   // initial residual is r = f - M x for the right preconditioner
   // and r = H (f - M x)  for the left preconditioner
   if (left_pc_) {
-    m_->Apply(x, p);
-    p.Update(1.0, f, -1.0);
-    h_->ApplyInverse(p, r);
+    m_->apply(x, p);
+    p.update(1.0, f, -1.0);
+    h_->applyInverse(p, r);
   } else {
-    m_->Apply(x, r);
-    r.Update(1.0, f, -1.0);
+    m_->apply(x, r);
+    r.update(1.0, f, -1.0);
   }
 
   double rnorm0;
-  r.Norm2(&rnorm0);
+  rnorm0 = r.norm2();
   residual_ = rnorm0;
   if (rnorm0_ < 0.0) rnorm0_ = rnorm0;
 
   if (fnorm == 0.0) {
-    x.PutScalar(0.0);
+    x.putScalar(0.0);
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
       *vo_->os() << "Converged, itr=" << num_itrs_total_ << " ||r||=" << rnorm0 << std::endl;
     return criteria;  // Zero solution satifies all criteria.
@@ -349,12 +347,12 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
   double tmp;
   d.PutScalar(0.0);
   if (num_ritz_ == 0) {
-    v_[0] = Teuchos::rcp(new Vector(r));
-    v_[0]->Update(0.0, r, 1.0 / rnorm0);
+    v_[0] = Teuchos::rcp(new Vector(r, Teuchos::DataAccess::Copy));
+    v_[0]->scale(1.0 / rnorm0);
     d(0) = rnorm0;
   } else {
     for (int i = 0 ; i <= num_ritz_; ++i) {
-      r.Dot(*(v_[i]), &tmp);
+      tmp = r.dot(*(v_[i]));
       d(i) = tmp;
     }
     i0 = num_ritz_;
@@ -368,29 +366,29 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
     }
   }
 
-  // Apply Arnoldi method to extend the Krylov space calculate
+  // apply Arnoldi method to extend the Krylov space calculate
   // at the end of the previous loop.
   double beta;
   for (int i = i0; i < krylov_dim_; i++) {
     if (left_pc_) {
-      m_->Apply(*(v_[i]), p);
-      h_->ApplyInverse(p, w);
+      m_->apply(*(v_[i]), p);
+      h_->applyInverse(p, w);
     } else {
-      h_->ApplyInverse(*(v_[i]), p);
-      m_->Apply(p, w);
+      h_->applyInverse(*(v_[i]), p);
+      m_->apply(p, w);
     }
 
     for (int k = 0; k <= i; k++) {  // Arnoldi algorithm
-      w.Dot(*(v_[k]), &tmp);
-      w.Update(-tmp, *(v_[k]), 1.0);
+      tmp = w.dot(*(v_[k]));
+      w.update(-tmp, *(v_[k]), 1.0);
       T(k, i) = tmp;
     }
-    w.Norm2(&beta);
+    beta = w.norm2();
     T(i + 1, i) = beta;
     if (beta == 0.0) break;
 
-    v_[i + 1] = Teuchos::rcp(new Vector(w));
-    v_[i + 1]->Update(0.0, r, 1.0 / beta);
+    v_[i + 1] = Teuchos::rcp(new Vector(w, Teuchos::DataAccess::Copy));
+    v_[i + 1]->scale(1.0 / beta);
   }
 
   // Solve the least-square problem min_d ||T d - c||.
@@ -464,10 +462,9 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::GMRES_Deflated_(
   // Calculate new basis for the next loop.
   std::vector<Teuchos::RCP<Vector> > vv(num_ritz_ + 1);
   for (int i = 0; i <= num_ritz_; ++i) {
-    vv[i] = Teuchos::rcp(new Vector(x.Map()));
-    vv[i]->PutScalar(0.0);
+    vv[i] = Teuchos::rcp(new Vector(x.getMap()));
     for (int k = 0; k <= krylov_dim_; ++k) {
-      vv[i]->Update(Vr(k, i), *(v_[k]), 1.0);
+      vv[i]->update(Vr(k, i), *(v_[k]), 1.0);
     }
   }
   
@@ -599,15 +596,15 @@ void LinearOperatorGMRES<Matrix, Vector, VectorSpace>::ComputeSolution_(
   //         and x = x0 + H V s for the right preconditioner
   if (left_pc_) {
     for (int j = 0; j <= k; j++) {
-      x.Update(s[j], *(v_[j]), 1.0);
+      x.update(s[j], *(v_[j]), 1.0);
     }
   } else {
-    p.PutScalar(0.0);
+    p.putScalar(0.0);
     for (int j = 0; j <= k; j++) {
-      p.Update(s[j], *(v_[j]), 1.0);
+      p.update(s[j], *(v_[j]), 1.0);
     }
-    h_->ApplyInverse(p, r);
-    x.Update(1.0, r, 1.0);
+    h_->applyInverse(p, r);
+    x.update(1.0, r, 1.0);
   }
 }
 
@@ -622,15 +619,15 @@ void LinearOperatorGMRES<Matrix, Vector, VectorSpace>::ComputeSolution_(
 {
   if (left_pc_) {
     for (int j = 0; j < krylov_dim_; j++) {
-      x.Update(d[j], *(v_[j]), 1.0);
+      x.update(d[j], *(v_[j]), 1.0);
     }
   } else {
-    p.PutScalar(0.0);
+    p.putScalar(0.0);
     for (int j = 0; j < krylov_dim_; j++) {
-      p.Update(d[j], *(v_[j]), 1.0);
+      p.update(d[j], *(v_[j]), 1.0);
     }
-    h_->ApplyInverse(p, r);
-    x.Update(1.0, r, 1.0);
+    h_->applyInverse(p, r);
+    x.update(1.0, r, 1.0);
   }
 }
 

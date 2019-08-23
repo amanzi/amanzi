@@ -2,10 +2,11 @@
 #include "UnitTest++.h"
 
 #include "Teuchos_RCP.hpp"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_MpiComm.h"
-#include "Epetra_Vector.h"
+#include "AmanziVector.hh"
+#include "AmanziMatrix.hh"
 
+#include "AmanziComm.hh"
+#include "AmanziVector.hh"
 #include "exceptions.hh"
 #include "LinearOperatorFactory.hh"
 #include "LinearOperatorPCG.hh"
@@ -18,9 +19,12 @@ using namespace Amanzi;
 
 SUITE(SOLVERS) {
 class Matrix {
+
+  using CrsMatrix_type = Tpetra::CrsMatrix<double,int,int>;
+
  public:
   Matrix() {};
-  Matrix(const Teuchos::RCP<Epetra_Map>& map) : map_(map) {
+  Matrix(const Map_ptr_type& map) : map_(map) {
     x_[0] = 0.00699270335645641;
     x_[1] = 0.01398540671291281;
     x_[2] = 0.02079636439636044;
@@ -35,148 +39,193 @@ class Matrix {
   }
     
   // 5-point FD stencil
-  virtual int Apply(const Epetra_Vector& v, Epetra_Vector& mv) const { 
-    int n = std::pow(v.Map().getNodeNumElements(), 0.5);
-    for (int i = 0; i < n; i++) {
-      for (int j = 0; j < n; j++) {
-        int k = j * n + i;
-        mv[k] = 4 * v[k];
-        if (i > 0) mv[k] -= v[k - 1];
-        if (j > 0) mv[k] -= v[k - n];
+  virtual int apply(const Vector_type& v, Vector_type& mv) const { 
+    int N = v.getMap()->getNodeNumElements();
+    int n = std::pow(N, 0.5);
 
-        if (i < n - 1) mv[k] -= v[k + 1];
-        if (j < n - 1) mv[k] -= v[k + n];
-      }
-    }
+    std::array<double,5> coefs {-1., -1., 4., -1., -1.};
+    auto vv = v.getLocalViewDevice();
+    auto mvv = mv.getLocalViewDevice();
+
+    typedef Kokkos::TeamPolicy<>::member_type MemberType;
+    // Create an instance of the policy
+    Kokkos::TeamPolicy<> policy(N, Kokkos::AUTO());
+    Kokkos::parallel_for(policy, KOKKOS_LAMBDA(MemberType team) {
+      int k = team.league_rank();
+      int i = k % n;
+      int j = k / n;
+
+      std::array<int,5> inds{ j > 0 ? k - n : -1,
+                                  i > 0 ? k - 1 : -1,
+                                  k,
+                                  i < n-1 ? k + 1 : -1,
+                                  j < n-1 ? k + n : -1};
+      double sum = 0.;
+      Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, 5),
+              KOKKOS_LAMBDA(int i, double& lsum) {
+                int c = inds[i];
+                lsum += c < 0 ? 0. : coefs[i] * vv(c,0);
+              }, sum);
+      mvv(k,0) = sum;
+    });
     return 0;
   }
 
-  virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const {
-    int n = v.Map().getNodeNumElements();
-    for (int i = 0; i < n; i++) hv[i] = v[i];
+  virtual int applyInverse(const Vector_type& v, Vector_type& hv) const {
+    auto vv = v.getLocalViewDevice();
+    auto hvv = hv.getLocalViewDevice();
+
+    Kokkos::parallel_for(hvv.extent(0), KOKKOS_LAMBDA(int i) {
+      hvv(i,0) = vv(i,0);
+    });
     return 0;
   }
 
   // 3-point FD stencil
   void Init() {
-    int n = map_->getNodeNumElements();
-    A_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *map_, *map_, 3));
-    for (int i = 0; i < n; i++) {
-      int indices[3];
-      double values[3] = {double(-i), double(2 * i + 1), double(-i - 1)};
-      for (int k = 0; k < 3; k++) indices[k] = i + k - 1; 
-      A_->InsertMyValues(i, 3, values, indices);
-    }
-    A_->FillComplete(*map_, *map_);
+    // int n = map_->getNodeNumElements();
+    // A_ = Teuchos::rcp(new CrsMatrix_type(map_, map_, 3));
+    // for (int i = 0; i < n; i++) {
+    //   int indices[3];
+    //   double values[3] = {double(-i), double(2 * i + 1), double(-i - 1)};
+    //   for (int k = 0; k < 3; k++) indices[k] = i + k - 1; 
+    //   A_->insertLocalValues(i, 3, values, indices);
+    // }
+    // A_->fillComplete(map_, map_);
   }
 
-  // partial consistency with Operators'interface
-  Teuchos::RCP<Epetra_CrsMatrix> A() const { return A_; }
-  void CopyVectorToSuperVector(const Epetra_Vector& ev, Epetra_Vector& sv) const { sv = ev; }
-  void CopySuperVectorToVector(const Epetra_Vector& sv, Epetra_Vector& ev) const { ev = sv; }
+  // // partial consistency with Operators'interface
+  // Teuchos::RCP<CrsMatrix_type> A() const { return A_; }
+  // void CopyVectorToSuperVector(const Vector_type& ev, Vector_type& sv) const { sv = ev; }
+  // void CopySuperVectorToVector(const Vector_type& sv, Vector_type& ev) const { ev = sv; }
 
-  virtual const Epetra_Map& DomainMap() const { return *map_; }
-  virtual const Epetra_Map& RangeMap() const { return *map_; }
-  virtual double* x() { return x_; }
+  const Map_ptr_type& getDomainMap() const { return map_; }
+  const Map_ptr_type& getRangeMap() const { return map_; }
+  double* x() { return x_; }
 
  private:
-  Teuchos::RCP<Epetra_Map> map_;
+  Map_ptr_type map_;
   double x_[5];
-  Teuchos::RCP<Epetra_CrsMatrix> A_;
+  //  Teuchos::RCP<CrsMatrix_type> A_;
 };
 
 
 TEST(PCG_SOLVER) {
   std::cout << "Checking PCG solver..." << std::endl;
 
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
-  Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
+  auto comm = getDefaultComm();
+  auto map = Teuchos::rcp(new Map_type(100, 0, comm));
 
   // create the pcg operator
   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
-  Teuchos::RCP<Matrix> h = m;
-  AmanziSolvers::LinearOperatorPCG<Matrix, Epetra_Vector, Epetra_Map> pcg(m, h);
+  AmanziSolvers::LinearOperatorPCG<Matrix, Vector_type, Map_type> pcg(m, m);
   pcg.Init();
 
   // initial guess
-  Epetra_Vector u(*map);
-  u[55] = 1.0;
+  Vector_type u(map);
+  {
+    auto uv = u.getLocalViewHost();
+    uv(55,0) = 1.0;
+  }
+  u.sync_device();
 
   // solve
-  Epetra_Vector v(*map);
-  int ierr = pcg.ApplyInverse(u, v);
+  Vector_type v(map);
+  int ierr = pcg.applyInverse(u, v);
   CHECK(ierr > 0);
+  CHECK_EQUAL(28, pcg.num_itrs());
 
-  for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
-
-  delete comm;
+  v.sync_host();
+  {
+    auto vv = v.getLocalViewHost();
+    for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], vv(i,0), 1e-6);
+  }
 };
 
 TEST(GMRES_SOLVER_LEFT_PRECONDITIONER) {
   std::cout << "\nChecking GMRES solver with LEFT preconditioner..." << std::endl;
 
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
-  Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
+  auto comm = getDefaultComm();
+  auto map = Teuchos::rcp(new Map_type(100, 0, comm));
 
   // create the gmres operator
+  std::vector<int> nits = {73,61};
   for (int loop = 0; loop < 2; loop++) {
     Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
-    AmanziSolvers::LinearOperatorGMRES<Matrix, Epetra_Vector, Epetra_Map> gmres(m, m);
+    AmanziSolvers::LinearOperatorGMRES<Matrix, Vector_type, Map_type> gmres(m, m);
     gmres.Init();
     gmres.set_krylov_dim(15 + loop * 5);
     gmres.set_tolerance(1e-12);
 
     // initial guess
-    Epetra_Vector u(*map);
-    u[55] = 1.0;
+    Vector_type u(map);
+    {
+      auto uv = u.getLocalViewHost();
+      uv(55,0) = 1.0;
+    }
+    u.sync_device();
 
     // solve
-    Epetra_Vector v(*map);
-    int ierr = gmres.ApplyInverse(u, v);
+    Vector_type v(map);
+    int ierr = gmres.applyInverse(u, v);
     CHECK(ierr > 0);
-    for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
+    CHECK_EQUAL(nits[loop], gmres.num_itrs());
+    v.sync_host();
+    {
+      auto vv = v.getLocalViewHost();
+      for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], vv(i,0), 1e-6);
+    }
   }
 
-  delete comm;
+  
 };
 
 TEST(GMRES_SOLVER_RIGHT_PRECONDITIONER) {
   std::cout << "\nChecking GMRES solver with RIGHT preconditioner..." << std::endl;
 
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
-  Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
+  auto comm = getDefaultComm();
+  auto map = Teuchos::rcp(new Map_type(100, 0, comm));
 
   Teuchos::ParameterList plist;
   plist.set<std::string>("preconditioning strategy", "right");
 
   // create the gmres operator
+  std::vector<int> nits = {73,61};
   for (int loop = 0; loop < 2; loop++) {
     Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
-    AmanziSolvers::LinearOperatorGMRES<Matrix, Epetra_Vector, Epetra_Map> gmres(m, m);
+    AmanziSolvers::LinearOperatorGMRES<Matrix, Vector_type, Map_type> gmres(m, m);
     gmres.Init(plist);
     gmres.set_krylov_dim(15 + loop * 5);
     gmres.set_tolerance(1e-12);
 
     // initial guess
-    Epetra_Vector u(*map);
-    u[55] = 1.0;
+    Vector_type u(map);
+    {
+      auto uv = u.getLocalViewHost();
+      uv(55,0) = 1.0;
+    }
+    u.sync_device();
 
     // solve
-    Epetra_Vector v(*map);
-    int ierr = gmres.ApplyInverse(u, v);
+    Vector_type v(map);
+    int ierr = gmres.applyInverse(u, v);
     CHECK(ierr > 0);
-
-    for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
+    CHECK_EQUAL(nits[loop], gmres.num_itrs());
+    v.sync_host();
+    {
+      auto vv = v.getLocalViewHost();
+      for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], vv(i,0), 1e-6);
+    }
   }
 
-  delete comm;
+  
 };
 
 TEST(GMRES_SOLVER_DEFLATION) {
   std::cout << "\nChecking GMRES solver with deflated restart..." << std::endl;
 
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
-  Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
+  auto comm = getDefaultComm();
+  auto map = Teuchos::rcp(new Map_type(100, 0, comm));
 
   Teuchos::ParameterList plist;
   plist.set<int>("maximum size of deflation space", 5);
@@ -188,133 +237,159 @@ TEST(GMRES_SOLVER_DEFLATION) {
 
   // create the gmres operator
   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
-  AmanziSolvers::LinearOperatorGMRES<Matrix, Epetra_Vector, Epetra_Map> gmres(m, m);
+  AmanziSolvers::LinearOperatorGMRES<Matrix, Vector_type, Map_type> gmres(m, m);
   gmres.Init(plist);
 
   // initial guess
-  Epetra_Vector u(*map);
-  u[55] = 1.0;
+  Vector_type u(map);
+  {
+    auto uv = u.getLocalViewHost();
+    uv(55,0) = 1.0;
+  }
+  u.sync_device();
 
   // solve
-  Epetra_Vector v(*map);
-  int ierr = gmres.ApplyInverse(u, v);
+  Vector_type v(map);
+  int ierr = gmres.applyInverse(u, v);
   CHECK(ierr > 0);
-
-  for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
-
-  delete comm;
+  CHECK_EQUAL(60, gmres.num_itrs());
+  v.sync_host();
+  {
+    auto vv = v.getLocalViewHost();
+    for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], vv(i,0), 1e-6);
+  }
+  
 };
 
 TEST(NKA_SOLVER) {
   std::cout << "\nChecking NKA solver..." << std::endl;
 
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
-  Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
+  auto comm = getDefaultComm();
+  auto map = Teuchos::rcp(new Map_type(100, 0, comm));
 
   // create the pcg operator
   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
-  AmanziSolvers::LinearOperatorNKA<Matrix, Epetra_Vector, Epetra_Map> nka(m, m);
+  AmanziSolvers::LinearOperatorNKA<Matrix, Vector_type, Map_type> nka(m, m);
   nka.Init();
 
   // initial guess
-  Epetra_Vector u(*map);
-  u[55] = 1.0;
+  Vector_type u(map);
+  {
+    auto uv = u.getLocalViewHost();
+    uv(55,0) = 1.0;
+  }
+  u.sync_device();
 
   // solve
-  Epetra_Vector v(*map);
-  int ierr = nka.ApplyInverse(u, v);
+  Vector_type v(map);
+  int ierr = nka.applyInverse(u, v);
   CHECK(ierr > 0);
-
-  for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
-
-  delete comm;
-};
-
-TEST(BELOS_GMRES_SOLVER) {
-  std::cout << "\nChecking Belos GMRES solver..." << std::endl;
-
-  Teuchos::ParameterList plist;
-  Teuchos::ParameterList& vo = plist.sublist("VerboseObject");
-  vo.set("Verbosity Level", "high");
-  plist.set<int>("size of Krylov space", 15);
-  plist.set<double>("error tolerance", 1e-12);
-  
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
-  Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
-
-  // create the operator
-  Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
-  AmanziSolvers::LinearOperatorBelosGMRES<Matrix, Epetra_Vector, Epetra_Map> gmres(m, m);
-  gmres.Init(plist);
-
-  // initial guess
-  Epetra_Vector u(*map);
-  u[55] = 1.0;
-
-  // solve
-  Epetra_Vector v(*map);
-  int ierr = gmres.ApplyInverse(u, v);
-  CHECK(ierr > 0);
-
-  for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
-
-  delete comm;
-};
-
-TEST(AMESOS_SOLVER) {
-  std::cout << "\nChecking Amesos solver..." << std::endl;
-
-  Teuchos::ParameterList plist;
-  Teuchos::ParameterList& vo = plist.sublist("VerboseObject");
-  vo.set("Verbosity Level", "high");
-  plist.set<std::string>("solver name", "Amesos_Klu")
-       .set<int>("amesos version", 1);
-  
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
-  Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(10, 0, *comm));
-
-  // create the operator
-  Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
-  m->Init();
-
-  // initial guess
-  Epetra_Vector v(*map), u(*map);
-  u[5] = 1.0;
-
-  // Amesos1
+  CHECK_EQUAL(62, nka.num_itrs());
+  v.sync_host();
   {
-    AmanziSolvers::LinearOperatorAmesos<Matrix, Epetra_Vector, Epetra_Map> klu(m, m);
-    klu.Init(plist);
-
-    int ierr = klu.ApplyInverse(u, v);
-    CHECK(ierr > 0);
-
-    double residual = 11 * v[5] - 5 * v[4] - 6 * v[6];
-    CHECK_CLOSE(residual, 1.0, 1e-12); 
-  }
-
-  // Amesos2
-  {
-    AmanziSolvers::LinearOperatorAmesos<Matrix, Epetra_Vector, Epetra_Map> klu(m, m);
-    plist.set<std::string>("solver name", "Klu2")
-         .set<int>("amesos version", 2);
-    klu.Init(plist);
-
-    int ierr = klu.ApplyInverse(u, v);
-    CHECK(ierr > 0);
-
-    double residual = 11 * v[5] - 5 * v[4] - 6 * v[6];
-    CHECK_CLOSE(residual, 1.0, 1e-12); 
+    auto vv = v.getLocalViewHost();
+    for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], vv(i,0), 1e-6);
   }
   
-  delete comm;
 };
+
+// TEST(BELOS_GMRES_SOLVER) {
+//   std::cout << "\nChecking Belos GMRES solver..." << std::endl;
+
+//   Teuchos::ParameterList plist;
+//   Teuchos::ParameterList& vo = plist.sublist("VerboseObject");
+//   vo.set("Verbosity Level", "high");
+//   plist.set<int>("size of Krylov space", 15);
+//   plist.set<double>("error tolerance", 1e-12);
+  
+//   auto comm = getDefaultComm();
+//   auto map = Teuchos::rcp(new Map_type(100, 0, comm));
+
+//   // create the operator
+//   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
+//   AmanziSolvers::LinearOperatorBelosGMRES<Matrix, Vector_type, Map_type> gmres(m, m);
+//   gmres.Init(plist);
+
+//   // initial guess
+//   Vector_type u(map);
+//  {
+//    auto uv = u.getLocalViewHost();
+//    uv(55,0) = 1.0;
+//  }
+//  u.sync_device();
+
+//   // solve
+//   Vector_type v(map);
+//   int ierr = gmres.applyInverse(u, v);
+//   CHECK(ierr > 0);
+    // v.sync_host();
+    // {
+    //   auto vv = v.getLocalViewHost();
+    //   for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], vv(i,0), 1e-6);
+    // }
+
+
+//   
+// };
+
+// TEST(AMESOS_SOLVER) {
+//   std::cout << "\nChecking Amesos solver..." << std::endl;
+
+//   Teuchos::ParameterList plist;
+//   Teuchos::ParameterList& vo = plist.sublist("VerboseObject");
+//   vo.set("Verbosity Level", "high");
+//   plist.set<std::string>("solver name", "Amesos_Klu")
+//        .set<int>("amesos version", 1);
+  
+//   auto comm = getDefaultComm();
+//   auto map = Teuchos::rcp(new Map_type(10, 0, comm));
+
+//   // create the operator
+//   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
+//   m->Init();
+
+//   // initial guess
+//   Vector_type v(map), u(map);
+//  {
+//    auto uv = u.getLocalViewHost();
+//    uv(55,0) = 1.0;
+//  }
+//  u.sync_device();
+
+//   // Amesos1
+//   {
+//     AmanziSolvers::LinearOperatorAmesos<Matrix, Vector_type, Map_type> klu(m, m);
+//     klu.Init(plist);
+
+//     int ierr = klu.applyInverse(u, v);
+//     CHECK(ierr > 0);
+
+//     double residual = 11 * v[5] - 5 * v[4] - 6 * v[6];
+//     CHECK_CLOSE(residual, 1.0, 1e-12); 
+//   }
+
+//   // Amesos2
+//   {
+//     AmanziSolvers::LinearOperatorAmesos<Matrix, Vector_type, Map_type> klu(m, m);
+//     plist.set<std::string>("solver name", "Klu2")
+//          .set<int>("amesos version", 2);
+//     klu.Init(plist);
+
+//     int ierr = klu.applyInverse(u, v);
+//     CHECK(ierr > 0);
+
+//     double residual = 11 * v[5] - 5 * v[4] - 6 * v[6];
+//     CHECK_CLOSE(residual, 1.0, 1e-12); 
+//   }
+  
+//   
+// };
 
 TEST(SOLVER_FACTORY) {
   std::cout << "\nChecking solver factory..." << std::endl;
 
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
-  Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
+  auto comm = getDefaultComm();
+  auto map = Teuchos::rcp(new Map_type(100, 0, comm));
 
   Teuchos::ParameterList plist;
   Teuchos::ParameterList& slist = plist.sublist("pcg");
@@ -322,30 +397,35 @@ TEST(SOLVER_FACTORY) {
 
   // create the pcg operator
   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
-  AmanziSolvers::LinearOperatorFactory<Matrix, Epetra_Vector, Epetra_Map> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix, Epetra_Vector, Epetra_Map> > 
+  AmanziSolvers::LinearOperatorFactory<Matrix, Vector_type, Map_type> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix, Vector_type, Map_type> > 
       solver = factory.Create("pcg", plist, m);
   solver->Init();
 
   // initial guess
-  Epetra_Vector u(*map);
-  u[55] = 1.0;
+  Vector_type u(map);
+ {
+   auto uv = u.getLocalViewHost();
+   uv(55,0) = 1.0;
+ }
+ u.sync_device();
 
   // solve
-  Epetra_Vector v(*map);
-  int ierr = solver->ApplyInverse(u, v);
+  Vector_type v(map);
+  int ierr = solver->applyInverse(u, v);
   CHECK(ierr > 0);
-
-  for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
-
-  delete comm;
+  v.sync_host();
+  {
+    auto vv = v.getLocalViewHost();
+    for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], vv(i,0), 1e-6);
+  }
 };
 
 TEST(VERBOSITY_OBJECT) {
   std::cout << "\nChecking verbosity object..." << std::endl;
 
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
-  Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(100, 0, *comm));
+  auto comm = getDefaultComm();
+  auto map = Teuchos::rcp(new Map_type(100, 0, comm));
 
   Teuchos::ParameterList plist;
   Teuchos::ParameterList& slist = plist.sublist("gmres");
@@ -358,22 +438,27 @@ TEST(VERBOSITY_OBJECT) {
 
   // create the pcg operator
   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
-  AmanziSolvers::LinearOperatorFactory<Matrix, Epetra_Vector, Epetra_Map> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix, Epetra_Vector, Epetra_Map> > 
+  AmanziSolvers::LinearOperatorFactory<Matrix, Vector_type, Map_type> factory;
+  Teuchos::RCP<AmanziSolvers::LinearOperator<Matrix, Vector_type, Map_type> > 
       solver = factory.Create("gmres", plist, m);
 
   // initial guess
-  Epetra_Vector u(*map);
-  u[55] = 1.0;
+  Vector_type u(map);
+ {
+   auto uv = u.getLocalViewHost();
+   uv(55,0) = 1.0;
+ }
+ u.sync_device();
 
-  // solve
-  Epetra_Vector v(*map);
-  int ierr = solver->ApplyInverse(u, v);
-  CHECK(ierr > 0);
-
-  for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
-
-  delete comm;
+ // solve
+ Vector_type v(map);
+ int ierr = solver->applyInverse(u, v);
+ CHECK(ierr > 0);
+ v.sync_host();
+ {
+   auto vv = v.getLocalViewHost();
+   for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], vv(i,0), 1e-6);
+ }
 };
 
 }  // suite SOLVERS

@@ -71,7 +71,7 @@ namespace AmanziSolvers {
 template<class Vector, class VectorSpace>
 class NKA_Base {
  public:
-  NKA_Base(int mvec, double vtol, const VectorSpace& map);
+  NKA_Base(int mvec, double vtol, const Teuchos::RCP<const VectorSpace>& map);
 
   void Init(Teuchos::ParameterList& plist) {
     vo_ = Teuchos::rcp(new VerboseObject("NKA_Base", plist));
@@ -108,7 +108,7 @@ class NKA_Base {
  * Allocate memory
  ***************************************************************** */
 template<class Vector, class VectorSpace>
-NKA_Base<Vector, VectorSpace>::NKA_Base(int mvec, double vtol, const VectorSpace& map)
+NKA_Base<Vector, VectorSpace>::NKA_Base(int mvec, double vtol, const Teuchos::RCP<const VectorSpace>& map)
     : subspace_(false),
       pending_(false),
       mvec_(std::max(mvec, 1)),
@@ -119,9 +119,9 @@ NKA_Base<Vector, VectorSpace>::NKA_Base(int mvec, double vtol, const VectorSpace
 
   for (int i = 0; i < mvec_ + 1; i++) {
     v_[i] = Teuchos::rcp(new Vector(map));
-    v_[i]->PutScalar(0.);
+    v_[i]->putScalar(0.);
     w_[i] = Teuchos::rcp(new Vector(map));
-    w_[i]->PutScalar(0.);
+    w_[i]->putScalar(0.);
   }
 
   h_.Shape(mvec_+1,mvec_+1);
@@ -193,7 +193,7 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
     auto vp = v_[first_v_];
 
     // next_v_ function difference w_1
-    wp->Update(-1., f, 1.);
+    wp->update(-1., f, 1.);
 
     // If the function difference is 0, we can't update the subspace with
     // this data; so we toss it out and continue.  In this case it is likely
@@ -203,10 +203,10 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
     // outside.
     double s = 0.;
     double sv = 0.;
-    wp->Norm2(&s);
-    vp->Norm2(&sv);
+    s = wp->norm2();
+    sv = vp->norm2();
     double sf = 0.;
-    f.Norm2(&sf);
+    sf = f.norm2();
 
     if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
       Teuchos::OSTab tab = vo_->getOSTab();
@@ -221,12 +221,12 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
       if (old_dir != Teuchos::null) *vp = *old_dir;
 
       // Normalize w_1 and apply same factor to v_1.
-      wp->Scale(1.0 / s);
-      vp->Scale(1.0 / s);
+      wp->scale(1.0 / s);
+      vp->scale(1.0 / s);
 
       s = 0.;
-      wp->Norm2(&s);
-      vp->Norm2(&sv);
+      s = wp->norm2();
+      sv = vp->norm2();
     }
 
     if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
@@ -248,18 +248,16 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
     AMANZI_ASSERT(first_v_ != NKA_EOL);
     auto wp = w_[first_v_];
     double s = 0.;
-    wp->Norm2(&s);
+    s = wp->norm2();
 
     // Update H.
     for (int k = next_v_[first_v_]; k != NKA_EOL; k = next_v_[k]) {
       double hk = 0.;
-      w_[k]->Norm2(&hk);
-      hk = 0.;
-      int ierr = wp->Dot(*w_[k], &hk);
-      AMANZI_ASSERT(!ierr);
+      hk = w_[k]->norm2();
+      hk = wp->dot(*w_[k]);
       h_[first_v_][k] = hk;
       hk = 0.;
-      w_[k]->Dot(*wp, &hk);
+      hk = w_[k]->dot(*wp);
     }
 
     // CHOLESKI FACTORIZATION OF H = W^t W
@@ -327,8 +325,8 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   }
 
   //  ACCELERATED CORRECTION
-  dir = f;
-  Vector dir_update(dir);
+  dir.assign(f);
+  Vector dir_update(dir, Teuchos::DataAccess::Copy);
 
   // Locate storage for the new vectors.
   AMANZI_ASSERT(free_v_ != NKA_EOL);
@@ -336,7 +334,7 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   free_v_ = next_v_[free_v_];
 
   // Save the original f for the next_v_ call.
-  *w_[new_v] = f;
+  w_[new_v]->assign(f);
 
   if (subspace_) {
     std::vector<double> c(mvec_+1,0.);
@@ -344,9 +342,7 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
     // Project f onto the span of the w vectors:
     // forward substitution
     for (int j = first_v_; j != NKA_EOL; j = next_v_[j]) {
-      double cj = 0.;
-      int ierr = dir.Dot(*w_[j], &cj);
-      AMANZI_ASSERT(!ierr);
+      double cj = dir.dot(*w_[j]);
 
       for (int i = first_v_; i != j; i = next_v_[i]) {
         cj -= h_[j][i] * c[i];
@@ -364,14 +360,13 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
 
     // The accelerated correction
     for (int k = first_v_; k != NKA_EOL; k = next_v_[k]) {
-      dir_update.Update(1.,*v_[k], -1., *w_[k], 0.);
-      dir.Update(c[k], dir_update, 1.0);
+      dir_update.update(1.,*v_[k], -1., *w_[k], 0.);
+      dir.update(c[k], dir_update, 1.0);
     }
   }
 
   // Save the accelerated correction for the next_v_ call.
-  *v_[new_v] = dir;
-
+  v_[new_v]->assign(dir);
 
   // Prepend the new vectors to the list.
   prev_v_[new_v] = NKA_EOL;
