@@ -122,6 +122,9 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_ = op_adv_->global_operator();
   op_adv_->SetBCs(op_bc_, op_bc_);
 
+  // refresh data BC and source data  
+  UpdateBoundaryData( t_physics_,  t_physics_, *tcc);
+
   auto flux = S->GetFieldData(darcy_flux_key_);
   op_adv_->Setup(*flux);
   op_adv_->UpdateMatrices(flux.ptr());
