@@ -240,5 +240,6 @@ TEST(OPERATOR_DIFFUSION_DG) {
   OperatorDiffusionDG("AztecOO CG", "normalized");
   OperatorDiffusionDG("AztecOO CG");
   OperatorDiffusionDG("Amesos1");
-  OperatorDiffusionDG("Amesos2");
+  OperatorDiffusionDG("Amesos2: basker");
+  OperatorDiffusionDG("Amesos2: superludist");
 }

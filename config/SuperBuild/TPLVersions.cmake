@@ -119,6 +119,7 @@
 #   0.95.7       - update MSTK to 3.1.0
 #   0.95.8       - update NetCDF-Fortran to 4.4.5
 #   0.95.9       - update NetCDF-C to 4.7.0
+#   0.95.10      - update Trilinos to 12.14.0bf557717e-Jun17
 
 include(CMakeParseArguments)
 
@@ -433,13 +434,15 @@ set(PETSc_MD5_SUM        ce207f60800e19cfb55a2d7a879ca42c)
 # TPL: Trilinos
 #
 set(Trilinos_VERSION_MAJOR 12)
-set(Trilinos_VERSION_MINOR 12)
-set(Trilinos_VERSION_PATCH 1)
+set(Trilinos_VERSION_MINOR 14)
+set(Trilinos_VERSION_PATCH 0bf557717e-Jun17)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}-${Trilinos_VERSION_MINOR}-${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "https://github.com/trilinos/Trilinos/archive")
 set(Trilinos_ARCHIVE_FILE   trilinos-release-${Trilinos_VERSION}.tar.gz)
 set(Trilinos_SAVEAS_FILE    ${Trilinos_ARCHIVE_FILE})
-set(Trilinos_MD5_SUM        ecd4606fa332212433c98bf950a69cc7)
+set(Trilinos_MD5_SUM        de912cca43c2ca3b74aa08528ac39dbd)
+set(Trilinos_GIT_REPOSITORY "https://github.com/trilinos/Trilinos")
+set(Trilinos_GIT_TAG        "0bf557717ec1cf692828e250f95c1dcaba4f01c9")
 
 #
 # TPL: SEACAS

@@ -7,7 +7,7 @@
 if (ENABLE_XSDK)
     set(trilinos_depend_projects XSDK SEACAS)
 else()
-    set(trilinos_depend_projects NetCDF Boost SEACAS)
+    set(trilinos_depend_projects NetCDF Boost SEACAS SuperLUDist ParMetis)
 endif() 
 
 if (ENABLE_HYPRE AND NOT ENABLE_XSDK)
@@ -130,6 +130,18 @@ if (ENABLE_HYPRE)
               "-DTPL_HYPRE_INCLUDE_DIRS:FILEPATH=${HYPRE_DIR}/include")
 endif()
 
+# SuperLUDist
+list(APPEND Trilinos_CMAKE_TPL_ARGS
+            "-DTPL_ENABLE_SuperLUDist:BOOL=ON"
+            "-DTPL_SuperLUDist_INCLUDE_DIRS:FILEPATH=${SuperLUDist_DIR}/include"
+            "-DTPL_SuperLUDist_LIBRARIES:STRING=${SuperLUDist_LIBRARY}")
+
+# ParMETIS
+list(APPEND Trilinos_CMAKE_TPL_ARGS
+            "-DTPL_ENABLE_ParMETIS:BOOL=ON"
+            "-DTPL_ParMETIS_INCLUDE_DIRS:FILEPATH=${ParMetis_DIR}/include"
+            "-DTPL_ParMETIS_LIBRARIES:STRING=${ParMetis_LIBRARIES}")
+
 #  - Addtional Trilinos CMake Arguments
 set(Trilinos_CMAKE_EXTRA_ARGS
     "-DTrilinos_VERBOSE_CONFIGURE:BOOL=ON"
@@ -137,6 +149,7 @@ set(Trilinos_CMAKE_EXTRA_ARGS
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
     "-DNOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA:BOOL=OFF"
     "-DNOX_ENABLE_THYRA_EPETRA_ADAPTERS:BOOL=OFF"    
+    "-DTpetra_ENABLE_DEPRECATED_CODE:BOOL=OFF"
     )
 
 if (CMAKE_BUILD_TYPE)
@@ -180,7 +193,7 @@ set(Trilinos_CMAKE_ARGS
 # Trilinos patches
 set(ENABLE_Trilinos_Patch ON)
 if (ENABLE_Trilinos_Patch)
-  set(Trilinos_patch_file trilinos-ifpack-hypre.patch trilinos-duplicate-parameters.patch)
+  set(Trilinos_patch_file trilinos-duplicate-parameters.patch)
   configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
                  ${Trilinos_prefix_dir}/trilinos-patch-step.sh
                  @ONLY)
@@ -191,54 +204,6 @@ else()
   message(STATUS "Patch NOT APPLIED for trilinos")
 endif()
 
-# Trilinos needs a patch for GNU versions > 4.6
-#LPRITCHif ( CMAKE_CXX_COMPILER_VERSION )
-#LPRITCH  if ( ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" )
-#LPRITCH    if ( ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "4.6" )
-#LPRITCH      set(ENABLE_Trilinos_Patch OFF)
-#LPRITCH    else()
-#LPRITCH      message(STATUS "Trilinos requires a patch when using"
-#LPRITCH                     " GNU ${CMAKE_CXX_COMPILER_VERSION}")
-#LPRITCH      set(ENABLE_Trilinos_Patch ON)
-#LPRITCH    endif()
-#LPRITCH  endif()
-#LPRITCHendif()  
-#LPRITCH
-#LPRITCHset(Trilinos_PATCH_COMMAND)
-#LPRITCHif (ENABLE_Trilinos_Patch)
-#LPRITCH    set(Trilinos_patch_file)
-#LPRITCH    # Set the patch file name
-#LPRITCH    if(CMAKE_CXX_COMPILER_VERSION)
-#LPRITCH      if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-#LPRITCH        if ( "${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "4.6" )
-#LPRITCH          message(FATAL_ERROR "ENABLE_Trilinos_Patch is ON, however no patch file exists"
-#LPRITCH                              " for version ${CMAKE_CXX_COMPILER_VERSION}.")
-#LPRITCH        elseif( "${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "4.7" )
-#LPRITCH          set(Trilinos_patch_file trilinos-${Trilinos_VERSION}-gcc46.patch)
-#LPRITCH        elseif ( "${CMAKE_CXX_COMPILER_VERSION}" VERSION_LESS "4.8" )
-#LPRITCH          set(Trilinos_patch_file trilinos-${Trilinos_VERSION}-gcc47.patch)
-#LPRITCH        else()
-#LPRITCH          message(FATAL_ERROR "ENABLE_Trilinos_Patch is ON, however no patch file exists"
-#LPRITCH                             " for version ${CMAKE_CXX_COMPILER_VERSION}.")
-#LPRITCH        endif()
-#LPRITCH      endif()
-#LPRITCH    endif()
-#LPRITCH
-#LPRITCH    #print_variable(Trilinos_patch_file)
-#LPRITCH    if(Trilinos_patch_file)
-#LPRITCH       configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/trilinos-patch-step.sh.in
-#LPRITCH                      ${Trilinos_prefix_dir}/trilinos-patch-step.sh
-#LPRITCH                      @ONLY)
-#LPRITCH       set(Trilinos_PATCH_COMMAND sh ${Trilinos_prefix_dir}/trilinos-patch-step.sh)
-#LPRITCH    else()
-#LPRITCH       message(WARNING "ENABLE_Trilinos_Patch is ON but no patch file found for "
-#LPRITCH                       "${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION} "
-#LPRITCH                       "Will not patch Trilinos.")
-#LPRITCH    endif()                   
-#LPRITCH                      
-#LPRITCHendif()  
-#print_variable(Trilinos_PATCH_COMMAND)
-
 # --- Define the Trilinos location
 set(Trilinos_install_dir ${TPL_INSTALL_PREFIX}/${Trilinos_BUILD_TARGET}-${Trilinos_VERSION})
 
@@ -248,9 +213,11 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     TMP_DIR   ${Trilinos_tmp_dir}                     # Temporary files directory
                     STAMP_DIR ${Trilinos_stamp_dir}                   # Timestamp and log directory
                     # -- Download and URL definitions
-                    DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}                  # Download directory
-                    URL          ${Trilinos_URL}                      # URL may be a web site OR a local file
-                    URL_MD5      ${Trilinos_MD5_SUM}                  # md5sum of the archive file
+                    DOWNLOAD_DIR   ${TPL_DOWNLOAD_DIR}                # Download directory
+                    GIT_REPOSITORY ${Trilinos_GIT_REPOSITORY}              
+                    GIT_TAG        ${Trilinos_GIT_TAG}      
+                    # -- Update (one way to skip this step is use null command)
+                    UPDATE_COMMAND ""
                     # -- Patch
                     PATCH_COMMAND ${Trilinos_PATCH_COMMAND}
                     # -- Configure

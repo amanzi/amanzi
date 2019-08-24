@@ -116,7 +116,7 @@ create_exports()
 
 option(ENABLE_Config_Report "Print out detailed information at the end of a configuration")
 set(AMANZI_CONFIG_LOG "${AMANZI_BINARY_DIR}/amanzi-config.log"
-    CACHE string "Amanzi configuration log file")
+    CACHE STRING "Amanzi configuration log file")
 include(AmanziConfigReport)
 if (ENABLE_Config_Report)
   set(cat_exec "cat")
