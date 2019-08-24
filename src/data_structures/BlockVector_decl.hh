@@ -42,10 +42,10 @@ public:
   //
   // Meta-data delegated to map
   // ---------------------------------------------
-  const Teuchos::RCP<const BlockSpace>& Map() const { return map_; }  
-  Comm_ptr_type Comm() const { return Map()->Comm(); }
-  GO GlobalLength(bool ghosted=false) const { return Map()->GlobalLength(ghosted); }
-  LO MyLength(bool ghosted=false) const { return Map()->MyLength(ghosted); }
+  const Teuchos::RCP<const BlockSpace>& getMap() const { return map_; }  
+  Comm_ptr_type Comm() const { return getMap()->Comm(); }
+  GO getGlobalLength(bool ghosted=false) const { return getMap()->getGlobalLength(ghosted); }
+  LO getLocalLength(bool ghosted=false) const { return getMap()->getLocalLength(ghosted); }
 
   //
   // Component meta-data delegated to map
@@ -53,11 +53,11 @@ public:
   bool HasComponent(const std::string& name) const { return map_->HasComponent(name); }
 
   using name_iterator = BlockSpace::name_iterator;
-  name_iterator begin() const { return Map()->begin(); }
-  name_iterator end() const { return Map()->end(); }
-  std::size_t size() const { return Map()->size(); }
+  name_iterator begin() const { return getMap()->begin(); }
+  name_iterator end() const { return getMap()->end(); }
+  std::size_t size() const { return getMap()->size(); }
 
-  std::size_t NumVectors(const std::string& name) const { return Map()->NumVectors(name); }
+  std::size_t getNumVectors(const std::string& name) const { return getMap()->getNumVectors(name); }
 
   //
   // Accessors to data.
@@ -108,69 +108,69 @@ public:
   // Vector operations.
   // --------------------------------
   // Insert value into data.
-  int PutScalar(Scalar scalar);
+  void putScalar(Scalar scalar);
 
   // Insert value into component [name].
-  int PutScalar(const std::string& name, Scalar scalar);
+  void putScalar(const std::string& name, Scalar scalar);
 
   // Insert values into component [name].
-  int PutScalar(const std::string& name, const std::vector<Scalar>& scalar);
+  void putScalar(const std::string& name, const std::vector<Scalar>& scalar);
 
   // Sets all vectors to value including ghosted elements.
   // Different name is given so it cannot be used in a templated code.   
-  int PutScalarMasterAndGhosted(Scalar scalar);
+  void putScalarMasterAndGhosted(Scalar scalar);
 
   // Sets ghost elements to value.
   // Different name is given so it cannot be used in a templated code.   
-  // int PutScalarGhosted(Scalar scalar);
+  // void putScalarGhosted(Scalar scalar);
 
   // cheap randomizer
-  int Random();
+  void random();
 
   // this <- abs(this)
-  int Abs(const BlockVector<Scalar>& other);
+  void abs(const BlockVector<Scalar>& other);
 
   // this <- this * scalarThis
-  int Scale(Scalar value);
+  void scale(Scalar value);
 
-  // Scale() applied to component name.
-  int Scale(const std::string& name, Scalar scalarThis);
+  // scale() applied to component name.
+  void scale(const std::string& name, Scalar scalarThis);
 
   // // this <- this + scalarA
-  // int Shift(Scalar scalarA);
+  // void Shift(Scalar scalarA);
 
   // // Shift() applied to component name.
-  // int Shift(const std::string& name, Scalar scalarA);
+  // void Shift(const std::string& name, Scalar scalarA);
 
   // this <- element wise reciprocal(this)
-  int Reciprocal(const BlockVector<Scalar>& other);
+  void reciprocal(const BlockVector<Scalar>& other);
   
   // result <- other \dot this
-  int Dot(const BlockVector<Scalar>& other, Scalar* result) const;
+  Scalar dot(const BlockVector<Scalar>& other) const;
 
   // this <- scalarA*A + scalarThis*this
-  BlockVector<Scalar>& Update(Scalar scalarA, const BlockVector<Scalar>& A, Scalar scalarThis);
+  void update(Scalar scalarA, const BlockVector<Scalar>& A, Scalar scalarThis);
 
   // this <- scalarA*A + scalarB*B + scalarThis*this
-  BlockVector<Scalar>& Update(Scalar scalarA, const BlockVector<Scalar>& A,
-          Scalar scalarB, const BlockVector<Scalar>& B, Scalar scalarThis);
+  void update(Scalar scalarA, const BlockVector<Scalar>& A,
+              Scalar scalarB, const BlockVector<Scalar>& B, Scalar scalarThis);
 
   // this <- scalarAB * A@B + scalarThis*this  (@ is the elementwise product
-  int Multiply(Scalar scalarAB, const BlockVector<Scalar>& A, const BlockVector<Scalar>& B,
-               Scalar scalarThis);
+  void  elementWiseMultiply(Scalar scalarAB, const BlockVector<Scalar>& A,
+                            const BlockVector<Scalar>& B, Scalar scalarThis);
 
   // this <- scalarAB * B/A + scalarThis*this  (/ is the elementwise division
-  // int ReciprocalMultiply(Scalar scalarAB, const BlockVector<Scalar>& A, const BlockVector<Scalar>& B,
+  // int ReciprocalelementWiseMultiply(Scalar scalarAB, const BlockVector<Scalar>& A, const BlockVector<Scalar>& B,
   //                        Scalar scalarThis);
 
   // Norms.
-  int NormInf(Scalar* norm) const;
-  int Norm1(Scalar* norm) const;
-  int Norm2(Scalar* norm) const;
+  Scalar normInf() const;
+  Scalar norm1() const;
+  Scalar norm2() const;
 
-  // int MinValue(Scalar* value) const;
-  // int MaxValue(Scalar* value) const;
-  // int MeanValue(Scalar* value) const;
+  // Scalar MinValue() const;
+  // Scalar MaxValue() const;
+  // Scalar MeanValue() const;
 
   // Extras
   void Print(std::ostream &os, bool ghosted=false, bool data_io=true) const;

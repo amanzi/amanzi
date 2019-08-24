@@ -71,7 +71,7 @@ class Op_Cell_FaceCell : public Op {
 
     if (scaling.HasComponent("cell")) {
       const Epetra_MultiVector& s_c = *scaling.ViewComponent("cell",true);
-      AMANZI_ASSERT(s_c.MyLength() == matrices.size());
+      AMANZI_ASSERT(s_c.getLocalLength() == matrices.size());
 
       AmanziMesh::Entity_ID_List face;
       for (int c = 0; c != matrices.size(); ++c) {

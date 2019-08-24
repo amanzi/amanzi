@@ -110,7 +110,7 @@ void Visualization::WritePartition() {
   //   Epetra_Vector reg(mesh_->cell_map(false), false);
   //   // loop over the regions and initialize the reg array
   //   double part_index = static_cast<double>(mesh_->get_comm()->MyPID());
-  //   reg.PutScalar(part_index);
+  //   reg.putScalar(part_index);
 
   //   Write("partition", reg);
   // }

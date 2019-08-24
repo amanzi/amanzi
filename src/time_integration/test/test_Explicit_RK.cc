@@ -22,7 +22,7 @@ class fn1 : public Explicit_TI::fnBase<Epetra_Vector> {
 class fn2 : public Explicit_TI::fnBase<Epetra_Vector> {
  public:
   void FunctionalTimeDerivative(const double t, const Epetra_Vector& y, Epetra_Vector& y_new) {
-    y_new.PutScalar(t*t);
+    y_new.putScalar(t*t);
   }
 };
 
@@ -38,7 +38,7 @@ TEST(Explicit_RK_Euler) {
   Explicit_TI::RK<Epetra_Vector> explicit_time_integrator(f, method, y); 
 	
   // initial value
-  y.PutScalar(1.0);
+  y.putScalar(1.0);
 
   // initial time
   double t = 0.0;
@@ -68,7 +68,7 @@ TEST(Explicit_RK_Heun) {
   Explicit_TI::RK<Epetra_Vector> explicit_time_integrator(f, method, y); 
 		
   // initial value
-  y.PutScalar(1.0);
+  y.putScalar(1.0);
 
   // initial time and time step
   double t(0.0), h(0.1);
@@ -96,7 +96,7 @@ TEST(Explicit_RK_Midpoint) {
   Explicit_TI::RK<Epetra_Vector> explicit_time_integrator(f, method, y); 
 		
   // initial value
-  y.PutScalar(1.0);
+  y.putScalar(1.0);
 
   // initial time
   double t = 0.0;
@@ -126,7 +126,7 @@ TEST(Explicit_RK_Ralston) {
   Explicit_TI::RK<Epetra_Vector> explicit_time_integrator(f, method, y); 
 		
   // initial value
-  y.PutScalar(1.0);
+  y.putScalar(1.0);
 
   // initial time
   double t = 0.0;
@@ -156,7 +156,7 @@ TEST(Explicit_TVD_RK3) {
   Explicit_TI::RK<Epetra_Vector> explicit_time_integrator(f, method, y); 
 		
   // initial value
-  y.PutScalar(1.0);
+  y.putScalar(1.0);
 
   // initial time
   double t(0.0), h(0.1);
@@ -184,7 +184,7 @@ TEST(Explicit_TVD_RK3_Exact) {
   Explicit_TI::RK<Epetra_Vector> explicit_time_integrator(f, method, y); 
 		
   // initial value
-  y.PutScalar(0.0);
+  y.putScalar(0.0);
 
   // initial time
   double t(0.0), h(0.1);
@@ -212,7 +212,7 @@ TEST(Explicit_RK_Kutta3D) {
   Explicit_TI::RK<Epetra_Vector> explicit_time_integrator(f, method, y); 
 		
   // initial value
-  y.PutScalar(1.0);
+  y.putScalar(1.0);
 
   // initial time
   double t = 0.0;
@@ -254,7 +254,7 @@ TEST(Explicit_RK_UserDefined) {
   Explicit_TI::RK<Epetra_Vector> explicit_time_integrator(f, order, a, b, c, y); 
 		
   // initial value
-  y.PutScalar(1.0);
+  y.putScalar(1.0);
 
   // initial time
   double t = 0.0;
@@ -284,7 +284,7 @@ TEST(Explicit_RK_RK4) {
   Explicit_TI::RK<Epetra_Vector> explicit_time_integrator(f, method, y); 
 		
   // initial value
-  y.PutScalar(1.0);
+  y.putScalar(1.0);
 
   // initial time
   double t = 0.0;

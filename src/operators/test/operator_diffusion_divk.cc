@@ -108,7 +108,7 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
 
   // create and initialize state variables.
   Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(cvs));
-  solution->PutScalar(0.0);
+  solution->putScalar(0.0);
 
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs));
   Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
@@ -165,7 +165,7 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   solver.Init(lop_list);
 
   CompositeVector& rhs = *global_op->rhs();
-  int ierr = solver.ApplyInverse(rhs, *solution);
+  int ierr = solver.applyInverse(rhs, *solution);
 
   if (getRank == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
@@ -262,7 +262,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
 
   // create and initialize state variables.
   Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(cvs));
-  solution->PutScalar(0.0);
+  solution->putScalar(0.0);
 
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs));
   Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
@@ -320,7 +320,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   solver.Init(lop_list);
 
   CompositeVector rhs = *global_op->rhs();
-  int ierr = solver.ApplyInverse(rhs, *solution);
+  int ierr = solver.applyInverse(rhs, *solution);
 
   if (getRank == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 

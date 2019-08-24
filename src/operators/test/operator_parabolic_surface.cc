@@ -99,7 +99,7 @@ void RunTest(std::string op_list_name) {
 
   // create source and add it to the operator
   CompositeVector source(*cvs);
-  source.PutScalarMasterAndGhosted(0.0);
+  source.putScalarMasterAndGhosted(0.0);
   
   Epetra_MultiVector& src = *source.ViewComponent("cell");
   for (int c = 0; c < 20; c++) {
@@ -108,10 +108,10 @@ void RunTest(std::string op_list_name) {
 
   // add accumulation terms
   CompositeVector solution(*cvs);
-  solution.PutScalar(0.0);  // solution at time T=0
+  solution.putScalar(0.0);  // solution at time T=0
 
   CompositeVector phi(*cvs);
-  phi.PutScalar(0.2);
+  phi.putScalar(0.2);
 
   double dT = 10.0;
 
@@ -153,8 +153,8 @@ void RunTest(std::string op_list_name) {
   solver.Init(lop_list);
 
   CompositeVector rhs = *global_op->rhs();
-  solution.PutScalar(0.0);
-  int ierr = solver.ApplyInverse(rhs, solution);
+  solution.putScalar(0.0);
+  int ierr = solver.applyInverse(rhs, solution);
 
   // ver.CheckResidual(solution, 1.0e-12);
 
@@ -165,8 +165,8 @@ void RunTest(std::string op_list_name) {
   }
 
   // repeat the above without destroying the operators.
-  solution.PutScalar(0.0);
-  global_op->rhs()->PutScalar(0.);
+  solution.putScalar(0.0);
+  global_op->rhs()->putScalar(0.);
 
   op.UpdateMatrices(Teuchos::null, Teuchos::null);
   op_acc.AddAccumulationDelta(solution, phi, phi, dT, "cell");
@@ -179,7 +179,7 @@ void RunTest(std::string op_list_name) {
   global_op->InitializePreconditioner(slist);
   global_op->UpdatePreconditioner();
 
-  ierr = solver.ApplyInverse(rhs, solution);
+  ierr = solver.applyInverse(rhs, solution);
 
   int num_itrs = solver.num_itrs();
   CHECK(num_itrs < 10);

@@ -53,7 +53,7 @@ int MFD3D_Diffusion_Edge::H1consistency(
   double volume = mesh_->cell_volume(c,false);
 
   // calculate matrix R (we re-use matrix N)
-  if (d_ == 3) N.PutScalar(0.0);
+  if (d_ == 3) N.putScalar(0.0);
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
@@ -110,7 +110,7 @@ int MFD3D_Diffusion_Edge::H1consistency(
 
   // Internal verification 
   // DenseMatrix NtR(d_ + 1, d_ + 1);
-  // NtR.Multiply(N, R, true);
+  // NtR.elementWiseMultiply(N, R, true);
   // std::cout << NtR << std::endl;
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;

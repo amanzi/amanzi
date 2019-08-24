@@ -98,7 +98,7 @@ void EvaluatorSecondaryMonotypeFromFunction::Evaluate_(const State &S,
       result_vecs.emplace_back(result->ViewComponent(comp, false).ptr());
     }
       
-    for (int i = 0; i != result_vecs[0]->MyLength(); ++i) {
+    for (int i = 0; i != result_vecs[0]->getLocalLength(); ++i) {
       std::vector<double> p(ndeps);
       for (int j = 0; j != ndeps; ++j)
         p[j] = (*dep_vecs[j])[0][i];

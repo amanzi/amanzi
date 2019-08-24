@@ -156,7 +156,7 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
 
     int nids, itmp = ids.size();
     Teuchos::reduceAll(*mesh->get_comm(), Teuchos::REDUCE_SUM, 1, &itmp, &nids);
-    double fraction = 100.0 * nids / grad_c.GlobalLength();
+    double fraction = 100.0 * nids / grad_c.getGlobalLength();
     if (getRank == 0) 
       printf("%9s: errors: %10.6f %10.6f  ||grad||=%8.4f  indicator=%5.1f%%\n",
           LIMITERS[i].c_str(), err_int, err_glb, gnorm, fraction);
@@ -182,11 +182,11 @@ void RunTest(std::string filename, std::string basis, double& l2norm)
       WhetStone::DenseMatrix M;
       dg.MassMatrix(c, K, M);
 
-      M.Multiply(data2, data3, false);
+      M.elementWiseMultiply(data2, data3, false);
       l2norm += data2 * data3;
 
       data2 -= data;
-      M.Multiply(data2, data3, false);
+      M.elementWiseMultiply(data2, data3, false);
       err += data2 * data3;
     }
 

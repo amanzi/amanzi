@@ -31,7 +31,7 @@ class PreconditionerIdentity : public Preconditioner<Matrix,Vector> {
   void Update(const Teuchos::RCP<const Matrix>& A) override {};
   void Destroy() override {};
 
-  int ApplyInverse(const Vector& v, Vector& hv) const override {
+  int applyInverse(const Vector& v, Vector& hv) const override {
     hv.assign(v);
     return 0;
   }

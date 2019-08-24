@@ -144,9 +144,9 @@ void TestDiffusionFracturedMatrix(double gravity) {
   CompositeVector& rhs = *global_op->rhs();
   Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(rhs));
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(rhs));
-  solution->PutScalar(0.0);
+  solution->putScalar(0.0);
 
-  int ierr = solver.ApplyInverse(rhs, *solution);
+  int ierr = solver.applyInverse(rhs, *solution);
 
   if (getRank == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
@@ -176,7 +176,7 @@ void TestDiffusionFracturedMatrix(double gravity) {
 
   op->UpdateFlux(solution.ptr(), flux.ptr());
 
-  const auto& fmap = *flux->Map().Map("face", true);
+  const auto& fmap = *flux->getMap().Map("face", true);
   for (int f = 0; f < nfaces; ++f) {
     int g = fmap.FirstPointInElement(f);
     flx_short[0][f] = flx_long[0][g];

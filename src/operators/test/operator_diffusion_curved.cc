@@ -136,10 +136,10 @@ void RunTestDiffusionCurved() {
 
   CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs), flux(rhs);
-  solution.PutScalar(0.0);
+  solution.putScalar(0.0);
 
   // -- run PCG
-  int ierr = solver.ApplyInverse(rhs, solution);
+  int ierr = solver.applyInverse(rhs, solution);
 
   if (getRank == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 

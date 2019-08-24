@@ -347,7 +347,7 @@ void LimiterCell::LimiterScalar_(
     const std::vector<int>& bc_model, const std::vector<double>& bc_value,
     Teuchos::RCP<Epetra_Vector> limiter, double (*func)(double))
 {
-  limiter->PutScalar(1.0);
+  limiter->putScalar(1.0);
   Epetra_MultiVector& grad = *gradient_->ViewComponent("cell", false);
 
   double u1, u2, u1f, umin, umax;
@@ -471,7 +471,7 @@ void LimiterCell::LimiterScalarDG_(
   double u1, u1f, umin, umax;
   AmanziMesh::Entity_ID_List faces, nodes;
 
-  int nk = field_->NumVectors();
+  int nk = field_->getNumVectors();
   WhetStone::DenseVector data(nk);
   AmanziGeometry::Point x1(dim), x2(dim), xm(dim);
   int order = WhetStone::PolynomialSpaceOrder(dim, nk);

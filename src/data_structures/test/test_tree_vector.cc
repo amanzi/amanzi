@@ -80,13 +80,13 @@ SUITE(TREE_VECTOR) {
   
   // test the vector's putscalar
   TEST_FIXTURE(test_tv, TVPutScalar) {
-    x->PutScalar(2.0);
+    x->putScalar(2.0);
     
     CHECK_CLOSE(get_value(*x->Data(),"cell",0,0), 2.0, 0.00001);
     CHECK_CLOSE(get_value(*x->Data(),"cell",1,0), 2.0, 0.00001);
     CHECK_CLOSE(get_value(*x->Data(),"face",0,0), 2.0, 0.00001);
 
-    x2->PutScalar(3.0);
+    x2->putScalar(3.0);
     CHECK_CLOSE(get_value(*x->Data(),"cell",0,0), 3.0, 0.00001); // x2 created via PushBack(x), ensure this stores a pointer, not copy
     CHECK_CLOSE(get_value(*x->Data(),"cell",1,0), 3.0, 0.00001);
     CHECK_CLOSE(get_value(*x->Data(),"face",0,0), 3.0, 0.00001);
@@ -97,11 +97,11 @@ SUITE(TREE_VECTOR) {
 
   // test the vector's copy constructor
   TEST_FIXTURE(test_tv, TVCopy) {
-    x->PutScalar(2.0);
+    x->putScalar(2.0);
 
     TreeVector y(*x);
-    CHECK(y.Map().SameAs(x->Map()));
-    y.PutScalar(4.0);
+    CHECK(y.getMap().SameAs(x->getMap()));
+    y.putScalar(4.0);
     CHECK_CLOSE(get_value(*x->Data(),"cell",0,0), 2.0, 0.00001);
     CHECK_CLOSE(get_value(*x->Data(),"cell",1,0), 2.0, 0.00001);
     CHECK_CLOSE(get_value(*x->Data(),"face",0,0), 2.0, 0.00001);
@@ -109,9 +109,9 @@ SUITE(TREE_VECTOR) {
     CHECK_CLOSE(get_value(*y.Data(),"cell",1,0), 4.0, 0.00001);
     CHECK_CLOSE(get_value(*y.Data(),"face",0,0), 4.0, 0.00001);
 
-    TreeVector z(x->Map());
-    CHECK(z.Map().SameAs(x->Map()));
-    z.PutScalar(4.0);
+    TreeVector z(x->getMap());
+    CHECK(z.getMap().SameAs(x->getMap()));
+    z.putScalar(4.0);
     CHECK_CLOSE(get_value(*x->Data(),"cell",0,0), 2.0, 0.00001);
     CHECK_CLOSE(get_value(*x->Data(),"cell",1,0), 2.0, 0.00001);
     CHECK_CLOSE(get_value(*x->Data(),"face",0,0), 2.0, 0.00001);
@@ -119,10 +119,10 @@ SUITE(TREE_VECTOR) {
     CHECK_CLOSE(get_value(*z.Data(),"cell",1,0), 4.0, 0.00001);
     CHECK_CLOSE(get_value(*z.Data(),"face",0,0), 4.0, 0.00001);
 
-    x2->PutScalar(2.0);
+    x2->putScalar(2.0);
     TreeVector y2(*x2);
-    CHECK(y2.Map().SameAs(x2->Map()));
-    y2.PutScalar(5.0);
+    CHECK(y2.getMap().SameAs(x2->getMap()));
+    y2.putScalar(5.0);
     CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"cell",0,0), 2.0, 0.00001);
     CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"cell",1,0), 2.0, 0.00001);
     CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"face",0,0), 2.0, 0.00001);
@@ -130,9 +130,9 @@ SUITE(TREE_VECTOR) {
     CHECK_CLOSE(get_value(*y2.SubVector(0)->Data(),"cell",1,0), 5.0, 0.00001);
     CHECK_CLOSE(get_value(*y2.SubVector(0)->Data(),"face",0,0), 5.0, 0.00001);
 
-    TreeVector z2(x2->Map());
-    CHECK(z2.Map().SameAs(x2->Map()));
-    z2.PutScalar(6.0);
+    TreeVector z2(x2->getMap());
+    CHECK(z2.getMap().SameAs(x2->getMap()));
+    z2.putScalar(6.0);
     CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"cell",0,0), 2.0, 0.00001);
     CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"cell",1,0), 2.0, 0.00001);
     CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"face",0,0), 2.0, 0.00001);
@@ -144,10 +144,10 @@ SUITE(TREE_VECTOR) {
 
   // test the vector's operator=
   TEST_FIXTURE(test_tv, TVOperatorEqual) {
-    x->PutScalar(2.0);
+    x->putScalar(2.0);
 
     TreeVector y(*x);
-    y.PutScalar(0.0);
+    y.putScalar(0.0);
 
     // operator= and check vals
     y = *x;
@@ -159,7 +159,7 @@ SUITE(TREE_VECTOR) {
     CHECK_CLOSE(get_value(*y.Data(),"face",0,0), 2.0, 0.00001);
 
     // ensure operator= did not copy pointers
-    x->PutScalar(4.0);
+    x->putScalar(4.0);
     CHECK_CLOSE(get_value(*x->Data(),"cell",0,0), 4.0, 0.00001);
     CHECK_CLOSE(get_value(*x->Data(),"cell",1,0), 4.0, 0.00001);
     CHECK_CLOSE(get_value(*x->Data(),"face",0,0), 4.0, 0.00001);
@@ -167,9 +167,9 @@ SUITE(TREE_VECTOR) {
     CHECK_CLOSE(get_value(*y.Data(),"cell",1,0), 2.0, 0.00001);
     CHECK_CLOSE(get_value(*y.Data(),"face",0,0), 2.0, 0.00001);
 
-    x2->PutScalar(5.0);
+    x2->putScalar(5.0);
     TreeVector y2(*x2);
-    y2.PutScalar(0.0);
+    y2.putScalar(0.0);
 
     // operator= and check vals
     y2 = *x2;
@@ -182,7 +182,7 @@ SUITE(TREE_VECTOR) {
     CHECK_CLOSE(get_value(*y2.SubVector(0)->Data(),"face",0,0), 5.0, 0.00001);
 
     // ensure operator= did not copy pointers
-    x2->PutScalar(6.0);
+    x2->putScalar(6.0);
     CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"cell",0,0), 6.0, 0.00001);
     CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"cell",1,0), 6.0, 0.00001);
     CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"face",0,0), 6.0, 0.00001);

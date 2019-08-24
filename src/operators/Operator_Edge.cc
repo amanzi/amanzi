@@ -34,7 +34,7 @@ void Operator_Edge::UpdateRHS(const CompositeVector& source, bool volume_include
   if (volume_included) {
     Operator::UpdateRHS(source);
   } else {
-    rhs_->PutScalarGhosted(0.0);
+    rhs_->putScalarGhosted(0.0);
     Epetra_MultiVector& rhs_e = *rhs_->ViewComponent("edge", true);
     const Epetra_MultiVector& source_e = *source.ViewComponent("edge", true);
 
@@ -65,7 +65,7 @@ int Operator_Edge::ApplyMatrixFreeOp(const Op_Cell_Edge& op,
 
   X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xe = *X.ViewComponent("edge", true);
-  Y.PutScalarGhosted(0.0);
+  Y.putScalarGhosted(0.0);
 
   {
     Epetra_MultiVector& Ye = *Y.ViewComponent("edge", true);
@@ -81,7 +81,7 @@ int Operator_Edge::ApplyMatrixFreeOp(const Op_Cell_Edge& op,
       }
 
       const WhetStone::DenseMatrix& Acell = op.matrices[c];
-      Acell.Multiply(v, av, false);
+      Acell.elementWiseMultiply(v, av, false);
 
       for (int n = 0; n != nedges; ++n) {
         Ye[0][edges[n]] += av(n);
@@ -105,7 +105,7 @@ int Operator_Edge::ApplyMatrixFreeOp(const Op_Edge_Edge& op,
   const Epetra_MultiVector& Xc = *X.ViewComponent("edge");
   Epetra_MultiVector& Yc = *Y.ViewComponent("edge");
 
-  for (int k = 0; k != Xc.NumVectors(); ++k) {
+  for (int k = 0; k != Xc.getNumVectors(); ++k) {
     for (int e = 0; e != nedges_owned; ++e) {
       Yc[k][e] += Xc[k][e] * (*op.diag)[k][e];
     }
@@ -213,7 +213,7 @@ void Operator_Edge::AssembleMatrixOp(
     const SuperMap& map, MatrixFE& mat,
     int my_block_row, int my_block_col) const
 {
-  AMANZI_ASSERT(op.diag->NumVectors() == 1);
+  AMANZI_ASSERT(op.diag->getNumVectors() == 1);
 
   const std::vector<int>& edge_row_inds = map.GhostIndices(my_block_row, "edge", 0);
   const std::vector<int>& edge_col_inds = map.GhostIndices(my_block_col, "edge", 0);

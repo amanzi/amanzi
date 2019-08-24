@@ -201,7 +201,7 @@ void PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential
       v = pf.coefs();
       dg_->cell_basis(c).ChangeBasisNaturalToMy(v);
 
-      Aface.Multiply(v, av, false);
+      Aface.elementWiseMultiply(v, av, false);
 
       // now fork the work flow
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
@@ -209,7 +209,7 @@ void PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential
           rhs_c[i][c] -= av(i);
         }
         local_op_->matrices_shadow[f] = Aface;
-        Aface.PutScalar(0.0);
+        Aface.putScalar(0.0);
       } else {
         for (int i = 0; i < ncols; ++i) {
           rhs_c[i][c] += av(i);
@@ -217,7 +217,7 @@ void PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential
       }
     } 
     else if (bc_model[f] == OPERATOR_BC_REMOVE) {
-      local_op_->matrices[f].PutScalar(0.0);
+      local_op_->matrices[f].putScalar(0.0);
     }
     else if (bc_model[f] != OPERATOR_BC_NONE) {
       AMANZI_ASSERT(false);
@@ -240,7 +240,7 @@ void PDE_AdvectionRiemann::UpdateFlux(
   const Epetra_MultiVector& u_f = *u->ViewComponent("face", false);
   Epetra_MultiVector& flux_f = *flux->ViewComponent("face", false);
 
-  flux->PutScalar(0.0);
+  flux->putScalar(0.0);
   for (int f = 0; f < nfaces_owned; ++f) {
     flux_f[0][f] = u_f[0][f] * h_f[0][f];
   }  

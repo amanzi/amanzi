@@ -54,8 +54,8 @@ class Op_Edge_Edge : public Op {
   virtual void Rescale(const CompositeVector& scaling) {
     if (scaling.HasComponent("edge")) {
       const Epetra_MultiVector& s_e = *scaling.ViewComponent("edge", false);
-      for (int k = 0; k != s_e.NumVectors(); ++k) {
-        for (int i = 0; i != s_e.MyLength(); ++i) {
+      for (int k = 0; k != s_e.getNumVectors(); ++k) {
+        for (int i = 0; i != s_e.getLocalLength(); ++i) {
           (*diag)[k][i] *= s_e[0][i];
         }
       }

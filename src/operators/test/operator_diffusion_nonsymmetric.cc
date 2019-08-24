@@ -101,7 +101,7 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
 
   // create and initialize state variables.
   Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(cvs));
-  solution->PutScalar(0.0);
+  solution->putScalar(0.0);
 
   // create source 
   CompositeVector source(cvs);
@@ -137,7 +137,7 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   solver->Init(lop_list);
 
   CompositeVector& rhs = *global_op->rhs();
-  int ierr = solver->ApplyInverse(rhs, *solution);
+  int ierr = solver->applyInverse(rhs, *solution);
 
   if (getRank == 0) {
     std::cout << "pressure solver (belos gmres): ||r||=" << solver->residual()

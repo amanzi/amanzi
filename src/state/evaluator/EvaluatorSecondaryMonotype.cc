@@ -87,7 +87,7 @@ void EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::
   int j = 0;
   for (const auto& keytag : my_keys_) {
     results[j] = &S.GetDerivativeW<CompositeVector>(keytag.first, keytag.second, wrt_key, wrt_tag, keytag.first);
-    results[j]->PutScalarMasterAndGhosted(0.);
+    results[j]->putScalarMasterAndGhosted(0.);
     ++j;
   }
 
@@ -102,7 +102,7 @@ void EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::
       }
       EvaluatePartialDerivative_(S, wrt_key, wrt_tag, tmp);
       for (int i=0; i!=my_keys_.size(); ++i)
-        results[i]->Update(1., tmp_data[i], 1.);
+        results[i]->update(1., tmp_data[i], 1.);
 
     } else if (S.GetEvaluator(dep.first, dep.second)
                    .IsDependency(S, wrt_key, wrt_tag)) {
@@ -124,7 +124,7 @@ void EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>::
 
       // sum
       for (int i=0; i!=my_keys_.size(); ++i)
-        results[i]->Multiply(1., ddep, tmp_data[i], 1.);
+        results[i]->elementWiseMultiply(1., ddep, tmp_data[i], 1.);
     }
   }
 }

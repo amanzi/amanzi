@@ -87,7 +87,7 @@ SuperMap::SuperMap(const Comm_ptr_type& comm, const std::vector<Teuchos::Ptr<con
         master_maps[compname_unique] = this_map;
         ghost_maps[compname_unique] = cvs->ComponentMap(compname, true);
 
-        std::size_t this_dofnum = cvs->NumVectors(compname);
+        std::size_t this_dofnum = cvs->getNumVectors(compname);
         dofnums[compname_unique] = this_dofnum;
 
         // map the block_num, compname, dof_num tuple to their corresponding
@@ -108,7 +108,7 @@ SuperMap::SuperMap(const Comm_ptr_type& comm, const std::vector<Teuchos::Ptr<con
 
         // map the block_num, compname, dof_num tuple to their corresponding
         // values in the SuperMapLumped
-        std::size_t this_dofnum = cvs->NumVectors(compname);
+        std::size_t this_dofnum = cvs->getNumVectors(compname);
         for (std::size_t dnum=0; dnum!=this_dofnum; ++dnum) {
           block_info_[std::make_tuple(block_num, compname, dnum)] =
               std::make_pair(index_iter->first, dnum+dofnums[index_iter->first]);

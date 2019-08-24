@@ -14,7 +14,7 @@ class NonlinearProblem6 : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vect
 
   void Residual(const Teuchos::RCP<Epetra_Vector>& u,
                 const Teuchos::RCP<Epetra_Vector>& f) {
-    for (int c = 0; c != u->MyLength(); ++c) {
+    for (int c = 0; c != u->getLocalLength(); ++c) {
       double x = (*u)[c];
       (*f)[c] = x < 0 ? -pow(fabs(x), 0.2) : pow(fabs(x), 0.2);
     }
@@ -30,8 +30,8 @@ class NonlinearProblem6 : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vect
   double ErrorNorm(const Teuchos::RCP<const Epetra_Vector>& u,
                    const Teuchos::RCP<const Epetra_Vector>& du) {
     double norm_du, norm_u;
-    du->NormInf(&norm_du);
-    u->NormInf(&norm_u);
+    norm_du = du->normInf();
+    norm_u = u->normInf();
     double error = norm_du / atol_;
     std::cout << " : error = " << error << std::endl;
     return error;
@@ -41,12 +41,12 @@ class NonlinearProblem6 : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vect
     h_ = Teuchos::rcp(new Epetra_Vector(*up));
 
     if (exact_jacobian_) {
-      for (int c = 0; c != up->MyLength(); ++c) {
+      for (int c = 0; c != up->getLocalLength(); ++c) {
         double x = (*up)[c];
         (*h_)[c] = 0.2 / pow(fabs(x), 0.8);
       }
     } else {
-      for (int c = 0; c != up->MyLength(); ++c) {
+      for (int c = 0; c != up->getLocalLength(); ++c) {
         double x = (*up)[c];
         (*h_)[c] = 0.3 / pow(fabs(x), 2.0 / 3);
       }

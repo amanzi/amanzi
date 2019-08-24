@@ -62,11 +62,11 @@ class TreeVector {
 
   // Access to ANY communicator (this may be ill-posed!)
   Comm_ptr_type Comm() const {
-    return Map().Comm();
+    return getMap().Comm();
   }
 
   // Access to the space.
-  const TreeVectorSpace& Map() const { return *map_; }
+  const TreeVectorSpace& getMap() const { return *map_; }
 
   // Access to SubVectors
   typedef std::vector<Teuchos::RCP<TreeVector> > SubVectorsContainer;
@@ -101,53 +101,53 @@ class TreeVector {
 
   // -- Assorted vector operations, this implements a Vec --
   // total length of the containing data
-  int GlobalLength() const;
+  int getGlobalLength() const;
   
   // this <- scalar
-  int PutScalar(double scalar);
+  void putScalar(double scalar);
 
   // this <- random
-  int Random();
+  void random();
 
   // n_l <- || this ||_{l}
-  int Norm2(double* n2) const;
-  int Norm1(double* n1) const;
-  int NormInf(double* ninf) const;
+  double norm2() const;
+  double norm1() const;
+  double normInf() const;
 
   // this <- abs(this)
-  int Abs(const TreeVector& other);
+  void abs(const TreeVector& other);
   
   // this <- value*this
-  int Scale(double value);
+  void scale(double value);
 
   // this <- this + scalarA
-  int Shift(double scalarA);
+  void shift(double scalarA);
 
   // this <- element wise reciprocal(this)
-  int Reciprocal(const TreeVector& other);
+  void reciprocal(const TreeVector& other);
   
   // result <- other \dot this
-  int Dot(const TreeVector& other, double* result) const;
+  double dot(const TreeVector& other) const;
 
   // this <- scalarA*A + scalarThis*this
-  TreeVector& Update(double scalarA, const TreeVector& A, double scalarThis);
+  void update(double scalarA, const TreeVector& A, double scalarThis);
 
   // this <- scalarA*A + scalarB*B + scalarThis*this
-  TreeVector& Update(double scalarA, const TreeVector& A,
-                     double scalarB, const TreeVector& B, double scalarThis);
+  void update(double scalarA, const TreeVector& A,
+              double scalarB, const TreeVector& B, double scalarThis);
 
   // this <- scalarAB * A@B + scalarThis*this  (@ is the elementwise product
-  int Multiply(double scalarAB, const TreeVector& A, const TreeVector& B,
+  void elementWiseMultiply(double scalarAB, const TreeVector& A, const TreeVector& B,
                double scalarThis);
 
   // this <- scalarAB * A^-1@B + scalarThis*this  (@ is the elementwise product
-  // int ReciprocalMultiply(double scalarAB, const TreeVector& A,
+  // int ReciprocalelementWiseMultiply(double scalarAB, const TreeVector& A,
   //                        const TreeVector& B, double scalarThis);
 
   // non-inherited extras
   void Print(std::ostream &os) const;
 
-  int GlobalLength() { std::cerr << "This method is not yet implemented\n"; return 0; }
+  int getGlobalLength() { std::cerr << "This method is not yet implemented\n"; return 0; }
 
  private:
   // Init's version of PushBack, which does not add to the space.

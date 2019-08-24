@@ -119,7 +119,7 @@ TEST_FIXTURE(another_reference_mesh, cv_function)
   Teuchos::RCP<CompositeVectorSpace> cv_sp = Teuchos::rcp(new CompositeVectorSpace());
   cv_sp->SetMesh(mesh)->SetGhosted(false)->SetComponents(names, locations, num_dofs);
   Teuchos::RCP<CompositeVector> cv = Teuchos::rcp(new CompositeVector(*cv_sp));
-  cv->PutScalar(0.0);
+  cv->putScalar(0.0);
 
   // apply the function to the vector
   cvfunc.Compute(0.0, cv.ptr());

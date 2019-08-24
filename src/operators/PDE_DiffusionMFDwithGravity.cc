@@ -139,7 +139,7 @@ void PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
           v(n) = -(zf - zc) * kf[n] * rho * norm(g_) / kc;
         }
 
-        Wff.Multiply(v, av, false);
+        Wff.elementWiseMultiply(v, av, false);
 
         for (int n = 0; n < nfaces; n++) {
           int f = faces[n];
@@ -182,7 +182,7 @@ void PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeV
   int dim = mesh_->space_dimension();
   Epetra_MultiVector& flux_data = *flux->ViewComponent("face", true);
   Epetra_MultiVector grav_flux(flux_data);
-  grav_flux.PutScalar(0.0);
+  grav_flux.putScalar(0.0);
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> hits(nfaces_wghost, 0);
@@ -249,7 +249,7 @@ void PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeV
         v(n) = -(zf - zc) * kf[n] * rho * norm(g_) / kc;
       }
 
-      Wff.Multiply(v, av, false);
+      Wff.elementWiseMultiply(v, av, false);
 
       for (int n = 0; n < nfaces; n++) {
         int dir, f = faces[n];

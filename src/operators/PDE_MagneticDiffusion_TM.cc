@@ -36,7 +36,7 @@ void PDE_MagneticDiffusion_TM::ModifyMatrices(
 
   for (int c = 0; c < ncells_owned; ++c) {
     WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
-    Acell.Scale(dt / 2);
+    Acell.scale(dt / 2);
 
     const WhetStone::DenseMatrix& Mcell = mass_op_[c];
     const WhetStone::DenseMatrix& Ccell = curl_op_[c];
@@ -54,8 +54,8 @@ void PDE_MagneticDiffusion_TM::ModifyMatrices(
       v1(n) = Bf[0][f] * dirs[n] * mesh_->face_area(f);
     }
 
-    Mcell.Multiply(v1, v2, false);
-    Ccell.Multiply(v2, v3, true);
+    Mcell.elementWiseMultiply(v1, v2, false);
+    Ccell.elementWiseMultiply(v2, v3, true);
 
     for (int n = 0; n < nnodes; ++n) {
       int v = nodes[n];
@@ -97,7 +97,7 @@ void PDE_MagneticDiffusion_TM::ModifyFields(
       v1(n) = Ev[0][v];
     }
 
-    Ccell.Multiply(v1, v2, false);
+    Ccell.elementWiseMultiply(v1, v2, false);
 
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
@@ -144,7 +144,7 @@ void PDE_MagneticDiffusion_TM::ApplyBCs_Node_(
   AmanziMesh::Entity_ID_List nodes, faces, cells;
   std::vector<int> fdirs;
 
-  global_op_->rhs()->PutScalarGhosted(0.0);
+  global_op_->rhs()->putScalarGhosted(0.0);
   Epetra_MultiVector& rhs_node = *global_op_->rhs()->ViewComponent("node", true);
 
   // calculate number of cells for each node

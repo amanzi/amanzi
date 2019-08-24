@@ -181,8 +181,8 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
       error = fn_->ErrorNorm(u, r);
       residual_ = error;
 
-      r->Norm2(&l2_error);
-      u->Norm2(&u_norm);
+      l2_error = r->norm2();
+      u_norm = u->norm2();
       if (vo_->os_OK(Teuchos::VERB_HIGH))
         *vo_->os() << "||u||=" << u_norm << " ||r||=" << l2_error << " error=" << error << std::endl;
 
@@ -211,16 +211,16 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
     
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;
-    r->Norm2(&res_l2);
-    r->NormInf(&res_inf);
+    res_l2 = r->norm2();
+    res_inf = r->normInf();
 
     if (vo_->os_OK(Teuchos::VERB_EXTREME))
       *vo_->os() << "Applying preconditioner" << std::endl;
     int pc_error = fn_->ApplyPreconditioner(r, du);
     if (pc_error < 0) return SOLVER_LINEAR_SOLVER_ERROR;
 
-    du->Norm2(&du_l2);
-    du->NormInf(&du_inf);
+    du_l2 = du->norm2();
+    du_inf = du->normInf();
 
     // Hack the correction
     if (modify_correction_) {
@@ -231,7 +231,7 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
 
     // Make sure that we do not diverge and cause numerical overflow.
     previous_du_norm = du_norm;
-    du->NormInf(&du_norm);
+    du_norm = du->normInf();
 
     if ((num_itrs_ > 0) && (du_norm > max_du_growth_factor_ * previous_du_norm)) {
       if (vo_->os_OK(Teuchos::VERB_HIGH))
@@ -263,7 +263,7 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
     }
 
     // Next solution iterate and error estimate: u  = u - du
-    u->Update(-1.0, *du, 1.0);
+    u->update(-1.0, *du, 1.0);
     fn_->ChangedSolution();
     
     // Increment iteration counter.
@@ -276,7 +276,7 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
       previous_error = error;
       error = fn_->ErrorNorm(u, du);
       residual_ = error;
-      du->Norm2(&l2_error);
+      l2_error = du->norm2();
 
       int ierr = Newton_ErrorControl_(error, previous_error, l2_error, previous_du_norm, du_norm);
       if (ierr == SOLVER_CONVERGED) return num_itrs_;

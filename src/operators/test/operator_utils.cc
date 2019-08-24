@@ -82,7 +82,7 @@ TEST(SUPERMAP_COPY_INVERTIBLE) {
   tv->SubVector(0)->Data()->Random();
   tv->SubVector(1)->Data()->Random();
 
-  Epetra_Vector vec(*maps.map->Map());
+  Epetra_Vector vec(*maps.map->getMap());
 
   // copy forward, backward
   Teuchos::RCP<TreeVector> tv2 = Teuchos::rcp(new TreeVector(*maps.tvs));
@@ -93,9 +93,9 @@ TEST(SUPERMAP_COPY_INVERTIBLE) {
   CHECK(!ierr);
 
   // check the same
-  tv2->Update(-1., *tv, 1.);
+  tv2->update(-1., *tv, 1.);
   double norm;
-  tv2->Norm2(&norm);
+  norm = tv2->norm2();
   CHECK_CLOSE(0., norm, 1.e-16);
 }
 
@@ -104,12 +104,12 @@ TEST(SUPERMAP_COPY_INTS) {
 
   Maps maps;
   Teuchos::RCP<TreeVector> tv = Teuchos::rcp(new TreeVector(*maps.tvs));
-  tv->SubVector(0)->Data()->ViewComponent("cell", false)->PutScalar(3.);
-  tv->SubVector(1)->Data()->ViewComponent("cell", false)->PutScalar(4.);
-  tv->SubVector(0)->Data()->ViewComponent("face", false)->PutScalar(5.);
-  tv->SubVector(1)->Data()->ViewComponent("face", false)->PutScalar(6.);
+  tv->SubVector(0)->Data()->ViewComponent("cell", false)->putScalar(3.);
+  tv->SubVector(1)->Data()->ViewComponent("cell", false)->putScalar(4.);
+  tv->SubVector(0)->Data()->ViewComponent("face", false)->putScalar(5.);
+  tv->SubVector(1)->Data()->ViewComponent("face", false)->putScalar(6.);
 
-  Epetra_Vector vec(*maps.map->Map());
+  Epetra_Vector vec(*maps.map->getMap());
 
   // copy forward
   Teuchos::RCP<TreeVector> tv2 = Teuchos::rcp(new TreeVector(*maps.tvs));
@@ -121,7 +121,7 @@ TEST(SUPERMAP_COPY_INTS) {
   int nfaces = maps.mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
   // check sizes
-  CHECK_EQUAL(2*ncells + 2*nfaces, vec.MyLength());
+  CHECK_EQUAL(2*ncells + 2*nfaces, vec.getLocalLength());
 
   for (int i = 0; i!=ncells; ++i) {
     CHECK_EQUAL(3., vec[i*2]);

@@ -33,7 +33,7 @@ SUITE(SOLVERS) {
     virtual void Residual(const Teuchos::RCP<Epetra_Vector>& u,
                           const Teuchos::RCP<Epetra_Vector>& r) {
       Apply(*u, *r);
-      r->Update(-1., *rhs_, 1.);
+      r->update(-1., *rhs_, 1.);
     }
     
     // preconditioner toolkit
@@ -47,7 +47,7 @@ SUITE(SOLVERS) {
     virtual double ErrorNorm(const Teuchos::RCP<const Epetra_Vector>& u,
                              const Teuchos::RCP<const Epetra_Vector>& du) {
       double res;
-      du->NormInf(&res);
+      res = du->normInf();
       return res;
     }
     

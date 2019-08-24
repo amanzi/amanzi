@@ -89,14 +89,14 @@ class CompositeVectorSpace {
     return indexmap_.find(name) != indexmap_.end(); }
 
   // Each component has a number of vectors
-  int NumVectors(const std::string& name) const {
+  int getNumVectors(const std::string& name) const {
     return num_vectors_[Index_(name)]; }
 
   // Each component exists on a mesh entity kind. (CELL, FACE, NODE, etc)
   AmanziMesh::Entity_kind Location(const std::string& name) const {
     return locations_[Index_(name)]; }
 
-  BlockMap_ptr_type Map(const std::string& name, bool ghost=false) const;
+  BlockMap_ptr_type getMap(const std::string& name, bool ghost=false) const;
 
   // Update all specs from another space's specs.
   // Useful for PKs to maintain default factories that apply to multiple CVs.

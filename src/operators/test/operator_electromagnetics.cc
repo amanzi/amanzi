@@ -152,7 +152,7 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   CompositeVector solution(cvs);
   Epetra_MultiVector& sol = *solution.ViewComponent("edge");
 
-  sol.PutScalar(0.0);
+  sol.putScalar(0.0);
   if (initial_guess) {
     for (int e = 0; e < nedges_owned; e++) {
       double len = mesh->edge_length(e);
@@ -169,7 +169,7 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
 
   // Add an accumulation term.
   CompositeVector phi(cvs);
-  phi.PutScalar(c_t);
+  phi.putScalar(c_t);
 
   Teuchos::RCP<Operator> global_op = op_curlcurl->global_operator();
   Teuchos::RCP<PDE_Accumulation> op_acc = Teuchos::rcp(new PDE_Accumulation(AmanziMesh::EDGE, global_op));
@@ -199,7 +199,7 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   solver.Init(lop_list);
 
   CompositeVector& rhs = *global_op->rhs();
-  int ierr = solver.ApplyInverse(rhs, solution);
+  int ierr = solver.applyInverse(rhs, solution);
 
   ver.CheckResidual(solution, 1.0e-10);
 
@@ -220,7 +220,7 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   if (getRank == 0) {
     el2_err /= enorm;
     printf("L2(e)=%12.9f  Inf(e)=%9.6f  itr=%3d  size=%d\n", el2_err, einf_err,
-            solver.num_itrs(), rhs.GlobalLength());
+            solver.num_itrs(), rhs.getGlobalLength());
 
     CHECK(el2_err < tolerance);
   }

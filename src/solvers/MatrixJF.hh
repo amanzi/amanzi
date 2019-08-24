@@ -95,7 +95,7 @@ int MatrixJF<Vector,VectorSpace>::Apply(const Vector& x, Vector& b) const {
   // u0_->Print(std::cout);
 
   // evaluate r1 = f(u0 + eps*x)
-  u0_->Update(eps, x, 1.0);
+  u0_->update(eps, x, 1.0);
   // std::cout<<"u1\n";
   // u0_->Print(std::cout);
   fn_->ChangedSolution();
@@ -110,13 +110,13 @@ int MatrixJF<Vector,VectorSpace>::Apply(const Vector& x, Vector& b) const {
 
   // evaluate Jx = (r1 - r0) / eps
   b = *r1;
-  b.Update(-1.0/eps, *r0_, 1.0/eps);
+  b.update(-1.0/eps, *r0_, 1.0/eps);
 
   // std::cout<<"b\n";
   // b.Print(std::cout);
 
   // revert to old u0
-  u0_->Update(-eps, x, 1.0);
+  u0_->update(-eps, x, 1.0);
   fn_->ChangedSolution();
 
   return 0;
@@ -154,45 +154,45 @@ double MatrixJF<Vector,VectorSpace>::CalculateEpsilon_(const Vector& u, const Ve
 
   if (method_name_ == "Knoll-Keyes") {
     double xinf(0.0);
-    x.NormInf(&xinf);
+    xinf = x.normInf();
     
     if (xinf > 0) {
       double uinf(0.0);
-      u.NormInf(&uinf);      
+      uinf = u.normInf();      
       eps = std::sqrt((1 + uinf) * 1.0e-12) / xinf;
     }
   }
   else if (method_name_ == "Knoll-Keyes L2") {
     double x_l2(0.0);
-    x.Norm2(&x_l2);
+    x_l2 = x.norm2();
     
     if (x_l2 > 0) {
       double u_l2(0.0);
-      u.Norm2(&u_l2);      
+      u_l2 = u.norm2();      
       eps = std::sqrt((1 + u_l2) * 1.0e-12) / x_l2;
     }
   }
   else if (method_name_ == "Brown-Saad") {
     double x_l2(0.0);
-    x.Norm2(&x_l2);
+    x_l2 = x.norm2();
     double xinf(0.0);
-    x.NormInf(&xinf);
+    xinf = x.normInf();
 
     if (x_l2 > 0) {
       double alp(0.);
-      u.Dot(x, &alp);
+      alp = u.dot(x);
       double sgn = (alp > 0) ? 1 : -1; 
       eps = (1e-12/x_l2)*std::max(fabs(alp), typical_size_u*xinf);
     }
   }              
   // else if (method_name_ == "simple") {
   //   double x_l2(0.0);
-  //   x.Norm2(&x_l2);
+  x_l2 = //   x.norm2();
 
   //   if (x_l2 > 0) {
   //     double b = 1e-13;
   //     double u_l1(0.);
-  //     u.Norm1(&u_l1);
+  u_l1 = //     u.norm1();
 
   //     int num = u.Size();
   //     //std::cout<<u_l1<<" "<<x_l2<<" "<<num<<"\n";    

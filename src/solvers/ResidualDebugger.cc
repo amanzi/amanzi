@@ -84,7 +84,7 @@ namespace AmanziSolvers {
 //       if (vis_[i].get()) {
 //         const Epetra_MultiVector& vec = *r_leaves[i]->Data()
 //           ->ViewComponent("cell",false);
-//         for (int j=0; j!=vec.NumVectors(); ++j) {
+//         for (int j=0; j!=vec.getNumVectors(); ++j) {
 //           std::stringstream my_name;
 //           my_name << "residual.cell." << j;
 //           vis_[i]->writeCellDataReal(*vec(j), my_name.str());
@@ -100,7 +100,7 @@ namespace AmanziSolvers {
 //         if (vis_[i].get()) {
 //           const Epetra_MultiVector& vec = *u_leaves[i]->Data()
 //             ->ViewComponent("cell",false);
-//           for (int j=0; j!=vec.NumVectors(); ++j) {
+//           for (int j=0; j!=vec.getNumVectors(); ++j) {
 //             std::stringstream my_name;
 //             my_name << "u.cell." << j;
 //             vis_[i]->writeCellDataReal(*vec(j), my_name.str());
@@ -117,7 +117,7 @@ namespace AmanziSolvers {
 //         if (vis_[i].get()) {
 //           const Epetra_MultiVector& vec = *du_leaves[i]->Data()
 //             ->ViewComponent("cell",false);
-//           for (int j=0; j!=vec.NumVectors(); ++j) {
+//           for (int j=0; j!=vec.getNumVectors(); ++j) {
 //             std::stringstream my_name;
 //             my_name << "du.cell." << j;
 //             vis_[i]->writeCellDataReal(*vec(j), my_name.str());

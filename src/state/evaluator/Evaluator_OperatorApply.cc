@@ -250,14 +250,14 @@ void Evaluator_OperatorApply::Update_(State &S) {
 
   const auto &x = S.Get<CompositeVector>(x0_key_, my_keys_[0].second);
   x.ScatterMasterToGhosted();
-  result.PutScalarMasterAndGhosted(0.);
+  result.putScalarMasterAndGhosted(0.);
   
   int i = 0;
   for (const auto& op_key : op0_keys_) {
     // create the global operator
     Operators::Operator_Factory global_op_fac;
     global_op_fac.set_mesh(result.Mesh());
-    global_op_fac.set_cvs(x.Map(), result.Map());
+    global_op_fac.set_cvs(x.getMap(), result.getMap());
     auto global_op = global_op_fac.Create();
 
     // do the apply
@@ -282,7 +282,7 @@ void Evaluator_OperatorApply::Update_(State &S) {
       // create the global operator
       Operators::Operator_Factory global_op_fac;
       global_op_fac.set_mesh(xj.Mesh());
-      global_op_fac.set_cvs(xj.Map(), result.Map());
+      global_op_fac.set_cvs(xj.getMap(), result.getMap());
       auto global_op = global_op_fac.Create();
 
       // do the apply
@@ -347,7 +347,7 @@ Evaluator_OperatorApply::UpdateDerivative_(State &S, const Key &wrt_key, const K
               auto op_cell = Teuchos::rcp(new Operators::Op_Cell_Cell(rhs_key, drhs.Mesh()));
               // clobber the diag
               *op_cell->diag = *drhs.ViewComponent(comp, false);
-              op_cell->diag->Scale(rhs_scalars_[j]);
+              op_cell->diag->scale(rhs_scalars_[j]);
               global_op->OpPushBack(op_cell);
             } else {
               AMANZI_ASSERT(0);

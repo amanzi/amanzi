@@ -33,7 +33,7 @@ int Operator_ConsistentFace::ApplyMatrixFreeOp(
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
-  Y.PutScalarGhosted(0.);
+  Y.putScalarGhosted(0.);
   X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
 
@@ -46,7 +46,7 @@ int Operator_ConsistentFace::ApplyMatrixFreeOp(
       int nfaces = faces.size();
 
       WhetStone::DenseVector v(nfaces), av(nfaces);
-      av.PutScalar(0.0);
+      av.putScalar(0.0);
       for (int n=0; n!=nfaces; ++n) {
         v(n) = Xf[0][faces[n]];
       }

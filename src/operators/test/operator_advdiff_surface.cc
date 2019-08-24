@@ -132,10 +132,10 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
 
   // Add an accumulation term.
   CompositeVector solution(cvs);
-  solution.PutScalar(0.0);  // solution at time T=0
+  solution.putScalar(0.0);  // solution at time T=0
 
   CompositeVector phi(cvs);
-  phi.PutScalar(0.2);
+  phi.putScalar(0.2);
 
   double dT = 0.02;
   Teuchos::RCP<PDE_Accumulation> op_acc = Teuchos::rcp(new PDE_Accumulation(AmanziMesh::CELL, global_op));
@@ -165,7 +165,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   solver.Init(lop_list);
 
   CompositeVector& rhs = *global_op->rhs();
-  int ierr = solver.ApplyInverse(rhs, solution);
+  int ierr = solver.applyInverse(rhs, solution);
 
   int num_itrs = solver.num_itrs();
   CHECK(num_itrs > 5 && num_itrs < 15);

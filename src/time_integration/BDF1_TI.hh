@@ -125,7 +125,7 @@ BDF1_TI<Vector, VectorSpace>::BDF1_TI(BDFFnBase<Vector>& fn,
   AmanziSolvers::SolverFactory<Vector,VectorSpace> factory;
   solver_ = factory.Create(plist_);
   solver_->set_db(db_);
-  solver_->Init(solver_fn_, initvector->Map());
+  solver_->Init(solver_fn_, initvector->getMap());
 
   // Allocate memory for adaptive timestep controll
   udot_ = Teuchos::rcp(new Vector(*initvector));
@@ -241,7 +241,7 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt,
   }
 
   // Update the debugger
-  db_->StartIteration<VectorSpace>(tlast, state_->seq, state_->failed_current, u->Map());
+  db_->StartIteration<VectorSpace>(tlast, state_->seq, state_->failed_current, u->getMap());
   
   // Solve the nonlinear BCE system.
   int ierr, code, itr;
@@ -301,7 +301,7 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt,
       *udot_prev_ = *udot_;
       double tmp = 1.0 / dt;
       *udot_ = *u;
-      udot_->Update(-tmp, *u_prev, tmp);
+      udot_->update(-tmp, *u_prev, tmp);
     }
 
     ReportStatistics_();

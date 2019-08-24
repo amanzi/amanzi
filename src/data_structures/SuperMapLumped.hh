@@ -71,10 +71,10 @@ class SuperMapLumped {
   template<class DeviceType=AmanziDefaultDevice>
   cVectorView_type_<DeviceType,LO> GhostIndices(const std::string& compname, int dofnum) const;
 
-  // block indices.  This is an array of integers, length Map().MyLength(),
+  // block indices.  This is an array of integers, length Map().getLocalLength(),
   // where each dof and component have a unique integer value.  The returned
   // int is the number of unique values, equal to
-  // sum(NumVectors(comp) for comp in components), in this array.
+  // sum(getNumVectors(comp) for comp in components), in this array.
   //  std::pair<int, Teuchos::RCP<std::vector<int> > > BlockIndices() const;
 
 #ifdef SUPERMAP_TESTING
@@ -89,7 +89,7 @@ class SuperMapLumped {
   LO NumOwnedElements(const std::string& compname) const { return counts_.at(compname); }
   LO NumUsedElements(const std::string& compname) const {
     return counts_.at(compname) + ghosted_counts_.at(compname); }
-  int NumVectors(const std::string& compname) const { return comp_maps_->NumVectors(compname); }
+  int getNumVectors(const std::string& compname) const { return comp_maps_->getNumVectors(compname); }
 
   // iterate over compnames
   using name_iterator = std::vector<std::string>::const_iterator;

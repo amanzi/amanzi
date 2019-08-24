@@ -58,7 +58,7 @@ void PDE_MagneticDiffusion::ModifyMatrices(
    CompositeVector& E, CompositeVector& B, double dt)
 {
   B.ScatterMasterToGhosted("face");
-  global_op_->rhs()->PutScalarGhosted(0.0);
+  global_op_->rhs()->putScalarGhosted(0.0);
 
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", true);
   Epetra_MultiVector& rhs_e = *global_op_->rhs()->ViewComponent("edge", true);
@@ -71,7 +71,7 @@ void PDE_MagneticDiffusion::ModifyMatrices(
 
   for (int c = 0; c < ncells_owned; ++c) {
     WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
-    Acell.Scale(dt / 2);
+    Acell.scale(dt / 2);
 
     const WhetStone::DenseMatrix& Mcell = mass_op_[c];
     const WhetStone::DenseMatrix& Ccell = curl_op_[c];
@@ -93,8 +93,8 @@ void PDE_MagneticDiffusion::ModifyMatrices(
       v1(n) = Bf[0][f] * dirs[n] * mesh_->face_area(f);
     }
 
-    Mcell.Multiply(v1, v2, false);
-    Ccell.Multiply(v2, v3, true);
+    Mcell.elementWiseMultiply(v1, v2, false);
+    Ccell.elementWiseMultiply(v2, v3, true);
 
     for (int n = 0; n < nedges; ++n) {
       int e = edges[n];
@@ -138,7 +138,7 @@ void PDE_MagneticDiffusion::ModifyFields(
       v1(n) = Ee[0][e];
     }
 
-    Ccell.Multiply(v1, v2, false);
+    Ccell.elementWiseMultiply(v1, v2, false);
 
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
@@ -178,7 +178,7 @@ double PDE_MagneticDiffusion::CalculateOhmicHeating(const CompositeVector& E)
       v1(n) = Ee[0][e];
     }
 
-    Mcell.Multiply(v1, v2, false);
+    Mcell.elementWiseMultiply(v1, v2, false);
     energy += v1 * v2;
   }
 
@@ -215,7 +215,7 @@ double PDE_MagneticDiffusion::CalculateMagneticEnergy(const CompositeVector& B)
       v1(n) = Bf[0][f] * dirs[n] * mesh_->face_area(f);
     }
 
-    Mcell.Multiply(v1, v2, false);
+    Mcell.elementWiseMultiply(v1, v2, false);
     energy += v1 * v2;
   }
 

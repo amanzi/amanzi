@@ -59,8 +59,8 @@ class NonlinearProblem : public AmanziSolvers::SolverFnBase<DenseVector> {
     op_->UpdateMatrices();
     op_->ApplyBCs(bcl_, type_l_, bcr_, type_r_);
 
-    op_->Apply(*u, *f);
-    f->Update(-1.0, op_->rhs(), 1.0);
+    op_->apply(*u, *f);
+    f->update(-1.0, op_->rhs(), 1.0);
  
     // accumulation term to residual
     if (dt_ > 0.0) {
@@ -74,14 +74,14 @@ class NonlinearProblem : public AmanziSolvers::SolverFnBase<DenseVector> {
 
   int ApplyPreconditioner(const Teuchos::RCP<const DenseVector>& u,
                           const Teuchos::RCP<DenseVector>& hu) {
-    op_->ApplyInverse(*u, *hu);
+    op_->applyInverse(*u, *hu);
     return 0;
   }
 
   double ErrorNorm(const Teuchos::RCP<const DenseVector>& u,
                    const Teuchos::RCP<const DenseVector>& du) {
     double tmp;
-    du->NormInf(&tmp);
+    tmp = du->normInf();
     return tmp;
   }
 
@@ -149,10 +149,10 @@ void MiniDiffusion1D_Nonlinear(double bcl, int type_l, double bcr, int type_r) {
     auto rhs = std::make_shared<DenseVector>(DenseVector(ncells));
     auto sol = Teuchos::rcp(new DenseVector(ncells));
 
-    Ka->PutScalar(1.0);
-    kr->PutScalar(2.0);
-    sol->PutScalar(1.0);
-    dkdu->PutScalar(2.0);
+    Ka->putScalar(1.0);
+    kr->putScalar(2.0);
+    sol->putScalar(1.0);
+    dkdu->putScalar(2.0);
 
     op->Setup(Ka, kr, dkdu);
 
@@ -224,10 +224,10 @@ void MiniDiffusion1D_Transient(int type_l, int type_r) {
   auto kr = std::make_shared<DenseVector>(DenseVector(ncells));
   auto dkdu = std::make_shared<DenseVector>(DenseVector(ncells));
 
-  u0->PutScalar(0.0);
-  u1->PutScalar(0.0);
-  kr->PutScalar(1.0);
-  dkdu->PutScalar(0.0);
+  u0->putScalar(0.0);
+  u1->putScalar(0.0);
+  kr->putScalar(1.0);
+  dkdu->putScalar(0.0);
 
   auto mesh = std::make_shared<DenseVector>(DenseVector(ncells + 1));
   double length(1.0);

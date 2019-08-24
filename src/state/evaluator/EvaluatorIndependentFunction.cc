@@ -58,7 +58,7 @@ void EvaluatorIndependentFunction::Update_(State &S) {
     auto &cv = S.Get<CompositeVector>(my_key_, my_tag_);
     AMANZI_ASSERT(plist_.isSublist("function"));
     func_ = Functions::CreateCompositeVectorFunction(plist_.sublist("function"),
-                                                     cv.Map());
+                                                     cv.getMap());
   }
 
   // NOTE: EvaluatorIndependentFunctions own their own data.

@@ -196,9 +196,9 @@ void OperatorDiffusionDG(std::string solver_name,
 
   CompositeVector& rhs = *global_op->rhs();
   CompositeVector solution(rhs);
-  solution.PutScalar(0.0);
+  solution.putScalar(0.0);
 
-  int ierr = solver->ApplyInverse(rhs, solution);
+  int ierr = solver->applyInverse(rhs, solution);
 
   ver.CheckResidual(solution, 1.0e-11);
 

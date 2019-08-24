@@ -32,7 +32,7 @@ include_directories(${WHETSTONE_SOURCE_DIR})
 # -- below needed only by ResidualDebugger -- maybe this can be fixed?
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${OUTPUT_SOURCE_DIR})
+#include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 
 # External (TPL) include directories
@@ -59,22 +59,23 @@ endif()
 # Library: solvers
 #
 set(solvers_inc_files FnBaseDefs.hh
-                      ResidualDebugger.hh
+                      #ResidualDebugger.hh
                       Preconditioner.hh
                       PreconditionerFactory.hh
                       PreconditionerDiagonal.hh
                       LinearOperator.hh
                       LinearOperatorPCG.hh
                       )
-set(solvers_source_files ResidualDebugger.cc)
+#set(solvers_source_files "")ResidualDebugger.cc)
 
-
+if(HAVE_HYPRE_PRECONDITIONERS)
 if(ENABLE_HYPRE)
   list(APPEND solvers_inc_files PreconditionerBoomerAMG.hh
                                 PreconditionerEuclid.hh)
 
   list(APPEND solvers_source_files PreconditionerBoomerAMG.cc
                                    PreconditionerEuclid.cc)
+endif()
 endif()
 
 if(HAVE_TRILINOS_PRECONDITIONERS)
@@ -86,10 +87,12 @@ endif()
 
 set(solvers_tpl_libs ${DBC_LIBRARIES}
 		     ${Teuchos_LIBRARIES}
-                     ${Tpetra_LIBRARIES}
-                     )
+                     ${Tpetra_LIBRARIES})
+
+if (HAVE_HYPRE_PRECONDITIONERS)
 if (ENABLE_HYPRE)
    list(APPEND solvers_tpl_libs ${HYPRE_LIBRARIES} ${Ifpack2_LIBRARIES})
+endif()
 endif()
 
 if (HAVE_TRILINOS_PRECONDITIONERS)
@@ -100,16 +103,14 @@ list(REVERSE solvers_tpl_libs)
 list(REMOVE_DUPLICATES solvers_tpl_libs)
 list(REVERSE solvers_tpl_libs)
 
-add_amanzi_library(solvers
-                   SOURCE ${solvers_source_files} 
-                   HEADERS ${solvers_inc_files}
-		   LINK_LIBS data_structures output whetstone atk ${solvers_tpl_libs})
+# add_amanzi_library(solvers
+#                    SOURCE ${solvers_source_files} 
+#                    HEADERS ${solvers_inc_files}
+# 		   LINK_LIBS data_structures whetstone atk ${solvers_tpl_libs})
 
 
 if (BUILD_TESTS)
-    set(solvers_test_link_libs solvers
-                               data_structures
-                               output
+    set(solvers_test_link_libs data_structures
                                mesh
                                geometry
                                error_handling

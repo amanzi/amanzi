@@ -54,7 +54,7 @@ class AnalyticElasticityBase {
 
     Amanzi::CompositeVector vol(*cvs);
     Epetra_MultiVector& vol_node = *vol.ViewComponent("node", true);
-    vol.PutScalar(0.0);
+    vol.putScalar(0.0);
 
     for (int c = 0; c != ncells_owned; ++c) {
       mesh_->cell_get_nodes(c, &nodes);

@@ -122,9 +122,9 @@ void PDE_DiffusionFVwithGravity::UpdateFlux(
       k_.get() ? k_->ViewComponent("face", false).ptr() : Teuchos::null;
 
   if (Krel_face.get()) {
-    flux.Multiply(1.0, *Krel_face, *gravity_term_->ViewComponent("face", false), 1.0);
+    flux.elementWiseMultiply(1.0, *Krel_face, *gravity_term_->ViewComponent("face", false), 1.0);
   } else {
-    flux.Update(1.0, *gravity_term_->ViewComponent("face", false), 1.0);
+    flux.update(1.0, *gravity_term_->ViewComponent("face", false), 1.0);
   }
 }
 
@@ -221,11 +221,11 @@ void PDE_DiffusionFVwithGravity::ComputeTransmissibility_(
 
   CompositeVector beta(cvs, true);
   Epetra_MultiVector& beta_face = *beta.ViewComponent("face", true);
-  beta.PutScalar(0.0);
+  beta.putScalar(0.0);
 
   CompositeVector h(cvs, true);
   Epetra_MultiVector& h_face = *h.ViewComponent("face", true);
-  h.PutScalar(0.0);
+  h.putScalar(0.0);
 
   AmanziMesh::Entity_ID_List faces, cells;
   AmanziGeometry::Point a_dist, a;
@@ -258,7 +258,7 @@ void PDE_DiffusionFVwithGravity::ComputeTransmissibility_(
 
   // Compute transmissibilities. Since it is done only, we repeat
   // some calculatons.
-  transmissibility_->PutScalar(0.0);
+  transmissibility_->putScalar(0.0);
 
   const Epetra_MultiVector* rho_c = NULL;
   if (!is_scalar_) {

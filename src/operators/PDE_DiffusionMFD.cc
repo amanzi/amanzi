@@ -480,7 +480,7 @@ void PDE_DiffusionMFD::UpdateMatricesTPFA_()
   Kc(0, 0) = 1.0;
 
   AmanziMesh::Entity_ID_List cells, faces;
-  Ttmp.PutScalar(0.0);
+  Ttmp.putScalar(0.0);
 
   for (int c = 0; c < ncells_owned; c++) {
     if (K_.get()) Kc = (*K_)[c];
@@ -602,7 +602,7 @@ void PDE_DiffusionMFD::ApplyBCs_Mixed_(
   AMANZI_ASSERT(bc_model_trial.size() == nfaces_wghost);
   AMANZI_ASSERT(bc_value.size() == nfaces_wghost);
 
-  global_op_->rhs()->PutScalarGhosted(0.0);
+  global_op_->rhs()->putScalarGhosted(0.0);
   Epetra_MultiVector& rhs_face = *global_op_->rhs()->ViewComponent("face", true);
   Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
 
@@ -783,7 +783,7 @@ void PDE_DiffusionMFD::ApplyBCs_Nodal_(
 {
   AmanziMesh::Entity_ID_List faces, nodes, cells;
 
-  global_op_->rhs()->PutScalarGhosted(0.0);
+  global_op_->rhs()->putScalarGhosted(0.0);
   Epetra_MultiVector& rhs_node = *global_op_->rhs()->ViewComponent("node", true);
 
   int nn(0), nm(0);
@@ -922,7 +922,7 @@ void PDE_DiffusionMFD::AddNewtonCorrectionCell_(
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
-    Aface.PutScalar(0.0);
+    Aface.putScalar(0.0);
 
     // We use the upwind discretization of the generalized flux.
     v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] * dkdp_f[0][f] / kf[0][f] : 0.0;
@@ -975,7 +975,7 @@ void PDE_DiffusionMFD::AddNewtonCorrectionCell_(
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
-    Aface.PutScalar(0.0);
+    Aface.putScalar(0.0);
 
     // We use the upwind discretization of the generalized flux.
     v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] * dkdp_f[0][f] / kf[0][f] : 0.0;
@@ -1022,7 +1022,7 @@ void PDE_DiffusionMFD::ModifyMatrices(const CompositeVector& u)
   AmanziMesh::Entity_ID_List faces;
   const Epetra_MultiVector& u_c = *u.ViewComponent("cell");
 
-  global_op_->rhs()->PutScalarGhosted(0.0);
+  global_op_->rhs()->putScalarGhosted(0.0);
 
   Epetra_MultiVector& rhs_f = *global_op_->rhs()->ViewComponent("face", true);
   for (int c = 0; c != ncells_owned; ++c) {
@@ -1053,7 +1053,7 @@ void PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                                   const Teuchos::Ptr<CompositeVector>& flux)
 {
   // Initialize intensity in ghost faces.
-  flux->PutScalar(0.0);
+  flux->putScalar(0.0);
   u->ScatterMasterToGhosted("face");
 
   if (k_ != Teuchos::null) {
@@ -1079,9 +1079,9 @@ void PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
     v(nfaces) = u_cell[0][c];
 
     if (local_op_->matrices_shadow[c].NumRows() == 0) { 
-      local_op_->matrices[c].Multiply(v, av, false);
+      local_op_->matrices[c].elementWiseMultiply(v, av, false);
     } else {
-      local_op_->matrices_shadow[c].Multiply(v, av, false);
+      local_op_->matrices_shadow[c].elementWiseMultiply(v, av, false);
     }
 
     for (int n = 0; n < nfaces; n++) {
@@ -1108,7 +1108,7 @@ void PDE_DiffusionMFD::UpdateFluxNonManifold(
     const Teuchos::Ptr<CompositeVector>& flux)
 {
   // Initialize intensity in ghost faces.
-  flux->PutScalar(0.0);
+  flux->putScalar(0.0);
   u->ScatterMasterToGhosted("face");
 
   const Epetra_MultiVector& u_cell = *u->ViewComponent("cell");
@@ -1128,9 +1128,9 @@ void PDE_DiffusionMFD::UpdateFluxNonManifold(
     v(nfaces) = u_cell[0][c];
 
     if (local_op_->matrices_shadow[c].NumRows() == 0) { 
-      local_op_->matrices[c].Multiply(v, av, false);
+      local_op_->matrices[c].elementWiseMultiply(v, av, false);
     } else {
-      local_op_->matrices_shadow[c].Multiply(v, av, false);
+      local_op_->matrices_shadow[c].elementWiseMultiply(v, av, false);
     }
 
     for (int n = 0; n < nfaces; n++) {
@@ -1164,7 +1164,7 @@ void PDE_DiffusionMFD::CreateMassMatrices_()
     if (Kc.Trace() == 0.0) {
       int nfaces = mesh_->cell_get_num_faces(c);
       Wff.Reshape(nfaces, nfaces);
-      Wff.PutScalar(0.0);
+      Wff.putScalar(0.0);
       ok = WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK;
     } else if (surface_mesh) {
       ok = mfd.MassMatrixInverseSurface(c, Kc, Wff);
@@ -1486,7 +1486,7 @@ int PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
   CompositeVector& y = *consistent_face_op_->rhs();
   Epetra_MultiVector& y_f = *y.ViewComponent("face", true);
   y_f = *global_op_->rhs()->ViewComponent("face", true);
-  consistent_face_op_->rhs()->PutScalarGhosted(0.0);
+  consistent_face_op_->rhs()->putScalarGhosted(0.0);
 
   // y_f - Afc * x_c
   const Epetra_MultiVector& x_c = *u.ViewComponent("cell", false);
@@ -1515,11 +1515,11 @@ int PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
         plist_.sublist("consistent faces").sublist("linear solver"), consistent_face_op_);
 
     CompositeVector u_f_copy(y);
-    ierr = lin_solver->ApplyInverse(y, u_f_copy);
+    ierr = lin_solver->applyInverse(y, u_f_copy);
     *u.ViewComponent("face", false) = *u_f_copy.ViewComponent("face", false);
   } else {
     CompositeVector u_f_copy(y);
-    ierr = consistent_face_op_->ApplyInverse(y, u);
+    ierr = consistent_face_op_->applyInverse(y, u);
     *u.ViewComponent("face", false) = *u_f_copy.ViewComponent("face", false);
   }
   

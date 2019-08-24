@@ -63,7 +63,7 @@ SUITE(VANDELAY_COMPOSITE_VECTOR) {
   // test the vector's putscalar
   TEST_FIXTURE(test_cv_vandelay, CVVandelay) {
     std::cout << "X has " << x->size() << " components" << std::endl;
-    x->PutScalar(2.0);
+    x->putScalar(2.0);
 
     {
       auto v_c = x->ViewComponent<AmanziDefaultHost>("cell", false);

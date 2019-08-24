@@ -53,7 +53,7 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
   Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
 
-  for (int k = 0; k != Xc.NumVectors(); ++k) {
+  for (int k = 0; k != Xc.getNumVectors(); ++k) {
     for (int c = 0; c != ncells_owned; ++c) {
       Yc[k][c] += Xc[k][c] * (*op.diag)[k][c];
     }
@@ -74,7 +74,7 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
   X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
 
-  Y.PutScalarGhosted(0.);
+  Y.putScalarGhosted(0.);
   Epetra_MultiVector& Yc = *Y.ViewComponent("cell", true);
 
   AmanziMesh::Entity_ID_List cells;
@@ -88,7 +88,7 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
     }
 
     const WhetStone::DenseMatrix& Aface = op.matrices[f];
-    Aface.Multiply(v, av, false);
+    Aface.elementWiseMultiply(v, av, false);
 
     for (int n = 0; n != ncells; ++n) {
       Yc[0][cells[n]] += av(n);
@@ -162,7 +162,7 @@ void Operator_Cell::AssembleMatrixOp(const Op_Cell_Cell& op,
                                      const SuperMap& map, MatrixFE& mat,
                                      int my_block_row, int my_block_col) const
 {
-  AMANZI_ASSERT(op.diag->NumVectors() == 1);
+  AMANZI_ASSERT(op.diag->getNumVectors() == 1);
 
   const std::vector<int>& cell_row_inds = map.GhostIndices(my_block_row, "cell", 0);
   const std::vector<int>& cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);

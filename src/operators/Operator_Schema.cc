@@ -52,7 +52,7 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Cell_Schema& op,
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
   X.ScatterMasterToGhosted();
-  Y.PutScalarGhosted(0.0);
+  Y.putScalarGhosted(0.0);
 
   for (int c = 0; c != ncells_owned; ++c) {
     const WhetStone::DenseMatrix& Acell = op.matrices[c];
@@ -61,7 +61,7 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Cell_Schema& op,
     WhetStone::DenseVector v(ncols), av(nrows);
 
     ExtractVectorCellOp(c, op.schema_col_, v, X);
-    Acell.Multiply(v, av, false);
+    Acell.elementWiseMultiply(v, av, false);
     AssembleVectorCellOp(c, op.schema_row_, av, Y);
   }
 
@@ -76,7 +76,7 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Face_Schema& op,
   AMANZI_ASSERT(op.matrices.size() == nfaces_owned);
 
   X.ScatterMasterToGhosted();
-  Y.PutScalarGhosted(0.0);
+  Y.putScalarGhosted(0.0);
 
   for (int f = 0; f != nfaces_owned; ++f) {
     const WhetStone::DenseMatrix& Aface = op.matrices[f];
@@ -85,7 +85,7 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Face_Schema& op,
     WhetStone::DenseVector v(ncols), av(nrows);
 
     ExtractVectorFaceOp(f, op.schema_col_, v, X);
-    Aface.Multiply(v, av, false);
+    Aface.elementWiseMultiply(v, av, false);
     AssembleVectorFaceOp(f, op.schema_row_, av, Y);
   }
 
@@ -103,7 +103,7 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Node_Node& op,
   const Epetra_MultiVector& Xn = *X.ViewComponent("node");
   Epetra_MultiVector& Yn = *Y.ViewComponent("node");
 
-  for (int i = 0; i < Xn.NumVectors(); ++i) {
+  for (int i = 0; i < Xn.getNumVectors(); ++i) {
     for (int v = 0; v != nnodes_owned; ++v) {
       Yn[i][v] += Xn[i][v] * (*op.diag)[i][v];
     }
@@ -121,7 +121,7 @@ int Operator_Schema::ApplyTransposeMatrixFreeOp(const Op_Cell_Schema& op,
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
   X.ScatterMasterToGhosted();
-  Y.PutScalarGhosted(0.0);
+  Y.putScalarGhosted(0.0);
 
   for (int c = 0; c != ncells_owned; ++c) {
     const WhetStone::DenseMatrix& Acell = op.matrices[c];
@@ -130,7 +130,7 @@ int Operator_Schema::ApplyTransposeMatrixFreeOp(const Op_Cell_Schema& op,
     WhetStone::DenseVector v(nrows), av(ncols);
 
     ExtractVectorCellOp(c, op.schema_row_, v, X);
-    Acell.Multiply(v, av, true);
+    Acell.elementWiseMultiply(v, av, true);
     AssembleVectorCellOp(c, op.schema_col_, av, Y);
   }
 
@@ -148,7 +148,7 @@ int Operator_Schema::ApplyInverse(const CompositeVector& X, CompositeVector& Y) 
   Epetra_Vector Ycopy(A_->RowMap());
 
   int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, schema_col_);
-  ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
+  ierr |= preconditioner_->applyInverse(Xcopy, Ycopy);
   ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y, schema_row_);
 
   return ierr;
@@ -161,13 +161,13 @@ int Operator_Schema::ApplyInverse(const CompositeVector& X, CompositeVector& Y) 
 int Operator_Schema::ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar) const
 {
   X.ScatterMasterToGhosted();
-  Y.PutScalarMasterAndGhosted(0.0);
+  Y.putScalarMasterAndGhosted(0.0);
 
   Epetra_Vector Xcopy(A_->RowMap());
   Epetra_Vector Ycopy(A_->RowMap());
 
   int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, schema_col_);
-  ierr |= A_->Apply(Xcopy, Ycopy);
+  ierr |= A_->apply(Xcopy, Ycopy);
   ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y, schema_row_);
 
   if (ierr) {
@@ -191,14 +191,14 @@ void Operator_Schema::SymbolicAssembleMatrix()
 
   // create the graph
   int row_size = MaxRowSize(*mesh_, schema_col_);
-  Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->Map(),
+  Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->getMap(),
           smap_->GhostedMap(), smap_->GhostedMap(), row_size));
 
   // fill the graph
   Operator::SymbolicAssembleMatrix(*smap_, *graph, 0, 0);
 
   // Completing and optimizing the graphs
-  int ierr = graph->FillComplete(smap_->Map(), smap_->Map());
+  int ierr = graph->FillComplete(smap_->getMap(), smap_->getMap());
   AMANZI_ASSERT(!ierr);
 
   // create global matrix
@@ -493,7 +493,7 @@ void Operator_Schema::AssembleMatrixOp(const Op_Node_Node& op,
     int row = node_row_inds[v];
     int col = node_col_inds[v];
 
-    for (int k = 0; k != op.diag->NumVectors(); ++k) {
+    for (int k = 0; k != op.diag->getNumVectors(); ++k) {
       ierr |= mat.SumIntoMyValues(row, 1, &(*op.diag)[k][v], &col);
       row++;
       col++;

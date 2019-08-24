@@ -139,7 +139,7 @@ inline void
 EvaluatorPrimary<CompositeVector, CompositeVectorSpace>::UpdateDerivative_(
     State &s) {
   s.GetDerivativeW<CompositeVector>(my_key_, my_tag_, my_key_, my_tag_, my_key_)
-      .PutScalar(1.0);
+      .putScalar(1.0);
 }
 
 template<>

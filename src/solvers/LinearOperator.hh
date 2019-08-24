@@ -67,11 +67,11 @@ class LinearOperator {
 
   double TrueResidual(const Vector& f, const Vector& v) const {
     Vector r(f);
-    m_->Apply(v, r);  // r = f - M * x
-    r.Update(1.0, f, -1.0);
+    m_->apply(v, r);  // r = f - M * x
+    r.update(1.0, f, -1.0);
 
     double true_residual;
-    r.Norm2(&true_residual);
+    true_residual = r.norm2();
     return true_residual;
   }
 

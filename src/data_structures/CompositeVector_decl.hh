@@ -65,8 +65,8 @@ public:
   
   // -- Accessors to meta-data --
   // Space/VectorSpace/Map accessor.
-  Teuchos::RCP<const CompositeSpace> Map() const { return cvs_; }
-  Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return Map()->Mesh(); }
+  Teuchos::RCP<const CompositeSpace> getMap() const { return cvs_; }
+  Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return getMap()->Mesh(); }
   
  protected:
 

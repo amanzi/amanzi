@@ -155,7 +155,7 @@ public:
 
     // Setup fields initialize
     S.Setup();
-    S.GetW<CompositeVector>("fb", "fb").PutScalar(2.0);
+    S.GetW<CompositeVector>("fb", "fb").putScalar(2.0);
     S.GetRecordW("fb", "fb").set_initialized();
     S.Initialize();
   }

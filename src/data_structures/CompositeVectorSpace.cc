@@ -37,7 +37,7 @@ CompositeVectorSpace::CompositeVectorSpace(const CompositeSpace& map)
   for (const auto& name : map) {
     names_.emplace_back(name);
     locations_.emplace_back(map.Location(name));
-    num_vectors_.emplace_back(map.NumVectors(name));
+    num_vectors_.emplace_back(map.getNumVectors(name));
     mastermaps_[name] = map.ComponentMap(name, false);
     ghostmaps_[name] = map.ComponentMap(name, true);
   }
@@ -74,7 +74,7 @@ CompositeVectorSpace::SubsetOf(const CompositeVectorSpace& other) const
   if (mesh_ != other.mesh_) return false;
   for (const auto& name : *this) {
     if (!other.HasComponent(name)) return false;
-    if (NumVectors(name) != other.NumVectors(name)) return false;
+    if (getNumVectors(name) != other.getNumVectors(name)) return false;
     if (Location(name) !=other.Location(name)) return false;
   }
   return true;
@@ -336,7 +336,7 @@ void CompositeVectorSpace::InitIndexMap_() {
   }
 }
 
-BlockMap_ptr_type CompositeVectorSpace::Map(const std::string& name, bool ghost) const {
+BlockMap_ptr_type CompositeVectorSpace::getMap(const std::string& name, bool ghost) const {
   if (std::find(names_.begin(), names_.end(), name) == names_.end()) {
     Errors::Message message("Map: Requested component ("+name+") doesn't exist in CompositeVectorSpace.");
     Exceptions::amanzi_throw(message);

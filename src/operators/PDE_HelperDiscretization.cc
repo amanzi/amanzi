@@ -129,7 +129,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
   std::vector<int> offset;
 
   CompositeVector& rhs = *global_op_->rhs();
-  rhs.PutScalarGhosted(0.0);
+  rhs.putScalarGhosted(0.0);
 
   const Schema& schema_row = global_op_->schema_row();
   const Schema& schema_col = global_op_->schema_col();
@@ -250,7 +250,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Point_(
   std::vector<int> offset;
 
   CompositeVector& rhs = *global_op_->rhs();
-  rhs.PutScalarGhosted(0.0);
+  rhs.putScalarGhosted(0.0);
 
   // AmanziMesh::Entity_kind kind = bc.kind();
   Teuchos::RCP<Epetra_MultiVector> rhs_node;
@@ -360,7 +360,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(
   std::vector<int> offset;
 
   CompositeVector& rhs = *global_op_->rhs();
-  rhs.PutScalarGhosted(0.0);
+  rhs.putScalarGhosted(0.0);
 
   const Schema& schema_row = global_op_->schema_row();
   const Schema& schema_col = global_op_->schema_col();

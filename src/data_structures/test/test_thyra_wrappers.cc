@@ -46,7 +46,7 @@ struct test_data {
 
     cv = Teuchos::rcp(new CompositeVector(mesh, names, locations, num_dofs, true));
     cv->CreateData();
-    cv->PutScalar(1.0);
+    cv->putScalar(1.0);
 
     tv1 = Teuchos::rcp(new TreeVector("TV with data"));
     tv1->SetData(cv);
@@ -66,7 +66,7 @@ SUITE(AmanziThyraWrappersTests) {
   TEST_FIXTURE(test_data, CreateThyraFromCV) {
     // assign a value to the CV and get norms
     double norm_cv = 0;
-    int ierr = cv->Norm1(&norm_cv);
+    norm_cv = int ierr = cv->norm1();
     CHECK(!ierr);
 
     // create the thyra object
@@ -83,7 +83,7 @@ SUITE(AmanziThyraWrappersTests) {
     Teuchos::RCP< const Thyra::VectorBase<double> > thyra_vec2 =
       ThyraWrappers::CreateThyraVector(cv2);
     double norm_cv2 = 0;
-    ierr = cv2->Norm1(&norm_cv2);
+    norm_cv2 = cv2->norm1();
     CHECK(!ierr);
     double norm_th2 = Thyra::norm_1<double>(*thyra_vec2);
     CHECK_CLOSE(norm_th2, norm_cv2, 0.000001);
@@ -92,7 +92,7 @@ SUITE(AmanziThyraWrappersTests) {
   TEST_FIXTURE(test_data, CreateThyraFromTVwData) {
     // assign a value to the CV and get norms
     double norm_tv = 0;
-    int ierr = tv1->Norm1(&norm_tv);
+    norm_tv = int ierr = tv1->norm1();
     CHECK(!ierr);
 
     // create the thyra object
@@ -107,7 +107,7 @@ SUITE(AmanziThyraWrappersTests) {
   TEST_FIXTURE(test_data, CreateThyraFromTVwSubVecs) {
     // assign a value to the CV and get norms
     double norm_tv = 0;
-    int ierr = tv2->Norm1(&norm_tv);
+    norm_tv = int ierr = tv2->norm1();
     CHECK(!ierr);
 
     // create the thyra object
@@ -134,7 +134,7 @@ SUITE(AmanziThyraWrappersTests) {
 
     // check norms
     double norm_cv = 0;
-    int ierr = cv2->Norm1(&norm_cv);
+    norm_cv = int ierr = cv2->norm1();
     CHECK(!ierr);
     CHECK_CLOSE(norm_th, norm_cv, 0.000001);
   }
@@ -152,7 +152,7 @@ SUITE(AmanziThyraWrappersTests) {
     Teuchos::RCP<TreeVector> tv3 =
       ThyraWrappers::CreateTreeVector("test", thyra_vec, tv2);
     double norm_tv = 0;
-    int ierr = tv3->Norm1(&norm_tv);
+    norm_tv = int ierr = tv3->norm1();
     CHECK(!ierr);
     CHECK_CLOSE(norm_th, norm_tv, 0.000001);
   }

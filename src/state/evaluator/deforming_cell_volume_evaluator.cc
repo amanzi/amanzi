@@ -91,7 +91,7 @@ void DeformingCellVolumeEvaluator::EvaluateField_(
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh(my_mesh_);
 
   // initialize from mesh
-  int ncells = cv.MyLength();
+  int ncells = cv.getLocalLength();
   for (int c = 0; c != ncells; ++c) {
     cv[0][c] = mesh->cell_volume(c,false);
     if (cv[0][c] < 0.)
@@ -104,7 +104,7 @@ void DeformingCellVolumeEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State> &S, Key wrt_key,
     const Teuchos::Ptr<CompositeVector> &result) {
 
-  result->PutScalar(0.);
+  result->putScalar(0.);
   // Errors::Message message("Deforming cell volume's derivatives are not
   // implemented"); throw(message);
 }

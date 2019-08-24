@@ -64,14 +64,14 @@ class Matrix {
       A_->InsertMyValues(i, 3, values, indices);
     }
     A_->FillComplete(map, map);
-    preconditioner_->Update(A_);
+    preconditioner_->update(A_);
   };    
 
   virtual int Apply(const Epetra_MultiVector& v, Epetra_MultiVector& mv) const { 
-    return A_->Apply(v, mv);
+    return A_->apply(v, mv);
   }
   virtual int ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv) const {
-    return preconditioner_->ApplyInverse(v, hv);
+    return preconditioner_->applyInverse(v, hv);
   }
 
   virtual const Epetra_Map& DomainMap() const { return *map_; }
@@ -109,9 +109,9 @@ TEST(DIAGONAL_PRECONDITIONER) {
   for (int n = 0; n < 4; n++) {
     m->Init(prec_names[n], *map);
 
-    v.PutScalar(0.0);
+    v.putScalar(0.0);
     printf("Preconditioner: %s\n", prec_names[n].c_str());
-    pcg.ApplyInverse(u, v);
+    pcg.applyInverse(u, v);
 
     CHECK_CLOSE(11.03249773994628, v[0], 1e-6);
     CHECK_CLOSE(10.53249773994628, v[1], 1e-6);
@@ -151,7 +151,7 @@ TEST(DIAGONAL_PRECONDITIONER_OPENMP) {
     Epetra_Vector u(*map), v(*map);
     for (int i = 0; i < N; i++) u[i] = 1.0 / (i + 2.0);
 
-    pcg.ApplyInverse(u, v);
+    pcg.applyInverse(u, v);
   }
 
   int nthreads = omp_get_max_threads();
@@ -173,7 +173,7 @@ TEST(DIAGONAL_PRECONDITIONER_OPENMP) {
     Epetra_Vector u(*map), v(*map);
     for (int i = 0; i < N; i++) u[i] = 1.0 / (i + 2.0);
 
-    pcg.ApplyInverse(u, v);
+    pcg.applyInverse(u, v);
   }
 
   cpu1 = omp_get_wtime();

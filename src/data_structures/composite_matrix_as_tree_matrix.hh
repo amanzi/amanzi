@@ -55,12 +55,12 @@ class CompositeMatrixAsTreeMatrix : public TreeMatrix {
 
   // Apply matrix, b <-- Ax, returns ierr
   virtual int Apply(const TreeVector& x, TreeVector& b) const {
-    return cm_->Apply(x.data(), b.data());
+    return cm_->apply(x.data(), b.data());
   }
 
   // Apply the inverse, x <-- A^-1 b, returns ierr
   virtual int ApplyInverse(const TreeVector& b, TreeVector& x) const {
-    return cm_->ApplyInverse(x.data(), b.data());
+    return cm_->applyInverse(x.data(), b.data());
   }
 
 };

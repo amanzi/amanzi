@@ -47,7 +47,7 @@ public:
 protected:
   virtual void Update_(State &s) override {
     double cv = s.GetMesh()->cell_volume(0,false);
-    s.GetW<CompositeVector>(my_key_, my_tag_, my_key_).PutScalar(-4. * cv);
+    s.GetW<CompositeVector>(my_key_, my_tag_, my_key_).putScalar(-4. * cv);
   }
 };
 
@@ -65,7 +65,7 @@ protected:
   virtual void Update_(State &s) override {
     auto &x = s.GetW<CompositeVector>(my_key_, my_tag_, my_key_);
     auto &x_c = *x.ViewComponent("cell", false);
-    for (int c = 0; c != x_c.MyLength(); ++c) {
+    for (int c = 0; c != x_c.getLocalLength(); ++c) {
       AmanziGeometry::Point cc = x.Mesh()->cell_centroid(c);
       x_c[0][c] = cc[0] * cc[0] + cc[1] * cc[1]; // x^2 + y^2
     }
@@ -84,7 +84,7 @@ public:
 
 protected:
   virtual void Update_(State &s) override {
-    s.GetW<CompositeVector>(my_key_, my_tag_, my_key_).PutScalar(1.);
+    s.GetW<CompositeVector>(my_key_, my_tag_, my_key_).putScalar(1.);
   }
 };
 
@@ -103,7 +103,7 @@ protected:
     auto &K = s.GetW<TensorVector>(my_key_, my_tag_, my_key_);
     for (auto &k : K) {
       k.Init(2, 0);
-      k.PutScalar(1.0);
+      k.putScalar(1.0);
     }
   }
 };
@@ -226,7 +226,7 @@ public:
     // create the global operator
     Operators::Operator_Factory global_op_fac;
     global_op_fac.set_mesh(A_rhs->Mesh());
-    global_op_fac.set_cvs(A_rhs->Map(), A_rhs->Map());
+    global_op_fac.set_cvs(A_rhs->getMap(), A_rhs->getMap());
 
     auto global_op_unique = global_op_fac.Create();
     // need to figure out a way to move unique_ptr into rcp
@@ -302,7 +302,7 @@ SUITE(EVALUATOR_ON_OP) {
     // Setup fields and marked as initialized.  Note: USER CODE SHOULD NOT DO IT
     // THIS WAY!
     S.Setup();
-    S.GetW<Operators::Op>("my_op", "", "my_op").diag->PutScalar(3.14);
+    S.GetW<Operators::Op>("my_op", "", "my_op").diag->putScalar(3.14);
     S.GetRecordW("my_op", "my_op").set_initialized();
     S.Initialize();
   }
@@ -388,7 +388,7 @@ SUITE(EVALUATOR_ON_OP) {
     // Setup fields and marked as initialized.  Note: USER CODE SHOULD NOT DO IT
     // THIS WAY!
     S.Setup();
-    S.GetW<CompositeVector>("x", "", "x").PutScalar(1.);
+    S.GetW<CompositeVector>("x", "", "x").putScalar(1.);
     S.GetRecordW("x", "", "x").set_initialized();
     S.Initialize();
 
@@ -528,7 +528,7 @@ SUITE(EVALUATOR_ON_OP) {
     double error(0.);
     auto &r =
         *S.Get<CompositeVector>("residual", "").ViewComponent("cell", false);
-    r.NormInf(&error);
+    error = r.normInf();
     CHECK_CLOSE(0.0, error, 1.e-3);
   }
 }

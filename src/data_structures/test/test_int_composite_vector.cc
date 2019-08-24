@@ -61,25 +61,25 @@ SUITE(COMPOSITE_VECTOR_INT) {
   TEST_FIXTURE(test_int_cv, CVConstruction) {
     CHECK_EQUAL(2, x->size());
     int size = comm->getSize();
-    if (size == 1) CHECK_EQUAL(8, x->MyLength("cell"));
-    CHECK_EQUAL(2, x->NumVectors("cell"));
-    CHECK(x->Map()->size() == x->size());
-    CHECK(x->Map()->SameAs(*x->Map()));
-    CHECK(x->Map()->ComponentMap("cell", false)->isSameAs(*mesh->map(CELL, false)));
-    CHECK(x->Map()->ComponentMap("cell", true)->isSameAs(*mesh->map(CELL, true)));
+    if (size == 1) CHECK_EQUAL(8, x->getLocalLength("cell"));
+    CHECK_EQUAL(2, x->getNumVectors("cell"));
+    CHECK(x->getMap()->size() == x->size());
+    CHECK(x->getMap()->SameAs(*x->getMap()));
+    CHECK(x->getMap()->ComponentMap("cell", false)->isSameAs(*mesh->map(CELL, false)));
+    CHECK(x->getMap()->ComponentMap("cell", true)->isSameAs(*mesh->map(CELL, true)));
 
     if (size == 2) {
-      CHECK_EQUAL(4, x->Map()->ComponentMap("cell", false)->getNodeNumElements());
-      CHECK_EQUAL(5, x->Map()->ComponentMap("cell", true)->getNodeNumElements());
+      CHECK_EQUAL(4, x->getMap()->ComponentMap("cell", false)->getNodeNumElements());
+      CHECK_EQUAL(5, x->getMap()->ComponentMap("cell", true)->getNodeNumElements());
     } else {
-      CHECK_EQUAL(8, x->Map()->ComponentMap("cell", false)->getNodeNumElements());
-      CHECK_EQUAL(8, x->Map()->ComponentMap("cell", true)->getNodeNumElements());
+      CHECK_EQUAL(8, x->getMap()->ComponentMap("cell", false)->getNodeNumElements());
+      CHECK_EQUAL(8, x->getMap()->ComponentMap("cell", true)->getNodeNumElements());
     }
   }
 
   TEST_FIXTURE(test_int_cv, CVSetGet) {
     // check putscalar
-    x->PutScalar(2);
+    x->putScalar(2);
     {
       // check on owned
       auto v1 = x->ViewComponent<AmanziDefaultHost>("cell", false);
@@ -106,8 +106,8 @@ SUITE(COMPOSITE_VECTOR_INT) {
     // 
     // std::vector<double> vals(2);
     // vals[0] = 4; vals[1] = 5;
-    // x->PutScalar("cell", vals);
-    // x->PutScalar("face", 3);
+    // x->putScalar("cell", vals);
+    // x->putScalar("face", 3);
     // {
     //   // check on owned
     //   auto v1 = x->ViewComponent<AmanziDefaultHost>("cell", false);
@@ -149,10 +149,10 @@ SUITE(COMPOSITE_VECTOR_INT) {
 
   // test the vector's copy constructor
   TEST_FIXTURE(test_int_cv, CVCopy) {
-    x->PutScalar(2);
+    x->putScalar(2);
 
     CompositeVector_<int> y(*x);
-    y.PutScalar(4);
+    y.putScalar(4);
 
     {
       // check set by view on owned
@@ -167,10 +167,10 @@ SUITE(COMPOSITE_VECTOR_INT) {
 
   // test the vector's operator=
   TEST_FIXTURE(test_int_cv, CVOperatorEqual) {
-    x->PutScalar(2);
+    x->putScalar(2);
 
     CompositeVector_<int> y(*x);
-    y.PutScalar(0);
+    y.putScalar(0);
 
     // operator= and check vals
     y = *x;
@@ -185,7 +185,7 @@ SUITE(COMPOSITE_VECTOR_INT) {
     }
 
     // ensure operator= did not copy pointers
-    x->PutScalar(4);
+    x->putScalar(4);
     {
       // check set by view on owned
       auto v1 = x->ViewComponent<AmanziDefaultHost>("cell", 0, false);
@@ -203,7 +203,7 @@ SUITE(COMPOSITE_VECTOR_INT) {
     int size = comm->getSize();
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
-    x->PutScalar(rank+1);
+    x->putScalar(rank+1);
     x->ScatterMasterToGhosted("cell");
 
     if (size == 2) {

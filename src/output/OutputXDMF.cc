@@ -49,30 +49,30 @@ OutputXDMF::FinalizeCycle() {
 }
 
 
-// write data to file
-void
-OutputXDMF::WriteVector(const Epetra_Vector& vec,
-			const std::string& name) const {
-  if (mesh_->is_logical()) {
-    io_->writeNodeDataReal(vec, name);
-  } else {
-    io_->writeCellDataReal(vec, name);
-  }
-}
+// // write data to file
+// void
+// OutputXDMF::WriteVector(const Epetra_Vector& vec,
+// 			const std::string& name) const {
+//   if (mesh_->is_logical()) {
+//     io_->writeNodeDataReal(vec, name);
+//   } else {
+//     io_->writeCellDataReal(vec, name);
+//   }
+// }
 
   
-void
-OutputXDMF::WriteMultiVector(const Epetra_MultiVector& vec,
-			     const std::vector<std::string>& names) const {
-  AMANZI_ASSERT(names.size() == vec.NumVectors());
-  for (int i=0; i!=vec.NumVectors(); ++i) {
-    if (mesh_->is_logical()) {
-      io_->writeNodeDataReal(*vec(i), names[i]);
-    } else {
-      io_->writeCellDataReal(*vec(i), names[i]);
-    }
-  }
-}
+// void
+// OutputXDMF::WriteMultiVector(const Epetra_MultiVector& vec,
+// 			     const std::vector<std::string>& names) const {
+//   AMANZI_ASSERT(names.size() == vec.getNumVectors());
+//   for (int i=0; i!=vec.getNumVectors(); ++i) {
+//     if (mesh_->is_logical()) {
+//       io_->writeNodeDataReal(*vec(i), names[i]);
+//     } else {
+//       io_->writeCellDataReal(*vec(i), names[i]);
+//     }
+//   }
+// }
   
 
 void
@@ -93,21 +93,21 @@ OutputXDMF::WriteAttribute(const std::string& val, const std::string& name) cons
 }
 
 
-// read data from file
-void
-OutputXDMF::ReadVector(Epetra_Vector& vec, const std::string& name) const {
-  io_->readData(vec, name);
-}
+// // read data from file
+// void
+// OutputXDMF::ReadVector(Epetra_Vector& vec, const std::string& name) const {
+//   io_->readData(vec, name);
+// }
 
   
-void
-OutputXDMF::ReadMultiVector(Epetra_MultiVector& vec,
-			    const std::vector<std::string>& names) const {
-  AMANZI_ASSERT(names.size() == vec.NumVectors());
-  for (int i=0; i!=vec.NumVectors(); ++i) {
-    io_->readData(*vec(i), names[i]);
-  }
-}
+// void
+// OutputXDMF::ReadMultiVector(Epetra_MultiVector& vec,
+// 			    const std::vector<std::string>& names) const {
+//   AMANZI_ASSERT(names.size() == vec.getNumVectors());
+//   for (int i=0; i!=vec.getNumVectors(); ++i) {
+//     io_->readData(*vec(i), names[i]);
+//   }
+// }
 
 
 void

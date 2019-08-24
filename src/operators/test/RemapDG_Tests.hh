@@ -83,11 +83,11 @@ void RemapDG_Tests<AnalyticDG>::InitializeConsistentJacobianDeterminant()
   CompositeVector one(tmp), u0(tmp), u1(tmp);
   Epetra_MultiVector& one_c = *one.ViewComponent("cell", true);
 
-  one.PutScalarMasterAndGhosted(0.0);
+  one.putScalarMasterAndGhosted(0.0);
   for (int c = 0; c < ncells_wghost_; ++c) one_c[0][c] = 1.0;
 
-  op_flux_->global_operator()->Apply(one, tmp);
-  op_reac_->global_operator()->Apply(tmp, u0);
+  op_flux_->global_operator()->apply(one, tmp);
+  op_reac_->global_operator()->apply(tmp, u0);
 
   // linear part of determinant
   double dt(0.01);
@@ -101,12 +101,12 @@ void RemapDG_Tests<AnalyticDG>::InitializeConsistentJacobianDeterminant()
   op_flux_->UpdateMatrices(velf_.ptr());
   op_flux_->ApplyBCs(true, true, true);
 
-  op_flux_->global_operator()->Apply(one, tmp);
-  op_reac_->global_operator()->Apply(tmp, u1);
-  u1.Update(-1.0/dt, u0, 1.0/dt);
+  op_flux_->global_operator()->apply(one, tmp);
+  op_reac_->global_operator()->apply(tmp, u1);
+  u1.update(-1.0/dt, u0, 1.0/dt);
 
   // save as polynomials
-  int nk = one_c.NumVectors();
+  int nk = one_c.getNumVectors();
   Amanzi::WhetStone::DenseVector data(nk);
   Epetra_MultiVector& u0c = *u0.ViewComponent("cell", true);
   Epetra_MultiVector& u1c = *u1.ViewComponent("cell", true);
@@ -179,11 +179,11 @@ void RemapDG_Tests<AnalyticDG>::CollectStatistics(double t, const CompositeVecto
     for (int n = 0; n < matrices.size(); ++n) matrices[n].Inverse();
 
     auto& rhs = *op_reac_->global_operator()->rhs();
-    op_reac_->global_operator()->Apply(u, rhs);
-    rhs.Dot(u, &l2norm_);
+    op_reac_->global_operator()->apply(u, rhs);
+    l2norm_ = rhs.dot(u);
 
     Epetra_MultiVector& xc = *rhs.ViewComponent("cell");
-    int nk = xc.NumVectors();
+    int nk = xc.getNumVectors();
     double xmax[nk], xmin[nk];
     xc.MaxValue(xmax);
     xc.MinValue(xmin);
@@ -216,7 +216,7 @@ void RemapDG_Tests<AnalyticDG>::DeformMesh(int deform, double t)
   Epetra_MultiVector& random_n = *random.ViewComponent("node", true);
 
   random_n.Random();
-  random_n.Scale(scale);
+  random_n.scale(scale);
   random.ScatterMasterToGhosted();
 
   // relocate mesh nodes

@@ -38,7 +38,7 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
-  Y.PutScalarGhosted(0.0);
+  Y.putScalarGhosted(0.0);
   X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
@@ -47,7 +47,7 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
     Epetra_MultiVector& Yf = *Y.ViewComponent("face", true);
     Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
 
-    const auto& map = Yf.Map();
+    const auto& map = Yf.getMap();
 
     AmanziMesh::Entity_ID_List faces;
     for (int c = 0; c != ncells_owned; ++c) {
@@ -71,7 +71,7 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
       v(npoints) = Xc[0][c];
 
       const WhetStone::DenseMatrix& Acell = op.matrices[c];
-      Acell.Multiply(v, av, false);
+      Acell.elementWiseMultiply(v, av, false);
 
       m = 0;
       for (int n = 0; n != nfaces; ++n) {
@@ -98,7 +98,7 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_Face& op,
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
-  Y.PutScalarGhosted(0.);
+  Y.putScalarGhosted(0.);
   X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
 
@@ -116,7 +116,7 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_Face& op,
       }
 
       const WhetStone::DenseMatrix& Acell = op.matrices[c];
-      Acell.Multiply(v, av, false);
+      Acell.elementWiseMultiply(v, av, false);
 
       for (int n = 0; n != nfaces; ++n) {
         Yf[0][faces[n]] += av(n);
@@ -136,7 +136,7 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
                                          const CompositeVector& X, CompositeVector& Y) const
 {
   int nsurf_cells = op.surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  AMANZI_ASSERT(op.diag->MyLength() == nsurf_cells);
+  AMANZI_ASSERT(op.diag->getLocalLength() == nsurf_cells);
 
   const Epetra_MultiVector& Xf = *X.ViewComponent("face", false);
   Epetra_MultiVector& Yf = *Y.ViewComponent("face", false);
@@ -160,7 +160,7 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
   X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
 
-  Y.PutScalarGhosted(0.);
+  Y.putScalarGhosted(0.);
   Epetra_MultiVector& Yf = *Y.ViewComponent("face", true);
   
   AmanziMesh::Entity_ID_List cells;
@@ -174,7 +174,7 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
     }
 
     const WhetStone::DenseMatrix& Aface = op.matrices[sf];
-    Aface.Multiply(v, av, false);
+    Aface.elementWiseMultiply(v, av, false);
 
     for (int n = 0; n != ncells; ++n) {
       Yf[0][op.surf_mesh->entity_get_parent(AmanziMesh::CELL, cells[n])] += av(n);

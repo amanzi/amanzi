@@ -196,7 +196,7 @@ void Debugger::WriteVector(const std::string &name,
   int nfaces_valid = 0;
   if (vec->HasComponent("face")) {
     vec_f = vec->ViewComponent("face", true);
-    nfaces_valid = vec_f->MyLength();
+    nfaces_valid = vec_f->getLocalLength();
   }
 
   for (int i = 0; i != dc_.size(); ++i) {

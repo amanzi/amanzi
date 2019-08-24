@@ -49,22 +49,22 @@ SuperMapLumped::CreateIndexing_()
       counts_[compname] = comp_maps_->ComponentMap(compname, false)->getNodeNumElements();
       ghosted_counts_[compname] = comp_maps_->ComponentMap(compname, true)->getNodeNumElements() - counts_[compname];
       offsets_[compname] = offset;
-      offset += comp_maps_->NumVectors(compname) * counts_[compname];
+      offset += comp_maps_->getNumVectors(compname) * counts_[compname];
     }
     n_local_ = offset;
 
     // fill the ghosted offsets
     for (const auto& compname : *comp_maps_) {
       ghosted_offsets_[compname] = offset;
-      offset += comp_maps_->NumVectors(compname) * ghosted_counts_[compname];
+      offset += comp_maps_->getNumVectors(compname) * ghosted_counts_[compname];
     }
     n_local_ghosted_ = offset;
   }
 
   // create indices into supermap and the supermap
   // -- count the total owned points
-  GO n_global = indices_->GlobalLength(false);
-  GO n_global_ghosted = indices_->GlobalLength(true);
+  GO n_global = indices_->getGlobalLength(false);
+  GO n_global_ghosted = indices_->getGlobalLength(true);
   
   // -- construct the flat map
   map_ = Teuchos::rcp(new Map_type(n_global, n_local_, 0, indices_->Comm()));
@@ -86,7 +86,7 @@ SuperMapLumped::CreateIndexing_()
     auto global_index_view = gids_comp.ViewComponent<AmanziDefaultHost>(compname, false);
 
     int offset = offsets_.at(compname);
-    int n_dofs = comp_maps_->NumVectors(compname);
+    int n_dofs = comp_maps_->getNumVectors(compname);
     for (LO i=0; i!=nentities_owned; ++i) {
       for (int j=0; j!=n_dofs; ++j) {
         LO lid = offset + j + i*n_dofs;
@@ -110,7 +110,7 @@ SuperMapLumped::CreateIndexing_()
     auto global_index_view = gids_comp.ViewComponent<AmanziDefaultHost>(compname, true);
     
     int ghosted_offset = ghosted_offsets_.at(compname);
-    int n_dofs = comp_maps_->NumVectors(compname);
+    int n_dofs = comp_maps_->getNumVectors(compname);
     for (LO i=nentities_owned; i!=nentities; ++i) {
       for (int j=0; j!=n_dofs; ++j) {
         LO lid = ghosted_offset + j + (i-nentities_owned)*n_dofs;

@@ -149,7 +149,7 @@ class PDE_DiffusionFVwithGravity : public PDE_DiffusionFV,
   virtual void ModifyMatrices(const CompositeVector& u) override {};
   virtual void ScaleMassMatrices(double s) override {
     ComputeTransmissibility_(gravity_term_);
-    transmissibility_->Scale(s);
+    transmissibility_->scale(s);
   };
 
   // Developments

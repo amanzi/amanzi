@@ -49,8 +49,8 @@ CompositeVector_<Scalar>::CompositeVector_(const Teuchos::RCP<const CompositeSpa
 // template<typename Scalar>
 // CompositeVector_<Scalar>::CompositeVector_(const Teuchos::RCP<const CompositeSpace>& map, bool ghosted)
 //     : map_(map),
-//       mastervec_(Teuchos::rcp(new CompVector<Scalar>(map->Map(false)))),
-//       ghostvec_(Teuchos::rcp(new CompVector<Scalar>(map->Map(true)))),
+//       mastervec_(Teuchos::rcp(new CompVector<Scalar>(map->getMap(false)))),
+//       ghostvec_(Teuchos::rcp(new CompVector<Scalar>(map->getMap(true)))),
 //       ghosted_(ghosted)
 // {
 //   CreateData_();
@@ -59,15 +59,15 @@ CompositeVector_<Scalar>::CompositeVector_(const Teuchos::RCP<const CompositeSpa
 
 template<typename Scalar>
 CompositeVector_<Scalar>::CompositeVector_(const CompositeVector_<Scalar>& other, InitMode mode)
-    : BlockVector<Scalar>(other.Map(), mode),
-      cvs_(other.Map())
+    : BlockVector<Scalar>(other.getMap(), mode),
+      cvs_(other.getMap())
 {}
 
 // template<typename Scalar>
 // CompositeVector_<Scalar>::CompositeVector_(const CompositeVector_<Scalar>& other, bool ghosted, InitMode mode)
-//     : map_(other->Map()),
-//       mastervec_(Teuchos::rcp(new CompVector<Scalar>(other.Map()->Map(false)))),
-//       ghostvec_(Teuchos::rcp(new CompVector<Scalar>(other.Map()->Map(true)))),
+//     : map_(other->getMap()),
+//       mastervec_(Teuchos::rcp(new CompVector<Scalar>(other.getMap()->getMap(false)))),
+//       ghostvec_(Teuchos::rcp(new CompVector<Scalar>(other.getMap()->getMap(true)))),
 //       ghosted_(ghosted)
 // {
 //   CreateData_();
@@ -116,7 +116,7 @@ template<typename Scalar>
 void
 CompositeVector_<Scalar>::CreateVandelay_() const
 {
-  vandelay_vector_ = Teuchos::rcp(new MultiVector_type_<Scalar>(Mesh()->exterior_face_map(false), this->NumVectors("face"), false));
+  vandelay_vector_ = Teuchos::rcp(new MultiVector_type_<Scalar>(Mesh()->exterior_face_map(false), this->getNumVectors("face"), false));
 }
 
 

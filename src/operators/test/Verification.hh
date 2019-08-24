@@ -28,14 +28,14 @@ class Verification {
     for (int n = 0; n < 2; n++) {
       a.Random();
       b.Random();
-      op_->Apply(a, ha);
-      op_->Apply(b, hb);
+      op_->apply(a, ha);
+      op_->apply(b, hb);
 
       double ahb, bha, aha, bhb;
-      a.Dot(hb, &ahb);
-      b.Dot(ha, &bha);
-      a.Dot(ha, &aha);
-      b.Dot(hb, &bhb);
+      ahb = a.dot(hb);
+      bha = b.dot(ha);
+      aha = a.dot(ha);
+      bhb = b.dot(hb);
 
       if (a.Comm()->getRank() == 0) {
         std::cout << "Matrix:\n";
@@ -57,14 +57,14 @@ class Verification {
 
     a.Random();
     b.Random();
-    op_->ApplyInverse(a, ha);
-    op_->ApplyInverse(b, hb);
+    op_->applyInverse(a, ha);
+    op_->applyInverse(b, hb);
 
     double ahb, bha, aha, bhb;
-    a.Dot(hb, &ahb);
-    b.Dot(ha, &bha);
-    a.Dot(ha, &aha);
-    b.Dot(hb, &bhb);
+    ahb = a.dot(hb);
+    bha = b.dot(ha);
+    aha = a.dot(ha);
+    bhb = b.dot(hb);
 
     if (a.Comm()->getRank() == 0) {
       int size = (op_->A() != Teuchos::null) ? op_->A()->NumGlobalRows() : -1;
@@ -85,11 +85,11 @@ class Verification {
     Vector r(b);
 
     op_->ApplyAssembled(x, r);
-    r.Update(1.0, b, -1.0);
+    r.update(1.0, b, -1.0);
 
     double tmp, xnorm;
-    r.Dot(r, &tmp);
-    x.Dot(x, &xnorm);
+    tmp = r.dot(r);
+    xnorm = x.dot(x);
     CHECK_CLOSE(0.0, tmp, tol * tol * xnorm * xnorm);
   }
 

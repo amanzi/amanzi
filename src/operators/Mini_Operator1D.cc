@@ -35,7 +35,7 @@ void Mini_Operator1D::Init(std::shared_ptr<const WhetStone::DenseVector> mesh)
   down_.Reshape(ncells);
 
   rhs_.Reshape(ncells);
-  rhs_.PutScalar(0.0);
+  rhs_.putScalar(0.0);
 }
 
 

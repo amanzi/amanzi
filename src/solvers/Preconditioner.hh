@@ -51,7 +51,7 @@ class Preconditioner {
   virtual void Destroy() = 0;
 
   // Apply the preconditioner.
-  virtual int ApplyInverse(const Vector& v,
+  virtual int applyInverse(const Vector& v,
                            Vector& hv) const = 0;
 
   virtual int returned_code() = 0;

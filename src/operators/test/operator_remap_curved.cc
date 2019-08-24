@@ -160,7 +160,7 @@ void MyRemapDG::DynamicCellVelocity(double t)
     maps_->Cofactors(Jt, C);
     
     // cell-based pseudo velocity -C^t u 
-    C.Multiply(uc_[c], (*velc_)[c], true);
+    C.elementWiseMultiply(uc_[c], (*velc_)[c], true);
     (*velc_)[c] *= -1.0;
   }
 }

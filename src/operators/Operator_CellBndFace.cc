@@ -39,7 +39,7 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
   const Epetra_MultiVector& Xbnd = *X.ViewComponent("boundary_face", true);
 
-  Y.PutScalarGhosted(0.);
+  Y.putScalarGhosted(0.);
   Epetra_MultiVector& Yc = *Y.ViewComponent("cell", true);
   Epetra_MultiVector& Ybnd = *Y.ViewComponent("boundary_face", true); 
 
@@ -55,7 +55,7 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
       }
 
       const WhetStone::DenseMatrix& Aface = op.matrices[f];
-      Aface.Multiply(v, av, false);
+      Aface.elementWiseMultiply(v, av, false);
 
       for (int n=0; n!=ncells; ++n) {
         Yc[0][cells[n]] += av(n);
@@ -68,7 +68,7 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
       v(1) = Xbnd[0][bf];
       
       const WhetStone::DenseMatrix& Aface = op.matrices[f];
-      Aface.Multiply(v, av, false);
+      Aface.elementWiseMultiply(v, av, false);
 
       Yc[0][cells[0]] += av(0);
       Ybnd[0][bf] += av(1);    
@@ -168,7 +168,7 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op
                                             const CompositeVector& X, CompositeVector& Y) const
 {
   int nsurf_cells = op.surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  AMANZI_ASSERT(op.diag->MyLength() == nsurf_cells);
+  AMANZI_ASSERT(op.diag->getLocalLength() == nsurf_cells);
   
   const Epetra_MultiVector& Xf = *X.ViewComponent("boundary_face", false);
   Epetra_MultiVector& Yf = *Y.ViewComponent("boundary_face", false);
@@ -192,7 +192,7 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op
   X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xf = *X.ViewComponent("boundary_face", true);
 
-  Y.PutScalarGhosted(0.);
+  Y.putScalarGhosted(0.);
   Epetra_MultiVector& Yf = *Y.ViewComponent("boundary_face", true);
   
   AmanziMesh::Entity_ID_List cells;
@@ -208,7 +208,7 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op
     }
 
     const WhetStone::DenseMatrix& Aface = op.matrices[sf];
-    Aface.Multiply(v, av, false);
+    Aface.elementWiseMultiply(v, av, false);
 
     for (int n = 0; n != ncells; ++n) {
       int f = op.surf_mesh->entity_get_parent(AmanziMesh::CELL, cells[n]);

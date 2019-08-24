@@ -120,7 +120,7 @@ std::pair<double, double> RunForwardProblem(const std::string& discretization,
   CompositeVector u(rhs), error(rhs), flux(rhs);
   
   // fill the solution
-  u.PutScalar(0.0);
+  u.putScalar(0.0);
   Epetra_MultiVector& u_c = *u.ViewComponent("cell", false);
   for (int c = 0; c != ncells; ++c) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
@@ -151,14 +151,14 @@ std::pair<double, double> RunForwardProblem(const std::string& discretization,
 
   // forward apply
   double pnorm(0.0);
-  u.ViewComponent("cell", false)->Norm2(&pnorm);
+  pnorm = u.ViewComponent("cell", false)->norm2();
   
   op->global_operator()->ComputeResidual(u, error, true);
   double l2(0.0);
-  error.ViewComponent("cell", false)->Norm2(&l2);
+  l2 = error.ViewComponent("cell", false)->norm2();
   l2 /= pnorm;
   double linf(0.0);
-  error.NormInf(&linf);
+  linf = error.normInf();
   
   if (comm->getRank() == 0) {
     printf("[%4d, %6.12e, %6.12e],\n",(int) round(log2(nx)), log2(l2), log2(linf));
@@ -248,7 +248,7 @@ std::pair<double, double> RunInverseProblem(const std::string& discretization,
   CompositeVector u(rhs), error(rhs), flux(rhs);
   
   // fill the solution
-  u.PutScalar(0.0);
+  u.putScalar(0.0);
   Epetra_MultiVector& u_c = *u.ViewComponent("cell", false);
   for (int c = 0; c != ncells; ++c) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
@@ -303,21 +303,21 @@ std::pair<double, double> RunInverseProblem(const std::string& discretization,
     EpetraExt::RowMatrixToMatlabFile(fname.str().c_str(), *op->global_operator()->A());
   }
   
-  error.PutScalar(0.0);
-  int ierr = lin_op->ApplyInverse(*op->global_operator()->rhs(), error);
+  error.putScalar(0.0);
+  int ierr = lin_op->applyInverse(*op->global_operator()->rhs(), error);
   CHECK(ierr >= 0);
   CHECK(lin_op->num_itrs() < 10);
 
-  error.Update(-1.0, u, 1.0);
+  error.update(-1.0, u, 1.0);
   
   double pnorm(0.0);
-  u.ViewComponent("cell", false)->Norm2(&pnorm);
+  pnorm = u.ViewComponent("cell", false)->norm2();
   
   double l2(0.0);
-  error.ViewComponent("cell", false)->Norm2(&l2);
+  l2 = error.ViewComponent("cell", false)->norm2();
   l2 /= pnorm;
   double linf(0.0);
-  error.NormInf(&linf);
+  linf = error.normInf();
   
   if (comm->getRank() == 0) {
     printf("[%4d, %6.12e, %6.12e],\n",(int) round(log2(nx)), log2(l2), log2(linf));

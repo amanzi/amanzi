@@ -55,8 +55,8 @@ class Op_Node_Node : public Op {
   virtual void Rescale(const CompositeVector& scaling) {
     if (scaling.HasComponent("node")) {
       const Epetra_MultiVector& s_v = *scaling.ViewComponent("node", false);
-      for (int k = 0; k != s_v.NumVectors(); ++k) {
-        for (int i = 0; i != s_v.MyLength(); ++i) {
+      for (int k = 0; k != s_v.getNumVectors(); ++k) {
+        for (int i = 0; i != s_v.getLocalLength(); ++i) {
           (*diag)[k][i] *= s_v[0][i];
         }
       }

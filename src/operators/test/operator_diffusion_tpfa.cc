@@ -84,7 +84,7 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
   // create source
   CompositeVector source(*cell_space);
   Epetra_MultiVector& src = *source.ViewComponent("cell", false);
-  src.PutScalar(0.0);
+  src.putScalar(0.0);
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
@@ -177,15 +177,15 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
   solution.Print(std::cout);
 
   op2->rhs()->Print(std::cout);
-  int ierr = op2->Apply(solution, residual);
+  int ierr = op2->apply(solution, residual);
 
   residual.Print(std::cout);
-  residual.Update(1.0, *op2->rhs(), -1.0);
+  residual.update(1.0, *op2->rhs(), -1.0);
   residual.Print(std::cout);
   CHECK(!ierr);
 
   double res_norm(0.0);
-  ierr |= residual.Norm2(&res_norm);
+  res_norm = ierr |= residual.norm2();
   CHECK(!ierr);
   CHECK_CLOSE(0.0, res_norm, 1.0e-8);
 }

@@ -135,9 +135,9 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART) {
 
   CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs);
-  solution.PutScalar(0.0);
+  solution.putScalar(0.0);
 
-  int ierr = solver.ApplyInverse(rhs, solution);
+  int ierr = solver.applyInverse(rhs, solution);
 
   if (getRank == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
@@ -272,9 +272,9 @@ void RunHighOrderLagrange(std::string vem_name, bool polygonal_mesh) {
 
   CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs);
-  solution.PutScalar(0.0);
+  solution.putScalar(0.0);
 
-  int ierr = solver.ApplyInverse(rhs, solution);
+  int ierr = solver.applyInverse(rhs, solution);
 
   if (getRank == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 

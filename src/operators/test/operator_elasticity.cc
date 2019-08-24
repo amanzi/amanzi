@@ -124,7 +124,7 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
 
   // create and initialize solution
   CompositeVector solution(cvs);
-  solution.PutScalar(0.0);
+  solution.putScalar(0.0);
 
   // create source 
   CompositeVector source(cvs);
@@ -165,7 +165,7 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   pcg.Init(lop_list);
 
   CompositeVector& rhs = *global_op->rhs();
-  int ierr = pcg.ApplyInverse(rhs, solution);
+  int ierr = pcg.applyInverse(rhs, solution);
 
   ver.CheckResidual(solution, 1.0e-14);
 

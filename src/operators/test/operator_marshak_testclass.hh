@@ -54,7 +54,7 @@ class HeatConduction {
       }
     }
     
-    derivatives_->PutScalar(1.0);
+    derivatives_->putScalar(1.0);
   }
 
   double Conduction(int c, double T) const { return T * T * T; }

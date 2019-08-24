@@ -50,7 +50,7 @@ int Operator_FaceCellSff::ApplyInverse(const CompositeVector& X, CompositeVector
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
     if ((*it)->schema_old_ & OPERATOR_SCHEMA_DOFS_CELL) {
       if (((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL))
-          && ((*it)->diag->MyLength() == ncells_owned)) {
+          && ((*it)->diag->getLocalLength() == ncells_owned)) {
         // diagonal schema
         for (int c = 0; c != ncells_owned; ++c) {
           D_c[0][c] += (*(*it)->diag)[0][c];
@@ -68,7 +68,7 @@ int Operator_FaceCellSff::ApplyInverse(const CompositeVector& X, CompositeVector
   // }
 
   int ierr(0);
-  Y.PutScalarGhosted(0.0);
+  Y.putScalarGhosted(0.0);
 
   // apply preconditioner inversion
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
@@ -76,7 +76,7 @@ int Operator_FaceCellSff::ApplyInverse(const CompositeVector& X, CompositeVector
 
   // Temporary cell and face vectors.
   CompositeVector T(X);
-  T.PutScalarGhosted(0.0);
+  T.putScalarGhosted(0.0);
 
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
     if ((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL |
@@ -107,7 +107,7 @@ int Operator_FaceCellSff::ApplyInverse(const CompositeVector& X, CompositeVector
         const Epetra_MultiVector& Tf_short = *T.ViewComponent("face", false);
         Epetra_MultiVector& Yf_short = *Y.ViewComponent("face", false);
 
-        ierr = preconditioner_->ApplyInverse(Tf_short, Yf_short);
+        ierr = preconditioner_->applyInverse(Tf_short, Yf_short);
         AMANZI_ASSERT(ierr >= 0);
       }
 
@@ -152,7 +152,7 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
     if ((*it)->schema_old_ & OPERATOR_SCHEMA_DOFS_CELL) {
       if (((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL))
-          && ((*it)->diag->MyLength() == ncells_owned)) {
+          && ((*it)->diag->getLocalLength() == ncells_owned)) {
         // diagonal schema
         for (int c = 0; c != ncells_owned; ++c) {
           D_c[0][c] += (*(*it)->diag)[0][c];
@@ -216,7 +216,7 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
       schur_op->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);
     } else if (((*it)->schema_old_ ==
                 (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL))
-               && ((*it)->diag->MyLength() == ncells_owned)) {
+               && ((*it)->diag->getLocalLength() == ncells_owned)) {
       // pass, already part of cell inverse
     } else {
       (*it)->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);
@@ -237,7 +237,7 @@ int Operator_FaceCellSff::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
   X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
-  Y.PutScalarGhosted(0.);
+  Y.putScalarGhosted(0.);
   
   {
     Epetra_MultiVector& Yf = *Y.ViewComponent("face", true);
@@ -255,7 +255,7 @@ int Operator_FaceCellSff::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
       v(nfaces) = Xc[0][c];
 
       const WhetStone::DenseMatrix& Acell = op.matrices[c];
-      Acell.Multiply(v, av, false);
+      Acell.elementWiseMultiply(v, av, false);
 
       for (int n=0; n!=nfaces; ++n) {
         Yf[0][faces[n]] += av(n);
@@ -281,13 +281,13 @@ void Operator_FaceCellSff::SymbolicAssembleMatrix()
 
   // create the graph
   int row_size = MaxRowSize(*mesh_, schema(), 1);
-  Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->Map(),
+  Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->getMap(),
           smap_->GhostedMap(), smap_->GhostedMap(), row_size));
 
   Operator::SymbolicAssembleMatrix(*smap_, *graph, 0, 0);
 
   // Completing and optimizing the graphs
-  int ierr = graph->FillComplete(smap_->Map(), smap_->Map());
+  int ierr = graph->FillComplete(smap_->getMap(), smap_->getMap());
   AMANZI_ASSERT(!ierr);
 
   // create global matrix

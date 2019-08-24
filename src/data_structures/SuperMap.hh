@@ -93,7 +93,7 @@ class SuperMap {
     return smap_->GhostIndices<DeviceType>(bi->second.first, bi->second.second);
   }
 
-  // block indices.  This is an array of integers, length Map().MyLength(),
+  // block indices.  This is an array of integers, length Map().getLocalLength(),
   // where each dof and component have a unique integer value.  The returned
   // int is the number of unique values, equal to
   // sum(NumDofs(comp) for comp in components), in this array.

@@ -56,11 +56,11 @@ SUITE(COMMON_MESH_OPERATIONS) {
   TEST_FIXTURE(TestHarness, FOR_EACH_CELL_VOLUME_LAMBDA) {
     // does a Kokkos for_each over cell volumes to calculate a derived quantity using lambdas
     auto sl = CreateVec("cell", Entity_kind::CELL, 1);
-    sl->PutScalar(0.5);
+    sl->putScalar(0.5);
     Teuchos::RCP<const CompositeVector> sl_c(sl);
 
     auto poro = CreateVec("cell", Entity_kind::CELL, 1);
-    poro->PutScalar(0.25);
+    poro->putScalar(0.25);
     Teuchos::RCP<const CompositeVector> poro_c(poro);
 
     auto wc = CreateVec("cell", Entity_kind::CELL, 1);

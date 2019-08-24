@@ -339,20 +339,20 @@ void RK<Vector>::TimeStep(double t, double h, const Vector& y, Vector& y_new)
       
       for (int j = 0; j != i; ++j) {
         if (a_(i,j) != 0.0) {
-          y_new.Update(a_(i,j), *k_[j], 1.0);
+          y_new.update(a_(i,j), *k_[j], 1.0);
         }
       }
       fn_.ModifySolution(sum_time, y_new);
       fn_.FunctionalTimeDerivative(sum_time, y_new, *k_[i]);
     }
 
-    k_[i]->Scale(h);
+    k_[i]->scale(h);
   }
 
   y_new = y_tmp;
   for (int i = 0; i != order_; ++i) {
     if (b_[i] != 0.0) {
-      y_new.Update(b_[i], *k_[i], 1.0);
+      y_new.update(b_[i], *k_[i], 1.0);
     }
   }
 }

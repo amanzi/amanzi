@@ -102,7 +102,7 @@ TEST(SILO_POLYGONAL) {
 
   // Setup cell quantity
   cell_quantity = Teuchos::rcp(new Epetra_Vector(Mesh->cell_map(false)));
-  for (int c=0; c!=cell_quantity->MyLength(); ++c) {
+  for (int c=0; c!=cell_quantity->getLocalLength(); ++c) {
     (*cell_quantity)[c] = 10.0*c;
   }
 

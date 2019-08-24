@@ -151,7 +151,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
 
   // create and initialize state variables: velocity and pressure.
   TreeVector solution(*tvs);
-  solution.PutScalar(0.0);
+  solution.putScalar(0.0);
 
   // create source term representing external forces.
   CompositeVector source(cvs);
@@ -179,7 +179,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
 
   // populate local matrices in the pressure block (for preconditioner)
   CompositeVector vol(global11->DomainMap());
-  vol.PutScalar(1.0);
+  vol.putScalar(1.0);
   pc11->AddAccumulationTerm(vol, 1.0, "cell");
   global11->SymbolicAssembleMatrix();
   global11->AssembleMatrix();
@@ -219,7 +219,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   *rhs.SubVector(1)->Data() = *global10->rhs();
 
   // -- execute GMRES solver
-  int ierr = solver.ApplyInverse(rhs, solution);
+  int ierr = solver.applyInverse(rhs, solution);
 
   // op->AssembleMatrix();
   // ver1.CheckResidual(solution, rhs, 1.0e-12);

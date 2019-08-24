@@ -117,7 +117,7 @@ void RunTest(int icase, double gravity) {
   cvs->AddComponent("face", AmanziMesh::FACE, 1);
 
   CompositeVector solution(*cvs);
-  solution.PutScalar(0.0);
+  solution.putScalar(0.0);
 
   // create diffusion operator
   double rho(1.0);
@@ -153,10 +153,10 @@ void RunTest(int icase, double gravity) {
   solver.Init(lop_list);
 
   CompositeVector rhs = *global_op->rhs();
-  int ierr = solver.ApplyInverse(rhs, solution);
+  int ierr = solver.applyInverse(rhs, solution);
 
   double a;
-  rhs.Norm2(&a);
+  a = rhs.norm2();
   if (getRank == 0) {
     std::cout << "pressure solver (" << solver.name() 
               << "): ||r||=" << solver.residual() << " itr=" << solver.num_itrs()

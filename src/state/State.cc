@@ -541,7 +541,7 @@ void DeformCheckpointMesh(State &S) {
   //   Amanzi::AmanziGeometry::Point new_coords(dim);
   //   AmanziGeometry::Point_List new_pos, final_pos;
   //   // loop over vertices and update vc
-  //   unsigned int nV = vc_n.MyLength();
+  //   unsigned int nV = vc_n.getLocalLength();
   //   for (unsigned int iV = 0; iV != nV; ++iV) {
   //     // set the coords of the node
   //     for (unsigned int s = 0; s != dim; ++s)

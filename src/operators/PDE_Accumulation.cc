@@ -37,8 +37,8 @@ void PDE_Accumulation::AddAccumulationTerm(
   Epetra_MultiVector& diag = *op->diag;
   const Epetra_MultiVector& duc = *du.ViewComponent(name);
 
-  int n = duc.MyLength();
-  int m = duc.NumVectors();
+  int n = duc.getLocalLength();
+  int m = duc.getNumVectors();
   for (int k = 0; k < m; k++) {
     for (int i = 0; i < n; i++) {
       diag[k][i] += duc[k][i];
@@ -58,8 +58,8 @@ void PDE_Accumulation::AddAccumulationTerm(
 
   const Epetra_MultiVector& duc = *du.ViewComponent(name);
 
-  int n = duc.MyLength();
-  int m = duc.NumVectors();
+  int n = duc.getLocalLength();
+  int m = duc.getNumVectors();
 
   if (volume) {
     CompositeVector vol(du);
@@ -100,18 +100,18 @@ void PDE_Accumulation::AddAccumulationRhs(
   const Epetra_MultiVector& s1c = *s1.ViewComponent(name);
   const Epetra_MultiVector& s2c = *s2.ViewComponent(name);  
 
-  int n = s1c.MyLength();
-  int m = s1c.NumVectors();
+  int n = s1c.getLocalLength();
+  int m = s1c.getNumVectors();
 
   Epetra_MultiVector& rhs = *global_operator()->rhs()->ViewComponent(name);
 
-  AMANZI_ASSERT(s1c.MyLength() == s2c.MyLength());
-  AMANZI_ASSERT(s1c.MyLength() == diag.MyLength());  
-  AMANZI_ASSERT(s2c.MyLength() == rhs.MyLength());
+  AMANZI_ASSERT(s1c.getLocalLength() == s2c.getLocalLength());
+  AMANZI_ASSERT(s1c.getLocalLength() == diag.getLocalLength());  
+  AMANZI_ASSERT(s2c.getLocalLength() == rhs.getLocalLength());
 
-  AMANZI_ASSERT(s1c.NumVectors() == s2c.NumVectors());
-  AMANZI_ASSERT(s1c.NumVectors() == diag.NumVectors());  
-  AMANZI_ASSERT(s2c.NumVectors() == rhs.NumVectors());
+  AMANZI_ASSERT(s1c.getNumVectors() == s2c.getNumVectors());
+  AMANZI_ASSERT(s1c.getNumVectors() == diag.getNumVectors());  
+  AMANZI_ASSERT(s2c.getNumVectors() == rhs.getNumVectors());
   
   if (volume) {
     CompositeVector vol(s1);
@@ -159,8 +159,8 @@ void PDE_Accumulation::AddAccumulationDelta(
   Epetra_MultiVector& volc = *vol.ViewComponent(name); 
   Epetra_MultiVector& rhs = *global_operator()->rhs()->ViewComponent(name);
 
-  int n = u0c.MyLength();
-  int m = u0c.NumVectors();
+  int n = u0c.getLocalLength();
+  int m = u0c.getNumVectors();
   for (int k = 0; k < m; ++k) {
     for (int i = 0; i < n; i++) {
       double factor = volc[0][i] / dT;
@@ -190,8 +190,8 @@ void PDE_Accumulation::AddAccumulationDelta(
   Epetra_MultiVector& volc = *vol.ViewComponent(name); 
   Epetra_MultiVector& rhs = *global_operator()->rhs()->ViewComponent(name);
 
-  int n = u0c.MyLength();
-  int m = u0c.NumVectors();
+  int n = u0c.getLocalLength();
+  int m = u0c.getNumVectors();
   for (int k = 0; k < m; ++k) {
     for (int i = 0; i < n; i++) {
       double factor = volc[0][i] / dT;
@@ -220,8 +220,8 @@ void PDE_Accumulation::AddAccumulationDeltaNoVolume(
 
   Epetra_MultiVector& rhs = *global_operator()->rhs()->ViewComponent(name);
 
-  int n = u0c.MyLength();
-  int m = u0c.NumVectors();
+  int n = u0c.getLocalLength();
+  int m = u0c.getNumVectors();
   for (int k = 0; k < m; ++k) {
     for (int i = 0; i < n; i++) {
       diag[k][i] += ssc[k][i];
@@ -252,7 +252,7 @@ void PDE_Accumulation::CalculateEntityVolume_(
 
   } else if (name == "edge" && volume.HasComponent("edge")) {
     Epetra_MultiVector& vol = *volume.ViewComponent(name, true); 
-    vol.PutScalar(0.0);
+    vol.putScalar(0.0);
 
     for (int c = 0; c != ncells_owned; ++c) {
       mesh_->cell_get_edges(c, &edges);
@@ -266,7 +266,7 @@ void PDE_Accumulation::CalculateEntityVolume_(
 
   } else if (name == "node" && volume.HasComponent("node")) {
     Epetra_MultiVector& vol = *volume.ViewComponent(name, true); 
-    vol.PutScalar(0.0);
+    vol.putScalar(0.0);
 
     for (int c = 0; c != ncells_owned; ++c) {
       mesh_->cell_get_nodes(c, &nodes);
@@ -412,9 +412,9 @@ void PDE_Accumulation::ApplyBCs()
       const Schema& schema = (*it)->schema_row();
       if (schema.base() == (*bc)->kind()) {
         Epetra_MultiVector& diag = *(*it)->diag;
-        int m = diag.NumVectors();
+        int m = diag.getNumVectors();
 
-        for (int i = 0; i < diag.MyLength(); i++) {
+        for (int i = 0; i < diag.getLocalLength(); i++) {
           if (bc_model[i] == OPERATOR_BC_DIRICHLET) {
             for (int k = 0; k < m; ++k) {
               diag[k][i] = 0.0;

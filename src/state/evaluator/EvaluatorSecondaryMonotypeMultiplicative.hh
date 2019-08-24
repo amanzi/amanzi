@@ -55,13 +55,13 @@ protected:
   virtual void Evaluate_(const State &S, const std::vector<Data_t*> &results) override {
     AMANZI_ASSERT(results.size() == 1);
     int i=0;
-    results[0]->PutScalar(coef_);
+    results[0]->putScalar(coef_);
     for (const auto& dep : this->dependencies_) {
       const auto& term = S.Get<Data_t>(dep.first, dep.second);
       if (reciprocal_ && this->dependencies_.size() - 1 == i) {
         results[0]->ReciprocalMultiply(1., term, *results[0], 0.);
       } else {
-        results[0]->Multiply(1., term, *results[0], 0.);
+        results[0]->elementWiseMultiply(1., term, *results[0], 0.);
       }
       ++i;
     }
@@ -70,7 +70,7 @@ protected:
   virtual void EvaluatePartialDerivative_(const State &S,
           const Key &wrt_key, const Key &wrt_tag, const std::vector<Data_t*> &results) override {
     int i=0;
-    results[0]->PutScalar(coef_);
+    results[0]->putScalar(coef_);
     for (const auto& dep : this->dependencies_) {
       if (dep.first != wrt_key || dep.second != wrt_tag) {
         // not WRT
@@ -78,7 +78,7 @@ protected:
         if (reciprocal_ && this->dependencies_.size() - 1 == i) {
           results[0]->ReciprocalMultiply(1., term, *results[0], 0.);
         } else {
-          results[0]->Multiply(1., term, *results[0], 0.);
+          results[0]->elementWiseMultiply(1., term, *results[0], 0.);
         }
       } else {
         // IS WRT

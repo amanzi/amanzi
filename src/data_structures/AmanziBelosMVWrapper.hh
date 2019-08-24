@@ -34,7 +34,7 @@ public:
   const CompositeMultiVector* CloneView(const std::vector<int> &index) const;
 
   // Dimension information methods
-  ptrdiff_t GetGlobalLength() const {return cmv_[0]->GlobalLength(); } // TODO: Fix this
+  ptrdiff_t GetGlobalLength() const {return cmv_[0]->getGlobalLength(); } // TODO: Fix this
   int GetNumberVecs() const { return cmv_.size(); }
 
   // Update methods
@@ -138,7 +138,7 @@ void CompositeMultiVector<Vector>::MvTimesMatAddMv(double alpha,
     for(int c=0; c<B.numCols(); c++)
     {
       // mv[c] += alpha b(r,c) A[r]
-      cmv_[c]->Update(alpha*B(r,c),*cmvA->cmv_[r],1);
+      cmv_[c]->update(alpha*B(r,c),*cmvA->cmv_[r],1);
     }
   }
 }
@@ -157,21 +157,21 @@ void CompositeMultiVector<Vector>::MvAddMv(double alpha,
        "CompositeMultiVector::MvAddMv: B must be a CompositeMultiVector");
 
   for(int i=0; i<cmv_.size(); i++)
-    cmv_[i]->Update(alpha,*cmvA->cmv_[i],beta,*cmvB->cmv_[i],0);
+    cmv_[i]->update(alpha,*cmvA->cmv_[i],beta,*cmvB->cmv_[i],0);
 }
 
 template<class Vector>
 void CompositeMultiVector<Vector>::MvScale(ScalarType alpha)
 {
   for(int i=0; i<cmv_.size(); i++)
-    cmv_[i]->Scale(alpha);
+    cmv_[i]->scale(alpha);
 }
 
 template<class Vector>
 void CompositeMultiVector<Vector>::MvScale(const std::vector<ScalarType>& alpha)
 {
   for(int i=0; i<cmv_.size(); i++)
-    cmv_[i]->Scale(alpha[i]);
+    cmv_[i]->scale(alpha[i]);
 }
 
 template<class Vector>
@@ -208,17 +208,17 @@ void CompositeMultiVector<Vector>::MvNorm(std::vector<MagnitudeType> &normvec, B
   if(type == Belos::TwoNorm)
   {
     for(int i=0; i<cmv_.size(); i++)
-      cmv_[i]->Norm2(&normvec[i]);
+      normvec[i] = cmv_[i]->norm2();
   }
   else if(type == Belos::OneNorm)
   {
     for(int i=0; i<cmv_.size(); i++)
-      cmv_[i]->Norm1(&normvec[i]);
+      normvec[i] = cmv_[i]->norm1();
   }
   else // if(type == Belos::InfNorm)
   {
     for(int i=0; i<cmv_.size(); i++)
-      cmv_[i]->NormInf(&normvec[i]);
+      normvec[i] = cmv_[i]->normInf();
   }
 }
 
@@ -244,7 +244,7 @@ template<class Vector>
 void CompositeMultiVector<Vector>::MvInit(ScalarType alpha)
 {
   for(int i=0; i<cmv_.size(); i++)
-    cmv_[i]->PutScalar(alpha);
+    cmv_[i]->putScalar(alpha);
 }
 
 template<class Vector>

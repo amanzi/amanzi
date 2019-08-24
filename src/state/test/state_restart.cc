@@ -254,9 +254,9 @@ SUITE(RESTART) {
     // and compare with the original
     CHECK_EQUAL(S0.time(), S1.time());
 
-    CHECK_EQUAL(s0p.MyLength(), s1p.MyLength());
+    CHECK_EQUAL(s0p.getLocalLength(), s1p.getLocalLength());
 
-    for (int i = 0; i < s1p.MyLength(); ++i) {
+    for (int i = 0; i < s1p.getLocalLength(); ++i) {
       CHECK_EQUAL(s1p[0][i], s0p[0][i]);
     }
   }

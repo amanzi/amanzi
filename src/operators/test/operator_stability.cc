@@ -111,7 +111,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
 
   // create source 
   CompositeVector source(*cvs);
-  source.PutScalarMasterAndGhosted(0.0);
+  source.putScalarMasterAndGhosted(0.0);
   
   Epetra_MultiVector& src = *source.ViewComponent("cell");
   for (int c = 0; c < ncells_owned; c++) {
@@ -154,12 +154,12 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
 
     // solve the problem
     Teuchos::ParameterList lop_list = plist.sublist("solvers").sublist("PCG").sublist("pcg parameters");
-    solution->PutScalar(0.0);
+    solution->putScalar(0.0);
     auto solver = Teuchos::rcp(new LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>(global_op, global_op));
     solver->Init(lop_list);
 
     CompositeVector& rhs = *global_op->rhs();
-    int ierr = solver->ApplyInverse(rhs, *solution);
+    int ierr = solver->applyInverse(rhs, *solution);
 
     // calculate pressure errors
     Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
@@ -261,11 +261,11 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
   cvs->SetComponent("node", AmanziMesh::NODE, 1);
 
   CompositeVector solution(*cvs);
-  solution.PutScalar(0.0);
+  solution.putScalar(0.0);
 
   // create source 
   CompositeVector source(*cvs);
-  source.PutScalarMasterAndGhosted(0.0);
+  source.putScalarMasterAndGhosted(0.0);
   
   Epetra_MultiVector& src = *source.ViewComponent("node", true);
   for (int v = 0; v < nnodes_wghost; v++) {
@@ -305,13 +305,13 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
 
     // solve the problem
     Teuchos::ParameterList lop_list = plist.sublist("solvers").sublist("PCG").sublist("pcg parameters");
-    solution.PutScalar(0.0);
+    solution.putScalar(0.0);
     auto solver = Teuchos::rcp(new LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>(global_op, global_op));
     solver->Init(lop_list);
 
     CompositeVector& rhs = *global_op->rhs();
-    solution.PutScalar(0.0);
-    int ierr = solver->ApplyInverse(rhs, solution);
+    solution.putScalar(0.0);
+    int ierr = solver->applyInverse(rhs, solution);
     CHECK(ierr > 0);
 
     // calculate errors

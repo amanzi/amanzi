@@ -35,7 +35,7 @@ class PreconditionerDiagonal : public Preconditioner<Matrix,Vector> {
   }
     
   void Destroy() override {};
-  int ApplyInverse(const Vector& v, Vector& hv) const override {
+  int applyInverse(const Vector& v, Vector& hv) const override {
     hv.elementWiseMultiply(1., v, *work_vec_, 0.);
     return 0;
   }

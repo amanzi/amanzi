@@ -46,7 +46,7 @@ BlockVector<Scalar>::BlockVector(const Teuchos::RCP<const BlockSpace>& map, Init
 // copy constructor
 template<typename Scalar>
 BlockVector<Scalar>::BlockVector(const BlockVector<Scalar>& other, InitMode mode)
-    : BlockVector(other.Map())
+    : BlockVector(other.getMap())
 {
   for (const auto& name : *this) {
     SetComponent_(name, true, Teuchos::null);
@@ -66,20 +66,20 @@ BlockVector<Scalar>::CreateData_(InitMode mode) {
   if (mode != InitMode::NOALLOC) {
     // create the data
     for (const auto& name : *this) {
-      auto ghost_map = Map()->ComponentMap(name, true);
+      auto ghost_map = getMap()->ComponentMap(name, true);
       if (ghost_map != Teuchos::null) {
-        SetComponent_(name, true, Teuchos::rcp(new MultiVector_type_<Scalar>(ghost_map, NumVectors(name), true)));
+        SetComponent_(name, true, Teuchos::rcp(new MultiVector_type_<Scalar>(ghost_map, getNumVectors(name), true)));
 
         auto g_comp = GetComponent_(name, true);
-        auto master_map = Map()->ComponentMap(name, false);
+        auto master_map = getMap()->ComponentMap(name, false);
 
         // get the ghost component's data
         auto m_comp = g_comp->offsetViewNonConst(master_map, 0);
         SetComponent_(name, false, m_comp);
 
       } else {
-        auto master_map = Map()->ComponentMap(name, false);
-        SetComponent_(name, false, Teuchos::rcp(new MultiVector_type_<Scalar>(master_map, NumVectors(name), true)));
+        auto master_map = getMap()->ComponentMap(name, false);
+        SetComponent_(name, false, Teuchos::rcp(new MultiVector_type_<Scalar>(master_map, getNumVectors(name), true)));
       }    
     }
   }
@@ -113,7 +113,7 @@ BlockVector<Scalar>::operator=(const BlockVector<Scalar>& other) {
 template<typename Scalar>
 cMultiVector_ptr_type_<Scalar>
 BlockVector<Scalar>::GetComponent(const std::string& name, bool ghosted) const {
-  if (!Map()->HasComponent(name)) {
+  if (!getMap()->HasComponent(name)) {
     Errors::Message message("BlockVector: Requested component ("+name+") does not exist.");
     throw(message);
   }
@@ -125,7 +125,7 @@ BlockVector<Scalar>::GetComponent(const std::string& name, bool ghosted) const {
 template<typename Scalar>
 MultiVector_ptr_type_<Scalar>
 BlockVector<Scalar>::GetComponent(const std::string& name, bool ghosted) {
-  if (!Map()->HasComponent(name)) {
+  if (!getMap()->HasComponent(name)) {
     Errors::Message message("BlockVector: Requested component ("+name+") does not exist.");
     throw(message);
   }
@@ -139,7 +139,7 @@ BlockVector<Scalar>::GetComponent(const std::string& name, bool ghosted) {
 // BlockVector<Scalar>::SetComponent(const std::string& name,
 //         const MultiVector_ptr_type_<Scalar>& data)
 // {
-//   if (!Map()->HasComponent(name)) {
+//   if (!getMap()->HasComponent(name)) {
 //     Errors::Message message("BlockVector: Requested SetComponent("+name+") does not exist.");
 //     throw(message);
 //   }
@@ -148,7 +148,7 @@ BlockVector<Scalar>::GetComponent(const std::string& name, bool ghosted) {
 //       Errors::Message message("BlockVector: Requested SetComponent("+name+") has incompatible map.");
 //       throw(message);
 //     }
-//     if (!(NumVectors(name) == data->getNumVectors())) {
+//     if (!(getNumVectors(name) == data->getNumVectors())) {
 //       Errors::Message message("BlockVector: Requested SetComponent("+name+") has incompatible number of DoFs.");
 //       throw(message);
 //     }
@@ -222,7 +222,7 @@ template<typename Scalar>
 void
 BlockVector<Scalar>::ScatterMasterToGhosted(const std::string& name, Tpetra::CombineMode mode) const
 {
-  auto import = Map()->Importer(name);
+  auto import = getMap()->Importer(name);
   if (import == Teuchos::null) return;
   auto g_comp = ghost_data_.at(name); // note cannot use GetComponent_() here, need non-const
   if (g_comp == Teuchos::null) return;
@@ -250,7 +250,7 @@ template<typename Scalar>
 void
 BlockVector<Scalar>::GatherGhostedToMaster(const std::string& name, Tpetra::CombineMode mode)
 {
-  auto import = Map()->Importer(name);
+  auto import = getMap()->Importer(name);
   if (import == Teuchos::null) return;
   // communicate
   auto g_comp = GetComponent(name, true);
@@ -262,57 +262,51 @@ BlockVector<Scalar>::GatherGhostedToMaster(const std::string& name, Tpetra::Comb
 // Vector operations.
 // -- Insert value into data.
 template<typename Scalar>
-int
-BlockVector<Scalar>::PutScalar(Scalar scalar) {
-  int ierr = 0;
+void
+BlockVector<Scalar>::putScalar(Scalar scalar) {
   for (const auto& name : *this) {
     GetComponent_(name)->putScalar(scalar);
   }
-  return ierr;
 };
 
 
 // -- Insert value into component [name].
 template<typename Scalar>
-int
-BlockVector<Scalar>::PutScalar(const std::string& name, Scalar scalar) {
+void
+BlockVector<Scalar>::putScalar(const std::string& name, Scalar scalar) {
   GetComponent(name)->putScalar(scalar);
-  return 0;
 };
 
 
 // -- Insert values into data of component [name].
 template<typename Scalar>
-int
-BlockVector<Scalar>::PutScalar(const std::string& name, const std::vector<Scalar>& scalar) {
-  if (scalar.size() != NumVectors(name)) {
-    Errors::Message message("BlockVector: requested PutScalar("+name+") with incorrectly sized vector of scalars.");
+void
+BlockVector<Scalar>::putScalar(const std::string& name, const std::vector<Scalar>& scalar) {
+  if (scalar.size() != getNumVectors(name)) {
+    Errors::Message message("BlockVector: requested putScalar("+name+") with incorrectly sized vector of scalars.");
     throw(message);
   }
 
-  for (int lcv_vector = 0; lcv_vector != NumVectors(name); ++lcv_vector) {
+  for (int lcv_vector = 0; lcv_vector != getNumVectors(name); ++lcv_vector) {
     (*GetComponent_(name))(lcv_vector)->putScalar(scalar[lcv_vector]);
   }
-  return 0;
 };
 
 
 // Vector operations.
 // -- Insert value into data.
 template<typename Scalar>
-int
-BlockVector<Scalar>::PutScalarMasterAndGhosted(Scalar scalar) {
-  int ierr = 0;
+void
+BlockVector<Scalar>::putScalarMasterAndGhosted(Scalar scalar) {
   for (const auto& name : *this) {
     GetComponent_(name,true)->putScalar(scalar);
   }
-  return ierr;
 };
 
 
 // template<typename Scalar>
 // int
-// BlockVector<Scalar>::PutScalarGhosted(Scalar scalar) {
+// BlockVector<Scalar>::putScalarGhosted(Scalar scalar) {
 //   for (int lcv_comp = 0; lcv_comp != NumComponents(); ++lcv_comp) {
 //     int size_owned = mastervec_->size(names_[lcv_comp]);
 //     int size_ghosted = ghostvec_->size(names_[lcv_comp]);
@@ -320,12 +314,12 @@ BlockVector<Scalar>::PutScalarMasterAndGhosted(Scalar scalar) {
 //     using Range_type = Kokkos::MDRangePolicy<Kokkos::DefaultExecutionSpace, int>;
 //     /*
 //     auto vec = ViewComponent(names_[lcv_comp], true);
-//     Kokkos::parallel_for("PutScalarGhosted", Range_type(size_owned, size_ghosted), 
+//     Kokkos::parallel_for("putScalarGhosted", Range_type(size_owned, size_ghosted), 
 // 			 [=] (const int& i) { vec(i) = scalar; })
 //     */
 //     auto vec = ViewComponent(names_[lcv_comp], true);
 //     auto vec_ghost_view = Kokkos::subview(vec, std::make_pair(size_owned, size_ghosted), Kokkos::ALL());
-//     Kokkos::parallel_for("PutScalarGhosted", Range_type(0, size_ghosted - size_owned), 
+//     Kokkos::parallel_for("putScalarGhosted", Range_type(0, size_ghosted - size_owned), 
     
 
 //   }
@@ -335,55 +329,51 @@ BlockVector<Scalar>::PutScalarMasterAndGhosted(Scalar scalar) {
 
 // this <- abs(this)
 template<typename Scalar>
-int
-BlockVector<Scalar>::Abs(const BlockVector<Scalar>& other) {
+void
+BlockVector<Scalar>::abs(const BlockVector<Scalar>& other) {
   for (const auto& name : *this) {
     GetComponent_(name)->abs(*other.GetComponent_(name));
   }
-  return 0;
 }
 
 
 // -- this <- value*this
 template<typename Scalar>
-int
-BlockVector<Scalar>::Scale(Scalar value) {
+void
+BlockVector<Scalar>::scale(Scalar value) {
   for (const auto& name : *this) {
     GetComponent_(name)->scale(value);
   }
-  return 0;
 };
 
 
-// Scale() applied to component name.
+// scale() applied to component name.
 template<typename Scalar>
-int
-BlockVector<Scalar>::Scale(const std::string& name, Scalar value) {
+void
+BlockVector<Scalar>::scale(const std::string& name, Scalar value) {
   GetComponent_(name)->scale(value);
-  return 0;
 };
 
 
 // this <- abs(this)
 template<typename Scalar>
-int
-BlockVector<Scalar>::Reciprocal(const BlockVector<Scalar>& other) {
+void
+BlockVector<Scalar>::reciprocal(const BlockVector<Scalar>& other) {
   for (const auto& name : *this) {
     GetComponent_(name)->reciprocal(*other.GetComponent_(name));
   }
-  return 0;
 }
 
 
 // -- result <- other \dot this
 template<typename Scalar>
-int
-BlockVector<Scalar>::Dot(const BlockVector<Scalar>& other, Scalar* result) const {
-  *result = 0;
+Scalar
+BlockVector<Scalar>::dot(const BlockVector<Scalar>& other) const {
+  Scalar result = 0;
   for (const auto& name : *this) {
-    Teuchos::Array<Scalar> intermediate_result(NumVectors(name));
+    Teuchos::Array<Scalar> intermediate_result(getNumVectors(name));
     GetComponent_(name)->dot(*(other.GetComponent_(name)), intermediate_result);
-    *result += std::accumulate(intermediate_result.begin(), intermediate_result.end(), (Scalar) 0);
+    result += std::accumulate(intermediate_result.begin(), intermediate_result.end(), (Scalar) 0);
   }
   return 0;
 };
@@ -391,32 +381,30 @@ BlockVector<Scalar>::Dot(const BlockVector<Scalar>& other, Scalar* result) const
 
 // -- this <- scalarA*A + scalarThis*this
 template<typename Scalar>
-BlockVector<Scalar>&
-BlockVector<Scalar>::Update(Scalar scalarA, const BlockVector<Scalar>& A, Scalar scalarThis) {
+void
+BlockVector<Scalar>::update(Scalar scalarA, const BlockVector<Scalar>& A, Scalar scalarThis) {
   for (const auto& name : *this) {
     GetComponent_(name)->update(scalarA, *A.GetComponent_(name), scalarThis);
   }
-  return *this;
 };
 
 
 // -- this <- scalarA*A + scalarB*B + scalarThis*this
 template<typename Scalar>
-BlockVector<Scalar>&
-BlockVector<Scalar>::Update(Scalar scalarA, const BlockVector<Scalar>& A,
+void
+BlockVector<Scalar>::update(Scalar scalarA, const BlockVector<Scalar>& A,
                            Scalar scalarB, const BlockVector<Scalar>& B, Scalar scalarThis) {
   for (const auto& name : *this) {
     GetComponent_(name)->update(scalarA, *A.GetComponent_(name), scalarB, *B.GetComponent_(name), scalarThis);
   }
-  return *this;
 };
 
 
 // -- this <- scalarAB * A@B + scalarThis*this  (@ is the elementwise product
 template<typename Scalar>
-int
-BlockVector<Scalar>::Multiply(Scalar scalarAB, const BlockVector<Scalar>& A, const BlockVector<Scalar>& B,
-                             Scalar scalarThis) {
+void
+BlockVector<Scalar>::elementWiseMultiply(Scalar scalarAB, const BlockVector<Scalar>& A,
+        const BlockVector<Scalar>& B, Scalar scalarThis) {
   for (const auto& name : *this) {
     if (A.GetComponent_(name)->getNumVectors() > 1) {
       Errors::Message message("Not implemented multiply: Tpetra does not provide elementwise multiply.");
@@ -424,16 +412,15 @@ BlockVector<Scalar>::Multiply(Scalar scalarAB, const BlockVector<Scalar>& A, con
     }
     GetComponent_(name)->elementWiseMultiply(scalarAB, *A.GetComponent_(name)->getVector(0), *B.GetComponent_(name), scalarThis);
   }
-  return 0;
 };
 
 // // -- this <- scalarAB * B / A + scalarThis*this  (/ is the elementwise division
 // template<typename Scalar>
 // int
-// BlockVector<Scalar>::ReciprocalMultiply(Scalar scalarAB, const BlockVector<Scalar>& A, const BlockVector<Scalar>& B,
+// BlockVector<Scalar>::ReciprocalelementWiseMultiply(Scalar scalarAB, const BlockVector<Scalar>& A, const BlockVector<Scalar>& B,
 //                   Scalar scalarThis) {
 //   for (const auto& name : *this) {
-//     GetComponent_(name)->reciprocalMultiply(scalarAB, *A.GetComponent_(name), *B.GetComponent_(name), scalarThis);
+//     GetComponent_(name)->reciprocalelementWiseMultiply(scalarAB, *A.GetComponent_(name), *B.GetComponent_(name), scalarThis);
 //   }
 //   return 0;
 // };
@@ -441,52 +428,42 @@ BlockVector<Scalar>::Multiply(Scalar scalarAB, const BlockVector<Scalar>& A, con
 
 // -- norms
 template<typename Scalar>
-int
-BlockVector<Scalar>::NormInf(Scalar* norm) const {
-  if (norm == NULL) return 1;
-  if (master_data_.size() == 0) return 1;
-
-  *norm = 0.0;
+Scalar
+BlockVector<Scalar>::normInf() const {
+  Scalar norm = 0.;
   for (const auto& name : *this) {
     Teuchos::Array<Scalar> norm_locs(GetComponent_(name)->getNumVectors());
-    GetComponent_(name)->normInf(norm_locs());
+    GetComponent_(name)->normInf(norm_locs);
     Scalar my_norm_loc = *std::max_element(norm_locs.begin(), norm_locs.end());
-    *norm = std::max(my_norm_loc, *norm);
+    norm = std::max(my_norm_loc, norm);
   }
-  return 0;
+  return norm;
 };
 
 
 template<typename Scalar>
-int
-BlockVector<Scalar>::Norm1(Scalar* norm) const {
-  if (norm == NULL) return 1;
-  if (master_data_.size() == 0) return 1;
-
-  *norm = 0.0;
+Scalar
+BlockVector<Scalar>::norm1() const {
+  Scalar norm = 0.0;
   for (const auto& name : *this) {
     Teuchos::Array<Scalar> norm_locs(GetComponent_(name)->getNumVectors());
-    GetComponent_(name)->norm1(norm_locs());
-    *norm += std::accumulate(norm_locs.begin(), norm_locs.end(), (Scalar) 0);
+    GetComponent_(name)->norm1(norm_locs);
+    norm += std::accumulate(norm_locs.begin(), norm_locs.end(), (Scalar) 0);
   }
-  return 0;
+  return norm;
 };
 
 
 template<typename Scalar>
-int
-BlockVector<Scalar>::Norm2(Scalar* norm) const {
-  if (norm == NULL) return 1;
-  if (master_data_.size() == 0) return 1;
-
-  *norm = 0.0;
+Scalar
+BlockVector<Scalar>::norm2() const {
+  Scalar norm = 0.0;
   for (const auto& name : *this) {
     Teuchos::Array<Scalar> norm_locs(GetComponent_(name)->getNumVectors());
     GetComponent_(name)->norm2(norm_locs());
-    *norm += std::accumulate(norm_locs.begin(), norm_locs.end(), (Scalar) 0, [](Scalar x, Scalar y) { return x + y*y; } );
+    norm += std::accumulate(norm_locs.begin(), norm_locs.end(), (Scalar) 0, [](Scalar x, Scalar y) { return x + y*y; } );
   }
-  *norm = sqrt(*norm);
-  return 0;
+  return sqrt(norm);
 };
 
 
@@ -502,7 +479,7 @@ BlockVector<Scalar>::Norm2(Scalar* norm) const {
 
 //   *value = 1e+50;
 //   for (const auto& name : *this) {
-//     for (int lcv_vector = 0; lcv_vector != GetComponent_(name)->NumVectors(); ++lcv_vector) {
+//     for (int lcv_vector = 0; lcv_vector != GetComponent_(name)->getNumVectors(); ++lcv_vector) {
 //       ierr = (*GetComponent_(name))(lcv_vector)->MinValue(value_loc);
 //       if (ierr) return ierr;
 //       *value = std::min(*value, value_loc[0]);
@@ -523,7 +500,7 @@ BlockVector<Scalar>::Norm2(Scalar* norm) const {
 
 //   *value = -1e+50;
 //   for (const auto& name : *this) {
-//     for (int lcv_vector = 0; lcv_vector != GetComponent_(name)->NumVectors(); ++lcv_vector) {
+//     for (int lcv_vector = 0; lcv_vector != GetComponent_(name)->getNumVectors(); ++lcv_vector) {
 //       ierr = (*GetComponent_(name))(lcv_vector)->MaxValue(value_loc);
 //       if (ierr) return ierr;
 //       *value = std::max(*value, value_loc[0]);
@@ -544,8 +521,8 @@ BlockVector<Scalar>::Norm2(Scalar* norm) const {
 
 //   *value = 0.0;
 //   for (const auto& name : *this) {
-//     n_loc = GetComponent_(name)->GlobalLength(); 
-//     for (int lcv_vector = 0; lcv_vector != GetComponent_(name)->NumVectors(); ++lcv_vector) {
+//     n_loc = GetComponent_(name)->getGlobalLength(); 
+//     for (int lcv_vector = 0; lcv_vector != GetComponent_(name)->getNumVectors(); ++lcv_vector) {
 //       ierr = (*GetComponent_(name))(lcv_vector)->MeanValue(value_loc);
 //       if (ierr) return ierr;
 //       *value += value_loc[0] * n_loc;
@@ -564,7 +541,7 @@ BlockVector<Scalar>::Print(std::ostream& os, bool ghosted, bool data_io) const {
   os << "Comp Vector" << std::endl;
   os << "  components: ";
   for (const auto& name : *this) {
-    os << name << "(" << NumVectors(name) << ") ";
+    os << name << "(" << getNumVectors(name) << ") ";
   }
   os << std::endl;
   if (data_io) {
@@ -577,12 +554,11 @@ BlockVector<Scalar>::Print(std::ostream& os, bool ghosted, bool data_io) const {
 
 // Populate by random numbers between -1 and 1. 
 template<typename Scalar>
-int
-BlockVector<Scalar>::Random() {
+void
+BlockVector<Scalar>::random() {
   for (const auto& name : *this) {
     GetComponent_(name)->randomize();
   }
-  return 0;
 };
 
 

@@ -100,7 +100,7 @@ void PDE_AdvectionUpwind::UpdateMatrices(const Teuchos::Ptr<const CompositeVecto
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
-    Aface.PutScalar(0.0);
+    Aface.putScalar(0.0);
 
     double umod = fabs(uf[0][f]);
     if (c1 < 0) {
@@ -146,7 +146,7 @@ void PDE_AdvectionUpwind::UpdateMatrices(
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
-    Aface.PutScalar(0.0);
+    Aface.putScalar(0.0);
 
     double umod = fabs(uf[0][f]);
     if (c1 < 0) {
@@ -247,7 +247,7 @@ void PDE_AdvectionUpwind::UpdateFlux(
   // might need to think more carefully about BCs
   const std::vector<int>& bc_model = bc->bc_model();
   const std::vector<double>& bc_value = bc->bc_value();
-  flux->PutScalar(0.0);
+  flux->putScalar(0.0);
   
   // apply preconditioner inversion
   h->ScatterMasterToGhosted("cell");

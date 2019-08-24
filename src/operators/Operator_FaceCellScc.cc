@@ -43,7 +43,7 @@ namespace Operators {
 int Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
   int ierr(0);
-  Y.PutScalarGhosted(0.0);
+  Y.putScalarGhosted(0.0);
 
   // apply preconditioner inversion
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
@@ -99,7 +99,7 @@ int Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector
   // Solve the Schur complement system Scc * Yc = Tc.
   {
     Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
-    preconditioner_->ApplyInverse(Tc, Yc);
+    preconditioner_->applyInverse(Tc, Yc);
   }
 
   // BACKWARD SUBSTITUTION:  Yf = inv(Aff) (Xf - Afc Yc)
@@ -214,7 +214,7 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
 
       AmanziMesh::Entity_ID_List cells, faces;
 
-      Ttmp.PutScalar(0.0);
+      Ttmp.putScalar(0.0);
       for (int c = 0; c < ncells_owned; c++) {
         mesh_->cell_get_faces(c, &faces);
         int nfaces = faces.size();
@@ -303,7 +303,7 @@ int Operator_FaceCellScc::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
-  Y.PutScalarGhosted(0.);
+  Y.putScalarGhosted(0.);
   X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
@@ -324,7 +324,7 @@ int Operator_FaceCellScc::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
       v(nfaces) = Xc[0][c];
 
       const WhetStone::DenseMatrix& Acell = op.matrices[c];
-      Acell.Multiply(v, av, false);
+      Acell.elementWiseMultiply(v, av, false);
 
       for (int n=0; n!=nfaces; ++n) {
         Yf[0][faces[n]] += av(n);
@@ -349,14 +349,14 @@ void Operator_FaceCellScc::SymbolicAssembleMatrix()
 
   // create the graph
   int row_size = MaxRowSize(*mesh_, schema(), 1);
-  Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->Map(),
+  Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->getMap(),
           smap_->GhostedMap(), smap_->GhostedMap(), row_size));
 
   // fill the graph
   Operator::SymbolicAssembleMatrix(*smap_, *graph, 0, 0);
 
   // Completing and optimizing the graphs
-  int ierr = graph->FillComplete(smap_->Map(), smap_->Map());
+  int ierr = graph->FillComplete(smap_->getMap(), smap_->getMap());
   AMANZI_ASSERT(!ierr);
 
   // create global matrix

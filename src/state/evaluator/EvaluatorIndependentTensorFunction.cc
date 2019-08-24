@@ -101,8 +101,8 @@ void EvaluatorIndependentTensorFunction::Update_(State &S) {
   std::vector<double> arr(num_funcs_);
   for (auto name : tv.map) {
     const auto &vec = *cv.ViewComponent(name, tv.ghosted);
-    for (int j = 0; j != vec.MyLength(); ++j) {
-      for (int k = 0; k != vec.NumVectors(); ++k)
+    for (int j = 0; j != vec.getLocalLength(); ++j) {
+      for (int k = 0; k != vec.getNumVectors(); ++k)
         arr[k] = vec[k][j];
       tv.data[i] = WhetStone::Tensor(dimension_, rank_, &arr[0]);
       i++;

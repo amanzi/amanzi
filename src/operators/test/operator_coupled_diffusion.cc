@@ -717,20 +717,20 @@ std::pair<double,double> RunForwardProblem(
   *X.SubVector(1)->Data() = *v;
 
   TreeVector AX(*problem->tvs);
-  problem->op->Apply(X,AX);
-  AX.Update(-1., B, 1.);
+  problem->op->apply(X,AX);
+  AX.update(-1., B, 1.);
 
   double error0_l2, error1_l2;
   double error0_linf, error1_linf;
   double unorm, vnorm;
 
-  B.SubVector(0)->Data()->ViewComponent("cell",false)->Norm2(&unorm);
-  B.SubVector(0)->Data()->ViewComponent("cell",false)->Norm2(&vnorm);
+  unorm = B.SubVector(0)->Data()->ViewComponent("cell",false)->norm2();
+  vnorm = B.SubVector(0)->Data()->ViewComponent("cell",false)->norm2();
 
-  AX.SubVector(0)->Data()->ViewComponent("cell",false)->Norm2(&error0_l2);
-  AX.SubVector(1)->Data()->ViewComponent("cell",false)->Norm2(&error1_l2);
-  AX.SubVector(0)->Data()->ViewComponent("cell",false)->NormInf(&error0_linf);
-  AX.SubVector(1)->Data()->ViewComponent("cell",false)->NormInf(&error1_linf);
+  error0_l2 = AX.SubVector(0)->Data()->ViewComponent("cell",false)->norm2();
+  error1_l2 = AX.SubVector(1)->Data()->ViewComponent("cell",false)->norm2();
+  error0_linf = AX.SubVector(0)->Data()->ViewComponent("cell",false)->normInf();
+  error1_linf = AX.SubVector(1)->Data()->ViewComponent("cell",false)->normInf();
 
   double error_l2 = sqrt(pow(error0_l2/unorm,2) + pow(error1_l2/vnorm,2));
   double error_linf = std::max(error0_linf, error1_linf);
@@ -804,20 +804,20 @@ std::pair<double,double> RunForwardProblem_Assembled(
   problem->op->ApplyAssembled(X,AX);
 
   // subtract off true RHS
-  AX.Update(-1., B, 1.);
+  AX.update(-1., B, 1.);
 
   // norms
   double error0_l2, error1_l2;
   double error0_linf, error1_linf;
   double unorm, vnorm;
 
-  B.SubVector(0)->Data()->ViewComponent("cell",false)->Norm2(&unorm);
-  B.SubVector(0)->Data()->ViewComponent("cell",false)->Norm2(&vnorm);
+  unorm = B.SubVector(0)->Data()->ViewComponent("cell",false)->norm2();
+  vnorm = B.SubVector(0)->Data()->ViewComponent("cell",false)->norm2();
 
-  AX.SubVector(0)->Data()->ViewComponent("cell",false)->Norm2(&error0_l2);
-  AX.SubVector(1)->Data()->ViewComponent("cell",false)->Norm2(&error1_l2);
-  AX.SubVector(0)->Data()->ViewComponent("cell",false)->NormInf(&error0_linf);
-  AX.SubVector(1)->Data()->ViewComponent("cell",false)->NormInf(&error1_linf);
+  error0_l2 = AX.SubVector(0)->Data()->ViewComponent("cell",false)->norm2();
+  error1_l2 = AX.SubVector(1)->Data()->ViewComponent("cell",false)->norm2();
+  error0_linf = AX.SubVector(0)->Data()->ViewComponent("cell",false)->normInf();
+  error1_linf = AX.SubVector(1)->Data()->ViewComponent("cell",false)->normInf();
 
   double error_l2 = sqrt(pow(error0_l2/unorm,2) + pow(error1_l2/vnorm,2));
   double error_linf = std::max(error0_linf, error1_linf);
@@ -909,14 +909,14 @@ std::pair<double,double> RunInverseProblem(
   Teuchos::RCP<AmanziSolvers::LinearOperator<TreeOperator,TreeVector,TreeVectorSpace> > lin_op =
       fac.Create(lin_list, problem->op);
 
-  X.PutScalar(0.);
-  int ierr = lin_op->ApplyInverse(B,X);
+  X.putScalar(0.);
+  int ierr = lin_op->applyInverse(B,X);
   CHECK(ierr >= 0);
   CHECK(lin_op->num_itrs() < 100);
 
   // subtract off true solution
-  X.SubVector(0)->Data()->Update(-1., *u, 1.);
-  X.SubVector(1)->Data()->Update(-1., *v, 1.);
+  X.SubVector(0)->Data()->update(-1., *u, 1.);
+  X.SubVector(1)->Data()->update(-1., *v, 1.);
 
   // write error if requested
   if (write_file) {
@@ -935,13 +935,13 @@ std::pair<double,double> RunInverseProblem(
   double error0_linf, error1_linf;
   double unorm, vnorm;
 
-  u->ViewComponent("cell",false)->Norm2(&unorm);
-  v->ViewComponent("cell",false)->Norm2(&vnorm);
+  unorm = u->ViewComponent("cell",false)->norm2();
+  vnorm = v->ViewComponent("cell",false)->norm2();
 
-  X.SubVector(0)->Data()->ViewComponent("cell",false)->Norm2(&error0_l2);
-  X.SubVector(1)->Data()->ViewComponent("cell",false)->Norm2(&error1_l2);
-  X.SubVector(0)->Data()->ViewComponent("cell",false)->NormInf(&error0_linf);
-  X.SubVector(1)->Data()->ViewComponent("cell",false)->NormInf(&error1_linf);
+  error0_l2 = X.SubVector(0)->Data()->ViewComponent("cell",false)->norm2();
+  error1_l2 = X.SubVector(1)->Data()->ViewComponent("cell",false)->norm2();
+  error0_linf = X.SubVector(0)->Data()->ViewComponent("cell",false)->normInf();
+  error1_linf = X.SubVector(1)->Data()->ViewComponent("cell",false)->normInf();
 
   double error_l2 = sqrt(pow(error0_l2/unorm,2) + pow(error1_l2/vnorm,2));
   double error_linf = std::max(error0_linf, error1_linf);
@@ -994,7 +994,7 @@ std::pair<double,double> RunNonlinearProblem(
 
   // simple newton iteration
   TreeVector X(*problem->tvs);
-  X.PutScalar(0.2);
+  X.putScalar(0.2);
   Teuchos::RCP<CompositeVector> u = X.SubVector(0)->Data();
   Teuchos::RCP<CompositeVector> v = X.SubVector(1)->Data();
   TreeVector R(*problem->tvs);
@@ -1033,14 +1033,14 @@ std::pair<double,double> RunNonlinearProblem(
     
     // apply the forward operator to get the residual
     // -- NOTE: update the interface to improve how we access TreeOp's RHS
-    problem->op->Apply(X, R);
-    R.SubVector(0)->Data()->Update(-1., *problem->op00->global_operator()->rhs(), 1);
-    R.SubVector(1)->Data()->Update(-1., *problem->op11->global_operator()->rhs(), 1);
+    problem->op->apply(X, R);
+    R.SubVector(0)->Data()->update(-1., *problem->op00->global_operator()->rhs(), 1);
+    R.SubVector(1)->Data()->update(-1., *problem->op11->global_operator()->rhs(), 1);
 
-    R.NormInf(&error);
-    R.Norm2(&l2error);
+    error = R.normInf();
+    l2error = R.norm2();
     double unorm;
-    X.Norm2(&unorm);
+    unorm = X.norm2();
     // std::cout << "Iteration: " << nits << " residual: Linf = " << error
     //           << ", L2 = " << l2error / unorm << std::endl;
 
@@ -1132,12 +1132,12 @@ std::pair<double,double> RunNonlinearProblem(
         fac.Create(lin_list, problem->pc);
 
     // invert the preconditioner to get a correction
-    DX.PutScalar(0.);
-    int converged_reason = lin_op->ApplyInverse(R, DX);
+    DX.putScalar(0.);
+    int converged_reason = lin_op->applyInverse(R, DX);
     CHECK(converged_reason >= 0);
 
     // apply the correction
-    X.Update(-damping, DX, 1.);
+    X.update(-damping, DX, 1.);
     nits++;
   }
 
@@ -1147,7 +1147,7 @@ std::pair<double,double> RunNonlinearProblem(
   // check error
   TreeVector U(X);
   problem->FillSolution(*U.SubVector(0)->Data(),*U.SubVector(1)->Data());
-  X.Update(-1., U, 1.);
+  X.update(-1., U, 1.);
   
   if (write_file) {
     std::stringstream fname;
@@ -1164,13 +1164,13 @@ std::pair<double,double> RunNonlinearProblem(
   double error0_linf, error1_linf;
   double unorm, vnorm;
 
-  U.SubVector(0)->Data()->ViewComponent("cell",false)->Norm2(&unorm);
-  U.SubVector(0)->Data()->ViewComponent("cell",false)->Norm2(&vnorm);
+  unorm = U.SubVector(0)->Data()->ViewComponent("cell",false)->norm2();
+  vnorm = U.SubVector(0)->Data()->ViewComponent("cell",false)->norm2();
 
-  X.SubVector(0)->Data()->ViewComponent("cell",false)->Norm2(&error0_l2);
-  X.SubVector(1)->Data()->ViewComponent("cell",false)->Norm2(&error1_l2);
-  X.SubVector(0)->Data()->ViewComponent("cell",false)->NormInf(&error0_linf);
-  X.SubVector(1)->Data()->ViewComponent("cell",false)->NormInf(&error1_linf);
+  error0_l2 = X.SubVector(0)->Data()->ViewComponent("cell",false)->norm2();
+  error1_l2 = X.SubVector(1)->Data()->ViewComponent("cell",false)->norm2();
+  error0_linf = X.SubVector(0)->Data()->ViewComponent("cell",false)->normInf();
+  error1_linf = X.SubVector(1)->Data()->ViewComponent("cell",false)->normInf();
 
   double error_l2 = sqrt(pow(error0_l2/unorm,2) + pow(error1_l2/vnorm,2));
   double error_linf = std::max(error0_linf, error1_linf);
@@ -1266,17 +1266,17 @@ std::pair<double,double> RunInverseProblem_Diag(
   *B.SubVector(1)->Data() = *problem->op11->global_operator()->rhs();
 
   TreeVector X(*problem->tvs);
-  X.PutScalar(0.);
+  X.putScalar(0.);
 
-  int ierr = lin_op->ApplyInverse(*B.SubVector(0)->Data(),*X.SubVector(0)->Data());
+  int ierr = lin_op->applyInverse(*B.SubVector(0)->Data(),*X.SubVector(0)->Data());
   CHECK(ierr >= 0);
 
-  ierr = lin_op11->ApplyInverse(*B.SubVector(1)->Data(),*X.SubVector(1)->Data());
+  ierr = lin_op11->applyInverse(*B.SubVector(1)->Data(),*X.SubVector(1)->Data());
   CHECK(ierr >= 0);
 
   //  std::cout << "Ran inverse with nitrs = " << lin_op->num_itrs() << std::endl;
-  X.SubVector(0)->Data()->Update(-1., *u, 1.);
-  X.SubVector(1)->Data()->Update(-1., *v, 1.);
+  X.SubVector(0)->Data()->update(-1., *u, 1.);
+  X.SubVector(1)->Data()->update(-1., *v, 1.);
   
   if (write_file) {
     std::stringstream fname;
@@ -1293,13 +1293,13 @@ std::pair<double,double> RunInverseProblem_Diag(
   double error0_linf, error1_linf;
   double unorm, vnorm;
 
-  u->ViewComponent("cell",false)->Norm2(&unorm);
-  v->ViewComponent("cell",false)->Norm2(&vnorm);
+  unorm = u->ViewComponent("cell",false)->norm2();
+  vnorm = v->ViewComponent("cell",false)->norm2();
 
-  X.SubVector(0)->Data()->ViewComponent("cell",false)->Norm2(&error0_l2);
-  X.SubVector(1)->Data()->ViewComponent("cell",false)->Norm2(&error1_l2);
-  X.SubVector(0)->Data()->ViewComponent("cell",false)->NormInf(&error0_linf);
-  X.SubVector(1)->Data()->ViewComponent("cell",false)->NormInf(&error1_linf);
+  error0_l2 = X.SubVector(0)->Data()->ViewComponent("cell",false)->norm2();
+  error1_l2 = X.SubVector(1)->Data()->ViewComponent("cell",false)->norm2();
+  error0_linf = X.SubVector(0)->Data()->ViewComponent("cell",false)->normInf();
+  error1_linf = X.SubVector(1)->Data()->ViewComponent("cell",false)->normInf();
 
   double error_l2 = sqrt(pow(error0_l2/unorm,2) + pow(error1_l2/vnorm,2));
   double error_linf = std::max(error0_linf, error1_linf);

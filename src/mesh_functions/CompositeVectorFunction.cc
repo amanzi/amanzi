@@ -39,7 +39,7 @@ void CompositeVectorFunction::Compute(double time,
         const Teuchos::Ptr<CompositeVector>& cv) {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = func_->mesh();
 
-  cv->PutScalar(0.);
+  cv->putScalar(0.);
 
 #ifdef ENSURE_INITIALIZED_CVFUNCS
   // ensure all components are touched

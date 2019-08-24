@@ -105,7 +105,7 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
 
   // create and initialize state variables.
   Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(cvs));
-  solution->PutScalar(0.0);
+  solution->putScalar(0.0);
 
   // create source 
   CompositeVector source(cvs);
@@ -143,7 +143,7 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
 
     CompositeVector& rhs = *global_op->rhs();
 
-    int ierr = solver.ApplyInverse(rhs, *solution);
+    int ierr = solver.applyInverse(rhs, *solution);
     
     // compute pressure error
     Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
@@ -249,7 +249,7 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
 
   // create and initialize state variables.
   Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(cvs));
-  solution->PutScalar(0.0);
+  solution->putScalar(0.0);
  
   // create source 
   CompositeVector source(cvs), t1(cvs), t2(cvs);
@@ -286,7 +286,7 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
 
     CompositeVector& rhs = *global_op->rhs();
    
-    int ierr = solver.ApplyInverse(rhs, *solution);
+    int ierr = solver.applyInverse(rhs, *solution);
  
     // compute pressure error
     Epetra_MultiVector& p = *solution->ViewComponent("cell", false);

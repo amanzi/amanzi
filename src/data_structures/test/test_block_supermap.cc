@@ -227,7 +227,7 @@ TEST(SUPERMAP_BLOCK_MANUAL) {
   maps[0]->Print(std::cout);
   maps[1]->Print(std::cout);
   std::cout << "\n======= SuperMapLumped =======" << std::endl;
-  map.Map()->Print(std::cout);
+  map.getMap()->Print(std::cout);
   
   // check the offsets
   CHECK(map.Offset("map1") == 0);

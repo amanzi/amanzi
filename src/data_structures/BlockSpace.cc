@@ -78,21 +78,21 @@ bool BlockSpace::SubsetOf(const BlockSpace& other) const
 }
 
 
-GO BlockSpace::GlobalLength(bool ghosted) const
+GO BlockSpace::getGlobalLength(bool ghosted) const
 {
   GO count = 0;
   for (const auto& name : names_) {
-    count += ComponentMap(name, ghosted)->getGlobalNumElements() * NumVectors(name);
+    count += ComponentMap(name, ghosted)->getGlobalNumElements() * getNumVectors(name);
   }
   return count;
 }
 
 
-LO BlockSpace::MyLength(bool ghosted) const
+LO BlockSpace::getLocalLength(bool ghosted) const
 {
   GO count = 0;
   for (const auto& name : names_) {
-    count += ComponentMap(name, ghosted)->getNodeNumElements() * NumVectors(name);
+    count += ComponentMap(name, ghosted)->getNodeNumElements() * getNumVectors(name);
   }
   return count;
 }

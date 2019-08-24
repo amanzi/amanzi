@@ -14,7 +14,7 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vecto
 
   void Residual(const Teuchos::RCP<Epetra_Vector>& u,
                 const Teuchos::RCP<Epetra_Vector>& f) {
-    for (int c = 0; c != u->MyLength(); ++c) {
+    for (int c = 0; c != u->getLocalLength(); ++c) {
       double x = (*u)[c];
       (*f)[c] = x * (x * x + 1.0);
     }
@@ -29,9 +29,9 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vecto
                    const Teuchos::RCP<const Epetra_Vector>& du) {
     double norm2_du;
     double norm_du, norm_u;
-    du->NormInf(&norm_du);
-    u->NormInf(&norm_u);
-    du->Norm2(&norm2_du);
+    norm_du = du->normInf();
+    norm_u = u->normInf();
+    norm2_du = du->norm2();
     return norm_du;
     //return norm_du / (atol_ + rtol_ * norm_u);
   }
@@ -40,12 +40,12 @@ class NonlinearProblem : public Amanzi::AmanziSolvers::SolverFnBase<Epetra_Vecto
     h_ = Teuchos::rcp(new Epetra_Vector(*up));
 
     if (exact_jacobian_) {
-      for (int c = 0; c != up->MyLength(); ++c) {
+      for (int c = 0; c != up->getLocalLength(); ++c) {
         double x = (*up)[c];
         (*h_)[c] = 3 * x * x + 1.0;
       }
     } else {
-      for (int c = 0; c != up->MyLength(); ++c) {
+      for (int c = 0; c != up->getLocalLength(); ++c) {
         double x = (*up)[c];
         (*h_)[c] = x * x + 2.5;
       }

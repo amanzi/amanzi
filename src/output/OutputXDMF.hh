@@ -18,8 +18,6 @@
 #include <vector>
 
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_Vector.h"
-#include "Epetra_MultiVector.h"
 
 #include "errors.hh"
 #include "dbc.hh"
@@ -45,10 +43,10 @@ class OutputXDMF : public Output {
   virtual void FinalizeCycle();
 
   // write data to file
-  virtual void WriteVector(const Epetra_Vector& vec,
-			   const std::string& name) const;
-  virtual void WriteMultiVector(const Epetra_MultiVector& vec,
-				const std::vector<std::string>& names) const;
+  // virtual void WriteVector(const Epetra_Vector& vec,
+  //       		   const std::string& name) const;
+  // virtual void WriteMultiVector(const Epetra_MultiVector& vec,
+  //       			const std::vector<std::string>& names) const;
 
   // can we template this?
   virtual void WriteAttribute(const double& val, const std::string& name) const;
@@ -56,9 +54,9 @@ class OutputXDMF : public Output {
   virtual void WriteAttribute(const std::string& val, const std::string& name) const;
 
   // read data from file
-  virtual void ReadVector(Epetra_Vector& vec, const std::string& name) const;
-  virtual void ReadMultiVector(Epetra_MultiVector& vec,
-			       const std::vector<std::string>& name) const;
+  // virtual void ReadVector(Epetra_Vector& vec, const std::string& name) const;
+  // virtual void ReadMultiVector(Epetra_MultiVector& vec,
+  //       		       const std::vector<std::string>& name) const;
 
   virtual void ReadAttribute(double& val, const std::string& name) const;
   virtual void ReadAttribute(int& val, const std::string& name) const;

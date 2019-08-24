@@ -106,7 +106,7 @@ void UpwindSecondOrder<Model>::Compute(
   const Epetra_Map& ext_face_map = mesh_->exterior_face_map(true);
   const Epetra_Map& face_map = mesh_->face_map(true);
   Epetra_MultiVector& upw_face = *field.ViewComponent(face_comp_, true);
-  upw_face.PutScalar(0.0);
+  upw_face.putScalar(0.0);
 
   double flxmin, flxmax;
   flx_face.MinValue(&flxmin);

@@ -1088,9 +1088,9 @@ void HDF5_MPI::writeFieldData_(const Epetra_Vector &x, std::string varname,
 
   int globaldims[2];
   int localdims[2];
-  globaldims[0] = x.GlobalLength();
+  globaldims[0] = x.getGlobalLength();
   globaldims[1] = 1;
-  localdims[0] = x.MyLength();
+  localdims[0] = x.getLocalLength();
   localdims[1] = 1;
 
   // TODO(barker): how to build path name?? probably still need iteration number
@@ -1183,7 +1183,7 @@ bool HDF5_MPI::readFieldData_(Epetra_Vector &x, std::string varname,
 
   int globaldims[ndims], localdims[ndims];
   parallelIO_get_dataset_dims(globaldims, data_file_, h5path, &IOgroup_);
-  localdims[0] = x.MyLength();
+  localdims[0] = x.getLocalLength();
   localdims[1] = globaldims[1];
 
   double *data = new double[localdims[0]*localdims[1]];

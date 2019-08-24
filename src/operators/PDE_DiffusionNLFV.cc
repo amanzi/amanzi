@@ -144,7 +144,7 @@ void PDE_DiffusionNLFV::InitStencils_()
   Epetra_MultiVector& gamma = *stencil_data_->ViewComponent("gamma", true);
   Epetra_MultiVector& weight = *stencil_data_->ViewComponent("weight", true);
 
-  stencil_data_->PutScalarMasterAndGhosted(0.0);
+  stencil_data_->putScalarMasterAndGhosted(0.0);
 
   stencil_faces_.resize(2 * dim_);
   stencil_cells_.resize(2 * dim_);
@@ -318,8 +318,8 @@ void PDE_DiffusionNLFV::UpdateMatrices(
   int c1, c2, c3, c4, k1, k2;
   AmanziMesh::Entity_ID_List cells, cells_tmp, faces;
 
-  matrix_cv.PutScalarMasterAndGhosted(0.0);
-  flux_data.PutScalar(0.0);
+  matrix_cv.putScalarMasterAndGhosted(0.0);
+  flux_data.putScalar(0.0);
 
   for (int c = 0; c < ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
@@ -451,7 +451,7 @@ void PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
-    Aface.PutScalar(0.0);
+    Aface.putScalar(0.0);
 
     // We use the upwind discretization of the generalized flux.
     v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] * dkdp_f[0][f] / kf[0][f] : 0.0;
@@ -510,7 +510,7 @@ void PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
-    Aface.PutScalar(0.0);
+    Aface.putScalar(0.0);
 
     // We use the upwind discretization of the generalized flux.
     v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] * dkdp_f[0][f] / kf[0][f] : 0.0;
@@ -564,7 +564,7 @@ void PDE_DiffusionNLFV::OneSidedFluxCorrections_(
   double gamma, tmp;
   AmanziMesh::Entity_ID_List cells, cells_tmp, faces;
 
-  flux_cv.PutScalarMasterAndGhosted(0.0);
+  flux_cv.putScalarMasterAndGhosted(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
@@ -632,7 +632,7 @@ void PDE_DiffusionNLFV::OneSidedWeightFluxes_(
   double gamma, tmp;
   AmanziMesh::Entity_ID_List cells, cells_tmp, faces;
 
-  flux_cv.PutScalarMasterAndGhosted(0.0);
+  flux_cv.putScalarMasterAndGhosted(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();

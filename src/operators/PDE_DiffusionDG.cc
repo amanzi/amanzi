@@ -200,23 +200,23 @@ void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
         WhetStone::DenseMatrix& Jcell = jump_up_op_->matrices[f];
-        Pcell.Multiply(v, pv, false);
-        Jcell.Multiply(v, jv, false);
+        Pcell.elementWiseMultiply(v, pv, false);
+        Jcell.elementWiseMultiply(v, jv, false);
 
         for (int i = 0; i < ncols; ++i) {
           rhs_c[i][c] += pv(i) + jv(i);
         }
       } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
         WhetStone::DenseMatrix& Jcell = jump_pu_op_->matrices[f];
-        Jcell.Multiply(v, jv, false);
+        Jcell.elementWiseMultiply(v, jv, false);
 
         for (int i = 0; i < ncols; ++i) {
           rhs_c[i][c] -= jv(i);
         }
 
-        Pcell.PutScalar(0.0);
-        Jcell.PutScalar(0.0);
-        jump_up_op_->matrices[f].PutScalar(0.0);
+        Pcell.putScalar(0.0);
+        Jcell.putScalar(0.0);
+        jump_up_op_->matrices[f].putScalar(0.0);
       }
     }
   } 

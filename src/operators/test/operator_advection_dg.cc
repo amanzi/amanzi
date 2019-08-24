@@ -281,9 +281,9 @@ void AdvectionSteady(int dim, std::string filename, int nx,
 
   CompositeVector& rhs = *global_op->rhs();
   CompositeVector solution(rhs);
-  solution.PutScalar(0.0);
+  solution.putScalar(0.0);
 
-  int ierr = solver.ApplyInverse(rhs, solution);
+  int ierr = solver.applyInverse(rhs, solution);
 
   if (getRank == 0) {
     std::cout << "dG solver (gmres): ||r||=" << solver.residual() 

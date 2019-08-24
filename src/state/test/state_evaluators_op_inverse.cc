@@ -53,7 +53,7 @@ protected:
   virtual void Update_(State &s) override {
     double cv = s.GetMesh()->cell_volume(0,false);
     auto &b = s.GetW<CompositeVector>(my_key_, my_tag_, my_key_);
-    b.ViewComponent("cell", false)->PutScalar(-4. * cv);
+    b.ViewComponent("cell", false)->putScalar(-4. * cv);
   }
 };
 
@@ -71,14 +71,14 @@ protected:
   virtual void Update_(State &s) override {
     auto &x = s.GetW<CompositeVector>(my_key_, my_tag_, my_key_);
     auto &x_c = *x.ViewComponent("cell", false);
-    for (int c = 0; c != x_c.MyLength(); ++c) {
+    for (int c = 0; c != x_c.getLocalLength(); ++c) {
       AmanziGeometry::Point cc = x.Mesh()->cell_centroid(c);
       x_c[0][c] = cc[0] * cc[0] + cc[1] * cc[1]; // x^2 + y^2
     }
 
     if (x.HasComponent("face")) {
       auto &x_f = *x.ViewComponent("face", false);
-      for (int f = 0; f != x_f.MyLength(); ++f) {
+      for (int f = 0; f != x_f.getLocalLength(); ++f) {
         AmanziGeometry::Point fc = x.Mesh()->face_centroid(f);
         x_f[0][f] = fc[0] * fc[0] + fc[1] * fc[1]; // x^2 + y^2
       }
@@ -98,7 +98,7 @@ public:
 
 protected:
   virtual void Update_(State &s) override {
-    s.GetW<CompositeVector>(my_key_, my_tag_, my_key_).PutScalar(1.);
+    s.GetW<CompositeVector>(my_key_, my_tag_, my_key_).putScalar(1.);
   }
 };
 
@@ -120,7 +120,7 @@ protected:
       // set this in consistent, and it should get init'ed somewhere during that
       // process, not now!
       k.Init(2, 1);
-      k.PutScalar(1.0);
+      k.putScalar(1.0);
     }
   }
 };
@@ -269,7 +269,7 @@ void test(const std::string &discretization) {
   // -- check error
   double error(0.);
   auto &r = S.Get<CompositeVector>("residual", "");
-  r.NormInf(&error);
+  error = r.normInf();
   std::cout << "Error = " << error << std::endl;
   CHECK(error != 0.0);
   CHECK_CLOSE(0.0, error, 1.e-3);
@@ -385,7 +385,7 @@ void test_inverse(const std::string &discretization) {
   // run
   // -- setup and init
   S.Setup();
-  S.GetW<CompositeVector>("x","","x").PutScalar(1.);
+  S.GetW<CompositeVector>("x","","x").putScalar(1.);
   S.GetRecordW("x","","x").set_initialized();
   S.Initialize();
 
@@ -397,7 +397,7 @@ void test_inverse(const std::string &discretization) {
     // -- check error of the initial guess
     double error(0.);
     auto &r = S.Get<CompositeVector>("residual", "");
-    r.NormInf(&error);
+    error = r.normInf();
     std::cout << "Error = " << error << std::endl;
   }
   
@@ -411,10 +411,10 @@ void test_inverse(const std::string &discretization) {
 
     // -- apply the inverse
     auto &r = S.Get<CompositeVector>("residual", "");
-    CompositeVector dx(r.Map());
+    CompositeVector dx(r.getMap());
     std::cout << "R:" << std::endl;
     r.Print(std::cout);
-    lin_op.ApplyInverse(r, dx);
+    lin_op.applyInverse(r, dx);
     std::cout << "dx:" << std::endl;
     dx.Print(std::cout);
 
@@ -441,7 +441,7 @@ void test_inverse(const std::string &discretization) {
     double error(0.);
     auto &r = S.Get<CompositeVector>("residual", "");
     r.Print(std::cout);
-    r.NormInf(&error);
+    error = r.normInf();
     std::cout << "Error = " << error << std::endl;
     CHECK(error != 0.0);
     CHECK_CLOSE(0.0, error, 1.e-3);

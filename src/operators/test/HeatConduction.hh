@@ -77,7 +77,7 @@ class HeatConduction {
       for (int i = 0; i < dim; i++) vgrad[i][c] = grad[i];
     }
 
-    derivatives_->PutScalar(1.0);
+    derivatives_->putScalar(1.0);
   }
 
   // adds twin-component and over-writes face-components on discontinuity

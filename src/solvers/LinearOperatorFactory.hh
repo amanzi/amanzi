@@ -24,8 +24,8 @@
 #include "LinearOperator.hh"
 #include "LinearOperatorPCG.hh"
 #include "LinearOperatorGMRES.hh"
-#include "LinearOperatorBelosGMRES.hh"
-#include "LinearOperatorAmesos.hh"
+// #include "LinearOperatorBelosGMRES.hh"
+// #include "LinearOperatorAmesos.hh"
 #include "LinearOperatorNKA.hh"
 
 namespace Amanzi {
@@ -66,8 +66,8 @@ class LinearOperatorFactory {
 
 
 /* ******************************************************************
-* The following calls have to be supported: m->Apply(...) and
-* h->ApplyInverse(...).
+* The following calls have to be supported: m->apply(...) and
+* h->applyInverse(...).
 ****************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
 Teuchos::RCP<LinearOperator<Matrix, Vector, VectorSpace> >
@@ -90,8 +90,8 @@ LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
 
 
 /* ******************************************************************
-* The following calls have to be supported: m->Apply(...) and
-* h->ApplyInverse(...).
+* The following calls have to be supported: m->apply(...) and
+* h->applyInverse(...).
 ****************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
 Teuchos::RCP<LinearOperator<Matrix, Vector, VectorSpace> >

@@ -131,7 +131,7 @@ double TimestepControllerAdaptive<Vector>::get_timestep_base_(
   double tol, error, error_max = 0.0;
   double dTfactor(100.0), dTfactor_cell;
 
-  int ncells_owned = u1.MyLength();
+  int ncells_owned = u1.getLocalLength();
   for (int c = 0; c < ncells_owned; c++) {
     error = fabs(u1[0][c] - u0[0][c]) * dt / 2;
     tol = rtol_ * p_ + atol_;

@@ -161,7 +161,7 @@ void SolutionHistory<Vector>::RecordSolution(double t, const Vector& x) {
       Exceptions::amanzi_throw(message);
     }
     double div = 1.0 / (times_[0] - times_[j]);
-    d_[j]->Update(div, *d_[j - 1], -div);
+    d_[j]->update(div, *d_[j - 1], -div);
   }
 }
 
@@ -195,7 +195,7 @@ void SolutionHistory<Vector>::RecordSolution(double t, const Vector& x, const Ve
     // update the rest of the divided differences
     for (unsigned int j = 2; j <= nvec_-1; j++) {
       double div = 1.0 / (times_[0] - times_[j]);
-      d_[j]->Update(div, *d_[j-1], -div);
+      d_[j]->update(div, *d_[j-1], -div);
     }
   }
 }
@@ -220,7 +220,7 @@ void SolutionHistory<Vector>::InterpolateSolution(double t, Vector& x, unsigned 
 
   x = *d_[order];
   for (int k = order - 1; k >= 0; k--) {
-    x.Update(1.0, *d_[k], t - times_[k]);
+    x.update(1.0, *d_[k], t - times_[k]);
   }
 }
 

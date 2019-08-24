@@ -43,8 +43,8 @@ class BlockSpace {
 
   Comm_ptr_type Comm() const { return comm_; }
 
-  GO GlobalLength(bool ghosted=false) const;
-  LO MyLength(bool ghosted=false) const;
+  GO getGlobalLength(bool ghosted=false) const;
+  LO getLocalLength(bool ghosted=false) const;
 
   //
   // Component meta-data
@@ -58,7 +58,7 @@ class BlockSpace {
   std::size_t size() const { return names_.size(); }
 
   // accessors
-  std::size_t NumVectors(const std::string& name) const { return num_vectors_.at(name); }
+  std::size_t getNumVectors(const std::string& name) const { return num_vectors_.at(name); }
   BlockMap_ptr_type ComponentMap(const std::string& name, bool ghosted=false) const;
   Import_ptr_type Importer(const std::string& name) const { return importers_.at(name); }
 

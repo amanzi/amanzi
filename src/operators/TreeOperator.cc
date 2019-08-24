@@ -65,7 +65,7 @@ void TreeOperator::SetOperatorBlock(int i, int j, const Teuchos::RCP<const Opera
 ****************************************************************** */
 int TreeOperator::Apply(const TreeVector& X, TreeVector& Y) const
 {
-  Y.PutScalar(0.0);
+  Y.putScalar(0.0);
 
   int ierr(0), n(0);
   for (TreeVector::iterator yN_tv = Y.begin(); yN_tv != Y.end(); ++yN_tv, ++n) {
@@ -76,7 +76,7 @@ int TreeOperator::Apply(const TreeVector& X, TreeVector& Y) const
         if (transpose_[n][m]) {
           ierr |= blocks_[n][m]->ApplyTranspose(*(*xM_tv)->Data(), yN, 1.0);
         } else {
-          ierr |= blocks_[n][m]->Apply(*(*xM_tv)->Data(), yN, 1.0);
+          ierr |= blocks_[n][m]->apply(*(*xM_tv)->Data(), yN, 1.0);
         }
       }
     }
@@ -90,14 +90,14 @@ int TreeOperator::Apply(const TreeVector& X, TreeVector& Y) const
 ****************************************************************** */
 int TreeOperator::ApplyAssembled(const TreeVector& X, TreeVector& Y) const
 {
-  Y.PutScalar(0.0);
+  Y.putScalar(0.0);
   Epetra_Vector Xcopy(A_->RowMap());
   Epetra_Vector Ycopy(A_->RowMap());
   double x_norm, y_norm;
 
   int ierr = CopyTreeVectorToSuperVector(*smap_, X, Xcopy);
 
-  ierr |= A_->Apply(Xcopy, Ycopy);
+  ierr |= A_->apply(Xcopy, Ycopy);
 
   ierr |= CopySuperVectorToTreeVector(*smap_, Ycopy, Y);
   AMANZI_ASSERT(!ierr);
@@ -117,7 +117,7 @@ int TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
     Epetra_Vector Ycopy(A_->RowMap());
 
     int ierr = CopyTreeVectorToSuperVector(*smap_, X, Xcopy);
-    code = preconditioner_->ApplyInverse(Xcopy, Ycopy);
+    code = preconditioner_->applyInverse(Xcopy, Ycopy);
     ierr |= CopySuperVectorToTreeVector(*smap_, Ycopy, Y);
 
     AMANZI_ASSERT(!ierr);
@@ -125,7 +125,7 @@ int TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
     for (int n = 0; n < tvs_->size(); ++n) {
       const CompositeVector& Xn = *X.SubVector(n)->Data();
       CompositeVector& Yn = *Y.SubVector(n)->Data();
-      code |= blocks_[n][n]->ApplyInverse(Xn, Yn);
+      code |= blocks_[n][n]->applyInverse(Xn, Yn);
     }
   }
 
@@ -172,7 +172,7 @@ void TreeOperator::SymbolicAssembleMatrix()
 
   // NOTE: this probably needs to be fixed for differing meshes. -etc
   int row_size = MaxRowSize(*an_op->DomainMap().Mesh(), schema, n_blocks);
-  auto graph = Teuchos::rcp(new GraphFE(smap_->Map(), 
+  auto graph = Teuchos::rcp(new GraphFE(smap_->getMap(), 
       smap_->GhostedMap(), smap_->GhostedMap(), row_size));
 
   // fill the graph
@@ -186,7 +186,7 @@ void TreeOperator::SymbolicAssembleMatrix()
   }
 
   // assemble the graph
-  int ierr = graph->FillComplete(smap_->Map(), smap_->Map());
+  int ierr = graph->FillComplete(smap_->getMap(), smap_->getMap());
   AMANZI_ASSERT(!ierr);
 
   // create the matrix
@@ -229,7 +229,7 @@ void TreeOperator::InitPreconditioner(
 {
   AmanziPreconditioners::PreconditionerFactory factory;
   preconditioner_ = factory.Create(prec_name, plist);
-  preconditioner_->Update(A_);
+  preconditioner_->update(A_);
 }
 
 
@@ -241,7 +241,7 @@ void TreeOperator::InitPreconditioner(
 {
   AmanziPreconditioners::PreconditionerFactory factory;
   preconditioner_ = factory.Create(plist);
-  preconditioner_->Update(A_);
+  preconditioner_->update(A_);
 }
 
 
@@ -282,7 +282,7 @@ void TreeOperator::UpdatePreconditioner()
 {
   AMANZI_ASSERT(preconditioner_.get());
   AMANZI_ASSERT(A_.get());
-  preconditioner_->Update(A_);
+  preconditioner_->update(A_);
 }
 
 

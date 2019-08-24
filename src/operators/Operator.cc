@@ -138,7 +138,7 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
 ****************************************************************** */
 void Operator::Init()
 {
-  rhs_->PutScalarMasterAndGhosted(0.0);
+  rhs_->putScalarMasterAndGhosted(0.0);
   int nops = ops_.size();
   for (int i = 0; i < nops; ++i) {
     if (! (ops_properties_[i] & OPERATOR_PROPERTY_DATA_READ_ONLY))
@@ -158,14 +158,14 @@ void Operator::SymbolicAssembleMatrix()
 
   // create the graph
   int row_size = MaxRowSize(*mesh_, schema(), 1);
-  Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->Map(),
+  Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(smap_->getMap(),
       smap_->GhostedMap(), smap_->GhostedMap(), row_size));
 
   // fill the graph
   SymbolicAssembleMatrix(*smap_, *graph, 0, 0);
 
   // Completing and optimizing the graphs
-  int ierr = graph->FillComplete(smap_->Map(), smap_->Map());
+  int ierr = graph->FillComplete(smap_->getMap(), smap_->getMap());
   AMANZI_ASSERT(!ierr);
 
   // create global matrix
@@ -236,7 +236,7 @@ int Operator::ComputeResidual(const CompositeVector& u, CompositeVector& r, bool
   } else {
     ierr = Apply(u, r, -1.0);
   }
-  r.Update(1.0, *rhs_, -1.0);
+  r.update(1.0, *rhs_, -1.0);
   return ierr;
 }
 
@@ -253,7 +253,7 @@ int Operator::ComputeNegativeResidual(const CompositeVector& u, CompositeVector&
     ierr = Apply(u, r, 1.0);
   }    
   
-  r.Update(-1.0, *rhs_, 1.0);
+  r.update(-1.0, *rhs_, 1.0);
 
   return ierr;
 }
@@ -268,12 +268,12 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar)
 
   // initialize ghost elements
   if (scalar == 0.0) {
-    Y.PutScalarMasterAndGhosted(0.0);
+    Y.putScalarMasterAndGhosted(0.0);
   } else if (scalar == 1.0) {
-    Y.PutScalarGhosted(0.0);
+    Y.putScalarGhosted(0.0);
   } else {
-    Y.Scale(scalar);
-    Y.PutScalarGhosted(0.0);
+    Y.scale(scalar);
+    Y.putScalarGhosted(0.0);
   }
 
   apply_calls_++;
@@ -294,12 +294,12 @@ int Operator::ApplyTranspose(const CompositeVector& X, CompositeVector& Y, doubl
 
   // initialize ghost elements
   if (scalar == 0.0) {
-    Y.PutScalarMasterAndGhosted(0.0);
+    Y.putScalarMasterAndGhosted(0.0);
   } else if (scalar == 1.0) {
-    Y.PutScalarGhosted(0.0);
+    Y.putScalarGhosted(0.0);
   } else {
-    Y.Scale(scalar);
-    Y.PutScalarGhosted(0.0);
+    Y.scale(scalar);
+    Y.putScalarGhosted(0.0);
   }
 
   apply_calls_++;
@@ -322,19 +322,19 @@ int Operator::ApplyAssembled(const CompositeVector& X, CompositeVector& Y, doubl
 
   // initialize ghost elements
   if (scalar == 0.0) {
-    Y.PutScalarMasterAndGhosted(0.0);
+    Y.putScalarMasterAndGhosted(0.0);
   } else if (scalar == 1.0) {
-    Y.PutScalarGhosted(0.0);
+    Y.putScalarGhosted(0.0);
   } else {
-    Y.Scale(scalar);
-    Y.PutScalarGhosted(0.0);
+    Y.scale(scalar);
+    Y.putScalarGhosted(0.0);
   }
 
   Epetra_Vector Xcopy(A_->RowMap());
   Epetra_Vector Ycopy(A_->RowMap());
 
   int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy);
-  ierr |= A_->Apply(Xcopy, Ycopy);
+  ierr |= A_->apply(Xcopy, Ycopy);
   ierr |= AddSuperVectorToCompositeVector(*smap_, Ycopy, Y);
 
   if (ierr) {
@@ -356,11 +356,11 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
   int ierr(1);
 
-  Epetra_Vector Xcopy(*smap_->Map());
-  Epetra_Vector Ycopy(*smap_->Map());
+  Epetra_Vector Xcopy(*smap_->getMap());
+  Epetra_Vector Ycopy(*smap_->getMap());
 
   ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy);
-  ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
+  ierr |= preconditioner_->applyInverse(Xcopy, Ycopy);
   ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y);
 
   if (ierr) {
@@ -396,7 +396,7 @@ void Operator::InitPreconditioner(Teuchos::ParameterList& plist)
 {
   AmanziPreconditioners::PreconditionerFactory factory;
   preconditioner_ = factory.Create(plist);
-  preconditioner_->Update(A_);
+  preconditioner_->update(A_);
 }
 
 
@@ -448,7 +448,7 @@ void Operator::UpdatePreconditioner()
     Errors::Message msg("Operator has no matrix or preconditioner for update.\n");
     Exceptions::amanzi_throw(msg);
   }
-  preconditioner_->Update(A_);
+  preconditioner_->update(A_);
 }
 
 
@@ -460,7 +460,7 @@ void Operator::UpdatePreconditioner()
 void Operator::UpdateRHS(const CompositeVector& source, bool volume_included) {
   for (auto it = rhs_->begin(); it != rhs_->end(); ++it) {
     if (source.HasComponent(*it)) {
-      rhs_->ViewComponent(*it, false)->Update(1.0, *source.ViewComponent(*it, false), 1.0);
+      rhs_->ViewComponent(*it, false)->update(1.0, *source.ViewComponent(*it, false), 1.0);
     }
   }
 }

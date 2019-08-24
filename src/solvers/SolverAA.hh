@@ -199,7 +199,7 @@ int SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u) {
       previous_error = error;
       error = fn_->ErrorNorm(u, r);
       residual_ = error;
-      r->Norm2(&l2_error);
+      l2_error = r->norm2();
 
       // We attempt to catch non-convergence early.
       if (num_itrs_ == 0) {
@@ -258,12 +258,12 @@ int SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u) {
 
     // Make sure that we do not diverge and cause numerical overflow.
     previous_du_norm = du_norm;
-    du->NormInf(&du_norm);
+    du_norm = du->normInf();
 
     if (num_itrs_ == 0) {
       double u_norm2, du_norm2;
-      u->Norm2(&u_norm2);
-      du->Norm2(&du_norm2);
+      u_norm2 = u->norm2();
+      du_norm2 = du->norm2();
       if (u_norm2 > 0 && du_norm2 > overflow_l2_tol_ * u_norm2) {
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) 
            *vo_->os() << "terminating due to L2-norm overflow ||du||=" << du_norm2
@@ -287,7 +287,7 @@ int SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u) {
       //std::cout<<"du\n";du->Print(std::cout);
 
       // Re-check du. If it fails again, give up.
-      du->NormInf(&du_norm);
+      du_norm = du->normInf();
 
       if (du_norm > max_du_growth_factor_ * previous_du_norm) {
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) 
@@ -312,7 +312,7 @@ int SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u) {
     }
 
     // Next solution iterate and error estimate: u  = u - du
-    u->Update(-1.0, *du, 1.0);
+    u->update(-1.0, *du, 1.0);
     fn_->ChangedSolution();
 
     // Increment iteration counter.
@@ -323,7 +323,7 @@ int SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u) {
       previous_error = error;
       error = fn_->ErrorNorm(u, du_tmp);
       residual_ = error;
-      du_tmp->Norm2(&l2_error);
+      l2_error = du_tmp->norm2();
 
       int ierr = AA_ErrorControl_(error, previous_error, l2_error);
       if (ierr == SOLVER_CONVERGED) return num_itrs_;
@@ -335,7 +335,7 @@ int SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u) {
       previous_error = error;
       error = fn_->ErrorNorm(u, du);
       residual_ = error;
-      du->Norm2(&l2_error);
+      l2_error = du->norm2();
 
       int ierr = AA_ErrorControl_(error, previous_error, l2_error);
       if (ierr == SOLVER_CONVERGED) return num_itrs_;

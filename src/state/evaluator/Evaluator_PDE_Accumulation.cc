@@ -48,9 +48,9 @@ void
 Evaluator_PDE_Accumulation::Evaluate_(const State &S, const std::vector<CompositeVector*>& results) {
   AMANZI_ASSERT(results.size() == 1);
   double dt = S.Get<double>("time", tag_new_) - S.Get<double>("time", tag_old_);
-  results[0]->Multiply(1./dt, S.Get<CompositeVector>(conserved_key_, tag_new_),
+  results[0]->elementWiseMultiply(1./dt, S.Get<CompositeVector>(conserved_key_, tag_new_),
                   S.Get<CompositeVector>(cv_key_, tag_new_), 0.);
-  results[0]->Multiply(-1./dt, S.Get<CompositeVector>(conserved_key_, tag_old_),
+  results[0]->elementWiseMultiply(-1./dt, S.Get<CompositeVector>(conserved_key_, tag_old_),
                   S.Get<CompositeVector>(cv_key_, tag_old_), 1.);
 }
 
@@ -63,20 +63,20 @@ Evaluator_PDE_Accumulation::EvaluatePartialDerivative_(const State &S,
   if (wrt_key == conserved_key_) {
     if (wrt_tag == tag_old_) {
       (*results[0]) = S.Get<CompositeVector>(cv_key_, tag_old_);
-      results[0]->Scale(-1./dt);
+      results[0]->scale(-1./dt);
     } else if (wrt_tag == tag_new_) {
       (*results[0]) = S.Get<CompositeVector>(cv_key_, tag_new_);
-      results[0]->Scale(1./dt);
+      results[0]->scale(1./dt);
     } else {
       AMANZI_ASSERT(0);
     }
   } else if (wrt_key == cv_key_) {
     if (wrt_tag == tag_old_) {
       (*results[0]) = S.Get<CompositeVector>(conserved_key_, tag_old_);
-      results[0]->Scale(-1./dt);
+      results[0]->scale(-1./dt);
     } else if (wrt_tag == tag_new_) {
       (*results[0]) = S.Get<CompositeVector>(conserved_key_, tag_new_);
-      results[0]->Scale(1./dt);
+      results[0]->scale(1./dt);
     } else {
       AMANZI_ASSERT(0);
     }

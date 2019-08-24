@@ -97,10 +97,10 @@ void WriteVis<CompositeVector>(const Visualization &vis, const Key &fieldname,
   //   // FIXME EPETRA TO TPETRA: need HostView of DeviceView vector
   //   auto vec_c = vec.ViewComponent("cell", false);
   //   if (subfieldnames.size() > 0) {
-  //     if (vec.NumVectors("cell") != subfieldnames.size()) {
+  //     if (vec.getNumVectors("cell") != subfieldnames.size()) {
   //       Errors::Message msg;
   //       msg << "While Visualizing \"" << fieldname << "\" a vector of lenth "
-  //           << vec.NumVectors("cell") << ", subfieldnames of length "
+  //           << vec.getNumVectors("cell") << ", subfieldnames of length "
   //           << (int)subfieldnames.size() << " were provided.";
   //       throw(msg);
   //     }
@@ -108,13 +108,13 @@ void WriteVis<CompositeVector>(const Visualization &vis, const Key &fieldname,
   //     // I feel like this could be fixed with boost zip_iterator, but the
   //     // Epetra vectors need iterated over and they aren't, by default,
   //     // iterable.
-  //     for (int i = 0; i != vec.NumVectors("cell"); ++i) {
+  //     for (int i = 0; i != vec.getNumVectors("cell"); ++i) {
   //       // FIXME EPETRA TO TPETRA
   //       //vis.Write(subfieldnames[i], *vec_c(i));
   //     }
 
   //   } else {
-  //     for (int i = 0; i != vec.NumVectors("cell"); ++i) {
+  //     for (int i = 0; i != vec.getNumVectors("cell"); ++i) {
   //       std::stringstream name;
   //       name << fieldname << ".cell." << i;
   //       // FIXME EPETRA TO TPETRA: write HostView to disk
@@ -133,7 +133,7 @@ void WriteCheckpoint<CompositeVector>(const Checkpoint &chkp,
   //   // FIXME EPETRA TO TPETRA: need HostView of DeviceView vector
   //   auto vec_c = vec.ViewComponent(cname, false);
 
-  //   for (int i = 0; i != vec.NumVectors(cname); ++i) {
+  //   for (int i = 0; i != vec.getNumVectors(cname); ++i) {
   //     std::stringstream name;
   //     name << fieldname << "." << cname << "." << i;
   //     // FIXME EPETRA TO TPETRA: write HostView to disk
@@ -151,7 +151,7 @@ void ReadCheckpoint<CompositeVector>(const Checkpoint &chkp,
   //   // FIXME EPETRA TO TPETRA: need HostView of DeviceView vector
   //   auto vec_c = vec.ViewComponent(cname, false);
 
-  //   for (int i = 0; i != vec.NumVectors(cname); ++i) {
+  //   for (int i = 0; i != vec.getNumVectors(cname); ++i) {
   //     std::stringstream name;
   //     name << fieldname << "." << cname << "." << i;
   //     // FIXME EPETRA TO TPETRA
@@ -181,7 +181,7 @@ bool Initialize<CompositeVector>(
   // if (plist.isSublist("exodus file initialization")) {
   //   // data must be pre-initialized to zero in case Exodus file does not
   //   // provide all values.
-  //   t.PutScalar(0.0);
+  //   t.putScalar(0.0);
 
   //   Teuchos::ParameterList& file_list = plist.sublist("exodus file
   //   initialization"); Functions::ReadExodusIIMeshFunction(file_list, t);
@@ -191,7 +191,7 @@ bool Initialize<CompositeVector>(
   // ------ Set values using a constant -----
   if (plist.isParameter("constant")) {
     double value = plist.get<double>("constant");
-    t.PutScalar(value);
+    t.putScalar(value);
     return true;
   }
 
@@ -204,7 +204,7 @@ bool Initialize<CompositeVector>(
 
   //   // read just the cells
   //   auto vec_c = t.ViewComponent("cell", false);
-  //   for (int i = 0; i != t.NumVectors("cell"); ++i) {
+  //   for (int i = 0; i != t.getNumVectors("cell"); ++i) {
   //     std::stringstream name;
   //     name << fieldname << ".cell." << i;
   //     // FIXME EPETRA TO TPETRA
@@ -237,7 +237,7 @@ bool Initialize<CompositeVector>(
   //     AMANZI_ASSERT(t.NumComponents() == 1);                 // one comp
   //     AMANZI_ASSERT(t.HasComponent("face"));                 // is named face
   //     AMANZI_ASSERT(t.Location("face") == AmanziMesh::FACE); // is on face
-  //     AMANZI_ASSERT(t.NumVectors("face") == 1);              // and is scalar
+  //     AMANZI_ASSERT(t.getNumVectors("face") == 1);              // and is scalar
 
   //     // create a vector on faces of the appropriate dimension
   //     int dim = t.Mesh()->space_dimension();
@@ -248,7 +248,7 @@ bool Initialize<CompositeVector>(
   //     CompositeVector vel_vec(cvs);
 
   //     // Evaluate the velocity function
-  //     auto func = Functions::CreateCompositeVectorFunction(func_plist, vel_vec.Map());
+  //     auto func = Functions::CreateCompositeVectorFunction(func_plist, vel_vec.getMap());
   //     func->Compute(0.0, vel_vec);
 
   //     // Dot the velocity with the normal
@@ -276,7 +276,7 @@ bool Initialize<CompositeVector>(
   //     // FIXME EPETRA TO TPETRA
   //     // // no map, just evaluate the function
   //     // Teuchos::RCP<Functions::CompositeVectorFunction> func =
-  //     //     Functions::CreateCompositeVectorFunction(func_plist, t.Map());
+  //     //     Functions::CreateCompositeVectorFunction(func_plist, t.getMap());
   //     // func->Compute(0.0, t);
   //     // fully_initialized = true;
   //   }

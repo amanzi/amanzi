@@ -63,10 +63,10 @@ int BackTracking<Vector>::Bisection(double f0, const Teuchos::RCP<Vector> u0, Te
   Teuchos::RCP<Vector> u1 = Teuchos::rcp(new Vector(*u0));
   Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u0));
 
-  u1->Update(1.0, *u0, -1.0, *du, 0.0);
+  u1->update(1.0, *u0, -1.0, *du, 0.0);
   
   fn_->Residual(u1, r);
-  r->Norm2(&f1);
+  f1 = r->norm2();
 
   num_steps_ = 0;
   if (f1 < f0 * BACKTRACKING_GOOD_REDUCTION) {
@@ -78,13 +78,13 @@ int BackTracking<Vector>::Bisection(double f0, const Teuchos::RCP<Vector> u0, Te
   for (int n = 0; n < BACKTRACKING_MAX_ITERATIONS; n++) {
     num_steps_++;
     s2 = (s0 + s1) / 2;
-    u1->Update(1.0, *u0, -s2, *du, 0.0);
+    u1->update(1.0, *u0, -s2, *du, 0.0);
 
     fn_->Residual(u1, r);
-    r->Norm2(&f1);
+    f1 = r->norm2();
 
     if (f1 < f0 * BACKTRACKING_GOOD_REDUCTION) {
-      du->Scale(s2);
+      du->scale(s2);
       final_residual_ = f1;
       return BACKTRACKING_USED;  // backtraking was activated
     } else {
@@ -106,7 +106,7 @@ int BackTracking<Vector>::Bisection(const Teuchos::RCP<Vector> u0, Teuchos::RCP<
   Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u0));
 
   fn_->Residual(u0, r);
-  r->Norm2(&f0);
+  f0 = r->norm2();
 
   return Bisection(f0, u0, du);  
 }
@@ -129,15 +129,15 @@ int BackTracking<Vector>::LineSearch(
   double tmplam, disc, alam, alam2 = 0.0, alamin, f2 = 0.0;
 
   double sum;
-  p.Norm2(&sum);
+  sum = p.norm2();
 
   // Scale if attempted step is too big.
   if (sum > step_max) {
-    p.Scale(step_max / sum);
+    p.scale(step_max / sum);
   }
 
   double slope;
-  g.Dot(p, &slope);
+  slope = g.dot(p);
   if (slope >= 0.0) return BACKTRACKING_ROUNDOFF_PROBLEM;
 
   // Compute lambda_min
@@ -154,9 +154,9 @@ int BackTracking<Vector>::LineSearch(
   alamin = tolx;
   alam = 1.0;
   for (int n = 0; n < BACKTRACKING_MAX_ITERATIONS; n++) {
-    x.Update(1.0, xold, alam, p, 0.0);
+    x.update(1.0, xold, alam, p, 0.0);
     fn_->Residual(x, r);
-    r->Norm2(&f);
+    f = r->norm2();
 
     // Convergence on Delta x.
     if (alam < alamin) {

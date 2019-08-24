@@ -143,9 +143,9 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
 
   CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs);
-  solution.PutScalar(0.0);
+  solution.putScalar(0.0);
 
-  int ierr = solver->ApplyInverse(rhs, solution);
+  int ierr = solver->applyInverse(rhs, solution);
   if (diff_op == "diffusion operator") 
       ver.CheckResidual(solution, 1.0e-12);
 
@@ -154,7 +154,7 @@ void LaplaceBeltramiFlat(std::vector<std::string> surfaces, std::string diff_op)
  
   // check bounds of cell-based solution
   const Epetra_MultiVector& p = *solution.ViewComponent("cell");
-  for (int c = 0; c < p.MyLength(); ++c) {
+  for (int c = 0; c < p.getLocalLength(); ++c) {
     CHECK(p[0][c] > 0.0 && p[0][c] < 3.0);
   } 
 

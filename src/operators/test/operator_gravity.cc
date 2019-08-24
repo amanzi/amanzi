@@ -86,7 +86,7 @@ void RunTestGravity(std::string op_list_name) {
 
   double rho(2.0);
   Teuchos::RCP<CompositeVector> rho_cv = Teuchos::rcp(new CompositeVector(cvs));
-  rho_cv->PutScalar(2.0);
+  rho_cv->putScalar(2.0);
 
   // we need flux and dummy solution to populate nonlinear coefficient
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs));
@@ -129,8 +129,8 @@ void RunTestGravity(std::string op_list_name) {
   CompositeVector& rhs1 = *op1->global_operator()->rhs();
   CompositeVector& rhs2 = *op2->global_operator()->rhs();
 
-  rhs1.Norm2(&a1);
-  rhs2.Norm2(&a2);
+  a1 = rhs1.norm2();
+  a2 = rhs2.norm2();
 
   if (getRank == 0) {
     std::cout << "||rhs1||=" << a1 << std::endl;

@@ -159,7 +159,7 @@ void AnalyticDGBase::ComputeCellError(
     const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     double volume = mesh_->cell_volume(c,false);
 
-    int nk = p.NumVectors();
+    int nk = p.getNumVectors();
     Amanzi::WhetStone::DenseVector data(nk);
     for (int i = 0; i < nk; ++i) data(i) = p[i][c];
 
@@ -237,7 +237,7 @@ void AnalyticDGBase::ComputeCellErrorRemap(
     const Amanzi::AmanziGeometry::Point& yc = mesh1->cell_centroid(c);
     double volume = mesh1->cell_volume(c,false);
 
-    int nk = p.NumVectors();
+    int nk = p.getNumVectors();
     Amanzi::WhetStone::DenseVector data(nk);
     Amanzi::WhetStone::Polynomial poly;
     for (int i = 0; i < nk; ++i) data(i) = p[i][c];

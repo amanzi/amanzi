@@ -47,7 +47,7 @@ int Operator_Diagonal::ApplyMatrixFreeOp(
       v(i) = Xi[0][col_lids[n][i]];
     }
 
-    Acell.Multiply(v, av, false);
+    Acell.elementWiseMultiply(v, av, false);
 
     for (int i = 0; i != nrows; ++i) {
       Yi[0][row_lids[n][i]] += av(i);

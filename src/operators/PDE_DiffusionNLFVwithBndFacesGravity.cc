@@ -58,7 +58,7 @@ void PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
   PDE_DiffusionNLFVwithBndFaces::UpdateMatrices(flux, hh.ptr());
 
   // add gravity fluxes to the right-hand side.
-  global_op_->rhs()->PutScalarGhosted(0.0);
+  global_op_->rhs()->putScalarGhosted(0.0);
 
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell", true);
@@ -82,7 +82,7 @@ void PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
         v(n) = zc * rho_g;
       }
 
-      Aface.Multiply(v, av, false);
+      Aface.elementWiseMultiply(v, av, false);
 
       for (int n = 0; n < ncells; n++) {
         rhs_cell[0][cells[n]] -= av(n);

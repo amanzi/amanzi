@@ -510,7 +510,7 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
 
   CompositeVector beta(cvs, true);
   Epetra_MultiVector& beta_face = *beta.ViewComponent("face", true);
-  beta.PutScalar(0.0);
+  beta.putScalar(0.0);
 
   AmanziMesh::Entity_ID_List faces, cells;
   std::vector<AmanziGeometry::Point> bisectors;
@@ -541,7 +541,7 @@ void PDE_DiffusionFV::ComputeTransmissibility_()
 
   // Compute transmissibilities. Since it is done only once, we repeat
   // some calculatons.
-  transmissibility_->PutScalar(0.0);
+  transmissibility_->putScalar(0.0);
 
   for (int f = 0; f < nfaces_owned; f++) {
     trans_face[0][f] = 1.0 / beta_face[0][f];

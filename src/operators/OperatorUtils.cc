@@ -33,10 +33,10 @@ int CopyCompositeVectorToSuperVector(const SuperMap& smap,
 {
   for (const auto& compname : cv) {
     if (smap.HasComponent(block_num, compname)) {
-      for (int dofnum=0; dofnum!=cv.NumVectors(compname); ++dofnum) {
+      for (int dofnum=0; dofnum!=cv.getNumVectors(compname); ++dofnum) {
         const auto& inds = smap.Indices(block_num, compname, dofnum);
         const auto& data = *cv.ViewComponent(compname, false);
-        for (int f=0; f!=data.MyLength(); ++f) sv[inds[f]] = data[dofnum][f];
+        for (int f=0; f!=data.getLocalLength(); ++f) sv[inds[f]] = data[dofnum][f];
       }
     }
   }
@@ -52,10 +52,10 @@ int CopySuperVectorToCompositeVector(const SuperMap& smap,
 {
   for (const auto& compname : cv) {
     if (smap.HasComponent(block_num, compname)) {
-      for (int dofnum=0; dofnum!=cv.NumVectors(compname); ++dofnum) {
+      for (int dofnum=0; dofnum!=cv.getNumVectors(compname); ++dofnum) {
         const auto& inds = smap.Indices(block_num, compname, dofnum);
         auto& data = *cv.ViewComponent(compname, false);
-        for (int f=0; f!=data.MyLength(); ++f) data[dofnum][f] = sv[inds[f]];
+        for (int f=0; f!=data.getLocalLength(); ++f) data[dofnum][f] = sv[inds[f]];
       }
     }
   }
@@ -71,10 +71,10 @@ int AddSuperVectorToCompositeVector(const SuperMap& smap,
 {
   for (const auto& compname : cv) {
     if (smap.HasComponent(block_num, compname)) { 
-      for (int dofnum=0; dofnum!=cv.NumVectors(compname); ++dofnum) {
+      for (int dofnum=0; dofnum!=cv.getNumVectors(compname); ++dofnum) {
         const auto& inds = smap.Indices(block_num, compname, dofnum);
         auto& data = *cv.ViewComponent(compname, false);
-        for (int f=0; f!=data.MyLength(); ++f) data[dofnum][f] += sv[inds[f]];
+        for (int f=0; f!=data.getLocalLength(); ++f) data[dofnum][f] += sv[inds[f]];
       }
     }
   }
@@ -95,7 +95,7 @@ int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector
     for (int k = 0; k < it->num; ++k) {
       const std::vector<int>& inds = smap.Indices(block_num, name, k);
       const Epetra_MultiVector& data = *cv.ViewComponent(name);
-      for (int n = 0; n != data.MyLength(); ++n) sv[inds[n]] = data[k][n];
+      for (int n = 0; n != data.getLocalLength(); ++n) sv[inds[n]] = data[k][n];
     }
   }
 
@@ -115,7 +115,7 @@ int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& 
     for (int k = 0; k < it->num; ++k) {
       const std::vector<int>& inds = smap.Indices(block_num, name, k);
       Epetra_MultiVector& data = *cv.ViewComponent(name);
-      for (int n = 0; n != data.MyLength(); ++n) data[k][n] = sv[inds[n]];
+      for (int n = 0; n != data.getLocalLength(); ++n) data[k][n] = sv[inds[n]];
     }
   }
 

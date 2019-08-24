@@ -56,7 +56,7 @@ struct test_cv {
 SUITE(COMPOSITE_VECTOR) {
   TEST_FIXTURE(test_cv, CVAccessTiming) {
     x->CreateData();
-    x->PutScalar(2.0);
+    x->putScalar(2.0);
 
     Teuchos::RCP<Teuchos::Time> cvtime =
         Teuchos::TimeMonitor::getNewCounter("composite vector access");

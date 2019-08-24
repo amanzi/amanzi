@@ -90,7 +90,7 @@ SUITE(EVALUATORS_CV) {
 
     // Setup fields and marked as initialized
     S.Setup();
-    S.GetW<CompositeVector>("fa", "fa").PutScalar(1.0);
+    S.GetW<CompositeVector>("fa", "fa").putScalar(1.0);
     S.GetRecordW("fa", "fa").set_initialized();
     S.Initialize();
 
@@ -171,7 +171,7 @@ SUITE(EVALUATORS_CV) {
     CHECK(S.Get<CompositeVector>("fa", "").Mesh() == S.GetMesh("domain"));
 
     // initialize
-    S.GetW<CompositeVector>("fb", "", "fb").PutScalar(3.0);
+    S.GetW<CompositeVector>("fb", "", "fb").putScalar(3.0);
     S.GetRecordW("fb", "fb").set_initialized();
     S.Initialize();
 
@@ -207,7 +207,7 @@ SUITE(EVALUATORS_CV) {
     CHECK_CLOSE(2.0, S.GetDerivative<CompositeVector>("fa", "", "fb", "").ViewComponent<AmanziDefaultHost>("cell",false)(0,0), 1.e-10);
 
     // change the primary and mark as changed
-    S.GetW<CompositeVector>("fb", "", "fb").PutScalar(14.0);
+    S.GetW<CompositeVector>("fb", "", "fb").putScalar(14.0);
     auto eval = S.GetEvaluatorPtr("fb");
     auto eval_p = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector,CompositeVectorSpace>>(eval);
     CHECK(eval_p.get());

@@ -164,9 +164,9 @@ void RunTestDiffusionMixed(int dim, double gravity, std::string pc_name = "Hypre
   CompositeVector rhs = *global_op->rhs();
   Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(rhs));
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(rhs));
-  solution->PutScalar(0.0);
+  solution->putScalar(0.0);
 
-  int ierr = solver.ApplyInverse(rhs, *solution);
+  int ierr = solver.applyInverse(rhs, *solution);
 
   if (getRank == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
@@ -310,9 +310,9 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
 
   CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs);
-  solution.PutScalar(0.0);
+  solution.putScalar(0.0);
 
-  int ierr = solver.ApplyInverse(rhs, solution);
+  int ierr = solver.applyInverse(rhs, solution);
 
   if (getRank == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 

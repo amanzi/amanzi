@@ -94,7 +94,7 @@ void RankEvaluator::Update_(const Teuchos::Ptr<State> &S) {
   MultiVector_type &rank_c = *rank->ViewComponent("cell", false);
 
   // initialize from mesh
-  for (int c = 0; c != rank_c.MyLength(); ++c) {
+  for (int c = 0; c != rank_c.getLocalLength(); ++c) {
     rank_c[0][c] = rank->Comm().MyPID();
   }
 }

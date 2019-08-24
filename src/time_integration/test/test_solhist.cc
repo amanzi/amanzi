@@ -35,7 +35,7 @@ SUITE(SolutionHistoryTests) {
     // create a solution history of size three
     Teuchos::RCP<Amanzi::SolutionHistory<Epetra_Vector> > SH =
         Teuchos::rcp(new Amanzi::SolutionHistory<Epetra_Vector>(3, 0.0, *x));
-    x->PutScalar(1.0);
+    x->putScalar(1.0);
     CHECK_EQUAL(SH->history_size(), 1);
     CHECK_EQUAL(SH->MostRecentTime(), 0.0);
 
@@ -44,13 +44,13 @@ SUITE(SolutionHistoryTests) {
     CHECK_EQUAL(SH->history_size(), 2);
     CHECK_EQUAL(SH->MostRecentTime(), 1.0);
 
-    x->PutScalar(4.0);
+    x->putScalar(4.0);
     SH->RecordSolution(2.0, *x);
 
     CHECK_EQUAL(SH->history_size(), 3);
     CHECK_EQUAL(SH->MostRecentTime(), 2.0);
 
-    x->PutScalar(9.0);
+    x->putScalar(9.0);
     SH->RecordSolution(3.0, *x);
 
     CHECK_EQUAL(SH->history_size(), 3);
@@ -84,8 +84,8 @@ SUITE(SolutionHistoryTests) {
 
     // from the quadratic through (1,1),(2,4),(3,9)
     // we should get 6.25
-    // x->PutScalar(6.25);
-    // x->Update(-1.0, *y, 1.0);
+    // x->putScalar(6.25);
+    // x->update(-1.0, *y, 1.0);
     y->NormInf(norminf);
     CHECK_EQUAL(norminf[0], 6.25);
 
@@ -102,14 +102,14 @@ SUITE(SolutionHistoryTests) {
     std::cout << "Test: SolutionHistory_2" << std::endl;
     Teuchos::RCP<Epetra_Vector> xdot = Teuchos::rcp(new Epetra_Vector(*x));
 
-    x->PutScalar(0.0);
-    xdot->PutScalar(0.0);
+    x->putScalar(0.0);
+    xdot->putScalar(0.0);
     // create a solution history of size three
     Teuchos::RCP<Amanzi::SolutionHistory<Epetra_Vector> > SH =
         Teuchos::rcp(new Amanzi::SolutionHistory<Epetra_Vector>(4, 0.0, *x, *xdot));
 
-    x->PutScalar(1.0);
-    xdot->PutScalar(2.0);
+    x->putScalar(1.0);
+    xdot->putScalar(2.0);
     SH->RecordSolution(1.0, *x, *xdot);
 
     Teuchos::RCP<Epetra_Vector> y = Teuchos::rcp(new Epetra_Vector(*x));

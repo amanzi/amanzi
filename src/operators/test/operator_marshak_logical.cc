@@ -125,10 +125,10 @@ void RunTestMarshakLogical(std::string op_list_name) {
   }
 
   CompositeVector solution(*cvs);
-  solution.PutScalar(knc->TemperatureFloor);  // solution at time T=0
+  solution.putScalar(knc->TemperatureFloor);  // solution at time T=0
 
   CompositeVector heat_capacity(*cvs);
-  heat_capacity.PutScalar(1.0);
+  heat_capacity.putScalar(1.0);
 
   // Create upwind model
   ParameterList& ulist = plist.sublist("PK operator").sublist("upwind");
@@ -193,12 +193,12 @@ void RunTestMarshakLogical(std::string op_list_name) {
 
     CompositeVector rhs = *global_op->rhs();
     solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
-    int ierr = solver->ApplyInverse(rhs, solution);
+    int ierr = solver->applyInverse(rhs, solution);
 
     step++;
     T += dT;
 
-    solution.ViewComponent("cell")->Norm2(&snorm);
+    snorm = solution.ViewComponent("cell")->norm2();
 
     if (getRank == 0) {
       printf("%3d  ||r||=%11.6g  itr=%2d  ||sol||=%11.6g  T=%7.4f  dT=%7.4f\n",
@@ -207,7 +207,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
 
     // change time step
     Epetra_MultiVector sol_diff(sol_old);
-    sol_diff.Update(1.0, sol_new, -1.0);
+    sol_diff.update(1.0, sol_new, -1.0);
 
     double ds_max, ds_rel(0.0);
     for (int c = 0; c < ncells_owned; c++) {

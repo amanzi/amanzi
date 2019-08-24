@@ -182,7 +182,7 @@ void Evaluator_PDE_Diffusion::Update_(State &S) {
   // create the global operator
   Operators::Operator_Factory global_op_fac;
   global_op_fac.set_mesh(A_rhs->Mesh());
-  global_op_fac.set_cvs(A_rhs->Map(), A_rhs->Map());
+  global_op_fac.set_cvs(A_rhs->getMap(), A_rhs->getMap());
   auto global_op = global_op_fac.Create();
 
   // set up the global operator
@@ -219,7 +219,7 @@ void Evaluator_PDE_Diffusion::UpdateDerivative_(State &S, const Key &wrt_key, co
   // create the global operator
   Operators::Operator_Factory global_op_fac;
   global_op_fac.set_mesh(A_rhs.Mesh());
-  global_op_fac.set_cvs(A_rhs.Map(), A_rhs.Map());
+  global_op_fac.set_cvs(A_rhs.getMap(), A_rhs.getMap());
   auto global_op = global_op_fac.Create();
 
   // set up the global operator

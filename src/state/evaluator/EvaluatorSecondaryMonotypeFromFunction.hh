@@ -75,7 +75,7 @@ protected:
   virtual void EvaluatePartialDerivative_(const State &S,
           const Key &wrt_key, const Key &wrt_tag, const std::vector<CompositeVector*> &results) override {
     for (auto& r : results) {
-      r->PutScalar(0.);
+      r->putScalar(0.);
     }
   }
 

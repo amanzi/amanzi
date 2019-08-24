@@ -110,42 +110,42 @@ struct test_state {
 SUITE(COPY) {
   // test the field copy constructor
   TEST_FIXTURE(test_field, FieldCopy) {
-    field->GetFieldData()->PutScalar(2.0);
+    field->GetFieldData()->putScalar(2.0);
     Teuchos::RCP<Field_CompositeVector> newfield =
         Teuchos::rcp(new Field_CompositeVector(*field));
-    newfield->GetFieldData()->PutScalar(3.0);
+    newfield->GetFieldData()->putScalar(3.0);
     CHECK_CLOSE(3.0, get_value(newfield), 0.00001);
     CHECK_CLOSE(2.0, get_value(field), 0.00001);
   }
 
   // test the field Clone constructor
   TEST_FIXTURE(test_field, FieldClone) {
-    field->GetFieldData()->PutScalar(2.0);
+    field->GetFieldData()->putScalar(2.0);
     Teuchos::RCP<Field> newfield = field->Clone();
-    newfield->GetFieldData()->PutScalar(3.0);
+    newfield->GetFieldData()->putScalar(3.0);
     CHECK_CLOSE(3.0, get_value(newfield), 0.00001);
     CHECK_CLOSE(2.0, get_value(field), 0.00001);
   }
 
   // test the state copy constructor
   TEST_FIXTURE(test_state, StateCopy) {
-    state->GetFieldData("fieldname", "owner")->PutScalar(2.0);
+    state->GetFieldData("fieldname", "owner")->putScalar(2.0);
     State newstate(*state);
 
-    newstate.GetFieldData("fieldname", "owner")->PutScalar(3.0);
+    newstate.GetFieldData("fieldname", "owner")->putScalar(3.0);
     CHECK_CLOSE(3.0, get_value(newstate), 0.00001);
     CHECK_CLOSE(2.0, get_value(*state), 0.00001);
   }
 
   // test the state assignment operator
   TEST_FIXTURE(test_state, StateAssignment) {
-    state->GetFieldData("fieldname", "owner")->PutScalar(2.0);
+    state->GetFieldData("fieldname", "owner")->putScalar(2.0);
 
     // copy construct the new state to get the same structure
     Teuchos::RCP<State> newstate = Teuchos::rcp(new State(*state));
 
     // reset the value to test the operator=
-    newstate->GetFieldData("fieldname", "owner")->PutScalar(0.0);
+    newstate->GetFieldData("fieldname", "owner")->putScalar(0.0);
     CHECK_CLOSE(2.0, get_value(*state), 0.00001);
     CHECK_CLOSE(0.0, get_value(*newstate), 0.00001);
 
@@ -155,7 +155,7 @@ SUITE(COPY) {
     CHECK_CLOSE(2.0, get_value(*newstate), 0.00001);
 
     // test copies are deep
-    newstate->GetFieldData("fieldname", "owner")->PutScalar(3.0);
+    newstate->GetFieldData("fieldname", "owner")->putScalar(3.0);
     CHECK_CLOSE(3.0, get_value(*newstate), 0.00001);
     CHECK_CLOSE(2.0, get_value(*state), 0.00001);
   }

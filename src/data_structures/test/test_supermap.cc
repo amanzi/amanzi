@@ -168,8 +168,8 @@ TEST(SUPERMAP_MANUAL) {
   }
 
   // check num dofs
-  CHECK(map.NumVectors("map1") == 2);
-  CHECK(map.NumVectors("map2") == 2);
+  CHECK(map.getNumVectors("map1") == 2);
+  CHECK(map.getNumVectors("map2") == 2);
 
   // check that the maps properly export
   Vector_type_<int> ghosted(map.GhostedMap());

@@ -72,8 +72,8 @@ class Op {
   // Clean the operator without destroying memory
   void Init() {
     if (diag != Teuchos::null) {
-      diag->PutScalar(0.0);
-      diag_shadow->PutScalar(0.0);
+      diag->putScalar(0.0);
+      diag_shadow->putScalar(0.0);
     }
 
     WhetStone::DenseMatrix null_mat;
@@ -138,7 +138,7 @@ class Op {
     for (int i = 0; i != matrices.size(); ++i) {
       matrices[i] *= scaling;
     }
-    if (diag.get()) diag->Scale(scaling);
+    if (diag.get()) diag->scale(scaling);
   }
 
   // access

@@ -31,7 +31,7 @@ class AnalyticDG02 : public AnalyticDGBase {
   virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) override {
     Amanzi::WhetStone::Tensor K(d_, 2);
     if (d_ == 3) {
-      K.PutScalar(0.0);
+      K.putScalar(0.0);
       K(2, 2) = 1.0;
     }
     K(0, 0) = 1.0;

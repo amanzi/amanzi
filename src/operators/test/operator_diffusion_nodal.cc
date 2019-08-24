@@ -107,7 +107,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   // create source and add it to the operator
   CompositeVector source(cvs);
   Epetra_MultiVector& src = *source.ViewComponent("node", true);
-  src.PutScalar(0.0);
+  src.putScalar(0.0);
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
@@ -156,9 +156,9 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
 
   CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs);
-  solution.PutScalar(0.0);
+  solution.putScalar(0.0);
 
-  int ierr = solver.ApplyInverse(rhs, solution);
+  int ierr = solver.applyInverse(rhs, solution);
 
   if (getRank == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
@@ -305,9 +305,9 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
 
   CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs);
-  solution.PutScalar(0.0);
+  solution.putScalar(0.0);
 
-  int ierr = solver.ApplyInverse(rhs, solution);
+  int ierr = solver.applyInverse(rhs, solution);
 
   if (getRank == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 

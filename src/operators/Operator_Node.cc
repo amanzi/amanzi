@@ -33,7 +33,7 @@ void Operator_Node::UpdateRHS(const CompositeVector& source, bool volume_include
   if (volume_included) {
     Operator::UpdateRHS(source);
   } else {
-    rhs_->PutScalarGhosted(0.0);
+    rhs_->putScalarGhosted(0.0);
     Epetra_MultiVector& rhs_v = *rhs_->ViewComponent("node", true);
     const Epetra_MultiVector& source_v = *source.ViewComponent("node", true);
 
@@ -64,7 +64,7 @@ int Operator_Node::ApplyMatrixFreeOp(const Op_Cell_Node& op,
 
   X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xn = *X.ViewComponent("node", true);
-  Y.PutScalarGhosted(0.0);
+  Y.putScalarGhosted(0.0);
 
   {
     Epetra_MultiVector& Yn = *Y.ViewComponent("node", true);
@@ -80,7 +80,7 @@ int Operator_Node::ApplyMatrixFreeOp(const Op_Cell_Node& op,
       }
 
       const WhetStone::DenseMatrix& Acell = op.matrices[c];
-      Acell.Multiply(v, av, false);
+      Acell.elementWiseMultiply(v, av, false);
 
       for (int n = 0; n != nnodes; ++n) {
         Yn[0][nodes[n]] += av(n);
@@ -102,7 +102,7 @@ int Operator_Node::ApplyMatrixFreeOp(const Op_Node_Node& op,
   const Epetra_MultiVector& Xn = *X.ViewComponent("node");
   Epetra_MultiVector& Yn = *Y.ViewComponent("node");
 
-  for (int i = 0; i < Xn.NumVectors(); ++i) {
+  for (int i = 0; i < Xn.getNumVectors(); ++i) {
     for (int v = 0; v != nnodes_owned; ++v) {
       Yn[i][v] += Xn[i][v] * (*op.diag)[i][v];
     }
@@ -206,7 +206,7 @@ void Operator_Node::AssembleMatrixOp(const Op_Node_Node& op,
                                      const SuperMap& map, MatrixFE& mat,
                                      int my_block_row, int my_block_col) const
 {
-  AMANZI_ASSERT(op.diag->NumVectors() == 1);
+  AMANZI_ASSERT(op.diag->getNumVectors() == 1);
 
   const std::vector<int>& node_row_inds = map.GhostIndices(my_block_row, "node", 0);
   const std::vector<int>& node_col_inds = map.GhostIndices(my_block_col, "node", 0);

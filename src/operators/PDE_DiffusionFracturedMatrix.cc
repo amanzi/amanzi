@@ -101,7 +101,7 @@ void PDE_DiffusionFracturedMatrix::UpdateMatrices(
       auto& Acell = local_op_->matrices[c];
 
       WhetStone::DenseMatrix Anew(np + 1, np + 1);
-      Anew.PutScalar(0.0);
+      Anew.putScalar(0.0);
 
       for (int i = 0; i < nfaces + 1; ++i) {
         for (int j = 0; j < nfaces + 1; ++j) {
@@ -124,7 +124,7 @@ void PDE_DiffusionFracturedMatrix::UpdateMatrices(
         v(n) = -(zf - zc) * rho_ * norm(g_);
       }
 
-      Wff.Multiply(v, av, false);
+      Wff.elementWiseMultiply(v, av, false);
 
       for (int n = 0; n < nfaces; n++) {
         rhs_face[0][lid[n]] += av(n); 
@@ -158,7 +158,7 @@ void PDE_DiffusionFracturedMatrix::ApplyBCs(
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
   const std::vector<double>& bc_mixed = bcs_trial_[0]->bc_mixed();
 
-  global_op_->rhs()->PutScalarGhosted(0.0);
+  global_op_->rhs()->putScalarGhosted(0.0);
   Epetra_MultiVector& rhs_face = *global_op_->rhs()->ViewComponent("face", true);
   Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
 
@@ -267,7 +267,7 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
     const Teuchos::Ptr<CompositeVector>& flux)
 {
   // Initialize intensity in ghost faces.
-  flux->PutScalarMasterAndGhosted(0.0);
+  flux->putScalarMasterAndGhosted(0.0);
   u->ScatterMasterToGhosted("face");
 
   const Epetra_MultiVector& u_cell = *u->ViewComponent("cell");
@@ -278,8 +278,8 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
   const auto& fmap = *cvs_->Map("face", true);
   const auto& cmap = mesh_->cell_map(true);
 
-  int ndofs_owned = flux->ViewComponent("face")->MyLength();
-  int ndofs_wghost = flux_data.MyLength();
+  int ndofs_owned = flux->ViewComponent("face")->getLocalLength();
+  int ndofs_wghost = flux_data.getLocalLength();
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -320,9 +320,9 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
     av.Reshape(np + 1);
 
     if (local_op_->matrices_shadow[c].NumRows() == 0) { 
-      local_op_->matrices[c].Multiply(v, av, false);
+      local_op_->matrices[c].elementWiseMultiply(v, av, false);
     } else {
-      local_op_->matrices_shadow[c].Multiply(v, av, false);
+      local_op_->matrices_shadow[c].elementWiseMultiply(v, av, false);
     }
 
     if (gravity_) {
@@ -334,7 +334,7 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
       }
 
       WhetStone::DenseMatrix& Wff = Wff_cells_[c];
-      Wff.Multiply(w, aw, false);
+      Wff.elementWiseMultiply(w, aw, false);
 
       for (int n = 0; n < nfaces; n++) {
         av(map[n]) -= aw(n);

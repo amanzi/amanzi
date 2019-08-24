@@ -109,7 +109,7 @@ void PDE_Electromagnetics::ApplyBCs_Edge_(
   AmanziMesh::Entity_ID_List edges, faces, cells;
   std::vector<int> edirs, fdirs;
 
-  global_op_->rhs()->PutScalarGhosted(0.0);
+  global_op_->rhs()->putScalarGhosted(0.0);
   Epetra_MultiVector& rhs_edge = *global_op_->rhs()->ViewComponent("edge", true);
 
   // support of surface integrals
@@ -168,7 +168,7 @@ void PDE_Electromagnetics::ApplyBCs_Edge_(
 
           WhetStone::DenseMatrix M(nedges, nedges);
           mfd3d.MassMatrixBoundary(f, T, M);
-          M.Multiply(b, mb, false);
+          M.elementWiseMultiply(b, mb, false);
 
           // assemble data in the right-hand side
           for (int i = 0; i != nedges; ++i) {

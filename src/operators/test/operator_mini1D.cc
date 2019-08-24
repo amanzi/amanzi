@@ -71,7 +71,7 @@ void MiniDiffusion1D_Constant(double bcl, int type_l, double bcr, int type_r) {
 
     // solve the problem
     WhetStone::DenseVector sol(rhs);
-    op.ApplyInverse(rhs, sol);  
+    op.applyInverse(rhs, sol);  
 
     // compute error
     double hc, xc, err, pnorm(1.0), hnorm(1.0);
@@ -151,7 +151,7 @@ void MiniDiffusion1D_Variable(double bcl, int type_l, double bcr, int type_r) {
 
     // solve the problem
     WhetStone::DenseVector sol(rhs);
-    op.ApplyInverse(rhs, sol);  
+    op.applyInverse(rhs, sol);  
 
     // compute error
     double hc, xc, err, pnorm(1.0), hnorm(1.0);

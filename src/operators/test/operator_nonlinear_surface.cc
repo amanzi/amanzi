@@ -71,7 +71,7 @@ class HeatConduction {
       values_f[0][f] = 0.3 + uf[0][f];
     }
 
-    derivatives_->PutScalar(1.0);
+    derivatives_->putScalar(1.0);
   }
 
   Teuchos::RCP<CompositeVector> values() { return values_; }
@@ -150,14 +150,14 @@ void RunTest(std::string op_list_name) {
   // create and initialize state variables.
   Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(*cvs));
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(*cvs));
-  solution->PutScalar(0.0);  // solution at time T=0
+  solution->putScalar(0.0);  // solution at time T=0
 
   CompositeVector phi(*cvs);
-  phi.PutScalar(0.2);
+  phi.putScalar(0.2);
 
   // create source and add it to the operator
   CompositeVector source(*cvs);
-  source.PutScalarMasterAndGhosted(0.0);
+  source.putScalarMasterAndGhosted(0.0);
   
   Epetra_MultiVector& src = *source.ViewComponent("cell");
   for (int c = 0; c < 20; c++) {
@@ -216,7 +216,7 @@ void RunTest(std::string op_list_name) {
     solver->Init(lop_list);
 
     CompositeVector rhs = *global_op->rhs();
-    int ierr = solver->ApplyInverse(rhs, *solution);
+    int ierr = solver->applyInverse(rhs, *solution);
 
     if (op_list_name == "diffusion operator")
          ver.CheckResidual(*solution, 1.0e-12);
@@ -226,7 +226,7 @@ void RunTest(std::string op_list_name) {
 
     if (getRank == 0) {
       double a;
-      rhs.Norm2(&a);
+      a = rhs.norm2();
       std::cout << "pressure solver (gmres): ||r||=" << solver->residual() << " itr=" << num_itrs
                 << "  ||f||=" << a 
                 << " code=" << solver->returned_code() << std::endl;
@@ -236,7 +236,7 @@ void RunTest(std::string op_list_name) {
     op.UpdateFlux(solution.ptr(), flux.ptr());
 
     // turn off the source
-    source.PutScalar(0.0);
+    source.putScalar(0.0);
   }
  
   if (getRank == 0) {

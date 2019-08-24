@@ -80,8 +80,8 @@ SUITE(ODEIntegrationTests) {
         Teuchos::rcp(new BDF1_TI<Epetra_Vector, Epetra_BlockMap>(NF, plist, init));
 
     // initial value
-    u->PutScalar(-1.0);
-    u_dot->PutScalar(1.0);
+    u->putScalar(-1.0);
+    u_dot->putScalar(1.0);
 
     // initial time
     double t=0.0;
@@ -122,11 +122,11 @@ SUITE(ODEIntegrationTests) {
     } while (tout > tlast);
 
     // compute the error with the exact solution
-    u_ex->PutScalar(-1.0/3.0);
-    u->Update(1.0, *u_ex, -1.0);
+    u_ex->putScalar(-1.0/3.0);
+    u->update(1.0, *u_ex, -1.0);
 
     double norm;
-    u->NormInf(&norm);
+    norm = u->normInf();
 
     TS->ReportStatistics_();
     CHECK_CLOSE(0.0,norm,1e-3);
@@ -161,8 +161,8 @@ SUITE(ODEIntegrationTests) {
         Teuchos::rcp(new BDF1_TI<Epetra_Vector, Epetra_BlockMap>(NF, plist, init));
 
     // initial value
-    u->PutScalar(-1.0);
-    u_dot->PutScalar(1.0);
+    u->putScalar(-1.0);
+    u_dot->putScalar(1.0);
 
     // initial time
     double t=0.0;
@@ -203,11 +203,11 @@ SUITE(ODEIntegrationTests) {
     } while (tout > tlast);
 
     // compute the error with the exact solution
-    u_ex->PutScalar(-1.0/3.0);
-    u->Update(1.0, *u_ex, -1.0);
+    u_ex->putScalar(-1.0/3.0);
+    u->update(1.0, *u_ex, -1.0);
 
     double norm;
-    u->NormInf(&norm);
+    norm = u->normInf();
 
     TS->ReportStatistics_();
     CHECK_CLOSE(0.0,norm,1e-3);

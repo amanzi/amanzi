@@ -72,8 +72,8 @@ void ReconstructionCell::ComputeGradient(const AmanziMesh::Entity_ID_List& ids)
     CellFaceAdjCellsNonManifold_(c, AmanziMesh::Parallel_type::ALL, cells);
     int ncells = cells.size();
 
-    matrix.PutScalar(0.0);
-    rhs.PutScalar(0.0);
+    matrix.putScalar(0.0);
+    rhs.putScalar(0.0);
 
     for (int n = 0; n < ncells; n++) {
       const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(cells[n]);

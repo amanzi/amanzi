@@ -173,7 +173,7 @@ void RemapDG::FunctionalTimeDerivative(
   op_flux_->ApplyBCs(true, true, true);
 
   // -- calculate right-hand_side
-  op_flux_->global_operator()->Apply(*field_, f);
+  op_flux_->global_operator()->apply(*field_, f);
 
   nfun_++;
 }
@@ -194,7 +194,7 @@ void RemapDG::ModifySolution(double t, CompositeVector& u)
   // solve the problem with the mass matrix
   auto& matrices = op_reac_->local_matrices()->matrices;
   for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
-  op_reac_->global_operator()->Apply(u, *field_);
+  op_reac_->global_operator()->apply(u, *field_);
 
   // limit non-conservative field and update the conservative field
   if (is_limiter_) {
@@ -210,7 +210,7 @@ void RemapDG::ModifySolution(double t, CompositeVector& u)
     // -- shift mean values
     auto& climiter = *limiter_->limiter();
     auto& u_c = *u.ViewComponent("cell");
-    int nk = u_c.NumVectors();
+    int nk = u_c.getNumVectors();
 
     for (int c = 0; c < ncells_owned_; ++c) {
       double a = climiter[c];
@@ -225,7 +225,7 @@ void RemapDG::ModifySolution(double t, CompositeVector& u)
     }
 
     // -- update conservative field
-    op_reac_->global_operator()->Apply(*field_, u);
+    op_reac_->global_operator()->apply(*field_, u);
   }
 }
 
@@ -298,7 +298,7 @@ void RemapDG::DynamicCellVelocity(double t)
 void RemapDG::ApplyLimiter(double t, CompositeVector& x)
 {
   const Epetra_MultiVector& x_c = *x.ViewComponent("cell", true);
-  int nk = x_c.NumVectors();
+  int nk = x_c.getNumVectors();
 
   // create list of cells where to apply limiter
   double L(-1.0);
@@ -324,7 +324,7 @@ void RemapDG::ApplyLimiter(double t, CompositeVector& x)
 
   int nids, itmp = ids.size();
   mesh0Teuchos::reduceAll(*_->get_comm(), Teuchos::REDUCE_SUM, 1, &itmp, &nids);
-  sharp_ = std::max(sharp_, 100.0 * nids / x.ViewComponent("cell")->GlobalLength());
+  sharp_ = std::max(sharp_, 100.0 * nids / x.ViewComponent("cell")->getGlobalLength());
 
   // apply limiter
   std::vector<int> bc_model(nfaces_wghost_, OPERATOR_BC_NONE);
@@ -383,7 +383,7 @@ void RemapDG::NonConservativeToConservative(
 
   op_reac_->Setup(det_);
   op_reac_->UpdateMatrices(Teuchos::null);
-  op_reac_->global_operator()->Apply(u, v);
+  op_reac_->global_operator()->apply(u, v);
 }
 
 void RemapDG::ConservativeToNonConservative(
@@ -398,7 +398,7 @@ void RemapDG::ConservativeToNonConservative(
   auto& matrices = op_reac_->local_matrices()->matrices;
   for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
 
-  op_reac_->global_operator()->Apply(u, v);
+  op_reac_->global_operator()->apply(u, v);
 }
 
 }  // namespace Operators

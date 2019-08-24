@@ -12,8 +12,8 @@
 #include "LinearOperatorPCG.hh"
 #include "LinearOperatorGMRES.hh"
 #include "LinearOperatorNKA.hh"
-#include "LinearOperatorBelosGMRES.hh"
-#include "LinearOperatorAmesos.hh"
+// #include "LinearOperatorBelosGMRES.hh"
+// #include "LinearOperatorAmesos.hh"
 
 using namespace Amanzi;
 

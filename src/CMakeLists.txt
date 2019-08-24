@@ -28,7 +28,7 @@ if (ENABLE_Unstructured)
   add_subdirectory(mesh_functions)
 
   # Output
-  add_subdirectory(output)
+  #add_subdirectory(output)
 
   # Solvers
   add_subdirectory(solvers)

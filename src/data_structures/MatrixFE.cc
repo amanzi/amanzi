@@ -43,9 +43,9 @@ MatrixFE::MatrixFE(const Teuchos::RCP<const GraphFE>& graph) :
 int
 MatrixFE::Zero() {
   int ierr(0);
-  ierr = matrix_->PutScalar(0.);
+  ierr = matrix_->putScalar(0.);
   if (graph_->includes_offproc())
-    ierr |= offproc_matrix_->PutScalar(0.);
+    ierr |= offproc_matrix_->putScalar(0.);
   return ierr;
 }
 
@@ -140,7 +140,7 @@ MatrixFE::DiagonalShift(double shift) {
   int ierr(0);
   Epetra_Vector diag(RowMap());
   ierr = matrix_->ExtractDiagonalCopy(diag);
-  for (int i=0; i!=diag.MyLength(); ++i) diag[i] += shift;
+  for (int i=0; i!=diag.getLocalLength(); ++i) diag[i] += shift;
   ierr |= matrix_->ReplaceDiagonalValues(diag);  
   return ierr;
 }
@@ -192,7 +192,7 @@ MatrixFE::FillComplete() {
     AMANZI_ASSERT(!ierr);
 
     // zero the offproc in case of multiple stage assembly and multiple calls to FillComplete()
-    ierr |= offproc_matrix_->PutScalar(0.);
+    ierr |= offproc_matrix_->putScalar(0.);
     AMANZI_ASSERT(!ierr);
   }
 

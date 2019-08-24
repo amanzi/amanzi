@@ -74,7 +74,7 @@ class Matrix {
     return 0;
   }
   int applyInverse(const Vector_type& v, Vector_type& hv) const {
-    return preconditioner_->ApplyInverse(v, hv);
+    return preconditioner_->applyInverse(v, hv);
   }
 
   const Map_ptr_type& getDomainMap() const { return map_; }

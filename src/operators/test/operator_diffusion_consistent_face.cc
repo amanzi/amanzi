@@ -127,7 +127,7 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
   // put in a random set of cell values
   CompositeVector x(cvs);
   x.Random();
-  x.ViewComponent("face")->PutScalar(0.);
+  x.ViewComponent("face")->putScalar(0.);
 
   op->UpdateConsistentFaces(x);
 
@@ -141,6 +141,6 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
   global_op->ComputeNegativeResidual(x,res);
 
   double norm;
-  res.ViewComponent("face",false)->NormInf(&norm);
+  norm = res.ViewComponent("face",false)->normInf();
   CHECK_CLOSE(0.0, norm, 1.e-8);
 }

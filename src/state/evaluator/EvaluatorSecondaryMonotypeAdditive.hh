@@ -57,7 +57,7 @@ public:
 protected:
 
   virtual void Evaluate_(const State &S, const std::vector<Data_t*> &results) override {
-    results[0]->PutScalar(0.);
+    results[0]->putScalar(0.);
     for (const auto& dep : this->dependencies_) {
       const auto& term = S.Get<Data_t>(dep.first, dep.second);
       double coef = coefs_[dep.first+":"+dep.second];
@@ -68,7 +68,7 @@ protected:
   virtual void EvaluatePartialDerivative_(const State &S,
           const Key &wrt_key, const Key &wrt_tag, const std::vector<Data_t*> &results) override {
     Key pname_full = wrt_key+":"+wrt_tag;
-    results[0]->PutScalar(coefs_[pname_full]);    
+    results[0]->putScalar(coefs_[pname_full]);    
   }
 
  protected:

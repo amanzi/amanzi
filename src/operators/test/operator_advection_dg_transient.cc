@@ -248,7 +248,7 @@ void AdvectionFn<AnalyticDG>::FunctionalTimeDerivative(
 
   CompositeVector& rhs = *global_op_->rhs();
   Epetra_MultiVector& rhs_c = *rhs.ViewComponent("cell");
-  rhs_c.PutScalar(0.0);
+  rhs_c.putScalar(0.0);
 
   for (int c = 0; c < ncells; ++c) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -330,10 +330,10 @@ void AdvectionFn<AnalyticDG>::FunctionalTimeDerivative(
   global_op_->ComputeResidual(u, u1);
 
   // invert vector
-  op_mass->global_operator()->Apply(u1, f);
+  op_mass->global_operator()->apply(u1, f);
 
   // statistics: l2 norm of solution
-  u.Dot(u, &l2norm);
+  l2norm = u.dot(u);
 }
 
 
@@ -418,7 +418,7 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
   const Epetra_MultiVector& u_c = *u.ViewComponent("cell", true);
 
   int dim = mesh_->space_dimension();
-  int nk = u_c.NumVectors();
+  int nk = u_c.getNumVectors();
   WhetStone::DenseVector data(nk);
 
   int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
@@ -456,7 +456,7 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
 
   CompositeVector vecf(*cvs);
   Epetra_MultiVector vecf_f = *vecf.ViewComponent("face", true);
-  vecf.PutScalar(0.0);
+  vecf.putScalar(0.0);
 
   for (int f = 0; f < nfaces_owned; ++f) {
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
@@ -545,7 +545,7 @@ void AdvectionFn<AnalyticDG>::ApplyLimiter(std::string& name, CompositeVector& u
   if (name == "Barth-Jespersen dg") {
     limiter.ApplyLimiter(u.ViewComponent("cell", true), *dg_, bc_model, bc_value);
   } else {
-    int nk = u_c.NumVectors();
+    int nk = u_c.getNumVectors();
     WhetStone::DenseVector data(nk);
 
     CompositeVectorSpace cvs;
@@ -589,7 +589,7 @@ void AdvectionFn<AnalyticDG>::ApplyLimiter(std::string& name, CompositeVector& u
   }
   Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_MIN, 1, &tmp1, &limiter_min);
   Teuchos::reduceAll(*mesh_->get_comm(), Teuchos::REDUCE_SUM, 1, &tmp2, &limiter_mean);
-  limiter_mean /= lim.Map().getMaxGlobalIndex() + 1;
+  limiter_mean /= lim.getMap().getMaxGlobalIndex() + 1;
 }
 
 }  // namespace Amanzi
@@ -697,7 +697,7 @@ void AdvectionTransient(std::string filename, int nx, int ny,
 
   CompositeVector& rhs = *fn.op_flux->global_operator()->rhs();
   CompositeVector sol(rhs), sol_next(rhs);
-  sol.PutScalar(0.0);
+  sol.putScalar(0.0);
 
   Epetra_MultiVector& sol_c = *sol.ViewComponent("cell");
   ana.InitialGuess(*dg, sol_c, 0.0);

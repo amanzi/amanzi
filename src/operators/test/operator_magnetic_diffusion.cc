@@ -124,8 +124,8 @@ void MagneticDiffusion2D(double dt, double tend,
   std::vector<int> edirs;
   AmanziMesh::Entity_ID_List cells, faces;
 
-  Ee.PutScalar(0.0);
-  Bf.PutScalar(0.0);
+  Ee.putScalar(0.0);
+  Bf.putScalar(0.0);
 
   for (int v = 0; v < nnodes_owned; ++v) {
     mesh->node_get_coordinates(v, &xv);
@@ -154,7 +154,7 @@ void MagneticDiffusion2D(double dt, double tend,
     // Add an accumulation term using dt=1 since time step is taken into
     // account in the system modification routine. Kc=constant FIXME
     CompositeVector phi(cvs_e);
-    phi.PutScalar(1.0 / Kc(0,0));
+    phi.putScalar(1.0 / Kc(0,0));
 
     Teuchos::RCP<PDE_Accumulation> op_acc = Teuchos::rcp(new PDE_Accumulation(AmanziMesh::NODE, global_op));
     op_acc->SetBCs(bc1, bc1);
@@ -192,7 +192,7 @@ void MagneticDiffusion2D(double dt, double tend,
     solver.Init(lop_list);
 
     CompositeVector& rhs = *global_op->rhs();
-    int ierr = solver.ApplyInverse(rhs, E);
+    int ierr = solver.applyInverse(rhs, E);
 
     double heat = op_mag->CalculateOhmicHeating(E);
     double energy = op_mag->CalculateMagneticEnergy(B);
@@ -212,7 +212,7 @@ void MagneticDiffusion2D(double dt, double tend,
 
     CompositeVector Bvec(*cvs);
     Epetra_MultiVector& sol = *Bvec.ViewComponent("cell"); 
-    sol.PutScalar(0.0);
+    sol.putScalar(0.0);
 
     std::vector<int> dirs;
     AmanziMesh::Entity_ID_List faces;
@@ -362,8 +362,8 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
   Epetra_MultiVector& Ee = *E.ViewComponent("edge");
   Epetra_MultiVector& Bf = *B.ViewComponent("face");
 
-  Ee.PutScalar(0.0);
-  Bf.PutScalar(0.0);
+  Ee.putScalar(0.0);
+  Bf.putScalar(0.0);
 
   for (int e = 0; e < nedges_owned; ++e) {
     double len = mesh->edge_length(e);
@@ -442,7 +442,7 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
     solver.Init(lop_list);
 
     CompositeVector& rhs = *global_op->rhs();
-    int ierr = solver.ApplyInverse(rhs, E);
+    int ierr = solver.applyInverse(rhs, E);
 
     double heat = op_mag->CalculateOhmicHeating(E);
     double energy = op_mag->CalculateMagneticEnergy(B);
@@ -466,7 +466,7 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
 
     CompositeVector Bvec(*cvs);
     Epetra_MultiVector& sol_b = *Bvec.ViewComponent("cell"); 
-    sol_b.PutScalar(0.0);
+    sol_b.putScalar(0.0);
 
     std::vector<int> dirs;
     AmanziMesh::Entity_ID_List faces;
@@ -499,7 +499,7 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
     // -- electric field
     CompositeVector Evec(*cvs);
     Epetra_MultiVector& sol_e = *Evec.ViewComponent("cell"); 
-    sol_e.PutScalar(0.0);
+    sol_e.putScalar(0.0);
 
     double avgE(0.0);
     WhetStone::MFD3D_Electromagnetics mfd(plist, mesh); 
@@ -518,7 +518,7 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
       }
 
       mfd.L2consistencyInverse(c, Ic, R, W, true);
-      R.Multiply(v1, v2, true);
+      R.elementWiseMultiply(v1, v2, true);
 
       double vol = mesh->cell_volume(c,false);
       for (int k = 0; k < 3; ++k) {

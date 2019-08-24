@@ -193,7 +193,7 @@ void AdvectionDiffusion2D(int nx, double* error)
 
   // solve the problem
   CompositeVector& rhs = *global_op->rhs();
-  rhs.Update(1.0, source, 1.0);
+  rhs.update(1.0, source, 1.0);
 
   ParameterList lop_list = plist.sublist("solvers")
                                 .sublist("AztecOO CG").sublist("gmres parameters");
@@ -202,8 +202,8 @@ void AdvectionDiffusion2D(int nx, double* error)
   solver.Init(lop_list);
 
   CompositeVector solution(*cvs);
-  solution.PutScalar(0.0);
-  int ierr = solver.ApplyInverse(rhs, solution);
+  solution.putScalar(0.0);
+  int ierr = solver.applyInverse(rhs, solution);
 
   // compute pressure error
   Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
