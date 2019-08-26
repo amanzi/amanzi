@@ -225,6 +225,9 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
   const auto& tcc_m = *S_->GetFieldData("total_component_concentration");
   const auto& tcc_f = *S_->GetFieldData("fracture-total_component_concentration");
 
+  pk_matrix -> UpdateBoundaryData( t_old,  t_new, tcc_m);
+  pk_fracture -> UpdateBoundaryData( t_old,  t_new, tcc_f);  
+
   pk_matrix->op()->rhs()->PutScalar(0.0);
   pk_matrix->op_acc()->local_op(0)->Rescale(0.0);
   pk_matrix->op_acc()->AddAccumulationDelta(tcc_m, phi_m, phi_m, dt, "cell");
