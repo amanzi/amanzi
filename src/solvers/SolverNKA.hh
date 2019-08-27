@@ -42,27 +42,27 @@ class SolverNKA : public Solver<Vector,VectorSpace> {
   }
 
   void Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-            const VectorSpace& map);
+            const Teuchos::RCP<const VectorSpace>& map) override;
 
-  int Solve(const Teuchos::RCP<Vector>& u) {
+  int Solve(const Teuchos::RCP<Vector>& u) override {
     returned_code_ = NKA_(u);
     return (returned_code_ >= 0) ? 0 : 1;
   }
 
   // mutators
-  void set_tolerance(double tol) { tol_ = tol; }
-  void set_pc_lag(double pc_lag) { pc_lag_ = pc_lag; }
-  virtual void set_db(const Teuchos::RCP<ResidualDebugger>& db) {
+  void set_tolerance(double tol) override { tol_ = tol; }
+  void set_pc_lag(double pc_lag) override { pc_lag_ = pc_lag; }
+  virtual void set_db(const Teuchos::RCP<ResidualDebugger>& db) override {
     db_ = db;
   }
 
   // access
-  double tolerance() { return tol_; }
-  double residual() { return residual_; }
-  int num_itrs() { return num_itrs_; }
-  int pc_calls() { return pc_calls_; }
-  int pc_updates() { return pc_updates_; }
-  int returned_code() { return returned_code_; }
+  double tolerance() override { return tol_; }
+  double residual() override { return residual_; }
+  int num_itrs() override { return num_itrs_; }
+  int pc_calls() override { return pc_calls_; }
+  int pc_updates() override { return pc_updates_; }
+  int returned_code() override { return returned_code_; }
 
  private:
   void Init_();
@@ -103,7 +103,7 @@ class SolverNKA : public Solver<Vector,VectorSpace> {
 template<class Vector, class VectorSpace>
 void
 SolverNKA<Vector,VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-        const VectorSpace& map)
+        const Teuchos::RCP<const VectorSpace>& map)
 {
   fn_ = fn;
   Init_();
@@ -178,12 +178,11 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
   pc_updates_ = 0;
 
   // create storage
-  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> du = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> du_tmp = Teuchos::rcp(new Vector(*u));
+  auto r = Teuchos::rcp(new Vector(u->getMap()));
+  auto du = Teuchos::rcp(new Vector(u->getMap()));
+  auto du_tmp = Teuchos::rcp(new Vector(u->getMap()));
 
   // variables to monitor the progress of the nonlinear solver
-  double u_norm;
   double error(0.0), previous_error(0.0), l2_error(0.0);
   double l2_error_initial(0.0);
   double du_norm(0.0), previous_du_norm(0.0), du_tmp_norm_initial, r_norm_initial;
@@ -191,7 +190,8 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
   int prec_error;
   int db_write_iter = 0;
 
-  u_norm = if (monitor_ == SOLVER_MONITOR_RESIDUAL) u->norm2();
+  double u_norm(0.);
+  if (monitor_ == SOLVER_MONITOR_RESIDUAL) u_norm = u->norm2();
 
   do {
     // Check for too many nonlinear iterations.
@@ -208,8 +208,7 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
     db_->WriteVector<Vector>(db_write_iter++, *r, u.ptr(), du.ptr());
 
     // Make sure that residual does not cause numerical overflow.
-    double r_norm;
-    r_norm = r->norm2();
+    double r_norm = r->norm2();
 
     if (num_itrs_ == 0) {
       r_norm_initial = r_norm;
@@ -257,8 +256,7 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
     prec_error = fn_->ApplyPreconditioner(r, du_tmp);
 
     // Make sure that preconditioner does not cause numerical overflow.
-    double du_tmp_norm;
-    du_tmp_norm = du_tmp->normInf();
+    double du_tmp_norm = du_tmp->normInf();
 
     if (num_itrs_ == 0) {
       du_tmp_norm_initial = du_tmp_norm;
@@ -274,12 +272,12 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
     // Calculate the accelerated correction.
     if (num_itrs_ <= nka_lag_space_) {
       // Lag the NKA space, just use the PC'd update.
-      *du = *du_tmp;
+      du->assign(*du_tmp);
     } else {
       if (num_itrs_ <= nka_lag_iterations_) {
         // Lag NKA's iteration, but update the space with this Jacobian info.
         nka_->Correction(*du_tmp, *du, du.ptr());
-        *du = *du_tmp;
+        du->assign(*du_tmp);
       } else {
         // Take the standard NKA correction.
         nka_->Correction(*du_tmp, *du, du.ptr());

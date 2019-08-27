@@ -24,7 +24,7 @@
 #include "IOEvent.hh"
 #include "TreeVector.hh"
 #include "TreeVector_Utils.hh"
-#include "HDF5_MPI.hh"
+//#include "HDF5_MPI.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {
@@ -54,7 +54,7 @@ class ResidualDebugger : public IOEvent {
   std::string filebasename_;
   bool on_;
   double time_;
-  std::vector<Teuchos::RCP<HDF5_MPI> > vis_;
+  //  std::vector<Teuchos::RCP<HDF5_MPI> > vis_;
 };
 
 

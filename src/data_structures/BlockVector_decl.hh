@@ -34,11 +34,13 @@ public:
   BlockVector(const Teuchos::RCP<const BlockSpace>& map, InitMode mode=InitMode::ZERO);
 
   // copy constructor
-  BlockVector(const BlockVector& other, InitMode mode=InitMode::COPY);
+  BlockVector(const BlockVector& other, Teuchos::DataAccess access=Teuchos::DataAccess::Copy,
+              InitMode mode=InitMode::COPY);
 
   // assignment
   BlockVector<Scalar>& operator=(const BlockVector<Scalar>& other);
-
+  void assign(const BlockVector<Scalar>& other) { *this = other; }
+  
   //
   // Meta-data delegated to map
   // ---------------------------------------------

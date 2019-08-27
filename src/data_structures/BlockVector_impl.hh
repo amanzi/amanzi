@@ -45,16 +45,24 @@ BlockVector<Scalar>::BlockVector(const Teuchos::RCP<const BlockSpace>& map, Init
 
 // copy constructor
 template<typename Scalar>
-BlockVector<Scalar>::BlockVector(const BlockVector<Scalar>& other, InitMode mode)
-    : BlockVector(other.getMap())
+BlockVector<Scalar>::BlockVector(const BlockVector<Scalar>& other,
+        Teuchos::DataAccess access, InitMode mode)
 {
   for (const auto& name : *this) {
     SetComponent_(name, true, Teuchos::null);
     SetComponent_(name, false, Teuchos::null);
   }
-  CreateData_(mode);
-  if (mode == InitMode::COPY) {
-    *this = other;
+
+  if (access == Teuchos::DataAccess::View) {
+    for (const auto& name : *this) {
+      SetComponent_(name, true, other.GetComponent_(name, true));
+      SetComponent_(name, false, other.GetComponent_(name, false));
+    }
+  } else {
+    CreateData_(mode);
+    if (mode == InitMode::COPY) {
+      *this = other;
+    }
   }
 };
 

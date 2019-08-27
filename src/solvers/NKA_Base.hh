@@ -119,9 +119,7 @@ NKA_Base<Vector, VectorSpace>::NKA_Base(int mvec, double vtol, const Teuchos::RC
 
   for (int i = 0; i < mvec_ + 1; i++) {
     v_[i] = Teuchos::rcp(new Vector(map));
-    v_[i]->putScalar(0.);
     w_[i] = Teuchos::rcp(new Vector(map));
-    w_[i]->putScalar(0.);
   }
 
   h_.Shape(mvec_+1,mvec_+1);
@@ -201,12 +199,9 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
     // (unless the function value is itself 0), and we merely want to do
     // something reasonable here and hope that situation is detected on the
     // outside.
-    double s = 0.;
-    double sv = 0.;
-    s = wp->norm2();
-    sv = vp->norm2();
-    double sf = 0.;
-    sf = f.norm2();
+    double s = wp->norm2();
+    double sv = vp->norm2();
+    double sf = f.norm2();
 
     if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
       Teuchos::OSTab tab = vo_->getOSTab();
@@ -218,13 +213,12 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
     if (!too_close) {
       // update the NKA space if the previously returned direction had been
       // modified before being applied
-      if (old_dir != Teuchos::null) *vp = *old_dir;
+      if (old_dir != Teuchos::null) vp->assign(*old_dir);
 
       // Normalize w_1 and apply same factor to v_1.
       wp->scale(1.0 / s);
       vp->scale(1.0 / s);
 
-      s = 0.;
       s = wp->norm2();
       sv = vp->norm2();
     }
@@ -247,17 +241,11 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   if (pending_) {
     AMANZI_ASSERT(first_v_ != NKA_EOL);
     auto wp = w_[first_v_];
-    double s = 0.;
-    s = wp->norm2();
+    double s = wp->norm2();
 
     // Update H.
     for (int k = next_v_[first_v_]; k != NKA_EOL; k = next_v_[k]) {
-      double hk = 0.;
-      hk = w_[k]->norm2();
-      hk = wp->dot(*w_[k]);
-      h_[first_v_][k] = hk;
-      hk = 0.;
-      hk = w_[k]->dot(*wp);
+      h_[first_v_][k] = wp->dot(*w_[k]);
     }
 
     // CHOLESKI FACTORIZATION OF H = W^t W
@@ -326,7 +314,6 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
 
   //  ACCELERATED CORRECTION
   dir.assign(f);
-  Vector dir_update(dir, Teuchos::DataAccess::Copy);
 
   // Locate storage for the new vectors.
   AMANZI_ASSERT(free_v_ != NKA_EOL);
@@ -359,6 +346,7 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
     }
 
     // The accelerated correction
+    Vector dir_update(dir.getMap());
     for (int k = first_v_; k != NKA_EOL; k = next_v_[k]) {
       dir_update.update(1.,*v_[k], -1., *w_[k], 0.);
       dir.update(c[k], dir_update, 1.0);

@@ -63,8 +63,13 @@ set(solvers_inc_files FnBaseDefs.hh
                       Preconditioner.hh
                       PreconditionerFactory.hh
                       PreconditionerDiagonal.hh
+                      NKA_Base.hh
                       LinearOperator.hh
                       LinearOperatorPCG.hh
+                      LinearOperatorGMRES.hh
+                      LinearOperatorNKA.hh
+                      Solver.hh
+                      SolverNKA.hh
                       )
 #set(solvers_source_files "")ResidualDebugger.cc)
 
@@ -155,10 +160,10 @@ if (BUILD_TESTS)
     #                 SOURCE test/Main.cc test/solver_linear_nox_jfnk.cc
     #                 LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
-    # add_amanzi_test(solver_nka solver_nka
-    #                 KIND unit
-    #                 SOURCE test/Main.cc test/solver_nka.cc
-    #                 LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+    add_amanzi_test(solver_nonlinear solver_nonlinear
+                    KIND unit
+                    SOURCE test/Main.cc test/solver_nonlinear.cc
+                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
     # add_amanzi_test(solver_continuation solver_continuation
     #                 KIND unit

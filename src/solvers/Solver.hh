@@ -31,7 +31,7 @@ class Solver {
   virtual ~Solver() = default;
   
   virtual void Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-                    const VectorSpace& map) = 0;
+                    const Teuchos::RCP<const VectorSpace>& map) = 0;
 
   virtual int Solve(const Teuchos::RCP<Vector>& u) = 0;
 
