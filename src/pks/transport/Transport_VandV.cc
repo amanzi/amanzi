@@ -177,14 +177,11 @@ void Transport_PK::VV_PrintLimiterStatistics()
 
       if (FindComponentNumber(name) == current_component_) {
         const Epetra_Vector& limiter = *limiter_->limiter();
-        double vmin(1e+99), vavg(0.0), vmax(-1e+99);
+        double vmin, vavg, vmax;
 
-        for (int c = 0; c < ncells_owned; ++c) {
-          vmin = std::min(vmin, limiter[c]);
-          vmax = std::max(vmax, limiter[c]);
-          vavg += limiter[c];
-        }
-        vavg /= ncells_owned;
+        limiter.MinValue(&vmin);
+        limiter.MaxValue(&vmax);
+        limiter.MeanValue(&vavg);
 
         *vo_->os() << name << ": limiter min/avg/max: " 
                    << vmin << " " << vavg<< " " << vmax << std::endl;
