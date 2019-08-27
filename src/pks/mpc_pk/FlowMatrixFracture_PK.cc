@@ -80,6 +80,12 @@ void FlowMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetComponent(name, AmanziMesh::FACE, mmap, gmap, 1);
   }
 
+  // -- darcy flux for fracture
+  if (!S->HasField("fracture-darcy_flux")) {
+    auto cvs2 = Operators::CreateNonManifoldCVS(mesh_fracture_);
+    *S->RequireField("fracture-darcy_flux", "flow")->SetMesh(mesh_fracture_)->SetGhosted(true) = *cvs2;
+  }
+
   // Require additional fields and evaluators
   Key normal_permeability_key_("fracture-normal_permeability");
   if (!S->HasField(normal_permeability_key_)) {
@@ -149,7 +155,7 @@ void FlowMatrixFracture_PK::Initialize(const Teuchos::Ptr<State>& S)
               ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   // -- indices transmissibimility coefficients for matrix-fracture flux
-  auto kn = *S_->GetFieldData("fracture-normal_permeability")->ViewComponent("cell");
+  const auto& kn = *S_->GetFieldData("fracture-normal_permeability")->ViewComponent("cell");
   double rho = *S->GetScalarData("fluid_density");
   double gravity;
   S->GetConstantVectorData("gravity")->Norm2(&gravity);

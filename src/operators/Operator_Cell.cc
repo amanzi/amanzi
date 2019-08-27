@@ -102,7 +102,7 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
 
 /* ******************************************************************
 * Visit methods for symbolic assemble.
-* Insert the diagonal on cells
+* Insert cell-based diagonal matrix.
 ****************************************************************** */
 void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
                                              const SuperMap& map, GraphFE& graph,
@@ -123,31 +123,34 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
 
 
 /* ******************************************************************
-* Insert each cells neighboring cells.
+* Insert each face neighboring cells (ELEMENT/BASE=face, DOFs=cell)
 ****************************************************************** */
 void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
                                              const SuperMap& map, GraphFE& graph,
                                              int my_block_row, int my_block_col) const
 {
-  // ELEMENT: face, DOF: cell
-  int lid_r[2];
-  int lid_c[2];
+  AMANZI_ASSERT(op.matrices.size() == nfaces_owned);
+
+  std::vector<int> lid_r;
+  std::vector<int> lid_c;
 
   const std::vector<int>& cell_row_inds = map.GhostIndices(my_block_row, "cell", 0);
   const std::vector<int>& cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);
 
   int ierr(0);
-  AmanziMesh::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_List cells; 
   for (int f = 0; f != nfaces_owned; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     
     int ncells = cells.size();
+    lid_r.resize(ncells);
+    lid_c.resize(ncells);    
     for (int n = 0; n != ncells; ++n) {
       lid_r[n] = cell_row_inds[cells[n]];
       lid_c[n] = cell_col_inds[cells[n]];
     }
 
-    ierr |= graph.InsertMyIndices(ncells, lid_r, ncells, lid_c);
+    ierr |= graph.InsertMyIndices(ncells, lid_r.data(), ncells, lid_c.data());
   }
 
   AMANZI_ASSERT(!ierr);
@@ -185,8 +188,8 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
   AMANZI_ASSERT(op.matrices.size() == nfaces_owned);
   
   // ELEMENT: face, DOF: cell
-  int lid_r[2];
-  int lid_c[2];
+  std::vector<int> lid_r;
+  std::vector<int> lid_c;
 
   const std::vector<int>& cell_row_inds = map.GhostIndices(my_block_row, "cell", 0);
   const std::vector<int>& cell_col_inds = map.GhostIndices(my_block_col, "cell", 0);
@@ -197,15 +200,17 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     
     int ncells = cells.size();
-    for (int n = 0; n != ncells; ++n) {
+    lid_r.resize(ncells);
+    lid_c.resize(ncells);    
+    for (int n = 0; n != ncells; ++n) {      
       lid_r[n] = cell_row_inds[cells[n]];
       lid_c[n] = cell_col_inds[cells[n]];
     }
-
-    ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[f]);
-    AMANZI_ASSERT(!ierr);
+   
+    ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[f]);
+    AMANZI_ASSERT(ierr>=0);
   }
-  AMANZI_ASSERT(!ierr);
+  AMANZI_ASSERT(ierr>=0);
 }
 
 }  // namespace Operators

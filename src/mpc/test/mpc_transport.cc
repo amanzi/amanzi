@@ -1,46 +1,39 @@
 #include <iostream>
 #include "stdlib.h"
 #include "math.h"
-#include "UnitTest++.h"
 
 
 #include <Epetra_MpiComm.h>
 #include "Epetra_SerialComm.h"
-
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "UnitTest++.h"
 
-#include "State.hh"
 #include "CycleDriver.hh"
+#include "Domain.hh"
+#include "eos_registration.hh"
+#include "GeometricModel.hh"
+#include "Mesh.hh"
+#include "MeshFactory.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "pks_pressuresaturation_registration.hh"
-#include "pks_pressure_registration.hh"
-#include "pks_saturation_registration.hh"
-
-#include "MeshFactory.hh"
-#include "Mesh.hh"
-#include "Domain.hh"
-#include "GeometricModel.hh"
+#include "pks_transport_registration.hh"
+#include "State.hh"
 
 
-TEST(NEW_DRIVER_COUPLED_MULTIPHASE) {
+TEST(MPC_DRIVER_TRANSPORT) {
 
-using namespace std;
+using namespace Amanzi;
+using namespace Amanzi::AmanziMesh;
+using namespace Amanzi::AmanziGeometry;
 
-#ifdef HAVE_MPI
   auto comm = Amanzi::getDefaultComm();
-#else  
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
-#endif
   
-  std::string xmlInFileName = "test/mpc_driver_impes.xml";
-
   // read the main parameter list
-  Teuchos::ParameterList driver_parameter_list;
+  std::string xmlInFileName = "test/mpc_transport.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
-  driver_parameter_list = xmlreader.getParameters();
-  
+  Teuchos::ParameterList plist = xmlreader.getParameters();
+
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
@@ -50,21 +43,23 @@ using namespace std;
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
+  pref.push_back(Framework::STK);
 
   MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(pref);
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 8, 8);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/mpc_transport_mesh_10x10.exo");
   AMANZI_ASSERT(!mesh.is_null());
 
   // create dummy observation data object
-  Amanzi::ObservationData obs_data;    
-  Teuchos::RCP<Teuchos::ParameterList> glist_rcp = Teuchos::rcp(new Teuchos::ParameterList(plist));
+  Amanzi::ObservationData obs_data;
 
-  Teuchos::ParameterList state_plist = glist_rcp->sublist("state");
+  Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(plist));
+
+  Teuchos::ParameterList state_plist = glist->sublist("state");
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
-  
-  Amanzi::CycleDriver cycle_driver(glist_rcp, S, comm, obs_data);
+
+  Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
   cycle_driver.Go();
 }
 

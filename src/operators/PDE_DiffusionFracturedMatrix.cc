@@ -19,8 +19,8 @@
 #include "MeshFactory.hh"
 #include "Op_Cell_FaceCell.hh"
 #include "Operator_FaceCell.hh"
-#include "ParallelCommunication.hh"
 #include "PDE_DiffusionFracturedMatrix.hh"
+#include "UniqueLocalIndex.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -67,7 +67,6 @@ void PDE_DiffusionFracturedMatrix::UpdateMatrices(
   PDE_DiffusionMFD::UpdateMatrices(flux, u);
 
   AmanziMesh::Entity_ID_List faces;
-  const auto& cmap = mesh_->cell_map(true);
   const auto& fmap = *cvs_->Map("face", true);
 
   int dim = mesh_->space_dimension();
@@ -90,7 +89,7 @@ void PDE_DiffusionFracturedMatrix::UpdateMatrices(
       int ndofs = fmap.ElementSize(f);
 
       int shift(0);
-      if (ndofs == 2) shift = FaceLocalIndex_(c, f, cmap); 
+      if (ndofs == 2) shift = UniqueIndexFaceToCells(*mesh_, f, c); 
 
       map[n] = np + shift;
       lid[n] = first + shift;
@@ -167,7 +166,6 @@ void PDE_DiffusionFracturedMatrix::ApplyBCs(
   Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
 
   const auto& fmap = *cvs_->Map("face", true);
-  const auto& cmap = mesh_->cell_map(true);
 
   for (int c = 0; c != ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
@@ -188,7 +186,7 @@ void PDE_DiffusionFracturedMatrix::ApplyBCs(
       int ndofs = fmap.ElementSize(f);
 
       int shift(0);
-      if (ndofs == 2) shift = FaceLocalIndex_(c, f, cmap); 
+      if (ndofs == 2) shift = UniqueIndexFaceToCells(*mesh_, f, c); 
 
       for (int k = 0; k < ndofs; ++k) {
         lid[np] = first + k;
@@ -280,7 +278,6 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
 
   int dim = mesh_->space_dimension();
   const auto& fmap = *cvs_->Map("face", true);
-  const auto& cmap = mesh_->cell_map(true);
 
   int ndofs_owned = flux->ViewComponent("face")->MyLength();
   int ndofs_wghost = flux_data.MyLength();
@@ -306,7 +303,7 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
       int ndofs = fmap.ElementSize(f);
 
       int shift(0);
-      if (ndofs == 2) shift = FaceLocalIndex_(c, f, cmap); 
+      if (ndofs == 2) shift = UniqueIndexFaceToCells(*mesh_, f, c); 
       map[n] = np + shift;
 
       for (int k = 0; k < ndofs; ++k) {
@@ -362,77 +359,6 @@ void PDE_DiffusionFracturedMatrix::UpdateFlux(
 
   flux->GatherGhostedToMaster();
 }
-
-
-/* ******************************************************************
-* Local index of DOF on internal face
-****************************************************************** */
-int PDE_DiffusionFracturedMatrix::FaceLocalIndex_(
-    int c, int f, const Epetra_BlockMap& cmap)
-{
-  AmanziMesh::Entity_ID_List cells;
-
-  int idx = 0;
-  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-  if (cells.size() == 2) {
-     int gid = cmap.GID(c);
-     int gid_min = std::min(cmap.GID(cells[0]), cmap.GID(cells[1]));
-     if (gid > gid_min) idx = 1;
-  }
-
-  return idx;
-}
-
-
-/* ******************************************************************
-* Non-member function
-****************************************************************** */
-Teuchos::RCP<CompositeVectorSpace> CreateFracturedMatrixCVS(
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-    const Teuchos::RCP<const AmanziMesh::Mesh>& fracture)
-{
-  AmanziMesh::Entity_ID_List cells;
-  int ncells_f = fracture->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-
-  auto points = Teuchos::rcp(new Epetra_IntVector(mesh->face_map(true)));
-  points->PutValue(1);
-
-  for (int c = 0; c < ncells_f; ++c) {
-    int f = fracture->entity_get_parent(AmanziMesh::CELL, c);
-    mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    (*points)[f] = cells.size();
-  }
-
-  ParallelCommunication pp(mesh);
-  pp.CopyMasterFace2GhostFace(*points);
-
-  // create ghosted map with two points on each fracture face
-  auto& gfmap = mesh->face_map(true);
-  int nlocal = gfmap.NumMyElements();
-
-  std::vector<int> gids(nlocal);
-  gfmap.MyGlobalElements(&gids[0]);
-
-  int* data; 
-  points->ExtractView(&data);
-  auto gmap = Teuchos::rcp(new Epetra_BlockMap(-1, nlocal, &gids[0], data, 0, gfmap.Comm()));
-
-  // create master map with two points on each fracture face
-  auto& mfmap = mesh->face_map(false);
-  nlocal = mfmap.NumMyElements();
-
-  auto mmap = Teuchos::rcp(new Epetra_BlockMap(-1, nlocal, &gids[0], data, 0, mfmap.Comm()));
-
-  // create global operator
-  std::string compname("face");
-  auto cvs = Teuchos::rcp(new CompositeVectorSpace());
-  cvs->SetMesh(mesh)->SetGhosted(true);
-  cvs->AddComponent(compname, AmanziMesh::FACE, mmap, gmap, 1);
-  cvs->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  return cvs;
-}
-
 
 }  // namespace Operators
 }  // namespace Amanzi

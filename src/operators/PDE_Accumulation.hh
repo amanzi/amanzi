@@ -145,6 +145,9 @@ class PDE_Accumulation : public PDE_HelperBCsList {
   Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
   Teuchos::RCP<Operator> global_operator() { return global_op_; }
 
+  Teuchos::RCP<const Op> local_op(int i) const { return local_ops_[i]; }
+  Teuchos::RCP<Op> local_op(int i) { return local_ops_[i]; }
+
  protected:
   void CalculateEntityVolume_(CompositeVector& entity_volume, const std::string& name);
   void InitAccumulation_(const Schema& schema, bool surface=false);

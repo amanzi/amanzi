@@ -53,7 +53,6 @@ class FlowMatrixFracture_PK : public PK_MPCStrong<PK_BDF> {
   
   // // preconditioner application
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
-  
 
   std::string name() { return "flow matrix-fracture"; } 
 

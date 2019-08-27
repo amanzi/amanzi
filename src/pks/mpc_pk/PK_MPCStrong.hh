@@ -122,7 +122,7 @@ PK_MPCStrong<PK_Base>::PK_MPCStrong(Teuchos::ParameterList& pk_tree,
                               const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                               const Teuchos::RCP<State>& S,
                               const Teuchos::RCP<TreeVector>& soln) :
-  PK_MPC<PK_Base>(pk_tree, global_list, S, soln) {};
+  PK_MPC<PK_Base>(pk_tree, global_list, S, soln), dt_(0.0) {};
 
 
 // -----------------------------------------------------------------------------
@@ -420,10 +420,10 @@ bool PK_MPCStrong<PK_Base>::ModifyPredictor(double h, Teuchos::RCP<const TreeVec
 // }
 
 
-//  template<class PK_Base>
-//  void PK_MPCStrong<PK_Base>::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
-//    PK_MPC<PK_Base>::CalculateDiagnostics(S);
-//  };
+// template<class PK_Base>
+// void PK_MPCStrong<PK_Base>::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
+//   PK_MPC<PK_Base>::CalculateDiagnostics(S);
+// };
 
 
 // -----------------------------------------------------------------------------

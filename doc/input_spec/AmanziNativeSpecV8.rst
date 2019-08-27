@@ -253,7 +253,8 @@ to handle multiphysics process kernels (PKs) and multiple time periods.
       * `"PK type`" [string] specifies the type of PK supported by Amanzi. At the moment
         available options are (`"darcy`", `"richards`", `"transport`", `"one-phase energy`", 
         `"two-phase energy`", `"reactive transport`", `"flow reactive transport`", 
-        `"thermal richards`", and `"chemistry`").
+        `"thermal richards`", `"chemistry`", `"transport implicit`", `"transport matrix fracture`",
+        `"transport matrix fracture implicit`", `"flow`", and `"darcy matrix fracture`").
  
       * `"start period time`" [double] is the start time of the current time period.
 

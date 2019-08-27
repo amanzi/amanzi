@@ -31,6 +31,7 @@
 #include "DenseVector.hh"
 #include "Mesh.hh"
 #include "State.hh"
+#include "UniqueLocalIndex.hh"
 
 namespace Amanzi {
 
@@ -147,7 +148,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
     const auto& field_out = *S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ViewComponent("cell", true);
     const auto& field_in = *S_->GetFieldCopyData(field_in_key_, copy_field_in_key_)->ViewComponent("cell", true);
 
-    Teuchos::RCP<const Epetra_BlockMap> flux_map = S_->GetFieldData(flux_key_)->Map().Map("face", true);
+    const auto& flux_map = S_->GetFieldData(flux_key_)->Map().Map("face", true);
 
     S_->GetFieldCopyData(field_out_key_, copy_field_out_key_)->ScatterMasterToGhosted("cell");    
     S_->GetFieldCopyData(field_in_key_, copy_field_in_key_)->ScatterMasterToGhosted("cell"); 
@@ -163,7 +164,6 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
     AmanziMesh::Entity_ID_List cells, faces;
     std::vector<int> dirs;
     auto mesh_out = S_->GetFieldData(field_out_key_)->Mesh();
-    const Epetra_Map& cell_map = mesh_out->cell_map(true);
     
     // loop over cells on the manifold
     for (auto c = entity_ids_->begin(); c != entity_ids_->end(); ++c) {
@@ -180,10 +180,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
 
       double linear(0.0);
       std::vector<double> val(num_vec, 0.0);
-      int pos = 0;
-      if (cells.size() == 2) {
-        pos = (cell_map.GID(cells[0]) < cell_map.GID(cells[1])) ? 0 : 1;
-      }
+      int pos = Operators::UniqueIndexFaceToCells(*mesh_out, f, cells[0]);
       
       for (int j = 0; j != cells.size(); ++j) {
         mesh_out->cell_get_faces_and_dirs(cells[j], &faces, &dirs);

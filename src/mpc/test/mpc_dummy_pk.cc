@@ -27,7 +27,7 @@ using namespace std;
 
   auto comm = Amanzi::getDefaultComm();
   
-  std::string xmlInFileName = "test/mpc_driver_dummy.xml";
+  std::string xmlInFileName = "test/mpc_dummy.xml";
 
   // read the main parameter list
   Teuchos::ParameterList plist;

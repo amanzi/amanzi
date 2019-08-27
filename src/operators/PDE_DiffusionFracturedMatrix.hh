@@ -54,21 +54,12 @@ class PDE_DiffusionFracturedMatrix : public PDE_DiffusionMFD {
                           const Teuchos::Ptr<CompositeVector>& flux) override;
 
  private:
-  int FaceLocalIndex_(int c, int f, const Epetra_BlockMap& cmap);
-
- private:
   Teuchos::RCP<CompositeVectorSpace> cvs_;
 
   double rho_;
   bool gravity_;
   AmanziGeometry::Point g_;
 };
-
-
-// non-member functions
-Teuchos::RCP<CompositeVectorSpace> CreateFracturedMatrixCVS(
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-    const Teuchos::RCP<const AmanziMesh::Mesh>& fracture);
 
 }  // namespace Operators
 }  // namespace Amanzi

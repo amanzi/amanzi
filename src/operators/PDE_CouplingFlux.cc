@@ -34,14 +34,14 @@ void PDE_CouplingFlux::Init_(
 {
   if (global_op_ == Teuchos::null) {
     global_op_ = Teuchos::rcp(new Operator_Diagonal(cvs_row, cvs_col, plist, OPERATOR_SCHEMA_INDICES));
-    std::string name("Coupling: Matrix-Fracture");
+    std::string name("Coupling_DIAGONAL");
   }
 
   // register the advection Op
   std::string row_compname = *(cvs_row->begin());
   std::string col_compname = *(cvs_col->begin());
 
-  std::string name("Coupling: Matrix-Fracture");
+  std::string name("Coupling_DIAGONAL");
   local_op_ = Teuchos::rcp(new Op_Diagonal(name, row_compname, col_compname, row_inds, col_inds));
   global_op_->OpPushBack(local_op_);
 }
