@@ -225,7 +225,7 @@ bool TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     }
     
     double dt_try = dt_MPC - dt_sum;
-    double tol = 1e-14 * (dt_try + dt_original); 
+    double tol = 1e-12 * (dt_try + dt_original); 
     bool final_cycle = false;
     if (dt_try >= 2 * dt_original) {
       dt_cycle = dt_original;
