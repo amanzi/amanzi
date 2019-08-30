@@ -17,8 +17,6 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "CompositeVector.hh"
-
 #include "TimestepController.hh"
 #include "TimeIntegrationDefs.hh"
 
@@ -59,7 +57,8 @@ class TimestepControllerAdaptive : public TimestepController {
 template<class Vector>
 TimestepControllerAdaptive<Vector>::TimestepControllerAdaptive(
     Teuchos::ParameterList& plist,
-    Teuchos::RCP<Vector> udot, Teuchos::RCP<Vector> udot_prev)
+    const Teuchos::RCP<const Vector>& udot,
+    const Teuchos::RCP<const Vector>& udot_prev)
     : plist_(plist), udot_(udot), udot_prev_(udot_prev)
 {
   max_its_ = plist_.get<int>("max iterations");
@@ -91,42 +90,12 @@ TimestepControllerAdaptive<Vector>::TimestepControllerAdaptive(
 template<class Vector>
 double TimestepControllerAdaptive<Vector>::get_timestep(double dt, int iterations)
 {
-  std::string msg("TimestepControllerAdaptive is implemented for a limited set of vectors.");
-  Errors::Message m(msg);
-  Exceptions::amanzi_throw(m);
-  return 0.0;
+  return get_timestep_base_(dt, *udot_, *udot_prev_);
 }
-
-
-template<> inline
-double TimestepControllerAdaptive<Epetra_MultiVector>::get_timestep(double dt, int iterations)
-{
-  if (iterations < 0 || iterations > max_its_) {
-    return dt * reduction_factor_;
-  }
-    
-  Epetra_MultiVector& u1 = *udot_;
-  Epetra_MultiVector& u0 = *udot_prev_;
-  return get_timestep_base_(dt, u0, u1);
-}
-
-
-template<> inline
-double TimestepControllerAdaptive<CompositeVector>::get_timestep(double dt, int iterations)
-{
-  if (iterations < 0 || iterations > max_its_) {
-    return dt * reduction_factor_;
-  }
-    
-  Epetra_MultiVector& u1 = *udot_->ViewComponent("cell");
-  Epetra_MultiVector& u0 = *udot_prev_->ViewComponent("cell");
-  return get_timestep_base_(dt, u0, u1);
-}
-
 
 template<class Vector>
 double TimestepControllerAdaptive<Vector>::get_timestep_base_(
-    double dt, const Epetra_MultiVector& u0, const Epetra_MultiVector& u1)
+    double dt, const Vector& u0, const Vector& u1)
 {
   double tol, error, error_max = 0.0;
   double dTfactor(100.0), dTfactor_cell;

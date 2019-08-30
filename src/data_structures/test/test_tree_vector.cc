@@ -52,12 +52,19 @@ struct test_tv {
     x_vec_space->SetMesh(mesh)->SetGhosted()
         ->SetComponents(names, locations, num_dofs);
     x_vec = x_vec_space->Create();
-    x = Teuchos::rcp(new TreeVector());
+
+    auto x_space = Teuchos::rcp(new TreeVectorSpace(comm));
+    x_space->SetData(x_vec->getMap());
+
+    x = Teuchos::rcp(new TreeVector(x_space));
     x->SetData(x_vec);
 
-    x2 = Teuchos::rcp(new TreeVector());
-    x2->PushBack(x);
-    x2->PushBack(x);
+    auto x2_space = Teuchos::rcp(new TreeVectorSpace(comm));
+    x2_space->PushBack(x_space);
+    x2_space->PushBack(x_space);
+    x2 = Teuchos::rcp(new TreeVector(x2_space));
+    x2->SetSubVector(0, x);
+    x2->SetSubVector(1, x);
   }
   ~test_tv() {  }
 };
@@ -100,7 +107,7 @@ SUITE(TREE_VECTOR) {
     x->putScalar(2.0);
 
     TreeVector y(*x);
-    CHECK(y.getMap().SameAs(x->getMap()));
+    CHECK(y.getMap()->SameAs(*x->getMap()));
     y.putScalar(4.0);
     CHECK_CLOSE(get_value(*x->Data(),"cell",0,0), 2.0, 0.00001);
     CHECK_CLOSE(get_value(*x->Data(),"cell",1,0), 2.0, 0.00001);
@@ -110,7 +117,7 @@ SUITE(TREE_VECTOR) {
     CHECK_CLOSE(get_value(*y.Data(),"face",0,0), 4.0, 0.00001);
 
     TreeVector z(x->getMap());
-    CHECK(z.getMap().SameAs(x->getMap()));
+    CHECK(z.getMap()->SameAs(*x->getMap()));
     z.putScalar(4.0);
     CHECK_CLOSE(get_value(*x->Data(),"cell",0,0), 2.0, 0.00001);
     CHECK_CLOSE(get_value(*x->Data(),"cell",1,0), 2.0, 0.00001);
@@ -121,7 +128,7 @@ SUITE(TREE_VECTOR) {
 
     x2->putScalar(2.0);
     TreeVector y2(*x2);
-    CHECK(y2.getMap().SameAs(x2->getMap()));
+    CHECK(y2.getMap()->SameAs(*x2->getMap()));
     y2.putScalar(5.0);
     CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"cell",0,0), 2.0, 0.00001);
     CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"cell",1,0), 2.0, 0.00001);
@@ -131,7 +138,7 @@ SUITE(TREE_VECTOR) {
     CHECK_CLOSE(get_value(*y2.SubVector(0)->Data(),"face",0,0), 5.0, 0.00001);
 
     TreeVector z2(x2->getMap());
-    CHECK(z2.getMap().SameAs(x2->getMap()));
+    CHECK(z2.getMap()->SameAs(*x2->getMap()));
     z2.putScalar(6.0);
     CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"cell",0,0), 2.0, 0.00001);
     CHECK_CLOSE(get_value(*x2->SubVector(0)->Data(),"cell",1,0), 2.0, 0.00001);

@@ -30,8 +30,7 @@ assumed in several places.
 #include <string>
 #include <vector>
 #include "Teuchos_RCP.hpp"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
+#include "Teuchos_DataAccess.hpp"
 
 #include "Iterators.hh"
 #include "DataStructuresHelpers.hh"
@@ -45,28 +44,28 @@ class TreeVector {
 
  public:
   // -- Constructors --
-
   // Basic constructors of a TreeVector
-  TreeVector();
-  TreeVector(const Comm_ptr_type& comm);
-  explicit TreeVector(const TreeVectorSpace& space, InitMode mode=InitMode::ZERO);
-  explicit TreeVector(const Teuchos::RCP<TreeVectorSpace>& space, InitMode mode=InitMode::ZERO);
+  explicit TreeVector(const Teuchos::RCP<const TreeVectorSpace>& space,
+                      InitMode mode=InitMode::ZERO);
 
   // copy constructors
-  TreeVector(const TreeVector& other, InitMode mode=InitMode::COPY);
+  TreeVector(const TreeVector& other,
+             Teuchos::DataAccess access=Teuchos::DataAccess::Copy,
+             InitMode mode=InitMode::COPY);
 
   // Assignment operator.
   TreeVector& operator=(const TreeVector& other);
+  void assign(const TreeVector& other) { *this = other; }
 
   // -- Accessors --
 
   // Access to ANY communicator (this may be ill-posed!)
   Comm_ptr_type Comm() const {
-    return getMap().Comm();
+    return getMap()->Comm();
   }
 
   // Access to the space.
-  const TreeVectorSpace& getMap() const { return *map_; }
+  const Teuchos::RCP<const TreeVectorSpace>& getMap() const { return map_; }
 
   // Access to SubVectors
   typedef std::vector<Teuchos::RCP<TreeVector> > SubVectorsContainer;
@@ -85,15 +84,14 @@ class TreeVector {
   // Const access to the sub-vector by index
   Teuchos::RCP<const TreeVector> SubVector(int index) const;
 
+  // Access to the sub-vector by index
+  void SetSubVector(int index, const Teuchos::RCP<TreeVector>& tv);
+  
   // Access to the data CompositeVector.
   Teuchos::RCP<CompositeVector> Data() { return data_; }
 
   // Const access to the data CompositeVector.
   Teuchos::RCP<const CompositeVector> Data() const { return data_; }
-
-
-  // Add a sub-vector as a child of this node.
-  void PushBack(const Teuchos::RCP<TreeVector>& subvec);
 
   // Set data by pointer
   void SetData(const Teuchos::RCP<CompositeVector>& data);
@@ -155,7 +153,7 @@ class TreeVector {
   void InitMap_(InitMode mode);
 
  private:
-  Teuchos::RCP<TreeVectorSpace> map_;
+  Teuchos::RCP<const TreeVectorSpace> map_;
 
   Teuchos::RCP<CompositeVector> data_;
   std::vector<Teuchos::RCP<TreeVector> > subvecs_;

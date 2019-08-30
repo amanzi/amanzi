@@ -18,6 +18,7 @@
 
 #include <vector>
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_DataAccess.hpp"
 #include "AmanziTypes.hh"
 #include "DataStructuresHelpers.hh"
 #include "BlockSpace.hh"

@@ -32,6 +32,7 @@ class TreeVectorSpace {
 
   // Comparators
   bool SameAs(const TreeVectorSpace& other) const;
+  bool LocallySameAs(const TreeVectorSpace& other) const;
   bool SubsetOf(const TreeVectorSpace& other) const;
 
   // Set/get data space

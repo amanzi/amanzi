@@ -70,8 +70,9 @@ set(solvers_inc_files FnBaseDefs.hh
                       LinearOperatorNKA.hh
                       Solver.hh
                       SolverNKA.hh
+                      SolverFactory.hh
                       )
-#set(solvers_source_files "")ResidualDebugger.cc)
+set(solvers_source_files SolverFactory.cc)#ResidualDebugger.cc)
 
 if(HAVE_HYPRE_PRECONDITIONERS)
 if(ENABLE_HYPRE)
@@ -108,10 +109,10 @@ list(REVERSE solvers_tpl_libs)
 list(REMOVE_DUPLICATES solvers_tpl_libs)
 list(REVERSE solvers_tpl_libs)
 
-# add_amanzi_library(solvers
-#                    SOURCE ${solvers_source_files} 
-#                    HEADERS ${solvers_inc_files}
-# 		   LINK_LIBS data_structures whetstone atk ${solvers_tpl_libs})
+add_amanzi_library(solvers
+                   SOURCE ${solvers_source_files} 
+                   HEADERS ${solvers_inc_files}
+		   LINK_LIBS data_structures whetstone atk ${solvers_tpl_libs})
 
 
 if (BUILD_TESTS)
@@ -127,47 +128,47 @@ if (BUILD_TESTS)
 
     # Copy test directory files if an out of source build
     if (NOT (${SOLVERS_SOURCE_DIR} EQUAL ${SOLVERS_BINARY_DIR}))
-        # file(GLOB DataFiles "${SOLVER_SOURCE_DIR}/test/*.xml")
-        # file(COPY ${DataFiles} DESTINATION ${SOLVER_BINARY_DIR}/test/)
+        # file(GLOB DataFiles "${SOLVERS_SOURCE_DIR}/test/*.xml")
+        # file(COPY ${DataFiles} DESTINATION ${SOLVERS_BINARY_DIR}/test/)
     endif()
 
     # Add the solvers directory to the include paths
     include_directories(${SOLVERS_SOURCE_DIR})
 
-    add_amanzi_test(solver_preconditioners_tpetra solver_preconditioners_tpetra
+    add_amanzi_test(solvers_preconditioners_tpetra solvers_preconditioners_tpetra
                     KIND unit
-                    SOURCE test/Main.cc test/solver_preconditioners_tpetra.cc
+                    SOURCE test/Main.cc test/solvers_preconditioners_tpetra.cc
                     LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
-    add_amanzi_test(solver_linear_operators solver_linear_operators
+    add_amanzi_test(solvers_linear_operators solvers_linear_operators
                     KIND unit
-                    SOURCE test/Main.cc test/solver_linear_operators.cc
+                    SOURCE test/Main.cc test/solvers_linear_operators.cc
                     LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
 
-    # add_amanzi_test(solver_preconditioner_noncontiguous solver_preconditioner_noncontiguous
+    # add_amanzi_test(solvers_preconditioner_noncontiguous solvers_preconditioner_noncontiguous
     #                 KIND unit
-    #                 SOURCE test/Main.cc test/solver_preconditioner_noncontiguous.cc
+    #                 SOURCE test/Main.cc test/solvers_preconditioner_noncontiguous.cc
     #                 LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
-    # add_amanzi_test(solver_linear_jfnk solver_linear_jfnk
+    # add_amanzi_test(solvers_linear_jfnk solvers_linear_jfnk
     #                 KIND unit
-    #                 SOURCE test/Main.cc test/solver_linear_jfnk.cc
+    #                 SOURCE test/Main.cc test/solvers_linear_jfnk.cc
     #                 LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
                     
-    # add_amanzi_test(solver_linear_nox_jfnk solver_linear_nox_jfnk
+    # add_amanzi_test(solvers_linear_nox_jfnk solvers_linear_nox_jfnk
     #                 KIND unit
-    #                 SOURCE test/Main.cc test/solver_linear_nox_jfnk.cc
+    #                 SOURCE test/Main.cc test/solvers_linear_nox_jfnk.cc
     #                 LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
-    add_amanzi_test(solver_nonlinear solver_nonlinear
+    add_amanzi_test(solvers_nonlinear solvers_nonlinear
                     KIND unit
-                    SOURCE test/Main.cc test/solver_nonlinear.cc
+                    SOURCE test/Main.cc test/solvers_nonlinear.cc
                     LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
-    # add_amanzi_test(solver_continuation solver_continuation
+    # add_amanzi_test(solvers_continuation solvers_continuation
     #                 KIND unit
-    #                 SOURCE test/Main.cc test/solver_continuation.cc
+    #                 SOURCE test/Main.cc test/solvers_continuation.cc
     #                 LINK_LIBS  ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
 endif()

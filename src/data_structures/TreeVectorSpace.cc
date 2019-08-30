@@ -47,6 +47,17 @@ bool TreeVectorSpace::SameAs(const TreeVectorSpace& other) const {
   return true;
 }
 
+bool TreeVectorSpace::LocallySameAs(const TreeVectorSpace& other) const {
+  if (data_ == Teuchos::null && other.data_ != Teuchos::null) return false;
+  if (data_ != Teuchos::null && other.data_ == Teuchos::null) return false;
+  if (data_ != Teuchos::null && other.data_ != Teuchos::null
+      && !data_->LocallySameAs(*other.data_)) return false;
+  if (subvecs_.size() != other.subvecs_.size()) return false;
+  for (int i=0; i!=subvecs_.size(); ++i)
+    if (!subvecs_[i]->LocallySameAs(*other.subvecs_[i])) return false;
+  return true;
+}
+
 // Checks subset
 bool TreeVectorSpace::SubsetOf(const TreeVectorSpace& other) const {
   if (data_ != Teuchos::null && other.data_ == Teuchos::null) return false;

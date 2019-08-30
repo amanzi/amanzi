@@ -41,7 +41,7 @@ Available types include:
 #include "TimestepControllerFixed.hh"
 #include "TimestepControllerStandard.hh"
 #include "TimestepControllerSmarter.hh"
-#include "TimestepControllerAdaptive.hh"
+//#include "TimestepControllerAdaptive.hh"
 #include "TimestepControllerFromFile.hh"
 
 
@@ -92,12 +92,14 @@ Teuchos::RCP<TimestepController> TimestepControllerFactory<Vector>::Create(
       return Teuchos::rcp(new TimestepControllerSmarter(tslist));
 
     } else if (type == "adaptive") {
-      if (!slist.isSublist("timestep controller adaptive parameters")) {
-        Errors::Message msg("TimestepControllerFactory: missing sublist \"timestep controller adaptive parameters\"");
-        Exceptions::amanzi_throw(msg);
-      }
-      Teuchos::ParameterList tslist = slist.sublist("timestep controller adaptive parameters");
-      return Teuchos::rcp(new TimestepControllerAdaptive<Vector>(tslist, udot, udot_prev));
+      // if (!slist.isSublist("timestep controller adaptive parameters")) {
+      //   Errors::Message msg("TimestepControllerFactory: missing sublist \"timestep controller adaptive parameters\"");
+      //   Exceptions::amanzi_throw(msg);
+      // }
+      // Teuchos::ParameterList tslist = slist.sublist("timestep controller adaptive parameters");
+      // return Teuchos::rcp(new TimestepControllerAdaptive<Vector>(tslist, udot, udot_prev));
+      Errors::Message msg("TimestepControllerFactory: TimestepControllerAdaptive not yet fixed for Tpetra.");
+      Exceptions::amanzi_throw(msg);
 
     } else if (type == "from file") {
       if (!slist.isSublist("timestep controller from file parameters")) {

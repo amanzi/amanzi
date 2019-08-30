@@ -60,7 +60,7 @@ CompositeVector_<Scalar>::CompositeVector_(const Teuchos::RCP<const CompositeSpa
 template<typename Scalar>
 CompositeVector_<Scalar>::CompositeVector_(const CompositeVector_<Scalar>& other,
         Teuchos::DataAccess access, InitMode mode)
-    : BlockVector<Scalar>(other.getMap(), access, mode),
+    : BlockVector<Scalar>(other, access, mode),
       cvs_(other.getMap())
 {}
 

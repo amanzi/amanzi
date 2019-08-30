@@ -18,29 +18,18 @@
 
 namespace Amanzi {
 
-// Basic constructors
-TreeVector::TreeVector() :
-    map_(Teuchos::rcp(new TreeVectorSpace()))
-{}
-
-TreeVector::TreeVector(const Comm_ptr_type& comm) :
-    map_(Teuchos::rcp(new TreeVectorSpace(comm)))
-{}
-
-TreeVector::TreeVector(const TreeVectorSpace& space, InitMode mode)
-{
-  map_ = Teuchos::rcp(new TreeVectorSpace(space));
-  InitMap_(mode); // ZERO BY DEFAULT, thanks to Trilinos
-}
-
-TreeVector::TreeVector(const Teuchos::RCP<TreeVectorSpace>& space, InitMode mode)
+TreeVector::TreeVector(const Teuchos::RCP<const TreeVectorSpace>& space, InitMode mode)
 {
   map_ = space;
   InitMap_(mode);
 }
 
-TreeVector::TreeVector(const TreeVector& other, InitMode mode)
+TreeVector::TreeVector(const TreeVector& other, Teuchos::DataAccess access, InitMode mode)
 {
+  if (access == Teuchos::DataAccess::View) { 
+    Errors::Message message("TreeVector: View semantic not supported.");
+    throw(message);
+  }
   map_ = Teuchos::rcp(new TreeVectorSpace(*other.map_));
   InitMap_(mode);
   if (mode == InitMode::COPY) {
@@ -55,9 +44,8 @@ void TreeVector::InitMap_(InitMode mode) {
     data_ = Teuchos::rcp(new CompositeVector(map_->Data()));
   }
 
-  for (TreeVectorSpace::iterator i=map_->begin();
-       i!=map_->end(); ++i) {
-    InitPushBack_(Teuchos::rcp(new TreeVector(*i, mode)));
+  for (auto i : *map_) {
+    subvecs_.emplace_back(Teuchos::rcp(new TreeVector(i, mode)));
   }
 }
 
@@ -293,21 +281,20 @@ Teuchos::RCP<const TreeVector> TreeVector::SubVector(int index) const {
   return Teuchos::null;
 };
 
-void TreeVector::PushBack(const Teuchos::RCP<TreeVector>& subvec) {
-  map_->PushBack(subvec->map_);
-  InitPushBack_(subvec);
+void TreeVector::SetSubVector(int i, const Teuchos::RCP<TreeVector>& subvec) {
+  if (!subvec->getMap()->LocallySameAs(*getMap()->SubVector(i))) {
+    Errors::Message message("TreeVector: SetSubVector called with incompatible vector.");
+    throw(message);
+  }
+  subvecs_[i] = subvec;
 };
-
-void TreeVector::InitPushBack_(const Teuchos::RCP<TreeVector>& subvec) {
-  subvecs_.push_back(subvec);
-};
-
 
 void TreeVector::SetData(const Teuchos::RCP<CompositeVector>& data) {
-  data_ = data;
-  if (map_->Data() == Teuchos::null || !map_->Data()->SameAs(*data->getMap())) {
-    map_->SetData(Teuchos::rcp(new CompositeSpace(*data->getMap())));
+  if (!data->getMap()->LocallySameAs(*getMap()->Data())) {
+    Errors::Message message("TreeVector: SetData called with incompatible vector.");
+    throw(message);
   }
+  data_ = data;
 };
 
 

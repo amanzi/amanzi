@@ -65,7 +65,9 @@ class BDF1_TI {
   bool TimeStep(double dt, const Teuchos::RCP<Vector>& u_prev,
                 const Teuchos::RCP<Vector>& u, double& dt_next);
   bool TimeStep(double dt, double& dt_next, const Teuchos::RCP<Vector>& x) {
-    return TimeStep(dt, Teuchos::rcp(new Vector(*x)), x, dt_next);
+    auto x_copy = Teuchos::rcp(new Vector(x->getMap()));
+    x_copy->assign(*x);
+    return TimeStep(dt, x_copy, x, dt_next);
   }
 
   // Reset the memory of the time integrator
@@ -111,7 +113,7 @@ BDF1_TI<Vector, VectorSpace>::BDF1_TI(BDFFnBase<Vector>& fn,
   fn_ = Teuchos::rcpFromRef(fn);
 
   // update the verbose options
-  vo_ = Teuchos::rcp(new VerboseObject(initvector->Comm(), "TI::BDF1", plist_));
+  vo_ = Teuchos::rcp(new VerboseObject(initvector->getMap()->getComm(), "TI::BDF1", plist_));
   db_ = Teuchos::rcp(new AmanziSolvers::ResidualDebugger(plist_.sublist("residual debugger")));
 
   // Create the state.
@@ -128,8 +130,8 @@ BDF1_TI<Vector, VectorSpace>::BDF1_TI(BDFFnBase<Vector>& fn,
   solver_->Init(solver_fn_, initvector->getMap());
 
   // Allocate memory for adaptive timestep controll
-  udot_ = Teuchos::rcp(new Vector(*initvector));
-  udot_prev_ = Teuchos::rcp(new Vector(*initvector));
+  udot_ = Teuchos::rcp(new Vector(initvector->getMap()));
+  udot_prev_ = Teuchos::rcp(new Vector(initvector->getMap()));
 
   // timestep controller
   TimestepControllerFactory<Vector> fac;
@@ -241,7 +243,7 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt,
   }
 
   // Update the debugger
-  db_->StartIteration<VectorSpace>(tlast, state_->seq, state_->failed_current, u->getMap());
+  db_->StartIteration<VectorSpace>(tlast, state_->seq, state_->failed_current, *u->getMap());
   
   // Solve the nonlinear BCE system.
   int ierr, code, itr;
@@ -264,7 +266,7 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt,
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       *vo_->os() << vo_->color("red") << "step failed with error code " << code << vo_->reset() << std::endl;
     }
-    *u = *u_prev;
+    u->assign(*u_prev);
   }
 
   // update the next timestep size
@@ -298,9 +300,9 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt,
     state_->hmin = std::min(state_->hmin, dt);
 
     if (state_->uhist->history_size() > 1) {
-      *udot_prev_ = *udot_;
+      udot_prev_->assign(*udot_);
       double tmp = 1.0 / dt;
-      *udot_ = *u;
+      udot_->assign(*u);
       udot_->update(-tmp, *u_prev, tmp);
     }
 

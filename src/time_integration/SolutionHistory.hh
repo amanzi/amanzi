@@ -6,8 +6,6 @@
 // Modified for Amanzi.
 
 #include "Teuchos_RCP.hpp"
-#include "Epetra_Vector.h"
-#include "Epetra_Map.h"
 
 #include "dbc.hh"
 #include "errors.hh"
@@ -111,7 +109,7 @@ void SolutionHistory<Vector>::Initialize_(int mvec, const Vector& initvec) {
   times_.resize(mvec);
 
   for (int j=0; j<mvec; j++)
-    d_[j] = Teuchos::rcp(new Vector(initvec));
+    d_[j] = Teuchos::rcp(new Vector(initvec.getMap()));
 }
 
 
@@ -152,7 +150,7 @@ void SolutionHistory<Vector>::RecordSolution(double t, const Vector& x) {
   // insert the new vector
   times_[0] = t;
   d_[0] = tmp;
-  *d_[0] = x;
+  d_[0]->assign(x);
 
   // update the divided differences
   for (unsigned int j = 1; j <= nvec_ - 1; j++) {
@@ -190,7 +188,7 @@ void SolutionHistory<Vector>::RecordSolution(double t, const Vector& x, const Ve
     // the first divided difference (same time index) is the specified derivative.
     times_[1] = times_[0];
     d_[1] = tmp;
-    *d_[1] = xdot;
+    d_[1]->assign(xdot);
 
     // update the rest of the divided differences
     for (unsigned int j = 2; j <= nvec_-1; j++) {
@@ -218,7 +216,7 @@ void SolutionHistory<Vector>::InterpolateSolution(double t, Vector& x, unsigned 
   AMANZI_ASSERT(order < nvec_);
   AMANZI_ASSERT(order >= 0);
 
-  x = *d_[order];
+  x.assign(*d_[order]);
   for (int k = order - 1; k >= 0; k--) {
     x.update(1.0, *d_[k], t - times_[k]);
   }
@@ -231,7 +229,7 @@ void SolutionHistory<Vector>::InterpolateSolution(double t, Vector& x, unsigned 
 template<class Vector>
 void SolutionHistory<Vector>::MostRecentSolution(Vector& x)
 {
-  x = *d_[0];
+  x.assign(*d_[0]);
 }
 
 

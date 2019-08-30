@@ -43,30 +43,44 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 #
 # Library: time_integration
 #
-file(GLOB time_int_new_source_files "*.cc")
-file(GLOB time_int_new_inc_files "*.hh")
-set(time_int_new_tpl_libs ${DBC_LIBRARIES} ${Teuchos_LIBRARIES} ${Tpetra_LIBRARIES} )
-list(REVERSE time_int_new_tpl_libs)
-list(REMOVE_DUPLICATES time_int_new_tpl_libs)
-list(REVERSE time_int_new_tpl_libs)
+set(time_integration_source_files TimestepControllerStandard.cc
+                                  TimestepControllerFromFile.cc
+                                  TimestepControllerSmarter.cc
+                                  )
+set(time_integration_inc_files TimeIntegrationDefs.hh
+                               TimestepController.hh
+                               TimestepControllerFixed.hh
+#                               TimestepControllerAdaptive.hh
+                               TimestepControllerStandard.hh
+                               TimestepControllerFromFile.hh
+                               TimestepControllerSmarter.hh
+                               TimestepControllerFactory.hh
+                               BDF_FnBase.hh
+                               Explicit_TI_FnBase.hh
+                               SolutionHistory.hh
+                               BDF1_SolverFnBase.hh
+                               BDF1_State.hh
+                               BDF1_TI.hh
+                               Explicit_TI_RK.hh
+                               )
 
-set(time_integration_link_libs solvers data_structures output mesh geometry error_handling whetstone atk )
+set(time_integration_tpl_libs ${Teuchos_LIBRARIES} ${Tpetra_LIBRARIES} )
+list(REVERSE time_integration_tpl_libs)
+list(REMOVE_DUPLICATES time_integration_tpl_libs)
+list(REVERSE time_integration_tpl_libs)
+
+#set(time_integration_link_libs solvers data_structures output mesh geometry error_handling whetstone atk )
+set(time_integration_link_libs solvers data_structures mesh geometry error_handling atk )
 
 add_amanzi_library(time_integration
-                   SOURCE ${time_int_new_source_files}
-		           HEADERS ${time_int_new_inc_files}
-		           LINK_LIBS ${time_integration_link_libs} ${time_int_new_tpl_libs})
+                   SOURCE ${time_integration_source_files}
+                   HEADERS ${time_integration_inc_files}
+		   LINK_LIBS ${time_integration_link_libs} ${time_integration_tpl_libs})
 
 if (BUILD_TESTS)
 
     # Add UnitTest include directoy
     include_directories(${UnitTest_INCLUDE_DIRS})
-
-    # Copy test directory files if an out of source build
-    if (NOT (${TIME_INTEGRATION_SOURCE_DIR} EQUAL ${TIME_INTEGRATION_BINARY_DIR}))
-      # file(GLOB DataFiles "${TIME_INTEGRATION_SOURCE_DIR}/test/*.xml")
-      # file(COPY ${DataFiles} DESTINATION ${TIME_INTEGRATION_BINARY_DIR}/test/)
-    endif()
 
     # Add the time_integration directory to the include paths
     include_directories(${TIME_INTEGRATION_SOURCE_DIR})
@@ -74,39 +88,38 @@ if (BUILD_TESTS)
     include_directories(${SOLVERS_SOURCE_DIR})
     include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 
-    add_amanzi_test(time_integration test_time_integration
+    add_amanzi_test(time_integration_solution_history time_integration_solution_history
                     KIND unit
 		    SOURCE
 		          test/Main.cc
-			  test/test_solhist.cc
+			  test/time_integration_solution_history.cc
 		    LINK_LIBS
-		          time_integration
 			  ${time_integration_link_libs}
 			  ${UnitTest_LIBRARIES}	  
 			  ${time_integration_tpl_libs})
 
-    add_amanzi_test(time_integration_nka test_nka_time_integration
+    add_amanzi_test(time_integration_bdf1 time_integration_bdf1
                     KIND unit
-		    SOURCE
-		          test/Main.cc
-			  test/test_ode_nka.cc
-		    LINK_LIBS
-		          time_integration
-			  ${time_integration_link_libs}
-			  ${UnitTest_LIBRARIES}
-			  ${time_int_new_tpl_libs})
+        	    SOURCE
+        	          test/Main.cc
+        		  test/time_integration_bdf1.cc
+        	    LINK_LIBS
+        	          time_integration
+        		  ${time_integration_link_libs}
+        		  ${UnitTest_LIBRARIES}
+        		  ${time_integration_tpl_libs})
 
-    add_amanzi_test(time_integration_rk test_rk_time_integration
+    add_amanzi_test(time_integration_rk time_integration_rk
                     KIND unit
-		    SOURCE
-		          test/Main.cc
-			      test/test_Explicit_RK.cc
-		    LINK_LIBS
-		          time_integration
-			  ${time_integration_link_libs}
-			  ${UnitTest_LIBRARIES}
-			  ${Teuchos_LIBRARIES}
-			  ${Tpetra_LIBRARIES}
-			  ${time_integration_tpl_libs})
+        	    SOURCE
+        	          test/Main.cc
+        		  test/time_integration_explicit_RK.cc
+        	    LINK_LIBS
+        	          time_integration
+        		  ${time_integration_link_libs}
+        		  ${UnitTest_LIBRARIES}
+        		  ${Teuchos_LIBRARIES}
+        		  ${Tpetra_LIBRARIES}
+        		  ${time_integration_tpl_libs})
 
 endif()

@@ -317,7 +317,7 @@ void RK<Vector>::CreateStorage_(const Vector& initvector)
 {
   k_.resize(order_);
   for (int i=0; i!=order_; ++i) {
-    k_[i] = Teuchos::rcp(new Vector(initvector));
+    k_[i] = Teuchos::rcp(new Vector(initvector.getMap()));
   }
 }
 
@@ -325,7 +325,7 @@ void RK<Vector>::CreateStorage_(const Vector& initvector)
 template<class Vector>
 void RK<Vector>::TimeStep(double t, double h, const Vector& y, Vector& y_new)
 {
-  Vector y_tmp(y);
+  Vector y_tmp(y, Teuchos::Copy);
   fn_.ModifySolution(t, y_tmp);
 
   double sum_time;
@@ -335,7 +335,7 @@ void RK<Vector>::TimeStep(double t, double h, const Vector& y, Vector& y_new)
     if (i == 0) {
       fn_.FunctionalTimeDerivative(sum_time, y_tmp, *k_[0]);
     } else {
-      y_new = y_tmp;
+      y_new.assign(y_tmp);
       
       for (int j = 0; j != i; ++j) {
         if (a_(i,j) != 0.0) {
@@ -349,7 +349,7 @@ void RK<Vector>::TimeStep(double t, double h, const Vector& y, Vector& y_new)
     k_[i]->scale(h);
   }
 
-  y_new = y_tmp;
+  y_new.assign(y_tmp);
   for (int i = 0; i != order_; ++i) {
     if (b_[i] != 0.0) {
       y_new.update(b_[i], *k_[i], 1.0);

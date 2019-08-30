@@ -47,17 +47,21 @@ BlockVector<Scalar>::BlockVector(const Teuchos::RCP<const BlockSpace>& map, Init
 template<typename Scalar>
 BlockVector<Scalar>::BlockVector(const BlockVector<Scalar>& other,
         Teuchos::DataAccess access, InitMode mode)
+    : map_(other.getMap())
 {
   for (const auto& name : *this) {
     SetComponent_(name, true, Teuchos::null);
     SetComponent_(name, false, Teuchos::null);
   }
 
-  if (access == Teuchos::DataAccess::View) {
-    for (const auto& name : *this) {
-      SetComponent_(name, true, other.GetComponent_(name, true));
-      SetComponent_(name, false, other.GetComponent_(name, false));
-    }
+  if (access == Teuchos::DataAccess::View) { 
+    Errors::Message message("BlockVector: View semantic not supported.");
+    throw(message);
+   
+    // for (const auto& name : *this) {
+    //   SetComponent_(name, true, other.GetComponent_(name, true));
+    //   SetComponent_(name, false, other.GetComponent_(name, false));
+    // }
   } else {
     CreateData_(mode);
     if (mode == InitMode::COPY) {

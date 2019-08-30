@@ -90,7 +90,7 @@ if (BUILD_TESTS)
 
     set(amanzi_libs data_structures geometry mstk_mesh mesh_factory mesh)
 
-    add_amanzi_test(data_structures test_data_structures 
+    add_amanzi_test(data_structures_vectors data_structures_vectors
     		    --kokkos-ndevices=1
                     KIND unit
                     NPROCS 2
@@ -117,14 +117,14 @@ if (BUILD_TESTS)
     # add_amanzi_test(matrix_fe_test_np2 matrix_fe_test NPROCS 2 KIND unit)
     # add_amanzi_test(matrix_fe_test_np4 matrix_fe_test NPROCS 4 KIND unit)
 
-    add_amanzi_test(supermap test_supermap
+    add_amanzi_test(data_structures_supermap data_structures_supermap
                     KIND unit
                     SOURCE test/Main.cc test/test_supermap.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-    add_amanzi_test(test_supermap_np3 test_supermap --kokkos-ndevices=1 NPROCS 3 KIND unit)
-    add_amanzi_test(test_supermap_np5 test_supermap --kokkos-ndevices=1 NPROCS 5 KIND unit)
+    add_amanzi_test(data_structures_supermap_np3 data_structures_supermap --kokkos-ndevices=1 NPROCS 3 KIND unit)
+    add_amanzi_test(data_structures_supermap_np5 data_structures_supermap --kokkos-ndevices=1 NPROCS 5 KIND unit)
 
-    # add_amanzi_test(block_supermap test_block_supermap
+    # add_amanzi_test(data_structures_block_supermap data_structures_block_supermap
     #                 KIND unit
     #                 SOURCE test/Main.cc test/test_block_supermap.cc
     #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
@@ -144,7 +144,7 @@ if (BUILD_TESTS)
     #                           simple_mesh
     #	                        ${UnitTest_LIBRARIES})
 
-    add_amanzi_test(common_patterns, test_common_patterns
+    add_amanzi_test(data_structures_common_patterns, data_structures_common_patterns
                     KIND unit
                     SOURCE test/Main.cc test/test_common_patterns.cc
                     LINK_LIBS data_structures mesh geometry mesh_factory simple_mesh ${UnitTest_LIBRARIES})
