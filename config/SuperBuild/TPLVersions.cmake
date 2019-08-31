@@ -383,7 +383,7 @@ set(ParMetis_SAVEAS_FILE    ${ParMetis_ARCHIVE_FILE})
 set(ParMetis_MD5_SUM        56ac6ebf6e7e8a522fa053c799dc7a92)
 
 #
-# TPL: SuperLU (Built by PETSc!)
+# TPL: SuperLU
 #
 set(SuperLU_VERSION_MAJOR  5)
 set(SuperLU_VERSION_MINOR  2)
@@ -395,7 +395,7 @@ set(SuperLU_SAVEAS_FILE    superlu_${SuperLU_VERSION}.tar.gz)
 set(SuperLU_MD5_SUM        3a1a9bff20cb06b7d97c46d337504447)
 
 #
-# TPL: SuperLU Distrib (Built by PETSc!)
+# TPL: SuperLU_Dist
 #
 set(SuperLUDist_VERSION_MAJOR  5)
 set(SuperLUDist_VERSION_MINOR  2)
@@ -426,10 +426,10 @@ set(PETSc_VERSION_MINOR  8)
 set(PETSc_VERSION_PATCH  2)
 set(PETSc_VERSION  ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
 set(PETSc_ARCHIVE_VERSION ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
-set(PETSc_URL_STRING     "https://bitbucket.org/petsc/petsc/get")
-set(PETSc_ARCHIVE_FILE   v${PETSc_VERSION}.tar.gz)
-set(PETSc_SAVEAS_FILE    petsc-${PETSc_ARCHIVE_VERSION}.tar.gz)
-set(PETSc_MD5_SUM        ce207f60800e19cfb55a2d7a879ca42c)
+set(PETSc_URL_STRING     "https://gitlab.com/petsc/petsc/-/archive/v${PETSc_VERSION}")
+set(PETSc_ARCHIVE_FILE   petsc-v${PETSc_VERSION}.tar.gz)
+set(PETSc_SAVEAS_FILE    petsc-${PETSc_VERSION}.tar.gz)
+set(PETSc_MD5_SUM        c9f03d11138046201b786e8da89dbe7b)
 
 #
 # TPL: Trilinos
