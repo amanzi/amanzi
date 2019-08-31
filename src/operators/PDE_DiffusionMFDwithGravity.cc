@@ -12,8 +12,9 @@
 #include <vector>
 
 #include "OperatorDefs.hh"
-#include "PDE_DiffusionMFDwithGravity.hh"
+#include "UniqueLocalIndex.hh"
 
+#include "PDE_DiffusionMFDwithGravity.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -291,9 +292,16 @@ void PDE_DiffusionMFDwithGravity::UpdateFluxNonManifold(
   }
 
   int dim = mesh_->space_dimension();
-  Epetra_MultiVector& flux_data = *flux->ViewComponent("cell", true);
+  Epetra_MultiVector& flux_data = *flux->ViewComponent("face", true);
+  Epetra_MultiVector grav_data(flux_data);
+  grav_data.PutScalar(0.0);
+
+  int ndofs_owned = flux->ViewComponent("face")->MyLength();
+  int ndofs_wghost = flux_data.MyLength();
 
   AmanziMesh::Entity_ID_List faces;
+  std::vector<int> hits(ndofs_wghost, 0);
+  const auto& fmap = *flux->Map().Map("face", true);
 
   WhetStone::Tensor Kc(dim, 1);
   Kc(0, 0) = 1.0;
@@ -323,17 +331,28 @@ void PDE_DiffusionMFDwithGravity::UpdateFluxNonManifold(
 
     for (int n = 0; n < nfaces; n++) {
       int dir, f = faces[n];
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+      AmanziGeometry::Point normal = mesh_->face_normal(f, false, c, &dir);
+      normal *= dir;
+
+      int g = fmap.FirstPointInElement(f);
+      int ndofs = fmap.ElementSize(f);
+      if (ndofs > 1) g += Operators::UniqueIndexFaceToCells(*mesh_, f, c);
 
       if (gravity_special_projection_) {
         const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f);
         double sign = normal * xcc;
         double tmp = copysign(norm(normal) / norm(xcc), sign);
-        flux_data[n][c] += (Kcg * xcc) * rho_ * kf[n] * tmp;
+        grav_data[0][g] += (Kcg * xcc) * rho_ * kf[n] * tmp;
       } else {
-        flux_data[n][c] += (Kcg * normal) * rho_ * kf[n];
+        grav_data[0][g] += (Kcg * normal) * rho_ * kf[n];
       }
+
+      hits[g]++;
     }
+  }
+
+  for (int g = 0; g < ndofs_owned; ++g) {
+    flux_data[0][g] += grav_data[0][g] / hits[g];
   }
 }
 

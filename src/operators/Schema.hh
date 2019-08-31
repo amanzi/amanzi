@@ -107,9 +107,11 @@ inline bool operator!=(const Schema& s1, const Schema& s2) {
 }
 
 inline CompositeVectorSpace cvsFromSchema(
-    const Schema& schema, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) {
+    const Schema& schema, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+    bool ghosted) {
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh);
+  cvs.SetGhosted(ghosted);
   for (const auto& item : schema) {
     int num;
     AmanziMesh::Entity_kind kind;

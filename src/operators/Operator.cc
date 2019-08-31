@@ -188,6 +188,41 @@ void Operator::SymbolicAssembleMatrix(const SuperMap& map, GraphFE& graph,
 
 
 /* ******************************************************************
+* Default visit method for symbolic assemble: Coupling
+****************************************************************** */
+void Operator::SymbolicAssembleMatrixOp(const Op_Diagonal& op,
+                                        const SuperMap& map, GraphFE& graph,
+                                        int my_block_row, int my_block_col) const
+{
+  AMANZI_ASSERT(cvs_col_->HasComponent(op.col_compname()));
+  AMANZI_ASSERT(cvs_row_->HasComponent(op.row_compname()));
+
+  const std::vector<int>& row_gids = map.GhostIndices(my_block_row, op.row_compname(), 0);
+  const std::vector<int>& col_gids = map.GhostIndices(my_block_col, op.col_compname(), 0);
+
+  const auto& col_lids = op.col_inds();
+  const auto& row_lids = op.row_inds();
+
+  std::vector<int> lid_r, lid_c;
+
+  int ierr(0);
+  for (int n = 0; n != col_lids.size(); ++n) {
+    int ndofs = col_lids[n].size();
+
+    lid_r.clear();
+    lid_c.clear();
+
+    for (int i = 0; i != ndofs; ++i) {
+      lid_r.push_back(row_gids[row_lids[n][i]]);
+      lid_c.push_back(col_gids[col_lids[n][i]]);
+    }
+    ierr |= graph.InsertMyIndices(ndofs, lid_r.data(), ndofs, lid_c.data());
+  }
+  AMANZI_ASSERT(!ierr);
+}
+
+
+/* ******************************************************************
 * Populate matrix entries.
 ****************************************************************** */
 void Operator::AssembleMatrix()
@@ -222,6 +257,42 @@ void Operator::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
   for (auto& it : *this) {
     it->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);
   }
+}
+
+
+/* ******************************************************************
+* Default visit methods for assemble: Coupling
+****************************************************************** */
+void Operator::AssembleMatrixOp(const Op_Diagonal& op,
+                                const SuperMap& map, MatrixFE& mat,
+                                int my_block_row, int my_block_col) const
+{
+  AMANZI_ASSERT(cvs_col_->HasComponent(op.col_compname()));
+  AMANZI_ASSERT(cvs_row_->HasComponent(op.row_compname()));
+
+  const std::vector<int>& row_gids = map.GhostIndices(my_block_row, op.row_compname(), 0);
+  const std::vector<int>& col_gids = map.GhostIndices(my_block_col, op.col_compname(), 0);
+
+  const auto& col_lids = op.col_inds();
+  const auto& row_lids = op.row_inds();
+
+  std::vector<int> lid_r, lid_c;
+
+  int ierr(0);
+  for (int n = 0; n != col_lids.size(); ++n) {
+    int ndofs = col_lids[n].size();
+
+    lid_r.clear();
+    lid_c.clear();
+
+    for (int i = 0; i != ndofs; ++i) {
+      lid_r.push_back(row_gids[row_lids[n][i]]);
+      lid_c.push_back(col_gids[col_lids[n][i]]);
+    }
+
+    ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[n]);
+  }
+  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -279,33 +350,6 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar)
   apply_calls_++;
 
   for (auto& it : *this) it->ApplyMatrixFreeOp(this, X, Y);
-
-  return 0;
-}
-
-
-/* ******************************************************************
-* Parallel matvec product Y = A^T * X.
-******************************************************************* */
-int Operator::ApplyTranspose(const CompositeVector& X, CompositeVector& Y, double scalar) const
-{
-  X.ScatterMasterToGhosted();
-
-  // initialize ghost elements
-  if (scalar == 0.0) {
-    Y.PutScalarMasterAndGhosted(0.0);
-  } else if (scalar == 1.0) {
-    Y.PutScalarGhosted(0.0);
-  } else {
-    Y.Scale(scalar);
-    Y.PutScalarGhosted(0.0);
-  }
-
-  apply_calls_++;
-
-  for (auto& it : *this) {
-    it->ApplyTransposeMatrixFreeOp(this, X, Y);
-  }
 
   return 0;
 }
@@ -371,6 +415,32 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
   }
 
   return ierr;
+}
+
+
+/* ******************************************************************
+* Defaultvisit method for apply 
+****************************************************************** */
+int Operator::ApplyMatrixFreeOp(const Op_Diagonal& op,
+                                const CompositeVector& X, CompositeVector& Y) const
+{
+  AMANZI_ASSERT(cvs_col_->HasComponent(op.col_compname()));
+  AMANZI_ASSERT(cvs_row_->HasComponent(op.row_compname()));
+
+  const Epetra_MultiVector& Xf = *X.ViewComponent(op.col_compname(), true);
+  Epetra_MultiVector& Yf = *Y.ViewComponent(op.row_compname(), true);
+  
+  const auto& col_lids = op.col_inds();
+  const auto& row_lids = op.row_inds();
+
+  int ierr(0);
+  for (int n = 0; n != col_lids.size(); ++n) {
+    int ndofs = col_lids[n].size();
+    AMANZI_ASSERT(ndofs == 1);
+
+    Yf[0][row_lids[n][0]] += op.matrices[n](0, 0) * Xf[0][col_lids[n][0]];
+  }
+  return 0;
 }
 
 
@@ -627,7 +697,7 @@ void Operator::CopySuperVectorToVector(const Epetra_Vector& sv, CompositeVector&
 int Operator::SchemaMismatch_(const std::string& schema1, const std::string& schema2) const
 {
   std::stringstream err;
-  err << "Schemas mismatch " << schema1 << " != " << schema2;
+  err << "Schemas mismatch: " << schema1 << " != " << schema2;
   Errors::Message message(err.str());
   Exceptions::amanzi_throw(message);
   return 1;
@@ -739,32 +809,6 @@ int Operator::ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
 ****************************************************************** */
 int Operator::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
                                 const CompositeVector& X, CompositeVector& Y) const {
-  return SchemaMismatch_(op.schema_string, schema_string_);
-}
-
-
-/* ******************************************************************
-* Visit methods for Apply: Coupling
-****************************************************************** */
-int Operator::ApplyMatrixFreeOp(const Op_Diagonal& op,
-                                const CompositeVector& X, CompositeVector& Y) const {
-  return SchemaMismatch_(op.schema_string, schema_string_);
-}
-
-
-/* ******************************************************************
-* Visit methods for ApplyTranspose: Cell
-****************************************************************** */
-int Operator::ApplyTransposeMatrixFreeOp(const Op_Cell_Schema& op,
-                                         const CompositeVector& X, CompositeVector& Y) const
-{
-  return SchemaMismatch_(op.schema_string, schema_string_);
-}
-
-
-int Operator::ApplyTransposeMatrixFreeOp(const Op_Face_Schema& op,
-                                         const CompositeVector& X, CompositeVector& Y) const
-{
   return SchemaMismatch_(op.schema_string, schema_string_);
 }
 
@@ -888,16 +932,6 @@ void Operator::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
 
 
 /* ******************************************************************
-* Visit methods for symbolic assemble: Coupling
-****************************************************************** */
-void Operator::SymbolicAssembleMatrixOp(const Op_Diagonal& op,
-                                        const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const {
-  SchemaMismatch_(op.schema_string, schema_string_);
-}
-
-
-/* ******************************************************************
 * Visit methods for assemble: Cell.
 ****************************************************************** */
 void Operator::AssembleMatrixOp(const Op_Cell_FaceCell& op,
@@ -1012,16 +1046,6 @@ void Operator::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
       << " cannot be used with a matrix on " << schema_string_;
   Errors::Message message(err.str());
   Exceptions::amanzi_throw(message);
-}
-
-
-/* ******************************************************************
-* Visit methods for assemble: Coupling
-****************************************************************** */
-void Operator::AssembleMatrixOp(const Op_Diagonal& op,
-                                const SuperMap& map, MatrixFE& mat,
-                                int my_block_row, int my_block_col) const {
-  SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 

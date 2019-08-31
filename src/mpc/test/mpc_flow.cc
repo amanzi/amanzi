@@ -10,18 +10,17 @@
 #include "UnitTest++.h"
 
 #include "CycleDriver.hh"
-#include "Domain.hh"
 #include "eos_registration.hh"
-#include "GeometricModel.hh"
-#include "Mesh.hh"
 #include "MeshFactory.hh"
+#include "Mesh.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
-#include "pks_transport_registration.hh"
+#include "pks_flow_registration.hh"
 #include "State.hh"
+#include "wrm_flow_registration.hh"
 
 
-TEST(MPC_DRIVER_TRANSPORT) {
+TEST(MPC_DRIVER_FLOW) {
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
@@ -30,10 +29,10 @@ using namespace Amanzi::AmanziGeometry;
   auto comm = Amanzi::getDefaultComm();
   
   // read the main parameter list
-  std::string xmlInFileName = "test/mpc_driver_transport.xml";
+  std::string xmlInFileName = "test/mpc_flow.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlInFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
-
+  
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
@@ -43,24 +42,49 @@ using namespace Amanzi::AmanziGeometry;
   Preference pref;
   pref.clear();
   pref.push_back(Framework::MSTK);
-  pref.push_back(Framework::STK);
 
   MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/mpc_driver_transport_mesh_10x10.exo");
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = meshfactory.create(0.0, 0.0, 216.0, 120.0, 54, 30);
   AMANZI_ASSERT(!mesh.is_null());
 
   // create dummy observation data object
-  Amanzi::ObservationData obs_data;
-
+  double avg1, avg2;
+  Amanzi::ObservationData obs_data;    
   Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(plist));
 
   Teuchos::ParameterList state_plist = glist->sublist("state");
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
   S->RegisterMesh("domain", mesh);
-
+  
+  {
   Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
-  cycle_driver.Go();
+    try {
+      auto S = cycle_driver.Go();
+      S->GetFieldData("saturation_liquid")->MeanValue(&avg1);
+    } catch (...) {
+      CHECK(false);
+    }
+  }
+  S = Teuchos::null;
+  
+  // restart simulation and compare results
+  glist->sublist("cycle driver").sublist("restart").set<std::string>("file name", "chk_flow00030.h5");
+  avg2 = 0.;
+  S = Teuchos::rcp(new Amanzi::State(state_plist));
+  S->RegisterMesh("domain", mesh);
+  
+  {
+    Amanzi::CycleDriver cycle_driver(glist, S, comm, obs_data);
+    try {
+      auto S = cycle_driver.Go();
+      S->GetFieldData("saturation_liquid")->MeanValue(&avg2);
+    } catch (...) {
+      CHECK(false);
+    }
+  }
+
+  CHECK_CLOSE(avg1, avg2, 1e-5 * avg1);
 }
 
 

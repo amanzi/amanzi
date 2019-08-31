@@ -57,7 +57,7 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
   //      parameter that enforces symmetry for a symmetric tree  operators.
   //    essential_eqn=true indicates that the operator places a positive number on 
   //      the main matrix diagonal for the case of essential BCs. This is the
-  //      implementtion trick/
+  //      implementtion trick.
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn);
 
   // postprocessing
@@ -102,6 +102,15 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
   int nnodes_owned, nnodes_wghost;
   int nedges_owned, nedges_wghost;
 };
+
+
+// non-member functions
+Teuchos::RCP<CompositeVectorSpace> CreateFracturedMatrixCVS(
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& fracture);
+
+Teuchos::RCP<CompositeVectorSpace> CreateNonManifoldCVS(
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
 }  // namespace Operators
 }  // namespace Amanzi

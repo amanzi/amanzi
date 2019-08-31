@@ -190,15 +190,20 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
                                           .sublist("divergence operator");
   op_matrix_div_ = Teuchos::rcp(new Operators::PDE_Abstract(tmp2, mesh_));
 
+  // -- create gradient block (transpose of divergence block)
+  Teuchos::ParameterList& tmp3 = ns_list_->sublist("operators")
+                                          .sublist("gradient operator");
+  op_matrix_grad_ = Teuchos::rcp(new Operators::PDE_Abstract(tmp3, mesh_));
+
   // -- create accumulation term (velocity block, only nodal unknowns)
   Operators::Schema schema(AmanziMesh::NODE, 2);  // FIXME
   op_matrix_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(schema, op_matrix_elas_->global_operator()));
   op_preconditioner_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(schema, op_preconditioner_elas_->global_operator()));
 
   // -- create convection term
-  Teuchos::ParameterList& tmp3 = ns_list_->sublist("operators")
+  Teuchos::ParameterList& tmp4 = ns_list_->sublist("operators")
                                           .sublist("advection operator");
-  op_matrix_conv_ = Teuchos::rcp(new Operators::PDE_Abstract(tmp3, op_matrix_elas_->global_operator()));
+  op_matrix_conv_ = Teuchos::rcp(new Operators::PDE_Abstract(tmp4, op_matrix_elas_->global_operator()));
   op_preconditioner_conv_ = Teuchos::rcp(new Operators::PDE_Abstract(tmp3, op_preconditioner_elas_->global_operator()));
 
   // -- create pressure block (for preconditioner)
@@ -208,7 +213,7 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_matrix_ = Teuchos::rcp(new Operators::TreeOperator(Teuchos::rcpFromRef(soln_->Map())));
   op_matrix_->SetOperatorBlock(0, 0, op_matrix_elas_->global_operator());
   op_matrix_->SetOperatorBlock(1, 0, op_matrix_div_->global_operator());
-  op_matrix_->SetOperatorBlock(0, 1, op_matrix_div_->global_operator(), true);
+  op_matrix_->SetOperatorBlock(0, 1, op_matrix_grad_->global_operator());
 
   op_preconditioner_ = Teuchos::rcp(new Operators::TreeOperator(Teuchos::rcpFromRef(soln_->Map())));
   op_preconditioner_->SetOperatorBlock(0, 0, op_preconditioner_elas_->global_operator());
@@ -268,6 +273,7 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
     op_matrix_conv_->AddBCs(bcx, bcx);
     op_matrix_acc_->AddBCs(bcx, bcx);
     op_matrix_div_->AddBCs(bcx, bcx);
+    op_matrix_grad_->AddBCs(bcx, bcx);
 
     op_preconditioner_elas_->AddBCs(bcx, bcx);
     op_preconditioner_conv_->AddBCs(bcx, bcx);

@@ -25,7 +25,6 @@
 
 // Amanzi
 #include "Explicit_TI_RK.hh"
-#include "OutputXDMF.hh"
 #include "CompositeVector.hh"
 #include "DG_Modal.hh"
 #include "LinearOperatorGMRES.hh"
@@ -33,6 +32,7 @@
 #include "MeshMapsFactory.hh"
 #include "NumericalIntegration.hh"
 #include "OperatorUtils.hh"
+#include "OutputXDMF.hh"
 #include "Tensor.hh"
 #include "VectorPolynomial.hh"
 #include "WhetStoneDefs.hh"

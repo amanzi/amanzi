@@ -52,7 +52,7 @@ void RunTest(int icase, double gravity) {
   if (MyPID == 0) std::cout << "\nTest: Darcy flow in fractures, gravity=" << gravity << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/operator_fractures.xml";
+  std::string xmlFileName = "test/operator_diffusion_dfn.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 

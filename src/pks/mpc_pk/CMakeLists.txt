@@ -60,6 +60,7 @@ if (ENABLE_Physics)
       FlowEnergy_PK.hh
       FlowMatrixFracture_PK.hh
       TransportMatrixFracture_PK.hh    
+      TransportMatrixFractureImplicit_PK.hh
       FlowReactiveTransport_PK.hh
       ReactiveTransport_PK.hh)
 
@@ -70,6 +71,7 @@ if (ENABLE_Physics)
       FlowEnergy_PK.cc
       FlowMatrixFracture_PK.cc
       TransportMatrixFracture_PK.cc        
+      TransportMatrixFractureImplicit_PK.cc
       FlowReactiveTransport_PK.cc
       ReactiveTransport_PK.cc)
 
@@ -102,15 +104,11 @@ else()
                    LINK_LIBS pks transport time_integration data_structures state
                              ${mpc_tree_tpl_libs})
 
-
 endif()
 
 
-      
-
-
-
 add_install_include_file(${mpc_tree_inc_files} mpc_pks_registration.hh)
+
 
 if (BUILD_TESTS) 
     # Add UnitTest include directoy

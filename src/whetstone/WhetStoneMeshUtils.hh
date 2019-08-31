@@ -66,7 +66,30 @@ void PolygonCentroidWeights(
 
 
 /* ******************************************************************
-* Extension of Mesh API. 
+* Extension of Mesh API: entities in cell
+****************************************************************** */
+inline
+void cell_get_entities(const AmanziMesh::Mesh& mesh, int c, 
+                       const AmanziMesh::Entity_kind kind, 
+                       AmanziMesh::Entity_ID_List* entities)
+{
+  if (kind == AmanziMesh::FACE) {
+    mesh.cell_get_faces(c, entities);
+  } else if (kind == AmanziMesh::EDGE) {
+    mesh.cell_get_edges(c, entities);
+  } else if (kind == AmanziMesh::NODE) {
+    mesh.cell_get_nodes(c, entities);
+  } else if (kind == AmanziMesh::CELL) {
+    entities->clear();
+    entities->push_back(c);
+  } else {
+    entities->clear();
+  }
+}
+
+
+/* ******************************************************************
+* Extension of Mesh API: neighboor of a cell 
 ****************************************************************** */
 inline
 int cell_get_face_adj_cell(const AmanziMesh::Mesh& mesh, int c, int f)

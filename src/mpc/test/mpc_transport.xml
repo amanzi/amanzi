@@ -15,7 +15,7 @@
     <ParameterList name="Computational domain">
       <ParameterList name="region: labeled set">
         <Parameter name="label" type="string" value="1"/>
-        <Parameter name="file" type="string" value="mpc_driver_transport_mesh_10x10.exo"/>
+        <Parameter name="file" type="string" value="mpc_transport_mesh_10x10.exo"/>
         <Parameter name="format" type="string" value="Exodus II"/>
         <Parameter name="entity" type="string" value="cell"/>
       </ParameterList>
@@ -29,7 +29,7 @@
     <ParameterList name="Left side">
       <ParameterList name="region: labeled set">
         <Parameter name="label" type="string" value="3"/>
-        <Parameter name="file" type="string" value="mpc_driver_transport_mesh.exo"/>
+        <Parameter name="file" type="string" value="mpc_transport_mesh.exo"/>
         <Parameter name="format" type="string" value="Exodus II"/>
         <Parameter name="entity" type="string" value="face"/>
       </ParameterList>
@@ -37,7 +37,7 @@
     <ParameterList name="Bottom side">
       <ParameterList name="region: labeled set">
         <Parameter name="label" type="string" value="2"/>
-        <Parameter name="file" type="string" value="mpc_driver_transport_mesh.exo"/>
+        <Parameter name="file" type="string" value="mpc_transport_mesh.exo"/>
         <Parameter name="format" type="string" value="Exodus II"/>
         <Parameter name="entity" type="string" value="face"/>
       </ParameterList>
@@ -50,7 +50,7 @@
       </ParameterList>
 
       <ParameterList name="read mesh file">
-	<Parameter name="file" type="string" value="test/mpc_driver_transport_mesh.exo"/>
+	<Parameter name="file" type="string" value="test/mpc_transport_mesh.exo"/>
 	<Parameter name="format" type="string" value="Exodus II"/>
       </ParameterList>
     </ParameterList>

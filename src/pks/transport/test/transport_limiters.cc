@@ -21,6 +21,7 @@
 
 #include "State.hh"
 #include "Transport_PK.hh"
+#include "TransportExplicit_PK.hh"
 
 
 /* **************************************************************** 
@@ -69,7 +70,7 @@ TEST(LIMITER_BARTH_JESPERSEN) {
   S->set_intermediate_time(0.0);
 
 
-  Transport_PK TPK(plist, S, component_names);
+  TransportExplicit_PK TPK(plist, S, component_names);
   TPK.CreateDefaultState(mesh, 1);
 
   /* modify the default state for the problem at hand */

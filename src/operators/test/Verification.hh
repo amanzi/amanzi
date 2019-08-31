@@ -22,14 +22,19 @@ class Verification {
   Verification(Teuchos::RCP<const Operator> op) : op_(op) {};
   ~Verification() {};
 
-  void CheckMatrixSPD(bool symmetry = true, bool pos_def = true) {
+  void CheckMatrixSPD(bool symmetry = true, bool pos_def = true, bool assembled = false) {
     Vector a(op_->DomainMap()), ha(a), b(a), hb(a);
 
     for (int n = 0; n < 2; n++) {
       a.Random();
       b.Random();
-      op_->Apply(a, ha);
-      op_->Apply(b, hb);
+      if (assembled) {
+        op_->ApplyAssembled(a, ha);
+        op_->ApplyAssembled(b, hb);
+      } else {
+        op_->Apply(a, ha);
+        op_->Apply(b, hb);
+      }
 
       double ahb, bha, aha, bhb;
       a.Dot(hb, &ahb);
@@ -38,7 +43,7 @@ class Verification {
       b.Dot(hb, &bhb);
 
       if (a.Comm()->MyPID() == 0) {
-        std::cout << "Matrix:\n";
+        if (n == 0) std::cout << "Matrix (assembled=" << assembled << "):\n";
         if (symmetry)
             printf("  Symmetry test: %21.14e = %21.14e\n", ahb, bha);
         if (pos_def)

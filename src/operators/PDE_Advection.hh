@@ -27,10 +27,10 @@ namespace Operators {
 class PDE_Advection : public PDE_HelperDiscretization {
  public:
   PDE_Advection(Teuchos::ParameterList& plist,
-               Teuchos::RCP<Operator> global_op) : PDE_HelperDiscretization(global_op) {};
+                const Teuchos::RCP<Operator>& global_op) : PDE_HelperDiscretization(global_op) {};
 
   PDE_Advection(Teuchos::ParameterList& plist,
-                Teuchos::RCP<const AmanziMesh::Mesh> mesh) : PDE_HelperDiscretization(mesh) {
+                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : PDE_HelperDiscretization(mesh) {
     global_op_ = Teuchos::null;
   }
 

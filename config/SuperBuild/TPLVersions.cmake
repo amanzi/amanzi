@@ -119,7 +119,8 @@
 #   0.95.7       - update MSTK to 3.1.0
 #   0.95.8       - update NetCDF-Fortran to 4.4.5
 #   0.95.9       - update NetCDF-C to 4.7.0
-#   0.95.10      - update Trilinos to 12.14.0bf557717e-Jun17
+#   0.95.10      - update OpenMPI to 3.1.4
+#   0.95.11      - update Trilinos to 12.14.0bf557717e-Jun17
 
 include(CMakeParseArguments)
 
@@ -172,7 +173,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 95)
-set(AMANZI_TPLS_VERSION_PATCH 9)
+set(AMANZI_TPLS_VERSION_PATCH 11)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -201,12 +202,12 @@ set(XERCES_MD5_SUM        7b1394c32abbdd87841d94a8404c2ac6)
 #
 set(OpenMPI_VERSION_MAJOR 3)
 set(OpenMPI_VERSION_MINOR 1)
-set(OpenMPI_VERSION_PATCH 1)
+set(OpenMPI_VERSION_PATCH 4)
 set(OpenMPI_VERSION ${OpenMPI_VERSION_MAJOR}.${OpenMPI_VERSION_MINOR}.${OpenMPI_VERSION_PATCH})
 set(OpenMPI_URL_STRING     "https://www.open-mpi.org/software/ompi/v3.1/downloads/")
 set(OpenMPI_ARCHIVE_FILE   openmpi-${OpenMPI_VERSION}.tar.bz2)
 set(OpenMPI_SAVEAS_FILE    ${OpenMPI_ARCHIVE_FILE})
-set(OpenMPI_MD5_SUM        493f1db2f75afaab1c8ecba78d2f5aab)
+set(OpenMPI_MD5_SUM        29770c6efcbb4c41d820cb6b8eae90b8)
 
 #
 # TPL: MPICH
