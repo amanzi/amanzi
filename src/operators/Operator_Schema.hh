@@ -62,10 +62,6 @@ class Operator_Schema : public Operator {
   virtual int ApplyMatrixFreeOp(const Op_Node_Node& op,
       const CompositeVector& X, CompositeVector& Y) const override;
 
-  // -- visit methods for ApplyTranspose 
-  virtual int ApplyTransposeMatrixFreeOp(const Op_Cell_Schema& op,
-          const CompositeVector& X, CompositeVector& Y) const override;
-
   // -- visit methods for symbolic assemble
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
           const SuperMap& map, GraphFE& graph,

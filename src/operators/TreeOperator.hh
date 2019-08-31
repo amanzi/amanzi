@@ -52,7 +52,7 @@ class TreeOperator {
   virtual ~TreeOperator() = default;
 
   // main members
-  void SetOperatorBlock(int i, int j, const Teuchos::RCP<const Operator>& op, bool transpose = false);
+  void SetOperatorBlock(int i, int j, const Teuchos::RCP<const Operator>& op);
   
   virtual int Apply(const TreeVector& X, TreeVector& Y) const;
   virtual int ApplyAssembled(const TreeVector& X, TreeVector& Y) const;
@@ -83,7 +83,6 @@ class TreeOperator {
  private:
   Teuchos::RCP<const TreeVectorSpace> tvs_;
   Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Operator> > > blocks_;
-  Teuchos::Array<Teuchos::Array<bool> > transpose_;
   
   Teuchos::RCP<Epetra_CrsMatrix> A_;
   Teuchos::RCP<MatrixFE> Amat_;

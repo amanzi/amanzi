@@ -49,6 +49,10 @@ void NavierStokes_PK::FunctionalResidual(double t_old, double t_new,
   op_matrix_div_->UpdateMatrices();
   op_matrix_div_->ApplyBCs(false, true, false);
 
+  op_matrix_grad_->global_operator()->Init();
+  op_matrix_grad_->UpdateMatrices();
+  op_matrix_grad_->ApplyBCs(true, false, false);
+
   // Teuchos::RCP<CompositeVector> rhs = op_matrix_->rhs();
   // AddSourceTerms(*rhs);
 

@@ -51,11 +51,6 @@ class Op_Diagonal : public Op {
     assembler->ApplyMatrixFreeOp(*this, X, Y);
   }
 
-  virtual void ApplyTransposeMatrixFreeOp(const Operator* assembler,
-          const CompositeVector& X, CompositeVector& Y) const {
-    assembler->ApplyMatrixFreeOp(*this, X, Y);
-  }
-
   virtual void SymbolicAssembleMatrixOp(const Operator* assembler,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const {

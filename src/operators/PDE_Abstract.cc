@@ -52,45 +52,31 @@ void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
     Exceptions::amanzi_throw(msg);
   }
 
-  // discretization method:
+  // discretization methods
   auto base = global_schema_row_.StringToKind(domain.get<std::string>("base"));
-  mfd_ = WhetStone::BilinearFormFactory::Create(domain, mesh_);
+  auto mfd_domain = WhetStone::BilinearFormFactory::Create(domain, mesh_);
   Teuchos::RCP<WhetStone::BilinearForm> mfd_range;
   if (!symmetric) 
     mfd_range = WhetStone::BilinearFormFactory::Create(range, mesh_);
   else
-    mfd_range = mfd_;
+    mfd_range = mfd_domain;
+
+  // At the moment, a bilinear form is based on one
+  // element, so we need to specify its non-default location
+  std::string location = plist.get<std::string>("factory", "schema domain");
+  mfd_ = (location == "schema range") ? mfd_range : mfd_domain;
 
   if (global_op_ == Teuchos::null) {
     // constructor was given a mesh
     // -- range schema and cvs
     local_schema_row_.Init(mfd_range, mesh_, base);
     global_schema_row_ = local_schema_row_;
-
-    Teuchos::RCP<CompositeVectorSpace> cvs_row = Teuchos::rcp(new CompositeVectorSpace());
-    cvs_row->SetMesh(mesh_)->SetGhosted(true);
-
-    int num;
-    AmanziMesh::Entity_kind kind;
-
-    for (auto it = global_schema_row_.begin(); it != global_schema_row_.end(); ++it) {
-      std::tie(kind, std::ignore, num) = *it;
-      std::string name(local_schema_row_.KindToString(kind));
-      cvs_row->AddComponent(name, kind, num);
-    }
+    Teuchos::RCP<CompositeVectorSpace> cvs_row = Teuchos::rcp(new CompositeVectorSpace(cvsFromSchema(global_schema_row_, mesh_, true)));
 
     // -- domain schema and cvs
-    local_schema_col_.Init(mfd_, mesh_, base);
+    local_schema_col_.Init(mfd_domain, mesh_, base);
     global_schema_col_ = local_schema_col_;
-
-    Teuchos::RCP<CompositeVectorSpace> cvs_col = Teuchos::rcp(new CompositeVectorSpace());
-    cvs_col->SetMesh(mesh_)->SetGhosted(true);
-
-    for (auto it = global_schema_col_.begin(); it != global_schema_col_.end(); ++it) {
-      std::tie(kind, std::ignore, num) = *it;
-      std::string name(local_schema_col_.KindToString(kind));
-      cvs_col->AddComponent(name, kind, num);
-    }
+    Teuchos::RCP<CompositeVectorSpace> cvs_col = Teuchos::rcp(new CompositeVectorSpace(cvsFromSchema(global_schema_col_, mesh_, true)));
 
     global_op_ = Teuchos::rcp(new Operator_Schema(cvs_row, cvs_col, plist, global_schema_row_, global_schema_col_));
     if (local_schema_col_.base() == AmanziMesh::CELL) {
@@ -104,7 +90,7 @@ void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
 
     mesh_ = global_op_->DomainMap().Mesh();
     local_schema_row_.Init(mfd_range, mesh_, base);
-    local_schema_col_.Init(mfd_, mesh_, base);
+    local_schema_col_.Init(mfd_domain, mesh_, base);
 
     local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
   }
@@ -132,7 +118,7 @@ void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
   if (Kpoly_.get()) coef = "polynomial";
   if (Kvec_.get()) coef = "vector polynomial";
 
-  WhetStone::DenseMatrix Mcell, Acell;
+  WhetStone::DenseMatrix Mcell, Acell, AcellT;
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
 
@@ -168,6 +154,12 @@ void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
     for (int c = 0; c < ncells_owned; ++c) {
       mfd_->DivergenceMatrix(c, Acell);
       matrix[c] = Acell;
+    }
+  } else if (matrix_ == "divergence transpose") {
+    for (int c = 0; c < ncells_owned; ++c) {
+      mfd_->DivergenceMatrix(c, Acell);
+      AcellT.Transpose(Acell);
+      matrix[c] = AcellT;
     }
   } else if (matrix_ == "advection" && coef == "constant") {
     const Epetra_MultiVector& u_c = *u->ViewComponent("cell", false);

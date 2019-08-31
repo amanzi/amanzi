@@ -121,13 +121,18 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   op00->SetBCs(bcf, bcf);
   op00->AddBCs(bcv, bcv);
 
-  // -- create a divergence operator. Note that it uses two different schemas for DOFs 
-  // for velocity and pressure.
+  // -- create a divergence operator (incompressibility equation). 
+  //    Note that it uses two different schemas for DOFs for velocity and pressure.
   op_list = plist.sublist("PK operator").sublist("divergence operator");
   Teuchos::RCP<PDE_Abstract> op10 = Teuchos::rcp(new PDE_Abstract(op_list, mesh));
-  // -- add boundary conditions to the discrete PDE: incompressibility equation
   op10->SetBCs(bcf, bcf);
   op10->AddBCs(bcv, bcv);
+
+  // -- create a gradient operator as transpose of divergence
+  op_list = plist.sublist("PK operator").sublist("gradient operator");
+  Teuchos::RCP<PDE_Abstract> op01 = Teuchos::rcp(new PDE_Abstract(op_list, mesh));
+  op01->SetBCs(bcf, bcf);
+  op01->AddBCs(bcv, bcv);
 
   // create identity type operator: pressure block for preconditioner
   Teuchos::RCP<PDE_Accumulation> pc11 = Teuchos::rcp(new PDE_Accumulation(AmanziMesh::CELL, mesh));
@@ -138,6 +143,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   // of the divergence operator (block 01).
   Teuchos::RCP<Operator> global00 = op00->global_operator();
   Teuchos::RCP<Operator> global10 = op10->global_operator();
+  Teuchos::RCP<Operator> global01 = op01->global_operator();
 
   const CompositeVectorSpace& cvs = global00->DomainMap();
   Teuchos::RCP<TreeVectorSpace> tvs = Teuchos::rcp(new TreeVectorSpace());
@@ -147,7 +153,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   Teuchos::RCP<TreeOperator> op = Teuchos::rcp(new Operators::TreeOperator(tvs));
   op->SetOperatorBlock(0, 0, global00);
   op->SetOperatorBlock(1, 0, global10);
-  op->SetOperatorBlock(0, 1, global10, true);
+  op->SetOperatorBlock(0, 1, global01);
 
   // create and initialize state variables: velocity and pressure.
   TreeVector solution(*tvs);
@@ -177,6 +183,9 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   op10->UpdateMatrices();
   op10->ApplyBCs(false, true, false);
 
+  op01->UpdateMatrices();
+  op01->ApplyBCs(true, false, false);
+
   // populate local matrices in the pressure block (for preconditioner)
   CompositeVector vol(global11->DomainMap());
   vol.PutScalar(1.0);
@@ -201,9 +210,13 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   pc->SetOperatorBlock(1, 1, pc11->global_operator());
   pc->InitBlockDiagonalPreconditioner();
 
+  // Assemble global matrix for tesing purposes
+  op->SymbolicAssembleMatrix();
+  op->AssembleMatrix();
   // Test SPD properties of the matrix and preconditioner.
   VerificationTV ver1(op), ver2(pc);
-  ver1.CheckMatrixSPD();
+  ver1.CheckMatrixSPD(true, false, false);
+  ver1.CheckMatrixSPD(true, false, true);
   ver2.CheckPreconditionerSPD();
 
   // solve the discrete problem.

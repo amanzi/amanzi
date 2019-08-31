@@ -76,7 +76,7 @@ class SuperMap {
     if (bi == block_info_.end()) {
       Errors::Message msg;
       msg << "SuperMap does not have block component <" << block_num << ","
-          << compname << "," << dof_num;
+          << compname << "," << dof_num << ">";
       Exceptions::amanzi_throw(msg);
     }
     return smap_->Indices(bi->second.first, bi->second.second);
@@ -88,7 +88,7 @@ class SuperMap {
     if (bi == block_info_.end()) {
       Errors::Message msg;
       msg << "SuperMap does not have block component <" << block_num << ","
-          << compname << "," << dof_num;
+          << compname << "," << dof_num << ">";
       Exceptions::amanzi_throw(msg);
     }
     return smap_->GhostIndices(bi->second.first, bi->second.second);
