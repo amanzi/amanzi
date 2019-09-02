@@ -1,16 +1,19 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-   ATS
+/*
+  Data Structures
 
-   License: see $ATS_DIR/COPYRIGHT
-   Author: Ethan Coon
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-   Implementation of TreeVector, a nested, hierarchical data structure for PK
-   hierarchies.  This nested vector allows each physical PK to push back
-   Epetra_MultiVectors to store their solution, and allows MPCs to push back
-   TreeVectors in a nested format.  It also provides an implementation of the
-   Vector interface for use with time integrators/nonlinear solvers.
-   ------------------------------------------------------------------------- */
+  Author: Ethan Coon
+
+  Implementation of TreeVector, a nested, hierarchical data structure for PK
+  hierarchies.  This nested vector allows each physical PK to push back
+  Epetra_MultiVectors to store their solution, and allows MPCs to push back
+  TreeVectors in a nested format.  It also provides an implementation of the
+  Vector interface for use with time integrators/nonlinear solvers.
+*/
 
 #include "dbc.hh"
 #include "TreeVector.hh"

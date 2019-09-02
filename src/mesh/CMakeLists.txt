@@ -30,9 +30,9 @@ include_directories(${Boost_INCLUDE_DIRS})
 #
 # Library: mesh
 #
-add_amanzi_library(mesh SOURCE Mesh.cc 
+add_amanzi_library(mesh SOURCE GenerationSpec.cc 
+                               Mesh.cc 
                                Mesh_Sets.cc 
-                               GenerationSpec.cc 
                         LINK_LIBS geometry atk ${Epetra_LIBRARIES})
 
 #
@@ -50,6 +50,7 @@ add_install_include_file(${mesh_inc_files})
 
 # Derived and support classes
 add_subdirectory(mesh_simple)
+add_subdirectory(mesh_derived)
 
 # Mesh Frameworks
 
