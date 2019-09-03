@@ -18,9 +18,10 @@ project(MESH_DERIVED)
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
+include_directories(${MESH_DERIVED_SOURCE_DIR})
+include_directories(${MESH_FACTORY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MSTK_SOURCE_DIR})
-include_directories(${MESH_DERIVED_SOURCE_DIR})
 
 # External (TPL) directories
 include_directories(${Epetra_INCLUDE_DIRS})
@@ -52,7 +53,7 @@ if (BUILD_TESTS)
    add_amanzi_test(mesh_derived_fracture mesh_derived_fracture
                    KIND unit
                    SOURCE test/Main.cc test/mesh_derived_fracture.cc
-                   LINK_LIBS mstk_mesh derived_mesh geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+                   LINK_LIBS mesh_factory mstk_mesh derived_mesh geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
 endif()
   

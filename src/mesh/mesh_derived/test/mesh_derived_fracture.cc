@@ -22,6 +22,7 @@
 
 // Amanzi::Mesh
 #include "MeshDerived.hh"
+#include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
 
 /* **************************************************************** */
@@ -32,27 +33,45 @@ TEST(DERIVED_MESH) {
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
 
+  std::vector<Framework> frameworks = {Framework::MSTK, Framework::MOAB, Framework::SIMPLE};
+
   // read parameter list
   std::string xmlFileName = "test/mesh_derived_fracture.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
-  // create a mesh framework
+  std::string exoname("test/mesh_derived_fracture.exo");
+  std::string setname("fractures");
+
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
-  RCP<const Mesh> mesh3D = Teuchos::rcp(new Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10,
-                                                      comm, gm, plist, true, true));
+  for (auto frm = frameworks.begin(); frm != frameworks.end(); ++frm) {
+    // create a mesh framework
+    std::cout << "\nMesh framework: " << framework_names.at(*frm) << std::endl;
+    MeshFactory meshfactory(comm, gm, plist);
+    meshfactory.set_preference(Preference({*frm}));
+    RCP<const Mesh> mesh3D;
 
-  // extract fractures mesh
-  std::string setname("fractures");
+    if (framework_names.at(*frm) != "MOAB")
+      mesh3D = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, true, true);
+    else 
+      mesh3D = meshfactory.create(exoname, true, true);
 
-  RCP<const Mesh> mesh = Teuchos::rcp(new MeshDerived(mesh3D, setname, AmanziMesh::FACE,
-                                                      comm, gm, plist, true, false));
+    if (framework_names.at(*frm) == "MSTK") mesh3D->write_to_exodus_file(exoname);
 
-  int ncells = mesh->cell_map(false).NumGlobalElements();
-  int nfaces = mesh->face_map(false).NumGlobalElements();
-  std::cout << "pid=" << comm->MyPID() << " cells: " << ncells 
-                                       << " faces: " << nfaces << std::endl;
+    // extract fractures mesh
+    try {
+      RCP<const Mesh> mesh = Teuchos::rcp(new MeshDerived(mesh3D, setname, AmanziMesh::FACE,
+                                                          comm, gm, plist, true, false));
+
+      int ncells = mesh->cell_map(false).NumGlobalElements();
+      int nfaces = mesh->face_map(false).NumGlobalElements();
+      std::cout << "pid=" << comm->MyPID() << " cells: " << ncells 
+                                           << " faces: " << nfaces << std::endl;
+    } catch (...) {
+      std::cout << "Framework failed.\n";
+    }
+  }
 }
 
 
