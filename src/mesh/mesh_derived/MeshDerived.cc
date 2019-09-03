@@ -83,10 +83,10 @@ void MeshDerived::cell_get_faces_and_dirs_internal_(
   int fp = entid_to_parent_[CELL][c];
   parent_mesh_->face_get_edges_and_dirs(fp, faces, fdirs);
   int nfaces = faces->size();
-
+ 
   for (int i = 0; i < nfaces; ++i) {
     int f = (*faces)[i];
-    (*faces)[i] = parent_to_entid_[CELL][f];
+    (*faces)[i] = parent_to_entid_[FACE][f];
   }
 }
 
@@ -156,7 +156,9 @@ void MeshDerived::cell_get_coordinates(const Entity_ID c,
                                        std::vector<AmanziGeometry::Point> *vxyz) const
 {
   Entity_ID_List nodes; 
-  parent_mesh_->cell_get_nodes(c, &nodes);
+
+  int fp = entid_to_parent_[CELL][c];
+  parent_mesh_->face_get_nodes(fp, &nodes);
   int nnodes = nodes.size();
 
   AmanziGeometry::Point p(space_dimension());
@@ -175,17 +177,19 @@ void MeshDerived::cell_get_coordinates(const Entity_ID c,
 void MeshDerived::face_get_coordinates(const Entity_ID f,
                                        std::vector<AmanziGeometry::Point>* vxyz) const
 {
-  Entity_ID_List nodes; 
-  parent_mesh_->face_get_nodes(f, &nodes);
-  int nnodes = nodes.size();
+  Entity_ID v0, v1;
 
-  AmanziGeometry::Point p(space_dimension());
+  int ep = entid_to_parent_[FACE][f];
+  parent_mesh_->edge_get_nodes(ep, &v0, &v1);
+
+  AmanziGeometry::Point xyz(space_dimension());
 
   vxyz->clear();
-  for (int i = 0; i < nnodes; ++i) {
-    parent_mesh_->node_get_coordinates(nodes[i], &p);
-    vxyz->push_back(p);
-  }
+  parent_mesh_->node_get_coordinates(v0, &xyz);
+  vxyz->push_back(xyz);
+
+  parent_mesh_->node_get_coordinates(v1, &xyz);
+  vxyz->push_back(xyz);
 }
 
 
