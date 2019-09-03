@@ -80,7 +80,14 @@ void MeshDerived::cell_get_faces_and_dirs_internal_(
     const Entity_ID c,
     Entity_ID_List *faces, std::vector<int> *fdirs, const bool ordered) const
 {
-  parent_mesh_->face_get_edges_and_dirs(c, faces, fdirs);
+  int fp = entid_to_parent_[CELL][c];
+  parent_mesh_->face_get_edges_and_dirs(fp, faces, fdirs);
+  int nfaces = faces->size();
+
+  for (int i = 0; i < nfaces; ++i) {
+    int f = (*faces)[i];
+    (*faces)[i] = parent_to_entid_[CELL][f];
+  }
 }
 
 
@@ -89,10 +96,13 @@ void MeshDerived::cell_get_faces_and_dirs_internal_(
 ****************************************************************** */
 void MeshDerived::face_get_nodes(const Entity_ID f, Entity_ID_List *nodes) const {
   Entity_ID v0, v1;
-  parent_mesh_->edge_get_nodes(f, &v0, &v1);
+
+  int ep = entid_to_parent_[FACE][f];
+  parent_mesh_->edge_get_nodes(ep, &v0, &v1);
+
   nodes->clear();
-  nodes->push_back(v0);
-  nodes->push_back(v1);
+  nodes->push_back(parent_to_entid_[NODE][v0]);
+  nodes->push_back(parent_to_entid_[NODE][v1]);
 }
 
 
@@ -104,10 +114,13 @@ void MeshDerived::face_get_edges_and_dirs_internal_(
     Entity_ID_List *edges, std::vector<int> *edirs, const bool ordered) const
 {
   Entity_ID v0, v1;
-  parent_mesh_->edge_get_nodes(f, &v0, &v1);
+
+  int ep = entid_to_parent_[FACE][f];
+  parent_mesh_->edge_get_nodes(ep, &v0, &v1);
+
   edges->clear();
-  edges->push_back(v0);
-  edges->push_back(v1);
+  edges->push_back(parent_to_entid_[NODE][v0]);
+  edges->push_back(parent_to_entid_[NODE][v1]);
   edirs->resize(2, 1);
 }
 
@@ -119,7 +132,20 @@ void MeshDerived::face_get_cells_internal_(
     const Entity_ID f,
     const Parallel_type ptype, Entity_ID_List *cells) const
 {
+  Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  int ep = entid_to_parent_[FACE][f];
+  // parent_mesh_->edge_get_faces_and_dirs(ep, ptype, &faces, &dirs);
   AMANZI_ASSERT(false);
+  int nfaces = faces.size();
+
+  cells->clear();
+  for (int i = 0; i < nfaces; ++i) {
+    int f = faces[i];
+    auto it = parent_to_entid_[CELL].find(f);
+    if (it != parent_to_entid_[CELL].end()) cells->push_back(it->second);
+  }
 }
 
 
@@ -130,14 +156,14 @@ void MeshDerived::cell_get_coordinates(const Entity_ID c,
                                        std::vector<AmanziGeometry::Point> *vxyz) const
 {
   Entity_ID_List nodes; 
-  cell_get_nodes(c, &nodes);
+  parent_mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
   AmanziGeometry::Point p(space_dimension());
 
   vxyz->clear();
   for (int i = 0; i < nnodes; ++i) {
-    node_get_coordinates(nodes[i], &p);
+    parent_mesh_->node_get_coordinates(nodes[i], &p);
     vxyz->push_back(p);
   }
 }
@@ -150,14 +176,14 @@ void MeshDerived::face_get_coordinates(const Entity_ID f,
                                        std::vector<AmanziGeometry::Point>* vxyz) const
 {
   Entity_ID_List nodes; 
-  face_get_nodes(f, &nodes);
+  parent_mesh_->face_get_nodes(f, &nodes);
   int nnodes = nodes.size();
 
   AmanziGeometry::Point p(space_dimension());
 
   vxyz->clear();
   for (int i = 0; i < nnodes; ++i) {
-    node_get_coordinates(nodes[i], &p);
+    parent_mesh_->node_get_coordinates(nodes[i], &p);
     vxyz->push_back(p);
   }
 }
@@ -502,6 +528,7 @@ void MeshDerived::InitParentMaps(const std::string& setname)
   nents_owned_.clear();
   nents_ghost_.clear();
   entid_to_parent_.clear();
+  parent_to_entid_.clear();
 
   std::vector<Entity_kind> kinds_derived({CELL, FACE, NODE});
   std::vector<Entity_kind> kinds_parent({FACE, EDGE, NODE});
@@ -517,19 +544,25 @@ void MeshDerived::InitParentMaps(const std::string& setname)
     // extract owned ids
     int nowned_p = parent_mesh_->num_entities(kind_p, Parallel_type::OWNED);
 
-    auto& ids = entid_to_parent_[kind_d];
+    auto& ids_p = entid_to_parent_[kind_d];
     for (int n = 0; n < setents.size(); ++n) {
-      if (setents[n] < nowned_p)
-        ids.push_back(setents[n]);
+      if (setents[n] < nowned_p) 
+        ids_p.push_back(setents[n]);
     }
 
-    nents_owned_[kind_d] = ids.size();
-    nents_ghost_[kind_d] = setents.size() - ids.size();
+    nents_owned_[kind_d] = ids_p.size();
+    nents_ghost_[kind_d] = setents.size() - ids_p.size();
 
     // extract ghost ids
     for (int n = 0; n < setents.size(); ++n) {
       if (setents[n] >= nowned_p)
-        ids.push_back(setents[n]);
+        ids_p.push_back(setents[n]);
+    }
+
+    // create reverse ordered map
+    auto& ids_d = parent_to_entid_[kind_d];
+    for (int n = 0; n < setents.size(); ++n) {
+      ids_d[setents[n]] = n;
     }
   }
 }

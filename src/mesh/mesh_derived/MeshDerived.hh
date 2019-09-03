@@ -162,27 +162,11 @@ class MeshDerived : public Mesh {
   // -- edges
 
   // -- faces
-  AmanziGeometry::Point face_centroid(const Entity_ID f) const {
-    return parent_mesh_->edge_centroid(f);
-  }
-
-  double face_area(Entity_ID f) const {
-    return parent_mesh_->edge_length(f);
-  }
-
   virtual void face_get_coordinates(const Entity_ID f,
                                     std::vector<AmanziGeometry::Point>* vxyz) const override;
 
   // -- cells
-  AmanziGeometry::Point cell_centroid(Entity_ID c) const {
-    return parent_mesh_->face_centroid(c);
-  }
-
-  double cell_volume(Entity_ID c) const {
-    return parent_mesh_->face_area(c);
-  }
-
-  // -- coordinates of nodes in cell in the standard order (Exodus II convention)
+  //    coordinates of nodes in cell in the standard order (Exodus II convention)
   //    STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES IN 3D
   //    For a general polyhedron this returns the node coordinates in arbitrary order
   virtual void cell_get_coordinates(const Entity_ID c,
@@ -284,6 +268,7 @@ class MeshDerived : public Mesh {
   // owned ids are enforced to be first in the child -> parent map
   mutable std::map<Entity_kind, Entity_ID> nents_owned_, nents_ghost_;
   mutable std::map<Entity_kind, Entity_ID_List> entid_to_parent_;
+  mutable std::map<Entity_kind, std::map<Entity_ID, Entity_ID> > parent_to_entid_;  // reverse to previous map
   mutable std::map<Entity_kind, Teuchos::RCP<const Epetra_Map> > ent_map_owned_, ent_map_wghost_;
   mutable std::map<Entity_kind, Teuchos::RCP<const Epetra_Map> > ent_extmap_owned_, ent_extmap_wghost_;
 

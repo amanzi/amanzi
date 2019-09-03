@@ -17,15 +17,15 @@
 
 // TPLs
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "UnitTest++.h"
 
 // Amanzi
 #include "GMVMesh.hh"
 #include "LinearOperatorPCG.hh"
 #include "MeshFactory.hh"
-#include "Mesh_MSTK.hh"
+#include "MeshDerived.hh"
 #include "Tensor.hh"
 #include "WhetStoneDefs.hh"
 
@@ -49,15 +49,14 @@ void RunTest(int icase, double gravity) {
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: Darcy flow in fractures, gravity=" << gravity << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: Darcy flow in fractures, gravity=" << gravity << " case=" << icase << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion_dfn.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create an SIMPLE mesh framework
-  ParameterList region_list = plist.sublist("regions");
+  ParameterList region_list = plist->sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
   MeshFactory meshfactory(comm,gm);
@@ -72,8 +71,12 @@ void RunTest(int icase, double gravity) {
     setnames.push_back("fracture 1");
     setnames.push_back("fracture 2");
     surfmesh = meshfactory.create(mesh, setnames, AmanziMesh::FACE);
-  } else {
+  } else if (icase == 1) {
     surfmesh = meshfactory.create("test/fractures.exo");
+  } else if (icase == 2) {
+    RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, true, true);
+    std::string setname("fractures");
+    surfmesh = Teuchos::rcp(new MeshDerived(mesh, setname, AmanziMesh::FACE, comm, gm, plist, true, false));
   }
 
   // modify diffusion coefficient
@@ -123,7 +126,7 @@ void RunTest(int icase, double gravity) {
   // create diffusion operator
   double rho(1.0);
   AmanziGeometry::Point g(0.0, 0.0, -gravity);
-  Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("diffusion operator");
+  Teuchos::ParameterList olist = plist->sublist("PK operator").sublist("diffusion operator");
   olist.set<bool>("gravity", (gravity > 0.0));
 
   Operators::PDE_DiffusionFactory opfactory;
@@ -143,12 +146,12 @@ void RunTest(int icase, double gravity) {
   global_op->AssembleMatrix();
     
   // create preconditoner
-  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  ParameterList slist = plist->sublist("preconditioners").sublist("Hypre AMG");
   global_op->InitializePreconditioner(slist);
   global_op->UpdatePreconditioner();
 
   // solve the problem
-  ParameterList lop_list = plist.sublist("solvers").sublist("PCG").sublist("pcg parameters");
+  ParameterList lop_list = plist->sublist("solvers").sublist("PCG").sublist("pcg parameters");
   AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
       solver(global_op, global_op);
   solver.Init(lop_list);
@@ -156,12 +159,14 @@ void RunTest(int icase, double gravity) {
   CompositeVector rhs = *global_op->rhs();
   int ierr = solver.ApplyInverse(rhs, solution);
 
+  int ndofs = global_op->A()->NumGlobalRows();
   double a;
   rhs.Norm2(&a);
   if (MyPID == 0) {
     std::cout << "pressure solver (" << solver.name() 
               << "): ||r||=" << solver.residual() << " itr=" << solver.num_itrs()
               << "  ||f||=" << a 
+              << "  #dofs=" << ndofs
               << " code=" << solver.returned_code() << std::endl;
   }
 
@@ -200,6 +205,10 @@ TEST(FRACTURES_EXTRACTION) {
 
 TEST(FRACTURES_INPUT_EXODUS_FILE_GRAVITY) {
   RunTest(1, 2.0);
+}
+
+TEST(FRACTURES_EXTRACTION_DERIVED) {
+  RunTest(2, 0.0);
 }
 
 
