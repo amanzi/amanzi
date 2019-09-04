@@ -256,6 +256,7 @@ if ( BUILD_TESTS )
      # fractures
     add_amanzi_test(transport_fractures transport_fractures
                     KIND unit
+                    NPROCS 2
                     SOURCE test/Main.cc test/transport_fractures.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
