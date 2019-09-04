@@ -17,6 +17,7 @@
 #include "energy_iem_registration.hh"
 #include "eos_registration.hh"
 #include "Mesh.hh"
+#include "MeshDerived.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
 #include "mpc_pks_registration.hh"
@@ -49,7 +50,7 @@ using namespace Amanzi::AmanziGeometry;
   auto mesh_list = Teuchos::sublist(plist, "mesh", true);
   MeshFactory factory(comm, gm, mesh_list);
   factory.set_preference(Preference({Framework::MSTK}));
-  auto mesh = factory.create(0.0, 0.0, 0.0, 216.0, 10.0, 120.0, 9, 2, 20);
+  auto mesh = factory.create(0.0, 0.0, 0.0, 216.0, 10.0, 120.0, 9, 2, 20, true, true);
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
@@ -61,7 +62,8 @@ using namespace Amanzi::AmanziGeometry;
   //create additional mesh for fracture
   std::vector<std::string> names;
   names.push_back("fracture");
-  auto mesh_fracture = factory.create(mesh, names, AmanziMesh::FACE);
+  // auto mesh_fracture = factory.create(mesh, names, AmanziMesh::FACE);
+  auto mesh_fracture = Teuchos::rcp(new MeshDerived(mesh, "fracture", AmanziMesh::FACE, comm, gm, mesh_list, true, false));
 
   S->RegisterMesh("fracture", mesh_fracture);
 
