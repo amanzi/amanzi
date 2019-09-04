@@ -48,11 +48,8 @@ file(GLOB mesh_inc_files "*.hh")
 add_install_include_file(${mesh_inc_files})
 
 
-# Derived and support classes
-add_subdirectory(mesh_simple)
-add_subdirectory(mesh_derived)
-
 # Mesh Frameworks
+add_subdirectory(mesh_simple)
 
 # STK (Trilinos Package)
 #if (ENABLE_STK_Mesh)
@@ -73,6 +70,7 @@ endif(ENABLE_MSTK_Mesh)
 # Factory class
 add_subdirectory(mesh_factory)
 add_subdirectory(mesh_logical)
+add_subdirectory(mesh_derived)
 
 
 if (BUILD_TESTS)

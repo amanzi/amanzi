@@ -82,9 +82,7 @@ class MeshDerived : public Mesh {
 
   // downward adjacencies
   // -- cells
-  virtual void cell_get_nodes(const Entity_ID c, Entity_ID_List* nodes) const override {
-    parent_mesh_->face_get_nodes(c, nodes);
-  }
+  virtual void cell_get_nodes(const Entity_ID c, Entity_ID_List* nodes) const override;
 
   // -- faces
   // On a distributed mesh, all nodes (OWNED or GHOST) of the face are returned
@@ -147,9 +145,7 @@ class MeshDerived : public Mesh {
 
   // Mesh entity geometry
   // -- nodes
-  virtual void node_get_coordinates(const Entity_ID n, AmanziGeometry::Point *xyz) const override {
-    parent_mesh_->node_get_coordinates(n, xyz);
-  }
+  virtual void node_get_coordinates(const Entity_ID n, AmanziGeometry::Point *xyz) const override;
 
   // -- node modifications are blocked for the derived mesh
   virtual void node_set_coordinates(const Entity_ID n, const AmanziGeometry::Point xyz) override {

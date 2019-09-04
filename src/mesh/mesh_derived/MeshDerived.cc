@@ -92,6 +92,22 @@ void MeshDerived::cell_get_faces_and_dirs_internal_(
 
 
 /* ******************************************************************
+* Connectivity list: cell -> nodes
+****************************************************************** */
+void MeshDerived::cell_get_nodes(const Entity_ID c, Entity_ID_List* nodes) const
+{
+  int fp = entid_to_parent_[CELL][c];
+  parent_mesh_->face_get_nodes(fp, nodes);
+  int nnodes = nodes->size();
+
+  for (int i = 0; i < nnodes; ++i) {
+    int v = (*nodes)[i];
+    (*nodes)[i] = parent_to_entid_[NODE][v];
+  }
+}
+
+
+/* ******************************************************************
 * Connectivity list: face -> nodes
 ****************************************************************** */
 void MeshDerived::face_get_nodes(const Entity_ID f, Entity_ID_List *nodes) const {
@@ -190,6 +206,17 @@ void MeshDerived::face_get_coordinates(const Entity_ID f,
 
   parent_mesh_->node_get_coordinates(v1, &xyz);
   vxyz->push_back(xyz);
+}
+
+
+/* ******************************************************************
+* Position vector for a node
+****************************************************************** */
+void MeshDerived::node_get_coordinates(const Entity_ID n,
+                                       AmanziGeometry::Point *xyz) const
+{
+  auto np = entid_to_parent_[NODE][n];
+  parent_mesh_->node_get_coordinates(np, xyz);
 }
 
 
@@ -549,6 +576,7 @@ void MeshDerived::InitParentMaps(const std::string& setname)
     int nowned_p = parent_mesh_->num_entities(kind_p, Parallel_type::OWNED);
 
     auto& ids_p = entid_to_parent_[kind_d];
+    ids_p.clear();
     for (int n = 0; n < setents.size(); ++n) {
       if (setents[n] < nowned_p) 
         ids_p.push_back(setents[n]);
@@ -565,8 +593,9 @@ void MeshDerived::InitParentMaps(const std::string& setname)
 
     // create reverse ordered map
     auto& ids_d = parent_to_entid_[kind_d];
-    for (int n = 0; n < setents.size(); ++n) {
-      ids_d[setents[n]] = n;
+    ids_d.clear();
+    for (int n = 0; n < ids_p.size(); ++n) {
+      ids_d[ids_p[n]] = n;
     }
   }
 }
