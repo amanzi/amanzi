@@ -79,6 +79,7 @@ set(operators_inc_files
     Operator_FaceCellSff.hh
     Operator_Factory.hh
     Operator_Node.hh
+    Operator_Schema.hh
     BoundaryFlux.hh
     PDE_Abstract.hh
     PDE_Accumulation.hh
