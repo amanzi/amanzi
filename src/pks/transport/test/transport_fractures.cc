@@ -65,6 +65,7 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   setnames.push_back("fracture 2");
 
   RCP<const Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::FACE);
+  // RCP<const Mesh> mesh = meshfactory.create("test/fractures.exo");
 
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);

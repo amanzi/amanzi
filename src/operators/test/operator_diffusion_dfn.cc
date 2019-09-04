@@ -65,6 +65,7 @@ void RunTest(int icase, double gravity) {
   RCP<Mesh> surfmesh;
 
   if (icase == 0) {
+    if (comm->NumProc() > 1) return;
     RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
 
     // extract fractures mesh

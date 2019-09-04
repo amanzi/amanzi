@@ -268,6 +268,8 @@ if (BUILD_TESTS)
                                         test/operator_diffusion_dfn.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+    add_amanzi_test(operators_dfn_4pe operators_dfn NPROCS 4 KIND unit)
+
     # Test: electromagnetics 
     add_amanzi_test(operators_electromagnetics operators_electromagnetics
                     KIND unit

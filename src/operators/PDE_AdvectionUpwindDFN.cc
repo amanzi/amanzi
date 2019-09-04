@@ -86,20 +86,17 @@ void PDE_AdvectionUpwindDFN::UpdateMatrices(const Teuchos::Ptr<const CompositeVe
       int c = downwind_cells_dfn_[f][n];
       double u = downwind_flux_dfn_[f][n];
       
-      if (c < ncells_owned) {
-        double tmp = u / flux_in;
-        for (int m = 0; m < nupwind; m++) {
-          double v = upwind_flux_dfn_[f][m];
-          for (int j = 0; j < cells.size(); j++) {
-            if (cells[j] == c) {
-              Aface(j, upwind_loc[m]) = (u / flux_in) * v;
-              break;
-            }
+      double tmp = u / flux_in;
+      for (int m = 0; m < nupwind; m++) {
+        double v = upwind_flux_dfn_[f][m];
+        for (int j = 0; j < cells.size(); j++) {
+          if (cells[j] == c) {
+            Aface(j, upwind_loc[m]) = (u / flux_in) * v;
+            break;
           }
         }
       }
     }
-
     matrix[f] = Aface;    
   }
 }

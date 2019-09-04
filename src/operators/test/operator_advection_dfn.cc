@@ -19,7 +19,7 @@
 
 // TPLs
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_ParameterXMLFileReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_RCP.hpp"
 #include "UnitTest++.h"
 
@@ -56,14 +56,14 @@ void RunTest(double gravity) {
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion_dfn.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
+  auto plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create an SIMPLE mesh framework
-  ParameterList region_list = plist.sublist("regions");
+  ParameterList region_list = plist->sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, *comm));
 
-  MeshFactory meshfactory(comm,gm);
+  auto mlist = Teuchos::sublist(plist, "mesh", true);
+  MeshFactory meshfactory(comm, gm, mlist);
   meshfactory.set_preference(Preference({Framework::MSTK}));
   RCP<const Mesh> mesh = meshfactory.create("test/fractures.exo");
 
@@ -118,7 +118,7 @@ void RunTest(double gravity) {
   solution.PutScalar(0.0);
 
   // create advection operator
-  Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("advection operator");
+  Teuchos::ParameterList olist = plist->sublist("PK operator").sublist("advection operator");
   Teuchos::RCP<Operators::PDE_AdvectionUpwindDFN> op_adv = Teuchos::rcp(new PDE_AdvectionUpwindDFN(olist, mesh));
   Teuchos::RCP<Operator> global_op = op_adv->global_operator();
 
@@ -138,7 +138,7 @@ void RunTest(double gravity) {
   global_op->AssembleMatrix();
     
   // create preconditoner
-  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  ParameterList slist = plist->sublist("preconditioners").sublist("Hypre AMG");
   global_op->InitializePreconditioner(slist);
   global_op->UpdatePreconditioner();
 
@@ -152,7 +152,7 @@ void RunTest(double gravity) {
   double t(0.0);
   for (int nstep = 0; nstep < 5; ++nstep) {
     // -- solve the problem
-    ParameterList lop_list = plist.sublist("solvers").sublist("GMRES").sublist("gmres parameters");
+    ParameterList lop_list = plist->sublist("solvers").sublist("GMRES").sublist("gmres parameters");
     AmanziSolvers::LinearOperatorGMRES<Operator, CompositeVector, CompositeVectorSpace>
         solver(global_op, global_op);
     solver.Init(lop_list);
@@ -189,7 +189,7 @@ void RunTest(double gravity) {
       for (int c2 = 0; c2 < ncells_owned; ++c2) {
         const auto& xc2 = mesh->cell_centroid(c2);
         if (xc2[0] - xc[0] > 1e-6 && fabs(xc2[1] - xc[1]) < 1e-6
-                                  && fabs(xc2[2] - xc[2]) < 1e-6) CHECK(new_c[0][c2] < new_c[0][c]); 
+                                  && fabs(xc2[2] - xc[2]) < 1e-6) CHECK(new_c[0][c2] <= new_c[0][c]); 
       }
     }
   }
