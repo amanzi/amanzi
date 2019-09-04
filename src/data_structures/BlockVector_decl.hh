@@ -65,22 +65,30 @@ public:
   //
   // Accessors to data.
   // ---------------------------------------------
-
+  template<class DeviceType=AmanziDefaultDevice>
+  using cMultiVectorView_type = cMultiVectorView_type_<DeviceType,Scalar>;
+  template<class DeviceType=AmanziDefaultDevice>
+  using MultiVectorView_type = MultiVectorView_type_<DeviceType,Scalar>;
+  template<class DeviceType=AmanziDefaultDevice>
+  using cVectorView_type = cVectorView_type_<DeviceType,Scalar>;
+  template<class DeviceType=AmanziDefaultDevice>
+  using VectorView_type = VectorView_type_<DeviceType,Scalar>;
+  
   // -- Access a component vector
   cMultiVector_ptr_type_<Scalar> GetComponent(const std::string& name, bool ghosted=false) const;
   MultiVector_ptr_type_<Scalar> GetComponent(const std::string& name, bool ghosted=false);
 
   // -- View a component vector
   template<class DeviceType=AmanziDefaultDevice>
-  cMultiVectorView_type_<DeviceType,Scalar> ViewComponent(const std::string& name, bool ghosted=false) const;
+  cMultiVectorView_type<DeviceType> ViewComponent(const std::string& name, bool ghosted=false) const;
   template<class DeviceType=AmanziDefaultDevice>
-  MultiVectorView_type_<DeviceType,Scalar> ViewComponent(const std::string& name, bool ghosted=false);
+  MultiVectorView_type<DeviceType> ViewComponent(const std::string& name, bool ghosted=false);
 
   // -- SubView of a component vector
   template<class DeviceType=AmanziDefaultDevice>
-  cVectorView_type_<DeviceType,Scalar> ViewComponent(const std::string& name, std::size_t dof, bool ghosted=false) const;
+  cVectorView_type<DeviceType> ViewComponent(const std::string& name, std::size_t dof, bool ghosted=false) const;
   template<class DeviceType=AmanziDefaultDevice>
-  VectorView_type_<DeviceType,Scalar> ViewComponent(const std::string& name, std::size_t dof, bool ghosted=false);
+  VectorView_type<DeviceType> ViewComponent(const std::string& name, std::size_t dof, bool ghosted=false);
   
   // // -- Set entries in the vectors.
   // void SetComponent(const std::string& name, const MultiVector_ptr_type_<Scalar>& data);

@@ -21,7 +21,8 @@ Debugging object for writing debug cells using VerboseObject.
 
 namespace Amanzi {
 
-class CompositeVector;
+template<typename Scalar> class CompositeVector_;
+using CompositeVector = CompositeVector_<double>;
 
 class Debugger {
 
@@ -40,8 +41,8 @@ public:
                    bool include_faces = false);
 
   // Write boundary condition data.
-  void WriteBoundaryConditions(const std::vector<int> &flag,
-                               const std::vector<double> &data);
+  // void WriteBoundaryConditions(const std::vector<int> &flag,
+  //                              const std::vector<double> &data);
 
   // Write list of vectors.
   void

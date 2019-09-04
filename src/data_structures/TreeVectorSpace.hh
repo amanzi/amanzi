@@ -41,6 +41,7 @@ class TreeVectorSpace {
 
   // Access to ANY communicator (this may be ill-posed!)
   Comm_ptr_type Comm() const { return comm_; }
+  Comm_ptr_type getComm() const { return comm_; }
 
   // Access to SubVectors
   typedef std::vector<Teuchos::RCP<TreeVectorSpace> > SubVectorsContainer;

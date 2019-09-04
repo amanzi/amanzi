@@ -31,7 +31,7 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
     Teuchos::Array<int> dcs = plist.get<Teuchos::Array<int>>("debug cells");
     for (Teuchos::Array<int>::const_iterator c = dcs.begin(); c != dcs.end();
          ++c) {
-      AmanziMesh::Entity_ID lc = mesh->cell_map(false).LID(*c);
+      AmanziMesh::Entity_ID lc = mesh->cell_map(false)->getLocalElement(*c);
       if (lc >= 0) {
         // include the LID
         dc_.push_back(lc);
@@ -42,7 +42,7 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
         vo_plist.sublist("verbose object");
         vo_plist.sublist("verbose object") = plist.sublist("verbose object");
         vo_plist.sublist("verbose object")
-            .set("write on rank", mesh->get_comm()->MyPID());
+            .set("write on rank", mesh->get_comm()->getRank());
         dcvo_.push_back(Teuchos::rcp(
             new VerboseObject(*mesh_->get_comm(), name, vo_plist)));
       }
@@ -54,24 +54,24 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
     Teuchos::Array<int> dfs = plist.get<Teuchos::Array<int>>("debug faces");
     for (Teuchos::Array<int>::const_iterator f = dfs.begin(); f != dfs.end();
          ++f) {
-      AmanziMesh::Entity_ID lf = mesh->face_map(true).LID(*f);
+      AmanziMesh::Entity_ID lf = mesh->face_map(true)->getLocalElement(*f);
       if (lf >= 0) {
         // debug the neighboring cells
-        AmanziMesh::Entity_ID_List cells;
-        mesh->face_get_cells(lf, AmanziMesh::Parallel_type::OWNED, &cells);
+        AmanziMesh::Entity_ID_View cells;
+        mesh->face_get_cells(lf, AmanziMesh::Parallel_type::OWNED, cells);
 
-        for (AmanziMesh::Entity_ID_List::const_iterator lc = cells.begin();
-             lc != cells.end(); ++lc) {
+        for (LO i=0; i!=cells.extent(0); ++i) {
+          auto lc = cells[i];
           // include the LID
-          dc_.push_back(*lc);
-          dc_gid_.push_back(mesh->cell_map(false).GID(*lc));
+          dc_.push_back(lc);
+          dc_gid_.push_back(mesh->cell_map(false)->getGlobalElement(lc));
 
           // make a verbose object for each case
           Teuchos::ParameterList vo_plist;
           vo_plist.sublist("verbose object");
           vo_plist.sublist("verbose object") = plist.sublist("verbose object");
           vo_plist.sublist("verbose object")
-              .set("write on rank", mesh->get_comm()->MyPID());
+              .set("write on rank", mesh->get_comm()->getRank());
           dcvo_.push_back(Teuchos::rcp(
               new VerboseObject(*mesh_->get_comm(), name, vo_plist)));
         }
@@ -166,13 +166,13 @@ void Debugger::WriteCellInfo(bool include_faces) {
                       << std::endl;
 
       if (include_faces) {
-        AmanziMesh::Entity_ID_List fnums0;
-        std::vector<int> dirs;
-        mesh_->cell_get_faces_and_dirs(c0, &fnums0, dirs);
+        AmanziMesh::Entity_ID_View fnums0;
+        Kokkos::View<int*> dirs;
+        mesh_->cell_get_faces_and_dirs(c0, fnums0, dirs);
 
         if (dcvo_[i]->os_OK(verb_level_)) {
           for (unsigned int n = 0; n != fnums0.size(); ++n) {
-            AmanziMesh::Entity_ID f_gid = mesh_->face_map(true).GID(fnums0[n]);
+            AmanziMesh::Entity_ID f_gid = mesh_->face_map(true)->getGlobalElement(fnums0[n]);
             AmanziGeometry::Point f_centroid = mesh_->face_centroid(fnums0[n]);
             *dcvo_[i]->os()
                 << "  neighbor face(" << f_gid << ") [dir=" << dirs[n]
@@ -188,16 +188,13 @@ void Debugger::WriteCellInfo(bool include_faces) {
 void Debugger::WriteVector(const std::string &name,
                            const Teuchos::Ptr<const CompositeVector> &vec,
                            bool include_faces) {
-  Teuchos::RCP<const Epetra_MultiVector> vec_c;
+  CompositeVector::cMultiVectorView_type<AmanziDefaultHost> vec_c;
   if (vec->HasComponent("cell"))
     vec_c = vec->ViewComponent("cell", false);
 
-  Teuchos::RCP<const Epetra_MultiVector> vec_f;
-  int nfaces_valid = 0;
-  if (vec->HasComponent("face")) {
+  CompositeVector::cMultiVectorView_type<AmanziDefaultHost> vec_f;
+  if (vec->HasComponent("face"))
     vec_f = vec->ViewComponent("face", true);
-    nfaces_valid = vec_f->getLocalLength();
-  }
 
   for (int i = 0; i != dc_.size(); ++i) {
     AmanziMesh::Entity_ID c0 = dc_[i];
@@ -207,17 +204,17 @@ void Debugger::WriteVector(const std::string &name,
     if (dcvo_[i]->os_OK(verb_level_)) {
       *dcvo_[i]->os() << FormatHeader_(name, c0_gid);
 
-      if (vec_c != Teuchos::null)
-        *dcvo_[i]->os() << Format_((*vec_c)[0][c0]);
+      if (vec_c.extent(0))
+        *dcvo_[i]->os() << Format_(vec_c(c0,0));
 
-      if (include_faces && vec_f != Teuchos::null) {
-        AmanziMesh::Entity_ID_List fnums0;
-        std::vector<int> dirs;
-        mesh_->cell_get_faces_and_dirs(c0, &fnums0, dirs);
+      if (include_faces && vec_f.extent(0)) {
+        AmanziMesh::Entity_ID_View fnums0;
+        Kokkos::View<int*> dirs;
+        mesh_->cell_get_faces_and_dirs(c0, fnums0, dirs);
 
         for (unsigned int n = 0; n != fnums0.size(); ++n)
-          if (fnums0[n] < nfaces_valid)
-            *dcvo_[i]->os() << " " << Format_((*vec_f)[0][fnums0[n]]);
+          if (fnums0[n] < vec_f.extent(0))
+            *dcvo_[i]->os() << " " << Format_(vec_f(fnums0[n],0));
       }
       *dcvo_[i]->os() << std::endl;
     }
@@ -245,25 +242,25 @@ void Debugger::WriteVectors(
         std::string name = names[lcv];
         Teuchos::Ptr<const CompositeVector> vec = vecs[lcv];
 
-        Teuchos::RCP<const Epetra_MultiVector> vec_c;
+        CompositeVector::cMultiVectorView_type<AmanziDefaultHost> vec_c;
         if (vec->HasComponent("cell"))
           vec_c = vec->ViewComponent("cell", false);
 
-        Teuchos::RCP<const Epetra_MultiVector> vec_f;
+        CompositeVector::cMultiVectorView_type<AmanziDefaultHost> vec_f;
         if (vec->HasComponent("face"))
-          vec_f = vec->ViewComponent("face", false);
+          vec_f = vec->ViewComponent("face", true);
 
         *dcvo_[i]->os() << FormatHeader_(name, c0_gid);
-        if (vec_c != Teuchos::null)
-          *dcvo_[i]->os() << Format_((*vec_c)[0][c0]);
+        if (vec_c.extent(0))
+          *dcvo_[i]->os() << Format_(vec_c(c0,0));
 
-        if (include_faces && vec_f != Teuchos::null) {
-          AmanziMesh::Entity_ID_List fnums0;
-          std::vector<int> dirs;
-          mesh_->cell_get_faces_and_dirs(c0, &fnums0, dirs);
+        if (include_faces && vec_f(c0,0)) {
+          AmanziMesh::Entity_ID_View fnums0;
+          Kokkos::View<int*> dirs;
+          mesh_->cell_get_faces_and_dirs(c0, fnums0, dirs);
 
           for (unsigned int n = 0; n != fnums0.size(); ++n)
-            *dcvo_[i]->os() << " " << Format_((*vec_f)[0][fnums0[n]]);
+            *dcvo_[i]->os() << " " << Format_(vec_f(fnums0[n],0));
         }
         *dcvo_[i]->os() << std::endl;
       }
@@ -271,34 +268,34 @@ void Debugger::WriteVectors(
   }
 }
 
-// Write boundary condition data.
-void Debugger::WriteBoundaryConditions(const std::vector<int> &flag,
-                                       const std::vector<double> &data) {
-  std::stringstream formatstream;
-  formatstream << "%_" << width_ << "." << precision_ << "g";
-  std::string format = formatstream.str();
+// // Write boundary condition data.
+// void Debugger::WriteBoundaryConditions(const std::vector<int> &flag,
+//                                        const std::vector<double> &data) {
+//   std::stringstream formatstream;
+//   formatstream << "%_" << width_ << "." << precision_ << "g";
+//   std::string format = formatstream.str();
 
-  for (int i = 0; i != dc_.size(); ++i) {
-    AmanziMesh::Entity_ID c0 = dc_[i];
-    AmanziMesh::Entity_ID c0_gid = dc_gid_[i];
-    Teuchos::OSTab tab = dcvo_[i]->getOSTab();
+//   for (int i = 0; i != dc_.size(); ++i) {
+//     AmanziMesh::Entity_ID c0 = dc_[i];
+//     AmanziMesh::Entity_ID c0_gid = dc_gid_[i];
+//     Teuchos::OSTab tab = dcvo_[i]->getOSTab();
 
-    if (dcvo_[i]->os_OK(verb_level_)) {
-      *dcvo_[i]->os() << FormatHeader_("BCs", c0_gid);
-      AmanziMesh::Entity_ID_List fnums0;
-      std::vector<int> dirs;
-      mesh_->cell_get_faces_and_dirs(c0, &fnums0, dirs);
+//     if (dcvo_[i]->os_OK(verb_level_)) {
+//       *dcvo_[i]->os() << FormatHeader_("BCs", c0_gid);
+//       AmanziMesh::Entity_ID_View fnums0;
+//       std::vector<int> dirs;
+//       mesh_->cell_get_faces_and_dirs(c0, &fnums0, dirs);
 
-      for (unsigned int n = 0; n != fnums0.size(); ++n)
-        *dcvo_[i]->os() << " " << flag[fnums0[n]] << "("
-                        << Format_(data[fnums0[n]]) << ")";
-      *dcvo_[i]->os() << std::endl;
-    }
-  }
-}
+//       for (unsigned int n = 0; n != fnums0.size(); ++n)
+//         *dcvo_[i]->os() << " " << flag[fnums0[n]] << "("
+//                         << Format_(data[fnums0[n]]) << ")";
+//       *dcvo_[i]->os() << std::endl;
+//     }
+//   }
+// }
 
 // call MPI_Comm_Barrier to sync between writing steps
-void Debugger::Barrier() { mesh_->get_comm()->Barrier(); }
+void Debugger::Barrier() { mesh_->get_comm()->barrier(); }
 
 // write a line of ----
 void Debugger::WriteDivider() {

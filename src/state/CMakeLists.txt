@@ -118,7 +118,7 @@ add_amanzi_library(state
 #		      evaluator/cell_volume_evaluator.cc
 #		      evaluator/deforming_cell_volume_evaluator.cc
 #		      evaluator/rank_evaluator.cc
-#		      io/Debugger.cc
+		      io/Debugger.cc
 		      io/Checkpoint.cc
 		      io/Visualization.cc
 		      io/Observable.cc
@@ -169,16 +169,16 @@ if (BUILD_TESTS)
           copy_directory ${STATE_SOURCE_DIR}/test ${STATE_BINARY_DIR}/test) 
     endif()
 
-    add_amanzi_test(data_factory data_factory
+    add_amanzi_test(state_data_factory state_data_factory
                     KIND unit
-                    SOURCE test/Main.cc test/data_factory.cc
+                    SOURCE test/Main.cc test/state_data_factory.cc
                     LINK_LIBS error_handling atk mesh data_structures mesh_functions state ${state_tpl_list} ${UnitTest_LIBRARIES})
                     # LINK_LIBS error_handling atk mesh operators data_structures mesh_functions state ${state_tpl_list} ${UnitTest_LIBRARIES})
 
 
-    add_amanzi_test(record record
+    add_amanzi_test(state_record state_record
                     KIND unit
-                    SOURCE test/Main.cc test/record.cc
+                    SOURCE test/Main.cc test/state_record.cc
                     LINK_LIBS atk mesh data_structures mesh_functions state ${state_tpl_list} ${UnitTest_LIBRARIES})
 #      LINK_LIBS atk mesh operators data_structures mesh_functions state ${state_tpl_list} ${UnitTest_LIBRARIES})
 
@@ -190,7 +190,7 @@ if (BUILD_TESTS)
 #      LINK_LIBS atk mesh_factory mesh operators data_structures mesh_functions state ${state_tpl_list} ${UnitTest_LIBRARIES})
 
 
-    add_amanzi_test(state_as_container state_as_container
+    add_amanzi_test(state_container state_container
                     KIND unit
                     SOURCE test/Main.cc test/state_container.cc
                     LINK_LIBS state data_structures mesh_factory simple_mesh mesh geometry functions atk error_handling ${Tpetra_LIBRARIES} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}) 

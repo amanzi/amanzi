@@ -60,7 +60,9 @@ public:
   CompositeVector_(const CompositeVector_<Scalar>& other,
                    Teuchos::DataAccess access=Teuchos::DataAccess::Copy,
                    InitMode mode=InitMode::COPY);
-  //CompositeVector_(const CompositeVector_<Scalar>& other, bool ghosted, InitMode mode=INIT_MODE_COPY);
+  // CompositeVector_(const CompositeVector_<Scalar>& other,
+  //                  bool ghosted,
+  //                  InitMode mode=INIT_MODE_COPY);
 
   // Assignment operator.
   CompositeVector_<Scalar>& operator=(const CompositeVector_<Scalar>& other);
