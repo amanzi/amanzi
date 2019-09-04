@@ -1,6 +1,19 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
 
+  <ParameterList name="mesh">
+    <ParameterList name="unstructured">
+      <ParameterList name="Read">
+        <Parameter name="file" type="string" value="mesh1.exo"/>
+        <Parameter name="format" type="string" value="Exodus II"/>
+      </ParameterList>
+      <ParameterList name="expert">
+        <Parameter name="framework" type="string" value="MSTK"/>
+        <Parameter name="partitioner" type="string" value="zoltan_rcb"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>    
+   
   <!--  REGIONS  -->
   <ParameterList name="regions">
     <ParameterList name="ALL">

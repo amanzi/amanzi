@@ -356,33 +356,6 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar)
 
 
 /* ******************************************************************
-* Parallel matvec product Y = A^T * X.
-******************************************************************* */
-int Operator::ApplyTranspose(const CompositeVector& X, CompositeVector& Y, double scalar) const
-{
-  X.ScatterMasterToGhosted();
-
-  // initialize ghost elements
-  if (scalar == 0.0) {
-    Y.PutScalarMasterAndGhosted(0.0);
-  } else if (scalar == 1.0) {
-    Y.PutScalarGhosted(0.0);
-  } else {
-    Y.Scale(scalar);
-    Y.PutScalarGhosted(0.0);
-  }
-
-  apply_calls_++;
-
-  for (auto& it : *this) {
-    it->ApplyTransposeMatrixFreeOp(this, X, Y);
-  }
-
-  return 0;
-}
-
-
-/* ******************************************************************
 * Parallel matvec product Y = A * X.
 * This method is mainly for debugging! Matrix-free apply could better.
 ******************************************************************* */
@@ -836,23 +809,6 @@ int Operator::ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
 ****************************************************************** */
 int Operator::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
                                 const CompositeVector& X, CompositeVector& Y) const {
-  return SchemaMismatch_(op.schema_string, schema_string_);
-}
-
-
-/* ******************************************************************
-* Visit methods for ApplyTranspose: Cell
-****************************************************************** */
-int Operator::ApplyTransposeMatrixFreeOp(const Op_Cell_Schema& op,
-                                         const CompositeVector& X, CompositeVector& Y) const
-{
-  return SchemaMismatch_(op.schema_string, schema_string_);
-}
-
-
-int Operator::ApplyTransposeMatrixFreeOp(const Op_Face_Schema& op,
-                                         const CompositeVector& X, CompositeVector& Y) const
-{
   return SchemaMismatch_(op.schema_string, schema_string_);
 }
 

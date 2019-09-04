@@ -57,7 +57,7 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
   //      parameter that enforces symmetry for a symmetric tree  operators.
   //    essential_eqn=true indicates that the operator places a positive number on 
   //      the main matrix diagonal for the case of essential BCs. This is the
-  //      implementtion trick/
+  //      implementtion trick.
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn);
 
   // postprocessing

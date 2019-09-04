@@ -64,9 +64,11 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   setnames.push_back("fracture 1");
   setnames.push_back("fracture 2");
 
-  RCP<const Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::FACE);
+  // RCP<const Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::FACE);
+  RCP<const Mesh> mesh = meshfactory.create("test/fractures.exo");
 
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   std::cout << "pid=" << comm->MyPID() << " cells: " << ncells_owned 
                                        << " faces: " << nfaces_owned << std::endl;
@@ -92,7 +94,7 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   S->InitializeEvaluators();
 
   // modify the default state
-  auto& flux = *S->GetFieldData("darcy_flux", "state")->ViewComponent("face");
+  auto& flux = *S->GetFieldData("darcy_flux", "state")->ViewComponent("face", true);
   const auto flux_map = S->GetFieldData("darcy_flux", "state")->Map().Map("face", true);
 
   int dir;
@@ -100,7 +102,7 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   std::vector<int> dirs;
 
   AmanziGeometry::Point velocity(1.0, 0.2, -0.1);
-  for (int c = 0; c < ncells_owned; c++) {
+  for (int c = 0; c < ncells_wghost; c++) {
     mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 

@@ -246,7 +246,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
 
 
 /* ******************************************************************
-* Apply BCs of scalar type. The code is limited to node DOFs.
+* Apply BCs of point type. The code is limited to node DOFs.
 ****************************************************************** */
 void PDE_HelperDiscretization::ApplyBCs_Cell_Point_(
     const BCs& bc, Teuchos::RCP<Op> op,
