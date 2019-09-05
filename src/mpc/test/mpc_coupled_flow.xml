@@ -16,6 +16,10 @@
   </ParameterList>
 
   <ParameterList name="regions">
+    <ParameterList name="Universe">
+      <ParameterList name="region: all">
+      </ParameterList>
+    </ParameterList>
     <ParameterList name="fracture">
       <ParameterList name="region: plane">
         <Parameter name="point" type="Array(double)" value="{0.0,0.0,60.0}"/>

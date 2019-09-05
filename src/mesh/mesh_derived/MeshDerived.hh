@@ -258,6 +258,9 @@ class MeshDerived : public Mesh {
   Entity_ID_List build_set_(const Teuchos::RCP<const AmanziGeometry::Region>& rgn,
                             const Entity_kind kind) const;
 
+  void try_extension1_(const std::string& setname, Entity_kind kind, Entity_ID_List* setents);
+  void try_extension2_(const std::string& setname, Entity_kind kind, Entity_ID_List* setents);
+
  private: 
   Teuchos::RCP<const Mesh> parent_mesh_;
 

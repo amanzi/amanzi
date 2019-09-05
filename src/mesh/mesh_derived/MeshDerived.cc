@@ -7,6 +7,7 @@
   Authors: Konstantin Lipnikov
 */
 
+#include <set>
 #include <utility>
 
 // Amanzi
@@ -251,21 +252,13 @@ void MeshDerived::get_set_entities_and_vofs(const std::string setname,
 
   std::string setname_internal = setname + std::to_string(kind);
   if (sets_.find(setname_internal) != sets_.end()) {
-    Entity_ID_List block;
-    std::vector<double> vofs;
-    parent_mesh_->get_set_entities_and_vofs(setname, AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL, &block, &vofs);
-
-    setents->clear();
-    for (int c = 0; c < num_entities(CELL, Parallel_type::ALL); ++c) {
-      int f = entid_to_parent_[CELL][c];
-      if (std::find(block.begin(), block.end(), f) != block.end()) setents->push_back(c);
-    }
-    sets_[setname_internal] = *setents;
+    *setents = sets_[setname_internal];
   }
 
   // all attempts to find the set failed so it must not exist - build it
   if (sets_.find(setname_internal) == sets_.end()) {
-    *setents = sets_[setname_internal] = build_set_(rgn, kind);
+    sets_[setname_internal] = build_set_(rgn, kind);
+    *setents = sets_[setname_internal];
   }
 
   // reset and count to get the real number
@@ -294,7 +287,7 @@ void MeshDerived::get_set_entities_and_vofs(const std::string setname,
   
   if (mglob == 0) {
     std::stringstream ss;
-    ss << "Could not retrieve any mesh entities of type " << kind << " for set " << setname << std::endl;
+    ss << "Could not retrieve any mesh entities of kind=" << kind << " for set \"" << setname << "\"" << std::endl;
     Errors::Message msg(ss.str());
     Exceptions::amanzi_throw(msg);
   }
@@ -568,9 +561,15 @@ void MeshDerived::InitParentMaps(const std::string& setname)
     auto kind_d = kinds_derived[i];
     auto kind_p = kinds_parent[i];
 
+    // build edge set from Exodus labeled face set
     Entity_ID_List setents;
     std::vector<double> vofs;
-    parent_mesh_->get_set_entities_and_vofs(setname, kind_p, Parallel_type::ALL, &setents, &vofs);
+
+    try_extension1_(setname, kind_p, &setents);
+    if (setents.size() == 0)
+      try_extension2_(setname, kind_p, &setents);
+    if (setents.size() == 0)
+      parent_mesh_->get_set_entities_and_vofs(setname, kind_p, Parallel_type::ALL, &setents, &vofs);
 
     // extract owned ids
     int nowned_p = parent_mesh_->num_entities(kind_p, Parallel_type::OWNED);
@@ -615,11 +614,7 @@ void MeshDerived::InitEpetraMaps()
     auto kind_d = kinds_derived[i];
     auto kind_p = kinds_parent[i];
 
-    std::vector<Entity_ID> setents;
-    std::vector<double> vofs;
-    get_set_entities_and_vofs("ALL", kind_d, Parallel_type::OWNED, &setents, &vofs);
-
-    // compute owned global ids using the parent map and the minimum global id
+    // compute (discontinuous) owned global ids using the parent map 
     Teuchos::RCP<const Epetra_BlockMap> parent_map = Teuchos::rcpFromRef(parent_mesh_->map(kind_p, false));
 
     int nents = nents_owned_[kind_d];
@@ -646,13 +641,86 @@ void MeshDerived::InitEpetraMaps()
 
     // creare continuous maps
     auto mymesh = Teuchos::rcpFromRef(*this);
-    auto tmp = AmanziMesh::CreateContinuousMaps(mymesh,
+    auto tmp = CreateContinuousMaps(mymesh,
                                     std::make_pair(parent_map, parent_map_wghost),
                                     std::make_pair(subset_map, subset_map_wghost));
 
     ent_map_owned_[kind_d] = tmp.first;
     ent_map_wghost_[kind_d] = tmp.second;
   }
+}
+
+
+/* ******************************************************************
+* Exception due to limitations of the base mesh framework.
+****************************************************************** */
+void MeshDerived::try_extension1_(
+    const std::string& setname, Entity_kind kind, Entity_ID_List* setents)
+{
+  // labeled set: extract edges
+  setents->clear();
+  if (kind != EDGE) return;
+
+  const auto& gm = geometric_model();
+  if (gm == Teuchos::null) return;
+
+  auto rgn = gm->FindRegion(setname);
+  if (rgn->type() != AmanziGeometry::LABELEDSET) return;
+
+  // populate list of edges
+  std::vector<Entity_ID> faceents;
+  std::vector<double> vofs;
+  parent_mesh_->get_set_entities_and_vofs(setname, FACE, Parallel_type::ALL, &faceents, &vofs);
+
+  Entity_ID_List edges;
+  std::vector<int> dirs;
+  std::set<Entity_ID> edgeents;
+  for (int n = 0; n < faceents.size(); ++n) {
+    int f = faceents[n];
+    parent_mesh_->face_get_edges_and_dirs(f, &edges, &dirs);
+    for (int i = 0; i < edges.size(); ++i) {
+      edgeents.insert(edges[i]);
+    }
+  }
+
+  for (auto it = edgeents.begin(); it != edgeents.end(); ++it)
+    setents->push_back(*it);
+}
+
+
+/* ******************************************************************
+* Exception due to limitations of the base mesh framework.
+****************************************************************** */
+void MeshDerived::try_extension2_(
+    const std::string& setname, Entity_kind kind, Entity_ID_List* setents)
+{
+  // labeled set: extract nodes
+  setents->clear();
+  if (kind != NODE) return;
+
+  const auto& gm = geometric_model();
+  if (gm == Teuchos::null) return;
+
+  auto rgn = gm->FindRegion(setname);
+  if (rgn->type() != AmanziGeometry::LABELEDSET) return;
+
+  // populate list of edges
+  std::vector<Entity_ID> faceents;
+  std::vector<double> vofs;
+  parent_mesh_->get_set_entities_and_vofs(setname, FACE, Parallel_type::ALL, &faceents, &vofs);
+
+  Entity_ID_List nodes;
+  std::set<Entity_ID> nodeents;
+  for (int n = 0; n < faceents.size(); ++n) {
+    int f = faceents[n];
+    parent_mesh_->face_get_nodes(f, &nodes);
+    for (int i = 0; i < nodes.size(); ++i) {
+      nodeents.insert(nodes[i]);
+    }
+  }
+
+  for (auto it = nodeents.begin(); it != nodeents.end(); ++it)
+    setents->push_back(*it);
 }
 
 }  // namespace AmanziMesh

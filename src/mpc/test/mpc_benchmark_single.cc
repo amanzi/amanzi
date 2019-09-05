@@ -50,7 +50,7 @@ using namespace Amanzi::AmanziGeometry;
   MeshFactory factory(comm, gm, mesh_list);
 
   factory.set_preference(Preference({Framework::MSTK}));
-  auto mesh = factory.create("test/single_fracture_tet.exo"); 
+  auto mesh = factory.create("test/single_fracture_tet.exo", true, true); 
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
@@ -73,8 +73,8 @@ using namespace Amanzi::AmanziGeometry;
   std::vector<std::string> names;
   names.push_back("fracture");
 
-  auto mesh_fracture = factory.create(mesh, names, AmanziMesh::FACE);
-  // auto mesh_fracture = Teuchos::rcp(new MeshDerived(mesh, "fracture", AmanziMesh::FACE, comm, gm, mesh_list, true, false));
+  // auto mesh_fracture = factory.create(mesh, names, AmanziMesh::FACE);
+  auto mesh_fracture = Teuchos::rcp(new MeshDerived(mesh, "fracture", AmanziMesh::FACE, comm, gm, mesh_list, true, false));
   S->RegisterMesh("fracture", mesh_fracture);
 
   Amanzi::CycleDriver cycle_driver(plist, S, comm, obs_data);

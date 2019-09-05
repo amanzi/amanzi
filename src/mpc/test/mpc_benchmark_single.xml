@@ -20,6 +20,10 @@
   </ParameterList>
 
   <ParameterList name="regions">
+    <ParameterList name="Universe">
+      <ParameterList name="region: all">
+      </ParameterList>
+    </ParameterList>
     <ParameterList name="All">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{-9.9e+98,-9.9e+98,-9.9e+98}"/>
@@ -209,7 +213,7 @@
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="regions" type="Array(string)" value="{RegionBottom,RegionTop}"/>
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
@@ -224,7 +228,7 @@
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
           <ParameterList name="domain">
-            <Parameter name="regions" type="Array(string)" value="{RegionBottom,RegionTop}"/>
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
