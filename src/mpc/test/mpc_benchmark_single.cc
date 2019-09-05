@@ -50,7 +50,7 @@ using namespace Amanzi::AmanziGeometry;
   MeshFactory factory(comm, gm, mesh_list);
 
   factory.set_preference(Preference({Framework::MSTK}));
-  auto mesh = factory.create("test/single_fracture_tet.exo", true, true); 
+  auto mesh = factory.create("test/single_fracture.exo", true, true); 
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    

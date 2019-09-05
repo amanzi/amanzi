@@ -255,13 +255,13 @@ void MeshDerived::get_set_entities_and_vofs(const std::string setname,
     *setents = sets_[setname_internal];
   }
 
-  // all attempts to find the set failed so it must not exist - build it
+  // set does not exist - build it
   if (sets_.find(setname_internal) == sets_.end()) {
     sets_[setname_internal] = build_set_(rgn, kind);
     *setents = sets_[setname_internal];
   }
 
-  // reset and count to get the real number
+  // extract entities only of specified parallel type
   int m(0);
 
   if (ptype == Parallel_type::ALL) {
@@ -291,6 +291,8 @@ void MeshDerived::get_set_entities_and_vofs(const std::string setname,
     Errors::Message msg(ss.str());
     Exceptions::amanzi_throw(msg);
   }
+
+  PrintSets_();
 }
 
 
@@ -565,11 +567,13 @@ void MeshDerived::InitParentMaps(const std::string& setname)
     Entity_ID_List setents;
     std::vector<double> vofs;
 
-    try_extension1_(setname, kind_p, &setents);
+    TryExtension1_(setname, kind_p, &setents);
     if (setents.size() == 0)
-      try_extension2_(setname, kind_p, &setents);
+      TryExtension2_(setname, kind_p, &setents);
     if (setents.size() == 0)
       parent_mesh_->get_set_entities_and_vofs(setname, kind_p, Parallel_type::ALL, &setents, &vofs);
+
+    ShrinkGhosts_(setname, kind_p, &setents);
 
     // extract owned ids
     int nowned_p = parent_mesh_->num_entities(kind_p, Parallel_type::OWNED);
@@ -654,7 +658,7 @@ void MeshDerived::InitEpetraMaps()
 /* ******************************************************************
 * Exception due to limitations of the base mesh framework.
 ****************************************************************** */
-void MeshDerived::try_extension1_(
+void MeshDerived::TryExtension1_(
     const std::string& setname, Entity_kind kind, Entity_ID_List* setents)
 {
   // labeled set: extract edges
@@ -671,6 +675,7 @@ void MeshDerived::try_extension1_(
   std::vector<Entity_ID> faceents;
   std::vector<double> vofs;
   parent_mesh_->get_set_entities_and_vofs(setname, FACE, Parallel_type::ALL, &faceents, &vofs);
+  ShrinkGhosts_(setname, FACE, &faceents);
 
   Entity_ID_List edges;
   std::vector<int> dirs;
@@ -685,13 +690,16 @@ void MeshDerived::try_extension1_(
 
   for (auto it = edgeents.begin(); it != edgeents.end(); ++it)
     setents->push_back(*it);
+
+  std::string setname_internal = setname + std::to_string(FACE);
+  sets_[setname_internal] = *setents;
 }
 
 
 /* ******************************************************************
 * Exception due to limitations of the base mesh framework.
 ****************************************************************** */
-void MeshDerived::try_extension2_(
+void MeshDerived::TryExtension2_(
     const std::string& setname, Entity_kind kind, Entity_ID_List* setents)
 {
   // labeled set: extract nodes
@@ -708,6 +716,7 @@ void MeshDerived::try_extension2_(
   std::vector<Entity_ID> faceents;
   std::vector<double> vofs;
   parent_mesh_->get_set_entities_and_vofs(setname, FACE, Parallel_type::ALL, &faceents, &vofs);
+  ShrinkGhosts_(setname, FACE, &faceents);
 
   Entity_ID_List nodes;
   std::set<Entity_ID> nodeents;
@@ -721,6 +730,107 @@ void MeshDerived::try_extension2_(
 
   for (auto it = nodeents.begin(); it != nodeents.end(); ++it)
     setents->push_back(*it);
+
+  std::string setname_internal = setname + std::to_string(NODE);
+  sets_[setname_internal] = *setents;
+}
+
+
+/* ******************************************************************
+* Limits the set of parent objects to only one layer of ghosts.
+****************************************************************** */
+void MeshDerived::ShrinkGhosts_(
+    const std::string& setname, Entity_kind kind, Entity_ID_List* setents)
+{
+  // base set is the set of master cells
+  Entity_ID_List fullset;
+  if (kind != FACE) {
+    std::vector<double> vofs;
+    parent_mesh_->get_set_entities_and_vofs(setname, FACE, Parallel_type::ALL, &fullset, &vofs);
+  } else { 
+    fullset = *setents;
+  }
+
+  // zero layer of ghosts is defined by master faces
+  Entity_ID_List nodes, edges;
+  std::vector<int> dirs;
+  int nfaces_owned = parent_mesh_->num_entities(FACE, Parallel_type::OWNED);
+  std::set<Entity_ID> nodeset0, nodeset, edgeset, faceset;
+
+  for (int n = 0; n < fullset.size(); ++n) {
+    int f = fullset[n];
+    if (f < nfaces_owned) {
+      parent_mesh_->face_get_nodes(f, &nodes);
+      for (int i = 0; i < nodes.size(); ++i) nodeset0.insert(nodes[i]);
+
+      parent_mesh_->face_get_edges_and_dirs(f, &edges, &dirs);
+      for (int i = 0; i < edges.size(); ++i) edgeset.insert(edges[i]);
+
+      faceset.insert(f);
+    } 
+  }
+
+  // first layer of ghosts is defined by neighboor faces of master faces
+  Entity_ID n0, n1;
+
+  nodeset = nodeset0;
+  for (int n = 0; n < fullset.size(); ++n) {
+    int f = fullset[n];
+    if (f >= nfaces_owned) {
+      bool found(false);
+      parent_mesh_->face_get_nodes(f, &nodes);
+      for (int i = 0; i < nodes.size(); ++i) {
+        if (nodeset0.find(nodes[i]) != nodeset0.end()) {
+          found = true;
+          break;
+        }
+      }
+      if (found) {
+        for (int i = 0; i < nodes.size(); ++i) nodeset.insert(nodes[i]);
+
+        parent_mesh_->face_get_edges_and_dirs(f, &edges, &dirs);
+        for (int i = 0; i < edges.size(); ++i) edgeset.insert(edges[i]);
+
+        faceset.insert(f);
+      }
+    }
+  }
+
+  // reduce input set to entities
+  int m(0);
+  for (int n = 0; n < setents->size(); ++n) {
+    int id = (*setents)[n];
+
+    if (kind == FACE) {
+      if (faceset.find(id) != faceset.end()) (*setents)[m++] = id;
+    }
+    else if (kind == EDGE) {
+      if (edgeset.find(id) != edgeset.end()) (*setents)[m++] = id;
+    }
+    else if (kind == NODE) {
+      if (nodeset.find(id) != nodeset.end()) (*setents)[m++] = id;
+    }
+  }
+
+  setents->resize(m);
+}
+
+
+/* ******************************************************************
+* Statistics
+****************************************************************** */
+void MeshDerived::PrintSets_() const
+{
+  if (vo_.get() && vo_->os_OK(Teuchos::VERB_LOW)) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *(vo_->os()) << "sets: ";
+    for (auto it : sets_) {
+      int i1, i0(it.second.size());
+      get_comm()->SumAll(&i0, &i1, 1);
+      *(vo_->os()) << "\"" << it.first << "\" (" << i1 << ") ";
+    }
+    *(vo_->os())  << "\n";
+  }
 }
 
 }  // namespace AmanziMesh

@@ -40,7 +40,7 @@ CreateContinuousMaps(
     const std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >& subset_maps)
 {
   int n_owned = subset_maps.first->NumMyElements();
-  AMANZI_ASSERT(n_owned > 0);
+  AMANZI_ASSERT(n_owned >= 0);
   
   const auto& comm = subset_maps.first->Comm();
   auto continuous_map = Teuchos::rcp(new Epetra_Map(-1, n_owned, 0, comm));
