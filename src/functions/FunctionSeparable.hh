@@ -57,10 +57,18 @@ class FunctionSeparable : public Function {
      : f1_(source.f1_->Clone()), f2_(source.f2_->Clone()) {}
   ~FunctionSeparable() {} //{ if (f1_) delete f1_; if (f2_) delete f2_; }
   FunctionSeparable* Clone() const { return new FunctionSeparable(*this); }
-  double operator()(const std::vector<double>& x) const {
-    std::vector<double>::const_iterator xb = x.begin(); xb++;
-    std::vector<double> y(xb, x.end());
+  
+  double operator()(const Kokkos::View<double*>& x) const {
+    //std::vector<double>::const_iterator xb = x.begin(); xb++;
+    //std::vector<double> y(xb, x.end());
+    auto y = Kokkos::subview(x,Kokkos::make_pair(static_cast<size_t>(1),static_cast<size_t>(x.extent(0)))); 
     return (*f1_)(x) * (*f2_)(y);
+  }
+
+  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double*>& x) const {assert(false); return 0.0;}
+
+  void apply(const Kokkos::View<double*>& in, Kokkos::View<double*>& out){
+    assert(false); 
   }
 
  private:

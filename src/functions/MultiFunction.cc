@@ -89,7 +89,7 @@ int MultiFunction::size() const {
 };
 
 
-double* MultiFunction::operator()(const std::vector<double>& xt) const {
+double* MultiFunction::operator()(const Kokkos::View<double*>& xt) const {
   for (int i=0; i!=size(); ++i) {
     values_[i] = (*functions_[i])(xt);
   }

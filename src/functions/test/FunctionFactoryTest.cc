@@ -16,7 +16,10 @@ using namespace Amanzi;
 
 int main (int argc, char *argv[])
 {
-  return UnitTest::RunAllTests ();
+  Kokkos::initialize();
+  auto status = UnitTest::RunAllTests ();
+  Kokkos::finalize(); 
+  return status; 
 }
 
 SUITE(malformed_parameter_list) {
@@ -67,7 +70,8 @@ SUITE(constant_factory) {
     sublist.set("value", 2.0);
     FunctionFactory fact;
     Function *f = fact.Create(list);
-    std::vector<double> x(1,9.0);
+    Kokkos::View<double*> x("x",1); 
+    x(0) = 9.0; 
     CHECK_EQUAL((*f)(x), 2.0);
   }
   TEST(missing_parameter)
@@ -94,7 +98,8 @@ SUITE(tabular_factory) {
     sublist.set("y values", y);
     FunctionFactory fact;
     Function *f = fact.Create(list);
-    std::vector<double> t(1,0.5);
+    Kokkos::View<double*> t("t",1); 
+    t(0) = 0.5; 
     CHECK_EQUAL((*f)(t), 2.5);
   }
   TEST(create_with_row_coordinate)
@@ -112,7 +117,8 @@ SUITE(tabular_factory) {
     sublist.set("y values", y);
     FunctionFactory fact;
     Function *f = fact.Create(list);
-    std::vector<double> t(1,0.5);
+    Kokkos::View<double*> t("t",1); 
+    t(0) = 0.5; 
     CHECK_EQUAL((*f)(t), 2.5);
   }
   TEST(create_with_form)
@@ -131,7 +137,8 @@ SUITE(tabular_factory) {
     sublist.set("forms", forms);
     FunctionFactory fact;
     Function *f = fact.Create(list);
-    std::vector<double> t(1,0.5);
+    Kokkos::View<double*> t("t",1); 
+    t(0) = 0.5; 
     CHECK_EQUAL(2.0, (*f)(t));
   }
   TEST(missing_parameter)
@@ -232,7 +239,8 @@ SUITE(bilinear_factory) {
    sublist.set("value header", "/values");
    FunctionFactory fact;
    Function *f = fact.Create(list);
-   std::vector<double> t(2,2.);
+   Kokkos::View<double*> t("t",2); 
+   t(0) = 2.; t(1) = 2.; 
    CHECK_EQUAL((*f)(t), 14.);
  }
  TEST(missing_rows)
@@ -310,7 +318,8 @@ SUITE(smooth_step_factory) {
     sublist.set("y1", 4.0);
     FunctionFactory fact;
     Function *f = fact.Create(list);
-    std::vector<double> x(1,2.);
+    Kokkos::View<double*> x("x",1); 
+    x(0) = 2.; 
     CHECK_EQUAL((*f)(x), 3.0);
   }
   TEST(missing_parameter)
@@ -351,7 +360,8 @@ SUITE(polynomial_factory) {
     sublist.set("exponents", p);
     FunctionFactory fact;
     Function *f = fact.Create(list);
-    std::vector<double> t(1,0.5);
+    Kokkos::View<double*> t("t",1); 
+    t(0) = 0.5; 
     CHECK_EQUAL((*f)(t), 2.5);
     delete f;
     // Now add the optional reference point argument
@@ -416,7 +426,8 @@ SUITE(linear_factory) {
     sublist.set("gradient", grad);
     FunctionFactory fact;
     Function *f = fact.Create(list);
-    std::vector<double> x(2,1.); x[1] = 2.;
+    Kokkos::View<double*> x("x",2); 
+    x(0) = 1.; x(1) = 2.; 
     CHECK_EQUAL(6.0, (*f)(x));
     delete f;
     // Now add the optional x0 parameter
@@ -488,7 +499,8 @@ SUITE(separable_factory) {
     flist2.set("gradient", grad);
     FunctionFactory factory;
     Function *f = factory.Create(list);
-    std::vector<double> x(3,0.); x[1] = 1.; x[2] = -1.;
+    Kokkos::View<double*> x("x",3); 
+    x(0) = 0.; x(1) = 1.; x(2) = -1.; 
     CHECK_EQUAL(-2.0, (*f)(x));
     delete f;
   }
@@ -533,7 +545,8 @@ SUITE(separable_factory) {
     flistz.set("value", 4.0);
     FunctionFactory factory;
     Function *f = factory.Create(list);
-    std::vector<double> x(3,0.);
+    Kokkos::View<double*> x("x",3); 
+    x(0) = 0.; x(1) = 0.; x(2) = 0.; 
     CHECK_EQUAL(24.0, (*f)(x));
     delete f;
   }
@@ -565,9 +578,11 @@ SUITE(static_head_factory) {
     sublist.sublist("water table elevation").sublist("function-constant").set("value",3.0);
     FunctionFactory factory;
     Function *f = factory.Create(list);
-    std::vector<double> x(4,0.); x[3] = 1.;
+    Kokkos::View<double*> x("x",4); 
+    x(0) = 0.; x(1) = 0.; x(2) = 0.; x(3) = 1.; 
     CHECK_EQUAL(5.0, (*f)(x));
-    std::vector<double> y(4,1.); y[3] = 4.;
+    Kokkos::View<double*> y("y",4); 
+    y(0) = 1.; y(1) = 1.; y(2) = 1.; y(3) = 4.; 
     CHECK_EQUAL(-1.0, (*f)(y));
   }
   TEST(missing_parameter)
@@ -615,7 +630,8 @@ SUITE(distance_factory) {
            .set<Teuchos::Array<double> >("metric", metric);
     FunctionFactory fact;
     Function *f = fact.Create(list);
-    std::vector<double> x(2, 2.0);
+    Kokkos::View<double*> x("x",2); 
+    x(0) = 2.; x(1) = 2.; 
     CHECK_EQUAL((*f)(x), 5.0);
   }
   TEST(missing_parameter)

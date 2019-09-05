@@ -56,7 +56,18 @@ class FunctionMultiplicative : public Function {
      : f1_(source.f1_->Clone()), f2_(source.f2_->Clone()) {}
   ~FunctionMultiplicative() {} //{ if (f1_) delete f1_; if (f2_) delete f2_; }
   FunctionMultiplicative* Clone() const { return new FunctionMultiplicative(*this); }
-  double operator()(const std::vector<double>& x) const { return (*f1_)(x) * (*f2_)(x); }
+  double operator()(const Kokkos::View<double*>& x) const { return (*f1_)(x) * (*f2_)(x); }
+  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double*>& x) const {assert(false); return 0.0;}
+
+  void apply(const Kokkos::View<double*>& in, Kokkos::View<double*>& out){
+    Kokkos::View<double*> out_1("out_1",in.extent(0)); 
+    Kokkos::View<double*> out_2("out_2",in.extent(0)); 
+    f1_->apply(in,out_1);
+    f2_->apply(in,out_2);  
+    Kokkos::parallel_for(in.extent(0),KOKKOS_LAMBDA(const int& i){
+      out(i) = out_1(i) * out_2(i); 
+    }); 
+  }
 
  private:
   std::unique_ptr<Function> f1_, f2_;

@@ -60,7 +60,16 @@ class FunctionStaticHead : public Function {
   ~FunctionStaticHead() {}
   FunctionStaticHead* Clone() const { return new FunctionStaticHead(*this); }
   // The array (t,x,y,z) is passed as *x, so that x[dim_] is z in 3D, y in 2D
-  double operator()(const std::vector<double>& x) const { return patm_+rho_g_ * ((*h_)(x)-x[dim_]); }
+  double operator()(const Kokkos::View<double*>& x) const { return patm_+rho_g_ * ((*h_)(x)-x[dim_]); }
+
+  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double*>& x) const {assert(false); return 0.0;} 
+
+  void apply(const Kokkos::View<double*>& in, Kokkos::View<double*>& out) {
+    h_->apply(in,out);
+    Kokkos::parallel_for(in.extent(0),KOKKOS_LAMBDA(const int& i){
+      out(i) = patm_+rho_g_*(out(i)-in(dim_)); 
+    }); 
+  }
  
  private:
   int dim_;

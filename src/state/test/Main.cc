@@ -9,6 +9,8 @@
 
 int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
-  return UnitTest::RunAllTests();
+  Kokkos::initialize(); 
+  auto status = UnitTest::RunAllTests();
+  Kokkos::finalize(); 
+  return status; 
 }

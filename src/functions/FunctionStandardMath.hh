@@ -67,11 +67,90 @@ namespace Amanzi {
 
 class FunctionStandardMath : public Function {
 
+  enum function: int {
+    COS, SIN, TAN, ACOS, ASIN, ATAN, COSH, SINH, TANH, 
+    EXP, LOG, LOG10, SQRT, CEIL, FABS, FLOOR, POW, MOD };
+
 public:
-  FunctionStandardMath(std::string op, double amplitude, double parameter, double shift);
+  FunctionStandardMath(char op[10], double amplitude, double parameter, double shift);
   ~FunctionStandardMath() {}
   FunctionStandardMath* Clone() const { return new FunctionStandardMath(*this); }
-  double operator()(const std::vector<double>& x) const;
+  double operator()(const Kokkos::View<double*>&) const; 
+
+  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double*>& x) const
+  {
+    double x0 = x[0] - shift_;
+    switch(op_){
+      case COS:
+        return amplitude_ * cos(parameter_ * x0);
+        break; 
+      case SIN: 
+        return amplitude_ * sin(parameter_ * x0);
+        break; 
+      case TAN:  
+        return amplitude_ * tan(parameter_ * x0);
+        break; 
+      case ACOS: 
+        return amplitude_ * acos(parameter_ * x0);
+        break; 
+      case ASIN: 
+        return amplitude_ * asin(parameter_ * x0);
+        break; 
+      case ATAN:
+        return amplitude_ * atan(parameter_ * x0);
+        break; 
+      case COSH: 
+        return amplitude_ * cosh(parameter_ * x0);
+        break; 
+      case SINH:
+        return amplitude_ * sinh(parameter_ * x0);
+        break; 
+      case TANH: 
+        return amplitude_ * tanh(parameter_ * x0);
+        break; 
+      case EXP: 
+        return amplitude_ * exp(parameter_ * x0);
+        break; 
+      case LOG:
+        assert(x0>0);  
+        //if (x0 <= 0) InvalidDomainError_(x[0]);
+        return amplitude_ * log(parameter_ * x0);
+        break; 
+      case LOG10: 
+        assert(x0>0); 
+        //if (x0 <= 0) InvalidDomainError_(x[0]);
+        return amplitude_ * log10(parameter_ * x0);
+        break; 
+      case SQRT: 
+        assert(x0>=0); 
+        //if (x0 < 0) InvalidDomainError_(x[0]);
+        return amplitude_ * sqrt(parameter_ * x0);
+        break; 
+      case CEIL: 
+        return amplitude_ * ceil(x0);
+        break; 
+      case FABS: 
+        return amplitude_ * fabs(x0);
+        break; 
+      case FLOOR: 
+        return amplitude_ * floor(x0);
+        break; 
+      case POW:
+        return amplitude_ * pow(x0, parameter_);
+        break; 
+      case MOD: 
+        return fmod(x0, parameter_);
+        break; 
+      default:
+        printf("Invalid or unknown standard math function %d\n",op_);
+        assert(false);   
+    } 
+    return 0.0;
+  }
+
+  void apply(const Kokkos::View<double*>& in, Kokkos::View<double*>& out){
+
+  }
 
 private:
   void InvalidDomainError_(double x) const;
@@ -80,7 +159,8 @@ private:
   double parameter_;
   double amplitude_;
   double shift_;
-  std::string op_;
+  function op_; 
+  //char op_[10];
 };
 
 } // namespace Amanzi

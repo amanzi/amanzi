@@ -25,6 +25,8 @@
 
 #include "errors.hh"
 
+#include <Kokkos_Core.hpp>
+
 namespace Amanzi {
 
 struct HDF5Reader {
@@ -46,20 +48,21 @@ struct HDF5Reader {
   }
 
   void
-  ReadData(std::string varname, std::vector<double>& vec) {
+  ReadData(std::string varname, Kokkos::View<double*>& vec) {
     //    char *h5path = new char[varname.size()+1];
     //    strcpy(h5path,varname.c_str());
 
     hid_t dataset = H5Dopen(file_, varname.c_str(), H5P_DEFAULT);
     hid_t dataspace = H5Dget_space(dataset);
     hssize_t size = H5Sget_simple_extent_npoints(dataspace);
-    vec.resize(size);
+    //vec.resize(size);
+    Kokkos::resize(vec,size); 
     herr_t status = H5Dread(dataset, H5T_NATIVE_DOUBLE,  H5S_ALL, H5S_ALL,
-                            H5P_DEFAULT, &vec[0]);
+                            H5P_DEFAULT, vec.data());
   }
 
   void
-  ReadMatData(std::string varname, Epetra_SerialDenseMatrix &mat) {
+  ReadMatData(std::string varname, Kokkos::View<double**> &mat) {
     //    char *h5path = new char[varname.size()+1];
     //    strcpy(h5path,varname.c_str());
     hid_t dataset = H5Dopen(file_, varname.c_str(), H5P_DEFAULT );
@@ -70,9 +73,22 @@ struct HDF5Reader {
       Errors::Message message("HDF5Reader: error, dataset dimension is not equal to 2 ");
       Exceptions::amanzi_throw(message);
     }
-    mat.Shape(dims[1],dims[0]);
+    Kokkos::resize(mat,dims[0],dims[1]); 
+    Epetra_SerialDenseMatrix m; 
+    m.Shape(dims[1],dims[0]);
+
+    // Not readable directly, need to change row major / column major 
+    //herr_t status = H5Dread(dataset, H5T_NATIVE_DOUBLE,  H5S_ALL, H5S_ALL,
+    //                        H5P_DEFAULT, mat.data());
+
     herr_t status = H5Dread(dataset, H5T_NATIVE_DOUBLE,  H5S_ALL, H5S_ALL,
-                            H5P_DEFAULT, &mat[0][0]);
+                            H5P_DEFAULT, &m[0][0]);
+    
+    for(int i = 0 ; i < mat.extent(0) ; ++i){
+      for(int j = 0 ; j < mat.extent(1); ++j){
+        mat(i,j) = m[i][j]; 
+      }
+    }
   }
 
  protected:

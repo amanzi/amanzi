@@ -49,7 +49,9 @@ void BoundaryFunction::Compute(double time) {
 
   // create the input tuple
   int dim = mesh_->space_dimension();
-  std::vector<double> args(1+dim);
+  Kokkos::View<double*> args("args",1+dim);
+  for(int i = 0 ; i < args.extent(0); ++i)
+    args(i) = 0.;
   args[0] = time;
 
   // Loop over all FACE specs and evaluate the function at all IDs in the

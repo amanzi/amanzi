@@ -2,29 +2,28 @@
 
 namespace Amanzi {
 
-FunctionPointer::FunctionPointer(double (*f)(const double*, const double*), const std::vector<double> &p)
-    : f_(f), np_(0), p_(0)
+FunctionPointer::FunctionPointer(
+  double (*f)(const Kokkos::View<double*>&, const Kokkos::View<double*>&), 
+  const Kokkos::View<double*> &p)
+    : f_(f), np_(0)
 {
-  if (p.size() > 0) {
-    np_ = p.size();
-    p_ = new double[np_];
+  if (p.extent(0) > 0) {
+    np_ = p.extent(0);
+    Kokkos::resize(p_,np_); 
+    //p_ = new double[np_];
     for (int i = 0; i < np_; ++i) p_[i] = p[i];
   }
 }
 
 FunctionPointer::FunctionPointer(const FunctionPointer& source)
-    : f_(source.f_), np_(0), p_(0)
+    : f_(source.f_)
 {
-  if (source.p_) {
+  if (source.np_) {
     np_ = source.np_;
-    p_ = new double[np_];
+    Kokkos::resize(p_,np_); 
+    //p_ = new double[np_];
     for (int i = 0; i < np_; ++i) p_[i] = source.p_[i];
   }
-}
-
-FunctionPointer::~FunctionPointer()
-{
-  if (p_) delete [] p_;
 }
 
 } // namespace Amanzi

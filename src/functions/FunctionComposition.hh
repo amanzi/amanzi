@@ -55,10 +55,20 @@ class FunctionComposition : public Function {
      : f1_(source.f1_->Clone()), f2_(source.f2_->Clone()) {}
   ~FunctionComposition() {} //{ if (f1_) delete f1_; if (f2_) delete f2_; }
   FunctionComposition* Clone() const { return new FunctionComposition(*this); }
-  double operator()(const std::vector<double>& x) const {
-    std::vector<double> y(x);
+
+  double operator()(const Kokkos::View<double*>& x) const {
+    Kokkos::View<double*> y(x); 
+    //std::vector<double> y(x);
     y[0] = (*f2_)(x);
     return (*f1_)(y);
+  }
+
+  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double*>& x) const {assert(false); return 0.0;} 
+
+  void apply(const Kokkos::View<double*>& in, Kokkos::View<double*>& out){
+    Kokkos::View<double*> out_1("out",in.extent(0)); 
+    f1_->apply(in,out_1); 
+    f2_->apply(out_1,out); 
   }
 
  private:

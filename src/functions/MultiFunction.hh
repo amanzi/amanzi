@@ -27,7 +27,7 @@ public:
   ~MultiFunction();
 
   int size() const;
-  double* operator()(const std::vector<double>& xt) const;
+  double* operator()(const Kokkos::View<double*>& xt) const;
 
  private:
   std::vector<Teuchos::RCP<const Function> > functions_;

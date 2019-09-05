@@ -10,7 +10,10 @@
 using namespace Amanzi;
 
 int main (int argc, char *argv[]) {
-    return UnitTest::RunAllTests ();
+    Kokkos::initialize(argc,argv); 
+    auto status =  UnitTest::RunAllTests ();
+    Kokkos::finalize(); 
+    return status; 
 }
 
 TEST(basic_test) {
@@ -22,7 +25,8 @@ TEST(basic_test) {
   functions.push_back(f2);
 
   Teuchos::RCP<MultiFunction> fc = Teuchos::rcp(new MultiFunction(functions));
-  std::vector<double> x(1,3.0);
+  Kokkos::View<double*> x("x",1); 
+  x(0) = 3.0; 
   CHECK_EQUAL((*fc)(x)[0], 1.0);
   CHECK_EQUAL((*fc)(x)[1], 2.0);
 }
@@ -42,7 +46,8 @@ TEST(factory_test) {
 
   Teuchos::RCP<MultiFunction> f = Teuchos::rcp(new MultiFunction(list));
 
-  std::vector<double> x(1,3.0);
+  Kokkos::View<double*> x("x",1); 
+  x(0) = 3.0; 
   CHECK_EQUAL((*f)(x)[0], 1.0);
   CHECK_EQUAL((*f)(x)[1], 2.0);
 }

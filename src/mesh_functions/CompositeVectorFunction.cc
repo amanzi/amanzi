@@ -51,7 +51,9 @@ void CompositeVectorFunction::Compute(double time,
 
   // create the input tuple
   int dim = mesh->space_dimension();
-  std::vector<double> args(1+dim, 0.);
+  Kokkos::View<double*> args("args",1+dim); 
+  for(int i = 0 ; i < args.extent(0); ++i)
+    args(i) = 0; 
   args[0] = time;
 
   // loop over the name/spec pair

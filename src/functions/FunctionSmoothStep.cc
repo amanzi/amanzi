@@ -16,8 +16,8 @@ FunctionSmoothStep::FunctionSmoothStep(double x0, double y0, double x1, double y
   }
 }
 
-double FunctionSmoothStep::operator()(const std::vector<double>& x) const
-{
+double FunctionSmoothStep::operator()(const Kokkos::View<double*>& x) const
+{ 
   double y;
   if (x[0] <= x0_) {
     y = y0_;

@@ -145,11 +145,14 @@ TEST_FIXTURE(reference_mesh, values1)
 TEST_FIXTURE(reference_mesh, values2)
 {
   // Create the function f(t,x,y,z) = t * (x + 2y + 3z)
-  std::vector<double> c(1,1.0);
-  std::vector<int> p(1,1);
+  Kokkos::View<double*> c("c",1); 
+  c(0) = 1; c(1) = 1.0;
+  Kokkos::View<int*> p("p",1); 
+  p(0) = 1;
   std::unique_ptr<Function> f1(new FunctionPolynomial(c, p));
-  double g[3] = {1.0, 2.0, 3.0};
-  std::vector<double> grad(g, g+3);
+  Kokkos::View<double*> g("g",3); 
+  g(0) = 1.0; g(1) = 2.0; g(2) = 3.0; 
+  Kokkos::View<double*> grad = Kokkos::subview(g,Kokkos::make_pair(0,3));
   std::unique_ptr<Function> f2(new FunctionLinear(0.0, grad));
 
   // Create the boundary function

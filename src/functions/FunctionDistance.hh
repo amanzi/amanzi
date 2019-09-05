@@ -46,13 +46,37 @@ namespace Amanzi {
 
 class FunctionDistance : public Function {
  public:
-  FunctionDistance(const std::vector<double>& x0, const std::vector<double>& metric);
+  FunctionDistance(const Kokkos::View<double*>& x0, const Kokkos::View<double*>& metric);
   ~FunctionDistance() {}
   FunctionDistance* Clone() const { return new FunctionDistance(*this); }
-  double operator()(const std::vector<double>& x) const;
+  double operator()(const Kokkos::View<double*>&) const; 
+
+  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double*>& x) const
+  {
+    double tmp(0.0), y(0.0);
+    if (x.extent(0) < x0_.extent(0)) {
+      assert(false && "FunctionDistance expects higher-dimension argument."); 
+      //Errors::Message m;
+      //m << "FunctionDistance expects higher-dimensional argument.";
+      //Exceptions::amanzi_throw(m);
+    }    
+    for (int j = 0; j < x0_.extent(0); ++j) {
+      tmp = x[j] - x0_[j];
+      y += metric_[j] * tmp * tmp;
+    }
+    y = sqrt(y);
+    return y;
+  }
+
+  void apply(const Kokkos::View<double*>& in, Kokkos::View<double*>& out){
+    assert(in.extent(0) == out.extent(0)); 
+    Kokkos::parallel_for(in.extent(0),KOKKOS_LAMBDA(const int& i){
+      out(i)  = apply_gpu(in);
+    });
+  }
 
  private:
-  std::vector<double> x0_, metric_;
+  Kokkos::View<double*> x0_, metric_;
 };
 
 } // namespace Amanzi
