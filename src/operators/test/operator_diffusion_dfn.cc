@@ -49,7 +49,7 @@ void RunTest(int icase, double gravity) {
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: Darcy flow in fractures, gravity=" << gravity << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: Darcy flow in fractures, gravity=" << gravity << " icase=" << icase << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion_dfn.xml";
