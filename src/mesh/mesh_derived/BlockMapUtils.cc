@@ -40,14 +40,14 @@ CreateContinuousMaps(
     const std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >& subset_maps)
 {
   int n_owned = subset_maps.first->NumMyElements();
-  AMANZI_ASSERT(n_owned >= 0);
   
   const auto& comm = subset_maps.first->Comm();
   auto continuous_map = Teuchos::rcp(new Epetra_Map(-1, n_owned, 0, comm));
 
   int n_all = subset_maps.second->NumMyElements();
   int n_ghost = n_all - n_owned;
-  std::vector<int> gl_id(n_ghost), pr_id(n_ghost), lc_id(n_ghost);
+  int m_ghost = std::max(n_ghost, 1);
+  std::vector<int> gl_id(m_ghost), pr_id(m_ghost), lc_id(m_ghost);
 
   int total_proc = mesh->get_comm()->NumProc();
   int my_pid = mesh->get_comm()->MyPID();
@@ -69,7 +69,8 @@ CreateContinuousMaps(
     if (pr_id[i] >= 0) n_all_new++;
   }
   
-  std::vector<int> global_id_ghosted(n_all_new);
+  int m_all_new = std::max(n_all_new, 1);
+  std::vector<int> global_id_ghosted(m_all_new);
   for (int i = 0; i < n_owned; i++) {
     global_id_ghosted[i] = continuous_map->GID(i);  
   }

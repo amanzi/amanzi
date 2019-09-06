@@ -3195,7 +3195,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
       if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
         *(verbobj->os()) << "Found labeled set region \"" << setname 
                          << "\" but it contains entities of type " << entity_type 
-                         << ", not the requested type\n";
+                         << ", not the requested type.\n";
       }
     } 
     else {
