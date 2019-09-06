@@ -300,14 +300,12 @@ void PDE_DiffusionMFDwithGravity::UpdateFluxNonManifold(
   int ndofs_wghost = flux_data.MyLength();
 
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> hits(ndofs_wghost, 0);
   const auto& fmap = *flux->Map().Map("face", true);
 
   WhetStone::Tensor Kc(dim, 1);
   Kc(0, 0) = 1.0;
 
-  // if f is on a processor boundary, some g will be initialized by a ghost cell
-  for (int c = 0; c < ncells_wghost; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
     double zc = mesh_->cell_centroid(c)[dim - 1];
@@ -347,14 +345,15 @@ void PDE_DiffusionMFDwithGravity::UpdateFluxNonManifold(
       } else {
         grav_data[0][g] += (Kcg * normal) * rho_ * kf[n];
       }
-
-      hits[g]++;
     }
   }
 
+  // if f is on a processor boundary, some g are not initialized
   for (int g = 0; g < ndofs_owned; ++g) {
-    flux_data[0][g] += grav_data[0][g] / hits[g];
+    flux_data[0][g] += grav_data[0][g];
   }
+ 
+  flux->GatherGhostedToMaster(Insert);
 }
 
 

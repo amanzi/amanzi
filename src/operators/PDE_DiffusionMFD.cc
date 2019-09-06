@@ -1111,23 +1111,22 @@ void PDE_DiffusionMFD::UpdateFluxNonManifold(
     const Teuchos::Ptr<CompositeVector>& flux)
 {
   // Initialize intensity in ghost faces.
-  flux->PutScalar(0.0);
   u->ScatterMasterToGhosted("face");
 
   const Epetra_MultiVector& u_cell = *u->ViewComponent("cell");
   const Epetra_MultiVector& u_face = *u->ViewComponent("face", true);
   Epetra_MultiVector& flux_data = *flux->ViewComponent("face", true);
 
+  flux_data.PutScalar(0.0);
+
   int ndofs_owned = flux->ViewComponent("face")->MyLength();
   int ndofs_wghost = flux_data.MyLength();
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
-  std::vector<int> hits(ndofs_wghost, 0);
   const auto& fmap = *flux->Map().Map("face", true);
 
-  // if f is on a processor boundary, some g will be initialized by a ghost cell
-  for (int c = 0; c < ncells_wghost; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
@@ -1151,13 +1150,10 @@ void PDE_DiffusionMFD::UpdateFluxNonManifold(
       if (ndofs > 1) g += Operators::UniqueIndexFaceToCells(*mesh_, f, c);
 
       flux_data[0][g] -= av(n) * dirs[n];
-      hits[g]++;
     }
   }
 
-  for (int g = 0; g != ndofs_owned; ++g) {
-    flux_data[0][g] /= hits[g];
-  }
+  flux->GatherGhostedToMaster(Add);
 }
 
 
