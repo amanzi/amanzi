@@ -1126,7 +1126,8 @@ void PDE_DiffusionMFD::UpdateFluxNonManifold(
   std::vector<int> hits(ndofs_wghost, 0);
   const auto& fmap = *flux->Map().Map("face", true);
 
-  for (int c = 0; c < ncells_owned; c++) {
+  // if f is on a processor boundary, some g will be initialized by a ghost cell
+  for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
