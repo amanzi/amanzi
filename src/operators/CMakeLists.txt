@@ -238,6 +238,7 @@ if (BUILD_TESTS)
 
     add_amanzi_test(operators_diffusion_fractured_matrix operators_diffusion_fractured_matrix
                     KIND unit
+                    NPROCS 2
                     SOURCE test/Main.cc test/operator_diffusion_fractured_matrix.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 

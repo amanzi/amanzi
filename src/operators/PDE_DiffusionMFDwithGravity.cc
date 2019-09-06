@@ -306,7 +306,8 @@ void PDE_DiffusionMFDwithGravity::UpdateFluxNonManifold(
   WhetStone::Tensor Kc(dim, 1);
   Kc(0, 0) = 1.0;
 
-  for (int c = 0; c < ncells_owned; c++) {
+  // if f is on a processor boundary, some g will be initialized by a ghost cell
+  for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
     double zc = mesh_->cell_centroid(c)[dim - 1];
