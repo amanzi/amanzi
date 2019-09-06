@@ -647,7 +647,7 @@ double Transport_PK::StableTimeStep()
   // loop over cells and calculate minimal time step
   double vol, outflux, dt_cell;
   dt_ = dt_cell = TRANSPORT_LARGE_TIME_STEP;
-  int cmin_dt = 0;
+  int cmin_dt = -1;
   for (int c = 0; c < ncells_owned; c++) {
     outflux = total_outflux[c];
     if (outflux) {
@@ -675,7 +675,7 @@ double Transport_PK::StableTimeStep()
 
   // print optional diagnostics using maximum cell id as the filter
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-    int cmin_dt_unique = (fabs(dt_tmp * cfl_ - dt_) < 1e-6 * dt_) ? cmin_dt : -1;
+    int cmin_dt_unique = (fabs(dt_tmp * cfl_ - dt_) < 1e-6 * dt_) ? cmin_dt : -2;
  
     int cmin_dt_tmp = cmin_dt_unique;
     ws_prev->Comm().MaxAll(&cmin_dt_tmp, &cmin_dt_unique, 1);
