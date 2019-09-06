@@ -152,6 +152,8 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   for (int n = 0; n < block.size(); ++n) {
     tcc_max = std::max(tcc_max, tcc[0][block[n]]);
   }
+  double tmp = tcc_max;
+  mesh->get_comm()->MaxAll(&tmp, &tcc_max, 1);
   CHECK(tcc_max > 0.25);
 
   GMV::open_data_file(*mesh, (std::string)"transport.gmv");
