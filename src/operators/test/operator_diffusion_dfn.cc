@@ -84,16 +84,15 @@ void RunTest(int icase, double gravity) {
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
-  for (int c = 0; c < ncells_owned; c++) {
-    WhetStone::Tensor Kc(2, 1);
-    Kc(0, 0) = 1.0;
-    K->push_back(Kc);
-  }
+  WhetStone::Tensor Kc(2, 1);
+  Kc(0, 0) = 1.0;
+  for (int c = 0; c < ncells_owned; c++) K->push_back(Kc);
 
   AmanziGeometry::Point v(1.0, 2.0, 3.0);
-  Analytic02 ana(surfmesh, v, gravity);
+  Analytic02 ana(surfmesh, v, gravity, Kc);
 
   // create boundary data (no mixed bc)
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
@@ -122,8 +121,8 @@ void RunTest(int icase, double gravity) {
   cvs->SetComponent("cell", AmanziMesh::CELL, 1)->SetOwned(false);
   cvs->AddComponent("face", AmanziMesh::FACE, 1);
 
-  CompositeVector solution(*cvs);
-  solution.PutScalar(0.0);
+  auto solution = Teuchos::rcp(new CompositeVector(*cvs));
+  solution->PutScalar(0.0);
 
   // create diffusion operator
   double rho(1.0);
@@ -159,8 +158,15 @@ void RunTest(int icase, double gravity) {
   solver.Init(lop_list);
 
   CompositeVector rhs = *global_op->rhs();
-  int ierr = solver.ApplyInverse(rhs, solution);
+  int ierr = solver.ApplyInverse(rhs, *solution);
 
+  // post-processing
+  auto cvs2 = Operators::CreateNonManifoldCVS(surfmesh);
+  auto flux = Teuchos::rcp(new CompositeVector(*cvs2));
+
+  op->UpdateFluxNonManifold(solution.ptr(), flux.ptr());
+
+  // statistics
   int ndofs = global_op->A()->NumGlobalRows();
   double a;
   rhs.Norm2(&a);
@@ -172,16 +178,31 @@ void RunTest(int icase, double gravity) {
               << " code=" << solver.returned_code() << std::endl;
   }
 
-  // calculate error in cell-centered data
+  // calculate error in potential
   double pnorm, l2_err, inf_err;
-  Epetra_MultiVector& p = *solution.ViewComponent("cell");
+  Epetra_MultiVector& p = *solution->ViewComponent("cell");
 
   ana.ComputeCellError(p, 0.0, pnorm, l2_err, inf_err);
   CHECK(l2_err < 1e-12);
 
+  // calculate flux error. To reuse the standard tools, we need to
+  // collapse flux on fracture interface
+  double unorm, ul2_err, uinf_err;
+  Epetra_MultiVector& flx_long = *flux->ViewComponent("face", true);
+  Epetra_MultiVector flx_short(surfmesh->face_map(false), 1);
+
+  const auto& fmap = *flux->Map().Map("face", true);
+  for (int f = 0; f < nfaces_owned; ++f) {
+    int g = fmap.FirstPointInElement(f);
+    flx_short[0][f] = flx_long[0][g];
+  }
+
+  ana.ComputeFaceError(flx_short, 0.0, unorm, ul2_err, uinf_err);
+
   if (MyPID == 0) {
     l2_err /= pnorm; 
-    printf("L2(p)=%9.6f  Inf(p)=%9.6f\n", l2_err, inf_err);
+    printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f\n",
+        l2_err, inf_err, ul2_err, uinf_err);
   }
 
   // remove gravity to check symmetry

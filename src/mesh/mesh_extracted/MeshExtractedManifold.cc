@@ -81,6 +81,41 @@ unsigned int MeshExtractedManifold::num_entities(const Entity_kind kind,
 
 
 /* ******************************************************************
+* Connectivity list: cell -> cells
+****************************************************************** */
+void MeshExtractedManifold::cell_get_face_adj_cells(
+    const Entity_ID c, const Parallel_type ptype, Entity_ID_List *cells) const
+{
+  Entity_ID_List nodes, faces0, faces1;
+
+  int fp = entid_to_parent_[CELL][c];
+  parent_mesh_->face_get_nodes(fp, &nodes);
+  int nnodes = nodes.size();
+ 
+  int nfaces_p = parent_mesh_->num_entities(FACE, ptype);
+
+  cells->clear();
+  for (int i = 0; i < nnodes; ++i) {
+    int j = (i + 1) % nnodes;
+    int np0 = nodes[i];
+    int np1 = nodes[j];
+
+    parent_mesh_->node_get_faces(np0, ptype, &faces0);
+    parent_mesh_->node_get_faces(np1, ptype, &faces1);
+
+    for (auto it0 = faces0.begin(); it0 != faces0.end(); ++it0) {
+      for (auto it1 = faces1.begin(); it1 != faces1.end(); ++it1) {
+        if (*it0 == *it1 && *it0 != fp) {
+          if (*it0 < nfaces_p) 
+            cells->push_back(parent_to_entid_[CELL][*it0]);
+        }
+      }
+    }
+  }
+}
+
+
+/* ******************************************************************
 * Connectivity list: cell -> faces
 ****************************************************************** */
 void MeshExtractedManifold::cell_get_faces_and_dirs_internal_(
@@ -94,6 +129,32 @@ void MeshExtractedManifold::cell_get_faces_and_dirs_internal_(
   for (int i = 0; i < nfaces; ++i) {
     int f = (*faces)[i];
     (*faces)[i] = parent_to_entid_[FACE][f];
+  }
+
+  // algorithms on a non-manifold use multiple normals and special continuity
+  // equations for fluxes, so that orientation does not play role.
+  // This may change in the future.
+  for (int i = 0; i < nfaces; ++i) {
+    (*fdirs)[i] = 1;
+  }
+}
+
+
+/* ******************************************************************
+* Connectivity list: cell -> edges = cell -> faces
+****************************************************************** */
+void MeshExtractedManifold::cell_get_edges_internal_(
+    const Entity_ID c, Entity_ID_List *edges) const
+{
+  std::vector<int> edirs;
+
+  int fp = entid_to_parent_[CELL][c];
+  parent_mesh_->face_get_edges_and_dirs(fp, edges, &edirs);
+  int nedges = edges->size();
+
+  for (int i = 0; i < nedges; ++i) {
+    int e = (*edges)[i];
+    (*edges)[i] = parent_to_entid_[FACE][e];
   }
 }
 
@@ -149,6 +210,51 @@ void MeshExtractedManifold::face_get_edges_and_dirs_internal_(
 
 
 /* ******************************************************************
+* Connectivity list: node -> cells
+****************************************************************** */
+void MeshExtractedManifold::node_get_cells(
+    const Entity_ID n,
+    const Parallel_type ptype, Entity_ID_List *cells) const 
+{
+  Entity_ID_List faces;
+
+  int np = entid_to_parent_[NODE][n];
+  parent_mesh_->node_get_faces(np, ptype, &faces);
+  int nfaces = faces.size();
+
+  cells->clear();
+  for (int i = 0; i < nfaces; ++i) {
+    int f = faces[i];
+    auto it = parent_to_entid_[CELL].find(f);
+    if (it != parent_to_entid_[CELL].end()) cells->push_back(it->second);
+  }
+}
+
+
+/* ******************************************************************
+* Connectivity list: node + cell -> faces
+****************************************************************** */
+void MeshExtractedManifold::node_get_cell_faces(
+    const Entity_ID n, const Entity_ID c,
+    const Parallel_type ptype, Entity_ID_List *faces) const
+{
+  Entity_ID_List edges, nodes;
+
+  int np = entid_to_parent_[NODE][n];
+  // parent_mesh_->node_get_edges(np, ptype, &edges);
+  AMANZI_ASSERT(false);
+  int nedges = edges.size();
+
+  faces->clear();
+  for (int i = 0; i < nedges; ++i) {
+    int e = edges[i];
+    auto it = parent_to_entid_[FACE].find(e);
+    if (it != parent_to_entid_[FACE].end()) faces->push_back(it->second);
+  }
+}
+
+
+/* ******************************************************************
 * Connectivity list: face -> cells
 ****************************************************************** */
 void MeshExtractedManifold::face_get_cells_internal_(
@@ -156,10 +262,9 @@ void MeshExtractedManifold::face_get_cells_internal_(
     const Parallel_type ptype, Entity_ID_List *cells) const
 {
   Entity_ID_List faces;
-  std::vector<int> dirs;
 
   int ep = entid_to_parent_[FACE][f];
-  // parent_mesh_->edge_get_faces_and_dirs(ep, ptype, &faces, &dirs);
+  // parent_mesh_->edge_get_faces(ep, ptype, &faces);
   AMANZI_ASSERT(false);
   int nfaces = faces.size();
 
@@ -576,7 +681,7 @@ void MeshExtractedManifold::InitParentMaps(const std::string& setname)
     if (setents.size() == 0)
       parent_mesh_->get_set_entities_and_vofs(setname, kind_p, Parallel_type::ALL, &setents, &vofs);
 
-    ShrinkGhosts_(setname, kind_p, &setents);
+    EnforceOneLayerOfGhosts_(setname, kind_p, &setents);
 
     // extract owned ids
     int nowned_p = parent_mesh_->num_entities(kind_p, Parallel_type::OWNED);
@@ -678,7 +783,7 @@ void MeshExtractedManifold::TryExtension1_(
   std::vector<Entity_ID> faceents;
   std::vector<double> vofs;
   parent_mesh_->get_set_entities_and_vofs(setname, FACE, Parallel_type::ALL, &faceents, &vofs);
-  ShrinkGhosts_(setname, FACE, &faceents);
+  EnforceOneLayerOfGhosts_(setname, FACE, &faceents);
 
   Entity_ID_List edges;
   std::vector<int> dirs;
@@ -719,7 +824,7 @@ void MeshExtractedManifold::TryExtension2_(
   std::vector<Entity_ID> faceents;
   std::vector<double> vofs;
   parent_mesh_->get_set_entities_and_vofs(setname, FACE, Parallel_type::ALL, &faceents, &vofs);
-  ShrinkGhosts_(setname, FACE, &faceents);
+  EnforceOneLayerOfGhosts_(setname, FACE, &faceents);
 
   Entity_ID_List nodes;
   std::set<Entity_ID> nodeents;
@@ -742,7 +847,7 @@ void MeshExtractedManifold::TryExtension2_(
 /* ******************************************************************
 * Limits the set of parent objects to only one layer of ghosts.
 ****************************************************************** */
-void MeshExtractedManifold::ShrinkGhosts_(
+void MeshExtractedManifold::EnforceOneLayerOfGhosts_(
     const std::string& setname, Entity_kind kind, Entity_ID_List* setents)
 {
   // base set is the set of master cells

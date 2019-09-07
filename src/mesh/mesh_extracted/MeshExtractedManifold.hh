@@ -98,24 +98,21 @@ class MeshExtractedManifold : public Mesh {
   // -- cells of type 'ptype' connected to a node - The order of cells is not guaranteed
   //    to be the same for corresponding nodes on different processors
   virtual void node_get_cells(const Entity_ID n, const Parallel_type ptype,
-                              Entity_ID_List *cells) const override {
-    AMANZI_ASSERT(false);
-  }
+                              Entity_ID_List *cells) const override;
 
-  // -- faces of type 'ptype' connected to a node - The order of faces is not guarnateed 
+  // -- faces of type 'ptype' connected to a node - The order of faces is not guaranteed 
   //    to be the same for corresponding nodes on different processors
   virtual void node_get_faces(const Entity_ID n, const Parallel_type ptype,
                               Entity_ID_List *faces) const override {
+    // parent_mesh_->node_get_edges() is not implemented, another algorithm is needed
     AMANZI_ASSERT(false);
   }
 
   // -- faces of type 'ptype' of a particular cell that are connected to the given node
-  //    The order of faces is not guarnateed to be the same on different processors
+  //    The order of faces is not guaranteed to be the same on different processors
   virtual void node_get_cell_faces(const Entity_ID n, const Entity_ID c,
                                    const Parallel_type ptype,
-                                   Entity_ID_List *faces) const override {
-    AMANZI_ASSERT(false);
-  }
+                                   Entity_ID_List *faces) const override;
 
   // -- cells of type 'ptype' connected to an edge - The order of cells is not guaranteed
   //    to be the same for corresponding edges on different processors
@@ -129,17 +126,16 @@ class MeshExtractedManifold : public Mesh {
   //    (e.g. a hex has 6 face neighbors)
   // 
   // The order in which the cellids are returned cannot be guaranteed in general
-  // except when ptype = ALL, in which case the cell ids will correcpond to cells
+  // except when ptype = ALL, in which case the cell ids will correspond to cells
   // across the respective faces given by cell_get_faces().
   virtual void cell_get_face_adj_cells(const Entity_ID c, const Parallel_type ptype,
-                                       Entity_ID_List *cells) const override {
-    AMANZI_ASSERT(false);
-  }
+                                       Entity_ID_List *cells) const override;
 
   // -- node connected neighboring cells of given cell (a hex in a structured mesh 
   //    has 26 node connected neighbors). The cells are returned in no particular order
   virtual void cell_get_node_adj_cells(const Entity_ID c, const Parallel_type ptype,
                                        Entity_ID_List *cells) const override {
+    // not used in Amanzi
     AMANZI_ASSERT(false);
   }
 
@@ -168,6 +164,7 @@ class MeshExtractedManifold : public Mesh {
   virtual void cell_get_coordinates(const Entity_ID c,
                                     std::vector<AmanziGeometry::Point> *vxyz) const override;
 
+  // -- mesh modifications are blocked for the extracted mesh
   virtual int deform(const std::vector<double>& target_cell_volumes,
                      const std::vector<double>& min_cell_volumes_in,
                      const Entity_ID_List& fixed_nodes,
@@ -241,10 +238,7 @@ class MeshExtractedManifold : public Mesh {
 
   // -- edges of a cell - this function is implemented in each mesh
   //    framework. The results are cached in the base class.
-  virtual void cell_get_edges_internal_(const Entity_ID c,
-                                        Entity_ID_List *edges) const override {
-    AMANZI_ASSERT(false);
-  }
+  virtual void cell_get_edges_internal_(const Entity_ID c, Entity_ID_List *edges) const override;
 
   // -- edges and directions of a 2D cell - this function is implemented
   //    in each mesh framework. The results are cached in the base class.
@@ -260,7 +254,7 @@ class MeshExtractedManifold : public Mesh {
 
   void TryExtension1_(const std::string& setname, Entity_kind kind, Entity_ID_List* setents);
   void TryExtension2_(const std::string& setname, Entity_kind kind, Entity_ID_List* setents);
-  void ShrinkGhosts_(const std::string& setname, Entity_kind kind, Entity_ID_List* setents);
+  void EnforceOneLayerOfGhosts_(const std::string& setname, Entity_kind kind, Entity_ID_List* setents);
 
   void PrintSets_() const;
 
