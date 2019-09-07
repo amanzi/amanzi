@@ -30,10 +30,10 @@ include_directories(${ATK_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
-include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_DERIVED_SOURCE_DIR})
+include_directories(${MESH_EXTRACTED_SOURCE_DIR})
 include_directories(${MESH_LOGICAL_SOURCE_DIR})
 include_directories(${MESH_FACTORY_SOURCE_DIR})
+include_directories(${MESH_SOURCE_DIR})
 include_directories(${MSTK_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
@@ -269,7 +269,7 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/operator_advection_dfn.cc
                                         test/operator_diffusion_dfn.cc
-                    LINK_LIBS derived_mesh ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+                    LINK_LIBS mesh_extracted ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(operators_dfn_4pe operators_dfn NPROCS 4 KIND unit)
 

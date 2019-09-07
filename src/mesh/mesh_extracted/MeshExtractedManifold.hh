@@ -1,5 +1,5 @@
 /*
-  Mesh Derived
+  Mesh Extracted
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -8,12 +8,12 @@
 
   Author: Konstantin Lipnikov
 
-  We assume that the parent mesh is a 3D mesh and derived mesh is a mesh
-  on 2D non-manifold. The derived mesh has 3D geometry.
+  We assume that the parent mesh is a 3D mesh and extracted mesh is a mesh
+  on a 2D non-manifold. The extracted mesh has 3D geometry.
 */
 
-#ifndef AMANZI_MESH_DERIVED_HH_
-#define AMANZI_MESH_DERIVED_HH_
+#ifndef AMANZI_MESH_EXTRACTED_MANIFOLD_HH_
+#define AMANZI_MESH_EXTRACTED_MANIFOLD_HH_
 
 #include <memory>
 #include <string>
@@ -35,19 +35,19 @@ namespace Amanzi {
 namespace AmanziMesh {
 
 
-class MeshDerived : public Mesh {
+class MeshExtractedManifold : public Mesh {
  public:
   // Construct a mesh by extracting a subset of entities from another
   // mesh. The subset may be specified by a list of entities. 
-  MeshDerived(const Teuchos::RCP<const Mesh>& parent_mesh,
-              const std::string& setname, 
-              const Entity_kind entity_kind,
-              const Comm_ptr_type& comm = Teuchos::null,
-              const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
-              const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
-              bool request_faces = true,
-              bool request_edges = false);
-  ~MeshDerived() {
+  MeshExtractedManifold(const Teuchos::RCP<const Mesh>& parent_mesh,
+                        const std::string& setname, 
+                        const Entity_kind entity_kind,
+                        const Comm_ptr_type& comm = Teuchos::null,
+                        const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+                        const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
+                        bool request_faces = true,
+                        bool request_edges = false);
+  ~MeshExtractedManifold() {
 };
 
   // initialization
@@ -60,7 +60,7 @@ class MeshDerived : public Mesh {
     return (id < nents_owned_[kind]) ? Parallel_type::OWNED : Parallel_type::GHOST;
   }
 
-  // parent entity if this mesh was derived from another mesh
+  // parent entity if this mesh was extracted from another mesh
   virtual
   Entity_ID entity_get_parent(const Entity_kind kind, const Entity_ID id) const override {
     return entid_to_parent_[kind][id];
@@ -147,7 +147,7 @@ class MeshDerived : public Mesh {
   // -- nodes
   virtual void node_get_coordinates(const Entity_ID n, AmanziGeometry::Point *xyz) const override;
 
-  // -- node modifications are blocked for the derived mesh
+  // -- node modifications are blocked for the extracted mesh
   virtual void node_set_coordinates(const Entity_ID n, const AmanziGeometry::Point xyz) override {
     AMANZI_ASSERT(false);
   }

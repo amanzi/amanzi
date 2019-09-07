@@ -1,6 +1,6 @@
 #
 #  Amanzi
-#    Derived Mesh framework
+#    Mesh Extracted framework
 #
 
 
@@ -10,15 +10,15 @@ include(PrintVariable)
 #
 # Define a project name
 # After this command the following varaibles are defined
-#   MESH_DERIVED_SOURCE_DIR
-#   MESH_DERIVED_BINARY_DIR
-project(MESH_DERIVED)
+#   MESH_EXTRACTED_SOURCE_DIR
+#   MESH_EXTRACTED_BINARY_DIR
+project(MESH_EXTRACTED)
 
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
-include_directories(${MESH_DERIVED_SOURCE_DIR})
+include_directories(${MESH_EXTRACTED_SOURCE_DIR})
 include_directories(${MESH_FACTORY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MSTK_SOURCE_DIR})
@@ -29,15 +29,15 @@ include_directories(${Epetra_INCLUDE_DIRS})
 #
 # Library: mesh
 #
-set(mesh_derived_inc_files
+set(mesh_extracted_inc_files
     BlockMapUtils.hh
-    MeshDerived.hh
+    MeshExtractedManifold.hh
 )
 
-add_amanzi_library(derived_mesh
+add_amanzi_library(mesh_extracted
                    SOURCE BlockMapUtils.cc
-                          MeshDerived.cc
-                   HEADERS ${mesh_derived_inc_files}
+                          MeshExtractedManifold.cc
+                   HEADERS ${mesh_extracted_inc_files}
                    LINK_LIBS mesh geometry ${Epetra_LIBRARIES})
 
 if (BUILD_TESTS)
@@ -46,14 +46,14 @@ if (BUILD_TESTS)
 
    # Need to copy files for the tests 
    if (NOT (${MSTK_SOURCE_DIR} EQUAL ${MSTK_BINARY_DIR}))
-       file(GLOB DataFiles "${MESH_DERIVED_SOURCE_DIR}/test/*.xml")
-       file(COPY ${DataFiles} DESTINATION ${MESH_DERIVED_BINARY_DIR}/test/)
+       file(GLOB DataFiles "${MESH_EXTRACTED_SOURCE_DIR}/test/*.xml")
+       file(COPY ${DataFiles} DESTINATION ${MESH_EXTRACTED_BINARY_DIR}/test/)
    endif()
 
-   add_amanzi_test(mesh_derived_fracture mesh_derived_fracture
+   add_amanzi_test(mesh_extracted_fracture mesh_extracted_fracture
                    KIND unit
-                   SOURCE test/Main.cc test/mesh_derived_fracture.cc
-                   LINK_LIBS mesh_factory mstk_mesh derived_mesh geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+                   SOURCE test/Main.cc test/mesh_extracted_fracture.cc
+                   LINK_LIBS mesh_factory mstk_mesh mesh_extracted geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
 endif()
   

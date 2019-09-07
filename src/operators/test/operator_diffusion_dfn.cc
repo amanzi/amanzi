@@ -24,8 +24,8 @@
 // Amanzi
 #include "GMVMesh.hh"
 #include "LinearOperatorPCG.hh"
+#include "MeshExtractedManifold.hh"
 #include "MeshFactory.hh"
-#include "MeshDerived.hh"
 #include "Tensor.hh"
 #include "WhetStoneDefs.hh"
 
@@ -77,7 +77,8 @@ void RunTest(int icase, double gravity) {
   } else if (icase == 2) {
     RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, true, true);
     std::string setname("fractures");
-    surfmesh = Teuchos::rcp(new MeshDerived(mesh, setname, AmanziMesh::FACE, comm, gm, plist, true, false));
+    surfmesh = Teuchos::rcp(new MeshExtractedManifold(
+        mesh, setname, AmanziMesh::FACE, comm, gm, plist, true, false));
   }
 
   // modify diffusion coefficient
@@ -208,7 +209,7 @@ TEST(FRACTURES_INPUT_EXODUS_FILE_GRAVITY) {
   RunTest(1, 2.0);
 }
 
-TEST(FRACTURES_EXTRACTION_DERIVED) {
+TEST(FRACTURES_MESH_EXTRACTION_MANIFOLD) {
   RunTest(2, 0.0);
 }
 

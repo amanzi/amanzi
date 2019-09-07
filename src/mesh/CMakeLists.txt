@@ -70,7 +70,7 @@ endif(ENABLE_MSTK_Mesh)
 # Factory class
 add_subdirectory(mesh_factory)
 add_subdirectory(mesh_logical)
-add_subdirectory(mesh_derived)
+add_subdirectory(mesh_extracted)
 
 
 if (BUILD_TESTS)

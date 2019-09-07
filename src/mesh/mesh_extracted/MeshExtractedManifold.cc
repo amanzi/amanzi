@@ -1,4 +1,6 @@
 /*
+  Mesh Extracted
+
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -19,7 +21,7 @@
 
 // Amanzi::Mesh
 #include "BlockMapUtils.hh"
-#include "MeshDerived.hh"
+#include "MeshExtractedManifold.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -27,7 +29,7 @@ namespace AmanziMesh {
 /* ******************************************************************
 * Light-weigthed constructor
 ****************************************************************** */
-MeshDerived::MeshDerived(
+MeshExtractedManifold::MeshExtractedManifold(
     const Teuchos::RCP<const Mesh>& parent_mesh,
     const std::string& setname, 
     const Entity_kind entity_kind,
@@ -38,18 +40,22 @@ MeshDerived::MeshDerived(
   : Mesh(comm, gm, plist, request_faces, request_edges),
     parent_mesh_(parent_mesh)
 {
+  vo_ = Teuchos::rcp(new VerboseObject(comm_, "MeshExtractedManifold", *plist_));
+
   set_space_dimension(parent_mesh_->space_dimension());
   set_manifold_dimension(parent_mesh_->space_dimension() - 1);
 
   InitParentMaps(setname); 
   InitEpetraMaps(); 
+
+  PrintSets_();
 }
 
 
 /* ******************************************************************
 * Get cell type
 ****************************************************************** */
-Cell_type MeshDerived::cell_get_type(const Entity_ID c) const
+Cell_type MeshExtractedManifold::cell_get_type(const Entity_ID c) const
 {
   int nfaces = cell_face_ids_[c].size();
   return (nfaces == 4) ? QUAD : ((nfaces == 3) ? TRI : POLYGON);
@@ -62,8 +68,8 @@ Cell_type MeshDerived::cell_get_type(const Entity_ID c) const
 * Number of entities of any kind (cell, face, edge, node) and in a
 * particular category (OWNED, GHOST, ALL)
 ****************************************************************** */
-unsigned int MeshDerived::num_entities(const Entity_kind kind, 
-                                       const Parallel_type ptype) const
+unsigned int MeshExtractedManifold::num_entities(const Entity_kind kind, 
+                                                 const Parallel_type ptype) const
 {
   if (ptype == Parallel_type::OWNED)
     return nents_owned_[kind];
@@ -77,7 +83,7 @@ unsigned int MeshDerived::num_entities(const Entity_kind kind,
 /* ******************************************************************
 * Connectivity list: cell -> faces
 ****************************************************************** */
-void MeshDerived::cell_get_faces_and_dirs_internal_(
+void MeshExtractedManifold::cell_get_faces_and_dirs_internal_(
     const Entity_ID c,
     Entity_ID_List *faces, std::vector<int> *fdirs, const bool ordered) const
 {
@@ -95,7 +101,7 @@ void MeshDerived::cell_get_faces_and_dirs_internal_(
 /* ******************************************************************
 * Connectivity list: cell -> nodes
 ****************************************************************** */
-void MeshDerived::cell_get_nodes(const Entity_ID c, Entity_ID_List* nodes) const
+void MeshExtractedManifold::cell_get_nodes(const Entity_ID c, Entity_ID_List* nodes) const
 {
   int fp = entid_to_parent_[CELL][c];
   parent_mesh_->face_get_nodes(fp, nodes);
@@ -111,7 +117,7 @@ void MeshDerived::cell_get_nodes(const Entity_ID c, Entity_ID_List* nodes) const
 /* ******************************************************************
 * Connectivity list: face -> nodes
 ****************************************************************** */
-void MeshDerived::face_get_nodes(const Entity_ID f, Entity_ID_List *nodes) const {
+void MeshExtractedManifold::face_get_nodes(const Entity_ID f, Entity_ID_List *nodes) const {
   Entity_ID v0, v1;
 
   int ep = entid_to_parent_[FACE][f];
@@ -126,7 +132,7 @@ void MeshDerived::face_get_nodes(const Entity_ID f, Entity_ID_List *nodes) const
 /* ******************************************************************
 * Connectivity list: face -> edges
 ****************************************************************** */
-void MeshDerived::face_get_edges_and_dirs_internal_(
+void MeshExtractedManifold::face_get_edges_and_dirs_internal_(
     const Entity_ID f,
     Entity_ID_List *edges, std::vector<int> *edirs, const bool ordered) const
 {
@@ -145,7 +151,7 @@ void MeshDerived::face_get_edges_and_dirs_internal_(
 /* ******************************************************************
 * Connectivity list: face -> cells
 ****************************************************************** */
-void MeshDerived::face_get_cells_internal_(
+void MeshExtractedManifold::face_get_cells_internal_(
     const Entity_ID f,
     const Parallel_type ptype, Entity_ID_List *cells) const
 {
@@ -169,8 +175,8 @@ void MeshDerived::face_get_cells_internal_(
 /* ******************************************************************
 * The node coordinates are returned in in arbitrary order
 ****************************************************************** */
-void MeshDerived::cell_get_coordinates(const Entity_ID c,
-                                       std::vector<AmanziGeometry::Point> *vxyz) const
+void MeshExtractedManifold::cell_get_coordinates(
+    const Entity_ID c, std::vector<AmanziGeometry::Point> *vxyz) const
 {
   Entity_ID_List nodes; 
 
@@ -191,8 +197,8 @@ void MeshDerived::cell_get_coordinates(const Entity_ID c,
 /* ******************************************************************
 * Face coordinates use convention same as in face_to_nodes()
 ****************************************************************** */
-void MeshDerived::face_get_coordinates(const Entity_ID f,
-                                       std::vector<AmanziGeometry::Point>* vxyz) const
+void MeshExtractedManifold::face_get_coordinates(
+    const Entity_ID f, std::vector<AmanziGeometry::Point>* vxyz) const
 {
   Entity_ID v0, v1;
 
@@ -213,8 +219,8 @@ void MeshDerived::face_get_coordinates(const Entity_ID f,
 /* ******************************************************************
 * Position vector for a node
 ****************************************************************** */
-void MeshDerived::node_get_coordinates(const Entity_ID n,
-                                       AmanziGeometry::Point *xyz) const
+void MeshExtractedManifold::node_get_coordinates(
+    const Entity_ID n, AmanziGeometry::Point *xyz) const
 {
   auto np = entid_to_parent_[NODE][n];
   parent_mesh_->node_get_coordinates(np, xyz);
@@ -224,11 +230,10 @@ void MeshDerived::node_get_coordinates(const Entity_ID n,
 /* ******************************************************************
 * Get list of entities of type 'ptype' in set specified by setname
 ****************************************************************** */
-void MeshDerived::get_set_entities_and_vofs(const std::string setname, 
-                                            const Entity_kind kind, 
-                                            const Parallel_type ptype, 
-                                            std::vector<Entity_ID> *setents,
-                                            std::vector<double> *vofs) const
+void MeshExtractedManifold::get_set_entities_and_vofs(
+    const std::string setname, 
+    const Entity_kind kind, const Parallel_type ptype, 
+    std::vector<Entity_ID> *setents, std::vector<double> *vofs) const
 {
   assert(setents != nullptr);
 
@@ -291,15 +296,13 @@ void MeshDerived::get_set_entities_and_vofs(const std::string setname,
     Errors::Message msg(ss.str());
     Exceptions::amanzi_throw(msg);
   }
-
-  PrintSets_();
 }
 
 
 /* ******************************************************************
 * Create a set from similar set in mesh
 ****************************************************************** */
-Entity_ID_List MeshDerived::build_set_(
+Entity_ID_List MeshExtractedManifold::build_set_(
     const Teuchos::RCP<const AmanziGeometry::Region>& rgn, const Entity_kind kind) const
 {
   int manifold_dim = manifold_dimension();
@@ -549,18 +552,18 @@ Entity_ID_List MeshDerived::build_set_(
 /* ******************************************************************
 * Create internal maps for child->parent
 ****************************************************************** */
-void MeshDerived::InitParentMaps(const std::string& setname)
+void MeshExtractedManifold::InitParentMaps(const std::string& setname)
 {
   nents_owned_.clear();
   nents_ghost_.clear();
   entid_to_parent_.clear();
   parent_to_entid_.clear();
 
-  std::vector<Entity_kind> kinds_derived({CELL, FACE, NODE});
+  std::vector<Entity_kind> kinds_extracted({CELL, FACE, NODE});
   std::vector<Entity_kind> kinds_parent({FACE, EDGE, NODE});
 
   for (int i = 0; i < 3; ++i) {
-    auto kind_d = kinds_derived[i];
+    auto kind_d = kinds_extracted[i];
     auto kind_p = kinds_parent[i];
 
     // build edge set from Exodus labeled face set
@@ -609,13 +612,13 @@ void MeshDerived::InitParentMaps(const std::string& setname)
 * owned or used by this processor. This helps Epetra understand 
 * inter-partition dependencies of the data.
 ****************************************************************** */
-void MeshDerived::InitEpetraMaps()
+void MeshExtractedManifold::InitEpetraMaps()
 {
-  std::vector<Entity_kind> kinds_derived({CELL, FACE, NODE});
+  std::vector<Entity_kind> kinds_extracted({CELL, FACE, NODE});
   std::vector<Entity_kind> kinds_parent({FACE, EDGE, NODE});
 
   for (int i = 0; i < 3; ++i) {
-    auto kind_d = kinds_derived[i];
+    auto kind_d = kinds_extracted[i];
     auto kind_p = kinds_parent[i];
 
     // compute (discontinuous) owned global ids using the parent map 
@@ -658,7 +661,7 @@ void MeshDerived::InitEpetraMaps()
 /* ******************************************************************
 * Exception due to limitations of the base mesh framework.
 ****************************************************************** */
-void MeshDerived::TryExtension1_(
+void MeshExtractedManifold::TryExtension1_(
     const std::string& setname, Entity_kind kind, Entity_ID_List* setents)
 {
   // labeled set: extract edges
@@ -699,7 +702,7 @@ void MeshDerived::TryExtension1_(
 /* ******************************************************************
 * Exception due to limitations of the base mesh framework.
 ****************************************************************** */
-void MeshDerived::TryExtension2_(
+void MeshExtractedManifold::TryExtension2_(
     const std::string& setname, Entity_kind kind, Entity_ID_List* setents)
 {
   // labeled set: extract nodes
@@ -739,7 +742,7 @@ void MeshDerived::TryExtension2_(
 /* ******************************************************************
 * Limits the set of parent objects to only one layer of ghosts.
 ****************************************************************** */
-void MeshDerived::ShrinkGhosts_(
+void MeshExtractedManifold::ShrinkGhosts_(
     const std::string& setname, Entity_kind kind, Entity_ID_List* setents)
 {
   // base set is the set of master cells
@@ -819,7 +822,7 @@ void MeshDerived::ShrinkGhosts_(
 /* ******************************************************************
 * Statistics
 ****************************************************************** */
-void MeshDerived::PrintSets_() const
+void MeshExtractedManifold::PrintSets_() const
 {
   if (vo_.get() && vo_->os_OK(Teuchos::VERB_LOW)) {
     Teuchos::OSTab tab = vo_->getOSTab();

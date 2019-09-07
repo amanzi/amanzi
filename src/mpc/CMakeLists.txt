@@ -34,7 +34,7 @@ include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
-include_directories(${MESH_DERIVED_SOURCE_DIR})
+include_directories(${MESH_EXTRACTED_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MPC_TREE_SOURCE_DIR})
 include_directories(${MSTK_SOURCE_DIR})
@@ -112,7 +112,7 @@ if (BUILD_TESTS)
     endif()
 
     set(amanzi_libs mpc pks mpc_tree flow transport chemistry_pk energy dummy pks eos 
-                    state operators derived_mesh mesh_factory mesh_audit 
+                    state operators mesh_extracted mesh_factory mesh_audit 
                     geometry whetstone mesh_functions functions)
 
     # Test: mpc driver for flow
@@ -168,6 +168,7 @@ if (BUILD_TESTS)
     # Test: mpc driver for coupled matrix-fracture flow and transport: benchmarks
     add_amanzi_test(mpc_benchmark_single mpc_benchmark_single
                     KIND      int
+                    NPROC     3
                     SOURCE    test/Main.cc test/mpc_benchmark_single.cc
         	    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})                  
 

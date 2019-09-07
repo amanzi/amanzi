@@ -21,12 +21,12 @@
 #include <UnitTest++.h>
 
 // Amanzi::Mesh
-#include "MeshDerived.hh"
+#include "MeshExtractedManifold.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
 
 /* **************************************************************** */
-TEST(DERIVED_MESH) {
+TEST(MESH_EXTRACTED_FRACTURES) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -36,10 +36,10 @@ TEST(DERIVED_MESH) {
   std::vector<Framework> frameworks = {Framework::MSTK, Framework::MOAB, Framework::SIMPLE};
 
   // read parameter list
-  std::string xmlFileName = "test/mesh_derived_fracture.xml";
+  std::string xmlFileName = "test/mesh_extracted_fracture.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
-  std::string exoname("test/mesh_derived_fracture.exo");
+  std::string exoname("test/mesh_extracted_fracture.exo");
   std::string setname("fractures");
 
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
@@ -61,8 +61,8 @@ TEST(DERIVED_MESH) {
 
     // extract fractures mesh
     try {
-      RCP<const Mesh> mesh = Teuchos::rcp(new MeshDerived(mesh3D, setname, AmanziMesh::FACE,
-                                                          comm, gm, plist, true, false));
+      RCP<const Mesh> mesh = Teuchos::rcp(new MeshExtractedManifold(mesh3D, setname, AmanziMesh::FACE,
+                                                                    comm, gm, plist, true, false));
 
       int ncells = mesh->cell_map(false).NumGlobalElements();
       int nfaces = mesh->face_map(false).NumGlobalElements();
