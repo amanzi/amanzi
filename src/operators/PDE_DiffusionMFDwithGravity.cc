@@ -293,7 +293,9 @@ void PDE_DiffusionMFDwithGravity::UpdateFluxNonManifold(
 
   int dim = mesh_->space_dimension();
   Epetra_MultiVector& flux_data = *flux->ViewComponent("face", true);
-  Epetra_MultiVector grav_data(flux_data);
+
+  CompositeVector grav(*flux);
+  Epetra_MultiVector& grav_data = *grav.ViewComponent("face", true);
   grav_data.PutScalar(0.0);
 
   int ndofs_owned = flux->ViewComponent("face")->MyLength();
@@ -349,11 +351,11 @@ void PDE_DiffusionMFDwithGravity::UpdateFluxNonManifold(
   }
 
   // if f is on a processor boundary, some g are not initialized
+  grav.GatherGhostedToMaster(Add);
+
   for (int g = 0; g < ndofs_owned; ++g) {
     flux_data[0][g] += grav_data[0][g];
   }
- 
-  flux->GatherGhostedToMaster(Insert);
 }
 
 

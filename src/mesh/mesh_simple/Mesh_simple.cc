@@ -757,7 +757,7 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string setname,
         }
           
         if (rgn->manifold_dimension() != Mesh::manifold_dimension()-1) {
-          std::cerr << "Geometric model does not have a region named" << setname << "with the appropriate dimension" << std::endl;
+          std::cerr << "Geometric model does not have a region named \"" << setname << "\" with the appropriate dimension" << std::endl;
           std::cerr << "Cannot construct set by this name" << std::endl;
           throw std::exception();
         }
@@ -967,7 +967,7 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string setname,
           
         if (rgn->manifold_dimension() > 0 &&
             rgn->manifold_dimension() != Mesh::manifold_dimension()) {
-          std::cerr << "Geometric model does not have a region named" << setname << "with the appropriate dimension" << std::endl;
+          std::cerr << "Geometric model does not have a region named \"" << setname << "\" with the appropriate dimension" << std::endl;
           std::cerr << "Cannot construct set by this name" << std::endl;
           throw std::exception();
         }

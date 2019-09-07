@@ -344,11 +344,11 @@ class MeshEmbeddedLogical : public Mesh {
   virtual
   void cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
           Entity_ID_List *edgeids,
-          std::vector<int> *edge_dirs) const;
+          std::vector<int> *edge_dirs) const override;
 
   // Cache connectivity info.
   virtual
-  void cache_cell_face_info_() const;
+  void cache_cell_face_info_() const override;
 
 
   virtual

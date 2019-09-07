@@ -56,11 +56,6 @@ int AddSuperVectorToTreeVector(const SuperMap& map,
 unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n_dofs = 1);
 unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, Schema& schema);
 
-std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >
-CreateBoundaryMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                   std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >& bnd_maps,
-                   std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >& face_maps);  
-
 // Nonmember helper function
 std::pair<Teuchos::RCP<const Epetra_BlockMap>, Teuchos::RCP<const Epetra_BlockMap> >
 getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location);

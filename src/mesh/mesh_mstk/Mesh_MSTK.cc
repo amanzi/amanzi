@@ -4,7 +4,7 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Rao Garimella, Konstantin Lipnikov, others
+  Authors: Rao Garimella, others
 */
 
 //! Implementation of the Mesh interface leveraging MSTK.
@@ -540,7 +540,7 @@ Mesh_MSTK::internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::Region>
     else if (entity_kind == FACE)
       internal_name = "FACESET_" + r->name();
     else if (entity_kind == EDGE)
-      internal_name = "EDGESET_not_supported";
+      internal_name = "EDGESET_" + r->name();
     else if (entity_kind == NODE)
       internal_name = "NODESET_" + r->name();
   }
@@ -2570,6 +2570,9 @@ void Mesh_MSTK::node_set_coordinates(const AmanziMesh::Entity_ID nodeid,
 }
 
 
+//---------------------------------------------------------
+// Private routine creating mesh sets for GM regions
+//---------------------------------------------------------
 MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& region,
                               const Entity_kind kind) const
 {
@@ -2840,6 +2843,41 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
             << "This request will result in an empty set\n";
       }
     }
+    break;
+
+  case EDGE: // Edgesets
+
+    enttype = MEDGE;
+    mset = MSet_New(mesh_,internal_name.c_str(),enttype);
+
+    if (region->type() == AmanziGeometry::BOX ||
+        region->type() == AmanziGeometry::PLANE ||
+        region->type() == AmanziGeometry::POLYGON) {
+
+      int nedge = num_entities(EDGE, Parallel_type::ALL);
+
+      for (int iedge = 0; iedge < nedge; iedge++) {
+        const auto& epnt = edge_centroid(iedge);
+                  
+        if (region->inside(epnt)) {
+          MSet_Add(mset,edge_id_to_handle[iedge]);
+        }
+      }
+    }
+    else if (region->type() == AmanziGeometry::LOGICAL) {
+      // We will handle it later in the routine
+    }
+    else {
+      Teuchos::RCP<const VerboseObject> verbobj = verbosity_obj();
+      if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_HIGH)) {
+        Teuchos::OSTab tab = verbobj->getOSTab();
+        *(verbobj->os()) << "Requested EDGEs on region " << region->name() 
+            << " of type " << region->type() << " and dimension " 
+            << region->manifold_dimension() << ".\n" 
+            << "This request will result in an empty set\n";
+      }
+    }
+      
     break;
 
   case NODE: // Nodesets
@@ -3157,7 +3195,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
       if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
         *(verbobj->os()) << "Found labeled set region \"" << setname 
                          << "\" but it contains entities of type " << entity_type 
-                         << ", not the requested type\n";
+                         << ", not the requested type.\n";
       }
     } 
     else {
