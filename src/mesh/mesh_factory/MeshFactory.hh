@@ -1,4 +1,3 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -30,15 +29,11 @@ class GeometricModel;
 namespace AmanziMesh {
 class Mesh;
 
-
-
 // -------------------------------------------------------------
 //  class MeshFactory
 // -------------------------------------------------------------
 class MeshFactory {
  public:
-  
-  // Constructor.
   explicit MeshFactory(const Comm_ptr_type& comm, 
                        const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm=Teuchos::null, 
                        const Teuchos::RCP<Teuchos::ParameterList>& plist=Teuchos::null);
@@ -46,7 +41,6 @@ class MeshFactory {
   // undefined copy constructor to avoid unwanted copies
   MeshFactory(MeshFactory& old) = delete;
   
-  // Destructor
   ~MeshFactory() = default;
 
   // Get/set the framework preference, an ordered list of available frameworks.
@@ -57,28 +51,21 @@ class MeshFactory {
   void set_preference(const Preference& pref);
 
   // Get/set the geometric model
-  //
-  Teuchos::RCP<const AmanziGeometry::GeometricModel> geometric_model() const {
-    return gm_; }
-  void set_geometric_model(const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm) {
-    gm_ = gm; }
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> geometric_model() const { return gm_; }
+  void set_geometric_model(const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm) { gm_ = gm; }
 
   // Get/set the parameter list
-  //
   Teuchos::RCP<const Teuchos::ParameterList> parameter_list() const { return plist_; }
   void set_parameter_list(const Teuchos::RCP<const Teuchos::ParameterList>& plist);
   
   // Creation methods
-  
-  // Create a mesh by reading the specified file (or set of files)
+  // -- Create a mesh by reading the specified file (or set of files)
   Teuchos::RCP<Mesh> create(const std::string& filename,
                             const bool request_faces=true,
                             const bool request_edges=false);
 
-  // Generate a hex mesh (3D)
-  //
-  // Generates a structured mesh covering [x0,x1] X [y0,y1] X [z0,z1] with
-  // (nx, ny, nz) cells.
+  // -- Generate a hex mesh (3D)
+  //    Generates a structured mesh covering [x0,x1] X [y0,y1] X [z0,z1] with (nx, ny, nz) cells.
   Teuchos::RCP<Mesh> create(const double x0, const double y0, const double z0,
                             const double x1, const double y1, const double z1,
                             const int nx, const int ny, const int nz,
@@ -86,32 +73,29 @@ class MeshFactory {
                             const bool request_edges=false);
                             
     
-  // Generate a quad mesh (2D)
-  //
-  // Generates a structured mesh covering [x0,x1] X [y0,y1] with (nx, ny)
-  // cells.
+  // -- Generate a quad mesh (2D)
+  //    Generates a structured mesh covering [x0,x1] X [y0,y1] with (nx, ny) cells.
   Teuchos::RCP<Mesh> create(const double x0, const double y0,
                             const double x1, const double y1,
                             const int nx, const int ny,
                             const bool request_faces=true,
                             const bool request_edges=false);
 
-  // Generate a mesh from parameters in a list
+  // -- Generate a mesh from parameters in a list
   Teuchos::RCP<Mesh> create(const Teuchos::ParameterList& gen_plist,
                             const bool request_faces=true,
                             const bool request_edges=false);
   
   
-  // Extract a mesh from another mesh and a collection of entities
-  //
-  // Lifts setids of type setkind from the parent mesh and makes a new mesh
-  // out of those entities (and their closure).  If parent_mesh is 3D and
-  // setkind is FACE, the mesh may be flattened to form a 2D mesh.
+  // -- Extract a mesh from another mesh and a collection of entities
+  //    Lifts setids of type setkind from the parent mesh and makes a new mesh
+  //    out of those entities (and their closure).  If parent_mesh is 3D and
+  //    setkind is FACE, the mesh may be flattened to form a 2D mesh.
   //  
-  // Note that preference is ignored here in favor of the type of parent_mesh.
-  // Frameworks that extract often need to assume the parent_mesh is the same
-  // type as the constructed mesh in order to use internal information.  Note
-  // this could likely be relaxed, but is easiest to require for now.
+  //    Note that preference is ignored here in favor of the type of parent_mesh.
+  //    Frameworks that extract often need to assume the parent_mesh is the same
+  //    type as the constructed mesh in order to use internal information.  Note
+  //    this could likely be relaxed, but is easiest to require for now.
   Teuchos::RCP<Mesh> create(const Teuchos::RCP<const Mesh>& parent_mesh,
                             const Entity_ID_List& setids,
                             const Entity_kind setkind,
@@ -120,17 +104,20 @@ class MeshFactory {
                             const bool request_edges=false);
                             
   
-  // Extract a mesh from another mesh and a set in that mesh.
+  // -- Extract a mesh from another mesh and a set in that mesh.
+  //    If expert parameter "extraction method" is missing, then it lifts setids 
+  //    of type setkind from the parent mesh's sets named in setnames and 
+  //    make a new mesh out of those entities (and their closure).
+  //    If parent_mesh is 3D and setkind is FACE, the mesh may be flattened to
+  //    form a 2D mesh.
   //
-  // Lifts setids of type setkind from the parent mesh's sets named in
-  // setnames and make a new mesh out of those entities (and their closure).
-  // If parent_mesh is 3D and setkind is FACE, the mesh may be flattened to
-  // form a 2D mesh.
+  //    Note that preference is ignored here in favor of the type of parent_mesh.
+  //    Frameworks that extract often need to assume the parent_mesh is the same
+  //    type as the constructed mesh in order to use internal information.  Note
+  //    this could likely be relaxed, but is easiest to require for now.
   //
-  // Note that preference is ignored here in favor of the type of parent_mesh.
-  // Frameworks that extract often need to assume the parent_mesh is the same
-  // type as the constructed mesh in order to use internal information.  Note
-  // this could likely be relaxed, but is easiest to require for now.
+  //    If expert paraeter "extraction method" is present, then the specified 
+  //    value is use to build a new mesh.
   Teuchos::RCP<Mesh> create(const Teuchos::RCP<const Mesh>& parent_mesh,
                             const std::vector<std::string>& setnames,
                             const Entity_kind setkind,
@@ -139,7 +126,6 @@ class MeshFactory {
                             const bool request_edges=false);
   
  protected:
-
   // The parallel environment
   Comm_ptr_type comm_;
 
@@ -157,6 +143,8 @@ class MeshFactory {
   bool request_faces_;
   bool request_edges_;
 
+ private:
+  std::string extraction_method_;
 };
 
 } // namespace AmanziMesh

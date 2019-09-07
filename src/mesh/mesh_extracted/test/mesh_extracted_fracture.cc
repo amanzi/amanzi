@@ -22,8 +22,13 @@
 
 // Amanzi::Mesh
 #include "MeshExtractedManifold.hh"
-#include "MeshFactory.hh"
+#ifdef HAVE_MOAB_MESH
+#include "Mesh_MOAB.hh"
+#endif
+#ifdef HAVE_MSTK_MESH
 #include "Mesh_MSTK.hh"
+#endif
+#include "Mesh_simple.hh"
 
 /* **************************************************************** */
 TEST(MESH_EXTRACTED_FRACTURES) {
@@ -32,8 +37,6 @@ TEST(MESH_EXTRACTED_FRACTURES) {
   using namespace Amanzi::AmanziMesh;
 
   Comm_ptr_type comm = Amanzi::getDefaultComm();
-
-  std::vector<Framework> frameworks = {Framework::MSTK, Framework::MOAB, Framework::SIMPLE};
 
   // read parameter list
   std::string xmlFileName = "test/mesh_extracted_fracture.xml";
@@ -45,19 +48,25 @@ TEST(MESH_EXTRACTED_FRACTURES) {
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
-  for (auto frm = frameworks.begin(); frm != frameworks.end(); ++frm) {
-    // create a mesh framework
-    std::cout << "\nMesh framework: " << framework_names.at(*frm) << std::endl;
-    MeshFactory meshfactory(comm, gm, plist);
-    meshfactory.set_preference(Preference({*frm}));
+  auto mesh_list = Teuchos::sublist(plist, "mesh", false);
+
+  for (int i = 0; i < 3; ++i) {
     RCP<const Mesh> mesh3D;
-
-    if (framework_names.at(*frm) != "MOAB")
-      mesh3D = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, true, true);
-    else 
-      mesh3D = meshfactory.create(exoname, true, true);
-
-    if (framework_names.at(*frm) == "MSTK") mesh3D->write_to_exodus_file(exoname);
+    if (i == 0) {
+#ifdef HAVE_MOAB_MESH
+      std::cout << "\nMesh framework: MSTK\n";
+      mesh3D = Teuchos::rcp(new Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, comm, gm, mesh_list, true, true));
+      mesh3D->write_to_exodus_file(exoname);
+#endif
+    } else if (i == 1) {
+      std::cout << "\nMesh framework: simple\n";
+      mesh3D = Teuchos::rcp(new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, comm, gm, mesh_list, true, true));
+    } else if (i == 2) {
+#ifdef HAVE_MOAB_MESH
+      std::cout << "\nMesh framework: MOAB\n";
+      mesh3D = Teuchos::rcp(new Mesh_MOAB(exoname, comm, gm, mesh_list, true, true));
+#endif
+    }
 
     // extract fractures mesh
     try {

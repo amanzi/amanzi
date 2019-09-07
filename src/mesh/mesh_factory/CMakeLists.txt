@@ -23,17 +23,18 @@ include(PrintVariable)
 project(MESH_FACTORY)
 
 # External (TPL) include directories
-include_directories(${Teuchos_INCLUDE_DIRS})
+include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${STK_INCLUDE_DIRS})
 include_directories(${SEACAS_INCLUDE_DIRS})
-include_directories(${Boost_INCLUDE_DIRS})
 
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
-include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_SIMPLE_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
+include_directories(${MESH_EXTRACTED_SOURCE_DIR})
+include_directories(${MESH_SIMPLE_SOURCE_DIR})
+include_directories(${MESH_SOURCE_DIR})
 
 
 #
@@ -67,7 +68,7 @@ endif()
 
 add_amanzi_library(mesh_factory
                    SOURCE ${mesh_factory_files} HEADERS ${mesh_factory_inc_files}
-                   LINK_LIBS ${mesh_factory_frameworks} ${Boost_LIBRARIES})
+                   LINK_LIBS ${mesh_factory_frameworks} mesh_extracted ${Boost_LIBRARIES})
 
 if (BUILD_TESTS)
 

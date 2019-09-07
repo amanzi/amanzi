@@ -47,8 +47,7 @@ class MeshExtractedManifold : public Mesh {
                         const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
                         bool request_faces = true,
                         bool request_edges = false);
-  ~MeshExtractedManifold() {
-};
+  ~MeshExtractedManifold() {};
 
   // initialization
   void InitParentMaps(const std::string& setname);

@@ -5584,6 +5584,10 @@ This specification format uses and describes the unstructured mesh only.
         detect columns of elements in a mesh and adjust the partitioning such that no column is 
         split over multiple partitions. If no partitioner is specified, the default one is used.
 
+    * `"submesh`" [list] parameters for extracted meshes
+
+      * `"extraction method`" [string] one of `"manifold mesh`". 
+
 Example of *Unstructured* mesh generated internally:
 
 .. code-block:: xml
