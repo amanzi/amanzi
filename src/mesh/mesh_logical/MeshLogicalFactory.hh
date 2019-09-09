@@ -288,6 +288,7 @@ class MeshLogicalFactory {
           const Entity_ID_List& cells,
           const AmanziGeometry::Point& normal,
           const std::vector<double>& lengths,
+          const std::vector<int>& dirs,
           double area);
 
   // Add a set from a list of entities
@@ -310,6 +311,7 @@ class MeshLogicalFactory {
   std::vector<double> cell_lengths_;
   std::vector<Entity_ID_List> face_cell_list_;
   std::vector<std::vector<double> > face_cell_lengths_;
+  std::vector<std::vector<int> > face_cell_dirs_;
   std::vector<AmanziGeometry::Point> face_area_normals_;
   std::vector<AmanziGeometry::Point> cell_centroids_;
 

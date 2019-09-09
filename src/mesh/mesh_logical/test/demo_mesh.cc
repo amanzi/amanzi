@@ -62,9 +62,11 @@ demoMeshLogicalSegmentRegularManual()
   face_area_normals.resize(5,normal);
 
   Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical> mesh =
-    Teuchos::rcp(new MeshLogical(comm,cell_volumes_,
+    Teuchos::rcp(new MeshLogical(comm,
+                                 cell_volumes_,
 				 face_cell_list,
-				 face_cell_lengths,
+                                 nullptr,
+                                 face_cell_lengths,
 				 face_area_normals));
   mesh->set_geometric_model(gm);
   return mesh;    
@@ -118,6 +120,7 @@ demoMeshLogicalSegmentIrregularManual() {
   Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical> mesh =
     Teuchos::rcp(new MeshLogical(comm,cell_volumes_,
 				 face_cell_list,
+                                 nullptr,
 				 face_cell_lengths,
 				 face_area_normals));
   mesh->set_geometric_model(gm);
@@ -278,7 +281,7 @@ demoMeshLogicalYManual() {
 
   // make the mesh  
   Teuchos::RCP<MeshLogical> m =
-    Teuchos::rcp(new MeshLogical(comm, cell_vols, face_cells, face_cell_lengths, face_normals, &cell_centroids_));
+      Teuchos::rcp(new MeshLogical(comm, cell_vols, face_cells, nullptr, face_cell_lengths, face_normals, &cell_centroids_));
 
   // make sets
   // -- coarse roots

@@ -32,6 +32,7 @@ namespace AmanziMesh {
 //
 MeshLogical::MeshLogical(const Comm_ptr_type& comm,
                          const std::vector<Entity_ID_List>& face_cell_ids,
+                         const std::vector<std::vector<int> >* face_cell_dirs,
                          const std::vector<AmanziGeometry::Point>& face_normals,
                          const Teuchos::RCP<const Teuchos::ParameterList>& plist)
     : Mesh(comm, Teuchos::null, plist, true, false)
@@ -63,8 +64,19 @@ MeshLogical::MeshLogical(const Comm_ptr_type& comm,
   // normal1 is negative normal0
   face_normals_.resize(face_normals.size());
   for (int f=0; f!=face_normals.size(); ++f) {
+    AMANZI_ASSERT(AmanziGeometry::norm(face_normals[f]) > 1.e-10);
     face_normals_[f].resize(2, face_normals[f] / AmanziGeometry::norm(face_normals[f]));
-    face_normals_[f][1] = -face_normals_[f][1];
+    if (face_cell_dirs != nullptr) {
+      // take the sign from dirs
+      face_normals_[f][0] *= (*face_cell_dirs)[f][0];
+      if ((*face_cell_dirs)[f].size() > 1) 
+        face_normals_[f][1] *= (*face_cell_dirs)[f][1];
+    
+    } else {
+      // no direction prescribed, so assume that the directionality is + for 0th and - for 1st.
+      // This is the sane default, and requires outward normal boundary faces.
+      face_normals_[f][1] = -face_normals_[f][1];
+    }
   }
 
   // populate cell, extra face info
@@ -81,15 +93,21 @@ MeshLogical::MeshLogical(const Comm_ptr_type& comm,
             Parallel_type::OWNED : Parallel_type::PTYPE_UNKNOWN);
 
     cell_face_ids_[f[0]].push_back(f_id);
-    cell_face_dirs_[f[0]].push_back(1);
+    if (face_cell_dirs) {
+      cell_face_dirs_[f[0]].push_back((*face_cell_dirs)[f_id][0]);
+    } else {
+      cell_face_dirs_[f[0]].push_back(1);
+    }
     cell_face_bisectors_[f[0]].emplace_back(face_normals_[f_id][0]);
 
     if (f.size() > 1 && f[1] >= 0) {
       cell_face_ids_[f[1]].push_back(f_id);
-      cell_face_dirs_[f[1]].push_back(-1);
+      if (face_cell_dirs) {
+        cell_face_dirs_[f[0]].push_back((*face_cell_dirs)[f_id][1]);
+      } else {
+        cell_face_dirs_[f[1]].push_back(-1);
+      }
       cell_face_bisectors_[f[1]].push_back(face_normals_[f_id][1]);
-
-      f[1] = ~f[1];  // 1s complement as face normal points into cell
     }
 
     f_id++;
@@ -127,6 +145,7 @@ MeshLogical::MeshLogical(const Comm_ptr_type& comm,
 MeshLogical::MeshLogical(const Comm_ptr_type& comm,
                          const std::vector<double>& cell_volumes,
                          const std::vector<Entity_ID_List>& face_cell_ids,
+                         const std::vector<std::vector<int> >* face_cell_dirs,
                          const std::vector<std::vector<double> >& face_cell_lengths,
                          const std::vector<AmanziGeometry::Point>& face_area_normals,
                          const std::vector<AmanziGeometry::Point>* cell_centroids,
@@ -161,25 +180,19 @@ MeshLogical::MeshLogical(const Comm_ptr_type& comm,
   cell_volumes_ = cell_volumes;
   face_cell_ids_ = face_cell_ids;
 
-  // normal1 is negative normal0
+  // normal1 is negative normal0, but which is the negative of what we got given?
   face_normals_.resize(face_area_normals.size());  // resize to number of faces
   for (int f=0; f!=face_area_normals.size(); ++f) {
     face_normals_[f].resize(2, face_area_normals[f]);
-    if (cell_centroids) {
-      if (face_cell_ids_[f].size() == 2) {
-        if (face_normals_[f][0] * ((*cell_centroids)[face_cell_ids_[f][1]] -
-                               (*cell_centroids)[face_cell_ids_[f][0]]) > 0.) {
-          // normal is outward from cell 0 to cell 1
-          face_normals_[f][1] = -face_normals_[f][1];
-        } else {
-          // normal is outward from cell 1 to cell 0
-          face_normals_[f][0] = -face_normals_[f][0];
-        }
-      } else {
-        // pass, boundary face and we must assume normal given was correct
-      }
+    if (face_cell_dirs) {
+      // take the sign from dirs
+      face_normals_[f][0] *= (*face_cell_dirs)[f][0];
+      if ((*face_cell_dirs)[f].size() > 1) 
+        face_normals_[f][1] *= (*face_cell_dirs)[f][1];
+    
     } else {
-      // no centroid info, doesn't matter what we choose
+      // no direction prescribed, so assume that the directionality is + for 0th and - for 1st.
+      // This is the sane default, and requires outward normal boundary faces.
       face_normals_[f][1] = -face_normals_[f][1];
     }
   }
@@ -214,28 +227,42 @@ MeshLogical::MeshLogical(const Comm_ptr_type& comm,
   int f_id=0;
   for (std::vector<Entity_ID_List>::iterator f=face_cell_ids_.begin();
        f!=face_cell_ids_.end(); ++f) {
+    // set parallel type of both cells
     face_cell_ptype_[f_id].push_back(Parallel_type::OWNED);
     face_cell_ptype_[f_id].push_back(f->size() == 2 ?
             Parallel_type::OWNED : Parallel_type::PTYPE_UNKNOWN);
-    face_areas_[f_id] = AmanziGeometry::norm(face_normals_[f_id][0]);
 
+    // set area
+    face_areas_[f_id] = AmanziGeometry::norm(face_normals_[f_id][0]);
+    AMANZI_ASSERT(face_areas_[f_id] > 1.e-10);
+
+    // set cell-face ids, dirs
     cell_face_ids_[(*f)[0]].push_back(f_id);
-    cell_face_dirs_[(*f)[0]].push_back(1);
+    if (face_cell_dirs) {
+      cell_face_dirs_[(*f)[0]].push_back((*face_cell_dirs)[f_id][0]);
+    } else {
+      cell_face_dirs_[(*f)[0]].push_back(1);
+    }
 
     AmanziGeometry::Point unit_normal(face_normals_[f_id][0]);
     unit_normal /= AmanziGeometry::norm(unit_normal);
     unit_normal *= face_cell_lengths[f_id][0];
+    AMANZI_ASSERT(face_cell_lengths[f_id][0] > 0.);
     cell_face_bisectors_[(*f)[0]].push_back(unit_normal);
 
     if (f->size() > 1 && (*f)[1] >= 0) {
       cell_face_ids_[(*f)[1]].push_back(f_id);
-      cell_face_dirs_[(*f)[1]].push_back(-1);
+
+      if (face_cell_dirs) {
+        cell_face_dirs_[(*f)[1]].push_back((*face_cell_dirs)[f_id][1]);
+      } else {
+        cell_face_dirs_[(*f)[1]].push_back(-1);
+      }
 
       AmanziGeometry::Point unit_normal(face_normals_[f_id][1]);
       unit_normal /= face_areas_[f_id];
+      AMANZI_ASSERT(face_cell_lengths[f_id][1] > 0.);
       cell_face_bisectors_[(*f)[1]].push_back(unit_normal * face_cell_lengths[f_id][1]);
-
-      (*f)[1] = ~((*f)[1]);  // 1s complement as face is pointing into cell 1
     }
 
     f_id++;

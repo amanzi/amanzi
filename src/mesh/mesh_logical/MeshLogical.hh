@@ -60,12 +60,14 @@ class MeshLogical : public Mesh {
   //                              array of centroids
   MeshLogical(const Comm_ptr_type& comm,
               const std::vector<Entity_ID_List>& face_cell_ids,
+              const std::vector<std::vector<int> >* face_cell_dirs,
               const std::vector<AmanziGeometry::Point>& face_normals,
               const Teuchos::RCP<const Teuchos::ParameterList>& plist=Teuchos::null);
 
   MeshLogical(const Comm_ptr_type& comm,
               const std::vector<double>& cell_volumes,
               const std::vector<Entity_ID_List>& face_cell_ids,
+              const std::vector<std::vector<int> >* face_cell_dirs,
               const std::vector<std::vector<double> >& face_cell_lengths,
               const std::vector<AmanziGeometry::Point>& face_area_normals,
               const std::vector<AmanziGeometry::Point>* cell_centroids=nullptr,

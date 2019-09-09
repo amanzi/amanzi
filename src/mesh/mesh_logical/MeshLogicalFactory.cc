@@ -212,6 +212,7 @@ MeshLogicalFactory::Create() const {
     mesh = Teuchos::rcp(new MeshLogical(comm_,
 					cell_volumes_,
 					face_cell_list_,
+                                        &face_cell_dirs_,
 					face_cell_lengths_,
 					face_area_normals_,
 					&cell_centroids_));
@@ -220,6 +221,7 @@ MeshLogicalFactory::Create() const {
     mesh = Teuchos::rcp(new MeshLogical(comm_,
 					cell_volumes_,
 					face_cell_list_,
+                                        &face_cell_dirs_,
 					face_cell_lengths_,
                                         face_area_normals_,
                                         nullptr));
@@ -326,7 +328,8 @@ MeshLogicalFactory::AddSegment(
 //
 // Cells and faces are optional return values containing the list of
 // entities in the new segment.
-// Add a segment
+//
+// Master add a segment -- all the others call this one!
 void
 MeshLogicalFactory::AddSegment(
       std::vector<AmanziGeometry::Point> const * const cell_centroids,
@@ -402,6 +405,7 @@ MeshLogicalFactory::AddSegment(
   if (first_tip_type == LogicalTip_t::BOUNDARY) {
     face_cell_list_.emplace_back(std::vector<int>{new_cells[0]});
     face_cell_lengths_.emplace_back(std::vector<double>{cell_lengths[0]/2});
+    face_cell_dirs_.emplace_back(std::vector<int>{1});
     if (calculated_volume_)
       cell_volumes_[new_cells[0]] += face_areas[i_face] * cell_lengths[0]/2;
     face_area_normals_.emplace_back(face_areas[i_face] * my_orientation);
@@ -410,8 +414,9 @@ MeshLogicalFactory::AddSegment(
 
   // add the interior faces
   for (int j=1; j!=n_cells; ++j) {
-    face_cell_list_.emplace_back(std::vector<int>{new_cells[j-1], new_cells[j]});
-    face_cell_lengths_.emplace_back(std::vector<double>{cell_lengths[j-1]/2, cell_lengths[j]/2});
+    face_cell_list_.emplace_back(std::vector<int>{new_cells[j], new_cells[j-1]});
+    face_cell_lengths_.emplace_back(std::vector<double>{cell_lengths[j]/2, cell_lengths[j-1]/2});
+    face_cell_dirs_.emplace_back(std::vector<int>{1,-1});
     if (calculated_volume_) {
       cell_volumes_[new_cells[j-1]] += face_areas[i_face] * cell_lengths[j-1]/2;
       cell_volumes_[new_cells[j]] += face_areas[i_face] * cell_lengths[j]/2;
@@ -424,6 +429,7 @@ MeshLogicalFactory::AddSegment(
   if (last_tip_type == LogicalTip_t::BOUNDARY) {
     face_cell_list_.emplace_back(std::vector<int>{new_cells.back()});
     face_cell_lengths_.emplace_back(std::vector<double>{cell_lengths.back()/2});
+    face_cell_dirs_.emplace_back(std::vector<int>{-1});
     if (calculated_volume_) {
       cell_volumes_[new_cells.back()] += face_areas[i_face] * cell_lengths.back()/2;
     }
@@ -637,15 +643,18 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist) {
     }
 
     // note cell_volumes_.size() will be the LID of the first cell of this segment!
-    std::vector<int> cells = {-1, (int) cell_volumes_.size() };
-    std::vector<double> lengths = {-1, cell_lengths[0]/2. };
+    std::vector<int> cells = {(int) cell_volumes_.size(), -1 };
+    std::vector<double> lengths = {cell_lengths[0]/2., -1 };
+    std::vector<int> dirs = { 1, 0  };
     
     if (branch_from_tip == "first") {
-      cells[0] = seg_cells_[branch_from].front();
-      lengths[0] = cell_lengths_[cells[0]]/2.;
+      cells[1] = seg_cells_[branch_from].front();
+      lengths[1] = cell_lengths_[cells[1]]/2.;
+      dirs[1] = 1;
     } else if (branch_from_tip == "last") {
-      cells[0] = seg_cells_[branch_from].back();
-      lengths[0] = cell_lengths_[cells[0]]/2.;
+      cells[1] = seg_cells_[branch_from].back();
+      lengths[1] = cell_lengths_[cells[1]]/2.;
+      dirs[1] = -1;
     } else {
       Errors::Message msg;
       msg << "MeshLogicalFactory (segment \"" << seg_name << "\"): \"first tip branch segment tip\" must be \"first\" or \"last\"";
@@ -664,7 +673,7 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist) {
     seg_faces_[seg_name] = new_faces;
 
     // -- add the reserved face
-    AddFace(f, cells, orientation, lengths, face_areas_mine[0]);
+    AddFace(f, cells, orientation, lengths, dirs, face_areas_mine[0]);
 
   } else {
     // -- Just add the interior faces
@@ -682,7 +691,7 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist) {
   if (last_tip_type == LogicalTip_t::BRANCH) {
     std::string branch_from = plist.get<std::string>("last tip branch segment");
     std::string branch_from_tip = plist.get<std::string>("last tip branch segment tip");
-
+    
     auto branch_from_seg = seg_cells_.find(branch_from);
     if (branch_from_seg == seg_cells_.end()) {
       Errors::Message msg;
@@ -692,13 +701,16 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist) {
 
     std::vector<int> cells = {-1, new_cells.back()};
     std::vector<double> lengths = {-1, cell_lengths.back()/2.};
+    std::vector<int> dirs = {0, -1};
     
     if (branch_from_tip == "first") {
       cells[0] = seg_cells_[branch_from].front();
       lengths[0] = cell_lengths_[cells[0]];
+      dirs[0] = 1;
     } else if (branch_from_tip == "last") {
       cells[0] = seg_cells_[branch_from].back();
       lengths[0] = cell_lengths_[cells[0]];
+      dirs[0] = -1;
     } else {
       Errors::Message msg;
       msg << "MeshLogicalFactory (segment \"" << seg_name << "\"): \"first tip branch segment tip\" must be \"first\" or \"last\"";
@@ -706,7 +718,7 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist) {
     }
 
     int f = ReserveFace();
-    AddFace(f, cells, orientation, lengths, face_areas_mine.back());
+    AddFace(f, cells, orientation, lengths, dirs, face_areas_mine.back());
   }
 }
   
@@ -718,6 +730,7 @@ MeshLogicalFactory::ReserveFace() {
   face_cell_list_.emplace_back(std::vector<int>());
   face_area_normals_.emplace_back(AmanziGeometry::Point());
   face_cell_lengths_.emplace_back(std::vector<double>());
+  face_cell_dirs_.emplace_back(std::vector<int>());
   return f;
 }
 
@@ -728,6 +741,7 @@ MeshLogicalFactory::AddFace(int f,
                             const Entity_ID_List& cells,
                             const AmanziGeometry::Point& normal,
                             const std::vector<double>& lengths,
+                            const std::vector<int>& dirs,
                             double area) {
   if (cells.size() != 2) {
     Errors::Message msg("MeshLogicalFactory: connection added is improperly formed -- all connections need two cells.");
@@ -737,6 +751,7 @@ MeshLogicalFactory::AddFace(int f,
   face_cell_list_[f] = cells;
   face_area_normals_[f] = area/AmanziGeometry::norm(normal)*normal;
   face_cell_lengths_[f] = lengths;
+  face_cell_dirs_[f] = dirs;
 
   if (calculated_volume_) {
     AMANZI_ASSERT(cells[0] < cell_volumes_.size());
