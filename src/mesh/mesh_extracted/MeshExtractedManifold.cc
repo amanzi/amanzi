@@ -257,6 +257,27 @@ void MeshExtractedManifold::node_get_cell_faces(
 
 
 /* ******************************************************************
+* Connectivity list: edge -> cells
+****************************************************************** */
+void MeshExtractedManifold::edge_get_cells(
+   const Entity_ID e, const Parallel_type ptype, Entity_ID_List *cells) const 
+{
+  Entity_ID_List faces;
+
+  int ep = entid_to_parent_[FACE][e];
+  parent_mesh_->edge_get_faces(ep, ptype, &faces);
+  int nfaces = faces.size();
+
+  cells->clear();
+  for (int i = 0; i < nfaces; ++i) {
+    int f = faces[i];
+    auto it = parent_to_entid_[CELL].find(f);
+    if (it != parent_to_entid_[CELL].end()) cells->push_back(it->second);
+  }
+}
+
+
+/* ******************************************************************
 * Connectivity list: face -> cells
 ****************************************************************** */
 void MeshExtractedManifold::face_get_cells_internal_(
@@ -266,8 +287,7 @@ void MeshExtractedManifold::face_get_cells_internal_(
   Entity_ID_List faces;
 
   int ep = entid_to_parent_[FACE][f];
-  // parent_mesh_->edge_get_faces(ep, ptype, &faces);
-  AMANZI_ASSERT(false);
+  parent_mesh_->edge_get_faces(ep, ptype, &faces);
   int nfaces = faces.size();
 
   cells->clear();

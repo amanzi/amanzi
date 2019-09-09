@@ -8,8 +8,11 @@
 
   Author: Konstantin Lipnikov
 
-  We assume that the parent mesh is a 3D mesh and extracted mesh is a mesh
-  on a 2D non-manifold. The extracted mesh has 3D geometry.
+  We assume that the parent mesh is a 3D mesh and the extracted mesh 
+  lives on a 2D non-manifold. The extracted mesh has 3D geometry.
+
+  Faces and edges are geometrycally identical in the extracted mesh
+  and have same ids, but they parent ids are different. 
 */
 
 #ifndef AMANZI_MESH_EXTRACTED_MANIFOLD_HH_
@@ -115,9 +118,7 @@ class MeshExtractedManifold : public Mesh {
   // -- cells of type 'ptype' connected to an edge - The order of cells is not guaranteed
   //    to be the same for corresponding edges on different processors
   virtual void edge_get_cells(const Entity_ID e, const Parallel_type ptype,
-                              Entity_ID_List *cells) const override {
-    AMANZI_ASSERT(false);
-  }
+                              Entity_ID_List *cells) const override;
 
   // same level adjacencies
   // -- face connected neighboring cells of given cell of a particular ptype
