@@ -29,8 +29,8 @@
 #include "wrm_flow_registration.hh"
 
 
-TEST(MPC_DRIVER_FLOW_MATRIX_FRACTURE) {
-
+void MPC_CoupledFlowTransport(const std::string& xmlfile, const std::string& exofile)
+{
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
@@ -38,8 +38,7 @@ using namespace Amanzi::AmanziGeometry;
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   
   // setup a piecewice linear solution with a jump
-  std::string xmlInFileName = "test/mpc_benchmark_single.xml";
-  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlInFileName);
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlfile);
 
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
@@ -50,7 +49,7 @@ using namespace Amanzi::AmanziGeometry;
   MeshFactory factory(comm, gm, mesh_list);
 
   factory.set_preference(Preference({Framework::MSTK}));
-  auto mesh = factory.create("test/single_fracture_tet.exo", true, true); 
+  auto mesh = factory.create(exofile, true, true); 
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
@@ -83,3 +82,6 @@ using namespace Amanzi::AmanziGeometry;
 }
 
 
+TEST(MPC_COUPLED_FLOW_TRANSPORT) {
+  MPC_CoupledFlowTransport("test/mpc_benchmark_single.xml", "test/single_fracture_tet.exo"); 
+}

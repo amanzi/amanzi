@@ -29,7 +29,6 @@
 #include "errors.hh"
 #include "Mesh.hh"
 #include "Region.hh"
-#include "VerboseObject.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -253,7 +252,8 @@ class MeshExtractedManifold : public Mesh {
 
   void TryExtension1_(const std::string& setname, Entity_kind kind, Entity_ID_List* setents);
   void TryExtension2_(const std::string& setname, Entity_kind kind, Entity_ID_List* setents);
-  void EnforceOneLayerOfGhosts_(const std::string& setname, Entity_kind kind, Entity_ID_List* setents);
+  std::map<Entity_ID, int> EnforceOneLayerOfGhosts_(const std::string& setname, Entity_kind kind,
+                                                    Entity_ID_List* setents);
 
   void PrintSets_() const;
 

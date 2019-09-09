@@ -23,6 +23,8 @@
 #include "BlockMapUtils.hh"
 #include "MeshExtractedManifold.hh"
 
+#include "MeshExtractedDefs.hh"
+
 namespace Amanzi {
 namespace AmanziMesh {
 
@@ -681,25 +683,21 @@ void MeshExtractedManifold::InitParentMaps(const std::string& setname)
     if (setents.size() == 0)
       parent_mesh_->get_set_entities_and_vofs(setname, kind_p, Parallel_type::ALL, &setents, &vofs);
 
-    EnforceOneLayerOfGhosts_(setname, kind_p, &setents);
+    auto marked_ents = EnforceOneLayerOfGhosts_(setname, kind_p, &setents);
 
     // extract owned ids
-    int nowned_p = parent_mesh_->num_entities(kind_p, Parallel_type::OWNED);
-
     auto& ids_p = entid_to_parent_[kind_d];
     ids_p.clear();
-    for (int n = 0; n < setents.size(); ++n) {
-      if (setents[n] < nowned_p) 
-        ids_p.push_back(setents[n]);
+    for (auto it = marked_ents.begin(); it != marked_ents.end(); ++it) {
+      if (it->second == MASTER) ids_p.push_back(it->first);
     }
 
     nents_owned_[kind_d] = ids_p.size();
-    nents_ghost_[kind_d] = setents.size() - ids_p.size();
+    nents_ghost_[kind_d] = marked_ents.size() - ids_p.size();
 
     // extract ghost ids
-    for (int n = 0; n < setents.size(); ++n) {
-      if (setents[n] >= nowned_p)
-        ids_p.push_back(setents[n]);
+    for (auto it = marked_ents.begin(); it != marked_ents.end(); ++it) {
+      if (it->second == GHOST) ids_p.push_back(it->first);
     }
 
     // create reverse ordered map
@@ -728,6 +726,7 @@ void MeshExtractedManifold::InitEpetraMaps()
 
     // compute (discontinuous) owned global ids using the parent map 
     Teuchos::RCP<const Epetra_BlockMap> parent_map = Teuchos::rcpFromRef(parent_mesh_->map(kind_p, false));
+    Teuchos::RCP<const Epetra_BlockMap> parent_map_wghost = Teuchos::rcpFromRef(parent_mesh_->map(kind_p, true));
 
     int nents = nents_owned_[kind_d];
     int nents_wghost = nents_owned_[kind_d] + nents_ghost_[kind_d];
@@ -735,14 +734,12 @@ void MeshExtractedManifold::InitEpetraMaps()
 
     for (int n = 0; n < nents; ++n) {
       int id = entid_to_parent_[kind_d][n];
-      gids[n] = parent_map->GID(id);
+      gids[n] = parent_map_wghost->GID(id);
     }
 
     auto subset_map = Teuchos::rcp(new Epetra_Map(-1, nents, gids, 0, *comm_));
 
     // compute owned + ghost ids using the parent map and the minimum global id
-    Teuchos::RCP<const Epetra_BlockMap> parent_map_wghost = Teuchos::rcpFromRef(parent_mesh_->map(kind_p, true));
-
     for (int n = 0; n < nents_wghost; ++n) {
       int id = entid_to_parent_[kind_d][n];
       gids[n] = parent_map_wghost->GID(id);
@@ -783,13 +780,14 @@ void MeshExtractedManifold::TryExtension1_(
   std::vector<Entity_ID> faceents;
   std::vector<double> vofs;
   parent_mesh_->get_set_entities_and_vofs(setname, FACE, Parallel_type::ALL, &faceents, &vofs);
-  EnforceOneLayerOfGhosts_(setname, FACE, &faceents);
+  auto marked_ents = EnforceOneLayerOfGhosts_(setname, FACE, &faceents);
 
   Entity_ID_List edges;
   std::vector<int> dirs;
   std::set<Entity_ID> edgeents;
-  for (int n = 0; n < faceents.size(); ++n) {
-    int f = faceents[n];
+
+  for (auto it = marked_ents.begin(); it != marked_ents.end(); ++it) {
+    int f = it->first;
     parent_mesh_->face_get_edges_and_dirs(f, &edges, &dirs);
     for (int i = 0; i < edges.size(); ++i) {
       edgeents.insert(edges[i]);
@@ -824,12 +822,12 @@ void MeshExtractedManifold::TryExtension2_(
   std::vector<Entity_ID> faceents;
   std::vector<double> vofs;
   parent_mesh_->get_set_entities_and_vofs(setname, FACE, Parallel_type::ALL, &faceents, &vofs);
-  EnforceOneLayerOfGhosts_(setname, FACE, &faceents);
+  auto marked_ents = EnforceOneLayerOfGhosts_(setname, FACE, &faceents);
 
   Entity_ID_List nodes;
   std::set<Entity_ID> nodeents;
-  for (int n = 0; n < faceents.size(); ++n) {
-    int f = faceents[n];
+  for (auto it = marked_ents.begin(); it != marked_ents.end(); ++it) {
+    int f = it->first;
     parent_mesh_->face_get_nodes(f, &nodes);
     for (int i = 0; i < nodes.size(); ++i) {
       nodeents.insert(nodes[i]);
@@ -847,7 +845,7 @@ void MeshExtractedManifold::TryExtension2_(
 /* ******************************************************************
 * Limits the set of parent objects to only one layer of ghosts.
 ****************************************************************** */
-void MeshExtractedManifold::EnforceOneLayerOfGhosts_(
+std::map<Entity_ID, int> MeshExtractedManifold::EnforceOneLayerOfGhosts_(
     const std::string& setname, Entity_kind kind, Entity_ID_List* setents)
 {
   // base set is the set of master cells
@@ -859,26 +857,30 @@ void MeshExtractedManifold::EnforceOneLayerOfGhosts_(
     fullset = *setents;
   }
 
-  // zero layer of ghosts is defined by master faces
-  Entity_ID_List nodes, edges;
+  // initia set of entities is defined by master parent faces and is marked as 
+  // potential master entities
+  Entity_ID_List nodes, edges, faces;
   std::vector<int> dirs;
   int nfaces_owned = parent_mesh_->num_entities(FACE, Parallel_type::OWNED);
-  std::set<Entity_ID> nodeset0, nodeset, edgeset, faceset;
+  std::map<Entity_ID, int> nodeset0, nodeset, edgeset, faceset;
 
   for (int n = 0; n < fullset.size(); ++n) {
     int f = fullset[n];
     if (f < nfaces_owned) {
       parent_mesh_->face_get_nodes(f, &nodes);
-      for (int i = 0; i < nodes.size(); ++i) nodeset0.insert(nodes[i]);
-
-      parent_mesh_->face_get_edges_and_dirs(f, &edges, &dirs);
-      for (int i = 0; i < edges.size(); ++i) edgeset.insert(edges[i]);
-
-      faceset.insert(f);
+      for (int i = 0; i < nodes.size(); ++i) nodeset0[nodes[i]] = MASTER;
+ 
+      if (kind == EDGE) {
+        parent_mesh_->face_get_edges_and_dirs(f, &edges, &dirs);
+        for (int i = 0; i < edges.size(); ++i) edgeset[edges[i]] = MASTER;
+      }
+ 
+      faceset[f] = MASTER;
     } 
   }
 
-  // first layer of ghosts is defined by neighboor faces of master faces
+  // ghosts entities are defined by neighboor faces of master faces. New
+  // entities are marked as ghosts
   Entity_ID n0, n1;
 
   nodeset = nodeset0;
@@ -894,33 +896,80 @@ void MeshExtractedManifold::EnforceOneLayerOfGhosts_(
         }
       }
       if (found) {
-        for (int i = 0; i < nodes.size(); ++i) nodeset.insert(nodes[i]);
+        for (int i = 0; i < nodes.size(); ++i) {
+          auto it = nodeset.find(nodes[i]);
+          if (it == nodeset.end())
+            nodeset[nodes[i]] = GHOST;
+          else
+            it->second |= GHOST;
+        }
 
-        parent_mesh_->face_get_edges_and_dirs(f, &edges, &dirs);
-        for (int i = 0; i < edges.size(); ++i) edgeset.insert(edges[i]);
+        if (kind == EDGE) {
+          parent_mesh_->face_get_edges_and_dirs(f, &edges, &dirs);
+          for (int i = 0; i < edges.size(); ++i) {
+            auto it = edgeset.find(edges[i]);
+            if (it == edgeset.end())
+              edgeset[edges[i]] = GHOST;
+            else
+              it->second |= GHOST;
+          }
+        }
 
-        faceset.insert(f);
+        faceset[f] = GHOST;
       }
     }
   }
 
-  // reduce input set to entities
-  int m(0);
-  for (int n = 0; n < setents->size(); ++n) {
-    int id = (*setents)[n];
+  // resolve master+ghost entities
+  if (kind == FACE) {
+    return faceset;
+  } else if (kind == EDGE) {
+    const auto& fmap = parent_mesh_->face_map(true);
 
-    if (kind == FACE) {
-      if (faceset.find(id) != faceset.end()) (*setents)[m++] = id;
+    int nowned = parent_mesh_->num_entities(FACE, Parallel_type::OWNED);
+    int gidmax = fmap.MaxMyGID();
+
+    for (auto it = edgeset.begin(); it != edgeset.end(); ++it) {
+      if (it->second == MASTER + GHOST) {
+        parent_mesh_->edge_get_faces(it->first, Parallel_type::ALL, &faces);
+        int nfaces = faces.size();
+
+        Entity_ID gid_owned_min(gidmax + 1), gid_wghost_min(gidmax + 1);
+        for (int n = 0; n < nfaces; ++n) {
+          Entity_ID f = faces[n];
+          gid_wghost_min = std::min(gid_wghost_min, fmap.GID(f));
+          if (f < nowned)
+            gid_owned_min = std::min(gid_owned_min, fmap.GID(f));
+        }
+        it->second = (gid_wghost_min == gid_owned_min) ? MASTER : GHOST;
+      }
     }
-    else if (kind == EDGE) {
-      if (edgeset.find(id) != edgeset.end()) (*setents)[m++] = id;
+    return edgeset;
+  } else if (kind == NODE) {
+    const auto& vmap = parent_mesh_->node_map(true);
+
+    int nowned = parent_mesh_->num_entities(NODE, Parallel_type::OWNED);
+    int gidmax = vmap.MaxMyGID();
+
+    for (auto it = nodeset.begin(); it != nodeset.end(); ++it) {
+      if (it->second == MASTER + GHOST) {
+        parent_mesh_->node_get_faces(it->first, Parallel_type::ALL, &faces);
+        int nfaces = faces.size();
+
+        Entity_ID gid_owned_min(gidmax + 1), gid_wghost_min(gidmax + 1);
+        for (int n = 0; n < nfaces; ++n) {
+          Entity_ID f = faces[n];
+          gid_wghost_min = std::min(gid_wghost_min, vmap.GID(f));
+          if (f < nowned)
+            gid_owned_min = std::min(gid_owned_min, vmap.GID(f));
+        }
+         it->second = (gid_wghost_min == gid_owned_min) ? MASTER : GHOST;
+      }
     }
-    else if (kind == NODE) {
-      if (nodeset.find(id) != nodeset.end()) (*setents)[m++] = id;
-    }
+    return nodeset;
   }
 
-  setents->resize(m);
+  return std::map<Entity_ID, int>();
 }
 
 
