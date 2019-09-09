@@ -53,7 +53,7 @@ TEST(MESH_EXTRACTED_FRACTURES) {
   for (int i = 0; i < 3; ++i) {
     RCP<const Mesh> mesh3D;
     if (i == 0) {
-#ifdef HAVE_MOAB_MESH
+#ifdef HAVE_MSTK_MESH
       std::cout << "\nMesh framework: MSTK\n";
       mesh3D = Teuchos::rcp(new Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, comm, gm, mesh_list, true, true));
       mesh3D->write_to_exodus_file(exoname);
@@ -67,6 +67,7 @@ TEST(MESH_EXTRACTED_FRACTURES) {
       mesh3D = Teuchos::rcp(new Mesh_MOAB(exoname, comm, gm, mesh_list, true, true));
 #endif
     }
+    if (mesh3D == Teuchos::null) continue;
 
     // extract fractures mesh
     try {

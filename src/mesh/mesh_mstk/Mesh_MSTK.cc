@@ -153,6 +153,9 @@ Mesh_MSTK::Mesh_MSTK(const std::string& filename,
         if (expert_list->isParameter("contiguous global ids")) {
           contiguous_gids_ = expert_list->get<bool>("contiguous global ids");
         }
+        if (expert_list->isParameter("request edges")) {
+          edges_requested_ = expert_list->get<bool>("request edges");
+        }
       }
     }
   }
@@ -223,7 +226,7 @@ Mesh_MSTK::Mesh_MSTK(const std::string& filename,
 
   // Do all the processing required for setting up the mesh for Amanzi 
   
-  post_create_steps_(request_faces, request_edges);
+  post_create_steps_(request_faces, edges_requested_);
 }
 
 
@@ -269,6 +272,9 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
         }
         if (expert_list->isParameter("contiguous global ids")) {
           contiguous_gids_ = expert_list->get<bool>("contiguous global ids");
+        }
+        if (expert_list->isParameter("request edges")) {
+          edges_requested_ = expert_list->get<bool>("request edges");
         }
       }
     }
@@ -332,7 +338,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
 
   // Do all the processing required for setting up the mesh for Amanzi 
   
-  post_create_steps_(request_faces, request_edges);
+  post_create_steps_(request_faces, edges_requested_);
 }
 
 

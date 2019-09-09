@@ -5584,9 +5584,18 @@ This specification format uses and describes the unstructured mesh only.
         detect columns of elements in a mesh and adjust the partitioning such that no column is 
         split over multiple partitions. If no partitioner is specified, the default one is used.
 
+      * `"request edges`" [bool] builds support for mesh edges. Only in 3D.
+
+      * `"contiguous global ids`" [bool] enforces contigoud global ids. Default is *true*.
+
     * `"submesh`" [list] parameters for extracted meshes
 
-      * `"extraction method`" [string] one of `"manifold mesh`". 
+      * `"extraction method`" [string] specifies the extraction method. The only available option
+        is `"manifold mesh`". If this parameter is missing, the parent mesh framework is used 
+        for submesh extraction..
+
+      * `"regions`" [Array(string)] defines a list of regions for submesh. Parameter 
+        `"extraction method`" requires a single name in this list.
 
 Example of *Unstructured* mesh generated internally:
 
