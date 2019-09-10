@@ -37,6 +37,7 @@ MeshColumn::MeshColumn(const Teuchos::RCP<const Mesh>& parent_mesh,
 
   // build epetra maps
   build_epetra_maps_();
+  init_cache(); 
 }
 
 

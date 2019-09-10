@@ -225,6 +225,7 @@ Mesh_MSTK::Mesh_MSTK(const std::string& filename,
   // Do all the processing required for setting up the mesh for Amanzi
 
   post_create_steps_(request_faces, request_edges);
+  std::cout<<"Cache init"<<std::endl;
   init_cache(); 
 
 }
@@ -335,6 +336,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
   // Do all the processing required for setting up the mesh for Amanzi
 
   post_create_steps_(request_faces, request_edges);
+  std::cout<<"Cache init"<<std::endl;
   init_cache(); 
 }
 
@@ -452,6 +454,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
 
   // Do all the processing required for setting up the mesh for Amanzi
   post_create_steps_(request_faces, request_edges);
+  std::cout<<"Cache init"<<std::endl;
   init_cache(); 
 }
 
@@ -508,6 +511,7 @@ Mesh_MSTK::Mesh_MSTK(const Teuchos::RCP<const Mesh>& parent_mesh,
   extract_mstk_mesh(src_ents, entity_dim, flatten, request_faces, request_edges);
 
   List_Delete(src_ents);
+  std::cout<<"Cache init"<<std::endl;
   init_cache(); 
 }
 

@@ -423,7 +423,6 @@ class Mesh {
       assert(false); 
       return; 
     }else{
-      assert(false); 
       bool done = false;
       int i = csr_start;  
       while(!done && i < csr_end){
@@ -431,6 +430,10 @@ class Mesh {
         if (cell_ptype == Parallel_type::PTYPE_UNKNOWN){ ++i; continue; }
         if(cell_ptype == ptype && start == -1){ start = i; }
         if(cell_ptype != ptype && start != -1){ stop = i;  }
+        ++i; 
+      }
+      if(stop == -1){
+        stop = i; 
       }
     }
     // Generte the subview 
