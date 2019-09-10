@@ -445,6 +445,14 @@ Entity_ID_List MeshExtractedManifold::build_set_(
   int nnodes_wghost = num_entities(NODE, Parallel_type::ALL);
   Entity_ID_List mset;
 
+  // special processing of regions
+  if (rgn->type() == AmanziGeometry::LABELEDSET) {
+    const auto& ids_p = parent_labeledsets_[internal_name];
+    for (auto it = ids_p.begin(); it != ids_p.end(); ++it) {
+      mset.push_back(parent_to_entid_[kind][*it]);
+    }
+  }
+
   switch (kind) {      
   // create a set of cells
   case CELL:
@@ -697,9 +705,7 @@ void MeshExtractedManifold::InitParentMaps(const std::string& setname)
     Entity_ID_List setents;
     std::vector<double> vofs;
 
-    TryExtension1_(setname, kind_p, &setents);
-    if (setents.size() == 0)
-      TryExtension2_(setname, kind_p, &setents);
+    TryExtension_(setname, kind_p, kind_d, &setents);
     if (setents.size() == 0)
       parent_mesh_->get_set_entities_and_vofs(setname, kind_p, Parallel_type::ALL, &setents, &vofs);
 
@@ -783,12 +789,12 @@ void MeshExtractedManifold::InitEpetraMaps()
 /* ******************************************************************
 * Exception due to limitations of the base mesh framework.
 ****************************************************************** */
-void MeshExtractedManifold::TryExtension1_(
-    const std::string& setname, Entity_kind kind, Entity_ID_List* setents)
+void MeshExtractedManifold::TryExtension_(
+    const std::string& setname,
+    Entity_kind kind_p, Entity_kind kind_d, Entity_ID_List* setents)
 {
   // labeled set: extract edges
   setents->clear();
-  if (kind != EDGE) return;
 
   const auto& gm = geometric_model();
   if (gm == Teuchos::null) return;
@@ -802,63 +808,34 @@ void MeshExtractedManifold::TryExtension1_(
   parent_mesh_->get_set_entities_and_vofs(setname, FACE, Parallel_type::ALL, &faceents, &vofs);
   auto marked_ents = EnforceOneLayerOfGhosts_(setname, FACE, &faceents);
 
-  Entity_ID_List edges;
+  Entity_ID_List edges, nodes;
   std::vector<int> dirs;
-  std::set<Entity_ID> edgeents;
+  std::set<Entity_ID> setents_tmp;
 
   for (auto it = marked_ents.begin(); it != marked_ents.end(); ++it) {
     int f = it->first;
-    parent_mesh_->face_get_edges_and_dirs(f, &edges, &dirs);
-    for (int i = 0; i < edges.size(); ++i) {
-      edgeents.insert(edges[i]);
+    if (kind_p == FACE) {
+      setents_tmp.insert(f);
+    }
+    else if (kind_p == EDGE) {
+      parent_mesh_->face_get_edges_and_dirs(f, &edges, &dirs);
+      for (int i = 0; i < edges.size(); ++i) {
+        setents_tmp.insert(edges[i]);
+      }
+    }
+    else if (kind_p == NODE) {
+      parent_mesh_->face_get_nodes(f, &nodes);
+      for (int i = 0; i < nodes.size(); ++i) {
+        setents_tmp.insert(nodes[i]);
+      }
     }
   }
 
-  for (auto it = edgeents.begin(); it != edgeents.end(); ++it)
+  for (auto it = setents_tmp.begin(); it != setents_tmp.end(); ++it)
     setents->push_back(*it);
 
-  std::string setname_internal = setname + std::to_string(FACE);
-  sets_[setname_internal] = *setents;
-}
-
-
-/* ******************************************************************
-* Exception due to limitations of the base mesh framework.
-****************************************************************** */
-void MeshExtractedManifold::TryExtension2_(
-    const std::string& setname, Entity_kind kind, Entity_ID_List* setents)
-{
-  // labeled set: extract nodes
-  setents->clear();
-  if (kind != NODE) return;
-
-  const auto& gm = geometric_model();
-  if (gm == Teuchos::null) return;
-
-  auto rgn = gm->FindRegion(setname);
-  if (rgn->type() != AmanziGeometry::LABELEDSET) return;
-
-  // populate list of edges
-  std::vector<Entity_ID> faceents;
-  std::vector<double> vofs;
-  parent_mesh_->get_set_entities_and_vofs(setname, FACE, Parallel_type::ALL, &faceents, &vofs);
-  auto marked_ents = EnforceOneLayerOfGhosts_(setname, FACE, &faceents);
-
-  Entity_ID_List nodes;
-  std::set<Entity_ID> nodeents;
-  for (auto it = marked_ents.begin(); it != marked_ents.end(); ++it) {
-    int f = it->first;
-    parent_mesh_->face_get_nodes(f, &nodes);
-    for (int i = 0; i < nodes.size(); ++i) {
-      nodeents.insert(nodes[i]);
-    }
-  }
-
-  for (auto it = nodeents.begin(); it != nodeents.end(); ++it)
-    setents->push_back(*it);
-
-  std::string setname_internal = setname + std::to_string(NODE);
-  sets_[setname_internal] = *setents;
+  std::string setname_internal = setname + std::to_string(kind_d);
+  parent_labeledsets_[setname_internal] = *setents;
 }
 
 
