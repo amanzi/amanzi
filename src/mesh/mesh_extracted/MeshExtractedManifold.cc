@@ -453,6 +453,13 @@ Entity_ID_List MeshExtractedManifold::build_set_(
     }
   }
 
+  // generic algorithm
+  int nents_wghost = num_entities(kind, Parallel_type::ALL);
+  if (rgn->type() == AmanziGeometry::ALL)  {
+    for (int n = 0; n < nents_wghost; ++n)
+      mset.push_back(n);
+  }
+
   switch (kind) {      
   // create a set of cells
   case CELL:
@@ -462,11 +469,6 @@ Entity_ID_List MeshExtractedManifold::build_set_(
 
       for (int c = 0; c < ncells_wghost; ++c)
         if (rgn->inside(cell_centroid(c))) mset.push_back(c);
-    }
-
-    else if (rgn->type() == AmanziGeometry::ALL)  {
-      for (int c = 0; c < ncells_wghost; ++c)
-        mset.push_back(c);
     }
 
     else if (rgn->type() == AmanziGeometry::POINT) {
@@ -517,11 +519,6 @@ Entity_ID_List MeshExtractedManifold::build_set_(
       for (int f = 0; f < nfaces_wghost; ++f) {
         if (rgn->inside(face_centroid(f))) mset.push_back(f);
       }
-    }
-
-    else if (rgn->type() == AmanziGeometry::ALL)  {
-      for (int f = 0; f < nfaces_wghost; ++f)
-        mset.push_back(f);
     }
 
     else if (rgn->type() == AmanziGeometry::PLANE ||
@@ -582,16 +579,10 @@ Entity_ID_List MeshExtractedManifold::build_set_(
                   
         if (rgn->inside(xp)) {
           mset.push_back(v);
-
           // Only one node per point rgn
           if (rgn->type() == AmanziGeometry::POINT) break;      
         }
       }
-    }
-
-    else if (rgn->type() == AmanziGeometry::ALL)  {
-      for (int v = 0; v < nnodes_wghost; ++v)
-        mset.push_back(v);
     }
 
     else if (rgn->type() == AmanziGeometry::LOGICAL) {
@@ -632,8 +623,7 @@ Entity_ID_List MeshExtractedManifold::build_set_(
     const std::vector<std::string> rgn_names = boolrgn->component_regions();
     int nregs = rgn_names.size();
     
-    std::vector<Entity_ID_List> msets;
-    std::vector<Teuchos::RCP<const AmanziGeometry::Region> > rgns;
+    std::vector<std::set<Entity_ID> > msets;
     
     for (int r = 0; r < nregs; r++) {
       auto rgn1 = gm->FindRegion(rgn_names[r]);
@@ -646,38 +636,45 @@ Entity_ID_List MeshExtractedManifold::build_set_(
         Exceptions::amanzi_throw(msg);
       }
         
-      rgns.push_back(rgn1);
       std::string setname_internal = rgn1->name() + std::to_string(kind);
+
       if (sets_.find(setname_internal) != sets_.end())
-        msets.push_back(build_set_(rgn1, kind)); 
-      else
-        msets.push_back(sets_[setname_internal]);
+        sets_[setname_internal] = build_set_(rgn1, kind); 
+     
+      auto it = sets_.find(setname_internal);
+      msets.push_back(std::set<Entity_ID>(it->second.begin(), it->second.end())); 
     }
 
-    // Check the entity types of the sets are consistent with the
-    // entity type of the requested set
-    /*
-    for (int ms = 0; ms < msets.size(); ms++) {
-      if (MSet_EntDim(msets[ms]) != enttype) {
-        Errors::Message msg("Amanzi cannot operate on sets of different entity types");
-        Exceptions::amanzi_throw(msg);               
-      }
-    }
-    */
-    
     if (boolrgn->operation() == AmanziGeometry::UNION) {
-      for (int ms = 0; ms < msets.size(); ms++) {
-        for (auto it = msets[ms].begin(); it != msets[ms].end(); ++it) {
-          mset.push_back(*it);
-        }
+      for (int n = 1; n < msets.size(); ++n) {
+        for (auto it = msets[n].begin(); it != msets[n].end(); ++n)
+          msets[0].insert(*it);
       }
     }
-    else if (boolrgn->operation() == AmanziGeometry::SUBTRACT ||
-             boolrgn->operation() == AmanziGeometry::COMPLEMENT ||
-             boolrgn->operation() == AmanziGeometry::INTERSECT) {
+
+    else if (boolrgn->operation() == AmanziGeometry::SUBTRACT) {
+      int nowned = num_entities(kind, Parallel_type::OWNED);
+      for (int n = 1; n < msets.size(); ++n) {
+        for (auto it = msets[n].begin(); it != msets[n].end(); ++n)
+          if (*it < nowned) msets[0].insert(*it);
+      }
+    }
+
+    else if (boolrgn->operation() == AmanziGeometry::COMPLEMENT) {
+      for (int n = 1; n < msets.size(); ++n) {
+        for (auto it = msets[n].begin(); it != msets[n].end(); ++n)
+          msets[0].insert(*it);
+      }
+      AMANZI_ASSERT(false);
+    } 
+
+    else if (boolrgn->operation() == AmanziGeometry::INTERSECT) {
       Errors::Message msg("Missing code for logical operation");
       Exceptions::amanzi_throw(msg);
     }
+
+    for (auto it = msets[0].begin(); it != msets[0].end(); ++it)
+      mset.push_back(*it);
   }
 
   return mset;
