@@ -27,8 +27,6 @@ u = cos(pi/2 x)
 
 */
 
-#include "Epetra_MpiComm.h"
-#include "Epetra_Vector.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_RCP.hpp"

@@ -21,5 +21,22 @@ Message& operator<<(Message &message, double datum) {
   return message; 
 }
 
+Message& operator<<(Message &message, unsigned long datum) { 
+  char number[24];
+  snprintf(number, 23, "%lu", datum);
+  message.add_data(number); 
+  return message; 
+}
+
+Message& operator<<(Message &message, unsigned datum) { 
+  char number[24];
+  snprintf(number, 23, "%u", datum);
+  message.add_data(number); 
+  return message; 
+}
+
+
+
+
 }  // namespace Errors
 
