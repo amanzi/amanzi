@@ -55,6 +55,8 @@ class MeshExtractedManifold : public Mesh {
   void InitParentMaps(const std::string& setname);
   void InitEpetraMaps();
 
+  virtual Teuchos::RCP<const Mesh> parent() const { return parent_mesh_; }
+
   // parallel type of entity - OWNED or GHOST
   virtual
   Parallel_type entity_get_ptype(const Entity_kind kind, const Entity_ID id) const override {
