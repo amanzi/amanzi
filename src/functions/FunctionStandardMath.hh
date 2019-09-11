@@ -148,7 +148,7 @@ public:
     return 0.0;
   }
 
-  void apply(const Kokkos::View<double*>& in, Kokkos::View<double*>& out){
+  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
 
   }
 

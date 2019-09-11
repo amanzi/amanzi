@@ -154,7 +154,7 @@ class FunctionTabular : public Function {
     return y;
   }
 
-  void apply(const Kokkos::View<double*>& in, Kokkos::View<double*>& out){
+  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
 
   }
 

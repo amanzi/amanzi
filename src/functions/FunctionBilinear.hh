@@ -124,10 +124,11 @@ class FunctionBilinear : public Function {
   }
 
   
-  void apply(const Kokkos::View<double*>& in, Kokkos::View<double*>& out){
+  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
     assert(in.extent(0) == out.extent(0)); 
     Kokkos::parallel_for(in.extent(0),KOKKOS_LAMBDA(const int& i){
-      out(i)  = apply_gpu(in);
+      Kokkos::View<double*> i_in = Kokkos::subview(in,i,Kokkos::ALL); 
+      out(i)  = apply_gpu(i_in);
     });
   }
 

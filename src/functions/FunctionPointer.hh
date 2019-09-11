@@ -18,7 +18,7 @@ class FunctionPointer : public Function {
 
   KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double*>& x) const {assert(false); return 0.0;}
   
-  void apply(const Kokkos::View<double*>& in, Kokkos::View<double*>& out){}
+  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {}
 
  private:
   double (*f_)(const Kokkos::View<double*>&, const Kokkos::View<double*>&);

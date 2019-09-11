@@ -75,7 +75,7 @@ class Function {
   virtual double operator()(const Kokkos::View<double*>& ) const = 0;
   // Device version 
   KOKKOS_INLINE_FUNCTION virtual double apply_gpu(const Kokkos::View<double*>&) const = 0; 
-  virtual void apply(const Kokkos::View<double*>&, Kokkos::View<double*>&) = 0; 
+  virtual void apply(const Kokkos::View<double**>&, Kokkos::View<double*>&) const = 0; 
 };
 
 } // namespace Amanzi

@@ -61,10 +61,10 @@ class FunctionAdditive : public Function {
 
   KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double*>& x) const {assert(false); return 0.0;} 
 
-  void apply(const Kokkos::View<double*>& in, Kokkos::View<double*>& out){
+  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
     assert(in.extent(0) == out.extent(0)); 
-    Kokkos::View<double*> out_1("result",in.extent(0)); 
-    Kokkos::View<double*> out_2("result",in.extent(0)); 
+    Kokkos::View<double*> out_1("result",in.extent(1)); 
+    Kokkos::View<double*> out_2("result",in.extent(1)); 
     f1_->apply(in,out_1);
     f2_->apply(in,out_2);  
     // Sum result 

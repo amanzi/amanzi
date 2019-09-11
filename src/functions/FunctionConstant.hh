@@ -39,7 +39,7 @@ class FunctionConstant : public Function {
 
   KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double*>& x) const {assert(false); return 0.0;}; 
 
-  void apply(const Kokkos::View<double*>& in, Kokkos::View<double*>& out){
+  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
     Kokkos::parallel_for(in.extent(0),KOKKOS_LAMBDA(const int& i){
       out(i) = c_; 
     });

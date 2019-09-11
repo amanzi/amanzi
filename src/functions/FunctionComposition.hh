@@ -65,10 +65,10 @@ class FunctionComposition : public Function {
 
   KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double*>& x) const {assert(false); return 0.0;} 
 
-  void apply(const Kokkos::View<double*>& in, Kokkos::View<double*>& out){
-    Kokkos::View<double*> out_1("out",in.extent(0)); 
+  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
+    Kokkos::View<double*> out_1("out",in.extent(1)); 
     f1_->apply(in,out_1); 
-    f2_->apply(out_1,out); 
+    //f2_->apply(out_1,out); 
   }
 
  private:
