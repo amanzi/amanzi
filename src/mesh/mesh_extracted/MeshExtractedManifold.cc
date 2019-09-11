@@ -618,7 +618,7 @@ Entity_ID_List MeshExtractedManifold::build_set_(
         
       std::string setname_internal = rgn1->name() + std::to_string(kind);
 
-      if (sets_.find(setname_internal) != sets_.end())
+      if (sets_.find(setname_internal) == sets_.end())
         sets_[setname_internal] = build_set_(rgn1, kind); 
      
       auto it = sets_.find(setname_internal);

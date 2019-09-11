@@ -13,10 +13,12 @@
 
 #include <Teuchos_RCP.hpp>
 
-#include "Mesh_simple.hh"
-#include "GenerationSpec.hh"
 #include "dbc.hh"
 #include "errors.hh"
+#include "GenerationSpec.hh"
+#include "RegionLogical.hh"
+
+#include "Mesh_simple.hh"
 
 
 namespace Amanzi {
@@ -73,7 +75,7 @@ void Mesh_simple::clear_internals_()
   cell_to_node_.resize(0);
   face_to_node_.resize(0);
 
-  side_sets_.resize(0);
+  sets_.clear();
 }
 
 
@@ -793,39 +795,80 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string setname,
   // we ignore ptype since this is a serial implementation
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
 
-  assert (setents != NULL);
-  setents->clear();
+  AMANZI_ASSERT(setents != NULL);
   
+  std::string setname_internal = setname + std::to_string(kind);
+  auto it = sets_.find(setname_internal);
+  if (it != sets_.end()) {
+    *setents = it->second;
+    return;
+  }
+
+  // create the side set from the region definition
+  Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setname);
+  if (rgn == Teuchos::null) {
+    std::cerr << "Geometric model has no region \"" << setname << "\"" << std::endl;
+    throw std::exception();
+  }
+
+  setents->clear();
+
   switch (kind) {
   case FACE:
   {
-    Entity_ID_List ss;
-
-    // Does this set exist?
-    int nss = side_sets_.size();  // number of side sets
-    bool found = false;
-    for (int i = 0; i < nss; i++) {
-      if ((side_set_regions_[i])->name() == setname) {
-        found = true;
-        ss = side_sets_[i];
-      }
-    }
-
-    if (!found) { // create the side set from the region definition
-      Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setname);
-          
-      if (rgn == Teuchos::null) {
-        std::cerr << "Geometric model has no region \"" << setname << "\"" << std::endl;
-        throw std::exception();
-      }
-          
-      if (rgn->type() == AmanziGeometry::BOX ||
-          rgn->type() == AmanziGeometry::PLANE) {
-        for (int ix = 0; ix < nx_; ix++)
+    if (rgn->type() == AmanziGeometry::BOX ||
+        rgn->type() == AmanziGeometry::PLANE) {
+      // y = constant planes
+      for (int iy = 0; iy <= ny_; ++iy) {
+        for (int ix = 0; ix < nx_; ix++) {
           for (int iz = 0; iz < nz_; iz++) {
             std::vector<AmanziGeometry::Point> fxyz;
 
-            int face = xzface_index_(ix, 0, iz);
+            int face = xzface_index_(ix, iy, iz);
+            face_get_coordinates(face, &fxyz);
+
+            bool inbox = true;
+            if (rgn->type() == AmanziGeometry::BOX) {
+              auto cenpnt = geometric_center_(fxyz);
+              if (!rgn->inside(cenpnt)) inbox = false;
+            } else {
+              inbox = all_inside_(fxyz, *rgn);
+            }
+                   
+            if (inbox) setents->push_back(face);
+          }
+        }
+      }
+
+      // z = constant planes
+      for (int iz = 0; iz <= nz_; ++iz) {
+        for (int ix = 0; ix < nx_; ix++) {
+          for (int iy = 0; iy < ny_; iy++) {
+            std::vector<AmanziGeometry::Point> fxyz;
+
+            int face = xyface_index_(ix, iy, iz);
+            face_get_coordinates(face, &fxyz);
+
+            bool inbox = true;
+            if (rgn->type() == AmanziGeometry::BOX) {
+              auto cenpnt = geometric_center_(fxyz);
+              if (!rgn->inside(cenpnt)) inbox = false;
+            } else {
+              inbox = all_inside_(fxyz, *rgn);
+            }
+                   
+            if (inbox) setents->push_back(face);
+          }
+        }
+      }
+ 
+      // x = constant planes
+      for (int ix = 0; ix <= nx_; ++ix) {
+        for (int iy = 0; iy < ny_; iy++) {
+          for (int iz = 0; iz < nz_; iz++) {
+            std::vector<AmanziGeometry::Point> fxyz;
+
+            int face = yzface_index_(ix, iy, iz);
             face_get_coordinates(face, &fxyz);
 
             bool inbox = true;
@@ -836,207 +879,114 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string setname,
               inbox = all_inside_(fxyz, *rgn);
             }
                     
-            if (inbox) ss.push_back(face);
-
-            face = xzface_index_(ix, ny_, iz);
-            face_get_coordinates(face, &fxyz);
-
-            inbox = true;
-            if (rgn->type() == AmanziGeometry::BOX) {
-              auto cenpnt = geometric_center_(fxyz);
-              if (!rgn->inside(cenpnt)) inbox = false;
-            } else {
-              inbox = all_inside_(fxyz, *rgn);
-            }
-                    
-            if (inbox) ss.push_back(face);
+            if (inbox) setents->push_back(face);
           }
-
-          for (int ix = 0; ix < nx_; ix++) {
-            for (int iy = 0; iy < ny_; iy++) {
-              std::vector<AmanziGeometry::Point> fxyz;
-
-              int face = xyface_index_(ix, iy, 0);
-              face_get_coordinates(face, &fxyz);
-
-              bool inbox = true;
-              if (rgn->type() == AmanziGeometry::BOX) {
-                auto cenpnt = geometric_center_(fxyz);
-                if (!rgn->inside(cenpnt)) inbox = false;
-              } else {
-                inbox = all_inside_(fxyz, *rgn);
-              }
-                   
-              if (inbox) ss.push_back(face);
-
-              face = xyface_index_(ix,iy,nz_);
-              face_get_coordinates(face,&fxyz);
-
-              inbox = true;
-              if (rgn->type() == AmanziGeometry::BOX) {
-                auto cenpnt = geometric_center_(fxyz);
-                if (!rgn->inside(cenpnt)) inbox = false;
-              } else {
-                inbox = all_inside_(fxyz, *rgn);
-              }
-                    
-              if (inbox) ss.push_back(face);
-            }
-          }
-
-          for (int iy=0; iy<ny_; iy++) {
-            for (int iz=0; iz<nz_; iz++) {
-              std::vector<AmanziGeometry::Point> fxyz;
-
-              int face = yzface_index_(0, iy, iz);
-              face_get_coordinates(face, &fxyz);
-
-              bool inbox = true;
-              if (rgn->type() == AmanziGeometry::BOX) {
-                auto cenpnt = geometric_center_(fxyz);
-                if (!rgn->inside(cenpnt)) inbox = false;
-              } else {
-                inbox = all_inside_(fxyz, *rgn);
-              }
-                    
-              if (inbox) ss.push_back(face);
-
-              face = yzface_index_(nx_, iy, iz);
-              face_get_coordinates(face, &fxyz);
-
-              inbox = true;
-              if (rgn->type() == AmanziGeometry::BOX) {
-                auto cenpnt = geometric_center_(fxyz);
-                if (!rgn->inside(cenpnt)) inbox = false;
-              } else {
-                inbox = all_inside_(fxyz, *rgn);
-              }
-                    
-              if (inbox) ss.push_back(face);
-            }
-          }
-
-          side_sets_.push_back(ss);
-          side_set_regions_.push_back(rgn);
         }
-
-      else if (rgn->type() != AmanziGeometry::LOGICAL) {
-        std::cerr << "Region type not suitable/applicable for sidesets" << std::endl;
-        throw std::exception();
       }
+
+      sets_[setname_internal] = *setents;
     }
 
-    *setents = ss;
+    else if (rgn->type() != AmanziGeometry::LOGICAL) {
+      std::cerr << "Region type not suitable/applicable for sidesets" << std::endl;
+      throw std::exception();
+    }
+
     break;
   }
 
   case AmanziMesh::CELL:
   {
-    Entity_ID_List cs; // cell set
-          
-    int ncs = element_blocks_.size();
-    bool found = false;
-    for (int i = 0; i < ncs; i++) {
-      if ((element_block_regions_[i])->name() == setname) {
-        found = true;
-        cs = element_blocks_[i];
+    if (rgn->type() == AmanziGeometry::BOX || 
+        rgn->type() == AmanziGeometry::COLORFUNCTION) {
+      for (int ix = 0; ix < nx_; ix++) {
+        for (int iy = 0; iy < ny_; iy++) {
+          for (int iz = 0; iz < nz_; iz++) {
+            int cell = cell_index_(ix, iy, iz);
+            std::vector<AmanziGeometry::Point> cxyz;
+            cell_get_coordinates(cell, &cxyz);
+
+            auto cenpnt = geometric_center_(cxyz);
+            if (rgn->inside(cenpnt)) setents->push_back(cell);
+          }
+        }
       }
+
+      sets_[setname_internal] = *setents;
+    }
+    else {
+      std::cerr << "Region type not suitable/applicable for cellsets" << std::endl;
+      throw std::exception();
     }
 
-    if (!found) { // create the cell set from the region definition
-      Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setname);
-          
-      if (rgn == Teuchos::null) {
-        std::cerr << "Geometric model has no region named " << setname << std::endl;
-        std::cerr << "Cannot construct set by this name" << std::endl;
-        throw std::exception();
-      }
-          
-      if (rgn->manifold_dimension() > 0 &&
-          rgn->manifold_dimension() != Mesh::manifold_dimension()) {
-        std::cerr << "Geometric model does not have a region named \"" << setname 
-                  << "\" with dimension=" << manifold_dimension() << std::endl;
-        std::cerr << "Cannot construct set by this name" << std::endl;
-        throw std::exception();
-      }
-
-      if (rgn->type() == AmanziGeometry::BOX || 
-          rgn->type() == AmanziGeometry::COLORFUNCTION) {
-        for (int ix=0; ix<nx_; ix++)
-          for (int iy=0; iy<ny_; iy++)
-            for (int iz=0; iz<nz_; iz++) {
-              int cell = cell_index_(ix,iy,iz);
-              std::vector<AmanziGeometry::Point> cxyz;
-              cell_get_coordinates(cell,&cxyz);
-
-              auto cenpnt = geometric_center_(cxyz);
-              if (rgn->inside(cenpnt)) cs.push_back(cell);
-            }
-
-        element_blocks_.push_back(cs);
-        element_block_regions_.push_back(rgn);
-      }
-      else {
-        std::cerr << "Region type not suitable/applicable for cellsets" << std::endl;
-        throw std::exception();
-      }
-    }
-
-    *setents = cs;
     break;
   }
 
   case AmanziMesh::NODE:
   {
-    Entity_ID_List ns;
-
-    // Does this set exist?
-
-    int nns = node_sets_.size();  // number of node sets
-    bool found = false;
-    for (int i = 0; i < nns; i++) {
-      if ((node_set_regions_[i])->name() == setname) {
-        found = true;
-        ns = node_sets_[i];
-      }
-    }
-
-    if (!found) {  // create the side set from the region definition
-      Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setname);
-          
-      if (rgn == Teuchos::null) {
-        std::cerr << "Geometric model has no region named " << setname << std::endl;
-        std::cerr << "Cannot construct set by this name" << std::endl;
-        throw std::exception();
-      }
-
-      bool done=false;
-      for (int ix=0; ix<nx_+1 && !done; ix++) {
-        for (int iy=0; iy<ny_+1 && !done; iy++) {
-          for (int iz=0; iz<nz_+1 && !done; iz++) {
-            int node = node_index_(ix,iy,iz);
-            AmanziGeometry::Point nxyz;
-            node_get_coordinates(node,&nxyz);
+    bool done = false;
+    for (int ix = 0; ix < nx_ + 1 && !done; ix++) {
+      for (int iy = 0; iy < ny_ + 1 && !done; iy++) {
+        for (int iz = 0; iz < nz_ + 1 && !done; iz++) {
+          int node = node_index_(ix, iy, iz);
+          AmanziGeometry::Point xyz;
+          node_get_coordinates(node, &xyz);
                  
-            if (rgn->inside(nxyz)) {
-              ns.push_back(node);
-              if (rgn->type() == AmanziGeometry::POINT) done = true;
-            }                   
-          }
+          if (rgn->inside(xyz)) {
+            setents->push_back(node);
+            if (rgn->type() == AmanziGeometry::POINT) done = true;
+          }                   
         }
       }
+    }
               
-      node_sets_.push_back(ns);
-      node_set_regions_.push_back(rgn);
-    }      
-      
-    *setents = ns;
+    sets_[setname_internal] = *setents;
   }
   break;
 
   default:
-    // set type not recognized
-    throw std::exception();
+    break;
+  }
+
+  if (rgn->type() == AmanziGeometry::LOGICAL) {
+    auto boolrgn = Teuchos::rcp_static_cast<const AmanziGeometry::RegionLogical>(rgn);
+    const std::vector<std::string> rgn_names = boolrgn->component_regions();
+    int nregs = rgn_names.size();
+    
+    std::vector<std::set<Entity_ID> > msets;
+    
+    for (int r = 0; r < nregs; r++) {
+      auto rgn1 = gm->FindRegion(rgn_names[r]);
+
+      // Did not find the rgn
+      if (rgn1 == Teuchos::null) {
+        std::stringstream ss;
+        ss << "Geometric model has no region named " << rgn_names[r];
+        Errors::Message msg(ss.str());
+        Exceptions::amanzi_throw(msg);
+      }
+        
+      std::string setname_internal1 = rgn1->name() + std::to_string(kind);
+
+      if (sets_.find(setname_internal) == sets_.end()) {
+        Entity_ID_List setents1;
+        get_set_entities_and_vofs(rgn1->name(), kind, ptype, &setents1, vofs);
+        sets_[setname_internal1] = setents1;
+      }
+     
+      auto it = sets_.find(setname_internal1);
+      msets.push_back(std::set<Entity_ID>(it->second.begin(), it->second.end())); 
+    }
+
+    if (boolrgn->operation() == AmanziGeometry::UNION) {
+      for (int n = 1; n < msets.size(); ++n) {
+        for (auto it = msets[n].begin(); it != msets[n].end(); ++it)
+          msets[0].insert(*it);
+      }
+    }
+
+    for (auto it = msets[0].begin(); it != msets[0].end(); ++it)
+      setents->push_back(*it);
   }
 }
 

@@ -263,12 +263,7 @@ class Mesh_simple : public Mesh {
   // The following are mutable because they have to be modified 
   // after the class construction even though the class is instantiated
   // as a constant class
-  mutable std::vector<std::vector<Entity_ID> > side_sets_;
-  mutable std::vector<std::vector<Entity_ID> > element_blocks_;
-  mutable std::vector<std::vector<Entity_ID> > node_sets_;
-  mutable std::vector<Teuchos::RCP<const AmanziGeometry::Region> > element_block_regions_;
-  mutable std::vector<Teuchos::RCP<const AmanziGeometry::Region> > side_set_regions_;
-  mutable std::vector<Teuchos::RCP<const AmanziGeometry::Region> > node_set_regions_;
+  mutable std::map<std::string, std::vector<Entity_ID> > sets_;
 
   // Get faces of a cell and directions in which the cell uses the face 
 
@@ -342,7 +337,7 @@ unsigned int Mesh_simple::xyface_index_(int i, int j, int k) const {
 
 inline
 unsigned int Mesh_simple::xzface_index_(int i, int j, int k) const {
-  return i + j * nx_ + k * nx_ * (ny_+1) + xyface_index_(0, 0, nz_+1);
+  return i + j * nx_ + k * nx_ * (ny_ + 1) + xyface_index_(0, 0, nz_ + 1);
 }
 
 inline
