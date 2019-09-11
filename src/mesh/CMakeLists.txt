@@ -30,9 +30,9 @@ include_directories(${Boost_INCLUDE_DIRS})
 #
 # Library: mesh
 #
-add_amanzi_library(mesh SOURCE Mesh.cc 
+add_amanzi_library(mesh SOURCE GenerationSpec.cc 
+                               Mesh.cc 
                                Mesh_Sets.cc 
-                               GenerationSpec.cc 
                         LINK_LIBS geometry atk ${Epetra_LIBRARIES})
 
 #
@@ -48,15 +48,8 @@ file(GLOB mesh_inc_files "*.hh")
 add_install_include_file(${mesh_inc_files})
 
 
-# Derived and support classes
-add_subdirectory(mesh_simple)
-
 # Mesh Frameworks
-
-# STK (Trilinos Package)
-#if (ENABLE_STK_Mesh)
-#  add_subdirectory(mesh_stk)
-#endif(ENABLE_STK_Mesh)    
+add_subdirectory(mesh_simple)
 
 # MOAB Mesh framework
 if (ENABLE_MOAB_Mesh)
@@ -68,10 +61,11 @@ if (ENABLE_MSTK_Mesh)
   add_subdirectory(mesh_mstk)
 endif(ENABLE_MSTK_Mesh)    
 
+add_subdirectory(mesh_extracted)
+add_subdirectory(mesh_logical)
 
 # Factory class
 add_subdirectory(mesh_factory)
-add_subdirectory(mesh_logical)
 
 
 if (BUILD_TESTS)

@@ -173,7 +173,8 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
 
       if (cells.size() != flux_map->ElementSize(f)) {
         std::stringstream m;
-        m << "Number of flux DOF doesn't equal to the number of cell sharing the interface: cell_ids\"" << cells[0] << "\"";
+        m << "Number of flux DOFs doesn't equal to the number of cells sharing a face: " 
+          << cells.size() << " != " << flux_map->ElementSize(f) << std::endl;
         Errors::Message message(m.str());
         Exceptions::amanzi_throw(message);
       }

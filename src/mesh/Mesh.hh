@@ -366,6 +366,15 @@ class Mesh {
                            const Parallel_type ptype,
                            Entity_ID_List *faceids) const = 0;
 
+  // Faces of type 'ptype' connected to an edge
+  //
+  // The order of faces is not guaranteed to be the same for corresponding
+  // edges on different processors
+  virtual
+  void edge_get_faces(const Entity_ID edgeid,
+                      const Parallel_type ptype,
+                      Entity_ID_List *faceids) const { AMANZI_ASSERT(false); }
+
   // Cells of type 'ptype' connected to an edge
   //
   // The order of cells is not guaranteed to be the same for corresponding

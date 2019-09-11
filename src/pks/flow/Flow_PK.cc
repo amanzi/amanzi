@@ -660,7 +660,6 @@ void Flow_PK::AddSourceTerms(CompositeVector& rhs)
 
 /* ******************************************************************
 * BDF methods need a good initial guess.
-* This method gives a less smoother solution than in Flow 1.0.
 * WARNING: Each owned face must have at least one owned cell. 
 * Probability that this assumption is violated is close to zero. 
 * Even when it happens, the code will not crash.

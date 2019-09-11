@@ -30,9 +30,10 @@ include_directories(${ATK_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
-include_directories(${MESH_SOURCE_DIR})
+include_directories(${MESH_EXTRACTED_SOURCE_DIR})
 include_directories(${MESH_LOGICAL_SOURCE_DIR})
 include_directories(${MESH_FACTORY_SOURCE_DIR})
+include_directories(${MESH_SOURCE_DIR})
 include_directories(${MSTK_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
@@ -79,6 +80,7 @@ set(operators_inc_files
     Operator_FaceCellSff.hh
     Operator_Factory.hh
     Operator_Node.hh
+    Operator_Schema.hh
     BoundaryFlux.hh
     PDE_Abstract.hh
     PDE_Accumulation.hh
@@ -236,6 +238,7 @@ if (BUILD_TESTS)
 
     add_amanzi_test(operators_diffusion_fractured_matrix operators_diffusion_fractured_matrix
                     KIND unit
+                    NPROCS 2
                     SOURCE test/Main.cc test/operator_diffusion_fractured_matrix.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
@@ -266,7 +269,9 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/operator_advection_dfn.cc
                                         test/operator_diffusion_dfn.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+                    LINK_LIBS mesh_extracted ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(operators_dfn_4pe operators_dfn NPROCS 4 KIND unit)
 
     # Test: electromagnetics 
     add_amanzi_test(operators_electromagnetics operators_electromagnetics

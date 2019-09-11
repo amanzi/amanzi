@@ -187,6 +187,11 @@ class Mesh_MSTK : public Mesh {
 			   const Parallel_type ptype,
 			   Entity_ID_List *faceids) const;    
     
+  // Faces of type 'ptype' connected to an edge
+  void edge_get_faces(const Entity_ID edgeid,
+                      const Parallel_type ptype,
+                      Entity_ID_List *faceids) const;
+
   // Cells of type 'ptype' connected to an edge
   void edge_get_cells(const Entity_ID edgeid,
                       const Parallel_type ptype,

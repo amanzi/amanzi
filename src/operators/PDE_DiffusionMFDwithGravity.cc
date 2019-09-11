@@ -293,14 +293,15 @@ void PDE_DiffusionMFDwithGravity::UpdateFluxNonManifold(
 
   int dim = mesh_->space_dimension();
   Epetra_MultiVector& flux_data = *flux->ViewComponent("face", true);
-  Epetra_MultiVector grav_data(flux_data);
+
+  CompositeVector grav(*flux);
+  Epetra_MultiVector& grav_data = *grav.ViewComponent("face", true);
   grav_data.PutScalar(0.0);
 
   int ndofs_owned = flux->ViewComponent("face")->MyLength();
   int ndofs_wghost = flux_data.MyLength();
 
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> hits(ndofs_wghost, 0);
   const auto& fmap = *flux->Map().Map("face", true);
 
   WhetStone::Tensor Kc(dim, 1);
@@ -346,13 +347,14 @@ void PDE_DiffusionMFDwithGravity::UpdateFluxNonManifold(
       } else {
         grav_data[0][g] += (Kcg * normal) * rho_ * kf[n];
       }
-
-      hits[g]++;
     }
   }
 
+  // if f is on a processor boundary, some g are not initialized
+  grav.GatherGhostedToMaster(Add);
+
   for (int g = 0; g < ndofs_owned; ++g) {
-    flux_data[0][g] += grav_data[0][g] / hits[g];
+    flux_data[0][g] += grav_data[0][g];
   }
 }
 
