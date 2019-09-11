@@ -114,7 +114,7 @@ no_color=$FALSE
 structured=$TRUE
 unstructured=$TRUE
 ccse_tools=$FALSE
-stk_mesh=$TRUE
+stk_mesh=$FALSE
 mstk_mesh=$TRUE
 moab_mesh=$FALSE
 amanzi_branch=
@@ -323,7 +323,7 @@ Value in brackets indicates default setting.
   ccse_tools              build structured AMR tools for post processing and tecplot ['"${ccse_tools}"']
 
   unstructured            build unstructured mesh capability ['"${unstructured}"']
-  stk_mesh                build the STK Mesh Toolkit ['"${stk_mesh}"']
+  stk_mesh                build the STK Mesh Toolkit (DISABLED) ['"${stk_mesh}"']
   mstk_mesh               build the MSTK Mesh Toolkit ['"${mstk_mesh}"']
   moab_mesh               build the MOAB Mesh Toolkit ['"${moab_mesh}"']
 
@@ -412,7 +412,7 @@ and executables for external packages (TPLs) and then for Amanzi:
                  --parallel=8 
                  --enable-shared
                  --enable-alquimia --enable-pflotran --enable-crunchtope 
-                 --enable-petsc --disable-stk_mesh 
+                 --enable-petsc
 
 Example that builds first OpenMPI, then TPLs, and finally Amanzi. It uses 
 OSX C and C++ compilers and Fortran compiler from MacPorts:
@@ -423,7 +423,7 @@ OSX C and C++ compilers and Fortran compiler from MacPorts:
                  --with-fort-compiler=/opt/local/bin/gfortran-mp-6
                  --parallel=8 
                  --enable-alquimia --enable-pflotran --enable-crunchtope 
-                 --enable-petsc --disable-stk_mesh 
+                 --enable-petsc
                  --tools-mpi=openmpi
 '
 }
