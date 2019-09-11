@@ -48,39 +48,26 @@ class Mesh_simple : public virtual Mesh {
               const bool request_faces = true,
               const bool request_edges = false);
   
-
   virtual ~Mesh_simple() = default;  
   void update();
-
 
   // Get parallel type of entity
   Parallel_type entity_get_ptype(const Entity_kind kind, 
                                  const Entity_ID entid) const;
 
-
   // Get cell type
-    
   Cell_type cell_get_type(const Entity_ID cellid) const;
         
-  //
-  // General mesh information
-  // -------------------------
-  //
-    
   // Number of entities of any kind (cell, face, node) and in a
   // particular category (OWNED, GHOST, ALL)
   unsigned int num_entities(const Entity_kind kind,
                             const Parallel_type ptype) const;
     
-    
   // Global ID of any entity
   Entity_ID GID(const Entity_ID lid, const Entity_kind kind) const;
     
     
-  //
-  // Mesh Entity Adjacencies 
-  //-------------------------
-
+  //---------------------
   // Downward Adjacencies
   //---------------------
     
@@ -96,7 +83,6 @@ class Mesh_simple : public virtual Mesh {
   void cell_get_nodes(const Entity_ID cellid, 
                       std::vector<Entity_ID> *nodeids) const;
     
-    
   // Get nodes of face 
   // On a distributed mesh, all nodes (OWNED or GHOST) of the face 
   // are returned
@@ -105,7 +91,6 @@ class Mesh_simple : public virtual Mesh {
   // In 2D, nfnodes is 2
   void face_get_nodes(const Entity_ID faceid, 
                       std::vector<Entity_ID> *nodeids) const;
-    
 
   // Get nodes of edge
   void edge_get_nodes(const Entity_ID edgeid, Entity_ID *nodeid0,
@@ -114,6 +99,7 @@ class Mesh_simple : public virtual Mesh {
     amanzi_throw(mesg);
   }
 
+  //-------------------
   // Upward adjacencies
   //-------------------
     
@@ -142,9 +128,8 @@ class Mesh_simple : public virtual Mesh {
     amanzi_throw(mesg);
   }
 
-    
-  // Faces of type 'ptype' connected to a node
 
+  //-----------------------
   // Same level adjacencies
   //-----------------------
 
@@ -166,15 +151,14 @@ class Mesh_simple : public virtual Mesh {
                                const Parallel_type ptype,
                                std::vector<Entity_ID> *nadj_cellids) const;
 
-    
-  //
+
+  //---------------------
   // Mesh entity geometry
   //---------------------
     
   // Node coordinates - 3 in 3D and 2 in 2D
   void node_get_coordinates(const Entity_ID nodeid, 
                             AmanziGeometry::Point *ncoord) const;
-    
     
   // Face coordinates - conventions same as face_to_nodes call 
   // Number of nodes is the vector size divided by number of spatial dimensions
@@ -194,8 +178,8 @@ class Mesh_simple : public virtual Mesh {
 
   void node_set_coordinates(const Entity_ID nodeid, const double *coords);
 
-    
-  //
+
+  //------------
   // Epetra maps
   //------------
     
@@ -215,7 +199,7 @@ class Mesh_simple : public virtual Mesh {
   const Epetra_Import& exterior_face_importer(void) const;
     
     
-  //
+  //----------------------------
   // Boundary Conditions or Sets
   //----------------------------
     
@@ -309,7 +293,6 @@ class Mesh_simple : public virtual Mesh {
   // and -1 if face normal points into cell
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
-
   void cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
                                          Entity_ID_List *faceids,
                                          std::vector<int> *face_dirs,
@@ -323,8 +306,7 @@ class Mesh_simple : public virtual Mesh {
 
   // Edges of a cell
   void cell_get_edges_internal_(const Entity_ID cellid,
-                                Entity_ID_List *edgeids) const 
-  { 
+                                Entity_ID_List *edgeids) const { 
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
     Exceptions::amanzi_throw(mesg);
   }
@@ -332,8 +314,7 @@ class Mesh_simple : public virtual Mesh {
   // Edges and directions of a 2D cell
   void cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
                                             Entity_ID_List *edgeids,
-                                            std::vector<int> *edgedirs) const 
-  { 
+                                            std::vector<int> *edgedirs) const { 
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
     Exceptions::amanzi_throw(mesg);
   }
@@ -342,8 +323,7 @@ class Mesh_simple : public virtual Mesh {
   void face_get_edges_and_dirs_internal_(const Entity_ID cellid,
                                          Entity_ID_List *edgeids,
                                          std::vector<int> *edgedirs,
-                                         bool ordered=true) const
-  {
+                                         bool ordered=true) const {
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
     amanzi_throw(mesg);
   };
@@ -354,29 +334,24 @@ class Mesh_simple : public virtual Mesh {
 // Template & inline members
 // ------------------------
 
-unsigned int Mesh_simple::node_index_(int i, int j, int k) const
-{
-  return i + j*(nx_+1) + k*(nx_+1)*(ny_+1);
+unsigned int Mesh_simple::node_index_(int i, int j, int k) const {
+  return i + j * (nx_ + 1) + k * (nx_ + 1) * (ny_ + 1);
 }
 
-unsigned int Mesh_simple::cell_index_(int i, int j, int k) const
-{
-  return i + j*nx_ + k*nx_*ny_;
+unsigned int Mesh_simple::cell_index_(int i, int j, int k) const {
+  return i + j * nx_ + k * nx_ * ny_;
 }
 
-unsigned int Mesh_simple::xyface_index_(int i, int j, int k) const
-{
-  return i + j*nx_ + k*nx_*ny_;
+unsigned int Mesh_simple::xyface_index_(int i, int j, int k) const {
+  return i + j * nx_ + k * nx_ * ny_;
 }
 
-unsigned int Mesh_simple::xzface_index_(int i, int j, int k) const
-{
-  return i + j*nx_ + k*nx_*(ny_+1) + xyface_index_(0,0,nz_+1);
+unsigned int Mesh_simple::xzface_index_(int i, int j, int k) const {
+  return i + j * nx_ + k * nx_ * (ny_+1) + xyface_index_(0, 0, nz_+1);
 }
 
-unsigned int Mesh_simple::yzface_index_(int i, int j, int k) const
-{
-  return i + j*(nx_+1) + k*(nx_+1)*ny_ + xzface_index_(0,0,nz_);
+unsigned int Mesh_simple::yzface_index_(int i, int j, int k) const {
+  return i + j * (nx_ + 1) + k * (nx_ + 1) * ny_ + xzface_index_(0, 0, nz_);
 }
 
 }  // namespace AmanziMesh
