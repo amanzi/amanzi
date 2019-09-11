@@ -460,6 +460,8 @@ Entity_ID_List MeshExtractedManifold::build_set_(
       mset.push_back(n);
   }
 
+  bool missing(false);
+
   switch (kind) {      
   // create a set of cells
   case CELL:
@@ -496,18 +498,8 @@ Entity_ID_List MeshExtractedManifold::build_set_(
       }
     }
 
-    else if (rgn->type() == AmanziGeometry::LOGICAL) {
-      // will process later in this subroutine
-    }
-
-    else {
-      if (vo_.get() && vo_->os_OK(Teuchos::VERB_HIGH)) {
-        Teuchos::OSTab tab = vo_->getOSTab();
-        *(vo_->os()) << "Requested CELLS on rgn " << rgn->name() 
-            << " of type " << rgn->type()  
-            << " and dimension " << rgn->manifold_dimension() << ".\n"
-            << "This request will result in an empty set";
-      }
+    else if (rgn->type() != AmanziGeometry::LOGICAL) {
+      missing = true;
     }
 
     break;
@@ -538,10 +530,6 @@ Entity_ID_List MeshExtractedManifold::build_set_(
       }
     }
 
-    else if (rgn->type() == AmanziGeometry::LOGICAL) {
-      // Will handle it later in the routine
-    }
-
     else if (rgn->type() == AmanziGeometry::BOUNDARY)  {
       const Epetra_Map& fmap = face_map(true); 
       const Epetra_Map& map = exterior_face_map(true); 
@@ -554,14 +542,8 @@ Entity_ID_List MeshExtractedManifold::build_set_(
       }
     }
 
-    else {
-      if (vo_.get() && vo_->os_OK(Teuchos::VERB_HIGH)) {
-        Teuchos::OSTab tab = vo_->getOSTab();
-        *(vo_->os()) << "Requested FACES on rgn " << rgn->name()
-            << " of type " << rgn->type() << " and dimension "
-            << rgn->manifold_dimension() << ".\n" 
-            << "This request will result in an empty set\n";
-      }
+    else if (rgn->type() != AmanziGeometry::LOGICAL) {
+      missing = true;
     }
 
     break;
@@ -585,10 +567,6 @@ Entity_ID_List MeshExtractedManifold::build_set_(
       }
     }
 
-    else if (rgn->type() == AmanziGeometry::LOGICAL) {
-      // We will handle it later in the routine
-    }
-
     else if (rgn->type() == AmanziGeometry::BOUNDARY)  {
       const Epetra_Map& vmap = node_map(true); 
       const Epetra_Map& map = exterior_node_map(true); 
@@ -601,14 +579,8 @@ Entity_ID_List MeshExtractedManifold::build_set_(
       }
     }
 
-    else {
-      if (vo_.get() && vo_->os_OK(Teuchos::VERB_HIGH)) {
-        Teuchos::OSTab tab = vo_->getOSTab();
-        *(vo_->os()) << "Requested POINTS on rgn " << rgn->name() 
-            << " of type " << rgn->type() << " and dimension " 
-            << rgn->manifold_dimension() << ".\n" 
-            << "This request will result in an empty set\n";
-      }
+    else if (rgn->type() != AmanziGeometry::LOGICAL) {
+      missing = true;
     }
       
     break;
@@ -617,6 +589,14 @@ Entity_ID_List MeshExtractedManifold::build_set_(
     break;
   }
 
+  if (missing) {
+    if (vo_.get() && vo_->os_OK(Teuchos::VERB_HIGH)) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *(vo_->os()) << "Requested entities of kind=" << kind 
+        << " on region=\"" << rgn->name() << "\" of type " << rgn->type()  
+        << " and dimension " << rgn->manifold_dimension() << ". Result is an empty set.\n";
+    }
+  }
 
   if (rgn->type() == AmanziGeometry::LOGICAL) {
     auto boolrgn = Teuchos::rcp_static_cast<const AmanziGeometry::RegionLogical>(rgn);
@@ -647,31 +627,38 @@ Entity_ID_List MeshExtractedManifold::build_set_(
 
     if (boolrgn->operation() == AmanziGeometry::UNION) {
       for (int n = 1; n < msets.size(); ++n) {
-        for (auto it = msets[n].begin(); it != msets[n].end(); ++n)
+        for (auto it = msets[n].begin(); it != msets[n].end(); ++it)
           msets[0].insert(*it);
       }
     }
 
     else if (boolrgn->operation() == AmanziGeometry::SUBTRACT) {
-      int nowned = num_entities(kind, Parallel_type::OWNED);
-      for (int n = 1; n < msets.size(); ++n) {
-        for (auto it = msets[n].begin(); it != msets[n].end(); ++n)
-          if (*it < nowned) msets[0].insert(*it);
+      for (int n = 2; n < msets.size(); ++n) {
+        for (auto it = msets[n].begin(); it != msets[n].end(); ++it)
+          msets[0].insert(*it);
       }
+
+      for (auto it = msets[1].begin(); it != msets[1].end(); ++it)
+        msets[0].erase(*it);
     }
 
     else if (boolrgn->operation() == AmanziGeometry::COMPLEMENT) {
       for (int n = 1; n < msets.size(); ++n) {
-        for (auto it = msets[n].begin(); it != msets[n].end(); ++n)
+        for (auto it = msets[n].begin(); it != msets[n].end(); ++it)
           msets[0].insert(*it);
       }
-      AMANZI_ASSERT(false);
+
+      auto tmp = msets[0];
+      for (int n = 0; n < nents_wghost; ++n)
+        if (tmp.find(n) == tmp.end()) msets[0].insert(n);
     } 
 
     else if (boolrgn->operation() == AmanziGeometry::INTERSECT) {
-      Errors::Message msg("Missing code for logical operation");
-      Exceptions::amanzi_throw(msg);
-    }
+      for (int n = 1; n < msets.size(); ++n) {
+        for (auto it = msets[n].begin(); it != msets[n].end(); ++it)
+          if (msets[0].find(*it) == msets[0].end()) msets[0].erase(*it);
+      }
+    } 
 
     for (auto it = msets[0].begin(); it != msets[0].end(); ++it)
       mset.push_back(*it);
