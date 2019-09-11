@@ -337,7 +337,7 @@ class MeshEmbeddedLogical : public Mesh {
   // framework. The results are cached in the base class.
   virtual
   void cell_get_edges_internal_(const Entity_ID cellid,
-          Entity_ID_List *edgeids) const;
+          Entity_ID_List *edgeids) const override;
 
   // edges and directions of a 2D cell - this function is implemented
   // in each mesh framework. The results are cached in the base class.

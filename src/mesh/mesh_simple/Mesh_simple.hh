@@ -28,9 +28,7 @@
 namespace Amanzi {
 namespace AmanziMesh {
 
-//class GenerationSpec;
-
-class Mesh_simple : public virtual Mesh {
+class Mesh_simple : public Mesh {
  public:
   // the request_faces and request_edges arguments have to be at the
   // end and not in the middle because if we omit them and specify a
@@ -53,18 +51,18 @@ class Mesh_simple : public virtual Mesh {
 
   // Get parallel type of entity
   Parallel_type entity_get_ptype(const Entity_kind kind, 
-                                 const Entity_ID entid) const;
+                                 const Entity_ID entid) const override;
 
   // Get cell type
-  Cell_type cell_get_type(const Entity_ID cellid) const;
+  Cell_type cell_get_type(const Entity_ID cellid) const override;
         
   // Number of entities of any kind (cell, face, node) and in a
   // particular category (OWNED, GHOST, ALL)
   unsigned int num_entities(const Entity_kind kind,
-                            const Parallel_type ptype) const;
+                            const Parallel_type ptype) const override;
     
   // Global ID of any entity
-  Entity_ID GID(const Entity_ID lid, const Entity_kind kind) const;
+  Entity_ID GID(const Entity_ID lid, const Entity_kind kind) const override;
     
     
   //---------------------
@@ -81,7 +79,7 @@ class Mesh_simple : public virtual Mesh {
   // In 2D, the nodes of the polygon will be returned in ccw order 
   // consistent with the face normal
   void cell_get_nodes(const Entity_ID cellid, 
-                      std::vector<Entity_ID> *nodeids) const;
+                      std::vector<Entity_ID> *nodeids) const override;
     
   // Get nodes of face 
   // On a distributed mesh, all nodes (OWNED or GHOST) of the face 
@@ -90,11 +88,11 @@ class Mesh_simple : public virtual Mesh {
   // with the face normal
   // In 2D, nfnodes is 2
   void face_get_nodes(const Entity_ID faceid, 
-                      std::vector<Entity_ID> *nodeids) const;
+                      std::vector<Entity_ID> *nodeids) const override;
 
   // Get nodes of edge
   void edge_get_nodes(const Entity_ID edgeid, Entity_ID *nodeid0,
-                      Entity_ID *nodeid1) const {
+                      Entity_ID *nodeid1) const override {
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
     amanzi_throw(mesg);
   }
@@ -106,24 +104,24 @@ class Mesh_simple : public virtual Mesh {
   // Cells of type 'ptype' connected to a node
   void node_get_cells(const Entity_ID nodeid, 
                       const Parallel_type ptype,
-                      std::vector<Entity_ID> *cellids) const;
+                      std::vector<Entity_ID> *cellids) const override;
     
   // Faces of type 'ptype' connected to a node
   void node_get_faces(const Entity_ID nodeid, 
                       const Parallel_type ptype,
-                      std::vector<Entity_ID> *faceids) const;
+                      std::vector<Entity_ID> *faceids) const override;
     
   // Get faces of ptype of a particular cell that are connected to the
   // given node
   void node_get_cell_faces(const Entity_ID nodeid, 
                            const Entity_ID cellid,
                            const Parallel_type ptype,
-                           std::vector<Entity_ID> *faceids) const;    
+                           std::vector<Entity_ID> *faceids) const override;
     
   // Cells of type 'ptype' connected to an edge
   void edge_get_cells(const Entity_ID edgeid, 
                       const Parallel_type ptype,
-                      std::vector<Entity_ID> *cellids) const {
+                      std::vector<Entity_ID> *cellids) const override {
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
     amanzi_throw(mesg);
   }
@@ -142,14 +140,14 @@ class Mesh_simple : public virtual Mesh {
   // faces given by cell_get_faces
   void cell_get_face_adj_cells(const Entity_ID cellid,
                                const Parallel_type ptype,
-                               std::vector<Entity_ID> *fadj_cellids) const;
+                               std::vector<Entity_ID> *fadj_cellids) const override;
 
   // Node connected neighboring cells of given cell
   // (a hex in a structured mesh has 26 node connected neighbors)
   // The cells are returned in no particular order
   void cell_get_node_adj_cells(const Entity_ID cellid,
                                const Parallel_type ptype,
-                               std::vector<Entity_ID> *nadj_cellids) const;
+                               std::vector<Entity_ID> *nadj_cellids) const override;
 
 
   //---------------------
@@ -158,12 +156,12 @@ class Mesh_simple : public virtual Mesh {
     
   // Node coordinates - 3 in 3D and 2 in 2D
   void node_get_coordinates(const Entity_ID nodeid, 
-                            AmanziGeometry::Point *ncoord) const;
+                            AmanziGeometry::Point *ncoord) const override;
     
   // Face coordinates - conventions same as face_to_nodes call 
   // Number of nodes is the vector size divided by number of spatial dimensions
   void face_get_coordinates(const Entity_ID faceid, 
-                            std::vector<AmanziGeometry::Point> *fcoords) const; 
+                            std::vector<AmanziGeometry::Point> *fcoords) const override; 
     
   // Coordinates of cells in standard order (Exodus II convention)
   // STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES IN 3D
@@ -171,32 +169,27 @@ class Mesh_simple : public virtual Mesh {
   // arbitrary order
   // Number of nodes is vector size divided by number of spatial dimensions
   void cell_get_coordinates(const Entity_ID cellid, 
-                            std::vector<AmanziGeometry::Point> *ccoords) const;
+                            std::vector<AmanziGeometry::Point> *ccoords) const override;
     
   // Modify the coordinates of a node
-  void node_set_coordinates(const Entity_ID nodeid, const AmanziGeometry::Point coords);
-
-  void node_set_coordinates(const Entity_ID nodeid, const double *coords);
+  void node_set_coordinates(const Entity_ID nodeid, const AmanziGeometry::Point coords) override;
+  void node_set_coordinates(const Entity_ID nodeid, const double *coords) override;
 
 
   //------------
   // Epetra maps
   //------------
+  const Epetra_Map& cell_map(bool include_ghost) const override;
+  const Epetra_Map& face_map(bool include_ghost) const override; 
+  const Epetra_Map& node_map(bool include_ghost) const override;
     
-  const Epetra_Map& cell_map(bool include_ghost) const;
-    
-  const Epetra_Map& face_map(bool include_ghost) const; 
-
-  const Epetra_Map& node_map(bool include_ghost) const;
-    
-  const Epetra_Map& exterior_face_map(bool include_ghost) const; 
-    
-  const Epetra_Map& exterior_node_map(bool include_ghost) const;
+  const Epetra_Map& exterior_face_map(bool include_ghost) const override; 
+  const Epetra_Map& exterior_node_map(bool include_ghost) const override;
 
   // Epetra importer that will allow apps to import values from a
   // Epetra vector defined on all owned faces into an Epetra vector
   // defined only on exterior faces
-  const Epetra_Import& exterior_face_importer(void) const;
+  const Epetra_Import& exterior_face_importer(void) const override;
     
     
   //----------------------------
@@ -204,18 +197,16 @@ class Mesh_simple : public virtual Mesh {
   //----------------------------
     
   // Get list of entities of type 'category' in set
-  using Mesh::get_set_entities;
-
   virtual
   void get_set_entities_and_vofs(const std::string setname, 
                                  const Entity_kind kind, 
                                  const Parallel_type ptype, 
                                  Entity_ID_List *entids,
-                                 std::vector<double> *vofs) const;
+                                 std::vector<double> *vofs) const override;
 
 
   // Miscellaneous
-  void write_to_exodus_file(const std::string filename) const;
+  void write_to_exodus_file(const std::string filename) const override;
 
 
   // this should be used with extreme caution:
@@ -231,23 +222,27 @@ class Mesh_simple : public virtual Mesh {
   int deform(const std::vector<double>& target_cell_volumes__in, 
              const std::vector<double>& min_cell_volumes__in, 
              const Entity_ID_List& fixed_nodes,
-             const bool move_vertical);  
+             const bool move_vertical) override;  
 
  private:
-  //  void generate_(const GenerationSpec& g);
   void update_internals_();
   void clear_internals_();
   void build_maps_();
+
+  AmanziGeometry::Point geometric_center_(std::vector<AmanziGeometry::Point>& vxyz) const;
+
+  bool all_inside_(std::vector<AmanziGeometry::Point>& vxyz,
+                   const AmanziGeometry::Region& rgn) const;
 
   Teuchos::RCP<Epetra_Map> cell_map_, face_map_, node_map_, extface_map_;
 
   std::vector<double> coordinates_;
 
-  inline unsigned int node_index_(int i, int j, int k) const;
-  inline unsigned int xyface_index_(int i, int j, int k) const;
-  inline unsigned int yzface_index_(int i, int j, int k) const;
-  inline unsigned int xzface_index_(int i, int j, int k) const;
-  inline unsigned int cell_index_(int i, int j, int k) const;
+  unsigned int node_index_(int i, int j, int k) const;
+  unsigned int xyface_index_(int i, int j, int k) const;
+  unsigned int yzface_index_(int i, int j, int k) const;
+  unsigned int xzface_index_(int i, int j, int k) const;
+  unsigned int cell_index_(int i, int j, int k) const;
 
   int nx_, ny_, nz_;  // number of cells in the three coordinate directions
   double x0_, x1_, y0_, y1_, z0_, z1_;  // coordinates of lower left front and upper right back of brick
@@ -268,15 +263,12 @@ class Mesh_simple : public virtual Mesh {
   // The following are mutable because they have to be modified 
   // after the class construction even though the class is instantiated
   // as a constant class
-
   mutable std::vector<std::vector<Entity_ID> > side_sets_;
   mutable std::vector<std::vector<Entity_ID> > element_blocks_;
   mutable std::vector<std::vector<Entity_ID> > node_sets_;
   mutable std::vector<Teuchos::RCP<const AmanziGeometry::Region> > element_block_regions_;
   mutable std::vector<Teuchos::RCP<const AmanziGeometry::Region> > side_set_regions_;
   mutable std::vector<Teuchos::RCP<const AmanziGeometry::Region> > node_set_regions_;
-
-  // Get faces of a cell.
 
   // Get faces of a cell and directions in which the cell uses the face 
 
@@ -296,17 +288,17 @@ class Mesh_simple : public virtual Mesh {
   void cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
                                          Entity_ID_List *faceids,
                                          std::vector<int> *face_dirs,
-                                         const bool ordered=false) const;
+                                         const bool ordered=false) const override;
 
   // Cells connected to a face
   void face_get_cells_internal_(const Entity_ID faceid, 
                                 const Parallel_type ptype,
-                                std::vector<Entity_ID> *cellids) const;
+                                std::vector<Entity_ID> *cellids) const override;
 
 
   // Edges of a cell
   void cell_get_edges_internal_(const Entity_ID cellid,
-                                Entity_ID_List *edgeids) const { 
+                                Entity_ID_List *edgeids) const override { 
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
     Exceptions::amanzi_throw(mesg);
   }
@@ -314,7 +306,7 @@ class Mesh_simple : public virtual Mesh {
   // Edges and directions of a 2D cell
   void cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
                                             Entity_ID_List *edgeids,
-                                            std::vector<int> *edgedirs) const { 
+                                            std::vector<int> *edgedirs) const override { 
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
     Exceptions::amanzi_throw(mesg);
   }
@@ -323,7 +315,7 @@ class Mesh_simple : public virtual Mesh {
   void face_get_edges_and_dirs_internal_(const Entity_ID cellid,
                                          Entity_ID_List *edgeids,
                                          std::vector<int> *edgedirs,
-                                         bool ordered=true) const {
+                                         bool ordered=true) const override {
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
     amanzi_throw(mesg);
   };
@@ -333,23 +325,27 @@ class Mesh_simple : public virtual Mesh {
 // -------------------------
 // Template & inline members
 // ------------------------
-
+inline
 unsigned int Mesh_simple::node_index_(int i, int j, int k) const {
   return i + j * (nx_ + 1) + k * (nx_ + 1) * (ny_ + 1);
 }
 
+inline
 unsigned int Mesh_simple::cell_index_(int i, int j, int k) const {
   return i + j * nx_ + k * nx_ * ny_;
 }
 
+inline
 unsigned int Mesh_simple::xyface_index_(int i, int j, int k) const {
   return i + j * nx_ + k * nx_ * ny_;
 }
 
+inline
 unsigned int Mesh_simple::xzface_index_(int i, int j, int k) const {
   return i + j * nx_ + k * nx_ * (ny_+1) + xyface_index_(0, 0, nz_+1);
 }
 
+inline
 unsigned int Mesh_simple::yzface_index_(int i, int j, int k) const {
   return i + j * (nx_ + 1) + k * (nx_ + 1) * ny_ + xzface_index_(0, 0, nz_);
 }

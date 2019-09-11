@@ -50,7 +50,7 @@ TEST(MESH_EXTRACTED_FRACTURES) {
 
   auto mesh_list = Teuchos::sublist(plist, "mesh", false);
 
-  for (int i = 0; i < 3; ++i) {
+  for (int i = 1; i < 2; ++i) {
     RCP<const Mesh> mesh3D;
     if (i == 0) {
 #ifdef HAVE_MSTK_MESH

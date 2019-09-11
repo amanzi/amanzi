@@ -44,10 +44,10 @@ Mesh_simple::Mesh_simple(double x0, double y0, double z0,
     vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Mesh:Simple", *plist)); 
   }
 
-  Mesh::set_mesh_type(RECTANGULAR);
-  Mesh::set_space_dimension(3);
-  Mesh::set_manifold_dimension(3);
-  if (gm != Teuchos::null) Mesh::set_geometric_model(gm);
+  set_mesh_type(RECTANGULAR);
+  set_space_dimension(3);
+  set_manifold_dimension(3);
+  if (gm != Teuchos::null) set_geometric_model(gm);
   update();
 }
 
@@ -394,13 +394,13 @@ unsigned int Mesh_simple::num_entities(AmanziMesh::Entity_kind kind,
                                        AmanziMesh::Parallel_type ptype) const
 {
   switch (kind) {
-    case AmanziMesh::FACE: 
+    case FACE: 
       return (ptype != AmanziMesh::Parallel_type::GHOST) ? num_faces_ : 0;
       break;
-    case AmanziMesh::NODE:
+    case NODE:
       return (ptype != AmanziMesh::Parallel_type::GHOST) ? num_nodes_ : 0;
       break;
-    case AmanziMesh::CELL:
+    case CELL:
       return (ptype != AmanziMesh::Parallel_type::GHOST) ? num_cells_ : 0;
       break;
     default:
@@ -815,189 +815,112 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string setname,
       Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setname);
           
       if (rgn == Teuchos::null) {
-        std::cerr << "Geometric model has no region named " << setname << std::endl;
-        std::cerr << "Cannot construct set by this name" << std::endl;
+        std::cerr << "Geometric model has no region \"" << setname << "\"" << std::endl;
         throw std::exception();
       }
           
-      if (rgn->manifold_dimension() != Mesh::manifold_dimension()-1) {
-        std::cerr << "Geometric model does not have a region named \"" << setname << "\" with the appropriate dimension" << std::endl;
-        std::cerr << "Cannot construct set by this name" << std::endl;
-        throw std::exception();
-      }
-
       if (rgn->type() == AmanziGeometry::BOX ||
           rgn->type() == AmanziGeometry::PLANE) {
-        for (int ix=0; ix<nx_; ix++)
-          for (int iz=0; iz<nz_; iz++) {
-            int face;
+        for (int ix = 0; ix < nx_; ix++)
+          for (int iz = 0; iz < nz_; iz++) {
             std::vector<AmanziGeometry::Point> fxyz;
-            bool inbox;
 
-            face = xzface_index_(ix,0,iz);
-            face_get_coordinates(face,&fxyz);
+            int face = xzface_index_(ix, 0, iz);
+            face_get_coordinates(face, &fxyz);
+
+            bool inbox = true;
+            if (rgn->type() == AmanziGeometry::BOX) {
+              auto cenpnt = geometric_center_(fxyz);
+              if (!rgn->inside(cenpnt)) inbox = false;
+            } else {
+              inbox = all_inside_(fxyz, *rgn);
+            }
+                    
+            if (inbox) ss.push_back(face);
+
+            face = xzface_index_(ix, ny_, iz);
+            face_get_coordinates(face, &fxyz);
 
             inbox = true;
             if (rgn->type() == AmanziGeometry::BOX) {
-              AmanziGeometry::Point cenpnt(Mesh::space_dimension());
-              for (int j = 0; j < 4; j++)
-                cenpnt += fxyz[j];
-              cenpnt /= 4.0;
-
+              auto cenpnt = geometric_center_(fxyz);
               if (!rgn->inside(cenpnt)) inbox = false;
-            }
-            else {
-              for (int j = 0; j < 4; j++) {
-                if (!rgn->inside(fxyz[j])) {
-                  inbox = false;
-                  break;
-                }
-              }                    
+            } else {
+              inbox = all_inside_(fxyz, *rgn);
             }
                     
-            if (inbox)
-              ss.push_back(face);
-
-            face = xzface_index_(ix,ny_,iz);
-            face_get_coordinates(face,&fxyz);
-
-            inbox = true;
-            if (rgn->type() == AmanziGeometry::BOX) {
-              AmanziGeometry::Point cenpnt(Mesh::space_dimension());
-              for (int j = 0; j < 4; j++)
-                cenpnt += fxyz[j];
-              cenpnt /= 4.0;
-
-              if (!rgn->inside(cenpnt)) inbox = false;
-            }
-            else {
-              for (int j = 0; j < 4; j++) {
-                if (!rgn->inside(fxyz[j])) {
-                  inbox = false;
-                  break;
-                }
-              }                    
-            }
-                    
-            if (inbox)
-              ss.push_back(face);
+            if (inbox) ss.push_back(face);
           }
 
-          for (int ix=0; ix<nx_; ix++)
-            for (int iy=0; iy<ny_; iy++) {
-              int face;
+          for (int ix = 0; ix < nx_; ix++) {
+            for (int iy = 0; iy < ny_; iy++) {
               std::vector<AmanziGeometry::Point> fxyz;
-              bool inbox;
 
-              face = xyface_index_(ix,iy,0);
-              face_get_coordinates(face,&fxyz);
+              int face = xyface_index_(ix, iy, 0);
+              face_get_coordinates(face, &fxyz);
 
-              inbox = true;
+              bool inbox = true;
               if (rgn->type() == AmanziGeometry::BOX) {
-                AmanziGeometry::Point cenpnt(Mesh::space_dimension());
-                for (int j = 0; j < 4; j++)
-                  cenpnt += fxyz[j];
-                cenpnt /= 4.0;
-
+                auto cenpnt = geometric_center_(fxyz);
                 if (!rgn->inside(cenpnt)) inbox = false;
-              }
-              else {
-                for (int j = 0; j < 4; j++) {
-                  if (!rgn->inside(fxyz[j])) {
-                    inbox = false;
-                    break;
-                  }
-                }                    
+              } else {
+                inbox = all_inside_(fxyz, *rgn);
               }
                    
-              if (inbox)
-                ss.push_back(face);
+              if (inbox) ss.push_back(face);
 
               face = xyface_index_(ix,iy,nz_);
               face_get_coordinates(face,&fxyz);
 
               inbox = true;
               if (rgn->type() == AmanziGeometry::BOX) {
-                AmanziGeometry::Point cenpnt(Mesh::space_dimension());
-                for (int j = 0; j < 4; j++)
-                  cenpnt += fxyz[j];
-                cenpnt /= 4.0;
-
+                auto cenpnt = geometric_center_(fxyz);
                 if (!rgn->inside(cenpnt)) inbox = false;
-              }
-              else {
-                for (int j = 0; j < 4; j++) {
-                  if (!rgn->inside(fxyz[j])) {
-                    inbox = false;
-                    break;
-                  }
-                }                    
+              } else {
+                inbox = all_inside_(fxyz, *rgn);
               }
                     
-              if (inbox)
-                ss.push_back(face);
+              if (inbox) ss.push_back(face);
             }
+          }
 
-          for (int iy=0; iy<ny_; iy++)
+          for (int iy=0; iy<ny_; iy++) {
             for (int iz=0; iz<nz_; iz++) {
-              int face;
               std::vector<AmanziGeometry::Point> fxyz;
-              bool inbox;
 
-              face = yzface_index_(0,iy,iz);
-              face_get_coordinates(face,&fxyz);
+              int face = yzface_index_(0, iy, iz);
+              face_get_coordinates(face, &fxyz);
+
+              bool inbox = true;
+              if (rgn->type() == AmanziGeometry::BOX) {
+                auto cenpnt = geometric_center_(fxyz);
+                if (!rgn->inside(cenpnt)) inbox = false;
+              } else {
+                inbox = all_inside_(fxyz, *rgn);
+              }
+                    
+              if (inbox) ss.push_back(face);
+
+              face = yzface_index_(nx_, iy, iz);
+              face_get_coordinates(face, &fxyz);
 
               inbox = true;
               if (rgn->type() == AmanziGeometry::BOX) {
-                AmanziGeometry::Point cenpnt(Mesh::space_dimension());
-                for (int j = 0; j < 4; j++)
-                  cenpnt += fxyz[j];
-                cenpnt /= 4.0;
-
+                auto cenpnt = geometric_center_(fxyz);
                 if (!rgn->inside(cenpnt)) inbox = false;
-              }
-              else {
-                for (int j = 0; j < 4; j++) {
-                  if (!rgn->inside(fxyz[j])) {
-                    inbox = false;
-                    break;
-                  }
-                }                    
+              } else {
+                inbox = all_inside_(fxyz, *rgn);
               }
                     
-              if (inbox)
-                ss.push_back(face);
-
-              face = yzface_index_(nx_,iy,iz);
-              face_get_coordinates(face,&fxyz);
-
-              inbox = true;
-              if (rgn->type() == AmanziGeometry::BOX) {
-                AmanziGeometry::Point cenpnt(Mesh::space_dimension());
-                for (int j = 0; j < 4; j++)
-                  cenpnt += fxyz[j];
-                cenpnt /= 4.0;
-
-                if (!rgn->inside(cenpnt)) inbox = false;
-              }
-              else {
-                for (int j = 0; j < 4; j++) {
-                  if (!rgn->inside(fxyz[j])) {
-                    inbox = false;
-                    break;
-                  }
-                }                    
-              }
-                    
-              if (inbox)
-                ss.push_back(face);
+              if (inbox) ss.push_back(face);
             }
+          }
 
           side_sets_.push_back(ss);
           side_set_regions_.push_back(rgn);
         }
 
-      else {
+      else if (rgn->type() != AmanziGeometry::LOGICAL) {
         std::cerr << "Region type not suitable/applicable for sidesets" << std::endl;
         throw std::exception();
       }
@@ -1031,7 +954,8 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string setname,
           
       if (rgn->manifold_dimension() > 0 &&
           rgn->manifold_dimension() != Mesh::manifold_dimension()) {
-        std::cerr << "Geometric model does not have a region named \"" << setname << "\" with the appropriate dimension" << std::endl;
+        std::cerr << "Geometric model does not have a region named \"" << setname 
+                  << "\" with dimension=" << manifold_dimension() << std::endl;
         std::cerr << "Cannot construct set by this name" << std::endl;
         throw std::exception();
       }
@@ -1045,14 +969,8 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string setname,
               std::vector<AmanziGeometry::Point> cxyz;
               cell_get_coordinates(cell,&cxyz);
 
-              AmanziGeometry::Point cenpnt(Mesh::space_dimension());
-
-              for (int j = 0; j < 8; j++)
-                cenpnt += cxyz[j];
-              cenpnt /= 8.0;
-
-              if (rgn->inside(cenpnt))
-                cs.push_back(cell);
+              auto cenpnt = geometric_center_(cxyz);
+              if (rgn->inside(cenpnt)) cs.push_back(cell);
             }
 
         element_blocks_.push_back(cs);
@@ -1093,8 +1011,8 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string setname,
       }
 
       bool done=false;
-      for (int ix=0; ix<nx_+1 && !done; ix++)
-        for (int iy=0; iy<ny_+1 && !done; iy++)
+      for (int ix=0; ix<nx_+1 && !done; ix++) {
+        for (int iy=0; iy<ny_+1 && !done; iy++) {
           for (int iz=0; iz<nz_+1 && !done; iz++) {
             int node = node_index_(ix,iy,iz);
             AmanziGeometry::Point nxyz;
@@ -1102,11 +1020,11 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string setname,
                  
             if (rgn->inside(nxyz)) {
               ns.push_back(node);
-                    
-              if (rgn->type() == AmanziGeometry::POINT)
-                done = true;
+              if (rgn->type() == AmanziGeometry::POINT) done = true;
             }                   
           }
+        }
+      }
               
       node_sets_.push_back(ns);
       node_set_regions_.push_back(rgn);
@@ -1146,6 +1064,33 @@ int Mesh_simple::deform(const std::vector<double>& target_cell_volumes_in,
 void Mesh_simple::write_to_exodus_file(const std::string filename) const {
   Errors::Message mesg("Not implemented");
   amanzi_throw(mesg);
+}
+
+
+//---------------------------------------------------------
+// Geometric center of a point cloud
+//---------------------------------------------------------
+AmanziGeometry::Point Mesh_simple::geometric_center_(
+    std::vector<AmanziGeometry::Point>& vxyz) const
+{
+  AmanziGeometry::Point gp(space_dimension());
+  for (int j = 0; j < vxyz.size(); j++) gp += vxyz[j];
+  gp /= vxyz.size();
+
+  return gp;
+}
+
+
+//---------------------------------------------------------
+// Check that all points are inside region
+//---------------------------------------------------------
+bool Mesh_simple::all_inside_(std::vector<AmanziGeometry::Point>& vxyz,
+                              const AmanziGeometry::Region& rgn) const
+{
+  for (int j = 0; j < vxyz.size(); j++) {
+    if (!rgn.inside(vxyz[j])) return false;
+  }                    
+  return true;
 }
 
 }  // namespace AmanziMesh

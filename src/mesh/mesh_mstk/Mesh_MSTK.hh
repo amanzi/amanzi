@@ -285,7 +285,8 @@ class Mesh_MSTK : public Mesh {
                                  std::vector<double> *vofs) const;
 
 
-  using Mesh::deform; // note this pulls back the node-based deform as well, so that it can be called when referencing a Mesh_MSTK object
+  // this pulls back the node-based deform as well, so that it can be called when referencing a Mesh_MSTK object
+  using Mesh::deform; 
   
   // Deform a mesh so that cell volumes conform as closely as possible
   // to target volumes without dropping below the minimum volumes.  If
