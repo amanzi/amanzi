@@ -50,18 +50,18 @@ class Mesh_simple : public Mesh {
 
   // Get parallel type of entity
   Parallel_type entity_get_ptype(const Entity_kind kind, 
-                                 const Entity_ID entid) const override;
+                                 const Entity_ID entid) const override { return Parallel_type::OWNED; }
 
   // Get cell type
-  Cell_type cell_get_type(const Entity_ID cellid) const override;
+  Cell_type cell_get_type(const Entity_ID cellid) const override { return HEX; }
         
   // Number of entities of any kind (cell, face, node) and in a
   // particular category (OWNED, GHOST, ALL)
   unsigned int num_entities(const Entity_kind kind,
                             const Parallel_type ptype) const override;
     
-  // Global ID of any entity
-  Entity_ID GID(const Entity_ID lid, const Entity_kind kind) const override;
+  // Global ID of any entity (this is a serial code)
+  Entity_ID GID(const Entity_ID lid, const Entity_kind kind) const override { return lid; }
     
     
   //---------------------
@@ -91,10 +91,7 @@ class Mesh_simple : public Mesh {
 
   // Get nodes of edge
   void edge_get_nodes(const Entity_ID edgeid, Entity_ID *nodeid0,
-                      Entity_ID *nodeid1) const override {
-    Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
-    amanzi_throw(mesg);
-  }
+                      Entity_ID *nodeid1) const override;
 
   //-------------------
   // Upward adjacencies
@@ -121,8 +118,8 @@ class Mesh_simple : public Mesh {
   void edge_get_cells(const Entity_ID edgeid, 
                       const Parallel_type ptype,
                       std::vector<Entity_ID> *cellids) const override {
-    Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
-    amanzi_throw(mesg);
+    Errors::Message msg("Edge to cell connectivity is not implemented in this framework.");
+    amanzi_throw(msg);
   }
 
 
@@ -257,10 +254,12 @@ class Mesh_simple : public Mesh {
 
   // mesh connectivity arrays
   std::vector<Entity_ID> cell_to_face_;
+  std::vector<Entity_ID> cell_to_edge_;
   std::vector<Entity_ID> cell_to_node_;
   std::vector<Entity_ID> face_to_edge_;
   std::vector<Entity_ID> face_to_node_;
   std::vector<Entity_ID> face_to_cell_;
+  std::vector<Entity_ID> edge_to_node_;
   std::vector<Entity_ID> node_to_face_;
   std::vector<Entity_ID> node_to_cell_;
 
@@ -292,16 +291,13 @@ class Mesh_simple : public Mesh {
 
   // Edges of a cell
   void cell_get_edges_internal_(const Entity_ID cellid,
-                                Entity_ID_List *edgeids) const override { 
-    Errors::Message mesg("Edges not implemented in this framework (1). Use MSTK");
-    Exceptions::amanzi_throw(mesg);
-  }
+                                Entity_ID_List *edgeids) const override;
 
   // Edges and directions of a 2D cell
   void cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
                                             Entity_ID_List *edgeids,
                                             std::vector<int> *edgedirs) const override { 
-    Errors::Message mesg("Edges not implemented in this framework (2). Use MSTK");
+    Errors::Message mesg("2D cells are not supported in this framework.");
     Exceptions::amanzi_throw(mesg);
   }
 
@@ -345,7 +341,7 @@ unsigned int Mesh_simple::yzface_index_(int i, int j, int k) const {
 
 inline
 unsigned int Mesh_simple::xedge_index_(int i, int j, int k) const {
-  return i + j * (nx_ + 1) + k * nx_ * (ny_ + 1);
+  return i + j * nx_ + k * nx_ * (ny_ + 1);
 }
 
 inline
