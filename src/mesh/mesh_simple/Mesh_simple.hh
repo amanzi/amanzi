@@ -91,10 +91,7 @@ class Mesh_simple : public Mesh {
 
   // Get nodes of edge
   void edge_get_nodes(const Entity_ID edgeid, Entity_ID *nodeid0,
-                      Entity_ID *nodeid1) const override {
-    Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
-    amanzi_throw(mesg);
-  }
+                      Entity_ID *nodeid1) const override;
 
   //-------------------
   // Upward adjacencies
@@ -121,8 +118,8 @@ class Mesh_simple : public Mesh {
   void edge_get_cells(const Entity_ID edgeid, 
                       const Parallel_type ptype,
                       std::vector<Entity_ID> *cellids) const override {
-    Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
-    amanzi_throw(mesg);
+    Errors::Message msg("Edge to cell connectivity is not implemented in this framework.");
+    amanzi_throw(msg);
   }
 
 
@@ -261,6 +258,7 @@ class Mesh_simple : public Mesh {
   std::vector<Entity_ID> face_to_edge_;
   std::vector<Entity_ID> face_to_node_;
   std::vector<Entity_ID> face_to_cell_;
+  std::vector<Entity_ID> edge_to_node_;
   std::vector<Entity_ID> node_to_face_;
   std::vector<Entity_ID> node_to_cell_;
 
@@ -292,16 +290,13 @@ class Mesh_simple : public Mesh {
 
   // Edges of a cell
   void cell_get_edges_internal_(const Entity_ID cellid,
-                                Entity_ID_List *edgeids) const override { 
-    Errors::Message mesg("Edges not implemented in this framework (1). Use MSTK");
-    Exceptions::amanzi_throw(mesg);
-  }
+                                Entity_ID_List *edgeids) const override ;
 
   // Edges and directions of a 2D cell
   void cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
                                             Entity_ID_List *edgeids,
                                             std::vector<int> *edgedirs) const override { 
-    Errors::Message mesg("Edges not implemented in this framework (2). Use MSTK");
+    Errors::Message mesg("Edges of a 2D cell is not implemented in this framework.");
     Exceptions::amanzi_throw(mesg);
   }
 
