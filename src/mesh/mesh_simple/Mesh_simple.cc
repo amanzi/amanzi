@@ -13,15 +13,20 @@
 
 #include <Teuchos_RCP.hpp>
 
-#include "Mesh_simple.hh"
-#include "GenerationSpec.hh"
 #include "dbc.hh"
 #include "errors.hh"
+#include "GenerationSpec.hh"
+#include "RegionLogical.hh"
+
+#include "Mesh_simple.hh"
 
 
 namespace Amanzi {
 namespace AmanziMesh {
 
+//---------------------------------------------------------
+// Constructor
+//---------------------------------------------------------
 Mesh_simple::Mesh_simple(double x0, double y0, double z0,
                          double x1, double y1, double z1,
                          int nx, int ny, int nz,
@@ -41,129 +46,102 @@ Mesh_simple::Mesh_simple(double x0, double y0, double z0,
     vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Mesh:Simple", *plist)); 
   }
 
-  Mesh::set_mesh_type(RECTANGULAR);
-  Mesh::set_space_dimension(3);
-  Mesh::set_manifold_dimension(3);
-  if (gm != Teuchos::null) Mesh::set_geometric_model(gm);
-  update();
+  set_mesh_type(RECTANGULAR);
+  set_space_dimension(3);
+  set_manifold_dimension(3);
+  if (gm != Teuchos::null) set_geometric_model(gm);
+
+  CreateCache_();
+  BuildMaps_();
 }
 
 
-void Mesh_simple::update()
+//---------------------------------------------------------
+// Update
+//---------------------------------------------------------
+void Mesh_simple::CreateCache_()
 {
-  clear_internals_();
-  update_internals_();
-}
+  // clear old cache
+  coordinates_.clear();
 
+  cell_to_face_.clear();
+  cell_to_node_.clear();
+  face_to_node_.clear();
 
-void Mesh_simple::clear_internals_()
-{
-  coordinates_.resize(0);
+  sets_.clear();
 
-  cell_to_face_.resize(0);
-  cell_to_node_.resize(0);
-  face_to_node_.resize(0);
-
-  side_sets_.resize(0);
-}
-
-
-void Mesh_simple::update_internals_()
-{
+  // build new cache
   num_cells_ = nx_ * ny_ * nz_;
-  num_nodes_ = (nx_+1)*(ny_+1)*(nz_+1);
-  num_faces_ = (nx_+1)*ny_*nz_ + nx_*(ny_+1)*nz_ + nx_*ny_*(nz_+1);
-  num_faces_bnd_ = 2*nx_*ny_ + 2*nx_*nz_ + 2*ny_*nz_;
+  num_nodes_ = (nx_ + 1) * (ny_ + 1) * (nz_ + 1);
+  num_faces_ = (nx_ + 1) * ny_ * nz_ + nx_ * (ny_ + 1) * nz_ + nx_ * ny_ * (nz_ + 1);
+  num_edges_ = nx_ * (ny_ + 1) * (nz_ + 1) + (nx_ + 1) * ny_ * (nz_ + 1) + (nx_ + 1) * (ny_ + 1) * nz_;
+  num_faces_bnd_ = 2 * nx_ * ny_ + 2 * nx_ * nz_ + 2 * ny_ * nz_;
 
-  coordinates_.resize(3*num_nodes_);
+  // -- node coordinates
+  coordinates_.resize(3 * num_nodes_);
 
-  double hx = (x1_ - x0_)/nx_;
-  double hy = (y1_ - y0_)/ny_;
-  double hz = (z1_ - z0_)/nz_;
+  double hx = (x1_ - x0_) / nx_;
+  double hy = (y1_ - y0_) / ny_;
+  double hz = (z1_ - z0_) / nz_;
 
-  for (int iz=0; iz<=nz_; iz++) {
-    for (int iy=0; iy<=ny_; iy++) {
-      for (int ix=0; ix<=nx_; ix++) {
-        int istart = 3*node_index_(ix,iy,iz);
-
-        coordinates_[istart]     = x0_ + ix*hx;
-        coordinates_[istart + 1] = y0_ + iy*hy;
-        coordinates_[istart + 2] = z0_ + iz*hz;
+  for (int iz = 0; iz <= nz_; iz++) {
+    for (int iy = 0; iy <= ny_; iy++) {
+      for (int ix = 0; ix <= nx_; ix++) {
+        int istart = 3 * node_index_(ix, iy, iz);
+        coordinates_[istart]     = x0_ + ix * hx;
+        coordinates_[istart + 1] = y0_ + iy * hy;
+        coordinates_[istart + 2] = z0_ + iz * hz;
       }
     }
   }
 
-  cell_to_face_.resize(6*num_cells_);
-  cell_to_face_dirs_.resize(6*num_cells_);
-  cell_to_node_.resize(8*num_cells_);
-  face_to_node_.resize(4*num_faces_);
-  node_to_face_.resize(13*num_nodes_);  // 1 extra for num faces
-  node_to_cell_.resize(9*num_nodes_);  // 1 extra for num cells
-  face_to_cell_.resize(2*num_faces_); 
-  face_to_cell_.assign(2*num_faces_,-1); 
+  // -- connectivity arrays
+  cell_to_face_.resize(6 * num_cells_);
+  cell_to_face_dirs_.resize(6 * num_cells_);
+  face_to_cell_.assign(2 * num_faces_, -1); 
+
+  cell_to_node_.resize(8 * num_cells_);
+  node_to_cell_.resize(9 * num_nodes_);  // 1 extra for num cells
+
+  face_to_node_.resize(4 * num_faces_);
+  node_to_face_.resize(13 * num_nodes_);  // 1 extra for num faces
+
+  if (edges_requested_) {
+    face_to_edge_.resize(4 * num_faces_);
+    face_to_edge_dirs_.resize(4 * num_faces_);
+  }
                                           
-  // loop over cells and initialize cell_to_node_
-  for (int iz=0; iz<nz_; iz++)
-    for (int iy=0; iy<ny_; iy++)
-      for (int ix=0; ix<nx_; ix++) {
-        int jstart=0;
-        int istart = 8 * cell_index_(ix,iy,iz);
-        int ncell=0;
+  // loop over cells and initialize cell <-> node
+  for (int iz = 0; iz < nz_; iz++) {
+    for (int iy = 0; iy < ny_; iy++) {
+      for (int ix = 0; ix < nx_; ix++) {
+        for (int k = 0; k < 2; ++k) {
+          int istart = 8 * cell_index_(ix, iy, iz) + 4 * k;
 
-        cell_to_node_[istart]   = node_index_(ix,iy,iz);
-        cell_to_node_[istart+1] = node_index_(ix+1,iy,iz);
-        cell_to_node_[istart+2] = node_index_(ix+1,iy+1,iz);
-        cell_to_node_[istart+3] = node_index_(ix,iy+1,iz);
-        cell_to_node_[istart+4] = node_index_(ix,iy,iz+1);
-        cell_to_node_[istart+5] = node_index_(ix+1,iy,iz+1);
-        cell_to_node_[istart+6] = node_index_(ix+1,iy+1,iz+1);
-        cell_to_node_[istart+7] = node_index_(ix,iy+1,iz+1);
+          cell_to_node_[istart]     = node_index_(ix,   iy,   iz + k);
+          cell_to_node_[istart + 1] = node_index_(ix+1, iy,   iz + k);
+          cell_to_node_[istart + 2] = node_index_(ix+1, iy+1, iz + k);
+          cell_to_node_[istart + 3] = node_index_(ix,   iy+1, iz + k);
+        }
 
-        jstart = 9 * node_index_(ix,iy,iz);
-        ncell = node_to_cell_[jstart];
-        node_to_cell_[jstart+1+ncell] = cell_index_(ix,iy,iz);
-        (node_to_cell_[jstart])++;
-
-        jstart = 9 * node_index_(ix+1,iy,iz); 
-        ncell = node_to_cell_[jstart];
-        node_to_cell_[jstart+1+ncell] = cell_index_(ix,iy,iz);
-        (node_to_cell_[jstart])++;
-
-        jstart = 9 * node_index_(ix+1,iy+1,iz); 
-        ncell = node_to_cell_[jstart];
-        node_to_cell_[jstart+1+ncell] = cell_index_(ix,iy,iz);
-        (node_to_cell_[jstart])++;
-
-        jstart = 9 * node_index_(ix,iy+1,iz); 
-        ncell = node_to_cell_[jstart];
-        node_to_cell_[jstart+1+ncell] = cell_index_(ix,iy,iz);
-        (node_to_cell_[jstart])++;
-
-        jstart = 9 * node_index_(ix,iy,iz+1);
-        ncell = node_to_cell_[jstart];
-        node_to_cell_[jstart+1+ncell] = cell_index_(ix,iy,iz);
-        node_to_cell_[jstart]++;
-
-        jstart = 9 * node_index_(ix+1,iy,iz+1); // 1 extra for num cells
-        ncell = node_to_cell_[jstart];
-        node_to_cell_[jstart+1+ncell] = cell_index_(ix,iy,iz);
-        (node_to_cell_[jstart])++;
-
-        jstart = 9 * node_index_(ix+1,iy+1,iz+1); // 1 extra for num cells
-        ncell = node_to_cell_[jstart];
-        node_to_cell_[jstart+1+ncell] = cell_index_(ix,iy,iz);
-        (node_to_cell_[jstart])++;
-
-        jstart = 9 * node_index_(ix,iy+1,iz+1); // 1 extra for num cells
-        ncell = node_to_cell_[jstart];
-        node_to_cell_[jstart+1+ncell] = cell_index_(ix,iy,iz);
-        (node_to_cell_[jstart])++;
+        for (int i = 0; i < 2; ++i) {
+          for (int j = 0; j < 2; ++j) {
+            for (int k = 0; k < 2; ++k) {
+              int jstart = 9 * node_index_(ix + i, iy + j, iz + k);
+              int ncell = node_to_cell_[jstart];
+              node_to_cell_[jstart + 1 + ncell] = cell_index_(ix, iy, iz);
+              (node_to_cell_[jstart])++;
+            }
+          }
+        }
       }
+    }
+  }
 
-  // loop over cells and initialize cell_to_face_
-  for (int iz=0; iz<nz_; iz++)
-    for (int iy=0; iy<ny_; iy++)
-      for (int ix=0; ix<nx_; ix++) {
+  // loop over cells and initialize cell <-> face
+  for (int iz = 0; iz < nz_; iz++) {
+    for (int iy = 0; iy < ny_; iy++) {
+      for (int ix = 0; ix < nx_; ix++) {
         int istart = 6 * cell_index_(ix,iy,iz);
         int jstart = 0;
 
@@ -199,13 +177,15 @@ void Mesh_simple::update_internals_()
         jstart = 2*xyface_index_(ix,iy,iz+1);
         face_to_cell_[jstart+1] = cell_index_(ix,iy,iz);
       }
+    }
+  }
 
-  // loop over faces and initialize face_to_node_
-  // first we do the xy faces
-  for (int iz=0; iz<=nz_; iz++)
-    for (int iy=0; iy<ny_; iy++)
-      for (int ix=0; ix<nx_; ix++) {
-        int istart = 4 * xyface_index_(ix,iy,iz);
+  // loop over faces and initialize face <-> node
+  // -- xy faces
+  for (int iz = 0; iz <= nz_; iz++) {
+    for (int iy = 0; iy < ny_; iy++) {
+      for (int ix = 0; ix < nx_; ix++) {
+        int istart = 4 * xyface_index_(ix, iy, iz);
         int jstart = 0;
         int nfaces = 0;
 
@@ -234,11 +214,13 @@ void Mesh_simple::update_internals_()
         node_to_face_[jstart+1+nfaces] = xyface_index_(ix,iy,iz);
         (node_to_face_[jstart])++;
       }
+    }
+  }
 
-  // then we do the xz faces
-  for (int iz=0; iz<nz_; iz++)
-    for (int iy=0; iy<=ny_; iy++)
-      for (int ix=0; ix<nx_; ix++) {
+  // -- xz faces
+  for (int iz = 0; iz < nz_; iz++) {
+    for (int iy = 0; iy <= ny_; iy++) {
+      for (int ix=0; ix < nx_; ix++) {
         int istart = 4 * xzface_index_(ix,iy,iz);
         int jstart = 0;
         int nfaces = 0;
@@ -268,11 +250,13 @@ void Mesh_simple::update_internals_()
         node_to_face_[jstart+1+nfaces] = xyface_index_(ix,iy,iz);
         (node_to_face_[jstart])++;
       }
+    }
+  }
 
-  // finally we do the yz faces
-  for (int iz=0; iz<nz_; iz++)
-    for (int iy=0; iy<ny_; iy++)
-      for (int ix=0; ix<=nx_; ix++) {
+  // -- yz faces
+  for (int iz = 0; iz < nz_; iz++) {
+    for (int iy = 0; iy < ny_; iy++) {
+      for (int ix = 0; ix <= nx_; ix++) {
         int istart = 4 * yzface_index_(ix,iy,iz);
         int jstart = 0;
         int nfaces = 0;
@@ -302,12 +286,75 @@ void Mesh_simple::update_internals_()
         node_to_face_[jstart+1+nfaces] = xyface_index_(ix,iy,iz);
         (node_to_face_[jstart])++;
       }
+    }
+  }
 
-  build_maps_();
+  // loop over faces and initialize face -> edge
+  if (edges_requested_) { 
+    // -- xy faces
+    for (int iz = 0; iz <= nz_; iz++) {
+      for (int iy = 0; iy < ny_; iy++) {
+        for (int ix = 0; ix < nx_; ix++) {
+          int istart = 4 * xyface_index_(ix, iy, iz);
+
+          face_to_edge_[istart]     = xedge_index_(ix,  iy,  iz);
+          face_to_edge_[istart + 1] = yedge_index_(ix+1,iy,  iz);
+          face_to_edge_[istart + 2] = xedge_index_(ix,  iy+1,iz);
+          face_to_edge_[istart + 3] = yedge_index_(ix,  iy,  iz);
+
+          face_to_edge_dirs_[istart]     = 1;
+          face_to_edge_dirs_[istart + 1] = 1;
+          face_to_edge_dirs_[istart + 2] = -1;
+          face_to_edge_dirs_[istart + 2] = -1;
+        }
+      }
+    }
+
+    // -- xz faces
+    for (int iz = 0; iz < nz_; iz++) {
+      for (int iy = 0; iy <= ny_; iy++) {
+        for (int ix=0; ix < nx_; ix++) {
+          int istart = 4 * xzface_index_(ix, iy, iz);
+
+          face_to_edge_[istart]     = xedge_index_(ix,  iy, iz);
+          face_to_edge_[istart + 1] = zedge_index_(ix+1,iy, iz);
+          face_to_edge_[istart + 2] = xedge_index_(ix,  iy, iz+1);
+          face_to_edge_[istart + 3] = zedge_index_(ix,  iy, iz);
+
+          face_to_edge_dirs_[istart]     = 1;
+          face_to_edge_dirs_[istart + 1] = 1;
+          face_to_edge_dirs_[istart + 2] = -1;
+          face_to_edge_dirs_[istart + 2] = -1;
+        }
+      }
+    }
+
+    // -- yz faces
+    for (int iz = 0; iz < nz_; iz++) {
+      for (int iy = 0; iy < ny_; iy++) {
+        for (int ix = 0; ix <= nx_; ix++) {
+          int istart = 4 * yzface_index_(ix,iy,iz);
+
+          face_to_edge_[istart]     = yedge_index_(ix, iy,  iz);
+          face_to_edge_[istart + 1] = zedge_index_(ix, iy+1,iz);
+          face_to_edge_[istart + 2] = yedge_index_(ix, iy,  iz+1);
+          face_to_edge_[istart + 3] = zedge_index_(ix, iy,  iz);
+
+          face_to_edge_dirs_[istart]     = 1;
+          face_to_edge_dirs_[istart + 1] = 1;
+          face_to_edge_dirs_[istart + 2] = -1;
+          face_to_edge_dirs_[istart + 2] = -1;
+        }
+      }
+    }
+  }
 }
 
 
-void Mesh_simple::build_maps_()
+//---------------------------------------------------------
+// Build Epetra maps
+//---------------------------------------------------------
+void Mesh_simple::BuildMaps_()
 {
   std::vector<int> cells(num_cells_);
   for (int i=0; i< num_cells_; i++) cells[i] = i;
@@ -340,9 +387,19 @@ void Mesh_simple::build_maps_()
   face_map_ = Teuchos::rcp(new Epetra_Map(-1, num_faces_, &faces[0], 0, *get_comm()));
   node_map_ = Teuchos::rcp(new Epetra_Map(-1, num_nodes_, &nodes[0], 0, *get_comm()));
   extface_map_ = Teuchos::rcp(new Epetra_Map(-1, num_faces_bnd_, &faces_bnd[0], 0, *get_comm()));
+
+  if (edges_requested_) {
+    std::vector<int> edges(num_edges_);
+    for (int i=0; i< num_edges_; i++) edges[i] = i;
+
+    edge_map_ = Teuchos::rcp(new Epetra_Map(-1, num_edges_, &edges[0], 0, *get_comm()));
+  }
 }
 
 
+//---------------------------------------------------------
+// TBW
+//---------------------------------------------------------
 Parallel_type Mesh_simple::entity_get_ptype(const Entity_kind kind, 
                                             const Entity_ID entid) const 
 {
@@ -350,15 +407,18 @@ Parallel_type Mesh_simple::entity_get_ptype(const Entity_kind kind,
 }
 
 
-//--------------------------------------
+//---------------------------------------------------------
 // Get cell type
-//--------------------------------------
+//---------------------------------------------------------
 AmanziMesh::Cell_type Mesh_simple::cell_get_type(const AmanziMesh::Entity_ID cellid) const 
 {
   return HEX;
 }
         
     
+//---------------------------------------------------------
+// TBW
+//---------------------------------------------------------
 Entity_ID Mesh_simple::GID(const AmanziMesh::Entity_ID lid, 
                            const AmanziMesh::Entity_kind kind) const
 {
@@ -366,18 +426,20 @@ Entity_ID Mesh_simple::GID(const AmanziMesh::Entity_ID lid,
 }
 
 
-
+//---------------------------------------------------------
+// TBW
+//---------------------------------------------------------
 unsigned int Mesh_simple::num_entities(AmanziMesh::Entity_kind kind, 
                                        AmanziMesh::Parallel_type ptype) const
 {
   switch (kind) {
-    case AmanziMesh::FACE: 
+    case FACE: 
       return (ptype != AmanziMesh::Parallel_type::GHOST) ? num_faces_ : 0;
       break;
-    case AmanziMesh::NODE:
+    case NODE:
       return (ptype != AmanziMesh::Parallel_type::GHOST) ? num_nodes_ : 0;
       break;
-    case AmanziMesh::CELL:
+    case CELL:
       return (ptype != AmanziMesh::Parallel_type::GHOST) ? num_cells_ : 0;
       break;
     default:
@@ -387,6 +449,9 @@ unsigned int Mesh_simple::num_entities(AmanziMesh::Entity_kind kind,
 }
 
 
+//---------------------------------------------------------
+// Connectivity: cell -> faces
+//---------------------------------------------------------
 void Mesh_simple::cell_get_faces_and_dirs_internal_(const AmanziMesh::Entity_ID cellid,
                                                     AmanziMesh::Entity_ID_List *faceids,
                                                     std::vector<int> *cfacedirs,
@@ -395,17 +460,20 @@ void Mesh_simple::cell_get_faces_and_dirs_internal_(const AmanziMesh::Entity_ID 
   unsigned int offset = (unsigned int) 6*cellid;
 
   faceids->clear();
-  if (cfacedirs) cfacedirs->clear();
+  auto it = cell_to_face_.begin() + offset;
+  faceids->insert(faceids->begin(), it, it + 6);
 
-  for (int i = 0; i < 6; i++) {
-    faceids->push_back(*(cell_to_face_.begin()+offset));
-    if (cfacedirs)
-      cfacedirs->push_back(*(cell_to_face_dirs_.begin()+offset));
-    offset++;
+  if (cfacedirs) {
+    cfacedirs->clear();
+    auto jt = cell_to_face_dirs_.begin() + offset;
+    cfacedirs->insert(cfacedirs->begin(), jt, jt + 6);
   }
 }
 
 
+//---------------------------------------------------------
+// TBW
+//---------------------------------------------------------
 void Mesh_simple::cell_get_nodes(AmanziMesh::Entity_ID cell, 
                                  AmanziMesh::Entity_ID_List *nodeids) const
 {
@@ -420,6 +488,9 @@ void Mesh_simple::cell_get_nodes(AmanziMesh::Entity_ID cell,
 }
 
 
+//---------------------------------------------------------
+// TBW
+//---------------------------------------------------------
 void Mesh_simple::face_get_nodes(AmanziMesh::Entity_ID face, 
                                  AmanziMesh::Entity_ID_List *nodeids) const
 {
@@ -434,9 +505,31 @@ void Mesh_simple::face_get_nodes(AmanziMesh::Entity_ID face,
 }
 
 
-//--------------------------------------
+//---------------------------------------------------------
+// Connectivity: face -> edges
+//---------------------------------------------------------
+void Mesh_simple::face_get_edges_and_dirs_internal_(const Entity_ID faceid,
+                                                    Entity_ID_List *edgeids,
+                                                    std::vector<int> *fedgedirs,
+                                                    bool ordered) const
+{
+  unsigned int offset = (unsigned int) 4*faceid;
+
+  edgeids->clear();
+  auto it = face_to_edge_.begin() + offset;
+  edgeids->insert(edgeids->begin(), it, it + 4);
+
+  if (fedgedirs) {
+    fedgedirs->clear();
+    auto jt = face_to_edge_dirs_.begin();
+    fedgedirs->insert(fedgedirs->begin(), jt, jt + 4);
+  }
+}
+
+
+//---------------------------------------------------------
 // Cooordinate Getters
-//--------------------------------------
+//---------------------------------------------------------
 void Mesh_simple::node_get_coordinates(const AmanziMesh::Entity_ID local_node_id, 
                                        AmanziGeometry::Point *ncoords) const
 {
@@ -447,6 +540,9 @@ void Mesh_simple::node_get_coordinates(const AmanziMesh::Entity_ID local_node_id
 }
 
 
+//---------------------------------------------------------
+// TBW
+//---------------------------------------------------------
 void Mesh_simple::face_get_coordinates(AmanziMesh::Entity_ID local_face_id, 
                                        std::vector<AmanziGeometry::Point> *fcoords) const
 {
@@ -465,6 +561,9 @@ void Mesh_simple::face_get_coordinates(AmanziMesh::Entity_ID local_face_id,
 }
 
 
+//---------------------------------------------------------
+// TBW
+//---------------------------------------------------------
 void Mesh_simple::cell_get_coordinates(AmanziMesh::Entity_ID local_cell_id, 
                                        std::vector<AmanziGeometry::Point> *ccoords) const
 {  
@@ -483,6 +582,9 @@ void Mesh_simple::cell_get_coordinates(AmanziMesh::Entity_ID local_cell_id,
 }
 
 
+//---------------------------------------------------------
+// TBW
+//---------------------------------------------------------
 void Mesh_simple::node_set_coordinates(const AmanziMesh::Entity_ID local_node_id, 
                                        const double *ncoord)
 {
@@ -499,6 +601,9 @@ void Mesh_simple::node_set_coordinates(const AmanziMesh::Entity_ID local_node_id
 }
 
 
+//---------------------------------------------------------
+// TBW
+//---------------------------------------------------------
 void Mesh_simple::node_set_coordinates(const AmanziMesh::Entity_ID local_node_id, 
                                        const AmanziGeometry::Point ncoord)
 {
@@ -517,6 +622,9 @@ void Mesh_simple::node_set_coordinates(const AmanziMesh::Entity_ID local_node_id
 }
 
 
+//---------------------------------------------------------
+// TBW
+//---------------------------------------------------------
 void Mesh_simple::node_get_cells(const AmanziMesh::Entity_ID nodeid, 
                                  const AmanziMesh::Parallel_type ptype,
                                  AmanziMesh::Entity_ID_List *cellids) const 
@@ -531,9 +639,9 @@ void Mesh_simple::node_get_cells(const AmanziMesh::Entity_ID nodeid,
 }
     
 
-//--------------------------------------
+//---------------------------------------------------------
 // Faces of type 'ptype' connected to a node
-//--------------------------------------
+//---------------------------------------------------------
 void Mesh_simple::node_get_faces(const AmanziMesh::Entity_ID nodeid, 
                                  const AmanziMesh::Parallel_type ptype,
                                  AmanziMesh::Entity_ID_List *faceids) const
@@ -548,10 +656,10 @@ void Mesh_simple::node_get_faces(const AmanziMesh::Entity_ID nodeid,
 }   
 
  
-//--------------------------------------
+//---------------------------------------------------------
 // Get faces of ptype of a particular cell that are connected to the
 // given node
-//--------------------------------------
+//---------------------------------------------------------
 void Mesh_simple::node_get_cell_faces(const AmanziMesh::Entity_ID nodeid, 
                                       const AmanziMesh::Entity_ID cellid,
                                       const AmanziMesh::Parallel_type ptype,
@@ -579,9 +687,9 @@ void Mesh_simple::node_get_cell_faces(const AmanziMesh::Entity_ID nodeid,
 }
     
 
-//--------------------------------------
+//---------------------------------------------------------
 // Cells connected to a face
-//--------------------------------------
+//---------------------------------------------------------
 void Mesh_simple::face_get_cells_internal_(const AmanziMesh::Entity_ID faceid, 
                                            const AmanziMesh::Parallel_type ptype,
                                            AmanziMesh::Entity_ID_List *cellids) const
@@ -601,7 +709,7 @@ void Mesh_simple::face_get_cells_internal_(const AmanziMesh::Entity_ID faceid,
 // Same level adjacencies
 //-----------------------
 
-//--------------------------------------
+//---------------------------------------------------------
 // Face connected neighboring cells of given cell of a particular ptype
 // (e.g. a hex has 6 face neighbors)
 
@@ -609,7 +717,7 @@ void Mesh_simple::face_get_cells_internal_(const AmanziMesh::Entity_ID faceid,
 // guaranteed in general except when ptype = ALL, in which case
 // the cellids will correcpond to cells across the respective
 // faces given by cell_get_faces
-//--------------------------------------
+//---------------------------------------------------------
 void Mesh_simple::cell_get_face_adj_cells(const AmanziMesh::Entity_ID cellid,
                                           const AmanziMesh::Parallel_type ptype,
                                           AmanziMesh::Entity_ID_List *fadj_cellids) const
@@ -637,11 +745,11 @@ void Mesh_simple::cell_get_face_adj_cells(const AmanziMesh::Entity_ID cellid,
 }
 
 
-//--------------------------------------
+//---------------------------------------------------------
 // Node connected neighboring cells of given cell
 // (a hex in a structured mesh has 26 node connected neighbors)
 // The cells are returned in no particular order
-//--------------------------------------
+//---------------------------------------------------------
 void Mesh_simple::cell_get_node_adj_cells(const AmanziMesh::Entity_ID cellid,
                                           const AmanziMesh::Parallel_type ptype,
                                           AmanziMesh::Entity_ID_List *nadj_cellids) const
@@ -675,30 +783,9 @@ void Mesh_simple::cell_get_node_adj_cells(const AmanziMesh::Entity_ID cellid,
 }
 
     
-const Epetra_Map& Mesh_simple::cell_map(bool include_ghost) const
-{
-  return *cell_map_;
-}
-
-
-const Epetra_Map& Mesh_simple::face_map(bool include_ghost) const
-{
-  return *face_map_;
-}
-
-
-const Epetra_Map& Mesh_simple::node_map(bool include_ghost) const
-{
-  return *node_map_;
-}
-
-
-const Epetra_Map& Mesh_simple::exterior_face_map(bool include_ghost) const
-{
-  return *extface_map_;
-}
-
-
+//---------------------------------------------------------
+// TBW
+//---------------------------------------------------------
 const Epetra_Map& Mesh_simple::exterior_node_map(bool include_ghost) const
 {
   Errors::Message mesg("Exterior node map is not implemented in this framework");
@@ -707,11 +794,11 @@ const Epetra_Map& Mesh_simple::exterior_node_map(bool include_ghost) const
 }
 
 
-//--------------------------------------
+//---------------------------------------------------------
 // Epetra importer that will allow apps to import values from a Epetra
 // vector defined on all owned faces into an Epetra vector defined
 // only on exterior faces
-//--------------------------------------
+//---------------------------------------------------------
 const Epetra_Import& Mesh_simple::exterior_face_importer(void) const
 {
   Errors::Message mesg("exterior face importer is not implemented");
@@ -719,6 +806,9 @@ const Epetra_Import& Mesh_simple::exterior_face_importer(void) const
 }
 
 
+//---------------------------------------------------------
+// TBW
+//---------------------------------------------------------
 void Mesh_simple::get_set_entities_and_vofs(const std::string setname, 
                                             const AmanziMesh::Entity_kind kind, 
                                             const AmanziMesh::Parallel_type ptype, 
@@ -728,343 +818,210 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string setname,
   // we ignore ptype since this is a serial implementation
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
 
-  assert (setents != NULL);
-  setents->clear();
+  AMANZI_ASSERT(setents != NULL);
   
+  std::string setname_internal = setname + std::to_string(kind);
+  auto it = sets_.find(setname_internal);
+  if (it != sets_.end()) {
+    *setents = it->second;
+    return;
+  }
+
+  // create the side set from the region definition
+  Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setname);
+  if (rgn == Teuchos::null) {
+    std::cerr << "Geometric model has no region \"" << setname << "\"" << std::endl;
+    throw std::exception();
+  }
+
+  setents->clear();
+
   switch (kind) {
-    case AmanziMesh::FACE:
-      {
-      Entity_ID_List ss;
+  case FACE:
+  {
+    if (rgn->type() == AmanziGeometry::BOX ||
+        rgn->type() == AmanziGeometry::PLANE) {
+      // y = constant planes
+      for (int iy = 0; iy <= ny_; ++iy) {
+        for (int ix = 0; ix < nx_; ix++) {
+          for (int iz = 0; iz < nz_; iz++) {
+            std::vector<AmanziGeometry::Point> fxyz;
 
-      // Does this set exist?
+            int face = xzface_index_(ix, iy, iz);
+            face_get_coordinates(face, &fxyz);
 
-      int nss = side_sets_.size();  // number of side sets
-      bool found = false;
-      for (int i = 0; i < nss; i++) {
-        if ((side_set_regions_[i])->name() == setname) {
-          found = true;
-          ss = side_sets_[i];
-        }
-      }
-
-      if (!found) { // create the side set from the region definition
-        Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setname);
-          
-        if (rgn == Teuchos::null) {
-          std::cerr << "Geometric model has no region named " << setname << std::endl;
-          std::cerr << "Cannot construct set by this name" << std::endl;
-          throw std::exception();
-        }
-          
-        if (rgn->manifold_dimension() != Mesh::manifold_dimension()-1) {
-          std::cerr << "Geometric model does not have a region named \"" << setname << "\" with the appropriate dimension" << std::endl;
-          std::cerr << "Cannot construct set by this name" << std::endl;
-          throw std::exception();
-        }
-
-        if (rgn->type() == AmanziGeometry::BOX ||
-            rgn->type() == AmanziGeometry::PLANE) {
-          for (int ix=0; ix<nx_; ix++)
-            for (int iz=0; iz<nz_; iz++) {
-              int face;
-              std::vector<AmanziGeometry::Point> fxyz;
-              bool inbox;
-
-              face = xzface_index_(ix,0,iz);
-              face_get_coordinates(face,&fxyz);
-
-              inbox = true;
-              if (rgn->type() == AmanziGeometry::BOX) {
-                AmanziGeometry::Point cenpnt(Mesh::space_dimension());
-                for (int j = 0; j < 4; j++)
-                  cenpnt += fxyz[j];
-                cenpnt /= 4.0;
-
-                if (!rgn->inside(cenpnt)) inbox = false;
-              }
-              else {
-                for (int j = 0; j < 4; j++) {
-                  if (!rgn->inside(fxyz[j])) {
-                    inbox = false;
-                    break;
-                  }
-                }                    
-              }
-                    
-              if (inbox)
-                ss.push_back(face);
-
-              face = xzface_index_(ix,ny_,iz);
-              face_get_coordinates(face,&fxyz);
-
-              inbox = true;
-              if (rgn->type() == AmanziGeometry::BOX) {
-                AmanziGeometry::Point cenpnt(Mesh::space_dimension());
-                for (int j = 0; j < 4; j++)
-                  cenpnt += fxyz[j];
-                cenpnt /= 4.0;
-
-                if (!rgn->inside(cenpnt)) inbox = false;
-              }
-              else {
-                for (int j = 0; j < 4; j++) {
-                  if (!rgn->inside(fxyz[j])) {
-                    inbox = false;
-                    break;
-                  }
-                }                    
-              }
-                    
-              if (inbox)
-                ss.push_back(face);
+            bool inbox = true;
+            if (rgn->type() == AmanziGeometry::BOX) {
+              auto cenpnt = geometric_center_(fxyz);
+              if (!rgn->inside(cenpnt)) inbox = false;
+            } else {
+              inbox = all_inside_(fxyz, *rgn);
             }
-
-            for (int ix=0; ix<nx_; ix++)
-              for (int iy=0; iy<ny_; iy++) {
-                int face;
-                std::vector<AmanziGeometry::Point> fxyz;
-                bool inbox;
-
-                face = xyface_index_(ix,iy,0);
-                face_get_coordinates(face,&fxyz);
-
-                inbox = true;
-                if (rgn->type() == AmanziGeometry::BOX) {
-                  AmanziGeometry::Point cenpnt(Mesh::space_dimension());
-                  for (int j = 0; j < 4; j++)
-                    cenpnt += fxyz[j];
-                  cenpnt /= 4.0;
-
-                  if (!rgn->inside(cenpnt)) inbox = false;
-                }
-                else {
-                  for (int j = 0; j < 4; j++) {
-                    if (!rgn->inside(fxyz[j])) {
-                      inbox = false;
-                      break;
-                    }
-                  }                    
-                }
-                    
-                if (inbox)
-                  ss.push_back(face);
-
-                face = xyface_index_(ix,iy,nz_);
-                face_get_coordinates(face,&fxyz);
-
-                inbox = true;
-                if (rgn->type() == AmanziGeometry::BOX) {
-                  AmanziGeometry::Point cenpnt(Mesh::space_dimension());
-                  for (int j = 0; j < 4; j++)
-                    cenpnt += fxyz[j];
-                  cenpnt /= 4.0;
-
-                  if (!rgn->inside(cenpnt)) inbox = false;
-                }
-                else {
-                  for (int j = 0; j < 4; j++) {
-                    if (!rgn->inside(fxyz[j])) {
-                      inbox = false;
-                      break;
-                    }
-                  }                    
-                }
-                    
-                if (inbox)
-                  ss.push_back(face);
-              }
-
-            for (int iy=0; iy<ny_; iy++)
-              for (int iz=0; iz<nz_; iz++) {
-                int face;
-                std::vector<AmanziGeometry::Point> fxyz;
-                bool inbox;
-
-                face = yzface_index_(0,iy,iz);
-                face_get_coordinates(face,&fxyz);
-
-                inbox = true;
-                if (rgn->type() == AmanziGeometry::BOX) {
-                  AmanziGeometry::Point cenpnt(Mesh::space_dimension());
-                  for (int j = 0; j < 4; j++)
-                    cenpnt += fxyz[j];
-                  cenpnt /= 4.0;
-
-                  if (!rgn->inside(cenpnt)) inbox = false;
-                }
-                else {
-                  for (int j = 0; j < 4; j++) {
-                    if (!rgn->inside(fxyz[j])) {
-                      inbox = false;
-                      break;
-                    }
-                  }                    
-                }
-                    
-                if (inbox)
-                  ss.push_back(face);
-
-                face = yzface_index_(nx_,iy,iz);
-                face_get_coordinates(face,&fxyz);
-
-                inbox = true;
-                if (rgn->type() == AmanziGeometry::BOX) {
-                  AmanziGeometry::Point cenpnt(Mesh::space_dimension());
-                  for (int j = 0; j < 4; j++)
-                    cenpnt += fxyz[j];
-                  cenpnt /= 4.0;
-
-                  if (!rgn->inside(cenpnt)) inbox = false;
-                }
-                else {
-                  for (int j = 0; j < 4; j++) {
-                    if (!rgn->inside(fxyz[j])) {
-                      inbox = false;
-                      break;
-                    }
-                  }                    
-                }
-                    
-                if (inbox)
-                  ss.push_back(face);
-              }
-
-            side_sets_.push_back(ss);
-            side_set_regions_.push_back(rgn);
+                   
+            if (inbox) setents->push_back(face);
           }
-
-        else {
-          std::cerr << "Region type not suitable/applicable for sidesets" << std::endl;
-          throw std::exception();
         }
       }
 
-      *setents = ss;
-      break;
-      }
+      // z = constant planes
+      for (int iz = 0; iz <= nz_; ++iz) {
+        for (int ix = 0; ix < nx_; ix++) {
+          for (int iy = 0; iy < ny_; iy++) {
+            std::vector<AmanziGeometry::Point> fxyz;
 
-    case AmanziMesh::CELL:
-      {
-      Entity_ID_List cs; // cell set
-          
-      int ncs = element_blocks_.size();
-      bool found = false;
-      for (int i = 0; i < ncs; i++) {
-        if ((element_block_regions_[i])->name() == setname) {
-          found = true;
-          cs = element_blocks_[i];
-        }
-      }
+            int face = xyface_index_(ix, iy, iz);
+            face_get_coordinates(face, &fxyz);
 
-      if (!found) { // create the cell set from the region definition
-        Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setname);
-          
-        if (rgn == Teuchos::null) {
-          std::cerr << "Geometric model has no region named " << setname << std::endl;
-          std::cerr << "Cannot construct set by this name" << std::endl;
-          throw std::exception();
-        }
-          
-        if (rgn->manifold_dimension() > 0 &&
-            rgn->manifold_dimension() != Mesh::manifold_dimension()) {
-          std::cerr << "Geometric model does not have a region named \"" << setname << "\" with the appropriate dimension" << std::endl;
-          std::cerr << "Cannot construct set by this name" << std::endl;
-          throw std::exception();
-        }
-
-        if (rgn->type() == AmanziGeometry::BOX || 
-            rgn->type() == AmanziGeometry::COLORFUNCTION) {
-          for (int ix=0; ix<nx_; ix++)
-            for (int iy=0; iy<ny_; iy++)
-              for (int iz=0; iz<nz_; iz++) {
-                int cell = cell_index_(ix,iy,iz);
-                std::vector<AmanziGeometry::Point> cxyz;
-                cell_get_coordinates(cell,&cxyz);
-
-                AmanziGeometry::Point cenpnt(Mesh::space_dimension());
-
-                for (int j = 0; j < 8; j++)
-                  cenpnt += cxyz[j];
-                cenpnt /= 8.0;
-
-                if (rgn->inside(cenpnt))
-                  cs.push_back(cell);
-              }
-
-          element_blocks_.push_back(cs);
-          element_block_regions_.push_back(rgn);
-        }
-        else {
-          std::cerr << "Region type not suitable/applicable for cellsets" << std::endl;
-          throw std::exception();
-        }
-      }
-
-      *setents = cs;
-      break;
-      }
-
-    case AmanziMesh::NODE:
-      {
-      Entity_ID_List ns;
-
-      // Does this set exist?
-
-      int nns = node_sets_.size();  // number of node sets
-      bool found = false;
-      for (int i = 0; i < nns; i++) {
-        if ((node_set_regions_[i])->name() == setname) {
-          found = true;
-          ns = node_sets_[i];
-        }
-      }
-
-      if (!found) {  // create the side set from the region definition
-        Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setname);
-          
-        if (rgn == Teuchos::null) {
-          std::cerr << "Geometric model has no region named " << setname << std::endl;
-          std::cerr << "Cannot construct set by this name" << std::endl;
-          throw std::exception();
-        }
-
-        bool done=false;
-        for (int ix=0; ix<nx_+1 && !done; ix++)
-          for (int iy=0; iy<ny_+1 && !done; iy++)
-            for (int iz=0; iz<nz_+1 && !done; iz++) {
-              int node = node_index_(ix,iy,iz);
-              AmanziGeometry::Point nxyz;
-              node_get_coordinates(node,&nxyz);
-                  
-              if (rgn->inside(nxyz)) {
-                ns.push_back(node);
-                    
-                if (rgn->type() == AmanziGeometry::POINT)
-                  done = true;
-              }                   
+            bool inbox = true;
+            if (rgn->type() == AmanziGeometry::BOX) {
+              auto cenpnt = geometric_center_(fxyz);
+              if (!rgn->inside(cenpnt)) inbox = false;
+            } else {
+              inbox = all_inside_(fxyz, *rgn);
             }
-              
-        node_sets_.push_back(ns);
-        node_set_regions_.push_back(rgn);
-      }      
-      
-      *setents = ns;
-      break;
+                   
+            if (inbox) setents->push_back(face);
+          }
+        }
+      }
+ 
+      // x = constant planes
+      for (int ix = 0; ix <= nx_; ++ix) {
+        for (int iy = 0; iy < ny_; iy++) {
+          for (int iz = 0; iz < nz_; iz++) {
+            std::vector<AmanziGeometry::Point> fxyz;
+
+            int face = yzface_index_(ix, iy, iz);
+            face_get_coordinates(face, &fxyz);
+
+            bool inbox = true;
+            if (rgn->type() == AmanziGeometry::BOX) {
+              auto cenpnt = geometric_center_(fxyz);
+              if (!rgn->inside(cenpnt)) inbox = false;
+            } else {
+              inbox = all_inside_(fxyz, *rgn);
+            }
+                    
+            if (inbox) setents->push_back(face);
+          }
+        }
       }
 
-    default:
-      // set type not recognized
-     throw std::exception();
+      sets_[setname_internal] = *setents;
+    }
+
+    else if (rgn->type() != AmanziGeometry::LOGICAL) {
+      std::cerr << "Region type not suitable/applicable for sidesets" << std::endl;
+      throw std::exception();
+    }
+
+    break;
+  }
+
+  case CELL:
+  {
+    if (rgn->type() == AmanziGeometry::BOX || 
+        rgn->type() == AmanziGeometry::COLORFUNCTION) {
+      for (int ix = 0; ix < nx_; ix++) {
+        for (int iy = 0; iy < ny_; iy++) {
+          for (int iz = 0; iz < nz_; iz++) {
+            int cell = cell_index_(ix, iy, iz);
+            std::vector<AmanziGeometry::Point> cxyz;
+            cell_get_coordinates(cell, &cxyz);
+
+            auto cenpnt = geometric_center_(cxyz);
+            if (rgn->inside(cenpnt)) setents->push_back(cell);
+          }
+        }
+      }
+
+      sets_[setname_internal] = *setents;
+    }
+    else {
+      std::cerr << "Region type not suitable/applicable for cellsets" << std::endl;
+      throw std::exception();
+    }
+
+    break;
+  }
+
+  case NODE:
+  {
+    if (rgn->type() != AmanziGeometry::LOGICAL) {
+      bool done = false;
+      for (int ix = 0; ix < nx_ + 1 && !done; ix++) {
+        for (int iy = 0; iy < ny_ + 1 && !done; iy++) {
+          for (int iz = 0; iz < nz_ + 1 && !done; iz++) {
+            int node = node_index_(ix, iy, iz);
+            AmanziGeometry::Point xyz;
+            node_get_coordinates(node, &xyz);
+                 
+            if (rgn->inside(xyz)) {
+              setents->push_back(node);
+              if (rgn->type() == AmanziGeometry::POINT) done = true;
+            }                   
+          }
+        }
+      }
+
+      sets_[setname_internal] = *setents;
+    }
+  }
+  break;
+
+  default:
+    break;
+  }
+
+  if (rgn->type() == AmanziGeometry::LOGICAL) {
+    auto boolrgn = Teuchos::rcp_static_cast<const AmanziGeometry::RegionLogical>(rgn);
+    const std::vector<std::string> rgn_names = boolrgn->component_regions();
+    int nregs = rgn_names.size();
+    
+    std::vector<std::set<Entity_ID> > msets;
+    
+    for (int r = 0; r < nregs; r++) {
+      auto rgn1 = gm->FindRegion(rgn_names[r]);
+
+      // Did not find the rgn
+      if (rgn1 == Teuchos::null) {
+        std::stringstream ss;
+        ss << "Geometric model has no region named " << rgn_names[r];
+        Errors::Message msg(ss.str());
+        Exceptions::amanzi_throw(msg);
+      }
+        
+      std::string setname_internal1 = rgn1->name() + std::to_string(kind);
+
+      if (sets_.find(setname_internal) == sets_.end()) {
+        Entity_ID_List setents1;
+        get_set_entities_and_vofs(rgn1->name(), kind, ptype, &setents1, vofs);
+        sets_[setname_internal1] = setents1;
+      }
+     
+      auto it = sets_.find(setname_internal1);
+      msets.push_back(std::set<Entity_ID>(it->second.begin(), it->second.end())); 
+    }
+
+    if (boolrgn->operation() == AmanziGeometry::UNION) {
+      for (int n = 1; n < msets.size(); ++n) {
+        for (auto it = msets[n].begin(); it != msets[n].end(); ++it)
+          msets[0].insert(*it);
+      }
+    }
+
+    for (auto it = msets[0].begin(); it != msets[0].end(); ++it)
+      setents->push_back(*it);
   }
 }
 
 
-//--------------------------------------
+//---------------------------------------------------------
 // Deform a mesh so that cell volumes conform as closely as possible
 // to target volumes without dropping below the minimum volumes.  If
 // move_vertical = true, nodes will be allowed to move only in the
 // vertical direction (right now arbitrary node movement is not allowed)
-//--------------------------------------
+//---------------------------------------------------------
 int Mesh_simple::deform(const std::vector<double>& target_cell_volumes_in, 
                         const std::vector<double>& min_cell_volumes_in, 
                         const Entity_ID_List& fixed_nodes,
@@ -1076,12 +1033,39 @@ int Mesh_simple::deform(const std::vector<double>& target_cell_volumes_in,
 }
 
 
-//--------------------------------------
+//---------------------------------------------------------
 // Write mesh out to exodus file
-//--------------------------------------
+//---------------------------------------------------------
 void Mesh_simple::write_to_exodus_file(const std::string filename) const {
   Errors::Message mesg("Not implemented");
   amanzi_throw(mesg);
+}
+
+
+//---------------------------------------------------------
+// Geometric center of a point cloud
+//---------------------------------------------------------
+AmanziGeometry::Point Mesh_simple::geometric_center_(
+    std::vector<AmanziGeometry::Point>& vxyz) const
+{
+  AmanziGeometry::Point gp(space_dimension());
+  for (int j = 0; j < vxyz.size(); j++) gp += vxyz[j];
+  gp /= vxyz.size();
+
+  return gp;
+}
+
+
+//---------------------------------------------------------
+// Check that all points are inside region
+//---------------------------------------------------------
+bool Mesh_simple::all_inside_(std::vector<AmanziGeometry::Point>& vxyz,
+                              const AmanziGeometry::Region& rgn) const
+{
+  for (int j = 0; j < vxyz.size(); j++) {
+    if (!rgn.inside(vxyz[j])) return false;
+  }                    
+  return true;
 }
 
 }  // namespace AmanziMesh

@@ -84,4 +84,5 @@ using namespace Amanzi::AmanziGeometry;
 
 TEST(MPC_COUPLED_FLOW_TRANSPORT) {
   MPC_CoupledFlowTransport("test/mpc_benchmark_single.xml", "test/single_fracture_tet.exo"); 
+  // MPC_CoupledFlowTransport("test/mpc_benchmark_regular_1.xml", "test/regular_fracture_ref0.exo"); 
 }

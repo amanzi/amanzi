@@ -679,7 +679,7 @@ double Transport_PK::StableTimeStep()
  
     int cmin_dt_tmp = cmin_dt_unique;
     ws_prev->Comm().MaxAll(&cmin_dt_tmp, &cmin_dt_unique, 1);
-    if (cmin_dt == cmin_dt_unique) {
+    if (cmin_dt == cmin_dt_unique && cmin_dt >= 0) {
       const AmanziGeometry::Point& p = mesh_->cell_centroid(cmin_dt);
 
       Teuchos::OSTab tab = vo_->getOSTab();

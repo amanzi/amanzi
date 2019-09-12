@@ -184,6 +184,7 @@ class InputConverterU : public InputConverter {
   bool FindNameInVector_(const std::string& name, const std::vector<std::string>& list); 
   std::string CreateNameFromVector_(const std::vector<std::string>& list); 
   bool WeightVolumeSubmodel_(const std::vector<std::string>& regions);
+  std::string CreateUniqueName_(const Teuchos::Array<std::string>& list);
   void PrintStatistics_();
 
  private:

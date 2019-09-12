@@ -941,7 +941,11 @@ void InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       tmp_f.remove("BDF1", false);
       tmp_f.remove("initialization", false);
 
-      mesh_list.sublist("extract fracture mesh").set<Teuchos::Array<std::string> >("regions", fracture_regions_);
+      Teuchos::Array<std::string> aux(1, CreateUniqueName_(fracture_regions_));
+      mesh_list.sublist("submesh").set<Teuchos::Array<std::string> >("regions", aux)
+                                  .set<std::string>("extraction method", "manifold mesh");
+
+      if (dim_ == 3) mesh_list.sublist("expert").set<bool>("request edges", true);
     }
 
     if (name == "coupled transport" && transport_implicit_) {

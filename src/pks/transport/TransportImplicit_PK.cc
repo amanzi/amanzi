@@ -57,7 +57,7 @@ TransportImplicit_PK::TransportImplicit_PK(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<TreeVector>& soln) :
     Transport_PK(pk_tree, glist, S, soln)
 {
-  if (tp_list_ -> isSublist("time integrator"))
+  if (tp_list_->isSublist("time integrator"))
     ti_list_ = Teuchos::sublist(tp_list_, "time integrator", true);
 
   // We also need miscaleneous sublists
@@ -83,7 +83,7 @@ TransportImplicit_PK::TransportImplicit_PK(const Teuchos::RCP<Teuchos::Parameter
   // We also need miscaleneous sublists
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
-  if (tp_list_ -> isSublist("time integrator"))
+  if (tp_list_->isSublist("time integrator"))
     ti_list_ = Teuchos::sublist(tp_list_, "time integrator", true);
 }
 
@@ -138,7 +138,7 @@ void TransportImplicit_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   op_->SymbolicAssembleMatrix();
   op_->CreateCheckPoint();
-  //op_->AssembleMatrix(); 
+  // op_->AssembleMatrix(); 
 
   // generic linear solver
   if (ti_list_ != Teuchos::null) {
@@ -186,7 +186,7 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     acc_term_prev_c[0][c] = (*phi)[0][c] * (*ws_prev)[0][c];    
   }
 
-  op_acc_ -> AddAccumulationDelta(*tcc, *acc_term_prev_, *acc_term_, dt_, "cell");
+  op_acc_->AddAccumulationDelta(*tcc, *acc_term_prev_, *acc_term_, dt_, "cell");
 
   // refresh data BC and source data  
   UpdateBoundaryData(t_old, t_new, *tcc);
@@ -195,8 +195,8 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   Epetra_MultiVector& rhs_cell = *rhs.ViewComponent("cell");
   
   //ApplyBC
-  op_adv_ -> UpdateMatrices(S_->GetFieldData(darcy_flux_key_).ptr());
-  op_adv_ -> ApplyBCs(true,true,true);
+  op_adv_->UpdateMatrices(S_->GetFieldData(darcy_flux_key_).ptr());
+  op_adv_->ApplyBCs(true,true,true);
 
   //Add Source  
   ComputeSources_(t_new, t_new-t_old, rhs_cell, *tcc->ViewComponent("cell"), 0, 0);
@@ -226,8 +226,8 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     VV_PrintSoluteExtrema(*tcc->ViewComponent("cell"), t_new-t_old);
   }
 
-  // // estimate time multiplier
-  // //dt_desirable_ = ts_control_->get_timestep(dt_MPC, 1);
+  // estimate time multiplier
+  // dt_desirable_ = ts_control_->get_timestep(dt_MPC, 1);
 
   return fail;
 }

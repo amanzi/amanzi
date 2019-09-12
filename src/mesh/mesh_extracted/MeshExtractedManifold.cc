@@ -445,6 +445,23 @@ Entity_ID_List MeshExtractedManifold::build_set_(
   int nnodes_wghost = num_entities(NODE, Parallel_type::ALL);
   Entity_ID_List mset;
 
+  // special processing of regions
+  if (rgn->type() == AmanziGeometry::LABELEDSET) {
+    const auto& ids_p = parent_labeledsets_[internal_name];
+    for (auto it = ids_p.begin(); it != ids_p.end(); ++it) {
+      mset.push_back(parent_to_entid_[kind][*it]);
+    }
+  }
+
+  // generic algorithm
+  int nents_wghost = num_entities(kind, Parallel_type::ALL);
+  if (rgn->type() == AmanziGeometry::ALL)  {
+    for (int n = 0; n < nents_wghost; ++n)
+      mset.push_back(n);
+  }
+
+  bool missing(false);
+
   switch (kind) {      
   // create a set of cells
   case CELL:
@@ -454,11 +471,6 @@ Entity_ID_List MeshExtractedManifold::build_set_(
 
       for (int c = 0; c < ncells_wghost; ++c)
         if (rgn->inside(cell_centroid(c))) mset.push_back(c);
-    }
-
-    else if (rgn->type() == AmanziGeometry::ALL)  {
-      for (int c = 0; c < ncells_wghost; ++c)
-        mset.push_back(c);
     }
 
     else if (rgn->type() == AmanziGeometry::POINT) {
@@ -486,18 +498,8 @@ Entity_ID_List MeshExtractedManifold::build_set_(
       }
     }
 
-    else if (rgn->type() == AmanziGeometry::LOGICAL) {
-      // will process later in this subroutine
-    }
-
-    else {
-      if (vo_.get() && vo_->os_OK(Teuchos::VERB_HIGH)) {
-        Teuchos::OSTab tab = vo_->getOSTab();
-        *(vo_->os()) << "Requested CELLS on rgn " << rgn->name() 
-            << " of type " << rgn->type()  
-            << " and dimension " << rgn->manifold_dimension() << ".\n"
-            << "This request will result in an empty set";
-      }
+    else if (rgn->type() != AmanziGeometry::LOGICAL) {
+      missing = true;
     }
 
     break;
@@ -509,11 +511,6 @@ Entity_ID_List MeshExtractedManifold::build_set_(
       for (int f = 0; f < nfaces_wghost; ++f) {
         if (rgn->inside(face_centroid(f))) mset.push_back(f);
       }
-    }
-
-    else if (rgn->type() == AmanziGeometry::ALL)  {
-      for (int f = 0; f < nfaces_wghost; ++f)
-        mset.push_back(f);
     }
 
     else if (rgn->type() == AmanziGeometry::PLANE ||
@@ -533,10 +530,6 @@ Entity_ID_List MeshExtractedManifold::build_set_(
       }
     }
 
-    else if (rgn->type() == AmanziGeometry::LOGICAL) {
-      // Will handle it later in the routine
-    }
-
     else if (rgn->type() == AmanziGeometry::BOUNDARY)  {
       const Epetra_Map& fmap = face_map(true); 
       const Epetra_Map& map = exterior_face_map(true); 
@@ -549,14 +542,8 @@ Entity_ID_List MeshExtractedManifold::build_set_(
       }
     }
 
-    else {
-      if (vo_.get() && vo_->os_OK(Teuchos::VERB_HIGH)) {
-        Teuchos::OSTab tab = vo_->getOSTab();
-        *(vo_->os()) << "Requested FACES on rgn " << rgn->name()
-            << " of type " << rgn->type() << " and dimension "
-            << rgn->manifold_dimension() << ".\n" 
-            << "This request will result in an empty set\n";
-      }
+    else if (rgn->type() != AmanziGeometry::LOGICAL) {
+      missing = true;
     }
 
     break;
@@ -574,20 +561,10 @@ Entity_ID_List MeshExtractedManifold::build_set_(
                   
         if (rgn->inside(xp)) {
           mset.push_back(v);
-
           // Only one node per point rgn
           if (rgn->type() == AmanziGeometry::POINT) break;      
         }
       }
-    }
-
-    else if (rgn->type() == AmanziGeometry::ALL)  {
-      for (int v = 0; v < nnodes_wghost; ++v)
-        mset.push_back(v);
-    }
-
-    else if (rgn->type() == AmanziGeometry::LOGICAL) {
-      // We will handle it later in the routine
     }
 
     else if (rgn->type() == AmanziGeometry::BOUNDARY)  {
@@ -602,14 +579,8 @@ Entity_ID_List MeshExtractedManifold::build_set_(
       }
     }
 
-    else {
-      if (vo_.get() && vo_->os_OK(Teuchos::VERB_HIGH)) {
-        Teuchos::OSTab tab = vo_->getOSTab();
-        *(vo_->os()) << "Requested POINTS on rgn " << rgn->name() 
-            << " of type " << rgn->type() << " and dimension " 
-            << rgn->manifold_dimension() << ".\n" 
-            << "This request will result in an empty set\n";
-      }
+    else if (rgn->type() != AmanziGeometry::LOGICAL) {
+      missing = true;
     }
       
     break;
@@ -618,14 +589,21 @@ Entity_ID_List MeshExtractedManifold::build_set_(
     break;
   }
 
+  if (missing) {
+    if (vo_.get() && vo_->os_OK(Teuchos::VERB_HIGH)) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *(vo_->os()) << "Requested entities of kind=" << kind 
+        << " on region=\"" << rgn->name() << "\" of type " << rgn->type()  
+        << " and dimension " << rgn->manifold_dimension() << ". Result is an empty set.\n";
+    }
+  }
 
   if (rgn->type() == AmanziGeometry::LOGICAL) {
     auto boolrgn = Teuchos::rcp_static_cast<const AmanziGeometry::RegionLogical>(rgn);
     const std::vector<std::string> rgn_names = boolrgn->component_regions();
     int nregs = rgn_names.size();
     
-    std::vector<Entity_ID_List> msets;
-    std::vector<Teuchos::RCP<const AmanziGeometry::Region> > rgns;
+    std::vector<std::set<Entity_ID> > msets;
     
     for (int r = 0; r < nregs; r++) {
       auto rgn1 = gm->FindRegion(rgn_names[r]);
@@ -638,38 +616,52 @@ Entity_ID_List MeshExtractedManifold::build_set_(
         Exceptions::amanzi_throw(msg);
       }
         
-      rgns.push_back(rgn1);
       std::string setname_internal = rgn1->name() + std::to_string(kind);
-      if (sets_.find(setname_internal) != sets_.end())
-        msets.push_back(build_set_(rgn1, kind)); 
-      else
-        msets.push_back(sets_[setname_internal]);
+
+      if (sets_.find(setname_internal) == sets_.end())
+        sets_[setname_internal] = build_set_(rgn1, kind); 
+     
+      auto it = sets_.find(setname_internal);
+      msets.push_back(std::set<Entity_ID>(it->second.begin(), it->second.end())); 
     }
 
-    // Check the entity types of the sets are consistent with the
-    // entity type of the requested set
-    /*
-    for (int ms = 0; ms < msets.size(); ms++) {
-      if (MSet_EntDim(msets[ms]) != enttype) {
-        Errors::Message msg("Amanzi cannot operate on sets of different entity types");
-        Exceptions::amanzi_throw(msg);               
-      }
-    }
-    */
-    
     if (boolrgn->operation() == AmanziGeometry::UNION) {
-      for (int ms = 0; ms < msets.size(); ms++) {
-        for (auto it = msets[ms].begin(); it != msets[ms].end(); ++it) {
-          mset.push_back(*it);
-        }
+      for (int n = 1; n < msets.size(); ++n) {
+        for (auto it = msets[n].begin(); it != msets[n].end(); ++it)
+          msets[0].insert(*it);
       }
     }
-    else if (boolrgn->operation() == AmanziGeometry::SUBTRACT ||
-             boolrgn->operation() == AmanziGeometry::COMPLEMENT ||
-             boolrgn->operation() == AmanziGeometry::INTERSECT) {
-      Errors::Message msg("Missing code for logical operation");
-      Exceptions::amanzi_throw(msg);
+
+    else if (boolrgn->operation() == AmanziGeometry::SUBTRACT) {
+      for (int n = 2; n < msets.size(); ++n) {
+        for (auto it = msets[n].begin(); it != msets[n].end(); ++it)
+          msets[0].insert(*it);
+      }
+
+      for (auto it = msets[1].begin(); it != msets[1].end(); ++it)
+        msets[0].erase(*it);
     }
+
+    else if (boolrgn->operation() == AmanziGeometry::COMPLEMENT) {
+      for (int n = 1; n < msets.size(); ++n) {
+        for (auto it = msets[n].begin(); it != msets[n].end(); ++it)
+          msets[0].insert(*it);
+      }
+
+      auto tmp = msets[0];
+      for (int n = 0; n < nents_wghost; ++n)
+        if (tmp.find(n) == tmp.end()) msets[0].insert(n);
+    } 
+
+    else if (boolrgn->operation() == AmanziGeometry::INTERSECT) {
+      for (int n = 1; n < msets.size(); ++n) {
+        for (auto it = msets[n].begin(); it != msets[n].end(); ++it)
+          if (msets[0].find(*it) == msets[0].end()) msets[0].erase(*it);
+      }
+    } 
+
+    for (auto it = msets[0].begin(); it != msets[0].end(); ++it)
+      mset.push_back(*it);
   }
 
   return mset;
@@ -697,9 +689,7 @@ void MeshExtractedManifold::InitParentMaps(const std::string& setname)
     Entity_ID_List setents;
     std::vector<double> vofs;
 
-    TryExtension1_(setname, kind_p, &setents);
-    if (setents.size() == 0)
-      TryExtension2_(setname, kind_p, &setents);
+    TryExtension_(setname, kind_p, kind_d, &setents);
     if (setents.size() == 0)
       parent_mesh_->get_set_entities_and_vofs(setname, kind_p, Parallel_type::ALL, &setents, &vofs);
 
@@ -783,12 +773,12 @@ void MeshExtractedManifold::InitEpetraMaps()
 /* ******************************************************************
 * Exception due to limitations of the base mesh framework.
 ****************************************************************** */
-void MeshExtractedManifold::TryExtension1_(
-    const std::string& setname, Entity_kind kind, Entity_ID_List* setents)
+void MeshExtractedManifold::TryExtension_(
+    const std::string& setname,
+    Entity_kind kind_p, Entity_kind kind_d, Entity_ID_List* setents)
 {
   // labeled set: extract edges
   setents->clear();
-  if (kind != EDGE) return;
 
   const auto& gm = geometric_model();
   if (gm == Teuchos::null) return;
@@ -802,63 +792,34 @@ void MeshExtractedManifold::TryExtension1_(
   parent_mesh_->get_set_entities_and_vofs(setname, FACE, Parallel_type::ALL, &faceents, &vofs);
   auto marked_ents = EnforceOneLayerOfGhosts_(setname, FACE, &faceents);
 
-  Entity_ID_List edges;
+  Entity_ID_List edges, nodes;
   std::vector<int> dirs;
-  std::set<Entity_ID> edgeents;
+  std::set<Entity_ID> setents_tmp;
 
   for (auto it = marked_ents.begin(); it != marked_ents.end(); ++it) {
     int f = it->first;
-    parent_mesh_->face_get_edges_and_dirs(f, &edges, &dirs);
-    for (int i = 0; i < edges.size(); ++i) {
-      edgeents.insert(edges[i]);
+    if (kind_p == FACE) {
+      setents_tmp.insert(f);
+    }
+    else if (kind_p == EDGE) {
+      parent_mesh_->face_get_edges_and_dirs(f, &edges, &dirs);
+      for (int i = 0; i < edges.size(); ++i) {
+        setents_tmp.insert(edges[i]);
+      }
+    }
+    else if (kind_p == NODE) {
+      parent_mesh_->face_get_nodes(f, &nodes);
+      for (int i = 0; i < nodes.size(); ++i) {
+        setents_tmp.insert(nodes[i]);
+      }
     }
   }
 
-  for (auto it = edgeents.begin(); it != edgeents.end(); ++it)
+  for (auto it = setents_tmp.begin(); it != setents_tmp.end(); ++it)
     setents->push_back(*it);
 
-  std::string setname_internal = setname + std::to_string(FACE);
-  sets_[setname_internal] = *setents;
-}
-
-
-/* ******************************************************************
-* Exception due to limitations of the base mesh framework.
-****************************************************************** */
-void MeshExtractedManifold::TryExtension2_(
-    const std::string& setname, Entity_kind kind, Entity_ID_List* setents)
-{
-  // labeled set: extract nodes
-  setents->clear();
-  if (kind != NODE) return;
-
-  const auto& gm = geometric_model();
-  if (gm == Teuchos::null) return;
-
-  auto rgn = gm->FindRegion(setname);
-  if (rgn->type() != AmanziGeometry::LABELEDSET) return;
-
-  // populate list of edges
-  std::vector<Entity_ID> faceents;
-  std::vector<double> vofs;
-  parent_mesh_->get_set_entities_and_vofs(setname, FACE, Parallel_type::ALL, &faceents, &vofs);
-  auto marked_ents = EnforceOneLayerOfGhosts_(setname, FACE, &faceents);
-
-  Entity_ID_List nodes;
-  std::set<Entity_ID> nodeents;
-  for (auto it = marked_ents.begin(); it != marked_ents.end(); ++it) {
-    int f = it->first;
-    parent_mesh_->face_get_nodes(f, &nodes);
-    for (int i = 0; i < nodes.size(); ++i) {
-      nodeents.insert(nodes[i]);
-    }
-  }
-
-  for (auto it = nodeents.begin(); it != nodeents.end(); ++it)
-    setents->push_back(*it);
-
-  std::string setname_internal = setname + std::to_string(NODE);
-  sets_[setname_internal] = *setents;
+  std::string setname_internal = setname + std::to_string(kind_d);
+  parent_labeledsets_[setname_internal] = *setents;
 }
 
 

@@ -55,6 +55,8 @@ class MeshExtractedManifold : public Mesh {
   void InitParentMaps(const std::string& setname);
   void InitEpetraMaps();
 
+  virtual Teuchos::RCP<const Mesh> parent() const override { return parent_mesh_; }
+
   // parallel type of entity - OWNED or GHOST
   virtual
   Parallel_type entity_get_ptype(const Entity_kind kind, const Entity_ID id) const override {
@@ -251,8 +253,8 @@ class MeshExtractedManifold : public Mesh {
   Entity_ID_List build_set_(const Teuchos::RCP<const AmanziGeometry::Region>& rgn,
                             const Entity_kind kind) const;
 
-  void TryExtension1_(const std::string& setname, Entity_kind kind, Entity_ID_List* setents);
-  void TryExtension2_(const std::string& setname, Entity_kind kind, Entity_ID_List* setents);
+  void TryExtension_(const std::string& setname,
+                     Entity_kind kind_p, Entity_kind kind_d, Entity_ID_List* setents);
   std::map<Entity_ID, int> EnforceOneLayerOfGhosts_(const std::string& setname, Entity_kind kind,
                                                     Entity_ID_List* setents);
 
@@ -273,6 +275,7 @@ class MeshExtractedManifold : public Mesh {
 
   // sets
   mutable std::map<std::string, Entity_ID_List> sets_;
+  mutable std::map<std::string, Entity_ID_List> parent_labeledsets_;
 };
 
 }  // namespace AmanziMesh

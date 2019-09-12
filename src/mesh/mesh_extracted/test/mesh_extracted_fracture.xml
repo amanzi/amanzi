@@ -2,10 +2,6 @@
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
 
   <ParameterList name="regions">
-    <ParameterList name="Universe">
-      <ParameterList name="region: all">
-      </ParameterList>
-    </ParameterList>
     <ParameterList name="ALL">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{0.0,0.0,0.0}"/>
