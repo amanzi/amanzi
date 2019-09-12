@@ -65,6 +65,7 @@ void Mesh_simple::CreateCache_()
   coordinates_.clear();
 
   cell_to_face_.clear();
+  cell_to_edge_.clear();
   cell_to_node_.clear();
   face_to_node_.clear();
   edge_to_node_.clear();
@@ -108,6 +109,7 @@ void Mesh_simple::CreateCache_()
   node_to_face_.resize(13 * num_nodes_);  // 1 extra for num faces
 
   if (edges_requested_) {
+    cell_to_edge_.resize(12 * num_edges_);
     face_to_edge_.resize(4 * num_faces_);
     face_to_edge_dirs_.resize(4 * num_faces_);
 
@@ -293,6 +295,31 @@ void Mesh_simple::CreateCache_()
   }
 
   if (edges_requested_) { 
+    // loop over cells and initialize cell -> edges
+    for (int iz = 0; iz < nz_; iz++) {
+      for (int iy = 0; iy < ny_; iy++) {
+        for (int ix = 0; ix < nx_; ix++) {
+          int istart = 6 * cell_index_(ix,iy,iz);
+
+          cell_to_face_[istart]     = xedge_index_(ix, iy,  iz);
+          cell_to_face_[istart + 1] = xedge_index_(ix, iy+1,iz);
+          cell_to_face_[istart + 2] = xedge_index_(ix, iy+1,iz+1);
+          cell_to_face_[istart + 3] = xedge_index_(ix, iy,  iz+1);
+
+          cell_to_face_[istart + 4] = yedge_index_(ix,  iy, iz);
+          cell_to_face_[istart + 5] = yedge_index_(ix+1,iy, iz);
+          cell_to_face_[istart + 6] = yedge_index_(ix+1,iy, iz+1);
+          cell_to_face_[istart + 7] = yedge_index_(ix,  iy, iz+1);
+
+          cell_to_face_[istart + 8] = zedge_index_(ix,  iy,  iz);
+          cell_to_face_[istart + 9] = zedge_index_(ix+1,iy,  iz);
+          cell_to_face_[istart +10] = zedge_index_(ix+1,iy+1,iz);
+          cell_to_face_[istart +11] = zedge_index_(ix,  iy+1,iz);
+        }
+      }
+    }
+
+
     // loop over faces and initialize face -> edge
     // -- xy faces
     for (int iz = 0; iz <= nz_; iz++) {
@@ -440,35 +467,6 @@ void Mesh_simple::BuildMaps_()
 //---------------------------------------------------------
 // TBW
 //---------------------------------------------------------
-Parallel_type Mesh_simple::entity_get_ptype(const Entity_kind kind, 
-                                            const Entity_ID entid) const 
-{
-  return Parallel_type::OWNED;  // Its a serial code
-}
-
-
-//---------------------------------------------------------
-// Get cell type
-//---------------------------------------------------------
-AmanziMesh::Cell_type Mesh_simple::cell_get_type(const AmanziMesh::Entity_ID cellid) const 
-{
-  return HEX;
-}
-        
-    
-//---------------------------------------------------------
-// TBW
-//---------------------------------------------------------
-Entity_ID Mesh_simple::GID(const AmanziMesh::Entity_ID lid, 
-                           const AmanziMesh::Entity_kind kind) const
-{
-  return lid;  // Its a serial code
-}
-
-
-//---------------------------------------------------------
-// TBW
-//---------------------------------------------------------
 unsigned int Mesh_simple::num_entities(AmanziMesh::Entity_kind kind, 
                                        AmanziMesh::Parallel_type ptype) const
 {
@@ -517,10 +515,11 @@ void Mesh_simple::cell_get_faces_and_dirs_internal_(const AmanziMesh::Entity_ID 
 void Mesh_simple::cell_get_edges_internal_(const Entity_ID cellid,
                                            Entity_ID_List *edgeids) const
 { 
-  edgeids->resize(12);
+  unsigned int offset = (unsigned int) 12*cellid;
 
-  Errors::Message msg("Cell to edges connectivity is not implemented in this framework.");
-  Exceptions::amanzi_throw(msg);
+  edgeids->clear();
+  auto it = cell_to_edge_.begin() + offset;
+  edgeids->insert(edgeids->begin(), it, it + 12);
 }
 
 
