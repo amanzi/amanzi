@@ -301,20 +301,20 @@ void Mesh_simple::CreateCache_()
         for (int ix = 0; ix < nx_; ix++) {
           int istart = 6 * cell_index_(ix,iy,iz);
 
-          cell_to_face_[istart]     = xedge_index_(ix, iy,  iz);
-          cell_to_face_[istart + 1] = xedge_index_(ix, iy+1,iz);
-          cell_to_face_[istart + 2] = xedge_index_(ix, iy+1,iz+1);
-          cell_to_face_[istart + 3] = xedge_index_(ix, iy,  iz+1);
+          cell_to_edge_[istart]     = xedge_index_(ix, iy,  iz);
+          cell_to_edge_[istart + 1] = xedge_index_(ix, iy+1,iz);
+          cell_to_edge_[istart + 2] = xedge_index_(ix, iy+1,iz+1);
+          cell_to_edge_[istart + 3] = xedge_index_(ix, iy,  iz+1);
 
-          cell_to_face_[istart + 4] = yedge_index_(ix,  iy, iz);
-          cell_to_face_[istart + 5] = yedge_index_(ix+1,iy, iz);
-          cell_to_face_[istart + 6] = yedge_index_(ix+1,iy, iz+1);
-          cell_to_face_[istart + 7] = yedge_index_(ix,  iy, iz+1);
+          cell_to_edge_[istart + 4] = yedge_index_(ix,  iy, iz);
+          cell_to_edge_[istart + 5] = yedge_index_(ix+1,iy, iz);
+          cell_to_edge_[istart + 6] = yedge_index_(ix+1,iy, iz+1);
+          cell_to_edge_[istart + 7] = yedge_index_(ix,  iy, iz+1);
 
-          cell_to_face_[istart + 8] = zedge_index_(ix,  iy,  iz);
-          cell_to_face_[istart + 9] = zedge_index_(ix+1,iy,  iz);
-          cell_to_face_[istart +10] = zedge_index_(ix+1,iy+1,iz);
-          cell_to_face_[istart +11] = zedge_index_(ix,  iy+1,iz);
+          cell_to_edge_[istart + 8] = zedge_index_(ix,  iy,  iz);
+          cell_to_edge_[istart + 9] = zedge_index_(ix+1,iy,  iz);
+          cell_to_edge_[istart +10] = zedge_index_(ix+1,iy+1,iz);
+          cell_to_edge_[istart +11] = zedge_index_(ix,  iy+1,iz);
         }
       }
     }

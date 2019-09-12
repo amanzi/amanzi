@@ -7,10 +7,7 @@
 
 #include "../Mesh_simple.hh"
 
-// #include "State.hpp"
-
 TEST(NUMBERING) {
-
   auto comm = Amanzi::getDefaultComm();
 
   double expnodecoords[8][3] = {{0.0,0.0,0.0},
@@ -32,19 +29,13 @@ TEST(NUMBERING) {
   int expcellfaces[6] = {2,5,3,4,0,1};
   int expfacedirs[6] = {1,1,-1,-1,-1,1};
                               
-
-
+  int expcelledges[12] = {0,1,3,2,4,5,7,6,8,9,11,10};
 
   // Create a single-cell mesh;
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, comm));
-  
-  //  State S(1,mesh);
-  
-  //  std::string gmvfile = "out.gmv";
-  //  S.write_gmv(gmvfile);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(
+      new Amanzi::AmanziMesh::Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, comm, Teuchos::null, Teuchos::null, true, true));
   
   // Write node coordinates
-
   Amanzi::AmanziGeometry::Point x;
   for (Amanzi::AmanziMesh::Entity_ID j = 0; j < 8; ++j) {
     mesh->node_get_coordinates(j, &x);
@@ -61,19 +52,22 @@ TEST(NUMBERING) {
   
   // Write cell-node connectivity
   Amanzi::AmanziMesh::Entity_ID_List cnode;
-  for (Amanzi::AmanziMesh::Entity_ID j = 0; j < 1; ++j) {
-    mesh->cell_get_nodes(j, &cnode);
-    CHECK_EQUAL(8,cnode.size());
-    CHECK_ARRAY_EQUAL(expcellnodes,cnode,cnode.size());
-  }
+  mesh->cell_get_nodes(0, &cnode);
+  CHECK_EQUAL(8,cnode.size());
+  CHECK_ARRAY_EQUAL(expcellnodes,cnode,cnode.size());
   
   // Write cell face-node connectivity
-  //  Amanzi::AmanziMesh::Entity_ID cface[6];
-  //  int fdir[6];
+  // Amanzi::AmanziMesh::Entity_ID cface[6];
+  // int fdir[6];
   Amanzi::AmanziMesh::Entity_ID_List cface;
   std::vector<int> fdir;
   mesh->cell_get_faces_and_dirs(0,&cface,&fdir);
   CHECK_ARRAY_EQUAL(expcellfaces,cface,6);
   CHECK_ARRAY_EQUAL(expfacedirs,fdir,6);
   
+  // Write cell-edge connectivity
+  Amanzi::AmanziMesh::Entity_ID_List cedge;
+  mesh->cell_get_edges(0, &cedge);
+  CHECK_EQUAL(12,cedge.size());
+  CHECK_ARRAY_EQUAL(expcelledges,cedge,cedge.size());
 }

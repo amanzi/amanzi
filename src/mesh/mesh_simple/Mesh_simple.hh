@@ -341,7 +341,7 @@ unsigned int Mesh_simple::yzface_index_(int i, int j, int k) const {
 
 inline
 unsigned int Mesh_simple::xedge_index_(int i, int j, int k) const {
-  return i + j * (nx_ + 1) + k * nx_ * (ny_ + 1);
+  return i + j * nx_ + k * nx_ * (ny_ + 1);
 }
 
 inline
