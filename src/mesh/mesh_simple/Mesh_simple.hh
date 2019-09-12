@@ -47,7 +47,6 @@ class Mesh_simple : public Mesh {
               const bool request_edges = false);
   
   virtual ~Mesh_simple() = default;  
-  void update();
 
   // Get parallel type of entity
   Parallel_type entity_get_ptype(const Entity_kind kind, 
@@ -179,11 +178,12 @@ class Mesh_simple : public Mesh {
   //------------
   // Epetra maps
   //------------
-  const Epetra_Map& cell_map(bool include_ghost) const override;
-  const Epetra_Map& face_map(bool include_ghost) const override; 
-  const Epetra_Map& node_map(bool include_ghost) const override;
+  const Epetra_Map& cell_map(bool include_ghost) const override { return *cell_map_; }
+  const Epetra_Map& face_map(bool include_ghost) const override { return *face_map_; }
+  const Epetra_Map& edge_map(bool include_ghost) const override { return *edge_map_; }
+  const Epetra_Map& node_map(bool include_ghost) const override { return *node_map_; }
     
-  const Epetra_Map& exterior_face_map(bool include_ghost) const override; 
+  const Epetra_Map& exterior_face_map(bool include_ghost) const override { return *extface_map_; }
   const Epetra_Map& exterior_node_map(bool include_ghost) const override;
 
   // Epetra importer that will allow apps to import values from a
@@ -225,40 +225,48 @@ class Mesh_simple : public Mesh {
              const bool move_vertical) override;  
 
  private:
-  void update_internals_();
-  void clear_internals_();
-  void build_maps_();
+  void CreateCache_();
+  void BuildMaps_();
 
   AmanziGeometry::Point geometric_center_(std::vector<AmanziGeometry::Point>& vxyz) const;
 
   bool all_inside_(std::vector<AmanziGeometry::Point>& vxyz,
                    const AmanziGeometry::Region& rgn) const;
 
-  Teuchos::RCP<Epetra_Map> cell_map_, face_map_, node_map_, extface_map_;
+  Teuchos::RCP<Epetra_Map> cell_map_, face_map_, edge_map_, node_map_;
+  Teuchos::RCP<Epetra_Map> extface_map_;
 
   std::vector<double> coordinates_;
 
   unsigned int node_index_(int i, int j, int k) const;
+  unsigned int cell_index_(int i, int j, int k) const;
+
   unsigned int xyface_index_(int i, int j, int k) const;
   unsigned int yzface_index_(int i, int j, int k) const;
   unsigned int xzface_index_(int i, int j, int k) const;
-  unsigned int cell_index_(int i, int j, int k) const;
+
+  unsigned int xedge_index_(int i, int j, int k) const;
+  unsigned int yedge_index_(int i, int j, int k) const;
+  unsigned int zedge_index_(int i, int j, int k) const;
 
   int nx_, ny_, nz_;  // number of cells in the three coordinate directions
   double x0_, x1_, y0_, y1_, z0_, z1_;  // coordinates of lower left front and upper right back of brick
 
-  int num_cells_;
-  int num_nodes_;
-  int num_faces_, num_faces_bnd_;
+  int num_cells_, num_faces_, num_edges_, num_nodes_;
+  int num_faces_bnd_;
 
-  // Local-id tables of entities
+  // mesh connectivity arrays
   std::vector<Entity_ID> cell_to_face_;
-  std::vector<int> cell_to_face_dirs_;
   std::vector<Entity_ID> cell_to_node_;
+  std::vector<Entity_ID> face_to_edge_;
   std::vector<Entity_ID> face_to_node_;
   std::vector<Entity_ID> face_to_cell_;
   std::vector<Entity_ID> node_to_face_;
   std::vector<Entity_ID> node_to_cell_;
+
+  // orientation arrays
+  std::vector<int> cell_to_face_dirs_;
+  std::vector<int> face_to_edge_dirs_;
 
   // The following are mutable because they have to be modified 
   // after the class construction even though the class is instantiated
@@ -267,15 +275,6 @@ class Mesh_simple : public Mesh {
 
   // Get faces of a cell and directions in which the cell uses the face 
 
-  // The Amanzi coding guidelines regarding function arguments is purposely
-  // violated here to allow for a default input argument
-
-  // On a distributed mesh, this will return all the faces of the
-  // cell, OWNED or GHOST. If ordered = true, the faces will be
-  // returned in a standard order according to Exodus II convention
-  // for standard cells; in all other situations (ordered = false or
-  // non-standard cells), the list of faces will be in arbitrary order
-
   // In 3D, direction is 1 if face normal points out of cell
   // and -1 if face normal points into cell
   // In 2D, direction is 1 if face/edge is defined in the same
@@ -283,7 +282,7 @@ class Mesh_simple : public Mesh {
   void cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
                                          Entity_ID_List *faceids,
                                          std::vector<int> *face_dirs,
-                                         const bool ordered=false) const override;
+                                         const bool ordered = false) const override;
 
   // Cells connected to a face
   void face_get_cells_internal_(const Entity_ID faceid, 
@@ -294,7 +293,7 @@ class Mesh_simple : public Mesh {
   // Edges of a cell
   void cell_get_edges_internal_(const Entity_ID cellid,
                                 Entity_ID_List *edgeids) const override { 
-    Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
+    Errors::Message mesg("Edges not implemented in this framework (1). Use MSTK");
     Exceptions::amanzi_throw(mesg);
   }
 
@@ -302,18 +301,17 @@ class Mesh_simple : public Mesh {
   void cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
                                             Entity_ID_List *edgeids,
                                             std::vector<int> *edgedirs) const override { 
-    Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
+    Errors::Message mesg("Edges not implemented in this framework (2). Use MSTK");
     Exceptions::amanzi_throw(mesg);
   }
 
-  // Edges and edge directions of a face
+  // Get edges of a face and directions in which the face uses the edges.
+  // In 3D, edge direction is 1 when it is oriented counter clockwise
+  // with respect to the face natural normal.
   void face_get_edges_and_dirs_internal_(const Entity_ID cellid,
                                          Entity_ID_List *edgeids,
                                          std::vector<int> *edgedirs,
-                                         bool ordered=true) const override {
-    Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
-    amanzi_throw(mesg);
-  };
+                                         bool ordered = true) const override;
 };
 
 
@@ -343,6 +341,21 @@ unsigned int Mesh_simple::xzface_index_(int i, int j, int k) const {
 inline
 unsigned int Mesh_simple::yzface_index_(int i, int j, int k) const {
   return i + j * (nx_ + 1) + k * (nx_ + 1) * ny_ + xzface_index_(0, 0, nz_);
+}
+
+inline
+unsigned int Mesh_simple::xedge_index_(int i, int j, int k) const {
+  return i + j * (nx_ + 1) + k * nx_ * (ny_ + 1);
+}
+
+inline
+unsigned int Mesh_simple::yedge_index_(int i, int j, int k) const {
+  return i + j * (nx_ + 1) + k * (nx_ + 1) * ny_ + xedge_index_(0, 0, nz_ + 1);
+}
+
+inline
+unsigned int Mesh_simple::zedge_index_(int i, int j, int k) const {
+  return i + j * (nx_ + 1) + k * (nx_ + 1) * (ny_ + 1) + yedge_index_(0, 0, nz_ + 1);
 }
 
 }  // namespace AmanziMesh

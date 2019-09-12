@@ -58,7 +58,7 @@ TEST(MESH_EXTRACTED_FRACTURES) {
       mesh3D = Teuchos::rcp(new Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, comm, gm, mesh_list, true, true));
       mesh3D->write_to_exodus_file(exoname);
 #endif
-    } else if (i == 1) {
+    } else if (i == 1 && comm->NumProc() == 1) {
       std::cout << "\nMesh framework: simple\n";
       mesh3D = Teuchos::rcp(new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, comm, gm, mesh_list, true, true));
     } else if (i == 2) {

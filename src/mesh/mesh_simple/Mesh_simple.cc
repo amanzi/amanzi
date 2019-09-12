@@ -50,134 +50,98 @@ Mesh_simple::Mesh_simple(double x0, double y0, double z0,
   set_space_dimension(3);
   set_manifold_dimension(3);
   if (gm != Teuchos::null) set_geometric_model(gm);
-  update();
+
+  CreateCache_();
+  BuildMaps_();
 }
 
 
 //---------------------------------------------------------
 // Update
 //---------------------------------------------------------
-void Mesh_simple::update()
+void Mesh_simple::CreateCache_()
 {
-  clear_internals_();
-  update_internals_();
-}
+  // clear old cache
+  coordinates_.clear();
 
-
-//---------------------------------------------------------
-// TBW
-//---------------------------------------------------------
-void Mesh_simple::clear_internals_()
-{
-  coordinates_.resize(0);
-
-  cell_to_face_.resize(0);
-  cell_to_node_.resize(0);
-  face_to_node_.resize(0);
+  cell_to_face_.clear();
+  cell_to_node_.clear();
+  face_to_node_.clear();
 
   sets_.clear();
-}
 
-
-//---------------------------------------------------------
-// TBW
-//---------------------------------------------------------
-void Mesh_simple::update_internals_()
-{
+  // build new cache
   num_cells_ = nx_ * ny_ * nz_;
-  num_nodes_ = (nx_+1)*(ny_+1)*(nz_+1);
-  num_faces_ = (nx_+1)*ny_*nz_ + nx_*(ny_+1)*nz_ + nx_*ny_*(nz_+1);
-  num_faces_bnd_ = 2*nx_*ny_ + 2*nx_*nz_ + 2*ny_*nz_;
+  num_nodes_ = (nx_ + 1) * (ny_ + 1) * (nz_ + 1);
+  num_faces_ = (nx_ + 1) * ny_ * nz_ + nx_ * (ny_ + 1) * nz_ + nx_ * ny_ * (nz_ + 1);
+  num_edges_ = nx_ * (ny_ + 1) * (nz_ + 1) + (nx_ + 1) * ny_ * (nz_ + 1) + (nx_ + 1) * (ny_ + 1) * nz_;
+  num_faces_bnd_ = 2 * nx_ * ny_ + 2 * nx_ * nz_ + 2 * ny_ * nz_;
 
-  coordinates_.resize(3*num_nodes_);
+  // -- node coordinates
+  coordinates_.resize(3 * num_nodes_);
 
-  double hx = (x1_ - x0_)/nx_;
-  double hy = (y1_ - y0_)/ny_;
-  double hz = (z1_ - z0_)/nz_;
+  double hx = (x1_ - x0_) / nx_;
+  double hy = (y1_ - y0_) / ny_;
+  double hz = (z1_ - z0_) / nz_;
 
-  for (int iz=0; iz<=nz_; iz++) {
-    for (int iy=0; iy<=ny_; iy++) {
-      for (int ix=0; ix<=nx_; ix++) {
-        int istart = 3*node_index_(ix,iy,iz);
-
-        coordinates_[istart]     = x0_ + ix*hx;
-        coordinates_[istart + 1] = y0_ + iy*hy;
-        coordinates_[istart + 2] = z0_ + iz*hz;
+  for (int iz = 0; iz <= nz_; iz++) {
+    for (int iy = 0; iy <= ny_; iy++) {
+      for (int ix = 0; ix <= nx_; ix++) {
+        int istart = 3 * node_index_(ix, iy, iz);
+        coordinates_[istart]     = x0_ + ix * hx;
+        coordinates_[istart + 1] = y0_ + iy * hy;
+        coordinates_[istart + 2] = z0_ + iz * hz;
       }
     }
   }
 
-  cell_to_face_.resize(6*num_cells_);
-  cell_to_face_dirs_.resize(6*num_cells_);
-  cell_to_node_.resize(8*num_cells_);
-  face_to_node_.resize(4*num_faces_);
-  node_to_face_.resize(13*num_nodes_);  // 1 extra for num faces
-  node_to_cell_.resize(9*num_nodes_);  // 1 extra for num cells
-  face_to_cell_.resize(2*num_faces_); 
-  face_to_cell_.assign(2*num_faces_,-1); 
+  // -- connectivity arrays
+  cell_to_face_.resize(6 * num_cells_);
+  cell_to_face_dirs_.resize(6 * num_cells_);
+  face_to_cell_.assign(2 * num_faces_, -1); 
+
+  cell_to_node_.resize(8 * num_cells_);
+  node_to_cell_.resize(9 * num_nodes_);  // 1 extra for num cells
+
+  face_to_node_.resize(4 * num_faces_);
+  node_to_face_.resize(13 * num_nodes_);  // 1 extra for num faces
+
+  if (edges_requested_) {
+    face_to_edge_.resize(4 * num_faces_);
+    face_to_edge_dirs_.resize(4 * num_faces_);
+  }
                                           
-  // loop over cells and initialize cell_to_node_
-  for (int iz=0; iz<nz_; iz++)
-    for (int iy=0; iy<ny_; iy++)
-      for (int ix=0; ix<nx_; ix++) {
-        int jstart=0;
-        int istart = 8 * cell_index_(ix,iy,iz);
-        int ncell=0;
+  // loop over cells and initialize cell <-> node
+  for (int iz = 0; iz < nz_; iz++) {
+    for (int iy = 0; iy < ny_; iy++) {
+      for (int ix = 0; ix < nx_; ix++) {
+        for (int k = 0; k < 2; ++k) {
+          int istart = 8 * cell_index_(ix, iy, iz) + 4 * k;
 
-        cell_to_node_[istart]   = node_index_(ix,iy,iz);
-        cell_to_node_[istart+1] = node_index_(ix+1,iy,iz);
-        cell_to_node_[istart+2] = node_index_(ix+1,iy+1,iz);
-        cell_to_node_[istart+3] = node_index_(ix,iy+1,iz);
-        cell_to_node_[istart+4] = node_index_(ix,iy,iz+1);
-        cell_to_node_[istart+5] = node_index_(ix+1,iy,iz+1);
-        cell_to_node_[istart+6] = node_index_(ix+1,iy+1,iz+1);
-        cell_to_node_[istart+7] = node_index_(ix,iy+1,iz+1);
+          cell_to_node_[istart]     = node_index_(ix,   iy,   iz + k);
+          cell_to_node_[istart + 1] = node_index_(ix+1, iy,   iz + k);
+          cell_to_node_[istart + 2] = node_index_(ix+1, iy+1, iz + k);
+          cell_to_node_[istart + 3] = node_index_(ix,   iy+1, iz + k);
+        }
 
-        jstart = 9 * node_index_(ix,iy,iz);
-        ncell = node_to_cell_[jstart];
-        node_to_cell_[jstart+1+ncell] = cell_index_(ix,iy,iz);
-        (node_to_cell_[jstart])++;
-
-        jstart = 9 * node_index_(ix+1,iy,iz); 
-        ncell = node_to_cell_[jstart];
-        node_to_cell_[jstart+1+ncell] = cell_index_(ix,iy,iz);
-        (node_to_cell_[jstart])++;
-
-        jstart = 9 * node_index_(ix+1,iy+1,iz); 
-        ncell = node_to_cell_[jstart];
-        node_to_cell_[jstart+1+ncell] = cell_index_(ix,iy,iz);
-        (node_to_cell_[jstart])++;
-
-        jstart = 9 * node_index_(ix,iy+1,iz); 
-        ncell = node_to_cell_[jstart];
-        node_to_cell_[jstart+1+ncell] = cell_index_(ix,iy,iz);
-        (node_to_cell_[jstart])++;
-
-        jstart = 9 * node_index_(ix,iy,iz+1);
-        ncell = node_to_cell_[jstart];
-        node_to_cell_[jstart+1+ncell] = cell_index_(ix,iy,iz);
-        node_to_cell_[jstart]++;
-
-        jstart = 9 * node_index_(ix+1,iy,iz+1); // 1 extra for num cells
-        ncell = node_to_cell_[jstart];
-        node_to_cell_[jstart+1+ncell] = cell_index_(ix,iy,iz);
-        (node_to_cell_[jstart])++;
-
-        jstart = 9 * node_index_(ix+1,iy+1,iz+1); // 1 extra for num cells
-        ncell = node_to_cell_[jstart];
-        node_to_cell_[jstart+1+ncell] = cell_index_(ix,iy,iz);
-        (node_to_cell_[jstart])++;
-
-        jstart = 9 * node_index_(ix,iy+1,iz+1); // 1 extra for num cells
-        ncell = node_to_cell_[jstart];
-        node_to_cell_[jstart+1+ncell] = cell_index_(ix,iy,iz);
-        (node_to_cell_[jstart])++;
+        for (int i = 0; i < 2; ++i) {
+          for (int j = 0; j < 2; ++j) {
+            for (int k = 0; k < 2; ++k) {
+              int jstart = 9 * node_index_(ix + i, iy + j, iz + k);
+              int ncell = node_to_cell_[jstart];
+              node_to_cell_[jstart + 1 + ncell] = cell_index_(ix, iy, iz);
+              (node_to_cell_[jstart])++;
+            }
+          }
+        }
       }
+    }
+  }
 
-  // loop over cells and initialize cell_to_face_
-  for (int iz=0; iz<nz_; iz++)
-    for (int iy=0; iy<ny_; iy++)
-      for (int ix=0; ix<nx_; ix++) {
+  // loop over cells and initialize cell <-> face
+  for (int iz = 0; iz < nz_; iz++) {
+    for (int iy = 0; iy < ny_; iy++) {
+      for (int ix = 0; ix < nx_; ix++) {
         int istart = 6 * cell_index_(ix,iy,iz);
         int jstart = 0;
 
@@ -213,13 +177,15 @@ void Mesh_simple::update_internals_()
         jstart = 2*xyface_index_(ix,iy,iz+1);
         face_to_cell_[jstart+1] = cell_index_(ix,iy,iz);
       }
+    }
+  }
 
-  // loop over faces and initialize face_to_node_
-  // first we do the xy faces
-  for (int iz=0; iz<=nz_; iz++)
-    for (int iy=0; iy<ny_; iy++)
-      for (int ix=0; ix<nx_; ix++) {
-        int istart = 4 * xyface_index_(ix,iy,iz);
+  // loop over faces and initialize face <-> node
+  // -- xy faces
+  for (int iz = 0; iz <= nz_; iz++) {
+    for (int iy = 0; iy < ny_; iy++) {
+      for (int ix = 0; ix < nx_; ix++) {
+        int istart = 4 * xyface_index_(ix, iy, iz);
         int jstart = 0;
         int nfaces = 0;
 
@@ -248,11 +214,13 @@ void Mesh_simple::update_internals_()
         node_to_face_[jstart+1+nfaces] = xyface_index_(ix,iy,iz);
         (node_to_face_[jstart])++;
       }
+    }
+  }
 
-  // then we do the xz faces
-  for (int iz=0; iz<nz_; iz++)
-    for (int iy=0; iy<=ny_; iy++)
-      for (int ix=0; ix<nx_; ix++) {
+  // -- xz faces
+  for (int iz = 0; iz < nz_; iz++) {
+    for (int iy = 0; iy <= ny_; iy++) {
+      for (int ix=0; ix < nx_; ix++) {
         int istart = 4 * xzface_index_(ix,iy,iz);
         int jstart = 0;
         int nfaces = 0;
@@ -282,11 +250,13 @@ void Mesh_simple::update_internals_()
         node_to_face_[jstart+1+nfaces] = xyface_index_(ix,iy,iz);
         (node_to_face_[jstart])++;
       }
+    }
+  }
 
-  // finally we do the yz faces
-  for (int iz=0; iz<nz_; iz++)
-    for (int iy=0; iy<ny_; iy++)
-      for (int ix=0; ix<=nx_; ix++) {
+  // -- yz faces
+  for (int iz = 0; iz < nz_; iz++) {
+    for (int iy = 0; iy < ny_; iy++) {
+      for (int ix = 0; ix <= nx_; ix++) {
         int istart = 4 * yzface_index_(ix,iy,iz);
         int jstart = 0;
         int nfaces = 0;
@@ -316,15 +286,75 @@ void Mesh_simple::update_internals_()
         node_to_face_[jstart+1+nfaces] = xyface_index_(ix,iy,iz);
         (node_to_face_[jstart])++;
       }
+    }
+  }
 
-  build_maps_();
+  // loop over faces and initialize face -> edge
+  if (edges_requested_) { 
+    // -- xy faces
+    for (int iz = 0; iz <= nz_; iz++) {
+      for (int iy = 0; iy < ny_; iy++) {
+        for (int ix = 0; ix < nx_; ix++) {
+          int istart = 4 * xyface_index_(ix, iy, iz);
+
+          face_to_edge_[istart]     = xedge_index_(ix,  iy,  iz);
+          face_to_edge_[istart + 1] = yedge_index_(ix+1,iy,  iz);
+          face_to_edge_[istart + 2] = xedge_index_(ix,  iy+1,iz);
+          face_to_edge_[istart + 3] = yedge_index_(ix,  iy,  iz);
+
+          face_to_edge_dirs_[istart]     = 1;
+          face_to_edge_dirs_[istart + 1] = 1;
+          face_to_edge_dirs_[istart + 2] = -1;
+          face_to_edge_dirs_[istart + 2] = -1;
+        }
+      }
+    }
+
+    // -- xz faces
+    for (int iz = 0; iz < nz_; iz++) {
+      for (int iy = 0; iy <= ny_; iy++) {
+        for (int ix=0; ix < nx_; ix++) {
+          int istart = 4 * xzface_index_(ix, iy, iz);
+
+          face_to_edge_[istart]     = xedge_index_(ix,  iy, iz);
+          face_to_edge_[istart + 1] = zedge_index_(ix+1,iy, iz);
+          face_to_edge_[istart + 2] = xedge_index_(ix,  iy, iz+1);
+          face_to_edge_[istart + 3] = zedge_index_(ix,  iy, iz);
+
+          face_to_edge_dirs_[istart]     = 1;
+          face_to_edge_dirs_[istart + 1] = 1;
+          face_to_edge_dirs_[istart + 2] = -1;
+          face_to_edge_dirs_[istart + 2] = -1;
+        }
+      }
+    }
+
+    // -- yz faces
+    for (int iz = 0; iz < nz_; iz++) {
+      for (int iy = 0; iy < ny_; iy++) {
+        for (int ix = 0; ix <= nx_; ix++) {
+          int istart = 4 * yzface_index_(ix,iy,iz);
+
+          face_to_edge_[istart]     = yedge_index_(ix, iy,  iz);
+          face_to_edge_[istart + 1] = zedge_index_(ix, iy+1,iz);
+          face_to_edge_[istart + 2] = yedge_index_(ix, iy,  iz+1);
+          face_to_edge_[istart + 3] = zedge_index_(ix, iy,  iz);
+
+          face_to_edge_dirs_[istart]     = 1;
+          face_to_edge_dirs_[istart + 1] = 1;
+          face_to_edge_dirs_[istart + 2] = -1;
+          face_to_edge_dirs_[istart + 2] = -1;
+        }
+      }
+    }
+  }
 }
 
 
 //---------------------------------------------------------
-// TBW
+// Build Epetra maps
 //---------------------------------------------------------
-void Mesh_simple::build_maps_()
+void Mesh_simple::BuildMaps_()
 {
   std::vector<int> cells(num_cells_);
   for (int i=0; i< num_cells_; i++) cells[i] = i;
@@ -357,6 +387,13 @@ void Mesh_simple::build_maps_()
   face_map_ = Teuchos::rcp(new Epetra_Map(-1, num_faces_, &faces[0], 0, *get_comm()));
   node_map_ = Teuchos::rcp(new Epetra_Map(-1, num_nodes_, &nodes[0], 0, *get_comm()));
   extface_map_ = Teuchos::rcp(new Epetra_Map(-1, num_faces_bnd_, &faces_bnd[0], 0, *get_comm()));
+
+  if (edges_requested_) {
+    std::vector<int> edges(num_edges_);
+    for (int i=0; i< num_edges_; i++) edges[i] = i;
+
+    edge_map_ = Teuchos::rcp(new Epetra_Map(-1, num_edges_, &edges[0], 0, *get_comm()));
+  }
 }
 
 
@@ -413,7 +450,7 @@ unsigned int Mesh_simple::num_entities(AmanziMesh::Entity_kind kind,
 
 
 //---------------------------------------------------------
-// TBW
+// Connectivity: cell -> faces
 //---------------------------------------------------------
 void Mesh_simple::cell_get_faces_and_dirs_internal_(const AmanziMesh::Entity_ID cellid,
                                                     AmanziMesh::Entity_ID_List *faceids,
@@ -423,13 +460,13 @@ void Mesh_simple::cell_get_faces_and_dirs_internal_(const AmanziMesh::Entity_ID 
   unsigned int offset = (unsigned int) 6*cellid;
 
   faceids->clear();
-  if (cfacedirs) cfacedirs->clear();
+  auto it = cell_to_face_.begin() + offset;
+  faceids->insert(faceids->begin(), it, it + 6);
 
-  for (int i = 0; i < 6; i++) {
-    faceids->push_back(*(cell_to_face_.begin()+offset));
-    if (cfacedirs)
-      cfacedirs->push_back(*(cell_to_face_dirs_.begin()+offset));
-    offset++;
+  if (cfacedirs) {
+    cfacedirs->clear();
+    auto jt = cell_to_face_dirs_.begin() + offset;
+    cfacedirs->insert(cfacedirs->begin(), jt, jt + 6);
   }
 }
 
@@ -464,6 +501,28 @@ void Mesh_simple::face_get_nodes(AmanziMesh::Entity_ID face,
   for (int i = 0; i < 4; i++) {
     nodeids->push_back(*(face_to_node_.begin()+offset));
     offset++;
+  }
+}
+
+
+//---------------------------------------------------------
+// Connectivity: face -> edges
+//---------------------------------------------------------
+void Mesh_simple::face_get_edges_and_dirs_internal_(const Entity_ID faceid,
+                                                    Entity_ID_List *edgeids,
+                                                    std::vector<int> *fedgedirs,
+                                                    bool ordered) const
+{
+  unsigned int offset = (unsigned int) 4*faceid;
+
+  edgeids->clear();
+  auto it = face_to_edge_.begin() + offset;
+  edgeids->insert(edgeids->begin(), it, it + 4);
+
+  if (fedgedirs) {
+    fedgedirs->clear();
+    auto jt = face_to_edge_dirs_.begin();
+    fedgedirs->insert(fedgedirs->begin(), jt, jt + 4);
   }
 }
 
@@ -727,42 +786,6 @@ void Mesh_simple::cell_get_node_adj_cells(const AmanziMesh::Entity_ID cellid,
 //---------------------------------------------------------
 // TBW
 //---------------------------------------------------------
-const Epetra_Map& Mesh_simple::cell_map(bool include_ghost) const
-{
-  return *cell_map_;
-}
-
-
-//---------------------------------------------------------
-// TBW
-//---------------------------------------------------------
-const Epetra_Map& Mesh_simple::face_map(bool include_ghost) const
-{
-  return *face_map_;
-}
-
-
-//---------------------------------------------------------
-// TBW
-//---------------------------------------------------------
-const Epetra_Map& Mesh_simple::node_map(bool include_ghost) const
-{
-  return *node_map_;
-}
-
-
-//---------------------------------------------------------
-// TBW
-//---------------------------------------------------------
-const Epetra_Map& Mesh_simple::exterior_face_map(bool include_ghost) const
-{
-  return *extface_map_;
-}
-
-
-//---------------------------------------------------------
-// TBW
-//---------------------------------------------------------
 const Epetra_Map& Mesh_simple::exterior_node_map(bool include_ghost) const
 {
   Errors::Message mesg("Exterior node map is not implemented in this framework");
@@ -895,7 +918,7 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string setname,
     break;
   }
 
-  case AmanziMesh::CELL:
+  case CELL:
   {
     if (rgn->type() == AmanziGeometry::BOX || 
         rgn->type() == AmanziGeometry::COLORFUNCTION) {
@@ -922,25 +945,27 @@ void Mesh_simple::get_set_entities_and_vofs(const std::string setname,
     break;
   }
 
-  case AmanziMesh::NODE:
+  case NODE:
   {
-    bool done = false;
-    for (int ix = 0; ix < nx_ + 1 && !done; ix++) {
-      for (int iy = 0; iy < ny_ + 1 && !done; iy++) {
-        for (int iz = 0; iz < nz_ + 1 && !done; iz++) {
-          int node = node_index_(ix, iy, iz);
-          AmanziGeometry::Point xyz;
-          node_get_coordinates(node, &xyz);
+    if (rgn->type() != AmanziGeometry::LOGICAL) {
+      bool done = false;
+      for (int ix = 0; ix < nx_ + 1 && !done; ix++) {
+        for (int iy = 0; iy < ny_ + 1 && !done; iy++) {
+          for (int iz = 0; iz < nz_ + 1 && !done; iz++) {
+            int node = node_index_(ix, iy, iz);
+            AmanziGeometry::Point xyz;
+            node_get_coordinates(node, &xyz);
                  
-          if (rgn->inside(xyz)) {
-            setents->push_back(node);
-            if (rgn->type() == AmanziGeometry::POINT) done = true;
-          }                   
+            if (rgn->inside(xyz)) {
+              setents->push_back(node);
+              if (rgn->type() == AmanziGeometry::POINT) done = true;
+            }                   
+          }
         }
       }
+
+      sets_[setname_internal] = *setents;
     }
-              
-    sets_[setname_internal] = *setents;
   }
   break;
 
