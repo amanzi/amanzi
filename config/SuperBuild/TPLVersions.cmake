@@ -120,7 +120,8 @@
 #   0.95.8       - update NetCDF-Fortran to 4.4.5
 #   0.95.9       - update NetCDF-C to 4.7.0
 #   0.95.10      - update OpenMPI to 3.1.4
-#   0.95.11      - update Trilinos to 12.14.0bf557717e-Jun17
+#
+#   0.96.0       - update Trilinos to 12.14.0bf557717e-Jun17
 
 include(CMakeParseArguments)
 
@@ -172,8 +173,8 @@ endmacro(amanzi_tpl_version_write)
 # TPLs and XSDK versions 
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
-set(AMANZI_TPLS_VERSION_MINOR 95)
-set(AMANZI_TPLS_VERSION_PATCH 11)
+set(AMANZI_TPLS_VERSION_MINOR 96)
+set(AMANZI_TPLS_VERSION_PATCH 0)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
