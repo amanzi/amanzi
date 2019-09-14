@@ -3,8 +3,9 @@ jobs:
     - stage: build get
       script:
       - cd Docker
+      - docker build -t ${DOCKER_USERNAME}/amanzi:latest -f Dockerfile-Amanzi-build .
       - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-      - docker pull $DOCKER_USERNAME/amanzi:latest
+      - docker push $DOCKER_USERNAME/amanzi:latest
     - stage: test
       script:
       - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
