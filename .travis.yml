@@ -7,4 +7,5 @@ jobs:
       - docker pull $DOCKER_USERNAME/amanzi:latest
     - stage: test
       script:
+      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
       - docker run --rm $DOCKER_USERNAME/amanzi:latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest"
