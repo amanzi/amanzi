@@ -12,10 +12,10 @@ branches:
 
 script:
   - cd Docker
-  - docker build -t ${DOCKER_USERNAME}/amanzi:latest -f Dockerfile-Amanzi .
+  - docker build -t ${DOCKER_USERNAME}/amanzi:latest -f Dockerfile-Amanzi-build .
 
 after_success:
-  - if [[ ${DOCKERHUB} == TRUE && ${DOCKER_USERNAME} && ${DOCKER_PASSWORD} && ${DEPLOY} ]]; then
-      docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD" || travis_terminate 1;
-      docker push "$DOCKER_USERNAME"/amanzi || travis_terminate 1;
-    fi
+# - if [[ ${DOCKERHUB} == TRUE && ${DOCKER_USERNAME} && ${DOCKER_PASSWORD} && ${DEPLOY} ]]; then
+  -  docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD" || travis_terminate 1;
+  -  docker push "$DOCKER_USERNAME"/amanzi:latest || travis_terminate 1;
+#   fi
