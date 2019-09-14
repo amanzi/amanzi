@@ -1,19 +1,10 @@
-language: cpp
-
-sudo: false
-
-services:
-  - docker
-
-branches:
-  only:
-  - master
-  - alexis/docker
-
-script:
-  - cd Docker
-  - echo "This would be the docker image build"
-  - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
-  - docker pull $DOCKER_USERNAME/amanzi:latest
-  - docker run --rm $DOCKER_USERNAME/amanzi:latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest"
-
+jobs:
+  include:
+    - stage: build get
+      script:
+      - cd Docker
+      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+      - docker pull $DOCKER_USERNAME/amanzi:latest
+    - stage: test
+      script:
+      - docker run --rm $DOCKER_USERNAME/amanzi:latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest"
