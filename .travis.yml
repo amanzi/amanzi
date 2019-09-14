@@ -13,6 +13,7 @@ branches:
 script:
   - cd Docker
   - echo "This would be the docker image build"
+  - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
   - docker pull $DOCKER_USERNAME/amanzi:latest
   - docker run --rm $DOCKER_USERNAME/amanzi:latest "cd ~/amanzi_builddir/amanzi; ctest"
 
