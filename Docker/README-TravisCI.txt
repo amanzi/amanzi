@@ -1,6 +1,10 @@
 ========================================================
 How to investigate Continuous Integration testing issues
 ========================================================
+
+Need to migrate this to markdown while we test the new configuration.
+It will help trigger the Travis build/test sequence.
+
 --------------------------------------------------------
 1. General Notes
 --------------------------------------------------------
