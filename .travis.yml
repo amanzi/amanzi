@@ -10,15 +10,8 @@ branches:
   - master
   - alexis/docker
 
-jobs:
-  include:
-    - stage: build
-    script:
-    - cd Docker
-    - echo "This would build the docker image"
-    #- docker build -t ${DOCKER_USERNAME}/amanzi:latest -f Dockerfile-Amanzi-build .
-    #- docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD" || travis_terminate 1;
-    #- docker push "$DOCKER_USERNAME"/amanzi:latest || travis_terminate 1;
-    - stage: test
-    script: docker run --rm $DOCKER_USERNAME/amanzi:latest "cd ~/amanzi_builddir/amanzi; ctest"
+script:
+  - cd Docker
+  - echo "This would be the docker image build"
+  - docker run --rm $DOCKER_USERNAME/amanzi:latest "cd ~/amanzi_builddir/amanzi; ctest"
 
