@@ -75,6 +75,12 @@ class TransportExplicit_PK : public Transport_PK,
                                         Epetra_Vector& f_component) override;
   void DudtOld(double t, const Epetra_Vector& component, Epetra_Vector& f_component);
 
+  // advection members
+  // -- advection in matrix
+  void AdvanceDonorUpwind(double dT);
+  // -- advection on non-manifolds
+  void AdvanceDonorUpwindNonManifold(double dT);
+
  private:
   void AdvanceSecondOrderUpwindRKn(double dt_cycle);
   void AdvanceSecondOrderUpwindRK2(double dt_cycle);

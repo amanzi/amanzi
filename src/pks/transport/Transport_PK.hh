@@ -121,12 +121,7 @@ class Transport_PK : public PK_Physical {
                        const Epetra_MultiVector& tcc_prev, int n0, int n1);
   bool ComputeBCs_(std::vector<int>& bc_model, std::vector<double>& bc_value, int component);
 
-  // advection members
-  // -- advection in matrix
-  void AdvanceDonorUpwind(double dT);
-  // -- advection on non-manifolds
-  void AdvanceDonorUpwindNonManifold(double dT);
-  // -- tools
+  // tools
   void IdentifyUpwindCells();
 
   void InterpolateCellVector(
