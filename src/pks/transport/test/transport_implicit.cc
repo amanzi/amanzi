@@ -34,14 +34,9 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
   std::string framework_name = "MSTK";
   Framework framework = Framework::MSTK;
   
-
   std::cout << "Test: implicit advance "<< std::endl;
 
-#ifdef HAVE_MPI
   Comm_ptr_type comm = Amanzi::getDefaultComm();
-#else
-  Comm_ptr_type comm = Amanzi::getCommSelf();
-#endif
 
   // read parameter list
   std::string xmlFileName("test/transport_implicit.xml");
@@ -60,15 +55,13 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
   RCP<const Mesh> mesh;
 
   mesh = meshfactory.create("test/hex_3x3x3_ss.exo");
-  //mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10);
-  
+  // mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 10);
   
   // create a simple state and populate it
   Amanzi::VerboseObject::global_hide_line_prefix = false;
 
   std::vector<std::string> component_names;
   component_names.push_back("Component 0");
-
 
   Teuchos::ParameterList state_list = plist->sublist("state");  
   RCP<State> S = rcp(new State(state_list));
@@ -78,11 +71,11 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
 
   Teuchos::ParameterList pk_tree = plist->sublist("cycle driver").sublist("pk_tree")
                                         .sublist("transport implicit");
-// create the global solution vector
+
+  // create the global solution vector
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   TransportImplicit_PK TPK(pk_tree, plist, S, soln);
 
-  
   TPK.Setup(S.ptr());
   TPK.CreateDefaultState(mesh, 2);
   S->InitializeFields();
@@ -93,7 +86,7 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
   Teuchos::RCP<Epetra_MultiVector> 
     flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
 
-  AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
+  AmanziGeometry::Point velocity(1.0, 1.0, 0.0);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
@@ -105,7 +98,7 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
 
   // advance the state
   double t_old(0.0), t_new, dt;
-  dt = 0.001;
+  dt = 0.01;
   t_new = t_old + dt;
   TPK.AdvanceStep(t_old, t_new);
   TPK.CommitStep(t_old, t_new, S);
@@ -115,7 +108,6 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
     tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell");
 
   while(t_new < 1.2) {
-    dt = 0.001; //TPK.StableTimeStep();
     t_new = t_old + dt;
     
     TPK.AdvanceStep(t_old, t_new);
@@ -132,10 +124,6 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
   // check that the final state is constant
   for (int k = 0; k < 4; k++) 
     CHECK_CLOSE((*tcc)[0][k], 1.0, 1e-5);
-
-
-    
-  
 }
  
 

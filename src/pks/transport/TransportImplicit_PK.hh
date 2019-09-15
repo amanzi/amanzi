@@ -109,7 +109,7 @@ class TransportImplicit_PK : public Transport_PK,
   //    scheme is changing the value of the solution in state.
   virtual void ChangedSolution() override {};
 
-  void UpdateBoundaryData(double t_old, double t_new, const CompositeVector& u);
+  void UpdateBoundaryData(double t_old, double t_new, int component);
 
   // access
   Teuchos::RCP<Operators::Operator> op() { return op_; }

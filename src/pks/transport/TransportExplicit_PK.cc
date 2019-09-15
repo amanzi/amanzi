@@ -514,5 +514,238 @@ bool TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   return failed;
 }
 
+
+/* ******************************************************************* 
+* A simple first-order "donor" upwind method.
+******************************************************************* */
+void TransportExplicit_PK::AdvanceDonorUpwind(double dt_cycle)
+{
+  dt_ = dt_cycle;  // overwrite the maximum stable transport step
+  mass_solutes_source_.assign(num_aqueous + num_gaseous, 0.0);
+
+  // populating next state of concentrations
+  tcc->ScatterMasterToGhosted("cell");
+  Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
+  Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
+
+  // prepare conservative state in master and slave cells
+  double vol_phi_ws, tcc_flux;
+
+  // We advect only aqueous components.
+  int num_advect = num_aqueous;
+
+  for (int c = 0; c < ncells_owned; c++) {
+    vol_phi_ws = mesh_->cell_volume(c) * (*phi)[0][c] * (*ws_start)[0][c];
+
+    for (int i = 0; i < num_advect; i++)
+      tcc_next[i][c] = tcc_prev[i][c] * vol_phi_ws;
+  }
+
+  const auto& flux_map = S_->GetFieldData(darcy_flux_key_)->Map().Map("face", true);
+ 
+  // advance all components at once
+  for (int f = 0; f < nfaces_wghost; f++) {  // loop over master and slave faces
+    int g = flux_map->FirstPointInElement(f);
+
+    for ( int j = 0; j < upwind_cells_[f].size(); j++) {
+      int c1 = upwind_cells_[f][j];
+      int c2 = downwind_cells_[f][j];
+                
+      double u = fabs((*darcy_flux)[0][g + j]);
+
+      if (c1 >=0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
+        for (int i = 0; i < num_advect; i++) {
+          tcc_flux = dt_ * u * tcc_prev[i][c1];
+          tcc_next[i][c1] -= tcc_flux;
+          tcc_next[i][c2] += tcc_flux;
+        }
+
+      } else if (c1 >=0 && c1 < ncells_owned && (c2 >= ncells_owned || c2 < 0)) {
+        for (int i = 0; i < num_advect; i++) {
+          tcc_flux = dt_ * u * tcc_prev[i][c1];
+          tcc_next[i][c1] -= tcc_flux;
+        }
+
+      } else if (c1 >= ncells_owned && c2 >= 0 && c2 < ncells_owned) {
+        for (int i = 0; i < num_advect; i++) {
+          tcc_flux = dt_ * u * tcc_prev[i][c1];
+          tcc_next[i][c2] += tcc_flux;
+        }
+      }
+    }
+  }
+
+  // loop over exterior boundary sets
+  int flag(0);
+  tcc_tmp->PutScalarGhosted(0.0);
+
+  for (int m = 0; m < bcs_.size(); m++) {
+    std::vector<int>& tcc_index = bcs_[m]->tcc_index();
+    int ncomp = tcc_index.size();
+
+    for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
+      int f = it->first;
+      if (f >= nfaces_owned) continue;
+
+      std::vector<double>& values = it->second;       
+      if (downwind_cells_[f].size() > 0) {
+        for (int j = 0; j < downwind_cells_[f].size(); j++) {
+          int c2 = downwind_cells_[f][j];
+          if (c2 < 0) continue;
+          if (c2 >= ncells_owned) flag = 1;
+
+          double u = fabs(downwind_flux_[f][j]);
+          for (int i = 0; i < ncomp; i++) {
+            int k = tcc_index[i];
+            if (k < num_advect) {
+              tcc_flux = dt_ * u * values[i];
+              tcc_next[k][c2] += tcc_flux;
+            }
+          }
+        }
+      }
+    }    
+  }
+
+  int flag_tmp(flag);
+  mesh_->get_comm()->MaxAll(&flag_tmp, &flag, 1);
+  if (flag == 1) tcc_tmp->GatherGhostedToMaster();
+
+  // process external sources
+  if (srcs_.size() != 0) {
+    double time = t_physics_;
+    ComputeSources_(time, dt_, tcc_next, tcc_prev, 0, num_advect - 1);
+  }
+
+  // recover concentration from new conservative state
+  for (int c = 0; c < ncells_owned; c++) {
+    vol_phi_ws = mesh_->cell_volume(c) * (*phi)[0][c] * (*ws_end)[0][c];
+    for (int i = 0; i < num_advect; i++) tcc_next[i][c] /= vol_phi_ws;
+  }
+
+  // update mass balance
+  for (int i = 0; i < mass_solutes_exact_.size(); i++) {
+    mass_solutes_exact_[i] += mass_solutes_source_[i] * dt_;
+  }
+
+  if (internal_tests_) {
+    VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
+  }
+}
+
+
+/* ******************************************************************* 
+* A simple first-order upwind method on non-manifolds.
+******************************************************************* */
+void TransportExplicit_PK::AdvanceDonorUpwindNonManifold(double dt_cycle)
+{
+  dt_ = dt_cycle;  // overwrite the maximum stable transport step
+  mass_solutes_source_.assign(num_aqueous + num_gaseous, 0.0);
+
+  // populating next state of concentrations
+  tcc->ScatterMasterToGhosted("cell");
+  Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
+  Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
+
+  // prepare conservative state in master and slave cells
+  double u, vol_phi_ws, tcc_flux;
+
+  // We advect only aqueous components.
+  int num_advect = num_aqueous;
+
+  for (int c = 0; c < ncells_owned; c++) {
+    vol_phi_ws = mesh_->cell_volume(c) * (*phi)[0][c] * (*ws_start)[0][c];
+
+    for (int i = 0; i < num_advect; i++)
+      tcc_next[i][c] = tcc_prev[i][c] * vol_phi_ws;
+  }
+
+  // advance all components at once
+  for (int f = 0; f < nfaces_wghost; f++) {
+    // calculate in and out fluxes and solutes at given face
+    double flux_in(0.0);
+    std::vector<double> tcc_out(num_advect, 0.0);
+
+    for (int n = 0; n < upwind_cells_[f].size(); ++n) {
+      int c = upwind_cells_[f][n];
+      u = upwind_flux_[f][n];
+
+      for (int i = 0; i < num_advect; i++) {
+        tcc_out[i] += u * tcc_prev[i][c];
+      }
+    }
+
+    for (int n = 0; n < downwind_cells_[f].size(); ++n) {
+      flux_in -= downwind_flux_[f][n];
+    }
+    if (flux_in == 0.0) flux_in = 1e-12;
+
+    // update solutes
+    for (int n = 0; n < upwind_cells_[f].size(); ++n) {
+      int c = upwind_cells_[f][n];
+      u = upwind_flux_[f][n];
+
+      if (c < ncells_owned) {
+        for (int i = 0; i < num_advect; i++) {
+          tcc_next[i][c] -= dt_ * u * tcc_prev[i][c];
+        }
+      }
+    }
+
+    for (int n = 0; n < downwind_cells_[f].size(); ++n) {
+      int c = downwind_cells_[f][n];
+      u = downwind_flux_[f][n];
+
+      if (c < ncells_owned) {
+        double tmp = u / flux_in;
+        for (int i = 0; i < num_advect; i++) {
+          tcc_next[i][c] -= dt_ * tmp * tcc_out[i];
+        }
+      }
+    }
+  }
+
+  // loop over exterior boundary sets
+  for (int m = 0; m < bcs_.size(); m++) {
+    std::vector<int>& tcc_index = bcs_[m]->tcc_index();
+    int ncomp = tcc_index.size();
+
+    for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
+      int f = it->first;
+      std::vector<double>& values = it->second; 
+
+      if (downwind_cells_[f].size() > 0) {
+        int c = downwind_cells_[f][0];
+        double u = downwind_flux_[f][0];
+
+        for (int i = 0; i < ncomp; i++) {
+          int k = tcc_index[i];
+          if (k < num_advect) {
+            tcc_flux = dt_ * u * values[i];
+            tcc_next[k][c] -= tcc_flux;
+          }
+        }
+      }
+    }
+  }
+
+  // process external sources
+  if (srcs_.size() != 0) {
+    double time = t_physics_;
+    ComputeSources_(time, dt_, tcc_next, tcc_prev, 0, num_advect - 1);
+  }
+
+  // recover concentration from new conservative state
+  for (int c = 0; c < ncells_owned; c++) {
+    vol_phi_ws = mesh_->cell_volume(c) * (*phi)[0][c] * (*ws_end)[0][c];
+    for (int i = 0; i < num_advect; i++) tcc_next[i][c] /= vol_phi_ws;
+  }
+
+  // update mass balance
+  for (int i = 0; i < mass_solutes_exact_.size(); i++) {
+    mass_solutes_exact_[i] += mass_solutes_source_[i] * dt_;
+  }
+}
+
 }  // namespace Transport
 }  // namespace Amazni

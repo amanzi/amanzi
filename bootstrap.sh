@@ -130,6 +130,8 @@ shared=${FALSE}
 spacedim=2
 silo=${FALSE}
 physics=${TRUE}
+build_stage_1=${FALSE}
+build_stage_2=${FALSE}
 
 # Dry-Run
 dry_run=${FALSE}
@@ -464,6 +466,8 @@ Build configuration:
     nersc               ='"${nersc}"'
     static_libs_prefer  ='"${prefer_static}"'
     static_executables  ='"${exec_static}"'
+    build_stage_1       ='"${build_stage_1}"'
+    build_stage_2       ='"${build_stage_2}"'
 
 Build Features:   
     structured          ='"${structured}"'
@@ -1608,12 +1612,42 @@ fi
 status_message "Amanzi configure complete"
 
 # Amanzi Build
-make -j ${parallel_jobs}
-if [ $? -ne 0 ]; then
-  error_message "Failed to build Amanzi"
-  exit_now 50
+if [ "${build_stage_1}" == "${TRUE}" ]; then
+    # we could make this fancier, but operators is roughly mid-way in the build in terms of dependencies.
+    status_message "Amanzi build-stage 1: "
+    cd ${amanzi_build_dir}/src/whetstone
+    status_message "  - building in $(pwd)"
+    make -j ${parallel_jobs}
+    cd ${amanzi_build_dir}/src/operators
+    status_message "  - building in $(pwd)"
+    make -j ${parallel_jobs}
+    cd ${amanzi_build_dir}
+    if [ $? -ne 0 ]; then
+        error_message "Amanzi build-stage 1: FAILED"
+        exit_now 50
+    else
+        status_message "Amanzi build-stage 1: complete"
+        status_message "Bootstrap Incomplete: run with --enable-build_stage_2 to complete the build."
+        exit_now 0
+    fi
+elif [ "${build_stage_2}" == "${TRUE}" ]; then
+    status_message "Amanzi build-stage 2: "
+    status_message "  - building in $(pwd)"
+    make -j ${parallel_jobs}
+    if [ $? -ne 0 ]; then
+        error_message "Amanzi build-stage 2: FAILED"
+        exit_now 50
+    else
+        status_message "Amanzi build-stage 2: complete"
+    fi
+else
+    make -j ${parallel_jobs}
+    if [ $? -ne 0 ]; then
+        error_message "Failed to build Amanzi"
+        exit_now 50
+    fi
+    status_message "Amanzi build complete"
 fi
-status_message "Amanzi build complete"
 
 # Amanzi Test Suite
 if [ "${test_suite}" -eq "${TRUE}" ]; then
@@ -1627,7 +1661,9 @@ if [ "${test_suite}" -eq "${TRUE}" ]; then
 fi
 
 # Amanzi Install
-make install
+if [ "${build_stage_1}" -ne "${TRUE}" ]; then
+    make install
+fi
 if [ $? -ne 0 ]; then
   error_message "Failed to install Amanzi"
   exit_now 50
