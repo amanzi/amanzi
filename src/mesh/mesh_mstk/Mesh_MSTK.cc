@@ -4,7 +4,7 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Rao Garimella, Konstantin Lipnikov, others
+  Authors: Rao Garimella, others
 */
 
 //! Implementation of the Mesh interface leveraging MSTK.
@@ -153,6 +153,9 @@ Mesh_MSTK::Mesh_MSTK(const std::string& filename,
         if (expert_list->isParameter("contiguous global ids")) {
           contiguous_gids_ = expert_list->get<bool>("contiguous global ids");
         }
+        if (expert_list->isParameter("request edges")) {
+          edges_requested_ = expert_list->get<bool>("request edges");
+        }
       }
     }
   }
@@ -223,7 +226,7 @@ Mesh_MSTK::Mesh_MSTK(const std::string& filename,
 
   // Do all the processing required for setting up the mesh for Amanzi 
   
-  post_create_steps_(request_faces, request_edges);
+  post_create_steps_(request_faces, edges_requested_);
 }
 
 
@@ -269,6 +272,9 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
         }
         if (expert_list->isParameter("contiguous global ids")) {
           contiguous_gids_ = expert_list->get<bool>("contiguous global ids");
+        }
+        if (expert_list->isParameter("request edges")) {
+          edges_requested_ = expert_list->get<bool>("request edges");
         }
       }
     }
@@ -332,7 +338,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
 
   // Do all the processing required for setting up the mesh for Amanzi 
   
-  post_create_steps_(request_faces, request_edges);
+  post_create_steps_(request_faces, edges_requested_);
 }
 
 
@@ -540,7 +546,7 @@ Mesh_MSTK::internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::Region>
     else if (entity_kind == FACE)
       internal_name = "FACESET_" + r->name();
     else if (entity_kind == EDGE)
-      internal_name = "EDGESET_not_supported";
+      internal_name = "EDGESET_" + r->name();
     else if (entity_kind == NODE)
       internal_name = "NODESET_" + r->name();
   }
@@ -2110,6 +2116,52 @@ void Mesh_MSTK::node_get_cell_faces(const Entity_ID nodeid,
 
 
 //---------------------------------------------------------
+// Faces of type 'ptype' connected to an edge.
+//---------------------------------------------------------
+void Mesh_MSTK::edge_get_faces(const Entity_ID edgeid, 
+                               const Parallel_type ptype,
+                               std::vector<Entity_ID> *faceids) const
+{
+  int idx, lid, nc;
+  List_ptr face_list;
+  MEntity_ptr ment;
+
+  AMANZI_ASSERT(faceids != nullptr && manifold_dimension() == 3);
+
+  MEdge_ptr me = (MEdge_ptr) edge_id_to_handle[edgeid];
+  face_list = ME_Faces(me);
+
+  nc = List_Num_Entries(face_list);
+  faceids->resize(nc); // resize to maximum size possible
+  Entity_ID_List::iterator it = faceids->begin();
+
+  int n = 0;
+  idx = 0; 
+  while ((ment = List_Next_Entry(face_list,&idx))) {
+    if (MEnt_PType(ment) == PGHOST) {
+      if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
+        lid = MEnt_ID(ment);
+        *it = lid-1;  // assign to next spot by dereferencing iterator
+        ++it;
+        ++n;
+      }
+    }
+    else {
+      if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
+        lid = MEnt_ID(ment);
+        *it = lid-1;  // assign to next spot by dereferencing iterator
+        ++it;
+        ++n;
+      }
+    }
+  }
+  faceids->resize(n); // resize to the actual number of cells being returned
+
+  List_Delete(face_list);
+}
+
+
+//---------------------------------------------------------
 // Cells of type 'ptype' connected to an edge. This routine uses
 // push_back on or near the partition boundary since we cannot tell at
 // the outset how many entries will be put into the list
@@ -2570,6 +2622,9 @@ void Mesh_MSTK::node_set_coordinates(const AmanziMesh::Entity_ID nodeid,
 }
 
 
+//---------------------------------------------------------
+// Private routine creating mesh sets for GM regions
+//---------------------------------------------------------
 MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& region,
                               const Entity_kind kind) const
 {
@@ -2840,6 +2895,41 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
             << "This request will result in an empty set\n";
       }
     }
+    break;
+
+  case EDGE: // Edgesets
+
+    enttype = MEDGE;
+    mset = MSet_New(mesh_,internal_name.c_str(),enttype);
+
+    if (region->type() == AmanziGeometry::BOX ||
+        region->type() == AmanziGeometry::PLANE ||
+        region->type() == AmanziGeometry::POLYGON) {
+
+      int nedge = num_entities(EDGE, Parallel_type::ALL);
+
+      for (int iedge = 0; iedge < nedge; iedge++) {
+        const auto& epnt = edge_centroid(iedge);
+                  
+        if (region->inside(epnt)) {
+          MSet_Add(mset,edge_id_to_handle[iedge]);
+        }
+      }
+    }
+    else if (region->type() == AmanziGeometry::LOGICAL) {
+      // We will handle it later in the routine
+    }
+    else {
+      Teuchos::RCP<const VerboseObject> verbobj = verbosity_obj();
+      if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_HIGH)) {
+        Teuchos::OSTab tab = verbobj->getOSTab();
+        *(verbobj->os()) << "Requested EDGEs on region " << region->name() 
+            << " of type " << region->type() << " and dimension " 
+            << region->manifold_dimension() << ".\n" 
+            << "This request will result in an empty set\n";
+      }
+    }
+      
     break;
 
   case NODE: // Nodesets
@@ -3157,7 +3247,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
       if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
         *(verbobj->os()) << "Found labeled set region \"" << setname 
                          << "\" but it contains entities of type " << entity_type 
-                         << ", not the requested type\n";
+                         << ", not the requested type.\n";
       }
     } 
     else {

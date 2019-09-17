@@ -25,6 +25,7 @@
 #include "primary_variable_field_evaluator.hh"
 #include "TimestepControllerFactory.hh"
 #include "Tensor.hh"
+#include "UniqueLocalIndex.hh"
 #include "WhetStoneMeshUtils.hh"
 
 // Amanzi::Flow
@@ -119,7 +120,6 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   darcy_flux_key_ = Keys::getKey(domain_, "darcy_flux"); 
   darcy_velocity_key_ = Keys::getKey(domain_, "darcy_velocity"); 
-  darcy_flux_fracture_key_ = Keys::getKey(domain_, "darcy_flux_fracture"); 
 
   permeability_key_ = Keys::getKey(domain_, "permeability"); 
   porosity_key_ = Keys::getKey(domain_, "porosity"); 
@@ -199,8 +199,13 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   if (!S->HasField(darcy_flux_key_)) {
-    S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("face", AmanziMesh::FACE, 1);
+    if (flow_on_manifold_) {
+      auto cvs = Operators::CreateNonManifoldCVS(mesh_);
+      *S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true) = *cvs;
+    } else {
+      S->RequireField(darcy_flux_key_, passwd_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("face", AmanziMesh::FACE, 1);
+    }
   }
 
   {
@@ -275,18 +280,6 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
     CompositeVectorSpace& cvs = *S->RequireField(permeability_key_, passwd_);
     cvs.SetOwned(false);
     cvs.AddComponent("offd", AmanziMesh::CELL, noff)->SetOwned(true);
-  }
-
-  // Require additional field to couple PKs
-  if (coupled_to_matrix_) {
-    if (!S->HasField(darcy_flux_fracture_key_)) {
-      int nrows, tmp(mesh_->cell_get_max_faces());
-      mesh_->get_comm()->MaxAll(&tmp, &nrows, 1);  // global maximum
-
-      S->RequireField(darcy_flux_fracture_key_, "state")->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, nrows);
-      S->GetField(darcy_flux_fracture_key_, "state")->set_io_vis(false);
-    }
   }
 
   // require optional fields
@@ -430,9 +423,6 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Verbose output of initialization statistics.
   InitializeStatistics_(init_darcy);
-
-  // for testing only
-  op_diff_->ApplyBCs(true, true, true);
 }
 
 
@@ -446,7 +436,6 @@ void Darcy_PK::InitializeFields_()
 
   InitializeField(S_.ptr(), passwd_, saturation_liquid_key_, 1.0);
   InitializeField(S_.ptr(), passwd_, prev_saturation_liquid_key_, 1.0);
-  InitializeField(S_.ptr(), "state", darcy_flux_fracture_key_, 0.0);
 }
 
 
@@ -593,16 +582,14 @@ void Darcy_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>&
 {
   // calculate Darcy mass flux
   Teuchos::RCP<CompositeVector> flux = S->GetFieldData(darcy_flux_key_, passwd_);
-  op_diff_->UpdateFlux(solution.ptr(), flux.ptr());
-  flux->Scale(1.0 / rho_);
 
-  // calculate Darcy mass flux in fractures
-  if (S->HasField(darcy_flux_fracture_key_)) {
-    Teuchos::RCP<CompositeVector> flux_fracture = S->GetFieldData(darcy_flux_fracture_key_, "state");
-    op_diff_->UpdateFluxNonManifold(solution.ptr(), flux_fracture.ptr());
-    flux_fracture->Scale(1.0 / rho_);
-
+  if (coupled_to_matrix_ || flow_on_manifold_) {
+    op_diff_->UpdateFluxNonManifold(solution.ptr(), flux.ptr());
+    flux->Scale(1.0 / rho_);
     FractureConservationLaw_();
+  } else {
+    op_diff_->UpdateFlux(solution.ptr(), flux.ptr());
+    flux->Scale(1.0 / rho_);
   }
 
   // update time derivative
@@ -675,43 +662,44 @@ void Darcy_PK::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
 ****************************************************************** */
 void Darcy_PK::FractureConservationLaw_()
 {
-  if (!S_->HasField("fracture-darcy_flux_fracture")) return;
+  if (!coupled_to_matrix_) return;
 
-  AmanziMesh::Entity_ID_List faces, cells;
-  std::vector<int> dirs;
-
-  const auto& fracture_flux = *S_->GetFieldData("fracture-darcy_flux_fracture")->ViewComponent("cell");
+  const auto& fracture_flux = *S_->GetFieldData("fracture-darcy_flux")->ViewComponent("face", true);
   const auto& matrix_flux = *S_->GetFieldData("darcy_flux")->ViewComponent("face", true);
-  auto flux_map = S_->GetFieldData("darcy_flux")->Map().Map("face", true);
+
+  const auto& fracture_map = S_->GetFieldData("fracture-darcy_flux")->Map().Map("face", true);
+  const auto& matrix_map = S_->GetFieldData("darcy_flux")->Map().Map("face", true);
 
   auto mesh_matrix = S_->GetMesh("domain");
-  const Epetra_Map& cell_map = mesh_matrix->cell_map(true);
 
+  std::vector<int> dirs;
   double err(0.0), flux_max(0.0);
+  AmanziMesh::Entity_ID_List faces, cells;
 
   for (int c = 0; c < ncells_owned; c++) {
     double flux_sum(0.0);
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];
-      flux_sum += fracture_flux[i][c];
+      int g = fracture_map->FirstPointInElement(f);
+      int ndofs = fracture_map->ElementSize(f);
+      if (ndofs > 1) g += Operators::UniqueIndexFaceToCells(*mesh_, f, c);
+
+      flux_sum += fracture_flux[0][g] * dirs[i];
     }
 
     // sum into fluxes from matrix
-    AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
+    auto f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
     mesh_matrix->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    int pos = 0;
-    if (cells.size() == 2) {
-      pos = (cell_map.GID(cells[0]) < cell_map.GID(cells[1])) ? 0 : 1;
-    }
+    int pos = Operators::UniqueIndexFaceToCells(*mesh_matrix, f, cells[0]);
 
     for (int j = 0; j != cells.size(); ++j) {
       mesh_matrix->cell_get_faces_and_dirs(cells[j], &faces, &dirs);
 
       for (int i = 0; i < faces.size(); i++) {
         if (f == faces[i]) {
-          int f_loc_id = flux_map->FirstPointInElement(f);            
-          double fln = matrix_flux[0][f_loc_id + (pos + j)%2] * dirs[i];
+          int g = matrix_map->FirstPointInElement(f);            
+          double fln = matrix_flux[0][g + (pos + j) % 2] * dirs[i];
           flux_sum -= fln;
           flux_max = std::max<double>(flux_max, std::fabs(fln));
             
@@ -721,7 +709,6 @@ void Darcy_PK::FractureConservationLaw_()
     }
 
     err = std::max<double>(err, fabs(flux_sum));
-    // std::cout << "cell " << c << " sum of fluxes " << flux_sum << "\n";
   }
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {

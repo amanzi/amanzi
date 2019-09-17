@@ -72,7 +72,7 @@ Face areas are specified through:
 
 OR
 
-* `"cross sectional areas [m^2]`" ``[Array(double)]`` List of face areas.
+* `"cross sectional areas [m^2]`" ``[Array(double)]`` List of face areas, ordered from first tip to last tip.
 
 Note that the number of faces, and hence the length of the list of face areas,
 depends upon how exactly tips are to be handled.  See below.
@@ -87,7 +87,10 @@ Orientation of the faces is given by:
 OR
 
 If segment begin/end points are provided, the orientation is given by
-end-begin.
+first tip - last tip.  Note that this is consistent with the view of a
+logical mesh as a stream network, where first tip is the downstream outlet and
+last tip is the upstream inlet, and orientation is aligned with the flow direction
+(downstream).
 
 Finally, often tips of segments may be boundaries (faces with boundary
 conditions), no type (i.e. there is no face), junction (at least one, likely
@@ -98,11 +101,11 @@ cell will add a face to a junction tip of another segment).
    `"boundary`", `"junction`", or `"branch`".
 * `"last tip type`" ``[string]`` Type of the last tip, see above.
 
-If either first or (respectively) last is a branch, then the following should
+If either last (or respectively first) is a branch, then the following should
 also be provided:
 
-* `"first tip branch segment`" ``[string]`` Name of the segment to connect to.
-* `"first tip branch segment tip`" ``[string]`` One of `"first`" or `"last`",
+* `"last tip branch segment`" ``[string]`` Name of the segment to connect to.
+* `"last tip branch segment tip`" ``[string]`` One of `"first`" or `"last`",
     the tip to connect this branch face to.
 
 Note that segments with a branch tip MUST appear AFTER the junction tip to
@@ -288,7 +291,7 @@ MeshLogicalFactory::AddSegment(
   AMANZI_ASSERT(calculated_volume_);
     
   // orientation
-  auto orientation = end - begin;
+  auto orientation = begin - end;
   double seg_length = AmanziGeometry::norm(orientation);
   orientation /= seg_length;
 
@@ -304,10 +307,10 @@ MeshLogicalFactory::AddSegment(
 
   // centroids
   std::vector<AmanziGeometry::Point> centroids(n_cells);
-  auto my_centroid = begin + orientation * cell_length/2.;
+  auto my_centroid = begin - orientation * cell_length/2.;
   centroids[0] = my_centroid;
   for (int c=0; c!=n_cells-1; ++c) {
-    my_centroid += orientation * cell_length;
+    my_centroid -= orientation * cell_length;
     centroids[c+1] = my_centroid;
   }
 
@@ -401,8 +404,7 @@ MeshLogicalFactory::AddSegment(
     face_cell_lengths_.emplace_back(std::vector<double>{cell_lengths[0]/2});
     if (calculated_volume_)
       cell_volumes_[new_cells[0]] += face_areas[i_face] * cell_lengths[0]/2;
-    // first tip has negative orientation to be outward normal
-    face_area_normals_.emplace_back(-face_areas[i_face] * my_orientation);
+    face_area_normals_.emplace_back(face_areas[i_face] * my_orientation);
     i_face++;
   }
 
@@ -487,10 +489,10 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist) {
 
   // potentially get cell volumes
   if (!calculated_volume_) {
-    if (plist.isParameter("cell volume [m]")) {
-      double cv = plist.get<double>("cell volume [m]");
+    if (plist.isParameter("cell volume [m^3]")) {
+      double cv = plist.get<double>("cell volume [m^3]");
       cell_volumes.resize(n_cells, cv);
-    } else if (plist.isParameter("cell volumes [m]")) {
+    } else if (plist.isParameter("cell volumes [m^3]")) {
       cell_volumes = plist.get<Teuchos::Array<double>>("cell volumes [m^3]").toVector();
       if (cell_volumes.size() != n_cells) {
         Errors::Message msg;
@@ -558,7 +560,7 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist) {
              && plist.isParameter("last tip")) {
     auto begin = GetPoint_(plist, "first tip");
     auto end = GetPoint_(plist, "last tip");
-    orientation = end - begin;
+    orientation = begin - end;
     orientation /= AmanziGeometry::norm(orientation);
   } else {
     Errors::Message msg;
@@ -605,8 +607,8 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist) {
       begin = tracking_end_points_[branch_from];
     }
 
-    auto end = begin + orientation * seg_length;
-    auto ds = orientation;
+    auto end = begin - orientation * seg_length;
+    auto ds = -orientation;
 
     cell_centroids.resize(n_cells);
     auto my_centroid = begin + ds * cell_lengths[0]/2;

@@ -1,0 +1,313 @@
+<ParameterList>
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+
+  <ParameterList name="checkpoint data">
+    <Parameter name="file name base" type="string" value="chk_transport"/>
+    <Parameter name="file name digits" type="int" value="5"/>
+    <Parameter name="cycles start period stop" type="Array(int)" value="{0, 100, -1}"/>
+  </ParameterList>
+  <ParameterList name="visualization data">
+    <Parameter name="file name base" type="string" value="plot_transport"/>
+    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 100, -1}"/>
+  </ParameterList>
+
+  <ParameterList name="regions">
+    <ParameterList name="Computational domain">
+      <ParameterList name="region: labeled set">
+        <Parameter name="label" type="string" value="1"/>
+        <Parameter name="file" type="string" value="mpc_transport_mesh_10x10.exo"/>
+        <Parameter name="format" type="string" value="Exodus II"/>
+        <Parameter name="entity" type="string" value="cell"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="All domain">
+      <ParameterList name="region: box">
+        <Parameter name="low coordinate" type="Array(double)" value="{-1.0, -1.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,  1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Left side">
+      <ParameterList name="region: labeled set">
+        <Parameter name="label" type="string" value="3"/>
+        <Parameter name="file" type="string" value="mpc_transport_mesh.exo"/>
+        <Parameter name="format" type="string" value="Exodus II"/>
+        <Parameter name="entity" type="string" value="face"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Bottom side">
+      <ParameterList name="region: labeled set">
+        <Parameter name="label" type="string" value="2"/>
+        <Parameter name="file" type="string" value="mpc_transport_mesh.exo"/>
+        <Parameter name="format" type="string" value="Exodus II"/>
+        <Parameter name="entity" type="string" value="face"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="mesh">
+    <ParameterList name="unstructured">
+      <ParameterList name="expert">
+	<Parameter name="framework" type="string" value="MSTK"/>
+      </ParameterList>
+
+      <ParameterList name="read mesh file">
+	<Parameter name="file" type="string" value="test/mpc_transport_mesh.exo"/>
+	<Parameter name="format" type="string" value="Exodus II"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="domain">
+    <Parameter name="spatial dimension" type="int" value="2"/>
+  </ParameterList>
+
+  <ParameterList name="cycle driver">
+    <Parameter name="start time" type="double" value="0"/>
+    <Parameter name="end time" type="double" value="100"/>
+    <Parameter name="component names" type="Array(string)" value="{Tc-99, Tc-98}"/>
+    <ParameterList name="time periods">
+      <ParameterList name="TP 0">
+	<ParameterList name="PK tree">
+	  <ParameterList name="transport">
+	    <Parameter name="PK type" type="string" value="transport"/>
+	  </ParameterList>
+	</ParameterList>
+	<Parameter name="initial time step" type="double" value="1.00000000000000000e+00"/>
+	<Parameter name="maximal time step" type="double" value="1.00000000000000000e+07"/>
+	<Parameter name="start period time" type="double" value="0.00000000000000000e+00"/>
+	<Parameter name="end period time" type="double" value="1.00000000000000000e+03"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="state">
+    <ParameterList name="field evaluators">
+      <ParameterList name="porosity">
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="Computational domain">
+            <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="4.08200000000000007e-01"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="initial conditions">
+      <ParameterList name="gravity">
+        <Parameter name="value" type="Array(double)" value="{0.0, -9.80665}"/>
+      </ParameterList>
+      <ParameterList name="fluid_viscosity">
+        <Parameter name="value" type="double" value="1.002e-03"/>
+      </ParameterList>
+      <ParameterList name="fluid_density">
+        <Parameter name="value" type="double" value="998.2"/>
+      </ParameterList>
+      <ParameterList name="permeability">
+        <ParameterList name="function">
+          <ParameterList name="Computational domain">
+            <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.99759999999999989e-12"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 2 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.99759999999999999e-13"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="pressure">
+        <ParameterList name="function">
+          <ParameterList name="Computational domain">
+            <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-linear">
+                <Parameter name="y0" type="double" value="1.01325000000000000e+05"/>
+                <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
+                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, -9.79351920000000064e+03}"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="total_component_concentration">
+        <ParameterList name="function">
+          <ParameterList name="Computational domain">
+            <Parameter name="regions" type="Array(string)" value="{Computational domain}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.0"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 2 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="0.0"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="darcy_flux">
+        <Parameter name="dot with normal" type="bool" value="true"/>
+        <ParameterList name="function">
+          <ParameterList name="All domain">
+            <Parameter name="regions" type="Array(string)" value="{All domain}"/>
+            <Parameter name="component" type="string" value="face"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="2"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.8634e-04"/>
+                </ParameterList>
+              </ParameterList>
+              <ParameterList name="dof 2 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.8634e-04"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="mesh partitions">
+      <ParameterList name="materials">
+        <Parameter name="region list" type="Array(string)" value="{Computational domain}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="PKs">
+    <ParameterList name="transport">
+      <Parameter name="PK type" type="string" value="transport"/>
+      <Parameter name="cfl" type="double" value="0.5"/>   
+      <Parameter name="spatial discretization order" type="int" value="2"/>   
+      <Parameter name="temporal discretization order" type="int" value="2"/>   
+      <!-- developers parameters --> 
+      <Parameter name="enable internal tests" type="bool" value="true"/>   
+      <Parameter name="internal tests tolerance" type="double" value="1e-5"/> 
+      <Parameter name="component names" type="Array(string)" value="{Tc-99, Tc-98}"/>
+      <!-- end of developers parameters -->
+      <ParameterList name="reconstruction">
+        <Parameter name="polynomial order" type="int" value="1"/>
+        <Parameter name="limiter" type="string" value="tensorial"/>
+        <Parameter name="limiter extension for transport" type="bool" value="true"/>
+      </ParameterList>
+      <ParameterList name="verbose object">
+	<Parameter name="verbosity level" type="string" value="high"/>
+      </ParameterList>
+      <ParameterList name="boundary conditions">
+	<ParameterList name="concentration">
+	  <ParameterList name="Tc-99">
+	    <ParameterList name="BC for bottom and left side">
+	      <Parameter name="regions" type="Array(string)" value="{Bottom side, Left side}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+	      <ParameterList name="boundary concentration">
+		<ParameterList name="function-tabular">
+		  <Parameter name="forms" type="Array(string)" value="{constant}"/>
+		  <Parameter name="x values" type="Array(double)" value="{0.0, 0.1}"/>
+		  <Parameter name="y values" type="Array(double)" value="{1.0, 1.0}"/>
+		</ParameterList>
+	      </ParameterList>
+	    </ParameterList>
+	  </ParameterList>
+	  <ParameterList name="Tc-98">
+	    <ParameterList name="BC for bottom">
+	      <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+	      <ParameterList name="boundary concentration">
+		<ParameterList name="function-tabular">
+		  <Parameter name="forms" type="Array(string)" value="{constant}"/>
+		  <Parameter name="x values" type="Array(double)" value="{0.0, 0.1}"/>
+		  <Parameter name="y values" type="Array(double)" value="{1.0, 1.0}"/>
+		</ParameterList>
+	      </ParameterList>
+	    </ParameterList>
+	    <ParameterList name="BC for left">
+	      <Parameter name="regions" type="Array(string)" value="{Bottom side}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+	      <ParameterList name="boundary concentration">
+		<ParameterList name="function-tabular">
+		  <Parameter name="forms" type="Array(string)" value="{constant}"/>
+		  <Parameter name="x values" type="Array(double)" value="{0.0, 0.1}"/>
+		  <Parameter name="y values" type="Array(double)" value="{0.5, 1.0}"/>
+		</ParameterList>
+	      </ParameterList>
+	    </ParameterList>
+	  </ParameterList>
+	</ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="preconditioners">
+    <ParameterList name="Hypre AMG">
+      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
+      <ParameterList name="boomer amg parameters">
+        <Parameter name="tolerance" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="smoother sweeps" type="int" value="3"/>
+        <Parameter name="cycle applications" type="int" value="5"/>
+        <Parameter name="strong threshold" type="double" value="5.00000000000000000e-01"/>
+        <Parameter name="relaxation type" type="int" value="3"/>
+        <Parameter name="cycle type" type="int" value="1"/>
+        <Parameter name="coarsen type" type="int" value="0"/>
+        <Parameter name="verbosity" type="int" value="0"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Block ILU">
+      <Parameter name="preconditioner type" type="string" value="block ilu"/>
+      <Parameter name="discretization method" type="string" value="optimized mfd scaled"/>
+      <ParameterList name="block ilu parameters">
+        <Parameter name="fact: relax value" type="double" value="1.00000000000000000e+00"/>
+        <Parameter name="fact: absolute threshold" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="fact: relative threshold" type="double" value="1.00000000000000000e+00"/>
+        <Parameter name="fact: level-of-fill" type="int" value="0"/>
+        <Parameter name="overlap" type="int" value="0"/>
+        <Parameter name="schwarz: combine mode" type="string" value="Add"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="solvers">
+    <ParameterList name="AztecOO">
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
+        <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
+        <Parameter name="maximum number of iterations" type="int" value="100"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="PCG with Hypre AMG">
+      <Parameter name="iterative method" type="string" value="pcg"/>
+      <ParameterList name="pcg parameters">
+        <Parameter name="error tolerance" type="double" value="9.99999999999999979e-17"/>
+        <Parameter name="maximum number of iterations" type="int" value="100"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

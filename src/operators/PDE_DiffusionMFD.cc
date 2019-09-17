@@ -38,6 +38,7 @@
 #include "Operator_FaceCellSff.hh"
 #include "Operator_Node.hh"
 #include "Operator_ConsistentFace.hh"
+#include "UniqueLocalIndex.hh"
 
 #include "PDE_DiffusionMFD.hh"
 
@@ -1100,25 +1101,33 @@ void PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
 
 
 /* ******************************************************************
-* Calculates one-sided (cell-based) exterior fluxes that satisfy 
-* proper continuity equations.
+* Calculates one-sided (cell-based) fluxes that satisfy proper 
+* continuity conditions. This differs from other subroutines
+* calculing fluxes due to presence of multiple normals on some
+* non-manifold faces.
 * **************************************************************** */
 void PDE_DiffusionMFD::UpdateFluxNonManifold(
     const Teuchos::Ptr<const CompositeVector>& u,
     const Teuchos::Ptr<CompositeVector>& flux)
 {
   // Initialize intensity in ghost faces.
-  flux->PutScalar(0.0);
   u->ScatterMasterToGhosted("face");
 
   const Epetra_MultiVector& u_cell = *u->ViewComponent("cell");
   const Epetra_MultiVector& u_face = *u->ViewComponent("face", true);
-  Epetra_MultiVector& flux_data = *flux->ViewComponent("cell", true);
+  Epetra_MultiVector& flux_data = *flux->ViewComponent("face", true);
+
+  flux_data.PutScalar(0.0);
+
+  int ndofs_owned = flux->ViewComponent("face")->MyLength();
+  int ndofs_wghost = flux_data.MyLength();
 
   AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+  const auto& fmap = *flux->Map().Map("face", true);
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces(c, &faces);
+    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
     WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);
@@ -1134,9 +1143,17 @@ void PDE_DiffusionMFD::UpdateFluxNonManifold(
     }
 
     for (int n = 0; n < nfaces; n++) {
-      flux_data[n][c] -= av(n);
+      int f = faces[n];
+      int g = fmap.FirstPointInElement(f);
+
+      int ndofs = fmap.ElementSize(f);
+      if (ndofs > 1) g += Operators::UniqueIndexFaceToCells(*mesh_, f, c);
+
+      flux_data[0][g] -= av(n) * dirs[n];
     }
   }
+
+  flux->GatherGhostedToMaster(Add);
 }
 
 

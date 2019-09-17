@@ -133,8 +133,9 @@ PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
     //const std::string& sub_name = sub->first;
     const std::string& sub_name = pk_name[i];
     if (!plist->isSublist(sub_name)) {
-      Errors::Message message("PK Tree: All entries in the PK tree must be ParameterLists");
-      Exceptions::amanzi_throw(message);
+      Errors::Message msg;
+      msg << "PK tree has no sublist \"" << sub_name << "\"";
+      Exceptions::amanzi_throw(msg);
     }
   }
 

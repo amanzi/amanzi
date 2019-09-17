@@ -243,6 +243,9 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt,
   // Update the debugger
   db_->StartIteration<VectorSpace>(tlast, state_->seq, state_->failed_current, u->Map());
   
+  // Overwrite preconditioner control
+  if (state_->freeze_pc) solver_->set_pc_lag(1000000000);
+
   // Solve the nonlinear BCE system.
   int ierr, code, itr;
   try {

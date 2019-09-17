@@ -47,16 +47,14 @@ TreeOperator::TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs) :
   // resize the blocks
   int n_blocks = tvs_->size();
   blocks_.resize(n_blocks, Teuchos::Array<Teuchos::RCP<const Operator> >(n_blocks, Teuchos::null));
-  transpose_.resize(n_blocks, Teuchos::Array<bool>(n_blocks, false));
 }
 
 
 /* ******************************************************************
 * Populate block matrix with pointers to operators.
 ****************************************************************** */
-void TreeOperator::SetOperatorBlock(int i, int j, const Teuchos::RCP<const Operator>& op, bool transpose) {
+void TreeOperator::SetOperatorBlock(int i, int j, const Teuchos::RCP<const Operator>& op) {
   blocks_[i][j] = op;
-  transpose_[i][j] = transpose;
 }
 
 
@@ -73,11 +71,7 @@ int TreeOperator::Apply(const TreeVector& X, TreeVector& Y) const
     int m(0);
     for (TreeVector::const_iterator xM_tv = X.begin(); xM_tv != X.end(); ++xM_tv, ++m) {
       if (blocks_[n][m] != Teuchos::null) {
-        if (transpose_[n][m]) {
-          ierr |= blocks_[n][m]->ApplyTranspose(*(*xM_tv)->Data(), yN, 1.0);
-        } else {
-          ierr |= blocks_[n][m]->Apply(*(*xM_tv)->Data(), yN, 1.0);
-        }
+        ierr |= blocks_[n][m]->Apply(*(*xM_tv)->Data(), yN, 1.0);
       }
     }
   }
@@ -149,22 +143,20 @@ void TreeOperator::SymbolicAssembleMatrix()
   std::vector<std::string> cvs_names;
 
   // Check that each row has at least one non-null operator block
+  // and save the position of this block, preferably diagonal.
   Teuchos::RCP<const Operator> an_op;
   for (int lcv_row = 0; lcv_row != n_blocks; ++lcv_row) {
-    bool is_block(false);
+    int block_col(-1);
     for (int lcv_col = 0; lcv_col != n_blocks; ++lcv_col) {
       if (blocks_[lcv_row][lcv_col] != Teuchos::null) {
         an_op = blocks_[lcv_row][lcv_col];
-        is_block = true;
-      }
-
-      if (lcv_row == lcv_col) {
-        AMANZI_ASSERT(blocks_[lcv_row][lcv_col] != Teuchos::null);
-        cvs_vec.push_back(blocks_[lcv_row][lcv_col]->DomainMap());
-        cvs_names.push_back(std::to_string(lcv_row));
+        if (block_col != lcv_row) block_col = lcv_col;
       }
     }
-    AMANZI_ASSERT(is_block);
+    AMANZI_ASSERT(block_col >= 0);
+
+    cvs_vec.push_back(blocks_[lcv_row][block_col]->RangeMap());
+    cvs_names.push_back(std::to_string(lcv_row));
   }
 
   // create the supermap and graph
@@ -217,7 +209,7 @@ void TreeOperator::AssembleMatrix() {
 
   // std::stringstream filename_s2;
   // filename_s2 << "assembled_matrix" << 0 << ".txt";
-  // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Amat_ ->Matrix());
+  // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Amat_->Matrix());
 }
 
 
@@ -236,9 +228,18 @@ void TreeOperator::InitPreconditioner(
 /* ******************************************************************
 * Create preconditioner using name and a factory.
 ****************************************************************** */
-void TreeOperator::InitPreconditioner(
-    Teuchos::ParameterList& plist)
+void TreeOperator::InitPreconditioner(Teuchos::ParameterList& plist)
 {
+  // provide block ids for block strategies.
+  if (plist.isParameter("preconditioner type") &&
+      plist.get<std::string>("preconditioner type") == "boomer amg" &&
+      plist.isSublist("boomer amg parameters")) {
+
+    auto block_ids = smap_->BlockIndices();
+    plist.sublist("boomer amg parameters").set("number of unique block indices", block_ids.first);
+    plist.sublist("boomer amg parameters").set("block indices", block_ids.second);
+  }
+
   AmanziPreconditioners::PreconditionerFactory factory;
   preconditioner_ = factory.Create(plist);
   preconditioner_->Update(A_);

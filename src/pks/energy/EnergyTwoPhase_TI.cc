@@ -11,9 +11,6 @@
   EnergyBase is a BDFFnBase
 */
 
-#include <boost/math/special_functions/fpclassify.hpp>
-#include <boost/test/floating_point_comparison.hpp>
-
 #include "FieldEvaluator.hh"
 #include "EnergyTwoPhase_PK.hh"
 

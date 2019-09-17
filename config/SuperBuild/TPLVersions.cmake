@@ -117,6 +117,9 @@
 #                - update OpenMPI to 3.1.1
 #   0.95.6       - added new package nanoflann 1.3.0
 #   0.95.7       - update MSTK to 3.1.0
+#   0.95.8       - update NetCDF-Fortran to 4.4.5
+#   0.95.9       - update NetCDF-C to 4.7.0
+#   0.95.10      - update OpenMPI to 3.1.4
 
 include(CMakeParseArguments)
 
@@ -169,7 +172,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 95)
-set(AMANZI_TPLS_VERSION_PATCH 7)
+set(AMANZI_TPLS_VERSION_PATCH 10)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -198,12 +201,12 @@ set(XERCES_MD5_SUM        7b1394c32abbdd87841d94a8404c2ac6)
 #
 set(OpenMPI_VERSION_MAJOR 3)
 set(OpenMPI_VERSION_MINOR 1)
-set(OpenMPI_VERSION_PATCH 1)
+set(OpenMPI_VERSION_PATCH 4)
 set(OpenMPI_VERSION ${OpenMPI_VERSION_MAJOR}.${OpenMPI_VERSION_MINOR}.${OpenMPI_VERSION_PATCH})
 set(OpenMPI_URL_STRING     "https://www.open-mpi.org/software/ompi/v3.1/downloads/")
 set(OpenMPI_ARCHIVE_FILE   openmpi-${OpenMPI_VERSION}.tar.bz2)
 set(OpenMPI_SAVEAS_FILE    ${OpenMPI_ARCHIVE_FILE})
-set(OpenMPI_MD5_SUM        493f1db2f75afaab1c8ecba78d2f5aab)
+set(OpenMPI_MD5_SUM        29770c6efcbb4c41d820cb6b8eae90b8)
 
 #
 # TPL: MPICH
@@ -297,13 +300,13 @@ set(HDF5_MD5_SUM        dd2148b740713ca0295442ec683d7b1c)
 # TPL: NetCDF
 #
 set(NetCDF_VERSION_MAJOR 4)
-set(NetCDF_VERSION_MINOR 6)
-set(NetCDF_VERSION_PATCH 1)
+set(NetCDF_VERSION_MINOR 7)
+set(NetCDF_VERSION_PATCH 0)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
 set(NetCDF_URL_STRING     "https://github.com/Unidata/netcdf-c/archive/")
 set(NetCDF_ARCHIVE_FILE   v${NetCDF_VERSION}.tar.gz)
 set(NetCDF_SAVEAS_FILE    netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_MD5_SUM        e35e98e2478271caa8c1d8569ac9835b)
+set(NetCDF_MD5_SUM        37134a12a49e80c45fb58777aa3e9e3b)
 
 
 #
@@ -311,13 +314,13 @@ set(NetCDF_MD5_SUM        e35e98e2478271caa8c1d8569ac9835b)
 #
 set(NetCDF_Fortran_VERSION_MAJOR 4)
 set(NetCDF_Fortran_VERSION_MINOR 4)
-set(NetCDF_Fortran_VERSION_PATCH 4)
+set(NetCDF_Fortran_VERSION_PATCH 5)
 set(NetCDF_Fortran_VERSION ${NetCDF_Fortran_VERSION_MAJOR}.${NetCDF_Fortran_VERSION_MINOR}.${NetCDF_Fortran_VERSION_PATCH})
 set(NetCDF_Fortran_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(NetCDF_Fortran_URL_STRING     "https://github.com/Unidata/netcdf-fortran/archive/")
 set(NetCDF_Fortran_ARCHIVE_FILE   v${NetCDF_Fortran_VERSION}.tar.gz)
 set(NetCDF_Fortran_SAVEAS_FILE    netcdf-fortran-${NetCDF_Fortran_VERSION}.tar.gz)
-set(NetCDF_Fortran_MD5_SUM        418c7e998e63e6d76b2da14019fa9c8f) 
+set(NetCDF_Fortran_MD5_SUM        8b5df466425a209b773c8343fe32e371) 
 
 #
 # ASCEM-IO
@@ -379,7 +382,7 @@ set(ParMetis_SAVEAS_FILE    ${ParMetis_ARCHIVE_FILE})
 set(ParMetis_MD5_SUM        56ac6ebf6e7e8a522fa053c799dc7a92)
 
 #
-# TPL: SuperLU (Built by PETSc!)
+# TPL: SuperLU
 #
 set(SuperLU_VERSION_MAJOR  5)
 set(SuperLU_VERSION_MINOR  2)
@@ -391,7 +394,7 @@ set(SuperLU_SAVEAS_FILE    superlu_${SuperLU_VERSION}.tar.gz)
 set(SuperLU_MD5_SUM        3a1a9bff20cb06b7d97c46d337504447)
 
 #
-# TPL: SuperLU Distrib (Built by PETSc!)
+# TPL: SuperLU_Dist
 #
 set(SuperLUDist_VERSION_MAJOR  5)
 set(SuperLUDist_VERSION_MINOR  2)
@@ -422,10 +425,10 @@ set(PETSc_VERSION_MINOR  8)
 set(PETSc_VERSION_PATCH  2)
 set(PETSc_VERSION  ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
 set(PETSc_ARCHIVE_VERSION ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
-set(PETSc_URL_STRING     "https://bitbucket.org/petsc/petsc/get")
-set(PETSc_ARCHIVE_FILE   v${PETSc_VERSION}.tar.gz)
-set(PETSc_SAVEAS_FILE    petsc-${PETSc_ARCHIVE_VERSION}.tar.gz)
-set(PETSc_MD5_SUM        ce207f60800e19cfb55a2d7a879ca42c)
+set(PETSc_URL_STRING     "https://gitlab.com/petsc/petsc/-/archive/v${PETSc_VERSION}")
+set(PETSc_ARCHIVE_FILE   petsc-v${PETSc_VERSION}.tar.gz)
+set(PETSc_SAVEAS_FILE    petsc-${PETSc_VERSION}.tar.gz)
+set(PETSc_MD5_SUM        c9f03d11138046201b786e8da89dbe7b)
 
 #
 # TPL: Trilinos

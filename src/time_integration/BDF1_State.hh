@@ -32,6 +32,7 @@ template<class Vector>
 struct BDF1_State {
   BDF1_State() :
       maxpclag(0),
+      freeze_pc(false),
       extrapolate_guess(true),
       seq(-1),
       failed_solve(0),
@@ -44,6 +45,7 @@ struct BDF1_State {
       hmin(std::numeric_limits<double>::max()) {}
 
   // Parameters and control
+  bool freeze_pc;  // freeze initial preconditioner
   int maxpclag;  // maximum iterations that the preconditioner can be lagged
   bool extrapolate_guess;  // extrapolate forward in time or use previous
                            // step as initial guess for nonlinear solver
@@ -83,7 +85,8 @@ template<class Vector>
 void BDF1_State<Vector>::InitializeFromPlist(Teuchos::ParameterList& plist,
         const Teuchos::RCP<const Vector>& initvec) {
   
-  // preconditioner lag control
+  // preconditioner control
+  freeze_pc = plist.get<bool>("freeze preconditioner", false);
   maxpclag = plist.get<int>("max preconditioner lag iterations", 0);
 
   // forward time extrapolation (fix me lipnikov@lanl.gov)

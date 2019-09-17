@@ -241,6 +241,15 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
   }
 
   // -- create PK tree for transient TP
+  std::string implicit("");
+  node = GetUniqueElementByTagsString_(
+      "numerical_controls, unstructured_controls, unstr_transport_controls, algorithm", flag);
+  if (flag) {
+    std::string algorithm = TrimString_(mm.transcode(node->getTextContent()));
+    transport_implicit_ = (algorithm == "implicit");
+    if (transport_implicit_) implicit = " implicit";
+  }
+
   std::string submodel;
   std::map<double, std::string>::iterator it = tp_mode.begin();
   while (it != tp_mode.end()) {
@@ -253,9 +262,9 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
         pk_tree_list.sublist("transport").set<std::string>("PK type", "transport");
       } else {
         Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("coupled transport");
-        tmp_list.set<std::string>("PK type", "transport matrix fracture");
-        tmp_list.sublist("transport matrix").set<std::string>("PK type", "transport");
-        tmp_list.sublist("transport fracture").set<std::string>("PK type", "transport");
+        tmp_list.set<std::string>("PK type", "transport matrix fracture" + implicit);
+        tmp_list.sublist("transport matrix").set<std::string>("PK type", "transport" + implicit);
+        tmp_list.sublist("transport fracture").set<std::string>("PK type", "transport" + implicit);
       }
       break;
     case 3:
@@ -288,10 +297,27 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
       }
     case 6:
       {
-        Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("flow and transport");
-        tmp_list.set<std::string>("PK type", "flow reactive transport");
-        tmp_list.sublist("flow").set<std::string>("PK type", pk_model_["flow"]);
-        tmp_list.sublist("transport").set<std::string>("PK type", "transport");
+        if (!coupled_flow_) {
+          Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("flow and transport");
+          tmp_list.set<std::string>("PK type", "flow reactive transport");
+          tmp_list.sublist("flow").set<std::string>("PK type", pk_model_["flow"]);
+          tmp_list.sublist("transport").set<std::string>("PK type", "transport");
+        } else {
+          Teuchos::ParameterList& tmp_list = pk_tree_list.sublist("flow and transport in matrix fracture");
+          tmp_list.set<std::string>("PK type", "flow reactive transport");
+          {
+            Teuchos::ParameterList& aux_list = tmp_list.sublist("coupled flow");
+            aux_list.set<std::string>("PK type", "darcy matrix fracture");
+            aux_list.sublist("flow matrix").set<std::string>("PK type", "darcy");
+            aux_list.sublist("flow fracture").set<std::string>("PK type", "darcy");
+          }
+          {
+            Teuchos::ParameterList& aux_list = tmp_list.sublist("coupled transport");
+            aux_list.set<std::string>("PK type", "transport matrix fracture" + implicit);
+            aux_list.sublist("transport matrix").set<std::string>("PK type", "transport" + implicit);
+            aux_list.sublist("transport fracture").set<std::string>("PK type", "transport" + implicit);
+          }
+        }
         break;
       }
     case 7:
@@ -737,6 +763,9 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
       *vo_->os() << "Translating process kernels" << std::endl;
   Teuchos::OSTab tab = vo_->getOSTab();
 
+  bool flag;
+  DOMNode* node;
+
   // create PKs list
   Teuchos::ParameterList tp_list = cd_list.sublist("time periods");
 
@@ -747,7 +776,7 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
         std::string name = pk_tree.begin()->first;
-        *vo_->os() << "PK name=\"" << name << "\", factory: \"" 
+        *vo_->os() << "TP: PK name=\"" << name << "\", factory: \"" 
                    << pk_tree.sublist(name).get<std::string>("PK type") << "\"" << std::endl;
       }
     }
@@ -755,6 +784,9 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
 
   // parse list of supported PKs
   for (auto it = out_list.begin(); it != out_list.end(); ++it) {
+    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+        *vo_->os() << "Next PK is \"" << it->first << "\"" << std::endl;
+
     if ((it->second).isList()) {
       // -- flow PKs
       if (it->first == "Flow Steady" || it->first == "flow matrix steady") {
@@ -804,6 +836,19 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
         pk_names.push_back("transport fracture");
         out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
         out_list.sublist(it->first).set<int>("master PK index", 0);
+
+        // implicit PK derived from a strongly coupled MPC needs a time integrator 
+        if (transport_implicit_) {
+          std::string err_options("residual"), mode("transient");
+          std::string nonlinear_solver("nka"), tags_default("unstructured_controls, unstr_nonlinear_solver");
+
+          node = GetUniqueElementByTagsString_(tags_default, flag);
+          if (flag) nonlinear_solver = GetAttributeValueS_(node, "name", TYPE_NONE, false, "nka"); 
+
+          out_list.sublist(it->first).sublist("time integrator") = TranslateTimeIntegrator_(
+              err_options, nonlinear_solver, false, tags_default,
+              dt_cut_[mode], dt_inc_[mode]);
+        }
       }
       else if (it->first == "reactive transport") {
         Teuchos::Array<std::string> pk_names;
@@ -848,6 +893,13 @@ Teuchos::ParameterList InputConverterU::TranslatePKs_(const Teuchos::ParameterLi
           out_list.sublist(it->first).sublist("verbose object") = verb_list_.sublist("verbose object");
         }
       }
+      else if (it->first == "flow and transport in matrix fracture") {
+        Teuchos::Array<std::string> pk_names;
+        pk_names.push_back("coupled flow");
+        pk_names.push_back("coupled transport");
+        out_list.sublist(it->first).set<Teuchos::Array<std::string> >("PKs order", pk_names);
+        out_list.sublist(it->first).set<int>("master PK index", 0);
+      }
     }
   }
 
@@ -889,7 +941,16 @@ void InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       tmp_f.remove("BDF1", false);
       tmp_f.remove("initialization", false);
 
-      mesh_list.sublist("extract fracture mesh").set<Teuchos::Array<std::string> >("regions", fracture_regions_);
+      Teuchos::Array<std::string> aux(1, CreateUniqueName_(fracture_regions_));
+      mesh_list.sublist("submesh").set<Teuchos::Array<std::string> >("regions", aux)
+                                  .set<std::string>("extraction method", "manifold mesh");
+
+      if (dim_ == 3) mesh_list.sublist("expert").set<bool>("request edges", true);
+    }
+
+    if (name == "coupled transport" && transport_implicit_) {
+      pk_list.sublist("transport matrix").sublist("operators").sublist("advection operator")
+             .sublist("matrix").set<Teuchos::Array<std::string> >("fracture", fracture_regions_);
     }
   }
 }

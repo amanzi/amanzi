@@ -15,6 +15,7 @@
 #include "MeshFactory.hh"
 #include "FileFormat.hh"
 
+#include "MeshExtractedManifold.hh"
 #include "Mesh_simple.hh"
 
 #ifdef HAVE_MSTK_MESH
@@ -52,6 +53,18 @@ MeshFactory::MeshFactory(const Comm_ptr_type& comm,
   if (plist_ == Teuchos::null) {
     plist_ = Teuchos::rcp(new Teuchos::ParameterList());
   }
+
+  // submesh parameter
+  extraction_method_ = "none";
+  if (plist != Teuchos::null) {
+      const auto& umesh = plist->sublist("unstructured");
+    if (umesh.isSublist("submesh")) {
+      const auto& submesh = umesh.sublist("submesh");
+      if (submesh.isParameter("extraction method")) {
+        extraction_method_ = submesh.get<std::string>("extraction method");
+      }
+    }
+  }
 }
 
 
@@ -66,6 +79,7 @@ MeshFactory::set_preference(const Preference& pref)
     Exceptions::amanzi_throw(FrameworkMessage("Preference requested includes no frameworks that are enabled."));
   }
 }
+
 
 // -------------------------------------------------------------
 // MeshFactory::create
@@ -110,26 +124,20 @@ MeshFactory::create(const std::string& filename,
   return Teuchos::null;
 }
 
-/** 
- * Coellective
- *
- * This creates a mesh by generating a block of hexahedral cells.
- *
- * Hopefully, if any one process has an error, all processes will
- * throw an Mesh::Message exception.
- * 
- * @param x0 origin x-coordinate
- * @param y0 origin y-coordinate
- * @param z0 origin z-coordinate
- * @param x1 maximum x-coordinate
- * @param y1 maximum y-coordinate
- * @param z1 maximum z-coordinate
- * @param nx number of cells in the x-direction
- * @param ny number of cells in the y-direction
- * @param nz number of cells in the z-direction
- * 
- * @return mesh instance
- */
+
+// -------------------------------------------------------------
+// This creates a mesh by generating a block of hexahedral cells.
+//
+// Hopefully, if any one process has an error, all processes will
+// throw an Mesh::Message exception.
+//
+// Input:
+//   (x0, y0, z0) left-bottom-front corner
+//   (x1, y1, z1) right-top-back corner
+//   nx x ny x nz number of cells in the box mesh
+//
+// Returns mesh instance
+// -------------------------------------------------------------
 Teuchos::RCP<Mesh> 
 MeshFactory::create(const double x0, const double y0, const double z0,
                     const double x1, const double y1, const double z1,
@@ -158,23 +166,19 @@ MeshFactory::create(const double x0, const double y0, const double z0,
 }
 
 
-/** 
- * Coellective
- *
- * This creates a mesh by generating a block of quadrilateral cells.
- *
- * Hopefully, if any one process has an error, all processes will
- * throw an Mesh::Message exception.
- * 
- * @param x0 origin x-coordinate
- * @param y0 origin y-coordinate
- * @param x1 maximum x-coordinate
- * @param y1 maximum y-coordinate
- * @param nx number of cells in the x-direction
- * @param ny number of cells in the y-direction
- * 
- * @return mesh instance
- */
+// -------------------------------------------------------------
+// This creates a mesh by generating a block of quadrilateral cells.
+//
+// Hopefully, if any one process has an error, all processes will
+// throw an Mesh::Message exception.
+//
+// Input:
+//   (x0, y0) left-bottom-front corner
+//   (x1, y1) right-top-back corner
+//   nx x ny number of cells in the box mesh
+//
+// Returns mesh instance
+// -------------------------------------------------------------
 Teuchos::RCP<Mesh> 
 MeshFactory::create(const double x0, const double y0,
                     const double x1, const double y1,
@@ -197,15 +201,12 @@ MeshFactory::create(const double x0, const double y0,
   return Teuchos::null;
 }
 
-/** 
- * This creates a mesh by generating a block of
- * quadrilateral/hexahedral cells, but using a parameter list with the
- * limits and cell counts.
- * 
- * @param parameter_list 
- * 
- * @return 
- */
+
+// -------------------------------------------------------------
+// This creates a mesh by generating a block of quadrilateral
+// or hexahedral cells, using a parameter list with the limits 
+// and cell counts.
+// -------------------------------------------------------------
 Teuchos::RCP<Mesh> 
 MeshFactory::create(const Teuchos::ParameterList& parameter_list, 
                     const bool request_faces, 
@@ -254,19 +255,11 @@ MeshFactory::create(const Teuchos::ParameterList& parameter_list,
 }
 
 
-/** 
- * This creates a mesh by extracting subsets of entities from an existing
- * mesh possibly flattening it by removing the last dimension or (in the 
- * future) extruding it when it makes sense
- * 
- * @param inmesh
- * @param setids
- * @param setkind
- * @param flatten
- * @param extrude
- * 
- * @return 
- */
+// -------------------------------------------------------------
+// This creates a mesh by extracting subsets of entities from an
+// existing mesh possibly flattening it by removing the last 
+// dimension or (in the future) extruding it when it makes sense
+// -------------------------------------------------------------
 Teuchos::RCP<Mesh> 
 MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh, 
                     const Entity_ID_List& setids,
@@ -286,12 +279,21 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
     comm = inmesh->get_comm();
   }
 
+  // check that ids are unique
+  for (auto it1 = setids.begin(); it1 != setids.end(); ++it1) {
+    for (auto it2 = it1 + 1; it2 != setids.end(); ++it2) {
+      if (*it2 == *it1) {
+        Exceptions::amanzi_throw(Message("Extrated mesh has geometrically identical elements."));
+      }
+    }
+  }
+
   // extract
   for (auto p : preference_) {
 #ifdef HAVE_MSTK_MESH      
     if (p == Framework::MSTK) {
       return Teuchos::rcp(new Mesh_MSTK(inmesh, setids, setkind, flatten,
-              comm, gm, plist_, request_faces, request_edges));
+          comm, gm, plist_, request_faces, request_edges));
     }
 #endif      
   }
@@ -300,19 +302,12 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
   return Teuchos::null;
 }
 
-/** 
- * This creates a mesh by extracting subsets of entities from an existing
- * mesh possibly flattening it by removing the last dimension or (in the 
- * future) extruding it when it makes sense
- * 
- * @param inmesh
- * @param setnames
- * @param setkind
- * @param flatten
- * @param extrude
- * 
- * @return 
- */
+
+// -------------------------------------------------------------
+// This creates a mesh by extracting subsets of entities from an existing
+//  mesh possibly flattening it by removing the last dimension or (in the 
+// future) extruding it when it makes sense
+// -------------------------------------------------------------
 Teuchos::RCP<Mesh> 
 MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh, 
                     const std::vector<std::string>& setnames,
@@ -321,6 +316,14 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
                     const bool request_faces, 
                     const bool request_edges)
 {
+  if (extraction_method_ == "manifold mesh" && setnames.size() == 1) {
+    const auto& comm = inmesh->get_comm();
+    const auto& gm = inmesh->geometric_model();
+
+    return Teuchos::rcp(new MeshExtractedManifold(inmesh, setnames[0], setkind,
+        comm, gm, plist_, request_faces, request_edges));
+  } 
+
   Entity_ID_List ids;
   for (auto name : setnames) {
     Entity_ID_List ids_l;
@@ -329,5 +332,6 @@ MeshFactory::create(const Teuchos::RCP<const Mesh>& inmesh,
   }
   return create(inmesh, ids, setkind, flatten, request_faces, request_edges);
 }
+
 } // namespace AmanziMesh
 } // namespace Amanzi

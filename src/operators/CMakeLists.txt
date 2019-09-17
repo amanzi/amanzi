@@ -30,9 +30,10 @@ include_directories(${ATK_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
-include_directories(${MESH_SOURCE_DIR})
+include_directories(${MESH_EXTRACTED_SOURCE_DIR})
 include_directories(${MESH_LOGICAL_SOURCE_DIR})
 include_directories(${MESH_FACTORY_SOURCE_DIR})
+include_directories(${MESH_SOURCE_DIR})
 include_directories(${MSTK_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
@@ -79,11 +80,14 @@ set(operators_inc_files
     Operator_FaceCellSff.hh
     Operator_Factory.hh
     Operator_Node.hh
+    Operator_Schema.hh
     BoundaryFlux.hh
     PDE_Abstract.hh
     PDE_Accumulation.hh
     PDE_Advection.hh
     PDE_AdvectionUpwind.hh
+    PDE_AdvectionUpwindDFN.hh    
+    PDE_AdvectionUpwindFracturedMatrix.hh
     PDE_AdvectionRiemann.hh
     PDE_CouplingFlux.hh
     PDE_Diffusion.hh
@@ -111,6 +115,7 @@ set(operators_inc_files
     TreeOperator.hh
     Reconstruction.hh
     ReconstructionCell.hh
+    UniqueLocalIndex.hh
     Upwind.hh
     UpwindArithmeticAverage.hh
     UpwindDivK.hh
@@ -138,6 +143,7 @@ add_amanzi_library(operators
                           PDE_Accumulation.cc
                           PDE_Abstract.cc
                           PDE_AdvectionUpwind.cc PDE_AdvectionRiemann.cc
+                          PDE_AdvectionUpwindFracturedMatrix.cc PDE_AdvectionUpwindDFN.cc                              
                           PDE_CouplingFlux.cc
                           PDE_DiffusionMFD.cc PDE_DiffusionMFDwithGravity.cc
                           PDE_DiffusionFV.cc PDE_DiffusionFVwithGravity.cc
@@ -155,6 +161,7 @@ add_amanzi_library(operators
                           TreeOperator.cc
                           ReconstructionCell.cc
                           RemapDG.cc RemapUtils.cc
+                          UniqueLocalIndex.cc
                           HEADERS ${operators_inc_files}
                    LINK_LIBS geometry mesh mesh_factory error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})                          
 
@@ -231,6 +238,7 @@ if (BUILD_TESTS)
 
     add_amanzi_test(operators_diffusion_fractured_matrix operators_diffusion_fractured_matrix
                     KIND unit
+                    NPROCS 2
                     SOURCE test/Main.cc test/operator_diffusion_fractured_matrix.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
@@ -251,12 +259,19 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/operator_advdiff.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # Test: matrices for surface
+    # Test: matrices for surface and fractures
     add_amanzi_test(operators_surface operators_surface
                     KIND unit
                     SOURCE test/Main.cc test/operator_advdiff_surface.cc
-                                        test/operator_fractures.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(operators_dfn operators_dfn
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_advection_dfn.cc
+                                        test/operator_diffusion_dfn.cc
+                    LINK_LIBS mesh_extracted ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+    add_amanzi_test(operators_dfn_4pe operators_dfn NPROCS 4 KIND unit)
 
     # Test: electromagnetics 
     add_amanzi_test(operators_electromagnetics operators_electromagnetics

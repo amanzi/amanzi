@@ -335,41 +335,6 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(
 
 
 /* ******************************************************************
-* Visit methods for symbolic assemble: Coupling
-****************************************************************** */
-void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Diagonal& op,
-                                                 const SuperMap& map, GraphFE& graph,
-                                                 int my_block_row, int my_block_col) const
-{
-  std::string row_name = op.row_compname();
-  std::string col_name = op.col_compname();
-
-  const std::vector<int>& row_gids = map.GhostIndices(my_block_row, op.row_compname(), 0);
-  const std::vector<int>& col_gids = map.GhostIndices(my_block_col, op.col_compname(), 0);
-
-  const auto& col_lids = op.col_inds();
-  const auto& row_lids = op.row_inds();
-
-  std::vector<int> lid_r, lid_c;
-
-  int ierr(0);
-  for (int n = 0; n != col_lids.size(); ++n) {
-    int ndofs = col_lids[n].size();
-
-    lid_r.clear();
-    lid_c.clear();
-
-    for (int i = 0; i != ndofs; ++i) {
-      lid_r.push_back(row_gids[row_lids[n][i]]);
-      lid_c.push_back(col_gids[col_lids[n][i]]);
-    }
-    ierr |= graph.InsertMyIndices(ndofs, lid_r.data(), ndofs, lid_c.data());
-  }
-  AMANZI_ASSERT(!ierr);
-}
-
-
-/* ******************************************************************
 * Visit methods for assemble: FaceCell
 ****************************************************************** */
 void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
@@ -513,39 +478,6 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
     }
 
     ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[sf]);
-  }
-  AMANZI_ASSERT(!ierr);
-}
-
-
-/* ******************************************************************
-* Visit methods for assemble: Coupling
-****************************************************************** */
-void Operator_FaceCell::AssembleMatrixOp(const Op_Diagonal& op,
-                                         const SuperMap& map, MatrixFE& mat,
-                                         int my_block_row, int my_block_col) const
-{
-  const std::vector<int>& row_gids = map.GhostIndices(my_block_row, op.row_compname(), 0);
-  const std::vector<int>& col_gids = map.GhostIndices(my_block_col, op.col_compname(), 0);
-
-  const auto& col_lids = op.col_inds();
-  const auto& row_lids = op.row_inds();
-
-  std::vector<int> lid_r, lid_c;
-
-  int ierr(0);
-  for (int n = 0; n != col_lids.size(); ++n) {
-    int ndofs = col_lids[n].size();
-
-    lid_r.clear();
-    lid_c.clear();
-
-    for (int i = 0; i != ndofs; ++i) {
-      lid_r.push_back(row_gids[row_lids[n][i]]);
-      lid_c.push_back(col_gids[col_lids[n][i]]);
-    }
-
-    ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[n]);
   }
   AMANZI_ASSERT(!ierr);
 }

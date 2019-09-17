@@ -187,6 +187,11 @@ class Mesh_MSTK : public Mesh {
 			   const Parallel_type ptype,
 			   Entity_ID_List *faceids) const;    
     
+  // Faces of type 'ptype' connected to an edge
+  void edge_get_faces(const Entity_ID edgeid,
+                      const Parallel_type ptype,
+                      Entity_ID_List *faceids) const;
+
   // Cells of type 'ptype' connected to an edge
   void edge_get_cells(const Entity_ID edgeid,
                       const Parallel_type ptype,
@@ -280,7 +285,8 @@ class Mesh_MSTK : public Mesh {
                                  std::vector<double> *vofs) const;
 
 
-  using Mesh::deform; // note this pulls back the node-based deform as well, so that it can be called when referencing a Mesh_MSTK object
+  // this pulls back the node-based deform as well, so that it can be called when referencing a Mesh_MSTK object
+  using Mesh::deform; 
   
   // Deform a mesh so that cell volumes conform as closely as possible
   // to target volumes without dropping below the minimum volumes.  If

@@ -12,7 +12,7 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "State.hh"
-#include "Transport_PK.hh"
+#include "TransportExplicit_PK.hh"
 
 
 double f_step(const Amanzi::AmanziGeometry::Point& x, double t) { 
@@ -63,7 +63,7 @@ void runTest(const Amanzi::AmanziMesh::Framework& mypref) {
   S->set_time(0.0);
   S->set_intermediate_time(0.0);
 
-  Transport_PK TPK(plist, S, "transport", component_names);
+  TransportExplicit_PK TPK(plist, S, "transport", component_names);
   TPK.Setup(S.ptr());
   TPK.CreateDefaultState(mesh, 2);
   S->InitializeFields();

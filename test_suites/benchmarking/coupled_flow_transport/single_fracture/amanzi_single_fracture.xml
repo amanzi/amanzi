@@ -72,7 +72,7 @@
   <numerical_controls>
     <unstructured_controls>
       <unstr_steady-state_controls>
-        <nonlinear_tolerance>1.0e-11</nonlinear_tolerance>
+        <nonlinear_tolerance>1.0e-10</nonlinear_tolerance>
         <unstr_initialization/>
       </unstr_steady-state_controls>
       <unstr_linear_solver>

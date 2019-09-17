@@ -39,6 +39,10 @@ set(ENABLE_MSTK_Mesh @ENABLE_MSTK_Mesh@ CACHE BOOL "Enable MSTK Unstructured Mes
 set(ENABLE_MOAB_Mesh @ENABLE_MOAB_Mesh@ CACHE BOOL "Enable MOAB Unstructured Mesh Toolkit")
 
 
+# Language standard
+set(CMAKE_CXX_STANDARD @CMAKE_CXX_STANDARD@ CACHE STRING "C++ standard")
+
+
 # TPL version
 set(AMANZI_TPLS_VERSION @AMANZI_TPLS_VERSION@ CACHE STRING "TPLs version")
 set(CMAKE_PREFIX_PATH @TPL_INSTALL_PREFIX@ CACHE STRING "search path for TPLs")

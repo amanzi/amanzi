@@ -71,9 +71,10 @@ void TestDiffusionFracturedMatrix(double gravity) {
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // modify diffusion coefficient
+  WhetStone::Tensor Knull;
   auto Kc = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
 
-  Analytic02 ana(mesh, Point(1.0, 2.0, 0.0), gravity);
+  Analytic02 ana(mesh, Point(1.0, 2.0, 0.0), gravity, Knull);
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);

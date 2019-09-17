@@ -37,14 +37,14 @@ namespace Operators {
 class PDE_AdvectionUpwind : public PDE_Advection {
  public:
   PDE_AdvectionUpwind(Teuchos::ParameterList& plist,
-                      Teuchos::RCP<Operator> global_op) :
+                      const Teuchos::RCP<Operator>& global_op) :
       PDE_Advection(plist, global_op)
   {
     InitAdvection_(plist);
   }
 
   PDE_AdvectionUpwind(Teuchos::ParameterList& plist,
-                      Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+                      const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       PDE_Advection(plist, mesh)
   {
     InitAdvection_(plist);
@@ -55,8 +55,8 @@ class PDE_AdvectionUpwind : public PDE_Advection {
   virtual void Setup(const CompositeVector& u) override;
   // -- generate a linearized operator
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                              const Teuchos::Ptr<const CompositeVector>& p) override;
-  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& dhdT) override;
+                              const Teuchos::Ptr<const CompositeVector>& dhdT) override;
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u) override;
 
   // -- determine advected flux of potential u
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h, 
@@ -76,11 +76,10 @@ class PDE_AdvectionUpwind : public PDE_Advection {
   //      implementtion trick.
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
- private:
+
+ protected:
   void InitAdvection_(Teuchos::ParameterList& plist);
   void IdentifyUpwindCells_(const CompositeVector& u);
-
- private:
   Teuchos::RCP<Epetra_IntVector> upwind_cell_, downwind_cell_;
 };
 

@@ -20,6 +20,7 @@
 #include "MeshDefs.hh"
 #include "PreconditionerFactory.hh"
 #include "SuperMap.hh"
+#include "WhetStoneMeshUtils.hh"
 
 #include "OperatorDefs.hh"
 #include "OperatorUtils.hh"
@@ -113,33 +114,6 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Node_Node& op,
 
 
 /* ******************************************************************
-* Apply the local matrices directly as schemas match.
-****************************************************************** */
-int Operator_Schema::ApplyTransposeMatrixFreeOp(const Op_Cell_Schema& op,
-                                                const CompositeVector& X, CompositeVector& Y) const
-{
-  AMANZI_ASSERT(op.matrices.size() == ncells_owned);
-
-  X.ScatterMasterToGhosted();
-  Y.PutScalarGhosted(0.0);
-
-  for (int c = 0; c != ncells_owned; ++c) {
-    const WhetStone::DenseMatrix& Acell = op.matrices[c];
-    int ncols = Acell.NumCols();
-    int nrows = Acell.NumRows();
-    WhetStone::DenseVector v(nrows), av(ncols);
-
-    ExtractVectorCellOp(c, op.schema_row_, v, X);
-    Acell.Multiply(v, av, true);
-    AssembleVectorCellOp(c, op.schema_col_, av, Y);
-  }
-
-  Y.GatherGhostedToMaster(Add);
-  return 0;
-}
-
-
-/* ******************************************************************
 * Parallel preconditioner: Y = P * X.
 ******************************************************************* */
 int Operator_Schema::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
@@ -216,82 +190,49 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
                                                int my_block_row, int my_block_col) const
 {
   std::vector<int> lid_r, lid_c;
-  AmanziMesh::Entity_ID_List nodes, edges, faces;
+  AmanziMesh::Entity_ID_List entities;
 
-  int ierr(0);
+  int num, ierr(0);
+  AmanziMesh::Entity_kind kind;
+
   for (int c = 0; c != ncells_owned; ++c) {
-    lid_r.clear();
     lid_c.clear();
     for (auto it = op.schema_col_.begin(); it != op.schema_col_.end(); ++it) {
-      int num;
-      AmanziMesh::Entity_kind kind;
       std::tie(kind, std::ignore, num) = *it;
 
-      if (kind == AmanziMesh::NODE) {
-        mesh_->cell_get_nodes(c, &nodes);
-        int nnodes = nodes.size();
+      std::string name = schema_row_.KindToString(kind);
+      WhetStone::cell_get_entities(*mesh_, c, kind, &entities);
+      int nents = entities.size();
+      AMANZI_ASSERT(nents > 0);
 
-        for (int n = 0; n != nnodes; ++n) {
-          int v = nodes[n];
-          for (int k = 0; k < num; ++k) {
-            const std::vector<int>& col_inds = map.GhostIndices(my_block_col, "node", k);
-            const std::vector<int>& row_inds = map.GhostIndices(my_block_row, "node", k);
-
-            lid_c.push_back(col_inds[v]);
-            lid_r.push_back(row_inds[v]);
-          }
-        }
-      }
-
-      else if (kind == AmanziMesh::FACE) {
-        mesh_->cell_get_faces(c, &faces);
-        int nfaces = faces.size();
-
-        for (int n = 0; n != nfaces; ++n) {
-          int f = faces[n];
-          for (int k = 0; k < num; ++k) {
-            const std::vector<int>& col_inds = map.GhostIndices(my_block_col, "face", k);
-            const std::vector<int>& row_inds = map.GhostIndices(my_block_row, "face", k);
-
-            lid_c.push_back(col_inds[f]);
-            lid_r.push_back(row_inds[f]);
-          }
-        }
-      }
-
-      else if (kind == AmanziMesh::EDGE) {
-        mesh_->cell_get_edges(c, &edges);
-        int nedges = edges.size();
-
-        for (int n = 0; n != nedges; ++n) {
-          int e = edges[n];
-          for (int k = 0; k < num; ++k) {
-            const std::vector<int>& col_inds = map.GhostIndices(my_block_col, "edge", k);
-            const std::vector<int>& row_inds = map.GhostIndices(my_block_row, "edge", k);
-
-            lid_c.push_back(col_inds[e]);
-            lid_r.push_back(row_inds[e]);
-          }
-        }
-      }
-
-      else if (kind == AmanziMesh::CELL) {
+      for (int n = 0; n != nents; ++n) {
+        int id = entities[n];
         for (int k = 0; k < num; ++k) {
-          const std::vector<int>& col_inds = map.GhostIndices(my_block_col, "cell", k);
-          const std::vector<int>& row_inds = map.GhostIndices(my_block_row, "cell", k);
-
-          lid_c.push_back(col_inds[c]);
-          lid_r.push_back(row_inds[c]);
+          const std::vector<int>& col_inds = map.GhostIndices(my_block_col, name, k);
+          lid_c.push_back(col_inds[id]);
         }
-      }
-
-      else {
-        AMANZI_ASSERT(false);
       }
     }
 
-    int m = lid_c.size();
-    ierr |= graph.InsertMyIndices(m, lid_r.data(), m, lid_c.data());
+    lid_r.clear();
+    for (auto it = op.schema_row_.begin(); it != op.schema_row_.end(); ++it) {
+      std::tie(kind, std::ignore, num) = *it;
+
+      std::string name = schema_row_.KindToString(kind);
+      WhetStone::cell_get_entities(*mesh_, c, kind, &entities);
+      int nents = entities.size();
+      AMANZI_ASSERT(nents > 0);
+
+      for (int n = 0; n != nents; ++n) {
+        int id = entities[n];
+        for (int k = 0; k < num; ++k) {
+          const std::vector<int>& row_inds = map.GhostIndices(my_block_row, name, k);
+          lid_r.push_back(row_inds[id]);
+        }
+      }
+    }
+
+    ierr |= graph.InsertMyIndices(lid_r.size(), lid_r.data(), lid_c.size(), lid_c.data());
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -371,77 +312,45 @@ void Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
   std::vector<int> lid_r, lid_c;
-  AmanziMesh::Entity_ID_List nodes, edges, faces;
+  AmanziMesh::Entity_ID_List entities;
 
-  int ierr(0);
+  int num, ierr(0);
+  AmanziMesh::Entity_kind kind;
+
   for (int c = 0; c != ncells_owned; ++c) {
-    lid_r.clear();
     lid_c.clear();
     for (auto it = op.schema_col_.begin(); it != op.schema_col_.end(); ++it) {
-      int num;
-      AmanziMesh::Entity_kind kind;
       std::tie(kind, std::ignore, num) = *it;
 
-      if (kind == AmanziMesh::NODE) {
-        mesh_->cell_get_nodes(c, &nodes);
-        int nnodes = nodes.size();
+      std::string name = schema_row_.KindToString(kind);
+      WhetStone::cell_get_entities(*mesh_, c, kind, &entities);
+      int nents = entities.size();
+      AMANZI_ASSERT(nents > 0);
 
-        for (int n = 0; n != nnodes; ++n) {
-          int v = nodes[n];
-          for (int k = 0; k < num; ++k) {
-            const std::vector<int>& col_inds = map.GhostIndices(my_block_col, "node", k);
-            const std::vector<int>& row_inds = map.GhostIndices(my_block_row, "node", k);
-
-            lid_c.push_back(col_inds[nodes[n]]);
-            lid_r.push_back(row_inds[nodes[n]]);
-          }
-        }
-      }
-
-      else if (kind == AmanziMesh::FACE) {
-        mesh_->cell_get_faces(c, &faces);
-        int nfaces = faces.size();
-
-        for (int n = 0; n != nfaces; ++n) {
-          int f = faces[n];
-          for (int k = 0; k < num; ++k) {
-            const std::vector<int>& col_inds = map.GhostIndices(my_block_col, "face", k);
-            const std::vector<int>& row_inds = map.GhostIndices(my_block_row, "face", k);
-
-            lid_c.push_back(col_inds[f]);
-            lid_r.push_back(row_inds[f]);
-          }
-        }
-      }
-
-      else if (kind == AmanziMesh::EDGE) {
-        mesh_->cell_get_edges(c, &edges);
-        int nedges = edges.size();
-
-        for (int n = 0; n != nedges; ++n) {
-          int e = edges[n];
-          for (int k = 0; k < num; ++k) {
-            const std::vector<int>& col_inds = map.GhostIndices(my_block_col, "edge", k);
-            const std::vector<int>& row_inds = map.GhostIndices(my_block_row, "edge", k);
-
-            lid_c.push_back(col_inds[e]);
-            lid_r.push_back(row_inds[e]);
-          }
-        }
-      }
-
-      else if (kind == AmanziMesh::CELL) {
+      for (int n = 0; n != nents; ++n) {
+        int id = entities[n];
         for (int k = 0; k < num; ++k) {
-          const std::vector<int>& col_inds = map.GhostIndices(my_block_col, "cell", k);
-          const std::vector<int>& row_inds = map.GhostIndices(my_block_row, "cell", k);
-
-          lid_c.push_back(col_inds[c]);
-          lid_r.push_back(row_inds[c]);
+          const std::vector<int>& col_inds = map.GhostIndices(my_block_col, name, k);
+          lid_c.push_back(col_inds[id]);
         }
       }
+    }
 
-      else {
-        AMANZI_ASSERT(false);
+    lid_r.clear();
+    for (auto it = op.schema_row_.begin(); it != op.schema_row_.end(); ++it) {
+      std::tie(kind, std::ignore, num) = *it;
+
+      std::string name = schema_row_.KindToString(kind);
+      WhetStone::cell_get_entities(*mesh_, c, kind, &entities);
+      int nents = entities.size();
+      AMANZI_ASSERT(nents > 0);
+
+      for (int n = 0; n != nents; ++n) {
+        int id = entities[n];
+        for (int k = 0; k < num; ++k) {
+          const std::vector<int>& row_inds = map.GhostIndices(my_block_row, name, k);
+          lid_r.push_back(row_inds[id]);
+        }
       }
     }
 

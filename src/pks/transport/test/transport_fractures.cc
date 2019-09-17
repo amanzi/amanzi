@@ -27,9 +27,10 @@
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
 #include "State.hh"
+#include "UniqueLocalIndex.hh"
 
 // Transport
-#include "Transport_PK.hh"
+#include "TransportExplicit_PK.hh"
 
 /* **************************************************************** */
 TEST(ADVANCE_TWO_FRACTURES) {
@@ -63,9 +64,11 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   setnames.push_back("fracture 1");
   setnames.push_back("fracture 2");
 
-  RCP<const Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::FACE);
+  // RCP<const Mesh> mesh = meshfactory.create(mesh3D, setnames, AmanziMesh::FACE);
+  RCP<const Mesh> mesh = meshfactory.create("test/fractures.exo");
 
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   std::cout << "pid=" << comm->MyPID() << " cells: " << ncells_owned 
                                        << " faces: " << nfaces_owned << std::endl;
@@ -84,38 +87,36 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   S->set_initial_time(0.0);
   S->set_final_time(0.0);
 
-  Transport_PK TPK(plist, S, "transport", component_names);
+  TransportExplicit_PK TPK(plist, S, "transport", component_names);
   TPK.Setup(S.ptr());
   TPK.CreateDefaultState(mesh, 1);
   S->InitializeFields();
   S->InitializeEvaluators();
 
   // modify the default state
-  Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux_fracture", "state")->ViewComponent("cell");
+  auto& flux = *S->GetFieldData("darcy_flux", "state")->ViewComponent("face", true);
+  const auto flux_map = S->GetFieldData("darcy_flux", "state")->Map().Map("face", true);
 
   int dir;
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
   AmanziGeometry::Point velocity(1.0, 0.2, -0.1);
-  for (int c = 0; c < ncells_owned; c++) {
+  for (int c = 0; c < ncells_wghost; c++) {
     mesh->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
+      int g = flux_map->FirstPointInElement(f);
+      int ndofs = flux_map->ElementSize(f);
+      if (ndofs > 1) g += Operators::UniqueIndexFaceToCells(*mesh, f, c);
+
       const AmanziGeometry::Point& normal = mesh->face_normal(f, false, c, &dir);
-      flux[n][c] = velocity * normal;
+      flux[0][g] = (velocity * normal) * dir;
     }
   }
-  S->GetField("darcy_flux_fracture", "state")->set_initialized();
-
-  // we still need the old flux until testing is complete
-  Epetra_MultiVector& flux_old = *S->GetFieldData("darcy_flux", "state")->ViewComponent("face");
-  for (int f = 0; f < nfaces_owned; f++) {
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    flux_old[0][f] = velocity * normal;
-  }
+  S->GetField("darcy_flux", "state")->set_initialized();
 
   // initialize the transport process kernel
   TPK.Initialize(S.ptr());
@@ -151,6 +152,8 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   for (int n = 0; n < block.size(); ++n) {
     tcc_max = std::max(tcc_max, tcc[0][block[n]]);
   }
+  double tmp = tcc_max;
+  mesh->get_comm()->MaxAll(&tmp, &tcc_max, 1);
   CHECK(tcc_max > 0.25);
 
   GMV::open_data_file(*mesh, (std::string)"transport.gmv");

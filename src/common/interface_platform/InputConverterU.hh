@@ -42,6 +42,7 @@ class InputConverterU : public InputConverter {
       mesh_rectangular_(false),
       transport_permeability_(false),
       use_transport_porosity_(false),
+      transport_implicit_(false),
       restart_(false),
       ic_time_(0.0),
       ic_time_flow_(0.0),
@@ -59,6 +60,7 @@ class InputConverterU : public InputConverter {
       mesh_rectangular_(false),
       transport_permeability_(false),
       use_transport_porosity_(false),
+      transport_implicit_(false),
       restart_(false),
       ic_time_(0.0),
       ic_time_flow_(0.0),
@@ -174,10 +176,15 @@ class InputConverterU : public InputConverter {
   void FilterEmptySublists_(Teuchos::ParameterList& plist);
   void MergeInitialConditionsLists_(Teuchos::ParameterList& plist);
 
+  // -- sort functions
+  template<class Iterator>
+  Iterator SelectUniqueEntries(Iterator first, Iterator last);
+
   // -- miscalleneous
   bool FindNameInVector_(const std::string& name, const std::vector<std::string>& list); 
   std::string CreateNameFromVector_(const std::vector<std::string>& list); 
   bool WeightVolumeSubmodel_(const std::vector<std::string>& regions);
+  std::string CreateUniqueName_(const Teuchos::Array<std::string>& list);
   void PrintStatistics_();
 
  private:
@@ -208,7 +215,7 @@ class InputConverterU : public InputConverter {
   std::map<std::string, int> region_type_;  // flag for vofs
 
   // global transport and chemistry constants
-  bool transport_permeability_, use_transport_porosity_;
+  bool transport_permeability_, use_transport_porosity_, transport_implicit_;
   std::vector<std::string> comp_names_all_;
   std::map<std::string, double> solute_molar_mass_;
 
@@ -241,6 +248,21 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList verb_list_;
   VerboseObject* vo_;
 };
+
+
+/* ******************************************************************
+* Selects unique entries and places them in [first, last)
+****************************************************************** */
+template<class Iterator>
+Iterator InputConverterU::SelectUniqueEntries(Iterator first, Iterator last)
+{
+  while (first != last) {
+    Iterator next(first);
+    last = std::remove(++next, last, *first);
+    first = next;
+  }
+  return last;
+}
 
 }  // namespace AmanziInput
 }  // namespace Amanzi

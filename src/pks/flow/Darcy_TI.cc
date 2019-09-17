@@ -54,9 +54,6 @@ void Darcy_PK::FunctionalResidual(
   CompositeVector& rhs = *op_->rhs();
   AddSourceTerms(rhs);
 
-  op_->AssembleMatrix();
-  op_->UpdatePreconditioner();
-
   op_->ComputeNegativeResidual(*u_new->Data(), *f->Data());
 }
 
@@ -71,6 +68,16 @@ int Darcy_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> X,
   Y->PutScalar(0.0);
 
   return op_->ApplyInverse(*X->Data(), *Y->Data());
+}
+
+
+/* ******************************************************************
+* Update preconditioner for the interval (tp-dtp, tp].
+****************************************************************** */
+void Darcy_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector> u, double dtp)
+{
+  op_->AssembleMatrix();
+  op_->UpdatePreconditioner();
 }
 
 

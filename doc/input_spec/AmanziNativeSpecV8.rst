@@ -253,7 +253,8 @@ to handle multiphysics process kernels (PKs) and multiple time periods.
       * `"PK type`" [string] specifies the type of PK supported by Amanzi. At the moment
         available options are (`"darcy`", `"richards`", `"transport`", `"one-phase energy`", 
         `"two-phase energy`", `"reactive transport`", `"flow reactive transport`", 
-        `"thermal richards`", and `"chemistry`").
+        `"thermal richards`", `"chemistry`", `"transport implicit`", `"transport matrix fracture`",
+        `"transport matrix fracture implicit`", `"flow`", and `"darcy matrix fracture`").
  
       * `"start period time`" [double] is the start time of the current time period.
 
@@ -1948,13 +1949,13 @@ Amanzi supports a few nonlinear solvers described in details in a separate secti
 
   <ParameterList name="Richards problem">  <!-- parent list -->
   <ParameterList name="time integrator">
-    <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
-    <Parameter name="extrapolate initial guess" type="bool" value="true"/>
-    <Parameter name="restart tolerance relaxation factor" type="double" value="1000.0"/>
-    <Parameter name="restart tolerance relaxation factor damping" type="double" value="0.9"/>
-
     <Parameter name="time integration method" type="string" value="BDF1"/>
     <ParameterList name="BDF1">
+      <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
+      <Parameter name="extrapolate initial guess" type="bool" value="true"/>
+      <Parameter name="restart tolerance relaxation factor" type="double" value="1000.0"/>
+      <Parameter name="restart tolerance relaxation factor damping" type="double" value="0.9"/>
+
       <Parameter name="timestep controller type" type="string" value="standard"/>
       <ParameterList name="timestep controller standard parameters">
         <Parameter name="min iterations" type="int" value="10"/>
@@ -4218,6 +4219,79 @@ and their extensions for various PKs.
   </ParameterList>
 
 
+Time integrator
+---------------
+
+There exists only one time integrator, *BDF1*.
+The standard parameters for this time integrator include sublists of control
+options for the timestep controller, preconditioner, and nonlinear solver.
+Each PK may have additional parameters.
+
+* `"max preconditioner lag iterations`" [int] specifies frequency of 
+  preconditioner recalculation.
+
+* `"freeze preconditioner`" [bool] enforces preconditioner to be updated only
+  once per non-linear solver. When set to *true*, the above parameter is ignored.
+  Default value is *false*.
+
+* `"extrapolate initial guess`" [bool] identifies forward time extrapolation
+  of the initial guess. Default is `"true`".
+
+* `"nonlinear iteration initial guess extrapolation order`" [int] defines
+  extrapolation algorithm. Defualt is 1. Zero value implies no extrapolation.
+
+* `"restart tolerance relaxation factor`" [double] changes the nonlinear
+  tolerance. The time integrator is usually restarted when a boundary condition 
+  changes drastically. It may be beneficial to loosen the nonlinear 
+  tolerance on the first several time steps after the time integrator restart. 
+  The default value is 1, while a reasonable value may be as large as 1000. 
+
+* `"restart tolerance relaxation factor damping`" controls how fast the loosened 
+  nonlinear tolerance will revert back to the one specified in `"nonlinear tolerance"`.
+  If the nonlinear tolerance is `"tol`", the relaxation factor is `"factor`", and 
+  the damping is `"d`", and the time step count is `"n`" then the actual nonlinear 
+  tolerance is `"tol * max(1.0, factor * d ** n)`".
+  The default value is 1, while reasonable values are between 0 and 1.
+
+* `"timestep controller type`" [string] defines one of a few available controllers.
+  This parameter typically requires a sublist with controller's parameters, e.g.
+  `"timestep controller standard parameters`".
+
+* `"solver type`" [string] defines nonlinear solver used on each time step for
+  a nonlinear algebraic system :math:`F(x) = 0`. 
+  The available options `"aa`", `"nka`" and `"Newton`".
+  This parameter typically requires a sublist with solver's control parameters, e.g. 
+  `"nka parameters`".
+
+* `"residual debugger`" [list] a residual debugger specification.
+
+  * `"file name base`" [string] specifies file name with the debug data. Default is `"amanzi_dbg`".
+    
+.. code-block:: xml
+
+  <ParameterList name="time integrator">
+    <Parameter name="time integration method" type="string" value="BDF1"/>
+    <ParameterList name="BDF1">
+      <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
+      <Parameter name="freeze preconditioner" type="bool" value="false"/>
+      <Parameter name="extrapolate initial guess" type="bool" value="true"/>
+      <Parameter name="nonlinear iteration initial guess extrapolation order" type="int" value="1"/>
+      <Parameter name="restart tolerance relaxation factor" type="double" value="1.0"/>
+      <Parameter name="restart tolerance relaxation factor damping" type="double" value="1.0"/>
+
+      <Parameter name="timestep controller type" type="string" value="standard"/>
+      <ParameterList name="timestep controller standard parameters">
+        ...
+      </ParameterList>
+
+      <Parameter name="solver type" type="string" value="nka"/>
+      <ParameterList name="nka parameters">
+        ... 
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+
 .. _TimeStepController:
 
 Time step controller
@@ -4256,25 +4330,6 @@ solutions which are enough different to cause doubt over their correctness.
   Available options are `"fixed`", `"standard`", `"smarter`",  `"adaptive`", and `"from file`"
   The later is under development and is based on a posteriori error estimates.
 
-  * `"max preconditioner lag iterations`" [int] specifies frequency of 
-    preconditioner recalculation.
-
-  * `"extrapolate initial guess`" [bool] identifies forward time extrapolation
-    of the initial guess. Default is `"true`".
-
-  * `"restart tolerance relaxation factor`" [double] changes the nonlinear
-    tolerance. The time integrator is usually restarted when a boundary condition 
-    changes drastically. It may be beneficial to loosen the nonlinear 
-    tolerance on the first several time steps after the time integrator restart. 
-    The default value is 1, while a reasonable value may be as large as 1000. 
-
-  * `"restart tolerance relaxation factor damping`" controls how fast the loosened 
-    nonlinear tolerance will revert back to the one specified in `"nonlinear tolerance"`.
-    If the nonlinear tolerance is `"tol`", the relaxation factor is `"factor`", and 
-    the damping is `"d`", and the time step count is `"n`" then the actual nonlinear 
-    tolerance is `"tol * max(1.0, factor * d ** n)`".
-    The default value is 1, while reasonable values are between 0 and 1.
-
   * `"time step increase factor`" [double] defines geometric grow rate for the
     initial time step. This factor is applied when nonlinear solver converged
     in less than `"min iterations`" iterations. 
@@ -4294,57 +4349,18 @@ solutions which are enough different to cause doubt over their correctness.
 
   * `"min time step`" [double] is the minimum allowed time step.
 
-  * `"solver type`" [string] defines nonlinear solver used on each time step for
-    a nonlinear algebraic system :math:`F(x) = 0`. 
-    The available options `"aa`", `"nka`" and `"Newton`".
-
-  * `"nka parameters`" [list] internal parameters for the nonlinear
-    solver NKA.
-
-  * `"aa parameters`" [list] internal parameters for the nonlinear
-    solver AA (Anderson acceleration).
-
-  * `"file name`" [string] is the path to hdf5 file containing timestep information. 
-    The parameter is used by only one controller.
-
-  * `"timestep header`" [string] is the name of the dataset containing the history 
-    of timestep sizes. The parameter is used by only one controller.
-
-  * `"max time step increase factor`" [double] specifies the maximum value for 
-    parameter `"time step increase factor`" in the smart controller. Default is 10.
-
-  * `"growth wait after fail`" [int] defined the number of skipped timesteps before
-    attempting to grow the timestep after a failed timestep. 
-    This parameter is used by the smart controller only.
-
-  * `"count before increasing increase factor`" [int] defines the number of successive 
-    increasions before multiplying parameter `"time step increase factor`". 
-    This parameter is used by the smart controller only.
- 
-  * `"residual debugger`" [list] a residual debugger specification.
-    
 .. code-block:: xml
 
-  <ParameterList name="Richards problem">  <!-- parent list -->
-  <ParameterList name="time integrator">
-    <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
-    <Parameter name="extrapolate initial guess" type="bool" value="true"/>
-    <Parameter name="restart tolerance relaxation factor" type="double" value="1000.0"/>
-    <Parameter name="restart tolerance relaxation factor damping" type="double" value="0.9"/>
-
-    <Parameter name="time integration method" type="string" value="BDF1"/>
-    <ParameterList name="BDF1">
-      <Parameter name="timestep controller type" type="string" value="standard"/>
-      <ParameterList name="timestep controller standard parameters">
-        <Parameter name="min iterations" type="int" value="10"/>
-        <Parameter name="max iterations" type="int" value="15"/>
-        <Parameter name="time step increase factor" type="double" value="1.2"/>
-        <Parameter name="time step reduction factor" type="double" value="0.5"/>
-        <Parameter name="max time step" type="double" value="1e+9"/>
-        <Parameter name="min time step" type="double" value="0.0"/>
-      </ParameterList>
+  <ParameterList name="BDF1"> <!-- parent list -->
+    <Parameter name="timestep controller type" type="string" value="standard"/>
+    <ParameterList name="timestep controller standard parameters">
+      <Parameter name="min iterations" type="int" value="10"/>
+      <Parameter name="max iterations" type="int" value="15"/>
+      <Parameter name="time step increase factor" type="double" value="1.2"/>
+      <Parameter name="time step reduction factor" type="double" value="0.5"/>
+      <Parameter name="max time step" type="double" value="1e+9"/>
+      <Parameter name="min time step" type="double" value="0.0"/>
     </ParameterList>
-  </ParameterList>
   </ParameterList>
 
 In this example, the time step is increased by factor 1.2 when the nonlinear
@@ -4353,6 +4369,25 @@ The time step is not changed when the number of nonlinear iterations is
 between 11 and 15.
 The time step will be cut twice if the number of nonlinear iterations exceeds 15.
 
+Parameters for other controllers are:
+
+* `"file name`" [string] is the path to hdf5 file containing timestep information. 
+  The parameter is used by only one controller.
+
+* `"timestep header`" [string] is the name of the dataset containing the history 
+  of timestep sizes. The parameter is used by only one controller.
+
+* `"max time step increase factor`" [double] specifies the maximum value for 
+  parameter `"time step increase factor`" in the smart controller. Default is 10.
+
+* `"growth wait after fail`" [int] defined the number of skipped timesteps before
+  attempting to grow the timestep after a failed timestep. 
+  This parameter is used by the smart controller only.
+
+* `"count before increasing increase factor`" [int] defines the number of successive 
+  increasions before multiplying parameter `"time step increase factor`". 
+  This parameter is used by the smart controller only.
+ 
 
 .. _Functions:
 
@@ -5548,6 +5583,19 @@ This specification format uses and describes the unstructured mesh only.
         Additionally, the use of `"zoltan_rcb"` with the MSTK framework triggers an option to 
         detect columns of elements in a mesh and adjust the partitioning such that no column is 
         split over multiple partitions. If no partitioner is specified, the default one is used.
+
+      * `"request edges`" [bool] builds support for mesh edges. Only in 3D.
+
+      * `"contiguous global ids`" [bool] enforces contigoud global ids. Default is *true*.
+
+    * `"submesh`" [list] parameters for extracted meshes
+
+      * `"extraction method`" [string] specifies the extraction method. The only available option
+        is `"manifold mesh`". If this parameter is missing, the parent mesh framework is used 
+        for submesh extraction..
+
+      * `"regions`" [Array(string)] defines a list of regions for submesh. Parameter 
+        `"extraction method`" requires a single name in this list.
 
 Example of *Unstructured* mesh generated internally:
 
