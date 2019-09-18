@@ -225,70 +225,80 @@ bool TransportMatrixFractureImplicit_PK::AdvanceStep(double t_old, double t_new,
   const auto& tcc_m = *S_->GetFieldData("total_component_concentration");
   const auto& tcc_f = *S_->GetFieldData("fracture-total_component_concentration");
 
-  pk_matrix->UpdateBoundaryData(t_old, t_new, 0);
-  pk_fracture->UpdateBoundaryData(t_old, t_new, 0);  
+  // we assume that all components are aquesous
+  int num_aqueous = tcc_m.ViewComponent("cell")->NumVectors();
 
-  pk_matrix->op()->rhs()->PutScalar(0.0);
-  pk_matrix->op_acc()->local_op(0)->Rescale(0.0);
-  pk_matrix->op_acc()->AddAccumulationDelta(tcc_m, phi_m, phi_m, dt, "cell");
+  for (int i = 0; i < num_aqueous; i++) {
+    auto tv_one = ExtractComponent_(tcc_m, tcc_f, i);
 
-  pk_fracture->op()->rhs()->PutScalar(0.0);
-  pk_fracture->op_acc()->local_op(0)->Rescale(0.0);
-  pk_fracture->op_acc()->AddAccumulationDelta(tcc_f, phi_f, phi_f, dt, "cell");
+    pk_matrix->UpdateBoundaryData(t_old, t_new, i);
+    pk_fracture->UpdateBoundaryData(t_old, t_new, i);
 
-  // assemble the operators
-  pk_matrix->op_adv()->UpdateMatrices(S_->GetFieldData("darcy_flux").ptr());
-  pk_matrix->op_adv()->ApplyBCs(true, true, true);
+    pk_matrix->op()->rhs()->PutScalar(0.0);
+    pk_matrix->op_acc()->local_op(0)->Rescale(0.0);
+    pk_matrix->op_acc()->AddAccumulationDelta(*tv_one->SubVector(0)->Data(), phi_m, phi_m, dt, "cell");
 
-  op_coupling00_->Setup(values1, 1.0);
-  op_coupling00_->UpdateMatrices(Teuchos::null, Teuchos::null);
+    pk_fracture->op()->rhs()->PutScalar(0.0);
+    pk_fracture->op_acc()->local_op(0)->Rescale(0.0);
+    pk_fracture->op_acc()->AddAccumulationDelta(*tv_one->SubVector(1)->Data(), phi_f, phi_f, dt, "cell");
 
-  op_coupling01_->Setup(values2, -1.0);
-  op_coupling01_->UpdateMatrices(Teuchos::null, Teuchos::null);
+    // assemble the operators
+    pk_matrix->op_adv()->UpdateMatrices(S_->GetFieldData("darcy_flux").ptr());
+    pk_matrix->op_adv()->ApplyBCs(true, true, true);
 
-  op_coupling10_->Setup(values1, -1.0);
-  op_coupling10_->UpdateMatrices(Teuchos::null, Teuchos::null);
+    op_coupling00_->Setup(values1, 1.0);
+    op_coupling00_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  op_coupling11_->Setup(values2, 1.0);
-  op_coupling11_->UpdateMatrices(Teuchos::null, Teuchos::null);  
+    op_coupling01_->Setup(values2, -1.0);
+    op_coupling01_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  op_tree_->AssembleMatrix();
+    op_coupling10_->Setup(values1, -1.0);
+    op_coupling10_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  // create preconditioner
-  auto pc_list = glist_->sublist("preconditioners").sublist("Hypre AMG");
-  op_tree_->InitPreconditioner(pc_list);
+    op_coupling11_->Setup(values2, 1.0);
+    op_coupling11_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  // create solver
-  Teuchos::ParameterList slist = glist_->sublist("solvers")
-                                        .sublist("GMRES with Hypre AMG").sublist("gmres parameters");
-  AmanziSolvers::LinearOperatorGMRES<Operators::TreeOperator, TreeVector, TreeVectorSpace>
-      solver(op_tree_, op_tree_);
-  solver.Init(slist);
-  solver.add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
+    op_tree_->AssembleMatrix();
 
-  TreeVector rhs(*solution_); 
-  *rhs.SubVector(0)->Data() = *pk_matrix->op()->rhs();
-  *rhs.SubVector(1)->Data() = *pk_fracture->op()->rhs();
+    // create preconditioner
+    auto pc_list = glist_->sublist("preconditioners").sublist("Hypre AMG");
+    op_tree_->InitPreconditioner(pc_list);
 
-  int ierr = solver.ApplyInverse(rhs, *solution_);
+    // create solver
+    Teuchos::ParameterList slist = glist_->sublist("solvers")
+                                          .sublist("GMRES with Hypre AMG").sublist("gmres parameters");
+    AmanziSolvers::LinearOperatorGMRES<Operators::TreeOperator, TreeVector, TreeVectorSpace>
+        solver(op_tree_, op_tree_);
+    solver.Init(slist);
+    solver.add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
 
-  // process error code
-  bool fail = (ierr == 0);
-  if (fail) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Step failed." << std::endl;
+    TreeVector rhs(*tv_one), tv_aux(*tv_one);
+    *rhs.SubVector(0)->Data() = *pk_matrix->op()->rhs();
+    *rhs.SubVector(1)->Data() = *pk_fracture->op()->rhs();
+
+    int ierr = solver.ApplyInverse(rhs, tv_aux);
+
+    SaveComponent_(tv_aux, solution_, i);
+
+    // process error code
+    bool fail = (ierr == 0);
+    if (fail) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "Step failed." << std::endl;
+      return fail;
+    }
   }
 
   // output 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     Teuchos::OSTab tab = vo_->getOSTab();
-    pk_matrix->VV_PrintSoluteExtrema(*solution_->SubVector(0)->Data()->ViewComponent("cell"), dt);
-    pk_fracture->VV_PrintSoluteExtrema(*solution_->SubVector(1)->Data()->ViewComponent("cell"), dt);
+    pk_matrix->VV_PrintSoluteExtrema(*solution_->SubVector(0)->Data()->ViewComponent("cell"), dt, " (m)");
+    pk_fracture->VV_PrintSoluteExtrema(*solution_->SubVector(1)->Data()->ViewComponent("cell"), dt, " (f)");
   }
 
   dt_ = ts_control_->get_timestep(dt_, 1);
 
-  return fail;
+  return false;
 }
 
 
@@ -300,6 +310,47 @@ void TransportMatrixFractureImplicit_PK::CommitStep(
 {
   *S->GetFieldData("total_component_concentration", "state") = *solution_->SubVector(0)->Data();
   *S->GetFieldData("fracture-total_component_concentration", "state") = *solution_->SubVector(1)->Data();
+}
+
+
+/* ******************************************************************
+* Create a copy of the i-th component
+****************************************************************** */
+Teuchos::RCP<TreeVector> TransportMatrixFractureImplicit_PK::ExtractComponent_(
+    const CompositeVector& tcc_m, const CompositeVector& tcc_f, int component)
+{
+  auto tv = Teuchos::rcp(new TreeVector());
+  Teuchos::RCP<TreeVector> tv1 = Teuchos::rcp(new TreeVector());
+  Teuchos::RCP<TreeVector> tv2 = Teuchos::rcp(new TreeVector());
+  tv->PushBack(tv1);
+  tv->PushBack(tv2);
+
+  CompositeVectorSpace cvs_m, cvs_f;
+  cvs_m.SetMesh(mesh_domain_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
+  cvs_f.SetMesh(mesh_fracture_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
+
+  auto cv0 = Teuchos::rcp(new CompositeVector(cvs_m));
+  tv->SubVector(0)->SetData(cv0);
+  *(*cv0->ViewComponent("cell"))(0) = *(*tcc_m.ViewComponent("cell"))(component);
+
+  auto cv1 = Teuchos::rcp(new CompositeVector(cvs_f));
+  tv->SubVector(1)->SetData(cv1);
+  *(*cv1->ViewComponent("cell"))(0) = *(*tcc_f.ViewComponent("cell"))(component);
+
+  return tv;
+}
+
+
+/* ******************************************************************
+* Save the i-th component to a solution vector
+****************************************************************** */
+void TransportMatrixFractureImplicit_PK::SaveComponent_(
+    const TreeVector& tv_one, const Teuchos::RCP<TreeVector>& tv_all, int component)
+{
+  for (int i = 0; i < 2; ++i) {
+    *(*tv_all->SubVector(i)->Data()->ViewComponent("cell"))(component) = 
+        *(*tv_one.SubVector(i)->Data()->ViewComponent("cell"))(0);
+  }
 }
 
 }  // namespace Amanzi

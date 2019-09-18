@@ -125,7 +125,7 @@
       </ParameterList>
     </ParameterList>
 
-    <Parameter name="component names" type="Array(string)" value="{Tc-99}"/>
+    <Parameter name="component names" type="Array(string)" value="{Tc-99, CO2}"/>
     
     <ParameterList name="time period control">
       <Parameter name="start times" type="Array(double)" value="{6.153732e+10, 6.15688776e+10}"/>
@@ -632,7 +632,7 @@
       <!-- developers parameters --> 
       <Parameter name="enable internal tests" type="bool" value="true"/>   
       <Parameter name="internal tests tolerance" type="double" value="1e-5"/> 
-      <Parameter name="component names" type="Array(string)" value="{Tc-99}"/>
+      <Parameter name="component names" type="Array(string)" value="{Tc-99, CO2}"/>
       <!-- end of developers parameters -->
       <ParameterList name="reconstruction">
         <Parameter name="polynomial order" type="int" value="0"/>
@@ -669,6 +669,19 @@
 	      </ParameterList>
 	    </ParameterList>
 	  </ParameterList>
+	  <ParameterList name="CO2">
+	    <ParameterList name="BC for center">
+	      <Parameter name="regions" type="Array(string)" value="{SurfaceCenter}"/>
+              <Parameter name="spatial distribution method" type="string" value="none"/>
+	      <ParameterList name="boundary concentration">
+		<ParameterList name="function-tabular">
+		  <Parameter name="forms" type="Array(string)" value="{constant}"/>
+		  <Parameter name="x values" type="Array(double)" value="{0.0, 0.1}"/>
+		  <Parameter name="y values" type="Array(double)" value="{1.0, 1.0}"/>
+		</ParameterList>
+	      </ParameterList>
+	    </ParameterList>
+	  </ParameterList>
 	</ParameterList>
       </ParameterList>
     </ParameterList>      
@@ -682,7 +695,7 @@
       <!-- developers parameters --> 
       <Parameter name="enable internal tests" type="bool" value="true"/>   
       <Parameter name="internal tests tolerance" type="double" value="1e-5"/> 
-      <Parameter name="component names" type="Array(string)" value="{Tc-99}"/>
+      <Parameter name="component names" type="Array(string)" value="{Tc-99, CO2}"/>
       <!-- end of developers parameters -->
       <ParameterList name="reconstruction">
         <Parameter name="polynomial order" type="int" value="0"/>
