@@ -57,7 +57,7 @@ MeshFactory::MeshFactory(const Comm_ptr_type& comm,
   // submesh parameter
   extraction_method_ = "none";
   if (plist != Teuchos::null) {
-      const auto& umesh = plist->sublist("unstructured");
+    const auto& umesh = plist->sublist("unstructured");
     if (umesh.isSublist("submesh")) {
       const auto& submesh = umesh.sublist("submesh");
       if (submesh.isParameter("extraction method")) {
