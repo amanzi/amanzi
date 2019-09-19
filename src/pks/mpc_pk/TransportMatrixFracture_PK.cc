@@ -66,7 +66,7 @@ void TransportMatrixFracture_PK::Setup(const Teuchos::Ptr<State>& S)
       .sublist("concentration").sublist("coupling").sublist("BC coupling");
 
    Teuchos::Array<std::string> regs;
-   regs.push_back("fracture");
+   regs.push_back("FRACTURE_NETWORK_INTERNAL");
    bclist.set<std::string>("spatial distribution method", "domain coupling")
          .set<std::string>("submodel", "field")
          .set<Teuchos::Array<std::string> >("regions", regs);

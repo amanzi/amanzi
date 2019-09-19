@@ -235,7 +235,7 @@ bool TransportImplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     *vo_->os() << "transport solver (" << name
                << "): ||sol||=" << sol_norm 
                << "  avg itrs=" << icount / num_aqueous << std::endl;
-      VV_PrintSoluteExtrema(*tcc->ViewComponent("cell"), t_new - t_old);
+      VV_PrintSoluteExtrema(*tcc->ViewComponent("cell"), t_new - t_old, "");
   }
 
   // estimate time multiplier

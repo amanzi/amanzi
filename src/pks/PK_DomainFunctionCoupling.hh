@@ -128,7 +128,8 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(
       entity_ids_->insert(id_list.begin(), id_list.end());
     } else {
       std::stringstream m;
-      m << "Unknown region in processing coupling source spec: \"" << *region << "\"";
+      m << "Unknown region in processing coupling source: name=" << *region 
+        << ", kind=" << kind << "\n";
       Errors::Message message(m.str());
       Exceptions::amanzi_throw(message);
     }

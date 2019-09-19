@@ -99,7 +99,8 @@ void Transport_PK::Policy(Teuchos::Ptr<State> S)
 /* *******************************************************************
 * Calculates extrema of specified solutes and print them.
 ******************************************************************* */
-void Transport_PK::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next, double dT_MPC)
+void Transport_PK::VV_PrintSoluteExtrema(
+    const Epetra_MultiVector& tcc_next, double dT_MPC, const std::string& mesh_id)
 {
   int num_components = tcc_next.NumVectors();
   double tccmin_vec[num_components];
@@ -143,7 +144,7 @@ void Transport_PK::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next, dou
     double tmp = solute_flux;
     mesh_->get_comm()->SumAll(&tmp, &solute_flux, 1);
 
-    *vo_->os() << runtime_solutes_[n] << ": min=" << units_.OutputConcentration(tccmin) 
+    *vo_->os() << runtime_solutes_[n] << mesh_id << ": min=" << units_.OutputConcentration(tccmin) 
                << " max=" << units_.OutputConcentration(tccmax);
     if (flag) *vo_->os() << ", flux=" << solute_flux << " mol/s";
 

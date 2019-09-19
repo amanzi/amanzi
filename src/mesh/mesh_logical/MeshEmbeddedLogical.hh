@@ -237,16 +237,16 @@ class MeshEmbeddedLogical : public Mesh {
   // Epetra maps
   //------------
   virtual
-  const Epetra_Map& cell_map(bool include_ghost) const;
+  const Epetra_Map& cell_map(bool include_ghost) const override;
 
   virtual
-  const Epetra_Map& face_map(bool include_ghost) const;
+  const Epetra_Map& face_map(bool include_ghost) const override;
 
   virtual
-  const Epetra_Map& node_map(bool include_ghost) const;
+  const Epetra_Map& node_map(bool include_ghost) const override;
 
   virtual
-  const Epetra_Map& exterior_face_map(bool include_ghost) const;
+  const Epetra_Map& exterior_face_map(bool include_ghost) const override;
 
   virtual
   const Epetra_Map& exterior_node_map(bool include_ghost) const override;
@@ -313,7 +313,7 @@ class MeshEmbeddedLogical : public Mesh {
   void cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
           Entity_ID_List *faceids,
           std::vector<int> *face_dirs,
-          const bool ordered=false) const;
+          const bool ordered=false) const override;
 
   // Cells connected to a face - this function is implemented in each
   // mesh framework. The results are cached in the base class
@@ -321,17 +321,16 @@ class MeshEmbeddedLogical : public Mesh {
   virtual
   void face_get_cells_internal_(const Entity_ID faceid,
           const Parallel_type ptype,
-          Entity_ID_List *cellids) const;
+          Entity_ID_List *cellids) const override;
 
 
   // edges of a face - this function is implemented in each mesh
   // framework. The results are cached in the base class
-
   virtual
   void face_get_edges_and_dirs_internal_(const Entity_ID faceid,
           Entity_ID_List *edgeids,
           std::vector<int> *edge_dirs,
-          const bool ordered=true) const;
+          const bool ordered=true) const override;
 
   // edges of a cell - this function is implemented in each mesh
   // framework. The results are cached in the base class.
