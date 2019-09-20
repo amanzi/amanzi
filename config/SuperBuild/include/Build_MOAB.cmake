@@ -79,6 +79,7 @@ ExternalProject_Add(${MOAB_BUILD_TARGET}
                                        --with-lapack=${TPL_LAPACK_LIBRARIES}
                                        --enable-shared=${moab_shared}
                                        --enable-static=${moab_static}
+                                       --enable-parallel
                                        CC=${CMAKE_C_COMPILER}
                                        CFLAGS=${moab_cflags}
                                        CXX=${CMAKE_CXX_COMPILER}
