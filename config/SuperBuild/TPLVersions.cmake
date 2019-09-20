@@ -122,6 +122,8 @@
 #   0.95.10      - update OpenMPI to 3.1.4
 #
 #   0.96.0       - update Trilinos to 12.14.0bf557717e-Jun17
+#   0.96.1       - update NetCDF-C to 4.7.1 
+#                - update MOAB to 5.1.0
 
 include(CMakeParseArguments)
 
@@ -303,12 +305,12 @@ set(HDF5_MD5_SUM        dd2148b740713ca0295442ec683d7b1c)
 #
 set(NetCDF_VERSION_MAJOR 4)
 set(NetCDF_VERSION_MINOR 7)
-set(NetCDF_VERSION_PATCH 0)
+set(NetCDF_VERSION_PATCH 1)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
 set(NetCDF_URL_STRING     "https://github.com/Unidata/netcdf-c/archive/")
 set(NetCDF_ARCHIVE_FILE   v${NetCDF_VERSION}.tar.gz)
 set(NetCDF_SAVEAS_FILE    netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_MD5_SUM        37134a12a49e80c45fb58777aa3e9e3b)
+set(NetCDF_MD5_SUM        e4a6c74c9591ec8036587ca51130f878)
 
 
 #
@@ -351,13 +353,13 @@ set(MSTK_MD5_SUM        bc9c39885d9dc41655f8b54c628e460b)
 # TPL: MOAB
 #
 set(MOAB_VERSION_MAJOR  5)
-set(MOAB_VERSION_MINOR  0)
+set(MOAB_VERSION_MINOR  1)
 set(MOAB_VERSION_PATCH  0)
 set(MOAB_VERSION ${MOAB_VERSION_MAJOR}.${MOAB_VERSION_MINOR}.${MOAB_VERSION_PATCH})
 set(MOAB_URL_STRING     ftp://ftp.mcs.anl.gov/pub/fathom)
 set(MOAB_ARCHIVE_FILE   moab-${MOAB_VERSION}.tar.gz)
 set(MOAB_SAVEAS_FILE    ${MOAB_ARCHIVE_FILE})
-set(MOAB_MD5_SUM        1840ca02366f4d3237d44af63e239e3b) 
+set(MOAB_MD5_SUM        875435654b2bc81b97e85894c2a45aaa)
 
 #
 # TPL: HYPRE

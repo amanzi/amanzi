@@ -44,6 +44,22 @@ build_whitespace_string(moab_ldflags
                         ${moab_shared_dir})
 
 # --- Add external project and tie to the MOAB build target
+# Some CMake files are missing
+#                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}  # Global definitions from root CMakeList
+#                                     ${MOAB_CMAKE_CACHE_ARGS}
+#                                     -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
+#                                     -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+#                                     -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
+#                                     -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
+#                                     -DENABLE_FORTRAN:BOOL=TRUE
+#                                     -DENABLE_MPI:BOOL=TRUE
+#                                     -DMPI_CXX_COMPILER:FILEPATH=${MPI_CXX_COMPILER}
+#                                     -DMPI_C_COMPILER:FILEPATH=${MPI_C_COMPILER}
+#                                     -DENABLE_HDF5:BOOL=TRUE
+#                                     -DHDF5_ROOT:FILEPATH=${TPL_INSTALL_PREFIX}
+#                                     -DENABLE_NETCDF:BOOL=TRUE
+#                                     -DNETCDF_ROOT:FILEPATH=${TPL_INSTALL_PREFIX}
+#                                     -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
 ExternalProject_Add(${MOAB_BUILD_TARGET}
                     DEPENDS   ${MOAB_PACKAGE_DEPENDS}    # Package dependency target
                     TMP_DIR   ${MOAB_tmp_dir}            # Temporary files directory
@@ -57,10 +73,10 @@ ExternalProject_Add(${MOAB_BUILD_TARGET}
                     CONFIGURE_COMMAND
                                  ${MOAB_source_dir}/configure
                                        --prefix=${TPL_INSTALL_PREFIX}
-                                       --disable-fortran
                                        --with-mpi=${MPI_PREFIX}
                                        --with-hdf5=${TPL_INSTALL_PREFIX}
                                        --with-netcdf=${TPL_INSTALL_PREFIX}
+                                       --with-lapack=${TPL_LAPACK_LIBRARIES}
                                        --enable-shared=${moab_shared}
                                        --enable-static=${moab_static}
                                        CC=${CMAKE_C_COMPILER}
