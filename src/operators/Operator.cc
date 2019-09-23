@@ -820,39 +820,6 @@ int Operator::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
 
 
 /* ******************************************************************
-<<<<<<< HEAD
-=======
-* Visit methods for Apply: Coupling
-****************************************************************** */
-int Operator::ApplyMatrixFreeOp(const Op_Diagonal& op,
-                                const CompositeVector& X, CompositeVector& Y) const {
-  return SchemaMismatch_(op.schema_string, schema_string_);
-}
-
-
-/* ******************************************************************
-* Visit methods for ApplyTranspose: Cell
-****************************************************************** */
-int Operator::ApplyTransposeMatrixFreeOp(const Op_Cell_Schema& op,
-                                         const CompositeVector& X, CompositeVector& Y) const {
-  return SchemaMismatch_(op.schema_string, schema_string_);
-}
-
-
-int Operator::ApplyTransposeMatrixFreeOp(const Op_Face_Schema& op,
-                                         const CompositeVector& X, CompositeVector& Y) const {
-  return SchemaMismatch_(op.schema_string, schema_string_);
-}
-
-
-int Operator::ApplyTransposeMatrixFreeOp(const Op_Node_Schema& op,
-                                         const CompositeVector& X, CompositeVector& Y) const {
-  return SchemaMismatch_(op.schema_string, schema_string_);
-}
-
-
-/* ******************************************************************
->>>>>>> 90b705c16... Modified elasticity PDE to allows for more schemes.
 * Visit methods for symbolic assemble: Cell.
 ****************************************************************** */
 void Operator::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,

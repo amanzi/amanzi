@@ -52,7 +52,7 @@ class MFD3D_Diffusion : public MFD3D,
   // main methods 
   // -- schema
   virtual std::vector<SchemaItem> schema() const override {
-   return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, 1));
+    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, 1));
   }
 
   // -- default Derahm complex for the mass matrix is not used by Amanzi

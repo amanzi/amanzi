@@ -12,6 +12,7 @@
 
 #include "MFD3D_BernardiRaugel.hh"
 #include "MFD3D_CrouzeixRaviart.hh"
+#include "MFD3D_CrouzeixRaviartAnyOrder.hh"
 #include "MFD3D_CrouzeixRaviartSerendipity.hh"
 #include "MFD3D_Diffusion.hh"
 #include "DG_Modal.hh"
@@ -26,6 +27,7 @@ namespace WhetStone {
 
 RegisteredFactory<MFD3D_BernardiRaugel> MFD3D_BernardiRaugel::factory_("BernardiRaugel");
 RegisteredFactory<MFD3D_CrouzeixRaviart> MFD3D_CrouzeixRaviart::factory_("CrouzeixRaviart");
+RegisteredFactory<MFD3D_CrouzeixRaviartAnyOrder> MFD3D_CrouzeixRaviartAnyOrder::factory_("CrouzeixRaviart high order");
 RegisteredFactory<MFD3D_CrouzeixRaviartSerendipity> MFD3D_CrouzeixRaviartSerendipity::factory_("CrouzeixRaviart serendipity");
 RegisteredFactory<MFD3D_Diffusion> MFD3D_Diffusion::factory_("diffusion");
 RegisteredFactory<MFD3D_Generalized_Diffusion> MFD3D_Generalized_Diffusion::factory_("diffusion generalized");

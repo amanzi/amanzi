@@ -41,7 +41,12 @@ add_amanzi_library(whetstone
                           DeRham_Node.cc DeRham_Edge.cc DeRham_Face.cc
                           MFD3D.cc
                           MFD3D_BernardiRaugel.cc
+<<<<<<< HEAD
 			  MFD3D_CrouzeixRaviart.cc MFD3D_CrouzeixRaviartSerendipity.cc
+=======
+			  MFD3D_CrouzeixRaviart.cc MFD3D_CrouzeixRaviartAnyOrder.cc
+                          MFD3D_CrouzeixRaviartSerendipity.cc
+>>>>>>> 3882b3c66... Split CR element implementtion into two classes: low and high order
                           MFD3D_Diffusion.cc MFD3D_Diffusion_Surface.cc MFD3D_Diffusion_Other.cc 
                           MFD3D_Elasticity.cc 
                           MFD3D_Electromagnetics.cc MFD3D_Electromagnetics_Surface.cc
@@ -70,7 +75,12 @@ add_amanzi_library(whetstone
                            FunctionUpwind.hh
                            MFD3D.hh
                            MFD3D_BernardiRaugel.hh
+<<<<<<< HEAD
 			   MFD3D_CrouzeixRaviart.hh MFD3D_CrouzeixRaviartSerendipity.hh
+=======
+			   MFD3D_CrouzeixRaviart.hh MFD3D_CrouzeixRaviartAnyOrder.hh
+                           MFD3D_CrouzeixRaviartSerendipity.hh
+>>>>>>> 3882b3c66... Split CR element implementtion into two classes: low and high order
                            MFD3D_Diffusion.hh
                            MFD3D_Elasticity.hh
                            MFD3D_Electromagnetics.hh

@@ -53,11 +53,6 @@ void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
     Exceptions::amanzi_throw(msg);
   }
 
-<<<<<<< HEAD
-  // discretization methods
-  auto base = global_schema_row_.StringToKind(domain.get<std::string>("base"));
-  auto mfd_domain = WhetStone::BilinearFormFactory::Create(domain, mesh_);
-=======
   // compatibility of two schemas
   auto base = global_schema_row_.StringToKind(domain.get<std::string>("base"));
   auto tmp = global_schema_col_.StringToKind(domain.get<std::string>("base"));
@@ -67,8 +62,7 @@ void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
   }
 
   // discretization method:
-  mfd_ = WhetStone::BilinearFormFactory::Create(domain, mesh_);
->>>>>>> 90b705c16... Modified elasticity PDE to allows for more schemes.
+  auto mfd_domain = WhetStone::BilinearFormFactory::Create(domain, mesh_);
   Teuchos::RCP<WhetStone::BilinearForm> mfd_range;
   if (!symmetric) 
     mfd_range = WhetStone::BilinearFormFactory::Create(range, mesh_);
