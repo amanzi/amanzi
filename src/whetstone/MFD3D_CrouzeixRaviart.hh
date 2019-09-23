@@ -9,8 +9,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Crouzeix-Raviart element: degrees of freedom are moments on faces
-  and inside cell.
+  Crouzeix-Raviart element: degrees of freedom are mean values on faces.
 */
 
 #ifndef AMANZI_MFD3D_CROUZEIX_RAVIART_HH_

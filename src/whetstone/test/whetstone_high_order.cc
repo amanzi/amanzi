@@ -23,8 +23,8 @@
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "MFD3D_CrouzeixRaviartAnyOrder.hh"
 #include "MFD3D_CrouzeixRaviartSerendipity.hh"
-#include "MFD3D_Diffusion.hh"
 #include "MFD3D_Lagrange.hh"
+#include "MFD3D_LagrangeAnyOrder.hh"
 #include "MFD3D_LagrangeSerendipity.hh"
 #include "Tensor.hh"
 
@@ -191,8 +191,8 @@ void HighOrderLagrange(std::string file_name) {
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
 
-  MFD3D_Diffusion mfd_lo(plist, mesh);
-  MFD3D_Lagrange mfd_ho(plist, mesh);
+  MFD3D_Lagrange mfd_lo(plist, mesh);
+  MFD3D_LagrangeAnyOrder mfd_ho(plist, mesh);
 
   for (int c = 0; c < ncells; ++c) {
     DenseMatrix N, A1, Ak;
@@ -268,7 +268,7 @@ void HighOrderLagrangeSerendipity(std::string file_name) {
   Teuchos::ParameterList plist; 
   plist.set<int>("method order", 1);
 
-  MFD3D_Diffusion mfd_lo(plist, mesh);
+  MFD3D_Lagrange mfd_lo(plist, mesh);
   MFD3D_LagrangeSerendipity mfd_ho(plist, mesh);
 
   for (int c = 0; c < ncells; ++c) {

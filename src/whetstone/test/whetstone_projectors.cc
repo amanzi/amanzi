@@ -27,8 +27,8 @@
 #include "MatrixPolynomial.hh"
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "MFD3D_CrouzeixRaviartSerendipity.hh"
-#include "MFD3D_Diffusion.hh"
 #include "MFD3D_Lagrange.hh"
+#include "MFD3D_LagrangeAnyOrder.hh"
 #include "MFD3D_LagrangeSerendipity.hh"
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
@@ -452,7 +452,7 @@ TEST(PROJECTORS_SQUARE_PK) {
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
 
-  MFD3D_Lagrange mfd(plist, mesh);
+  MFD3D_LagrangeAnyOrder mfd(plist, mesh);
   MFD3D_CrouzeixRaviartAnyOrder mfd_cr(plist, mesh);
   Polynomial moments(2, 0);
 
@@ -537,7 +537,7 @@ TEST(PROJECTORS_POLYGON_PK) {
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
 
-  MFD3D_Lagrange mfd(plist, mesh);
+  MFD3D_LagrangeAnyOrder mfd(plist, mesh);
   MFD3D_CrouzeixRaviartAnyOrder mfd_cr(plist, mesh);
   Polynomial moments(2, 0);
 

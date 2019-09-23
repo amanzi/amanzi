@@ -25,6 +25,7 @@
 #include "Basis_Regularized.hh"
 #include "CoordinateSystems.hh"
 #include "GrammMatrix.hh"
+#include "MFD3D_LagrangeAnyOrder.hh"
 #include "MFD3D_LagrangeSerendipity.hh"
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
@@ -39,7 +40,7 @@ MFD3D_LagrangeSerendipity::MFD3D_LagrangeSerendipity(
     const Teuchos::ParameterList& plist,
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
   : InnerProduct(mesh),
-    MFD3D_Lagrange(plist, mesh)
+    MFD3D_LagrangeAnyOrder(plist, mesh)
 {
   order_ = plist.get<int>("method order");
 }
@@ -100,7 +101,7 @@ int MFD3D_LagrangeSerendipity::H1consistency(
 
   // calculate full matrices
   DenseMatrix Nf, Af;
-  MFD3D_Lagrange::H1consistency(c, K, Nf, Af);
+  MFD3D_LagrangeAnyOrder::H1consistency(c, K, Nf, Af);
 
   // pre-calculate integrals of monomials 
   NumericalIntegration numi(mesh_);
@@ -201,7 +202,7 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
   DenseMatrix N, A;
 
   T(0, 0) = 1.0;
-  MFD3D_Lagrange::H1consistency(c, T, N, A);  
+  MFD3D_LagrangeAnyOrder::H1consistency(c, T, N, A);  
 
   // select number of non-aligned edges: we assume cell convexity 
   int nfaces = mesh_->cell_get_num_faces(c);

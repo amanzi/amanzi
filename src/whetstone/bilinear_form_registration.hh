@@ -20,6 +20,7 @@
 #include "MFD3D_Electromagnetics.hh"
 #include "MFD3D_Elasticity.hh"
 #include "MFD3D_Lagrange.hh"
+#include "MFD3D_LagrangeAnyOrder.hh"
 #include "MFD3D_LagrangeSerendipity.hh"
 
 namespace Amanzi {
@@ -34,6 +35,7 @@ RegisteredFactory<MFD3D_Generalized_Diffusion> MFD3D_Generalized_Diffusion::fact
 RegisteredFactory<MFD3D_Elasticity> MFD3D_Elasticity::factory_("elasticity");
 RegisteredFactory<MFD3D_Electromagnetics> MFD3D_Electromagnetics::factory_("electromagnetics");
 RegisteredFactory<MFD3D_Lagrange> MFD3D_Lagrange::factory_("Lagrange");
+RegisteredFactory<MFD3D_LagrangeAnyOrder> MFD3D_LagrangeAnyOrder::factory_("Lagrange high order");
 RegisteredFactory<MFD3D_LagrangeSerendipity> MFD3D_LagrangeSerendipity::factory_("Lagrange serendipity");
 
 RegisteredFactory<DG_Modal> DG_Modal::factory_("dg modal");
