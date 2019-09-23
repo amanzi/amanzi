@@ -11,8 +11,8 @@
 
   The package uses the formula M = Mc + Ms, where matrix Mc is build from a 
   consistency condition (Mc N = R) and matrix Ms is build from a stability 
-  condition (Ms N = 0), to generate mass and stiffness matrices for a variety 
-  of physics packages: flow, transport, thermal, and geomechanics. 
+  condition and Ms N = 0, to generate mass and stiffness matrices for 
+  a variety of physics packages: flow, transport, thermal, and geomechanics. 
   The material properties are imbedded into the the matrix Mc. 
 
   Notation used below: M (mass), W (inverse of M), A (stiffness).

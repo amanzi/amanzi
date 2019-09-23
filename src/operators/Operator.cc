@@ -41,6 +41,7 @@
 #include "Op_Face_CellBndFace.hh"
 #include "Op_Face_Schema.hh"
 #include "Op_Node_Node.hh"
+#include "Op_Node_Schema.hh"
 #include "Op_SurfaceCell_SurfaceCell.hh"
 #include "Op_SurfaceFace_SurfaceCell.hh"
 #include "Operator.hh"
@@ -751,8 +752,7 @@ int Operator::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
 
 
 int Operator::ApplyMatrixFreeOp(const Op_Cell_Schema& op,
-                                const CompositeVector& X, CompositeVector& Y) const
-{
+                                const CompositeVector& X, CompositeVector& Y) const {
   return SchemaMismatch_(op.schema_string, schema_string_);
 }
 
@@ -795,6 +795,12 @@ int Operator::ApplyMatrixFreeOp(const Op_Node_Node& op,
 }
 
 
+int Operator::ApplyMatrixFreeOp(const Op_Node_Schema& op,
+                                const CompositeVector& X, CompositeVector& Y) const {
+  return SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
 /* ******************************************************************
 * Visit methods for Apply: SurfaceCell
 ****************************************************************** */
@@ -814,6 +820,39 @@ int Operator::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
 
 
 /* ******************************************************************
+<<<<<<< HEAD
+=======
+* Visit methods for Apply: Coupling
+****************************************************************** */
+int Operator::ApplyMatrixFreeOp(const Op_Diagonal& op,
+                                const CompositeVector& X, CompositeVector& Y) const {
+  return SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+/* ******************************************************************
+* Visit methods for ApplyTranspose: Cell
+****************************************************************** */
+int Operator::ApplyTransposeMatrixFreeOp(const Op_Cell_Schema& op,
+                                         const CompositeVector& X, CompositeVector& Y) const {
+  return SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+int Operator::ApplyTransposeMatrixFreeOp(const Op_Face_Schema& op,
+                                         const CompositeVector& X, CompositeVector& Y) const {
+  return SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+int Operator::ApplyTransposeMatrixFreeOp(const Op_Node_Schema& op,
+                                         const CompositeVector& X, CompositeVector& Y) const {
+  return SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+/* ******************************************************************
+>>>>>>> 90b705c16... Modified elasticity PDE to allows for more schemes.
 * Visit methods for symbolic assemble: Cell.
 ****************************************************************** */
 void Operator::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
@@ -901,18 +940,20 @@ void Operator::SymbolicAssembleMatrixOp(const Op_Node_Node& op,
 }
 
 
+void Operator::SymbolicAssembleMatrixOp(const Op_Node_Schema& op,
+                                        const SuperMap& map, GraphFE& graph,
+                                        int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
 /* ******************************************************************
 * Visit methods for symbolic assemble: SurfaceCell
 ****************************************************************** */
 void Operator::SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
                                         const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const
-{
-  std::stringstream err;
-  err << "Symbolic assemble: invalid schema combination -- " << op.schema_string
-      << " cannot be used with a matrix on " << schema_string_;
-  Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
+                                        int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
@@ -921,13 +962,8 @@ void Operator::SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
 ****************************************************************** */
 void Operator::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
                                         const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const
-{
-  std::stringstream err;
-  err << "Symbolic assemble: invalid schema combination -- " << op.schema_string
-      << " cannot be used with a matrix on " << schema_string_;
-  Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
+                                        int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
 }
 
 
@@ -1018,6 +1054,12 @@ void Operator::AssembleMatrixOp(const Op_Node_Node& op,
   SchemaMismatch_(op.schema_string, schema_string_);
 }
 
+void Operator::AssembleMatrixOp(const Op_Node_Schema& op,
+                                const SuperMap& map, MatrixFE& mat,
+                                int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
+}
+
 
 /* ******************************************************************
 * Visit methods for assemble: Surface Cell
@@ -1053,33 +1095,43 @@ void Operator::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
 * Local assemble routines (for new schema)
 ****************************************************************** */
 void Operator::ExtractVectorCellOp(int c, const Schema& schema,
-                                   WhetStone::DenseVector& v, const CompositeVector& X) const
-{
+                                   WhetStone::DenseVector& v, const CompositeVector& X) const {
   Errors::Message msg("Extracton fo local cell-based vector is missing for this operator");
   Exceptions::amanzi_throw(msg);
 }
 
 
 void Operator::AssembleVectorCellOp(int c, const Schema& schema,
-                                    const WhetStone::DenseVector& v, CompositeVector& X) const
-{
-  Errors::Message msg("Extracton fo local cell-based vector is missing for this operator");
+                                    const WhetStone::DenseVector& v, CompositeVector& X) const {
+  Errors::Message msg("Assembly fo local cell-based vector is missing for this operator");
   Exceptions::amanzi_throw(msg);
 }
 
 
 void Operator::ExtractVectorFaceOp(int c, const Schema& schema,
-                                   WhetStone::DenseVector& v, const CompositeVector& X) const
-{
+                                   WhetStone::DenseVector& v, const CompositeVector& X) const {
   Errors::Message msg("Extracton fo local cell-based vector is missing for this operator");
   Exceptions::amanzi_throw(msg);
 }
 
 
 void Operator::AssembleVectorFaceOp(int c, const Schema& schema,
-                                    const WhetStone::DenseVector& v, CompositeVector& X) const
-{
-  Errors::Message msg("Extracton fo local cell-based vector is missing for this operator");
+                                    const WhetStone::DenseVector& v, CompositeVector& X) const {
+  Errors::Message msg("Assembly fo local cell-based vector is missing for this operator");
+  Exceptions::amanzi_throw(msg);
+}
+
+
+void Operator::ExtractVectorNodeOp(int n, const Schema& schema,
+                                   WhetStone::DenseVector& v, const CompositeVector& X) const {
+  Errors::Message msg("Extracton fo local node-based vector is missing for this operator");
+  Exceptions::amanzi_throw(msg);
+}
+
+
+void Operator::AssembleVectorNodeOp(int n, const Schema& schema,
+                                    const WhetStone::DenseVector& v, CompositeVector& X) const {
+  Errors::Message msg("Assembly fo local node-based vector is missing for this operator");
   Exceptions::amanzi_throw(msg);
 }
 

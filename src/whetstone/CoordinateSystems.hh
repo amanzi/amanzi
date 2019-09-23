@@ -15,6 +15,8 @@
 #ifndef AMANZI_COORDINATE_SYSTEMS_HH_
 #define AMANZI_COORDINATE_SYSTEMS_HH_
 
+#include <cmath>
+
 #include "Point.hh"
 
 namespace Amanzi {
@@ -28,6 +30,16 @@ inline void FaceCoordinateSystem(const AmanziGeometry::Point& normal,
   tau.resize(d - 1);    
   if (d == 2) {
     tau[0] = AmanziGeometry::Point(-normal[1], normal[0]);
+  } else {
+    double area = norm(normal);
+    if (fabs(normal[0]) > 0.1)
+      tau[0] = AmanziGeometry::Point(normal[1], -normal[0], 0.0);
+    else 
+      tau[0] = AmanziGeometry::Point(0.0, -normal[2], normal[1]);
+
+    tau[0] *= sqrt(area) / norm(tau[0]);
+    tau[1] = normal ^ tau[0];
+    tau[1] /= area;
   }
 }
 
