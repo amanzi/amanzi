@@ -149,8 +149,11 @@ class DenseMatrix {
   }
 
   // Second level routines
-  // -- submatrix in rows [ib, ie) and colums [jb, je) 
+  // -- submatrix in rows [ib, ie) and colums [jb, je)
   DenseMatrix SubMatrix(int ib, int ie, int jb, int je);
+  // -- insert submatrix of B at position (is, js)
+  void InsertSubMatrix(const DenseMatrix& B,int ib, int ie, int jb, int je,
+                       int is, int js);
  
   // -- transpose creates new matrix
   void Transpose(const DenseMatrix& A);

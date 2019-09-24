@@ -9,8 +9,11 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Lagrange-type element: degrees of freedom are nodal values and
-  moments on edges, faces and inside cell.
+  Lagrange-type element: degrees of freedom are ordered as follows:
+    (1) nodal values in the natural order;
+    (2) moments on faces groupped by face;
+    (3) moments of edges, groupped by edge (in 3D);
+    (4) moments inside cell.
 */
 
 #ifndef AMANZI_MFD3D_LAGRANGE_ANY_ORDER_HH_
@@ -52,12 +55,12 @@ class MFD3D_LagrangeAnyOrder : public MFD3D {
 
   // -- mass matrices
   virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override {
-    Errors::Message msg("L2 consistency is not implemented for Lagrange_AnyOrder element.");
+    Errors::Message msg("L2 consistency is not implemented for LagrangeAnyOrder element.");
     Exceptions::amanzi_throw(msg);
     return 0;
   }
   virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override {
-    Errors::Message msg("Mass matrix is not implemented for Lagrange_AnyOrder element.");
+    Errors::Message msg("Mass matrix is not implemented for LagrangeAnyOrder element.");
     Exceptions::amanzi_throw(msg);
     return 0;
   }

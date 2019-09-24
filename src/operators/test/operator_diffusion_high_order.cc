@@ -345,6 +345,7 @@ void RunHighOrderLagrange3D(const std::string& vem_name) {
   meshfactory.set_preference(Preference({Framework::MSTK}));
   RCP<const Mesh> mesh;
   mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 3, 4, true, true);
+  // mesh = meshfactory.create("test/hexes.exo", true, true);
 
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   int nedges_wghost = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::ALL);
@@ -485,6 +486,7 @@ void RunHighOrderLagrange3D(const std::string& vem_name) {
 
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
+              << " size=" <<  global_op->A()->NumGlobalRows() 
               << " itr=" << solver.num_itrs()
               << " code=" << solver.returned_code() << std::endl;
   }

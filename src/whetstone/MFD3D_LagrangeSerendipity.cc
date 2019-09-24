@@ -9,9 +9,13 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Serendipity Lagrange-type element: degrees of freedom are nodal values 
-  and moments on edges, faces and inside cell. The number of later is 
-  reduced significantly for polygonal cells. 
+  Serendipity Lagrange-type element: degrees of freedom are nodal values,
+  moments on edges, and selected moments on faces and inside cell:
+  Degrees of freedom are ordered as follows:
+    (1) nodal values in the natural order;
+    (2) moments on faces groupped by face;
+    (3) moments on edges, groupped by edge (in 3D);
+    (4) moments inside cell.
 */
 
 #include <cmath>
@@ -76,11 +80,16 @@ std::vector<SchemaItem> MFD3D_LagrangeSerendipity::schema() const
 int MFD3D_LagrangeSerendipity::H1consistency(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List nodes;
+  Entity_ID_List nodes, edges;
   mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
   int nfaces = mesh_->cell_get_num_faces(c);
+  int nedges(0);
+  if (d_ == 3) {
+    mesh_->cell_get_edges(c, &edges);
+    nedges = edges.size();
+  }
 
   // select number of non-aligned edges: we assume cell convexity 
   int eta(3);
@@ -88,16 +97,14 @@ int MFD3D_LagrangeSerendipity::H1consistency(
 
   // calculate degrees of freedom: serendipity space S contains all boundary
   // dofs plus a few internal dofs that depedend on the value of eta.
-  Polynomial poly(d_, order_), pf, pc;
-  if (order_ > 1)
-    pf.Reshape(d_ - 1, order_ - 2);
-  if (order_ > 3)
-    pc.Reshape(d_, order_ - eta);
+  Polynomial poly(d_, order_);
 
-  int nd = poly.size();
-  int ndf = pf.size();
-  int ndc = pc.size();
-  int ndof_S = nnodes + nfaces * ndf + ndc;
+  int nd, nde(0), ndf, ndc;
+  nd = poly.size();
+  nde = (d_ == 2) ? 0 : PolynomialSpaceDimension(d_ - 2, order_ - 2);
+  ndf = PolynomialSpaceDimension(d_ - 1, order_ - 2);
+  ndc = PolynomialSpaceDimension(d_, order_ - eta);
+  int ndof_S = nnodes + nedges * nde + nfaces * ndf + ndc;
 
   // calculate full matrices
   DenseMatrix Nf, Af;
@@ -137,7 +144,7 @@ int MFD3D_LagrangeSerendipity::H1consistency(
   }
 
   // calculate matrices N and R
-  // -- extract sub-matrices 
+  // -- extract sub-matrices. More work is required in 3D
   DenseMatrix Rf(R_);
   N = Nf.SubMatrix(0, ndof_S, 0, nd);
   R_ = Rf.SubMatrix(0, ndof_S, 0, nd);
@@ -210,7 +217,7 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
   if (nfaces > 3) eta = 4;
 
   // degrees of freedom: serendipity space S contains all boundary dofs
-  // plus a few internal dofs that depedend on the value of eta.
+  // plus a few internal dofs that depend on the value of eta.
   int nd = PolynomialSpaceDimension(d_, order_);
   int ndof = A.NumRows();
   int ndof_c = PolynomialSpaceDimension(d_, order_ - 2);
@@ -306,7 +313,7 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
 
 
 /* ******************************************************************
-* Calculate degrees of freedom in 2D.
+* Calculate boundary degrees of freedom in 2D and 3D.
 ****************************************************************** */
 void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
     int c, const std::vector<Polynomial>& vf, DenseVector& vdof)

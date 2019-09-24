@@ -369,7 +369,7 @@ TEST(HIGH_ORDER_LAGRANGE_3D) {
 
 
 /* ******************************************************************
-* Serendipity 32D and 3D Lagrange elements
+* Serendipity 2D and 3D Lagrange elements
 ****************************************************************** */
 void HighOrderLagrangeSerendipity(const std::string& filename) {
   using namespace Amanzi;
@@ -405,7 +405,7 @@ void HighOrderLagrangeSerendipity(const std::string& filename) {
     }
 
     // 1st-order scheme
-    DenseMatrix N, A1, Ak;
+    DenseMatrix G1, A1, Ak;
     mfd_lo.StiffnessMatrix(c, T, A1);
 
     mfd_ho.set_order(1);
@@ -420,7 +420,6 @@ void HighOrderLagrangeSerendipity(const std::string& filename) {
     // high-order schemes
     for (int k = 2; k < 4; ++k) {
       mfd_ho.set_order(k);
-      mfd_ho.H1consistency(c, T, N, Ak);
       mfd_ho.StiffnessMatrix(c, T, Ak);
 
       printf("Stiffness (sub)matrix for order=%d, cell=%d, size=%d\n", k, c, Ak.NumRows());
@@ -431,12 +430,18 @@ void HighOrderLagrangeSerendipity(const std::string& filename) {
       for (int i = 0; i < nrows; i++) CHECK(Ak(i, i) > 0.0);
 
       // verify exact integration property
-      const DenseMatrix& R = mfd_ho.R();
       const DenseMatrix& G = mfd_ho.G();
 
-      DenseMatrix G1(G);
-      G1.PutScalar(0.0);
-      G1.Multiply(N, R, true);
+      PolynomialOnMesh integrals;
+      NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+      numi.UpdateMonomialIntegralsCell(0, 2 * k, integrals);
+
+      Polynomial ptmp, poly(d, k);
+      Basis_Regularized<AmanziMesh::Mesh> basis;
+      basis.Init(mesh, 0, k, ptmp);
+
+      GrammMatrixGradients(T, poly, integrals, basis, G1);
+
       G1(0, 0) = 1.0;
       G1.Inverse();
       G1(0, 0) = 0.0;
@@ -451,7 +456,7 @@ void HighOrderLagrangeSerendipity(const std::string& filename) {
 TEST(HIGH_ORDER_LAGRANGE_SERENDIPITY) {
   HighOrderLagrangeSerendipity("test/two_cell2_dist.exo");
   HighOrderLagrangeSerendipity("test/one_pentagon.exo");
-  // HighOrderLagrangeSerendipity("test/cube_unit.exo");
+  HighOrderLagrangeSerendipity("test/cube_unit.exo");
 } 
 
 
