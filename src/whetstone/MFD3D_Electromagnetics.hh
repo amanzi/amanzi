@@ -42,6 +42,7 @@ class MFD3D_Electromagnetics : public MFD3D,
   MFD3D_Electromagnetics(const Teuchos::ParameterList& plist,
                          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : MFD3D(mesh),
+      DeRham_Edge(mesh),
       InnerProduct(mesh) {};
   ~MFD3D_Electromagnetics() {};
 

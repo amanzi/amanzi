@@ -44,7 +44,8 @@ class Polynomial;
 
 class DG_Modal : public BilinearForm {
  public:
-  DG_Modal(const Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+  DG_Modal(const Teuchos::ParameterList& plist,
+           const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~DG_Modal() {};
 
   // basic member functions

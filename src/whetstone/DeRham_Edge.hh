@@ -28,7 +28,6 @@ namespace WhetStone {
 
 class DeRham_Edge : public virtual InnerProductL2 { 
  public:
-  DeRham_Edge() {};
   DeRham_Edge(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) 
     : InnerProduct(mesh) {};
   ~DeRham_Edge() {};

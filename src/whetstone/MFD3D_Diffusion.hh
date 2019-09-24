@@ -42,10 +42,12 @@ class MFD3D_Diffusion : public MFD3D,
   // constructor for backward compatibility
   MFD3D_Diffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : MFD3D(mesh),
+      DeRham_Face(mesh),
       InnerProduct(mesh) {};
   MFD3D_Diffusion(const Teuchos::ParameterList& plist,
                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : MFD3D(mesh),
+      DeRham_Face(mesh),
       InnerProduct(mesh) {};
   ~MFD3D_Diffusion() {};
 

@@ -30,7 +30,6 @@ namespace WhetStone {
 
 class InnerProduct { 
  public:
-  InnerProduct() {};
   InnerProduct(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : mesh_(mesh),
       stability_method_(WHETSTONE_STABILITY_GENERIC) { d_ = mesh_->space_dimension(); }

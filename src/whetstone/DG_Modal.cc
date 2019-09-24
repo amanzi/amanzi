@@ -34,7 +34,8 @@ namespace WhetStone {
 ****************************************************************** */
 DG_Modal::DG_Modal(const Teuchos::ParameterList& plist,
                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-  : numi_(mesh),
+  : InnerProduct(mesh),
+    numi_(mesh),
     mesh_(mesh),
     d_(mesh->space_dimension())
 {
