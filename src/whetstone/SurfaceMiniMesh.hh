@@ -70,7 +70,8 @@ class SurfaceMiniMesh {
 
   // -- geometric objects
   AmanziGeometry::Point cell_centroid(Entity_ID c) const {
-    return mesh_->face_centroid(c);
+    const auto& xf = mesh_->face_centroid(c);
+    return coordsys_->Project(xf);
   }
 
   double cell_volume(Entity_ID c) const {

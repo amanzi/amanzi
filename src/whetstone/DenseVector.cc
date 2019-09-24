@@ -18,6 +18,48 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
+* Constructors
+****************************************************************** */
+DenseVector::DenseVector(int mrow) : m_(mrow), mem_(mrow) {
+  data_ = new double[mem_];
+}
+
+
+DenseVector::DenseVector(int mrow, double* data)
+{
+  m_ = mrow;
+  mem_ = mrow;
+  data_ = new double[mem_]; 
+  for (int i = 0; i < m_; i++) data_[i] = data[i];
+}
+
+
+DenseVector::DenseVector(const DenseVector& B)
+{ 
+  m_ = B.NumRows();
+  mem_ = m_;
+  data_ = NULL;
+  if (m_ > 0) {
+    data_ = new double[m_];
+    const double* dataB = B.Values();
+    for (int i = 0; i < m_; i++) data_[i] = dataB[i];
+  }
+}
+
+
+DenseVector::DenseVector(const std::vector<double>& B)
+{
+  m_ = B.size();
+  mem_ = m_;
+  data_ = NULL;
+  if (m_ > 0) {
+    data_ = new double[m_];
+    for (int i = 0; i < m_; i++) data_[i] = B[i];
+  }
+}
+
+
+/* ******************************************************************
 * Smart memory management: preserves data only for vector reduction
 ****************************************************************** */
 void DenseVector::Reshape(int mrow)
@@ -54,6 +96,18 @@ DenseVector& DenseVector::operator=(const DenseVector& B)
     for (int i = 0; i < m_; ++i) data_[i] = b[i];
   }
   return (*this);
+}
+
+
+/* ******************************************************************
+* Vector based initialization. The size of the vector is not changed!
+****************************************************************** */
+void DenseVector::PutVector(const DenseVector& v, double val)
+{
+  int mmin = std::min(m_, v.NumRows());
+  const double* vdata = v.Values();
+  for (int i = 0; i < mmin; ++i) data_[i] = vdata[i];   
+  for (int i = mmin; i < m_; ++i) data_[i] = val;
 }
 
 }  // namespace WhetStone

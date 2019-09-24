@@ -34,6 +34,7 @@
 #include "SurfaceMiniMesh.hh"
 #include "Tensor.hh"
 #include "WhetStoneDefs.hh"
+#include "WhetStoneMeshUtils.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -81,7 +82,7 @@ std::vector<SchemaItem> MFD3D_LagrangeAnyOrder::schema() const
 int MFD3D_LagrangeAnyOrder::H1consistency3D_(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List nodes, edges, faces, fedges, fnodes;
+  Entity_ID_List nodes, edges, faces, fedges, fnodes, ids;
   std::vector<int> dirs, fdirs, map;
 
   mesh_->cell_get_nodes(c, &nodes);
@@ -96,7 +97,11 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c); 
   double volume = mesh_->cell_volume(c); 
 
-  // calculate degrees of freedom 
+  // surface mesh processing
+  MFD3D_LagrangeAnyOrder mfd_surf(mesh_);
+  mfd_surf.set_order(order_);
+
+  // count degrees of freedom 
   Polynomial poly(d_, order_), pf, pe, pc;
   if (order_ > 1) {
     pe.Reshape(d_ - 2, order_ - 2);
@@ -107,8 +112,108 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
   int nde = pe.size();
   int ndf = pf.size();
   int ndc = pc.size();
-
   int ndof = nnodes + nedges * nde + nfaces * ndf + ndc;
+
+  int rowf = nnodes;  // pointer to groups
+  int rowe = rowf + nfaces * ndf;
+  int rowc = rowe + nedges * nde;
+
+  // pre-calculate data for each face
+  std::vector<DenseMatrix> vRf;
+  std::vector<std::vector<int> > vmapf;
+  std::vector<std::shared_ptr<SurfaceCoordinateSystem> > vsysf;
+
+  for (int i = 0; i < nfaces; i++) {
+    int f = faces[i];
+    double area = mesh_->face_area(f);
+    AmanziGeometry::Point normal = mesh_->face_normal(f);
+
+    auto coordsys = std::make_shared<SurfaceCoordinateSystem>(normal);
+    const auto& tau = *coordsys->tau();
+    vsysf.push_back(coordsys);
+
+    Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
+
+    // -- matrices
+    DenseMatrix Nf, Af, Mf;
+    mfd_surf.H1consistency2D_<SurfaceMiniMesh>(surf_mesh, f, K, Nf, Af);
+    const DenseMatrix& Rf = mfd_surf.R();
+    const DenseMatrix& Gf = mfd_surf.G();
+    auto integrals_f = mfd_surf.integrals();
+
+    NumericalIntegration<SurfaceMiniMesh> numi_f(surf_mesh);
+    numi_f.UpdateMonomialIntegralsCell(f, 2 * order_, integrals_f);
+
+    Basis_Regularized<SurfaceMiniMesh> basis_f;
+    basis_f.Init(surf_mesh, f, order_, integrals_f.poly());
+
+    Polynomial tmp(d_ - 1, order_);
+    tmp.set_origin(surf_mesh->cell_centroid(f));
+    GrammMatrix(tmp, integrals_f, basis_f, Mf);
+
+    DenseMatrix RG(Rf), RGM(Rf);
+    RG.Multiply(Rf, Gf, false);
+    RGM.Multiply(RG, Mf, false);
+
+    // -- constant in projector generates additional matrix
+    mesh_->face_get_nodes(f, &ids);
+
+    int m = RGM.NumRows();
+    int n = RGM.NumCols();
+
+    if (order_ == 1) {
+      std::vector<double> weights;
+      PolygonCentroidWeights(*mesh_, ids, area, weights);
+      
+      for (int i = 0; i < m; ++i)
+        for (int j = 0; j < n; ++j) RGM(i, j) += Mf(0, j) * weights[i] / area;
+    } else {
+      DenseVector w(n), rw(m);
+      w.PutScalar(0.0);
+      w(0) = -1.0 / area;
+
+      RGM.Multiply(w, rw, false); 
+      rw(m - ndf) += 1.0;
+
+      for (int i = 0; i < m; ++i)
+        for (int j = 0; j < n; ++j) RGM(i, j) += Mf(0, j) * rw(i);
+    }
+
+    vRf.push_back(RGM);
+
+    // -- maps for DOFs
+    int pos;
+    std::vector<int> map;
+
+    // -- map : nodes
+    for (int i = 0; i < ids.size(); ++i) {
+      int v = ids[i];
+      pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
+      map.push_back(pos);
+    }
+
+    // -- map : edge moments
+    Entity_ID_List dirs_aux;
+    mesh_->face_get_edges_and_dirs(f, &ids, &dirs_aux);
+    for (int i = 0; i < ids.size(); ++i) {
+      int e = ids[i];
+      pos = std::distance(edges.begin(), std::find(edges.begin(), edges.end(), e));
+      pos = rowe + pos * nde;
+
+      for (int k = 0; k < pe.size(); ++k)
+        map.push_back(pos + k);
+    }
+
+    // -- map : interior face moments
+    pos = std::distance(faces.begin(), std::find(faces.begin(), faces.end(), f));
+    pos = rowf + pos * ndf;
+    for (int k = 0; k < pf.size(); ++k)
+      map.push_back(pos + k);
+
+    vmapf.push_back(map);
+  }
+
+  // populate columns of matrices R and N 
   N.Reshape(ndof, nd);
   Ac.Reshape(ndof, ndof);
 
@@ -124,7 +229,6 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
   basis.Init(mesh_, c, order_, integrals_.poly());
 
   // populate matrices N and R
-  std::vector<AmanziGeometry::Point> tau(d_ - 1);
   R_.PutScalar(0.0);
   N.PutScalar(0.0);
 
@@ -142,7 +246,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
     polys[0] = &cmono;
 
     int col = it.PolynomialPosition();
-    int row(nnodes);
+    int row = rowf;
 
     AmanziGeometry::Point xv(d_);
     for (int i = 0; i < nnodes; i++) {
@@ -151,26 +255,23 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
       N(i, col) = cmono.Value(xv);
     }
 
-    // N and R: degrees of freedom on faces and edges
+    // N: degrees of freedom on faces
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
       AmanziGeometry::Point normal = mesh_->face_normal(f);
       const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
       double area = mesh_->face_area(f);
 
-      // create a mini-mesh
-      auto coordsys = std::make_shared<SurfaceCoordinateSystem>(normal);
-      const auto& tau = *coordsys->tau();
-      Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
-
       // local coordinate system with origin at face centroid
       normal *= dirs[i];
       AmanziGeometry::Point conormal = K * normal;
-
       Polynomial tmp = grad * conormal;
+
+      const auto& tau = *vsysf[i]->tau();
       tmp.ChangeCoordinates(xf, tau);
 
-      // low-order moments are the degrees of freedom
+      // low-order moments are the degrees of freedom but we parse
+      // them together with (order_ - 1) moments.
       for (auto jt = pf.begin(); jt < pf.end(); ++jt) {
         const int* jndex = jt.multi_index();
         Polynomial fmono(d_ - 1, jndex, 1.0);
@@ -179,24 +280,47 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
         polys[1] = &fmono;
 
         int k = jt.PolynomialPosition();
-        R_(row + k, col) = area * tmp(k);
         N(row + k, col) = numi.IntegratePolynomialsFace(f, polys) / area;
       }
       row += ndf;
 
-      // the highest-order moments require H^1 projector on each face
-      // -- we calculate some of its parts, bypassing polynomial machinery
-      DenseMatrix Nf, Af;
-      // H1consistency2D_<SurfaceMiniMesh>(surf_mesh, f, K, Nf, Af);
-      // const DenseMatrix& R = mfd_surf.R();
-      // const DenseMatrix& G = mfd_surf.G();
+      // R: degrees of freedom on faces and edges
+      const auto& map = vmapf[i];
+      const auto& Rf = vRf[i];
 
-      // Add w^T * inv(G) * R^T to matrix R
-      // Add moments to matrix N
+      int ncolsf = Rf.NumCols();
+      int nrowsf = Rf.NumRows();
+      DenseVector v(ncolsf), rv(nrowsf);
+
+      v.PutVector(tmp.ExpandCoefficients(), 0.0);
+      Rf.Multiply(v, rv, false);
+
+      for (int k = 0; k < nrowsf; ++k) {
+        R_(map[k], col) += rv(k);
+      }
     }
 
-    // N and R: degrees of freedom in cells
-    row += nfaces * ndf + nedges * nde;
+    // N: degrees of freedom at edges
+    for (int i = 0; i < nedges; i++) {
+      int e = edges[i];
+      const auto& xe = mesh_->edge_centroid(e);
+      std::vector<AmanziGeometry::Point> tau_edge(1, mesh_->edge_vector(e));
+      double length = mesh_->edge_length(e);
+
+      for (auto jt = pe.begin(); jt < pe.end(); ++jt) {
+        const int* jndex = jt.multi_index();
+        Polynomial fmono(d_ - 2, jndex, 1.0);
+        fmono.InverseChangeCoordinates(xe, tau_edge);  
+
+        polys[1] = &fmono;
+
+        int k = jt.PolynomialPosition();
+        N(row + k, col) = numi.IntegratePolynomialsEdge(e, polys) / length;
+      }
+      row += nde;
+    }
+
+    // R: degrees of freedom in cells
     if (cmono.order() > 1) {
       VectorPolynomial Kgrad = K * grad;
       Polynomial tmp = Divergence(Kgrad);
@@ -209,6 +333,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
       }
     }
 
+    // N: degrees of freedom in cells
     if (order_ > 1) {
       for (auto jt = pc.begin(); jt < pc.end(); ++jt) {
         int n = jt.PolynomialPosition();
@@ -271,7 +396,6 @@ int MFD3D_LagrangeAnyOrder::StiffnessMatrixSurface(
     int f, const Tensor& K, DenseMatrix& A)
 {
   const auto& normal = mesh_->face_normal(f);
-  std::vector<AmanziGeometry::Point> tau(d_ - 1);
 
   auto coordsys = std::make_shared<SurfaceCoordinateSystem>(normal);
   Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
@@ -335,8 +459,6 @@ void MFD3D_LagrangeAnyOrder::ProjectorCell_(
   basis.Init(mesh_, c, order_, ptmp);
 
   AmanziGeometry::Point xv(d_);
-  std::vector<AmanziGeometry::Point> tau(d_ - 1);
-
   int row(nnodes);
 
   // calculate DOFs on boundary

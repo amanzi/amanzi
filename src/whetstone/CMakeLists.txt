@@ -56,7 +56,6 @@ add_amanzi_library(whetstone
                           Polynomial.cc VectorPolynomial.cc MatrixPolynomial.cc
                           MeshMaps.cc
                           MeshMaps_FEM.cc MeshMaps_VEM.cc MeshMaps_PEM.cc
-                          GrammMatrix.cc
                           SurfaceCoordinateSystem.cc
                    HEADERS DenseMatrix.hh DenseVector.hh
                            DG_Modal.hh

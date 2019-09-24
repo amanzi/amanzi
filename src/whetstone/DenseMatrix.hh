@@ -191,10 +191,15 @@ inline bool operator!=(const DenseMatrix& A, const DenseMatrix& B) {
 }
 
 
-inline void PrintMatrix(const DenseMatrix& A, const char* format = "%12.5f") {
+inline void PrintMatrix(const DenseMatrix& A, const char* format = "%12.5f", int mmax = 0) {
   int m = A.NumRows();
   int n = A.NumCols();
   
+  if (mmax > 0) {
+    m = std::min(mmax, m);
+    n = std::min(mmax, n);
+  }
+
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < n; j++) printf(format, A(i, j));
     printf("\n");

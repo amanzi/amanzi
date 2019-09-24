@@ -86,8 +86,6 @@ TEST(DARCY_SURFACE) {
     CHECK_CLOSE(vyy, volume, 1e-10);
     CHECK_CLOSE(vxy, 0.0, 1e-10);
   }
-
-  
 }
 
 
