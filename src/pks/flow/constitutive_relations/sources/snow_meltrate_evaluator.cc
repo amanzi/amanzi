@@ -29,6 +29,7 @@ SnowMeltRateEvaluator::SnowMeltRateEvaluator(Teuchos::ParameterList& plist) :
 {
   melt_rate_ = plist.get<double>("snow melt rate [mm day^-1 C^-1]", 2.74) * 0.001 / 86400.; // convert mm/day to m/s 
   snow_transition_depth_ = plist.get<double>("snow-ground transition depth [m]", 0.02);
+  snow_temp_shift_ = plist.get<double>("air-snow temperature difference [C]", 2.0); // snow is typically a few degrees colder than air at melt time
 
   domain_ = Keys::getDomain(my_key_);
   if (domain_ == "snow") {
@@ -57,8 +58,8 @@ SnowMeltRateEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   auto& res = *result->ViewComponent("cell", false);
   
   for (int c=0; c!=res.MyLength(); ++c) {
-    if (air_temp[0][c] > 273.15) {
-      res[0][c] = melt_rate_ * (air_temp[0][c] - 273.15);
+    if (air_temp[0][c] - snow_temp_shift_ > 273.15) {
+      res[0][c] = melt_rate_ * (air_temp[0][c] - snow_temp_shift_ - 273.15);
 
       if (swe[0][c] < snow_transition_depth_) {
         res[0][c] *= std::max(0., swe[0][c] / snow_transition_depth_);
@@ -81,7 +82,7 @@ SnowMeltRateEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>
 
   if (wrt_key == at_key_) {
     for (int c=0; c!=res.MyLength(); ++c) {
-      if (air_temp[0][c] > 273.15) {
+      if (air_temp[0][c] - snow_temp_shift_ > 273.15) {
         res[0][c] = melt_rate_;
         if (swe[0][c] < snow_transition_depth_) {
           res[0][c] *= std::max(0., swe[0][c] / snow_transition_depth_);
@@ -93,8 +94,8 @@ SnowMeltRateEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>
 
   } else if (wrt_key == snow_key_) {
     for (int c=0; c!=res.MyLength(); ++c) {
-      if (swe[0][c] < snow_transition_depth_ && air_temp[0][c] > 273.15) {
-        res[0][c] = melt_rate_ * (air_temp[0][c] - 273.15) / snow_transition_depth_;
+      if (swe[0][c] < snow_transition_depth_ && air_temp[0][c] - snow_temp_shift_ > 273.15) {
+        res[0][c] = melt_rate_ * (air_temp[0][c] - snow_temp_shift_ - 273.15) / snow_transition_depth_;
       } else {
         res[0][c] = 0.0;
       }

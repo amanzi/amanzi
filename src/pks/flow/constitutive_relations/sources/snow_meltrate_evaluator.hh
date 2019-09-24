@@ -13,6 +13,25 @@ Requires the following dependencies:
 
 * `"air temperature key`" ``[string]`` **DOMAIN-air_temperature**
 * `"precipitation snow key`" ``[string]`` **DOMAIN-precipitation_snow**
+
+Allows the following parameters:
+
+* `"snow melt rate [mm day^-1 C^-1]`" ``[double]`` **2.74**
+    the melt rate per degree-day above 0 C.
+
+* `"snow-ground transition depth [m]`" ``[double]`` **0.02**
+    Snow depth at which bare ground starts to appear.
+
+* `"air-snow temperature difference [C]`" ``[double]`` **2.0**
+    Snow temperature is typicaly a few degrees colder than the air
+    temperature at snowmelt. This shifts air temp (positive is colder)
+    when calculating the snow temperature.
+
+.. note:
+    If snow temperature is known, the `"air-snow temperature difference`"
+    should be set to 0, and the `"air temperature key`" should be set to
+    the snow temperature key instead.
+
 */
 
 #ifndef AMANZI_FLOW_RELATIONS_SMR_EVALUATOR_HH_
@@ -47,6 +66,7 @@ class SnowMeltRateEvaluator : public SecondaryVariableFieldEvaluator {
   Key at_key_, snow_key_;
   double melt_rate_;
   double snow_transition_depth_;
+  double snow_temp_shift_;
 
   Key domain_, domain_surf_;
   bool compatibility_checked_;
