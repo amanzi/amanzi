@@ -38,8 +38,9 @@
 #include "MFD3D_Lagrange.hh"
 #include "Mesh.hh"
 #include "NumericalIntegration.hh"
+#include "WhetStoneFunction.hh"
 
-class AnalyticBase {
+class AnalyticBase : public Amanzi::WhetStone::WhetStoneFunction {
  public:
   AnalyticBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) 
     : mesh_(mesh),
@@ -54,7 +55,7 @@ class AnalyticBase {
   virtual double ScalarDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) { return 1.0; }
 
   // -- analytic solution p
-  virtual double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) const = 0;
 
   // -- gradient of continuous velocity grad(h), where h = p - g z
   virtual Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
@@ -72,6 +73,9 @@ class AnalyticBase {
     auto grad = gradient_exact(p, t);
     return -(K * grad) * kr;
   }
+
+  // interface to function
+  virtual double Value(const Amanzi::AmanziGeometry::Point& p) const { return pressure_exact(p, 0.0); }
 
   // error calculation
   void ComputeCellError(Epetra_MultiVector& p, double t, double& pnorm, double& l2_err, double& inf_err);

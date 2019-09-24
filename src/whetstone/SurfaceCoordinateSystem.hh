@@ -24,7 +24,8 @@ namespace WhetStone {
 class SurfaceCoordinateSystem {
  public:
   SurfaceCoordinateSystem(const AmanziGeometry::Point& normal)
-    : normal_(normal) { Init(); }
+    : normal_(normal),
+      normal_unit_(normal) { Init(); }
   ~SurfaceCoordinateSystem() {};
 
   // calculate orthogonal vectors of the surface coordinate system
@@ -35,10 +36,11 @@ class SurfaceCoordinateSystem {
 
   // const access
   const AmanziGeometry::Point& normal() const { return normal_; }
+  const AmanziGeometry::Point& normal_unit() const { return normal_unit_; }
   const std::shared_ptr<std::vector<AmanziGeometry::Point> > tau() const { return tau_; }
 
  private:
-  AmanziGeometry::Point normal_;
+  AmanziGeometry::Point normal_, normal_unit_;
   std::shared_ptr<std::vector<AmanziGeometry::Point> > tau_;
 };
 

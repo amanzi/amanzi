@@ -88,7 +88,7 @@ class SurfaceMiniMesh {
 
   AmanziGeometry::Point face_normal(int f) const {
     const auto& tau = mesh_->edge_vector(f);
-    auto normal = tau ^ coordsys_->normal();
+    auto normal = tau ^ coordsys_->normal_unit();
     return coordsys_->Project(normal);
   }
 

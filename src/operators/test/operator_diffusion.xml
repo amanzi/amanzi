@@ -127,6 +127,15 @@
       </ParameterList>
     </ParameterList>
 
+    <ParameterList name="diffusion operator 3D Lagrange">
+      <Parameter name="matrix type" type="string" value="stiffness"/>
+      <ParameterList name="schema">
+        <Parameter name="base" type="string" value="cell"/>
+        <Parameter name="method" type="string" value="Lagrange high order"/>
+        <Parameter name="method order" type="int" value="2"/>
+      </ParameterList>
+    </ParameterList>
+
     <!-- EDGE (nonconformal) MFD schemes -->
     <ParameterList name="diffusion operator edge">
       <Parameter name="matrix type" type="string" value="stiffness"/>

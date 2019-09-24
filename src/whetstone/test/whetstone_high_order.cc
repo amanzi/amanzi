@@ -179,7 +179,7 @@ TEST(HIGH_ORDER_CROUZEIX_RAVIART_SERENDIPITY) {
 /* ******************************************************************
 * Lagrange 2D element
 ****************************************************************** */
-void HighOrderLagrange(std::string file_name) {
+void HighOrderLagrange2D(std::string file_name) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -204,13 +204,9 @@ void HighOrderLagrange(std::string file_name) {
   for (int c = 0; c < ncells; ++c) {
     DenseMatrix N, A1, Ak;
 
-    int rank = (d == 2) ? 2 : 1;
-    Tensor T(d, rank);
-    T(0, 0) = 2.0; 
-    if (d == 2) {
-      T(1, 1) = 2.0;
-      T(0, 1) = T(1, 0) = 0.1;
-    }
+    Tensor T(2, 2);
+    T(0, 0) = T(1, 1) = 2.0;
+    T(0, 1) = T(1, 0) = 0.1;
 
     // 1st-order scheme
     mfd_lo.StiffnessMatrix(c, T, A1);
@@ -226,8 +222,7 @@ void HighOrderLagrange(std::string file_name) {
     CHECK(A1.NormInf() <= 1e-10);
 
     // high-order scheme (new algorithm)
-    int kmax = (d == 2) ? 5 : 4;
-    for (int k = 2; k < kmax; ++k) {
+    for (int k = 2; k < 5; ++k) {
       mfd_ho.set_order(k);
       mfd_ho.H1consistency(c, T, N, Ak);
       mfd_ho.StiffnessMatrix(c, T, Ak);
@@ -255,10 +250,9 @@ void HighOrderLagrange(std::string file_name) {
 }
 
 
-TEST(HIGH_ORDER_LAGRANGE) {
-  HighOrderLagrange("test/one_pentagon.exo");
-  HighOrderLagrange("test/two_cell2_dist.exo");
-  HighOrderLagrange("test/parallepiped.exo");
+TEST(HIGH_ORDER_LAGRANGE_2D) {
+  HighOrderLagrange2D("test/one_pentagon.exo");
+  HighOrderLagrange2D("test/two_cell2_dist.exo");
 } 
 
 
@@ -271,7 +265,8 @@ void HighOrderLagrange3D(const std::string& filename1,
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: High-order Lagrange element" << std::endl;
+  std::cout << "\nTest: High-order 3D Lagrange element, comparing: " 
+            << filename1 << " and " << filename2 << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
@@ -302,17 +297,19 @@ void HighOrderLagrange3D(const std::string& filename1,
     PrintMatrix(A2, "%8.4f ");
 
     A1 -= A2;
-    CHECK(A1.NormInf() <= 1e-10);
+    CHECK(A1.NormInf() <= 1e-10 * A2.NormInf());
   }
 
   // high-order scheme (new algorithm)
   MFD3D_LagrangeAnyOrder mfd1(plist, mesh1);
   MFD3D_LagrangeAnyOrder mfd2(plist, mesh2);
-  for (int k = 2; k < 4; ++k) {
+  for (int k = 1; k < 3; ++k) {
     mfd1.set_order(k);
     mfd1.H1consistency(0, T, N, A1);
     mfd1.StiffnessMatrix(0, T, A1);
-    mfd2.StiffnessMatrix(0, T, A1);
+
+    mfd2.set_order(k);
+    mfd2.StiffnessMatrix(0, T, A2);
 
     printf("Stiffness (sub)matrix for order=%d, size=%d\n", k, A1.NumRows());
     PrintMatrix(A1, "%8.4f ", 12);
@@ -322,7 +319,7 @@ void HighOrderLagrange3D(const std::string& filename1,
     for (int i = 0; i < nrows; i++) CHECK(A1(i, i) > 0.0);
 
     A1 -= A2;
-    CHECK(A1.NormInf() <= 1e-10);
+    CHECK(A1.NormInf() <= 1e-10 * A2.NormInf());
 
     // verify exact integration property
     const DenseMatrix& R = mfd1.R();
@@ -341,6 +338,7 @@ void HighOrderLagrange3D(const std::string& filename1,
 
 TEST(HIGH_ORDER_LAGRANGE_3D) {
   HighOrderLagrange3D("test/cube_unit.exo", "test/cube_unit_rotated.exo");
+  HighOrderLagrange3D("test/cube_half.exo", "test/cube_half.exo");
   HighOrderLagrange3D("test/parallepiped.exo", "test/parallepiped_rotated.exo");
 }
 

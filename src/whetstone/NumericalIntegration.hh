@@ -47,6 +47,16 @@ class NumericalIntegration {
       int c, const std::vector<const WhetStoneFunction*>& funcs, int order) const;
 
   double IntegrateFunctionsEdge(
+      int e, const std::vector<const WhetStoneFunction*>& funcs, int order) const {
+    int v1, v2;
+    AmanziGeometry::Point x1(d_), x2(d_);
+    mesh_->edge_get_nodes(e, &v1, &v2);
+    mesh_->node_get_coordinates(v1, &x1);
+    mesh_->node_get_coordinates(v2, &x2);
+    return IntegrateFunctionsEdge(x1, x2, funcs, order);
+  }
+
+  double IntegrateFunctionsEdge(
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
       const std::vector<const WhetStoneFunction*>& funcs, int order) const;
 

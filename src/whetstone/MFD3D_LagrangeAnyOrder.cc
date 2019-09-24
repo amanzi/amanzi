@@ -122,9 +122,10 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
   std::vector<DenseMatrix> vRf;
   std::vector<std::vector<int> > vmapf;
   std::vector<std::shared_ptr<SurfaceCoordinateSystem> > vsysf;
+  std::vector<Basis_Regularized<SurfaceMiniMesh> > vbasisf;
 
-  for (int i = 0; i < nfaces; i++) {
-    int f = faces[i];
+  for (int l = 0; l < nfaces; ++l) {
+    int f = faces[l];
     double area = mesh_->face_area(f);
     AmanziGeometry::Point normal = mesh_->face_normal(f);
 
@@ -146,6 +147,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
 
     Basis_Regularized<SurfaceMiniMesh> basis_f;
     basis_f.Init(surf_mesh, f, order_, integrals_f.poly());
+    vbasisf.push_back(basis_f);
 
     Polynomial tmp(d_ - 1, order_);
     tmp.set_origin(surf_mesh->cell_centroid(f));
@@ -166,7 +168,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
       PolygonCentroidWeights(*mesh_, ids, area, weights);
       
       for (int i = 0; i < m; ++i)
-        for (int j = 0; j < n; ++j) RGM(i, j) += Mf(0, j) * weights[i] / area;
+        for (int j = 0; j < n; ++j) RGM(i, j) += Mf(0, j) * weights[i];
     } else {
       DenseVector w(n), rw(m);
       w.PutScalar(0.0);
@@ -263,18 +265,19 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
       double area = mesh_->face_area(f);
 
       // local coordinate system with origin at face centroid
-      normal *= dirs[i];
+      normal *= dirs[i] / area;
       AmanziGeometry::Point conormal = K * normal;
       Polynomial tmp = grad * conormal;
 
       const auto& tau = *vsysf[i]->tau();
       tmp.ChangeCoordinates(xf, tau);
-
+      
       // low-order moments are the degrees of freedom but we parse
       // them together with (order_ - 1) moments.
       for (auto jt = pf.begin(); jt < pf.end(); ++jt) {
         const int* jndex = jt.multi_index();
-        Polynomial fmono(d_ - 1, jndex, 1.0);
+        factor = vbasisf[i].monomial_scales()[jt.MonomialSetOrder()];
+        Polynomial fmono(d_ - 1, jndex, factor);
         fmono.InverseChangeCoordinates(xf, tau);  
 
         polys[1] = &fmono;
@@ -293,6 +296,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
       DenseVector v(ncolsf), rv(nrowsf);
 
       v.PutVector(tmp.ExpandCoefficients(), 0.0);
+      vbasisf[i].ChangeBasisNaturalToMy(v);
       Rf.Multiply(v, rv, false);
 
       for (int k = 0; k < nrowsf; ++k) {

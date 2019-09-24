@@ -28,18 +28,19 @@ void SurfaceCoordinateSystem::Init()
   tau_ = std::make_shared<std::vector<AmanziGeometry::Point> >(d - 1);
   auto& tau = *tau_; 
 
+  normal_unit_ /= AmanziGeometry::norm(normal_unit_);
+
   if (d == 2) {
     tau[0] = AmanziGeometry::Point(-normal_[1], normal_[0]);
   } else {
-    double area = norm(normal_);
-    if (fabs(normal_[0]) > 0.1)
-      tau[0] = AmanziGeometry::Point(normal_[1], -normal_[0], 0.0);
+    // here we need orthogonal projector to implement hierarchical construction
+    if (fabs(normal_unit_[0]) > 0.1)
+      tau[0] = AmanziGeometry::Point(normal_unit_[1], -normal_unit_[0], 0.0);
     else 
-      tau[0] = AmanziGeometry::Point(0.0, -normal_[2], normal_[1]);
+      tau[0] = AmanziGeometry::Point(0.0, -normal_unit_[2], normal_unit_[1]);
 
-    tau[0] *= sqrt(area) / norm(tau[0]);
-    tau[1] = normal_ ^ tau[0];
-    tau[1] /= area;
+    tau[0] /= norm(tau[0]);
+    tau[1] = normal_unit_ ^ tau[0];
   }
 }
 
@@ -52,7 +53,7 @@ AmanziGeometry::Point SurfaceCoordinateSystem::Project(const AmanziGeometry::Poi
   AmanziGeometry::Point xloc(d);    
 
   for (int i = 0; i < d; ++i) 
-    xloc[i] = x * (*tau_)[i] / L22((*tau_)[i]);
+    xloc[i] = x * (*tau_)[i];
 
   return xloc;
 }
