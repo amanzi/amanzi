@@ -44,8 +44,7 @@ namespace WhetStone {
 ****************************************************************** */
 MFD3D_LagrangeAnyOrder::MFD3D_LagrangeAnyOrder(
     const Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-  : MFD3D(mesh),
-    InnerProduct(mesh)
+  : MFD3D(mesh)
 {
   order_ = plist.get<int>("method order");
 }

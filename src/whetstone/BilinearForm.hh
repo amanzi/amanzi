@@ -37,7 +37,10 @@ class Polynomial;
 class BilinearForm : public virtual InnerProductL2,
                      public virtual InnerProductH1 {
  public:
-  explicit BilinearForm() : order_(1) {};
+  explicit BilinearForm(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : mesh_(mesh),
+      d_(mesh->space_dimension()),
+      order_(1) {};
   virtual ~BilinearForm() {};
 
   // schema
@@ -120,7 +123,8 @@ class BilinearForm : public virtual InnerProductL2,
   void set_order(int order) { order_ = order; }
 
  protected:
-  int order_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  int d_, order_;
 };
 
 }  // namespace WhetStone

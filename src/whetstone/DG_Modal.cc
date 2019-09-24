@@ -34,10 +34,8 @@ namespace WhetStone {
 ****************************************************************** */
 DG_Modal::DG_Modal(const Teuchos::ParameterList& plist,
                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-  : InnerProduct(mesh),
-    numi_(mesh),
-    mesh_(mesh),
-    d_(mesh->space_dimension())
+  : BilinearForm(mesh),
+    numi_(mesh)
 {
   order_ = plist.get<int>("method order");
   std::string basis_name = plist.get<std::string>("dg basis");

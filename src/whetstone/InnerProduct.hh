@@ -30,9 +30,7 @@ namespace WhetStone {
 
 class InnerProduct { 
  public:
-  InnerProduct(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : mesh_(mesh),
-      stability_method_(WHETSTONE_STABILITY_GENERIC) { d_ = mesh_->space_dimension(); }
+  InnerProduct() : stability_method_(WHETSTONE_STABILITY_GENERIC) {};
   ~InnerProduct() {};
 
   // access
@@ -48,9 +46,6 @@ class InnerProduct {
   void GrammSchmidt_(DenseMatrix& N);
 
  protected:
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  int d_;
-
   int stability_method_;  // stability parameters
   double scalar_stability_, scaling_factor_;
 };

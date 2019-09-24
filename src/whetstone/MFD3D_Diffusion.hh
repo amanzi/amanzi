@@ -42,13 +42,11 @@ class MFD3D_Diffusion : public MFD3D,
   // constructor for backward compatibility
   MFD3D_Diffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : MFD3D(mesh),
-      DeRham_Face(mesh),
-      InnerProduct(mesh) {};
+      DeRham_Face(mesh) {};
   MFD3D_Diffusion(const Teuchos::ParameterList& plist,
                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : MFD3D(mesh),
-      DeRham_Face(mesh),
-      InnerProduct(mesh) {};
+      DeRham_Face(mesh) {};
   ~MFD3D_Diffusion() {};
 
   // main methods 
@@ -123,6 +121,10 @@ class MFD3D_Diffusion : public MFD3D,
   // mesh extension methods 
   // -- exterior normal
   AmanziGeometry::Point mesh_face_normal(int f, int c);
+
+ protected:
+  using MFD3D::mesh_;
+  using MFD3D::d_;
 
  private:
   static RegisteredFactory<MFD3D_Diffusion> factory_;

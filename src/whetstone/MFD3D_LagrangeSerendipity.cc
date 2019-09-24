@@ -43,8 +43,7 @@ namespace WhetStone {
 MFD3D_LagrangeSerendipity::MFD3D_LagrangeSerendipity(
     const Teuchos::ParameterList& plist,
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-  : InnerProduct(mesh),
-    MFD3D_LagrangeAnyOrder(plist, mesh)
+  : MFD3D_LagrangeAnyOrder(plist, mesh)
 {
   order_ = plist.get<int>("method order");
 }

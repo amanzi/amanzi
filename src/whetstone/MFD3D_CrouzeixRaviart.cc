@@ -24,10 +24,10 @@
 
 // WhetStone
 #include "Basis_Regularized.hh"
-#include "SurfaceCoordinateSystem.hh"
 #include "GrammMatrix.hh"
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "NumericalIntegration.hh"
+#include "SurfaceCoordinateSystem.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
@@ -38,8 +38,7 @@ namespace WhetStone {
 ****************************************************************** */
 MFD3D_CrouzeixRaviart::MFD3D_CrouzeixRaviart(const Teuchos::ParameterList& plist,
                                              const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-  : MFD3D(mesh),
-    InnerProduct(mesh)
+  : MFD3D(mesh)
 {
   order_ = plist.get<int>("method order");
 }

@@ -29,11 +29,16 @@ namespace WhetStone {
 class DeRham_Node : virtual public InnerProductL2 { 
  public:
   DeRham_Node(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) 
-    : InnerProduct(mesh) {};
+    : mesh_(mesh),
+      d_(mesh->space_dimension()) {};
   ~DeRham_Node() {};
 
   virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
   virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M); 
+
+ protected:
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  int d_;
 };
 
 }  // namespace WhetStone

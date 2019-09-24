@@ -124,9 +124,7 @@ class DG_Modal : public BilinearForm {
   int AdvectionMatrixPiecewisePoly_(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test);
 
  private:
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   NumericalIntegration<AmanziMesh::Mesh> numi_;
-  int order_, d_;
 
   std::vector<Polynomial> monomial_integrals_;  // integrals of non-normalized monomials
   std::vector<std::shared_ptr<Basis<AmanziMesh::Mesh> > > basis_;

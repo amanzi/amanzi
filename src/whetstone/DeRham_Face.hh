@@ -29,7 +29,8 @@ namespace WhetStone {
 class DeRham_Face : virtual public InnerProductL2 { 
  public:
   DeRham_Face(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) 
-    : InnerProduct(mesh) {};
+    : mesh_(mesh),
+      d_(mesh->space_dimension()) {};
   ~DeRham_Face() {};
 
   virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
@@ -37,6 +38,10 @@ class DeRham_Face : virtual public InnerProductL2 {
 
   virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
   virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W); 
+
+ protected:
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  int d_;
 };
 
 }  // namespace WhetStone
