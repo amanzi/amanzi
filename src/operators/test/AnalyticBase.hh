@@ -217,7 +217,7 @@ void AnalyticBase::ComputeNodeError(
 
     const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     const Amanzi::AmanziGeometry::Point& grad_exact = gradient_exact(xc, t);
-    mfd.L2Cell(c, cell_solution, NULL, poly);
+    mfd.L2Cell(c, cell_solution, cell_solution, NULL, poly);
     for (int k = 0; k < d_; ++k) grad[k] = poly(k + 1);
 
     h1_err += L22(grad - grad_exact) * volume;

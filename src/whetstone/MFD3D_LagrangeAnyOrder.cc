@@ -416,7 +416,8 @@ int MFD3D_LagrangeAnyOrder::StiffnessMatrixSurface(
 * Generic projector on space of polynomials of order k in cell c.
 ****************************************************************** */
 void MFD3D_LagrangeAnyOrder::ProjectorCell_(
-    int c, const std::vector<Polynomial>& vf, 
+    int c, const std::vector<Polynomial>& ve, 
+    const std::vector<Polynomial>& vf,
     const ProjectorType type,
     const Polynomial* moments, Polynomial& uc) 
 {

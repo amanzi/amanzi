@@ -91,30 +91,38 @@ class BilinearForm : public virtual InnerProductL2,
 
   // Projectors facilitate construction of bilinear forms
   // -- L2 projectors
-  virtual void L2Cell(int c, const std::vector<Polynomial>& vf,
+  virtual void L2Cell(int c, const std::vector<Polynomial>& ve,
+                      const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& vc) {
-    Errors::Message msg("L2 projector is not supported/implemented for this space.");
+    Errors::Message msg("L2 projector is not implemented for this scheme.");
     Exceptions::amanzi_throw(msg);
   }
+  virtual void L2Face(int f, const std::vector<Polynomial>& ve,
+                      const Polynomial* moments, Polynomial& vf) {
+    Errors::Message msg("L2 face projector is not implemented for this scheme.");
+    Exceptions::amanzi_throw(msg);
+  }
+
   virtual void L2Cell(int c, const DenseVector& dofs, Polynomial& vc) {
-    Errors::Message msg("L2 projector (from DOFs) is not supported/implemented for this space.");
+    Errors::Message msg("L2 projector (from DOFs) is not implemented for this scheme.");
     Exceptions::amanzi_throw(msg);
   }
 
   // -- H1 projectors
-  virtual void H1Cell(int c, const std::vector<Polynomial>& vf,
+  virtual void H1Cell(int c, const std::vector<Polynomial>& ve,
+                      const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& vc) {
-    Errors::Message msg("H1 cell projector is not supported/implemented for this scheme.");
+    Errors::Message msg("H1 cell projector is not implemented for this scheme.");
     Exceptions::amanzi_throw(msg);
   }
   virtual void H1Face(int f, const std::vector<Polynomial>& ve,
                       const Polynomial* moments, Polynomial& vf) {
-    Errors::Message msg("H1 face projector is not supported/implemented for this scheme.");
+    Errors::Message msg("H1 face projector is not implemented for this scheme.");
     Exceptions::amanzi_throw(msg);
   }
 
   virtual void H1Cell(int c, const DenseVector& dofs, Polynomial& vc) {
-    Errors::Message msg("H1 cell projector (from DOFs) is not supported/implemented for this space.");
+    Errors::Message msg("H1 cell projector (from DOFs) is not implemented for this scheme.");
     Exceptions::amanzi_throw(msg);
   }
 

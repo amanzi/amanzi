@@ -48,10 +48,10 @@ void MeshMaps_VEM::VelocityCell(
       }
     
       if (projector_ == "H1") {
-        mfd->H1Cell(c, vvf, NULL, vc[i]);
+        mfd->H1Cell(c, vvf, vvf, NULL, vc[i]);
       }
       else if (projector_ == "L2") {
-        mfd->L2Cell(c, vvf, NULL, vc[i]);
+        mfd->L2Cell(c, vvf, vvf, NULL, vc[i]);
       }
     }
   }

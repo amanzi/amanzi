@@ -758,7 +758,7 @@ TEST(RECOVER_GRADIENT_MIXED) {
   
   // gradient recovery
   Polynomial gradient(3, 1);
-  mfd.L2Cell(cell, solution, NULL, gradient);
+  mfd.L2Cell(cell, solution, solution, NULL, gradient);
 
   printf("Gradient %f %f %f\n", gradient(1), gradient(2), gradient(3));
 
@@ -812,7 +812,7 @@ TEST(RECOVER_GRADIENT_NODAL) {
   
   // gradient recovery
   WhetStone::Polynomial gradient(3, 1);
-  mfd.L2Cell(cell, solution, NULL, gradient);
+  mfd.L2Cell(cell, solution, solution, NULL, gradient);
 
   printf("Gradient %f %f %f\n", gradient(1), gradient(2), gradient(3));
 

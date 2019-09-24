@@ -71,15 +71,18 @@ class MFD3D_LagrangeAnyOrder : public MFD3D {
   }
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
-  // -- projectors
-  virtual void L2Cell(int c, const std::vector<Polynomial>& vf,
+  // -- l2 projectors
+  virtual void L2Cell(int c, const std::vector<Polynomial>& ve,
+                      const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& uc) override {
-    ProjectorCell_(c, vf, ProjectorType::L2, moments, uc);
+    ProjectorCell_(c, ve, vf, ProjectorType::L2, moments, uc);
   }
 
-  virtual void H1Cell(int c, const std::vector<Polynomial>& vf,
+  // -- h1 projectors
+  virtual void H1Cell(int c, const std::vector<Polynomial>& ve,
+                      const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& uc) override {
-    ProjectorCell_(c, vf, ProjectorType::H1, moments, uc);
+    ProjectorCell_(c, ve, vf, ProjectorType::H1, moments, uc);
   }
 
   virtual void H1Cell(int c, const DenseVector& dofs, Polynomial& uc) override {
@@ -105,7 +108,8 @@ class MFD3D_LagrangeAnyOrder : public MFD3D {
 
   int H1consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
 
-  void ProjectorCell_(int c, const std::vector<Polynomial>& vf,
+  void ProjectorCell_(int c, const std::vector<Polynomial>& ve,
+                      const std::vector<Polynomial>& vf,
                       const ProjectorType type,
                       const Polynomial* moments, Polynomial& uc);
 

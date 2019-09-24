@@ -145,7 +145,8 @@ int MFD3D_Lagrange::StiffnessMatrix(
 * N and R are used. Here we use simplified versions.
 ***************************************************************** */
 void MFD3D_Lagrange::ProjectorCell_(
-    int c, const std::vector<Polynomial>& vf, Polynomial& uc)
+    int c, const std::vector<Polynomial>& ve,
+    const std::vector<Polynomial>& vf, Polynomial& uc)
 {
   Entity_ID_List nodes, faces;
   std::vector<int> dirs;

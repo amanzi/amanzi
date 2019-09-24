@@ -106,7 +106,8 @@ class MFD3D_Diffusion : public MFD3D,
 
   // -- projectors
   //    we return linear polynomial instead of constant vector polynomial (FIXME)
-  virtual void L2Cell(int c, const std::vector<Polynomial>& vf,
+  virtual void L2Cell(int c, const std::vector<Polynomial>& ve,
+                      const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& vc) override;
 
   // utils
