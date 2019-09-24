@@ -200,12 +200,17 @@ void HighOrderLagrange(std::string file_name) {
   MFD3D_Lagrange mfd_lo(plist, mesh);
   MFD3D_LagrangeAnyOrder mfd_ho(plist, mesh);
 
+  int d = mesh->space_dimension();
   for (int c = 0; c < ncells; ++c) {
     DenseMatrix N, A1, Ak;
 
-    Tensor T(2, 2);
-    T(0, 0) = T(1, 1) = 2.0;
-    T(0, 1) = T(1, 0) = 0.0;
+    int rank = (d == 2) ? 2 : 1;
+    Tensor T(d, rank);
+    T(0, 0) = 2.0; 
+    if (d == 2) {
+      T(1, 1) = 2.0;
+      T(0, 1) = T(1, 0) = 0.1;
+    }
 
     // 1st-order scheme
     mfd_lo.StiffnessMatrix(c, T, A1);
@@ -221,7 +226,8 @@ void HighOrderLagrange(std::string file_name) {
     CHECK(A1.NormInf() <= 1e-10);
 
     // high-order scheme (new algorithm)
-    for (int k = 2; k < 5; ++k) {
+    int kmax = (d == 2) ? 5 : 4;
+    for (int k = 2; k < kmax; ++k) {
       mfd_ho.set_order(k);
       mfd_ho.H1consistency(c, T, N, Ak);
       mfd_ho.StiffnessMatrix(c, T, Ak);
@@ -252,13 +258,15 @@ void HighOrderLagrange(std::string file_name) {
 TEST(HIGH_ORDER_LAGRANGE) {
   HighOrderLagrange("test/one_pentagon.exo");
   HighOrderLagrange("test/two_cell2_dist.exo");
+  HighOrderLagrange("test/parallepiped.exo");
 } 
 
 
 /* ******************************************************************
 * Lagrange 3D element
 ****************************************************************** */
-TEST(HIGH_ORDER_LAGRANGE_3D) {
+void HighOrderLagrange3D(const std::string& filename1,
+                         const std::string& filename2) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -269,8 +277,8 @@ TEST(HIGH_ORDER_LAGRANGE_3D) {
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
   MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh1 = meshfactory.create("test/cube_unit.exo", true, true); 
-  Teuchos::RCP<Mesh> mesh2 = meshfactory.create("test/cube_unit_rotated.exo", true, true); 
+  Teuchos::RCP<Mesh> mesh1 = meshfactory.create(filename1, true, true); 
+  Teuchos::RCP<Mesh> mesh2 = meshfactory.create(filename2, true, true); 
  
   DenseMatrix N, A1, A2;
   Teuchos::ParameterList plist;
@@ -328,6 +336,12 @@ TEST(HIGH_ORDER_LAGRANGE_3D) {
     G1 -= G;
     CHECK(G1.NormInf() <= 1e-12 * G.NormInf());
   }
+}
+
+
+TEST(HIGH_ORDER_LAGRANGE_3D) {
+  HighOrderLagrange3D("test/cube_unit.exo", "test/cube_unit_rotated.exo");
+  HighOrderLagrange3D("test/parallepiped.exo", "test/parallepiped_rotated.exo");
 }
 
 
