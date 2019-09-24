@@ -113,7 +113,7 @@
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="method" type="string" value="Lagrange"/>
+        <Parameter name="method" type="string" value="Lagrange high order"/>
         <Parameter name="method order" type="int" value="3"/>
       </ParameterList>
     </ParameterList>
@@ -141,7 +141,7 @@
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="method" type="string" value="CrouzeixRaviart"/>
+        <Parameter name="method" type="string" value="CrouzeixRaviart high order"/>
         <Parameter name="method order" type="int" value="3"/>
       </ParameterList>
     </ParameterList>

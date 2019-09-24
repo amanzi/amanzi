@@ -9,11 +9,12 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Crouzeix-Raviart element: degrees of freedom are mean values on faces.
+  Crouzeix-Raviart element: degrees of freedom are moments on faces
+  and inside cell.
 */
 
-#ifndef AMANZI_MFD3D_CROUZEIX_RAVIART_HH_
-#define AMANZI_MFD3D_CROUZEIX_RAVIART_HH_
+#ifndef AMANZI_MFD3D_CROUZEIX_RAVIART_HO_HH_
+#define AMANZI_MFD3D_CROUZEIX_RAVIART_HO_HH_
 
 #include "Teuchos_RCP.hpp"
 
@@ -31,17 +32,15 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_CrouzeixRaviart : public MFD3D { 
+class MFD3D_CrouzeixRaviartAnyOrder : public MFD3D { 
  public:
-  MFD3D_CrouzeixRaviart(const Teuchos::ParameterList& plist,
-                        const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
-  ~MFD3D_CrouzeixRaviart() {};
+  MFD3D_CrouzeixRaviartAnyOrder(const Teuchos::ParameterList& plist,
+                                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+  ~MFD3D_CrouzeixRaviartAnyOrder() {};
 
   // required methods
   // -- schema
-  virtual std::vector<SchemaItem> schema() const override {
-    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, 1));
-  }
+  virtual std::vector<SchemaItem> schema() const override;
 
   // -- mass matrices
   virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override {
@@ -62,32 +61,46 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
   // -- projectors: base L2 and H1 projectors
   virtual void L2Cell(int c, const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& uc) override {
-    ProjectorCell_(c, vf, uc);
+    ProjectorCell_(c, vf, ProjectorType::L2, moments, uc);
   }
 
   virtual void H1Cell(int c, const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& uc) override {
-    ProjectorCell_(c, vf, uc);
+    ProjectorCell_(c, vf, ProjectorType::H1, moments, uc);
   }
 
   // additional miscaleneous projectors
-  void H1Face(int f, const AmanziGeometry::Point& p0,
-              const std::vector<VectorPolynomial>& ve, VectorPolynomial& uf) const;
+  void L2GradientCell(int c, const std::vector<VectorPolynomial>& vf,
+                      const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc) {
+    ProjectorGradientCell_(c, vf, ProjectorType::L2, moments, uc);
+  }
 
   // access / setup
   // -- integrals of monomials in high-order schemes could be reused
+  const PolynomialOnMesh& integrals() const { return integrals_; }
   const DenseMatrix& G() const { return G_; }
   const DenseMatrix& R() const { return R_; }
 
  private:
-  // efficient implementation of low-order elliptic projectors
-  void ProjectorCell_(int c, const std::vector<Polynomial>& vf, Polynomial& uc);
+  // generic code for multiple projectors
+  void ProjectorCell_(int c, const std::vector<Polynomial>& vf,
+                      const ProjectorType type, 
+                      const Polynomial* moments, Polynomial& uc);
+
+  void ProjectorGradientCell_(int c, const std::vector<VectorPolynomial>& vf,
+                              const ProjectorType type, 
+                              const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc);
+
+  // supporting routines
+  void CalculateFaceDOFs_(int f, const Polynomial& vf, const Polynomial& pf,
+                          DenseVector& vdof, int& row);
 
  protected:
+  PolynomialOnMesh integrals_;
   DenseMatrix R_, G_;
 
  private:
-  static RegisteredFactory<MFD3D_CrouzeixRaviart> factory_;
+  static RegisteredFactory<MFD3D_CrouzeixRaviartAnyOrder> factory_;
 };
 
 }  // namespace WhetStone

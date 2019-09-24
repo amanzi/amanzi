@@ -59,6 +59,8 @@ class Operator_Schema : public Operator {
           const CompositeVector& X, CompositeVector& Y) const override;
   virtual int ApplyMatrixFreeOp(const Op_Face_Schema& op,
           const CompositeVector& X, CompositeVector& Y) const override;
+  virtual int ApplyMatrixFreeOp(const Op_Node_Schema& op,
+          const CompositeVector& X, CompositeVector& Y) const override;
   virtual int ApplyMatrixFreeOp(const Op_Node_Node& op,
       const CompositeVector& X, CompositeVector& Y) const override;
 
@@ -67,6 +69,9 @@ class Operator_Schema : public Operator {
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const override;
   virtual void SymbolicAssembleMatrixOp(const Op_Face_Schema& op,
+          const SuperMap& map, GraphFE& graph,
+          int my_block_row, int my_block_col) const override;
+  virtual void SymbolicAssembleMatrixOp(const Op_Node_Schema& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const override;
   virtual void SymbolicAssembleMatrixOp(const Op_Node_Node& op,
@@ -78,6 +83,9 @@ class Operator_Schema : public Operator {
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const override;
   virtual void AssembleMatrixOp(const Op_Face_Schema& op,
+          const SuperMap& map, MatrixFE& mat,
+          int my_block_row, int my_block_col) const override;
+  virtual void AssembleMatrixOp(const Op_Node_Schema& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const override;
   virtual void AssembleMatrixOp(const Op_Node_Node& op,
@@ -93,6 +101,11 @@ class Operator_Schema : public Operator {
   virtual void ExtractVectorFaceOp(int f, const Schema& schema,
           WhetStone::DenseVector& v, const CompositeVector& X) const override;
   virtual void AssembleVectorFaceOp(int f, const Schema& schema,
+          const WhetStone::DenseVector& v, CompositeVector& X) const override;
+
+  virtual void ExtractVectorNodeOp(int n, const Schema& schema,
+          WhetStone::DenseVector& v, const CompositeVector& X) const override;
+  virtual void AssembleVectorNodeOp(int n, const Schema& schema,
           const WhetStone::DenseVector& v, CompositeVector& X) const override;
 
   // debugging methods

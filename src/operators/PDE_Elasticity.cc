@@ -18,12 +18,14 @@
 #include "BilinearFormFactory.hh"
 #include "errors.hh"
 #include "MatrixFE.hh"
+#include "MFD3D_Elasticity.hh"
 #include "PreconditionerFactory.hh"
 #include "WhetStoneDefs.hh"
 
 // Amanzi::Operators
 #include "Op.hh"
 #include "Op_Cell_Schema.hh"
+#include "Op_Node_Schema.hh"
 #include "OperatorDefs.hh"
 #include "Operator_Schema.hh"
 #include "PDE_Elasticity.hh"
@@ -74,12 +76,11 @@ void PDE_Elasticity::Init_(Teuchos::ParameterList& plist)
 {
   // generate schema for the mimetic discretization method
   Teuchos::ParameterList& schema_list = plist.sublist("schema");
+  mfd_ = WhetStone::BilinearFormFactory::Create(schema_list, mesh_);
 
   Schema my_schema;
-  auto base = my_schema.StringToKind(schema_list.get<std::string>("base"));
-
-  mfd_ = WhetStone::BilinearFormFactory::Create(schema_list, mesh_);
-  my_schema.Init(mfd_, mesh_, base);
+  base_ = my_schema.StringToKind(schema_list.get<std::string>("base"));
+  my_schema.Init(mfd_, mesh_, base_);
 
   // create or check the existing Operator
   local_schema_col_ = my_schema;

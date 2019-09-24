@@ -137,8 +137,9 @@ class Op_Diagonal;
 class Op_Face_Cell;
 class Op_Face_CellBndFace;
 class Op_Face_Schema;
-class Op_Node_Node;
 class Op_Edge_Edge;
+class Op_Node_Node;
+class Op_Node_Schema;
 class Op_SurfaceCell_SurfaceCell;
 class Op_SurfaceFace_SurfaceCell;
 
@@ -281,7 +282,10 @@ class Operator {
 
   virtual int ApplyMatrixFreeOp(const Op_Edge_Edge& op,
       const CompositeVector& X, CompositeVector& Y) const;
+
   virtual int ApplyMatrixFreeOp(const Op_Node_Node& op,
+      const CompositeVector& X, CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_Node_Schema& op,
       const CompositeVector& X, CompositeVector& Y) const;
 
   virtual int ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
@@ -325,7 +329,11 @@ class Operator {
   virtual void SymbolicAssembleMatrixOp(const Op_Edge_Edge& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;
+
   virtual void SymbolicAssembleMatrixOp(const Op_Node_Node& op,
+          const SuperMap& map, GraphFE& graph,
+          int my_block_row, int my_block_col) const;
+  virtual void SymbolicAssembleMatrixOp(const Op_Node_Schema& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;
 
@@ -373,7 +381,11 @@ class Operator {
   virtual void AssembleMatrixOp(const Op_Edge_Edge& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
+
   virtual void AssembleMatrixOp(const Op_Node_Node& op,
+          const SuperMap& map, MatrixFE& mat,
+          int my_block_row, int my_block_col) const;
+  virtual void AssembleMatrixOp(const Op_Node_Schema& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
 
@@ -397,6 +409,11 @@ class Operator {
   virtual void ExtractVectorFaceOp(int c, const Schema& schema,
           WhetStone::DenseVector& v, const CompositeVector& X) const;
   virtual void AssembleVectorFaceOp(int c, const Schema& schema,
+          const WhetStone::DenseVector& v, CompositeVector& X) const;
+
+  virtual void ExtractVectorNodeOp(int n, const Schema& schema,
+          WhetStone::DenseVector& v, const CompositeVector& X) const;
+  virtual void AssembleVectorNodeOp(int n, const Schema& schema,
           const WhetStone::DenseVector& v, CompositeVector& X) const;
 
   // deep copy for building interfaces to TPLs, mainly to solvers

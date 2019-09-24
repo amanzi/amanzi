@@ -24,14 +24,14 @@
 
 #include "BilinearFormFactory.hh"
 #include "DenseMatrix.hh"
-#include "MFD3D_Lagrange.hh"
+#include "MFD3D_LagrangeAnyOrder.hh"
 #include "Polynomial.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_LagrangeSerendipity : public MFD3D_Lagrange { 
+class MFD3D_LagrangeSerendipity : public MFD3D_LagrangeAnyOrder { 
  public:
   MFD3D_LagrangeSerendipity(const Teuchos::ParameterList& plist,
                             const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);

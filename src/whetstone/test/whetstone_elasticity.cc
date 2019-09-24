@@ -47,6 +47,7 @@ TEST(ELASTICITY_STIFFNESS_2D) {
   RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo"); 
  
   Teuchos::ParameterList plist;
+  plist.set<std::string>("base", "cell");
   MFD3D_Elasticity mfd(plist, mesh);
 
   int nnodes = 5, nrows = nnodes * 2, cell = 0;
@@ -74,10 +75,7 @@ TEST(ELASTICITY_STIFFNESS_2D) {
     // std::cout << "Functional value=" << mfd.simplex_functional() << std::endl;
 
     printf("Stiffness matrix for cell %3d\n", cell);
-    for (int i = 0; i < nrows; i++) {
-      for (int j = 0; j < nrows; j++ ) printf("%8.4f ", A(i, j)); 
-      printf("\n");
-    }
+    PrintMatrix(A, "%8.4f ");
 
     // verify SPD propery
     for (int i = 0; i < nrows; i++) CHECK(A(i, i) > 0.0);
@@ -93,17 +91,17 @@ TEST(ELASTICITY_STIFFNESS_2D) {
     for (int i = 0; i < nnodes; i++) {
       int v = nodes[i];
       mesh->node_get_coordinates(v, &p);
-      xx[i] = p[0];    
-      xx[i + nnodes] = 0.0;    
+      xx[2 * i] = p[0];    
+      xx[2 * i + 1] = 0.0;    
 
-      yy[i] = 0.0;    
-      yy[i + nnodes] = p[1];
+      yy[2 * i] = 0.0;    
+      yy[2 * i + 1] = p[1];
     }
 
     double xi, yi, xj;
     double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
-    for (int i = 0; i < nnodes; i++) {
-      for (int j = 0; j < nnodes; j++) {
+    for (int i = 0; i < nrows; i++) {
+      for (int j = 0; j < nrows; j++) {
         vxx += A(i, j) * xx[i] * xx[j];
         vxy += A(i, j) * yy[i] * xx[j];
       }
@@ -111,8 +109,6 @@ TEST(ELASTICITY_STIFFNESS_2D) {
     CHECK_CLOSE((2 * mu + lambda) * volume, vxx, 1e-10);
     CHECK_CLOSE(0.0, vxy, 1e-10);
   }
-
-  
 }
 
 
@@ -137,6 +133,7 @@ TEST(ELASTICITY_STIFFNESS_3D) {
   RCP<Mesh> mesh = meshfactory.create("test/one_trapezoid.exo"); 
  
   Teuchos::ParameterList plist;
+  plist.set<std::string>("base", "cell");
   MFD3D_Elasticity mfd(plist, mesh);
 
   int nrows = 24, nnodes = 8, cell = 0;
@@ -147,10 +144,7 @@ TEST(ELASTICITY_STIFFNESS_3D) {
   mfd.StiffnessMatrix(cell, T, A);
 
   printf("Stiffness matrix for cell %3d\n", cell);
-  for (int i = 0; i < nrows; i++) {
-    for (int j = 0; j < nrows; j++ ) printf("%8.4f ", A(i, j)); 
-    printf("\n");
-  }
+  PrintMatrix(A, "%8.4f ");
 
   // verify SPD propery
   for (int i = 0; i < nrows; i++) CHECK(A(i, i) > 0.0);
@@ -162,25 +156,28 @@ TEST(ELASTICITY_STIFFNESS_3D) {
   int d = mesh->space_dimension();
   Point p(d);
 
-  double xi, yi, xj;
-  double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
+  double xx[nrows], yy[nrows];
   for (int i = 0; i < nnodes; i++) {
     int v = nodes[i];
     mesh->node_get_coordinates(v, &p);
-    xi = p[0];
-    yi = p[1];
-    for (int j = 0; j < nnodes; j++) {
-      v = nodes[j];
-      mesh->node_get_coordinates(v, &p);
-      xj = p[0];
-      vxx += A(i, j) * xi * xj;
-      vxy += A(i, j) * yi * xj;
+    xx[3 * i] = p[0];    
+    xx[3 * i + 1] = 0.0;    
+    xx[3 * i + 2] = 0.0;    
+
+    yy[3 * i] = 0.0;    
+    yy[3 * i + 1] = p[1];
+    yy[3 * i + 2] = 0.0;
+  }
+
+  double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
+  for (int i = 0; i < nrows; i++) {
+    for (int j = 0; j < nrows; j++) {
+      vxx += A(i, j) * xx[i] * xx[j];
+      vxy += A(i, j) * xx[i] * yy[j];
     }
   }
   CHECK_CLOSE(vxx, volume, 1e-10);
   CHECK_CLOSE(vxy, 0.0, 1e-10);
-
-  
 }
 
 

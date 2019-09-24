@@ -24,19 +24,19 @@
 
 #include "BilinearFormFactory.hh"
 #include "DenseMatrix.hh"
-#include "MFD3D_CrouzeixRaviart.hh"
+#include "MFD3D_CrouzeixRaviartAnyOrder.hh"
 #include "Polynomial.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_CrouzeixRaviartSerendipity : public MFD3D_CrouzeixRaviart { 
+class MFD3D_CrouzeixRaviartSerendipity : public MFD3D_CrouzeixRaviartAnyOrder { 
  public:
   MFD3D_CrouzeixRaviartSerendipity(const Teuchos::ParameterList& plist,
                                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : InnerProduct(mesh),
-      MFD3D_CrouzeixRaviart(plist, mesh) {};
+      MFD3D_CrouzeixRaviartAnyOrder(plist, mesh) {};
   ~MFD3D_CrouzeixRaviartSerendipity() {};
 
   // required methods

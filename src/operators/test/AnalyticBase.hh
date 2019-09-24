@@ -179,8 +179,7 @@ void AnalyticBase::ComputeNodeError(
   Amanzi::AmanziGeometry::Point grad(d_);
 
   Teuchos::ParameterList plist;
-  plist.set<int>("method order", 1)
-       .set<bool>("use low-order scheme", true);
+  plist.set<int>("method order", 1);
   Amanzi::WhetStone::MFD3D_Lagrange mfd(plist, mesh_);
 
   Amanzi::WhetStone::Polynomial poly(d_, 1);

@@ -21,44 +21,48 @@
 #include "MeshFactory.hh"
 
 #include "MFD3D_CrouzeixRaviart.hh"
+#include "MFD3D_CrouzeixRaviartAnyOrder.hh"
 #include "MFD3D_CrouzeixRaviartSerendipity.hh"
-#include "MFD3D_Diffusion.hh"
 #include "MFD3D_Lagrange.hh"
+#include "MFD3D_LagrangeAnyOrder.hh"
 #include "MFD3D_LagrangeSerendipity.hh"
 #include "Tensor.hh"
 
 
 /* **************************************************************** */
-TEST(HIGH_ORDER_CROUZEIX_RAVIART) {
+void HighOrderCrouzeixRaviart(int dim, std::string file_name) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "Test: High-order Crouzeix Raviart in 2D" << std::endl;
+  std::cout << "Test: High-order Crouzeix Raviart in " 
+            << dim << "D" << " file=" << file_name <<std::endl;
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", true, false); 
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, (dim == 3)); 
  
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
-  MFD3D_CrouzeixRaviart mfd(plist, mesh);
+  MFD3D_CrouzeixRaviart mfd_lo(plist, mesh);
+  MFD3D_CrouzeixRaviartAnyOrder mfd_ho(plist, mesh);
 
   int cell(0);
   DenseMatrix N, A1, Ak;
 
-  Tensor T(2, 2);
+  Tensor T(dim, 2);
   T(0, 0) = T(1, 1) = 2.0;
   T(0, 1) = T(1, 0) = 1.0;
+  T(dim - 1, dim - 1) = 2.0;
 
   // 1st-order scheme
-  mfd.set_order(1);
-  mfd.StiffnessMatrix(cell, T, A1);
+  mfd_lo.set_order(1);
+  mfd_lo.StiffnessMatrix(cell, T, A1);
 
   // 1st-order scheme (new algorithm)
-  mfd.set_use_always_ho(true);
-  mfd.StiffnessMatrix(cell, T, Ak);
+  mfd_ho.set_order(1);
+  mfd_ho.StiffnessMatrix(cell, T, Ak);
 
   printf("Stiffness matrix for order = 1\n");
   PrintMatrix(A1, "%8.4f ");
@@ -67,10 +71,11 @@ TEST(HIGH_ORDER_CROUZEIX_RAVIART) {
   CHECK(A1.NormInf() <= 1e-10);
 
   // high-order scheme (new algorithm)
-  for (int k = 2; k < 4; ++k) {
-    mfd.set_order(k);
-    mfd.H1consistency(cell, T, N, Ak);
-    mfd.StiffnessMatrix(cell, T, Ak);
+  int kmax = (dim == 3) ? 3 : 4;
+  for (int k = 2; k < kmax; ++k) {
+    mfd_ho.set_order(k);
+    mfd_ho.H1consistency(cell, T, N, Ak);
+    mfd_ho.StiffnessMatrix(cell, T, Ak);
 
     printf("Stiffness matrix for order = %d\n", k);
     PrintMatrix(Ak, "%8.4f ");
@@ -80,8 +85,8 @@ TEST(HIGH_ORDER_CROUZEIX_RAVIART) {
     for (int i = 0; i < nrows; i++) CHECK(Ak(i, i) > 0.0);
 
     // verify exact integration property
-    const DenseMatrix& G = mfd.G();
-    const DenseMatrix& R = mfd.R();
+    const DenseMatrix& G = mfd_ho.G();
+    const DenseMatrix& R = mfd_ho.R();
     DenseMatrix G1(G);
     G1.Multiply(N, R, true);
     G1(0, 0) = 1.0;
@@ -93,19 +98,26 @@ TEST(HIGH_ORDER_CROUZEIX_RAVIART) {
 }
 
 
+TEST(HIGH_ORDER_CROUZEIX_RAVIART) {
+  HighOrderCrouzeixRaviart(2, "test/one_pentagon.exo");
+  HighOrderCrouzeixRaviart(3, "test/cube_unit.exo");
+} 
+
+
 /* **************************************************************** */
-void HighOrderCrouzeixRaviartSerendipity(std::string file_name) {
+void HighOrderCrouzeixRaviartSerendipity(int dim, std::string file_name) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: High-order Crouzeix Raviart Serendipity element in 2D, file=" << file_name << std::endl;
+  std::cout << "\nTest: High-order Crouzeix Raviart Serendipity element in " 
+            << dim << "D, file=" << file_name << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
   MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, false); 
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, (dim == 3)); 
  
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
@@ -116,11 +128,12 @@ void HighOrderCrouzeixRaviartSerendipity(std::string file_name) {
   for (int c = 0; c < ncells; ++c) {
     if (mesh->cell_get_num_faces(c) < 4) continue;
 
-    Tensor T(2, 1);
+    Tensor T(dim, 1);
     T(0, 0) = 1.0;
 
     // high-order schemes
-    for (int k = 1; k < 4; ++k) {
+    int kmax = (dim == 3) ? 3 : 4;
+    for (int k = 1; k < kmax; ++k) {
       DenseMatrix N, Ak;
 
       mfd.set_order(k);
@@ -153,8 +166,9 @@ void HighOrderCrouzeixRaviartSerendipity(std::string file_name) {
 
 
 TEST(HIGH_ORDER_CROUZEIX_RAVIART_SERENDIPITY) {
-  HighOrderCrouzeixRaviartSerendipity("test/two_cell2_dist.exo");
-  HighOrderCrouzeixRaviartSerendipity("test/one_pentagon.exo");
+  HighOrderCrouzeixRaviartSerendipity(2, "test/two_cell2_dist.exo");
+  HighOrderCrouzeixRaviartSerendipity(2, "test/one_pentagon.exo");
+  // HighOrderCrouzeixRaviartSerendipity(3, "test/cube_unit.exo");
 } 
 
 
@@ -177,8 +191,8 @@ void HighOrderLagrange(std::string file_name) {
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
 
-  MFD3D_Diffusion mfd_lo(plist, mesh);
-  MFD3D_Lagrange mfd_ho(plist, mesh);
+  MFD3D_Lagrange mfd_lo(plist, mesh);
+  MFD3D_LagrangeAnyOrder mfd_ho(plist, mesh);
 
   for (int c = 0; c < ncells; ++c) {
     DenseMatrix N, A1, Ak;
@@ -254,7 +268,7 @@ void HighOrderLagrangeSerendipity(std::string file_name) {
   Teuchos::ParameterList plist; 
   plist.set<int>("method order", 1);
 
-  MFD3D_Diffusion mfd_lo(plist, mesh);
+  MFD3D_Lagrange mfd_lo(plist, mesh);
   MFD3D_LagrangeSerendipity mfd_ho(plist, mesh);
 
   for (int c = 0; c < ncells; ++c) {

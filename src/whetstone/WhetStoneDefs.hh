@@ -96,7 +96,7 @@ const int WHETSTONE_SIMPLEX_FUNCTIONAL_TRACE = 2;
 #undef WHETSTONE_SIMPLEX_PIVOT_BRANDT  // select pivot rule
 #define WHETSTONE_SIMPLEX_PIVOT_MFD3D
 
-// various MFD schemes
+// various MFD schemes for diffusion
 const int DIFFUSION_OPTIMIZED_FOR_SPARSITY = 9;  // recommended
 const int DIFFUSION_POLYHEDRA_SCALED = 2; 
 const int DIFFUSION_OPTIMIZED_FOR_MONOTONICITY = 3;  

@@ -27,6 +27,8 @@ namespace Operators {
 ****************************************************************** */
 void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
 {
+  Errors::Message msg;
+
   // parse parameters
   // -- discretization details
   matrix_ = plist.get<std::string>("matrix type");
@@ -45,15 +47,21 @@ void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
     domain = range;
   }
   else {
-    Errors::Message msg;
     msg << "Schema mismatch for abstract operator.\n" 
         << "  Use \"schema\" for a square operator.\n"
         << "  Use \"schema range\" and \"schema domain\" for a general operator.\n";
     Exceptions::amanzi_throw(msg);
   }
 
-  // discretization methods
+  // compatibility of two schemas
   auto base = global_schema_row_.StringToKind(domain.get<std::string>("base"));
+  auto tmp = global_schema_col_.StringToKind(domain.get<std::string>("base"));
+  if (tmp != base) {
+    msg << "Schema's base mismatch for abstract operator.\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  // discretization method:
   auto mfd_domain = WhetStone::BilinearFormFactory::Create(domain, mesh_);
   Teuchos::RCP<WhetStone::BilinearForm> mfd_range;
   if (!symmetric) 
