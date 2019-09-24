@@ -306,7 +306,7 @@ demoMeshLogicalYManual() {
 
 // Single coarse root to 1 meter, then branches to 4 fine roots
 Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
-demoMeshLogicalYFromXML(const std::string& meshname) {
+demoMeshLogicalFromXML(const std::string& meshname) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
@@ -318,28 +318,7 @@ demoMeshLogicalYFromXML(const std::string& meshname) {
   MeshLogicalFactory fac(comm, gm);
 
   // load the xml
-  std::string xmlFileName = "test/demo_mesh_Y.xml";
-  Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
-  Teuchos::ParameterList plist = xmlreader.getParameters();
-  return fac.Create(plist.sublist(meshname));
-}
-  
-
-  // Single coarse root to 1 meter, then branches to 2 fine roots
-Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
-demoMeshLogical2YFromXML(const std::string& meshname) {
-  using namespace Amanzi::AmanziMesh;
-  using namespace Amanzi::AmanziGeometry;
-
-  auto comm = Amanzi::getDefaultComm();
-  const int nproc(comm->NumProc());
-  const int me(comm->MyPID());
-
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3));
-  MeshLogicalFactory fac(comm, gm);
-
-  // load the xml
-  std::string xmlFileName = "test/demo_mesh_2Y.xml";
+  std::string xmlFileName = "test/demo_mesh.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
   return fac.Create(plist.sublist(meshname));
