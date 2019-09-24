@@ -27,6 +27,7 @@
 #include "LinearOperatorPCG.hh"
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
+#include "SurfaceCoordinateSystem.hh"
 
 // Operators
 #include "Analytic00.hh"
@@ -383,21 +384,30 @@ void RunHighOrderLagrange3D(const std::string& vem_name) {
   std::vector<int>& bc_model_e = bc_e->bc_model();
   std::vector<std::vector<double> >& bc_value_e = bc_e->bc_value_vector(nke);
 
-  std::vector<const WhetStoneFunction*> funcs(1);
+  std::vector<const WhetStoneFunction*> funcs(2);
   funcs[0] = &ana;
 
   for (int e = 0; e < nedges_wghost; ++e) {
     const Point& xe = mesh->edge_centroid(e);
     double length = mesh->edge_length(e);
+    std::vector<AmanziGeometry::Point> tau(1, mesh->edge_vector(e));
 
-    WhetStone::Polynomial poly(3, order - 2);
+    WhetStone::Polynomial pe(1, order - 2);
 
     if (fabs(xe[0]) < 1e-6 || fabs(xe[0] - 1.0) < 1e-6 ||
         fabs(xe[1]) < 1e-6 || fabs(xe[1] - 1.0) < 1e-6 ||
         fabs(xe[2]) < 1e-6 || fabs(xe[2] - 1.0) < 1e-6) {
 
-      bc_value_e[e][0] = numi.IntegrateFunctionsEdge(e, funcs, 1) / length;
-      bc_model_e[e] = OPERATOR_BC_DIRICHLET;
+      for (auto jt = pe.begin(); jt < pe.end(); ++jt) {
+        const int* jndex = jt.multi_index();
+        Polynomial fmono(1, jndex, 1.0);
+        fmono.InverseChangeCoordinates(xe, tau);  
+        funcs[1] = &fmono;
+
+        int k = jt.PolynomialPosition();
+        bc_value_e[e][k] = numi.IntegrateFunctionsEdge(e, funcs, 2) / length;
+        bc_model_e[e] = OPERATOR_BC_DIRICHLET;
+      }
     }
   }
 
@@ -409,14 +419,32 @@ void RunHighOrderLagrange3D(const std::string& vem_name) {
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
+    const Point& normal = mesh->face_normal(f);
     double area = mesh->face_area(f);
+
+    WhetStone::Polynomial pf(2, order - 2);
 
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
         fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) {
 
-      bc_value_f[f][0] = numi.IntegrateFunctionsTriangulatedFace(f, funcs, 1) / area;
-      bc_model_f[f] = OPERATOR_BC_DIRICHLET;
+      // local coordinate system with origin at face centroid
+      SurfaceCoordinateSystem coordsys(normal);
+
+      for (auto it = pf.begin(); it < pf.end(); ++it) {
+        int m = it.MonomialSetOrder();
+        double scale = std::pow(area, -(double)m / 2);
+
+        const int* index = it.multi_index();
+        Polynomial fmono(2, index, scale);
+        fmono.InverseChangeCoordinates(xf, *coordsys.tau());  
+
+        funcs[1] = &fmono;
+
+        int k = it.PolynomialPosition();
+        bc_value_f[f][k] = numi.IntegrateFunctionsTriangulatedFace(f, funcs, 2) / area;
+        bc_model_f[f] = OPERATOR_BC_DIRICHLET;
+      }
     }
   }
 

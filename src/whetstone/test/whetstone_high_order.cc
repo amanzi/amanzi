@@ -20,6 +20,7 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
+#include "GrammMatrix.hh"
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "MFD3D_CrouzeixRaviartAnyOrder.hh"
 #include "MFD3D_CrouzeixRaviartSerendipity.hh"
@@ -51,7 +52,7 @@ void HighOrderCrouzeixRaviart(int dim, std::string file_name) {
   MFD3D_CrouzeixRaviartAnyOrder mfd_ho(plist, mesh);
 
   int cell(0);
-  DenseMatrix N, A1, Ak;
+  DenseMatrix G1, A1, Ak;
 
   Tensor T(dim, 2);
   T(0, 0) = T(1, 1) = 2.0;
@@ -76,7 +77,6 @@ void HighOrderCrouzeixRaviart(int dim, std::string file_name) {
   int kmax = (dim == 3) ? 3 : 4;
   for (int k = 2; k < kmax; ++k) {
     mfd_ho.set_order(k);
-    mfd_ho.H1consistency(cell, T, N, Ak);
     mfd_ho.StiffnessMatrix(cell, T, Ak);
 
     printf("Stiffness (sub)matrix for order=%d, size=%d\n", k, Ak.NumRows());
@@ -88,9 +88,17 @@ void HighOrderCrouzeixRaviart(int dim, std::string file_name) {
 
     // verify exact integration property
     const DenseMatrix& G = mfd_ho.G();
-    const DenseMatrix& R = mfd_ho.R();
-    DenseMatrix G1(G);
-    G1.Multiply(N, R, true);
+    
+    PolynomialOnMesh integrals;
+    NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+    numi.UpdateMonomialIntegralsCell(cell, 2 * k, integrals);
+
+    Polynomial ptmp, poly(dim, k);
+    Basis_Regularized<AmanziMesh::Mesh> basis;
+    basis.Init(mesh, cell, k, ptmp);
+
+    GrammMatrixGradients(T, poly, integrals, basis, G1);
+
     G1(0, 0) = 1.0;
     G1.Inverse();
     G1(0, 0) = 0.0;
@@ -138,10 +146,9 @@ void HighOrderCrouzeixRaviartSerendipity(int dim, std::string file_name) {
     // high-order schemes
     int kmax = (dim == 3) ? 3 : 4;
     for (int k = 1; k < kmax; ++k) {
-      DenseMatrix N, Ak;
+      DenseMatrix G1, Ak;
 
       mfd.set_order(k);
-      mfd.H1consistency(c, T, N, Ak);
       mfd.StiffnessMatrix(c, T, Ak);
 
       printf("Stiffness (sub)matrix for order=%d, cell=%d, size=%d\n", k, c, Ak.NumRows());
@@ -152,12 +159,18 @@ void HighOrderCrouzeixRaviartSerendipity(int dim, std::string file_name) {
       for (int i = 0; i < nrows; i++) CHECK(Ak(i, i) > 0.0);
 
       // verify exact integration property
-      const DenseMatrix& R = mfd.R();
       const DenseMatrix& G = mfd.G();
 
-      DenseMatrix G1(G);
-      G1.PutScalar(0.0);
-      G1.Multiply(N, R, true);
+      PolynomialOnMesh integrals;
+      NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+      numi.UpdateMonomialIntegralsCell(c, 2 * k, integrals);
+
+      Polynomial ptmp, poly(dim, k);
+      Basis_Regularized<AmanziMesh::Mesh> basis;
+      basis.Init(mesh, c, k, ptmp);
+
+      GrammMatrixGradients(T, poly, integrals, basis, G1);
+
       G1(0, 0) = 1.0;
       G1.Inverse();
       G1(0, 0) = 0.0;
@@ -202,7 +215,7 @@ void HighOrderLagrange2D(std::string file_name) {
 
   int d = mesh->space_dimension();
   for (int c = 0; c < ncells; ++c) {
-    DenseMatrix N, A1, Ak;
+    DenseMatrix G1, A1, Ak;
 
     Tensor T(2, 2);
     T(0, 0) = T(1, 1) = 2.0;
@@ -224,7 +237,6 @@ void HighOrderLagrange2D(std::string file_name) {
     // high-order scheme (new algorithm)
     for (int k = 2; k < 5; ++k) {
       mfd_ho.set_order(k);
-      mfd_ho.H1consistency(c, T, N, Ak);
       mfd_ho.StiffnessMatrix(c, T, Ak);
 
       printf("Stiffness (sub)matrix for order=%d, cell=%d, size=%d\n", k, c, Ak.NumRows());
@@ -235,11 +247,18 @@ void HighOrderLagrange2D(std::string file_name) {
       for (int i = 0; i < nrows; i++) CHECK(Ak(i, i) > 0.0);
 
       // verify exact integration property
-      const DenseMatrix& R = mfd_ho.R();
       const DenseMatrix& G = mfd_ho.G();
-      DenseMatrix G1(G);
 
-      G1.Multiply(N, R, true);
+      PolynomialOnMesh integrals;
+      NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+      numi.UpdateMonomialIntegralsCell(c, 2 * k, integrals);
+
+      Polynomial ptmp, poly(mesh->space_dimension(), k);
+      Basis_Regularized<AmanziMesh::Mesh> basis;
+      basis.Init(mesh, c, k, ptmp);
+
+      GrammMatrixGradients(T, poly, integrals, basis, G1);
+
       G1(0, 0) = 1.0;
       G1.Inverse();
       G1(0, 0) = 0.0;
@@ -275,7 +294,7 @@ void HighOrderLagrange3D(const std::string& filename1,
   Teuchos::RCP<Mesh> mesh1 = meshfactory.create(filename1, true, true); 
   Teuchos::RCP<Mesh> mesh2 = meshfactory.create(filename2, true, true); 
  
-  DenseMatrix N, A1, A2;
+  DenseMatrix G1, A1, A2;
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
 
@@ -305,7 +324,6 @@ void HighOrderLagrange3D(const std::string& filename1,
   MFD3D_LagrangeAnyOrder mfd2(plist, mesh2);
   for (int k = 1; k < 3; ++k) {
     mfd1.set_order(k);
-    mfd1.H1consistency(0, T, N, A1);
     mfd1.StiffnessMatrix(0, T, A1);
 
     mfd2.set_order(k);
@@ -322,11 +340,18 @@ void HighOrderLagrange3D(const std::string& filename1,
     CHECK(A1.NormInf() <= 1e-10 * A2.NormInf());
 
     // verify exact integration property
-    const DenseMatrix& R = mfd1.R();
-    const DenseMatrix& G = mfd1.G();
-    DenseMatrix G1(G);
+    const DenseMatrix& G = mfd2.G();
 
-    G1.Multiply(N, R, true);
+    PolynomialOnMesh integrals;
+    NumericalIntegration<AmanziMesh::Mesh> numi(mesh2);
+    numi.UpdateMonomialIntegralsCell(0, 2 * k, integrals);
+
+    Polynomial ptmp, poly(3, k);
+    Basis_Regularized<AmanziMesh::Mesh> basis;
+    basis.Init(mesh2, 0, k, ptmp);
+
+    GrammMatrixGradients(T, poly, integrals, basis, G1);
+
     G1(0, 0) = 1.0;
     G1.Inverse();
     G1(0, 0) = 0.0;

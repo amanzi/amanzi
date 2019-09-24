@@ -68,8 +68,6 @@ TEST(DG2D_MASS_MATRIX) {
       CHECK_CLOSE(M(i, i), area, 1e-12);
     }
   }
-
-  
 }
 
 

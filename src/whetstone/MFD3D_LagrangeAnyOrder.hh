@@ -26,6 +26,7 @@
 #include "Basis_Regularized.hh"
 #include "BilinearFormFactory.hh"
 #include "DenseMatrix.hh"
+#include "GrammMatrix.hh"
 #include "MFD3D.hh"
 #include "NumericalIntegration.hh"
 #include "Polynomial.hh"

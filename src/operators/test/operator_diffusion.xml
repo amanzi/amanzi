@@ -132,7 +132,7 @@
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
         <Parameter name="method" type="string" value="Lagrange high order"/>
-        <Parameter name="method order" type="int" value="2"/>
+        <Parameter name="method order" type="int" value="3"/>
       </ParameterList>
     </ParameterList>
 
