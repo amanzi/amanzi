@@ -73,10 +73,6 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   void StaticEdgeFaceVelocities();
   void StaticCellVelocity();
 
-  // dynamic geometric quantities
-  virtual void DynamicJacobianMatrix(
-      int c, double t, const WhetStone::MatrixPolynomial& J, WhetStone::MatrixPolynomial& Jt);
-
   // change between conservative and non-conservative variable
   void ConservativeToNonConservative(double t, const CompositeVector& u, CompositeVector& v);
   void NonConservativeToConservative(double t, const CompositeVector& u, CompositeVector& v);

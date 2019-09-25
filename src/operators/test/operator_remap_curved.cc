@@ -52,10 +52,10 @@ class MyRemapDG : public RemapDG_Tests<AnalyticDG04> {
   void ReInit(double tini);
 
   // geometric tools
-  virtual void DynamicJacobianMatrix(
-      int c, double t, const WhetStone::MatrixPolynomial& J, WhetStone::MatrixPolynomial& Jt) override;
+  void DynamicJacobianMatrix(
+      int c, double t, const WhetStone::MatrixPolynomial& J, WhetStone::MatrixPolynomial& Jt);
   void DynamicFaceVelocity(double t);
-  virtual void DynamicCellVelocity(double t) override;
+  void DynamicCellVelocity(double t);
 
   // mesh deformation from time 0 to t
   virtual void DeformMesh(int deform, double t) override;
@@ -64,12 +64,12 @@ class MyRemapDG : public RemapDG_Tests<AnalyticDG04> {
   virtual double global_time(double t) override { return tini_ + t * T1_; }
 
   // access 
-  const std::vector<WhetStone::VectorPolynomial> det() const { return *det_; }
+  const std::vector<WhetStone::SpaceTimePolynomial> det() const { return *det_; }
   const std::shared_ptr<WhetStone::MeshMaps> maps() const { return maps_; }
 
  private:
   double T1_, tini_;
-  std::vector<WhetStone::MatrixPolynomial> J0_;
+  std::vector<WhetStone::MatrixPolynomial> J0_, J_;
   std::vector<WhetStone::VectorPolynomial> velf_vec0_;
 };
 
@@ -81,7 +81,7 @@ void MyRemapDG::Init(const Teuchos::RCP<WhetStone::DG_Modal> dg)
 {
   InitializeOperators(dg);
   StaticEdgeFaceVelocities();
-  InitializeJacobianMatrix();
+  StaticCellVelocity();
 
   velf_vec0_.resize(nfaces_wghost_);
   for (int f = 0; f < nfaces_wghost_; ++f) {
@@ -114,7 +114,7 @@ void MyRemapDG::ReInit(double tini)
   for (int f = 0; f < nfaces_wghost_; ++f)
     velf_vec_[f] -= velf_vec0_[f];
 
-  InitializeJacobianMatrix();
+  StaticCellVelocity();
 
   tini_ = tini;
 }
@@ -406,7 +406,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   auto& det = remap.det();
 
   for (int c = 0; c < ncells_owned; ++c) {
-    double vol1 = numi.IntegratePolynomialCell(c, det[c][0]);
+    double vol1 = numi.IntegratePolynomialCell(c, det[c].Value(1.0));
     double vol2 = mesh1->cell_volume(c);
 
     area += vol1;
@@ -421,9 +421,9 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
     for (int i = 0; i < nk; ++i) data(i) = p2c[i][c];
     auto poly = dg->cell_basis(c).CalculatePolynomial(mesh0, c, order, data);
 
-    int quad_order = det[c][0].order() + poly.order();
+    int quad_order = det[c].order() + poly.order();
 
-    WhetStone::Polynomial tmp(det[c][0]);
+    WhetStone::Polynomial tmp(det[c].Value(1.0));
     tmp.ChangeOrigin(mesh0->cell_centroid(c));
     poly *= tmp;
     mass1 += numi.IntegratePolynomialCell(c, poly);

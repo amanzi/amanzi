@@ -322,7 +322,7 @@ void AdvectionFn<AnalyticDG>::FunctionalTimeDerivative(
 
   if (setup_) {
     op_mass->SetupPoly(K);
-    op_mass->UpdateMatrices(Teuchos::null);
+    op_mass->UpdateMatrices(Teuchos::null, Teuchos::null);
     setup_ = false;
   }
 

@@ -292,21 +292,6 @@ void RemapDG::ModifySolution(double t, CompositeVector& u)
 
 
 /* *****************************************************************
-* Calculates various geometric quantaties on intermediate meshes.
-***************************************************************** */
-void RemapDG::DynamicJacobianMatrix(
-    int c, double t, const WhetStone::MatrixPolynomial& J, WhetStone::MatrixPolynomial& Jt)
-{
-  int nJ = J.NumRows();
-  Jt = J * t;
-
-  for (int i = 0; i < nJ; ++i) {
-    Jt(i, i % dim_)(0) += 1.0;
-  }
-}
-
-
-/* *****************************************************************
 * Limit non-conservative field x
 ***************************************************************** */
 void RemapDG::ApplyLimiter(double t, CompositeVector& x)
