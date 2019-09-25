@@ -120,6 +120,10 @@
 #   0.95.8       - update NetCDF-Fortran to 4.4.5
 #   0.95.9       - update NetCDF-C to 4.7.0
 #   0.95.10      - update OpenMPI to 3.1.4
+#
+#   0.96.0       - update Trilinos to 12.14.0bf557717e-Jun17
+#   0.96.1       - update NetCDF-C to 4.7.1 
+#                - update MOAB to 5.1.0
 
 include(CMakeParseArguments)
 
@@ -171,8 +175,8 @@ endmacro(amanzi_tpl_version_write)
 # TPLs and XSDK versions 
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
-set(AMANZI_TPLS_VERSION_MINOR 95)
-set(AMANZI_TPLS_VERSION_PATCH 10)
+set(AMANZI_TPLS_VERSION_MINOR 96)
+set(AMANZI_TPLS_VERSION_PATCH 1)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -301,12 +305,12 @@ set(HDF5_MD5_SUM        dd2148b740713ca0295442ec683d7b1c)
 #
 set(NetCDF_VERSION_MAJOR 4)
 set(NetCDF_VERSION_MINOR 7)
-set(NetCDF_VERSION_PATCH 0)
+set(NetCDF_VERSION_PATCH 1)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
 set(NetCDF_URL_STRING     "https://github.com/Unidata/netcdf-c/archive/")
 set(NetCDF_ARCHIVE_FILE   v${NetCDF_VERSION}.tar.gz)
 set(NetCDF_SAVEAS_FILE    netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_MD5_SUM        37134a12a49e80c45fb58777aa3e9e3b)
+set(NetCDF_MD5_SUM        e4a6c74c9591ec8036587ca51130f878)
 
 
 #
@@ -349,13 +353,13 @@ set(MSTK_MD5_SUM        bc9c39885d9dc41655f8b54c628e460b)
 # TPL: MOAB
 #
 set(MOAB_VERSION_MAJOR  5)
-set(MOAB_VERSION_MINOR  0)
+set(MOAB_VERSION_MINOR  1)
 set(MOAB_VERSION_PATCH  0)
 set(MOAB_VERSION ${MOAB_VERSION_MAJOR}.${MOAB_VERSION_MINOR}.${MOAB_VERSION_PATCH})
 set(MOAB_URL_STRING     ftp://ftp.mcs.anl.gov/pub/fathom)
 set(MOAB_ARCHIVE_FILE   moab-${MOAB_VERSION}.tar.gz)
 set(MOAB_SAVEAS_FILE    ${MOAB_ARCHIVE_FILE})
-set(MOAB_MD5_SUM        1840ca02366f4d3237d44af63e239e3b) 
+set(MOAB_MD5_SUM        875435654b2bc81b97e85894c2a45aaa)
 
 #
 # TPL: HYPRE
@@ -434,13 +438,15 @@ set(PETSc_MD5_SUM        c9f03d11138046201b786e8da89dbe7b)
 # TPL: Trilinos
 #
 set(Trilinos_VERSION_MAJOR 12)
-set(Trilinos_VERSION_MINOR 12)
-set(Trilinos_VERSION_PATCH 1)
+set(Trilinos_VERSION_MINOR 14)
+set(Trilinos_VERSION_PATCH 0bf557717e-Jun17)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}-${Trilinos_VERSION_MINOR}-${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "https://github.com/trilinos/Trilinos/archive")
 set(Trilinos_ARCHIVE_FILE   trilinos-release-${Trilinos_VERSION}.tar.gz)
 set(Trilinos_SAVEAS_FILE    ${Trilinos_ARCHIVE_FILE})
-set(Trilinos_MD5_SUM        ecd4606fa332212433c98bf950a69cc7)
+set(Trilinos_MD5_SUM        de912cca43c2ca3b74aa08528ac39dbd)
+set(Trilinos_GIT_REPOSITORY "https://github.com/trilinos/Trilinos")
+set(Trilinos_GIT_TAG        "0bf557717ec1cf692828e250f95c1dcaba4f01c9")
 
 #
 # TPL: SEACAS

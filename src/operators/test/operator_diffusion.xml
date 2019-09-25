@@ -69,10 +69,18 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="Amesos2">
+    <ParameterList name="Amesos2: basker">
       <Parameter name="direct method" type="string" value="amesos"/>
       <ParameterList name="amesos parameters">
         <Parameter name="solver name" type="string" value="basker"/>
+        <Parameter name="amesos version" type="int" value="2"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Amesos2: superludist">
+      <Parameter name="direct method" type="string" value="amesos"/>
+      <ParameterList name="amesos parameters">
+        <Parameter name="solver name" type="string" value="superludist"/>
         <Parameter name="amesos version" type="int" value="2"/>
       </ParameterList>
     </ParameterList>
