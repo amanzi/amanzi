@@ -145,6 +145,7 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
 
   // create remap object
   MyRemapDG remap(mesh0, mesh1, plist);
+  if (MyPID == 0) std::cout << "Deforming mesh...\n";
   remap.DeformMesh(deform, 1.0);
   remap.InitializeOperators(dg);
   if (MyPID == 0) std::cout << "Computing static data on mesh scheleton...\n";
@@ -299,9 +300,9 @@ TEST(REMAP_DUAL) {
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
   int deform = 1;
-  RemapTestsDualRK(rk_method, maps, "", 10,10,10, dT/2, deform);
+  // RemapTestsDualRK(rk_method, maps, "", 10,10,10, dT/2, deform);
   RemapTestsDualRK(rk_method, maps, "", 20,20,20, dT/4, deform);
-  RemapTestsDualRK(rk_method, maps, "", 40,40,40, dT/8, deform);
+  // RemapTestsDualRK(rk_method, maps, "", 40,40,40, dT/8, deform);
 
   /*
   double dT(0.01);

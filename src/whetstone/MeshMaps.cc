@@ -123,33 +123,6 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
 * Transformation of normal is defined completely by face data.
 ****************************************************************** */
 void MeshMaps::NansonFormula(
-    int f, const VectorPolynomial& map, VectorPolynomial& cn) const
-{
-  const auto& normal = mesh0_->face_normal(f);
-  cn.resize(d_);
-
-  auto grad = Gradient(map);
-  for (int i = 0; i < d_; ++i) grad(i, i)(0) += 1.0;
-
-  if (d_ == 2) {
-    cn[1] = grad(0, 0) * normal[1] - grad(0, 1) * normal[0];
-    cn[0] = grad(1, 1) * normal[0] - grad(1, 0) * normal[1];
-  } else {
-    for (int i = 0; i < d_; ++i) {
-      int j = (i + 1) % d_;
-      int k = (j + 1) % d_;
-      cn[i] = (grad(j, j) * grad(k, k) - grad(j, k) * grad(k, j)) * normal[i]
-            + (grad(j, k) * grad(k, i) - grad(j, i) * grad(k, k)) * normal[j]
-            + (grad(j, i) * grad(k, j) - grad(j, j) * grad(k, i)) * normal[k];
-    }
-  }
-}
-
-
-/* ******************************************************************
-* Transformation of normal is defined completely by face data.
-****************************************************************** */
-void MeshMaps::NansonFormula(
     int f, const VectorSpaceTimePolynomial& map, VectorSpaceTimePolynomial& cn) const
 {
   const auto& normal = mesh0_->face_normal(f);

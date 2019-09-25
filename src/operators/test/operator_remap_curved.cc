@@ -51,12 +51,6 @@ class MyRemapDG : public RemapDG_Tests<AnalyticDG04> {
   void Init(const Teuchos::RCP<WhetStone::DG_Modal> dg);
   void ReInit(double tini);
 
-  // geometric tools
-  void DynamicJacobianMatrix(
-      int c, double t, const WhetStone::MatrixPolynomial& J, WhetStone::MatrixPolynomial& Jt);
-  void DynamicFaceVelocity(double t);
-  void DynamicCellVelocity(double t);
-
   // mesh deformation from time 0 to t
   virtual void DeformMesh(int deform, double t) override;
 
@@ -69,7 +63,6 @@ class MyRemapDG : public RemapDG_Tests<AnalyticDG04> {
 
  private:
   double T1_, tini_;
-  std::vector<WhetStone::MatrixPolynomial> J0_, J_;
   std::vector<WhetStone::VectorPolynomial> velf_vec0_;
 };
 
@@ -87,12 +80,6 @@ void MyRemapDG::Init(const Teuchos::RCP<WhetStone::DG_Modal> dg)
   for (int f = 0; f < nfaces_wghost_; ++f) {
     velf_vec0_[f].Reshape(dim_, dim_, 0, true);
   }
-
-  J0_.resize(ncells_owned_);
-  for (int c = 0; c < ncells_owned_; ++c) {
-    J0_[c].Reshape(dim_, dim_, dim_, 0, true);
-    J0_[c].set_origin(mesh0_->cell_centroid(c));
-  }
 }
 
 
@@ -104,9 +91,6 @@ void MyRemapDG::ReInit(double tini)
   for (int f = 0; f < nfaces_wghost_; ++f)
     velf_vec0_[f] += velf_vec_[f];
 
-  for (int c = 0; c < ncells_owned_; ++c)
-    J0_[c] += J_[c];
-
   InitializeOperators(dg_);
   StaticEdgeFaceVelocities();
 
@@ -117,52 +101,6 @@ void MyRemapDG::ReInit(double tini)
   StaticCellVelocity();
 
   tini_ = tini;
-}
-
-
-/* *****************************************************************
-* Calculates various geometric quantaties on intermediate meshes.
-***************************************************************** */
-void MyRemapDG::DynamicJacobianMatrix(
-    int c, double t, const WhetStone::MatrixPolynomial& J, WhetStone::MatrixPolynomial& Jt)
-{
-  Jt = J0_[c] + t * J;
-
-  for (int i = 0; i < dim_; ++i)
-    Jt(i, i)(0) += 1.0;
-}
-
-
-/* *****************************************************************
-* Calculate face co-velocity in reference coordinates
-***************************************************************** */
-void MyRemapDG::DynamicFaceVelocity(double t)
-{
-  WhetStone::VectorPolynomial cn;  // cn = j J^{-t} N dA
-
-  for (int f = 0; f < nfaces_wghost_; ++f) {
-    WhetStone::VectorPolynomial tmp = velf_vec0_[f] + t * velf_vec_[f]; 
-    maps_->NansonFormula(f, tmp, cn);
-    (*velf_)[f] = velf_vec_[f] * cn;
-  }
-}
-
-
-/* *****************************************************************
-* Cell co-velocity in reference coordinates and Jacobian determinant
-***************************************************************** */
-void MyRemapDG::DynamicCellVelocity(double t)
-{
-  WhetStone::MatrixPolynomial Jt, C;
-  for (int c = 0; c < ncells_owned_; ++c) {
-    DynamicJacobianMatrix(c, t, J_[c], Jt);
-    maps_->Determinant(Jt, (*det_)[c]);
-    maps_->Cofactors(Jt, C);
-    
-    // cell-based pseudo velocity -C^t u 
-    C.Multiply(uc_[c], (*velc_)[c], true);
-    (*velc_)[c] *= -1.0;
-  }
 }
 
 

@@ -61,7 +61,6 @@ class MeshMaps {
 
   // -- Nanson formula. Face deformation is defined completely by the
   //    deformation map in this formula: X = x + map(x)
-  void NansonFormula(int f, const VectorPolynomial& map, VectorPolynomial& cn) const;
   void NansonFormula(int f, const VectorSpaceTimePolynomial& map, VectorSpaceTimePolynomial& cn) const;
 
   // -- Jacobian 

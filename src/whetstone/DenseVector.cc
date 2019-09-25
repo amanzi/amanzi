@@ -60,7 +60,7 @@ DenseVector::DenseVector(const std::vector<double>& B)
 
 
 /* ******************************************************************
-* Smart memory management: preserves data only for vector reduction
+* Smart memory management preserving data 
 ****************************************************************** */
 void DenseVector::Reshape(int mrow)
 {

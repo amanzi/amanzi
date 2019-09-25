@@ -122,6 +122,8 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
   std::vector<std::vector<int> > vmapf;
   std::vector<std::shared_ptr<SurfaceCoordinateSystem> > vsysf;
   std::vector<Basis_Regularized<SurfaceMiniMesh> > vbasisf;
+  std::vector<NumericalIntegration<SurfaceMiniMesh> > vnumif;
+  std::vector<PolynomialOnMesh> vintegralsf;
 
   for (int l = 0; l < nfaces; ++l) {
     int f = faces[l];
@@ -144,6 +146,8 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
 
     NumericalIntegration<SurfaceMiniMesh> numi_f(surf_mesh);
     numi_f.UpdateMonomialIntegralsCell(f, 2 * order_, integrals_f);
+    vnumif.push_back(numi_f);
+    vintegralsf.push_back(integrals_f);
 
     Basis_Regularized<SurfaceMiniMesh> basis_f;
     basis_f.Init(surf_mesh, f, order_, integrals_f.poly());
@@ -245,8 +249,6 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
     // N: degrees of freedom at vertices
     auto grad = Gradient(cmono);
      
-    polys[0] = &cmono;
-
     int col = it.PolynomialPosition();
     int row = rowf;
 
@@ -272,18 +274,23 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
       const auto& tau = *vsysf[i]->tau();
       tmp.ChangeCoordinates(xf, tau);
       
+      // transform to surface coordinates
+      Polynomial cmono2D(cmono);
+      cmono2D.ChangeCoordinates(xf, tau);
+      polys[0] = &cmono2D;
+
       // low-order moments are the degrees of freedom but we parse
       // them together with (order_ - 1) moments.
       for (auto jt = pf.begin(); jt < pf.end(); ++jt) {
         const int* jndex = jt.multi_index();
         factor = vbasisf[i].monomial_scales()[jt.MonomialSetOrder()];
         Polynomial fmono(d_ - 1, jndex, factor);
-        fmono.InverseChangeCoordinates(xf, tau);  
 
+        polys[0] = &cmono2D;
         polys[1] = &fmono;
 
         int k = jt.PolynomialPosition();
-        N(row + k, col) = numi.IntegratePolynomialsFace(f, polys) / area;
+        N(row + k, col) = vnumif[i].IntegratePolynomialsCell(f, polys, vintegralsf[i]) / area;
       }
       row += ndf;
 
@@ -316,6 +323,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
         Polynomial fmono(d_ - 2, jndex, 1.0);
         fmono.InverseChangeCoordinates(xe, tau_edge);  
 
+        polys[0] = &cmono;
         polys[1] = &fmono;
 
         int k = jt.PolynomialPosition();
