@@ -523,5 +523,6 @@ void RunHighOrderLagrange3D(const std::string& vem_name) {
 
 TEST(OPERATOR_DIFFUSION_HIGH_ORDER_LAGRANGE_3D) {
   RunHighOrderLagrange3D("Lagrange");
+  RunHighOrderLagrange3D("Lagrange serendipity");
 }
 

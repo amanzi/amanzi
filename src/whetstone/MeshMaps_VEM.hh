@@ -47,7 +47,8 @@ class MeshMaps_VEM : public MeshMaps {
 
   // remap pseudo velocity
   virtual void VelocityFace(int f, VectorPolynomial& vf) const override;
-  virtual void VelocityCell(int c, const std::vector<VectorPolynomial>& vf,
+  virtual void VelocityCell(int c, const std::vector<VectorPolynomial>& ve,
+		            const std::vector<VectorPolynomial>& vf,
                             VectorPolynomial& vc) const override;
 
  private:

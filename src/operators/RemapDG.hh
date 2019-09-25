@@ -68,7 +68,7 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
 
   // initialization routines
   void InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg); 
-  void InitializeFaceVelocity();
+  void InitializeEdgeFaceVelocities();
   void InitializeJacobianMatrix();
 
   // dynamic geometric quantities
@@ -90,7 +90,9 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh0_;
   Teuchos::RCP<AmanziMesh::Mesh> mesh1_;
-  int ncells_owned_, ncells_wghost_, nfaces_owned_, nfaces_wghost_;
+  int ncells_owned_, ncells_wghost_;
+  int nedges_owned_, nedges_wghost_;
+  int nfaces_owned_, nfaces_wghost_;
   int dim_;
 
   Teuchos::ParameterList plist_;
@@ -121,7 +123,7 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
 
   Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > velc_;
   Teuchos::RCP<std::vector<WhetStone::Polynomial> > velf_;
-  std::vector<WhetStone::VectorPolynomial> velf_vec_;
+  std::vector<WhetStone::VectorPolynomial> vele_vec_, velf_vec_;
 
   // statistics
   int nfun_;

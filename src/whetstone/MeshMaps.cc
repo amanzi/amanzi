@@ -26,6 +26,41 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
+* Calculate mesh velocity on 2D or 3D edge e.
+****************************************************************** */
+void MeshMaps::VelocityEdge(int e, VectorPolynomial& ve) const
+{
+  const AmanziGeometry::Point& xe0 = mesh0_->edge_centroid(e);
+  const AmanziGeometry::Point& xe1 = mesh1_->edge_centroid(e);
+
+  // velocity order 1
+  int n0, n1;
+  AmanziGeometry::Point x0, x1;
+
+  mesh0_->edge_get_nodes(e, &n0, &n1);
+  mesh0_->node_get_coordinates(n0, &x0);
+  mesh1_->node_get_coordinates(n0, &x1);
+
+  x0 -= xe0;
+  x1 -= xe1;
+
+  // operator F(\xi) = x_c + R (\xi - \xi_c) where R = x1 * x0^T / |x0|^2
+  ve.Reshape(d_, d_, 1);
+
+  x0 /= L22(x0);
+  for (int i = 0; i < d_; ++i) {
+    for (int j = 0; j < d_; ++j) {
+      ve[i](1, j) = x1[i] * x0[j];
+    }
+    ve[i](0, 0) = xe1[i] - x1[i] * (x0 * xe0);
+    ve[i](1, i) -= 1.0;
+  }
+
+  ve.set_origin(xe0); 
+}
+
+
+/* ******************************************************************
 * Calculate mesh velocity on 2D face f.
 ****************************************************************** */
 void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
@@ -91,18 +126,29 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
 void MeshMaps::NansonFormula(
     int f, const VectorPolynomial& map, VectorPolynomial& cn) const
 {
-  AMANZI_ASSERT(d_ == 2);
-
-  const AmanziGeometry::Point& normal = mesh0_->face_normal(f);
-
+  const auto& normal = mesh0_->face_normal(f);
   cn.resize(d_);
-  auto grad = Gradient(map[0]);
-  cn[1] = grad[0] * normal[1] - grad[1] * normal[0];
-  cn[1](0) += normal[1]; 
 
-  grad = Gradient(map[1]);
-  cn[0] = grad[1] * normal[0] - grad[0] * normal[1];
-  cn[0](0) += normal[0]; 
+  if (d_ == 2) {
+    auto grad = Gradient(map[0]);
+    cn[1] = grad[0] * normal[1] - grad[1] * normal[0];
+
+    grad = Gradient(map[1]);
+    cn[0] = grad[1] * normal[0] - grad[0] * normal[1];
+  } else {
+    auto grad = Gradient(map);
+    for (int i = 0; i < d_; ++i) grad(i, i)(0) += normal[i];
+
+    for (int i = 0; i < d_; ++i) {
+      int j = (i + 1) % d_;
+      int k = (j + 1) % d_;
+      cn[i] = (grad(j, j) * grad(k, k) - grad(j, k) * grad(k, j)) * normal[i]
+            + (grad(j, k) * grad(k, i) - grad(j, i) * grad(k, k)) * normal[j]
+            + (grad(j, i) * grad(k, j) - grad(j, j) * grad(k, i)) * normal[k];
+    }
+  }
+
+  for (int i = 0; i < d_; ++i) cn[i](0) += normal[i];
 }
 
 

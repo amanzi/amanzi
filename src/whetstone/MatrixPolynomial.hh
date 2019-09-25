@@ -86,7 +86,7 @@ class MatrixPolynomial {
   void set_origin(const AmanziGeometry::Point& origin);
   void ChangeOrigin(const AmanziGeometry::Point& origin);
 
-  // typical operations with vector polynomials
+  // simple operations with vector polynomials
   // -- value
   DenseMatrix Value(const AmanziGeometry::Point& xp) const;
 
@@ -108,6 +108,21 @@ class MatrixPolynomial {
   int d_, m_, n_, order_;
   std::vector<std::vector<Polynomial> > polys_;
 };
+
+
+// non-member functions
+// -- gradient
+inline
+MatrixPolynomial Gradient(const VectorPolynomial& p)
+{
+  int d = p[0].dimension(), n = p.size();
+  MatrixPolynomial grad(d, d, n, 0);
+  for (int i = 0; i < n; ++i) {
+    auto tmp = Gradient(p[i]);
+    for (int k = 0; k < d; ++k) grad(i, k) = tmp[k];
+  }
+  return grad;
+}
 
 }  // namespace WhetStone
 }  // namespace Amanzi

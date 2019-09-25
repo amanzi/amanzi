@@ -28,7 +28,8 @@ namespace WhetStone {
 * Calculate piecewise polynomial mesh velocity in cell c. 
 ****************************************************************** */
 void MeshMaps_PEM::VelocityCell(
-    int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
+    int c, const std::vector<VectorPolynomial>& ve,
+    const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
   AMANZI_ASSERT(d_ == 2);
 

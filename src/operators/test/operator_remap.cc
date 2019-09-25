@@ -147,7 +147,7 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   MyRemapDG remap(mesh0, mesh1, plist);
   remap.DeformMesh(deform, 1.0);
   remap.InitializeOperators(dg);
-  remap.InitializeFaceVelocity();
+  remap.InitializeEdgeFaceVelocities();
   remap.InitializeJacobianMatrix();
   remap.InitializeConsistentJacobianDeterminant();
 
@@ -300,13 +300,14 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   io.FinalizeCycle();
 }
 
-TEST(REMAP_DUAL_2D) {
+TEST(REMAP_DUAL) {
   double dT(0.1);
   auto rk_method = Amanzi::Explicit_TI::heun_euler;
+  int deform = 1;
   RemapTestsDualRK(rk_method, "FEM", "", 10,10,0, dT);
 
   RemapTestsDualRK(rk_method, "VEM", "test/median15x16.exo", 0,0,0, dT/2);
-  // RemapTestsDualRK(rk_method, "VEM", "", 5,5,5, dT);
+  RemapTestsDualRK(rk_method, "VEM", "", 5,5,5, dT / 2, deform);
 
   /*
   double dT(0.01);

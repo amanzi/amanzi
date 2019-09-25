@@ -60,6 +60,11 @@ std::vector<SchemaItem> MFD3D_LagrangeSerendipity::schema() const
   if (order_ > 1) {
     int nk = PolynomialSpaceDimension(d_ - 1, order_ - 2);
     items.push_back(std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, nk));
+
+    if (d_ == 3) {
+      nk = PolynomialSpaceDimension(d_ - 2, order_ - 2);
+      items.push_back(std::make_tuple(AmanziMesh::EDGE, DOF_Type::MOMENT, nk));
+    }
   }
 
   // this should be calculated FIXME
@@ -191,99 +196,31 @@ int MFD3D_LagrangeSerendipity::StiffnessMatrix(
 
 
 /* ******************************************************************
-* Calculate boundary degrees of freedom in 2D and 3D.
+* Projector 
 ****************************************************************** */
-void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
-    int c, const std::vector<Polynomial>& ve,
-    const std::vector<Polynomial>& vf, DenseVector& vdof)
+void MFD3D_LagrangeSerendipity::H1Face(
+    int f, const std::vector<Polynomial>& ve,
+    const Polynomial* moments, Polynomial& uf)
 {
-  Entity_ID_List nodes, faces, edges;
+  auto coordsys = std::make_shared<SurfaceCoordinateSystem>(mesh_->face_normal(f));
+  Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
 
-  mesh_->cell_get_nodes(c, &nodes);
-  int nnodes = nodes.size();
+  const auto& xf = mesh_->face_centroid(f);
 
-  mesh_->cell_get_faces(c, &faces);
-  int nfaces = faces.size();
-
-  std::vector<const PolynomialBase*> polys(2);
-  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
-
-  AmanziGeometry::Point xv(d_);
-  std::vector<AmanziGeometry::Point> tau(d_ - 1);
-
-  // number of moments of faces
-  Polynomial pf;
-  if (order_ > 1) {
-    pf.Reshape(d_ - 1, order_ - 2);
+  std::vector<Polynomial> vve;
+  for (int i = 0; i < ve.size(); ++i) {
+    Polynomial tmp(ve[i]);
+std::cout << "Edge-3D: xf=" << xf << tmp << std::endl;
+    tmp.ChangeCoordinates(xf, *coordsys->tau());  
+std::cout << "Edge-2D:" << tmp << std::endl;
+    vve.push_back(tmp);
   }
 
-  int row(nnodes);
-  for (int n = 0; n < nfaces; ++n) {
-    int f = faces[n];
-
-    Entity_ID_List face_nodes;
-    mesh_->face_get_nodes(f, &face_nodes);
-    int nfnodes = face_nodes.size();
-
-    for (int j = 0; j < nfnodes; j++) {
-      int v = face_nodes[j];
-      mesh_->node_get_coordinates(v, &xv);
-
-      int pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
-      vdof(pos) = vf[n].Value(xv);
-    }
-
-    if (order_ > 1) { 
-      const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
-      double area = mesh_->face_area(f);
-
-      // local coordinate system with origin at face centroid
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      SurfaceCoordinateSystem coordsys(normal);
-      const auto& tau = *coordsys.tau();
-
-      polys[0] = &(vf[n]);
-
-      for (auto it = pf.begin(); it < pf.end(); ++it) {
-        const int* index = it.multi_index();
-        double factor = (d_ == 2) ? 1.0 : std::pow(area, -(double)it.MonomialSetOrder() / 2);
-        Polynomial fmono(d_ - 1, index, factor);
-        fmono.InverseChangeCoordinates(xf, tau);  
-
-        polys[1] = &fmono;
-
-        vdof(row) = numi.IntegratePolynomialsFace(f, polys) / area;
-        row++;
-      }
-    }
-  }
-
-  if (d_ == 3) {
-    mesh_->cell_get_edges(c, &edges);
-    int nedges = edges.size();
-
-    Polynomial pe(d_ - 2, order_ - 2);
-
-    for (int n = 0; n < nedges; ++n) {
-      int e = edges[n];
-      const auto& xe = mesh_->edge_centroid(e);
-      double length = mesh_->edge_length(e);
-      std::vector<AmanziGeometry::Point> tau(1, mesh_->edge_vector(e));
-
-      polys[0] = &(ve[n]);
-
-      for (auto it = pe.begin(); it < pe.end(); ++it) {
-        const int* index = it.multi_index();
-        Polynomial fmono(d_ - 2, index, 1.0);
-        fmono.InverseChangeCoordinates(xe, tau);  
-
-        polys[1] = &fmono;
-
-        vdof(row) = numi.IntegratePolynomialsEdge(e, polys) / length;
-        row++;
-      }
-    }
-  }
+  ProjectorCell_<SurfaceMiniMesh>(surf_mesh, f, vve, vve, ProjectorType::H1, moments, uf);
+std::cout << "Face-2D:" << uf << std::endl;
+  uf.ChangeOrigin(AmanziGeometry::Point(d_ - 1));
+std::cout << "Face-3D:" << uf << std::endl;
+  uf.InverseChangeCoordinates(xf, *coordsys->tau());  
 }
 
 }  // namespace WhetStone

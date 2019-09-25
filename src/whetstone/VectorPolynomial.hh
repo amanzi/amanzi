@@ -156,6 +156,7 @@ class VectorPolynomial {
   std::vector<Polynomial> polys_;
 };
 
+
 // non-member functions
 // -- gradient
 inline

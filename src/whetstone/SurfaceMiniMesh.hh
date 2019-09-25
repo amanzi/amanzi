@@ -43,6 +43,11 @@ class SurfaceMiniMesh {
     mesh_->face_get_edges_and_dirs(c, faces, dirs);
   }
 
+  void cell_get_edges(Entity_ID c, Entity_ID_List *edges) const {
+    std::vector<int> dirs;
+    mesh_->face_get_edges_and_dirs(c, edges, &dirs);
+  }
+
   void cell_get_nodes(Entity_ID c, Entity_ID_List *nodes) const {
     mesh_->face_get_nodes(c, nodes);
   }

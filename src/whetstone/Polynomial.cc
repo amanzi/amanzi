@@ -438,7 +438,7 @@ double Polynomial::Value(const AmanziGeometry::Point& xp) const
 
 /* ******************************************************************
 * Change of coordinates: x = x0 + B * s 
-* Note: resulting polynomial is centered at new origin.
+* Note: the resulting polynomial is centered at the new local origin.
 ****************************************************************** */
 void Polynomial::ChangeCoordinates(
     const AmanziGeometry::Point& x0, const std::vector<AmanziGeometry::Point>& B)
@@ -511,7 +511,8 @@ void Polynomial::ChangeCoordinates(
 
 
 /* ******************************************************************
-* Inverse change of coordinates: s = B^+ (x - x0) 
+* Inverse change of coordinates: s = B^+ (x - x0) for polynomial
+* centered at the origin.
 * Note: resulting polynomial is centered at x0.
 ****************************************************************** */
 void Polynomial::InverseChangeCoordinates(

@@ -40,6 +40,11 @@ RemapDG::RemapDG(
   nfaces_owned_ = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   nfaces_wghost_ = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
+  if (mesh0_->valid_edges()) {
+    nedges_owned_ = mesh0_->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::OWNED);
+    nedges_wghost_ = mesh0_->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::ALL);
+  }
+
   auto& pklist = plist_.sublist("PK operator");
   order_ = pklist.sublist("flux operator")
                  .sublist("schema").template get<int>("method order");
@@ -123,7 +128,7 @@ void RemapDG::InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg)
 /* *****************************************************************
 * Initialization of velocities and deformation tensor
 ***************************************************************** */
-void RemapDG::InitializeFaceVelocity()
+void RemapDG::InitializeEdgeFaceVelocities()
 {
   auto map_list = plist_.sublist("maps");
   WhetStone::MeshMapsFactory maps_factory;
@@ -133,6 +138,13 @@ void RemapDG::InitializeFaceVelocity()
   for (int f = 0; f < nfaces_wghost_; ++f) {
     maps_->VelocityFace(f, velf_vec_[f]);
   }
+
+  if (mesh0_->valid_edges()) {
+    vele_vec_.resize(nedges_wghost_);
+    for (int e = 0; e < nedges_wghost_; ++e) {
+      maps_->VelocityEdge(e, vele_vec_[e]);
+    }
+  }
 }
 
 
@@ -141,19 +153,29 @@ void RemapDG::InitializeFaceVelocity()
 ***************************************************************** */
 void RemapDG::InitializeJacobianMatrix()
 {
-  WhetStone::Entity_ID_List faces;
+  WhetStone::Entity_ID_List edges, faces;
   J_.resize(ncells_owned_);
   uc_.resize(ncells_owned_);
 
   for (int c = 0; c < ncells_owned_; ++c) {
+    // faces are always included
     mesh0_->cell_get_faces(c, &faces);
 
-    std::vector<WhetStone::VectorPolynomial> vvf;
+    std::vector<WhetStone::VectorPolynomial> vve, vvf;
     for (int n = 0; n < faces.size(); ++n) {
       vvf.push_back(velf_vec_[faces[n]]);
     }
 
-    maps_->VelocityCell(c, vvf, uc_[c]);
+    // edges are included in 3D only
+    if (dim_ == 3) {
+      mesh0_->cell_get_edges(c, &edges);
+
+      for (int n = 0; n < edges.size(); ++n) {
+        vve.push_back(vele_vec_[edges[n]]);
+      }
+    } 
+
+    maps_->VelocityCell(c, vve, vvf, uc_[c]);
     maps_->Jacobian(uc_[c], J_[c]);
   }
 }
@@ -252,12 +274,12 @@ void RemapDG::DynamicJacobianMatrix(
 ***************************************************************** */
 void RemapDG::DynamicFaceVelocity(double t)
 {
-  WhetStone::VectorPolynomial tmp, fmap, cn;
+  WhetStone::VectorPolynomial tmp, cn;
 
   for (int f = 0; f < nfaces_wghost_; ++f) {
     // cn = j J^{-t} N dA
-    fmap = t * velf_vec_[f];
-    maps_->NansonFormula(f, fmap, cn);
+    tmp = t * velf_vec_[f]; 
+    maps_->NansonFormula(f, tmp, cn);
     (*velf_)[f] = velf_vec_[f] * cn;
   }
 }

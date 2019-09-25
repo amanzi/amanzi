@@ -101,13 +101,14 @@ class MFD3D_LagrangeAnyOrder : public MFD3D {
   const DenseMatrix& G() const { return G_; }
   const DenseMatrix& R() const { return R_; }
 
- private:
+ protected:
   template<typename MyMesh>
-  int H1consistency2D_(Teuchos::RCP<const MyMesh>& mymesh,
+  int H1consistency2D_(const Teuchos::RCP<const MyMesh>& mymesh,
                        int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
 
   int H1consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
 
+ private:
   void ProjectorCell_(int c, const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
                       const ProjectorType type,
@@ -132,7 +133,7 @@ class MFD3D_LagrangeAnyOrder : public MFD3D {
 ****************************************************************** */
 template <class MyMesh>
 int MFD3D_LagrangeAnyOrder::H1consistency2D_(
-    Teuchos::RCP<const MyMesh>& mymesh,
+    const Teuchos::RCP<const MyMesh>& mymesh,
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
   // input mesh may have a different dimension than base mesh

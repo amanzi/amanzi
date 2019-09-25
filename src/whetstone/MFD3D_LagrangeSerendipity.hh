@@ -61,11 +61,7 @@ class MFD3D_LagrangeSerendipity : public MFD3D_LagrangeAnyOrder {
   }
 
   virtual void H1Face(int f, const std::vector<Polynomial>& ve,
-                      const Polynomial* moments, Polynomial& uf) override {
-    auto coordsys = std::make_shared<SurfaceCoordinateSystem>(mesh_->face_normal(f));
-    Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
-    ProjectorCell_<SurfaceMiniMesh>(surf_mesh, f, ve, ve, ProjectorType::H1, moments, uf);
-  }
+                      const Polynomial* moments, Polynomial& uf) override;
 
   // other methods
   void L2Cell_LeastSquare(int c, const std::vector<Polynomial>& vf,
@@ -81,7 +77,9 @@ class MFD3D_LagrangeSerendipity : public MFD3D_LagrangeAnyOrder {
                       const ProjectorType type,
                       const Polynomial* moments, Polynomial& uc);
 
+  template<class MyMesh>
   void CalculateDOFsOnBoundary_(
+      const Teuchos::RCP<const MyMesh>& mymesh, 
       int c, const std::vector<Polynomial>& ve,
       const std::vector<Polynomial>& vf, DenseVector& vdof);
 
@@ -101,17 +99,23 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
     const ProjectorType type,
     const Polynomial* moments, Polynomial& uc)
 {
+  // input mesh may have a different dimension than base mesh
+  int d = mymesh->space_dimension();
+
   // selecting regularized basis
   Polynomial ptmp;
   Basis_Regularized<MyMesh> basis;
   basis.Init(mymesh, c, order_, ptmp);
 
   // calculate stiffness matrix
-  Tensor T(d_, 1);
-  DenseMatrix N, A;
-
+  Tensor T(d, 1);
   T(0, 0) = 1.0;
-  MFD3D_LagrangeAnyOrder::H1consistency(c, T, N, A);  
+
+  DenseMatrix N, A;
+  if (d == 2)
+    H1consistency2D_<MyMesh>(mymesh, c, T, N, A);
+  else
+    H1consistency3D_(c, T, N, A);
 
   // select number of non-aligned edges: we assume cell convexity 
   int nfaces;
@@ -125,10 +129,10 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
 
   // degrees of freedom: serendipity space S contains all boundary dofs
   // plus a few internal dofs that depend on the value of eta.
-  int nd = PolynomialSpaceDimension(d_, order_);
+  int nd = PolynomialSpaceDimension(d, order_);
   int ndof = A.NumRows();
-  int ndof_c = PolynomialSpaceDimension(d_, order_ - 2);
-  int ndof_cs = PolynomialSpaceDimension(d_, order_ - eta);
+  int ndof_c = PolynomialSpaceDimension(d, order_ - 2);
+  int ndof_cs = PolynomialSpaceDimension(d, order_ - eta);
   int ndof_f(ndof - ndof_c);
 
   // extract submatrix
@@ -144,7 +148,7 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
   DenseVector v1(nd), v3(std::max(1, ndof_cs)), v5(nd);
 
   DenseVector vdof(ndof_f + ndof_cs);
-  CalculateDOFsOnBoundary_(c, ve, vf, vdof);
+  CalculateDOFsOnBoundary_<MyMesh>(mymesh, c, ve, vf, vdof);
 
   // DOFs inside cell: copy moments from input data
   if (ndof_cs > 0) {
@@ -167,7 +171,7 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
   if (type == ProjectorType::H1) {
     DenseVector v4(nd);
     DenseMatrix M;
-    Polynomial poly(d_, order_);
+    Polynomial poly(d, order_);
 
     NumericalIntegration<MyMesh> numi(mymesh);
     numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
@@ -191,7 +195,7 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
   if (type == ProjectorType::L2 && ndof_cs > 0) {
     DenseVector v4(nd), v6(nd - ndof_cs);
     DenseMatrix M, M2;
-    Polynomial poly(d_, order_);
+    Polynomial poly(d, order_);
 
     NumericalIntegration<MyMesh> numi(mymesh);
     numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
@@ -216,6 +220,106 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
 
   // set correct origin 
   uc.set_origin(xc);
+}
+
+
+/* ******************************************************************
+* Calculate boundary degrees of freedom in 2D and 3D.
+****************************************************************** */
+template<class MyMesh>
+void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
+    const Teuchos::RCP<const MyMesh>& mymesh, 
+    int c, const std::vector<Polynomial>& ve,
+    const std::vector<Polynomial>& vf, DenseVector& vdof)
+{
+  // input mesh may have a different dimension than base mesh
+  int d = mymesh->space_dimension();
+
+  Entity_ID_List nodes, faces, edges;
+  mymesh->cell_get_nodes(c, &nodes);
+  int nnodes = nodes.size();
+
+  mymesh->cell_get_faces(c, &faces);
+  int nfaces = faces.size();
+
+  std::vector<const PolynomialBase*> polys(2);
+  NumericalIntegration<MyMesh> numi(mymesh);
+
+  AmanziGeometry::Point xv(d);
+
+  // number of moments of faces
+  Polynomial pf;
+  if (order_ > 1) {
+    pf.Reshape(d - 1, order_ - 2);
+  }
+
+  int row(nnodes);
+  for (int n = 0; n < nfaces; ++n) {
+    int f = faces[n];
+
+    Entity_ID_List face_nodes;
+    mymesh->face_get_nodes(f, &face_nodes);
+    int nfnodes = face_nodes.size();
+
+    for (int j = 0; j < nfnodes; j++) {
+      int v = face_nodes[j];
+      mymesh->node_get_coordinates(v, &xv);
+
+      int pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
+      vdof(pos) = vf[n].Value(xv);
+    }
+
+    if (order_ > 1) { 
+      const AmanziGeometry::Point& xf = mymesh->face_centroid(f); 
+      double area = mymesh->face_area(f);
+
+      // local coordinate system with origin at face centroid
+      const AmanziGeometry::Point& normal = mymesh->face_normal(f);
+      SurfaceCoordinateSystem coordsys(normal);
+      const auto& tau = *coordsys.tau();
+
+      polys[0] = &(vf[n]);
+
+      for (auto it = pf.begin(); it < pf.end(); ++it) {
+        const int* index = it.multi_index();
+        double factor = (d == 2) ? 1.0 : std::pow(area, -(double)it.MonomialSetOrder() / 2);
+        Polynomial fmono(d - 1, index, factor);
+        fmono.InverseChangeCoordinates(xf, tau);  
+
+        polys[1] = &fmono;
+
+        vdof(row) = numi.IntegratePolynomialsFace(f, polys) / area;
+        row++;
+      }
+    }
+  }
+
+  if (d == 3) {
+    mymesh->cell_get_edges(c, &edges);
+    int nedges = edges.size();
+
+    Polynomial pe(d - 2, order_ - 2);
+
+    for (int n = 0; n < nedges; ++n) {
+      int e = edges[n];
+      const auto& xe = mymesh->edge_centroid(e);
+      double length = mymesh->edge_length(e);
+      std::vector<AmanziGeometry::Point> tau(1, mymesh->edge_vector(e));
+
+      polys[0] = &(ve[n]);
+
+      for (auto it = pe.begin(); it < pe.end(); ++it) {
+        const int* index = it.multi_index();
+        Polynomial fmono(d - 2, index, 1.0);
+        fmono.InverseChangeCoordinates(xe, tau);  
+
+        polys[1] = &fmono;
+
+        vdof(row) = numi.IntegratePolynomialsEdge(e, polys) / length;
+        row++;
+      }
+    }
+  }
 }
 
 }  // namespace WhetStone
