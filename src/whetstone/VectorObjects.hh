@@ -169,11 +169,6 @@ class VectorObjects {
     return tmp;
   }
 
-  // specialized member functions
-  // -- project gradient of the given polynomial on unit sphere using
-  //    the Taylor expansion with k terms
-  friend VectorObjects<T> GradientOnUnitSphere(const T& poly, int k);
-
   // output 
   friend std::ostream& operator << (std::ostream& os, const VectorObjects<T>& poly) {
     os << "Vector Object (length=" << poly.size() << "):" << std::endl;
@@ -199,6 +194,10 @@ VectorPolynomial Gradient(const Polynomial& p);
 VectorSpaceTimePolynomial Gradient(const SpaceTimePolynomial& p);
 
 Polynomial Divergence(const VectorObjects<Polynomial>& vp);
+VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k);
+
+// project gradient of the given polynomial on unit sphere using
+// the Taylor expansion with k terms
 VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k);
 
 }  // namespace WhetStone

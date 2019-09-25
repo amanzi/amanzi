@@ -144,12 +144,14 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   ana.InitialGuess(*dg, p1c, 1.0);
 
   // create remap object
+  if (MyPID == 0) std::cout << "Start computing static data...\n";
   MyRemapDG remap(mesh0, mesh1, plist);
   remap.DeformMesh(deform, 1.0);
   remap.InitializeOperators(dg);
   remap.StaticEdgeFaceVelocities();
   remap.StaticCellVelocity();
   remap.InitializeConsistentJacobianDeterminant();
+  if (MyPID == 0) std::cout << "Done.\n";
 
   // initial mass
   double mass0(0.0);
@@ -281,6 +283,7 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
 }
 
 TEST(REMAP_DUAL) {
+  /*
   double dT(0.1);
   auto rk_method = Amanzi::Explicit_TI::heun_euler;
   int deform = 1;
@@ -288,8 +291,8 @@ TEST(REMAP_DUAL) {
 
   RemapTestsDualRK(rk_method, "VEM", "test/median15x16.exo", 0,0,0, dT/2);
   RemapTestsDualRK(rk_method, "VEM", "", 4,4,4, dT, deform);
+  */
 
-  /*
   double dT(0.1);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
@@ -297,7 +300,6 @@ TEST(REMAP_DUAL) {
   RemapTestsDualRK(rk_method, maps, "", 10,10,10, dT/2, deform);
   RemapTestsDualRK(rk_method, maps, "", 20,20,20, dT/4, deform);
   RemapTestsDualRK(rk_method, maps, "", 40,40,40, dT/8, deform);
-  */
 
   /*
   double dT(0.01);
