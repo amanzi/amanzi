@@ -52,6 +52,7 @@ class SpaceTimePolynomial {
   // typical operations with polynomials
   // -- polynomial values
   double Value(const AmanziGeometry::Point& xp, double t) const;
+  Polynomial Value(double t) const;
 
   // -- operators (extended ring algebra)
   SpaceTimePolynomial& operator+=(const SpaceTimePolynomial& poly);

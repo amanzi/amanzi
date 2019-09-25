@@ -76,7 +76,6 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   // dynamic geometric quantities
   virtual void DynamicJacobianMatrix(
       int c, double t, const WhetStone::MatrixPolynomial& J, WhetStone::MatrixPolynomial& Jt);
-  virtual void DynamicCellVelocity(double t);
 
   // change between conservative and non-conservative variable
   void ConservativeToNonConservative(double t, const CompositeVector& u, CompositeVector& v);
@@ -118,19 +117,14 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   // geometric data
   int det_method_;
 
-  // -- dynamic (old data)
-  Teuchos::RCP<std::vector<WhetStone::Polynomial> > det_;
-  Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > velc_;
-
-  // -- static (old data)
+  // -- static
   std::vector<WhetStone::VectorPolynomial> uc_;
-  std::vector<WhetStone::MatrixPolynomial> J_;
   std::vector<WhetStone::VectorPolynomial> vele_vec_, velf_vec_;
 
-  // -- space-time (new data)
+  // -- space-time quasi-static data
   Teuchos::RCP<std::vector<WhetStone::SpaceTimePolynomial> > velf_;
-  Teuchos::RCP<std::vector<WhetStone::VectorSpaceTimePolynomial> > velc_st_;
-  Teuchos::RCP<std::vector<WhetStone::SpaceTimePolynomial> > det_st_;
+  Teuchos::RCP<std::vector<WhetStone::VectorSpaceTimePolynomial> > velc_;
+  Teuchos::RCP<std::vector<WhetStone::SpaceTimePolynomial> > det_;
 
   // statistics
   int nfun_;

@@ -151,6 +151,23 @@ double SpaceTimePolynomial::Value(const AmanziGeometry::Point& xp, double t) con
 
 
 /* ******************************************************************
+* Calculate polynomial value at a given time point.
+****************************************************************** */
+Polynomial SpaceTimePolynomial::Value(double t) const
+{
+  double tmp(t);
+  auto poly = coefs_[0];
+
+  for (int i = 1; i < size_; ++i) {
+    poly += coefs_[i] * tmp;
+    tmp *= t;
+ }
+
+  return poly;
+}
+
+
+/* ******************************************************************
 * Fancy I/O
 ****************************************************************** */
 std::ostream& operator << (std::ostream& os, const SpaceTimePolynomial& p)

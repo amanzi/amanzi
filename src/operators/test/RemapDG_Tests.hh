@@ -37,7 +37,6 @@ class RemapDG_Tests : public Operators::RemapDG {
                                    const AmanziGeometry::Point& rv = AmanziGeometry::Point(3));
 
   // experimental options
-  virtual void DynamicCellVelocity(double t);
   void InitializeConsistentJacobianDeterminant(); 
 
   // output
@@ -63,14 +62,11 @@ void RemapDG_Tests<AnalyticDG>::InitializeConsistentJacobianDeterminant()
   det_method_ = Operators::OPERATOR_DETERMINANT_VEM;
 
   // constant part of determinant
-  // DynamicFaceVelocity(0.0);
-  DynamicCellVelocity(0.0);
-
-  op_adv_->SetupPolyVector(velc_);
-  op_adv_->UpdateMatrices();
+  op_adv_->Setup(velc_);
+  op_adv_->UpdateMatrices(0.0);
 
   op_reac_->Setup(det_);
-  op_reac_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  op_reac_->UpdateMatrices(0.0);
 
   auto& matrices = op_reac_->local_op()->matrices;
   for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
@@ -91,11 +87,8 @@ void RemapDG_Tests<AnalyticDG>::InitializeConsistentJacobianDeterminant()
 
   // linear part of determinant
   double dt(0.01);
-  // DynamicFaceVelocity(dt);
-  DynamicCellVelocity(dt);
- 
-  op_adv_->SetupPolyVector(velc_);
-  op_adv_->UpdateMatrices();
+  op_adv_->Setup(velc_);
+  op_adv_->UpdateMatrices(dt);
 
   op_flux_->Setup(velf_.ptr());
   op_flux_->UpdateMatrices(dt);
@@ -125,44 +118,6 @@ void RemapDG_Tests<AnalyticDG>::InitializeConsistentJacobianDeterminant()
   }
 
   det_method_ = det_method_tmp;
-}
-
-
-/* *****************************************************************
-* Cell co-velocity in reference coordinates and Jacobian determinant
-***************************************************************** */
-template<class AnalyticDG>
-void RemapDG_Tests<AnalyticDG>::DynamicCellVelocity(double t)
-{
-  WhetStone::MatrixPolynomial Jt, C;
-  for (int c = 0; c < ncells_owned_; ++c) {
-    DynamicJacobianMatrix(c, t, J_[c], Jt);
-    maps_->Cofactors(Jt, C);
-    if (det_method_ == Operators::OPERATOR_DETERMINANT_EXACT_TI) {
-      double tmp = t * t / 2;
-      (*det_)[c] = t * det0_[c] + tmp * det1_[c];
-      (*det_)[c](0) += 1.0;
-    } else if (det_method_ == Operators::OPERATOR_DETERMINANT_VEM) {
-      maps_->Determinant(Jt, (*det_)[c]);
-    }
-    
-    // negative co-velocity, v = -C^t u 
-    int nC = C.NumRows();
-    (*velc_)[c].resize(nC);
-
-    int kC = nC / dim_;
-      for (int n = 0; n < kC; ++n) {
-      int m = n * dim_;
-      for (int i = 0; i < dim_; ++i) {
-        (*velc_)[c][m + i].Reshape(dim_, 0, true);
-        (*velc_)[c][m + i].set_origin(uc_[c][0].origin());
-
-        for (int k = 0; k < dim_; ++k) {
-          (*velc_)[c][m + i] -= C(m + k, i) * uc_[c][m + k];
-        }
-      }
-    }
-  }
 }
 
 

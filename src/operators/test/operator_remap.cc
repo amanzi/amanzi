@@ -45,7 +45,7 @@ class MyRemapDG : public RemapDG_Tests<AnalyticDG04> {
   ~MyRemapDG() {};
 
   // access 
-  const std::vector<WhetStone::Polynomial> det() const { return *det_; }
+  const std::vector<WhetStone::SpaceTimePolynomial> det() const { return *det_; }
   const std::shared_ptr<WhetStone::MeshMaps> maps() const { return maps_; }
 };
 
@@ -234,7 +234,7 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   double area(0.0), area1(0.0), mass1(0.0), gcl_err(0.0), gcl_inf(0.0);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    double vol1 = numi.IntegratePolynomialCell(c, det[c]);
+    double vol1 = numi.IntegratePolynomialCell(c, det[c].Value(1.0));
     double vol2 = mesh1->cell_volume(c);
 
     area += vol1;
@@ -250,7 +250,7 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
 
     int quad_order = det[c].order() + poly.order();
 
-    WhetStone::Polynomial tmp(det[c]);
+    WhetStone::Polynomial tmp(det[c].Value(1.0));
     tmp.ChangeOrigin(mesh0->cell_centroid(c));
     poly *= tmp;
     mass1 += numi.IntegratePolynomialCell(c, poly);
