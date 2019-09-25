@@ -52,6 +52,7 @@ add_amanzi_library(whetstone
                           DG_Modal.cc
                           BilinearFormFactory.cc
                           nlfv.cc 
+                          NumericalIntegration.cc
                           Tensor.cc DenseMatrix.cc DenseVector.cc
                           Polynomial.cc SpaceTimePolynomial.cc VectorObjects.cc
                           MeshMaps.cc

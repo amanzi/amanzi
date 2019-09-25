@@ -539,6 +539,13 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
     c2 = cells[1 - id];
   }
 
+  // create integrator on a surface (used for 3D only)
+  const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+  auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
+
+  Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
+  NumericalIntegration<SurfaceMiniMesh> numi_f(surf_mesh);
+
   // integrate traces of polynomials on face f
   std::vector<const PolynomialBase*> polys(3);
 
@@ -564,14 +571,25 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
       polys[2] = &q;
 
       // downwind-downwind integral
-      double vel1 = numi_.IntegratePolynomialsFaceOptimized(f, polys);
+      double vel0, vel1;
+      if (d_ == 2) {
+        vel1 = numi_.IntegratePolynomialsFace(f, polys);
+      } else {
+        auto product = ConvertPolynomialsToSurfacePolynomial(xf, coordsys, polys);
+        vel1 = numi_f.IntegratePolynomialCell(f, product);
+      }
       vel1 /= mesh_->face_area(f);
       vel1 *= dir;  
 
       // upwind-downwind integral
       polys[1] = &p1;
 
-      double vel0 = numi_.IntegratePolynomialsFaceOptimized(f, polys);
+      if (d_ == 2) {
+        vel0 = numi_.IntegratePolynomialsFace(f, polys);
+      } else {
+        auto product = ConvertPolynomialsToSurfacePolynomial(xf, coordsys, polys);
+        vel0 = numi_f.IntegratePolynomialCell(f, product);
+      }
       vel0 /= mesh_->face_area(f);
       vel0 *= dir;  
 

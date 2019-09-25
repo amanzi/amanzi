@@ -73,9 +73,6 @@ class NumericalIntegration {
   double IntegratePolynomialsFace(
       int f, const std::vector<const PolynomialBase*>& polys) const;
 
-  double IntegratePolynomialsFaceOptimized(
-      int f, const std::vector<const PolynomialBase*>& polys) const;
-
   double IntegratePolynomialsEdge(
       int e, const std::vector<const PolynomialBase*>& polys) const {
     int v1, v2;
@@ -136,6 +133,9 @@ class NumericalIntegration {
   void IntegrateMonomialsFace_(
       int c, int f, double factor, int k, Polynomial& integrals) const;
 
+  void IntegrateMonomialsFaceReduction_(
+      int c, int f, double factor, int k, Polynomial& integrals) const;
+
   void IntegrateMonomialsEdge_(
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
       double factor, int k, Polynomial& integrals) const;
@@ -151,7 +151,20 @@ class NumericalIntegration {
  private:
   Teuchos::RCP<const Mesh> mesh_;
   int d_;
+
+  // often, we need to perform multiple integrations on the same object.
+  // saving database of monomial integrals reduces computational cost, 
+  // especially in 3D
+  PolynomialOnMesh integrals_; 
 };
+
+
+// supporting non-member functions
+//  -- trace of polynomials on manifold
+Polynomial ConvertPolynomialsToSurfacePolynomial(
+    const AmanziGeometry::Point& xf, 
+    const std::shared_ptr<SurfaceCoordinateSystem>& coordsys,
+    const std::vector<const PolynomialBase*>& polys);
 
 
 /* ******************************************************************
@@ -284,13 +297,9 @@ double NumericalIntegration<Mesh>::IntegrateFunctionsEdge(
 template <class Mesh>
 double NumericalIntegration<Mesh>::IntegratePolynomialCell(int c, const Polynomial& poly)
 {
-  // calculate integrals of monomials centered at cell centroid
+  // create/update integrals of monomials centered at cell centroid
   int order = poly.order();
-  Polynomial integrals(d_, order);
-
-  for (int k = 0; k <= order; ++k) {
-    IntegrateMonomialsCell(c, k, integrals);
-  }
+  UpdateMonomialIntegralsCell(c, order, integrals_);
 
   // dot product of coefficients of two polynomials.
   Polynomial tmp = poly;
@@ -298,7 +307,7 @@ double NumericalIntegration<Mesh>::IntegratePolynomialCell(int c, const Polynomi
 
   double value(0.0);
   for (int n = 0; n < tmp.size(); ++n) {
-    value += integrals(n) * tmp(n);
+    value += integrals_.poly()(n) * tmp(n);
   }
 
   return value;
@@ -329,16 +338,12 @@ double NumericalIntegration<Mesh>::IntegratePolynomialsCell(
   
   // calculate integrals of monomials centered at cell centroid
   int order = product.order();
-  Polynomial integrals(d_, order);
-
-  for (int k = 0; k <= order; ++k) {
-    IntegrateMonomialsCell(c, k, integrals);
-  }
+  UpdateMonomialIntegralsCell(c, order, integrals_);
 
   // dot product of coefficients of two polynomials.
   double value(0.0);
   for (int n = 0; n < product.size(); ++n) {
-    value += integrals(n) * product(n);
+    value += integrals_.poly()(n) * product(n);
   }
 
   return value;
@@ -456,49 +461,6 @@ double NumericalIntegration<Mesh>::IntegratePolynomialsFace(
   }
 
   return sum;
-}
-
-
-/* ******************************************************************
-* Integrate over face f the product of polynomials and monomials that
-* may have different origins. In 3D, we use change of variables.
-****************************************************************** */
-template <class Mesh>
-double NumericalIntegration<Mesh>::IntegratePolynomialsFaceOptimized(
-    int f, const std::vector<const PolynomialBase*>& polys) const
-{
-  AmanziGeometry::Point enormal(d_), x1(d_), x2(d_);
-
-  if (d_ == 2) {
-    Entity_ID_List nodes;
-    mesh_->face_get_nodes(f, &nodes);
-
-    mesh_->node_get_coordinates(nodes[0], &x1);
-    mesh_->node_get_coordinates(nodes[1], &x2);
-    return IntegratePolynomialsEdge(x1, x2, polys);
-  }
-  else {
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
-
-    Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
-    NumericalIntegration<SurfaceMiniMesh> numi(surf_mesh);
-
-    // convert polynomials to 2D
-    // create a single polynomial centered at face centroid (new origin)
-    Polynomial product(d_ - 1, 0);
-    product(0) = 1.0;
-
-    for (int i = 0; i < polys.size(); ++ i) {
-      Polynomial tmp(d_, polys[i]->order(), polys[i]->ExpandCoefficients());
-      tmp.set_origin(polys[i]->origin());
-      tmp.ChangeCoordinates(xf, *coordsys->tau());  
-      product *= tmp;
-    }
-
-    return numi.IntegratePolynomialCell(f, product);
-  }
 }
 
 
@@ -634,6 +596,7 @@ void NumericalIntegration<Mesh>::UpdateMonomialIntegralsCell(
   Polynomial& poly = integrals.poly();
   int k0 = poly.order();
 
+  // reset polynomial metadata
   if (integrals.kind() != (Entity_kind)WhetStone::CELL || integrals.id() != c) {
     integrals.set_kind((Entity_kind)WhetStone::CELL);
     integrals.set_id(c);
@@ -658,6 +621,16 @@ template <class Mesh>
 void NumericalIntegration<Mesh>::IntegrateMonomialsCell(
     int c, int k, Polynomial& integrals) const
 {
+  if (k == 0) {
+    integrals(0) = mesh_->cell_volume(c);
+    return;
+  } 
+
+  if (k == 1) {
+    for (int i = 0; i < d_; ++i) integrals(1 + i) = 0.0;
+    return;
+  }
+
   int nk = PolynomialSpaceDimension(d_, k - 1);
   int mk = MonomialSpaceDimension(d_, k);
   for (int i = 0; i < mk; ++i) {
@@ -680,7 +653,7 @@ void NumericalIntegration<Mesh>::IntegrateMonomialsCell(
     
     if (d_ == 3) {
       tmp /= mesh_->face_area(f);
-      IntegrateMonomialsFace_(c, f, tmp, k, integrals);
+      IntegrateMonomialsFaceReduction_(c, f, tmp, k, integrals);
     } else if (d_ == 2) {
       mesh_->face_get_nodes(f, &nodes);
 
@@ -751,7 +724,7 @@ void NumericalIntegration<Mesh>::IntegrateMonomialsFace_(
         q(s) *= tmp / (m + d_ - 1);
       }
 
-      // integrate along edge
+      // integrate along edge (based on Euler theorem)
       int n0, n1; 
       mesh_->edge_get_nodes(e, &n0, &n1);
       mesh_->node_get_coordinates(n0, &x1);
@@ -759,6 +732,20 @@ void NumericalIntegration<Mesh>::IntegrateMonomialsFace_(
 
       polys[0] = &q;
       integrals(nk + l) += IntegratePolynomialsEdge(x1, x2, polys);
+
+      // integrate along edge (based on change of variables)
+      /*
+      std::vector<AmanziGeometry::Point> tau_edge(1, tau);
+      q.ChangeCoordinates(xe, tau_edge);  
+
+      int m(1);
+      double sum(0.0);
+      for (int i = 0; i < q.size(); i += 2) {
+        sum += q(i) / (i + 1) / m;
+        m *= 4;
+      }
+      integrals(nk + l) += sum * length;
+      */
     }
   }
 }

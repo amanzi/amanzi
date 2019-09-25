@@ -204,7 +204,7 @@ TEST(NUMI_CELL_3D_QUADRATURE_POLYHEDRON) {
     val2 = numi.IntegratePolynomialCell(cell, poly);
 
     printf("CELL: order=%d  value= %12.6f  diff=%10.6g\n", order, val1, val1 - val2);
-    CHECK_CLOSE(val1, val2, 1e-11 * std::max(1.0, std::fabs(val1)));
+    CHECK_CLOSE(val1, val2, 5e-11 * std::max(1.0, std::fabs(val1)));
 
     // face of a polyhedron
     val1 = numi.IntegrateFunctionsTriangulatedFace(face, polys, order);
