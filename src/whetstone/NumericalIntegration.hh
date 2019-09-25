@@ -27,6 +27,8 @@
 #include "Quadrature1D.hh"
 #include "Quadrature2D.hh"
 #include "Quadrature3D.hh"
+#include "SurfaceCoordinateSystem.hh"
+#include "SurfaceMiniMesh.hh"
 #include "WhetStoneFunction.hh"
 
 namespace Amanzi {
@@ -65,6 +67,9 @@ class NumericalIntegration {
       int c, const std::vector<const PolynomialBase*>& polys) const;
 
   double IntegratePolynomialsFace(
+      int f, const std::vector<const PolynomialBase*>& polys) const;
+
+  double IntegratePolynomialsFaceOptimized(
       int f, const std::vector<const PolynomialBase*>& polys) const;
 
   double IntegratePolynomialsEdge(
@@ -414,6 +419,49 @@ double NumericalIntegration<Mesh>::IntegratePolynomialsFace(
 
 
 /* ******************************************************************
+* Integrate over face f the product of polynomials and monomials that
+* may have different origins. In 3D, we use change of variables.
+****************************************************************** */
+template <class Mesh>
+double NumericalIntegration<Mesh>::IntegratePolynomialsFaceOptimized(
+    int f, const std::vector<const PolynomialBase*>& polys) const
+{
+  AmanziGeometry::Point enormal(d_), x1(d_), x2(d_);
+
+  if (d_ == 2) {
+    Entity_ID_List nodes;
+    mesh_->face_get_nodes(f, &nodes);
+
+    mesh_->node_get_coordinates(nodes[0], &x1);
+    mesh_->node_get_coordinates(nodes[1], &x2);
+    return IntegratePolynomialsEdge(x1, x2, polys);
+  }
+  else {
+    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
+
+    Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
+    NumericalIntegration<SurfaceMiniMesh> numi(surf_mesh);
+
+    // convert polynomials to 2D
+    // create a single polynomial centered at face centroid (new origin)
+    Polynomial product(d_ - 1, 0);
+    product(0) = 1.0;
+
+    for (int i = 0; i < polys.size(); ++ i) {
+      Polynomial tmp(d_, polys[i]->order(), polys[i]->ExpandCoefficients());
+      tmp.set_origin(polys[i]->origin());
+      tmp.ChangeCoordinates(xf, *coordsys->tau());  
+      product *= tmp;
+    }
+
+    return numi.IntegratePolynomialCell(f, product);
+  }
+}
+
+
+/* ******************************************************************
 * Integrate over edge (x1,x2) a product of polynomials that may have
 * different origins.
 ****************************************************************** */
@@ -457,7 +505,7 @@ double NumericalIntegration<Mesh>::IntegrateFunctionsTriangle_(
 {
   // calculate minimal quadrature rule 
   int m(order);
-  AMANZI_ASSERT(m < 10);
+  AMANZI_ASSERT(m < 14);
 
   int n1 = q2d_order[m][1];
   int n2 = n1 + q2d_order[m][0];

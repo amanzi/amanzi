@@ -564,14 +564,14 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
       polys[2] = &q;
 
       // downwind-downwind integral
-      double vel1 = numi_.IntegratePolynomialsFace(f, polys);
+      double vel1 = numi_.IntegratePolynomialsFaceOptimized(f, polys);
       vel1 /= mesh_->face_area(f);
       vel1 *= dir;  
 
       // upwind-downwind integral
       polys[1] = &p1;
 
-      double vel0 = numi_.IntegratePolynomialsFace(f, polys);
+      double vel0 = numi_.IntegratePolynomialsFaceOptimized(f, polys);
       vel0 /= mesh_->face_area(f);
       vel0 *= dir;  
 
