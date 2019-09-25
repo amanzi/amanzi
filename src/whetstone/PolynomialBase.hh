@@ -91,7 +91,7 @@ int MonomialSetPosition(int d, const int* multi_index)
 }
 
 
-// Position in polynomial defined by multi_index. 2D algorithm.
+// Position in polynomial defined by multi_index.
 inline
 int PolynomialPosition(int d, const int* multi_index)
 {

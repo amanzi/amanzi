@@ -34,9 +34,8 @@ namespace WhetStone {
 ****************************************************************** */
 DG_Modal::DG_Modal(const Teuchos::ParameterList& plist,
                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-  : numi_(mesh),
-    mesh_(mesh),
-    d_(mesh->space_dimension())
+  : BilinearForm(mesh),
+    numi_(mesh)
 {
   order_ = plist.get<int>("method order");
   std::string basis_name = plist.get<std::string>("dg basis");
@@ -50,10 +49,10 @@ DG_Modal::DG_Modal(const Teuchos::ParameterList& plist,
     monomial_integrals_[c](0) = mesh_->cell_volume(c);
   }
 
-  BasisFactory factory;
+  BasisFactory<AmanziMesh::Mesh> factory;
   for (int c = 0; c < ncells_wghost; ++c) {
     basis_[c] = factory.Create(basis_name);
-    basis_[c]->Init(mesh_, AmanziMesh::CELL, c, order_, monomial_integrals_[c]);
+    basis_[c]->Init(mesh_, c, order_, monomial_integrals_[c]);
   }
 }
 

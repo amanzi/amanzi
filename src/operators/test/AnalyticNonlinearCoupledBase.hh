@@ -66,8 +66,8 @@ class AnalyticNonlinearCoupledBase {
   virtual double DScalarCoefficient11D1(double u, double v) { return 0.; }
   
   // -- analytic solution p
-  virtual double exact0(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
-  virtual double exact1(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual double exact0(const Amanzi::AmanziGeometry::Point& p, double t) const = 0;
+  virtual double exact1(const Amanzi::AmanziGeometry::Point& p, double t) const = 0;
 
   // -- gradient of continuous velocity grad(h), where h = p + g z
   virtual Amanzi::AmanziGeometry::Point gradient_exact0(const Amanzi::AmanziGeometry::Point& p, double t) = 0;

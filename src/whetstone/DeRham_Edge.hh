@@ -28,9 +28,9 @@ namespace WhetStone {
 
 class DeRham_Edge : public virtual InnerProductL2 { 
  public:
-  DeRham_Edge() {};
   DeRham_Edge(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) 
-    : InnerProduct(mesh) {};
+    : mesh_(mesh),
+      d_(mesh->space_dimension()) {};
   ~DeRham_Edge() {};
 
   virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override;
@@ -45,6 +45,10 @@ class DeRham_Edge : public virtual InnerProductL2 {
 
   int L2consistencyInverse2D_(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc);
   int L2consistencyInverse3D_(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc);
+
+ protected:
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  int d_;
 };
 
 }  // namespace WhetStone

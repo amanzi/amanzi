@@ -24,10 +24,10 @@
 
 // WhetStone
 #include "Basis_Regularized.hh"
-#include "CoordinateSystems.hh"
 #include "GrammMatrix.hh"
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "NumericalIntegration.hh"
+#include "SurfaceCoordinateSystem.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
@@ -38,8 +38,7 @@ namespace WhetStone {
 ****************************************************************** */
 MFD3D_CrouzeixRaviart::MFD3D_CrouzeixRaviart(const Teuchos::ParameterList& plist,
                                              const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-  : MFD3D(mesh),
-    InnerProduct(mesh)
+  : MFD3D(mesh)
 {
   order_ = plist.get<int>("method order");
 }
@@ -109,112 +108,6 @@ int MFD3D_CrouzeixRaviart::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& 
 
   StabilityScalar_(N, A);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
-}
-
-
-/* ******************************************************************
-* Energy projector on the space of linear polynomials in cell c.
-****************************************************************** */
-void MFD3D_CrouzeixRaviart::ProjectorCell_(
-    int c, const std::vector<Polynomial>& vf, Polynomial& uc)
-{
-  Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-  int nfaces = faces.size();
-
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double vol = mesh_->cell_volume(c);
-
-  // create zero vector polynomial
-  uc.Reshape(d_, 1, true);
-
-  for (int n = 0; n < nfaces; ++n) {  
-    int f = faces[n];
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-
-    double tmp = vf[n].Value(xf) * dirs[n] / vol;
-
-    for (int j = 0; j < d_; ++j) {
-      uc(1, j) += tmp * normal[j];
-    }
-  }
-
-  // calculate projector's low-order term
-  AmanziGeometry::Point grad(d_);
-  for (int j = 0; j < d_; ++j) {
-    grad[j] = uc(1, j);
-  }
-    
-  double a1(0.0), a2(0.0), tmp;
-  for (int n = 0; n < nfaces; ++n) {  
-    int f = faces[n];
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-    double area = mesh_->face_area(f);
-       
-    tmp = vf[n].Value(xf) - grad * (xf - xc);
-    a1 += tmp * area;
-    a2 += area;
-  }
-
-  uc(0) = a1 / a2;
-
-  // set the correct origin
-  uc.set_origin(xc);
-}
-
-
-/* ******************************************************************
-* Energy projector on space of linear polynomials in face f.
-* Uniqueness requires to specify projector's value at face centroid.
-****************************************************************** */
-void MFD3D_CrouzeixRaviart::H1Face(
-    int f, const AmanziGeometry::Point& p0,
-    const std::vector<VectorPolynomial>& ve, VectorPolynomial& uf) const
-{
-  Entity_ID_List edges;
-  std::vector<int> dirs;
-
-  mesh_->face_get_edges_and_dirs(f, &edges, &dirs);
-  int nedges = edges.size();
-
-  double area = mesh_->face_area(f);
-  AmanziGeometry::Point fnormal = mesh_->face_normal(f);
-  fnormal /= norm(fnormal);
-
-  // create zero vector polynomial
-  uf.resize(d_);
-  for (int i = 0; i < d_; ++i) { 
-    uf[i].Reshape(d_, 1, true);
-  }
-
-  AmanziGeometry::Point enormal(d_);
-
-  for (int n = 0; n < nedges; ++n) {  
-    int e = edges[n];
-    const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
-    const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
-
-    enormal = tau^fnormal;
-
-    for (int i = 0; i < d_; ++i) {
-      double tmp = ve[n][i].Value(xe) * dirs[n] / area;
-
-      for (int j = 0; j < d_; ++j) {
-        uf[i](1, j) += tmp * enormal[j];
-      }
-    }
-  }
-
-  // fix the constant value
-  const AmanziGeometry::Point& xf0 = mesh_->face_centroid(f);
-
-  for (int i = 0; i < d_; ++i) {
-    uf[i](0) = p0[i];
-    uf[i].set_origin(xf0);
-  }
 }
 
 }  // namespace WhetStone

@@ -154,7 +154,7 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   // initial mass
   double mass0(0.0);
   WhetStone::DenseVector data(nk);
-  WhetStone::NumericalIntegration numi(mesh0);
+  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh0);
 
   for (int c = 0; c < ncells_owned; c++) {
     for (int i = 0; i < nk; ++i) data(i) = p1c[i][c];

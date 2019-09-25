@@ -37,7 +37,7 @@ class Analytic05 : public AnalyticBase {
     return K;
   }
 
-  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) const { 
     double x = p[0];
     double y = p[1];
     return 2 * x + y;

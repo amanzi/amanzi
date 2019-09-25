@@ -51,14 +51,12 @@ add_amanzi_library(whetstone
                           MFD3D_LagrangeSerendipity.cc
                           DG_Modal.cc
                           BilinearFormFactory.cc
-                          Basis_Regularized.cc Basis_Normalized.cc Basis_Orthonormalized.cc
                           nlfv.cc 
                           Tensor.cc DenseMatrix.cc DenseVector.cc
                           Polynomial.cc VectorPolynomial.cc MatrixPolynomial.cc
-                          NumericalIntegration.cc
                           MeshMaps.cc
                           MeshMaps_FEM.cc MeshMaps_VEM.cc MeshMaps_PEM.cc
-                          GrammMatrix.cc
+                          SurfaceCoordinateSystem.cc
                    HEADERS DenseMatrix.hh DenseVector.hh
                            DG_Modal.hh
                            Basis.hh BasisFactory.hh
@@ -85,8 +83,9 @@ add_amanzi_library(whetstone
                            Quadrature1D.hh Quadrature2D.hh Quadrature3D.hh
                            MeshMaps.hh MeshMapsFactory.hh
                            MeshMaps_FEM.hh MeshMaps_VEM.hh MeshMaps_VEM.hh
-                           CoordinateSystems.hh
                            Monomial.hh Polynomial.hh PolynomialIterator.hh PolynomialBase.hh
+                           SurfaceCoordinateSystem.hh
+                           SurfaceMiniMesh.hh
                            VectorPolynomial.hh MatrixPolynomial.hh PolynomialOnMesh.hh
                            Tensor.hh
                            WhetStoneDefs.hh
@@ -150,12 +149,14 @@ if (BUILD_TESTS)
     # Test: matrices for DG methods
     add_amanzi_test(whetstone_dg whetstone_dg
                     KIND unit
-                    SOURCE test/Main.cc test/whetstone_polynomials.cc
+                    SOURCE test/Main.cc 
+                                        test/whetstone_polynomials.cc
                                         test/whetstone_dg.cc
                                         test/whetstone_numi.cc
                                         test/whetstone_high_order.cc
                                         test/whetstone_maps.cc
                                         test/whetstone_projectors.cc
+                                        test/whetstone_high_order.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: matrices for Derham complex

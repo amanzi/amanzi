@@ -15,6 +15,7 @@
 #include <cmath>
 
 #include "DenseMatrix.hh"
+#include "DenseVector.hh"
 #include "Monomial.hh"
 #include "Polynomial.hh"
 
@@ -523,13 +524,24 @@ void Polynomial::InverseChangeCoordinates(
   tmp.set_origin(x0);
 
   // populate new polynomial using different algorithms
-  if (d_ == 1) {
+  if (d_ == 1 && dnew == 2) {
     int i = (fabs(B[0][0]) > fabs(B[0][1])) ? 0 : 1;
     double scale = 1.0 / B[0][i];
 
-    for (auto it = begin(); it < end(); ++it) {
-      int m = it.MonomialSetOrder();
-      tmp(m, i * m) = this->operator()(m, 0) * std::pow(scale, m);
+    for (int m = 0; m < size_; ++m) {
+      tmp(m, i * m) = coefs_(m) * std::pow(scale, m);
+    }
+  } else if (d_ == 1 && dnew == 3) {
+    int i = (fabs(B[0][0]) > fabs(B[0][1])) ? 0 : 1;
+    if (fabs(B[0][2]) > fabs(B[0][i])) i = 2;
+    double scale = 1.0 / B[0][i];
+
+    int multi_index[3] = {0, 0, 0};
+
+    for (int n = 0; n < size_; ++n) {
+      multi_index[i] = n;
+      int m = PolynomialPosition(3, multi_index);
+      tmp(m) = coefs_(n) * std::pow(scale, n);
     }
   } else if (d_ == 2) {
     // find monor with the largest determinant

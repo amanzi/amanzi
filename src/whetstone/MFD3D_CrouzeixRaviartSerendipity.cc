@@ -23,7 +23,7 @@
 #include "errors.hh"
 
 #include "Basis_Regularized.hh"
-#include "CoordinateSystems.hh"
+#include "SurfaceCoordinateSystem.hh"
 #include "GrammMatrix.hh"
 #include "MFD3D_CrouzeixRaviartSerendipity.hh"
 #include "NumericalIntegration.hh"
@@ -77,12 +77,12 @@ int MFD3D_CrouzeixRaviartSerendipity::H1consistency(
   MFD3D_CrouzeixRaviartAnyOrder::H1consistency(c, K, Nf, Af);
 
   // pre-calculate integrals of monomials 
-  NumericalIntegration numi(mesh_);
+  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
   numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
   // selecting regularized basis
-  Basis_Regularized basis;
-  basis.Init(mesh_, AmanziMesh::CELL, c, order_, integrals_.poly());
+  Basis_Regularized<AmanziMesh::Mesh> basis;
+  basis.Init(mesh_, c, order_, integrals_.poly());
 
   // Gramm matrix for polynomials
   DenseMatrix M(nd, nd);
@@ -166,12 +166,12 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
     const Polynomial* moments, Polynomial& uc)
 {
   // create integration object 
-  NumericalIntegration numi(mesh_);
+  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
 
   // selecting regularized basis
   Polynomial ptmp;
-  Basis_Regularized basis;
-  basis.Init(mesh_, AmanziMesh::CELL, c, order_, ptmp);
+  Basis_Regularized<AmanziMesh::Mesh> basis;
+  basis.Init(mesh_, c, order_, ptmp);
 
   // calculate full matrices
   Tensor T(d_, 1);
@@ -226,7 +226,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
     DenseMatrix M;
     Polynomial poly(d_, order_);
 
-    NumericalIntegration numi(mesh_);
+    NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
     numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
     GrammMatrix(poly, integrals_, basis, M);
@@ -250,7 +250,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
     DenseMatrix M, M2;
     Polynomial poly(d_, order_);
 
-    NumericalIntegration numi(mesh_);
+    NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
     numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
     GrammMatrix(poly, integrals_, basis, M);
@@ -289,10 +289,9 @@ void MFD3D_CrouzeixRaviartSerendipity::CalculateDOFsOnBoundary_(
   int nfaces = faces.size();
 
   std::vector<const PolynomialBase*> polys(2);
-  NumericalIntegration numi(mesh_);
+  NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
 
   AmanziGeometry::Point xv(d_);
-  std::vector<AmanziGeometry::Point> tau(d_ - 1);
 
   // number of moments of faces
   Polynomial pf(d_ - 1, order_ - 1);
@@ -306,14 +305,14 @@ void MFD3D_CrouzeixRaviartSerendipity::CalculateDOFsOnBoundary_(
 
     // local coordinate system with origin at face centroid
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    FaceCoordinateSystem(normal, tau);
+    SurfaceCoordinateSystem coordsys(normal);
 
     polys[0] = &(vf[n]);
 
     for (auto it = pf.begin(); it < pf.end(); ++it) {
       const int* index = it.multi_index();
       Polynomial fmono(d_ - 1, index, 1.0);
-      fmono.InverseChangeCoordinates(xf, tau);  
+      fmono.InverseChangeCoordinates(xf, *coordsys.tau());  
 
       polys[1] = &fmono;
 

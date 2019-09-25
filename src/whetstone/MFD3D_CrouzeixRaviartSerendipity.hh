@@ -35,8 +35,7 @@ class MFD3D_CrouzeixRaviartSerendipity : public MFD3D_CrouzeixRaviartAnyOrder {
  public:
   MFD3D_CrouzeixRaviartSerendipity(const Teuchos::ParameterList& plist,
                                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : InnerProduct(mesh),
-      MFD3D_CrouzeixRaviartAnyOrder(plist, mesh) {};
+    : MFD3D_CrouzeixRaviartAnyOrder(plist, mesh) {};
   ~MFD3D_CrouzeixRaviartSerendipity() {};
 
   // required methods
@@ -48,12 +47,14 @@ class MFD3D_CrouzeixRaviartSerendipity : public MFD3D_CrouzeixRaviartAnyOrder {
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
   // -- projectors
-  virtual void L2Cell(int c, const std::vector<Polynomial>& vf,
+  virtual void L2Cell(int c, const std::vector<Polynomial>& ve,
+                      const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& uc) override {
     ProjectorCell_(c, vf, ProjectorType::L2, moments, uc);
   }
 
-  virtual void H1Cell(int c, const std::vector<Polynomial>& vf,
+  virtual void H1Cell(int c, const std::vector<Polynomial>& ve,
+                      const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& uc) override {
     ProjectorCell_(c, vf, ProjectorType::H1, moments, uc);
   }

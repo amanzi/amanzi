@@ -298,6 +298,27 @@ DenseMatrix DenseMatrix::SubMatrix(int ib, int ie, int jb, int je)
 
 
 /* ******************************************************************
+* Second level routine: insert submatrix of B at position (is, js)
+****************************************************************** */
+void DenseMatrix::InsertSubMatrix(
+    const DenseMatrix& B, int ib, int ie, int jb, int je, int is, int js)
+{
+  int ks(js), mB(B.NumRows());
+
+  for (int j = jb; j < je; ++j) {
+    double* dataA = data_ + ks * m_ + is;
+    const double* dataB = B.Values() + j * mB + ib;
+    for (int i = ib; i < ie; ++i) {
+      *dataA = *dataB;
+      dataA++; 
+      dataB++; 
+    }
+    ks++;
+  } 
+}
+
+
+/* ******************************************************************
 * Second level routine: transpose
 ****************************************************************** */
 void DenseMatrix::Transpose(const DenseMatrix& A) 

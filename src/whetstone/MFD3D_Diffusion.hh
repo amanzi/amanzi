@@ -42,11 +42,11 @@ class MFD3D_Diffusion : public MFD3D,
   // constructor for backward compatibility
   MFD3D_Diffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : MFD3D(mesh),
-      InnerProduct(mesh) {};
+      DeRham_Face(mesh) {};
   MFD3D_Diffusion(const Teuchos::ParameterList& plist,
                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : MFD3D(mesh),
-      InnerProduct(mesh) {};
+      DeRham_Face(mesh) {};
   ~MFD3D_Diffusion() {};
 
   // main methods 
@@ -106,7 +106,8 @@ class MFD3D_Diffusion : public MFD3D,
 
   // -- projectors
   //    we return linear polynomial instead of constant vector polynomial (FIXME)
-  virtual void L2Cell(int c, const std::vector<Polynomial>& vf,
+  virtual void L2Cell(int c, const std::vector<Polynomial>& ve,
+                      const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& vc) override;
 
   // utils
@@ -121,6 +122,10 @@ class MFD3D_Diffusion : public MFD3D,
   // mesh extension methods 
   // -- exterior normal
   AmanziGeometry::Point mesh_face_normal(int f, int c);
+
+ protected:
+  using MFD3D::mesh_;
+  using MFD3D::d_;
 
  private:
   static RegisteredFactory<MFD3D_Diffusion> factory_;

@@ -325,7 +325,8 @@ int MFD3D_Diffusion::StiffnessMatrixMMatrix(int c, const Tensor& K, DenseMatrix&
 * Low-order L2 projector. 
 * NOTE: we abuse the interface and return a linear polynomial.
 ***************************************************************** */
-void MFD3D_Diffusion::L2Cell(int c, const std::vector<Polynomial>& vf,
+void MFD3D_Diffusion::L2Cell(int c, const std::vector<Polynomial>& ve,
+                             const std::vector<Polynomial>& vf,
                              const Polynomial* moments, Polynomial& vc)
 {
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);

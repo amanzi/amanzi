@@ -8,64 +8,52 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
+  3D version of Analytic00.
+  
   Polynomial solution and constant coefficient is defined by
   the user-provided gradient and polynomial order:
   Solution: p = 1  order=0
-            p = 1 + gx x + gy y  order=1
-            p = 1 + gx x + gy y + 3x^2 + 4xy - 3y^2  order=2
-            p = 1 + gx x + gy y + 3x^2 + 4xy - 3y^2 + x^3 + 6x^2y - 3xy^2 - 3y^3  order=3
+            p = 1 + gx x + gy y + gz z order=1
   Diffusion: K = 1
-  Velocity: v = [vx, vy]
+  Velocity: v = [vx, vy, vz]
   Source: f = -Laplacian(p)
 */
 
-#ifndef AMANZI_OPERATOR_ANALYTIC_00_HH_
-#define AMANZI_OPERATOR_ANALYTIC_00_HH_
+#ifndef AMANZI_OPERATOR_ANALYTIC_00B_HH_
+#define AMANZI_OPERATOR_ANALYTIC_00B_HH_
 
 #include "Polynomial.hh"
 #include "VectorPolynomial.hh"
 
 #include "AnalyticBase.hh"
 
-class Analytic00 : public AnalyticBase {
+class Analytic00b : public AnalyticBase {
  public:
-  Analytic00(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, double gx, double gy, int order,
-             const Amanzi::AmanziGeometry::Point v = Amanzi::AmanziGeometry::Point(2)) :
+  Analytic00b(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, double gx, double gy, double gz, int order,
+              const Amanzi::AmanziGeometry::Point v = Amanzi::AmanziGeometry::Point(3)) :
       AnalyticBase(mesh),
-      poly_(2, order),
+      poly_(3, order),
       v_(v) {
     poly_(0, 0) = 1.0;
 
     if (order > 0) {
       poly_(1, 0) = gx;
       poly_(1, 1) = gy;
-    }
-
-    if (order > 1) {
-      poly_(2, 0) = 3.0;
-      poly_(2, 1) = 4.0;
-      poly_(2, 2) =-3.0;
-    }
-
-    if (order > 2) {
-      poly_(3, 0) = 1.0;
-      poly_(3, 1) = 6.0;
-      poly_(3, 2) =-3.0;
-      poly_(3, 3) =-2.0;
+      poly_(1, 2) = gz;
     }
 
     grad_ = Gradient(poly_);
  
-    Amanzi::WhetStone::VectorPolynomial tmp(2, 2);
-    for (int i = 0; i < 2; ++i) {
+    Amanzi::WhetStone::VectorPolynomial tmp(3, 3);
+    for (int i = 0; i < 3; ++i) {
       tmp[i] = v_[i] * poly_;
     }
     rhs_ = Amanzi::WhetStone::Divergence(tmp) - poly_.Laplacian();
   }
-  ~Analytic00() {};
+  ~Analytic00b() {};
 
   Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) {
-    Amanzi::WhetStone::Tensor K(2, 1);
+    Amanzi::WhetStone::Tensor K(3, 1);
     K(0, 0) = 1.0;
     return K;
   }
@@ -75,9 +63,10 @@ class Analytic00 : public AnalyticBase {
   }
 
   Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-    Amanzi::AmanziGeometry::Point v(2);
+    Amanzi::AmanziGeometry::Point v(3);
     v[0] = -grad_[0].Value(p);
     v[1] = -grad_[1].Value(p);
+    v[2] = -grad_[2].Value(p);
     return v;
   }
  

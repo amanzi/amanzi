@@ -25,27 +25,28 @@
 namespace Amanzi {
 namespace WhetStone {
 
+template<class MyMesh>
 class BasisFactory {
  public:
   explicit BasisFactory() {};
   ~BasisFactory() {};
 
   // select numerical scheme using its name and order 
-  std::shared_ptr<Basis> Create(const std::string& name) {
+  std::shared_ptr<Basis<MyMesh> > Create(const std::string& name) {
     if (name == "regularized") {
-      auto basis = std::make_shared<Basis_Regularized>();
+      auto basis = std::make_shared<Basis_Regularized<MyMesh> >();
       return basis;
     }
     else if (name == "normalized") {
-      auto basis = std::make_shared<Basis_Normalized>();
+      auto basis = std::make_shared<Basis_Normalized<MyMesh> >();
       return basis;
     }
     else if (name == "orthonormalized") {
-      auto basis = std::make_shared<Basis_Orthonormalized>();
+      auto basis = std::make_shared<Basis_Orthonormalized<MyMesh> >();
       return basis;
     }
     else if (name == "natural") {
-      auto basis = std::make_shared<Basis_Natural>();
+      auto basis = std::make_shared<Basis_Natural<MyMesh> >();
       return basis;
     }
     return NULL;

@@ -67,7 +67,7 @@ TEST(PROJECTORS_SQUARE_CR) {
   Polynomial moments(2, 0);  // trivial polynomials p=0
 
   mfd_ho.set_order(2);
-  mfd_ho.H1Cell(cell, vf, &moments, uc);
+  mfd_ho.H1Cell(cell, vf, vf, &moments, uc);
 
   uc.ChangeOrigin(zero);
   CHECK(uc.NormInf() < 1e-12);
@@ -81,7 +81,7 @@ TEST(PROJECTORS_SQUARE_CR) {
   }
   
   mfd_ho.set_order(1);
-  mfd_ho.H1Cell(cell, vf, &moments, uc);
+  mfd_ho.H1Cell(cell, vf, vf, &moments, uc);
 
   uc.ChangeOrigin(zero);
   std::cout << uc << std::endl;
@@ -99,7 +99,7 @@ TEST(PROJECTORS_SQUARE_CR) {
     }
 
     mfd_ho.set_order(k);
-    mfd_ho.H1Cell(cell, vf, &moments, uc);
+    mfd_ho.H1Cell(cell, vf, vf, &moments, uc);
 
     uc.ChangeOrigin(zero);
     std::cout << uc << std::endl;
@@ -118,7 +118,7 @@ TEST(PROJECTORS_SQUARE_CR) {
   moments(0) = 0.2;
 
   mfd_ho.set_order(2);
-  mfd_ho.H1Cell(cell, vf, &moments, uc);
+  mfd_ho.H1Cell(cell, vf, vf, &moments, uc);
 
   uc.ChangeOrigin(zero);
   std::cout << uc << std::endl;
@@ -165,7 +165,7 @@ TEST(PROJECTORS_POLYGON_CR) {
 
   // -- old scheme
   mfd_lo.set_order(1);
-  mfd_lo.H1Cell(cell, vf, NULL, uc);
+  mfd_lo.H1Cell(cell, vf, vf, NULL, uc);
 
   uc.ChangeOrigin(zero);
   std::cout << uc << std::endl;
@@ -184,7 +184,7 @@ TEST(PROJECTORS_POLYGON_CR) {
     }
 
     mfd_ho.set_order(k);
-    mfd_ho.H1Cell(cell, vf, &moments, uc);
+    mfd_ho.H1Cell(cell, vf, vf, &moments, uc);
 
     uc.ChangeOrigin(zero);
     std::cout << uc << std::endl;
@@ -211,7 +211,7 @@ TEST(PROJECTORS_POLYGON_CR) {
     }
 
     mfd_ho.set_order(k);
-    mfd_ho.H1Cell(cell, vf, &moments, uc);
+    mfd_ho.H1Cell(cell, vf, vf, &moments, uc);
 
     uc.ChangeOrigin(zero);
     std::cout << uc << std::endl;
@@ -239,7 +239,7 @@ TEST(PROJECTORS_POLYGON_CR) {
     }
 
     mfd_ho.set_order(k);
-    mfd_ho.H1Cell(cell, vf, &moments, uc);
+    mfd_ho.H1Cell(cell, vf, vf, &moments, uc);
 
     uc.ChangeOrigin(zero);
     std::cout << vf[0] << std::endl;
@@ -263,14 +263,14 @@ TEST(PROJECTORS_POLYGON_CR) {
   moments(0) = 19.88406156156157;
 
   mfd_ho.set_order(2);
-  mfd_ho.H1Cell(cell, vf, &moments, uc);
+  mfd_ho.H1Cell(cell, vf, vf, &moments, uc);
 
   uc.ChangeOrigin(zero);
   std::cout << uc << std::endl;
 
   int dir;
   double val1(0.0), valx(0.0);
-  NumericalIntegration numi(mesh);
+  NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
 
   for (int n = 0; n < nfaces; ++n) {
     const AmanziGeometry::Point& normal = mesh->face_normal(n, false, cell, &dir);
@@ -305,7 +305,7 @@ TEST(PROJECTORS_POLYGON_CR) {
     }
 
     mfd_ho.set_order(k);
-    mfd_ho.H1Cell(cell, vf, &moments, uc);
+    mfd_ho.H1Cell(cell, vf, vf, &moments, uc);
 
     for (auto it = moments.begin(); it < moments.end(); ++it) {
       Polynomial mono(2, it.multi_index(), 1.0);
@@ -360,7 +360,7 @@ TEST(L2_PROJECTORS_SQUARE_CR) {
   moments(2, 1) = 1.0 / 60;
 
   mfd_ho.set_order(4);
-  mfd_ho.H1Cell(cell, vf, &moments, uc);
+  mfd_ho.H1Cell(cell, vf, vf, &moments, uc);
 
   uc.ChangeOrigin(zero);
   std::cout << uc << std::endl;
@@ -472,7 +472,7 @@ TEST(PROJECTORS_SQUARE_PK) {
     }
 
     mfd.set_order(k);
-    mfd.H1Cell(cell, vf, &moments, uc);  
+    mfd.H1Cell(cell, vf, vf, &moments, uc);  
 
     uc.ChangeOrigin(zero);
     uc -= vf[0];
@@ -491,10 +491,10 @@ TEST(PROJECTORS_SQUARE_PK) {
 
   for (int k = 1; k < 3; ++k) { 
     mfd.set_order(k);
-    mfd.H1Cell(cell, vf, &moments, uc);  
+    mfd.H1Cell(cell, vf, vf, &moments, uc);  
 
     mfd_cr.set_order(k);
-    mfd_cr.H1Cell(cell, vf, &moments, uc2);
+    mfd_cr.H1Cell(cell, vf, vf, &moments, uc2);
 
     uc.ChangeOrigin(zero);
     uc2.ChangeOrigin(zero);
@@ -502,7 +502,7 @@ TEST(PROJECTORS_SQUARE_PK) {
     CHECK(uc2.NormInf() < 1e-12);
 
     // Compare H1 and L2 projectors
-    mfd.L2Cell(cell, vf, &moments, uc2);
+    mfd.L2Cell(cell, vf, vf, &moments, uc2);
 
     uc2.ChangeOrigin(zero);
     uc2 -= uc;
@@ -558,7 +558,7 @@ TEST(PROJECTORS_POLYGON_PK) {
     }
 
     mfd.set_order(k);
-    mfd.H1Cell(cell, vf, &moments, uc);
+    mfd.H1Cell(cell, vf, vf, &moments, uc);
 
     uc.ChangeOrigin(zero);
     std::cout << uc << std::endl;
@@ -585,7 +585,7 @@ TEST(PROJECTORS_POLYGON_PK) {
     }
 
     mfd.set_order(k);
-    mfd.H1Cell(cell, vf, &moments, uc);
+    mfd.H1Cell(cell, vf, vf, &moments, uc);
 
     uc.ChangeOrigin(zero);
     std::cout << uc << std::endl;
@@ -605,14 +605,14 @@ TEST(PROJECTORS_POLYGON_PK) {
   moments(0) = 19.88406156156157;
 
   mfd.set_order(2);
-  mfd.H1Cell(cell, vf, &moments, uc);
+  mfd.H1Cell(cell, vf, vf, &moments, uc);
 
   uc.ChangeOrigin(zero);
   std::cout << uc << std::endl;
 
   int dir;
   double val1(0.0), valx(0.0);
-  NumericalIntegration numi(mesh);
+  NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
 
   for (int n = 0; n < nfaces; ++n) {
     const AmanziGeometry::Point& normal = mesh->face_normal(n, false, cell, &dir);
@@ -667,17 +667,17 @@ TEST(PROJECTORS_POLYGON_PK) {
     }
 
     mfd.set_order(k);
-    mfd.H1Cell(cell, vf, &moments, uc);
+    mfd.H1Cell(cell, vf, vf, &moments, uc);
 
     mfd_cr.set_order(k);
-    mfd_cr.H1Cell(cell, vf, &moments, uc2);
+    mfd_cr.H1Cell(cell, vf, vf, &moments, uc2);
 
     uc.ChangeOrigin(zero);
     uc2.ChangeOrigin(zero);
     uc2 -= uc;
     if (k < 3) CHECK(uc2.NormInf() < 1e-12);
 
-    mfd.L2Cell(cell, vf, &moments, uc2);
+    mfd.L2Cell(cell, vf, vf, &moments, uc2);
 
     uc2.ChangeOrigin(zero);
     uc2 -= uc;
@@ -693,11 +693,11 @@ TEST(PROJECTORS_POLYGON_PK) {
     moments.PutScalar(1.0);
 
     mfd.set_order(k);
-    mfd.H1Cell(cell, vf, &moments, uc);
+    mfd.H1Cell(cell, vf, vf, &moments, uc);
     double tmp = numi.IntegratePolynomialCell(cell, uc) / mesh->cell_volume(cell);
     CHECK_CLOSE(1.0, tmp, 1e-12);
 
-    mfd.L2Cell(cell, vf, &moments, uc);
+    mfd.L2Cell(cell, vf, vf, &moments, uc);
     tmp = numi.IntegratePolynomialCell(cell, uc) / mesh->cell_volume(cell);
     CHECK_CLOSE(1.0, tmp, 1e-12);
   }
@@ -739,14 +739,14 @@ void SerendipityProjectorPolygon() {
   
   for (int k = 1; k < 4; ++k) {
     mfd.set_order(k);
-    mfd.L2Cell(cell, vf, NULL, uc);
+    mfd.L2Cell(cell, vf, vf, NULL, uc);
     uc.ChangeOrigin(zero);
     std::cout << uc << std::endl;
 
     uc -= vf[0];
     CHECK(uc.NormInf() < 1e-10);
 
-    mfd.H1Cell(cell, vf, NULL, uc);
+    mfd.H1Cell(cell, vf, vf, NULL, uc);
     uc.ChangeOrigin(zero);
     uc -= vf[0];
     CHECK(uc.NormInf() < 2e-10);
@@ -763,14 +763,14 @@ void SerendipityProjectorPolygon() {
 
   for (int k = 2; k < 4; ++k) {
     mfd.set_order(k);
-    mfd.L2Cell(cell, vf, NULL, uc);
+    mfd.L2Cell(cell, vf, vf, NULL, uc);
     uc.ChangeOrigin(zero);
     std::cout << uc << std::endl;
 
     uc -= vf[0];
     CHECK(uc.NormInf() < 4e-10);
 
-    mfd.H1Cell(cell, vf, NULL, uc);
+    mfd.H1Cell(cell, vf, vf, NULL, uc);
     uc.ChangeOrigin(zero);
     uc -= vf[0];
     CHECK_CLOSE(0.0, uc.NormInf(), 6e-10);
@@ -802,7 +802,7 @@ void SerendipityProjectorPolygon() {
   
   for (int k = 1; k < 4; ++k) {
     mfd.set_order(k);
-    mfd.L2Cell(cell, vf, NULL, uc);
+    mfd.L2Cell(cell, vf, vf, NULL, uc);
     uc.ChangeOrigin(zero);
     std::cout << "order=" << k << " " << uc << std::endl;
 
@@ -811,7 +811,7 @@ void SerendipityProjectorPolygon() {
     uc2 -= uc;
     CHECK(uc2.NormInf() < 1e-11);
 
-    mfd.H1Cell(cell, vf, NULL, uc2);
+    mfd.H1Cell(cell, vf, vf, NULL, uc2);
     uc2.ChangeOrigin(zero);
     uc2 -= uc;
     CHECK(uc2.NormInf() < 2e-2);
@@ -824,5 +824,127 @@ TEST(SERENDIPITY_PROJECTORS_POLYGON_PK) {
 
 TEST(SERENDIPITY_PROJECTORS_POLYGON_CR) {
   SerendipityProjectorPolygon<Amanzi::WhetStone::MFD3D_CrouzeixRaviartSerendipity>();
+}
+
+
+/* **************************************************************** */
+TEST(SERENDIPITY_PROJECTORS_CUBE_PK) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: HO Serendipity Lagrange projectors for cube" << std::endl;
+  auto comm = Amanzi::getDefaultComm();
+
+  Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, true, true);
+ 
+  int cell(2), nfaces(6), nedges(12);
+  AmanziGeometry::Point zero(3);
+  Polynomial uc, uc2;
+  std::vector<Polynomial> vf(nfaces), ve(nedges);
+
+  Teuchos::ParameterList plist;
+  plist.set<int>("method order", 1);
+
+  MFD3D_LagrangeSerendipity mfd(plist, mesh);
+
+  // test globally linear deformation
+  for (int n = 0; n < nfaces; ++n) {
+    vf[n].Reshape(3, 1, true);
+    vf[n](0) = 1.0;
+    vf[n](1) = 2.0;
+    vf[n](2) = 3.0;
+    vf[n](3) = 4.0;
+  }
+  
+  for (int n = 0; n < nedges; ++n) {
+    ve[n].Reshape(3, 1, true);
+    ve[n](0) = 1.0;
+    ve[n](1) = 2.0;
+    ve[n](2) = 3.0;
+    ve[n](3) = 4.0;
+  }
+
+  for (int k = 1; k < 4; ++k) {
+    mfd.set_order(k);
+    mfd.L2Cell(cell, ve, vf, NULL, uc);
+    uc.ChangeOrigin(zero);
+    std::cout << uc << std::endl;
+
+    uc -= vf[0];
+    CHECK(uc.NormInf() < 4e-10);
+
+    mfd.H1Cell(cell, ve, vf, NULL, uc);
+    uc.ChangeOrigin(zero);
+    uc -= vf[0];
+    CHECK(uc.NormInf() < 3e-10);
+  }
+
+  // test globally quadratic deformation
+  for (int n = 0; n < nfaces; ++n) {
+    vf[n].Reshape(3, 2, true);
+    vf[n](4) = 1.0;
+    vf[n](5) = 2.0;
+    vf[n](6) = 3.0;
+    vf[n](7) = 4.0;
+  }
+  
+  for (int n = 0; n < nedges; ++n) {
+    ve[n].Reshape(3, 2, true);
+    ve[n](4) = 1.0;
+    ve[n](5) = 2.0;
+    ve[n](6) = 3.0;
+    ve[n](7) = 4.0;
+  }
+
+  for (int k = 2; k < 4; ++k) {
+    mfd.set_order(k);
+    mfd.L2Cell(cell, ve, vf, NULL, uc);
+    uc.ChangeOrigin(zero);
+    std::cout << uc << std::endl;
+
+    uc -= vf[0];
+    CHECK(uc.NormInf() < 1e-10);
+
+    mfd.H1Cell(cell, ve, vf, NULL, uc);
+    uc.ChangeOrigin(zero);
+    uc -= vf[0];
+    CHECK(uc.NormInf() < 2e-10);
+  }
+
+  // test globally cubic deformation
+  for (int n = 0; n < nfaces; ++n) {
+    vf[n].Reshape(3, 3, true);
+    vf[n](10) = 1.0;
+    vf[n](11) = 2.0;
+    vf[n](12) = 3.0;
+    vf[n](13) = 4.0;
+  }
+  
+  for (int n = 0; n < nedges; ++n) {
+    ve[n].Reshape(3, 3, true);
+    ve[n](10) = 1.0;
+    ve[n](11) = 2.0;
+    ve[n](12) = 3.0;
+    ve[n](13) = 4.0;
+  }
+
+  for (int k = 3; k < 4; ++k) {
+    mfd.set_order(k);
+    mfd.L2Cell(cell, ve, vf, NULL, uc);
+    uc.ChangeOrigin(zero);
+    std::cout << uc << std::endl;
+
+    uc -= vf[0];
+    CHECK(uc.NormInf() < 1e-10);
+
+    mfd.H1Cell(cell, ve, vf, NULL, uc);
+    uc.ChangeOrigin(zero);
+    uc -= vf[0];
+    CHECK(uc.NormInf() < 2e-10);
+  }
 }
 

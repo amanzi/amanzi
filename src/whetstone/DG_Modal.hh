@@ -44,7 +44,8 @@ class Polynomial;
 
 class DG_Modal : public BilinearForm {
  public:
-  DG_Modal(const Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+  DG_Modal(const Teuchos::ParameterList& plist,
+           const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~DG_Modal() {};
 
   // basic member functions
@@ -112,7 +113,7 @@ class DG_Modal : public BilinearForm {
   int order() { return order_; }
 
   // -- access
-  const Basis& cell_basis(int c) const { return *basis_[c]; }
+  const Basis<AmanziMesh::Mesh>& cell_basis(int c) const { return *basis_[c]; }
   Polynomial& monomial_integrals(int c) { return monomial_integrals_[c]; }
 
  private:
@@ -123,12 +124,10 @@ class DG_Modal : public BilinearForm {
   int AdvectionMatrixPiecewisePoly_(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test);
 
  private:
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  NumericalIntegration numi_;
-  int order_, d_;
+  NumericalIntegration<AmanziMesh::Mesh> numi_;
 
   std::vector<Polynomial> monomial_integrals_;  // integrals of non-normalized monomials
-  std::vector<std::shared_ptr<Basis> > basis_;
+  std::vector<std::shared_ptr<Basis<AmanziMesh::Mesh> > > basis_;
 
   static RegisteredFactory<DG_Modal> factory_;
 };

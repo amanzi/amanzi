@@ -149,8 +149,11 @@ class DenseMatrix {
   }
 
   // Second level routines
-  // -- submatrix in rows [ib, ie) and colums [jb, je) 
+  // -- submatrix in rows [ib, ie) and colums [jb, je)
   DenseMatrix SubMatrix(int ib, int ie, int jb, int je);
+  // -- insert submatrix of B at position (is, js)
+  void InsertSubMatrix(const DenseMatrix& B,int ib, int ie, int jb, int je,
+                       int is, int js);
  
   // -- transpose creates new matrix
   void Transpose(const DenseMatrix& A);
@@ -191,10 +194,15 @@ inline bool operator!=(const DenseMatrix& A, const DenseMatrix& B) {
 }
 
 
-inline void PrintMatrix(const DenseMatrix& A, const char* format = "%12.5f") {
+inline void PrintMatrix(const DenseMatrix& A, const char* format = "%12.5f", int mmax = 0) {
   int m = A.NumRows();
   int n = A.NumCols();
   
+  if (mmax > 0) {
+    m = std::min(mmax, m);
+    n = std::min(mmax, n);
+  }
+
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < n; j++) printf(format, A(i, j));
     printf("\n");
