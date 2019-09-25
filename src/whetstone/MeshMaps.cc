@@ -147,6 +147,32 @@ void MeshMaps::NansonFormula(
 
 
 /* ******************************************************************
+* Transformation of normal is defined completely by face data.
+****************************************************************** */
+void MeshMaps::NansonFormula(
+    int f, const VectorSpaceTimePolynomial& map, VectorSpaceTimePolynomial& cn) const
+{
+  const auto& normal = mesh0_->face_normal(f);
+  cn.resize(d_);
+
+  auto grad = Gradient(map);
+
+  if (d_ == 2) {
+    cn[1] = grad(0, 0) * normal[1] - grad(0, 1) * normal[0];
+    cn[0] = grad(1, 1) * normal[0] - grad(1, 0) * normal[1];
+  } else {
+    for (int i = 0; i < d_; ++i) {
+      int j = (i + 1) % d_;
+      int k = (j + 1) % d_;
+      cn[i] = (grad(j, j) * grad(k, k) - grad(j, k) * grad(k, j)) * normal[i]
+            + (grad(j, k) * grad(k, i) - grad(j, i) * grad(k, k)) * normal[j]
+            + (grad(j, i) * grad(k, j) - grad(j, j) * grad(k, i)) * normal[k];
+    }
+  }
+}
+
+
+/* ******************************************************************
 * Calculation of Jacobian.
 * Multiple velocities are packed in a rectagular matrix.
 ****************************************************************** */
@@ -161,77 +187,6 @@ void MeshMaps::Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const
     auto tmp = Gradient(vc[i]);
     for (int j = 0; j < d_; ++j) {
       J(i, j) = tmp[j];
-    }
-  }
-}
-
-
-/* ******************************************************************
-* Calculation of matrix of cofactors.
-* Multiple cofactors are packed in a rectagular matrix.
-****************************************************************** */
-void MeshMaps::Cofactors(const MatrixPolynomial& J, MatrixPolynomial& C) const
-{
-  // allocate memory for matrix of cofactors
-  int nJ = J.NumRows();
-  C.Reshape(d_, nJ, d_, 0, false);
-
-  // calculate cofactors
-  int kJ = nJ / d_;
-  for (int n = 0; n < kJ; ++n) {
-    int m0 = n * d_;
-    int m1 = m0 + 1;
-    if (d_ == 2) {
-      C(m1, 1) = J(m0, 0);
-      C(m1, 0) = J(m0, 1);
-      C(m1, 0) *= -1.0;
-
-      C(m0, 0) = J(m1, 1);
-      C(m0, 1) = J(m1, 0);
-      C(m0, 1) *= -1.0;
-    }
-    else if (d_ == 3) {
-      int m2 = m0 + 2;
-      C(m0, 0) = J(m1, 1) * J(m2, 2) - J(m2, 1) * J(m1, 2);
-      C(m1, 0) = J(m2, 1) * J(m0, 2) - J(m0, 1) * J(m2, 2);
-      C(m2, 0) = J(m0, 1) * J(m1, 2) - J(m1, 1) * J(m0, 2);
-
-      C(m0, 1) = J(m2, 0) * J(m1, 2) - J(m1, 0) * J(m2, 2);
-      C(m1, 1) = J(m0, 0) * J(m2, 2) - J(m2, 0) * J(m0, 2);
-      C(m2, 1) = J(m1, 0) * J(m0, 2) - J(m0, 0) * J(m1, 2);
-
-      C(m0, 2) = J(m1, 0) * J(m2, 1) - J(m2, 0) * J(m1, 1);
-      C(m1, 2) = J(m2, 0) * J(m0, 1) - J(m0, 0) * J(m2, 1);
-      C(m2, 2) = J(m0, 0) * J(m1, 1) - J(m1, 0) * J(m0, 1);
-    }
-  }
-}
-
-
-/* ******************************************************************
-* Calculate detminant at time t.
-* Multiple determinatds are packed in a vector.
-****************************************************************** */
-void MeshMaps::Determinant(const MatrixPolynomial& J, VectorPolynomial& det) const
-{
-  int ndet = J.NumRows() / d_;
-  det.resize(ndet);
-
-  for (int n = 0; n < ndet; ++n) {
-    int m0 = n * d_;
-    int m1 = m0 + 1;
-
-    if (d_ == 2) {
-      det[n] = J(m0, 0) * J(m1, 1) - J(m0, 1) * J(m1, 0);
-    }
-    else if (d_ == 3) {
-      int m2 = m0 + 2;
-      det[n] = J(m0, 0) * J(m1, 1) * J(m2, 2) 
-             + J(m2, 0) * J(m0, 1) * J(m1, 2) 
-             + J(m1, 0) * J(m2, 1) * J(m0, 2) 
-             - J(m2, 0) * J(m1, 1) * J(m0, 2) 
-             - J(m1, 0) * J(m0, 1) * J(m2, 2) 
-             - J(m0, 0) * J(m2, 1) * J(m1, 2); 
     }
   }
 }

@@ -25,8 +25,9 @@
 #include "DenseMatrix.hh"
 #include "InnerProductL2.hh"
 #include "InnerProductH1.hh"
+#include "Polynomial.hh"
 #include "Tensor.hh"
-#include "VectorPolynomial.hh"
+#include "VectorObjects.hh"
 #include "WhetStoneDefs.hh"
 
 namespace Amanzi {

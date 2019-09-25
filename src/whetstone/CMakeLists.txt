@@ -53,9 +53,9 @@ add_amanzi_library(whetstone
                           BilinearFormFactory.cc
                           nlfv.cc 
                           Tensor.cc DenseMatrix.cc DenseVector.cc
-                          Polynomial.cc VectorPolynomial.cc MatrixPolynomial.cc
+                          Polynomial.cc SpaceTimePolynomial.cc VectorObjects.cc
                           MeshMaps.cc
-                          MeshMaps_FEM.cc MeshMaps_VEM.cc MeshMaps_PEM.cc
+                          MeshMaps_FEM.cc MeshMaps_VEM.cc
                           SurfaceCoordinateSystem.cc
                    HEADERS DenseMatrix.hh DenseVector.hh
                            DG_Modal.hh
@@ -84,9 +84,10 @@ add_amanzi_library(whetstone
                            MeshMaps.hh MeshMapsFactory.hh
                            MeshMaps_FEM.hh MeshMaps_VEM.hh MeshMaps_VEM.hh
                            Monomial.hh Polynomial.hh PolynomialIterator.hh PolynomialBase.hh
+                           SpaceTimePolynomial.hh
                            SurfaceCoordinateSystem.hh
                            SurfaceMiniMesh.hh
-                           VectorPolynomial.hh MatrixPolynomial.hh PolynomialOnMesh.hh
+                           VectorObjects.hh MatrixObjects.hh PolynomialOnMesh.hh
                            Tensor.hh
                            WhetStoneDefs.hh
                            WhetStoneFunction.hh WhetStoneMeshUtils.hh

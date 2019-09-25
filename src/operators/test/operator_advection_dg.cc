@@ -33,7 +33,7 @@
 #include "MeshMapsFactory.hh"
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
-#include "VectorPolynomial.hh"
+#include "VectorObjects.hh"
 #include "WhetStoneDefs.hh"
 
 // Operators

@@ -25,7 +25,7 @@
 #include "BilinearFormFactory.hh"
 #include "DenseMatrix.hh"
 #include "GrammMatrix.hh"
-#include "MatrixPolynomial.hh"
+#include "MatrixObjects.hh"
 #include "MFD3D.hh"
 #include "NumericalIntegration.hh"
 #include "Polynomial.hh"

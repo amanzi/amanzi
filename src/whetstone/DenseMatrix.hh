@@ -68,6 +68,7 @@ class DenseMatrix {
     return *this;
   }
 
+  // incomplete ring algebra for matrices
   DenseMatrix& operator*=(double val) {
     for (int i = 0; i < m_ * n_; i++) data_[i] *= val;
     return *this;
@@ -86,6 +87,16 @@ class DenseMatrix {
   DenseMatrix& operator-=(const DenseMatrix& A) {
     for (int i = 0; i < m_ * n_; i++) data_[i] -= A.data_[i];
     return *this;
+  }
+
+  friend DenseMatrix operator*(const DenseMatrix& A, double val) {
+    DenseMatrix tmp(A);
+    return tmp *= val;
+  }
+
+  friend DenseMatrix operator*(double val, const DenseMatrix& A) {
+    DenseMatrix tmp(A);
+    return tmp *= val;
   }
 
   // calculates either A * B to A^T * B

@@ -11,6 +11,8 @@
 
   Maps between mesh objects located on different meshes, e.g. two states 
   of a deformable mesh: polygonal finite element implementation.
+
+  ***** This class was taken off-line. *****
 */
 
 #include "Point.hh"

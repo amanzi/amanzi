@@ -34,7 +34,7 @@
 #include "OperatorUtils.hh"
 #include "OutputXDMF.hh"
 #include "Tensor.hh"
-#include "VectorPolynomial.hh"
+#include "VectorObjects.hh"
 #include "WhetStoneDefs.hh"
 
 // Operators

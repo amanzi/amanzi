@@ -19,37 +19,50 @@
 #include <string>
 
 #include "DG_Modal.hh"
-#include "VectorPolynomial.hh"
+#include "SpaceTimePolynomial.hh"
+#include "VectorObjects.hh"
 
 #include "PDE_Advection.hh"
 
 namespace Amanzi {
 namespace Operators {
 
+struct SurfaceFluxData {
+  WhetStone::DenseMatrix Uface, Dface;
+  double uflux, dflux;
+};
+
+
 class PDE_AdvectionRiemann : public PDE_Advection {
  public:
   PDE_AdvectionRiemann(Teuchos::ParameterList& plist,
                        Teuchos::RCP<Operator> global_op) :
-      PDE_Advection(plist, global_op)
+      PDE_Advection(plist, global_op),
+      static_matrices_initialized_(false)
   {
     InitAdvection_(plist);
   }
 
   PDE_AdvectionRiemann(Teuchos::ParameterList& plist,
                        Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      PDE_Advection(plist, mesh)
+      PDE_Advection(plist, mesh),
+      static_matrices_initialized_(false)
   {
     InitAdvection_(plist);
   }
 
   // main members 
-  // -- setup
+  // -- setup for various flux algorithms
   virtual void Setup(const CompositeVector& u) override {};
 
   void Setup(const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> >& Kc,
              const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& Kf) {
     Kc_ = Kc;
     Kf_ = Kf;
+  }
+  void Setup(const Teuchos::Ptr<const std::vector<WhetStone::SpaceTimePolynomial> >& uc) {
+    uc_ = uc;
+    if (!static_matrices_initialized_) CreateStaticMatrices_();
   }
 
   // -- generate linearized operator: standard interface
@@ -58,6 +71,7 @@ class PDE_AdvectionRiemann : public PDE_Advection {
 
   // -- generate linearized operator: new interface
   void UpdateMatrices(const Teuchos::Ptr<const std::vector<WhetStone::Polynomial> >& u);
+  void UpdateMatrices(double t);
 
   // -- determine advected flux of potential u
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h,
@@ -73,15 +87,22 @@ class PDE_AdvectionRiemann : public PDE_Advection {
 
  private:
   void InitAdvection_(Teuchos::ParameterList& plist);
+  void CreateStaticMatrices_();
 
  private:
-  Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > Kc_;
-  Teuchos::RCP<std::vector<WhetStone::Polynomial> > Kf_;
-
   std::string method_, matrix_, flux_;
   bool jump_on_test_;
 
   Teuchos::RCP<WhetStone::DG_Modal> dg_;
+
+  // support of Rusanov flux
+  Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > Kc_;
+  Teuchos::RCP<std::vector<WhetStone::Polynomial> > Kf_;
+
+  // support of space-time polynomial velocity
+  bool static_matrices_initialized_;
+  Teuchos::Ptr<const std::vector<WhetStone::SpaceTimePolynomial> > uc_;
+  std::vector<std::vector<SurfaceFluxData> > static_matrices_;
 };
 
 }  // namespace Operators

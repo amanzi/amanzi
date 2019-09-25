@@ -16,9 +16,10 @@
   The integration is performed on the pseudo-time interval from 0 to 1. 
   The remap velocity u is constant, but since the integration is performed
   in the reference coordinate system associated with mesh0, the transformed
-  velocity v is the time-dependent quantity. The call it the co-velocity,
+  velocity v is the time-dependent quantity. We call it as co-velocity,
   v = C^t u where C is the matrix of co-factors for the Jacobian matrix J.
-  Recall that C = det(J) J^{-T}. 
+  Recall that C = det(J) J^{-T}. The co-velocity is reprsented using a
+  space-time polynomial.
 
   Input parameter list describes operators, limiters, and mesh maps,
   see native spec for more detail. 
@@ -39,7 +40,8 @@
 // Amanzi
 #include "Explicit_TI_RK.hh"
 #include "MeshMapsFactory.hh"
-#include "VectorPolynomial.hh"
+#include "SpaceTimePolynomial.hh"
+#include "VectorObjects.hh"
 #include "WhetStoneDefs.hh"
 
 // Amanzi::Operators
@@ -68,13 +70,12 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
 
   // initialization routines
   void InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg); 
-  void InitializeEdgeFaceVelocities();
-  void InitializeJacobianMatrix();
+  void StaticEdgeFaceVelocities();
+  void StaticCellVelocity();
 
   // dynamic geometric quantities
   virtual void DynamicJacobianMatrix(
       int c, double t, const WhetStone::MatrixPolynomial& J, WhetStone::MatrixPolynomial& Jt);
-  virtual void DynamicFaceVelocity(double t);
   virtual void DynamicCellVelocity(double t);
 
   // change between conservative and non-conservative variable
@@ -117,13 +118,19 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   // geometric data
   int det_method_;
 
+  // -- dynamic (old data)
+  Teuchos::RCP<std::vector<WhetStone::Polynomial> > det_;
+  Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > velc_;
+
+  // -- static (old data)
   std::vector<WhetStone::VectorPolynomial> uc_;
   std::vector<WhetStone::MatrixPolynomial> J_;
-  Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > det_;
-
-  Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > velc_;
-  Teuchos::RCP<std::vector<WhetStone::Polynomial> > velf_;
   std::vector<WhetStone::VectorPolynomial> vele_vec_, velf_vec_;
+
+  // -- space-time (new data)
+  Teuchos::RCP<std::vector<WhetStone::SpaceTimePolynomial> > velf_;
+  Teuchos::RCP<std::vector<WhetStone::VectorSpaceTimePolynomial> > velc_st_;
+  Teuchos::RCP<std::vector<WhetStone::SpaceTimePolynomial> > det_st_;
 
   // statistics
   int nfun_;

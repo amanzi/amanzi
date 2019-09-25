@@ -18,7 +18,8 @@
 
 // Amanzi::WhetStone
 #include "Polynomial.hh"
-#include "VectorPolynomial.hh"
+#include "SpaceTimePolynomial.hh"
+#include "VectorObjects.hh"
 
 
 /* ****************************************************************
@@ -154,3 +155,42 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   q2.Reshape(2, 2, true);
   q1 = q2;
 }
+
+
+/* ****************************************************************
+* Test of space-time polynomials
+**************************************************************** */
+TEST(DG_SPACE_TIME_POLYNOMIALS) {
+  using namespace Amanzi;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "Space-time polynomials..." << std::endl; 
+  int d(2);
+  Polynomial p0(d, 0), p1(d, 1), p2(d, 2);
+  p0(0) = 1.0;
+
+  p1(0) = 1.0;
+  p1(1) = 2.0;
+  p1(3) = 3.0;
+
+  p2(0) = 1.0;
+  p2(1) = 2.0;
+  p2(5) = 3.0;
+
+  SpaceTimePolynomial stp1(d, 2);
+  stp1[0] = p0;
+  stp1[1] = p1;
+  stp1[2] = p2;
+
+  auto stp2 = stp1;
+  auto stp3 = stp1 * stp2;
+  auto stp4 = stp2 * stp1;
+  stp4 -= stp3;
+  CHECK_CLOSE(0.0, stp4.NormInf(), 1e-14);
+
+  stp1 *= 2;
+  stp2 = stp1 + stp2;
+  // std::cout << stp2 << std::endl;
+}
+
+

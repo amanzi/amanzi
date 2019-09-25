@@ -28,7 +28,7 @@
 #include "Mesh.hh"
 #include "Point.hh"
 #include "Polynomial.hh"
-#include "VectorPolynomial.hh"
+#include "VectorObjects.hh"
 #include "WhetStoneFunction.hh"
 #include "Tensor.hh"
 

@@ -24,7 +24,7 @@
 #include "Point.hh"
 
 // WhetStone
-#include "MatrixPolynomial.hh"
+#include "MatrixObjects.hh"
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "MFD3D_CrouzeixRaviartSerendipity.hh"
 #include "MFD3D_Lagrange.hh"

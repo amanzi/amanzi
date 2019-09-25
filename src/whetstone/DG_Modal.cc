@@ -22,7 +22,6 @@
 #include "FunctionUpwind.hh"
 #include "Monomial.hh"
 #include "Polynomial.hh"
-#include "VectorPolynomial.hh"
 #include "WhetStoneDefs.hh"
 #include "WhetStoneMeshUtils.hh"
 
@@ -497,7 +496,7 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
 *   a \Int { (u.n) \psi^* [\rho] } dS
 ****************************************************************** */
 int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
-                         bool upwind, bool jump_on_test)
+                         bool upwind, bool jump_on_test, double* flux)
 {
   AmanziMesh::Entity_ID_List cells;
   mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
@@ -515,8 +514,9 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
   mesh_->face_normal(f, false, cells[0], &dir);
   const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
+  *flux = un.Value(xf) * dir;
   if (ncells > 1) {
-    double vel = un.Value(xf) * dir;
+    double vel = *flux;
     if (upwind) vel = -vel;
 
     if (vel > 0.0) {

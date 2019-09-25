@@ -63,20 +63,20 @@ void RemapDG_Tests<AnalyticDG>::InitializeConsistentJacobianDeterminant()
   det_method_ = Operators::OPERATOR_DETERMINANT_VEM;
 
   // constant part of determinant
-  DynamicFaceVelocity(0.0);
+  // DynamicFaceVelocity(0.0);
   DynamicCellVelocity(0.0);
 
   op_adv_->SetupPolyVector(velc_);
   op_adv_->UpdateMatrices();
 
   op_reac_->Setup(det_);
-  op_reac_->UpdateMatrices(Teuchos::null);
+  op_reac_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   auto& matrices = op_reac_->local_op()->matrices;
   for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
 
-  op_flux_->Setup(velc_, velf_);
-  op_flux_->UpdateMatrices(velf_.ptr());
+  op_flux_->Setup(velf_.ptr());
+  op_flux_->UpdateMatrices(0.0);
   op_flux_->ApplyBCs(true, true, true);
 
   CompositeVector& tmp = *op_reac_->global_operator()->rhs();
@@ -91,14 +91,14 @@ void RemapDG_Tests<AnalyticDG>::InitializeConsistentJacobianDeterminant()
 
   // linear part of determinant
   double dt(0.01);
-  DynamicFaceVelocity(dt);
+  // DynamicFaceVelocity(dt);
   DynamicCellVelocity(dt);
  
   op_adv_->SetupPolyVector(velc_);
   op_adv_->UpdateMatrices();
 
-  op_flux_->Setup(velc_, velf_);
-  op_flux_->UpdateMatrices(velf_.ptr());
+  op_flux_->Setup(velf_.ptr());
+  op_flux_->UpdateMatrices(dt);
   op_flux_->ApplyBCs(true, true, true);
 
   op_flux_->global_operator()->Apply(one, tmp);
@@ -140,8 +140,8 @@ void RemapDG_Tests<AnalyticDG>::DynamicCellVelocity(double t)
     maps_->Cofactors(Jt, C);
     if (det_method_ == Operators::OPERATOR_DETERMINANT_EXACT_TI) {
       double tmp = t * t / 2;
-      (*det_)[c][0] = t * det0_[c] + tmp * det1_[c];
-      (*det_)[c][0](0) += 1.0;
+      (*det_)[c] = t * det0_[c] + tmp * det1_[c];
+      (*det_)[c](0) += 1.0;
     } else if (det_method_ == Operators::OPERATOR_DETERMINANT_VEM) {
       maps_->Determinant(Jt, (*det_)[c]);
     }

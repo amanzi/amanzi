@@ -54,7 +54,7 @@ class MyRemapDG : public RemapDG_Tests<AnalyticDG04> {
   // geometric tools
   virtual void DynamicJacobianMatrix(
       int c, double t, const WhetStone::MatrixPolynomial& J, WhetStone::MatrixPolynomial& Jt) override;
-  virtual void DynamicFaceVelocity(double t) override;
+  void DynamicFaceVelocity(double t);
   virtual void DynamicCellVelocity(double t) override;
 
   // mesh deformation from time 0 to t
@@ -80,7 +80,7 @@ class MyRemapDG : public RemapDG_Tests<AnalyticDG04> {
 void MyRemapDG::Init(const Teuchos::RCP<WhetStone::DG_Modal> dg)
 {
   InitializeOperators(dg);
-  InitializeEdgeFaceVelocities();
+  StaticEdgeFaceVelocities();
   InitializeJacobianMatrix();
 
   velf_vec0_.resize(nfaces_wghost_);
@@ -108,7 +108,7 @@ void MyRemapDG::ReInit(double tini)
     J0_[c] += J_[c];
 
   InitializeOperators(dg_);
-  InitializeEdgeFaceVelocities();
+  StaticEdgeFaceVelocities();
 
   // adjust new velocities for interval [tini, tend]
   for (int f = 0; f < nfaces_wghost_; ++f)
