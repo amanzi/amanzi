@@ -21,7 +21,7 @@
 
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "MFD3D_Diffusion.hh"
-#include "MFD3D_Generalized_Diffusion.hh"
+#include "MFD3D_GeneralizedDiffusion.hh"
 #include "MFD3D_Lagrange.hh"
 #include "Tensor.hh"
 
@@ -98,8 +98,6 @@ TEST(DARCY_MASS_2D) {
     CHECK_CLOSE(T(0,0) * volume, vxx, 1e-10);
     CHECK_CLOSE(T(1,0) * volume, vxy, 1e-10);
   }
-
-  
 }
 
 
@@ -178,8 +176,6 @@ TEST(DARCY_MASS_3D) {
     CHECK_CLOSE(volume, vxx, 1e-10);
     CHECK_CLOSE(0.0, vxy, 1e-10);
   }
-
-  
 }
 
 
@@ -199,7 +195,7 @@ TEST(DARCY_MASS_3D_GENERALIZED_POLYHEDRON) {
   // Teuchos::RCP<Mesh> mesh = meshfactory.create("test/random3D_05.exo"); 
  
   Teuchos::ParameterList plist;
-  MFD3D_Generalized_Diffusion mfd(plist, mesh);
+  MFD3D_GeneralizedDiffusion mfd(plist, mesh);
 
   int nfaces = 6, cell = 0;
   double volume = mesh->cell_volume(cell);
@@ -232,8 +228,6 @@ TEST(DARCY_MASS_3D_GENERALIZED_POLYHEDRON) {
 
   // verify SPD propery
   for (int i = 0; i < nfaces; ++i) CHECK(M(i, i) > 0.0);
-
-  
 }
 
 
@@ -316,8 +310,6 @@ TEST(DARCY_INVERSE_MASS_3D) {
     CHECK_CLOSE(vxx, volume, 1e-10);
     CHECK_CLOSE(vxy, 0.0, 1e-10);
   }
-
-  
 }
 
 
@@ -414,8 +406,6 @@ TEST(DARCY_FULL_TENSOR_2D) {
       }
     }
   }
-
-  
 }
 
 
@@ -503,8 +493,6 @@ TEST(DARCY_FULL_TENSOR_3D) {
     }
     CHECK_CLOSE(vxx, 4 * volume, 1e-10);
   }
-
-  
 }
 
 
@@ -577,8 +565,6 @@ TEST(DARCY_STIFFNESS_2D_NODE) {
     CHECK_CLOSE(vxx, volume, 1e-10);
     CHECK_CLOSE(vxy, 0.0, 1e-10);
   }
-
-  
 }
 
 
@@ -647,8 +633,6 @@ TEST(DARCY_STIFFNESS_2D_EDGE) {
     CHECK_CLOSE(vxx, volume, 1e-10);
     CHECK_CLOSE(vxy, 0.0, 1e-10);
   }
-
-  
 }
 
 
@@ -714,8 +698,6 @@ TEST(DARCY_STIFFNESS_3D) {
   }
   CHECK_CLOSE(vxx, volume, 1e-10);
   CHECK_CLOSE(vxy, 0.0, 1e-10);
-
-  
 }
 
 
@@ -765,8 +747,6 @@ TEST(RECOVER_GRADIENT_MIXED) {
   CHECK_CLOSE(gradient(1), 1.0, 1e-10);
   CHECK_CLOSE(gradient(2), 2.0, 1e-10);
   CHECK_CLOSE(gradient(3), 3.0, 1e-10);
-
-  
 }
 
 
@@ -819,8 +799,6 @@ TEST(RECOVER_GRADIENT_NODAL) {
   CHECK_CLOSE(gradient(1), 1.0, 1e-10);
   CHECK_CLOSE(gradient(2), 2.0, 1e-10);
   CHECK_CLOSE(gradient(3), 3.0, 1e-10);
-
-  
 }
 
 
@@ -896,8 +874,6 @@ TEST(DARCY_INVERSE_MASS_2D) {
     CHECK_CLOSE(volume * T(0, 1), vxy, 1e-10);
     CHECK_CLOSE(mfd.simplex_functional(), 60.0, 1e-2);
   }
-
-  
 }
 
 

@@ -150,8 +150,6 @@ TEST(DG3D_MASS_MATRIX) {
       CHECK_CLOSE(M0(i, 0), 0.0, 1e-12);
     }
   }
-
-  
 }
 
 
@@ -216,8 +214,6 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
 
   CHECK_CLOSE(20.2332916667, integral[0], 1e-10);
   CHECK(integral[0] < integral[1]);
-
-  
 }
 
 
@@ -280,8 +276,6 @@ void Run2DFluxMatrix(bool upwind, bool jump_on_test) {
     A0 -= A1;
     CHECK_CLOSE(0.0, A0.NormInf(), 1e-12);
   }
-
-  
 }
 
 TEST(DG2D_FLUX_MATRIX) {
@@ -338,8 +332,6 @@ TEST(DG2D_FLUX_MATRIX_CONSERVATION) {
     A1.Multiply(e, b, false);
     CHECK_CLOSE(0.0, b(0) + b(nk / 2), 1e-12); 
   }
-
-  
 }
 
 
@@ -403,8 +395,6 @@ TEST(DG3D_FLUX_MATRIX) {
     A0 -= A1;
     CHECK_CLOSE(0.0, A0.NormInf(), 1e-12);
   }
-
-  
 }
 
 
@@ -525,8 +515,6 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
     A1 -= A0;
     CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
   }
-
-  
 }
 
  
@@ -603,8 +591,6 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
       CHECK_CLOSE(integral, 43.0 / 24.0, 1e-12);
     }
   }
-
-  
 }
 
  
@@ -721,8 +707,6 @@ TEST(DG_LEAST_SQUARE_MAP_CELL) {
   // -- check that it is bilinear map
   CHECK_CLOSE(0.0, u[0](2, 0), 1e-14);
   CHECK_CLOSE(0.0, u[0](2, 2), 1e-14);
-
-  
 }
 
 

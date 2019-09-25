@@ -46,7 +46,7 @@ add_amanzi_library(whetstone
                           MFD3D_Diffusion.cc MFD3D_Diffusion_Surface.cc MFD3D_Diffusion_Other.cc 
                           MFD3D_Elasticity.cc 
                           MFD3D_Electromagnetics.cc MFD3D_Electromagnetics_Surface.cc
-                          MFD3D_Generalized_Diffusion.cc
+                          MFD3D_GeneralizedDiffusion.cc
                           MFD3D_Lagrange.cc MFD3D_LagrangeAnyOrder.cc
                           MFD3D_LagrangeSerendipity.cc
                           DG_Modal.cc
@@ -76,7 +76,7 @@ add_amanzi_library(whetstone
                            MFD3D_Diffusion.hh
                            MFD3D_Elasticity.hh
                            MFD3D_Electromagnetics.hh
-                           MFD3D_Generalized_Diffusion.hh
+                           MFD3D_GeneralizedDiffusion.hh
                            MFD3D_Lagrange.hh MFD3D_LagrangeAnyOrder.hh
                            MFD3D_LagrangeSerendipity.hh
                            nlfv.hh

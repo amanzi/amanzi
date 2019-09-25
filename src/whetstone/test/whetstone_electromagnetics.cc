@@ -26,7 +26,9 @@
 #include "Tensor.hh"
 
 
-/* **************************************************************** */
+/* ******************************************************************
+* Mass matrix in 2D
+****************************************************************** */
 TEST(MASS_MATRIX_2D) {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -110,12 +112,12 @@ TEST(MASS_MATRIX_2D) {
     CHECK_CLOSE(volume, vxx, 1e-10);
     CHECK_CLOSE(-volume, vxy, 1e-10);
   }
-
-  
 }
 
 
-/* **************************************************************** */
+/* ******************************************************************
+* Mass matrix in 3D
+****************************************************************** */
 void MassMatrix3D(std::string mesh_file, int max_row) {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -133,10 +135,11 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
 
-  bool request_faces(true), request_edges(true);
-
-  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, true, true); 
-  RCP<Mesh> mesh = meshfactory.create(mesh_file, request_faces, request_edges); 
+  RCP<Mesh> mesh;
+  if (mesh_file == "")
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, true, true); 
+  else 
+    mesh = meshfactory.create(mesh_file, true, true); 
  
   Teuchos::ParameterList plist;
   MFD3D_Electromagnetics mfd(plist, mesh);
@@ -155,7 +158,8 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
   T(1, 0) = 1.0;
   T(2, 2) = 1.0;
 
-  for (int method = 0; method < 4; method++) {
+  int i0 = (mesh_file == "test/hex_random.exo") ? 4 : 0;
+  for (int method = i0; method < 4; method++) {
     DenseMatrix M(nrows, nrows);
 
     if (method == 0) {
@@ -203,25 +207,32 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
     CHECK_CLOSE(volume, vxx, 1e-10);
     CHECK_CLOSE(-volume, vxy, 1e-10);
   }
+}
 
-  
+TEST(MASS_MATRIX_3D_HEX_RANDOM) {
+  MassMatrix3D("test/hex_random.exo", 12);
+}
+
+TEST(MASS_MATRIX_3D_CUBE) {
+  MassMatrix3D("", 12);
 }
 
 TEST(MASS_MATRIX_3D_HEX) {
   MassMatrix3D("test/one_trapezoid.exo", 12);
 }
 
-TEST(MASS_MATRIX_3D_DODECAHEDRON) {
-  MassMatrix3D("test/dodecahedron.exo", 10);
-}
-
 TEST(MASS_MATRIX_3D_24SIDED) {
   MassMatrix3D("test/cube_triangulated.exo", 10);
 }
 
+TEST(MASS_MATRIX_3D_DODECAHEDRON) {
+  MassMatrix3D("test/dodecahedron.exo", 10);
+}
 
 
-/* **************************************************************** */
+/* ******************************************************************
+* Stiffness matrix in 2D
+****************************************************************** */
 TEST(STIFFNESS_MATRIX_2D) {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -263,7 +274,7 @@ TEST(STIFFNESS_MATRIX_2D) {
     if (method == 0) {
       mfd.StiffnessMatrix(cell, T, A);
     } else if (method == 1) {
-      mfd.StiffnessMatrixGeneralized(cell, T, A);
+      mfd.StiffnessMatrix_GradCorrection(cell, T, A);
     }
 
     printf("Stiffness matrix for cell %3d method=%d\n", cell, method);
@@ -305,7 +316,9 @@ TEST(STIFFNESS_MATRIX_2D) {
 }
 
 
-/* **************************************************************** */
+/* ******************************************************************
+* Stiffness matrix in 3D
+****************************************************************** */
 void StiffnessMatrix3D(std::string mesh_file, int max_row) {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -351,7 +364,7 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
     if (method == 0) {
       mfd.StiffnessMatrix(cell, T, A);
     } else if (method == 1) {
-      mfd.StiffnessMatrixGeneralized(cell, T, A);
+      mfd.StiffnessMatrix_GradCorrection(cell, T, A);
     }
 
     int m = std::min(nrows, max_row);
@@ -398,8 +411,6 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
     CHECK_CLOSE(4 * volume * T(0,0), vxx, tol);
     CHECK_CLOSE(4 * volume * T(0,1), vxy, tol);
   }
-
-  
 }
 
 TEST(STIFFNESS_MATRIX_3D_HEX) {

@@ -17,6 +17,9 @@
 
 #include <memory>
 
+#include "Teuchos_RCP.hpp"
+
+#include "Mesh.hh"
 #include "Point.hh"
 
 namespace Amanzi {

@@ -322,8 +322,11 @@ class Mesh {
   // On a distributed mesh, all nodes (OWNED or GHOST) of the face
   // are returned
   // In 3D, the nodes of the face are returned in ccw order consistent
-  // with the face normal
-  // In 2D, nfnodes is 2
+  // with the face normal. 
+  // In 2D, nfnodes is 2.
+  // IMPORTANT NOTE FOR MSTK FRAMEWORK: The first node in 3D is the 
+  // starting node of the first edge oriented ccw. Thus, the ccw order
+  // of vertices and edges is as follows: v0, e0, v1, e1, v2, ..., eN.
   virtual
   void face_get_nodes(const Entity_ID faceid,
                       Entity_ID_List *nodeids) const = 0;

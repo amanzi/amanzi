@@ -68,7 +68,7 @@ class DenseMatrix {
     return *this;
   }
 
-  // incomplete ring algebra for matrices
+  // ring algebra for matrices
   DenseMatrix& operator*=(double val) {
     for (int i = 0; i < m_ * n_; i++) data_[i] *= val;
     return *this;
@@ -98,6 +98,10 @@ class DenseMatrix {
     DenseMatrix tmp(A);
     return tmp *= val;
   }
+
+  friend DenseMatrix operator+(const DenseMatrix& A, const DenseMatrix& B);
+  friend DenseMatrix operator-(const DenseMatrix& A, const DenseMatrix& B);
+  friend DenseMatrix operator*(const DenseMatrix& A, const DenseMatrix& B);
 
   // calculates either A * B to A^T * B
   int Multiply(const DenseMatrix& A, const DenseMatrix& B, bool transposeA);
@@ -174,6 +178,7 @@ class DenseMatrix {
   // -- inversion is applicable for square matrices only
   int Inverse();
   int InverseSPD();
+  int InverseMoorePenrose();
   int NullSpace(DenseMatrix& D);
   double Det();  // limited capabilities
 

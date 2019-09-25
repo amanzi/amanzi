@@ -56,8 +56,6 @@ TEST(FACE_CENTROIDS) {
   const AmanziGeometry::Point& xm = mesh->cell_centroid(0);
   std::cout << xc << " = " << xm << std::endl;
   CHECK_CLOSE(0.0, norm(xc - xm), 1e-10);
-
-  
 }
 
 
