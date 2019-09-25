@@ -62,16 +62,16 @@ void RemapDG_Tests<AnalyticDG>::InitializeConsistentJacobianDeterminant()
   det_method_ = Operators::OPERATOR_DETERMINANT_VEM;
 
   // constant part of determinant
-  op_adv_->Setup(velc_);
+  op_adv_->Setup(velc_, false);
   op_adv_->UpdateMatrices(0.0);
 
-  op_reac_->Setup(det_);
+  op_reac_->Setup(det_, false);
   op_reac_->UpdateMatrices(0.0);
 
   auto& matrices = op_reac_->local_op()->matrices;
   for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
 
-  op_flux_->Setup(velf_.ptr());
+  op_flux_->Setup(velf_.ptr(), false);
   op_flux_->UpdateMatrices(0.0);
   op_flux_->ApplyBCs(true, true, true);
 
@@ -87,10 +87,8 @@ void RemapDG_Tests<AnalyticDG>::InitializeConsistentJacobianDeterminant()
 
   // linear part of determinant
   double dt(0.01);
-  op_adv_->Setup(velc_);
   op_adv_->UpdateMatrices(dt);
 
-  op_flux_->Setup(velf_.ptr());
   op_flux_->UpdateMatrices(dt);
   op_flux_->ApplyBCs(true, true, true);
 

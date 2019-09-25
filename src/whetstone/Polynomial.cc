@@ -505,7 +505,7 @@ void Polynomial::ChangeCoordinates(
         for (int k = power2.size() - 1; k < idx[2]; ++k)
            power2.push_back(power2[k] * poly2);
 
-        tmp += coef * (power0[idx[0]] * power1[idx[1]] * power2[idx[2]]);        
+        tmp += (coef * power0[idx[0]]) * power1[idx[1]] * power2[idx[2]];        
       }
     }
   }  

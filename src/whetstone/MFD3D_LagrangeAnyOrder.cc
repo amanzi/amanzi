@@ -374,7 +374,7 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
 
   // to invert generate matrix, we add and subtruct positive number
   G_(0, 0) = 1.0;
-  G_.Inverse();
+  G_.InverseSPD();
   G_(0, 0) = 0.0;
   RG.Multiply(R_, G_, false);
 

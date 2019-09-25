@@ -66,9 +66,9 @@ class PDE_Abstract : public PDE_HelperDiscretization {
   void SetupTensor(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) { K_ = K; }
   void SetupPoly(const Teuchos::RCP<const std::vector<WhetStone::Polynomial> >& K) { Kpoly_ = K; }
   void SetupPolyVector(const Teuchos::RCP<const std::vector<WhetStone::VectorPolynomial> >& K) { Kvec_ = K; }
-  void Setup(const Teuchos::RCP<const std::vector<WhetStone::VectorSpaceTimePolynomial> >& K) {
+  void Setup(const Teuchos::RCP<const std::vector<WhetStone::VectorSpaceTimePolynomial> >& K, bool reset) {
     Kvec_st_ = K;
-    if (!static_matrices_initialized_) CreateStaticMatrices_();
+    if (!static_matrices_initialized_ || reset) CreateStaticMatrices_();
   }
 
   // optional calculation of flux from potential p

@@ -375,7 +375,7 @@ int DenseMatrix::Inverse()
 
 
 /* ******************************************************************
-* Second level routine: inversion of symmetric poitive definite
+* Second level routine: inversion of symmetric positive definite
 ****************************************************************** */
 int DenseMatrix::InverseSPD() 
 {

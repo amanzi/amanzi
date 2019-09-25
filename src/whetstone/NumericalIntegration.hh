@@ -64,7 +64,7 @@ class NumericalIntegration {
 
   // integrate product of polynomials and monomials with different origins
   double IntegratePolynomialsCell(
-      int c, const std::vector<const PolynomialBase*>& polys) const;
+      int c, const std::vector<const PolynomialBase*>& polys);
 
   double IntegratePolynomialsCell(
       int c, const std::vector<const PolynomialBase*>& polys,
@@ -100,7 +100,7 @@ class NumericalIntegration {
 
   // integrate group of monomials 
   void IntegrateMonomialsCell(int c, int k, Polynomial& integrals) const;
-  void UpdateMonomialIntegralsCell(int c, int order, Polynomial& integrals);
+  void UpdateMonomialIntegralsCell(int c, int order, Polynomial& integrals) const;
   void UpdateMonomialIntegralsCell(int c, int order, PolynomialOnMesh& integrals) const;
 
   // useful functions: integrate single polynomial
@@ -320,7 +320,7 @@ double NumericalIntegration<Mesh>::IntegratePolynomialCell(int c, const Polynomi
 ****************************************************************** */
 template <class Mesh>
 double NumericalIntegration<Mesh>::IntegratePolynomialsCell(
-    int c, const std::vector<const PolynomialBase*>& polys) const
+    int c, const std::vector<const PolynomialBase*>& polys)
 {
   // create a single polynomial centered at cell centroid
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -576,7 +576,7 @@ double NumericalIntegration<Mesh>::IntegrateFunctionsTetrahedron_(
 ****************************************************************** */
 template <class Mesh>
 void NumericalIntegration<Mesh>::UpdateMonomialIntegralsCell(
-    int c, int order, Polynomial& integrals)
+    int c, int order, Polynomial& integrals) const
 {
   int k0 = integrals.order();
 

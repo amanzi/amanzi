@@ -49,9 +49,9 @@ class PDE_Reaction : public PDE_HelperDiscretization {
   // -- setup
   void SetupScalar(const Teuchos::RCP<Epetra_MultiVector>& K) { K_ = K; }
   void SetupPoly(const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& K) { poly_ = K; }
-  void Setup(const Teuchos::RCP<const std::vector<WhetStone::SpaceTimePolynomial> >& K) {
+  void Setup(const Teuchos::RCP<const std::vector<WhetStone::SpaceTimePolynomial> >& K, bool reset) {
     poly_st_ = K;
-    if (!static_matrices_initialized_) CreateStaticMatrices_();
+    if (!static_matrices_initialized_ || reset) CreateStaticMatrices_();
   }
 
   // -- generate a linearized operator 

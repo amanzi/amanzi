@@ -547,17 +547,36 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
   NumericalIntegration<SurfaceMiniMesh> numi_f(surf_mesh);
 
   // integrate traces of polynomials on face f
-  std::vector<const PolynomialBase*> polys(3);
+  std::vector<const PolynomialBase*> polys(3), polys0(2), polys1(2), polys_tmp(1);
+  Polynomial un_tmp, p0_tmp, p1_tmp, q_tmp;
+
+  if (d_ == 3) {
+    polys_tmp[0] = &un;
+    un_tmp = ConvertPolynomialsToSurfacePolynomial(xf, coordsys, polys_tmp);
+  }
 
   for (auto it = poly.begin(); it < poly.end(); ++it) {
     const int* idx0 = it.multi_index();
     int k = PolynomialPosition(d_, idx0);
 
+    // add monomials to the product list
     Monomial p0(d_, idx0, 1.0);
     p0.set_origin(mesh_->cell_centroid(c1));
 
     Monomial p1(d_, idx0, 1.0);
     p1.set_origin(mesh_->cell_centroid(c2));
+
+    if (d_ == 3) {
+      polys_tmp[0] = &p0;
+      p0_tmp = ConvertPolynomialsToSurfacePolynomial(xf, coordsys, polys_tmp);
+      p0_tmp *= un_tmp;
+      polys0[0] = &p0_tmp;
+
+      polys_tmp[0] = &p1;
+      p1_tmp = ConvertPolynomialsToSurfacePolynomial(xf, coordsys, polys_tmp);
+      p1_tmp *= un_tmp;
+      polys1[0] = &p1_tmp;
+    }
 
     for (auto jt = poly.begin(); jt < poly.end(); ++jt) {
       const int* idx1 = jt.multi_index();
@@ -566,29 +585,33 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
       Monomial q(d_, idx1, 1.0);
       q.set_origin(mesh_->cell_centroid(c1));
 
-      polys[0] = &un;
-      polys[1] = &p0;
-      polys[2] = &q;
+      // add monomial to the product list
+      if (d_ == 3) {
+        polys_tmp[0] = &q;
+        q_tmp = ConvertPolynomialsToSurfacePolynomial(xf, coordsys, polys_tmp);
+        polys0[1] = &q_tmp;
+        polys1[1] = &q_tmp;
+      }
 
       // downwind-downwind integral
       double vel0, vel1;
       if (d_ == 2) {
+        polys[0] = &un;
+        polys[1] = &p0;
+        polys[2] = &q;
         vel1 = numi_.IntegratePolynomialsFace(f, polys);
       } else {
-        auto product = ConvertPolynomialsToSurfacePolynomial(xf, coordsys, polys);
-        vel1 = numi_f.IntegratePolynomialCell(f, product);
+        vel1 = numi_f.IntegratePolynomialsCell(f, polys0);
       }
       vel1 /= mesh_->face_area(f);
       vel1 *= dir;  
 
       // upwind-downwind integral
-      polys[1] = &p1;
-
       if (d_ == 2) {
+        polys[1] = &p1;
         vel0 = numi_.IntegratePolynomialsFace(f, polys);
       } else {
-        auto product = ConvertPolynomialsToSurfacePolynomial(xf, coordsys, polys);
-        vel0 = numi_f.IntegratePolynomialCell(f, product);
+        vel0 = numi_f.IntegratePolynomialsCell(f, polys1);
       }
       vel0 /= mesh_->face_area(f);
       vel0 *= dir;  

@@ -77,6 +77,7 @@ class MyRemapDG : public RemapDG_Tests<AnalyticDG04> {
 ***************************************************************** */
 void MyRemapDG::Init(const Teuchos::RCP<WhetStone::DG_Modal> dg)
 {
+  if (mesh0_->get_comm()->MyPID() == 0) std::cout << "Computing static data on mesh scheleton...\n";
   InitializeOperators(dg);
   StaticEdgeFaceVelocities();
   StaticCellVelocity();
@@ -92,6 +93,7 @@ void MyRemapDG::Init(const Teuchos::RCP<WhetStone::DG_Modal> dg)
     J0_[c].set_origin(mesh0_->cell_centroid(c));
   }
 
+  if (mesh0_->get_comm()->MyPID() == 0) std::cout << "Computing static data in mesh cells...\n";
   StaticFaceCoVelocity();
   StaticCellCoVelocity();
 }
@@ -102,6 +104,7 @@ void MyRemapDG::Init(const Teuchos::RCP<WhetStone::DG_Modal> dg)
 ***************************************************************** */
 void MyRemapDG::ReInit(double tini)
 {
+  if (mesh0_->get_comm()->MyPID() == 0) std::cout << "Computing static data on mesh scheleton...\n";
   for (int f = 0; f < nfaces_wghost_; ++f)
     velf_vec0_[f] += velf_vec_[f];
 
@@ -117,8 +120,15 @@ void MyRemapDG::ReInit(double tini)
 
   StaticCellVelocity();
 
+  if (mesh0_->get_comm()->MyPID() == 0) std::cout << "Computing static data in mesh cells...\n";
   StaticFaceCoVelocity();
   StaticCellCoVelocity();
+
+  // re-calculate static matrices
+  if (mesh0_->get_comm()->MyPID() == 0) std::cout << "Computing static matrices for operators...\n";
+  op_adv_->Setup(velc_, true);
+  op_reac_->Setup(det_, true);
+  op_flux_->Setup(velf_.ptr(), true);
 
   tini_ = tini;
 }
@@ -191,7 +201,7 @@ void MyRemapDG::StaticCellCoVelocity()
         Jt(i, j)[0] = J0_[c](i, j);
         Jt(i, j)[1] = J_[c](i, j);  // Jt = J0 + t * J
       }
-      Jt(i, i)[0](0) = 1.0;
+      Jt(i, i)[0](0) += 1.0;
       tmp[i][0] = uc_[c][i];
     }
 
@@ -325,6 +335,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
 
   // create remap object
   MyRemapDG remap(mesh0, mesh1, plist, T1);
+  if (MyPID == 0) std::cout << "Deforming mesh...\n";
   remap.DeformMesh(deform, T1);
   remap.Init(dg);
   remap.set_dt_output(0.1);

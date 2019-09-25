@@ -185,6 +185,7 @@ int MFD3D_Generalized_Diffusion::MassMatrixInverse(
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
+
 /* ******************************************************************
 * Stiffness matrix is calculated by a hybridization algorithm.
 ****************************************************************** */

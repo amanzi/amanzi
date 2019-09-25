@@ -245,10 +245,10 @@ void RemapDG::FunctionalTimeDerivative(
     double t, const CompositeVector& u, CompositeVector& f)
 {
   // -- populate operators
-  op_adv_->Setup(velc_);
+  op_adv_->Setup(velc_, false);
   op_adv_->UpdateMatrices(t);
 
-  op_flux_->Setup(velf_.ptr());
+  op_flux_->Setup(velf_.ptr(), false);
   op_flux_->UpdateMatrices(t);
   op_flux_->ApplyBCs(true, true, true);
 
@@ -265,7 +265,7 @@ void RemapDG::FunctionalTimeDerivative(
 void RemapDG::ModifySolution(double t, CompositeVector& u)
 {
   // populate operators
-  op_reac_->Setup(det_);
+  op_reac_->Setup(det_, false);
   op_reac_->UpdateMatrices(t);
 
   // solve the problem with the mass matrix
@@ -393,15 +393,16 @@ void RemapDG::ApplyLimiter(double t, CompositeVector& x)
 void RemapDG::NonConservativeToConservative(
     double t, const CompositeVector& u, CompositeVector& v)
 {
-  op_reac_->Setup(det_);
+  op_reac_->Setup(det_, false);
   op_reac_->UpdateMatrices(t);
   op_reac_->global_operator()->Apply(u, v);
 }
 
+
 void RemapDG::ConservativeToNonConservative(
     double t, const CompositeVector& u, CompositeVector& v)
 {
-  op_reac_->Setup(det_);
+  op_reac_->Setup(det_, false);
   op_reac_->UpdateMatrices(t);
 
   auto& matrices = op_reac_->local_op()->matrices;

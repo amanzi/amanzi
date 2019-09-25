@@ -60,9 +60,9 @@ class PDE_AdvectionRiemann : public PDE_Advection {
     Kc_ = Kc;
     Kf_ = Kf;
   }
-  void Setup(const Teuchos::Ptr<const std::vector<WhetStone::SpaceTimePolynomial> >& uc) {
+  void Setup(const Teuchos::Ptr<const std::vector<WhetStone::SpaceTimePolynomial> >& uc, bool reset) {
     uc_ = uc;
-    if (!static_matrices_initialized_) CreateStaticMatrices_();
+    if (!static_matrices_initialized_ || reset) CreateStaticMatrices_();
   }
 
   // -- generate linearized operator: standard interface
