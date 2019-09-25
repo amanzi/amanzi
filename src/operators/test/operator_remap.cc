@@ -188,15 +188,16 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   CompositeVectorSpace cvs3;
   cvs3.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  CompositeVector q2(p2);
+  CompositeVector q2(p2), perr(p2);
   Epetra_MultiVector& q2c = *q2.ViewComponent("cell");
+  Epetra_MultiVector& pec = *perr.ViewComponent("cell");
   q2c = p2c;
 
   double pnorm, l2_err, inf_err, l20_err, inf0_err;
   ana.ComputeCellErrorRemap(*dg, p2c, tend, 0, mesh1,
-                            pnorm, l2_err, inf_err, l20_err, inf0_err);
+                            pnorm, l2_err, inf_err, l20_err, inf0_err, &pec);
 
-  CHECK(l2_err < 0.12 / (order + 1));
+  CHECK(((dim == 2) ? l2_err : l20_err) < 0.12 / (order + 1));
 
   if (MyPID == 0) {
     printf("nx=%3d (orig) L2=%12.8g(mean) %12.8g  Inf=%12.8g %12.8g\n", 
@@ -307,7 +308,8 @@ TEST(REMAP_DUAL) {
   RemapTestsDualRK(rk_method, "FEM", "", 10,10,0, dT);
 
   RemapTestsDualRK(rk_method, "VEM", "test/median15x16.exo", 0,0,0, dT/2);
-  RemapTestsDualRK(rk_method, "VEM", "", 5,5,5, dT, deform);
+  RemapTestsDualRK(rk_method, "VEM", "", 4,4,4, dT, deform);
+  // RemapTestsDualRK(rk_method, "VEM", "", 10,10,10, dT/2, deform);
 
   /*
   double dT(0.01);

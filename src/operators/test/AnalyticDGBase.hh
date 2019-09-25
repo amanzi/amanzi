@@ -99,7 +99,8 @@ class AnalyticDGBase {
   void ComputeCellErrorRemap(const Amanzi::WhetStone::DG_Modal& dg, Epetra_MultiVector& p, double t,
                              int p_location, Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh1,
                              double& pnorm, double& l2_err, double& inf_err,
-                             double& l20_err, double& inf0_err);
+                             double& l20_err, double& inf0_err,
+                             Epetra_MultiVector* perr = NULL);
 
   // communications
   void GlobalOp(std::string op, double* val, int n);
@@ -223,7 +224,8 @@ void AnalyticDGBase::ComputeCellErrorRemap(
     Epetra_MultiVector& p, double t, int p_location,
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh1,
     double& pnorm, double& l2_err, double& inf_err,
-                   double& l20_err, double& inf0_err)
+                   double& l20_err, double& inf0_err,
+    Epetra_MultiVector* perr)
 {
   auto& mesh0 = mesh_;
 
@@ -252,6 +254,7 @@ void AnalyticDGBase::ComputeCellErrorRemap(
       poly.set_origin(yc);
       err = poly.Value(yc) - SolutionExact(yc, t);
     }
+    if (perr != NULL) (*perr)[0][c] = err;
 
     inf0_err = std::max(inf0_err, fabs(err));
     l20_err += err * err * volume;

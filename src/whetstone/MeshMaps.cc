@@ -128,16 +128,13 @@ void MeshMaps::NansonFormula(
   const auto& normal = mesh0_->face_normal(f);
   cn.resize(d_);
 
+  auto grad = Gradient(map);
+  for (int i = 0; i < d_; ++i) grad(i, i)(0) += 1.0;
+
   if (d_ == 2) {
-    auto grad = Gradient(map[0]);
-    cn[1] = grad[0] * normal[1] - grad[1] * normal[0];
-
-    grad = Gradient(map[1]);
-    cn[0] = grad[1] * normal[0] - grad[0] * normal[1];
+    cn[1] = grad(0, 0) * normal[1] - grad(0, 1) * normal[0];
+    cn[0] = grad(1, 1) * normal[0] - grad(1, 0) * normal[1];
   } else {
-    auto grad = Gradient(map);
-    for (int i = 0; i < d_; ++i) grad(i, i)(0) += normal[i];
-
     for (int i = 0; i < d_; ++i) {
       int j = (i + 1) % d_;
       int k = (j + 1) % d_;
@@ -146,8 +143,6 @@ void MeshMaps::NansonFormula(
             + (grad(j, i) * grad(k, j) - grad(j, j) * grad(k, i)) * normal[k];
     }
   }
-
-  for (int i = 0; i < d_; ++i) cn[i](0) += normal[i];
 }
 
 
