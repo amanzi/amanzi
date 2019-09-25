@@ -144,12 +144,14 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   ana.InitialGuess(*dg, p1c, 1.0);
 
   // create remap object
-  if (MyPID == 0) std::cout << "Start computing static data...\n";
   MyRemapDG remap(mesh0, mesh1, plist);
   remap.DeformMesh(deform, 1.0);
   remap.InitializeOperators(dg);
+  if (MyPID == 0) std::cout << "Computing static data on mesh scheleton...\n";
   remap.StaticEdgeFaceVelocities();
+  if (MyPID == 0) std::cout << "Computing static data in mesh cells...\n";
   remap.StaticCellVelocity();
+  if (MyPID == 0) std::cout << "Computing static matrices for operators...\n";
   remap.InitializeConsistentJacobianDeterminant();
   if (MyPID == 0) std::cout << "Done.\n";
 
