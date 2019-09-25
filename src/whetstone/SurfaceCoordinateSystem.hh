@@ -15,6 +15,8 @@
 #ifndef AMANZI_SURFACE_COORDINATE_SYSTEM_HH_
 #define AMANZI_SURFACE_COORDINATE_SYSTEM_HH_
 
+#include <memory>
+
 #include "Point.hh"
 
 namespace Amanzi {
