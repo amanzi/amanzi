@@ -299,13 +299,12 @@ void MFD3D_CrouzeixRaviartSerendipity::CalculateDOFsOnBoundary_(
   int row(0);
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
-
-    const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
     double area = mesh_->face_area(f);
+    const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
     // local coordinate system with origin at face centroid
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    SurfaceCoordinateSystem coordsys(normal);
+    SurfaceCoordinateSystem coordsys(xf, normal);
 
     polys[0] = &(vf[n]);
 

@@ -397,7 +397,7 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_Projection(
       }
     }
 
-    maps->VelocityCell(c, vvf, (*velc)[c]);
+    maps->VelocityCell(c, vvf, vvf, (*velc)[c]);
     (*velc)[c] *= -dtfac * weak_sign_;
 
     if (divergence_term_) (*divc)[c] = Divergence((*velc)[c]);

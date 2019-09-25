@@ -206,12 +206,12 @@ int MFD3D_LagrangeAnyOrder::H1consistency2D_(
     // N and R: degrees of freedom on faces 
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
-      const AmanziGeometry::Point& xf = mymesh->face_centroid(f); 
       double area = mymesh->face_area(f);
+      const AmanziGeometry::Point& xf = mymesh->face_centroid(f); 
+      AmanziGeometry::Point normal = mymesh->face_normal(f);
 
       // local coordinate system with origin at face centroid
-      AmanziGeometry::Point normal = mymesh->face_normal(f);
-      auto coordsys = std::make_shared<SurfaceCoordinateSystem>(normal);
+      auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
 
       normal *= dirs[i];
       AmanziGeometry::Point conormal = K * normal;

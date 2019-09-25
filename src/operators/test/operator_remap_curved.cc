@@ -80,7 +80,7 @@ class MyRemapDG : public RemapDG_Tests<AnalyticDG04> {
 void MyRemapDG::Init(const Teuchos::RCP<WhetStone::DG_Modal> dg)
 {
   InitializeOperators(dg);
-  InitializeFaceVelocity();
+  InitializeEdgeFaceVelocities();
   InitializeJacobianMatrix();
 
   velf_vec0_.resize(nfaces_wghost_);
@@ -108,7 +108,7 @@ void MyRemapDG::ReInit(double tini)
     J0_[c] += J_[c];
 
   InitializeOperators(dg_);
-  InitializeFaceVelocity();
+  InitializeEdgeFaceVelocities();
 
   // adjust new velocities for interval [tini, tend]
   for (int f = 0; f < nfaces_wghost_; ++f)

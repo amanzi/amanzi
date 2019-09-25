@@ -110,6 +110,21 @@ int MFD3D_CrouzeixRaviart::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
+
+/* ******************************************************************
+* Projector on a manifold
+****************************************************************** */
+void MFD3D_CrouzeixRaviart::H1Face(int f, const std::vector<Polynomial>& ve,
+                                   const Polynomial* moments, Polynomial& vf)
+{
+  const auto& origin = mesh_->face_centroid(f);
+  const auto& normal = mesh_->face_normal(f);
+  auto coordsys = std::make_shared<SurfaceCoordinateSystem>(origin, normal);
+
+  Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
+  ProjectorCell_<SurfaceMiniMesh>(surf_mesh, f, ve, ve, vf);
+}
+
 }  // namespace WhetStone
 }  // namespace Amanzi
 

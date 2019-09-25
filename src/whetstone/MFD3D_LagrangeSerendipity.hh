@@ -270,12 +270,12 @@ void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
     }
 
     if (order_ > 1) { 
-      const AmanziGeometry::Point& xf = mymesh->face_centroid(f); 
       double area = mymesh->face_area(f);
+      const AmanziGeometry::Point& xf = mymesh->face_centroid(f); 
+      const AmanziGeometry::Point& normal = mymesh->face_normal(f);
 
       // local coordinate system with origin at face centroid
-      const AmanziGeometry::Point& normal = mymesh->face_normal(f);
-      SurfaceCoordinateSystem coordsys(normal);
+      SurfaceCoordinateSystem coordsys(xf, normal);
       const auto& tau = *coordsys.tau();
 
       polys[0] = &(vf[n]);

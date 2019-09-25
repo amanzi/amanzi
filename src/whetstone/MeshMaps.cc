@@ -55,8 +55,6 @@ void MeshMaps::VelocityEdge(int e, VectorPolynomial& ve) const
     ve[i](0, 0) = xe1[i] - x1[i] * (x0 * xe0);
     ve[i](1, i) -= 1.0;
   }
-
-  ve.set_origin(xe0); 
 }
 
 
@@ -72,15 +70,16 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
   AMANZI_ASSERT(points0.size() == points1.size());
 
   // local coordinate system
+  const AmanziGeometry::Point& xf = mesh0_->face_centroid(f);
   const AmanziGeometry::Point& normal = mesh0_->face_normal(f);
-  SurfaceCoordinateSystem coordsys(normal);
+
+  SurfaceCoordinateSystem coordsys(xf, normal);
   const auto& tau = *coordsys.tau();
 
   // polynomial is converted from local to global coordinate system
   AmanziMesh::Entity_ID_List nodes;
   AmanziGeometry::Point x0, x1, y0, y1;
 
-  const AmanziGeometry::Point& xf = mesh0_->face_centroid(f);
   AmanziGeometry::Point yf = mesh1_->face_centroid(f);
 
   mesh0_->face_get_nodes(f, &nodes);

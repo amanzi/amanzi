@@ -973,7 +973,7 @@ void Projector3DLagrangeSerendipitySurface(const std::string& filename)
   Teuchos::RCP<Mesh> mesh = meshfactory.create(filename, true, true); 
  
   int face(0), nedges(4);
-  AmanziGeometry::Point zero(3);
+  AmanziGeometry::Point zero(3), xyz0(3), xyz1(3);
   const auto& xf = mesh->face_centroid(face);
   Polynomial uf;
   std::vector<Polynomial> ve(nedges);
@@ -990,6 +990,16 @@ void Projector3DLagrangeSerendipitySurface(const std::string& filename)
     ve[n](1) = 2.0;
     ve[n](2) = 3.0;
     ve[n](3) = 4.0;
+  }
+
+  // add constant to thrid edge (y=1)
+  int n0, n1;
+  mesh->edge_get_nodes(2, &n0, &n1);
+  mesh->node_get_coordinates(n0, &xyz0);
+  mesh->node_get_coordinates(n1, &xyz1);
+  if (fabs(xyz0[0] - xyz1[0]) < 1e-6) {
+    ve[2](0) += 1.0;
+    ve[2](2) -= 1.0;
   }
 
   for (int k = 1; k < 4; ++k) {

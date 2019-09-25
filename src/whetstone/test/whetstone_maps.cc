@@ -300,9 +300,9 @@ TEST(DG_MAP_VELOCITY_CELL) {
   for (int i = 0; i < d; ++i) {
     u[i].Reshape(d, order, true);
     u[i](0, 0) = 1.0 + i;
-    u[i](1, 0) = 0.0;
-    u[i](1, 1) = 0.0;
-    u[i](1, 2) = 0.0;
+    u[i](1, 0) = 2.0 - i;
+    u[i](1, 1) = 3.0;
+    u[i](1, 2) = 4.0 + 2 * i;
   }
   u *= 0.05;
 
@@ -325,7 +325,6 @@ TEST(DG_MAP_VELOCITY_CELL) {
        .set<std::string>("projector", "H1");
   auto maps = std::make_shared<MeshMaps_VEM>(mesh0, mesh1, plist);
 
-std::cout << "U=" << u << std::endl;
   std::vector<VectorPolynomial> ve(nedges); 
   for (int n = 0; n < nedges; ++n) {
     maps->VelocityEdge(n, ve[n]);
@@ -335,19 +334,15 @@ std::cout << "U=" << u << std::endl;
   std::vector<VectorPolynomial> vf(nfaces); 
   for (int n = 0; n < nfaces; ++n) {
     maps->VelocityFace(n, vf[n]);
-auto tmp(vf[n]);
-tmp.ChangeOrigin(AmanziGeometry::Point(3));
-std::cout << "VF=" << mesh0->face_centroid(n) << tmp << std::endl;
   }
 
   // -- in cell
   VectorPolynomial vc;
   maps->VelocityCell(0, ve, vf, vc);
   vc.ChangeOrigin(AmanziGeometry::Point(3));
-std::cout << "VC=" << vc << std::endl;
 
-  vc -= ve[0];
-  CHECK_CLOSE(0.0, vc.NormInf(), 1e-12);
+  vc -= u;
+  CHECK_CLOSE(vc.NormInf(), 0.0, 1e-12);
 }
 
 

@@ -307,7 +307,7 @@ TEST(REMAP_DUAL) {
   RemapTestsDualRK(rk_method, "FEM", "", 10,10,0, dT);
 
   RemapTestsDualRK(rk_method, "VEM", "test/median15x16.exo", 0,0,0, dT/2);
-  RemapTestsDualRK(rk_method, "VEM", "", 5,5,5, dT / 2, deform);
+  RemapTestsDualRK(rk_method, "VEM", "", 5,5,5, dT, deform);
 
   /*
   double dT(0.01);

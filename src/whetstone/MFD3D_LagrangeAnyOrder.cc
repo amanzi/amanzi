@@ -126,9 +126,10 @@ int MFD3D_LagrangeAnyOrder::H1consistency3D_(
   for (int l = 0; l < nfaces; ++l) {
     int f = faces[l];
     double area = mesh_->face_area(f);
+    const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
     AmanziGeometry::Point normal = mesh_->face_normal(f);
 
-    auto coordsys = std::make_shared<SurfaceCoordinateSystem>(normal);
+    auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
     const auto& tau = *coordsys->tau();
     vsysf.push_back(coordsys);
 
@@ -398,9 +399,10 @@ int MFD3D_LagrangeAnyOrder::StiffnessMatrix(
 int MFD3D_LagrangeAnyOrder::StiffnessMatrixSurface(
     int f, const Tensor& K, DenseMatrix& A)
 {
+  const auto& origin = mesh_->face_centroid(f);
   const auto& normal = mesh_->face_normal(f);
 
-  auto coordsys = std::make_shared<SurfaceCoordinateSystem>(normal);
+  auto coordsys = std::make_shared<SurfaceCoordinateSystem>(origin, normal);
   Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
 
   DenseMatrix N;
@@ -482,12 +484,12 @@ void MFD3D_LagrangeAnyOrder::ProjectorCell_(
     }
 
     if (order_ > 1) { 
-      const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
       double area = mesh_->face_area(f);
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
       // local coordinate system with origin at face centroid
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      SurfaceCoordinateSystem coordsys(normal);
+      SurfaceCoordinateSystem coordsys(xf, normal);
 
       polys[0] = &(vf[n]);
 

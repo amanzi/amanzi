@@ -202,24 +202,21 @@ void MFD3D_LagrangeSerendipity::H1Face(
     int f, const std::vector<Polynomial>& ve,
     const Polynomial* moments, Polynomial& uf)
 {
-  auto coordsys = std::make_shared<SurfaceCoordinateSystem>(mesh_->face_normal(f));
-  Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
-
   const auto& xf = mesh_->face_centroid(f);
+  const auto& normal = mesh_->face_normal(f);
+  auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
+
+  Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
 
   std::vector<Polynomial> vve;
   for (int i = 0; i < ve.size(); ++i) {
     Polynomial tmp(ve[i]);
-std::cout << "Edge-3D: xf=" << xf << tmp << std::endl;
     tmp.ChangeCoordinates(xf, *coordsys->tau());  
-std::cout << "Edge-2D:" << tmp << std::endl;
     vve.push_back(tmp);
   }
 
   ProjectorCell_<SurfaceMiniMesh>(surf_mesh, f, vve, vve, ProjectorType::H1, moments, uf);
-std::cout << "Face-2D:" << uf << std::endl;
   uf.ChangeOrigin(AmanziGeometry::Point(d_ - 1));
-std::cout << "Face-3D:" << uf << std::endl;
   uf.InverseChangeCoordinates(xf, *coordsys->tau());  
 }
 
