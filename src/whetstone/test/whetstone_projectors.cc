@@ -882,7 +882,7 @@ void Projector3DLagrangeSerendipity(const std::string& filename)
     mfd.H1Cell(cell, ve, vf, NULL, uc);
     uc.ChangeOrigin(zero);
     uc -= vf[0];
-    CHECK(uc.NormInf() < 3e-10);
+    CHECK(uc.NormInf() < 5e-10);
   }
 
   // test globally quadratic deformation

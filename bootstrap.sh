@@ -54,8 +54,8 @@ curl_binary=`which curl`
 # CMake
 cmake_binary=`which cmake`
 ctest_binary=`which ctest`
-cmake_version=3.7.2
-cmake_url=https://cmake.org/files/v3.7
+cmake_version=3.10.0
+cmake_url=https://cmake.org/files/v3.10
 cmake_archive_file=cmake-${cmake_version}.tar.gz
 
 # Build configuration
@@ -114,7 +114,7 @@ no_color=$FALSE
 structured=$TRUE
 unstructured=$TRUE
 ccse_tools=$FALSE
-stk_mesh=$TRUE
+stk_mesh=$FALSE
 mstk_mesh=$TRUE
 moab_mesh=$FALSE
 amanzi_branch=
@@ -325,7 +325,7 @@ Value in brackets indicates default setting.
   ccse_tools              build structured AMR tools for post processing and tecplot ['"${ccse_tools}"']
 
   unstructured            build unstructured mesh capability ['"${unstructured}"']
-  stk_mesh                build the STK Mesh Toolkit ['"${stk_mesh}"']
+  stk_mesh                build the STK Mesh Toolkit (DISABLED) ['"${stk_mesh}"']
   mstk_mesh               build the MSTK Mesh Toolkit ['"${mstk_mesh}"']
   moab_mesh               build the MOAB Mesh Toolkit ['"${moab_mesh}"']
 
@@ -414,7 +414,7 @@ and executables for external packages (TPLs) and then for Amanzi:
                  --parallel=8 
                  --enable-shared
                  --enable-alquimia --enable-pflotran --enable-crunchtope 
-                 --enable-petsc --disable-stk_mesh 
+                 --enable-petsc
 
 Example that builds first OpenMPI, then TPLs, and finally Amanzi. It uses 
 OSX C and C++ compilers and Fortran compiler from MacPorts:
@@ -425,7 +425,7 @@ OSX C and C++ compilers and Fortran compiler from MacPorts:
                  --with-fort-compiler=/opt/local/bin/gfortran-mp-6
                  --parallel=8 
                  --enable-alquimia --enable-pflotran --enable-crunchtope 
-                 --enable-petsc --disable-stk_mesh 
+                 --enable-petsc
                  --tools-mpi=openmpi
 '
 }
@@ -1201,7 +1201,7 @@ function check_tools
     ( version_compare "$ver_string" "$cmake_version" )
     result=$?
     if [ ${result} -eq 2 ]; then
-      status_message "CMake version is less than required version. Will build CMake version 3.7.2"
+      status_message "CMake version is less than required version. Will build CMake version 3.10.0"
       build_cmake ${tools_build_dir} ${tools_install_prefix} ${tools_download_dir} 
     fi
   fi
