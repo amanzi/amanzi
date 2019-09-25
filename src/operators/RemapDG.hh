@@ -69,9 +69,13 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   virtual void ModifySolution(double t, CompositeVector& u) override;
 
   // initialization routines
+  // -- static quantities
   void InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg); 
   void StaticEdgeFaceVelocities();
   void StaticCellVelocity();
+  // -- quasi-static space-time quantities
+  virtual void StaticFaceCoVelocity();
+  virtual void StaticCellCoVelocity();
 
   // change between conservative and non-conservative variable
   void ConservativeToNonConservative(double t, const CompositeVector& u, CompositeVector& v);

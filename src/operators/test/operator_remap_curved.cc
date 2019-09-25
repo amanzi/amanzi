@@ -54,6 +54,10 @@ class MyRemapDG : public RemapDG_Tests<AnalyticDG04> {
   // mesh deformation from time 0 to t
   virtual void DeformMesh(int deform, double t) override;
 
+  // co-velocities
+  virtual void StaticFaceCoVelocity() override;
+  virtual void StaticCellCoVelocity() override;
+
   // miscalleneous other tools
   virtual double global_time(double t) override { return tini_ + t * T1_; }
 
@@ -64,6 +68,7 @@ class MyRemapDG : public RemapDG_Tests<AnalyticDG04> {
  private:
   double T1_, tini_;
   std::vector<WhetStone::VectorPolynomial> velf_vec0_;
+  std::vector<WhetStone::MatrixPolynomial> J_, J0_;
 };
 
 
@@ -78,8 +83,17 @@ void MyRemapDG::Init(const Teuchos::RCP<WhetStone::DG_Modal> dg)
 
   velf_vec0_.resize(nfaces_wghost_);
   for (int f = 0; f < nfaces_wghost_; ++f) {
-    velf_vec0_[f].Reshape(dim_, dim_, 0, true);
+    velf_vec0_[f].Reshape(dim_, dim_, 1, true);
   }
+
+  J0_.resize(ncells_owned_);
+  for (int c = 0; c < ncells_owned_; ++c) {
+    J0_[c].Reshape(dim_, dim_, dim_, 0, true);
+    J0_[c].set_origin(mesh0_->cell_centroid(c));
+  }
+
+  StaticFaceCoVelocity();
+  StaticCellCoVelocity();
 }
 
 
@@ -91,6 +105,9 @@ void MyRemapDG::ReInit(double tini)
   for (int f = 0; f < nfaces_wghost_; ++f)
     velf_vec0_[f] += velf_vec_[f];
 
+  for (int c = 0; c < ncells_owned_; ++c)
+    J0_[c] += J_[c];
+
   InitializeOperators(dg_);
   StaticEdgeFaceVelocities();
 
@@ -99,6 +116,9 @@ void MyRemapDG::ReInit(double tini)
     velf_vec_[f] -= velf_vec0_[f];
 
   StaticCellVelocity();
+
+  StaticFaceCoVelocity();
+  StaticCellCoVelocity();
 
   tini_ = tini;
 }
@@ -124,6 +144,63 @@ void MyRemapDG::DeformMesh(int deform, double t)
     auto tmp = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(mesh0_);
     Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(tmp)->set_face_ho_nodes(ho_nodes0);
     Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(mesh1_)->set_face_ho_nodes(ho_nodes1);
+  }
+}
+
+
+/* *****************************************************************
+* Initialization of space-tim co-velocity v = u * (j J^{-t} N)
+***************************************************************** */
+void MyRemapDG::StaticFaceCoVelocity()
+{
+  WhetStone::VectorSpaceTimePolynomial cn;
+  for (int f = 0; f < nfaces_wghost_; ++f) {
+    WhetStone::VectorSpaceTimePolynomial map(dim_, dim_, 1), tmp(dim_, dim_, 0);
+    const auto& origin = velf_vec_[f][0].origin();
+
+    for (int i = 0; i < dim_; ++i) {
+      map[i][0] = velf_vec0_[f][i];  // map = u0
+      map[i][0](1, i) += 1.0;        // map = x + u0
+      map[i][1] = velf_vec_[f][i];   // map = x + u0 + t * (u - u0)
+
+      tmp[i][0] = velf_vec_[f][i];
+    }
+
+    maps_->NansonFormula(f, map, cn);
+    (*velf_)[f] = tmp * cn;
+  }
+}
+
+
+/* *****************************************************************
+* Initialization of the constant cell velocity
+***************************************************************** */
+void MyRemapDG::StaticCellCoVelocity()
+{
+  J_.resize(ncells_owned_);
+  for (int c = 0; c < ncells_owned_; ++c) {
+    maps_->Jacobian(uc_[c], J_[c]);
+
+    // space-time cell velocity: v = -j J^{-1} u = -C^t u
+    WhetStone::MatrixSpaceTimePolynomial Jt(dim_, dim_, dim_, 1), Ct;
+    WhetStone::VectorSpaceTimePolynomial tmp(dim_, dim_, 0);
+    const auto& origin = uc_[c][0].origin();
+
+    for (int i = 0; i < dim_; ++i) {
+      for (int j = 0; j < dim_; ++j) {
+        Jt(i, j)[0] = J0_[c](i, j);
+        Jt(i, j)[1] = J_[c](i, j);  // Jt = J0 + t * J
+      }
+      Jt(i, i)[0](0) = 1.0;
+      tmp[i][0] = uc_[c][i];
+    }
+
+    maps_->Cofactors(Jt, Ct);
+
+    tmp *= -1.0;
+    Ct.Multiply(tmp, (*velc_)[c], true);
+
+    maps_->Determinant(Jt, (*det_)[c]);
   }
 }
 

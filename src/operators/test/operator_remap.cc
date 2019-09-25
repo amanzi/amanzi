@@ -150,8 +150,10 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   remap.InitializeOperators(dg);
   if (MyPID == 0) std::cout << "Computing static data on mesh scheleton...\n";
   remap.StaticEdgeFaceVelocities();
+  remap.StaticFaceCoVelocity();
   if (MyPID == 0) std::cout << "Computing static data in mesh cells...\n";
   remap.StaticCellVelocity();
+  remap.StaticCellCoVelocity();
   if (MyPID == 0) std::cout << "Computing static matrices for operators...\n";
   remap.InitializeConsistentJacobianDeterminant();
   if (MyPID == 0) std::cout << "Done.\n";

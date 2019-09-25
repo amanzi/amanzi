@@ -126,7 +126,7 @@ void RemapDG::InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg)
 
 
 /* *****************************************************************
-* Initialization of velocities and deformation tensor
+* Initialization of static edge and face velocities
 ***************************************************************** */
 void RemapDG::StaticEdgeFaceVelocities()
 {
@@ -145,30 +145,11 @@ void RemapDG::StaticEdgeFaceVelocities()
       maps_->VelocityEdge(e, vele_vec_[e]);
     }
   }
-
-  // space-time face velocity: v = u * (j J^{-t} N)
-  WhetStone::VectorSpaceTimePolynomial cn;
-  for (int f = 0; f < nfaces_wghost_; ++f) {
-    WhetStone::VectorSpaceTimePolynomial map(dim_, dim_, 1), tmp(dim_, dim_, 0);
-    const auto& origin = velf_vec_[f][0].origin();
-
-    for (int i = 0; i < dim_; ++i) {
-      map[i][0].Reshape(dim_, order_, true);
-      map[i][0](1, i) = 1.0;        // map = x
-      map[i][0].set_origin(origin);
-      map[i][1] = velf_vec_[f][i];  // map = x + t * u
-
-      tmp[i][0] = velf_vec_[f][i];
-    }
-
-    maps_->NansonFormula(f, map, cn);
-    (*velf_)[f] = tmp * cn;
-  }
 }
 
 
 /* *****************************************************************
-* Initialization of the deformation tensor
+* Initialization of the constant cell velocity
 ***************************************************************** */
 void RemapDG::StaticCellVelocity()
 {
@@ -193,8 +174,43 @@ void RemapDG::StaticCellVelocity()
       }
     } 
 
-    WhetStone::MatrixPolynomial Jc;
     maps_->VelocityCell(c, vve, vvf, uc_[c]);
+  }
+}
+
+
+/* *****************************************************************
+* Initialization of space-tim co-velocity v = u * (j J^{-t} N)
+***************************************************************** */
+void RemapDG::StaticFaceCoVelocity()
+{
+  WhetStone::VectorSpaceTimePolynomial cn;
+  for (int f = 0; f < nfaces_wghost_; ++f) {
+    WhetStone::VectorSpaceTimePolynomial map(dim_, dim_, 1), tmp(dim_, dim_, 0);
+    const auto& origin = velf_vec_[f][0].origin();
+
+    for (int i = 0; i < dim_; ++i) {
+      map[i][0].Reshape(dim_, order_, true);
+      map[i][0](1, i) = 1.0;        // map = x
+      map[i][0].set_origin(origin);
+      map[i][1] = velf_vec_[f][i];  // map = x + t * u
+
+      tmp[i][0] = velf_vec_[f][i];
+    }
+
+    maps_->NansonFormula(f, map, cn);
+    (*velf_)[f] = tmp * cn;
+  }
+}
+
+
+/* *****************************************************************
+* Initialization of the constant cell velocity
+***************************************************************** */
+void RemapDG::StaticCellCoVelocity()
+{
+  for (int c = 0; c < ncells_owned_; ++c) {
+    WhetStone::MatrixPolynomial Jc;
     maps_->Jacobian(uc_[c], Jc);
 
     // space-time cell velocity: v = -j J^{-1} u = -C^t u
