@@ -71,6 +71,10 @@ class MFD3D : public BilinearForm {
   int simplex_num_itrs_;
 };
 
+
+// non-member functions
+void AddGradient(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, DenseMatrix& N);
+
 }  // namespace WhetStone
 }  // namespace Amanzi
 

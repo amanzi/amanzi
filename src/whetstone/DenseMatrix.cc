@@ -521,7 +521,7 @@ int DenseMatrix::InverseMoorePenrose()
 
   // inverse of S
   for (int i = 0; i < mn; ++i)
-    if (fabs(S[i]) > 1e-14) S[i] = 1.0 / S[i];
+    if (fabs(S[i]) > 1e-12) S[i] = 1.0 / S[i];
 
   // assemble preuso-inverse
   DenseMatrix UU(m_, m_, U, WHETSTONE_DATA_ACCESS_VIEW);

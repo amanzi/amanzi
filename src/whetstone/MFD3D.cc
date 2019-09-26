@@ -400,8 +400,81 @@ void MFD3D::SimplexExchangeVariables_(DenseMatrix& T, int kp, int ip)
 }
 
 
+/* ******************************************************************
+* Modify the stability space by extending matrix N.
+****************************************************************** */
+void AddGradient(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, DenseMatrix& N)
+{
+  Entity_ID_List edges, nodes;
+
+  mesh->cell_get_edges(c, &edges);
+  int nedges = edges.size();
+
+  mesh->cell_get_nodes(c, &nodes);
+  int nnodes = nodes.size();
+
+  // reserve map: gid -> lid
+  std::map<int, int> lid;
+  for (int n = 0; n < nnodes; ++n) lid[nodes[n]] = n;
+
+  // populate discrete gradient
+  int v1, v2;
+  DenseMatrix G(nedges, nnodes);
+  G.PutScalar(0.0);
+
+  for (int m = 0; m < nedges; ++m) {
+    int e = edges[m];
+    double length = mesh->edge_length(e);
+    mesh->edge_get_nodes(e, &v1, &v2);
+
+    G(m, lid[v1]) += 1.0 / length;
+    G(m, lid[v2]) -= 1.0 / length;
+  } 
+
+  // create matrix [N G] with possibly linearly dependent vectors
+  int ncols = N.NumCols();
+  DenseMatrix NG(nedges, ncols + nnodes - 1);
+  for (int n = 0; n < ncols; ++n) {
+    for (int m = 0; m < nedges; ++m) NG(m, n) = N(m, n);
+  }
+  for (int n = 0; n < nnodes - 1; ++n) {
+    for (int m = 0; m < nedges; ++m) NG(m, ncols + n) = G(m, n);
+  }
+  
+  // identify linearly independent vectors by using the
+  // Gramm-Schmidt orthogonalization process
+  int ngcols = ncols + nnodes - 1;
+  double scale = G.Norm2();
+  double tol = 1e-24 * scale * scale;
+
+  std::vector<int> map;
+  for (int n = 0; n < ngcols; ++n) {
+    double l22 = 0.0;
+    for (int m = 0; m < nedges; m++) l22 += NG(m, n) * NG(m, n);
+
+    // skip column of matrix G
+    if (n >= ncols && l22 < tol) continue;
+
+    map.push_back(n);
+    l22 = 1.0 / sqrt(l22);
+    for (int m = 0; m < nedges; ++m) NG(m, n) *= l22;
+
+    for (int k = n + 1; k < ngcols; ++k) {
+      double s = 0.0;
+      for (int m = 0; m < nedges; ++m) s += NG(m, n) * NG(m, k);
+      for (int m = 0; m < nedges; ++m) NG(m, k) -= s * NG(m, n);
+    }
+  }
+
+  // create new matrix N
+  int nmap = map.size();
+  N.Reshape(nedges, nmap);
+  for (int n = 0; n < nmap; ++n) {
+    for (int m = 0; m < nedges; ++m) N(m, n) = NG(m, map[n]);
+  }
+}
+
 }  // namespace WhetStone
 }  // namespace Amanzi
-
 
 

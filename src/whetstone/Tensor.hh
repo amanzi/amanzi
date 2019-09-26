@@ -113,7 +113,7 @@ void TensorToVector(const Tensor& T, DenseVector& v);
 void VectorToTensor(const DenseVector& v, Tensor& T);
 
 // -- rotation about 3D axis given by unit vector u
-Tensor RotationMatrix90cw(const AmanziGeometry::Point& u);
+Tensor RotationMatrix90(const AmanziGeometry::Point& u, bool ccw);
 
 }  // namespace WhetStone
 }  // namespace Amanzi

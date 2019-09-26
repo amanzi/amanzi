@@ -305,7 +305,7 @@ void MFD3D_GeneralizedDiffusion::CurvedFaceGeometry_(
   }
   xf /= nnodes;
 
-  // centrer of gravity
+  // weighted center of gravity
   double area(0.0);
 
   xm[0].set(0.0, 0.0, 0.0);
