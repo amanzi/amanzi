@@ -103,7 +103,6 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
   int nx_;
   double dt_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_new_;
 
   int order_;
   Teuchos::RCP<WhetStone::DG_Modal> dg_;  
@@ -174,14 +173,8 @@ AdvectionFn<AnalyticDG>::AdvectionFn(
   //factory.set_partitioner(AmanziMesh::Partitioner_type::ZOLTAN_RCB);
   meshfactory.set_preference(AmanziMesh::Preference({AmanziMesh::Framework::MSTK}));
    
-  std::string name = plist.get<std::string>("file name");
-  if (name == "square")
-    mesh_new_ = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx_, nx_);
-  else 
-    mesh_new_ = meshfactory.create(name, true, true);
-
   // cotrol variables
-  name = plist.get<std::string>("face velocity method");
+  std::string name = plist.get<std::string>("face velocity method");
   high_order_velf_ = (name == "high order");
   level_set_velf_ = (name == "level set");
 
@@ -241,9 +234,9 @@ void AdvectionFn<AnalyticDG>::FunctionalTimeDerivative(
   }
 
   // -- source term
-  int nk = (order_ + 1) * (order_ + 2) / 2;
+  int nk = WhetStone::PolynomialSpaceDimension(d, order_);
 
-  WhetStone::Polynomial sol, src, pc(2, order_);
+  WhetStone::Polynomial sol, src, pc(d, order_);
   WhetStone::DenseVector data(pc.size());
   WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh_);
 
@@ -261,7 +254,7 @@ void AdvectionFn<AnalyticDG>::FunctionalTimeDerivative(
       int n = it.PolynomialPosition();
       int k = it.MonomialSetOrder();
 
-      WhetStone::Polynomial cmono(2, it.multi_index(), 1.0);
+      WhetStone::Polynomial cmono(d, it.multi_index(), 1.0);
       cmono.set_origin(xc);      
 
       WhetStone::Polynomial tmp = src * cmono;      
@@ -287,7 +280,8 @@ void AdvectionFn<AnalyticDG>::FunctionalTimeDerivative(
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
-        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
+        fabs(xf[d - 1]) < 1e-6 || fabs(xf[d - 1] - 1.0) < 1e-6) {
       AmanziGeometry::Point vp = ana_.VelocityExact(xf, t); 
 
       if (vp * normal < -1e-12) {
@@ -348,56 +342,44 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_Projection(
     const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& velf,
     const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& divc)
 {
-  // deform auxiliary mesh for time interval (t, t + dt)
-  int dim = mesh_->space_dimension();
-  AmanziGeometry::Point xv(dim), yv(dim), sv(dim);
-  AmanziMesh::Entity_ID_List faces, nodeids;
-  AmanziGeometry::Point_List new_positions, final_positions;
-
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  int nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
-
-  for (int v = 0; v < nnodes_wghost; ++v) {
-    mesh_->node_get_coordinates(v, &xv);
-    yv = ana_.VelocityExact(xv, t); 
-    xv += yv * dt;
-
-    nodeids.push_back(v);
-    new_positions.push_back(xv);
-  }
-  mesh_new_->deform(nodeids, new_positions, false, &final_positions);
+  int d = mesh_->space_dimension();
 
   // create a mesh map at time t
   const Teuchos::ParameterList& map_list = plist_.sublist("maps");
   WhetStone::MeshMapsFactory maps_factory;
-  auto maps = maps_factory.Create(map_list, mesh_, mesh_new_);
+  auto maps = maps_factory.Create(map_list, mesh_, mesh_);
 
   // calculate approximate velocities
+  AmanziMesh::Entity_ID_List faces, edges;
+  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+
   double dtfac = 1.0 / dt;
   for (int c = 0; c < ncells_wghost; ++c) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
     WhetStone::VectorPolynomial v;
-    std::vector<WhetStone::VectorPolynomial> vvf;
+    std::vector<WhetStone::VectorPolynomial> vvf, vve;
 
-    if (high_order_velf_) { // use high-order face velocity 
-      for (int n = 0; n < nfaces; ++n) {
-        int f = faces[n];
-        ana_.VelocityTaylor(mesh_->face_centroid(f), t, v);
-        vvf.push_back(v * dt);
-        (*velf)[f] = v * (mesh_->face_normal(f) * weak_sign_);
-      }
-    } else {
-      for (int n = 0; n < nfaces; ++n) {
-        int f = faces[n];
-        maps->VelocityFace(f, v);
-        vvf.push_back(v);
-        (*velf)[f] = (v * mesh_->face_normal(f)) * dtfac * weak_sign_;
+    for (int n = 0; n < nfaces; ++n) {
+      int f = faces[n];
+      ana_.VelocityTaylor(mesh_->face_centroid(f), t, v);
+      vvf.push_back(v * dt);
+      (*velf)[f] = v * (mesh_->face_normal(f) * weak_sign_);
+    }
+
+    if (d == 3) {
+      mesh_->cell_get_edges(c, &edges);
+      int nedges = edges.size();
+
+      for (int n = 0; n < nedges; ++n) {
+        int e = edges[n];
+        ana_.VelocityTaylor(mesh_->edge_centroid(e), t, v);
+        vve.push_back(v * dt);
       }
     }
 
-    maps->VelocityCell(c, vvf, vvf, (*velc)[c]);
+    maps->VelocityCell(c, vve, vvf, (*velc)[c]);
     (*velc)[c] *= -dtfac * weak_sign_;
 
     if (divergence_term_) (*divc)[c] = Divergence((*velc)[c]);
@@ -421,6 +403,8 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
   int dim = mesh_->space_dimension();
   int nk = u_c.NumVectors();
   WhetStone::DenseVector data(nk);
+
+  AMANZI_ASSERT(dim == 2);
 
   int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
@@ -555,7 +539,7 @@ void AdvectionFn<AnalyticDG>::ApplyLimiter(std::string& name, CompositeVector& u
     Epetra_MultiVector& grad_c = *grad->ViewComponent("cell", true);
 
     for (int c = 0; c < ncells_owned; ++c) {
-      // mean value is preserved automatiacally for the partially orthogonalized basis
+      // mean value is preserved automatically for the partially orthogonalized basis
       // otherwise, a more complicated routine is needed
       AMANZI_ASSERT(dg_->cell_basis(c).id() == WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
 
@@ -610,7 +594,7 @@ bool inside2(const Amanzi::AmanziGeometry::Point& p) {
 }
 
 template <class AnalyticDG>
-void AdvectionTransient(std::string filename, int nx, int ny,
+void AdvectionTransient(std::string filename, int nx, int ny, int nz,
                         double dt0, double tend,
                         const Amanzi::Explicit_TI::method_t& rk_method,
                         bool conservative_form = true, 
@@ -646,7 +630,7 @@ void AdvectionTransient(std::string filename, int nx, int ny,
   { 
     std::string problem = (conservative_form) ? ", conservative PDE" : "";
     if (MyPID == 0) {
-      std::cout << "\nTest: 2D dG transient advection: " << filename 
+      std::cout << "\nTest: dG transient advection: " << filename 
                 << ", order=" << order << problem 
                 << ", basis=" << basis 
                 << "\n      weak formulation=\"" << weak_form << "\""
@@ -666,17 +650,16 @@ void AdvectionTransient(std::string filename, int nx, int ny,
   }
 
   // create a mesh framework
-  ParameterList region_list = plist.sublist("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
-
-  MeshFactory meshfactory(comm,gm);
+  MeshFactory meshfactory(comm, Teuchos::null);
   //meshfactory.set_partitioner(AmanziMesh::Partitioner_type::ZOLTAN_RCB);
   meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
   RCP<const Mesh> mesh;
   if (nx == 0 || ny == 0)
     mesh = meshfactory.create(filename, true, true);
-  else
+  else if (nz == 0) 
     mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, ny);
+  else 
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny);
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
@@ -689,7 +672,6 @@ void AdvectionTransient(std::string filename, int nx, int ny,
   OutputXDMF io(iolist, mesh, true, false);
 
   // create main advection class
-  plist.set<std::string>("file name", filename);
   plist.set<std::string>("face velocity method", face_velocity_method);
 
   auto dg = Teuchos::rcp(new WhetStone::DG_Modal(dg_list, mesh));
@@ -765,83 +747,82 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   double dT(0.1), T1(1.0);
   auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
   exact_solution_expected = true;
-  AdvectionTransient<AnalyticDG02b>("square", 4,4, dT,T1, rk_order, false);
-  AdvectionTransient<AnalyticDG02b>("square", 4,4, dT,T1, rk_order, false, "gauss points");
+  AdvectionTransient<AnalyticDG02b>("square", 4,4,0, dT,T1, rk_order, false);
+  AdvectionTransient<AnalyticDG02b>("square", 4,4,0, dT,T1, rk_order, false, "gauss points");
 
   exact_solution_expected = false;
-  AdvectionTransient<AnalyticDG06b>("square", 4,4, dT,T1, rk_order);
-  AdvectionTransient<AnalyticDG06>("square",  4,4, dT,T1, rk_order, false, "primal");
-  AdvectionTransient<AnalyticDG06>("square",  4,4, dT,T1, rk_order, false, "dual", "high order");
-  AdvectionTransient<AnalyticDG06>("square",  4,4, dT,T1, rk_order, false, "gauss points", "high order", "Barth-Jespersen dg");
+  AdvectionTransient<AnalyticDG06b>("square", 4,4,0, dT,T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("square",  4,4,0, dT,T1, rk_order, false, "primal");
+  AdvectionTransient<AnalyticDG06>("square",  4,4,0, dT,T1, rk_order, false, "dual", "high order");
+  AdvectionTransient<AnalyticDG06>("square",  4,4,0, dT,T1, rk_order, false, "gauss points", "high order", "Barth-Jespersen dg");
 
   /*
   double dT(0.01), T1(1.0);
   auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
-  AdvectionTransient<AnalyticDG06>("square",  16, 16, dT,  T1, rk_order);
-  AdvectionTransient<AnalyticDG06>("square",  32, 32, dT/2,T1, rk_order);
-  AdvectionTransient<AnalyticDG06>("square",  64, 64, dT/4,T1, rk_order);
-  AdvectionTransient<AnalyticDG06>("square", 128,128, dT/8,T1, rk_order);
-  */
-
-  /*
-  double dT(0.01), T1(1.0);
-  auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
-  AdvectionTransient<AnalyticDG06>("test/triangular8.exo",    8,0, dT,   T1, rk_order);
-  AdvectionTransient<AnalyticDG06>("test/triangular16.exo",  16,0, dT/2, T1, rk_order);
-  AdvectionTransient<AnalyticDG06>("test/triangular32.exo",  32,0, dT/4, T1, rk_order);
-  AdvectionTransient<AnalyticDG06>("test/triangular64.exo",  64,0, dT/8, T1, rk_order);
-  AdvectionTransient<AnalyticDG06>("test/triangular128.exo",128,0, dT/16,T1  rk_order);
-  */
-
-  /*
-  double dT(0.001), T1(1.0);
-  auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
-  AdvectionTransient<AnalyticDG06>("test/median15x16.exo",   16,0, dT,  T1, rk_order);
-  AdvectionTransient<AnalyticDG06>("test/median32x33.exo",   32,0, dT/2,T1, rk_order);
-  AdvectionTransient<AnalyticDG06>("test/median63x64.exo",   64,0, dT/4,T1, rk_order);
-  AdvectionTransient<AnalyticDG06>("test/median127x128.exo",128,0, dT/8,T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("square",  16, 0, 0, dT,  T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("square",  32, 0, 0, dT/2,T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("square",  64, 0, 0, dT/4,T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("square", 128, 0, 0, dT/8,T1, rk_order);
   */
 
   /*
   double dT(0.01), T1(1.0);
   auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
-  AdvectionTransient<AnalyticDG06>("test/mesh_poly20x20.exo",   20,0, dT,  T1, rk_order);
-  AdvectionTransient<AnalyticDG06>("test/mesh_poly40x40.exo",   40,0, dT/2,T1, rk_order);
-  AdvectionTransient<AnalyticDG06>("test/mesh_poly80x80.exo",   80,0, dT/4,T1, rk_order);
-  AdvectionTransient<AnalyticDG06>("test/mesh_poly160x160.exo",160,0, dT/8,T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("test/triangular8.exo",    8,0,0, dT,   T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("test/triangular16.exo",  16,0,0, dT/2, T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("test/triangular32.exo",  32,0,0, dT/4, T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("test/triangular64.exo",  64,0,0, dT/8, T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("test/triangular128.exo",128,0,0, dT/16,T1  rk_order);
   */
 
   /*
   double dT(0.001), T1(1.0);
   auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
-  AdvectionTransient<AnalyticDG07>("square", 20, 20, dT,  T1, rk_order, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("square", 40, 40, dT/2,T1, rk_order, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("square", 80, 80, dT/4,T1, rk_order, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("square",160,160, dT/8,T1, rk_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG06>("test/median15x16.exo",   16,0,0, dT,  T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("test/median32x33.exo",   32,0,0, dT/2,T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("test/median63x64.exo",   64,0,0, dT/4,T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("test/median127x128.exo",128,0,0, dT/8,T1, rk_order);
+  */
+
+  /*
+  double dT(0.01), T1(1.0);
+  auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
+  AdvectionTransient<AnalyticDG06>("test/mesh_poly20x20.exo",   20,0,0, dT,  T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("test/mesh_poly40x40.exo",   40,0,0, dT/2,T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("test/mesh_poly80x80.exo",   80,0,0, dT/4,T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("test/mesh_poly160x160.exo",160,0,0, dT/8,T1, rk_order);
   */
 
   /*
   double dT(0.001), T1(1.0);
   auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
-  AdvectionTransient<AnalyticDG07>("test/median15x16.exo",   16,0, dT,  T1, rk_order, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("test/median32x33.exo",   32,0, dT/2,T1, rk_order, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("test/median63x64.exo",   64,0, dT/4,T1, rk_order, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("test/median127x128.exo",128,0, dT/8,T1, rk_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("square", 20, 20, 0, dT,  T1, rk_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("square", 40, 40, 0, dT/2,T1, rk_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("square", 80, 80, 0, dT/4,T1, rk_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("square",160,160, 0, dT/8,T1, rk_order, false, "primal", "level set");
+  */
+
+  /*
+  double dT(0.001), T1(1.0);
+  auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
+  AdvectionTransient<AnalyticDG07>("test/median15x16.exo",   16,0,0, dT,  T1, rk_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("test/median32x33.exo",   32,0,0, dT/2,T1, rk_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("test/median63x64.exo",   64,0,0, dT/4,T1, rk_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("test/median127x128.exo",128,0,0, dT/8,T1, rk_order, false, "primal", "level set");
   */
 
   /*
   double dT(0.001), T1(0.8);
   auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
-  AdvectionTransient<AnalyticDG07b>("square", 128, 128, dT/6,T1, rk_order, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07b>("test/median127x128.exo", 128,0, dT/6,T1, rk_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07b>("square", 128, 128, 0, dT/6,T1, rk_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07b>("test/median127x128.exo", 128,0,0, dT/6,T1, rk_order, false, "primal", "level set");
   */
 
   /*
   double dT(0.01), T1(6.2832);
   auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
-  AdvectionTransient<AnalyticDG08>("square", 64,64, dT/4,T1, rk_order, true, "dual", "high order", "none");
-  AdvectionTransient<AnalyticDG08>("square", 160,160, dT/8,T1, rk_order, true, "dual", "high order", "none");
-  AdvectionTransient<AnalyticDG08>("test/median127x128.exo", 128,0, dT/8,T1, rk_order, true, "dual", "high order", "none");
+  AdvectionTransient<AnalyticDG08>("square", 160,160,0, dT/8,T1, rk_order, true, "dual", "high order", "none");
+  AdvectionTransient<AnalyticDG08>("test/median127x128.exo", 128,0,0, dT/8,T1, rk_order, true, "dual", "high order", "none");
   */
 }
 

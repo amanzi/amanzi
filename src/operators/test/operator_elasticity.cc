@@ -178,7 +178,7 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
 
   // compute velocity error
   double unorm, ul2_err, uinf_err;
-  ana.ComputeNodeError(solution, 0.0, unorm, ul2_err, uinf_err);
+  ana.VectorNodeError(solution, 0.0, unorm, ul2_err, uinf_err);
 
   if (MyPID == 0) {
     ul2_err /= unorm;

@@ -28,6 +28,7 @@ void DeformMesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh0,
 AmanziGeometry::Point TaylorGreenVortex(double t, const AmanziGeometry::Point& xv);
 AmanziGeometry::Point Rotation2D(double t, const AmanziGeometry::Point& xv);
 AmanziGeometry::Point CompressionExpansion2D(double t, const AmanziGeometry::Point& xv);
+AmanziGeometry::Point CompressionExpansion3D(double t, const AmanziGeometry::Point& xv);
 AmanziGeometry::Point Unused(double t, const AmanziGeometry::Point& xv);
 
 
@@ -70,6 +71,8 @@ void DeformMesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh0,
       yv = Unused(t, xv);
     } else if (deform == 4) {
       yv = CompressionExpansion2D(t, xv);
+    } else if (deform == 5) {
+      yv = CompressionExpansion3D(t, xv);
     } else if (deform == 6) {
       yv = Rotation2D(t, xv);
     } else if (deform == 7) {
@@ -115,13 +118,12 @@ AmanziGeometry::Point TaylorGreenVortex(double t, const AmanziGeometry::Point& x
 inline
 AmanziGeometry::Point Rotation2D(double t, const AmanziGeometry::Point& xv)
 {
-  AmanziGeometry::Point yv(2);
-
   double phi = t * 2 * M_PI;
   double cs(std::cos(phi)), sn(std::sin(phi));
+
+  AmanziGeometry::Point yv(2);
   yv[0] = cs * xv[0] - sn * xv[1];
   yv[1] = sn * xv[0] + cs * xv[1];
-
   return yv;
 }
 
@@ -133,12 +135,19 @@ inline
 AmanziGeometry::Point CompressionExpansion2D(double t, const AmanziGeometry::Point& xv)
 {
   AmanziGeometry::Point yv(2);
-
   yv[0] += t * xv[0] * xv[1] * (1.0 - xv[0]) / 2;
   yv[1] += t * xv[0] * xv[1] * (1.0 - xv[1]) / 2;
-  // yv[0] += t * xv[0] * (1.0 - xv[0]) / 2;
-  // yv[1] += t * xv[1] * (1.0 - xv[1]) / 2;
+  return yv;
+}
 
+
+inline
+AmanziGeometry::Point CompressionExpansion3D(double t, const AmanziGeometry::Point& xv)
+{
+  AmanziGeometry::Point yv(3);
+  yv[0] += t * xv[0] * xv[1] * xv[2] * (1.0 - xv[0]) / 2;
+  yv[1] += t * xv[0] * xv[1] * xv[2] * (1.0 - xv[1]) / 2;
+  yv[2] += t * xv[0] * xv[1] * xv[2] * (1.0 - xv[2]) / 2;
   return yv;
 }
 
@@ -150,10 +159,8 @@ inline
 AmanziGeometry::Point Unused(double t, const AmanziGeometry::Point& xv)
 {
   AmanziGeometry::Point yv(2);
-
   yv[0] = xv[0] * xv[1] + (1.0 - xv[1]) * std::pow(xv[0], 0.8);
   yv[1] = xv[1] * xv[0] + (1.0 - xv[0]) * std::pow(xv[1], 0.8);
-
   return yv;
 }
 
