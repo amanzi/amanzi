@@ -62,7 +62,7 @@ class BilinearForm : public virtual InnerProductL2,
   }
 
   virtual int DivergenceMatrix(int c, DenseMatrix& A) {
-    Errors::Message msg("DivergenceMatrix is not supported.");
+    Errors::Message msg("Function DivergenceMatrix is not supported.");
     Exceptions::amanzi_throw(msg);
     return 1;
   }
@@ -86,6 +86,12 @@ class BilinearForm : public virtual InnerProductL2,
   using InnerProductH1::StiffnessMatrix;
   virtual int StiffnessMatrix(int c, const VectorPolynomial& K, DenseMatrix& A) {
     Errors::Message msg("StiffnessMatrix: polynomial coefficient is not supported.");
+    Exceptions::amanzi_throw(msg);
+    return 1;
+  }
+  // -- general coefficient and qudrature rule of order order
+  virtual int StiffnessMatrix(int c, const WhetStoneFunction& K, DenseMatrix& A, int order) {
+    Errors::Message msg("StiffnessMatrix: general coefficient is not supported.");
     Exceptions::amanzi_throw(msg);
     return 1;
   }

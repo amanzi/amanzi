@@ -25,6 +25,7 @@
 #include "CompositeVector.hh"
 #include "DenseMatrix.hh"
 #include "Tensor.hh"
+#include "WhetStoneFunction.hh"
 
 // Operators
 #include "PDE_HelperDiscretization.hh"
@@ -40,7 +41,9 @@ class PDE_DiffusionDG : public PDE_HelperDiscretization {
                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       PDE_HelperDiscretization(mesh),
       Kc_(NULL),
-      Kf_(NULL)
+      Kc_func_(NULL),
+      Kf_(NULL),
+      coef_type_(CoefType::CONSTANT)
   {
     global_op_ = Teuchos::null;
     operator_type_ = OPERATOR_DIFFUSION_DG;
@@ -49,8 +52,9 @@ class PDE_DiffusionDG : public PDE_HelperDiscretization {
 
   // main virtual members
   // -- setup
-  void SetProblemCoefficients(const std::shared_ptr<std::vector<WhetStone::Tensor> >& Kc,
-                              const std::shared_ptr<std::vector<double> >& Kf);
+  template<typename T>
+  void Setup(const std::shared_ptr<std::vector<T> >& Kc,
+             const std::shared_ptr<std::vector<double> >& Kf);
 
   // -- creation of an operator
   using PDE_HelperDiscretization::UpdateMatrices;
@@ -72,10 +76,13 @@ class PDE_DiffusionDG : public PDE_HelperDiscretization {
 
  private:
   std::string matrix_;
-  int method_order_;
+  int method_order_, numi_order_;
 
+  // models for coefficeints
   std::shared_ptr<std::vector<WhetStone::Tensor> > Kc_;
+  std::shared_ptr<std::vector<WhetStone::WhetStoneFunction*> > Kc_func_;
   std::shared_ptr<std::vector<double> > Kf_;
+  CoefType coef_type_;
 
   // operator and schemas
   Schema global_schema_col_, global_schema_row_;
@@ -86,6 +93,30 @@ class PDE_DiffusionDG : public PDE_HelperDiscretization {
 
   Teuchos::RCP<WhetStone::DG_Modal> dg_;
 };
+
+
+/* ******************************************************************
+* Speciation of a member function
+****************************************************************** */
+template<>
+inline
+void PDE_DiffusionDG::Setup(
+   const std::shared_ptr<std::vector<WhetStone::Tensor> >& Kc,
+   const std::shared_ptr<std::vector<double> >& Kf) {
+  Kc_ = Kc;
+  Kf_ = Kf;
+  coef_type_ = CoefType::CONSTANT;
+}
+
+template<>
+inline
+void PDE_DiffusionDG::Setup(
+   const std::shared_ptr<std::vector<WhetStone::WhetStoneFunction*> >& Kc,
+   const std::shared_ptr<std::vector<double> >& Kf) {
+  Kc_func_ = Kc;
+  Kf_ = Kf;
+  coef_type_ = CoefType::FUNCTION;
+}
 
 }  // namespace Operators
 }  // namespace Amanzi

@@ -46,7 +46,7 @@ class NumericalIntegration {
       int c, const std::vector<const WhetStoneFunction*>& funcs, int order) const;
 
   double IntegrateFunctionsTriangulatedFace(
-      int c, const std::vector<const WhetStoneFunction*>& funcs, int order) const;
+      int f, const std::vector<const WhetStoneFunction*>& funcs, int order) const;
 
   double IntegrateFunctionsEdge(
       int e, const std::vector<const WhetStoneFunction*>& funcs, int order) const {

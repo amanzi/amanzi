@@ -41,9 +41,18 @@
 /* *****************************************************************
 * This test diffusion solver with full tensor and source term.
 * **************************************************************** */
+class MyFunction : public Amanzi::WhetStone::WhetStoneFunction {
+ public:
+  MyFunction(AnalyticDG02* ana) : ana_(ana) {};
+  ~MyFunction() {};
+
+  virtual double Value(const Amanzi::AmanziGeometry::Point& x) const override { return (ana_->Tensor(x, 0.0))(0, 0); }
+  AnalyticDG02* ana_;
+};
+
 void OperatorDiffusionDG(std::string solver_name,
                          std::string dg_basis = "regularized",
-                         int dim = 2) {
+                         int dim = 2, int numi_order = 0) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -80,6 +89,7 @@ void OperatorDiffusionDG(std::string solver_name,
 
   // modify diffusion coefficient
   auto Kc = std::make_shared<std::vector<WhetStone::Tensor> >();
+  auto Kc_func = std::make_shared<std::vector<WhetStone::WhetStoneFunction*> >();
   auto Kf = std::make_shared<std::vector<double> >();
 
   AnalyticDG02 ana(mesh, 2, false);
@@ -88,6 +98,13 @@ void OperatorDiffusionDG(std::string solver_name,
     const Point& xc = mesh->cell_centroid(c);
     const WhetStone::Tensor& Ktmp = ana.Tensor(xc, 0.0);
     Kc->push_back(Ktmp);
+  }
+
+  MyFunction Ktmp(&ana);
+  if (numi_order > 0) {
+    for (int c = 0; c < ncells_wghost; c++) {
+      Kc_func->push_back(&Ktmp);
+    }
   }
 
   for (int f = 0; f < nfaces_wghost; f++) {
@@ -135,6 +152,7 @@ void OperatorDiffusionDG(std::string solver_name,
 
   // create diffusion operator 
   // -- primary term
+  op_list.set<int>("quadrature order", numi_order);
   op_list.sublist("schema").set<std::string>("dg basis", dg_basis);
   Teuchos::RCP<PDE_DiffusionDG> op = Teuchos::rcp(new PDE_DiffusionDG(op_list, mesh));
   auto global_op = op->global_operator();
@@ -178,7 +196,10 @@ void OperatorDiffusionDG(std::string solver_name,
   }
 
   // populate the diffusion operator
-  op->SetProblemCoefficients(Kc, Kf);
+  if (numi_order == 0) 
+    op->Setup(Kc, Kf);
+  else 
+    op->Setup(Kc_func, Kf);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // update the source term
@@ -235,7 +256,7 @@ void OperatorDiffusionDG(std::string solver_name,
   double pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean, pl2_int;
   ana.ComputeCellError(dg, p, 0.0, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean, pl2_int);
 
-  if (MyPID == 0) {
+  if (MyPID == 0 && numi_order == 0) {
     printf("Mean:     L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_mean, pinf_mean, solver->num_itrs());
     printf("Total:    L2(p)=%9.6f  Inf(p)=%9.6f\n", pl2_err, pinf_err);
     printf("Integral: L2(p)=%9.6f\n", pl2_int);
@@ -251,4 +272,7 @@ TEST(OPERATOR_DIFFUSION_DG) {
   OperatorDiffusionDG("Amesos1");
   OperatorDiffusionDG("Amesos2: basker");
   OperatorDiffusionDG("Amesos2: superludist");
+
+  int order = 2;
+  OperatorDiffusionDG("AztecOO CG", "orthonormalized", 2, order);
 }

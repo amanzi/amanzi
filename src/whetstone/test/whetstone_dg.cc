@@ -218,6 +218,60 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
 
 
 /* ****************************************************************
+* Test of 2D DG stiffness matrices
+**************************************************************** */
+class MyFunction : public Amanzi::WhetStone::WhetStoneFunction {
+  double Value(const Amanzi::AmanziGeometry::Point& x) const { return 1.0; }
+};
+
+TEST(DG2D_STIFFNESS_MATRIX) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "Test: DG2D stiffness matrices" << std::endl;
+  auto comm = Amanzi::getDefaultComm();
+
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.5, 0.5, 1, 1); 
+
+  DenseMatrix M1, M2;
+  Tensor T(2, 1);
+  T(0, 0) = 1.0;
+
+  MyFunction func;
+
+  for (int k = 0; k < 3; k++) {
+    Teuchos::ParameterList plist;
+    plist.set<std::string>("dg basis", "regularized")
+         .set<int>("method order", k);
+    DG_Modal dg(plist, mesh);
+
+    dg.StiffnessMatrix(0, T, M1);
+    dg.StiffnessMatrix(0, func, M2, 2);
+    int nk = M1.NumRows();
+
+    printf("Stiffness matrix for order=%d\n", k);
+    for (int i = 0; i < nk; i++) {
+      for (int j = 0; j < nk; j++ ) printf("%9.5f ", M2(i, j)); 
+      printf("\n");
+    }
+
+    if (k > 1) {
+      double area = mesh->cell_volume(0);
+      for (int i = 1; i < 2; ++i) {
+        CHECK_CLOSE(M1(i, i), area * 4, 1e-12);
+      }
+    }
+
+    M1 -= M2;
+    CHECK_CLOSE(0.0, M1.NormInf(), 1e-12);
+  }
+}
+
+
+/* ****************************************************************
 * Test of DG2D flux matrices on a face
 **************************************************************** */
 void Run2DFluxMatrix(bool upwind, bool jump_on_test) {

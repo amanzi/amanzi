@@ -33,6 +33,13 @@ typedef enum { OPERATOR_DIFFUSION_MFD,
                OPERATOR_ELECTROMAGNETICS,
                OPERATOR_MAGNETIC_DIFFUSION} OperatorType;
 
+// coefficient type
+typedef enum { CONSTANT = 0,  // includes tensorial coefficients
+               POLYNOMIAL,
+               VECTOR_POLYNOMIAL,
+               VECTOR_SPACETIME_POLYNOMIAL,
+               FUNCTION } CoefType;
+
 // Constants in the next block must powers of 2.
 const int OPERATOR_SCHEMA_DOFS_FACE = 1;
 const int OPERATOR_SCHEMA_DOFS_CELL = 2;

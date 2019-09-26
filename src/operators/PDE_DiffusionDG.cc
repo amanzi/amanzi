@@ -41,6 +41,7 @@ void PDE_DiffusionDG::Init_(Teuchos::ParameterList& plist)
 
   matrix_ = plist.get<std::string>("matrix type");
   method_order_ = schema_list.get<int>("method order", 0);
+  numi_order_ = plist.get<int>("quadrature order", method_order_);
   
   dg_ = Teuchos::rcp(new WhetStone::DG_Modal(schema_list, mesh_));
   my_schema.Init(dg_, mesh_, base);
@@ -93,18 +94,6 @@ void PDE_DiffusionDG::Init_(Teuchos::ParameterList& plist)
 
 
 /* ******************************************************************
-* Setup methods: scalar coefficients
-****************************************************************** */
-void PDE_DiffusionDG::SetProblemCoefficients(
-   const std::shared_ptr<std::vector<WhetStone::Tensor> >& Kc,
-   const std::shared_ptr<std::vector<double> >& Kf) 
-{
-  Kc_ = Kc;
-  Kf_ = Kf;
-}
-
-
-/* ******************************************************************
 * Populate face-based 2x2 matrices on interior faces and 1x1 matrices
 * on boundary faces.
 ****************************************************************** */
@@ -121,25 +110,44 @@ void PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
   Kc1(0, 0) = 1.0;
   Kc2(0, 0) = 1.0;
 
-  for (int c = 0; c != ncells_owned; ++c) {
-    if (Kc_.get()) Kc1 = (*Kc_)[c];
-    dg_->StiffnessMatrix(c, Kc1, Acell);
-    local_op_->matrices[c] = Acell;
+  // volumetric term
+  if (coef_type_ == CoefType::CONSTANT) {
+    for (int c = 0; c != ncells_owned; ++c) {
+      if (Kc_.get()) Kc1 = (*Kc_)[c];
+      dg_->StiffnessMatrix(c, Kc1, Acell);
+      local_op_->matrices[c] = Acell;
+    }
+  } else if (coef_type_ == CoefType::FUNCTION) {
+    for (int c = 0; c != ncells_owned; ++c) {
+      dg_->StiffnessMatrix(c, *(*Kc_func_)[c], Acell, numi_order_);
+      local_op_->matrices[c] = Acell;
+    }
   }
 
+  // strenghen stability term
   for (int f = 0; f != nfaces_owned; ++f) {
     if (Kf_.get()) Kf = (*Kf_)[f];
     dg_->FaceMatrixPenalty(f, Kf, Aface);
     penalty_op_->matrices[f] = Aface;
   }
 
+  // stability terms
   for (int f = 0; f != nfaces_owned; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    if (Kc_.get()) {
-      Kc1 = (*Kc_)[cells[0]]; 
-      if (cells.size() > 1) Kc2 = (*Kc_)[cells[1]]; 
+    int c1 = cells[0];
+    int c2 = (cells.size() > 1) ? cells[1] : c1;
+
+    if (coef_type_ == CoefType::CONSTANT) {
+      if (Kc_.get()) {
+        Kc1 = (*Kc_)[c1]; 
+        Kc2 = (*Kc_)[c2]; 
+      }
+      dg_->FaceMatrixJump(f, Kc1, Kc2, Aface);
     }
-    dg_->FaceMatrixJump(f, Kc1, Kc2, Aface);
+    else if (coef_type_ == CoefType::FUNCTION) {
+      dg_->FaceMatrixJump(f, *(*Kc_func_)[c1], *(*Kc_func_)[c2], Aface, numi_order_);
+    }
+
     Aface *= -1.0;
     jump_up_op_->matrices[f] = Aface;
 

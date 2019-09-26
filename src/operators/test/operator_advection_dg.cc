@@ -256,7 +256,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   op_flux->UpdateMatrices(velf.ptr());
   op_flux->ApplyBCs(true, true, true);
 
-  op_adv->SetupPolyVector(velc);
+  op_adv->Setup(velc, false);
   op_adv->UpdateMatrices();
 
   if (conservative_form || weak_form == "primal" || weak_form == "gauss points")

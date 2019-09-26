@@ -279,7 +279,7 @@ int DG_Modal::MassMatrixPiecewisePoly_(
 
 
 /* ******************************************************************
-* Stiffness matrix for Taylor basis functions. 
+* Stiffness matrix for Taylor basis functions and tensorial coefficient
 ****************************************************************** */
 int DG_Modal::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 {
@@ -326,6 +326,58 @@ int DG_Modal::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
             multi_index[i]++;
             multi_index[j]++;
           }
+        }
+      }
+
+      A(l, k) = A(k, l) = sum; 
+    }
+  }
+
+  basis_[c]->BilinearFormNaturalToMy(A);
+
+  return 0;
+}
+
+
+/* ******************************************************************
+* Stiffness matrix for Taylor basis functions and general coefficient
+****************************************************************** */
+int DG_Modal::StiffnessMatrix(int c, const WhetStoneFunction& K, DenseMatrix& A, int order)
+{
+  int multi_index[3];
+  Polynomial p(d_, order_);
+
+  int nrows = p.size();
+  A.Reshape(nrows, nrows);
+
+  std::vector<const WhetStoneFunction*> funcs(2);
+  funcs[0] = &K;
+
+  for (auto it = p.begin(); it < p.end(); ++it) {
+    const int* index = it.multi_index();
+    int k = it.PolynomialPosition();
+
+    for (auto jt = it; jt < p.end(); ++jt) {
+      const int* jndex = jt.multi_index();
+      int l = jt.PolynomialPosition();
+
+      for (int i = 0; i < d_; ++i) {
+        multi_index[i] = index[i] + jndex[i];
+      }
+
+      double sum(0.0), tmp;
+      for (int i = 0; i < d_; ++i) {
+        if (index[i] > 0 && jndex[i] > 0) {
+          multi_index[i] -= 2;
+
+          Monomial p0(d_, multi_index, 1.0);
+          p0.set_origin(mesh_->cell_centroid(c));
+          funcs[1] = &p0;
+
+          tmp = numi_.IntegrateFunctionsTriangulatedCell(c, funcs, order);
+          sum += tmp * index[i] * jndex[i];
+
+          multi_index[i] += 2;
         }
       }
 
@@ -868,8 +920,7 @@ int DG_Modal::FluxMatrixRusanov(
 
 
 /* *****************************************************************
-* Jump matrix for Taylor basis:
-*
+* Jump matrix for Taylor basis using tensors:
 *   \Int_f ( {K \grad \rho} [\psi] ) dS
 ****************************************************************** */
 int DG_Modal::FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMatrix& A)
@@ -946,6 +997,100 @@ int DG_Modal::FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMat
 
         polys[1] = &q0;
         coef10 = numi_.IntegratePolynomialsFace(f, polys);
+
+        A(k, size + l) = -coef01 / ncells;
+        A(size + k, size + l) = -coef11 / ncells;
+        A(size + k, l) = coef10 / ncells;
+      }
+    }
+  }
+
+  if (ncells == 1) {
+    basis_[c1]->BilinearFormNaturalToMy(A);
+  } else {
+    basis_[c1]->BilinearFormNaturalToMy(basis_[c1], basis_[c2], A);
+  }
+
+  return 0;
+}
+
+
+/* *****************************************************************
+* Jump matrix for Taylor basis using functions:
+*   \Int_f ( {K \grad \rho} [\psi] ) dS
+****************************************************************** */
+int DG_Modal::FaceMatrixJump(
+    int f, const WhetStoneFunction& K1, const WhetStoneFunction& K2, DenseMatrix& A, int order)
+{
+  AmanziMesh::Entity_ID_List cells;
+  mesh_->face_get_cells(f, Parallel_type::ALL, &cells);
+  int ncells = cells.size();
+
+  Polynomial poly(d_, order_);
+  int size = poly.size();
+
+  int nrows = ncells * size;
+  A.Reshape(nrows, nrows);
+
+  // Calculate integrals needed for scaling
+  int c1 = cells[0];
+  int c2 = (ncells > 1) ? cells[1] : -1;
+
+  // Calculate co-normals
+  int dir;
+  AmanziGeometry::Point normal = mesh_->face_normal(f, false, c1, &dir);
+  double area = mesh_->face_area(f);
+  normal /= area;
+
+  // integrate traces of polynomials on face f
+  double coef00, coef01, coef10, coef11;
+  Polynomial p0, p1, q0, q1;
+  VectorPolynomial pgrad;
+  std::vector<const WhetStoneFunction*> funcs(3);
+
+  for (auto it = poly.begin(); it < poly.end(); ++it) {
+    const int* idx0 = it.multi_index();
+    int k = PolynomialPosition(d_, idx0);
+
+    Polynomial p0(d_, idx0, 1.0);
+    p0.set_origin(mesh_->cell_centroid(c1));
+
+    pgrad = Gradient(p0);
+    p0 = pgrad * normal;
+
+    for (auto jt = poly.begin(); jt < poly.end(); ++jt) {
+      const int* idx1 = jt.multi_index();
+      int l = PolynomialPosition(d_, idx1);
+
+      Polynomial q0(d_, idx1, 1.0);
+      q0.set_origin(mesh_->cell_centroid(c1));
+
+      funcs[0] = &p0;
+      funcs[1] = &q0;
+      funcs[2] = &K1;
+      coef00 = numi_.IntegrateFunctionsTriangulatedFace(f, funcs, order);
+
+      A(k, l) = coef00 / ncells;
+
+      if (c2 >= 0) {
+        Polynomial p1(d_, idx0, 1.0);
+        p1.set_origin(mesh_->cell_centroid(c2));
+
+        pgrad = Gradient(p1);
+        p1 = pgrad * normal;
+
+        Polynomial q1(d_, idx1, 1.0);
+        q1.set_origin(mesh_->cell_centroid(c2));
+
+        funcs[1] = &q1;
+        coef01 = numi_.IntegrateFunctionsTriangulatedFace(f, funcs, order);
+
+        funcs[0] = &p1;
+        funcs[2] = &K2;
+        coef11 = numi_.IntegrateFunctionsTriangulatedFace(f, funcs, order);
+
+        funcs[1] = &q0;
+        coef10 = numi_.IntegrateFunctionsTriangulatedFace(f, funcs, order);
 
         A(k, size + l) = -coef01 / ncells;
         A(size + k, size + l) = -coef11 / ncells;

@@ -36,6 +36,7 @@
 #include "Tensor.hh"
 #include "VectorObjects.hh"
 #include "WhetStoneDefs.hh"
+#include "WhetStoneFunction.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -78,8 +79,9 @@ class DG_Modal : public BilinearForm {
     return ok;
   }
 
-  // -- stiffness matrices
+  // -- stiffness matrices. General coefficient requires to specify the quadrature order
   virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A) override;
+  virtual int StiffnessMatrix(int c, const WhetStoneFunction& K, DenseMatrix& A, int order) override;
 
   // -- advection matrices
   virtual int AdvectionMatrix(int c, const VectorPolynomial& uc,
@@ -102,6 +104,7 @@ class DG_Modal : public BilinearForm {
 
   // -- interface matrices: jumps and penalty
   int FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMatrix& A);
+  int FaceMatrixJump(int f, const WhetStoneFunction& K1, const WhetStoneFunction& K2, DenseMatrix& A, int order);
   int FaceMatrixPenalty(int f, double Kf, DenseMatrix& A);
 
   // interfaces that are not used

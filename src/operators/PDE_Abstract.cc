@@ -118,40 +118,35 @@ void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   int d(mesh_->space_dimension());
 
-  // identify type of coefficient
-  std::string coef("constant");
-  if (Kpoly_.get()) coef = "polynomial";
-  if (Kvec_.get()) coef = "vector polynomial";
-
   WhetStone::DenseMatrix Mcell, Acell, AcellT;
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
 
-  if (matrix_ == "mass" && coef == "constant") {
+  if (matrix_ == "mass" && coef_type_ == CoefType::CONSTANT) {
     for (int c = 0; c < ncells_owned; ++c) {
-      if (K_.get()) Kc = (*K_)[c];
+      if (Ktensor_.get()) Kc = (*Ktensor_)[c];
       mfd_->MassMatrix(c, Kc, Acell);
       matrix[c] = Acell;
     }
-  } else if (matrix_ == "mass" && coef == "polynomial") {
+  } else if (matrix_ == "mass" && coef_type_ == CoefType::POLYNOMIAL) {
     for (int c = 0; c < ncells_owned; ++c) {
       mfd_->MassMatrix(c, (*Kpoly_)[c], Acell);
       matrix[c] = Acell;
     }
-  } else if (matrix_ == "mass inverse" && coef == "constant") {
+  } else if (matrix_ == "mass inverse" && coef_type_ == CoefType::CONSTANT) {
     for (int c = 0; c < ncells_owned; ++c) {
-      if (K_.get()) Kc = (*K_)[c];
+      if (Ktensor_.get()) Kc = (*Ktensor_)[c];
       mfd_->MassMatrixInverse(c, Kc, Acell);
       matrix[c] = Acell;
     }
-  } else if (matrix_ == "mass inverse" && coef == "polynomial") {
+  } else if (matrix_ == "mass inverse" && coef_type_ == CoefType::POLYNOMIAL) {
     for (int c = 0; c < ncells_owned; ++c) {
       mfd_->MassMatrixInverse(c, (*Kpoly_)[c], Acell);
       matrix[c] = Acell;
     }
-  } else if (matrix_ == "stiffness" && coef == "constant") {
+  } else if (matrix_ == "stiffness" && coef_type_ == CoefType::CONSTANT) {
     for (int c = 0; c < ncells_owned; ++c) {
-      if (K_.get()) Kc = (*K_)[c];
+      if (Ktensor_.get()) Kc = (*Ktensor_)[c];
       mfd_->StiffnessMatrix(c, Kc, Acell);
       matrix[c] = Acell;
     }
@@ -166,7 +161,7 @@ void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
       AcellT.Transpose(Acell);
       matrix[c] = AcellT;
     }
-  } else if (matrix_ == "advection" && coef == "constant") {
+  } else if (matrix_ == "advection" && coef_type_ == CoefType::CONSTANT) {
     const Epetra_MultiVector& u_c = *u->ViewComponent("cell", false);
 
     for (int c = 0; c < ncells_owned; ++c) {
@@ -176,15 +171,15 @@ void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
       mfd_->AdvectionMatrix(c, vc, Acell, grad_on_test_);
       matrix[c] = Acell;
     }
-  } else if (matrix_ == "advection" && coef == "vector polynomial") {
+  } else if (matrix_ == "advection" && coef_type_ == CoefType::VECTOR_POLYNOMIAL) {
     for (int c = 0; c < ncells_owned; ++c) {
-      mfd_->AdvectionMatrix(c, (*Kvec_)[c], Acell, grad_on_test_);
+      mfd_->AdvectionMatrix(c, (*Kvec_poly_)[c], Acell, grad_on_test_);
       matrix[c] = Acell;
     }
   } else {
     Errors::Message msg;
     msg << "Unsupported combination matrix=" << matrix_ 
-        << " and coef=" << coef << "\n";
+        << " and coeffient type=" << coef_type_ << "\n";
     Exceptions::amanzi_throw(msg);
   }
 }
@@ -196,7 +191,7 @@ void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
 void PDE_Abstract::UpdateMatrices(double t) 
 {
   // verify type of coefficient
-  AMANZI_ASSERT(Kvec_st_.get());
+  AMANZI_ASSERT(Kvec_stpoly_.get());
 
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
 
@@ -233,11 +228,11 @@ void PDE_Abstract::CreateStaticMatrices_()
   static_matrices_.resize(ncells_owned);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    int size = (*Kvec_st_)[c][0].size();
+    int size = (*Kvec_stpoly_)[c][0].size();
     static_matrices_[c].clear();
  
     for (int i = 0; i < size; ++i) {
-      for (int k = 0; k < d; ++k) poly[k] = (*Kvec_st_)[c][k][i];
+      for (int k = 0; k < d; ++k) poly[k] = (*Kvec_stpoly_)[c][k][i];
       mfd_->AdvectionMatrix(c, poly, Acell, grad_on_test_);
       static_matrices_[c].push_back(Acell);
     }
