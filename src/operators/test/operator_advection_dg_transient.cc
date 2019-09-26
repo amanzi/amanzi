@@ -754,10 +754,14 @@ void AdvectionTransient(std::string filename, int nx, int ny, int nz,
   double pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean, pl2_int;
   ana.ComputeCellError(*dg, p, tend, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean, pl2_int);
 
+  double pface_inf, grad_pface_inf;
+  ana.ComputeFaceError(*dg, p, tend, pface_inf, grad_pface_inf);
+
   if (MyPID == 0) {
-    printf("nx=%3d (mean) L2(p)=%9.6g  Inf(p)=%9.6g\n", nx, pl2_mean, pinf_mean);
-    printf("      (total) L2(p)=%9.6g  Inf(p)=%9.6g\n", pl2_err, pinf_err);
-    printf("   (integral) L2(p)=%9.6g\n", pl2_int);
+    printf("nx=%3d CELL: (mean) L2(p)=%9.6g  Inf(p)=%9.6g\n", nx, pl2_mean, pinf_mean);
+    printf("            (total) L2(p)=%9.6g  Inf(p)=%9.6g\n", pl2_err, pinf_err);
+    printf("         (integral) L2(p)=%9.6g\n", pl2_int);
+    printf("       FACE:        Inf(p)=%9.6g  Ind(grad p)=%9.6g\n", pface_inf, grad_pface_inf);
     if (exact_solution_expected) 
       CHECK(pl2_mean < 1e-10);
     else if (limiter == "none") 
@@ -769,7 +773,6 @@ void AdvectionTransient(std::string filename, int nx, int ny, int nz,
 
 
 TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
-  /*
   double dT(0.1), T1(1.0);
   exact_solution_expected = true;
   AdvectionTransient<AnalyticDG02b>("square", 4,4,0, dT,T1, 0, false);
@@ -781,7 +784,6 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient<AnalyticDG06>("square",  4,4,0, dT,T1, 0, false, "dual", "high order");
   AdvectionTransient<AnalyticDG06>("square",  4,4,0, dT,T1, 0, false, "gauss points", "high order", "Barth-Jespersen dg");
   AdvectionTransient<AnalyticDG06c>("cube",   2,2,1, dT,T1, 0);
-  */
 
   /*
   int deform(0);
@@ -807,11 +809,13 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient<AnalyticDG06>("test/triangular128.exo",128,0,0, dT/16,T1);
   */
 
+  /*
   double dT(0.002), T1(1.0);
   AdvectionTransient<AnalyticDG06>("test/median15x16.exo",   16,0,0, dT,  T1);
   AdvectionTransient<AnalyticDG06>("test/median32x33.exo",   32,0,0, dT/2,T1);
   AdvectionTransient<AnalyticDG06>("test/median63x64.exo",   64,0,0, dT/4,T1);
   AdvectionTransient<AnalyticDG06>("test/median127x128.exo",128,0,0, dT/8,T1);
+  */
 
   /*
   double dT(0.01), T1(1.0);
