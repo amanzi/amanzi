@@ -175,7 +175,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
     }
     int nents = entities.size();
 
-    // check for a boundary face
+    // check for a boundary entity
     bool found(false);
     for (int n = 0; n != nents; ++n) {
       int x = entities[n];

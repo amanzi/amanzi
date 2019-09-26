@@ -1,12 +1,11 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
 
-  <!-- MESH -->
-  <ParameterList name="mesh">
-    <ParameterList name="unstructured">
-      <ParameterList name="expert">
-        <Parameter name="framework" type="string" value="MSTK"/>
-        <Parameter name="partitioner" type="string" value="zoltan_rcb"/>
+  <!--  REGIONS  -->
+  <ParameterList name="regions">
+    <ParameterList name="Boundary">
+      <ParameterList name="region: boundary">
+        <Parameter name="entity" type="string" value="node"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

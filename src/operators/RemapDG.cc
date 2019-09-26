@@ -348,6 +348,7 @@ void RemapDG::ApplyLimiter(double t, CompositeVector& x)
   x.ScatterMasterToGhosted("cell");
 
   if (limiter_->type() == OPERATOR_LIMITER_BARTH_JESPERSEN_DG ||
+      limiter_->type() == OPERATOR_LIMITER_MICHALAK_GOOCH_DG ||
       limiter_->type() == OPERATOR_LIMITER_BARTH_JESPERSEN_DG_HIERARCHICAL) { 
     limiter_->ApplyLimiter(ids, x.ViewComponent("cell", true), *dg_, bc_model, bc_value);
   } else {

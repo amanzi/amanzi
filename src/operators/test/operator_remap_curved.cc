@@ -287,15 +287,18 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   }
 
   // create initial mesh
+  Teuchos::ParameterList region_list = plist.sublist("regions");
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(dim, region_list, *comm));
+
   auto mlist = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("mesh")));
   Teuchos::RCP<MeshCurved> mesh0, mesh1;
 
   if (dim == 2 && ny != 0) {
-    mesh0 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, comm, mlist));
-    mesh1 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, comm, mlist));
+    mesh0 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, comm, gm, mlist));
+    mesh1 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, comm, gm, mlist));
   } else if (ny == 0) {
-    mesh0 = Teuchos::rcp(new MeshCurved(file_name, comm, mlist));
-    mesh1 = Teuchos::rcp(new MeshCurved(file_name, comm, mlist));
+    mesh0 = Teuchos::rcp(new MeshCurved(file_name, comm, gm, mlist));
+    mesh1 = Teuchos::rcp(new MeshCurved(file_name, comm, gm, mlist));
   }
 
   int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);

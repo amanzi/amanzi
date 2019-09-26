@@ -156,14 +156,20 @@ void RemapDG_Tests<AnalyticDG>::CollectStatistics(double t, const CompositeVecto
 
     Epetra_MultiVector& xc = *rhs.ViewComponent("cell");
     int nk = xc.NumVectors();
-    double xmax[nk], xmin[nk];
+    double xmax[nk], xmin[nk], lmax(-1.0), lmin(-1.0), lavg(-1.0);
     xc.MaxValue(xmax);
     xc.MinValue(xmin);
 
+    if (limiter() != Teuchos::null) {
+      const auto& lim = *limiter()->limiter();
+      lim.MaxValue(&lmax);
+      lim.MinValue(&lmin);
+      lim.MeanValue(&lavg);
+    }
+
     if (mesh0_->get_comm()->MyPID() == 0) {
-      printf("t=%8.5f  L2=%9.5g  nfnc=%5d  sharp=%5.1f%%  umax: ", tglob, l2norm_, nfun_, sharp_);
-      for (int i = 0; i < std::min(nk, 4); ++i) printf("%9.5g ", xmax[i]);
-      printf("  umin: %9.5g\n", xmin[0]);
+      printf("t=%8.5f  L2=%9.5g  nfnc=%5d  sharp=%5.1f%%  limiter: %6.3f %6.3f %6.3f  umax/umin: %9.5g %9.5g\n",
+             tglob, l2norm_, nfun_, sharp_, lmax, lmin, lavg, xmax[0], xmin[0]);
     }
 
     tprint_ += dt_output_;

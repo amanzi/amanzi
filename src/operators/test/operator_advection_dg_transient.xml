@@ -67,7 +67,7 @@
 
     <ParameterList name="flux operator">
       <Parameter name="matrix type" type="string" value="flux"/>
-      <Parameter name="flux formula" type="string" value="upwind"/>
+      <Parameter name="flux formula" type="string" value="downwind"/>
       <Parameter name="jump operator on test function" type="bool" value="false"/>
 
       <ParameterList name="schema">
@@ -119,7 +119,7 @@
 
     <ParameterList name="flux operator">
       <Parameter name="matrix type" type="string" value="flux"/>
-      <Parameter name="flux formula" type="string" value="upwind at gauss points"/>
+      <Parameter name="flux formula" type="string" value="downwind at gauss points"/>
       <Parameter name="jump operator on test function" type="bool" value="false"/>
 
       <ParameterList name="schema">

@@ -310,6 +310,7 @@ TEST(REMAP_DUAL) {
   /*
   double dT(0.01);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
+  std::string maps = "VEM";
   int deform = 1;
   RemapTestsDualRK(rk_method, maps, "",  16, 16,0, dT,    deform);
   RemapTestsDualRK(rk_method, maps, "",  32, 32,0, dT/2,  deform);
@@ -322,7 +323,7 @@ TEST(REMAP_DUAL) {
   double dT(0.01);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
-  int deform = 4;
+  int deform = 1;
   RemapTestsDualRK(rk_method, maps, "test/median15x16.exo",    16,0,0, dT,   deform);
   RemapTestsDualRK(rk_method, maps, "test/median32x33.exo",    32,0,0, dT/2, deform);
   RemapTestsDualRK(rk_method, maps, "test/median63x64.exo",    64,0,0, dT/4, deform);

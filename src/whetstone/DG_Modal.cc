@@ -487,13 +487,12 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
 * The normal in u.n is scaled by the face area. If jump_on_test=true,
 * we calculate
 * 
-*   a \Int { (u.n) \rho^* [\psi] } dS
+*   \Int { (u.n) \rho^* [\psi] } dS
 * 
 * where star means upwind/downwind, \psi is a test function, \rho is 
-* a solution, a=-1 for upwind, a=1 for downwind. Otherwise, we
-* calculate 
+* a solution. Otherwise, we calculate 
 *
-*   a \Int { (u.n) \psi^* [\rho] } dS
+*   \Int { (u.n) \psi^* [\rho] } dS
 ****************************************************************** */
 int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
                          bool upwind, bool jump_on_test, double* flux)
@@ -517,9 +516,9 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
   *flux = un.Value(xf) * dir;
   if (ncells > 1) {
     double vel = *flux;
-    if (upwind) vel = -vel;
+    if (!upwind) vel = -vel;
 
-    if (vel > 0.0) {
+    if (vel < 0.0) {
       id = 1;
     } else {
       dir = -dir;
@@ -645,13 +644,12 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
 * basis and normal velocity u.n. The normal in u.n is scaled by the 
 * face area. If jump_on_test=true, we calculate
 * 
-*   a \Int { (u.n) \rho^* [\psi] } dS
+*   \Int { (u.n) \rho^* [\psi] } dS
 * 
 * where star means upwind/downwind, \psi is a test function, \rho is 
-* a solution, a=-1 for upwind, and a=1 for downwind. Otherwise, we
-* calculate 
+* a solution. Otherwise, we calculate 
 *
-*   a \Int { (u.n) \psi^* [\rho] } dS
+*   \Int { (u.n) \psi^* [\rho] } dS
 ****************************************************************** */
 int DG_Modal::FluxMatrixGaussPoints(
     int f, const Polynomial& un, DenseMatrix& A, bool upwind, bool jump_on_test)
