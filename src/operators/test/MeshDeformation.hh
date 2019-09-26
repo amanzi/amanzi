@@ -124,9 +124,9 @@ AmanziGeometry::Point Rotation2D(double t, const AmanziGeometry::Point& xv)
   double phi = t * 2 * M_PI;
   double cs(std::cos(phi)), sn(std::sin(phi));
 
-  AmanziGeometry::Point yv(2);
-  yv[0] = cs * xv[0] - sn * xv[1];
-  yv[1] = sn * xv[0] + cs * xv[1];
+  AmanziGeometry::Point yv(xv);
+  yv[0] += cs * xv[0] - sn * xv[1];
+  yv[1] += sn * xv[0] + cs * xv[1];
   return yv;
 }
 
@@ -137,7 +137,7 @@ AmanziGeometry::Point Rotation2D(double t, const AmanziGeometry::Point& xv)
 inline
 AmanziGeometry::Point CompressionExpansion2D(double t, const AmanziGeometry::Point& xv)
 {
-  AmanziGeometry::Point yv(2);
+  AmanziGeometry::Point yv(xv);
   yv[0] += t * xv[0] * xv[1] * (1.0 - xv[0]) / 2;
   yv[1] += t * xv[0] * xv[1] * (1.0 - xv[1]) / 2;
   return yv;
@@ -147,7 +147,7 @@ AmanziGeometry::Point CompressionExpansion2D(double t, const AmanziGeometry::Poi
 inline
 AmanziGeometry::Point CompressionExpansion3D(double t, const AmanziGeometry::Point& xv)
 {
-  AmanziGeometry::Point yv(3);
+  AmanziGeometry::Point yv(xv);
   yv[0] += t * xv[0] * xv[1] * xv[2] * (1.0 - xv[0]) / 2;
   yv[1] += t * xv[0] * xv[1] * xv[2] * (1.0 - xv[1]) / 2;
   yv[2] += t * xv[0] * xv[1] * xv[2] * (1.0 - xv[2]) / 2;

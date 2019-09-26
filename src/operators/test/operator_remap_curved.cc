@@ -502,7 +502,7 @@ TEST(REMAP_CURVED_2D) {
   */
 
   /*
-  int nloop = 5;
+  int nloop = 1;
   double dT(0.02 * nloop), T1(1.0 / nloop);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
