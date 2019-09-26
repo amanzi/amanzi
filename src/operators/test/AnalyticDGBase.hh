@@ -241,7 +241,10 @@ void AnalyticDGBase::ComputeFaceError(
     mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
-    double err(0.0), graderr(0.0), tmp;
+    double err(0.0);
+    Amanzi::WhetStone::DenseVector graderr(d_);
+    graderr.PutScalar(0.0);
+
     for (int n = 0; n < ncells; ++n) {
       int c = cells[n];
       const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -263,11 +266,13 @@ void AnalyticDGBase::ComputeFaceError(
 
       // gradient error
       auto grad = Gradient(poly_err);
-      grad.Value(xf).Norm2(&tmp);
-      graderr += tmp;
+      graderr += grad.Value(xf);
     }
-    p_inf = std::max(p_inf, err / nk);
-    grad_p_inf = std::max(grad_p_inf, graderr / nk);
+
+    double tmp;
+    graderr.Norm2(&tmp); 
+    p_inf = std::max(p_inf, fabs(err) / nk);
+    grad_p_inf = std::max(grad_p_inf, tmp / nk);
   }
 
 #ifdef HAVE_MPI

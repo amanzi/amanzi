@@ -98,7 +98,7 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
     points1[i] -= points0[i];
   }
 
-  // velocity is transformed from local to glocal coordinate systems
+  // velocity is transformed from local to global coordinate systems
   int order = points1.size() + 1;
 
   v.resize(d_);

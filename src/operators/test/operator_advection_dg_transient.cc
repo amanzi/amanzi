@@ -515,7 +515,7 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
   for (int f = 0; f < nfaces_wghost; ++f) {
     dt_stable = std::min(dt_stable, mesh_->face_area(f));
   }
-  if (level_set_velf_) dt_stable_min = std::min(dt_stable_min, dt_stable);
+  if (level_set_velf_) dt_stable_min = std::min(dt_stable_min, dt_stable / (2 * order_ + 1));
 }
 
 
@@ -761,7 +761,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, int nz,
     printf("nx=%3d CELL: (mean) L2(p)=%9.6g  Inf(p)=%9.6g\n", nx, pl2_mean, pinf_mean);
     printf("            (total) L2(p)=%9.6g  Inf(p)=%9.6g\n", pl2_err, pinf_err);
     printf("         (integral) L2(p)=%9.6g\n", pl2_int);
-    printf("       FACE:        Inf(p)=%9.6g  Ind(grad p)=%9.6g\n", pface_inf, grad_pface_inf);
+    printf("       FACE:        Inf(p)=%9.6g  Inf(grad p)=%9.6g\n", pface_inf, grad_pface_inf);
     if (exact_solution_expected) 
       CHECK(pl2_mean < 1e-10);
     else if (limiter == "none") 
