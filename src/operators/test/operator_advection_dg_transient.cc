@@ -686,9 +686,9 @@ void AdvectionFn<Analytic>::ApplyLimiter(std::string& name, CompositeVector& u)
 
 
 /* *****************************************************************
-* This tests exactness of the transient advection scheme for
-* dp/dt + div(v p) = f.
+* This tests the transient advection scheme.
 ***************************************************************** */
+// support functions for the level set algorithm
 bool inside1(const Amanzi::AmanziGeometry::Point& p) {
   Amanzi::AmanziGeometry::Point c(0.5, 0.5);
   return (norm(p - c) < 0.06); 
@@ -696,6 +696,40 @@ bool inside1(const Amanzi::AmanziGeometry::Point& p) {
 bool inside2(const Amanzi::AmanziGeometry::Point& p) {
   Amanzi::AmanziGeometry::Point c(1.0, 0.0);
   return (norm(p) < 0.06 || norm(p - c) < 0.06); 
+}
+
+// support function for visualization: extrapolation to mesh nodes
+Teuchos::RCP<Epetra_MultiVector> InterpolateCellToNode(
+    Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh,
+    const Amanzi::WhetStone::DG_Modal& dg,
+    const Epetra_MultiVector& uc)
+{
+  int order = dg.order();
+  int nk = uc.NumVectors();
+  Amanzi::AmanziGeometry::Point xv(mesh->space_dimension());
+  Amanzi::AmanziMesh::Entity_ID_List cells;
+
+  int nnodes_owned = mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  auto un = Teuchos::rcp(new Epetra_MultiVector(mesh->node_map(false), 1));
+
+  for (int v = 0; v < nnodes_owned; ++v) {
+    mesh->node_get_coordinates(v, &xv);
+    mesh->node_get_cells(v, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
+    int ncells = cells.size();
+
+    double value(0.0);
+    Amanzi::WhetStone::DenseVector data(nk);
+
+    for (int n = 0; n < ncells; ++n) {
+      int c = cells[n];
+      for (int i = 0; i < nk; ++i) data(i) = uc[i][c];
+      auto poly = dg.cell_basis(c).CalculatePolynomial(mesh, c, order, data);
+      value += poly.Value(xv);
+    }
+    (*un)[0][v] = value / ncells;
+  } 
+
+  return un;
 }
 
 template <class Analytic, class Advection>
@@ -811,10 +845,12 @@ void Transient(std::string filename, int nx, int ny, int nz,
         printf("t=%9.6f |p|=%12.8g  CFL=%8.6f  limiter min/mean: %8.4g %8.4g\n",
             t, fn.l2norm, fn.dt_stable_min, fn.limiter_min, fn.limiter_mean);
 
-      const Epetra_MultiVector& p = *sol.ViewComponent("cell");
+      const Epetra_MultiVector& pc = *sol.ViewComponent("cell");
+      auto pn = InterpolateCellToNode(mesh, *dg, pc);
   
       io.InitializeCycle(t, nstep);
-      io.WriteVector(*p(0), "solution", AmanziMesh::CELL);
+      io.WriteVector(*pc(0), "solution", AmanziMesh::CELL);
+      io.WriteVector(*(*pn)(0), "interpolation", AmanziMesh::NODE);
       io.FinalizeCycle();
     }
 
