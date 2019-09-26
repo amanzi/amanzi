@@ -31,6 +31,7 @@
 #include "OutputXDMF.hh"
 
 // Amanzi::Operators
+#include "MeshDeformation.hh"
 #include "RemapDG_Tests.hh"
 
 #include "AnalyticDG04.hh"
@@ -52,7 +53,7 @@ class MyRemapDG : public RemapDG_Tests<AnalyticDG04> {
   void ReInit(double tini);
 
   // mesh deformation from time 0 to t
-  virtual void DeformMesh(int deform, double t) override;
+  void DeformMesh(int deform, double t);
 
   // co-velocities
   virtual void StaticFaceCoVelocity() override;
@@ -139,7 +140,7 @@ void MyRemapDG::ReInit(double tini)
 ***************************************************************** */
 void MyRemapDG::DeformMesh(int deform, double t)
 {
-  RemapDG_Tests<AnalyticDG04>::DeformMesh(deform, t);
+  Amanzi::DeformMesh(mesh0_, mesh1_, deform, t);
 
   if (order_ > 1) {
     int nfaces = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
@@ -149,7 +150,16 @@ void MyRemapDG::DeformMesh(int deform, double t)
     for (int f = 0; f < nfaces; ++f) {
       const AmanziGeometry::Point& xf = mesh0_->face_centroid(f);
       (*ho_nodes0)[f].push_back(xf);
-      (*ho_nodes1)[f].push_back(DeformNode(deform, t, xf));
+
+      AmanziGeometry::Point yv(2);
+      if (deform == 1)
+        yv = TaylorGreenVortex(t, xf);
+      else if (deform == 4)
+        yv = CompressionExpansion2D(t, xf);
+      else if (deform == 6)
+        yv = Rotation2D(t, xf);
+
+      (*ho_nodes1)[f].push_back(yv);
     }
     auto tmp = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(mesh0_);
     Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(tmp)->set_face_ho_nodes(ho_nodes0);

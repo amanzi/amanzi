@@ -30,6 +30,7 @@
 #include "OutputXDMF.hh"
 
 // Amanzi::Operators
+#include "MeshDeformation.hh"
 #include "RemapDG_Tests.hh"
 
 #include "AnalyticDG04.hh"
@@ -146,7 +147,7 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   // create remap object
   MyRemapDG remap(mesh0, mesh1, plist);
   if (MyPID == 0) std::cout << "Deforming mesh...\n";
-  remap.DeformMesh(deform, 1.0);
+  DeformMesh(mesh0, mesh1, deform, 1.0);
   remap.InitializeOperators(dg);
   if (MyPID == 0) std::cout << "Computing static data on mesh scheleton...\n";
   remap.StaticEdgeFaceVelocities();
