@@ -59,12 +59,13 @@ class RemapDG_Tests : public Operators::RemapDG {
 template<class AnalyticDG>
 double RemapDG_Tests<AnalyticDG>::StabilityCondition()
 {
-  double dt(1e+99), alpha(0.2);
+  double dt(1e+99), alpha(0.2), tmp;
 
   for (int f = 0; f < nfaces_wghost_; ++f) {
     double area = mesh0_->face_area(f);
     const AmanziGeometry::Point& xf = mesh0_->face_centroid(f);
-    dt = std::min(dt, area / norm(velf_vec_[f].Value(xf)));
+    velf_vec_[f].Value(xf).Norm2(&tmp);
+    dt = std::min(dt, area / tmp);
   }
 
   return dt * alpha / (2 * order_ + 1);
