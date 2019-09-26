@@ -42,7 +42,8 @@
 * This test diffusion solver with full tensor and source term.
 * **************************************************************** */
 void OperatorDiffusionDG(std::string solver_name,
-                         std::string dg_basis = "regularized") {
+                         std::string dg_basis = "regularized",
+                         int dim = 2) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -52,8 +53,8 @@ void OperatorDiffusionDG(std::string solver_name,
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: 2D elliptic problem, dG method, solver: " << solver_name 
-                            << ", basis=" << dg_basis << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: "<< dim << "D elliptic problem, dG method, solver: " 
+                            << solver_name << ", basis=" << dg_basis << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion.xml";
@@ -63,9 +64,14 @@ void OperatorDiffusionDG(std::string solver_name,
   // create a mesh framework
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
-  // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 2);
-  RCP<const Mesh> mesh = meshfactory.create("test/median7x8_filtered.exo");
-  // RCP<const Mesh> mesh = meshfactory.create("test/triangular8_clockwise.exo");
+  RCP<const Mesh> mesh;
+  if (dim == 2) {
+    // mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 2);
+    mesh = meshfactory.create("test/median7x8_filtered.exo");
+    // mesh = meshfactory.create("test/triangular8_clockwise.exo");
+  } else {
+    mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 2.0, 2, 3, 3, true, true);
+  }
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
@@ -93,7 +99,7 @@ void OperatorDiffusionDG(std::string solver_name,
   // the vicinity of domain boundary.
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator dg");
   int order = op_list.sublist("schema").get<int>("method order");
-  int nk = (order + 1) * (order + 2) / 2;
+  int nk = WhetStone::PolynomialSpaceDimension(dim, order);
 
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, WhetStone::DOF_Type::VECTOR));
   std::vector<int>& bc_model = bc->bc_model();
@@ -102,7 +108,10 @@ void OperatorDiffusionDG(std::string solver_name,
   WhetStone::Polynomial coefs;
   WhetStone::DenseVector data;
 
-  for (int f = 0; f < nfaces_wghost; ++f) {
+  const auto& fmap = mesh->face_map(true);
+  const auto& bmap = mesh->exterior_face_map(true);
+  for (int bf = 0; bf < bmap.NumMyElements(); ++bf) {
+    int f = fmap.LID(bmap.GID(bf));
     const Point& xf = mesh->face_centroid(f);
 
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
@@ -113,7 +122,7 @@ void OperatorDiffusionDG(std::string solver_name,
       for (int i = 0; i < coefs.size(); ++i) {
         bc_value[f][i] = coefs(i);
       }
-    } else if (fabs(xf[1] - 1.0) < 1e-6) {
+    } else {
       // bc_model[f] = OPERATOR_BC_NEUMANN;
       bc_model[f] = OPERATOR_BC_DIRICHLET;
 
@@ -139,7 +148,7 @@ void OperatorDiffusionDG(std::string solver_name,
   CompositeVector src(cvs);
   Epetra_MultiVector& src_c = *src.ViewComponent("cell");
 
-  WhetStone::Polynomial pc(2, order);
+  WhetStone::Polynomial pc(dim, order);
   WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
 
   for (int c = 0; c < ncells; ++c) {
@@ -154,7 +163,7 @@ void OperatorDiffusionDG(std::string solver_name,
     for (auto it = pc.begin(); it < pc.end(); ++it) {
       int n = it.PolynomialPosition();
 
-      WhetStone::Polynomial cmono(2, it.multi_index(), 1.0);
+      WhetStone::Polynomial cmono(dim, it.multi_index(), 1.0);
       cmono.set_origin(xc);      
       WhetStone::Polynomial tmp = coefs * cmono;      
 
@@ -182,7 +191,7 @@ void OperatorDiffusionDG(std::string solver_name,
 
   // Test SPD properties of the matrix.
   VerificationCV ver(global_op);
-  ver.CheckMatrixSPD(false, true);
+  ver.CheckMatrixSPD(false, true, 1);
 
   // create preconditoner using the base operator class
   ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
@@ -213,7 +222,7 @@ void OperatorDiffusionDG(std::string solver_name,
     GMV::start_data();
     GMV::write_cell_data(p, 0, "solution");
     GMV::write_cell_data(p, 1, "gradx");
-    GMV::write_cell_data(p, 1, "grady");
+    GMV::write_cell_data(p, 2, "grady");
     GMV::close_data_file();
   }
 
