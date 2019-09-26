@@ -130,12 +130,14 @@ void LimiterCell::ApplyLimiter(
   }
 
   limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
+  limiter_->PutScalar(1.0);
+
   if (type_ == OPERATOR_LIMITER_BARTH_JESPERSEN) {
-    LimiterScalar_(ids, bc_model, bc_value, limiter_, [](double x) { return x; });
+    LimiterScalar_(ids, bc_model, bc_value, limiter_, [](double x) { return std::min(1.0, x); });
     ApplyLimiter(limiter_);
   }
   else if (type_ == OPERATOR_LIMITER_MICHALAK_GOOCH) {
-    LimiterScalar_(ids, bc_model, bc_value, limiter_, [](double x) { return x - 4 * x * x * x / 27; });
+    LimiterScalar_(ids, bc_model, bc_value, limiter_, [](double x) { return (x < 1.5) ? x - 4 * x * x * x / 27 : 1.0; });
     ApplyLimiter(limiter_);
   } 
   else if (type_ == OPERATOR_LIMITER_TENSORIAL) {
@@ -179,11 +181,13 @@ void LimiterCell::ApplyLimiter(
   }
 
   limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
+  limiter_->PutScalar(1.0);
+
   if (type_ == OPERATOR_LIMITER_BARTH_JESPERSEN_DG) {
-    LimiterScalarDG_(dg, ids, bc_model, bc_value, [](double x) { return x; });
+    LimiterScalarDG_(dg, ids, bc_model, bc_value, [](double x) { return std::min(1.0, x); });
   } 
   else if (type_ == OPERATOR_LIMITER_MICHALAK_GOOCH_DG) {
-    LimiterScalarDG_(dg, ids, bc_model, bc_value, [](double x) { return x - 4 * x * x * x / 27; });
+    LimiterScalarDG_(dg, ids, bc_model, bc_value, [](double x) { return (x < 1.5) ? x - 4 * x * x * x / 27 : 1.0; });
   } 
   else if (type_ == OPERATOR_LIMITER_BARTH_JESPERSEN_DG_HIERARCHICAL) {
     LimiterHierarchicalDG_(dg, ids, bc_model, bc_value, [](double x) { return x; });
@@ -387,9 +391,9 @@ void LimiterCell::LimiterScalar_(
 
       getBounds(c, f, stencil_id_, &umin, &umax);
 
-      if (u1f < umin - tol) {
+      if (u1f < u1 - tol) {
         (*limiter)[c] = std::min((*limiter)[c], func((umin - u1) / u1_add));
-      } else if (u1f > umax + tol) {
+      } else if (u1f > u1 + tol) {
         (*limiter)[c] = std::min((*limiter)[c], func((umax - u1) / u1_add));
       }
     }
@@ -514,9 +518,9 @@ void LimiterCell::LimiterScalarDG_(
         u1f = poly.Value(xm);
         double u1_add = u1f - u1;
 
-        if (u1f < umin - tol) {
+        if (u1f < u1 - tol) {
           climiter = std::min(climiter, func((umin - u1) / u1_add));
-        } else if (u1f > umax + tol) {
+        } else if (u1f > u1 + tol) {
           climiter = std::min(climiter, func((umax - u1) / u1_add));
         }
       }
