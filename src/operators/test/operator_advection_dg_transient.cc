@@ -89,7 +89,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
   void ApplyLimiter(std::string& limiter, CompositeVector& u);
 
  public:
-  double l2norm;
+  double l2norm, dt_stable_min;
   double limiter_min, limiter_mean;
 
   Teuchos::RCP<Operators::PDE_AdvectionRiemann> op_flux;
@@ -130,6 +130,7 @@ AdvectionFn<AnalyticDG>::AdvectionFn(
       dg_(dg), 
       ana_(mesh, dg->order(), true),
       conservative_form_(conservative_form),
+      dt_stable_min(1e+99),
       limiter_min(-1.0),
       limiter_mean(-1.0)
 {
@@ -208,10 +209,20 @@ void AdvectionFn<AnalyticDG>::FunctionalTimeDerivative(
     (*velc)[c] *= -weak_sign_;
   }
 
+  // -- verify also stability condition
+  double dt_stable(1e+99), alpha(1.0), vmag;
+
   for (int f = 0; f < nfaces_wghost; ++f) {
     ana_.VelocityTaylor(mesh_->face_centroid(f), t, v); 
     (*velf)[f] = v * (mesh_->face_normal(f) * weak_sign_);
+
+    double area = mesh_->face_area(f);
+    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    v.Value(xf).Norm2(&vmag);
+    dt_stable = std::min(dt_stable, area / vmag);
   }
+  dt_stable *= alpha / (2 * order_ + 1);
+  if (high_order_velf_) dt_stable_min = std::min(dt_stable_min, dt_stable);
 
   if (divergence_term_) {
     for (int c = 0; c < ncells_wghost; ++c) {
@@ -498,6 +509,13 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
     (*velf)[f] = vvf * normal;
     (*velf)[f].set_origin(xf);
   }
+
+  // update CFL condition
+  double dt_stable(1.0e+99);
+  for (int f = 0; f < nfaces_wghost; ++f) {
+    dt_stable = std::min(dt_stable, mesh_->face_area(f));
+  }
+  if (level_set_velf_) dt_stable_min = std::min(dt_stable_min, dt_stable);
 }
 
 
@@ -632,12 +650,11 @@ void AdvectionTransient(std::string filename, int nx, int ny, int nz,
   std::string basis = dg_list.get<std::string>("dg basis");
 
   { 
-    std::string problem = (conservative_form) ? ", conservative PDE" : "";
+    std::string problem = (conservative_form) ? "conservative" : "non-conservative";
     if (MyPID == 0) {
       std::cout << "\nTest: dG transient advection: " << filename 
-                << ", deform=" << deform
-                << ", order=" << order << problem 
-                << ", basis=" << basis 
+                << ", deform=" << deform << ", order=" << order << ", dt=" << dt0
+                << "\n      PDE=" << problem << ", basis=" << basis 
                 << "\n      weak formulation=\"" << weak_form << "\""
                 << ", face_velocity=\"" << face_velocity_method << "\""
                 << ", limiter=\"" << limiter << "\"" << std::endl;
@@ -710,9 +727,10 @@ void AdvectionTransient(std::string filename, int nx, int ny, int nz,
     // visualization
     if (std::fabs(t - tio) < dt/4) {
       tio = std::min(tio + 0.1, tend); 
+      ana.GlobalOp("min", &fn.dt_stable_min, 1);
       if (MyPID == 0)
-        printf("t=%9.6f |p|=%12.8g limiter min/mean: %8.4g %8.4g\n",
-            t, fn.l2norm, fn.limiter_min, fn.limiter_mean);
+        printf("t=%9.6f |p|=%12.8g  CFL=%8.6f  limiter min/mean: %8.4g %8.4g\n",
+            t, fn.l2norm, fn.dt_stable_min, fn.limiter_min, fn.limiter_mean);
 
       const Epetra_MultiVector& p = *sol.ViewComponent("cell");
   
@@ -725,7 +743,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, int nz,
 
     // overwrite solution at the origin
     if (face_velocity_method == "level set") {
-      ana.InitialGuess(*dg, sol_c, t, inside2);
+      ana.InitialGuess(*dg, sol_c, t, inside1);
     }
   }
 
@@ -751,6 +769,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, int nz,
 
 
 TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
+  /*
   double dT(0.1), T1(1.0);
   exact_solution_expected = true;
   AdvectionTransient<AnalyticDG02b>("square", 4,4,0, dT,T1, 0, false);
@@ -762,6 +781,7 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient<AnalyticDG06>("square",  4,4,0, dT,T1, 0, false, "dual", "high order");
   AdvectionTransient<AnalyticDG06>("square",  4,4,0, dT,T1, 0, false, "gauss points", "high order", "Barth-Jespersen dg");
   AdvectionTransient<AnalyticDG06c>("cube",   2,2,1, dT,T1, 0);
+  */
 
   /*
   int deform(0);
@@ -787,13 +807,11 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient<AnalyticDG06>("test/triangular128.exo",128,0,0, dT/16,T1);
   */
 
-  /*
-  double dT(0.001), T1(1.0);
+  double dT(0.002), T1(1.0);
   AdvectionTransient<AnalyticDG06>("test/median15x16.exo",   16,0,0, dT,  T1);
   AdvectionTransient<AnalyticDG06>("test/median32x33.exo",   32,0,0, dT/2,T1);
   AdvectionTransient<AnalyticDG06>("test/median63x64.exo",   64,0,0, dT/4,T1);
   AdvectionTransient<AnalyticDG06>("test/median127x128.exo",128,0,0, dT/8,T1);
-  */
 
   /*
   double dT(0.01), T1(1.0);
@@ -805,10 +823,10 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
 
   /*
   double dT(0.001), T1(1.0);
-  AdvectionTransient<AnalyticDG07>("square", 20, 20, 0, dT,  T1, 0, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("square", 40, 40, 0, dT/2,T1, 0, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("square", 80, 80, 0, dT/4,T1, 0, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("square",160,160, 0, dT/8,T1, 0, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("square", 16, 16, 0, dT,  T1, 0, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("square", 32, 32, 0, dT/2,T1, 0, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("square", 64, 64, 0, dT/4,T1, 0, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("square",128,128, 0, dT/8,T1, 0, false, "primal", "level set");
   */
 
   /*
@@ -827,7 +845,7 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
 
   /*
   double dT(0.01), T1(6.2832);
-  AdvectionTransient<AnalyticDG08>("square", 160,160,0, dT/8,T1, 0, true, "dual", "high order", "none");
+  AdvectionTransient<AnalyticDG08>("square", 128,128,0, dT/8,T1, 0, true, "dual", "high order", "none");
   AdvectionTransient<AnalyticDG08>("test/median127x128.exo", 128,0,0, dT/8,T1, 0, true, "dual", "high order", "none");
   */
 }

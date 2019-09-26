@@ -34,6 +34,9 @@ class RemapDG_Tests : public Operators::RemapDG {
       dt_output_(0.1) {};
   ~RemapDG_Tests() {};
 
+  // CFL condition
+  double StabilityCondition();
+
   // experimental options
   void InitializeConsistentJacobianDeterminant(); 
 
@@ -48,6 +51,23 @@ class RemapDG_Tests : public Operators::RemapDG {
   // statistics
   double tprint_, dt_output_, l2norm_;
 };
+
+
+/* *****************************************************************
+* Initialization of the consistent jacobian determinant
+***************************************************************** */
+double StabilityCondition()
+{
+  double dt(1e+99), alpha(0.2);
+
+  for (int f = 0; f < nfaces_wghost_; ++f) {
+    double area = mesh_->face_area(f);
+    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    dt = std::min(dt, area / norm(velf_vec_[f].Value(xf)));
+  }
+
+  return dt * alpha / (2 * order_ + 1);
+}
 
 
 /* *****************************************************************
