@@ -103,7 +103,7 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   int order_;
   Teuchos::RCP<PDE_Abstract> op_adv_;
   Teuchos::RCP<PDE_AdvectionRiemann> op_flux_;
-  Teuchos::RCP<PDE_Reaction>op_reac_;
+  Teuchos::RCP<PDE_Reaction> op_reac_;
   
   int bc_type_;
 
