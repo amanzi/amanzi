@@ -107,8 +107,8 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   }
 
   // create two meshes
-  MeshFactory meshfactory(comm);
-  //meshfactory.set_partitioner(AmanziMesh::Partitioner_type::ZOLTAN_RCB);
+  auto mlist = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("mesh")));
+  MeshFactory meshfactory(comm, Teuchos::null, mlist);
   meshfactory.set_preference(Preference({AmanziMesh::Framework::MSTK}));
 
   Teuchos::RCP<const Mesh> mesh0;
