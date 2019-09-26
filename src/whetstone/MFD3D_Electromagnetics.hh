@@ -67,7 +67,7 @@ class MFD3D_Electromagnetics : public MFD3D,
   int MassMatrixDiagonal(int c, const Tensor& T, DenseMatrix& M);
 
   int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A, DenseMatrix& M, DenseMatrix& C);
-  int StiffnessMatrixGeneralized(int c, const Tensor& T, DenseMatrix& A);
+  int StiffnessMatrix_GradCorrection(int c, const Tensor& T, DenseMatrix& A);
 
   // curl matrix
   void CurlMatrix(int c, DenseMatrix& C);

@@ -46,16 +46,17 @@ add_amanzi_library(whetstone
                           MFD3D_Diffusion.cc MFD3D_Diffusion_Surface.cc MFD3D_Diffusion_Other.cc 
                           MFD3D_Elasticity.cc 
                           MFD3D_Electromagnetics.cc MFD3D_Electromagnetics_Surface.cc
-                          MFD3D_Generalized_Diffusion.cc
+                          MFD3D_GeneralizedDiffusion.cc
                           MFD3D_Lagrange.cc MFD3D_LagrangeAnyOrder.cc
                           MFD3D_LagrangeSerendipity.cc
                           DG_Modal.cc
                           BilinearFormFactory.cc
                           nlfv.cc 
+                          NumericalIntegration.cc
                           Tensor.cc DenseMatrix.cc DenseVector.cc
-                          Polynomial.cc VectorPolynomial.cc MatrixPolynomial.cc
+                          Polynomial.cc SpaceTimePolynomial.cc VectorObjects.cc
                           MeshMaps.cc
-                          MeshMaps_FEM.cc MeshMaps_VEM.cc MeshMaps_PEM.cc
+                          MeshMaps_FEM.cc MeshMaps_VEM.cc
                           SurfaceCoordinateSystem.cc
                    HEADERS DenseMatrix.hh DenseVector.hh
                            DG_Modal.hh
@@ -75,7 +76,7 @@ add_amanzi_library(whetstone
                            MFD3D_Diffusion.hh
                            MFD3D_Elasticity.hh
                            MFD3D_Electromagnetics.hh
-                           MFD3D_Generalized_Diffusion.hh
+                           MFD3D_GeneralizedDiffusion.hh
                            MFD3D_Lagrange.hh MFD3D_LagrangeAnyOrder.hh
                            MFD3D_LagrangeSerendipity.hh
                            nlfv.hh
@@ -84,9 +85,10 @@ add_amanzi_library(whetstone
                            MeshMaps.hh MeshMapsFactory.hh
                            MeshMaps_FEM.hh MeshMaps_VEM.hh MeshMaps_VEM.hh
                            Monomial.hh Polynomial.hh PolynomialIterator.hh PolynomialBase.hh
+                           SpaceTimePolynomial.hh
                            SurfaceCoordinateSystem.hh
                            SurfaceMiniMesh.hh
-                           VectorPolynomial.hh MatrixPolynomial.hh PolynomialOnMesh.hh
+                           VectorObjects.hh MatrixObjects.hh PolynomialOnMesh.hh
                            Tensor.hh
                            WhetStoneDefs.hh
                            WhetStoneFunction.hh WhetStoneMeshUtils.hh

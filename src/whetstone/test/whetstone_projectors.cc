@@ -24,7 +24,7 @@
 #include "Point.hh"
 
 // WhetStone
-#include "MatrixPolynomial.hh"
+#include "MatrixObjects.hh"
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "MFD3D_CrouzeixRaviartSerendipity.hh"
 #include "MFD3D_Lagrange.hh"
@@ -828,20 +828,22 @@ TEST(SERENDIPITY_PROJECTORS_POLYGON_CR) {
 
 
 /* **************************************************************** */
-TEST(SERENDIPITY_PROJECTORS_CUBE_PK) {
+void Projector3DLagrangeSerendipity(const std::string& filename)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: HO Serendipity Lagrange projectors for cube" << std::endl;
+  std::cout << "\nTest: HO Serendipity Lagrange projectors for " << filename << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
   MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, true, true);
+  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, true, true);
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(filename, true, true); 
  
-  int cell(2), nfaces(6), nedges(12);
+  int cell(0), nfaces(6), nedges(12);
   AmanziGeometry::Point zero(3);
   Polynomial uc, uc2;
   std::vector<Polynomial> vf(nfaces), ve(nedges);
@@ -948,3 +950,68 @@ TEST(SERENDIPITY_PROJECTORS_CUBE_PK) {
   }
 }
 
+
+TEST(SERENDIPITY_PROJECTORS_CUBE_PK) {
+  Projector3DLagrangeSerendipity("test/cube_unit.exo");
+  Projector3DLagrangeSerendipity("test/cube_unit_rotated.exo");
+}
+
+
+/* **************************************************************** */
+void Projector3DLagrangeSerendipitySurface(const std::string& filename)
+{
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: HO Serendipity Lagrange projectors on surface: " << filename << std::endl;
+  auto comm = Amanzi::getDefaultComm();
+
+  Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(filename, true, true); 
+ 
+  int face(0), nedges(4);
+  AmanziGeometry::Point zero(3), xyz0(3), xyz1(3);
+  const auto& xf = mesh->face_centroid(face);
+  Polynomial uf;
+  std::vector<Polynomial> ve(nedges);
+
+  Teuchos::ParameterList plist;
+  plist.set<int>("method order", 1);
+
+  MFD3D_LagrangeSerendipity mfd(plist, mesh);
+
+  // test globally linear deformation
+  for (int n = 0; n < nedges; ++n) {
+    ve[n].Reshape(3, 1, true);
+    ve[n](0) = 1.0;
+    ve[n](1) = 2.0;
+    ve[n](2) = 3.0;
+    ve[n](3) = 4.0;
+  }
+
+  // add constant to thrid edge (y=1)
+  int n0, n1;
+  mesh->edge_get_nodes(2, &n0, &n1);
+  mesh->node_get_coordinates(n0, &xyz0);
+  mesh->node_get_coordinates(n1, &xyz1);
+  if (fabs(xyz0[0] - xyz1[0]) < 1e-6) {
+    ve[2](0) += 1.0;
+    ve[2](2) -= 1.0;
+  }
+
+  for (int k = 1; k < 4; ++k) {
+    mfd.set_order(k);
+    mfd.H1Face(face, ve, NULL, uf);
+    uf.ChangeOrigin(zero);
+    CHECK(fabs(ve[0].Value(xf) - uf.Value(xf)) < 5e-10);
+  }
+}
+
+
+TEST(SERENDIPITY_PROJECTORS_CUBE_PK_SURFACE) {
+  Projector3DLagrangeSerendipitySurface("test/cube_unit.exo");
+  Projector3DLagrangeSerendipitySurface("test/cube_unit_rotated.exo");
+}

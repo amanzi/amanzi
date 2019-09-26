@@ -34,7 +34,7 @@
 #include "Polynomial.hh"
 #include "PolynomialOnMesh.hh"
 #include "Tensor.hh"
-#include "VectorPolynomial.hh"
+#include "VectorObjects.hh"
 #include "WhetStoneDefs.hh"
 
 namespace Amanzi {
@@ -82,7 +82,8 @@ class DG_Modal : public BilinearForm {
   virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A) override;
 
   // -- advection matrices
-  virtual int AdvectionMatrix(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test) override {
+  virtual int AdvectionMatrix(int c, const VectorPolynomial& uc,
+                              DenseMatrix& A, bool grad_on_test) override {
     int ok;
     if (uc.size() == d_) {
       ok = AdvectionMatrixPoly_(c, uc, A, grad_on_test);
@@ -93,7 +94,8 @@ class DG_Modal : public BilinearForm {
   }
 
   // -- flux matrices
-  int FluxMatrix(int f, const Polynomial& uf, DenseMatrix& A, bool upwind, bool jump_on_test);
+  //    returns point flux value (u.n) in the last parameter
+  int FluxMatrix(int f, const Polynomial& uf, DenseMatrix& A, bool upwind, bool jump_on_test, double* flux);
   int FluxMatrixRusanov(int f, const VectorPolynomial& uc1, const VectorPolynomial& uc2,
                         const Polynomial& uf, DenseMatrix& A);
   int FluxMatrixGaussPoints(int f, const Polynomial& uf, DenseMatrix& A, bool upwind, bool jump_on_test);

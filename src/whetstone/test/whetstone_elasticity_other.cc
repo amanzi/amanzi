@@ -108,8 +108,6 @@ TEST(DIFFUSION_STOKES_2D) {
   }
   CHECK_CLOSE(vxx, volume, 1e-10);
   CHECK_CLOSE(vxy, 0.0, 1e-10);
-
-  
 }
 
 

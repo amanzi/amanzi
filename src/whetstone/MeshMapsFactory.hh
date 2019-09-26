@@ -18,7 +18,6 @@
 #include "Mesh.hh"
 
 #include "MeshMaps_FEM.hh"
-#include "MeshMaps_PEM.hh"
 #include "MeshMaps_VEM.hh"
 
 namespace Amanzi {
@@ -40,8 +39,6 @@ class MeshMapsFactory {
       maps = std::make_shared<MeshMaps_FEM>(mesh0, mesh1);
     } else if (name == "VEM") {
       maps = std::make_shared<MeshMaps_VEM>(mesh0, mesh1, plist);
-    } else if (name == "PEM") {
-      maps = std::make_shared<MeshMaps_PEM>(mesh0, mesh1);
     }
 
     return maps;

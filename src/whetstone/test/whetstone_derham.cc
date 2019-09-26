@@ -84,8 +84,6 @@ TEST(DERHAM_COMPLEX_NODE) {
 
   CHECK_CLOSE(T(0,0) * volume, vxx, 1e-10);
   CHECK_CLOSE(T(0,0) * volume, vxy, 1e-10);
-
-  
 }
 
 

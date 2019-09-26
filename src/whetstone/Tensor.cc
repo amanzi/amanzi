@@ -574,6 +574,30 @@ void VectorToTensor(const DenseVector& v, Tensor& T) {
   }
 }
 
+
+/* ******************************************************************
+* Rotations
+****************************************************************** */
+Tensor RotationMatrix90cw(const AmanziGeometry::Point& u)
+{
+  AMANZI_ASSERT(u.dim() == 3);
+
+  Tensor T(3, 2);
+  T(0, 0) = u[0] * u[0];
+  T(0, 1) = u[0] * u[1] + u[2];
+  T(0, 2) = u[0] * u[2] - u[1];
+
+  T(1, 0) = u[1] * u[0] - u[2];
+  T(1, 1) = u[1] * u[1];
+  T(1, 2) = u[1] * u[2] + u[0];
+
+  T(2, 0) = u[2] * u[0] + u[1];
+  T(2, 1) = u[2] * u[1] - u[0];
+  T(2, 2) = u[2] * u[2];
+
+  return T;
+}
+
 }  // namespace WhetStone
 }  // namespace Amanzi
 

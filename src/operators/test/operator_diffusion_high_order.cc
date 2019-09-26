@@ -430,7 +430,7 @@ void RunHighOrderLagrange3D(const std::string& vem_name) {
         fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) {
 
       // local coordinate system with origin at face centroid
-      SurfaceCoordinateSystem coordsys(normal);
+      SurfaceCoordinateSystem coordsys(xf, normal);
 
       for (auto it = pf.begin(); it < pf.end(); ++it) {
         int m = it.MonomialSetOrder();
@@ -523,5 +523,6 @@ void RunHighOrderLagrange3D(const std::string& vem_name) {
 
 TEST(OPERATOR_DIFFUSION_HIGH_ORDER_LAGRANGE_3D) {
   RunHighOrderLagrange3D("Lagrange");
+  RunHighOrderLagrange3D("Lagrange serendipity");
 }
 

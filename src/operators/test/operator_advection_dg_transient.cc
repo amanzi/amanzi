@@ -34,7 +34,7 @@
 #include "OperatorUtils.hh"
 #include "OutputXDMF.hh"
 #include "Tensor.hh"
-#include "VectorPolynomial.hh"
+#include "VectorObjects.hh"
 #include "WhetStoneDefs.hh"
 
 // Operators
@@ -322,7 +322,7 @@ void AdvectionFn<AnalyticDG>::FunctionalTimeDerivative(
 
   if (setup_) {
     op_mass->SetupPoly(K);
-    op_mass->UpdateMatrices(Teuchos::null);
+    op_mass->UpdateMatrices(Teuchos::null, Teuchos::null);
     setup_ = false;
   }
 
@@ -397,7 +397,7 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_Projection(
       }
     }
 
-    maps->VelocityCell(c, vvf, (*velc)[c]);
+    maps->VelocityCell(c, vvf, vvf, (*velc)[c]);
     (*velc)[c] *= -dtfac * weak_sign_;
 
     if (divergence_term_) (*divc)[c] = Divergence((*velc)[c]);

@@ -106,7 +106,7 @@ void RunTestDiffusionCurved() {
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // -- set up diffusivity coefficient and populate local matrices.
-  op->Setup(K);
+  op->SetupTensor(K);
   op->UpdateMatrices();
 
   // -- apply boundary conditions

@@ -29,7 +29,7 @@ class PolynomialBase : public WhetStoneFunction {
   PolynomialBase(int d, int order) : d_(d), order_(order), origin_(d) {};
   virtual ~PolynomialBase() {};
 
-  // convert to regular polynomial
+  // convert to regular vector
   virtual DenseVector ExpandCoefficients() const = 0;
 
   // modifiers

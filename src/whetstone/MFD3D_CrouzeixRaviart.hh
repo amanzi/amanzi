@@ -22,7 +22,6 @@
 
 #include "BilinearFormFactory.hh"
 #include "DenseMatrix.hh"
-#include "MatrixPolynomial.hh"
 #include "MFD3D.hh"
 #include "Polynomial.hh"
 #include "PolynomialOnMesh.hh"
@@ -75,11 +74,7 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
   }
 
   virtual void H1Face(int f, const std::vector<Polynomial>& ve,
-                      const Polynomial* moments, Polynomial& vf) override {
-    auto coordsys = std::make_shared<SurfaceCoordinateSystem>(mesh_->face_normal(f));
-    Teuchos::RCP<const SurfaceMiniMesh> surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
-    ProjectorCell_<SurfaceMiniMesh>(surf_mesh, f, ve, ve, vf);
-  }
+                      const Polynomial* moments, Polynomial& vf) override ;
 
   // access / setup
   // -- integrals of monomials in high-order schemes could be reused

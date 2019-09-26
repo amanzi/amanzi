@@ -412,21 +412,22 @@ Polynomial Polynomial::ChangeOrigin(
 double Polynomial::Value(const AmanziGeometry::Point& xp) const
 {
   double sum(coefs_(0));
+  AmanziGeometry::Point dx(xp - origin_);
   
   if (order_ > 0) {
     for (int i = 0; i < d_; ++i) {
-      sum += (xp[i] - origin_[i]) * coefs_(i + 1);
+      sum += dx[i] * coefs_(i + 1);
     }
   }
 
   for (auto it = begin(2); it < end(); ++it) {
     int n = it.PolynomialPosition();
-    const int* index = it.multi_index();
-
     double tmp = coefs_(n);
+
     if (tmp != 0.0) {
+      const int* index = it.multi_index();
       for (int i = 0; i < d_; ++i) {
-        tmp *= std::pow(xp[i] - origin_[i], index[i]);
+        tmp *= std::pow(dx[i], index[i]);
       }
       sum += tmp;
     }
@@ -438,7 +439,7 @@ double Polynomial::Value(const AmanziGeometry::Point& xp) const
 
 /* ******************************************************************
 * Change of coordinates: x = x0 + B * s 
-* Note: resulting polynomial is centered at new origin.
+* Note: the resulting polynomial is centered at the new local origin.
 ****************************************************************** */
 void Polynomial::ChangeCoordinates(
     const AmanziGeometry::Point& x0, const std::vector<AmanziGeometry::Point>& B)
@@ -454,15 +455,17 @@ void Polynomial::ChangeCoordinates(
 
   if (dnew == 1) {
     for (auto it = begin(); it < end(); ++it) {
-      const int* multi_index = it.multi_index();
       int m = it.MonomialSetOrder();
       int n = it.PolynomialPosition();
 
       double coef = coefs_(n);
-      for (int i = 0; i < d_; ++i) {
-        coef *= std::pow(B[0][i], multi_index[i]);  
+      if (coef != 0.0) {
+        const int* multi_index = it.multi_index();
+        for (int i = 0; i < d_; ++i) {
+          coef *= std::pow(B[0][i], multi_index[i]);  
+        }
+        tmp(m, 0) += coef;
       }
-      tmp(m, 0) += coef;
     }
   }
 
@@ -488,10 +491,11 @@ void Polynomial::ChangeCoordinates(
     power2.push_back(one);
 
     for (auto it = begin(); it < end(); ++it) {
-      const int* idx = it.multi_index();
       double coef = coefs_(it.PolynomialPosition());
 
       if (coef != 0.0) {
+        const int* idx = it.multi_index();
+
         for (int k = power0.size() - 1; k < idx[0]; ++k)
            power0.push_back(power0[k] * poly0);
 
@@ -501,7 +505,7 @@ void Polynomial::ChangeCoordinates(
         for (int k = power2.size() - 1; k < idx[2]; ++k)
            power2.push_back(power2[k] * poly2);
 
-        tmp += coef * (power0[idx[0]] * power1[idx[1]] * power2[idx[2]]);        
+        tmp += (coef * power0[idx[0]]) * power1[idx[1]] * power2[idx[2]];        
       }
     }
   }  
@@ -511,7 +515,8 @@ void Polynomial::ChangeCoordinates(
 
 
 /* ******************************************************************
-* Inverse change of coordinates: s = B^+ (x - x0) 
+* Inverse change of coordinates: s = B^+ (x - x0) for polynomial
+* centered at the origin.
 * Note: resulting polynomial is centered at x0.
 ****************************************************************** */
 void Polynomial::InverseChangeCoordinates(

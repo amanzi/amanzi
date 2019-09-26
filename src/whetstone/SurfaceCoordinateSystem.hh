@@ -25,24 +25,29 @@ namespace WhetStone {
 // -- comparison operators
 class SurfaceCoordinateSystem {
  public:
-  SurfaceCoordinateSystem(const AmanziGeometry::Point& normal)
-    : normal_(normal),
+  SurfaceCoordinateSystem(const AmanziGeometry::Point& origin,
+                          const AmanziGeometry::Point& normal)
+    : origin_(origin),
+      normal_(normal),
       normal_unit_(normal) { Init(); }
   ~SurfaceCoordinateSystem() {};
 
   // calculate orthogonal vectors of the surface coordinate system
   void Init();
 
-  // project vector on the surface
-  AmanziGeometry::Point Project(const AmanziGeometry::Point& x) const;
+  // project vector on the surface. 
+  // -- flag = true, calculate coordinates of new points relative to origin
+  // -- flag = false, project vectors
+  AmanziGeometry::Point Project(const AmanziGeometry::Point& x, bool flag) const;
 
   // const access
+  const AmanziGeometry::Point& origin() const { return origin_; }
   const AmanziGeometry::Point& normal() const { return normal_; }
   const AmanziGeometry::Point& normal_unit() const { return normal_unit_; }
   const std::shared_ptr<std::vector<AmanziGeometry::Point> > tau() const { return tau_; }
 
  private:
-  AmanziGeometry::Point normal_, normal_unit_;
+  AmanziGeometry::Point origin_, normal_, normal_unit_;
   std::shared_ptr<std::vector<AmanziGeometry::Point> > tau_;
 };
 

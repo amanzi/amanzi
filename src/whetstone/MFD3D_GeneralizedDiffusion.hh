@@ -27,12 +27,12 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_Generalized_Diffusion : public MFD3D { 
+class MFD3D_GeneralizedDiffusion : public MFD3D { 
  public:
-  MFD3D_Generalized_Diffusion(const Teuchos::ParameterList& plist,
+  MFD3D_GeneralizedDiffusion(const Teuchos::ParameterList& plist,
                               const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : MFD3D(mesh) {};
-  ~MFD3D_Generalized_Diffusion() {};
+  ~MFD3D_GeneralizedDiffusion() {};
 
   // required member functions
   // -- schema for this element
@@ -62,7 +62,7 @@ class MFD3D_Generalized_Diffusion : public MFD3D {
                            std::vector<AmanziGeometry::Point>& xm);
 
  private:
-  static RegisteredFactory<MFD3D_Generalized_Diffusion> factory_;
+  static RegisteredFactory<MFD3D_GeneralizedDiffusion> factory_;
 };
 
 }  // namespace WhetStone

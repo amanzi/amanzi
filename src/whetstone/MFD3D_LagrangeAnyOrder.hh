@@ -101,13 +101,14 @@ class MFD3D_LagrangeAnyOrder : public MFD3D {
   const DenseMatrix& G() const { return G_; }
   const DenseMatrix& R() const { return R_; }
 
- private:
+ protected:
   template<typename MyMesh>
-  int H1consistency2D_(Teuchos::RCP<const MyMesh>& mymesh,
+  int H1consistency2D_(const Teuchos::RCP<const MyMesh>& mymesh,
                        int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
 
   int H1consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
 
+ private:
   void ProjectorCell_(int c, const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
                       const ProjectorType type,
@@ -132,7 +133,7 @@ class MFD3D_LagrangeAnyOrder : public MFD3D {
 ****************************************************************** */
 template <class MyMesh>
 int MFD3D_LagrangeAnyOrder::H1consistency2D_(
-    Teuchos::RCP<const MyMesh>& mymesh,
+    const Teuchos::RCP<const MyMesh>& mymesh,
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
   // input mesh may have a different dimension than base mesh
@@ -205,12 +206,12 @@ int MFD3D_LagrangeAnyOrder::H1consistency2D_(
     // N and R: degrees of freedom on faces 
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
-      const AmanziGeometry::Point& xf = mymesh->face_centroid(f); 
       double area = mymesh->face_area(f);
+      const AmanziGeometry::Point& xf = mymesh->face_centroid(f); 
+      AmanziGeometry::Point normal = mymesh->face_normal(f);
 
       // local coordinate system with origin at face centroid
-      AmanziGeometry::Point normal = mymesh->face_normal(f);
-      auto coordsys = std::make_shared<SurfaceCoordinateSystem>(normal);
+      auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
 
       normal *= dirs[i];
       AmanziGeometry::Point conormal = K * normal;

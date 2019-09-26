@@ -49,7 +49,7 @@ class Polynomial : public PolynomialBase {
              const std::vector<AmanziGeometry::Point>& xyz, 
              const DenseVector& values);
 
-  // reshape polynomial with erase (optionally) memory
+  // reshape polynomial and erase (optionally) memory
   void Reshape(int d, int order, bool reset = false);
 
   // initialization options

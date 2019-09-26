@@ -67,7 +67,7 @@ void PDE_Electromagnetics::UpdateMatrices(
   for (int c = 0; c < ncells_owned; c++) {
     if (K_.get()) Kc = (*K_)[c];
     if (mfd_primary_ == WhetStone::ELECTROMAGNETICS_GENERALIZED)
-      mfd.StiffnessMatrixGeneralized(c, Kc, Acell);
+      mfd.StiffnessMatrix_GradCorrection(c, Kc, Acell);
     else
       mfd.StiffnessMatrix(c, Kc, Acell);
     local_op_->matrices[c] = Acell;

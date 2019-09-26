@@ -54,8 +54,6 @@ TEST(FACTORY_DISCRETIZATION_METHODS) {
     Teuchos::RCP<BilinearForm> form = BilinearFormFactory::Create(plist, mesh); 
     CHECK(form != Teuchos::null);
   }
-
-  
 }
 
 

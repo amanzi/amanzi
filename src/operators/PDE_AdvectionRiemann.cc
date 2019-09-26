@@ -11,9 +11,11 @@
 
 #include <vector>
 
+// Amanzi
 #include "Basis_Regularized.hh"
 #include "BilinearFormFactory.hh"
 
+// Amanzi::Operators
 #include "OperatorDefs.hh"
 #include "Operator_Schema.hh"
 #include "Op_Cell_Schema.hh"
@@ -46,7 +48,7 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
   }
 
   // -- fluxes
-  flux_ = plist.get<std::string>("flux formula", "Rusavov");
+  flux_ = plist.get<std::string>("flux formula", "Rusanov");
   jump_on_test_ = plist.get<bool>("jump operator on test function", true);
 
   // constructor was given a mesh
@@ -114,19 +116,18 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
 void PDE_AdvectionRiemann::UpdateMatrices(
     const Teuchos::Ptr<const std::vector<WhetStone::Polynomial> >& u)
 {
-  std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
-  std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
-
+  double flux;
   WhetStone::DenseMatrix Aface;
+  std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
 
   if (matrix_ == "flux" && flux_ == "upwind") {
     for (int f = 0; f < nfaces_owned; ++f) {
-      dg_->FluxMatrix(f, (*u)[f], Aface, true, jump_on_test_);
+      dg_->FluxMatrix(f, (*u)[f], Aface, true, jump_on_test_, &flux);
       matrix[f] = Aface;
     }
   } else if (matrix_ == "flux" && flux_ == "downwind") {
     for (int f = 0; f < nfaces_owned; ++f) {
-      dg_->FluxMatrix(f, (*u)[f], Aface, false, jump_on_test_);
+      dg_->FluxMatrix(f, (*u)[f], Aface, false, jump_on_test_, &flux);
       matrix[f] = Aface;
     }
   } else if (matrix_ == "flux" && flux_ == "upwind at gauss points") {
@@ -148,6 +149,54 @@ void PDE_AdvectionRiemann::UpdateMatrices(
       int c2 = (cells.size() == 2) ? cells[1] : c1;
       dg_->FluxMatrixRusanov(f, (*Kc_)[c1], (*Kc_)[c2], (*Kf_)[f], Aface);
       matrix[f] = Aface;
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Flux matrices for the case of space-time polynomial velocity.
+****************************************************************** */
+void PDE_AdvectionRiemann::UpdateMatrices(double t)
+{
+  std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
+
+  for (int f = 0; f < nfaces_owned; ++f) {
+    int size = (*uc_)[f].size();
+
+    // calculate dynamic surface flux 
+    double flux_t(0.0), tmp(1.0);
+    for (int i = 0; i < size; ++i) {
+      flux_t += tmp * static_matrices_[f][i].uflux; 
+      tmp *= t;
+    }
+
+    // sum up matrices with matching signs of point fluxes
+    int nrows = static_matrices_[f][0].Uface.NumRows();
+    int ncols = static_matrices_[f][0].Uface.NumRows();
+
+    matrix[f].Reshape(nrows, ncols);
+    matrix[f].PutScalar(0.0);
+
+    tmp = 1.0;
+    for (int i = 0; i < size; ++i) {
+      double flux_i = static_matrices_[f][i].uflux;
+      double sign = flux_i * flux_t;
+
+      if (matrix_ == "flux" && flux_ == "upwind") {
+        if (sign > 0.0) 
+          matrix[f] += static_matrices_[f][i].Uface * tmp;
+        else 
+          matrix[f] += static_matrices_[f][i].Dface * tmp;
+      }
+      else if (matrix_ == "flux" && flux_ == "downwind") {
+        if (sign > 0.0) 
+          matrix[f] += static_matrices_[f][i].Dface * tmp;
+        else 
+          matrix[f] += static_matrices_[f][i].Uface * tmp;
+      }
+
+      tmp *= t;
     }
   }
 }
@@ -246,6 +295,31 @@ void PDE_AdvectionRiemann::UpdateFlux(
   for (int f = 0; f < nfaces_owned; ++f) {
     flux_f[0][f] = u_f[0][f] * h_f[0][f];
   }  
+}
+
+
+/* *******************************************************************
+* Space-time coefficients can be pre-processed.
+******************************************************************* */
+void PDE_AdvectionRiemann::CreateStaticMatrices_()
+{
+  AMANZI_ASSERT(matrix_ == "flux");
+
+  static_matrices_.resize(nfaces_owned);
+
+  for (int f = 0; f < nfaces_owned; ++f) {
+    int size = (*uc_)[f].size();
+    static_matrices_[f].clear();
+ 
+    SurfaceFluxData data;
+    for (int i = 0; i < size; ++i) {
+      dg_->FluxMatrix(f, (*uc_)[f][i], data.Uface, true, jump_on_test_, &data.uflux);
+      dg_->FluxMatrix(f, (*uc_)[f][i], data.Dface, false, jump_on_test_, &data.dflux);
+      static_matrices_[f].push_back(data);
+    }
+  }
+
+  static_matrices_initialized_ = true;
 }
 
 }  // namespace Operators

@@ -48,13 +48,14 @@ void SurfaceCoordinateSystem::Init()
 /* ******************************************************************
 * Initialization of local coordinate system
 ****************************************************************** */
-AmanziGeometry::Point SurfaceCoordinateSystem::Project(const AmanziGeometry::Point& x) const
+AmanziGeometry::Point SurfaceCoordinateSystem::Project(
+   const AmanziGeometry::Point& x, bool flag) const
 {
   int d = tau_->size();
   AmanziGeometry::Point xloc(d);    
 
   for (int i = 0; i < d; ++i) 
-    xloc[i] = x * (*tau_)[i];
+    xloc[i] = (flag) ? ((x - origin_) * (*tau_)[i]) : (x * (*tau_)[i]);
 
   return xloc;
 }

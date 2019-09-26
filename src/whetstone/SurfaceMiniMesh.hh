@@ -43,6 +43,11 @@ class SurfaceMiniMesh {
     mesh_->face_get_edges_and_dirs(c, faces, dirs);
   }
 
+  void cell_get_edges(Entity_ID c, Entity_ID_List *edges) const {
+    std::vector<int> dirs;
+    mesh_->face_get_edges_and_dirs(c, edges, &dirs);
+  }
+
   void cell_get_nodes(Entity_ID c, Entity_ID_List *nodes) const {
     mesh_->face_get_nodes(c, nodes);
   }
@@ -71,7 +76,7 @@ class SurfaceMiniMesh {
   // -- geometric objects
   AmanziGeometry::Point cell_centroid(Entity_ID c) const {
     const auto& xf = mesh_->face_centroid(c);
-    return coordsys_->Project(xf);
+    return coordsys_->Project(xf, true);
   }
 
   double cell_volume(Entity_ID c) const {
@@ -83,13 +88,13 @@ class SurfaceMiniMesh {
   // vector on the local coordinate system
   AmanziGeometry::Point face_centroid(Entity_ID f) const {
     const auto& xe = mesh_->edge_centroid(f);
-    return coordsys_->Project(xe);
+    return coordsys_->Project(xe, true);
   }
 
   AmanziGeometry::Point face_normal(int f) const {
     const auto& tau = mesh_->edge_vector(f);
     auto normal = tau ^ coordsys_->normal_unit();
-    return coordsys_->Project(normal);
+    return coordsys_->Project(normal, false);
   }
 
   double face_area(Entity_ID f) const {
@@ -99,12 +104,12 @@ class SurfaceMiniMesh {
   AmanziGeometry::Point edge_centroid(Entity_ID e) const {
     AmanziGeometry::Point xyz(d_);
     mesh_->node_get_coordinates(e, &xyz);
-    return coordsys_->Project(xyz);
+    return coordsys_->Project(xyz, true);
   }
 
   AmanziGeometry::Point edge_vector(Entity_ID e) const {
     AmanziGeometry::Point xyz(d_);
-    return coordsys_->Project(xyz);
+    return coordsys_->Project(xyz, false);
   }
 
   double edge_length(Entity_ID e) const { return 0.0; }
@@ -112,7 +117,7 @@ class SurfaceMiniMesh {
   void node_get_coordinates(Entity_ID v, AmanziGeometry::Point* xyz) const {
     AmanziGeometry::Point tmp(d_);
     mesh_->node_get_coordinates(v, &tmp);
-    *xyz = coordsys_->Project(tmp);
+    *xyz = coordsys_->Project(tmp, true);
   }
 
  private:
