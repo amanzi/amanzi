@@ -29,14 +29,14 @@ class MeshCurved : public Mesh_MSTK {
              const Comm_ptr_type& comm,
              const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
              const Teuchos::RCP<Teuchos::ParameterList>& plist)
-      : Mesh_MSTK(x0, y0, x1, y1, nx, ny, comm, Teuchos::null, plist, true, false),
+      : Mesh_MSTK(x0, y0, x1, y1, nx, ny, comm, gm, plist, true, false),
         face_ho_nodes_(NULL) {};
 
   MeshCurved(const std::string& filename,
              const Comm_ptr_type& comm,
              const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
              const Teuchos::RCP<Teuchos::ParameterList>& plist)
-      : Mesh_MSTK(filename.c_str(), comm, Teuchos::null, plist, true, false),
+      : Mesh_MSTK(filename.c_str(), comm, gm, plist, true, false),
         face_ho_nodes_(NULL) {};
 
   ~MeshCurved() {};

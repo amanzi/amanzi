@@ -29,6 +29,7 @@ AmanziGeometry::Point TaylorGreenVortex(double t, const AmanziGeometry::Point& x
 AmanziGeometry::Point Rotation2D(double t, const AmanziGeometry::Point& xv);
 AmanziGeometry::Point CompressionExpansion2D(double t, const AmanziGeometry::Point& xv);
 AmanziGeometry::Point CompressionExpansion3D(double t, const AmanziGeometry::Point& xv);
+AmanziGeometry::Point BubbleFace3D(double t, const AmanziGeometry::Point& xv);
 AmanziGeometry::Point Unused(double t, const AmanziGeometry::Point& xv);
 
 
@@ -49,16 +50,16 @@ void DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1, int deform, double 
   CompositeVector random(cvs);
   Epetra_MultiVector& random_n = *random.ViewComponent("node", true);
 
-  if (deform == 7) {
-    int gid = mesh1->node_map(false).MaxAllGID();
-    double scale = 0.02 * std::pow(gid, -1.0 / d);
+  int gid = mesh1->node_map(false).MaxAllGID();
+  double scale = 0.5 * std::pow(gid, -1.0 / d);
 
+  if (deform == 7) {
     random_n.Random();
     random_n.Scale(scale);
     random.ScatterMasterToGhosted();
 
     std::vector<double> vofs;
-    mesh1->get_set_entities_and_vofs("Boundary", AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED, &bnd_ids, &vofs);
+    mesh1->get_set_entities_and_vofs("Boundary", AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL, &bnd_ids, &vofs);
   }
 
   // relocate mesh nodes
@@ -91,6 +92,8 @@ void DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1, int deform, double 
       if (std::find(bnd_ids.begin(), bnd_ids.end(), v) == bnd_ids.end()) { 
         for (int i = 0; i < d; ++i) yv[i] += random_n[i][v];
       } 
+    } else if (deform == 8) {
+      yv = BubbleFace3D(t, xv);
     }
 
     new_positions.push_back(yv);
@@ -162,6 +165,18 @@ AmanziGeometry::Point CompressionExpansion3D(double t, const AmanziGeometry::Poi
   yv[0] += t * xv[0] * xv[1] * xv[2] * (1.0 - xv[0]) / 2;
   yv[1] += t * xv[0] * xv[1] * xv[2] * (1.0 - xv[1]) / 2;
   yv[2] += t * xv[0] * xv[1] * xv[2] * (1.0 - xv[2]) / 2;
+  return yv;
+}
+
+
+/* *****************************************************************
+* Bubble face in Z-direction
+***************************************************************** */
+inline
+AmanziGeometry::Point BubbleFace3D(double t, const AmanziGeometry::Point& xv)
+{
+  AmanziGeometry::Point yv(xv);
+  yv[2] += 8 * xv[0] * xv[1] * xv[2] * (1.0 - xv[0]) * (1.0 - xv[1]) * (1.0 - xv[2]);
   return yv;
 }
 
