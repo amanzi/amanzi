@@ -102,7 +102,7 @@ void AnalyticElasticityBase::VectorNodeError(
     l2_err += tmp * vol_node[0][v];
     inf_err = std::max(inf_err, sqrt(tmp));
     unorm += L22(uexact) * vol_node[0][v];
-    // std::cout << v << " uh=" << ucalc << " ex=" << uexact << std::endl;
+    // std::cout << v << " uh=" << ucalc << " ex=" << uexact << " xv=" << p << std::endl;
   }
 #ifdef HAVE_MPI
   GlobalOp("sum", &unorm, 1);
@@ -141,7 +141,7 @@ void AnalyticElasticityBase::VectorCellError(
     l2_err += tmp * vol;
     inf_err = std::max(inf_err, sqrt(tmp));
     unorm += L22(uexact) * vol;
-    // std::cout << c << " uh=" << ucalc << " ex=" << uexact << std::endl;
+    // std::cout << c << " uh=" << ucalc << " ex=" << uexact << " l2=" << l2_err << std::endl;
   }
 #ifdef HAVE_MPI
   GlobalOp("sum", &unorm, 1);

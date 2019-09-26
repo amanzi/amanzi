@@ -360,7 +360,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Point_(
               if (essential_eqn) {
                 mesh_->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
                 rhs_loc(noff) = 0.0;
-                (*rhs_node)[k][v] = value[k];
+                if (v < nnodes_owned) (*rhs_node)[k][v] = value[k];
                 Acell(noff, noff) = 1.0 / cells.size();
               }
 
