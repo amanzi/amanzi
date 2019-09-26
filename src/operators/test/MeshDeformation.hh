@@ -22,8 +22,8 @@
 namespace Amanzi{
 
 // collection of routines for mesh deformation
-void DeformMesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh0,
-                const Teuchos::RCP<AmanziMesh::Mesh>& mesh1, int deform, double t);
+void DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1, int deform, double t,
+                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh0 = Teuchos::null);
 
 AmanziGeometry::Point TaylorGreenVortex(double t, const AmanziGeometry::Point& xv);
 AmanziGeometry::Point Rotation2D(double t, const AmanziGeometry::Point& xv);
@@ -36,17 +36,16 @@ AmanziGeometry::Point Unused(double t, const AmanziGeometry::Point& xv);
 * Deform mesh1 using coordinates given by mesh0
 ***************************************************************** */
 inline
-void DeformMesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh0,
-                const Teuchos::RCP<AmanziMesh::Mesh>& mesh1,
-                int deform, double t)
+void DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1, int deform, double t,
+                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh0)
 {
   // create distributed random vector
-  int d = mesh0->space_dimension();
+  int d = mesh1->space_dimension();
   CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh0)->SetGhosted(true)->AddComponent("node", AmanziMesh::NODE, d);
+  cvs.SetMesh(mesh1)->SetGhosted(true)->AddComponent("node", AmanziMesh::NODE, d);
   CompositeVector random(cvs);
 
-  int gid = mesh0->node_map(false).MaxAllGID();
+  int gid = mesh1->node_map(false).MaxAllGID();
   double scale = 0.2 * std::pow(gid, -1.0 / d);
   Epetra_MultiVector& random_n = *random.ViewComponent("node", true);
 
@@ -59,10 +58,14 @@ void DeformMesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh0,
   AmanziMesh::Entity_ID_List nodeids;
   AmanziGeometry::Point_List new_positions, final_positions;
 
-  int nnodes = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+  int nnodes = mesh1->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   for (int v = 0; v < nnodes; ++v) {
-    mesh0->node_get_coordinates(v, &xv);
+    if (mesh0.get()) 
+      mesh0->node_get_coordinates(v, &xv);
+    else
+      mesh1->node_get_coordinates(v, &xv);
+      
     nodeids.push_back(v);
 
     if (deform == 1) {

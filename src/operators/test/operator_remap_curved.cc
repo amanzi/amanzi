@@ -140,7 +140,7 @@ void MyRemapDG::ReInit(double tini)
 ***************************************************************** */
 void MyRemapDG::DeformMesh(int deform, double t)
 {
-  Amanzi::DeformMesh(mesh0_, mesh1_, deform, t);
+  Amanzi::DeformMesh(mesh1_, deform, t, mesh0_);
 
   if (order_ > 1) {
     int nfaces = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);

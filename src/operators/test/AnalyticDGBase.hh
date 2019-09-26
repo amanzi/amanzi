@@ -102,6 +102,9 @@ class AnalyticDGBase {
                              double& l20_err, double& inf0_err,
                              Epetra_MultiVector* perr = NULL);
 
+  // utilities
+  Amanzi::AmanziGeometry::Point face_normal_exterior(int f, bool* flag);
+
   // communications
   void GlobalOp(std::string op, double* val, int n);
 
@@ -285,6 +288,25 @@ void AnalyticDGBase::ComputeCellErrorRemap(
   pnorm = sqrt(pnorm);
   l2_err = sqrt(l2_err);
   l20_err = sqrt(l20_err);
+}
+
+
+/* ******************************************************************
+* Exterior normal
+****************************************************************** */
+inline
+Amanzi::AmanziGeometry::Point AnalyticDGBase::face_normal_exterior(int f, bool* flag)
+{
+  Amanzi::AmanziMesh::Entity_ID_List cells;
+  mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
+  *flag = (cells.size() == 1);
+
+  int dir;
+  Amanzi::AmanziGeometry::Point normal(d_);
+  if (*flag) 
+    normal = mesh_->face_normal(f, false, cells[0], &dir);
+
+  return normal;
 }
 
 
