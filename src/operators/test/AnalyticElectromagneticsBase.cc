@@ -61,18 +61,11 @@ void AnalyticElectromagneticsBase::ComputeEdgeError(
   l2_err = 0.0;
   inf_err = 0.0;
 
-  int n1, n2; 
-  Amanzi::AmanziGeometry::Point p1(3), p2(3), xe(3);
-
   int nedges = mesh_->num_entities(Amanzi::AmanziMesh::EDGE, Amanzi::AmanziMesh::Parallel_type::OWNED);
   for (int e = 0; e < nedges; e++) {
     double len = mesh_->edge_length(e);
     const Amanzi::AmanziGeometry::Point& tau = mesh_->edge_vector(e);
-
-    mesh_->edge_get_nodes(e, &n1, &n2);
-    mesh_->node_get_coordinates(n1, &p1);
-    mesh_->node_get_coordinates(n2, &p2);
-    xe = (p1 + p2) / 2;
+    const Amanzi::AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
 
     const Amanzi::AmanziGeometry::Point& E = electric_exact(xe, t);
     double tmp = (E * tau) / len;
@@ -83,12 +76,9 @@ void AnalyticElectromagneticsBase::ComputeEdgeError(
     // std::cout << e << " xe=" << xe << " E=" << u[0][e] << " Eex=" << tmp << " L2err=" << l2_err << std::endl;
   }
 #ifdef HAVE_MPI
-  double tmp = unorm;
-  mesh_->get_comm()->SumAll(&tmp, &unorm, 1);
-  tmp = l2_err;
-  mesh_->get_comm()->SumAll(&tmp, &l2_err, 1);
-  tmp = inf_err;
-  mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
+  GlobalOp("sum", &unorm, 1);
+  GlobalOp("sum", &l2_err, 1);
+  GlobalOp("max", &inf_err, 1);
 #endif
   unorm = sqrt(unorm);
   l2_err = sqrt(l2_err);
@@ -129,15 +119,27 @@ void AnalyticElectromagneticsBase::ComputeNodeError(
     }
   }
 #ifdef HAVE_MPI
-  double tmp = unorm;
-  mesh_->get_comm()->SumAll(&tmp, &unorm, 1);
-  tmp = l2_err;
-  mesh_->get_comm()->SumAll(&tmp, &l2_err, 1);
-  tmp = inf_err;
-  mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
+  GlobalOp("sum", &unorm, 1);
+  GlobalOp("sum", &l2_err, 1);
+  GlobalOp("max", &inf_err, 1);
 #endif
   unorm = sqrt(unorm);
   l2_err = sqrt(l2_err);
 }
 
 
+/* ******************************************************************
+* Collective communications.
+****************************************************************** */
+void AnalyticElectromagneticsBase::GlobalOp(std::string op, double* val, int n)
+{
+  double* val_tmp = new double[n];
+  for (int i = 0; i < n; ++i) val_tmp[i] = val[i];
+
+  if (op == "sum") 
+    mesh_->get_comm()->SumAll(val_tmp, val, n);
+  else if (op == "max") 
+    mesh_->get_comm()->MaxAll(val_tmp, val, n);
+
+  delete[] val_tmp;
+}
