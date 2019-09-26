@@ -41,17 +41,25 @@ void DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1, int deform, double 
 {
   // create distributed random vector
   int d = mesh1->space_dimension();
+
+  // consistent parallel data are needed for the random mesh deformation
+  AmanziMesh::Entity_ID_List bnd_ids;
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh1)->SetGhosted(true)->AddComponent("node", AmanziMesh::NODE, d);
   CompositeVector random(cvs);
-
-  int gid = mesh1->node_map(false).MaxAllGID();
-  double scale = 0.2 * std::pow(gid, -1.0 / d);
   Epetra_MultiVector& random_n = *random.ViewComponent("node", true);
 
-  random_n.Random();
-  random_n.Scale(scale);
-  random.ScatterMasterToGhosted();
+  if (deform == 7) {
+    int gid = mesh1->node_map(false).MaxAllGID();
+    double scale = 0.02 * std::pow(gid, -1.0 / d);
+
+    random_n.Random();
+    random_n.Scale(scale);
+    random.ScatterMasterToGhosted();
+
+    std::vector<double> vofs;
+    mesh1->get_set_entities_and_vofs("Boundary", AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED, &bnd_ids, &vofs);
+  }
 
   // relocate mesh nodes
   AmanziGeometry::Point xv(d), yv(d), uv(d);
@@ -79,7 +87,10 @@ void DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1, int deform, double 
     } else if (deform == 6) {
       yv = Rotation2D(t, xv);
     } else if (deform == 7) {
-      for (int i = 0; i < d; ++i) yv[i] = random_n[i][v];
+      yv = xv;
+      if (std::find(bnd_ids.begin(), bnd_ids.end(), v) == bnd_ids.end()) { 
+        for (int i = 0; i < d; ++i) yv[i] += random_n[i][v];
+      } 
     }
 
     new_positions.push_back(yv);

@@ -349,6 +349,13 @@ Tensor& Tensor::operator+=(double c)
 /* ******************************************************************
 * Elementary operations with a tensor.
 ****************************************************************** */
+Tensor& Tensor::operator+=(const Tensor& T)
+{
+  double* data = T.data();
+  for (int i = 0; i < size_*size_; ++i) data_[i] += data[i];
+  return *this;
+}
+
 Tensor& Tensor::operator-=(const Tensor& T)
 {
   double* data = T.data();
@@ -415,19 +422,23 @@ Tensor operator*(const Tensor& T1, const Tensor& T2)
   Tensor T3;
 
   if (rank1 == 4 && rank2 == 2) {
-    int n = d * (d + 1) / 2;
+    int n = T1.size();
     double *tmp1 = new double[n];
     double *tmp2 = new double[n];
 
     tmp1[0] = data2[0];
     tmp1[1] = data2[d + 1];
     if (d == 2) {
-      tmp1[2] = data2[1] + data2[2];
+      tmp1[2] = data2[1];
+      tmp1[3] = data2[2];
     } else if (d == 3) {
       tmp1[2] = data2[8];
-      tmp1[3] = data2[1] + data2[3];
-      tmp1[4] = data2[5] + data2[7];
-      tmp1[5] = data2[2] + data2[6];
+      tmp1[3] = data2[1];
+      tmp1[4] = data2[3];
+      tmp1[5] = data2[5];
+      tmp1[6] = data2[7];
+      tmp1[7] = data2[2];
+      tmp1[8] = data2[6];
     }
 
     T3.Init(d, rank2);
@@ -441,12 +452,16 @@ Tensor operator*(const Tensor& T1, const Tensor& T2)
     T3(0, 0) = tmp2[0];
     T3(1, 1) = tmp2[1];
     if (d == 2) {
-      T3(1, 0) = T3(0, 1) = tmp2[2];
+      T3(1, 0) = tmp2[2];
+      T3(0, 1) = tmp2[3];
     } else if (d == 3) {
       T3(2, 3) = tmp2[2];
-      T3(0, 1) = T3(1, 0) = tmp2[3];
-      T3(1, 2) = T3(2, 1) = tmp2[4];
-      T3(0, 2) = T3(2, 0) = tmp2[5];
+      T3(1, 0) = tmp2[3];
+      T3(0, 1) = tmp2[4];
+      T3(2, 1) = tmp2[5];
+      T3(1, 2) = tmp2[6];
+      T3(2, 0) = tmp2[7];
+      T3(0, 2) = tmp2[8];
     }
 
     delete [] tmp1;

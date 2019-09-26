@@ -28,8 +28,8 @@ namespace Amanzi {
 namespace WhetStone {
 
 const int WHETSTONE_TENSOR_SIZE[3][4] = {{1, 1, 0, 1},
-                                         {1, 2, 0, 3},
-                                         {1, 3, 0, 6}};
+                                         {1, 2, 0, 4},
+                                         {1, 3, 0, 9}};
 
 class Tensor {
  public:
@@ -61,6 +61,7 @@ class Tensor {
   // elementary operators
   Tensor& operator*=(double c);
   Tensor& operator+=(double c);
+  Tensor& operator+=(const Tensor& T);
   Tensor& operator-=(const Tensor& T);
   Tensor& operator=(const Tensor& T);
   friend AmanziGeometry::Point operator*(const Tensor& T, const AmanziGeometry::Point& p);
