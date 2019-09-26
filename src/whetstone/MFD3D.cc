@@ -50,6 +50,7 @@ void MFD3D::ModifyStabilityScalingFactor(double factor)
 
 /* ******************************************************************
 * A wrapper for the simplex method that finds monotone parameters. 
+* Content of N is destroyed.
 ****************************************************************** */
 int MFD3D::StabilityMMatrix_(
     int c, DenseMatrix& N, DenseMatrix& M, int objective)
@@ -63,9 +64,8 @@ int MFD3D::StabilityMMatrix_(
   }
 
   // compute null space
-  int mcols = nrows - ncols;
-  DenseMatrix D(nrows, mcols);
-  int ierr = N.NullSpace(D);
+  auto D = N.NullSpace();
+  int mcols = D.NumCols();
 
   // populate the tableau
   int m1(0), m2(nrows), m12, n12, mx, nx, ir;

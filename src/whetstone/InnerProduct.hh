@@ -40,6 +40,7 @@ class InnerProduct {
  protected:
   // supporting stability methods
   void StabilityScalar_(DenseMatrix& N, DenseMatrix& M);
+  void StabilityScalarNonSymmetric_(DenseMatrix& N, DenseMatrix& M);
   int StabilityOptimized_(const Tensor& T, DenseMatrix& N, DenseMatrix& M);
 
   double CalculateStabilityScalar_(DenseMatrix& Mc);

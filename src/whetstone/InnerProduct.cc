@@ -173,6 +173,34 @@ int InnerProduct::StabilityOptimized_(const Tensor& T, DenseMatrix& N, DenseMatr
 }
 
 
+
+/* ******************************************************************
+* Simple stability term for nonsymmetric tensors.
+****************************************************************** */
+void InnerProduct::StabilityScalarNonSymmetric_(DenseMatrix& N, DenseMatrix& M)
+{
+  GrammSchmidt_(N);
+  CalculateStabilityScalar_(M);
+
+  int nrows = M.NumRows();
+  int ncols = N.NumCols();
+
+  // add projector ss * (I - N^T N) to matrix M
+  for (int i = 0; i < nrows; i++) {  
+    M(i, i) += scalar_stability_;
+
+    for (int j = i; j < nrows; j++) {
+      double s = 0.0;
+      for (int k = 0; k < ncols; k++)  s += N(i, k) * N(j, k);
+
+      s *= scalar_stability_;
+      M(i, j) -= s;
+      if (i - j) M(j, i) -= s;
+    }
+  }
+}
+
+
 /* ******************************************************************
 * Calculate stability factor using matrix and optional scaling.
 ****************************************************************** */
