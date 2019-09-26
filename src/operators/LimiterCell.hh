@@ -9,7 +9,7 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Implementation of different limiters uses a few common rules:
-  1. Dirichlet boundary data are used to update limter bounds.
+  1. Dirichlet boundary data are used to update limiter bounds.
   2. Limiters are modified optionally so the the stable time step
      of first-order scheme is reduce not more than twice. This
      step requires to specify a face-based flux field.
@@ -108,7 +108,7 @@ class LimiterCell {
   void set_bounds(const Teuchos::RCP<CompositeVector>& bounds) { bounds_ = bounds; }
  
  private:
-  // internal limiters and supporting routines
+  // scalar limiters
   void LimiterScalar_(
       const AmanziMesh::Entity_ID_List& ids,
       const std::vector<int>& bc_model, const std::vector<double>& bc_value,
@@ -126,6 +126,12 @@ class LimiterCell {
       const AmanziMesh::Entity_ID_List& ids,
       const std::vector<int>& bc_model, const std::vector<double>& bc_value);
 
+  // hierarchical limiters
+  void LimiterHierarchicalDG_(
+      const WhetStone::DG_Modal& dg, const AmanziMesh::Entity_ID_List& ids,
+      const std::vector<int>& bc_model, const std::vector<double>& bc_value, double (*)(double));
+
+  // supprting routines for limiters
   void LimiterKuzminCell_(int cell,
                           AmanziGeometry::Point& gradient_c,
                           const std::vector<double>& field_node_min_c,

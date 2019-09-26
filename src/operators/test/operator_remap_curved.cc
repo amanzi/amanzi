@@ -317,7 +317,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   auto dg = Teuchos::rcp(new WhetStone::DG_Modal(dg_list, mesh0));
 
   AnalyticDG04 ana(mesh0, order, true);
-  // ana.set_shapes(true, true, false);
+  // ana.set_shapes(true, true, true);
   ana.InitialGuess(*dg, p1c, 1.0);
 
   // visualize initial solution

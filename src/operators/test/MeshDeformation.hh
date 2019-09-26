@@ -125,8 +125,8 @@ AmanziGeometry::Point Rotation2D(double t, const AmanziGeometry::Point& xv)
   double cs(std::cos(phi)), sn(std::sin(phi));
 
   AmanziGeometry::Point yv(xv);
-  yv[0] += cs * xv[0] - sn * xv[1];
-  yv[1] += sn * xv[0] + cs * xv[1];
+  yv[0] = cs * xv[0] - sn * xv[1];
+  yv[1] = sn * xv[0] + cs * xv[1];
   return yv;
 }
 

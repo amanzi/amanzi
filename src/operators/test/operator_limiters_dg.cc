@@ -214,7 +214,7 @@ TEST(LIMITER_SMOOTHNESS_INDICATOR_2D) {
 /* *****************************************************************
 * New limiters
 ***************************************************************** */
-TEST(LIMITER_GAUSS_POINTS)
+void RunTestGaussPoints(const std::string& limiter_name)
 {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -223,7 +223,7 @@ TEST(LIMITER_GAUSS_POINTS)
 
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: Limiters at Gauss points" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: Limiters at Gauss points, method=" << limiter_name << std::endl;
 
   // create rectangular mesh
   MeshFactory meshfactory(comm);
@@ -244,7 +244,7 @@ TEST(LIMITER_GAUSS_POINTS)
 
   WhetStone::DG_Modal dg(dglist, mesh);
   AnalyticDG08b ana(mesh, order, true);
-  ana.set_shapes(true, false, false);
+  ana.set_shapes(true, false, false);  // cone, hump, cylinder
 
   ana.InitialGuess(dg, *field_c, 0.0);
   field->ScatterMasterToGhosted("cell");
@@ -262,7 +262,7 @@ TEST(LIMITER_GAUSS_POINTS)
   Teuchos::ParameterList plist;
   plist.set<int>("polynomial_order", 2)
        .set<bool>("limiter extension for transport", false)
-       .set<std::string>("limiter", "Barth-Jespersen dg")
+       .set<std::string>("limiter", limiter_name)
        .set<std::string>("limiter stencil", "cell to all cells")
        .set<int>("limiter points", 3);
 
@@ -312,3 +312,7 @@ TEST(LIMITER_GAUSS_POINTS)
 }
 
 
+TEST(LIMITER_GAUSS_POINTS) {
+  RunTestGaussPoints("Barth-Jespersen dg");
+  RunTestGaussPoints("Barth-Jespersen dg hierarchical");
+}

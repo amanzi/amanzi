@@ -79,6 +79,9 @@ void LimiterCell::Init(Teuchos::ParameterList& plist,
   } else if (name == "Barth-Jespersen dg") {
     type_ = OPERATOR_LIMITER_BARTH_JESPERSEN_DG;
     stencil = plist.get<std::string>("limiter stencil", "face to cells");
+  } else if (name == "Barth-Jespersen dg hierarchical") {
+    type_ = OPERATOR_LIMITER_BARTH_JESPERSEN_DG_HIERARCHICAL;
+    stencil = plist.get<std::string>("limiter stencil", "face to cells");
   } else if (name == "Michalak-Gooch") {
     type_ = OPERATOR_LIMITER_MICHALAK_GOOCH;
     stencil = plist.get<std::string>("limiter stencil", "face to cells");
@@ -181,6 +184,9 @@ void LimiterCell::ApplyLimiter(
   } 
   else if (type_ == OPERATOR_LIMITER_MICHALAK_GOOCH_DG) {
     LimiterScalarDG_(dg, ids, bc_model, bc_value, [](double x) { return x - 4 * x * x * x / 27; });
+  } 
+  else if (type_ == OPERATOR_LIMITER_BARTH_JESPERSEN_DG_HIERARCHICAL) {
+    LimiterHierarchicalDG_(dg, ids, bc_model, bc_value, [](double x) { return x; });
   } else {
     Errors::Message msg("Unknown limiter");
     Exceptions::amanzi_throw(msg);
@@ -459,7 +465,6 @@ void LimiterCell::LimiterExtensionTransportScalar_(
 
 /* *******************************************************************
 * The scalar limiter for modal DG schemes. 
-* Note: external bounds are required.
 ******************************************************************* */
 void LimiterCell::LimiterScalarDG_(
     const WhetStone::DG_Modal& dg, const AmanziMesh::Entity_ID_List& ids,
@@ -518,6 +523,114 @@ void LimiterCell::LimiterScalarDG_(
     }
 
     for (int i = 1; i < nk; ++i) (*field_)[i][c] *= climiter;
+    (*limiter_)[c] = climiter;
+  }
+}
+
+
+/* *******************************************************************
+* The hierarchical limiter for modal DG schemes. 
+******************************************************************* */
+void LimiterCell::LimiterHierarchicalDG_(
+    const WhetStone::DG_Modal& dg, const AmanziMesh::Entity_ID_List& ids,
+    const std::vector<int>& bc_model, const std::vector<double>& bc_value, double (*func)(double))
+{
+  AMANZI_ASSERT(dim == 2);
+  AMANZI_ASSERT(dg.cell_basis(0).id() == WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
+
+  double u1, u1f, umin, umax;
+  AmanziMesh::Entity_ID_List faces, nodes;
+
+  int nk = field_->NumVectors();
+  WhetStone::DenseVector data(nk);
+  AmanziGeometry::Point x1(dim), x2(dim), xm(dim);
+  int order = WhetStone::PolynomialSpaceOrder(dim, nk);
+
+  // calculate bounds
+  // -- for mean values
+  component_ = 0;
+  std::vector<Teuchos::RCP<CompositeVector> > bounds(1 + dim); 
+  bounds[0] = BoundsForCells(*field_, bc_model, bc_value, stencil_id_);
+
+  // -- for gradient
+  {
+    std::vector<int> bc_model_none(nfaces_wghost, OPERATOR_BC_NONE);
+    Epetra_MultiVector field_tmp(mesh_->cell_map(true), dim);
+
+    for (int c = 0; c < ncells_owned; ++c) {
+      for (int i = 0; i < nk; ++i) data(i) = (*field_)[i][c];
+      auto poly = dg.cell_basis(c).CalculatePolynomial(mesh_, c, order, data);
+      for (int i = 0; i < dim; ++i) field_tmp[i][c] = poly(i + 1);
+    }
+
+    for (int i = 0; i < dim; ++i) {
+      component_ = i;
+      bounds[i + 1] = BoundsForCells(field_tmp, bc_model_none, bc_value, stencil_id_);
+    }
+  }
+
+  for (int n = 0; n < ids.size(); ++n) {
+    int c = ids[n];
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+
+    for (int i = 0; i < nk; ++i) data(i) = (*field_)[i][c];
+    auto poly = dg.cell_basis(c).CalculatePolynomial(mesh_, c, order, data);
+    auto grad = Gradient(poly);
+    // poly.Reshape(dim, 1);
+
+    u1 = (*field_)[0][c];
+    double tol = sqrt(OPERATOR_LIMITER_TOLERANCE) * fabs(u1);
+
+    int m = limiter_points_ - 1;
+    double climiter(1.0), hlimiter(1.0);
+
+    for (int i = 0; i < nfaces; i++) {
+      int f = faces[i];
+      mesh_->face_get_nodes(f, &nodes);
+
+      mesh_->node_get_coordinates(nodes[0], &x1);
+      mesh_->node_get_coordinates(nodes[1], &x2);
+
+      // limit mean values
+      bounds_ = bounds[0];
+      getBounds(c, f, stencil_id_, &umin, &umax);
+
+      for (int k = 0; k < limiter_points_; ++k) {
+        xm = x1 * WhetStone::q1d_points[m][k] + x2 * (1.0 - WhetStone::q1d_points[m][k]);
+        u1f = poly.Value(xm);
+        double u1_add = u1f - u1;
+
+        if (u1f < umin - tol) {
+          climiter = std::min(climiter, func((umin - u1) / u1_add));
+        } else if (u1f > umax + tol) {
+          climiter = std::min(climiter, func((umax - u1) / u1_add));
+        }
+      }
+
+      // limit gradient values
+      for (int l = 0; l < dim; ++l) {
+        bounds_ = bounds[l + 1];
+        getBounds(c, f, stencil_id_, &umin, &umax);
+
+        for (int k = 0; k < limiter_points_; ++k) {
+          xm = x1 * WhetStone::q1d_points[m][k] + x2 * (1.0 - WhetStone::q1d_points[m][k]);
+          u1f = grad[l].Value(xm);
+          double u1_add = u1f - grad[l](0);
+
+          if (u1f < umin) {
+            hlimiter = std::min(hlimiter, func((umin - u1) / u1_add));
+          } else if (u1f > umax) {
+            hlimiter = std::min(hlimiter, func((umax - u1) / u1_add));
+          }
+        }
+      }
+    }
+
+    climiter = std::max(climiter, hlimiter);
+    for (int i = 0; i < dim; ++i) (*field_)[i + 1][c] *= climiter;
+    for (int i = dim + 1; i < nk; ++i) (*field_)[i][c] *= climiter;
     (*limiter_)[c] = climiter;
   }
 }
