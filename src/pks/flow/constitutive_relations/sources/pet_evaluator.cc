@@ -28,7 +28,7 @@ namespace Relations {
 PETEvaluator::PETEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist)
 {
-  pt_alpha_ = plist.get<double>("adjustment factor alpha",1.26);
+  pt_alpha_ = plist.get<double>("adjustment factor alpha [-]",1.26);
   auto domain = Keys::getDomain(my_key_);
   at_key_ = Keys::readKey(plist, domain, "air temperature", "air_temperature");
   dependencies_.insert(at_key_);
