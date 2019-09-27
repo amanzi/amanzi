@@ -2,7 +2,7 @@ jobs:
   include:
     - stage: build phase 1
       script:
-      - echo "Build stage 1: travis branch = $TRAVIS_BRANCH"
+      - echo $TRAVIS_BRANCH
       - cd Docker
       - docker build -t ${DOCKER_USERNAME}/amanzi:${TRAVIS_BRANCH}-temp-build-stage-1 --build-arg amanzi_branch=${TRAVIS_BRANCH} -f Dockerfile-Amanzi-build-stage-1 . 
       - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
