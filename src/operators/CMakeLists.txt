@@ -52,6 +52,8 @@ add_definitions("-DMSTK_HAVE_MPI")
 #
 set(operators_inc_files
     BCs.hh
+    CompositeVector.hh
+    InterfaceWhetStone.hh
     LimiterCell.hh
     Mini_Diffusion1D.hh
     Mini_Operator1D.hh

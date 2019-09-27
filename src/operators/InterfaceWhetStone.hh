@@ -41,11 +41,11 @@ class InterfaceWhetStoneImpl : public InterfaceWhetStone {
     : mfd_(mfd), coef_(coef) {};
 
   virtual void StiffnessMatrix(int c, WhetStone::DenseMatrix& Acell) override {
-    mfd_->StiffnessMatrix(c, (*coef_->coef_)[c], Acell);
+    mfd_->StiffnessMatrix(c, coef_->get_coef(c), Acell);
   }
 
   virtual void FaceMatrixJump(int f, int c1, int c2, WhetStone::DenseMatrix& Aface) override {
-    mfd_->FaceMatrixJump(f, (*coef_->coef_)[c1], (*coef_->coef_)[c2], Aface);
+    mfd_->FaceMatrixJump(f, coef_->get_coef(c1), coef_->get_coef(c2), Aface);
   }
 
  private:

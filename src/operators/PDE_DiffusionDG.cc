@@ -107,10 +107,6 @@ void PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
   double Kf(1.0);
   AmanziMesh::Entity_ID_List cells;
   
-  WhetStone::Tensor Kc1(d, 1), Kc2(d, 1);
-  Kc1(0, 0) = 1.0;
-  Kc2(0, 0) = 1.0;
-
   // volumetric term
   for (int c = 0; c != ncells_owned; ++c) {
     interface_->StiffnessMatrix(c, Acell);

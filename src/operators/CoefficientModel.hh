@@ -16,58 +16,39 @@
 #define AMANZI_OPERATOR_COEFFICIENT_MODEL_HH_
 
 #include <string>
+#include <typeinfo>
 
 #include "Teuchos_RCP.hpp"
 
 namespace Amanzi {
 namespace Operators {
 
+template<typename T>
 class CoefficientModel {
  public:
   CoefficientModel() {}; 
+  CoefficientModel(const std::shared_ptr<std::vector<T> >& coef)
+    : coef_(coef) {}; 
   ~CoefficientModel() {}; 
 
-  virtual std::string name() const = 0;
+  virtual std::string name() { return typeid(T).name(); }
+  T get_coef(int c) { return (*coef_)[c]; }
+
+ public:
+  std::shared_ptr<std::vector<T> > coef_;
 };
 
 
-class CoefficientConstant : public CoefficientModel {
- public:
-  CoefficientConstant(const std::shared_ptr<std::vector<WhetStone::Tensor> >& coef)
-    : coef_(coef) {}; 
-  ~CoefficientConstant() {}; 
-
-  virtual std::string name() const override { return "constant"; }
-
- public:
-  std::shared_ptr<std::vector<WhetStone::Tensor> > coef_;
-};
-
-
-class CoefficientMatrixPolynomial : public CoefficientModel {
- public:
-  CoefficientMatrixPolynomial(const std::shared_ptr<std::vector<WhetStone::MatrixPolynomial> >& coef)
-    : coef_(coef) {};
-  ~CoefficientMatrixPolynomial() {}; 
-
-  virtual std::string name() const override { return "matrix polynomial"; }
-
- public:
-  std::shared_ptr<std::vector<WhetStone::MatrixPolynomial> > coef_;
-};
-
-
-class CoefficientFunction : public CoefficientModel {
- public:
-  CoefficientFunction(const std::shared_ptr<std::vector<WhetStone::WhetStoneFunction*> >& coef)
-    : coef_(coef) {};
-  ~CoefficientFunction() {}; 
-
-  virtual std::string name() const override { return "function"; }
-
- public:
-  std::shared_ptr<const std::vector<WhetStone::WhetStoneFunction*> > coef_;
-};
+/* ******************************************************************
+* Specialization
+****************************************************************** */
+template<>
+WhetStone::Tensor CoefficientModel<WhetStone::Tensor>::get_coef(int c)
+{
+  WhetStone::Tensor Kc(2, 1);
+  Kc(0, 0) = 1.0;
+  return (coef_.get()) ? (*coef_)[c] : Kc;
+}
 
 }  // namespace Operators
 }  // namespace Amanzi
