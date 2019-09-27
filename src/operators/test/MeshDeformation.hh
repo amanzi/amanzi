@@ -30,6 +30,8 @@ void DeformMeshCurved(
     const Teuchos::RCP<AmanziMesh::Mesh>& mesh1, int deform, double t,
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh0, int order);
 
+AmanziGeometry::Point MovePoint(double t, const AmanziGeometry::Point& xv, int deform);
+
 AmanziGeometry::Point TaylorGreenVortex(double t, const AmanziGeometry::Point& xv);
 AmanziGeometry::Point Rotation2D(double t, const AmanziGeometry::Point& xv);
 AmanziGeometry::Point CompressionExpansion2D(double t, const AmanziGeometry::Point& xv);
@@ -84,23 +86,13 @@ void DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1, int deform, double 
       
     nodeids.push_back(v);
 
-    if (deform == 1) {
-      yv = TaylorGreenVortex(t, xv);
-    } else if (deform == 2) {
-      yv = Unused(t, xv);
-    } else if (deform == 4) {
-      yv = CompressionExpansion2D(t, xv);
-    } else if (deform == 5) {
-      yv = CompressionExpansion3D(t, xv);
-    } else if (deform == 6) {
-      yv = Rotation2D(t, xv);
-    } else if (deform == 7) {
+    if (deform == 7) {
       yv = xv;
       if (std::find(bnd_ids.begin(), bnd_ids.end(), v) == bnd_ids.end()) { 
         for (int i = 0; i < d; ++i) yv[i] += random_n[i][v];
       } 
-    } else if (deform == 8) {
-      yv = BubbleFace3D(t, xv);
+    } else {
+      yv = MovePoint(t, xv, deform);
     }
 
     new_positions.push_back(yv);
@@ -120,7 +112,6 @@ void DeformMeshCurved(
   DeformMesh(mesh1, deform, t, mesh0);
 
   int dim = mesh1->space_dimension();
-  AmanziGeometry::Point yv(dim);
   if (order > 1) {
     int nfaces = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
     auto ho_nodes0f = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nfaces);
@@ -130,15 +121,7 @@ void DeformMeshCurved(
       const AmanziGeometry::Point& xf = mesh0->face_centroid(f);
       (*ho_nodes0f)[f].push_back(xf);
 
-      if (deform == 1)
-        yv = TaylorGreenVortex(t, xf);
-      else if (deform == 4)
-        yv = CompressionExpansion2D(t, xf);
-      else if (deform == 5)
-        yv = CompressionExpansion3D(t, xf);
-      else if (deform == 6)
-        yv = Rotation2D(t, xf);
-
+      auto yv = MovePoint(t, xf, deform);
       (*ho_nodes1f)[f].push_back(yv);
     }
     auto tmp = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(mesh0);
@@ -154,17 +137,48 @@ void DeformMeshCurved(
         const AmanziGeometry::Point& xe = mesh0->edge_centroid(e);
         (*ho_nodes0e)[e].push_back(xe);
 
-        if (deform == 1)
-          yv = TaylorGreenVortex(t, xe);
-        else if (deform == 5)
-          yv = CompressionExpansion3D(t, xe);
-
+        auto yv = MovePoint(t, xe, deform);
         (*ho_nodes1e)[e].push_back(yv);
       }
       Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(tmp)->set_face_ho_nodes(ho_nodes0e);
       Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(mesh1)->set_face_ho_nodes(ho_nodes1e);
     }
   }
+}
+
+
+/* *****************************************************************
+* Factory of point relocation methods
+***************************************************************** */
+inline
+AmanziGeometry::Point MovePoint(double t, const AmanziGeometry::Point& xv, int deform)
+{
+  AmanziGeometry::Point yv(xv);
+
+  switch (deform) {
+  case 1: 
+    yv = TaylorGreenVortex(t, xv);
+    break;
+  case 2: 
+    yv = Unused(t, xv);
+    break;
+  case 4: 
+    yv = CompressionExpansion2D(t, xv);
+    break;
+  case 5:
+    yv = CompressionExpansion3D(t, xv);
+    break;
+  case 6:
+    yv = Rotation2D(t, xv);
+    break;
+  case 8:
+    yv = BubbleFace3D(t, xv);
+    break;
+  default:
+    break;
+ }
+
+ return yv;
 }
 
 
