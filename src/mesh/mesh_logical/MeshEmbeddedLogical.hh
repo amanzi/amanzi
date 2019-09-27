@@ -281,9 +281,7 @@ class MeshEmbeddedLogical : public Mesh {
   virtual
   void write_to_exodus_file(const std::string filename) const;
 
-
  protected:
-
   // individual versions, if recompute is used
   virtual
   int compute_cell_geometry_(const Entity_ID cellid,
@@ -308,7 +306,6 @@ class MeshEmbeddedLogical : public Mesh {
   // get faces of a cell and directions in which it is used - this function
   // is implemented in each mesh framework. The results are cached in
   // the base class
-
   virtual
   void cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
           Entity_ID_List *faceids,
@@ -317,7 +314,6 @@ class MeshEmbeddedLogical : public Mesh {
 
   // Cells connected to a face - this function is implemented in each
   // mesh framework. The results are cached in the base class
-
   virtual
   void face_get_cells_internal_(const Entity_ID faceid,
           const Parallel_type ptype,
@@ -364,16 +360,11 @@ class MeshEmbeddedLogical : public Mesh {
   Teuchos::RCP<Epetra_Import> exterior_face_importer_;
   std::vector<std::vector<AmanziGeometry::Point> > cell_face_bisectors_;
 
-  Teuchos::RCP<Mesh> bg_mesh_; // background mesh, typically a Mesh_MSTK
-  Teuchos::RCP<Mesh> log_mesh_; // embedded mesh, typically a MeshLogical
+  Teuchos::RCP<Mesh> bg_mesh_;  // background mesh, typically a Mesh_MSTK
+  Teuchos::RCP<Mesh> log_mesh_;  // embedded mesh, typically a MeshLogical
 };
 
-
-} // close namespace AmanziMesh
-} // close namespace Amanzi
-
-
-
-
+}  // namespace AmanziMesh
+}  // namespace Amanzi
 
 #endif

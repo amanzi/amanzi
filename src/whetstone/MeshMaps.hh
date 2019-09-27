@@ -54,7 +54,6 @@ class MeshMaps {
   // Maps
   // -- pseudo-velocity
   virtual void VelocityEdge(int e, VectorPolynomial& ve) const;
-  void VelocityEdgeNew(int e, VectorPolynomial& ve) const;
   virtual void VelocityFace(int f, VectorPolynomial& vf) const;
   virtual void VelocityCell(int c, const std::vector<VectorPolynomial>& ve,
 		            const std::vector<VectorPolynomial>& vf,

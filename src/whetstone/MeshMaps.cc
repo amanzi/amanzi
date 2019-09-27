@@ -28,37 +28,7 @@ namespace WhetStone {
 /* ******************************************************************
 * Calculate mesh velocity on 2D or 3D edge e.
 ****************************************************************** */
-void MeshMaps::VelocityEdge(int e, VectorPolynomial& ve) const
-{
-  const AmanziGeometry::Point& xe0 = mesh0_->edge_centroid(e);
-  const AmanziGeometry::Point& xe1 = mesh1_->edge_centroid(e);
-
-  // velocity order 1
-  int n0, n1;
-  AmanziGeometry::Point x0, x1;
-
-  mesh0_->edge_get_nodes(e, &n0, &n1);
-  mesh0_->node_get_coordinates(n0, &x0);
-  mesh1_->node_get_coordinates(n0, &x1);
-
-  x0 -= xe0;
-  x1 -= xe1;
-
-  // operator F(\xi) = x_c + R (\xi - \xi_c) where R = x1 * x0^T / |x0|^2
-  ve.Reshape(d_, d_, 1);
-
-  x0 /= L22(x0);
-  for (int i = 0; i < d_; ++i) {
-    for (int j = 0; j < d_; ++j) {
-      ve[i](1, j) = x1[i] * x0[j];
-    }
-    ve[i](0, 0) = xe1[i] - x1[i] * (x0 * xe0);
-    ve[i](1, i) -= 1.0;
-  }
-}
-
-
-void MeshMaps::VelocityEdgeNew(int e, VectorPolynomial& v) const
+void MeshMaps::VelocityEdge(int e, VectorPolynomial& v) const
 {
   AMANZI_ASSERT(d_ == 3);
 
@@ -101,7 +71,7 @@ void MeshMaps::VelocityEdgeNew(int e, VectorPolynomial& v) const
     v[i].Reshape(d_ - 2, order);
     if (order == 1) {
       v[i](0) = ye[i];
-      v[i](1) = ye[i] - y0[i];
+      v[i](1) = y1[i] - y0[i];
     } else {
       v[i](0) = points1[0][i];
       v[i](1) = y1[i] - y0[i];

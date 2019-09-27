@@ -327,7 +327,6 @@ TEST(DG_MAP_VELOCITY_CELL) {
 
   std::vector<VectorPolynomial> ve(nedges); 
   for (int n = 0; n < nedges; ++n) {
-    // maps->VelocityEdgeNew(n, ve[n]);
     maps->VelocityEdge(n, ve[n]);
   }
 

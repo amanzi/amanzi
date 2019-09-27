@@ -117,8 +117,9 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   Teuchos::RCP<const Mesh> mesh0;
   Teuchos::RCP<Mesh> mesh1;
   if (file_name != "") {
-    mesh0 = meshfactory.create(file_name, true, true);
-    mesh1 = meshfactory.create(file_name, true, true);
+    bool request_edges = (dim == 3);
+    mesh0 = meshfactory.create(file_name, true, request_edges);
+    mesh1 = meshfactory.create(file_name, true, request_edges);
   } else if (dim == 2) {
     mesh0 = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, ny);
     mesh1 = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, ny);
@@ -297,7 +298,7 @@ TEST(REMAP_DUAL) {
   int deform = 1;
   RemapTestsDualRK(rk_method, "FEM", "", 10,10,0, dT);
 
-  RemapTestsDualRK(rk_method, "VEM", "test/median15x16.exo", 1,1,0, dT/2);
+  RemapTestsDualRK(rk_method, "VEM", "test/median15x16.exo", 16,1,0, dT/2);
   RemapTestsDualRK(rk_method, "VEM", "", 4,4,4, dT, deform);
 
   /*
