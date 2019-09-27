@@ -4,8 +4,16 @@ LABEL Description="Amanzi: Build stage 1 and install in temporary Docker image."
 # Switch to amanzi_user
 USER amanzi_user
 
+RUN echo "${AMANZI_PREFIX}"
+RUN echo "${AMANZI_TPLS_DIR}"
+
 # Arguments
 ARG amanzi_branch=master 
+
+# Installation paths
+ENV AMANZI_PREFIX=/home/amanzi_user/install \
+    AMANZI_INSTALL_DIR=/home/amanzi_user/install/amanzi \
+    AMANZI_TPLS_DIR=/home/amanzi_user/install/tpls
 
 # Change the Working Directory and update amanzi
 WORKDIR /home/amanzi_user/amanzi
