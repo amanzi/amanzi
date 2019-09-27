@@ -42,7 +42,7 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D : public virtual BilinearForm {
+class MFD3D : public BilinearForm {
  public:
   explicit MFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   virtual ~MFD3D() {};

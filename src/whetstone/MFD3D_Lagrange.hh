@@ -9,8 +9,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Lagrange-type element: degrees of freedom are nodal values and
-  moments on edges, faces and inside cell.
+  Lagrange element: degrees of freedom are nodal values.
 */
 
 #ifndef AMANZI_MFD3D_LAGRANGE_HH_
@@ -41,7 +40,9 @@ class MFD3D_Lagrange : public MFD3D {
 
   // required methods
   // -- schema
-  virtual std::vector<SchemaItem> schema() const override;
+  virtual std::vector<SchemaItem> schema() const override {
+    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::NODE, DOF_Type::SCALAR, 1));
+  }
 
   // -- mass matrices
   virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override {
@@ -56,65 +57,27 @@ class MFD3D_Lagrange : public MFD3D {
   }
 
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override {
-    if (d_ == 2) return H1consistency2D_(c, T, N, Ac);
-    return H1consistency3D_(c, T, N, Ac);
-  }
+  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override;
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
   // -- projectors
-  virtual void L2Cell(int c, const std::vector<Polynomial>& vf,
+  virtual void L2Cell(int c, const std::vector<Polynomial>& ve,
+                      const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& uc) override {
-    if (use_lo_) {
-      ProjectorCell_LO_(c, vf, uc);
-    } else {
-      ProjectorCell_(c, vf, ProjectorType::L2, moments, uc);
-    }
+    ProjectorCell_(c, ve, vf, uc);
   }
 
-  virtual void H1Cell(int c, const std::vector<Polynomial>& vf,
+  virtual void H1Cell(int c, const std::vector<Polynomial>& ve,
+                      const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& uc) override {
-    ProjectorCell_(c, vf, ProjectorType::H1, moments, uc);
+    ProjectorCell_(c, ve, vf, uc);
   }
-
-  virtual void H1Cell(int c, const DenseVector& dofs, Polynomial& uc) override {
-    ProjectorCellFromDOFs_(c, dofs, ProjectorType::H1, uc);
-  }
-
-  // surface methods
-  int H1consistencySurface(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
-  int StiffnessMatrixSurface(int c, const Tensor& T, DenseMatrix& A);
-
-  // access 
-  // -- integrals of monomials in high-order schemes could be reused
-  const PolynomialOnMesh& integrals() const { return integrals_; }
-  PolynomialOnMesh& integrals() { return integrals_; }
-
-  // -- matrices that could be resused in other code
-  const DenseMatrix& G() const { return G_; }
-  const DenseMatrix& R() const { return R_; }
 
  private:
-  int H1consistency2D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
-  int H1consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
-
-  void ProjectorCell_(int c, const std::vector<Polynomial>& vf,
-                      const ProjectorType type,
-                      const Polynomial* moments, Polynomial& uc);
-
-  void ProjectorCell_LO_(int c, const std::vector<Polynomial>& vf, Polynomial& uc);
-
-  void ProjectorCellFromDOFs_(int c, const DenseVector& dofs,
-                              const ProjectorType type, Polynomial& uc);
-
-  std::vector<Polynomial> ConvertMomentsToPolynomials_(int order);
-
- protected:
-  PolynomialOnMesh integrals_;
-  DenseMatrix R_, G_;
+  void ProjectorCell_(int c, const std::vector<Polynomial>& ve,
+                      const std::vector<Polynomial>& vf, Polynomial& uc);
 
  private:
-  bool use_lo_;
   static RegisteredFactory<MFD3D_Lagrange> factory_;
 };
 

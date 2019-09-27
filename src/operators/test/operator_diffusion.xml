@@ -121,12 +121,30 @@
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="method" type="string" value="Lagrange"/>
+        <Parameter name="method" type="string" value="Lagrange high order"/>
         <Parameter name="method order" type="int" value="3"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="diffusion operator Lagrange serendipity">
+      <Parameter name="matrix type" type="string" value="stiffness"/>
+      <ParameterList name="schema">
+        <Parameter name="base" type="string" value="cell"/>
+        <Parameter name="method" type="string" value="Lagrange serendipity"/>
+        <Parameter name="method order" type="int" value="3"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="diffusion operator 3D Lagrange">
+      <Parameter name="matrix type" type="string" value="stiffness"/>
+      <ParameterList name="schema">
+        <Parameter name="base" type="string" value="cell"/>
+        <Parameter name="method" type="string" value="Lagrange high order"/>
+        <Parameter name="method order" type="int" value="3"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="diffusion operator 3D Lagrange serendipity">
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
@@ -149,7 +167,7 @@
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="method" type="string" value="CrouzeixRaviart"/>
+        <Parameter name="method" type="string" value="CrouzeixRaviart high order"/>
         <Parameter name="method order" type="int" value="3"/>
       </ParameterList>
     </ParameterList>

@@ -68,8 +68,6 @@ TEST(DG2D_MASS_MATRIX) {
       CHECK_CLOSE(M(i, i), area, 1e-12);
     }
   }
-
-  
 }
 
 
@@ -152,8 +150,6 @@ TEST(DG3D_MASS_MATRIX) {
       CHECK_CLOSE(M0(i, 0), 0.0, 1e-12);
     }
   }
-
-  
 }
 
 
@@ -218,8 +214,6 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
 
   CHECK_CLOSE(20.2332916667, integral[0], 1e-10);
   CHECK(integral[0] < integral[1]);
-
-  
 }
 
 
@@ -248,10 +242,11 @@ void Run2DFluxMatrix(bool upwind, bool jump_on_test) {
     un(0) = 1.0;
 
     // TEST1: constant u
+    double flux;
     DenseMatrix A0, A1;
-    dg.FluxMatrix(1, un, A0, upwind, jump_on_test);
+    dg.FluxMatrix(1, un, A0, upwind, jump_on_test, &flux);
 
-    printf("Flux matrix (face-based) for order=%d  u.n=1\n", k);
+    printf("Flux matrix (face-based) for order=%d u.n=1, flux=%8.2f\n", k, flux);
     int nk = A0.NumRows();
     for (int i = 0; i < nk; i++) {
       for (int j = 0; j < nk; j++ ) printf("%8.4f ", A0(i, j)); 
@@ -260,7 +255,7 @@ void Run2DFluxMatrix(bool upwind, bool jump_on_test) {
 
     // TEST2: add zero gradient to velocity un
     un.Reshape(2, 1);
-    dg.FluxMatrix(1, un, A1, upwind, jump_on_test);
+    dg.FluxMatrix(1, un, A1, upwind, jump_on_test, &flux);
 
     A1 -= A0;
     CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
@@ -268,9 +263,9 @@ void Run2DFluxMatrix(bool upwind, bool jump_on_test) {
     // TEST3: nonzero linear component of velocity un
     un(1) = 1.0;
 
-    dg.FluxMatrix(1, un, A1, upwind, jump_on_test);
+    dg.FluxMatrix(1, un, A1, upwind, jump_on_test, &flux);
 
-    printf("Flux matrix (face-based) for order=%d u.n=1+x\n", k);
+    printf("Flux matrix (face-based) for order=%d u.n=1+x, flux=%8.2f\n", k, flux);
     for (int i = 0; i < nk; i++) {
       for (int j = 0; j < nk; j++ ) printf("%8.4f ", A1(i, j)); 
       printf("\n");
@@ -281,8 +276,6 @@ void Run2DFluxMatrix(bool upwind, bool jump_on_test) {
     A0 -= A1;
     CHECK_CLOSE(0.0, A0.NormInf(), 1e-12);
   }
-
-  
 }
 
 TEST(DG2D_FLUX_MATRIX) {
@@ -317,8 +310,9 @@ TEST(DG2D_FLUX_MATRIX_CONSERVATION) {
     un(1) = 1.0;
     un(2) =-6.0;
 
+    double flux;
     DenseMatrix A0, A1;
-    dg.FluxMatrix(1, un, A0, true, true);
+    dg.FluxMatrix(1, un, A0, true, true, &flux);
     dg.FluxMatrixGaussPoints(1, un, A1, true, true);
 
     printf("Flux matrix (face-based) for order=%d u.n=1+x\n", k);
@@ -338,8 +332,6 @@ TEST(DG2D_FLUX_MATRIX_CONSERVATION) {
     A1.Multiply(e, b, false);
     CHECK_CLOSE(0.0, b(0) + b(nk / 2), 1e-12); 
   }
-
-  
 }
 
 
@@ -369,8 +361,9 @@ TEST(DG3D_FLUX_MATRIX) {
     un(0, 0) = 1.0;
 
     // TEST1: constant u
+    double flux;
     DenseMatrix A0, A1;
-    dg.FluxMatrix(f, un, A0, true, false);
+    dg.FluxMatrix(f, un, A0, true, false, &flux);
 
     printf("Advection matrix (face-based) for order=%d  u.n=1\n", k);
     int nk = A0.NumRows();
@@ -381,7 +374,7 @@ TEST(DG3D_FLUX_MATRIX) {
 
     // TEST2: add zero gradient to polynomial un
     un.Reshape(d, 1);
-    dg.FluxMatrix(f, un, A1, true, false);
+    dg.FluxMatrix(f, un, A1, true, false, &flux);
 
     A1 -= A0;
     CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
@@ -389,7 +382,7 @@ TEST(DG3D_FLUX_MATRIX) {
     // TEST3: nonzero linear component polynomial un
     un(1, 0) = 1.0;
 
-    dg.FluxMatrix(f, un, A1, true, false);
+    dg.FluxMatrix(f, un, A1, true, false, &flux);
 
     printf("Advection matrix (face-based) for order=%d u.n=1+x\n", k);
     for (int i = 0; i < nk; i++) {
@@ -402,8 +395,6 @@ TEST(DG3D_FLUX_MATRIX) {
     A0 -= A1;
     CHECK_CLOSE(0.0, A0.NormInf(), 1e-12);
   }
-
-  
 }
 
 
@@ -524,8 +515,6 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
     A1 -= A0;
     CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
   }
-
-  
 }
 
  
@@ -602,8 +591,6 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
       CHECK_CLOSE(integral, 43.0 / 24.0, 1e-12);
     }
   }
-
-  
 }
 
  
@@ -720,8 +707,6 @@ TEST(DG_LEAST_SQUARE_MAP_CELL) {
   // -- check that it is bilinear map
   CHECK_CLOSE(0.0, u[0](2, 0), 1e-14);
   CHECK_CLOSE(0.0, u[0](2, 2), 1e-14);
-
-  
 }
 
 

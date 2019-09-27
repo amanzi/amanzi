@@ -254,9 +254,9 @@ class MeshExtractedManifold : public Mesh {
                             const Entity_kind kind) const;
 
   void TryExtension_(const std::string& setname,
-                     Entity_kind kind_p, Entity_kind kind_d, Entity_ID_List* setents);
+                     Entity_kind kind_p, Entity_kind kind_d, Entity_ID_List* setents) const;
   std::map<Entity_ID, int> EnforceOneLayerOfGhosts_(const std::string& setname, Entity_kind kind,
-                                                    Entity_ID_List* setents);
+                                                    Entity_ID_List* setents) const;
 
   void PrintSets_() const;
 

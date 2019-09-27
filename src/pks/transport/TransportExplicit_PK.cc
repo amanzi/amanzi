@@ -508,7 +508,7 @@ bool TransportExplicit_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     *vo_->os() << ncycles << " sub-cycles, dt_stable=" << units_.OutputTime(dt_original) 
                << ", dt_MPC=" << units_.OutputTime(dt_MPC) << std::endl;
 
-    VV_PrintSoluteExtrema(tcc_next, dt_MPC);
+    VV_PrintSoluteExtrema(tcc_next, dt_MPC, "");
   }
 
   return failed;

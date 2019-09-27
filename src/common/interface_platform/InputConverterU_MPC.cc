@@ -941,7 +941,8 @@ void InputConverterU::FinalizeMPC_PKs_(Teuchos::ParameterList& glist)
       tmp_f.remove("BDF1", false);
       tmp_f.remove("initialization", false);
 
-      Teuchos::Array<std::string> aux(1, CreateUniqueName_(fracture_regions_));
+      // Teuchos::Array<std::string> aux(1, CreateUniqueName_(fracture_regions_));
+      Teuchos::Array<std::string> aux(1, "FRACTURE_NETWORK_INTERNAL");
       mesh_list.sublist("submesh").set<Teuchos::Array<std::string> >("regions", aux)
                                   .set<std::string>("extraction method", "manifold mesh");
 

@@ -20,70 +20,85 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
+#include "GrammMatrix.hh"
 #include "MFD3D_CrouzeixRaviart.hh"
+#include "MFD3D_CrouzeixRaviartAnyOrder.hh"
 #include "MFD3D_CrouzeixRaviartSerendipity.hh"
-#include "MFD3D_Diffusion.hh"
 #include "MFD3D_Lagrange.hh"
+#include "MFD3D_LagrangeAnyOrder.hh"
 #include "MFD3D_LagrangeSerendipity.hh"
 #include "Tensor.hh"
 
 
-/* **************************************************************** */
-TEST(HIGH_ORDER_CROUZEIX_RAVIART) {
+/* ******************************************************************
+* Crouzier-Raviart 2D and 3D elements
+****************************************************************** */
+void HighOrderCrouzeixRaviart(int dim, std::string file_name) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "Test: High-order Crouzeix Raviart in 2D" << std::endl;
+  std::cout << "Test: High-order Crouzeix Raviart in " 
+            << dim << "D" << " file=" << file_name <<std::endl;
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", true, false); 
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, (dim == 3)); 
  
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
-  MFD3D_CrouzeixRaviart mfd(plist, mesh);
+  MFD3D_CrouzeixRaviart mfd_lo(plist, mesh);
+  MFD3D_CrouzeixRaviartAnyOrder mfd_ho(plist, mesh);
 
   int cell(0);
-  DenseMatrix N, A1, Ak;
+  DenseMatrix G1, A1, Ak;
 
-  Tensor T(2, 2);
+  Tensor T(dim, 2);
   T(0, 0) = T(1, 1) = 2.0;
   T(0, 1) = T(1, 0) = 1.0;
+  T(dim - 1, dim - 1) = 2.0;
 
   // 1st-order scheme
-  mfd.set_order(1);
-  mfd.StiffnessMatrix(cell, T, A1);
+  mfd_lo.set_order(1);
+  mfd_lo.StiffnessMatrix(cell, T, A1);
 
   // 1st-order scheme (new algorithm)
-  mfd.set_use_always_ho(true);
-  mfd.StiffnessMatrix(cell, T, Ak);
+  mfd_ho.set_order(1);
+  mfd_ho.StiffnessMatrix(cell, T, Ak);
 
-  printf("Stiffness matrix for order = 1\n");
+  printf("Stiffness (sub)matrix for order = 1\n");
   PrintMatrix(A1, "%8.4f ");
 
   A1 -= Ak;
   CHECK(A1.NormInf() <= 1e-10);
 
   // high-order scheme (new algorithm)
-  for (int k = 2; k < 4; ++k) {
-    mfd.set_order(k);
-    mfd.H1consistency(cell, T, N, Ak);
-    mfd.StiffnessMatrix(cell, T, Ak);
+  int kmax = (dim == 3) ? 3 : 4;
+  for (int k = 2; k < kmax; ++k) {
+    mfd_ho.set_order(k);
+    mfd_ho.StiffnessMatrix(cell, T, Ak);
 
-    printf("Stiffness matrix for order = %d\n", k);
-    PrintMatrix(Ak, "%8.4f ");
+    printf("Stiffness (sub)matrix for order=%d, size=%d\n", k, Ak.NumRows());
+    PrintMatrix(Ak, "%8.4f ", 12);
 
     // verify SPD propery
     int nrows = Ak.NumRows();
     for (int i = 0; i < nrows; i++) CHECK(Ak(i, i) > 0.0);
 
     // verify exact integration property
-    const DenseMatrix& G = mfd.G();
-    const DenseMatrix& R = mfd.R();
-    DenseMatrix G1(G);
-    G1.Multiply(N, R, true);
+    const DenseMatrix& G = mfd_ho.G();
+    
+    PolynomialOnMesh integrals;
+    NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+    numi.UpdateMonomialIntegralsCell(cell, 2 * k, integrals);
+
+    Polynomial ptmp, poly(dim, k);
+    Basis_Regularized<AmanziMesh::Mesh> basis;
+    basis.Init(mesh, cell, k, ptmp);
+
+    GrammMatrixGradients(T, poly, integrals, basis, G1);
+
     G1(0, 0) = 1.0;
     G1.Inverse();
     G1(0, 0) = 0.0;
@@ -93,19 +108,28 @@ TEST(HIGH_ORDER_CROUZEIX_RAVIART) {
 }
 
 
-/* **************************************************************** */
-void HighOrderCrouzeixRaviartSerendipity(std::string file_name) {
+TEST(HIGH_ORDER_CROUZEIX_RAVIART) {
+  HighOrderCrouzeixRaviart(2, "test/one_pentagon.exo");
+  HighOrderCrouzeixRaviart(3, "test/cube_unit.exo");
+} 
+
+
+/* ******************************************************************
+* Incorrect Serendipity Crouzier-Raviart 2D element (for testing)
+****************************************************************** */
+void HighOrderCrouzeixRaviartSerendipity(int dim, std::string file_name) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: High-order Crouzeix Raviart Serendipity element in 2D, file=" << file_name << std::endl;
+  std::cout << "\nTest: High-order Crouzeix Raviart Serendipity element in " 
+            << dim << "D, file=" << file_name << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
   MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, false); 
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, (dim == 3)); 
  
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
@@ -116,31 +140,37 @@ void HighOrderCrouzeixRaviartSerendipity(std::string file_name) {
   for (int c = 0; c < ncells; ++c) {
     if (mesh->cell_get_num_faces(c) < 4) continue;
 
-    Tensor T(2, 1);
+    Tensor T(dim, 1);
     T(0, 0) = 1.0;
 
     // high-order schemes
-    for (int k = 1; k < 4; ++k) {
-      DenseMatrix N, Ak;
+    int kmax = (dim == 3) ? 3 : 4;
+    for (int k = 1; k < kmax; ++k) {
+      DenseMatrix G1, Ak;
 
       mfd.set_order(k);
-      mfd.H1consistency(c, T, N, Ak);
       mfd.StiffnessMatrix(c, T, Ak);
 
-      printf("Stiffness matrix for order=%d, cell=%d\n", k, c);
-      PrintMatrix(Ak, "%8.3f ");
+      printf("Stiffness (sub)matrix for order=%d, cell=%d, size=%d\n", k, c, Ak.NumRows());
+      PrintMatrix(Ak, "%8.3f ", 12);
 
       // verify SPD propery
       int nrows = Ak.NumRows();
       for (int i = 0; i < nrows; i++) CHECK(Ak(i, i) > 0.0);
 
       // verify exact integration property
-      const DenseMatrix& R = mfd.R();
       const DenseMatrix& G = mfd.G();
 
-      DenseMatrix G1(G);
-      G1.PutScalar(0.0);
-      G1.Multiply(N, R, true);
+      PolynomialOnMesh integrals;
+      NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+      numi.UpdateMonomialIntegralsCell(c, 2 * k, integrals);
+
+      Polynomial ptmp, poly(dim, k);
+      Basis_Regularized<AmanziMesh::Mesh> basis;
+      basis.Init(mesh, c, k, ptmp);
+
+      GrammMatrixGradients(T, poly, integrals, basis, G1);
+
       G1(0, 0) = 1.0;
       G1.Inverse();
       G1(0, 0) = 0.0;
@@ -153,18 +183,21 @@ void HighOrderCrouzeixRaviartSerendipity(std::string file_name) {
 
 
 TEST(HIGH_ORDER_CROUZEIX_RAVIART_SERENDIPITY) {
-  HighOrderCrouzeixRaviartSerendipity("test/two_cell2_dist.exo");
-  HighOrderCrouzeixRaviartSerendipity("test/one_pentagon.exo");
+  HighOrderCrouzeixRaviartSerendipity(2, "test/two_cell2_dist.exo");
+  HighOrderCrouzeixRaviartSerendipity(2, "test/one_pentagon.exo");
+  // HighOrderCrouzeixRaviartSerendipity(3, "test/cube_unit.exo");
 } 
 
 
-/* **************************************************************** */
-void HighOrderLagrange(std::string file_name) {
+/* ******************************************************************
+* Lagrange 2D element
+****************************************************************** */
+void HighOrderLagrange2D(std::string file_name) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: High-order Lagrange element in 2D, file=" << file_name << std::endl;
+  std::cout << "\nTest: High-order Lagrange element, file=" << file_name << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
@@ -177,15 +210,16 @@ void HighOrderLagrange(std::string file_name) {
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
 
-  MFD3D_Diffusion mfd_lo(plist, mesh);
-  MFD3D_Lagrange mfd_ho(plist, mesh);
+  MFD3D_Lagrange mfd_lo(plist, mesh);
+  MFD3D_LagrangeAnyOrder mfd_ho(plist, mesh);
 
+  int d = mesh->space_dimension();
   for (int c = 0; c < ncells; ++c) {
-    DenseMatrix N, A1, Ak;
+    DenseMatrix G1, A1, Ak;
 
     Tensor T(2, 2);
     T(0, 0) = T(1, 1) = 2.0;
-    T(0, 1) = T(1, 0) = 0.0;
+    T(0, 1) = T(1, 0) = 0.1;
 
     // 1st-order scheme
     mfd_lo.StiffnessMatrix(c, T, A1);
@@ -194,8 +228,8 @@ void HighOrderLagrange(std::string file_name) {
     mfd_ho.set_order(1);
     mfd_ho.StiffnessMatrix(c, T, Ak);
 
-    printf("Stiffness matrix for order=1, cell=%d\n", c);
-    PrintMatrix(A1, "%8.4f ");
+    printf("Stiffness (sub)matrix for order=1, cell=%d\n", c);
+    PrintMatrix(Ak, "%8.4f ");
 
     A1 -= Ak;
     CHECK(A1.NormInf() <= 1e-10);
@@ -203,22 +237,28 @@ void HighOrderLagrange(std::string file_name) {
     // high-order scheme (new algorithm)
     for (int k = 2; k < 5; ++k) {
       mfd_ho.set_order(k);
-      mfd_ho.H1consistency(c, T, N, Ak);
       mfd_ho.StiffnessMatrix(c, T, Ak);
 
-      printf("Stiffness matrix for order=%d, cell=%d\n", k, c);
-      PrintMatrix(Ak, "%8.4f ");
+      printf("Stiffness (sub)matrix for order=%d, cell=%d, size=%d\n", k, c, Ak.NumRows());
+      PrintMatrix(Ak, "%8.4f ", 12);
 
       // verify SPD propery
       int nrows = Ak.NumRows();
       for (int i = 0; i < nrows; i++) CHECK(Ak(i, i) > 0.0);
 
       // verify exact integration property
-      const DenseMatrix& R = mfd_ho.R();
       const DenseMatrix& G = mfd_ho.G();
-      DenseMatrix G1(G);
 
-      G1.Multiply(N, R, true);
+      PolynomialOnMesh integrals;
+      NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+      numi.UpdateMonomialIntegralsCell(c, 2 * k, integrals);
+
+      Polynomial ptmp, poly(mesh->space_dimension(), k);
+      Basis_Regularized<AmanziMesh::Mesh> basis;
+      basis.Init(mesh, c, k, ptmp);
+
+      GrammMatrixGradients(T, poly, integrals, basis, G1);
+
       G1(0, 0) = 1.0;
       G1.Inverse();
       G1(0, 0) = 0.0;
@@ -229,49 +269,149 @@ void HighOrderLagrange(std::string file_name) {
 }
 
 
-TEST(HIGH_ORDER_LAGRANGE) {
-  HighOrderLagrange("test/one_pentagon.exo");
-  HighOrderLagrange("test/two_cell2_dist.exo");
+TEST(HIGH_ORDER_LAGRANGE_2D) {
+  HighOrderLagrange2D("test/one_pentagon.exo");
+  HighOrderLagrange2D("test/two_cell2_dist.exo");
 } 
 
 
-/* **************************************************************** */
-void HighOrderLagrangeSerendipity(std::string file_name) {
+/* ******************************************************************
+* Lagrange 3D element
+****************************************************************** */
+void HighOrderLagrange3D(const std::string& filename1,
+                         const std::string& filename2) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: High-order Lagrange Serendipity element in 2D, file=" << file_name << std::endl;
+  std::cout << "\nTest: High-order 3D Lagrange element, comparing: " 
+            << filename1 << " and " << filename2 << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
   MeshFactory meshfactory(comm,gm);
   meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, true); 
+  Teuchos::RCP<Mesh> mesh1 = meshfactory.create(filename1, true, true); 
+  Teuchos::RCP<Mesh> mesh2 = meshfactory.create(filename2, true, true); 
  
+  DenseMatrix G1, A1, A2;
+  Teuchos::ParameterList plist;
+  plist.set<int>("method order", 1);
+
+  Tensor T(3, 1);
+  T(0, 0) = 2.0;
+
+  {
+    MFD3D_Lagrange mfd_lo(plist, mesh2);
+    MFD3D_LagrangeAnyOrder mfd_ho(plist, mesh2);
+
+    // 1st-order scheme
+    mfd_lo.StiffnessMatrix(0, T, A1);
+
+    // 1st-order scheme (new algorithm)
+    mfd_ho.set_order(1);
+    mfd_ho.StiffnessMatrix(0, T, A2);
+
+    printf("Stiffness (sub)matrix for order=1\n");
+    PrintMatrix(A2, "%8.4f ");
+
+    A1 -= A2;
+    CHECK(A1.NormInf() <= 1e-10 * A2.NormInf());
+  }
+
+  // high-order scheme (new algorithm)
+  MFD3D_LagrangeAnyOrder mfd1(plist, mesh1);
+  MFD3D_LagrangeAnyOrder mfd2(plist, mesh2);
+  for (int k = 1; k < 3; ++k) {
+    mfd1.set_order(k);
+    mfd1.StiffnessMatrix(0, T, A1);
+
+    mfd2.set_order(k);
+    mfd2.StiffnessMatrix(0, T, A2);
+
+    printf("Stiffness (sub)matrix for order=%d, size=%d\n", k, A1.NumRows());
+    PrintMatrix(A1, "%8.4f ", 12);
+
+    // verify SPD propery
+    int nrows = A1.NumRows();
+    for (int i = 0; i < nrows; i++) CHECK(A1(i, i) > 0.0);
+
+    A1 -= A2;
+    CHECK(A1.NormInf() <= 1e-10 * A2.NormInf());
+
+    // verify exact integration property
+    const DenseMatrix& G = mfd2.G();
+
+    PolynomialOnMesh integrals;
+    NumericalIntegration<AmanziMesh::Mesh> numi(mesh2);
+    numi.UpdateMonomialIntegralsCell(0, 2 * k, integrals);
+
+    Polynomial ptmp, poly(3, k);
+    Basis_Regularized<AmanziMesh::Mesh> basis;
+    basis.Init(mesh2, 0, k, ptmp);
+
+    GrammMatrixGradients(T, poly, integrals, basis, G1);
+
+    G1(0, 0) = 1.0;
+    G1.Inverse();
+    G1(0, 0) = 0.0;
+    G1 -= G;
+    CHECK(G1.NormInf() <= 1e-12 * G.NormInf());
+  }
+}
+
+
+TEST(HIGH_ORDER_LAGRANGE_3D) {
+  HighOrderLagrange3D("test/cube_unit.exo", "test/cube_unit_rotated.exo");
+  HighOrderLagrange3D("test/cube_half.exo", "test/cube_half.exo");
+  HighOrderLagrange3D("test/parallepiped.exo", "test/parallepiped_rotated.exo");
+}
+
+
+/* ******************************************************************
+* Serendipity 2D and 3D Lagrange elements
+****************************************************************** */
+void HighOrderLagrangeSerendipity(const std::string& filename) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: High-order Lagrange Serendipity element, file=" << filename << std::endl;
+  auto comm = Amanzi::getDefaultComm();
+
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(filename, true, true); 
+ 
+  int d = mesh->space_dimension();
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
   Teuchos::ParameterList plist; 
   plist.set<int>("method order", 1);
 
-  MFD3D_Diffusion mfd_lo(plist, mesh);
+  MFD3D_Lagrange mfd_lo(plist, mesh);
   MFD3D_LagrangeSerendipity mfd_ho(plist, mesh);
 
   for (int c = 0; c < ncells; ++c) {
     if (mesh->cell_get_num_faces(c) < 4) continue;
 
-    Tensor T(2, 2);
-    T(0, 0) = T(1, 1) = 2.0;
-    T(0, 1) = T(1, 0) = 1.0;
+    int rank = (d == 3) ? 1 : 2; 
+    Tensor T(d, rank);
+    T(0, 0) = 2.0;
+    if (rank == 2) {
+      T(1, 1) = 2.0;
+      T(0, 1) = T(1, 0) = 1.0;
+    }
 
     // 1st-order scheme
-    DenseMatrix N, A1, Ak;
+    DenseMatrix G1, A1, Ak;
     mfd_lo.StiffnessMatrix(c, T, A1);
 
     mfd_ho.set_order(1);
     mfd_ho.StiffnessMatrix(c, T, Ak);
 
-    printf("Stiffness matrix for order=1, cell=%d\n", c);
+    printf("Stiffness (sub)matrix for order=1, cell=%d\n", c);
     PrintMatrix(Ak, "%8.4f ");
 
     A1 -= Ak;
@@ -280,23 +420,28 @@ void HighOrderLagrangeSerendipity(std::string file_name) {
     // high-order schemes
     for (int k = 2; k < 4; ++k) {
       mfd_ho.set_order(k);
-      mfd_ho.H1consistency(c, T, N, Ak);
       mfd_ho.StiffnessMatrix(c, T, Ak);
 
-      printf("Stiffness matrix for order=%d, cell=%d\n", k, c);
-      PrintMatrix(Ak, "%8.3f ");
+      printf("Stiffness (sub)matrix for order=%d, cell=%d, size=%d\n", k, c, Ak.NumRows());
+      PrintMatrix(Ak, "%8.3f ", 12);
 
       // verify SPD propery
       int nrows = Ak.NumRows();
       for (int i = 0; i < nrows; i++) CHECK(Ak(i, i) > 0.0);
 
       // verify exact integration property
-      const DenseMatrix& R = mfd_ho.R();
       const DenseMatrix& G = mfd_ho.G();
 
-      DenseMatrix G1(G);
-      G1.PutScalar(0.0);
-      G1.Multiply(N, R, true);
+      PolynomialOnMesh integrals;
+      NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
+      numi.UpdateMonomialIntegralsCell(0, 2 * k, integrals);
+
+      Polynomial ptmp, poly(d, k);
+      Basis_Regularized<AmanziMesh::Mesh> basis;
+      basis.Init(mesh, 0, k, ptmp);
+
+      GrammMatrixGradients(T, poly, integrals, basis, G1);
+
       G1(0, 0) = 1.0;
       G1.Inverse();
       G1(0, 0) = 0.0;
@@ -311,5 +456,46 @@ void HighOrderLagrangeSerendipity(std::string file_name) {
 TEST(HIGH_ORDER_LAGRANGE_SERENDIPITY) {
   HighOrderLagrangeSerendipity("test/two_cell2_dist.exo");
   HighOrderLagrangeSerendipity("test/one_pentagon.exo");
+  HighOrderLagrangeSerendipity("test/cube_unit.exo");
 } 
 
+
+/* ******************************************************************
+* Surface Lagrange element
+****************************************************************** */
+TEST(HIGH_ORDER_LAGRANGE_SURFACE) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: High-order Lagrange element on surface"<< std::endl;
+  auto comm = Amanzi::getDefaultComm();
+
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
+  MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh2d = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1);
+  Teuchos::RCP<Mesh> mesh3d = meshfactory.create("test/cube_unit.exo", true, true); 
+ 
+  Teuchos::ParameterList plist; 
+  plist.set<int>("method order", 2);
+
+  MFD3D_LagrangeAnyOrder mfd_2d(plist, mesh2d);
+  MFD3D_LagrangeAnyOrder mfd_ho(plist, mesh3d);
+
+  Tensor T(2, 1);
+  T(0, 0) = 1.0;
+
+  // 1st-order scheme
+  DenseMatrix A2d, A3d;
+  mfd_ho.StiffnessMatrixSurface(0, T, A3d);
+
+  printf("Stiffness (sub)matrix for order=2, size=%d\n", A3d.NumRows());
+  PrintMatrix(A3d, "%9.3f ", 12);
+
+  // compare with flat construction
+  mfd_2d.StiffnessMatrix(0, T, A2d);
+
+  A3d -= A2d;
+  CHECK(A3d.NormInf() <= 1e-12 * A2d.NormInf());
+}

@@ -68,7 +68,7 @@ int MFD3D_BernardiRaugel::H1consistency(
   for (int i = 0; i < d_; ++i) {
     for (int j = i; j < d_; ++j) {
       Tensor T(d_, 2);
-      T(i, j) = T(j, i) += 1.0;
+      T(i, j) = T(j, i) = 1.0;
       vT.push_back(T);
 
       Tensor KT(K * T);

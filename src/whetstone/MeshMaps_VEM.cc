@@ -29,7 +29,8 @@ namespace WhetStone {
 * NOTE: second mesh is not used, so does it belong here?
 ****************************************************************** */
 void MeshMaps_VEM::VelocityCell(
-    int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
+    int c, const std::vector<VectorPolynomial>& ve,
+    const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
   Teuchos::ParameterList plist;
   plist.set<std::string>("method", method_)
@@ -42,16 +43,20 @@ void MeshMaps_VEM::VelocityCell(
     LeastSquareProjector_Cell_(order_, c, vf, vc);
   } else {
     for (int i = 0; i < d_; ++i) {
-      std::vector<Polynomial> vvf;
+      std::vector<Polynomial> vvf, vve;
       for (int n = 0; n < vf.size(); ++n) {
         vvf.push_back(vf[n][i]);
       }
     
+      for (int n = 0; n < ve.size(); ++n) {
+        vve.push_back(ve[n][i]);
+      }
+    
       if (projector_ == "H1") {
-        mfd->H1Cell(c, vvf, NULL, vc[i]);
+        mfd->H1Cell(c, vve, vvf, NULL, vc[i]);
       }
       else if (projector_ == "L2") {
-        mfd->L2Cell(c, vvf, NULL, vc[i]);
+        mfd->L2Cell(c, vve, vvf, NULL, vc[i]);
       }
     }
   }
@@ -78,51 +83,19 @@ void MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
     auto mfd = BilinearFormFactory::Create(plist, mesh0_);
     mfd->set_order(order_);
 
-    VectorPolynomial v;
-    std::vector<Polynomial> ve;
-
+    vf.resize(d_);
     for (int i = 0; i < d_; ++i) {
+      VectorPolynomial v;
+      std::vector<Polynomial> ve;
+
       for (int n = 0; n < nedges; ++n) {
         int e = edges[n];
-        VelocityEdge_(e, v);
+	MeshMaps::VelocityEdge(e, v);
         ve.push_back(v[i]);
       }
 
       mfd->H1Face(f, ve, NULL, vf[i]);
     }
-  }
-}
-
-
-/* ******************************************************************
-* Calculate mesh velocity on 2D or 3D edge e.
-****************************************************************** */
-void MeshMaps_VEM::VelocityEdge_(int e, VectorPolynomial& ve) const
-{
-  const AmanziGeometry::Point& xe0 = mesh0_->edge_centroid(e);
-  const AmanziGeometry::Point& xe1 = mesh1_->edge_centroid(e);
-
-  // velocity order 1
-  int n0, n1;
-  AmanziGeometry::Point x0, x1;
-
-  mesh0_->edge_get_nodes(e, &n0, &n1);
-  mesh0_->node_get_coordinates(n0, &x0);
-  mesh1_->node_get_coordinates(n0, &x1);
-
-  x0 -= xe0;
-  x1 -= xe1;
-
-  // operator F(\xi) = x_c + R (\xi - \xi_c) where R = x1 * x0^T
-  ve.Reshape(d_, d_, 1);
-
-  x0 /= L22(x0);
-  for (int i = 0; i < d_; ++i) {
-    for (int j = 0; j < d_; ++j) {
-      ve[i](1, j) = x1[i] * x0[j];
-    }
-    ve[i](0, 0) = xe1[i] - x1[i] * (x0 * xe0);
-    ve[i](1, i) -= 1.0;
   }
 }
 

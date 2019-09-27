@@ -42,7 +42,6 @@ class Schema {
             Teuchos::RCP<const AmanziMesh::Mesh> mesh,
             AmanziMesh::Entity_kind base);
 
-  void SetBase(AmanziMesh::Entity_kind base) { base_ = base; }
   void AddItem(AmanziMesh::Entity_kind kind, WhetStone::DOF_Type type, int num) {
     WhetStone::SchemaItem item(kind, type, num);
     items_.push_back(item);
@@ -63,7 +62,9 @@ class Schema {
   std::string CreateUniqueName() const;
 
   // access
+  void set_base(AmanziMesh::Entity_kind base) { base_ = base; }
   AmanziMesh::Entity_kind base() const { return base_; }
+
   std::vector<WhetStone::SchemaItem>::const_iterator begin() const { return items_.begin(); }
   std::vector<WhetStone::SchemaItem>::const_iterator end() const { return items_.end(); }
   int size() const { return items_.size(); }

@@ -49,12 +49,11 @@ TEST(FACTORY_DISCRETIZATION_METHODS) {
     Teuchos::ParameterList plist;
     plist.set<std::string>("method", names[i])
          .set<int>("method order", 1)
+         .set<std::string>("base", "cell")
          .set<std::string>("dg basis", "normalized");
     Teuchos::RCP<BilinearForm> form = BilinearFormFactory::Create(plist, mesh); 
     CHECK(form != Teuchos::null);
   }
-
-  
 }
 
 

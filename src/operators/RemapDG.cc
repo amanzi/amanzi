@@ -40,6 +40,11 @@ RemapDG::RemapDG(
   nfaces_owned_ = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   nfaces_wghost_ = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
+  if (mesh0_->valid_edges()) {
+    nedges_owned_ = mesh0_->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::OWNED);
+    nedges_wghost_ = mesh0_->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::ALL);
+  }
+
   auto& pklist = plist_.sublist("PK operator");
   order_ = pklist.sublist("flux operator")
                  .sublist("schema").template get<int>("method order");
@@ -111,9 +116,9 @@ void RemapDG::InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg)
   op_flux_->SetBCs(bc, bc);
 
   // memory allocation for velocities
-  velf_ = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost_));
-  velc_ = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_owned_));
-  det_ = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_owned_));
+  velf_ = Teuchos::rcp(new std::vector<WhetStone::SpaceTimePolynomial>(nfaces_wghost_));
+  velc_ = Teuchos::rcp(new std::vector<WhetStone::VectorSpaceTimePolynomial>(ncells_owned_));
+  det_ = Teuchos::rcp(new std::vector<WhetStone::SpaceTimePolynomial>(ncells_owned_));
 
   // memory allocation for non-conservative field
   field_ = Teuchos::rcp(new CompositeVector(*op_reac_->global_operator()->rhs()));
@@ -121,9 +126,9 @@ void RemapDG::InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg)
 
 
 /* *****************************************************************
-* Initialization of velocities and deformation tensor
+* Initialization of static edge and face velocities
 ***************************************************************** */
-void RemapDG::InitializeFaceVelocity()
+void RemapDG::StaticEdgeFaceVelocities()
 {
   auto map_list = plist_.sublist("maps");
   WhetStone::MeshMapsFactory maps_factory;
@@ -133,28 +138,102 @@ void RemapDG::InitializeFaceVelocity()
   for (int f = 0; f < nfaces_wghost_; ++f) {
     maps_->VelocityFace(f, velf_vec_[f]);
   }
+
+  if (mesh0_->valid_edges()) {
+    vele_vec_.resize(nedges_wghost_);
+    for (int e = 0; e < nedges_wghost_; ++e) {
+      maps_->VelocityEdge(e, vele_vec_[e]);
+    }
+  }
 }
 
 
 /* *****************************************************************
-* Initialization of the deformation tensor
+* Initialization of the constant cell velocity
 ***************************************************************** */
-void RemapDG::InitializeJacobianMatrix()
+void RemapDG::StaticCellVelocity()
 {
-  WhetStone::Entity_ID_List faces;
-  J_.resize(ncells_owned_);
+  WhetStone::Entity_ID_List edges, faces;
   uc_.resize(ncells_owned_);
 
   for (int c = 0; c < ncells_owned_; ++c) {
+    // faces are always included
     mesh0_->cell_get_faces(c, &faces);
 
-    std::vector<WhetStone::VectorPolynomial> vvf;
+    std::vector<WhetStone::VectorPolynomial> vve, vvf;
     for (int n = 0; n < faces.size(); ++n) {
       vvf.push_back(velf_vec_[faces[n]]);
     }
 
-    maps_->VelocityCell(c, vvf, uc_[c]);
-    maps_->Jacobian(uc_[c], J_[c]);
+    // edges are included in 3D only
+    if (dim_ == 3) {
+      mesh0_->cell_get_edges(c, &edges);
+
+      for (int n = 0; n < edges.size(); ++n) {
+        vve.push_back(vele_vec_[edges[n]]);
+      }
+    } 
+
+    maps_->VelocityCell(c, vve, vvf, uc_[c]);
+  }
+}
+
+
+/* *****************************************************************
+* Initialization of space-tim co-velocity v = u * (j J^{-t} N)
+***************************************************************** */
+void RemapDG::StaticFaceCoVelocity()
+{
+  WhetStone::VectorSpaceTimePolynomial cn;
+  for (int f = 0; f < nfaces_wghost_; ++f) {
+    WhetStone::VectorSpaceTimePolynomial map(dim_, dim_, 1), tmp(dim_, dim_, 0);
+    const auto& origin = velf_vec_[f][0].origin();
+
+    for (int i = 0; i < dim_; ++i) {
+      map[i][0].Reshape(dim_, order_, true);
+      map[i][0](1, i) = 1.0;        // map = x
+      map[i][0].set_origin(origin);
+      map[i][1] = velf_vec_[f][i];  // map = x + t * u
+
+      tmp[i][0] = velf_vec_[f][i];
+    }
+
+    maps_->NansonFormula(f, map, cn);
+    (*velf_)[f] = tmp * cn;
+  }
+}
+
+
+/* *****************************************************************
+* Initialization of the constant cell velocity
+***************************************************************** */
+void RemapDG::StaticCellCoVelocity()
+{
+  for (int c = 0; c < ncells_owned_; ++c) {
+    WhetStone::MatrixPolynomial Jc;
+    maps_->Jacobian(uc_[c], Jc);
+
+    // space-time cell velocity: v = -j J^{-1} u = -C^t u
+    WhetStone::MatrixSpaceTimePolynomial Jt(dim_, dim_, dim_, 1), Ct;
+    WhetStone::VectorSpaceTimePolynomial tmp(dim_, dim_, 0);
+    const auto& origin = uc_[c][0].origin();
+
+    for (int i = 0; i < dim_; ++i) {
+      for (int j = 0; j < dim_; ++j) {
+        Jt(i, j)[0].Reshape(dim_, 0, true);
+        Jt(i, j)[0].set_origin(origin);
+        Jt(i, j)[1] = Jc(i, j);  // Jt = 1 + t * J
+      }
+      Jt(i, i)[0](0) = 1.0;
+      tmp[i][0] = uc_[c][i];
+    }
+
+    maps_->Cofactors(Jt, Ct);
+
+    tmp *= -1.0;
+    Ct.Multiply(tmp, (*velc_)[c], true);
+
+    maps_->Determinant(Jt, (*det_)[c]);
   }
 }
 
@@ -166,12 +245,11 @@ void RemapDG::FunctionalTimeDerivative(
     double t, const CompositeVector& u, CompositeVector& f)
 {
   // -- populate operators
-  //    geometric data were updated during solution modification
-  op_adv_->SetupPolyVector(velc_);
-  op_adv_->UpdateMatrices();
+  op_adv_->Setup(velc_, false);
+  op_adv_->UpdateMatrices(t);
 
-  op_flux_->Setup(velc_, velf_);
-  op_flux_->UpdateMatrices(velf_.ptr());
+  op_flux_->Setup(velf_.ptr(), false);
+  op_flux_->UpdateMatrices(t);
   op_flux_->ApplyBCs(true, true, true);
 
   // -- calculate right-hand_side
@@ -186,12 +264,9 @@ void RemapDG::FunctionalTimeDerivative(
 ***************************************************************** */
 void RemapDG::ModifySolution(double t, CompositeVector& u)
 {
-  DynamicFaceVelocity(t);
-  DynamicCellVelocity(t);
-
   // populate operators
-  op_reac_->Setup(det_);
-  op_reac_->UpdateMatrices(Teuchos::null);
+  op_reac_->Setup(det_, false);
+  op_reac_->UpdateMatrices(t);
 
   // solve the problem with the mass matrix
   auto& matrices = op_reac_->local_op()->matrices;
@@ -228,68 +303,6 @@ void RemapDG::ModifySolution(double t, CompositeVector& u)
 
     // -- update conservative field
     op_reac_->global_operator()->Apply(*field_, u);
-  }
-}
-
-
-/* *****************************************************************
-* Calculates various geometric quantaties on intermediate meshes.
-***************************************************************** */
-void RemapDG::DynamicJacobianMatrix(
-    int c, double t, const WhetStone::MatrixPolynomial& J, WhetStone::MatrixPolynomial& Jt)
-{
-  int nJ = J.NumRows();
-  Jt = J * t;
-
-  for (int i = 0; i < nJ; ++i) {
-    Jt(i, i % dim_)(0) += 1.0;
-  }
-}
-
-
-/* *****************************************************************
-* Calculate face co-velocity in reference coordinates
-***************************************************************** */
-void RemapDG::DynamicFaceVelocity(double t)
-{
-  WhetStone::VectorPolynomial tmp, fmap, cn;
-
-  for (int f = 0; f < nfaces_wghost_; ++f) {
-    // cn = j J^{-t} N dA
-    fmap = t * velf_vec_[f];
-    maps_->NansonFormula(f, fmap, cn);
-    (*velf_)[f] = velf_vec_[f] * cn;
-  }
-}
-
-
-/* *****************************************************************
-* Cell co-velocity in reference coordinates and Jacobian determinant
-***************************************************************** */
-void RemapDG::DynamicCellVelocity(double t)
-{
-  WhetStone::MatrixPolynomial Jt, C;
-  for (int c = 0; c < ncells_owned_; ++c) {
-    DynamicJacobianMatrix(c, t, J_[c], Jt);
-    maps_->Cofactors(Jt, C);
-    maps_->Determinant(Jt, (*det_)[c]);
-    
-    // negative co-velocity, v = -C^t u 
-    int nC = C.NumRows();
-    (*velc_)[c].resize(nC);
-
-    int kC = nC / dim_;
-      for (int n = 0; n < kC; ++n) {
-      int m = n * dim_;
-      for (int i = 0; i < dim_; ++i) {
-        (*velc_)[c][m + i].Reshape(dim_, 0, true);
-        (*velc_)[c][m + i].set_origin(uc_[c][0].origin());
-
-        for (int k = 0; k < dim_; ++k) {
-          (*velc_)[c][m + i] -= C(m + k, i) * uc_[c][m + k];
-        }
-      }
-    }
   }
 }
 
@@ -380,22 +393,17 @@ void RemapDG::ApplyLimiter(double t, CompositeVector& x)
 void RemapDG::NonConservativeToConservative(
     double t, const CompositeVector& u, CompositeVector& v)
 {
-  DynamicFaceVelocity(t);
-  DynamicCellVelocity(t);
-
-  op_reac_->Setup(det_);
-  op_reac_->UpdateMatrices(Teuchos::null);
+  op_reac_->Setup(det_, false);
+  op_reac_->UpdateMatrices(t);
   op_reac_->global_operator()->Apply(u, v);
 }
+
 
 void RemapDG::ConservativeToNonConservative(
     double t, const CompositeVector& u, CompositeVector& v)
 {
-  DynamicFaceVelocity(t);
-  DynamicCellVelocity(t);
-
-  op_reac_->Setup(det_);
-  op_reac_->UpdateMatrices(Teuchos::null);
+  op_reac_->Setup(det_, false);
+  op_reac_->UpdateMatrices(t);
 
   auto& matrices = op_reac_->local_op()->matrices;
   for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();

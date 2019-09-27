@@ -33,7 +33,7 @@
 #include "MeshMapsFactory.hh"
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
-#include "VectorPolynomial.hh"
+#include "VectorObjects.hh"
 #include "WhetStoneDefs.hh"
 
 // Operators
@@ -169,7 +169,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
 
   // -- divergence of velocity
   //    non-conservative formulation leads to Kn = Kreac - div(v)
-  auto Kn = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>());
+  auto Kn = Teuchos::rcp(new std::vector<WhetStone::Polynomial>());
   WhetStone::Polynomial divv = Divergence(v);
 
   if (!conservative_form && weak_form == "dual") {
@@ -185,7 +185,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   WhetStone::Polynomial sol, src;
   WhetStone::Polynomial pc(dim, order);
   WhetStone::DenseVector data(pc.size());
-  WhetStone::NumericalIntegration numi(mesh);
+  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
 
   Epetra_MultiVector& rhs_c = *global_op->rhs()->ViewComponent("cell");
   for (int c = 0; c < ncells; ++c) {
@@ -260,10 +260,10 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   op_adv->UpdateMatrices();
 
   if (conservative_form || weak_form == "primal" || weak_form == "gauss points")
-    op_reac->Setup(Kc);
+    op_reac->SetupScalar(Kc);
   else 
-    op_reac->Setup(Kn);
-  op_reac->UpdateMatrices(Teuchos::null);
+    op_reac->SetupPoly(Kn);
+  op_reac->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // create preconditoner
   ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");

@@ -447,17 +447,29 @@ Entity_ID_List MeshExtractedManifold::build_set_(
 
   // special processing of regions
   if (rgn->type() == AmanziGeometry::LABELEDSET) {
+    if (parent_labeledsets_.find(internal_name) == parent_labeledsets_.end()) {
+      Entity_kind kind_p(NODE);
+      if (kind == CELL) kind_p = FACE;
+      if (kind == FACE) kind_p = EDGE;
+
+      Entity_ID_List setents;
+      TryExtension_(rgn->name(), kind_p, kind, &setents);
+    }
+
     const auto& ids_p = parent_labeledsets_[internal_name];
     for (auto it = ids_p.begin(); it != ids_p.end(); ++it) {
       mset.push_back(parent_to_entid_[kind][*it]);
     }
+    return mset;
   }
 
   // generic algorithm
   int nents_wghost = num_entities(kind, Parallel_type::ALL);
   if (rgn->type() == AmanziGeometry::ALL)  {
-    for (int n = 0; n < nents_wghost; ++n)
+    for (int n = 0; n < nents_wghost; ++n) {
       mset.push_back(n);
+    }
+    return mset;
   }
 
   bool missing(false);
@@ -775,7 +787,7 @@ void MeshExtractedManifold::InitEpetraMaps()
 ****************************************************************** */
 void MeshExtractedManifold::TryExtension_(
     const std::string& setname,
-    Entity_kind kind_p, Entity_kind kind_d, Entity_ID_List* setents)
+    Entity_kind kind_p, Entity_kind kind_d, Entity_ID_List* setents) const
 {
   // labeled set: extract edges
   setents->clear();
@@ -827,7 +839,7 @@ void MeshExtractedManifold::TryExtension_(
 * Limits the set of parent objects to only one layer of ghosts.
 ****************************************************************** */
 std::map<Entity_ID, int> MeshExtractedManifold::EnforceOneLayerOfGhosts_(
-    const std::string& setname, Entity_kind kind, Entity_ID_List* setents)
+    const std::string& setname, Entity_kind kind, Entity_ID_List* setents) const
 {
   // base set is the set of master cells
   Entity_ID_List fullset;
@@ -963,6 +975,14 @@ void MeshExtractedManifold::PrintSets_() const
     Teuchos::OSTab tab = vo_->getOSTab();
     *(vo_->os()) << "sets: ";
     for (auto it : sets_) {
+      int i1, i0(it.second.size());
+      get_comm()->SumAll(&i0, &i1, 1);
+      *(vo_->os()) << "\"" << it.first << "\" (" << i1 << ") ";
+    }
+    *(vo_->os())  << "\n";
+
+    *(vo_->os()) << "parent labeledsets: ";
+    for (auto it : parent_labeledsets_) {
       int i1, i0(it.second.size());
       get_comm()->SumAll(&i0, &i1, 1);
       *(vo_->os()) << "\"" << it.first << "\" (" << i1 << ") ";

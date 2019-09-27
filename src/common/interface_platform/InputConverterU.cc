@@ -99,8 +99,9 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   }
 
   // -- single region for fracture network
-  if (fracture_regions_.size() > 1) {
-    std::string network = CreateUniqueName_(fracture_regions_);
+  if (fracture_regions_.size() > 0) {
+    // std::string network = CreateUniqueName_(fracture_regions_);
+    std::string network("FRACTURE_NETWORK_INTERNAL");
     out_list.sublist("regions").sublist(network).sublist("region: logical")
         .set<std::string>("operation", "union")
         .set<Teuchos::Array<std::string> >("regions", fracture_regions_);

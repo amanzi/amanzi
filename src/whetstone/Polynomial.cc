@@ -15,6 +15,7 @@
 #include <cmath>
 
 #include "DenseMatrix.hh"
+#include "DenseVector.hh"
 #include "Monomial.hh"
 #include "Polynomial.hh"
 
@@ -411,21 +412,22 @@ Polynomial Polynomial::ChangeOrigin(
 double Polynomial::Value(const AmanziGeometry::Point& xp) const
 {
   double sum(coefs_(0));
+  AmanziGeometry::Point dx(xp - origin_);
   
   if (order_ > 0) {
     for (int i = 0; i < d_; ++i) {
-      sum += (xp[i] - origin_[i]) * coefs_(i + 1);
+      sum += dx[i] * coefs_(i + 1);
     }
   }
 
   for (auto it = begin(2); it < end(); ++it) {
     int n = it.PolynomialPosition();
-    const int* index = it.multi_index();
-
     double tmp = coefs_(n);
+
     if (tmp != 0.0) {
+      const int* index = it.multi_index();
       for (int i = 0; i < d_; ++i) {
-        tmp *= std::pow(xp[i] - origin_[i], index[i]);
+        tmp *= std::pow(dx[i], index[i]);
       }
       sum += tmp;
     }
@@ -437,7 +439,7 @@ double Polynomial::Value(const AmanziGeometry::Point& xp) const
 
 /* ******************************************************************
 * Change of coordinates: x = x0 + B * s 
-* Note: resulting polynomial is centered at new origin.
+* Note: the resulting polynomial is centered at the new local origin.
 ****************************************************************** */
 void Polynomial::ChangeCoordinates(
     const AmanziGeometry::Point& x0, const std::vector<AmanziGeometry::Point>& B)
@@ -450,16 +452,61 @@ void Polynomial::ChangeCoordinates(
 
   // populate new polynomial using different algorithms
   Polynomial tmp(dnew, order_);
-  for (auto it = begin(); it < end(); ++it) {
-    const int* multi_index = it.multi_index();
-    int m = it.MonomialSetOrder();
-    int n = it.PolynomialPosition();
-    if (dnew == 1) {
+
+  if (dnew == 1) {
+    for (auto it = begin(); it < end(); ++it) {
+      int m = it.MonomialSetOrder();
+      int n = it.PolynomialPosition();
+
       double coef = coefs_(n);
-      for (int i = 0; i < d_; ++i) {
-        coef *= std::pow(B[0][i], multi_index[i]);  
+      if (coef != 0.0) {
+        const int* multi_index = it.multi_index();
+        for (int i = 0; i < d_; ++i) {
+          coef *= std::pow(B[0][i], multi_index[i]);  
+        }
+        tmp(m, 0) += coef;
       }
-      tmp(m, 0) += coef;
+    }
+  }
+
+  else if (dnew == 2) {
+    Polynomial poly0(dnew, 1), poly1(dnew, 1), poly2(dnew, 1);
+
+    poly0(1) = B[0][0];
+    poly0(2) = B[1][0];
+
+    poly1(1) = B[0][1];
+    poly1(2) = B[1][1];
+
+    poly2(1) = B[0][2];
+    poly2(2) = B[1][2];
+
+    // lazy computation of powers of three binomials
+    Polynomial one(dnew, 0);
+    one(0) = 1.0;
+
+    std::vector<Polynomial> power0, power1, power2;
+    power0.push_back(one);
+    power1.push_back(one);
+    power2.push_back(one);
+
+    for (auto it = begin(); it < end(); ++it) {
+      double coef = coefs_(it.PolynomialPosition());
+
+      if (coef != 0.0) {
+        const int* idx = it.multi_index();
+
+        for (int k = power0.size() - 1; k < idx[0]; ++k)
+           power0.push_back(power0[k] * poly0);
+
+        for (int k = power1.size() - 1; k < idx[1]; ++k)
+           power1.push_back(power1[k] * poly1);
+
+        for (int k = power2.size() - 1; k < idx[2]; ++k)
+           power2.push_back(power2[k] * poly2);
+
+        tmp += (coef * power0[idx[0]]) * power1[idx[1]] * power2[idx[2]];        
+      }
     }
   }  
   
@@ -468,7 +515,8 @@ void Polynomial::ChangeCoordinates(
 
 
 /* ******************************************************************
-* Inverse change of coordinates: s = B^+ (x - x0) 
+* Inverse change of coordinates: s = B^+ (x - x0) for polynomial
+* centered at the origin.
 * Note: resulting polynomial is centered at x0.
 ****************************************************************** */
 void Polynomial::InverseChangeCoordinates(
@@ -481,15 +529,81 @@ void Polynomial::InverseChangeCoordinates(
   tmp.set_origin(x0);
 
   // populate new polynomial using different algorithms
-  if (d_ == 1) {
+  if (d_ == 1 && dnew == 2) {
     int i = (fabs(B[0][0]) > fabs(B[0][1])) ? 0 : 1;
     double scale = 1.0 / B[0][i];
 
-    for (auto it = begin(); it < end(); ++it) {
-      int m = it.MonomialSetOrder();
-      tmp(m, i * m) = this->operator()(m, 0) * std::pow(scale, m);
+    for (int m = 0; m < size_; ++m) {
+      tmp(m, i * m) = coefs_(m) * std::pow(scale, m);
     }
-  }  
+  } else if (d_ == 1 && dnew == 3) {
+    int i = (fabs(B[0][0]) > fabs(B[0][1])) ? 0 : 1;
+    if (fabs(B[0][2]) > fabs(B[0][i])) i = 2;
+    double scale = 1.0 / B[0][i];
+
+    int multi_index[3] = {0, 0, 0};
+
+    for (int n = 0; n < size_; ++n) {
+      multi_index[i] = n;
+      int m = PolynomialPosition(3, multi_index);
+      tmp(m) = coefs_(n) * std::pow(scale, n);
+    }
+  } else if (d_ == 2) {
+    // find monor with the largest determinant
+    int i0(0), i1(1), i2;
+    double det01, det02, det12, tmp01, tmp02, tmp12;
+    
+    det01 = B[0][0] * B[1][1] - B[0][1] * B[1][0];
+    det02 = B[0][0] * B[1][2] - B[0][2] * B[1][0];
+    det12 = B[0][1] * B[1][2] - B[0][2] * B[1][1];
+
+    tmp01 = std::fabs(det01); 
+    tmp02 = std::fabs(det02);
+    tmp12 = std::fabs(det12);
+
+    if (tmp02 > std::max(tmp01, tmp12)) {
+      i1 = 2;
+      det01 = det02;
+    } else if (tmp12 > std::max(tmp01, tmp02)) {
+      i0 = 1;
+      i1 = 2;
+      det01 = det12;
+    }
+
+    // invert indirectly the minor
+    Polynomial poly0(dnew, 1), poly1(dnew, 1);
+    poly0(1 + i0) = B[1][i1] / det01;
+    poly0(1 + i1) =-B[1][i0] / det01;
+    poly0.set_origin(x0);
+
+    poly1(1 + i0) =-B[0][i1] / det01;
+    poly1(1 + i1) = B[0][i0] / det01;
+    poly1.set_origin(x0);
+
+    // lazy computation of powers of two binomials
+    Polynomial one(dnew, 0);
+    one.set_origin(x0);
+    one(0) = 1.0;
+
+    std::vector<Polynomial> power0, power1;
+    power0.push_back(one);
+    power1.push_back(one);
+
+    for (auto it = begin(); it < end(); ++it) {
+      const int* idx = it.multi_index();
+      double coef = coefs_(it.PolynomialPosition());
+
+      if (coef != 0.0) {
+        for (int k = power0.size() - 1; k < idx[0]; ++k)
+           power0.push_back(power0[k] * poly0);
+
+        for (int k = power1.size() - 1; k < idx[1]; ++k)
+           power1.push_back(power1[k] * poly1);
+
+        tmp += coef * (power0[idx[0]] * power1[idx[1]]);        
+      }
+    }
+  } 
   
   *this = tmp;
 }

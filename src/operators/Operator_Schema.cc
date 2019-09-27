@@ -27,6 +27,7 @@
 #include "Operator_Schema.hh"
 #include "Op_Cell_Schema.hh"
 #include "Op_Face_Schema.hh"
+#include "Op_Node_Schema.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -45,7 +46,8 @@ void Operator_Schema::UpdateRHS(const CompositeVector& source, bool volume_inclu
 
 
 /* ******************************************************************
-* Apply the local matrices directly as schemas match.
+* Visit methods for a matrix free mat-vec.
+* Apply cell-based local matrices directly as schemas match.
 ****************************************************************** */
 int Operator_Schema::ApplyMatrixFreeOp(const Op_Cell_Schema& op,
                                        const CompositeVector& X, CompositeVector& Y) const
@@ -56,13 +58,13 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Cell_Schema& op,
   Y.PutScalarGhosted(0.0);
 
   for (int c = 0; c != ncells_owned; ++c) {
-    const WhetStone::DenseMatrix& Acell = op.matrices[c];
-    int ncols = Acell.NumCols();
-    int nrows = Acell.NumRows();
+    const WhetStone::DenseMatrix& A = op.matrices[c];
+    int ncols = A.NumCols();
+    int nrows = A.NumRows();
     WhetStone::DenseVector v(ncols), av(nrows);
 
     ExtractVectorCellOp(c, op.schema_col_, v, X);
-    Acell.Multiply(v, av, false);
+    A.Multiply(v, av, false);
     AssembleVectorCellOp(c, op.schema_row_, av, Y);
   }
 
@@ -71,6 +73,10 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Cell_Schema& op,
 }
 
 
+/* ******************************************************************
+* Visit methods for a matrix free mat-vec.
+* Apply face-based local matrices directly as schemas match.
+****************************************************************** */
 int Operator_Schema::ApplyMatrixFreeOp(const Op_Face_Schema& op,
                                        const CompositeVector& X, CompositeVector& Y) const
 {
@@ -80,14 +86,42 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Face_Schema& op,
   Y.PutScalarGhosted(0.0);
 
   for (int f = 0; f != nfaces_owned; ++f) {
-    const WhetStone::DenseMatrix& Aface = op.matrices[f];
-    int ncols = Aface.NumCols();
-    int nrows = Aface.NumRows();
+    const WhetStone::DenseMatrix& A = op.matrices[f];
+    int ncols = A.NumCols();
+    int nrows = A.NumRows();
     WhetStone::DenseVector v(ncols), av(nrows);
 
     ExtractVectorFaceOp(f, op.schema_col_, v, X);
-    Aface.Multiply(v, av, false);
+    A.Multiply(v, av, false);
     AssembleVectorFaceOp(f, op.schema_row_, av, Y);
+  }
+
+  Y.GatherGhostedToMaster(Add);
+  return 0;
+}
+
+
+/* ******************************************************************
+* Visit methods for a matrix free mat-vec.
+* Apply node-based local matrices directly as schemas match.
+****************************************************************** */
+int Operator_Schema::ApplyMatrixFreeOp(const Op_Node_Schema& op,
+                                       const CompositeVector& X, CompositeVector& Y) const
+{
+  AMANZI_ASSERT(op.matrices.size() == nnodes_owned);
+
+  X.ScatterMasterToGhosted();
+  Y.PutScalarGhosted(0.0);
+
+  for (int n = 0; n != nnodes_owned; ++n) {
+    const WhetStone::DenseMatrix& A = op.matrices[n];
+    int ncols = A.NumCols();
+    int nrows = A.NumRows();
+    WhetStone::DenseVector v(ncols), av(nrows);
+
+    ExtractVectorNodeOp(n, op.schema_col_, v, X);
+    A.Multiply(v, av, false);
+    AssembleVectorNodeOp(n, op.schema_row_, av, Y);
   }
 
   Y.GatherGhostedToMaster(Add);
@@ -183,7 +217,7 @@ void Operator_Schema::SymbolicAssembleMatrix()
 
 /* ******************************************************************
 * Visit methods for symbolic assemble.
-* Apply the local matrices directly as schemas match.
+* Apply cell-based local matrices directly as schemas match.
 ****************************************************************** */
 void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
                                                const SuperMap& map, GraphFE& graph,
@@ -238,6 +272,10 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
 }
 
 
+/* ******************************************************************
+* Visit methods for symbolic assemble.
+* Apply face-based local matrices directly as schemas match.
+****************************************************************** */
 void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Face_Schema& op,
                                                const SuperMap& map, GraphFE& graph,
                                                int my_block_row, int my_block_col) const
@@ -256,6 +294,51 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Face_Schema& op,
 
       if (kind == AmanziMesh::CELL) {
         mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+        int ncells = cells.size();
+
+        for (int n = 0; n != ncells; ++n) {
+          for (int k = 0; k < num; ++k) {
+            const std::vector<int>& col_inds = map.GhostIndices(my_block_col, "cell", k);
+            const std::vector<int>& row_inds = map.GhostIndices(my_block_row, "cell", k);
+
+            lid_c.push_back(col_inds[cells[n]]);
+            lid_r.push_back(row_inds[cells[n]]);
+          }
+        }
+      } else {
+        AMANZI_ASSERT(false);
+      }
+    }
+
+    int m = lid_c.size();
+    ierr |= graph.InsertMyIndices(m, lid_r.data(), m, lid_c.data());
+  }
+  AMANZI_ASSERT(!ierr);
+}
+
+
+/* ******************************************************************
+* Visit methods for symbolic assemble.
+* Apply node-based local matrices directly as schemas match.
+****************************************************************** */
+void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Node_Schema& op,
+                                               const SuperMap& map, GraphFE& graph,
+                                               int my_block_row, int my_block_col) const
+{
+  std::vector<int> lid_r, lid_c;
+  AmanziMesh::Entity_ID_List cells;
+
+  int ierr(0);
+  for (int v = 0; v != nnodes_owned; ++v) {
+    lid_r.clear();
+    lid_c.clear();
+    for (auto it = op.schema_col_.begin(); it != op.schema_col_.end(); ++it) {
+      int num;
+      AmanziMesh::Entity_kind kind;
+      std::tie(kind, std::ignore, num) = *it;
+
+      if (kind == AmanziMesh::CELL) {
+        mesh_->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
         int ncells = cells.size();
 
         for (int n = 0; n != ncells; ++n) {
@@ -303,7 +386,7 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Node_Node& op,
 
 /* ******************************************************************
 * Visit methods for assemble
-* Apply the local matrices directly as schemas match.
+* Insert cell-based local matrices directly as schemas match.
 ****************************************************************** */
 void Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
                                        const SuperMap& map, MatrixFE& mat,
@@ -360,6 +443,10 @@ void Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
 }
 
 
+/* ******************************************************************
+* Visit methods for assemble
+* Insert face-based local matrices directly as schemas match.
+****************************************************************** */
 void Operator_Schema::AssembleMatrixOp(const Op_Face_Schema& op,
                                        const SuperMap& map, MatrixFE& mat,
                                        int my_block_row, int my_block_col) const
@@ -397,6 +484,52 @@ void Operator_Schema::AssembleMatrixOp(const Op_Face_Schema& op,
     }
 
     ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[f]);
+  }
+  AMANZI_ASSERT(!ierr);
+}
+
+
+/* ******************************************************************
+* Visit methods for assemble
+* Insert node-based local matrices directly as schemas match.
+****************************************************************** */
+void Operator_Schema::AssembleMatrixOp(const Op_Node_Schema& op,
+                                       const SuperMap& map, MatrixFE& mat,
+                                       int my_block_row, int my_block_col) const
+{
+  AMANZI_ASSERT(op.matrices.size() == nnodes_owned);
+
+  std::vector<int> lid_r, lid_c;
+  AmanziMesh::Entity_ID_List cells;
+
+  int ierr(0);
+  for (int v = 0; v != nnodes_owned; ++v) {
+    lid_r.clear();
+    lid_c.clear();
+    for (auto it = op.schema_col_.begin(); it != op.schema_col_.end(); ++it) {
+      int num;
+      AmanziMesh::Entity_kind kind;
+      std::tie(kind, std::ignore, num) = *it;
+
+      if (kind == AmanziMesh::CELL) {
+        mesh_->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
+        int ncells = cells.size();
+
+        for (int n = 0; n != ncells; ++n) {
+          for (int k = 0; k < num; ++k) {
+            const std::vector<int>& col_inds = map.GhostIndices(my_block_col, "cell", k);
+            const std::vector<int>& row_inds = map.GhostIndices(my_block_row, "cell", k);
+
+            lid_c.push_back(col_inds[cells[n]]);
+            lid_r.push_back(row_inds[cells[n]]);
+          }
+        }
+      } else {
+        AMANZI_ASSERT(false);
+      }
+    }
+
+    ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[v]);
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -529,6 +662,37 @@ void Operator_Schema::AssembleVectorFaceOp(
 
 
 /* ******************************************************************
+* Assemble local vector to the global CV when the base is node.
+****************************************************************** */
+void Operator_Schema::AssembleVectorNodeOp(
+    int n, const Schema& schema,
+    const WhetStone::DenseVector& v, CompositeVector& X) const
+{
+  AmanziMesh::Entity_ID_List cells;
+
+  int m(0);
+  for (auto it = schema.begin(); it != schema.end(); ++it) {
+    int num;
+    AmanziMesh::Entity_kind kind;
+    std::tie(kind, std::ignore, num) = *it;
+
+    if (kind == AmanziMesh::CELL) {
+      Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
+
+      mesh_->node_get_cells(n, AmanziMesh::Parallel_type::ALL, &cells);
+      int ncells = cells.size();
+
+      for (int i = 0; i != ncells; ++i) {
+        for (int k = 0; k < num; ++k) {
+          Xc[k][cells[i]] += v(m++);
+        }
+      }
+    }
+  }
+}
+
+
+/* ******************************************************************
 * Extract local vector from the global CV when the base is cell.
 ****************************************************************** */
 void Operator_Schema::ExtractVectorCellOp(
@@ -621,6 +785,37 @@ void Operator_Schema::ExtractVectorFaceOp(
       for (int n = 0; n != ncells; ++n) {
         for (int k = 0; k < num; ++k) {
           v(m++) = Xf[k][cells[n]];
+        }
+      }
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Extract local vector from the global CV when the base is node.
+****************************************************************** */
+void Operator_Schema::ExtractVectorNodeOp(
+    int n, const Schema& schema,
+    WhetStone::DenseVector& v, const CompositeVector& X) const
+{
+  AmanziMesh::Entity_ID_List cells;
+
+  int m(0);
+  for (auto it = schema.begin(); it != schema.end(); ++it) {
+    int num;
+    AmanziMesh::Entity_kind kind;
+    std::tie(kind, std::ignore, num) = *it;
+
+    if (kind == AmanziMesh::CELL) {
+      const Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
+
+      mesh_->node_get_cells(n, AmanziMesh::Parallel_type::ALL, &cells);
+      int ncells = cells.size();
+
+      for (int i = 0; i != ncells; ++i) {
+        for (int k = 0; k < num; ++k) {
+          v(m++) = Xc[k][cells[i]];
         }
       }
     }

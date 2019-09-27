@@ -26,10 +26,10 @@
 #include "Point.hh"
 
 #include "DenseMatrix.hh"
-#include "MatrixPolynomial.hh"
+#include "MatrixObjects.hh"
 #include "Tensor.hh"
-#include "VectorPolynomial.hh"
-// #include "WhetStoneDefs.hh"
+#include "SpaceTimePolynomial.hh"
+#include "VectorObjects.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -53,22 +53,26 @@ class MeshMaps {
 
   // Maps
   // -- pseudo-velocity
-  virtual void VelocityFace(int f, VectorPolynomial& v) const;
-  virtual void VelocityCell(int c, const std::vector<VectorPolynomial>& vf,
+  virtual void VelocityEdge(int e, VectorPolynomial& ve) const;
+  virtual void VelocityFace(int f, VectorPolynomial& vf) const;
+  virtual void VelocityCell(int c, const std::vector<VectorPolynomial>& ve,
+		            const std::vector<VectorPolynomial>& vf,
                             VectorPolynomial& vc) const = 0;
 
   // -- Nanson formula. Face deformation is defined completely by the
   //    deformation map in this formula: X = x + map(x)
-  void NansonFormula(int f, const VectorPolynomial& map, VectorPolynomial& cn) const;
+  void NansonFormula(int f, const VectorSpaceTimePolynomial& map, VectorSpaceTimePolynomial& cn) const;
 
   // -- Jacobian 
   void Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const;
 
   // -- matrix of cofactors
-  void Cofactors(const MatrixPolynomial& J, MatrixPolynomial& C) const;
+  template<typename Matrix>
+  void Cofactors(const Matrix& J, Matrix& C) const;
 
   // -- determinant
-  void Determinant(const MatrixPolynomial& J, VectorPolynomial& det) const;
+  template<typename Matrix, typename Vector>
+  void Determinant(const Matrix& J, Vector& det) const;
 
   // Miscalleneous
   // -- projection ffrom reference coordinates (mesh0) to mesh1
@@ -85,6 +89,61 @@ class MeshMaps {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh1_;  // target mesh
   int d_;
 };
+
+
+/* ******************************************************************
+* Calculation of matrix of cofactors.
+****************************************************************** */
+template<typename Matrix>
+void MeshMaps::Cofactors(const Matrix& J, Matrix& C) const
+{
+  // allocate memory for matrix of cofactors
+  C.Reshape(d_, d_, d_, 0, false);
+
+  // calculate cofactors
+  if (d_ == 2) {
+    C(1, 1) = J(0, 0);
+    C(1, 0) = J(0, 1);
+    C(1, 0) *= -1.0;
+
+    C(0, 0) = J(1, 1);
+    C(0, 1) = J(1, 0);
+    C(0, 1) *= -1.0;
+  }
+  else if (d_ == 3) {
+    C(0, 0) = J(1, 1) * J(2, 2) - J(2, 1) * J(1, 2);
+    C(1, 0) = J(2, 1) * J(0, 2) - J(0, 1) * J(2, 2);
+    C(2, 0) = J(0, 1) * J(1, 2) - J(1, 1) * J(0, 2);
+
+    C(0, 1) = J(2, 0) * J(1, 2) - J(1, 0) * J(2, 2);
+    C(1, 1) = J(0, 0) * J(2, 2) - J(2, 0) * J(0, 2);
+    C(2, 1) = J(1, 0) * J(0, 2) - J(0, 0) * J(1, 2);
+
+    C(0, 2) = J(1, 0) * J(2, 1) - J(2, 0) * J(1, 1);
+    C(1, 2) = J(2, 0) * J(0, 1) - J(0, 0) * J(2, 1);
+    C(2, 2) = J(0, 0) * J(1, 1) - J(1, 0) * J(0, 1);
+  }
+}
+
+
+/* ******************************************************************
+* Calculate detminant of a matrix.
+****************************************************************** */
+template<typename Matrix, typename Poly>
+void MeshMaps::Determinant(const Matrix& J, Poly& det) const
+{
+  if (d_ == 2) {
+    det = J(0, 0) * J(1, 1) - J(0, 1) * J(1, 0);
+  }
+  else if (d_ == 3) {
+    det = J(0, 0) * J(1, 1) * J(2, 2) 
+        + J(2, 0) * J(0, 1) * J(1, 2) 
+        + J(1, 0) * J(2, 1) * J(0, 2) 
+        - J(2, 0) * J(1, 1) * J(0, 2) 
+        - J(1, 0) * J(0, 1) * J(2, 2) 
+        - J(0, 0) * J(2, 1) * J(1, 2); 
+  }
+}
 
 }  // namespace WhetStone
 }  // namespace Amanzi

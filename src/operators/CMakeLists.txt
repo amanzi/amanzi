@@ -69,6 +69,7 @@ set(operators_inc_files
     Op_Face_CellBndFace.hh
     Op_Face_Schema.hh
     Op_Node_Node.hh
+    Op_Node_Schema.hh
     Operator.hh
     Operator_Cell.hh
     Operator_CellBndFace.hh

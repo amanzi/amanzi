@@ -25,8 +25,9 @@
 #include "DenseMatrix.hh"
 #include "InnerProductL2.hh"
 #include "InnerProductH1.hh"
+#include "Polynomial.hh"
 #include "Tensor.hh"
-#include "VectorPolynomial.hh"
+#include "VectorObjects.hh"
 #include "WhetStoneDefs.hh"
 
 namespace Amanzi {
@@ -37,7 +38,10 @@ class Polynomial;
 class BilinearForm : public virtual InnerProductL2,
                      public virtual InnerProductH1 {
  public:
-  explicit BilinearForm() : order_(1) {};
+  explicit BilinearForm(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : mesh_(mesh),
+      d_(mesh->space_dimension()),
+      order_(1) {};
   virtual ~BilinearForm() {};
 
   // schema
@@ -86,12 +90,50 @@ class BilinearForm : public virtual InnerProductL2,
     return 1;
   }
 
+  // Projectors facilitate construction of bilinear forms
+  // -- L2 projectors
+  virtual void L2Cell(int c, const std::vector<Polynomial>& ve,
+                      const std::vector<Polynomial>& vf,
+                      const Polynomial* moments, Polynomial& vc) {
+    Errors::Message msg("L2 projector is not implemented for this scheme.");
+    Exceptions::amanzi_throw(msg);
+  }
+  virtual void L2Face(int f, const std::vector<Polynomial>& ve,
+                      const Polynomial* moments, Polynomial& vf) {
+    Errors::Message msg("L2 face projector is not implemented for this scheme.");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  virtual void L2Cell(int c, const DenseVector& dofs, Polynomial& vc) {
+    Errors::Message msg("L2 projector (from DOFs) is not implemented for this scheme.");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  // -- H1 projectors
+  virtual void H1Cell(int c, const std::vector<Polynomial>& ve,
+                      const std::vector<Polynomial>& vf,
+                      const Polynomial* moments, Polynomial& vc) {
+    Errors::Message msg("H1 cell projector is not implemented for this scheme.");
+    Exceptions::amanzi_throw(msg);
+  }
+  virtual void H1Face(int f, const std::vector<Polynomial>& ve,
+                      const Polynomial* moments, Polynomial& vf) {
+    Errors::Message msg("H1 face projector is not implemented for this scheme.");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  virtual void H1Cell(int c, const DenseVector& dofs, Polynomial& vc) {
+    Errors::Message msg("H1 cell projector (from DOFs) is not implemented for this scheme.");
+    Exceptions::amanzi_throw(msg);
+  }
+
   // miscalleneous
   int order() const { return order_; }
   void set_order(int order) { order_ = order; }
 
  protected:
-  int order_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  int d_, order_;
 };
 
 }  // namespace WhetStone

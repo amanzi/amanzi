@@ -45,7 +45,7 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
 
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "\nTest: 2D elasticity: exactness test" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: 2D elasticity: exactness test for " << std::endl;
 
   // read parameter list
   // -- it specifies details of the mesh, elasticity operator, and solver

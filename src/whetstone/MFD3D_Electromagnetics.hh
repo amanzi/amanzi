@@ -42,7 +42,7 @@ class MFD3D_Electromagnetics : public MFD3D,
   MFD3D_Electromagnetics(const Teuchos::ParameterList& plist,
                          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : MFD3D(mesh),
-      InnerProduct(mesh) {};
+      DeRham_Edge(mesh) {};
   ~MFD3D_Electromagnetics() {};
 
   // required methods
@@ -67,7 +67,7 @@ class MFD3D_Electromagnetics : public MFD3D,
   int MassMatrixDiagonal(int c, const Tensor& T, DenseMatrix& M);
 
   int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A, DenseMatrix& M, DenseMatrix& C);
-  int StiffnessMatrixGeneralized(int c, const Tensor& T, DenseMatrix& A);
+  int StiffnessMatrix_GradCorrection(int c, const Tensor& T, DenseMatrix& A);
 
   // curl matrix
   void CurlMatrix(int c, DenseMatrix& C);
@@ -81,6 +81,10 @@ class MFD3D_Electromagnetics : public MFD3D,
   int H1consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
 
   void AddGradientToProjector_(int c, DenseMatrix& N);
+
+ protected:
+  using MFD3D::mesh_;
+  using MFD3D::d_;
 
  private:
   static RegisteredFactory<MFD3D_Electromagnetics> factory_;

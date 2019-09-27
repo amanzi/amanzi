@@ -27,7 +27,8 @@ namespace WhetStone {
 * Calculate mesh velocity in cell c. 
 ****************************************************************** */
 void MeshMaps_FEM::VelocityCell(
-    int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
+    int c, const std::vector<VectorPolynomial>& ve,
+    const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
   Entity_ID_List nodes;
 

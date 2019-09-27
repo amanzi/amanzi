@@ -11,6 +11,8 @@
 
   Maps between mesh objects located on different meshes, e.g. two states 
   of a deformable mesh: polygonal finite element implementation.
+
+  ***** This class was taken off-line. *****
 */
 
 #include "Point.hh"
@@ -28,7 +30,8 @@ namespace WhetStone {
 * Calculate piecewise polynomial mesh velocity in cell c. 
 ****************************************************************** */
 void MeshMaps_PEM::VelocityCell(
-    int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
+    int c, const std::vector<VectorPolynomial>& ve,
+    const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
   AMANZI_ASSERT(d_ == 2);
 

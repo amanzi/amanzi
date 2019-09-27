@@ -39,7 +39,7 @@ TEST(NUMI_CELL_2D_EULER_FORMULA) {
   meshfactory.set_preference(Preference({Framework::MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", true, true); 
  
-  NumericalIntegration numi(mesh);
+  NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
 
   int cell(0);
   double val;
@@ -61,8 +61,6 @@ TEST(NUMI_CELL_2D_EULER_FORMULA) {
 
   printf("order=1  value=%10.6g\n", val);
   CHECK_CLOSE(val, mesh->cell_volume(cell), 1e-10);
- 
-  
 }
 
 
@@ -80,7 +78,7 @@ TEST(NUMI_CELL_2D_QUADRATURE_POLYGON) {
   meshfactory.set_preference(Preference({Framework::MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", true, true); 
  
-  NumericalIntegration numi(mesh);
+  NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
 
   int cell(0), face(0);
   double val1, val2;
@@ -118,8 +116,6 @@ TEST(NUMI_CELL_2D_QUADRATURE_POLYGON) {
     printf("FACE: order=%d  values: %10.6g %10.6g\n", order, val1, val2);
     CHECK_CLOSE(val1, val2, 1e-12);
   }
-
-  
 }
 
 
@@ -137,7 +133,7 @@ TEST(NUMI_CELL_2D_QUADRATURE_SQUARE) {
   meshfactory.set_preference(Preference({Framework::MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(-1.0, -1.0, 1.0, 1.0, 2, 2); 
  
-  NumericalIntegration numi(mesh);
+  NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
 
   int cell(3), face(9);
   double val, exact;
@@ -160,8 +156,6 @@ TEST(NUMI_CELL_2D_QUADRATURE_SQUARE) {
     printf("FACE: order=%d  values: %10.6g %10.6g\n", order, val, exact);
     CHECK_CLOSE(val, exact, 1e-12);
   }
- 
-  
 }
 
 
@@ -179,7 +173,7 @@ TEST(NUMI_CELL_3D_QUADRATURE_POLYHEDRON) {
   meshfactory.set_preference(Preference({Framework::MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/dodecahedron.exo", true, true); 
  
-  NumericalIntegration numi(mesh);
+  NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
 
   int cell(0), face(3);
   double val1, val2;
@@ -210,7 +204,7 @@ TEST(NUMI_CELL_3D_QUADRATURE_POLYHEDRON) {
     val2 = numi.IntegratePolynomialCell(cell, poly);
 
     printf("CELL: order=%d  value= %12.6f  diff=%10.6g\n", order, val1, val1 - val2);
-    CHECK_CLOSE(val1, val2, 1e-11 * std::max(1.0, std::fabs(val1)));
+    CHECK_CLOSE(val1, val2, 5e-11 * std::max(1.0, std::fabs(val1)));
 
     // face of a polyhedron
     val1 = numi.IntegrateFunctionsTriangulatedFace(face, polys, order);
@@ -218,26 +212,25 @@ TEST(NUMI_CELL_3D_QUADRATURE_POLYHEDRON) {
     printf("FACE: order=%d  values: %10.6g %10.6g\n", order, val1, val2);
     CHECK_CLOSE(val1, val2, 1e-12 * std::max(1.0, std::fabs(val1)));
   }
-
-  
 }
 
 
-/* **************************************************************** */
-TEST(NUMI_CELL_3D_QUADRATURE_SQUARE) {
+/* ******************************************************************
+* 3D cube: Amanzi mesh
+****************************************************************** */
+TEST(NUMI_CELL_3D_QUADRATURE_CUBE) {
   using namespace Amanzi;
-  using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
   std::cout << "Test: Numerical integration: quadrature rule for cube" << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 2, 2, 2); 
+  AmanziMesh::MeshFactory meshfactory(comm,gm);
+  meshfactory.set_preference(AmanziMesh::Preference({AmanziMesh::Framework::MSTK}));
+  Teuchos::RCP<AmanziMesh::Mesh> mesh = meshfactory.create(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 2, 2, 2); 
  
-  NumericalIntegration numi(mesh);
+  NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
 
   int cell(7), face(31);
   double val, exact;
@@ -260,6 +253,5 @@ TEST(NUMI_CELL_3D_QUADRATURE_SQUARE) {
     printf("FACE: order=%d  values: %10.6g %10.6g\n", order, val, exact);
     CHECK_CLOSE(val, exact, 1e-12 * std::fabs(val));
   }
- 
-  
 }
+

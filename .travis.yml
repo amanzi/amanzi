@@ -1,12 +1,18 @@
 jobs:
   include:
-    - stage: build get
+    - stage: build phase 1
       script:
       - cd Docker
-      - docker build -t ${DOCKER_USERNAME}/amanzi:latest -f Dockerfile-Amanzi-build .
+      - docker build -t ${DOCKER_USERNAME}/amanzi:temp-build-stage-1 -f Dockerfile-Amanzi-build-stage-1 .
       - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-      - docker push $DOCKER_USERNAME/amanzi:latest
+      - docker push $DOCKER_USERNAME/amanzi:temp-build-stage-1
+    - stage: build phase 2
+      script:
+      - cd Docker
+      - docker build -t ${DOCKER_USERNAME}/amanzi:temp-build-stage-2 -f Dockerfile-Amanzi-build-stage-2 .
+      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+      - docker push $DOCKER_USERNAME/amanzi:temp-build-stage-2
     - stage: test
       script:
       - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-      - docker run --rm $DOCKER_USERNAME/amanzi:latest /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest"
+      - docker run --rm $DOCKER_USERNAME/amanzi:temp-build-stage-2 /bin/bash -c "cd ~/amanzi_builddir/amanzi; ctest"

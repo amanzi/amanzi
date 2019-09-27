@@ -29,7 +29,7 @@ class PolynomialBase : public WhetStoneFunction {
   PolynomialBase(int d, int order) : d_(d), order_(order), origin_(d) {};
   virtual ~PolynomialBase() {};
 
-  // convert to regular polynomial
+  // convert to regular vector
   virtual DenseVector ExpandCoefficients() const = 0;
 
   // modifiers
@@ -91,7 +91,7 @@ int MonomialSetPosition(int d, const int* multi_index)
 }
 
 
-// Position in polynomial defined by multi_index. 2D algorithm.
+// Position in polynomial defined by multi_index.
 inline
 int PolynomialPosition(int d, const int* multi_index)
 {

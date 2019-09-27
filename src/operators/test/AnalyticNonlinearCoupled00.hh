@@ -72,13 +72,13 @@ class AnalyticNonlinearCoupled00 : public AnalyticNonlinearCoupledBase {
     return exp((u+v)/2.) * 0.5;
   }
   
-  double exact0(const Amanzi::AmanziGeometry::Point& p, double t) {
+  double exact0(const Amanzi::AmanziGeometry::Point& p, double t) const {
     // u = a x^2 + y^2
     double x = p[0];
     double y = p[1];
     return 2*pow(x, 2) + pow(y, 2);
   }
-  double exact1(const Amanzi::AmanziGeometry::Point& p, double t) {
+  double exact1(const Amanzi::AmanziGeometry::Point& p, double t) const {
     // v = sin^2( pi/4 * (x+y) )
     double x = p[0];
     double y = p[1];

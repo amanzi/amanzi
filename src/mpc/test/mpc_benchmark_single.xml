@@ -20,10 +20,6 @@
   </ParameterList>
 
   <ParameterList name="regions">
-    <ParameterList name="Universe">
-      <ParameterList name="region: all">
-      </ParameterList>
-    </ParameterList>
     <ParameterList name="All">
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{-9.9e+98,-9.9e+98,-9.9e+98}"/>
@@ -66,6 +62,12 @@
       <ParameterList name="region: box">
         <Parameter name="low coordinate" type="Array(double)" value="{   0.0,  0.0, 10.0}"/>
         <Parameter name="high coordinate" type="Array(double)" value="{100.0,100.0, 100.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="FRACTURE_NETWORK_INTERNAL">
+      <ParameterList name="region: logical">
+        <Parameter name="operation" type="string" value="union"/>
+        <Parameter name="regions" type="Array(string)" value="{fracture}"/>
       </ParameterList>
     </ParameterList>
     
