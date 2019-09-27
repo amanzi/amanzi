@@ -314,31 +314,6 @@ void RemapDG_Helper::ApplyLimiter(double t, CompositeVector& x)
   }
 }
 
-
-/* *****************************************************************
-* Change between conservative and non-conservative variables.
-***************************************************************** */
-void RemapDG_Helper::NonConservativeToConservative(
-    double t, const CompositeVector& u, CompositeVector& v)
-{
-  op_reac_->Setup(det_, false);
-  op_reac_->UpdateMatrices(t);
-  op_reac_->global_operator()->Apply(u, v);
-}
-
-
-void RemapDG_Helper::ConservativeToNonConservative(
-    double t, const CompositeVector& u, CompositeVector& v)
-{
-  op_reac_->Setup(det_, false);
-  op_reac_->UpdateMatrices(t);
-
-  auto& matrices = op_reac_->local_op()->matrices;
-  for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
-
-  op_reac_->global_operator()->Apply(u, v);
-}
-
 }  // namespace Operators
 }  // namespace Amanzi
 

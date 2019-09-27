@@ -35,7 +35,7 @@
 #include "MeshDeformation.hh"
 #include "RemapDG.hh"
 
-#include "AnalyticDG04b.hh"
+#include "AnalyticDG04.hh"
 
 namespace Amanzi {
 
@@ -51,16 +51,13 @@ class MyRemapDG : public Operators::RemapDG<TreeVector> {
       dt_output_(0.1) {};
   ~MyRemapDG() {};
 
-  // other member
-  void InitializeConsistentJacobianDeterminant();
-
   // time control
   double global_time(double t) { return tini_ + t * T1_; }
 
   // tools
   // -- mass on mesh0
   double InitialMass(const TreeVector& p1, int order);
-  // -- statictics
+  // -- statistics
   void CollectStatistics(double t, const TreeVector& u);
 
   // access 
@@ -69,73 +66,9 @@ class MyRemapDG : public Operators::RemapDG<TreeVector> {
  public:
   double tprint_, dt_output_, l2norm_;
 
- protected:
-  std::vector<WhetStone::Polynomial> det0_, det1_;
-
  private:
   double T1_, tini_;
 };
-
-
-/* *****************************************************************
-* Initialization of the consistent jacobian determinant
-***************************************************************** */
-void MyRemapDG::InitializeConsistentJacobianDeterminant()
-{
-  // constant part of determinant
-  op_adv_->Setup(velc_, false);
-  op_adv_->UpdateMatrices(0.0);
-
-  op_reac_->Setup(det_, false);
-  op_reac_->UpdateMatrices(0.0);
-
-  auto& matrices = op_reac_->local_op()->matrices;
-  for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
-
-  op_flux_->Setup(velf_.ptr(), false);
-  op_flux_->UpdateMatrices(0.0);
-  op_flux_->ApplyBCs(true, true, true);
-
-  CompositeVector& tmp = *op_reac_->global_operator()->rhs();
-  CompositeVector one(tmp), u0(tmp), u1(tmp);
-  Epetra_MultiVector& one_c = *one.ViewComponent("cell", true);
-
-  one.PutScalarMasterAndGhosted(0.0);
-  for (int c = 0; c < ncells_wghost_; ++c) one_c[0][c] = 1.0;
-
-  op_flux_->global_operator()->Apply(one, tmp);
-  op_reac_->global_operator()->Apply(tmp, u0);
-
-  // linear part of determinant
-  double dt(0.01);
-  op_adv_->UpdateMatrices(dt);
-
-  op_flux_->UpdateMatrices(dt);
-  op_flux_->ApplyBCs(true, true, true);
-
-  op_flux_->global_operator()->Apply(one, tmp);
-  op_reac_->global_operator()->Apply(tmp, u1);
-  u1.Update(-1.0/dt, u0, 1.0/dt);
-
-  // save as polynomials
-  int nk = one_c.NumVectors();
-  Amanzi::WhetStone::DenseVector data(nk);
-  Epetra_MultiVector& u0c = *u0.ViewComponent("cell", true);
-  Epetra_MultiVector& u1c = *u1.ViewComponent("cell", true);
-
-  det0_.resize(ncells_owned_);
-  det1_.resize(ncells_owned_);
-
-  for (int c = 0; c < ncells_owned_; ++c) {
-    const auto& basis = dg_->cell_basis(c);
-
-    for (int i = 0; i < nk; ++i) data(i) = u0c[i][c];
-    det0_[c] = basis.CalculatePolynomial(mesh0_, c, order_, data);
-
-    for (int i = 0; i < nk; ++i) data(i) = u1c[i][c];
-    det1_[c] = basis.CalculatePolynomial(mesh0_, c, order_, data);
-  }
-}
 
 
 /* *****************************************************************
@@ -299,7 +232,7 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
                                        .sublist("flux operator").sublist("schema");
   auto dg = Teuchos::rcp(new WhetStone::DG_Modal(dglist, mesh0));
 
-  AnalyticDG04b ana(mesh0, order, true);
+  AnalyticDG04 ana(mesh0, order, true);
   ana.InitialGuess(*dg, p1c, 1.0);
   j1c.PutScalar(0.0);
   j1c(0)->PutScalar(1.0);
@@ -326,7 +259,7 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
   TreeVector p3(*p1);
   auto& sv3 = *p3.SubVector(0)->Data();
   Epetra_MultiVector& p3c = *sv3.ViewComponent("cell", true);
-  remap.NonConservativeToConservative(0.0, sv1, sv3);
+  remap.NonConservativeToConservative(0.0, *p1, p3);
 
   double t(0.0), tend(1.0);
   while(t < tend - dt/2) {
@@ -338,7 +271,7 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
     remap.CollectStatistics(t, *p1);
   }
 
-  remap.ConservativeToNonConservative(1.0, sv1, sv2);
+  remap.ConservativeToNonConservative(1.0, *p1, *p2);
 
   // calculate error in the new basis
   std::vector<int> dirs;
@@ -408,18 +341,17 @@ TEST(REMAP_GEOMETRIC_CONSERVATION_LAW) {
   int deform = 1;
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
 
-  /*
   double dT(0.1);
-  auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   RemapGCL(rk_method, "test/median15x16.exo",   16,1,0, dT/2, deform);
+  /*
   RemapGCL(rk_method, "test/median32x33.exo",   32,1,0, dT/4, deform);
   RemapGCL(rk_method, "test/median63x64.exo",   64,1,0, dT/8, deform);
   RemapGCL(rk_method, "test/median127x128.exo",128,1,0, dT/16,deform);
-  */
 
   double dT(0.025);
   RemapGCL(rk_method, "test/prism10.exo", 10,1,1, dT,   deform);
   RemapGCL(rk_method, "test/prism20.exo", 20,1,1, dT/2, deform);
   RemapGCL(rk_method, "test/prism40.exo", 40,1,1, dT/4, deform);
+  */
 }
 

@@ -25,7 +25,7 @@ namespace Amanzi {
 namespace Operators {
 
 /* *****************************************************************
-* Evaluation of functional at time t
+* Specialization for CompositeVector: Functional evaluation
 ***************************************************************** */
 template<>
 void RemapDG<CompositeVector>::FunctionalTimeDerivative(
@@ -96,7 +96,34 @@ void RemapDG<CompositeVector>::ModifySolution(double t, CompositeVector& u)
 
 
 /* *****************************************************************
-* Evaluation of functional at time t
+* Change between conservative and non-conservative variables.
+***************************************************************** */
+template<>
+void RemapDG<CompositeVector>::NonConservativeToConservative(
+    double t, const CompositeVector& u, CompositeVector& v)
+{
+  op_reac_->Setup(det_, false);
+  op_reac_->UpdateMatrices(t);
+  op_reac_->global_operator()->Apply(u, v);
+}
+
+
+template<>
+void RemapDG<CompositeVector>::ConservativeToNonConservative(
+    double t, const CompositeVector& u, CompositeVector& v)
+{
+  op_reac_->Setup(det_, false);
+  op_reac_->UpdateMatrices(t);
+
+  auto& matrices = op_reac_->local_op()->matrices;
+  for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
+
+  op_reac_->global_operator()->Apply(u, v);
+}
+
+
+/* *****************************************************************
+* Specialization for TreeVector: functional evaluation
 ***************************************************************** */
 template<>
 void RemapDG<TreeVector>::FunctionalTimeDerivative(
@@ -160,6 +187,56 @@ void RemapDG<TreeVector>::ModifySolution(double t, TreeVector& u)
   auto& matrices = op_reac_->local_op()->matrices;
   for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
   op_reac_->global_operator()->Apply(*u.SubVector(0)->Data(), *field_);
+}
+
+
+/* *****************************************************************
+* Change between conservative and non-conservative variables.
+***************************************************************** */
+template<>
+void RemapDG<TreeVector>::NonConservativeToConservative(
+    double t, const TreeVector& u, TreeVector& v)
+{
+  // create a polynomial for determinant of Jacobian
+  auto detc = *u.SubVector(1)->Data()->ViewComponent("cell");
+  int nk = detc.NumVectors();
+  WhetStone::DenseVector data(nk);
+
+  for (int c = 0; c < ncells_owned_; ++c) {
+    for (int i = 0; i < nk; ++i) data(i) = detc[i][c];
+    (*jac_)[c] = dg_->cell_basis(c).CalculatePolynomial(mesh0_, c, order_, data);
+  }
+
+  op_reac_->Setup(jac_, false);
+  op_reac_->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  // conversion is matrix-vector product
+  op_reac_->global_operator()->Apply(*u.SubVector(0)->Data(), *v.SubVector(0)->Data());
+}
+
+
+template<>
+void RemapDG<TreeVector>::ConservativeToNonConservative(
+    double t, const TreeVector& u, TreeVector& v)
+{
+  // create a polynomial for determinant of Jacobian
+  auto detc = *u.SubVector(1)->Data()->ViewComponent("cell");
+  int nk = detc.NumVectors();
+  WhetStone::DenseVector data(nk);
+
+  for (int c = 0; c < ncells_owned_; ++c) {
+    for (int i = 0; i < nk; ++i) data(i) = detc[i][c];
+    (*jac_)[c] = dg_->cell_basis(c).CalculatePolynomial(mesh0_, c, order_, data);
+  }
+
+  op_reac_->Setup(jac_, false);
+  op_reac_->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  // conversion is inverse matrix-vector product
+  auto& matrices = op_reac_->local_op()->matrices;
+  for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
+
+  op_reac_->global_operator()->Apply(*u.SubVector(0)->Data(), *v.SubVector(0)->Data());
 }
 
 }  // namespace Operators

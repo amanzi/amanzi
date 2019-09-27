@@ -73,10 +73,6 @@ class RemapDG_Helper {
   virtual void StaticFaceCoVelocity();
   virtual void StaticCellCoVelocity();
 
-  // change between conservative and non-conservative variable
-  void ConservativeToNonConservative(double t, const CompositeVector& u, CompositeVector& v);
-  void NonConservativeToConservative(double t, const CompositeVector& u, CompositeVector& v);
-
   // limiters
   void ApplyLimiter(double t, CompositeVector& u); 
 
