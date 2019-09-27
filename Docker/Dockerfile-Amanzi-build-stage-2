@@ -1,11 +1,16 @@
-FROM metsi/amanzi:amanzi-0.88-temp-build-stage-1
+# Arguments
+ARG amanzi_branch=master
+
+FROM metsi/amanzi:${amanzi_branch}-temp-build-stage-1
 LABEL Description="Amanzi: Build stage 2 and install in temporary Docker image."
 
 # Switch to amanzi_user
 USER amanzi_user
 
+
 # Change the Working Directory and update amanzi
 WORKDIR /home/amanzi_user/amanzi
+RUN echo "Amanzi branch = ${amanzi_branch}"
   
 RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
