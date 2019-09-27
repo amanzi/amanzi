@@ -28,7 +28,7 @@ namespace Relations {
 PETEvaluator::PETEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist)
 {
-  pt_alpha_ =1.26;
+  pt_alpha_ = plist.get<double>("adjustment factor alpha",1.26);
   auto domain = Keys::getDomain(my_key_);
   at_key_ = Keys::readKey(plist, domain, "air temperature", "air_temperature");
   dependencies_.insert(at_key_);
@@ -40,7 +40,7 @@ PETEvaluator::PETEvaluator(Teuchos::ParameterList& plist) :
   dependencies_.insert(elev_key_);
   swr_key_ = Keys::readKey(plist, domain, "shortwave radiation", "shortwave_radiation");
   dependencies_.insert(swr_key_);
-
+  
 }
 
 // Required methods from SecondaryVariableFieldEvaluator
@@ -61,15 +61,12 @@ PETEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     double ps_const = PsychrometricConstant(lh_vap, elev[0][c]);
     double vp_slope = VPSlope(air_temp[0][c]);
 
-    //    double hf_ground = HeatFluxDensity(air_temp_inter[0][c], air_temp[0][c]);
     double hf_ground = HeatFluxDensity(air_temp_inter[0][c], air_temp[0][c]);
 
     double s1 = vp_slope / (vp_slope + ps_const);
-    // old -- double sw_rad =11.63/24 * swr[0][c];
     double sw_rad = 2.064 * swr[0][c];
     double s2 = sw_rad / 23.88 - hf_ground;
 
-    //    res[0][c] = 0.001* pt_alpha_ * (1./lh_vap) * s1 * s2 / 86400.; // convert mm to m, and per day to per second
     res[0][c] = 0.24* pt_alpha_ * (1./lh_vap) * s1 * s2 / 86400.; // convert mm to m, and per day to per second
     res[0][c] = std::max(res[0][c],0.0);
   }
