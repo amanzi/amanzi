@@ -102,7 +102,7 @@ class PDE_Abstract : public PDE_HelperDiscretization {
 
 
 /* ******************************************************************
-* Specification of Setup
+* Specialization of Setup
 ****************************************************************** */
 template<>
 inline

@@ -63,7 +63,8 @@ void OperatorDiffusionDG(std::string solver_name,
   int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "\nTest: "<< dim << "D elliptic problem, dG method, solver: " 
-                            << solver_name << ", basis=" << dg_basis << std::endl;
+                            << solver_name << ", basis=" << dg_basis 
+                            << ", quadrature=" << numi_order << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion.xml";
@@ -88,23 +89,27 @@ void OperatorDiffusionDG(std::string solver_name,
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // modify diffusion coefficient
+  int d = mesh->space_dimension();
   auto Kc = std::make_shared<std::vector<WhetStone::Tensor> >();
+  auto Kc_poly = std::make_shared<std::vector<WhetStone::MatrixPolynomial> >();
   auto Kc_func = std::make_shared<std::vector<WhetStone::WhetStoneFunction*> >();
   auto Kf = std::make_shared<std::vector<double> >();
 
   AnalyticDG02 ana(mesh, 2, false);
+  MyFunction func(&ana);
 
   for (int c = 0; c < ncells_wghost; c++) {
     const Point& xc = mesh->cell_centroid(c);
     const WhetStone::Tensor& Ktmp = ana.Tensor(xc, 0.0);
     Kc->push_back(Ktmp);
-  }
 
-  MyFunction Ktmp(&ana);
-  if (numi_order > 0) {
-    for (int c = 0; c < ncells_wghost; c++) {
-      Kc_func->push_back(&Ktmp);
-    }
+    WhetStone::MatrixPolynomial Kpoly(d, d, d, 0);
+    for (int i = 0; i < d; ++i) 
+      for (int j = 0; j < d; ++j) Kpoly(i, j)(0) = Ktmp(i, j);
+    Kpoly.set_origin(xc);
+    Kc_poly->push_back(Kpoly);
+
+    Kc_func->push_back(&func);
   }
 
   for (int f = 0; f < nfaces_wghost; f++) {
@@ -199,7 +204,8 @@ void OperatorDiffusionDG(std::string solver_name,
   if (numi_order == 0) 
     op->Setup(Kc, Kf);
   else 
-    op->Setup(Kc_func, Kf);
+    op->Setup(Kc_poly, Kf);
+    // op->Setup(Kc_func, Kf);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // update the source term
@@ -235,7 +241,8 @@ void OperatorDiffusionDG(std::string solver_name,
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver->residual() 
               << " itr=" << solver->num_itrs()
-              << " code=" << solver->returned_code() << std::endl;
+              << " code=" << solver->returned_code() 
+              << " dofs=" << global_op->A()->NumGlobalRows() << std::endl;
 
     // visualization
     const Epetra_MultiVector& p = *solution.ViewComponent("cell");
@@ -256,7 +263,7 @@ void OperatorDiffusionDG(std::string solver_name,
   double pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean, pl2_int;
   ana.ComputeCellError(dg, p, 0.0, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean, pl2_int);
 
-  if (MyPID == 0 && numi_order == 0) {
+  if (MyPID == 0) {
     printf("Mean:     L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_mean, pinf_mean, solver->num_itrs());
     printf("Total:    L2(p)=%9.6f  Inf(p)=%9.6f\n", pl2_err, pinf_err);
     printf("Integral: L2(p)=%9.6f\n", pl2_int);

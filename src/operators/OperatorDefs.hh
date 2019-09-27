@@ -38,6 +38,7 @@ typedef enum { CONSTANT = 0,  // includes tensorial coefficients
                POLYNOMIAL,
                VECTOR_POLYNOMIAL,
                VECTOR_SPACETIME_POLYNOMIAL,
+               MATRIX_POLYNOMIAL,
                FUNCTION } CoefType;
 
 // Constants in the next block must powers of 2.

@@ -68,28 +68,33 @@ class MatrixObjects {
   MatrixObjects<T>& operator+=(const MatrixObjects<T>& mp);
   MatrixObjects<T>& operator-=(const MatrixObjects<T>& mp);
 
-  friend MatrixObjects<T> operator+(const MatrixObjects<T>& vp1, const MatrixObjects<T>& vp2) {
-    MatrixObjects<T> tmp(vp1);
-    return tmp += vp2;
+  friend MatrixObjects<T> operator+(const MatrixObjects<T>& m1, const MatrixObjects<T>& m2) {
+    MatrixObjects<T> tmp(m1);
+    return tmp += m2;
   }
 
-  friend MatrixObjects<T> operator-(const MatrixObjects<T>& vp1, const MatrixObjects<T>& vp2) {
-    MatrixObjects<T> tmp(vp1);
-    return tmp -= vp2;
+  friend MatrixObjects<T> operator-(const MatrixObjects<T>& m1, const MatrixObjects<T>& m2) {
+    MatrixObjects<T> tmp(m1);
+    return tmp -= m2;
   }
 
-  template<typename U>
-  friend MatrixObjects<T> operator*(const U& val, const MatrixObjects<T>& vp) {
-    MatrixObjects<T> tmp(vp);
+  friend MatrixObjects<T> operator*(double val, const MatrixObjects<T>& m) {
+    MatrixObjects<T> tmp(m);
     return tmp *= val;
   }
 
-  template<typename U>
-  friend MatrixObjects<T> operator*(const MatrixObjects<T>& vp, const U& val) {
-    MatrixObjects tmp(vp);
+  friend MatrixObjects<T> operator*(const MatrixObjects<T>& m, double val) {
+    MatrixObjects tmp(m);
     return tmp *= val;
   }
 
+  friend VectorObjects<T> operator*(const MatrixObjects<T>& m, const AmanziGeometry::Point& p) {
+    VectorObjects<T> v;
+    m.Multiply(p, v, false);
+    return v;
+  }
+
+  // change the coordinate system
   // change the coordinate system
   void set_origin(const AmanziGeometry::Point& origin);
   void ChangeOrigin(const AmanziGeometry::Point& origin);
@@ -101,7 +106,7 @@ class MatrixObjects {
   // -- matrix-vector products
   void Multiply(const VectorObjects<T>& v, VectorObjects<T>& av, bool transpose);
   void Multiply(const DenseVector& v, VectorObjects<T>& av, bool transpose);
-  void Multiply(const AmanziGeometry::Point& p, VectorObjects<T>& av, bool transpose);
+  void Multiply(const AmanziGeometry::Point& p, VectorObjects<T>& av, bool transpose) const;
 
   // output 
   friend std::ostream& operator << (std::ostream& os, const MatrixObjects<T>& poly) {
@@ -188,7 +193,7 @@ MatrixObjects<T>& MatrixObjects<T>::operator-=(const MatrixObjects<T>& mp)
 ***************************************************************** */
 template<class T>
 void MatrixObjects<T>::Multiply(const VectorObjects<T>& v,
-                                   VectorObjects<T>& av, bool transpose)
+                                VectorObjects<T>& av, bool transpose)
 {
   if (!transpose) {
     av.resize(m_);
@@ -216,7 +221,7 @@ void MatrixObjects<T>::Multiply(const VectorObjects<T>& v,
 
 template<class T>
 void MatrixObjects<T>::Multiply(const DenseVector& v,
-                                   VectorObjects<T>& av, bool transpose)
+                                VectorObjects<T>& av, bool transpose)
 {
   if (!transpose) {
     av.resize(m_);
@@ -242,7 +247,7 @@ void MatrixObjects<T>::Multiply(const DenseVector& v,
 
 template<class T>
 void MatrixObjects<T>::Multiply(const AmanziGeometry::Point& p,
-                                   VectorObjects<T>& av, bool transpose)
+                                VectorObjects<T>& av, bool transpose) const
 {
   int d(p.dim());
   AMANZI_ASSERT(NumCols() == d);

@@ -71,8 +71,7 @@ class VectorObjects {
   }
 
   // ring algebra
-  template<typename U>
-  VectorObjects<T>& operator*=(const U& val) {
+  VectorObjects<T>& operator*=(double val) {
     for (int i = 0; i < polys_.size(); ++i) polys_[i] *= val;
     return *this;
   }
@@ -96,14 +95,12 @@ class VectorObjects {
     return tmp -= vp2;
   }
 
-  template<typename U>
-  friend VectorObjects<T> operator*(const U& val, const VectorObjects<T>& vp) {
+  friend VectorObjects<T> operator*(double val, const VectorObjects<T>& vp) {
     VectorObjects<T> tmp(vp);
     return tmp *= val;
   }
 
-  template<typename U>
-  friend VectorObjects<T> operator*(const VectorObjects<T>& vp, const U& val) {
+  friend VectorObjects<T> operator*(const VectorObjects<T>& vp, double val) {
     VectorObjects<T> tmp(vp);
     return tmp *= val;
   }

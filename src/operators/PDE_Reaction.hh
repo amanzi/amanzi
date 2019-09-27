@@ -34,6 +34,7 @@ class PDE_Reaction : public PDE_HelperDiscretization {
   PDE_Reaction(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op) :
       K_(Teuchos::null),
       PDE_HelperDiscretization(global_op),
+      coef_type_(CoefType::CONSTANT),
       static_matrices_initialized_(false) {
     InitReaction_(plist);
   }
@@ -41,18 +42,17 @@ class PDE_Reaction : public PDE_HelperDiscretization {
   PDE_Reaction(Teuchos::ParameterList& plist, Teuchos::RCP<const AmanziMesh::Mesh> mesh) : 
       K_(Teuchos::null),
       PDE_HelperDiscretization(mesh),
+      coef_type_(CoefType::CONSTANT),
       static_matrices_initialized_(false) {
     InitReaction_(plist);
   }
 
   // required members 
   // -- setup
-  void SetupScalar(const Teuchos::RCP<Epetra_MultiVector>& K) { K_ = K; }
-  void SetupPoly(const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& K) { poly_ = K; }
-  void Setup(const Teuchos::RCP<const std::vector<WhetStone::SpaceTimePolynomial> >& K, bool reset) {
-    poly_st_ = K;
-    if (!static_matrices_initialized_ || reset) CreateStaticMatrices_();
-  }
+  void Setup(const Teuchos::RCP<Epetra_MultiVector>& K) { K_ = K; }
+
+  template<typename T>
+  void Setup(const Teuchos::RCP<std::vector<T> >& K, bool reset);
 
   // -- generate a linearized operator 
   using PDE_HelperDiscretization::UpdateMatrices;
@@ -74,8 +74,8 @@ class PDE_Reaction : public PDE_HelperDiscretization {
 
  protected:
   Teuchos::RCP<const Epetra_MultiVector> K_;
-  Teuchos::RCP<const std::vector<WhetStone::Polynomial> > poly_;
-  Teuchos::RCP<const std::vector<WhetStone::SpaceTimePolynomial> > poly_st_;
+  Teuchos::RCP<std::vector<WhetStone::Polynomial> > Kpoly_;
+  Teuchos::RCP<std::vector<WhetStone::SpaceTimePolynomial> > Kpoly_st_;
 
   Teuchos::RCP<WhetStone::BilinearForm> mfd_;
 
@@ -83,9 +83,31 @@ class PDE_Reaction : public PDE_HelperDiscretization {
   Schema global_schema_col_, global_schema_row_;
   Schema local_schema_col_, local_schema_row_;
 
+  CoefType coef_type_;
   bool static_matrices_initialized_;
   std::vector<std::vector<WhetStone::DenseMatrix> > static_matrices_;
 };
+
+
+/* ******************************************************************
+* Specialization of Setup
+****************************************************************** */
+template<>
+inline
+void PDE_Reaction::Setup<WhetStone::Polynomial>(
+    const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& K, bool reset) {
+  Kpoly_ = K;
+  coef_type_ = CoefType::POLYNOMIAL;
+}
+
+template<>
+inline
+void PDE_Reaction::Setup<WhetStone::SpaceTimePolynomial>(
+    const Teuchos::RCP<std::vector<WhetStone::SpaceTimePolynomial> >& K, bool reset) {
+  Kpoly_st_ = K;
+  coef_type_ = CoefType::VECTOR_SPACETIME_POLYNOMIAL;
+  if (!static_matrices_initialized_ || reset) CreateStaticMatrices_();
+}
 
 }  // namespace Operators
 }  // namespace Amanzi

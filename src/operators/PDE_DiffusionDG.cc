@@ -17,6 +17,7 @@
 #include "Polynomial.hh"
 
 // Operators
+#include "InterfaceWhetStone.hh"
 #include "Op.hh"
 #include "Op_Cell_Schema.hh"
 #include "Op_Face_Schema.hh"
@@ -111,17 +112,9 @@ void PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
   Kc2(0, 0) = 1.0;
 
   // volumetric term
-  if (coef_type_ == CoefType::CONSTANT) {
-    for (int c = 0; c != ncells_owned; ++c) {
-      if (Kc_.get()) Kc1 = (*Kc_)[c];
-      dg_->StiffnessMatrix(c, Kc1, Acell);
-      local_op_->matrices[c] = Acell;
-    }
-  } else if (coef_type_ == CoefType::FUNCTION) {
-    for (int c = 0; c != ncells_owned; ++c) {
-      dg_->StiffnessMatrix(c, *(*Kc_func_)[c], Acell, numi_order_);
-      local_op_->matrices[c] = Acell;
-    }
+  for (int c = 0; c != ncells_owned; ++c) {
+    interface_->StiffnessMatrix(c, Acell);
+    local_op_->matrices[c] = Acell;
   }
 
   // strenghen stability term
@@ -137,16 +130,7 @@ void PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
     int c1 = cells[0];
     int c2 = (cells.size() > 1) ? cells[1] : c1;
 
-    if (coef_type_ == CoefType::CONSTANT) {
-      if (Kc_.get()) {
-        Kc1 = (*Kc_)[c1]; 
-        Kc2 = (*Kc_)[c2]; 
-      }
-      dg_->FaceMatrixJump(f, Kc1, Kc2, Aface);
-    }
-    else if (coef_type_ == CoefType::FUNCTION) {
-      dg_->FaceMatrixJump(f, *(*Kc_func_)[c1], *(*Kc_func_)[c2], Aface, numi_order_);
-    }
+    interface_->FaceMatrixJump(f, c1, c2, Aface);
 
     Aface *= -1.0;
     jump_up_op_->matrices[f] = Aface;

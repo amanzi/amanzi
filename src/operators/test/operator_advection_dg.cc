@@ -260,9 +260,9 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   op_adv->UpdateMatrices();
 
   if (conservative_form || weak_form == "primal" || weak_form == "gauss points")
-    op_reac->SetupScalar(Kc);
+    op_reac->Setup(Kc);
   else 
-    op_reac->SetupPoly(Kn);
+    op_reac->Setup(Kn, false);
   op_reac->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // create preconditoner
