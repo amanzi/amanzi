@@ -1,4 +1,4 @@
-FROM metsi/amanzi:temp-build-stage-1
+FROM metsi/amanzi:amanzi-0.88-temp-build-stage-1
 LABEL Description="Amanzi: Build stage 2 and install in temporary Docker image."
 
 # Switch to amanzi_user

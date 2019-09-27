@@ -1,4 +1,4 @@
-FROM metsi/amanzi-tpls:latest
+FROM metsi/amanzi-tpls:0.94.12
 LABEL Description="Amanzi: Build stage 1 and install in temporary Docker image."
 
 # Switch to amanzi_user
