@@ -68,7 +68,7 @@ class MyRemapDG : public RemapDG_Tests<AnalyticDG04> {
 
  private:
   double T1_, tini_;
-  std::vector<WhetStone::VectorPolynomial> velf_vec0_;
+  std::vector<WhetStone::VectorPolynomial> velf_vec0_, vele_vec0_;
   std::vector<WhetStone::MatrixPolynomial> J_, J0_;
 };
 
@@ -87,6 +87,14 @@ void MyRemapDG::Init(const Teuchos::RCP<WhetStone::DG_Modal> dg)
   for (int f = 0; f < nfaces_wghost_; ++f) {
     velf_vec0_[f].Reshape(dim_, dim_, 1, true);
     velf_vec0_[f].set_origin(mesh0_->face_centroid(f));
+  }
+
+  if (mesh0_->valid_edges()) {
+    vele_vec0_.resize(nedges_wghost_);
+    for (int e = 0; e < nedges_wghost_; ++e) {
+      vele_vec0_[e].Reshape(dim_, dim_, 1, true);
+      vele_vec0_[e].set_origin(mesh0_->edge_centroid(e));
+    }
   }
 
   J0_.resize(ncells_owned_);
@@ -110,6 +118,11 @@ void MyRemapDG::ReInit(double tini)
   for (int f = 0; f < nfaces_wghost_; ++f)
     velf_vec0_[f] += velf_vec_[f];
 
+  if (mesh0_->valid_edges()) {
+    for (int e = 0; e < nedges_wghost_; ++e)
+      vele_vec0_[e] += vele_vec_[e];
+  }
+
   for (int c = 0; c < ncells_owned_; ++c)
     J0_[c] += J_[c];
 
@@ -119,6 +132,11 @@ void MyRemapDG::ReInit(double tini)
   // adjust new velocities for interval [tini, tend]
   for (int f = 0; f < nfaces_wghost_; ++f)
     velf_vec_[f] -= velf_vec0_[f];
+
+  if (mesh0_->valid_edges()) {
+    for (int e = 0; e < nedges_wghost_; ++e)
+      vele_vec_[e] -= vele_vec0_[e];
+  }
 
   StaticCellVelocity();
 
@@ -254,7 +272,7 @@ void MyRemapDG::StaticCellCoVelocity()
 * Dual formulation places gradient and jumps on a test function.
 ***************************************************************** */
 void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
-                      std::string map_name, std::string file_name,
+                      std::string file_name,
                       int nx, int ny, int nz, double dt0,
                       int deform = 1, int nloop = 1, double T1 = 1.0) 
 {
@@ -279,7 +297,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   int nk = WhetStone::PolynomialSpaceDimension(dim, order);
 
   // make modifications to the parameter list
-  plist.sublist("maps").set<std::string>("map name", map_name);
+  plist.sublist("maps").set<std::string>("map name", "VEM");
 
   // print simulation header
   const auto& map_list = plist.sublist("maps");
@@ -511,12 +529,11 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
 
 /*
 TEST(REMAP_CURVED_3D) {
-  int nloop = 2;
+  int nloop = 1;
   double dT(0.0125 * nloop), T1(1.0 / nloop);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
-  std::string maps = "VEM";
-  int deform = 1;
-  RemapTestsCurved(rk_method, maps, "test/prism10.exo", 10,1,1, dT,   deform, nloop, T1);
+  int deform = 5;
+  RemapTestsCurved(rk_method, "test/prism10.exo", 10,1,1, dT,   deform, nloop, T1);
 }
 */
 
@@ -524,47 +541,41 @@ TEST(REMAP_CURVED_2D) {
   int nloop = 1;
   double dT(0.1), T1(1.0 / nloop);
   auto rk_method = Amanzi::Explicit_TI::heun_euler;
-  std::string maps = "VEM";
-  // int deform = 4;
-  // RemapTestsCurved(rk_method, maps, "", 8,8,0, dT, deform, nloop, T1);
   int deform = 1;
-  RemapTestsCurved(rk_method, maps, "", 8,8,0, dT, deform, nloop, T1);
-  // RemapTestsCurved(rk_method, maps, "test/circle_quad10.exo", 10,0,0, 0.1, 6, 40, 0.025);
+  RemapTestsCurved(rk_method, "", 8,8,0, dT, deform, nloop, T1);
+  // RemapTestsCurved(rk_method, "test/circle_quad10.exo", 10,0,0, 0.1, 6, 40, 0.025);
 
   /*
   int nloop = 40;
   double dT(0.0025 * nloop), T1(1.0 / nloop);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
-  std::string maps = "VEM";
   int deform = 6;
-  RemapTestsCurved(rk_method, maps, "test/circle_quad10.exo", 10,0,0, dT,   deform, nloop, T1);
-  RemapTestsCurved(rk_method, maps, "test/circle_quad20.exo", 20,0,0, dT/2, deform, nloop, T1);
-  RemapTestsCurved(rk_method, maps, "test/circle_poly40.exo", 40,0,0, dT/4, deform, nloop, T1);
-  RemapTestsCurved(rk_method, maps, "test/circle_poly80.exo", 80,0,0, dT/8, deform, nloop, T1);
+  RemapTestsCurved(rk_method, "test/circle_quad10.exo", 10,0,0, dT,   deform, nloop, T1);
+  RemapTestsCurved(rk_method, "test/circle_quad20.exo", 20,0,0, dT/2, deform, nloop, T1);
+  RemapTestsCurved(rk_method, "test/circle_poly40.exo", 40,0,0, dT/4, deform, nloop, T1);
+  RemapTestsCurved(rk_method, "test/circle_poly80.exo", 80,0,0, dT/8, deform, nloop, T1);
   */
 
   /*
   int nloop = 2;
   double dT(0.01 * nloop), T1(1.0 / nloop);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
-  std::string maps = "VEM";
   int deform = 1;
-  RemapTestsCurved(rk_method, maps, "",  16, 16,0, dT,   deform, nloop, T1);
-  RemapTestsCurved(rk_method, maps, "",  32, 32,0, dT/2, deform, nloop, T1);
-  RemapTestsCurved(rk_method, maps, "",  64, 64,0, dT/4, deform, nloop, T1);
-  RemapTestsCurved(rk_method, maps, "", 128,128,0, dT/8, deform, nloop, T1);
+  RemapTestsCurved(rk_method, "",  16, 16,0, dT,   deform, nloop, T1);
+  RemapTestsCurved(rk_method, "",  32, 32,0, dT/2, deform, nloop, T1);
+  RemapTestsCurved(rk_method, "",  64, 64,0, dT/4, deform, nloop, T1);
+  RemapTestsCurved(rk_method, "", 128,128,0, dT/8, deform, nloop, T1);
   */
 
   /*
   int nloop = 1;
   double dT(0.01 * nloop), T1(1.0 / nloop);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
-  std::string maps = "VEM";
   int deform = 4;
-  RemapTestsCurved(rk_method, maps, "test/median15x16.exo",    16,0,0, dT,   deform, nloop, T1);
-  RemapTestsCurved(rk_method, maps, "test/median32x33.exo",    32,0,0, dT/2, deform, nloop, T1);
-  RemapTestsCurved(rk_method, maps, "test/median63x64.exo",    64,0,0, dT/4, deform, nloop, T1);
-  RemapTestsCurved(rk_method, maps, "test/median127x128.exo", 128,0,0, dT/8, deform, nloop, T1);
+  RemapTestsCurved(rk_method, "test/median15x16.exo",    16,0,0, dT,   deform, nloop, T1);
+  RemapTestsCurved(rk_method, "test/median32x33.exo",    32,0,0, dT/2, deform, nloop, T1);
+  RemapTestsCurved(rk_method, "test/median63x64.exo",    64,0,0, dT/4, deform, nloop, T1);
+  RemapTestsCurved(rk_method, "test/median127x128.exo", 128,0,0, dT/8, deform, nloop, T1);
   */
 }
 
