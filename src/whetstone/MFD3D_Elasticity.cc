@@ -28,6 +28,22 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
+* A
+****************************************************************** */
+MFD3D_Elasticity::MFD3D_Elasticity(
+    const Teuchos::ParameterList& plist,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) 
+  : MFD3D(mesh)
+{
+  std::string base = plist.get<std::string>("base");
+  if (base == "node") 
+    name_id_ = WhetStone::ELASTICITY_LOCAL_STRESS;
+  else
+    name_id_ = WhetStone::ELASTICITY_DEFAULT;
+}
+
+
+/* ******************************************************************
 * Consistency condition for mass matrix in mechanics. 
 * Only the upper triangular part of Ac is calculated.
 * Requires mesh_get_edges to complete the implementation.

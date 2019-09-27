@@ -34,14 +34,15 @@ namespace WhetStone {
 class MFD3D_Elasticity : public MFD3D { 
  public:
   MFD3D_Elasticity(const Teuchos::ParameterList& plist,
-                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : MFD3D(mesh) {};
+                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~MFD3D_Elasticity() {};
 
   // required methods
   // -- schema
   virtual std::vector<SchemaItem> schema() const override {
+    if (name_id_ == ELASTICITY_DEFAULT) 
     return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::NODE, DOF_Type::SCALAR, d_));
+    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::CELL, DOF_Type::SCALAR, d_));
   }
 
   // -- mass matrices
@@ -56,15 +57,20 @@ class MFD3D_Elasticity : public MFD3D {
   virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc) override;
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
+  // special methods
+  int StiffnessMatrix_LocalStress(int c, const std::vector<Tensor>& T, DenseMatrix& A, DenseMatrix& B);
+
   // optimization methods (mainly for research, since the maximum principle does not exists)
   int StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatrix& A);
   int StiffnessMatrixMMatrix(int c, const Tensor& T, DenseMatrix& A);
 
  private:
-  void MatrixMatrixProduct_(
-      const DenseMatrix& A, const DenseMatrix& B, bool transposeB, DenseMatrix& AB);
+  void LocalStressMatrices_(int v, const std::vector<Tensor>& T,
+                            DenseMatrix& M, DenseMatrix& D, DenseMatrix& S1, DenseMatrix& S2);
 
  private:
+  int name_id_;
+
   static RegisteredFactory<MFD3D_Elasticity> factory_;
 };
 

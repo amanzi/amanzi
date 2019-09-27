@@ -21,6 +21,7 @@
 #include "MFD3D_Elasticity.hh"
 #include "PreconditionerFactory.hh"
 #include "WhetStoneDefs.hh"
+#include "WhetStoneMeshUtils.hh"
 
 // Amanzi::Operators
 #include "Op.hh"
@@ -56,16 +57,47 @@ void PDE_Elasticity::SetTensorCoefficient(double K) {
 void PDE_Elasticity::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                                     const Teuchos::Ptr<const CompositeVector>& p)
 {
-  WhetStone::DenseMatrix Acell;
-
+  WhetStone::DenseMatrix A, B;
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = K_default_;
   
-  for (int c = 0; c < ncells_owned; c++) {
+  // use factory for cell-based method
+  if (base_ == AmanziMesh::CELL) {
+    for (int c = 0; c < ncells_owned; ++c) {
     if (K_.get()) Kc = (*K_)[c];
-    mfd_->StiffnessMatrix(c, Kc, Acell);
-    local_op_->matrices[c] = Acell;
+      mfd_->StiffnessMatrix(c, Kc, A);
+      local_op_->matrices[c] = A;
+    }
+  // special elasticity methods: there exists only one such method so far
+  } else if (base_ == AmanziMesh::NODE) {
+    AmanziMesh::Entity_ID_List cells;
+    auto mfd_elasticity = Teuchos::rcp_dynamic_cast<WhetStone::MFD3D_Elasticity>(mfd_);
+
+    for (int n = 0; n < nnodes_owned; ++n) {
+      mesh_->node_get_cells(n, AmanziMesh::Parallel_type::ALL, &cells);
+
+      std::vector<WhetStone::Tensor> vKc;
+      for (int i = 0; i < cells.size(); ++i) {
+        if (K_.get()) Kc = (*K_)[cells[i]];
+        vKc.push_back(Kc);
+      }
+      mfd_elasticity->StiffnessMatrix_LocalStress(n, vKc, A, B);
+      local_op_->matrices[n] = A;
+      local_op_->matrices_shadow[n] = B;
+    }
   }
+}
+
+
+/* ******************************************************************
+* Apply boundary conditions to the local matrices. 
+****************************************************************** */
+void PDE_Elasticity::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
+{
+  if (base_ == AmanziMesh::NODE)
+    ApplyBCs_Node_Point_(*bcs_trial_[0], local_op_, primary, eliminate, essential_eqn);
+  else
+    PDE_HelperDiscretization::ApplyBCs(primary, eliminate, essential_eqn);
 }
 
 
@@ -112,11 +144,71 @@ void PDE_Elasticity::Init_(Teuchos::ParameterList& plist)
   }
 
   // create the local Op and register it with the global Operator
+  if (base_ == AmanziMesh::CELL) {
   local_op_ = Teuchos::rcp(new Op_Cell_Schema(my_schema, my_schema, mesh_));
+  } else if (base_ == AmanziMesh::NODE) {
+    local_op_ = Teuchos::rcp(new Op_Node_Schema(my_schema, my_schema, mesh_));
+  }
+
   global_op_->OpPushBack(local_op_);
   
   K_ = Teuchos::null;
 }
 
+
+/* ******************************************************************
+* Apply BCs of point type. Generalize and move to the helper class.
+****************************************************************** */
+void PDE_Elasticity::ApplyBCs_Node_Point_(
+    const BCs& bc, Teuchos::RCP<Op> op,
+    bool primary, bool eliminate, bool essential_eqn)
+{
+  const std::vector<int>& bc_model = bc.bc_model();
+  const std::vector<std::vector<double> >& bc_value = bc.bc_value_vector();
+
+  AmanziMesh::Entity_ID_List faces;
+
+  CompositeVector& rhs = *global_op_->rhs();
+  rhs.PutScalarGhosted(0.0);
+
+  int d = mesh_->space_dimension(); 
+  const Schema& schema_row = global_op_->schema_row();
+
+  for (int v = 0; v != nnodes_owned; ++v) {
+    WhetStone::DenseMatrix& Anode = op->matrices_shadow[v];
+    int ncols = Anode.NumCols();
+    int nrows = Anode.NumRows();
+
+    mesh_->node_get_faces(v, AmanziMesh::Parallel_type::ALL, &faces);
+    int nfaces = faces.size();
+
+    // essential zero conditions for trial functions
+    for (int n = 0; n != nfaces; ++n) {
+      int f = faces[n];
+      double area = mesh_->face_area(f) / 2;  // FIXME for 3D
+      const std::vector<double>& value = bc_value[f];
+
+      if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+        for (int k = 0; k < d; ++k) {
+          int noff(d*n + k);
+          WhetStone::DenseVector rhs_loc(nrows);
+
+          if (eliminate) {
+            int pos = WhetStone::UniqueIndexFaceToNodes(*mesh_, f, v);
+            for (int m = 0; m < nrows; m++) {
+              rhs_loc(m) = Anode(m, noff) * value[d * pos + k] * area;
+            }
+          }
+
+          global_op_->AssembleVectorNodeOp(v, schema_row, rhs_loc, rhs);
+        }
+      }
+    }
+  } 
+
+  rhs.GatherGhostedToMaster(Add);
+}
+
 }  // namespace Operators
 }  // namespace Amanzi
+

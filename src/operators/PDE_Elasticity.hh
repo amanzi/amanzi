@@ -57,6 +57,19 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                               const Teuchos::Ptr<const CompositeVector>& p) override;
 
+  // -- modify matrix due to boundary conditions: generic implementation 
+  //    for PDE classes based on new schema: 
+  //    primary=true indicates that the operator updates both matrix and right-hand
+  //      side using BC data. If primary=false, only matrix is changed.
+  //    eliminate=true indicates that we eliminate essential BCs for a trial 
+  //      function, i.e. zeros go in the corresponding matrix columns and 
+  //      right-hand side is modified using BC values. This is the optional 
+  //      parameter that enforces symmetry for a symmetric tree  operators.
+  //    essential_eqn=true indicates that the operator places a positive number on 
+  //      the main matrix diagonal for the case of essential BCs. This is the
+  //      implementtion trick/
+  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
+
   // -- postprocessing: calculated stress u from displacement p
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
                           const Teuchos::Ptr<CompositeVector>& u) override {};
@@ -68,6 +81,11 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
 
  protected:
   void Init_(Teuchos::ParameterList& plist);
+
+ private:
+  // this should be generalized when the next use case appear
+  void ApplyBCs_Node_Point_(const BCs& bc, Teuchos::RCP<Op> op,
+                            bool primary, bool eliminate, bool essential_eqn);
 
  protected:
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;

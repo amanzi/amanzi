@@ -64,6 +64,7 @@ void PDE_MagneticDiffusion::ModifyMatrices(
   Epetra_MultiVector& rhs_e = *global_op_->rhs()->ViewComponent("edge", true);
 
   Teuchos::ParameterList plist;
+  plist.set<int>("method order", 0);
   WhetStone::MFD3D_Electromagnetics mfd(plist, mesh_);
 
   std::vector<int> dirs;

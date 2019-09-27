@@ -73,8 +73,7 @@
   <ParameterList name="PK operator">
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
-    <!-- NODE 2, FACE 1 scheme -->
-    <ParameterList name="elasticity operator">
+    <ParameterList name="elasticity operator 1">
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema">
         <Parameter name="method" type="string" value="BernardiRaugel"/>
@@ -82,7 +81,24 @@
         <Parameter name="base" type="string" value="cell"/>
       </ParameterList>
     </ParameterList>
+
+    <ParameterList name="elasticity operator 2">
+      <Parameter name="matrix type" type="string" value="stiffness"/>
+      <ParameterList name="schema">
+        <Parameter name="method" type="string" value="elasticity"/>
+        <Parameter name="method order" type="int" value="1"/>
+        <Parameter name="base" type="string" value="cell"/>
+      </ParameterList>
   </ParameterList>
 
+    <ParameterList name="elasticity operator local stress">
+      <Parameter name="matrix type" type="string" value="stiffness"/>
+      <ParameterList name="schema">
+        <Parameter name="method" type="string" value="elasticity"/>
+        <Parameter name="method order" type="int" value="1"/>
+        <Parameter name="base" type="string" value="node"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
 </ParameterList>
 

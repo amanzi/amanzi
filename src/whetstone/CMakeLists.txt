@@ -45,6 +45,7 @@ add_amanzi_library(whetstone
                           MFD3D_CrouzeixRaviartSerendipity.cc
                           MFD3D_Diffusion.cc MFD3D_Diffusion_Surface.cc MFD3D_Diffusion_Other.cc 
                           MFD3D_Elasticity.cc 
+                          MFD3D_Elasticity_LocalStress.cc 
                           MFD3D_Electromagnetics.cc MFD3D_Electromagnetics_Surface.cc
                           MFD3D_GeneralizedDiffusion.cc
                           MFD3D_Lagrange.cc MFD3D_LagrangeAnyOrder.cc
@@ -155,7 +156,6 @@ if (BUILD_TESTS)
                                         test/whetstone_polynomials.cc
                                         test/whetstone_dg.cc
                                         test/whetstone_numi.cc
-                                        test/whetstone_high_order.cc
                                         test/whetstone_maps.cc
                                         test/whetstone_projectors.cc
                                         test/whetstone_high_order.cc

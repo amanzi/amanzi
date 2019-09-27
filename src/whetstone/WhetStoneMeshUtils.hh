@@ -105,6 +105,18 @@ int cell_get_face_adj_cell(const AmanziMesh::Mesh& mesh, int c, int f)
 
 
 /* ******************************************************************
+* Unique index of nodes. We assume that mesh map is unique.
+****************************************************************** */
+inline
+int UniqueIndexFaceToNodes(const AmanziMesh::Mesh& mesh, int f, int v)
+{
+  AmanziMesh::Entity_ID_List nodes;
+  mesh.face_get_nodes(f, &nodes);
+  return (nodes[0] == v) ? 0 : 1;
+}
+
+
+/* ******************************************************************
 * Exterior boundary normal: dir = 0 for internal face
 ****************************************************************** */
 inline

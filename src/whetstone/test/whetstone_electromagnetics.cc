@@ -142,6 +142,8 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
     mesh = meshfactory.create(mesh_file, true, true); 
  
   Teuchos::ParameterList plist;
+  plist.set<int>("method order", 0);
+
   MFD3D_Electromagnetics mfd(plist, mesh);
 
   int cell = 0;
@@ -172,9 +174,10 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
       mfd.MassMatrixInverseOptimized(cell, T, M);
       M.Inverse();
     }
+    CHECK(M.NumRows() == nrows);
 
     int m = std::min(nrows, max_row);
-    printf("Mass matrix: method=%d  edges=%d  submatrix=%dx%d\n", method, nedges, m, m);
+    printf("Mass matrix: method=%d  edges=%d  size=%d  submatrix=%dx%d\n", method, nedges, nrows, m, m);
 
     for (int i = 0; i < m; i++) {
       for (int j = 0; j < m; j++ ) printf("%8.4f ", M(i, j)); 
