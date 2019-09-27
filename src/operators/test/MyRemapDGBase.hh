@@ -37,13 +37,14 @@ class MyRemapDGBase : public Operators::RemapDG {
   // CFL condition
   double StabilityCondition();
 
+  // tools
+  // -- mass on mesh0
+  double InitialMass(const CompositeVector& p1, int order);
+
   // output
   void CollectStatistics(double t, const CompositeVector& u);
   virtual double global_time(double t) { return t; }
   void set_dt_output(double dt) { dt_output_ = dt; }
-
- protected:
-  std::vector<WhetStone::Polynomial> det0_, det1_;
 
   // statistics
   double tprint_, dt_output_, l2norm_;
@@ -66,6 +67,31 @@ double MyRemapDGBase<AnalyticDG>::StabilityCondition()
   }
 
   return dt * alpha / (2 * order_ + 1);
+}
+
+
+/* *****************************************************************
+* Compute initial mass
+***************************************************************** */
+template<class AnalyticDG>
+double MyRemapDGBase<AnalyticDG>::InitialMass(const CompositeVector& p1, int order)
+{
+  const Epetra_MultiVector& p1c = *p1.ViewComponent("cell", false);
+  int nk = p1c.NumVectors();
+  int ncells = p1c.MyLength();
+
+  double mass(0.0), mass0;
+  WhetStone::DenseVector data(nk);
+  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh0_);
+
+  for (int c = 0; c < ncells; c++) {
+    for (int i = 0; i < nk; ++i) data(i) = p1c[i][c];
+    auto poly = dg_->cell_basis(c).CalculatePolynomial(mesh0_, c, order, data);
+    mass += numi.IntegratePolynomialCell(c, poly);
+  }
+
+  mesh0_->get_comm()->SumAll(&mass, &mass0, 1);
+  return mass0;
 }
 
 

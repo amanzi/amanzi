@@ -379,24 +379,15 @@ void RemapTestsCurved(std::string file_name,
   io->WriteVector(*p2c(0), "solution", AmanziMesh::CELL);
   io->FinalizeCycle();
 
-  // initial mass
-  double mass0(0.0);
-  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh0);
-
-  for (int c = 0; c < ncells_owned; c++) {
-    WhetStone::DenseVector data(nk);
-    for (int i = 0; i < nk; ++i) data(i) = p1c[i][c];
-    auto poly = dg->cell_basis(c).CalculatePolynomial(mesh0, c, order, data);
-    mass0 += numi.IntegratePolynomialCell(c, poly);
-  }
-  ana.GlobalOp("sum", &mass0, 1);
-
   // create remap object
   MyRemapDG remap(mesh0, mesh1, plist, T1);
   if (MyPID == 0) std::cout << "Deforming mesh...\n";
   remap.DeformMesh(deform, T1);
   remap.Init(dg);
   remap.set_dt_output(0.1);
+
+  // initial mass
+  double mass0 = remap.InitialMass(*p1, order);
 
   // work in progress on boundary conditions for remap object
   std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
@@ -452,9 +443,6 @@ void RemapTestsCurved(std::string file_name,
   std::vector<int> dirs;
   AmanziGeometry::Point v0(dim), v1(dim), tau(dim);
 
-  CompositeVectorSpace cvs3;
-  cvs3.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
-
   double pnorm, l2_err, inf_err, l20_err, inf0_err;
   ana.ComputeCellErrorRemap(*dg, p2c, tend, 0, mesh1,
                             pnorm, l2_err, inf_err, l20_err, inf0_err);
@@ -489,6 +477,7 @@ void RemapTestsCurved(std::string file_name,
   double area(0.0), area0(0.0), area1(0.0);
   double mass1(0.0), gcl_err(0.0), gcl_inf(0.0);
   auto& det = remap.det();
+  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh0);
 
   for (int c = 0; c < ncells_owned; ++c) {
     double vol1 = numi.IntegratePolynomialCell(c, det[c].Value(1.0));
@@ -505,8 +494,6 @@ void RemapTestsCurved(std::string file_name,
     WhetStone::DenseVector data(nk);
     for (int i = 0; i < nk; ++i) data(i) = p2c[i][c];
     auto poly = dg->cell_basis(c).CalculatePolynomial(mesh0, c, order, data);
-
-    int quad_order = det[c].order() + poly.order();
 
     WhetStone::Polynomial tmp(det[c].Value(1.0));
     tmp.ChangeOrigin(mesh0->cell_centroid(c));

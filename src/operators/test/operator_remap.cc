@@ -161,16 +161,7 @@ void RemapTestsDualRK(std::string map_name, std::string file_name,
   if (MyPID == 0) std::cout << "Done.\n";
 
   // initial mass
-  double mass0(0.0);
-  WhetStone::DenseVector data(nk);
-  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh0);
-
-  for (int c = 0; c < ncells_owned; c++) {
-    for (int i = 0; i < nk; ++i) data(i) = p1c[i][c];
-    auto poly = dg->cell_basis(c).CalculatePolynomial(mesh0, c, order, data);
-    mass0 += numi.IntegratePolynomialCell(c, poly);
-  }
-  ana.GlobalOp("sum", &mass0, 1);
+  double mass0 = remap.InitialMass(*p1, order);
 
   // explicit time integration
   CompositeVector p1aux(*p1);
@@ -194,9 +185,6 @@ void RemapTestsDualRK(std::string map_name, std::string file_name,
   // calculate error in the new basis
   std::vector<int> dirs;
   AmanziGeometry::Point v0(dim), v1(dim), tau(dim);
-
-  CompositeVectorSpace cvs3;
-  cvs3.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
 
   CompositeVector q2(p2), perr(p2);
   Epetra_MultiVector& q2c = *q2.ViewComponent("cell");
@@ -242,6 +230,7 @@ void RemapTestsDualRK(std::string map_name, std::string file_name,
   // concervation errors: mass and volume (CGL)
   auto& det = remap.det();
   double area(0.0), area1(0.0), mass1(0.0), gcl_err(0.0), gcl_inf(0.0);
+  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh0);
 
   for (int c = 0; c < ncells_owned; ++c) {
     double vol1 = numi.IntegratePolynomialCell(c, det[c].Value(1.0));
@@ -257,8 +246,6 @@ void RemapTestsDualRK(std::string map_name, std::string file_name,
     WhetStone::DenseVector data(nk);
     for (int i = 0; i < nk; ++i) data(i) = p2c[i][c];
     auto poly = dg->cell_basis(c).CalculatePolynomial(mesh0, c, order, data);
-
-    int quad_order = det[c].order() + poly.order();
 
     WhetStone::Polynomial tmp(det[c].Value(1.0));
     tmp.ChangeOrigin(mesh0->cell_centroid(c));

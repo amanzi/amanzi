@@ -27,6 +27,7 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "NumericalIntegration.hh"
+#include "TreeVector.hh"
 #include "OutputXDMF.hh"
 
 // Amanzi::Operators
@@ -49,6 +50,9 @@ class MyRemapDG : public MyRemapDGBase<AnalyticDG04> {
 
   // access 
   const std::vector<WhetStone::SpaceTimePolynomial> det() const { return *det_; }
+
+ protected:
+  std::vector<WhetStone::Polynomial> det0_, det1_;
 };
 
 
@@ -192,15 +196,26 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
 
   int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
-  // create and initialize cell-based field 
-  CompositeVectorSpace cvs1, cvs2;
-  cvs1.SetMesh(mesh0)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
-  Teuchos::RCP<CompositeVector> p1 = Teuchos::rcp(new CompositeVector(cvs1));
-  Epetra_MultiVector& p1c = *p1->ViewComponent("cell", true);
+  // create and initialize cell-based fields
+  Teuchos::RCP<TreeVectorSpace> tvs0, tvs1, tvs2;
+  auto cvs1 = Teuchos::rcp(new CompositeVectorSpace());
+  cvs1->SetMesh(mesh0)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
+  tvs0->SetData(cvs1);
+  tvs1->PushBack(tvs0);
+  tvs1->PushBack(tvs0);
 
-  cvs2.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
-  CompositeVector p2(cvs2);
-  Epetra_MultiVector& p2c = *p2.ViewComponent("cell");
+  Teuchos::RCP<TreeVector> p1 = Teuchos::rcp(new TreeVector(*tvs1));
+  Epetra_MultiVector& p1c = *p1->SubVector(0)->Data()->ViewComponent("cell", true);
+  Epetra_MultiVector& j1c = *p1->SubVector(1)->Data()->ViewComponent("cell", true);
+
+  auto cvs2 = Teuchos::rcp(new CompositeVectorSpace());
+  cvs2->SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
+  tvs0->SetData(cvs2);
+  tvs2->PushBack(tvs0);
+  tvs2->PushBack(tvs0);
+
+  Teuchos::RCP<TreeVector> p2 = Teuchos::rcp(new TreeVector(*tvs2));
+  Epetra_MultiVector& p2c = *p2->SubVector(0)->Data()->ViewComponent("cell", true);
 
   // we need dg to use correct scaling of basis functions
   Teuchos::ParameterList dglist = plist.sublist("PK operator")
@@ -224,50 +239,37 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
   if (MyPID == 0) std::cout << "Done.\n";
 
   // initial mass
-  double mass0(0.0);
-  WhetStone::DenseVector data(nk);
-  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh0);
-
-  for (int c = 0; c < ncells_owned; c++) {
-    for (int i = 0; i < nk; ++i) data(i) = p1c[i][c];
-    auto poly = dg->cell_basis(c).CalculatePolynomial(mesh0, c, order, data);
-    mass0 += numi.IntegratePolynomialCell(c, poly);
-  }
-  ana.GlobalOp("sum", &mass0, 1);
+  auto sv1 = *p1->SubVector(0)->Data();
+  auto sv2 = *p2->SubVector(0)->Data();
+  double mass0 = remap.InitialMass(sv1, order);
 
   // explicit time integration
-  CompositeVector p1aux(*p1);
-  Explicit_TI::RK<CompositeVector> rk(remap, rk_method, p1aux);
+  Explicit_TI::RK<TreeVector> rk(remap, rk_method, *p1);
 
-  remap.NonConservativeToConservative(0.0, *p1, p1aux);
+  TreeVector p3(*p1);
+  auto sv3 = *p3.SubVector(0)->Data();
+  Epetra_MultiVector& p3c = *sv3.ViewComponent("cell", true);
+  remap.NonConservativeToConservative(0.0, sv1, sv3);
 
   double t(0.0), tend(1.0);
   while(t < tend - dt/2) {
-    // remap.ApplyLimiter(t, p1aux);
-    rk.TimeStep(t, dt, p1aux, *p1);
-    *p1aux.ViewComponent("cell") = *p1->ViewComponent("cell");
+    // remap.ApplyLimiter(t, p3);
+    rk.TimeStep(t, dt, p3, *p1);
+    p3 = *p1;
 
     t += dt;
-    remap.CollectStatistics(t, *p1);
+    remap.CollectStatistics(t, sv1);
   }
 
-  remap.ConservativeToNonConservative(1.0, *p1, p2);
+  remap.ConservativeToNonConservative(1.0, sv1, sv2);
 
   // calculate error in the new basis
   std::vector<int> dirs;
   AmanziGeometry::Point v0(dim), v1(dim), tau(dim);
 
-  CompositeVectorSpace cvs3;
-  cvs3.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  CompositeVector q2(p2), perr(p2);
-  Epetra_MultiVector& q2c = *q2.ViewComponent("cell");
-  Epetra_MultiVector& pec = *perr.ViewComponent("cell");
-  q2c = p2c;
-
   double pnorm, l2_err, inf_err, l20_err, inf0_err;
   ana.ComputeCellErrorRemap(*dg, p2c, tend, 0, mesh1,
-                            pnorm, l2_err, inf_err, l20_err, inf0_err, &pec);
+                            pnorm, l2_err, inf_err, l20_err, inf0_err, &p3c);
 
   CHECK(((dim == 2) ? l2_err : l20_err) < 0.12 / (order + 1));
 
@@ -279,6 +281,7 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
   // concervation errors: mass and volume (CGL)
   auto& det = remap.det();
   double area(0.0), area1(0.0), mass1(0.0), gcl_err(0.0), gcl_inf(0.0);
+  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh0);
 
   for (int c = 0; c < ncells_owned; ++c) {
     double vol1 = numi.IntegratePolynomialCell(c, det[c].Value(1.0));
@@ -294,8 +297,6 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
     WhetStone::DenseVector data(nk);
     for (int i = 0; i < nk; ++i) data(i) = p2c[i][c];
     auto poly = dg->cell_basis(c).CalculatePolynomial(mesh0, c, order, data);
-
-    int quad_order = det[c].order() + poly.order();
 
     WhetStone::Polynomial tmp(det[c].Value(1.0));
     tmp.ChangeOrigin(mesh0->cell_centroid(c));
@@ -323,7 +324,6 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
 
   io.InitializeCycle(t, 1);
   io.WriteVector(*p2c(0), "solution", AmanziMesh::CELL);
-  io.WriteVector(*q2c(0), "solution-prj", AmanziMesh::CELL);
   io.FinalizeCycle();
 }
 
