@@ -23,110 +23,44 @@
 
   Input parameter list describes operators, limiters, and mesh maps,
   see native spec for more detail. 
+
+  The design breaks implemetation into generic core capabilities (a helper
+  class) and templated time integrator.
 */
 
 #ifndef AMANZI_OPERATOR_REMAP_DG_HH_
 #define AMANZI_OPERATOR_REMAP_DG_HH_
 
-#include <cmath>
-#include <cstdlib>
-#include <iostream>
-#include <vector>
-
 // TPLs
-#include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 // Amanzi
+#include "dbc.hh"
 #include "Explicit_TI_RK.hh"
-#include "MeshMapsFactory.hh"
-#include "SpaceTimePolynomial.hh"
-#include "VectorObjects.hh"
-#include "WhetStoneDefs.hh"
 
 // Amanzi::Operators
-#include "LimiterCell.hh"
-#include "OperatorDefs.hh"
-#include "PDE_Abstract.hh"
-#include "PDE_AdvectionRiemann.hh"
-#include "PDE_Reaction.hh"
+#include "RemapDG_Helper.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
+template<class Vector>
+class RemapDG : public Explicit_TI::fnBase<Vector>,
+                public RemapDG_Helper {
  public:
   RemapDG(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
           const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
-          Teuchos::ParameterList& plist);
+          Teuchos::ParameterList& plist)
+    : RemapDG_Helper(mesh0, mesh1, plist) {};
   ~RemapDG() {};
 
   // main members required by the time integration class
   // -- calculate functional f(t, u) where u is the conservative quantity
-  virtual void FunctionalTimeDerivative(double t, const CompositeVector& u, CompositeVector& f) override;
+  virtual void FunctionalTimeDerivative(double t, const Vector& u, Vector& f) override;
 
   // -- limit solution at all steps of the RK scheme
-  virtual void ModifySolution(double t, CompositeVector& u) override;
-
-  // initialization routines
-  // -- static quantities
-  void InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg); 
-  void StaticEdgeFaceVelocities();
-  void StaticCellVelocity();
-  // -- quasi-static space-time quantities
-  virtual void StaticFaceCoVelocity();
-  virtual void StaticCellCoVelocity();
-
-  // change between conservative and non-conservative variable
-  void ConservativeToNonConservative(double t, const CompositeVector& u, CompositeVector& v);
-  void NonConservativeToConservative(double t, const CompositeVector& u, CompositeVector& v);
-
-  // limiters
-  void ApplyLimiter(double t, CompositeVector& u); 
-
-  // access
-  Teuchos::RCP<LimiterCell> limiter() { return limiter_; }
-
- protected:
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh0_;
-  Teuchos::RCP<AmanziMesh::Mesh> mesh1_;
-  int ncells_owned_, ncells_wghost_;
-  int nedges_owned_, nedges_wghost_;
-  int nfaces_owned_, nfaces_wghost_;
-  int dim_;
-
-  Teuchos::ParameterList plist_;
-  std::shared_ptr<WhetStone::MeshMaps> maps_;
-  Teuchos::RCP<WhetStone::DG_Modal> dg_; 
-
-  // operators
-  int order_;
-  Teuchos::RCP<PDE_Abstract> op_adv_;
-  Teuchos::RCP<PDE_AdvectionRiemann> op_flux_;
-  Teuchos::RCP<PDE_Reaction> op_reac_;
-  
-  int bc_type_;
-
-  // shock inticators and limiters
-  std::string smoothness_;
-  Teuchos::RCP<LimiterCell> limiter_;
-
-  // intermediate non-conservative quantity
-  Teuchos::RCP<CompositeVector> field_;
-
-  // -- static
-  std::vector<WhetStone::VectorPolynomial> uc_;
-  std::vector<WhetStone::VectorPolynomial> vele_vec_, velf_vec_;
-
-  // -- space-time quasi-static data
-  Teuchos::RCP<std::vector<WhetStone::SpaceTimePolynomial> > velf_;
-  Teuchos::RCP<std::vector<WhetStone::VectorSpaceTimePolynomial> > velc_;
-  Teuchos::RCP<std::vector<WhetStone::SpaceTimePolynomial> > det_;
-
-  // statistics
-  int nfun_;
-  bool is_limiter_;
-  double sharp_;
+  virtual void ModifySolution(double t, Vector& u) override;
 };
 
 }  // namespace Operators

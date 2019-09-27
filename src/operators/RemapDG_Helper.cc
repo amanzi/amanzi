@@ -25,7 +25,7 @@ namespace Operators {
 /* *****************************************************************
 * Initialization of remap: operarot and face velocity.
 ***************************************************************** */
-RemapDG::RemapDG(
+RemapDG_Helper::RemapDG_Helper(
     const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
     const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
     Teuchos::ParameterList& plist) 
@@ -74,7 +74,7 @@ RemapDG::RemapDG(
 /* *****************************************************************
 * Initialization of operators
 ***************************************************************** */
-void RemapDG::InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg)
+void RemapDG_Helper::InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg)
 {
   dg_ = dg;
 
@@ -120,7 +120,7 @@ void RemapDG::InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg)
 /* *****************************************************************
 * Initialization of static edge and face velocities
 ***************************************************************** */
-void RemapDG::StaticEdgeFaceVelocities()
+void RemapDG_Helper::StaticEdgeFaceVelocities()
 {
   auto map_list = plist_.sublist("maps");
   WhetStone::MeshMapsFactory maps_factory;
@@ -143,7 +143,7 @@ void RemapDG::StaticEdgeFaceVelocities()
 /* *****************************************************************
 * Initialization of the constant cell velocity
 ***************************************************************** */
-void RemapDG::StaticCellVelocity()
+void RemapDG_Helper::StaticCellVelocity()
 {
   WhetStone::Entity_ID_List edges, faces;
   uc_.resize(ncells_owned_);
@@ -174,7 +174,7 @@ void RemapDG::StaticCellVelocity()
 /* *****************************************************************
 * Initialization of space-time co-velocity v = u * (j J^{-t} N)
 ***************************************************************** */
-void RemapDG::StaticFaceCoVelocity()
+void RemapDG_Helper::StaticFaceCoVelocity()
 {
   WhetStone::VectorSpaceTimePolynomial cn;
   for (int f = 0; f < nfaces_wghost_; ++f) {
@@ -199,7 +199,7 @@ void RemapDG::StaticFaceCoVelocity()
 /* *****************************************************************
 * Initialization of the constant cell velocity
 ***************************************************************** */
-void RemapDG::StaticCellCoVelocity()
+void RemapDG_Helper::StaticCellCoVelocity()
 {
   for (int c = 0; c < ncells_owned_; ++c) {
     WhetStone::MatrixPolynomial Jc;
@@ -231,78 +231,9 @@ void RemapDG::StaticCellCoVelocity()
 
 
 /* *****************************************************************
-* Main routine: evaluation of functional at time t
-***************************************************************** */
-void RemapDG::FunctionalTimeDerivative(
-    double t, const CompositeVector& u, CompositeVector& f)
-{
-  // -- populate operators
-  op_adv_->Setup(velc_, false);
-  op_adv_->UpdateMatrices(t);
-
-  op_flux_->Setup(velf_.ptr(), false);
-  op_flux_->UpdateMatrices(t);
-  op_flux_->ApplyBCs(true, true, true);
-
-  // -- calculate right-hand_side
-  op_flux_->global_operator()->Apply(*field_, f);
-
-  nfun_++;
-}
-
-
-/* *****************************************************************
-* Limiting the non-conservative field at time t
-***************************************************************** */
-void RemapDG::ModifySolution(double t, CompositeVector& u)
-{
-  // populate operators
-  op_reac_->Setup(det_, false);
-  op_reac_->UpdateMatrices(t);
-
-  // solve the problem with the mass matrix
-  auto& matrices = op_reac_->local_op()->matrices;
-  for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
-  op_reac_->global_operator()->Apply(u, *field_);
-
-  // limit non-conservative field and update the conservative field
-  if (is_limiter_) {
-    // -- save original field and limit it
-    auto& field_c = *field_->ViewComponent("cell");
-    auto orig_c = field_c;
-
-    ApplyLimiter(t, *field_);
-
-    // -- recover original mass matrices FIXME (lipnikov@lanl.gov)
-    for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
-
-    // -- shift mean values
-    auto& climiter = *limiter_->limiter();
-    auto& u_c = *u.ViewComponent("cell");
-    int nk = u_c.NumVectors();
-
-    for (int c = 0; c < ncells_owned_; ++c) {
-      double a = climiter[c];
-      if (a < 1.0) {
-        double mass(0.0);
-        for (int i = 0; i < nk; ++i) {
-          mass += matrices[c](i, 0) * orig_c[i][c];
-        }
-
-        field_c[0][c] = a * orig_c[0][c] + (1.0 - a) * mass / matrices[c](0, 0);
-      }
-    }
-
-    // -- update conservative field
-    op_reac_->global_operator()->Apply(*field_, u);
-  }
-}
-
-
-/* *****************************************************************
 * Limit non-conservative field x
 ***************************************************************** */
-void RemapDG::ApplyLimiter(double t, CompositeVector& x)
+void RemapDG_Helper::ApplyLimiter(double t, CompositeVector& x)
 {
   const Epetra_MultiVector& x_c = *x.ViewComponent("cell", true);
   int nk = x_c.NumVectors();
@@ -384,7 +315,7 @@ void RemapDG::ApplyLimiter(double t, CompositeVector& x)
 /* *****************************************************************
 * Change between conservative and non-conservative variables.
 ***************************************************************** */
-void RemapDG::NonConservativeToConservative(
+void RemapDG_Helper::NonConservativeToConservative(
     double t, const CompositeVector& u, CompositeVector& v)
 {
   op_reac_->Setup(det_, false);
@@ -393,7 +324,7 @@ void RemapDG::NonConservativeToConservative(
 }
 
 
-void RemapDG::ConservativeToNonConservative(
+void RemapDG_Helper::ConservativeToNonConservative(
     double t, const CompositeVector& u, CompositeVector& v)
 {
   op_reac_->Setup(det_, false);

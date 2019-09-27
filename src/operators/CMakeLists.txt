@@ -113,6 +113,7 @@ set(operators_inc_files
     PDE_HelperDiscretization.hh
     PDE_Reaction.hh
     RemapDG.hh
+    RemapDG_Helper.hh
     RemapUtils.hh
     Schema.hh
     TreeOperator.hh
@@ -165,6 +166,7 @@ add_amanzi_library(operators
                           ReconstructionCell.cc
                           RemapDG.cc RemapUtils.cc
                           UniqueLocalIndex.cc
+                          RemapDG.cc RemapDG_Helper.cc RemapUtils.cc
                           HEADERS ${operators_inc_files}
                    LINK_LIBS geometry mesh mesh_factory error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})                          
 

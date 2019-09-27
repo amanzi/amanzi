@@ -22,6 +22,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "CompositeVector.hh"
 #include "DG_Modal.hh"
 #include "Explicit_TI_RK.hh"
 #include "Mesh.hh"
@@ -32,22 +33,25 @@
 
 // Amanzi::Operators
 #include "MeshDeformation.hh"
-#include "MyRemapDGBase.hh"
+#include "RemapDG.hh"
 
 #include "AnalyticDG04.hh"
 #include "AnalyticDG04b.hh"
 
 namespace Amanzi {
 
-class MyRemapDG : public MyRemapDGBase<AnalyticDG04> {
+class MyRemapDGc : public Operators::RemapDG<CompositeVector> {
  public:
-  MyRemapDG(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
+  MyRemapDGc(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
             const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
             Teuchos::ParameterList& plist, double T1)
-    : MyRemapDGBase<AnalyticDG04>(mesh0, mesh1, plist),
+    : RemapDG<CompositeVector>(mesh0, mesh1, plist),
+      tprint_(0.0),
+      l2norm_(-1.0),
+      dt_output_(0.1),
       T1_(T1),
       tini_(0.0) {};
-  ~MyRemapDG() {};
+  ~MyRemapDGc() {};
 
   // create basic structures at time zero
   void Init(const Teuchos::RCP<WhetStone::DG_Modal> dg);
@@ -60,12 +64,22 @@ class MyRemapDG : public MyRemapDGBase<AnalyticDG04> {
   virtual void StaticFaceCoVelocity() override;
   virtual void StaticCellCoVelocity() override;
 
-  // miscalleneous other tools
-  virtual double global_time(double t) override { return tini_ + t * T1_; }
+  // time control
+  double global_time(double t) { return tini_ + t * T1_; }
+  void set_dt_output(double dt) { dt_output_ = dt; }
+
+  // tools
+  // -- mass on mesh0
+  double InitialMass(const CompositeVector& p1, int order);
+  // -- statictics
+  void CollectStatistics(double t, const CompositeVector& u);
 
   // access 
   const std::vector<WhetStone::SpaceTimePolynomial> det() const { return *det_; }
   const std::shared_ptr<WhetStone::MeshMaps> maps() const { return maps_; }
+
+ public:
+  double tprint_, dt_output_, l2norm_;
 
  private:
   double T1_, tini_;
@@ -77,7 +91,7 @@ class MyRemapDG : public MyRemapDGBase<AnalyticDG04> {
 /* *****************************************************************
 * Initialization of remap.
 ***************************************************************** */
-void MyRemapDG::Init(const Teuchos::RCP<WhetStone::DG_Modal> dg)
+void MyRemapDGc::Init(const Teuchos::RCP<WhetStone::DG_Modal> dg)
 {
   if (mesh0_->get_comm()->MyPID() == 0) std::cout << "Computing static data on mesh scheleton...\n";
   InitializeOperators(dg);
@@ -113,7 +127,7 @@ void MyRemapDG::Init(const Teuchos::RCP<WhetStone::DG_Modal> dg)
 /* *****************************************************************
 * TBW
 ***************************************************************** */
-void MyRemapDG::ReInit(double tini)
+void MyRemapDGc::ReInit(double tini)
 {
   if (mesh0_->get_comm()->MyPID() == 0) std::cout << "Computing static data on mesh scheleton...\n";
   for (int f = 0; f < nfaces_wghost_; ++f)
@@ -158,7 +172,7 @@ void MyRemapDG::ReInit(double tini)
 /* *****************************************************************
 * Deform mesh1
 ***************************************************************** */
-void MyRemapDG::DeformMesh(int deform, double t)
+void MyRemapDGc::DeformMesh(int deform, double t)
 {
   Amanzi::DeformMesh(mesh1_, deform, t, mesh0_);
 
@@ -213,7 +227,7 @@ void MyRemapDG::DeformMesh(int deform, double t)
 /* *****************************************************************
 * Initialization of space-tim co-velocity v = u * (j J^{-t} N)
 ***************************************************************** */
-void MyRemapDG::StaticFaceCoVelocity()
+void MyRemapDGc::StaticFaceCoVelocity()
 {
   WhetStone::VectorSpaceTimePolynomial cn;
   for (int f = 0; f < nfaces_wghost_; ++f) {
@@ -236,7 +250,7 @@ void MyRemapDG::StaticFaceCoVelocity()
 /* *****************************************************************
 * Initialization of the constant cell velocity
 ***************************************************************** */
-void MyRemapDG::StaticCellCoVelocity()
+void MyRemapDGc::StaticCellCoVelocity()
 {
   J_.resize(ncells_owned_);
   for (int c = 0; c < ncells_owned_; ++c) {
@@ -265,6 +279,69 @@ void MyRemapDG::StaticCellCoVelocity()
   }
 }
 
+
+/* *****************************************************************
+* Compute initial mass: partial specialization
+***************************************************************** */
+double MyRemapDGc::InitialMass(const CompositeVector& p1, int order)
+{
+  const Epetra_MultiVector& p1c = *p1.ViewComponent("cell", false);
+  int nk = p1c.NumVectors();
+  int ncells = p1c.MyLength();
+
+  double mass(0.0), mass0;
+  WhetStone::DenseVector data(nk);
+  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh0_);
+
+  for (int c = 0; c < ncells; c++) {
+    for (int i = 0; i < nk; ++i) data(i) = p1c[i][c];
+    auto poly = dg_->cell_basis(c).CalculatePolynomial(mesh0_, c, order, data);
+    mass += numi.IntegratePolynomialCell(c, poly);
+  }
+
+  mesh0_->get_comm()->SumAll(&mass, &mass0, 1);
+  return mass0;
+}
+
+
+/* *****************************************************************
+* Print statistics using conservative field u
+***************************************************************** */
+void MyRemapDGc::CollectStatistics(double t, const CompositeVector& u)
+{
+  double tglob = global_time(t);
+  if (tglob >= tprint_) {
+    op_reac_->UpdateMatrices(t);
+    auto& matrices = op_reac_->local_op()->matrices;
+    for (int n = 0; n < matrices.size(); ++n) matrices[n].Inverse();
+
+    auto& rhs = *op_reac_->global_operator()->rhs();
+    op_reac_->global_operator()->Apply(u, rhs);
+    rhs.Dot(u, &l2norm_);
+
+    Epetra_MultiVector& xc = *rhs.ViewComponent("cell");
+    int nk = xc.NumVectors();
+    double xmax[nk], xmin[nk], lmax(-1.0), lmin(-1.0), lavg(-1.0);
+    xc.MaxValue(xmax);
+    xc.MinValue(xmin);
+
+    if (limiter() != Teuchos::null) {
+      const auto& lim = *limiter()->limiter();
+      lim.MaxValue(&lmax);
+      lim.MinValue(&lmin);
+      lim.MeanValue(&lavg);
+    }
+
+    if (mesh0_->get_comm()->MyPID() == 0) {
+      printf("t=%8.5f  L2=%9.5g  nfnc=%5d  sharp=%5.1f%%  limiter: %6.3f %6.3f %6.3f  umax/umin: %9.5g %9.5g\n",
+             tglob, l2norm_, nfun_, sharp_, lmax, lmin, lavg, xmax[0], xmin[0]);
+    }
+
+    tprint_ += dt_output_;
+    sharp_ = 0.0;
+  } 
+}
+
 }  // namespace Amanzi
 
 
@@ -287,7 +364,7 @@ void RemapTestsCurved(std::string file_name,
   auto comm = Amanzi::getDefaultComm();
   int MyPID = comm->MyPID();
 
-  // read parameter list
+  // read and set parameters
   std::string xmlFileName = "test/operator_remap.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
@@ -296,6 +373,8 @@ void RemapTestsCurved(std::string file_name,
   int order = flux_list.sublist("schema").get<int>("method order");
 
   int nk = WhetStone::PolynomialSpaceDimension(dim, order);
+
+  auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
 
   // make modifications to the parameter list
   plist.sublist("maps").set<std::string>("map name", "VEM");
@@ -325,6 +404,8 @@ void RemapTestsCurved(std::string file_name,
 
     std::cout << "      limiter: " << limiter
                 << ", stencil=\"" << stencil << "\"" << std::endl;
+
+    std::cout << "      RK method: " << (int)rk_method << std::endl;
   }
 
   // create initial mesh
@@ -380,7 +461,7 @@ void RemapTestsCurved(std::string file_name,
   io->FinalizeCycle();
 
   // create remap object
-  MyRemapDG remap(mesh0, mesh1, plist, T1);
+  MyRemapDGc remap(mesh0, mesh1, plist, T1);
   if (MyPID == 0) std::cout << "Deforming mesh...\n";
   remap.DeformMesh(deform, T1);
   remap.Init(dg);
@@ -395,7 +476,6 @@ void RemapTestsCurved(std::string file_name,
 
   // explicit time integration
   CompositeVector p1aux(*p1);
-  auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   Explicit_TI::RK<CompositeVector> rk(remap, rk_method, p1aux);
 
   remap.NonConservativeToConservative(0.0, *p1, p1aux);
@@ -524,12 +604,21 @@ TEST(REMAP_CURVED_3D) {
   // RemapTestsCurved<AnalyticDG04b>("test/prism10.exo", 10,1,1, dT,   deform, nloop, T1);
 }
 
-TEST(REMAP_DUAL_CURVED) {
+TEST(REMAP_CURVED_2D) {
   int nloop = 2;
   double dT(0.1), T1(1.0 / nloop);
   int deform = 1;
   RemapTestsCurved<AnalyticDG04>("", 8,8,0, dT, deform, nloop, T1);
   // RemapTestsCurved<AnalyticDG04>("test/circle_quad10.exo", 10,0,0, 0.1, 6, 40, 0.025);
+}
+
+TEST(REMAP_CURVED_DEV) {
+  /*
+  int nloop = 2;
+  double dT(0.025), T1(1.0 / nloop);
+  int deform = 5;
+  RemapTestsCurved<AnalyticDG04b>("test/prism10.exo", 10,1,1, dT,   deform, nloop, T1);
+  */
 
   /*
   int nloop = 40;
