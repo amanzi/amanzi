@@ -24,6 +24,7 @@
 
 #include "MFD3D_Electromagnetics.hh"
 #include "Tensor.hh"
+#include "VEM_NedelecSerendipityType2.hh"
 
 
 /* ******************************************************************
@@ -142,7 +143,10 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
     mesh = meshfactory.create(mesh_file, true, true); 
  
   Teuchos::ParameterList plist;
+  plist.set<int>("method order", 0);
+
   MFD3D_Electromagnetics mfd(plist, mesh);
+  VEM_NedelecSerendipityType2 vem(plist, mesh);
 
   int cell = 0;
   AmanziMesh::Entity_ID_List edges;
@@ -158,7 +162,7 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
   T(1, 0) = 1.0;
   T(2, 2) = 1.0;
 
-  for (int method = 0; method < 4; method++) {
+  for (int method = 0; method < 5; method++) {
     DenseMatrix M(nrows, nrows);
 
     if (method == 0) {
@@ -171,10 +175,13 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
     } else if (method == 3) {
       mfd.MassMatrixInverseOptimized(cell, T, M);
       M.Inverse();
+    } else if (method == 4) {
+      vem.MassMatrix(cell, T, M);
     }
+    CHECK(M.NumRows() == nrows);
 
     int m = std::min(nrows, max_row);
-    printf("Mass matrix: method=%d  edges=%d  submatrix=%dx%d\n", method, nedges, m, m);
+    printf("Mass matrix: method=%d  edges=%d  size=%d  submatrix=%dx%d\n", method, nedges, nrows, m, m);
 
     for (int i = 0; i < m; i++) {
       for (int j = 0; j < m; j++ ) printf("%8.4f ", M(i, j)); 

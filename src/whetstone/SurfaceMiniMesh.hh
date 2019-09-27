@@ -8,7 +8,8 @@
   provided in the top-level COPYRIGHT file.
 
   Surface mini mesh has one less topological dimension than the 
-  base mesh used in the constructor.
+  base mesh used in the constructor. Like in the base mesh, edge
+  and face are equivalent.
 */
 
 #ifndef AMANZI_WHETSTONE_SURFACE_MINI_MESH_HH_
@@ -53,12 +54,8 @@ class SurfaceMiniMesh {
   }
 
   void face_get_edges_and_dirs(const Entity_ID f, Entity_ID_List *edges, std::vector<int> *dirs) const {
-    Entity_ID v0, v1;
-    mesh_->edge_get_nodes(f, &v0, &v1);
-    edges->clear();
-    edges->push_back(v0);
-    edges->push_back(v1);
-    dirs->resize(2, 1);
+    edges->resize(1, f);
+    dirs->resize(1, 1);
   }
 
   void face_get_nodes(Entity_ID f, Entity_ID_List *nodes) const {
@@ -70,7 +67,7 @@ class SurfaceMiniMesh {
   }
 
   void edge_get_nodes(const Entity_ID e, Entity_ID* n0, Entity_ID* n1) const {
-    *n1 = *n0 = e;
+    mesh_->edge_get_nodes(e, &n0, &n1);
   }
 
   // -- geometric objects
@@ -102,17 +99,18 @@ class SurfaceMiniMesh {
   }
 
   AmanziGeometry::Point edge_centroid(Entity_ID e) const {
-    AmanziGeometry::Point xyz(d_);
-    mesh_->node_get_coordinates(e, &xyz);
-    return coordsys_->Project(xyz, true);
+    const auto& xe = mesh_->edge_centroid(f);
+    return coordsys_->Project(xe, true);
   }
 
   AmanziGeometry::Point edge_vector(Entity_ID e) const {
-    AmanziGeometry::Point xyz(d_);
-    return coordsys_->Project(xyz, false);
+    const auto& tau = mesh_->edge_vector(e);
+    return coordsys_->Project(tau, false);
   }
 
-  double edge_length(Entity_ID e) const { return 0.0; }
+  double edge_length(Entity_ID e) const { 
+    return mesh_->edge_length(e);
+  }
 
   void node_get_coordinates(Entity_ID v, AmanziGeometry::Point* xyz) const {
     AmanziGeometry::Point tmp(d_);

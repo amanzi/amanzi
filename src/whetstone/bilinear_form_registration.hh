@@ -23,6 +23,8 @@
 #include "MFD3D_LagrangeAnyOrder.hh"
 #include "MFD3D_LagrangeSerendipity.hh"
 
+#include "VEM_NedelecSerendipityType2.hh"
+
 namespace Amanzi {
 namespace WhetStone {
 
@@ -39,6 +41,8 @@ RegisteredFactory<MFD3D_LagrangeAnyOrder> MFD3D_LagrangeAnyOrder::factory_("Lagr
 RegisteredFactory<MFD3D_LagrangeSerendipity> MFD3D_LagrangeSerendipity::factory_("Lagrange serendipity");
 
 RegisteredFactory<DG_Modal> DG_Modal::factory_("dg modal");
+
+RegisteredFactory<VEM_NedelecSerendipityType2> VEM_NedelecSerendipityType2::factory_("Nedelec serendipity type2");
 
 }  // namespace WhetStone
 }  // namespace Amanzi

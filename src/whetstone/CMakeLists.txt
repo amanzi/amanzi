@@ -58,6 +58,7 @@ add_amanzi_library(whetstone
                           MeshMaps.cc
                           MeshMaps_FEM.cc MeshMaps_VEM.cc
                           SurfaceCoordinateSystem.cc
+                          VEM_NedelecSerendipityType2.cc
                    HEADERS DenseMatrix.hh DenseVector.hh
                            DG_Modal.hh
                            Basis.hh BasisFactory.hh
@@ -155,7 +156,6 @@ if (BUILD_TESTS)
                                         test/whetstone_polynomials.cc
                                         test/whetstone_dg.cc
                                         test/whetstone_numi.cc
-                                        test/whetstone_high_order.cc
                                         test/whetstone_maps.cc
                                         test/whetstone_projectors.cc
                                         test/whetstone_high_order.cc
