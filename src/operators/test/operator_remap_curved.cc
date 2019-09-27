@@ -57,9 +57,6 @@ class MyRemapDGc : public Operators::RemapDG<CompositeVector> {
   void Init(const Teuchos::RCP<WhetStone::DG_Modal> dg);
   void ReInit(double tini);
 
-  // mesh deformation from time 0 to t
-  void DeformMesh(int deform, double t);
-
   // co-velocities
   virtual void StaticFaceCoVelocity() override;
   virtual void StaticCellCoVelocity() override;
@@ -166,61 +163,6 @@ void MyRemapDGc::ReInit(double tini)
   op_flux_->Setup(velf_.ptr(), true);
 
   tini_ = tini;
-}
-
-
-/* *****************************************************************
-* Deform mesh1
-***************************************************************** */
-void MyRemapDGc::DeformMesh(int deform, double t)
-{
-  Amanzi::DeformMesh(mesh1_, deform, t, mesh0_);
-
-  AmanziGeometry::Point yv(dim_);
-  if (order_ > 1) {
-    int nfaces = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-    auto ho_nodes0f = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nfaces);
-    auto ho_nodes1f = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nfaces);
-
-    for (int f = 0; f < nfaces; ++f) {
-      const AmanziGeometry::Point& xf = mesh0_->face_centroid(f);
-      (*ho_nodes0f)[f].push_back(xf);
-
-      if (deform == 1)
-        yv = TaylorGreenVortex(t, xf);
-      else if (deform == 4)
-        yv = CompressionExpansion2D(t, xf);
-      else if (deform == 5)
-        yv = CompressionExpansion3D(t, xf);
-      else if (deform == 6)
-        yv = Rotation2D(t, xf);
-
-      (*ho_nodes1f)[f].push_back(yv);
-    }
-    auto tmp = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(mesh0_);
-    Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(tmp)->set_face_ho_nodes(ho_nodes0f);
-    Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(mesh1_)->set_face_ho_nodes(ho_nodes1f);
-
-    if (dim_ == 3) {
-      int nedges = mesh0_->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::ALL);
-      auto ho_nodes0e = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nedges);
-      auto ho_nodes1e = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nedges);
-
-      for (int e = 0; e < nedges; ++e) {
-        const AmanziGeometry::Point& xe = mesh0_->edge_centroid(e);
-        (*ho_nodes0e)[e].push_back(xe);
-
-        if (deform == 1)
-          yv = TaylorGreenVortex(t, xe);
-        else if (deform == 5)
-          yv = CompressionExpansion3D(t, xe);
-
-        (*ho_nodes1e)[e].push_back(yv);
-      }
-      Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(tmp)->set_face_ho_nodes(ho_nodes0e);
-      Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(mesh1_)->set_face_ho_nodes(ho_nodes1e);
-    }
-  }
 }
 
 
@@ -462,8 +404,7 @@ void RemapTestsCurved(std::string file_name,
 
   // create remap object
   MyRemapDGc remap(mesh0, mesh1, plist, T1);
-  if (MyPID == 0) std::cout << "Deforming mesh...\n";
-  remap.DeformMesh(deform, T1);
+  DeformMeshCurved(mesh1, deform, T1, mesh0, order);
   remap.Init(dg);
   remap.set_dt_output(0.1);
 
@@ -485,7 +426,7 @@ void RemapTestsCurved(std::string file_name,
     dt = dt0;
     tend += T1;
     if (iloop > 0) { 
-      remap.DeformMesh(deform, tend);
+      DeformMeshCurved(mesh1, deform, tend, mesh0, order);
       remap.ReInit(tend - T1);
       t = 0.0;
     }
@@ -618,6 +559,8 @@ TEST(REMAP_CURVED_DEV) {
   double dT(0.025), T1(1.0 / nloop);
   int deform = 5;
   RemapTestsCurved<AnalyticDG04b>("test/prism10.exo", 10,1,1, dT,   deform, nloop, T1);
+  RemapTestsCurved<AnalyticDG04b>("test/prism20.exo", 20,1,1, dT/2, deform, nloop, T1);
+  RemapTestsCurved<AnalyticDG04b>("test/prism40.exo", 40,1,1, dT/4, deform, nloop, T1);
   */
 
   /*

@@ -253,7 +253,6 @@ void RemapTestsDualRK(std::string map_name, std::string file_name,
 
   // create remap object
   MyRemapDG remap(mesh0, mesh1, plist);
-  if (MyPID == 0) std::cout << "Deforming mesh...\n";
   DeformMesh(mesh1, deform, 1.0);
   remap.InitializeOperators(dg);
   if (MyPID == 0) std::cout << "Computing static data on mesh scheleton...\n";
@@ -262,7 +261,6 @@ void RemapTestsDualRK(std::string map_name, std::string file_name,
   if (MyPID == 0) std::cout << "Computing static data in mesh cells...\n";
   remap.StaticCellVelocity();
   remap.StaticCellCoVelocity();
-  if (MyPID == 0) std::cout << "Done.\n";
 
   // initial mass
   double mass0 = remap.InitialMass(*p1, order);

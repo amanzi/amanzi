@@ -15,6 +15,7 @@
 #define AMANZI_OPERATOR_DEFORM_MESH_HH_
 
 #include "Mesh.hh"
+#include "MeshCurved.hh"
 #include "CompositeVector.hh"
 
 #include "OperatorDefs.hh"
@@ -24,6 +25,10 @@ namespace Amanzi{
 // collection of routines for mesh deformation
 void DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1, int deform, double t,
                 const Teuchos::RCP<const AmanziMesh::Mesh>& mesh0 = Teuchos::null);
+
+void DeformMeshCurved(
+    const Teuchos::RCP<AmanziMesh::Mesh>& mesh1, int deform, double t,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh0, int order);
 
 AmanziGeometry::Point TaylorGreenVortex(double t, const AmanziGeometry::Point& xv);
 AmanziGeometry::Point Rotation2D(double t, const AmanziGeometry::Point& xv);
@@ -40,6 +45,8 @@ inline
 void DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1, int deform, double t,
                 const Teuchos::RCP<const AmanziMesh::Mesh>& mesh0)
 {
+  if (mesh1->get_comm()->MyPID() == 0) std::cout << "Deforming mesh...\n";
+
   // create distributed random vector
   int d = mesh1->space_dimension();
 
@@ -99,6 +106,65 @@ void DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1, int deform, double 
     new_positions.push_back(yv);
   }
   mesh1->deform(nodeids, new_positions, false, &final_positions);
+}
+
+
+/* *****************************************************************
+* Deform high-order (curved) mesh1
+***************************************************************** */
+inline
+void DeformMeshCurved(
+    const Teuchos::RCP<AmanziMesh::Mesh>& mesh1, int deform, double t,
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh0, int order)
+{
+  DeformMesh(mesh1, deform, t, mesh0);
+
+  int dim = mesh1->space_dimension();
+  AmanziGeometry::Point yv(dim);
+  if (order > 1) {
+    int nfaces = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+    auto ho_nodes0f = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nfaces);
+    auto ho_nodes1f = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nfaces);
+
+    for (int f = 0; f < nfaces; ++f) {
+      const AmanziGeometry::Point& xf = mesh0->face_centroid(f);
+      (*ho_nodes0f)[f].push_back(xf);
+
+      if (deform == 1)
+        yv = TaylorGreenVortex(t, xf);
+      else if (deform == 4)
+        yv = CompressionExpansion2D(t, xf);
+      else if (deform == 5)
+        yv = CompressionExpansion3D(t, xf);
+      else if (deform == 6)
+        yv = Rotation2D(t, xf);
+
+      (*ho_nodes1f)[f].push_back(yv);
+    }
+    auto tmp = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(mesh0);
+    Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(tmp)->set_face_ho_nodes(ho_nodes0f);
+    Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(mesh1)->set_face_ho_nodes(ho_nodes1f);
+
+    if (dim == 3) {
+      int nedges = mesh0->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::ALL);
+      auto ho_nodes0e = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nedges);
+      auto ho_nodes1e = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nedges);
+
+      for (int e = 0; e < nedges; ++e) {
+        const AmanziGeometry::Point& xe = mesh0->edge_centroid(e);
+        (*ho_nodes0e)[e].push_back(xe);
+
+        if (deform == 1)
+          yv = TaylorGreenVortex(t, xe);
+        else if (deform == 5)
+          yv = CompressionExpansion3D(t, xe);
+
+        (*ho_nodes1e)[e].push_back(yv);
+      }
+      Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(tmp)->set_face_ho_nodes(ho_nodes0e);
+      Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(mesh1)->set_face_ho_nodes(ho_nodes1e);
+    }
+  }
 }
 
 

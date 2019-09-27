@@ -25,6 +25,7 @@
 #include "DG_Modal.hh"
 #include "Explicit_TI_RK.hh"
 #include "Mesh.hh"
+#include "MeshCurved.hh"
 #include "MeshFactory.hh"
 #include "NumericalIntegration.hh"
 #include "OutputXDMF.hh"
@@ -34,7 +35,7 @@
 #include "MeshDeformation.hh"
 #include "RemapDG.hh"
 
-#include "AnalyticDG04.hh"
+#include "AnalyticDG04b.hh"
 
 namespace Amanzi {
 
@@ -45,6 +46,8 @@ class MyRemapDG : public Operators::RemapDG<TreeVector> {
             Teuchos::ParameterList& plist)
     : RemapDG<TreeVector>(mesh0, mesh1, plist),
       T1_(1.0),
+      l2norm_(-1.0),
+      tprint_(0.0),
       dt_output_(0.1) {};
   ~MyRemapDG() {};
 
@@ -61,7 +64,7 @@ class MyRemapDG : public Operators::RemapDG<TreeVector> {
   void CollectStatistics(double t, const TreeVector& u);
 
   // access 
-  const std::vector<WhetStone::SpaceTimePolynomial> det() const { return *det_; }
+  const std::vector<WhetStone::Polynomial> jac() const { return *jac_; }
 
  public:
   double tprint_, dt_output_, l2norm_;
@@ -168,7 +171,7 @@ void MyRemapDG::CollectStatistics(double t, const TreeVector& u)
   if (tglob >= tprint_) {
     op_reac_->UpdateMatrices(t);
     auto& matrices = op_reac_->local_op()->matrices;
-    for (int n = 0; n < matrices.size(); ++n) matrices[n].Inverse();
+    for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
 
     auto& rhs = *op_reac_->global_operator()->rhs();
     op_reac_->global_operator()->Apply(*u.SubVector(0)->Data(), rhs);
@@ -250,21 +253,18 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(dim, region_list, *comm));
 
   auto mlist = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("mesh")));
-  MeshFactory meshfactory(comm, gm, mlist);
-  meshfactory.set_preference(Preference({AmanziMesh::Framework::MSTK}));
+  Teuchos::RCP<MeshCurved> mesh0, mesh1;
 
-  Teuchos::RCP<const Mesh> mesh0;
-  Teuchos::RCP<Mesh> mesh1;
   if (file_name != "") {
     bool request_edges = (dim == 3);
-    mesh0 = meshfactory.create(file_name, true, request_edges);
-    mesh1 = meshfactory.create(file_name, true, request_edges);
+    mesh0 = Teuchos::rcp(new MeshCurved(file_name, comm, gm, mlist, true, request_edges));
+    mesh1 = Teuchos::rcp(new MeshCurved(file_name, comm, gm, mlist, true, request_edges));
   } else if (dim == 2) {
-    mesh0 = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, ny);
-    mesh1 = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, ny);
+    mesh0 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, comm, gm, mlist));
+    mesh1 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, comm, gm, mlist));
   } else { 
-    mesh0 = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, true, true);
-    mesh1 = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, true, true);
+    mesh0 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, comm, gm, mlist));
+    mesh1 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, comm, gm, mlist));
   }
 
   int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -299,15 +299,14 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
                                        .sublist("flux operator").sublist("schema");
   auto dg = Teuchos::rcp(new WhetStone::DG_Modal(dglist, mesh0));
 
-  AnalyticDG04 ana(mesh0, order, true);
+  AnalyticDG04b ana(mesh0, order, true);
   ana.InitialGuess(*dg, p1c, 1.0);
   j1c.PutScalar(0.0);
   j1c(0)->PutScalar(1.0);
 
   // create remap object
   MyRemapDG remap(mesh0, mesh1, plist);
-  if (MyPID == 0) std::cout << "Deforming mesh...\n";
-  DeformMesh(mesh1, deform, 1.0);
+  DeformMeshCurved(mesh1, deform, 1.0, mesh0, order);
   remap.InitializeOperators(dg);
   if (MyPID == 0) std::cout << "Computing static data on mesh scheleton...\n";
   remap.StaticEdgeFaceVelocities();
@@ -315,7 +314,6 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
   if (MyPID == 0) std::cout << "Computing static data in mesh cells...\n";
   remap.StaticCellVelocity();
   remap.StaticCellCoVelocity();
-  if (MyPID == 0) std::cout << "Done.\n";
 
   // initial mass
   auto& sv1 = *p1->SubVector(0)->Data();
@@ -358,12 +356,12 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
   }
 
   // concervation errors: mass and volume (CGL)
-  auto& det = remap.det();
+  auto& jac = remap.jac();
   double area(0.0), area1(0.0), mass1(0.0), gcl_err(0.0), gcl_inf(0.0);
   WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh0);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    double vol1 = numi.IntegratePolynomialCell(c, det[c].Value(1.0));
+    double vol1 = numi.IntegratePolynomialCell(c, jac[c]);
     double vol2 = mesh1->cell_volume(c);
 
     area += vol1;
@@ -377,7 +375,7 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
     for (int i = 0; i < nk; ++i) data(i) = p2c[i][c];
     auto poly = dg->cell_basis(c).CalculatePolynomial(mesh0, c, order, data);
 
-    WhetStone::Polynomial tmp(det[c].Value(1.0));
+    WhetStone::Polynomial tmp(jac[c]);
     tmp.ChangeOrigin(mesh0->cell_centroid(c));
     poly *= tmp;
     mass1 += numi.IntegratePolynomialCell(c, poly);
@@ -407,12 +405,21 @@ void RemapGCL(const Amanzi::Explicit_TI::method_t& rk_method,
 }
 
 TEST(REMAP_GEOMETRIC_CONSERVATION_LAW) {
+  int deform = 1;
+  auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
+
+  /*
   double dT(0.1);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
-  int deform = 1;
   RemapGCL(rk_method, "test/median15x16.exo",   16,1,0, dT/2, deform);
-  // RemapGCL(rk_method, "test/median32x33.exo",   32,1,0, dT/4, deform);
-  // RemapGCL(rk_method, "test/median63x64.exo",   64,1,0, dT/8, deform);
-  // RemapGCL(rk_method, "test/median127x128.exo",128,1,0, dT/16,deform);
+  RemapGCL(rk_method, "test/median32x33.exo",   32,1,0, dT/4, deform);
+  RemapGCL(rk_method, "test/median63x64.exo",   64,1,0, dT/8, deform);
+  RemapGCL(rk_method, "test/median127x128.exo",128,1,0, dT/16,deform);
+  */
+
+  double dT(0.025);
+  RemapGCL(rk_method, "test/prism10.exo", 10,1,1, dT,   deform);
+  RemapGCL(rk_method, "test/prism20.exo", 20,1,1, dT/2, deform);
+  RemapGCL(rk_method, "test/prism40.exo", 40,1,1, dT/4, deform);
 }
 

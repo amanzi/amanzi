@@ -114,6 +114,9 @@ void RemapDG_Helper::InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal>
 
   // memory allocation for non-conservative field
   field_ = Teuchos::rcp(new CompositeVector(*op_reac_->global_operator()->rhs()));
+
+  // memory allocation for new features
+  jac_ = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_owned_));
 }
 
 
