@@ -81,7 +81,6 @@ class PDE_Abstract : public PDE_HelperDiscretization {
 
  protected:
   // available models for operator coefficient
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > Ktensor_;
   Teuchos::RCP<std::vector<WhetStone::Polynomial> > Kpoly_;
   Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > Kvec_poly_;
   Teuchos::RCP<std::vector<WhetStone::VectorSpaceTimePolynomial> > Kvec_stpoly_;
@@ -113,7 +112,6 @@ template<>
 inline
 void PDE_Abstract::Setup<WhetStone::Tensor>(
     const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K, bool reset) {
-  Ktensor_ = K;
   coef_type_ = CoefType::CONSTANT;
 
   auto Kc = Teuchos::get_shared_ptr(K);

@@ -132,15 +132,9 @@ void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
       interface_->MassMatrix(c, Acell);
       matrix[c] = Acell;
     }
-  } else if (matrix_ == "mass inverse" && coef_type_ == CoefType::CONSTANT) {
+  } else if (matrix_ == "mass inverse") {
     for (int c = 0; c < ncells_owned; ++c) {
-      if (Ktensor_.get()) Kc = (*Ktensor_)[c];
-      mfd_->MassMatrixInverse(c, Kc, Acell);
-      matrix[c] = Acell;
-    }
-  } else if (matrix_ == "mass inverse" && coef_type_ == CoefType::POLYNOMIAL) {
-    for (int c = 0; c < ncells_owned; ++c) {
-      mfd_->MassMatrixInverse(c, (*Kpoly_)[c], Acell);
+      interface_->MassMatrixInverse(c, Acell);
       matrix[c] = Acell;
     }
   } else if (matrix_ == "stiffness") {
@@ -176,8 +170,7 @@ void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
     }
   } else {
     Errors::Message msg;
-    msg << "Unsupported combination matrix=" << matrix_ 
-        << " and coeffient type=" << coef_type_ << "\n";
+    msg << "Unsupported matrix type = " << matrix_ << "\n";
     Exceptions::amanzi_throw(msg);
   }
 }

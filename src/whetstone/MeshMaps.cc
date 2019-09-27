@@ -114,7 +114,6 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
     }
 
     v[i].InverseChangeCoordinates(xf, tau);  
-    v[i].ChangeOrigin(AmanziGeometry::Point(d_));
   }
 }
 

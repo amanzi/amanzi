@@ -86,6 +86,7 @@ void MyRemapDG::Init(const Teuchos::RCP<WhetStone::DG_Modal> dg)
   velf_vec0_.resize(nfaces_wghost_);
   for (int f = 0; f < nfaces_wghost_; ++f) {
     velf_vec0_[f].Reshape(dim_, dim_, 1, true);
+    velf_vec0_[f].set_origin(mesh0_->face_centroid(f));
   }
 
   J0_.resize(ncells_owned_);
@@ -156,6 +157,8 @@ void MyRemapDG::DeformMesh(int deform, double t)
         yv = TaylorGreenVortex(t, xf);
       else if (deform == 4)
         yv = CompressionExpansion2D(t, xf);
+      else if (deform == 5)
+        yv = CompressionExpansion3D(t, xf);
       else if (deform == 6)
         yv = Rotation2D(t, xf);
 
@@ -293,12 +296,16 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   auto mlist = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("mesh")));
   Teuchos::RCP<MeshCurved> mesh0, mesh1;
 
-  if (dim == 2 && ny != 0) {
+  if (file_name != "") {
+    bool request_edges = (dim == 3);
+    mesh0 = Teuchos::rcp(new MeshCurved(file_name, comm, gm, mlist, true, request_edges));
+    mesh1 = Teuchos::rcp(new MeshCurved(file_name, comm, gm, mlist, true, request_edges));
+  } else if (dim == 2) {
     mesh0 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, comm, gm, mlist));
     mesh1 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 1.0, 1.0, nx, ny, comm, gm, mlist));
-  } else if (ny == 0) {
-    mesh0 = Teuchos::rcp(new MeshCurved(file_name, comm, gm, mlist));
-    mesh1 = Teuchos::rcp(new MeshCurved(file_name, comm, gm, mlist));
+  } else {
+    mesh0 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, comm, gm, mlist));
+    mesh1 = Teuchos::rcp(new MeshCurved(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, comm, gm, mlist));
   }
 
   int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -483,6 +490,17 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   }
 }
 
+/*
+TEST(REMAP_CURVED_3D) {
+  int nloop = 2;
+  double dT(0.025 * nloop), T1(1.0 / nloop);
+  auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
+  std::string maps = "VEM";
+  int deform = 5;
+  RemapTestsCurved(rk_method, maps, "test/prism10.exo", 10,1,1, dT,   deform, nloop, T1);
+}
+*/
+
 TEST(REMAP_CURVED_2D) {
   int nloop = 2;
   double dT(0.1), T1(1.0 / nloop);
@@ -505,8 +523,8 @@ TEST(REMAP_CURVED_2D) {
   */
 
   /*
-  int nloop = 1;
-  double dT(0.02 * nloop), T1(1.0 / nloop);
+  int nloop = 2;
+  double dT(0.01 * nloop), T1(1.0 / nloop);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
   int deform = 1;
@@ -528,4 +546,5 @@ TEST(REMAP_CURVED_2D) {
   RemapTestsCurved(rk_method, maps, "test/median127x128.exo", 128,0,0, dT/8, deform, nloop, T1);
   */
 }
+
 

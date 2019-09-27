@@ -9,7 +9,8 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
           Ethan Coon (ecoon@lanl.gov)
 
-  Interface class that binds discretization class with coefficient model.
+  Interface class that hides details of the actual coefficient model
+  using a few template classes.
 */
 
 #ifndef AMANZI_OPERATOR_INTERFACE_WHETSTONE_HH_
@@ -30,6 +31,7 @@ class InterfaceWhetStone {
   virtual ~InterfaceWhetStone() {};
 
   virtual void MassMatrix(int c, WhetStone::DenseMatrix& Acell) {};
+  virtual void MassMatrixInverse(int c, WhetStone::DenseMatrix& Acell) {};
   virtual void StiffnessMatrix(int c, WhetStone::DenseMatrix& Acell) {};
   virtual void FaceMatrixJump(int f, int c1, int c2, WhetStone::DenseMatrix& Aface) {};
 };
@@ -63,6 +65,10 @@ class InterfaceWhetStoneMFD : public InterfaceWhetStone {
 
   virtual void MassMatrix(int c, WhetStone::DenseMatrix& Acell) override {
     mfd_->MassMatrix(c, coef_->get_coef(c), Acell);
+  }
+
+  virtual void MassMatrixInverse(int c, WhetStone::DenseMatrix& Acell) override {
+    mfd_->MassMatrixInverse(c, coef_->get_coef(c), Acell);
   }
 
   virtual void StiffnessMatrix(int c, WhetStone::DenseMatrix& Acell) override {

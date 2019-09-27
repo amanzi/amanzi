@@ -32,7 +32,7 @@ class AnalyticDG04b : public AnalyticDGBase {
   // analytic data in conventional Taylor basis
   // -- diffusion tensor
   virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) override {
-    Amanzi::WhetStone::Tensor K(2, 1);
+    Amanzi::WhetStone::Tensor K(3, 1);
     K(0, 0) = 1.0;
     return K;
   }
