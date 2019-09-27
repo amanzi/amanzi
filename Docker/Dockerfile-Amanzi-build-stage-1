@@ -9,10 +9,10 @@ ARG amanzi_branch=master
 
 # Change the Working Directory and update amanzi
 WORKDIR /home/amanzi_user/amanzi
-RUN echo "Amanzi branch = $amanzi_branch"; \
-    git checkout $amanzi_branch; \
-    git branch --list ; \
-    git pull
+RUN echo "Amanzi branch = $amanzi_branch"
+RUN git branch --list
+RUN git pull
+RUN git checkout $amanzi_branch
  
 RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
