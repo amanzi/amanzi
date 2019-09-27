@@ -34,16 +34,16 @@
 #include "MeshDeformation.hh"
 #include "RemapDG_Tests.hh"
 
-#include "AnalyticDG04.hh"
+#include "AnalyticDG04b.hh"
 
 namespace Amanzi {
 
-class MyRemapDG : public RemapDG_Tests<AnalyticDG04> {
+class MyRemapDG : public RemapDG_Tests<AnalyticDG04b> {
  public:
   MyRemapDG(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
             const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
             Teuchos::ParameterList& plist, double T1)
-    : RemapDG_Tests<AnalyticDG04>(mesh0, mesh1, plist),
+    : RemapDG_Tests<AnalyticDG04b>(mesh0, mesh1, plist),
       T1_(T1),
       tini_(0.0) {};
   ~MyRemapDG() {};
@@ -143,16 +143,16 @@ void MyRemapDG::DeformMesh(int deform, double t)
 {
   Amanzi::DeformMesh(mesh1_, deform, t, mesh0_);
 
+  AmanziGeometry::Point yv(dim_);
   if (order_ > 1) {
     int nfaces = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-    auto ho_nodes0 = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nfaces);
-    auto ho_nodes1 = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nfaces);
+    auto ho_nodes0f = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nfaces);
+    auto ho_nodes1f = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nfaces);
 
     for (int f = 0; f < nfaces; ++f) {
       const AmanziGeometry::Point& xf = mesh0_->face_centroid(f);
-      (*ho_nodes0)[f].push_back(xf);
+      (*ho_nodes0f)[f].push_back(xf);
 
-      AmanziGeometry::Point yv(2);
       if (deform == 1)
         yv = TaylorGreenVortex(t, xf);
       else if (deform == 4)
@@ -162,11 +162,31 @@ void MyRemapDG::DeformMesh(int deform, double t)
       else if (deform == 6)
         yv = Rotation2D(t, xf);
 
-      (*ho_nodes1)[f].push_back(yv);
+      (*ho_nodes1f)[f].push_back(yv);
     }
     auto tmp = Teuchos::rcp_const_cast<AmanziMesh::Mesh>(mesh0_);
-    Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(tmp)->set_face_ho_nodes(ho_nodes0);
-    Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(mesh1_)->set_face_ho_nodes(ho_nodes1);
+    Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(tmp)->set_face_ho_nodes(ho_nodes0f);
+    Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(mesh1_)->set_face_ho_nodes(ho_nodes1f);
+
+    if (dim_ == 3) {
+      int nedges = mesh0_->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::ALL);
+      auto ho_nodes0e = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nedges);
+      auto ho_nodes1e = std::make_shared<std::vector<AmanziGeometry::Point_List> >(nedges);
+
+      for (int e = 0; e < nedges; ++e) {
+        const AmanziGeometry::Point& xe = mesh0_->edge_centroid(e);
+        (*ho_nodes0e)[e].push_back(xe);
+
+        if (deform == 1)
+          yv = TaylorGreenVortex(t, xe);
+        else if (deform == 5)
+          yv = CompressionExpansion3D(t, xe);
+
+        (*ho_nodes1e)[e].push_back(yv);
+      }
+      Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(tmp)->set_face_ho_nodes(ho_nodes0e);
+      Teuchos::rcp_static_cast<AmanziMesh::MeshCurved>(mesh1_)->set_face_ho_nodes(ho_nodes1e);
+    }
   }
 }
 
@@ -179,7 +199,6 @@ void MyRemapDG::StaticFaceCoVelocity()
   WhetStone::VectorSpaceTimePolynomial cn;
   for (int f = 0; f < nfaces_wghost_; ++f) {
     WhetStone::VectorSpaceTimePolynomial map(dim_, dim_, 1), tmp(dim_, dim_, 0);
-    const auto& origin = velf_vec_[f][0].origin();
 
     for (int i = 0; i < dim_; ++i) {
       map[i][0] = velf_vec0_[f][i];  // map = u0
@@ -326,7 +345,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
                                         .sublist("flux operator").sublist("schema");
   auto dg = Teuchos::rcp(new WhetStone::DG_Modal(dg_list, mesh0));
 
-  AnalyticDG04 ana(mesh0, order, true);
+  AnalyticDG04b ana(mesh0, order, true);
   // ana.set_shapes(true, true, true);
   ana.InitialGuess(*dg, p1c, 1.0);
 
@@ -490,18 +509,17 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   }
 }
 
-/*
 TEST(REMAP_CURVED_3D) {
-  int nloop = 2;
+  int nloop = 1;
   double dT(0.025 * nloop), T1(1.0 / nloop);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
-  int deform = 5;
+  int deform = 1;
   RemapTestsCurved(rk_method, maps, "test/prism10.exo", 10,1,1, dT,   deform, nloop, T1);
 }
-*/
 
 TEST(REMAP_CURVED_2D) {
+  /*
   int nloop = 2;
   double dT(0.1), T1(1.0 / nloop);
   auto rk_method = Amanzi::Explicit_TI::heun_euler;
@@ -509,6 +527,7 @@ TEST(REMAP_CURVED_2D) {
   int deform = 1;
   RemapTestsCurved(rk_method, maps, "", 8,8,0, dT, deform, nloop, T1);
   // RemapTestsCurved(rk_method, maps, "test/circle_quad10.exo", 10,0,0, 0.1, 6, 40, 0.025);
+  */
 
   /*
   int nloop = 40;

@@ -180,7 +180,7 @@ void RemapDG::StaticCellVelocity()
 
 
 /* *****************************************************************
-* Initialization of space-tim co-velocity v = u * (j J^{-t} N)
+* Initialization of space-time co-velocity v = u * (j J^{-t} N)
 ***************************************************************** */
 void RemapDG::StaticFaceCoVelocity()
 {

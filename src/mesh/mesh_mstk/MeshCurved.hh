@@ -60,9 +60,9 @@ class MeshCurved : public Mesh_MSTK {
 
   // -- curvature information
   virtual 
-  void edge_get_ho_nodes(Entity_ID f,
+  void edge_get_ho_nodes(Entity_ID e,
                          AmanziGeometry::Point_List* nodes) const override {
-    if (edge_ho_nodes_ != nullptr) *nodes = (*edge_ho_nodes_)[f];
+    if (edge_ho_nodes_ != nullptr) *nodes = (*edge_ho_nodes_)[e];
   }
   virtual 
   void face_get_ho_nodes(Entity_ID f,

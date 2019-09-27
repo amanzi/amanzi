@@ -755,7 +755,7 @@ class Mesh {
   // from the list of returned interior nodes. For a linear (default)
   // mesh, these functions return the empty list.
   virtual
-  void edge_get_ho_nodes(Entity_ID faceid,
+  void edge_get_ho_nodes(Entity_ID edgeid,
                          AmanziGeometry::Point_List *nodes) const { nodes->clear(); }
 
   virtual

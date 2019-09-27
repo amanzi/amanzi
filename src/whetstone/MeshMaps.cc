@@ -58,12 +58,68 @@ void MeshMaps::VelocityEdge(int e, VectorPolynomial& ve) const
 }
 
 
+void MeshMaps::VelocityEdgeNew(int e, VectorPolynomial& v) const
+{
+  AMANZI_ASSERT(d_ == 3);
+
+  AmanziGeometry::Point_List points0, points1;
+  mesh0_->edge_get_ho_nodes(e, &points0);
+  mesh1_->edge_get_ho_nodes(e, &points1);
+  AMANZI_ASSERT(points0.size() == points1.size());
+
+  // local coordinate system (-0.5, 0.5)
+  std::vector<AmanziGeometry::Point> tau(1, mesh0_->edge_vector(e));
+
+  // polynomial is converted from local to global coordinate system
+  int n0, n1;
+  AmanziGeometry::Point x0, x1, y0, y1, ye;
+
+  const AmanziGeometry::Point& xe = mesh0_->edge_centroid(e);
+  ye = mesh1_->edge_centroid(e);
+
+  mesh0_->edge_get_nodes(e, &n0, &n1);
+  mesh0_->node_get_coordinates(n0, &x0);
+  mesh0_->node_get_coordinates(n1, &x1);
+
+  mesh1_->node_get_coordinates(n0, &y0);
+  mesh1_->node_get_coordinates(n1, &y1);
+
+  // velocity at points defining the polynomial
+  y0 -= x0;
+  y1 -= x1;
+  ye -= xe;
+
+  for (int i = 0; i < points1.size(); ++i) {
+    points1[i] -= points0[i];
+  }
+
+  // velocity is transformed from local to global coordinate systems
+  int order = points1.size() + 1;
+
+  v.resize(d_);
+  for (int i = 0; i < d_; ++i) {
+    v[i].Reshape(d_ - 2, order);
+    if (order == 1) {
+      v[i](0) = ye[i];
+      v[i](1) = ye[i] - y0[i];
+    } else {
+      v[i](0) = points1[0][i];
+      v[i](1) = y1[i] - y0[i];
+      v[i](2) = 2 * y0[i] + 2 * y1[i] - 4 * points1[0][i];
+    }
+
+    v[i].InverseChangeCoordinates(xe, tau);  
+  }
+}
+
+
 /* ******************************************************************
 * Calculate mesh velocity on 2D face f.
 ****************************************************************** */
 void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
 {
   AMANZI_ASSERT(d_ == 2);
+
   AmanziGeometry::Point_List points0, points1;
   mesh0_->face_get_ho_nodes(f, &points0);
   mesh1_->face_get_ho_nodes(f, &points1);

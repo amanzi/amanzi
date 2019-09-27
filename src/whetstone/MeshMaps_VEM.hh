@@ -52,9 +52,6 @@ class MeshMaps_VEM : public MeshMaps {
                             VectorPolynomial& vc) const override;
 
  private:
-  // pseudo-velocity on edge e
-  void VelocityEdge_(int e, VectorPolynomial& ve) const;
-
   void LeastSquareProjector_Cell_(int order, int c, const std::vector<VectorPolynomial>& vf,
                                   VectorPolynomial& vc) const;
 
