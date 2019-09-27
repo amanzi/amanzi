@@ -32,18 +32,19 @@
 
 // Amanzi::Operators
 #include "MeshDeformation.hh"
-#include "RemapDG_Tests.hh"
+#include "MyRemapDGBase.hh"
 
 #include "AnalyticDG04.hh"
+#include "AnalyticDG04b.hh"
 
 namespace Amanzi {
 
-class MyRemapDG : public RemapDG_Tests<AnalyticDG04> {
+class MyRemapDG : public MyRemapDGBase<AnalyticDG04> {
  public:
   MyRemapDG(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
             const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
             Teuchos::ParameterList& plist, double T1)
-    : RemapDG_Tests<AnalyticDG04>(mesh0, mesh1, plist),
+    : MyRemapDGBase<AnalyticDG04>(mesh0, mesh1, plist),
       T1_(T1),
       tini_(0.0) {};
   ~MyRemapDG() {};
@@ -271,8 +272,8 @@ void MyRemapDG::StaticCellCoVelocity()
 * Remap of polynomilas in two dimensions. Explicit time scheme.
 * Dual formulation places gradient and jumps on a test function.
 ***************************************************************** */
-void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
-                      std::string file_name,
+template<class AnalyticDG>
+void RemapTestsCurved(std::string file_name,
                       int nx, int ny, int nz, double dt0,
                       int deform = 1, int nloop = 1, double T1 = 1.0) 
 {
@@ -310,8 +311,8 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
     std::string limiter = limiter_list.get<std::string>("limiter");
     std::string stencil = limiter_list.get<std::string>("limiter stencil");
       
-    std::cout << "\nTest: " << dim << "D remap:"
-              << " mesh=" << ((ny == 0) ? file_name : "square")
+    std::cout << "\nTest: " << dim << "D remap curved:"
+              << " mesh=" << ((ny == 0) ? file_name : "box mesh")
               << " deform=" << deform << std::endl;
 
     std::cout << "      discretization: order=" << order 
@@ -363,7 +364,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
                                         .sublist("flux operator").sublist("schema");
   auto dg = Teuchos::rcp(new WhetStone::DG_Modal(dg_list, mesh0));
 
-  AnalyticDG04 ana(mesh0, order, true);
+  AnalyticDG ana(mesh0, order, true);
   // ana.set_shapes(true, true, true);
   ana.InitialGuess(*dg, p1c, 1.0);
 
@@ -403,6 +404,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
 
   // explicit time integration
   CompositeVector p1aux(*p1);
+  auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   Explicit_TI::RK<CompositeVector> rk(remap, rk_method, p1aux);
 
   remap.NonConservativeToConservative(0.0, *p1, p1aux);
@@ -457,7 +459,7 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   ana.ComputeCellErrorRemap(*dg, p2c, tend, 0, mesh1,
                             pnorm, l2_err, inf_err, l20_err, inf0_err);
 
-  CHECK(l2_err < 0.2 / (order + 1));
+  CHECK(l20_err < 0.2 / (order + 1));
 
   if (MyPID == 0) {
     printf("nx=%3d (orig) L2=%12.8g(mean) %12.8g  Inf=%12.8g %12.8g\n", 
@@ -527,55 +529,49 @@ void RemapTestsCurved(const Amanzi::Explicit_TI::method_t& rk_method,
   }
 }
 
-/*
 TEST(REMAP_CURVED_3D) {
   int nloop = 1;
-  double dT(0.0125 * nloop), T1(1.0 / nloop);
-  auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
+  double dT(0.025), T1(1.0 / nloop);
   int deform = 5;
-  RemapTestsCurved(rk_method, "test/prism10.exo", 10,1,1, dT,   deform, nloop, T1);
+  RemapTestsCurved<AnalyticDG04b>("", 4,4,4, dT, deform, nloop, T1);
+  // RemapTestsCurved<AnalyticDG04b>("test/prism10.exo", 10,1,1, dT,   deform, nloop, T1);
 }
-*/
 
-TEST(REMAP_CURVED_2D) {
-  int nloop = 1;
+TEST(REMAP_DUAL_CURVED) {
+  int nloop = 2;
   double dT(0.1), T1(1.0 / nloop);
-  auto rk_method = Amanzi::Explicit_TI::heun_euler;
   int deform = 1;
-  RemapTestsCurved(rk_method, "", 8,8,0, dT, deform, nloop, T1);
-  // RemapTestsCurved(rk_method, "test/circle_quad10.exo", 10,0,0, 0.1, 6, 40, 0.025);
+  RemapTestsCurved<AnalyticDG04>("", 8,8,0, dT, deform, nloop, T1);
+  // RemapTestsCurved<AnalyticDG04>("test/circle_quad10.exo", 10,0,0, 0.1, 6, 40, 0.025);
 
   /*
   int nloop = 40;
   double dT(0.0025 * nloop), T1(1.0 / nloop);
-  auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   int deform = 6;
-  RemapTestsCurved(rk_method, "test/circle_quad10.exo", 10,0,0, dT,   deform, nloop, T1);
-  RemapTestsCurved(rk_method, "test/circle_quad20.exo", 20,0,0, dT/2, deform, nloop, T1);
-  RemapTestsCurved(rk_method, "test/circle_poly40.exo", 40,0,0, dT/4, deform, nloop, T1);
-  RemapTestsCurved(rk_method, "test/circle_poly80.exo", 80,0,0, dT/8, deform, nloop, T1);
+  RemapTestsCurved<AnalyticDG04>("test/circle_quad10.exo", 10,0,0, dT,   deform, nloop, T1);
+  RemapTestsCurved<AnalyticDG04>("test/circle_quad20.exo", 20,0,0, dT/2, deform, nloop, T1);
+  RemapTestsCurved<AnalyticDG04>("test/circle_poly40.exo", 40,0,0, dT/4, deform, nloop, T1);
+  RemapTestsCurved<AnalyticDG04>("test/circle_poly80.exo", 80,0,0, dT/8, deform, nloop, T1);
   */
 
   /*
   int nloop = 2;
   double dT(0.01 * nloop), T1(1.0 / nloop);
-  auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   int deform = 1;
-  RemapTestsCurved(rk_method, "",  16, 16,0, dT,   deform, nloop, T1);
-  RemapTestsCurved(rk_method, "",  32, 32,0, dT/2, deform, nloop, T1);
-  RemapTestsCurved(rk_method, "",  64, 64,0, dT/4, deform, nloop, T1);
-  RemapTestsCurved(rk_method, "", 128,128,0, dT/8, deform, nloop, T1);
+  RemapTestsCurved<AnalyticDG04>("",  16, 16,0, dT,   deform, nloop, T1);
+  RemapTestsCurved<AnalyticDG04>("",  32, 32,0, dT/2, deform, nloop, T1);
+  RemapTestsCurved<AnalyticDG04>("",  64, 64,0, dT/4, deform, nloop, T1);
+  RemapTestsCurved<AnalyticDG04>("", 128,128,0, dT/8, deform, nloop, T1);
   */
 
   /*
   int nloop = 1;
   double dT(0.01 * nloop), T1(1.0 / nloop);
-  auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   int deform = 4;
-  RemapTestsCurved(rk_method, "test/median15x16.exo",    16,0,0, dT,   deform, nloop, T1);
-  RemapTestsCurved(rk_method, "test/median32x33.exo",    32,0,0, dT/2, deform, nloop, T1);
-  RemapTestsCurved(rk_method, "test/median63x64.exo",    64,0,0, dT/4, deform, nloop, T1);
-  RemapTestsCurved(rk_method, "test/median127x128.exo", 128,0,0, dT/8, deform, nloop, T1);
+  RemapTestsCurved<AnalyticDG04>("test/median15x16.exo",    16,0,0, dT,   deform, nloop, T1);
+  RemapTestsCurved<AnalyticDG04>("test/median32x33.exo",    32,0,0, dT/2, deform, nloop, T1);
+  RemapTestsCurved<AnalyticDG04>("test/median63x64.exo",    64,0,0, dT/4, deform, nloop, T1);
+  RemapTestsCurved<AnalyticDG04>("test/median127x128.exo", 128,0,0, dT/8, deform, nloop, T1);
   */
 }
 

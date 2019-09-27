@@ -31,19 +31,21 @@
 
 // Amanzi::Operators
 #include "MeshDeformation.hh"
-#include "RemapDG_Tests.hh"
+#include "MyRemapDGBase.hh"
 
 #include "AnalyticDG04.hh"
 
 namespace Amanzi {
 
-class MyRemapDG : public RemapDG_Tests<AnalyticDG04> {
+class MyRemapDG : public MyRemapDGBase<AnalyticDG04> {
  public:
   MyRemapDG(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
             const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
             Teuchos::ParameterList& plist)
-    : RemapDG_Tests<AnalyticDG04>(mesh0, mesh1, plist) {};
+    : MyRemapDGBase<AnalyticDG04>(mesh0, mesh1, plist) {};
   ~MyRemapDG() {};
+
+  void InitializeConsistentJacobianDeterminant();
 
   // access 
   const std::vector<WhetStone::SpaceTimePolynomial> det() const { return *det_; }
@@ -53,8 +55,7 @@ class MyRemapDG : public RemapDG_Tests<AnalyticDG04> {
 /* *****************************************************************
 * Initialization of the consistent jacobian determinant
 ***************************************************************** */
-template<class AnalyticDG>
-void MyRemapDG<AnalyticDG>::InitializeConsistentJacobianDeterminant()
+void MyRemapDG::InitializeConsistentJacobianDeterminant()
 {
   // constant part of determinant
   op_adv_->Setup(velc_, false);

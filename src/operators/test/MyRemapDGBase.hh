@@ -23,16 +23,16 @@
 namespace Amanzi {
 
 template<class AnalyticDG>
-class RemapDG_Tests : public Operators::RemapDG {
+class MyRemapDGBase : public Operators::RemapDG {
  public:
-  RemapDG_Tests(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
+  MyRemapDGBase(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
                 const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
                 Teuchos::ParameterList& plist) 
     : RemapDG(mesh0, mesh1, plist),
       tprint_(0.0),
       l2norm_(-1.0),
       dt_output_(0.1) {};
-  ~RemapDG_Tests() {};
+  ~MyRemapDGBase() {};
 
   // CFL condition
   double StabilityCondition();
@@ -54,7 +54,7 @@ class RemapDG_Tests : public Operators::RemapDG {
 * Initialization of the consistent jacobian determinant
 ***************************************************************** */
 template<class AnalyticDG>
-double RemapDG_Tests<AnalyticDG>::StabilityCondition()
+double MyRemapDGBase<AnalyticDG>::StabilityCondition()
 {
   double dt(1e+99), alpha(0.2), tmp;
 
@@ -73,7 +73,7 @@ double RemapDG_Tests<AnalyticDG>::StabilityCondition()
 * Print statistics using conservative field u
 ***************************************************************** */
 template<class AnalyticDG>
-void RemapDG_Tests<AnalyticDG>::CollectStatistics(double t, const CompositeVector& u)
+void MyRemapDGBase<AnalyticDG>::CollectStatistics(double t, const CompositeVector& u)
 {
   double tglob = global_time(t);
   if (tglob >= tprint_) {

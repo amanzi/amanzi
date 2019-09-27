@@ -31,18 +31,18 @@
 
 // Amanzi::Operators
 #include "MeshDeformation.hh"
-#include "RemapDG_Tests.hh"
+#include "MyRemapDGBase.hh"
 
 #include "AnalyticDG04.hh"
 
 namespace Amanzi {
 
-class MyRemapDG : public RemapDG_Tests<AnalyticDG04> {
+class MyRemapDG : public MyRemapDGBase<AnalyticDG04> {
  public:
   MyRemapDG(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
             const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
             Teuchos::ParameterList& plist)
-    : RemapDG_Tests<AnalyticDG04>(mesh0, mesh1, plist) {};
+    : MyRemapDGBase<AnalyticDG04>(mesh0, mesh1, plist) {};
   ~MyRemapDG() {};
 
   // access 
@@ -57,8 +57,7 @@ class MyRemapDG : public RemapDG_Tests<AnalyticDG04> {
 * Remap of polynomilas in two dimensions. Explicit time scheme.
 * Dual formulation places gradient and jumps on a test function.
 ***************************************************************** */
-void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
-                      std::string map_name, std::string file_name,
+void RemapTestsDualRK(std::string map_name, std::string file_name,
                       int nx, int ny, int nz, double dt,
                       int deform = 1) {
   using namespace Amanzi;
@@ -175,6 +174,7 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
 
   // explicit time integration
   CompositeVector p1aux(*p1);
+  auto rk_method = Amanzi::Explicit_TI::heun_euler;
   Explicit_TI::RK<CompositeVector> rk(remap, rk_method, p1aux);
 
   remap.NonConservativeToConservative(0.0, *p1, p1aux);
@@ -291,99 +291,82 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
 }
 
 TEST(REMAP_DUAL) {
+  std::string maps = "VEM";
   double dT(0.1);
-  auto rk_method = Amanzi::Explicit_TI::heun_euler;
   int deform = 1;
-  RemapTestsDualRK(rk_method, "FEM", "", 10,10,0, dT);
-
-  RemapTestsDualRK(rk_method, "VEM", "test/median15x16.exo", 16,1,0, dT/2);
-  RemapTestsDualRK(rk_method, "VEM", "", 4,4,4, dT, deform);
+  RemapTestsDualRK("FEM", "", 10,10,0, dT);
+  RemapTestsDualRK(maps, "test/median15x16.exo", 16,1,0, dT/2);
+  RemapTestsDualRK(maps, "", 4,4,4, dT, deform);
 
   /*
   double dT(0.025);
-  auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
-  std::string maps = "VEM";
   int deform = 5;
-  RemapTestsDualRK(rk_method, maps, "test/prism10.exo", 10,1,1, dT,   deform);
-  RemapTestsDualRK(rk_method, maps, "test/prism20.exo", 20,1,1, dT/2, deform);
-  RemapTestsDualRK(rk_method, maps, "test/prism40.exo", 40,1,1, dT/4, deform);
+  RemapTestsDualRK(maps, "test/prism10.exo", 10,1,1, dT,   deform);
+  RemapTestsDualRK(maps, "test/prism20.exo", 20,1,1, dT/2, deform);
+  RemapTestsDualRK(maps, "test/prism40.exo", 40,1,1, dT/4, deform);
   */
 
   /*
   double dT(0.025);
-  auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
-  std::string maps = "VEM";
   int deform = 5;
-  RemapTestsDualRK(rk_method, maps, "test/hexes4.exo",   4,1,1, dT,   deform);
-  RemapTestsDualRK(rk_method, maps, "test/hexes8.exo",   8,1,1, dT/2, deform);
-  RemapTestsDualRK(rk_method, maps, "test/hexes16.exo", 16,1,1, dT/4, deform);
-  RemapTestsDualRK(rk_method, maps, "test/hexes32.exo", 32,1,1, dT/8, deform);
+  RemapTestsDualRK(maps, "test/hexes4.exo",   4,1,1, dT,   deform);
+  RemapTestsDualRK(maps, "test/hexes8.exo",   8,1,1, dT/2, deform);
+  RemapTestsDualRK(maps, "test/hexes16.exo", 16,1,1, dT/4, deform);
+  RemapTestsDualRK(maps, "test/hexes32.exo", 32,1,1, dT/8, deform);
   */
 
   /*
   double dT(0.1);
-  auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
-  std::string maps = "VEM";
   int deform = 1;
-  RemapTestsDualRK(rk_method, maps, "", 10,10,10, dT/2, deform);
-  RemapTestsDualRK(rk_method, maps, "", 20,20,20, dT/4, deform);
-  RemapTestsDualRK(rk_method, maps, "", 40,40,40, dT/8, deform);
+  RemapTestsDualRK(maps, "", 10,10,10, dT/2, deform);
+  RemapTestsDualRK(maps, "", 20,20,20, dT/4, deform);
+  RemapTestsDualRK(maps, "", 40,40,40, dT/8, deform);
   */
 
   /*
   double dT(0.01);
-  auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
-  std::string maps = "VEM";
   int deform = 1;
-  RemapTestsDualRK(rk_method, maps, "",  16, 16,0, dT,    deform);
-  RemapTestsDualRK(rk_method, maps, "",  32, 32,0, dT/2,  deform);
-  RemapTestsDualRK(rk_method, maps, "",  64, 64,0, dT/4,  deform);
-  RemapTestsDualRK(rk_method, maps, "", 128,128,0, dT/8,  deform);
-  RemapTestsDualRK(rk_method, maps, "", 256,256,0, dT/16, deform);
+  RemapTestsDualRK(maps, "",  16, 16,0, dT,    deform);
+  RemapTestsDualRK(maps, "",  32, 32,0, dT/2,  deform);
+  RemapTestsDualRK(maps, "",  64, 64,0, dT/4,  deform);
+  RemapTestsDualRK(maps, "", 128,128,0, dT/8,  deform);
+  RemapTestsDualRK(maps, "", 256,256,0, dT/16, deform);
   */
 
   /*
   double dT(0.01);
-  auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
-  std::string maps = "VEM";
   int deform = 4;
-  RemapTestsDualRK(rk_method, maps, "test/median15x16.exo",    16,0,0, dT,   deform);
-  RemapTestsDualRK(rk_method, maps, "test/median32x33.exo",    32,0,0, dT/2, deform);
-  RemapTestsDualRK(rk_method, maps, "test/median63x64.exo",    64,0,0, dT/4, deform);
-  RemapTestsDualRK(rk_method, maps, "test/median127x128.exo", 128,0,0, dT/8, deform);
-  RemapTestsDualRK(rk_method, maps, "test/median255x256.exo", 256,0,0, dT/16,deform);
+  RemapTestsDualRK(maps, "test/median15x16.exo",    16,0,0, dT,   deform);
+  RemapTestsDualRK(maps, "test/median32x33.exo",    32,0,0, dT/2, deform);
+  RemapTestsDualRK(maps, "test/median63x64.exo",    64,0,0, dT/4, deform);
+  RemapTestsDualRK(maps, "test/median127x128.exo", 128,0,0, dT/8, deform);
+  RemapTestsDualRK(maps, "test/median255x256.exo", 256,0,0, dT/16,deform);
   */
 
   /*
   double dT(0.05);
-  auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
-  std::string maps = "VEM";
   int deform = 4;
-  RemapTestsDualRK(rk_method, maps, "test/mesh_poly20x20.exo",    20,0,0, dT,   deform);
-  RemapTestsDualRK(rk_method, maps, "test/mesh_poly40x40.exo",    40,0,0, dT/2, deform);
-  RemapTestsDualRK(rk_method, maps, "test/mesh_poly80x80.exo",    80,0,0, dT/4, deform);
-  RemapTestsDualRK(rk_method, maps, "test/mesh_poly160x160.exo", 160,0,0, dT/8, deform);
+  RemapTestsDualRK(maps, "test/mesh_poly20x20.exo",    20,0,0, dT,   deform);
+  RemapTestsDualRK(maps, "test/mesh_poly40x40.exo",    40,0,0, dT/2, deform);
+  RemapTestsDualRK(maps, "test/mesh_poly80x80.exo",    80,0,0, dT/4, deform);
+  RemapTestsDualRK(maps, "test/mesh_poly160x160.exo", 160,0,0, dT/8, deform);
   */
 
   /*
   double dT(0.05);
-  auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
-  std::string maps = "VEM";
   int deform = 4;
-  RemapTestsDualRK(rk_method, maps, "test/random10.exo", 10,0,0, dT,   deform);
-  RemapTestsDualRK(rk_method, maps, "test/random20.exo", 20,0,0, dT/2, deform);
-  RemapTestsDualRK(rk_method, maps, "test/random40.exo", 40,0,0, dT/4, deform);
+  RemapTestsDualRK(maps, "test/random10.exo", 10,0,0, dT,   deform);
+  RemapTestsDualRK(maps, "test/random20.exo", 20,0,0, dT/2, deform);
+  RemapTestsDualRK(maps, "test/random40.exo", 40,0,0, dT/4, deform);
   */
 
   /*
   double dT(0.025);
-  auto rk_method = rk_method;
-  std::string maps = "VEM";
-  RemapTestsDualRK(rk_method, maps, "test/triangular8.exo",  0,0,0, dT);
-  RemapTestsDualRK(rk_method, maps, "test/triangular16.exo", 0,0,0, dT/2);
-  RemapTestsDualRK(rk_method, maps, "test/triangular32.exo", 0,0,0, dT/4);
-  RemapTestsDualRK(rk_method, maps, "test/triangular64.exo", 0,0,0, dT/8);
-  RemapTestsDualRK(rk_method, maps, "test/triangular128.exo",0,0,0, dT/16);
+  RemapTestsDualRK(maps, "test/triangular8.exo",  0,0,0, dT);
+  RemapTestsDualRK(maps, "test/triangular16.exo", 0,0,0, dT/2);
+  RemapTestsDualRK(maps, "test/triangular32.exo", 0,0,0, dT/4);
+  RemapTestsDualRK(maps, "test/triangular64.exo", 0,0,0, dT/8);
+  RemapTestsDualRK(maps, "test/triangular128.exo",0,0,0, dT/16);
   */
 }
 

@@ -351,11 +351,12 @@ if (BUILD_TESTS)
                     KIND unit
                     NPROCS 2
                     SOURCE test/Main.cc test/operator_remap.cc
+                                        test/operator_remap_curved.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    add_amanzi_test(operators_remap_curved operators_remap_curved
+    add_amanzi_test(operators_remap_curved_gcl operators_remap_gcl
                     KIND unit
-                    SOURCE test/Main.cc test/operator_remap_curved.cc
+                    SOURCE test/Main.cc test/operator_remap_gcl.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # high-order diffusion test
