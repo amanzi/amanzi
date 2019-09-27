@@ -55,14 +55,6 @@ RemapDG::RemapDG(
   if (name == "remove")
     bc_type_ = OPERATOR_BC_REMOVE;
 
-  name = pklist.template get<std::string>("jacobian determinant method");
-  if (name == "VEM") 
-    det_method_ = OPERATOR_DETERMINANT_VEM;
-  else if (name == "exact time integration") 
-    det_method_ = OPERATOR_DETERMINANT_EXACT_TI;
-  else if (name == "monotone") 
-    det_method_ = OPERATOR_DETERMINANT_MONOTONE;
-
   // initialize limiter
   auto limlist = plist_.sublist("limiter");
   is_limiter_ = (limlist.template get<std::string>("limiter") != "none");
@@ -80,7 +72,7 @@ RemapDG::RemapDG(
 
 
 /* *****************************************************************
-* Initialization of opertors
+* Initialization of operators
 ***************************************************************** */
 void RemapDG::InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg)
 {

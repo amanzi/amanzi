@@ -40,7 +40,6 @@
   <!--  OPERATORS: dual formulation -->
   <ParameterList name="PK operator">
     <Parameter name="boundary conditions" type="string" value="none"/>
-    <Parameter name="jacobian determinant method" type="string" value="VEM"/>
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
     <ParameterList name="flux operator">

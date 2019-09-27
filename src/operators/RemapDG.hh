@@ -114,9 +114,6 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   // intermediate non-conservative quantity
   Teuchos::RCP<CompositeVector> field_;
 
-  // geometric data
-  int det_method_;
-
   // -- static
   std::vector<WhetStone::VectorPolynomial> uc_;
   std::vector<WhetStone::VectorPolynomial> vele_vec_, velf_vec_;
