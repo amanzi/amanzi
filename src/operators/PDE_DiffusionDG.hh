@@ -104,7 +104,7 @@ void PDE_DiffusionDG::Setup(
   Kf_ = Kf;
 
   auto coef = std::make_shared<CoefficientModel<WhetStone::Tensor> >(Kc);
-  interface_ = Teuchos::rcp(new InterfaceWhetStoneImpl<
+  interface_ = Teuchos::rcp(new InterfaceWhetStoneDG<
       WhetStone::DG_Modal, CoefficientModel<WhetStone::Tensor> >(dg_, coef));
 }
 
@@ -116,7 +116,7 @@ void PDE_DiffusionDG::Setup(
   Kf_ = Kf;
 
   auto coef = std::make_shared<CoefficientModel<WhetStone::WhetStoneFunction*> >(Kc);
-  interface_ = Teuchos::rcp(new InterfaceWhetStoneImpl<
+  interface_ = Teuchos::rcp(new InterfaceWhetStoneDG<
       WhetStone::DG_Modal, CoefficientModel<WhetStone::WhetStoneFunction*> >(dg_, coef));
 }
 
@@ -128,7 +128,7 @@ void PDE_DiffusionDG::Setup(
   Kf_ = Kf;
 
   auto coef = std::make_shared<CoefficientModel<WhetStone::MatrixPolynomial> >(Kc);
-  interface_ = Teuchos::rcp(new InterfaceWhetStoneImpl<
+  interface_ = Teuchos::rcp(new InterfaceWhetStoneDG<
       WhetStone::DG_Modal, CoefficientModel<WhetStone::MatrixPolynomial> >(dg_, coef));
 }
 

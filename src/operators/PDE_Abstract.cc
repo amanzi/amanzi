@@ -105,6 +105,11 @@ void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
 
   // register the advection Op
   global_op_->OpPushBack(local_op_);
+
+  // default values
+  const auto coef = std::make_shared<CoefficientModel<WhetStone::Tensor> >(nullptr);
+  interface_ = Teuchos::rcp(new InterfaceWhetStoneMFD<
+      WhetStone::BilinearForm, CoefficientModel<WhetStone::Tensor> >(mfd_, coef));
 }
 
 
@@ -122,15 +127,9 @@ void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
 
-  if (matrix_ == "mass" && coef_type_ == CoefType::CONSTANT) {
+  if (matrix_ == "mass") {
     for (int c = 0; c < ncells_owned; ++c) {
-      if (Ktensor_.get()) Kc = (*Ktensor_)[c];
-      mfd_->MassMatrix(c, Kc, Acell);
-      matrix[c] = Acell;
-    }
-  } else if (matrix_ == "mass" && coef_type_ == CoefType::POLYNOMIAL) {
-    for (int c = 0; c < ncells_owned; ++c) {
-      mfd_->MassMatrix(c, (*Kpoly_)[c], Acell);
+      interface_->MassMatrix(c, Acell);
       matrix[c] = Acell;
     }
   } else if (matrix_ == "mass inverse" && coef_type_ == CoefType::CONSTANT) {
@@ -144,10 +143,9 @@ void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
       mfd_->MassMatrixInverse(c, (*Kpoly_)[c], Acell);
       matrix[c] = Acell;
     }
-  } else if (matrix_ == "stiffness" && coef_type_ == CoefType::CONSTANT) {
+  } else if (matrix_ == "stiffness") {
     for (int c = 0; c < ncells_owned; ++c) {
-      if (Ktensor_.get()) Kc = (*Ktensor_)[c];
-      mfd_->StiffnessMatrix(c, Kc, Acell);
+      interface_->StiffnessMatrix(c, Acell);
       matrix[c] = Acell;
     }
   } else if (matrix_ == "divergence") {

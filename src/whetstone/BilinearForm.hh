@@ -85,8 +85,14 @@ class BilinearForm : public virtual InnerProductL2,
   }
 
   using InnerProductH1::StiffnessMatrix;
-  virtual int StiffnessMatrix(int c, const MatrixPolynomial& K, DenseMatrix& A) {
+  virtual int StiffnessMatrix(int c, const Polynomial& K, DenseMatrix& A) {
     Errors::Message msg("StiffnessMatrix: polynomial coefficient is not supported.");
+    Exceptions::amanzi_throw(msg);
+    return 1;
+  }
+  // -- general coefficient. Qudrature rule is provided via the input parameter list
+  virtual int StiffnessMatrix(int c, const MatrixPolynomial& K, DenseMatrix& A) {
+    Errors::Message msg("StiffnessMatrix: matrix polynomial coefficient is not supported.");
     Exceptions::amanzi_throw(msg);
     return 1;
   }

@@ -25,8 +25,12 @@
 #include <string>
 #include <vector>
 
+#include "Teuchos_RCPStdSharedPtrConversions.hpp"
+
 // Amanzi
 #include "BilinearForm.hh"
+#include "CoefficientModel.hh"
+#include "InterfaceWhetStone.hh"
 #include "Polynomial.hh"
 #include "Tensor.hh"
 #include "VectorObjects.hh"
@@ -94,6 +98,7 @@ class PDE_Abstract : public PDE_HelperDiscretization {
   bool grad_on_test_;
 
   Teuchos::RCP<WhetStone::BilinearForm> mfd_;
+  Teuchos::RCP<InterfaceWhetStone> interface_;
 
   CoefType coef_type_;
   bool static_matrices_initialized_;
@@ -110,6 +115,11 @@ void PDE_Abstract::Setup<WhetStone::Tensor>(
     const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K, bool reset) {
   Ktensor_ = K;
   coef_type_ = CoefType::CONSTANT;
+
+  auto Kc = Teuchos::get_shared_ptr(K);
+  const auto coef = std::make_shared<CoefficientModel<WhetStone::Tensor> >(Kc);
+  interface_ = Teuchos::rcp(new InterfaceWhetStoneMFD<
+      WhetStone::BilinearForm, CoefficientModel<WhetStone::Tensor> >(mfd_, coef));
 }
  
 template<>
@@ -118,6 +128,11 @@ void PDE_Abstract::Setup<WhetStone::Polynomial>(
     const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& K, bool reset) {
   Kpoly_ = K;
   coef_type_ = CoefType::POLYNOMIAL;
+
+  auto Kc = Teuchos::get_shared_ptr(K);
+  const auto coef = std::make_shared<CoefficientModel<WhetStone::Polynomial> >(Kc);
+  interface_ = Teuchos::rcp(new InterfaceWhetStoneMFD<
+      WhetStone::BilinearForm, CoefficientModel<WhetStone::Polynomial> >(mfd_, coef));
 }
 
 template<>

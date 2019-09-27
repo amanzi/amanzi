@@ -29,23 +29,44 @@ class InterfaceWhetStone {
   InterfaceWhetStone() {};
   virtual ~InterfaceWhetStone() {};
 
-  virtual void StiffnessMatrix(int c, WhetStone::DenseMatrix& Acell) = 0;
-  virtual void FaceMatrixJump(int f, int c1, int c2, WhetStone::DenseMatrix& Aface) = 0;
+  virtual void MassMatrix(int c, WhetStone::DenseMatrix& Acell) {};
+  virtual void StiffnessMatrix(int c, WhetStone::DenseMatrix& Acell) {};
+  virtual void FaceMatrixJump(int f, int c1, int c2, WhetStone::DenseMatrix& Aface) {};
 };
 
 
 template<class T, class U>
-class InterfaceWhetStoneImpl : public InterfaceWhetStone {
+class InterfaceWhetStoneDG : public InterfaceWhetStone {
  public:
-  InterfaceWhetStoneImpl(const Teuchos::RCP<T>& mfd, const std::shared_ptr<U>& coef)
-    : mfd_(mfd), coef_(coef) {};
+  InterfaceWhetStoneDG(const Teuchos::RCP<T>& dg, const std::shared_ptr<U>& coef)
+    : dg_(dg), coef_(coef) {};
 
   virtual void StiffnessMatrix(int c, WhetStone::DenseMatrix& Acell) override {
-    mfd_->StiffnessMatrix(c, coef_->get_coef(c), Acell);
+    dg_->StiffnessMatrix(c, coef_->get_coef(c), Acell);
   }
 
   virtual void FaceMatrixJump(int f, int c1, int c2, WhetStone::DenseMatrix& Aface) override {
-    mfd_->FaceMatrixJump(f, coef_->get_coef(c1), coef_->get_coef(c2), Aface);
+    dg_->FaceMatrixJump(f, coef_->get_coef(c1), coef_->get_coef(c2), Aface);
+  }
+
+ private:
+  Teuchos::RCP<T> dg_;
+  std::shared_ptr<U> coef_;
+};
+
+
+template<class T, class U>
+class InterfaceWhetStoneMFD : public InterfaceWhetStone {
+ public:
+  InterfaceWhetStoneMFD(const Teuchos::RCP<T>& mfd, const std::shared_ptr<U>& coef)
+    : mfd_(mfd), coef_(coef) {};
+
+  virtual void MassMatrix(int c, WhetStone::DenseMatrix& Acell) override {
+    mfd_->MassMatrix(c, coef_->get_coef(c), Acell);
+  }
+
+  virtual void StiffnessMatrix(int c, WhetStone::DenseMatrix& Acell) override {
+    mfd_->StiffnessMatrix(c, coef_->get_coef(c), Acell);
   }
 
  private:
