@@ -51,7 +51,7 @@ void DeformMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh1, int deform, double 
   Epetra_MultiVector& random_n = *random.ViewComponent("node", true);
 
   int gid = mesh1->node_map(false).MaxAllGID();
-  double scale = 0.5 * std::pow(gid, -1.0 / d);
+  double scale = 0.2 * std::pow(gid, -2.0 / d);
 
   if (deform == 7) {
     random_n.Random();

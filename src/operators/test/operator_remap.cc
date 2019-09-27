@@ -95,7 +95,7 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
     std::string map_name = map_list.get<std::string>("map name");
       
     std::cout << "\nTest: " << dim << "D remap:"
-              << " mesh=" << ((ny == 0) ? file_name : "square")
+              << " mesh=" << ((file_name == "") ? "structured" : file_name)
               << " deform=" << deform << std::endl;
 
     std::cout << "      discretization: order=" << order 
@@ -107,18 +107,21 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   }
 
   // create two meshes
+  Teuchos::ParameterList region_list = plist.sublist("regions");
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(dim, region_list, *comm));
+
   auto mlist = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("mesh")));
-  MeshFactory meshfactory(comm, Teuchos::null, mlist);
+  MeshFactory meshfactory(comm, gm, mlist);
   meshfactory.set_preference(Preference({AmanziMesh::Framework::MSTK}));
 
   Teuchos::RCP<const Mesh> mesh0;
   Teuchos::RCP<Mesh> mesh1;
-  if (dim == 2 && ny != 0) {
+  if (file_name != "") {
+    mesh0 = meshfactory.create(file_name, true, true);
+    mesh1 = meshfactory.create(file_name, true, true);
+  } else if (dim == 2) {
     mesh0 = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, ny);
     mesh1 = meshfactory.create(0.0, 0.0, 1.0, 1.0, nx, ny);
-  } else if (dim == 2) {
-    mesh0 = meshfactory.create(file_name);
-    mesh1 = meshfactory.create(file_name);
   } else { 
     mesh0 = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, true, true);
     mesh1 = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, true, true);
@@ -294,8 +297,29 @@ TEST(REMAP_DUAL) {
   int deform = 1;
   RemapTestsDualRK(rk_method, "FEM", "", 10,10,0, dT);
 
-  RemapTestsDualRK(rk_method, "VEM", "test/median15x16.exo", 0,0,0, dT/2);
+  RemapTestsDualRK(rk_method, "VEM", "test/median15x16.exo", 1,1,0, dT/2);
   RemapTestsDualRK(rk_method, "VEM", "", 4,4,4, dT, deform);
+
+  /*
+  double dT(0.025);
+  auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
+  std::string maps = "VEM";
+  int deform = 5;
+  RemapTestsDualRK(rk_method, maps, "test/prism10.exo", 10,1,1, dT,   deform);
+  RemapTestsDualRK(rk_method, maps, "test/prism20.exo", 20,1,1, dT/2, deform);
+  RemapTestsDualRK(rk_method, maps, "test/prism40.exo", 40,1,1, dT/4, deform);
+  */
+
+  /*
+  double dT(0.025);
+  auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
+  std::string maps = "VEM";
+  int deform = 5;
+  RemapTestsDualRK(rk_method, maps, "test/hexes4.exo",   4,1,1, dT,   deform);
+  RemapTestsDualRK(rk_method, maps, "test/hexes8.exo",   8,1,1, dT/2, deform);
+  RemapTestsDualRK(rk_method, maps, "test/hexes16.exo", 16,1,1, dT/4, deform);
+  RemapTestsDualRK(rk_method, maps, "test/hexes32.exo", 32,1,1, dT/8, deform);
+  */
 
   /*
   double dT(0.1);
