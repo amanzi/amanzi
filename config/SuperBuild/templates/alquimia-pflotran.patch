@@ -1,0 +1,21 @@
+diff -ruNbB alquimia-1.0.5df9d47-17Aug2019-source/alquimia/pflotran_alquimia_interface.F90 alquimia-1.0.5df9d47-17Aug2019-new/alquimia/pflotran_alquimia_interface.F90
+--- alquimia-1.0.5df9d47-17Aug2019-source/alquimia/pflotran_alquimia_interface.F90	2019-09-27 12:21:09.000000000 -0600
++++ alquimia-1.0.5df9d47-17Aug2019-new/alquimia/pflotran_alquimia_interface.F90	2019-09-27 12:20:26.000000000 -0600
+@@ -1102,7 +1102,7 @@
+        InputErrorMsg, InputError
+   use String_module, only : StringToUpper
+   use Transport_Constraint_module, only : tran_constraint_list_type, tran_constraint_type, &
+-       TranConstraintReadRT, TranConstraintInitList, TranConstraintAddToList, &
++       TranConstraintRead, TranConstraintInitList, TranConstraintAddToList, &
+        TranConstraintCreate
+   use petscsys
+   implicit none
+@@ -1150,7 +1150,7 @@
+         if (debug) then
+            call printMsg(option, tran_constraint%name)
+         end if
+-        call TranConstraintReadRT(tran_constraint, reaction, input, option)
++        call TranConstraintRead(tran_constraint, reaction, input, option)
+         call TranConstraintAddToList(tran_constraint, transport_constraints)
+         nullify(tran_constraint)
+ 
