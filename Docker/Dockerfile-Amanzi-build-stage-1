@@ -5,13 +5,12 @@ LABEL Description="Amanzi: Build stage 1 and install in temporary Docker image."
 USER amanzi_user
 
 # Arguments
-ARG amanzi_branch
-RUN echo "Amanzi branch = $amanzi_branch"
-
+ARG amanzi_branch=master 
 
 # Change the Working Directory and update amanzi
 WORKDIR /home/amanzi_user/amanzi
 RUN echo "Amanzi branch = $amanzi_branch"; \
+    git checkout $amanzi_branch; \
     git branch --list ; \
     git pull
  
