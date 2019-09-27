@@ -8,11 +8,6 @@ RUN echo "Amanzi branch = ${amanzi_branch}"
 # Switch to amanzi_user
 USER amanzi_user
 
-# Installation paths
-ENV AMANZI_PREFIX=/home/amanzi_user/install \
-    AMANZI_INSTALL_DIR=/home/amanzi_user/install/amanzi \
-    AMANZI_TPLS_DIR=/home/amanzi_user/install/tpls
-
 # Change the Working Directory and update amanzi
 WORKDIR /home/amanzi_user/amanzi
 
