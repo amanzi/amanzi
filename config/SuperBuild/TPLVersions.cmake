@@ -411,7 +411,7 @@ set(SuperLUDist_VERSION  ${SuperLUDist_VERSION_MAJOR}.${SuperLUDist_VERSION_MINO
 set(SuperLUDist_URL_STRING     "https://github.com/xiaoyeli/superlu_dist/archive")
 set(SuperLUDist_ARCHIVE_FILE   v${SuperLUDist_VERSION}.tar.gz)
 set(SuperLUDist_SAVEAS_FILE    superlu_dist_${SuperLUDist_VERSION}.tar.gz)
-set(SuperLUDist_MD5_SUM        e64645c5be352ae2c88327af2cac66e1)
+set(SuperLUDist_MD5_SUM        334cd350ae375be63ccf4d62900be3e4)
 
 #
 # TPL: Sowing (Built by PETSc!)
