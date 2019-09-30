@@ -58,17 +58,21 @@ class FunctionComposition : public Function {
 
   double operator()(const Kokkos::View<double*>& x) const {
     Kokkos::View<double*> y(x); 
-    //std::vector<double> y(x);
     y[0] = (*f2_)(x);
     return (*f1_)(y);
   }
 
-  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double*>& x) const {assert(false); return 0.0;} 
-
   void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
-    Kokkos::View<double*> out_1("out",in.extent(1)); 
-    f1_->apply(in,out_1); 
-    //f2_->apply(out_1,out); 
+    Kokkos::View<double*> out_1("out",out.extent(0)); 
+    Kokkos::View<double**> tmpin("tmpin",in.extent(0),in.extent(1));
+    Kokkos::deep_copy(tmpin,in);  
+    f1_->apply(tmpin,out_1); 
+    // Change all value 
+    Kokkos::parallel_for(in.extent(1),KOKKOS_LAMBDA(const int& j){
+      for(int i = 0 ; i < in.extent(0); ++i)
+        tmpin(i,j) = out_1(i);
+    });
+    f2_->apply(tmpin,out); 
   }
 
  private:

@@ -37,10 +37,8 @@ class FunctionConstant : public Function {
   FunctionConstant* Clone() const { return new FunctionConstant(*this); }
   double operator()(const Kokkos::View<double*>& x) const { return c_; }
 
-  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double*>& x) const {assert(false); return 0.0;}; 
-
   void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
-    Kokkos::parallel_for(in.extent(0),KOKKOS_LAMBDA(const int& i){
+    Kokkos::parallel_for(in.extent(1),KOKKOS_LAMBDA(const int& i){
       out(i) = c_; 
     });
   }

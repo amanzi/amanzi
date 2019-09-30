@@ -71,8 +71,8 @@ class FunctionLinear : public Function {
   }
 
   void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
-    Kokkos::parallel_for(in.extent(0),KOKKOS_LAMBDA(const int& i){
-      Kokkos::View<double*> i_in = Kokkos::subview(in,i,Kokkos::ALL); 
+    Kokkos::parallel_for(in.extent(1),KOKKOS_LAMBDA(const int& i){
+      Kokkos::View<double*> i_in = Kokkos::subview(in,Kokkos::ALL,i); 
       out(i) = apply_gpu(i_in); 
     });
   }

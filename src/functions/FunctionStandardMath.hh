@@ -72,7 +72,7 @@ class FunctionStandardMath : public Function {
     EXP, LOG, LOG10, SQRT, CEIL, FABS, FLOOR, POW, MOD };
 
 public:
-  FunctionStandardMath(char op[10], double amplitude, double parameter, double shift);
+  FunctionStandardMath(std::string op, double amplitude, double parameter, double shift);
   ~FunctionStandardMath() {}
   FunctionStandardMath* Clone() const { return new FunctionStandardMath(*this); }
   double operator()(const Kokkos::View<double*>&) const; 
@@ -149,7 +149,10 @@ public:
   }
 
   void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
-
+    Kokkos::parallel_for(in.extent(1),KOKKOS_LAMBDA(const int& i){
+      Kokkos::View<double*> i_in = Kokkos::subview(in,Kokkos::ALL,i); 
+      out(i) = apply_gpu(i_in);
+    });
   }
 
 private:

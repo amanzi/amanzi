@@ -64,6 +64,7 @@ END
 #include <Kokkos_Core.hpp>
 #include <cassert>
 
+
 namespace Amanzi {
 
 class Function {
@@ -74,7 +75,7 @@ class Function {
   // Keep host version working 
   virtual double operator()(const Kokkos::View<double*>& ) const = 0;
   // Device version 
-  KOKKOS_INLINE_FUNCTION virtual double apply_gpu(const Kokkos::View<double*>&) const = 0; 
+  //KOKKOS_INLINE_FUNCTION virtual double apply_gpu(const Kokkos::View<double*>&) const = 0; 
   virtual void apply(const Kokkos::View<double**>&, Kokkos::View<double*>&) const = 0; 
 };
 

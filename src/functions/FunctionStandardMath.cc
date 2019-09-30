@@ -5,45 +5,45 @@
 
 namespace Amanzi {
 
-FunctionStandardMath::FunctionStandardMath(char op[10],
+FunctionStandardMath::FunctionStandardMath(std::string op,
         double amplitude, double parameter, double shift) :
     amplitude_(amplitude), parameter_(parameter), shift_(shift) {
 
-  if (strcmp(op,"cos")==0){
+  if (op.compare("cos")==0){
     op_ = COS; 
-  }else if (strcmp(op,"sin")==0){
+  }else if (op.compare("sin")==0){
     op_ = SIN; 
-  }else if (strcmp(op,"tan")==0){
+  }else if (op.compare("tan")==0){
     op_ = TAN; 
-  }else if (strcmp(op,"acos")==0){
+  }else if (op.compare("acos")==0){
     op_ = ACOS; 
-  }else if (strcmp(op,"asin")==0){
+  }else if (op.compare("asin")==0){
     op_ = ASIN; 
-  }else if (strcmp(op,"atan")==0){
+  }else if (op.compare("atan")==0){
     op_ = ATAN; 
-  }else if (strcmp(op,"cosh")==0){
+  }else if (op.compare("cosh")==0){
     op_ = COSH; 
-  }else if (strcmp(op,"sinh")==0){
+  }else if (op.compare("sinh")==0){
     op_ = SINH; 
-  }else if (strcmp(op,"tanh")==0){
+  }else if (op.compare("tanh")==0){
     op_ = TANH; 
-  }else if (strcmp(op,"exp")==0){
+  }else if (op.compare("exp")==0){
     op_ = EXP; 
-  }else if (strcmp(op,"log")==0){
+  }else if (op.compare("log")==0){
     op_ = LOG; 
-  }else if (strcmp(op,"log10")==0){
+  }else if (op.compare("log10")==0){
     op_ = LOG10; 
-  }else if (strcmp(op,"sqrt")==0){
+  }else if (op.compare("sqrt")==0){
     op_ = SQRT; 
-  }else if (strcmp(op,"ceil")==0){
+  }else if (op.compare("ceil")==0){
     op_ = CEIL; 
-  }else if (strcmp(op,"fabs")==0){
+  }else if (op.compare("fabs")==0){
     op_ = FABS; 
-  }else if (strcmp(op,"floor")==0){
+  }else if (op.compare("floor")==0){
     op_ = FLOOR; 
-  }else if (strcmp(op,"mod")==0){
+  }else if (op.compare("mod")==0){
     op_ = MOD; 
-  }else if (strcmp(op,"pow")==0){
+  }else if (op.compare("pow")==0){
     op_ = POW; 
   }else{
     std::stringstream m;

@@ -69,9 +69,9 @@ class FunctionDistance : public Function {
   }
 
   void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
-    assert(in.extent(0) == out.extent(0)); 
-    Kokkos::parallel_for(in.extent(0),KOKKOS_LAMBDA(const int& i){
-      Kokkos::View<double*> i_in = Kokkos::subview(in,i,Kokkos::ALL); 
+    assert(in.extent(1) == out.extent(0)); 
+    Kokkos::parallel_for(in.extent(1),KOKKOS_LAMBDA(const int& i){
+      Kokkos::View<double*> i_in = Kokkos::subview(in,Kokkos::ALL,i); 
       out(i)  = apply_gpu(i_in);
     });
   }

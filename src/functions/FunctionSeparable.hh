@@ -65,10 +65,8 @@ class FunctionSeparable : public Function {
     return (*f1_)(x) * (*f2_)(y);
   }
 
-  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double*>& x) const {assert(false); return 0.0;}
-
   void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
-    assert(false); 
+    f1_->apply(in,out); 
   }
 
  private:

@@ -89,4 +89,11 @@ if (BUILD_TESTS)
                   LINK_LIBS  mesh_functions mesh_factory data_structures 
                              ${UnitTest_LIBRARIES} ${Boost_LIBRARIES} 
                              ${MSTK_LIBRARIES} ${NOX_LIBRARIES} ${HDF5_LIBRARIES})
+  
+  add_amanzi_test(v_functions v_functions
+                  KIND unit
+                  SOURCE test/vector_function.cc
+                  LINK_LIBS  mesh_functions mesh_factory data_structures 
+                            ${UnitTest_LIBRARIES} ${Boost_LIBRARIES} 
+                            ${MSTK_LIBRARIES} ${NOX_LIBRARIES} ${HDF5_LIBRARIES})
 endif()

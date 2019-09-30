@@ -29,9 +29,10 @@ public:
   int size() const;
   Kokkos::View<double*> operator()(const Kokkos::View<double*>& xt) const;
 
-  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
+  void apply(const Kokkos::View<double**>& in, Kokkos::View<double**>& out) const {
     for(int i = 0 ; i < size(); ++i){
-      functions_[i]->apply(in,out); 
+      Kokkos::View<double*> out_i = Kokkos::subview(out,Kokkos::ALL,i); 
+      functions_[i]->apply(in,out_i); 
     }
   }
 

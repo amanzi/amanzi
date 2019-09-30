@@ -114,7 +114,6 @@ void CompositeVectorFunction::Compute(double time,
 
       } else {
 
-        std::cout<<"TESTING"<<std::endl;
         if (mesh->valid_set_name(*region, kind)) {
           // get the indices of the domain.
           Kokkos::View<AmanziMesh::Entity_ID*> id_list;
@@ -138,7 +137,7 @@ void CompositeVectorFunction::Compute(double time,
             for (int i=0; i!=dim; ++i) txyz(id,i) = xc[i];
           }
 
-          Kokkos::View<double*> result("result",id_list.extent(0),1); 
+          Kokkos::View<double**> result("result",id_list.extent(0),1); 
           spec->second->apply(txyz,result); 
           for (int id = 0 ; id < id_list.extent(0); ++id) {
             for (int i=0; i!=(*spec->second).size(); ++i) {
