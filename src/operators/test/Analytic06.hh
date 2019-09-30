@@ -32,7 +32,7 @@ class Analytic06 : public AnalyticBase {
     return K;
   }
 
-  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) const { 
     return ana_.exact1(p,t);
   }
 

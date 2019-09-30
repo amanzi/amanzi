@@ -140,7 +140,7 @@ void OperatorDiffusionDG(std::string solver_name,
   Epetra_MultiVector& src_c = *src.ViewComponent("cell");
 
   WhetStone::Polynomial pc(2, order);
-  WhetStone::NumericalIntegration numi(mesh);
+  WhetStone::NumericalIntegration<AmanziMesh::Mesh> numi(mesh);
 
   for (int c = 0; c < ncells; ++c) {
     const Point& xc = mesh->cell_centroid(c);
@@ -240,5 +240,6 @@ TEST(OPERATOR_DIFFUSION_DG) {
   OperatorDiffusionDG("AztecOO CG", "normalized");
   OperatorDiffusionDG("AztecOO CG");
   OperatorDiffusionDG("Amesos1");
-  OperatorDiffusionDG("Amesos2");
+  OperatorDiffusionDG("Amesos2: basker");
+  OperatorDiffusionDG("Amesos2: superludist");
 }

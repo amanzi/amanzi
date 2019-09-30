@@ -20,7 +20,7 @@
 
 // Amanzi
 #include "BilinearForm.hh"
-#include "VectorPolynomial.hh"
+#include "VectorObjects.hh"
 
 // Amanzi::Operators
 #include "PDE_HelperDiscretization.hh"
@@ -33,24 +33,34 @@ class PDE_Reaction : public PDE_HelperDiscretization {
  public:
   PDE_Reaction(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op) :
       K_(Teuchos::null),
-      PDE_HelperDiscretization(global_op) {
+      PDE_HelperDiscretization(global_op),
+      static_matrices_initialized_(false) {
     InitReaction_(plist);
   }
 
   PDE_Reaction(Teuchos::ParameterList& plist, Teuchos::RCP<const AmanziMesh::Mesh> mesh) : 
       K_(Teuchos::null),
-      PDE_HelperDiscretization(mesh) {
+      PDE_HelperDiscretization(mesh),
+      static_matrices_initialized_(false) {
     InitReaction_(plist);
   }
 
   // required members 
   // -- setup
-  void Setup(Teuchos::RCP<Epetra_MultiVector>& K) { K_ = K; }
-  void Setup(Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> >& poly) { poly_ = poly; }
+  void SetupScalar(const Teuchos::RCP<Epetra_MultiVector>& K) { K_ = K; }
+  void SetupPoly(const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& K) { poly_ = K; }
+  void Setup(const Teuchos::RCP<const std::vector<WhetStone::SpaceTimePolynomial> >& K, bool reset) {
+    poly_st_ = K;
+    if (!static_matrices_initialized_ || reset) CreateStaticMatrices_();
+  }
+
   // -- generate a linearized operator 
   using PDE_HelperDiscretization::UpdateMatrices;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                               const Teuchos::Ptr<const CompositeVector>& p) override;
+  // -- new interface for pre-computed data  
+  void UpdateMatrices(double t);
+
   // -- flux calculation has yet no meaning for this operator
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
                           const Teuchos::Ptr<CompositeVector>& u) override {};
@@ -60,16 +70,21 @@ class PDE_Reaction : public PDE_HelperDiscretization {
 
  private:
   void InitReaction_(Teuchos::ParameterList& plist);
+  void CreateStaticMatrices_();
 
  protected:
   Teuchos::RCP<const Epetra_MultiVector> K_;
-  Teuchos::RCP<const std::vector<WhetStone::VectorPolynomial> > poly_;
+  Teuchos::RCP<const std::vector<WhetStone::Polynomial> > poly_;
+  Teuchos::RCP<const std::vector<WhetStone::SpaceTimePolynomial> > poly_st_;
 
   Teuchos::RCP<WhetStone::BilinearForm> mfd_;
 
  private:
   Schema global_schema_col_, global_schema_row_;
   Schema local_schema_col_, local_schema_row_;
+
+  bool static_matrices_initialized_;
+  std::vector<std::vector<WhetStone::DenseMatrix> > static_matrices_;
 };
 
 }  // namespace Operators

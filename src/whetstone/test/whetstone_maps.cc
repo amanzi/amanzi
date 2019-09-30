@@ -73,7 +73,7 @@ TEST(DG_MAP_DETERMINANT_CELL) {
   MatrixPolynomial J;
 
   VectorPolynomial moments(2, 2);
-  auto numi = std::make_shared<NumericalIntegration>(mesh0);
+  auto numi = std::make_shared<NumericalIntegration<AmanziMesh::Mesh> >(mesh0);
   std::vector<const char*> list = {"SerendipityPk"};
   
   for (auto name : list) {
@@ -91,7 +91,7 @@ TEST(DG_MAP_DETERMINANT_CELL) {
 
       // run differet discretization methods
       if (std::strcmp(name, "SerendipityPk") == 0) {
-        maps->VelocityCell(cell, vf, uc);
+        maps->VelocityCell(cell, vf, vf, uc);
       }
       maps->Jacobian(uc, J);
       J(0, 0)(0) += 1.0;
@@ -108,8 +108,6 @@ TEST(DG_MAP_DETERMINANT_CELL) {
           k, name, tmp, err, uc[0].NormInf(), uc[1].NormInf());
     }
   }
-  
-  
 }
 
 
@@ -181,7 +179,7 @@ TEST(DG_MAP_LEAST_SQUARE_CELL) {
        .set<std::string>("projector", "least square");
   auto maps = std::make_shared<MeshMaps_VEM>(mesh0, mesh1, plist);
 
-  maps->VelocityCell(0, vf, vc1);
+  maps->VelocityCell(0, vf, vf, vc1);
   vc1.ChangeOrigin(mesh0->cell_centroid(cell));
 
   // Serendipity calculation
@@ -190,12 +188,10 @@ TEST(DG_MAP_LEAST_SQUARE_CELL) {
        .set<std::string>("projector", "L2");
   maps = std::make_shared<MeshMaps_VEM>(mesh0, mesh1, plist);
 
-  maps->VelocityCell(0, vf, vc2);
+  maps->VelocityCell(0, vf, vf, vc2);
 
   vc1 -= vc2;
   CHECK_CLOSE(0.0, vc1.NormInf(), 1e-12);
-  
-  
 }
 
 
@@ -272,7 +268,81 @@ TEST(DG_MAP_GCL) {
     err = u.NormInf();
     std::cout << "Piola compatibility condition error=" << err << std::endl;
   }
-
-  
 }
+
+
+/* ****************************************************************
+* Hierachical velocity reconstruction in 3D
+**************************************************************** */
+TEST(DG_MAP_VELOCITY_CELL) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: Velocity reconstruction in 3D." << std::endl;
+  auto comm = Amanzi::getDefaultComm();
+
+  // create two meshes
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh0 = meshfactory.create("test/cube_unit.exo", true, true);
+  Teuchos::RCP<Mesh> mesh1 = meshfactory.create("test/cube_unit.exo", true, true);
+
+  // deform the second mesh
+  int d(3), nnodes(8), nfaces(6), nedges(12);
+  AmanziGeometry::Point xv(d), yv(d);
+  Entity_ID_List nodeids, faces;
+  AmanziGeometry::Point_List new_positions, final_positions;
+
+  // -- deformation function
+  int order(1);
+  VectorPolynomial u(d, d); 
+  for (int i = 0; i < d; ++i) {
+    u[i].Reshape(d, order, true);
+    u[i](0, 0) = 1.0 + i;
+    u[i](1, 0) = 2.0 - i;
+    u[i](1, 1) = 3.0;
+    u[i](1, 2) = 4.0 + 2 * i;
+  }
+  u *= 0.05;
+
+  for (int v = 0; v < nnodes; ++v) {
+    mesh1->node_get_coordinates(v, &xv);
+
+    for (int i = 0; i < d; ++i) 
+      yv[i] = xv[i] + u[i].Value(xv);
+
+    nodeids.push_back(v);
+    new_positions.push_back(yv);
+  }
+  mesh1->deform(nodeids, new_positions, false, &final_positions);
+
+  // velocity calculation
+  // -- on edges
+  Teuchos::ParameterList plist;
+  plist.set<std::string>("method", "Lagrange serendipity")
+       .set<int>("method order", order)
+       .set<std::string>("projector", "H1");
+  auto maps = std::make_shared<MeshMaps_VEM>(mesh0, mesh1, plist);
+
+  std::vector<VectorPolynomial> ve(nedges); 
+  for (int n = 0; n < nedges; ++n) {
+    maps->VelocityEdge(n, ve[n]);
+  }
+
+  // -- on faces
+  std::vector<VectorPolynomial> vf(nfaces); 
+  for (int n = 0; n < nfaces; ++n) {
+    maps->VelocityFace(n, vf[n]);
+  }
+
+  // -- in cell
+  VectorPolynomial vc;
+  maps->VelocityCell(0, ve, vf, vc);
+  vc.ChangeOrigin(AmanziGeometry::Point(3));
+
+  vc -= u;
+  CHECK_CLOSE(vc.NormInf(), 0.0, 1e-12);
+}
+
 

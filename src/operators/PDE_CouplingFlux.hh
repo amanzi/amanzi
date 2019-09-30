@@ -23,7 +23,6 @@
 #include "BilinearForm.hh"
 #include "Polynomial.hh"
 #include "Tensor.hh"
-#include "VectorPolynomial.hh"
 #include "WhetStoneDefs.hh"
 
 // Operators

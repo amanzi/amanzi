@@ -29,7 +29,7 @@
 #include "BilinearForm.hh"
 #include "Polynomial.hh"
 #include "Tensor.hh"
-#include "VectorPolynomial.hh"
+#include "VectorObjects.hh"
 #include "WhetStoneDefs.hh"
 
 // Operators
@@ -41,12 +41,14 @@ namespace Operators {
 class PDE_Abstract : public PDE_HelperDiscretization {
  public:
   PDE_Abstract(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op) :
-      PDE_HelperDiscretization(global_op) {
+      PDE_HelperDiscretization(global_op),
+      static_matrices_initialized_(false) {
     Init_(plist);
   }
 
   PDE_Abstract(Teuchos::ParameterList& plist, Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      PDE_HelperDiscretization(mesh) {
+      PDE_HelperDiscretization(mesh),
+      static_matrices_initialized_(false) {
     global_op_ = Teuchos::null;
     Init_(plist);
   }
@@ -57,11 +59,17 @@ class PDE_Abstract : public PDE_HelperDiscretization {
   using PDE_HelperDiscretization::UpdateMatrices;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                               const Teuchos::Ptr<const CompositeVector>& p) override;
-  
+  // -- new interface for pre-computed data  
+  void UpdateMatrices(double t);
+
   // -- setup
-  void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) { K_ = K; }
-  void SetupPoly(const Teuchos::RCP<const std::vector<WhetStone::Polynomial> >& Kpoly) { Kpoly_ = Kpoly; }
-  void SetupPolyVector(const Teuchos::RCP<const std::vector<WhetStone::VectorPolynomial> >& Kvec) { Kvec_ = Kvec; }
+  void SetupTensor(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) { K_ = K; }
+  void SetupPoly(const Teuchos::RCP<const std::vector<WhetStone::Polynomial> >& K) { Kpoly_ = K; }
+  void SetupPolyVector(const Teuchos::RCP<const std::vector<WhetStone::VectorPolynomial> >& K) { Kvec_ = K; }
+  void Setup(const Teuchos::RCP<const std::vector<WhetStone::VectorSpaceTimePolynomial> >& K, bool reset) {
+    Kvec_st_ = K;
+    if (!static_matrices_initialized_ || reset) CreateStaticMatrices_();
+  }
 
   // optional calculation of flux from potential p
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
@@ -71,18 +79,23 @@ class PDE_Abstract : public PDE_HelperDiscretization {
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;
   Teuchos::RCP<const std::vector<WhetStone::Polynomial> > Kpoly_;
   Teuchos::RCP<const std::vector<WhetStone::VectorPolynomial> > Kvec_;
+  Teuchos::RCP<const std::vector<WhetStone::VectorSpaceTimePolynomial> > Kvec_st_;
 
   Schema global_schema_row_, global_schema_col_;
   Schema local_schema_col_, local_schema_row_;
 
  private:
   void Init_(Teuchos::ParameterList& plist);
+  void CreateStaticMatrices_();
 
  private:
   std::string matrix_;
   bool grad_on_test_;
 
   Teuchos::RCP<WhetStone::BilinearForm> mfd_;
+
+  bool static_matrices_initialized_;
+  std::vector<std::vector<WhetStone::DenseMatrix> > static_matrices_;
 };
 
 }  // namespace Operators

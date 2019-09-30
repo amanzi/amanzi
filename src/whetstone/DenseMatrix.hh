@@ -68,6 +68,7 @@ class DenseMatrix {
     return *this;
   }
 
+  // ring algebra for matrices
   DenseMatrix& operator*=(double val) {
     for (int i = 0; i < m_ * n_; i++) data_[i] *= val;
     return *this;
@@ -87,6 +88,20 @@ class DenseMatrix {
     for (int i = 0; i < m_ * n_; i++) data_[i] -= A.data_[i];
     return *this;
   }
+
+  friend DenseMatrix operator*(const DenseMatrix& A, double val) {
+    DenseMatrix tmp(A);
+    return tmp *= val;
+  }
+
+  friend DenseMatrix operator*(double val, const DenseMatrix& A) {
+    DenseMatrix tmp(A);
+    return tmp *= val;
+  }
+
+  friend DenseMatrix operator+(const DenseMatrix& A, const DenseMatrix& B);
+  friend DenseMatrix operator-(const DenseMatrix& A, const DenseMatrix& B);
+  friend DenseMatrix operator*(const DenseMatrix& A, const DenseMatrix& B);
 
   // calculates either A * B to A^T * B
   int Multiply(const DenseMatrix& A, const DenseMatrix& B, bool transposeA);
@@ -149,8 +164,11 @@ class DenseMatrix {
   }
 
   // Second level routines
-  // -- submatrix in rows [ib, ie) and colums [jb, je) 
+  // -- submatrix in rows [ib, ie) and colums [jb, je)
   DenseMatrix SubMatrix(int ib, int ie, int jb, int je);
+  // -- insert submatrix of B at position (is, js)
+  void InsertSubMatrix(const DenseMatrix& B,int ib, int ie, int jb, int je,
+                       int is, int js);
  
   // -- transpose creates new matrix
   void Transpose(const DenseMatrix& A);
@@ -160,6 +178,7 @@ class DenseMatrix {
   // -- inversion is applicable for square matrices only
   int Inverse();
   int InverseSPD();
+  int InverseMoorePenrose();
   int NullSpace(DenseMatrix& D);
   double Det();  // limited capabilities
 
@@ -191,10 +210,15 @@ inline bool operator!=(const DenseMatrix& A, const DenseMatrix& B) {
 }
 
 
-inline void PrintMatrix(const DenseMatrix& A, const char* format = "%12.5f") {
+inline void PrintMatrix(const DenseMatrix& A, const char* format = "%12.5f", int mmax = 0) {
   int m = A.NumRows();
   int n = A.NumCols();
   
+  if (mmax > 0) {
+    m = std::min(mmax, m);
+    n = std::min(mmax, n);
+  }
+
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < n; j++) printf(format, A(i, j));
     printf("\n");

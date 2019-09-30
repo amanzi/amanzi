@@ -23,7 +23,7 @@
 #define AMANZI_OPERATOR_ANALYTIC_00_HH_
 
 #include "Polynomial.hh"
-#include "VectorPolynomial.hh"
+#include "VectorObjects.hh"
 
 #include "AnalyticBase.hh"
 
@@ -70,7 +70,7 @@ class Analytic00 : public AnalyticBase {
     return K;
   }
 
-  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) const { 
     return poly_.Value(p);
   }
 

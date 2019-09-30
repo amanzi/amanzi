@@ -27,6 +27,8 @@ namespace Operators {
 ****************************************************************** */
 void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
 {
+  Errors::Message msg;
+
   // parse parameters
   // -- discretization details
   matrix_ = plist.get<std::string>("matrix type");
@@ -45,15 +47,21 @@ void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
     domain = range;
   }
   else {
-    Errors::Message msg;
     msg << "Schema mismatch for abstract operator.\n" 
         << "  Use \"schema\" for a square operator.\n"
         << "  Use \"schema range\" and \"schema domain\" for a general operator.\n";
     Exceptions::amanzi_throw(msg);
   }
 
-  // discretization methods
+  // compatibility of two schemas
   auto base = global_schema_row_.StringToKind(domain.get<std::string>("base"));
+  auto tmp = global_schema_col_.StringToKind(domain.get<std::string>("base"));
+  if (tmp != base) {
+    msg << "Schema's base mismatch for abstract operator.\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
+  // discretization method:
   auto mfd_domain = WhetStone::BilinearFormFactory::Create(domain, mesh_);
   Teuchos::RCP<WhetStone::BilinearForm> mfd_range;
   if (!symmetric) 
@@ -108,10 +116,7 @@ void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                                   const Teuchos::Ptr<const CompositeVector>& p)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
-  std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
-
-  int dir, d(mesh_->space_dimension());
-  AmanziMesh::Entity_ID_List nodes;
+  int d(mesh_->space_dimension());
 
   // identify type of coefficient
   std::string coef("constant");
@@ -182,6 +187,63 @@ void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
         << " and coef=" << coef << "\n";
     Exceptions::amanzi_throw(msg);
   }
+}
+
+
+/* ******************************************************************
+* Populate containers of elemental matrices using MFD factory.
+****************************************************************** */
+void PDE_Abstract::UpdateMatrices(double t) 
+{
+  // verify type of coefficient
+  AMANZI_ASSERT(Kvec_st_.get());
+
+  std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
+
+  if (matrix_ == "advection") {
+    for (int c = 0; c < ncells_owned; ++c) {
+      double tmp(t);
+      int size = static_matrices_[c].size();
+
+      matrix[c] = static_matrices_[c][0];
+      for (int i = 1; i < size; ++i) {
+        matrix[c] += tmp * static_matrices_[c][i]; 
+        tmp *= t;
+      }
+    }
+  } else {
+    Errors::Message msg;
+    msg << "Unsupported value of matrix=" << matrix_ << "\n";
+    Exceptions::amanzi_throw(msg);
+  }
+}
+
+
+/* *******************************************************************
+* Space-time coefficients can be pre-processed.
+******************************************************************* */
+void PDE_Abstract::CreateStaticMatrices_()
+{
+  AMANZI_ASSERT(matrix_ == "advection");
+
+  int d(mesh_->space_dimension());
+  WhetStone::DenseMatrix Acell;
+  WhetStone::VectorPolynomial poly(d, d, 0);
+
+  static_matrices_.resize(ncells_owned);
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    int size = (*Kvec_st_)[c][0].size();
+    static_matrices_[c].clear();
+ 
+    for (int i = 0; i < size; ++i) {
+      for (int k = 0; k < d; ++k) poly[k] = (*Kvec_st_)[c][k][i];
+      mfd_->AdvectionMatrix(c, poly, Acell, grad_on_test_);
+      static_matrices_[c].push_back(Acell);
+    }
+  }
+
+  static_matrices_initialized_ = true;
 }
 
 }  // namespace Operators

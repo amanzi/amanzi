@@ -112,6 +112,9 @@ inline bool operator!=(const Tensor& T1, const Tensor& T2) {
 void TensorToVector(const Tensor& T, DenseVector& v);
 void VectorToTensor(const DenseVector& v, Tensor& T);
 
+// -- rotation about 3D axis given by unit vector u
+Tensor RotationMatrix90cw(const AmanziGeometry::Point& u);
+
 }  // namespace WhetStone
 }  // namespace Amanzi
 

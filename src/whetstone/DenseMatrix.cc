@@ -147,6 +147,80 @@ double DenseMatrix::Trace()
 
 
 /* ******************************************************************
+* Ring algebra
+****************************************************************** */
+DenseMatrix operator+(const DenseMatrix& A, const DenseMatrix& B)
+{
+  int m = A.NumRows();
+  int n = A.NumCols();
+  AMANZI_ASSERT(m == B.NumRows() && n == B.NumCols()); 
+
+  DenseMatrix AB(m, n);
+  
+  const double* dataA = A.Values();
+  const double* dataB = B.Values();
+  double* dataAB = AB.Values();
+
+  for (int i = 0; i < m * n; ++i) {
+    *dataAB = *dataA + *dataB;
+    dataA++;
+    dataB++;
+    dataAB++;
+  }
+  return AB;
+}
+
+
+DenseMatrix operator-(const DenseMatrix& A, const DenseMatrix& B)
+{
+  int m = A.NumRows();
+  int n = A.NumCols();
+  AMANZI_ASSERT(m == B.NumRows() && n == B.NumCols()); 
+
+  DenseMatrix AB(m, n);
+  
+  const double* dataA = A.Values();
+  const double* dataB = B.Values();
+  double* dataAB = AB.Values();
+
+  for (int i = 0; i < m * n; ++i) {
+    *dataAB = *dataA - *dataB;
+    dataA++;
+    dataB++;
+    dataAB++;
+  }
+  return AB;
+}
+
+
+DenseMatrix operator*(const DenseMatrix& A, const DenseMatrix& B)
+{
+  const double* dataA = A.Values();
+  const double* dataB = B.Values();
+
+  int mrowsA = A.NumRows(), ncolsA = A.NumCols();
+  int mrowsB = B.NumRows(), ncolsB = B.NumCols();
+
+  DenseMatrix AB(mrowsA, ncolsB);
+
+  for (int i = 0; i < mrowsA; i++) {
+    const double* tmpB = dataB;
+    for (int j = 0; j < ncolsB; j++) {
+      const double* tmpA = dataA + i;
+      double s(0.0);
+      for (int k = 0; k < mrowsB; k++) {
+        s += (*tmpA) * (*tmpB);
+        tmpA += mrowsA;
+        tmpB++;
+      }
+      AB(i, j) = s;
+    }
+  } 
+  return AB;
+}
+
+
+/* ******************************************************************
 * Matrix-matrix product. The matrices are ordered by columns.
 ****************************************************************** */
 int DenseMatrix::Multiply(const DenseMatrix& A, 
@@ -298,6 +372,27 @@ DenseMatrix DenseMatrix::SubMatrix(int ib, int ie, int jb, int je)
 
 
 /* ******************************************************************
+* Second level routine: insert submatrix of B at position (is, js)
+****************************************************************** */
+void DenseMatrix::InsertSubMatrix(
+    const DenseMatrix& B, int ib, int ie, int jb, int je, int is, int js)
+{
+  int ks(js), mB(B.NumRows());
+
+  for (int j = jb; j < je; ++j) {
+    double* dataA = data_ + ks * m_ + is;
+    const double* dataB = B.Values() + j * mB + ib;
+    for (int i = ib; i < ie; ++i) {
+      *dataA = *dataB;
+      dataA++; 
+      dataB++; 
+    }
+    ks++;
+  } 
+}
+
+
+/* ******************************************************************
 * Second level routine: transpose
 ****************************************************************** */
 void DenseMatrix::Transpose(const DenseMatrix& A) 
@@ -354,7 +449,7 @@ int DenseMatrix::Inverse()
 
 
 /* ******************************************************************
-* Second level routine: inversion of symmetric poitive definite
+* Second level routine: inversion of symmetric positive definite
 ****************************************************************** */
 int DenseMatrix::InverseSPD() 
 {
@@ -399,6 +494,48 @@ int DenseMatrix::NullSpace(DenseMatrix& D)
   double* data = D.Values();
   int offset = m_ * n_;
   for (int i = 0; i < m * n; i++) data[i] = U[offset + i];
+
+  return 0;
+}
+
+
+/* ******************************************************************
+* Second level routine: calculates pseudo-inverse using Moore-Penrose
+* algorithm.
+****************************************************************** */
+int DenseMatrix::InverseMoorePenrose()
+{
+  // We can treat only square matrices.
+  if (m_ != n_) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+
+  // Allocate memory for Lapack routine.
+  int mn, lwork, info; 
+  mn = std::min(n_, m_);
+  lwork = std::max(m_ + 3 * n_, 5*n_);
+  double U[m_ * m_], V[n_ * n_], S[mn], work[lwork];
+
+  DGESVD_F77("A", "A", &m_, &n_, data_, &m_, 
+             S, U, &m_, V, &n_, work, &lwork, &info);
+
+  if (info != 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+
+  // inverse of S
+  for (int i = 0; i < mn; ++i)
+    if (fabs(S[i]) > 1e-14) S[i] = 1.0 / S[i];
+
+  // assemble preuso-inverse
+  DenseMatrix UU(m_, m_, U, WHETSTONE_DATA_ACCESS_VIEW);
+  DenseMatrix VV(n_, n_, V, WHETSTONE_DATA_ACCESS_VIEW);
+
+  for (int i = 0; i < n_; ++i) {
+    for (int j = 0; j < m_; ++j) {
+      double tmp(0.0);
+      for (int k = 0; k < m_; ++k)
+        tmp += VV(k, i) * S[k] * UU(j, k);
+
+      data_[j * m_ + i] = tmp;
+    }
+  }
 
   return 0;
 }

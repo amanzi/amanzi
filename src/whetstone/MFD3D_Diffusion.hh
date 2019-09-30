@@ -11,8 +11,8 @@
 
   The package uses the formula M = Mc + Ms, where matrix Mc is build from a 
   consistency condition (Mc N = R) and matrix Ms is build from a stability 
-  condition (Ms N = 0), to generate mass and stiffness matrices for a variety 
-  of physics packages: flow, transport, thermal, and geomechanics. 
+  condition and Ms N = 0, to generate mass and stiffness matrices for 
+  a variety of physics packages: flow, transport, thermal, and geomechanics. 
   The material properties are imbedded into the the matrix Mc. 
 
   Notation used below: M (mass), W (inverse of M), A (stiffness).
@@ -42,17 +42,17 @@ class MFD3D_Diffusion : public MFD3D,
   // constructor for backward compatibility
   MFD3D_Diffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : MFD3D(mesh),
-      InnerProduct(mesh) {};
+      DeRham_Face(mesh) {};
   MFD3D_Diffusion(const Teuchos::ParameterList& plist,
                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : MFD3D(mesh),
-      InnerProduct(mesh) {};
+      DeRham_Face(mesh) {};
   ~MFD3D_Diffusion() {};
 
   // main methods 
   // -- schema
   virtual std::vector<SchemaItem> schema() const override {
-   return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, 1));
+    return std::vector<SchemaItem>(1, std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, 1));
   }
 
   // -- default Derahm complex for the mass matrix is not used by Amanzi
@@ -106,7 +106,8 @@ class MFD3D_Diffusion : public MFD3D,
 
   // -- projectors
   //    we return linear polynomial instead of constant vector polynomial (FIXME)
-  virtual void L2Cell(int c, const std::vector<Polynomial>& vf,
+  virtual void L2Cell(int c, const std::vector<Polynomial>& ve,
+                      const std::vector<Polynomial>& vf,
                       const Polynomial* moments, Polynomial& vc) override;
 
   // utils
@@ -121,6 +122,10 @@ class MFD3D_Diffusion : public MFD3D,
   // mesh extension methods 
   // -- exterior normal
   AmanziGeometry::Point mesh_face_normal(int f, int c);
+
+ protected:
+  using MFD3D::mesh_;
+  using MFD3D::d_;
 
  private:
   static RegisteredFactory<MFD3D_Diffusion> factory_;

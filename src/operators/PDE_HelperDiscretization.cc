@@ -98,19 +98,35 @@ void PDE_HelperDiscretization::set_local_op(const Teuchos::RCP<Op>& op)
 ****************************************************************** */
 void PDE_HelperDiscretization::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
+  auto base = global_op_->schema_row().base();
+
   for (auto bc : bcs_trial_) {
+    bool missing(true);
+
     if (bc->type() == WhetStone::DOF_Type::SCALAR ||
         bc->type() == WhetStone::DOF_Type::NORMAL_COMPONENT ||
         bc->type() == WhetStone::DOF_Type::MOMENT) {
-      ApplyBCs_Cell_Scalar_(*bc, local_op_, primary, eliminate, essential_eqn);
+      if (base == AmanziMesh::CELL) {
+        ApplyBCs_Cell_Scalar_(*bc, local_op_, primary, eliminate, essential_eqn);
+        missing = false;
+      }
     } 
     else if (bc->type() == WhetStone::DOF_Type::POINT) {
-      ApplyBCs_Cell_Point_(*bc, local_op_, primary, eliminate, essential_eqn);
+      if (base == AmanziMesh::CELL) {
+        ApplyBCs_Cell_Point_(*bc, local_op_, primary, eliminate, essential_eqn);
+        missing = false;
+      } else if (base == AmanziMesh::NODE) {
+        missing = false;  // for testing
+      }
     }
     else if (bc->type() == WhetStone::DOF_Type::VECTOR) {
-      ApplyBCs_Cell_Vector_(*bc, local_op_, primary, eliminate, essential_eqn);
+      if (base == AmanziMesh::CELL) {
+        ApplyBCs_Cell_Vector_(*bc, local_op_, primary, eliminate, essential_eqn);
+        missing = false;
+      }
     }
-    else {
+
+    if (missing) {
       Errors::Message msg("PDE_HelperDiscretization: Unsupported boundary condition.\n");
       Exceptions::amanzi_throw(msg);
     }

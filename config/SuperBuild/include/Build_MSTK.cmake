@@ -7,7 +7,7 @@
 if (NOT ENABLE_XSDK)
   define_external_project_args(MSTK
                                TARGET mstk
-                               DEPENDS HDF5 NetCDF SEACAS METIS Trilinos)
+                               DEPENDS HDF5 NetCDF SEACAS METIS ParMetis Trilinos)
 else()
   define_external_project_args(MSTK
                                TARGET mstk
@@ -59,6 +59,7 @@ set(MSTK_CMAKE_CACHE_ARGS
                     -DENABLE_ZOLTAN:BOOL=TRUE
                     -DENABLE_METIS:BOOL=TRUE
                     -DMETIS_MAJOR_VER:STRING=5
+                    -DZOLTAN_NEEDS_ParMETIS:BOOL=TRUE
                     -DHDF5_DIR:PATH=${HDF5_DIR}
                     -DHDF5_INCLUDE_DIRS:PATH=${HDF5_INCLUDE_DIRS}
                     -DHDF5_LIBRARIES:LIST=${HDF5_LIBRARIES}
@@ -76,6 +77,7 @@ set(MSTK_CMAKE_CACHE_ARGS
                     -DMETIS_INCLUDE_DIR:PATH=${METIS_DIR}/include 
                     -DMetis_INCLUDE_DIRS:PATH=${METIS_DIR}/include
                     -DMETIS_INCLUDE_DIRS:PATH=${METIS_DIR}/include
+                    -DParMETIS_DIR:PATH=${METIS_DIR}
                     -DENABLE_Tests:BOOL=FALSE
                     -DINSTALL_DIR:PATH=${TPL_INSTALL_PREFIX}
                     -DINSTALL_ADD_VERSION:BOOL=FALSE)

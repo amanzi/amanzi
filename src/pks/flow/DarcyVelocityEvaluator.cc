@@ -92,7 +92,7 @@ void DarcyVelocityEvaluator::EvaluateField_(
       solution[n](0) = flux[0][g];
     }
   
-    mfd.L2Cell(c, solution, NULL, gradient);
+    mfd.L2Cell(c, solution, solution, NULL, gradient);
     for (int i = 0; i < dim; i++) result_c[i][c] = -gradient(i + 1);
   }
 }

@@ -34,7 +34,7 @@
 #include "Polynomial.hh"
 #include "PolynomialOnMesh.hh"
 #include "Tensor.hh"
-#include "VectorPolynomial.hh"
+#include "VectorObjects.hh"
 #include "WhetStoneDefs.hh"
 
 namespace Amanzi {
@@ -44,7 +44,8 @@ class Polynomial;
 
 class DG_Modal : public BilinearForm {
  public:
-  DG_Modal(const Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+  DG_Modal(const Teuchos::ParameterList& plist,
+           const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~DG_Modal() {};
 
   // basic member functions
@@ -81,7 +82,8 @@ class DG_Modal : public BilinearForm {
   virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A) override;
 
   // -- advection matrices
-  virtual int AdvectionMatrix(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test) override {
+  virtual int AdvectionMatrix(int c, const VectorPolynomial& uc,
+                              DenseMatrix& A, bool grad_on_test) override {
     int ok;
     if (uc.size() == d_) {
       ok = AdvectionMatrixPoly_(c, uc, A, grad_on_test);
@@ -92,7 +94,8 @@ class DG_Modal : public BilinearForm {
   }
 
   // -- flux matrices
-  int FluxMatrix(int f, const Polynomial& uf, DenseMatrix& A, bool upwind, bool jump_on_test);
+  //    returns point flux value (u.n) in the last parameter
+  int FluxMatrix(int f, const Polynomial& uf, DenseMatrix& A, bool upwind, bool jump_on_test, double* flux);
   int FluxMatrixRusanov(int f, const VectorPolynomial& uc1, const VectorPolynomial& uc2,
                         const Polynomial& uf, DenseMatrix& A);
   int FluxMatrixGaussPoints(int f, const Polynomial& uf, DenseMatrix& A, bool upwind, bool jump_on_test);
@@ -112,7 +115,7 @@ class DG_Modal : public BilinearForm {
   int order() { return order_; }
 
   // -- access
-  const Basis& cell_basis(int c) const { return *basis_[c]; }
+  const Basis<AmanziMesh::Mesh>& cell_basis(int c) const { return *basis_[c]; }
   Polynomial& monomial_integrals(int c) { return monomial_integrals_[c]; }
 
  private:
@@ -123,12 +126,10 @@ class DG_Modal : public BilinearForm {
   int AdvectionMatrixPiecewisePoly_(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test);
 
  private:
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  NumericalIntegration numi_;
-  int order_, d_;
+  NumericalIntegration<AmanziMesh::Mesh> numi_;
 
   std::vector<Polynomial> monomial_integrals_;  // integrals of non-normalized monomials
-  std::vector<std::shared_ptr<Basis> > basis_;
+  std::vector<std::shared_ptr<Basis<AmanziMesh::Mesh> > > basis_;
 
   static RegisteredFactory<DG_Modal> factory_;
 };

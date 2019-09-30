@@ -74,6 +74,7 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
   double K_default_;
 
   Teuchos::RCP<WhetStone::BilinearForm> mfd_;
+  AmanziMesh::Entity_kind base_;
 
   // operator and schemas
   Schema global_schema_col_, global_schema_row_;

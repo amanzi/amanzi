@@ -268,9 +268,9 @@ int MFD3D_Electromagnetics::StiffnessMatrix(
 
 
 /* ******************************************************************
-* Stiffness matrix: the algorithm based on new 
+* Stiffness matrix: the algorithm based on new consistency condition
 ****************************************************************** */
-int MFD3D_Electromagnetics::StiffnessMatrixGeneralized(
+int MFD3D_Electromagnetics::StiffnessMatrix_GradCorrection(
     int c, const Tensor& T, DenseMatrix& A)
 {
   DenseMatrix N;
@@ -286,7 +286,7 @@ int MFD3D_Electromagnetics::StiffnessMatrixGeneralized(
 
 
 /* ******************************************************************
-* Stiffness matrix: the algorithm based on new 
+* Modify the stability space by extending matrix N.
 ****************************************************************** */
 void MFD3D_Electromagnetics::AddGradientToProjector_(int c, DenseMatrix& N) 
 {

@@ -19,6 +19,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <iomanip>
+#include <vector>
 
 #include "lapack.hh"
 
@@ -28,28 +29,10 @@ namespace WhetStone {
 class DenseVector {
  public:
   DenseVector() : m_(0), mem_(0), data_(NULL) {};
-
-  explicit DenseVector(int mrow) : m_(mrow), mem_(mrow) {
-    data_ = new double[mem_];
-  }
-
-  DenseVector(int mrow, double* data) {
-    m_ = mrow;
-    mem_ = mrow;
-    data_ = new double[mem_]; 
-    for (int i = 0; i < m_; i++) data_[i] = data[i];
-  }
-
-  DenseVector(const DenseVector& B) {
-    m_ = B.NumRows();
-    mem_ = m_;
-    data_ = NULL;
-    if (m_ > 0) {
-      data_ = new double[m_];
-      const double* dataB = B.Values();
-      for (int i = 0; i < m_; i++) data_[i] = dataB[i];
-    }
-  }
+  explicit DenseVector(int mrow);
+  DenseVector(int mrow, double* data);
+  DenseVector(const DenseVector& B);
+  DenseVector(const std::vector<double>& B);
 
   ~DenseVector() { if (data_ != NULL) { delete[] data_; } }
 
@@ -63,6 +46,10 @@ class DenseVector {
   void PutScalar(double val) {
     for (int i = 0; i < m_; i++) data_[i] = val;
   }
+
+  // -- the size of the vector is not changed. For a short
+  //    vector v, remaining data are initialized to val
+  void PutVector(const DenseVector& v, double val);
 
   // -- access to components
   double& operator()(int i) { return data_[i]; }
@@ -193,6 +180,18 @@ class DenseVector {
   int m_, mem_;
   double* data_;                       
 };
+
+
+// non-member functions
+// find rows with the maximum value
+inline int VectorMaxValuePosition(const DenseVector& v) {
+  int imax(0);
+  const double* data = v.Values();
+  for (int i = 1; i < v.NumRows(); ++i) {
+    if (data[imax] < data[i]) imax = i;
+  }
+  return imax;
+}
 
 }  // namespace WhetStone
 }  // namespace Amanzi

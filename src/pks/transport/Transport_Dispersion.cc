@@ -51,7 +51,7 @@ void Transport_PK::CalculateDispersionTensor_(
       flux[n].Reshape(dim, 0);
       flux[n](0) = darcy_flux[0][faces[n]];
     }
-    mfd3d.L2Cell(c, flux, NULL, poly);
+    mfd3d.L2Cell(c, flux, flux, NULL, poly);
 
     for (int k = 0; k < dim; ++k) velocity[k] = poly(k + 1);
     D_[c] = mdm_->second[(*mdm_->first)[c]]->mech_dispersion(

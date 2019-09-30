@@ -103,6 +103,29 @@ void PDE_Reaction::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
 }
 
 
+/* ******************************************************************
+* Populate containers of elemental matrices using MFD factory.
+****************************************************************** */
+void PDE_Reaction::UpdateMatrices(double t) 
+{
+  // verify type of coefficient
+  AMANZI_ASSERT(poly_st_.get());
+
+  std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    double tmp(t);
+    int size = static_matrices_[c].size();
+
+    matrix[c] = static_matrices_[c][0];
+    for (int i = 1; i < size; ++i) {
+      matrix[c] += tmp * static_matrices_[c][i]; 
+      tmp *= t;
+    }
+  }
+}
+
+
 /* *******************************************************************
 * Apply boundary condition to the local matrices
 ******************************************************************* */
@@ -110,6 +133,30 @@ void PDE_Reaction::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
   for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
   }
+}
+
+
+/* *******************************************************************
+* Space-time coefficients can be pre-processed.
+******************************************************************* */
+void PDE_Reaction::CreateStaticMatrices_()
+{
+  int d(mesh_->space_dimension());
+  WhetStone::DenseMatrix Mcell;
+
+  static_matrices_.resize(ncells_owned);
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    int size = (*poly_st_)[c].size();
+    static_matrices_[c].clear();
+ 
+    for (int i = 0; i < size; ++i) {
+      mfd_->MassMatrix(c, (*poly_st_)[c][i], Mcell);
+      static_matrices_[c].push_back(Mcell);
+    }
+  }
+
+  static_matrices_initialized_ = true;
 }
 
 }  // namespace Operators

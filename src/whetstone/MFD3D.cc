@@ -28,7 +28,7 @@ namespace WhetStone {
 * Constructors
 ****************************************************************** */
 MFD3D::MFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-  : InnerProduct(mesh)
+  : BilinearForm(mesh)
 {
   simplex_functional_ = 0.0;
   simplex_num_itrs_ = -1;

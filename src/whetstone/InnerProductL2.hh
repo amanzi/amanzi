@@ -22,8 +22,6 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class Polynomial;
-
 class InnerProductL2 : public virtual InnerProduct { 
  public:
   InnerProductL2() {};
@@ -43,17 +41,6 @@ class InnerProductL2 : public virtual InnerProduct {
     MassMatrix(c, T, W);
     W.Inverse();
     return WHETSTONE_ELEMENTAL_MATRIX_OK;
-  }
-
-  // L2 projectors, moments is the optional argument
-  virtual void L2Cell(int c, const std::vector<Polynomial>& vf,
-                      const Polynomial* moments, Polynomial& vc) {
-    Errors::Message msg("L2 projector is not supported/implemented for this space.");
-    Exceptions::amanzi_throw(msg);
-  }
-  virtual void L2Cell(int c, const DenseVector& dofs, Polynomial& vc) {
-    Errors::Message msg("L2 projector (from DOFs) is not supported/implemented for this space.");
-    Exceptions::amanzi_throw(msg);
   }
 };
 

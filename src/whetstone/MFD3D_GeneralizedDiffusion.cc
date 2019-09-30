@@ -14,7 +14,7 @@
 
 #include "Mesh.hh"
 
-#include "MFD3D_Generalized_Diffusion.hh"
+#include "MFD3D_GeneralizedDiffusion.hh"
 #include "WhetStoneDefs.hh"
 
 namespace Amanzi {
@@ -23,7 +23,7 @@ namespace WhetStone {
 /* ******************************************************************
 * Schema.
 ****************************************************************** */
-std::vector<SchemaItem> MFD3D_Generalized_Diffusion::schema() const
+std::vector<SchemaItem> MFD3D_GeneralizedDiffusion::schema() const
 {
   std::vector<SchemaItem> items;
   items.push_back(std::make_tuple(AmanziMesh::FACE, DOF_Type::SCALAR, d_));
@@ -35,7 +35,7 @@ std::vector<SchemaItem> MFD3D_Generalized_Diffusion::schema() const
 /* ******************************************************************
 * Consistency condition for inner product on a generized polyhedron.
 ****************************************************************** */
-int MFD3D_Generalized_Diffusion::L2consistency(
+int MFD3D_GeneralizedDiffusion::L2consistency(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
   Entity_ID_List faces, nodes;
@@ -96,7 +96,7 @@ int MFD3D_Generalized_Diffusion::L2consistency(
 /* ******************************************************************
 * Mass matrix for genelized polyhedron
 ****************************************************************** */
-int MFD3D_Generalized_Diffusion::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
+int MFD3D_GeneralizedDiffusion::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 {
   DenseMatrix N;
 
@@ -115,7 +115,7 @@ int MFD3D_Generalized_Diffusion::MassMatrix(int c, const Tensor& K, DenseMatrix&
 * Consistency condition for inverse of inner product on a generized 
 * polyhedron.
 ****************************************************************** */
-int MFD3D_Generalized_Diffusion::L2consistencyInverse(
+int MFD3D_GeneralizedDiffusion::L2consistencyInverse(
     int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry)
 {
   Entity_ID_List faces, nodes;
@@ -173,7 +173,7 @@ int MFD3D_Generalized_Diffusion::L2consistencyInverse(
 /* ******************************************************************
 * Inverse mass matrix for generalized polyhedron
 ****************************************************************** */
-int MFD3D_Generalized_Diffusion::MassMatrixInverse(
+int MFD3D_GeneralizedDiffusion::MassMatrixInverse(
     int c, const Tensor& K, DenseMatrix& W)
 {
   DenseMatrix R;
@@ -185,10 +185,11 @@ int MFD3D_Generalized_Diffusion::MassMatrixInverse(
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
+
 /* ******************************************************************
 * Stiffness matrix is calculated by a hybridization algorithm.
 ****************************************************************** */
-int MFD3D_Generalized_Diffusion::StiffnessMatrix(
+int MFD3D_GeneralizedDiffusion::StiffnessMatrix(
     int c, const Tensor& K, DenseMatrix& A)
 {
   DenseMatrix M;
@@ -242,7 +243,7 @@ int MFD3D_Generalized_Diffusion::StiffnessMatrix(
 /* ******************************************************************
 * Divergence matrix.
 ****************************************************************** */
-int MFD3D_Generalized_Diffusion::DivergenceMatrix(int c, DenseMatrix& A)
+int MFD3D_GeneralizedDiffusion::DivergenceMatrix(int c, DenseMatrix& A)
 {
   Entity_ID_List faces;
   std::vector<int> dirs;
@@ -266,7 +267,7 @@ int MFD3D_Generalized_Diffusion::DivergenceMatrix(int c, DenseMatrix& A)
 /* ******************************************************************
 * Geometry of a curved face
 ****************************************************************** */
-void MFD3D_Generalized_Diffusion::CurvedFaceGeometry_(
+void MFD3D_GeneralizedDiffusion::CurvedFaceGeometry_(
     int f, int dirs, std::vector<AmanziGeometry::Point>& vv, 
     std::vector<AmanziGeometry::Point>& xm) 
 {
