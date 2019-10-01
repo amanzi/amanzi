@@ -850,7 +850,7 @@ std::map<Entity_ID, int> MeshExtractedManifold::EnforceOneLayerOfGhosts_(
     fullset = *setents;
   }
 
-  // initia set of entities is defined by master parent faces and is marked as 
+  // initial set of entities is defined by master parent faces and is marked as 
   // potential master entities
   Entity_ID_List nodes, edges, faces;
   std::vector<int> dirs;
@@ -873,7 +873,7 @@ std::map<Entity_ID, int> MeshExtractedManifold::EnforceOneLayerOfGhosts_(
   }
 
   // ghosts entities are defined by neighboor faces of master faces. New
-  // entities are marked as ghosts
+  // entities are marked as ghosts. Old entities are marked as undefined.
   Entity_ID n0, n1;
 
   nodeset = nodeset0;
@@ -914,25 +914,31 @@ std::map<Entity_ID, int> MeshExtractedManifold::EnforceOneLayerOfGhosts_(
   }
 
   // resolve master+ghost entities
+  std::set<Entity_ID> auxset;
+  for (int n = 0; n < fullset.size(); ++n) auxset.insert(fullset[n]);
+
   if (kind == FACE) {
     return faceset;
   } else if (kind == EDGE) {
     const auto& fmap = parent_mesh_->face_map(true);
 
     int nowned = parent_mesh_->num_entities(FACE, Parallel_type::OWNED);
-    int gidmax = fmap.MaxMyGID();
+    int gidmax = fmap.MaxAllGID();
 
     for (auto it = edgeset.begin(); it != edgeset.end(); ++it) {
       if (it->second == MASTER + GHOST) {
         parent_mesh_->edge_get_faces(it->first, Parallel_type::ALL, &faces);
         int nfaces = faces.size();
 
+        // compare maximum global ids for owned and all faces living on manifold
         Entity_ID gid_owned_min(gidmax + 1), gid_wghost_min(gidmax + 1);
         for (int n = 0; n < nfaces; ++n) {
           Entity_ID f = faces[n];
-          gid_wghost_min = std::min(gid_wghost_min, fmap.GID(f));
-          if (f < nowned)
-            gid_owned_min = std::min(gid_owned_min, fmap.GID(f));
+          if (auxset.find(f) != auxset.end()) {
+            gid_wghost_min = std::min(gid_wghost_min, fmap.GID(f));
+            if (f < nowned)
+              gid_owned_min = std::min(gid_owned_min, fmap.GID(f));
+          }
         }
         it->second = (gid_wghost_min == gid_owned_min) ? MASTER : GHOST;
       }
@@ -942,21 +948,24 @@ std::map<Entity_ID, int> MeshExtractedManifold::EnforceOneLayerOfGhosts_(
     const auto& vmap = parent_mesh_->node_map(true);
 
     int nowned = parent_mesh_->num_entities(NODE, Parallel_type::OWNED);
-    int gidmax = vmap.MaxMyGID();
+    int gidmax = vmap.MaxAllGID();
 
     for (auto it = nodeset.begin(); it != nodeset.end(); ++it) {
       if (it->second == MASTER + GHOST) {
         parent_mesh_->node_get_faces(it->first, Parallel_type::ALL, &faces);
         int nfaces = faces.size();
 
+        // compare maximum global ids for owned and all faces living on manifold
         Entity_ID gid_owned_min(gidmax + 1), gid_wghost_min(gidmax + 1);
         for (int n = 0; n < nfaces; ++n) {
           Entity_ID f = faces[n];
-          gid_wghost_min = std::min(gid_wghost_min, vmap.GID(f));
-          if (f < nowned)
-            gid_owned_min = std::min(gid_owned_min, vmap.GID(f));
+          if (auxset.find(f) != auxset.end()) {
+            gid_wghost_min = std::min(gid_wghost_min, vmap.GID(f));
+            if (f < nowned)
+              gid_owned_min = std::min(gid_owned_min, vmap.GID(f));
+          }
         }
-         it->second = (gid_wghost_min == gid_owned_min) ? MASTER : GHOST;
+        it->second = (gid_wghost_min == gid_owned_min) ? MASTER : GHOST;
       }
     }
     return nodeset;
