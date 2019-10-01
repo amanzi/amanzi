@@ -40,7 +40,7 @@
 
 //#include "chemistry_amanzi_registration.hh"
 //#include "pks_chemistry_registration.hh"
-#include "mpc_pks_registration.hh"
+//#include "mpc_pks_registration.hh"
 #include "mpc_registration.hh"
 
 #include "deformation_registration.hh"

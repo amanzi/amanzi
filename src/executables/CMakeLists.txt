@@ -35,6 +35,10 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/chemistry/chemistry_amanzi)
 include_directories(${ATS_SOURCE_DIR}/src/coordinator)
 
 
+link_directories(/nh/u/dasvyat/Coastal/fates/install/lib/)
+link_directories(/nh/u/dasvyat/Coastal/ParallelIO/install/lib/)
+link_directories(/nh/u/dasvyat/Coastal/pnetcdf-1.11.2/install/lib)
+
 include_evaluators_directories(LISTNAME ATS_POROSITY_EVAL_INCLUDES)
 include_evaluators_directories(LISTNAME CONSTITUTIVE_RELATIONS_EOS_EVALUATORS_INCLUDES)
 include_evaluators_directories(LISTNAME CONSTITUTIVE_RELATIONS_SURFACE_SUBSURFACE_FLUXES_EVALUATORS_INCLUDES)
@@ -67,7 +71,6 @@ include_evaluators_directories(LISTNAME TRANSPORT_AMANZI_REG_INCLUDES)
 #add_executable(ats main.cc plant_1D_mesh.cc ats_mesh_factory.cc simulation_driver.cc )
 add_executable(ats main.cc ats_mesh_factory.cc simulation_driver.cc )
 
-
 set(ATS_LIBS
 		     coordinator
                      mpc
@@ -95,6 +98,7 @@ set(ATS_LIBS
                       pk_volumetric_deformation
                       pk_surface_balance_SEB
                       pk_BGC
+                      pk_veg
                       pk_bases
                       #deform_relations_porosity
                       energy_relations
@@ -137,7 +141,12 @@ set(AMANZI_LIBS
                       amanzi_dbg                      
 )
 
-target_link_libraries(ats ${ATS_LIBS} ${AMANZI_LIBS})
+set(FATES_LIBS -lfates_interface -lfates -lshared  -lpiof -lpioc -lpnetcdf -lgptl)
+
+
+link_directories(ats /nh/u/dasvyat/Coastal/fates/install/lib/)
+
+target_link_libraries(ats  ${ATS_LIBS} ${FATES_LIBS} ${AMANZI_LIBS})
 install(TARGETS ats DESTINATION bin)
 
 
