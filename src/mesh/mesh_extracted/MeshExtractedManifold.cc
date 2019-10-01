@@ -945,10 +945,10 @@ std::map<Entity_ID, int> MeshExtractedManifold::EnforceOneLayerOfGhosts_(
     }
     return edgeset;
   } else if (kind == NODE) {
-    const auto& vmap = parent_mesh_->node_map(true);
+    const auto& fmap = parent_mesh_->face_map(true);
 
-    int nowned = parent_mesh_->num_entities(NODE, Parallel_type::OWNED);
-    int gidmax = vmap.MaxAllGID();
+    int nowned = parent_mesh_->num_entities(FACE, Parallel_type::OWNED);
+    int gidmax = fmap.MaxAllGID();
 
     for (auto it = nodeset.begin(); it != nodeset.end(); ++it) {
       if (it->second == MASTER + GHOST) {
@@ -960,9 +960,9 @@ std::map<Entity_ID, int> MeshExtractedManifold::EnforceOneLayerOfGhosts_(
         for (int n = 0; n < nfaces; ++n) {
           Entity_ID f = faces[n];
           if (auxset.find(f) != auxset.end()) {
-            gid_wghost_min = std::min(gid_wghost_min, vmap.GID(f));
+            gid_wghost_min = std::min(gid_wghost_min, fmap.GID(f));
             if (f < nowned)
-              gid_owned_min = std::min(gid_owned_min, vmap.GID(f));
+              gid_owned_min = std::min(gid_owned_min, fmap.GID(f));
           }
         }
         it->second = (gid_wghost_min == gid_owned_min) ? MASTER : GHOST;
