@@ -127,7 +127,7 @@
 #   0.96.2       - update SuperLU_Dist to 3.4.0
 #                - update PETSc to 3.11.3
 #                - update PFloTran to b681066 (Sep 20, 2019)
-#                - update Alquimia to 5df9d47 (Aug 17, 2019)
+#                - update Alquimia to 1.0.6-rc
 
 include(CMakeParseArguments)
 
@@ -483,12 +483,12 @@ set(PFLOTRAN_GIT_TAG        "b68106687fd4ea421468fda130ea053d44e0262e")
 #
 set(ALQUIMIA_VERSION_MAJOR 1)
 set(ALQUIMIA_VERSION_MINOR 0)
-set(ALQUIMIA_VERSION_PATCH 5df9d47-17Aug2019)
+set(ALQUIMIA_VERSION_PATCH 6-rc)
 set(ALQUIMIA_VERSION ${ALQUIMIA_VERSION_MAJOR}.${ALQUIMIA_VERSION_MINOR}.${ALQUIMIA_VERSION_PATCH})
-set(ALQUIMIA_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(ALQUIMIA_ARCHIVE_FILE   alquimia-5df9d47-17Aug2019.tar.gz)
-set(ALQUIMIA_SAVEAS_FILE    alquimia-5df9d47-17Aug2019.tar.gz)
-set(ALQUIMIA_MD5_SUM        5722a195dc27b1e7ea5b000d772e3169)
+set(ALQUIMIA_URL_STRING     https://github.com/LBL-EESA/alquimia-dev/archive)
+set(ALQUIMIA_ARCHIVE_FILE   v${ALQUIMIA_VERSION}.tar.gz)
+set(ALQUIMIA_SAVEAS_FILE    alquimia-dev-${ALQUIMIA_VERSION}.tar.gz)
+set(ALQUIMIA_MD5_SUM        5bcf12c69c63cbd7912facc67b859af1)
 
 #
 # TPL: Silo
