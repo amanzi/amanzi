@@ -486,7 +486,7 @@ bool MeshAudit::check_face_refs_by_cells() const
     error = true;
   }
 
-  if (!bad_faces.empty()) {
+  if (!bad_faces.empty() && mesh->space_dimension() == mesh->manifold_dimension()) {
     os << "ERROR: found faces shared by more than two cells:";
     write_list(bad_faces, MAX_OUT);
     error = true;
@@ -716,7 +716,9 @@ bool MeshAudit::check_cell_to_faces_to_nodes() const
     error = true;
   }
 
-  if (!bad_cells1.empty()) {
+  // algorithms on a non-manifold use multiple normals and special continuity equations
+  // for fluxes, so that orientation does not play role. This may change in the future.
+  if (!bad_cells1.empty() && mesh->space_dimension() == mesh->manifold_dimension()) {
     os << "ERROR: bad cell_get_face_dirs values for cells:";
     write_list(bad_cells1, MAX_OUT);
     error = true;

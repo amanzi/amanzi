@@ -21,6 +21,7 @@
 #include <UnitTest++.h>
 
 // Amanzi::Mesh
+#include "MeshAudit.hh"
 #include "MeshExtractedManifold.hh"
 #ifdef HAVE_MOAB_MESH
 #include "Mesh_MOAB.hh"
@@ -31,7 +32,7 @@
 #include "Mesh_simple.hh"
 
 /* **************************************************************** */
-TEST(MESH_EXTRACTED_FRACTURES) {
+void RunTest(const std::string regname) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -43,7 +44,7 @@ TEST(MESH_EXTRACTED_FRACTURES) {
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   std::string exoname("test/mesh_extracted_fracture.exo");
-  std::string setname("fractures");
+  std::string setname(regname);
 
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
@@ -54,7 +55,7 @@ TEST(MESH_EXTRACTED_FRACTURES) {
     RCP<const Mesh> mesh3D;
     if (i == 0) {
 #ifdef HAVE_MSTK_MESH
-      std::cout << "\nMesh framework: MSTK\n";
+      std::cout << "\nMesh framework: MSTK (" << regname << ")\n";
       mesh3D = Teuchos::rcp(new Mesh_MSTK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, comm, gm, mesh_list, true, true));
       mesh3D->write_to_exodus_file(exoname);
 #endif
@@ -63,6 +64,7 @@ TEST(MESH_EXTRACTED_FRACTURES) {
       mesh3D = Teuchos::rcp(new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, comm, gm, mesh_list, true, true));
     } else if (i == 2) {
 #ifdef HAVE_MOAB_MESH
+      if (comm->NumProc() > 1) continue;
       std::cout << "\nMesh framework: MOAB\n";
       mesh3D = Teuchos::rcp(new Mesh_MOAB(exoname, comm, gm, mesh_list, true, true));
 #endif
@@ -71,17 +73,31 @@ TEST(MESH_EXTRACTED_FRACTURES) {
 
     // extract fractures mesh
     try {
-      RCP<const Mesh> mesh = Teuchos::rcp(new MeshExtractedManifold(mesh3D, setname, AmanziMesh::FACE,
-                                                                    comm, gm, plist, true, false));
+      RCP<Mesh> mesh = Teuchos::rcp(new MeshExtractedManifold(mesh3D, setname, AmanziMesh::FACE,
+                                                              comm, gm, plist, true, false));
 
       int ncells = mesh->cell_map(false).NumGlobalElements();
       int nfaces = mesh->face_map(false).NumGlobalElements();
       std::cout << "pid=" << comm->MyPID() << " cells: " << ncells 
                                            << " faces: " << nfaces << std::endl;
+
+      // verify mesh 
+      MeshAudit audit(mesh);
+      int ok = audit.Verify();
+      CHECK(ok == 0);
+
     } catch (...) {
       std::cout << "Framework failed.\n";
     }
   }
 }
 
+
+TEST(MESH_EXTRACTED_FRACTURE_NETWORK) {
+  RunTest("fractures");
+}
+
+TEST(MESH_EXTRACTED_SURFACE) {
+  RunTest("Left side");
+}
 
