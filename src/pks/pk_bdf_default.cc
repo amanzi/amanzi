@@ -110,7 +110,7 @@ void PK_BDF_Default::set_states(const Teuchos::RCP<const State>& S,
 bool PK_BDF_Default::AdvanceStep(double t_old, double t_new, bool reinit) {
   double dt = t_new -t_old;
   Teuchos::OSTab out = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_HIGH))
+  //if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "----------------------------------------------------------------" << std::endl
                << "Advancing: t0 = " << S_inter_->time()
                << " t1 = " << S_next_->time() << " h = " << dt << std::endl
@@ -118,6 +118,7 @@ bool PK_BDF_Default::AdvanceStep(double t_old, double t_new, bool reinit) {
 
   State_to_Solution(S_next_, *solution_);
 
+  
   // take a bdf timestep
   double dt_solver;
   bool fail;

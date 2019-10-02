@@ -546,8 +546,10 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
 
       Teuchos::RCP<TransportSourceFunction_Alquimia> 
           src = Teuchos::rcp(new TransportSourceFunction_Alquimia(spec, mesh_, chem_pk_, chem_engine_));
-
+      
+      Key mass_src_key=Keys::readKey(*tp_list_, domain_name_, "mass source", "mass_source");
       src->set_mol_dens_data_(mol_dens_.ptr());
+      src->set_liquid_src_data_(S->GetFieldData(mass_src_key) -> ViewComponent("cell", false).ptr());
 
       std::vector<int>& tcc_index = src->tcc_index();
       std::vector<std::string>& tcc_names = src->tcc_names();
@@ -1620,7 +1622,6 @@ void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp,
   //std::cout<<"Time "<<tp<<"\n";
   for (int m = 0; m < nsrcs; m++) {
     double t0 = tp - dtp;
-    //std::cout<<srcs_[m]->name()<<"\n";    
     srcs_[m]->Compute(t0, tp); 
 
     std::vector<int> tcc_index = srcs_[m]->tcc_index();
@@ -1628,7 +1629,7 @@ void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp,
       int c = it->first;
       std::vector<double>& values = it->second;
 
-      //      std::cout<<c<<": "<<ncells_owned<<" "<<values[0]<<"\n";
+     
       if (c >= ncells_owned) continue;
 
       for (int k = 0; k < tcc_index.size(); ++k) {
@@ -1659,16 +1660,7 @@ void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp,
     }
   }
 
-  // for (int c = 0; c < ncells_owned; c++) {
-  //   mass2 += tcc[0][c];
-  // }
-  // tmp1 = mass2;
-  // mesh_->get_comm()->SumAll(&tmp1, &mass2, 1);
-  // tmp1 = add_mass;
-  // mesh_->get_comm()->SumAll(&tmp1, &add_mass, 1);
 
-
-  // std::cout<<std::setprecision(10)<<mass1<<" "<<mass2<<" "<<add_mass<<" "<<mass2 - mass1<<"\n";
   
 }
 
@@ -1690,7 +1682,7 @@ void Transport_PK_ATS::MixingSolutesWthSources(double told, double tnew)
   const Epetra_MultiVector& water_source =
     *S_->GetFieldData(mass_source_key)->ViewComponent("cell",false);
 
-  Teuchos::RCP<const Epetra_MultiVector> nliq1, nliq1_s;
+  Teuchos::RCP<const Epetra_MultiVector> nliq1_s;
 
   if (water_source_in_meters_) {
       // External source term is in [m water / s], not in [mols / s], so a
@@ -1738,9 +1730,7 @@ void Transport_PK_ATS::MixingSolutesWthSources(double told, double tnew)
         if (num_vectors == 1) imap = 0;
 
         double tcc_src_value =  mesh_->cell_volume(c) * values[k] * (tnew - told);
-
         double consv_qty = tcc_prev_vec[imap][c]*vol_phi_ws_den + tcc_src_value;
-
 
         if (vol_phi_ws_den + add_water > water_tolerance_){
           tcc_w_src_vec[imap][c] = consv_qty/(vol_phi_ws_den + add_water);
@@ -1753,6 +1743,10 @@ void Transport_PK_ATS::MixingSolutesWthSources(double told, double tnew)
       }
     }
   }
+
+  // std::cout<<tcc_w_src_vec<<"\n";
+  // S_->WriteStatistics(vo_); 
+  // exit(0);
 
 }
 

@@ -196,7 +196,7 @@ void Coupled_ReactiveTransport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S){
 
 bool Coupled_ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit) {
 
-
+  Teuchos::OSTab tab = vo_->getOSTab();
     
   bool fail = false;
   chem_step_succeeded = false;
@@ -207,17 +207,21 @@ bool Coupled_ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, b
   Key sub_mol_den_key = Keys::getKey(subsurface_domain_key,  "molar_density_liquid");
   Key over_mol_den_key = Keys::getKey(overland_domain_key,  "molar_density_liquid");
 
+  double t_initial = S_->initial_time();
+  double t_final = S_next_->final_time(); 
 
-  // if (!storage_created){
-  //   ttc_sub_stor_ = Teuchos::rcp(new Epetra_MultiVector(*S_->GetFieldCopyData(tcc_sub_key,"subcycling")
-  //                                                       ->ViewComponent("cell", true)));
+  *vo_->os()<< "t_initial "<<t_initial<<" t_final "<<t_final<<"\n";
+   
+  // if (abs(t_old - t_initial) < 1e-12){
+  //   double dt_MPC =  t_final - t_initial;
+  //   Teuchos::RCP<Epetra_MultiVector> tcc_sub = 
+  //     S_->GetFieldCopyData(tcc_sub_key,"subcycling","state")->ViewComponent("cell", true);
+  //   Teuchos::RCP<const Epetra_MultiVector> mol_dens_sub =
+  //     S_->GetFieldData(sub_mol_den_key)->ViewComponent("cell", true);
 
-  //   ttc_over_stor_ = Teuchos::rcp(new Epetra_MultiVector(*S_->GetFieldCopyData(tcc_over_key,"subcycling")
-  //                                                        ->ViewComponent("cell", true)));
-
-  //   storage_created = true;
+  //   AdvanceChemistry(chemistry_pk_subsurface_, *mol_dens_sub,  tcc_sub,  t_initial, t_initial + 0.5*dt_MPC, reinit);    
   // }
-
+    
   // First we do a transport step.
 
   bool pk_fail = false;
@@ -229,8 +233,8 @@ bool Coupled_ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, b
     Exceptions::amanzi_throw(message);
   }
 
-  Teuchos::RCP<Teuchos::TimeMonitor> local_flow_monitor = Teuchos::rcp(new Teuchos::TimeMonitor(*chem_timer_));
-  
+  Teuchos::RCP<Teuchos::TimeMonitor> local_monitor = Teuchos::rcp(new Teuchos::TimeMonitor(*chem_timer_));
+   
   try {
     
     Teuchos::RCP<Epetra_MultiVector> tcc_sub = 
@@ -247,17 +251,26 @@ bool Coupled_ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, b
 
 
     AdvanceChemistry(chemistry_pk_subsurface_, *mol_dens_sub,  tcc_sub,  t_old, t_new, reinit);
-    AdvanceChemistry(chemistry_pk_overland_,   *mol_dens_over, tcc_over, t_old, t_new, reinit);
-                     
+    AdvanceChemistry(chemistry_pk_overland_,   *mol_dens_over, tcc_over, t_old, t_new, reinit);                    
 
-    //std::cout << *tcc_sub<<"\n";
-    //for (int c=0; c<tcc_sub->MyLength(); c++) std::cout<<(*tcc_sub)[13][c]<<"\n";
   }
   catch (const Errors::Message& chem_error) {
     fail = true;
   }
 
-  local_flow_monitor = Teuchos::null;
+  // if (abs(t_new - t_final) < 1e-12){
+  //   double dt_MPC =  t_final - t_initial;
+  //   Teuchos::RCP<Epetra_MultiVector> tcc_sub = 
+  //     S_->GetFieldCopyData(tcc_sub_key,"subcycling","state")->ViewComponent("cell", true);
+  //   Teuchos::RCP<const Epetra_MultiVector> mol_dens_sub =
+  //     S_->GetFieldData(sub_mol_den_key)->ViewComponent("cell", true);
+    
+  //   AdvanceChemistry(chemistry_pk_subsurface_, *mol_dens_sub,  tcc_sub,  t_initial + 0.5*dt_MPC, t_final, reinit);
+  // }
+
+
+  
+  local_monitor = Teuchos::null;
   
   return fail;
 };
