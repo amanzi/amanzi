@@ -1113,6 +1113,10 @@ bool MeshAudit::check_face_to_nodes_ghost_data() const
     maxnodes = fnode.size() > maxnodes ? fnode.size() : maxnodes;
   }
 
+  // parallel calls require uniformity
+  int maxnodes_tmp(maxnodes);
+  comm_->MaxAll(&maxnodes_tmp, &maxnodes, 1);
+
   Epetra_IntSerialDenseMatrix gids(nface_use,maxnodes); // no Epetra_IntMultiVector :(
   for (AmanziMesh::Entity_ID j = 0; j < nface_own; ++j) {
     mesh->face_get_nodes(j, &fnode);
@@ -1226,6 +1230,11 @@ bool MeshAudit::check_cell_to_nodes_ghost_data() const
     mesh->cell_get_nodes(j, &cnode);
     maxnodes = (cnode.size() > maxnodes) ? cnode.size() : maxnodes;
   }
+
+  // parallel calls require uniformity
+  int maxnodes_tmp(maxnodes);
+  comm_->MaxAll(&maxnodes_tmp, &maxnodes, 1);
+
   Epetra_IntSerialDenseMatrix gids(ncell_use,maxnodes); // no Epetra_IntMultiVector :(
 
   // Create a matrix of the GIDs for all owned cells.
@@ -1306,6 +1315,10 @@ bool MeshAudit::check_cell_to_faces_ghost_data() const
     mesh->cell_get_faces(j, &cface);
     maxfaces = (cface.size() > maxfaces) ? cface.size() : maxfaces;
   }
+
+  // parallel calls require uniformity
+  int maxfaces_tmp(maxfaces);
+  comm_->MaxAll(&maxfaces_tmp, &maxfaces, 1);
 
   Epetra_IntSerialDenseMatrix gids(ncell_use,maxfaces); // no Epetra_IntMultiVector :(
 
