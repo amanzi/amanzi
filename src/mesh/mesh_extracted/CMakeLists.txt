@@ -69,7 +69,7 @@ if (BUILD_TESTS)
                    SOURCE test/Main.cc test/mesh_extracted_fracture.cc
                    LINK_LIBS ${mesh_frameworks} mesh_extracted mesh_audit geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-   add_amanzi_test(mesh_extracted_fracture_3pe mesh_extracted_fracture NPROCS 2 KIND unit)
+   # add_amanzi_test(mesh_extracted_fracture_3pe mesh_extracted_fracture NPROCS 2 KIND unit)
 
 endif()
   
