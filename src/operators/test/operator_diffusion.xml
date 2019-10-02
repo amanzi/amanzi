@@ -258,6 +258,7 @@
         <Parameter name="method" type="string" value="dg modal"/>
         <Parameter name="method order" type="int" value="2"/>
         <Parameter name="dg basis" type="string" value="regularized"/>
+        <Parameter name="quadrature order" type="int" value="2"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

@@ -131,6 +131,7 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   // create source for a manufactured solution.
   CompositeVector source(cvs);
   Epetra_MultiVector& src = *source.ViewComponent("edge");
+  source.PutScalarMasterAndGhosted(0.0);
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh->cell_get_edges(c, &edges);
@@ -213,7 +214,7 @@ void CurlCurl(double c_t, int nx, double tolerance, bool initial_guess,
   }
 
   // compute electric error
-  Epetra_MultiVector& E = *solution.ViewComponent("edge", false);
+  Epetra_MultiVector& E = *solution.ViewComponent("edge", true);
   double enorm, el2_err, einf_err;
   ana.ComputeEdgeError(E, time, enorm, el2_err, einf_err);
 
@@ -233,7 +234,7 @@ TEST(CURL_CURL_LINEAR) {
 }
 
 TEST(CURL_CURL_NONLINEAR) {
-  CurlCurl<AnalyticElectromagnetics02>(1.0e-5, 0, 2e-1, false);
+  CurlCurl<AnalyticElectromagnetics02>(1.0e-1, 0, 2e-1, false);
 }
 
 TEST(CURL_CURL_TIME_DEPENDENT) {

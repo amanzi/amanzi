@@ -561,10 +561,10 @@ void Polynomial::InverseChangeCoordinates(
     tmp02 = std::fabs(det02);
     tmp12 = std::fabs(det12);
 
-    if (tmp02 > std::max(tmp01, tmp12)) {
+    if (tmp02 >= std::max(tmp01, tmp12)) {
       i1 = 2;
       det01 = det02;
-    } else if (tmp12 > std::max(tmp01, tmp02)) {
+    } else if (tmp12 >= std::max(tmp01, tmp02)) {
       i0 = 1;
       i1 = 2;
       det01 = det12;

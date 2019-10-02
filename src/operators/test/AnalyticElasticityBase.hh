@@ -39,10 +39,14 @@ class AnalyticElasticityBase {
   virtual Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
   // error calculation
-  // -- displacement
-  void ComputeNodeError(Amanzi::CompositeVector& u, double t, double& unorm, double& l2_err, double& inf_err);
+  // -- velocity or displacement
+  void VectorNodeError(Amanzi::CompositeVector& u, double t, double& unorm, double& l2_err, double& inf_err);
+  void VectorCellError(Amanzi::CompositeVector& u, double t, double& unorm, double& l2_err, double& inf_err);
   // -- pressure
-  void ComputeCellError(Amanzi::CompositeVector& p, double t, double& pnorm, double& l2_err, double& inf_err);
+  void ScalarCellError(Amanzi::CompositeVector& p, double t, double& pnorm, double& l2_err, double& inf_err);
+
+  // communications
+  void GlobalOp(std::string op, double* val, int n);
 
  protected:
   Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh_;
@@ -55,7 +59,7 @@ class AnalyticElasticityBase {
 * Error in displacement.
 ****************************************************************** */
 inline
-void AnalyticElasticityBase::ComputeNodeError(
+void AnalyticElasticityBase::VectorNodeError(
     Amanzi::CompositeVector& u, double t, double& unorm,
     double& l2_err, double& inf_err)
 {
@@ -98,15 +102,51 @@ void AnalyticElasticityBase::ComputeNodeError(
     l2_err += tmp * vol_node[0][v];
     inf_err = std::max(inf_err, sqrt(tmp));
     unorm += L22(uexact) * vol_node[0][v];
-    // std::cout << v << " uh=" << ucalc << " ex=" << uexact << std::endl;
+    // std::cout << v << " uh=" << ucalc << " ex=" << uexact << " xv=" << p << std::endl;
   }
 #ifdef HAVE_MPI
-  double tmp = unorm;
-  mesh_->get_comm()->SumAll(&tmp, &unorm, 1);
-  tmp = l2_err;
-  mesh_->get_comm()->SumAll(&tmp, &l2_err, 1);
-  tmp = inf_err;
-  mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
+  GlobalOp("sum", &unorm, 1);
+  GlobalOp("sum", &l2_err, 1);
+  GlobalOp("max", &inf_err, 1);
+#endif
+  unorm = sqrt(unorm);
+  l2_err = sqrt(l2_err);
+}
+
+
+/* ******************************************************************
+* Error in velocity or displacement
+****************************************************************** */
+inline
+void AnalyticElasticityBase::VectorCellError(
+    Amanzi::CompositeVector& u, double t, double& unorm,
+    double& l2_err, double& inf_err)
+{
+  unorm = 0.0;
+  l2_err = 0.0;
+  inf_err = 0.0;
+
+  int d = mesh_->space_dimension(); 
+  Amanzi::AmanziGeometry::Point ucalc(d);
+  Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    double vol = mesh_->cell_volume(c);
+
+    const Amanzi::AmanziGeometry::Point& uexact = velocity_exact(xc, t);
+    for (int i = 0; i < d; ++i) ucalc[i] = u_cell[i][c];
+
+    double tmp = L22(ucalc - uexact);
+    l2_err += tmp * vol;
+    inf_err = std::max(inf_err, sqrt(tmp));
+    unorm += L22(uexact) * vol;
+    // std::cout << c << " uh=" << ucalc << " ex=" << uexact << " l2=" << l2_err << std::endl;
+  }
+#ifdef HAVE_MPI
+  GlobalOp("sum", &unorm, 1);
+  GlobalOp("sum", &l2_err, 1);
+  GlobalOp("max", &inf_err, 1);
 #endif
   unorm = sqrt(unorm);
   l2_err = sqrt(l2_err);
@@ -117,7 +157,7 @@ void AnalyticElasticityBase::ComputeNodeError(
 * Error in pressure
 ****************************************************************** */
 inline
-void AnalyticElasticityBase::ComputeCellError(
+void AnalyticElasticityBase::ScalarCellError(
     Amanzi::CompositeVector& p, double t, double& pnorm,
     double& l2_err, double& inf_err)
 {
@@ -140,15 +180,30 @@ void AnalyticElasticityBase::ComputeCellError(
     // std::cout << c << " ph=" << p_cell[0][c] << " ex=" << pexact << std::endl;
   }
 #ifdef HAVE_MPI
-  double tmp = pnorm;
-  mesh_->get_comm()->SumAll(&tmp, &pnorm, 1);
-  tmp = l2_err;
-  mesh_->get_comm()->SumAll(&tmp, &l2_err, 1);
-  tmp = inf_err;
-  mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
+  GlobalOp("sum", &pnorm, 1);
+  GlobalOp("sum", &l2_err, 1);
+  GlobalOp("max", &inf_err, 1);
 #endif
   pnorm = sqrt(pnorm);
   l2_err = sqrt(l2_err);
+}
+
+
+/* ******************************************************************
+* Collective communications.
+****************************************************************** */
+inline
+void AnalyticElasticityBase::GlobalOp(std::string op, double* val, int n)
+{
+  double* val_tmp = new double[n];
+  for (int i = 0; i < n; ++i) val_tmp[i] = val[i];
+
+  if (op == "sum") 
+    mesh_->get_comm()->SumAll(val_tmp, val, n);
+  else if (op == "max") 
+    mesh_->get_comm()->MaxAll(val_tmp, val, n);
+
+  delete[] val_tmp;
 }
 
 #endif

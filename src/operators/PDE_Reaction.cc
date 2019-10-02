@@ -91,8 +91,8 @@ void PDE_Reaction::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
   WhetStone::Tensor Kc(d, 1);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    if (poly_.get()) {
-      mfd_->MassMatrix(c, (*poly_)[c], Mcell);
+    if (Kpoly_.get()) {
+      mfd_->MassMatrix(c, (*Kpoly_)[c], Mcell);
     } else {
       Kc(0, 0) = K_.get() ? (*K_)[0][c] : 1.0;
       mfd_->MassMatrix(c, Kc, Mcell);
@@ -109,7 +109,7 @@ void PDE_Reaction::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
 void PDE_Reaction::UpdateMatrices(double t) 
 {
   // verify type of coefficient
-  AMANZI_ASSERT(poly_st_.get());
+  AMANZI_ASSERT(Kpoly_st_.get());
 
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
 
@@ -147,11 +147,11 @@ void PDE_Reaction::CreateStaticMatrices_()
   static_matrices_.resize(ncells_owned);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    int size = (*poly_st_)[c].size();
+    int size = (*Kpoly_st_)[c].size();
     static_matrices_[c].clear();
  
     for (int i = 0; i < size; ++i) {
-      mfd_->MassMatrix(c, (*poly_st_)[c][i], Mcell);
+      mfd_->MassMatrix(c, (*Kpoly_st_)[c][i], Mcell);
       static_matrices_[c].push_back(Mcell);
     }
   }

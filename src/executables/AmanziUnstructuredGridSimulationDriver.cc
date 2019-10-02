@@ -364,7 +364,6 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
       Amanzi::InputAnalysis analysis(mesh_fracture, "fracture");
       analysis.Init(*plist_);
       analysis.RegionAnalysis();
-      analysis.OutputBCs();
     }
   }
 

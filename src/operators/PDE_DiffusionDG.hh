@@ -22,9 +22,13 @@
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
+#include "CoefficientModel.hh"
 #include "CompositeVector.hh"
 #include "DenseMatrix.hh"
+#include "InterfaceWhetStone.hh"
+#include "MatrixObjects.hh"
 #include "Tensor.hh"
+#include "WhetStoneFunction.hh"
 
 // Operators
 #include "PDE_HelperDiscretization.hh"
@@ -39,7 +43,6 @@ class PDE_DiffusionDG : public PDE_HelperDiscretization {
   PDE_DiffusionDG(Teuchos::ParameterList& plist,
                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       PDE_HelperDiscretization(mesh),
-      Kc_(NULL),
       Kf_(NULL)
   {
     global_op_ = Teuchos::null;
@@ -49,8 +52,9 @@ class PDE_DiffusionDG : public PDE_HelperDiscretization {
 
   // main virtual members
   // -- setup
-  void SetProblemCoefficients(const std::shared_ptr<std::vector<WhetStone::Tensor> >& Kc,
-                              const std::shared_ptr<std::vector<double> >& Kf);
+  template<typename T>
+  void Setup(const std::shared_ptr<std::vector<T> >& Kc,
+             const std::shared_ptr<std::vector<double> >& Kf);
 
   // -- creation of an operator
   using PDE_HelperDiscretization::UpdateMatrices;
@@ -72,9 +76,9 @@ class PDE_DiffusionDG : public PDE_HelperDiscretization {
 
  private:
   std::string matrix_;
-  int method_order_;
+  int method_order_, numi_order_;
 
-  std::shared_ptr<std::vector<WhetStone::Tensor> > Kc_;
+  // penalty coefficeint
   std::shared_ptr<std::vector<double> > Kf_;
 
   // operator and schemas
@@ -85,7 +89,48 @@ class PDE_DiffusionDG : public PDE_HelperDiscretization {
   Teuchos::RCP<Op> jump_up_op_, jump_pu_op_, penalty_op_;
 
   Teuchos::RCP<WhetStone::DG_Modal> dg_;
+  Teuchos::RCP<InterfaceWhetStone> interface_;
 };
+
+
+/* ******************************************************************
+* Speciation of a member function
+****************************************************************** */
+template<>
+inline
+void PDE_DiffusionDG::Setup(
+   const std::shared_ptr<std::vector<WhetStone::Tensor> >& Kc,
+   const std::shared_ptr<std::vector<double> >& Kf) {
+  Kf_ = Kf;
+
+  auto coef = std::make_shared<CoefficientModel<WhetStone::Tensor> >(Kc);
+  interface_ = Teuchos::rcp(new InterfaceWhetStoneDG<
+      WhetStone::DG_Modal, CoefficientModel<WhetStone::Tensor> >(dg_, coef));
+}
+
+template<>
+inline
+void PDE_DiffusionDG::Setup(
+   const std::shared_ptr<std::vector<WhetStone::WhetStoneFunction*> >& Kc,
+   const std::shared_ptr<std::vector<double> >& Kf) {
+  Kf_ = Kf;
+
+  auto coef = std::make_shared<CoefficientModel<WhetStone::WhetStoneFunction*> >(Kc);
+  interface_ = Teuchos::rcp(new InterfaceWhetStoneDG<
+      WhetStone::DG_Modal, CoefficientModel<WhetStone::WhetStoneFunction*> >(dg_, coef));
+}
+
+template<>
+inline
+void PDE_DiffusionDG::Setup(
+   const std::shared_ptr<std::vector<WhetStone::MatrixPolynomial> >& Kc,
+   const std::shared_ptr<std::vector<double> >& Kf) {
+  Kf_ = Kf;
+
+  auto coef = std::make_shared<CoefficientModel<WhetStone::MatrixPolynomial> >(Kc);
+  interface_ = Teuchos::rcp(new InterfaceWhetStoneDG<
+      WhetStone::DG_Modal, CoefficientModel<WhetStone::MatrixPolynomial> >(dg_, coef));
+}
 
 }  // namespace Operators
 }  // namespace Amanzi

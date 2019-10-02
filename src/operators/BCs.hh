@@ -169,7 +169,7 @@ class BCs {
   const std::vector<double>& bc_value() const { return bc_value_; }
   const std::vector<double>& bc_mixed() const { return bc_mixed_; }
   const std::vector<AmanziGeometry::Point>& bc_value_point() const { return bc_value_point_; }
-  const std::vector<std::vector<double>>& bc_value_vector() const { return bc_value_vector_; }
+  const std::vector<std::vector<double> >& bc_value_vector() const { return bc_value_vector_; }
   
  private:
   AmanziMesh::Entity_kind kind_;

@@ -247,7 +247,7 @@ int MFD3D_Diffusion::MassMatrixNonSymmetric(int c, const Tensor& K, DenseMatrix&
   int ok = L2consistencyScaledArea(c, Kinv, N, M, false);
   if (ok) return ok;
 
-  StabilityScalarNonSymmetric_(c, N, M);
+  StabilityScalarNonSymmetric_(N, M);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
@@ -262,7 +262,7 @@ int MFD3D_Diffusion::MassMatrixInverseNonSymmetric(int c, const Tensor& K, Dense
   int ok = L2consistencyInverseScaledArea(c, K, R, W, false);
   if (ok) return ok;
 
-  StabilityScalarNonSymmetric_(c, R, W);
+  StabilityScalarNonSymmetric_(R, W);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
@@ -669,33 +669,6 @@ int MFD3D_Diffusion::StabilityMMatrixHex_(int c, const Tensor& K, DenseMatrix& M
     }
   }
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
-}
-
-
-/* ******************************************************************
-* Simple stability term for nonsymmetric tensors.
-****************************************************************** */
-void MFD3D_Diffusion::StabilityScalarNonSymmetric_(int c, DenseMatrix& N, DenseMatrix& M)
-{
-  GrammSchmidt_(N);
-  CalculateStabilityScalar_(M);
-
-  int nrows = M.NumRows();
-  int ncols = N.NumCols();
-
-  // add projector ss * (I - N^T N) to matrix M
-  for (int i = 0; i < nrows; i++) {  
-    M(i, i) += scalar_stability_;
-
-    for (int j = i; j < nrows; j++) {
-      double s = 0.0;
-      for (int k = 0; k < ncols; k++)  s += N(i, k) * N(j, k);
-
-      s *= scalar_stability_;
-      M(i, j) -= s;
-      if (i - j) M(j, i) -= s;
-    }
-  }
 }
 
 }  // namespace WhetStone

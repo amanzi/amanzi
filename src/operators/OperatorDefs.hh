@@ -33,6 +33,14 @@ typedef enum { OPERATOR_DIFFUSION_MFD,
                OPERATOR_ELECTROMAGNETICS,
                OPERATOR_MAGNETIC_DIFFUSION} OperatorType;
 
+// coefficient type
+typedef enum { CONSTANT = 0,  // includes tensorial coefficients
+               POLYNOMIAL,
+               VECTOR_POLYNOMIAL,
+               VECTOR_SPACETIME_POLYNOMIAL,
+               MATRIX_POLYNOMIAL,
+               FUNCTION } CoefType;
+
 // Constants in the next block must powers of 2.
 const int OPERATOR_SCHEMA_DOFS_FACE = 1;
 const int OPERATOR_SCHEMA_DOFS_CELL = 2;
@@ -116,6 +124,8 @@ const int OPERATOR_LIMITER_MICHALAK_GOOCH = 3;
 const int OPERATOR_LIMITER_MICHALAK_GOOCH_DG = 4; 
 const int OPERATOR_LIMITER_TENSORIAL = 5;
 const int OPERATOR_LIMITER_KUZMIN = 6;
+const int OPERATOR_LIMITER_BARTH_JESPERSEN_DG_HIERARCHICAL = 7; 
+
 const double OPERATOR_LIMITER_TOLERANCE = 1e-14;
 const double OPERATOR_LIMITER_INFINITY = 1e+99;
 
@@ -124,11 +134,6 @@ const int OPERATOR_LIMITER_STENCIL_N2C = 10;
 const int OPERATOR_LIMITER_STENCIL_F2C = 20;
 const int OPERATOR_LIMITER_STENCIL_C2C_CLOSEST = 30;
 const int OPERATOR_LIMITER_STENCIL_C2C_ALL = 31;
-
-// detrminant of Jacobian of a map
-const int OPERATOR_DETERMINANT_VEM = 1;
-const int OPERATOR_DETERMINANT_EXACT_TI = 2;  // experimental
-const int OPERATOR_DETERMINANT_MONOTONE = 3;
 
 }  // namespace Operators
 }  // namespace Amanzi

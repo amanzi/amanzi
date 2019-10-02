@@ -37,8 +37,7 @@ class Op_Node_Node : public Op {
   virtual void SymbolicAssembleMatrixOp(const Operator* assembler,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const {
-    assembler->SymbolicAssembleMatrixOp(*this,
-            map, graph, my_block_row, my_block_col);
+    assembler->SymbolicAssembleMatrixOp(*this, map, graph, my_block_row, my_block_col);
   }
 
   virtual void AssembleMatrixOp(const Operator* assembler,

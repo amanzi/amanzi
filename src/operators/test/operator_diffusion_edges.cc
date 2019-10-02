@@ -127,7 +127,7 @@ void TestDiffusionEdges(int dim, double tol, std::string filename)
   source.GatherGhostedToMaster();
 
   // populate the diffusion operator
-  op->SetupTensor(K);
+  op->Setup(K, false);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // update the source term

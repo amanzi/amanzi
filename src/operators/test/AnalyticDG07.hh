@@ -8,9 +8,10 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Analytic solution for level-set algorithms: expanding sphere
+  Analytic solution for level-set algorithms: expanding sphere.
+  The zero level set satisfies equation R(t) = 0.3 + t.
 
-  Solution: u = 0.3 + t - [(x - 0.5)^2 + (y - 0.5)^2])^0.5
+  Solution: u = -0.3 - t + [(x - 0.5)^2 + (y - 0.5)^2])^0.5
   Diffusion: K = 1
   Accumulation: a = 1
   Reaction: r = 0
@@ -25,6 +26,9 @@
 
 class AnalyticDG07 : public AnalyticDGBase {
  public:
+  double X0 = 0.5;
+  double Y0 =-0.1;
+
   AnalyticDG07(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order, bool advection)
     : AnalyticDGBase(mesh, order, advection) {};
   ~AnalyticDG07() {};
@@ -44,31 +48,31 @@ class AnalyticDG07 : public AnalyticDGBase {
     sol.set_origin(p);
 
     double dx, dy, dist, dist2, dist3, dist5;
-    dx = p[0] - 0.5;
-    dy = p[1] - 0.5;
+    dx = p[0] - X0;
+    dy = p[1] - Y0;
     dist2 = dx * dx + dy * dy;
     dist = std::pow(dist2, 0.5);
 
-    sol(0, 0) = 0.3 + t - dist;
+    sol(0, 0) = -0.3 - t + dist;
 
     if (order_ > 0) {
-      sol(1, 0) = -dx / dist;
-      sol(1, 1) = -dy / dist;
+      sol(1, 0) = dx / dist;
+      sol(1, 1) = dy / dist;
     }
 
     if (order_ > 1) {
       dist3 = dist2 * dist;
-      sol(2, 0) = -dy * dy / dist3 / 2;
-      sol(2, 1) =  dx * dy / dist3;
-      sol(2, 2) = -dx * dx / dist3 / 2;
+      sol(2, 0) = dy * dy / dist3 / 2;
+      sol(2, 1) =-dx * dy / dist3;
+      sol(2, 2) = dx * dx / dist3 / 2;
     }
 
     if (order_ > 2) {
       dist5 = dist3 * dist2;
-      sol(3, 0) = dx * dy * dy / dist5 / 2;
-      sol(3, 1) = dy * (dy * dy - 2 * dx * dx) / dist5 / 2;
-      sol(3, 2) = dx * (dx * dx - 2 * dy * dy) / dist5 / 2;
-      sol(3, 3) = dy * dx * dx / dist5 / 2;
+      sol(3, 0) = -dx * dy * dy / dist5 / 2;
+      sol(3, 1) = -dy * (dy * dy - 2 * dx * dx) / dist5 / 2;
+      sol(3, 2) = -dx * (dx * dx - 2 * dy * dy) / dist5 / 2;
+      sol(3, 3) = -dy * dx * dx / dist5 / 2;
     }
 
     if (order_ > 3) AMANZI_ASSERT(false);
@@ -82,7 +86,7 @@ class AnalyticDG07 : public AnalyticDGBase {
     a.set_origin(p);
   }
 
-  // -- velocity is defined as v = -grad u / |grad u| 
+  // -- velocity is defined as the Taylor expansion of v = grad u / |grad u| 
   virtual void VelocityTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                               Amanzi::WhetStone::VectorPolynomial& v) override {
     v.resize(d_);
@@ -90,8 +94,8 @@ class AnalyticDG07 : public AnalyticDGBase {
     v.set_origin(p);
 
     double dx, dy, dist, dist2, dist3, dist5;
-    dx = p[0] - 0.5;
-    dy = p[1] - 0.5;
+    dx = p[0] - X0;
+    dy = p[1] - Y0;
     dist = std::pow(dx * dx + dy * dy, 0.5);
     
     v[0](0) = dx / dist;
@@ -135,9 +139,6 @@ class AnalyticDG07 : public AnalyticDGBase {
     src.Reshape(d_, 0, true);
     src.set_origin(p);
   }
-
- private:
-  double x0_, y0_;
 };
 
 #endif

@@ -8,46 +8,61 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Solution: u = t (1 + x^2 + y^2)
-  Diffusion: K = 0
-  Accumulation: a = 1
+  3D version of test AnalyticDG04.
+
+  Solution: u = t sin(3x) sin(6y) sin(4z)
+  Diffusion: K = 1
+  Accumulation: a = 0
   Reaction: r = 0
-  Velocity: v = [0.1 + x - x^2, y - y^2]
-  Source: exact
+  Velocity: v = 0
+  Source: f = u / t + v . \grad u  
 */
 
-#ifndef AMANZI_OPERATOR_ANALYTIC_DG_02B_BASE_HH_
-#define AMANZI_OPERATOR_ANALYTIC_DG_02B_BASE_HH_
+#ifndef AMANZI_OPERATOR_ANALYTIC_DG_04B_BASE_HH_
+#define AMANZI_OPERATOR_ANALYTIC_DG_04B_BASE_HH_
 
 #include "AnalyticDGBase.hh"
 
-class AnalyticDG02b : public AnalyticDGBase {
+class AnalyticDG04b : public AnalyticDGBase {
  public:
-  AnalyticDG02b(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order, bool advection)
+  AnalyticDG04b(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order, bool advection)
     : AnalyticDGBase(mesh, order, advection) {};
-  ~AnalyticDG02b() {};
+  ~AnalyticDG04b() {};
 
-  // diffusion tensor
+  // analytic data in conventional Taylor basis
+  // -- diffusion tensor
   virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) override {
-    Amanzi::WhetStone::Tensor K(d_, 1);
-    K(0, 0) = 0.0;
+    Amanzi::WhetStone::Tensor K(3, 1);
+    K(0, 0) = 1.0;
     return K;
   }
 
-  // analytic data in conventional Taylor basis
   // -- solution
   virtual void SolutionTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                               Amanzi::WhetStone::Polynomial& sol) override {
-    AMANZI_ASSERT(order_ > 1);
     sol.Reshape(d_, order_, true); 
+    double snx(std::sin(3 * p[0])), csx(std::cos(3 * p[0]));
+    double sny(std::sin(6 * p[1])), csy(std::cos(6 * p[1]));
+    double snz(std::sin(4 * p[2])), csz(std::cos(4 * p[2]));
+
+    sol(0, 0) = snx * sny * snz;
+
+    if (order_ > 0) {
+      sol(1, 0) = 3 * csx * sny * snz;
+      sol(1, 1) = 6 * snx * csy * snz;
+      sol(1, 2) = 4 * snx * sny * csz;
+    }
+
+    if (order_ > 1) {
+      sol(2, 0) =  -4.5 * snx * sny * snz;
+      sol(2, 1) =  18.0 * csx * csy * snz;
+      sol(2, 2) =  12.0 * csx * sny * csz;
+      sol(2, 3) = -18.0 * snx * sny * snz;
+      sol(2, 4) =  24.0 * snx * csy * csz;
+      sol(2, 5) =  -8.0 * snx * sny * csz;
+    }
+
     sol.set_origin(p);
-
-    sol(0) = 1.0 + p * p;
-    sol(1) = 2.0 * p[0];
-    sol(2) = 2.0 * p[1];
-    sol(3) = 1.0;
-    sol(5) = 1.0;
-
     sol *= t;
   }
 
@@ -55,68 +70,38 @@ class AnalyticDG02b : public AnalyticDGBase {
   virtual void AccumulationTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                                   Amanzi::WhetStone::Polynomial& a) override {
     a.Reshape(d_, 0, true); 
-    a(0) = 1.0;
-    a.set_origin(p);
   }
 
   // -- velocity
   virtual void VelocityTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                               Amanzi::WhetStone::VectorPolynomial& v) override {
-    double x(p[0]), y(p[1]);
-
     v.resize(d_);
-    if (! advection_) {
-      for (int i = 0; i < 2; ++i) {
-        v[i].Reshape(d_, 0, true); 
-      }
-    } else {
-      for (int i = 0; i < 2; ++i) {
-        v[i].Reshape(d_, 2, true); 
-      }
-      v[0](0, 0) = 0.1 + x - x * x;
-      v[0](1, 0) = 1.0 - 2 * x;
-      v[0](2, 0) =-1.0;
-
-      v[1](0, 0) = y - y * y;
-      v[1](1, 1) = 1.0 - 2 * y;
-      v[1](2, 2) =-1.0;
-    }
-
     v.set_origin(p);
+
+    for (int i = 0; i < d_; ++i) {
+      v[i].Reshape(d_, 0, true); 
+    }
   }
 
   // -- reaction
   virtual void ReactionTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                               Amanzi::WhetStone::Polynomial& r) override {
     r.Reshape(d_, 0, true); 
-    r.set_origin(p);
   }
 
   // -- source term
   virtual void SourceTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                             Amanzi::WhetStone::Polynomial& src) override {
-    double x(p[0]), y(p[1]);
-
-    if (!advection_) {
-      src.Reshape(d_, 0, true);
-    } else {
-      src.Reshape(d_, 3, true);
-      src(0, 0) = 2 * x * (0.1 + x - x * x) + 2 * y * y * (1.0 - y);
-      src(1, 0) = 0.2 + 4 * x - 6 * x * x;
-      src(1, 1) = 4 * y - 6 * y * y;
-      src(2, 0) = 2.0 - 6 * x;
-      src(2, 2) = 2.0 - 6 * y;
-      src(3, 0) = -2.0;
-      src(3, 3) = -2.0;
-    }
-
-    src *= t;
-    src.set_origin(p);
-
-    // add accumulation term whicth equals solution at time 1
     Amanzi::WhetStone::Polynomial sol;
+    Amanzi::WhetStone::VectorPolynomial v;
+
     SolutionTaylor(p, 1.0, sol);
-    src += sol;
+    VelocityTaylor(p, t, v); 
+
+    v[0].ChangeOrigin(p);
+    v[1].ChangeOrigin(p);
+
+    src = sol + (v * Gradient(sol)) * t;
   }
 };
 

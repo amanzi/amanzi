@@ -53,6 +53,11 @@ class MFD3D_LagrangeSerendipity : public MFD3D_LagrangeAnyOrder {
     ProjectorCell_<AmanziMesh::Mesh>(mesh_, c, ve, vf, ProjectorType::L2, moments, uc);
   }
 
+  virtual void L2Face(int f, const std::vector<Polynomial>& ve,
+                      const Polynomial* moments, Polynomial& uf) override {
+    ProjectorFace_(f, ve, ProjectorType::L2, moments, uf);
+  }
+
   // -- h1 projectors
   virtual void H1Cell(int c, const std::vector<Polynomial>& ve,
                       const std::vector<Polynomial>& vf,
@@ -61,7 +66,9 @@ class MFD3D_LagrangeSerendipity : public MFD3D_LagrangeAnyOrder {
   }
 
   virtual void H1Face(int f, const std::vector<Polynomial>& ve,
-                      const Polynomial* moments, Polynomial& uf) override;
+                      const Polynomial* moments, Polynomial& uf) override {
+    ProjectorFace_(f, ve, ProjectorType::H1, moments, uf);
+  }
 
   // other methods
   void L2Cell_LeastSquare(int c, const std::vector<Polynomial>& vf,
@@ -76,6 +83,10 @@ class MFD3D_LagrangeSerendipity : public MFD3D_LagrangeAnyOrder {
                       const std::vector<Polynomial>& vf,
                       const ProjectorType type,
                       const Polynomial* moments, Polynomial& uc);
+
+  void ProjectorFace_(int f, const std::vector<Polynomial>& ve,
+                      const ProjectorType type,
+                      const Polynomial* moments, Polynomial& uf);
 
   template<class MyMesh>
   void CalculateDOFsOnBoundary_(

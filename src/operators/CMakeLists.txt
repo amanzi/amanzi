@@ -52,6 +52,8 @@ add_definitions("-DMSTK_HAVE_MPI")
 #
 set(operators_inc_files
     BCs.hh
+    CoefficientModel.hh
+    InterfaceWhetStone.hh
     LimiterCell.hh
     Mini_Diffusion1D.hh
     Mini_Operator1D.hh
@@ -111,6 +113,7 @@ set(operators_inc_files
     PDE_HelperDiscretization.hh
     PDE_Reaction.hh
     RemapDG.hh
+    RemapDG_Helper.hh
     RemapUtils.hh
     Schema.hh
     TreeOperator.hh
@@ -163,6 +166,7 @@ add_amanzi_library(operators
                           ReconstructionCell.cc
                           RemapDG.cc RemapUtils.cc
                           UniqueLocalIndex.cc
+                          RemapDG_Helper.cc RemapUtils.cc
                           HEADERS ${operators_inc_files}
                    LINK_LIBS geometry mesh mesh_factory error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})                          
 
@@ -349,11 +353,12 @@ if (BUILD_TESTS)
                     KIND unit
                     NPROCS 2
                     SOURCE test/Main.cc test/operator_remap.cc
+                                        test/operator_remap_curved.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    add_amanzi_test(operators_remap_curved operators_remap_curved
+    add_amanzi_test(operators_remap_curved_gcl operators_remap_gcl
                     KIND unit
-                    SOURCE test/Main.cc test/operator_remap_curved.cc
+                    SOURCE test/Main.cc test/operator_remap_gcl.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # high-order diffusion test

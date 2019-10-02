@@ -16,7 +16,6 @@
 #include <vector>
 
 // TPLs
-#include "EpetraExt_RowMatrixOut.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
@@ -26,12 +25,14 @@
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
 #include "LinearOperatorPCG.hh"
+#include "LinearOperatorGMRES.hh"
 #include "Tensor.hh"
 
 // Amanzi::Operators
 #include "PDE_Elasticity.hh"
 
 #include "AnalyticElasticity01.hh"
+#include "AnalyticElasticity03.hh"
 #include "Verification.hh"
 
 /* *****************************************************************
@@ -140,9 +141,9 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   op->SetTensorCoefficient(K);
   op->UpdateMatrices();
 
-  // get and assmeble the global operator
+  // get and assemble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  global_op->UpdateRHS(source, true);
+  global_op->UpdateRHS(source, true);  // FIXME
   op->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
@@ -177,7 +178,7 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
 
   // compute velocity error
   double unorm, ul2_err, uinf_err;
-  ana.ComputeNodeError(solution, 0.0, unorm, ul2_err, uinf_err);
+  ana.VectorNodeError(solution, 0.0, unorm, ul2_err, uinf_err);
 
   if (MyPID == 0) {
     ul2_err /= unorm;
@@ -188,5 +189,4 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
     CHECK(pcg.num_itrs() < 15);
   }
 }
-
 

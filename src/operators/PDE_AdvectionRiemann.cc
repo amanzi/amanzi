@@ -150,6 +150,10 @@ void PDE_AdvectionRiemann::UpdateMatrices(
       dg_->FluxMatrixRusanov(f, (*Kc_)[c1], (*Kc_)[c2], (*Kf_)[f], Aface);
       matrix[f] = Aface;
     }
+  } else {
+    Errors::Message msg;
+    msg << "Unsupported matrix type=" << matrix_ << " and/or flux type=" << flux_ << "\n";
+    Exceptions::amanzi_throw(msg);
   }
 }
 
@@ -194,6 +198,11 @@ void PDE_AdvectionRiemann::UpdateMatrices(double t)
           matrix[f] += static_matrices_[f][i].Dface * tmp;
         else 
           matrix[f] += static_matrices_[f][i].Uface * tmp;
+      }
+      else {
+        Errors::Message msg;
+        msg << "Unsupported matrix type=" << matrix_ << " and/or flux type=" << flux_ << "\n";
+        Exceptions::amanzi_throw(msg);
       }
 
       tmp *= t;
