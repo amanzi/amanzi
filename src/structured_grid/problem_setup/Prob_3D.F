@@ -206,7 +206,7 @@ c ::: -----------------------------------------------------------
       REAL_T    adv(DIMV(adv),1)
       REAL_T    mask(DIMV(mask))
       REAL_T    value
-      REAL_T    ax, ay, az, aerr
+      REAL_T    ax, ay, az
       REAL_T    axp, axm, ayp, aym, azp, azm, aerr
 
       integer   i, j, k
