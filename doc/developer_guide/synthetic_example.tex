@@ -1,0 +1,56 @@
+\section{Synthetic example}
+The purpose of this section is to provide step by step instructions into 
+solving square systems using Amanzi.
+A square systems are those that can be written as
+$$
+  \mbox{Find~} u \in V \colon \quad
+  a(u, v) = f(v) \quad \forall  v \in V.
+$$
+
+\subsection{Glossary}
+
+\subsection{Defining your PDE class}
+The PDE class defined must be a derived class of PDE HelperDiscretization,
+this immediately gives new class access to two important varibles, a global operator and a container for 
+local matrices and a series of useful routines to apply boundary conditions, assemble global systems, etc.
+This all comes with a caviat: you must define a member function called UpdateMatrices which is usually
+used to populate the local matrices, failure to do so will result in an abstract class with no possibility for
+instantiation.
+The header for a class to solve the Poisson equation in second order form will look like
+
+\subsection{Populating local matrices and defining the global operator}
+The first step in populating the local matrices is to define a schema. There should be one schema for the test space and one for
+the trial space, in the case of square systems the same can be used for both. Schemas define the different
+aspects of a variable and its discretization. Schemas require two inputs: the base and and an item. The base
+describes what type of assembly is required for this variable the choices include cells, faces, edges and nodes
+all part of the AmanziMesh namespace. Selecting, for example, faces as the base will imply that the local
+matrices are associated with the faces of the mesh. Moreover, item defines the type of degrees of freedom
+that are used to discretize the variable in question. Items require three inputs: a part of the topology of the
+mesh like a node or an edge which defines where the degrees of freedom are places, the type of quantity
+the degree of freedom, whether it is scalar of vector valued and the number of degrees of freedom of this
+type. For a classic finite element method to solve the Poisson equation the definition of its schema will look
+something like
+
+
+\subsection{Creating a mesh}
+
+
+\subsection{Adding boundary conditions} 
+The class PDE HelperDiscretization has some built in features to
+impose boundary conditions but in order to access them we need to define the object BCs which takes
+as creation arguments the mesh, where the degrees of freedom will be places and the type of degree of
+freedom. Moreover, we must also populate the two class variables, the bc model which defines what type of
+boundary condition we want to prescribe and the bc value which precise value of such boundary condition.
+For example,
+
+
+\subsection{Assembly and imposing the boundary conditions}
+
+
+\subsection{The linear solve}
+In order to apply a linear solver we must initialize a vector for the solution and
+initialize the preconditioner. The linear solve is templated to fit the different types of scenarios where linear
+solves are necessary.
+
+
+
