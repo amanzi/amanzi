@@ -105,6 +105,16 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
     out_list.sublist("regions").sublist(network).sublist("region: logical")
         .set<std::string>("operation", "union")
         .set<Teuchos::Array<std::string> >("regions", fracture_regions_);
+
+    if (out_list.isSublist("visualization data")) {
+      Teuchos::ParameterList& aux = out_list.sublist("visualization data");
+      out_list.sublist("visualization data fracture") = aux;
+
+      std::string name = aux.get<std::string>("file name base");
+      aux.set<std::string>("file name base", name + "_matrix");
+      out_list.sublist("visualization data fracture")
+          .set<std::string>("file name base", name + "_fracture");
+    }
   }
 
   // -- final I/O
