@@ -153,10 +153,10 @@ public:
   void OutputTimeHistory(const Teuchos::ParameterList& plist, std::vector<dt_tuple>& dT_history);
 
   // access member functions
-  Teuchos::RCP<Operators::OperatorDiffusionFV> op_pres_prec() { return op_pres_prec_; }
-  Teuchos::RCP<Operators::OperatorDiffusionFV> op_fuga_prec() { return op4_preconditioner_; }
-  Teuchos::RCP<Operators::OperatorAdvection> op_sat_prec() { return op_sat_prec_; }
-  std::vector<Teuchos::RCP<Operators::OperatorDiffusion> >& Ops() { return ops_; }
+  Teuchos::RCP<Operators::PDE_DiffusionFV> op_pres_prec() { return op_pres_prec_; }
+  Teuchos::RCP<Operators::PDE_DiffusionFV> op_fuga_prec() { return op4_preconditioner_; }
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_sat_prec() { return op_sat_prec_; }
+  std::vector<Teuchos::RCP<Operators::PDE_Diffusion> >& Ops() { return ops_; }
 
 public:
   int ncells_owned_, ncells_wghost_;
@@ -239,21 +239,21 @@ private:
   Teuchos::RCP<CapillaryPressure> capillary_pressure_;
   Teuchos::RCP<CapillaryPressure> capillary_pressure_old_;
 
-  Teuchos::RCP<Operators::OperatorDiffusion> op1_matrix_;
-  Teuchos::RCP<Operators::OperatorDiffusion> op2_matrix_;
-  Teuchos::RCP<Operators::OperatorDiffusion> op3_matrix_;
-  Teuchos::RCP<Operators::OperatorDiffusion> op4_matrix_;
-  Teuchos::RCP<Operators::OperatorDiffusion> op1_preconditioner_;
-  Teuchos::RCP<Operators::OperatorAdvection> op2_preconditioner_;
-  Teuchos::RCP<Operators::OperatorAdvection> op5_preconditioner_;
-  Teuchos::RCP<Operators::OperatorAdvection> op6_preconditioner_;
-  Teuchos::RCP<Operators::OperatorDiffusion> op3_preconditioner_;
-  Teuchos::RCP<Operators::OperatorDiffusionFV> op4_preconditioner_;
-  Teuchos::RCP<Operators::OperatorDiffusionFV> op_pres_prec_;
-  Teuchos::RCP<Operators::OperatorAdvection> op_sat_prec_;
-  Teuchos::RCP<Operators::OperatorAccumulation> op_pres_acc_;
-  Teuchos::RCP<Operators::OperatorAccumulation> op_sat_acc_;
-  Teuchos::RCP<Operators::OperatorAccumulation> op_fug_acc_;
+  Teuchos::RCP<Operators::PDE_Diffusion> op1_matrix_;
+  Teuchos::RCP<Operators::PDE_Diffusion> op2_matrix_;
+  Teuchos::RCP<Operators::PDE_Diffusion> op3_matrix_;
+  Teuchos::RCP<Operators::PDE_Diffusion> op4_matrix_;
+  Teuchos::RCP<Operators::PDE_Diffusion> op1_preconditioner_;
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op2_preconditioner_;
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op5_preconditioner_;
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op6_preconditioner_;
+  Teuchos::RCP<Operators::PDE_Diffusion> op3_preconditioner_;
+  Teuchos::RCP<Operators::PDE_DiffusionFV> op4_preconditioner_;
+  Teuchos::RCP<Operators::PDE_DiffusionFV> op_pres_prec_;
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_sat_prec_;
+  Teuchos::RCP<Operators::PDE_Accumulation> op_pres_acc_;
+  Teuchos::RCP<Operators::PDE_Accumulation> op_sat_acc_;
+  Teuchos::RCP<Operators::PDE_Accumulation> op_fug_acc_;
   Teuchos::RCP<Operators::BCs> op_bc_s_;
   Teuchos::RCP<Operators::BCs> op_bc_p_;
   Teuchos::RCP<Operators::BCs> op_bc_pc_;
@@ -264,8 +264,8 @@ private:
   Teuchos::RCP<Operators::UpwindFlux<RelativePermeability> > upwind_w_;
   Teuchos::RCP<Operators::UpwindFlux<RelativePermeability> > upwind_n_;
 
-  std::vector<Teuchos::RCP<Operators::OperatorDiffusion> > ops_;
-  typedef std::vector<Teuchos::RCP<Operators::OperatorDiffusion> >::iterator op_iter;
+  std::vector<Teuchos::RCP<Operators::PDE_Diffusion> > ops_;
+  typedef std::vector<Teuchos::RCP<Operators::PDE_Diffusion> >::iterator op_iter;
   typedef std::vector<Teuchos::RCP<Operators::Op> >::iterator local_op_iter;
 
   // The solution obtained from solving for pressure

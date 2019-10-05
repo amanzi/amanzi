@@ -65,12 +65,12 @@ public:
 
 
   // access methods
-  Teuchos::RCP<Operators::OperatorAccumulation> op_prec1() { return op1_acc_; }
-  Teuchos::RCP<Operators::OperatorAccumulation> op_prec2() { return op2_acc_; }
-  Teuchos::RCP<Operators::OperatorAccumulation> op_prec3() { return op3_acc_; }
-  Teuchos::RCP<Operators::OperatorAccumulation> op_prec1_tmp() { return op1_acc_tmp_; }
-  Teuchos::RCP<Operators::OperatorAccumulation> op_prec2_tmp() { return op2_acc_tmp_; }
-  Teuchos::RCP<Operators::OperatorAccumulation> op_prec3_tmp() { return op3_acc_tmp_; }
+  Teuchos::RCP<Operators::PDE_Accumulation> op_prec1() { return op1_acc_; }
+  Teuchos::RCP<Operators::PDE_Accumulation> op_prec2() { return op2_acc_; }
+  Teuchos::RCP<Operators::PDE_Accumulation> op_prec3() { return op3_acc_; }
+  Teuchos::RCP<Operators::PDE_Accumulation> op_prec1_tmp() { return op1_acc_tmp_; }
+  Teuchos::RCP<Operators::PDE_Accumulation> op_prec2_tmp() { return op2_acc_tmp_; }
+  Teuchos::RCP<Operators::PDE_Accumulation> op_prec3_tmp() { return op3_acc_tmp_; }
   int* getInactiveGasIndices(){ return inactive_gas_idx_; }
   int getNumInactiveCells(){ return cnt_; }
   void SetNCPFunctionType(std::string ncp_type) { ncp_type_ = ncp_type; }
@@ -100,13 +100,13 @@ private:
 
   Teuchos::RCP<CapillaryPressure> capillary_pressure_;
 
-  Teuchos::RCP<Operators::OperatorAccumulation> op1_acc_;
-  Teuchos::RCP<Operators::OperatorAccumulation> op2_acc_;
-  Teuchos::RCP<Operators::OperatorAccumulation> op3_acc_;
+  Teuchos::RCP<Operators::PDE_Accumulation> op1_acc_;
+  Teuchos::RCP<Operators::PDE_Accumulation> op2_acc_;
+  Teuchos::RCP<Operators::PDE_Accumulation> op3_acc_;
 
-  Teuchos::RCP<Operators::OperatorAccumulation> op1_acc_tmp_;
-  Teuchos::RCP<Operators::OperatorAccumulation> op2_acc_tmp_;
-  Teuchos::RCP<Operators::OperatorAccumulation> op3_acc_tmp_;
+  Teuchos::RCP<Operators::PDE_Accumulation> op1_acc_tmp_;
+  Teuchos::RCP<Operators::PDE_Accumulation> op2_acc_tmp_;
+  Teuchos::RCP<Operators::PDE_Accumulation> op3_acc_tmp_;
   Teuchos::RCP<Operators::BCs> op_bc_;
 
   // The solution obtained from solving for pressure

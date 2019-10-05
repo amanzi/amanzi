@@ -322,7 +322,7 @@ void Comp_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u, 
   std::cout << "Matrix prec 1: " << *op1_preconditioner_->global_operator()->A() << "\n";
 
   Teuchos::ParameterList& op_list = comp_list_->sublist("operators").sublist("diffusion operator").sublist("preconditioner");
-  op_pres_prec_ = Teuchos::rcp(new Operators::OperatorDiffusionFV(op_list, op1_preconditioner_->global_operator()));
+  op_pres_prec_ = Teuchos::rcp(new Operators::PDE_DiffusionFV(op_list, op1_preconditioner_->global_operator()));
   op_pres_prec_->SetBCs(op_bc_p_, op_bc_p_);
   op_pres_prec_->Setup(Kptr, rel_perm_n_->Krel(), Teuchos::null);
   op_pres_prec_->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -333,7 +333,7 @@ void Comp_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u, 
   accumulation_pres->Multiply(1.0, *xn, *accumulation_pres, 0.0);
   accumulation_pres->ReciprocalMultiply(-1.0, *pressure_n, *accumulation_pres, 0.0);
   accumulation_pres->Scale(phi_);
-  op_pres_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_pres_prec_->global_operator()));
+  op_pres_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_pres_prec_->global_operator()));
   if (dTp > 0.0) {
     op_pres_acc_->AddAccumulationTerm(*saturation_n, *accumulation_pres, dTp, "cell");
   }
@@ -377,12 +377,12 @@ void Comp_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u, 
   //std::cout << "Done op2 \n";
 
   Teuchos::ParameterList adv_list = comp_list_->sublist("operators").sublist("advection operator");
-  op_sat_prec_ = Teuchos::rcp(new Operators::OperatorAdvection(adv_list, op2_preconditioner_->global_operator()));
+  op_sat_prec_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, op2_preconditioner_->global_operator()));
   op_sat_prec_->Setup(*tmp_flux2_);
   op_sat_prec_->UpdateMatrices(*rel_perm_n_->dKdS());
   op_sat_prec_->ApplyBCs(op_bc_p_, true);
   //std::cout << "Done op_sat \n";
-  op_sat_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_sat_prec_->global_operator()));
+  op_sat_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_sat_prec_->global_operator()));
 
   CompositeVector accumulation_factor(*xn);
   accumulation_factor.Update(-1.0, *xw, 1.0);
@@ -412,7 +412,7 @@ void Comp_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u, 
   mf_coef2->PutScalarMasterAndGhosted(1.0);
   mf_coef2->ReciprocalMultiply(1.0, *pressure_n_wf, *mf_coef2, 0.0);
   //std::cout << "mf_coef2: " << *mf_coef2->ViewComponent("face") << "\n";
-  op4_preconditioner_ = Teuchos::rcp(new Operators::OperatorDiffusionFV(op_list, op3_preconditioner_->global_operator()));
+  op4_preconditioner_ = Teuchos::rcp(new Operators::PDE_DiffusionFV(op_list, op3_preconditioner_->global_operator()));
   op4_preconditioner_->SetBCs(op_bc_xn_, op_bc_xn_);
   op4_preconditioner_->Setup(D2ptr, mf_coef2, Teuchos::null);
   op4_preconditioner_->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -436,7 +436,7 @@ void Comp_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u, 
   op2_matrix_->UpdateFlux(*pressure_n, *tmp_flux2_);
   tmp_flux2_->ReciprocalMultiply(1.0, *pressure_n_wf, *tmp_flux2_, 0.0);
 
-  op5_preconditioner_ = Teuchos::rcp(new Operators::OperatorAdvection(adv_list, op4_preconditioner_->global_operator()));
+  op5_preconditioner_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, op4_preconditioner_->global_operator()));
   op5_preconditioner_->Setup(*tmp_flux1_);
   op5_preconditioner_->UpdateMatrices(*tmp_flux1_);
   op5_preconditioner_->ApplyBCs(op_bc_p_, true);
@@ -445,7 +445,7 @@ void Comp_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u, 
   //op5_preconditioner_->global_operator()->AssembleMatrix();
   //std::cout << "Matrix prec 5: " << *op5_preconditioner_->global_operator()->A() << "\n";
 
-  op6_preconditioner_ = Teuchos::rcp(new Operators::OperatorAdvection(adv_list, op5_preconditioner_->global_operator()));
+  op6_preconditioner_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(adv_list, op5_preconditioner_->global_operator()));
   op6_preconditioner_->Setup(*tmp_flux2_);
   op6_preconditioner_->UpdateMatrices(*tmp_flux2_);
   op6_preconditioner_->ApplyBCs(op_bc_p_, true);
@@ -454,7 +454,7 @@ void Comp_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u, 
   //op6_preconditioner_->global_operator()->AssembleMatrix();
   //std::cout << "Matrix prec 6: " << *op6_preconditioner_->global_operator()->A() << "\n";
 
-  op_fug_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op6_preconditioner_->global_operator()));
+  op_fug_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op6_preconditioner_->global_operator()));
   CompositeVector accumulation_fuga(*saturation_n);
   accumulation_fuga.ReciprocalMultiply(1.0, *pressure_n, accumulation_fuga, 0.0);
   accumulation_fuga.Update(1.0/comp_coeff_, *saturation_w, 1.0);
@@ -532,7 +532,7 @@ void Comp_PK::NumericalJacobian(double t_old, double t_new,
     for (int f_it = 0; f_it < faces.size(); ++f_it) {
       int f_id = faces[f_it];
       AmanziMesh::Entity_ID_List cells;
-      mesh_->face_get_cells(f_id, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f_id, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
       //std::cout << "Face: " << f_id << "; bc type: " << bc_model_p_[f_id] << "\n";
 

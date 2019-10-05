@@ -16,28 +16,27 @@ Authors: Quan Bui (mquanbui@math.umd.edu)
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
-#include "PK_DomainFunction.hh"
-#include "PK_PhysicalBDF.hh"
-#include "State.hh"
-#include "Tensor.hh"
-#include "TI_Specs.hh"
-#include "TreeVector.hh"
-
+#include "BDF1_TI.hh"
 #include "FlowBoundaryFunction.hh"
+#include "LinearOperatorFactory.hh"
 #include "Operator.hh"
+#include "PDE_Accumulation.hh"
 #include "PDE_AdvectionUpwind.hh"
 #include "PDE_Diffusion.hh"
 #include "PDE_DiffusionFV.hh"
 #include "PDE_DiffusionFactory.hh"
-#include "PDE_Accumulation.hh"
+#include "PK_DomainFunction.hh"
 #include "PK_Factory.hh"
+#include "PK_PhysicalBDF.hh"
 #include "primary_variable_field_evaluator.hh"
-#include "BDF1_TI.hh"
+#include "State.hh"
+#include "Tensor.hh"
+#include "TI_Specs.hh"
+#include "TreeVector.hh"
 #include "Upwind.hh"
 #include "UpwindFactory.hh"
-#include "TimerManager.hh"
 
-// Specific include for this PK
+// Amanzi::Multiphase
 #include "RelativePermeability.hh"
 #include "WaterRetentionModel.hh"
 #include "FractionalFlow.hh"
@@ -58,16 +57,16 @@ public:
   // New interface for a PK
   virtual void Setup();
   virtual void Initialize() {
-      InitializeFields();
-      InitializeSaturation();
-      InitTimeInterval(*ti_list_);
+    InitializeFields();
+    InitializeSaturation();
+    InitTimeInterval(*ti_list_);
   }
 
-  virtual double get_dt(){return 1.0;}
-  virtual void set_dt(double){};
+  virtual double get_dt() {return 1.0;}
+  virtual void set_dt(double) {};
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit);
   virtual void CommitStep(double t_old, double t_new);
-  virtual void CalculateDiagnostics(){};
+  virtual void CalculateDiagnostics() {};
   virtual std::string name(){return "saturation";}
 
   // Main methods of this PK
@@ -88,22 +87,18 @@ public:
 
   // applies preconditioner to u and returns the result in Pu
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, 
-                                   Teuchos::RCP<TreeVector> Pu);
-  virtual void ApplyPreconditioner_Fake(Teuchos::RCP<const TreeVector> u, 
-                                   Teuchos::RCP<TreeVector> Pu) {};
+                                  Teuchos::RCP<TreeVector> Pu);
+
   // updates the preconditioner
-  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
-                    double h);
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);
 
   // computes a norm on u-du and returns the result
   virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
-               Teuchos::RCP<const TreeVector> du);
-
+                           Teuchos::RCP<const TreeVector> du);
 
   // check the admissibility of a solution
   // override with the actual admissibility check
-  virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up) {
-  }
+  virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up) { return true; }
 
   // possibly modifies the predictor that is going to be used as a
   // starting value for the nonlinear solve in the time integrator,
@@ -112,8 +107,7 @@ public:
   // this predictor this function returns true if the predictor was
   // modified, false if not
   virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
-               Teuchos::RCP<TreeVector> u) {
-  }
+                               Teuchos::RCP<TreeVector> u) { return false; }
 
   // possibly modifies the correction, after the nonlinear solver (NKA)
   // has computed it, will return true if it did change the correction,
@@ -121,13 +115,13 @@ public:
   // and pass it to NKA so that the NKA space can be updated
   virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
   ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
-           Teuchos::RCP<const TreeVector> u,
-           Teuchos::RCP<TreeVector> du);
+                   Teuchos::RCP<const TreeVector> u,
+                   Teuchos::RCP<TreeVector> du);
 
   // experimental approach -- calling this indicates that the time
   // integration scheme is changing the value of the solution in
   // state.
-  virtual void ChangedSolution() {}
+  virtual void ChangedSolution() {};
 
   virtual int ReportStatistics() {return ls_itrs_;}
 
@@ -161,7 +155,7 @@ public:
   // access methods
   Teuchos::RCP<Operators::Operator> op_prec() { return op_preconditioner_->global_operator(); }
 
-public:
+ public:
   int ncells_owned, ncells_wghost;
   int nfaces_owned, nfaces_wghost;
 
@@ -176,7 +170,7 @@ public:
   int ti_phase_counter;
   int missed_bc_faces_, dirichlet_bc_faces_;
 
-private:
+ private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int dim_;
   bool include_capillary_;
@@ -185,10 +179,9 @@ private:
   VerboseObject* vo_;
 
   // boundary conditons
+  std::vector<int> bc_submodel;
   Flow::FlowBoundaryFunction* bc_saturation;
-  Flow::FlowBoundaryFunction* bc_flux;
-  std::vector<int> bc_model, bc_submodel, bc_model_pc, bc_model_tmp;
-  std::vector<double> bc_value, bc_value_pc, bc_value_tmp, bc_coef, bc_mixed;
+  std::vector<Teuchos::RCP<Flow::FlowBoundaryFunction> > bcs_; 
 
   // time integration phases
   TI_Specs ti_specs_generic_;

@@ -271,11 +271,11 @@ void CompH_PK::InitializeFields()
 void CompH_PK::InitializeComponent()
 {
   // Initilize various common data depending on mesh and state.
-  ncells_owned_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  ncells_wghost_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  ncells_owned_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  ncells_wghost_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
-  nfaces_owned_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  nfaces_wghost_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  nfaces_owned_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  nfaces_wghost_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // Fundamental physical quantities
   double* gravity_data;
@@ -378,12 +378,12 @@ void CompH_PK::InitializeComponent()
 
   // create diffusion operators op_matrix_ and op_preconditioner_.
   // They will need to be initialized, which is done later in InitNextTI.
-  Operators::OperatorDiffusionFactory opfactory;
+  Operators::PDE_DiffusionFactory opfactory;
   //op1_matrix_ = opfactory.Create(oplist_matrix, mesh_, op_bc_p_, 1.0, gravity_);
   //op2_matrix_ = opfactory.Create(oplist_matrix, mesh_, op_bc_p_n_, 1.0, gravity_);
-  op1_matrix_ = Teuchos::rcp(new Operators::OperatorDiffusionFVwithGravity(oplist_matrix, mesh_, 1.0, gravity_));
+  op1_matrix_ = Teuchos::rcp(new Operators::PDE_DiffusionFVwithGravity(oplist_matrix, mesh_, 1.0, gravity_));
   op1_matrix_->SetBCs(op_bc_p_, op_bc_p_);
-  op2_matrix_ = Teuchos::rcp(new Operators::OperatorDiffusionFVwithGravity(oplist_matrix, mesh_, 1.0, gravity_));
+  op2_matrix_ = Teuchos::rcp(new Operators::PDE_DiffusionFVwithGravity(oplist_matrix, mesh_, 1.0, gravity_));
   op2_matrix_->SetBCs(op_bc_p_n_, op_bc_p_n_);
   op3_matrix_ = opfactory.Create(oplist_matrix, mesh_, op_bc_rhl_, 1.0, gravity_);
 
@@ -393,14 +393,14 @@ void CompH_PK::InitializeComponent()
   op3_preconditioner_ = opfactory.Create(oplist_pc, mesh_, op_bc_s_, 1.0, gravity_);
 
   Teuchos::ParameterList olist_adv = comp_list_->sublist("operators").sublist("advection operator");
-  op_prec_pres_ = Teuchos::rcp(new Operators::OperatorAdvection(olist_adv, op1_preconditioner_->global_operator()));
-  op_prec_sat_ = Teuchos::rcp(new Operators::OperatorAdvection(olist_adv, op3_preconditioner_->global_operator()));
-  op_prec_rho_ = Teuchos::rcp(new Operators::OperatorAdvection(olist_adv, op2_preconditioner_->global_operator()));
+  op_prec_pres_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, op1_preconditioner_->global_operator()));
+  op_prec_sat_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, op3_preconditioner_->global_operator()));
+  op_prec_rho_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, op2_preconditioner_->global_operator()));
 
   // accumulation terms
-  op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_prec_pres_->global_operator()));
-  op1_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_prec_rho_->global_operator()));
-  op2_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_prec_sat_->global_operator()));
+  op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_prec_pres_->global_operator()));
+  op1_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_prec_rho_->global_operator()));
+  op2_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_prec_sat_->global_operator()));
 
   if (jacobian_type_ == "numerical")
     for (int n_op = 0; n_op < soln_->size(); n_op++) {
@@ -441,11 +441,11 @@ void CompH_PK::InitNextTI()
   // initialize operators
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K_);
   Teuchos::RCP<std::vector<WhetStone::Tensor> > D1ptr = Teuchos::rcpFromRef(D1_);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op1_matrix_)->Setup(Kptr, coef_w_->Krel(), Teuchos::null);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op1_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->Setup(Kptr, coef_w_->Krel(), Teuchos::null);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->Setup(Kptr, coef_n_->Krel(), Teuchos::null);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->Setup(Kptr, coef_n_->Krel(), Teuchos::null);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   op3_matrix_->Setup(D1ptr, Teuchos::null, Teuchos::null);
   op3_matrix_->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -498,15 +498,15 @@ void CompH_PK::CommitStep(double t_old, double t_new)
 
   CompositeVector& phase2_flux = *S_->GetFieldData("velocity_nonwet", passwd_);
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K_);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->global_operator()->Init();
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->Setup(Kptr, coef_n_->Krel(), Teuchos::null);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->ApplyBCs(true, true);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->UpdateFlux(p2, phase2_flux);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->global_operator()->Init();
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->Setup(Kptr, coef_n_->Krel(), Teuchos::null);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->ApplyBCs(true, true);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateFlux(p2, phase2_flux);
 
   // compute upwind velocities from pressure 
   //CompositeVector& phase2_flux = *S_->GetFieldData("velocity_nonwet", passwd_);
-  //((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->UpdateFlux(p2, phase2_flux);
+  //((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateFlux(p2, phase2_flux);
 
   // write hydrogen density in liquid to state
   CompositeVector& rhl = *S_->GetFieldData("hydrogen density liquid", passwd_);
@@ -635,11 +635,11 @@ void CompH_PK::ComputeBCs(bool stop) {
   // mark missing boundary conditions as zero flux conditions 
   AmanziMesh::Entity_ID_List cells;
   missed_bc_faces_ = 0;
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_model_[f] == Operators::OPERATOR_BC_NONE) {
       cells.clear();
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       if (ncells == 1) {
@@ -676,7 +676,7 @@ void CompH_PK::ComputeBC_Pn()
     std::string region = WRM[mb]->region();
     //std::cout << "block " << mb << " region: " << region << "\n";
     AmanziMesh::Entity_ID_List block;
-    mesh_->get_set_entities(region, AmanziMesh::FACE, AmanziMesh::OWNED, &block);
+    mesh_->get_set_entities(region, AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &block);
     AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) {
       //std::cout << "Processing boundary face " << *i << "\n";
@@ -698,11 +698,11 @@ void CompH_PK::DeriveFaceValuesFromCellValues(
     const std::vector<int>& bc_model, const std::vector<double>& bc_value)
 {
   AmanziMesh::Entity_ID_List cells;
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
   for (int f = 0; f < nfaces; f++) {
     cells.clear();
-    mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::OWNED, &cells);
     int ncells = cells.size();
 
     if (ncells == 2) {

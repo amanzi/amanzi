@@ -30,11 +30,11 @@ void GasConstraint::Initialize() {
   }
 
   // Initilize various common data depending on mesh and state.
-  ncells_owned_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  ncells_wghost_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  ncells_owned_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  ncells_wghost_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
-  nfaces_owned_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  nfaces_wghost_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  nfaces_owned_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  nfaces_wghost_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // Allocate memory for boundary data.
   bc_model_.resize(nfaces_wghost_, 0);
@@ -44,12 +44,12 @@ void GasConstraint::Initialize() {
   op_bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model_, bc_value_, bc_mixed_));
 
   // preconditioners
-  op1_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, mesh_)); 
-  op2_acc_= Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, mesh_));
-  op3_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, mesh_));
-  op1_acc_tmp_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, mesh_)); 
-  op2_acc_tmp_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, mesh_));
-  op3_acc_tmp_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, mesh_));
+  op1_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_)); 
+  op2_acc_= Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_));
+  op3_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_));
+  op1_acc_tmp_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_)); 
+  op2_acc_tmp_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_));
+  op3_acc_tmp_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_));
 
   Teuchos::ParameterList& wrm_list = plist_.sublist("Water retention models");
   //std::cout << wrm_list << "\n";

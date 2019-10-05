@@ -22,10 +22,11 @@
 #include "LinearOperatorFactory.hh"
 #include "MFD3D_Diffusion.hh"
 #include "OperatorDefs.hh"
-// #include "Flow_SourceFactory.hh"
+#include "TimerManager.hh"
 
-#include "Saturation_PK.hh"
+// Amanzi::Multiphase
 #include "MultiphaseDefs.hh"
+#include "Saturation_PK.hh"
 
 // namespace
 namespace Amanzi {
@@ -37,7 +38,6 @@ Saturation_PK::Saturation_PK(Teuchos::ParameterList& pk_tree,
                       const Teuchos::RCP<State>& S,
                       const Teuchos::RCP<TreeVector>& soln):
               bc_saturation(NULL),
-              bc_flux(NULL),
               ti_specs_(NULL),
               vo_(NULL),
               src_sink_(NULL),
@@ -118,18 +118,22 @@ void Saturation_PK::Setup()
   }
 }
 
+
 /* ******************************************************************
 * Clean memory.
 ****************************************************************** */
 Saturation_PK::~Saturation_PK()
 {
   if (bc_saturation != NULL) delete bc_saturation;
-  if (bc_flux != NULL) delete bc_flux;
 
   if (src_sink_ != NULL) delete src_sink_;
   if (vo_ != NULL) delete vo_;
 }
 
+
+/* ******************************************************************
+* 
+****************************************************************** */
 void Saturation_PK::InitializeFields()
 {
   // set popular default values
@@ -196,6 +200,9 @@ void Saturation_PK::InitializeFields()
 }
 
 
+/* ******************************************************************
+* 
+****************************************************************** */
 void Saturation_PK::InitializeSaturation()
 {
   // Initilize various common data depending on mesh and state.
@@ -220,7 +227,7 @@ void Saturation_PK::InitializeSaturation()
   rho_[1] = *(S_->GetScalarData("oil_density"));
   mu_[0] = *(S_->GetScalarData("water_viscosity"));
   mu_[1] = *(S_->GetScalarData("oil_viscosity"));
-  //phi_ = *S_->GetScalarData("porosity");
+  // phi_ = *S_->GetScalarData("porosity");
 
   // Initialize miscalleneous default parameters.
   ti_specs_ = NULL;
@@ -248,35 +255,28 @@ void Saturation_PK::InitializeSaturation()
   capillary_pressure_->Init(*wrm_list_); 
 
   std::string krel_method_name = mp_list_->get<std::string>("relative permeability");
-  //rel_perm_w_->ProcessStringRelativePermeability(krel_method_name);
-  //rel_perm_n_->ProcessStringRelativePermeability(krel_method_name);
 
-  // Allocate memory for boundary data.
-  bc_model.resize(nfaces_wghost, 0);
-  bc_submodel.resize(nfaces_wghost, 0);
-  bc_value.resize(nfaces_wghost, 0.0);
-  bc_coef.resize(nfaces_wghost, 0.0);
-  bc_mixed.resize(nfaces_wghost, 0.0);
-
-  bc_model_pc.resize(nfaces_wghost, 0);
-  bc_value_pc.resize(nfaces_wghost, 0.0);
-  
   // Process parameter list. This entails creating boundary conditions
   // and source term objects.
   ProcessParameterList(*mp_list_);
 
   // Now compute BCs
+  bc_submodel.resize(nfaces_wghost, 0);
+
   double time = S_->time();
   if (time >= 0.0) T_physics = time;
   time = T_physics;
-  bc_saturation->Compute(time);
-  bc_flux->Compute(time);
+  bc_saturation->Compute(time, time);
+  for (int i = 0; i < bcs_.size(); i++) {
+    bcs_[i]->Compute(time, time);
+    bcs_[i]->ComputeSubmodel(mesh_);
+  }
   ComputeBCs();
   ComputeBC_Pc();
 
   // create operator boundary condition object
-  op_bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
-  op_bc_pc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model_pc, bc_value_pc, bc_mixed));
+  op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  op_bc_pc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   
   // create advection operators
   Teuchos::ParameterList oplist_matrix = mp_list_->sublist("operators").sublist("advection operator");
@@ -320,8 +320,8 @@ void Saturation_PK::InitializeSaturation()
 
   // Timer for profiling
   Amanzi::timer_manager.add("ApplyPreconditioner", Amanzi::Timer::ACCUMULATE);
+}
 
-} // End InitializeSaturation()
 
 void Saturation_PK::InitTimeInterval(Teuchos::ParameterList& ti_list){
   
@@ -363,20 +363,10 @@ void Saturation_PK::InitTimeInterval(Teuchos::ParameterList& ti_list){
 ****************************************************************** */
 void Saturation_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
 {
-  ResetPKtimes(T0, dT0);
-  //std::cout<<"T0 "<<T0<<" dT0 "<<dT0<<" dT "<<dT<<"\n";
+  std::vector<int>& bc_model = op_bc_->bc_model();
+  std::vector<double>& bc_value = op_bc_->bc_value();
 
-  /*
-  if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
-    Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << std::endl 
-        << vo_->color("green") << "New TI phase: " << ti_specs.ti_method_name.c_str() 
-        << vo_->reset() << std::endl << std::endl;
-    *vo_->os() << "T=" << T0 / FLOW_YEAR << " [y] dT=" << dT0 << " [sec]" << std::endl
-        << "EC:" << error_control_ << " Src:" << src_sink_distribution_
-        << " PC:\"" << ti_specs.preconditioner_name.c_str() << "\"" << std::endl;
-  }
-  */
+  ResetPKtimes(T0, dT0);
 
   // Compute fractional flow
   Teuchos::RCP<const CompositeVector> water_saturation = S_->GetFieldData("water_saturation");
@@ -385,56 +375,49 @@ void Saturation_PK::InitNextTI(double T0, double dT0, TI_Specs& ti_specs)
   dfw_dS_ = frac_flow_->dF_dS();
 
   // Now upwind fractional flow
-  FractionalFlowUpwindFn func1 = &FractionalFlow::Value;
-  upwind_->Compute(*darcy_flux_, *darcy_flux_, bc_model, bc_value, *fractional_flow_, *fractional_flow_, func1);
-  FractionalFlowUpwindFn func2 = &FractionalFlow::Derivative;
-  upwind_->Compute(*darcy_flux_, *darcy_flux_, bc_model, bc_value, *dfw_dS_, *dfw_dS_, func2); 
+  upwind_->Compute(*darcy_flux_, *darcy_flux_, bc_model, *fractional_flow_);
+  upwind_->Compute(*darcy_flux_, *darcy_flux_, bc_model, *dfw_dS_); 
+
   fractional_flow_->Multiply(1.0, *fractional_flow_, *darcy_flux_, 0.0);
   dfw_dS_->Multiply(1.0, *dfw_dS_, *darcy_flux_, 0.0);
 
   // Initialize operators
-  //std::cout << "darcy_flux_: " << *darcy_flux_->ViewComponent("face") << "\n";
   op_matrix_->Setup(*darcy_flux_);
-  op_matrix_->UpdateMatrices(*fractional_flow_);
+  op_matrix_->UpdateMatrices(fractional_flow_.ptr(), Teuchos::null);
 
   op_preconditioner_->Setup(*darcy_flux_);
-  op_preconditioner_->UpdateMatrices(*dfw_dS_);
-  //op_preconditioner_->UpdateMatrices(*fractional_flow_);
-  //op_preconditioner_->ApplyBCs(op_bc_, true);
-  //op_preconditioner_->global_operator()->SymbolicAssembleMatrix();
-  //op_ = op_preconditioner_->global_operator();
-  //op_->SymbolicAssembleMatrix();
+  op_preconditioner_->UpdateMatrices(dfw_dS_.ptr(), Teuchos::null);
+  // op_preconditioner_->UpdateMatrices(*fractional_flow_);
+  // op_preconditioner_->ApplyBCs(op_bc_, true);
+  // op_preconditioner_->global_operator()->SymbolicAssembleMatrix();
+  // op_ = op_preconditioner_->global_operator();
+  // op_->SymbolicAssembleMatrix();
 
   SetAbsolutePermeabilityTensor();
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K_);
   op1_matrix_->Setup(Kptr, Teuchos::null, Teuchos::null);
   op1_matrix_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op1_matrix_->ApplyBCs(true, true);
+  op1_matrix_->ApplyBCs(true, true, true);
 
   op1_preconditioner_->Setup(Kptr, fractional_flow_, Teuchos::null);
   op1_preconditioner_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  /*
   // Initialize source
-  if (src_sink_ != NULL) {
-    //src_sink_->ComputeDistribute(T0, NULL);
-    src_sink_->ComputeDistribute(T0, T0 + dT0);
-  }
-  */
+  // if (src_sink_ != NULL) {
+  //   src_sink_->ComputeDistribute(T0, T0 + dT0);
+  // }
 
   // set up new time integration or solver
   std::string ti_method_name(ti_specs.ti_method_name);
 
   if (ti_specs.ti_method == FLOW_TIME_INTEGRATION_BDF1) {
-    //Teuchos::ParameterList bdf1_list = rp_list_.sublist(ti_method_name).sublist("BDF1");
     Teuchos::ParameterList bdf1_list = ti_specs.ti_list_ptr_->sublist("BDF1");
-    //std::cout<<bdf1_list<<"\n";
     if (! bdf1_list.isSublist("VerboseObject"))
         bdf1_list.sublist("VerboseObject") = mp_list_->sublist("VerboseObject");
 
     bdf1_dae = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
   }
-} // End InitNextTI
+}
 
 
 /* ******************************************************************* 
@@ -449,15 +432,15 @@ bool Saturation_PK::Advance(double dT_MPC, double& dT_actual)
   time = T_physics;
 
   // Update boundary conditions and source terms for each time iteration
-  /*
-  if (src_sink_ != NULL) {
-    //src_sink_->ComputeDistribute(time, NULL);
-    src_sink_->ComputeDistribute(time, time + dT_MPC);
-  }
-  */
+  // if (src_sink_ != NULL) {
+  //   src_sink_->ComputeDistribute(time, time + dT_MPC);
+  // }
 
-  bc_saturation->Compute(time);
-  bc_flux->Compute(time);
+  bc_saturation->Compute(time, time);
+  for (int i = 0; i < bcs_.size(); i++) {
+    bcs_[i]->Compute(time, time);
+    bcs_[i]->ComputeSubmodel(mesh_);
+  }
   ComputeBCs();
 
   // Update the flux
@@ -467,10 +450,10 @@ bool Saturation_PK::Advance(double dT_MPC, double& dT_actual)
   udot->PutScalar(0.0);
 
   // predict water mass change during time step
-  //if (ti_specs_->num_itrs == 0) {  // initialization
+  // if (ti_specs_->num_itrs == 0) {  // initialization
     // I do not know how to estimate du/dt, so it is set to zero.
-    //Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(soln_->Map()));
-    //udot->PutScalar(0.0);
+    // Teuchos::RCP<TreeVector> udot = Teuchos::rcp(new TreeVector(soln_->Map()));
+    // udot->PutScalar(0.0);
     /*
     if (ti_specs_->ti_method == FLOW_TIME_INTEGRATION_BDF1) {
       std::cout << "Set Initial State in Advance, soln_ = " << *soln_->Data()->ViewComponent("cell") << "\n";
@@ -483,7 +466,7 @@ bool Saturation_PK::Advance(double dT_MPC, double& dT_actual)
     */
     //UpdatePreconditioner(time, soln_, dT);
     //ti_specs_->num_itrs++;
-  //}
+  // }
 
   /*
   if (ti_specs_->ti_method == FLOW_TIME_INTEGRATION_BDF1) {
@@ -492,12 +475,11 @@ bool Saturation_PK::Advance(double dT_MPC, double& dT_actual)
     }
     // --etc this is a bug in general -- should not commit the solution unless
     //   the step passes all other PKs
-    //std::cout << "\n solution before commit: " << *soln_->Data()->ViewComponent("cell") << "\n";
     bdf1_dae->CommitSolution(dT, soln_);
     T_physics = bdf1_dae->time();
   }
   */
-  //std::cout << "Set Initial State in Advance, soln_ = " << *soln_->Data()->ViewComponent("cell") << "\n";
+
   bdf1_dae->SetInitialState(time, soln_, udot);
 
   bool fail = false;
@@ -574,49 +556,61 @@ void Saturation_PK::AddSourceTerm(CompositeVector& rhs, const CompositeVector& f
   for (src = src_sink_->begin(); src != src_sink_->end(); ++src) {
     int c = src->first;
     rhs_cell[0][c] += mesh_->cell_volume(c) * (std::max(src->second, 0.0)
-                      + std::min(src->second, 0.0) * fractional_flow_c[0][c]);
+                   + std::min(src->second, 0.0) * fractional_flow_c[0][c]);
   }
   */
 }
 
+
 /* *********************************************************************
 * Compute boundary conditions
 ********************************************************************* */
-void Saturation_PK::ComputeBCs() {
+void Saturation_PK::ComputeBCs()
+{
+  std::vector<int>& bc_model = op_bc_->bc_model();
+  std::vector<double>& bc_value = op_bc_->bc_value();
+  std::vector<double>& bc_mixed = op_bc_->bc_mixed();
+
+  std::vector<int>& bc_model_pc = op_bc_pc_->bc_model();
+  std::vector<double>& bc_value_pc = op_bc_pc_->bc_value();
+
   int flag_essential_bc = 0;
   dirichlet_bc_faces_ = 0;
 
   for (int n = 0; n < bc_model.size(); n++) {
     bc_model[n] = Operators::OPERATOR_BC_NONE;
     bc_value[n] = 0.0;
-    bc_coef[n] = 0.0;
   }
 
   Flow::FlowBoundaryFunction::Iterator bc;
   for (bc = bc_saturation->begin(); bc != bc_saturation->end(); ++bc) {
     int f = bc->first;
     bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-    bc_value[f] = bc->second;
+    bc_value[f] = bc->second[0];
     bc_model_pc[f] = Operators::OPERATOR_BC_DIRICHLET;
     flag_essential_bc = 1;
     dirichlet_bc_faces_++;
   }
 
-  for (bc = bc_flux->begin(); bc != bc_flux->end(); ++bc) {
-    int f = bc->first;
-    bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
-    bc_value[f] = bc->second;
-    bc_model_pc[f] = Operators::OPERATOR_BC_NEUMANN;
+  for (int i = 0; i < bcs_.size(); ++i) {
+    if (bcs_[i]->bc_name() == "flux") {
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        int f = it->first;
+        bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_value[f] = it->second[0];
+        bc_model_pc[f] = Operators::OPERATOR_BC_NEUMANN;
+      }
+    }
   }
 
   // mark missing boundary conditions as zero flux conditions 
   AmanziMesh::Entity_ID_List cells;
   missed_bc_faces_ = 0;
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_model[f] == Operators::OPERATOR_BC_NONE) {
       cells.clear();
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       if (ncells == 1) {
@@ -644,28 +638,31 @@ void Saturation_PK::ComputeBCs() {
 ****************************************************************** */
 void Saturation_PK::ComputeBC_Pc()
 {
+  std::vector<int>& bc_model = op_bc_pc_->bc_model();
+  std::vector<double>& bc_value = op_bc_pc_->bc_value();
+  std::vector<double>& bc_mixed = op_bc_pc_->bc_mixed();
+
   std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = rel_perm_n_->WRM(); 
+
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
     AmanziMesh::Entity_ID_List block;
-    mesh_->get_set_entities(region, AmanziMesh::FACE, AmanziMesh::OWNED, &block);
+    mesh_->get_set_entities(region, AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &block);
     AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) {
-      //std::cout << "Processing boundary face " << *i << "\n";
       if (bc_model[*i] == Operators::OPERATOR_BC_DIRICHLET) {
-        //bc_model_pc[*i] = Operators::OPERATOR_BC_DIRICHLET;
-        //std::cout << "Dirichlet value of saturation on face " << *i << " = " << bc_value[*i] << "\n";
-        bc_value_pc[*i] = WRM[mb]->capillaryPressure(bc_value[*i]);
-        //std::cout << "phase2 pressure on face " << *i << " = " << bc_value_pc[*i] << "\n";
+        bc_value[*i] = WRM[mb]->capillaryPressure(bc_value[*i]);
       } else if (bc_model[*i] == Operators::OPERATOR_BC_NEUMANN) {
-        //bc_model_pc[*i] = bc_model[*i];
-        bc_value_pc[*i] = bc_value[*i];
+        bc_value[*i] = bc_value[*i];
       }
     }
   }
 }
 
 
+/* ******************************************************************
+*
+****************************************************************** */
 void Saturation_PK::SetAbsolutePermeabilityTensor()
 {
   const CompositeVector& cv = *S_->GetFieldData("permeability");
@@ -698,6 +695,5 @@ void Saturation_PK::SetAbsolutePermeabilityTensor()
   }
 }
 
-
-}  // namespace Flow
-} // End namespace Amanzi
+}  // namespace Multiphase
+}  // namespace Amanzi

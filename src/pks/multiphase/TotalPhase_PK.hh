@@ -145,9 +145,9 @@ public:
   void IncludeCapillary(bool include_capillary) { include_capillary_ = include_capillary; }
 
   // access member methods
-  Teuchos::RCP<Operators::OperatorDiffusion> op_prec1() { return op1_preconditioner_; }
-  Teuchos::RCP<Operators::OperatorAdvection> op_prec2() { return op2_preconditioner_; }
-  std::vector<Teuchos::RCP<Operators::OperatorDiffusion> >& Ops() { return ops_; }
+  Teuchos::RCP<Operators::PDE_Diffusion> op_prec1() { return op1_preconditioner_; }
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_prec2() { return op2_preconditioner_; }
+  std::vector<Teuchos::RCP<Operators::PDE_Diffusion> >& Ops() { return ops_; }
 
 public:
   int ncells_owned_, ncells_wghost_;
@@ -200,24 +200,24 @@ private:
   Teuchos::RCP<RelativePermeability> rel_perm_w_;
   Teuchos::RCP<RelativePermeability> rel_perm_n_;
   Teuchos::RCP<CapillaryPressure> capillary_pressure_;
-  Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;
-  Teuchos::RCP<Operators::OperatorDiffusion> op1_matrix_;
-  Teuchos::RCP<Operators::OperatorDiffusion> op2_matrix_;
-  Teuchos::RCP<Operators::OperatorDiffusion> op_matrix_copy_;
-  Teuchos::RCP<Operators::OperatorDiffusion> op_matrix_copy1_;
-  Teuchos::RCP<Operators::OperatorDiffusion> op1_preconditioner_;
-  Teuchos::RCP<Operators::OperatorAdvection> op2_preconditioner_;
-  Teuchos::RCP<Operators::OperatorAdvection> op3_preconditioner_;
-  Teuchos::RCP<Operators::OperatorDiffusionFV> op_sum_;
-  Teuchos::RCP<Operators::OperatorAdvection> op_sum1_;
+  Teuchos::RCP<Operators::PDE_Accumulation> op_acc_;
+  Teuchos::RCP<Operators::PDE_Diffusion> op1_matrix_;
+  Teuchos::RCP<Operators::PDE_Diffusion> op2_matrix_;
+  Teuchos::RCP<Operators::PDE_Diffusion> op_matrix_copy_;
+  Teuchos::RCP<Operators::PDE_Diffusion> op_matrix_copy1_;
+  Teuchos::RCP<Operators::PDE_Diffusion> op1_preconditioner_;
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op2_preconditioner_;
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op3_preconditioner_;
+  Teuchos::RCP<Operators::PDE_DiffusionFV> op_sum_;
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_sum1_;
   Teuchos::RCP<Operators::BCs> op_bc_p_;
   Teuchos::RCP<Operators::BCs> op_bc_s_;
   Teuchos::RCP<Operators::BCs> op_bc_pc_;
   Teuchos::RCP<Operators::BCs> op_bc_pn_;
   Teuchos::RCP<Operators::BCs> op_bc_pc_prime_;
 
-  std::vector<Teuchos::RCP<Operators::OperatorDiffusion> > ops_;
-  typedef std::vector<Teuchos::RCP<Operators::OperatorDiffusion> >::iterator op_iter;
+  std::vector<Teuchos::RCP<Operators::PDE_Diffusion> > ops_;
+  typedef std::vector<Teuchos::RCP<Operators::PDE_Diffusion> >::iterator op_iter;
   typedef std::vector<Teuchos::RCP<Operators::Op> >::iterator local_op_iter;
 
   // upwind operator

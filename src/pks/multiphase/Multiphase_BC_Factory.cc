@@ -553,7 +553,7 @@ void MultiphaseBCFactory::PopulateSubmodelFlag(
   int nregions = regions.size();
   for (int n = 0; n < nregions; n++) {
     AmanziMesh::Entity_ID_List faces;
-    mesh_->get_set_entities(regions[n], AmanziMesh::FACE, AmanziMesh::OWNED, &faces);
+    mesh_->get_set_entities(regions[n], AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &faces);
 
     int nfaces = faces.size();
     for (int m = 0; m < nfaces; m++) {

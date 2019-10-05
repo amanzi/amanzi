@@ -249,11 +249,11 @@ void TotalPhase_PK::InitializeFields()
 void TotalPhase_PK::InitializePhase2()
 {
   // Initilize various common data depending on mesh and state.
-  ncells_owned_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  ncells_wghost_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  ncells_owned_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  ncells_wghost_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
-  nfaces_owned_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  nfaces_wghost_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  nfaces_owned_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  nfaces_wghost_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // Fundamental physical quantities
   double* gravity_data;
@@ -355,7 +355,7 @@ void TotalPhase_PK::InitializePhase2()
 
   // create diffusion operators op_matrix_ and op_preconditioner_.
   // They will need to be initialized, which is done later in InitNextTI.
-  Operators::OperatorDiffusionFactory opfactory;
+  Operators::PDE_DiffusionFactory opfactory;
   op1_matrix_ = opfactory.Create(oplist_matrix, mesh_, op_bc_p_, 1.0, gravity_);
   op2_matrix_ = opfactory.Create(oplist_matrix, mesh_, op_bc_pc_, 1.0, gravity_);
   op_matrix_copy_ = opfactory.Create(oplist_matrix, mesh_, op_bc_pc_prime_, 1.0, gravity_);
@@ -366,13 +366,13 @@ void TotalPhase_PK::InitializePhase2()
   }
 
   Teuchos::ParameterList olist_adv = mp_list_.sublist("operators").sublist("advection operator");
-  op2_preconditioner_ = Teuchos::rcp(new Operators::OperatorAdvection(olist_adv, mesh_));
-  op3_preconditioner_ = Teuchos::rcp(new Operators::OperatorAdvection(olist_adv, op2_preconditioner_->global_operator()));
-  op_sum1_ = Teuchos::rcp(new Operators::OperatorAdvection(olist_adv, op3_preconditioner_->global_operator()));
-  op_sum_ = Teuchos::rcp(new Operators::OperatorDiffusionFV(oplist_pc, op_sum1_->global_operator()));
+  op2_preconditioner_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, mesh_));
+  op3_preconditioner_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, op2_preconditioner_->global_operator()));
+  op_sum1_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, op3_preconditioner_->global_operator()));
+  op_sum_ = Teuchos::rcp(new Operators::PDE_DiffusionFV(oplist_pc, op_sum1_->global_operator()));
 
   // accumulation operators
-  op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op2_preconditioner_->global_operator())); 
+  op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op2_preconditioner_->global_operator())); 
 
   // create pressure_phase2_ which is needed for Functional and UpdatePreconditioner
   pressure_phase2_ = Teuchos::rcp(new CompositeVector(soln_->SubVector(0)->Data()->Map()));
@@ -599,11 +599,11 @@ void TotalPhase_PK::ComputeBCs() {
   // mark missing boundary conditions as zero flux conditions only for pressure equation
   AmanziMesh::Entity_ID_List cells;
   missed_bc_faces_ = 0;
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_model_[f] == Operators::OPERATOR_BC_NONE) {
       cells.clear();
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       if (ncells == 1) {
@@ -635,7 +635,7 @@ void TotalPhase_PK::ComputeBC_Pc()
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
     AmanziMesh::Entity_ID_List block;
-    mesh_->get_set_entities(region, AmanziMesh::FACE, AmanziMesh::OWNED, &block);
+    mesh_->get_set_entities(region, AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &block);
     AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) {
       //std::cout << "Processing boundary face " << *i << "\n";

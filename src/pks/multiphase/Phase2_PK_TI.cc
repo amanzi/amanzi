@@ -222,7 +222,7 @@ void Phase2_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u
      
     // additional advection operator for K * lambda_n * grad(Pc')
     //Teuchos::ParameterList olist_adv = mp_list_.sublist("operators").sublist("advection operator");
-    //op_sum1_ = Teuchos::rcp(new Operators::OperatorAdvection(olist_adv, op2_preconditioner_->global_operator()));
+    //op_sum1_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, op2_preconditioner_->global_operator()));
     op_sum1_->Setup(*tmp_flux_);
     op_sum1_->UpdateMatrices(*tmp_flux_);
     op_sum1_->ApplyBCs(op_bc_s_, true);
@@ -259,7 +259,7 @@ void Phase2_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u
 
     // diffusion operator wrt S2, corresponding to the term K * lambda_n * Pc' * grad
     //Teuchos::ParameterList& op_list = mp_list_.sublist("operators").sublist("diffusion operator").sublist("preconditioner1");
-    //op_sum_ = Teuchos::rcp(new Operators::OperatorDiffusionFV(op_list, op_sum1_->global_operator()));
+    //op_sum_ = Teuchos::rcp(new Operators::PDE_DiffusionFV(op_list, op_sum1_->global_operator()));
     //op_sum_->SetGravity(gravity_);
     op_sum_->SetBCs(op_bc_pc_, op_bc_pc_);
     op_sum_->Setup(Kptr, rel_perm_n_->Krel(), Teuchos::null);
@@ -271,7 +271,7 @@ void Phase2_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u
   }
 
   // create accumulation term
-  // op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op2_preconditioner_->global_operator())); 
+  // op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op2_preconditioner_->global_operator())); 
 
   CompositeVector porosity(*S_->GetFieldData("porosity"));
   porosity.Scale(rho_);
@@ -350,7 +350,7 @@ void Phase2_PK::NumericalJacobian(double t_old, double t_new,
       for (int f_it = 0; f_it < faces.size(); ++f_it) {
         int f_id = faces[f_it];
         AmanziMesh::Entity_ID_List cells;
-        mesh_->face_get_cells(f_id, AmanziMesh::USED, &cells);
+        mesh_->face_get_cells(f_id, AmanziMesh::Parallel_type::ALL, &cells);
         int ncells = cells.size();
         //std::cout << "Face: " << f_id << "; ncells: " << ncells << "\n";
 

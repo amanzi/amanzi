@@ -1,5 +1,5 @@
 /*
-  This is the multiphase component of the Amanzi code. 
+  MultiPhase
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -7,6 +7,7 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Quan Bui (mquanbui@math.umd.edu)
+
   This routine implements various I/O components of Saturation_PK which
   are common to Pressure_PK and Saturation_PK.
   Copied from Flow_IO.cc in Flow_PK and adapt it to multiphase.
@@ -15,11 +16,10 @@
 #include <vector>
 #include "errors.hh"
 #include "Mesh.hh"
-#include "TabularFunction.hh"
+#include "FunctionTabular.hh"
+#include "PK_DomainFunctionFactory.hh"
 
 #include "Saturation_PK.hh"
-#include "Flow_BC_Factory.hh"
-#include "Flow_SourceFactory.hh"
 #include "Multiphase_BC_Factory.hh"
 
 namespace Amanzi {
@@ -40,10 +40,25 @@ void Saturation_PK::ProcessParameterList(Teuchos::ParameterList& plist)
     msg << "Saturation_PK: problem does not have <boundary conditions> list\n";
     Exceptions::amanzi_throw(msg);
   }
-  Teuchos::RCP<Teuchos::ParameterList>
-        bc_list = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("boundary conditions", true)));
-  Flow::FlowBCFactory bc_factory(mesh_, bc_list);
-  bc_flux = bc_factory.CreateMassFlux(bc_submodel);
+
+  Teuchos::RCP<Flow::FlowBoundaryFunction> bc;
+  auto bc_list = Teuchos::rcp(new Teuchos::ParameterList(plist.sublist("boundary conditions", true)));
+
+  bcs_.clear();
+
+  if (bc_list->isSublist("mass flux")) {
+    PK_DomainFunctionFactory<Flow::FlowBoundaryFunction> bc_factory(mesh_);
+
+    Teuchos::ParameterList& tmp_list = bc_list->sublist("mass flux");
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+      if (it->second.isList()) {
+        Teuchos::ParameterList spec = Teuchos::getValue<Teuchos::ParameterList>(it->second);
+        bc = bc_factory.Create(spec, "outward mass flux", AmanziMesh::FACE, Teuchos::null);
+        bc->set_bc_name("flux");
+        bcs_.push_back(bc);
+      }
+    }
+  }
 
   MultiphaseBCFactory multiphase_bc_factory(mesh_, bc_list);
   bc_saturation = multiphase_bc_factory.CreateSaturation(bc_submodel);
@@ -308,10 +323,10 @@ void Saturation_PK::ProcessStringErrorOptions(Teuchos::ParameterList& list, int*
 void Saturation_PK::AddSourceTerms(CompositeVector& rhs)
 {
   Epetra_MultiVector& rhs_cell = *rhs.ViewComponent("cell");
-  Flow::FlowDomainFunction::Iterator src;
+  PK_DomainFunction::Iterator src;
   for (src = src_sink_->begin(); src != src_sink_->end(); ++src) {
     int c = src->first;
-    rhs_cell[0][c] += mesh_->cell_volume(c) * src->second;
+    rhs_cell[0][c] += mesh_->cell_volume(c) * src->second[0];
   }
 }
 

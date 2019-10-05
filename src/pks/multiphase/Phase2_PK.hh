@@ -1,77 +1,69 @@
 /*
-This is the multiphase flow component of the Amanzi code. 
+  MultiPhase
 
-Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Quan Bui (mquanbui@math.umd.edu)
+  Authors: Quan Bui (mquanbui@math.umd.edu)
 */
 
 #ifndef AMANZI_PHASE2_PK_HH_
 #define AMANZI_PHASE2_PK_HH_
 
-// Trilinos include
+// TPLs
 #include "Teuchos_RCP.hpp"
 
-// Basic data structure include
+// Amanzi
+#include "FlowBoundaryFunction.hh"
+#include "PDE_Accumulation.hh"
+#include "PDE_AdvectionUpwind.hh"
+#include "PDE_DiffusionFactory.hh"
+#include "PDE_DiffusionFV.hh"
+#include "PK_Factory.hh"
+#include "PK_DomainFunction.hh"
+#include "PK_PhysicalBDF.hh"
+#include "primary_variable_field_evaluator.hh"
+#include "State.hh"
 #include "Tensor.hh"
 #include "TreeVector.hh"
-
-// Time integration include
-#include "FnTimeIntegratorPK.hh"
-//#include "TI_Specs.hh"
-
-// General include
-#include "State.hh"
-#include "OperatorDiffusionFactory.hh"
-#include "OperatorDiffusionFV.hh"
-#include "OperatorAccumulation.hh"
-#include "OperatorAdvection.hh"
-#include "PK_Factory.hh"
-#include "primary_variable_field_evaluator.hh"
-#include "UpwindFactory.hh"
 #include "Upwind.hh"
+#include "UpwindFactory.hh"
 
-// Specific include for this PK
-#include "RelativePermeability.hh"
+// Amanzi::Multiphase
 #include "CapillaryPressure.hh"
 #include "MultiphaseTypeDefs.hh"
+#include "RelativePermeability.hh"
 #include "WaterRetentionModel.hh"
-
-#include "FlowBoundaryFunction.hh"
-#include "FlowDomainFunction.hh"
-#include "Flow_BC_Factory.hh"
-#include "Flow_SourceFactory.hh"
 
 namespace Amanzi {
 namespace Multiphase {
 //class State;
 
-class Phase2_PK: public FnTimeIntegratorPK {
+class Phase2_PK: public PK_PhysicalBDF {
 public:
   Phase2_PK(Teuchos::ParameterList& pk_tree,
-                    const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-                    const Teuchos::RCP<State>& S,
-                    const Teuchos::RCP<TreeVector>& soln);
+            const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+            const Teuchos::RCP<State>& S,
+            const Teuchos::RCP<TreeVector>& soln);
 
   ~Phase2_PK();
 
   // New interface for a PK
   virtual void Setup(){};
   virtual void Initialize() {
-      InitializeFields();
-      InitializePhase2();
-      InitNextTI();
+    InitializeFields();
+    InitializePhase2();
+    InitNextTI();
   }
 
-  virtual double get_dt(){return 1;}
-  virtual void set_dt(double){};
+  virtual double get_dt() { return 1.0; }
+  virtual void set_dt(double) {};
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit);
   virtual void CommitStep(double t_old, double t_new);
   virtual void CalculateDiagnostics(){};
-  virtual std::string name(){return "phase2 pk";}
+  virtual std::string name() { return "phase2 pk"; }
 
   // Main methods of this PK
   void InitializeFields();
@@ -87,21 +79,18 @@ public:
 
   // applies preconditioner to u and returns the result in Pu
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, 
-                                   Teuchos::RCP<TreeVector> Pu);
+                                  Teuchos::RCP<TreeVector> Pu);
 
   // updates the preconditioner
-  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
-                    double h);
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);
 
   // computes a norm on u-du and returns the result
   virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
-           Teuchos::RCP<const TreeVector> du) {
-  }
+                           Teuchos::RCP<const TreeVector> du) { return 0.0; }
 
   // check the admissibility of a solution
   // override with the actual admissibility check
-  virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up) {
-  }
+  virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up) { return true; }
 
   // possibly modifies the predictor that is going to be used as a
   // starting value for the nonlinear solve in the time integrator,
@@ -110,8 +99,7 @@ public:
   // this predictor this function returns true if the predictor was
   // modified, false if not
   virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
-         Teuchos::RCP<TreeVector> u) {
-  }
+                               Teuchos::RCP<TreeVector> u) { return false; }
 
   // possibly modifies the correction, after the nonlinear solver (NKA)
   // has computed it, will return true if it did change the correction,
@@ -119,14 +107,15 @@ public:
   // and pass it to NKA so that the NKA space can be updated
   virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
   ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
-         Teuchos::RCP<const TreeVector> u,
-         Teuchos::RCP<TreeVector> du) {
+                   Teuchos::RCP<const TreeVector> u,
+                   Teuchos::RCP<TreeVector> du) {
+    return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
   }
 
   // experimental approach -- calling this indicates that the time
   // integration scheme is changing the value of the solution in
   // state.
-  virtual void ChangedSolution() {}
+  virtual void ChangedSolution() {};
 
   void NumericalJacobian(double t_old, double t_new, Teuchos::RCP<const TreeVector> u, double eps);
 
@@ -145,9 +134,9 @@ public:
   void IncludeCapillary(bool include_capillary) { include_capillary_ = include_capillary; }
 
   // access member methods
-  Teuchos::RCP<Operators::OperatorDiffusion> op_prec1() { return op1_preconditioner_; }
-  Teuchos::RCP<Operators::OperatorAdvection> op_prec2() { return op2_preconditioner_; }
-  std::vector<Teuchos::RCP<Operators::OperatorDiffusion> >& Ops() { return ops_; }
+  Teuchos::RCP<Operators::PDE_Diffusion> op_prec1() { return op1_preconditioner_; }
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_prec2() { return op2_preconditioner_; }
+  std::vector<Teuchos::RCP<Operators::PDE_Diffusion> >& Ops() { return ops_; }
 
 public:
   int ncells_owned_, ncells_wghost_;
@@ -175,7 +164,7 @@ private:
   double rho_, mu_, phi_;
 
   // source and sink terms
-  Flow::FlowDomainFunction* src_sink_;
+  PK_DomainFunction* src_sink_;
   int src_sink_distribution_;
   std::string passwd_;
 
@@ -183,16 +172,6 @@ private:
   VerboseObject* vo_;
 
   // boundary conditons
-  std::vector<int> bc_model_p_, bc_submodel_p_;
-  std::vector<double> bc_value_p_, bc_coef_p_;
-  std::vector<int> bc_model_s_, bc_submodel_s_;
-  std::vector<double> bc_value_s_, bc_coef_s_;
-  std::vector<int> bc_model_pc_, bc_submodel_pc_;
-  std::vector<double> bc_value_pc_, bc_coef_pc_;
-  std::vector<int> bc_model_pc_prime_, bc_submodel_pc_prime_;
-  std::vector<double> bc_value_pc_prime_, bc_coef_pc_prime_;
-  std::vector<double> bc_mixed_;
-
   Flow::FlowBoundaryFunction* bc_pressure_;
   Flow::FlowBoundaryFunction* bc_saturation_;
   Flow::FlowBoundaryFunction* bc_flux_phase2_;
@@ -200,21 +179,21 @@ private:
   Teuchos::RCP<State> S_;
   Teuchos::RCP<RelativePermeability> rel_perm_n_;
   Teuchos::RCP<CapillaryPressure> capillary_pressure_;
-  Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;
-  Teuchos::RCP<Operators::OperatorDiffusion> op_matrix_;
-  Teuchos::RCP<Operators::OperatorDiffusion> op_matrix_copy_;
-  Teuchos::RCP<Operators::OperatorDiffusion> op_matrix_copy1_;
-  Teuchos::RCP<Operators::OperatorDiffusion> op1_preconditioner_;
-  Teuchos::RCP<Operators::OperatorAdvection> op2_preconditioner_;
-  Teuchos::RCP<Operators::OperatorDiffusionFV> op_sum_;
-  Teuchos::RCP<Operators::OperatorAdvection> op_sum1_;
+  Teuchos::RCP<Operators::PDE_Accumulation> op_acc_;
+  Teuchos::RCP<Operators::PDE_Diffusion> op_matrix_;
+  Teuchos::RCP<Operators::PDE_Diffusion> op_matrix_copy_;
+  Teuchos::RCP<Operators::PDE_Diffusion> op_matrix_copy1_;
+  Teuchos::RCP<Operators::PDE_Diffusion> op1_preconditioner_;
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op2_preconditioner_;
+  Teuchos::RCP<Operators::PDE_DiffusionFV> op_sum_;
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_sum1_;
   Teuchos::RCP<Operators::BCs> op_bc_;
   Teuchos::RCP<Operators::BCs> op_bc_s_;
   Teuchos::RCP<Operators::BCs> op_bc_pc_;
   Teuchos::RCP<Operators::BCs> op_bc_pc_prime_;
 
-  std::vector<Teuchos::RCP<Operators::OperatorDiffusion> > ops_;
-  typedef std::vector<Teuchos::RCP<Operators::OperatorDiffusion> >::iterator op_iter;
+  std::vector<Teuchos::RCP<Operators::PDE_Diffusion> > ops_;
+  typedef std::vector<Teuchos::RCP<Operators::PDE_Diffusion> >::iterator op_iter;
   typedef std::vector<Teuchos::RCP<Operators::Op> >::iterator local_op_iter;
 
   // upwind operator

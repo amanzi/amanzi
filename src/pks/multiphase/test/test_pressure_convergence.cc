@@ -80,8 +80,8 @@ for (int nx = 8; nx < 150; nx *= 2) {
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, nx, nx, gm);
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   /* create a simple state populate it */
   RCP<State> S = rcp(new State(*state_list));

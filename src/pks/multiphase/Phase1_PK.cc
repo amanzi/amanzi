@@ -209,11 +209,11 @@ void Phase1_PK::InitializeFields()
 void Phase1_PK::InitializePhase1()
 {
   // Initilize various common data depending on mesh and state.
-  ncells_owned_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  ncells_wghost_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  ncells_owned_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  ncells_wghost_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
-  nfaces_owned_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  nfaces_wghost_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  nfaces_owned_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  nfaces_wghost_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // Fundamental physical quantities
   double* gravity_data;
@@ -279,7 +279,7 @@ void Phase1_PK::InitializePhase1()
 
   // create diffusion operators op_matrix_ and op_preconditioner_.
   // They will need to be initialized, which is done later in InitNextTI.
-  Operators::OperatorDiffusionFactory opfactory;
+  Operators::PDE_DiffusionFactory opfactory;
   op1_matrix_ = opfactory.Create(oplist_matrix, mesh_, op_bc_p_, rho_, gravity_);
   //op1_matrix_->SetDensity(rho_);
   op1_preconditioner_ = opfactory.Create(oplist_pc, mesh_, op_bc_p_, rho_, gravity_);
@@ -289,10 +289,10 @@ void Phase1_PK::InitializePhase1()
   //op_test_ = opfactory.Create(mesh_, op_bc_p_, oplist_matrix, gravity_, 1);
 
   Teuchos::ParameterList olist_adv = mp_list_->sublist("operators").sublist("advection operator");
-  op2_preconditioner_ = Teuchos::rcp(new Operators::OperatorAdvection(olist_adv, mesh_));
+  op2_preconditioner_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, mesh_));
 
   // accumulation term
-  op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op2_preconditioner_->global_operator()));
+  op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op2_preconditioner_->global_operator()));
 
   // create saturation from solution
   saturation_phase1_ = Teuchos::rcp(new CompositeVector(*soln_->SubVector(1)->Data()));
@@ -481,11 +481,11 @@ void Phase1_PK::ComputeBCs() {
   // mark missing boundary conditions as zero flux conditions only for pressure equation
   AmanziMesh::Entity_ID_List cells;
   missed_bc_faces_ = 0;
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_model_p_[f] == Operators::OPERATOR_BC_NONE) {
       cells.clear();
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       if (ncells == 1) {

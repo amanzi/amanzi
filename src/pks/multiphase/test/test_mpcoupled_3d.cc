@@ -77,8 +77,8 @@ TEST(MULTIPHASE_MPCOUPLED_3D) {
                                      high_coor[0], high_coor[1], high_coor[2],
                                      mesh_size[0], mesh_size[1], mesh_size[2], gm);
   //RCP<const Mesh> mesh = meshfactory(file_name, gm);
-  //int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  //int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  //int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  //int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   /* create a simple state populate it */
   RCP<State> S = rcp(new State(*state_list));

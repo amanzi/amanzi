@@ -16,9 +16,10 @@
 #include <vector>
 
 #include "LinearOperatorFactory.hh"
-#include "Saturation_PK.hh"
 #include "OperatorDefs.hh"
 #include "Op.hh"
+#include "Saturation_PK.hh"
+#include "TimerManager.hh"
 
 namespace Amanzi {
 namespace Multiphase {
@@ -40,29 +41,24 @@ void Saturation_PK::Functional(double Told, double Tnew,
   fractional_flow_ = frac_flow_->Frac_Flow();
 
   // Now upwind fractional flow
-  FractionalFlowUpwindFn func1 = &FractionalFlow::Value; 
-  upwind_->Compute(*darcy_flux_, *darcy_flux_, bc_model, bc_value, *fractional_flow_, *fractional_flow_, func1);
+  std::vector<int>& bc_model = op_bc_->bc_model();
+  upwind_->Compute(*darcy_flux_, *darcy_flux_, bc_model, *fractional_flow_);
 
   // create the diffusion coefficient for capillary pressure
   Teuchos::RCP<CompositeVector> diff_coef = Teuchos::rcp(new CompositeVector(*rel_perm_n_->Krel()));
   diff_coef->PutScalar(0.0);
-  if (include_capillary_) 
-  {
+
+  if (include_capillary_) {
     capillary_pressure_->Compute(*water_saturation);
-    //std::cout << "capillary_pressure_: " << *capillary_pressure_->Pc()->ViewComponent("cell") << "\n";
     rel_perm_n_->Compute(*water_saturation);
-    RelativePermeabilityUpwindFn func1 = &RelativePermeability::Value;
-    upwind_n_->Compute(*darcy_flux_, *darcy_flux_, bc_model, bc_value, *rel_perm_n_->Krel(), *rel_perm_n_->Krel(), func1);
+    upwind_n_->Compute(*darcy_flux_, *darcy_flux_, bc_model, *rel_perm_n_->Krel());
     rel_perm_n_->Krel()->Scale(1.0/mu_[1]);
     diff_coef->Multiply(1.0, *rel_perm_n_->Krel(), *fractional_flow_, 0.0);
-    //diff_coef->Multiply(1.0, *diff_coef, *capillary_pressure_->dPc_dS(), 0.0);
-    //std::cout << "dPc_dS: " << *capillary_pressure_->dPc_dS()->ViewComponent("cell") << "\n";
-    //std::cout << "diff_coef: " << *diff_coef->ViewComponent("face") << "\n";
+    // diff_coef->Multiply(1.0, *diff_coef, *capillary_pressure_->dPc_dS(), 0.0);
   }
 
   // Multiply fractional flow by the velocity/flux computed in Pressure_PK
   fractional_flow_->Multiply(1.0, *fractional_flow_, *darcy_flux_, 0.0);
-  //std::cout << "fractional_flow_: " << *fractional_flow_->ViewComponent("face") << "\n";
   /*
   Epetra_MultiVector& darcy_flux_f = *fractional_flow_->ViewComponent("face");
   Epetra_MultiVector& fflow_f = *fractional_flow_->ViewComponent("face");
@@ -75,26 +71,22 @@ void Saturation_PK::Functional(double Told, double Tnew,
   // the assumption is that darcy_flux_ and fractional_flow_ have been changed, so we need to update the operators.
   op_matrix_->global_operator()->Init();
   op_matrix_->Setup(*darcy_flux_);
-  op_matrix_->UpdateMatrices(*fractional_flow_);
-  op_matrix_->ApplyBCs(op_bc_, true);
+  op_matrix_->UpdateMatrices(fractional_flow_.ptr(), Teuchos::null);
+  op_matrix_->ApplyBCs(true, true, true);
   op_matrix_->global_operator()->SymbolicAssembleMatrix();
   op_matrix_->global_operator()->AssembleMatrix();
-  //std::cout << "Functional matrix: " << *op_matrix_->global_operator()->A() << "\n";
-  //std::cout << "Functional rhs: " << *op_matrix_->global_operator()->rhs()->ViewComponent("cell") << "\n";
 
   // create diffusion operator if capillary pressure is present
   if (include_capillary_)
   {
     Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K_);
     op1_matrix_->global_operator()->Init();
-    //op1_matrix_->SetDensity(rho_[1] - rho_[0]);
+    // op1_matrix_->SetDensity(rho_[1] - rho_[0]);
     op1_matrix_->Setup(Kptr, diff_coef, Teuchos::null);
     op1_matrix_->UpdateMatrices(Teuchos::null, Teuchos::null);
-    op1_matrix_->ApplyBCs(true, true);
-    //op1_matrix_->global_operator()->SymbolicAssembleMatrix();
-    //op1_matrix_->global_operator()->AssembleMatrix();
-    //std::cout << "Functional matrix: " << *op1_matrix_->global_operator()->A() << "\n";
-    //std::cout << "Functional rhs: " << *op1_matrix_->global_operator()->rhs()->ViewComponent("cell") << "\n";
+    op1_matrix_->ApplyBCs(true, true, true);
+    // op1_matrix_->global_operator()->SymbolicAssembleMatrix();
+    // op1_matrix_->global_operator()->AssembleMatrix();
   }
 
   // Add source term if any
@@ -190,8 +182,13 @@ void Saturation_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVecto
 }
 
 
+/* ******************************************************************
+*
+****************************************************************** */
 void Saturation_PK::NumericalJacobian(double Tp, Teuchos::RCP<const TreeVector> u, double dTp) 
 {
+  std::vector<int>& bc_model = op_bc_->bc_model();
+
   double t_old, t_new, eps;
   t_old = 0.0;
   t_new = t_old + dTp;
@@ -244,25 +241,20 @@ void Saturation_PK::NumericalJacobian(double Tp, Teuchos::RCP<const TreeVector> 
     for (int f_it = 0; f_it < faces.size(); ++f_it) {
       int f_id = faces[f_it];
       AmanziMesh::Entity_ID_List cells;
-      mesh_->face_get_cells(f_id, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f_id, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
-      //std::cout << "Face: " << f_id << "; bc type: " << bc_model[f_id] << "\n";
 
-      //Epetra_MultiVector& deriv_c = *deriv->ViewComponent("cell");
-      //std::cout << "numerical deriv: " << deriv_c << "\n";
+      // Epetra_MultiVector& deriv_c = *deriv->ViewComponent("cell");
       WhetStone::DenseMatrix Aface(ncells, ncells);
       Aface = 0.0;
 
       if (bc_model[f_id] != Operators::OPERATOR_BC_NEUMANN)
       {
         for (int i = 0; i != ncells; ++i) {
-          //std::cout << "adjacent cells: " << cells[i] << "\n";
-          //std::cout << "deriv value diagonal: " << deriv_c[0][cells[i]] << "\n";
           if (cells[i] == c) 
           {
             Aface(i, i) = deriv_c[0][cells[i]]/(double)nfaces_none;
             for (int j = i + 1; j != ncells; ++j) {
-              //std::cout << "deriv value off diag: " << deriv_c[0][cells[j]] << "\n";
               Aface(j, i) = deriv_c[0][cells[j]];
             }
           } else {
@@ -271,46 +263,43 @@ void Saturation_PK::NumericalJacobian(double Tp, Teuchos::RCP<const TreeVector> 
             }
           }
         }
-        //WhetStone::DenseMatrix& tmp_matrix = (*local_op_it)->matrices[f_id];
-        WhetStone::DenseMatrix& tmp_matrix = op1_preconditioner_->local_matrices()->matrices[f_id];
+        WhetStone::DenseMatrix& tmp_matrix = op1_preconditioner_->local_op()->matrices[f_id];
         ASSERT(Aface.NumRows() == tmp_matrix.NumRows() && Aface.NumCols() == tmp_matrix.NumCols());
-        //Aface += tmp_matrix;
-        //tmp_matrix = Aface;
+        // Aface += tmp_matrix;
+        // tmp_matrix = Aface;
         tmp_matrix += Aface;
       }
     }
   }
-  op1_preconditioner_->ApplyBCs(true, true);
+  op1_preconditioner_->ApplyBCs(true, true, true);
 
   op1_preconditioner_->global_operator()->SymbolicAssembleMatrix();
   op1_preconditioner_->global_operator()->AssembleMatrix();
-  //std::cout << "numerical jacobian: " << *op1_preconditioner_->global_operator()->A() << "\n";
   op1_preconditioner_->global_operator()->InitPreconditioner(ti_specs_->preconditioner_name, *preconditioner_list_);
 }
 
 
+/* ******************************************************************
+*
+****************************************************************** */
 void Saturation_PK::AnalyticJacobian(double Tp, Teuchos::RCP<const TreeVector> u, double dTp)
 {
+  std::vector<int>& bc_model = op_bc_->bc_model();
+
   // recompute the fractional flow using the new saturation
   Teuchos::RCP<const CompositeVector> water_saturation = u->Data();
-  //std::cout << "water_saturation " << *water_saturation->ViewComponent("cell") << "\n";
   frac_flow_->Compute(*water_saturation);
   fractional_flow_ = frac_flow_->Frac_Flow();
   dfw_dS_ = frac_flow_->dF_dS();
-  //std::cout << "dfw_dS_ " << *dfw_dS_->ViewComponent("cell") << "\n";
 
   // Now upwind fractional flow
-  FractionalFlowUpwindFn func1 = &FractionalFlow::Value;
-  upwind_->Compute(*darcy_flux_, *darcy_flux_, bc_model, bc_value, *fractional_flow_, *fractional_flow_, func1);
-  FractionalFlowUpwindFn func2 = &FractionalFlow::Derivative;
-  upwind_->Compute(*darcy_flux_, *darcy_flux_, bc_model, bc_value, *dfw_dS_, *dfw_dS_, func2);
-  //std::cout << "dfw_dS_ after upwind" << *dfw_dS_->ViewComponent("face") << "\n";
+  upwind_->Compute(*darcy_flux_, *darcy_flux_, bc_model, *fractional_flow_);
+  upwind_->Compute(*darcy_flux_, *darcy_flux_, bc_model, *dfw_dS_);
+
   Teuchos::RCP<CompositeVector> fractional_flow_copy_ = Teuchos::rcp(new CompositeVector(*fractional_flow_));
-  //fractional_flow_->Multiply(1.0, *fractional_flow_, *darcy_flux_, 0.0);
+  // fractional_flow_->Multiply(1.0, *fractional_flow_, *darcy_flux_, 0.0);
   Teuchos::RCP<CompositeVector> dfw_dS_copy = Teuchos::rcp(new CompositeVector(*dfw_dS_));
   dfw_dS_->Multiply(1.0, *dfw_dS_, *darcy_flux_, 0.0);
-  //std::cout << "darcy_flux_: " << *darcy_flux_->ViewComponent("face") << "\n";
-  //std::cout << "dfw_dS_ face: " << *dfw_dS_->ViewComponent("face") << "\n";
 
   /*
   Epetra_MultiVector& darcy_flux_f = *fractional_flow_->ViewComponent("face");
@@ -322,29 +311,26 @@ void Saturation_PK::AnalyticJacobian(double Tp, Teuchos::RCP<const TreeVector> u
   }
   */
 
-  //std::cout << "darcy_flux_face: " << *darcy_flux_->ViewComponent("face") << "\n";
   // update advection operator for preconditioner
-  //op_->Init();
   op_preconditioner_->global_operator()->Init();
   op_preconditioner_->Setup(*darcy_flux_);
-  op_preconditioner_->UpdateMatrices(*dfw_dS_);
-  op_preconditioner_->ApplyBCs(op_bc_, true);
+  op_preconditioner_->UpdateMatrices(dfw_dS_.ptr(), Teuchos::null);
+  op_preconditioner_->ApplyBCs(true, true, true);
 
-  op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_preconditioner_->global_operator()));
+  op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_preconditioner_->global_operator()));
 
   CompositeVectorSpace cvs; 
   cvs.SetMesh(mesh_);
   cvs.SetGhosted(true);
   cvs.SetComponent("cell", AmanziMesh::CELL, 1);
   cvs.SetOwned(false);
-  //cvs.AddComponent("face", AmanziMesh::FACE, 1);
 
   //CompositeVector porosity(cvs);
-  //porosity.PutScalar(phi_);
+  // porosity.PutScalar(phi_);
   CompositeVector porosity(*S_->GetFieldData("porosity"));
 
   if (dTp > 0.0) {
-    op_acc_->AddAccumulationTerm(*u->Data(), porosity, dTp, "cell");
+    op_acc_->AddAccumulationDelta(*u->Data(), porosity, porosity, dTp, "cell");
   }
 
   // add source term
@@ -357,19 +343,14 @@ void Saturation_PK::AnalyticJacobian(double Tp, Teuchos::RCP<const TreeVector> u
   if (include_capillary_) {
     rel_perm_n_->Compute(*water_saturation);
     rel_perm_n_->dKdS()->Scale(-1.0); // must scale derivative by -1 since s2 is the primary variable
-    RelativePermeabilityUpwindFn func1 = &RelativePermeability::Value;
-    upwind_n_->Compute(*darcy_flux_, *darcy_flux_, bc_model, bc_value, *rel_perm_n_->Krel(), *rel_perm_n_->Krel(), func1);
-    RelativePermeabilityUpwindFn func2 = &RelativePermeability::Derivative;
-    upwind_n_->Compute(*darcy_flux_, *darcy_flux_, bc_model, bc_value, *rel_perm_n_->dKdS(), *rel_perm_n_->dKdS(), func2);
-    rel_perm_n_->Krel()->Scale(1.0/mu_[1]);
-    rel_perm_n_->dKdS()->Scale(-1.0/mu_[1]);
+    upwind_n_->Compute(*darcy_flux_, *darcy_flux_, bc_model, *rel_perm_n_->Krel());
+    upwind_n_->Compute(*darcy_flux_, *darcy_flux_, bc_model, *rel_perm_n_->dKdS());
+    rel_perm_n_->Krel()->Scale(1.0 / mu_[1]);
+    rel_perm_n_->dKdS()->Scale(-1.0 / mu_[1]);
 
     capillary_pressure_->Compute(*water_saturation);
     capillary_pressure_->dPc_dS()->Scale(-1.0); // Must scale derivative by -1 since s2 is the primary variable
-    //std::cout << "dPc_dS cell: " << *capillary_pressure_->dPc_dS()->ViewComponent("cell") << "\n";
-    CapillaryPressureUpwindFn func3 = &CapillaryPressure::Derivative;
-    upwind_pc_->Compute(*darcy_flux_, *darcy_flux_, bc_model, bc_value, 
-                        *capillary_pressure_->dPc_dS(), *capillary_pressure_->dPc_dS(), func3);
+    upwind_pc_->Compute(*darcy_flux_, *darcy_flux_, bc_model, *capillary_pressure_->dPc_dS());
     capillary_pressure_->dPc_dS()->Scale(-1.0);
 
     Teuchos::RCP<CompositeVector> diff_coef = Teuchos::rcp(new CompositeVector(*rel_perm_n_->Krel()));
@@ -377,60 +358,58 @@ void Saturation_PK::AnalyticJacobian(double Tp, Teuchos::RCP<const TreeVector> u
     diff_coef->Multiply(1.0, *diff_coef, *capillary_pressure_->dPc_dS(), 0.0);
 
     diff_coef->Scale(-1.0); // scale by -1 since we add - div(grad Pc)
-    //std::cout << "diff_coef: " << *diff_coef->ViewComponent("face") << "\n";
-    //fractional_flow_copy_->Multiply(1.0, *fractional_flow_copy_, *rel_perm_n_->Krel(), 0.0);
-    //fractional_flow_copy_->Multiply(1.0, *fractional_flow_copy_, *capillary_pressure_->dPc_dS(), 0.0);
-    //fractional_flow_copy_->Scale(-1.0);
+    // fractional_flow_copy_->Multiply(1.0, *fractional_flow_copy_, *rel_perm_n_->Krel(), 0.0);
+    // fractional_flow_copy_->Multiply(1.0, *fractional_flow_copy_, *capillary_pressure_->dPc_dS(), 0.0);
+    // fractional_flow_copy_->Scale(-1.0);
 
     Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K_);
     Teuchos::ParameterList& op_list = mp_list_->sublist("operators").sublist("diffusion operator").sublist("preconditioner1");
-    op_pres_pc_ = Teuchos::rcp(new Operators::OperatorDiffusionFV(op_list, op_preconditioner_->global_operator()));
-    //op_pres_pc_->SetGravity(gravity_);
+    op_pres_pc_ = Teuchos::rcp(new Operators::PDE_DiffusionFV(op_list, op_preconditioner_->global_operator()));
+    // op_pres_pc_->SetGravity(gravity_);
     op_pres_pc_->SetBCs(op_bc_, op_bc_);
     op_pres_pc_->Setup(Kptr, diff_coef, Teuchos::null);
     op_pres_pc_->UpdateMatrices(Teuchos::null, Teuchos::null);
-    op_pres_pc_->ApplyBCs(true, true);
+    op_pres_pc_->ApplyBCs(true, true, true);
 
     Teuchos::RCP<CompositeVector> tmp_flux_ = Teuchos::rcp(new CompositeVector(*darcy_flux_));
     tmp_flux_->PutScalar(0.0);
-    op1_matrix_->UpdateFlux(*capillary_pressure_->dPc_dS(), *tmp_flux_);
+    op1_matrix_->UpdateFlux(capillary_pressure_->dPc_dS().ptr(), tmp_flux_.ptr());
 
     Teuchos::ParameterList olist_adv = mp_list_->sublist("operators").sublist("advection operator");
-    op_sum_ = Teuchos::rcp(new Operators::OperatorAdvection(olist_adv, op_pres_pc_->global_operator()));
+    op_sum_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, op_pres_pc_->global_operator()));
     op_sum_->Setup(*tmp_flux_);
-    op_sum_->UpdateMatrices(*tmp_flux_);
-    op_sum_->ApplyBCs(op_bc_, true);
+    op_sum_->UpdateMatrices(tmp_flux_.ptr(), Teuchos::null);
+    op_sum_->ApplyBCs(true, true, true);
 
     Teuchos::RCP<CompositeVector> dlambda_fw_ds = Teuchos::rcp(new CompositeVector(*fractional_flow_));
     dlambda_fw_ds->Multiply(1.0, *dlambda_fw_ds, *rel_perm_n_->dKdS(), 0.0);
     dlambda_fw_ds->Multiply(1.0, *rel_perm_n_->Krel(), *dfw_dS_copy, 1.0);
     dlambda_fw_ds->Scale(-1.0);
     tmp_flux_->PutScalar(0.0);
+
     op1_matrix_->global_operator()->Init();
-    //op1_matrix_->SetDensity(rho_[0] - rho_[1]);
+    // op1_matrix_->SetDensity(rho_[0] - rho_[1]);
     op1_matrix_->Setup(Kptr, dlambda_fw_ds, Teuchos::null);
     op1_matrix_->UpdateMatrices(Teuchos::null, Teuchos::null);
-    op1_matrix_->UpdateFlux(*capillary_pressure_->Pc(), *tmp_flux_);
-    //dlambda_fw_ds->Multiply(1.0, *dlambda_fw_ds, *tmp_flux_, 0.0);
-    //std::cout << "dlambda_fw_ds: " << *dlambda_fw_ds->ViewComponent("face") << "\n";
+    op1_matrix_->UpdateFlux(capillary_pressure_->Pc().ptr(), tmp_flux_.ptr());
+    // dlambda_fw_ds->Multiply(1.0, *dlambda_fw_ds, *tmp_flux_, 0.0);
 
-    op_sum1_ = Teuchos::rcp(new Operators::OperatorAdvection(olist_adv, op_sum_->global_operator()));
+    op_sum1_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, op_sum_->global_operator()));
     op_sum1_->Setup(*tmp_flux_);
-    op_sum1_->UpdateMatrices(*tmp_flux_);
-    op_sum1_->ApplyBCs(op_bc_, true);
+    op_sum1_->UpdateMatrices(tmp_flux_.ptr(), Teuchos::null);
+    op_sum1_->ApplyBCs(true, true, true);
   }
 
   // finalize preconditioner
   op_preconditioner_->global_operator()->SymbolicAssembleMatrix();
   op_preconditioner_->global_operator()->AssembleMatrix();
-  //std::cout << "UpdatePreconditioner: u: " << *u->Data()->ViewComponent("cell") << "\n";
-  //std::cout<<"Saturation preconditioner: Assemble Matrix\n";
-  //std::cout<<*op_->A()<<"\n";
-  //std::cout<<"UpdatePreconditioner: RHS\n";
-  //std::cout<<*op_preconditioner_->rhs()->ViewComponent("cell")<<"\n";
   op_preconditioner_->global_operator()->InitPreconditioner(ti_specs_->preconditioner_name, *preconditioner_list_);
 }
 
+
+/* ******************************************************************
+*
+****************************************************************** */
 double Saturation_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) 
 {
   double du_inf;
@@ -441,6 +420,9 @@ double Saturation_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<c
 }
 
 
+/* ******************************************************************
+*
+****************************************************************** */
 AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 Saturation_PK::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
            Teuchos::RCP<const TreeVector> u,
@@ -476,6 +458,9 @@ Saturation_PK::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
 }
 
 
+/* ******************************************************************
+*
+****************************************************************** */
 void Saturation_PK::ClipSaturation(Teuchos::RCP<CompositeVector> s, double tol)
 {
   double max_s, min_s;

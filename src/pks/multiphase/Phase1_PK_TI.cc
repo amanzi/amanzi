@@ -164,7 +164,7 @@ void Phase1_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u
   op2_preconditioner_->global_operator()->Rescale(-1.0);
 
   // create operator for accumulation term
-  //op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op2_preconditioner_->global_operator()));
+  //op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op2_preconditioner_->global_operator()));
 
   // Create cvs for accumulation term 
   CompositeVectorSpace cvs; 
@@ -196,11 +196,11 @@ void Phase1_PK::NumericalJacobian(double t_old, double t_new,
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   //std::cout << "saturation phase2: " << *u->SubVector(1)->Data()->ViewComponent("cell") << "\n";
   //std::cout << "pressure phase1: " << *u->SubVector(0)->Data()->ViewComponent("cell") << "\n";
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K_); 
@@ -262,7 +262,7 @@ void Phase1_PK::NumericalJacobian(double t_old, double t_new,
         int f_id = faces[f_it];
         //if (f_id >= nfaces_owned) continue;
         AmanziMesh::Entity_ID_List cells;
-        mesh_->face_get_cells(f_id, AmanziMesh::USED, &cells);
+        mesh_->face_get_cells(f_id, AmanziMesh::Parallel_type::ALL, &cells);
         int ncells = cells.size();
         //std::cout << "MyPID: " << MyPID << "; Face: " << f_id << "; ncells: " << ncells << "\n";
 

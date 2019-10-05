@@ -65,7 +65,7 @@ void RelativePermeability::Compute(const CompositeVector& saturation_water)
     std::string region = WRM_[mb]->region();
 
     std::vector<AmanziMesh::Entity_ID> block;
-    mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+    mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
 
     AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) {
@@ -91,7 +91,7 @@ void RelativePermeability::DerivedSdP(const Epetra_MultiVector& p, Epetra_MultiV
   for (int mb = 0; mb < WRM_.size(); mb++) {
     std::string region = WRM_[mb]->region();
     AmanziMesh::Entity_ID_List block;
-    mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+    mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
 
     AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) {
@@ -114,7 +114,7 @@ void RelativePermeability::DerivedKdP(const Epetra_MultiVector& p, Epetra_MultiV
   for (int mb = 0; mb < WRM_.size(); mb++) {
     std::string region = WRM_[mb]->region();
     AmanziMesh::Entity_ID_List block;
-    mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+    mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
 
     AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) {
@@ -136,7 +136,7 @@ void RelativePermeability::ComputeGravityFlux(
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
     AmanziGeometry::Point Kg = K[c] * g;
@@ -167,7 +167,7 @@ void RelativePermeability::PopulateMapC2MB_()
   for (int mb = 0; mb < WRM_.size(); mb++) {
     std::string region = WRM_[mb]->region();
     AmanziMesh::Entity_ID_List block;
-    mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+    mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
 
     AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) {
@@ -178,7 +178,7 @@ void RelativePermeability::PopulateMapC2MB_()
   pp_->CopyMasterCell2GhostCell(map);
 
   // internal check
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < ncells_owned; c++) {
     if (map[c] < 0) {
       Errors::Message msg;

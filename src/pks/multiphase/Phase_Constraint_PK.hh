@@ -68,13 +68,13 @@ public:
 
 
   // access methods
-  Teuchos::RCP<Operators::OperatorAdvection> op_prec1() { return op1_prec_; }
-  Teuchos::RCP<Operators::OperatorAdvection> op_prec2() { return op2_prec_; }
-  Teuchos::RCP<Operators::OperatorAdvection> op_prec3() { return op3_prec_; }
-  Teuchos::RCP<Operators::OperatorAdvection> op_prec4() { return op4_prec_; }
-  Teuchos::RCP<Operators::OperatorAdvection> op_prec5() { return op5_prec_; }
-  Teuchos::RCP<Operators::OperatorAdvection> op_p2_sat_prec() { return op_p2_sat_prec_; }
-  Teuchos::RCP<Operators::OperatorAdvection> op_p1_sat_prec() { return op_p1_sat_prec_; }
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_prec1() { return op1_prec_; }
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_prec2() { return op2_prec_; }
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_prec3() { return op3_prec_; }
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_prec4() { return op4_prec_; }
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_prec5() { return op5_prec_; }
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_p2_sat_prec() { return op_p2_sat_prec_; }
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_p1_sat_prec() { return op_p1_sat_prec_; }
 
 public:
   Teuchos::ParameterList plist_;
@@ -100,22 +100,22 @@ private:
   Teuchos::RCP<RelativePermeability> rel_perm_n_;
   Teuchos::RCP<CapillaryPressure> capillary_pressure_;
 
-  Teuchos::RCP<Operators::OperatorAccumulation> op1_acc_;
-  Teuchos::RCP<Operators::OperatorAccumulation> op2_acc_;
-  Teuchos::RCP<Operators::OperatorAccumulation> op3_acc_;
-  Teuchos::RCP<Operators::OperatorAccumulation> op4_acc_;
-  Teuchos::RCP<Operators::OperatorAccumulation> op5_acc_;
-  Teuchos::RCP<Operators::OperatorAccumulation> op6_acc_;
-  Teuchos::RCP<Operators::OperatorAccumulation> op_p1_sat_acc_;
-  Teuchos::RCP<Operators::OperatorAccumulation> op_p2_sat_acc_;
-  Teuchos::RCP<Operators::OperatorAdvection> op1_prec_;
-  Teuchos::RCP<Operators::OperatorAdvection> op2_prec_;
-  Teuchos::RCP<Operators::OperatorAdvection> op3_prec_;
-  Teuchos::RCP<Operators::OperatorAdvection> op4_prec_;
-  Teuchos::RCP<Operators::OperatorAdvection> op5_prec_;
-  Teuchos::RCP<Operators::OperatorAdvection> op6_prec_;
-  Teuchos::RCP<Operators::OperatorAdvection> op_p1_sat_prec_;
-  Teuchos::RCP<Operators::OperatorAdvection> op_p2_sat_prec_;
+  Teuchos::RCP<Operators::PDE_Accumulation> op1_acc_;
+  Teuchos::RCP<Operators::PDE_Accumulation> op2_acc_;
+  Teuchos::RCP<Operators::PDE_Accumulation> op3_acc_;
+  Teuchos::RCP<Operators::PDE_Accumulation> op4_acc_;
+  Teuchos::RCP<Operators::PDE_Accumulation> op5_acc_;
+  Teuchos::RCP<Operators::PDE_Accumulation> op6_acc_;
+  Teuchos::RCP<Operators::PDE_Accumulation> op_p1_sat_acc_;
+  Teuchos::RCP<Operators::PDE_Accumulation> op_p2_sat_acc_;
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op1_prec_;
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op2_prec_;
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op3_prec_;
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op4_prec_;
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op5_prec_;
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op6_prec_;
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_p1_sat_prec_;
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_p2_sat_prec_;
   Teuchos::RCP<Operators::BCs> op_bc_;
 
   // The solution obtained from solving for pressure

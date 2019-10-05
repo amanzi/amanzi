@@ -111,24 +111,24 @@ void CompH_PK::Functional(double t_old, double t_new,
 
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K_);
   Teuchos::RCP<std::vector<WhetStone::Tensor> > D1ptr = Teuchos::rcpFromRef(D1_);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op1_matrix_)->global_operator()->Init();
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op1_matrix_)->Setup(Kptr, coef_w_->Coeff(), Teuchos::null);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->global_operator()->Init();
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->Setup(Kptr, coef_w_->Coeff(), Teuchos::null);
   op1_matrix_->SetDensity(rho_w_);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op1_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op1_matrix_)->ApplyBCs(true, true);
-  //((Teuchos::RCP<Operators::OperatorDiffusion>)op1_matrix_)->SymbolicAssembleMatrix();
-  //((Teuchos::RCP<Operators::OperatorDiffusion>)op1_matrix_)->AssembleMatrix();
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->ApplyBCs(true, true);
+  //((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->SymbolicAssembleMatrix();
+  //((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->AssembleMatrix();
 
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->global_operator()->Init();
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->Setup(Kptr, coef_n_->Coeff(), Teuchos::null);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->global_operator()->Init();
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->Setup(Kptr, coef_n_->Coeff(), Teuchos::null);
   op2_matrix_->SetDensity(rho_g_old);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->ApplyBCs(true, true);
-  //((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->global_operator()->SymbolicAssembleMatrix();
-  //((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->global_operator()->AssembleMatrix(); 
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->ApplyBCs(true, true);
+  //((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->global_operator()->SymbolicAssembleMatrix();
+  //((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->global_operator()->AssembleMatrix(); 
   //std::cout << "op2_rhs: \n";
-  //((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->global_operator()->rhs()->Print(std::cout);
-  //std::cout << "((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_): " << *((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->global_operator()->A() << "\n";
+  //((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->global_operator()->rhs()->Print(std::cout);
+  //std::cout << "((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_): " << *((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->global_operator()->A() << "\n";
 
   op3_matrix_->global_operator()->Init();
   op3_matrix_->Setup(D1ptr, s_with_face, Teuchos::null);
@@ -140,8 +140,8 @@ void CompH_PK::Functional(double t_old, double t_new,
   Teuchos::RCP<CompositeVector> f1 = Teuchos::rcp(new CompositeVector(f->Data()->Map()));
   Teuchos::RCP<CompositeVector> f2 = Teuchos::rcp(new CompositeVector(f->Data()->Map()));
   Teuchos::RCP<CompositeVector> f3 = Teuchos::rcp(new CompositeVector(f->Data()->Map()));
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op1_matrix_)->global_operator()->ComputeNegativeResidual(*pressure_w, *f1);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->global_operator()->ComputeNegativeResidual(*pressure_n, *f2);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->global_operator()->ComputeNegativeResidual(*pressure_w, *f1);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->global_operator()->ComputeNegativeResidual(*pressure_n, *f2);
   op3_matrix_->global_operator()->ComputeNegativeResidual(*rhl, *f3);
   //std::cout << "f1: " << *f1->ViewComponent("cell") << "\n";
   //std::cout << "f2: " << *f2->ViewComponent("cell") << "\n";
@@ -224,10 +224,10 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
 
   // compute flux for upwind direction of advection operator for nonwetting phase
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K_);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->global_operator()->Init();
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->Setup(Kptr, Teuchos::null, Teuchos::null);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->UpdateFlux(*pressure_n, *upwind_vn_);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->global_operator()->Init();
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->Setup(Kptr, Teuchos::null, Teuchos::null);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateFlux(*pressure_n, *upwind_vn_);
 
   //std::cout << "upwind velocity wet: " << *upwind_vw_->ViewComponent("face") << "\n";
   //std::cout << "upwind velocity nonwet: " << *upwind_vn_->ViewComponent("face") << "\n";
@@ -279,20 +279,20 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
 
   Teuchos::RCP<CompositeVector> tmp_flux_ = Teuchos::rcp(new CompositeVector(*upwind_vn_));
   tmp_flux_->PutScalar(0.0);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->global_operator()->Init();
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->Setup(Kptr, lambda_n, Teuchos::null);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->UpdateFlux(*pressure_n, *tmp_flux_);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->global_operator()->Init();
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->Setup(Kptr, lambda_n, Teuchos::null);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateFlux(*pressure_n, *tmp_flux_);
 
   //Teuchos::ParameterList olist_adv = comp_list_->sublist("operators").sublist("advection operator");
-  //op_prec_pres_ = Teuchos::rcp(new Operators::OperatorAdvection(olist_adv, op1_preconditioner_->global_operator()));
+  //op_prec_pres_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, op1_preconditioner_->global_operator()));
   op_prec_pres_->Setup(*tmp_flux_);
   //tmp_flux_->Scale(-1.0);
   op_prec_pres_->UpdateMatrices(*tmp_flux_);
   op_prec_pres_->ApplyBCs(op_bc_p_n_, true);
 
   // create operator for accumulation term
-  //op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_prec_pres_->global_operator()));
+  //op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_prec_pres_->global_operator()));
 
   CompositeVector acc_term(*saturation_w);
   acc_term.Scale(-1.0);
@@ -327,22 +327,22 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
 
   // Compute RHL * K * lambda_w' * grad Pw
   tmp_flux_->PutScalar(0.0);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op1_matrix_)->global_operator()->Init();
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op1_matrix_)->Setup(Kptr, rhoDerivLambdaW, Teuchos::null);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op1_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
-  //((Teuchos::RCP<Operators::OperatorDiffusion>)op1_matrix_)->ApplyBCs(true, true);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op1_matrix_)->UpdateFlux(*pressure_w, *tmp_flux_);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->global_operator()->Init();
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->Setup(Kptr, rhoDerivLambdaW, Teuchos::null);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
+  //((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->ApplyBCs(true, true);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->UpdateFlux(*pressure_w, *tmp_flux_);
   //std::cout << "tmp_flux_: " << *tmp_flux_->ViewComponent("face") << "\n";
   adv_coef->Update(1.0, *tmp_flux_, 1.0);
   //std::cout << "adv_coef 1: " << *adv_coef->ViewComponent("face") << "\n";
 
   // Compute RHG * K * lambda_n' * grad Pn
   tmp_flux_->PutScalar(0.0);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->global_operator()->Init();
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->Setup(Kptr, rhoDerivLambdaN, Teuchos::null);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
-  //((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->ApplyBCs(true, true);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->UpdateFlux(*pressure_n, *tmp_flux_);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->global_operator()->Init();
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->Setup(Kptr, rhoDerivLambdaN, Teuchos::null);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
+  //((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->ApplyBCs(true, true);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateFlux(*pressure_n, *tmp_flux_);
   //std::cout << "tmp_flux_: " << *tmp_flux_->ViewComponent("face") << "\n";
   adv_coef->Update(1.0, *tmp_flux_, 1.0);
   //std::cout << "adv_coef 2: " << *adv_coef->ViewComponent("face") << "\n";
@@ -359,11 +359,11 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
   //tmp_coef->Print(std::cout);
 
   tmp_flux_->PutScalar(0.0);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->global_operator()->Init();
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->Setup(Kptr, tmp_coef, Teuchos::null);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
-  //((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->ApplyBCs(true, true);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->UpdateFlux(*pressure_n, *tmp_flux_);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->global_operator()->Init();
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->Setup(Kptr, tmp_coef, Teuchos::null);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
+  //((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->ApplyBCs(true, true);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateFlux(*pressure_n, *tmp_flux_);
   //std::cout << "tmp_flux_: " << *tmp_flux_->ViewComponent("face") << "\n";
   adv_coef->Update(0.0, *tmp_flux_, 1.0);
   //std::cout << "adv_coef 3: " << *adv_coef->ViewComponent("face") << "\n";
@@ -372,11 +372,11 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
   tmp_flux_->PutScalar(0.0);
   Teuchos::RCP<CompositeVector> rhoLambdaN = Teuchos::rcp(new CompositeVector(*coef_n_->Coeff()));
   rhoLambdaN->Scale(dTp/mu2_);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->global_operator()->Init();
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->Setup(Kptr, rhoLambdaN, Teuchos::null);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
-  //((Teuchos::RCP<Operators::OperatorDiffusion>)op1_matrix_)->ApplyBCs(true, true);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op2_matrix_)->UpdateFlux(*coef_n_->DPc(), *tmp_flux_);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->global_operator()->Init();
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->Setup(Kptr, rhoLambdaN, Teuchos::null);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
+  //((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->ApplyBCs(true, true);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateFlux(*coef_n_->DPc(), *tmp_flux_);
   //std::cout << "tmp_flux_: " << *tmp_flux_->ViewComponent("face") << "\n";
   adv_coef->Update(0.0, *tmp_flux_, 1.0);
   //std::cout << "adv_coef 4: " << *adv_coef->ViewComponent("face") << "\n";
@@ -410,7 +410,7 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
   //EpetraExt::RowMatrixToMatlabFile("A_22_diffusion.txt", *op3_preconditioner_->global_operator()->A());
   op3_preconditioner_->global_operator()->Rescale(-1.0);
 
-  //op_prec_sat_ = Teuchos::rcp(new Operators::OperatorAdvection(olist_adv, op3_preconditioner_->global_operator()));
+  //op_prec_sat_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, op3_preconditioner_->global_operator()));
   op_prec_sat_->Setup(*upwind_vn_);
   op_prec_sat_->UpdateMatrices(*adv_coef);
   op_prec_sat_->ApplyBCs(op_bc_s_, true);
@@ -420,7 +420,7 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
   //EpetraExt::RowMatrixToMatlabFile("A_22_before_acc_debug.txt", *op_prec_sat_->global_operator()->A());
   //std::cout << "A_22 excluded the accumulation term: " << *op_prec_sat_->global_operator()->A() << "\n";
 
-  //op2_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_prec_sat_->global_operator()));
+  //op2_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_prec_sat_->global_operator()));
   acc_term.Update(phi_, *rhl, -phi_, *rho_g, 0.0);
   //acc_term.Print(std::cout);
   if (dTp > 0.0) {
@@ -439,17 +439,17 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
   op2_preconditioner_->ApplyBCs(true, true);
 
   tmp_flux_->PutScalar(0.0);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op1_matrix_)->global_operator()->Init();
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op1_matrix_)->Setup(Kptr, coef_w_->Krel(), Teuchos::null);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op1_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
-  ((Teuchos::RCP<Operators::OperatorDiffusion>)op1_matrix_)->UpdateFlux(*pressure_w, *tmp_flux_);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->global_operator()->Init();
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->Setup(Kptr, coef_w_->Krel(), Teuchos::null);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->UpdateFlux(*pressure_w, *tmp_flux_);
 
-  //op_prec_rho_ = Teuchos::rcp(new Operators::OperatorAdvection(olist_adv, op2_preconditioner_->global_operator()));
+  //op_prec_rho_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, op2_preconditioner_->global_operator()));
   op_prec_rho_->Setup(*tmp_flux_);
   op_prec_rho_->UpdateMatrices(*tmp_flux_);
   op_prec_rho_->ApplyBCs(op_bc_p_, true);
 
-  //op1_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_prec_rho_->global_operator()));
+  //op1_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_prec_rho_->global_operator()));
   acc_term.Update(phi_, *saturation_w, 0.0);
   if (dTp > 0.0) {
     op1_acc_->AddAccumulationTerm(*saturation_w, acc_term, 1.0, "cell");
@@ -523,7 +523,7 @@ void CompH_PK::NumericalJacobian(double t_old, double t_new,
     for (int f_it = 0; f_it < faces.size(); ++f_it) {
       int f_id = faces[f_it];
       AmanziMesh::Entity_ID_List cells;
-      mesh_->face_get_cells(f_id, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f_id, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
       //std::cout << "Face: " << f_id << "; bc type: " << bc_model_[f_id] << "\n";
 

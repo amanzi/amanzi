@@ -1,6 +1,5 @@
 /*
-  This is the multiphase flow component of the Amanzi code. 
-  This routine implements the interface functions to the FnTimeIntegratorPK
+  MultiPhase
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -8,9 +7,11 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Quan Bui (mquanbui@math.umd.edu)
+
+  This routine implements the interface functions for the implicit
+  time integrator.
 */
 
-// include stuff
 #include "Pressure_PK.hh"
 #include "Epetra_Vector.h"
 
@@ -37,6 +38,7 @@ void Pressure_PK::Functional(double t_old, double t_new,
   op_matrix_->global_operator()->ComputeNegativeResidual(*u_new->Data(), *f->Data());
 }
 
+
 /* ******************************************************************
 * Apply preconditioner inv(B) * X.                                                 
 ****************************************************************** */
@@ -48,7 +50,10 @@ int Pressure_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
      solver = factory.Create(solver_name_, *linear_operator_list_, op_);
 
   solver->ApplyInverse(*u->Data(), *Pu->Data());
+
+  return 0;
 }
+
 
 /* ******************************************************************
 * Update new preconditioner B(p, dT_prec).                                   
@@ -93,5 +98,5 @@ void Pressure_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector>
   op_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
 }
 
-} // End namespace Amanzi
-} // End namespace Flow
+}  // namespace Multiphase
+}  // namespace Amanzi

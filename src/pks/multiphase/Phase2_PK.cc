@@ -199,11 +199,11 @@ void Phase2_PK::InitializeFields()
 void Phase2_PK::InitializePhase2()
 {
   // Initilize various common data depending on mesh and state.
-  ncells_owned_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  ncells_wghost_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  ncells_owned_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  ncells_wghost_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
-  nfaces_owned_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  nfaces_wghost_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  nfaces_owned_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  nfaces_wghost_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // Fundamental physical quantities
   double* gravity_data;
@@ -225,29 +225,6 @@ void Phase2_PK::InitializePhase2()
   // create verbosity object
   vo_ = new VerboseObject("MultiphasePK::Phase2", mp_list_); 
 
-  // Allocate memory for boundary data.
-  bc_model_p_.resize(nfaces_wghost_, 0);
-  bc_submodel_p_.resize(nfaces_wghost_, 0);
-  bc_value_p_.resize(nfaces_wghost_, 0.0);
-  bc_coef_p_.resize(nfaces_wghost_, 0.0);
-
-  bc_model_s_.resize(nfaces_wghost_, 0);
-  bc_submodel_s_.resize(nfaces_wghost_, 0);
-  bc_value_s_.resize(nfaces_wghost_, 0.0);
-  bc_coef_s_.resize(nfaces_wghost_, 0.0);
-  
-  bc_model_pc_.resize(nfaces_wghost_, 0);
-  bc_submodel_pc_.resize(nfaces_wghost_, 0);
-  bc_value_pc_.resize(nfaces_wghost_, 0.0);
-  bc_coef_pc_.resize(nfaces_wghost_, 0.0);
-
-  bc_model_pc_prime_.resize(nfaces_wghost_, 0);
-  bc_submodel_pc_prime_.resize(nfaces_wghost_, 0);
-  bc_value_pc_prime_.resize(nfaces_wghost_, 0.0);
-  bc_coef_pc_prime_.resize(nfaces_wghost_, 0.0);
-
-  bc_mixed_.resize(nfaces_wghost_, 0.0);
-
   ProcessParameterList(mp_list_);
 
   // compute boundary values from input functions
@@ -256,9 +233,9 @@ void Phase2_PK::InitializePhase2()
   if (time >= 0.0) T_physics_ = time;
 
   time = T_physics_;
-  bc_pressure_->Compute(time);
-  bc_flux_phase2_->Compute(time);
-  bc_saturation_->Compute(time);
+  bc_pressure_->Compute(time, time);
+  bc_flux_phase2_->Compute(time, time);
+  bc_saturation_->Compute(time, time);
 
   // allocate memory for absolute permeability
   K_.resize(ncells_wghost_);
@@ -281,17 +258,17 @@ void Phase2_PK::InitializePhase2()
   capillary_pressure_->Init(wrm_list); 
 
   std::string krel_method_name = mp_list_.get<std::string>("relative permeability");
-  //rel_perm_n_->ProcessStringRelativePermeability(krel_method_name);
+  // rel_perm_n_->ProcessStringRelativePermeability(krel_method_name);
 
   // Compute boundary conditions
   ComputeBCs();
   ComputeBC_Pc();
   
   // create operator boundary condition object
-  op_bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model_p_, bc_value_p_, bc_mixed_));
-  op_bc_s_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model_s_, bc_value_s_, bc_mixed_));
-  op_bc_pc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model_pc_, bc_value_pc_, bc_mixed_));
-  op_bc_pc_prime_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model_pc_prime_, bc_value_pc_prime_, bc_mixed_));
+  op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  op_bc_s_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  op_bc_pc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  op_bc_pc_prime_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
 
   // Select a proper matrix class. 
   Teuchos::ParameterList& tmp_list = mp_list_.sublist("operators").sublist("diffusion operator");
@@ -300,7 +277,7 @@ void Phase2_PK::InitializePhase2()
 
   // create diffusion operators op_matrix_ and op_preconditioner_.
   // They will need to be initialized, which is done later in InitNextTI.
-  Operators::OperatorDiffusionFactory opfactory;
+  Operators::PDE_DiffusionFactory opfactory;
   op_matrix_ = opfactory.Create(oplist_matrix, mesh_, op_bc_pc_, rho_, gravity_);
   //op_matrix_->SetDensity(rho_);
   op_matrix_copy_ = opfactory.Create(oplist_matrix, mesh_, op_bc_pc_prime_, rho_, gravity_);
@@ -313,12 +290,12 @@ void Phase2_PK::InitializePhase2()
   }
 
   Teuchos::ParameterList olist_adv = mp_list_.sublist("operators").sublist("advection operator");
-  op2_preconditioner_ = Teuchos::rcp(new Operators::OperatorAdvection(olist_adv, mesh_));
-  op_sum1_ = Teuchos::rcp(new Operators::OperatorAdvection(olist_adv, op2_preconditioner_->global_operator()));
-  op_sum_ = Teuchos::rcp(new Operators::OperatorDiffusionFV(oplist_pc, op_sum1_->global_operator()));
+  op2_preconditioner_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, mesh_));
+  op_sum1_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, op2_preconditioner_->global_operator()));
+  op_sum_ = Teuchos::rcp(new Operators::PDE_DiffusionFV(oplist_pc, op_sum1_->global_operator()));
 
   // accumulation operators
-  op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op2_preconditioner_->global_operator())); 
+  op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op2_preconditioner_->global_operator())); 
 
   // create pressure_phase2_ which is needed for Functional and UpdatePreconditioner
   pressure_phase2_ = Teuchos::rcp(new CompositeVector(soln_->SubVector(0)->Data()->Map()));
@@ -345,6 +322,8 @@ void Phase2_PK::InitializePhase2()
 ****************************************************************** */
 void Phase2_PK::InitNextTI()
 {
+  std::vector<int>& bc_model_s = op_bc_s_->bc_model();
+
   CompositeVectorSpace cvs; 
   cvs.SetMesh(mesh_);
   cvs.SetGhosted(true);
@@ -365,10 +344,8 @@ void Phase2_PK::InitNextTI()
   rel_perm_n_->dKdS()->Scale(-rho_/mu_);
 
   upwind_velocity_ = S_->GetFieldData("phase2_velocity", passwd_);
-  RelativePermeabilityUpwindFn func1 = &RelativePermeability::Value;
-  upwind_->Compute(*upwind_velocity_, *upwind_velocity_, bc_model_s_, bc_value_s_, *rel_perm_n_->Krel(), *rel_perm_n_->Krel(), func1);
-  RelativePermeabilityUpwindFn func2 = &RelativePermeability::Derivative;
-  upwind_->Compute(*upwind_velocity_, *upwind_velocity_, bc_model_s_, bc_value_s_, *rel_perm_n_->dKdS(), *rel_perm_n_->dKdS(), func2);
+  upwind_->Compute(*upwind_velocity_, *upwind_velocity_, bc_model_s_, *rel_perm_n_->Krel());
+  upwind_->Compute(*upwind_velocity_, *upwind_velocity_, bc_model_s_, *rel_perm_n_->dKdS());
 
   // initialize matrix and preconditioner operators 
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K_); 
@@ -380,7 +357,7 @@ void Phase2_PK::InitNextTI()
 
   // this operator needs newton correction
   op2_preconditioner_->Setup(*upwind_velocity_);
-  op2_preconditioner_->UpdateMatrices(*rel_perm_n_->dKdS());
+  op2_preconditioner_->UpdateMatrices(rel_perm_n_->dKdS().ptr(), Teuchos::null);
 
   for (int ii = 0; ii < ops_.size(); ii++) {
     ops_[ii]->Setup(Kptr, rel_perm_n_->Krel(), Teuchos::null);
@@ -444,10 +421,10 @@ void Phase2_PK::CommitStep(double t_old, double t_new)
 void Phase2_PK::AddSourceTerms(CompositeVector& rhs)
 {
   Epetra_MultiVector& rhs_cell = *rhs.ViewComponent("cell", true);
-  Flow::FlowDomainFunction::Iterator src;
+  PK_DomainFunction::Iterator src;
   for (src = src_sink_->begin(); src != src_sink_->end(); ++src) {
     int c = src->first;
-    rhs_cell[0][c] += mesh_->cell_volume(c) * src->second;
+    rhs_cell[0][c] += mesh_->cell_volume(c) * src->second[0];
   }
 }
 
@@ -502,7 +479,10 @@ void Phase2_PK::SetAbsolutePermeabilityTensor()
 /* ******************************************************************* 
 * Compute boundary conditions based on bc type and values
 ******************************************************************* */
-void Phase2_PK::ComputeBCs() {
+void Phase2_PK::ComputeBCs()
+{
+  std::vector<int>& bc_model_p = op_bc_->bc_model();
+
   int flag_essential_bc = 0;
   dirichlet_bc_faces_ = 0;
 
@@ -519,7 +499,7 @@ void Phase2_PK::ComputeBCs() {
   for (bc = bc_pressure_->begin(); bc != bc_pressure_->end(); ++bc) {
     int f = bc->first;
     bc_model_p_[f] = Operators::OPERATOR_BC_DIRICHLET;
-    bc_value_p_[f] = bc->second;
+    bc_value_p_[f] = bc->second[0];
     flag_essential_bc = 1;
     dirichlet_bc_faces_++;
   }
@@ -531,23 +511,23 @@ void Phase2_PK::ComputeBCs() {
     // this only matters when we need to compute the derivatives of Krel and Pc
     // since dS2 = - dS1.
     bc_model_s_[f] = Operators::OPERATOR_BC_DIRICHLET;
-    bc_value_s_[f] = 1.0 - bc->second; // bc value for s1
+    bc_value_s_[f] = 1.0 - bc->second[0]; // bc value for s1
   }
 
   for (bc = bc_flux_phase2_->begin(); bc != bc_flux_phase2_->end(); ++bc) {
     int f = bc->first;
     bc_model_p_[f] = Operators::OPERATOR_BC_NEUMANN;
-    bc_value_p_[f] = bc->second;
+    bc_value_p_[f] = bc->second[0];
   }
   
   // mark missing boundary conditions as zero flux conditions only for pressure equation
   AmanziMesh::Entity_ID_List cells;
   missed_bc_faces_ = 0;
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_model_p_[f] == Operators::OPERATOR_BC_NONE) {
       cells.clear();
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       if (ncells == 1) {
@@ -579,7 +559,7 @@ void Phase2_PK::ComputeBC_Pc()
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
     AmanziMesh::Entity_ID_List block;
-    mesh_->get_set_entities(region, AmanziMesh::FACE, AmanziMesh::OWNED, &block);
+    mesh_->get_set_entities(region, AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &block);
     AmanziMesh::Entity_ID_List::iterator i;
     for (i = block.begin(); i != block.end(); i++) {
       //std::cout << "Processing boundary face " << *i << "\n";

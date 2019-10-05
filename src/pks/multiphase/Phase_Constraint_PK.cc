@@ -18,11 +18,11 @@ Phase_Constraint_PK::Phase_Constraint_PK(Teuchos::ParameterList plist,
 
 void Phase_Constraint_PK::Initialize() {
   // Initilize various common data depending on mesh and state.
-  ncells_owned_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  ncells_wghost_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  ncells_owned_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  ncells_wghost_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
-  nfaces_owned_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  nfaces_wghost_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  nfaces_owned_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  nfaces_wghost_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // Allocate memory for boundary data.
   bc_model_.resize(nfaces_wghost_, 0);
@@ -34,14 +34,14 @@ void Phase_Constraint_PK::Initialize() {
   op_bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model_, bc_value_, bc_mixed_));
 
   Teuchos::ParameterList olist_adv = plist_.sublist("Constraints").sublist("operators").sublist("advection operator");
-  op1_prec_ = Teuchos::rcp(new Operators::OperatorAdvection(olist_adv, mesh_));
-  op2_prec_ = Teuchos::rcp(new Operators::OperatorAdvection(olist_adv, mesh_));
-  op3_prec_ = Teuchos::rcp(new Operators::OperatorAdvection(olist_adv, mesh_));
-  op4_prec_ = Teuchos::rcp(new Operators::OperatorAdvection(olist_adv, mesh_));
-  op5_prec_ = Teuchos::rcp(new Operators::OperatorAdvection(olist_adv, mesh_));
-  op6_prec_ = Teuchos::rcp(new Operators::OperatorAdvection(olist_adv, mesh_));
-  op_p1_sat_prec_ = Teuchos::rcp(new Operators::OperatorAdvection(olist_adv, mesh_));
-  //op_p2_sat_prec_ = Teuchos::rcp(new Operators::OperatorAdvection(olist_adv, mesh_));
+  op1_prec_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, mesh_));
+  op2_prec_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, mesh_));
+  op3_prec_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, mesh_));
+  op4_prec_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, mesh_));
+  op5_prec_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, mesh_));
+  op6_prec_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, mesh_));
+  op_p1_sat_prec_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, mesh_));
+  //op_p2_sat_prec_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, mesh_));
 
   Teuchos::ParameterList& wrm_list = plist_.sublist("Water retention models");
   //std::cout << wrm_list << "\n";
@@ -296,7 +296,7 @@ void Phase_Constraint_PK::UpdatePreconditioner(double T0, Teuchos::RCP<const Tre
   op1_prec_->Setup(*velocity);
   op1_prec_->UpdateMatrices(*velocity);
   op1_prec_->ApplyBCs(op_bc_, true);
-  op1_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op1_prec_->global_operator())); 
+  op1_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op1_prec_->global_operator())); 
   op1_acc_->AddAccumulationTerm(*saturation_n, *coef_p1_f1, 1.0, "cell");
 
   // block for dH1/dfg_2
@@ -304,7 +304,7 @@ void Phase_Constraint_PK::UpdatePreconditioner(double T0, Teuchos::RCP<const Tre
   op2_prec_->Setup(*velocity);
   op2_prec_->UpdateMatrices(*velocity);
   op2_prec_->ApplyBCs(op_bc_, true);
-  op2_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op2_prec_->global_operator())); 
+  op2_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op2_prec_->global_operator())); 
   op2_acc_->AddAccumulationTerm(*saturation_n, *coef_p1_f2, 1.0, "cell");
 
   // block for dH2/dfg_1
@@ -312,7 +312,7 @@ void Phase_Constraint_PK::UpdatePreconditioner(double T0, Teuchos::RCP<const Tre
   op3_prec_->Setup(*velocity);
   op3_prec_->UpdateMatrices(*velocity);
   op3_prec_->ApplyBCs(op_bc_, true);
-  op3_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op3_prec_->global_operator())); 
+  op3_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op3_prec_->global_operator())); 
   op3_acc_->AddAccumulationTerm(*saturation_n, *coef_p2_f1, 1.0, "cell");
 
   // block for dH2/dfg_2
@@ -320,37 +320,37 @@ void Phase_Constraint_PK::UpdatePreconditioner(double T0, Teuchos::RCP<const Tre
   op4_prec_->Setup(*velocity);
   op4_prec_->UpdateMatrices(*velocity);
   op4_prec_->ApplyBCs(op_bc_, true);
-  op4_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op4_prec_->global_operator())); 
+  op4_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op4_prec_->global_operator())); 
   op4_acc_->AddAccumulationTerm(*saturation_n, *coef_p2_f2, 1.0, "cell");
 
   op5_prec_->global_operator()->Init();
   op5_prec_->Setup(*velocity);
   op5_prec_->UpdateMatrices(*velocity);
   op5_prec_->ApplyBCs(op_bc_, true);
-  op5_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op5_prec_->global_operator()));
+  op5_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op5_prec_->global_operator()));
   op5_acc_->AddAccumulationTerm(*saturation_n, *coef_p2_p1, 1.0, "cell");
 
   op6_prec_->global_operator()->Init();
   op6_prec_->Setup(*velocity);
   op6_prec_->UpdateMatrices(*velocity);
   op6_prec_->ApplyBCs(op_bc_, true);
-  op6_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op6_prec_->global_operator()));
+  op6_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op6_prec_->global_operator()));
   op6_acc_->AddAccumulationTerm(*saturation_n, *coef_p2_s2, 1.0, "cell");
 
   op_p1_sat_prec_->global_operator()->Init();
   op_p1_sat_prec_->Setup(*velocity);
   op_p1_sat_prec_->UpdateMatrices(*velocity);
   op_p1_sat_prec_->ApplyBCs(op_bc_, true);
-  op_p1_sat_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_p1_sat_prec_->global_operator()));
+  op_p1_sat_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_p1_sat_prec_->global_operator()));
   inactive_p1->Scale(-1.0);
   op_p1_sat_acc_->AddAccumulationTerm(*saturation_n, *inactive_p1, 1.0, "cell"); 
 
   Teuchos::ParameterList olist_adv = plist_.sublist("Constraints").sublist("operators").sublist("advection operator");
-  op_p2_sat_prec_ = Teuchos::rcp(new Operators::OperatorAdvection(olist_adv, op6_prec_->global_operator()));
+  op_p2_sat_prec_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, op6_prec_->global_operator()));
   op_p2_sat_prec_->Setup(*velocity);
   op_p2_sat_prec_->UpdateMatrices(*velocity);
   op_p2_sat_prec_->ApplyBCs(op_bc_, true);
-  op_p2_sat_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_p2_sat_prec_->global_operator()));
+  op_p2_sat_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_p2_sat_prec_->global_operator()));
   op_p2_sat_acc_->AddAccumulationTerm(*saturation_n, *inactive_p2, 1.0, "cell");
 
   /*
