@@ -22,7 +22,7 @@ EOF
 #
 # Default location based on Travis configuration
 #
-AMANZI_SOURCE_DIR=/home/travis/build/metsi/amanzi
+AMANZI_SOURCE_DIR=/home/travis/build/amanzi/amanzi
 
 parse_options()
 {

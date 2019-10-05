@@ -4,8 +4,8 @@ jobs:
       script:
       - echo ${TRAVIS_BRANCH}
       - echo ${PWD}
-      - cd Docker
       - echo `./get_tpls_version.sh --amanzi_source_dir=${PWD}`
+      - cd Docker
       - export AMANZI_TPLS_VER=`./get_tpls_version.sh`
       - docker build --build-arg amanzi_branch=${TRAVIS_BRANCH} --build-arg amanzi_tpls_ver=${AMANZI_TPLS_VER} -t ${DOCKER_USERNAME}/amanzi:${TRAVIS_BRANCH}-temp-build-stage-1 -f Dockerfile-Amanzi-build-stage-1 . 
       - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
