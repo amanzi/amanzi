@@ -1,3 +1,4 @@
+ARG amanzi_branch=master
 FROM metsi/amanzi:${amanzi_branch}-temp-build-stage-1
 LABEL Description="Amanzi: Build stage 2 and install in temporary Docker image."
 
