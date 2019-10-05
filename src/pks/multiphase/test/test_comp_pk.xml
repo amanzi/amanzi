@@ -1,0 +1,361 @@
+<ParameterList>
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+  <Parameter name="grid_option" type="string" value="Unstructured"/>
+  <Parameter isUsed="true" name="input file name" type="string" value="dvz_3layer_2D_short.xml"/>
+  <Parameter name="New multi-process coordinator" type="bool" value="true"/>
+
+  <!--  REGIONS  -->
+  <ParameterList name="Regions">
+    <ParameterList name="Left side">
+      <ParameterList name="Region: Plane">
+        <Parameter name="Location" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{-1.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Right side">
+      <ParameterList name="Region: Plane">
+        <Parameter name="Location" type="Array(double)" value="{1.0,0.0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{1.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Bottom side">
+      <ParameterList name="Region: Plane">
+        <Parameter name="Location" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="Direction" type="Array(double)" value="{0.0,-1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Top side">
+      <ParameterList name="Region: Plane">
+        <Parameter name="Location" type="Array(double)" value="{1.0,0.1}"/>
+        <Parameter name="Direction" type="Array(double)" value="{0.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="All">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{1.0,0.1}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Left Domain">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{0.35,0.1}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Right Domain">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array(double)" value="{0.35,0.0}"/>
+        <Parameter name="High Coordinate" type="Array(double)" value="{1.0,0.1}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Mesh">
+    <ParameterList name="Unstructured">
+      <ParameterList name="Generate Mesh">
+          <Parameter name="Number of Cells" type="Array(int)" value="{5, 1}"/>
+          <Parameter name="Domain Low Coordinate" type="Array(double)" value="{0.00000000000000000e+00, 0.00000000000000000e+00}"/>
+          <Parameter name="Domain High Coordinate" type="Array(double)" value="{1.0, 1.0}"/>
+      </ParameterList>
+      <ParameterList name="Expert">
+        <Parameter name="Framework" type="string" value="MSTK"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Domain">
+    <Parameter isUsed="true" name="Spatial Dimension" type="int" value="2"/>
+  </ParameterList>
+
+  <ParameterList name="PK Tree">
+    <ParameterList name="Component 1">
+      <Parameter name="component name" type="string" value="Component 1"/>
+    </ParameterList>
+    <ParameterList name="Component 2">
+      <Parameter name="component name" type="string" value="Component 2"/>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="State">
+    <ParameterList name="initial conditions">
+      <ParameterList name="gravity">
+        <Parameter name="value" type="Array(double)" value="{0.00000000000000000e+00, 0.0}"/>
+      </ParameterList>
+      <ParameterList name="water_viscosity">
+        <Parameter name="value" type="double" value="1.0"/>
+      </ParameterList>
+      <ParameterList name="water_density">
+        <Parameter name="value" type="double" value="1.0"/>
+      </ParameterList>
+      <ParameterList name="phase_saturation">
+        <ParameterList name="function">
+          <ParameterList name="Left Domain">
+            <Parameter name="regions" type="Array(string)" value="{Left Domain}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.80000000000000000e+00"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="Right Domain">
+            <Parameter name="regions" type="Array(string)" value="{Right Domain}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.20000000000000000e+00"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="phase_pressure">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="10.00000000000000000e+00"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="permeability">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
+            <Parameter name="component" type="string" value="cell"/>
+              <ParameterList name="function">
+                <Parameter name="Number of DoFs" type="int" value="2"/>
+                <Parameter name="Function type" type="string" value="composite function"/>
+                <ParameterList name="DoF 1 Function">
+                  <ParameterList name="function-constant">
+                    <Parameter name="value" type="double" value="1.0"/>
+                  </ParameterList>
+                </ParameterList>
+                <ParameterList name="DoF 2 Function">
+                  <ParameterList name="function-constant">
+                    <Parameter name="value" type="double" value="1.0"/>
+                  </ParameterList>
+                </ParameterList>
+              </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList> <!-- End initial conditions -->
+
+    <!--
+    <ParameterList name="mesh partitions">
+      <ParameterList name="materials">
+        <Parameter name="region list" type="Array(string)" value="{All}"/>
+      </ParameterList>
+    </ParameterList>
+    -->
+  </ParameterList> <!-- End State -->
+
+  <!--  MPMC Specs -->
+  <ParameterList name="MPMC Specs">
+    <ParameterList name="EOS">
+      <ParameterList name="Component 2">
+        <Parameter name="coefficient name" type="string" value="henry coefficient"/>
+        <Parameter name="coefficient value" type="double" value="64.0"/>
+      </ParameterList>
+      <ParameterList name="Component 1">
+        <Parameter name="coefficient name" type="string" value="water vapor pressure"/>
+        <Parameter name="coefficient value" type="double" value="2.28571428571"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Constraints">
+      <ParameterList name="operators">
+        <ParameterList name="advection operator">
+          <Parameter name="discretization primary" type="string" value="upwind"/>
+          <Parameter name="reconstruction order" type="int" value="0"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Component 2">
+      <Parameter name="component name" type="string" value="hydrogen"/>
+      <Parameter name="component id" type="int" value="1"/>
+
+      <Parameter name="atmospheric pressure" type="double" value="0.0"/>
+      <Parameter name="relative permeability" type="string" value="upwind with gravity"/>
+
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="extreme"/>
+      </ParameterList>
+
+      <ParameterList name="operators">
+        <ParameterList name="advection operator">
+          <Parameter name="discretization primary" type="string" value="upwind"/>
+          <Parameter name="reconstruction order" type="int" value="0"/>
+        </ParameterList>
+        <ParameterList name="diffusion operator">
+          <ParameterList name="upwind">
+            <Parameter name="upwind method" type="string" value="standard"/>
+            <ParameterList name="upwind standard parameters">
+               <Parameter name="tolerance" type="double" value="1e-12"/>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="matrix">
+            <Parameter name="discretization primary" type="string" value="fv: default"/>
+            <Parameter name="discretization secondary" type="string" value="fv: default"/>
+            <Parameter name="schema" type="Array(string)" value="{cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
+            <Parameter name="gravity" type="bool" value="false"/>
+            <Parameter name="upwind" type="string" value="with flux"/>
+          </ParameterList>
+          <ParameterList name="preconditioner">
+            <Parameter name="discretization primary" type="string" value="fv: default"/>
+            <Parameter name="discretization secondary" type="string" value="fv: default"/>
+            <Parameter name="schema" type="Array(string)" value="{cell}"/>
+            <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
+            <Parameter name="gravity" type="bool" value="false"/>
+            <Parameter name="upwind" type="string" value="with flux"/>
+            <Parameter name="newton correction" type="string" value="true jacobian"/>           
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="boundary conditions">
+        <ParameterList name="pressure">
+          <ParameterList name="BC 1">
+            <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+            <ParameterList name="boundary pressure">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="11.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="BC 2">
+            <Parameter name="regions" type="Array(string)" value="{Right side}"/>
+            <ParameterList name="boundary pressure">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="10.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <!--
+        <ParameterList name="mass flux phase1">
+          <ParameterList name="BC 1">
+            <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+            <ParameterList name="outward mass flux">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="-1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList> 
+          <ParameterList name="BC 3">
+            <Parameter name="regions" type="Array(string)" value="{Top side, Bottom side}"/>
+            <ParameterList name="outward mass flux">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="-0.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="mass flux phase2">
+          <ParameterList name="BC 1">
+            <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+            <ParameterList name="outward mass flux">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="-0.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList> 
+          <ParameterList name="BC 3">
+            <Parameter name="regions" type="Array(string)" value="{Top side, Bottom side}"/>
+            <ParameterList name="outward mass flux">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="-0.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        -->
+        <ParameterList name="saturation">
+          <ParameterList name="BC 1">
+            <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+            <ParameterList name="boundary saturation">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="BC 2">
+            <Parameter name="regions" type="Array(string)" value="{Right side}"/>
+            <ParameterList name="boundary saturation">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.2"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        
+        <ParameterList name="molar fraction phase1">
+          <ParameterList name="BC 1">
+            <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+            <ParameterList name="boundary molar fraction">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.125"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="BC 2">
+            <Parameter name="regions" type="Array(string)" value="{Right side}"/>
+            <ParameterList name="boundary molar fraction">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.125"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+
+        <ParameterList name="molar fraction phase2">
+          <ParameterList name="BC 1">
+            <Parameter name="regions" type="Array(string)" value="{Left side}"/>
+            <ParameterList name="boundary molar fraction">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="BC 2">
+            <Parameter name="regions" type="Array(string)" value="{Right side}"/>
+            <ParameterList name="boundary molar fraction">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.8"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="source terms">
+        <ParameterList name="SRC 1">
+          <Parameter name="regions" type="Array(string)" value="{All}"/>
+          <Parameter name="spatial distribution method" type="string" value="none"/>
+          <Parameter name="submodel" type="string" value="intergrand"/>
+          <ParameterList name="sink">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="0.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList> <!-- End Component 2 -->
+
+    <ParameterList name="Water retention models">
+      <ParameterList name="Water retention model for the whole domain">
+        <Parameter name="water retention model" type="string" value="Simple"/>
+        <Parameter name="region" type="string" value="All"/>
+        <Parameter name="residual saturation wet" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="residual saturation nonwet" type="double" value="0.00000000000000000e+00"/>
+        <Parameter name="coefficient" type="double" value="0.0"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList> <!-- End MPMC Specs -->
+
+</ParameterList>
