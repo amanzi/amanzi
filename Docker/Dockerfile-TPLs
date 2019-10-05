@@ -1,5 +1,7 @@
 #FROM ubuntu:latest
-FROM ubuntu:artful
+#FROM ubuntu:artful
+FROM ubuntu:bionic
+
 LABEL Description="This image contains all of the third-party libraries needed by Amanzi (based on the specified branch, default branch is master)."
 
 RUN apt-get -q update -y && apt-get -qq install -y \
@@ -23,7 +25,8 @@ RUN apt-get -q update -y && apt-get -qq install -y \
   openssl \
   python2.7 \
   rsync \
-  wget 
+  wget  \
+  zlib1g-dev
 
 # Versions change and we cannot set environment variables from command output.
 ARG petsc_ver
