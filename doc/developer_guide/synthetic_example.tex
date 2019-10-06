@@ -38,14 +38,6 @@ The PDE class defined must be a derived class of PDE\_HelperDiscretization, this
 %
 Notice that in this class we have, additionally, defined a composite vector space as a class variable. Composite vector spaces are factories for composite vectors which is an enhanced epetra multivector. This factory can help us create vectors for our trial or test spaces which in the case of a square system are the same or at least have the same set of degrees of freedom. In what follows we will explain how to define the global operator, we note that this is all done in the constructor of the PDE class.
 %
-\subsubsection{Constructing the Local Stiffness Matrix}
-Consider the local reconstruction and test spaces for a cell $P$ as
-%
-\begin{equation}
-\Sr:=\left\{p: \triangle p = 0\right\},\quad \T:=\Poly_1^2(P).
-\end{equation}
-%
-Then, for $p\in \Sr$ and $q\in\T$ take
 \subsubsection{Populating The Local Matrices and Defining the Global Operator}\label{Sec:LocalMatAndGlobalOp}
 %
 The first step in populating the local matrices is to define a schema. There should be one schema for the test space and one for the trial space, in the case of square systems the same can be used for both. Schemas define the different aspects of a variable and its discretization. Schemas require two inputs: the base and and an item. The base describes what type of assembly is required for this variable the choices include cells, faces, edges and nodes all part of the AmanziMesh namespace. Selecting, for example, faces as the base will imply that the local matrices are associated with the faces of the mesh. Moreover, item defines the type of degrees of freedom that are used to discretize the variable in question. Items require three inputs: a part of the topology of the mesh like a node or an edge which defines where the degrees of freedom are places, the type of quantity the degree of freedom, whether it is scalar of vector valued and the number of degrees of freedom of this type. For a classic finite element method to solve the Poisson equation the definition of its schema will look something like
