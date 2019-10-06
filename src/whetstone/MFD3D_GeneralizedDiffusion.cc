@@ -112,6 +112,25 @@ int MFD3D_GeneralizedDiffusion::MassMatrix(int c, const Tensor& K, DenseMatrix& 
 
 
 /* ******************************************************************
+* Mass matrix for genelized polyhedron
+****************************************************************** */
+int MFD3D_GeneralizedDiffusion::MassMatrixOptimized(
+    int c, const Tensor& K, DenseMatrix& M)
+{
+  DenseMatrix N;
+
+  Tensor Kinv(K);
+  Kinv.Inverse();
+
+  int ok = L2consistency(c, Kinv, N, M, true);
+  if (ok) return ok;
+
+  StabilityOptimized_(K, N, M);
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
 * Consistency condition for inverse of inner product on a generized 
 * polyhedron.
 ****************************************************************** */
@@ -305,7 +324,7 @@ void MFD3D_GeneralizedDiffusion::CurvedFaceGeometry_(
   }
   xf /= nnodes;
 
-  // centrer of gravity
+  // weighted center of gravity
   double area(0.0);
 
   xm[0].set(0.0, 0.0, 0.0);

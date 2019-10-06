@@ -196,11 +196,11 @@ int MFD3D_LagrangeSerendipity::StiffnessMatrix(
 
 
 /* ******************************************************************
-* Projector 
+* Projector on a mesh face.
 ****************************************************************** */
-void MFD3D_LagrangeSerendipity::H1Face(
+void MFD3D_LagrangeSerendipity::ProjectorFace_(
     int f, const std::vector<Polynomial>& ve,
-    const Polynomial* moments, Polynomial& uf)
+    const ProjectorType type, const Polynomial* moments, Polynomial& uf)
 {
   const auto& xf = mesh_->face_centroid(f);
   const auto& normal = mesh_->face_normal(f);
@@ -215,7 +215,7 @@ void MFD3D_LagrangeSerendipity::H1Face(
     vve.push_back(tmp);
   }
 
-  ProjectorCell_<SurfaceMiniMesh>(surf_mesh, f, vve, vve, ProjectorType::H1, moments, uf);
+  ProjectorCell_<SurfaceMiniMesh>(surf_mesh, f, vve, vve, type, moments, uf);
   uf.ChangeOrigin(AmanziGeometry::Point(d_ - 1));
   uf.InverseChangeCoordinates(xf, *coordsys->tau());  
 }

@@ -256,13 +256,13 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   op_flux->UpdateMatrices(velf.ptr());
   op_flux->ApplyBCs(true, true, true);
 
-  op_adv->SetupPolyVector(velc);
+  op_adv->Setup(velc, false);
   op_adv->UpdateMatrices();
 
   if (conservative_form || weak_form == "primal" || weak_form == "gauss points")
-    op_reac->SetupScalar(Kc);
+    op_reac->Setup(Kc);
   else 
-    op_reac->SetupPoly(Kn);
+    op_reac->Setup(Kn, false);
   op_reac->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // create preconditoner
@@ -314,7 +314,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   ana.ComputeCellError(dg, p, 0.0, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean, pl2_int);
 
   if (MyPID == 0) {
-    sol.ChangeOrigin(AmanziGeometry::Point(2));
+    sol.ChangeOrigin(AmanziGeometry::Point(dim));
     std::cout << "\nEXACT solution: " << sol << std::endl;
     printf("Mean:     L2(p)=%12.9f  Inf(p)=%12.9f  itr=%3d\n", pl2_mean, pinf_mean, solver.num_itrs());
     printf("Total:    L2(p)=%12.9f  Inf(p)=%12.9f\n", pl2_err, pinf_err);

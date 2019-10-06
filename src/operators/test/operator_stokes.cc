@@ -246,11 +246,11 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   // Post-processing
   // -- compute velocity error
   double unorm, ul2_err, uinf_err;
-  ana.ComputeNodeError(*solution.SubVector(0)->Data(), 0.0, unorm, ul2_err, uinf_err);
+  ana.VectorNodeError(*solution.SubVector(0)->Data(), 0.0, unorm, ul2_err, uinf_err);
 
   // -- compute pressure error
   double pnorm, pl2_err, pinf_err;
-  ana.ComputeCellError(*solution.SubVector(1)->Data(), 0.0, pnorm, pl2_err, pinf_err);
+  ana.ScalarCellError(*solution.SubVector(1)->Data(), 0.0, pnorm, pl2_err, pinf_err);
 
   if (MyPID == 0) {
     ul2_err /= unorm;

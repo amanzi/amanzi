@@ -153,5 +153,12 @@ if (BUILD_TESTS)
                           test/test_surface_column_mesh.cc 
                     LINK_LIBS mstk_mesh geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+    # Test: extract fracture test
+    add_amanzi_test(mstk_fracture_mesh mstk_fracture_mesh
+                    KIND unit
+                    SOURCE
+                          test/Main.cc 
+                          test/test_fracture_mesh.cc 
+                    LINK_LIBS mstk_mesh geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 endif()
 

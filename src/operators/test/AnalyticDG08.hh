@@ -43,21 +43,21 @@ class AnalyticDG08 : public AnalyticDGBase {
     sol.Reshape(d_, order_, true); 
     sol.set_origin(p);
 
-    double tol(1e-5), x0, y0, dx, dy;
+    double tol(1e-5), x0, y0, dx, dy, sn(std::sin(t)), cs(std::cos(t));
     double uxp, uxm, uyp, uym;
-    x0 = 0.5 - 0.25 * std::sin(t);
-    y0 = 0.5 + 0.25 * std::cos(t);
+    x0 = 0.5 - 0.25 * sn;
+    y0 = 0.5 + 0.25 * cs;
     dx = p[0] - x0;
     dy = p[1] - y0;
 
-    sol(0) = DistanceNotchedCircle_(dx, dy);
+    sol(0) = DistanceNotchedCircle_(dx, dy, sn, cs);
 
     if (order_ > 0) {
-      uxm = DistanceNotchedCircle_(dx - tol, dy);
-      uxp = DistanceNotchedCircle_(dx + tol, dy);
+      uxm = DistanceNotchedCircle_(dx - tol, dy, sn, cs);
+      uxp = DistanceNotchedCircle_(dx + tol, dy, sn, cs);
 
-      uym = DistanceNotchedCircle_(dx, dy - tol);
-      uyp = DistanceNotchedCircle_(dx, dy + tol);
+      uym = DistanceNotchedCircle_(dx, dy - tol, sn, cs);
+      uyp = DistanceNotchedCircle_(dx, dy + tol, sn, cs);
 
       sol(1) = (uxp - uxm) / (2 * tol);
       sol(2) = (uyp - uym) / (2 * tol);
@@ -65,10 +65,10 @@ class AnalyticDG08 : public AnalyticDGBase {
 
     if (order_ > 1) {
       double umm, ump, upm, upp;
-      umm = DistanceNotchedCircle_(dx - tol, dy - tol);
-      ump = DistanceNotchedCircle_(dx - tol, dy + tol);
-      upm = DistanceNotchedCircle_(dx + tol, dy - tol);
-      upp = DistanceNotchedCircle_(dx + tol, dy + tol);
+      umm = DistanceNotchedCircle_(dx - tol, dy - tol, sn, cs);
+      ump = DistanceNotchedCircle_(dx - tol, dy + tol, sn, cs);
+      upm = DistanceNotchedCircle_(dx + tol, dy - tol, sn, cs);
+      upp = DistanceNotchedCircle_(dx + tol, dy + tol, sn, cs);
 
       sol(3) = (uxm - 2 * sol(0) + uxp) / (tol * tol);
       sol(4) = (upp + umm - upm - ump) / (4 * tol * tol);
@@ -116,17 +116,21 @@ class AnalyticDG08 : public AnalyticDGBase {
   }
 
  private:
-  double DistanceNotchedCircle_(double x, double y);
+  double DistanceNotchedCircle_(double x0, double y0, double sn, double cs);
 };
 
 
 /* ******************************************************************
-* Implementation of distance functions. 
+* Distance function for counter clockwise rotated notched circle.
 * Assumptions: (a) circle center is at point (0, 0); (b) distance is
 * positive inside notched circle.
 ****************************************************************** */
-double AnalyticDG08::DistanceNotchedCircle_(double x, double y)
+double AnalyticDG08::DistanceNotchedCircle_(double x0, double y0, double sn, double cs)
 {
+  // rotate the input point clockwise
+  double x = x0 * cs + y0 * sn;
+  double y =-x0 * sn + y0 * cs;
+
   double R(0.2), W(0.05), H;
   H = std::pow(R * R - W * W, 0.5);
  
@@ -134,8 +138,8 @@ double AnalyticDG08::DistanceNotchedCircle_(double x, double y)
   double dx, dy, tmp = std::pow(x * x + y * y, 0.5);
   double dist = R - tmp; 
 
-  // above notch, right
-  if (y >= H && std::fabs(x) <= W) {
+  // cone above notch
+  if (y >= H && H * x >= -W * y && H * x <= W * y) {
     dy = y - H;
     if (x >= 0.0)
       dist = -std::pow((x - W) * (x - W) + dy * dy, 0.5);

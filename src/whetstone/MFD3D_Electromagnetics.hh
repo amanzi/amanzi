@@ -80,8 +80,6 @@ class MFD3D_Electromagnetics : public MFD3D,
   int H1consistency2D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
   int H1consistency3D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
 
-  void AddGradientToProjector_(int c, DenseMatrix& N);
-
  protected:
   using MFD3D::mesh_;
   using MFD3D::d_;

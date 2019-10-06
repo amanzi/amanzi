@@ -751,9 +751,13 @@ class Mesh {
   // High-order mesh
   //----------------
 
-  // Geometry of a curved face is defined by a derived mesh class from
-  // the list of returned interior nodess. For a linear mesh, this
-  // function is null.
+  // Geometry of a curved edge/face is defined by a derived mesh class 
+  // from the list of returned interior nodes. For a linear (default)
+  // mesh, these functions return the empty list.
+  virtual
+  void edge_get_ho_nodes(Entity_ID edgeid,
+                         AmanziGeometry::Point_List *nodes) const { nodes->clear(); }
+
   virtual
   void face_get_ho_nodes(Entity_ID faceid,
                          AmanziGeometry::Point_List *nodes) const { nodes->clear(); }

@@ -338,7 +338,7 @@ class MeshSurfaceCell : public Mesh {
   virtual
   void face_get_cells_internal_(const Entity_ID faceid,
           const Parallel_type ptype,
-          Entity_ID_List *cellids) const;
+          Entity_ID_List *cellids) const override;
 
   // edges of a face - this function is implemented in each mesh
   // framework. The results are cached in the base class
@@ -346,13 +346,13 @@ class MeshSurfaceCell : public Mesh {
   void face_get_edges_and_dirs_internal_(const Entity_ID faceid,
           Entity_ID_List *edgeids,
           std::vector<int> *edge_dirs,
-          const bool ordered=true) const;
+          const bool ordered=true) const override;
 
   // edges of a cell - this function is implemented in each mesh
   // framework. The results are cached in the base class.
   virtual
   void cell_get_edges_internal_(const Entity_ID cellid,
-          Entity_ID_List *edgeids) const;
+          Entity_ID_List *edgeids) const override;
 
 
   // edges and directions of a 2D cell - this function is implemented
@@ -360,7 +360,7 @@ class MeshSurfaceCell : public Mesh {
   virtual
   void cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
           Entity_ID_List *edgeids,
-          std::vector<int> *edge_dirs) const;
+          std::vector<int> *edge_dirs) const override;
 
  protected:
 

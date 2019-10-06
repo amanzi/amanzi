@@ -22,10 +22,10 @@ class Verification {
   Verification(Teuchos::RCP<const Operator> op) : op_(op) {};
   ~Verification() {};
 
-  void CheckMatrixSPD(bool symmetry = true, bool pos_def = true, bool assembled = false) {
+  void CheckMatrixSPD(bool symmetry = true, bool pos_def = true, int nloops = 2, bool assembled = false) {
     Vector a(op_->DomainMap()), ha(a), b(a), hb(a);
 
-    for (int n = 0; n < 2; n++) {
+    for (int n = 0; n < nloops; n++) {
       a.Random();
       b.Random();
       if (assembled) {
@@ -104,7 +104,7 @@ class Verification {
   }
 
 
-  void CheckSpectralBounds() {
+  void CheckSpectralBounds(int kernel_dim = 1) {
     double emin = 1e+99, emax = -1e+99;
     double cndmin = 1e+99, cndmax = 1.0, cndavg = 0.0;
 
@@ -124,8 +124,9 @@ class Verification {
 
         OrderByIncrease_(n, dmem1.Values());
 
-        double e, a = dmem1(1), b = dmem1(1);  // skip the 1st eigenvalue
-        for (int k = 2; k < n; k++) {
+        int m = std::min(kernel_dim, dmem1.NumRows() - 1);
+        double e, a = dmem1(m), b = dmem1(m);  // skip the kernel
+        for (int k = m + 1; k < n; k++) {
           e = dmem1(k);
           a = std::min(a, e);
           b = std::max(b, e);

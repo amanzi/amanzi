@@ -51,7 +51,8 @@ TEST(DG2D_MASS_MATRIX) {
   for (int k = 0; k < 3; k++) {
     Teuchos::ParameterList plist;
     plist.set<std::string>("dg basis", "orthonormalized")
-         .set<int>("method order", k);
+         .set<int>("method order", k)
+         .set<int>("quadrature order", 2);
     DG_Modal dg(plist, mesh);
 
     dg.MassMatrix(0, T, M);
@@ -93,7 +94,8 @@ TEST(DG3D_MASS_MATRIX) {
   for (int k = 0; k < 3; k++) {
     Teuchos::ParameterList plist;
     plist.set<std::string>("dg basis", "regularized")
-         .set<int>("method order", k);
+         .set<int>("method order", k)
+         .set<int>("quadrature order", 2);
 
     DG_Modal dg1(plist, mesh);
     dg1.MassMatrix(0, T, M0);
@@ -174,7 +176,8 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
   for (int k = 0; k < 3; k++) {
     Teuchos::ParameterList plist;
     plist.set<std::string>("dg basis", "orthonormalized")
-         .set<int>("method order", 2);
+         .set<int>("method order", 2)
+         .set<int>("quadrature order", 2);
     DG_Modal dg(plist, mesh);
 
     Polynomial u(2, k);
@@ -202,18 +205,65 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
     M1.Multiply(v, av, false);
     v.Dot(av, &tmp);
     integral[k] = tmp;
-
-    // method 2 for calculating mass matrix
-    VectorPolynomial vu(2, 5); 
-    vu[0] = vu[1] = vu[2] = vu[3] = vu[4] = u;
-
-    dg.MassMatrix(0, vu, M2);
-    M2 -= M1;
-    CHECK_CLOSE(M2.NormInf(), 0.0, 1e-12);
   }
 
   CHECK_CLOSE(20.2332916667, integral[0], 1e-10);
   CHECK(integral[0] < integral[1]);
+}
+
+
+/* ****************************************************************
+* Test of 2D DG stiffness matrices
+**************************************************************** */
+class MyFunction : public Amanzi::WhetStone::WhetStoneFunction {
+  double Value(const Amanzi::AmanziGeometry::Point& x) const { return 1.0; }
+};
+
+TEST(DG2D_STIFFNESS_MATRIX) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "Test: DG2D stiffness matrices" << std::endl;
+  auto comm = Amanzi::getDefaultComm();
+
+  MeshFactory meshfactory(comm);
+  meshfactory.set_preference(Preference({Framework::MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.5, 0.5, 1, 1); 
+
+  DenseMatrix M1, M2;
+  Tensor T(2, 1);
+  T(0, 0) = 1.0;
+
+  MyFunction func;
+
+  for (int k = 0; k < 3; k++) {
+    Teuchos::ParameterList plist;
+    plist.set<std::string>("dg basis", "regularized")
+         .set<int>("method order", k)
+         .set<int>("quadrature order", 2);
+    DG_Modal dg(plist, mesh);
+
+    dg.StiffnessMatrix(0, T, M1);
+    dg.StiffnessMatrix(0, &func, M2);
+    int nk = M1.NumRows();
+
+    printf("Stiffness matrix for order=%d\n", k);
+    for (int i = 0; i < nk; i++) {
+      for (int j = 0; j < nk; j++ ) printf("%9.5f ", M2(i, j)); 
+      printf("\n");
+    }
+
+    if (k > 1) {
+      double area = mesh->cell_volume(0);
+      for (int i = 1; i < 2; ++i) {
+        CHECK_CLOSE(M1(i, i), area * 4, 1e-12);
+      }
+    }
+
+    M1 -= M2;
+    CHECK_CLOSE(0.0, M1.NormInf(), 1e-12);
+  }
 }
 
 
@@ -235,7 +285,8 @@ void Run2DFluxMatrix(bool upwind, bool jump_on_test) {
   for (int k = 0; k < 3; k++) {
     Teuchos::ParameterList plist;
     plist.set<std::string>("dg basis", "orthonormalized")
-         .set<int>("method order", k);
+         .set<int>("method order", k)
+         .set<int>("quadrature order", 2);
     DG_Modal dg(plist, mesh);
 
     Polynomial un(2, 0);
@@ -302,7 +353,8 @@ TEST(DG2D_FLUX_MATRIX_CONSERVATION) {
   for (int k = 0; k < 3; k++) {
     Teuchos::ParameterList plist;
     plist.set<std::string>("dg basis", "normalized")
-         .set<int>("method order", k);
+         .set<int>("method order", k)
+         .set<int>("quadrature order", 2);
     DG_Modal dg(plist, mesh);
 
     Polynomial un(2, 1);
@@ -353,7 +405,8 @@ TEST(DG3D_FLUX_MATRIX) {
   for (int k = 0; k < 2; k++) {
     Teuchos::ParameterList plist;
     plist.set<std::string>("dg basis", "orthonormalized")
-         .set<int>("method order", k);
+         .set<int>("method order", k)
+         .set<int>("quadrature order", 2);
     DG_Modal dg(plist, mesh);
 
     int d(3), f(4);
@@ -416,7 +469,8 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
   for (int k = 0; k < 3; k++) {
     Teuchos::ParameterList plist;
     plist.set<std::string>("dg basis", "regularized")
-         .set<int>("method order", k);
+         .set<int>("method order", k)
+         .set<int>("quadrature order", 2);
     DG_Modal dg(plist, mesh);
 
     DenseMatrix A0, A1;
@@ -435,17 +489,6 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
       printf("\n");
     }
 
-    // TEST1: constant u, method 2
-    VectorPolynomial vu(2, 8); 
-    for (int i = 0; i < 4; ++i) {
-      vu[2 * i] = u[0];
-      vu[2 * i + 1] = u[1];
-    }
-
-    dg.AdvectionMatrix(0, vu, A1, false);
-    A1 -= A0;
-    CHECK_CLOSE(A1.NormInf(), 0.0, 1e-12);
-
     // TEST2: linear u, method 1
     u[0](1, 0) = 1.0;
     u[0](1, 1) = 1.0;
@@ -457,16 +500,6 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
       for (int j = 0; j < nk; j++ ) printf("%10.6f ", A0(i, j)); 
       printf("\n");
     }
-
-    // TEST2: linear u, method 2
-    for (int i = 0; i < 4; ++i) {
-      vu[2 * i] = u[0];
-      vu[2 * i + 1] = u[1];
-    }
-
-    dg.AdvectionMatrix(0, vu, A1, false);
-    A1 -= A0;
-    CHECK_CLOSE(A1.NormInf(), 0.0, 1e-12);
 
     // accuracy test for functions 1+x and 1+x
     DenseVector v1(nk), v2(nk), v3(nk);
@@ -504,16 +537,6 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
       double integral(v2 * v3);
       printf("  inner product = %10.6f\n", integral);
     }
-
-    // TEST3: quadratic u, method 2
-    for (int i = 0; i < 4; ++i) {
-      vu[2 * i] = u[0];
-      vu[2 * i + 1] = u[1];
-    }
-
-    dg.AdvectionMatrix(0, vu, A1, false);
-    A1 -= A0;
-    CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
   }
 }
 
@@ -537,7 +560,8 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
   for (int k = 0; k < 2; k++) {
     Teuchos::ParameterList plist;
     plist.set<std::string>("dg basis", "regularized")
-         .set<int>("method order", k);
+         .set<int>("method order", k)
+         .set<int>("quadrature order", 2);
 
     DG_Modal dg(plist, mesh);
 

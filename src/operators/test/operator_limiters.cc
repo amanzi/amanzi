@@ -137,12 +137,14 @@ TEST(LIMITER_LINEAR_FUNCTION_2D) {
     limiter.Init(plist);
     limiter.ApplyLimiter(field, 0, lifting.gradient(), bc_model, bc_value);
 
-    // calculate gradient error
+    // calculate gradient error.
     double err_int, err_glb, gnorm;
     Epetra_MultiVector& grad_computed = *lifting.gradient()->ViewComponent("cell");
 
     ComputeGradError(mesh, grad_computed, grad_exact, err_int, err_glb, gnorm);
-    CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
+    // Michalak-Gooch limiter is not linearity preserving near boundary
+    CHECK_CLOSE(0.0, err_int, 1.0e-12);
+    if (i < 6) CHECK_CLOSE(0.0, err_glb, 1.0e-12);
 
     if (MyPID == 0)
         printf("%9s: errors: %8.4f %8.4f\n", LIMITERS[i].c_str(), err_int, err_glb);

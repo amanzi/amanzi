@@ -38,6 +38,7 @@ class AnalyticDG02b : public AnalyticDGBase {
   // -- solution
   virtual void SolutionTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                               Amanzi::WhetStone::Polynomial& sol) override {
+    AMANZI_ASSERT(order_ > 1);
     sol.Reshape(d_, order_, true); 
     sol.set_origin(p);
 

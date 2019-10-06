@@ -41,6 +41,7 @@ class MFD3D_GeneralizedDiffusion : public MFD3D {
   // -- mass matrices
   virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override;
   virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override; 
+  int MassMatrixOptimized(int c, const Tensor& T, DenseMatrix& M); 
 
   virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) override;
   virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) override; 
@@ -53,7 +54,7 @@ class MFD3D_GeneralizedDiffusion : public MFD3D {
   }
   virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A) override;
 
-  // -- adevction matrices
+  // -- advection matrices
   virtual int DivergenceMatrix(int c, DenseMatrix& A) override;
 
  private:

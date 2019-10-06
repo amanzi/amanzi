@@ -8,240 +8,27 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  The helper advection-based base class for various remap methods. It
-  provides support of time integration and calculation of various static
-  and dynamic geometric quantities. The actual time-step loop could be
-  implemented differently by an application.
+  The helper advection-based base class for various remap methods.
 */
 
+// TPLs
 #include "Epetra_Vector.h"
 
+// Amanzi
+#include "CompositeVector.hh"
+#include "TreeVector.hh"
+
+// Amanzi::Operators
 #include "RemapDG.hh"
-#include "WhetStoneDefs.hh"
 
 namespace Amanzi {
 namespace Operators {
 
 /* *****************************************************************
-* Initialization of remap: operarot and face velocity.
+* Specialization for CompositeVector: Functional evaluation
 ***************************************************************** */
-RemapDG::RemapDG(
-    const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
-    const Teuchos::RCP<AmanziMesh::Mesh> mesh1,
-    Teuchos::ParameterList& plist) 
-  : mesh0_(mesh0),
-    mesh1_(mesh1),
-    plist_(plist),
-    dim_(mesh0->space_dimension())
-{
-  // mesh data
-  ncells_owned_ = mesh0_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  ncells_wghost_ = mesh0_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  nfaces_owned_ = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  nfaces_wghost_ = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-
-  if (mesh0_->valid_edges()) {
-    nedges_owned_ = mesh0_->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::OWNED);
-    nedges_wghost_ = mesh0_->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::ALL);
-  }
-
-  auto& pklist = plist_.sublist("PK operator");
-  order_ = pklist.sublist("flux operator")
-                 .sublist("schema").template get<int>("method order");
-
-  // other control variable
-  bc_type_ = OPERATOR_BC_NONE;
-  std::string name = pklist.template get<std::string>("boundary conditions");
-  if (name == "remove")
-    bc_type_ = OPERATOR_BC_REMOVE;
-
-  name = pklist.template get<std::string>("jacobian determinant method");
-  if (name == "VEM") 
-    det_method_ = OPERATOR_DETERMINANT_VEM;
-  else if (name == "exact time integration") 
-    det_method_ = OPERATOR_DETERMINANT_EXACT_TI;
-  else if (name == "monotone") 
-    det_method_ = OPERATOR_DETERMINANT_MONOTONE;
-
-  // initialize limiter
-  auto limlist = plist_.sublist("limiter");
-  is_limiter_ = (limlist.template get<std::string>("limiter") != "none");
-
-  if (is_limiter_) {
-    smoothness_ = limlist.template get<std::string>("smoothness indicator", "none");
-    limiter_ = Teuchos::rcp(new LimiterCell(mesh0_));
-    limiter_->Init(limlist);
-  }
-
-  // miscallateous
-  nfun_ = 0;
-  sharp_ = 0.0;
-}
-
-
-/* *****************************************************************
-* Initialization of opertors
-***************************************************************** */
-void RemapDG::InitializeOperators(const Teuchos::RCP<WhetStone::DG_Modal> dg)
-{
-  dg_ = dg;
-
-  // create right-hand side operator
-  // -- flux
-  auto oplist = plist_.sublist("PK operator").sublist("flux operator");
-  op_flux_ = Teuchos::rcp(new PDE_AdvectionRiemann(oplist, mesh0_));
-  auto global_op = op_flux_->global_operator();
-
-  // -- advection
-  oplist = plist_.sublist("PK operator").sublist("advection operator");
-  op_adv_ = Teuchos::rcp(new PDE_Abstract(oplist, global_op));
-
-  // create left-hand side operator 
-  oplist = plist_.sublist("PK operator").sublist("reaction operator");
-  op_reac_ = Teuchos::rcp(new PDE_Reaction(oplist, mesh0_));
-
-  // boundary data
-  int nk = WhetStone::PolynomialSpaceDimension(dim_, order_);
-  auto bc = Teuchos::rcp(new BCs(mesh0_, AmanziMesh::FACE, WhetStone::DOF_Type::VECTOR));
-  std::vector<int>& bc_model = bc->bc_model();
-  std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(nk);
-
-  const auto& fmap = mesh0_->face_map(true);
-  const auto& bmap = mesh0_->exterior_face_map(true);
-  for (int bf = 0; bf < bmap.NumMyElements(); ++bf) {
-    int f = fmap.LID(bmap.GID(bf));
-    for (int i = 0; i < nk; ++i) bc_value[f][i] = 0.0;
-    bc_model[f] = bc_type_;
-  }
-  op_flux_->SetBCs(bc, bc);
-
-  // memory allocation for velocities
-  velf_ = Teuchos::rcp(new std::vector<WhetStone::SpaceTimePolynomial>(nfaces_wghost_));
-  velc_ = Teuchos::rcp(new std::vector<WhetStone::VectorSpaceTimePolynomial>(ncells_owned_));
-  det_ = Teuchos::rcp(new std::vector<WhetStone::SpaceTimePolynomial>(ncells_owned_));
-
-  // memory allocation for non-conservative field
-  field_ = Teuchos::rcp(new CompositeVector(*op_reac_->global_operator()->rhs()));
-}
-
-
-/* *****************************************************************
-* Initialization of static edge and face velocities
-***************************************************************** */
-void RemapDG::StaticEdgeFaceVelocities()
-{
-  auto map_list = plist_.sublist("maps");
-  WhetStone::MeshMapsFactory maps_factory;
-  maps_ = maps_factory.Create(map_list, mesh0_, mesh1_);
-
-  velf_vec_.resize(nfaces_wghost_);
-  for (int f = 0; f < nfaces_wghost_; ++f) {
-    maps_->VelocityFace(f, velf_vec_[f]);
-  }
-
-  if (mesh0_->valid_edges()) {
-    vele_vec_.resize(nedges_wghost_);
-    for (int e = 0; e < nedges_wghost_; ++e) {
-      maps_->VelocityEdge(e, vele_vec_[e]);
-    }
-  }
-}
-
-
-/* *****************************************************************
-* Initialization of the constant cell velocity
-***************************************************************** */
-void RemapDG::StaticCellVelocity()
-{
-  WhetStone::Entity_ID_List edges, faces;
-  uc_.resize(ncells_owned_);
-
-  for (int c = 0; c < ncells_owned_; ++c) {
-    // faces are always included
-    mesh0_->cell_get_faces(c, &faces);
-
-    std::vector<WhetStone::VectorPolynomial> vve, vvf;
-    for (int n = 0; n < faces.size(); ++n) {
-      vvf.push_back(velf_vec_[faces[n]]);
-    }
-
-    // edges are included in 3D only
-    if (dim_ == 3) {
-      mesh0_->cell_get_edges(c, &edges);
-
-      for (int n = 0; n < edges.size(); ++n) {
-        vve.push_back(vele_vec_[edges[n]]);
-      }
-    } 
-
-    maps_->VelocityCell(c, vve, vvf, uc_[c]);
-  }
-}
-
-
-/* *****************************************************************
-* Initialization of space-tim co-velocity v = u * (j J^{-t} N)
-***************************************************************** */
-void RemapDG::StaticFaceCoVelocity()
-{
-  WhetStone::VectorSpaceTimePolynomial cn;
-  for (int f = 0; f < nfaces_wghost_; ++f) {
-    WhetStone::VectorSpaceTimePolynomial map(dim_, dim_, 1), tmp(dim_, dim_, 0);
-    const auto& origin = velf_vec_[f][0].origin();
-
-    for (int i = 0; i < dim_; ++i) {
-      map[i][0].Reshape(dim_, order_, true);
-      map[i][0](1, i) = 1.0;        // map = x
-      map[i][0].set_origin(origin);
-      map[i][1] = velf_vec_[f][i];  // map = x + t * u
-
-      tmp[i][0] = velf_vec_[f][i];
-    }
-
-    maps_->NansonFormula(f, map, cn);
-    (*velf_)[f] = tmp * cn;
-  }
-}
-
-
-/* *****************************************************************
-* Initialization of the constant cell velocity
-***************************************************************** */
-void RemapDG::StaticCellCoVelocity()
-{
-  for (int c = 0; c < ncells_owned_; ++c) {
-    WhetStone::MatrixPolynomial Jc;
-    maps_->Jacobian(uc_[c], Jc);
-
-    // space-time cell velocity: v = -j J^{-1} u = -C^t u
-    WhetStone::MatrixSpaceTimePolynomial Jt(dim_, dim_, dim_, 1), Ct;
-    WhetStone::VectorSpaceTimePolynomial tmp(dim_, dim_, 0);
-    const auto& origin = uc_[c][0].origin();
-
-    for (int i = 0; i < dim_; ++i) {
-      for (int j = 0; j < dim_; ++j) {
-        Jt(i, j)[0].Reshape(dim_, 0, true);
-        Jt(i, j)[0].set_origin(origin);
-        Jt(i, j)[1] = Jc(i, j);  // Jt = 1 + t * J
-      }
-      Jt(i, i)[0](0) = 1.0;
-      tmp[i][0] = uc_[c][i];
-    }
-
-    maps_->Cofactors(Jt, Ct);
-
-    tmp *= -1.0;
-    Ct.Multiply(tmp, (*velc_)[c], true);
-
-    maps_->Determinant(Jt, (*det_)[c]);
-  }
-}
-
-
-/* *****************************************************************
-* Main routine: evaluation of functional at time t
-***************************************************************** */
-void RemapDG::FunctionalTimeDerivative(
+template<>
+void RemapDG<CompositeVector>::FunctionalTimeDerivative(
     double t, const CompositeVector& u, CompositeVector& f)
 {
   // -- populate operators
@@ -262,7 +49,8 @@ void RemapDG::FunctionalTimeDerivative(
 /* *****************************************************************
 * Limiting the non-conservative field at time t
 ***************************************************************** */
-void RemapDG::ModifySolution(double t, CompositeVector& u)
+template<>
+void RemapDG<CompositeVector>::ModifySolution(double t, CompositeVector& u)
 {
   // populate operators
   op_reac_->Setup(det_, false);
@@ -308,89 +96,10 @@ void RemapDG::ModifySolution(double t, CompositeVector& u)
 
 
 /* *****************************************************************
-* Limit non-conservative field x
-***************************************************************** */
-void RemapDG::ApplyLimiter(double t, CompositeVector& x)
-{
-  const Epetra_MultiVector& x_c = *x.ViewComponent("cell", true);
-  int nk = x_c.NumVectors();
-
-  // create list of cells where to apply limiter
-  double L(-1.0);
-  double threshold = -4.0 * std::log10((double)order_) - L;
-  AmanziMesh::Entity_ID_List ids;
-
-  for (int c = 0; c < ncells_owned_; ++c) {
-    if (smoothness_ == "high order term" && order_ > 1) {
-      double honorm(0.0);
-      for (int i = dim_ + 1; i < nk; ++i)
-        honorm += x_c[i][c] * x_c[i][c];
-
-      double xnorm = honorm;
-      for (int i = 0; i <= dim_; ++i)
-        xnorm += x_c[i][c] * x_c[i][c];
-
-      if (xnorm > 0.0 && std::log10(honorm / xnorm) > threshold)
-        ids.push_back(c);
-    } else {
-      ids.push_back(c);
-    }
-  }
-
-  int nids, itmp = ids.size();
-  mesh0_->get_comm()->SumAll(&itmp, &nids, 1);
-  sharp_ = std::max(sharp_, 100.0 * nids / x.ViewComponent("cell")->GlobalLength());
-
-  // apply limiter
-  std::vector<int> bc_model(nfaces_wghost_, OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost_, 0.0);
-
-  x.ScatterMasterToGhosted("cell");
-
-  if (limiter_->type() == OPERATOR_LIMITER_BARTH_JESPERSEN_DG) { 
-    limiter_->ApplyLimiter(ids, x.ViewComponent("cell", true), *dg_, bc_model, bc_value);
-  } else {
-    // -- create gradient in the natural basis
-    WhetStone::DenseVector data(nk);
-
-    CompositeVectorSpace cvs;
-    cvs.SetMesh(mesh0_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, dim_);
-    auto grad = Teuchos::rcp(new CompositeVector(cvs));
-    Epetra_MultiVector& grad_c = *grad->ViewComponent("cell", true);
-
-    // -- mean value is preserved automatiacally for the partially orthogonalized basis
-    //    otherwise, a more complicated algorithm is needed
-    AMANZI_ASSERT(dg_->cell_basis(0).id() == WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
-
-    for (int c = 0; c < ncells_wghost_; ++c) {
-      for (int i = 0; i < nk; ++i) data(i) = x_c[i][c];
-      for (int i = dim_ + 1; i < nk; ++i) data(i) = 0.0;
-
-      dg_->cell_basis(c).ChangeBasisMyToNatural(data);
-      for (int i = 0; i < dim_; ++i) grad_c[i][c] = data(i + 1);
-      x_c[0][c] = data(0);
-    }
-
-    // -- limit gradient and save it to solution
-    limiter_->ApplyLimiter(ids, x.ViewComponent("cell", true), 0, grad, bc_model, bc_value);
-
-    for (int n = 0; n < ids.size(); ++n) {
-      int c = ids[n];
-      data(0) = x_c[0][c];
-      for (int i = 0; i < dim_; ++i) data(i + 1) = grad_c[i][c];
-      for (int i = dim_ + 1; i < nk; ++i) data(i) = 0.0;
-
-      dg_->cell_basis(c).ChangeBasisNaturalToMy(data);
-      for (int i = 0; i < nk; ++i) x_c[i][c] = data(i);
-    }
-  }
-}
-
-
-/* *****************************************************************
 * Change between conservative and non-conservative variables.
 ***************************************************************** */
-void RemapDG::NonConservativeToConservative(
+template<>
+void RemapDG<CompositeVector>::NonConservativeToConservative(
     double t, const CompositeVector& u, CompositeVector& v)
 {
   op_reac_->Setup(det_, false);
@@ -399,7 +108,8 @@ void RemapDG::NonConservativeToConservative(
 }
 
 
-void RemapDG::ConservativeToNonConservative(
+template<>
+void RemapDG<CompositeVector>::ConservativeToNonConservative(
     double t, const CompositeVector& u, CompositeVector& v)
 {
   op_reac_->Setup(det_, false);
@@ -409,6 +119,124 @@ void RemapDG::ConservativeToNonConservative(
   for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
 
   op_reac_->global_operator()->Apply(u, v);
+}
+
+
+/* *****************************************************************
+* Specialization for TreeVector: functional evaluation
+***************************************************************** */
+template<>
+void RemapDG<TreeVector>::FunctionalTimeDerivative(
+    double t, const TreeVector& u, TreeVector& f)
+{
+  // mass conservation equation
+  // -- populate operators
+  op_adv_->Setup(velc_, false);
+  op_adv_->UpdateMatrices(t);
+
+  op_flux_->Setup(velf_.ptr(), false);
+  op_flux_->UpdateMatrices(t);
+  op_flux_->ApplyBCs(true, true, true);
+
+  // -- calculate right-hand_side
+  op_flux_->global_operator()->Apply(*field_, *f.SubVector(0)->Data());
+
+  // volume conservation equation
+  auto ones(*field_);
+  ones.PutScalar(0.0);
+  (*ones.ViewComponent("cell"))(0)->PutScalar(1.0);
+
+  auto tmp = *f.SubVector(1)->Data();
+  op_flux_->global_operator()->Apply(ones, tmp);
+
+  op_reac_->Setup(det_, false);
+  op_reac_->UpdateMatrices(0.0);
+
+  auto& matrices = op_reac_->local_op()->matrices;
+  for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
+  op_reac_->global_operator()->Apply(tmp, *f.SubVector(1)->Data());
+
+  nfun_++;
+}
+
+
+/* *****************************************************************
+* Limiting the non-conservative field at time t
+***************************************************************** */
+template<>
+void RemapDG<TreeVector>::ModifySolution(double t, TreeVector& u)
+{
+  // populate operators
+  auto detc = *u.SubVector(1)->Data()->ViewComponent("cell");
+  int nk = detc.NumVectors();
+  WhetStone::DenseVector data(nk);
+
+  for (int c = 0; c < ncells_owned_; ++c) {
+    for (int i = 0; i < nk; ++i) data(i) = detc[i][c];
+    (*jac_)[c] = dg_->cell_basis(c).CalculatePolynomial(mesh0_, c, order_, data);
+  }
+
+  op_reac_->Setup(jac_, false);
+  op_reac_->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  // discrete volume conservation law
+  // op_reac_->Setup(det_, false);
+  // op_reac_->UpdateMatrices(t);
+
+  // solve the problem with the mass matrix
+  auto& matrices = op_reac_->local_op()->matrices;
+  for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
+  op_reac_->global_operator()->Apply(*u.SubVector(0)->Data(), *field_);
+}
+
+
+/* *****************************************************************
+* Change between conservative and non-conservative variables.
+***************************************************************** */
+template<>
+void RemapDG<TreeVector>::NonConservativeToConservative(
+    double t, const TreeVector& u, TreeVector& v)
+{
+  // create a polynomial for determinant of Jacobian
+  auto detc = *u.SubVector(1)->Data()->ViewComponent("cell");
+  int nk = detc.NumVectors();
+  WhetStone::DenseVector data(nk);
+
+  for (int c = 0; c < ncells_owned_; ++c) {
+    for (int i = 0; i < nk; ++i) data(i) = detc[i][c];
+    (*jac_)[c] = dg_->cell_basis(c).CalculatePolynomial(mesh0_, c, order_, data);
+  }
+
+  op_reac_->Setup(jac_, false);
+  op_reac_->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  // conversion is matrix-vector product
+  op_reac_->global_operator()->Apply(*u.SubVector(0)->Data(), *v.SubVector(0)->Data());
+}
+
+
+template<>
+void RemapDG<TreeVector>::ConservativeToNonConservative(
+    double t, const TreeVector& u, TreeVector& v)
+{
+  // create a polynomial for determinant of Jacobian
+  auto detc = *u.SubVector(1)->Data()->ViewComponent("cell");
+  int nk = detc.NumVectors();
+  WhetStone::DenseVector data(nk);
+
+  for (int c = 0; c < ncells_owned_; ++c) {
+    for (int i = 0; i < nk; ++i) data(i) = detc[i][c];
+    (*jac_)[c] = dg_->cell_basis(c).CalculatePolynomial(mesh0_, c, order_, data);
+  }
+
+  op_reac_->Setup(jac_, false);
+  op_reac_->UpdateMatrices(Teuchos::null, Teuchos::null);
+
+  // conversion is inverse matrix-vector product
+  auto& matrices = op_reac_->local_op()->matrices;
+  for (int n = 0; n < matrices.size(); ++n) matrices[n].InverseSPD();
+
+  op_reac_->global_operator()->Apply(*u.SubVector(0)->Data(), *v.SubVector(0)->Data());
 }
 
 }  // namespace Operators
