@@ -121,7 +121,7 @@ The only potentially confusing part is the use of the visitor pattern (i.e. doub
 dispatch in this case) to resolve all types.  
 For instance to assemble a matrix, we may use the following pseudocode
 
-\begin{verbatim}
+\begin{lstlisting}[language=C++]
 // Operator
 AssembleMatrix(Matrix A) {
   for each op {
@@ -146,7 +146,7 @@ AssembleMatrixOp(Op_Cell_FaceCell& op, Matrix& A) {
   // This method now know both local schema and the matrix's dofs, 
   // and assembles the face+cell local matrices into the matrix.
 }
-\end{verbatim}
+\end{lstlisting}
 
 The reason for the double dispatch is to get the types specifically
 without a ton of statements like this one "if (schema | XX \&\& schema | YY) 
