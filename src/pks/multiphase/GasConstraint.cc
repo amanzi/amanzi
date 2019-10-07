@@ -41,7 +41,7 @@ void GasConstraint::Initialize() {
   bc_value_.resize(nfaces_wghost_, 0.0);
   bc_mixed_.resize(nfaces_wghost_, 0.0);
 
-  op_bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model_, bc_value_, bc_mixed_));
+  op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
 
   // preconditioners
   op1_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_)); 
@@ -57,10 +57,10 @@ void GasConstraint::Initialize() {
   capillary_pressure_->Init(wrm_list); 
 }
 
-void GasConstraint::Functional(double t_old, double t_new, 
-                          Teuchos::RCP<TreeVector> u_old,
-                          Teuchos::RCP<TreeVector> u_new,
-                          Teuchos::RCP<TreeVector> f) 
+void GasConstraint::FunctionalResidual(double t_old, double t_new, 
+                                       Teuchos::RCP<TreeVector> u_old,
+                                       Teuchos::RCP<TreeVector> u_new,
+                                       Teuchos::RCP<TreeVector> f) 
 {
   Teuchos::RCP<const CompositeVector> pressure_w = u_new->SubVector(0)->Data();
   Teuchos::RCP<const CompositeVector> saturation_w = u_new->SubVector(1)->Data();
@@ -249,31 +249,30 @@ void GasConstraint::UpdatePreconditioner(double T0, Teuchos::RCP<const TreeVecto
       }
     }
   }
-  ASSERT(cnt_idx == cnt_);
+  AMANZI_ASSERT(cnt_idx == cnt_);
 
   // block for dH1/dfg_1
   op1_acc_->global_operator()->Init();
-  op1_acc_->AddAccumulationTerm(*saturation_w, *coef_df_dp, 1.0, "cell");
+  op1_acc_->AddAccumulationDelta(*saturation_w, *coef_df_dp, *coef_df_dp, 1.0, "cell");
 
   op2_acc_->global_operator()->Init();
-  op2_acc_->AddAccumulationTerm(*saturation_w, *coef_df_ds, 1.0, "cell");
+  op2_acc_->AddAccumulationDelta(*saturation_w, *coef_df_ds, *coef_df_ds, 1.0, "cell");
 
   // block for dH2/dfg_1
   op3_acc_->global_operator()->Init();
-  op3_acc_->AddAccumulationTerm(*saturation_w, *coef_df_dr, 1.0, "cell");
+  op3_acc_->AddAccumulationDelta(*saturation_w, *coef_df_dr, *coef_df_dr, 1.0, "cell");
 
   /* experiment with smoothed preconditioner with parameter mu */
   // block for dH1/dfg_1
   op1_acc_tmp_->global_operator()->Init();
-  op1_acc_tmp_->AddAccumulationTerm(*saturation_w, *coef_df_dp_tmp, 1.0, "cell");
+  op1_acc_tmp_->AddAccumulationDelta(*saturation_w, *coef_df_dp_tmp, *coef_df_dp_tmp, 1.0, "cell");
 
   op2_acc_tmp_->global_operator()->Init();
-  op2_acc_tmp_->AddAccumulationTerm(*saturation_w, *coef_df_ds_tmp, 1.0, "cell");
+  op2_acc_tmp_->AddAccumulationDelta(*saturation_w, *coef_df_ds_tmp, *coef_df_ds_tmp, 1.0, "cell");
 
   // block for dH2/dfg_1
   op3_acc_tmp_->global_operator()->Init();
-  op3_acc_tmp_->AddAccumulationTerm(*saturation_w, *coef_df_dr_tmp, 1.0, "cell");
-
+  op3_acc_tmp_->AddAccumulationDelta(*saturation_w, *coef_df_dr_tmp, *coef_df_dr_tmp, 1.0, "cell");
 }
 
 }

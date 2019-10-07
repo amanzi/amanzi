@@ -1,67 +1,55 @@
 /*
-This is the multiphase flow component of the Amanzi code. 
+  Multiphase
 
-Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Quan Bui (mquanbui@math.umd.edu)
+  Authors: Quan Bui (mquanbui@math.umd.edu)
 */
 
 #ifndef AMANZI_GAS_CONSTRAINT_PK_HH_
 #define AMANZI_GAS_CONSTRAINT_PK_HH_
 
-// Trilinos include
+// TPLs
 #include "Teuchos_RCP.hpp"
 
-// Basic data structure include
+// Amanzi
+#include "PDE_AdvectionUpwind.hh"
+#include "PDE_Accumulation.hh"
+#include "PK_Factory.hh"
+#include "State.hh"
 #include "TreeVector.hh"
 
-// General include
-#include "State.hh"
-#include "OperatorAdvection.hh"
-#include "OperatorAccumulation.hh"
-#include "PK_Factory.hh"
-
-// Specific include for this PK
+// Amanzi::Multiphase
 #include "CapillaryPressure.hh"
 #include "MultiphaseTypeDefs.hh"
 #include "WaterRetentionModel.hh"
 
-//#include "FlowBoundaryFunction.hh"
-//#include "FlowDomainFunction.hh"
-//#include "Flow_BC_Factory.hh"
-//#include "Flow_SourceFactory.hh"
-
 namespace Amanzi {
 namespace Multiphase {
 
-class GasConstraint//: public FnTimeIntegratorPK {
-{
-public:
-  GasConstraint(Teuchos::ParameterList plist,
-                      const Teuchos::RCP<State> S);
-
+class GasConstraint {
+ public:
+  GasConstraint(Teuchos::ParameterList plist, const Teuchos::RCP<State> S);
   ~GasConstraint() {};
 
   // New interface for a PK
-  virtual void Setup(){};
-  virtual void Initialize(); 
-  virtual std::string name(){return "phase constraint pk";}
+  void Initialize();
+  std::string name() { return "phase constraint pk"; }
 
   // Main methods of this PK
 
   // Time integration interface new_mpc, implemented in Pressure_PK_TI.cc
   // computes the non-linear functional f = f(t,u,udot)
-  virtual void Functional(double t_old, double t_new, 
-                          Teuchos::RCP<TreeVector> u_old,
-                          Teuchos::RCP<TreeVector> u_new,
-                          Teuchos::RCP<TreeVector> f);
+  virtual void FunctionalResidual(double t_old, double t_new, 
+                                  Teuchos::RCP<TreeVector> u_old,
+                                  Teuchos::RCP<TreeVector> u_new,
+                                  Teuchos::RCP<TreeVector> f);
 
   // updates the preconditioner
-  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
-                    double h);
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h);
 
 
   // access methods
@@ -71,10 +59,10 @@ public:
   Teuchos::RCP<Operators::PDE_Accumulation> op_prec1_tmp() { return op1_acc_tmp_; }
   Teuchos::RCP<Operators::PDE_Accumulation> op_prec2_tmp() { return op2_acc_tmp_; }
   Teuchos::RCP<Operators::PDE_Accumulation> op_prec3_tmp() { return op3_acc_tmp_; }
-  int* getInactiveGasIndices(){ return inactive_gas_idx_; }
-  int getNumInactiveCells(){ return cnt_; }
+  int* getInactiveGasIndices() { return inactive_gas_idx_; }
+  int getNumInactiveCells() { return cnt_; }
   void SetNCPFunctionType(std::string ncp_type) { ncp_type_ = ncp_type; }
-  void setMu(double mu) {mu_ = mu;}
+  void setMu(double mu) { mu_ = mu; }
 
 public:
   Teuchos::ParameterList plist_;

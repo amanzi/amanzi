@@ -80,11 +80,14 @@ Reduced2p2c_PK::Reduced2p2c_PK(Teuchos::ParameterList& pk_tree,
   accumulateSetupTime_ = 0.0;
 }
 
+
 Reduced2p2c_PK::~Reduced2p2c_PK() {
   // Do nothing for now
 }
 
-void Reduced2p2c_PK::Initialize() {
+
+void Reduced2p2c_PK::Initialize(const Teuchos::Ptr<State>& S)
+{
   rhs_ = Teuchos::rcp(new TreeVector());
   p1_ = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("pressure_w",passwd_)));
   s1_ = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("saturation_w",passwd_)));
@@ -94,13 +97,14 @@ void Reduced2p2c_PK::Initialize() {
   rhl_tree_->SetData(rhl_);
   //std::cout << "Initial solution: \n";
   //soln_->Print(std::cout);
-  comp_w_pk_->Initialize();
-  comp_h_pk_->Initialize();
+  comp_w_pk_->Initialize(S_.ptr());
+  comp_h_pk_->Initialize(S_.ptr());
   gas_constraint_pk_->Initialize();
 
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
   Teuchos::RCP<TreeVectorSpace> tvs = Teuchos::rcp(new TreeVectorSpace());
-  Teuchos::RCP<TreeVectorSpace> cvs_as_tvs = Teuchos::rcp(new TreeVectorSpace(cvs));
+  Teuchos::RCP<TreeVectorSpace> cvs_as_tvs = Teuchos::rcp(new TreeVectorSpace());
+  cvs_as_tvs->SetData(cvs);
   tvs->PushBack(cvs_as_tvs);
   tvs->PushBack(cvs_as_tvs);
   tvs->PushBack(cvs_as_tvs);
@@ -236,6 +240,7 @@ void Reduced2p2c_PK::Initialize() {
 
   std::cout << "Reduced2p2c_PK: done initialization\n";
 }
+
 
 bool Reduced2p2c_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
   dT = t_new - t_old;
@@ -393,25 +398,23 @@ void Reduced2p2c_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
     //tree_op_->InitPreconditioner(pc_all_name_, *pc_list_);
   }
 
-  //tree_op_->SymbolicAssembleMatrix();
-  //tree_op_->AssembleMatrix();
+  // tree_op_->SymbolicAssembleMatrix();
+  // tree_op_->AssembleMatrix();
   Amanzi::timer_manager.stop("UpdatePreconditioner");
 }
 
-void Reduced2p2c_PK::Functional(double t_old, double t_new, 
-                         Teuchos::RCP<TreeVector> u_old,
-                         Teuchos::RCP<TreeVector> u_new,
-                         Teuchos::RCP<TreeVector> f) 
+
+void Reduced2p2c_PK::FunctionalResidual(double t_old, double t_new, 
+                                        Teuchos::RCP<TreeVector> u_old,
+                                        Teuchos::RCP<TreeVector> u_new,
+                                        Teuchos::RCP<TreeVector> f) 
 {
-  comp_w_pk_->Functional(t_old, t_new, u_old, u_new, f->SubVector(0));
-  comp_h_pk_->Functional(t_old, t_new, u_old, u_new, f->SubVector(1));
-  gas_constraint_pk_->Functional(t_old, t_new, u_old, u_new, f->SubVector(2));
+  comp_w_pk_->FunctionalResidual(t_old, t_new, u_old, u_new, f->SubVector(0));
+  comp_h_pk_->FunctionalResidual(t_old, t_new, u_old, u_new, f->SubVector(1));
+  gas_constraint_pk_->FunctionalResidual(t_old, t_new, u_old, u_new, f->SubVector(2));
   rhs_ = f;
-  //std::cout << "Reduced2p2c_PK::Functional\n";
-  //std::cout << *f->SubVector(0)->Data()->ViewComponent("cell") << "\n";
-  //std::cout << *f->SubVector(1)->Data()->ViewComponent("cell") << "\n";
-  //std::cout << *f->SubVector(2)->Data()->ViewComponent("cell") << "\n";
 }
+
 
 int Reduced2p2c_PK::ApplyJacobian(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu)
 {
@@ -423,9 +426,6 @@ int Reduced2p2c_PK::ApplyJacobian(Teuchos::RCP<const TreeVector> u, Teuchos::RCP
 int Reduced2p2c_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu)
 {
   Amanzi::timer_manager.start("ApplyPreconditioner");
-  //std::cout << "Reduced2p2c_PK: ApplyPreconditioner\n";
-  //std::cout << "pu: \n";
-  //pu->Print(std::cout);
 
   /*if (ln_itrs_ == 0)*/ pu->PutScalar(0.0);
   TreeVector pu_temp = *pu;
@@ -446,11 +446,9 @@ int Reduced2p2c_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teucho
     Amanzi::timer_manager.start("PreconditionerSetup");
     tree_op_->InitPreconditioner(pc_all_name_, *pc_list_);
     Amanzi::timer_manager.stop("PreconditionerSetup");
-    accumulateSetupTime_ = accumulateSetupTime_ + tree_op_->Preconditioner()->ComputeTime();
     Amanzi::timer_manager.start("PreconditionerSolve");
     ierr = solver_tree_->ApplyInverse(*u, *pu);
     Amanzi::timer_manager.stop("PreconditionerSolve");
-    accumulateSolveTime_ = accumulateSolveTime_ + tree_op_->Preconditioner()->ApplyInverseTime();
     if (ierr > 0) 
       ln_itrs_ += solver_tree_->num_itrs();
     else {
@@ -463,18 +461,18 @@ int Reduced2p2c_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teucho
       const Epetra_MultiVector& rhs_s = *u->SubVector(1)->Data()->ViewComponent("cell");
       const Epetra_MultiVector& rhs_c = *u->SubVector(2)->Data()->ViewComponent("cell");
       for (int i = 0; i < ncells; i++) {
-        file_out << std::setprecision(std::numeric_limits<long double>::digits10 + 1) << rhs_p[0][i] << endl 
-                 << std::setprecision(std::numeric_limits<long double>::digits10 + 1) << rhs_s[0][i] << endl 
-                 << std::setprecision(std::numeric_limits<long double>::digits10 + 1) << rhs_c[0][i] << endl;
+        file_out << std::setprecision(std::numeric_limits<long double>::digits10 + 1) << rhs_p[0][i] << std::endl 
+                 << std::setprecision(std::numeric_limits<long double>::digits10 + 1) << rhs_s[0][i] << std::endl 
+                 << std::setprecision(std::numeric_limits<long double>::digits10 + 1) << rhs_c[0][i] << std::endl;
       }
       file_out.close();
 
       file_name = "inactiveIdx_" + ss.str() + ".txt";
       file_out.open(file_name.c_str());
       //std::cout << "Inactive gas indices \n";
-      file_out << gas_constraint_pk_->getNumInactiveCells() << endl;
+      file_out << gas_constraint_pk_->getNumInactiveCells() << std::endl;
       for (int i=0; i < gas_constraint_pk_->getNumInactiveCells(); i++) {
-        file_out << *(gas_constraint_pk_->getInactiveGasIndices() + i) << endl;
+        file_out << *(gas_constraint_pk_->getInactiveGasIndices() + i) << std::endl;
       }
       file_out.close();
     }
@@ -503,48 +501,13 @@ int Reduced2p2c_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teucho
     if (ierr > 0) ln_itrs_ += solver_tree_->num_itrs();
   }
 
-  /*
-  //std::cout << "Done solving matrix number " << num_mat_ << "\n";
-  std::ofstream rhs_out;
-  file_name = "rhs_" + ss.str() + ".txt";
-  rhs_out.open(file_name.c_str());
-  int ncells = (*u->SubVector(0)->Data()->ViewComponent("cell")).MyLength();
-  const Epetra_MultiVector& rhs_p = *u->SubVector(0)->Data()->ViewComponent("cell");
-  const Epetra_MultiVector& rhs_s = *u->SubVector(1)->Data()->ViewComponent("cell");
-  const Epetra_MultiVector& rhs_c = *u->SubVector(2)->Data()->ViewComponent("cell");
-  for (int i = 0; i < ncells; i++) {
-    rhs_out << rhs_p[0][i] << endl << rhs_s[0][i] << endl << rhs_c[0][i] << endl;
-  }
-  rhs_out.close();
-  */
-
-  /*
-  file_name = "sol_" + ss.str() + ".txt";
-  rhs_out.open(file_name.c_str());
-  const Epetra_MultiVector& sol_p = *pu->SubVector(0)->Data()->ViewComponent("cell");
-  const Epetra_MultiVector& sol_s = *pu->SubVector(1)->Data()->ViewComponent("cell");
-  const Epetra_MultiVector& sol_c = *pu->SubVector(2)->Data()->ViewComponent("cell");
-  for (int i = 0; i < ncells; i++) {
-    rhs_out << sol_p[0][i] << endl << sol_s[0][i] << endl << sol_c[0][i] << endl;
-  }
-  rhs_out.close();
-  */
-
   //AmanziSolvers::LinearOperatorFactory<Operators::TreeOperator, TreeVector, TreeVectorSpace> factory;
   //Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::TreeOperator, TreeVector, TreeVectorSpace> >
   //    solver = factory.Create("GMRES", *linear_operator_list_, tree_op_);
   //solver->ApplyInverse(*u, *pu);
   //ln_itrs_ += solver->num_itrs();
 
-  //std::cout << "saturation correction: " << *pu->SubVector(1)->Data()->ViewComponent("cell") << "\n";
-  //std::cout << "Solution correction: \n";
-  //pu->Print(std::cout);
-
   //tree_op_->ApplyInverse(*u, *pu);
-  //std::cout << "du: \n";
-  //std::cout << *pu->SubVector(0)->Data()->ViewComponent("cell") << "\n";
-  //std::cout << *pu->SubVector(1)->Data()->ViewComponent("cell") << "\n";
-  //std::cout << *pu->SubVector(2)->Data()->ViewComponent("cell") << "\n";
 
   /*
   Teuchos::RCP<TreeVector> out = Teuchos::rcp(new TreeVector(*u));
@@ -554,15 +517,14 @@ int Reduced2p2c_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teucho
   std::cout << *out->SubVector(0)->Data()->ViewComponent("cell") << "\n";
   std::cout << *out->SubVector(1)->Data()->ViewComponent("cell") << "\n";
   */
-  //std::cout << "Solution correction: \n";
-  //pu->Print(std::cout); 
+
   Amanzi::timer_manager.stop("ApplyPreconditioner");
   return ierr;
 }
 
+
 double Reduced2p2c_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) 
 {
-  //std::cout << "Reduced2p2c_PK: ErrorNorm\n";
   // Monitor l2 norm of residual
   double du_l2 = 0.0;
   double resnorm_p, resnorm_s, resnorm_r;
@@ -602,17 +564,19 @@ double Reduced2p2c_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<
 }
 
 
-void Reduced2p2c_PK::CommitStep(double t_old, double t_new) {
-  comp_w_pk_->CommitStep(t_old, t_new);
-  comp_h_pk_->CommitStep(t_old, t_new);
+void Reduced2p2c_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
+{
+  comp_w_pk_->CommitStep(t_old, t_new, S);
+  comp_h_pk_->CommitStep(t_old, t_new, S);
 }
+
 
 AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
 Reduced2p2c_PK::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
            Teuchos::RCP<const TreeVector> u,
            Teuchos::RCP<TreeVector> du)
 {
-  //du->Scale(h);
+  // du->Scale(h);
   /*
   Teuchos::RCP<CompositeVector> s_next = Teuchos::rcp(new CompositeVector(*u->SubVector(1)->Data()));
   s_next->Update(-1.0, *du->SubVector(1)->Data(), 1.0);
@@ -623,6 +587,8 @@ Reduced2p2c_PK::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
   rho_next->Update(-1.0, *du->SubVector(2)->Data(), 1.0);
   ClipConcentration(rho_next);
   du->SubVector(2)->Data()->Update(1.0, *u->SubVector(2)->Data(), -1.0, *rho_next, 0.0);
+
+  return AmanziSolvers::FnBaseDefs::CORRECTION_MODIFIED;
 }
 
 

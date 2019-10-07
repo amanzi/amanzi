@@ -1,5 +1,5 @@
 /*
-  This is the multiphase flow component of the Amanzi code. 
+  Multiphase
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -12,39 +12,40 @@
 #include <vector>
 #include <iostream>
 
+// TPLs
 #include "Epetra_Import.h"
 #include "Epetra_Vector.h"
 
+// Amanzi
+#include "CommonDefs.hh"
 #include "errors.hh"
 #include "exceptions.hh"
 #include "LinearOperatorFactory.hh"
-#include "mfd3d_diffusion.hh"
-#include "OperatorDefs.hh"
-#include "CommonDefs.hh"
-
 #include "Mesh.hh"
+#include "MFD3D_Diffusion.hh"
+#include "OperatorDefs.hh"
 
+// Amanzi::Multiphase
 #include "CompH.hh"
 #include "MultiphaseDefs.hh"
-#include "Multiphase_BC_Factory.hh"
 
 // namespace
 namespace Amanzi {
 namespace Multiphase {
 
 CompH_PK::CompH_PK(Teuchos::ParameterList& pk_tree,
-                      const Teuchos::RCP<Teuchos::ParameterList>& specs_list,
-                      const Teuchos::RCP<State>& S,
-                      const Teuchos::RCP<TreeVector>& soln):
-              bc_pressure_(NULL),
-              bc_rhl_(NULL),
-              bc_flux_(NULL),
-              bc_saturation_(NULL),
-              src_sink_(NULL),
-              S_(S),
-              soln_(soln),
-              passwd_("state"),
-              jacobian_type_("analytic")
+                   const Teuchos::RCP<Teuchos::ParameterList>& specs_list,
+                   const Teuchos::RCP<State>& S,
+                   const Teuchos::RCP<TreeVector>& soln)
+  : bc_pressure_(NULL),
+    bc_rhl_(NULL),
+    bc_flux_(NULL),
+    bc_saturation_(NULL),
+    src_sink_(NULL),
+    S_(S),
+    soln_(soln),
+    passwd_("state"),
+    jacobian_type_("analytic")
 {
   comp_list_ = Teuchos::sublist(specs_list, "Component 2");
   if (!specs_list->isSublist("Water retention models")) {
@@ -58,7 +59,6 @@ CompH_PK::CompH_PK(Teuchos::ParameterList& pk_tree,
   jacobian_type_ = specs_list->get<std::string>("Jacobian type", "analytic");
   
   Cg_ = specs_list->sublist("Component 2").get<double>("compressibility constant");
-  //std::cout << "Cg_: " << Cg_ << "\n";
   /*
   if (!comp_list_->isParameter("component name")) {
     Errors::Message msg("CompH_PK: parameter \"component name\" is missing");
@@ -73,6 +73,7 @@ CompH_PK::CompH_PK(Teuchos::ParameterList& pk_tree,
     comp_coeff_ = comp_list_->get<double>("component coefficient");
   }
   */
+
   mesh_ = S->GetMesh();
   dim_ = mesh_->space_dimension();
   src_sink_ = NULL;
@@ -320,21 +321,23 @@ void CompH_PK::InitializeComponent()
   }
   Teuchos::RCP<Teuchos::ParameterList>
         bc_list = Teuchos::rcp(new Teuchos::ParameterList(comp_list_->sublist("boundary conditions", true)));
+  /* FIXME
   MultiphaseBCFactory bc_factory(mesh_, bc_list);
   bc_flux_ = bc_factory.CreateMassFlux(bc_submodel_);
   bc_rhl_ = bc_factory.CreateHydrogenDensity(bc_submodel_);
   bc_pressure_ = bc_factory.CreatePressure(bc_submodel_);
   bc_saturation_ = bc_factory.CreateSaturation(bc_submodel_);
+  */
 
   //double time = S_->time();
   double time = 0.0;
   //if (time >= 0.0) T_physics_ = time;
 
   time = T_physics_;
-  bc_pressure_->Compute(time);
-  bc_flux_->Compute(time);
-  bc_saturation_->Compute(time);
-  bc_rhl_->Compute(time);
+  bc_pressure_->Compute(time, time);
+  bc_flux_->Compute(time, time);
+  bc_saturation_->Compute(time, time);
+  bc_rhl_->Compute(time, time);
 
   // Create water retention models.
   coef_w_ = Teuchos::rcp(new MPCoeff(mesh_));
@@ -344,18 +347,14 @@ void CompH_PK::InitializeComponent()
   capillary_pressure_ = Teuchos::rcp(new CapillaryPressure(mesh_));
   capillary_pressure_->Init(wrm_list_); 
 
-  //std::string krel_method_name = comp_list_->get<std::string>("relative permeability");
-  //coef_w_->ProcessStringRelativePermeability(krel_method_name);
-  //coef_n_->ProcessStringRelativePermeability(krel_method_name);
-
   ComputeBCs(false);
   ComputeBC_Pn();
    
   // create operator boundary condition object
-  op_bc_p_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model_, bc_value_p_, bc_mixed_));
-  op_bc_p_n_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model_, bc_value_p_n_, bc_mixed_));
-  op_bc_rhl_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model_, bc_value_rhl_, bc_mixed_));
-  op_bc_s_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model_, bc_value_s_, bc_mixed_));
+  op_bc_p_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  op_bc_p_n_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  op_bc_rhl_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
+  op_bc_s_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
 
   // allocate memory for absolute permeability
   K_.resize(ncells_wghost_);
@@ -462,10 +461,10 @@ void CompH_PK::InitNextTI()
 * Wrapper for CompH_PK::CommitState. This is the interface used 
 * by the MPC.
 ******************************************************************* */
-void CompH_PK::CommitStep(double t_old, double t_new)
+void CompH_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   // Write pressure to state
-  CompositeVector& p2 = *S_->GetFieldData("pressure_n", passwd_);
+  auto p2 = S_->GetFieldData("pressure_n", passwd_);
   CompositeVector& p1 = *S_->GetFieldData("pressure_w", passwd_);
   p1 = *soln_->SubVector(0)->Data();
 
@@ -477,8 +476,8 @@ void CompH_PK::CommitStep(double t_old, double t_new)
   s2.Shift(1.0);
 
   capillary_pressure_->Compute(s1); 
-  p2.Update(1.0, p1, 0.0);
-  p2.Update(1.0, *capillary_pressure_->Pc(), 1.0);
+  p2->Update(1.0, p1, 0.0);
+  p2->Update(1.0, *capillary_pressure_->Pc(), 1.0);
 
   capillary_pressure_->dPc_dS()->Scale(-1.0);
   CompositeVector& dPc_dS = *S_->GetFieldData("dPc_dS", passwd_);
@@ -491,22 +490,20 @@ void CompH_PK::CommitStep(double t_old, double t_new)
   upwind_vn_ = S_->GetFieldData("velocity_nonwet", passwd_);
   //std::cout << "upwind velocity: " << *upwind_vw_->ViewComponent("face") << "\n";
 
-  CoefUpwindFn1 func1 = &MPCoeff::ValueKrel;
-  upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_, bc_value_s_, 
-                     *coef_n_->Krel(), *coef_n_->Krel(), func1);
+  upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_, *coef_n_->Krel());
   coef_n_->Krel()->Scale((t_new - t_old)/mu2_); // don't need rho to compute darcy flux
 
-  CompositeVector& phase2_flux = *S_->GetFieldData("velocity_nonwet", passwd_);
+  auto phase2_flux = S_->GetFieldData("velocity_nonwet", passwd_);
   Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K_);
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->global_operator()->Init();
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->Setup(Kptr, coef_n_->Krel(), Teuchos::null);
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
-  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->ApplyBCs(true, true);
-  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateFlux(p2, phase2_flux);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->ApplyBCs(true, true, true);
+  ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateFlux(p2.ptr(), phase2_flux.ptr());
 
   // compute upwind velocities from pressure 
-  //CompositeVector& phase2_flux = *S_->GetFieldData("velocity_nonwet", passwd_);
-  //((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateFlux(p2, phase2_flux);
+  // CompositeVector& phase2_flux = *S_->GetFieldData("velocity_nonwet", passwd_);
+  // ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateFlux(p2, phase2_flux);
 
   // write hydrogen density in liquid to state
   CompositeVector& rhl = *S_->GetFieldData("hydrogen density liquid", passwd_);
@@ -607,19 +604,19 @@ void CompH_PK::ComputeBCs(bool stop) {
   for (bc = bc_pressure_->begin(); bc != bc_pressure_->end(); ++bc) {
     int f = bc->first;
     bc_model_[f] = Operators::OPERATOR_BC_DIRICHLET;
-    bc_value_p_[f] = bc->second;
+    bc_value_p_[f] = bc->second[0];
     flag_essential_bc = 1;
     dirichlet_bc_faces_++;
   }
 
   for (bc = bc_saturation_->begin(); bc != bc_saturation_->end(); ++bc) {
     int f = bc->first;
-    bc_value_s_[f] = bc->second;
+    bc_value_s_[f] = bc->second[0];
   }
 
   for (bc = bc_rhl_->begin(); bc != bc_rhl_->end(); ++bc) {
     int f = bc->first;
-    bc_value_rhl_[f] = bc->second;
+    bc_value_rhl_[f] = bc->second[0];
   }
 
   for (bc = bc_flux_->begin(); bc != bc_flux_->end(); ++bc) {
@@ -628,7 +625,7 @@ void CompH_PK::ComputeBCs(bool stop) {
     if (stop) {
       bc_value_p_[f] = 0.0;
     } else {
-      bc_value_p_[f] = bc->second;
+      bc_value_p_[f] = bc->second[0];
     }
   }
 

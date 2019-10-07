@@ -12,97 +12,85 @@ Authors: Quan Bui (mquanbui@math.umd.edu)
 #ifndef AMANZI_COMPH_PK_HH_
 #define AMANZI_COMPH_PK_HH_
 
-// Trilinos include
+// TPLs
 #include "Teuchos_RCP.hpp"
 
-// Basic data structure include
+// Amanzi
+#include "FlowBoundaryFunction.hh"
+#include "PK_PhysicalBDF.hh"
 #include "Tensor.hh"
-#include "TreeVector.hh"
-
-// Time integration include
-#include "FnTimeIntegratorPK.hh"
 #include "TI_Specs.hh"
-
-// General include
+#include "TreeVector.hh"
 #include "State.hh"
-#include "OperatorDiffusionFactory.hh"
-#include "OperatorAdvection.hh"
-#include "OperatorDiffusionFV.hh"
-#include "OperatorDiffusionFVwithGravity.hh"
+#include "PDE_AdvectionUpwind.hh"
+#include "PDE_Diffusion.hh"
+#include "PDE_DiffusionFactory.hh"
+#include "PDE_DiffusionFV.hh"
+#include "PDE_DiffusionFVwithGravity.hh"
+#include "PDE_Accumulation.hh"
+#include "PK_DomainFunction.hh"
 #include "PK_Factory.hh"
 #include "UpwindFlux.hh"
-#include "OperatorDiffusion.hh"
-#include "OperatorAccumulation.hh"
 
-// Specific include for this PK
-#include "MPCoeff.hh"
+// Amanzi::Multiphase
 #include "CapillaryPressure.hh"
+#include "MPCoeff.hh"
 #include "MultiphaseTypeDefs.hh"
 #include "WaterRetentionModel.hh"
 
-#include "FlowBoundaryFunction.hh"
-#include "FlowDomainFunction.hh"
-#include "Flow_BC_Factory.hh"
-#include "Flow_SourceFactory.hh"
-
 namespace Amanzi {
 namespace Multiphase {
-//class State;
 
-class CompH_PK: public FnTimeIntegratorPK {
-public:
+class CompH_PK: public PK_PhysicalBDF {
+ public:
   CompH_PK(Teuchos::ParameterList& pk_tree,
-                    const Teuchos::RCP<Teuchos::ParameterList>& global_list,
-                    const Teuchos::RCP<State>& S,
-                    const Teuchos::RCP<TreeVector>& soln);
+           const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+           const Teuchos::RCP<State>& S,
+           const Teuchos::RCP<TreeVector>& soln);
 
   ~CompH_PK();
 
   // New interface for a PK
-  virtual void Setup(){};
-  virtual void Initialize() {
-      InitializeFields();
-      InitializeComponent();
-      InitNextTI();
+  virtual void Setup(const Teuchos::Ptr<State>& S) override {};
+  virtual void Initialize(const Teuchos::Ptr<State>& S) override {
+    InitializeFields();
+    InitializeComponent();
+    InitNextTI();
   }
 
-  virtual double get_dt(){return 1;}
-  virtual void set_dt(double){};
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit){};
-  virtual void CommitStep(double t_old, double t_new);
-  virtual void CalculateDiagnostics(){};
-  virtual std::string name(){return "hydrogen component";}
+  virtual double get_dt() override { return 1; }
+  virtual void set_dt(double) override {};
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit) override { return true; }
+  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) override;
+  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) override {};
+  virtual std::string name() override { return "hydrogen component"; }
 
   // Main methods of this PK
   void InitializeFields();
   void InitializeComponent();
   void InitNextTI();
-  //void CommitState(const Teuchos::Ptr<State>& S);
+  // void CommitState(const Teuchos::Ptr<State>& S);
 
   // Time integration interface new_mpc, implemented in Pressure_PK_TI.cc
   // computes the non-linear functional f = f(t,u,udot)
-  virtual void Functional(double t_old, double t_new, 
-                          Teuchos::RCP<TreeVector> u_old,
-                          Teuchos::RCP<TreeVector> u_new,
-                          Teuchos::RCP<TreeVector> f);
+  virtual void FunctionalResidual(double t_old, double t_new, 
+                                  Teuchos::RCP<TreeVector> u_old,
+                                  Teuchos::RCP<TreeVector> u_new,
+                                  Teuchos::RCP<TreeVector> f) override;
 
   // applies preconditioner to u and returns the result in Pu
-  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, 
-                                   Teuchos::RCP<TreeVector> Pu);
+  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> pu) override;
 
   // updates the preconditioner
-  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
-                    double h);
+  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) override;
 
   // computes a norm on u-du and returns the result
   virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
-           Teuchos::RCP<const TreeVector> du) {
-  }
+                           Teuchos::RCP<const TreeVector> du) override { return 0.0; }
 
   // check the admissibility of a solution
   // override with the actual admissibility check
-  virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up) {
-  }
+  virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up) override { return true; }
 
   // possibly modifies the predictor that is going to be used as a
   // starting value for the nonlinear solve in the time integrator,
@@ -111,8 +99,7 @@ public:
   // this predictor this function returns true if the predictor was
   // modified, false if not
   virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
-         Teuchos::RCP<TreeVector> u) {
-  }
+                               Teuchos::RCP<TreeVector> u) override { return false; }
 
   // possibly modifies the correction, after the nonlinear solver (NKA)
   // has computed it, will return true if it did change the correction,
@@ -121,13 +108,14 @@ public:
   virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
   ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
          Teuchos::RCP<const TreeVector> u,
-         Teuchos::RCP<TreeVector> du) {
+         Teuchos::RCP<TreeVector> du) override {
+    return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
   }
 
   // experimental approach -- calling this indicates that the time
   // integration scheme is changing the value of the solution in
   // state.
-  virtual void ChangedSolution() {}
+  virtual void ChangedSolution() override {};
 
   void NumericalJacobian(double t_old, double t_new, Teuchos::RCP<const TreeVector> u, double eps);
 
@@ -189,7 +177,7 @@ private:
   Teuchos::RCP<CompositeVector> rho_w_;
 
   // source and sink terms
-  Flow::FlowDomainFunction* src_sink_;
+  PK_DomainFunction* src_sink_;
   int src_sink_distribution_;
 
   // Time integration control

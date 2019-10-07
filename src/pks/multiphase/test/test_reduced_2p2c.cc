@@ -52,8 +52,8 @@ TEST(MULTIPHASE_REDUCED_2P2C) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Flow;
 
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
+  Comm_ptr_type comm = Amanzi::getDefaultComm();
+  int MyPID = comm->MyPID();
 
   if (MyPID == 0) std::cout << "Test: multiphase component pk, uniform rectangular mesh" << std::endl;
 
@@ -64,41 +64,18 @@ TEST(MULTIPHASE_REDUCED_2P2C) {
   Teuchos::RCP<Teuchos::ParameterList> parameter_list = 
      Teuchos::rcp(new Teuchos::ParameterList(plist));
   Teuchos::ParameterList pk_tree_list = plist.sublist("PK Tree");
-  Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(parameter_list, "State");
-  Teuchos::RCP<Teuchos::ParameterList> time_list = Teuchos::sublist(parameter_list, "Cycle Driver");
+  Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(parameter_list, "state");
+  Teuchos::RCP<Teuchos::ParameterList> time_list = Teuchos::sublist(parameter_list, "cycle driver");
   Teuchos::RCP<Teuchos::ParameterList> MPMC_specs = Teuchos::sublist(parameter_list, "MPMC Specs");
-  ParameterList mesh_list = plist.sublist("Mesh").sublist("Unstructured").sublist("Generate Mesh");
-  std::vector<int> mesh_size = mesh_list.get<Teuchos::Array<int> > ("Number of Cells").toVector();
-  std::vector<double> high_coor = mesh_list.get<Teuchos::Array<double> > ("Domain High Coordinate").toVector();
-  std::vector<double> low_coor = mesh_list.get<Teuchos::Array<double> > ("Domain Low Coordinate").toVector();
-  int ndim = plist.sublist("Domain").get<int>("Spatial Dimension", 2);
-  std::string file_name = plist.sublist("Mesh").sublist("Unstructured").sublist("Read Mesh File").get<std::string>("File");
 
   /* create a MSTK mesh framework */
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(ndim, region_list, &comm);
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, *comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
 
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
-
-  /*
-  RCP<const Mesh> mesh;
-  if (ndim == 2)
-    mesh = meshfactory(low_coor[0], low_coor[1], 
-                                     high_coor[0], high_coor[1],
-                                     mesh_size[0], mesh_size[1], gm);
-  else if (ndim == 3)
-    mesh = meshfactory(low_coor[0], low_coor[1], low_coor[2],
-                                     high_coor[0], high_coor[1], high_coor[2],
-                                     mesh_size[0], mesh_size[1], mesh_size[2], gm);
-  */
-
-  RCP<const Mesh> mesh = meshfactory(file_name, gm);
+  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 200.0, 20.0, 200, 10);
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
@@ -109,12 +86,10 @@ TEST(MULTIPHASE_REDUCED_2P2C) {
   std::string passwd("state");
 
   std::vector<Teuchos::RCP<Visualization> > visualization_;
-  for (State::mesh_iterator mesh=S->mesh_begin();
-       mesh!=S->mesh_end(); ++mesh) {
-    if (parameter_list->isSublist("Visualization Data")) {
-      Teuchos::ParameterList& vis_plist = parameter_list->sublist("Visualization Data");
-      Teuchos::RCP<Visualization> vis =
-        Teuchos::rcp(new Visualization(vis_plist, &comm));
+  for (State::mesh_iterator mesh=S->mesh_begin(); mesh!=S->mesh_end(); ++mesh) {
+    if (parameter_list->isSublist("visualization data")) {
+      Teuchos::ParameterList& vis_plist = parameter_list->sublist("visualization data");
+      Teuchos::RCP<Visualization> vis = Teuchos::rcp(new Visualization(vis_plist));
       vis->set_mesh(mesh->second.first);
       vis->CreateFiles();
       visualization_.push_back(vis);
@@ -191,7 +166,7 @@ TEST(MULTIPHASE_REDUCED_2P2C) {
   S->InitializeFields();
 
   // Init the PK and solve for pressure
-  MPMC->Initialize();
+  MPMC->Initialize(S.ptr());
 
   // write initial state
   for (std::vector<Teuchos::RCP<Visualization> >::iterator vis=visualization_.begin();
@@ -210,7 +185,7 @@ TEST(MULTIPHASE_REDUCED_2P2C) {
       dT = MPMC->get_dt();
     } else {
       t_sim += dT;
-      MPMC->CommitStep(t_sim, t_sim + dT); 
+      MPMC->CommitStep(t_sim, t_sim + dT, S); 
       S->advance_time(dT);
       S->advance_cycle();
       if (MyPID == 0) {
@@ -274,15 +249,15 @@ TEST(MULTIPHASE_REDUCED_2P2C) {
 
     double max_percell(0.0);
     double min_percell(0.0);
-    comm.MinAll(&percell,&min_percell,1);
-    comm.MaxAll(&percell,&max_percell,1);
+    comm->MinAll(&percell,&min_percell,1);
+    comm->MaxAll(&percell,&max_percell,1);
 
     double total_mem(0.0);
     double max_mem(0.0);
     double min_mem(0.0);
-    comm.SumAll(&mem,&total_mem,1);
-    comm.MinAll(&mem,&min_mem,1);
-    comm.MaxAll(&mem,&max_mem,1);
+    comm->SumAll(&mem,&total_mem,1);
+    comm->MinAll(&mem,&min_mem,1);
+    comm->MaxAll(&mem,&max_mem,1);
 
     //Teuchos::OSTab tab = vo->getOSTab();
     *vo->os() << "======================================================================" << std::endl;
@@ -308,9 +283,9 @@ TEST(MULTIPHASE_REDUCED_2P2C) {
   double global_doubles_count(0.0);
   double min_doubles_count(0.0);
   double max_doubles_count(0.0);
-  comm.SumAll(&doubles_count,&global_doubles_count,1);
-  comm.MinAll(&doubles_count,&min_doubles_count,1);
-  comm.MaxAll(&doubles_count,&max_doubles_count,1);
+  comm->SumAll(&doubles_count,&global_doubles_count,1);
+  comm->MinAll(&doubles_count,&min_doubles_count,1);
+  comm->MaxAll(&doubles_count,&max_doubles_count,1);
 
   //Teuchos::OSTab tab = vo->getOSTab();
   *vo->os() << "Doubles allocated in state fields " << std::endl;

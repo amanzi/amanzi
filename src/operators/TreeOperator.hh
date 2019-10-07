@@ -75,6 +75,7 @@ class TreeOperator {
   // access
   Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; } 
   Teuchos::RCP<const Epetra_CrsMatrix> A() const { return A_; } 
+  Teuchos::RCP<const Operator> GetBlock(int i, int j) { return blocks_[i][j]; }
 
   // deep copy for building interfaces to TPLs, mainly to solvers
   void CopyVectorToSuperVector(const TreeVector& cv, Epetra_Vector& sv) const;
