@@ -60,7 +60,8 @@ if (BUILD_TESTS)
 
    # Need to copy files for the tests 
    if (NOT (${MSTK_SOURCE_DIR} EQUAL ${MSTK_BINARY_DIR}))
-       file(GLOB DataFiles "${MESH_EXTRACTED_SOURCE_DIR}/test/*.xml")
+       file(GLOB DataFiles "${MESH_EXTRACTED_SOURCE_DIR}/test/*.exo"
+                           "${MESH_EXTRACTED_SOURCE_DIR}/test/*.xml")
        file(COPY ${DataFiles} DESTINATION ${MESH_EXTRACTED_BINARY_DIR}/test/)
    endif()
 
