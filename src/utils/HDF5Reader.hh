@@ -21,7 +21,7 @@
 #define H5Gopen_vers 2
 #define H5Dopen_vers 2
 #include "hdf5.h"
-#include "Epetra_SerialDenseMatrix.h"
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 #include "errors.hh"
 
@@ -74,15 +74,13 @@ struct HDF5Reader {
       Exceptions::amanzi_throw(message);
     }
     Kokkos::resize(mat,dims[0],dims[1]); 
-    Epetra_SerialDenseMatrix m; 
-    m.Shape(dims[1],dims[0]);
 
-    // Not readable directly, need to change row major / column major 
-    //herr_t status = H5Dread(dataset, H5T_NATIVE_DOUBLE,  H5S_ALL, H5S_ALL,
-    //                        H5P_DEFAULT, mat.data());
-
+    // The view is not readable directly, need to change row major / column
+    // major.
+    Teuchos::SerialDenseMatrix<std::size_t, double> m; 
+    m.shape(dims[1],dims[0]);
     herr_t status = H5Dread(dataset, H5T_NATIVE_DOUBLE,  H5S_ALL, H5S_ALL,
-                            H5P_DEFAULT, &m[0][0]);
+                            H5P_DEFAULT, m.values());
     
     for(int i = 0 ; i < mat.extent(0) ; ++i){
       for(int j = 0 ; j < mat.extent(1); ++j){

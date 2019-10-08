@@ -1,6 +1,5 @@
 #include "FunctionBilinear.hh"
 #include "errors.hh"
-#include "Epetra_SerialDenseMatrix.h"
 
 namespace Amanzi {
 

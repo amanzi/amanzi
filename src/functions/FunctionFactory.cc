@@ -1,5 +1,4 @@
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_SerialDenseMatrix.h"
 
 #include "errors.hh"
 #include "HDF5Reader.hh"
