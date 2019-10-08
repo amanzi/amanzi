@@ -147,7 +147,8 @@ class FunctionTabular : public Function {
       case CONSTANT:
         y = y_[j1];
         break;
-      //case FUNCTION:
+      case FUNCTION:
+        assert(false && "Not implemented for FUNCTION");
       //  y = (*func_[j1])(x);
       }
     }
@@ -155,6 +156,10 @@ class FunctionTabular : public Function {
   }
 
   void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
+    Kokkos::parallel_for(in.extent(1),KOKKOS_LAMBDA(const int& i){
+      Kokkos::View<double*> i_in = Kokkos::subview(in,Kokkos::ALL,i); 
+      out(i) = apply_gpu(i_in);
+    });
   }
 
  private:

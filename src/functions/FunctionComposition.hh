@@ -57,8 +57,9 @@ class FunctionComposition : public Function {
   FunctionComposition* Clone() const { return new FunctionComposition(*this); }
 
   double operator()(const Kokkos::View<double*>& x) const {
-    Kokkos::View<double*> y(x); 
-    y[0] = (*f2_)(x);
+    Kokkos::View<double*> y("y",x.extent(0));
+    Kokkos::deep_copy(y,x);  
+    y(0) = (*f2_)(x);
     return (*f1_)(y);
   }
 
@@ -66,13 +67,13 @@ class FunctionComposition : public Function {
     Kokkos::View<double*> out_1("out",out.extent(0)); 
     Kokkos::View<double**> tmpin("tmpin",in.extent(0),in.extent(1));
     Kokkos::deep_copy(tmpin,in);  
-    f1_->apply(tmpin,out_1); 
-    // Change all value 
+    f2_->apply(tmpin,out_1); 
+    // Change all first value 
     Kokkos::parallel_for(in.extent(1),KOKKOS_LAMBDA(const int& j){
       for(int i = 0 ; i < in.extent(0); ++i)
         tmpin(i,j) = out_1(i);
     });
-    f2_->apply(tmpin,out); 
+    f1_->apply(tmpin,out); 
   }
 
  private:

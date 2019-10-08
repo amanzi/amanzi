@@ -123,22 +123,23 @@ TEST_FIXTURE(another_reference_mesh, cv_function)
 
   Teuchos::RCP<CompositeVectorSpace> cv_sp = Teuchos::rcp(new CompositeVectorSpace());
   cv_sp->SetMesh(mesh)->SetGhosted(false)->SetComponents(names, locations, num_dofs);
-  #if 0 
-  Teuchos::RCP<CompositeVector> cv = Teuchos::rcp(new CompositeVector(*cv_sp));
+
+  Teuchos::RCP<CompositeVector> cv = cv_sp->Create();
+
   cv->PutScalar(0.0);
 
   // apply the function to the vector
   cvfunc.Compute(0.0, cv.ptr());
-
+  
   // Check
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c=0; c!=ncells; ++c) {
-    CHECK_CLOSE(1.0, (*cv)("cell", 0, c), 0.0000001);
+    CHECK_CLOSE(1.0, cv->ViewComponent<AmanziDefaultHost>("cell")(c,0), 0.0000001);
   }
 
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f=0; f!=nfaces; ++f) {
-    CHECK_CLOSE(1.0, (*cv)("face", 0, f), 0.0000001);
+    CHECK_CLOSE(1.0, cv->ViewComponent<AmanziDefaultHost>("face")(f,0), 0.0000001);
   }
-  #endif 
+
 }

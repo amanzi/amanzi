@@ -93,7 +93,6 @@ void CompositeVectorFunction::Compute(double time,
               AmanziMesh::Entity_ID bf = vandelay_map.getLocalElement(face_map.getGlobalElement(id_list(id)));
               AMANZI_ASSERT(bf >= 0);
 
-
               // get the coordinate
               AmanziGeometry::Point xf = mesh->face_centroid(id_list(id));
               for (int i=0; i!=dim; ++i) args[i+1] = xf[i];
@@ -120,7 +119,7 @@ void CompositeVectorFunction::Compute(double time,
           mesh->get_set_entities(*region, kind, AmanziMesh::Parallel_type::OWNED, id_list);
 
           // convert 
-          Kokkos::View<double**> txyz("txyz",id_list.extent(0), mesh->space_dimension()+1); 
+          Kokkos::View<double**> txyz("txyz", dim+1,id_list.extent(0)); 
           // Feed the array with data 
           for (int id = 0 ; id < id_list.extent(0); ++id) {
             // get the coordinate
@@ -134,39 +133,22 @@ void CompositeVectorFunction::Compute(double time,
             } else {
               AMANZI_ASSERT(0);
             }
-            for (int i=0; i!=dim; ++i) txyz(id,i) = xc[i];
-          }
+            txyz(0,id) = time; 
+            for (int i=0; i < dim; ++i) txyz(i+1,id) = xc[i];
+          } // for 
 
-          Kokkos::View<double**> result("result",id_list.extent(0),1); 
-          spec->second->apply(txyz,result); 
+          Kokkos::View<double**> result("result",id_list.extent(0),(*spec->second).size());
+          spec->second->apply(txyz,result);
+
+          assert(id_list.extent(0) == result.extent(0));
+          assert((*spec->second).size() == result.extent(1));  
+
           for (int id = 0 ; id < id_list.extent(0); ++id) {
-            for (int i=0; i!=(*spec->second).size(); ++i) {
-              compvec(i,id_list(id)) = result(id,i);
+            for (int i=0; i < (*spec->second).size(); ++i) {
+              compvec(id_list(id),i) = result(id,i);
             }
           }
 
-          // loop over indices
-          //for (int id = 0 ; id < id_list.extent(0); ++id) {
-            // get the coordinate
-          //  AmanziGeometry::Point xc;
-          //  if (kind == AmanziMesh::CELL) {
-          //    xc = mesh->cell_centroid(id_list(id));
-          //  } else if (kind == AmanziMesh::FACE) {
-          //    xc = mesh->face_centroid(id_list(id));
-          //  } else if (kind == AmanziMesh::NODE) {
-          //    assert(false)); 
-              //mesh->node_get_coordinates(id_list(id), &xc);
-          //  } else {
-          //    AMANZI_ASSERT(0);
-          //  }
-          //  for (int i=0; i!=dim; ++i) args[i+1] = xc[i];
-
-            // evaluate the functions and stuff the result into the CV
-          //  double *value = (*spec->second)(args);
-          //  for (int i=0; i!=(*spec->second).size(); ++i) {
-          //    compvec(i,id_list(id)) = value[i];
-          //  }
-          //}
         } else {
           Errors::Message message;
           message << "CV: unknown region \"" << *region << "\"";

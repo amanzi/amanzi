@@ -61,12 +61,24 @@ class FunctionSeparable : public Function {
   double operator()(const Kokkos::View<double*>& x) const {
     //std::vector<double>::const_iterator xb = x.begin(); xb++;
     //std::vector<double> y(xb, x.end());
-    auto y = Kokkos::subview(x,Kokkos::make_pair(static_cast<size_t>(1),static_cast<size_t>(x.extent(0)))); 
+    auto y = Kokkos::subview(
+      x,
+      Kokkos::make_pair(static_cast<size_t>(1),static_cast<size_t>(x.extent(0)))); 
     return (*f1_)(x) * (*f2_)(y);
   }
 
+
   void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
-    f1_->apply(in,out); 
+    Kokkos::View<double**> y = Kokkos::subview(
+      in,
+      Kokkos::make_pair(static_cast<size_t>(1),static_cast<size_t>(in.extent(0))),
+      Kokkos::ALL); 
+    Kokkos::View<double*> out_1("out_1",out.extent(0)); 
+    f1_->apply(in,out_1);
+    f2_->apply(y,out);
+    Kokkos::parallel_for(out.extent(0),KOKKOS_LAMBDA(const int& i){
+      out(i) *= out_1(i); 
+    });
   }
 
  private:

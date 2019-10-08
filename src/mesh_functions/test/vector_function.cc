@@ -51,7 +51,6 @@ TEST_FIXTURE(test, values1)
     constexpr size_t nvalues = 20; 
     size_t nfunctions = 0; 
     Kokkos::View<double**> xyz("xyz",dims,nvalues); 
-    std::cout<<"xyz: extent(0)="<<xyz.extent(0)<<" extent(1)="<<xyz.extent(1)<<std::endl;
     for(int i = 0 ; i < xyz.extent(1); ++i){
         for(int j = 0 ; j < xyz.extent(0); ++j){
             // Values between [0-10]
@@ -123,16 +122,20 @@ TEST_FIXTURE(test, values1)
     functions.push_back(Teuchos::rcp(new FunctionStandardMath("ceil",1.,1.,0.))); 
 
     // Function Composition ----------------------------------------
-    //std::unique_ptr<Function> f5(new FunctionConstant(0.01)); 
-    //std::unique_ptr<Function> f6(new FunctionMonomial(1.,x0,p));
-    //functions.push_back(Teuchos::rcp(new FunctionComposition(
-    //    std::move(f3),std::move(f4)))); 
+    std::unique_ptr<Function> f5(new FunctionConstant(0.01)); 
+    std::unique_ptr<Function> f6(new FunctionMonomial(1.,x0,p));
+    functions.push_back(Teuchos::rcp(new FunctionComposition(
+        std::move(f5),std::move(f6)))); 
 
     // Function Separable ------------------------------------------
-    //std::unique_ptr<Function> f7(new FunctionConstant(0.01)); 
-    //std::unique_ptr<Function> f8(new FunctionMonomial(1.,x0,p));
-    //functions.push_back(Teuchos::rcp(new FunctionSeparable(
-    //    std::move(f7),std::move(f8)))); 
+    std::unique_ptr<Function> f7(new FunctionConstant(0.01)); 
+    Kokkos::View<double*> x0_l("x0_l",dims-1);
+    Kokkos::View<int*> p_l("p_l",dims-1);
+    p_l(0) = 1; p_l(1) = 2;
+    x0_l(0) = xyz(0,0); x0_l(1) = xyz(1,0); 
+    std::unique_ptr<Function> f8(new FunctionMonomial(1.,x0_l,p_l));
+    functions.push_back(Teuchos::rcp(new FunctionSeparable(
+        std::move(f7),std::move(f8)))); 
 
     // Function StaticHead -----------------------------------------
     std::unique_ptr<Function> f9(new FunctionMonomial(1.,x0,p));
@@ -140,7 +143,9 @@ TEST_FIXTURE(test, values1)
         std::move(f9),3))); 
 
     // Function Tabular --------------------------------------------
-    //functions.push_back(Teuchos::rcp(new FunctionTabular(x0,x0,0))); 
+    Kokkos::View<double*> x0_i("x0_i",dims);
+    x0_i(0) = 1.0; x0_i(1) = 2.0; x0_i(2) = 3.0;
+    functions.push_back(Teuchos::rcp(new FunctionTabular(x0_i,x0_i,0))); 
 
     nfunctions = functions.size(); 
 

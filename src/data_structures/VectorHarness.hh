@@ -277,7 +277,6 @@ namespace Amanzi {
     using ret_type =
       Impl::multivector_nonowning_local_object_type<SC, LO, GO, NT,
                                                     memory_space, access_mode>;
-    std::cout << "getMultiVector" << std::endl;
 
     // if (access_mode == WriteOnly) { ...} // FIXME (mfh 22 Oct 2018)
     if (LA.G_.template need_sync<memory_space> ()) {
