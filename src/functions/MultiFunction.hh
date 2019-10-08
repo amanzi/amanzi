@@ -27,11 +27,18 @@ public:
   ~MultiFunction();
 
   int size() const;
-  double* operator()(const std::vector<double>& xt) const;
+  Kokkos::View<double*> operator()(const Kokkos::View<double*>& xt) const;
+
+  void apply(const Kokkos::View<double**>& in, Kokkos::View<double**>& out) const {
+    for(int i = 0 ; i < size(); ++i){
+      Kokkos::View<double*> out_i = Kokkos::subview(out,Kokkos::ALL,i); 
+      functions_[i]->apply(in,out_i); 
+    }
+  }
 
  private:
   std::vector<Teuchos::RCP<const Function> > functions_;
-  double* values_;
+  Kokkos::View<double*> values_;
 };
 
 } // namespace

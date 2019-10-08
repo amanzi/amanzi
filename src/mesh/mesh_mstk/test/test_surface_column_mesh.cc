@@ -77,8 +77,12 @@ TEST(SURFACE_COLUMN_MESH_3D)
   // Create a column mesh from one of the columns
   auto colmesh = Teuchos::rcp(new Amanzi::AmanziMesh::MeshColumn(mesh,10));
 
+  std::cout<<"Column mesh created"<<std::endl;
+
   // Extract the surface from this column
   Amanzi::AmanziMesh::MeshSurfaceCell col_surf(colmesh, "surface");
+
+  std::cout<<"Extracted"<<std::endl;
 
   // -- check basic mesh structure
   CHECK_EQUAL(1, col_surf.num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED));

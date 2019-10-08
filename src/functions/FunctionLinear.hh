@@ -54,15 +54,32 @@ namespace Amanzi {
 
 class FunctionLinear : public Function {
  public:
-  FunctionLinear(double y0, const std::vector<double> &grad);
-  FunctionLinear(double y0, const std::vector<double> &grad, const std::vector<double> &x0);
+  FunctionLinear(double y0, const Kokkos::View<double*> &grad);
+  FunctionLinear(double y0, const Kokkos::View<double*> &grad, const Kokkos::View<double*> &x0);
   ~FunctionLinear() {}
   FunctionLinear* Clone() const { return new FunctionLinear(*this); }
-  double operator()(const std::vector<double>& x) const;
+  double operator()(const Kokkos::View<double*>&) const; 
+
+  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double*>& x) const
+  {
+    double y = y0_;
+    if (x.extent(0) < grad_.extent(0)) {
+      assert(false && "FunctionLinear expects higher-dimensional argument."); 
+    }    
+    for (int j = 0; j < grad_.extent(0); ++j) y += grad_[j]*(x[j] - x0_[j]);
+    return y;
+  }
+
+  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
+    Kokkos::parallel_for(in.extent(1),KOKKOS_LAMBDA(const int& i){
+      Kokkos::View<double*> i_in = Kokkos::subview(in,Kokkos::ALL,i); 
+      out(i) = apply_gpu(i_in); 
+    });
+  }
 
  private:
   double y0_;
-  std::vector<double> grad_, x0_;
+  Kokkos::View<double*> grad_, x0_;
 };
 
 } // namespace Amanzi

@@ -40,12 +40,14 @@ namespace Amanzi {
 MultiFunction::MultiFunction(
         const std::vector<Teuchos::RCP<const Function> >& functions) :
     functions_(functions) {
-  values_ = new double[functions_.size()];
+  Kokkos::resize(values_,functions_.size()); 
+  //values_ = new double[functions_.size()];
 };
 
 MultiFunction::MultiFunction(const Teuchos::RCP<const Function>& function) :
     functions_(1, function)  {
-  values_ = new double[1];
+  Kokkos::resize(values_,1); 
+  //values_ = new double[1];
 };
 
 
@@ -75,12 +77,13 @@ MultiFunction::MultiFunction(Teuchos::ParameterList& plist) {
     functions_.push_back(Teuchos::rcp(factory.Create(plist)));
   };
 
-  values_ = new double[functions_.size()];
+  //values_ = new double[functions_.size()];
+  Kokkos::resize(values_,functions_.size()); 
 }
 
 
 MultiFunction::~MultiFunction() {
-  delete [] values_;
+  //delete [] values_;
 };
 
 
@@ -89,7 +92,7 @@ int MultiFunction::size() const {
 };
 
 
-double* MultiFunction::operator()(const std::vector<double>& xt) const {
+Kokkos::View<double*> MultiFunction::operator()(const Kokkos::View<double*>& xt) const {
   for (int i=0; i!=size(); ++i) {
     values_[i] = (*functions_[i])(xt);
   }

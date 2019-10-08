@@ -31,7 +31,9 @@ int DynamicBoundaryFunction::Func_ID(double time) {
   if (unique_specs_.size() == 0) return 0;
 
   int dim = mesh_->space_dimension();
-  std::vector<double> args(1+dim);
+  Kokkos::View<double*> args("args",1+dim);
+  for(int i = 0 ; i < args.extent(0); ++i)
+    args(i) = 0.;
   args[0] = time;
 
   UniqueSpecList::const_iterator uspec = unique_specs_[AmanziMesh::FACE]->begin();

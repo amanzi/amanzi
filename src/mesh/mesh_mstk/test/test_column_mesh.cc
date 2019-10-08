@@ -81,7 +81,6 @@ TEST(COLUMN_MESH_3D)
   // Create a column mesh from one of the columns
   Amanzi::AmanziMesh::MeshColumn colmesh(mesh,10);
 
-
   // Verify column mesh topology
   int ncells = colmesh.num_entities(Amanzi::AmanziMesh::CELL,
           Amanzi::AmanziMesh::Parallel_type::OWNED);
@@ -195,7 +194,7 @@ TEST(COLUMN_MESH_3D)
   CHECK_EQUAL(2, myregion.extent(0));
   CHECK(colmesh.cell_centroid(myregion(0))[2] >= 2.5);
   CHECK(colmesh.cell_centroid(myregion(1))[2] >= 2.5);
-
+  std::cout<<"End first"<<std::endl;
 }
 
 

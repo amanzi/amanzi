@@ -3,61 +3,65 @@
 
 namespace Amanzi {
 
-FunctionTabular::FunctionTabular(const std::vector<double>& x, const std::vector<double>& y,
+FunctionTabular::FunctionTabular(const Kokkos::View<double*>& x, const Kokkos::View<double*>& y,
                                  const int xi)
   : x_(x), y_(y), xi_(xi)
 {
-  form_.assign(x.size() - 1, LINEAR);
+  Kokkos::resize(form_,x.extent(0)-1);
+  for(int i = 0 ; i < form_.extent(0); ++i){
+    form_(i) = LINEAR; 
+  } 
+  //form_.assign(x.size() - 1, LINEAR);
   check_args(x, y, form_);
 }
 
 FunctionTabular::FunctionTabular(
-    const std::vector<double>& x, const std::vector<double>& y,
-    const int xi, const std::vector<Form>& form) : x_(x), y_(y), xi_(xi), form_(form)
+    const Kokkos::View<double*>& x, const Kokkos::View<double*>& y,
+    const int xi, const Kokkos::View<Form*>& form) : x_(x), y_(y), xi_(xi), form_(form)
 {
   check_args(x, y, form);
 }
 
 FunctionTabular::FunctionTabular(
-    const std::vector<double>& x, const std::vector<double>& y,
-    const int xi, const std::vector<Form>& form, const std::vector<Function*>& func) 
+    const Kokkos::View<double*>& x, const Kokkos::View<double*>& y,
+    const int xi, const Kokkos::View<Form*>& form, const std::vector<Function*>& func) 
   : x_(x), y_(y), xi_(xi), form_(form), func_(func)
 {
   check_args(x, y, form);
 }
 
-void FunctionTabular::check_args(const std::vector<double>& x, const std::vector<double>& y,
-                                 const std::vector<Form>& form) const
+void FunctionTabular::check_args(const Kokkos::View<double*>& x, const Kokkos::View<double*>& y,
+                                 const Kokkos::View<Form*>& form) const
 {
-  if (x.size() != y.size()) {
+  if (x.extent(0) != y.extent(0)) {
     Errors::Message m;
     m << "the number of x and y values differ";
     Exceptions::amanzi_throw(m);
   }
-  if (x.size() < 2) {
+  if (x.extent(0) < 2) {
     Errors::Message m;
     m << "at least two table values must be given";
     Exceptions::amanzi_throw(m);
   }
-  for (int j = 1; j < x.size(); ++j) {
+  for (int j = 1; j < x.extent(0); ++j) {
     if (x[j] <= x[j-1]) {
       Errors::Message m;
       m << "x values are not strictly increasing";
       Exceptions::amanzi_throw(m);
     }
   }
-  if (form.size() != x.size()-1) {
+  if (form.extent(0) != x.extent(0)-1) {
     Errors::Message m;
     m << "incorrect number of form values specified";
     Exceptions::amanzi_throw(m);
   }
 }
 
-double FunctionTabular::operator()(const std::vector<double>& x) const
+double FunctionTabular::operator()(const Kokkos::View<double*>& x) const
 {
   double y;
   double xv = x[xi_];
-  int n = x_.size();
+  int n = x_.extent(0);
   if (xv <= x_[0]) {
     y = y_[0];
   } else if (xv > x_[n-1]) {
