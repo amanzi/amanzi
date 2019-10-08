@@ -190,17 +190,11 @@ private:
   VerboseObject* vo_;
 
   // boundary conditons
-  std::vector<int> bc_model_, bc_submodel_;
-  std::vector<double> bc_value_p_, bc_coef_p_;
-  std::vector<double> bc_value_p_n_, bc_coef_p_n_;
-  std::vector<double> bc_value_s_, bc_coef_s_;
-  std::vector<double> bc_value_rhl_, bc_coef_rhl_;
-  std::vector<double> bc_mixed_;
-
-  Flow::FlowBoundaryFunction* bc_pressure_;
-  Flow::FlowBoundaryFunction* bc_saturation_;
-  Flow::FlowBoundaryFunction* bc_flux_;
-  Flow::FlowBoundaryFunction* bc_rhl_;
+  std::vector<Teuchos::RCP<Flow::FlowBoundaryFunction> > bcs_; 
+  Teuchos::RCP<Operators::BCs> op_bc_p_;
+  Teuchos::RCP<Operators::BCs> op_bc_p_n_;
+  Teuchos::RCP<Operators::BCs> op_bc_s_;
+  Teuchos::RCP<Operators::BCs> op_bc_rhl_;
   
   // State and operators
   int error_control_, update_upwind_;
@@ -224,10 +218,6 @@ private:
   Teuchos::RCP<Operators::PDE_Accumulation> op_acc_;  
   Teuchos::RCP<Operators::PDE_Accumulation> op1_acc_;  
   Teuchos::RCP<Operators::PDE_Accumulation> op2_acc_;  
-  Teuchos::RCP<Operators::BCs> op_bc_s_;
-  Teuchos::RCP<Operators::BCs> op_bc_p_;
-  Teuchos::RCP<Operators::BCs> op_bc_p_n_;
-  Teuchos::RCP<Operators::BCs> op_bc_rhl_;
 
   // upwind operator
   Teuchos::RCP<Operators::UpwindFlux<MPCoeff> > upwind_w_;

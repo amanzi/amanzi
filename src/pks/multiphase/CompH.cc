@@ -24,6 +24,7 @@
 #include "Mesh.hh"
 #include "MFD3D_Diffusion.hh"
 #include "OperatorDefs.hh"
+#include "PK_DomainFunctionFactory.hh"
 
 // Amanzi::Multiphase
 #include "CompH.hh"
@@ -37,11 +38,7 @@ CompH_PK::CompH_PK(Teuchos::ParameterList& pk_tree,
                    const Teuchos::RCP<Teuchos::ParameterList>& specs_list,
                    const Teuchos::RCP<State>& S,
                    const Teuchos::RCP<TreeVector>& soln)
-  : bc_pressure_(NULL),
-    bc_rhl_(NULL),
-    bc_flux_(NULL),
-    bc_saturation_(NULL),
-    src_sink_(NULL),
+  : src_sink_(NULL),
     S_(S),
     soln_(soln),
     passwd_("state"),
@@ -160,10 +157,9 @@ CompH_PK::CompH_PK(Teuchos::ParameterList& pk_tree,
 
   if (!S->HasField("velocity_nonwet")) {
     S->RequireField("velocity_nonwet", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      //->SetComponents(names, locations, ndofs);
       ->SetComponent("face", AmanziMesh::FACE, 1);
   }
-} // End CompH_PK constructor
+}
 
 
 /* ******************************************************************
@@ -171,19 +167,16 @@ CompH_PK::CompH_PK(Teuchos::ParameterList& pk_tree,
 ****************************************************************** */
 CompH_PK::~CompH_PK()
 {
-  if (bc_pressure_ != NULL) delete bc_pressure_;
-  if (bc_saturation_ != NULL) delete bc_saturation_;
-  if (bc_rhl_ != NULL) delete bc_rhl_;
-
   if (src_sink_ != NULL) delete src_sink_;
   if (vo_ != NULL) delete vo_;
 }
 
 
+/* ******************************************************************
+* Set popular default values
+****************************************************************** */
 void CompH_PK::InitializeFields()
 {
-  // set popular default values
-
   if (!S_->GetField("phase1_viscosity", passwd_)->initialized()) {
     *(S_->GetScalarData("phase1_viscosity", passwd_)) = 1.0;
     S_->GetField("phase1_viscosity", passwd_)->set_initialized();
@@ -306,38 +299,79 @@ void CompH_PK::InitializeComponent()
   vo_ = new VerboseObject("MPMC:Component", *comp_list_); 
 
   // Allocate memory for boundary data.
-  bc_model_.resize(nfaces_wghost_, 0);
-  bc_submodel_.resize(nfaces_wghost_, 0);
-  bc_value_p_.resize(nfaces_wghost_, 0.0);
-  bc_value_s_.resize(nfaces_wghost_, 0.0);
-  bc_value_p_n_.resize(nfaces_wghost_, 0.0);
-  bc_value_rhl_.resize(nfaces_wghost_, 0.0);
+  Teuchos::RCP<Flow::FlowBoundaryFunction> bc;
+  auto& bc_list = comp_list_->sublist("boundary conditions");
 
-  //ProcessParameterList(*comp_list_);
-  if (!comp_list_->isSublist("boundary conditions")) {
-    Errors::Message msg;
-    msg << "Comp_PK: problem does not have <boundary conditions> list\n";
-    Exceptions::amanzi_throw(msg);
+  bcs_.clear();
+
+  // -- pressure 
+  if (bc_list.isSublist("pressure")) {
+    PK_DomainFunctionFactory<Flow::FlowBoundaryFunction> bc_factory(mesh_);
+
+    Teuchos::ParameterList& tmp_list = bc_list.sublist("pressure");
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+      std::string name = it->first;
+      if (tmp_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = tmp_list.sublist(name);
+        bc = bc_factory.Create(spec, "boundary pressure", AmanziMesh::FACE, Teuchos::null);
+        bc->set_bc_name("pressure");
+        bcs_.push_back(bc);
+      }
+    }
   }
-  Teuchos::RCP<Teuchos::ParameterList>
-        bc_list = Teuchos::rcp(new Teuchos::ParameterList(comp_list_->sublist("boundary conditions", true)));
-  /* FIXME
-  MultiphaseBCFactory bc_factory(mesh_, bc_list);
-  bc_flux_ = bc_factory.CreateMassFlux(bc_submodel_);
-  bc_rhl_ = bc_factory.CreateHydrogenDensity(bc_submodel_);
-  bc_pressure_ = bc_factory.CreatePressure(bc_submodel_);
-  bc_saturation_ = bc_factory.CreateSaturation(bc_submodel_);
-  */
 
-  //double time = S_->time();
-  double time = 0.0;
-  //if (time >= 0.0) T_physics_ = time;
+  // -- saturation
+  if (bc_list.isSublist("saturation")) {
+    PK_DomainFunctionFactory<Flow::FlowBoundaryFunction> bc_factory(mesh_);
 
-  time = T_physics_;
-  bc_pressure_->Compute(time, time);
-  bc_flux_->Compute(time, time);
-  bc_saturation_->Compute(time, time);
-  bc_rhl_->Compute(time, time);
+    Teuchos::ParameterList& tmp_list = bc_list.sublist("saturation");
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+      std::string name = it->first;
+      if (tmp_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = tmp_list.sublist(name);
+        bc = bc_factory.Create(spec, "boundary saturation", AmanziMesh::FACE, Teuchos::null);
+        bc->set_bc_name("saturation");
+        bcs_.push_back(bc);
+      }
+    }
+  }
+
+  // -- hydrogen density
+  if (bc_list.isSublist("hydrogen density")) {
+    PK_DomainFunctionFactory<Flow::FlowBoundaryFunction> bc_factory(mesh_);
+
+    Teuchos::ParameterList& tmp_list = bc_list.sublist("hydrogen density");
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+      std::string name = it->first;
+      if (tmp_list.isSublist(name)) {
+        Teuchos::ParameterList& spec = tmp_list.sublist(name);
+        bc = bc_factory.Create(spec, "boundary hydrogen density", AmanziMesh::FACE, Teuchos::null);
+        bc->set_bc_name("hydrogen density");
+        bcs_.push_back(bc);
+      }
+    }
+  }
+
+  // -- mass flux
+  if (bc_list.isSublist("mass flux total")) {
+    PK_DomainFunctionFactory<Flow::FlowBoundaryFunction> bc_factory(mesh_);
+
+    Teuchos::ParameterList& tmp_list = bc_list.sublist("mass flux total");
+    for (auto it = tmp_list.begin(); it != tmp_list.end(); ++it) {
+      if (it->second.isList()) {
+        Teuchos::ParameterList spec = Teuchos::getValue<Teuchos::ParameterList>(it->second);
+        bc = bc_factory.Create(spec, "outward mass flux", AmanziMesh::FACE, Teuchos::null);
+        bc->set_bc_name("flux");
+        bcs_.push_back(bc);
+      }
+    }
+  }
+
+  // double time = S_->time();
+  double time = T_physics_;
+  for (int i = 0; i < bcs_.size(); i++) {
+    bcs_[i]->Compute(time, time);
+  }
 
   // Create water retention models.
   coef_w_ = Teuchos::rcp(new MPCoeff(mesh_));
@@ -347,15 +381,15 @@ void CompH_PK::InitializeComponent()
   capillary_pressure_ = Teuchos::rcp(new CapillaryPressure(mesh_));
   capillary_pressure_->Init(wrm_list_); 
 
-  ComputeBCs(false);
-  ComputeBC_Pn();
-   
-  // create operator boundary condition object
+  // create and ppulate boundary conditions
   op_bc_p_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   op_bc_p_n_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   op_bc_rhl_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   op_bc_s_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
 
+  ComputeBCs(false);
+  ComputeBC_Pn();
+   
   // allocate memory for absolute permeability
   K_.resize(ncells_wghost_);
   D1_.resize(ncells_wghost_);
@@ -463,6 +497,8 @@ void CompH_PK::InitNextTI()
 ******************************************************************* */
 void CompH_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
+  const std::vector<int>& bc_model_p_n = op_bc_p_n_->bc_model();
+
   // Write pressure to state
   auto p2 = S_->GetFieldData("pressure_n", passwd_);
   CompositeVector& p1 = *S_->GetFieldData("pressure_w", passwd_);
@@ -486,11 +522,9 @@ void CompH_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>&
   // compute upwind velocities from pressure 
   // Calculate total mobility needed to initialize diffusion operator
   coef_n_->Compute(s1);
-  //std::cout << "krel_w before upwind " << *rel_perm_w_->Krel()->ViewComponent("cell") << "\n";
   upwind_vn_ = S_->GetFieldData("velocity_nonwet", passwd_);
-  //std::cout << "upwind velocity: " << *upwind_vw_->ViewComponent("face") << "\n";
 
-  upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_, *coef_n_->Krel());
+  upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_p_n, *coef_n_->Krel());
   coef_n_->Krel()->Scale((t_new - t_old)/mu2_); // don't need rho to compute darcy flux
 
   auto phase2_flux = S_->GetFieldData("velocity_nonwet", passwd_);
@@ -588,44 +622,72 @@ void CompH_PK::SetDiffusionTensor()
 /* ******************************************************************* 
 * Compute boundary conditions based on bc type and values
 ******************************************************************* */
-void CompH_PK::ComputeBCs(bool stop) {
+void CompH_PK::ComputeBCs(bool stop)
+{
+  std::vector<int>& bc_model_p = op_bc_p_->bc_model();
+  std::vector<double>& bc_value_p = op_bc_p_->bc_value();
+
+  std::vector<int>& bc_model_p_n = op_bc_p_n_->bc_model();
+  std::vector<double>& bc_value_p_n = op_bc_p_n_->bc_value();
+
+  std::vector<int>& bc_model_s = op_bc_s_->bc_model();
+  std::vector<double>& bc_value_s = op_bc_s_->bc_value();
+
+  std::vector<int>& bc_model_rhl = op_bc_rhl_->bc_model();
+  std::vector<double>& bc_value_rhl = op_bc_rhl_->bc_value();
+
   int flag_essential_bc = 0;
   dirichlet_bc_faces_ = 0;
 
-  for (int n = 0; n < bc_model_.size(); n++) {
-    bc_model_[n] = Operators::OPERATOR_BC_NONE;
-    bc_value_p_[n] = 0.0;
-    bc_value_p_n_[n] = 0.0;
-    bc_value_s_[n] = 0.0;
-    bc_value_rhl_[n] = 0.0;
+  for (int n = 0; n < bc_model_p.size(); n++) {
+    bc_model_p[n] = Operators::OPERATOR_BC_NONE;
+    bc_model_p_n[n] = Operators::OPERATOR_BC_NONE;
+    bc_model_s[n] = Operators::OPERATOR_BC_NONE;
+    bc_model_rhl[n] = Operators::OPERATOR_BC_NONE;
+
+    bc_value_p[n] = 0.0;
+    bc_value_p_n[n] = 0.0;
+    bc_value_s[n] = 0.0;
+    bc_value_rhl[n] = 0.0;
   }
 
-  Flow::FlowBoundaryFunction::Iterator bc;
-  for (bc = bc_pressure_->begin(); bc != bc_pressure_->end(); ++bc) {
-    int f = bc->first;
-    bc_model_[f] = Operators::OPERATOR_BC_DIRICHLET;
-    bc_value_p_[f] = bc->second[0];
-    flag_essential_bc = 1;
-    dirichlet_bc_faces_++;
-  }
+  for (int i = 0; i < bcs_.size(); ++i) {
+    if (bcs_[i]->bc_name() == "pressure") {
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        int f = it->first;
+        bc_model_p[f] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_value_p[f] = it->second[0];
+        flag_essential_bc = 1;
+        dirichlet_bc_faces_++;
+      }
+    }
 
-  for (bc = bc_saturation_->begin(); bc != bc_saturation_->end(); ++bc) {
-    int f = bc->first;
-    bc_value_s_[f] = bc->second[0];
-  }
+    if (bcs_[i]->bc_name() == "saturation") {
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        int f = it->first;
+        bc_model_s[f] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_value_s[f] = it->second[0];
+      }
+    }
 
-  for (bc = bc_rhl_->begin(); bc != bc_rhl_->end(); ++bc) {
-    int f = bc->first;
-    bc_value_rhl_[f] = bc->second[0];
-  }
+    if (bcs_[i]->bc_name() == "hydrogen density") {
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        int f = it->first;
+        bc_model_rhl[f] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_value_rhl[f] = it->second[0];
+      }
+    }
 
-  for (bc = bc_flux_->begin(); bc != bc_flux_->end(); ++bc) {
-    int f = bc->first;
-    bc_model_[f] = Operators::OPERATOR_BC_NEUMANN;
-    if (stop) {
-      bc_value_p_[f] = 0.0;
-    } else {
-      bc_value_p_[f] = bc->second[0];
+    if (bcs_[i]->bc_name() == "flux") {
+      for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
+        int f = it->first;
+        bc_model_p[f] = Operators::OPERATOR_BC_NEUMANN;
+        if (stop) {
+          bc_value_p[f] = 0.0;
+        } else {
+          bc_value_p[f] = it->second[0];
+        }
+      }
     }
   }
 
@@ -634,17 +696,21 @@ void CompH_PK::ComputeBCs(bool stop) {
   missed_bc_faces_ = 0;
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
-    if (bc_model_[f] == Operators::OPERATOR_BC_NONE) {
+    if (bc_model_p[f] == Operators::OPERATOR_BC_NONE) {
       cells.clear();
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       if (ncells == 1) {
-        bc_model_[f] = Operators::OPERATOR_BC_NEUMANN;
-        bc_value_p_[f] = 0.0;
-        bc_value_p_n_[f] = 0.0;
-        bc_value_s_[f] = 0.0;
-        bc_value_rhl_[f] = 0.0;
+        bc_model_p[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_model_p_n[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_model_s[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_model_rhl[f] = Operators::OPERATOR_BC_NEUMANN;
+
+        bc_value_p[f] = 0.0;
+        bc_value_p_n[f] = 0.0;
+        bc_value_s[f] = 0.0;
+        bc_value_rhl[f] = 0.0;
         missed_bc_faces_++;
       }
     }
@@ -667,28 +733,30 @@ void CompH_PK::ComputeBCs(bool stop) {
 ****************************************************************** */
 void CompH_PK::ComputeBC_Pn()
 {
-  //std::cout << "Compute boundary condition for Pn \n";
+  const std::vector<int>& bc_model_p = op_bc_p_->bc_model();
+  const std::vector<double>& bc_value_p = op_bc_p_->bc_value();
+  const std::vector<double>& bc_value_s = op_bc_s_->bc_value();
+
+  std::vector<double>& bc_value_p_n = op_bc_p_n_->bc_value();
+
   std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM = coef_n_->WRM(); 
   for (int mb = 0; mb < WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
-    //std::cout << "block " << mb << " region: " << region << "\n";
     AmanziMesh::Entity_ID_List block;
     mesh_->get_set_entities(region, AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &block);
     AmanziMesh::Entity_ID_List::iterator i;
+
     for (i = block.begin(); i != block.end(); i++) {
-      //std::cout << "Processing boundary face " << *i << "\n";
-      if (bc_model_[*i] == Operators::OPERATOR_BC_DIRICHLET) {
-        //std::cout << "Dirichlet value of saturation on face " << *i << " = " << bc_value_s_[*i] << "\n";
-        bc_value_p_n_[*i] = bc_value_p_[*i] + WRM[mb]->capillaryPressure(bc_value_s_[*i]);
-        //std::cout << "phase2 pressure on face " << *i << " = " << bc_value_p_n_[*i] << "\n";
+      if (bc_model_p[*i] == Operators::OPERATOR_BC_DIRICHLET) {
+        bc_value_p_n[*i] = bc_value_p[*i] + WRM[mb]->capillaryPressure(bc_value_s[*i]);
       } else {
-        //bc_value_p_n_[*i] = bc_value_p_[*i];
+        // bc_value_p_n[*i] = bc_value_p[*i];
         // do nothing for now
       }
     }
   }
-  //std::cout << "done computing capillary pressure \n";
 }
+
 
 void CompH_PK::DeriveFaceValuesFromCellValues(
     const Epetra_MultiVector& ucells, Epetra_MultiVector& ufaces,

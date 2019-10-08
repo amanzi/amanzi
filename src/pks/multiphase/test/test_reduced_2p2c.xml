@@ -174,12 +174,12 @@
               <ParameterList name="function">
                 <Parameter name="number of dofs" type="int" value="2"/>
                 <Parameter name="function type" type="string" value="composite function"/>
-                <ParameterList name="DoF 1 Function">
+                <ParameterList name="dof 1 function">
                   <ParameterList name="function-constant">
                     <Parameter name="value" type="double" value="3.0e-9"/>
                   </ParameterList>
                 </ParameterList>
-                <ParameterList name="DoF 2 Function">
+                <ParameterList name="dof 2 function">
                   <ParameterList name="function-constant">
                     <Parameter name="value" type="double" value="3.0e-9"/>
                   </ParameterList>
@@ -196,12 +196,12 @@
               <ParameterList name="function">
                 <Parameter name="number of dofs" type="int" value="2"/>
                 <Parameter name="function type" type="string" value="composite function"/>
-                <ParameterList name="DoF 1 Function">
+                <ParameterList name="dof 1 function">
                   <ParameterList name="function-constant">
                     <Parameter name="value" type="double" value="5.0e-20"/>
                   </ParameterList>
                 </ParameterList>
-                <ParameterList name="DoF 2 Function">
+                <ParameterList name="dof 2 function">
                   <ParameterList name="function-constant">
                     <Parameter name="value" type="double" value="5.0e-20"/>
                   </ParameterList>
@@ -210,7 +210,7 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-    </ParameterList> <!-- End initial conditions -->
+    </ParameterList>
 
     <ParameterList name="mesh partitions">
       <ParameterList name="materials">
@@ -286,6 +286,7 @@
         <ParameterList name="pressure">
           <ParameterList name="BC 1">
             <Parameter name="regions" type="Array(string)" value="{Outflow}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="boundary pressure">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="1.0e6"/>
@@ -296,6 +297,7 @@
         <ParameterList name="mass flux total">
           <ParameterList name="BC 1">
             <Parameter name="regions" type="Array(string)" value="{Inflow}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="outward mass flux">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="-1.766235413495687e-13"/>
@@ -306,6 +308,7 @@
         <ParameterList name="saturation">
           <ParameterList name="BC 1">
             <Parameter name="regions" type="Array(string)" value="{Outflow}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="boundary saturation">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="1.0"/>
@@ -316,6 +319,7 @@
         <ParameterList name="hydrogen density">
           <ParameterList name="BC 1">
             <Parameter name="regions" type="Array(string)" value="{Outflow}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="boundary hydrogen density">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="0.0"/>
@@ -369,7 +373,6 @@
             <Parameter name="schema" type="Array(string)" value="{cell}"/>
             <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
             <Parameter name="gravity" type="bool" value="false"/>
-            <Parameter name="upwind" type="string" value="with flux"/>
           </ParameterList>
           <ParameterList name="preconditioner">
             <Parameter name="discretization primary" type="string" value="fv: default"/>
@@ -377,7 +380,6 @@
             <Parameter name="schema" type="Array(string)" value="{cell}"/>
             <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
             <Parameter name="gravity" type="bool" value="false"/>
-            <Parameter name="upwind" type="string" value="with flux"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -386,6 +388,7 @@
         <ParameterList name="pressure">
           <ParameterList name="BC 1">
             <Parameter name="regions" type="Array(string)" value="{Outflow}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="boundary pressure">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="1.0e6"/>
@@ -396,6 +399,7 @@
         <ParameterList name="mass flux total">
           <ParameterList name="BC 1">
             <Parameter name="regions" type="Array(string)" value="{Inflow}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="outward mass flux">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="-1.766235413495687e-13"/>
@@ -406,6 +410,7 @@
         <ParameterList name="saturation">
           <ParameterList name="BC 1">
             <Parameter name="regions" type="Array(string)" value="{Outflow}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="boundary saturation">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="1.0"/>
@@ -416,6 +421,7 @@
         <ParameterList name="hydrogen density">
           <ParameterList name="BC 1">
             <Parameter name="regions" type="Array(string)" value="{Outflow}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
             <ParameterList name="boundary hydrogen density">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="0.0"/>
@@ -459,7 +465,7 @@
   </ParameterList> <!-- End MPMC Specs -->
 
   <!-- SOLVERS -->
-  <ParameterList name="Solvers">
+  <ParameterList name="solvers">
     <ParameterList name="GMRES">
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
@@ -478,7 +484,7 @@
   </ParameterList>
 
   <!-- PRECONDITIONERS -->
-  <ParameterList name="Preconditioners">
+  <ParameterList name="preconditioners">
     <ParameterList name="Euclid">
       <Parameter name="discretization method" type="string" value="fv: default"/>
       <Parameter name="preconditioner type" type="string" value="euclid"/>

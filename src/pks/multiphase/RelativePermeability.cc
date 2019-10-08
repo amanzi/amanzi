@@ -28,7 +28,6 @@ namespace Multiphase {
 ****************************************************************** */
 void RelativePermeability::Init(std::string phase_name, Teuchos::ParameterList& plist)
 {
-  //atm_pressure = p0;
   phase_ = phase_name;
   ProcessParameterList_(plist);
 
@@ -72,8 +71,6 @@ void RelativePermeability::Compute(const CompositeVector& saturation_water)
       double Sw = Sw_cell[0][*i];
       Krel_cell[0][*i] = WRM_[mb]->k_relative(Sw, phase_);
       dKdS_cell[0][*i] = WRM_[mb]->dKdS(Sw, phase_);
-      //std::cout << "cell: " << *i << "; Sw: " << Sw << "; krel: " << Krel_cell[0][*i] << "\n";
-      //dKdP_cell[0][*i] = -WRM_[mb]->dKdPc(pc);  // Negative sign indicates that dKdP = -dKdPc.
     }
   }
 }

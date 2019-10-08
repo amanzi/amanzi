@@ -71,7 +71,8 @@ set(multiphase_src_files CompW.cc CompW_TI.cc CompH.cc CompH_TI.cc
 add_amanzi_library(multiphase 
                    SOURCE ${multiphase_src_files}
                    LINK_LIBS pks operators state functions 
-                             mesh_functions time_integration data_structures)
+                             mesh_functions time_integration data_structures
+                             flow)
 
 #
 # Install Targets
@@ -104,36 +105,15 @@ if (BUILD_TESTS)
 
   # Copy test subdirectory for out of source builds
   if (NOT (MULTIPHASE_SOURCE_DIR STREQUAL MULTIPHASE_BINARY_DIR))
-    execute_process(COMMAND ${CMAKE_COMMAND} -E 
-                    copy_directory ${MULTIPHASE_SOURCE_DIR}/test ${MULTIPHASE_BINARY_DIR}/test) 
+    file(GLOB DataFiles "${MULTIPHASE_SOURCE_DIR}/test/*.xml"
+                        "${MULTIPHASE_SOURCE_DIR}/test/*.exo")
+    file(COPY ${DataFiles} DESTINATION ${MULTIPHASE_BINARY_DIR}/test/)
   endif()
 
   set(amanzi_libs multiphase state mesh_factory whetstone operators flow
                   geometry mesh_functions functions pks)
 
   # Unit tests:
-  if(0)
-  add_amanzi_test(test_sequential test_sequential
-                  KIND      int
-                  SOURCE    test/Main.cc test/test_sequential.cc
-                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-      
-  add_amanzi_test(test_seq_q5 test_seq_q5
-                  KIND      int
-                  SOURCE    test/Main.cc test/test_seq_q5.cc
-                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
-  add_amanzi_test(test_seq_q5_3d test_seq_q5_3d
-                  KIND      int
-                  SOURCE    test/Main.cc test/test_seq_q5_3d.cc
-                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-
-  add_amanzi_test(test_constraint test_constraint
-                  KIND      int
-                  SOURCE    test/Main.cc test/test_constraint.cc
-                  LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
-  endif()
-
   add_amanzi_test(test_reduced_2p2c test_reduced_2p2c
                   KIND      int
                   SOURCE    test/Main.cc test/test_reduced_2p2c.cc

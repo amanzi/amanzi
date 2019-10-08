@@ -29,6 +29,8 @@ void CompH_PK::FunctionalResidual(double t_old, double t_new,
                                   Teuchos::RCP<TreeVector> u_new, 
                                   Teuchos::RCP<TreeVector> f)
 {
+  const std::vector<int>& bc_model_p = op_bc_p_->bc_model();
+
   double dTp(t_new - t_old);
   // Get the new pressure and saturation from the solution tree vector
   Teuchos::RCP<const CompositeVector> pressure_w = u_new->SubVector(0)->Data();
@@ -64,10 +66,10 @@ void CompH_PK::FunctionalResidual(double t_old, double t_new,
   upwind_vw_ = S_->GetFieldData("velocity_wet", passwd_);
   upwind_vn_ = S_->GetFieldData("velocity_nonwet", passwd_);
 
-  upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_, *coef_w_->Coeff());
-  coef_w_->Coeff()->Scale(1.0/mu1_);
-  upwind_n_->Compute(*upwind_vw_, *upwind_vw_, bc_model_, *coef_n_->Coeff());
-  coef_n_->Coeff()->Scale(1.0/mu2_);
+  upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_p, *coef_w_->Coeff());
+  coef_w_->Coeff()->Scale(1.0 / mu1_);
+  upwind_n_->Compute(*upwind_vw_, *upwind_vw_, bc_model_p, *coef_n_->Coeff());
+  coef_n_->Coeff()->Scale(1.0 / mu2_);
 
   // compute the upwinded coefficient for the molecular diffusion operator
   CompositeVectorSpace cvs; 
@@ -78,9 +80,7 @@ void CompH_PK::FunctionalResidual(double t_old, double t_new,
   cvs.AddComponent("face", AmanziMesh::FACE, 1);
   Teuchos::RCP<CompositeVector> s_with_face = Teuchos::rcp(new CompositeVector(cvs));
   *s_with_face->ViewComponent("cell") = *saturation_w->ViewComponent("cell");
-  //DeriveFaceValuesFromCellValues(*s_with_face->ViewComponent("cell"), *s_with_face->ViewComponent("face"),
-  //                               bc_model_, bc_value_s_);
-  upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_, *s_with_face);
+  upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_p, *s_with_face);
   s_with_face->Scale(phi_);
 
   // compute the water component density for gravity term using the density of hydrogen in liquid
@@ -166,6 +166,8 @@ int CompH_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
 ****************************************************************** */
 void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u, double dTp)
 {
+  const std::vector<int>& bc_model_p = op_bc_p_->bc_model();
+
   Teuchos::RCP<const CompositeVector> pressure_w = u->SubVector(0)->Data();
   Teuchos::RCP<const CompositeVector> saturation_w = u->SubVector(1)->Data();
   Teuchos::RCP<const CompositeVector> rhl = u->SubVector(2)->Data();
@@ -192,10 +194,10 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateFlux(pressure_n.ptr(), upwind_vn_.ptr());
 
-  upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_, *coef_w_->Coeff());
-  //coef_w_->Coeff()->Scale(dTp/mu1_);
-  upwind_n_->Compute(*upwind_vn_, *upwind_vn_, bc_model_, *coef_n_->Coeff());
-  //coef_n_->Coeff()->Scale(dTp/mu2_);
+  upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_p, *coef_w_->Coeff());
+  // coef_w_->Coeff()->Scale(dTp / mu1_);
+  upwind_n_->Compute(*upwind_vn_, *upwind_vn_, bc_model_p, *coef_n_->Coeff());
+  // coef_n_->Coeff()->Scale(dTp / mu2_);
   Teuchos::RCP<CompositeVector> total_coef = Teuchos::rcp(new CompositeVector(*coef_w_->Coeff()));
   total_coef->Update(dTp/mu2_, *coef_n_->Coeff(), dTp/mu1_);
 
@@ -209,7 +211,7 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
   *s_with_face->ViewComponent("cell") = *saturation_w->ViewComponent("cell");
   //DeriveFaceValuesFromCellValues(*s_with_face->ViewComponent("cell"), *s_with_face->ViewComponent("face"),
   //                               bc_model_, bc_value_s_);
-  upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_, *s_with_face);
+  upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_p, *s_with_face);
   s_with_face->Scale(dTp*phi_);
 
   // A_21 block wrt Pw
@@ -220,9 +222,9 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
   // op1_preconditioner_->global_operator()->SymbolicAssembleMatrix();
   // op1_preconditioner_->global_operator()->AssembleMatrix();
 
-  upwind_n_->Compute(*upwind_vn_, *upwind_vn_, bc_model_, *coef_n_->Krel());
+  upwind_n_->Compute(*upwind_vn_, *upwind_vn_, bc_model_p, *coef_n_->Krel());
   Teuchos::RCP<CompositeVector> lambda_n = Teuchos::rcp(new CompositeVector(*coef_n_->Krel()));
-  lambda_n->Scale(Cg_*dTp/mu2_);
+  lambda_n->Scale(Cg_*dTp / mu2_);
 
   Teuchos::RCP<CompositeVector> tmp_flux_ = Teuchos::rcp(new CompositeVector(*upwind_vn_));
   tmp_flux_->PutScalar(0.0);
@@ -231,10 +233,10 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateFlux(pressure_n.ptr(), tmp_flux_.ptr());
 
-  //Teuchos::ParameterList olist_adv = comp_list_->sublist("operators").sublist("advection operator");
-  //op_prec_pres_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, op1_preconditioner_->global_operator()));
+  // Teuchos::ParameterList olist_adv = comp_list_->sublist("operators").sublist("advection operator");
+  // op_prec_pres_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, op1_preconditioner_->global_operator()));
   op_prec_pres_->Setup(*tmp_flux_);
-  //tmp_flux_->Scale(-1.0);
+  // tmp_flux_->Scale(-1.0);
   op_prec_pres_->UpdateMatrices(tmp_flux_.ptr(), Teuchos::null);
   op_prec_pres_->ApplyBCs(true, true, true);
 
@@ -257,13 +259,13 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
   Teuchos::RCP<CompositeVector> tmp_coef = Teuchos::rcp(new CompositeVector(*coef_w_->Krel()));
   tmp_coef->PutScalar(0.0);
 
-  upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_, *coef_w_->RhoDerivKrel());
+  upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_p, *coef_w_->RhoDerivKrel());
   Teuchos::RCP<CompositeVector> rhoDerivLambdaW = Teuchos::rcp(new CompositeVector(*coef_w_->RhoDerivKrel()));
   rhoDerivLambdaW->Scale(dTp/mu1_);
-  upwind_n_->Compute(*upwind_vn_, *upwind_vn_, bc_model_, *coef_n_->RhoDerivKrel());
+  upwind_n_->Compute(*upwind_vn_, *upwind_vn_, bc_model_p, *coef_n_->RhoDerivKrel());
   Teuchos::RCP<CompositeVector> rhoDerivLambdaN = Teuchos::rcp(new CompositeVector(*coef_n_->RhoDerivKrel()));
   rhoDerivLambdaN->Scale(dTp/mu2_);
-  //coef_n_->RhoDerivKrel()->Scale(dTp/mu2_);
+  // coef_n_->RhoDerivKrel()->Scale(dTp / mu2_);
 
   // Compute RHL * K * lambda_w' * grad Pw
   tmp_flux_->PutScalar(0.0);
@@ -285,7 +287,7 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
 
   // Compute Cg * Pc' * K * lambda_n * grad Pn
   // upwind Pc'
-  upwind_n_->Compute(*upwind_vn_, *upwind_vn_, bc_model_, *coef_n_->DPc()); 
+  upwind_n_->Compute(*upwind_vn_, *upwind_vn_, bc_model_p, *coef_n_->DPc()); 
   tmp_coef->Update(Cg_*dTp/mu2_, *coef_n_->Krel(), 0.0);
   tmp_coef->Multiply(1.0, *tmp_coef, *coef_n_->DPc(), 0.0);
 
@@ -381,14 +383,11 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
 void CompH_PK::NumericalJacobian(double t_old, double t_new, 
                                  Teuchos::RCP<const TreeVector> u, double eps)
 {
+  const std::vector<int>& bc_model_p = op_bc_p_->bc_model();
+
   for (op_iter op_it = ops_.begin(); op_it != ops_.end(); op_it++) {
     (*op_it)->global_operator()->Init();
   }
-  /*
-  for (int i = 1; i < ops_.size()-1; i++) {
-    ops_[i]->global_operator()->Init();
-  }
-  */
 
   Teuchos::RCP<TreeVector> u_copy = Teuchos::rcp(new TreeVector(*u));
 
@@ -434,7 +433,7 @@ void CompH_PK::NumericalJacobian(double t_old, double t_new,
     int nfaces_none = 0;
     for (int f_it = 0; f_it < faces.size(); ++f_it) {
       int f_id = faces[f_it];
-      if (bc_model_[f_id] != Operators::OPERATOR_BC_NEUMANN) nfaces_none++;
+      if (bc_model_p[f_id] != Operators::OPERATOR_BC_NEUMANN) nfaces_none++;
     }
     for (int f_it = 0; f_it < faces.size(); ++f_it) {
       int f_id = faces[f_it];
@@ -446,10 +445,9 @@ void CompH_PK::NumericalJacobian(double t_old, double t_new,
       WhetStone::DenseMatrix Aface(ncells, ncells);
       Aface = 0.0;
 
-      if (bc_model_[f_id] != Operators::OPERATOR_BC_NEUMANN) {
+      if (bc_model_p[f_id] != Operators::OPERATOR_BC_NEUMANN) {
       for (int i = 0; i != ncells; ++i) {
-        if (cells[i] == c) 
-        {
+        if (cells[i] == c) {
           Aface(i, i) = deriv_c[0][cells[i]]/(double)nfaces_none;
           for (int j = i + 1; j != ncells; ++j) {
             Aface(j, i) = deriv_c[0][cells[j]];

@@ -194,16 +194,10 @@ private:
   VerboseObject* vo_;
 
   // boundary conditons
-  std::vector<int> bc_model_, bc_submodel_;
-  std::vector<double> bc_value_p_;
-  std::vector<double> bc_value_s_;
-  std::vector<double> bc_value_rhl_;
-  std::vector<double> bc_mixed_;
-
-  Flow::FlowBoundaryFunction* bc_pressure_;
-  Flow::FlowBoundaryFunction* bc_saturation_;
-  Flow::FlowBoundaryFunction* bc_rhl_;
-  //Flow::FlowBoundaryFunction* bc_flux_;
+  std::vector<Teuchos::RCP<Flow::FlowBoundaryFunction> > bcs_; 
+  Teuchos::RCP<Operators::BCs> op_bc_p_;
+  Teuchos::RCP<Operators::BCs> op_bc_s_;
+  Teuchos::RCP<Operators::BCs> op_bc_rhl_;
   
   // State and operators
   int error_control_, update_upwind_;
@@ -215,9 +209,6 @@ private:
 
   Teuchos::RCP<Operators::PDE_DiffusionFVwithGravity> op1_matrix_;
   Teuchos::RCP<Operators::PDE_Diffusion> op2_matrix_;
-  Teuchos::RCP<Operators::BCs> op_bc_s_;
-  Teuchos::RCP<Operators::BCs> op_bc_p_;
-  Teuchos::RCP<Operators::BCs> op_bc_rhl_;
 
   Teuchos::RCP<Operators::PDE_Diffusion> op1_preconditioner_;
   Teuchos::RCP<Operators::PDE_Diffusion> op3_preconditioner_;

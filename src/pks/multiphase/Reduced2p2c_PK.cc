@@ -12,27 +12,16 @@ Reduced2p2c_PK::Reduced2p2c_PK(Teuchos::ParameterList& pk_tree,
                     soln_(soln), S_(S), pk_tree_(pk_tree), glist_(global_list),
                     passwd_("state")
 {
-  if (global_list->isSublist("Cycle Driver")) {
-    ti_list_ = Teuchos::rcp(new Teuchos::ParameterList(global_list->sublist("Cycle Driver").sublist("time integrator")));
-  } else {
-    ASSERT(0);
-  }
+  ti_list_ = Teuchos::rcp(new Teuchos::ParameterList(global_list->sublist("cycle driver").sublist("time integrator")));
 
-  /*
-  if (global_list->isSublist("MPMC Specs")) {
-    mpmc_list_ = Teuchos::rcp(new Teuchos::ParameterList(global_list->sublist("MPMC Specs")));
-  } else {
-    ASSERT(0);
-  }
-  */
   mpmc_list_ = Teuchos::sublist(global_list, "MPMC Specs", true);
   jacobian_type_ = mpmc_list_->get<std::string>("Jacobian type", "analytic");
   ncp_type_ = mpmc_list_->get<std::string>("NCP function", "min");
   mu_ = mpmc_list_->get<double>("smoothing parameter mu", 0.0);
 
   // We also need preconditioner and solver sublists
-  pc_list_ = Teuchos::sublist(global_list, "Preconditioners", true);
-  linear_operator_list_ = Teuchos::sublist(global_list, "Solvers", true);
+  pc_list_ = Teuchos::sublist(global_list, "preconditioners", true);
+  linear_operator_list_ = Teuchos::sublist(global_list, "solvers", true);
 
   // we need flow list
   cpr_enhanced_ = mpmc_list_->get<bool>("CPR enhancement", false);
@@ -42,12 +31,12 @@ Reduced2p2c_PK::Reduced2p2c_PK(Teuchos::ParameterList& pk_tree,
     pc_block_names_ = cpr_list_->get<Teuchos::Array<std::string> >("preconditioner").toVector();
     pc_block_names_.resize(correction_blocks.size());
     for (int i = 0; i < pc_block_names_.size(); i++)
-      ASSERT(pc_list_->isSublist(pc_block_names_[i]));
+      AMANZI_ASSERT(pc_list_->isSublist(pc_block_names_[i]));
   }
 
   pc_all_name_ = ti_list_->get<std::string>("preconditioner");
   linear_solver_name_ = ti_list_->get<std::string>("linear solver");
-  ASSERT(pc_list_->isSublist(pc_all_name_));
+  AMANZI_ASSERT(pc_list_->isSublist(pc_all_name_));
 
   p1_tree_ = Teuchos::rcp(new TreeVector());
   s1_tree_ = Teuchos::rcp(new TreeVector());
@@ -59,8 +48,7 @@ Reduced2p2c_PK::Reduced2p2c_PK(Teuchos::ParameterList& pk_tree,
   comp_h_pk_ = Teuchos::rcp(new CompH_PK(pk_tree.sublist("Component 2"), mpmc_list_, S, soln_));
   gas_constraint_pk_ = Teuchos::rcp(new GasConstraint(*mpmc_list_, S));
   gas_constraint_pk_->setMu(mu_);
-  //gas_constraint_pk_->SetNCPFunctionType(ncp_type_);
-  std::cout << "Done Reduced2p2c_PK Constructor\n";
+  // gas_constraint_pk_->SetNCPFunctionType(ncp_type_);
 
   num_mat_ = 0;
   ln_itrs_ = 0;
@@ -71,7 +59,6 @@ Reduced2p2c_PK::Reduced2p2c_PK(Teuchos::ParameterList& pk_tree,
   vo_ = new VerboseObject("Reduced2p2c::", *mpmc_list_);
 
   Amanzi::timer_manager.add("UpdatePreconditioner", Amanzi::Timer::ACCUMULATE);
-  //Amanzi::timer_manager.add("NumericalJacobian", Amanzi::Timer::ACCUMULATE);
   Amanzi::timer_manager.add("ApplyPreconditioner", Amanzi::Timer::ACCUMULATE);
   Amanzi::timer_manager.add("PreconditionerSetup", Amanzi::Timer::ACCUMULATE);
   Amanzi::timer_manager.add("PreconditionerSolve", Amanzi::Timer::ACCUMULATE);
@@ -95,8 +82,6 @@ void Reduced2p2c_PK::Initialize(const Teuchos::Ptr<State>& S)
   p1_tree_->SetData(p1_);
   s1_tree_->SetData(s1_);
   rhl_tree_->SetData(rhl_);
-  //std::cout << "Initial solution: \n";
-  //soln_->Print(std::cout);
   comp_w_pk_->Initialize(S_.ptr());
   comp_h_pk_->Initialize(S_.ptr());
   gas_constraint_pk_->Initialize();
@@ -165,8 +150,6 @@ void Reduced2p2c_PK::Initialize(const Teuchos::Ptr<State>& S)
   dT = dT0;
   dTnext = dT0;
 
-  std::cout<<"T0 "<<T0<<" dT0 "<<dT0<<"\n";
-
   ti_specs_ = &ti_specs_generic_;
 
   error_control_ = ti_specs_->error_control_options;
@@ -179,12 +162,7 @@ void Reduced2p2c_PK::Initialize(const Teuchos::Ptr<State>& S)
   std::string ti_method_name(ti_specs_generic_.ti_method_name);
 
   if (ti_specs_generic_.ti_method == FLOW_TIME_INTEGRATION_BDF1) {
-    //Teuchos::ParameterList bdf1_list = rp_list_.sublist(ti_method_name).sublist("BDF1");
     Teuchos::ParameterList bdf1_list = ti_specs_generic_.ti_list_ptr_->sublist("BDF1");
-    //std::cout<<bdf1_list<<"\n";
-    //if (! bdf1_list.isSublist("VerboseObject"))
-    //    bdf1_list.sublist("VerboseObject") = mp_list_.sublist("VerboseObject");
-
     bdf1_dae = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
   }
 
@@ -200,9 +178,9 @@ void Reduced2p2c_PK::Initialize(const Teuchos::Ptr<State>& S)
   coarse_indices_array_[1] = 1;
   coarse_indices_array_[2] = 1;
   coarse_indices_array_[3] = 1;
-  coarse_indices_array_[4] = -1;
+  coarse_indices_array_[4] =-1;
   coarse_indices_array_[5] = 0;
-  coarse_indices_array_[6] = -1;
+  coarse_indices_array_[6] =-1;
   coarse_indices_array_[7] = 0;
   coarse_indices_array_[8] = 0;
 
@@ -212,10 +190,10 @@ void Reduced2p2c_PK::Initialize(const Teuchos::Ptr<State>& S)
   //coarse_indices_array_two_level_[2] = 1;
   coarse_indices_array_two_level_[3] = 1;
   coarse_indices_array_two_level_[4] = -1;
-  //coarse_indices_array_two_level_[5] = 0;
+  // coarse_indices_array_two_level_[5] = 0;
   coarse_indices_array_two_level_[6] = -1;
   coarse_indices_array_two_level_[7] = 0;
-  //coarse_indices_array_two_level_[8] = 0;
+  // coarse_indices_array_two_level_[8] = 0;
 
   Teuchos::OSTab tab = vo_->getOSTab();
   *vo_->os() << std::endl;
@@ -228,30 +206,28 @@ void Reduced2p2c_PK::Initialize(const Teuchos::Ptr<State>& S)
     method_name = "CPR-AMG(" + ss.str() + ")";
   }
 
-  *vo_->os() << vo_->color("green") << "Initializaton Complete!"
-    << vo_->reset() << std::endl;
   *vo_->os() << "Jacobian type: " << jacobian_type_ << std::endl
     << "Preconditioning Method: " << method_name
     << std::endl << std::endl;
   *vo_->os() << "NCP function: " << ncp_type_ << std::endl;
+
   if (ncp_type_ == "fischer-burmeister")  
     *vo_->os() << "smoothing parameter mu: " << mu_ << std::endl;
-  *vo_->os() << std::endl;
 
-  std::cout << "Reduced2p2c_PK: done initialization\n";
+  *vo_->os() << vo_->color("green") << "Initializaton complete" << vo_->reset() << std::endl;
 }
 
 
-bool Reduced2p2c_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
+bool Reduced2p2c_PK::AdvanceStep(double t_old, double t_new, bool reinit)
+{
   dT = t_new - t_old;
   dT_actual = dT;
   double state_time = S_->time();
-  //std::cout << "State time: " << state_time << endl;
   double time = 0.0;
   if (time >= 0.0) T_physics = time;
   time = T_physics;
-  //int cycle = S_->cycle();
-  //if (cycle == 100) comp_h_pk_->ComputeBCs(cycle);
+  // int cycle = S_->cycle();
+  // if (cycle == 100) comp_h_pk_->ComputeBCs(cycle);
 
   double time_stop_injection = 1.5768e+13;
   if (state_time - time_stop_injection > 1e-10) {
@@ -276,7 +252,6 @@ bool Reduced2p2c_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
   bool fail = false;
   if (ti_specs_->ti_method == FLOW_TIME_INTEGRATION_BDF1){
     fail = bdf1_dae->TimeStep(dT, dTnext, soln_);
-    //std::cout << "dTnext: " << dTnext << endl;
     if (fail) {
       dT = dTnext;
       nl_itrs_ = 0;
@@ -291,13 +266,12 @@ bool Reduced2p2c_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
   //ti_specs_->dT_history.push_back(times);
 
   nl_itrs_ = 0;
-
   ti_specs_->num_itrs++;
-
   dT = dTnext;
 
   return fail;
 }
+
 
 void Reduced2p2c_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h)
 {
@@ -312,24 +286,6 @@ void Reduced2p2c_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
   }
   nl_itrs_++;
   Amanzi::timer_manager.start("UpdatePreconditioner");
-  //std::cout << "Solution: \n";
-  //up->Print(std::cout);
-  /*
-  std::ofstream sol;
-  stringstream ss, ss1;
-  ss << nl_itrs_;
-  ss1 << ts_cnt_;
-  std::string file_name = "sol_" + ss1.str() + "." + ss.str() + ".txt";
-  sol.open(file_name.c_str());
-  int ncells = (*up->SubVector(0)->Data()->ViewComponent("cell")).MyLength();
-  const Epetra_MultiVector& sol_p = *up->SubVector(0)->Data()->ViewComponent("cell");
-  const Epetra_MultiVector& sol_s = *up->SubVector(1)->Data()->ViewComponent("cell");
-  const Epetra_MultiVector& sol_c = *up->SubVector(2)->Data()->ViewComponent("cell");
-  for (int i = 0; i < ncells; i++) {
-    sol << sol_p[0][i] << endl << sol_s[0][i] << endl << sol_c[0][i] << endl;
-  }
-  sol.close();
-  */
 
   if (jacobian_type_ == "analytic") {
     comp_w_pk_->UpdatePreconditioner(t, up, h);
@@ -347,11 +303,6 @@ void Reduced2p2c_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
   }
   */
 
-  /*
-  std::cout << *gas_constraint_pk_->op_prec1()->global_operator()->A() << "\n";
-  std::cout << *gas_constraint_pk_->op_p1_sat_prec()->global_operator()->A() << "\n";
-  std::cout << *gas_constraint_pk_->op_prec3()->global_operator()->A() << "\n";
-  */
   if (pc_list_->sublist(pc_all_name_).get<std::string>("preconditioner type") == "systg") {
     Teuchos::ParameterList& systg_list =  pc_list_->sublist(pc_all_name_).sublist("systg parameters");
     std::cout << "mu_k = " << mu_k << std::endl;

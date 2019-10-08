@@ -29,6 +29,11 @@ void CompW_PK::FunctionalResidual(double t_old, double t_new,
                                   Teuchos::RCP<TreeVector> u_new, 
                                   Teuchos::RCP<TreeVector> f)
 {
+  const std::vector<int>& bc_model_p = op_bc_p_->bc_model();
+
+  const std::vector<int>& bc_model_s = op_bc_s_->bc_model();
+  const std::vector<double>& bc_value_s = op_bc_s_->bc_value();
+
   double dTp(t_new - t_old);
 
   // Get the new pressure and saturation from the solution tree vector
@@ -45,7 +50,7 @@ void CompW_PK::FunctionalResidual(double t_old, double t_new,
   rel_perm_w_->Compute(*saturation_w);
   upwind_vw_ = S_->GetFieldData("velocity_wet", passwd_);
 
-  upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_, *rel_perm_w_->Krel());
+  upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_p, *rel_perm_w_->Krel());
   rel_perm_w_->Krel()->Scale(rho_/mu_);
 
   // compute the upwinded coefficient for the molecular diffusion operator
@@ -58,13 +63,12 @@ void CompW_PK::FunctionalResidual(double t_old, double t_new,
   Teuchos::RCP<CompositeVector> s_with_face = Teuchos::rcp(new CompositeVector(cvs));
   *s_with_face->ViewComponent("cell") = *saturation_w->ViewComponent("cell");
   DeriveFaceValuesFromCellValues(*s_with_face->ViewComponent("cell"), *s_with_face->ViewComponent("face"),
-                                 bc_model_, bc_value_s_);
+                                 bc_model_s, bc_value_s);
 
   upwind_vw_->Scale(-1.0);
-  upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_, *s_with_face);
+  upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_p, *s_with_face);
   s_with_face->Scale(-phi_);
   upwind_vw_->Scale(-1.0);
-  //std::cout << "s_with_face: " << *s_with_face->ViewComponent("cell") << "\n";
 
   // compute the water component density for gravity term using the density of hydrogen in liquid
   // from the previous time step.
@@ -80,19 +84,14 @@ void CompW_PK::FunctionalResidual(double t_old, double t_new,
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->ApplyBCs(true, true, true);
 
-  // ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->SymbolicAssembleMatrix();
-  // ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->AssembleMatrix();
-
   op2_matrix_->global_operator()->Init();
   op2_matrix_->Setup(D1ptr, s_with_face, Teuchos::null);
   op2_matrix_->UpdateMatrices(Teuchos::null, Teuchos::null);
   op2_matrix_->ApplyBCs(true, true, true);
-  //op2_matrix_->SymbolicAssembleMatrix();
-  //op2_matrix_->AssembleMatrix(); 
 
   // Update source term
-  //Teuchos::RCP<CompositeVector> rhs = ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->rhs();
-  //if (src_sink_ != NULL) AddSourceTerms(*rhs);
+  // Teuchos::RCP<CompositeVector> rhs = ((Teuchos::RCP<Operators::PDE_Diffusion>)op1_matrix_)->rhs();
+  // if (src_sink_ != NULL) AddSourceTerms(*rhs);
   
   Teuchos::RCP<CompositeVector> f1 = Teuchos::rcp(new CompositeVector(f->Data()->Map()));
   Teuchos::RCP<CompositeVector> f2 = Teuchos::rcp(new CompositeVector(f->Data()->Map()));
@@ -137,6 +136,8 @@ int CompW_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
 ****************************************************************** */
 void CompW_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u, double dTp)
 {
+  const std::vector<int>& bc_model_p = op_bc_p_->bc_model();
+
   // Get the new pressure and saturation from the solution tree vector
   Teuchos::RCP<const CompositeVector> pressure_w = u->SubVector(0)->Data();
   Teuchos::RCP<const CompositeVector> saturation_w = u->SubVector(1)->Data();
@@ -144,16 +145,13 @@ void CompW_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
 
   // Calculate relative perm needed to initialize diffusion operator
   rel_perm_w_->Compute(*saturation_w);
-  //std::cout << "krel_w before upwind " << *rel_perm_w_->Krel()->ViewComponent("cell") << "\n";
   upwind_vw_ = S_->GetFieldData("velocity_wet", passwd_);
-  //std::cout << "upwind velocity: " << *upwind_vw_->ViewComponent("face") << "\n";
 
-  upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_, *rel_perm_w_->Krel());
+  upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_p, *rel_perm_w_->Krel());
   rel_perm_w_->Krel()->Scale(dTp*rho_/mu_);
 
-  upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_, *rel_perm_w_->dKdS());
-  rel_perm_w_->dKdS()->Scale(dTp*rho_/mu_); 
-  // rel_perm_w_->dKdS()->Scale(0.0);
+  upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_p, *rel_perm_w_->dKdS());
+  rel_perm_w_->dKdS()->Scale(dTp*rho_ / mu_); 
 
   // the flux is only used for finding the upwind cells
   Teuchos::RCP<CompositeVector> tmp_flux_ = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("velocity_wet")));
@@ -248,12 +246,11 @@ void CompW_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
   if (dTp > 0.0) {
     op_acc_->AddAccumulationDelta(*saturation_w, porosity, porosity, 1.0, "cell");
   } 
-  //op_prec_sat_->global_operator()->SymbolicAssembleMatrix();
-  //op_prec_sat_->global_operator()->AssembleMatrix();
-  //std::cout << "Analytic Jacobian A_12: " << *op_prec_sat_->global_operator()->A() << "\n";
+  // op_prec_sat_->global_operator()->SymbolicAssembleMatrix();
+  // op_prec_sat_->global_operator()->AssembleMatrix();
 
   // A_13 block wrt rhl
-  //s_with_face->Scale(-1.0);
+  // s_with_face->Scale(-1.0);
   op3_preconditioner_->global_operator()->Init();
   op3_preconditioner_->Setup(D1ptr, s_with_face, Teuchos::null);
   op3_preconditioner_->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -266,6 +263,8 @@ void CompW_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
 void CompW_PK::NumericalJacobian(double t_old, double t_new, 
                                  Teuchos::RCP<const TreeVector> u, double eps)
 {
+  const std::vector<int>& bc_model_p = op_bc_p_->bc_model();
+
   for (op_iter op_it = ops_.begin(); op_it != ops_.end(); op_it++) {
     (*op_it)->global_operator()->Init();
   }
@@ -315,41 +314,34 @@ void CompW_PK::NumericalJacobian(double t_old, double t_new,
     int nfaces_none = 0;
     for (int f_it = 0; f_it < faces.size(); ++f_it) {
       int f_id = faces[f_it];
-      if (bc_model_[f_id] != Operators::OPERATOR_BC_NEUMANN) nfaces_none++;
+      if (bc_model_p[f_id] != Operators::OPERATOR_BC_NEUMANN) nfaces_none++;
     }
     for (int f_it = 0; f_it < faces.size(); ++f_it) {
       int f_id = faces[f_it];
       AmanziMesh::Entity_ID_List cells;
       mesh_->face_get_cells(f_id, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
-      //std::cout << "Face: " << f_id << "; bc type: " << bc_model_[f_id] << "\n";
 
       //Epetra_MultiVector& deriv_c = *deriv->ViewComponent("cell");
-      //std::cout << "numerical deriv: " << deriv_c << "\n";
       WhetStone::DenseMatrix Aface(ncells, ncells);
       Aface = 0.0;
 
-      if (bc_model_[f_id] != Operators::OPERATOR_BC_NEUMANN)
-      {
-      for (int i = 0; i != ncells; ++i) {
-        //std::cout << "adjacent cells: " << cells[i] << "\n";
-        //std::cout << "deriv value diagonal: " << deriv_c[0][cells[i]] << "\n";
-        if (cells[i] == c) 
-        {
-          Aface(i, i) = deriv_c[0][cells[i]]/(double)nfaces_none;
-          for (int j = i + 1; j != ncells; ++j) {
-            //std::cout << "deriv value off diag: " << deriv_c[0][cells[j]] << "\n";
-            Aface(j, i) = deriv_c[0][cells[j]];
-          }
-        } else {
-          for (int j = i + 1; j != ncells; ++j) {
-            Aface(i, j) = deriv_c[0][cells[i]];
+      if (bc_model_p[f_id] != Operators::OPERATOR_BC_NEUMANN) {
+        for (int i = 0; i != ncells; ++i) {
+          if (cells[i] == c) {
+            Aface(i, i) = deriv_c[0][cells[i]]/(double)nfaces_none;
+            for (int j = i + 1; j != ncells; ++j) {
+              Aface(j, i) = deriv_c[0][cells[j]];
+            }
+          } else {
+            for (int j = i + 1; j != ncells; ++j) {
+              Aface(i, j) = deriv_c[0][cells[i]];
+            }
           }
         }
-      }
-      WhetStone::DenseMatrix& tmp_matrix = (*local_op_it)->matrices[f_id];
-      Aface += tmp_matrix;
-      tmp_matrix = Aface;
+        WhetStone::DenseMatrix& tmp_matrix = (*local_op_it)->matrices[f_id];
+        Aface += tmp_matrix;
+        tmp_matrix = Aface;
       }
     }
   }
