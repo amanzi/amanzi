@@ -72,7 +72,7 @@ public:
   // Space/VectorSpace/Map accessor.
   Teuchos::RCP<const CompositeSpace> getMap() const { return cvs_; }
   Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return getMap()->Mesh(); }
-  
+
  protected:
 
   virtual cMultiVector_ptr_type_<Scalar> GetComponent_(const std::string& name, bool ghosted=false) const override;

@@ -1,3 +1,15 @@
+/*
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+  See $AMANZI_DIR/COPYRIGHT
+
+  Author: Ethan Coon
+*/
+
+// Tests the Record and RecordSet objects, which store meta-data about data.
+
 #include "UniqueHelpers.hh"
 #include "UnitTest++.h"
 #include "data/RecordSet.hh"

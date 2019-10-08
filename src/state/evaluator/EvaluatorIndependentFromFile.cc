@@ -1,15 +1,23 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-ATS
+/*
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+  See $AMANZI_DIR/COPYRIGHT
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon
+  Author: Ethan Coon
+*/
 
-A field evaluator with no dependencies specified by a function.
+//! An evaluator with no dependencies specified by discrete data in an HDF5 file.
 
-------------------------------------------------------------------------- */
+/*!
 
-#include "HDF5Reader.hh"
+.. todo:
+    This needs a test and documentation! --etc
+
+*/
+
+#include "FileHDF5.hh"
 
 #include "EvaluatorIndependentFromFile.hh"
 #include "Function.hh"
@@ -28,7 +36,9 @@ EvaluatorIndependentFromFile::EvaluatorIndependentFromFile(
       varname_(plist.get<std::string>("variable name")),
       compname_(plist.get<std::string>("component name", "cell")),
       locname_(plist.get<std::string>("mesh entity", "cell")),
-      ndofs_(plist.get<int>("number of DoFs", 1)) {
+      ndofs_(plist.get<int>("number of DoFs", 1)),
+      current_interval_(0)
+{
   if (plist.isSublist("time function")) {
     FunctionFactory fac;
     time_func_ = Teuchos::rcp(fac.Create(plist.sublist("time function")));
@@ -70,43 +80,48 @@ operator=(const EvaluatorIndependentFromFile &other) {
 void EvaluatorIndependentFromFile::EnsureCompatibility(State &S) {
   EvaluatorIndependent::EnsureCompatibility(S);
 
-  // requirements on vector data
-  if (locname_ == "cell") {
-    S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_, my_key_)
-        .SetMesh(S.GetMesh(meshname_))
-        ->AddComponent(compname_, AmanziMesh::CELL, ndofs_);
-  } else if (locname_ == "face") {
-    S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_, my_key_)
-        .SetMesh(S.GetMesh(meshname_))
-        ->AddComponent(compname_, AmanziMesh::FACE, ndofs_);
-  } else if (locname_ == "boundary_face") {
-    S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_, my_key_)
-        .SetMesh(S.GetMesh(meshname_))
-        ->AddComponent(compname_, AmanziMesh::BOUNDARY_FACE, ndofs_);
-  } else {
-    Errors::Message m;
-    m << "IndependentVariableFromFile: invalid location name: \"" << locname_
-      << "\"";
-    throw(m);
-  }
-
-  // load times, ensure file is valid
-  HDF5Reader reader(filename_);
-  reader.ReadData("/time", times_);
-
-  // check for increasing times
-  for (int j = 1; j < times_.size(); ++j) {
-    if (times_[j] <= times_[j - 1]) {
+  if (current_interval_ == 0) {
+    auto mesh = S.GetMesh(meshname_);
+    
+    // requirements on vector data
+    if (locname_ == "cell") {
+      S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_, my_key_)
+          .SetMesh(mesh)
+          ->AddComponent(compname_, AmanziMesh::CELL, ndofs_);
+    } else if (locname_ == "face") {
+      S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_, my_key_)
+          .SetMesh(mesh)
+          ->AddComponent(compname_, AmanziMesh::FACE, ndofs_);
+    } else if (locname_ == "boundary_face") {
+      S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_, my_key_)
+          .SetMesh(mesh)
+          ->AddComponent(compname_, AmanziMesh::BOUNDARY_FACE, ndofs_);
+    } else {
       Errors::Message m;
-      m << "IndependentVariable from file: times values are not strictly "
-           "increasing";
+      m << "IndependentVariableFromFile: invalid location name: \"" << locname_
+        << "\"";
       throw(m);
     }
-  }
 
-  current_interval_ = -1;
-  t_before_ = -1;
-  t_after_ = times_[0];
+    // load times, ensure file is valid.
+    // NOTE: all read this.  Could do on rank 0 and broadcast (maybe should!)
+    FileHDF5 reader(Amanzi::getCommSelf(), filename_, FILE_READONLY);
+    reader.ReadData("/time", times_);
+
+    // check for increasing times
+    for (int j = 1; j < times_.size(); ++j) {
+      if (times_[j] <= times_[j - 1]) {
+        Errors::Message m;
+        m << "IndependentVariable from file: times values are not strictly "
+            "increasing";
+        throw(m);
+      }
+    }
+
+    current_interval_ = -1;
+    t_before_ = -1;
+    t_after_ = times_[0];
+  }
 }
 
 // ---------------------------------------------------------------------------

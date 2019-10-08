@@ -1,5 +1,3 @@
-//! Reads and writes HDF5 files.
-
 /*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -8,6 +6,8 @@
 
   Author: Ethan Coon
 */
+
+//! Reads and writes HDF5 files.
 
 /*
   Reads and writes HDF5 files via parallelIO library.
@@ -43,45 +43,44 @@ class FileHDF5 {
   
 
   template<typename scalar_type>
-  void WriteAttribute(scalar_type value,
-                 const std::string& attr_name, const std::string& h5path="/");
-
-  template<typename scalar_type>
-  void WriteAttributeArray(scalar_type const * const values, std::size_t count,
-                      const std::string& attr_name, const std::string& h5path="/");
+  void WriteAttribute(const std::string& attr_name, const std::string& attr_path, scalar_type value);
 
   template<typename scalar_type>
   scalar_type ReadAttribute(const std::string& attr_name, const std::string& h5path="/");
 
-  template<typename scalar_type>
-  std::vector<scalar_type> ReadAttributeArray(std::size_t count, const std::string& attr_name,
-          const std::string& h5path="/");
+  // write Maps
+  void WriteVector(const std::string& var_path, const Map_type& vec);
 
-  void WriteVector(const Map_type& vec, const std::string& var_path);
+  // read/write Vector_type_<>
   template<typename scalar_type>
-  void WriteVector(const Vector_type_<scalar_type>& vec, const std::string& var_path);
+  void WriteVector(const std::string& var_path, const Vector_type_<scalar_type>& vec);
+
+  template<typename scalar_type>
+  void ReadVector(const std::string& var_name, Vector_type_<scalar_type>& vec);
+
+  // write Kokkos::View<double**> objects.  Note this looks more general
+  // because it takes a more general template argument, but really it is 2D doubles only!
   template<typename view_type>
-  void WriteView(const view_type vec, Tpetra::global_size_t global_length,
-                 const std::string& var_path);
+  void WriteView(const std::string& var_name, Tpetra::global_size_t global_length, const view_type vec);
+
+  // write MultiVector_type_<> in a single block (fastest)
   template<typename scalar_type>
-  void WriteMultiVectorBlock(const MultiVector_type_<scalar_type>& vec,
-                        const std::string& var_name);
-  template<typename scalar_type>
-  void WriteMultiVector(const MultiVector_type_<scalar_type>& vec,
-                        const std::vector<std::string>& var_paths);
+  void WriteMultiVectorBlock(const std::string& var_name, const MultiVector_type_<scalar_type>& vec);
 
   template<typename scalar_type>
-  void ReadVector(Vector_type_<scalar_type>& vec, const std::string& var_name);
+  void ReadMultiVector(const std::vector<std::string>& var_name, MultiVector_type_<scalar_type>& vec);
+
+  // write MultiVector_type_<> by vector (currently how vis is done, fix me!)
+  template<typename scalar_type>
+  void WriteMultiVector(const std::vector<std::string>& var_paths, const MultiVector_type_<scalar_type>& vec);
   
   template<typename scalar_type>
-  void ReadMultiVector(MultiVector_type_<scalar_type>& vec,
-                       const std::vector<std::string>& var_name);
-  template<typename scalar_type>
-  void ReadMultiVectorBlock(MultiVector_type_<scalar_type>& vec,
-                            const std::string& var_name);
+  void ReadMultiVectorBlock(const std::string& var_name, MultiVector_type_<scalar_type>& vec);
   
 
  private:
+  Comm_ptr_type comm_;
+  
   iogroup_conf_t IOconfig_;
   iogroup_t IOgroup_;
   hid_t data_file_;

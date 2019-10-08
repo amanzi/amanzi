@@ -173,43 +173,41 @@ public:
   }
 
   // virtual interface for ad-hoc polymorphism
-  void WriteVis(const Visualization &vis, const Key &fieldname,
-                const std::vector<std::string> &subfieldnames) const {
+  void WriteVis(const Visualization &vis, const Teuchos::ParameterList& attrs) const {
     if (!p_) {
       Errors::Message msg;
       msg << " data not created through RecordSet::SetType() or "
              "State::CreatData()";
       throw(msg);
     }
-    p_->WriteVis(vis, fieldname, subfieldnames);
+    p_->WriteVis(vis, attrs);
   }
-  void WriteCheckpoint(const Checkpoint &chkp, const Key &fieldname) const {
+  void WriteCheckpoint(const Checkpoint &chkp, const Teuchos::ParameterList& attrs) const {
     if (!p_) {
       Errors::Message msg;
       msg << " data not created through RecordSet::SetType() or "
              "State::CreatData()";
       throw(msg);
     }
-    p_->WriteCheckpoint(chkp, fieldname);
+    p_->WriteCheckpoint(chkp, attrs);
   }
-  void ReadCheckpoint(const Checkpoint &chkp, const Key &fieldname) {
+  void ReadCheckpoint(const Checkpoint &chkp, const Teuchos::ParameterList& attrs) {
     if (!p_) {
       Errors::Message msg;
       msg << " data not created through RecordSet::SetType() or "
              "State::CreatData()";
       throw(msg);
     }
-    p_->ReadCheckpoint(chkp, fieldname);
+    p_->ReadCheckpoint(chkp, attrs);
   }
-  bool Initialize(Teuchos::ParameterList &plist, const Key &fieldname,
-                  const std::vector<std::string> &subfieldnames) {
+  bool Initialize(Teuchos::ParameterList &plist, const Teuchos::ParameterList& attrs) {
     if (!p_) {
       Errors::Message msg;
       msg << " data not created through RecordSet::SetType() or "
              "State::CreatData()";
       throw(msg);
     }
-    return p_->Initialize(plist, fieldname, subfieldnames);
+    return p_->Initialize(plist, attrs);
   }
 
 private:

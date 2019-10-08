@@ -1,4 +1,4 @@
-//! OutputXDMF: writes XDMF+H5 files for VisIt
+//! OutputXDMF: writes XDMF+H5 files for visualization in VisIt
 /*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -9,7 +9,8 @@
 */
 
 /*
-  XDMF implementation of an Output object.
+  XDMF implementation of an Output object, can only work as a Vis object as it
+  needs a mesh and cannot handle face DoFs.
 */
 
 #ifndef AMANZI_OUTPUT_XDMF_HH_
@@ -61,7 +62,6 @@ inline int XDMFCellTypeID(AmanziMesh::Cell_type type)
 
 
 class OutputXDMF : public Output {
-
  public:
   OutputXDMF(Teuchos::ParameterList& plist,
 	     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
@@ -69,54 +69,20 @@ class OutputXDMF : public Output {
   virtual ~OutputXDMF() = default;
   
   // open and close files
-  virtual void InitializeCycle(double time, int cycle) override;
-  virtual void FinalizeCycle() override;
+  virtual void CreateFile(double time, int cycle) override;
+  virtual void FinalizeFile() override;
   virtual std::string Filename() const override;
 
   // write data to file
-  virtual void WriteField(const Vector_type& vec, const std::string& name, const AmanziMesh::Entity_kind& location) const override {
-    xdmf_->WriteField<Vector_type::scalar_type>(name, location);
-    std::stringstream path;
-    path << "/" << name << ".0/" << cycle_;
-    h5_data_->WriteVector<Vector_type::scalar_type>(vec, path.str());
-  }
-  virtual void WriteField(const IntVector_type& vec, const std::string& name, const AmanziMesh::Entity_kind& location) const override {
-    xdmf_->WriteField<IntVector_type::scalar_type>(name, location);
-    std::stringstream path;
-    path << "/" << name << ".0/" << cycle_;
-    h5_data_->WriteVector<IntVector_type::scalar_type>(vec, path.str());
-  }
-    
-  virtual void WriteFields(const MultiVector_type& vec, const std::string& name, const AmanziMesh::Entity_kind& location) const override {
-    xdmf_->WriteFields<MultiVector_type::scalar_type>(name, vec.getNumVectors(), location);
-    std::vector<std::string> paths;
-    for (int i=0; i!=vec.getNumVectors(); ++i) {
-      std::stringstream path;
-      path << "/" << name << "." << i << "/" << cycle_;
-      paths.push_back(path.str());
-    }    
-    h5_data_->WriteMultiVector<MultiVector_type::scalar_type>(vec, paths);
-  }
-  virtual void WriteFields(const MultiVector_type& vec, const std::string& name, const std::vector<std::string>& subfield_names, const AmanziMesh::Entity_kind& location) const override {
-    AMANZI_ASSERT(subfield_names.size() == vec.getNumVectors());
-    xdmf_->WriteFields<MultiVector_type::scalar_type>(name, subfield_names, location);
-
-    std::vector<std::string> paths;
-    for (int i=0; i!=vec.getNumVectors(); ++i) {
-      std::stringstream path;
-      path << "/" << name << "." << subfield_names[i] << "/" << cycle_;
-      paths.push_back(path.str());
-    }    
-    h5_data_->WriteMultiVector<MultiVector_type::scalar_type>(vec, paths);
-  }
-
-  // can we template this (not yet...)
-  virtual void WriteAttribute(const double& val, const std::string& name) const override {
-    h5_data_->WriteAttribute(val, name, "/"); }
-  virtual void WriteAttribute(const int& val, const std::string& name) const override {
-    h5_data_->WriteAttribute(val, name, "/"); }
-  virtual void WriteAttribute(const std::string& val, const std::string& name) const override {
-    h5_data_->WriteAttribute(val, name, "/"); }
+  virtual void Write(const Teuchos::ParameterList& attrs, const double& val) const override;
+  virtual void Write(const Teuchos::ParameterList& attrs, const int& val) const override;
+  virtual void Write(const Teuchos::ParameterList& attrs, const std::string& val) const override;
+  virtual void Write(const Teuchos::ParameterList& attrs, const Vector_type& vec) const override;
+  virtual void Write(const Teuchos::ParameterList& attrs, const IntVector_type& vec) const override;    
+  virtual void Write(const Teuchos::ParameterList& attrs, const MultiVector_type& vec) const override;
+  virtual void Write(const Teuchos::ParameterList& attrs, const IntMultiVector_type& vec) const override;  
+  virtual void Write(const Teuchos::ParameterList& attrs, const CompositeVector_<double>& vec) const override;
+  virtual void Write(const Teuchos::ParameterList& attrs, const CompositeVector_<int>& vec) const override;  
     
  protected:
   std::tuple<int,int,int> WriteMesh_(int cycle);
@@ -133,9 +99,9 @@ class OutputXDMF : public Output {
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
-  Teuchos::RCP<FileHDF5> h5_data_;
-  Teuchos::RCP<FileHDF5> h5_mesh_;
-  Teuchos::RCP<FileXDMF> xdmf_;
+  std::unique_ptr<FileHDF5> h5_data_;
+  std::unique_ptr<FileHDF5> h5_mesh_;
+  std::unique_ptr<FileXDMF> xdmf_;
 };
   
 } // namespace Amanzi

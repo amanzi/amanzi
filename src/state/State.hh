@@ -462,8 +462,7 @@ private:
 void WriteVis(Visualization &vis, const State &S);
 
 // Checkpointing State.
-void WriteCheckpoint(Checkpoint &chkp, const Comm_ptr_type& comm,
-                     const State &S, bool final = false);
+void WriteCheckpoint(Checkpoint &chkp, const State &S, bool final=false);
 
 void ReadCheckpoint(const Comm_ptr_type& comm, State &S,
                     const std::string &filename);

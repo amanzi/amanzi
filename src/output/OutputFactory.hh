@@ -16,6 +16,9 @@
 #define AMANZI_OUTPUT_FACTORY_HH_
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
+
+#include "AmanziTypes.hh"
 
 namespace Amanzi {
 
@@ -24,10 +27,16 @@ namespace AmanziMesh {
 class Mesh;
 }
 
-Teuchos::RCP<Output> CreateOutput(Teuchos::ParameterList& plist,
-        const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+namespace OutputFactory {
 
 
+std::unique_ptr<Output>
+CreateForVis(Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+
+std::unique_ptr<Output>
+CreateForCheckpoint(Teuchos::ParameterList& plist, const Comm_ptr_type& comm);
+
+} // namespace
 } // namespace
 
 #endif

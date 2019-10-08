@@ -1,10 +1,20 @@
 /*
-  State
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+  See $AMANZI_DIR/COPYRIGHT
 
-  License: BSD
   Author: Ethan Coon
+*/
 
-  An evaluator with no dependencies specified by a function.
+//! Base class for evaluators with no dependencies.
+
+/*!
+
+Note this cannot be constructed, and instead is constructed from a derived
+class such as EvaluatorIndependentFromFunction or EvaluatorIndependentFromFile.
+
 */
 
 #ifndef AMANZI_INDEPENDENT_EVALUATOR_

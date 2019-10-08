@@ -51,7 +51,7 @@ OutputSilo::~OutputSilo() {
 
 // open and close files
 void
-OutputSilo::InitializeCycle(double time, int cycle) {
+OutputSilo::CreateTimestep(double time, int cycle) {
   // check not open
   AMANZI_ASSERT(fid_ == NULL);
   if (fid_) {
@@ -158,7 +158,7 @@ OutputSilo::InitializeCycle(double time, int cycle) {
 }
 
 void
-OutputSilo::FinalizeCycle() {
+OutputSilo::FinalizeTimestep() {
   if (fid_) {
     CloseFile_();
     count_++;

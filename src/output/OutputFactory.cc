@@ -18,20 +18,33 @@
 #include "Output.hh"
 #include "OutputXDMF.hh"
 #include "InputOutputHDF5.hh"
+#include "UniqueHelpers.hh"
 
 #include "OutputFactory.hh"
 
-namespace Amanzi {
 
-Teuchos::RCP<Output>
-CreateOutput(Teuchos::ParameterList& plist,
-        const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+namespace Amanzi {
+namespace OutputFactory {
+
+std::unique_ptr<Output>
+CreateForVis(Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
 {
-  std::string output_type = plist.get<std::string>("output type");
+  std::string output_type = plist.get<std::string>("file format", "XDMF");
   if (output_type == "XDMF") {
-    return Teuchos::rcp(new OutputXDMF(plist, mesh));
-  } else if (output_type == "HDF5") {
-    return Teuchos::rcp(new InputOutputHDF5(plist, mesh->get_comm()));
+    return std::make_unique<OutputXDMF>(plist, mesh);
+  } else {
+    Errors::Message msg;
+    msg << "OutputFactory: Unknown output type \"" << output_type << "\"";
+    throw(msg);
+  }
+}
+
+std::unique_ptr<Output>
+CreateForCheckpoint(Teuchos::ParameterList& plist, const Comm_ptr_type& comm)
+{
+  std::string output_type = plist.get<std::string>("file format", "HDF5");
+  if (output_type == "HDF5") {
+    return std::make_unique<OutputHDF5>(plist, comm);
   } else {
     Errors::Message msg;
     msg << "OutputFactory: Unknown output type \"" << output_type << "\"";
@@ -40,4 +53,5 @@ CreateOutput(Teuchos::ParameterList& plist,
 }
 
 
+} // namespace
 } // namespace

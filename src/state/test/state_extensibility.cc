@@ -27,23 +27,22 @@ struct MyPoint {
 
 using MyPointList = std::vector<MyPoint>;
 
-bool inline UserInitialize(Teuchos::ParameterList &plist, MyPointList &t,
-                           const Amanzi::Key &fieldname,
-                           const std::vector<std::string> &subfieldnames) {
-  std::cout << "found it!" << std::endl;
+bool inline UserInitialize(Teuchos::ParameterList &plist,
+                           const Teuchos::ParameterList &attrs, 
+                           MyPointList &t) {
+  std::cout << "Successfully initialized a MyPoint!" << std::endl;
   return true;
 }
 
 void UserWriteVis(const Amanzi::Visualization &vis,
-                  const Amanzi::Key &fieldname,
-                  const std::vector<std::string> &subfieldnames,
+                  const Teuchos::ParameterList& attrs,
                   const MyPointList &vec) {}
-
 void UserWriteCheckpoint(const Amanzi::Checkpoint &chkp,
-                         const Amanzi::Key &fieldname, const MyPointList &vec) {
-}
+                         const Teuchos::ParameterList& attrs,
+                         const MyPointList &vec) {}
 void UserReadCheckpoint(const Amanzi::Checkpoint &chkp,
-                        const Amanzi::Key &fieldname, MyPointList &vec) {}
+                        const Teuchos::ParameterList& attrs,
+                        MyPointList &vec) {}
 
 TEST(STATE_EXTENSIBILITY_CREATION) {
   using namespace Amanzi;
@@ -67,11 +66,9 @@ TEST(STATE_EXTENSIBILITY_CREATION) {
   s.Setup();
   s.InitializeFields();
 
-  Visualization vis(plist->sublist("visualization"));
-  vis.set_mesh(m);
-  vis.CreateFiles();
+  Visualization vis(plist->sublist("visualization"), m);
   WriteVis(vis, s);
 
   Checkpoint chkp(plist->sublist("checkpoint"), comm);
-  WriteCheckpoint(chkp, comm, s, 0.0);
+  WriteCheckpoint(chkp, s);
 }

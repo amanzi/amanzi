@@ -29,7 +29,9 @@ hope it will at some point.
 #include "dbc.hh"
 #include "errors.hh"
 
-#include "Data_Helpers.hh"
+#include "Data_Initializers.hh"
+#include "Visualization.hh"
+#include "Checkpoint.hh"
 
 namespace Amanzi {
 
@@ -53,14 +55,14 @@ public:
   template <typename T> void Set(const T &t);
 
   // virtual interface for ad-hoc polymorphism
-  virtual void
-  WriteVis(const Visualization &vis, const Key &fieldname,
-           const std::vector<std::string> &subfieldnames) const = 0;
+  virtual void WriteVis(const Visualization &vis,
+                        const Teuchos::ParameterList& attrs) const = 0;
   virtual void WriteCheckpoint(const Checkpoint &chkp,
-                               const Key &fieldname) const = 0;
-  virtual void ReadCheckpoint(const Checkpoint &chkp, const Key &fieldname) = 0;
-  virtual bool Initialize(Teuchos::ParameterList &plist, const Key &fieldname,
-                          const std::vector<std::string> &subfieldnames) = 0;
+          const Teuchos::ParameterList& attrs) const = 0;
+  virtual void ReadCheckpoint(const Checkpoint &chkp,
+          const Teuchos::ParameterList& attrs) = 0;
+  virtual bool Initialize(Teuchos::ParameterList &plist,
+                          const Teuchos::ParameterList& attrs) = 0;
 };
 
 // underlying implementation of type erasure
@@ -95,23 +97,21 @@ public:
   void Set(const T &t) { *t_ = t; }
 
   // virtual interface for ad-hoc polymorphism
-  void WriteVis(const Visualization &vis, const Key &fieldname,
-                const std::vector<std::string> &subfieldnames) const override {
-    ::Amanzi::Helpers::WriteVis(vis, fieldname, subfieldnames, *t_);
+  void WriteVis(const Visualization &vis, const Teuchos::ParameterList& attrs) const override
+  {
+    vis.Write(attrs, *t_);
   }
 
-  void WriteCheckpoint(const Checkpoint &chkp,
-                       const Key &fieldname) const override {
-    ::Amanzi::Helpers::WriteCheckpoint(chkp, fieldname, *t_);
+  void WriteCheckpoint(const Checkpoint &chkp, const Teuchos::ParameterList& attrs) const override {
+    chkp.Write(attrs, *t_);
   }
 
-  void ReadCheckpoint(const Checkpoint &chkp, const Key &fieldname) override {
-    ::Amanzi::Helpers::ReadCheckpoint(chkp, fieldname, *t_);
+  void ReadCheckpoint(const Checkpoint &chkp, const Teuchos::ParameterList& attrs) override {
+    chkp.Read(attrs, *t_);
   }
 
-  bool Initialize(Teuchos::ParameterList &plist, const Key &fieldname,
-                  const std::vector<std::string> &subfieldnames) override {
-    return ::Amanzi::Helpers::Initialize(plist, *t_, fieldname, subfieldnames);
+  bool Initialize(Teuchos::ParameterList &plist, const Teuchos::ParameterList& attrs) override {
+    return Data_Initializers::Initialize(plist, attrs, *t_);
   }
 
 private:

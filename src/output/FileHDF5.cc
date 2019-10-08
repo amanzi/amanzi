@@ -1,5 +1,3 @@
-//! Reads and writes HDF5 files.
-
 /*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -8,6 +6,8 @@
 
   Author: Ethan Coon
 */
+
+//! Reads and writes HDF5 files.
 
 /*
   Reads and writes HDF5 files via parallelIO library.
@@ -20,10 +20,11 @@
 namespace Amanzi {
 
 FileHDF5::FileHDF5(const Comm_ptr_type& comm, const std::string& filename, file_mode_t mode)
-    : filename_(filename),
+    : comm_(comm),
+      filename_(filename),
       data_file_(-1)
 {    
-  auto mpi_comm = Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm);
+  auto mpi_comm = Teuchos::rcp_dynamic_cast<const MpiComm_type>(comm_);
   AMANZI_ASSERT(mpi_comm.get());
 
   IOconfig_.numIOgroups = 1;
@@ -73,7 +74,7 @@ FileHDF5::CreateGroup(const std::string& h5path_)
 
 
 void
-FileHDF5::WriteVector(const Map_type& vec, const std::string& var_name)
+FileHDF5::WriteVector(const std::string& var_name, const Map_type& vec)
 {
   IODetails::DangerousString full_h5path(var_name);
 
@@ -106,31 +107,18 @@ FileHDF5::WriteVector(const Map_type& vec, const std::string& var_name)
                            &IOgroup_, NONUNIFORM_CONTIGUOUS_WRITE);
 }
   
-  
-
-
 
 //
 // STD::STRING
 //
 template<>
 void
-FileHDF5::WriteAttribute<std::string>(std::string value,
-                             const std::string& attr_name_, const std::string& h5path_)
+FileHDF5::WriteAttribute<std::string>(const std::string& attr_name_, const std::string& h5path_, std::string value)
 {
   IODetails::DangerousString attr_name(attr_name_);
   IODetails::DangerousString h5path(h5path_);
   parallelIO_write_simple_attr(attr_name.c_str(), (void*) value.c_str(), PIO_STRING,
           data_file_, h5path.c_str(), &IOgroup_);
-}
-
-template<>
-void
-FileHDF5::WriteAttributeArray<std::string>(std::string const * const values, std::size_t count,
-        const std::string& attr_name, const std::string& h5path)
-{
-  Errors::Message message("FileHDF5::WriteAttributeArray not implemented for this type.");
-  throw(message);
 }
 
 
@@ -148,18 +136,5 @@ FileHDF5::ReadAttribute<std::string>(const std::string& attr_name_, const std::s
   free(loc_value);
   return value;
 }
-
-
-template<>
-std::vector<std::string>
-FileHDF5::ReadAttributeArray(std::size_t count,
-                    const std::string& attr_name, const std::string& h5path)
-{
-  Errors::Message message("FileHDF5::ReadAttributeArray not implemented for this type.");
-  throw(message);
-}
-
-
-
 
 } // namespace

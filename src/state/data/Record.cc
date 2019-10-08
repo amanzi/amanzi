@@ -45,23 +45,26 @@ Record::Record(const Record &other)
 // }
 
 // pass-throughs for other functionality
-void Record::WriteVis(const Visualization &vis) const {
+void Record::WriteVis(const Visualization &vis, Teuchos::ParameterList attrs) const {
   if (io_vis()) {
-    data_.WriteVis(vis, vis_fieldname(), subfieldnames());
+    attributes(attrs);
+    data_.WriteVis(vis, attrs);
   }
 }
-void Record::WriteCheckpoint(const Checkpoint &chkp) const {
+void Record::WriteCheckpoint(const Checkpoint &chkp, Teuchos::ParameterList attrs) const {
   if (io_checkpoint()) {
-    data_.WriteCheckpoint(chkp, vis_fieldname());
+    attributes(attrs);
+    data_.WriteCheckpoint(chkp, attrs);
   }
 }
-void Record::ReadCheckpoint(const Checkpoint &chkp) {
+void Record::ReadCheckpoint(const Checkpoint &chkp, Teuchos::ParameterList attrs) {
   if (io_checkpoint()) {
-    data_.ReadCheckpoint(chkp, vis_fieldname());
+    attributes(attrs);
+    data_.ReadCheckpoint(chkp, attrs);
   }
 }
 
-bool Record::Initialize(Teuchos::ParameterList &plist) {
+bool Record::Initialize(Teuchos::ParameterList &plist, Teuchos::ParameterList attrs) {
   // check meta-data
   if (plist.isParameter("write checkpoint")) {
     bool checkpoint_io = plist.get<bool>("write checkpoint", false);
@@ -75,18 +78,14 @@ bool Record::Initialize(Teuchos::ParameterList &plist) {
 
   bool initialized_here = false;
   if (!initialized()) {
-    if (plist.isParameter("subfieldnames")) {
-      set_subfieldnames(
-          plist.get<Teuchos::Array<std::string>>("subfieldnames").toVector());
-    }
-
-    initialized_here =
-        data_.Initialize(plist, vis_fieldname(), subfieldnames());
+    attributes(attrs);
+    initialized_here = data_.Initialize(plist, attrs);
     if (initialized_here)
       set_initialized();
   }
   return initialized_here;
 }
+
 
 void Record::AssertOwnerOrDie(const Key &test_owner) const {
   if (test_owner != owner()) {

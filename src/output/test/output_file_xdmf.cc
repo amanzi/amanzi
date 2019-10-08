@@ -19,13 +19,13 @@ using namespace Amanzi;
 TEST(XDMF_WRITER) {
   FileXDMF xdmf("visdump", 1818, 800, 7200);
   xdmf.CreateTimestep(0.0, 0, true);
-  xdmf.WriteField<double>("base_porosity.cell", AmanziMesh::Entity_kind::CELL);
-  xdmf.WriteFields<double>("darcy_velocity.cell", 3, AmanziMesh::Entity_kind::CELL);
+  xdmf.WriteField<double>("base_porosity", AmanziMesh::Entity_kind::CELL);
+  xdmf.WriteFields<double>("darcy_velocity", 3, AmanziMesh::Entity_kind::CELL);
   xdmf.CloseTimestep(0.0, 0, true);
 
   xdmf.CreateTimestep(2.46406570841889092e-02, 104, false);
-  xdmf.WriteField<double>("base_porosity.cell", AmanziMesh::Entity_kind::CELL);
-  xdmf.WriteFields<double>("darcy_velocity.cell", 3, AmanziMesh::Entity_kind::CELL);
+  xdmf.WriteField<double>("base_porosity", AmanziMesh::Entity_kind::CELL);
+  xdmf.WriteFields<double>("darcy_velocity", 3, AmanziMesh::Entity_kind::CELL);
   xdmf.CloseTimestep(2.46406570841889092e-02, 104, false);
 
   std::cout << "CHECK: visdump_mesh.VisIt.xmf" << std::endl;

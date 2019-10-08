@@ -24,6 +24,7 @@ namespace Amanzi {
 
 class Visualization;
 
+
 class RecordSet {
 private:
   using RecordMap = std::unordered_map<Key, std::unique_ptr<Record>>;
@@ -44,15 +45,24 @@ public:
   const Key &fieldname() const { return fieldname_; }
   const Key &vis_fieldname() const { return vis_fieldname_; }
   bool initialized() const { return initialized_; }
-  Units units() const { return units_; }
-
+  std::string units() const { return units_; }
+  AmanziMesh::Entity_kind location() const { return location_; }
+  const Teuchos::Array<std::string>& subfieldnames() const {
+    return subfieldnames_;
+  }
+  Teuchos::ParameterList attributes() const;
+  
   // mutate
   void set_fieldname(Key fieldname) { fieldname_ = std::move(fieldname); }
   void set_vis_fieldname(Key vis_fieldname) {
     vis_fieldname_ = std::move(vis_fieldname);
   }
   void set_initialized(bool initialized = true) { initialized_ = initialized; }
-  void set_units(Units units) { units = std::move(units); }
+  void set_units(const std::string& units) { units_ = units; }
+  void set_location(AmanziMesh::Entity_kind location) { location_ = location; }
+  void set_subfieldnames(Teuchos::Array<std::string> subfieldnames) {
+    subfieldnames_ = std::move(subfieldnames);
+  }
 
   // pass-throughs for other functionality
   void WriteVis(const Visualization &vis) const;
@@ -148,7 +158,9 @@ private:
   Key fieldname_;
   Key vis_fieldname_;
   bool initialized_;
-  Units units_;
+  std::string units_;
+  AmanziMesh::Entity_kind location_;
+  Teuchos::Array<std::string> subfieldnames_;
 
   DataFactory factory_;
   RecordMap records_;

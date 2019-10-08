@@ -38,15 +38,32 @@ TEST(WRITE_MESH) {
   
   {
     OutputXDMF out(plist, mesh);
-    out.InitializeCycle(0.0, 0);
-    out.WriteField(*poro, "base_porosity.cell", AmanziMesh::Entity_kind::CELL);
-    out.WriteFields(*darcy_velocity, "darcy_velocity.cell", AmanziMesh::Entity_kind::CELL);
-    out.FinalizeCycle();
+    out.CreateFile(0.0, 0);
 
-    out.InitializeCycle(2.46406570841889092e-02, 104);
-    out.WriteField(*poro, "base_porosity.cell", AmanziMesh::Entity_kind::CELL);
-    out.WriteFields(*darcy_velocity, "darcy_velocity.cell", AmanziMesh::Entity_kind::CELL);
-    out.FinalizeCycle();
+    {
+      Teuchos::ParameterList plist("base_porosity");
+      plist.set("location", AmanziMesh::CELL);
+      out.Write(plist, *poro);
+    }
+    {
+      Teuchos::ParameterList plist("darcy_velocity");
+      plist.set("location", AmanziMesh::CELL);
+      out.Write(plist, *darcy_velocity);
+    }
+    out.FinalizeFile();
+
+    out.CreateFile(2.46406570841889092e-02, 104);
+    {
+      Teuchos::ParameterList plist("base_porosity");
+      plist.set("location", AmanziMesh::CELL);
+      out.Write(plist, *poro);
+    }
+    {
+      Teuchos::ParameterList plist("darcy_velocity");
+      plist.set("location", AmanziMesh::CELL);
+      out.Write(plist, *darcy_velocity);
+    }
+    out.FinalizeFile();
   }    
 
   if (comm->getSize() == 1) {

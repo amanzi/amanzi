@@ -6,6 +6,9 @@
    Author: Ethan Coon
 
    Unit tests for the communication patterns used in CompositeVector
+
+   NOTE, these are all-Tpetra code and only test our understanding, not Amanzi
+   code.
 ------------------------------------------------------------------------- */
 #include <vector>
 
@@ -20,7 +23,6 @@
 #include "MeshFactory.hh"
 
 using namespace Amanzi;
-
 
 TEST(COMMUNICATION_PATTERN_DISTINCT_VECTORS) {
   // having some trouble with communication -- lets make sure we understand
@@ -114,6 +116,61 @@ TEST(COMMUNICATION_PATTERN_OFFSET_VIEW) {
       CHECK_CLOSE(1.0, ghost_v(2,0), 1.e-6);
     }
   }
+}
+
+
+TEST(OFFSET_VIEW_1D_VIEW) {
+  // having some trouble with communication -- lets make sure we understand
+  // how to use tpetra
+  auto comm = getDefaultComm();
+
+  int size = comm->getSize(); CHECK_EQUAL(2,size);
+  int rank = comm->getRank();
+  int n_vecs = 5;
+
+  Map_ptr_type owned_map, ghost_map;
+  if (rank == 0) {
+    std::vector<int> gids_owned{0,1};
+    owned_map = Teuchos::rcp(new Map_type(4, gids_owned.data(), 2, 0, comm));
+
+    std::vector<int> gids_used{0,1,2};
+    ghost_map = Teuchos::rcp(new Map_type(6, gids_used.data(), 3, 0, comm));
+  } else {
+    std::vector<int> gids_owned{2,3};
+    owned_map = Teuchos::rcp(new Map_type(4, gids_owned.data(), 2, 0, comm));
+
+    std::vector<int> gids_used{2,3,1};
+    ghost_map = Teuchos::rcp(new Map_type(6, gids_used.data(), 3, 0, comm));
+  }
+
+  auto ghost = Teuchos::rcp(new MultiVector_type(ghost_map, n_vecs));
+  auto owned = ghost->offsetViewNonConst(owned_map, 0);
+
+  CHECK_EQUAL(3, ghost->getLocalLength());
+  CHECK_EQUAL(2, owned->getLocalLength());
+  CHECK_EQUAL(n_vecs, ghost->getNumVectors());
+  CHECK_EQUAL(n_vecs, owned->getNumVectors());
+
+  {
+    auto ghost_v = ghost->getLocalViewHost();
+    CHECK_EQUAL(3, ghost_v.extent(0));
+    CHECK_EQUAL(3*n_vecs, ghost_v.span());
+    CHECK_EQUAL(n_vecs, ghost_v.extent(1));
+    
+    auto owned_v = owned->getLocalViewHost();
+    CHECK_EQUAL(2, owned_v.extent(0));
+
+    // NOTE: this currently fails, and likely SHOULD fail according to Trilinos
+    // CHECK_EQUAL(2*n_vecs, owned_v.span());
+    CHECK_EQUAL(n_vecs, owned_v.extent(1));
+  }
+  
+  CHECK(ghost->isConstantStride());
+  CHECK_EQUAL(3*n_vecs, ghost->get1dView().size());
+  CHECK(owned->isConstantStride());
+  // NOTE: this currently fails, and likely SHOULD NOT fail.  See Trilinos issue #6058
+  // CHECK_EQUAL(2*n_vecs, owned->get1dView().size());
+  
 }
 
 

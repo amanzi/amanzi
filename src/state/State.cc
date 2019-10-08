@@ -461,7 +461,7 @@ void WriteVis(Visualization &vis, const State &S) {
   if (!vis.is_disabled()) {
     // Create the new time step
     // NOTE: internally we use seconds, but for vis we write the time in years
-    vis.CreateTimestep(S.time() / (365.25 * 24 * 60 * 60), S.cycle());
+    vis.CreateFile(S.time(), S.cycle());
 
     // Write all fields to the visualization file, the fields know if they
     // need to be written.
@@ -469,36 +469,36 @@ void WriteVis(Visualization &vis, const State &S) {
       r->second->WriteVis(vis);
     }
 
-    vis.WriteRegions();
-    vis.WritePartition();
+    //vis.WriteRegions();
+    //vis.WritePartition();
 
     // Finalize i/o.
-    vis.FinalizeTimestep();
+    vis.FinalizeFile();
   }
 };
 
 // Non-member function for checkpointing.
-void WriteCheckpoint(Checkpoint &chkp,  const Comm_ptr_type& comm,
-                     const State &S, bool final) {
-  if (!chkp.is_disabled()) {
-    chkp.SetFinal(final);
-    chkp.CreateFile(S.cycle());
-    for (auto r = S.data_begin(); r != S.data_end(); ++r) {
-      r->second->WriteCheckpoint(chkp);
-    }
-    chkp.Write("mpi_num_procs", comm->getSize());
-    chkp.Finalize();
+void WriteCheckpoint(Checkpoint &chkp, const State &S, bool final) {
+  chkp.CreateFile(S.time(), S.cycle());
+  for (auto r = S.data_begin(); r != S.data_end(); ++r) {
+    r->second->WriteCheckpoint(chkp);
   }
+  chkp.FinalizeFile(final);
 };
 
 // Non-member function for checkpointing.
 void ReadCheckpoint(const Comm_ptr_type& comm, State &S,
                     const std::string &filename) {
-  Checkpoint chkp(filename, comm);
+  Teuchos::ParameterList plist;
+  plist.set("file name", filename);
+  plist.set("file type", "HDF5");
+  Checkpoint chkp(plist, comm, true);
 
   // Load the number of processes and ensure they are the same.
   int num_procs(-1);
-  chkp.Read("mpi_num_procs", num_procs);
+
+  Teuchos::ParameterList mpi_num_procs("mpi_num_procs");
+  chkp.Read(mpi_num_procs, num_procs);
   if (comm->getSize() != num_procs) {
     std::stringstream messagestream;
     messagestream << "Requested checkpoint file " << filename
@@ -513,8 +513,6 @@ void ReadCheckpoint(const Comm_ptr_type& comm, State &S,
   for (auto data = S.data_begin_(); data != S.data_end_(); ++data) {
     data->second->ReadCheckpoint(chkp);
   }
-
-  chkp.Finalize();
 };
 
 // Non-member function for deforming the mesh after reading a checkpoint file

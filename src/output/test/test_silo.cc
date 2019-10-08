@@ -54,7 +54,7 @@ TEST(SILO_STRUCTURED) {
     node_quantity->ReplaceGlobalValues(12, node_values, node_index_list);
     
     // write time step data
-    io.InitializeCycle(time,i);
+    io.CreateTimestep(time,i);
     io.WriteVector(*cell_quantity, "cell_quantity");
     io.WriteVector(*fake_pressure, "pressure");
     io.WriteVector(*node_quantity, "node_quantity");
@@ -73,7 +73,7 @@ TEST(SILO_STRUCTURED) {
     }
 
     // close file
-    io.FinalizeCycle();
+    io.FinalizeTimestep();
   }
 
 }
@@ -130,7 +130,7 @@ TEST(SILO_POLYGONAL) {
     node_quantity->ReplaceGlobalValues(12, node_values, node_index_list);
     
     // write time step data
-    io.InitializeCycle(time,i);
+    io.CreateTimestep(time,i);
     io.WriteVector(*cell_quantity, "cell_quantity");
     io.WriteVector(*fake_pressure, "pressure");
     io.WriteVector(*node_quantity, "node_quantity");
@@ -149,7 +149,7 @@ TEST(SILO_POLYGONAL) {
     }
 
     // close file
-    io.FinalizeCycle();
+    io.FinalizeTimestep();
   }
 
 }

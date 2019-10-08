@@ -1,12 +1,12 @@
 #include "FunctionBilinear.hh"
 #include "errors.hh"
-#include "Epetra_SerialDenseMatrix.h"
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 namespace Amanzi {
 
 FunctionBilinear::FunctionBilinear(
     const std::vector<double> &x, const std::vector<double> &y,
-    const Epetra_SerialDenseMatrix &v, const int xi, const int yi) : 
+    const Teuchos::SerialDenseMatrix<std::size_t,double>& v, const int xi, const int yi) : 
     x_(x), y_(y), v_(v), xi_(xi), yi_(yi)
 {
   check_args(x, y, v);
@@ -14,14 +14,14 @@ FunctionBilinear::FunctionBilinear(
 
 
 void FunctionBilinear::check_args(const std::vector<double> &x, const std::vector<double> &y,
-                                  const Epetra_SerialDenseMatrix &v) const
+                                  const Teuchos::SerialDenseMatrix<std::size_t,double> &v) const
 {
-  if (x.size() != v.N()) {
+  if (x.size() != v.numRows()) {
     Errors::Message m;
     m << "the number of x values and row in v differ";
     Exceptions::amanzi_throw(m);
   }
-  if (y.size() != v.M()) {
+  if (y.size() != v.numCols()) {
     Errors::Message m;
     m << "the number of y values and columns in v differ";
     Exceptions::amanzi_throw(m);

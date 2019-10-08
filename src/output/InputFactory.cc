@@ -15,20 +15,23 @@
 #include <string>
 
 #include "errors.hh"
+#include "UniqueHelpers.hh"
 #include "Input.hh"
 #include "InputOutputHDF5.hh"
 
 #include "InputFactory.hh"
 
 namespace Amanzi {
+namespace InputFactory {
 
-Teuchos::RCP<Input>
-CreateInput(Teuchos::ParameterList& plist,
-        const Comm_ptr_type& comm)
+std::unique_ptr<Input>
+CreateForCheckpoint(Teuchos::ParameterList& plist, const Comm_ptr_type& comm)
 {
-  std::string input_type = plist.get<std::string>("input type");
+  std::string filename = plist.get<std::string>("file name");
+  std::string input_type = plist.get<std::string>("file format", "HDF5");
+  
   if (input_type == "HDF5") {
-    return Teuchos::rcp(new InputOutputHDF5(plist, comm));
+    return std::make_unique<InputHDF5>(comm, filename);
   } else {
     Errors::Message msg;
     msg << "InputFactory: Unknown input type \"" << input_type << "\"";
@@ -36,5 +39,5 @@ CreateInput(Teuchos::ParameterList& plist,
   }
 }
 
-
+} // namespace
 } // namespace

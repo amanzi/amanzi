@@ -49,9 +49,8 @@ public:
   Key vis_fieldname() const { return vis_key_; }
   bool io_checkpoint() const { return io_checkpoint_; }
   bool io_vis() const { return io_vis_; }
-  Units units() const { return units_; }
-  const std::vector<std::string> &subfieldnames() const {
-    return subfieldnames_;
+  void attributes(Teuchos::ParameterList& plist) const {
+    plist.setName(vis_fieldname());
   }
 
   // mutators
@@ -63,16 +62,12 @@ public:
     io_checkpoint_ = std::move(io_checkpoint);
   }
   void set_io_vis(bool io_vis = true) { io_vis_ = std::move(io_vis); }
-  void set_units(Units units) { units = std::move(units); }
-  void set_subfieldnames(std::vector<std::string> subfieldnames) {
-    subfieldnames_ = std::move(subfieldnames);
-  }
-
+  
   // pass-throughs for other functionality
-  void WriteVis(const Visualization &vis) const;
-  void WriteCheckpoint(const Checkpoint &chkp) const;
-  void ReadCheckpoint(const Checkpoint &chkp);
-  bool Initialize(Teuchos::ParameterList &plist);
+  void WriteVis(const Visualization &vis, Teuchos::ParameterList attrs) const;
+  void WriteCheckpoint(const Checkpoint &chkp, Teuchos::ParameterList attrs) const;
+  void ReadCheckpoint(const Checkpoint &chkp, Teuchos::ParameterList attrs);
+  bool Initialize(Teuchos::ParameterList &plist, Teuchos::ParameterList attrs);
 
   // Data setters/getters
   template <typename T> const T &Get() const {
@@ -148,6 +143,7 @@ private:
   Key owner_;
   Key vis_key_;
   std::vector<std::string> subfieldnames_;
+  AmanziMesh::Entity_kind location_;
 
   bool initialized_;
   bool io_checkpoint_;

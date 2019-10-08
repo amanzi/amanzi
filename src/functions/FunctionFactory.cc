@@ -1,5 +1,5 @@
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_SerialDenseMatrix.h"
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 #include "errors.hh"
 #include "HDF5Reader.hh"
@@ -524,7 +524,7 @@ Function* FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
       std::vector<double> vec_x;
       std::vector<double> vec_y;
       std::string v = params.get<std::string>("value header");
-      Epetra_SerialDenseMatrix mat_v; 
+      Teuchos::SerialDenseMatrix<std::size_t,double> mat_v; 
       reader.ReadData(x, vec_x);
       reader.ReadData(y, vec_y);
       reader.ReadMatData(v, mat_v);

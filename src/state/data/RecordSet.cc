@@ -16,26 +16,47 @@ Author: Ethan Coon
 
 namespace Amanzi {
 
+// gather attributes for use with other functionality
+Teuchos::ParameterList RecordSet::attributes() const {
+  Teuchos::ParameterList attrs(vis_fieldname());
+  attrs.set("units", units());
+  attrs.set("location", location());
+  attrs.set("subfieldnames", subfieldnames());
+  return attrs;
+}
+
 // pass-throughs for other functionality
 void RecordSet::WriteVis(const Visualization &vis) const {
+  auto attrs = attributes();
   for (auto &e : records_) {
-    e.second->WriteVis(vis);
+    e.second->WriteVis(vis, attrs);
   }
 }
 void RecordSet::WriteCheckpoint(const Checkpoint &chkp) const {
+  auto attrs = attributes();
   for (auto &e : records_) {
-    e.second->WriteCheckpoint(chkp);
+    e.second->WriteCheckpoint(chkp, attrs);
   }
 }
 void RecordSet::ReadCheckpoint(const Checkpoint &chkp) {
+  auto attrs = attributes();
   for (auto &e : records_) {
-    e.second->ReadCheckpoint(chkp);
+    e.second->ReadCheckpoint(chkp, attrs);
   }
 }
 bool RecordSet::Initialize(Teuchos::ParameterList &plist) {
   bool init = false;
+
+  if (plist.isParameter("units"))
+    set_units(plist.get<std::string>("units"));
+  if (plist.isParameter("location"))
+    set_location(AmanziMesh::entity_kind(plist.get<std::string>("location")));
+  if (plist.isParameter("subfieldnames"))
+    set_subfieldnames(plist.get<Teuchos::Array<std::string> >("subfieldnames"));
+
+  auto attrs = attributes();
   for (auto &e : records_) {
-    init |= e.second->Initialize(plist);
+    init |= e.second->Initialize(plist, attrs);
   }
   return init;
 }

@@ -1,4 +1,4 @@
-//! OutputXDMF: writes XDMF+H5 files for VisIt
+//! OutputXDMF: writes XDMF+H5 files for visualization in VisIt
 /*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -9,9 +9,11 @@
 */
 
 /*
-  XDMF implementation of an Output object.
+  XDMF implementation of an Output object, can only work as a Vis object as it
+  needs a mesh and cannot handle face DoFs.
 */
 
+#include "UniqueHelpers.hh"
 #include "OutputUtils.hh"
 #include "OutputXDMF.hh"
 
@@ -28,23 +30,26 @@ OutputXDMF::OutputXDMF(Teuchos::ParameterList& plist,
 
 // open and close files
 void
-OutputXDMF::InitializeCycle(double time, int cycle) {
+OutputXDMF::CreateFile(double time, int cycle) {
   time_ = time;
   cycle_ = cycle;
 
   if (!init_) {
     // create and set up the FileHDF5 object
-    h5_data_ = Teuchos::rcp(new FileHDF5(mesh_->get_comm(), filenamebase_+"_data.h5", FILE_CREATE));
+    h5_data_ = std::make_unique<FileHDF5>(mesh_->get_comm(),
+            filenamebase_+"_data.h5", FILE_CREATE);
   
     // create and set up the FileHDF5Mesh h5
-    h5_mesh_ = Teuchos::rcp(new FileHDF5(mesh_->get_comm(), filenamebase_+"_mesh.h5", FILE_CREATE));
+    h5_mesh_ = std::make_unique<FileHDF5>(mesh_->get_comm(),
+            filenamebase_+"_mesh.h5", FILE_CREATE);
 
     // write the mesh
     auto global_sizes = WriteMesh_(cycle);
     write_mesh_ = true;
 
     // create and set up the FileXDMF object
-    xdmf_ = Teuchos::rcp(new FileXDMF(filenamebase_, std::get<0>(global_sizes), std::get<1>(global_sizes), std::get<2>(global_sizes)));
+    xdmf_ = std::make_unique<FileXDMF>(filenamebase_, std::get<0>(global_sizes),
+            std::get<1>(global_sizes), std::get<2>(global_sizes));
     xdmf_->CreateTimestep(time, cycle, true);
 
     init_ = true;
@@ -67,7 +72,7 @@ OutputXDMF::InitializeCycle(double time, int cycle) {
 }
 
 
-void OutputXDMF::FinalizeCycle() {
+void OutputXDMF::FinalizeFile() {
   h5_data_->CloseFile();
   xdmf_->CloseTimestep(time_, cycle_, write_mesh_);
 }
@@ -78,7 +83,6 @@ std::string OutputXDMF::Filename() const
   Errors::Message message("OutputXDMF: This is a multi-part file, no single filename exists.");
   throw(message);
 }
-
 
 
 std::tuple<int,int,int>
@@ -151,10 +155,10 @@ OutputXDMF::WriteMesh_(int cycle)
     }
   }
   // -- write the coordinates
-  h5_mesh_->WriteView(coords, global_nodes, h5path.str()+"Nodes");
+  h5_mesh_->WriteView(h5path.str()+"Nodes", global_nodes, coords);
 
   // -- write the coordinate map
-  h5_mesh_->WriteVector(*node_map, h5path.str()+"NodeMap");
+  h5_mesh_->WriteVector(h5path.str()+"NodeMap", *node_map);
 
   // Get and write connectivity information
   // nodes are written to h5 out of order, need the natural node map
@@ -200,13 +204,148 @@ OutputXDMF::WriteMesh_(int cycle)
   }
 
   // write the connections
-  h5_mesh_->WriteVector(conns, h5path.str()+"MixedElements");
+  h5_mesh_->WriteVector(h5path.str()+"MixedElements", conns);
 
   // Write the cell map
-  h5_mesh_->WriteVector(*cell_map, h5path.str()+"ElementMap");
+  h5_mesh_->WriteVector(h5path.str()+"ElementMap", *cell_map);
   
   h5_mesh_->CloseFile();
   return std::make_tuple(global_nodes, global_cells, global_conns);  
+}
+
+
+void
+OutputXDMF::Write(const Teuchos::ParameterList& attrs, const Vector_type& vec) const
+{
+  auto location = attrs.get<AmanziMesh::Entity_kind>("location");
+  if (location == AmanziMesh::Entity_kind::CELL || location == AmanziMesh::Entity_kind::NODE) {
+    xdmf_->WriteField<Vector_type::scalar_type>(attrs.name(), location);
+    std::stringstream path;
+    path << "/" << attrs.name() << ".0/" << cycle_;
+    h5_data_->WriteVector<Vector_type::scalar_type>(path.str(), vec);
+  }
+}
+
+void
+OutputXDMF::Write(const Teuchos::ParameterList& attrs, const IntVector_type& vec) const
+{
+  auto location = attrs.get<AmanziMesh::Entity_kind>("location");
+  if (location == AmanziMesh::Entity_kind::CELL || location == AmanziMesh::Entity_kind::NODE) {
+    xdmf_->WriteField<IntVector_type::scalar_type>(attrs.name(), location);
+    std::stringstream path;
+    path << "/" << attrs.name() << ".0/" << cycle_;
+    h5_data_->WriteVector<IntVector_type::scalar_type>(path.str(), vec);
+  }
+}
+    
+void
+OutputXDMF::Write(const Teuchos::ParameterList& attrs, const MultiVector_type& vec) const
+{
+  auto location = attrs.get<AmanziMesh::Entity_kind>("location");
+  if (location == AmanziMesh::Entity_kind::CELL || location == AmanziMesh::Entity_kind::NODE) {
+    xdmf_->WriteFields<MultiVector_type::scalar_type>(attrs.name(), vec.getNumVectors(), location);
+    std::vector<std::string> paths;
+    if (attrs.isParameter("subfieldnames") && attrs.get<Teuchos::Array<std::string> >("subfieldnames").size() == vec.getNumVectors()) {
+      auto subfield_names = attrs.get<Teuchos::Array<std::string> >("subfieldnames");
+      for (int i=0; i!=vec.getNumVectors(); ++i) {
+        std::stringstream path;
+        path << "/" << attrs.name() << "." << subfield_names[i] << "/" << cycle_;
+        paths.push_back(path.str());
+      }
+    } else {
+      for (int i=0; i!=vec.getNumVectors(); ++i) {
+        std::stringstream path;
+        path << "/" << attrs.name() << "." << i << "/" << cycle_;
+        paths.push_back(path.str());
+      }
+    }
+    h5_data_->WriteMultiVector<MultiVector_type::scalar_type>(paths, vec);
+  }
+}
+
+void
+OutputXDMF::Write(const Teuchos::ParameterList& attrs, const IntMultiVector_type& vec) const
+{
+  auto location = attrs.get<AmanziMesh::Entity_kind>("location");
+  if (location == AmanziMesh::Entity_kind::CELL || location == AmanziMesh::Entity_kind::NODE) {
+    // write the xdmf
+    xdmf_->WriteFields<IntMultiVector_type::scalar_type>(attrs.name(), vec.getNumVectors(), location);
+    std::vector<std::string> paths;
+    if (attrs.isParameter("subfieldnames") &&
+        attrs.get<Teuchos::Array<std::string> >("subfieldnames").size() == vec.getNumVectors()) {
+      auto subfield_names = attrs.get<Teuchos::Array<std::string> >("subfieldnames");
+      for (int i=0; i!=vec.getNumVectors(); ++i) {
+        std::stringstream path;
+        path << "/" << attrs.name() << "." << subfield_names[i] << "/" << cycle_;
+        paths.push_back(path.str());
+      }
+    } else {
+      for (int i=0; i!=vec.getNumVectors(); ++i) {
+        std::stringstream path;
+        path << "/" << attrs.name() << "." << i << "/" << cycle_;
+        paths.push_back(path.str());
+      }
+    }
+    h5_data_->WriteMultiVector<IntMultiVector_type::scalar_type>(paths, vec);
+  }
+}
+  
+void
+OutputXDMF::Write(const Teuchos::ParameterList& attrs, const CompositeVector_<double>& vec) const
+{
+  for (const auto& compname : vec) {
+    auto location = vec.getMap()->Location(compname);
+    if (location == AmanziMesh::Entity_kind::CELL ||
+        location == AmanziMesh::Entity_kind::NODE) {
+      
+      Teuchos::ParameterList local_attrs(attrs);
+      local_attrs.setName(attrs.name()+"."+compname);
+      local_attrs.set("location", location);
+      
+      const auto& compvec = *vec.GetComponent(compname, false);
+      Write(local_attrs, compvec);
+    }
+  }
+}
+
+// NOTE this is identical to the one above and could be templated but is virtual
+void
+OutputXDMF::Write(const Teuchos::ParameterList& attrs, const CompositeVector_<int>& vec) const
+{
+  for (const auto& compname : vec) {
+    auto location = vec.getMap()->Location(compname);
+    if (location == AmanziMesh::Entity_kind::CELL ||
+        location == AmanziMesh::Entity_kind::NODE) {
+      
+      Teuchos::ParameterList local_attrs(attrs);
+      local_attrs.setName(attrs.name()+"."+compname);
+      local_attrs.set("location", location);
+      
+      const auto& compvec = *vec.GetComponent(compname, false);
+      Write(local_attrs, compvec);
+    }
+  }
+}
+
+  
+// can we template this (not yet...)
+void
+OutputXDMF::Write(const Teuchos::ParameterList& attrs, const double& val) const
+{
+  h5_data_->WriteAttribute(attrs.name(), "/", val);
+}
+
+void
+OutputXDMF::Write(const Teuchos::ParameterList& attrs, const int& val) const
+{
+  h5_data_->WriteAttribute(attrs.name(), "/", val);
+}
+
+void
+OutputXDMF::Write(const Teuchos::ParameterList& attrs,
+                  const std::string& val) const
+{
+  h5_data_->WriteAttribute(attrs.name(), "/", val);
 }
 
 

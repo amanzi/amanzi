@@ -12,83 +12,185 @@
   Input/Output via HDF5 file for checkpoint/restart.
 */
 
-
+#include "UniqueHelpers.hh"
 #include "InputOutputHDF5.hh"
 
 namespace Amanzi {
 
-// open and close files
-void InputOutputHDF5::InitializeCycle(double time, int cycle)
+InputHDF5::InputHDF5(const Comm_ptr_type& comm, const std::string& filename) :
+    file_(std::make_unique<FileHDF5>(comm, filename, FILE_READONLY)) {}
+
+void
+InputHDF5::Read(const Teuchos::ParameterList& attrs, double& val) const
 {
-  file_ = Teuchos::rcp(new FileHDF5(comm_, Filename_(cycle), FILE_CREATE));
+  val = file_->ReadAttribute<double>(attrs.name(), "/");
 }
 
-void InputOutputHDF5::FinalizeCycle()
+void
+InputHDF5::Read(const Teuchos::ParameterList& attrs, int& val) const
 {
-  file_ = Teuchos::null;
+  val = file_->ReadAttribute<int>(attrs.name(), "/");
 }
 
-// read data to file
-void InputOutputHDF5::ReadField(Vector_type& vec, const std::string& name, const AmanziMesh::Entity_kind& location) const
+void
+InputHDF5::Read(const Teuchos::ParameterList& attrs, std::string& val) const
 {
-  file_->ReadVector(vec, name);
-}
-      
-void InputOutputHDF5::ReadField(IntVector_type& vec, const std::string& name, const AmanziMesh::Entity_kind& location) const
-{
-  file_->ReadVector(vec, name);
+  val = file_->ReadAttribute<std::string>(attrs.name(), "/");
 }
 
-void InputOutputHDF5::ReadFields(MultiVector_type& vec, const std::string& name, const AmanziMesh::Entity_kind& location) const
+void
+InputHDF5::Read(const Teuchos::ParameterList& attrs, Vector_type& vec) const
 {
-  file_->ReadMultiVectorBlock(vec, name);
+  file_->ReadVector(attrs.name(), vec);
 }
 
-void InputOutputHDF5::ReadFields(MultiVector_type& vec, const std::string& name, const std::vector<std::string>& subfield_names, const AmanziMesh::Entity_kind& location) const
+void
+InputHDF5::Read(const Teuchos::ParameterList& attrs, IntVector_type& vec) const
 {
-  Errors::Message message("InputOutputHDF5::Not implemented, use the Block version instead.");
-  throw(message);
+  file_->ReadVector(attrs.name(), vec);
 }
 
-// can we template this (not yet...)
-void InputOutputHDF5::ReadAttribute(double& val, const std::string& name) const
+void
+InputHDF5::Read(const Teuchos::ParameterList& attrs, MultiVector_type& vec) const
 {
-  val = file_->ReadAttribute<double>(name);
-}
-  void InputOutputHDF5::ReadAttribute(const int& val, const std::string& name) const
-{
-}
-  void InputOutputHDF5::ReadAttribute(const std::string& val, const std::string& name) const
-{
+  std::vector<std::string> fieldnames;
+  for (std::size_t i=0; i!=vec.getNumVectors(); ++i)
+    fieldnames.push_back(attrs.name() + "." + std::to_string(i));
+  file_->ReadMultiVector(fieldnames, vec);
 }
 
-  // write data to file
-  void InputOutputHDF5::WriteField(const Vector_type& vec, const std::string& name, const AmanziMesh::Entity_kind& location) const
+void
+InputHDF5::Read(const Teuchos::ParameterList& attrs, IntMultiVector_type& vec) const
 {
-}
-  void InputOutputHDF5::WriteField(const IntVector_type& vec, const std::string& name, const AmanziMesh::Entity_kind& location) const
-{
-}
-  void InputOutputHDF5::WriteFields(const MultiVector_type& vec, const std::string& name, const AmanziMesh::Entity_kind& location) const
-{
-}
-  void InputOutputHDF5::WriteFields(const MultiVector_type& vec, const std::string& name, const std::vector<std::string>& subfield_names, const AmanziMesh::Entity_kind& location) const
-{
+  std::vector<std::string> fieldnames;
+  for (std::size_t i=0; i!=vec.getNumVectors(); ++i)
+    fieldnames.push_back(attrs.name() + "." + std::to_string(i));
+  file_->ReadMultiVector(fieldnames, vec);
 }
 
-  // can we template this (not yet...)
-  void InputOutputHDF5::WriteAttribute(const double& val, const std::string& name) const
+void
+InputHDF5::Read(const Teuchos::ParameterList& attrs, CompositeVector_<double>& vec) const
 {
+  for (const auto& compname : vec) {
+    std::string vname = attrs.name() + "." + compname;
+    Teuchos::ParameterList attrs_comp(attrs);
+    attrs_comp.setName(vname);
+    Read(attrs_comp, *vec.GetComponent(compname, false));
+  }
 }
-  void InputOutputHDF5::WriteAttribute(const int& val, const std::string& name) const
+    
+void
+InputHDF5::Read(const Teuchos::ParameterList& attrs, CompositeVector_<int>& vec) const
 {
+  for (const auto& compname : vec) {
+    std::string vname = attrs.name() + "." + compname;
+    Teuchos::ParameterList attrs_comp(attrs);
+    attrs_comp.setName(vname);
+    Read(attrs_comp, *vec.GetComponent(compname, false));
+  }
 }
-  void InputOutputHDF5::WriteAttribute(const std::string& val, const std::string& name) const
+
+
+OutputHDF5::OutputHDF5(Teuchos::ParameterList& plist, const Comm_ptr_type& comm)
+    : comm_(comm),
+      filename_base_(plist.template get<std::string>("file name base","checkpoint")),
+      filename_digits_(plist.template get<int>("file name digits", 5))
+{}
+  
+
+
+void
+OutputHDF5::CreateFile(double time, int cycle)
 {
+  cycle_ = cycle;
+  file_ = std::make_unique<FileHDF5>(comm_, Filename(), FILE_CREATE);
 }
 
-};
+void
+OutputHDF5::FinalizeFile()
+{
+  file_.reset(); // destroy the file object, which closes files
+}
 
+std::string
+OutputHDF5::Filename() const
+{
+  std::stringstream oss;
+  oss << filename_base_;
+  oss.fill('0');
+  oss.width(filename_digits_);
+  oss << std::right << cycle_ << ".h5";
+  return oss.str();
+}
 
-} // namespace Amanzi
+void
+OutputHDF5::Write(const Teuchos::ParameterList& attrs, const int& val) const
+{
+  file_->WriteAttribute(attrs.name(), "/", val);
+}
 
+void
+OutputHDF5::Write(const Teuchos::ParameterList& attrs, const double& val) const
+{
+  file_->WriteAttribute(attrs.name(), "/", val);
+}
+
+void
+OutputHDF5::Write(const Teuchos::ParameterList& attrs, const std::string& val) const
+{
+  file_->WriteAttribute(attrs.name(), "/", val);
+}
+
+void
+OutputHDF5::Write(const Teuchos::ParameterList& attrs, const Vector_type& vec) const
+{
+  file_->WriteVector(attrs.name(), vec);
+}
+
+void
+OutputHDF5::Write(const Teuchos::ParameterList& attrs, const IntVector_type& vec) const
+{
+  file_->WriteVector(attrs.name(), vec);
+}
+
+void
+OutputHDF5::Write(const Teuchos::ParameterList& attrs, const MultiVector_type& vec) const
+{
+  std::vector<std::string> fieldnames;
+  for (std::size_t i=0; i!=vec.getNumVectors(); ++i)
+    fieldnames.push_back(attrs.name() + "." + std::to_string(i));
+  file_->WriteMultiVector(fieldnames, vec);
+}
+
+void
+OutputHDF5::Write(const Teuchos::ParameterList& attrs, const IntMultiVector_type& vec) const
+{
+  std::vector<std::string> fieldnames;
+  for (std::size_t i=0; i!=vec.getNumVectors(); ++i)
+    fieldnames.push_back(attrs.name() + "." + std::to_string(i));
+  file_->WriteMultiVector(fieldnames, vec);
+}
+
+void
+OutputHDF5::Write(const Teuchos::ParameterList& attrs, const CompositeVector_<int>& vec) const
+{
+  for (const auto& compname : vec) {
+    std::string vname = attrs.name() + "." + compname;
+    Teuchos::ParameterList attrs_comp(attrs);
+    attrs_comp.setName(vname);
+    Write(attrs_comp, *vec.GetComponent(compname, false));
+  }
+}
+
+void
+OutputHDF5::Write(const Teuchos::ParameterList& attrs, const CompositeVector_<double>& vec) const
+{
+  for (const auto& compname : vec) {
+    std::string vname = attrs.name() + "." + compname;
+    Teuchos::ParameterList attrs_comp(attrs);
+    attrs_comp.setName(vname);
+    Write(attrs_comp, *vec.GetComponent(compname, false));
+  }
+}
+
+} // namespace

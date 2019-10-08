@@ -27,19 +27,20 @@ private:
   int size_;
 };
 
-bool UserInitialize(Teuchos::ParameterList &plist, Vec &t,
-                    const Amanzi::Key &fieldname,
-                    const std::vector<std::string> &subfieldnames) {
-  std::cout << "found it!" << std::endl;
+bool UserInitialize(Teuchos::ParameterList &plist,
+                    const Teuchos::ParameterList &attrs,
+                    Vec &t) {
+  std::cout << "Successfully initialized a Vec!" << std::endl;
   return true;
 }
 
 void UserWriteVis(const Amanzi::Visualization &vis,
-                  const Amanzi::Key &fieldname,
-                  const std::vector<std::string> &subfieldnames,
+                  const Teuchos::ParameterList &attrs,
                   const Vec &vec) {}
 
 void UserWriteCheckpoint(const Amanzi::Checkpoint &chkp,
-                         const Amanzi::Key &fieldname, const Vec &vec) {}
+                         const Teuchos::ParameterList &attrs,
+                         const Vec &vec) {}
 void UserReadCheckpoint(const Amanzi::Checkpoint &chkp,
-                        const Amanzi::Key &fieldname, Vec &vec) {}
+                        const Teuchos::ParameterList &attrs,
+                        Vec &vec) {}

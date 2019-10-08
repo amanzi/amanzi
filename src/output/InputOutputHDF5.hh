@@ -28,86 +28,49 @@
 
 namespace Amanzi {
 
-class InputOutputHDF5 : public Input, public Output {
+class InputHDF5 : public Input {
  public:
-  InputOutputHDF5(Teuchos::ParameterList& plist, const Comm_ptr_type& comm) :
-      filename_base_(plist.get<std::string>("file name base","checkpoint")),
-      filename_digits_(plist.get<int>("file name digits", 5)),
-      comm_(comm),
-      cycle_(-1)
-  {}
-  
-  virtual ~InputOutputHDF5() = default;
 
-  // 
-  virtual void InitializeCycle(double time, int cycle) {
-    cycle_ = cycle;
-    file_ = Teuchos::rcp(new FileHDF5(comm_, Filename(), FILE_CREATE)); }    
-  virtual void FinalizeCycle() {
-    file_ = Teuchos::null;
-  }
+  InputHDF5(const Comm_ptr_type& comm, const std::string& filename);
+  virtual ~InputHDF5() override = default;
+
+  // read data from file
+  virtual void Read(const Teuchos::ParameterList& attrs, double& val) const override;
+  virtual void Read(const Teuchos::ParameterList& attrs, int& val) const override;
+  virtual void Read(const Teuchos::ParameterList& attrs, std::string& val) const override;
+  virtual void Read(const Teuchos::ParameterList& attrs, Vector_type& vec) const override;
+  virtual void Read(const Teuchos::ParameterList& attrs, IntVector_type& vec) const override;    
+  virtual void Read(const Teuchos::ParameterList& attrs, MultiVector_type& vec) const override;
+  virtual void Read(const Teuchos::ParameterList& attrs, IntMultiVector_type& vec) const override;  
+  virtual void Read(const Teuchos::ParameterList& attrs, CompositeVector_<double>& vec) const override;
+  virtual void Read(const Teuchos::ParameterList& attrs, CompositeVector_<int>& vec) const override;  
+
+ protected:
+  std::unique_ptr<FileHDF5> file_;
+};
 
 
-  // read data to file
-  virtual void ReadField(Vector_type& vec, const std::string& name, const AmanziMesh::Entity_kind& location) const {
-    file_->ReadVector(vec, name);
-  }
-  virtual void ReadField(IntVector_type& vec, const std::string& name, const AmanziMesh::Entity_kind& location) const {
-    file_->ReadVector(vec, name);
-  }
-  virtual void ReadFields(MultiVector_type& vec, const std::string& name, const AmanziMesh::Entity_kind& location) const {
-    file_->ReadMultiVectorBlock(vec, name);
-  }
-  virtual void ReadFields(MultiVector_type& vec, const std::string& name, const std::vector<std::string>& subfield_names, const AmanziMesh::Entity_kind& location) const {
-    file_->ReadMultiVectorBlock(vec, name);
-  }
+class OutputHDF5 : public Output {
+ public:
+  OutputHDF5(Teuchos::ParameterList& plist, const Comm_ptr_type& comm) ;
+  virtual ~OutputHDF5() override = default;
 
-  // can we template this (not yet...)
-  virtual void ReadAttribute(double& val, const std::string& name) const {
-    val = file_->ReadAttribute<double>(name);
-  }
-  virtual void ReadAttribute(int& val, const std::string& name) const {
-    val = file_->ReadAttribute<int>(name);
-  }    
-  virtual void ReadAttribute(std::string& val, const std::string& name) const {
-    val = file_->ReadAttribute<std::string>(name);
-  }    
+  virtual void CreateFile(double time, int cycle) override;
+  virtual void FinalizeFile() override;
+  virtual std::string Filename() const override;
 
-  // write data to file
-  virtual void WriteField(const Vector_type& vec, const std::string& name, const AmanziMesh::Entity_kind& location) const {
-    file_->WriteVector(vec, name);
-  }
-  virtual void WriteField(const IntVector_type& vec, const std::string& name, const AmanziMesh::Entity_kind& location) const {
-    file_->WriteVector(vec, name);
-  }
-  virtual void WriteFields(const MultiVector_type& vec, const std::string& name, const AmanziMesh::Entity_kind& location) const {
-    file_->WriteMultiVectorBlock(vec, name);
-  }
-  virtual void WriteFields(const MultiVector_type& vec, const std::string& name, const std::vector<std::string>& subfield_names, const AmanziMesh::Entity_kind& location) const {
-    file_->WriteMultiVectorBlock(vec, name);
-  }
+  virtual void Write(const Teuchos::ParameterList& attrs, const int& val) const override;
+  virtual void Write(const Teuchos::ParameterList& attrs, const double& val) const override;
+  virtual void Write(const Teuchos::ParameterList& attrs, const std::string& val) const override;
 
-  // can we template this (not yet...)
-  virtual void WriteAttribute(const double& val, const std::string& name) const {
-    file_->WriteAttribute(val, name);
-  }
-  virtual void WriteAttribute(const int& val, const std::string& name) const {
-    file_->WriteAttribute(val, name);
-  }
-  virtual void WriteAttribute(const std::string& val, const std::string& name) const {
-    file_->WriteAttribute(val, name);
-  }
+  virtual void Write(const Teuchos::ParameterList& attrs, const Vector_type& vec) const override;
+  virtual void Write(const Teuchos::ParameterList& attrs, const IntVector_type& vec) const override;
 
-  virtual std::string Filename() const {
-    // create the restart file
-    std::stringstream oss;
-    oss.flush();
-    oss << filename_base_;
-    oss.fill('0');
-    oss.width(filename_digits_);
-    oss << std::right << cycle_;
-    return oss.str();
-  }
+  virtual void Write(const Teuchos::ParameterList& attrs, const MultiVector_type& vec) const override;
+  virtual void Write(const Teuchos::ParameterList& attrs, const IntMultiVector_type& vec) const override;
+
+  virtual void Write(const Teuchos::ParameterList& attrs, const CompositeVector_<int>& vec) const override;
+  virtual void Write(const Teuchos::ParameterList& attrs, const CompositeVector_<double>& vec) const override;
 
  protected:
   std::string filename_base_;
@@ -115,7 +78,7 @@ class InputOutputHDF5 : public Input, public Output {
   Comm_ptr_type comm_;
   int cycle_;
   
-  Teuchos::RCP<FileHDF5> file_;
+  std::unique_ptr<FileHDF5> file_;
 };
 
 

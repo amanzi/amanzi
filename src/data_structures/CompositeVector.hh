@@ -32,13 +32,13 @@ DOCUMENT VANDELAY HERE! FIX ME --etc
 
 */
 
-
+#include "AmanziTypes.hh"
 #include "CompositeVector_decl.hh"
 #include "CompositeVector_impl.hh"
 
 #ifndef AMANZI_COMPOSITEVECTOR_HH_
 #define AMANZI_COMPOSITEVECTOR_HH_
 namespace Amanzi {
-using CompositeVector = CompositeVector_<double>;
+using CompositeVector = CompositeVector_<double_type>;
 }
 #endif

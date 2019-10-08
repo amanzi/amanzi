@@ -30,13 +30,9 @@ class FileXDMF {
   void CloseTimestep(const double time, const int cycle, const bool write_mesh);
 
   template<typename scalar_type>
-  void WriteField(const std::string& var_name,
-                  const AmanziMesh::Entity_kind& location,
-                  const std::string& dofnum="0");
+  void WriteField(const std::string& var_name, const AmanziMesh::Entity_kind& location, const std::string& dofnum="0");
   template<typename scalar_type>
-  void WriteFields(const std::string& var_name,
-                   const std::vector<std::string>& subfield_names,
-                   const AmanziMesh::Entity_kind& location);
+  void WriteFields(const std::string& var_name, const std::vector<std::string>& subfield_names, const AmanziMesh::Entity_kind& location);
   template<typename scalar_type>
   void WriteFields(const std::string& var_name, int n_dofs, const AmanziMesh::Entity_kind& location);
 

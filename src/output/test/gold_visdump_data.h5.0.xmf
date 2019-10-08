@@ -12,24 +12,24 @@
         </DataItem>
       </Geometry>
       <Time Value="0.00000000000000000e+00"/>
-      <Attribute Center="Cell" Name="base_porosity.cell.0" Type="Scalar">
+      <Attribute Center="Cell" Name="base_porosity.0" Type="Scalar">
         <DataItem DataType="Float" Dimensions="800" Format="HDF">
-          visdump_data.h5:base_porosity.cell.0/0
+          visdump_data.h5:base_porosity.0/0
         </DataItem>
       </Attribute>
-      <Attribute Center="Cell" Name="darcy_velocity.cell.0" Type="Scalar">
+      <Attribute Center="Cell" Name="darcy_velocity.0" Type="Scalar">
         <DataItem DataType="Float" Dimensions="800" Format="HDF">
-          visdump_data.h5:darcy_velocity.cell.0/0
+          visdump_data.h5:darcy_velocity.0/0
         </DataItem>
       </Attribute>
-      <Attribute Center="Cell" Name="darcy_velocity.cell.1" Type="Scalar">
+      <Attribute Center="Cell" Name="darcy_velocity.1" Type="Scalar">
         <DataItem DataType="Float" Dimensions="800" Format="HDF">
-          visdump_data.h5:darcy_velocity.cell.1/0
+          visdump_data.h5:darcy_velocity.1/0
         </DataItem>
       </Attribute>
-      <Attribute Center="Cell" Name="darcy_velocity.cell.2" Type="Scalar">
+      <Attribute Center="Cell" Name="darcy_velocity.2" Type="Scalar">
         <DataItem DataType="Float" Dimensions="800" Format="HDF">
-          visdump_data.h5:darcy_velocity.cell.2/0
+          visdump_data.h5:darcy_velocity.2/0
         </DataItem>
       </Attribute>
     </Grid>

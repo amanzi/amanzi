@@ -27,6 +27,7 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${MSTK_SOURCE_DIR})
+include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 
 # External (TPL) include directories
@@ -61,6 +62,7 @@ set(output_source_files OutputUtils.cc
                         FileHDF5.cc
                         FileXDMF.cc
                         OutputXDMF.cc
+                        InputOutputHDF5.cc
                         OutputFactory.cc
                         InputFactory.cc
                         )
@@ -76,7 +78,7 @@ set(output_source_files OutputUtils.cc
 add_amanzi_library(output 
                    SOURCE ${output_source_files}
                    HEADERS ${output_inc_files}
-                   LINK_LIBS mstk_mesh mesh geometry error_handling ${output_tpl_list})
+                   LINK_LIBS data_structures mstk_mesh mesh geometry error_handling ${output_tpl_list})
 
 
 # #
@@ -125,6 +127,7 @@ if (BUILD_TESTS)
                   LINK_LIBS   output ${UnitTest_LIBRARIES}
                   KIND unit)
   add_amanzi_test(output_file_hdf5_np2 output_file_hdf5 NPROCS 2 KIND unit)
+  add_amanzi_test(output_file_hdf5_np5 output_file_hdf5 NPROCS 5 KIND unit)
 
   # Test: file_xdmf
   add_amanzi_test(output_file_xdmf output_file_xdmf

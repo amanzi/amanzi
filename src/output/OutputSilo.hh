@@ -46,7 +46,7 @@ class OutputSilo : public Output {
   ~OutputSilo();
   
   // open and close files
-  virtual void InitializeCycle(double time, int cycle);
+  virtual void CreateTimestep(double time, int cycle);
   virtual void FinalizeCycle();
 
   // write data to file
