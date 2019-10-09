@@ -360,7 +360,7 @@ class MeshSurfaceCell : public Mesh {
   virtual
   void cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
           Entity_ID_List *edgeids,
-          std::vector<int> *edge_dirs) const;
+          std::vector<int> *edge_dirs) const override;
 
  protected:
 

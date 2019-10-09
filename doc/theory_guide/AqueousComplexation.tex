@@ -1,0 +1,165 @@
+\subsection{Aqueous Complexation} \label{sec:AqueousComplexation}
+
+\subsubsection{Overview}
+
+It is customary to treat the reaction network corresponding to the homogeneous reactions 
+in the aqueous phase as a distinct set of processes taking place within a single aqueous phase \citep{steefel_1996}. 
+%although these can also be described within the same more general formalism provided in Section~\ref{sec:mathframework} 
+%that includes multiphase reactions.  
+This reaction network is sometimes referred to as \textit{aqueous complexation}, 
+since it involves reactions between individual dissolved species to form complexes.  
+
+\subsubsection{Process Model Equations} \label{sec:aqueous-complexation-eq}
+
+\paragraph{Equilibrium Reactions.} 
+
+If we assume that the various aqueous species are in chemical
+equilibrium, it is possible to reduce the number of
+\textit{independent} concentrations, that is, the number that actually
+need to be solved for. Mathematically, this means that in a system
+containing $N_{tot} $ aqueous species, the number of independent
+chemical components in the system $N_{c} $ is reduced from the total
+number of species by the $N_{x} $ linearly independent chemical
+reactions between them (for further discussion,
+see~\citet{hooyman_1961, aris_1965, bowen_1968, van_1970, reed_1982,
+  lichtner_1985, kirkner_1988}. This leads to a natural partitioning
+of the system into $N_{c} $ \textit{primary} or \textit{basis}
+species, designated here as $C_{j} $, and the $N_{x} $
+\textit{secondary} species, referred to as $C_{i}
+$~\citep{reed_1982, lichtner_1985, kirkner_1988}. The equilibrium
+chemical reactions between the primary and secondary species take the
+form
+%
+\begin{equation}
+  \A_{i} 
+     \rightleftharpoons 
+        \sum _{j=1}^{N_{c} } \, 
+        \nu _{ij} \A_{j} \; \; \; 
+        (i=1,...,N_{x} ), 
+\label{eq:AqueousComplexation:EquilibriumReaction} 
+\end{equation} 
+%
+where $\A_{j} $ and $\A_{i} $ are the
+chemical formulas of the primary and secondary species respectively
+and $\nu _{ij} $ is the number of moles of primary
+species $j$ in one mole of secondary species $i$. 
+It should be noted here that the partitioning between the primary
+and secondary species is not unique, that is, we can write the
+chemical reactions in more than one way. The equilibrium reactions
+provide an algebraic link between the primary and secondary species
+via the law of mass action for each reaction
+\begin{equation}
+  C_{i} 
+     = K_{i}^{-1} \gamma _{i}^{-1} 
+       \prod _{j=1}^{N_{c} } \, 
+          ( \gamma _{j} C_{j} )^{\nu _{ij}}
+     \; \; \; 
+     (i=1,...,N_{x} ), 
+\label{eq:AqueousComplexation:MassAction} 
+\end{equation} 
+%
+where $\gamma _{j} $ and $\gamma _{i} $ are
+the activity coefficients for the primary and secondary species
+respectively, and $K_{i} $ is the equilibrium
+constant of the reaction given in
+Equation~\eqref{eq:AqueousComplexation:MassAction}, written here as
+the destruction\todo[color=cyan]{GEH: What does ``destruction'' mean?} of one mole of the secondary
+species. Equation~\eqref{eq:AqueousComplexation:MassAction} implies
+that the rate of production of a primary component $j$ due to
+homogeneous reactions, $R_{j}^{aq}$, can be written in terms of the
+sum of the total rates of production of the secondary
+species~\citep{kirkner_1988}
+%
+\begin{equation}
+  R_{j}^{aq} \eq -\sum _{i=1}^{N_{x} } \, \nu_{ ij} I_{i}^{aq} , 
+ \label{eq:AqueousComplexation:RateSecondary} 
+\end{equation} 
+%
+where $I_{i}^{aq}$ is the reaction rate of the secondary species in
+the aqueous
+phase. Equation~\eqref{eq:AqueousComplexation:RateSecondary} suggests
+that one can think of a mineral dissolving, for example, as producing
+\textit{only primary species} which then equilibrate instantly with
+the secondary species in the system. Using
+Equation~\eqref{eq:AqueousComplexation:RateSecondary} and neglecting
+transport for the sake of simplicity here, the rates of the
+equilibrium reactions can be eliminated~\citep{steefel_1996}
+%
+\begin{equation} \label{eq:PartitioningEquilibriumKinetic}
+ \frac{\partial }{\partial t} \left[\phi s_w \rho _{w}  \left(C_{j} + \sum _{i=1}^{N_{x} } \, \nu _{ij} C_{i} \right)\right] =R_{j}^{min} \; \; \; (j=1,...,N_{c} ),
+\end{equation} 
+%\[
+%\_ \boldsymbol{\nabla} \bullet \left[u\rho _{f} M_{H_{2} O} \left(C_{j} +\sum _{i=1}^{N_{x} } \, \nu _{ij} X_{i} \right)-D\boldsymbol{\nabla} \left\{\rho _{f} M_{H_{2} O} \left(C_{j} +\sum _{i=1}^{N_{x} } \, \nu _{ij} X_{i} \right)\right\}\right]
+%\] 
+%\begin{equation} \label{eq:AqueousComplexation:PrimaryTransport} 
+%\_ =R_{j}^{min} \; \; \; (j=1,...,N_{c} ) 
+%\end{equation} 
+where $s_w$ and $\rho_w$ refer to the saturation and mass density of
+the aqueous phase, respectively.  Note that only the term 
+$R_{j}^{min} $ remains on the right hand side of
+Equation~\eqref{eq:PartitioningEquilibriumKinetic} because we have
+assumed that they are the only kinetic reactions.
+
+\paragraph{Definition of a Total Concentration.}
+\noindent If a total concentration, $\Psi_{j} $, is defined as~\citep{reed_1982, lichtner_1985, kirkner_1988} 
+\begin{equation} \label{eq:AqueousComplexation_GrindEQ__12} 
+  \Psi_{j} =C_{j} +\sum _{i=1}^{N_{x} } \, \nu _{ij} C_{i} , 
+\end{equation} 
+then the governing differential equations can be written in terms of the total concentrations in the case where only aqueous (and therefore mobile) species are involved (Kirkner and Reeves, 1988) 
+\begin{equation} \label{eq:AqueousComplexation_GrindEQ__13} 
+  \frac{\partial }{\partial t} \left( \phi s_w \rho _{w}  \Psi_{j} \right) 
+  + 
+  \boldsymbol{\nabla} \cdot \left[ \phi s_w \rho _{w} \boldsymbol{v}_w \Psi_{j} -D\boldsymbol{\nabla} 
+  \left( \phi s_w \rho_{w}  \Psi_{j} \right) \right] \eq R_{j}^{min} \; \; \; (j=1,...,N_{c} ),
+\end{equation} 
+where $\boldsymbol{v}_w$ is the velocity of the aqueous phase and $R_j^{\rm min}$ denotes the kinetic mineral reaction rate.
+As pointed out by~\citet{reed_1982} and~\citet{lichtner_1985}, the total concentrations can usually be interpreted in a straightforward fashion as the total elemental concentrations (e.g., total aluminum in solution), but in the case of $H^{+} $ and redox species, the total concentration has no simple physical meaning and the total concentrations may take on negative values. Such quantities, however, do appear occasionally in geochemistry, the best example of which is alkalinity. In fact, the alkalinity (which may take on negative values) is just the negative of the total H$^{+} $ concentration where CO$_{2}$(aq) or H$_{2}$ CO$_{3}$ is chosen as the basis species for the carbonate system. 
+
+Note that the total concentration is generally only a useful concept computationally where equilibrium reactions allow the definition of secondary species described with Equation~\eqref{eq:AqueousComplexation:RateSecondary}.  In the case where the reactions among aqueous species are described kinetically, then the various aqueous complexes cannot be eliminated algebraically and they have to be solved for individually.
+
+\paragraph{Kinetic Aqueous Reactions.}
+If the aqueous phase reactions are not sufficiently fast for a given time scale of interest that they reach equilibrium, then they must be treated kinetically by solving an ordinary differential equation.  A convenient way to represent the reactions is with a Transition State Theory (TST) type of rate law~\citep{lasaga_1981, lasaga_1984, aagaard_1982}
+\begin{equation} \label{eq:AqueousTSTkinetics}
+  I_j^{aq} \eq k_{+}^{aq} \left(  \frac{Q^{aq}}{K^{aq}} \right) \prod a_{i}^{n},
+\end{equation}
+where $k_{+}^{aq}$ is the rate constant for the aqueous reaction, $Q^{aq}$ is the ion activity product , $K^{aq}$ is the corresponding equilibrium constant, and $a_i$ are the activities of the species affecting the rate far from equilibrium raised to the power $n$.
+
+Alternatively, the reactions can be considered as completely irreversible, in which case there is no back reaction.  A good example is radioactive decay. The reactions are assumed to take the form
+\begin{equation} \label{eq:IrreversibleKinetics}
+  I_j^{aq} \eq k_{+}^{aq} \prod a_{i}^{n} ,
+\end{equation}
+and are therefore similar to the TST form except that a dependence on the saturation state is missing.   This more general form of irreversible reactions can be used to model decay and ingrowth of daughter products.
+
+%\paragraph{References}
+
+%\noindent Aagaard P. and Helgeson H.C. (1982) Thermodynamic and kinetic constraints on reaction rates among minerals and aqueous solutions, I, Theoretical considerations. \textit{Amer. J. Sci. }, 237-285. 
+%
+%\noindent Aris R. (1965) Prolegomena to the rational analysis of systems of chemical reactions. \textit{Arch. Rational Mech. and Anal.} , 81-99. 
+%
+%
+%\noindent Bowen R.M. (1968) On the stoichiometry of chemically reacting materials. \textit{Arch. Rational Mech. Anal.} , 114-124. 
+%
+%
+%\noindent Hooyman G.J. (1961) On thermodynamic coupling of chemical reactions. \textit{Proc. Nat. Acad. Sci.} , 1169-1173. 
+%
+%\noindent Kirkner D.J. and Reeves H. (1988) Multicomponent mass transport with homogeneous and heterogeneous chemical reactions: Effect of chemistry on the choice of numerical algorithm. I. Theory. \textit{Water Resources Res. }, 1719-1729. 
+%
+%\noindent Lasaga A.C. (1981) Rate laws in chemical reactions. In \textit{Kinetics of Geochemical Processes} (ed. A.C. Lasaga and R.J. Kirkpatrick), Rev. Mineral. , 135-169. 
+%
+%\noindent Lasaga A.C. (1984) Chemical kinetics of water-rock interactions. \textit{J. Geophys. Res. }, 4009-4025. 
+%
+%\noindent Lichtner P.C. (1985) Continuum model for simultaneous chemical reactions and mass transport in hydrothermal systems. \textit{Geochim. Cosmochim. Acta }, 779-800. 
+%
+%
+%\noindent Reed M.H. (1982) Calculation of multicomponent chemical equilibria and reaction processes in systems involving minerals, gases, and an aqueous phase. \textit{Geochim. Cosmochim. Acta }, 513-528. 
+%
+%
+%\noindent Steefel, C.I. and MacQuarrie, K.T.B. (1996) Approaches to modeling reactive transport in porous media.  In \textit{Reactive Transport in Porous Media} (P.C. Lichtner, C.I. Steefel, and E.H. Oelkers, eds.), \textit{Reviews in Mineralogy} 34, 83-125.
+%
+%
+%
+% 
+%
+%\noindent Van Zeggeren F. and Storey S.H. (1970) \textit{The Computation of Chemical Equilibria}. Cambridge University Press, Cambridge, 176 p. 
+%
+%
