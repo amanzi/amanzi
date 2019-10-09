@@ -244,12 +244,9 @@ void MeshLogical::set_logical_geometry(std::vector<double> const* const cell_vol
         AMANZI_ASSERT(f_index < cell_face_ids_[c1].size());
         auto face_centroid_right = cell_centroids_[c1] + cell_face_bisectors_[c1][f_index];
         face_centroids_[f] = (face_centroid_right + face_centroid_left) / 2.;
-        std::cout << "  cc1 = " << cell_centroids_[c1] << " + " << cell_face_bisectors_[c1][f_index] << " = " << face_centroid_right << std::endl;
-
       } else {
         face_centroids_[f] = face_centroid_left;
       }
-      std::cout << "  --> fc = " << face_centroids_[f] << std::endl;
     }
   }
   

@@ -351,7 +351,6 @@ MeshLogicalFactory::AddSegment(
   int n_cells = cell_lengths.size();
   if (n_cells == 0) return;
   int n_faces = face_areas.size();
-  std::cout << "DEBUG: Adding segment of ncells = " << n_cells << ", nfaces = " << n_faces << std::endl;
 
   // check for consistency in sizes
   if (cell_centroids) AMANZI_ASSERT(cell_centroids->size() == n_cells);
@@ -610,7 +609,6 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist) {
     AmanziGeometry::Point begin;
     if (first_tip_type == LogicalTip_t::BOUNDARY) {
       begin = GetPoint_(plist, "first tip");
-      std::cout << "DEBUG: Begin of " << seg_name << " = " << begin << std::endl;
     } else {
       if (first_tip_type != LogicalTip_t::BRANCH) {
         Errors::Message msg;
@@ -619,7 +617,6 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist) {
       }
       std::string branch_from = plist.get<std::string>("first tip branch segment");
       begin = tracking_end_points_[branch_from];
-      std::cout << "DEBUG: Begin of " << seg_name << " = " << begin << std::endl;
     }
 
     auto end = begin - orientation * seg_length;
@@ -633,7 +630,6 @@ MeshLogicalFactory::AddSegment(Teuchos::ParameterList& plist) {
       cell_centroids[c+1] = my_centroid;
     }
     tracking_end_points_[seg_name] = end;
-    std::cout << "DEBUG: End of " << seg_name << " = " << end << std::endl;
   }
 
   // Now start doing the add
