@@ -335,9 +335,13 @@ void CompW_PK::InitializeComponent()
 
   op1_preconditioner_ = opfactory.Create(oplist_pc, mesh_, op_bc_p_, 1.0, gravity_);
   op3_preconditioner_ = opfactory.Create(oplist_pc, mesh_, op_bc_rhl_, 1.0, gravity_);
+
   Teuchos::ParameterList olist_adv = comp_list_->sublist("operators").sublist("advection operator");
   op2_preconditioner_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, mesh_));
+  op2_preconditioner_->SetBCs(op_bc_rhl_, op_bc_rhl_);
+
   op_prec_sat_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, op2_preconditioner_->global_operator()));
+  op_prec_sat_->SetBCs(op_bc_s_, op_bc_s_);
 
   op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_prec_sat_->global_operator()));
 

@@ -78,6 +78,7 @@ void CompH_PK::FunctionalResidual(double t_old, double t_new,
   cvs.SetComponent("cell", AmanziMesh::CELL, 1);
   cvs.SetOwned(false);
   cvs.AddComponent("face", AmanziMesh::FACE, 1);
+  cvs.AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1);
   Teuchos::RCP<CompositeVector> s_with_face = Teuchos::rcp(new CompositeVector(cvs));
   *s_with_face->ViewComponent("cell") = *saturation_w->ViewComponent("cell");
   upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_p, *s_with_face);
@@ -193,6 +194,7 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->Setup(Kptr, Teuchos::null, Teuchos::null);
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateFlux(pressure_n.ptr(), upwind_vn_.ptr());
+exit(0);
 
   upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_p, *coef_w_->Coeff());
   // coef_w_->Coeff()->Scale(dTp / mu1_);

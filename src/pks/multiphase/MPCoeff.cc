@@ -1,16 +1,17 @@
 /*
-This is the multiphase component of the Amanzi code. 
+  MultiPhase
 
-Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-Amanzi is released under the three-clause BSD License. 
-The terms of use and "as is" disclaimer for this license are 
-provided in the top-level COPYRIGHT file.
+  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-         Quan Bui (mquanbui@math.umd.edu)
-This file implements the main methods of the class for MPCoeff. 
-Unlike the one in Flow, this is specialized for multiphase. The relative 
-permeability is computed from water saturation, instead of pressure (as in Richards).
+  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+           Quan Bui (mquanbui@math.umd.edu)
+
+  This file implements the main methods of the class for MPCoeff. 
+  Unlike the one in Flow, this is specialized for multiphase. The relative 
+  permeability is computed from water saturation, instead of pressure (as in Richards).
 */
 
 #include "errors.hh"
@@ -40,6 +41,7 @@ void MPCoeff::Init(std::string phase_name, Teuchos::ParameterList& plist)
   cvs.SetComponent("cell", AmanziMesh::CELL, 1);
   cvs.SetOwned(false);
   cvs.AddComponent("face", AmanziMesh::FACE, 1);
+  cvs.AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1);
 
   Krel_ = Teuchos::rcp(new CompositeVector(cvs));
   dKdS_ = Teuchos::rcp(new CompositeVector(cvs));
@@ -229,9 +231,6 @@ void MPCoeff::ProcessParameterList_(Teuchos::ParameterList& plist)
       iblock++;
     }
   }
-
-  // optional debug output
-  //PlotWRMcurves(plist);
 }
 
 }  // namespace Flow

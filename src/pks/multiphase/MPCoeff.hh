@@ -64,14 +64,6 @@ class MPCoeff {
   // wrt Sw
   double DerivativePc(int c, double Sw) const { return WRM_[(*map_c2mb_)[c]]->dPc_dS(Sw); } 
 
-
-  //double Derivative(int c, double x, double Sw) const {
-  //  return x * WRM_[(*map_c2mb_)[c]]->dKdS(Sw, phase_);
-  //}
-
-  //void VerifyWRMparameters(double m, double alpha, double sr, double pc0) {}
-  //void PlotWRMcurves(Teuchos::ParameterList& plist) {}
-
   // access methods
   std::vector<Teuchos::RCP<WaterRetentionModel> >& WRM() { return WRM_; }
   

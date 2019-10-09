@@ -60,6 +60,7 @@ void CompW_PK::FunctionalResidual(double t_old, double t_new,
   cvs.SetComponent("cell", AmanziMesh::CELL, 1);
   cvs.SetOwned(false);
   cvs.AddComponent("face", AmanziMesh::FACE, 1);
+  cvs.AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1);
   Teuchos::RCP<CompositeVector> s_with_face = Teuchos::rcp(new CompositeVector(cvs));
   *s_with_face->ViewComponent("cell") = *saturation_w->ViewComponent("cell");
   DeriveFaceValuesFromCellValues(*s_with_face->ViewComponent("cell"), *s_with_face->ViewComponent("face"),
@@ -182,15 +183,14 @@ void CompW_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
   op1_preconditioner_->Setup(Kptr, rel_perm_w_->Krel(), Teuchos::null);
   op1_preconditioner_->UpdateMatrices(Teuchos::null, Teuchos::null);
   op1_preconditioner_->ApplyBCs(true, true, true);
-  //op1_preconditioner_->global_operator()->SymbolicAssembleMatrix();
-  //op1_preconditioner_->global_operator()->AssembleMatrix();
-  //std::cout << "Analytic Jacobian A_11: " << *op1_preconditioner_->global_operator()->A() << "\n";
+  // op1_preconditioner_->global_operator()->SymbolicAssembleMatrix();
+  // op1_preconditioner_->global_operator()->AssembleMatrix();
 
   // A_12 block wrt Sw
   //tmp_flux_->Scale(-1.0);
   op2_preconditioner_->global_operator()->Init();
   op2_preconditioner_->Setup(*tmp_flux_);
-  op2_preconditioner_->UpdateMatrices(rel_perm_w_->dKdS().ptr(), Teuchos::null);
+  op2_preconditioner_->UpdateMatrices(rel_perm_w_->dKdS().ptr());
   op2_preconditioner_->ApplyBCs(true, true, true);
   op2_preconditioner_->global_operator()->Rescale(-1.0);
 
@@ -219,12 +219,9 @@ void CompW_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
   op2_matrix_->UpdateMatrices(Teuchos::null, Teuchos::null);
   op2_matrix_->UpdateFlux(rhl.ptr(), tmp_flux_.ptr());
 
-  //Teuchos::ParameterList olist_adv = comp_list_->sublist("operators").sublist("advection operator");
-  //op_prec_sat_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, op2_preconditioner_->global_operator()));
-  //tmp_flux_->Scale(-1.0);
   op_prec_sat_->Setup(*tmp_flux_);
   tmp_flux_->Scale(-1.0);
-  op_prec_sat_->UpdateMatrices(tmp_flux_.ptr(), Teuchos::null);
+  op_prec_sat_->UpdateMatrices(tmp_flux_.ptr());
   op_prec_sat_->ApplyBCs(true, true, true);
   op_prec_sat_->global_operator()->Rescale(-1.0);
 

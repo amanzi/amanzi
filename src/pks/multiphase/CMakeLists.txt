@@ -62,9 +62,7 @@ set(multiphase_src_files CompW.cc CompW_TI.cc CompH.cc CompH_TI.cc
                          GasConstraint.cc
                          Reduced2p2c_PK.cc
                          MPCoeff.cc
-                         RelativePermeability_IO.cc FractionalFlow.cc
-                         RelativePermeability.cc WRM_Simple.cc
-                         WRM_VanGenuchten.cc WRM_BrooksCorey.cc
+                         WRM_Simple.cc WRM_VanGenuchten.cc WRM_BrooksCorey.cc
                          CapillaryPressure.cc
                          )
 
@@ -83,9 +81,7 @@ set(multiphase_inc_files
   GasConstraint.hh
   Reduced2p2c_PK.hh
   MPCoeff.hh
-  RelativePermeability.hh
   CapillaryPressure.hh
-  FractionalFlow.hh
   WaterRetentionModel.hh
   WRM_Simple.hh
   WRM_VanGenuchten.hh
