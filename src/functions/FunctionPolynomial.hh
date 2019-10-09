@@ -50,18 +50,18 @@ class FunctionPolynomial : public Function {
   FunctionPolynomial* Clone() const { return new FunctionPolynomial(*this); }
   double operator()(const Kokkos::View<double*>&) const; 
 
-  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double*>& x) const
+  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double**>& x, const int i) const
   {
     // Polynomial terms with non-negative exponents
     double y = c_[pmax_-pmin_];
     if (pmax_ > 0) {
-      double z = x[0] - x0_;
+      double z = x(0,i) - x0_;
       for (int j = pmax_; j > 0; --j) y = c_[j-1-pmin_] + z*y;
     }
     // Polynomial terms with negative exponents.
     if (pmin_ < 0) {
       double w = c_[0];
-      double z = 1.0 / (x[0] - x0_);
+      double z = 1.0 / (x(0,i) - x0_);
       for (int j = pmin_; j < -1; ++j) w = c_[j+1-pmin_] + z*w;
       y += z*w;
     }
@@ -70,8 +70,7 @@ class FunctionPolynomial : public Function {
 
   void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
     Kokkos::parallel_for(in.extent(1),KOKKOS_LAMBDA(const int& i){
-      Kokkos::View<double*> i_in = Kokkos::subview(in,Kokkos::ALL,i); 
-      out(i) = apply_gpu(i_in); 
+      out(i) = apply_gpu(in,i); 
     }); 
   }
 

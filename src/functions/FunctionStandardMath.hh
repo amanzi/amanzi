@@ -77,9 +77,9 @@ public:
   FunctionStandardMath* Clone() const { return new FunctionStandardMath(*this); }
   double operator()(const Kokkos::View<double*>&) const; 
 
-  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double*>& x) const
+  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double**>& x, const int i) const
   {
-    double x0 = x[0] - shift_;
+    double x0 = x(0,i) - shift_;
     switch(op_){
       case COS:
         return amplitude_ * cos(parameter_ * x0);
@@ -150,8 +150,7 @@ public:
 
   void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
     Kokkos::parallel_for(in.extent(1),KOKKOS_LAMBDA(const int& i){
-      Kokkos::View<double*> i_in = Kokkos::subview(in,Kokkos::ALL,i); 
-      out(i) = apply_gpu(i_in);
+      out(i) = apply_gpu(in,i);
     });
   }
 

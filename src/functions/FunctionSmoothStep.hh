@@ -47,15 +47,15 @@ class FunctionSmoothStep : public Function {
   FunctionSmoothStep* Clone() const { return new FunctionSmoothStep(*this); }
   double operator()(const Kokkos::View<double*>&) const; 
   
-  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double*>& x) const
+  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double**>& x, const int i) const
   { 
     double y;
-    if (x[0] <= x0_) {
+    if (x(0,i) <= x0_) {
       y = y0_;
-    } else if (x[0] >= x1_) {
+    } else if (x(0,i) >= x1_) {
       y = y1_;
     } else {
-      double s = (x[0] - x0_)/(x1_ - x0_);
+      double s = (x(0,i) - x0_)/(x1_ - x0_);
       y = y0_ + (y1_ - y0_)*s*s*(3 - 2*s);
     }
     return y;
@@ -63,8 +63,7 @@ class FunctionSmoothStep : public Function {
 
   void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
     Kokkos::parallel_for(in.extent(1),KOKKOS_LAMBDA(const int& i){
-      Kokkos::View<double*> i_in = Kokkos::subview(in,Kokkos::ALL,i); 
-      out(i) = apply_gpu(i_in);
+      out(i) = apply_gpu(in,i);
     });
   }
 

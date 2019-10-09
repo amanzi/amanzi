@@ -59,21 +59,19 @@ class FunctionMonomial : public Function {
   FunctionMonomial* Clone() const { return new FunctionMonomial(*this); }
   double operator()(const Kokkos::View<double*>&) const; 
 
-  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double*>& x) const
+  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double**>& x, const int i) const
   {
     double y = c_;
     if (x.extent(0) < x0_.extent(0)) {
       assert(false && "FunctionMonomial expects higher-dimensional argument.");
     }    
-    for (int j = 0; j < x0_.extent(0); ++j) y *= pow(x[j] - x0_[j], p_[j]);
+    for (int j = 0; j < x0_.extent(0); ++j) y *= pow(x(j,i) - x0_[j], p_[j]);
     return y;
   }
 
   void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
-
     Kokkos::parallel_for(in.extent(1),KOKKOS_LAMBDA(const int& i){
-      Kokkos::View<double*> i_in = Kokkos::subview(in,Kokkos::ALL,i); 
-      out(i) = apply_gpu(i_in); 
+      out(i) = apply_gpu(in,i); 
     });
   }
 

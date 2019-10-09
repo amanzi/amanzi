@@ -12,6 +12,7 @@
 #include "MeshFactory.hh"
 #include "MultiFunction.hh"
 #include "FunctionConstant.hh"
+#include "FunctionLinear.hh"
 #include "CompositeVectorFunction.hh"
 #include "errors.hh"
 #include "CompositeVectorSpace.hh"
@@ -87,10 +88,13 @@ struct another_reference_mesh
 TEST_FIXTURE(another_reference_mesh, cv_function)
 {
   // make the mesh function
-  Teuchos::RCP<const Function> constant_func = Teuchos::rcp(new FunctionConstant(1.0));
-  std::vector<Teuchos::RCP<const Function> > constant_funcs(1,constant_func);
+  Kokkos::View<double*> grad("grad",4);
+  grad(0) = 0.0; grad(1) = 0.0; grad(2) = 0.0; grad(3) = 0.0; 
+
+  Teuchos::RCP<const Function> linear_func = Teuchos::rcp(new FunctionLinear(1.0,grad));
+  std::vector<Teuchos::RCP<const Function> > linear_funcs(1,linear_func);
   Teuchos::RCP<MultiFunction> vector_func =
-    Teuchos::rcp(new MultiFunction(constant_funcs));
+    Teuchos::rcp(new MultiFunction(linear_funcs));
 
   std::vector<std::string> regions(1, "DOMAIN");
   Teuchos::RCP<MeshFunction::Domain> domainC =
@@ -141,5 +145,4 @@ TEST_FIXTURE(another_reference_mesh, cv_function)
   for (int f=0; f!=nfaces; ++f) {
     CHECK_CLOSE(1.0, cv->ViewComponent<AmanziDefaultHost>("face")(f,0), 0.0000001);
   }
-
 }

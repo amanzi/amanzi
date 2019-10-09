@@ -116,10 +116,10 @@ class FunctionTabular : public Function {
 
   double operator()(const Kokkos::View<double*>&) const; 
 
-  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double*>& x) const
+  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double**>& x, const int i) const
   {
     double y;
-    double xv = x[xi_];
+    double xv = x(xi_,i);
     int n = x_.extent(0);
     if (xv <= x_[0]) {
       y = y_[0];
@@ -157,8 +157,7 @@ class FunctionTabular : public Function {
 
   void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
     Kokkos::parallel_for(in.extent(1),KOKKOS_LAMBDA(const int& i){
-      Kokkos::View<double*> i_in = Kokkos::subview(in,Kokkos::ALL,i); 
-      out(i) = apply_gpu(i_in);
+      out(i) = apply_gpu(in,i);
     });
   }
 

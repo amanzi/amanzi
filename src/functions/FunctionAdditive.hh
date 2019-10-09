@@ -63,7 +63,7 @@ class FunctionAdditive : public Function {
     Kokkos::View<double*> out_1("result",in.extent(1)); 
     Kokkos::View<double*> out_2("result",in.extent(1)); 
     f1_->apply(in,out_1);
-    f2_->apply(in,out_2);  
+    f2_->apply(in,out_2);
     // Sum result 
     Kokkos::parallel_for(in.extent(1),KOKKOS_LAMBDA(const int& i){
       out(i) = out_1(i) + out_2(i);

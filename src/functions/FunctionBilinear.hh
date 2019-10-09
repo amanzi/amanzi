@@ -62,14 +62,14 @@ class FunctionBilinear : public Function {
   FunctionBilinear* Clone() const { return new FunctionBilinear(*this); }
   double operator()(const Kokkos::View<double*>&) const; 
 
-  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double*>& x) const
+  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double**>& x, const int& i) const
   { 
     
     double v;
     int nx = x_.extent(0);
     int ny = y_.extent(0);
-    double xv = x[xi_];
-    double yv = x[yi_];
+    double xv = x(xi_,i);
+    double yv = x(yi_,i);
     // if xv and yv are out of bounds 
     if (xv <= x_[0] && yv <= y_[0]) {
       v = v_(0,0);
@@ -127,8 +127,7 @@ class FunctionBilinear : public Function {
   void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
     assert(in.extent(1) == out.extent(0)); 
     Kokkos::parallel_for(in.extent(1),KOKKOS_LAMBDA(const int& i){
-      Kokkos::View<double*> i_in = Kokkos::subview(in,Kokkos::ALL,i); 
-      out(i) = apply_gpu(i_in); 
+      out(i) = apply_gpu(in,i); 
     });
   }
 

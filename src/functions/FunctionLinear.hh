@@ -60,20 +60,19 @@ class FunctionLinear : public Function {
   FunctionLinear* Clone() const { return new FunctionLinear(*this); }
   double operator()(const Kokkos::View<double*>&) const; 
 
-  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double*>& x) const
+  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double**>& x, const int i) const
   {
     double y = y0_;
     if (x.extent(0) < grad_.extent(0)) {
       assert(false && "FunctionLinear expects higher-dimensional argument."); 
     }    
-    for (int j = 0; j < grad_.extent(0); ++j) y += grad_[j]*(x[j] - x0_[j]);
+    for (int j = 0; j < grad_.extent(0); ++j) y += grad_[j]*(x(j,i) - x0_[j]);
     return y;
   }
 
   void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
     Kokkos::parallel_for(in.extent(1),KOKKOS_LAMBDA(const int& i){
-      Kokkos::View<double*> i_in = Kokkos::subview(in,Kokkos::ALL,i); 
-      out(i) = apply_gpu(i_in); 
+      out(i) = apply_gpu(in,i); 
     });
   }
 

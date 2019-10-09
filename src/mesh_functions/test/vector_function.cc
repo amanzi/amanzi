@@ -54,7 +54,7 @@ TEST_FIXTURE(test, values1)
     for(int i = 0 ; i < xyz.extent(1); ++i){
         for(int j = 0 ; j < xyz.extent(0); ++j){
             // Values between [0-10]
-         xyz(j,i) = (static_cast<double>(rand())/static_cast<double>(RAND_MAX))*10.; 
+            xyz(j,i) = (static_cast<double>(rand())/static_cast<double>(RAND_MAX))*10.; 
         }
     }
     // vector of functions  
@@ -149,8 +149,10 @@ TEST_FIXTURE(test, values1)
 
     nfunctions = functions.size(); 
 
+
     // Create the multifunction 
     MultiFunction mf = MultiFunction(functions);
+
     Kokkos::View<double**> result("result",nvalues,nfunctions); 
     Kokkos::View<double**> result_gpu("result",nvalues,nfunctions); 
 
