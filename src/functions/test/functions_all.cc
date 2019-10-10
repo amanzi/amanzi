@@ -9,7 +9,6 @@
 #include "FunctionPolynomial.hh"
 #include "FunctionLinear.hh"
 #include "FunctionSeparable.hh"
-#include "FunctionPointer.hh"
 #include "FunctionStaticHead.hh"
 #include "FunctionBilinear.hh"
 #include "errors.hh"
@@ -502,20 +501,3 @@ double f_using_params (const Kokkos::View<double*>& x, const Kokkos::View<double
   return p[1]*x[1] - p[0]*x[0];
 }
 
-TEST(pointer_test)
-{
-  Function *f = new FunctionPointer(&f_using_no_params);
-  Kokkos::View<double*> x("x",2); 
-  x(0) = 2.; x(1) = 1.;
-  CHECK_EQUAL(f_using_no_params(x,x), (*f)(x));
-  delete f;
-  Kokkos::View<double*> p("p",2);
-  p(0) = -1.0; p(1) = 2.0; 
-  Kokkos::View<double*> pvec = Kokkos::subview(p,Kokkos::make_pair(0,2)); 
-  f = new FunctionPointer(&f_using_params, pvec);
-  CHECK_EQUAL(f_using_params(x,p), (*f)(x));
-  Function *g = f->Clone();
-  delete f;
-  CHECK_EQUAL(f_using_params(x,p), (*g)(x));
-  delete g;
-}

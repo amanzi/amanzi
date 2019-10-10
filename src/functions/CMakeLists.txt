@@ -39,12 +39,50 @@ add_definitions("-DUSE_MPI")
 #
 # Library: functions
 #
-file(GLOB src_files "*.cc")
-file(GLOB inc_files "*.hh")
+set(funcs_inc_files Function.hh
+  FunctionComposition.hh
+  FunctionMultiplicative.hh
+  FunctionSmoothStep.hh
+  FunctionStaticHead.hh
+  FunctionAdditive.hh
+  FunctionConstant.hh
+  FunctionLinear.hh
+  FunctionPolynomial.hh
+  FunctionSquareDistance.hh
+  FunctionTabular.hh
+  FunctionBilinear.hh
+  FunctionDistance.hh
+  FunctionMonomial.hh
+  FunctionSeparable.hh
+  FunctionStandardMath.hh
+  FunctionFactory.hh
+  MultiFunction.hh
+  )
+
+set(funcs_src_files FunctionBilinear.cc
+  FunctionMonomial.cc
+  FunctionSmoothStep.cc
+  FunctionStandardMath.cc
+  FunctionDistance.cc
+  FunctionLinear.cc
+  FunctionPolynomial.cc
+  FunctionSquareDistance.cc
+  FunctionTabular.cc
+  FunctionFactory.cc
+  MultiFunction.cc
+  )
+
+set(funcs_link_libs error_handling
+  ${HDF5_LIBRARIES}
+  ${Teuchos_LIBRARIES}
+  ${Tpetra_LIBRARIES}
+  )
+
 add_amanzi_library(functions 
-                   SOURCE ${src_files}
-                   HEADERS ${inc_files}
-                   LINK_LIBS error_handling ${HDF5_LIBRARIES} ${Teuchos_LIBRARIES} ${Tpetra_LIBRARIES})
+                   SOURCE ${funcs_src_files}
+                   HEADERS ${funcs_inc_files}
+                   LINK_LIBS ${funcs_link_libs}
+                   )
 
 # Define all tests at the of the file. BUILD_TESTS gates test building.
 if (BUILD_TESTS)
@@ -62,34 +100,19 @@ if (BUILD_TESTS)
       file(COPY ${DataFiles} DESTINATION ${FUNCS_BINARY_DIR}/test/)
   endif()
 
-  add_amanzi_test(function_all function_all
+  add_amanzi_test(functions_all functions_all
                   KIND unit
-                  SOURCE test/AllFunctionTest.cc
+                  SOURCE test/functions_all.cc
                   LINK_LIBS functions ${UnitTest_LIBRARIES})
 
-  add_amanzi_test(function_factory function_factory
+  add_amanzi_test(functions_factory functions_factory
                   KIND unit
-                  SOURCE test/FunctionFactoryTest.cc
+                  SOURCE test/functions_factory.cc
                   LINK_LIBS functions ${UnitTest_LIBRARIES})
  
-  # add_amanzi_test(function_concrete_color function_concrete_color
-  #                 KIND unit
-  #                 SOURCE test/AllColorFunctionTest.cc
-  #                 LINK_LIBS functions ${UnitTest_LIBRARIES})
-
-  # add_amanzi_test(function_color_factory function_color_factory
-  #                 KIND unit
-  #                 SOURCE test/ColorFunctionFactoryTest.cc
-  #                 LINK_LIBS 
-  #                        functions
-  #                        ${UnitTest_LIBRARIES}
-  #                        ${Teuchos_LIBRARIES}
-  #                        ${Tpetra_LIBRARIES})
-
-
-  add_amanzi_test(function_composite function_composite
+  add_amanzi_test(functions_multi functions_multi
                   KIND unit
-                  SOURCE test/CompositeFunctionTest.cc
+                  SOURCE test/functions_multi.cc
 		  LINK_LIBS functions ${UnitTest_LIBRARIES})
 
 endif()
