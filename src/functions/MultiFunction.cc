@@ -1,13 +1,20 @@
 /*
-  Functions
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
+  See $AMANZI_DIR/COPYRIGHT
 
   Author: Ethan Coon
+*/
 
+//! Function from R^d to R^n.
+
+/*!
+
+  A MultiFunction is simply an array of functions, which allow Functions to
+  be used for MultiVectors.
+  
   Factory for vector functions which are composed of multiple scalar functions.
   The expected plist is of the form:
 
@@ -30,6 +37,7 @@
 
   Where each of the "Function X" lists are valid input to the
   function-factory Create() method (see ./function-factory.hh).
+
 */
 
 #include "dbc.hh"

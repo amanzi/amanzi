@@ -50,12 +50,20 @@ TEST_FIXTURE(test, values1)
     constexpr size_t dims = 3;
     constexpr size_t nvalues = 20; 
     size_t nfunctions = 0; 
-    Kokkos::View<double**> xyz("xyz",dims,nvalues); 
-    for(int i = 0 ; i < xyz.extent(1); ++i){
-        for(int j = 0 ; j < xyz.extent(0); ++j){
-            // Values between [0-10]
-            xyz(j,i) = (static_cast<double>(rand())/static_cast<double>(RAND_MAX))*10.; 
-        }
+    Kokkos::View<double**> xyz_nolayout("xyz_nolayout",dims,nvalues); 
+    for(int i = 0 ; i < xyz_nolayout.extent(1); ++i){
+      for(int j = 0 ; j < xyz_nolayout.extent(0); ++j){
+        // Values between [0-10]
+        xyz_nolayout(j,i) = (static_cast<double>(rand())/static_cast<double>(RAND_MAX))*10.; 
+      }
+    }
+
+    Kokkos::View<double**, Kokkos::LayoutLeft> xyz_layout_left("xyz_layout_left",dims,nvalues); 
+    for(int i = 0 ; i < xyz_layout_left.extent(1); ++i){
+      for(int j = 0 ; j < xyz_layout_left.extent(0); ++j){
+        // Values between [0-10]
+        xyz_layout_left(j,i) = xyz_nolayout(j,i);
+      }
     }
     // vector of functions  
     std::vector<Teuchos::RCP<const Function>> functions; 
@@ -79,7 +87,7 @@ TEST_FIXTURE(test, values1)
     Kokkos::View<double*> x0("x_a",dims);
     Kokkos::View<double*> metric("metric",dims);  
     metric(0) = 1; metric(1) = 1; metric(2) = 1; 
-    x0(0) = xyz(0,0); x0(1) = xyz(1,0); x0(2) = xyz(2,0); 
+    x0(0) = xyz_nolayout(0,0); x0(1) = xyz_nolayout(1,0); x0(2) = xyz_nolayout(2,0); 
     functions.push_back(Teuchos::rcp(new FunctionDistance(x0,metric))); 
 
     // Function Linear ---------------------------------------------
@@ -89,7 +97,7 @@ TEST_FIXTURE(test, values1)
 
     // Function Monomial -------------------------------------------
     Kokkos::View<int*> p("p",dims);
-    p(0) = 1; p(1) = 2; p(2) = 3; 
+    p(0) = 1; p(1) = 2; p(2) = 3;
     functions.push_back(Teuchos::rcp(new FunctionMonomial(1.25,x0,p))); 
 
     // Function Polynomial------------------------------------------
@@ -132,7 +140,7 @@ TEST_FIXTURE(test, values1)
     Kokkos::View<double*> x0_l("x0_l",dims-1);
     Kokkos::View<int*> p_l("p_l",dims-1);
     p_l(0) = 1; p_l(1) = 2;
-    x0_l(0) = xyz(0,0); x0_l(1) = xyz(1,0); 
+    x0_l(0) = xyz_nolayout(0,0); x0_l(1) = xyz_nolayout(1,0); 
     std::unique_ptr<Function> f8(new FunctionMonomial(1.,x0_l,p_l));
     functions.push_back(Teuchos::rcp(new FunctionSeparable(
         std::move(f7),std::move(f8)))); 
@@ -140,7 +148,7 @@ TEST_FIXTURE(test, values1)
     // Function StaticHead -----------------------------------------
     std::unique_ptr<Function> f9(new FunctionMonomial(1.,x0,p));
     functions.push_back(Teuchos::rcp(new FunctionStaticHead(1.0,1.0,1.0,
-        std::move(f9),3))); 
+        std::move(f9),2))); 
 
     // Function Tabular --------------------------------------------
     Kokkos::View<double*> x0_i("x0_i",dims);
@@ -154,26 +162,26 @@ TEST_FIXTURE(test, values1)
     MultiFunction mf = MultiFunction(functions);
 
     Kokkos::View<double**> result("result",nvalues,nfunctions); 
-    Kokkos::View<double**> result_gpu("result",nvalues,nfunctions); 
+    Kokkos::View<double**,Kokkos::LayoutLeft> result_gpu("result",nvalues,nfunctions); 
 
+    mf.apply(xyz_nolayout,result_gpu);
+    
     for(int i = 0 ; i < nvalues ; ++i){
-        Kokkos::View<double*> t = Kokkos::subview(xyz,Kokkos::ALL,i); 
+        Kokkos::View<double*> t = Kokkos::subview(xyz_layout_left,Kokkos::ALL,i); 
         Kokkos::View<double*> tmp_res = mf(t); 
         for(int j = 0 ; j < tmp_res.extent(0); ++j){
             result(i,j) = tmp_res(j); 
         }
     }
 
-    mf.apply(xyz,result_gpu);
-    
-    for(int i = 0 ; i < nvalues; ++i){
-        for(int j = 0 ; j < nfunctions ; ++j){
-            if(fabs(result_gpu(i,j)-result(i,j)) >= 1.0e-10){
-                std::cerr<<"Function: "<<j<<" ";
-                std::cerr<<result(i,j)<<" == ";
-                std::cerr<<result_gpu(i,j)<<" ; ";
-            }
-            assert(fabs(result_gpu(i,j)-result(i,j)) < 1.0e-10); 
+    for(int j = 0 ; j < nfunctions ; ++j){
+      for(int i = 0 ; i < nvalues; ++i){
+        if(fabs(result_gpu(i,j)-result(i,j)) >= 1.0e-10){
+          std::cerr<<"Function: "<<j<<" ";
+          std::cerr<<result(i,j)<<" == ";
+          std::cerr<<result_gpu(i,j)<<" ; ";
         }
+        CHECK_CLOSE(result(i,j), result_gpu(i,j), 1.0e-10); 
+      }
     }
 }

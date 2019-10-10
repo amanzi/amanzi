@@ -72,7 +72,6 @@ void CompositeVectorFunction::Compute(double time,
     // loop over all regions in the spec
     for (MeshFunction::RegionList::const_iterator region=spec->first->first.begin();
          region!=spec->first->first.end(); ++region) {
-
      
       // special case for BOUNDARY_FACE
       if (kind == AmanziMesh::BOUNDARY_FACE) {
@@ -137,7 +136,7 @@ void CompositeVectorFunction::Compute(double time,
             for (int i=0; i < dim; ++i) txyz(i+1,id) = xc[i];
           } // for 
 
-          Kokkos::View<double**> result("result",id_list.extent(0),(*spec->second).size());
+          Kokkos::View<double**, Kokkos::LayoutLeft> result("result",id_list.extent(0),(*spec->second).size());
           spec->second->apply(txyz,result);
 
           assert(id_list.extent(0) == result.extent(0));
