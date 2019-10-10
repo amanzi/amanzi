@@ -26,6 +26,8 @@
 
 #include "errors.hh"
 
+#include <Kokkos_Core.hpp>
+
 namespace Amanzi {
 
 struct HDF5Reader {
@@ -46,9 +48,8 @@ struct HDF5Reader {
     H5Fclose(file_);
   }
 
-  template<class Array>
   void
-  ReadData(std::string varname, Array& arr) {
+  ReadData(std::string varname, Teuchos::Array<double>& arr) {
     hid_t dataset = H5Dopen(file_, varname.c_str(), H5P_DEFAULT);
     hid_t dataspace = H5Dget_space(dataset);
     hssize_t size = H5Sget_simple_extent_npoints(dataspace);
@@ -57,10 +58,28 @@ struct HDF5Reader {
     herr_t status = H5Dread(dataset, H5T_NATIVE_DOUBLE,  H5S_ALL, H5S_ALL,
                             H5P_DEFAULT, arr.data());
   }
-
-  template<class Mat>
   void
-  ReadMatData(std::string varname, Mat& mat) {
+  ReadData(std::string varname, std::vector<double>& arr) {
+    hid_t dataset = H5Dopen(file_, varname.c_str(), H5P_DEFAULT);
+    hid_t dataspace = H5Dget_space(dataset);
+    hssize_t size = H5Sget_simple_extent_npoints(dataspace);
+
+    arr.resize(size);    
+    herr_t status = H5Dread(dataset, H5T_NATIVE_DOUBLE,  H5S_ALL, H5S_ALL,
+                            H5P_DEFAULT, arr.data());
+  }
+  void
+  ReadData(std::string varname, Kokkos::View<double*>& vec) {
+    hid_t dataset = H5Dopen(file_, varname.c_str(), H5P_DEFAULT);
+    hid_t dataspace = H5Dget_space(dataset);
+    hssize_t size = H5Sget_simple_extent_npoints(dataspace);
+    Kokkos::resize(vec,size); 
+    herr_t status = H5Dread(dataset, H5T_NATIVE_DOUBLE,  H5S_ALL, H5S_ALL,
+                            H5P_DEFAULT, vec.data());
+  }
+
+  void
+  ReadMatData(std::string varname, Teuchos::SerialDenseMatrix<std::size_t, double>& mat) {
     hid_t dataset = H5Dopen(file_, varname.c_str(), H5P_DEFAULT );
     hid_t dataspace = H5Dget_space(dataset);
     hsize_t dims[2];
@@ -69,11 +88,21 @@ struct HDF5Reader {
       Errors::Message message("HDF5Reader: dataset dimension is not 2.");
       Exceptions::amanzi_throw(message);
     }
-
-    // Mat is column-major/LayoutLeft, so we transpose.
     mat.shape(dims[1],dims[0]);
     herr_t status = H5Dread(dataset, H5T_NATIVE_DOUBLE,  H5S_ALL, H5S_ALL,
                             H5P_DEFAULT, mat.values());
+  }
+  void
+  ReadMatData(std::string varname, Kokkos::View<double**> &mat) {
+    Teuchos::SerialDenseMatrix<std::size_t, double> m;
+    ReadMatData(varname, m);
+
+    Kokkos::resize(mat, m.numCols(), m.numRows());
+    for(int i = 0 ; i < mat.extent(0) ; ++i){
+      for(int j = 0 ; j < mat.extent(1); ++j){
+        mat(i,j) = m[i][j]; 
+      }
+    }
   }
 
  protected:

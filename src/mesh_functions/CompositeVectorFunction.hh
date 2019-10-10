@@ -31,7 +31,7 @@ public:
                           const std::vector<std::string>& names);
   virtual ~CompositeVectorFunction() = default;
   
-  virtual void Compute(double time, const Teuchos::Ptr<CompositeVector>& vec);
+  virtual void Compute(double time, CompositeVector& vec);
 
 protected:
   typedef std::pair<std::string, Teuchos::RCP<MeshFunction::Spec> > CompositeVectorSpec;

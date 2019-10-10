@@ -29,6 +29,8 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
       parent_mesh_(parent_mesh)
 {
 
+  std::cout<<"Constructor"<<std::endl;
+
   // set dimensions
   if (flatten) {
     set_space_dimension(2);
@@ -71,6 +73,8 @@ MeshSurfaceCell::MeshSurfaceCell(const Teuchos::RCP<const Mesh>& parent_mesh,
 
   // set the geometric model and sets
   auto gm = parent_mesh->geometric_model();
+
+  init_cache(); 
 
   for (AmanziGeometry::GeometricModel::RegionConstIterator r=gm->RegionBegin();
        r!=gm->RegionEnd(); ++r) {

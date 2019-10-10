@@ -1,9 +1,20 @@
 /*
-  State
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+  See $AMANZI_DIR/COPYRIGHT
 
   Author: Ethan Coon
+*/
 
-  A field evaluator with no dependencies specified by a function.
+//! An evaluator with no dependencies specified by a function of t,x,y,z.
+
+/*!
+
+.. todo:
+    This needs a test and documentation! --etc
+
 */
 
 #include "EvaluatorIndependentFunction.hh"
@@ -55,10 +66,9 @@ operator=(const EvaluatorIndependentFunction &other) {
 void EvaluatorIndependentFunction::Update_(State &S) {
   if (!computed_once_) {
     // Create the function.
-    auto &cv = S.Get<CompositeVector>(my_key_, my_tag_);
+    CompositeVectorSpace& cvs = S.Require<CompositeVector,CompositeVectorSpace>(my_key_, my_tag_);
     AMANZI_ASSERT(plist_.isSublist("function"));
-    func_ = Functions::CreateCompositeVectorFunction(plist_.sublist("function"),
-                                                     cv.getMap());
+    func_ = Functions::CreateCompositeVectorFunction(plist_.sublist("function"), cvs);
   }
 
   // NOTE: EvaluatorIndependentFunctions own their own data.

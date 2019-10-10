@@ -1,4 +1,3 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
   Copyright 2010-201x held jointly, see COPYRIGHT.
   Amanzi is released under the three-clause BSD License.
@@ -42,6 +41,10 @@ public:
 
     // if true, the last dependency is "divided by"
     reciprocal_ = this->plist_.template get<bool>("reciprocal", false);
+    if (reciprocal_) {
+      Errors::Message msg("EvaluatorSecondaryMonotypeMultiplicative: reciprocalMultiply() not currently implemented.  FIXME");
+      throw(msg);
+    }
   }
     
 
@@ -59,7 +62,7 @@ protected:
     for (const auto& dep : this->dependencies_) {
       const auto& term = S.Get<Data_t>(dep.first, dep.second);
       if (reciprocal_ && this->dependencies_.size() - 1 == i) {
-        results[0]->ReciprocalMultiply(1., term, *results[0], 0.);
+        // results[0]->ReciprocalMultiply(1., term, *results[0], 0.);
       } else {
         results[0]->elementWiseMultiply(1., term, *results[0], 0.);
       }
@@ -76,7 +79,7 @@ protected:
         // not WRT
         const auto& term = S.Get<Data_t>(dep.first, dep.second);
         if (reciprocal_ && this->dependencies_.size() - 1 == i) {
-          results[0]->ReciprocalMultiply(1., term, *results[0], 0.);
+          // results[0]->ReciprocalMultiply(1., term, *results[0], 0.);
         } else {
           results[0]->elementWiseMultiply(1., term, *results[0], 0.);
         }
@@ -84,9 +87,9 @@ protected:
         // IS WRT
         if (reciprocal_ && this->dependencies_.size() - 1 == i) {
           //  - term ^ -2
-          const auto& term = S.Get<Data_t>(dep.first, dep.second);
-          results[0]->ReciprocalMultiply(-1., term, *results[0], 0.);
-          results[0]->ReciprocalMultiply(1., term, *results[0], 0.);
+          // const auto& term = S.Get<Data_t>(dep.first, dep.second);
+          // results[0]->ReciprocalMultiply(-1., term, *results[0], 0.);
+          // results[0]->ReciprocalMultiply(1., term, *results[0], 0.);
         }
       }
       ++i;

@@ -130,15 +130,19 @@ void EvaluatorIndependentFromFile::EnsureCompatibility(State &S) {
 // ---------------------------------------------------------------------------
 void EvaluatorIndependentFromFile::Update_(State &S) {
   CompositeVector &cv = S.GetW<CompositeVector>(my_key_, my_tag_, my_key_);
+  AMANZI_ASSERT(2 == cv.getLocalLength());
 
   if (!computed_once_) {
-    val_after_ = Teuchos::rcp(new CompositeVector(cv));
+    val_after_ = Teuchos::rcp(new CompositeVector(cv.getMap()));
+    AMANZI_ASSERT(2 == val_after_->getLocalLength());
     LoadFile_(0);
+    computed_once_ = true;
   }
 
   double t = S.time();
   if (time_func_ != Teuchos::null) {
-    std::vector<double> point(1, t);
+    Kokkos::View<double*> point("time", 1);
+    point(0) = t;
     t = (*time_func_)(point);
   }
 
@@ -161,17 +165,17 @@ void EvaluatorIndependentFromFile::Update_(State &S) {
   } else if (t == t_before_) {
     // at the start of the interval
     AMANZI_ASSERT(val_before_ != Teuchos::null);
-    cv = *val_before_;
+    cv.assign(*val_before_);
 
   } else if (t < t_after_) {
     if (t_before_ == -1) {
       // to the left of the first point
       AMANZI_ASSERT(val_after_ != Teuchos::null);
-      cv = *val_after_;
+      cv.assign(*val_after_);
     } else if (val_after_ == Teuchos::null) {
       // to the right of the last point
       AMANZI_ASSERT(val_before_ != Teuchos::null);
-      cv = *val_before_;
+      cv.assign(*val_before_);
     } else {
       // in the interval, interpolate
       Interpolate_(t, cv);
@@ -179,7 +183,7 @@ void EvaluatorIndependentFromFile::Update_(State &S) {
   } else if (t == t_after_) {
     // at the end of the interval
     AMANZI_ASSERT(val_after_ != Teuchos::null);
-    cv = *val_after_;
+    cv.assign(*val_after_);
 
   } else {
     // to the right of the interval -- advance the interval
@@ -193,7 +197,7 @@ void EvaluatorIndependentFromFile::Update_(State &S) {
         val_after_ = Teuchos::null;
 
         // copy the value
-        cv = *val_before_;
+        cv.assign(*val_before_);
 
       } else {
         t_after_ = times_[current_interval_ + 1];
@@ -206,7 +210,7 @@ void EvaluatorIndependentFromFile::Update_(State &S) {
 
         // now we are in the interval, interpolate
         if (t == t_after_) {
-          cv = *val_after_;
+          cv.assign(*val_after_);
         } else if (t < t_after_) {
           Interpolate_(t, cv);
         }
@@ -223,7 +227,7 @@ void EvaluatorIndependentFromFile::LoadFile_(int i) {
   // allocate data
   if (val_after_ == Teuchos::null) {
     AMANZI_ASSERT(val_before_ != Teuchos::null);
-    val_after_ = Teuchos::rcp(new CompositeVector(*val_before_));
+    val_after_ = Teuchos::rcp(new CompositeVector(val_before_->getMap()));
   }
 
   // open the file
@@ -231,12 +235,14 @@ void EvaluatorIndependentFromFile::LoadFile_(int i) {
 
   // load the data
   MultiVector_type& vec = *val_after_->GetComponent(compname_, false);
+
+  std::vector<std::string> fieldnames;  
   for (int j = 0; j != ndofs_; ++j) {
     std::stringstream varname;
-    varname << varname_ << "." << locname_ << "." << j << "//" << i;
-    Vector_type& subvec = *vec.getVectorNonConst(j);
-    file_input.ReadVector(varname.str(), subvec);
+    varname << "/" << varname_ << "." << locname_ << "." << j << "/" << i;
+    fieldnames.push_back(varname.str());
   }
+  file_input.ReadMultiVector<MultiVector_type::scalar_type>(fieldnames, vec);
 }
 
 void EvaluatorIndependentFromFile::Interpolate_(double time,
@@ -250,7 +256,7 @@ void EvaluatorIndependentFromFile::Interpolate_(double time,
   AMANZI_ASSERT(val_after_ != Teuchos::null);
 
   double coef = (time - t_before_) / (t_after_ - t_before_);
-  v = *val_before_;
+  v.assign(*val_before_);
   v.update(coef, *val_after_, 1 - coef);
 }
 

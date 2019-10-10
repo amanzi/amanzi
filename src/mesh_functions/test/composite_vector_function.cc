@@ -7,12 +7,15 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "AmanziComm.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "MultiFunction.hh"
 #include "FunctionConstant.hh"
+#include "FunctionLinear.hh"
 #include "CompositeVectorFunction.hh"
 #include "errors.hh"
+#include "CompositeVectorSpace.hh"
 
 #include "VerboseObject_objs.hh"
 
@@ -24,7 +27,10 @@ using namespace Amanzi::Functions;
 int main (int argc, char *argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-  return UnitTest::RunAllTests ();
+  Kokkos::initialize(); 
+  auto status =  UnitTest::RunAllTests ();
+  Kokkos::finalize(); 
+  return status; 
 }
 
 struct another_reference_mesh
@@ -82,10 +88,13 @@ struct another_reference_mesh
 TEST_FIXTURE(another_reference_mesh, cv_function)
 {
   // make the mesh function
-  Teuchos::RCP<const Function> constant_func = Teuchos::rcp(new FunctionConstant(1.0));
-  std::vector<Teuchos::RCP<const Function> > constant_funcs(1,constant_func);
+  Kokkos::View<double*> grad("grad",4);
+  grad(0) = 0.0; grad(1) = 0.0; grad(2) = 0.0; grad(3) = 0.0; 
+
+  Teuchos::RCP<const Function> linear_func = Teuchos::rcp(new FunctionLinear(1.0,grad));
+  std::vector<Teuchos::RCP<const Function> > linear_funcs(1,linear_func);
   Teuchos::RCP<MultiFunction> vector_func =
-    Teuchos::rcp(new MultiFunction(constant_funcs));
+    Teuchos::rcp(new MultiFunction(linear_funcs));
 
   std::vector<std::string> regions(1, "DOMAIN");
   Teuchos::RCP<MeshFunction::Domain> domainC =
@@ -118,20 +127,21 @@ TEST_FIXTURE(another_reference_mesh, cv_function)
 
   Teuchos::RCP<CompositeVectorSpace> cv_sp = Teuchos::rcp(new CompositeVectorSpace());
   cv_sp->SetMesh(mesh)->SetGhosted(false)->SetComponents(names, locations, num_dofs);
-  Teuchos::RCP<CompositeVector> cv = Teuchos::rcp(new CompositeVector(*cv_sp));
+
+  Teuchos::RCP<CompositeVector> cv = cv_sp->Create();
   cv->putScalar(0.0);
 
   // apply the function to the vector
-  cvfunc.Compute(0.0, cv.ptr());
-
+  cvfunc.Compute(0.0, *cv);
+  
   // Check
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c=0; c!=ncells; ++c) {
-    CHECK_CLOSE(1.0, (*cv)("cell", 0, c), 0.0000001);
+    CHECK_CLOSE(1.0, cv->ViewComponent<AmanziDefaultHost>("cell")(c,0), 0.0000001);
   }
 
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f=0; f!=nfaces; ++f) {
-    CHECK_CLOSE(1.0, (*cv)("face", 0, f), 0.0000001);
+    CHECK_CLOSE(1.0, cv->ViewComponent<AmanziDefaultHost>("face")(f,0), 0.0000001);
   }
 }

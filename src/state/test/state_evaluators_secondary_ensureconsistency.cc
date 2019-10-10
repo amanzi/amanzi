@@ -36,7 +36,6 @@ public:
     return Teuchos::rcp(new AEvaluator(*this));
   };
 
- protected:
   virtual void Evaluate_(const State &S, const std::vector<CompositeVector*> &results) override {
     auto result_c = results[0]->ViewComponent(comp_);
     const auto fb_c = S.Get<CompositeVector>("fb").ViewComponent(comp_);

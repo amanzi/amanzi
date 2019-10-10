@@ -9,17 +9,21 @@ namespace Amanzi {
 
 class FunctionPointer : public Function {
  public:
-  FunctionPointer(double (*f)(const double*, const double*)) : f_(f), np_(0), p_(0) {}
-  FunctionPointer(double (*f)(const double*, const double*), const std::vector<double>&);
+  FunctionPointer(double (*f)(const Kokkos::View<double*>&, const Kokkos::View<double*>&)) : f_(f), np_(0) {}
+  FunctionPointer(double (*f)(const Kokkos::View<double*>&, const Kokkos::View<double*>&), const Kokkos::View<double*>&);
   FunctionPointer(const FunctionPointer&);
-  ~FunctionPointer();
+  ~FunctionPointer(){};
   FunctionPointer* Clone() const { return new FunctionPointer(*this); }
-  double operator()(const std::vector<double>& x) const { return (*f_)(&x[0], p_); }
+  double operator()(const Kokkos::View<double*>& x) const { return (*f_)(x, p_); }
+
+  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double*>& x) const {assert(false); return 0.0;}
   
+  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {}
+
  private:
-  double (*f_)(const double*, const double*);
+  double (*f_)(const Kokkos::View<double*>&, const Kokkos::View<double*>&);
   int np_;
-  double *p_;
+  Kokkos::View<double*> p_;
 };
 
 } // namespace Amanzi

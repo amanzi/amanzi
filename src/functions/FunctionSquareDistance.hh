@@ -42,13 +42,34 @@ namespace Amanzi {
 
 class FunctionSquareDistance : public Function {
  public:
-  FunctionSquareDistance(const std::vector<double>& x0, const std::vector<double>& metric);
+  FunctionSquareDistance(const Kokkos::View<double*>& x0, const Kokkos::View<double*>& metric);
   ~FunctionSquareDistance() {}
   FunctionSquareDistance* Clone() const { return new FunctionSquareDistance(*this); }
-  double operator()(const std::vector<double>& x) const;
+  double operator()(const Kokkos::View<double*>& x) const;
+
+  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double**>& x, const int i) const
+  {
+    double tmp(0.), y(0.0);
+    if (x.extent(0) < x0_.extent(0)) {
+      assert(false && "FunctionSquareDistance expects higher-dimensional argument."); 
+    }    
+    for (int j = 0; j < x0_.extent(0); ++j) {
+      tmp = x(j,i) - x0_[j];
+      y += metric_[j] * tmp * tmp;
+    }
+    return y;
+  }
+
+  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
+    Kokkos::parallel_for(in.extent(1),KOKKOS_LAMBDA(const int& i){
+      out(i) = apply_gpu(in,i);
+    });
+  }
+
+
 
  private:
-  std::vector<double> x0_, metric_;
+  Kokkos::View<double*> x0_, metric_;
 };
 
 } // namespace Amanzi

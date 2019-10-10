@@ -1,12 +1,16 @@
 /*
-  Tests the functionality of the base class evaluators, primary, secondary,
-  and independent.
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+  See $AMANZI_DIR/COPYRIGHT
 
-  Authors: Ethan Coon
+  Author: Ethan Coon
 */
 
-#include "Epetra_MpiComm.h"
-#include "Epetra_Vector.h"
+//! Tests the functionality of the base class evaluators, primary, secondary, and independent.
+
+
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_RCP.hpp"

@@ -101,22 +101,23 @@ SUITE(COMMON_MESH_OPERATIONS) {
     auto trans = CreateVec("face", Entity_kind::FACE, 1);
     {
       auto trans_view = trans->ViewComponent<AmanziDefaultDevice>("face",0,false);
+      Mesh* m = mesh.get(); 
 
       typedef Kokkos::RangePolicy<AmanziDefaultDevice, LO> Policy_type;
       Kokkos::parallel_for(trans_view.extent(0),
                            KOKKOS_LAMBDA(const LO& f) {
                              // face info
-                             const auto& fc = mesh->face_centroid(f);
-                             const auto& f_normal = mesh->face_normal(f);
-                             double area = mesh->face_area(f);
+                             const auto& fc = m->face_centroid(f);
+                             const auto& f_normal = m->face_normal(f);
+                             double area = m->face_area(f);
 
                              // neighbor cells
                              Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cellids;
-                             mesh->face_get_cells(f, Parallel_type::ALL, cellids);
+                             m->face_get_cells(f, Parallel_type::ALL, cellids);
 
                              // this could be a kokkos reduction...
                              for (int i=0; i!=cellids.extent(0); ++i) {
-                               const auto& cc = mesh->cell_centroid(cellids(i));
+                               const auto& cc = m->cell_centroid(cellids(i));
                                auto bisector = fc - cc;
                                double s = area / norm(bisector);
 

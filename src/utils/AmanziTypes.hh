@@ -55,7 +55,7 @@
 // #endif // KOKKOS_ENABLE_CUDA
 
 using AmanziDefaultDevice = Kokkos::Device<Kokkos::DefaultExecutionSpace, Kokkos::DefaultExecutionSpace::memory_space>;
-using AmanziDefaultHost = Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::DefaultHostExecutionSpace::memory_space>;
+using AmanziDefaultHost = Kokkos::Device<Kokkos::DefaultExecutionSpace, Kokkos::DefaultExecutionSpace::memory_space>;
 
 
 #else // TRILINOS_TPETRA_STACK

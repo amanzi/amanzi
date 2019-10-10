@@ -35,7 +35,13 @@ class FunctionConstant : public Function {
  public:
   FunctionConstant(double c) : c_(c) {}
   FunctionConstant* Clone() const { return new FunctionConstant(*this); }
-  double operator()(const std::vector<double>& x) const { return c_; }
+  double operator()(const Kokkos::View<double*>& x) const { return c_; }
+
+  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
+    Kokkos::parallel_for(in.extent(1),KOKKOS_LAMBDA(const int& i){
+      out(i) = c_; 
+    });
+  }
   
  private:
   double c_;

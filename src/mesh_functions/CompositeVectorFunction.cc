@@ -35,23 +35,24 @@ CompositeVectorFunction::CompositeVectorFunction(
   }
 }
 
-void CompositeVectorFunction::Compute(double time,
-        const Teuchos::Ptr<CompositeVector>& cv) {
+void CompositeVectorFunction::Compute(double time, CompositeVector& cv) {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = func_->mesh();
 
-  cv->putScalar(0.);
+  cv.putScalar(0.);
 
 #ifdef ENSURE_INITIALIZED_CVFUNCS
   // ensure all components are touched
   std::map<std::string,bool> done;
-  for (auto compname : *cv) {
+  for (auto compname : cv) {
     done[compname] = false;
   }
 #endif
 
   // create the input tuple
   int dim = mesh->space_dimension();
-  std::vector<double> args(1+dim, 0.);
+  Kokkos::View<double*> args("args",1+dim); 
+  for(int i = 0 ; i < args.extent(0); ++i)
+    args(i) = 0; 
   args[0] = time;
 
   // loop over the name/spec pair
@@ -62,7 +63,7 @@ void CompositeVectorFunction::Compute(double time,
     done[compname] = true;
 #endif
 
-    auto compvec = cv->ViewComponent<AmanziDefaultHost>(compname,false);
+    auto compvec = cv.ViewComponent<AmanziDefaultHost>(compname,false);
     Teuchos::RCP<MeshFunction::Spec> spec = (*cv_spec)->second;
 
     AmanziMesh::Entity_kind kind = spec->first->second;
@@ -70,7 +71,6 @@ void CompositeVectorFunction::Compute(double time,
     // loop over all regions in the spec
     for (MeshFunction::RegionList::const_iterator region=spec->first->first.begin();
          region!=spec->first->first.end(); ++region) {
-
      
       // special case for BOUNDARY_FACE
       if (kind == AmanziMesh::BOUNDARY_FACE) {
@@ -85,18 +85,18 @@ void CompositeVectorFunction::Compute(double time,
           // loop over indices
           Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells;
           for (int id = 0 ; id < id_list.extent(0); ++id) {
+
             mesh->face_get_cells(id_list(id), AmanziMesh::Parallel_type::ALL, cells);
             if (cells.extent(0) == 1) {
               AmanziMesh::Entity_ID bf = vandelay_map.getLocalElement(face_map.getGlobalElement(id_list(id)));
               AMANZI_ASSERT(bf >= 0);
-
 
               // get the coordinate
               AmanziGeometry::Point xf = mesh->face_centroid(id_list(id));
               for (int i=0; i!=dim; ++i) args[i+1] = xf[i];
 
               // evaluate the functions and stuff the result into the CV
-              double *value = (*spec->second)(args);
+              Kokkos::View<double*> value = (*spec->second)(args);
               for (int i=0; i!=(*spec->second).size(); ++i) {
                 compvec(i,bf) = value[i];
               }
@@ -110,12 +110,15 @@ void CompositeVectorFunction::Compute(double time,
         }
 
       } else {
+
         if (mesh->valid_set_name(*region, kind)) {
           // get the indices of the domain.
           Kokkos::View<AmanziMesh::Entity_ID*> id_list;
           mesh->get_set_entities(*region, kind, AmanziMesh::Parallel_type::OWNED, id_list);
 
-          // loop over indices
+          // convert 
+          Kokkos::View<double**> txyz("txyz", dim+1,id_list.extent(0)); 
+          // Feed the array with data 
           for (int id = 0 ; id < id_list.extent(0); ++id) {
             // get the coordinate
             AmanziGeometry::Point xc;
@@ -128,14 +131,22 @@ void CompositeVectorFunction::Compute(double time,
             } else {
               AMANZI_ASSERT(0);
             }
-            for (int i=0; i!=dim; ++i) args[i+1] = xc[i];
+            txyz(0,id) = time; 
+            for (int i=0; i < dim; ++i) txyz(i+1,id) = xc[i];
+          } // for 
 
-            // evaluate the functions and stuff the result into the CV
-            double *value = (*spec->second)(args);
-            for (int i=0; i!=(*spec->second).size(); ++i) {
-              compvec(i,id_list(id)) = value[i];
+          Kokkos::View<double**, Kokkos::LayoutLeft> result("result",id_list.extent(0),(*spec->second).size());
+          spec->second->apply(txyz,result);
+
+          assert(id_list.extent(0) == result.extent(0));
+          assert((*spec->second).size() == result.extent(1));  
+
+          for (int id = 0 ; id < id_list.extent(0); ++id) {
+            for (int i=0; i < (*spec->second).size(); ++i) {
+              compvec(id_list(id),i) = result(id,i);
             }
           }
+
         } else {
           Errors::Message message;
           message << "CV: unknown region \"" << *region << "\"";

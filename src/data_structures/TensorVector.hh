@@ -1,18 +1,15 @@
-//! Helper factory for storing WhetStone Tensors in State
-
 /*
-  WhetStone, version X.Y
-  Release name: dev
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
+  See $AMANZI_DIR/COPYRIGHT
 
-  Author: Ethan Coon (ecoon@lanl.gov)
-
-  A simple wrapper for creating a vector of tensors.
+  Author: Ethan Coon
 */
+
+//! Helper data structure and factory for using WhetStone Tensors
+
 
 #ifndef AMANZI_TENSOR_VECTOR_HH_
 #define AMANZI_TENSOR_VECTOR_HH_

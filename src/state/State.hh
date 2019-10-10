@@ -1,4 +1,3 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
   Copyright 2010-201x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.

@@ -1,4 +1,3 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
   Copyright 2010-201x held jointly, see COPYRIGHT.
   Amanzi is released under the three-clause BSD License.
@@ -8,8 +7,7 @@
   Author: Ethan Coon
 */
 
-//! A secondary variable evaluator which evaluates functions on its
-//! dependenecies.
+//! A secondary variable evaluator which evaluates functions on its dependenecies.
 
 /*!
 Uses functions to evaluate arbitrary algebraic functions of its dependencies.
@@ -88,23 +86,36 @@ void EvaluatorSecondaryMonotypeFromFunction::Evaluate_(const State &S,
   }
 
   for (auto comp : *results[0]) {
-    std::vector<Teuchos::Ptr<const MultiVector_type>> dep_vecs;
-    for (const auto &dep : deps) {
-      dep_vecs.emplace_back(dep->ViewComponent(comp, false).ptr());
+    // Two possible implementations here -- either create the temporary data as
+    // a view, copy into that view, and then call apply.  Alternatively, could
+    // loop over entities, construct the local "point", then call the
+    // operator() instead of apply.  Unclear which is better -- we'll try the
+    // first.
+
+    // create temporary
+    // space to hold the dependencies
+    Kokkos::View<double**> in("tmp_in", deps.size(),
+            results[0]->GetComponent(comp,false)->getLocalLength());
+
+    std::size_t i=0;
+    for (const auto& dep : deps) {
+      if (dep->getNumVectors(comp) != 1) {
+        Errors::Message msg("EvaluatorSecondaryMonotypeFromFunction: Currently cannot handle true MultiVectors, so all dependencies must be MultiVectors with only 1 vector.");
+        throw(msg);
+      }
+      Kokkos::deep_copy(Kokkos::subview(in, i, Kokkos::ALL),
+                        dep->ViewComponent(comp, 0, false));
+      i++;
     }
 
-    std::vector<Teuchos::Ptr<MultiVector_type>> result_vecs;
-    for (auto &result : results) {
-      result_vecs.emplace_back(result->ViewComponent(comp, false).ptr());
-    }
-      
-    for (int i = 0; i != result_vecs[0]->getLocalLength(); ++i) {
-      std::vector<double> p(ndeps);
-      for (int j = 0; j != ndeps; ++j)
-        p[j] = (*dep_vecs[j])[0][i];
-
-      for (int k = 0; k != funcs_.size(); ++k)
-        (*result_vecs[k])[0][i] = (*funcs_[k])(p);
+    // loop over results and evaluate the function
+    for (std::size_t j=0; j!=results.size(); ++j) {
+      if (results[j]->getNumVectors(comp) != 1) {
+        Errors::Message msg("EvaluatorSecondaryMonotypeFromFunction: Currently cannot handle true MultiVectors, so all result MultiVectors must have only 1 vector.");
+        throw(msg);
+      }
+      Kokkos::View<double*> comp_view = results[j]->ViewComponent(comp, 0, false);
+      funcs_[j]->apply(in, comp_view);
     }
   }
 }

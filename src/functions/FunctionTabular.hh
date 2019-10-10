@@ -104,27 +104,72 @@ class FunctionTabular : public Function {
   enum Form { LINEAR, CONSTANT, FUNCTION };
  
  public:
-  FunctionTabular(const std::vector<double>& x, const std::vector<double>& y,
+  FunctionTabular(const Kokkos::View<double*>& x, const Kokkos::View<double*>& y,
                   const int xi);
-  FunctionTabular(const std::vector<double>& x, const std::vector<double>& y,
-                  const int xi, const std::vector<Form>& form);
-  FunctionTabular(const std::vector<double>& x, const std::vector<double>& y,
-                  const int xi, const std::vector<Form>& form,
+  FunctionTabular(const Kokkos::View<double*>& x, const Kokkos::View<double*>& y,
+                  const int xi, const Kokkos::View<Form*>& form);
+  FunctionTabular(const Kokkos::View<double*>& x, const Kokkos::View<double*>& y,
+                  const int xi, const Kokkos::View<Form*>& form,
                   const std::vector<Function*>& func);
   ~FunctionTabular() {};
-
   FunctionTabular* Clone() const { return new FunctionTabular(*this); }
-  double operator()(const std::vector<double>& x) const;
+
+  double operator()(const Kokkos::View<double*>&) const; 
+
+  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double**>& x, const int i) const
+  {
+    double y;
+    double xv = x(xi_,i);
+    int n = x_.extent(0);
+    if (xv <= x_[0]) {
+      y = y_[0];
+    } else if (xv > x_[n-1]) {
+      y = y_[n-1];
+    } else {
+      // binary search to find interval containing xv
+      int j1 = 0, j2 = n-1;
+      while (j2 - j1 > 1) {
+        int j = (j1 + j2) / 2;
+        // if (xv >= x_[j]) { // right continuous
+        if (xv > x_[j]) { // left continuous
+          j1 = j;
+        } else {
+          j2 = j;
+        }
+      }
+      // Now have x_[j1] <= xv < x_[j2], if right continuous
+      // or x_[j1] < xv <= x_[j2], if left continuous
+      switch (form_[j1]) {
+      case LINEAR:
+        // Linear interpolation between x[j1] and x[j2]
+        y = y_[j1] + ((y_[j2]-y_[j1])/(x_[j2]-x_[j1])) * (xv - x_[j1]);
+        break;
+      case CONSTANT:
+        y = y_[j1];
+        break;
+      case FUNCTION:
+        assert(false && "Not implemented for FUNCTION");
+      //  y = (*func_[j1])(x);
+      }
+    }
+    return y;
+  }
+
+  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
+    Kokkos::parallel_for(in.extent(1),KOKKOS_LAMBDA(const int& i){
+      out(i) = apply_gpu(in,i);
+    });
+  }
 
  private:
-  std::vector<double> x_, y_;
-  std::vector<Form> form_;
+  Kokkos::View<double*> x_, y_;
+  Kokkos::View<Form*> form_;
   std::vector<Function* > func_;
   int xi_;
   
  private: // helper functions
-  void check_args(const std::vector<double>&, const std::vector<double>&,
-     const std::vector<Form>&) const;
+  void check_args(const Kokkos::View<double*>&, const Kokkos::View<double*>&,
+     const Kokkos::View<Form*>&) const;
 };
 
 } // namespace Amanzi
