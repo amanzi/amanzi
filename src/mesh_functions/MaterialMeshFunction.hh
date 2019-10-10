@@ -1,20 +1,15 @@
 /*
-  Mesh Functions
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov
-
-  This is a generalization of a mesh function: the function domain 
-  does not match a mesh and volume fraction are introduced. 
-
-  Known issues: if function domain is defined by a set of overlapping
-  regions, the volume fractions are summed up which is correct only
-  for special configurations.
+  Authors:
+      Konstantin Lipnikov  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_MATERIAL_MESH_FUNCTION_HH_
 #define AMANZI_MATERIAL_MESH_FUNCTION_HH_
@@ -51,3 +46,4 @@ class MaterialMeshFunction : public MeshFunction {
 }  // namespace Amanzi
 
 #endif
+

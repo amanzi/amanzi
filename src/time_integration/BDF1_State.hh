@@ -1,17 +1,16 @@
 /*
-  Time Integration
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Markus Berndt
-           Ethan Coon (ecoon@lanl.gov)
-
-  This class is based on Neil Carlson's BDF2_DAE module
-  that is part of LANL's Truchas code.
+  Authors:
+      Markus Berndt
+      Ethan Coon (ecoon@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_BDF1STATE_HH_
 #define AMANZI_BDF1STATE_HH_
@@ -103,4 +102,5 @@ void BDF1_State<Vector>::InitializeFromPlist(Teuchos::ParameterList& plist,
 }  // namespace Amanzi
 
 #endif
+
 

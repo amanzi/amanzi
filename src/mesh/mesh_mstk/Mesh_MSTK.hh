@@ -1,14 +1,15 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-201x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Rao Garimella, others
+  Authors:
+      Rao Garimella, others  
 */
 
-//! Implementation of the Mesh interface leveraging MSTK.
 
+//! Implementation of the Mesh interface leveraging MSTK.
 
 #ifndef AMANZI_MESH_MSTK_HH_
 #define AMANZI_MESH_MSTK_HH_
@@ -669,3 +670,4 @@ Parallel_type Mesh_MSTK::entity_get_ptype(const Entity_kind kind, const Entity_I
 } // namespace Amanzi
 
 #endif
+

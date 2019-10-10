@@ -1,13 +1,15 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-201x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Rao Garimella, others
+  Authors:
+      Rao Garimella, others  
 */
 
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 //
 // This is a mesh with a vertical column of prismatic cells (the
@@ -508,3 +510,4 @@ class MeshColumn : public Mesh {
 } // namespace Amanzi
 
 #endif
+

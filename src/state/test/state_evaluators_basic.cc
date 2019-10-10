@@ -3,13 +3,13 @@
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
-  See $AMANZI_DIR/COPYRIGHT
 
-  Author: Ethan Coon
+  Authors:
+      Ethan Coon  
 */
 
-//! Tests the functionality of the base class evaluators, primary, secondary, and independent.
 
+//! Tests the functionality of the base class evaluators, primary, secondary, and independent.
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
@@ -342,3 +342,4 @@ SUITE(EVALUATORS) {
     CHECK(!S.GetEvaluator("fa").Update(S, "my_request"));
   }
 }
+

@@ -1,14 +1,16 @@
 /*
-  Geometry
-
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-201x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Rao Garimella
-           Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors:
+      Rao Garimella
+      Konstantin Lipnikov (lipnikov@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_GEOMETRY_POINT_HH_
 #define AMANZI_GEOMETRY_POINT_HH_
@@ -202,3 +204,4 @@ KOKKOS_INLINE_FUNCTION bool operator!=(const Point& p, const Point& q) {
 }  // namespace Amanzi
 
 #endif
+

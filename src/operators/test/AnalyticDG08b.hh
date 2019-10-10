@@ -1,25 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Analytic solution is the step function consisting of three
-  geometric shapes: cone centered at x0 of radius r0, hump 
-  centered at x1 of radius r1, and notched cylinder centered 
-  at x2 of radius r2. The width of the notch is w = r / 4.
-
-  Solution: u = step function(x0, x1, x2, r, w)
-  Diffusion: K = 1
-  Accumulation: a = 1
-  Reaction: r = 0
-  Velocity: v = (R(2 \pi t) - I) [x, y]
-  Source: f = 0
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_DG_08B_BASE_HH_
 #define AMANZI_OPERATOR_ANALYTIC_DG_08B_BASE_HH_
@@ -176,4 +166,5 @@ class AnalyticDG08b : public AnalyticDGBase {
 };
 
 #endif
+
 

@@ -1,14 +1,16 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Daniil Svyatskiy (dasvyat@lanl.gov)
-           Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors:
+      Daniil Svyatskiy (dasvyat@lanl.gov)
+      Konstantin Lipnikov (lipnikov@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_PDE_DIFFUSION_NLFV_WITH_BND_WITH_GRAVITY_HH_
 #define AMANZI_OPERATOR_PDE_DIFFUSION_NLFV_WITH_BND_WITH_GRAVITY_HH_
@@ -145,3 +147,4 @@ class PDE_DiffusionNLFVwithBndFacesGravity : public PDE_DiffusionNLFVwithBndFace
 }  // namespace Amanzi
 
 #endif
+

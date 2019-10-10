@@ -1,20 +1,15 @@
 /*
-  Solvers
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
-
-  This decorator class wraps a nonlinear SolverFnBase as a Matrix
-  class that approximates the linear problem at a point by doing a
-  standard finite difference (i.e. Knoll and Keyes '04) to approximate
-  the action of the Jacobian.  When used with, for instance, NKA, this
-  residual evaluation reduces to GMRES on the linear system, giving as
-  a solution the standard JFNK correction to the nonlinear problem.
+  Authors:
+      Ethan Coon (ecoon@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_JF_MATRIX_HH_
 #define AMANZI_JF_MATRIX_HH_
@@ -211,4 +206,5 @@ double MatrixJF<Vector,VectorSpace>::CalculateEpsilon_(const Vector& u, const Ve
 }  // namespace Amanzi
 
 #endif
+
 

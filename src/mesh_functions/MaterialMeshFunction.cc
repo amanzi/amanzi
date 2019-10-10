@@ -1,16 +1,15 @@
 /*
-  Mesh Functions
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-201x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov
-
-  Function applied to a mesh component defined on a material region
-  with at most one function application per entity.
+  Authors:
+      Konstantin Lipnikov  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #include "errors.hh"
 
@@ -90,3 +89,4 @@ void MaterialMeshFunction::AddSpec(const Teuchos::RCP<Spec>& spec)
 
 }  // namespace Functions
 }  // namespace Amanzi
+

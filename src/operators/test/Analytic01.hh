@@ -1,20 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Non-polynomial solution and a full non-constant tensor:
-  Solution: p = x^3y^2 + x sin(2 PI xy) sin(2 PI y) - gy * y
-  Diffusion: K = [(x+1)^2 + y^y   -xy  ]
-                 [     -xy      (x+1)^2]
-  Velocity: v = [0, 0]
-  Source: f = -div(K grad(p))
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_01_HH_
 #define AMANZI_OPERATOR_ANALYTIC_01_HH_
@@ -131,3 +126,4 @@ class Analytic01 : public AnalyticBase {
 };
 
 #endif
+

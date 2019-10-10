@@ -1,13 +1,15 @@
 /*
-  Time Integration 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Markus Berndt (berndt@lanl.gov)
+  Authors:
+      Markus Berndt (berndt@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_EXPLICIT_FNBASE_HH_
 #define AMANZI_EXPLICIT_FNBASE_HH_
@@ -34,3 +36,4 @@ class fnBase {
 
 
 #endif 
+

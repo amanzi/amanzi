@@ -1,16 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  A coupling operator discretizes the two-point flux between 
-  physics fields. At the moment, we tes the flux between two PKs.
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_PDE_COUPLING_FLUX_HH_
 #define AMANZI_OPERATOR_PDE_COUPLING_FLUX_HH_
@@ -79,4 +78,5 @@ class PDE_CouplingFlux : public PDE_HelperDiscretization {
 }  // namespace Amanzi
 
 #endif
+
 

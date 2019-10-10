@@ -3,10 +3,11 @@
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
-  See $AMANZI_DIR/COPYRIGHT
 
-  Author: Ethan Coon
+  Authors:
+      Ethan Coon  
 */
+
 
 //! State is the primary data manager for Amanzi-ATS
 
@@ -471,3 +472,4 @@ void DeformCheckpointMesh(State &S);
 } // namespace Amanzi
 
 #endif
+

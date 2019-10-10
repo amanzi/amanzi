@@ -3,10 +3,11 @@
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
-  See $AMANZI_DIR/COPYRIGHT
 
-  Author: Ethan Coon
+  Authors:
+      Ethan Coon  
 */
+
 
 //! Function from R^d to R^n.
 
@@ -110,4 +111,5 @@ Kokkos::View<double*> MultiFunction::operator()(const Kokkos::View<double*>& xt)
 
 
 } // namespace
+
 

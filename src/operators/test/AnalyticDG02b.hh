@@ -1,20 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Solution: u = t (1 + x^2 + y^2)
-  Diffusion: K = 0
-  Accumulation: a = 1
-  Reaction: r = 0
-  Velocity: v = [0.1 + x - x^2, y - y^2]
-  Source: exact
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_DG_02B_BASE_HH_
 #define AMANZI_OPERATOR_ANALYTIC_DG_02B_BASE_HH_
@@ -120,4 +115,5 @@ class AnalyticDG02b : public AnalyticDGBase {
 };
 
 #endif
+
 

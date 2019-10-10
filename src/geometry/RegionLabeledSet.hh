@@ -1,15 +1,16 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! RegionLabeledSet: A region defined by a set of mesh entities in a mesh file
-
 /*
-  Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Rao Garimella
-           Ethan Coon (ecoon@lanl.gov)
+  Authors:
+      Rao Garimella
+      Ethan Coon (ecoon@lanl.gov)  
 */
+
+
+//! RegionLabeledSet: A region defined by a set of mesh entities in a mesh file
 
 /*!
 The list *region: labeled set* defines a named set of mesh entities
@@ -105,3 +106,4 @@ protected:
 
 
 #endif
+

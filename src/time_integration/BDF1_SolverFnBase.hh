@@ -1,16 +1,15 @@
 /*
-  Time Integration
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
-
-  Interface that wraps a BDF_FnBase providing the interface for Solver_FnBase
-  as used by the BDF1 time integrator.
+  Authors:
+      Ethan Coon (ecoon@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_BDF1_SOLVER_FNBASE_
 #define AMANZI_BDF1_SOLVER_FNBASE_
@@ -142,4 +141,5 @@ void BDF1_SolverFnBase<Vector>::ChangedSolution() {
 
 } // namespace Amanzi
 #endif
+
 

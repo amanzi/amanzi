@@ -1,16 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Examples of usage this operator are in test/operators_elasticity.cc
-  and test/operators_stokes.cc
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_PDE_ELASTICITY_HH_
 #define AMANZI_OPERATOR_PDE_ELASTICITY_HH_
@@ -86,5 +85,6 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
 }  // namespace Amanzi
 
 #endif
+
 
 

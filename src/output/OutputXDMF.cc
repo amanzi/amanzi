@@ -1,12 +1,15 @@
-//! OutputXDMF: writes XDMF+H5 files for visualization in VisIt
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors:
+      Ethan Coon  
 */
+
+
+//! OutputXDMF: writes XDMF+H5 files for visualization in VisIt
 
 /*
   XDMF implementation of an Output object, can only work as a Vis object as it
@@ -350,3 +353,4 @@ OutputXDMF::Write(const Teuchos::ParameterList& attrs,
 
 
 } // namespace Amanzi
+

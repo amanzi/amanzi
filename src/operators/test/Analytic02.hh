@@ -1,21 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Linear solution for problem with constant tensorial coefficient
-  working in 2D and 3D
-  Solution: p = x + 2y - gy y
-  Diffusion: K = [1   0.1]
-                 [0.1   3]
-  Velocity: v = [0, 0]
-  Source: f = -div(K grad(p))
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_02_HH_
 #define AMANZI_OPERATOR_ANALYTIC_02_HH_
@@ -69,4 +63,5 @@ class Analytic02 : public AnalyticBase {
 };
 
 #endif
+
 

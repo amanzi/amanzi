@@ -1,22 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Analytic solution is distance function for the notched circle.
-
-  Solution: u = distance_func(x, y; r=0.2, w=0.1)
-  Diffusion: K = 1
-  Accumulation: a = 1
-  Reaction: r = 0
-  Velocity: v = [0.5 - y, x - 0.5]
-  Source: f = 0
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_DG_08_BASE_HH_
 #define AMANZI_OPERATOR_ANALYTIC_DG_08_BASE_HH_
@@ -176,4 +169,5 @@ double AnalyticDG08::DistanceNotchedCircle_(double x, double y)
 }
 
 #endif
+
 

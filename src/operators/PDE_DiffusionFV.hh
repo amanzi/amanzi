@@ -1,38 +1,16 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Daniil Svyatskiy (dasvyat@lanl.gov)
-           Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  DiffusionFV implements the Diffusion interface using
-  finite volumes, i.e. the two point flux approximation.
-
-
-  NOTE on the mesh requirements.
-  ------------------------------
-  It needs a limited set of the mesh interface, and therefore can be
-  defined on things less "mesh-like" and more topological.  To
-  facilitate that, the needed mesh interface is:
-
-    - space_dimension()
-    - num_entities(CELL,FACE,NODE)
-    - face_get_cells()
-    - cell_get_faces_and_dirs()
-    - cell_map()
-    - face_area()
-    - face_normal()
-    - face_centroid()
-    - cell_centroid()
-   
-    NOTE: actually, cell-to-cell distance, face-to-cell distance, not
-    necessarily centroid locations are necessary, but this is not in
-    the current mesh interface.
+  Authors:
+      Daniil Svyatskiy (dasvyat@lanl.gov)
+      Konstantin Lipnikov (lipnikov@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_PDE_DIFFUSION_FV_HH_
 #define AMANZI_OPERATOR_PDE_DIFFUSION_FV_HH_
@@ -147,3 +125,4 @@ class PDE_DiffusionFV : public virtual PDE_Diffusion {
 
 
 #endif
+

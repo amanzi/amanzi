@@ -1,16 +1,16 @@
 /*
-  This is the state component of the Amanzi code.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-201x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Markus Berndt
-           Ethan Coon (ecoon@lanl.gov)
-
-  Collection of Observations on an unstructured mesh.
+  Authors:
+      Markus Berndt
+      Ethan Coon (ecoon@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #include "UnstructuredObservations.hh"
 
@@ -95,3 +95,4 @@ void UnstructuredObservations::Flush() {
 }
 
 } // namespace Amanzi
+

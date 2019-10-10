@@ -1,13 +1,16 @@
-//! Checkpoint writes ALL data, but no meshes to files.
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
-          Markus Berndt
+  Authors:
+      Ethan Coon
+      Markus Berndt  
 */
+
+
+//! Checkpoint writes ALL data, but no meshes to files.
 
 /*
   Reads/writes to/from file using a generic Input/Output object.
@@ -61,3 +64,4 @@ Checkpoint::FinalizeFile(bool final) {
 }
 
 } // namespace Amanzi
+

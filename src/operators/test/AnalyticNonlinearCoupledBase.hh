@@ -1,18 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
-
-  Base class for testing coupled nonlinear diffusion problems:
-
-    - div( k00(u,v) K00 grad(u) ) - div( k01(u,v) K01 grad(v) ) = f0
-    - div( k10(u,v) K10 grad(u) ) - div( k11(u,v) K11 grad(v) ) = f1
+  Authors:
+      Ethan Coon (ecoon@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_NONLINEAR_BASE_HH_
 #define AMANZI_OPERATOR_ANALYTIC_NONLINEAR_BASE_HH_
@@ -169,4 +166,5 @@ class AnalyticNonlinearCoupledBase {
 };
 
 #endif
+
 

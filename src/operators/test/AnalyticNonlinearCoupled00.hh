@@ -1,27 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
-
-  Test for a nonlinear coupled diffusion problem.
-
-  - div( k00(u,v) grad(u) ) = f0
-  - div( k11(u,v) grad(v) ) = f1
-
-  u = a x^2 + y^2
-  v = sin^2( pi/4 * (x+y) )
-
-  k0 = exp(uv)
-  k1 = exp((u+v)/2)
-
-  Note that k0 and k1 are both positive, monotonically increasing functions of
-  both u and v.
+  Authors:
+      Ethan Coon (ecoon@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_NONLINEAR_00_HH_
 #define AMANZI_OPERATOR_ANALYTIC_NONLINEAR_00_HH_
@@ -117,3 +105,4 @@ class AnalyticNonlinearCoupled00 : public AnalyticNonlinearCoupledBase {
 };
 
 #endif
+

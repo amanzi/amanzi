@@ -1,20 +1,15 @@
 /*
-  Solvers
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
-
-  This decorator class wraps a nonlinear SolverFnBase with a class
-  that replaces ApplyPreconditioner() with a Jacobian-free
-  implementation of the inverse.
-
-  Note this is a pass-through to the SolverFnBase in all but
-  ApplyPreconditioner() and UpdatePreconditioner().
+  Authors:
+      Ethan Coon (ecoon@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_JF_SOLVER_FN_BASE_HH_
 #define AMANZI_JF_SOLVER_FN_BASE_HH_
@@ -128,3 +123,4 @@ void SolverFnBaseJF<Vector,VectorSpace>::UpdatePreconditioner(const Teuchos::RCP
 }  // namespace Amanzi
 
 #endif
+

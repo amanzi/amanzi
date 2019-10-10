@@ -1,23 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Base class for testing DG schemes for diffusion and advection
-  problems of the form:
-
-    a du/dt + v . grad(u) - div(K grad(u)) + r u = f.
-
-  Advection is activated via constructor. List of solutions:
-    AnalyticDG0n: polynomial solution of order n, where n=0,1,2,3.
-    AnalyticDG04: sin(3x) six(6y)
-    AnalyticDG06: level-set circle problem with divergence-free velocity
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_DG_BASE_HH_
 #define AMANZI_OPERATOR_ANALYTIC_DG_BASE_HH_
@@ -303,4 +295,5 @@ void AnalyticDGBase::GlobalOp(std::string op, double* val, int n)
 }
 
 #endif
+
 

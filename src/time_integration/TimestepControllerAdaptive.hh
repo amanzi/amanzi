@@ -1,15 +1,15 @@
 /*
-  Time Integration
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov
-
-  Adaptive timestep control based upon previous iteration count.
+  Authors:
+      Konstantin Lipnikov  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_ADAPTIVE_TIMESTEP_CONTROLLER_HH_
 #define AMANZI_ADAPTIVE_TIMESTEP_CONTROLLER_HH_
@@ -128,3 +128,4 @@ double TimestepControllerAdaptive<Vector>::get_timestep_base_(
 }  // namespace Amanzi
 
 #endif
+

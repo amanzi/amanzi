@@ -1,21 +1,16 @@
 /*
-  Solvers
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
-           Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Generalized minimum residual method is due to 
-    Yu.Kuznetsov, 1968;
-    Y.Saad, 1986.
-  Deflated version of GMRES is due to 
-    R.Morgan, GMRES with deflated restarting, 2002 SISC;
-    S.Rollin, W.Fichtner, Improving accuracy of GMRES with deflated restarting, 2007 SISC.
+  Authors:
+      Ethan Coon (ecoon@lanl.gov)
+      Konstantin Lipnikov (lipnikov@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_GMRES_OPERATOR_HH_
 #define AMANZI_GMRES_OPERATOR_HH_
@@ -679,3 +674,4 @@ int LinearOperatorGMRES<Matrix, Vector, VectorSpace>::CheckConvergence_(
 }  // namespace Amanzi
 
 #endif
+

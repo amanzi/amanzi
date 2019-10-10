@@ -1,46 +1,51 @@
-//
-// Mesh
-//
-// Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
-// Amanzi is released under the three-clause BSD License.
-// The terms of use and "as is" disclaimer for this license are
-// provided in the top-level COPYRIGHT file.
-//
-// Base mesh class for Amanzi
-//
-// Use the associated mesh factory to create an instance of a
-// derived class based on a particular mesh framework (like MSTK,
-// STKmesh etc.)
-//
-// Design documentation:
-//
-// This class is designed to be both flexible and performant (and somewhat
-// succeeds at both).  Many of the low-level methods here are accessed in the
-// innermost loop of performance-critical physics methods, so must themselves
-// be as simple as possible.  To meet this need, the low-level geometry ( such
-// as cell_volume() ) and relational topology ( such as cell_get_faces() ) are
-// ideally inlined to a single array access.
-//
-// To accomplish this goal, this class stores a cache of data which is
-// accessed using the public interface.  This cache is (lazily) built up using
-// "cache-building" methods (i.e. compute_cell_geometry_() ) which are virtual,
-// but have a default implementation here.  These default implementations
-// simply call more virtual methods (i.e. cell_get_faces_internal() ) which
-// are NOT implemented here and instead use the various mesh frameworks.
-//
-//
-// There are a few exceptions to this -- Mesh_Simple and classes that inherit
-// from Mesh_Simple have no internal storage -- they use the cache directly as
-// their mesh representation.  They are not full-featured, but are useful for
-// some simple structured tests and mesh manipulations where a mesh is implied
-// (i.e. MeshLogical, MeshColumn, etc).
-//
-// Note that not everything is cached, which would be memory overkill.  Only
-// things which have proven (or more accurately, a few were proven and the
-// rest were assumed based on those results) to be an issue have been cached.
-//
-// NOTE: Lazy definition of the cache itself is necessarily "mutable".
-//
+/*
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+
+  Authors:
+      Rao Garimella  
+*/
+
+//! Base mesh class for Amanzi
+
+/*
+  
+Use the associated mesh factory to create an instance of a
+derived class based on a particular mesh framework (like MSTK,
+STKmesh etc.)
+
+Design documentation:
+
+This class is designed to be both flexible and performant (and somewhat
+succeeds at both).  Many of the low-level methods here are accessed in the
+innermost loop of performance-critical physics methods, so must themselves
+be as simple as possible.  To meet this need, the low-level geometry ( such
+as cell_volume() ) and relational topology ( such as cell_get_faces() ) are
+ideally inlined to a single array access.
+
+To accomplish this goal, this class stores a cache of data which is
+accessed using the public interface.  This cache is (lazily) built up using
+"cache-building" methods (i.e. compute_cell_geometry_() ) which are virtual,
+but have a default implementation here.  These default implementations
+simply call more virtual methods (i.e. cell_get_faces_internal() ) which
+are NOT implemented here and instead use the various mesh frameworks.
+
+
+There are a few exceptions to this -- Mesh_Simple and classes that inherit
+from Mesh_Simple have no internal storage -- they use the cache directly as
+their mesh representation.  They are not full-featured, but are useful for
+some simple structured tests and mesh manipulations where a mesh is implied
+(i.e. MeshLogical, MeshColumn, etc).
+
+Note that not everything is cached, which would be memory overkill.  Only
+things which have proven (or more accurately, a few were proven and the
+rest were assumed based on those results) to be an issue have been cached.
+
+NOTE: Lazy definition of the cache itself is necessarily "mutable".
+
+*/
 
 #include "AmanziMap.hh"
 #include "AmanziVector.hh"

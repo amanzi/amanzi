@@ -3,10 +3,11 @@
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
-  See $AMANZI_DIR/COPYRIGHT
 
-  Author: Ethan Coon
+  Authors:
+      Ethan Coon  
 */
+
 
 //! An evaluator with no dependencies specified by a function of t,x,y,z.
 
@@ -78,3 +79,4 @@ void EvaluatorIndependentFunction::Update_(State &S) {
 }
 
 } // namespace Amanzi
+

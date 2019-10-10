@@ -1,16 +1,15 @@
 /*
-  Mesh Functions
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-201x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author Ethan Coon
-
-  Function applied to a mesh component, along with meta-data to store the values
-  of this function in a CompositeVector.
+  Authors:
+  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #include "errors.hh"
 #include "MeshDefs.hh"
@@ -169,3 +168,4 @@ void CompositeVectorFunction::Compute(double time, CompositeVector& cv) {
 
 } // namespace
 } // namespace
+

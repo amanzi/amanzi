@@ -1,21 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Solution: u = exp(-a [(x - x0)^2 + (y - y0)^2]), a = 20
-            default center: x0 = 0.75, y0 = 0.5
-  Diffusion: K = 1
-  Accumulation: a = 0
-  Reaction: r = 0
-  Velocity: v = cos(\pi t) [sin(\pi x) cos(\pi y), -cos(\pi x) sin(\pi y)]
-  Source: f = 0
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_DG_06_BASE_HH_
 #define AMANZI_OPERATOR_ANALYTIC_DG_06_BASE_HH_
@@ -158,4 +152,5 @@ class AnalyticDG06 : public AnalyticDGBase {
 };
 
 #endif
+
 

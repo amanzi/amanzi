@@ -1,17 +1,16 @@
 /*
-  Mesh operations
-
-  Copyright 2010-2012 held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
-
-  This test suite is intended to explore how to access mesh operations on
-  devices.
-  
+  Authors:
+      Ethan Coon (ecoon@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
+
 #include <vector>
 
 #include "UnitTest++.h"
@@ -137,3 +136,4 @@ SUITE(COMMON_MESH_OPERATIONS) {
     
     
     
+

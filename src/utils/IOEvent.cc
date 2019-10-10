@@ -1,17 +1,16 @@
 /*
-  Utils
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Markus Berndt
-           Ethan Coon (ecoon@lanl.gov)
-
-  IO event -- base class for reading or writing data.  Mostly just manages when
-  to do the I/O.
+  Authors:
+      Markus Berndt
+      Ethan Coon (ecoon@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #include "dbc.hh"
 #include "errors.hh"
@@ -209,3 +208,4 @@ void IOEvent::ValidUnitOrThrow_(const std::string& my_units) {
 
 
 } // namespace Amanzi
+

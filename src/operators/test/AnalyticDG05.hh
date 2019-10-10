@@ -1,18 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  A simple step function moving with constant velocity V. Initial
-  location of step is at x = X0:
-     u(x,t) = 1 if x < X0 + t V
-     u(x,t) = 0 otherwise.
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_DG_05_BASE_HH_
 #define AMANZI_OPERATOR_ANALYTIC_DG_05_BASE_HH_
@@ -71,4 +68,5 @@ class AnalyticDG05 : public AnalyticDGBase {
 };
 
 #endif
+
 

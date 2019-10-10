@@ -1,22 +1,16 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-201x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-           Ethan Coon (ecoon@lanl.gov)
-
-  Operator whose unknowns are CELL + FACE, but which assembles the
-  FACE only system and Schur complements cells.
-
-  This uses special assembly.  Apply is done as if we had the full FACE+CELL
-  system.  SymbolicAssembly() is done as if we had the CELL system, but with an
-  additional step to get the layout due to the Schur'd system on FACE+CELL.
-  Assemble, however, is done using a totally different approach.
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)
+      Ethan Coon (ecoon@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #include <vector>
 #include "EpetraExt_RowMatrixOut.h"
@@ -310,4 +304,5 @@ void Operator_FaceCellSff::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
 
 }  // namespace Operators
 }  // namespace Amanzi
+
 

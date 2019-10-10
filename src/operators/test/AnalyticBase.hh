@@ -1,33 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Base class for testing advection-diffusion problems with gravity:
-    -div (K k (grad(p) - g) - v p) = f
-  where g is the gravity vector pointing downward of axis z or
-  axis y in two dimensions, K is diffusion tensor, v is velocity,
-  and k is scalar correction to diffusion coefficient.
-
-  List of problems.  Note that all are 2D:
-
-  Analytic00: polynomial solution with constant, scalar coefficient
-  Analytic01: non-polynomial solution with full, non-constant tensor
-  Analytic02: linear solution with constant, tensor coefficient
-  Analytic03: non-polynomial solution with discontinuous (scalar)
-              coefficient
-  Analytic03b: same as 03, but with the coef as a scalar instead of
-               scaling the tensor
-  Analytic04: non-polynomial solution with non-constant scalar
-              coefficient, coefficient can be zero
-  Analytic05: linear solution with non-symmetric, non-constant
-              tensor coefficient
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_BASE_HH_
 #define AMANZI_OPERATOR_ANALYTIC_BASE_HH_
@@ -379,4 +361,5 @@ void AnalyticBase::GlobalOp(std::string op, double* val, int n)
 }
 
 #endif
+
 

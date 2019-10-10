@@ -1,16 +1,15 @@
 /*
-  Solvers
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
-
-  Debugging object for writing vectors to file within an iterative
-  process for use with vis tools.
+  Authors:
+      Ethan Coon  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #include "Mesh.hh"
 #include "HDF5_MPI.hh"
@@ -140,3 +139,4 @@ namespace AmanziSolvers {
   
 } // namespace Solvers  
 } // namespace Amanzi
+

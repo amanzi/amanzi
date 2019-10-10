@@ -1,19 +1,15 @@
 /*
-  Solvers
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
-
-  Interface for using Backtracking line search as a solver.
-
-  From PETSc SNES type BT, which in turn is from Numerical Methods for
-  Unconstrained Optimization and Nonlinear Equations by Dennis & Schnabel, pg
-  325.
+  Authors:
+      Ethan Coon (ecoon@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_BT_SOLVER_
 #define AMANZI_BT_SOLVER_
@@ -328,3 +324,4 @@ int SolverBT<Vector, VectorSpace>::BT_ErrorControl_(
 
 
 #endif
+

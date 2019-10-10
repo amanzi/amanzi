@@ -3,12 +3,13 @@
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
-  See $AMANZI_DIR/COPYRIGHT
 
-  Author: Ethan Coon
+  Authors:
+      Ethan Coon  
 */
-//! Interface for reading vectors of data from HDF5 files, in serial only.
 
+
+//! Interface for reading vectors of data from HDF5 files, in serial only.
 
 #ifndef AMANZI_HDF5_READER_HH_
 #define AMANZI_HDF5_READER_HH_
@@ -113,3 +114,4 @@ struct HDF5Reader {
 } // namespace Amanzi
 
 #endif
+

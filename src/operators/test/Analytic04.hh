@@ -1,25 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
-
-  Non-polynomial solution with constant tensor and non-constant 
-  other coefficients:
-
-  Solution:  p = 0         if x < 0,
-             p = 1         if x > PI / 2,
-             p = sin(x)^2  otherwise
-  Diffusion: K = 0         if x < 0,
-             K = 1         if x > PI / 2,
-             K = sin(x)^2  otherwise
-  Velocity: v = [0, 0]
-  Source: f = -div(K grad(p))
+  Authors:
+      Ethan Coon (ecoon@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_04_HH_
 #define AMANZI_OPERATOR_ANALYTIC_04_HH_
@@ -101,4 +91,5 @@ class Analytic04 : public AnalyticBase {
 };
 
 #endif
+
 

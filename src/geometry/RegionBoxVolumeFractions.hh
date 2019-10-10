@@ -1,15 +1,16 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! RegionBoxVolumeFractions: A rectangular region in space, defined by two corner points and normals to sides.
-
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-201x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Lipnikov Konstantin (lipnikov@lanl.gov)
-           Rao Garimella (rao@lanl.gov)
+  Authors:
+      Lipnikov Konstantin (lipnikov@lanl.gov)
+      Rao Garimella (rao@lanl.gov)  
 */
+
+
+//! RegionBoxVolumeFractions: A rectangular region in space, defined by two corner points and normals to sides.
 
 /*!
 
@@ -118,3 +119,4 @@ void IntersectConvexPolyhedra(const std::vector<Point>& xyz1,
 }  // namespace Amanzi
 
 #endif
+

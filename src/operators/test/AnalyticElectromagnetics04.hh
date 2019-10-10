@@ -1,15 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Relaxation of magnetic lines, trivial steady-state solution 
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_ELECTROMAGNETICS_04_HH_
 #define AMANZI_OPERATOR_ANALYTIC_ELECTROMAGNETICS_04_HH_
@@ -51,3 +51,4 @@ class AnalyticElectromagnetics04 : public AnalyticElectromagneticsBase {
 };
 
 #endif
+

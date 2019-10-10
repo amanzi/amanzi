@@ -1,14 +1,16 @@
 /*
-  State
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Copyright 2010-201x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Markus Berndt
-           Ethan Coon (ecoon@lanl.gov)
+  Authors:
+      Markus Berndt
+      Ethan Coon (ecoon@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #include "Epetra_MpiComm.h"
 #include "Epetra_MultiVector.h"
@@ -160,3 +162,4 @@ SUITE(COPY) {
     CHECK_CLOSE(2.0, get_value(*state), 0.00001);
   }
 }
+

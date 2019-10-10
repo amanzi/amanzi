@@ -1,13 +1,19 @@
-// PDE_DiffusionMFDwithGravity: Discrete gravity operator blended with the MFD diffusion operator.
-
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
+
+// PDE_DiffusionMFDwithGravity: Discrete gravity operator blended with the MFD diffusion operator.
+
+
 
 #ifndef AMANZI_OPERATOR_PDE_DIFFUSION_MFD_WITH_GRAVITY_HH_
 #define AMANZI_OPERATOR_PDE_DIFFUSION_MFD_WITH_GRAVITY_HH_
@@ -161,4 +167,5 @@ class PDE_DiffusionMFDwithGravity : public PDE_DiffusionMFD,
 }  // namespace Amanzi
 
 #endif
+
 

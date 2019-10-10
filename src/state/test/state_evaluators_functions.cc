@@ -3,14 +3,13 @@
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
-  See $AMANZI_DIR/COPYRIGHT
 
-  Author: Ethan Coon
+  Authors:
+      Ethan Coon  
 */
 
+
 //! Tests the math functionality in some basic evaluators.
-
-
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
@@ -148,3 +147,4 @@ TEST_FIXTURE(tester, SECONDARY_FUNCTION) {
 }
 
 }
+

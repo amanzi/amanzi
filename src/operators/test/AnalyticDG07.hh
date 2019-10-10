@@ -1,22 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Analytic solution for level-set algorithms: expanding sphere
-
-  Solution: u = 0.3 + t - [(x - 0.5)^2 + (y - 0.5)^2])^0.5
-  Diffusion: K = 1
-  Accumulation: a = 1
-  Reaction: r = 0
-  Velocity: v = [0, 0]
-  Source: f = 0
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_DG_07_BASE_HH_
 #define AMANZI_OPERATOR_ANALYTIC_DG_07_BASE_HH_
@@ -141,4 +134,5 @@ class AnalyticDG07 : public AnalyticDGBase {
 };
 
 #endif
+
 

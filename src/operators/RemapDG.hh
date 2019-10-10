@@ -1,28 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  The helper advection-based base class for various remap methods. It
-  provides support of time integration and calculation of various static
-  and dynamic geometric quantities. The actual time-step loop could be
-  implemented differently by an application.
-
-  The integration is performed on the pseudo-time interval from 0 to 1. 
-  The remap velocity u is constant, but since the integration is performed
-  in the reference coordinate system associated with mesh0, the transformed
-  velocity v is the time-dependent quantity. The call it the co-velocity,
-  v = C^t u where C is the matrix of co-factors for the Jacobian matrix J.
-  Recall that C = det(J) J^{-T}. 
-
-  Input parameter list describes operators, limiters, and mesh maps,
-  see native spec for more detail. 
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_REMAP_DG_HH_
 #define AMANZI_OPERATOR_REMAP_DG_HH_
@@ -133,3 +120,4 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
 }  // namespace Amanzi
 
 #endif
+

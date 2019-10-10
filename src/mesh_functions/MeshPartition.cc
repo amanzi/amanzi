@@ -1,16 +1,15 @@
 /*
-  Mesh Functions
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
-
-  A MeshPartition is a collection of non-overlapping regions which cover 
-  (optionally) a mesh.
+  Authors:
+      Ethan Coon  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #include "errors.hh"
 #include "MeshPartition.hh"
@@ -145,3 +144,4 @@ void MeshPartition::Verify() const
 
 }  // namespace Functions
 }  // namespace Amanzi
+

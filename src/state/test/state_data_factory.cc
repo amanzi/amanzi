@@ -3,10 +3,13 @@
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
-  See $AMANZI_DIR/COPYRIGHT
 
-  Author: Ethan Coon
+  Authors:
+      Ethan Coon  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 //  Tests the DataFactory object, which stores a factory and generates data as
 //  part of the container functionality of State.
@@ -64,3 +67,4 @@ TEST(VEC_FACTORY_MISDIRECTED) {
   CHECK_EQUAL(0, g_constructor_calls_copy);
   CHECK_EQUAL(0, g_constructor_calls_default);
 }
+

@@ -1,16 +1,19 @@
-// PDE_DiffusionFactory constructs objects which implement the interface for a PDE_Diffusion.
-
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  This documentation is for the entire Diffusion concept, which is maintained 
-  here because the input spec for Diffusion objects is defined/used here.
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
+
+// PDE_DiffusionFactory constructs objects which implement the interface for a PDE_Diffusion.
+
+
 
 #ifndef AMANZI_OPERATOR_PDE_DIFFUSION_FACTORY_HH_
 #define AMANZI_OPERATOR_PDE_DIFFUSION_FACTORY_HH_
@@ -141,3 +144,4 @@ struct PDE_DiffusionFactory {
 }  // namespace Amanzi
 
 #endif
+

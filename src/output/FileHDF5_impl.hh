@@ -1,13 +1,15 @@
-//! Reads and writes HDF5 files.
-
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors:
+      Ethan Coon  
 */
+
+
+//! Reads and writes HDF5 files.
 
 /*
   Reads and writes HDF5 files via parallelIO library.
@@ -423,3 +425,4 @@ std::string
 FileHDF5::ReadAttribute<std::string>(const std::string& attr_name, const std::string& h5path);
 
 } // namespace
+

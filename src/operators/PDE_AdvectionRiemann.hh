@@ -1,17 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Riemann flux-based advection operator for a scalar field.
-  The family will include DG and CG methods for linear and nonlinear
-  fluxes. We shall start with the existing node2-face1 schema.
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_PDE_ADVECTION_RIEMANN_HH_
 #define AMANZI_OPERATOR_PDE_ADVECTION_RIEMANN_HH_
@@ -88,4 +86,5 @@ class PDE_AdvectionRiemann : public PDE_Advection {
 }  // namespace Amanzi
 
 #endif
+
 

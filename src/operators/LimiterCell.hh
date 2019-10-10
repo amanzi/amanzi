@@ -1,21 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Implementation of different limiters uses a few common rules:
-  1. Dirichlet boundary data are used to update limter bounds.
-  2. Limiters are modified optionally so the the stable time step
-     of first-order scheme is reduce not more than twice. This
-     step requires to specify a face-based flux field.
-  3. At the moment, we require both the input field and boundary
-     conditions to be defined at ghost positions.
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_LIMITER_CELL_HH_
 #define AMANZI_LIMITER_CELL_HH_
@@ -173,3 +167,4 @@ class LimiterCell {
 }  // namespace Amanzi
 
 #endif
+

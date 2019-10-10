@@ -1,21 +1,15 @@
 /*
-  This is the operators component of the Amanzi code.
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Linear solution for problem with nonsymmetric diffusion coefficient:
-
-  Solution: p = 2x + y
-  Diffusion: K = [1   -x^2]
-                 [x^2  0.2]
-  Velocity: v = [0, 0]
-  Source: f = -div(K grad(p))
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_05_HH_
 #define AMANZI_OPERATOR_ANALYTIC_05_HH_
@@ -61,4 +55,5 @@ class Analytic05 : public AnalyticBase {
 };
 
 #endif
+
 

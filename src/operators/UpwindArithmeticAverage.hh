@@ -1,15 +1,15 @@
 /*
-  Operators 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  A face-based field is defined by volume averaging of cell-centered data.
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_ARITHMETIC_AVERAGE_HH_
 #define AMANZI_ARITHMETIC_AVERAGE_HH_
@@ -118,4 +118,5 @@ void UpwindArithmeticAverage<Model>::Compute(
 }  // namespace Amanzi
 
 #endif
+
 

@@ -1,12 +1,15 @@
-//! Input/Output via HDF5 file for checkpoint/restart.
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors:
+      Ethan Coon  
 */
+
+
+//! Input/Output via HDF5 file for checkpoint/restart.
 
 /*
   Input/Output via HDF5 file for checkpoint/restart.
@@ -194,3 +197,4 @@ OutputHDF5::Write(const Teuchos::ParameterList& attrs, const CompositeVector_<do
 }
 
 } // namespace
+

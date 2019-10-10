@@ -1,18 +1,15 @@
 /*
-  Operators
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  The helper advection-based base class for various remap methods. It
-  provides support of time integration and calculation of various static
-  and dynamic geometric quantities. The actual time-step loop could be
-  implemented differently by an application.
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)  
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #include "Epetra_Vector.h"
 
@@ -403,4 +400,5 @@ void RemapDG::ConservativeToNonConservative(
 
 }  // namespace Operators
 }  // namespace Amanzi
+
 
