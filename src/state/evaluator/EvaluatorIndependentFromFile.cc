@@ -17,6 +17,7 @@
 
 */
 
+#include "HDF5Reader.hh"
 #include "FileHDF5.hh"
 
 #include "EvaluatorIndependentFromFile.hh"
@@ -105,7 +106,7 @@ void EvaluatorIndependentFromFile::EnsureCompatibility(State &S) {
 
     // load times, ensure file is valid.
     // NOTE: all read this.  Could do on rank 0 and broadcast (maybe should!)
-    FileHDF5 reader(Amanzi::getCommSelf(), filename_, FILE_READONLY);
+    HDF5Reader reader(filename_);
     reader.ReadData("/time", times_);
 
     // check for increasing times
@@ -226,20 +227,16 @@ void EvaluatorIndependentFromFile::LoadFile_(int i) {
   }
 
   // open the file
-  Teuchos::RCP<Amanzi::HDF5_MPI> file_input =
-      Teuchos::rcp(new Amanzi::HDF5_MPI(val_after_->Comm(), filename_));
-  file_input->open_h5file();
+  FileHDF5 file_input(val_after_->Comm(), filename_, FILE_READONLY);
 
   // load the data
-  MultiVector_type &vec = *val_after_->ViewComponent(compname_, false);
+  MultiVector_type& vec = *val_after_->GetComponent(compname_, false);
   for (int j = 0; j != ndofs_; ++j) {
     std::stringstream varname;
     varname << varname_ << "." << locname_ << "." << j << "//" << i;
-    file_input->readData(*vec(j), varname.str());
+    Vector_type& subvec = *vec.getVectorNonConst(j);
+    file_input.ReadVector(varname.str(), subvec);
   }
-
-  // close file
-  file_input->close_h5file();
 }
 
 void EvaluatorIndependentFromFile::Interpolate_(double time,
@@ -254,7 +251,7 @@ void EvaluatorIndependentFromFile::Interpolate_(double time,
 
   double coef = (time - t_before_) / (t_after_ - t_before_);
   v = *val_before_;
-  v.Update(coef, *val_after_, 1 - coef);
+  v.update(coef, *val_after_, 1 - coef);
 }
 
 } // namespace Amanzi

@@ -40,5 +40,8 @@ DOCUMENT VANDELAY HERE! FIX ME --etc
 #define AMANZI_COMPOSITEVECTOR_HH_
 namespace Amanzi {
 using CompositeVector = CompositeVector_<double_type>;
+
+void DeriveFaceValuesFromCellValues(CompositeVector&);
+
 }
 #endif

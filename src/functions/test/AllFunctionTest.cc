@@ -395,7 +395,8 @@ TEST(bilinear_test)
   int yi = 1;
   reader.ReadData(col_name, vec_y);
   std::string v_name = "values";
-  Epetra_SerialDenseMatrix mat_v;
+
+  Teuchos::SerialDenseMatrix<std::size_t, double> mat_v;
   reader.ReadMatData(v_name, mat_v);
   Function *f = new FunctionBilinear(vec_x, vec_y, mat_v, xi, yi);
   // Corners

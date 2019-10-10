@@ -60,8 +60,8 @@ set(state_inc_files
   evaluator/Evaluator.hh
   evaluator/Evaluator_Factory.hh
   evaluator/EvaluatorIndependent.hh
-#  evaluator/EvaluatorIndependentFromFile.hh
-#  evaluator/EvaluatorIndependentFromFile_reg.hh
+  evaluator/EvaluatorIndependentFromFile.hh
+  evaluator/EvaluatorIndependentFromFile_reg.hh
 #  evaluator/EvaluatorIndependentFunction.hh
 #  evaluator/EvaluatorIndependentFunction_reg.hh
 #  evaluator/EvaluatorIndependentTensorFunction.hh
@@ -100,7 +100,7 @@ set(state_src_files
   evaluator/Evaluator.cc
   evaluator/Evaluator_Factory.cc
   evaluator/EvaluatorIndependent.cc
-#  evaluator/EvaluatorIndependentFromFile.cc
+  evaluator/EvaluatorIndependentFromFile.cc
 #  evaluator/EvaluatorIndependentFunction.cc
   evaluator/EvaluatorPrimary.cc
   evaluator/EvaluatorSecondary.cc
@@ -131,7 +131,7 @@ set(state_link_libs
   mesh_functions
   output
   ${Boost_LIBRARIES}
-)
+  )
 
 #
 # Library: state
@@ -154,7 +154,7 @@ add_install_include_file(${state_inc_files})
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorPrimary_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 # register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorIndependentFunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 # register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorIndependentTensorFunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
-# register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorIndependentFromFile_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorIndependentFromFile_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 #register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_OperatorApply_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 #register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_PDE_Diffusion_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 #register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_PDE_Accumulation_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
@@ -176,13 +176,11 @@ if (BUILD_TESTS)
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
 
-    # Add State include directory. 
+    # other libraries
     include_directories(${STATE_SOURCE_DIR})
-
-    # Mesh factory includes
     include_directories(${MESH_FACTORY_SOURCE_DIR})
 
-    set(test_link_libs state mesh_factory ${state_tpl_list})
+    set(test_link_libs state mesh_factory ${UnitTest_LIBRARIES})
 
     # Copy test subdirectory for out of source builds
     if (NOT ("${STATE_SOURCE_DIR}" STREQUAL "${STATE_BINARY_DIR}"))
@@ -194,85 +192,85 @@ if (BUILD_TESTS)
     add_amanzi_test(state_data_factory state_data_factory
                     KIND unit
                     SOURCE test/Main.cc test/state_data_factory.cc
-                    LINK_LIBS ${test_link_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${test_link_libs})
 
     # Tests the Record and RecordSet objects, meta-data and a part of
     # state's container capabilities.
     add_amanzi_test(state_record state_record
                     KIND unit
                     SOURCE test/Main.cc test/state_record.cc
-                    LINK_LIBS ${test_link_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${test_link_libs})
 
     # Tests the ability of state to hold meshes.
     add_amanzi_test(state_mesh state_mesh
                     KIND unit
                     SOURCE test/Main.cc test/state_mesh.cc
-                    LINK_LIBS ${test_link_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${test_link_libs})
 
     # Tests the ability of state to hold known data types.
     add_amanzi_test(state_container state_container
                     KIND unit
                     SOURCE test/Main.cc test/state_container.cc
-                    LINK_LIBS ${test_link_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${test_link_libs})
 
     # Tests the ability of state to hold user-provided data types.
     add_amanzi_test(state_extensibility state_extensibility
                     KIND int
                     SOURCE test/Main.cc test/state_extensibility.cc
-                    LINK_LIBS ${test_link_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${test_link_libs})
 
     # Tests the ability to visualize state.                    
     add_amanzi_test(state_vis state_vis
                     KIND int
                     SOURCE test/Main.cc test/state_vis.cc
-                    LINK_LIBS ${test_link_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${test_link_libs})
 
     # Tests checkpoint/restart
     add_amanzi_test(state_restart state_restart
                     KIND int
                     SOURCE test/Main.cc test/state_restart.cc
-                    LINK_LIBS ${test_link_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${test_link_libs})
     add_amanzi_test(state_restart_np2 state_restart NPROCS 2 KIND unit)
               
-##    add_amanzi_test(state_init state_init
-#      KIND int
-#      SOURCE test/Main.cc test/state_init.cc
-#      LINK_LIBS ${test_link_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(state_init state_init
+                    KIND int
+                    SOURCE test/Main.cc test/state_init.cc
+                    LINK_LIBS ${test_link_libs})
 
     add_amanzi_test(state_evaluators_basic state_evaluators_basic
                     KIND int
                     SOURCE test/Main.cc test/state_evaluators_basic.cc
-                    LINK_LIBS ${test_link_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${test_link_libs})
 
     add_amanzi_test(state_evaluators_secondary_ensureconsistency state_evaluators_secondary_ensureconsistency
                     KIND int
                     SOURCE test/Main.cc test/state_evaluators_secondary_ensureconsistency.cc
-                    LINK_LIBS ${test_link_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${test_link_libs})
 
     add_amanzi_test(state_dag_double state_dag_double
                     KIND int
                     SOURCE test/Main.cc test/state_dag_double.cc
-                    LINK_LIBS ${test_link_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${test_link_libs})
 
     add_amanzi_test(state_evaluator_tpetra state_dag_tpetra 
           KIND int
           SOURCE test/Main.cc test/state_dag_tpetra.cc
-          LINK_LIBS ${test_link_libs} ${UnitTest_LIBRARIES})
+          LINK_LIBS ${test_link_libs})
 
     add_amanzi_test(state_evaluator_byregion state_evaluator_byregion
           KIND int
           SOURCE test/Main.cc test/state_evaluator_byregion.cc
-          LINK_LIBS ${test_link_libs} ${UnitTest_LIBRARIES})
+          LINK_LIBS ${test_link_libs})
 
     #-add_amanzi_test(state_evaluators_op state_evaluators_op
     #  KIND int
     #  SOURCE test/Main.cc test/state_evaluators_op.cc
-    #  LINK_LIBS ${test_link_libs} ${UnitTest_LIBRARIES})
+    #  LINK_LIBS ${test_link_libs})
 
     #-add_amanzi_test(state_evaluators_op_inverse state_evaluators_op_inverse
     #  KIND int
     #  SOURCE test/Main.cc test/state_evaluators_op_inverse.cc
-    #  LINK_LIBS ${test_link_libs} ${UnitTest_LIBRARIES})
+    #  LINK_LIBS ${test_link_libs})
 
 
 endif()
