@@ -2,14 +2,14 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  The base virtual class for factory of mimetic, DG and other 
+  The base virtual class for factory of mimetic, DG and other
   schemes on polytopal meshes.
 */
 
@@ -36,24 +36,30 @@ class Polynomial;
 class BilinearForm : public virtual InnerProductL2,
                      public virtual InnerProductH1 {
  public:
-  explicit BilinearForm() : order_(1) {};
-  virtual ~BilinearForm() {};
+  explicit BilinearForm() : order_(1){};
+  virtual ~BilinearForm(){};
 
   // additional members
   // -- low-order schemes require typically constant vector/tensor coefficients
   //    also specify function to which gradient operator is applied
-  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A, bool grad_on_test) {
+  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v,
+                              DenseMatrix& A, bool grad_on_test)
+  {
     Errors::Message msg("AdvectionMatrix: scalar velocity is not supported.");
     Exceptions::amanzi_throw(msg);
     return 1;
   }
-  virtual int AdvectionMatrix(int c, const VectorPolynomial& v, DenseMatrix& A, bool grad_on_test) {
-    Errors::Message msg("AdvectionMatrix: polynomial coefficient is not supported.");
+  virtual int AdvectionMatrix(int c, const VectorPolynomial& v, DenseMatrix& A,
+                              bool grad_on_test)
+  {
+    Errors::Message msg(
+      "AdvectionMatrix: polynomial coefficient is not supported.");
     Exceptions::amanzi_throw(msg);
     return 1;
   }
 
-  virtual int DivergenceMatrix(int c, DenseMatrix& A) {
+  virtual int DivergenceMatrix(int c, DenseMatrix& A)
+  {
     Errors::Message msg("DivergenceMatrix is not supported.");
     Exceptions::amanzi_throw(msg);
     return 1;
@@ -62,22 +68,28 @@ class BilinearForm : public virtual InnerProductL2,
   // extend interface for the existing members
   // -- high-order schemes may require polynomial coefficients
   using InnerProductL2::MassMatrix;
-  virtual int MassMatrix(int c, const VectorPolynomial& K, DenseMatrix& M) {
+  virtual int MassMatrix(int c, const VectorPolynomial& K, DenseMatrix& M)
+  {
     Errors::Message msg("MassMatrix: polynomial coefficient is not supported.");
     Exceptions::amanzi_throw(msg);
     return 1;
   }
 
   using InnerProductL2::MassMatrixInverse;
-  virtual int MassMatrixInverse(int c, const VectorPolynomial& K, DenseMatrix& M) {
-    Errors::Message msg("MassMatrixInverse: polynomial coefficient is not supported.");
+  virtual int
+  MassMatrixInverse(int c, const VectorPolynomial& K, DenseMatrix& M)
+  {
+    Errors::Message msg(
+      "MassMatrixInverse: polynomial coefficient is not supported.");
     Exceptions::amanzi_throw(msg);
     return 1;
   }
 
   using InnerProductH1::StiffnessMatrix;
-  virtual int StiffnessMatrix(int c, const VectorPolynomial& K, DenseMatrix& A) {
-    Errors::Message msg("StiffnessMatrix: polynomial coefficient is not supported.");
+  virtual int StiffnessMatrix(int c, const VectorPolynomial& K, DenseMatrix& A)
+  {
+    Errors::Message msg(
+      "StiffnessMatrix: polynomial coefficient is not supported.");
     Exceptions::amanzi_throw(msg);
     return 1;
   }
@@ -90,8 +102,7 @@ class BilinearForm : public virtual InnerProductL2,
   int order_;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

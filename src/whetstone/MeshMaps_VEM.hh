@@ -2,14 +2,14 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Maps between mesh objects located on different meshes, e.g. two 
+  Maps between mesh objects located on different meshes, e.g. two
   states of a deformable mesh: virtual element implementation.
 */
 
@@ -30,20 +30,22 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MeshMaps_VEM : public MeshMaps { 
+class MeshMaps_VEM : public MeshMaps {
  public:
   MeshMaps_VEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-               const Teuchos::ParameterList& plist) :
-      MeshMaps(mesh) {
+               const Teuchos::ParameterList& plist)
+    : MeshMaps(mesh)
+  {
     ParseInputParameters_(plist);
   }
   MeshMaps_VEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
                Teuchos::RCP<const AmanziMesh::Mesh> mesh1,
-               const Teuchos::ParameterList& plist) :
-      MeshMaps(mesh0, mesh1) {
+               const Teuchos::ParameterList& plist)
+    : MeshMaps(mesh0, mesh1)
+  {
     ParseInputParameters_(plist);
   }
-  ~MeshMaps_VEM() {};
+  ~MeshMaps_VEM(){};
 
   // remap pseudo velocity
   virtual void VelocityFace(int f, VectorPolynomial& vf) const override;
@@ -54,7 +56,8 @@ class MeshMaps_VEM : public MeshMaps {
   // pseudo-velocity on edge e
   void VelocityEdge_(int e, VectorPolynomial& ve) const;
 
-  void LeastSquareProjector_Cell_(int order, int c, const std::vector<VectorPolynomial>& vf,
+  void LeastSquareProjector_Cell_(int order, int c,
+                                  const std::vector<VectorPolynomial>& vf,
                                   VectorPolynomial& vc) const;
 
   // io
@@ -65,8 +68,7 @@ class MeshMaps_VEM : public MeshMaps {
   int order_;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

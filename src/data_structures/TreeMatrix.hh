@@ -4,7 +4,7 @@
 ATS
 
 License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon (ecoon@lanl.gov)
+Author: Ethan Coon (coonet@ornl.gov)
 
 Interface for a Matrix that acts on TreeVector.
 ------------------------------------------------------------------------- */
@@ -20,25 +20,20 @@ class TreeVector;
 class TreeVectorSpace;
 
 class TreeMatrix {
-
  public:
-
   // Vector space of the Matrix's domain.
-  virtual const TreeVectorSpace& DomainMap() const = 0;
+  virtual const TreeVectorSpace& DomaingetMap() const = 0;
 
   // Vector space of the Matrix's range.
-  virtual const TreeVectorSpace& RangeMap() const = 0;
+  virtual const TreeVectorSpace& RangegetMap() const = 0;
 
   // Apply matrix, b <-- Ax, returns ierr
-  virtual int Apply(const TreeVector& x,
-                    TreeVector& b) const = 0;
+  virtual int apply(const TreeVector& x, TreeVector& b) const = 0;
 
   // Apply the inverse, x <-- A^-1 b, returns ierr
-  virtual int ApplyInverse(const TreeVector& b,
-                           TreeVector& x) const = 0;
-
+  virtual int applyInverse(const TreeVector& b, TreeVector& x) const = 0;
 };
 
-} // namespace
+} // namespace Amanzi
 
 #endif

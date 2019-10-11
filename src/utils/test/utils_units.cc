@@ -7,7 +7,7 @@ using namespace Amanzi::Utils;
 
 using namespace boost::units;
 
-TEST(UNITS_TIME) 
+TEST(UNITS_TIME)
 {
   Units units("molar");
   bool flag;
@@ -27,7 +27,7 @@ TEST(UNITS_TIME)
   t = units.ConvertTime(1.0, "noleap", "d", flag);
   std::cout << "  1 noleap = " << t << " d, flag=" << flag << std::endl;
   CHECK_CLOSE(t, 365., 1e-3);
-  
+
   CHECK(units.IsValidTime("y"));
   CHECK(units.IsValidTime("noleap"));
   CHECK(!units.IsValidTime("yr"));
@@ -36,13 +36,14 @@ TEST(UNITS_TIME)
 }
 
 
-TEST(UNITS_LENGTH) 
+TEST(UNITS_LENGTH)
 {
   Units units("molar");
   bool flag;
 
   double len = units.ConvertLength(1.0, "m", "cm", flag);
-  std::cout << "Length tests:\n  1 m = " << len << " cm, flag=" << flag << std::endl;
+  std::cout << "Length tests:\n  1 m = " << len << " cm, flag=" << flag
+            << std::endl;
   CHECK_CLOSE(len, 100.0, 1e-8);
 
   len = units.ConvertLength(1.0, "ft", "m", flag);
@@ -57,17 +58,17 @@ TEST(UNITS_LENGTH)
   CHECK(units.IsValidLength("m"));
   CHECK(!units.IsValidLength("meter"));
   std::cout << "Valid lengths are: " << units.ValidLengthStrings() << std::endl;
-  
 }
 
 
-TEST(UNITS_CONCENTRATION) 
+TEST(UNITS_CONCENTRATION)
 {
   Units units("molar");
   bool flag;
 
   double conc = units.ConvertConcentration(1.0, "SI", "molar", 1.0, flag);
-  std::cout << "Concentration tests:\n  1 mol/m^3 = " << conc << " molar, flag=" << flag << std::endl;
+  std::cout << "Concentration tests:\n  1 mol/m^3 = " << conc
+            << " molar, flag=" << flag << std::endl;
   CHECK_CLOSE(conc, 1e-3, 1e-4);
 
   conc = units.ConvertConcentration(1.0, "molar", "SI", 1.0, flag);
@@ -85,19 +86,20 @@ TEST(UNITS_CONCENTRATION)
   CHECK(units.IsValidConcentration("molar"));
   CHECK(units.IsValidConcentration("SI"));
   CHECK(!units.IsValidConcentration("y"));
-  std::cout << "Valid concentrations are: " << units.ValidConcentrationStrings() << std::endl;
-  
+  std::cout << "Valid concentrations are: " << units.ValidConcentrationStrings()
+            << std::endl;
 }
 
 
-TEST(UNITS_DERIVED_DOUBLE) 
+TEST(UNITS_DERIVED_DOUBLE)
 {
   Units units("molar");
   bool flag;
 
   std::string in_unit("m/d"), out_unit("ft/y");
   double tmp = units.ConvertUnitD(1.0, in_unit, out_unit, 51.9961e-3, flag);
-  std::cout << "Derived tests:\n  1 m/d = " << tmp << " ft/y, flag=" << flag << std::endl;
+  std::cout << "Derived tests:\n  1 m/d = " << tmp << " ft/y, flag=" << flag
+            << std::endl;
   CHECK_CLOSE(tmp, 1198.326, 1e-3);
 
   out_unit = "ft/y/m";
@@ -107,7 +109,8 @@ TEST(UNITS_DERIVED_DOUBLE)
   in_unit = "g*m/s^2";
   out_unit = "kg*in/h^2";
   tmp = units.ConvertUnitD(1.0, in_unit, out_unit, 51.9961e-3, flag);
-  std::cout << "  1 g*m/s^2 = " << tmp << " kg*in/h^2, flag=" << flag << std::endl;
+  std::cout << "  1 g*m/s^2 = " << tmp << " kg*in/h^2, flag=" << flag
+            << std::endl;
   CHECK_CLOSE(tmp, 5.10236e+05, 1.0);
 
   in_unit = "g*s/m^3";
@@ -130,7 +133,7 @@ TEST(UNITS_DERIVED_DOUBLE)
 }
 
 
-TEST(UNITS_DERIVED_STRING) 
+TEST(UNITS_DERIVED_STRING)
 {
   Units units("molar");
   std::string out_unit;
@@ -153,12 +156,11 @@ TEST(UNITS_DERIVED_STRING)
 }
 
 
-TEST(UNITS_FANCY_OUTPUT) 
+TEST(UNITS_FANCY_OUTPUT)
 {
   Units units("molar");
 
-  for (double val = 1e-3; val < 1e+8; val*=4) {
+  for (double val = 1e-3; val < 1e+8; val *= 4) {
     std::cout << val << " res=" << units.OutputTime(val) << std::endl;
   }
 }
-

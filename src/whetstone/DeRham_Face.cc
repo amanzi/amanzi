@@ -21,10 +21,11 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Only upper triangular part of Mc = R (R^T N)^{-1} R^T is calculated.
-****************************************************************** */
-int DeRham_Face::L2consistency(
-    int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
+ * Only upper triangular part of Mc = R (R^T N)^{-1} R^T is calculated.
+ ****************************************************************** */
+int
+DeRham_Face::L2consistency(int c, const Tensor& K, DenseMatrix& N,
+                           DenseMatrix& Mc, bool symmetry)
 {
   Kokkos::View<Entity_ID*> faces;
   Kokkos::View<int*> dirs;
@@ -37,7 +38,7 @@ int DeRham_Face::L2consistency(
 
   AmanziGeometry::Point v1(d_), v2(d_);
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c,false);
+  double volume = mesh_->cell_volume(c, false);
 
   Tensor Kinv(K);
   Kinv.Inverse();
@@ -70,9 +71,10 @@ int DeRham_Face::L2consistency(
 
 
 /* ******************************************************************
-* Mass matrix: adding stability matrix to the consistency matrix.
-****************************************************************** */
-int DeRham_Face::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
+ * Mass matrix: adding stability matrix to the consistency matrix.
+ ****************************************************************** */
+int
+DeRham_Face::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 {
   DenseMatrix N;
 
@@ -88,11 +90,12 @@ int DeRham_Face::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 
 
 /* ******************************************************************
-* Consistency condition for inverse of mass matrix.
-* Only the upper triangular part of Wc is calculated.
-****************************************************************** */
-int DeRham_Face::L2consistencyInverse(
-    int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry)
+ * Consistency condition for inverse of mass matrix.
+ * Only the upper triangular part of Wc is calculated.
+ ****************************************************************** */
+int
+DeRham_Face::L2consistencyInverse(int c, const Tensor& K, DenseMatrix& R,
+                                  DenseMatrix& Wc, bool symmetry)
 {
   Kokkos::View<Entity_ID*> faces;
   Kokkos::View<int*> dirs;
@@ -112,7 +115,7 @@ int DeRham_Face::L2consistencyInverse(
 
   // populate matrix W_0
   AmanziGeometry::Point v1(d_);
-  double volume = mesh_->cell_volume(c,false);
+  double volume = mesh_->cell_volume(c, false);
 
   for (int i = 0; i < nfaces; i++) {
     int f = faces(i);
@@ -153,9 +156,10 @@ int DeRham_Face::L2consistencyInverse(
 
 
 /* ******************************************************************
-* Inverse mass matrix: adding stability to the consistency
-****************************************************************** */
-int DeRham_Face::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
+ * Inverse mass matrix: adding stability to the consistency
+ ****************************************************************** */
+int
+DeRham_Face::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
 {
   DenseMatrix R;
 
@@ -167,5 +171,5 @@ int DeRham_Face::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
   return ok;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi

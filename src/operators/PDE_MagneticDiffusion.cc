@@ -1,13 +1,15 @@
 /*
-  Operators 
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+  Authors:
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
+
+
+//! <MISSING_ONELINE_DOCSTRING>
 
 #include <vector>
 
@@ -26,12 +28,13 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
-* Populate contains of elemental matrices.
-* NOTE: The input parameters are not yet used.
-****************************************************************** */
-void PDE_MagneticDiffusion::UpdateMatrices(
-    const Teuchos::Ptr<const CompositeVector>& u,
-    const Teuchos::Ptr<const CompositeVector>& p)
+ * Populate contains of elemental matrices.
+ * NOTE: The input parameters are not yet used.
+ ****************************************************************** */
+void
+PDE_MagneticDiffusion::UpdateMatrices(
+  const Teuchos::Ptr<const CompositeVector>& u,
+  const Teuchos::Ptr<const CompositeVector>& p)
 {
   Teuchos::ParameterList plist;
   WhetStone::MFD3D_Electromagnetics mfd(plist, mesh_);
@@ -39,7 +42,7 @@ void PDE_MagneticDiffusion::UpdateMatrices(
 
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
-  
+
   for (int c = 0; c < ncells_owned; c++) {
     mfd.StiffnessMatrix(c, Kc, Acell, Mcell, Ccell);
 
@@ -51,14 +54,15 @@ void PDE_MagneticDiffusion::UpdateMatrices(
 
 
 /* ******************************************************************
-* System modification before solving the problem:
-* A := invK I + dt/2 A   and  f += Curl M B 
-* **************************************************************** */
-void PDE_MagneticDiffusion::ModifyMatrices(
-   CompositeVector& E, CompositeVector& B, double dt)
+ * System modification before solving the problem:
+ * A := invK I + dt/2 A   and  f += Curl M B
+ * **************************************************************** */
+void
+PDE_MagneticDiffusion::ModifyMatrices(CompositeVector& E, CompositeVector& B,
+                                      double dt)
 {
   B.ScatterMasterToGhosted("face");
-  global_op_->rhs()->PutScalarGhosted(0.0);
+  global_op_->rhs()->putScalarGhosted(0.0);
 
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", true);
   Epetra_MultiVector& rhs_e = *global_op_->rhs()->ViewComponent("edge", true);
@@ -71,7 +75,7 @@ void PDE_MagneticDiffusion::ModifyMatrices(
 
   for (int c = 0; c < ncells_owned; ++c) {
     WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
-    Acell.Scale(dt / 2);
+    Acell.scale(dt / 2);
 
     const WhetStone::DenseMatrix& Mcell = mass_op_[c];
     const WhetStone::DenseMatrix& Ccell = curl_op_[c];
@@ -93,8 +97,8 @@ void PDE_MagneticDiffusion::ModifyMatrices(
       v1(n) = Bf[0][f] * dirs[n] * mesh_->face_area(f);
     }
 
-    Mcell.Multiply(v1, v2, false);
-    Ccell.Multiply(v2, v3, true);
+    Mcell.elementWiseMultiply(v1, v2, false);
+    Ccell.elementWiseMultiply(v2, v3, true);
 
     for (int n = 0; n < nedges; ++n) {
       int e = edges[n];
@@ -107,16 +111,17 @@ void PDE_MagneticDiffusion::ModifyMatrices(
 
 
 /* ******************************************************************
-* Solution postprocessing
-* **************************************************************** */
-void PDE_MagneticDiffusion::ModifyFields(
-   CompositeVector& E, CompositeVector& B, double dt)
+ * Solution postprocessing
+ * **************************************************************** */
+void
+PDE_MagneticDiffusion::ModifyFields(CompositeVector& E, CompositeVector& B,
+                                    double dt)
 {
   E.ScatterMasterToGhosted("edge");
 
   Epetra_MultiVector& Ee = *E.ViewComponent("edge", true);
   Epetra_MultiVector& Bf = *B.ViewComponent("face", false);
-  
+
   std::vector<int> dirs;
   AmanziMesh::Entity_ID_List faces, edges;
 
@@ -138,7 +143,7 @@ void PDE_MagneticDiffusion::ModifyFields(
       v1(n) = Ee[0][e];
     }
 
-    Ccell.Multiply(v1, v2, false);
+    Ccell.elementWiseMultiply(v1, v2, false);
 
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
@@ -152,9 +157,10 @@ void PDE_MagneticDiffusion::ModifyFields(
 
 
 /* ******************************************************************
-* Calculates Ohmic heating
-****************************************************************** */
-double PDE_MagneticDiffusion::CalculateOhmicHeating(const CompositeVector& E)
+ * Calculates Ohmic heating
+ ****************************************************************** */
+double
+PDE_MagneticDiffusion::CalculateOhmicHeating(const CompositeVector& E)
 {
   const Epetra_MultiVector& Ee = *E.ViewComponent("edge", true);
   E.ScatterMasterToGhosted("edge");
@@ -178,7 +184,7 @@ double PDE_MagneticDiffusion::CalculateOhmicHeating(const CompositeVector& E)
       v1(n) = Ee[0][e];
     }
 
-    Mcell.Multiply(v1, v2, false);
+    Mcell.elementWiseMultiply(v1, v2, false);
     energy += v1 * v2;
   }
 
@@ -191,9 +197,10 @@ double PDE_MagneticDiffusion::CalculateOhmicHeating(const CompositeVector& E)
 
 
 /* ******************************************************************
-* Calculates integral of 1/2 |B|^2
-****************************************************************** */
-double PDE_MagneticDiffusion::CalculateMagneticEnergy(const CompositeVector& B)
+ * Calculates integral of 1/2 |B|^2
+ ****************************************************************** */
+double
+PDE_MagneticDiffusion::CalculateMagneticEnergy(const CompositeVector& B)
 {
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", true);
   B.ScatterMasterToGhosted("face");
@@ -215,7 +222,7 @@ double PDE_MagneticDiffusion::CalculateMagneticEnergy(const CompositeVector& B)
       v1(n) = Bf[0][f] * dirs[n] * mesh_->face_area(f);
     }
 
-    Mcell.Multiply(v1, v2, false);
+    Mcell.elementWiseMultiply(v1, v2, false);
     energy += v1 * v2;
   }
 
@@ -228,13 +235,13 @@ double PDE_MagneticDiffusion::CalculateMagneticEnergy(const CompositeVector& B)
 
 
 /* ******************************************************************
-* Useful tools
-* **************************************************************** */
-double PDE_MagneticDiffusion::CalculateDivergence(
-    int c, const CompositeVector& B)
+ * Useful tools
+ * **************************************************************** */
+double
+PDE_MagneticDiffusion::CalculateDivergence(int c, const CompositeVector& B)
 {
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", false);
-  
+
   std::vector<int> dirs;
   AmanziMesh::Entity_ID_List faces;
 
@@ -246,16 +253,17 @@ double PDE_MagneticDiffusion::CalculateDivergence(
     int f = faces[n];
     div += Bf[0][f] * dirs[n] * mesh_->face_area(f);
   }
-  div /= mesh_->cell_volume(c,false);
+  div /= mesh_->cell_volume(c, false);
 
   return div;
 }
 
 
 /* ******************************************************************
-* Put here stuff that has to be done in constructor.
-****************************************************************** */
-void PDE_MagneticDiffusion::InitMagneticDiffusion_(Teuchos::ParameterList& plist)
+ * Put here stuff that has to be done in constructor.
+ ****************************************************************** */
+void
+PDE_MagneticDiffusion::InitMagneticDiffusion_(Teuchos::ParameterList& plist)
 {
   // Primary discretization methods
   std::string primary = plist.get<std::string>("discretization primary");
@@ -266,14 +274,15 @@ void PDE_MagneticDiffusion::InitMagneticDiffusion_(Teuchos::ParameterList& plist
     mfd_primary_ = WhetStone::ELECTROMAGNETICS_GENERALIZED;
   } else {
     Errors::Message msg;
-    msg << "Primary discretization method \"" << primary << "\" is not supported.";
+    msg << "Primary discretization method \"" << primary
+        << "\" is not supported.";
     Exceptions::amanzi_throw(msg);
-  } 
+  }
 
   // Define stencil for the MFD diffusion method.
   mass_op_.resize(ncells_owned);
   curl_op_.resize(ncells_owned);
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi

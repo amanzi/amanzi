@@ -12,30 +12,39 @@
 
 TEST(MSTK_EDGES_2D)
 {
-
   auto comm = Amanzi::getDefaultComm();
   int rank = comm->getRank();
   int size = comm->getSize();
-  CHECK_EQUAL(4,size);
+  CHECK_EQUAL(4, size);
 
   //  if (rank == 0) {
   int DebugWait = 0;
-  while (DebugWait);
+  while (DebugWait)
+    ;
   //  }
 
   // Generate a 4x4 quad mesh distributed over four processors
 
   bool request_faces = true, request_edges = true;
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh>
-    mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,2.0,1.0,4,4,comm,Teuchos::null,
-					   Teuchos::null,request_faces,request_edges));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(
+    new Amanzi::AmanziMesh::Mesh_MSTK(0.0,
+                                      0.0,
+                                      2.0,
+                                      1.0,
+                                      4,
+                                      4,
+                                      comm,
+                                      Teuchos::null,
+                                      Teuchos::null,
+                                      request_faces,
+                                      request_edges));
 
   // Check that we get the expected number of edges
 
   int ne_owned = mesh->num_entities(Amanzi::AmanziMesh::EDGE,
-				    Amanzi::AmanziMesh::Parallel_type::OWNED);
+                                    Amanzi::AmanziMesh::Parallel_type::OWNED);
   int ne_all = mesh->num_entities(Amanzi::AmanziMesh::EDGE,
-				  Amanzi::AmanziMesh::Parallel_type::ALL);
+                                  Amanzi::AmanziMesh::Parallel_type::ALL);
 
   // This assumes a symmetric partitioning - not always the case with
   // ZOLTAN graph partitioning
@@ -46,51 +55,51 @@ TEST(MSTK_EDGES_2D)
   // global IDs for a cell must match
 
   int nc_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL,
-				    Amanzi::AmanziMesh::Parallel_type::OWNED);
+                                    Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < nc_owned; ++c) {
     Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> fedges, cfaces, cedges;
     Kokkos::View<int*> cfdirs, fedirs, cedirs;
 
-    mesh->cell_2D_get_edges_and_dirs(c,cedges,&cedirs);
-    mesh->cell_get_faces_and_dirs(c,cfaces,cfdirs);
+    mesh->cell_2D_get_edges_and_dirs(c, cedges, &cedirs);
+    mesh->cell_get_faces_and_dirs(c, cfaces, cfdirs);
 
     for (int e = 0; e < cedges.extent(0); ++e) {
-      CHECK_EQUAL(mesh->getGlobalElement(cedges(e),Amanzi::AmanziMesh::EDGE),
-		  mesh->getGlobalElement(cfaces(e),Amanzi::AmanziMesh::FACE));
+      CHECK_EQUAL(mesh->getGlobalElement(cedges(e), Amanzi::AmanziMesh::EDGE),
+                  mesh->getGlobalElement(cfaces(e), Amanzi::AmanziMesh::FACE));
 
       // Also, see if the direction and vector we got for edges of 2D
       // cell is consistent with the direction and normal vector we
       // got for the faces of the cell
 
-      CHECK_EQUAL(cedirs(e),cfdirs(e));
+      CHECK_EQUAL(cedirs(e), cfdirs(e));
 
       Amanzi::AmanziGeometry::Point evec(2), fnormal(2), ftangent(2);
 
-      evec = mesh->edge_vector(cedges(e))*cedirs(e);
+      evec = mesh->edge_vector(cedges(e)) * cedirs(e);
 
-      fnormal = mesh->face_normal(cfaces(e))*cfdirs(e);
-      ftangent.set(-fnormal[1],fnormal[0]);
+      fnormal = mesh->face_normal(cfaces(e)) * cfdirs(e);
+      ftangent.set(-fnormal[1], fnormal[0]);
 
-      CHECK_EQUAL(evec[0],ftangent[0]);
-      CHECK_EQUAL(evec[1],ftangent[1]);
+      CHECK_EQUAL(evec[0], ftangent[0]);
+      CHECK_EQUAL(evec[1], ftangent[1]);
     }
 
 
     for (int f = 0; f < cfaces.extent(0); ++f) {
-      mesh->face_get_edges_and_dirs(cfaces(f),fedges,&fedirs);
+      mesh->face_get_edges_and_dirs(cfaces(f), fedges, &fedirs);
 
-      CHECK_EQUAL(1,fedges.extent(0)); // face is same as edge in 2D
-      CHECK_EQUAL(1,fedirs(0)); // direction is always 1
+      CHECK_EQUAL(1, fedges.extent(0)); // face is same as edge in 2D
+      CHECK_EQUAL(1, fedirs(0));        // direction is always 1
 
       // check the face-edges to cell-edges map
 
       std::vector<int> map;
 
-      mesh->face_to_cell_edge_map(cfaces(f),c,&map);
+      mesh->face_to_cell_edge_map(cfaces(f), c, &map);
 
       for (int e = 0; e < fedges.extent(0); ++e)
-	CHECK_EQUAL(fedges(e),cedges(map[e]));
+        CHECK_EQUAL(fedges(e), cedges(map[e]));
     }
   }
 
@@ -104,48 +113,56 @@ TEST(MSTK_EDGES_2D)
     evec = mesh->edge_vector(e);
     elen = mesh->edge_length(e);
     if (evec[1] == 0.0) {
-      CHECK_EQUAL(0.5,elen);
-      CHECK_EQUAL(elen,norm(evec));
-    }
-    else if (evec[0] == 0.0) {
-      CHECK_EQUAL(0.25,elen);
-      CHECK_EQUAL(elen,norm(evec));
+      CHECK_EQUAL(0.5, elen);
+      CHECK_EQUAL(elen, norm(evec));
+    } else if (evec[0] == 0.0) {
+      CHECK_EQUAL(0.25, elen);
+      CHECK_EQUAL(elen, norm(evec));
     }
   }
-
 }
-
 
 
 // Test edge functions in 3D
 
 TEST(MSTK_EDGES_3D)
 {
-
   auto comm = Amanzi::getDefaultComm();
   int rank = comm->getRank();
   int size = comm->getSize();
-  CHECK_EQUAL(4,size);
+  CHECK_EQUAL(4, size);
 
   //  if (rank == 0) {
   int DebugWait = 0;
-  while (DebugWait);
+  while (DebugWait)
+    ;
   //  }
 
   // Generate a 4x4x4 quad mesh distributed over four processors
 
   bool request_faces = true, request_edges = true;
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh>
-    mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,2.0,1.0,4.0,4,4,4,
-					   comm,Teuchos::null,Teuchos::null,request_faces,
-					   request_edges));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(
+    new Amanzi::AmanziMesh::Mesh_MSTK(0.0,
+                                      0.0,
+                                      0.0,
+                                      2.0,
+                                      1.0,
+                                      4.0,
+                                      4,
+                                      4,
+                                      4,
+                                      comm,
+                                      Teuchos::null,
+                                      Teuchos::null,
+                                      request_faces,
+                                      request_edges));
 
   // How many owned and used edges are there?
 
   int ne_owned = mesh->num_entities(Amanzi::AmanziMesh::EDGE,
-				    Amanzi::AmanziMesh::Parallel_type::OWNED);
+                                    Amanzi::AmanziMesh::Parallel_type::OWNED);
   int ne_all = mesh->num_entities(Amanzi::AmanziMesh::EDGE,
-				  Amanzi::AmanziMesh::Parallel_type::ALL);
+                                  Amanzi::AmanziMesh::Parallel_type::ALL);
 
   // Check that we got a non-zero number
 
@@ -158,25 +175,25 @@ TEST(MSTK_EDGES_3D)
   // of these faces and do additional checks
 
   int nc_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL,
-				    Amanzi::AmanziMesh::Parallel_type::OWNED);
+                                    Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < nc_owned; ++c) {
     Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cfaces, fedges, cedges;
     Kokkos::View<int*> cfdirs, fedirs;
 
-    mesh->cell_get_edges(c,cedges);
-    mesh->cell_get_faces_and_dirs(c,cfaces,cfdirs);
+    mesh->cell_get_edges(c, cedges);
+    mesh->cell_get_faces_and_dirs(c, cfaces, cfdirs);
 
     for (int f = 0; f < cfaces.extent(0); ++f) {
-      mesh->face_get_edges_and_dirs(cfaces(f),fedges,&fedirs);
+      mesh->face_get_edges_and_dirs(cfaces(f), fedges, &fedirs);
 
       // check the face-edges to cell-edges map
 
       std::vector<int> map;
-      mesh->face_to_cell_edge_map(cfaces(f),c,&map);
+      mesh->face_to_cell_edge_map(cfaces(f), c, &map);
 
       for (int e = 0; e < fedges.extent(0); ++e)
-	CHECK_EQUAL(fedges(e),cedges(map[e]));
+        CHECK_EQUAL(fedges(e), cedges(map[e]));
     }
   }
 
@@ -191,17 +208,14 @@ TEST(MSTK_EDGES_3D)
     evec = mesh->edge_vector(e);
     elen = mesh->edge_length(e);
     if (evec[0] != 0.0 && evec[1] == 0.0) {
-      CHECK_EQUAL(0.5,elen);
-      CHECK_EQUAL(elen,norm(evec));
-    }
-    else if (evec[0] == 0.0 && evec[1] != 0.0) {
-      CHECK_EQUAL(0.25,elen);
-      CHECK_EQUAL(elen,norm(evec));
-    }
-    else  {
-      CHECK_EQUAL(1.0,elen);
-      CHECK_EQUAL(elen,norm(evec));
+      CHECK_EQUAL(0.5, elen);
+      CHECK_EQUAL(elen, norm(evec));
+    } else if (evec[0] == 0.0 && evec[1] != 0.0) {
+      CHECK_EQUAL(0.25, elen);
+      CHECK_EQUAL(elen, norm(evec));
+    } else {
+      CHECK_EQUAL(1.0, elen);
+      CHECK_EQUAL(elen, norm(evec));
     }
   }
-
 }

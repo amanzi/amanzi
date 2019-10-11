@@ -2,6 +2,6 @@
 namespace Amanzi {
 
 Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFunction>
-    EvaluatorIndependentFunction::fac_("independent variable");
+  EvaluatorIndependentFunction::fac_("independent variable");
 
 } // namespace Amanzi

@@ -22,9 +22,10 @@
 #include "WhetStoneMeshUtils.hh"
 
 /* ****************************************************************
-* Test of face centroids
-**************************************************************** */
-TEST(FACE_CENTROIDS) {
+ * Test of face centroids
+ **************************************************************** */
+TEST(FACE_CENTROIDS)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -45,7 +46,7 @@ TEST(FACE_CENTROIDS) {
   Kokkos::View<Entity_ID*> nodes;
   std::vector<double> weights;
 
-  double area = mesh->cell_volume(0,false);
+  double area = mesh->cell_volume(0, false);
   mesh->cell_get_nodes(0, nodes);
   PolygonCentroidWeights(*mesh, nodes, area, weights);
 
@@ -57,6 +58,4 @@ TEST(FACE_CENTROIDS) {
   const AmanziGeometry::Point& xm = mesh->cell_centroid(0);
   std::cout << xc << " = " << xm << std::endl;
   CHECK_CLOSE(0.0, norm(xc - xm), 1e-10);
-
-
 }

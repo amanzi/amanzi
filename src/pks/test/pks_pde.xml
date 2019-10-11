@@ -1,0 +1,217 @@
+<ParameterList name="Main" type="ParameterList">
+
+  <ParameterList name="regions" type="ParameterList">
+    <ParameterList name="computational domain" type="ParameterList">
+      <ParameterList name="region: box" type="ParameterList">
+        <Parameter name="low coordinate" type="Array(double)" value="{-1.0,-1.0}" />
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0}" />
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="north" type="ParameterList">
+      <ParameterList name="region: box" type="ParameterList">
+        <Parameter name="low coordinate" type="Array(double)" value="{-1.0,1.0}" />
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0}" />
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="south" type="ParameterList">
+      <ParameterList name="region: box" type="ParameterList">
+        <Parameter name="low coordinate" type="Array(double)" value="{-1.0,-1.0}" />
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,-1.0}" />
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="east" type="ParameterList">
+      <ParameterList name="region: box" type="ParameterList">
+        <Parameter name="low coordinate" type="Array(double)" value="{1.0,-1.0}" />
+        <Parameter name="high coordinate" type="Array(double)" value="{1.0,1.0}" />
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="west" type="ParameterList">
+      <ParameterList name="region: box" type="ParameterList">
+        <Parameter name="low coordinate" type="Array(double)" value="{-1.0,-1.0}" />
+        <Parameter name="high coordinate" type="Array(double)" value="{-1.0,1.0}" />
+      </ParameterList>
+    </ParameterList>
+
+  </ParameterList>
+
+  <ParameterList name="PKs" type="ParameterList">
+    <ParameterList name="diffusion FE explicit" type="ParameterList">
+      <Parameter name="domain name" type="string" value="domain" />
+      <Parameter name="primary variable key" type="string" value="u" />
+      <Parameter name="initial time step" type="double" value="0.001" />
+      <ParameterList name="time integrator" type="ParameterList">
+        <Parameter name="RK method" type="string" value="forward euler" />
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="diffusion FE implicit" type="ParameterList">
+      <Parameter name="domain name" type="string" value="domain" />
+      <Parameter name="primary variable key" type="string" value="u" />
+      <Parameter name="initial time step" type="double" value="1." />
+
+      <ParameterList name="time integrator" type="ParameterList">
+        <ParameterList name="verbose object" type="ParameterList">
+          <Parameter name="verbosity level" type="string" value="high" />
+        </ParameterList>
+        <Parameter name="solver type" type="string" value="Newton" />
+        <ParameterList name="Newton parameters" type="ParameterList">
+          <ParameterList name="verbose object" type="ParameterList">
+            <Parameter name="verbosity level" type="string" value="extreme" />
+          </ParameterList>
+          <Parameter name="nonlinear tolerance" type="double" value="1.e-4" />
+        </ParameterList>
+        <Parameter name="timestep controller type" type="string" value="fixed" />
+        <ParameterList name="timestep controller fixed parameters" type="ParameterList">
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+  </ParameterList>
+
+
+  <ParameterList name="state" type="ParameterList">
+    <ParameterList name="evaluators" type="ParameterList">
+
+      <ParameterList name="source" type="ParameterList">
+        <Parameter name="evaluator type" type="string" value="independent variable" />
+        <ParameterList name="function" type="ParameterList">
+          <ParameterList name="domain" type="ParameterList">
+            <Parameter name="region" type="string" value="computational domain" />
+            <Parameter name="component" type="string" value="cell" />
+            <ParameterList name="function" type="ParameterList">
+              <ParameterList name="function-separable" type="ParameterList">
+                <ParameterList name="function1" type="ParameterList">
+                  <ParameterList name="function-constant" type="ParameterList">
+                    <Parameter name="value" type="double" value="0.4934802200544679" />
+                  </ParameterList>
+                </ParameterList>
+                <ParameterList name="function2" type="ParameterList">
+                  <ParameterList name="function-standard-math" type="ParameterList">
+                    <Parameter name="operator" type="string" value="cos" />
+                    <Parameter name="parameter" type="double" value="1.5707963267948966" />
+                  </ParameterList>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="verbose object" type="ParameterList">
+          <Parameter name="verbosity level" type="string" value="low" />
+        </ParameterList>
+      </ParameterList>
+      
+      <ParameterList name="cell_volume" type="ParameterList">
+        <Parameter name="evaluator type" type="string" value="cell volume" />
+        <Parameter name="mesh" type="string" value="domain" />
+        <ParameterList name="verbose object" type="ParameterList">
+          <Parameter name="verbosity level" type="string" value="low" />
+        </ParameterList>
+      </ParameterList>
+      
+      <ParameterList name="source_cv" type="ParameterList">
+        <Parameter name="evaluator type" type="string" value="multiplicative" />
+        <Parameter name="dependencies" type="Array(string)" value="{source, cell_volume}" />
+        <Parameter name="dependency tags are my tag" type="bool" value="true" />
+        <ParameterList name="verbose object" type="ParameterList">
+          <Parameter name="verbosity level" type="string" value="low" />
+        </ParameterList>
+      </ParameterList>
+
+      <!--
+      <ParameterList name="u_cv" type="ParameterList">
+        <Parameter name="evaluator type" type="string" value="multiplicative" />
+        <Parameter name="dependencies" type="Array(string)" value="{u, cell_volume}" />
+        <Parameter name="dependency tags are my tag" type="bool" value="true" />
+        <ParameterList name="verbose object" type="ParameterList">
+          <Parameter name="verbosity level" type="string" value="low" />
+        </ParameterList>
+      </ParameterList>
+      -->
+      
+      <ParameterList name="A_local" type="ParameterList">
+        <Parameter name="evaluator type" type="string" value="diffusion operator" />
+        <Parameter name="local operator key" type="string" value="A_local" />
+        <Parameter name="rhs key" type="string" value="A_rhs" />
+        <Parameter name="tensor coefficient key" type="string" value="tensor_coefficient" />
+        <Parameter name="scalar coefficient key" type="string" value="scalar_coefficient" />
+        <Parameter name="boundary conditions key" type="string" value="boundary_conditions" />
+        <Parameter name="operator argument key" type="string" value="u" />
+        <Parameter name="discretization primary" type="string" value="fv: default" />
+        <ParameterList name="verbose object" type="ParameterList">
+          <Parameter name="verbosity level" type="string" value="low" />
+        </ParameterList>
+      </ParameterList>
+      
+      <ParameterList name="scalar_coefficient" type="ParameterList">
+        <Parameter name="evaluator type" type="string" value="independent variable" />
+        <ParameterList name="function" type="ParameterList">
+          <ParameterList name="domain" type="ParameterList">
+            <Parameter name="region" type="string" value="computational domain" />
+            <Parameter name="component" type="string" value="face" />
+            <ParameterList name="function" type="ParameterList">
+              <ParameterList name="function-constant" type="ParameterList">
+                <Parameter name="value" type="double" value=".2" />
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="verbose object" type="ParameterList">
+          <Parameter name="verbosity level" type="string" value="low" />
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="boundary_conditions" type="ParameterList">
+        <Parameter name="evaluator type" type="string" value="general boundary conditions" />
+        <ParameterList name="boundary functions" type="ParameterList">
+          <ParameterList name="exterior_boundary_dirichlet_data" type="ParameterList">
+            <Parameter name="boundary condition type" type="string" value="Dirichlet" />
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="verbose object" type="ParameterList">
+          <Parameter name="verbosity level" type="string" value="low" />
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="exterior_boundary_dirichlet_data" type="ParameterList">
+        <Parameter name="evaluator type" type="string" value="boundary function" />
+        <Parameter name="list name" type="string" value="u" />
+        <Parameter name="function name" type="string" value="u" />
+        <ParameterList name="u">
+          <ParameterList name="all">
+            <Parameter name="regions" type="Array(string)" value="{east,west}" />
+            <ParameterList name="u">
+              <ParameterList name="function-constant" type="ParameterList">
+                <Parameter name="value" type="double" value="0.0" />
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="verbose object" type="ParameterList">
+          <Parameter name="verbosity level" type="string" value="low" />
+        </ParameterList>
+      </ParameterList>
+       
+      <ParameterList name="tensor_coefficient" type="ParameterList">
+        <Parameter name="evaluator type" type="string" value="tensor independent variable" />
+        <Parameter name="tensor rank" type="int" value="0" />
+        <ParameterList name="function" type="ParameterList">
+          <ParameterList name="domain" type="ParameterList">
+            <Parameter name="region" type="string" value="computational domain" />
+            <Parameter name="component" type="string" value="cell" />
+            <Parameter name="number of dofs" type="int" value="1" />
+            <ParameterList name="function" type="ParameterList">
+              <ParameterList name="function-constant" type="ParameterList">
+                <Parameter name="value" type="double" value="1.0" />
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="verbose object" type="ParameterList">
+          <Parameter name="verbosity level" type="string" value="low" />
+        </ParameterList>
+      </ParameterList>
+
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

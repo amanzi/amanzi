@@ -25,13 +25,14 @@ class CompositeSpace;
 class TreeVectorSpace {
  public:
   // Constructor
-  TreeVectorSpace() : comm_(Amanzi::getDefaultComm()) {};
-  TreeVectorSpace(const Comm_ptr_type& comm) : comm_(comm) {};
+  TreeVectorSpace() : comm_(Amanzi::getDefaultComm()){};
+  TreeVectorSpace(const Comm_ptr_type& comm) : comm_(comm){};
   explicit TreeVectorSpace(const Teuchos::RCP<const CompositeSpace>& cvfac);
   TreeVectorSpace(const TreeVectorSpace& other);
 
   // Comparators
   bool SameAs(const TreeVectorSpace& other) const;
+  bool LocallySameAs(const TreeVectorSpace& other) const;
   bool SubsetOf(const TreeVectorSpace& other) const;
 
   // Set/get data space
@@ -40,11 +41,13 @@ class TreeVectorSpace {
 
   // Access to ANY communicator (this may be ill-posed!)
   Comm_ptr_type Comm() const { return comm_; }
+  Comm_ptr_type getComm() const { return comm_; }
 
   // Access to SubVectors
-  typedef std::vector<Teuchos::RCP<TreeVectorSpace> > SubVectorsContainer;
+  typedef std::vector<Teuchos::RCP<TreeVectorSpace>> SubVectorsContainer;
   typedef Utils::iterator<SubVectorsContainer, TreeVectorSpace> iterator;
-  typedef Utils::const_iterator<SubVectorsContainer, const TreeVectorSpace> const_iterator;
+  typedef Utils::const_iterator<SubVectorsContainer, const TreeVectorSpace>
+    const_iterator;
 
   const_iterator begin() const { return const_iterator(subvecs_.begin()); }
   const_iterator end() const { return const_iterator(subvecs_.end()); }
@@ -52,7 +55,7 @@ class TreeVectorSpace {
   iterator begin() { return iterator(subvecs_.begin()); }
   iterator end() { return iterator(subvecs_.end()); }
   size_t size() const { return subvecs_.size(); }
-  
+
   // Get a pointer to the sub-vector by index
   Teuchos::RCP<const TreeVectorSpace> SubVector(int index) const;
 
@@ -65,7 +68,7 @@ class TreeVectorSpace {
 
  private:
   Teuchos::RCP<const CompositeSpace> data_;
-  std::vector<Teuchos::RCP<TreeVectorSpace> > subvecs_;
+  std::vector<Teuchos::RCP<TreeVectorSpace>> subvecs_;
   Comm_ptr_type comm_;
 };
 

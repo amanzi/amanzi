@@ -16,12 +16,12 @@ namespace Amanzi {
 // registry of method
 template <>
 Utils::RegisteredFactory<Evaluator, EvaluatorPrimary<double>>
-    EvaluatorPrimary<double>::fac_("primary variable double");
+  EvaluatorPrimary<double>::fac_("primary variable double");
 
 template <>
 Utils::RegisteredFactory<
-    Evaluator, EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>
-    EvaluatorPrimary<CompositeVector, CompositeVectorSpace>::fac_(
-        "primary variable");
+  Evaluator, EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>
+  EvaluatorPrimary<CompositeVector, CompositeVectorSpace>::fac_(
+    "primary variable");
 
 } // namespace Amanzi

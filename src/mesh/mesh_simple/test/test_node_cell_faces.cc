@@ -7,65 +7,58 @@
 #include <AmanziComm.hh>
 #include "Epetra_SerialComm.h"
 
-TEST(NODE_CELL_FACES) {
-
+TEST(NODE_CELL_FACES)
+{
   using namespace std;
   auto comm = Amanzi::getDefaultComm();
   const unsigned int exp_nnode = 27;
 
-  Amanzi::AmanziMesh::Mesh_simple Mm(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, comm);
+  Amanzi::AmanziMesh::Mesh_simple Mm(
+    0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, comm);
 
 
-  for (int i = 0; i < exp_nnode; i++)
-    {
+  for (int i = 0; i < exp_nnode; i++) {
+    Amanzi::AmanziMesh::Entity_ID node = i;
 
-      Amanzi::AmanziMesh::Entity_ID node = i;
+    Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells;
 
-      Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells;
+    Mm.node_get_cells(node, Amanzi::AmanziMesh::Parallel_type::OWNED, cells);
 
-      Mm.node_get_cells(node, Amanzi::AmanziMesh::Parallel_type::OWNED, cells);
+    unsigned int ncells = cells.extent(0);
 
-      unsigned int ncells = cells.extent(0);
+    for (int j = 0; j < ncells; j++) {
+      Amanzi::AmanziMesh::Entity_ID cell = cells(j);
 
-      for (int j = 0; j < ncells; j++)
-	{
-	  Amanzi::AmanziMesh::Entity_ID cell = cells(j);
+      Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> faces;
 
-	  Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> faces;
+      Mm.node_get_cell_faces(
+        node, cell, Amanzi::AmanziMesh::Parallel_type::OWNED, faces);
 
-	  Mm.node_get_cell_faces(node, cell, Amanzi::AmanziMesh::Parallel_type::OWNED, faces);
+      // This is a hex mesh. In any given cell, number of faces
+      // connected to a node should be 3
 
-	  // This is a hex mesh. In any given cell, number of faces
-	  // connected to a node should be 3
+      CHECK_EQUAL(3, faces.extent(0));
 
-	  CHECK_EQUAL(3,faces.extent(0));
+      for (int k = 0; k < 3; k++) {
+        Amanzi::AmanziMesh::Entity_ID face = faces(k);
 
-	  for (int k = 0; k < 3; k++)
-	    {
+        Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> fnodes;
 
-	      Amanzi::AmanziMesh::Entity_ID face = faces(k);
+        Mm.face_get_nodes(face, fnodes);
 
-	      Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> fnodes;
+        unsigned int nfnodes = fnodes.extent(0);
 
-	      Mm.face_get_nodes(face, fnodes);
+        unsigned int found = 0;
 
-	      unsigned int nfnodes = fnodes.extent(0);
+        for (int n = 0; n < nfnodes; n++) {
+          if (fnodes(n) == node) {
+            found = 1;
+            break;
+          }
+        }
 
-	      unsigned int found = 0;
-
-	      for (int n = 0; n < nfnodes; n++)
-		{
-		  if (fnodes(n) == node)
-		    {
-		      found = 1;
-		      break;
-		    }
-		}
-
-	      CHECK_EQUAL(1,found);
-	    }
-
-	}
+        CHECK_EQUAL(1, found);
+      }
     }
-
+  }
 }

@@ -19,9 +19,8 @@
 namespace Amanzi {
 
 class Evaluator_Factory : public Utils::Factory<Evaluator> {
-
-public:
-  Teuchos::RCP<Evaluator> createEvaluator(Teuchos::ParameterList &plist);
+ public:
+  Teuchos::RCP<Evaluator> createEvaluator(Teuchos::ParameterList& plist);
 };
 
 } // namespace Amanzi

@@ -13,9 +13,9 @@
 namespace Amanzi {
 
 class MeshAudit {
-public:
-
-  MeshAudit(Teuchos::RCP<AmanziMesh::Mesh> &mesh_, std::ostream& os=std::cout);
+ public:
+  MeshAudit(Teuchos::RCP<AmanziMesh::Mesh>& mesh_,
+            std::ostream& os = std::cout);
 
   // This is the main method.
   int Verify() const;
@@ -66,8 +66,7 @@ public:
   bool check_node_partition() const;
   bool check_face_partition() const;
 
-private:
-
+ private:
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   Comm_ptr_type comm_;
 
@@ -81,37 +80,44 @@ private:
   bool distinct_values(const Kokkos::View<AmanziMesh::Entity_ID*>& list) const;
   void write_list(const AmanziMesh::Entity_ID_List&, unsigned int) const;
   bool global_any(bool) const;
-  int same_face(const Kokkos::View<AmanziMesh::Entity_ID*>, const AmanziMesh::Entity_ID_List) const;
+  int same_face(const Kokkos::View<AmanziMesh::Entity_ID*>,
+                const AmanziMesh::Entity_ID_List) const;
 
   bool check_maps(const Map_ptr_type&, const Map_ptr_type&) const;
   bool check_get_set_ids(AmanziMesh::Entity_kind) const;
   bool check_valid_set_id(AmanziMesh::Entity_kind) const;
-  bool check_sets(AmanziMesh::Entity_kind, const Map_ptr_type&, const Map_ptr_type&) const;
-  bool check_get_set(AmanziMesh::Set_ID, AmanziMesh::Entity_kind, AmanziMesh::Parallel_type, const Map_ptr_type&) const;
-  bool check_used_set(AmanziMesh::Set_ID, AmanziMesh::Entity_kind, const Map_ptr_type&, const Map_ptr_type&) const;
+  bool check_sets(AmanziMesh::Entity_kind, const Map_ptr_type&,
+                  const Map_ptr_type&) const;
+  bool check_get_set(AmanziMesh::Set_ID, AmanziMesh::Entity_kind,
+                     AmanziMesh::Parallel_type, const Map_ptr_type&) const;
+  bool check_used_set(AmanziMesh::Set_ID, AmanziMesh::Entity_kind,
+                      const Map_ptr_type&, const Map_ptr_type&) const;
 
   // This is the vertex type for the test dependency graph.
-  typedef bool (MeshAudit::* Test)() const;
-  struct Vertex
-  {
+  typedef bool (MeshAudit::*Test)() const;
+  struct Vertex {
     Vertex() : run(true) {}
     std::string name;
     mutable bool run;
     Test test;
   };
 
-  typedef boost::adjacency_list<boost::listS, boost::vecS, boost::directedS, Vertex> Graph;
+  typedef boost::adjacency_list<boost::listS, boost::vecS, boost::directedS,
+                                Vertex>
+    Graph;
   Graph g;
 
-  struct mark_do_not_run : public boost::bfs_visitor<>
-  {
+  struct mark_do_not_run : public boost::bfs_visitor<> {
     template <class Vertex, class Graph>
-    void discover_vertex(Vertex v, Graph &gr) { gr[v].run = false; }
+    void discover_vertex(Vertex v, Graph& gr)
+    {
+      gr[v].run = false;
+    }
   };
 
   void create_test_dependencies();
 };
 
-} // close namespace Amanzi
+} // namespace Amanzi
 
 #endif

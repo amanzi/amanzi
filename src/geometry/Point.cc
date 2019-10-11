@@ -1,7 +1,4 @@
 #include "Point.hh"
 namespace Amanzi {
-namespace AmanziGeometry {
-
- 
-}
-}
+namespace AmanziGeometry {}
+} // namespace Amanzi

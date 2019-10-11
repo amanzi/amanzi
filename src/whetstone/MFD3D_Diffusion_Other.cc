@@ -26,9 +26,10 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* The conventional FV scheme for a general mesh.
-****************************************************************** */
-int MFD3D_Diffusion::MassMatrixInverseTPFA(int c, const Tensor& K, DenseMatrix& W)
+ * The conventional FV scheme for a general mesh.
+ ****************************************************************** */
+int
+MFD3D_Diffusion::MassMatrixInverseTPFA(int c, const Tensor& K, DenseMatrix& W)
 {
   Kokkos::View<Entity_ID*> faces;
   Kokkos::View<int*> dirs;
@@ -59,10 +60,11 @@ int MFD3D_Diffusion::MassMatrixInverseTPFA(int c, const Tensor& K, DenseMatrix& 
 
 
 /* ******************************************************************
-* The one-sided transmissibility coefficient. Any change to this
-* routine must be consistent with the above routine.
-****************************************************************** */
-double MFD3D_Diffusion::Transmissibility(int f, int c, const Tensor& K)
+ * The one-sided transmissibility coefficient. Any change to this
+ * routine must be consistent with the above routine.
+ ****************************************************************** */
+double
+MFD3D_Diffusion::Transmissibility(int f, int c, const Tensor& K)
 {
   int dir;
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -82,12 +84,14 @@ double MFD3D_Diffusion::Transmissibility(int f, int c, const Tensor& K)
 
 
 /* ******************************************************************
-* The debug version of the above FV scheme for a scalar tensor and
-* an orthogonal brick element.
-****************************************************************** */
-int MFD3D_Diffusion::MassMatrixInverseDiagonal(int c, const Tensor& K, DenseMatrix& W)
+ * The debug version of the above FV scheme for a scalar tensor and
+ * an orthogonal brick element.
+ ****************************************************************** */
+int
+MFD3D_Diffusion::MassMatrixInverseDiagonal(int c, const Tensor& K,
+                                           DenseMatrix& W)
 {
-  double volume = mesh_->cell_volume(c,false);
+  double volume = mesh_->cell_volume(c, false);
 
   Kokkos::View<Entity_ID*> faces;
   mesh_->cell_get_faces(c, faces);
@@ -106,9 +110,10 @@ int MFD3D_Diffusion::MassMatrixInverseDiagonal(int c, const Tensor& K, DenseMatr
 
 
 /* ******************************************************************
-* Second-generation MFD method as inlemented in RC1.
-****************************************************************** */
-int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
+ * Second-generation MFD method as inlemented in RC1.
+ ****************************************************************** */
+int
+MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
 {
   Kokkos::View<Entity_ID*> faces;
   Kokkos::View<int*> fdirs;
@@ -135,7 +140,8 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
     int nfaces = corner_faces.extent(0);
     if (nfaces < d_) {
       Errors::Message msg;
-      msg << "WhetStone MFD3D_Diffusion: number of faces forming a corner is small.";
+      msg << "WhetStone MFD3D_Diffusion: number of faces forming a corner is "
+             "small.";
       Exceptions::amanzi_throw(msg);
     }
 
@@ -162,7 +168,7 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
   // rescale corner weights
   double factor = 0.0;
   for (int n = 0; n < nnodes; n++) factor += cwgt[n];
-  factor = mesh_->cell_volume(c,false) / factor;
+  factor = mesh_->cell_volume(c, false) / factor;
 
   for (int n = 0; n < nnodes; n++) cwgt[n] *= factor;
 
@@ -176,13 +182,19 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
     Tensor& Mv_tmp = Mv[n];
     for (int i = 0; i < d_; i++) {
       int k = 0;
-      for(int f = 0 ; f < num_faces; ++f){
-        if(faces(f) == corner_faces(i)){ k = f; break; }
+      for (int f = 0; f < num_faces; ++f) {
+        if (faces(f) == corner_faces(i)) {
+          k = f;
+          break;
+        }
       }
       for (int j = i; j < d_; j++) {
         int l = 0;
-        for(int f = 0 ; f < num_faces; ++f){
-          if(faces(f) == corner_faces(j)){ l = f; break; }
+        for (int f = 0; f < num_faces; ++f) {
+          if (faces(f) == corner_faces(j)) {
+            l = f;
+            break;
+          }
         }
         W(k, l) += Mv_tmp(i, j) * cwgt[n] * fdirs(k) * fdirs(l);
         W(l, k) = W(k, l);
@@ -194,12 +206,13 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
   int ierr = W.Inverse();
   if (ierr != 0) {
     Errors::Message msg;
-    msg << "WhetStone MFD3D_Diffusion: support operator generated bad elemental mass matrix.";
+    msg << "WhetStone MFD3D_Diffusion: support operator generated bad "
+           "elemental mass matrix.";
     Exceptions::amanzi_throw(msg);
   }
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi

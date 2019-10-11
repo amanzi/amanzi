@@ -16,12 +16,11 @@ using Entity_ID_View = Kokkos::View<LO*>;
 //
 
 // Execute over continuous range, no tag.
-template<template <typename> class Model, 
-         class DeviceType=AmanziDefaultDevice>
-void ExecuteModel(const std::string& kernelName,
-		  Model<DeviceType>& model,
-		  const int beg, const int end,
-		  DeviceType /* dev */ = DeviceType ())
+template <template <typename> class Model,
+          class DeviceType = AmanziDefaultDevice>
+void
+ExecuteModel(const std::string& kernelName, Model<DeviceType>& model,
+             const int beg, const int end, DeviceType /* dev */ = DeviceType())
 {
   using execution_space = typename DeviceType::execution_space;
   using range = Kokkos::RangePolicy<execution_space, int>;
@@ -29,14 +28,12 @@ void ExecuteModel(const std::string& kernelName,
 }
 
 // Execute over a continuous range, with tag.
-template<template <typename> class Model, 
-	 class TagType,
-         class DeviceType=AmanziDefaultDevice>
-void ExecuteModel(const std::string& kernelName,
-		  Model<DeviceType>& model,
-		  TagType /* tag */,
-		  const int beg, const int end,
-		  DeviceType /* dev */ = DeviceType ())
+template <template <typename> class Model, class TagType,
+          class DeviceType = AmanziDefaultDevice>
+void
+ExecuteModel(const std::string& kernelName, Model<DeviceType>& model,
+             TagType /* tag */, const int beg, const int end,
+             DeviceType /* dev */ = DeviceType())
 {
   using execution_space = typename DeviceType::execution_space;
   using range = Kokkos::RangePolicy<execution_space, TagType, int>;
@@ -45,36 +42,35 @@ void ExecuteModel(const std::string& kernelName,
 
 
 // Execute over a random range, no tag.
-template<template <typename> class Model, 
-         class DeviceType = AmanziDefaultDevice>
-void ExecuteModel(const std::string& kernelName,
-		  Model<DeviceType>& model,
-                  const Entity_ID_View& entities,
-		  DeviceType /* dev */ = DeviceType ())
+template <template <typename> class Model,
+          class DeviceType = AmanziDefaultDevice>
+void
+ExecuteModel(const std::string& kernelName, Model<DeviceType>& model,
+             const Entity_ID_View& entities,
+             DeviceType /* dev */ = DeviceType())
 {
   using execution_space = typename DeviceType::execution_space;
   using range = Kokkos::RangePolicy<execution_space, int>;
-  Kokkos::parallel_for(kernelName, range(0, entities.extent(0)),
-                       KOKKOS_LAMBDA (const int i) { model(entities(i)); });
+  Kokkos::parallel_for(kernelName,
+                       range(0, entities.extent(0)),
+                       KOKKOS_LAMBDA(const int i) { model(entities(i)); });
 }
 
 // Execute over a random range, with tag.
-template<template <typename> class Model, 
-	 class TagType,
-         class DeviceType = AmanziDefaultDevice>
-void ExecuteModel(const std::string& kernelName,
-		  Model<DeviceType>& model,
-		  TagType /* tag */,
-                  const Entity_ID_View& entities,
-		  DeviceType /* dev */ = DeviceType ())
+template <template <typename> class Model, class TagType,
+          class DeviceType = AmanziDefaultDevice>
+void
+ExecuteModel(const std::string& kernelName, Model<DeviceType>& model,
+             TagType /* tag */, const Entity_ID_View& entities,
+             DeviceType /* dev */ = DeviceType())
 {
   using execution_space = typename DeviceType::execution_space;
   using range = Kokkos::RangePolicy<execution_space, int>;
-  Kokkos::parallel_for(kernelName, range(0, entities.extent(0)),
-                       KOKKOS_LAMBDA (const int i) { model(TagType(), entities(i)); });
+  Kokkos::parallel_for(
+    kernelName, range(0, entities.extent(0)), KOKKOS_LAMBDA(const int i) {
+      model(TagType(), entities(i));
+    });
 }
-
-
 
 
 } // namespace Amanzi

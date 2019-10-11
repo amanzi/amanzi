@@ -18,29 +18,29 @@ A field evaluator for an changing cell volume.
 namespace Amanzi {
 
 class DeformingCellVolumeEvaluator : public EvaluatorSecondaryMonotype {
-public:
+ public:
   // constructor format for all derived classes
-  explicit DeformingCellVolumeEvaluator(Teuchos::ParameterList &plist);
+  explicit DeformingCellVolumeEvaluator(Teuchos::ParameterList& plist);
 
   // copy constructors
-  DeformingCellVolumeEvaluator(const DeformingCellVolumeEvaluator &other);
+  DeformingCellVolumeEvaluator(const DeformingCellVolumeEvaluator& other);
   virtual Teuchos::RCP<Evaluator> Clone() const;
 
   // setup of data and class
-  virtual void EnsureCompatibility(const Teuchos::Ptr<State> &S);
+  virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
 
-protected:
+ protected:
   // Required methods from EvaluatorSecondaryMonotype
-  virtual void EvaluateField_(const Teuchos::Ptr<State> &S,
-                              const Teuchos::Ptr<CompositeVector> &result);
+  virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
+                              const Teuchos::Ptr<CompositeVector>& result);
   virtual void
-  EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State> &S, Key wrt_key,
-                                  const Teuchos::Ptr<CompositeVector> &result);
+  EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S, Key wrt_key,
+                                  const Teuchos::Ptr<CompositeVector>& result);
 
-protected:
+ protected:
   Key my_mesh_;
 
-private:
+ private:
   static Utils::RegisteredFactory<Evaluator, DeformingCellVolumeEvaluator> fac_;
 };
 

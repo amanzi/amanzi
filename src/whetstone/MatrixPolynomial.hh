@@ -2,16 +2,16 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Operations with matrix of polynomials of type p(x - x0) where x0
   could be different for each entry.
-*/ 
+*/
 
 #ifndef AMANZI_WHETSTONE_MATRIX_POLYNOMIAL_HH_
 #define AMANZI_WHETSTONE_MATRIX_POLYNOMIAL_HH_
@@ -30,9 +30,9 @@ namespace WhetStone {
 
 class MatrixPolynomial {
  public:
-  MatrixPolynomial() : d_(0), m_(0), n_(0) {};
+  MatrixPolynomial() : d_(0), m_(0), n_(0){};
   MatrixPolynomial(int d, int m, int n, int order);
-  ~MatrixPolynomial() {};
+  ~MatrixPolynomial(){};
 
   // reshape polynomial with erase (optionally) memory
   void Reshape(int d, int m, int n, int order, bool reset = false);
@@ -49,35 +49,41 @@ class MatrixPolynomial {
   double NormInf() const;
 
   // ring algebra
-  template<typename Type>
-  MatrixPolynomial& operator*=(Type val) {
+  template <typename Type>
+  MatrixPolynomial& operator*=(Type val)
+  {
     for (int i = 0; i < m_; ++i)
-      for (int j = 0; j < n_; ++j)
-        polys_[i][j] *= val;
+      for (int j = 0; j < n_; ++j) polys_[i][j] *= val;
     return *this;
   }
 
   MatrixPolynomial& operator+=(const MatrixPolynomial& mp);
   MatrixPolynomial& operator-=(const MatrixPolynomial& mp);
 
-  friend MatrixPolynomial operator+(const MatrixPolynomial& vp1, const MatrixPolynomial& vp2) {
+  friend MatrixPolynomial
+  operator+(const MatrixPolynomial& vp1, const MatrixPolynomial& vp2)
+  {
     MatrixPolynomial tmp(vp1);
     return tmp += vp2;
   }
 
-  friend MatrixPolynomial operator-(const MatrixPolynomial& vp1, const MatrixPolynomial& vp2) {
+  friend MatrixPolynomial
+  operator-(const MatrixPolynomial& vp1, const MatrixPolynomial& vp2)
+  {
     MatrixPolynomial tmp(vp1);
     return tmp -= vp2;
   }
 
-  template<typename Type>
-  friend MatrixPolynomial operator*(const Type& val, const MatrixPolynomial& vp) {
+  template <typename Type>
+  friend MatrixPolynomial operator*(const Type& val, const MatrixPolynomial& vp)
+  {
     MatrixPolynomial tmp(vp);
     return tmp *= val;
   }
 
-  template<typename Type>
-  friend MatrixPolynomial operator*(const MatrixPolynomial& vp, const Type& val) {
+  template <typename Type>
+  friend MatrixPolynomial operator*(const MatrixPolynomial& vp, const Type& val)
+  {
     MatrixPolynomial tmp(vp);
     return tmp *= val;
   }
@@ -91,13 +97,18 @@ class MatrixPolynomial {
   DenseMatrix Value(const AmanziGeometry::Point& xp) const;
 
   // -- matrix-vector products
-  void Multiply(const VectorPolynomial& v, VectorPolynomial& av, bool transpose);
+  void
+  Multiply(const VectorPolynomial& v, VectorPolynomial& av, bool transpose);
   void Multiply(const DenseVector& v, VectorPolynomial& av, bool transpose);
-  void Multiply(const AmanziGeometry::Point& p, VectorPolynomial& av, bool transpose);
+  void Multiply(const AmanziGeometry::Point& p, VectorPolynomial& av,
+                bool transpose);
 
-  // output 
-  friend std::ostream& operator << (std::ostream& os, const MatrixPolynomial& poly) {
-    os << "Matrix Polynomial: " << poly.NumRows() << " x " << poly.NumCols() << std::endl;
+  // output
+  friend std::ostream&
+  operator<<(std::ostream& os, const MatrixPolynomial& poly)
+  {
+    os << "Matrix Polynomial: " << poly.NumRows() << " x " << poly.NumCols()
+       << std::endl;
     for (int i = 0; i < poly.NumRows(); ++i)
       for (int j = 0; j < poly.NumCols(); ++j)
         os << "i=" << i << ", j=" << j << " " << poly(i, j);
@@ -106,11 +117,10 @@ class MatrixPolynomial {
 
  private:
   int d_, m_, n_, order_;
-  std::vector<std::vector<Polynomial> > polys_;
+  std::vector<std::vector<Polynomial>> polys_;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

@@ -28,11 +28,12 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Efficient implementation is possible in 2D. Hence, we fork the code.
-* This is the experimental algorithm.
-****************************************************************** */
-int MFD3D_Electromagnetics::H1consistency(
-    int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac)
+ * Efficient implementation is possible in 2D. Hence, we fork the code.
+ * This is the experimental algorithm.
+ ****************************************************************** */
+int
+MFD3D_Electromagnetics::H1consistency(int c, const Tensor& T, DenseMatrix& N,
+                                      DenseMatrix& Ac)
 {
   int ok;
   if (d_ == 2) {
@@ -45,10 +46,11 @@ int MFD3D_Electromagnetics::H1consistency(
 
 
 /* ******************************************************************
-* Consistency condition for a stiffness matrix.
-****************************************************************** */
-int MFD3D_Electromagnetics::H1consistency2D_(
-    int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac)
+ * Consistency condition for a stiffness matrix.
+ ****************************************************************** */
+int
+MFD3D_Electromagnetics::H1consistency2D_(int c, const Tensor& T, DenseMatrix& N,
+                                         DenseMatrix& Ac)
 {
   Kokkos::View<Entity_ID*> faces;
   Kokkos::View<int*> fdirs;
@@ -63,7 +65,7 @@ int MFD3D_Electromagnetics::H1consistency2D_(
   // calculate Ac = R (R^T N)^{+} R^T
   double T00 = T(0, 0);
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c,false);
+  double volume = mesh_->cell_volume(c, false);
 
   for (int i = 0; i < nfaces; ++i) {
     int f = faces(i);
@@ -96,10 +98,11 @@ int MFD3D_Electromagnetics::H1consistency2D_(
 
 
 /* ******************************************************************
-* Consistency condition for a stiffness matrix.
-****************************************************************** */
-int MFD3D_Electromagnetics::H1consistency3D_(
-    int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac)
+ * Consistency condition for a stiffness matrix.
+ ****************************************************************** */
+int
+MFD3D_Electromagnetics::H1consistency3D_(int c, const Tensor& T, DenseMatrix& N,
+                                         DenseMatrix& Ac)
 {
   Kokkos::View<Entity_ID*> faces, fedges, edges;
   std::vector<int> map;
@@ -111,7 +114,7 @@ int MFD3D_Electromagnetics::H1consistency3D_(
   mesh_->cell_get_edges(c, edges);
   int nedges = edges.extent(0);
 
-  int nd = 6;  // order_ * (order_ + 2) * (order_ + 3) / 2;
+  int nd = 6; // order_ * (order_ + 2) * (order_ + 3) / 2;
   N.Reshape(nedges, nd);
   Ac.Reshape(nedges, nedges);
 
@@ -121,7 +124,7 @@ int MFD3D_Electromagnetics::H1consistency3D_(
   AmanziGeometry::Point v1(d_), v2(d_), v3(d_);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c,false);
+  double volume = mesh_->cell_volume(c, false);
 
   for (int i = 0; i < nfaces; ++i) {
     int f = faces(i);
@@ -177,9 +180,11 @@ int MFD3D_Electromagnetics::H1consistency3D_(
 
 
 /* ******************************************************************
-* Mass matrix optimized for sparsity.
-****************************************************************** */
-int MFD3D_Electromagnetics::MassMatrixOptimized(int c, const Tensor& T, DenseMatrix& M)
+ * Mass matrix optimized for sparsity.
+ ****************************************************************** */
+int
+MFD3D_Electromagnetics::MassMatrixOptimized(int c, const Tensor& T,
+                                            DenseMatrix& M)
 {
   DenseMatrix N;
 
@@ -192,11 +197,12 @@ int MFD3D_Electromagnetics::MassMatrixOptimized(int c, const Tensor& T, DenseMat
 
 
 /* ******************************************************************
-* Inverse of matrix matrix for edge-based discretization optimized
-* for starcity.
-****************************************************************** */
-int MFD3D_Electromagnetics::MassMatrixInverseOptimized(
-    int c, const Tensor& T, DenseMatrix& W)
+ * Inverse of matrix matrix for edge-based discretization optimized
+ * for starcity.
+ ****************************************************************** */
+int
+MFD3D_Electromagnetics::MassMatrixInverseOptimized(int c, const Tensor& T,
+                                                   DenseMatrix& W)
 {
   DenseMatrix R;
 
@@ -209,12 +215,13 @@ int MFD3D_Electromagnetics::MassMatrixInverseOptimized(
 
 
 /* ******************************************************************
-* A simple mass matrix for testing.
-****************************************************************** */
-int MFD3D_Electromagnetics::MassMatrixDiagonal(
-    int c, const Tensor& T, DenseMatrix& M)
+ * A simple mass matrix for testing.
+ ****************************************************************** */
+int
+MFD3D_Electromagnetics::MassMatrixDiagonal(int c, const Tensor& T,
+                                           DenseMatrix& M)
 {
-  double volume = mesh_->cell_volume(c,false);
+  double volume = mesh_->cell_volume(c, false);
 
   Kokkos::View<Entity_ID*> edges;
   mesh_->cell_get_edges(c, edges);
@@ -229,12 +236,11 @@ int MFD3D_Electromagnetics::MassMatrixDiagonal(
 }
 
 
-
 /* ******************************************************************
-* Stiffness matrix: the standard algorithm.
-****************************************************************** */
-int MFD3D_Electromagnetics::StiffnessMatrix(
-    int c, const Tensor& T, DenseMatrix& A)
+ * Stiffness matrix: the standard algorithm.
+ ****************************************************************** */
+int
+MFD3D_Electromagnetics::StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A)
 {
   DenseMatrix M, C;
 
@@ -244,11 +250,12 @@ int MFD3D_Electromagnetics::StiffnessMatrix(
 
 
 /* ******************************************************************
-* Stiffness matrix: the standard algorithm. Curls in 2D and 3D are
-* defined using exterior face normals.
-****************************************************************** */
-int MFD3D_Electromagnetics::StiffnessMatrix(
-    int c, const Tensor& T, DenseMatrix& A, DenseMatrix& M, DenseMatrix& C)
+ * Stiffness matrix: the standard algorithm. Curls in 2D and 3D are
+ * defined using exterior face normals.
+ ****************************************************************** */
+int
+MFD3D_Electromagnetics::StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A,
+                                        DenseMatrix& M, DenseMatrix& C)
 {
   MFD3D_Diffusion diffusion(mesh_);
   int ok = diffusion.MassMatrixScaledArea(c, T, M);
@@ -269,10 +276,11 @@ int MFD3D_Electromagnetics::StiffnessMatrix(
 
 
 /* ******************************************************************
-* Stiffness matrix: the algorithm based on new
-****************************************************************** */
-int MFD3D_Electromagnetics::StiffnessMatrixGeneralized(
-    int c, const Tensor& T, DenseMatrix& A)
+ * Stiffness matrix: the algorithm based on new
+ ****************************************************************** */
+int
+MFD3D_Electromagnetics::StiffnessMatrixGeneralized(int c, const Tensor& T,
+                                                   DenseMatrix& A)
 {
   DenseMatrix N;
 
@@ -287,11 +295,12 @@ int MFD3D_Electromagnetics::StiffnessMatrixGeneralized(
 
 
 /* ******************************************************************
-* Stiffness matrix: the algorithm based on new
-****************************************************************** */
-void MFD3D_Electromagnetics::AddGradientToProjector_(int c, DenseMatrix& N)
+ * Stiffness matrix: the algorithm based on new
+ ****************************************************************** */
+void
+MFD3D_Electromagnetics::AddGradientToProjector_(int c, DenseMatrix& N)
 {
-  Kokkos::View<Entity_ID*> edges,nodes;
+  Kokkos::View<Entity_ID*> edges, nodes;
 
   mesh_->cell_get_edges(c, edges);
   int nedges = edges.extent(0);
@@ -362,10 +371,11 @@ void MFD3D_Electromagnetics::AddGradientToProjector_(int c, DenseMatrix& N)
 
 
 /* ******************************************************************
-* Curl matrix acts onto the space of total fluxes; hence, there is
-* no face area scaling below.
-****************************************************************** */
-void MFD3D_Electromagnetics::CurlMatrix(int c, DenseMatrix& C)
+ * Curl matrix acts onto the space of total fluxes; hence, there is
+ * no face area scaling below.
+ ****************************************************************** */
+void
+MFD3D_Electromagnetics::CurlMatrix(int c, DenseMatrix& C)
 {
   std::vector<int> map;
   Kokkos::View<Entity_ID*> faces, fedges, edges, nodes;
@@ -405,5 +415,5 @@ void MFD3D_Electromagnetics::CurlMatrix(int c, DenseMatrix& C)
   }
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi

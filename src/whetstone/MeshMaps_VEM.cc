@@ -25,15 +25,15 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Calculate mesh velocity in cell c: new algorithm.
-* NOTE: second mesh is not used, so does it belong here?
-****************************************************************** */
-void MeshMaps_VEM::VelocityCell(
-    int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
+ * Calculate mesh velocity in cell c: new algorithm.
+ * NOTE: second mesh is not used, so does it belong here?
+ ****************************************************************** */
+void
+MeshMaps_VEM::VelocityCell(int c, const std::vector<VectorPolynomial>& vf,
+                           VectorPolynomial& vc) const
 {
   Teuchos::ParameterList plist;
-  plist.set<std::string>("method", method_)
-       .set<int>("method order", order_);
+  plist.set<std::string>("method", method_).set<int>("method order", order_);
   auto mfd = BilinearFormFactory::Create(plist, mesh0_);
 
   vc.resize(d_);
@@ -43,14 +43,11 @@ void MeshMaps_VEM::VelocityCell(
   } else {
     for (int i = 0; i < d_; ++i) {
       std::vector<Polynomial> vvf;
-      for (int n = 0; n < vf.size(); ++n) {
-        vvf.push_back(vf[n][i]);
-      }
+      for (int n = 0; n < vf.size(); ++n) { vvf.push_back(vf[n][i]); }
 
       if (projector_ == "H1") {
         mfd->H1Cell(c, vvf, NULL, vc[i]);
-      }
-      else if (projector_ == "L2") {
+      } else if (projector_ == "L2") {
         mfd->L2Cell(c, vvf, NULL, vc[i]);
       }
     }
@@ -59,9 +56,10 @@ void MeshMaps_VEM::VelocityCell(
 
 
 /* ******************************************************************
-* Calculate mesh velocity on face f.
-****************************************************************** */
-void MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
+ * Calculate mesh velocity on face f.
+ ****************************************************************** */
+void
+MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
 {
   if (d_ == 2) {
     MeshMaps::VelocityFace(f, vf);
@@ -73,8 +71,7 @@ void MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
     int nedges = edges.extent(0);
 
     Teuchos::ParameterList plist;
-    plist.set<std::string>("method", method_)
-         .set<int>("method order", order_);
+    plist.set<std::string>("method", method_).set<int>("method order", order_);
     auto mfd = BilinearFormFactory::Create(plist, mesh0_);
     mfd->set_order(order_);
 
@@ -95,9 +92,10 @@ void MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
 
 
 /* ******************************************************************
-* Calculate mesh velocity on 2D or 3D edge e.
-****************************************************************** */
-void MeshMaps_VEM::VelocityEdge_(int e, VectorPolynomial& ve) const
+ * Calculate mesh velocity on 2D or 3D edge e.
+ ****************************************************************** */
+void
+MeshMaps_VEM::VelocityEdge_(int e, VectorPolynomial& ve) const
 {
   const AmanziGeometry::Point& xe0 = mesh0_->edge_centroid(e);
   const AmanziGeometry::Point& xe1 = mesh1_->edge_centroid(e);
@@ -118,9 +116,7 @@ void MeshMaps_VEM::VelocityEdge_(int e, VectorPolynomial& ve) const
 
   x0 /= L22(x0);
   for (int i = 0; i < d_; ++i) {
-    for (int j = 0; j < d_; ++j) {
-      ve[i](1, j) = x1[i] * x0[j];
-    }
+    for (int j = 0; j < d_; ++j) { ve[i](1, j) = x1[i] * x0[j]; }
     ve[i](0, 0) = xe1[i] - x1[i] * (x0 * xe0);
     ve[i](1, i) -= 1.0;
   }
@@ -128,10 +124,12 @@ void MeshMaps_VEM::VelocityEdge_(int e, VectorPolynomial& ve) const
 
 
 /* ******************************************************************
-* Calculate mesh velocity in cell c: old algorithm
-****************************************************************** */
-void MeshMaps_VEM::LeastSquareProjector_Cell_(
-    int order, int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
+ * Calculate mesh velocity in cell c: old algorithm
+ ****************************************************************** */
+void
+MeshMaps_VEM::LeastSquareProjector_Cell_(
+  int order, int c, const std::vector<VectorPolynomial>& vf,
+  VectorPolynomial& vc) const
 {
   AMANZI_ASSERT(order == 1 || order == 2);
 
@@ -161,9 +159,7 @@ void MeshMaps_VEM::LeastSquareProjector_Cell_(
       const auto& xf = mesh0_->face_centroid(faces(n));
       x1.push_back(xf);
 
-      for (int i = 0; i < d_; ++i)  {
-        px2[i] = vf[n][i].Value(xf);
-      }
+      for (int i = 0; i < d_; ++i) { px2[i] = vf[n][i].Value(xf); }
       x2.push_back(px2);
     }
   }
@@ -174,14 +170,15 @@ void MeshMaps_VEM::LeastSquareProjector_Cell_(
 
 
 /* ******************************************************************
-* Calculate mesh velocity in cell c: old algorithm
-****************************************************************** */
-void MeshMaps_VEM::ParseInputParameters_(const Teuchos::ParameterList& plist)
+ * Calculate mesh velocity in cell c: old algorithm
+ ****************************************************************** */
+void
+MeshMaps_VEM::ParseInputParameters_(const Teuchos::ParameterList& plist)
 {
   method_ = plist.get<std::string>("method");
   order_ = plist.get<int>("method order");
   projector_ = plist.get<std::string>("projector");
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi

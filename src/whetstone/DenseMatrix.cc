@@ -2,9 +2,9 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -25,34 +25,34 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Constructor: memory is allocated.
-****************************************************************** */
-DenseMatrix::DenseMatrix(int mrow, int ncol) 
-{ 
+ * Constructor: memory is allocated.
+ ****************************************************************** */
+DenseMatrix::DenseMatrix(int mrow, int ncol)
+{
   m_ = mrow;
   n_ = ncol;
   mem_ = m_ * n_;
-  data_ = new double[mem_]; 
+  data_ = new double[mem_];
   access_ = WHETSTONE_DATA_ACCESS_COPY;
 }
 
 
 /* ******************************************************************
-* Constructor: empty matrix
-****************************************************************** */
-DenseMatrix::DenseMatrix() 
-{ 
+ * Constructor: empty matrix
+ ****************************************************************** */
+DenseMatrix::DenseMatrix()
+{
   m_ = 0;
   n_ = 0;
   mem_ = 0;
-  data_ = NULL; 
+  data_ = NULL;
   access_ = WHETSTONE_DATA_ACCESS_COPY;
 }
 
 
 /* ******************************************************************
-* No memory check is performed: invalid read is possible.
-****************************************************************** */
+ * No memory check is performed: invalid read is possible.
+ ****************************************************************** */
 DenseMatrix::DenseMatrix(int mrow, int ncol, double* data, int data_access)
 {
   m_ = mrow;
@@ -61,7 +61,7 @@ DenseMatrix::DenseMatrix(int mrow, int ncol, double* data, int data_access)
 
   if (access_ == WHETSTONE_DATA_ACCESS_COPY) {
     mem_ = m_ * n_;
-    data_ = new double[mem_]; 
+    data_ = new double[mem_];
     for (int i = 0; i < mem_; i++) data_[i] = data[i];
   } else {
     mem_ = 0;
@@ -71,8 +71,8 @@ DenseMatrix::DenseMatrix(int mrow, int ncol, double* data, int data_access)
 
 
 /* ******************************************************************
-* Copy constructor creates an new matrix.
-****************************************************************** */
+ * Copy constructor creates an new matrix.
+ ****************************************************************** */
 DenseMatrix::DenseMatrix(const DenseMatrix& B)
 {
   m_ = B.NumRows();
@@ -87,9 +87,9 @@ DenseMatrix::DenseMatrix(const DenseMatrix& B)
 
 
 /* ******************************************************************
-* Copy constructor creates a new matrix from the submatrix of B in 
-* rows m1 to m2-1 and columns n1 to n2-1.
-****************************************************************** */
+ * Copy constructor creates a new matrix from the submatrix of B in
+ * rows m1 to m2-1 and columns n1 to n2-1.
+ ****************************************************************** */
 DenseMatrix::DenseMatrix(const DenseMatrix& B, int m1, int m2, int n1, int n2)
 {
   m_ = m2 - m1;
@@ -116,9 +116,10 @@ DenseMatrix::DenseMatrix(const DenseMatrix& B, int m1, int m2, int n1, int n2)
 
 
 /* ******************************************************************
-* Smart memory management. Data destroyed in general.
-****************************************************************** */
-void DenseMatrix::Reshape(int mrow, int ncol)
+ * Smart memory management. Data destroyed in general.
+ ****************************************************************** */
+void
+DenseMatrix::Reshape(int mrow, int ncol)
 {
   AMANZI_ASSERT(access_ == WHETSTONE_DATA_ACCESS_COPY);
 
@@ -126,9 +127,7 @@ void DenseMatrix::Reshape(int mrow, int ncol)
   n_ = ncol;
 
   if (mem_ < m_ * n_) {
-    if (data_ != NULL) {
-      delete [] data_;
-    }
+    if (data_ != NULL) { delete[] data_; }
     mem_ = m_ * n_;
     data_ = new double[mem_];
   }
@@ -136,9 +135,10 @@ void DenseMatrix::Reshape(int mrow, int ncol)
 
 
 /* ******************************************************************
-* Trace operator is extended to rectangular matrices.
-****************************************************************** */
-double DenseMatrix::Trace()
+ * Trace operator is extended to rectangular matrices.
+ ****************************************************************** */
+double
+DenseMatrix::Trace()
 {
   double s(0.0);
   for (int i = 0; i < m_ * n_; i += m_ + 1) s += data_[i];
@@ -147,10 +147,11 @@ double DenseMatrix::Trace()
 
 
 /* ******************************************************************
-* Matrix-matrix product. The matrices are ordered by columns.
-****************************************************************** */
-int DenseMatrix::Multiply(const DenseMatrix& A, 
-                          const DenseMatrix& B, bool transposeA)
+ * Matrix-matrix product. The matrices are ordered by columns.
+ ****************************************************************** */
+int
+DenseMatrix::Multiply(const DenseMatrix& A, const DenseMatrix& B,
+                      bool transposeA)
 {
   const double* dataA = A.Values();
   const double* dataB = B.Values();
@@ -158,7 +159,7 @@ int DenseMatrix::Multiply(const DenseMatrix& A,
   int mrowsA = A.NumRows(), ncolsA = A.NumCols();
   int mrowsB = B.NumRows(), ncolsB = B.NumCols();
 
-  if (! transposeA) {
+  if (!transposeA) {
     if (ncolsA != mrowsB || m_ != mrowsA || n_ != ncolsB) return 1;
 
     for (int i = 0; i < m_; i++) {
@@ -173,7 +174,7 @@ int DenseMatrix::Multiply(const DenseMatrix& A,
         }
         (*this)(i, j) = s;
       }
-    } 
+    }
   } else {
     if (mrowsA != mrowsB || m_ != ncolsA || n_ != ncolsB) return 1;
 
@@ -197,9 +198,11 @@ int DenseMatrix::Multiply(const DenseMatrix& A,
 
 
 /* ******************************************************************
-* Matrix-vector product. The matrix is ordered by columns.
-****************************************************************** */
-int DenseMatrix::Multiply(const DenseVector& A, DenseVector& B, bool transpose) const
+ * Matrix-vector product. The matrix is ordered by columns.
+ ****************************************************************** */
+int
+DenseMatrix::Multiply(const DenseVector& A, DenseVector& B,
+                      bool transpose) const
 {
   const double* dataA = A.Values();
   double* dataB = B.Values();
@@ -207,7 +210,7 @@ int DenseMatrix::Multiply(const DenseVector& A, DenseVector& B, bool transpose) 
   int mrowsA = A.NumRows();
   int mrowsB = B.NumRows();
 
-  if (! transpose) {
+  if (!transpose) {
     if (n_ != mrowsA || m_ != mrowsB) return 1;
 
     for (int i = 0; i < m_; i++) {
@@ -218,7 +221,7 @@ int DenseMatrix::Multiply(const DenseVector& A, DenseVector& B, bool transpose) 
         tmpM += m_;
       }
       dataB[i] = s;
-    } 
+    }
   } else {
     if (m_ != mrowsA || n_ != mrowsB) return 1;
 
@@ -238,47 +241,51 @@ int DenseMatrix::Multiply(const DenseVector& A, DenseVector& B, bool transpose) 
 
 
 /* ******************************************************************
-* Second level routine: max values
-****************************************************************** */
-void DenseMatrix::MaxRowValue(int irow, int jmin, int jmax, int* j, double* value)
+ * Second level routine: max values
+ ****************************************************************** */
+void
+DenseMatrix::MaxRowValue(int irow, int jmin, int jmax, int* j, double* value)
 {
   double* data = data_ + jmin * m_ + irow;
   *j = jmin;
-  *value = *data; 
+  *value = *data;
 
   for (int k = jmin + 1; k < jmax + 1; k++) {
     data += m_;
     if (*data > *value) {
       *j = k;
-      *value = *data; 
+      *value = *data;
     }
   }
 }
 
 
 /* ******************************************************************
-* Second level routine: max absolute value
-****************************************************************** */
-void DenseMatrix::MaxRowMagnitude(int irow, int jmin, int jmax, int* j, double* value)
+ * Second level routine: max absolute value
+ ****************************************************************** */
+void
+DenseMatrix::MaxRowMagnitude(int irow, int jmin, int jmax, int* j,
+                             double* value)
 {
   double* data = data_ + jmin * m_ + irow;
   *j = jmin;
-  *value = fabs(*data); 
+  *value = fabs(*data);
 
   for (int k = jmin + 1; k < jmax + 1; k++) {
     data += m_;
     if (fabs(*data) > *value) {
       *j = k;
-      *value = fabs(*data); 
+      *value = fabs(*data);
     }
   }
 }
 
 
 /* ******************************************************************
-* Second level routine: submatrix in rows [ib,ie) and columns [jb,je)
-****************************************************************** */
-DenseMatrix DenseMatrix::SubMatrix(int ib, int ie, int jb, int je) 
+ * Second level routine: submatrix in rows [ib,ie) and columns [jb,je)
+ ****************************************************************** */
+DenseMatrix
+DenseMatrix::SubMatrix(int ib, int ie, int jb, int je)
 {
   int mrows(ie - ib), ncols(je - jb);
   DenseMatrix tmp(mrows, ncols);
@@ -288,19 +295,20 @@ DenseMatrix DenseMatrix::SubMatrix(int ib, int ie, int jb, int je)
     const double* dataA = data_ + j * m_ + ib;
     for (int i = ib; i < ie; ++i) {
       *dataB = *dataA;
-      dataA++; 
-      dataB++; 
+      dataA++;
+      dataB++;
     }
-  } 
+  }
 
   return tmp;
 }
 
 
 /* ******************************************************************
-* Second level routine: transpose
-****************************************************************** */
-void DenseMatrix::Transpose(const DenseMatrix& A) 
+ * Second level routine: transpose
+ ****************************************************************** */
+void
+DenseMatrix::Transpose(const DenseMatrix& A)
 {
   const double* dataA = A.Values();
   int mrowsA = A.NumRows(), ncolsA = A.NumCols();
@@ -310,34 +318,36 @@ void DenseMatrix::Transpose(const DenseMatrix& A)
   for (int j = 0; j < ncolsA; ++j) {
     for (int i = 0; i < mrowsA; ++i) {
       *(data_ + i * ncolsA + j) = *dataA;
-      dataA++; 
+      dataA++;
     }
-  } 
+  }
 }
 
 
-int DenseMatrix::Transpose() 
+int
+DenseMatrix::Transpose()
 {
   if (m_ != n_) return 1;
 
   for (int i = 0; i < m_; ++i) {
     for (int j = i + 1; j < n_; ++j) {
-      double* aij = data_ + i * n_ + j; 
-      double* aji = data_ + j * n_ + i; 
+      double* aij = data_ + i * n_ + j;
+      double* aji = data_ + j * n_ + i;
 
       double tmp(*aij);
       *aij = *aji;
       *aji = tmp;
     }
-  } 
+  }
   return 0;
 }
 
 
 /* ******************************************************************
-* Second level routine: inversion
-****************************************************************** */
-int DenseMatrix::Inverse() 
+ * Second level routine: inversion
+ ****************************************************************** */
+int
+DenseMatrix::Inverse()
 {
   if (n_ != m_) return 911;
 
@@ -345,7 +355,7 @@ int DenseMatrix::Inverse()
   int iwork[n_];
   DGETRF_F77(&n_, &n_, data_, &n_, iwork, &ierr);
   if (ierr) return ierr;
- 
+
   int lwork = n_ * n_;
   double dwork[lwork];
   DGETRI_F77(&n_, data_, &n_, iwork, dwork, &lwork, &ierr);
@@ -354,30 +364,31 @@ int DenseMatrix::Inverse()
 
 
 /* ******************************************************************
-* Second level routine: inversion of symmetric poitive definite
-****************************************************************** */
-int DenseMatrix::InverseSPD() 
+ * Second level routine: inversion of symmetric poitive definite
+ ****************************************************************** */
+int
+DenseMatrix::InverseSPD()
 {
   if (n_ != m_) return 911;
 
   int ierr;
-  DPOTRF_F77("U", &n_, data_, &n_, &ierr); 
+  DPOTRF_F77("U", &n_, data_, &n_, &ierr);
   if (ierr) return ierr;
- 
+
   DPOTRI_F77("U", &n_, data_, &n_, &ierr);
   for (int i = 0; i < n_; i++)
-    for (int j = i + 1; j < n_; j++)
-      data_[i * n_ + j] = data_[j * n_ + i];
+    for (int j = i + 1; j < n_; j++) data_[i * n_ + j] = data_[j * n_ + i];
   return ierr;
 }
 
 
 /* ******************************************************************
-* Second level routine: calculates matrix D such that (*this)^T D = 0.
-* The matrix (*this) must have a full rank and have more rows than
-* columns.
-****************************************************************** */
-int DenseMatrix::NullSpace(DenseMatrix& D)
+ * Second level routine: calculates matrix D such that (*this)^T D = 0.
+ * The matrix (*this) must have a full rank and have more rows than
+ * columns.
+ ****************************************************************** */
+int
+DenseMatrix::NullSpace(DenseMatrix& D)
 {
   // We can treat only one type of rectangular matrix.
   if (m_ <= n_) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
@@ -387,15 +398,15 @@ int DenseMatrix::NullSpace(DenseMatrix& D)
   if (m != m_ || n != m_ - n_) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
 
   // Allocate memory for Lapack routine.
-  int ldv(1), lwork, info; 
-  lwork = std::max(m_ + 3 * n_, 5*n_);
+  int ldv(1), lwork, info;
+  lwork = std::max(m_ + 3 * n_, 5 * n_);
   double U[m_ * m_], V, S[n_], work[lwork];
 
-  DGESVD_F77("A", "N", &m_,  &n_, data_, &m_, 
-             S, U, &m, &V, &ldv, work, &lwork, &info);
+  DGESVD_F77(
+    "A", "N", &m_, &n_, data_, &m_, S, U, &m, &V, &ldv, work, &lwork, &info);
 
   if (info != 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
-  
+
   double* data = D.Values();
   int offset = m_ * n_;
   for (int i = 0; i < m * n; i++) data[i] = U[offset + i];
@@ -405,20 +416,18 @@ int DenseMatrix::NullSpace(DenseMatrix& D)
 
 
 /* ******************************************************************
-* Optimized linear algebra: determinant for matrices of size<=3.
-****************************************************************** */
-double DenseMatrix::Det()
+ * Optimized linear algebra: determinant for matrices of size<=3.
+ ****************************************************************** */
+double
+DenseMatrix::Det()
 {
   double a = 0.0;
   if (m_ == 2) {
     a = data_[0] * data_[3] - data_[1] * data_[2];
   } else if (m_ == 3) {
-    a = data_[0] * data_[4] * data_[8]
-      + data_[3] * data_[7] * data_[2]
-      + data_[1] * data_[5] * data_[6]
-      - data_[6] * data_[4] * data_[2]
-      - data_[3] * data_[1] * data_[8]
-      - data_[0] * data_[7] * data_[5];
+    a = data_[0] * data_[4] * data_[8] + data_[3] * data_[7] * data_[2] +
+        data_[1] * data_[5] * data_[6] - data_[6] * data_[4] * data_[2] -
+        data_[3] * data_[1] * data_[8] - data_[0] * data_[7] * data_[5];
   } else {
     a = data_[0];
   }
@@ -427,9 +436,10 @@ double DenseMatrix::Det()
 
 
 /* ******************************************************************
-* Orthonormalize selected matrix columns.
-****************************************************************** */
-int DenseMatrix::OrthonormalizeColumns(int n1, int n2)
+ * Orthonormalize selected matrix columns.
+ ****************************************************************** */
+int
+DenseMatrix::OrthonormalizeColumns(int n1, int n2)
 {
   double sum;
 
@@ -451,15 +461,16 @@ int DenseMatrix::OrthonormalizeColumns(int n1, int n2)
     sum = std::pow(1.0 / sum, 0.5);
     for (int k = 0; k < m_; ++k) tmp1[k] *= sum;
   }
- 
+
   return 0;
 }
 
 
 /* ******************************************************************
-* Permutation of matrix columns.
-****************************************************************** */
-void DenseMatrix::SwapColumns(int n1, int n2) 
+ * Permutation of matrix columns.
+ ****************************************************************** */
+void
+DenseMatrix::SwapColumns(int n1, int n2)
 {
   if (n1 != n2) {
     double tmp;
@@ -474,5 +485,5 @@ void DenseMatrix::SwapColumns(int n1, int n2)
   }
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi

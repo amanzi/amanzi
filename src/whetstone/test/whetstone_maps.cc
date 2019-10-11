@@ -34,9 +34,10 @@
 
 
 /* ****************************************************************
-* Test of determinant of transformation
-**************************************************************** */
-TEST(DG_MAP_DETERMINANT_CELL) {
+ * Test of determinant of transformation
+ **************************************************************** */
+TEST(DG_MAP_DETERMINANT_CELL)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -46,7 +47,7 @@ TEST(DG_MAP_DETERMINANT_CELL) {
 
   // create two meshes
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh0 = meshfactory.create("test/one_pentagon.exo");
   Teuchos::RCP<Mesh> mesh1 = meshfactory.create("test/one_pentagon.exo");
 
@@ -54,7 +55,7 @@ TEST(DG_MAP_DETERMINANT_CELL) {
   int dim(2), cell(0), nnodes(5), nfaces(5);
   AmanziGeometry::Point xv(dim);
   Entity_ID_List faces;
-  Kokkos::View<Entity_ID*> nodeids("",nnodes);
+  Kokkos::View<Entity_ID*> nodeids("", nnodes);
   AmanziGeometry::Point_List new_positions;
   Kokkos::View<AmanziGeometry::Point*> final_positions;
 
@@ -77,16 +78,16 @@ TEST(DG_MAP_DETERMINANT_CELL) {
 
   VectorPolynomial moments(2, 2);
   auto numi = std::make_shared<NumericalIntegration>(mesh0);
-  std::vector<const char*> list = {"SerendipityPk"};
+  std::vector<const char*> list = { "SerendipityPk" };
 
   for (auto name : list) {
-    double fac(0.5), volume = mesh1->cell_volume(cell,false);
+    double fac(0.5), volume = mesh1->cell_volume(cell, false);
     for (int k = 1; k < 4; ++k) {
       // collect geometric data
       Teuchos::ParameterList plist;
       plist.set<std::string>("method", "Lagrange serendipity")
-           .set<int>("method order", k)
-           .set<std::string>("projector", "L2");
+        .set<int>("method order", k)
+        .set<std::string>("projector", "L2");
       auto maps = std::make_shared<MeshMaps_VEM>(mesh0, mesh1, plist);
 
       std::vector<WhetStone::VectorPolynomial> vf(nfaces);
@@ -108,18 +109,22 @@ TEST(DG_MAP_DETERMINANT_CELL) {
 
       uc.ChangeOrigin(mesh0->cell_centroid(cell));
       printf("k=%d  %14s  vol=%8.6g  err=%12.8f  |poly|=%9.6g %9.6g\n",
-          k, name, tmp, err, uc[0].NormInf(), uc[1].NormInf());
+             k,
+             name,
+             tmp,
+             err,
+             uc[0].NormInf(),
+             uc[1].NormInf());
     }
   }
-
-
 }
 
 
 /* ****************************************************************
-* Comparison of least-square and Serendipity reconstructions
-**************************************************************** */
-TEST(DG_MAP_LEAST_SQUARE_CELL) {
+ * Comparison of least-square and Serendipity reconstructions
+ **************************************************************** */
+TEST(DG_MAP_LEAST_SQUARE_CELL)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -129,7 +134,7 @@ TEST(DG_MAP_LEAST_SQUARE_CELL) {
 
   // create two meshes
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh0 = meshfactory.create("test/one_pentagon.exo");
   Teuchos::RCP<Mesh> mesh1 = meshfactory.create("test/one_pentagon.exo");
 
@@ -163,10 +168,8 @@ TEST(DG_MAP_LEAST_SQUARE_CELL) {
   std::vector<VectorPolynomial> vf(nfaces);
   VectorPolynomial vc1(d, d), vc2(d, d);
 
-  for (int n = 0; n < nfaces; ++n) {
-    vf[n] = u;
-  }
-  Kokkos::resize(nodeids,nnodes);
+  for (int n = 0; n < nfaces; ++n) { vf[n] = u; }
+  Kokkos::resize(nodeids, nnodes);
   // -- mesh deformation
   for (int v = 0; v < nnodes; ++v) {
     mesh1->node_get_coordinates(v, &xv);
@@ -182,8 +185,8 @@ TEST(DG_MAP_LEAST_SQUARE_CELL) {
   // least-square calculation
   Teuchos::ParameterList plist;
   plist.set<std::string>("method", "Lagrange serendipity")
-       .set<int>("method order", 2)
-       .set<std::string>("projector", "least square");
+    .set<int>("method order", 2)
+    .set<std::string>("projector", "least square");
   auto maps = std::make_shared<MeshMaps_VEM>(mesh0, mesh1, plist);
 
   maps->VelocityCell(0, vf, vc1);
@@ -191,23 +194,22 @@ TEST(DG_MAP_LEAST_SQUARE_CELL) {
 
   // Serendipity calculation
   plist.set<std::string>("method", "Lagrange serendipity")
-       .set<int>("method order", 2)
-       .set<std::string>("projector", "L2");
+    .set<int>("method order", 2)
+    .set<std::string>("projector", "L2");
   maps = std::make_shared<MeshMaps_VEM>(mesh0, mesh1, plist);
 
   maps->VelocityCell(0, vf, vc2);
 
   vc1 -= vc2;
   CHECK_CLOSE(0.0, vc1.NormInf(), 1e-12);
-
-
 }
 
 
 /* ****************************************************************
-* Geometric conservation law (GCL) equation: dj/dt = j div u.
-**************************************************************** */
-TEST(DG_MAP_GCL) {
+ * Geometric conservation law (GCL) equation: dj/dt = j div u.
+ **************************************************************** */
+TEST(DG_MAP_GCL)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -217,14 +219,14 @@ TEST(DG_MAP_GCL) {
 
   // create 2D mesh
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
 
   // create a map
   Teuchos::ParameterList plist;
   plist.set<std::string>("method", "Lagrange serendipity")
-       .set<int>("method order", 2)
-       .set<std::string>("projector", "L2");
+    .set<int>("method order", 2)
+    .set<std::string>("projector", "L2");
 
   auto maps = std::make_shared<MeshMaps_VEM>(mesh, plist);
 
@@ -277,6 +279,4 @@ TEST(DG_MAP_GCL) {
     err = u.NormInf();
     std::cout << "Piola compatibility condition error=" << err << std::endl;
   }
-
-
 }

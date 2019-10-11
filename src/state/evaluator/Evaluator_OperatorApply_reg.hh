@@ -2,6 +2,6 @@
 namespace Amanzi {
 
 Utils::RegisteredFactory<Evaluator, Evaluator_OperatorApply>
-    Evaluator_OperatorApply::fac_("operator application");
+  Evaluator_OperatorApply::fac_("operator application");
 
 } // namespace Amanzi

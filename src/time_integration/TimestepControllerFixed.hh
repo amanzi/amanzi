@@ -1,10 +1,11 @@
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors:
+      Ethan Coon
 */
 
 
@@ -31,12 +32,12 @@ minimum of PK's initial timestep sizes.
 namespace Amanzi {
 
 class TimestepControllerFixed : public TimestepController {
-
  public:
   TimestepControllerFixed(Teuchos::ParameterList& plist) : plist_(plist) {}
 
   // single method for timestep control
-  double get_timestep(double dt, int iterations) {
+  double get_timestep(double dt, int iterations)
+  {
     if (iterations < 0) {
       std::string msg = "Timestep failed: Time step crash";
       Errors::Message m(msg);

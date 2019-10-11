@@ -14,6 +14,6 @@ A field evaluator for an unchanging MPI Comm rank.
 namespace Amanzi {
 
 Utils::RegisteredFactory<Evaluator, RankEvaluator>
-    RankEvaluator::fac_("mpi_comm_rank");
+  RankEvaluator::fac_("mpi_comm_rank");
 
 } // namespace Amanzi

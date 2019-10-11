@@ -1,14 +1,16 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  Copyright 2010-201x held jointly, see COPYRIGHT.
+  Copyright 2010-201x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Authors:
+      Ethan Coon
 */
 
+
 //! A secondary variable evaluator which evaluates functions on its
+
 //! dependenecies.
 
 /*!
@@ -59,32 +61,35 @@ namespace Amanzi {
 class Function;
 
 class EvaluatorSecondaryMonotypeFromFunction
-    : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
-
-public:
-  explicit EvaluatorSecondaryMonotypeFromFunction(Teuchos::ParameterList &plist);
-  EvaluatorSecondaryMonotypeFromFunction(const EvaluatorSecondaryMonotypeFromFunction &other);
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
+ public:
+  explicit EvaluatorSecondaryMonotypeFromFunction(
+    Teuchos::ParameterList& plist);
+  EvaluatorSecondaryMonotypeFromFunction(
+    const EvaluatorSecondaryMonotypeFromFunction& other);
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 
-protected:
+ protected:
   // These do the actual work
-  virtual void Evaluate_(const State &S, const std::vector<CompositeVector*>& results) override;
+  virtual void Evaluate_(const State& S,
+                         const std::vector<CompositeVector*>& results) override;
 
   // This should get some careful thought of the right strategy.  Punting for
   // now --etc
-  virtual void EvaluatePartialDerivative_(const State &S,
-          const Key &wrt_key, const Key &wrt_tag, const std::vector<CompositeVector*> &results) override {
-    for (auto& r : results) {
-      r->PutScalar(0.);
-    }
+  virtual void EvaluatePartialDerivative_(
+    const State& S, const Key& wrt_key, const Key& wrt_tag,
+    const std::vector<CompositeVector*>& results) override
+  {
+    for (auto& r : results) { r->putScalar(0.); }
   }
 
-protected:
+ protected:
   std::vector<Teuchos::RCP<const Function>> funcs_;
 
-private:
-  static Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryMonotypeFromFunction>
-      fac_;
+ private:
+  static Utils::RegisteredFactory<Evaluator,
+                                  EvaluatorSecondaryMonotypeFromFunction>
+    fac_;
 
 }; // class
 

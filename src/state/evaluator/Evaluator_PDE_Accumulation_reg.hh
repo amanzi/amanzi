@@ -2,6 +2,6 @@
 namespace Amanzi {
 
 Utils::RegisteredFactory<Evaluator, Evaluator_PDE_Accumulation>
-    Evaluator_PDE_Accumulation::fac_("accumulation operator");
+  Evaluator_PDE_Accumulation::fac_("accumulation operator");
 
 } // namespace Amanzi

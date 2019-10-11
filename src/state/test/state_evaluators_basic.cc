@@ -1,12 +1,17 @@
 /*
-  Tests the functionality of the base class evaluators, primary, secondary,
-  and independent.
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon
+  Authors:
+      Ethan Coon
 */
 
-#include "Epetra_MpiComm.h"
-#include "Epetra_Vector.h"
+
+//! Tests the functionality of the base class evaluators, primary, secondary,
+//! and independent.
+
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_RCP.hpp"
@@ -26,24 +31,30 @@ using namespace Amanzi::AmanziMesh;
  * Equation A = 2*B
  ****************************************************************** */
 class AEvaluator : public EvaluatorSecondaryMonotype<double> {
-public:
-  AEvaluator(Teuchos::ParameterList &plist)
-      : EvaluatorSecondaryMonotype<double>(plist) {
-    dependencies_.emplace_back(std::make_pair(Key{"fb"}, Key{""}));
+ public:
+  AEvaluator(Teuchos::ParameterList& plist)
+    : EvaluatorSecondaryMonotype<double>(plist)
+  {
+    dependencies_.emplace_back(std::make_pair(Key{ "fb" }, Key{ "" }));
   }
 
-  virtual Teuchos::RCP<Evaluator> Clone() const override {
+  virtual Teuchos::RCP<Evaluator> Clone() const override
+  {
     return Teuchos::rcp(new AEvaluator(*this));
   };
 
-  virtual void Evaluate_(const State &S, const std::vector<double*> &results) override {
-    auto &fb = S.Get<double>("fb");
+  virtual void
+  Evaluate_(const State& S, const std::vector<double*>& results) override
+  {
+    auto& fb = S.Get<double>("fb");
     (*results[0]) = 2 * fb;
   }
 
-  virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
-                                          const Key &wrt_tag,
-                                          const std::vector<double*> &results) override {
+  virtual void
+  EvaluatePartialDerivative_(const State& S, const Key& wrt_key,
+                             const Key& wrt_tag,
+                             const std::vector<double*>& results) override
+  {
     if (wrt_key == "fb" && wrt_tag == "") {
       (*results[0]) = 2.0;
     } else {
@@ -53,41 +64,47 @@ public:
 };
 
 class AIndependent : public EvaluatorIndependent<double> {
-public:
+ public:
   using EvaluatorIndependent<double>::EvaluatorIndependent;
 
-  virtual Teuchos::RCP<Evaluator> Clone() const override {
+  virtual Teuchos::RCP<Evaluator> Clone() const override
+  {
     return Teuchos::rcp(new AIndependent(*this));
   };
 
-protected:
-  virtual void Update_(State &s) override {
+ protected:
+  virtual void Update_(State& s) override
+  {
     s.GetW<double>(my_key_, my_tag_, my_key_) = 3.;
   }
 };
 
 class BIndependent : public EvaluatorIndependent<double> {
-public:
+ public:
   using EvaluatorIndependent<double>::EvaluatorIndependent;
 
-  virtual Teuchos::RCP<Evaluator> Clone() const override {
+  virtual Teuchos::RCP<Evaluator> Clone() const override
+  {
     return Teuchos::rcp(new BIndependent(*this));
   };
 
-protected:
-  virtual void Update_(State &s) override {
+ protected:
+  virtual void Update_(State& s) override
+  {
     s.GetW<double>(my_key_, my_tag_, my_key_) = s.time(my_tag_);
   }
 };
 
-SUITE(EVALUATORS) {
-  TEST(PRIMARY) {
+SUITE(EVALUATORS)
+{
+  TEST(PRIMARY)
+  {
     std::cout << "Primary Variable Test" << std::endl;
     State S;
 
     Teuchos::ParameterList es_list;
     es_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
+      .set<std::string>("verbosity level", "extreme");
     es_list.setName("fa");
 
     S.Require<double>("fa", "", "fa");
@@ -146,14 +163,15 @@ SUITE(EVALUATORS) {
     CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", ""));
   }
 
-  TEST(SECONDARY) {
+  TEST(SECONDARY)
+  {
     std::cout << "Secondary Variable Test" << std::endl;
     State S;
 
     // make the primary.  Note: USER CODE SHOULD NOT DO IT THIS WAY!
     Teuchos::ParameterList es_list;
     es_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
+      .set<std::string>("verbosity level", "extreme");
     es_list.setName("fb");
     S.Require<double>("fb", "", "fb");
     auto fb_eval = Teuchos::rcp(new EvaluatorPrimary<double>(es_list));
@@ -162,7 +180,7 @@ SUITE(EVALUATORS) {
     // make the secondary.  Note: USER CODE SHOULD NOT DO IT THIS WAY!
     Teuchos::ParameterList ea_list;
     ea_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
+      .set<std::string>("verbosity level", "extreme");
     ea_list.setName("fa");
     ea_list.set("tag", "");
     S.Require<double>("fa", "", "fa");
@@ -223,13 +241,14 @@ SUITE(EVALUATORS) {
     CHECK_CLOSE(2.0, S.GetDerivative<double>("fa", "", "fb", ""), 1.e-10);
   }
 
-  TEST(INDEPENDENT_CONSTANT) {
+  TEST(INDEPENDENT_CONSTANT)
+  {
     std::cout << "Independent Variable Test (Temporally constant)" << std::endl;
     State S;
 
     Teuchos::ParameterList es_list;
     es_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
+      .set<std::string>("verbosity level", "extreme");
     es_list.setName("fa");
     es_list.set("constant in time", true);
 
@@ -275,13 +294,14 @@ SUITE(EVALUATORS) {
     CHECK_CLOSE(3.0, S.Get<double>("fa", ""), 1.e-10);
   }
 
-  TEST(INDEPENDENT_TEMPORALLY_CHANGING) {
+  TEST(INDEPENDENT_TEMPORALLY_CHANGING)
+  {
     std::cout << "Independent Variable Test (Temporally varying)" << std::endl;
     State S;
 
     Teuchos::ParameterList es_list;
     es_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
+      .set<std::string>("verbosity level", "extreme");
     es_list.setName("fa");
     es_list.set("constant in time", false);
 

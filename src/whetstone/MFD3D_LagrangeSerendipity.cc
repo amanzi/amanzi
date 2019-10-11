@@ -32,24 +32,24 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Constructor parses the parameter list
-****************************************************************** */
+ * Constructor parses the parameter list
+ ****************************************************************** */
 MFD3D_LagrangeSerendipity::MFD3D_LagrangeSerendipity(
-    const Teuchos::ParameterList& plist,
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-  : InnerProduct(mesh),
-    MFD3D_Lagrange(plist, mesh)
+  const Teuchos::ParameterList& plist,
+  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+  : InnerProduct(mesh), MFD3D_Lagrange(plist, mesh)
 {
   order_ = plist.get<int>("method order");
 }
 
 
 /* ******************************************************************
-* High-order consistency condition for the stiffness matrix.
-* Only the upper triangular part of Ac is calculated.
-****************************************************************** */
-int MFD3D_LagrangeSerendipity::H1consistency(
-    int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
+ * High-order consistency condition for the stiffness matrix.
+ * Only the upper triangular part of Ac is calculated.
+ ****************************************************************** */
+int
+MFD3D_LagrangeSerendipity::H1consistency(int c, const Tensor& K, DenseMatrix& N,
+                                         DenseMatrix& Ac)
 {
   Kokkos::View<Entity_ID*> nodes;
   mesh_->cell_get_nodes(c, nodes);
@@ -64,10 +64,8 @@ int MFD3D_LagrangeSerendipity::H1consistency(
   // calculate degrees of freedom: serendipity space S contains all boundary
   // dofs plus a few internal dofs that depedend on the value of eta.
   Polynomial poly(d_, order_), pf, pc;
-  if (order_ > 1)
-    pf.Reshape(d_ - 1, order_ - 2);
-  if (order_ > 3)
-    pc.Reshape(d_, order_ - eta);
+  if (order_ > 1) pf.Reshape(d_ - 1, order_ - 2);
+  if (order_ > 3) pc.Reshape(d_, order_ - eta);
 
   int nd = poly.size();
   int ndf = pf.size();
@@ -144,10 +142,11 @@ int MFD3D_LagrangeSerendipity::H1consistency(
 
 
 /* ******************************************************************
-* Stiffness matrix for a high-order scheme.
-****************************************************************** */
-int MFD3D_LagrangeSerendipity::StiffnessMatrix(
-    int c, const Tensor& K, DenseMatrix& A)
+ * Stiffness matrix for a high-order scheme.
+ ****************************************************************** */
+int
+MFD3D_LagrangeSerendipity::StiffnessMatrix(int c, const Tensor& K,
+                                           DenseMatrix& A)
 {
   DenseMatrix N;
 
@@ -160,12 +159,14 @@ int MFD3D_LagrangeSerendipity::StiffnessMatrix(
 
 
 /* ******************************************************************
-* Generic projector on space of polynomials of order k in cell c.
-****************************************************************** */
-void MFD3D_LagrangeSerendipity::ProjectorCell_(
-    int c, const std::vector<Polynomial>& vf,
-    const ProjectorType type,
-    const Polynomial* moments, Polynomial& uc)
+ * Generic projector on space of polynomials of order k in cell c.
+ ****************************************************************** */
+void
+MFD3D_LagrangeSerendipity::ProjectorCell_(int c,
+                                          const std::vector<Polynomial>& vf,
+                                          const ProjectorType type,
+                                          const Polynomial* moments,
+                                          Polynomial& uc)
 {
   // selecting regularized basis
   Polynomial ptmp;
@@ -213,9 +214,7 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
     const DenseVector& v3 = moments->coefs();
     AMANZI_ASSERT(ndof_cs == v3.NumRows());
 
-    for (int n = 0; n < ndof_cs; ++n) {
-      vdof(ndof_f + n) = v3(n);
-    }
+    for (int n = 0; n < ndof_cs; ++n) { vdof(ndof_f + n) = v3(n); }
   }
 
   Ns.Multiply(vdof, v1, true);
@@ -238,7 +237,7 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
 
     vdof.Reshape(ndof_f + ndof_c);
     for (int n = ndof_cs; n < ndof_c; ++n) {
-      vdof(ndof_f + n) = v4(n) / mesh_->cell_volume(c,false);
+      vdof(ndof_f + n) = v4(n) / mesh_->cell_volume(c, false);
     }
 
     R_.Multiply(vdof, v4, true);
@@ -262,12 +261,10 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
     M2.Multiply(v5, v6, false);
 
     for (int n = 0; n < ndof_cs; ++n) {
-      v4(n) = v3(n) * mesh_->cell_volume(c,false);
+      v4(n) = v3(n) * mesh_->cell_volume(c, false);
     }
 
-    for (int n = 0; n < nd - ndof_cs; ++n) {
-      v4(ndof_cs + n) = v6(n);
-    }
+    for (int n = 0; n < nd - ndof_cs; ++n) { v4(ndof_cs + n) = v6(n); }
 
     M.InverseSPD();
     M.Multiply(v4, v5, false);
@@ -281,10 +278,11 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
 
 
 /* ******************************************************************
-* Calculate degrees of freedom in 2D.
-****************************************************************** */
-void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
-    int c, const std::vector<Polynomial>& vf, DenseVector& vdof)
+ * Calculate degrees of freedom in 2D.
+ ****************************************************************** */
+void
+MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
+  int c, const std::vector<Polynomial>& vf, DenseVector& vdof)
 {
   Kokkos::View<Entity_ID*> nodes, faces;
 
@@ -302,9 +300,7 @@ void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
 
   // number of moments of faces
   Polynomial pf;
-  if (order_ > 1) {
-    pf.Reshape(d_ - 1, order_ - 2);
-  }
+  if (order_ > 1) { pf.Reshape(d_ - 1, order_ - 2); }
 
   int row(nnodes);
   for (int n = 0; n < nfaces; ++n) {
@@ -318,10 +314,8 @@ void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
       int v = face_nodes(j);
       mesh_->node_get_coordinates(v, &xv);
       int pos;
-      for(pos = 0 ; pos < nodes.extent(0); ++pos){
-        if(nodes(pos) == v){
-          break;
-        }
+      for (pos = 0; pos < nodes.extent(0); ++pos) {
+        if (nodes(pos) == v) { break; }
       }
       vdof(pos) = vf[n].Value(xv);
     }
@@ -350,5 +344,5 @@ void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
   }
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi

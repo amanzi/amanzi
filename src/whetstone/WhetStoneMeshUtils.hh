@@ -28,14 +28,14 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Return centroid weights for 2D and 3D polygons. We take list of
-* nodes as input since it is not cached by the mesh.
-* NOTE: polygon must be star-shaped w.r.t. its geometric center.
-****************************************************************** */
-inline
-void PolygonCentroidWeights(
-    const AmanziMesh::Mesh& mesh, const Kokkos::View<AmanziMesh::Entity_ID*>& nodes,
-    double area, std::vector<double>& weights)
+ * Return centroid weights for 2D and 3D polygons. We take list of
+ * nodes as input since it is not cached by the mesh.
+ * NOTE: polygon must be star-shaped w.r.t. its geometric center.
+ ****************************************************************** */
+inline void
+PolygonCentroidWeights(const AmanziMesh::Mesh& mesh,
+                       const Kokkos::View<AmanziMesh::Entity_ID*>& nodes,
+                       double area, std::vector<double>& weights)
 {
   int d = mesh.space_dimension();
   int nnodes = nodes.extent(0);
@@ -56,7 +56,7 @@ void PolygonCentroidWeights(
     mesh.node_get_coordinates(nodes(i1), &p1);
     mesh.node_get_coordinates(nodes(i2), &p2);
 
-    p3 = (p1 - xg)^(p2 - xg);
+    p3 = (p1 - xg) ^ (p2 - xg);
     double tmp = norm(p3) / (6 * area);
 
     weights[i1] += tmp;
@@ -66,26 +66,25 @@ void PolygonCentroidWeights(
 
 
 /* ******************************************************************
-* Extension of Mesh API.
-****************************************************************** */
-inline
-int cell_get_face_adj_cell(const AmanziMesh::Mesh& mesh, int c, int f)
+ * Extension of Mesh API.
+ ****************************************************************** */
+inline int
+cell_get_face_adj_cell(const AmanziMesh::Mesh& mesh, int c, int f)
 {
   Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells;
   mesh.face_get_cells(f, Parallel_type::ALL, cells);
 
-  if (cells.extent(0) == 2)
-    return cells(0) + cells(1) - c;
+  if (cells.extent(0) == 2) return cells(0) + cells(1) - c;
 
   return -1;
 }
 
 
 /* ******************************************************************
-* Exterior boundary normal: dir = 0 for internal face
-****************************************************************** */
-inline
-AmanziGeometry::Point face_normal_exterior(const AmanziMesh::Mesh& mesh, int f, int* dir)
+ * Exterior boundary normal: dir = 0 for internal face
+ ****************************************************************** */
+inline AmanziGeometry::Point
+face_normal_exterior(const AmanziMesh::Mesh& mesh, int f, int* dir)
 {
   Kokkos::View<Amanzi::AmanziMesh::Entity_ID*> cells;
   mesh.face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, cells);
@@ -98,10 +97,10 @@ AmanziGeometry::Point face_normal_exterior(const AmanziMesh::Mesh& mesh, int f, 
 
 
 /* ******************************************************************
-* Geometric center of a mesh cell
-****************************************************************** */
-inline
-AmanziGeometry::Point cell_geometric_center(const AmanziMesh::Mesh& mesh, int c)
+ * Geometric center of a mesh cell
+ ****************************************************************** */
+inline AmanziGeometry::Point
+cell_geometric_center(const AmanziMesh::Mesh& mesh, int c)
 {
   int d = mesh.space_dimension();
   AmanziGeometry::Point v(d), xg(d);
@@ -119,7 +118,7 @@ AmanziGeometry::Point cell_geometric_center(const AmanziMesh::Mesh& mesh, int c)
   return xg;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif

@@ -28,12 +28,13 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Consistency condition for mass matrix in mechanics.
-* Only the upper triangular part of Ac is calculated.
-* Requires mesh_get_edges to complete the implementation.
-****************************************************************** */
-int MFD3D_Elasticity::L2consistency(int c, const Tensor& T,
-                                    DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
+ * Consistency condition for mass matrix in mechanics.
+ * Only the upper triangular part of Ac is calculated.
+ * Requires mesh_get_edges to complete the implementation.
+ ****************************************************************** */
+int
+MFD3D_Elasticity::L2consistency(int c, const Tensor& T, DenseMatrix& N,
+                                DenseMatrix& Mc, bool symmetry)
 {
   Kokkos::View<Entity_ID*> faces;
 
@@ -43,7 +44,7 @@ int MFD3D_Elasticity::L2consistency(int c, const Tensor& T,
   N.Reshape(nfaces, d_);
   Mc.Reshape(nfaces, nfaces);
 
-  double volume = mesh_->cell_volume(c,false);
+  double volume = mesh_->cell_volume(c, false);
 
   AmanziGeometry::Point v1(d_), v2(d_);
   const AmanziGeometry::Point& cm = mesh_->cell_centroid(c);
@@ -66,13 +67,14 @@ int MFD3D_Elasticity::L2consistency(int c, const Tensor& T,
 
 
 /* ******************************************************************
-* Consistency condition for stiffness matrix in mechanics.
-* Only the upper triangular part of Ac is calculated.
-****************************************************************** */
-int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
-                                    DenseMatrix& N, DenseMatrix& Ac)
+ * Consistency condition for stiffness matrix in mechanics.
+ * Only the upper triangular part of Ac is calculated.
+ ****************************************************************** */
+int
+MFD3D_Elasticity::H1consistency(int c, const Tensor& T, DenseMatrix& N,
+                                DenseMatrix& Ac)
 {
-  Kokkos::View<Entity_ID*> faces,nodes;
+  Kokkos::View<Entity_ID*> faces, nodes;
   Kokkos::View<int*> dirs;
 
   mesh_->cell_get_nodes(c, nodes);
@@ -139,15 +141,13 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
 
         v1 = pprev - pnext;
         v2 = p - fm;
-        v3 = v1^v2;
+        v3 = v1 ^ v2;
         u = dirs(i) * norm(v3) / (4 * area);
       }
 
       int pos = 0;
-      for(pos = 0 ; pos < nodes.extent(0); ++pos){
-        if(nodes(pos) == v){
-          break;
-        }
+      for (pos = 0; pos < nodes.extent(0); ++pos) {
+        if (nodes(pos) == v) { break; }
       }
       for (int k = 0; k < nd; k++) {
         v1 = TE[k] * normal;
@@ -160,12 +160,12 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
   Tensor Tinv(T);
   Tinv.Inverse();
 
-  double volume = mesh_->cell_volume(c,false);
+  double volume = mesh_->cell_volume(c, false);
   Tinv *= 1.0 / volume;
 
   DenseMatrix RT(nrows, nd);
   if (Tinv.rank() == 1) {
-    double* data_N = R.Values();  // We stress that memory belongs to matrix N.
+    double* data_N = R.Values(); // We stress that memory belongs to matrix N.
     double* data_RT = RT.Values();
     double s = Tinv(0, 0);
     for (int i = 0; i < nrows * nd; i++) data_RT[i] = data_N[i] * s;
@@ -200,13 +200,13 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
         md++;
       }
     }
-    for (int k = 0; k < d_; k++) {  // additional columns correspod to kernel
+    for (int k = 0; k < d_; k++) { // additional columns correspod to kernel
       N(k * nnodes + i, md) = 1.0;
       md++;
     }
     for (int k = 0; k < d_; k++) {
       for (int l = k + 1; l < d_; l++) {
-        N(k * nnodes + i, md) =  v1[l];
+        N(k * nnodes + i, md) = v1[l];
         N(l * nnodes + i, md) = -v1[k];
         md++;
       }
@@ -217,9 +217,10 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
 
 
 /* ******************************************************************
-* Lame stiffness matrix: a wrapper for other low-level routines
-****************************************************************** */
-int MFD3D_Elasticity::StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A)
+ * Lame stiffness matrix: a wrapper for other low-level routines
+ ****************************************************************** */
+int
+MFD3D_Elasticity::StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A)
 {
   DenseMatrix N;
 
@@ -232,9 +233,11 @@ int MFD3D_Elasticity::StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A)
 
 
 /* ******************************************************************
-* Lame stiffness matrix: a wrapper for other low-level routines
-****************************************************************** */
-int MFD3D_Elasticity::StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatrix& A)
+ * Lame stiffness matrix: a wrapper for other low-level routines
+ ****************************************************************** */
+int
+MFD3D_Elasticity::StiffnessMatrixOptimized(int c, const Tensor& T,
+                                           DenseMatrix& A)
 {
   DenseMatrix N;
 
@@ -247,10 +250,11 @@ int MFD3D_Elasticity::StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatr
 
 
 /* ******************************************************************
-* Lame stiffness matrix: a wrapper for other low-level routines
-* For education purpose only: ther are no M-matrices in elasticity.
-****************************************************************** */
-int MFD3D_Elasticity::StiffnessMatrixMMatrix(int c, const Tensor& T, DenseMatrix& A)
+ * Lame stiffness matrix: a wrapper for other low-level routines
+ * For education purpose only: ther are no M-matrices in elasticity.
+ ****************************************************************** */
+int
+MFD3D_Elasticity::StiffnessMatrixMMatrix(int c, const Tensor& T, DenseMatrix& A)
 {
   DenseMatrix N;
 
@@ -264,11 +268,12 @@ int MFD3D_Elasticity::StiffnessMatrixMMatrix(int c, const Tensor& T, DenseMatrix
 
 
 /* ******************************************************************
-* Classical matrix-matrix product
-****************************************************************** */
-void MFD3D_Elasticity::MatrixMatrixProduct_(
-    const DenseMatrix& A, const DenseMatrix& B, bool transposeB,
-    DenseMatrix& AB)
+ * Classical matrix-matrix product
+ ****************************************************************** */
+void
+MFD3D_Elasticity::MatrixMatrixProduct_(const DenseMatrix& A,
+                                       const DenseMatrix& B, bool transposeB,
+                                       DenseMatrix& AB)
 {
   int nrows = A.NumRows();
   int ncols = A.NumCols();
@@ -295,5 +300,5 @@ void MFD3D_Elasticity::MatrixMatrixProduct_(
   }
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi

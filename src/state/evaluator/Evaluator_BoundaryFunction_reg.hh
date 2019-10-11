@@ -2,6 +2,6 @@
 namespace Amanzi {
 
 Utils::RegisteredFactory<Evaluator, Evaluator_BoundaryFunction>
-    Evaluator_BoundaryFunction::fac_("boundary function");
+  Evaluator_BoundaryFunction::fac_("boundary function");
 
 } // namespace Amanzi

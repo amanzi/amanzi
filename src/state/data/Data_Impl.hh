@@ -29,43 +29,52 @@ hope it will at some point.
 #include "dbc.hh"
 #include "errors.hh"
 
-#include "Data_Helpers.hh"
+#include "Data_Initializers.hh"
+#include "Visualization.hh"
+#include "Checkpoint.hh"
 
 namespace Amanzi {
 
 // underlying interface with type erasure
 class Data_Intf {
-public:
+ public:
   virtual ~Data_Intf() {}
 
   //  virtual std::unique_ptr<Data_Intf> Clone() const = 0;
 
-  template <typename T> const T &Get() const;
+  template <typename T>
+  const T& Get() const;
 
-  template <typename T> T &GetW();
+  template <typename T>
+  T& GetW();
 
-  template <typename T> Teuchos::RCP<const T> GetPtr() const;
+  template <typename T>
+  Teuchos::RCP<const T> GetPtr() const;
 
-  template <typename T> Teuchos::RCP<T> GetPtrW();
+  template <typename T>
+  Teuchos::RCP<T> GetPtrW();
 
-  template <typename T> void SetPtr(Teuchos::RCP<T> t);
+  template <typename T>
+  void SetPtr(Teuchos::RCP<T> t);
 
-  template <typename T> void Set(const T &t);
+  template <typename T>
+  void Set(const T& t);
 
   // virtual interface for ad-hoc polymorphism
-  virtual void
-  WriteVis(const Visualization &vis, const Key &fieldname,
-           const std::vector<std::string> &subfieldnames) const = 0;
-  virtual void WriteCheckpoint(const Checkpoint &chkp,
-                               const Key &fieldname) const = 0;
-  virtual void ReadCheckpoint(const Checkpoint &chkp, const Key &fieldname) = 0;
-  virtual bool Initialize(Teuchos::ParameterList &plist, const Key &fieldname,
-                          const std::vector<std::string> &subfieldnames) = 0;
+  virtual void WriteVis(const Visualization& vis,
+                        const Teuchos::ParameterList& attrs) const = 0;
+  virtual void WriteCheckpoint(const Checkpoint& chkp,
+                               const Teuchos::ParameterList& attrs) const = 0;
+  virtual void ReadCheckpoint(const Checkpoint& chkp,
+                              const Teuchos::ParameterList& attrs) = 0;
+  virtual bool Initialize(Teuchos::ParameterList& plist,
+                          const Teuchos::ParameterList& attrs) = 0;
 };
 
 // underlying implementation of type erasure
-template <typename T> class Data_Impl : public Data_Intf {
-public:
+template <typename T>
+class Data_Impl : public Data_Intf {
+ public:
   Data_Impl() {}
 
   Data_Impl(Teuchos::RCP<T> t) : t_(std::move(t)) {}
@@ -73,48 +82,53 @@ public:
   // Data_Impl(const Data_Impl<T>& other) :
   //     t_(Teuchos::rcp(new T(*other.t_))) {}
 
-  Data_Impl(Data_Impl<T> &&other) noexcept : t_(std::move(other.t_)) {}
+  Data_Impl(Data_Impl<T>&& other) noexcept : t_(std::move(other.t_)) {}
 
   template <typename... Ts>
-  Data_Impl(Ts &&... ts)
-      : t_(Teuchos::rcp(new T(std::forward<Ts...>(ts...)))) {}
+  Data_Impl(Ts&&... ts) : t_(Teuchos::rcp(new T(std::forward<Ts...>(ts...))))
+  {}
 
   // std::unique_ptr<Data_Intf> Clone() const override {
   //   return std::unique_ptr<Data_Impl<T> >(new Data_Impl<T>(*this));
   // }
 
-  Data_Impl<T> &operator=(Data_Impl<T> other) = delete; // {
+  Data_Impl<T>& operator=(Data_Impl<T> other) = delete; // {
 
-  const T &Get() const { return *t_; }
-  T &GetW() { return *t_; }
+  const T& Get() const { return *t_; }
+  T& GetW() { return *t_; }
 
   Teuchos::RCP<const T> GetPtr() const { return t_; }
   Teuchos::RCP<T> GetPtrW() { return t_; }
 
   void SetPtr(Teuchos::RCP<T> t) { t_ = std::move(t); }
-  void Set(const T &t) { *t_ = t; }
+  void Set(const T& t) { *t_ = t; }
 
   // virtual interface for ad-hoc polymorphism
-  void WriteVis(const Visualization &vis, const Key &fieldname,
-                const std::vector<std::string> &subfieldnames) const override {
-    ::Amanzi::Helpers::WriteVis(vis, fieldname, subfieldnames, *t_);
+  void WriteVis(const Visualization& vis,
+                const Teuchos::ParameterList& attrs) const override
+  {
+    vis.Write(attrs, *t_);
   }
 
-  void WriteCheckpoint(const Checkpoint &chkp,
-                       const Key &fieldname) const override {
-    ::Amanzi::Helpers::WriteCheckpoint(chkp, fieldname, *t_);
+  void WriteCheckpoint(const Checkpoint& chkp,
+                       const Teuchos::ParameterList& attrs) const override
+  {
+    chkp.Write(attrs, *t_);
   }
 
-  void ReadCheckpoint(const Checkpoint &chkp, const Key &fieldname) override {
-    ::Amanzi::Helpers::ReadCheckpoint(chkp, fieldname, *t_);
+  void ReadCheckpoint(const Checkpoint& chkp,
+                      const Teuchos::ParameterList& attrs) override
+  {
+    chkp.Read(attrs, *t_);
   }
 
-  bool Initialize(Teuchos::ParameterList &plist, const Key &fieldname,
-                  const std::vector<std::string> &subfieldnames) override {
-    return ::Amanzi::Helpers::Initialize(plist, *t_, fieldname, subfieldnames);
+  bool Initialize(Teuchos::ParameterList& plist,
+                  const Teuchos::ParameterList& attrs) override
+  {
+    return Data_Initializers::Initialize(plist, attrs, *t_);
   }
 
-private:
+ private:
   Teuchos::RCP<T> t_;
 };
 
@@ -123,8 +137,11 @@ private:
 // cast to the correct type and provide access.
 //
 
-template <typename T> const T &Data_Intf::Get() const {
-  auto p = dynamic_cast<const Data_Impl<T> *>(this);
+template <typename T>
+const T&
+Data_Intf::Get() const
+{
+  auto p = dynamic_cast<const Data_Impl<T>*>(this);
   if (!p) {
     Errors::Message msg;
     msg << " data requested via incorrect type: \"" << typeid(T).name() << "\"";
@@ -133,8 +150,11 @@ template <typename T> const T &Data_Intf::Get() const {
   return p->Get();
 }
 
-template <typename T> T &Data_Intf::GetW() {
-  auto p = dynamic_cast<Data_Impl<T> *>(this);
+template <typename T>
+T&
+Data_Intf::GetW()
+{
+  auto p = dynamic_cast<Data_Impl<T>*>(this);
   if (!p) {
     Errors::Message msg;
     msg << " data requested via incorrect type: \"" << typeid(T).name() << "\"";
@@ -143,8 +163,11 @@ template <typename T> T &Data_Intf::GetW() {
   return p->GetW();
 }
 
-template <typename T> Teuchos::RCP<const T> Data_Intf::GetPtr() const {
-  auto p = dynamic_cast<const Data_Impl<T> *>(this);
+template <typename T>
+Teuchos::RCP<const T>
+Data_Intf::GetPtr() const
+{
+  auto p = dynamic_cast<const Data_Impl<T>*>(this);
   if (!p) {
     Errors::Message msg;
     msg << " data requested via incorrect type: \"" << typeid(T).name() << "\"";
@@ -153,8 +176,11 @@ template <typename T> Teuchos::RCP<const T> Data_Intf::GetPtr() const {
   return p->GetPtr();
 }
 
-template <typename T> Teuchos::RCP<T> Data_Intf::GetPtrW() {
-  auto p = dynamic_cast<Data_Impl<T> *>(this);
+template <typename T>
+Teuchos::RCP<T>
+Data_Intf::GetPtrW()
+{
+  auto p = dynamic_cast<Data_Impl<T>*>(this);
   if (!p) {
     Errors::Message msg;
     msg << " data requested via incorrect type: \"" << typeid(T).name() << "\"";
@@ -163,8 +189,11 @@ template <typename T> Teuchos::RCP<T> Data_Intf::GetPtrW() {
   return p->GetPtrW();
 }
 
-template <typename T> void Data_Intf::SetPtr(Teuchos::RCP<T> t) {
-  auto p = dynamic_cast<Data_Impl<T> *>(this);
+template <typename T>
+void
+Data_Intf::SetPtr(Teuchos::RCP<T> t)
+{
+  auto p = dynamic_cast<Data_Impl<T>*>(this);
   if (!p) {
     Errors::Message msg;
     msg << " data requested via incorrect type: \"" << typeid(T).name() << "\"";
@@ -173,8 +202,11 @@ template <typename T> void Data_Intf::SetPtr(Teuchos::RCP<T> t) {
   p->SetPtr(std::move(t));
 }
 
-template <typename T> void Data_Intf::Set(const T &t) {
-  auto p = dynamic_cast<Data_Impl<T> *>(this);
+template <typename T>
+void
+Data_Intf::Set(const T& t)
+{
+  auto p = dynamic_cast<Data_Impl<T>*>(this);
   if (!p) {
     Errors::Message msg;
     msg << " data requested via incorrect type: \"" << typeid(T).name() << "\"";

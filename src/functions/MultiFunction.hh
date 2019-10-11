@@ -3,10 +3,11 @@
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
-  See $AMANZI_DIR/COPYRIGHT
 
-  Author: Ethan Coon
+  Authors:
+      Ethan Coon
 */
+
 
 //! Function from R^d to R^n.
 
@@ -14,7 +15,29 @@
 
   A MultiFunction is simply an array of functions, which allow Functions to
   be used for MultiVectors.
-  
+
+  Factory for vector functions which are composed of multiple scalar functions.
+  The expected plist is of the form:
+
+  <ParameterList name="constuctor plist">
+    <Parameter name="number of dofs">
+  <ParameterList name="dof 1 function">
+      <ParameterList name="function-constant">
+        ...
+      </ParameterList>
+    </ParameterList>
+
+  <ParameterList name="dof 2 function">
+      <ParameterList name="function-linear">
+        ...
+      </ParameterList>
+    </ParameterList>
+
+    ...
+  </ParameterList>
+
+  Where each of the "Function X" lists are valid input to the
+  function-factory Create() method (see ./function-factory.hh).
 */
 
 
@@ -29,9 +52,8 @@
 namespace Amanzi {
 
 class MultiFunction {
-
-public:
-  MultiFunction(const std::vector<Teuchos::RCP<const Function> >& functions);
+ public:
+  MultiFunction(const std::vector<Teuchos::RCP<const Function>>& functions);
   MultiFunction(const Teuchos::RCP<const Function>& function);
   MultiFunction(Teuchos::ParameterList& plist);
 
@@ -52,18 +74,20 @@ public:
   // contiguous.  Likely this is important for performance anyway, so I doubt
   // we're losing much generality, and may even be making performance more
   // robust.
-  void apply(const Kokkos::View<double**>& in, Kokkos::View<double**, Kokkos::LayoutLeft>& out) const {
-    for(int i = 0 ; i < size(); ++i){
-      Kokkos::View<double*> out_i = Kokkos::subview(out,Kokkos::ALL,i); 
-      functions_[i]->apply(in,out_i); 
+  void apply(const Kokkos::View<double**>& in,
+             Kokkos::View<double**, Kokkos::LayoutLeft>& out) const
+  {
+    for (int i = 0; i < size(); ++i) {
+      Kokkos::View<double*> out_i = Kokkos::subview(out, Kokkos::ALL, i);
+      functions_[i]->apply(in, out_i);
     }
   }
 
  private:
-  std::vector<Teuchos::RCP<const Function> > functions_;
+  std::vector<Teuchos::RCP<const Function>> functions_;
   Kokkos::View<double*> values_;
 };
 
-} // namespace
+} // namespace Amanzi
 
 #endif

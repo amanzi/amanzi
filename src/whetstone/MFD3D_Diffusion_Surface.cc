@@ -24,13 +24,14 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Consistency condition for inverse of mass matrix in space of
-* fluxes for a non-flat surface. Only the upper triangular part of
-* Wc is calculated. Darcy flux is scaled by the area!
-* WARNING: routine works for scalar T only.
-****************************************************************** */
-int MFD3D_Diffusion::L2consistencyInverseSurface(
-    int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc)
+ * Consistency condition for inverse of mass matrix in space of
+ * fluxes for a non-flat surface. Only the upper triangular part of
+ * Wc is calculated. Darcy flux is scaled by the area!
+ * WARNING: routine works for scalar T only.
+ ****************************************************************** */
+int
+MFD3D_Diffusion::L2consistencyInverseSurface(int c, const Tensor& T,
+                                             DenseMatrix& R, DenseMatrix& Wc)
 {
   Kokkos::View<Entity_ID*> faces;
 
@@ -41,7 +42,7 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
   Wc.Reshape(nfaces, nfaces);
 
   int dir;
-  double volume = mesh_->cell_volume(c,false);
+  double volume = mesh_->cell_volume(c, false);
 
   // calculate cell normal
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -49,22 +50,20 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
   const AmanziGeometry::Point& xf2 = mesh_->face_centroid(faces(1));
   AmanziGeometry::Point v1(d_), v2(d_), v3(d_);
 
-  v1 = (xf1 - xc)^(xf2 - xc);
+  v1 = (xf1 - xc) ^ (xf2 - xc);
   v1 /= norm(v1);
 
   // calculate projector
   Tensor P(d_, 2);
   for (int i = 0; i < d_; i++) {
     P(i, i) = 1.0;
-    for (int j = 0; j < d_; j++) {
-      P(i, j) -= v1[i] * v1[j];
-    }
+    for (int j = 0; j < d_; j++) { P(i, j) -= v1[i] * v1[j]; }
   }
 
   // cell-based coordinate system
   v2 = xf1 - xc;
   v2 /= norm(v2);
-  v3 = v1^v2;
+  v3 = v1 ^ v2;
 
   // define new tensor
   Tensor PTP(d_, 2);
@@ -99,10 +98,11 @@ int MFD3D_Diffusion::L2consistencyInverseSurface(
 
 
 /* ******************************************************************
-* Darcy inverse mass matrix for surface: the standard algorithm
-****************************************************************** */
-int MFD3D_Diffusion::MassMatrixInverseSurface(
-    int c, const Tensor& K, DenseMatrix& W)
+ * Darcy inverse mass matrix for surface: the standard algorithm
+ ****************************************************************** */
+int
+MFD3D_Diffusion::MassMatrixInverseSurface(int c, const Tensor& K,
+                                          DenseMatrix& W)
 {
   DenseMatrix R;
 
@@ -115,9 +115,10 @@ int MFD3D_Diffusion::MassMatrixInverseSurface(
 
 
 /* ******************************************************************
-* Exterior normal to 2D face in 3D space.
-****************************************************************** */
-AmanziGeometry::Point MFD3D_Diffusion::mesh_face_normal(int f, int c)
+ * Exterior normal to 2D face in 3D space.
+ ****************************************************************** */
+AmanziGeometry::Point
+MFD3D_Diffusion::mesh_face_normal(int f, int c)
 {
   Kokkos::View<AmanziGeometry::Point*> vs;
   mesh_->face_get_coordinates(f, vs);
@@ -134,5 +135,5 @@ AmanziGeometry::Point MFD3D_Diffusion::mesh_face_normal(int f, int c)
   return normal;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
