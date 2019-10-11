@@ -387,9 +387,6 @@ void CompH_PK::InitializeComponent()
   op_bc_rhl_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
   op_bc_s_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, WhetStone::DOF_Type::SCALAR));
 
-  ComputeBCs(false);
-  ComputeBC_Pn();
-   
   // allocate memory for absolute permeability
   K_.resize(ncells_wghost_);
   D1_.resize(ncells_wghost_);
@@ -407,18 +404,20 @@ void CompH_PK::InitializeComponent()
   Teuchos::ParameterList oplist_matrix = tmp_list.sublist("matrix");
   Teuchos::ParameterList oplist_pc = tmp_list.sublist("preconditioner");
   op_list_ = Teuchos::rcp(new Teuchos::ParameterList(tmp_list.sublist("preconditioner")));
-  //std::cout << "op_list_: " << *op_list_ << "\n";
 
   // create diffusion operators op_matrix_ and op_preconditioner_.
   // They will need to be initialized, which is done later in InitNextTI.
   Operators::PDE_DiffusionFactory opfactory;
-  //op1_matrix_ = opfactory.Create(oplist_matrix, mesh_, op_bc_p_, 1.0, gravity_);
-  //op2_matrix_ = opfactory.Create(oplist_matrix, mesh_, op_bc_p_n_, 1.0, gravity_);
   op1_matrix_ = Teuchos::rcp(new Operators::PDE_DiffusionFVwithGravity(oplist_matrix, mesh_, 1.0, gravity_));
   op1_matrix_->SetBCs(op_bc_p_, op_bc_p_);
+
   op2_matrix_ = Teuchos::rcp(new Operators::PDE_DiffusionFVwithGravity(oplist_matrix, mesh_, 1.0, gravity_));
   op2_matrix_->SetBCs(op_bc_p_n_, op_bc_p_n_);
+
   op3_matrix_ = opfactory.Create(oplist_matrix, mesh_, op_bc_rhl_, 1.0, gravity_);
+
+  ComputeBCs(false);
+  ComputeBC_Pn();
 
   // preconditioner operators
   op1_preconditioner_ = opfactory.Create(oplist_pc, mesh_, op_bc_p_, 1.0, gravity_);
@@ -442,28 +441,25 @@ void CompH_PK::InitializeComponent()
 
   // init upwind operator
   Teuchos::ParameterList upw_list = comp_list_->sublist("operators")
-                                            .sublist("diffusion operator")
-                                            .sublist("upwind");
+                                               .sublist("diffusion operator")
+                                               .sublist("upwind");
 
-  //Operators::UpwindFactory<MPCoeff> upwind_factory;
-  //upwind_n_ = upwind_factory.Create(mesh_, coef_n_, upw_list);
-  //upwind_n_ = upwind_factory.Create(mesh_, coef_w_, upw_list);
+  // Operators::UpwindFactory<MPCoeff> upwind_factory;
+  // upwind_n_ = upwind_factory.Create(mesh_, coef_n_, upw_list);
+  // upwind_n_ = upwind_factory.Create(mesh_, coef_w_, upw_list);
 
   upwind_n_ = Teuchos::rcp(new Operators::UpwindFlux<MPCoeff>(mesh_, coef_n_));
   upwind_n_->Init(upw_list);
   upwind_w_ = Teuchos::rcp(new Operators::UpwindFlux<MPCoeff>(mesh_, coef_w_));
   upwind_w_->Init(upw_list);
-  //std::cout << "Done creating upwind operator \n";
 
   // init upwind_velocity
   upwind_vw_ = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("velocity_wet", passwd_)));
   upwind_vn_ = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("velocity_nonwet", passwd_)));
-  //std::cout << "Done init upwind_velocity \n";
 
   tmp_flux1_ = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("velocity_wet", passwd_)));
   tmp_flux2_ = Teuchos::rcp(new CompositeVector(*S_->GetFieldData("velocity_nonwet", passwd_)));
-  //std::cout << "Done InitializeComponent\n";
-} // End InitializePressure()
+}
 
 
 /* ******************************************************************
@@ -696,23 +692,31 @@ void CompH_PK::ComputeBCs(bool stop)
   missed_bc_faces_ = 0;
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
-    if (bc_model_p[f] == Operators::OPERATOR_BC_NONE) {
-      cells.clear();
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      int ncells = cells.size();
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    int ncells = cells.size();
 
-      if (ncells == 1) {
+    if (ncells == 1) {
+      if (bc_model_p[f] == Operators::OPERATOR_BC_NONE) {
         bc_model_p[f] = Operators::OPERATOR_BC_NEUMANN;
-        bc_model_p_n[f] = Operators::OPERATOR_BC_NEUMANN;
-        bc_model_s[f] = Operators::OPERATOR_BC_NEUMANN;
-        bc_model_rhl[f] = Operators::OPERATOR_BC_NEUMANN;
-
         bc_value_p[f] = 0.0;
-        bc_value_p_n[f] = 0.0;
-        bc_value_s[f] = 0.0;
-        bc_value_rhl[f] = 0.0;
-        missed_bc_faces_++;
       }
+
+      if (bc_model_p_n[f] == Operators::OPERATOR_BC_NONE) {
+        bc_model_p_n[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_value_p_n[f] = 0.0;
+      }
+
+      if (bc_model_s[f] == Operators::OPERATOR_BC_NONE) {
+        bc_model_s[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_value_s[f] = 0.0;
+      }
+
+      if (bc_model_rhl[f] == Operators::OPERATOR_BC_NONE) {
+        bc_model_rhl[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_value_rhl[f] = 0.0;
+      }
+
+      missed_bc_faces_++;
     }
   }
 

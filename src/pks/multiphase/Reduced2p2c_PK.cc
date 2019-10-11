@@ -429,17 +429,6 @@ int Reduced2p2c_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teucho
     }
   }
 
-  /*
-  if (pc_list_->isSublist("Euclid") && (ierr < 0) && pc_all_name_ != "Euclid" && !cpr_enhanced_) {
-    *vo_->os() << vo_->color("green") << "Switching to Euclid\n";
-    ierr = 0;
-    tree_op_->InitPreconditioner("Euclid", *pc_list_);
-    ierr = solver_tree_->ApplyInverse(*u, pu_temp);
-    *pu = pu_temp;
-    if (ierr > 0) ln_itrs_ += solver_tree_->num_itrs();
-  }
-  */
-
   if (ierr < 0) {
     Teuchos::ParameterList& systg_list =  pc_list_->sublist(pc_all_name_).sublist("systg parameters");
     systg_list.set("coarse solver type", 1);
@@ -464,9 +453,6 @@ int Reduced2p2c_PK::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teucho
   Teuchos::RCP<TreeVector> out = Teuchos::rcp(new TreeVector(*u));
   out->PutScalar(0.0);
   tree_op_->Apply(*pu, *out);
-  std::cout << "apply to get functional back: \n";
-  std::cout << *out->SubVector(0)->Data()->ViewComponent("cell") << "\n";
-  std::cout << *out->SubVector(1)->Data()->ViewComponent("cell") << "\n";
   */
 
   Amanzi::timer_manager.stop("ApplyPreconditioner");
@@ -485,33 +471,6 @@ double Reduced2p2c_PK::ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<
   printf("resnorm_p = %4.6e, resnorm_s = %4.6e, resnorm_r = %4.6e \n", resnorm_p, resnorm_s, resnorm_r);
   du->Norm2(&du_l2);
   return du_l2;
-
-  /*
-  // monitor relative update
-  double p_l2, s_l2, rho_l2, dp_l2, ds_l2, drho_l2;
-  double p_l1, s_l1, rho_l1, dp_l1, ds_l1, drho_l1;
-  du->SubVector(0)->Norm1(&dp_l2);
-  du->SubVector(1)->Norm1(&ds_l2);
-  du->SubVector(2)->Norm1(&drho_l2);
-
-  u->SubVector(0)->Norm1(&p_l2);
-  u->SubVector(1)->Norm1(&s_l2);
-  u->SubVector(2)->Norm1(&rho_l2);
-
-  return std::max(std::max(dp_l2/p_l2, ds_l2/s_l2), drho_l2/rho_l2);
-  double p_l2, s_l2, rho_l2, dp_l2, ds_l2, drho_l2;
-  double p_l1, s_l1, rho_l1, dp_l1, ds_l1, drho_l1;
-  du->SubVector(0)->Norm2(&dp_l2);
-  du->SubVector(1)->Norm2(&ds_l2);
-  du->SubVector(2)->Norm2(&drho_l2);
-
-  u->SubVector(0)->Norm2(&p_l2);
-  printf("resnorm_p = %4.6e, resnorm_s = %4.6e, resnorm_r = %4.6e \n", dp_l2/p_l2, ds_l2, drho_l2);
-  //u->SubVector(1)->Norm2(&s_l2);
-  //u->SubVector(2)->Norm2(&rho_l2);
-
-  return std::max(std::max(dp_l2/p_l2, ds_l2), drho_l2);
-  */
 }
 
 

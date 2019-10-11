@@ -146,7 +146,6 @@ void CompH_PK::FunctionalResidual(double t_old, double t_new,
 
     double factor = phi_ * mesh_->cell_volume(c) / dTp;
     double tmp_acc_term = (rhg1*(1.0-s1) + rhl1*s1 - rhg0*(1.0-s0) - rhl0*s0) * factor;
-    //std::cout << "accumulation term cell " << c << ": " << tmp_acc_term << "\n";
     f_cell[0][c] += tmp_acc_term;
   }
   f->Scale(dTp);
@@ -327,7 +326,6 @@ exit(0);
   // RHG * K * lambda_n * Pc'
   tmp_coef->Update(1.0, *coef_n_->Coeff(), 0.0);
   tmp_coef->Multiply(1.0, *tmp_coef, *coef_n_->DPc(), 0.0);
-  //tmp_coef->Print(std::cout);
   tmp_coef->Scale(dTp/mu2_);
   op3_preconditioner_->global_operator()->Init();
   op3_preconditioner_->Setup(Kptr, tmp_coef, Teuchos::null);
@@ -347,7 +345,6 @@ exit(0);
 
   //op2_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_prec_sat_->global_operator()));
   acc_term.Update(phi_, *rhl, -phi_, *rho_g, 0.0);
-  //acc_term.Print(std::cout);
   if (dTp > 0.0) {
     op2_acc_->AddAccumulationDelta(*saturation_w, acc_term, acc_term, 1.0, "cell");
   } 
@@ -428,7 +425,6 @@ void CompH_PK::NumericalJacobian(double t_old, double t_new,
     var_diff_c[0][c] = s_save;
     deriv->Update(1.0/h, *f_diff->Data(), -1.0/h, *f_ref->Data(), 0.0);
     Epetra_MultiVector& deriv_c = *deriv->ViewComponent("cell");
-    //std::cout << "numerical derivative: " << *deriv->ViewComponent("cell") << "\n";
 
     AmanziMesh::Entity_ID_List faces;
     mesh_->cell_get_faces(c, &faces);

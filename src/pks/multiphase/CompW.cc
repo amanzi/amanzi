@@ -563,21 +563,26 @@ void CompW_PK::ComputeBCs()
   missed_bc_faces_ = 0;
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
-    if (bc_model_p[f] == Operators::OPERATOR_BC_NONE) {
-      cells.clear();
-      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      int ncells = cells.size();
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    int ncells = cells.size();
 
-      if (ncells == 1) {
+    if (ncells == 1) {
+      if (bc_model_p[f] == Operators::OPERATOR_BC_NONE) {
         bc_model_p[f] = Operators::OPERATOR_BC_NEUMANN;
-        bc_model_s[f] = Operators::OPERATOR_BC_NEUMANN;
-        bc_model_rhl[f] = Operators::OPERATOR_BC_NEUMANN;
-
         bc_value_p[f] = 0.0;
-        bc_value_s[f] = 0.0;
-        bc_value_rhl[f] = 0.0;
-        missed_bc_faces_++;
       }
+
+      if (bc_model_s[f] == Operators::OPERATOR_BC_NONE) {
+        bc_model_s[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_value_s[f] = 0.0;
+      }
+
+      if (bc_model_rhl[f] == Operators::OPERATOR_BC_NONE) {
+        bc_model_rhl[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_value_rhl[f] = 0.0;
+      }
+
+      missed_bc_faces_++;
     }
   }
 
