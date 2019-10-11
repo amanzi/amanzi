@@ -4,7 +4,7 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Author: Ethan Coon (coonet@ornl.gov)
 */
 
 //! PK Adaptors map between the mixin classes and the virtual interface.
@@ -39,186 +39,216 @@ namespace Amanzi {
 
 class Debugger;
 
-template <class Base_t> class PK_Adaptor : public PK, public Base_t {
-public:
+template <class Base_t>
+class PK_Adaptor : public PK, public Base_t {
+ public:
   using Base_t::Base_t;
 
   virtual void Setup() override final { Base_t::Setup(); }
   virtual void Initialize() override final { Base_t::Initialize(); }
-  virtual bool AdvanceStep(const Key &tag_old,
-                           const Key &tag_new) override final {
+  virtual bool
+  AdvanceStep(const Key& tag_old, const Key& tag_new) override final
+  {
     return Base_t::AdvanceStep(tag_old, tag_new);
   }
-  virtual bool ValidStep(const Key &tag_old,
-                         const Key &tag_new) override final {
+  virtual bool ValidStep(const Key& tag_old, const Key& tag_new) override final
+  {
     return Base_t::ValidStep(tag_old, tag_new);
   }
-  virtual void CommitStep(const Key &tag_old,
-                          const Key &tag_new) override final {
+  virtual void CommitStep(const Key& tag_old, const Key& tag_new) override final
+  {
     Base_t::CommitStep(tag_old, tag_new);
   }
-  virtual void FailStep(const Key &tag_old, const Key &tag_new) override final {
+  virtual void FailStep(const Key& tag_old, const Key& tag_new) override final
+  {
     Base_t::FailStep(tag_old, tag_new);
   }
-  virtual void CalculateDiagnostics(const Key &tag) override final {
+  virtual void CalculateDiagnostics(const Key& tag) override final
+  {
     Base_t::CalculateDiagnostics(tag);
   }
-  virtual void ChangedSolutionPK(const Key &tag) override final {
+  virtual void ChangedSolutionPK(const Key& tag) override final
+  {
     Base_t::ChangedSolutionPK(tag);
   }
   virtual std::string name() override final { return Base_t::name(); }
   virtual double get_dt() override final { return Base_t::get_dt(); }
-  virtual Teuchos::Ptr<Debugger> debugger() override final {
+  virtual Teuchos::Ptr<Debugger> debugger() override final
+  {
     return Base_t::debugger();
   }
 
-protected:
-  virtual void ConstructChildren() override final {
+ protected:
+  virtual void ConstructChildren() override final
+  {
     Base_t::ConstructChildren();
   }
-  virtual Teuchos::RCP<TreeVectorSpace> SolutionSpace() override final {
+  virtual Teuchos::RCP<TreeVectorSpace> SolutionSpace() override final
+  {
     return Base_t::SolutionSpace();
   }
-  virtual void StateToSolution(TreeVector &soln, const Key &tag,
-                               const Key &suffix) override final {
+  virtual void StateToSolution(TreeVector& soln, const Key& tag,
+                               const Key& suffix) override final
+  {
     Base_t::StateToSolution(soln, tag, suffix);
   }
-  virtual void SolutionToState(const Key &tag,
-                               const Key &suffix) override final {
+  virtual void SolutionToState(const Key& tag, const Key& suffix) override final
+  {
     Base_t::SolutionToState(tag, suffix);
   }
-  virtual void StateToState(const Key &tag_from,
-                            const Key &tag_to) override final {
+  virtual void
+  StateToState(const Key& tag_from, const Key& tag_to) override final
+  {
     Base_t::StateToState(tag_from, tag_to);
   }
 };
 
 template <class Base_t>
 class PK_Explicit_Adaptor : public PK_Explicit<>, public Base_t {
-public:
+ public:
   using Base_t::Base_t;
 
   // the PK interface
   virtual void Setup() override final { Base_t::Setup(); }
   virtual void Initialize() override final { Base_t::Initialize(); }
-  virtual bool AdvanceStep(const Key &tag_old,
-                           const Key &tag_new) override final {
+  virtual bool
+  AdvanceStep(const Key& tag_old, const Key& tag_new) override final
+  {
     return Base_t::AdvanceStep(tag_old, tag_new);
   }
-  virtual bool ValidStep(const Key &tag_old,
-                         const Key &tag_new) override final {
+  virtual bool ValidStep(const Key& tag_old, const Key& tag_new) override final
+  {
     return Base_t::ValidStep(tag_old, tag_new);
   }
-  virtual void CommitStep(const Key &tag_old,
-                          const Key &tag_new) override final {
+  virtual void CommitStep(const Key& tag_old, const Key& tag_new) override final
+  {
     Base_t::CommitStep(tag_old, tag_new);
   }
-  virtual void FailStep(const Key &tag_old, const Key &tag_new) override final {
+  virtual void FailStep(const Key& tag_old, const Key& tag_new) override final
+  {
     Base_t::FailStep(tag_old, tag_new);
   }
-  virtual void CalculateDiagnostics(const Key &tag) override final {
+  virtual void CalculateDiagnostics(const Key& tag) override final
+  {
     Base_t::CalculateDiagnostics(tag);
   }
-  virtual void ChangedSolutionPK(const Key &tag) override final {
+  virtual void ChangedSolutionPK(const Key& tag) override final
+  {
     Base_t::ChangedSolutionPK(tag);
   }
   virtual std::string name() override final { return Base_t::name(); }
   virtual double get_dt() override final { return Base_t::get_dt(); }
-  virtual Teuchos::Ptr<Debugger> debugger() override final {
+  virtual Teuchos::Ptr<Debugger> debugger() override final
+  {
     return Base_t::debugger();
   }
 
   // the Explicit_TI::fnBase interface
-  virtual void FunctionalTimeDerivative(double t, const TreeVector &u,
-                    TreeVector &f) override final {
+  virtual void FunctionalTimeDerivative(double t, const TreeVector& u,
+                                        TreeVector& f) override final
+  {
     Base_t::FunctionalTimeDerivative(t, u, f);
   }
 
-  virtual void ConstructChildren() override final {
+  virtual void ConstructChildren() override final
+  {
     Base_t::ConstructChildren();
   }
-  virtual Teuchos::RCP<TreeVectorSpace> SolutionSpace() override final {
+  virtual Teuchos::RCP<TreeVectorSpace> SolutionSpace() override final
+  {
     return Base_t::SolutionSpace();
   }
-  virtual void StateToSolution(TreeVector &soln, const Key &tag,
-                               const Key &suffix) override final {
+  virtual void StateToSolution(TreeVector& soln, const Key& tag,
+                               const Key& suffix) override final
+  {
     Base_t::StateToSolution(soln, tag, suffix);
   }
-  virtual void SolutionToState(const Key &tag,
-                               const Key &suffix) override final {
+  virtual void SolutionToState(const Key& tag, const Key& suffix) override final
+  {
     Base_t::SolutionToState(tag, suffix);
   }
-  virtual void StateToState(const Key &tag_from,
-                            const Key &tag_to) override final {
+  virtual void
+  StateToState(const Key& tag_from, const Key& tag_to) override final
+  {
     Base_t::StateToState(tag_from, tag_to);
   }
 };
 
 template <class Base_t>
 class PK_Implicit_Adaptor : public PK_Implicit<TreeVector>, public Base_t {
-public:
+ public:
   using Base_t::Base_t;
 
   // the PK interface
   virtual void Setup() override final { Base_t::Setup(); }
   virtual void Initialize() override final { Base_t::Initialize(); }
-  virtual bool AdvanceStep(const Key &tag_old,
-                           const Key &tag_new) override final {
+  virtual bool
+  AdvanceStep(const Key& tag_old, const Key& tag_new) override final
+  {
     return Base_t::AdvanceStep(tag_old, tag_new);
   }
-  virtual bool ValidStep(const Key &tag_old,
-                         const Key &tag_new) override final {
+  virtual bool ValidStep(const Key& tag_old, const Key& tag_new) override final
+  {
     return Base_t::ValidStep(tag_old, tag_new);
   }
-  virtual void CommitStep(const Key &tag_old,
-                          const Key &tag_new) override final {
+  virtual void CommitStep(const Key& tag_old, const Key& tag_new) override final
+  {
     Base_t::CommitStep(tag_old, tag_new);
   }
-  virtual void FailStep(const Key &tag_old, const Key &tag_new) override final {
+  virtual void FailStep(const Key& tag_old, const Key& tag_new) override final
+  {
     Base_t::FailStep(tag_old, tag_new);
   }
-  virtual void CalculateDiagnostics(const Key &tag) override final {
+  virtual void CalculateDiagnostics(const Key& tag) override final
+  {
     Base_t::CalculateDiagnostics(tag);
   }
-  virtual void ChangedSolutionPK(const Key &tag) override final {
+  virtual void ChangedSolutionPK(const Key& tag) override final
+  {
     Base_t::ChangedSolutionPK(tag);
   }
   virtual std::string name() override final { return Base_t::name(); }
   virtual double get_dt() override final { return Base_t::get_dt(); }
-  virtual Teuchos::Ptr<Debugger> debugger() override final {
+  virtual Teuchos::Ptr<Debugger> debugger() override final
+  {
     return Base_t::debugger();
   }
 
   // the BDFfnBase interface
   // computes the non-linear functional f = f(t,u,udot)
-  virtual void FunctionalResidual(double t_old, double t_new,
-                          Teuchos::RCP<TreeVector> u_old,
-                          Teuchos::RCP<TreeVector> u_new,
-                          Teuchos::RCP<TreeVector> f) override final {
+  virtual void
+  FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+                     Teuchos::RCP<TreeVector> u_new,
+                     Teuchos::RCP<TreeVector> f) override final
+  {
     Base_t::FunctionalResidual(t_old, t_new, u_old, u_new, f);
   }
 
   // applies preconditioner to u and returns the result in Pu
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
-                                  Teuchos::RCP<TreeVector> Pu) override final {
+                                  Teuchos::RCP<TreeVector> Pu) override final
+  {
     return Base_t::ApplyPreconditioner(u, Pu);
   }
 
   // computes a norm on u-du and returns the result
   virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
-                           Teuchos::RCP<const TreeVector> du) override final {
+                           Teuchos::RCP<const TreeVector> du) override final
+  {
     return Base_t::ErrorNorm(u, du);
   }
 
   // updates the preconditioner
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
-                                    double h) override final {
+                                    double h) override final
+  {
     Base_t::UpdatePreconditioner(t, up, h);
   }
 
   // check the admissibility of a solution
   // override final with the actual admissibility check
-  virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up) override final {
+  virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up) override final
+  {
     return Base_t::IsAdmissible(up);
   }
 
@@ -229,7 +259,8 @@ public:
   // this predictor this function returns true if the predictor was
   // modified, false if not
   virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
-                               Teuchos::RCP<TreeVector> u) override final {
+                               Teuchos::RCP<TreeVector> u) override final
+  {
     return Base_t::ModifyPredictor(h, u0, u);
   }
 
@@ -240,12 +271,14 @@ public:
   virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
   ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
                    Teuchos::RCP<const TreeVector> u,
-                   Teuchos::RCP<TreeVector> du) override final {
+                   Teuchos::RCP<TreeVector> du) override final
+  {
     return Base_t::ModifyCorrection(h, res, u, du);
   }
 
   // update the continuation parameter
-  virtual void UpdateContinuationParameter(double lambda) override final {
+  virtual void UpdateContinuationParameter(double lambda) override final
+  {
     Base_t::UpdateContinuationParameter(lambda);
   }
 
@@ -254,22 +287,26 @@ public:
   // state.
   virtual void ChangedSolution() override final { Base_t::ChangedSolution(); }
 
-  virtual void ConstructChildren() override final {
+  virtual void ConstructChildren() override final
+  {
     Base_t::ConstructChildren();
   }
-  virtual Teuchos::RCP<TreeVectorSpace> SolutionSpace() override final {
+  virtual Teuchos::RCP<TreeVectorSpace> SolutionSpace() override final
+  {
     return Base_t::SolutionSpace();
   }
-  virtual void StateToSolution(TreeVector &soln, const Key &tag,
-                               const Key &suffix) override final {
+  virtual void StateToSolution(TreeVector& soln, const Key& tag,
+                               const Key& suffix) override final
+  {
     Base_t::StateToSolution(soln, tag, suffix);
   }
-  virtual void SolutionToState(const Key &tag,
-                               const Key &suffix) override final {
+  virtual void SolutionToState(const Key& tag, const Key& suffix) override final
+  {
     Base_t::SolutionToState(tag, suffix);
   }
-  virtual void StateToState(const Key &tag_from,
-                            const Key &tag_to) override final {
+  virtual void
+  StateToState(const Key& tag_from, const Key& tag_to) override final
+  {
     Base_t::StateToState(tag_from, tag_to);
   }
 };
@@ -277,69 +314,79 @@ public:
 template <class Base_t>
 class PK_ImplicitExplicit_Adaptor : public PK_ImplicitExplicit<TreeVector>,
                                     public Base_t {
-public:
+ public:
   using Base_t::Base_t;
 
   // the PK interface
   virtual void Setup() override final { Base_t::Setup(); }
   virtual void Initialize() override final { Base_t::Initialize(); }
-  virtual bool AdvanceStep(const Key &tag_old,
-                           const Key &tag_new) override final {
+  virtual bool
+  AdvanceStep(const Key& tag_old, const Key& tag_new) override final
+  {
     return Base_t::AdvanceStep(tag_old, tag_new);
   }
-  virtual bool ValidStep(const Key &tag_old,
-                         const Key &tag_new) override final {
+  virtual bool ValidStep(const Key& tag_old, const Key& tag_new) override final
+  {
     return Base_t::ValidStep(tag_old, tag_new);
   }
-  virtual void CommitStep(const Key &tag_old,
-                          const Key &tag_new) override final {
+  virtual void CommitStep(const Key& tag_old, const Key& tag_new) override final
+  {
     Base_t::CommitStep(tag_old, tag_new);
   }
-  virtual void FailStep(const Key &tag_old, const Key &tag_new) override final {
+  virtual void FailStep(const Key& tag_old, const Key& tag_new) override final
+  {
     Base_t::FailStep(tag_old, tag_new);
   }
-  virtual void CalculateDiagnostics(const Key &tag) override final {
+  virtual void CalculateDiagnostics(const Key& tag) override final
+  {
     Base_t::CalculateDiagnostics(tag);
   }
-  virtual void ChangedSolutionPK(const Key &tag) override final {
+  virtual void ChangedSolutionPK(const Key& tag) override final
+  {
     Base_t::ChangedSolutionPK(tag);
   }
   virtual std::string name() override final { return Base_t::name(); }
   virtual double get_dt() override final { return Base_t::get_dt(); }
-  virtual Teuchos::Ptr<Debugger> debugger() override final {
+  virtual Teuchos::Ptr<Debugger> debugger() override final
+  {
     return Base_t::debugger();
   }
 
   // the BDFfnBase interface
   // computes the non-linear functional f = f(t,u,udot)
-  virtual void FunctionalResidual(double t_old, double t_new,
-                          Teuchos::RCP<TreeVector> u_old,
-                          Teuchos::RCP<TreeVector> u_new,
-                          Teuchos::RCP<TreeVector> f) override final {
+  virtual void
+  FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+                     Teuchos::RCP<TreeVector> u_new,
+                     Teuchos::RCP<TreeVector> f) override final
+  {
     Base_t::FunctionalResidual(t_old, t_new, u_old, u_new, f);
   }
 
   // applies preconditioner to u and returns the result in Pu
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
-                                  Teuchos::RCP<TreeVector> Pu) override final {
+                                  Teuchos::RCP<TreeVector> Pu) override final
+  {
     return Base_t::ApplyPreconditioner(u, Pu);
   }
 
   // computes a norm on u-du and returns the result
   virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u,
-                           Teuchos::RCP<const TreeVector> du) override final {
+                           Teuchos::RCP<const TreeVector> du) override final
+  {
     return Base_t::ErrorNorm(u, du);
   }
 
   // updates the preconditioner
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
-                                    double h) override final {
+                                    double h) override final
+  {
     Base_t::UpdatePreconditioner(t, up, h);
   }
 
   // check the admissibility of a solution
   // override final with the actual admissibility check
-  virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up) override final {
+  virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up) override final
+  {
     return Base_t::IsAdmissible(up);
   }
 
@@ -350,7 +397,8 @@ public:
   // this predictor this function returns true if the predictor was
   // modified, false if not
   virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
-                               Teuchos::RCP<TreeVector> u) override final {
+                               Teuchos::RCP<TreeVector> u) override final
+  {
     return Base_t::ModifyPredictor(h, u0, u);
   }
 
@@ -361,12 +409,14 @@ public:
   virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
   ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
                    Teuchos::RCP<const TreeVector> u,
-                   Teuchos::RCP<TreeVector> du) override final {
+                   Teuchos::RCP<TreeVector> du) override final
+  {
     return Base_t::ModifyCorrection(h, res, u, du);
   }
 
   // update the continuation parameter
-  virtual void UpdateContinuationParameter(double lambda) override final {
+  virtual void UpdateContinuationParameter(double lambda) override final
+  {
     Base_t::UpdateContinuationParameter(lambda);
   }
 
@@ -376,27 +426,32 @@ public:
   virtual void ChangedSolution() override final { Base_t::ChangedSolution(); }
 
   // the Explicit_TI::fnBase interface
-  virtual void FunctionalTimeDerivative(double t, const TreeVector &u,
-                    TreeVector &f) override final {
+  virtual void FunctionalTimeDerivative(double t, const TreeVector& u,
+                                        TreeVector& f) override final
+  {
     Base_t::FunctionalTimeDerivative(t, u, f);
   }
 
-  virtual void ConstructChildren() override final {
+  virtual void ConstructChildren() override final
+  {
     Base_t::ConstructChildren();
   }
-  virtual Teuchos::RCP<TreeVectorSpace> SolutionSpace() override final {
+  virtual Teuchos::RCP<TreeVectorSpace> SolutionSpace() override final
+  {
     return Base_t::SolutionSpace();
   }
-  virtual void StateToSolution(TreeVector &soln, const Key &tag,
-                               const Key &suffix) override final {
+  virtual void StateToSolution(TreeVector& soln, const Key& tag,
+                               const Key& suffix) override final
+  {
     Base_t::StateToSolution(soln, tag, suffix);
   }
-  virtual void SolutionToState(const Key &tag,
-                               const Key &suffix) override final {
+  virtual void SolutionToState(const Key& tag, const Key& suffix) override final
+  {
     Base_t::SolutionToState(tag, suffix);
   }
-  virtual void StateToState(const Key &tag_from,
-                            const Key &tag_to) override final {
+  virtual void
+  StateToState(const Key& tag_from, const Key& tag_to) override final
+  {
     Base_t::StateToState(tag_from, tag_to);
   }
 };

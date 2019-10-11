@@ -25,10 +25,11 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Calculate piecewise polynomial mesh velocity in cell c.
-****************************************************************** */
-void MeshMaps_PEM::VelocityCell(
-    int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
+ * Calculate piecewise polynomial mesh velocity in cell c.
+ ****************************************************************** */
+void
+MeshMaps_PEM::VelocityCell(int c, const std::vector<VectorPolynomial>& vf,
+                           VectorPolynomial& vc) const
 {
   AMANZI_ASSERT(d_ == 2);
 
@@ -71,13 +72,11 @@ void MeshMaps_PEM::VelocityCell(
       vc[m].set_origin(AmanziGeometry::Point(d_));
 
       vc[m](0, 0) = q[i];
-      for (int j = 0; j < d_; ++j) {
-        vc[m](1, j) = J(i, j);
-      }
+      for (int j = 0; j < d_; ++j) { vc[m](1, j) = J(i, j); }
       m++;
     }
   }
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi

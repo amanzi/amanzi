@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -22,9 +22,7 @@ namespace Operators {
 typedef boost::array<double, 2> bc_tuple;
 typedef std::pair<double, double> dt_tuple;
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-
-

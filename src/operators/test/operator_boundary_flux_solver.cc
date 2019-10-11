@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Daniil Svyatskiy(dasvyat@lanl.gov)  
+      Daniil Svyatskiy(dasvyat@lanl.gov)
 */
 
 
@@ -28,17 +28,15 @@
 #include "OperatorDefs.hh"
 #include "BoundaryFlux.hh"
 
-namespace Amanzi{
+namespace Amanzi {
 
 class Model {
  public:
-  Model() {};
-  ~Model() {};
+  Model(){};
+  ~Model(){};
 
   // main members
-  double Value(double pc) const { 
-    return analytic(pc); 
-  }
+  double Value(double pc) const { return analytic(pc); }
 
   double analytic(double pc) const { return 1 + pc; }
 
@@ -46,16 +44,17 @@ class Model {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };
 
-typedef double(Model::*NonLinFn)(double pc) const; 
+typedef double (Model::*NonLinFn)(double pc) const;
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 
 /* *****************************************************************
-* This test replaces diffusion tensor and boundary conditions by
-* continuous functions.
-* **************************************************************** */
-TEST(BOUNDARYFLUX) {
+ * This test replaces diffusion tensor and boundary conditions by
+ * continuous functions.
+ * **************************************************************** */
+TEST(BOUNDARYFLUX)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -68,7 +67,7 @@ TEST(BOUNDARYFLUX) {
   if (getRank == 0) std::cout << "\nTest: BoundaryFluxSolver" << std::endl;
 
   // create model of nonlinearity
-  Teuchos::RCP<const Model> model  = Teuchos::rcp(new Model());
+  Teuchos::RCP<const Model> model = Teuchos::rcp(new Model());
   NonLinFn func = &Model::Value;
 
   double trans_f = 1;
@@ -80,17 +79,25 @@ TEST(BOUNDARYFLUX) {
   int dir = 1;
   double max_val = 100;
   double min_val = 0;
-  double eps=1e-6;
+  double eps = 1e-6;
 
-  BoundaryFaceSolver<Model> BndFaceSolver(trans_f, g_f, cell_val, lmd, bnd_flux, dir, patm, 
-                                           max_val, min_val, eps, model, func);
+  BoundaryFaceSolver<Model> BndFaceSolver(trans_f,
+                                          g_f,
+                                          cell_val,
+                                          lmd,
+                                          bnd_flux,
+                                          dir,
+                                          patm,
+                                          max_val,
+                                          min_val,
+                                          eps,
+                                          model,
+                                          func);
 
-  double face_value; 
+  double face_value;
   face_value = BndFaceSolver.FaceValue();
 
-  if (getRank == 0) std::cout << "Face value " << face_value <<"\n";
+  if (getRank == 0) std::cout << "Face value " << face_value << "\n";
 
   CHECK(fabs(face_value - 0.585786) < eps);
 }
-
-

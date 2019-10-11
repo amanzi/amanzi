@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -58,37 +58,44 @@ using namespace Amanzi::AmanziMesh;
  ****************************************************************** */
 // Device Type : GPUs or CPUs
 
-template<class DeviceType>
+template <class DeviceType>
 class AModel {
-public:
-  AModel(OutputVector_type<DeviceType> A, InputVector_type<DeviceType> B, InputVector_type<DeviceType> C, 
-	 InputVector_type<DeviceType> E, InVector_type<DeviceType> H, Teuchos::ParameterList &plist) :
-    A_(A), B_(B), C_(C), E_(E), H_(H) {}
+ public:
+  AModel(OutputVector_type<DeviceType> A, InputVector_type<DeviceType> B,
+         InputVector_type<DeviceType> C, InputVector_type<DeviceType> E,
+         InVector_type<DeviceType> H, Teuchos::ParameterList& plist)
+    : A_(A), B_(B), C_(C), E_(E), H_(H)
+  {}
 
-  KOKKOS_INLINE_FUNCTION void operator() (const int i) const {
-    A_(i) = 2 * B_(i)  + C_(i) * E_(i) * H_(i);
+  KOKKOS_INLINE_FUNCTION void operator()(const int i) const
+  {
+    A_(i) = 2 * B_(i) + C_(i) * E_(i) * H_(i);
   }
 
-  class dAdB{};
-  KOKKOS_INLINE_FUNCTION void operator() (dAdB, const int i) const {
+  class dAdB {};
+  KOKKOS_INLINE_FUNCTION void operator()(dAdB, const int i) const
+  {
     A_(i) = 2.0;
   }
 
-  class dAdC{};
-  KOKKOS_INLINE_FUNCTION void operator() (dAdC, const int i) const {
+  class dAdC {};
+  KOKKOS_INLINE_FUNCTION void operator()(dAdC, const int i) const
+  {
     A_(i) = E_(i) * H_(i);
   }
-  class dAdE{};
-  KOKKOS_INLINE_FUNCTION void operator() (dAdE, const int i) const {
-    A_(i) = C_(i) * H_(i) ;
-  } 
-  
-  class dAdH{};
-  KOKKOS_INLINE_FUNCTION void operator() (dAdH, const int i) const {
+  class dAdE {};
+  KOKKOS_INLINE_FUNCTION void operator()(dAdE, const int i) const
+  {
+    A_(i) = C_(i) * H_(i);
+  }
+
+  class dAdH {};
+  KOKKOS_INLINE_FUNCTION void operator()(dAdH, const int i) const
+  {
     A_(i) = C_(i) * E_(*);
   }
 
-private:
+ private:
   OutputVector_type<DeviceType> A_;
   InputVector_type<DeviceType> B_;
   InputVector_type<DeviceType> C_;
@@ -120,7 +127,3 @@ private:
 /* ******************************************************************
  * Equation H = 2*F
  ****************************************************************** */
-
-
-
-

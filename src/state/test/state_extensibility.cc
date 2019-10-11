@@ -27,30 +27,34 @@ struct MyPoint {
 
 using MyPointList = std::vector<MyPoint>;
 
-bool inline UserInitialize(Teuchos::ParameterList &plist,
-                           const Teuchos::ParameterList &attrs, 
-                           MyPointList &t) {
+bool inline UserInitialize(Teuchos::ParameterList& plist,
+                           const Teuchos::ParameterList& attrs, MyPointList& t)
+{
   std::cout << "Successfully initialized a MyPoint!" << std::endl;
   return true;
 }
 
-void UserWriteVis(const Amanzi::Visualization &vis,
-                  const Teuchos::ParameterList& attrs,
-                  const MyPointList &vec) {}
-void UserWriteCheckpoint(const Amanzi::Checkpoint &chkp,
-                         const Teuchos::ParameterList& attrs,
-                         const MyPointList &vec) {}
-void UserReadCheckpoint(const Amanzi::Checkpoint &chkp,
-                        const Teuchos::ParameterList& attrs,
-                        MyPointList &vec) {}
+void
+UserWriteVis(const Amanzi::Visualization& vis,
+             const Teuchos::ParameterList& attrs, const MyPointList& vec)
+{}
+void
+UserWriteCheckpoint(const Amanzi::Checkpoint& chkp,
+                    const Teuchos::ParameterList& attrs, const MyPointList& vec)
+{}
+void
+UserReadCheckpoint(const Amanzi::Checkpoint& chkp,
+                   const Teuchos::ParameterList& attrs, MyPointList& vec)
+{}
 
-TEST(STATE_EXTENSIBILITY_CREATION) {
+TEST(STATE_EXTENSIBILITY_CREATION)
+{
   using namespace Amanzi;
 
   auto comm = Amanzi::getDefaultComm();
   Teuchos::ParameterList region_list;
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm = Teuchos::rcp(
-      new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
+    new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   Amanzi::AmanziMesh::MeshFactory meshfactory(comm, gm);
   auto m = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1);

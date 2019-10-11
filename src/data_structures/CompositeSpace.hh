@@ -6,7 +6,7 @@
 
   Authors:
       Ethan Coon
-      Daniil Svyatsky (dasvyat@lanl.gov)  
+      Daniil Svyatsky (dasvyat@lanl.gov)
 */
 
 
@@ -53,7 +53,7 @@ class CompositeSpace : public BlockSpace {
                  const std::map<std::string, BlockMap_ptr_type>& master_maps,
                  const std::map<std::string, BlockMap_ptr_type>& ghost_maps,
                  const std::map<std::string, std::size_t>& num_vectors,
-                 bool ghosted);                 
+                 bool ghosted);
 
   CompositeSpace(const CompositeSpace& other) = default;
   CompositeSpace& operator=(const CompositeSpace&) = default;
@@ -76,4 +76,3 @@ class CompositeSpace : public BlockSpace {
 } // namespace Amanzi
 
 #endif
-

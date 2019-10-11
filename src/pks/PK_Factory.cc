@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -18,14 +18,17 @@
 
 namespace Amanzi {
 
-Teuchos::RCP<PK> PKFactory::CreatePK(
-    std::string pk_name, const Teuchos::RCP<Teuchos::ParameterList> &pk_tree,
-    const Teuchos::RCP<Teuchos::ParameterList> &global_list,
-    const Teuchos::RCP<State> &state, const Teuchos::RCP<TreeVector> &soln) {
+Teuchos::RCP<PK>
+PKFactory::CreatePK(std::string pk_name,
+                    const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
+                    const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+                    const Teuchos::RCP<State>& state,
+                    const Teuchos::RCP<TreeVector>& soln)
+{
   // make sure we can find PKs
   if (!global_list->isSublist("PKs")) {
     Errors::Message message(
-        "PK_Factory: Missing sublist \"PKs\" in global list.");
+      "PK_Factory: Missing sublist \"PKs\" in global list.");
     Exceptions::amanzi_throw(message);
   }
 
@@ -49,15 +52,15 @@ Teuchos::RCP<PK> PKFactory::CreatePK(
       // flyweight PKs are defined across a domain_set
       Teuchos::Array<std::string> domain_sets;
       domain_sets =
-          global_list->sublist("state").get<Teuchos::Array<std::string>>(
-              "domain sets", domain_sets);
+        global_list->sublist("state").get<Teuchos::Array<std::string>>(
+          "domain sets", domain_sets);
       for (auto ds : domain_sets) {
         if (ds == std::get<0>(pk_triple)) {
           // flyweight PK, alter the sublist and construct
           // -- get the domain name and base varname
           Key pk_flyweight = Keys::getKey(ds + "_*", std::get<2>(pk_triple));
           Teuchos::ParameterList pk_list_new =
-              global_list->sublist("PKs").sublist(pk_flyweight);
+            global_list->sublist("PKs").sublist(pk_flyweight);
 
           // -- overwrite the domain name
           Key new_domain = ds + "_" + std::get<1>(pk_triple);
@@ -67,14 +70,14 @@ Teuchos::RCP<PK> PKFactory::CreatePK(
           // -- overwrite sub pks names with prepended domain
           if (pk_list_new.isParameter("PKs order")) {
             auto subpks_names =
-                pk_list_new.get<Teuchos::Array<std::string>>("PKs order");
-            for (auto &subpk_name : subpks_names) {
+              pk_list_new.get<Teuchos::Array<std::string>>("PKs order");
+            for (auto& subpk_name : subpks_names) {
               KeyTriple subpk_triple;
               bool subpk_is_ds = Keys::splitDomainSet(subpk_name, subpk_triple);
 
               if (subpk_is_ds) {
                 subpk_name = Keys::getKey(std::get<0>(subpk_triple) + "_" +
-                                              std::get<1>(pk_triple),
+                                            std::get<1>(pk_triple),
                                           std::get<2>(subpk_triple));
               }
             }
@@ -143,7 +146,6 @@ Teuchos::RCP<PK> PKFactory::CreatePK(
   return Teuchos::rcp(iter->second(pk_subtree, global_list, state, soln));
 }
 
-PKFactory::map_type *PKFactory::map_;
+PKFactory::map_type* PKFactory::map_;
 
 } // namespace Amanzi
-

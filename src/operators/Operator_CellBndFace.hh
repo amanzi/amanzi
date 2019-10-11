@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Daniil Svyatsky(dasvyat@lanl.gov)  
+      Daniil Svyatsky(dasvyat@lanl.gov)
 */
 
 
@@ -25,51 +25,53 @@ class Operator_CellBndFace : public Operator_Cell {
   // main constructor
   //   The CVS is the domain and range of the operator
   Operator_CellBndFace(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
-                Teuchos::ParameterList& plist,
-                int schema) :
-    Operator_Cell(cvs, plist, schema) {
+                       Teuchos::ParameterList& plist, int schema)
+    : Operator_Cell(cvs, plist, schema)
+  {
     set_schema_string("CELLBNDFACE");
   }
 
   // visit methods for apply
-  virtual int ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
-                                const CompositeVector& X, CompositeVector& Y) const;
+  virtual int
+  ApplyMatrixFreeOp(const Op_Face_CellBndFace& op, const CompositeVector& X,
+                    CompositeVector& Y) const;
 
-  virtual int ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
-                                const CompositeVector& X, CompositeVector& Y) const;
-  virtual int ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
-                                const CompositeVector& X, CompositeVector& Y) const;
+  virtual int
+  ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
+                    const CompositeVector& X, CompositeVector& Y) const;
+  virtual int
+  ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
+                    const CompositeVector& X, CompositeVector& Y) const;
 
   // visit methods for symbolic assemble
-  virtual void SymbolicAssembleMatrixOp(const Op_Face_CellBndFace& op,
-                                        const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const;
-  
-  virtual void SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
-                                        const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const;
-  virtual void SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
-                                        const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const;
-  
-  // visit methods for assemble
-  virtual void AssembleMatrixOp(const Op_Face_CellBndFace& op,
-                                const SuperMap& map, MatrixFE& mat,
-                                int my_block_row, int my_block_col) const;
+  virtual void
+  SymbolicAssembleMatrixOp(const Op_Face_CellBndFace& op, const SuperMap& map,
+                           GraphFE& graph, int my_block_row,
+                           int my_block_col) const;
 
-  virtual void AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
-                                const SuperMap& map, MatrixFE& mat,
-                                int my_block_row, int my_block_col) const;
-  virtual void AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
-                                const SuperMap& map, MatrixFE& mat,
-                                int my_block_row, int my_block_col) const;
+  virtual void
+  SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
+                           const SuperMap& map, GraphFE& graph,
+                           int my_block_row, int my_block_col) const;
+  virtual void
+  SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
+                           const SuperMap& map, GraphFE& graph,
+                           int my_block_row, int my_block_col) const;
+
+  // visit methods for assemble
+  virtual void
+  AssembleMatrixOp(const Op_Face_CellBndFace& op, const SuperMap& map,
+                   MatrixFE& mat, int my_block_row, int my_block_col) const;
+
+  virtual void
+  AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op, const SuperMap& map,
+                   MatrixFE& mat, int my_block_row, int my_block_col) const;
+  virtual void
+  AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op, const SuperMap& map,
+                   MatrixFE& mat, int my_block_row, int my_block_col) const;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-
-    
-
-

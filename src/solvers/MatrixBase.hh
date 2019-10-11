@@ -5,14 +5,14 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon (ecoon@lanl.gov)
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Ethan Coon (coonet@ornl.gov)
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
 //! <MISSING_ONELINE_DOCSTRING>
 
-template<class Vector, class VectorSpace>
+template <class Vector, class VectorSpace>
 class MatrixBase {
  public:
   // NOTE that a default constructor MUST be allowed, even if it
@@ -35,4 +35,3 @@ class MatrixBase {
   // Apply the inverse, x <-- A^-1 b, returns ierr >= 0 if success, <0 otherwise
   int ApplyInverse(const Vector& b, Vector& x) const;
 };
-

@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon (coonet@ornl.gov)  
+      Ethan Coon (coonet@ornl.gov)
 */
 
 
@@ -19,4 +19,3 @@
 
 #include "BlockVector_decl.hh"
 #include "BlockVector_impl.hh"
-

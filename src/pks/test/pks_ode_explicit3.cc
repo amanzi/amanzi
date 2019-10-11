@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -31,14 +31,15 @@
 using namespace Amanzi;
 
 class DudtEvaluator
-    : EvaluatorSecondary<CompositeVector, CompositeVectorSpace> {
-  DudtEvaluator(Teuchos::ParameterList &plist) : EvaluatorSecondary(plist) {}
+  : EvaluatorSecondary<CompositeVector, CompositeVectorSpace> {
+  DudtEvaluator(Teuchos::ParameterList& plist) : EvaluatorSecondary(plist) {}
 
-  void Evaluate_(State &S, Data_t &result) {
+  void Evaluate_(State& S, Data_t& result)
+  {
     result = S->Get<CompositeVector>(my_key_, my_tag_);
   }
-  void EvaluatePartialDerivative_(State &S, const Key &wrt_key,
-                                  Data_t &result) {
+  void EvaluatePartialDerivative_(State& S, const Key& wrt_key, Data_t& result)
+  {
     AMANZI_ASSERT(wrt_key == my_key_);
     result.PutScalar(1.);
   }
@@ -46,45 +47,49 @@ class DudtEvaluator
 
 template <class Base_t>
 class PK_ODE_Explicit : public Base_t {
-public:
-  PK_ODE_Explicit(const Teuchos::RCP<Teuchos::ParameterList> &pk_tree,
-                  const Teuchos::RCP<Teuchos::ParameterList> &global_plist,
-                  const Teuchos::RCP<State> &S,
-                  const Teuchos::RCP<TreeVector> &solution)
-      : Base_t(pk_tree, global_plist, S, solution) {}
+ public:
+  PK_ODE_Explicit(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
+                  const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
+                  const Teuchos::RCP<State>& S,
+                  const Teuchos::RCP<TreeVector>& solution)
+    : Base_t(pk_tree, global_plist, S, solution)
+  {}
 
-  void Setup() {
+  void Setup()
+  {
     Base_t::Setup();
 
     this->S_
-        ->template Require<CompositeVector, CompositeVectorSpace>(
-            this->key_, "", this->name())
-        .SetComponent("cell", AmanziMesh::CELL, 1);
+      ->template Require<CompositeVector, CompositeVectorSpace>(
+        this->key_, "", this->name())
+      .SetComponent("cell", AmanziMesh::CELL, 1);
 
     Key dudt_key = Keys::getDerivKey(key_, "t");
     this->S_
-        ->template Require<CompositeVector, CompositeVectorSpace>(dudt_key, "",
-                                                                  this->name())
-        .SetComponent("cell", AmanziMesh::CELL, 1);
+      ->template Require<CompositeVector, CompositeVectorSpace>(
+        dudt_key, "", this->name())
+      .SetComponent("cell", AmanziMesh::CELL, 1);
 
     Teuchos::ParameterList plist;
     auto dudt_eval = Teuchos::rcp(new DudtEvaluator(plist));
     this->S_->SetEvaluator(dudt_key, dudt_eval);
   }
 
-  void Initialize() {
+  void Initialize()
+  {
     Base_t::Initialize();
     this->S_->template GetW<CompositeVector>("primary", "", "primary")
-        .PutScalar(1.);
+      .PutScalar(1.);
     this->S_->GetRecordW("primary", "primary").set_initialized();
   }
 
-  void FunctionalTimeDerivative(double t, const TreeVector &u, TreeVector &f) {
+  void FunctionalTimeDerivative(double t, const TreeVector& u, TreeVector& f)
+  {
     this->SolutionToState(u, name() + "_explicit_ti_intermediate");
     ChangedSolutionPK(name() + "_explicit_ti_intermediate");
     Key dudt_key = Keys::getDerivKey(key_, "t");
     this->S_->GetEvaluator(dudt_key, name() + "_explicit_ti_intermediate")
-        ->Update(*S_, name());
+      ->Update(*S_, name());
     std::cout << "  At time t = " << t
               << ": u = " << (*u.Data()->ViewComponent("cell", false))[0][0]
               << ", du/dt = " << (*f.Data()->ViewComponent("cell", false))[0][0]
@@ -94,18 +99,19 @@ public:
 };
 
 Teuchos::RCP<PK>
-create(const Teuchos::RCP<State> &S,
-       const Teuchos::RCP<Teuchos::ParameterList> &global_list) {
+create(const Teuchos::RCP<State>& S,
+       const Teuchos::RCP<Teuchos::ParameterList>& global_list)
+{
   Teuchos::RCP<Teuchos::ParameterList> pk_tree =
-      Teuchos::rcp(new Teuchos::ParameterList("my pk"));
+    Teuchos::rcp(new Teuchos::ParameterList("my pk"));
 
   // intentionally leaks memory
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
   // create mesh
   Teuchos::ParameterList regions_list;
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm = Teuchos::rcp(
-      new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, comm));
+    new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, comm));
 
   Amanzi::AmanziMesh::FrameworkPreference pref;
   pref.clear();
@@ -114,25 +120,25 @@ create(const Teuchos::RCP<State> &S,
   Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
   meshfactory.preference(pref);
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh =
-      meshfactory(0.0, -2.0, 1.0, 0.0, 18, 18, gm);
+    meshfactory(0.0, -2.0, 1.0, 0.0, 18, 18, gm);
   S->RegisterDomainMesh(mesh);
 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
   return Teuchos::rcp(
-      new PK_Adaptor<
-          PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default>>>>(
-          pk_tree, global_list, S, soln));
+    new PK_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default>>>>(
+      pk_tree, global_list, S, soln));
 }
 
-SUITE(PK_ODE_EXPLICIT2) {
-
-  TEST(Construct) {
+SUITE(PK_ODE_EXPLICIT2)
+{
+  TEST(Construct)
+  {
     std::cout << "PK_ODE_Explicit2: Construction" << std::endl;
 
     Teuchos::RCP<Teuchos::ParameterList> global_list =
-        Teuchos::rcp(new Teuchos::ParameterList("main"));
+      Teuchos::rcp(new Teuchos::ParameterList("main"));
     auto sublist =
-        Teuchos::sublist(Teuchos::sublist(global_list, "PKs"), "my pk");
+      Teuchos::sublist(Teuchos::sublist(global_list, "PKs"), "my pk");
     sublist->set<std::string>("domain name", "domain");
     sublist->set<std::string>("primary variable key", "primary");
 
@@ -144,13 +150,14 @@ SUITE(PK_ODE_EXPLICIT2) {
     S->Initialize();
   }
 
-  TEST(Advance) {
+  TEST(Advance)
+  {
     std::cout << "PK_ODE_Explicit2: Advance 1 step" << std::endl;
 
     Teuchos::RCP<Teuchos::ParameterList> global_list =
-        Teuchos::rcp(new Teuchos::ParameterList("main"));
+      Teuchos::rcp(new Teuchos::ParameterList("main"));
     auto sublist =
-        Teuchos::sublist(Teuchos::sublist(global_list, "PKs"), "my pk");
+      Teuchos::sublist(Teuchos::sublist(global_list, "PKs"), "my pk");
     sublist->set<std::string>("domain name", "domain");
     sublist->set<std::string>("primary variable key", "primary");
 
@@ -170,20 +177,21 @@ SUITE(PK_ODE_EXPLICIT2) {
     CHECK(!fail);
     CHECK_CLOSE(1.0,
                 (*S->Get<CompositeVector>("primary", "")
-                      .ViewComponent("cell", false))[0][0],
+                    .ViewComponent("cell", false))[0][0],
                 1.e-10);
     CHECK_CLOSE(2.0,
                 (*S->Get<CompositeVector>("primary", "next")
-                      .ViewComponent("cell", false))[0][0],
+                    .ViewComponent("cell", false))[0][0],
                 1.e-10);
   }
 
-  TEST(Advance2) {
+  TEST(Advance2)
+  {
     std::cout << "PK_ODE_Explicit2: Advance to finish" << std::endl;
     Teuchos::RCP<Teuchos::ParameterList> global_list =
-        Teuchos::rcp(new Teuchos::ParameterList("main"));
+      Teuchos::rcp(new Teuchos::ParameterList("main"));
     auto sublist =
-        Teuchos::sublist(Teuchos::sublist(global_list, "PKs"), "my pk");
+      Teuchos::sublist(Teuchos::sublist(global_list, "PKs"), "my pk");
     sublist->set<std::string>("domain name", "domain");
     sublist->set<std::string>("primary variable key", "primary");
 
@@ -213,17 +221,18 @@ SUITE(PK_ODE_EXPLICIT2) {
 
     CHECK_CLOSE(2.0,
                 (*S->Get<CompositeVector>("primary", "next")
-                      .ViewComponent("cell", false))[0][0],
+                    .ViewComponent("cell", false))[0][0],
                 1.e-10);
   }
 
-  TEST(Advance_RK2) {
+  TEST(Advance_RK2)
+  {
     std::cout << "PK_ODE_Explicit2: Advance to finish with RK midpoint"
               << std::endl;
     Teuchos::RCP<Teuchos::ParameterList> global_list =
-        Teuchos::rcp(new Teuchos::ParameterList("main"));
+      Teuchos::rcp(new Teuchos::ParameterList("main"));
     auto sublist =
-        Teuchos::sublist(Teuchos::sublist(global_list, "PKs"), "my pk");
+      Teuchos::sublist(Teuchos::sublist(global_list, "PKs"), "my pk");
     sublist->set<std::string>("domain name", "domain");
     sublist->set<std::string>("primary variable key", "primary");
 
@@ -256,17 +265,18 @@ SUITE(PK_ODE_EXPLICIT2) {
 
     CHECK_CLOSE(2.5,
                 (*S->Get<CompositeVector>("primary", "next")
-                      .ViewComponent("cell", false))[0][0],
+                    .ViewComponent("cell", false))[0][0],
                 1.e-10);
   }
 
-  TEST(Advance_RK4) {
+  TEST(Advance_RK4)
+  {
     std::cout << "PK_ODE_Explicit2: Advance to finish with RK 4th order"
               << std::endl;
     Teuchos::RCP<Teuchos::ParameterList> global_list =
-        Teuchos::rcp(new Teuchos::ParameterList("main"));
+      Teuchos::rcp(new Teuchos::ParameterList("main"));
     auto sublist =
-        Teuchos::sublist(Teuchos::sublist(global_list, "PKs"), "my pk");
+      Teuchos::sublist(Teuchos::sublist(global_list, "PKs"), "my pk");
     sublist->set<std::string>("domain name", "domain");
     sublist->set<std::string>("primary variable key", "primary");
     sublist->set<double>("initial time step", 0.1);
@@ -304,8 +314,7 @@ SUITE(PK_ODE_EXPLICIT2) {
     // solution, y = exp(t)|_{t=1} = e
     CHECK_CLOSE(2.7182818284590451,
                 (*S->Get<CompositeVector>("primary", "next")
-                      .ViewComponent("cell", false))[0][0],
+                    .ViewComponent("cell", false))[0][0],
                 1.e-5);
   }
 }
-

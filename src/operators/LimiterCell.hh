@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -34,10 +34,10 @@
 namespace Amanzi {
 namespace Operators {
 
-class LimiterCell {  
+class LimiterCell {
  public:
   LimiterCell(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh);
-  ~LimiterCell() {};
+  ~LimiterCell(){};
 
   // limited gradient
   // -- identify inflow boundaries (optional)
@@ -47,49 +47,61 @@ class LimiterCell {
   // -- limit gradient using boundary data
   void ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field, int component,
                     const Teuchos::RCP<CompositeVector>& gradient,
-                    const std::vector<int>& bc_model, const std::vector<double>& bc_value) {
+                    const std::vector<int>& bc_model,
+                    const std::vector<double>& bc_value)
+  {
     AmanziMesh::Entity_ID_List ids(ncells_owned);
     for (int c = 0; c < ncells_owned; ++c) ids[c] = c;
-    ApplyLimiter(ids, field, component, gradient, bc_model, bc_value); 
+    ApplyLimiter(ids, field, component, gradient, bc_model, bc_value);
   }
 
   // -- apply limiter in specified cells
   void ApplyLimiter(const AmanziMesh::Entity_ID_List& ids,
                     Teuchos::RCP<const Epetra_MultiVector> field, int component,
                     const Teuchos::RCP<CompositeVector>& gradient,
-                    const std::vector<int>& bc_model, const std::vector<double>& bc_value);
+                    const std::vector<int>& bc_model,
+                    const std::vector<double>& bc_value);
 
-  // -- apply external limiter 
+  // -- apply external limiter
   void ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter);
 
-  // limited dG solution 
+  // limited dG solution
   // -- apply limiter in spcified cells
-  void ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field, const WhetStone::DG_Modal& dg,
-                    const std::vector<int>& bc_model, const std::vector<double>& bc_value) {
+  void
+  ApplyLimiter(Teuchos::RCP<const Epetra_MultiVector> field,
+               const WhetStone::DG_Modal& dg, const std::vector<int>& bc_model,
+               const std::vector<double>& bc_value)
+  {
     AmanziMesh::Entity_ID_List ids(ncells_owned);
     for (int c = 0; c < ncells_owned; ++c) ids[c] = c;
-    ApplyLimiter(ids, field, dg, bc_model, bc_value); 
+    ApplyLimiter(ids, field, dg, bc_model, bc_value);
   }
 
-  void ApplyLimiter(const AmanziMesh::Entity_ID_List& ids,
-                    Teuchos::RCP<const Epetra_MultiVector> field, const WhetStone::DG_Modal& dg,
-                    const std::vector<int>& bc_model, const std::vector<double>& bc_value);
+  void
+  ApplyLimiter(const AmanziMesh::Entity_ID_List& ids,
+               Teuchos::RCP<const Epetra_MultiVector> field,
+               const WhetStone::DG_Modal& dg, const std::vector<int>& bc_model,
+               const std::vector<double>& bc_value);
 
-  // bounds for FV fields: if reset=true they are recalculated 
-  Teuchos::RCP<CompositeVector> BoundsForCells(
-      const Epetra_MultiVector& field, 
-      const std::vector<int>& bc_model, const std::vector<double>& bc_value, int stencil);
-  Teuchos::RCP<CompositeVector> BoundsForFaces(
-      const Epetra_MultiVector& field,
-      const std::vector<int>& bc_model, const std::vector<double>& bc_value, int stencil);
-  Teuchos::RCP<CompositeVector> BoundsForNodes(
-      const Epetra_MultiVector& field,
-      const std::vector<int>& bc_model, const std::vector<double>& bc_value, int stencil);
+  // bounds for FV fields: if reset=true they are recalculated
+  Teuchos::RCP<CompositeVector>
+  BoundsForCells(const Epetra_MultiVector& field,
+                 const std::vector<int>& bc_model,
+                 const std::vector<double>& bc_value, int stencil);
+  Teuchos::RCP<CompositeVector>
+  BoundsForFaces(const Epetra_MultiVector& field,
+                 const std::vector<int>& bc_model,
+                 const std::vector<double>& bc_value, int stencil);
+  Teuchos::RCP<CompositeVector>
+  BoundsForNodes(const Epetra_MultiVector& field,
+                 const std::vector<int>& bc_model,
+                 const std::vector<double>& bc_value, int stencil);
 
   // calculate value of a linear function at the given point p
   void getBounds(int c, int f, int stencil, double* umin, double* umax);
   double getValue(int c, const AmanziGeometry::Point& p);
-  double getValue(const AmanziGeometry::Point& gradient, int c, const AmanziGeometry::Point& p);
+  double getValue(const AmanziGeometry::Point& gradient, int c,
+                  const AmanziGeometry::Point& p);
 
   // access
   Teuchos::RCP<CompositeVector> gradient() { return gradient_; }
@@ -98,49 +110,57 @@ class LimiterCell {
   int type() { return type_; }
 
   // modifiers
-  void set_gradient(const Teuchos::RCP<CompositeVector>& gradient) { gradient_ = gradient; }
-  void set_bounds(const Teuchos::RCP<CompositeVector>& bounds) { bounds_ = bounds; }
- 
+  void set_gradient(const Teuchos::RCP<CompositeVector>& gradient)
+  {
+    gradient_ = gradient;
+  }
+  void set_bounds(const Teuchos::RCP<CompositeVector>& bounds)
+  {
+    bounds_ = bounds;
+  }
+
  private:
   // internal limiters and supporting routines
-  void LimiterScalar_(
-      const AmanziMesh::Entity_ID_List& ids,
-      const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-      Teuchos::RCP<Epetra_Vector> limiter, double (*)(double));
+  void LimiterScalar_(const AmanziMesh::Entity_ID_List& ids,
+                      const std::vector<int>& bc_model,
+                      const std::vector<double>& bc_value,
+                      Teuchos::RCP<Epetra_Vector> limiter, double (*)(double));
 
-  void LimiterScalarDG_(
-      const WhetStone::DG_Modal& dg, const AmanziMesh::Entity_ID_List& ids,
-      const std::vector<int>& bc_model, const std::vector<double>& bc_value, double (*)(double));
+  void
+  LimiterScalarDG_(const WhetStone::DG_Modal& dg,
+                   const AmanziMesh::Entity_ID_List& ids,
+                   const std::vector<int>& bc_model,
+                   const std::vector<double>& bc_value, double (*)(double));
 
-  void LimiterTensorial_(
-      const AmanziMesh::Entity_ID_List& ids,
-      const std::vector<int>& bc_model, const std::vector<double>& bc_value);
+  void LimiterTensorial_(const AmanziMesh::Entity_ID_List& ids,
+                         const std::vector<int>& bc_model,
+                         const std::vector<double>& bc_value);
 
-  void LimiterKuzmin_(
-      const AmanziMesh::Entity_ID_List& ids,
-      const std::vector<int>& bc_model, const std::vector<double>& bc_value);
+  void LimiterKuzmin_(const AmanziMesh::Entity_ID_List& ids,
+                      const std::vector<int>& bc_model,
+                      const std::vector<double>& bc_value);
 
-  void LimiterKuzminCell_(int cell,
-                          AmanziGeometry::Point& gradient_c,
+  void LimiterKuzminCell_(int cell, AmanziGeometry::Point& gradient_c,
                           const std::vector<double>& field_node_min_c,
                           const std::vector<double>& field_node_max_c);
 
   void CalculateDescentDirection_(std::vector<AmanziGeometry::Point>& normals,
                                   AmanziGeometry::Point& normal_new,
-                                  double& L22normal_new, 
+                                  double& L22normal_new,
                                   AmanziGeometry::Point& direction);
 
-  void ApplyDirectionalLimiter_(AmanziGeometry::Point& normal, 
+  void ApplyDirectionalLimiter_(AmanziGeometry::Point& normal,
                                 AmanziGeometry::Point& p,
-                                AmanziGeometry::Point& direction, 
+                                AmanziGeometry::Point& direction,
                                 AmanziGeometry::Point& gradient);
 
   void IdentifyUpwindCells_();
 
   void LimiterExtensionTransportScalar_(Teuchos::RCP<Epetra_Vector> limiter);
   void LimiterExtensionTransportTensorial_();
-  void LimiterExtensionTransportKuzmin_(
-      const std::vector<double>& field_local_min, const std::vector<double>& field_local_max);
+  void
+  LimiterExtensionTransportKuzmin_(const std::vector<double>& field_local_min,
+                                   const std::vector<double>& field_local_max);
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -153,18 +173,17 @@ class LimiterCell {
   Teuchos::RCP<Epetra_Vector> limiter_;
   int component_;
 
-  Teuchos::RCP<const Epetra_MultiVector> flux_;  // for limiters
-  std::vector<std::vector<int> > upwind_cells_;  // fracture friendly 
-  std::vector<std::vector<int> > downwind_cells_;
+  Teuchos::RCP<const Epetra_MultiVector> flux_; // for limiters
+  std::vector<std::vector<int>> upwind_cells_;  // fracture friendly
+  std::vector<std::vector<int>> downwind_cells_;
 
   int type_, stencil_id_;
   bool limiter_correction_, external_bounds_;
 
-  int limiter_points_;  // number of Gauss points on faces where limiting occurs
+  int limiter_points_; // number of Gauss points on faces where limiting occurs
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-

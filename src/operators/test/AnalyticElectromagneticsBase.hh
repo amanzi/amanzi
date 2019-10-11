@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -19,27 +19,34 @@
 
 class AnalyticElectromagneticsBase {
  public:
-  AnalyticElectromagneticsBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh) {};
-  ~AnalyticElectromagneticsBase() {};
+  AnalyticElectromagneticsBase(
+    Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
+    : mesh_(mesh){};
+  ~AnalyticElectromagneticsBase(){};
 
   // analytic solution for Maxwell's equations
   // -- resitivity tensor T
-  virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::WhetStone::Tensor
+  Tensor(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
   // -- analytic solution E
-  virtual Amanzi::AmanziGeometry::Point electric_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
-  virtual Amanzi::AmanziGeometry::Point magnetic_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::AmanziGeometry::Point
+  electric_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::AmanziGeometry::Point
+  magnetic_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
   // -- source term
-  virtual Amanzi::AmanziGeometry::Point source_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  virtual Amanzi::AmanziGeometry::Point
+  source_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
   // error calculation
-  void ComputeFaceError(Epetra_MultiVector& u, double t, double& unorm, double& l2_err, double& inf_err);
-  void ComputeEdgeError(Epetra_MultiVector& u, double t, double& unorm, double& l2_err, double& inf_err);
-  void ComputeNodeError(Epetra_MultiVector& u, double t, double& unorm, double& l2_err, double& inf_err);
+  void ComputeFaceError(Epetra_MultiVector& u, double t, double& unorm,
+                        double& l2_err, double& inf_err);
+  void ComputeEdgeError(Epetra_MultiVector& u, double t, double& unorm,
+                        double& l2_err, double& inf_err);
+  void ComputeNodeError(Epetra_MultiVector& u, double t, double& unorm,
+                        double& l2_err, double& inf_err);
 
  protected:
   Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh_;
 };
 
 #endif
-
-

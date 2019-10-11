@@ -5,14 +5,14 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
 //! Base factory for self-registering classes of a given base type.
 
 /*!
-  
+
   In many cases in Amanzi/ATS, we may have multiple options that inherit a
   common (likely purely) virtual class.  For instance, many implementations
   of the equations of state class will provide a basic method for rho(T,p),
@@ -90,19 +90,21 @@
 namespace Amanzi {
 namespace Utils {
 
-template<typename TBase>
+template <typename TBase>
 class Factory {
-
-public:
+ public:
   typedef std::map<std::string, TBase* (*)(Teuchos::ParameterList&)> map_type;
 
-  static TBase* CreateInstance(const std::string& s, Teuchos::ParameterList& plist) {
+  static TBase*
+  CreateInstance(const std::string& s, Teuchos::ParameterList& plist)
+  {
     typename map_type::iterator iter = GetMap()->find(s);
     if (iter == GetMap()->end()) {
       std::cout << "Factory: cannot get item of type: " << s << std::endl;
 
-      for (typename map_type::iterator piter=GetMap()->begin();
-           piter!=GetMap()->end(); ++piter) {
+      for (typename map_type::iterator piter = GetMap()->begin();
+           piter != GetMap()->end();
+           ++piter) {
         std::cout << "  option: " << piter->first << std::endl;
       }
       return 0;
@@ -110,42 +112,51 @@ public:
     return iter->second(plist);
   }
 
-protected:
-  static map_type* GetMap() {
-    if (!map_) {
-      map_ = new map_type;
-    }
+ protected:
+  static map_type* GetMap()
+  {
+    if (!map_) { map_ = new map_type; }
     return map_;
   }
 
-private:
+ private:
   static map_type* map_;
 };
 
-template<typename TBase> typename Factory<TBase>::map_type* Factory<TBase> ::map_;
+template <typename TBase>
+typename Factory<TBase>::map_type* Factory<TBase>::map_;
 
-template<typename TBase,typename TDerived> TBase* CreateT(Teuchos::ParameterList& plist) { return new TDerived(plist); }
+template <typename TBase, typename TDerived>
+TBase*
+CreateT(Teuchos::ParameterList& plist)
+{
+  return new TDerived(plist);
+}
 
 
-template<typename TBase,typename TDerived>
+template <typename TBase, typename TDerived>
 class RegisteredFactory : public Factory<TBase> {
-public:
+ public:
   // Constructor for the registered factory.  Needs some error checking in
   // case a name s is already in the map? (i.e. two implementations trying to
   // call themselves the same thing) --etc
-  RegisteredFactory(const std::string& s) {
-    for (typename Factory<TBase>::map_type::iterator iter=Factory<TBase>::GetMap()->begin();
-         iter!=Factory<TBase>::GetMap()->end(); ++iter) {
-    }
-    Factory<TBase>::GetMap()->insert(std::pair<std::string,TBase* (*)(Teuchos::ParameterList&)>(s, &CreateT<TBase,TDerived>));
-    for (typename Factory<TBase>::map_type::iterator iter=Factory<TBase>::GetMap()->begin();
-         iter!=Factory<TBase>::GetMap()->end(); ++iter) {
-    }
+  RegisteredFactory(const std::string& s)
+  {
+    for (typename Factory<TBase>::map_type::iterator iter =
+           Factory<TBase>::GetMap()->begin();
+         iter != Factory<TBase>::GetMap()->end();
+         ++iter) {}
+    Factory<TBase>::GetMap()->insert(
+      std::pair<std::string, TBase* (*)(Teuchos::ParameterList&)>(
+        s, &CreateT<TBase, TDerived>));
+    for (typename Factory<TBase>::map_type::iterator iter =
+           Factory<TBase>::GetMap()->begin();
+         iter != Factory<TBase>::GetMap()->end();
+         ++iter) {}
   }
 };
 
-}  // namespace Utils
-}  // namespace Amanzi
+} // namespace Utils
+} // namespace Amanzi
 
 #endif
-

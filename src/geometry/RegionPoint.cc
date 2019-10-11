@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Rao Garimella  
+      Rao Garimella
 */
 
 
@@ -20,13 +20,11 @@
 namespace Amanzi {
 namespace AmanziGeometry {
 
-RegionPoint::RegionPoint(const std::string& name,
-                         const int id,
-                         const Point& p,
+RegionPoint::RegionPoint(const std::string& name, const int id, const Point& p,
                          const LifeCycleType lifecycle)
-  : Region(name, id, true, POINT, 1, p.dim(), lifecycle),
-    p_(p) {}
-  
+  : Region(name, id, true, POINT, 1, p.dim(), lifecycle), p_(p)
+{}
+
 // -------------------------------------------------------------
 // RegionPoint::inside -- check if input point is coincident with point
 // -------------------------------------------------------------
@@ -41,12 +39,11 @@ RegionPoint::inside(const Point& p) const
   }
 
   bool result(true);
-  for (int i=0; i!=p.dim(); ++i) {
-    result = result & (fabs(p[i]-p_[i]) < TOL);
+  for (int i = 0; i != p.dim(); ++i) {
+    result = result & (fabs(p[i] - p_[i]) < TOL);
   }
   return result;
 }
 
 } // namespace AmanziGeometry
 } // namespace Amanzi
-

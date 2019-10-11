@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Rao Garimella  
+      Rao Garimella
 */
 
 
@@ -22,8 +22,7 @@ namespace AmanziGeometry {
 // -------------------------------------------------------------
 // RegionLabeledSet:: constructor
 // -------------------------------------------------------------
-RegionLabeledSet::RegionLabeledSet(const std::string& name, 
-                                   const int id,
+RegionLabeledSet::RegionLabeledSet(const std::string& name, const int id,
                                    const std::string& entity_str,
                                    const std::string& file,
                                    const std::string& format,
@@ -50,4 +49,3 @@ RegionLabeledSet::inside(const Point& p) const
 
 } // namespace AmanziGeometry
 } // namespace Amanzi
-

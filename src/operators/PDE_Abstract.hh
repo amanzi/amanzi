@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -32,37 +32,49 @@ namespace Operators {
 
 class PDE_Abstract : public PDE_HelperDiscretization {
  public:
-  PDE_Abstract(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op) :
-      PDE_HelperDiscretization(global_op) {
+  PDE_Abstract(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op)
+    : PDE_HelperDiscretization(global_op)
+  {
     Init_(plist);
   }
 
-  PDE_Abstract(Teuchos::ParameterList& plist, Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      PDE_HelperDiscretization(mesh) {
+  PDE_Abstract(Teuchos::ParameterList& plist,
+               Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : PDE_HelperDiscretization(mesh)
+  {
     global_op_ = Teuchos::null;
     Init_(plist);
   }
-  ~PDE_Abstract() {};
+  ~PDE_Abstract(){};
 
-  // main members 
+  // main members
   // -- required by the interface
   using PDE_HelperDiscretization::UpdateMatrices;
-  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                              const Teuchos::Ptr<const CompositeVector>& p) override;
-  
+  virtual void
+  UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                 const Teuchos::Ptr<const CompositeVector>& p) override;
+
   // -- setup
-  void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) { K_ = K; }
-  void SetupPoly(const Teuchos::RCP<const std::vector<WhetStone::Polynomial> >& Kpoly) { Kpoly_ = Kpoly; }
-  void SetupPolyVector(const Teuchos::RCP<const std::vector<WhetStone::VectorPolynomial> >& Kvec) { Kvec_ = Kvec; }
+  void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor>>& K) { K_ = K; }
+  void
+  SetupPoly(const Teuchos::RCP<const std::vector<WhetStone::Polynomial>>& Kpoly)
+  {
+    Kpoly_ = Kpoly;
+  }
+  void SetupPolyVector(
+    const Teuchos::RCP<const std::vector<WhetStone::VectorPolynomial>>& Kvec)
+  {
+    Kvec_ = Kvec;
+  }
 
   // optional calculation of flux from potential p
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
-                          const Teuchos::Ptr<CompositeVector>& u) override {};
+                          const Teuchos::Ptr<CompositeVector>& u) override{};
 
  protected:
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;
-  Teuchos::RCP<const std::vector<WhetStone::Polynomial> > Kpoly_;
-  Teuchos::RCP<const std::vector<WhetStone::VectorPolynomial> > Kvec_;
+  Teuchos::RCP<std::vector<WhetStone::Tensor>> K_;
+  Teuchos::RCP<const std::vector<WhetStone::Polynomial>> Kpoly_;
+  Teuchos::RCP<const std::vector<WhetStone::VectorPolynomial>> Kvec_;
 
   Schema global_schema_row_, global_schema_col_;
   Schema local_schema_col_, local_schema_row_;
@@ -77,9 +89,7 @@ class PDE_Abstract : public PDE_HelperDiscretization {
   Teuchos::RCP<WhetStone::BilinearForm> mfd_;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-
-

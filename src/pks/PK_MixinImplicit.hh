@@ -4,7 +4,7 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (coonet@ornl.gov)
 */
 
 //! A mixin class with default implementations of methods for an BDF integrated
@@ -34,22 +34,23 @@ integrated PKs.  Manages the creation of intermediate data and AdvanceStep().
 
 namespace Amanzi {
 
-template <class Base_t> class PK_MixinImplicit : public Base_t {
-public:
-  PK_MixinImplicit(const Teuchos::RCP<Teuchos::ParameterList> &pk_tree,
-                   const Teuchos::RCP<Teuchos::ParameterList> &global_plist,
-                   const Teuchos::RCP<State> &S);
+template <class Base_t>
+class PK_MixinImplicit : public Base_t {
+ public:
+  PK_MixinImplicit(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
+                   const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
+                   const Teuchos::RCP<State>& S);
 
   virtual ~PK_MixinImplicit() =
-      default; // here to make this polymorphic and therefore castable
+    default; // here to make this polymorphic and therefore castable
 
   void Setup();
-  bool AdvanceStep(const Key &tag_old, const Key &tag_new);
-  void CommitStep(const Key &tag_old, const Key &tag_new);
+  bool AdvanceStep(const Key& tag_old, const Key& tag_new);
+  void CommitStep(const Key& tag_old, const Key& tag_new);
 
   double get_dt() { return dt_; }
 
-protected:
+ protected:
   // timestep size
   double dt_;
   bool assemble_preconditioner_;
@@ -69,20 +70,24 @@ protected:
 
 template <class Base_t>
 PK_MixinImplicit<Base_t>::PK_MixinImplicit(
-    const Teuchos::RCP<Teuchos::ParameterList> &pk_tree,
-    const Teuchos::RCP<Teuchos::ParameterList> &global_plist,
-    const Teuchos::RCP<State> &S)
-    : Base_t(pk_tree, global_plist, S) {
+  const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
+  const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
+  const Teuchos::RCP<State>& S)
+  : Base_t(pk_tree, global_plist, S)
+{
   // initial timestep
   dt_ = plist_->template get<double>("initial time step", 1.);
 };
 
-template <class Base_t> void PK_MixinImplicit<Base_t>::Setup() {
+template <class Base_t>
+void
+PK_MixinImplicit<Base_t>::Setup()
+{
   Base_t::Setup();
 
   // preconditioner assembly
   assemble_preconditioner_ =
-      plist_->template get<bool>("assemble preconditioner", true);
+    plist_->template get<bool>("assemble preconditioner", true);
 
   // set up tags
   tag_old_ = "";
@@ -94,8 +99,9 @@ template <class Base_t> void PK_MixinImplicit<Base_t>::Setup() {
 }
 
 template <class Base_t>
-bool PK_MixinImplicit<Base_t>::AdvanceStep(const Key &tag_old,
-                                           const Key &tag_new) {
+bool
+PK_MixinImplicit<Base_t>::AdvanceStep(const Key& tag_old, const Key& tag_new)
+{
   // my local tags, used in physics PKs?  Can we get rid of these? --etc
   tag_old_ = tag_old;
   tag_new_ = tag_new;
@@ -109,12 +115,12 @@ bool PK_MixinImplicit<Base_t>::AdvanceStep(const Key &tag_old,
   Teuchos::OSTab out = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os()
-        << "----------------------------------------------------------------"
-        << std::endl
-        << "Advancing: t0 = " << t_old << " t1 = " << t_new << " h = " << dt
-        << std::endl
-        << "----------------------------------------------------------------"
-        << std::endl;
+      << "----------------------------------------------------------------"
+      << std::endl
+      << "Advancing: t0 = " << t_old << " t1 = " << t_new << " h = " << dt
+      << std::endl
+      << "----------------------------------------------------------------"
+      << std::endl;
 
   // create solution vectors, old and new, which are pointers into state data
   auto soln_space = this->SolutionSpace();
@@ -128,13 +134,13 @@ bool PK_MixinImplicit<Base_t>::AdvanceStep(const Key &tag_old,
   // create the time integrator if first call
   if (!time_stepper_.get()) {
     // -- instantiate time stepper
-    Teuchos::ParameterList &bdf_plist = plist_->sublist("time integrator");
+    Teuchos::ParameterList& bdf_plist = plist_->sublist("time integrator");
     bdf_plist.set("initial time", S_->time(tag_old));
 
-    auto this_as_bdf_p = dynamic_cast<BDFFnBase<TreeVector> *>(this);
+    auto this_as_bdf_p = dynamic_cast<BDFFnBase<TreeVector>*>(this);
     AMANZI_ASSERT(this_as_bdf_p);
     time_stepper_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(
-        *this_as_bdf_p, bdf_plist, soln_new));
+      *this_as_bdf_p, bdf_plist, soln_new));
 
     // -- initialize time derivative at 0, used in higher order BDF methods?
     // Can we remove this? --etc
@@ -176,8 +182,9 @@ bool PK_MixinImplicit<Base_t>::AdvanceStep(const Key &tag_old,
 
 // -- Commit any secondary (dependent) variables.
 template <class Base_t>
-void PK_MixinImplicit<Base_t>::CommitStep(const Key &tag_old,
-                                          const Key &tag_new) {
+void
+PK_MixinImplicit<Base_t>::CommitStep(const Key& tag_old, const Key& tag_new)
+{
   double dt = S_->time(tag_new) - S_->time(tag_old);
 
   // this should eventually be removed -- it is manipulating internal state of

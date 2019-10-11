@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -32,7 +32,7 @@ CreateForCheckpoint(Teuchos::ParameterList& plist, const Comm_ptr_type& comm)
 {
   std::string filename = plist.get<std::string>("file name");
   std::string input_type = plist.get<std::string>("file format", "HDF5");
-  
+
   if (input_type == "HDF5") {
     return std::make_unique<InputHDF5>(comm, filename);
   } else {
@@ -42,6 +42,5 @@ CreateForCheckpoint(Teuchos::ParameterList& plist, const Comm_ptr_type& comm)
   }
 }
 
-} // namespace
-} // namespace
-
+} // namespace InputFactory
+} // namespace Amanzi

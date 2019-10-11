@@ -4,7 +4,7 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Author: Ethan Coon (coonet@ornl.gov)
 */
 
 //! The interface for a Process Kernel, an equation or system of equations.
@@ -19,18 +19,20 @@
 
 namespace Amanzi {
 
-PK_Default::PK_Default(const Teuchos::RCP<Teuchos::ParameterList> &pk_tree,
-                       const Teuchos::RCP<Teuchos::ParameterList> &global_plist,
-                       const Teuchos::RCP<State> &S)
-    : S_(S), name_(Keys::cleanPListName(pk_tree->name())) {
+PK_Default::PK_Default(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
+                       const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
+                       const Teuchos::RCP<State>& S)
+  : S_(S), name_(Keys::cleanPListName(pk_tree->name()))
+{
   // grab my sublist
   Teuchos::RCP<Teuchos::ParameterList> pks_list =
-      Teuchos::sublist(global_plist, "PKs");
+    Teuchos::sublist(global_plist, "PKs");
   if (pks_list->isSublist(name_)) {
     plist_ = Teuchos::sublist(pks_list, name_);
   } else {
     Errors::Message message;
-    message << "PK_Default: There is no sublist for PK \"" << name_ << "\" in PKs list\n";
+    message << "PK_Default: There is no sublist for PK \"" << name_
+            << "\" in PKs list\n";
     Exceptions::amanzi_throw(message);
   }
 

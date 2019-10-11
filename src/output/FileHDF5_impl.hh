@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -31,75 +31,108 @@ class DangerousString {
   DangerousString(std::string str) : str_(std::move(str)) {}
   DangerousString(const char* chars) : DangerousString(std::string(chars)) {}
   char* c_str() { return const_cast<char*>(str_.c_str()); }
-  
+
  private:
   std::string str_;
 };
 
 // a compile-time map from type to ASCEMIO::datatype_t
-template<typename T> struct PIO_DatatypeMap;
-template<> struct PIO_DatatypeMap<int> { static const datatype_t type=PIO_INTEGER; };
-template<> struct PIO_DatatypeMap<float> { static const datatype_t type=PIO_FLOAT; };
-template<> struct PIO_DatatypeMap<double> { static const datatype_t type=PIO_DOUBLE; };
-template<> struct PIO_DatatypeMap<long> { static const datatype_t type=PIO_LONG; };
-template<> struct PIO_DatatypeMap<bool> { static const datatype_t type=PIO_BYTE; };
+template <typename T>
+struct PIO_DatatypeMap;
+template <>
+struct PIO_DatatypeMap<int> {
+  static const datatype_t type = PIO_INTEGER;
+};
+template <>
+struct PIO_DatatypeMap<float> {
+  static const datatype_t type = PIO_FLOAT;
+};
+template <>
+struct PIO_DatatypeMap<double> {
+  static const datatype_t type = PIO_DOUBLE;
+};
+template <>
+struct PIO_DatatypeMap<long> {
+  static const datatype_t type = PIO_LONG;
+};
+template <>
+struct PIO_DatatypeMap<bool> {
+  static const datatype_t type = PIO_BYTE;
+};
 
-} // namespace
+} // namespace IODetails
 
-template<typename scalar_type>
+template <typename scalar_type>
 void
-FileHDF5::WriteAttribute(const std::string& attr_name_, const std::string& h5path_, scalar_type value)
+FileHDF5::WriteAttribute(const std::string& attr_name_,
+                         const std::string& h5path_, scalar_type value)
 {
   IODetails::DangerousString attr_name(attr_name_);
   IODetails::DangerousString h5path(h5path_);
-  parallelIO_write_simple_attr(attr_name.c_str(), (void*) &value,
-          IODetails::PIO_DatatypeMap<scalar_type>::type, data_file_, h5path.c_str(), &IOgroup_);
+  parallelIO_write_simple_attr(attr_name.c_str(),
+                               (void*)&value,
+                               IODetails::PIO_DatatypeMap<scalar_type>::type,
+                               data_file_,
+                               h5path.c_str(),
+                               &IOgroup_);
 }
 
 
-template<typename scalar_type>
+template <typename scalar_type>
 scalar_type
-FileHDF5::ReadAttribute(const std::string& attr_name_, const std::string& h5path_)
+FileHDF5::ReadAttribute(const std::string& attr_name_,
+                        const std::string& h5path_)
 {
   IODetails::DangerousString attr_name(attr_name_);
   IODetails::DangerousString h5path(h5path_);
 
-  scalar_type *loc_value;
-  parallelIO_read_simple_attr(attr_name.c_str(), reinterpret_cast<void**>(&loc_value),
-          IODetails::PIO_DatatypeMap<scalar_type>::type, data_file_, h5path.c_str(), &IOgroup_);
+  scalar_type* loc_value;
+  parallelIO_read_simple_attr(attr_name.c_str(),
+                              reinterpret_cast<void**>(&loc_value),
+                              IODetails::PIO_DatatypeMap<scalar_type>::type,
+                              data_file_,
+                              h5path.c_str(),
+                              &IOgroup_);
   scalar_type value = *loc_value;
   free(loc_value);
   return value;
 }
 
 
-template<typename scalar_type>
+template <typename scalar_type>
 void
-FileHDF5::WriteVector(const std::string& var_name, const Vector_type_<scalar_type>& vec)
+FileHDF5::WriteVector(const std::string& var_name,
+                      const Vector_type_<scalar_type>& vec)
 {
   IODetails::DangerousString full_h5path(var_name);
 
   // parallelIO only deals with global lengths that are ints
   // Really check this!
   static_assert(std::is_same<Tpetra::global_size_t, std::size_t>::value,
-                "ASCEMIO does not support vectors with global length larger than a (signed) int");
+                "ASCEMIO does not support vectors with global length larger "
+                "than a (signed) int");
   Tpetra::global_size_t globallength_raw = vec.getGlobalLength();
 
   if (globallength_raw > std::numeric_limits<int>::max()) {
-    Errors::Message message("FileHDF5::ASCEMIO does not support vectors with global length larger than a (signed) int.");
+    Errors::Message message("FileHDF5::ASCEMIO does not support vectors with "
+                            "global length larger than a (signed) int.");
     throw(message);
   }
   int globaldims[] = { static_cast<int>(globallength_raw), 1 };
-  
+
   std::size_t locallength = vec.getLocalLength();
   int localdims[] = { static_cast<int>(locallength), 1 };
-  
+
   auto vec_data = vec.getData();
-  parallelIO_write_dataset((void*) vec_data.get(),
+  parallelIO_write_dataset((void*)vec_data.get(),
                            IODetails::PIO_DatatypeMap<scalar_type>::type,
-                           2, globaldims, localdims,
-                           data_file_, full_h5path.c_str(),
-                           &IOgroup_, NONUNIFORM_CONTIGUOUS_WRITE);
+                           2,
+                           globaldims,
+                           localdims,
+                           data_file_,
+                           full_h5path.c_str(),
+                           &IOgroup_,
+                           NONUNIFORM_CONTIGUOUS_WRITE);
 }
 
 
@@ -157,39 +190,47 @@ FileHDF5::WriteMultiVectorBlock(const std::string& var_name, const MultiVector_t
 }
 #endif
 
-template<typename scalar_type>
+template <typename scalar_type>
 void
-FileHDF5::WriteMultiVector(const std::vector<std::string>& var_paths, const MultiVector_type_<scalar_type>& vec)
+FileHDF5::WriteMultiVector(const std::vector<std::string>& var_paths,
+                           const MultiVector_type_<scalar_type>& vec)
 {
   if (var_paths.size() != vec.getNumVectors()) {
-    Errors::Message message("FileHDF5::WriteMultiVector requested with invalid number of names.");
+    Errors::Message message(
+      "FileHDF5::WriteMultiVector requested with invalid number of names.");
     throw(message);
   }
 
   // parallelIO only deals with global lengths that are ints
   // Really check this!
   static_assert(std::is_same<Tpetra::global_size_t, std::size_t>::value,
-                "ASCEMIO does not support vectors with global length larger than a (signed) int");
+                "ASCEMIO does not support vectors with global length larger "
+                "than a (signed) int");
   Tpetra::global_size_t globallength_raw = vec.getGlobalLength();
 
   if (globallength_raw > std::numeric_limits<int>::max()) {
-    Errors::Message message("FileHDF5::ASCEMIO does not support vectors with global length larger than a (signed) int.");
+    Errors::Message message("FileHDF5::ASCEMIO does not support vectors with "
+                            "global length larger than a (signed) int.");
     throw(message);
   }
   int globaldims[] = { static_cast<int>(globallength_raw), 1 };
-  
+
   std::size_t locallength = vec.getLocalLength();
   int localdims[] = { static_cast<int>(locallength), 1 };
 
-  for (std::size_t i=0; i!=vec.getNumVectors(); ++i) {
+  for (std::size_t i = 0; i != vec.getNumVectors(); ++i) {
     IODetails::DangerousString full_h5path(var_paths[i]);
 
     auto vec_data = vec.getData(i);
-    parallelIO_write_dataset((void*) vec_data.get(),
+    parallelIO_write_dataset((void*)vec_data.get(),
                              IODetails::PIO_DatatypeMap<scalar_type>::type,
-                             2, globaldims, localdims,
-                             data_file_, full_h5path.c_str(),
-                             &IOgroup_, NONUNIFORM_CONTIGUOUS_WRITE);
+                             2,
+                             globaldims,
+                             localdims,
+                             data_file_,
+                             full_h5path.c_str(),
+                             &IOgroup_,
+                             NONUNIFORM_CONTIGUOUS_WRITE);
   }
 }
 
@@ -198,30 +239,40 @@ FileHDF5::WriteMultiVector(const std::vector<std::string>& var_paths, const Mult
 // NOTE: this is somewhat dangerous -- Views are a LOCAL concept, but this is a
 // parallel write, so we have work to do.
 //
-template<typename view_type>
+template <typename view_type>
 void
-FileHDF5::WriteView(const std::string& var_path, Tpetra::global_size_t global_length_raw, const view_type vec)
+FileHDF5::WriteView(const std::string& var_path,
+                    Tpetra::global_size_t global_length_raw,
+                    const view_type vec)
 {
-  Kokkos::View<double**, Kokkos::LayoutRight, AmanziDefaultHost> check_layout_right = vec;
-  int localdims[] = { static_cast<int>(vec.extent(0)), static_cast<int>(vec.extent(1)) };
+  Kokkos::View<double**, Kokkos::LayoutRight, AmanziDefaultHost>
+    check_layout_right = vec;
+  int localdims[] = { static_cast<int>(vec.extent(0)),
+                      static_cast<int>(vec.extent(1)) };
 
   IODetails::DangerousString full_h5path(var_path);
 
   auto local_length = vec.extent(0);
   auto global_length(local_length);
-  Teuchos::reduceAll(*comm_, Teuchos::REDUCE_SUM, 1, &local_length, &global_length);
+  Teuchos::reduceAll(
+    *comm_, Teuchos::REDUCE_SUM, 1, &local_length, &global_length);
   int globaldims[] = { static_cast<int>(global_length), localdims[1] };
-  
-  parallelIO_write_dataset((void*) &vec(0,0),
+
+  parallelIO_write_dataset((void*)&vec(0, 0),
                            PIO_DOUBLE,
-                           2, localdims, localdims,
-                           data_file_, full_h5path.c_str(),
-                           &IOgroup_, NONUNIFORM_CONTIGUOUS_WRITE);
+                           2,
+                           localdims,
+                           localdims,
+                           data_file_,
+                           full_h5path.c_str(),
+                           &IOgroup_,
+                           NONUNIFORM_CONTIGUOUS_WRITE);
 }
 
 
 // //
-// // NOTE: this is somewhat dangerous -- Views are a LOCAL concept, but this is a
+// // NOTE: this is somewhat dangerous -- Views are a LOCAL concept, but this is
+// a
 // // parallel read, so we have work to do.
 // //
 // template<typename view_type>
@@ -230,33 +281,36 @@ FileHDF5::WriteView(const std::string& var_path, Tpetra::global_size_t global_le
 // {
 //   IODetails::DangerousString full_h5path(var_name);
 
-//   Kokkos::View<double**, Kokkos::LayoutRight, AmanziDefaultHost> check_layout_right = vec;
-//   int localdims[] = { static_cast<int>(vec.extent(0)), static_cast<int>(vec.extent(1)) };
-  
+//   Kokkos::View<double**, Kokkos::LayoutRight, AmanziDefaultHost>
+//   check_layout_right = vec; int localdims[] = {
+//   static_cast<int>(vec.extent(0)), static_cast<int>(vec.extent(1)) };
+
 //   int ndims;
-//   parallelIO_get_dataset_ndims(&ndims, data_file_, full_h5path.c_str(), &IOgroup_);
-//   if (ndims != 2) {
+//   parallelIO_get_dataset_ndims(&ndims, data_file_, full_h5path.c_str(),
+//   &IOgroup_); if (ndims != 2) {
 //     Errors::Message message("FileHDF5::ReadView only deals with 2D views.");
 //     throw(message);
 //   }
 
 //   int globaldims[ndims];
-//   parallelIO_get_dataset_dims(globaldims, data_file_, full_h5path.c_str(), &IOgroup_);
+//   parallelIO_get_dataset_dims(globaldims, data_file_, full_h5path.c_str(),
+//   &IOgroup_);
 
 //   // check dims add up
 //   auto local_length = vec.extent(0);
 //   auto global_length(local_length);
 //   comm_->reduceAll(Teuchos::REDUCE_SUM, 1, &local_length, &global_length);
 //   if (globaldims[0] != global_length) {
-//     Errors::Message message("FileHDF5::ReadView called with incompatible global dimension views.");
-//     throw(message);
+//     Errors::Message message("FileHDF5::ReadView called with incompatible
+//     global dimension views."); throw(message);
 //   }
 
 //   for (int i=0; i!=ndims; ++i) {
 //     if (vec.extent(i) != localdims[i]) {
 //       Errors::Message message;
-//       message << "FileHDF5::ReadView called with view of incorrect extent (got " << localdims[i] << ", expected " << vec.extent(i) << " in dimension " << i << ").";
-//       throw(message);
+//       message << "FileHDF5::ReadView called with view of incorrect extent
+//       (got " << localdims[i] << ", expected " << vec.extent(i) << " in
+//       dimension " << i << ")."; throw(message);
 //     }
 //   }
 
@@ -274,24 +328,29 @@ FileHDF5::WriteView(const std::string& var_path, Tpetra::global_size_t global_le
 // }
 
 
-template<typename scalar_type>
+template <typename scalar_type>
 void
-FileHDF5::ReadVector(const std::string& var_name, Vector_type_<scalar_type>& vec)
+FileHDF5::ReadVector(const std::string& var_name,
+                     Vector_type_<scalar_type>& vec)
 {
   IODetails::DangerousString full_h5path(var_name);
 
   int ndims;
-  parallelIO_get_dataset_ndims(&ndims, data_file_, full_h5path.c_str(), &IOgroup_);
+  parallelIO_get_dataset_ndims(
+    &ndims, data_file_, full_h5path.c_str(), &IOgroup_);
   if (ndims < 0) {
-    Errors::Message message("FileHDF5::ReadVector data has negative dimension.");
+    Errors::Message message(
+      "FileHDF5::ReadVector data has negative dimension.");
     throw(message);
   }
 
   int globaldims[ndims], localdims[ndims];
-  parallelIO_get_dataset_dims(globaldims, data_file_, full_h5path.c_str(), &IOgroup_);
+  parallelIO_get_dataset_dims(
+    globaldims, data_file_, full_h5path.c_str(), &IOgroup_);
   if (vec.getGlobalLength() != globaldims[0]) {
     Errors::Message message;
-    message << "FileHDF5::ReadVector with incorrect length (got " << globaldims[0] << ", expected " << vec.getGlobalLength() << ").";
+    message << "FileHDF5::ReadVector with incorrect length (got "
+            << globaldims[0] << ", expected " << vec.getGlobalLength() << ").";
     throw(message);
   }
 
@@ -300,41 +359,52 @@ FileHDF5::ReadVector(const std::string& var_name, Vector_type_<scalar_type>& vec
 
   {
     auto vecv = vec.get1dViewNonConst();
-    parallelIO_read_dataset((void *) vecv.get(),
+    parallelIO_read_dataset((void*)vecv.get(),
                             IODetails::PIO_DatatypeMap<scalar_type>::type,
-                            ndims, globaldims, localdims,
-                            data_file_, full_h5path.c_str(),
-                            &IOgroup_, NONUNIFORM_CONTIGUOUS_READ);
+                            ndims,
+                            globaldims,
+                            localdims,
+                            data_file_,
+                            full_h5path.c_str(),
+                            &IOgroup_,
+                            NONUNIFORM_CONTIGUOUS_READ);
   }
 }
-    
 
-template<typename scalar_type>
+
+template <typename scalar_type>
 void
-FileHDF5::ReadMultiVector(const std::vector<std::string>& var_paths, MultiVector_type_<scalar_type>& vec)
+FileHDF5::ReadMultiVector(const std::vector<std::string>& var_paths,
+                          MultiVector_type_<scalar_type>& vec)
 {
   auto vecv = vec.get2dViewNonConst();
 
   if (var_paths.size() != vec.getNumVectors()) {
-    Errors::Message message("FileHDF5::ReadMultiVector requested with invalid number of names.");
+    Errors::Message message(
+      "FileHDF5::ReadMultiVector requested with invalid number of names.");
     throw(message);
   }
-    
-  for (std::size_t i=0; i!=vec.getNumVectors(); ++i) {
+
+  for (std::size_t i = 0; i != vec.getNumVectors(); ++i) {
     IODetails::DangerousString full_h5path(var_paths[i]);
 
     int ndims;
-    parallelIO_get_dataset_ndims(&ndims, data_file_, full_h5path.c_str(), &IOgroup_);
+    parallelIO_get_dataset_ndims(
+      &ndims, data_file_, full_h5path.c_str(), &IOgroup_);
     if (ndims < 0) {
-      Errors::Message message("FileHDF5::ReadVector data has negative dimension.");
+      Errors::Message message(
+        "FileHDF5::ReadVector data has negative dimension.");
       throw(message);
     }
 
     int globaldims[ndims], localdims[ndims];
-    parallelIO_get_dataset_dims(globaldims, data_file_, full_h5path.c_str(), &IOgroup_);
+    parallelIO_get_dataset_dims(
+      globaldims, data_file_, full_h5path.c_str(), &IOgroup_);
     if (vec.getGlobalLength() != globaldims[0]) {
       Errors::Message message;
-      message << "FileHDF5::ReadVector with incorrect length (got " << globaldims[0] << ", expected " << vec.getGlobalLength() << ").";
+      message << "FileHDF5::ReadVector with incorrect length (got "
+              << globaldims[0] << ", expected " << vec.getGlobalLength()
+              << ").";
       throw(message);
     }
 
@@ -342,11 +412,15 @@ FileHDF5::ReadMultiVector(const std::vector<std::string>& var_paths, MultiVector
     localdims[1] = globaldims[1];
 
     {
-      parallelIO_read_dataset((void *) vecv[i].get(),
-              IODetails::PIO_DatatypeMap<scalar_type>::type,
-              ndims, globaldims, localdims,
-              data_file_, full_h5path.c_str(),
-              &IOgroup_, NONUNIFORM_CONTIGUOUS_READ);
+      parallelIO_read_dataset((void*)vecv[i].get(),
+                              IODetails::PIO_DatatypeMap<scalar_type>::type,
+                              ndims,
+                              globaldims,
+                              localdims,
+                              data_file_,
+                              full_h5path.c_str(),
+                              &IOgroup_,
+                              NONUNIFORM_CONTIGUOUS_READ);
     }
   }
 }
@@ -416,13 +490,15 @@ FileHDF5::ReadMultiVectorBlock(const std::string& var_name, MultiVector_type_<sc
 //
 // STD::STRING
 //
-template<>
+template <>
 void
-FileHDF5::WriteAttribute<std::string>(const std::string& attr_name, const std::string& h5path, std::string value);
+FileHDF5::WriteAttribute<std::string>(const std::string& attr_name,
+                                      const std::string& h5path,
+                                      std::string value);
 
-template<>
+template <>
 std::string
-FileHDF5::ReadAttribute<std::string>(const std::string& attr_name, const std::string& h5path);
+FileHDF5::ReadAttribute<std::string>(const std::string& attr_name,
+                                     const std::string& h5path);
 
-} // namespace
-
+} // namespace Amanzi

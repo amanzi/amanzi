@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -22,14 +22,16 @@ using namespace Amanzi;
 
 #include "Vec.hh"
 
-TEST(NULL_FACTORY) {
+TEST(NULL_FACTORY)
+{
   DataFactory fac = dataFactory<double, NullFactory>();
   auto s = fac.Create();
   s.Set(1.1);
   CHECK_EQUAL(1.1, s.Get<double>());
 }
 
-TEST(NULL_FACTORY_MISDIRECTED) {
+TEST(NULL_FACTORY_MISDIRECTED)
+{
   DataFactory fac = dataFactory<double, NullFactory>();
   auto s = data<double>();
   fac.Create(s);
@@ -37,7 +39,8 @@ TEST(NULL_FACTORY_MISDIRECTED) {
   CHECK_EQUAL(1.1, s.Get<double>());
 }
 
-TEST(VEC_FACTORY) {
+TEST(VEC_FACTORY)
+{
   g_constructor_calls_default = 0;
   g_constructor_calls_main = 0;
   g_constructor_calls_copy = 0;
@@ -52,7 +55,8 @@ TEST(VEC_FACTORY) {
   CHECK_EQUAL(0, g_constructor_calls_default);
 }
 
-TEST(VEC_FACTORY_MISDIRECTED) {
+TEST(VEC_FACTORY_MISDIRECTED)
+{
   g_constructor_calls_default = 0;
   g_constructor_calls_main = 0;
   g_constructor_calls_copy = 0;
@@ -67,4 +71,3 @@ TEST(VEC_FACTORY_MISDIRECTED) {
   CHECK_EQUAL(0, g_constructor_calls_copy);
   CHECK_EQUAL(0, g_constructor_calls_default);
 }
-

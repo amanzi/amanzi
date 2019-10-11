@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -34,49 +34,49 @@
 namespace Amanzi {
 
 class EvaluatorSecondary : public Evaluator {
+ public:
+  explicit EvaluatorSecondary(Teuchos::ParameterList& plist);
 
-public:
-  explicit EvaluatorSecondary(Teuchos::ParameterList &plist);
+  EvaluatorSecondary(const EvaluatorSecondary& other) = default;
 
-  EvaluatorSecondary(const EvaluatorSecondary &other) = default;
-
-  virtual Evaluator &operator=(const Evaluator &other) override;
-  EvaluatorSecondary &operator=(const EvaluatorSecondary &other);
+  virtual Evaluator& operator=(const Evaluator& other) override;
+  EvaluatorSecondary& operator=(const EvaluatorSecondary& other);
 
   // ---------------------------------------------------------------------------
   // Answers the question, has this Field changed since it was last requested
   // for Field Key reqest.  Updates the field if needed.
   // ---------------------------------------------------------------------------
-  virtual bool Update(State &S, const Key &request) override;
+  virtual bool Update(State& S, const Key& request) override;
 
   // ---------------------------------------------------------------------------
   // Answers the question, Has This Field's derivative with respect to Key
   // wrt_key changed since it was last requested for Field Key reqest.
   // Updates the derivative if needed.
   // ---------------------------------------------------------------------------
-  virtual bool UpdateDerivative(State &S, const Key &request,
-                                const Key &wrt_key,
-                                const Key &wrt_tag) override;
+  virtual bool
+  UpdateDerivative(State& S, const Key& request, const Key& wrt_key,
+                   const Key& wrt_tag) override;
 
-  virtual bool IsDependency(const State &S, const Key &key,
-                            const Key &tag) const override;
-  virtual bool ProvidesKey(const Key &key, const Key &tag) const override;
-  virtual bool IsDifferentiableWRT(const State &S, const Key &wrt_key,
-          const Key &wrt_tag) const override {
+  virtual bool
+  IsDependency(const State& S, const Key& key, const Key& tag) const override;
+  virtual bool ProvidesKey(const Key& key, const Key& tag) const override;
+  virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key,
+                                   const Key& wrt_tag) const override
+  {
     return IsDependency(S, wrt_key, wrt_tag);
   }
 
   virtual std::string WriteToString() const override;
 
-protected:
+ protected:
   // These do the actual work
-  virtual void Update_(State &S) = 0;
-  virtual void UpdateDerivative_(State &S, const Key &wrt_key,
-                                 const Key &wrt_tag) = 0;
+  virtual void Update_(State& S) = 0;
+  virtual void
+  UpdateDerivative_(State& S, const Key& wrt_key, const Key& wrt_tag) = 0;
 
-  void EnsureCompatibility_Flags_(State &S);
-  
-protected:
+  void EnsureCompatibility_Flags_(State& S);
+
+ protected:
   KeyPairVector my_keys_;
 
   KeySet requests_;
@@ -91,4 +91,3 @@ protected:
 } // namespace Amanzi
 
 #endif
-

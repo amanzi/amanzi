@@ -1,9 +1,9 @@
 /*
   WhetStone
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -30,7 +30,8 @@
 
 
 /* **************************************************************** */
-TEST(HIGH_ORDER_CROUZEIX_RAVIART) {
+TEST(HIGH_ORDER_CROUZEIX_RAVIART)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -39,9 +40,10 @@ TEST(HIGH_ORDER_CROUZEIX_RAVIART) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", true, false); 
- 
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh =
+    meshfactory.create("test/one_pentagon.exo", true, false);
+
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
   MFD3D_CrouzeixRaviart mfd(plist, mesh);
@@ -95,20 +97,25 @@ TEST(HIGH_ORDER_CROUZEIX_RAVIART) {
 
 
 /* **************************************************************** */
-void HighOrderCrouzeixRaviartSerendipity(std::string file_name) {
+void
+HighOrderCrouzeixRaviartSerendipity(std::string file_name)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: High-order Crouzeix Raviart Serendipity element in 2D, file=" << file_name << std::endl;
+  std::cout
+    << "\nTest: High-order Crouzeix Raviart Serendipity element in 2D, file="
+    << file_name << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, false); 
- 
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, false);
+
+  int ncells =
+    mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
@@ -146,34 +153,40 @@ void HighOrderCrouzeixRaviartSerendipity(std::string file_name) {
       G1.Inverse();
       G1(0, 0) = 0.0;
       G1 -= G;
-      std::cout << "Norm of dG=" << G1.NormInf() << " " << G.NormInf() << std::endl;      
+      std::cout << "Norm of dG=" << G1.NormInf() << " " << G.NormInf()
+                << std::endl;
       CHECK(G1.NormInf() <= 1e-11 * G.NormInf());
     }
   }
 }
 
 
-TEST(HIGH_ORDER_CROUZEIX_RAVIART_SERENDIPITY) {
+TEST(HIGH_ORDER_CROUZEIX_RAVIART_SERENDIPITY)
+{
   HighOrderCrouzeixRaviartSerendipity("test/two_cell2_dist.exo");
   HighOrderCrouzeixRaviartSerendipity("test/one_pentagon.exo");
-} 
+}
 
 
 /* **************************************************************** */
-void HighOrderLagrange(std::string file_name) {
+void
+HighOrderLagrange(std::string file_name)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: High-order Lagrange element in 2D, file=" << file_name << std::endl;
+  std::cout << "\nTest: High-order Lagrange element in 2D, file=" << file_name
+            << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, true); 
- 
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, true);
+
+  int ncells =
+    mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
   Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
@@ -230,29 +243,34 @@ void HighOrderLagrange(std::string file_name) {
 }
 
 
-TEST(HIGH_ORDER_LAGRANGE) {
+TEST(HIGH_ORDER_LAGRANGE)
+{
   HighOrderLagrange("test/one_pentagon.exo");
   HighOrderLagrange("test/two_cell2_dist.exo");
-} 
+}
 
 
 /* **************************************************************** */
-void HighOrderLagrangeSerendipity(std::string file_name) {
+void
+HighOrderLagrangeSerendipity(std::string file_name)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: High-order Lagrange Serendipity element in 2D, file=" << file_name << std::endl;
+  std::cout << "\nTest: High-order Lagrange Serendipity element in 2D, file="
+            << file_name << std::endl;
   auto comm = Amanzi::getDefaultComm();
 
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, true); 
- 
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  Teuchos::RCP<Mesh> mesh = meshfactory.create(file_name, true, true);
 
-  Teuchos::ParameterList plist; 
+  int ncells =
+    mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+
+  Teuchos::ParameterList plist;
   plist.set<int>("method order", 1);
 
   MFD3D_Diffusion mfd_lo(plist, mesh);
@@ -302,15 +320,16 @@ void HighOrderLagrangeSerendipity(std::string file_name) {
       G1.Inverse();
       G1(0, 0) = 0.0;
       G1 -= G;
-      std::cout << "Norm of dG=" << G1.NormInf() << " " << G.NormInf() << std::endl;      
+      std::cout << "Norm of dG=" << G1.NormInf() << " " << G.NormInf()
+                << std::endl;
       CHECK(G1.NormInf() <= 1e-12 * G.NormInf());
     }
   }
 }
 
 
-TEST(HIGH_ORDER_LAGRANGE_SERENDIPITY) {
+TEST(HIGH_ORDER_LAGRANGE_SERENDIPITY)
+{
   HighOrderLagrangeSerendipity("test/two_cell2_dist.exo");
   HighOrderLagrangeSerendipity("test/one_pentagon.exo");
-} 
-
+}

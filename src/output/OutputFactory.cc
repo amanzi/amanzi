@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -30,7 +30,8 @@ namespace Amanzi {
 namespace OutputFactory {
 
 std::unique_ptr<Output>
-CreateForVis(Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+CreateForVis(Teuchos::ParameterList& plist,
+             const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
 {
   std::string output_type = plist.get<std::string>("file format", "XDMF");
   if (output_type == "XDMF") {
@@ -56,6 +57,5 @@ CreateForCheckpoint(Teuchos::ParameterList& plist, const Comm_ptr_type& comm)
 }
 
 
-} // namespace
-} // namespace
-
+} // namespace OutputFactory
+} // namespace Amanzi

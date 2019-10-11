@@ -6,7 +6,7 @@
 
   Authors:
       Ethan Coon
-      Markus Berndt  
+      Markus Berndt
 */
 
 
@@ -28,44 +28,49 @@
 namespace Amanzi {
 
 class Checkpoint : public IOEvent {
-public:
-  Checkpoint(Teuchos::ParameterList& plist, const Comm_ptr_type& comm, bool read=false);
+ public:
+  Checkpoint(Teuchos::ParameterList& plist, const Comm_ptr_type& comm,
+             bool read = false);
 
   // start/finish checkpoint writing
   void CreateFile(double time, int cycle);
-  void FinalizeFile(bool final=false);
-  
+  void FinalizeFile(bool final = false);
+
   // user-provided writing
   template <typename T>
   typename std::enable_if<!Output::writes<T>::value>::type
-  Write(const Teuchos::ParameterList& attrs, const T &t) const {
+  Write(const Teuchos::ParameterList& attrs, const T& t) const
+  {
     UserWriteCheckpoint(*this, attrs, t);
   }
 
   // output-provided writing
   template <typename T>
   typename std::enable_if<Output::writes<T>::value>::type
-  Write(const Teuchos::ParameterList& attrs, const T &t) const {
+  Write(const Teuchos::ParameterList& attrs, const T& t) const
+  {
     output_->Write(attrs, t);
   }
 
   // user-provided reading
   template <typename T>
   typename std::enable_if<!Input::reads<T>::value>::type
-  Read(const Teuchos::ParameterList& attrs, T &t) const {
+  Read(const Teuchos::ParameterList& attrs, T& t) const
+  {
     UserReadCheckpoint(*this, attrs, t);
   }
 
   // input-provided reading
   template <typename T>
   typename std::enable_if<Input::reads<T>::value>::type
-  Read(const Teuchos::ParameterList& attrs, T &t) const {
+  Read(const Teuchos::ParameterList& attrs, T& t) const
+  {
     input_->Read(attrs, t);
   }
 
  protected:
   Comm_ptr_type comm_;
-  
+
   std::unique_ptr<Output> output_;
   std::unique_ptr<Input> input_;
 
@@ -76,4 +81,3 @@ public:
 } // namespace Amanzi
 
 #endif
-

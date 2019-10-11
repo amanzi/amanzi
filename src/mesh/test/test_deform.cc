@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Rao Garimella, others  
+      Rao Garimella, others
 */
 
 
@@ -24,7 +24,6 @@
 
 TEST(MESH_DEFORM2D)
 {
-
   auto comm = Amanzi::getDefaultComm();
   const int nproc(comm->getSize());
   const int me(comm->getRank());
@@ -34,7 +33,8 @@ TEST(MESH_DEFORM2D)
   std::vector<Amanzi::AmanziMesh::Framework> frameworks;
   std::vector<std::string> framework_names;
 
-  if (Amanzi::AmanziMesh::framework_enabled(Amanzi::AmanziMesh::Framework::MSTK)) {
+  if (Amanzi::AmanziMesh::framework_enabled(
+        Amanzi::AmanziMesh::Framework::MSTK)) {
     frameworks.push_back(Amanzi::AmanziMesh::Framework::MSTK);
     framework_names.push_back("MSTK");
   }
@@ -56,7 +56,7 @@ TEST(MESH_DEFORM2D)
 
       meshfactory.set_preference(prefs);
 
-      mesh = meshfactory.create(0.0,0.0,10.0,10.0,10,10);
+      mesh = meshfactory.create(0.0, 0.0, 10.0, 10.0, 10, 10);
 
     } catch (const Amanzi::AmanziMesh::Message& e) {
       std::cerr << ": mesh error: " << e.what() << std::endl;
@@ -68,7 +68,7 @@ TEST(MESH_DEFORM2D)
 
     Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &aerr);
 
-    CHECK_EQUAL(aerr,0);
+    CHECK_EQUAL(aerr, 0);
 
 
     // Deform the mesh
@@ -81,23 +81,23 @@ TEST(MESH_DEFORM2D)
 
     nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,
                                 Amanzi::AmanziMesh::Parallel_type::OWNED);
-    Kokkos::resize(nodeids,nnodes);
+    Kokkos::resize(nodeids, nnodes);
     for (int j = 0; j < nnodes; j++) {
       nodeids(j) = j;
 
-      Amanzi::AmanziGeometry::Point oldcoord(2),newcoord(2);
+      Amanzi::AmanziGeometry::Point oldcoord(2), newcoord(2);
 
-      mesh->node_get_coordinates(j,&oldcoord);
+      mesh->node_get_coordinates(j, &oldcoord);
 
-      newcoord.set(oldcoord[0],0.5*oldcoord[1]);
+      newcoord.set(oldcoord[0], 0.5 * oldcoord[1]);
 
       newpos.push_back(newcoord);
     }
 
-    status = mesh->deform(nodeids,newpos,false,finpos);
+    status = mesh->deform(nodeids, newpos, false, finpos);
 
 
-    CHECK_EQUAL(status,1);
+    CHECK_EQUAL(status, 1);
 
 
     // If the deformation was successful, the cell volumes should be half
@@ -107,20 +107,16 @@ TEST(MESH_DEFORM2D)
                                     Amanzi::AmanziMesh::Parallel_type::ALL);
 
     for (int j = 0; j < ncells; j++) {
-      double volume = mesh->cell_volume(j,false);
-      CHECK_EQUAL(volume,0.5);
+      double volume = mesh->cell_volume(j, false);
+      CHECK_EQUAL(volume, 0.5);
     }
 
   } // for each framework i
-
-
 }
-
 
 
 TEST(MESH_DEFORM3D)
 {
-
   auto comm = Amanzi::getDefaultComm();
   const int nproc(comm->getSize());
   const int me(comm->getRank());
@@ -136,7 +132,8 @@ TEST(MESH_DEFORM3D)
   frameworks.push_back(Amanzi::AmanziMesh::Framework::SIMPLE);
   framework_names.push_back("simple");
 
-  if (Amanzi::AmanziMesh::framework_enabled(Amanzi::AmanziMesh::Framework::MSTK)) {
+  if (Amanzi::AmanziMesh::framework_enabled(
+        Amanzi::AmanziMesh::Framework::MSTK)) {
     frameworks.push_back(Amanzi::AmanziMesh::Framework::MSTK);
     framework_names.push_back("MSTK");
   }
@@ -158,7 +155,7 @@ TEST(MESH_DEFORM3D)
 
       meshfactory.set_preference(prefs);
 
-      mesh = meshfactory.create(0.0,0.0,0.0,1.0,1.0,1.0,10,10,10);
+      mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
 
     } catch (const Amanzi::AmanziMesh::Message& e) {
       std::cerr << ": mesh error: " << e.what() << std::endl;
@@ -170,7 +167,7 @@ TEST(MESH_DEFORM3D)
 
     Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &aerr);
 
-    CHECK_EQUAL(aerr,0);
+    CHECK_EQUAL(aerr, 0);
 
 
     // Deform the mesh
@@ -181,47 +178,44 @@ TEST(MESH_DEFORM3D)
 
     int status, nnodes;
     if (nproc == 1) {
-
       nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,
-                                 Amanzi::AmanziMesh::Parallel_type::OWNED);
-      Kokkos::resize(nodeids,nnodes);
+                                  Amanzi::AmanziMesh::Parallel_type::OWNED);
+      Kokkos::resize(nodeids, nnodes);
       for (int j = 0; j < nnodes; j++) {
         double pi = 3.1415926;
         nodeids(j) = j;
 
-        Amanzi::AmanziGeometry::Point oldcoord(3),newcoord(3);
+        Amanzi::AmanziGeometry::Point oldcoord(3), newcoord(3);
 
-        mesh->node_get_coordinates(j,&oldcoord);
+        mesh->node_get_coordinates(j, &oldcoord);
 
-        newcoord.set(oldcoord[0],oldcoord[1],
-                     oldcoord[2]-sin((oldcoord[0]+1)*pi)*sin((oldcoord[1]+1)*pi)*oldcoord[2]*0.2);
+        newcoord.set(oldcoord[0],
+                     oldcoord[1],
+                     oldcoord[2] - sin((oldcoord[0] + 1) * pi) *
+                                     sin((oldcoord[1] + 1) * pi) * oldcoord[2] *
+                                     0.2);
 
         newpos.push_back(newcoord);
       }
 
-      status = mesh->deform(nodeids,newpos,false,finpos);
+      status = mesh->deform(nodeids, newpos, false, finpos);
 
     } else {
-
       std::cerr << "Parallel deformation not implemented" << std::endl;
       status = 0;
-
     }
 
-    CHECK_EQUAL(status,1);
+    CHECK_EQUAL(status, 1);
 
 
     // Check the deformations
 
     for (int j = 0; j < nnodes; j++) {
-      Amanzi::AmanziGeometry::Point diff = finpos[j]-newpos[j];
-      CHECK_EQUAL(diff[0],0.0);
-      CHECK_EQUAL(diff[1],0.0);
-      CHECK_EQUAL(diff[2],0.0);
+      Amanzi::AmanziGeometry::Point diff = finpos[j] - newpos[j];
+      CHECK_EQUAL(diff[0], 0.0);
+      CHECK_EQUAL(diff[1], 0.0);
+      CHECK_EQUAL(diff[2], 0.0);
     }
 
   } // for each framework i
-
-
 }
-

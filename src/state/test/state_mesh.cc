@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -20,9 +20,10 @@
 #include "MeshFactory.hh"
 #include "State.hh"
 
-TEST(STATE_CREATION) {
+TEST(STATE_CREATION)
+{
   using namespace Amanzi;
-  auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   AmanziMesh::MeshFactory fac(comm);
   auto mesh = fac.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
@@ -42,4 +43,3 @@ TEST(STATE_CREATION) {
 
   CHECK(s.GetMesh() == s.GetMesh("yet_another_domain_mesh"));
 }
-

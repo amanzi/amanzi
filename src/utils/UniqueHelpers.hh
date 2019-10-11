@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -17,13 +17,13 @@
 #include <memory>
 namespace std {
 
-template<typename T, typename ...Args>
-unique_ptr<T> make_unique(Args&& ...args)
+template <typename T, typename... Args>
+unique_ptr<T>
+make_unique(Args&&... args)
 {
   return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
-}  // namespace std
+} // namespace std
 
 #endif
-

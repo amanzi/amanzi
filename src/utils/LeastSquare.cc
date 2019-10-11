@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -20,9 +20,10 @@ namespace Amanzi {
 namespace Utils {
 
 /* *******************************************************************
-* Calculates best least square fit for data (h[i], error[i]).                       
-******************************************************************* */
-double bestLSfit(const std::vector<double>& h, const std::vector<double>& error)
+ * Calculates best least square fit for data (h[i], error[i]).
+ ******************************************************************* */
+double
+bestLSfit(const std::vector<double>& h, const std::vector<double>& error)
 {
   double a = 0.0, b = 0.0, c = 0.0, d = 0.0, tmp1, tmp2;
 
@@ -39,7 +40,5 @@ double bestLSfit(const std::vector<double>& h, const std::vector<double>& error)
   return (a * b - n * d) / (a * a - n * c);
 }
 
-}  // namespace Utils
-}  // namespace Amanzi
-
-
+} // namespace Utils
+} // namespace Amanzi

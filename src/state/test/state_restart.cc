@@ -6,7 +6,7 @@
 
   Authors:
       Markus Berndt
-      Ethan Coon (ecoon@lanl.gov)  
+      Ethan Coon (coonet@ornl.gov)
 */
 
 
@@ -28,10 +28,10 @@
 #include "State.hh"
 #include "io/Checkpoint.hh"
 
-SUITE(RESTART) {
-
-  TEST(DUMP_DATA) {
-
+SUITE(RESTART)
+{
+  TEST(DUMP_DATA)
+  {
     std::string xmlFileName = "test/state_restart.xml";
     Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
     Teuchos::ParameterList plist = xmlreader.getParameters();
@@ -41,7 +41,7 @@ SUITE(RESTART) {
     // set up mesh
     Teuchos::ParameterList region_list = plist.sublist("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm = Teuchos::rcp(
-        new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
+      new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
     Amanzi::AmanziMesh::MeshFactory meshfactory(comm, gm);
     auto mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1);
@@ -53,10 +53,10 @@ SUITE(RESTART) {
     S0.RegisterDomainMesh(mesh);
 
     S0.Require<Amanzi::CompositeVector, Amanzi::CompositeVectorSpace>(
-          "celldata", "", "state_restart")
-        .SetMesh(mesh)
-        ->SetGhosted(false)
-        ->SetComponent("cell", Amanzi::AmanziMesh::CELL, 3);
+        "celldata", "", "state_restart")
+      .SetMesh(mesh)
+      ->SetGhosted(false)
+      ->SetComponent("cell", Amanzi::AmanziMesh::CELL, 3);
 
     S0.Setup();
     S0.InitializeFields();
@@ -73,10 +73,10 @@ SUITE(RESTART) {
     // read checkpoint
     Amanzi::State S1(state_list);
     S1.Require<Amanzi::CompositeVector, Amanzi::CompositeVectorSpace>(
-          "celldata", "", "state_restart")
-        .SetMesh(mesh)
-        ->SetGhosted(false)
-        ->SetComponent("cell", Amanzi::AmanziMesh::CELL, 3);
+        "celldata", "", "state_restart")
+      .SetMesh(mesh)
+      ->SetGhosted(false)
+      ->SetComponent("cell", Amanzi::AmanziMesh::CELL, 3);
     S1.Setup();
     S1.InitializeFields();
 
@@ -87,20 +87,19 @@ SUITE(RESTART) {
 
     // Compare
     auto s0p = S0.Get<Amanzi::CompositeVector>("celldata")
-               .ViewComponent<AmanziDefaultHost>("cell", false);
+                 .ViewComponent<AmanziDefaultHost>("cell", false);
     auto s1p = S1.Get<Amanzi::CompositeVector>("celldata")
-               .ViewComponent<AmanziDefaultHost>("cell", false);
+                 .ViewComponent<AmanziDefaultHost>("cell", false);
 
     // and compare with the original
     CHECK_EQUAL(S0.time(), S1.time());
     CHECK_EQUAL(s0p.extent(0), s1p.extent(0));
     CHECK_EQUAL(s0p.extent(1), s1p.extent(1));
-    
+
     for (int i = 0; i < s0p.extent(0); ++i) {
       for (int j = 0; j < s0p.extent(1); ++j) {
-        CHECK_EQUAL(s0p(i,j), s1p(i,j));
+        CHECK_EQUAL(s0p(i, j), s1p(i, j));
       }
     }
   }
 }
-

@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-  
+
 */
 
 
@@ -35,7 +35,7 @@ Example:
   </ParameterList>
 
 */
-  
+
 #ifndef AMANZI_SMOOTH_STEP_FUNCTION_HH_
 #define AMANZI_SMOOTH_STEP_FUNCTION_HH_
 
@@ -46,28 +46,29 @@ namespace Amanzi {
 class FunctionSmoothStep : public Function {
  public:
   FunctionSmoothStep(double x0, double y0, double x1, double y1);
-  ~FunctionSmoothStep() {};
+  ~FunctionSmoothStep(){};
   FunctionSmoothStep* Clone() const { return new FunctionSmoothStep(*this); }
-  double operator()(const Kokkos::View<double*>&) const; 
-  
-  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double**>& x, const int i) const
-  { 
+  double operator()(const Kokkos::View<double*>&) const;
+
+  KOKKOS_INLINE_FUNCTION double
+  apply_gpu(const Kokkos::View<double**>& x, const int i) const
+  {
     double y;
-    if (x(0,i) <= x0_) {
+    if (x(0, i) <= x0_) {
       y = y0_;
-    } else if (x(0,i) >= x1_) {
+    } else if (x(0, i) >= x1_) {
       y = y1_;
     } else {
-      double s = (x(0,i) - x0_)/(x1_ - x0_);
-      y = y0_ + (y1_ - y0_)*s*s*(3 - 2*s);
+      double s = (x(0, i) - x0_) / (x1_ - x0_);
+      y = y0_ + (y1_ - y0_) * s * s * (3 - 2 * s);
     }
     return y;
   }
 
-  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
-    Kokkos::parallel_for(in.extent(1),KOKKOS_LAMBDA(const int& i){
-      out(i) = apply_gpu(in,i);
-    });
+  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const
+  {
+    Kokkos::parallel_for(
+      in.extent(1), KOKKOS_LAMBDA(const int& i) { out(i) = apply_gpu(in, i); });
   }
 
  private:
@@ -76,5 +77,4 @@ class FunctionSmoothStep : public Function {
 
 } // namespace Amanzi
 
-#endif  // AMANZI_SMOOTH_STEP_FUNCTION_HH_
-
+#endif // AMANZI_SMOOTH_STEP_FUNCTION_HH_

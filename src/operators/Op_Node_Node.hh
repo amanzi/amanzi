@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon (ecoon@lanl.gov)  
+      Ethan Coon (coonet@ornl.gov)
 */
 
 
@@ -24,37 +24,46 @@ namespace Operators {
 class Op_Node_Node : public Op {
  public:
   Op_Node_Node(const std::string& name,
-               const Teuchos::RCP<const AmanziMesh::Mesh> mesh, int nvec) :
-      Op(OPERATOR_SCHEMA_BASE_NODE |
-         OPERATOR_SCHEMA_DOFS_NODE, name, mesh) {
+               const Teuchos::RCP<const AmanziMesh::Mesh> mesh, int nvec)
+    : Op(OPERATOR_SCHEMA_BASE_NODE | OPERATOR_SCHEMA_DOFS_NODE, name, mesh)
+  {
     diag = Teuchos::rcp(new Epetra_MultiVector(mesh->node_map(false), nvec));
-    diag_shadow = Teuchos::rcp(new Epetra_MultiVector(mesh->node_map(false), nvec));
+    diag_shadow =
+      Teuchos::rcp(new Epetra_MultiVector(mesh->node_map(false), nvec));
   }
 
-  virtual void ApplyMatrixFreeOp(const Operator* assembler,
-          const CompositeVector& X, CompositeVector& Y) const {
+  virtual void
+  ApplyMatrixFreeOp(const Operator* assembler, const CompositeVector& X,
+                    CompositeVector& Y) const
+  {
     assembler->ApplyMatrixFreeOp(*this, X, Y);
   }
 
-  virtual void ApplyTransposeMatrixFreeOp(const Operator* assembler,
-          const CompositeVector& X, CompositeVector& Y) const {
+  virtual void
+  ApplyTransposeMatrixFreeOp(const Operator* assembler,
+                             const CompositeVector& X, CompositeVector& Y) const
+  {
     assembler->ApplyMatrixFreeOp(*this, X, Y);
   }
 
-  virtual void SymbolicAssembleMatrixOp(const Operator* assembler,
-          const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const {
-    assembler->SymbolicAssembleMatrixOp(*this,
-            map, graph, my_block_row, my_block_col);
+  virtual void
+  SymbolicAssembleMatrixOp(const Operator* assembler, const SuperMap& map,
+                           GraphFE& graph, int my_block_row,
+                           int my_block_col) const
+  {
+    assembler->SymbolicAssembleMatrixOp(
+      *this, map, graph, my_block_row, my_block_col);
   }
 
-  virtual void AssembleMatrixOp(const Operator* assembler,
-          const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col) const {
+  virtual void
+  AssembleMatrixOp(const Operator* assembler, const SuperMap& map,
+                   MatrixFE& mat, int my_block_row, int my_block_col) const
+  {
     assembler->AssembleMatrixOp(*this, map, mat, my_block_row, my_block_col);
   }
-  
-  virtual void Rescale(const CompositeVector& scaling) {
+
+  virtual void Rescale(const CompositeVector& scaling)
+  {
     if (scaling.HasComponent("node")) {
       const Epetra_MultiVector& s_v = *scaling.ViewComponent("node", false);
       for (int k = 0; k != s_v.getNumVectors(); ++k) {
@@ -66,11 +75,8 @@ class Op_Node_Node : public Op {
   }
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 
 #endif
-
-
-

@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -31,7 +31,7 @@ Example:
   </ParameterList>
 
 */
-  
+
 #ifndef AMANZI_SQUAREDISTANCE_FUNCTION_HH_
 #define AMANZI_SQUAREDISTANCE_FUNCTION_HH_
 
@@ -43,30 +43,35 @@ namespace Amanzi {
 
 class FunctionSquareDistance : public Function {
  public:
-  FunctionSquareDistance(const Kokkos::View<double*>& x0, const Kokkos::View<double*>& metric);
+  FunctionSquareDistance(const Kokkos::View<double*>& x0,
+                         const Kokkos::View<double*>& metric);
   ~FunctionSquareDistance() {}
-  FunctionSquareDistance* Clone() const { return new FunctionSquareDistance(*this); }
+  FunctionSquareDistance* Clone() const
+  {
+    return new FunctionSquareDistance(*this);
+  }
   double operator()(const Kokkos::View<double*>& x) const;
 
-  KOKKOS_INLINE_FUNCTION double apply_gpu(const Kokkos::View<double**>& x, const int i) const
+  KOKKOS_INLINE_FUNCTION double
+  apply_gpu(const Kokkos::View<double**>& x, const int i) const
   {
     double tmp(0.), y(0.0);
     if (x.extent(0) < x0_.extent(0)) {
-      assert(false && "FunctionSquareDistance expects higher-dimensional argument."); 
-    }    
+      assert(false &&
+             "FunctionSquareDistance expects higher-dimensional argument.");
+    }
     for (int j = 0; j < x0_.extent(0); ++j) {
-      tmp = x(j,i) - x0_[j];
+      tmp = x(j, i) - x0_[j];
       y += metric_[j] * tmp * tmp;
     }
     return y;
   }
 
-  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
-    Kokkos::parallel_for(in.extent(1),KOKKOS_LAMBDA(const int& i){
-      out(i) = apply_gpu(in,i);
-    });
+  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const
+  {
+    Kokkos::parallel_for(
+      in.extent(1), KOKKOS_LAMBDA(const int& i) { out(i) = apply_gpu(in, i); });
   }
-
 
 
  private:
@@ -76,4 +81,3 @@ class FunctionSquareDistance : public Function {
 } // namespace Amanzi
 
 #endif
-

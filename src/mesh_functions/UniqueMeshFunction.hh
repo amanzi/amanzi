@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -29,21 +29,20 @@ class UniqueMeshFunction : public MeshFunction {
  public:
   // Constructor
   UniqueMeshFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-      : MeshFunction(mesh) {};
+    : MeshFunction(mesh){};
 
   // Overload the AddSpec method to check uniqueness.
   virtual void AddSpec(const Teuchos::RCP<Spec>& spec);
 
  protected:
   typedef std::set<AmanziMesh::Entity_ID> MeshIDs;
-  typedef std::pair<Teuchos::RCP<Spec>, Teuchos::RCP<MeshIDs> > UniqueSpec;
-  typedef std::vector<Teuchos::RCP<UniqueSpec> > UniqueSpecList;
+  typedef std::pair<Teuchos::RCP<Spec>, Teuchos::RCP<MeshIDs>> UniqueSpec;
+  typedef std::vector<Teuchos::RCP<UniqueSpec>> UniqueSpecList;
 
-  std::map<AmanziMesh::Entity_kind, Teuchos::RCP<UniqueSpecList> > unique_specs_;
+  std::map<AmanziMesh::Entity_kind, Teuchos::RCP<UniqueSpecList>> unique_specs_;
 };
 
-}  //namespace Functions
-}  //namespace Amanzi
+} // namespace Functions
+} // namespace Amanzi
 
 #endif
-

@@ -6,7 +6,7 @@
 
   Authors:
       Ethan Coon
-      Daniil Svyatsky (dasvyat@lanl.gov)  
+      Daniil Svyatsky (dasvyat@lanl.gov)
 */
 
 
@@ -30,19 +30,20 @@
 namespace Amanzi {
 
 std::pair<Map_ptr_type, Map_ptr_type>
-getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
+getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location)
+{
   return std::make_pair(mesh.map(location, false), mesh.map(location, true));
 }
 
 
 // constructor
-CompositeSpace::CompositeSpace(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-        const std::vector<std::string>& names,
-        const std::map<std::string, AmanziMesh::Entity_kind> locations,
-        const std::map<std::string, BlockMap_ptr_type>& master_maps,
-        const std::map<std::string, BlockMap_ptr_type>& ghost_maps,
-        const std::map<std::string, std::size_t>& num_vectors,
-        bool ghosted)
+CompositeSpace::CompositeSpace(
+  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+  const std::vector<std::string>& names,
+  const std::map<std::string, AmanziMesh::Entity_kind> locations,
+  const std::map<std::string, BlockMap_ptr_type>& master_maps,
+  const std::map<std::string, BlockMap_ptr_type>& ghost_maps,
+  const std::map<std::string, std::size_t>& num_vectors, bool ghosted)
   : BlockSpace(mesh->get_comm(), names, master_maps, ghost_maps, num_vectors),
     locations_(locations),
     mesh_(mesh),
@@ -62,7 +63,8 @@ AmanziMesh::Entity_kind
 CompositeSpace::Location(const std::string& name) const
 {
   if (!HasComponent(name)) {
-    Errors::Message message("Map: Requested component ("+name+") does not exist.");
+    Errors::Message message("Map: Requested component (" + name +
+                            ") does not exist.");
     throw(message);
   }
   return locations_.at(name);
@@ -70,4 +72,3 @@ CompositeSpace::Location(const std::string& name) const
 
 
 } // namespace Amanzi
-

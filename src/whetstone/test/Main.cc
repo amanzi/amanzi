@@ -7,10 +7,11 @@
 #include "bilinear_form_registration.hh"
 
 
-int main( int argc, char *argv[] )
+int
+main(int argc, char* argv[])
 {
   Kokkos::initialize();
-  Teuchos::GlobalMPISession  mpiSession( &argc, &argv );
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   int status = UnitTest::RunAllTests();
 

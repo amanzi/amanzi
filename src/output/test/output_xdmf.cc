@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -26,10 +26,12 @@
 
 using namespace Amanzi;
 
-TEST(WRITE_MESH) {
+TEST(WRITE_MESH)
+{
   // current checks binary equality
   auto comm = Amanzi::getDefaultComm();
-  auto mesh = Teuchos::rcp(new AmanziMesh::Mesh_MSTK("test/hillslope_noduff.exo", comm));
+  auto mesh =
+    Teuchos::rcp(new AmanziMesh::Mesh_MSTK("test/hillslope_noduff.exo", comm));
 
   Teuchos::ParameterList plist;
   plist.set("file name base", "visdump");
@@ -37,9 +39,10 @@ TEST(WRITE_MESH) {
   auto poro = Teuchos::rcp(new Vector_type(mesh->cell_map(false)));
   poro->putScalar(0.5);
 
-  auto darcy_velocity = Teuchos::rcp(new MultiVector_type(mesh->cell_map(false), 3));
+  auto darcy_velocity =
+    Teuchos::rcp(new MultiVector_type(mesh->cell_map(false), 3));
   darcy_velocity->putScalar(1.0);
-  
+
   {
     OutputXDMF out(plist, mesh);
     out.CreateFile(0.0, 0);
@@ -68,17 +71,21 @@ TEST(WRITE_MESH) {
       out.Write(plist, *darcy_velocity);
     }
     out.FinalizeFile();
-  }    
+  }
 
   if (comm->getSize() == 1) {
     int res = system("h5diff visdump_mesh.h5 test/gold_visdump_mesh.h5");
     std::cout << "res = " << res << std::endl;
     CHECK(!res);
   }
-  CHECK(compareTextFiles("visdump_mesh.VisIt.xmf", "test/gold_visdump_mesh.VisIt.xmf"));
-  CHECK(compareTextFiles("visdump_data.VisIt.xmf", "test/gold_visdump_data.VisIt.xmf"));
-  CHECK(compareTextFiles("visdump_mesh.h5.0.xmf", "test/gold_visdump_mesh.h5.0.xmf"));
-  CHECK(compareTextFiles("visdump_data.h5.0.xmf", "test/gold_visdump_data.h5.0.xmf"));
-  CHECK(compareTextFiles("visdump_data.h5.104.xmf", "test/gold_visdump_data.h5.104.xmf"));
+  CHECK(compareTextFiles("visdump_mesh.VisIt.xmf",
+                         "test/gold_visdump_mesh.VisIt.xmf"));
+  CHECK(compareTextFiles("visdump_data.VisIt.xmf",
+                         "test/gold_visdump_data.VisIt.xmf"));
+  CHECK(compareTextFiles("visdump_mesh.h5.0.xmf",
+                         "test/gold_visdump_mesh.h5.0.xmf"));
+  CHECK(compareTextFiles("visdump_data.h5.0.xmf",
+                         "test/gold_visdump_data.h5.0.xmf"));
+  CHECK(compareTextFiles("visdump_data.h5.104.xmf",
+                         "test/gold_visdump_data.h5.104.xmf"));
 }
-

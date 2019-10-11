@@ -54,14 +54,16 @@ u = cos(pi/2 x)
 
 using namespace Amanzi;
 
-//static const double PI_2 = 1.5707963267948966;
+// static const double PI_2 = 1.5707963267948966;
 
-SUITE(PKS_PDE) {
-
+SUITE(PKS_PDE)
+{
   // Forward Euler tests with each of 3 PKs
-  TEST(DIFFUSION_FE_EXPLICIT) {
+  TEST(DIFFUSION_FE_EXPLICIT)
+  {
     // run the simulation
-    using PK_t = PK_Explicit_Adaptor<PK_PDE_Explicit<PK_MixinExplicit<PK_MixinLeafCompositeVector<PK_Default>>>>;
+    using PK_t = PK_Explicit_Adaptor<PK_PDE_Explicit<
+      PK_MixinExplicit<PK_MixinLeafCompositeVector<PK_Default>>>>;
     auto run = createRunPDE<PK_t>("diffusion FE explicit", "test/pks_pde.xml");
     auto nsteps = run_test(run->S, run->pk, 20.0);
 
@@ -72,22 +74,25 @@ SUITE(PKS_PDE) {
 
     // check error
     auto m = run->S->GetMesh();
-    int ncells = m->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    for (int c=0; c!=ncells; ++c) {
+    int ncells =
+      m->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+    for (int c = 0; c != ncells; ++c) {
       auto p = m->cell_centroid(c);
       double val = std::cos(PI_2 * p[0]);
       CHECK_CLOSE(val, u[0][c], 1.e-3);
     }
 
     // check timesteps
-    CHECK_EQUAL(20./0.001, nsteps.first);
+    CHECK_EQUAL(20. / 0.001, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
   }
 
   // Forward Euler tests with each of 3 PKs
-  TEST(DIFFUSION_FE_IMPLICIT) {
+  TEST(DIFFUSION_FE_IMPLICIT)
+  {
     // run the simulation
-    using PK_t = PK_Implicit_Adaptor<PK_PDE_Implicit<PK_MixinImplicit<PK_MixinLeafCompositeVector<PK_Default>>>>;
+    using PK_t = PK_Implicit_Adaptor<PK_PDE_Implicit<
+      PK_MixinImplicit<PK_MixinLeafCompositeVector<PK_Default>>>>;
     auto run = createRunPDE<PK_t>("diffusion FE implicit", "test/pks_pde.xml");
     auto nsteps = run_test(run->S, run->pk, 20.0);
 
@@ -98,15 +103,16 @@ SUITE(PKS_PDE) {
 
     // check error
     auto m = run->S->GetMesh();
-    int ncells = m->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    for (int c=0; c!=ncells; ++c) {
+    int ncells =
+      m->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+    for (int c = 0; c != ncells; ++c) {
       auto p = m->cell_centroid(c);
       double val = std::cos(PI_2 * p[0]);
       CHECK_CLOSE(val, u[0][c], 1.e-3);
     }
 
     // check timesteps
-    CHECK_EQUAL(20./1, nsteps.first);
+    CHECK_EQUAL(20. / 1, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
   }
 }

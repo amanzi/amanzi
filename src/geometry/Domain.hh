@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Rao Garimella (rao@lanl.gov)  
+      Rao Garimella (rao@lanl.gov)
 */
 
 
@@ -29,12 +29,12 @@ namespace AmanziGeometry {
 /**
  * The geometric domain contains one or more objects describing the specifics
  * of how the domain is decomposed into subdomains. In its simplest form,
- * the geometric domain is a list of geometric regions (see 
+ * the geometric domain is a list of geometric regions (see
  * AmanziGeometry::Region) that may or may not tile the domain with or
  * without overlap. In its most sophisticated form, the domain has a list
  * of geometric models, each of which is a particular non-overlapping, tiling
  * decomposition of the domain into geometric regions. Other free floating
- * regions may also exist in the domain for purposes like post-processing 
+ * regions may also exist in the domain for purposes like post-processing
  */
 
 class Domain {
@@ -42,22 +42,18 @@ class Domain {
   // Default constructor.
   Domain(const unsigned int dim);
 
-  // Copy constructor 
+  // Copy constructor
   Domain(const Domain& old);
 
   // Constructor with Geometric Model List
-  Domain(const unsigned int dim, 
-         const std::vector<Teuchos::RCP<GeometricModel> >& in_geometric_models, 
-         const std::vector<Teuchos::RCP<Region> >& in_Regions); 
+  Domain(const unsigned int dim,
+         const std::vector<Teuchos::RCP<GeometricModel>>& in_geometric_models,
+         const std::vector<Teuchos::RCP<Region>>& in_Regions);
 
   // Destructor
   virtual ~Domain(void);
 
-  inline 
-  unsigned int spatial_dimension() const
-  {
-    return spatial_dimension_;
-  }
+  inline unsigned int spatial_dimension() const { return spatial_dimension_; }
 
   // Add a Geometric Model
   void Add_Geometric_Model(const Teuchos::RCP<GeometricModel>& gm);
@@ -82,16 +78,14 @@ class Domain {
   unsigned int spatial_dimension_;
 
   // List of geometric models in domain
-  std::vector<Teuchos::RCP<GeometricModel> > GeometricModels;
+  std::vector<Teuchos::RCP<GeometricModel>> GeometricModels;
 
   // List of Free Region pointers (regions that are not part of any
   // geometric model)
-  std::vector<Teuchos::RCP<Region> > FreeRegions;
+  std::vector<Teuchos::RCP<Region>> FreeRegions;
 };
 
-}  // namespace AmanziGeometry
-}  // namespace Amanzi
+} // namespace AmanziGeometry
+} // namespace Amanzi
 
 #endif
-
-

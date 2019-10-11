@@ -18,24 +18,26 @@ namespace Amanzi {
 // EnsureCompatibility.  This is never used, instead the below templated one
 // is.
 //
-class EvaluatorCellVolume : public EvaluatorIndependent<CompositeVector,CompositeVectorSpace> {
-
-public:
+class EvaluatorCellVolume
+  : public EvaluatorIndependent<CompositeVector, CompositeVectorSpace> {
+ public:
   // ---------------------------------------------------------------------------
   // Constructors, assignement operators, etc
   // ---------------------------------------------------------------------------
-  using EvaluatorIndependent<CompositeVector,CompositeVectorSpace>::EvaluatorIndependent;
-  EvaluatorCellVolume(const EvaluatorCellVolume &other) = default;
+  using EvaluatorIndependent<CompositeVector,
+                             CompositeVectorSpace>::EvaluatorIndependent;
+  EvaluatorCellVolume(const EvaluatorCellVolume& other) = default;
 
-  Teuchos::RCP<Evaluator> Clone() const {
+  Teuchos::RCP<Evaluator> Clone() const
+  {
     return Teuchos::rcp(new EvaluatorCellVolume(*this));
   }
 
-protected:
+ protected:
   // ---------------------------------------------------------------------------
   // Does the actual work to update the value in the state.
   // ---------------------------------------------------------------------------
-  virtual void Update_(State &S);
+  virtual void Update_(State& S);
 
  private:
   static Utils::RegisteredFactory<Evaluator, EvaluatorCellVolume> fac_;

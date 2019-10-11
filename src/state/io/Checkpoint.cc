@@ -6,7 +6,7 @@
 
   Authors:
       Ethan Coon
-      Markus Berndt  
+      Markus Berndt
 */
 
 
@@ -29,20 +29,23 @@
 namespace Amanzi {
 
 // standard constructor
-Checkpoint::Checkpoint(Teuchos::ParameterList& plist,
-                       const Comm_ptr_type& comm, bool read)
-    : IOEvent(plist),
-      filename_base_(plist.template get<std::string>("file name base",
-              "checkpoint")),
-      comm_(comm)
+Checkpoint::Checkpoint(Teuchos::ParameterList& plist, const Comm_ptr_type& comm,
+                       bool read)
+  : IOEvent(plist),
+    filename_base_(
+      plist.template get<std::string>("file name base", "checkpoint")),
+    comm_(comm)
 
 {
-  if (read) input_ = std::move(InputFactory::CreateForCheckpoint(plist, comm));
-  else output_ = std::move(OutputFactory::CreateForCheckpoint(plist, comm));
+  if (read)
+    input_ = std::move(InputFactory::CreateForCheckpoint(plist, comm));
+  else
+    output_ = std::move(OutputFactory::CreateForCheckpoint(plist, comm));
 }
 
 void
-Checkpoint::CreateFile(double time, int cycle) {
+Checkpoint::CreateFile(double time, int cycle)
+{
   output_->CreateFile(time, cycle);
 
   // write comm size
@@ -52,16 +55,17 @@ Checkpoint::CreateFile(double time, int cycle) {
 };
 
 void
-Checkpoint::FinalizeFile(bool final) {
+Checkpoint::FinalizeFile(bool final)
+{
   output_->FinalizeFile();
   if (final) {
     std::string filename = output_->Filename();
     std::string filename_extension = boost::filesystem::extension(filename);
-    std::string filename_final = filename_base_ + "_finale" + filename_extension;
+    std::string filename_final =
+      filename_base_ + "_finale" + filename_extension;
     boost::filesystem::remove(filename_extension);
     boost::filesystem::create_hard_link(filename.data(), filename_final.data());
-  }    
+  }
 }
 
 } // namespace Amanzi
-

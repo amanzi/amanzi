@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -25,19 +25,25 @@
 namespace Amanzi {
 namespace Operators {
 
-class Reconstruction {  
+class Reconstruction {
  public:
-  Reconstruction() {};
-  Reconstruction(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
-      mesh_(mesh), field_(Teuchos::null), component_(0) {};
+  Reconstruction(){};
+  Reconstruction(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh)
+    : mesh_(mesh), field_(Teuchos::null), component_(0){};
   virtual ~Reconstruction() = default;
 
   // main members
   virtual void Init(Teuchos::RCP<const Epetra_MultiVector> field,
-                    Teuchos::ParameterList& plist) { field_ = field; }
+                    Teuchos::ParameterList& plist)
+  {
+    field_ = field;
+  }
   virtual void Init(Teuchos::RCP<const Epetra_MultiVector> field,
-                    Teuchos::ParameterList& plist, int component) { field_ = field;
-                                                                    component_ = component; }
+                    Teuchos::ParameterList& plist, int component)
+  {
+    field_ = field;
+    component_ = component;
+  }
   virtual void ComputeGradient() = 0;
 
  protected:
@@ -46,8 +52,7 @@ class Reconstruction {
   int component_;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-

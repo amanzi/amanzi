@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-  
+
 */
 
 
@@ -59,7 +59,7 @@ OR:
 #* `"function: squared distance`" ``[squared-distance-function-spec]``
 END
 */
-  
+
 #ifndef AMANZI_FUNCTION_HH_
 #define AMANZI_FUNCTION_HH_
 
@@ -75,13 +75,13 @@ class Function {
   virtual ~Function() {}
   virtual Function* Clone() const = 0;
 
-  // Keep host version working 
-  virtual double operator()(const Kokkos::View<double*>& ) const = 0;
+  // Keep host version working
+  virtual double operator()(const Kokkos::View<double*>&) const = 0;
 
-  virtual void apply(const Kokkos::View<double**>&, Kokkos::View<double*>&) const = 0; 
+  virtual void
+  apply(const Kokkos::View<double**>&, Kokkos::View<double*>&) const = 0;
 };
 
 } // namespace Amanzi
 
 #endif // AMANZI_FUNCTION_HH_
-

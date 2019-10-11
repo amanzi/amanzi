@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -35,8 +35,7 @@ namespace InputFactory {
 std::unique_ptr<Input>
 CreateForCheckpoint(Teuchos::ParameterList& plist, const Comm_ptr_type& comm);
 
-} // namespace
-} // namespace
+} // namespace InputFactory
+} // namespace Amanzi
 
 #endif
-

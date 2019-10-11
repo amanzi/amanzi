@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -51,26 +51,33 @@ namespace Amanzi {
 
 class FunctionStaticHead : public Function {
  public:
-  FunctionStaticHead(double patm, double rho, double g, std::unique_ptr<Function> h, int dim)
-      : patm_(patm), rho_g_(rho*g), h_(std::move(h)), dim_(dim) {}
-  FunctionStaticHead(double patm, double rho, double g, const Function& h, int dim)
-      : patm_(patm), rho_g_(rho*g), h_(h.Clone()), dim_(dim) {}
+  FunctionStaticHead(double patm, double rho, double g,
+                     std::unique_ptr<Function> h, int dim)
+    : patm_(patm), rho_g_(rho * g), h_(std::move(h)), dim_(dim)
+  {}
+  FunctionStaticHead(double patm, double rho, double g, const Function& h,
+                     int dim)
+    : patm_(patm), rho_g_(rho * g), h_(h.Clone()), dim_(dim)
+  {}
   FunctionStaticHead(const FunctionStaticHead& src)
-      : patm_(src.patm_), rho_g_(src.rho_g_), h_(src.h_->Clone()), dim_(src.dim_) {}
+    : patm_(src.patm_), rho_g_(src.rho_g_), h_(src.h_->Clone()), dim_(src.dim_)
+  {}
   ~FunctionStaticHead() {}
   FunctionStaticHead* Clone() const { return new FunctionStaticHead(*this); }
   // The array (t,x,y,z) is passed as *x, so that x[dim_] is z in 3D, y in 2D
-  double operator()(const Kokkos::View<double*>& x) const {
+  double operator()(const Kokkos::View<double*>& x) const
+  {
     return patm_ + rho_g_ * ((*h_)(x)-x(dim_));
   }
-  
-  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
-    h_->apply(in,out);
-    Kokkos::parallel_for(in.extent(1),KOKKOS_LAMBDA(const int& i){
+
+  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const
+  {
+    h_->apply(in, out);
+    Kokkos::parallel_for(in.extent(1), KOKKOS_LAMBDA(const int& i) {
       out(i) = patm_ + rho_g_ * (out(i) - in(dim_, i));
-    }); 
+    });
   }
- 
+
  private:
   int dim_;
   double patm_, rho_g_;
@@ -80,4 +87,3 @@ class FunctionStaticHead : public Function {
 } // namespace Amanzi
 
 #endif // AMANZI_STATIC_HEAD_FUNCTION_HH_
-

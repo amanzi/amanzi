@@ -2,9 +2,9 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -13,7 +13,7 @@
 
   Let each column of R represent new basis vector in the old basis.
   Then, transformation of the bilinear form matrix A from old to new
-  basis is calculated as follows: R^T A R. Also, to change vector v 
+  basis is calculated as follows: R^T A R. Also, to change vector v
   from the new to old basis, we compute v_old = R v_new. Inverse of
   R defines the backward transformation. Finally, transformation of
   the linear form, represented by vector f, is given by R^T f.
@@ -33,41 +33,42 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class Basis { 
+class Basis {
  public:
-  Basis() {};
-  virtual ~Basis() {};
+  Basis(){};
+  virtual ~Basis(){};
 
   // initialization
-  virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                    AmanziMesh::Entity_ID id, int c, int order,
-                    Polynomial& integrals) = 0;
+  virtual void
+  Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+       AmanziMesh::Entity_ID id, int c, int order, Polynomial& integrals) = 0;
 
   // transformation of bilinear form
   virtual void BilinearFormNaturalToMy(DenseMatrix& A) const = 0;
-  virtual void BilinearFormNaturalToMy(std::shared_ptr<Basis> bl,
-                                       std::shared_ptr<Basis> br, DenseMatrix& A) const = 0;
+  virtual void
+  BilinearFormNaturalToMy(std::shared_ptr<Basis> bl, std::shared_ptr<Basis> br,
+                          DenseMatrix& A) const = 0;
 
   // transformation of linear form
   virtual void LinearFormNaturalToMy(DenseVector& v) const = 0;
 
-  // transformation of vector 
+  // transformation of vector
   virtual void ChangeBasisMyToNatural(DenseVector& v) const = 0;
   virtual void ChangeBasisNaturalToMy(DenseVector& v) const = 0;
 
   // recover polynomial in the natural basis
-  virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                                         int c, int order, DenseVector& coefs) const = 0;
+  virtual Polynomial
+  CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c,
+                      int order, DenseVector& coefs) const = 0;
 
-  // assess 
+  // assess
   int id() const { return id_; };
 
  protected:
   int id_;
 };
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

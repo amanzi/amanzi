@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -22,10 +22,11 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
-* Constructor takes the old schema as input.
-****************************************************************** */
-void Schema::Init(Teuchos::ParameterList& plist,
-                  Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+ * Constructor takes the old schema as input.
+ ****************************************************************** */
+void
+Schema::Init(Teuchos::ParameterList& plist,
+             Teuchos::RCP<const AmanziMesh::Mesh> mesh)
 {
   Errors::Message msg;
 
@@ -38,7 +39,7 @@ void Schema::Init(Teuchos::ParameterList& plist,
 
   std::vector<std::string> name;
   if (plist.isParameter("location")) {
-    name = plist.get<Teuchos::Array<std::string> >("location").toVector();
+    name = plist.get<Teuchos::Array<std::string>>("location").toVector();
   } else {
     msg << "Parameter schema->location is missing.";
     Exceptions::amanzi_throw(msg);
@@ -46,7 +47,7 @@ void Schema::Init(Teuchos::ParameterList& plist,
 
   std::vector<std::string> type;
   if (plist.isParameter("type")) {
-    type = plist.get<Teuchos::Array<std::string> >("type").toVector();
+    type = plist.get<Teuchos::Array<std::string>>("type").toVector();
   } else {
     msg << "Parameter schema->type is missing.";
     Exceptions::amanzi_throw(msg);
@@ -54,7 +55,7 @@ void Schema::Init(Teuchos::ParameterList& plist,
 
   std::vector<int> ndofs;
   if (plist.isParameter("number")) {
-    ndofs = plist.get<Teuchos::Array<int> >("number").toVector();
+    ndofs = plist.get<Teuchos::Array<int>>("number").toVector();
   } else {
     msg << "Parameter schema->number is missing.";
     Exceptions::amanzi_throw(msg);
@@ -71,11 +72,12 @@ void Schema::Init(Teuchos::ParameterList& plist,
 
 
 /* ******************************************************************
-* Backward compatibility: takes the old schema as input.
-****************************************************************** */
-void Schema::Init(int i)
-{ 
-  base_ = AmanziMesh::CELL;  // default
+ * Backward compatibility: takes the old schema as input.
+ ****************************************************************** */
+void
+Schema::Init(int i)
+{
+  base_ = AmanziMesh::CELL; // default
 
   if (i & OPERATOR_SCHEMA_BASE_NODE) {
     base_ = AmanziMesh::NODE;
@@ -107,16 +109,17 @@ void Schema::Init(int i)
     items_.push_back(item);
   }
   if (i & OPERATOR_SCHEMA_DOFS_BNDFACE) {
-    item.set(AmanziMesh::BOUNDARY_FACE,  DOF_Type::SCALAR, 1);
+    item.set(AmanziMesh::BOUNDARY_FACE, DOF_Type::SCALAR, 1);
     items_.push_back(item);
   }
 }
 
 
 /* ******************************************************************
-* Backward compatibility: takes kind as input.
-****************************************************************** */
-void Schema::Init(AmanziMesh::Entity_kind kind, int nvec) 
+ * Backward compatibility: takes kind as input.
+ ****************************************************************** */
+void
+Schema::Init(AmanziMesh::Entity_kind kind, int nvec)
 {
   base_ = kind;
 
@@ -129,9 +132,10 @@ void Schema::Init(AmanziMesh::Entity_kind kind, int nvec)
 
 
 /* ******************************************************************
-* Compute offsets (starting position of DOF ids).
-****************************************************************** */
-void Schema::Finalize(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+ * Compute offsets (starting position of DOF ids).
+ ****************************************************************** */
+void
+Schema::Finalize(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
 {
   offset_.clear();
 
@@ -145,10 +149,11 @@ void Schema::Finalize(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
 
 
 /* ******************************************************************
-* Compute local (cell-based) offsets
-****************************************************************** */
-void Schema::ComputeOffset(int c, Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                           std::vector<int>& offset) const
+ * Compute local (cell-based) offsets
+ ****************************************************************** */
+void
+Schema::ComputeOffset(int c, Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                      std::vector<int>& offset) const
 {
   AmanziMesh::Entity_ID_List nodes, edges, faces;
 
@@ -160,15 +165,12 @@ void Schema::ComputeOffset(int c, Teuchos::RCP<const AmanziMesh::Mesh> mesh,
     if (it->kind == AmanziMesh::NODE) {
       mesh->cell_get_nodes(c, &nodes);
       ndofs = nodes.size();
-    }
-    else if (it->kind == AmanziMesh::EDGE) {
+    } else if (it->kind == AmanziMesh::EDGE) {
       mesh->cell_get_nodes(c, &edges);
       ndofs = edges.size();
-    }
-    else if (it->kind == AmanziMesh::FACE) {
+    } else if (it->kind == AmanziMesh::FACE) {
       ndofs = mesh->cell_get_num_faces(c);
-    }
-    else if (it->kind == AmanziMesh::CELL) {
+    } else if (it->kind == AmanziMesh::CELL) {
       ndofs = 1;
     }
 
@@ -178,9 +180,10 @@ void Schema::ComputeOffset(int c, Teuchos::RCP<const AmanziMesh::Mesh> mesh,
 
 
 /* ******************************************************************
-* Compatibility: returns old schema
-****************************************************************** */
-int Schema::OldSchema() const
+ * Compatibility: returns old schema
+ ****************************************************************** */
+int
+Schema::OldSchema() const
 {
   int i(0);
 
@@ -197,15 +200,15 @@ int Schema::OldSchema() const
 
   for (auto it = items_.begin(); it != items_.end(); ++it) {
     if (it->kind == AmanziMesh::NODE) {
-      i += OPERATOR_SCHEMA_DOFS_NODE; 
+      i += OPERATOR_SCHEMA_DOFS_NODE;
     } else if (it->kind == AmanziMesh::EDGE) {
-      i += OPERATOR_SCHEMA_DOFS_EDGE; 
+      i += OPERATOR_SCHEMA_DOFS_EDGE;
     } else if (it->kind == AmanziMesh::FACE) {
-      i += OPERATOR_SCHEMA_DOFS_FACE; 
+      i += OPERATOR_SCHEMA_DOFS_FACE;
     } else if (it->kind == AmanziMesh::CELL) {
-      i += OPERATOR_SCHEMA_DOFS_CELL;     
+      i += OPERATOR_SCHEMA_DOFS_CELL;
     } else if (it->kind == AmanziMesh::BOUNDARY_FACE) {
-      i += OPERATOR_SCHEMA_DOFS_BNDFACE;     
+      i += OPERATOR_SCHEMA_DOFS_BNDFACE;
     }
   }
   return i;
@@ -213,9 +216,10 @@ int Schema::OldSchema() const
 
 
 /* ******************************************************************
-* Returns standard name for geometric location of DOF.
-****************************************************************** */
-std::string Schema::KindToString(AmanziMesh::Entity_kind kind) const 
+ * Returns standard name for geometric location of DOF.
+ ****************************************************************** */
+std::string
+Schema::KindToString(AmanziMesh::Entity_kind kind) const
 {
   if (kind == AmanziMesh::NODE) {
     return "node";
@@ -233,9 +237,10 @@ std::string Schema::KindToString(AmanziMesh::Entity_kind kind) const
 
 
 /* ******************************************************************
-* Returns standard mesh id for geometric location of DOF.
-****************************************************************** */
-AmanziMesh::Entity_kind Schema::StringToKind(std::string& name) const 
+ * Returns standard mesh id for geometric location of DOF.
+ ****************************************************************** */
+AmanziMesh::Entity_kind
+Schema::StringToKind(std::string& name) const
 {
   if (name == "node") {
     return AmanziMesh::NODE;
@@ -250,9 +255,10 @@ AmanziMesh::Entity_kind Schema::StringToKind(std::string& name) const
 
 
 /* ******************************************************************
-* Returns standard mesh id for geometric location of DOF.
-****************************************************************** */
-DOF_Type Schema::StringToType(std::string& name) const 
+ * Returns standard mesh id for geometric location of DOF.
+ ****************************************************************** */
+DOF_Type
+Schema::StringToType(std::string& name) const
 {
   if (name == "scalar") {
     return DOF_Type::SCALAR;
@@ -270,15 +276,16 @@ DOF_Type Schema::StringToType(std::string& name) const
 
 
 /* ******************************************************************
-* Auxiliary routine creates new name.
-****************************************************************** */
-std::string Schema::CreateUniqueName() const
+ * Auxiliary routine creates new name.
+ ****************************************************************** */
+std::string
+Schema::CreateUniqueName() const
 {
   std::string name(KindToString(base_)), c("_");
   for (auto it = items_.begin(); it != items_.end(); ++it) {
     name.append(c);
-    name.append(KindToString(it->kind)); 
-    name.append(std::to_string(it->num)); 
+    name.append(KindToString(it->kind));
+    name.append(std::to_string(it->num));
     c = "+";
   }
 
@@ -286,8 +293,5 @@ std::string Schema::CreateUniqueName() const
   return name;
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
-
-
-
+} // namespace Operators
+} // namespace Amanzi

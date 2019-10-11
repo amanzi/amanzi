@@ -7,8 +7,9 @@ using namespace Amanzi;
 // Helper struct to store a run for the below function
 // ================================================================================
 struct Run {
-  Run(const Teuchos::RCP<State> &S_, const Teuchos::RCP<PK> &pk_)
-      : S(S_), pk(pk_) {}
+  Run(const Teuchos::RCP<State>& S_, const Teuchos::RCP<PK>& pk_)
+    : S(S_), pk(pk_)
+  {}
 
   Teuchos::RCP<State> S;
   Teuchos::RCP<PK> pk;
@@ -17,10 +18,10 @@ struct Run {
 //
 // Helper function that mocks a coordinator to run the test.
 // ================================================================================
-std::pair<double, double> run_test(const Teuchos::RCP<State> &S,
-        const Teuchos::RCP<PK> &pk,
-        double end_time=1.0) {
-
+std::pair<double, double>
+run_test(const Teuchos::RCP<State>& S, const Teuchos::RCP<PK>& pk,
+         double end_time = 1.0)
+{
   pk->Setup();
   S->Setup();
 
@@ -58,10 +59,11 @@ std::pair<double, double> run_test(const Teuchos::RCP<State> &S,
 // Helper function for creating a run with one MPC and two PKs
 // ============================================================================
 template <class MPC_t, class PK_A_t, class PK_B_t, class PK_t = Amanzi::PK>
-std::unique_ptr<Run> createRunMPC(const std::string &mpc_name,
-        const std::string &pk_A_name,
-        const std::string &pk_B_name,
-        const std::string& filename="test/pks_ode.xml") {
+std::unique_ptr<Run>
+createRunMPC(const std::string& mpc_name, const std::string& pk_A_name,
+             const std::string& pk_B_name,
+             const std::string& filename = "test/pks_ode.xml")
+{
   std::cout << "Test: " << mpc_name << std::endl;
 
   auto global_list = Teuchos::getParametersFromXmlFile(filename);
@@ -70,8 +72,9 @@ std::unique_ptr<Run> createRunMPC(const std::string &mpc_name,
   auto comm = getDefaultComm();
 
   // create mesh
-  Teuchos::ParameterList &regions_list = global_list->sublist("regions");
-  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
+  Teuchos::ParameterList& regions_list = global_list->sublist("regions");
+  auto gm = Teuchos::rcp(
+    new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
   Amanzi::AmanziMesh::MeshFactory meshfactory(comm, gm);
   // make a 1x1 'mesh' for ODEs
@@ -87,7 +90,7 @@ std::unique_ptr<Run> createRunMPC(const std::string &mpc_name,
 
   auto pk_tree_B = Teuchos::rcp(new Teuchos::ParameterList(pk_B_name));
   auto pk_b = Teuchos::rcp(new PK_B_t(pk_tree_B, global_list, S));
-  mpc->SetChildren(std::vector<Teuchos::RCP<PK_t>>{pk_a, pk_b});
+  mpc->SetChildren(std::vector<Teuchos::RCP<PK_t>>{ pk_a, pk_b });
 
   return std::make_unique<Run>(S, mpc);
 }
@@ -97,7 +100,10 @@ std::unique_ptr<Run> createRunMPC(const std::string &mpc_name,
 // This makes a 0D mesh (single cell).
 // ============================================================================
 template <class PK_t>
-std::unique_ptr<Run> createRunODE(const std::string &pk_name, const std::string& filename="test/pks_ode.xml") {
+std::unique_ptr<Run>
+createRunODE(const std::string& pk_name,
+             const std::string& filename = "test/pks_ode.xml")
+{
   std::cout << "Test: " << pk_name << std::endl;
 
   auto global_list = Teuchos::getParametersFromXmlFile(filename);
@@ -106,8 +112,9 @@ std::unique_ptr<Run> createRunODE(const std::string &pk_name, const std::string&
   auto comm = getDefaultComm();
 
   // create mesh
-  Teuchos::ParameterList &regions_list = global_list->sublist("regions");
-  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
+  Teuchos::ParameterList& regions_list = global_list->sublist("regions");
+  auto gm = Teuchos::rcp(
+    new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
   Amanzi::AmanziMesh::MeshFactory meshfactory(comm, gm);
   // make a 1x1 'mesh' for ODEs
@@ -127,7 +134,9 @@ std::unique_ptr<Run> createRunODE(const std::string &pk_name, const std::string&
 // Note that this is identical to ODE above but includes a 1D mesh.
 // ============================================================================
 template <class PK_t>
-std::unique_ptr<Run> createRunPDE(const std::string &pk_name, const std::string& filename) {
+std::unique_ptr<Run>
+createRunPDE(const std::string& pk_name, const std::string& filename)
+{
   std::cout << "Test: " << pk_name << std::endl;
 
   auto global_list = Teuchos::getParametersFromXmlFile(filename);
@@ -136,8 +145,9 @@ std::unique_ptr<Run> createRunPDE(const std::string &pk_name, const std::string&
   auto comm = getDefaultComm();
 
   // create mesh
-  Teuchos::ParameterList &regions_list = global_list->sublist("regions");
-  auto gm = Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
+  Teuchos::ParameterList& regions_list = global_list->sublist("regions");
+  auto gm = Teuchos::rcp(
+    new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, *comm));
 
   Amanzi::AmanziMesh::MeshFactory meshfactory(comm, gm);
   // make a 1x1 'mesh' for ODEs

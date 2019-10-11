@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon (ecoon@lanl.gov)  
+      Ethan Coon (coonet@ornl.gov)
 */
 
 
@@ -13,8 +13,8 @@
 
 /*!
 
-Lots of options here, document me!  
-  
+Lots of options here, document me!
+
 */
 
 #ifndef STATE_EVALUATOR_PDE_ACCUMULATION_HH_
@@ -28,22 +28,26 @@ Lots of options here, document me!
 
 namespace Amanzi {
 
-class Evaluator_PDE_Accumulation : public EvaluatorSecondaryMonotype<CompositeVector,CompositeVectorSpace> {
+class Evaluator_PDE_Accumulation
+  : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
  public:
-  Evaluator_PDE_Accumulation(Teuchos::ParameterList &plist);
+  Evaluator_PDE_Accumulation(Teuchos::ParameterList& plist);
 
   Evaluator_PDE_Accumulation(const Evaluator_PDE_Accumulation& other) = default;
-  virtual Teuchos::RCP<Evaluator> Clone() const override {
+  virtual Teuchos::RCP<Evaluator> Clone() const override
+  {
     return Teuchos::rcp(new Evaluator_PDE_Accumulation(*this));
   };
 
-  virtual void EnsureCompatibility(State &S) override;
-  
- protected:
-  virtual void EvaluatePartialDerivative_(const State &S,
-          const Key &wrt_key, const Key &wrt_tag, const std::vector<CompositeVector*>& results) override;
+  virtual void EnsureCompatibility(State& S) override;
 
-  virtual void Evaluate_(const State &S, const std::vector<CompositeVector*>& results) override;
+ protected:
+  virtual void EvaluatePartialDerivative_(
+    const State& S, const Key& wrt_key, const Key& wrt_tag,
+    const std::vector<CompositeVector*>& results) override;
+
+  virtual void Evaluate_(const State& S,
+                         const std::vector<CompositeVector*>& results) override;
 
  protected:
   Key conserved_key_;
@@ -52,10 +56,8 @@ class Evaluator_PDE_Accumulation : public EvaluatorSecondaryMonotype<CompositeVe
 
  private:
   static Utils::RegisteredFactory<Evaluator, Evaluator_PDE_Accumulation> fac_;
-  
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif
-

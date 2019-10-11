@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -18,7 +18,7 @@
 * `"preconditioner type`" ``[string]`` Iterative method to be used.
 * `"_preconditioner_type_ parameters`" ``[_preconditioner_type_-spec]``
   Parameters associated with the requested preconditioner.
-  
+
  */
 
 #ifndef AMANZI_PRECONDITIONER_HH_
@@ -34,15 +34,15 @@
 namespace Amanzi {
 namespace AmanziPreconditioners {
 
-template<class Matrix, class Vector>
+template <class Matrix, class Vector>
 class Preconditioner {
  public:
   virtual ~Preconditioner() = default;
 
   // Initializes the solver with provided parameters.
   // This need not be called by preconditioners created using the factory.
-  virtual void Init(const std::string& name,
-                    const Teuchos::ParameterList& list) = 0;
+  virtual void
+  Init(const std::string& name, const Teuchos::ParameterList& list) = 0;
 
   // Rebuild the preconditioner using the given matrix A.
   virtual void Update(const Teuchos::RCP<const Matrix>& A) = 0;
@@ -51,17 +51,13 @@ class Preconditioner {
   virtual void Destroy() = 0;
 
   // Apply the preconditioner.
-  virtual int applyInverse(const Vector& v,
-                           Vector& hv) const = 0;
+  virtual int applyInverse(const Vector& v, Vector& hv) const = 0;
 
   virtual int returned_code() = 0;
 };
 
-}  // namespace AmanziPreconditioners
-}  // namespace Amanzi
+} // namespace AmanziPreconditioners
+} // namespace Amanzi
 
 
 #endif
-
-
-

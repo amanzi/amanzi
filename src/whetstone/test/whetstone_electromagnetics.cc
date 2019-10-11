@@ -28,7 +28,8 @@
 
 
 /* **************************************************************** */
-TEST(MASS_MATRIX_2D) {
+TEST(MASS_MATRIX_2D)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziGeometry;
@@ -43,11 +44,13 @@ TEST(MASS_MATRIX_2D) {
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   bool request_faces(true), request_edges(true);
-  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 20, 20, true, true);
-  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/two_cell2.exo", request_faces, request_edges);
+  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 20, 20,
+  // true, true);
+  Teuchos::RCP<Mesh> mesh =
+    meshfactory.create("test/two_cell2.exo", request_faces, request_edges);
 
   Teuchos::ParameterList plist;
   MFD3D_Electromagnetics mfd(plist, mesh);
@@ -82,7 +85,7 @@ TEST(MASS_MATRIX_2D) {
 
     printf("Mass matrix for cell %3d method=%d\n", cell, method);
     for (int i = 0; i < nrows; i++) {
-      for (int j = 0; j < nrows; j++ ) printf("%9.5f ", M(i, j));
+      for (int j = 0; j < nrows; j++) printf("%9.5f ", M(i, j));
       printf("\n");
     }
 
@@ -91,7 +94,7 @@ TEST(MASS_MATRIX_2D) {
 
     // verify exact integration property
     double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell,false);
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell, false);
     for (int i = 0; i < nedges; i++) {
       int e1 = edges(i);
       const AmanziGeometry::Point& t1 = mesh->edge_vector(e1);
@@ -111,20 +114,21 @@ TEST(MASS_MATRIX_2D) {
     CHECK_CLOSE(volume, vxx, 1e-10);
     CHECK_CLOSE(-volume, vxy, 1e-10);
   }
-
-
 }
 
 
 /* **************************************************************** */
-void MassMatrix3D(std::string mesh_file, int max_row) {
+void
+MassMatrix3D(std::string mesh_file, int max_row)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: Mass matrix for edge elements in 3D: " << mesh_file << std::endl;
+  std::cout << "\nTest: Mass matrix for edge elements in 3D: " << mesh_file
+            << std::endl;
 #ifdef HAVE_MPI
   auto comm = Amanzi::getDefaultComm();
 #else
@@ -132,11 +136,12 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   bool request_faces(true), request_edges(true);
 
-  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3, true, true);
+  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3,
+  // true, true);
   RCP<Mesh> mesh = meshfactory.create(mesh_file, request_faces, request_edges);
 
   Teuchos::ParameterList plist;
@@ -172,10 +177,14 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
     }
 
     int m = std::min(nrows, max_row);
-    printf("Mass matrix: method=%d  edges=%d  submatrix=%dx%d\n", method, nedges, m, m);
+    printf("Mass matrix: method=%d  edges=%d  submatrix=%dx%d\n",
+           method,
+           nedges,
+           m,
+           m);
 
     for (int i = 0; i < m; i++) {
-      for (int j = 0; j < m; j++ ) printf("%8.4f ", M(i, j));
+      for (int j = 0; j < m; j++) printf("%8.4f ", M(i, j));
       printf("\n");
     }
 
@@ -184,7 +193,7 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
 
     // verify exact integration property
     double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell,false);
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell, false);
     for (int i = 0; i < nedges; i++) {
       int e1 = edges(i);
       const AmanziGeometry::Point& t1 = mesh->edge_vector(e1);
@@ -204,26 +213,27 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
     CHECK_CLOSE(volume, vxx, 1e-10);
     CHECK_CLOSE(-volume, vxy, 1e-10);
   }
-
-
 }
 
-TEST(MASS_MATRIX_3D_HEX) {
+TEST(MASS_MATRIX_3D_HEX)
+{
   MassMatrix3D("test/one_trapezoid.exo", 12);
 }
 
-TEST(MASS_MATRIX_3D_DODECAHEDRON) {
+TEST(MASS_MATRIX_3D_DODECAHEDRON)
+{
   MassMatrix3D("test/dodecahedron.exo", 10);
 }
 
-TEST(MASS_MATRIX_3D_24SIDED) {
+TEST(MASS_MATRIX_3D_24SIDED)
+{
   MassMatrix3D("test/cube_triangulated.exo", 10);
 }
 
 
-
 /* **************************************************************** */
-TEST(STIFFNESS_MATRIX_2D) {
+TEST(STIFFNESS_MATRIX_2D)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziGeometry;
@@ -238,11 +248,13 @@ TEST(STIFFNESS_MATRIX_2D) {
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   bool request_faces(true), request_edges(true);
-  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1, true, true);
-  Teuchos::RCP<Mesh> mesh = meshfactory.create("test/two_cell2.exo", request_faces, request_edges);
+  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1,
+  // true, true);
+  Teuchos::RCP<Mesh> mesh =
+    meshfactory.create("test/two_cell2.exo", request_faces, request_edges);
 
   Teuchos::ParameterList plist;
   MFD3D_Electromagnetics mfd(plist, mesh);
@@ -269,7 +281,7 @@ TEST(STIFFNESS_MATRIX_2D) {
 
     printf("Stiffness matrix for cell %3d method=%d\n", cell, method);
     for (int i = 0; i < nrows; i++) {
-      for (int j = 0; j < nrows; j++ ) printf("%8.4f ", A(i, j));
+      for (int j = 0; j < nrows; j++) printf("%8.4f ", A(i, j));
       printf("\n");
     }
 
@@ -281,7 +293,7 @@ TEST(STIFFNESS_MATRIX_2D) {
     AmanziGeometry::Point p1(2), p2(2);
 
     const AmanziGeometry::Point& xc = mesh->cell_centroid(cell);
-    double volume = mesh->cell_volume(cell,false);
+    double volume = mesh->cell_volume(cell, false);
 
     for (int i = 0; i < nrows; i++) {
       int f1 = faces(i);
@@ -307,14 +319,17 @@ TEST(STIFFNESS_MATRIX_2D) {
 
 
 /* **************************************************************** */
-void StiffnessMatrix3D(std::string mesh_file, int max_row) {
+void
+StiffnessMatrix3D(std::string mesh_file, int max_row)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: Stiffness matrix for edge elements in 3D: " << mesh_file << std::endl;
+  std::cout << "\nTest: Stiffness matrix for edge elements in 3D: " << mesh_file
+            << std::endl;
 #ifdef HAVE_MPI
   auto comm = Amanzi::getDefaultComm();
 #else
@@ -322,11 +337,12 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
 
   bool request_faces(true), request_edges(true);
 
-  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, true, true);
+  // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1,
+  // true, true);
   RCP<Mesh> mesh = meshfactory.create(mesh_file, request_faces, request_edges);
 
   Teuchos::ParameterList plist;
@@ -356,10 +372,14 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
     }
 
     int m = std::min(nrows, max_row);
-    printf("Stiffness matrix: method=%d  edges=%d  submatrix=%dx%d\n", method, nedges, m, m);
+    printf("Stiffness matrix: method=%d  edges=%d  submatrix=%dx%d\n",
+           method,
+           nedges,
+           m,
+           m);
 
     for (int i = 0; i < m; i++) {
-      for (int j = 0; j < m; j++ ) printf("%9.5f ", A(i, j));
+      for (int j = 0; j < m; j++) printf("%9.5f ", A(i, j));
       printf("\n");
     }
 
@@ -369,7 +389,7 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
     // verify exact integration property
     int n1, n2;
     double xi, xj, yj;
-    double vxx(0.0), vxy(0.0), volume = mesh->cell_volume(cell,false);
+    double vxx(0.0), vxy(0.0), volume = mesh->cell_volume(cell, false);
     AmanziGeometry::Point v1(3);
 
     for (int i = 0; i < nedges; i++) {
@@ -378,7 +398,7 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
       const AmanziGeometry::Point& t1 = mesh->edge_vector(e1);
       double a1 = mesh->edge_length(e1);
 
-      v1 = xe^t1;
+      v1 = xe ^ t1;
       xi = v1[0] / a1;
 
       for (int j = 0; j < nedges; j++) {
@@ -387,7 +407,7 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
         const AmanziGeometry::Point& t2 = mesh->edge_vector(e2);
         double a2 = mesh->edge_length(e2);
 
-        v1 = ye^t2;
+        v1 = ye ^ t2;
         xj = v1[0] / a2;
         yj = v1[1] / a2;
 
@@ -396,21 +416,22 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
       }
     }
     double tol = vxx * 1e-10;
-    CHECK_CLOSE(4 * volume * T(0,0), vxx, tol);
-    CHECK_CLOSE(4 * volume * T(0,1), vxy, tol);
+    CHECK_CLOSE(4 * volume * T(0, 0), vxx, tol);
+    CHECK_CLOSE(4 * volume * T(0, 1), vxy, tol);
   }
-
-
 }
 
-TEST(STIFFNESS_MATRIX_3D_HEX) {
+TEST(STIFFNESS_MATRIX_3D_HEX)
+{
   StiffnessMatrix3D("test/one_trapezoid.exo", 12);
 }
 
-TEST(STIFFNESS_MATRIX_3D_DODECAHEDRON) {
+TEST(STIFFNESS_MATRIX_3D_DODECAHEDRON)
+{
   StiffnessMatrix3D("test/dodecahedron.exo", 10);
 }
 
-TEST(STIFFNESS_MATRIX_3D_24SIDES) {
+TEST(STIFFNESS_MATRIX_3D_24SIDES)
+{
   StiffnessMatrix3D("test/cube_triangulated.exo", 10);
 }

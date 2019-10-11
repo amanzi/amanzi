@@ -4,7 +4,7 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Author: Ethan Coon (coonet@ornl.gov)
 */
 
 //! The interface for a Process Kernel, an equation or system of equations.
@@ -236,7 +236,7 @@ class TreeVector;
 class TreeVectorSpace;
 
 class PK {
-public:
+ public:
   // Virtual destructor
   virtual ~PK() = default;
 
@@ -247,25 +247,25 @@ public:
   virtual void Initialize() = 0;
 
   // Advance PK from time tag old to time tag new
-  virtual bool AdvanceStep(const Key &tag_old, const Key &tag_new) = 0;
+  virtual bool AdvanceStep(const Key& tag_old, const Key& tag_new) = 0;
 
   // Returns validity of the step taken from tag_old to tag_new
-  virtual bool ValidStep(const Key &tag_old, const Key &tag_new) = 0;
+  virtual bool ValidStep(const Key& tag_old, const Key& tag_new) = 0;
 
   // Do work that can only be done if we know the step was successful.
-  virtual void CommitStep(const Key &tag_old, const Key &tag_new) = 0;
+  virtual void CommitStep(const Key& tag_old, const Key& tag_new) = 0;
 
   // Revert a step from tag_new back to tag_old
-  virtual void FailStep(const Key &tag_old, const Key &tag_new) = 0;
+  virtual void FailStep(const Key& tag_old, const Key& tag_new) = 0;
 
   // Choose a time step compatible with physics.
   virtual double get_dt() = 0;
 
   // Calculate any diagnostics at tag, currently used for visualization.
-  virtual void CalculateDiagnostics(const Key &tag) = 0;
+  virtual void CalculateDiagnostics(const Key& tag) = 0;
 
   // Mark, as changed, any primary variable evaluator owned by this PK
-  virtual void ChangedSolutionPK(const Key &tag) = 0;
+  virtual void ChangedSolutionPK(const Key& tag) = 0;
 
   // Return PK's name
   virtual std::string name() = 0;
@@ -279,20 +279,20 @@ public:
 
   // Generates the TreeVectorSpace that represents the solution vector.
   virtual Teuchos::RCP<TreeVectorSpace> SolutionSpace() = 0;
-  
+
   // Builds a TreeVector from the impled PK tree and data in State, at tag.
   // Each component is optionally suffixed (usually as "_t") to get other
   // vectors (usually the time derivative for explicit PKs.
-  virtual void StateToSolution(TreeVector &soln, const Key &tag,
-                               const Key &suffix) = 0;
+  virtual void
+  StateToSolution(TreeVector& soln, const Key& tag, const Key& suffix) = 0;
 
   // Issue Require() calls to State for a TreeVector to be formed at this tag.
   // This is how time integrators get work space they they need in the dag.
-  virtual void SolutionToState(const Key &tag, const Key &suffix) = 0;
+  virtual void SolutionToState(const Key& tag, const Key& suffix) = 0;
 
   // Copy anything needed from one tag to another.  Typically this is the
   // primary variable, but may also be conserved quantities used in DAEs, etc.
-  virtual void StateToState(const Key &tag_from, const Key &tag_to) = 0;
+  virtual void StateToState(const Key& tag_from, const Key& tag_to) = 0;
 };
 
 //
@@ -300,7 +300,7 @@ public:
 //
 template <typename Vector = TreeVector>
 class PK_Implicit : public PK, public BDFFnBase<Vector> {
-public:
+ public:
   virtual ~PK_Implicit() = default;
 };
 
@@ -309,7 +309,7 @@ public:
 //
 template <typename Vector = TreeVector>
 class PK_Explicit : public PK, public Explicit_TI::fnBase<Vector> {
-public:
+ public:
   virtual ~PK_Explicit() = default;
 };
 
@@ -320,7 +320,7 @@ template <typename Vector = TreeVector>
 class PK_ImplicitExplicit : public PK,
                             public BDFFnBase<Vector>,
                             public Explicit_TI::fnBase<Vector> {
-public:
+ public:
   virtual ~PK_ImplicitExplicit() = default;
 };
 

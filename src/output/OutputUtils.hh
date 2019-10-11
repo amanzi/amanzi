@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -18,11 +18,11 @@
 
 namespace Amanzi {
 
-Map_ptr_type GetNaturalMap(const Map_ptr_type& ghosted_map, const Map_ptr_type& owned_map);
+Map_ptr_type
+GetNaturalMap(const Map_ptr_type& ghosted_map, const Map_ptr_type& owned_map);
 
 
 } // namespace Amanzi
 
 
 #endif
-

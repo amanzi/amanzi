@@ -7,7 +7,7 @@
   Authors:
       William Perkins
       Rao Garimella
-      Ethan Coon (ecoon@lanl.gov)  
+      Ethan Coon (coonet@ornl.gov)
 */
 
 
@@ -19,9 +19,11 @@ List *region: box* defines a region bounded by coordinate-aligned
 planes. Boxes are allowed to be of zero thickness in only one
 direction in which case they are equivalent to planes.
 
-* `"low coordinate`" ``[Array(double)]`` Location of the boundary point with the lowest coordinates.
+* `"low coordinate`" ``[Array(double)]`` Location of the boundary point with the
+lowest coordinates.
 
-* `"high coordinate`" ``[Array(double)]`` Location of the boundary points with the highest coordinates.
+* `"high coordinate`" ``[Array(double)]`` Location of the boundary points with
+the highest coordinates.
 
 Example:
 
@@ -29,11 +31,12 @@ Example:
 
    <ParameterList name="WELL">  <!-- parent list -->
      <ParameterList name="region: box">
-       <Parameter name="low coordinate" type="Array(double)" value="{-5.0,-5.0, -5.0}"/>
-       <Parameter name="high coordinate" type="Array(double)" value="{5.0, 5.0,  5.0}"/>
+       <Parameter name="low coordinate" type="Array(double)" value="{-5.0,-5.0,
+-5.0}"/> <Parameter name="high coordinate" type="Array(double)"
+value="{5.0, 5.0,  5.0}"/>
      </ParameterList>
    </ParameterList>
-  
+
 */
 
 
@@ -50,11 +53,8 @@ namespace AmanziGeometry {
 class RegionBox : public Region {
  public:
   // Default constructor uses two corner points (order not important).
-  RegionBox(const std::string& name,
-            const int id,
-            const Point& p0, 
-            const Point& p1,
-            const LifeCycleType lifecycle=PERMANENT);
+  RegionBox(const std::string& name, const int id, const Point& p0,
+            const Point& p1, const LifeCycleType lifecycle = PERMANENT);
 
   // Get the first point defining the region
   const Point& point0() const { return p0_; }
@@ -67,7 +67,7 @@ class RegionBox : public Region {
 
   // Is the box degenerate - zero length in one or more directions and
   // if so in how many directions?
-  bool is_degenerate(int *ndeg) const;
+  bool is_degenerate(int* ndeg) const;
 
  private:
   Point p0_; // lower corner of the box
@@ -78,4 +78,3 @@ class RegionBox : public Region {
 } // namespace Amanzi
 
 #endif
-

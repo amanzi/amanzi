@@ -4,7 +4,7 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (coonet@ornl.gov)
 */
 
 //! A mixin class with default implementations of methods for a subcycled
@@ -42,16 +42,16 @@ namespace Amanzi {
 
 template <class Base_t>
 class PK_MixinExplicitSubcycled : public PK_MixinExplicit<Base_t> {
-public:
+ public:
   PK_MixinExplicitSubcycled(
-      const Teuchos::RCP<Teuchos::ParameterList> &pk_tree,
-      const Teuchos::RCP<Teuchos::ParameterList> &global_plist,
-      const Teuchos::RCP<State> &S);
+    const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
+    const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
+    const Teuchos::RCP<State>& S);
 
   void Setup();
-  bool AdvanceStep(const Key &tag_old, const Key &tag_new);
+  bool AdvanceStep(const Key& tag_old, const Key& tag_new);
 
-protected:
+ protected:
   using PK_MixinExplicit<Base_t>::tag_old_;
   using PK_MixinExplicit<Base_t>::tag_new_;
   using PK_MixinExplicit<Base_t>::tag_inter_;
@@ -64,16 +64,20 @@ protected:
 
 template <class Base_t>
 PK_MixinExplicitSubcycled<Base_t>::PK_MixinExplicitSubcycled(
-    const Teuchos::RCP<Teuchos::ParameterList> &pk_tree,
-    const Teuchos::RCP<Teuchos::ParameterList> &global_plist,
-    const Teuchos::RCP<State> &S)
-    : PK_MixinExplicit<Base_t>(pk_tree, global_plist, S) {
+  const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
+  const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
+  const Teuchos::RCP<State>& S)
+  : PK_MixinExplicit<Base_t>(pk_tree, global_plist, S)
+{
   // this could be generalized, for now just take 1/Nth step size
   subcycled_count_ =
-      plist_->template get<int>("subcycling substeps per outer step");
+    plist_->template get<int>("subcycling substeps per outer step");
 }
 
-template <class Base_t> void PK_MixinExplicitSubcycled<Base_t>::Setup() {
+template <class Base_t>
+void
+PK_MixinExplicitSubcycled<Base_t>::Setup()
+{
   PK_MixinExplicit<Base_t>::Setup();
 
   // reserve space for inner step
@@ -89,8 +93,10 @@ template <class Base_t> void PK_MixinExplicitSubcycled<Base_t>::Setup() {
 }
 
 template <class Base_t>
-bool PK_MixinExplicitSubcycled<Base_t>::AdvanceStep(const Key &tag_old,
-                                                    const Key &tag_new) {
+bool
+PK_MixinExplicitSubcycled<Base_t>::AdvanceStep(const Key& tag_old,
+                                               const Key& tag_new)
+{
   // times associated with inner and outer steps
   double t_start = S_->time(tag_old);
   double t_final = S_->time(tag_new);
@@ -100,12 +106,12 @@ bool PK_MixinExplicitSubcycled<Base_t>::AdvanceStep(const Key &tag_old,
   Teuchos::OSTab out = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os()
-        << "----------------------------------------------------------------"
-        << std::endl
-        << "Subcycling, Outer step: t0 = " << t_start << " t1 = " << t_final
-        << " h = " << t_final - t_start << std::endl
-        << "----------------------------------------------------------------"
-        << std::endl;
+      << "----------------------------------------------------------------"
+      << std::endl
+      << "Subcycling, Outer step: t0 = " << t_start << " t1 = " << t_final
+      << " h = " << t_final - t_start << std::endl
+      << "----------------------------------------------------------------"
+      << std::endl;
 
   // copy initial condition to inner
   this->StateToState(tag_old, tag_old_);

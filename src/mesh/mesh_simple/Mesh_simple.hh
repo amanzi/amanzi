@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-  
+
 */
 
 
@@ -31,7 +31,7 @@
 namespace Amanzi {
 namespace AmanziMesh {
 
-//class GenerationSpec;
+// class GenerationSpec;
 
 class Mesh_simple : public virtual Mesh {
  public:
@@ -42,14 +42,13 @@ class Mesh_simple : public virtual Mesh {
   // of the call and making the pointer argument seem NULL. In C++11,
   // we could "delete" the illegal version of the call effectively
   // blocking the implicit conversion.
-  Mesh_simple(double x0, double y0, double z0,
-              double x1, double y1, double z1,
-              int nx, int ny, int nz,
-              const Comm_ptr_type& comm,
-              const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
-              const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
-              const bool request_faces = true,
-              const bool request_edges = false);
+  Mesh_simple(
+    double x0, double y0, double z0, double x1, double y1, double z1, int nx,
+    int ny, int nz, const Comm_ptr_type& comm,
+    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm =
+      Teuchos::null,
+    const Teuchos::RCP<const Teuchos::ParameterList>& plist = Teuchos::null,
+    const bool request_faces = true, const bool request_edges = false);
 
 
   virtual ~Mesh_simple() = default;
@@ -57,8 +56,8 @@ class Mesh_simple : public virtual Mesh {
 
 
   // Get parallel type of entity
-  Parallel_type entity_get_ptype(const Entity_kind kind,
-                                 const Entity_ID entid) const;
+  Parallel_type
+  entity_get_ptype(const Entity_kind kind, const Entity_ID entid) const;
 
 
   // Get cell type
@@ -72,8 +71,8 @@ class Mesh_simple : public virtual Mesh {
 
   // Number of entities of any kind (cell, face, node) and in a
   // particular category (OWNED, GHOST, ALL)
-  unsigned int num_entities(const Entity_kind kind,
-                            const Parallel_type ptype) const;
+  unsigned int
+  num_entities(const Entity_kind kind, const Parallel_type ptype) const;
 
 
   // Global ID of any entity
@@ -97,7 +96,7 @@ class Mesh_simple : public virtual Mesh {
   // In 2D, the nodes of the polygon will be returned in ccw order
   // consistent with the face normal
   void cell_get_nodes(const Entity_ID cellid,
-                      Kokkos::View<Entity_ID*> &nodeids) const;
+                      Kokkos::View<Entity_ID*>& nodeids) const;
 
 
   // Get nodes of face
@@ -107,12 +106,13 @@ class Mesh_simple : public virtual Mesh {
   // with the face normal
   // In 2D, nfnodes is 2
   void face_get_nodes(const Entity_ID faceid,
-                      Kokkos::View<Entity_ID*> &nodeids) const;
+                      Kokkos::View<Entity_ID*>& nodeids) const;
 
 
   // Get nodes of edge
-  void edge_get_nodes(const Entity_ID edgeid, Entity_ID *nodeid0,
-                      Entity_ID *nodeid1) const {
+  void edge_get_nodes(const Entity_ID edgeid, Entity_ID* nodeid0,
+                      Entity_ID* nodeid1) const
+  {
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
     amanzi_throw(mesg);
   }
@@ -121,26 +121,23 @@ class Mesh_simple : public virtual Mesh {
   //-------------------
 
   // Cells of type 'ptype' connected to a node
-  void node_get_cells(const Entity_ID nodeid,
-                      const Parallel_type ptype,
-                      Kokkos::View<Entity_ID*> &cellids) const;
+  void node_get_cells(const Entity_ID nodeid, const Parallel_type ptype,
+                      Kokkos::View<Entity_ID*>& cellids) const;
 
   // Faces of type 'ptype' connected to a node
-  void node_get_faces(const Entity_ID nodeid,
-                      const Parallel_type ptype,
-                      Kokkos::View<Entity_ID*> &faceids) const;
+  void node_get_faces(const Entity_ID nodeid, const Parallel_type ptype,
+                      Kokkos::View<Entity_ID*>& faceids) const;
 
   // Get faces of ptype of a particular cell that are connected to the
   // given node
-  void node_get_cell_faces(const Entity_ID nodeid,
-                           const Entity_ID cellid,
+  void node_get_cell_faces(const Entity_ID nodeid, const Entity_ID cellid,
                            const Parallel_type ptype,
-                           Kokkos::View<Entity_ID*> &faceids) const;
+                           Kokkos::View<Entity_ID*>& faceids) const;
 
   // Cells of type 'ptype' connected to an edge
-  void edge_get_cells(const Entity_ID edgeid,
-                      const Parallel_type ptype,
-                      Kokkos::View<Entity_ID*> &cellids) const {
+  void edge_get_cells(const Entity_ID edgeid, const Parallel_type ptype,
+                      Kokkos::View<Entity_ID*>& cellids) const
+  {
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
     amanzi_throw(mesg);
   }
@@ -158,16 +155,16 @@ class Mesh_simple : public virtual Mesh {
   // guaranteed in general except when ptype = ALL, in which case
   // the cellids will correcpond to cells across the respective
   // faces given by cell_get_faces
-  void cell_get_face_adj_cells(const Entity_ID cellid,
-                               const Parallel_type ptype,
-                               Kokkos::View<Entity_ID*> &fadj_cellids) const;
+  void
+  cell_get_face_adj_cells(const Entity_ID cellid, const Parallel_type ptype,
+                          Kokkos::View<Entity_ID*>& fadj_cellids) const;
 
   // Node connected neighboring cells of given cell
   // (a hex in a structured mesh has 26 node connected neighbors)
   // The cells are returned in no particular order
-  void cell_get_node_adj_cells(const Entity_ID cellid,
-                               const Parallel_type ptype,
-                               Kokkos::View<Entity_ID*> &nadj_cellids) const;
+  void
+  cell_get_node_adj_cells(const Entity_ID cellid, const Parallel_type ptype,
+                          Kokkos::View<Entity_ID*>& nadj_cellids) const;
 
 
   //
@@ -176,26 +173,29 @@ class Mesh_simple : public virtual Mesh {
 
   // Node coordinates - 3 in 3D and 2 in 2D
   void node_get_coordinates(const Entity_ID nodeid,
-                            AmanziGeometry::Point *ncoord) const;
+                            AmanziGeometry::Point* ncoord) const;
 
 
   // Face coordinates - conventions same as face_to_nodes call
   // Number of nodes is the vector size divided by number of spatial dimensions
-  void face_get_coordinates(const Entity_ID faceid,
-                            Kokkos::View<AmanziGeometry::Point*> &fcoords) const;
+  void
+  face_get_coordinates(const Entity_ID faceid,
+                       Kokkos::View<AmanziGeometry::Point*>& fcoords) const;
 
   // Coordinates of cells in standard order (Exodus II convention)
   // STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES IN 3D
   // For a general polyhedron this will return the node coordinates in
   // arbitrary order
   // Number of nodes is vector size divided by number of spatial dimensions
-  void cell_get_coordinates(const Entity_ID cellid,
-                            Kokkos::View<AmanziGeometry::Point*> &ccoords) const;
+  void
+  cell_get_coordinates(const Entity_ID cellid,
+                       Kokkos::View<AmanziGeometry::Point*>& ccoords) const;
 
   // Modify the coordinates of a node
-  void node_set_coordinates(const Entity_ID nodeid, const AmanziGeometry::Point coords);
+  void node_set_coordinates(const Entity_ID nodeid,
+                            const AmanziGeometry::Point coords);
 
-  void node_set_coordinates(const Entity_ID nodeid, const double *coords);
+  void node_set_coordinates(const Entity_ID nodeid, const double* coords);
 
 
   //
@@ -223,12 +223,11 @@ class Mesh_simple : public virtual Mesh {
   // Get list of entities of type 'category' in set
   using Mesh::get_set_entities;
 
-  virtual
-  void get_set_entities_and_vofs(const std::string setname,
-                                 const Entity_kind kind,
-                                 const Parallel_type ptype,
-                                 Kokkos::View<Entity_ID*>& entids,
-                                 Kokkos::View<double*> *vofs) const;
+  virtual void
+  get_set_entities_and_vofs(const std::string setname, const Entity_kind kind,
+                            const Parallel_type ptype,
+                            Kokkos::View<Entity_ID*>& entids,
+                            Kokkos::View<double*>* vofs) const;
 
 
   // Miscellaneous
@@ -237,18 +236,18 @@ class Mesh_simple : public virtual Mesh {
 
   // this should be used with extreme caution:
   // modify coordinates
-  void set_coordinate(Entity_ID local_node_id,
-                      double* source_begin, double* source_end);
+  void set_coordinate(Entity_ID local_node_id, double* source_begin,
+                      double* source_end);
 
 
   // Deform a mesh so that cell volumes conform as closely as possible
   // to target volumes without dropping below the minimum volumes.  If
   // move_vertical = true, nodes will be allowed to move only in the
   // vertical direction (right now arbitrary node movement is not allowed)
-  int deform(const std::vector<double>& target_cell_volumes__in,
-             const std::vector<double>& min_cell_volumes__in,
-             const Kokkos::View<Entity_ID*>& fixed_nodes,
-             const bool move_vertical);
+  int
+  deform(const std::vector<double>& target_cell_volumes__in,
+         const std::vector<double>& min_cell_volumes__in,
+         const Kokkos::View<Entity_ID*>& fixed_nodes, const bool move_vertical);
 
  private:
   //  void generate_(const GenerationSpec& g);
@@ -266,8 +265,9 @@ class Mesh_simple : public virtual Mesh {
   inline unsigned int xzface_index_(int i, int j, int k) const;
   inline unsigned int cell_index_(int i, int j, int k) const;
 
-  int nx_, ny_, nz_;  // number of cells in the three coordinate directions
-  double x0_, x1_, y0_, y1_, z0_, z1_;  // coordinates of lower left front and upper right back of brick
+  int nx_, ny_, nz_; // number of cells in the three coordinate directions
+  double x0_, x1_, y0_, y1_, z0_,
+    z1_; // coordinates of lower left front and upper right back of brick
 
   int num_cells_;
   int num_nodes_;
@@ -286,12 +286,15 @@ class Mesh_simple : public virtual Mesh {
   // after the class construction even though the class is instantiated
   // as a constant class
 
-  mutable std::vector<std::vector<Entity_ID> > side_sets_;
-  mutable std::vector<std::vector<Entity_ID> > element_blocks_;
-  mutable std::vector<std::vector<Entity_ID> > node_sets_;
-  mutable std::vector<Teuchos::RCP<const AmanziGeometry::Region> > element_block_regions_;
-  mutable std::vector<Teuchos::RCP<const AmanziGeometry::Region> > side_set_regions_;
-  mutable std::vector<Teuchos::RCP<const AmanziGeometry::Region> > node_set_regions_;
+  mutable std::vector<std::vector<Entity_ID>> side_sets_;
+  mutable std::vector<std::vector<Entity_ID>> element_blocks_;
+  mutable std::vector<std::vector<Entity_ID>> node_sets_;
+  mutable std::vector<Teuchos::RCP<const AmanziGeometry::Region>>
+    element_block_regions_;
+  mutable std::vector<Teuchos::RCP<const AmanziGeometry::Region>>
+    side_set_regions_;
+  mutable std::vector<Teuchos::RCP<const AmanziGeometry::Region>>
+    node_set_regions_;
 
   // Get faces of a cell.
 
@@ -313,17 +316,17 @@ class Mesh_simple : public virtual Mesh {
 
   void cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
                                          Kokkos::View<Entity_ID*>& faceids,
-                                         Kokkos::View<int*> &face_dirs) const;
+                                         Kokkos::View<int*>& face_dirs) const;
 
   // Cells connected to a face
-  void face_get_cells_internal_(const Entity_ID faceid,
-                                const Parallel_type ptype,
-                                Kokkos::View<Entity_ID*> &cellids) const;
+  void
+  face_get_cells_internal_(const Entity_ID faceid, const Parallel_type ptype,
+                           Kokkos::View<Entity_ID*>& cellids) const;
 
 
   // Edges of a cell
   void cell_get_edges_internal_(const Entity_ID cellid,
-                                Kokkos::View<Entity_ID*> &edgeids) const
+                                Kokkos::View<Entity_ID*>& edgeids) const
   {
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
     Exceptions::amanzi_throw(mesg);
@@ -331,8 +334,8 @@ class Mesh_simple : public virtual Mesh {
 
   // Edges and directions of a 2D cell
   void cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
-                                            Kokkos::View<Entity_ID*> &edgeids,
-                                            Kokkos::View<int*> *edgedirs) const
+                                            Kokkos::View<Entity_ID*>& edgeids,
+                                            Kokkos::View<int*>* edgedirs) const
   {
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
     Exceptions::amanzi_throw(mesg);
@@ -340,9 +343,9 @@ class Mesh_simple : public virtual Mesh {
 
   // Edges and edge directions of a face
   void face_get_edges_and_dirs_internal_(const Entity_ID cellid,
-                                         Kokkos::View<Entity_ID*> &edgeids,
-                                         Kokkos::View<int*> *edgedirs,
-                                         bool ordered=true) const
+                                         Kokkos::View<Entity_ID*>& edgeids,
+                                         Kokkos::View<int*>* edgedirs,
+                                         bool ordered = true) const
   {
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
     amanzi_throw(mesg);
@@ -354,33 +357,37 @@ class Mesh_simple : public virtual Mesh {
 // Template & inline members
 // ------------------------
 
-unsigned int Mesh_simple::node_index_(int i, int j, int k) const
+unsigned int
+Mesh_simple::node_index_(int i, int j, int k) const
 {
-  return i + j*(nx_+1) + k*(nx_+1)*(ny_+1);
+  return i + j * (nx_ + 1) + k * (nx_ + 1) * (ny_ + 1);
 }
 
-unsigned int Mesh_simple::cell_index_(int i, int j, int k) const
+unsigned int
+Mesh_simple::cell_index_(int i, int j, int k) const
 {
-  return i + j*nx_ + k*nx_*ny_;
+  return i + j * nx_ + k * nx_ * ny_;
 }
 
-unsigned int Mesh_simple::xyface_index_(int i, int j, int k) const
+unsigned int
+Mesh_simple::xyface_index_(int i, int j, int k) const
 {
-  return i + j*nx_ + k*nx_*ny_;
+  return i + j * nx_ + k * nx_ * ny_;
 }
 
-unsigned int Mesh_simple::xzface_index_(int i, int j, int k) const
+unsigned int
+Mesh_simple::xzface_index_(int i, int j, int k) const
 {
-  return i + j*nx_ + k*nx_*(ny_+1) + xyface_index_(0,0,nz_+1);
+  return i + j * nx_ + k * nx_ * (ny_ + 1) + xyface_index_(0, 0, nz_ + 1);
 }
 
-unsigned int Mesh_simple::yzface_index_(int i, int j, int k) const
+unsigned int
+Mesh_simple::yzface_index_(int i, int j, int k) const
 {
-  return i + j*(nx_+1) + k*(nx_+1)*ny_ + xzface_index_(0,0,nz_);
+  return i + j * (nx_ + 1) + k * (nx_ + 1) * ny_ + xzface_index_(0, 0, nz_);
 }
 
-}  // namespace AmanziMesh
-}  // namespace Amanzi
+} // namespace AmanziMesh
+} // namespace Amanzi
 
 #endif
-

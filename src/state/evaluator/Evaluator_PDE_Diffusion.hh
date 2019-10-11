@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon (ecoon@lanl.gov)  
+      Ethan Coon (coonet@ornl.gov)
 */
 
 
@@ -13,8 +13,8 @@
 
 /*!
 
-Lots of options here, document me!  
-  
+Lots of options here, document me!
+
 */
 
 #ifndef STATE_EVALUATOR_PDE_DIFFUSION_HH_
@@ -30,29 +30,34 @@ namespace Amanzi {
 
 class Evaluator_PDE_Diffusion : public EvaluatorSecondary {
  public:
-  Evaluator_PDE_Diffusion(Teuchos::ParameterList &plist);
+  Evaluator_PDE_Diffusion(Teuchos::ParameterList& plist);
 
   Evaluator_PDE_Diffusion(const Evaluator_PDE_Diffusion& other) = default;
-  virtual Teuchos::RCP<Evaluator> Clone() const override {
+  virtual Teuchos::RCP<Evaluator> Clone() const override
+  {
     return Teuchos::rcp(new Evaluator_PDE_Diffusion(*this));
   };
 
-  virtual void EnsureCompatibility(State &S) override;
+  virtual void EnsureCompatibility(State& S) override;
 
   // jac-op handled in EnsureCompatibility()
-  //  virtual void EnsureCompatibleDerivative(State &S, const Key& wrt_key, const Key& wrt_tag) override {}
-  
-  virtual bool UpdateDerivative(State &S, const Key &requestor, const Key &wrt_key,
-          const Key &wrt_tag) override;
-  
-  virtual bool IsDifferentiableWRT(const State &S, const Key &wrt_key,
-          const Key &wrt_tag) const override {
+  //  virtual void EnsureCompatibleDerivative(State &S, const Key& wrt_key,
+  //  const Key& wrt_tag) override {}
+
+  virtual bool
+  UpdateDerivative(State& S, const Key& requestor, const Key& wrt_key,
+                   const Key& wrt_tag) override;
+
+  virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key,
+                                   const Key& wrt_tag) const override
+  {
     return IsDependency(S, wrt_key, wrt_tag) && !jac_op_key_.empty();
   }
 
  protected:
-  virtual void Update_(State &S) override;
-  virtual void UpdateDerivative_(State &S, const Key &wrt_key, const Key &wrt_tag) override;
+  virtual void Update_(State& S) override;
+  virtual void
+  UpdateDerivative_(State& S, const Key& wrt_key, const Key& wrt_tag) override;
 
  protected:
   Key my_tag_;
@@ -63,10 +68,8 @@ class Evaluator_PDE_Diffusion : public EvaluatorSecondary {
 
  private:
   static Utils::RegisteredFactory<Evaluator, Evaluator_PDE_Diffusion> fac_;
-  
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif
-

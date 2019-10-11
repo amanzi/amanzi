@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -26,20 +26,20 @@
 #include "Operator.hh"
 
 /* ******************************************************************
-  TreeOperators are the block analogue of Operators -- they provide 
+  TreeOperators are the block analogue of Operators -- they provide
   a linear operator acting on a TreeVectorSpace.  They are currently
-  assumed R^n -> R^n, and furthermore each block is currently assumed 
-  to be from R^m --> R^m for n = i*m where i is an integer (every 
+  assumed R^n -> R^n, and furthermore each block is currently assumed
+  to be from R^m --> R^m for n = i*m where i is an integer (every
   block's space is the same).
 
   Note that these are really intended for preconditioners -- it is
   unlikely that these need assembled for the operator itself, and
-  therefore no ComputeResidual() methods are provided.  It would be 
+  therefore no ComputeResidual() methods are provided.  It would be
   difficult to manage a RHS for these systems.
 
   Future work will relax this constraint, but currently this can be
   used for things like multi-phased flow, thermal Richards, etc.
-****************************************************************** */ 
+****************************************************************** */
 
 namespace Amanzi {
 namespace Operators {
@@ -49,13 +49,14 @@ class MatrixFE;
 
 class TreeOperator {
  public:
-  TreeOperator() : block_diagonal_(false) {};
+  TreeOperator() : block_diagonal_(false){};
   TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs);
   virtual ~TreeOperator() = default;
 
   // main members
-  void SetOperatorBlock(int i, int j, const Teuchos::RCP<const Operator>& op, bool transpose = false);
-  
+  void SetOperatorBlock(int i, int j, const Teuchos::RCP<const Operator>& op,
+                        bool transpose = false);
+
   virtual int Apply(const TreeVector& X, TreeVector& Y) const;
   virtual int ApplyAssembled(const TreeVector& X, TreeVector& Y) const;
   virtual int ApplyInverse(const TreeVector& X, TreeVector& Y) const;
@@ -67,7 +68,8 @@ class TreeOperator {
   const TreeVectorSpace& RangeMap() const { return *tvs_; }
 
   // preconditioners
-  void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist);
+  void InitPreconditioner(const std::string& prec_name,
+                          const Teuchos::ParameterList& plist);
   void InitPreconditioner(Teuchos::ParameterList& plist);
   void InitBlockDiagonalPreconditioner();
 
@@ -75,8 +77,8 @@ class TreeOperator {
   void UpdatePreconditioner();
 
   // access
-  Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; } 
-  Teuchos::RCP<const Epetra_CrsMatrix> A() const { return A_; } 
+  Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; }
+  Teuchos::RCP<const Epetra_CrsMatrix> A() const { return A_; }
 
   // deep copy for building interfaces to TPLs, mainly to solvers
   void CopyVectorToSuperVector(const TreeVector& cv, Epetra_Vector& sv) const;
@@ -84,9 +86,9 @@ class TreeOperator {
 
  private:
   Teuchos::RCP<const TreeVectorSpace> tvs_;
-  Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Operator> > > blocks_;
-  Teuchos::Array<Teuchos::Array<bool> > transpose_;
-  
+  Teuchos::Array<Teuchos::Array<Teuchos::RCP<const Operator>>> blocks_;
+  Teuchos::Array<Teuchos::Array<bool>> transpose_;
+
   Teuchos::RCP<Epetra_CrsMatrix> A_;
   Teuchos::RCP<MatrixFE> Amat_;
   Teuchos::RCP<SuperMap> smap_;
@@ -97,11 +99,8 @@ class TreeOperator {
   Teuchos::RCP<VerboseObject> vo_;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 
 #endif
-
-
-

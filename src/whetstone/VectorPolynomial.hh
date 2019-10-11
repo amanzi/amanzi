@@ -2,16 +2,16 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Operations with vector of polynomials of type p(x - x0) where x0
   could be different for each vector component.
-*/ 
+*/
 
 #ifndef AMANZI_WHETSTONE_VECTORPOLYNOMIAL_HH_
 #define AMANZI_WHETSTONE_VECTORPOLYNOMIAL_HH_
@@ -31,11 +31,11 @@ class MatrixPolynomial;
 
 class VectorPolynomial {
  public:
-  VectorPolynomial() : d_(0) {};
+  VectorPolynomial() : d_(0){};
   VectorPolynomial(int d, int size);
   VectorPolynomial(int d, int size, int order);
   VectorPolynomial(const Polynomial& p);
-  ~VectorPolynomial() {};
+  ~VectorPolynomial(){};
 
   // reshape polynomial with erase (optionally) memory
   void Reshape(int d, int m, int order, bool reset = false);
@@ -52,35 +52,40 @@ class VectorPolynomial {
   double NormInf() const;
 
   // ring algebra
-  template<typename Type>
-  VectorPolynomial& operator*=(Type val) {
-    for (int i = 0; i < polys_.size(); ++i) {
-      polys_[i] *= val;
-    }
+  template <typename Type>
+  VectorPolynomial& operator*=(Type val)
+  {
+    for (int i = 0; i < polys_.size(); ++i) { polys_[i] *= val; }
     return *this;
   }
 
   VectorPolynomial& operator+=(const VectorPolynomial& vp);
   VectorPolynomial& operator-=(const VectorPolynomial& vp);
 
-  friend VectorPolynomial operator+(const VectorPolynomial& vp1, const VectorPolynomial& vp2) {
+  friend VectorPolynomial
+  operator+(const VectorPolynomial& vp1, const VectorPolynomial& vp2)
+  {
     VectorPolynomial tmp(vp1);
     return tmp += vp2;
   }
 
-  friend VectorPolynomial operator-(const VectorPolynomial& vp1, const VectorPolynomial& vp2) {
+  friend VectorPolynomial
+  operator-(const VectorPolynomial& vp1, const VectorPolynomial& vp2)
+  {
     VectorPolynomial tmp(vp1);
     return tmp -= vp2;
   }
 
-  template<typename Type>
-  friend VectorPolynomial operator*(const Type& val, const VectorPolynomial& vp) {
+  template <typename Type>
+  friend VectorPolynomial operator*(const Type& val, const VectorPolynomial& vp)
+  {
     VectorPolynomial tmp(vp);
     return tmp *= val;
   }
 
-  template<typename Type>
-  friend VectorPolynomial operator*(const VectorPolynomial& vp, const Type& val) {
+  template <typename Type>
+  friend VectorPolynomial operator*(const VectorPolynomial& vp, const Type& val)
+  {
     VectorPolynomial tmp(vp);
     return tmp *= val;
   }
@@ -93,20 +98,22 @@ class VectorPolynomial {
   // -- value
   DenseVector Value(const AmanziGeometry::Point& xp) const;
 
-  // dot product v1 * p 
-  friend Polynomial operator*(const VectorPolynomial& poly, const AmanziGeometry::Point& p) {
+  // dot product v1 * p
+  friend Polynomial
+  operator*(const VectorPolynomial& poly, const AmanziGeometry::Point& p)
+  {
     AMANZI_ASSERT(poly.size() == p.dim());
 
     Polynomial tmp(poly[0] * p[0]);
 
-    for (int i = 1; i < p.dim(); ++i) {
-      tmp += poly[i] * p[i];
-    }
+    for (int i = 1; i < p.dim(); ++i) { tmp += poly[i] * p[i]; }
     return tmp;
   }
 
-  // dot product T * v1 
-  friend VectorPolynomial operator*(const Tensor& T, const VectorPolynomial& poly) {
+  // dot product T * v1
+  friend VectorPolynomial
+  operator*(const Tensor& T, const VectorPolynomial& poly)
+  {
     int d(T.dimension());
     VectorPolynomial tmp(d, d, 0);
 
@@ -117,23 +124,21 @@ class VectorPolynomial {
       tmp.set_origin(poly[0].origin());
 
       for (int i = 0; i < d; ++i) {
-        for (int j = 0; j < d; ++j) {
-          tmp[i] += T(i, j) * poly[j];
-        }
+        for (int j = 0; j < d; ++j) { tmp[i] += T(i, j) * poly[j]; }
       }
     }
     return tmp;
   }
 
   // dot product v1 * v2
-  friend Polynomial operator*(const VectorPolynomial& v1, const VectorPolynomial& v2) {
+  friend Polynomial
+  operator*(const VectorPolynomial& v1, const VectorPolynomial& v2)
+  {
     AMANZI_ASSERT(v1.size() == v2.size());
 
     Polynomial tmp(v1[0] * v2[0]);
 
-    for (int i = 1; i < v1.size(); ++i) {
-      tmp += v1[i] * v2[i];
-    }
+    for (int i = 1; i < v1.size(); ++i) { tmp += v1[i] * v2[i]; }
     return tmp;
   }
 
@@ -142,12 +147,12 @@ class VectorPolynomial {
   //    the Taylor expansion with k terms
   friend VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k);
 
-  // output 
-  friend std::ostream& operator << (std::ostream& os, const VectorPolynomial& poly) {
+  // output
+  friend std::ostream&
+  operator<<(std::ostream& os, const VectorPolynomial& poly)
+  {
     os << "Vector Polynomial (size=" << poly.size() << "):" << std::endl;
-    for (int i = 0; i < poly.size(); ++i) {
-      os << "i=" << i << " " << poly[i];
-    }
+    for (int i = 0; i < poly.size(); ++i) { os << "i=" << i << " " << poly[i]; }
     return os;
   }
 
@@ -158,8 +163,8 @@ class VectorPolynomial {
 
 // non-member functions
 // -- gradient
-inline
-VectorPolynomial Gradient(const Polynomial p)
+inline VectorPolynomial
+Gradient(const Polynomial p)
 {
   int d = p.dimension();
   int order = std::max(0, p.order() - 1);
@@ -192,8 +197,8 @@ VectorPolynomial Gradient(const Polynomial p)
 
 
 // --divergence
-inline
-Polynomial Divergence(const VectorPolynomial& vp) 
+inline Polynomial
+Divergence(const VectorPolynomial& vp)
 {
   int d = vp[0].dimension();
   AMANZI_ASSERT(d == vp.size());
@@ -229,8 +234,8 @@ Polynomial Divergence(const VectorPolynomial& vp)
 
 
 // Projecton of gradient using Taylor expansion with k terms
-inline
-VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k)
+inline VectorPolynomial
+GradientOnUnitSphere(const Polynomial& poly, int k)
 {
   int d = poly.dimension();
   AMANZI_ASSERT(d == 2);
@@ -257,17 +262,17 @@ VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k)
     double tmp2 = a2 * a4 - 2 * a1 * a5;
 
     len3 = len * len * len;
-    ux =-a2 * tmp1;
+    ux = -a2 * tmp1;
     uy = a2 * tmp2;
 
     vx = a1 * tmp1;
-    vy =-a1 * tmp2;
+    vy = -a1 * tmp2;
 
-    out[0](1) = ux / len3; 
-    out[0](2) = uy / len3; 
+    out[0](1) = ux / len3;
+    out[0](2) = uy / len3;
 
-    out[1](1) = vx / len3; 
-    out[1](2) = vy / len3; 
+    out[1](1) = vx / len3;
+    out[1](2) = vy / len3;
   }
 
   if (k > 1) {
@@ -278,16 +283,22 @@ VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k)
 
     len2 = len * len;
     len5 = len3 * len2;
-    double uxx = 2 * a2 * (3 * a2 * a6 + a3 * a4) - a1 * (a4 * a4 + 2 * a2 * a7);
-    double uxy = 2 * a2 * (a2 * a7 + 4 * a3 * a5 - a1 * a8) - a4 * (a2 * a4 + 2 * a1 * a5);
-    double uyy = 2 * a2 * (a2 * a8 + a4 * a5) - a1 * (4 * a5 * a5 + 6 * a2 * a9);
+    double uxx =
+      2 * a2 * (3 * a2 * a6 + a3 * a4) - a1 * (a4 * a4 + 2 * a2 * a7);
+    double uxy =
+      2 * a2 * (a2 * a7 + 4 * a3 * a5 - a1 * a8) - a4 * (a2 * a4 + 2 * a1 * a5);
+    double uyy =
+      2 * a2 * (a2 * a8 + a4 * a5) - a1 * (4 * a5 * a5 + 6 * a2 * a9);
 
     double dx = 2 * a1 * a3 + a2 * a4;
     double dy = 2 * a2 * a5 + a1 * a4;
 
-    double vxx = 2 * a1 * (a1 * a7 + a3 * a4) - a2 * (4 * a3 * a3 + 6 * a1 * a6); 
-    double vxy = 2 * a1 * (a1 * a8 + a4 * a4 - 2 * a3 * a5) - 2 * a2 * (a3 * a4 + a1 * a7); 
-    double vyy = 2 * a1 * (3 * a1 * a9 + a4 * a5) - a2 * (a4 * a4 + 2 * a1 * a8); 
+    double vxx =
+      2 * a1 * (a1 * a7 + a3 * a4) - a2 * (4 * a3 * a3 + 6 * a1 * a6);
+    double vxy =
+      2 * a1 * (a1 * a8 + a4 * a4 - 2 * a3 * a5) - 2 * a2 * (a3 * a4 + a1 * a7);
+    double vyy =
+      2 * a1 * (3 * a1 * a9 + a4 * a5) - a2 * (a4 * a4 + 2 * a1 * a8);
 
     out[0](3) = (uxx * len2 - 3 * ux * dx) / (2 * len5);
     out[0](4) = (uxy * len2 - 3 * ux * dy) / len5;
@@ -301,8 +312,7 @@ VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k)
   return out;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

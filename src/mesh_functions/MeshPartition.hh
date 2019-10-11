@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -24,7 +24,7 @@ namespace Functions {
 
 class MeshPartition {
  public:
-  MeshPartition() : initialized_(false) {};
+  MeshPartition() : initialized_(false){};
 
   MeshPartition(AmanziMesh::Entity_kind kind,
                 const std::vector<std::string>& regions);
@@ -32,7 +32,7 @@ class MeshPartition {
   // this routine could be used to optimize mesh coloring
   void Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                   AmanziMesh::Entity_kind kind,
-                  const std::vector<std::vector<std::string> >& regions,
+                  const std::vector<std::vector<std::string>>& regions,
                   const int default_value);
 
   void Initialize(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
@@ -53,8 +53,7 @@ class MeshPartition {
   Teuchos::RCP<Epetra_IntVector> map_;
 };
 
-}  // namespace Functions
-}  // namespace Amanzi
+} // namespace Functions
+} // namespace Amanzi
 
 #endif
-

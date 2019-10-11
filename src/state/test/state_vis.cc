@@ -6,7 +6,7 @@
 
   Authors:
       Markus Berndt
-      Ethan Coon (ecoon@lanl.gov)  
+      Ethan Coon (coonet@ornl.gov)
 */
 
 
@@ -29,9 +29,10 @@
 #include "State.hh"
 #include "io/Visualization.hh"
 
-SUITE(VISUALIZATION) {
-
-  TEST(DUMP_MESH_AND_DATA) {
+SUITE(VISUALIZATION)
+{
+  TEST(DUMP_MESH_AND_DATA)
+  {
     // here we just check that the code does not crash when
     // the mesh and data files are written
     Teuchos::ParameterList plist;
@@ -41,9 +42,10 @@ SUITE(VISUALIZATION) {
     Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
     plist = xmlreader.getParameters();
 
-    Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+    Teuchos::ParameterList region_list =
+      plist.get<Teuchos::ParameterList>("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm = Teuchos::rcp(
-        new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
+      new Amanzi::AmanziGeometry::GeometricModel(3, region_list, *comm));
 
     Amanzi::AmanziMesh::MeshFactory meshfactory(comm, gm);
     auto mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1);
@@ -52,19 +54,19 @@ SUITE(VISUALIZATION) {
     Amanzi::State S0(state_list);
 
     S0.RegisterMesh("domain", mesh);
-    S0.Require<Amanzi::CompositeVector, Amanzi::CompositeVectorSpace>("celldata")
-        .SetMesh(mesh)
-        ->SetGhosted(false)
-        ->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);
+    S0.Require<Amanzi::CompositeVector, Amanzi::CompositeVectorSpace>(
+        "celldata")
+      .SetMesh(mesh)
+      ->SetGhosted(false)
+      ->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);
     S0.Setup();
     S0.InitializeFields();
 
     S0.set_time(1.02);
 
     Teuchos::ParameterList visualization_list =
-        plist.get<Teuchos::ParameterList>("visualization");
+      plist.get<Teuchos::ParameterList>("visualization");
     Amanzi::Visualization V(visualization_list, mesh);
     WriteVis(V, S0);
   }
 }
-

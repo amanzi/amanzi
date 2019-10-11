@@ -10,13 +10,15 @@ using namespace Amanzi;
 // ODE for testing
 class nonlinearODE : public Amanzi::BDFFnBase<Vector_type> {
  public:
-  nonlinearODE(double atol, double rtol, bool exact_jacobian) :
-      rtol_(rtol), atol_(atol), exact_jacobian_(exact_jacobian) {
-  }
+  nonlinearODE(double atol, double rtol, bool exact_jacobian)
+    : rtol_(rtol), atol_(atol), exact_jacobian_(exact_jacobian)
+  {}
 
-  void FunctionalResidual(double told, double tnew, Teuchos::RCP<Vector_type> uold,
-                  Teuchos::RCP<Vector_type> unew,
-                  Teuchos::RCP<Vector_type> f) {
+  void
+  FunctionalResidual(double told, double tnew, Teuchos::RCP<Vector_type> uold,
+                     Teuchos::RCP<Vector_type> unew,
+                     Teuchos::RCP<Vector_type> f)
+  {
     // f = udot - u^2
     // note that the exact solution is
     // uex = u0/(1-u0(t-t0))
@@ -35,24 +37,31 @@ class nonlinearODE : public Amanzi::BDFFnBase<Vector_type> {
       auto fv = f->getLocalViewHost();
       std::cout.precision(10);
       for (int c = 0; c != unew->getLocalLength(); ++c) {
-        std::cout << "Res: u_old = " << u0v(c,0) << ", u_new = " << u1v(c,0) << ", f = " << fv(c,0) << std::endl;
+        std::cout << "Res: u_old = " << u0v(c, 0) << ", u_new = " << u1v(c, 0)
+                  << ", f = " << fv(c, 0) << std::endl;
       }
     }
   }
 
-  int ApplyPreconditioner(Teuchos::RCP<const Vector_type> u, Teuchos::RCP<Vector_type> Pu) {
+  int ApplyPreconditioner(Teuchos::RCP<const Vector_type> u,
+                          Teuchos::RCP<Vector_type> Pu)
+  {
     Pu->elementWiseMultiply(1., *Pu_, *u, 0.);
     return 0;
   }
 
-  double ErrorNorm(Teuchos::RCP<const Vector_type> u, Teuchos::RCP<const Vector_type> du) {
+  double ErrorNorm(Teuchos::RCP<const Vector_type> u,
+                   Teuchos::RCP<const Vector_type> du)
+  {
     double norm_du, norm_u;
     norm_du = du->normInf();
     norm_u = u->normInf();
-    return norm_du/(atol_+rtol_*norm_u);
+    return norm_du / (atol_ + rtol_ * norm_u);
   }
 
-  void UpdatePreconditioner(double t, Teuchos::RCP<const Vector_type> up, double h) {
+  void
+  UpdatePreconditioner(double t, Teuchos::RCP<const Vector_type> up, double h)
+  {
     // do nothing since the preconditioner is the identity
     if (Pu_ == Teuchos::null) {
       Pu_ = Teuchos::rcp(new Vector_type(up->getMap()));
@@ -62,22 +71,27 @@ class nonlinearODE : public Amanzi::BDFFnBase<Vector_type> {
       Pu_->assign(*up);
       Vector_type ones(Pu_->getMap());
       ones.putScalar(1.0);
-      Pu_->update(1.0/h, ones, -2.0);
+      Pu_->update(1.0 / h, ones, -2.0);
     } else {
-      Pu_->putScalar(1.0/h);
+      Pu_->putScalar(1.0 / h);
     }
     Pu_->reciprocal(*Pu_);
   }
 
-  void compute_udot(double t, Teuchos::RCP<const Vector_type> u, Teuchos::RCP<const Vector_type> udot) {};
+  void compute_udot(double t, Teuchos::RCP<const Vector_type> u,
+                    Teuchos::RCP<const Vector_type> udot){};
 
   bool IsAdmissible(Teuchos::RCP<const Vector_type> up) { return true; }
-  bool ModifyPredictor(double h, Teuchos::RCP<const Vector_type> u0, 
-                       Teuchos::RCP<Vector_type> u) { return false; }
+  bool ModifyPredictor(double h, Teuchos::RCP<const Vector_type> u0,
+                       Teuchos::RCP<Vector_type> u)
+  {
+    return false;
+  }
   Amanzi::AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
-      ModifyCorrection(double h, Teuchos::RCP<const Vector_type> res,
-                       Teuchos::RCP<const Vector_type> u,
-                       Teuchos::RCP<Vector_type> du) { 
+  ModifyCorrection(double h, Teuchos::RCP<const Vector_type> res,
+                   Teuchos::RCP<const Vector_type> u,
+                   Teuchos::RCP<Vector_type> du)
+  {
     return Amanzi::AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
   }
   void ChangedSolution() {}
@@ -87,7 +101,6 @@ class nonlinearODE : public Amanzi::BDFFnBase<Vector_type> {
   double atol_, rtol_;
   Teuchos::RCP<Vector_type> Pu_;
 };
-
 
 
 #endif

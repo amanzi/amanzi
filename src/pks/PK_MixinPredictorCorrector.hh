@@ -4,7 +4,7 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (coonet@ornl.gov)
 */
 
 //! A mixin class with default implementations of methods for a
@@ -41,20 +41,22 @@ namespace Amanzi {
 
 template <class Base_t>
 class PK_MixinPredictorCorrector
-    : public PK_MixinImplicit<PK_MixinExplicit<Base_t>> {
-public:
+  : public PK_MixinImplicit<PK_MixinExplicit<Base_t>> {
+ public:
   using PK_MixinImplicit<PK_MixinExplicit<Base_t>>::PK_MixinImplicit;
 
   bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
                        Teuchos::RCP<TreeVector> u);
 
-protected:
+ protected:
   using Base_t::plist_;
 };
 
 template <class Base_t>
-bool PK_MixinPredictorCorrector<Base_t>::ModifyPredictor(
-    double h, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) {
+bool
+PK_MixinPredictorCorrector<Base_t>::ModifyPredictor(
+  double h, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u)
+{
   Teuchos::RCP<Teuchos::ParameterList> ti_plist;
   if (!PK_MixinExplicit<Base_t>::time_stepper_.get()) {
     ti_plist = Teuchos::sublist(plist_, "time integrator");
@@ -63,7 +65,7 @@ bool PK_MixinPredictorCorrector<Base_t>::ModifyPredictor(
   }
 
   bool fail = PK_MixinExplicit<Base_t>::AdvanceStep(
-      PK_MixinExplicit<Base_t>::tag_old_, PK_MixinExplicit<Base_t>::tag_new_);
+    PK_MixinExplicit<Base_t>::tag_old_, PK_MixinExplicit<Base_t>::tag_new_);
 
   if (ti_plist.get()) {
     plist_->set("predictor", plist_->sublist("time integrator"));

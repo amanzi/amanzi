@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon (ecoon@lanl.gov)  
+      Ethan Coon (coonet@ornl.gov)
 */
 
 
@@ -15,7 +15,7 @@
 
   Include this instead of directly including Epetra_Map.h to ease transition
   between linear algebra packages.
-  
+
 */
 
 
@@ -27,16 +27,15 @@
 
 #ifdef TRILINOS_TPETRA_STACK
 
-#include "Tpetra_Map.hpp"
-#include "Tpetra_Import.hpp"
+#  include "Tpetra_Map.hpp"
+#  include "Tpetra_Import.hpp"
 
 #else // Epetra stack
 
-#include "Epetra_Map.h"
-#include "Epetra_BlockMap.h"
-#include "Epetra_Import.h"
+#  include "Epetra_Map.h"
+#  include "Epetra_BlockMap.h"
+#  include "Epetra_Import.h"
 
 #endif // trilinos stack
 
 #endif
-

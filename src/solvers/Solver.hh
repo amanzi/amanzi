@@ -5,8 +5,8 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon (ecoon@lanl.gov)
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Ethan Coon (coonet@ornl.gov)
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -23,13 +23,12 @@
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template<class Vector, class VectorSpace>
+template <class Vector, class VectorSpace>
 class Solver {
  public:
-
   virtual ~Solver() = default;
-  
-  virtual void Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
+
+  virtual void Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn,
                     const Teuchos::RCP<const VectorSpace>& map) = 0;
 
   virtual int Solve(const Teuchos::RCP<Vector>& u) = 0;
@@ -38,8 +37,8 @@ class Solver {
   virtual void set_tolerance(double tol) = 0;
   virtual void set_pc_lag(double pc_lag) = 0;
   virtual void set_db(const Teuchos::RCP<ResidualDebugger>& db) {}
-  
-  // access 
+
+  // access
   virtual double tolerance() = 0;
   virtual double residual() = 0;
   virtual int num_itrs() = 0;
@@ -48,8 +47,7 @@ class Solver {
   virtual int pc_updates() = 0;
 };
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 #endif
-

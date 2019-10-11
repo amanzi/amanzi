@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -18,7 +18,8 @@
 
 namespace Amanzi {
 
-FunctionMonomial::FunctionMonomial(double c, const Kokkos::View<double*>& x0, const Kokkos::View<int*>& p)
+FunctionMonomial::FunctionMonomial(double c, const Kokkos::View<double*>& x0,
+                                   const Kokkos::View<int*>& p)
 {
   if (x0.extent(0) != p.extent(0)) {
     Errors::Message m;
@@ -30,17 +31,17 @@ FunctionMonomial::FunctionMonomial(double c, const Kokkos::View<double*>& x0, co
   p_ = p;
 }
 
-double FunctionMonomial::operator()(const Kokkos::View<double*>& x) const
+double
+FunctionMonomial::operator()(const Kokkos::View<double*>& x) const
 {
   double y = c_;
   if (x.extent(0) < x0_.extent(0)) {
     Errors::Message m;
     m << "FunctionMonomial expects higher-dimensional argument.";
     Exceptions::amanzi_throw(m);
-  }    
+  }
   for (int j = 0; j < x0_.extent(0); ++j) y *= pow(x[j] - x0_[j], p_[j]);
   return y;
 }
 
-}  // namespace Amanzi
-
+} // namespace Amanzi

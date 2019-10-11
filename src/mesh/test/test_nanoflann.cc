@@ -9,25 +9,26 @@
 #include "Point.hh"
 
 typedef nanoflann::KDTreeSingleIndexAdaptor<
-    nanoflann::L2_Adaptor<double, Amanzi::AmanziMesh::PointCloud>,
-    Amanzi::AmanziMesh::PointCloud, -1> MyKDTree;
+  nanoflann::L2_Adaptor<double, Amanzi::AmanziMesh::PointCloud>,
+  Amanzi::AmanziMesh::PointCloud, -1>
+  MyKDTree;
 
-TEST(NANOFLANN) {
-
+TEST(NANOFLANN)
+{
   Kokkos::initialize();
   // generate points
   const int d(2), n(10);
   double range(1.0);
-  double query_pt[2] = {0.5, 0.5};
+  double query_pt[2] = { 0.5, 0.5 };
   Amanzi::AmanziGeometry::Point p(0.5, 0.5);
-  Kokkos::View<Amanzi::AmanziGeometry::Point*> points("",n);
+  Kokkos::View<Amanzi::AmanziGeometry::Point*> points("", n);
 
   for (int i = 0; i < n; ++i) {
     double x = range * (rand() % 1000) / 1000.0;
     double y = range * (rand() % 1000) / 1000.0;
     points(i) = Amanzi::AmanziGeometry::Point(x, y);
   }
-  std::cout<<"Added"<<std::endl;
+  std::cout << "Added" << std::endl;
 
   std::cout << "Input points:\n";
   for (int i = 0; i < n; i++) {
@@ -57,24 +58,27 @@ TEST(NANOFLANN) {
   for (int i = 0; i < nresults; i++) {
     int n = idx[i];
     double dist = std::pow(dist_sqr[i], 0.5);
-    std::cout << " point: " << n << " dist=" << dist << " xy=" << points(n) << std::endl;
+    std::cout << " point: " << n << " dist=" << dist << " xy=" << points(n)
+              << std::endl;
     CHECK_CLOSE(dist, Amanzi::AmanziGeometry::norm(points(n) - p), 1e-14);
   }
 
   // SEARCH 2: points is a ball
   double radius = 0.14;
-  std::vector<std::pair<size_t, double> > matches;
+  std::vector<std::pair<size_t, double>> matches;
 
   nanoflann::SearchParams params;
   // params.sorted = false;
 
   nresults = tree.radiusSearch(&query_pt[0], radius, matches, params);
 
-  std::cout << "\nSearch results: radius=" << std::pow(radius, 0.5) << " -> " << nresults << " points inside\n";
+  std::cout << "\nSearch results: radius=" << std::pow(radius, 0.5) << " -> "
+            << nresults << " points inside\n";
   for (int i = 0; i < nresults; ++i) {
     int n = matches[i].first;
     double dist = std::pow(matches[i].second, 0.5);
-    std::cout << " point: " << n << " dist=" << dist << " xy=" << points(n) << std::endl;
+    std::cout << " point: " << n << " dist=" << dist << " xy=" << points(n)
+              << std::endl;
     CHECK_CLOSE(dist, Amanzi::AmanziGeometry::norm(points(n) - p), 1e-14);
   }
 

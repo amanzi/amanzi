@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -26,7 +26,8 @@ namespace AmanziSolvers {
 
 // //
 // // TreeVector does work
-// // -----------------------------------------------------------------------------
+// //
+// -----------------------------------------------------------------------------
 // template<>
 // void
 // ResidualDebugger::StartIteration<TreeVectorSpace>(double time,
@@ -40,25 +41,27 @@ namespace AmanziSolvers {
 //     std::vector<Teuchos::RCP<const TreeVectorSpace> > leaves =
 //       collectTreeVectorLeaves_const(space);
 //     vis_.resize(leaves.size());
-  
+
 //     for (int i=0; i!=leaves.size(); ++i) {
 //       if (leaves[i]->Data()->HasComponent("cell")) {
 //         std::stringstream filename;
 //         filename << filebasename_ << cycle << "_a" << attempt << "_v" << i;
-//         vis_[i] = Teuchos::rcp(new HDF5_MPI(leaves[i]->Data()->Mesh()->get_comm()));
+//         vis_[i] = Teuchos::rcp(new
+//         HDF5_MPI(leaves[i]->Data()->Mesh()->get_comm()));
 //         vis_[i]->setTrackXdmf(true);
-//         vis_[i]->createMeshFile(leaves[i]->Data()->Mesh(), filename.str()+"_mesh");
-//         vis_[i]->createDataFile(filename.str());
-        
+//         vis_[i]->createMeshFile(leaves[i]->Data()->Mesh(),
+//         filename.str()+"_mesh"); vis_[i]->createDataFile(filename.str());
+
 //       }
 //     }
 //   }
 // }
-  
-  
-// //  
+
+
+// //
 // // Write a vector individually.
-// // -----------------------------------------------------------------------------
+// //
+// -----------------------------------------------------------------------------
 // template<>
 // void
 // ResidualDebugger::WriteVector<TreeVector>(int iter,
@@ -133,10 +136,9 @@ namespace AmanziSolvers {
 //         (*it)->endTimestep();
 //       }
 //     }
-//   }    
+//   }
 // }
 
-  
-} // namespace Solvers  
-} // namespace Amanzi
 
+} // namespace AmanziSolvers
+} // namespace Amanzi

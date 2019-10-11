@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -33,76 +33,73 @@ namespace Amanzi {
 
 struct HDF5Reader {
  public:
-  HDF5Reader(std::string filename) :
-      filename_(filename) {
+  HDF5Reader(std::string filename) : filename_(filename)
+  {
     htri_t ierr = H5Fis_hdf5(filename.c_str());
     if (ierr > 0) {
       file_ = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
     } else {
       std::string header("HDF5Reader: error, invalid filename ");
-      Errors::Message message(header+filename);
+      Errors::Message message(header + filename);
       Exceptions::amanzi_throw(message);
     }
   }
 
-  ~HDF5Reader() {
-    H5Fclose(file_);
-  }
+  ~HDF5Reader() { H5Fclose(file_); }
 
-  void
-  ReadData(std::string varname, Teuchos::Array<double>& arr) {
+  void ReadData(std::string varname, Teuchos::Array<double>& arr)
+  {
     hid_t dataset = H5Dopen(file_, varname.c_str(), H5P_DEFAULT);
     hid_t dataspace = H5Dget_space(dataset);
     hssize_t size = H5Sget_simple_extent_npoints(dataspace);
 
-    arr.resize(size);    
-    herr_t status = H5Dread(dataset, H5T_NATIVE_DOUBLE,  H5S_ALL, H5S_ALL,
-                            H5P_DEFAULT, arr.data());
+    arr.resize(size);
+    herr_t status = H5Dread(
+      dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, arr.data());
   }
-  void
-  ReadData(std::string varname, std::vector<double>& arr) {
+  void ReadData(std::string varname, std::vector<double>& arr)
+  {
     hid_t dataset = H5Dopen(file_, varname.c_str(), H5P_DEFAULT);
     hid_t dataspace = H5Dget_space(dataset);
     hssize_t size = H5Sget_simple_extent_npoints(dataspace);
 
-    arr.resize(size);    
-    herr_t status = H5Dread(dataset, H5T_NATIVE_DOUBLE,  H5S_ALL, H5S_ALL,
-                            H5P_DEFAULT, arr.data());
+    arr.resize(size);
+    herr_t status = H5Dread(
+      dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, arr.data());
   }
-  void
-  ReadData(std::string varname, Kokkos::View<double*>& vec) {
+  void ReadData(std::string varname, Kokkos::View<double*>& vec)
+  {
     hid_t dataset = H5Dopen(file_, varname.c_str(), H5P_DEFAULT);
     hid_t dataspace = H5Dget_space(dataset);
     hssize_t size = H5Sget_simple_extent_npoints(dataspace);
-    Kokkos::resize(vec,size); 
-    herr_t status = H5Dread(dataset, H5T_NATIVE_DOUBLE,  H5S_ALL, H5S_ALL,
-                            H5P_DEFAULT, vec.data());
+    Kokkos::resize(vec, size);
+    herr_t status = H5Dread(
+      dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, vec.data());
   }
 
-  void
-  ReadMatData(std::string varname, Teuchos::SerialDenseMatrix<std::size_t, double>& mat) {
-    hid_t dataset = H5Dopen(file_, varname.c_str(), H5P_DEFAULT );
+  void ReadMatData(std::string varname,
+                   Teuchos::SerialDenseMatrix<std::size_t, double>& mat)
+  {
+    hid_t dataset = H5Dopen(file_, varname.c_str(), H5P_DEFAULT);
     hid_t dataspace = H5Dget_space(dataset);
     hsize_t dims[2];
     int ndims = H5Sget_simple_extent_dims(dataspace, dims, NULL);
-    if ( ndims != 2 ) {
+    if (ndims != 2) {
       Errors::Message message("HDF5Reader: dataset dimension is not 2.");
       Exceptions::amanzi_throw(message);
     }
-    mat.shape(dims[1],dims[0]);
-    herr_t status = H5Dread(dataset, H5T_NATIVE_DOUBLE,  H5S_ALL, H5S_ALL,
-                            H5P_DEFAULT, mat.values());
+    mat.shape(dims[1], dims[0]);
+    herr_t status = H5Dread(
+      dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, mat.values());
   }
-  void
-  ReadMatData(std::string varname, Kokkos::View<double**> &mat) {
+  void ReadMatData(std::string varname, Kokkos::View<double**>& mat)
+  {
     Teuchos::SerialDenseMatrix<std::size_t, double> m;
     ReadMatData(varname, m);
 
     Kokkos::resize(mat, m.numCols(), m.numRows());
-    for(int i = 0 ; i < mat.extent(0) ; ++i){
-      for(int j = 0 ; j < mat.extent(1); ++j){
-        mat(i,j) = m[i][j]; 
-      }
+    for (int i = 0; i < mat.extent(0); ++i) {
+      for (int j = 0; j < mat.extent(1); ++j) { mat(i, j) = m[i][j]; }
     }
   }
 
@@ -114,4 +111,3 @@ struct HDF5Reader {
 } // namespace Amanzi
 
 #endif
-

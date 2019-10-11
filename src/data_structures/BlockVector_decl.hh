@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon (coonet@ornl.gov)  
+      Ethan Coon (coonet@ornl.gov)
 */
 
 
@@ -29,73 +29,94 @@
 
 namespace Amanzi {
 
-template<typename Scalar>
+template <typename Scalar>
 class BlockVector {
-
-public:
+ public:
   //
   // Constructors etc
   // ---------------------------------------------
-  BlockVector(const Teuchos::RCP<const BlockSpace>& map, InitMode mode=InitMode::ZERO);
+  BlockVector(const Teuchos::RCP<const BlockSpace>& map,
+              InitMode mode = InitMode::ZERO);
 
   // copy constructor
-  BlockVector(const BlockVector& other, Teuchos::DataAccess access=Teuchos::DataAccess::Copy,
-              InitMode mode=InitMode::COPY);
+  BlockVector(const BlockVector& other,
+              Teuchos::DataAccess access = Teuchos::DataAccess::Copy,
+              InitMode mode = InitMode::COPY);
 
   // assignment
   BlockVector<Scalar>& operator=(const BlockVector<Scalar>& other);
   void assign(const BlockVector<Scalar>& other) { *this = other; }
-  
+
   //
   // Meta-data delegated to map
   // ---------------------------------------------
-  const Teuchos::RCP<const BlockSpace>& getMap() const { return map_; }  
+  const Teuchos::RCP<const BlockSpace>& getMap() const { return map_; }
   Comm_ptr_type Comm() const { return getMap()->Comm(); }
-  GO getGlobalLength(bool ghosted=false) const { return getMap()->getGlobalLength(ghosted); }
-  LO getLocalLength(bool ghosted=false) const { return getMap()->getLocalLength(ghosted); }
+  GO getGlobalLength(bool ghosted = false) const
+  {
+    return getMap()->getGlobalLength(ghosted);
+  }
+  LO getLocalLength(bool ghosted = false) const
+  {
+    return getMap()->getLocalLength(ghosted);
+  }
 
   //
   // Component meta-data delegated to map
   // ---------------------------------------------
-  bool HasComponent(const std::string& name) const { return map_->HasComponent(name); }
+  bool HasComponent(const std::string& name) const
+  {
+    return map_->HasComponent(name);
+  }
 
   using name_iterator = BlockSpace::name_iterator;
   name_iterator begin() const { return getMap()->begin(); }
   name_iterator end() const { return getMap()->end(); }
   std::size_t size() const { return getMap()->size(); }
 
-  std::size_t getNumVectors(const std::string& name) const { return getMap()->getNumVectors(name); }
+  std::size_t getNumVectors(const std::string& name) const
+  {
+    return getMap()->getNumVectors(name);
+  }
 
   //
   // Accessors to data.
   // ---------------------------------------------
-  template<class DeviceType=AmanziDefaultDevice>
-  using cMultiVectorView_type = cMultiVectorView_type_<DeviceType,Scalar>;
-  template<class DeviceType=AmanziDefaultDevice>
-  using MultiVectorView_type = MultiVectorView_type_<DeviceType,Scalar>;
-  template<class DeviceType=AmanziDefaultDevice>
-  using cVectorView_type = cVectorView_type_<DeviceType,Scalar>;
-  template<class DeviceType=AmanziDefaultDevice>
-  using VectorView_type = VectorView_type_<DeviceType,Scalar>;
-  
+  template <class DeviceType = AmanziDefaultDevice>
+  using cMultiVectorView_type = cMultiVectorView_type_<DeviceType, Scalar>;
+  template <class DeviceType = AmanziDefaultDevice>
+  using MultiVectorView_type = MultiVectorView_type_<DeviceType, Scalar>;
+  template <class DeviceType = AmanziDefaultDevice>
+  using cVectorView_type = cVectorView_type_<DeviceType, Scalar>;
+  template <class DeviceType = AmanziDefaultDevice>
+  using VectorView_type = VectorView_type_<DeviceType, Scalar>;
+
   // -- Access a component vector
-  cMultiVector_ptr_type_<Scalar> GetComponent(const std::string& name, bool ghosted=false) const;
-  MultiVector_ptr_type_<Scalar> GetComponent(const std::string& name, bool ghosted=false);
+  cMultiVector_ptr_type_<Scalar>
+  GetComponent(const std::string& name, bool ghosted = false) const;
+  MultiVector_ptr_type_<Scalar>
+  GetComponent(const std::string& name, bool ghosted = false);
 
   // -- View a component vector
-  template<class DeviceType=AmanziDefaultDevice>
-  cMultiVectorView_type<DeviceType> ViewComponent(const std::string& name, bool ghosted=false) const;
-  template<class DeviceType=AmanziDefaultDevice>
-  MultiVectorView_type<DeviceType> ViewComponent(const std::string& name, bool ghosted=false);
+  template <class DeviceType = AmanziDefaultDevice>
+  cMultiVectorView_type<DeviceType>
+  ViewComponent(const std::string& name, bool ghosted = false) const;
+  template <class DeviceType = AmanziDefaultDevice>
+  MultiVectorView_type<DeviceType>
+  ViewComponent(const std::string& name, bool ghosted = false);
 
   // -- SubView of a component vector
-  template<class DeviceType=AmanziDefaultDevice>
-  cVectorView_type<DeviceType> ViewComponent(const std::string& name, std::size_t dof, bool ghosted=false) const;
-  template<class DeviceType=AmanziDefaultDevice>
-  VectorView_type<DeviceType> ViewComponent(const std::string& name, std::size_t dof, bool ghosted=false);
-  
+  template <class DeviceType = AmanziDefaultDevice>
+  cVectorView_type<DeviceType>
+  ViewComponent(const std::string& name, std::size_t dof,
+                bool ghosted = false) const;
+  template <class DeviceType = AmanziDefaultDevice>
+  VectorView_type<DeviceType>
+  ViewComponent(const std::string& name, std::size_t dof, bool ghosted = false);
+
   // // -- Set entries in the vectors.
-  // void SetComponent(const std::string& name, const MultiVector_ptr_type_<Scalar>& data);
+  // void SetComponent(const std::string& name, const
+  // MultiVector_ptr_type_<Scalar>& data);
 
   //
   // Communication operations
@@ -108,15 +129,17 @@ public:
   // Note that although scatter changes things, it doesn't change master
   // data, so we allow it to work on const.  This is necessary for a
   // non-owning PK to communicate a non-owned vector.
-  void ScatterMasterToGhosted(Tpetra::CombineMode mode=Tpetra::INSERT) const;
-  void ScatterMasterToGhosted(const std::string& name, Tpetra::CombineMode=Tpetra::INSERT) const;
+  void ScatterMasterToGhosted(Tpetra::CombineMode mode = Tpetra::INSERT) const;
+  void ScatterMasterToGhosted(const std::string& name,
+                              Tpetra::CombineMode = Tpetra::INSERT) const;
 
   // Combine ghosted values back to master values.
   //
   // Modes shown in Tpetra::CombineMode.h, but the default is ADD,
   // where off-process values are first summed into the on-process value.
-  void GatherGhostedToMaster(Tpetra::CombineMode mode=Tpetra::ADD);
-  void GatherGhostedToMaster(const std::string& name, Tpetra::CombineMode mode=Tpetra::ADD);
+  void GatherGhostedToMaster(Tpetra::CombineMode mode = Tpetra::ADD);
+  void GatherGhostedToMaster(const std::string& name,
+                             Tpetra::CombineMode mode = Tpetra::ADD);
 
 
   //
@@ -132,11 +155,11 @@ public:
   void putScalar(const std::string& name, const std::vector<Scalar>& scalar);
 
   // Sets all vectors to value including ghosted elements.
-  // Different name is given so it cannot be used in a templated code.   
+  // Different name is given so it cannot be used in a templated code.
   void putScalarMasterAndGhosted(Scalar scalar);
 
   // Sets ghost elements to value.
-  // Different name is given so it cannot be used in a templated code.   
+  // Different name is given so it cannot be used in a templated code.
   // void putScalarGhosted(Scalar scalar);
 
   // cheap randomizer
@@ -159,7 +182,7 @@ public:
 
   // this <- element wise reciprocal(this)
   void reciprocal(const BlockVector<Scalar>& other);
-  
+
   // result <- other \dot this
   Scalar dot(const BlockVector<Scalar>& other) const;
 
@@ -167,15 +190,16 @@ public:
   void update(Scalar scalarA, const BlockVector<Scalar>& A, Scalar scalarThis);
 
   // this <- scalarA*A + scalarB*B + scalarThis*this
-  void update(Scalar scalarA, const BlockVector<Scalar>& A,
-              Scalar scalarB, const BlockVector<Scalar>& B, Scalar scalarThis);
+  void update(Scalar scalarA, const BlockVector<Scalar>& A, Scalar scalarB,
+              const BlockVector<Scalar>& B, Scalar scalarThis);
 
   // this <- scalarAB * A@B + scalarThis*this  (@ is the elementwise product
-  void  elementWiseMultiply(Scalar scalarAB, const BlockVector<Scalar>& A,
-                            const BlockVector<Scalar>& B, Scalar scalarThis);
+  void elementWiseMultiply(Scalar scalarAB, const BlockVector<Scalar>& A,
+                           const BlockVector<Scalar>& B, Scalar scalarThis);
 
   // this <- scalarAB * B/A + scalarThis*this  (/ is the elementwise division
-  // int ReciprocalelementWiseMultiply(Scalar scalarAB, const BlockVector<Scalar>& A, const BlockVector<Scalar>& B,
+  // int ReciprocalelementWiseMultiply(Scalar scalarAB, const
+  // BlockVector<Scalar>& A, const BlockVector<Scalar>& B,
   //                        Scalar scalarThis);
 
   // Norms.
@@ -188,29 +212,38 @@ public:
   // Scalar MeanValue() const;
 
   // Extras
-  void Print(std::ostream &os, bool ghosted=false, bool data_io=true) const;
+  void Print(std::ostream& os, bool ghosted = false, bool data_io = true) const;
 
  protected:
-  virtual cMultiVector_ptr_type_<Scalar> GetComponent_(const std::string& name, bool ghosted=false) const {
-    return ghosted ? ghost_data_.at(name) : master_data_.at(name); }
-  virtual MultiVector_ptr_type_<Scalar> GetComponent_(const std::string& name, bool ghosted=false) {
-    return ghosted ? ghost_data_.at(name) : master_data_.at(name); }
+  virtual cMultiVector_ptr_type_<Scalar>
+  GetComponent_(const std::string& name, bool ghosted = false) const
+  {
+    return ghosted ? ghost_data_.at(name) : master_data_.at(name);
+  }
+  virtual MultiVector_ptr_type_<Scalar>
+  GetComponent_(const std::string& name, bool ghosted = false)
+  {
+    return ghosted ? ghost_data_.at(name) : master_data_.at(name);
+  }
 
-  void SetComponent_(const std::string& name, bool ghosted, const MultiVector_ptr_type_<Scalar>& v) {
-    if (ghosted) ghost_data_[name] = v;
-    else master_data_[name] = v;
+  void SetComponent_(const std::string& name, bool ghosted,
+                     const MultiVector_ptr_type_<Scalar>& v)
+  {
+    if (ghosted)
+      ghost_data_[name] = v;
+    else
+      master_data_[name] = v;
   }
 
   // Constructor just does maps, this allocates memory.
   void CreateData_(InitMode mode);
-  
+
  protected:
   Teuchos::RCP<const BlockSpace> map_;
-  std::map<std::string, MultiVector_ptr_type_<Scalar> > master_data_, ghost_data_;
-
+  std::map<std::string, MultiVector_ptr_type_<Scalar>> master_data_,
+    ghost_data_;
 };
 
-} // namespace
+} // namespace Amanzi
 
 #endif
-

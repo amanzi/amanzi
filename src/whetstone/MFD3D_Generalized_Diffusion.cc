@@ -21,10 +21,12 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Consistency condition for inner product on a generized polyhedron.
-****************************************************************** */
-int MFD3D_Generalized_Diffusion::L2consistency(
-    int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
+ * Consistency condition for inner product on a generized polyhedron.
+ ****************************************************************** */
+int
+MFD3D_Generalized_Diffusion::L2consistency(int c, const Tensor& K,
+                                           DenseMatrix& N, DenseMatrix& Mc,
+                                           bool symmetry)
 {
   Kokkos::View<Entity_ID*> faces, nodes;
   Kokkos::View<int*> dirs;
@@ -37,7 +39,7 @@ int MFD3D_Generalized_Diffusion::L2consistency(
   Mc.Reshape(nx, nx);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c,false);
+  double volume = mesh_->cell_volume(c, false);
 
   AmanziGeometry::Point v1(d_), v2(d_);
   std::vector<AmanziGeometry::Point> vv(3), xm(3);
@@ -57,9 +59,7 @@ int MFD3D_Generalized_Diffusion::L2consistency(
       R(d_ * i + 1, k) = area * xm[1][k];
       R(d_ * i + 2, k) = area * xm[2][k];
 
-      for (int l = 0; l < d_; ++l) {
-        N(d_ * i + l, k) = vv[l][k];
-      }
+      for (int l = 0; l < d_; ++l) { N(d_ * i + l, k) = vv[l][k]; }
     }
   }
 
@@ -82,9 +82,10 @@ int MFD3D_Generalized_Diffusion::L2consistency(
 
 
 /* ******************************************************************
-* Mass matrix for genelized polyhedron
-****************************************************************** */
-int MFD3D_Generalized_Diffusion::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
+ * Mass matrix for genelized polyhedron
+ ****************************************************************** */
+int
+MFD3D_Generalized_Diffusion::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 {
   DenseMatrix N;
 
@@ -100,11 +101,14 @@ int MFD3D_Generalized_Diffusion::MassMatrix(int c, const Tensor& K, DenseMatrix&
 
 
 /* ******************************************************************
-* Consistency condition for inverse of inner product on a generized
-* polyhedron.
-****************************************************************** */
-int MFD3D_Generalized_Diffusion::L2consistencyInverse(
-    int c, const Tensor& K, DenseMatrix& R, DenseMatrix& Wc, bool symmetry)
+ * Consistency condition for inverse of inner product on a generized
+ * polyhedron.
+ ****************************************************************** */
+int
+MFD3D_Generalized_Diffusion::L2consistencyInverse(int c, const Tensor& K,
+                                                  DenseMatrix& R,
+                                                  DenseMatrix& Wc,
+                                                  bool symmetry)
 {
   Kokkos::View<Entity_ID*> faces, nodes;
   Kokkos::View<int*> dirs;
@@ -117,7 +121,7 @@ int MFD3D_Generalized_Diffusion::L2consistencyInverse(
   Wc.Reshape(nx, nx);
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c,false);
+  double volume = mesh_->cell_volume(c, false);
 
   AmanziGeometry::Point v1(d_), v2(d_);
   std::vector<AmanziGeometry::Point> vv(3), xm(3);
@@ -137,9 +141,7 @@ int MFD3D_Generalized_Diffusion::L2consistencyInverse(
       R(d_ * i + 1, k) = area * xm[1][k];
       R(d_ * i + 2, k) = area * xm[2][k];
 
-      for (int l = 0; l < d_; ++l) {
-        N(d_ * i + l, k) = vv[l][k];
-      }
+      for (int l = 0; l < d_; ++l) { N(d_ * i + l, k) = vv[l][k]; }
     }
   }
 
@@ -159,10 +161,11 @@ int MFD3D_Generalized_Diffusion::L2consistencyInverse(
 
 
 /* ******************************************************************
-* Inverse mass matrix for generalized polyhedron
-****************************************************************** */
-int MFD3D_Generalized_Diffusion::MassMatrixInverse(
-    int c, const Tensor& K, DenseMatrix& W)
+ * Inverse mass matrix for generalized polyhedron
+ ****************************************************************** */
+int
+MFD3D_Generalized_Diffusion::MassMatrixInverse(int c, const Tensor& K,
+                                               DenseMatrix& W)
 {
   DenseMatrix R;
 
@@ -174,10 +177,11 @@ int MFD3D_Generalized_Diffusion::MassMatrixInverse(
 }
 
 /* ******************************************************************
-* Stiffness matrix is calculated by a hybridization algorithm.
-****************************************************************** */
-int MFD3D_Generalized_Diffusion::StiffnessMatrix(
-    int c, const Tensor& K, DenseMatrix& A)
+ * Stiffness matrix is calculated by a hybridization algorithm.
+ ****************************************************************** */
+int
+MFD3D_Generalized_Diffusion::StiffnessMatrix(int c, const Tensor& K,
+                                             DenseMatrix& A)
 {
   DenseMatrix M;
   MassMatrixInverse(c, K, M);
@@ -209,14 +213,10 @@ int MFD3D_Generalized_Diffusion::StiffnessMatrix(
 
   double cntr(0.0);
   for (int i = 0; i < nx; ++i) {
-    for (int j = 0; j < nx; ++j) {
-      A(i, j) = M(i, j) * area(i) * area(j);
-    }
+    for (int j = 0; j < nx; ++j) { A(i, j) = M(i, j) * area(i) * area(j); }
 
     double add(0.0);
-    for (int j = 0; j < nx; ++j) {
-      add -= M(i, j) * area_div(j);
-    }
+    for (int j = 0; j < nx; ++j) { add -= M(i, j) * area_div(j); }
     A(nx, i) = A(i, nx) = add * area(i);
 
     cntr -= add * area_div(i);
@@ -228,9 +228,10 @@ int MFD3D_Generalized_Diffusion::StiffnessMatrix(
 
 
 /* ******************************************************************
-* Divergence matrix.
-****************************************************************** */
-int MFD3D_Generalized_Diffusion::DivergenceMatrix(int c, DenseMatrix& A)
+ * Divergence matrix.
+ ****************************************************************** */
+int
+MFD3D_Generalized_Diffusion::DivergenceMatrix(int c, DenseMatrix& A)
 {
   Kokkos::View<Entity_ID*> faces;
   Kokkos::View<int*> dirs;
@@ -252,14 +253,16 @@ int MFD3D_Generalized_Diffusion::DivergenceMatrix(int c, DenseMatrix& A)
 
 
 /* ******************************************************************
-* Geometry of a curved face
-****************************************************************** */
-void MFD3D_Generalized_Diffusion::CurvedFaceGeometry_(
-    int f, int dirs, std::vector<AmanziGeometry::Point>& vv,
-    std::vector<AmanziGeometry::Point>& xm)
+ * Geometry of a curved face
+ ****************************************************************** */
+void
+MFD3D_Generalized_Diffusion::CurvedFaceGeometry_(
+  int f, int dirs, std::vector<AmanziGeometry::Point>& vv,
+  std::vector<AmanziGeometry::Point>& xm)
 {
   // local coordinate system uses external normal
-  AmanziGeometry::Point normal(d_), xf(d_), v1(d_), v2(d_), v3(d_), p1(d_), p2(d_);
+  AmanziGeometry::Point normal(d_), xf(d_), v1(d_), v2(d_), v3(d_), p1(d_),
+    p2(d_);
 
   normal = mesh_->face_normal(f);
   normal /= norm(normal);
@@ -276,9 +279,9 @@ void MFD3D_Generalized_Diffusion::CurvedFaceGeometry_(
 
   vv[0] = normal;
   vv[1] = v1 / norm(v1);
-  vv[2] = normal^vv[1];
+  vv[2] = normal ^ vv[1];
 
-  vv[0] *= dirs;  // exterior average normal
+  vv[0] *= dirs; // exterior average normal
 
   // geometric center. We cannot use face_centroid
   Kokkos::View<Entity_ID*> nodes;
@@ -307,7 +310,7 @@ void MFD3D_Generalized_Diffusion::CurvedFaceGeometry_(
 
     v1 = xf - p1;
     v2 = xf - p2;
-    v3 = v1^v2;
+    v3 = v1 ^ v2;
     area += norm(v3) / 2;
 
     for (int k = 0; k < 3; ++k) {
@@ -320,5 +323,5 @@ void MFD3D_Generalized_Diffusion::CurvedFaceGeometry_(
   xm[2] /= area;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi

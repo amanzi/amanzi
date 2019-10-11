@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov  
+      Konstantin Lipnikov
 */
 
 
@@ -22,18 +22,19 @@
 
 namespace Amanzi {
 
-template<class Vector>
+template <class Vector>
 class TimestepControllerAdaptive : public TimestepController {
-
  public:
   TimestepControllerAdaptive(Teuchos::ParameterList& plist,
-                             Teuchos::RCP<Vector> udot, Teuchos::RCP<Vector> udot_prev);
+                             Teuchos::RCP<Vector> udot,
+                             Teuchos::RCP<Vector> udot_prev);
 
   // single method for timestep control
   double get_timestep(double dt, int iterations);
 
  private:
-  double get_timestep_base_(double dt, const Epetra_MultiVector& u0, const Epetra_MultiVector& u1);
+  double get_timestep_base_(double dt, const Epetra_MultiVector& u0,
+                            const Epetra_MultiVector& u1);
 
  protected:
   Teuchos::ParameterList plist_;
@@ -46,20 +47,19 @@ class TimestepControllerAdaptive : public TimestepController {
   double min_dt_;
 
  private:
-  Teuchos::RCP<Vector> udot_prev_, udot_;  // for error estimate 
-  double atol_, rtol_, p_;  // error parameters
+  Teuchos::RCP<Vector> udot_prev_, udot_; // for error estimate
+  double atol_, rtol_, p_;                // error parameters
 };
 
 
 /* ******************************************************************
-* Constructor 
-****************************************************************** */
-template<class Vector>
+ * Constructor
+ ****************************************************************** */
+template <class Vector>
 TimestepControllerAdaptive<Vector>::TimestepControllerAdaptive(
-    Teuchos::ParameterList& plist,
-    const Teuchos::RCP<const Vector>& udot,
-    const Teuchos::RCP<const Vector>& udot_prev)
-    : plist_(plist), udot_(udot), udot_prev_(udot_prev)
+  Teuchos::ParameterList& plist, const Teuchos::RCP<const Vector>& udot,
+  const Teuchos::RCP<const Vector>& udot_prev)
+  : plist_(plist), udot_(udot), udot_prev_(udot_prev)
 {
   max_its_ = plist_.get<int>("max iterations");
   min_its_ = plist_.get<int>("min iterations");
@@ -84,18 +84,21 @@ TimestepControllerAdaptive<Vector>::TimestepControllerAdaptive(
 
 
 /* ******************************************************************
-* Estimate new time step by comparing the 1st and 2nd order time 
-* approximations. 
-****************************************************************** */
-template<class Vector>
-double TimestepControllerAdaptive<Vector>::get_timestep(double dt, int iterations)
+ * Estimate new time step by comparing the 1st and 2nd order time
+ * approximations.
+ ****************************************************************** */
+template <class Vector>
+double
+TimestepControllerAdaptive<Vector>::get_timestep(double dt, int iterations)
 {
   return get_timestep_base_(dt, *udot_, *udot_prev_);
 }
 
-template<class Vector>
-double TimestepControllerAdaptive<Vector>::get_timestep_base_(
-    double dt, const Vector& u0, const Vector& u1)
+template <class Vector>
+double
+TimestepControllerAdaptive<Vector>::get_timestep_base_(double dt,
+                                                       const Vector& u0,
+                                                       const Vector& u1)
 {
   double tol, error, error_max = 0.0;
   double dTfactor(100.0), dTfactor_cell;
@@ -105,7 +108,8 @@ double TimestepControllerAdaptive<Vector>::get_timestep_base_(
     error = fabs(u1[0][c] - u0[0][c]) * dt / 2;
     tol = rtol_ * p_ + atol_;
 
-    dTfactor_cell = sqrt(tol / std::max(error, DT_CONTROLLER_ADAPTIVE_ERROR_TOLERANCE));
+    dTfactor_cell =
+      sqrt(tol / std::max(error, DT_CONTROLLER_ADAPTIVE_ERROR_TOLERANCE));
     dTfactor = std::min(dTfactor, dTfactor_cell);
 
     error_max = std::max(error_max, error - tol);
@@ -118,14 +122,13 @@ double TimestepControllerAdaptive<Vector>::get_timestep_base_(
   double dT_tmp = dTfactor;
   auto comm = getCommWrapper(udot_->Comm());
   comm->MinAll(&dT_tmp, &dTfactor, 1);
- 
+
   double error_tmp = error_max;
   comm->MaxAll(&error_tmp, &error_max, 1);
 
   return std::min(dt * dTfactor, max_dt_);
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif
-

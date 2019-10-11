@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -19,16 +19,14 @@
 namespace Amanzi {
 
 class TimestepController {
-
-public:
+ public:
   // virtual destructor
-  virtual ~TimestepController() {};
+  virtual ~TimestepController(){};
 
   // single method for timestep control
   virtual double get_timestep(double dt, int iterations) = 0;
 };
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif
-

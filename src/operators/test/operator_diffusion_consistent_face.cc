@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -40,7 +40,8 @@
  * This does a check that the UpdateConsistentFace method results in face
  * values that satisfy the linear equation.
  * **************************************************************** */
-TEST(OPERATOR_DIFFUSION_MIXED) {
+TEST(OPERATOR_DIFFUSION_MIXED)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -49,8 +50,9 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
 
   auto comm = Amanzi::getDefaultComm();
   int getRank = comm->getRank();
-  if (getRank == 0) std::cout << "\nTest: 2D elliptic solver, exactness" 
-                            << " test for mixed discretization" << std::endl;
+  if (getRank == 0)
+    std::cout << "\nTest: 2D elliptic solver, exactness"
+              << " test for mixed discretization" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion_consistent_face.xml";
@@ -59,19 +61,24 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
 
   // create an SIMPLE mesh framework
   ParameterList region_list = plist.sublist("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, *comm));
+  Teuchos::RCP<GeometricModel> gm =
+    Teuchos::rcp(new GeometricModel(2, region_list, *comm));
 
-  MeshFactory meshfactory(comm,gm);
-  meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
-  //RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 1);
+  MeshFactory meshfactory(comm, gm);
+  meshfactory.set_preference(Preference({ Framework::MSTK, Framework::STK }));
+  // RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 10, 1);
   RCP<const Mesh> mesh = meshfactory.create("test/median32x33.exo");
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  Teuchos::RCP<std::vector<WhetStone::Tensor>> K =
+    Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+  int ncells =
+    mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces =
+    mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost =
+    mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   Analytic02 ana(mesh);
 
@@ -84,7 +91,8 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
   AmanziGeometry::Point g(0.0, -1.0);
 
   // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc =
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
   std::vector<double>& bc_mixed = bc->bc_mixed();
@@ -97,10 +105,12 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
 
     if (fabs(xf[0]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
-      bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;  // We assume exterior normal.
+      bc_value[f] = ana.velocity_exact(xf, 0.0) * normal /
+                    area; // We assume exterior normal.
     } else if (fabs(xf[1]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_MIXED;
-      bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;  // We assume exterior normal.
+      bc_value[f] = ana.velocity_exact(xf, 0.0) * normal /
+                    area; // We assume exterior normal.
 
       double tmp = ana.pressure_exact(xf, 0.0);
       bc_mixed[f] = 1.0;
@@ -111,8 +121,9 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
     }
   }
 
-  // create diffusion operator 
-  ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator mixed");
+  // create diffusion operator
+  ParameterList op_list =
+    plist.sublist("PK operator").sublist("diffusion operator mixed");
   auto op = Teuchos::rcp(new PDE_DiffusionMFD(op_list, mesh));
   op->Init(op_list);
   op->SetBCs(bc, bc);
@@ -136,14 +147,14 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
   // // dump the schur complement
   // std::stringstream filename_s2;
   // filename_s2 << "consist_face_" << 0 << ".txt";
-  // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *op->consistent_face_operator()->A());
+  // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(),
+  // *op->consistent_face_operator()->A());
 
   // ensure that (y - A * x) on faces is zero
   CompositeVector res(cvs);
-  global_op->ComputeNegativeResidual(x,res);
+  global_op->ComputeNegativeResidual(x, res);
 
   double norm;
-  norm = res.ViewComponent("face",false)->normInf();
+  norm = res.ViewComponent("face", false)->normInf();
   CHECK_CLOSE(0.0, norm, 1.e-8);
 }
-

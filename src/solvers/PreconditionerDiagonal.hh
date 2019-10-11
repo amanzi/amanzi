@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -23,21 +23,24 @@
 namespace Amanzi {
 namespace AmanziPreconditioners {
 
-template<class Matrix, class Vector>
-class PreconditionerDiagonal : public Preconditioner<Matrix,Vector> {
+template <class Matrix, class Vector>
+class PreconditionerDiagonal : public Preconditioner<Matrix, Vector> {
  public:
-  PreconditionerDiagonal() {};
-  ~PreconditionerDiagonal() {};
+  PreconditionerDiagonal(){};
+  ~PreconditionerDiagonal(){};
 
-  void Init(const std::string& name, const Teuchos::ParameterList& plist) override {};
-  void Update(const Teuchos::RCP<const Matrix>& A) override {
+  void
+  Init(const std::string& name, const Teuchos::ParameterList& plist) override{};
+  void Update(const Teuchos::RCP<const Matrix>& A) override
+  {
     work_vec_ = Teuchos::rcp(new Vector(A->getRowMap()));
     A->getLocalDiagCopy(*work_vec_);
     work_vec_->reciprocal(*work_vec_);
   }
-    
-  void Destroy() override {};
-  int applyInverse(const Vector& v, Vector& hv) const override {
+
+  void Destroy() override{};
+  int applyInverse(const Vector& v, Vector& hv) const override
+  {
     hv.elementWiseMultiply(1., v, *work_vec_, 0.);
     return 0;
   }
@@ -47,8 +50,7 @@ class PreconditionerDiagonal : public Preconditioner<Matrix,Vector> {
   Teuchos::RCP<Vector> work_vec_;
 };
 
-} // namespace
-} // namespace
+} // namespace AmanziPreconditioners
+} // namespace Amanzi
 
 #endif
-

@@ -5,11 +5,12 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
-//! A secondary variable evaluator which evaluates functions on its dependenecies.
+//! A secondary variable evaluator which evaluates functions on its
+//! dependenecies.
 
 /*!
 Uses functions to evaluate arbitrary algebraic functions of its dependencies.
@@ -46,8 +47,9 @@ so if it was found useful.
 namespace Amanzi {
 
 EvaluatorSecondaryMonotypeFromFunction::EvaluatorSecondaryMonotypeFromFunction(
-    Teuchos::ParameterList &plist)
-    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist) {
+  Teuchos::ParameterList& plist)
+  : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist)
+{
   FunctionFactory fac;
   if (plist.isSublist("functions")) {
     auto& flist = plist.sublist("functions");
@@ -67,23 +69,26 @@ EvaluatorSecondaryMonotypeFromFunction::EvaluatorSecondaryMonotypeFromFunction(
 }
 
 EvaluatorSecondaryMonotypeFromFunction::EvaluatorSecondaryMonotypeFromFunction(
-    const EvaluatorSecondaryMonotypeFromFunction &other)
-    : EvaluatorSecondaryMonotype(other) {
-  for (const auto& fp : other.funcs_) {
-    funcs_.emplace_back(fp->Clone());
-  }
+  const EvaluatorSecondaryMonotypeFromFunction& other)
+  : EvaluatorSecondaryMonotype(other)
+{
+  for (const auto& fp : other.funcs_) { funcs_.emplace_back(fp->Clone()); }
 }
 
-Teuchos::RCP<Evaluator> EvaluatorSecondaryMonotypeFromFunction::Clone() const {
+Teuchos::RCP<Evaluator>
+EvaluatorSecondaryMonotypeFromFunction::Clone() const
+{
   return Teuchos::rcp(new EvaluatorSecondaryMonotypeFromFunction(*this));
 }
 
 // These do the actual work
-void EvaluatorSecondaryMonotypeFromFunction::Evaluate_(const State &S,
-        const std::vector<CompositeVector*> &results) {
+void
+EvaluatorSecondaryMonotypeFromFunction::Evaluate_(
+  const State& S, const std::vector<CompositeVector*>& results)
+{
   int ndeps = dependencies_.size();
   std::vector<Teuchos::Ptr<const CompositeVector>> deps;
-  for (auto &dep : dependencies_) {
+  for (auto& dep : dependencies_) {
     deps.emplace_back(S.GetPtr<CompositeVector>(dep.first, dep.second).ptr());
   }
 
@@ -96,13 +101,18 @@ void EvaluatorSecondaryMonotypeFromFunction::Evaluate_(const State &S,
 
     // create temporary
     // space to hold the dependencies
-    Kokkos::View<double**> in("tmp_in", deps.size(),
-            results[0]->GetComponent(comp,false)->getLocalLength());
+    Kokkos::View<double**> in(
+      "tmp_in",
+      deps.size(),
+      results[0]->GetComponent(comp, false)->getLocalLength());
 
-    std::size_t i=0;
+    std::size_t i = 0;
     for (const auto& dep : deps) {
       if (dep->getNumVectors(comp) != 1) {
-        Errors::Message msg("EvaluatorSecondaryMonotypeFromFunction: Currently cannot handle true MultiVectors, so all dependencies must be MultiVectors with only 1 vector.");
+        Errors::Message msg(
+          "EvaluatorSecondaryMonotypeFromFunction: Currently cannot handle "
+          "true MultiVectors, so all dependencies must be MultiVectors with "
+          "only 1 vector.");
         throw(msg);
       }
       Kokkos::deep_copy(Kokkos::subview(in, i, Kokkos::ALL),
@@ -111,16 +121,18 @@ void EvaluatorSecondaryMonotypeFromFunction::Evaluate_(const State &S,
     }
 
     // loop over results and evaluate the function
-    for (std::size_t j=0; j!=results.size(); ++j) {
+    for (std::size_t j = 0; j != results.size(); ++j) {
       if (results[j]->getNumVectors(comp) != 1) {
-        Errors::Message msg("EvaluatorSecondaryMonotypeFromFunction: Currently cannot handle true MultiVectors, so all result MultiVectors must have only 1 vector.");
+        Errors::Message msg("EvaluatorSecondaryMonotypeFromFunction: Currently "
+                            "cannot handle true MultiVectors, so all result "
+                            "MultiVectors must have only 1 vector.");
         throw(msg);
       }
-      Kokkos::View<double*> comp_view = results[j]->ViewComponent(comp, 0, false);
+      Kokkos::View<double*> comp_view =
+        results[j]->ViewComponent(comp, 0, false);
       funcs_[j]->apply(in, comp_view);
     }
   }
 }
 
 } // namespace Amanzi
-

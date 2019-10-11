@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -21,13 +21,16 @@ class AnalyticDG06 : public AnalyticDGBase {
   const double a = 20.0;
 
  public:
-  AnalyticDG06(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order, bool advection)
-    : AnalyticDGBase(mesh, order, advection) {};
-  ~AnalyticDG06() {};
+  AnalyticDG06(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order,
+               bool advection)
+    : AnalyticDGBase(mesh, order, advection){};
+  ~AnalyticDG06(){};
 
   // analytic data in conventional Taylor basis
   // -- diffusion tensor
-  virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) override {
+  virtual Amanzi::WhetStone::Tensor
+  Tensor(const Amanzi::AmanziGeometry::Point& p, double t) override
+  {
     Amanzi::WhetStone::Tensor K(2, 1);
     K(0, 0) = 1.0;
     return K;
@@ -35,8 +38,9 @@ class AnalyticDG06 : public AnalyticDGBase {
 
   // -- solution
   virtual void SolutionTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
-                              Amanzi::WhetStone::Polynomial& sol) override {
-    sol.Reshape(d_, order_, true); 
+                              Amanzi::WhetStone::Polynomial& sol) override
+  {
+    sol.Reshape(d_, order_, true);
     sol.set_origin(p);
 
     double dx = p[0] - 0.75;
@@ -58,9 +62,9 @@ class AnalyticDG06 : public AnalyticDGBase {
     if (order_ > 1) {
       dx2 = dx * dx;
       dy2 = dy * dy;
-      sol(2, 0) =  u * (dx2 - 2 * a) / 2;
-      sol(2, 1) =  u * dx * dy;
-      sol(2, 2) =  u * (dy2 - 2 * a) / 2;
+      sol(2, 0) = u * (dx2 - 2 * a) / 2;
+      sol(2, 1) = u * dx * dy;
+      sol(2, 2) = u * (dy2 - 2 * a) / 2;
     }
 
     if (order_ > 2) {
@@ -74,18 +78,21 @@ class AnalyticDG06 : public AnalyticDGBase {
   }
 
   // -- accumulation
-  virtual void AccumulationTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
-                                  Amanzi::WhetStone::Polynomial& a) override {
-    a.Reshape(d_, 0, true); 
+  virtual void
+  AccumulationTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
+                     Amanzi::WhetStone::Polynomial& a) override
+  {
+    a.Reshape(d_, 0, true);
     a.set_origin(p);
   }
 
   // -- velocity
   virtual void VelocityTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
-                              Amanzi::WhetStone::VectorPolynomial& v) override {
+                              Amanzi::WhetStone::VectorPolynomial& v) override
+  {
     v.resize(d_);
     for (int i = 0; i < d_; ++i) {
-      v[i].Reshape(d_, order_, true); 
+      v[i].Reshape(d_, order_, true);
       v[i].set_origin(p);
     }
 
@@ -97,21 +104,21 @@ class AnalyticDG06 : public AnalyticDGBase {
     csy = std::cos(M_PI * p[1]);
 
     v[0](0, 0) = snx * csy;
-    v[1](0, 0) =-csx * sny;
+    v[1](0, 0) = -csx * sny;
 
     if (order_ > 0) {
       v[0](1, 0) = M_PI * csx * csy;
-      v[0](1, 1) =-M_PI * snx * sny;
+      v[0](1, 1) = -M_PI * snx * sny;
 
       v[1](1, 0) = M_PI * snx * sny;
-      v[1](1, 1) =-M_PI * csx * csy;
+      v[1](1, 1) = -M_PI * csx * csy;
     }
 
     if (order_ > 1) {
       double factor = M_PI * M_PI;
-      v[0](2, 0) =-factor * snx * csy / 2;
-      v[0](2, 1) =-factor * csx * sny;
-      v[0](2, 2) =-factor * snx * csy / 2;
+      v[0](2, 0) = -factor * snx * csy / 2;
+      v[0](2, 1) = -factor * csx * sny;
+      v[0](2, 2) = -factor * snx * csy / 2;
 
       v[1](2, 0) = factor * csx * sny / 2;
       v[1](2, 1) = factor * snx * csy;
@@ -120,14 +127,14 @@ class AnalyticDG06 : public AnalyticDGBase {
 
     if (order_ > 2) {
       double factor = M_PI * M_PI * M_PI;
-      v[0](3, 0) =-factor * csx * csy / 6;
+      v[0](3, 0) = -factor * csx * csy / 6;
       v[0](3, 1) = factor * snx * sny / 2;
-      v[0](3, 2) =-factor * csx * csy / 2;
+      v[0](3, 2) = -factor * csx * csy / 2;
       v[0](3, 3) = factor * snx * sny / 6;
 
-      v[1](3, 0) =-factor * snx * sny / 6;
+      v[1](3, 0) = -factor * snx * sny / 6;
       v[1](3, 1) = factor * csx * csy / 2;
-      v[1](3, 2) =-factor * snx * sny / 2;
+      v[1](3, 2) = -factor * snx * sny / 2;
       v[1](3, 3) = factor * csx * csy / 6;
     }
 
@@ -138,19 +145,19 @@ class AnalyticDG06 : public AnalyticDGBase {
 
   // -- reaction
   virtual void ReactionTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
-                              Amanzi::WhetStone::Polynomial& r) override {
-    r.Reshape(d_, 0, true); 
+                              Amanzi::WhetStone::Polynomial& r) override
+  {
+    r.Reshape(d_, 0, true);
     r.set_origin(p);
   }
 
   // -- source term
   virtual void SourceTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
-                            Amanzi::WhetStone::Polynomial& src) override {
+                            Amanzi::WhetStone::Polynomial& src) override
+  {
     src.Reshape(d_, 0, true);
     src.set_origin(p);
   }
 };
 
 #endif
-
-

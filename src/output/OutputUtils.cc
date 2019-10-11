@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -18,15 +18,20 @@ namespace Amanzi {
 
 //
 // Given a ghosted, unordered GIDs map, get the ghosted, naturally ordered map.
-Map_ptr_type GetNaturalMap(const Map_ptr_type& ghosted_map, const Map_ptr_type& owned_map) {
+Map_ptr_type
+GetNaturalMap(const Map_ptr_type& ghosted_map, const Map_ptr_type& owned_map)
+{
   // create the owned natural map.
-  Map_type owned_natural(owned_map->getGlobalNumElements(), owned_map->getNodeNumElements(), 0, owned_map->getComm());
-    
+  Map_type owned_natural(owned_map->getGlobalNumElements(),
+                         owned_map->getNodeNumElements(),
+                         0,
+                         owned_map->getComm());
+
   Vector_type_<Map_type::global_ordinal_type> natural(ghosted_map);
   {
     auto nv = natural.getLocalViewHost();
-    for (int i=0; i!=owned_map->getNodeNumElements(); ++i) {
-      nv(i,0) = owned_natural.getGlobalElement(i);
+    for (int i = 0; i != owned_map->getNodeNumElements(); ++i) {
+      nv(i, 0) = owned_natural.getGlobalElement(i);
     }
   }
   Import_type importer(owned_map, ghosted_map);
@@ -34,9 +39,9 @@ Map_ptr_type GetNaturalMap(const Map_ptr_type& ghosted_map, const Map_ptr_type& 
 
   Teuchos::Array<Map_type::global_ordinal_type> inds(natural.getLocalLength());
   natural.get1dCopy(inds);
-  auto ghosted_natural = Teuchos::rcp(new Map_type(ghosted_map->getGlobalNumElements(), inds, 0, owned_map->getComm()));
+  auto ghosted_natural = Teuchos::rcp(new Map_type(
+    ghosted_map->getGlobalNumElements(), inds, 0, owned_map->getComm()));
   return ghosted_natural;
 }
 
-} // namespace
-
+} // namespace Amanzi

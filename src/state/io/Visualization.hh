@@ -6,7 +6,7 @@
 
   Authors:
       Ethan Coon
-      Markus Berndt  
+      Markus Berndt
 */
 
 
@@ -38,7 +38,7 @@ class Mesh;
 
 class Visualization : public IOEvent {
  public:
-  Visualization(Teuchos::ParameterList &plist,
+  Visualization(Teuchos::ParameterList& plist,
                 const Teuchos::RCP<AmanziMesh::Mesh>& mesh);
 
   void CreateFile(const double& time, const int& cycle);
@@ -47,14 +47,16 @@ class Visualization : public IOEvent {
   // user-provided writing
   template <typename T>
   typename std::enable_if<!Output::writes<T>::value>::type
-  Write(const Teuchos::ParameterList& attrs, const T &t) const {
+  Write(const Teuchos::ParameterList& attrs, const T& t) const
+  {
     UserWriteVis(*this, attrs, t);
   }
 
   // output-provided writing
   template <typename T>
   typename std::enable_if<Output::writes<T>::value>::type
-  Write(const Teuchos::ParameterList& attrs, const T &t) const {
+  Write(const Teuchos::ParameterList& attrs, const T& t) const
+  {
     output_->Write(attrs, t);
   }
 
@@ -65,4 +67,3 @@ class Visualization : public IOEvent {
 } // namespace Amanzi
 
 #endif
-

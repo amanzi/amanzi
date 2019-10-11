@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -17,9 +17,10 @@
 #include "Point.hh"
 
 namespace Amanzi {
-namespace AmanziGeometry {  
+namespace AmanziGeometry {
 
-typedef int Entity_ID;  // should be consistent with similar definition in class Mesh
+typedef int
+  Entity_ID; // should be consistent with similar definition in class Mesh
 typedef std::vector<Point> Point_List;
 
 typedef enum {
@@ -29,7 +30,7 @@ typedef enum {
   LAYER,
   SURFACE,
   POINT,
-  COLORFUNCTION,  
+  COLORFUNCTION,
   LOGICAL,
   POLYGON,
   ENUMERATED,
@@ -40,14 +41,11 @@ typedef enum {
 } RegionType;
 
 
-typedef enum {
-  PERMANENT=0,
-  TEMPORARY
-} LifeCycleType;
+typedef enum { PERMANENT = 0, TEMPORARY } LifeCycleType;
 
 
 typedef enum {
-  NOBOOLEAN=-1,
+  NOBOOLEAN = -1,
   COMPLEMENT,
   UNION,
   INTERSECT,
@@ -58,10 +56,9 @@ const double TOL = 1.0e-08;
 
 // arbitrary number to avoid clashing
 // with IDs of LabeledSet regions
-const unsigned int REGION_ID_OFFSET = 59049;  
+const unsigned int REGION_ID_OFFSET = 59049;
 
-}  // namespace AmanziGeometry
-}  // namespace Amanzi
+} // namespace AmanziGeometry
+} // namespace Amanzi
 
 #endif
-

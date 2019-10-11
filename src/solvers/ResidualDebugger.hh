@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -29,26 +29,25 @@ namespace Amanzi {
 namespace AmanziSolvers {
 
 class ResidualDebugger : public IOEvent {
-
  public:
   // Constructor
-  ResidualDebugger(Teuchos::ParameterList& plist) :
-      IOEvent(plist) {
+  ResidualDebugger(Teuchos::ParameterList& plist) : IOEvent(plist)
+  {
     filebasename_ = plist_.get<std::string>("file name base", "amanzi_dbg");
   }
 
   template <class VectorSpace>
-  void StartIteration(double time, int cycle, int attempt,
-                      const VectorSpace& space) {}
+  void
+  StartIteration(double time, int cycle, int attempt, const VectorSpace& space)
+  {}
 
   template <class Vector>
-  void
-  WriteVector(int iter,
-              const Vector& res,
-              const Teuchos::Ptr<const Vector>& u=Teuchos::null,
-              const Teuchos::Ptr<const Vector>& du=Teuchos::null) {}
+  void WriteVector(int iter, const Vector& res,
+                   const Teuchos::Ptr<const Vector>& u = Teuchos::null,
+                   const Teuchos::Ptr<const Vector>& du = Teuchos::null)
+  {}
 
-  
+
  protected:
   std::string filebasename_;
   bool on_;
@@ -58,19 +57,19 @@ class ResidualDebugger : public IOEvent {
 
 
 // template <>
-// void ResidualDebugger::StartIteration<TreeVectorSpace>(double time, int cycle, int attempt,
-//                                                        const TreeVectorSpace& space);
+// void ResidualDebugger::StartIteration<TreeVectorSpace>(double time, int
+// cycle, int attempt,
+//                                                        const TreeVectorSpace&
+//                                                        space);
 // template <>
 // void ResidualDebugger::WriteVector<TreeVector>(int iter,
 //               const TreeVector& res,
 //               const Teuchos::Ptr<const TreeVector>& u,
 //               const Teuchos::Ptr<const TreeVector>& du);
 
-  
 
-} // namespace AmanziSolver
+} // namespace AmanziSolvers
 } // namespace Amanzi
 
 
 #endif
-

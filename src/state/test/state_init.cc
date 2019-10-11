@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -26,10 +26,11 @@
 // State
 #include "State.hh"
 
-TEST(FIELD_INITIALIZATION) {
+TEST(FIELD_INITIALIZATION)
+{
   using namespace Amanzi;
 
-  //Epetra_MpiComm comm(MPI_COMM_WORLD);
+  // Epetra_MpiComm comm(MPI_COMM_WORLD);
   auto comm = getDefaultComm();
   std::string xmlFileName = "test/state_init.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
@@ -37,9 +38,9 @@ TEST(FIELD_INITIALIZATION) {
 
   // create geometric model
   Teuchos::ParameterList region_list =
-      plist.get<Teuchos::ParameterList>("regions");
+    plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, *comm));
+    Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, *comm));
 
   // create a mesh
   AmanziMesh::MeshFactory meshfactory(comm, gm);
@@ -47,7 +48,7 @@ TEST(FIELD_INITIALIZATION) {
 
   // create a state
   Teuchos::ParameterList state_list =
-      plist.get<Teuchos::ParameterList>("state");
+    plist.get<Teuchos::ParameterList>("state");
   State S(state_list);
 
   // populate state
@@ -55,19 +56,19 @@ TEST(FIELD_INITIALIZATION) {
 
   // constant value
   S.Require<CompositeVector, CompositeVectorSpace>("field1")
-      .SetMesh(mesh)
-      ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    .SetMesh(mesh)
+    ->SetGhosted(false)
+    ->SetComponent("cell", AmanziMesh::CELL, 1);
 
   //
   S.Require<CompositeVector, CompositeVectorSpace>("field2")
-      .SetMesh(mesh)
-      ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    .SetMesh(mesh)
+    ->SetGhosted(false)
+    ->SetComponent("cell", AmanziMesh::CELL, 1);
   S.Require<CompositeVector, CompositeVectorSpace>("permeability")
-      .SetMesh(mesh)
-      ->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, 3);
+    .SetMesh(mesh)
+    ->SetGhosted(false)
+    ->SetComponent("cell", AmanziMesh::CELL, 3);
 
   // setup creates data
   S.Setup();
@@ -77,11 +78,11 @@ TEST(FIELD_INITIALIZATION) {
 
   // check state's fields
   // -- porosity (simple field)
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  auto phi = S.Get<CompositeVector>("field1").ViewComponent<AmanziDefaultHost>("cell");
-  for (int c = 0; c < ncells; ++c) {
-    CHECK_EQUAL(0.25, phi(c,0));
-  }
+  int ncells =
+    mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  auto phi =
+    S.Get<CompositeVector>("field1").ViewComponent<AmanziDefaultHost>("cell");
+  for (int c = 0; c < ncells; ++c) { CHECK_EQUAL(0.25, phi(c, 0)); }
 
   // from exo currently not supported in new state
   // // -- scalar field from a file
@@ -99,4 +100,3 @@ TEST(FIELD_INITIALIZATION) {
   //   CHECK_EQUAL(1.0e-13, K[2][c]);
   // }
 }
-

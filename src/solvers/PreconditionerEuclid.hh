@@ -6,7 +6,7 @@
 
   Authors:
       Konstantin Lipnikov (lipnikov@lanl.gov)
-      Ethan Coon (ecoon@lanl.gov)  
+      Ethan Coon (coonet@ornl.gov)
 */
 
 
@@ -27,32 +27,32 @@
 namespace Amanzi {
 namespace AmanziPreconditioners {
 
-class PreconditionerEuclid : public Preconditioner<Epetra_RowMatrix,Epetra_MultiVector> {
+class PreconditionerEuclid
+  : public Preconditioner<Epetra_RowMatrix, Epetra_MultiVector> {
  public:
-  PreconditionerEuclid() {};
-  ~PreconditionerEuclid() {};
+  PreconditionerEuclid(){};
+  ~PreconditionerEuclid(){};
 
-  void Init(const std::string& name, const Teuchos::ParameterList& list) override;
+  void
+  Init(const std::string& name, const Teuchos::ParameterList& list) override;
   void Update(const Teuchos::RCP<const Epetra_RowMatrix>& A) override;
-  void Destroy()  override{};
+  void Destroy() override{};
 
-  int ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv) const override;
+  int ApplyInverse(const Epetra_MultiVector& v,
+                   Epetra_MultiVector& hv) const override;
 
   int returned_code() override { return returned_code_; }
 
  private:
   Teuchos::ParameterList plist_;
-  std::vector<Teuchos::RCP<FunctionParameter> > funcs_;
+  std::vector<Teuchos::RCP<FunctionParameter>> funcs_;
 
   mutable int returned_code_;
   Teuchos::RCP<Ifpack_Hypre> IfpHypre_;
-
 };
 
-}  // namespace AmanziPreconditioners
-}  // namespace Amanzi
-
+} // namespace AmanziPreconditioners
+} // namespace Amanzi
 
 
 #endif
-

@@ -6,7 +6,7 @@
 
   Authors:
       Konstantin Lipnikov (lipnikov@lanl.gov)
-      Ethan Coon (ecoon@lanl.gov)  
+      Ethan Coon (coonet@ornl.gov)
 */
 
 
@@ -26,47 +26,47 @@ class Operator_Cell : public Operator {
   // main constructor
   //   The CVS is the domain and range of the operator
   Operator_Cell(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
-                Teuchos::ParameterList& plist,
-                int schema) :
-      Operator(cvs, plist, schema) {
+                Teuchos::ParameterList& plist, int schema)
+    : Operator(cvs, plist, schema)
+  {
     set_schema_string("CELL");
     cell_max_faces = mesh_->cell_get_max_faces();
   }
 
   // rhs update which multiplies by cell
   virtual void UpdateRHS(const CompositeVector& source, bool volume_included);
-  
+
   // visit methods for Apply
-  virtual int ApplyMatrixFreeOp(const Op_Cell_Cell& op,
-      const CompositeVector& X, CompositeVector& Y) const;
-  virtual int ApplyMatrixFreeOp(const Op_Face_Cell& op,
-      const CompositeVector& X, CompositeVector& Y) const;
+  virtual int
+  ApplyMatrixFreeOp(const Op_Cell_Cell& op, const CompositeVector& X,
+                    CompositeVector& Y) const;
+  virtual int
+  ApplyMatrixFreeOp(const Op_Face_Cell& op, const CompositeVector& X,
+                    CompositeVector& Y) const;
 
   // visit methods for symbolic assemble
-  virtual void SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
-                                        const SuperMap& map, GraphFE& graph,
-                                        int my_block_row, int my_block_col) const;
-  virtual void SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
-          const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const;
-  
+  virtual void
+  SymbolicAssembleMatrixOp(const Op_Cell_Cell& op, const SuperMap& map,
+                           GraphFE& graph, int my_block_row,
+                           int my_block_col) const;
+  virtual void
+  SymbolicAssembleMatrixOp(const Op_Face_Cell& op, const SuperMap& map,
+                           GraphFE& graph, int my_block_row,
+                           int my_block_col) const;
+
   // visit methods for assemble
-  virtual void AssembleMatrixOp(const Op_Cell_Cell& op,
-          const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col) const;
-  virtual void AssembleMatrixOp(const Op_Face_Cell& op,
-          const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col) const;
+  virtual void
+  AssembleMatrixOp(const Op_Cell_Cell& op, const SuperMap& map, MatrixFE& mat,
+                   int my_block_row, int my_block_col) const;
+  virtual void
+  AssembleMatrixOp(const Op_Face_Cell& op, const SuperMap& map, MatrixFE& mat,
+                   int my_block_row, int my_block_col) const;
 
  protected:
   int cell_max_faces;
 };
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 #endif
-
-    
-
-

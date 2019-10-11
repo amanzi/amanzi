@@ -3,7 +3,8 @@
 
 namespace Amanzi {
 
-FunctionLinear::FunctionLinear(double y0, const Kokkos::View<double*> &grad, const Kokkos::View<double*> &x0)
+FunctionLinear::FunctionLinear(double y0, const Kokkos::View<double*>& grad,
+                               const Kokkos::View<double*>& x0)
 {
   if (grad.extent(0) < 1) {
     Errors::Message m;
@@ -20,7 +21,7 @@ FunctionLinear::FunctionLinear(double y0, const Kokkos::View<double*> &grad, con
   x0_ = x0;
 }
 
-FunctionLinear::FunctionLinear(double y0, const Kokkos::View<double*> &grad)
+FunctionLinear::FunctionLinear(double y0, const Kokkos::View<double*>& grad)
 {
   if (grad.extent(0) < 1) {
     Errors::Message m;
@@ -29,23 +30,22 @@ FunctionLinear::FunctionLinear(double y0, const Kokkos::View<double*> &grad)
   }
   y0_ = y0;
   grad_ = grad;
-  Kokkos::resize(x0_,grad.extent(0));
-  for(int i = 0 ; i < x0_.extent(0); ++i){
-    x0_(i) = 0.0;  
-  } 
-  //x0_.assign(grad.size(), 0.0);
+  Kokkos::resize(x0_, grad.extent(0));
+  for (int i = 0; i < x0_.extent(0); ++i) { x0_(i) = 0.0; }
+  // x0_.assign(grad.size(), 0.0);
 }
 
-double FunctionLinear::operator()(const Kokkos::View<double*>& x) const
+double
+FunctionLinear::operator()(const Kokkos::View<double*>& x) const
 {
   double y = y0_;
   if (x.extent(0) < grad_.extent(0)) {
     Errors::Message m;
     m << "FunctionLinear expects higher-dimensional argument.";
     Exceptions::amanzi_throw(m);
-  }    
-  for (int j = 0; j < grad_.extent(0); ++j) y += grad_[j]*(x[j] - x0_[j]);
+  }
+  for (int j = 0; j < grad_.extent(0); ++j) y += grad_[j] * (x[j] - x0_[j]);
   return y;
 }
 
-}  // namespace Amanzi
+} // namespace Amanzi

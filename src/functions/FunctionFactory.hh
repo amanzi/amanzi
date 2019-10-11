@@ -5,7 +5,7 @@
 
 namespace Amanzi {
 
-class Function;  // forward declaration
+class Function; // forward declaration
 
 class FunctionFactory {
  public:

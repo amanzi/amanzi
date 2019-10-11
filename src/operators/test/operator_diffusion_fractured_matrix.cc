@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -39,9 +39,11 @@
 
 
 /* *****************************************************************
-* This test diffusion solver with full tensor and source term.
-* **************************************************************** */
-void TestDiffusionFracturedMatrix(double gravity) {
+ * This test diffusion solver with full tensor and source term.
+ * **************************************************************** */
+void
+TestDiffusionFracturedMatrix(double gravity)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -51,7 +53,9 @@ void TestDiffusionFracturedMatrix(double gravity) {
   Comm_ptr_type comm = Amanzi::getDefaultComm();
   int getRank = comm->getRank();
 
-  if (getRank == 0) std::cout << "\nTest: 3D fractured matrix problem: gravity=" << gravity << "\n";
+  if (getRank == 0)
+    std::cout << "\nTest: 3D fractured matrix problem: gravity=" << gravity
+              << "\n";
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion_fractured_matrix.xml";
@@ -63,13 +67,18 @@ void TestDiffusionFracturedMatrix(double gravity) {
 
   // create a mesh framework
   MeshFactory meshfactory(comm, gm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  RCP<const Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  RCP<const Mesh> mesh =
+    meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
 
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells =
+    mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces =
+    mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost =
+    mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost =
+    mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // modify diffusion coefficient
   auto Kc = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
@@ -83,9 +92,11 @@ void TestDiffusionFracturedMatrix(double gravity) {
   }
 
   // create boundary data.
-  ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator");
+  ParameterList op_list =
+    plist.sublist("PK operator").sublist("diffusion operator");
 
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc =
+    Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -93,9 +104,9 @@ void TestDiffusionFracturedMatrix(double gravity) {
     const Point& xf = mesh->face_centroid(f);
 
     // external boundary
-    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
-        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
-        fabs(xf[2]) < 1e-6 || fabs(xf[2] - 1.0) < 1e-6) {
+    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6 ||
+        fabs(xf[1] - 1.0) < 1e-6 || fabs(xf[2]) < 1e-6 ||
+        fabs(xf[2] - 1.0) < 1e-6) {
       bc_model[f] = OPERATOR_BC_DIRICHLET;
       bc_value[f] = ana.pressure_exact(xf, 0.0);
     }
@@ -114,7 +125,8 @@ void TestDiffusionFracturedMatrix(double gravity) {
 
   if (gravity > 0.0) op_list.set<bool>("gravity", true);
 
-  auto op = Teuchos::rcp(new PDE_DiffusionFracturedMatrix(op_list, mesh, rho, g));
+  auto op =
+    Teuchos::rcp(new PDE_DiffusionFracturedMatrix(op_list, mesh, rho, g));
   op->Init(op_list);
   auto global_op = op->global_operator();
 
@@ -137,27 +149,29 @@ void TestDiffusionFracturedMatrix(double gravity) {
   global_op->UpdatePreconditioner();
 
   // solve the problem
-  ParameterList lop_list = plist.sublist("solvers")
-                                .sublist("AztecOO CG").sublist("pcg parameters");
-  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
+  ParameterList lop_list =
+    plist.sublist("solvers").sublist("AztecOO CG").sublist("pcg parameters");
+  AmanziSolvers::
+    LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
       solver(global_op, global_op);
   solver.Init(lop_list);
 
   CompositeVector& rhs = *global_op->rhs();
-  Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(rhs));
+  Teuchos::RCP<CompositeVector> solution =
+    Teuchos::rcp(new CompositeVector(rhs));
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(rhs));
   solution->putScalar(0.0);
 
   int ierr = solver.applyInverse(rhs, *solution);
 
   if (getRank == 0) {
-    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
+    std::cout << "pressure solver (pcg): ||r||=" << solver.residual()
               << " itr=" << solver.num_itrs()
               << " code=" << solver.returned_code() << std::endl;
 
     // visualization
     const Epetra_MultiVector& p = *solution->ViewComponent("cell");
-    GMV::open_data_file(*mesh, (std::string)"operators.gmv");
+    GMV::open_data_file(*mesh, (std::string) "operators.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "solution");
     GMV::close_data_file();
@@ -188,15 +202,19 @@ void TestDiffusionFracturedMatrix(double gravity) {
 
   if (getRank == 0) {
     printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  itr=%3d\n",
-        pl2_err, pinf_err, ul2_err, uinf_err, solver.num_itrs());
+           pl2_err,
+           pinf_err,
+           ul2_err,
+           uinf_err,
+           solver.num_itrs());
 
     CHECK(pl2_err < 1e-10);
     CHECK(ul2_err < 1e-10);
   }
 }
 
-TEST(OPERATOR_DIFFUSION_FRACTURED_MATRIX) {
+TEST(OPERATOR_DIFFUSION_FRACTURED_MATRIX)
+{
   TestDiffusionFracturedMatrix(0.0);
   TestDiffusionFracturedMatrix(9.8);
 }
-

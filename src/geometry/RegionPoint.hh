@@ -5,14 +5,14 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Rao Garimella  
+      Rao Garimella
 */
 
 
 //! RegionPoint: a point in space.
 
 /*!
-List *region: point* defines a point in space. 
+List *region: point* defines a point in space.
 This region consists of cells containing this point.
 
 * `"coordinate`" ``[Array(double)]`` Location of point in space.
@@ -23,7 +23,8 @@ Example:
 
    <ParameterList name="DOWN_WIND150"> <!-- parent list defining the name -->
      <ParameterList name="region: point">
-       <Parameter name="coordinate" type="Array(double)" value="{-150.0, 0.0, 0.0}"/>
+       <Parameter name="coordinate" type="Array(double)" value="{-150.0, 0.0,
+0.0}"/>
      </ParameterList>
    </ParameterList>
 
@@ -39,10 +40,8 @@ namespace AmanziGeometry {
 
 class RegionPoint : public Region {
  public:
-  RegionPoint(const std::string& name,
-              const int id,
-              const Point& p,
-              const LifeCycleType lifecycle=PERMANENT);
+  RegionPoint(const std::string& name, const int id, const Point& p,
+              const LifeCycleType lifecycle = PERMANENT);
 
   // Get the point defining the region
   const Point& point(void) const { return p_; }
@@ -60,4 +59,3 @@ class RegionPoint : public Region {
 
 
 #endif
-

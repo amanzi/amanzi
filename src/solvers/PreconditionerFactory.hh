@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -24,31 +24,32 @@
 namespace Amanzi {
 namespace AmanziPreconditioners {
 
-template<class Matrix, class Vector>
+template <class Matrix, class Vector>
 class PreconditionerFactory {
  public:
-  PreconditionerFactory() {};
-  ~PreconditionerFactory() {};
+  PreconditionerFactory(){};
+  ~PreconditionerFactory(){};
 
-  Teuchos::RCP<Preconditioner<Matrix,Vector> > Create(const std::string& name,
-          const Teuchos::ParameterList& prec_list);
-  Teuchos::RCP<Preconditioner<Matrix,Vector> > Create(Teuchos::ParameterList& prec_list);
+  Teuchos::RCP<Preconditioner<Matrix, Vector>>
+  Create(const std::string& name, const Teuchos::ParameterList& prec_list);
+  Teuchos::RCP<Preconditioner<Matrix, Vector>>
+  Create(Teuchos::ParameterList& prec_list);
 };
 
 
 /* ******************************************************************
  * Initialization of the preconditioner
  ****************************************************************** */
-template<class Matrix, class Vector>
-Teuchos::RCP<Preconditioner<Matrix,Vector> >
-PreconditionerFactory<Matrix,Vector>::Create(
-    const std::string& name, const Teuchos::ParameterList& prec_list)
+template <class Matrix, class Vector>
+Teuchos::RCP<Preconditioner<Matrix, Vector>>
+PreconditionerFactory<Matrix, Vector>::Create(
+  const std::string& name, const Teuchos::ParameterList& prec_list)
 {
   if (prec_list.isSublist(name)) {
     Teuchos::ParameterList slist = prec_list.sublist(name);
     return Create(slist);
   } else {
-    auto prec = Teuchos::rcp(new PreconditionerIdentity<Matrix,Vector>());
+    auto prec = Teuchos::rcp(new PreconditionerIdentity<Matrix, Vector>());
     prec->Init(name, prec_list);
     return prec;
   }
@@ -58,43 +59,46 @@ PreconditionerFactory<Matrix,Vector>::Create(
 /* ******************************************************************
  * Initialization of the preconditioner
  ****************************************************************** */
-template<class Matrix, class Vector>
-Teuchos::RCP<Preconditioner<Matrix, Vector> >
-PreconditionerFactory<Matrix,Vector>::Create(Teuchos::ParameterList& slist)
+template <class Matrix, class Vector>
+Teuchos::RCP<Preconditioner<Matrix, Vector>>
+PreconditionerFactory<Matrix, Vector>::Create(Teuchos::ParameterList& slist)
 {
   if (slist.isParameter("preconditioner type")) {
     std::string type = slist.get<std::string>("preconditioner type");
 
-    if (type == "identity") {  // Identity preconditioner is default.
-      auto prec = Teuchos::rcp(new PreconditionerIdentity<Matrix,Vector>());
+    if (type == "identity") { // Identity preconditioner is default.
+      auto prec = Teuchos::rcp(new PreconditionerIdentity<Matrix, Vector>());
       prec->Init(type, slist);
       return prec;
 
     } else if (type == "diagonal") {
-      auto prec = Teuchos::rcp(new PreconditionerDiagonal<Matrix,Vector>());
+      auto prec = Teuchos::rcp(new PreconditionerDiagonal<Matrix, Vector>());
       prec->Init(type, slist);
       return prec;
 
-    } else if (type == "boomer amg" || type == "euclid" || type == "ml" || type == "block ilu") {
+    } else if (type == "boomer amg" || type == "euclid" || type == "ml" ||
+               type == "block ilu") {
       Errors::Message msg;
-      msg << "Preconditioner type \"" << type << "\" is not available in a Tpetra-based installation of Amanzi.";
+      msg << "Preconditioner type \"" << type
+          << "\" is not available in a Tpetra-based installation of Amanzi.";
       Exceptions::amanzi_throw(msg);
-      
+
     } else {
-      Errors::Message msg("PreconditionerFactory: wrong value of parameter `\"preconditioner type`\"");
+      Errors::Message msg("PreconditionerFactory: wrong value of parameter "
+                          "`\"preconditioner type`\"");
       Exceptions::amanzi_throw(msg);
     }
   } else {
-    Errors::Message msg("PreconditionerFactory: parameter `\"preconditioner type`\" is missing");
+    Errors::Message msg(
+      "PreconditionerFactory: parameter `\"preconditioner type`\" is missing");
     Exceptions::amanzi_throw(msg);
   }
   return Teuchos::null;
 }
 
 
-}  // namespace AmanziPreconditioners
-}  // namespace Amanzi
+} // namespace AmanziPreconditioners
+} // namespace Amanzi
 
 
 #endif
-

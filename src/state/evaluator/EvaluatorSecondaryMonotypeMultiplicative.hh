@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -13,7 +13,7 @@
 
 /*!
 
-  
+
 */
 
 #ifndef STATE_EVALUATOR_ALGEBRAIC_MULTIPLICATIVE_HH_
@@ -34,32 +34,38 @@ namespace Amanzi {
 // By default, this class adds nothing on top of EvaluatorSecondary.
 // Specializations can do useful things though.
 template <typename Data_t, typename DataFactory_t = NullFactory>
-class EvaluatorSecondaryMonotypeMultiplicative : public EvaluatorSecondaryMonotype<Data_t, DataFactory_t> {
-public:
-  EvaluatorSecondaryMonotypeMultiplicative(Teuchos::ParameterList &plist) :
-      EvaluatorSecondaryMonotype<Data_t,DataFactory_t>(plist)
+class EvaluatorSecondaryMonotypeMultiplicative
+  : public EvaluatorSecondaryMonotype<Data_t, DataFactory_t> {
+ public:
+  EvaluatorSecondaryMonotypeMultiplicative(Teuchos::ParameterList& plist)
+    : EvaluatorSecondaryMonotype<Data_t, DataFactory_t>(plist)
   {
     coef_ = this->plist_.template get<double>("coefficient", 1.0);
 
     // if true, the last dependency is "divided by"
     reciprocal_ = this->plist_.template get<bool>("reciprocal", false);
     if (reciprocal_) {
-      Errors::Message msg("EvaluatorSecondaryMonotypeMultiplicative: reciprocalMultiply() not currently implemented.  FIXME");
+      Errors::Message msg(
+        "EvaluatorSecondaryMonotypeMultiplicative: reciprocalMultiply() not "
+        "currently implemented.  FIXME");
       throw(msg);
     }
   }
-    
 
-  EvaluatorSecondaryMonotypeMultiplicative(const EvaluatorSecondaryMonotypeMultiplicative &other) = default;
-  virtual Teuchos::RCP<Evaluator> Clone() const override {
+
+  EvaluatorSecondaryMonotypeMultiplicative(
+    const EvaluatorSecondaryMonotypeMultiplicative& other) = default;
+  virtual Teuchos::RCP<Evaluator> Clone() const override
+  {
     return Teuchos::rcp(new EvaluatorSecondaryMonotypeMultiplicative(*this));
   }
 
-protected:
-
-  virtual void Evaluate_(const State &S, const std::vector<Data_t*> &results) override {
+ protected:
+  virtual void
+  Evaluate_(const State& S, const std::vector<Data_t*>& results) override
+  {
     AMANZI_ASSERT(results.size() == 1);
-    int i=0;
+    int i = 0;
     results[0]->putScalar(coef_);
     for (const auto& dep : this->dependencies_) {
       const auto& term = S.Get<Data_t>(dep.first, dep.second);
@@ -71,10 +77,13 @@ protected:
       ++i;
     }
   }
-  
-  virtual void EvaluatePartialDerivative_(const State &S,
-          const Key &wrt_key, const Key &wrt_tag, const std::vector<Data_t*> &results) override {
-    int i=0;
+
+  virtual void
+  EvaluatePartialDerivative_(const State& S, const Key& wrt_key,
+                             const Key& wrt_tag,
+                             const std::vector<Data_t*>& results) override
+  {
+    int i = 0;
     results[0]->putScalar(coef_);
     for (const auto& dep : this->dependencies_) {
       if (dep.first != wrt_key || dep.second != wrt_tag) {
@@ -103,13 +112,12 @@ protected:
   bool reciprocal_;
 
  private:
-  static Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryMonotypeMultiplicative<Data_t,DataFactory_t>> fac_;
-  
-  
+  static Utils::RegisteredFactory<
+    Evaluator, EvaluatorSecondaryMonotypeMultiplicative<Data_t, DataFactory_t>>
+    fac_;
 };
 
 
 } // namespace Amanzi
 
 #endif
-

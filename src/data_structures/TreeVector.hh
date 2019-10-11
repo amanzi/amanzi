@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -44,17 +44,16 @@ assumed in several places.
 namespace Amanzi {
 
 class TreeVector {
-
  public:
   // -- Constructors --
   // Basic constructors of a TreeVector
   explicit TreeVector(const Teuchos::RCP<const TreeVectorSpace>& space,
-                      InitMode mode=InitMode::ZERO);
+                      InitMode mode = InitMode::ZERO);
 
   // copy constructors
   TreeVector(const TreeVector& other,
-             Teuchos::DataAccess access=Teuchos::DataAccess::Copy,
-             InitMode mode=InitMode::COPY);
+             Teuchos::DataAccess access = Teuchos::DataAccess::Copy,
+             InitMode mode = InitMode::COPY);
 
   // Assignment operator.
   TreeVector& operator=(const TreeVector& other);
@@ -63,15 +62,13 @@ class TreeVector {
   // -- Accessors --
 
   // Access to ANY communicator (this may be ill-posed!)
-  Comm_ptr_type Comm() const {
-    return getMap()->Comm();
-  }
+  Comm_ptr_type Comm() const { return getMap()->Comm(); }
 
   // Access to the space.
   const Teuchos::RCP<const TreeVectorSpace>& getMap() const { return map_; }
 
   // Access to SubVectors
-  typedef std::vector<Teuchos::RCP<TreeVector> > SubVectorsContainer;
+  typedef std::vector<Teuchos::RCP<TreeVector>> SubVectorsContainer;
   typedef Utils::iterator<SubVectorsContainer, TreeVector> iterator;
   typedef Utils::const_iterator<SubVectorsContainer, TreeVector> const_iterator;
 
@@ -80,7 +77,7 @@ class TreeVector {
   iterator end() { return iterator(subvecs_.end()); }
   const_iterator end() const { return const_iterator(subvecs_.end()); }
   size_t size() const { return subvecs_.size(); }
-  
+
   // Access to the sub-vector by index
   Teuchos::RCP<TreeVector> SubVector(int index);
 
@@ -89,7 +86,7 @@ class TreeVector {
 
   // Access to the sub-vector by index
   void SetSubVector(int index, const Teuchos::RCP<TreeVector>& tv);
-  
+
   // Access to the data CompositeVector.
   Teuchos::RCP<CompositeVector> Data() { return data_; }
 
@@ -103,7 +100,7 @@ class TreeVector {
   // -- Assorted vector operations, this implements a Vec --
   // total length of the containing data
   int getGlobalLength() const;
-  
+
   // this <- scalar
   void putScalar(double scalar);
 
@@ -117,7 +114,7 @@ class TreeVector {
 
   // this <- abs(this)
   void abs(const TreeVector& other);
-  
+
   // this <- value*this
   void scale(double value);
 
@@ -126,7 +123,7 @@ class TreeVector {
 
   // this <- element wise reciprocal(this)
   void reciprocal(const TreeVector& other);
-  
+
   // result <- other \dot this
   double dot(const TreeVector& other) const;
 
@@ -134,21 +131,25 @@ class TreeVector {
   void update(double scalarA, const TreeVector& A, double scalarThis);
 
   // this <- scalarA*A + scalarB*B + scalarThis*this
-  void update(double scalarA, const TreeVector& A,
-              double scalarB, const TreeVector& B, double scalarThis);
+  void update(double scalarA, const TreeVector& A, double scalarB,
+              const TreeVector& B, double scalarThis);
 
   // this <- scalarAB * A@B + scalarThis*this  (@ is the elementwise product
-  void elementWiseMultiply(double scalarAB, const TreeVector& A, const TreeVector& B,
-               double scalarThis);
+  void elementWiseMultiply(double scalarAB, const TreeVector& A,
+                           const TreeVector& B, double scalarThis);
 
   // this <- scalarAB * A^-1@B + scalarThis*this  (@ is the elementwise product
   // int ReciprocalelementWiseMultiply(double scalarAB, const TreeVector& A,
   //                        const TreeVector& B, double scalarThis);
 
   // non-inherited extras
-  void Print(std::ostream &os) const;
+  void Print(std::ostream& os) const;
 
-  int getGlobalLength() { std::cerr << "This method is not yet implemented\n"; return 0; }
+  int getGlobalLength()
+  {
+    std::cerr << "This method is not yet implemented\n";
+    return 0;
+  }
 
  private:
   // Init's version of PushBack, which does not add to the space.
@@ -159,11 +160,10 @@ class TreeVector {
   Teuchos::RCP<const TreeVectorSpace> map_;
 
   Teuchos::RCP<CompositeVector> data_;
-  std::vector<Teuchos::RCP<TreeVector> > subvecs_;
+  std::vector<Teuchos::RCP<TreeVector>> subvecs_;
 };
 
-} // namespace
+} // namespace Amanzi
 
 
 #endif
-

@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -26,11 +26,8 @@ class PDE_DiffusionFracturedMatrix : public PDE_DiffusionMFD {
  public:
   PDE_DiffusionFracturedMatrix(Teuchos::ParameterList& plist,
                                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                               double rho, const AmanziGeometry::Point& g) :
-      PDE_Diffusion(mesh),
-      PDE_DiffusionMFD(plist, mesh),
-      g_(g),
-      rho_(rho)
+                               double rho, const AmanziGeometry::Point& g)
+    : PDE_Diffusion(mesh), PDE_DiffusionMFD(plist, mesh), g_(g), rho_(rho)
   {
     operator_type_ = OPERATOR_DIFFUSION_FRACTURED_MATRIX;
   }
@@ -38,20 +35,24 @@ class PDE_DiffusionFracturedMatrix : public PDE_DiffusionMFD {
   // main interface members
   virtual void Init(Teuchos::ParameterList& plist) override;
 
-  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
-                              const Teuchos::Ptr<const CompositeVector>& u) override;
+  virtual void
+  UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
+                 const Teuchos::Ptr<const CompositeVector>& u) override;
 
-  // modify matrix due to boundary conditions 
-  //    primary=true indicates that the operator updates both matrix and right-hand
+  // modify matrix due to boundary conditions
+  //    primary=true indicates that the operator updates both matrix and
+  //    right-hand
   //      side using BC data. If primary=false, only matrix is changed.
-  //    eliminate=true indicates that we eliminate essential BCs for a trial 
-  //      function, i.e. zeros go in the corresponding matrix columns and 
-  //      right-hand side is modified using BC values. This is the optional 
+  //    eliminate=true indicates that we eliminate essential BCs for a trial
+  //      function, i.e. zeros go in the corresponding matrix columns and
+  //      right-hand side is modified using BC values. This is the optional
   //      parameter that enforces symmetry for a symmetric tree operators.
-  //    essential_eqn=true indicates that the operator places a positive number on 
+  //    essential_eqn=true indicates that the operator places a positive number
+  //    on
   //      the main matrix diagonal for the case of essential BCs. This is the
   //      implementation trick.
-  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
+  virtual void
+  ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
   // main virtual members after solving the problem
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
@@ -70,13 +71,12 @@ class PDE_DiffusionFracturedMatrix : public PDE_DiffusionMFD {
 
 
 // non-member functions
-Teuchos::RCP<CompositeVectorSpace> CreateFracturedMatrixCVS(
-    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-    const Teuchos::RCP<const AmanziMesh::Mesh>& fracture);
+Teuchos::RCP<CompositeVectorSpace>
+CreateFracturedMatrixCVS(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                         const Teuchos::RCP<const AmanziMesh::Mesh>& fracture);
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 
 #endif
-

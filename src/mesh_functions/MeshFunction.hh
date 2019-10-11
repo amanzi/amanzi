@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -34,15 +34,18 @@ class MeshFunction {
   typedef std::pair<RegionList, AmanziMesh::Entity_kind> Domain;
 
   // A specification for domain and function.
-  typedef std::pair<Teuchos::RCP<Domain>, Teuchos::RCP<const MultiFunction> > Spec;
-  typedef std::vector<Teuchos::RCP<Spec> > SpecList;
+  typedef std::pair<Teuchos::RCP<Domain>, Teuchos::RCP<const MultiFunction>>
+    Spec;
+  typedef std::vector<Teuchos::RCP<Spec>> SpecList;
 
   // constructor
-  MeshFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) : mesh_(mesh) {};
+  MeshFunction(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : mesh_(mesh){};
   virtual ~MeshFunction() = default;
-  
+
   // add a spec -- others may inherit this and overload to do some checking?
-  virtual void AddSpec(const Teuchos::RCP<Spec>& spec) {
+  virtual void AddSpec(const Teuchos::RCP<Spec>& spec)
+  {
     spec_list_.push_back(spec);
   }
 
@@ -60,10 +63,8 @@ class MeshFunction {
   SpecList spec_list_;
 };
 
-} // namespace
-} // namespace
+} // namespace Functions
+} // namespace Amanzi
 
 
 #endif
-
-

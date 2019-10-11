@@ -4,7 +4,7 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Author: Ethan Coon (coonet@ornl.gov)
 */
 
 //! The default, landing implementation for all PKs.
@@ -39,11 +39,11 @@ class State;
 class Debugger;
 
 class PK_Default {
-public:
+ public:
   // lone constructor
-  PK_Default(const Teuchos::RCP<Teuchos::ParameterList> &pk_tree,
-             const Teuchos::RCP<Teuchos::ParameterList> &global_plist,
-             const Teuchos::RCP<State> &S);
+  PK_Default(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
+             const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
+             const Teuchos::RCP<State>& S);
 
   // Setup: forms the DAG, pushes meta-data into State
   // Default: no setup
@@ -55,31 +55,33 @@ public:
 
   // Returns validity of the step taken from tag_old to tag_new
   // Default: step is valid
-  bool ValidStep(const Key &tag_old, const Key &tag_new) { return true; }
+  bool ValidStep(const Key& tag_old, const Key& tag_new) { return true; }
 
   // Do work that can only be done if we know the step was successful.
   // Default: no work to be done
-  void CommitStep(const Key &tag_old, const Key &tag_new) {}
+  void CommitStep(const Key& tag_old, const Key& tag_new) {}
 
   // Revert a step from tag_new back to tag_old
   // Default: no work to be done
-  void FailStep(const Key &tag_old, const Key &tag_new) {}
+  void FailStep(const Key& tag_old, const Key& tag_new) {}
 
   // Calculate any diagnostics at tag, currently used for visualization.
   // Default: no work to be done
-  void CalculateDiagnostics(const Key &tag) {}
+  void CalculateDiagnostics(const Key& tag) {}
 
   bool IsAdmissible(Teuchos::RCP<const TreeVector> up) { return true; }
 
   bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
-                       Teuchos::RCP<TreeVector> u) {
+                       Teuchos::RCP<TreeVector> u)
+  {
     return false;
   }
 
   AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
   ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
                    Teuchos::RCP<const TreeVector> u,
-                   Teuchos::RCP<TreeVector> du) {
+                   Teuchos::RCP<TreeVector> du)
+  {
     return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
   }
 
@@ -89,7 +91,7 @@ public:
   // Accessor for debugger, for use by coupling MPCs
   Teuchos::Ptr<Debugger> debugger() { return Teuchos::null; }
 
-protected:
+ protected:
   // my subtree of the solution vector
   //  Teuchos::RCP<TreeVector> solution_;
 

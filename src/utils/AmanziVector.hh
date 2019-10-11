@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon (ecoon@lanl.gov)  
+      Ethan Coon (coonet@ornl.gov)
 */
 
 
@@ -13,9 +13,9 @@
 
 /*!
 
-  Include this instead of directly including Epetra_MultiVector.h to ease transition
-  between linear algebra packages.
-  
+  Include this instead of directly including Epetra_MultiVector.h to ease
+  transition between linear algebra packages.
+
 */
 
 
@@ -27,17 +27,16 @@
 
 #ifdef TRILINOS_TPETRA_STACK
 
-#include "Tpetra_Vector.hpp"
-#include "Tpetra_MultiVector.hpp"
+#  include "Tpetra_Vector.hpp"
+#  include "Tpetra_MultiVector.hpp"
 
 #else // Epetra stack
 
-#include "Epetra_Vector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_IntVector.h"
+#  include "Epetra_Vector.h"
+#  include "Epetra_MultiVector.h"
+#  include "Epetra_IntVector.h"
 //#include "Epetra_MultiIntVector.h" // defined in trilinos 12.??
 
 #endif // trilinos stack
 
 #endif
-

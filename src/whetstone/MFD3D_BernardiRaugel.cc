@@ -24,11 +24,12 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* The stable discretization for Stokes: vectors at nodes plus normal
-* components at faces. Fixed normal is used for the latter.
-****************************************************************** */
-int MFD3D_BernardiRaugel::H1consistency(
-    int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
+ * The stable discretization for Stokes: vectors at nodes plus normal
+ * components at faces. Fixed normal is used for the latter.
+ ****************************************************************** */
+int
+MFD3D_BernardiRaugel::H1consistency(int c, const Tensor& K, DenseMatrix& N,
+                                    DenseMatrix& Ac)
 {
   Kokkos::View<Entity_ID*> faces, nodes;
   Kokkos::View<int*> dirs;
@@ -47,7 +48,7 @@ int MFD3D_BernardiRaugel::H1consistency(
   Ac.Reshape(nrows, nrows);
 
   const AmanziGeometry::Point& xm = mesh_->cell_centroid(c);
-  double volume = mesh_->cell_volume(c,false);
+  double volume = mesh_->cell_volume(c, false);
 
   // convolute tensors for non-zero modes
   std::vector<Tensor> vT, vKT;
@@ -91,17 +92,17 @@ int MFD3D_BernardiRaugel::H1consistency(
 
       AmanziGeometry::Point normal(d_);
       normal[0] = tau[1];
-      normal[1] =-tau[0];
+      normal[1] = -tau[0];
 
       for (int i = 0; i < modes; i++) {
         v1 = vKT[i] * normal;
         double t = (tau * v1) * length / 2;
 
-        N(2*n, i) += tau[0] * t;
-        N(2*n + 1, i) += tau[1] * t;
+        N(2 * n, i) += tau[0] * t;
+        N(2 * n + 1, i) += tau[1] * t;
 
-        N(2*m, i) += tau[0] * t;
-        N(2*m + 1, i) += tau[1] * t;
+        N(2 * m, i) += tau[0] * t;
+        N(2 * m + 1, i) += tau[1] * t;
       }
     }
   }
@@ -153,7 +154,7 @@ int MFD3D_BernardiRaugel::H1consistency(
 
       for (int l = k + 1; l < d_; ++l) {
         N(d_ * n + k, col) = xv[l];
-        N(d_ * n + l, col) =-xv[k];
+        N(d_ * n + l, col) = -xv[k];
         col++;
       }
     }
@@ -211,10 +212,10 @@ int MFD3D_BernardiRaugel::H1consistency(
 
 
 /* ******************************************************************
-* Stiffness matrix: the standard algorithm.
-****************************************************************** */
-int MFD3D_BernardiRaugel::StiffnessMatrix(
-    int c, const Tensor& K, DenseMatrix& A)
+ * Stiffness matrix: the standard algorithm.
+ ****************************************************************** */
+int
+MFD3D_BernardiRaugel::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 {
   DenseMatrix N;
 
@@ -227,10 +228,11 @@ int MFD3D_BernardiRaugel::StiffnessMatrix(
 
 
 /* ******************************************************************
-* Advection matrix depends on velocity u.
-****************************************************************** */
-int MFD3D_BernardiRaugel::AdvectionMatrix(
-    int c, const std::vector<AmanziGeometry::Point>& u, DenseMatrix& A)
+ * Advection matrix depends on velocity u.
+ ****************************************************************** */
+int
+MFD3D_BernardiRaugel::AdvectionMatrix(
+  int c, const std::vector<AmanziGeometry::Point>& u, DenseMatrix& A)
 {
   AMANZI_ASSERT(d_ == 2);
 
@@ -286,10 +288,11 @@ int MFD3D_BernardiRaugel::AdvectionMatrix(
 
 
 /* ******************************************************************
-* Divergence matrix: vectors at nodes, normal components on faces.
-* Fixed normal vector is used for the latter.
-****************************************************************** */
-int MFD3D_BernardiRaugel::DivergenceMatrix(int c, DenseMatrix& A)
+ * Divergence matrix: vectors at nodes, normal components on faces.
+ * Fixed normal vector is used for the latter.
+ ****************************************************************** */
+int
+MFD3D_BernardiRaugel::DivergenceMatrix(int c, DenseMatrix& A)
 {
   Kokkos::View<Entity_ID*> faces, nodes;
   Kokkos::View<int*> dirs;
@@ -311,5 +314,5 @@ int MFD3D_BernardiRaugel::DivergenceMatrix(int c, DenseMatrix& A)
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi

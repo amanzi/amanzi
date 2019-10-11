@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-  
+
 */
 
 
@@ -13,7 +13,7 @@
 
 /*!
 
-Constant function is defined as :math:`f(x) = a`, for all :math:`x`. 
+Constant function is defined as :math:`f(x) = a`, for all :math:`x`.
 
 * `"value`" ``[double]`` The constant to be applied.
 
@@ -40,12 +40,12 @@ class FunctionConstant : public Function {
   FunctionConstant* Clone() const { return new FunctionConstant(*this); }
   double operator()(const Kokkos::View<double*>& x) const { return c_; }
 
-  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const {
-    Kokkos::parallel_for(in.extent(1),KOKKOS_LAMBDA(const int& i){
-      out(i) = c_; 
-    });
+  void apply(const Kokkos::View<double**>& in, Kokkos::View<double*>& out) const
+  {
+    Kokkos::parallel_for(in.extent(1),
+                         KOKKOS_LAMBDA(const int& i) { out(i) = c_; });
   }
-  
+
  private:
   double c_;
 };
@@ -53,4 +53,3 @@ class FunctionConstant : public Function {
 } // namespace Amanzi
 
 #endif // AMANZI_CONSTANT_FUNCTION_HH_
-

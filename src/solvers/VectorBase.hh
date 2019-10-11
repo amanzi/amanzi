@@ -5,8 +5,8 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon (ecoon@lanl.gov)
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Ethan Coon (coonet@ornl.gov)
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -29,5 +29,3 @@ class VectorBase {
   // dot product: a = (*this) * u, returns error code 0 if success, !0 otherwise
   int Dot(const VectorBase& u, double* a);
 };
-
-

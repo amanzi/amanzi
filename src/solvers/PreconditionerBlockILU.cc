@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -21,11 +21,13 @@ namespace Amanzi {
 namespace AmanziPreconditioners {
 
 /* ******************************************************************
-* Apply the preconditioner.
-* According to IfPack documentation, the error code is set to 0 if 
-* the inversion was successful. 
-****************************************************************** */
-int PreconditionerBlockILU::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv) const
+ * Apply the preconditioner.
+ * According to IfPack documentation, the error code is set to 0 if
+ * the inversion was successful.
+ ****************************************************************** */
+int
+PreconditionerBlockILU::ApplyInverse(const Epetra_MultiVector& v,
+                                     Epetra_MultiVector& hv) const
 {
   returned_code_ = IfpILU_->ApplyInverse(v, hv);
   return returned_code_;
@@ -35,7 +37,9 @@ int PreconditionerBlockILU::ApplyInverse(const Epetra_MultiVector& v, Epetra_Mul
 /* ******************************************************************
  * Initialize the preconditioner.
  ****************************************************************** */
-void PreconditionerBlockILU::Init(const std::string& name, const Teuchos::ParameterList& list)
+void
+PreconditionerBlockILU::Init(const std::string& name,
+                             const Teuchos::ParameterList& list)
 {
   list_ = list;
   initialized_ = false;
@@ -45,7 +49,8 @@ void PreconditionerBlockILU::Init(const std::string& name, const Teuchos::Parame
 /* ******************************************************************
  * Rebuild the preconditioner suing the given matrix A.
  ****************************************************************** */
-void PreconditionerBlockILU::Update(const Teuchos::RCP<const Epetra_RowMatrix>& A)
+void
+PreconditionerBlockILU::Update(const Teuchos::RCP<const Epetra_RowMatrix>& A)
 {
   Ifpack factory;
   std::string type("ILU");
@@ -54,7 +59,7 @@ void PreconditionerBlockILU::Update(const Teuchos::RCP<const Epetra_RowMatrix>& 
   list_.set<std::string>("schwarz: combine mode", "Add");
 
   // probably a mistake in Ifpack that this is not const.  Confirm! --etc
-  auto A_nc = Teuchos::rcp_const_cast<Epetra_RowMatrix>(A);  
+  auto A_nc = Teuchos::rcp_const_cast<Epetra_RowMatrix>(A);
   IfpILU_ = Teuchos::rcp(factory.Create(type, &*A_nc, overlap));
 
   IfpILU_->SetParameters(list_);
@@ -68,10 +73,9 @@ void PreconditionerBlockILU::Update(const Teuchos::RCP<const Epetra_RowMatrix>& 
 /* ******************************************************************
  * Destroy the preconditioner and auxiliary data structures.
  ****************************************************************** */
-void PreconditionerBlockILU::Destroy()
-{
-}
+void
+PreconditionerBlockILU::Destroy()
+{}
 
-}  // namespace AmanziPreconditioners
-}  // namespace Amanzi
-
+} // namespace AmanziPreconditioners
+} // namespace Amanzi

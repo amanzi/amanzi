@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon (ecoon@lanl.gov)  
+      Ethan Coon (coonet@ornl.gov)
 */
 
 
@@ -41,17 +41,19 @@ using namespace Amanzi::AmanziGeometry;
 using namespace Amanzi::Operators;
 
 struct Maps {
-  Maps() {
+  Maps()
+  {
     comm = Amanzi::getDefaultComm();
-    
+
     // create a mesh
-    mesh = Teuchos::rcp(new Mesh_MSTK(0.,0.,1.,1.,10,10, comm));
+    mesh = Teuchos::rcp(new Mesh_MSTK(0., 0., 1., 1., 10, 10, comm));
 
     // create a vector
     cvs = Teuchos::rcp(new CompositeVectorSpace());
-    cvs->SetMesh(mesh)->SetGhosted(true)
-        ->AddComponent("cell", AmanziMesh::CELL, 1)
-        ->AddComponent("face", AmanziMesh::FACE, 1);
+    cvs->SetMesh(mesh)
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1)
+      ->AddComponent("face", AmanziMesh::FACE, 1);
 
     Teuchos::RCP<TreeVectorSpace> tvs0 = Teuchos::rcp(new TreeVectorSpace());
     tvs0->SetData(cvs);
@@ -62,7 +64,6 @@ struct Maps {
 
     // create a supermap, vec
     map = createSuperMap(*tvs);
-    
   }
 
   Comm_ptr_type comm;
@@ -73,7 +74,8 @@ struct Maps {
 };
 
 
-TEST(SUPERMAP_COPY_INVERTIBLE) {
+TEST(SUPERMAP_COPY_INVERTIBLE)
+{
   Maps maps;
   Teuchos::RCP<TreeVector> tv = Teuchos::rcp(new TreeVector(*maps.tvs));
 
@@ -99,8 +101,8 @@ TEST(SUPERMAP_COPY_INVERTIBLE) {
 }
 
 
-TEST(SUPERMAP_COPY_INTS) {
-
+TEST(SUPERMAP_COPY_INTS)
+{
   Maps maps;
   Teuchos::RCP<TreeVector> tv = Teuchos::rcp(new TreeVector(*maps.tvs));
   tv->SubVector(0)->Data()->ViewComponent("cell", false)->putScalar(3.);
@@ -116,21 +118,21 @@ TEST(SUPERMAP_COPY_INTS) {
   CHECK(!ierr);
 
   // check values
-  int ncells = maps.mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces = maps.mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int ncells =
+    maps.mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces =
+    maps.mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
   // check sizes
-  CHECK_EQUAL(2*ncells + 2*nfaces, vec.getLocalLength());
+  CHECK_EQUAL(2 * ncells + 2 * nfaces, vec.getLocalLength());
 
-  for (int i = 0; i!=ncells; ++i) {
-    CHECK_EQUAL(3., vec[i*2]);
-    CHECK_EQUAL(4., vec[i*2+1]);
+  for (int i = 0; i != ncells; ++i) {
+    CHECK_EQUAL(3., vec[i * 2]);
+    CHECK_EQUAL(4., vec[i * 2 + 1]);
   }
 
-  for (int i = 0; i!=nfaces; ++i) {
-    CHECK_EQUAL(5., vec[2*ncells + i*2]);
-    CHECK_EQUAL(6., vec[2*ncells + i*2+1]);
+  for (int i = 0; i != nfaces; ++i) {
+    CHECK_EQUAL(5., vec[2 * ncells + i * 2]);
+    CHECK_EQUAL(6., vec[2 * ncells + i * 2 + 1]);
   }
-  
 }
-

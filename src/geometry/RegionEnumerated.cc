@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon (ecoon@lanl.gov)  
+      Ethan Coon (coonet@ornl.gov)
 */
 
 
@@ -21,14 +21,14 @@
 namespace Amanzi {
 namespace AmanziGeometry {
 
-RegionEnumerated::RegionEnumerated(const std::string& name,
-                                   const int id,
+RegionEnumerated::RegionEnumerated(const std::string& name, const int id,
                                    const std::string& entity_str,
                                    const std::vector<Entity_ID>& ents,
                                    const LifeCycleType lifecycle)
   : Region(name, id, false, ENUMERATED, 0, 0, lifecycle),
     entity_str_(boost::to_upper_copy<std::string>(entity_str)),
-    entities_(ents) {
+    entities_(ents)
+{
   // Region dimension is set arbitrarily as 0 since the set of
   // entities in the mesh will determine the dimension
 }
@@ -47,4 +47,3 @@ RegionEnumerated::inside(const Point& p) const
 
 } // namespace AmanziGeometry
 } // namespace Amanzi
-

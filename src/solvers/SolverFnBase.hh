@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon (ecoon@lanl.gov)  
+      Ethan Coon (coonet@ornl.gov)
 */
 
 
@@ -21,18 +21,18 @@
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template<class Vector>
+template <class Vector>
 class SolverFnBase {
  public:
   virtual ~SolverFnBase() = default;
 
   // computes the non-linear functional r = F(u)
-  virtual void Residual(const Teuchos::RCP<Vector>& u,
-                        const Teuchos::RCP<Vector>& r) = 0;
+  virtual void
+  Residual(const Teuchos::RCP<Vector>& u, const Teuchos::RCP<Vector>& r) = 0;
 
   // preconditioner toolkit
   virtual int ApplyPreconditioner(const Teuchos::RCP<const Vector>& r,
-                                   const Teuchos::RCP<Vector>& Pr) = 0;
+                                  const Teuchos::RCP<Vector>& Pr) = 0;
   virtual void UpdatePreconditioner(const Teuchos::RCP<const Vector>& u) = 0;
 
   // error analysis
@@ -40,27 +40,28 @@ class SolverFnBase {
                            const Teuchos::RCP<const Vector>& du) = 0;
 
   // allow PK to modify a correction
-  virtual FnBaseDefs::ModifyCorrectionResult 
-      ModifyCorrection(const Teuchos::RCP<const Vector>& r,
-                       const Teuchos::RCP<const Vector>& u,
-                       const Teuchos::RCP<Vector>& du) {
+  virtual FnBaseDefs::ModifyCorrectionResult
+  ModifyCorrection(const Teuchos::RCP<const Vector>& r,
+                   const Teuchos::RCP<const Vector>& u,
+                   const Teuchos::RCP<Vector>& du)
+  {
     return FnBaseDefs::CORRECTION_NOT_MODIFIED;
   }
 
-  virtual void UpdateContinuationParameter(double lambda) {};
-  
+  virtual void UpdateContinuationParameter(double lambda){};
+
   // Check the admissibility of an inner iterate (ensures preconditions for
   // F(u) to be defined).
-  virtual bool IsAdmissible(const Teuchos::RCP<const Vector>& up) {
+  virtual bool IsAdmissible(const Teuchos::RCP<const Vector>& up)
+  {
     return true;
   }
 
   // bookkeeping for state
-  virtual void ChangedSolution() {};
+  virtual void ChangedSolution(){};
 };
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 #endif
-

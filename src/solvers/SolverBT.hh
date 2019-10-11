@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon (ecoon@lanl.gov)  
+      Ethan Coon (coonet@ornl.gov)
 */
 
 
@@ -29,23 +29,23 @@
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template<class Vector, class VectorSpace>
-class SolverBT : public Solver<Vector,VectorSpace> {
+template <class Vector, class VectorSpace>
+class SolverBT : public Solver<Vector, VectorSpace> {
  public:
-  SolverBT(Teuchos::ParameterList& plist) :
-      plist_(plist) {};
+  SolverBT(Teuchos::ParameterList& plist) : plist_(plist){};
 
   SolverBT(Teuchos::ParameterList& plist,
-           const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-           const VectorSpace& map) :
-      plist_(plist) {
+           const Teuchos::RCP<SolverFnBase<Vector>>& fn, const VectorSpace& map)
+    : plist_(plist)
+  {
     Init(fn, map);
   }
 
-  void Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-            const VectorSpace& map);
+  void
+  Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn, const VectorSpace& map);
 
-  int Solve(const Teuchos::RCP<Vector>& u) {
+  int Solve(const Teuchos::RCP<Vector>& u)
+  {
     returned_code_ = BT_(u);
     return (returned_code_ >= 0) ? 0 : 1;
   }
@@ -53,9 +53,7 @@ class SolverBT : public Solver<Vector,VectorSpace> {
   // mutators
   void set_tolerance(double tol) { tol_ = tol; }
   void set_pc_lag(double pc_lag) { pc_lag_ = pc_lag; }
-  virtual void set_db(const Teuchos::RCP<ResidualDebugger>& db) {
-    db_ = db;
-  }
+  virtual void set_db(const Teuchos::RCP<ResidualDebugger>& db) { db_ = db; }
 
   // access
   double tolerance() { return tol_; }
@@ -69,25 +67,23 @@ class SolverBT : public Solver<Vector,VectorSpace> {
   void Init_();
   int BT_(const Teuchos::RCP<Vector>& u);
   int BT_ErrorControl_(double error, double previous_error, double l2_error);
-  
+
 
   struct Functor {
-    Functor(const Teuchos::RCP<SolverFnBase<Vector> >& fn_) :
-        fn(fn_) {}
+    Functor(const Teuchos::RCP<SolverFnBase<Vector>>& fn_) : fn(fn_) {}
 
-    void setup(const Teuchos::RCP<Vector>& u_,
-               const Teuchos::RCP<Vector>& u0_,
-               const Teuchos::RCP<Vector>& du_) {
+    void setup(const Teuchos::RCP<Vector>& u_, const Teuchos::RCP<Vector>& u0_,
+               const Teuchos::RCP<Vector>& du_)
+    {
       u = u_;
       du = du_;
       u0 = u0_;
-      if (r == Teuchos::null) {
-        r = Teuchos::rcp(new Vector(*u));
-      }
+      if (r == Teuchos::null) { r = Teuchos::rcp(new Vector(*u)); }
       *u0 = *u;
     }
-    
-    double operator()(double x) {
+
+    double operator()(double x)
+    {
       *u = *u0;
       u->update(-x, *du, 1.);
       fn->ChangedSolution();
@@ -95,14 +91,14 @@ class SolverBT : public Solver<Vector,VectorSpace> {
       return fn->ErrorNorm(u, r);
     }
 
-    Teuchos::RCP<Vector> u,r,u0,du;
-    Teuchos::RCP<SolverFnBase<Vector> > fn;
+    Teuchos::RCP<Vector> u, r, u0, du;
+    Teuchos::RCP<SolverFnBase<Vector>> fn;
   };
 
-  
+
  private:
   Teuchos::ParameterList plist_;
-  Teuchos::RCP<SolverFnBase<Vector> > fn_;
+  Teuchos::RCP<SolverFnBase<Vector>> fn_;
 
   Teuchos::RCP<VerboseObject> vo_;
   Teuchos::RCP<ResidualDebugger> db_;
@@ -120,21 +116,20 @@ class SolverBT : public Solver<Vector,VectorSpace> {
   double min_alpha_;
   double max_alpha_;
   int max_ls_itrs_;
-  
+
   bool modify_correction_;
-  double residual_;  // defined by convergence criterion
+  double residual_; // defined by convergence criterion
   ConvergenceMonitor monitor_;
 };
 
 
-
 /* ******************************************************************
-* Public Init method.
-****************************************************************** */
-template<class Vector, class VectorSpace>
+ * Public Init method.
+ ****************************************************************** */
+template <class Vector, class VectorSpace>
 void
-SolverBT<Vector,VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
-        const VectorSpace& map)
+SolverBT<Vector, VectorSpace>::Init(
+  const Teuchos::RCP<SolverFnBase<Vector>>& fn, const VectorSpace& map)
 {
   fn_ = fn;
   Init_();
@@ -142,15 +137,17 @@ SolverBT<Vector,VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn
 
 
 /* ******************************************************************
-* Initialization of the NKA solver.
-****************************************************************** */
-template<class Vector, class VectorSpace>
-void SolverBT<Vector, VectorSpace>::Init_()
+ * Initialization of the NKA solver.
+ ****************************************************************** */
+template <class Vector, class VectorSpace>
+void
+SolverBT<Vector, VectorSpace>::Init_()
 {
   tol_ = plist_.get<double>("nonlinear tolerance", 1.e-6);
   overflow_tol_ = plist_.get<double>("diverged tolerance", 1.0e10);
   max_itrs_ = plist_.get<int>("limit iterations", 20);
-  max_error_growth_factor_ = plist_.get<double>("max error growth factor", 1.0e5);
+  max_error_growth_factor_ =
+    plist_.get<double>("max error growth factor", 1.0e5);
   modify_correction_ = plist_.get<bool>("modify correction", false);
 
   bits_ = plist_.get<int>("accuracy of line search minimum [bits]", 10);
@@ -166,17 +163,16 @@ void SolverBT<Vector, VectorSpace>::Init_()
 
   residual_ = -1.0;
 
-  
+
   // update the verbose options
   vo_ = Teuchos::rcp(new VerboseObject("Solver::BT", plist_));
 }
 
 
-template<class Vector, class VectorSpace>
+template <class Vector, class VectorSpace>
 int
-SolverBT<Vector,VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
+SolverBT<Vector, VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
 {
-  
   // create storage
   Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u));
   Teuchos::RCP<Vector> r_end = Teuchos::rcp(new Vector(*u));
@@ -186,7 +182,8 @@ SolverBT<Vector,VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
   // variables to monitor the progress of the nonlinear solver
   double error(0.0), previous_error(0.0);
   double l2_error(0.0), l2_error_initial(0.0);
-  double du_norm(0.0), du_norm_initial(0.), previous_du_norm(0.0), r_norm_initial;
+  double du_norm(0.0), du_norm_initial(0.), previous_du_norm(0.0),
+    r_norm_initial;
   int divergence_count(0);
   int prec_error;
   int db_write_iter = 0;
@@ -211,14 +208,14 @@ SolverBT<Vector,VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
 
   // set up the functor for minimization in the line search
   Functor linesearch_func(fn_);
-  linesearch_func.setup(u,u0,du);
+  linesearch_func.setup(u, u0, du);
 
   // loop til convergence or failure
   do {
     // Check for too many nonlinear iterations.
     if (num_itrs_ >= max_itrs_) {
       if (vo_->os_OK(Teuchos::VERB_HIGH))
-        *vo_->os() << "Solve reached maximum of iterations (" << num_itrs_ 
+        *vo_->os() << "Solve reached maximum of iterations (" << num_itrs_
                    << ")  error=" << error << " terminating..." << std::endl;
       return SOLVER_MAX_ITERATIONS;
     }
@@ -251,18 +248,26 @@ SolverBT<Vector,VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
     // minimize
     double left = min_alpha_;
     boost::uintmax_t ls_itrs(max_ls_itrs_);
-    std::pair<double,double> result = boost::math::tools::brent_find_minima(
-        linesearch_func, left, endpoint, bits_, ls_itrs);
+    std::pair<double, double> result = boost::math::tools::brent_find_minima(
+      linesearch_func, left, endpoint, bits_, ls_itrs);
     fun_calls_ += ls_itrs;
 
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-      *vo_->os() << "  Brent algorithm in: " << ls_itrs << " itrs (alpha=" << result.first << ") Error = " << result.second << "(old error=" << error << ")" << std::endl; 
+      *vo_->os() << "  Brent algorithm in: " << ls_itrs
+                 << " itrs (alpha=" << result.first
+                 << ") Error = " << result.second << "(old error=" << error
+                 << ")" << std::endl;
     }
 
     // check for a minimization value at the start
     if (result.second - error >= 0.) {
       if (vo_->os_OK(Teuchos::VERB_HIGH))
-        *vo_->os() << "Searching in this direction resulted in change of error of = " << result.second - error << ", which is not a sufficient reduction, indicating a bad search direction..." << std::endl;
+        *vo_->os()
+          << "Searching in this direction resulted in change of error of = "
+          << result.second - error
+          << ", which is not a sufficient reduction, indicating a bad search "
+             "direction..."
+          << std::endl;
       return SOLVER_BAD_SEARCH_DIRECTION;
     }
 
@@ -273,7 +278,7 @@ SolverBT<Vector,VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
 
     // Increment iteration counter.
     num_itrs_++;
-    
+
     // get the residual again
     fn_->Residual(u, r);
 
@@ -286,30 +291,35 @@ SolverBT<Vector,VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
     int ierr2 = BT_ErrorControl_(error, previous_error, l2_error);
     if (ierr2 == SOLVER_CONVERGED) return num_itrs_;
     if (ierr2 != SOLVER_CONTINUE) return ierr2;
-  } while(true);
-}    
+  } while (true);
+}
 
 
 /* ******************************************************************
-* Internal convergence control.
-****************************************************************** */
-template<class Vector, class VectorSpace>
-int SolverBT<Vector, VectorSpace>::BT_ErrorControl_(
-   double error, double previous_error, double l2_error)
+ * Internal convergence control.
+ ****************************************************************** */
+template <class Vector, class VectorSpace>
+int
+SolverBT<Vector, VectorSpace>::BT_ErrorControl_(double error,
+                                                double previous_error,
+                                                double l2_error)
 {
   if (vo_->os_OK(Teuchos::VERB_HIGH))
-    *vo_->os() << num_itrs_ << ": error=" << error << "  L2-error=" << l2_error << std::endl;
+    *vo_->os() << num_itrs_ << ": error=" << error << "  L2-error=" << l2_error
+               << std::endl;
 
   if (error < tol_) {
     if (vo_->os_OK(Teuchos::VERB_HIGH))
-      *vo_->os() << "Solver converged: " << num_itrs_ << " itrs, error=" << error << std::endl;
+      *vo_->os() << "Solver converged: " << num_itrs_
+                 << " itrs, error=" << error << std::endl;
     return SOLVER_CONVERGED;
   } else if (error > overflow_tol_) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-      *vo_->os() << "Solve failed, error " << error << " > "
-                 << overflow_tol_ << " (overflow)" << std::endl;
+      *vo_->os() << "Solve failed, error " << error << " > " << overflow_tol_
+                 << " (overflow)" << std::endl;
     return SOLVER_OVERFLOW;
-  } else if ((num_itrs_ > 1) && (error > max_error_growth_factor_ * previous_error)) {
+  } else if ((num_itrs_ > 1) &&
+             (error > max_error_growth_factor_ * previous_error)) {
     if (vo_->os_OK(Teuchos::VERB_MEDIUM))
       *vo_->os() << "Solver threatens to overflow, error " << error << " > "
                  << previous_error << " (previous error)" << std::endl;
@@ -319,9 +329,8 @@ int SolverBT<Vector, VectorSpace>::BT_ErrorControl_(
 }
 
 
-} // namespace Amanzi 
 } // namespace AmanziSolvers
+} // namespace Amanzi
 
 
 #endif
-

@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon (ecoon@lanl.gov)  
+      Ethan Coon (coonet@ornl.gov)
 */
 
 
@@ -25,10 +25,9 @@ namespace Amanzi {
 namespace AmanziGeometry {
 
 class RegionAll : public Region {
-public:
-  RegionAll(const std::string& name,
-            const int id,
-            const LifeCycleType lifecycle=PERMANENT);
+ public:
+  RegionAll(const std::string& name, const int id,
+            const LifeCycleType lifecycle = PERMANENT);
 
   // Is the the specified point inside this region
   bool inside(const Point& p) const;
@@ -39,4 +38,3 @@ public:
 
 
 #endif
-

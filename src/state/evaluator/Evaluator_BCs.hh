@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -23,27 +23,28 @@ namespace Amanzi {
 
 class Evaluator_BCs : public EvaluatorSecondary {
  public:
-  explicit
-  Evaluator_BCs(Teuchos::ParameterList &plist);
+  explicit Evaluator_BCs(Teuchos::ParameterList& plist);
 
-  Evaluator_BCs(const Evaluator_BCs &other) = default;
-  virtual Teuchos::RCP<Evaluator> Clone() const override {
+  Evaluator_BCs(const Evaluator_BCs& other) = default;
+  virtual Teuchos::RCP<Evaluator> Clone() const override
+  {
     return Teuchos::rcp(new Evaluator_BCs(*this));
   }
 
-  virtual bool
-  IsDifferentiableWRT(const State &S, const Key &wrt_key,
-                      const Key &wrt_tag) const override final {
+  virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key,
+                                   const Key& wrt_tag) const override final
+  {
     return false;
   }
 
-  virtual void EnsureCompatibility(State &S) override;
+  virtual void EnsureCompatibility(State& S) override;
   // virtual void EnsureCompatibleDerivative(State &S,
   //         const Key& wrt_key, const Key& wrt_tag) override;
 
-  virtual void Update_(State &S) override;
-  virtual void UpdateDerivative_(State &S, const Key &wrt_key,
-          const Key &wrt_tag) override final {
+  virtual void Update_(State& S) override;
+  virtual void UpdateDerivative_(State& S, const Key& wrt_key,
+                                 const Key& wrt_tag) override final
+  {
     AMANZI_ASSERT(false); // never called
   }
 
@@ -52,11 +53,9 @@ class Evaluator_BCs : public EvaluatorSecondary {
 
  private:
   static Utils::RegisteredFactory<Evaluator, Evaluator_BCs> fac_;
-
 };
 
 
-} // namespace
+} // namespace Amanzi
 
 #endif
-

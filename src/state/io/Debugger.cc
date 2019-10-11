@@ -18,12 +18,17 @@
 namespace Amanzi {
 
 // Constructor
-Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
-                   std::string name, Teuchos::ParameterList &plist,
+Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                   std::string name, Teuchos::ParameterList& plist,
                    Teuchos::EVerbosityLevel verb_level)
-    : mesh_(mesh), verb_level_(verb_level), precision_(10), width_(15),
-      header_width_(20), cellnum_width_(5), decimal_width_(7) {
-
+  : mesh_(mesh),
+    verb_level_(verb_level),
+    precision_(10),
+    width_(15),
+    header_width_(20),
+    cellnum_width_(5),
+    decimal_width_(7)
+{
   vo_ = Teuchos::rcp(new VerboseObject(name, plist));
 
   // cells to debug
@@ -42,9 +47,9 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
         vo_plist.sublist("verbose object");
         vo_plist.sublist("verbose object") = plist.sublist("verbose object");
         vo_plist.sublist("verbose object")
-            .set("write on rank", mesh->get_comm()->getRank());
-        dcvo_.push_back(Teuchos::rcp(
-            new VerboseObject(*mesh_->get_comm(), name, vo_plist)));
+          .set("write on rank", mesh->get_comm()->getRank());
+        dcvo_.push_back(
+          Teuchos::rcp(new VerboseObject(*mesh_->get_comm(), name, vo_plist)));
       }
     }
   }
@@ -60,7 +65,7 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
         AmanziMesh::Entity_ID_View cells;
         mesh->face_get_cells(lf, AmanziMesh::Parallel_type::OWNED, cells);
 
-        for (LO i=0; i!=cells.extent(0); ++i) {
+        for (LO i = 0; i != cells.extent(0); ++i) {
           auto lc = cells[i];
           // include the LID
           dc_.push_back(lc);
@@ -71,9 +76,9 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
           vo_plist.sublist("verbose object");
           vo_plist.sublist("verbose object") = plist.sublist("verbose object");
           vo_plist.sublist("verbose object")
-              .set("write on rank", mesh->get_comm()->getRank());
+            .set("write on rank", mesh->get_comm()->getRank());
           dcvo_.push_back(Teuchos::rcp(
-              new VerboseObject(*mesh_->get_comm(), name, vo_plist)));
+            new VerboseObject(*mesh_->get_comm(), name, vo_plist)));
         }
       }
     }
@@ -87,7 +92,9 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
   precision_ = plist.get<int>("precision", precision_);
 }
 
-std::string Debugger::Format_(double dat) {
+std::string
+Debugger::Format_(double dat)
+{
   std::stringstream datastream;
   if (dat == 0.) {
     std::stringstream formatstream1;
@@ -108,10 +115,10 @@ std::string Debugger::Format_(double dat) {
       // (decimal_width_-mag-1)) % decimal_width_;
       if (mag < 0) {
         formatstream2 << boost::format("%%%df") %
-                             (width_ - (decimal_width_ - mag - 2));
+                           (width_ - (decimal_width_ - mag - 2));
       } else {
         formatstream2 << boost::format("%%%df") %
-                             (width_ - (decimal_width_ - mag - 1));
+                           (width_ - (decimal_width_ - mag - 1));
       }
 
       datastream << boost::format(formatstream1.str()) % std::string("")
@@ -133,7 +140,9 @@ std::string Debugger::Format_(double dat) {
   return datastream.str();
 }
 
-std::string Debugger::FormatHeader_(std::string name, int c) {
+std::string
+Debugger::FormatHeader_(std::string name, int c)
+{
   std::string header_prefix(name);
   int header_prefix_width = header_width_ - cellnum_width_ - 4;
   if (header_prefix.size() > header_prefix_width) {
@@ -149,7 +158,9 @@ std::string Debugger::FormatHeader_(std::string name, int c) {
 }
 
 // Write cell + face info
-void Debugger::WriteCellInfo(bool include_faces) {
+void
+Debugger::WriteCellInfo(bool include_faces)
+{
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(verb_level_)) {
     *vo_->os() << "Debug Cells Information:" << std::endl;
@@ -172,11 +183,12 @@ void Debugger::WriteCellInfo(bool include_faces) {
 
         if (dcvo_[i]->os_OK(verb_level_)) {
           for (unsigned int n = 0; n != fnums0.size(); ++n) {
-            AmanziMesh::Entity_ID f_gid = mesh_->face_map(true)->getGlobalElement(fnums0[n]);
+            AmanziMesh::Entity_ID f_gid =
+              mesh_->face_map(true)->getGlobalElement(fnums0[n]);
             AmanziGeometry::Point f_centroid = mesh_->face_centroid(fnums0[n]);
             *dcvo_[i]->os()
-                << "  neighbor face(" << f_gid << ") [dir=" << dirs[n]
-                << "] centroid = " << f_centroid << std::endl;
+              << "  neighbor face(" << f_gid << ") [dir=" << dirs[n]
+              << "] centroid = " << f_centroid << std::endl;
           }
         }
       }
@@ -185,16 +197,16 @@ void Debugger::WriteCellInfo(bool include_faces) {
 }
 
 // Write a vector individually.
-void Debugger::WriteVector(const std::string &name,
-                           const Teuchos::Ptr<const CompositeVector> &vec,
-                           bool include_faces) {
+void
+Debugger::WriteVector(const std::string& name,
+                      const Teuchos::Ptr<const CompositeVector>& vec,
+                      bool include_faces)
+{
   CompositeVector::cMultiVectorView_type<AmanziDefaultHost> vec_c;
-  if (vec->HasComponent("cell"))
-    vec_c = vec->ViewComponent("cell", false);
+  if (vec->HasComponent("cell")) vec_c = vec->ViewComponent("cell", false);
 
   CompositeVector::cMultiVectorView_type<AmanziDefaultHost> vec_f;
-  if (vec->HasComponent("face"))
-    vec_f = vec->ViewComponent("face", true);
+  if (vec->HasComponent("face")) vec_f = vec->ViewComponent("face", true);
 
   for (int i = 0; i != dc_.size(); ++i) {
     AmanziMesh::Entity_ID c0 = dc_[i];
@@ -204,8 +216,7 @@ void Debugger::WriteVector(const std::string &name,
     if (dcvo_[i]->os_OK(verb_level_)) {
       *dcvo_[i]->os() << FormatHeader_(name, c0_gid);
 
-      if (vec_c.extent(0))
-        *dcvo_[i]->os() << Format_(vec_c(c0,0));
+      if (vec_c.extent(0)) *dcvo_[i]->os() << Format_(vec_c(c0, 0));
 
       if (include_faces && vec_f.extent(0)) {
         AmanziMesh::Entity_ID_View fnums0;
@@ -214,7 +225,7 @@ void Debugger::WriteVector(const std::string &name,
 
         for (unsigned int n = 0; n != fnums0.size(); ++n)
           if (fnums0[n] < vec_f.extent(0))
-            *dcvo_[i]->os() << " " << Format_(vec_f(fnums0[n],0));
+            *dcvo_[i]->os() << " " << Format_(vec_f(fnums0[n], 0));
       }
       *dcvo_[i]->os() << std::endl;
     }
@@ -222,10 +233,12 @@ void Debugger::WriteVector(const std::string &name,
 }
 
 // Write list of vectors.
-void Debugger::WriteVectors(
-    const std::vector<std::string> &names,
-    const std::vector<Teuchos::Ptr<const CompositeVector>> &vecs,
-    bool include_faces) {
+void
+Debugger::WriteVectors(
+  const std::vector<std::string>& names,
+  const std::vector<Teuchos::Ptr<const CompositeVector>>& vecs,
+  bool include_faces)
+{
   AMANZI_ASSERT(names.size() == vecs.size());
 
   std::stringstream formatstream;
@@ -247,20 +260,18 @@ void Debugger::WriteVectors(
           vec_c = vec->ViewComponent("cell", false);
 
         CompositeVector::cMultiVectorView_type<AmanziDefaultHost> vec_f;
-        if (vec->HasComponent("face"))
-          vec_f = vec->ViewComponent("face", true);
+        if (vec->HasComponent("face")) vec_f = vec->ViewComponent("face", true);
 
         *dcvo_[i]->os() << FormatHeader_(name, c0_gid);
-        if (vec_c.extent(0))
-          *dcvo_[i]->os() << Format_(vec_c(c0,0));
+        if (vec_c.extent(0)) *dcvo_[i]->os() << Format_(vec_c(c0, 0));
 
-        if (include_faces && vec_f(c0,0)) {
+        if (include_faces && vec_f(c0, 0)) {
           AmanziMesh::Entity_ID_View fnums0;
           Kokkos::View<int*> dirs;
           mesh_->cell_get_faces_and_dirs(c0, fnums0, dirs);
 
           for (unsigned int n = 0; n != fnums0.size(); ++n)
-            *dcvo_[i]->os() << " " << Format_(vec_f(fnums0[n],0));
+            *dcvo_[i]->os() << " " << Format_(vec_f(fnums0[n], 0));
         }
         *dcvo_[i]->os() << std::endl;
       }
@@ -295,10 +306,16 @@ void Debugger::WriteVectors(
 // }
 
 // call MPI_Comm_Barrier to sync between writing steps
-void Debugger::Barrier() { mesh_->get_comm()->barrier(); }
+void
+Debugger::Barrier()
+{
+  mesh_->get_comm()->barrier();
+}
 
 // write a line of ----
-void Debugger::WriteDivider() {
+void
+Debugger::WriteDivider()
+{
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(verb_level_))
     *vo_->os() << "------------------------------------------------------------"
@@ -307,11 +324,11 @@ void Debugger::WriteDivider() {
 }
 
 // Reverse order... get the VerboseObject for Entity_
-Teuchos::RCP<VerboseObject> Debugger::GetVerboseObject(AmanziMesh::Entity_ID id,
-                                                       int rank) {
-
+Teuchos::RCP<VerboseObject>
+Debugger::GetVerboseObject(AmanziMesh::Entity_ID id, int rank)
+{
   std::vector<AmanziMesh::Entity_ID>::iterator loc =
-      std::find(dc_.begin(), dc_.end(), id);
+    std::find(dc_.begin(), dc_.end(), id);
   if (loc == dc_.end()) {
     return Teuchos::null;
   } else {

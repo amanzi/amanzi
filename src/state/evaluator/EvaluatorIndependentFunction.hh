@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -29,37 +29,35 @@
 namespace Amanzi {
 
 class EvaluatorIndependentFunction
-    : public EvaluatorIndependent<CompositeVector, CompositeVectorSpace> {
-
-public:
+  : public EvaluatorIndependent<CompositeVector, CompositeVectorSpace> {
+ public:
   // ---------------------------------------------------------------------------
   // Constructors
   // ---------------------------------------------------------------------------
-  explicit EvaluatorIndependentFunction(Teuchos::ParameterList &plist);
-  EvaluatorIndependentFunction(const EvaluatorIndependentFunction &other) =
-      default;
+  explicit EvaluatorIndependentFunction(Teuchos::ParameterList& plist);
+  EvaluatorIndependentFunction(const EvaluatorIndependentFunction& other) =
+    default;
 
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 
-  virtual Evaluator &operator=(const Evaluator &other) override;
+  virtual Evaluator& operator=(const Evaluator& other) override;
 
-  EvaluatorIndependentFunction &
-  operator=(const EvaluatorIndependentFunction &other);
+  EvaluatorIndependentFunction&
+  operator=(const EvaluatorIndependentFunction& other);
 
-protected:
+ protected:
   // ---------------------------------------------------------------------------
   // Update the value in the state.
   // ---------------------------------------------------------------------------
-  virtual void Update_(State &S) override;
+  virtual void Update_(State& S) override;
 
-protected:
+ protected:
   Teuchos::RCP<Functions::CompositeVectorFunction> func_;
 
-private:
+ private:
   static Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFunction> fac_;
 };
 
 } // namespace Amanzi
 
 #endif
-

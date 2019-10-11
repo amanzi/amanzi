@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -23,17 +23,19 @@
 namespace Amanzi {
 namespace AmanziPreconditioners {
 
-template<class Matrix,class Vector>
-class PreconditionerIdentity : public Preconditioner<Matrix,Vector> {
+template <class Matrix, class Vector>
+class PreconditionerIdentity : public Preconditioner<Matrix, Vector> {
  public:
-  PreconditionerIdentity() {};
-  ~PreconditionerIdentity() {};
+  PreconditionerIdentity(){};
+  ~PreconditionerIdentity(){};
 
-  void Init(const std::string& name, const Teuchos::ParameterList& list) override {};
-  void Update(const Teuchos::RCP<const Matrix>& A) override {};
-  void Destroy() override {};
+  void
+  Init(const std::string& name, const Teuchos::ParameterList& list) override{};
+  void Update(const Teuchos::RCP<const Matrix>& A) override{};
+  void Destroy() override{};
 
-  int applyInverse(const Vector& v, Vector& hv) const override {
+  int applyInverse(const Vector& v, Vector& hv) const override
+  {
     hv.assign(v);
     return 0;
   }
@@ -42,9 +44,7 @@ class PreconditionerIdentity : public Preconditioner<Matrix,Vector> {
 };
 
 
-
-}  // namespace AmanziPreconditioners
-}  // namespace Amanzi
+} // namespace AmanziPreconditioners
+} // namespace Amanzi
 
 #endif
-

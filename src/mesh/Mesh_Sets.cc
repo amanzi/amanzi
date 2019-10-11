@@ -6,7 +6,7 @@
 
   Authors:
       Lipnikov Konstantin (lipnikov@lanl.gov)
-      Rao Garimella (rao@lanl.gov)  
+      Rao Garimella (rao@lanl.gov)
 */
 
 
@@ -29,34 +29,32 @@
 namespace Amanzi {
 namespace AmanziMesh {
 
-void Mesh::get_set_entities_box_vofs_(
-    Teuchos::RCP<const AmanziGeometry::Region> region,
-    const Entity_kind kind,
-    const Parallel_type ptype,
-    Kokkos::View<Entity_ID*>& setents,
-    Kokkos::View<double*>* volume_fractions) const
+void
+Mesh::get_set_entities_box_vofs_(
+  Teuchos::RCP<const AmanziGeometry::Region> region, const Entity_kind kind,
+  const Parallel_type ptype, Kokkos::View<Entity_ID*>& setents,
+  Kokkos::View<double*>* volume_fractions) const
 {
-  //AMANZI_ASSERT(volume_fractions != NULL);
+  // AMANZI_ASSERT(volume_fractions != NULL);
 
-  //setents->clear();
-  //volume_fractions->clear();
-  Kokkos::resize(*volume_fractions,0);
+  // setents->clear();
+  // volume_fractions->clear();
+  Kokkos::resize(*volume_fractions, 0);
 
   int sdim = space_dimension();
   int mdim = region->manifold_dimension();
 
   switch (kind) {
-  case CELL:
-  {
+  case CELL: {
     std::string name = region->name() + "_cell";
 
     if (region_ids.find(name) != region_ids.end()) {
-      Kokkos::resize(setents,region_ids[name].size());
-      Kokkos::resize(*volume_fractions,region_vofs[name].size());
+      Kokkos::resize(setents, region_ids[name].size());
+      Kokkos::resize(*volume_fractions, region_vofs[name].size());
 
       assert(region_ids[name].size() == region_vofs.size());
 
-      for(int i = 0 ; i < region_ids[name].size(); ++i){
+      for (int i = 0; i < region_ids[name].size(); ++i) {
         setents(i) = region_ids[name][i];
         (*volume_fractions)(i) = region_vofs[name][i];
       }
@@ -64,10 +62,10 @@ void Mesh::get_set_entities_box_vofs_(
       int ncells = num_entities(CELL, ptype);
       double volume;
 
-      Kokkos::View<Entity_ID*> faces,cnodes,fnodes;
+      Kokkos::View<Entity_ID*> faces, cnodes, fnodes;
       Kokkos::View<int*> dirs;
       Kokkos::View<AmanziGeometry::Point*> polytope_nodes;
-      std::vector<std::vector<int> > polytope_faces;
+      std::vector<std::vector<int>> polytope_faces;
 
       size_t volume_fractions_size = 0;
       for (int c = 0; c < ncells; ++c) {
@@ -87,8 +85,8 @@ void Mesh::get_set_entities_box_vofs_(
             for (int i = 0; i < nnodes; ++i) {
               int j = (dirs(n) > 0) ? i : nnodes - i - 1;
               int pos = 0;
-              for(int p = 0 ; p < cnodes.extent(0); ++p){
-                if(cnodes(p) == fnodes(j)){
+              for (int p = 0; p < cnodes.extent(0); ++p) {
+                if (cnodes(p) == fnodes(j)) {
                   pos = p;
                   break;
                 }
@@ -98,41 +96,44 @@ void Mesh::get_set_entities_box_vofs_(
           }
         }
 
-        if ((volume = region->intersect(polytope_nodes, polytope_faces)) > 0.0) {
-          Kokkos::resize(setents,setents.extent(0)+1);
-          setents(setents.extent(0)-1) = c; ;
-          if (region->type()==AmanziGeometry::LINE_SEGMENT){
-            Kokkos::resize(*volume_fractions,(*volume_fractions).extent(0)+1);
+        if ((volume = region->intersect(polytope_nodes, polytope_faces)) >
+            0.0) {
+          Kokkos::resize(setents, setents.extent(0) + 1);
+          setents(setents.extent(0) - 1) = c;
+          ;
+          if (region->type() == AmanziGeometry::LINE_SEGMENT) {
+            Kokkos::resize(*volume_fractions,
+                           (*volume_fractions).extent(0) + 1);
             (*volume_fractions)(volume_fractions_size++) = volume;
           } else {
-            Kokkos::resize(*volume_fractions,(*volume_fractions).extent(0)+1);
-            (*volume_fractions)(volume_fractions_size++) = volume /cell_volume(c,false);
-           }
+            Kokkos::resize(*volume_fractions,
+                           (*volume_fractions).extent(0) + 1);
+            (*volume_fractions)(volume_fractions_size++) =
+              volume / cell_volume(c, false);
+          }
         }
       }
 
       region_ids[name].resize(setents.extent(0));
-      //assert(region_ids[name].size() == region_vofs.size());
+      // assert(region_ids[name].size() == region_vofs.size());
 
-      for(int i = 0 ; i < region_ids[name].size(); ++i){
+      for (int i = 0; i < region_ids[name].size(); ++i) {
         region_ids[name][i] = setents(i);
       }
-      for(int i = 0 ; i < region_vofs[name].size(); ++i){
+      for (int i = 0; i < region_vofs[name].size(); ++i) {
         region_vofs[name][i] = (*volume_fractions)(i);
       }
-
     }
     break;
   }
 
-  case FACE:
-  {
+  case FACE: {
     std::string name = region->name() + "_face";
 
     if (region_ids.find(name) != region_ids.end()) {
-      Kokkos::resize(setents,region_ids[name].size());
+      Kokkos::resize(setents, region_ids[name].size());
       assert(region_ids[name].size() == region_vofs.size());
-      for(int i = 0 ; i < region_ids[name].size(); ++i){
+      for (int i = 0; i < region_ids[name].size(); ++i) {
         setents(i) = region_ids[name][i];
         (*volume_fractions)(i) = region_vofs[name][i];
       }
@@ -141,42 +142,39 @@ void Mesh::get_set_entities_box_vofs_(
       double area;
 
       Kokkos::View<AmanziGeometry::Point*> polygon;
-      size_t volume_fractions_size = 0 ;
+      size_t volume_fractions_size = 0;
       for (int f = 0; f < nfaces; ++f) {
         face_get_coordinates(f, polygon);
         if ((area = region->intersect(polygon)) > 0.0) {
-          Kokkos::resize(setents,setents.extent(0)+1);
-          setents(setents.extent(0)-1) = f;
+          Kokkos::resize(setents, setents.extent(0) + 1);
+          setents(setents.extent(0) - 1) = f;
           (*volume_fractions)(volume_fractions_size++) = area / face_area(f);
         }
       }
 
       region_ids[name].resize(setents.extent(0));
       assert(region_ids[name].size() == region_vofs.size());
-      for(int i = 0 ; i < region_ids[name].size(); ++i){
+      for (int i = 0; i < region_ids[name].size(); ++i) {
         region_ids[name][i] = setents(i);
         region_vofs[name][i] = (*volume_fractions)(i);
       }
-
     }
     break;
   }
 
-  case EDGE:
-  {
+  case EDGE: {
     int nedges = num_entities(EDGE, ptype);
 
     for (int e = 0; e < nedges; ++e) {
       if (region->inside(edge_centroid(e))) {
-        Kokkos::resize(setents,setents.extent(0)+1);
-        setents(setents.extent(0)-1) = e;
+        Kokkos::resize(setents, setents.extent(0) + 1);
+        setents(setents.extent(0) - 1) = e;
       }
     }
     break;
   }
 
-  case NODE:
-  {
+  case NODE: {
     int nnodes = num_entities(NODE, ptype);
 
     AmanziGeometry::Point xv(space_dimension());
@@ -184,8 +182,8 @@ void Mesh::get_set_entities_box_vofs_(
     for (int v = 0; v < nnodes; ++v) {
       node_get_coordinates(v, &xv);
       if (region->inside(xv)) {
-        Kokkos::resize(setents,setents.extent(0)+1);
-        setents(setents.extent(0)-1) = v;
+        Kokkos::resize(setents, setents.extent(0) + 1);
+        setents(setents.extent(0) - 1) = v;
       }
     }
     break;
@@ -200,7 +198,8 @@ void Mesh::get_set_entities_box_vofs_(
   Teuchos::reduceAll(*get_comm(), Teuchos::REDUCE_SUM, 1, &nents_tmp, &nents);
   if (nents == 0) {
     Errors::Message msg;
-    msg << "Could not retrieve any mesh entities for set \"" << region->name() << "\".\n";
+    msg << "Could not retrieve any mesh entities for set \"" << region->name()
+        << "\".\n";
     Exceptions::amanzi_throw(msg);
   }
 }
@@ -209,9 +208,9 @@ void Mesh::get_set_entities_box_vofs_(
 //---------------------------------------------------------
 // Generic implemnetation of set routines.
 //---------------------------------------------------------
-unsigned int Mesh::get_set_size(const Set_ID setid,
-                                const Entity_kind kind,
-                                const Parallel_type ptype) const
+unsigned int
+Mesh::get_set_size(const Set_ID setid, const Entity_kind kind,
+                   const Parallel_type ptype) const
 {
   Kokkos::View<Entity_ID*> ents;
   std::string setname = geometric_model()->FindRegion(setid)->name();
@@ -222,9 +221,9 @@ unsigned int Mesh::get_set_size(const Set_ID setid,
 }
 
 
-unsigned int Mesh::get_set_size(const std::string setname,
-                                const Entity_kind kind,
-                                const Parallel_type ptype) const
+unsigned int
+Mesh::get_set_size(const std::string setname, const Entity_kind kind,
+                   const Parallel_type ptype) const
 {
   Kokkos::View<Entity_ID*> setents;
   Kokkos::View<double*> vofs;
@@ -235,16 +234,15 @@ unsigned int Mesh::get_set_size(const std::string setname,
 }
 
 
-void Mesh::get_set_entities(const Set_ID setid,
-                            const Entity_kind kind,
-                            const Parallel_type ptype,
-                            Kokkos::View<Entity_ID*> &entids) const
+void
+Mesh::get_set_entities(const Set_ID setid, const Entity_kind kind,
+                       const Parallel_type ptype,
+                       Kokkos::View<Entity_ID*>& entids) const
 {
   Kokkos::View<double*> vofs;
   std::string setname = geometric_model()->FindRegion(setid)->name();
   get_set_entities_and_vofs(setname, kind, ptype, entids, &vofs);
 }
 
-}  // namespace AmanziMesh
-}  // namespace Amanzi
-
+} // namespace AmanziMesh
+} // namespace Amanzi

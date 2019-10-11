@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -38,32 +38,38 @@ namespace Amanzi {
 
 State::State() : state_plist_(Teuchos::rcp(new Teuchos::ParameterList())){};
 
-State::State(const Teuchos::RCP<Teuchos::ParameterList> &state_plist)
-    : state_plist_(state_plist){};
+State::State(const Teuchos::RCP<Teuchos::ParameterList>& state_plist)
+  : state_plist_(state_plist){};
 
 // -----------------------------------------------------------------------------
 // State handles mesh management.
 // -----------------------------------------------------------------------------
-void State::RegisterDomainMesh(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
-                               bool deformable) {
+void
+State::RegisterDomainMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
+                          bool deformable)
+{
   RegisterMesh("domain", mesh, deformable);
 }
 
-void State::RegisterMesh(Key key, Teuchos::RCP<AmanziMesh::Mesh> mesh,
-                         bool deformable) {
+void
+State::RegisterMesh(Key key, Teuchos::RCP<AmanziMesh::Mesh> mesh,
+                    bool deformable)
+{
   meshes_.emplace(std::piecewise_construct,
                   std::forward_as_tuple<Key>(std::move(key)),
                   std::forward_as_tuple<Teuchos::RCP<AmanziMesh::Mesh>, bool>(
-                      std::move(mesh), std::move(deformable)));
+                    std::move(mesh), std::move(deformable)));
 };
 
-void State::AliasMesh(const Key &target, Key alias) {
+void
+State::AliasMesh(const Key& target, Key alias)
+{
   bool deformable = IsDeformableMesh(target);
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh;
   try {
     mesh = meshes_.at(target).first;
-  } catch (const std::out_of_range &e) {
+  } catch (const std::out_of_range& e) {
     std::stringstream messagestream;
     messagestream << "Mesh \"" << target << "\" does not exist in the state.";
     Errors::Message message(messagestream.str());
@@ -73,14 +79,24 @@ void State::AliasMesh(const Key &target, Key alias) {
   RegisterMesh(alias, mesh, deformable);
 };
 
-void State::RemoveMesh(const Key &key) { meshes_.erase(key); };
+void
+State::RemoveMesh(const Key& key)
+{
+  meshes_.erase(key);
+};
 
-bool State::HasMesh(const Key &key) const { return Keys::hasKey(meshes_, key); }
+bool
+State::HasMesh(const Key& key) const
+{
+  return Keys::hasKey(meshes_, key);
+}
 
-Teuchos::RCP<const AmanziMesh::Mesh> State::GetMesh(const Key &key) const {
+Teuchos::RCP<const AmanziMesh::Mesh>
+State::GetMesh(const Key& key) const
+{
   try {
     return meshes_.at(key).first;
-  } catch (const std::out_of_range &e) {
+  } catch (const std::out_of_range& e) {
     std::stringstream messagestream;
     messagestream << "Mesh \"" << key << "\" does not exist in the state.";
     Errors::Message message(messagestream.str());
@@ -88,11 +104,13 @@ Teuchos::RCP<const AmanziMesh::Mesh> State::GetMesh(const Key &key) const {
   }
 };
 
-Teuchos::RCP<AmanziMesh::Mesh> State::GetDeformableMesh(const Key &key) {
+Teuchos::RCP<AmanziMesh::Mesh>
+State::GetDeformableMesh(const Key& key)
+{
   std::pair<Teuchos::RCP<AmanziMesh::Mesh>, bool> m;
   try {
     m = meshes_.at(key);
-  } catch (const std::out_of_range &e) {
+  } catch (const std::out_of_range& e) {
     std::stringstream messagestream;
     messagestream << "Mesh \"" << key << "\" does not exist in the state.";
     Errors::Message message(messagestream.str());
@@ -109,10 +127,12 @@ Teuchos::RCP<AmanziMesh::Mesh> State::GetDeformableMesh(const Key &key) {
   }
 };
 
-bool State::IsDeformableMesh(const Key &key) const {
+bool
+State::IsDeformableMesh(const Key& key) const
+{
   try {
     return meshes_.at(key).second;
-  } catch (const std::out_of_range &e) {
+  } catch (const std::out_of_range& e) {
     std::stringstream messagestream;
     messagestream << "Mesh \"" << key << "\" does not exist in the state.";
     Errors::Message message(messagestream.str());
@@ -124,19 +144,17 @@ bool State::IsDeformableMesh(const Key &key) const {
 // -----------------------------------------------------------------------------
 // State handles data evaluation.
 // -----------------------------------------------------------------------------
-Evaluator& State::RequireEvaluator(const Key &key,
-                                                const Key &tag) {
-
+Evaluator&
+State::RequireEvaluator(const Key& key, const Key& tag)
+{
   // does it already exist?
-  if (HasEvaluator(key, tag)) {
-    return GetEvaluator(key, tag);
-  }
+  if (HasEvaluator(key, tag)) { return GetEvaluator(key, tag); }
 
   // See if the key is provided by another existing evaluator.
-  for (auto &f_it : evaluators_) {
+  for (auto& f_it : evaluators_) {
     if (Keys::hasKey(f_it.second, tag) &&
         f_it.second.at(tag)->ProvidesKey(key, tag)) {
-      auto &evaluator = f_it.second.at(tag);
+      auto& evaluator = f_it.second.at(tag);
       SetEvaluator(key, evaluator);
       return *evaluator;
     }
@@ -144,7 +162,7 @@ Evaluator& State::RequireEvaluator(const Key &key,
 
   // Create the evaluator from State's plist
   // -- Get the Field Evaluator plist
-  Teuchos::ParameterList &fm_plist = state_plist_->sublist("evaluators");
+  Teuchos::ParameterList& fm_plist = state_plist_->sublist("evaluators");
 
   if (fm_plist.isSublist(key)) {
     // -- Get this evaluator's plist.
@@ -158,10 +176,11 @@ Evaluator& State::RequireEvaluator(const Key &key,
       sublist.set(modeltype, modellist);
     } else if (sublist.isParameter("models parameters")) {
       Teuchos::Array<std::string> modelnames =
-          sublist.get<Teuchos::Array<std::string>>("models parameters");
+        sublist.get<Teuchos::Array<std::string>>("models parameters");
       for (Teuchos::Array<std::string>::const_iterator modelname =
-               modelnames.begin();
-           modelname != modelnames.end(); ++modelname) {
+             modelnames.begin();
+           modelname != modelnames.end();
+           ++modelname) {
         Teuchos::ParameterList modellist = GetModelParameters(*modelname);
         std::string modeltype = modellist.get<std::string>("model type");
         sublist.set(modeltype, modellist);
@@ -182,7 +201,9 @@ Evaluator& State::RequireEvaluator(const Key &key,
   throw(message);
 }
 
-bool State::HasEvaluator(const Key &key, const Key &tag) {
+bool
+State::HasEvaluator(const Key& key, const Key& tag)
+{
   if (Keys::hasKey(evaluators_, key)) {
     return Keys::hasKey(evaluators_.at(key), tag);
   } else {
@@ -190,12 +211,15 @@ bool State::HasEvaluator(const Key &key, const Key &tag) {
   }
 }
 
-Evaluator& State::GetEvaluator(const Key &key, const Key &tag) {
-  return *GetEvaluatorPtr(key,tag);
+Evaluator&
+State::GetEvaluator(const Key& key, const Key& tag)
+{
+  return *GetEvaluatorPtr(key, tag);
 }
 
-const Evaluator& State::GetEvaluator(const Key &key,
-        const Key &tag) const {
+const Evaluator&
+State::GetEvaluator(const Key& key, const Key& tag) const
+{
   try {
     return *evaluators_.at(key).at(tag);
   } catch (std::out_of_range) {
@@ -207,7 +231,9 @@ const Evaluator& State::GetEvaluator(const Key &key,
   }
 };
 
-Teuchos::RCP<Evaluator> State::GetEvaluatorPtr(const Key &key, const Key &tag) {
+Teuchos::RCP<Evaluator>
+State::GetEvaluatorPtr(const Key& key, const Key& tag)
+{
   try {
     return evaluators_.at(key).at(tag);
   } catch (std::out_of_range) {
@@ -219,17 +245,19 @@ Teuchos::RCP<Evaluator> State::GetEvaluatorPtr(const Key &key, const Key &tag) {
   }
 };
 
-void State::SetEvaluator(const Key &key, const Key &tag,
-                         const Teuchos::RCP<Evaluator> &evaluator) {
+void
+State::SetEvaluator(const Key& key, const Key& tag,
+                    const Teuchos::RCP<Evaluator>& evaluator)
+{
   evaluators_[key][tag] = evaluator;
 };
 
-void State::WriteDependencyGraph() const {
+void
+State::WriteDependencyGraph() const
+{
   std::ofstream os("dependency_graph.txt", std::ios::out);
-  for (auto &fe : evaluators_) {
-    for (auto &e : fe.second) {
-      os << *e.second;
-    }
+  for (auto& fe : evaluators_) {
+    for (auto& e : fe.second) { os << *e.second; }
   }
   os.close();
 }
@@ -237,14 +265,16 @@ void State::WriteDependencyGraph() const {
 // -----------------------------------------------------------------------------
 // State handles model parameters.
 // -----------------------------------------------------------------------------
-Teuchos::ParameterList State::GetModelParameters(std::string modelname) {
+Teuchos::ParameterList
+State::GetModelParameters(std::string modelname)
+{
   if (!state_plist_->isSublist("model parameters")) {
     Errors::Message message(
-        "State parameter list is missing \"model parameters\" sublist.");
+      "State parameter list is missing \"model parameters\" sublist.");
     throw(message);
   }
-  Teuchos::ParameterList &model_plist =
-      state_plist_->sublist("model parameters");
+  Teuchos::ParameterList& model_plist =
+    state_plist_->sublist("model parameters");
   if (!model_plist.isSublist(modelname)) {
     Errors::Message message;
     message << "State \"model parameters\" list does not have a model named \""
@@ -259,7 +289,9 @@ Teuchos::ParameterList State::GetModelParameters(std::string modelname) {
 // -----------------------------------------------------------------------------
 // Initialize data, allowing values to be specified here or in the owning PK.
 // All independent variables must be initialized here.
-void State::Setup() {
+void
+State::Setup()
+{
   Require<double>("time", "", "time");
   Require<double>("time", "next", "time");
   Require<int>("cycle", "", "cycle");
@@ -267,8 +299,8 @@ void State::Setup() {
 
   // Ensure compatibility of all the evaluators -- each evaluator's dependencies
   // must provide what is required of that evaluator.
-  for (auto &e : evaluators_) {
-    for (auto &r : e.second) {
+  for (auto& e : evaluators_) {
+    for (auto& r : e.second) {
       if (!r.second->ProvidesKey(e.first, r.first)) {
         Errors::Message message;
         message << "Evaluator \"" << e.first << "\" with tag \"" << r.first
@@ -290,12 +322,8 @@ void State::Setup() {
   // }
 
   // -- Create the data for all fields.
-  for (auto &f : data_) {
-    f.second->CreateData();
-  }
-  for (auto& deriv : derivs_) {
-    deriv.second->CreateData();
-  }
+  for (auto& f : data_) { f.second->CreateData(); }
+  for (auto& deriv : derivs_) { deriv.second->CreateData(); }
 
   Set("time", "", "time", 0.0);
   GetRecordW("time", "time").set_initialized();
@@ -307,7 +335,9 @@ void State::Setup() {
   GetRecordW("cycle", "next", "cycle").set_initialized();
 };
 
-void State::Initialize() {
+void
+State::Initialize()
+{
   // Initialize any other fields from state plist.
   InitializeFields();
 
@@ -328,15 +358,16 @@ void State::Initialize() {
 };
 
 // Initialized this from other state
-void State::Initialize(const State &other) {
-
+void
+State::Initialize(const State& other)
+{
   // initialize data in this from data in other
-  for (auto &e : data_) {
+  for (auto& e : data_) {
     if (!e.second->initialized()) {
-      for (auto &et : *e.second) {
-        auto &fieldname = e.first;
-        auto &tag = et.first;
-        auto &record = *et.second;
+      for (auto& et : *e.second) {
+        auto& fieldname = e.first;
+        auto& tag = et.first;
+        auto& record = *et.second;
         if (other.HasData(fieldname, tag)) {
           record = other.GetRecord(fieldname, tag);
           record.set_initialized(true);
@@ -367,24 +398,27 @@ void State::Initialize(const State &other) {
   WriteDependencyGraph();
 };
 
-void State::InitializeEvaluators(){
-    // for (auto& f_it : evaluators_) {
-    //   for (auto& e : f_it.second) {
-    //     std::cout << "Initing eval: \"" << f_it.first << "\" tag \"" <<
-    //     e.first << "\"" << std::endl;
-    //     e.second->Update(*this, "state");
-    //     GetRecordW(f_it.first, e.first, f_it.first).set_initialized();
-    //   }
-    // }
+void
+State::InitializeEvaluators(){
+  // for (auto& f_it : evaluators_) {
+  //   for (auto& e : f_it.second) {
+  //     std::cout << "Initing eval: \"" << f_it.first << "\" tag \"" <<
+  //     e.first << "\"" << std::endl;
+  //     e.second->Update(*this, "state");
+  //     GetRecordW(f_it.first, e.first, f_it.first).set_initialized();
+  //   }
+  // }
 };
 
-void State::InitializeFields() {
+void
+State::InitializeFields()
+{
   if (state_plist_->isSublist("initial conditions")) {
-    for (auto &e : data_) {
+    for (auto& e : data_) {
       if (!e.second->initialized()) {
         if (state_plist_->sublist("initial conditions").isSublist(e.first)) {
           Teuchos::ParameterList sublist =
-              state_plist_->sublist("initial conditions").sublist(e.first);
+            state_plist_->sublist("initial conditions").sublist(e.first);
           e.second->Initialize(sublist);
         }
       }
@@ -393,16 +427,18 @@ void State::InitializeFields() {
 }
 
 // Some fields share evaluators, these must be aliased by pointer.
-void State::AliasEvaluators() {
-  for (auto &f_it : data_) {
+void
+State::AliasEvaluators()
+{
+  for (auto& f_it : data_) {
     auto fname = f_it.first;
-    for (auto &e : *f_it.second) {
+    for (auto& e : *f_it.second) {
       auto tagname = e.first;
       if (!HasEvaluator(fname, tagname)) {
         // first check and see if there is a Evaluator, but we haven't yet used
         // it.
         Teuchos::RCP<Evaluator> found_eval;
-        for (auto &f_eval_it : evaluators_) {
+        for (auto& f_eval_it : evaluators_) {
           if (Keys::hasKey(f_eval_it.second, tagname) &&
               f_eval_it.second.at(tagname)->ProvidesKey(fname, tagname)) {
             found_eval = f_eval_it.second.at(tagname);
@@ -422,7 +458,9 @@ void State::AliasEvaluators() {
 // Make sure all fields that are not evaluated by a Evaluator are
 // initialized.  Such fields may be used by an evaluator field but are not in
 // the dependency tree due to poor design.
-bool State::CheckNotEvaluatedFieldsInitialized() {
+bool
+State::CheckNotEvaluatedFieldsInitialized()
+{
   // for (auto& f_it : data_) {
   //   for (auto& field : *f_it.second) {
   //     if (!HasEvaluator(f_it.first, field.first) &&
@@ -441,7 +479,9 @@ bool State::CheckNotEvaluatedFieldsInitialized() {
 
 // Make sure all fields have gotten their IC, either from State or the owning
 // PK.
-bool State::CheckAllFieldsInitialized() {
+bool
+State::CheckAllFieldsInitialized()
+{
   // for (auto& f_it : data_) {
   //   Record& field = f_it.second->GetRecord("");
   //   if (!field.initialized()) {
@@ -457,7 +497,9 @@ bool State::CheckAllFieldsInitialized() {
 };
 
 // Non-member function for vis.
-void WriteVis(Visualization &vis, const State &S) {
+void
+WriteVis(Visualization& vis, const State& S)
+{
   if (!vis.is_disabled()) {
     // Create the new time step
     // NOTE: internally we use seconds, but for vis we write the time in years
@@ -469,8 +511,8 @@ void WriteVis(Visualization &vis, const State &S) {
       r->second->WriteVis(vis);
     }
 
-    //vis.WriteRegions();
-    //vis.WritePartition();
+    // vis.WriteRegions();
+    // vis.WritePartition();
 
     // Finalize i/o.
     vis.FinalizeFile();
@@ -478,7 +520,9 @@ void WriteVis(Visualization &vis, const State &S) {
 };
 
 // Non-member function for checkpointing.
-void WriteCheckpoint(Checkpoint &chkp, const State &S, bool final) {
+void
+WriteCheckpoint(Checkpoint& chkp, const State& S, bool final)
+{
   chkp.CreateFile(S.time(), S.cycle());
   for (auto r = S.data_begin(); r != S.data_end(); ++r) {
     r->second->WriteCheckpoint(chkp);
@@ -487,8 +531,9 @@ void WriteCheckpoint(Checkpoint &chkp, const State &S, bool final) {
 };
 
 // Non-member function for checkpointing.
-void ReadCheckpoint(const Comm_ptr_type& comm, State &S,
-                    const std::string &filename) {
+void
+ReadCheckpoint(const Comm_ptr_type& comm, State& S, const std::string& filename)
+{
   Teuchos::ParameterList plist;
   plist.set("file name", filename);
   plist.set("file type", "HDF5");
@@ -522,9 +567,12 @@ void ReadCheckpoint(const Comm_ptr_type& comm, State &S,
 // FIX ME: Refactor this to make the name more general.  Should align with a
 // mesh name prefix or something, and the coordinates should be written by
 // state in WriteCheckpoint if mesh IsDeformableMesh() --ETC
-void DeformCheckpointMesh(State &S) {
+void
+DeformCheckpointMesh(State& S)
+{
   // FIXME EPETRA TO TPETRA: deforming
-  // if (S.HasData("vertex coordinate")) { // only deform mesh if vertex coordinate
+  // if (S.HasData("vertex coordinate")) { // only deform mesh if vertex
+  // coordinate
   //                                       // field exists
   //   AmanziMesh::Mesh *write_access_mesh =
   //       const_cast<AmanziMesh::Mesh *>(&*S.GetMesh());
@@ -557,4 +605,3 @@ void DeformCheckpointMesh(State &S) {
 }
 
 } // namespace Amanzi
-

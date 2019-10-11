@@ -3,7 +3,8 @@
 #include <boost/any.hpp>
 #include <vector>
 
-TEST(ANY) {
+TEST(ANY)
+{
   std::vector<boost::any> stuff;
 
   boost::any thing1 = std::make_unique<double>(1.1);

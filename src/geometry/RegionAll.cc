@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon (ecoon@lanl.gov)  
+      Ethan Coon (coonet@ornl.gov)
 */
 
 
@@ -20,10 +20,10 @@
 namespace Amanzi {
 namespace AmanziGeometry {
 
-RegionAll::RegionAll(const std::string& name,
-                     const int id,
+RegionAll::RegionAll(const std::string& name, const int id,
                      const LifeCycleType lifecycle)
-  : Region(name, id, false, ALL, 0, 0, lifecycle) {
+  : Region(name, id, false, ALL, 0, 0, lifecycle)
+{
   // Region dimension is set arbitrarily as 0 since the set of
   // entities in the mesh will determine the dimension
 }
@@ -42,5 +42,3 @@ RegionAll::inside(const Point& p) const
 
 } // namespace AmanziGeometry
 } // namespace Amanzi
-
-

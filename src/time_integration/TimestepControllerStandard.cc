@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -17,8 +17,10 @@
 
 namespace Amanzi {
 
-TimestepControllerStandard::TimestepControllerStandard(Teuchos::ParameterList& plist) :
-    plist_(plist) {
+TimestepControllerStandard::TimestepControllerStandard(
+  Teuchos::ParameterList& plist)
+  : plist_(plist)
+{
   max_its_ = plist_.get<int>("max iterations");
   min_its_ = plist_.get<int>("min iterations");
   AMANZI_ASSERT(max_its_ > min_its_);
@@ -37,7 +39,8 @@ TimestepControllerStandard::TimestepControllerStandard(Teuchos::ParameterList& p
 
 
 double
-TimestepControllerStandard::get_timestep(double dt, int iterations) {
+TimestepControllerStandard::get_timestep(double dt, int iterations)
+{
   double dt_next(dt);
   // iterations < 0 implies failed timestep
   if (iterations < 0 || iterations > max_its_) {
@@ -63,7 +66,8 @@ TimestepControllerStandard::get_timestep(double dt, int iterations) {
   // check that if we have failed, our step size has decreased.
   if (iterations < 0) {
     if (dt - dt_next < 1.0e-10) {
-      std::string msg = "dT change is too small (check reduction_factor), terminating...";
+      std::string msg =
+        "dT change is too small (check reduction_factor), terminating...";
       Errors::Message m(msg);
       Exceptions::amanzi_throw(m);
     }
@@ -73,5 +77,4 @@ TimestepControllerStandard::get_timestep(double dt, int iterations) {
 }
 
 
-} // namespace
-
+} // namespace Amanzi

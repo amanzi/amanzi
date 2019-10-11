@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -25,10 +25,11 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
-* System modification before solving the problem.
-* **************************************************************** */
-void PDE_MagneticDiffusion_TM::ModifyMatrices(
-   CompositeVector& E, CompositeVector& B, double dt)
+ * System modification before solving the problem.
+ * **************************************************************** */
+void
+PDE_MagneticDiffusion_TM::ModifyMatrices(CompositeVector& E, CompositeVector& B,
+                                         double dt)
 {
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", true);
   Epetra_MultiVector& rhs_v = *global_op_->rhs()->ViewComponent("node", true);
@@ -68,16 +69,17 @@ void PDE_MagneticDiffusion_TM::ModifyMatrices(
 
 
 /* ******************************************************************
-* Solution postprocessing
-* **************************************************************** */
-void PDE_MagneticDiffusion_TM::ModifyFields(
-   CompositeVector& E, CompositeVector& B, double dt)
+ * Solution postprocessing
+ * **************************************************************** */
+void
+PDE_MagneticDiffusion_TM::ModifyFields(CompositeVector& E, CompositeVector& B,
+                                       double dt)
 {
   B.ScatterMasterToGhosted("face");
 
   Epetra_MultiVector& Ev = *E.ViewComponent("node", true);
   Epetra_MultiVector& Bf = *B.ViewComponent("face", false);
-  
+
   std::vector<int> dirs;
   AmanziMesh::Entity_ID_List faces, nodes;
 
@@ -113,15 +115,17 @@ void PDE_MagneticDiffusion_TM::ModifyFields(
 
 
 /* ******************************************************************
-* Apply boundary conditions to the local matrices. We always zero-out
-* matrix rows for essential test BCs. As to trial BCs, there are
-* options: (a) eliminate or not, (b) if eliminate, then put 1 on
-* the diagonal or not.
-****************************************************************** */
-void PDE_MagneticDiffusion_TM::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
+ * Apply boundary conditions to the local matrices. We always zero-out
+ * matrix rows for essential test BCs. As to trial BCs, there are
+ * options: (a) eliminate or not, (b) if eliminate, then put 1 on
+ * the diagonal or not.
+ ****************************************************************** */
+void
+PDE_MagneticDiffusion_TM::ApplyBCs(bool primary, bool eliminate,
+                                   bool essential_eqn)
 {
-  if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
-                         | OPERATOR_SCHEMA_DOFS_NODE)) {
+  if (local_op_schema_ ==
+      (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_NODE)) {
     Teuchos::RCP<const BCs> bc_f, bc_v;
     for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
       if ((*bc)->kind() == AmanziMesh::FACE) {
@@ -136,30 +140,31 @@ void PDE_MagneticDiffusion_TM::ApplyBCs(bool primary, bool eliminate, bool essen
 
 
 /* ******************************************************************
-* Apply BCs on cell operators
-****************************************************************** */
-void PDE_MagneticDiffusion_TM::ApplyBCs_Node_(
-    const Teuchos::Ptr<const BCs>& bc_f,
-    const Teuchos::Ptr<const BCs>& bc_v,
-    bool primary, bool eliminate, bool essential_eqn)
+ * Apply BCs on cell operators
+ ****************************************************************** */
+void
+PDE_MagneticDiffusion_TM::ApplyBCs_Node_(const Teuchos::Ptr<const BCs>& bc_f,
+                                         const Teuchos::Ptr<const BCs>& bc_v,
+                                         bool primary, bool eliminate,
+                                         bool essential_eqn)
 {
   AmanziMesh::Entity_ID_List nodes, faces, cells;
   std::vector<int> fdirs;
 
   global_op_->rhs()->putScalarGhosted(0.0);
-  Epetra_MultiVector& rhs_node = *global_op_->rhs()->ViewComponent("node", true);
+  Epetra_MultiVector& rhs_node =
+    *global_op_->rhs()->ViewComponent("node", true);
 
   // calculate number of cells for each node
   // move to properties of BCs (lipnikov@lanl.gov)
-  int nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+  int nnodes_wghost =
+    mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
   std::vector<int> node_get_cells(nnodes_wghost, 0);
   for (int c = 0; c != ncells_wghost; ++c) {
     mesh_->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();
 
-    for (int n = 0; n < nnodes; ++n) {
-      node_get_cells[nodes[n]]++;
-    }
+    for (int n = 0; n < nnodes; ++n) { node_get_cells[nodes[n]]++; }
   }
 
   int nn(0), nm(0);
@@ -179,7 +184,7 @@ void PDE_MagneticDiffusion_TM::ApplyBCs_Node_(
       for (int n = 0; n != nnodes; ++n) {
         int v = nodes[n];
         if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
-          if (flag) {  // make a copy of elemental matrix
+          if (flag) { // make a copy of elemental matrix
             local_op_->matrices_shadow[c] = Acell;
             flag = false;
           }
@@ -192,11 +197,11 @@ void PDE_MagneticDiffusion_TM::ApplyBCs_Node_(
         double value = bc_value[v];
 
         if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
-          if (flag) {  // make a copy of cell-based matrix
+          if (flag) { // make a copy of cell-based matrix
             local_op_->matrices_shadow[c] = Acell;
             flag = false;
           }
-     
+
           if (eliminate) {
             for (int m = 0; m < nnodes; m++) {
               rhs_node[0][nodes[m]] -= Acell(m, n) * value;
@@ -211,16 +216,17 @@ void PDE_MagneticDiffusion_TM::ApplyBCs_Node_(
         }
       }
     }
-  } 
+  }
 
   global_op_->rhs()->GatherGhostedToMaster("node", Add);
 }
 
 
 /* ******************************************************************
-* Calculates Ohmic heating
-****************************************************************** */
-double PDE_MagneticDiffusion_TM::CalculateOhmicHeating(const CompositeVector& E)
+ * Calculates Ohmic heating
+ ****************************************************************** */
+double
+PDE_MagneticDiffusion_TM::CalculateOhmicHeating(const CompositeVector& E)
 {
   const Epetra_MultiVector& Ev = *E.ViewComponent("node", true);
 
@@ -231,7 +237,7 @@ double PDE_MagneticDiffusion_TM::CalculateOhmicHeating(const CompositeVector& E)
     mesh_->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();
 
-    double volume = mesh_->cell_volume(c,false);
+    double volume = mesh_->cell_volume(c, false);
     double tmp = volume / (*K_)[c](0, 0) / nnodes;
     for (int n = 0; n < nnodes; ++n) {
       int v = nodes[n];
@@ -242,6 +248,5 @@ double PDE_MagneticDiffusion_TM::CalculateOhmicHeating(const CompositeVector& E)
   return energy;
 }
 
-}  // namespace Operators
-}  // namespace Amanzi
-
+} // namespace Operators
+} // namespace Amanzi

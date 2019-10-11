@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -34,13 +34,13 @@ namespace OutputFactory {
 
 
 std::unique_ptr<Output>
-CreateForVis(Teuchos::ParameterList& plist, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+CreateForVis(Teuchos::ParameterList& plist,
+             const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
 std::unique_ptr<Output>
 CreateForCheckpoint(Teuchos::ParameterList& plist, const Comm_ptr_type& comm);
 
-} // namespace
-} // namespace
+} // namespace OutputFactory
+} // namespace Amanzi
 
 #endif
-

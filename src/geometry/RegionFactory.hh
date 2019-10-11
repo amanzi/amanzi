@@ -6,7 +6,7 @@
 
   Authors:
       Rao Garimella
-      Ethan Coon (ecoon@lanl.gov)  
+      Ethan Coon (coonet@ornl.gov)
 */
 
 
@@ -24,16 +24,12 @@ namespace Amanzi {
 namespace AmanziGeometry {
 
 class Region;
-  
+
 Teuchos::RCP<Region>
-createRegion(const std::string reg_name,
-             int reg_id,
-             Teuchos::ParameterList& reg_spec,
-             const Comm_type& comm);
+createRegion(const std::string reg_name, int reg_id,
+             Teuchos::ParameterList& reg_spec, const Comm_type& comm);
 
 } // namespace AmanziGeometry
 } // namespace Amanzi
 
 #endif
-
-

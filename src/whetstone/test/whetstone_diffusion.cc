@@ -28,7 +28,8 @@
 
 
 /* **************************************************************** */
-TEST(DARCY_MASS_2D) {
+TEST(DARCY_MASS_2D)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -37,7 +38,7 @@ TEST(DARCY_MASS_2D) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.5, 1.0, 1, 1);
 
   MFD3D_Diffusion mfd(mesh);
@@ -67,7 +68,7 @@ TEST(DARCY_MASS_2D) {
     PrintMatrix(M, "%8.4f ");
 
     // verify SPD propery
-    for (int i=0; i<nfaces; i++) CHECK(M(i, i) > 0.0);
+    for (int i = 0; i < nfaces; i++) CHECK(M(i, i) > 0.0);
 
     // verify exact integration property
     Kokkos::View<AmanziMesh::Entity_ID*> faces;
@@ -75,7 +76,7 @@ TEST(DARCY_MASS_2D) {
     mesh->cell_get_faces_and_dirs(cell, faces, dirs);
 
     double xi, yi, xj, yj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell,false);
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell, false);
     for (int i = 0; i < nfaces; i++) {
       int f1 = faces(i);
       for (int j = 0; j < nfaces; j++) {
@@ -96,16 +97,15 @@ TEST(DARCY_MASS_2D) {
       }
     }
 
-    CHECK_CLOSE(T(0,0) * volume, vxx, 1e-10);
-    CHECK_CLOSE(T(1,0) * volume, vxy, 1e-10);
+    CHECK_CLOSE(T(0, 0) * volume, vxx, 1e-10);
+    CHECK_CLOSE(T(1, 0) * volume, vxy, 1e-10);
   }
-
-
 }
 
 
 /* **************************************************************** */
-TEST(DARCY_MASS_3D) {
+TEST(DARCY_MASS_3D)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -123,7 +123,8 @@ TEST(DARCY_MASS_3D) {
 
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1);
+  Teuchos::RCP<Mesh> mesh =
+    meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1);
 
   MFD3D_Diffusion mfd(mesh);
   DeRham_Face drc(mfd);
@@ -153,7 +154,7 @@ TEST(DARCY_MASS_3D) {
     mesh->cell_get_faces_and_dirs(cell, faces, dirs);
 
     double xi, yi, xj, yj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell,false);
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell, false);
     for (int i = 0; i < nfaces; i++) {
       int f1 = faces(i);
       for (int j = 0; j < nfaces; j++) {
@@ -179,13 +180,12 @@ TEST(DARCY_MASS_3D) {
     CHECK_CLOSE(volume, vxx, 1e-10);
     CHECK_CLOSE(0.0, vxy, 1e-10);
   }
-
-
 }
 
 
 /* **************************************************************** */
-TEST(DARCY_MASS_3D_GENERALIZED_POLYHEDRON) {
+TEST(DARCY_MASS_3D_GENERALIZED_POLYHEDRON)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -194,8 +194,9 @@ TEST(DARCY_MASS_3D_GENERALIZED_POLYHEDRON) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
-  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1);
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
+  // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+  // 1, 1, 1);
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/hex_random.exo");
   // Teuchos::RCP<Mesh> mesh = meshfactory.create("test/random3D_05.exo");
 
@@ -203,7 +204,7 @@ TEST(DARCY_MASS_3D_GENERALIZED_POLYHEDRON) {
   MFD3D_Generalized_Diffusion mfd(plist, mesh);
 
   int nfaces = 6, cell = 0;
-  double volume = mesh->cell_volume(cell,false);
+  double volume = mesh->cell_volume(cell, false);
   DenseMatrix N, R, M;
   DenseMatrix B(3, 3);
 
@@ -233,13 +234,12 @@ TEST(DARCY_MASS_3D_GENERALIZED_POLYHEDRON) {
 
   // verify SPD propery
   for (int i = 0; i < nfaces; ++i) CHECK(M(i, i) > 0.0);
-
-
 }
 
 
 /* **************************************************************** */
-TEST(DARCY_INVERSE_MASS_3D) {
+TEST(DARCY_INVERSE_MASS_3D)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -257,13 +257,14 @@ TEST(DARCY_INVERSE_MASS_3D) {
 
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3);
+  Teuchos::RCP<Mesh> mesh =
+    meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3);
 
   MFD3D_Diffusion mfd(mesh);
   DeRham_Face drc(mfd);
 
   int nfaces = 6, cell = 0;
-  Tensor T(3, 1);  // tensor of rank 1
+  Tensor T(3, 1); // tensor of rank 1
   T(0, 0) = 1.0;
 
   DenseMatrix W;
@@ -294,7 +295,7 @@ TEST(DARCY_INVERSE_MASS_3D) {
     mesh->cell_get_faces_and_dirs(cell, faces, dirs);
 
     double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell,false);
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell, false);
     for (int i = 0; i < nfaces; i++) {
       int f1 = faces(i);
       for (int j = 0; j < nfaces; j++) {
@@ -317,18 +318,18 @@ TEST(DARCY_INVERSE_MASS_3D) {
     CHECK_CLOSE(vxx, volume, 1e-10);
     CHECK_CLOSE(vxy, 0.0, 1e-10);
   }
-
-
 }
 
 
 /* **************************************************************** */
-TEST(DARCY_FULL_TENSOR_2D) {
+TEST(DARCY_FULL_TENSOR_2D)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\n\nTest: Inverse mass matrix and full tensor in 2D" << std::endl;
+  std::cout << "\n\nTest: Inverse mass matrix and full tensor in 2D"
+            << std::endl;
 #ifdef HAVE_MPI
   auto comm = Amanzi::getDefaultComm();
 #else
@@ -336,7 +337,7 @@ TEST(DARCY_FULL_TENSOR_2D) {
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   // Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1);
   Teuchos::RCP<Mesh> mesh = meshfactory.create("test/two_cell2.exo");
 
@@ -345,7 +346,7 @@ TEST(DARCY_FULL_TENSOR_2D) {
 
   for (int cell = 0; cell < 2; cell++) {
     for (int method = 0; method < 7; method++) {
-      Tensor T(2, 2);  // tensor of rank 2
+      Tensor T(2, 2); // tensor of rank 2
       T(0, 0) = 1.0;
       T(1, 1) = 2.0;
       T(0, 1) = T(1, 0) = 1.0;
@@ -363,8 +364,10 @@ TEST(DARCY_FULL_TENSOR_2D) {
         mfd.MassMatrixInverseMMatrixHex(cell, T, W);
       } else if (method == 4) {
         ok = mfd.MassMatrixInverseMMatrix(cell, T, W);
-        std::cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << " code=" << ok << std::endl;
-        std::cout << "Functional value=" << mfd.simplex_functional() << std::endl;
+        std::cout << "Number of simplex itrs=" << mfd.simplex_num_itrs()
+                  << " code=" << ok << std::endl;
+        std::cout << "Functional value=" << mfd.simplex_functional()
+                  << std::endl;
       } else if (method == 5) {
         double kmean = 1.0;
         AmanziGeometry::Point kgrad(0.1, 0.2);
@@ -389,7 +392,7 @@ TEST(DARCY_FULL_TENSOR_2D) {
 
       AmanziGeometry::Point v(1.0, 2.0);
       double xi, xj;
-      double vxx = 0.0, volume = mesh->cell_volume(cell,false);
+      double vxx = 0.0, volume = mesh->cell_volume(cell, false);
       for (int i = 0; i < nfaces; i++) {
         xi = (v * mesh->face_normal(faces(i))) * dirs(i);
         for (int j = 0; j < nfaces; j++) {
@@ -415,13 +418,12 @@ TEST(DARCY_FULL_TENSOR_2D) {
       }
     }
   }
-
-
 }
 
 
 /* **************************************************************** */
-TEST(DARCY_FULL_TENSOR_3D) {
+TEST(DARCY_FULL_TENSOR_3D)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -439,13 +441,14 @@ TEST(DARCY_FULL_TENSOR_3D) {
 
   MeshFactory meshfactory(comm);
   meshfactory.set_preference(pref);
-  Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.1, 1.0, 1.0, 3, 2, 1);
+  Teuchos::RCP<Mesh> mesh =
+    meshfactory.create(0.0, 0.0, 0.0, 1.1, 1.0, 1.0, 3, 2, 1);
 
   MFD3D_Diffusion mfd(mesh);
   DeRham_Face drc(mfd);
 
   int nfaces = 6, cell = 0;
-  Tensor T(3, 2);  // tensor of rank 2
+  Tensor T(3, 2); // tensor of rank 2
   T(0, 0) = 1.0;
   T(1, 1) = 2.0;
   T(2, 2) = 3.0;
@@ -464,7 +467,8 @@ TEST(DARCY_FULL_TENSOR_3D) {
       mfd.MassMatrixInverseMMatrixHex(cell, T, W);
     } else if (method == 4) {
       mfd.MassMatrixInverseMMatrix(cell, T, W);
-      std::cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << std::endl;
+      std::cout << "Number of simplex itrs=" << mfd.simplex_num_itrs()
+                << std::endl;
       std::cout << "Functional value=" << mfd.simplex_functional() << std::endl;
     } else if (method == 5) {
       drc.MassMatrixInverse(cell, T, W);
@@ -474,7 +478,7 @@ TEST(DARCY_FULL_TENSOR_3D) {
     PrintMatrix(W, "%8.4f ");
 
     // verify SPD propery
-    for (int i=0; i<nfaces; i++) CHECK(W(i, i) > 0.0);
+    for (int i = 0; i < nfaces; i++) CHECK(W(i, i) > 0.0);
 
     // verify exact integration property
     W.Inverse();
@@ -485,7 +489,7 @@ TEST(DARCY_FULL_TENSOR_3D) {
 
     AmanziGeometry::Point v(1.0, 2.0, 3.0);
     double xi, xj;
-    double vxx = 0.0, volume = mesh->cell_volume(cell,false);
+    double vxx = 0.0, volume = mesh->cell_volume(cell, false);
     for (int i = 0; i < nfaces; i++) {
       int f1 = faces(i);
       for (int j = 0; j < nfaces; j++) {
@@ -504,13 +508,12 @@ TEST(DARCY_FULL_TENSOR_3D) {
     }
     CHECK_CLOSE(vxx, 4 * volume, 1e-10);
   }
-
-
 }
 
 
 /* **************************************************************** */
-TEST(DARCY_STIFFNESS_2D_NODE) {
+TEST(DARCY_STIFFNESS_2D_NODE)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziGeometry;
@@ -525,7 +528,7 @@ TEST(DARCY_STIFFNESS_2D_NODE) {
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1);
   RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo");
 
@@ -541,7 +544,8 @@ TEST(DARCY_STIFFNESS_2D_NODE) {
       mfd.StiffnessMatrix(cell, T, A);
     } else if (method == 1) {
       mfd.StiffnessMatrixMMatrix(cell, T, A);
-      std::cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << std::endl;
+      std::cout << "Number of simplex itrs=" << mfd.simplex_num_itrs()
+                << std::endl;
       std::cout << "Functional value=" << mfd.simplex_functional() << std::endl;
     } else if (method == 2) {
       mfd.StiffnessMatrixOptimized(cell, T, A);
@@ -551,7 +555,7 @@ TEST(DARCY_STIFFNESS_2D_NODE) {
     PrintMatrix(A, "%8.4f ");
 
     // verify SPD propery
-    for (int i=0; i<nnodes; i++) CHECK(A(i, i) > 0.0);
+    for (int i = 0; i < nnodes; i++) CHECK(A(i, i) > 0.0);
 
     // verify exact integration property
     Kokkos::View<AmanziMesh::Entity_ID*> nodes;
@@ -561,7 +565,7 @@ TEST(DARCY_STIFFNESS_2D_NODE) {
     Point p(d);
 
     double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell,false);
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell, false);
     for (int i = 0; i < nnodes; i++) {
       int v = nodes(i);
       mesh->node_get_coordinates(v, &p);
@@ -578,13 +582,12 @@ TEST(DARCY_STIFFNESS_2D_NODE) {
     CHECK_CLOSE(vxx, volume, 1e-10);
     CHECK_CLOSE(vxy, 0.0, 1e-10);
   }
-
-
 }
 
 
 /* **************************************************************** */
-TEST(DARCY_STIFFNESS_2D_EDGE) {
+TEST(DARCY_STIFFNESS_2D_EDGE)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziGeometry;
@@ -599,7 +602,7 @@ TEST(DARCY_STIFFNESS_2D_EDGE) {
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1);
   RCP<Mesh> mesh = meshfactory.create("test/one_pentagon.exo", true, true);
 
@@ -613,15 +616,13 @@ TEST(DARCY_STIFFNESS_2D_EDGE) {
 
   DenseMatrix A;
   for (int method = 0; method < 1; method++) {
-    if (method == 0) {
-      mfd.StiffnessMatrix(cell, T, A);
-    }
+    if (method == 0) { mfd.StiffnessMatrix(cell, T, A); }
 
     printf("Stiffness matrix for cell %3d\n", cell);
     PrintMatrix(A, "%8.4f ");
 
     // verify SPD propery
-    for (int i=0; i<nedges; i++) CHECK(A(i, i) > 0.0);
+    for (int i = 0; i < nedges; i++) CHECK(A(i, i) > 0.0);
 
     // verify exact integration property
     Kokkos::View<AmanziMesh::Entity_ID*> edges;
@@ -631,7 +632,7 @@ TEST(DARCY_STIFFNESS_2D_EDGE) {
     Point p(d);
 
     double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell,false);
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell, false);
     for (int i = 0; i < nedges; i++) {
       int e = edges(i);
       const AmanziGeometry::Point& xe = mesh->edge_centroid(e);
@@ -648,13 +649,12 @@ TEST(DARCY_STIFFNESS_2D_EDGE) {
     CHECK_CLOSE(vxx, volume, 1e-10);
     CHECK_CLOSE(vxy, 0.0, 1e-10);
   }
-
-
 }
 
 
 /* **************************************************************** */
-TEST(DARCY_STIFFNESS_3D) {
+TEST(DARCY_STIFFNESS_3D)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziGeometry;
@@ -669,7 +669,7 @@ TEST(DARCY_STIFFNESS_3D) {
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1);
   // RCP<Mesh> mesh = meshfactory.create("test/one_trapezoid.exo");
   RCP<Mesh> mesh = meshfactory.create("test/dodecahedron.exo");
@@ -689,7 +689,7 @@ TEST(DARCY_STIFFNESS_3D) {
   std::cout << "Functional value=" << mfd.simplex_functional() << std::endl;
 
   // verify SPD propery
-  for (int i=0; i<nnodes; i++) CHECK(A(i, i) > 0.0);
+  for (int i = 0; i < nnodes; i++) CHECK(A(i, i) > 0.0);
 
   // verify exact integration property
   Kokkos::View<AmanziMesh::Entity_ID*> nodes;
@@ -699,7 +699,7 @@ TEST(DARCY_STIFFNESS_3D) {
   Point p(d);
 
   double xi, yi, xj;
-  double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell,false);
+  double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell, false);
   for (int i = 0; i < nnodes; i++) {
     int v = nodes(i);
     mesh->node_get_coordinates(v, &p);
@@ -715,13 +715,12 @@ TEST(DARCY_STIFFNESS_3D) {
   }
   CHECK_CLOSE(vxx, volume, 1e-10);
   CHECK_CLOSE(vxy, 0.0, 1e-10);
-
-
 }
 
 
 /* **************************************************************** */
-TEST(RECOVER_GRADIENT_MIXED) {
+TEST(RECOVER_GRADIENT_MIXED)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziGeometry;
@@ -736,7 +735,7 @@ TEST(RECOVER_GRADIENT_MIXED) {
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh = meshfactory.create("test/one_trapezoid.exo");
 
   MFD3D_Diffusion mfd(mesh);
@@ -766,13 +765,12 @@ TEST(RECOVER_GRADIENT_MIXED) {
   CHECK_CLOSE(gradient(1), 1.0, 1e-10);
   CHECK_CLOSE(gradient(2), 2.0, 1e-10);
   CHECK_CLOSE(gradient(3), 3.0, 1e-10);
-
-
 }
 
 
 /* **************************************************************** */
-TEST(RECOVER_GRADIENT_NODAL) {
+TEST(RECOVER_GRADIENT_NODAL)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziGeometry;
@@ -787,12 +785,11 @@ TEST(RECOVER_GRADIENT_NODAL) {
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   RCP<Mesh> mesh = meshfactory.create("test/one_trapezoid.exo");
 
   Teuchos::ParameterList plist;
-  plist.set<int>("method order", 1)
-       .set<bool>("use low-order scheme", true);
+  plist.set<int>("method order", 1).set<bool>("use low-order scheme", true);
   MFD3D_Lagrange mfd(plist, mesh);
 
   // create pressure solution
@@ -820,13 +817,12 @@ TEST(RECOVER_GRADIENT_NODAL) {
   CHECK_CLOSE(gradient(1), 1.0, 1e-10);
   CHECK_CLOSE(gradient(2), 2.0, 1e-10);
   CHECK_CLOSE(gradient(3), 3.0, 1e-10);
-
-
 }
 
 
 /* **************************************************************** */
-TEST(DARCY_INVERSE_MASS_2D) {
+TEST(DARCY_INVERSE_MASS_2D)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -840,7 +836,7 @@ TEST(DARCY_INVERSE_MASS_2D) {
 #endif
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 1.0, 1.0, 1, 1);
   // RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3);
   // RCP<Mesh> mesh = meshfactory.create("test/cube_triangulated.exo");
@@ -849,7 +845,7 @@ TEST(DARCY_INVERSE_MASS_2D) {
   MFD3D_Diffusion mfd(mesh);
 
   int ok, nfaces = 12, cell = 0, dim = mesh->space_dimension();
-  Tensor T(dim, 2);  // tensor of rank 1
+  Tensor T(dim, 2); // tensor of rank 1
   T(0, 0) = 1.0;
   T(1, 1) = 1.0;
   T(2, 2) = 1.0;
@@ -859,7 +855,8 @@ TEST(DARCY_INVERSE_MASS_2D) {
   for (int method = 0; method < 1; method++) {
     if (method == 0) {
       ok = mfd.MassMatrixInverseMMatrix(cell, T, W);
-      std::cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << std::endl;
+      std::cout << "Number of simplex itrs=" << mfd.simplex_num_itrs()
+                << std::endl;
       std::cout << "Functional value=" << mfd.simplex_functional() << std::endl;
     }
 
@@ -881,7 +878,7 @@ TEST(DARCY_INVERSE_MASS_2D) {
     mesh->cell_get_faces_and_dirs(cell, faces, dirs);
 
     double xi, yi, xj;
-    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell,false);
+    double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell, false);
     for (int i = 0; i < nfaces; i++) {
       int f = faces(i);
       xi = mesh->face_normal(f)[0] * dirs(i);
@@ -897,6 +894,4 @@ TEST(DARCY_INVERSE_MASS_2D) {
     CHECK_CLOSE(volume * T(0, 1), vxy, 1e-10);
     CHECK_CLOSE(mfd.simplex_functional(), 60.0, 1e-2);
   }
-
-
 }

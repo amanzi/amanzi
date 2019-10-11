@@ -5,8 +5,8 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon (ecoon@lanl.gov)
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Ethan Coon (coonet@ornl.gov)
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -22,7 +22,7 @@ namespace AmanziSolvers {
 // which can be turned on or off.  Currently convergence is met if any of the
 // enabled criteria match.  The exception to this is ONE_ITERATION, which
 // requires at least one iteration independent of the initial residual.
-const int LIN_SOLVER_RELATIVE_RHS = 1;  // must be power of 2
+const int LIN_SOLVER_RELATIVE_RHS = 1; // must be power of 2
 const int LIN_SOLVER_RELATIVE_RESIDUAL = 2;
 const int LIN_SOLVER_ABSOLUTE_RESIDUAL = 4;
 const int LIN_SOLVER_MAKE_ONE_ITERATION = 8;
@@ -41,9 +41,7 @@ const int LIN_SOLVER_AMESOS_SAYS_FAIL = -1;
 const int LIN_SOLVER_AMESOS_SYMBOLIC_FAIL = -2;
 const int LIN_SOLVER_AMESOS_FACTORIZATION_FAIL = -3;
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
- 
+} // namespace AmanziSolvers
+} // namespace Amanzi
+
 #endif
-
-

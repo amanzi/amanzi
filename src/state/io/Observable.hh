@@ -4,7 +4,7 @@ Amanzi
 
 License:
 Author: Markus Berndt
-        Ethan Coon (ecoon@lanl.gov)
+        Ethan Coon (coonet@ornl.gov)
 
 Observable data object
 
@@ -25,31 +25,33 @@ namespace Amanzi {
 
 class State;
 
-double ObservableSum(double a, double b);
-double ObservableMin(double a, double b);
-double ObservableMax(double a, double b);
+double
+ObservableSum(double a, double b);
+double
+ObservableMin(double a, double b);
+double
+ObservableMax(double a, double b);
 
 class Observable : public IOEvent {
-
-public:
-  Observable(Teuchos::ParameterList &plist, Epetra_MpiComm *comm);
+ public:
+  Observable(Teuchos::ParameterList& plist, Epetra_MpiComm* comm);
 
   std::string name() { return name_; }
   std::string variable() { return variable_; }
 
   // DO NOT OVERRIDE -- instead, use the virtual, protected version.
-  void Update(const State &S,
-              Amanzi::ObservationData::DataQuadruple &data_triplet);
+  void
+  Update(const State& S, Amanzi::ObservationData::DataQuadruple& data_triplet);
 
   void Flush();
 
-protected:
-  virtual void Update_(const State &S,
-                       Amanzi::ObservationData::DataQuadruple &data_triplet);
+ protected:
+  virtual void
+  Update_(const State& S, Amanzi::ObservationData::DataQuadruple& data_triplet);
 
   virtual void WriteHeader_();
 
-protected:
+ protected:
   bool write_;
   int interval_;
   int count_;

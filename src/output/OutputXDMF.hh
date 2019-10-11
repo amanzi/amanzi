@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -36,30 +36,30 @@
 
 namespace Amanzi {
 
-inline int XDMFCellTypeID(AmanziMesh::Cell_type type)
+inline int
+XDMFCellTypeID(AmanziMesh::Cell_type type)
 {
   // cell type id's defined in Xdmf/include/XdmfTopology.h
-  AMANZI_ASSERT (AmanziMesh::cell_valid_type(type));
-  switch (type)
-  {
-    case AmanziMesh::POLYGON:
-      return 3;
-    case AmanziMesh::TRI:
-      return 4;
-    case AmanziMesh::QUAD:
-      return 5;
-    case AmanziMesh::TET:
-      return 6;
-    case AmanziMesh::PYRAMID:
-      return 7;
-    case AmanziMesh::PRISM:
-      return 8; //wedge
-    case AmanziMesh::HEX:
-      return 9;
-    case AmanziMesh::POLYHED:
-      return 3; //for now same as polygon
-    default:
-      return 3; //unknown, for now same as polygon
+  AMANZI_ASSERT(AmanziMesh::cell_valid_type(type));
+  switch (type) {
+  case AmanziMesh::POLYGON:
+    return 3;
+  case AmanziMesh::TRI:
+    return 4;
+  case AmanziMesh::QUAD:
+    return 5;
+  case AmanziMesh::TET:
+    return 6;
+  case AmanziMesh::PYRAMID:
+    return 7;
+  case AmanziMesh::PRISM:
+    return 8; // wedge
+  case AmanziMesh::HEX:
+    return 9;
+  case AmanziMesh::POLYHED:
+    return 3; // for now same as polygon
+  default:
+    return 3; // unknown, for now same as polygon
   }
 }
 
@@ -67,29 +67,38 @@ inline int XDMFCellTypeID(AmanziMesh::Cell_type type)
 class OutputXDMF : public Output {
  public:
   OutputXDMF(Teuchos::ParameterList& plist,
-	     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+             const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
 
   virtual ~OutputXDMF() = default;
-  
+
   // open and close files
   virtual void CreateFile(double time, int cycle) override;
   virtual void FinalizeFile() override;
   virtual std::string Filename() const override;
 
   // write data to file
-  virtual void Write(const Teuchos::ParameterList& attrs, const double& val) const override;
-  virtual void Write(const Teuchos::ParameterList& attrs, const int& val) const override;
-  virtual void Write(const Teuchos::ParameterList& attrs, const std::string& val) const override;
-  virtual void Write(const Teuchos::ParameterList& attrs, const Vector_type& vec) const override;
-  virtual void Write(const Teuchos::ParameterList& attrs, const IntVector_type& vec) const override;    
-  virtual void Write(const Teuchos::ParameterList& attrs, const MultiVector_type& vec) const override;
-  virtual void Write(const Teuchos::ParameterList& attrs, const IntMultiVector_type& vec) const override;  
-  virtual void Write(const Teuchos::ParameterList& attrs, const CompositeVector_<double>& vec) const override;
-  virtual void Write(const Teuchos::ParameterList& attrs, const CompositeVector_<int>& vec) const override;  
-    
+  virtual void
+  Write(const Teuchos::ParameterList& attrs, const double& val) const override;
+  virtual void
+  Write(const Teuchos::ParameterList& attrs, const int& val) const override;
+  virtual void Write(const Teuchos::ParameterList& attrs,
+                     const std::string& val) const override;
+  virtual void Write(const Teuchos::ParameterList& attrs,
+                     const Vector_type& vec) const override;
+  virtual void Write(const Teuchos::ParameterList& attrs,
+                     const IntVector_type& vec) const override;
+  virtual void Write(const Teuchos::ParameterList& attrs,
+                     const MultiVector_type& vec) const override;
+  virtual void Write(const Teuchos::ParameterList& attrs,
+                     const IntMultiVector_type& vec) const override;
+  virtual void Write(const Teuchos::ParameterList& attrs,
+                     const CompositeVector_<double>& vec) const override;
+  virtual void Write(const Teuchos::ParameterList& attrs,
+                     const CompositeVector_<int>& vec) const override;
+
  protected:
-  std::tuple<int,int,int> WriteMesh_(int cycle);
-  
+  std::tuple<int, int, int> WriteMesh_(int cycle);
+
  protected:
   bool is_dynamic_;
   bool init_;
@@ -106,8 +115,7 @@ class OutputXDMF : public Output {
   std::unique_ptr<FileHDF5> h5_mesh_;
   std::unique_ptr<FileXDMF> xdmf_;
 };
-  
+
 } // namespace Amanzi
 
-#endif  // OUTPUT_XDMF_HH_
-
+#endif // OUTPUT_XDMF_HH_

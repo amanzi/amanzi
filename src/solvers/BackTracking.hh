@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -22,18 +22,17 @@
 namespace Amanzi {
 namespace AmanziSolvers {
 
-template<class Vector>
+template <class Vector>
 class BackTracking {
  public:
-  BackTracking(const Teuchos::RCP<SolverFnBase<Vector> >& fn)
-      : fn_(fn) {};
+  BackTracking(const Teuchos::RCP<SolverFnBase<Vector>>& fn) : fn_(fn){};
 
   int Bisection(const Teuchos::RCP<Vector> u0, Teuchos::RCP<Vector> du);
-  int Bisection(double f0, const Teuchos::RCP<Vector> u0, Teuchos::RCP<Vector> du);
+  int
+  Bisection(double f0, const Teuchos::RCP<Vector> u0, Teuchos::RCP<Vector> du);
 
-  int LineSearch(
-      Vector& xold, double fold, Vector& g, Vector& p,
-      Vector& x, double& f, double step_max);
+  int LineSearch(Vector& xold, double fold, Vector& g, Vector& p, Vector& x,
+                 double& f, double step_max);
 
   // access
   int num_steps() { return num_steps_; }
@@ -42,7 +41,7 @@ class BackTracking {
   double fun_calls() { return fun_calls_; }
 
  private:
-  Teuchos::RCP<SolverFnBase<Vector> > fn_;
+  Teuchos::RCP<SolverFnBase<Vector>> fn_;
 
   int num_steps_, fun_calls_;
   double initial_residual_, final_residual_;
@@ -50,10 +49,12 @@ class BackTracking {
 
 
 /* ******************************************************************
-* Bisection algorithm: u1 = u0 - s * du
-****************************************************************** */
-template<class Vector>
-int BackTracking<Vector>::Bisection(double f0, const Teuchos::RCP<Vector> u0, Teuchos::RCP<Vector> du)
+ * Bisection algorithm: u1 = u0 - s * du
+ ****************************************************************** */
+template <class Vector>
+int
+BackTracking<Vector>::Bisection(double f0, const Teuchos::RCP<Vector> u0,
+                                Teuchos::RCP<Vector> du)
 {
   double f1;
   initial_residual_ = f0;
@@ -63,14 +64,14 @@ int BackTracking<Vector>::Bisection(double f0, const Teuchos::RCP<Vector> u0, Te
   Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u0));
 
   u1->update(1.0, *u0, -1.0, *du, 0.0);
-  
+
   fn_->Residual(u1, r);
   f1 = r->norm2();
 
   num_steps_ = 0;
   if (f1 < f0 * BACKTRACKING_GOOD_REDUCTION) {
     final_residual_ = f1;
-    return 0;  // success
+    return 0; // success
   }
 
   double s0(0.0), s1(1.0), s2;
@@ -85,21 +86,23 @@ int BackTracking<Vector>::Bisection(double f0, const Teuchos::RCP<Vector> u0, Te
     if (f1 < f0 * BACKTRACKING_GOOD_REDUCTION) {
       du->scale(s2);
       final_residual_ = f1;
-      return BACKTRACKING_USED;  // backtraking was activated
+      return BACKTRACKING_USED; // backtraking was activated
     } else {
       s1 = s2;
     }
-  }  
+  }
 
   return BACKTRACKING_MAX_ITERATIONS;
 }
 
 
 /* ******************************************************************
-* Bisection algorithm
-****************************************************************** */
-template<class Vector>
-int BackTracking<Vector>::Bisection(const Teuchos::RCP<Vector> u0, Teuchos::RCP<Vector> du)
+ * Bisection algorithm
+ ****************************************************************** */
+template <class Vector>
+int
+BackTracking<Vector>::Bisection(const Teuchos::RCP<Vector> u0,
+                                Teuchos::RCP<Vector> du)
 {
   double f0;
   Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u0));
@@ -107,18 +110,18 @@ int BackTracking<Vector>::Bisection(const Teuchos::RCP<Vector> u0, Teuchos::RCP<
   fn_->Residual(u0, r);
   f0 = r->norm2();
 
-  return Bisection(f0, u0, du);  
+  return Bisection(f0, u0, du);
 }
-  
 
 
 /* ******************************************************************
-* Line search
-****************************************************************** */
+ * Line search
+ ****************************************************************** */
 template <class Vector>
-int BackTracking<Vector>::LineSearch(
-    Vector& xold, double fold, Vector& g, Vector& p,
-    Vector& x, double& f, double step_max) 
+int
+BackTracking<Vector>::LineSearch(Vector& xold, double fold, Vector& g,
+                                 Vector& p, Vector& x, double& f,
+                                 double step_max)
 {
   Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(x));
 
@@ -131,9 +134,7 @@ int BackTracking<Vector>::LineSearch(
   sum = p.norm2();
 
   // Scale if attempted step is too big.
-  if (sum > step_max) {
-    p.scale(step_max / sum);
-  }
+  if (sum > step_max) { p.scale(step_max / sum); }
 
   double slope;
   slope = g.dot(p);
@@ -141,7 +142,7 @@ int BackTracking<Vector>::LineSearch(
 
   // Compute lambda_min
   /*
-  double temp, test = 0.0; 
+  double temp, test = 0.0;
   for (int i = 0; i < n; i++) {
     temp=abs(p[i])/MAX(abs(xold[i]),1.0);
     if (temp > test) test=temp;
@@ -161,19 +162,20 @@ int BackTracking<Vector>::LineSearch(
     if (alam < alamin) {
       x = xold;
       return 0;
-    // Sufficient function decrease
+      // Sufficient function decrease
     } else if (f <= fold + alpha * alam * slope) {
       return 0;
-    // Backtracking
+      // Backtracking
     } else {
       if (alam == 1.0) {
-        tmplam = -slope / (2.0 * (f - fold - slope));  // First time.
-      } else {                                         // Subsequent backtracks.
+        tmplam = -slope / (2.0 * (f - fold - slope)); // First time.
+      } else {                                        // Subsequent backtracks.
         double rhs1, rhs2, a, b;
         rhs1 = f - fold - alam * slope;
         rhs2 = f2 - fold - alam2 * slope;
         a = (rhs1 / (alam * alam) - rhs2 / (alam2 * alam2)) / (alam - alam2);
-        b = (-alam2 * rhs1 / (alam * alam) + alam * rhs2 / (alam2 * alam2)) / (alam - alam2);
+        b = (-alam2 * rhs1 / (alam * alam) + alam * rhs2 / (alam2 * alam2)) /
+            (alam - alam2);
 
         if (a == 0.0) {
           tmplam = -slope / (2.0 * b);
@@ -195,14 +197,13 @@ int BackTracking<Vector>::LineSearch(
 
     alam2 = alam;
     f2 = f;
-    alam = std::max(tmplam, 0.1 * alam);  // lambda > 0.1 lambda_1
-  } 
+    alam = std::max(tmplam, 0.1 * alam); // lambda > 0.1 lambda_1
+  }
   return 0;
 }
 
 
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 #endif
-

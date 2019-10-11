@@ -4,7 +4,7 @@
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Author: Ethan Coon (coonet@ornl.gov)
 */
 
 //! The mixin with default implementations for a Multi-Process Coordinator (MPC)
@@ -45,7 +45,7 @@ namespace Amanzi {
 
 template <class Base_t, class PK_Contained_t>
 class PK_MixinMPC : public Base_t {
-public:
+ public:
   typedef std::vector<Teuchos::RCP<PK_Contained_t>> SubPKList;
 
   using Base_t::Base_t;
@@ -57,7 +57,7 @@ public:
   // testing.  Should make this private and friend the test generation
   // function or something?  Children should only be created by
   // ConstructChildren().
-  void SetChildren(const SubPKList &sub_pks) { sub_pks_ = sub_pks; }
+  void SetChildren(const SubPKList& sub_pks) { sub_pks_ = sub_pks; }
 
   // PK methods
   // -- sets up sub-PKs
@@ -67,19 +67,19 @@ public:
   void Initialize();
 
   // Returns validity of the step taken from tag_old to tag_new
-  bool ValidStep(const Key &tag_old, const Key &tag_new);
+  bool ValidStep(const Key& tag_old, const Key& tag_new);
 
   // Do work that can only be done if we know the step was successful.
-  void CommitStep(const Key &tag_old, const Key &tag_new);
+  void CommitStep(const Key& tag_old, const Key& tag_new);
 
   // Revert a step from tag_new back to tag_old
-  void FailStep(const Key &tag_old, const Key &tag_new);
+  void FailStep(const Key& tag_old, const Key& tag_new);
 
   // Calculate any diagnostics at tag, currently used for visualization.
-  void CalculateDiagnostics(const Key &tag);
+  void CalculateDiagnostics(const Key& tag);
 
   // Mark, as changed, any primary variable evaluator owned by this PK
-  void ChangedSolutionPK(const Key &tag);
+  void ChangedSolutionPK(const Key& tag);
 
   // Generates the TreeVectorSpace that represents the solution vector.
   Teuchos::RCP<TreeVectorSpace> SolutionSpace();
@@ -91,7 +91,7 @@ public:
   // data, copy pointers.  Otherwise ensure pointers are equal.
   //
   // These almost certainly are implemented by default.
-  void StateToSolution(TreeVector &soln, const Key &tag, const Key &suffix);
+  void StateToSolution(TreeVector& soln, const Key& tag, const Key& suffix);
 
   // Ensure consistency between a time integrator's view of data (TreeVector)
   // and the dag's view of data (dictionary of CompositeVectors).
@@ -102,11 +102,11 @@ public:
   // the State does have this data, ensure consistency.
   //
   // These almost certainly are implemented by default.
-  void SolutionToState(const Key &tag, const Key &suffix);
+  void SolutionToState(const Key& tag, const Key& suffix);
 
-  void StateToState(const Key &tag_from, const Key &tag_to);
+  void StateToState(const Key& tag_from, const Key& tag_to);
 
-protected:
+ protected:
   // list of the PKs coupled by this MPC
   SubPKList sub_pks_;
 };
@@ -115,9 +115,10 @@ protected:
 // Loop over sub-PKs, calling their Setup methods
 // -----------------------------------------------------------------------------
 template <class Base_t, class PK_Contained_t>
-void PK_MixinMPC<Base_t, PK_Contained_t>::Setup() {
-  for (auto &pk : sub_pks_)
-    pk->Setup();
+void
+PK_MixinMPC<Base_t, PK_Contained_t>::Setup()
+{
+  for (auto& pk : sub_pks_) pk->Setup();
   Base_t::Setup();
 }
 
@@ -125,9 +126,10 @@ void PK_MixinMPC<Base_t, PK_Contained_t>::Setup() {
 // Loop over sub-PKs, calling their initialization methods
 // -----------------------------------------------------------------------------
 template <class Base_t, class PK_Contained_t>
-void PK_MixinMPC<Base_t, PK_Contained_t>::Initialize() {
-  for (auto &pk : sub_pks_)
-    pk->Initialize();
+void
+PK_MixinMPC<Base_t, PK_Contained_t>::Initialize()
+{
+  for (auto& pk : sub_pks_) pk->Initialize();
   Base_t::Initialize();
 }
 
@@ -135,11 +137,12 @@ void PK_MixinMPC<Base_t, PK_Contained_t>::Initialize() {
 // Valid implies ALL are valid
 // -----------------------------------------------------------------------------
 template <class Base_t, class PK_Contained_t>
-bool PK_MixinMPC<Base_t, PK_Contained_t>::ValidStep(const Key &tag_old,
-                                                    const Key &tag_new) {
-  for (auto &pk : sub_pks_) {
-    if (!pk->ValidStep(tag_old, tag_new))
-      return false;
+bool
+PK_MixinMPC<Base_t, PK_Contained_t>::ValidStep(const Key& tag_old,
+                                               const Key& tag_new)
+{
+  for (auto& pk : sub_pks_) {
+    if (!pk->ValidStep(tag_old, tag_new)) return false;
   }
   return true;
 }
@@ -148,38 +151,42 @@ bool PK_MixinMPC<Base_t, PK_Contained_t>::ValidStep(const Key &tag_old,
 // Call all commits
 // -----------------------------------------------------------------------------
 template <class Base_t, class PK_Contained_t>
-void PK_MixinMPC<Base_t, PK_Contained_t>::CommitStep(const Key &tag_old,
-                                                     const Key &tag_new) {
-  for (auto &pk : sub_pks_)
-    pk->CommitStep(tag_old, tag_new);
+void
+PK_MixinMPC<Base_t, PK_Contained_t>::CommitStep(const Key& tag_old,
+                                                const Key& tag_new)
+{
+  for (auto& pk : sub_pks_) pk->CommitStep(tag_old, tag_new);
 }
 
 // -----------------------------------------------------------------------------
 // Call all fails
 // -----------------------------------------------------------------------------
 template <class Base_t, class PK_Contained_t>
-void PK_MixinMPC<Base_t, PK_Contained_t>::FailStep(const Key &tag_old,
-                                                   const Key &tag_new) {
-  for (auto &pk : sub_pks_)
-    pk->FailStep(tag_old, tag_new);
+void
+PK_MixinMPC<Base_t, PK_Contained_t>::FailStep(const Key& tag_old,
+                                              const Key& tag_new)
+{
+  for (auto& pk : sub_pks_) pk->FailStep(tag_old, tag_new);
 }
 
 // -----------------------------------------------------------------------------
 // Calculate any diagnostics at tag
 // -----------------------------------------------------------------------------
 template <class Base_t, class PK_Contained_t>
-void PK_MixinMPC<Base_t, PK_Contained_t>::CalculateDiagnostics(const Key &tag) {
-  for (auto &pk : sub_pks_)
-    pk->CalculateDiagnostics(tag);
+void
+PK_MixinMPC<Base_t, PK_Contained_t>::CalculateDiagnostics(const Key& tag)
+{
+  for (auto& pk : sub_pks_) pk->CalculateDiagnostics(tag);
 }
 
 // -----------------------------------------------------------------------------
 // Mark, as changed, any primary variable evaluator owned by this PK
 // -----------------------------------------------------------------------------
 template <class Base_t, class PK_Contained_t>
-void PK_MixinMPC<Base_t, PK_Contained_t>::ChangedSolutionPK(const Key &tag) {
-  for (auto &pk : sub_pks_)
-    pk->ChangedSolutionPK(tag);
+void
+PK_MixinMPC<Base_t, PK_Contained_t>::ChangedSolutionPK(const Key& tag)
+{
+  for (auto& pk : sub_pks_) pk->ChangedSolutionPK(tag);
 }
 
 
@@ -188,10 +195,11 @@ void PK_MixinMPC<Base_t, PK_Contained_t>::ChangedSolutionPK(const Key &tag) {
 // -----------------------------------------------------------------------------
 template <class Base_t, class PK_Contained_t>
 Teuchos::RCP<TreeVectorSpace>
-PK_MixinMPC<Base_t, PK_Contained_t>::SolutionSpace() {
+PK_MixinMPC<Base_t, PK_Contained_t>::SolutionSpace()
+{
   auto space = Teuchos::rcp(new TreeVectorSpace());
-  for (auto &pk : sub_pks_) space->PushBack(pk->SolutionSpace());
-  return space;  
+  for (auto& pk : sub_pks_) space->PushBack(pk->SolutionSpace());
+  return space;
 }
 
 
@@ -203,9 +211,11 @@ PK_MixinMPC<Base_t, PK_Contained_t>::SolutionSpace() {
 // data, copy pointers.  Otherwise ensure pointers are equal.
 // -----------------------------------------------------------------------------
 template <class Base_t, class PK_Contained_t>
-void PK_MixinMPC<Base_t, PK_Contained_t>::StateToSolution(TreeVector &soln,
-                                                          const Key &tag,
-                                                          const Key &suffix) {
+void
+PK_MixinMPC<Base_t, PK_Contained_t>::StateToSolution(TreeVector& soln,
+                                                     const Key& tag,
+                                                     const Key& suffix)
+{
   AMANZI_ASSERT(soln.size() == sub_pks_.size());
   // if (soln.size() != sub_pks_.size()) {
   //   AMANZI_ASSERT(soln.size() == 0);
@@ -216,7 +226,7 @@ void PK_MixinMPC<Base_t, PK_Contained_t>::StateToSolution(TreeVector &soln,
   // }
 
   int i = 0;
-  for (auto &pk : sub_pks_) {
+  for (auto& pk : sub_pks_) {
     pk->StateToSolution(*soln.SubVector(i), tag, suffix);
     ++i;
   }
@@ -232,17 +242,19 @@ void PK_MixinMPC<Base_t, PK_Contained_t>::StateToSolution(TreeVector &soln,
 // the State does have this data, ensure consistency.
 // -----------------------------------------------------------------------------
 template <class Base_t, class PK_Contained_t>
-void PK_MixinMPC<Base_t, PK_Contained_t>::SolutionToState(const Key &tag,
-                                                          const Key &suffix) {
-  for (auto &pk : sub_pks_)
-    pk->SolutionToState(tag, suffix);
+void
+PK_MixinMPC<Base_t, PK_Contained_t>::SolutionToState(const Key& tag,
+                                                     const Key& suffix)
+{
+  for (auto& pk : sub_pks_) pk->SolutionToState(tag, suffix);
 }
 
 template <class Base_t, class PK_Contained_t>
-void PK_MixinMPC<Base_t, PK_Contained_t>::StateToState(const Key &tag_from,
-                                                       const Key &tag_to) {
-  for (auto &pk : sub_pks_)
-    pk->StateToState(tag_from, tag_to);
+void
+PK_MixinMPC<Base_t, PK_Contained_t>::StateToState(const Key& tag_from,
+                                                  const Key& tag_to)
+{
+  for (auto& pk : sub_pks_) pk->StateToState(tag_from, tag_to);
 }
 
 } // namespace Amanzi

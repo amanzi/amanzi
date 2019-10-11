@@ -44,41 +44,45 @@ These tests that functionality with a series of ODEs.
 
 using namespace Amanzi;
 
-SUITE(PKS_MPC) {
-
+SUITE(PKS_MPC)
+{
   // weak MPC coupling two FE PKs
-  TEST(SEQUENTIAL_BC_FORWARD_EULER) {
-    typedef PK_Explicit_Adaptor<PK_ODE_Explicit<
-        PK_MixinExplicit<PK_MixinLeafCompositeVector<PK_Default>>,
-        DudtEvaluatorB>>
-        PK_B_t;
-    typedef PK_Explicit_Adaptor<PK_ODE_Explicit<
-        PK_MixinExplicit<PK_MixinLeafCompositeVector<PK_Default>>,
-        DudtEvaluatorC>>
-        PK_C_t;
+  TEST(SEQUENTIAL_BC_FORWARD_EULER)
+  {
+    typedef PK_Explicit_Adaptor<
+      PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeafCompositeVector<PK_Default>>,
+                      DudtEvaluatorB>>
+      PK_B_t;
+    typedef PK_Explicit_Adaptor<
+      PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeafCompositeVector<PK_Default>>,
+                      DudtEvaluatorC>>
+      PK_C_t;
     typedef PK_Adaptor<PK_MixinMPCAdvanceStepWeak<
-        PK_MixinMPCGetDtMin<PK_MixinMPC<PK_Default, PK>>>>
-        MPC_t;
+      PK_MixinMPCGetDtMin<PK_MixinMPC<PK_Default, PK>>>>
+      MPC_t;
 
     auto run = createRunMPC<MPC_t, PK_B_t, PK_C_t>(
-        "BC weak forward euler", "B, forward euler", "C, forward euler");
+      "BC weak forward euler", "B, forward euler", "C, forward euler");
     auto nsteps = run_test(run->S, run->pk);
 
     // check B soln -- same as B_FORWARD_EULER
     CHECK_CLOSE(std::exp(1),
-                run->S->Get<CompositeVector>("primaryB").ViewComponent<AmanziDefaultHost>("cell", false)(0,0),
+                run->S->Get<CompositeVector>("primaryB")
+                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
                 0.15);
     CHECK_CLOSE(2.59374, // calculated via test.py
-                run->S->Get<CompositeVector>("primaryB").ViewComponent<AmanziDefaultHost>("cell", false)(0,0),
+                run->S->Get<CompositeVector>("primaryB")
+                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
                 1.e-4);
 
     // check C soln -- same as C_FORWARD_EULER
     CHECK_CLOSE(std::exp(1),
-                run->S->Get<CompositeVector>("primaryC").ViewComponent<AmanziDefaultHost>("cell", false)(0,0),
+                run->S->Get<CompositeVector>("primaryC")
+                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
                 0.4);
     CHECK_CLOSE(2.33463, // calculated via test.py
                 run->S->Get<CompositeVector>("primaryC")
-                      .ViewComponent<AmanziDefaultHost>("cell", false)(0,0),
+                  .ViewComponent<AmanziDefaultHost>("cell", false)(0, 0),
                 1.e-4);
 
     CHECK_EQUAL(10, nsteps.first);
@@ -163,7 +167,8 @@ SUITE(PKS_MPC) {
   //   CHECK_EQUAL(0, nsteps.second);
   // }
 
-  // // weak MPC coupling one FE and one implicit BDF with a variable timestep in
+  // // weak MPC coupling one FE and one implicit BDF with a variable timestep
+  // in
   // // which the BDF DOES fail, forcing the explicit to back up
   // TEST(SEQUENTIAL_BC_FE_BDF_FAILING) {
   //   typedef PK_Explicit_Adaptor<PK_ODE_Explicit<
@@ -206,7 +211,8 @@ SUITE(PKS_MPC) {
   //   CHECK_EQUAL(2, nsteps.second);
   // }
 
-  // // weak MPC coupling one FE and one implicit BDF with a variable timestep in
+  // // weak MPC coupling one FE and one implicit BDF with a variable timestep
+  // in
   // // which the BDF DOES fail, and subcycles to keep up with the explicit
   // TEST(SEQUENTIAL_BC_FE_BDF_FAILING2) {
   //   typedef PK_Explicit_Adaptor<PK_ODE_Explicit<
@@ -222,7 +228,8 @@ SUITE(PKS_MPC) {
   //       MPC_t;
 
   //   auto run = createRunMPC<MPC_t, PK_B_t, PK_C_t>(
-  //       "BC weak imex variable dt", "B, RK4", "C, backward euler, large step");
+  //       "BC weak imex variable dt", "B, RK4", "C, backward euler, large
+  //       step");
   //   auto nsteps = run_test(run->S, run->pk);
 
   //   // check B soln - note this is the same as pks_ode:B_RK4
@@ -328,5 +335,4 @@ SUITE(PKS_MPC) {
 
   //   CHECK_EQUAL(96, nsteps.first);
   // }
-
 }

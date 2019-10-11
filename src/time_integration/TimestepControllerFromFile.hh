@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -21,7 +21,8 @@ number of iterations enough to alter the timestep history, resulting in
 solutions which are enough different to cause doubt over their correctness.
 
 * `"file name`" ``[string]`` Path to hdf5 file containing timestep information.
-* `"timestep header`" ``[string]`` Name of the dataset containing the history of timestep sizes.
+* `"timestep header`" ``[string]`` Name of the dataset containing the history of
+timestep sizes.
 
 */
 
@@ -38,7 +39,6 @@ solutions which are enough different to cause doubt over their correctness.
 namespace Amanzi {
 
 class TimestepControllerFromFile : public TimestepController {
-
  public:
   TimestepControllerFromFile(Teuchos::ParameterList& plist);
 
@@ -53,4 +53,3 @@ class TimestepControllerFromFile : public TimestepController {
 } // namespace Amanzi
 
 #endif
-

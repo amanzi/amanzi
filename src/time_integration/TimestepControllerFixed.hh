@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -32,12 +32,12 @@ minimum of PK's initial timestep sizes.
 namespace Amanzi {
 
 class TimestepControllerFixed : public TimestepController {
-
  public:
   TimestepControllerFixed(Teuchos::ParameterList& plist) : plist_(plist) {}
 
   // single method for timestep control
-  double get_timestep(double dt, int iterations) {
+  double get_timestep(double dt, int iterations)
+  {
     if (iterations < 0) {
       std::string msg = "Timestep failed: Time step crash";
       Errors::Message m(msg);
@@ -54,4 +54,3 @@ class TimestepControllerFixed : public TimestepController {
 } // namespace Amanzi
 
 #endif
-

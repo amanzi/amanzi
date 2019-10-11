@@ -11,31 +11,33 @@
 
 using namespace Amanzi;
 
-SUITE(SolutionHistoryTests) {
-
+SUITE(SolutionHistoryTests)
+{
   // data structures for testing
   struct test_data {
     Comm_ptr_type comm;
     Vector_ptr_type x;
 
-    test_data() {
+    test_data()
+    {
       comm = getDefaultComm();
-      auto map = Teuchos::rcp(new Map_type(2,0,comm));
+      auto map = Teuchos::rcp(new Map_type(2, 0, comm));
       x = Teuchos::rcp(new Vector_type(map));
     }
   };
 
-  TEST_FIXTURE(test_data, SolutionHistory_1) {
+  TEST_FIXTURE(test_data, SolutionHistory_1)
+  {
     std::cout << "Test: SolutionHistory_1" << std::endl;
 
     // create a solution history of size three
-    Teuchos::RCP<Amanzi::SolutionHistory<Vector_type> > SH =
-        Teuchos::rcp(new Amanzi::SolutionHistory<Vector_type>(3, 0.0, *x));
+    Teuchos::RCP<Amanzi::SolutionHistory<Vector_type>> SH =
+      Teuchos::rcp(new Amanzi::SolutionHistory<Vector_type>(3, 0.0, *x));
     x->putScalar(1.0);
     CHECK_EQUAL(SH->history_size(), 1);
     CHECK_EQUAL(SH->MostRecentTime(), 0.0);
 
-    SH->RecordSolution(1.0,* x);
+    SH->RecordSolution(1.0, *x);
 
     CHECK_EQUAL(SH->history_size(), 2);
     CHECK_EQUAL(SH->MostRecentTime(), 1.0);
@@ -57,7 +59,8 @@ SUITE(SolutionHistoryTests) {
     Teuchos::RCP<Vector_type> y = Teuchos::rcp(new Vector_type(*x));
     SH->MostRecentSolution(*y);
 
-    double norminf = y->normInf(); // compute the max norm of the computed difference
+    double norminf =
+      y->normInf(); // compute the max norm of the computed difference
     CHECK_EQUAL(norminf, 9.0);
 
     std::vector<double> h;
@@ -93,14 +96,15 @@ SUITE(SolutionHistoryTests) {
     CHECK_EQUAL(norminf, 6.25);
   }
 
-  TEST_FIXTURE(test_data, SolutionHistory_2) {
+  TEST_FIXTURE(test_data, SolutionHistory_2)
+  {
     std::cout << "Test: SolutionHistory_2" << std::endl;
     auto xdot = Teuchos::rcp(new Vector_type(x->getMap()));
     x->putScalar(0.0);
     xdot->putScalar(0.0);
     // create a solution history of size three
-    Teuchos::RCP<Amanzi::SolutionHistory<Vector_type> > SH =
-        Teuchos::rcp(new Amanzi::SolutionHistory<Vector_type>(4, 0.0, *x, *xdot));
+    Teuchos::RCP<Amanzi::SolutionHistory<Vector_type>> SH =
+      Teuchos::rcp(new Amanzi::SolutionHistory<Vector_type>(4, 0.0, *x, *xdot));
 
     x->putScalar(1.0);
     xdot->putScalar(2.0);

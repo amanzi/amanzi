@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -24,7 +24,8 @@
 //#include "Op_Factory.hh"
 #include "Vec.hh"
 
-TEST(STATE_CREATION) {
+TEST(STATE_CREATION)
+{
   using namespace Amanzi;
 
   State s;
@@ -32,7 +33,8 @@ TEST(STATE_CREATION) {
   s.Setup();
 }
 
-TEST(STATE_ASSIGNMENT) {
+TEST(STATE_ASSIGNMENT)
+{
   using namespace Amanzi;
 
   State s;
@@ -42,11 +44,12 @@ TEST(STATE_ASSIGNMENT) {
   CHECK_EQUAL(1.1, s.Get<double>("my_double"));
 }
 
-TEST(STATE_FACTORIES_PERSIST) {
+TEST(STATE_FACTORIES_PERSIST)
+{
   using namespace Amanzi;
 
   // create a mesh
-  auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   AmanziMesh::MeshFactory fac(comm);
   auto mesh = fac.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
@@ -56,20 +59,21 @@ TEST(STATE_FACTORIES_PERSIST) {
 
   // require data with factory
   s.Require<CompositeVector, CompositeVectorSpace>("my_vec", "", "my_vec_owner")
-      .SetMesh(s.GetMesh())
-      ->SetGhosted();
+    .SetMesh(s.GetMesh())
+    ->SetGhosted();
 
   s.Require<CompositeVector, CompositeVectorSpace>("my_vec").SetComponent(
-      "cell", AmanziMesh::CELL, 1);
+    "cell", AmanziMesh::CELL, 1);
 
   s.Setup();
 }
 
-TEST(STATE_HETEROGENEOUS_DATA) {
+TEST(STATE_HETEROGENEOUS_DATA)
+{
   using namespace Amanzi;
 
   // create a mesh
-  auto comm = Comm_ptr_type( new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+  auto comm = Comm_ptr_type(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   AmanziMesh::MeshFactory fac(comm);
   auto mesh = fac.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
 
@@ -85,9 +89,9 @@ TEST(STATE_HETEROGENEOUS_DATA) {
 
   // require data with factory
   s.Require<CompositeVector, CompositeVectorSpace>("my_vec", "", "my_vec_owner")
-      .SetMesh(s.GetMesh())
-      ->SetComponent("cell", AmanziMesh::CELL, 1)
-      ->SetGhosted();
+    .SetMesh(s.GetMesh())
+    ->SetComponent("cell", AmanziMesh::CELL, 1)
+    ->SetGhosted();
 
   s.Setup();
 
@@ -129,6 +133,3 @@ TEST(STATE_HETEROGENEOUS_DATA) {
   CHECK_EQUAL(1.1, s.Get<double>("my_double"));
   CHECK_EQUAL(3.3, s.Get<double>("my_double", "prev"));
 }
-
-
-

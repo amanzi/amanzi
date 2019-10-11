@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -24,15 +24,17 @@ namespace Amanzi {
 
 // NOTE: this is in the original code, but then not implemented correctly so
 // was not written...
-//const std::string FileXDMF::xdmfHeader_ = "<?xml version=\"1.0\" ?>\n<!DOCTYPE Xdmf SYSTEM \"Xdmf.dtd\" []>\n";
+// const std::string FileXDMF::xdmfHeader_ = "<?xml version=\"1.0\"
+// ?>\n<!DOCTYPE Xdmf SYSTEM \"Xdmf.dtd\" []>\n";
 const std::string FileXDMF::xdmfHeader_ = "";
 
 const std::string FileXDMF::DatatypeMap<int>::type = "Int";
 const std::string FileXDMF::DatatypeMap<float>::type = "Float";
 const std::string FileXDMF::DatatypeMap<double>::type = "Float";
 
-FileXDMF::FileXDMF(const std::string& prefix, int n_nodes, int n_elems, int n_conns) :
-    filename_prefix_(prefix),
+FileXDMF::FileXDMF(const std::string& prefix, int n_nodes, int n_elems,
+                   int n_conns)
+  : filename_prefix_(prefix),
     xmf_data_visit_(GetDataVisit_()),
     xmf_mesh_visit_(GetMeshVisit_()),
     n_nodes_(n_nodes),
@@ -41,19 +43,20 @@ FileXDMF::FileXDMF(const std::string& prefix, int n_nodes, int n_elems, int n_co
     cycle_(0),
     last_mesh_cycle_(-1)
 {
-  WriteFile_(filename_prefix_+"_mesh.VisIt.xmf", xmf_mesh_visit_);
-  WriteFile_(filename_prefix_+"_data.VisIt.xmf", xmf_data_visit_);
+  WriteFile_(filename_prefix_ + "_mesh.VisIt.xmf", xmf_mesh_visit_);
+  WriteFile_(filename_prefix_ + "_data.VisIt.xmf", xmf_data_visit_);
 
   // strip the prefix for a basename
   // -- for linux/unix/mac directory names
   std::stringstream ss(prefix);
   char delim('/');
-  while(std::getline(ss, basename_, delim)) { }
+  while (std::getline(ss, basename_, delim)) {}
 }
 
 
 void
-FileXDMF::CreateTimestep(const double time, const int cycle, const bool write_mesh)
+FileXDMF::CreateTimestep(const double time, const int cycle,
+                         const bool write_mesh)
 {
   // create the single timestep data xmf
   xmf_data_timestep_ = GetDataTimestep_(time, cycle, write_mesh);
@@ -61,7 +64,8 @@ FileXDMF::CreateTimestep(const double time, const int cycle, const bool write_me
 }
 
 void
-FileXDMF::CloseTimestep(const double time, const int cycle, const bool write_mesh)
+FileXDMF::CloseTimestep(const double time, const int cycle,
+                        const bool write_mesh)
 {
   // get the timestep filename
   std::stringstream data_timestep_stream;
@@ -72,11 +76,12 @@ FileXDMF::CloseTimestep(const double time, const int cycle, const bool write_mes
   node.addChild(GetGrid_(data_timestep_stream.str()));
 
   // write the data files
-  WriteFile_(filename_prefix_+"_data.VisIt.xmf", xmf_data_visit_);
+  WriteFile_(filename_prefix_ + "_data.VisIt.xmf", xmf_data_visit_);
   std::stringstream data_full_filename_stream;
-  data_full_filename_stream << filename_prefix_ << "_data.h5." << cycle << ".xmf";
+  data_full_filename_stream << filename_prefix_ << "_data.h5." << cycle
+                            << ".xmf";
   WriteFile_(data_full_filename_stream.str(), xmf_data_timestep_);
-  
+
   if (write_mesh) {
     // get the mesh timestep
     auto xmf_mesh_timestep = GetMeshTimestep_(time, cycle);
@@ -88,17 +93,19 @@ FileXDMF::CloseTimestep(const double time, const int cycle, const bool write_mes
     node.addChild(GetGrid_(mesh_timestep_stream.str()));
 
     // write the mesh files
-    WriteFile_(filename_prefix_+"_mesh.VisIt.xmf", xmf_mesh_visit_);
+    WriteFile_(filename_prefix_ + "_mesh.VisIt.xmf", xmf_mesh_visit_);
     std::stringstream mesh_full_filename_stream;
-    mesh_full_filename_stream << filename_prefix_ << "_mesh.h5." << cycle << ".xmf";
+    mesh_full_filename_stream << filename_prefix_ << "_mesh.h5." << cycle
+                              << ".xmf";
     WriteFile_(mesh_full_filename_stream.str(), xmf_mesh_timestep);
   }
 
   cycle_ = -1;
 }
 
-  
-void FileXDMF::WriteFile_(const std::string& filename, const Teuchos::XMLObject& xml)
+
+void
+FileXDMF::WriteFile_(const std::string& filename, const Teuchos::XMLObject& xml)
 {
   // write xmf
   std::ofstream of(filename.c_str());
@@ -106,7 +113,8 @@ void FileXDMF::WriteFile_(const std::string& filename, const Teuchos::XMLObject&
   of.close();
 }
 
-Teuchos::XMLObject FileXDMF::GetMeshTimestep_(const double time, const int cycle)
+Teuchos::XMLObject
+FileXDMF::GetMeshTimestep_(const double time, const int cycle)
 {
   last_mesh_cycle_ = cycle;
 
@@ -115,14 +123,15 @@ Teuchos::XMLObject FileXDMF::GetMeshTimestep_(const double time, const int cycle
 
   std::stringstream mesh_name;
   mesh_name << "Mesh " << cycle;
-  
+
   // build xml object
   mesh.addChild(GetHeaderLocal_(mesh_name.str(), time, cycle, true));
   return mesh;
 }
 
-                          
-Teuchos::XMLObject FileXDMF::GetMeshVisit_()
+
+Teuchos::XMLObject
+FileXDMF::GetMeshVisit_()
 {
   Teuchos::XMLObject xmf("Xdmf");
   xmf.addAttribute("xmlns:xi", "http://www.w3.org/2001/XInclude");
@@ -133,15 +142,18 @@ Teuchos::XMLObject FileXDMF::GetMeshVisit_()
   return xmf;
 }
 
-Teuchos::XMLObject FileXDMF::GetDataTimestep_(const double time, const int cycle, const bool write_mesh)
+Teuchos::XMLObject
+FileXDMF::GetDataTimestep_(const double time, const int cycle,
+                           const bool write_mesh)
 {
   Teuchos::XMLObject xmf("Xdmf");
   xmf.addChild(GetHeaderLocal_("Mesh", time, cycle, write_mesh));
   return xmf;
 }
-  
 
-Teuchos::XMLObject FileXDMF::GetDataVisit_()
+
+Teuchos::XMLObject
+FileXDMF::GetDataVisit_()
 {
   // TODO(barker): add error handling: can't open/write
   Teuchos::XMLObject xmf("Xdmf");
@@ -154,7 +166,8 @@ Teuchos::XMLObject FileXDMF::GetDataVisit_()
 }
 
 
-Teuchos::XMLObject FileXDMF::GetHeaderGlobal_()
+Teuchos::XMLObject
+FileXDMF::GetHeaderGlobal_()
 {
   Teuchos::XMLObject domain("Domain");
   Teuchos::XMLObject grid("Grid");
@@ -165,8 +178,9 @@ Teuchos::XMLObject FileXDMF::GetHeaderGlobal_()
 }
 
 
-Teuchos::XMLObject FileXDMF::GetHeaderLocal_(
-    const std::string name, const double time_val, const int cycle, bool write_mesh)
+Teuchos::XMLObject
+FileXDMF::GetHeaderLocal_(const std::string name, const double time_val,
+                          const int cycle, bool write_mesh)
 {
   Teuchos::XMLObject domain("Domain");
 
@@ -183,7 +197,8 @@ Teuchos::XMLObject FileXDMF::GetHeaderLocal_(
 }
 
 
-Teuchos::XMLObject FileXDMF::GetTopo_(const int cycle, const bool write_mesh)
+Teuchos::XMLObject
+FileXDMF::GetTopo_(const int cycle, const bool write_mesh)
 {
   // NEW MIXED MESH
   Teuchos::XMLObject topo("Topology");
@@ -198,9 +213,11 @@ Teuchos::XMLObject FileXDMF::GetTopo_(const int cycle, const bool write_mesh)
 
   std::stringstream tmp1;
   if (write_mesh) {
-    tmp1 << basename_ << "_mesh.h5" << ":/" << cycle << "/Mesh/MixedElements";
+    tmp1 << basename_ << "_mesh.h5"
+         << ":/" << cycle << "/Mesh/MixedElements";
   } else {
-    tmp1 << basename_ << "_mesh.h5" << ":/" << last_mesh_cycle_ << "/Mesh/MixedElements";
+    tmp1 << basename_ << "_mesh.h5"
+         << ":/" << last_mesh_cycle_ << "/Mesh/MixedElements";
   }
 
   DataItem.addContent(tmp1.str());
@@ -209,9 +226,9 @@ Teuchos::XMLObject FileXDMF::GetTopo_(const int cycle, const bool write_mesh)
 }
 
 
-Teuchos::XMLObject FileXDMF::GetGeo_(const int cycle, const bool write_mesh)
+Teuchos::XMLObject
+FileXDMF::GetGeo_(const int cycle, const bool write_mesh)
 {
-
   Teuchos::XMLObject geo("Geometry");
   geo.addAttribute("Name", "geo");
   geo.addAttribute("Type", "XYZ");
@@ -220,22 +237,26 @@ Teuchos::XMLObject FileXDMF::GetGeo_(const int cycle, const bool write_mesh)
   DataItem.addAttribute("DataType", "Float");
 
   std::stringstream tmp1;
-  tmp1 << n_nodes_ << " " << " 3";
+  tmp1 << n_nodes_ << " "
+       << " 3";
   DataItem.addAttribute("Dimensions", tmp1.str());
   DataItem.addAttribute("Format", "HDF");
 
   std::stringstream tmp;
   if (write_mesh) {
-    tmp << basename_ << "_mesh.h5" << ":/" << cycle << "/Mesh/Nodes";
+    tmp << basename_ << "_mesh.h5"
+        << ":/" << cycle << "/Mesh/Nodes";
   } else {
-    tmp << basename_ << "_mesh.h5" << ":/" << last_mesh_cycle_ << "/Mesh/Nodes";
+    tmp << basename_ << "_mesh.h5"
+        << ":/" << last_mesh_cycle_ << "/Mesh/Nodes";
   }
   DataItem.addContent(tmp.str());
   geo.addChild(DataItem);
   return geo;
 }
 
-Teuchos::XMLObject FileXDMF::GetGrid_(std::string grid_filename)
+Teuchos::XMLObject
+FileXDMF::GetGrid_(std::string grid_filename)
 {
   // Create xmlObject grid
   Teuchos::XMLObject xi_include("xi:include");
@@ -245,7 +266,8 @@ Teuchos::XMLObject FileXDMF::GetGrid_(std::string grid_filename)
 }
 
 
-Teuchos::XMLObject FileXDMF::FindGridNode_(Teuchos::XMLObject xmlobject)
+Teuchos::XMLObject
+FileXDMF::FindGridNode_(Teuchos::XMLObject xmlobject)
 {
   Teuchos::XMLObject node, tmp;
 
@@ -260,9 +282,7 @@ Teuchos::XMLObject FileXDMF::FindGridNode_(Teuchos::XMLObject xmlobject)
   for (int i = 0; i < node.numChildren(); i++) {
     tmp = node.getChild(i);
     if (tmp.getTag() == "Grid" && tmp.hasAttribute("GridType")) {
-      if (tmp.getAttribute("GridType") == "Collection") {
-        return tmp;
-      }
+      if (tmp.getAttribute("GridType") == "Collection") { return tmp; }
     }
   }
 
@@ -271,7 +291,8 @@ Teuchos::XMLObject FileXDMF::FindGridNode_(Teuchos::XMLObject xmlobject)
 }
 
 
-Teuchos::XMLObject FileXDMF::FindMeshNode_(Teuchos::XMLObject xmlobject)
+Teuchos::XMLObject
+FileXDMF::FindMeshNode_(Teuchos::XMLObject xmlobject)
 {
   Teuchos::XMLObject node, tmp;
 
@@ -286,9 +307,7 @@ Teuchos::XMLObject FileXDMF::FindMeshNode_(Teuchos::XMLObject xmlobject)
   for (int i = 0; i < node.numChildren(); i++) {
     tmp = node.getChild(i);
     if (tmp.getTag() == "Grid" && tmp.hasAttribute("Name")) {
-      if (tmp.getAttribute("Name") == "Mesh") {
-        return tmp;
-      }
+      if (tmp.getAttribute("Name") == "Mesh") { return tmp; }
     }
   }
 
@@ -312,12 +331,12 @@ FileXDMF::GetField_(const std::string& varname, const std::string& location,
 
   DataItem.addAttribute("DataType", data_type);
   std::stringstream tmp;
-  tmp << basename_ << "_data.h5" << ":" << varname << "/" << cycle;
+  tmp << basename_ << "_data.h5"
+      << ":" << varname << "/" << cycle;
   DataItem.addContent(tmp.str());
   attribute.addChild(DataItem);
   return attribute;
 }
 
 
-} // namespace
-
+} // namespace Amanzi

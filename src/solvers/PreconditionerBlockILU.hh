@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -48,16 +48,19 @@ Example:
 namespace Amanzi {
 namespace AmanziPreconditioners {
 
-class PreconditionerBlockILU : public Preconditioner<Epetra_RowMatrix,Epetra_MultiVector> {
+class PreconditionerBlockILU
+  : public Preconditioner<Epetra_RowMatrix, Epetra_MultiVector> {
  public:
-  PreconditionerBlockILU() {};
-  ~PreconditionerBlockILU() {};
+  PreconditionerBlockILU(){};
+  ~PreconditionerBlockILU(){};
 
-  void Init(const std::string& name, const Teuchos::ParameterList& list) override;
+  void
+  Init(const std::string& name, const Teuchos::ParameterList& list) override;
   void Update(const Teuchos::RCP<const Epetra_RowMatrix>& A) override;
   void Destroy() override;
 
-  int ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv) const override;
+  int ApplyInverse(const Epetra_MultiVector& v,
+                   Epetra_MultiVector& hv) const override;
 
   int returned_code() override { return returned_code_; }
 
@@ -69,10 +72,8 @@ class PreconditionerBlockILU : public Preconditioner<Epetra_RowMatrix,Epetra_Mul
   mutable int returned_code_;
 };
 
-}  // namespace AmanziPreconditioners
-}  // namespace Amanzi
-
+} // namespace AmanziPreconditioners
+} // namespace Amanzi
 
 
 #endif
-

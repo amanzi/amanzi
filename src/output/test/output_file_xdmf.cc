@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -20,7 +20,8 @@
 #include "output_test_utils.hh"
 
 using namespace Amanzi;
-TEST(XDMF_WRITER) {
+TEST(XDMF_WRITER)
+{
   FileXDMF xdmf("visdump", 1818, 800, 7200);
   xdmf.CreateTimestep(0.0, 0, true);
   xdmf.WriteField<double>("base_porosity", AmanziMesh::Entity_kind::CELL);
@@ -57,9 +58,3 @@ TEST(XDMF_WRITER) {
   std::string f5 = read_text_file("visdump_data.h5.104.xmf");
   CHECK_EQUAL(f5g, f5);
 }
-  
-                    
-  
-  
-  
-

@@ -30,7 +30,8 @@ struct test_cv_vandelay {
   Teuchos::RCP<CompositeVectorSpace> x_space;
   Teuchos::RCP<CompositeVector> x;
 
-  test_cv_vandelay() {
+  test_cv_vandelay()
+  {
     comm = getDefaultComm();
     Preference pref;
     pref.clear();
@@ -40,44 +41,47 @@ struct test_cv_vandelay {
     meshfactory.set_preference(pref);
 
     mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
-    // mesh = Teuchos::rcp(new Mesh_MSTK(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2, comm, NULL));
+    // mesh = Teuchos::rcp(new Mesh_MSTK(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2,
+    // comm, NULL));
 
-    std::vector<Entity_kind> locations = {CELL, FACE};
-    std::vector<std::string> names = {"cell", "face"};
+    std::vector<Entity_kind> locations = { CELL, FACE };
+    std::vector<std::string> names = { "cell", "face" };
 
     // std::vector<Entity_kind> locations_v = {CELL, BOUNDARY_FACE};
     // std::vector<std::string> names_v = {"cell", "boundary_face"};
 
-    std::vector<int> num_dofs = {2,1};
+    std::vector<int> num_dofs = { 2, 1 };
 
     x_space = Teuchos::rcp(new CompositeVectorSpace());
-    x_space->SetMesh(mesh)->SetGhosted()
-        ->SetComponents(names, locations, num_dofs);
+    x_space->SetMesh(mesh)->SetGhosted()->SetComponents(
+      names, locations, num_dofs);
     x = x_space->Create();
   }
-  ~test_cv_vandelay() {  }
+  ~test_cv_vandelay() {}
 };
 
 
-SUITE(VANDELAY_COMPOSITE_VECTOR) {
+SUITE(VANDELAY_COMPOSITE_VECTOR)
+{
   // test the vector's putscalar
-  TEST_FIXTURE(test_cv_vandelay, CVVandelay) {
+  TEST_FIXTURE(test_cv_vandelay, CVVandelay)
+  {
     std::cout << "X has " << x->size() << " components" << std::endl;
     x->putScalar(2.0);
 
     {
       auto v_c = x->ViewComponent<AmanziDefaultHost>("cell", false);
-      CHECK_CLOSE(2., v_c(0,0), 0.00001);
-      CHECK_CLOSE(2., v_c(0,1), 0.00001);
+      CHECK_CLOSE(2., v_c(0, 0), 0.00001);
+      CHECK_CLOSE(2., v_c(0, 1), 0.00001);
 
       auto v_f = x->ViewComponent<AmanziDefaultHost>("face", 0, false);
       CHECK_CLOSE(2.0, v_f(0), 0.00001);
     }
 
     {
-      auto v_bf = x->ViewComponent<AmanziDefaultHost>("boundary_face", 0, false);
+      auto v_bf =
+        x->ViewComponent<AmanziDefaultHost>("boundary_face", 0, false);
       CHECK_CLOSE(2.0, v_bf(0), 0.00001);
     }
   }
 }
-

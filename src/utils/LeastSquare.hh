@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -13,17 +13,17 @@
 
 #include "TimerManager.hh"
 #ifndef AMANZI_UTILS_LEAST_SQUARE_HH_
-#define AMANZI_UTILS_LEAST_SQUARE_HH_
+#  define AMANZI_UTILS_LEAST_SQUARE_HH_
 
-#include <vector>
+#  include <vector>
 
 namespace Amanzi {
 namespace Utils {
 
-double bestLSfit(const std::vector<double>& h, const std::vector<double>& error);
+double
+bestLSfit(const std::vector<double>& h, const std::vector<double>& error);
 
-}  // namespace Utils
-}  // namespace Amanzi
+} // namespace Utils
+} // namespace Amanzi
 
 #endif
-

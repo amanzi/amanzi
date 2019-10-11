@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -23,7 +23,8 @@ class VerbosityLevel {
   static Teuchos::EVerbosityLevel level_;
 
   static const unsigned int kVerbositySize = 16;
-  static std::string verbosityHeader(const std::string str) {
+  static std::string verbosityHeader(const std::string str)
+  {
     std::string header(str);
     if (header.size() > kVerbositySize) {
       header.erase(kVerbositySize);
@@ -37,4 +38,3 @@ class VerbosityLevel {
 } // namespace Amanzi
 
 #endif
-

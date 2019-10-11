@@ -2,9 +2,9 @@
   WhetStone, Version 2.2
   Release name: naka-to.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -39,23 +39,16 @@ const int BOUNDARY_FACE = AmanziMesh::BOUNDARY_FACE;
 typedef long long int Entity_ID;
 typedef std::vector<Entity_ID> Entity_ID_List;
 
-enum Entity_kind {
-  NODE = 0,
-  EDGE,
-  FACE,
-  CELL,
-  BOUNDARY_FACE
-};
+enum Entity_kind { NODE = 0, EDGE, FACE, CELL, BOUNDARY_FACE };
 
 enum class Parallel_type {
-  OWNED = 1;  // Owned by this processor
-  GHOST = 2;  // Owned by another processor
-  ALL = 3;    // OWNED + GHOST
+  OWNED = 1; // Owned by this processor
+  GHOST = 2; // Owned by another processor
+  ALL = 3;   // OWNED + GHOST
 };
 #endif
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi
 
 #endif
-

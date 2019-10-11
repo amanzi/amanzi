@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -41,12 +41,12 @@ DOCUMENT VANDELAY HERE! FIX ME --etc
 #include "CompositeVector_impl.hh"
 
 #ifndef AMANZI_COMPOSITEVECTOR_HH_
-#define AMANZI_COMPOSITEVECTOR_HH_
+#  define AMANZI_COMPOSITEVECTOR_HH_
 namespace Amanzi {
 using CompositeVector = CompositeVector_<double_type>;
 
-void DeriveFaceValuesFromCellValues(CompositeVector&);
+void
+DeriveFaceValuesFromCellValues(CompositeVector&);
 
-}
+} // namespace Amanzi
 #endif
-

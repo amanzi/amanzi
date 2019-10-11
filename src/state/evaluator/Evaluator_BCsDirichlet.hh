@@ -5,19 +5,18 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
 //! Evaluates a function to provide Dirichlet data on faces.
 
 #ifndef AMANZI_EVALUATOR_BCS_DIRICHLET_HH_
-#define AMANZI_EVALUATOR_BCS_DIRICHLET_HH_
+#  define AMANZI_EVALUATOR_BCS_DIRICHLET_HH_
 
-#include "EvaluatorIndependent.hh"
-#include "BoundaryFunctionFactory.hh"
+#  include "EvaluatorIndependent.hh"
+#  include "BoundaryFunctionFactory.hh"
 
 namespace Amanzi {
 
-class 
-
+class

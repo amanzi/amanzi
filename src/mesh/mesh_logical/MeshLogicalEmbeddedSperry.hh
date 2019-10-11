@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -38,28 +38,33 @@ namespace AmanziMesh {
 
 class MeshLogicalEmbeddedSperry : public MeshLogicalFactory {
  public:
-  MeshLogicalEmbeddedSperry(const Epetra_MpiComm* comm,
-                      const Teuchos::RCP<AmanziGeometry::GeometricModel>& gm) :
-      MeshLogicalFactory(comm, gm)    
+  MeshLogicalEmbeddedSperry(
+    const Epetra_MpiComm* comm,
+    const Teuchos::RCP<AmanziGeometry::GeometricModel>& gm)
+    : MeshLogicalFactory(comm, gm)
   {}
 
-  Teuchos::RCP<MeshLogical> CreateLogical(int n_leaf, int n_stem,
-          double max_rooting_depth, int n_rheizosphere_shells);
-  Teuchos::RCP<MeshLogical> CreateEmbedded(int n_leaf, int n_stem,
-          double max_rooting_depth, int n_rheizosphere_shells,
-          const Teuchos::RCP<AmanziMesh::Mesh>& bg_mesh);
+  Teuchos::RCP<MeshLogical>
+  CreateLogical(int n_leaf, int n_stem, double max_rooting_depth,
+                int n_rheizosphere_shells);
+  Teuchos::RCP<MeshLogical>
+  CreateEmbedded(int n_leaf, int n_stem, double max_rooting_depth,
+                 int n_rheizosphere_shells,
+                 const Teuchos::RCP<AmanziMesh::Mesh>& bg_mesh);
 
  protected:
   std::string Name_(const std::string& pftname, int col,
-                    const std::string& component, int col_cell=0) {
+                    const std::string& component, int col_cell = 0)
+  {
     std::string name;
     if (component == "aroot" || component == "rheizosphere") {
-      return pftname+"_"+std::to_string(col)+"_"+std::to_string(col_cell)+"_"+component;
+      return pftname + "_" + std::to_string(col) + "_" +
+             std::to_string(col_cell) + "_" + component;
     } else {
-      return pftname+"_"+std::to_string(col)+"_"+component;
+      return pftname + "_" + std::to_string(col) + "_" + component;
     }
   }
-  
+
  protected:
   // topological parameters
   int n_leaf_, n_stem_;
@@ -68,13 +73,10 @@ class MeshLogicalEmbeddedSperry : public MeshLogicalFactory {
   Teuchos::RCP<AmanziMesh::Mesh> bg_mesh_;
 
   std::vector<Entity_ID_List> rheizosphere_to_bg_;
-  
 };
-
 
 
 } // namespace AmanziMesh
 } // namespace Amanzi
 
 #endif
-

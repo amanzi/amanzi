@@ -30,9 +30,10 @@
 
 
 /* ****************************************************************
-* DeRham complex for nodes
-**************************************************************** */
-TEST(DERHAM_COMPLEX_NODE) {
+ * DeRham complex for nodes
+ **************************************************************** */
+TEST(DERHAM_COMPLEX_NODE)
+{
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -41,7 +42,7 @@ TEST(DERHAM_COMPLEX_NODE) {
   auto comm = Amanzi::getDefaultComm();
 
   MeshFactory meshfactory(comm);
-  meshfactory.set_preference(Preference({Framework::MSTK}));
+  meshfactory.set_preference(Preference({ Framework::MSTK }));
   Teuchos::RCP<Mesh> mesh = meshfactory.create(0.0, 0.0, 0.5, 1.0, 1, 1);
 
   DeRham_Node drc(mesh);
@@ -65,7 +66,7 @@ TEST(DERHAM_COMPLEX_NODE) {
   mesh->cell_get_nodes(cell, nodes);
 
   double xi, yi, xj, yj;
-  double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell,false);
+  double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell, false);
   AmanziGeometry::Point p1(2), p2(2);
 
   for (int i = 0; i < nnodes; i++) {
@@ -83,8 +84,6 @@ TEST(DERHAM_COMPLEX_NODE) {
     }
   }
 
-  CHECK_CLOSE(T(0,0) * volume, vxx, 1e-10);
-  CHECK_CLOSE(T(0,0) * volume, vxy, 1e-10);
-
-
+  CHECK_CLOSE(T(0, 0) * volume, vxx, 1e-10);
+  CHECK_CLOSE(T(0, 0) * volume, vxy, 1e-10);
 }

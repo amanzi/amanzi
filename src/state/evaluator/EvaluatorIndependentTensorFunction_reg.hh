@@ -2,6 +2,6 @@
 namespace Amanzi {
 
 Utils::RegisteredFactory<Evaluator, EvaluatorIndependentTensorFunction>
-    EvaluatorIndependentTensorFunction::fac_("tensor independent variable");
+  EvaluatorIndependentTensorFunction::fac_("tensor independent variable");
 
 } // namespace Amanzi

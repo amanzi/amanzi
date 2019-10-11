@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -26,12 +26,15 @@ class Mesh;
 
 namespace Operators {
 
-int CellToFace_Scale(Teuchos::RCP<CompositeVector> f1, Teuchos::RCP<CompositeVector>& f2);
-int CellToFace_ScaleInverse(Teuchos::RCP<const CompositeVector> f1, Teuchos::RCP<CompositeVector>& f2);
+int
+CellToFace_Scale(Teuchos::RCP<CompositeVector> f1,
+                 Teuchos::RCP<CompositeVector>& f2);
+int
+CellToFace_ScaleInverse(Teuchos::RCP<const CompositeVector> f1,
+                        Teuchos::RCP<CompositeVector>& f2);
 
-}  // namespace Operators
-}  // namespace Amanzi
+} // namespace Operators
+} // namespace Amanzi
 
 
 #endif
-

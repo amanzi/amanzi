@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon  
+      Ethan Coon
 */
 
 
@@ -21,25 +21,29 @@ namespace Amanzi {
 namespace Data_Initializers {
 
 template <>
-bool Initialize<double>(Teuchos::ParameterList &plist, const Teuchos::ParameterList& attrs, double &t)
-{
-  return InitializePrimitiveByValue(plist, attrs, t);
-}
-  
-template <>
-bool Initialize<int>(Teuchos::ParameterList &plist, const Teuchos::ParameterList& attrs, int &t)
+bool
+Initialize<double>(Teuchos::ParameterList& plist,
+                   const Teuchos::ParameterList& attrs, double& t)
 {
   return InitializePrimitiveByValue(plist, attrs, t);
 }
 
 template <>
-bool Initialize<std::string>(Teuchos::ParameterList &plist, const Teuchos::ParameterList& attrs, std::string &t)
+bool
+Initialize<int>(Teuchos::ParameterList& plist,
+                const Teuchos::ParameterList& attrs, int& t)
+{
+  return InitializePrimitiveByValue(plist, attrs, t);
+}
+
+template <>
+bool
+Initialize<std::string>(Teuchos::ParameterList& plist,
+                        const Teuchos::ParameterList& attrs, std::string& t)
 {
   return InitializePrimitiveByValue(plist, attrs, t);
 }
 
 
-
-} // namespace
-} // namespace
-
+} // namespace Data_Initializers
+} // namespace Amanzi

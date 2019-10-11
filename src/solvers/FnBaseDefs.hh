@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon (ecoon@lanl.gov)  
+      Ethan Coon (coonet@ornl.gov)
 */
 
 
@@ -26,9 +26,8 @@ enum ModifyCorrectionResult {
   CORRECTION_MODIFIED_LAG_BACKTRACKING
 };
 
-}  // namespace FnBaseDefs
-}  // namespace AmanziSolvers
-}  // namespace Amanzi
+} // namespace FnBaseDefs
+} // namespace AmanziSolvers
+} // namespace Amanzi
 
 #endif
-

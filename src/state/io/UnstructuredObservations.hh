@@ -6,7 +6,7 @@
 
   Authors:
       Markus Berndt
-      Ethan Coon (ecoon@lanl.gov)  
+      Ethan Coon (coonet@ornl.gov)
 */
 
 
@@ -26,19 +26,18 @@
 namespace Amanzi {
 
 class UnstructuredObservations {
-
-public:
+ public:
   UnstructuredObservations(
-      Teuchos::ParameterList &observations_plist,
-      const Teuchos::RCP<ObservationData> &observation_data,
-      Epetra_MpiComm *comm);
+    Teuchos::ParameterList& observations_plist,
+    const Teuchos::RCP<ObservationData>& observation_data,
+    Epetra_MpiComm* comm);
 
   bool DumpRequested(int cycle, double time) const;
-  void MakeObservations(const State &state);
-  void RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager> &tsm);
+  void MakeObservations(const State& state);
+  void RegisterWithTimeStepManager(const Teuchos::Ptr<TimeStepManager>& tsm);
   void Flush();
 
-private:
+ private:
   typedef std::map<std::string, Teuchos::RCP<Observable>> ObservableMap;
 
   Teuchos::RCP<Amanzi::ObservationData> observation_data_;
@@ -48,4 +47,3 @@ private:
 } // namespace Amanzi
 
 #endif
-

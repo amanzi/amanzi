@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Ethan Coon (ecoon@lanl.gov)  
+      Ethan Coon (coonet@ornl.gov)
 */
 
 
@@ -13,9 +13,9 @@
 
 /*!
 
-  Include this instead of directly including Epetra_RowMatrix.h to ease transition
-  between linear algebra packages.
-  
+  Include this instead of directly including Epetra_RowMatrix.h to ease
+  transition between linear algebra packages.
+
 */
 
 
@@ -27,13 +27,12 @@
 
 #ifdef TRILINOS_TPETRA_STACK
 
-#include "Tpetra_RowMatrix.hpp"
+#  include "Tpetra_RowMatrix.hpp"
 
 #else // Epetra stack
 
-#include "Epetra_RowMatrix.h"
+#  include "Epetra_RowMatrix.h"
 
 #endif // trilinos stack
 
 #endif
-

@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Konstantin Lipnikov (lipnikov@lanl.gov)  
+      Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
 
@@ -13,7 +13,7 @@
 
 /*!
 
-List *region: boundary* defines a set of all boundary faces. 
+List *region: boundary* defines a set of all boundary faces.
 Using this definition, faces located on the domain boundary are extracted.
 
 * `"entity`" ``[string]`` Type of the mesh object.  Unclear whether this is
@@ -45,20 +45,18 @@ namespace AmanziGeometry {
 
 class RegionBoundary : public Region {
  public:
-  RegionBoundary(const std::string& name,
-                 const int id,
-                 const LifeCycleType lifecycle=PERMANENT);
+  RegionBoundary(const std::string& name, const int id,
+                 const LifeCycleType lifecycle = PERMANENT);
 
   // Is the the specified point inside this region
   bool inside(const Point& p) const;
-  
+
  protected:
-  const std::string entity_str_; // what kind of entities make up this set
+  const std::string entity_str_;    // what kind of entities make up this set
   const std::vector<int> entities_; // list of those included
 };
 
-}  // namespace AmanziGeometry
-}  // namespace Amanzi
+} // namespace AmanziGeometry
+} // namespace Amanzi
 
 #endif
-

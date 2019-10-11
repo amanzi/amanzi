@@ -4,13 +4,13 @@
 
 #include "Kokkos_Core.hpp"
 
-int main(int argc, char *argv[])
+int
+main(int argc, char* argv[])
 {
-
-  MPI_Init(&argc,&argv);
+  MPI_Init(&argc, &argv);
   Kokkos::initialize();
 
-  int status = UnitTest::RunAllTests ();
+  int status = UnitTest::RunAllTests();
 
   Kokkos::finalize();
   MPI_Finalize();

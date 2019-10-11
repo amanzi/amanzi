@@ -5,7 +5,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-      Rao Garimella (rao@lanl.gov)  
+      Rao Garimella (rao@lanl.gov)
 */
 
 
@@ -25,7 +25,7 @@ namespace AmanziGeometry {
 // -------------------------------------------------------------
 
 // Constructor
-Domain::Domain(const unsigned int dim): spatial_dimension_(dim)
+Domain::Domain(const unsigned int dim) : spatial_dimension_(dim)
 {
   if (dim < 2u || dim > 3u) {
     std::cerr << "Only 2D and 3D domains are supported" << std::endl;
@@ -67,11 +67,13 @@ Domain::~Domain(void)
 
 
 // Constructor with lists of geometric models and free regions
-Domain::Domain(const unsigned int dim, 
-               const std::vector<Teuchos::RCP<GeometricModel> >& in_geometric_models, 
-               const std::vector<Teuchos::RCP<Region> >& in_Regions) :
-  spatial_dimension_(dim), GeometricModels(in_geometric_models),
-  FreeRegions(in_Regions)
+Domain::Domain(
+  const unsigned int dim,
+  const std::vector<Teuchos::RCP<GeometricModel>>& in_geometric_models,
+  const std::vector<Teuchos::RCP<Region>>& in_Regions)
+  : spatial_dimension_(dim),
+    GeometricModels(in_geometric_models),
+    FreeRegions(in_Regions)
 {
   if (dim != 2 || dim != 3) {
     std::cerr << "Only 2D and 3D domains are supported" << std::endl;
@@ -81,13 +83,14 @@ Domain::Domain(const unsigned int dim,
 
 
 // Add a geometric model
-void Domain::Add_Geometric_Model(const Teuchos::RCP<GeometricModel>& gm)
+void
+Domain::Add_Geometric_Model(const Teuchos::RCP<GeometricModel>& gm)
 {
   // // Make sure spatial dimension of domain and geometric model are the same
 
   // if (spatial_dimension_ != gm->dimension()) {
-  //   std::cerr << "Spatial dimension of domain and geometric model mismatch" << std::endl;
-  //   throw std::exception();
+  //   std::cerr << "Spatial dimension of domain and geometric model mismatch"
+  //   << std::endl; throw std::exception();
   // }
 
   GeometricModels.push_back(gm);
@@ -95,10 +98,13 @@ void Domain::Add_Geometric_Model(const Teuchos::RCP<GeometricModel>& gm)
 
 
 // Add a Free Region
-void Domain::Add_Free_Region(const Teuchos::RCP<Region>& regptr)
+void
+Domain::Add_Free_Region(const Teuchos::RCP<Region>& regptr)
 {
   if (spatial_dimension_ < regptr->manifold_dimension()) {
-    std::cerr << "Spatial dimension of domain is less than that of the free region" << std::endl;
+    std::cerr
+      << "Spatial dimension of domain is less than that of the free region"
+      << std::endl;
     throw std::exception();
   }
 
@@ -107,32 +113,35 @@ void Domain::Add_Free_Region(const Teuchos::RCP<Region>& regptr)
 
 
 // Number of geometric models
-int Domain::Num_Geometric_Models(void) const
+int
+Domain::Num_Geometric_Models(void) const
 {
   return GeometricModels.size();
 }
 
 
 // Get the i'th Decomposition
-Teuchos::RCP<GeometricModel> Domain::Geometric_Model_i(const int i) const
+Teuchos::RCP<GeometricModel>
+Domain::Geometric_Model_i(const int i) const
 {
   return GeometricModels[i];
 }
 
 
 // Number of Free Regions
-int Domain::Num_Free_Regions(void) const
+int
+Domain::Num_Free_Regions(void) const
 {
   return FreeRegions.size();
 }
 
 
 // Get the i'th Free Region
-Teuchos::RCP<Region> Domain::Free_Region_i(const int i) const
+Teuchos::RCP<Region>
+Domain::Free_Region_i(const int i) const
 {
   return FreeRegions[i];
 }
 
-}  // namespace AmanziGeometry
-}  // namespace Amanzi
-
+} // namespace AmanziGeometry
+} // namespace Amanzi

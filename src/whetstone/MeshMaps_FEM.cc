@@ -24,10 +24,11 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Calculate mesh velocity in cell c.
-****************************************************************** */
-void MeshMaps_FEM::VelocityCell(
-    int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
+ * Calculate mesh velocity in cell c.
+ ****************************************************************** */
+void
+MeshMaps_FEM::VelocityCell(int c, const std::vector<VectorPolynomial>& vf,
+                           VectorPolynomial& vc) const
 {
   Kokkos::View<Entity_ID*> nodes;
 
@@ -68,18 +69,17 @@ void MeshMaps_FEM::VelocityCell(
   }
 
   // calculate velocity u(X) = F(X) - X
-  for (int i = 0; i < d_; ++i) {
-    vc[i](1, i) -= 1.0;
-  }
+  for (int i = 0; i < d_; ++i) { vc[i](1, i) -= 1.0; }
 }
 
 
 /* ******************************************************************
-* Supporting routine for calculating Jacobian.
-****************************************************************** */
-Tensor MeshMaps_FEM::JacobianValueInternal_(
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-    int c, const AmanziGeometry::Point& xref) const
+ * Supporting routine for calculating Jacobian.
+ ****************************************************************** */
+Tensor
+MeshMaps_FEM::JacobianValueInternal_(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                                     int c,
+                                     const AmanziGeometry::Point& xref) const
 {
   Kokkos::View<Entity_ID*> nodes;
 
@@ -103,5 +103,5 @@ Tensor MeshMaps_FEM::JacobianValueInternal_(
   return jac;
 }
 
-}  // namespace WhetStone
-}  // namespace Amanzi
+} // namespace WhetStone
+} // namespace Amanzi

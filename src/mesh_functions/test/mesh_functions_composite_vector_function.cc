@@ -24,17 +24,17 @@ using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
 using namespace Amanzi::Functions;
 
-int main (int argc, char *argv[])
+int
+main(int argc, char* argv[])
 {
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-  Kokkos::initialize(); 
-  auto status =  UnitTest::RunAllTests ();
-  Kokkos::finalize(); 
-  return status; 
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  Kokkos::initialize();
+  auto status = UnitTest::RunAllTests();
+  Kokkos::finalize();
+  return status;
 }
 
-struct another_reference_mesh
-{
+struct another_reference_mesh {
   Comm_ptr_type comm;
   Teuchos::RCP<Mesh> mesh;
   Teuchos::RCP<GeometricModel> gm;
@@ -42,12 +42,12 @@ struct another_reference_mesh
 
   another_reference_mesh()
   {
-    LEFT   = "LEFT";
-    RIGHT  = "RIGHT";
-    FRONT  = "FRONT";
-    BACK   = "BACK";
+    LEFT = "LEFT";
+    RIGHT = "RIGHT";
+    FRONT = "FRONT";
+    BACK = "BACK";
     BOTTOM = "BOTTOM";
-    TOP    = "TOP";
+    TOP = "TOP";
     INVALID = "INVALID";
 
     comm = getDefaultComm();
@@ -62,24 +62,38 @@ struct another_reference_mesh
     Teuchos::Array<double> top(Teuchos::tuple(0.0, 0.0, 1.0));
     // Create the geometric model
     Teuchos::ParameterList regions;
-    regions.sublist("LEFT").sublist("region: plane").
-        set("point",corner_min).set("normal",left);
-    regions.sublist("FRONT").sublist("region: plane").
-        set("point",corner_min).set("normal",front);
-    regions.sublist("BOTTOM").sublist("region: plane").
-        set("point",corner_min).set("normal",bottom);
-    regions.sublist("RIGHT").sublist("region: plane").
-        set("point",corner_max).set("normal",right);
-    regions.sublist("BACK").sublist("region: plane").
-        set("point",corner_max).set("normal",back);
-    regions.sublist("TOP").sublist("region: plane").
-        set("point",corner_max).set("normal",top);
-    regions.sublist("DOMAIN").sublist("region: box").
-      set("low coordinate", corner_min).set("high coordinate", corner_max);
+    regions.sublist("LEFT")
+      .sublist("region: plane")
+      .set("point", corner_min)
+      .set("normal", left);
+    regions.sublist("FRONT")
+      .sublist("region: plane")
+      .set("point", corner_min)
+      .set("normal", front);
+    regions.sublist("BOTTOM")
+      .sublist("region: plane")
+      .set("point", corner_min)
+      .set("normal", bottom);
+    regions.sublist("RIGHT")
+      .sublist("region: plane")
+      .set("point", corner_max)
+      .set("normal", right);
+    regions.sublist("BACK")
+      .sublist("region: plane")
+      .set("point", corner_max)
+      .set("normal", back);
+    regions.sublist("TOP")
+      .sublist("region: plane")
+      .set("point", corner_max)
+      .set("normal", top);
+    regions.sublist("DOMAIN")
+      .sublist("region: box")
+      .set("low coordinate", corner_min)
+      .set("high coordinate", corner_max);
 
-    gm = Teuchos::rcp(new GeometricModel(3,regions,*comm));
+    gm = Teuchos::rcp(new GeometricModel(3, regions, *comm));
     // Create the mesh
-    MeshFactory meshfactory(comm,gm);
+    MeshFactory meshfactory(comm, gm);
     mesh = meshfactory.create(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
   }
 };
@@ -88,11 +102,15 @@ struct another_reference_mesh
 TEST_FIXTURE(another_reference_mesh, cv_function)
 {
   // make the mesh function
-  Kokkos::View<double*> grad("grad",4);
-  grad(0) = 0.0; grad(1) = 0.0; grad(2) = 0.0; grad(3) = 0.0; 
+  Kokkos::View<double*> grad("grad", 4);
+  grad(0) = 0.0;
+  grad(1) = 0.0;
+  grad(2) = 0.0;
+  grad(3) = 0.0;
 
-  Teuchos::RCP<const Function> linear_func = Teuchos::rcp(new FunctionLinear(1.0,grad));
-  std::vector<Teuchos::RCP<const Function> > linear_funcs(1,linear_func);
+  Teuchos::RCP<const Function> linear_func =
+    Teuchos::rcp(new FunctionLinear(1.0, grad));
+  std::vector<Teuchos::RCP<const Function>> linear_funcs(1, linear_func);
   Teuchos::RCP<MultiFunction> vector_func =
     Teuchos::rcp(new MultiFunction(linear_funcs));
 
@@ -123,25 +141,31 @@ TEST_FIXTURE(another_reference_mesh, cv_function)
   std::vector<AmanziMesh::Entity_kind> locations(2);
   locations[0] = AmanziMesh::CELL;
   locations[1] = AmanziMesh::FACE;
-  std::vector<int> num_dofs(2,1);
+  std::vector<int> num_dofs(2, 1);
 
-  Teuchos::RCP<CompositeVectorSpace> cv_sp = Teuchos::rcp(new CompositeVectorSpace());
-  cv_sp->SetMesh(mesh)->SetGhosted(false)->SetComponents(names, locations, num_dofs);
+  Teuchos::RCP<CompositeVectorSpace> cv_sp =
+    Teuchos::rcp(new CompositeVectorSpace());
+  cv_sp->SetMesh(mesh)->SetGhosted(false)->SetComponents(
+    names, locations, num_dofs);
 
   Teuchos::RCP<CompositeVector> cv = cv_sp->Create();
   cv->putScalar(0.0);
 
   // apply the function to the vector
   cvfunc.Compute(0.0, *cv);
-  
+
   // Check
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  for (int c=0; c!=ncells; ++c) {
-    CHECK_CLOSE(1.0, cv->ViewComponent<AmanziDefaultHost>("cell")(c,0), 0.0000001);
+  int ncells =
+    mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  for (int c = 0; c != ncells; ++c) {
+    CHECK_CLOSE(
+      1.0, cv->ViewComponent<AmanziDefaultHost>("cell")(c, 0), 0.0000001);
   }
 
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  for (int f=0; f!=nfaces; ++f) {
-    CHECK_CLOSE(1.0, cv->ViewComponent<AmanziDefaultHost>("face")(f,0), 0.0000001);
+  int nfaces =
+    mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  for (int f = 0; f != nfaces; ++f) {
+    CHECK_CLOSE(
+      1.0, cv->ViewComponent<AmanziDefaultHost>("face")(f, 0), 0.0000001);
   }
 }
