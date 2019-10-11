@@ -9,9 +9,8 @@
 
 \section{Design of Amanzi}
 
-The basic design principles are about the code modularity and extensibility.
-We follow closely the Google codying style.
-
+The design principles described below are about the code modularity and extensibility.
+We follow closely, but not exactly, the Google C++ codying style.
 The titles of subsections below are mapped on the source code names
 to easy navigation.
 
@@ -19,22 +18,151 @@ to easy navigation.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{State}
 
-Describe state, fields, field evaluators, and DAG.
+State is a simple data manager. 
+It allows process kernels to require, read, and write various fields.
+It provides some data protection by providing both const and non-const data pointers for fields.
+It provides some initialization capability -- this is where all independent fields can be 
+initialized since independent variables are typically owned by the state, not by a ny process kernel.
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{PK and MPC PK}
 
-Describe approach to combining single PKs into MPC PKs.
+PK stands for Process Kernel.
+MPC stands for Multi-Process Coupler.
+Each PK and MPC PK does little actual numerical work.
+Instead, PK administrates discretization schemes, time integrators, and solvers. 
+Each PK may represent a single equation (e.g. the Poisson equation for the Darcy flow) 
+or system of strongly connected equations (e.g. the Navier-Stokes flow).
 
-MPC PK is also a PK.
-It uses the same API such as {\tt Setup}
+An MPC PK couples multiple physical processes which have their respected PKs.
+An MPC PK may often be fully automated with no knowledge of the underlying PKs.
+Since an MPC PK has the same interface as a PK, it is also a process kernel which
+allows us to build a hierarchy of physical models with various degree of coupling
+ranging from a weak coupling to an iterative coupling to a strong coupling.
+
+Much of the work in a PK is delegated to field evaluators, which implement various 
+physical and mathematical models, such as the equations of state. 
+For these reason, it is approprite to call them variable evaluators.
+The available variable eveluators are classified as follows:
+
+\begin{enumerate}
+\item Independent variable evaluators are the user-provided functions of spatial and temporal coordinates
+      and has no dependencies.
+      They could be used to compute boundary terms, source terms, and initial conditions. 
+\item Primary variable evaluatora are related to the fields solved for within a PK.
+      Examples are pressure and temperature fields.
+      Typically these evaluators are used internally to track change in fields state and inform the 
+      dependency tree about this.
+\item Secondary variable evaluators are derived either from primary variable evaluators or other secondary variables. 
+      There are two types of the secondary variable evaluators used to evaluate either a single or multiple variable.
+      A model for a secondary variable can be anything from a constitutive relation to a discrete operator
+      (apply a divergence operator to a velocity given a mesh and discretization) 
+      to a summation operator (add the divergence of Darcy fluxes to a source term to determine the mass balance).
+      Quite often, the secondary field/variable evaluators are created by high-level PKs during the setup phase 
+      and inserted automatically in the list of evaluators. 
+\end{enumerate}
+
+The evaluator is much like a functor or function; it stores no actual data, only metadata and 
+a few parameters or constants.
+It accesses data using a data manager, which controls access for both read-only and read/write modes. 
+
+All evaluators are stored in a dependency graph, which is a directed, acyclic graph (DAG) 
+describing the functional relationship of each field in the state. 
+End nodes in the dependency graph are either independent variables or primary variables. 
+All other nodes in the graph are secondary variables.
+
+The combination of a data manager and a dependency graph enables dynamic definition of each variable's model 
+and data, and splits complex equations into manageable chunks. 
+It also allows lazy evaluation, where nodes in the graph are updated (re-calculated) only if their dependencies
+have changed, resulting in a managed, automated evaluation process with fewer bugs and inefficiencies.
+
+For more details, we refer to \cite{coon2016managing}.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{CompositeVector and TreeVector}
 
-Mimics the structure of PKs and MPC PKs
+Class {\tt CompositeVector} is an implementation of an improved
+{\tt Epetra\_MultiVector} which spans multiple components and knows how to
+communicate itself.
+A composite vector is a collection of vectors defined on a common mesh and
+communicator. 
+Each vector, or component, has a name (typically, a mesh entity)
+and a number of degrees of freedom.  
+
+Ghost cell updates are managed by the {\tt CompositeVector}. 
+The design of this pattern is prompted by two things:
+\begin{itemize}
+\item The need for updated ghost cell information is typically known by the
+      user just prior to being used, not just after the non-ghost values are
+      updated.
+\item Occasionally multiple functions need ghost values, but no changes to
+      owned data have been made between these functions.  However, it is not
+      always possible for the second call to know, for certain, that the first
+      call did the communication.  Versatility means many code paths may be
+      followed.
+\end{itemize}
+
+\subsubsection{Future work: reduce number of parallel communications}
+To avoid unncessary parallel communication the following algorithm were implemented
+but are not active now.
+This may change in the future.
+
+Each time the values of the vector are changed, flags are marked to
+record that the ghost values are stale.
+Each time ghost cells are needed, that flag is checked and communication
+is done, if needed.
+Keeping these flags correct is therefore critical. 
+To do this, access to vectors must follow the rigid pattern.
+The following modifications tag the flag:
+
+\begin{enumerate}
+\item Any of the usual {\it PutScalar()}, {\it Apply()}, etc methods.
+\item Non-const calls of {\tt ViewComponent()}.
+\item Call of {\it GatherMasterToGhosted()} and {\it ChangedValues()}.
+\item {\it Scatter()} called in non-INSERT mode.
+\end{enumerate}
+
+There exist known ways to break this paradigm. 
+One is to store a non-const pointer to the underlying {\tt Epetra\_MultiVector}.
+The fix is simple as this: NEVER store a pointer to the underlying data, 
+just keep pointers to the CompositeVector itself.
+
+The other one is when one grabs a non-const pointer, call {\it Scatter()}, then 
+change the values of the local data.  
+This is the nasty one, because it is both subtle and reasonable usage.
+When you access a non-const pointer, the data is flagged as changed.
+Then you call {\it Scatter()}, the data is flagged as unchanged.
+Then you change the data from your old non-const pointer, and the data is changed, but not flagged.
+The first fix is to always call {\it ViewComponent()} after {\it Scatter()} and before changing values.
+Another way to protect yourself is to put non-const references in their own scope.
+For instance, the following practice is encourage:
+\begin{lstlisting}
+CompositeVector my_cv;
+{ // unnamed scope for my_vec
+  Epetra_MultiVector& my_vec = *my_cv.ViewComponent("cell", false);
+  my_vec[0][0] = 12;
+} // close scope of my_vec
+
+my_cv.ScatterMasterToGhosted()
+
+// Reference to my_vec is now gone, so we cannot use it and screw things up!
+
+{ // unnamed scope for my_vec
+  // This is now safe!
+  Epetra_MultiVector& my_vec = *my_cv.ViewComponent("cell", true);
+  my_vec[0][0] = my_vec[0][ghost_index] + ...
+} // close scope of my_vec
+\end{lstlisting}
+
+the final way to break the parallel mashinery is use {\it const\_cast()} and 
+then change the values.
+Const-correctness is your friend. Keep your PKs const-correct, and you will never have this problem.
+
+Note that non-INSERT modes of scatter are always done, and also always tag as changed.  
+This is because subsequent calls with different modes would break the code.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
