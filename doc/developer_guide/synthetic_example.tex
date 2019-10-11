@@ -1,11 +1,19 @@
 \section{Synthetic example}
-The purpose of this section is to shed some light into solving square systems using Amanzi. A square systems are those that can be written as
+The purpose of this section is to describe first-experince into solving square systems using Amanzi. 
+A square systems are those that can be written as
 %
 \begin{equation}
-\mbox{Find }u\in V:\;\forall v\in V\quad
-a(u,v) = f(v).
+  \mbox{Find }u\in V:\;\forall v\in V\quad
+  a(u,v) = f(v).
 \end{equation}
-The types of problems these systems include well-known differential systems like Poisson, Advection-diffusion, magneto and electro statics. In summary, the process of solving these types of systems is as follows, begin by creating a mesh using the mesh\_factory, then create a class for your PDE type as a derived class from PDE\_HelperDiscretization, this will give access to a container for local matrices and a global operator that assembles these matrices as well as routines for applying Dirichlet-type boundary conditions. Thus, the next step is to populate the entries in the container for mass matrices, then assemble the global system and the right-hand side and apply a linear solver.\\
+The types of problems these systems include well-known differential systems like Poisson, advection-diffusion, 
+magneto- and electro-statics. 
+In summary, the process of solving these types of systems is as follows, begin by creating a mesh using the
+{\tt MeshFactory}, then create a class for your PDE type as a derived class from {\tt PDE\_HelperDiscretization}, 
+this will give access to a container for local matrices and a global operator that assembles these matrices as 
+well as routines for applying Dirichlet-type boundary conditions. 
+Thus, the next step is to populate the entries in the container for mass matrices, then assemble the global 
+system and the right-hand side and apply a linear solver.
 
 
 \subsection{Defining your PDE class}\label{Sec:PDEClass}
@@ -18,18 +26,17 @@ class PDE_SecondOrderPoisson: public PDE_HelperDiscretization {
   PDE_SecondOrderPoisson(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~PDE_SecondOrderPoisson() {};
 
-  // creation of an operator
-  using PDE_HelperDiscretization::UpdateMatrices;
+  // populate container of local matrices
   virtual
   void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                       const Teuchos::Ptr<const CompositeVector>& p);
 		
-  // postprocessing: calculated stress u from displacement p
+  // postprocessing: calculate flux u from potential p
   virtual
   void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
-                  const Teuchos::Ptr<CompositeVector>& u) {};
+                  const Teuchos::Ptr<CompositeVector>& u);
 		
-  // these are accessors
+  // accessors
   Teuchos::RCP<CompositeVectorSpace> GetCVS() { return cvs_; }
 
  public:
@@ -37,142 +44,158 @@ class PDE_SecondOrderPoisson: public PDE_HelperDiscretization {
 };
 \end{lstlisting}
 
-%
-Notice that in this class we have, additionally, defined a composite vector space as a class variable. Composite vector spaces are factories for composite vectors which is an enhanced epetra multivector. This factory can help us create vectors for our trial or test spaces which in the case of a square system are the same or at least have the same set of degrees of freedom. In what follows we will explain how to define the global operator, we note that this is all done in the constructor of the PDE class.
-%
-\subsubsection{Populating The Local Matrices and Defining the Global Operator}\label{Sec:LocalMatAndGlobalOp}
-%
-The first step in populating the local matrices is to define a schema. There should be one schema for the test space and one for the trial space, in the case of square systems the same can be used for both. Schemas define the different aspects of a variable and its discretization. Schemas require two inputs: the base and and an item. The base describes what type of assembly is required for this variable the choices include cells, faces, edges and nodes all part of the AmanziMesh namespace. Selecting, for example, faces as the base will imply that the local matrices are associated with the faces of the mesh. Moreover, item defines the type of degrees of freedom that are used to discretize the variable in question. Items require three inputs: a part of the topology of the mesh like a node or an edge which defines where the degrees of freedom are places, the type of quantity the degree of freedom, whether it is scalar of vector valued and the number of degrees of freedom of this type. For a classic finite element method to solve the Poisson equation the definition of its schema will look something like
+Notice that in this class we have, additionally, defined a composite vector space as a class variable. 
+Composite vector spaces are factories for composite vectors which is an enhanced epetra multivector. 
+This factory can help us create vectors for our trial or test spaces which in the case of a square system are the same or at least have the same set of degrees of freedom. In what follows we will explain how to define the global operator, we note that this is all done in the constructor of the PDE class.
+
+
+\subsubsection{Populating the local matrices and defining the global operator}\label{Sec:LocalMatAndGlobalOp}
+The first step in populating the local matrices is to define a schema. 
+There should be one schema for the test space and one for the trial space, in the case of square systems the same can be used for both. 
+Schemas define the different aspects of a variable and its discretization. Schemas require two inputs: the base and and an item. The base describes what type of assembly is required for this variable the choices include cells, faces, edges and nodes all part of the AmanziMesh namespace. Selecting, for example, faces as the base will imply that the local matrices are associated with the faces of the mesh. Moreover, item defines the type of degrees of freedom that are used to discretize the variable in question. Items require three inputs: a part of the topology of the mesh like a node or an edge which defines where the degrees of freedom are places, the type of quantity the degree of freedom, whether it is scalar of vector valued and the number of degrees of freedom of this type. For a classic finite element method to solve the Poisson equation the definition of its schema will look something like
 %
 \begin{lstlisting}
 Schema p_schema;
 // the assembly should run over the cells thus its base are the cells
 p_schema.SetBase(AmanziMesh::CELL);
 
-// the pressure DOFs are cell-based and scalars.
+// the pressure dofs are cell-based and scalars
 p_schema.AddItem(AmanziMesh::NODE,WhetStone::DOF_Type::SCALAR,1);
 p_schema.Finalize(mesh);  // computes the starting position of the dof ids
 \end{lstlisting}
 %
-Feeding the mesh to the schema, as shown in the last step, will create important variables used in the eventual assembly.\\
-%
-Once the necessary schemas are defined the local operator can be initialized and populated in a fairly straight-forward way. It is a matter of feeding the schemas to the local operator and defining the necessary matrices. For example:
+Feeding the mesh to the schema, as shown in the last step, will create important variables used in the eventual assembly.
+
+Once the necessary schemas are defined the local operator can be initialized and populated in a fairly straight-forward way. 
+It is a matter of feeding the schemas to the local operator and defining the necessary matrices. For example:
 %
 \begin{lstlisting}
 local_op_ = Teuchos::rcp(new Op_Cell_Schema(p_schema,p_schema,mesh));
-//Now we populate the local matrices
+// populate the local matrices
 for (int c = 0; c < ncells_owned ; c++) {
-	Mcell(0,0) = 3, Mcell(0,1) = -1, Mcell(0,2) = -1, Mcell(0,3) = -1;
-	Mcell(1,0) = -1, Mcell(1,1) = 3, Mcell(1,2) = -1, Mcell(1,3) = -1;
-	Mcell(2,0) = -1, Mcell(2,1) = -1, Mcell(2,2) = 3, Mcell(2,3) = -1;
-	Mcell(3,0) = -1, Mcell(3,1) = -1, Mcell(3,2) = -1, Mcell(3,3) = 3;
-	local_op_->matrices[c] = Mcell;
+  Mcell(0,0) =  3, Mcell(0,1) = -1, Mcell(0,2) = -1, Mcell(0,3) = -1;
+  Mcell(1,0) = -1, Mcell(1,1) =  3, Mcell(1,2) = -1, Mcell(1,3) = -1;
+  Mcell(2,0) = -1, Mcell(2,1) = -1, Mcell(2,2) =  3, Mcell(2,3) = -1;
+  Mcell(3,0) = -1, Mcell(3,1) = -1, Mcell(3,2) = -1, Mcell(3,3) =  3;
+  local_op_->matrices[c] = Mcell;
 }
 \end{lstlisting}
 %
 To finalize we need to define the global operator which requires us to fist define a composite vector space that is consistent with the schema that we defined in the local systems. Thankfully schema has a rotine that does this for us. Thus, initializing the global operator can be done in four lines as follows:
 \begin{lstlisting}
-cvs_ = Teuchos::rcp( new CompositeVectorSpace 
-(cvsFromSchema(p_schema, mesh,false)) );
-//The constructor for a global operator requires a 
-//parameter list so we will create a dummy one
+cvs_ = Teuchos::rcp(new CompositeVectorSpace(
+    cvsFromSchema(p_schema, mesh, false)));
+
+// constructor for a global operator requires a parameter list
 Teuchos::ParameterList plist = Teuchos::ParameterList();
-//This line creates a global operator for the mass matrix
+
+// create a global operator for the mass matrix
 global_op_ = Teuchos::rcp(new Operator_Schema(cvs_, plist, p_schema));
-//This line assigns the corresponding container of local matrices.
+
+// assign the corresponding container of local matrices
+std::string my_name = "Diffusion: Poisson";
+local_op_ = Teuchos::rcp(new Op_Cell_Node(my_name, mesh_));
 global_op_->OpPushBack(local_op_);
 \end{lstlisting}
-%
+
+
 \subsection{Creating A Mesh}\label{CreatingAMesh}
-The class MeshFactory gives the necessary tools to create a mesh. Mesh factory requires some inputs: the MPI communicator and the preferences which provide the specific capability that is used. A default communicator is already defined in Amanzi namespace and the preferences are usually set to MSTK anb STK from the namespace Framework.\\
-The meshfactory object can create meshes in several ways depending on the dimensionality (2D or 3D) and the types of cells. A complete routine to build a simple quadrilateral mesh in 2D will look like this: 
+The class {\tt MeshFactory} gives the necessary tools to create a mesh. 
+Mesh factory requires some inputs: the MPI communicator and the preferences which provide the specific capability that is used. 
+A default communicator is already defined in Amanzi namespace and the preferences are usually set 
+to MSTK anb STK from the namespace Framework.
+
+The meshfactory object can create meshes in several ways depending on the dimensionality (2D or 3D) and the types of cells. 
+A complete routine to build a simple quadrilateral mesh in 2D will look like this: 
 %
 \begin{lstlisting}
 auto comm = Amanzi::getDefaultComm();
-MeshFactory meshfactory(comm);
-meshfactory.set_preference(Preference({Framework::MSTK, Framework::STK}));
-// Generates a structured mesh covering [x0,x1] X [y0,y1] with (nx, ny)
-// cells.
-//  Teuchos::RCP<Mesh> create(const double x0, const double y0,
-//                           const double x1, const double y1,
-//                           const int nx, const int ny,
-//                           const bool request_faces=true,
-//                           const bool request_edges=false);
-Teuchos::RCP<const Mesh> mesh = meshfactory.create(-1,-1,1,1,3,3);
+MeshFactory factory(comm);
+factory.set_preference(Preference({Framework::MSTK}));
+// generate a square mesh covering [-1,1] x [-1,1] with 9 cells.
+Teuchos::RCP<const Mesh> mesh = factory.create(-1.0,-1.0,1.0,1.0, 3,3);
 \end{lstlisting}
-%
-The classes MeshFactory and Mesh are a part of MSTK for which documentation is available. 
-%
+
+
 \subsection{Adding boundary conditions}\label{Sec:AddingBoundaryCond}
-The class PDE\_HelperDiscretization has some built in features to impose boundary conditions but in order to access them we need to define the object BCs which takes as creation arguments the mesh, where the degrees of freedom will be places and the type of degree of freedom. Moreover, we must also populate the two class variables, the bc\_model which defines what type of boundary condition we want to prescribe and the bc\_value which precise value of such boundary condition. For example,
+The class {\tt PDE\_HelperDiscretization} has some built-in features to impose boundary conditions 
+but in order to access them we need to define the object of class {\tt BCs} which takes as 
+creation arguments the mesh, where the degrees of freedom will be places and the type of degree 
+of freedom. 
+Moreover, we must also populate the two class variables, {\tt bc\_model} which defines what 
+type of boundary condition we want to prescribe and {\tt bc\_value} which precise value of such 
+boundary condition. For example,
 %
 \begin{lstlisting}
-//The BCs are placed on the nodes and are scalars.
-Teuchos::RCP<BCs> bcv = Teuchos::rcp(
-ew BCs(mesh, AmanziMesh::NODE, WhetStone::DOF_Type::SCALAR));
+// the BCs are placed on the nodes and are scalars
+Teuchos::RCP<BCs> bcv = Teuchos::rcp(new BCs(
+    mesh, AmanziMesh::NODE, WhetStone::DOF_Type::SCALAR));
+
 std::vector<int>& bcv_model = bcv->bc_model();
 std::vector<double>& bcv_value = bcv->bc_value();
 
-Point xv(2); // a point with two entries
-//nnode_wghost is the number of nodes in the mesh.
+Point xv(2);  // a point with two entries
+// nnode_wghost is the number of nodes in the mesh including ghosts
 for (int v = 0; v < nnodes_wghost; ++v) {
-	mesh->node_get_coordinates(v, &xv);
-	//This will identify which points lie in the boundary
-	if (fabs(xv[0]+1) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 ||
-	fabs(xv[1]+1) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6) {
-		bcv_model[v] = OPERATOR_BC_DIRICHLET;
-		bcv_value[v] = 1;
-}}
+  mesh->node_get_coordinates(v, &xv);
+  // This will identify which points lie in the boundary
+  if (fabs(xv[0] + 1.0) < 1e-6 || fabs(xv[0] - 1.0) < 1e-6 ||
+      fabs(xv[1] + 1.0) < 1e-6 || fabs(xv[1] - 1.0) < 1e-6) {
+    bcv_model[v] = Operators::OPERATOR_BC_DIRICHLET;
+    bcv_value[v] = 1.0;
+  }
+}
 \end{lstlisting}
+
+
 \subsection{Assembly and Imposing the Boundary Conditions}\label{Sec:AssemblyAndBoundaryCond}
-%
 Amanzi imposes boundary conditions by placing $1$ in the correct place in the global matrix and adding the value to the right hand side yielding the correct values in the final solution after the linear solve is performed. Thus, before imposing these conditions we must feed the right hand side to the object created by our PDE class. This is fairly simple since we already have created a composite vector space for the functions defined in our schema we can make use of this factory to initialize the right hand side and manually populate its entries as follows
 %
 \begin{lstlisting}
 CompositeVector source(cvs);
 Epetra_MultiVector& src = *source.ViewComponent("node");
-for (int v = 0; v < nnodes; v++) {
-	mesh->node_get_coordinates(v, &xv);
-	src[0][v] = 1;
+for (int v = 0; v < nnodes_owned; v++) {
+  mesh->node_get_coordinates(v, &xv);
+  src[0][v] = 1.0;
 }
 \end{lstlisting}
 %
 Next we instantiate our PDE class, feed the right hand side, apply the boundary conditions and assemble the system
 %
 \begin{lstlisting}
-Teuchos::RCP<PDE_SecondOrderPoisson> op_poisson = 
-Teuchos::rcp(new PDE_SecondOrderPoisson(mesh));
-//The global stiffness operator
-Teuchos::RCP<Operator> global_op = op_poisson->global_operator();
-const CompositeVectorSpace & cvs = *op_poisson->GetCVS();
-global_op->UpdateRHS(source, true);
+auto op_poisson = Teuchos::rcp(new PDE_SecondOrderPoisson(mesh));
 op_poisson->SetBCs(bcv, bcv);
-//Global assembly
+op_poisson->UpdateMatrices(Teuchos::null, Teuchos::null);
 op_poisson->ApplyBCs(true, true, true);
+
+// global assembly
+Teuchos::RCP<Operator> global_op = op_poisson->global_operator();
+global_op->UpdateRHS(source, true);
 global_op->SymbolicAssembleMatrix();
 global_op->AssembleMatrix();
 \end{lstlisting}
-%
+
+
 \subsection{The Linear Solve}\label{Sec:Linear Solve}
 %
 In order to apply a linear solver we must initialize a vector for the solution and initialize the preconditioner. The linear solve is templated to fit the different types of scenarios where linear solves are necessary.
 %
 \begin{lstlisting}
+const CompositeVectorSpace& cvs = *op_poisson->GetCVS();
 CompositeVector solution(cvs);
-solution.PutScalar(0.0); \\Solution initialized with the value zero.
-std::string xmlFileName = "test/operator_SecondOrderPoisson.xml"; \\This file contains the specifications for the preconditioner
+solution.PutScalar(0.0);  // solution initialized with the value zero
+
+// This file contains the specifications for the preconditioner
+std::string xmlFileName = "test/operator_SecondOrderPoisson.xml"; 
 Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
 Teuchos::ParameterList plist = xmlreader.getParameters();
-Teuchos::ParameterList slist = plist.sublist("preconditioners")
-.sublist("Hypre AMG");
+auto slist = plist.sublist("preconditioners").sublist("Hypre AMG");
 global_op->InitializePreconditioner(slist);
 global_op->UpdatePreconditioner();
 
-Teuchos::ParameterList lop_list = plist.sublist("solvers")
-.sublist("PCG").sublist("pcg parameters");
-AmanziSolvers::LinearOperatorPCG<Operator, 
-CompositeVector, CompositeVectorSpace>
-pcg(global_op, global_op);
+auto lop_list = plist.sublist("solvers").sublist("PCG").sublist("pcg parameters");
+AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace> pcg(global_op, global_op);
+
 pcg.Init(lop_list);
 CompositeVector& rhs = *global_op->rhs();
 int ierr = pcg.ApplyInverse(rhs, solution);
@@ -181,38 +204,28 @@ int ierr = pcg.ApplyInverse(rhs, solution);
 The xml file used above contains the following information
 %
 \begin{lstlisting}[language=xml]
-<!-- SOLVERS -->
 <ParameterList name="solvers">
  <ParameterList name="PCG">
   <Parameter name="iterative method" type="string" value="pcg"/>
   <ParameterList name="pcg parameters">
    <Parameter name="maximum number of iterations" type="int" value="20"/>
    <Parameter name="error tolerance" type="double" value="1e-12"/>
-   <ParameterList name="verbose object">
-   <Parameter name="verbosity level" type="string" value="extreme"/>
   </ParameterList>
  </ParameterList>
 </ParameterList>
 
-<!-- PRECONDITIONERS -->
 <ParameterList name="preconditioners">
-<ParameterList name="Hypre AMG">
-<Parameter name="discretization method" 
-type="string" value="generic mfd"/>
-<Parameter name="preconditioner type" 
-type="string" value="boomer amg"/>
-<ParameterList name="boomer amg parameters">
-<Parameter name="cycle applications" type="int" value="2"/>
-<Parameter name="smoother sweeps" type="int" value="3"/>
-<Parameter name="strong threshold" type="double" value="0.5"/>
-<Parameter name="tolerance" type="double" value="0.0"/>
->Parameter name="relaxation type" type="int" value="6"/>
-<Parameter name="verbosity" type="int" value="0"/>
+ <ParameterList name="Hypre AMG">
+  <Parameter name="discretization method" type="string" value="generic mfd"/>
+  <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+  <ParameterList name="boomer amg parameters">
+   <Parameter name="cycle applications" type="int" value="2"/>
+   <Parameter name="smoother sweeps" type="int" value="3"/>
+   <Parameter name="strong threshold" type="double" value="0.5"/>
+   <Parameter name="tolerance" type="double" value="0.0"/>
+   <Parameter name="relaxation type" type="int" value="6"/>
+   <Parameter name="verbosity" type="int" value="0"/>
+  </ParameterList>
+ </ParameterList>
 </ParameterList>
-</ParameterList>
-</ParameterList>
-	
-<!--  OPERATORS  -->
-<ParameterList name="PK operator">
-<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 \end{lstlisting}

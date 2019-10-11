@@ -17,7 +17,6 @@ to easy navigation.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{State}
-
 State is a simple data manager. 
 It allows process kernels to require, read, and write various fields.
 It provides some data protection by providing both const and non-const data pointers for fields.
@@ -28,9 +27,8 @@ initialized since independent variables are typically owned by the state, not by
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{PK and MPC PK}
-
-PK stands for Process Kernel.
-MPC stands for Multi-Process Coupler.
+PK stands for the Process Kernel.
+MPC stands for the Multi-Process Coupler.
 Each PK and MPC PK does little actual numerical work.
 Instead, PK administrates discretization schemes, time integrators, and solvers. 
 Each PK may represent a single equation (e.g. the Poisson equation for the Darcy flow) 
@@ -82,8 +80,7 @@ For more details, we refer to \cite{coon2016managing}.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{CompositeVector and TreeVector}
-
+\subsection{CompositeVector}
 Class {\tt CompositeVector} is an implementation of an improved
 {\tt Epetra\_MultiVector} which spans multiple components and knows how to
 communicate itself.
@@ -91,6 +88,7 @@ A composite vector is a collection of vectors defined on a common mesh and
 communicator. 
 Each vector, or component, has a name (typically, a mesh entity)
 and a number of degrees of freedom.  
+This meta data is stored in class {\tt CompositeVectorSpace}.
 
 Ghost cell updates are managed by the {\tt CompositeVector}. 
 The design of this pattern is prompted by two things:
@@ -104,6 +102,7 @@ The design of this pattern is prompted by two things:
       call did the communication.  Versatility means many code paths may be
       followed.
 \end{itemize}
+
 
 \subsubsection{Future work: reduce number of parallel communications}
 To avoid unncessary parallel communication the following algorithm were implemented
@@ -139,7 +138,7 @@ Then you change the data from your old non-const pointer, and the data is change
 The first fix is to always call {\it ViewComponent()} after {\it Scatter()} and before changing values.
 Another way to protect yourself is to put non-const references in their own scope.
 For instance, the following practice is encourage:
-\begin{lstlisting}
+\begin{lstlisting}[language=C++]
 CompositeVector my_cv;
 { // unnamed scope for my_vec
   Epetra_MultiVector& my_vec = *my_cv.ViewComponent("cell", false);
@@ -166,10 +165,19 @@ This is because subsequent calls with different modes would break the code.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Operators and TreeOperators}
+\subsection{TreeVector}
+Class {\tt TreeVector} implements a nested, hierarchical data structure 
+that mimics that for PK hiearchies.
+It is an extendable collection of composite vectors.
+This vector allows each physical PK to use composite vector to store 
+their solution, and allows MPCs to push back TreeVectors in a tree format.
 
-Again, mimicks the structure of PKs and MPC PKs
+This vector provides the standard vector interface and may be used with
+time integrators and nonlinear solvers.
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Linear operators}
 The idea behind the desing of Amanzi operators is to separate three 
 functionalities that are frequently placed in a single class in other
 C++ packages.
@@ -184,6 +192,7 @@ C++ packages.
 coefficients, create specialized preconditioners, and impose special
 boundary conditions. 
 \end{enumerate}
+
 
 \subsubsection{Op}
 Op is a container of local matrices.
@@ -282,9 +291,6 @@ without a ton of statements like this one "if (schema | XX \&\& schema | YY)
 \{ assemble one way \} else \{ assemble another way\}".
 
 
-\subsubsection{TreeOperator}
-
-
 \subsubsection{PDE}
 An discrete PDE consists of (a) a single global operatorr, (2) an 
 optional assembled matrix, and (3) an un-ordered additive collection of 
@@ -319,10 +325,42 @@ checks to make sure the Operator contains the necessary dofs and
 adds local Ops to the global Operator's list of Ops.
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{TreeOperator}
+Class {\tt TreeOperator} is the block analogue of linear operators and 
+provides a linear operator acting on a TreeVectorSpace. 
+In short, it is a matrix of operators.
+
+Currently this structur is used for things like multi-phased flows, 
+thermal Richards, coupled matrix-fracture flow, etc.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Linear solvers}
-
-Native and third-party solvers are handle through a single factory and 
+Native and third-party solvers are handled through a single factory and 
 uniform interface.
+Direct and iterative solvers from Trilinos is a part of this factory.
+Native re-implementation of some itertive solvers available in Trilinos
+is due to lack of capabilities needed for subsurface solvers.
+Example is the neccessaty to perform at least one itertion even when
+a norm of the linear residual is below the requested tolerance.
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Nonlinear solvers}
+A factory of nonlinear solvers includes sever solvers ranging from
+the Newton method to inexect Newton methods to continuation methods.
+The solvers are templated on classes {\tt Vector} and {\tt VectorSpace}.
+
+The nonlinear Krylov accelerator solvers \cite{carlson1998design} implements
+inexact Newton's method, where the correction 
+equation of Newton's method is only approximately solved because the 
+Jacobian matrix is approximated and/or the linear system is not solved exactly.  
+Placed in the iteration loop, this black-box accelerator listens to the sequence
+of inexact corrections and replaces them with accelerated corrections;
+the resulting method is a type of accelerated inexact Newton method.
+Note that an inexact Newton iteration is merely a standard fixed point iteration for
+a preconditioned system, and so this accelerator is more generally
+applicable to fixed point iterations.
 
 
