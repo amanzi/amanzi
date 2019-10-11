@@ -128,6 +128,7 @@
 #                - update PETSc to 3.11.3
 #                - update PFloTran to b681066 (Sep 20, 2019)
 #                - update Alquimia to 1.0.6-rc
+#   0.96.3       - update HDF5 to 1.10.5
 
 include(CMakeParseArguments)
 
@@ -180,12 +181,11 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 96)
-set(AMANZI_TPLS_VERSION_PATCH 2)
+set(AMANZI_TPLS_VERSION_PATCH 3)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
-set(XSDK_VERSION "0.2.0")
-set(XSDK_VERSION_NEW "0.3.0")
+set(XSDK_VERSION "0.3.0")
 
 #
 # Default location on GitHub
@@ -295,13 +295,13 @@ set(Boost_MD5_SUM        ced776cb19428ab8488774e1415535ab)
 # TPL: HDF5
 #
 set(HDF5_VERSION_MAJOR 1)
-set(HDF5_VERSION_MINOR 8)
-set(HDF5_VERSION_PATCH 18)
+set(HDF5_VERSION_MINOR 10)
+set(HDF5_VERSION_PATCH 5)
 set(HDF5_VERSION ${HDF5_VERSION_MAJOR}.${HDF5_VERSION_MINOR}.${HDF5_VERSION_PATCH})
 set(HDF5_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(HDF5_ARCHIVE_FILE   hdf5-${HDF5_VERSION}.tar.gz)
 set(HDF5_SAVEAS_FILE    ${HDF5_ARCHIVE_FILE})
-set(HDF5_MD5_SUM        dd2148b740713ca0295442ec683d7b1c)
+set(HDF5_MD5_SUM        e115eeb66e944fa7814482415dd21cc4)
 
 
 #
