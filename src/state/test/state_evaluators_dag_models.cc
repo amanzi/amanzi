@@ -53,71 +53,73 @@ using namespace Amanzi::AmanziMesh;
   intermediate derivatives are not saved.
 */
 
-// MOVE THESE TO UTILS
+
 //
 // Tag type for derivatives
 template<int> struct Deriv {};
-
-//
-// END MOVE THESE TO UTILS
 
 
 
 template<class cView_type, class View_type>
 class AModel {
  public:
+
   static const int n_dependencies = 4;
+  static const std::string name;
   
   AModel(Teuchos::ParameterList& plist) :
       alpha_(plist.get<double>("alpha", 2.0)) {}
 
-  void SetViews(const std::vector<cView_type>& deps,
-                const std::vector<View_type>& res)
+  void SetViews(const std::vector<cView_type>& dependency_views,
+                const std::vector<View_type>& result_views)
   {
-    AMANZI_ASSERT(deps.size() == 4);
-    AMANZI_ASSERT(res.size() == 1);
+    AMANZI_ASSERT(dependency_views.size() == 4);
+    AMANZI_ASSERT(result_views.size() == 1);
     
-    A_ = res[0];
-    B_ = deps[0];
-    C_ = deps[1];
-    E_ = deps[2];
-    H_ = deps[3];
+    A_ = result_views[0];
+    B_ = dependency_views[0];
+    C_ = dependency_views[1];
+    E_ = dependency_views[2];
+    H_ = dependency_views[3];
   }
 
   KeyVector my_keys() {
+    // NOTE, a real Model would parse the parameter list to get these
     return { "A", };
   };
 
   KeyPairVector dependencies() {
+    // NOTE, a real Model would parse the parameter list to get these
     return { {"B", ""}, {"C", ""}, {"E", ""}, {"H", ""} };
   };
-  
+
+  // the model
   KOKKOS_INLINE_FUNCTION void operator() (const int i) const {
     A_[i] = alpha_ * B_[i] + C_[i] * E_[i] * H_[i];
   }
 
-  // generic match, throws
-  template<class Deriv_type>
-  void operator()(Deriv_type, const typename View_type::size_type i) const {
-    AMANZI_ASSERT(false);
-  }
+  // derivatives
+  //
+  // NOTE: the order of these function tags (i.e. Deriv<0>, ...) is set by the
+  // above call to dependencies().  Deriv<I> must correspond to the derivative
+  // with respect to dependencies()[I];
+  
   // d/dB
-  KOKKOS_INLINE_FUNCTION void operator()(Deriv<0>, const typename View_type::size_type i) const {
+  KOKKOS_INLINE_FUNCTION void operator()(Deriv<0>, const int i) const {
     A_[i] = alpha_;
   }
   // d/dC
-  KOKKOS_INLINE_FUNCTION void operator()(Deriv<1>, const typename View_type::size_type i) const {
+  KOKKOS_INLINE_FUNCTION void operator()(Deriv<1>, const int i) const {
     A_[i] = E_[i] * H_[i];
   }
   // d/dE
-  KOKKOS_INLINE_FUNCTION void operator()(Deriv<2>, const typename View_type::size_type i) const {
+  KOKKOS_INLINE_FUNCTION void operator()(Deriv<2>, const int i) const {
     A_[i] = C_[i] * H_[i];
   }
   // d/dH
-  KOKKOS_INLINE_FUNCTION void operator()(Deriv<3>, const typename View_type::size_type i) const {
+  KOKKOS_INLINE_FUNCTION void operator()(Deriv<3>, const int i) const {
     A_[i] = C_[i] * E_[i];
   }
-
   
 private:
   View_type A_;
@@ -130,9 +132,13 @@ private:
 
 
 template<class cView_type, class View_type>
+const std::string AModel<cView_type,View_type>::name("A");
+
+
+template<class cView_type, class View_type>
 class CModel {
  public:
-  static const int n_dependencies = 1;
+  static const int n_dependencies = 2;
 
   CModel(Teuchos::ParameterList& plist) {}
 
@@ -159,18 +165,12 @@ class CModel {
     C_[i] = 2 * D_[i] + G_[i];
   }
 
-  // generic match, throws
-  template<class Deriv_type>
-  void operator()(Deriv_type, const typename View_type::size_type i)  const {
-    AMANZI_ASSERT(false);
-  }
-
   // d/dD
-  KOKKOS_INLINE_FUNCTION void operator()(Deriv<0>, const typename View_type::size_type i)  const {
+  KOKKOS_INLINE_FUNCTION void operator()(Deriv<0>, const int i)  const {
     C_[i] = 2.0;
   }
   // d/dG
-  KOKKOS_INLINE_FUNCTION void operator()(Deriv<1>, const typename View_type::size_type i)  const {
+  KOKKOS_INLINE_FUNCTION void operator()(Deriv<1>, const int i)  const {
     C_[i] = 1.0;
   }
 
@@ -207,18 +207,12 @@ class DModel {
     return { {"G", ""} };
   };
 
-  KOKKOS_INLINE_FUNCTION void operator()(const typename View_type::size_type i) const {
+  KOKKOS_INLINE_FUNCTION void operator()(const int i) const {
     D_[i] = 2 * G_[i];
   }
 
-  // generic match, throws
-  template<class Deriv_type>
-  void operator()(Deriv_type, const typename View_type::size_type i)  const {
-    AMANZI_ASSERT(false);
-  }
-
   // derivatives
-  KOKKOS_INLINE_FUNCTION void operator()(Deriv<0>, const typename View_type::size_type i)  const {
+  KOKKOS_INLINE_FUNCTION void operator()(Deriv<0>, const int i)  const {
     D_[i] = 2.0;
   }
   
@@ -258,17 +252,12 @@ class EModel {
     E_[i] = D_[i] * F_[i];
   }
 
-  // generic match, throws
-  template<class Deriv_type>
-  void operator()(Deriv_type, const typename View_type::size_type i) const {
-    AMANZI_ASSERT(false);
-  }
   // d/dD
-  KOKKOS_INLINE_FUNCTION void operator()(Deriv<0>, const typename View_type::size_type i) const {
+  KOKKOS_INLINE_FUNCTION void operator()(Deriv<0>, const int i) const {
     E_[i] = F_[i];
   }
   // d/dF
-  KOKKOS_INLINE_FUNCTION void operator()(Deriv<1>, const typename View_type::size_type i) const {
+  KOKKOS_INLINE_FUNCTION void operator()(Deriv<1>, const int i) const {
     E_[i] = D_[i];
   }
 
@@ -309,13 +298,8 @@ class FModel {
     F_[i] = 2 * G_[i];
   }
 
-  // generic match, throws
-  template<class Deriv_type>
-  void operator()(Deriv_type, const typename View_type::size_type i) const {
-    AMANZI_ASSERT(false);
-  }
   // d/dG
-  KOKKOS_INLINE_FUNCTION void operator()(Deriv<0>, const typename View_type::size_type i) const {
+  KOKKOS_INLINE_FUNCTION void operator()(Deriv<0>, const int i) const {
     F_[i] = 2.0;
   }
   
@@ -356,13 +340,8 @@ class HModel {
     H_[i] = 2 * F_[i];
   }
 
-  // generic match, throws
-  template<class Deriv_type>
-  void operator()(Deriv_type, const typename View_type::size_type i) const {
-    AMANZI_ASSERT(false);
-  }
   // d/dF
-  KOKKOS_INLINE_FUNCTION void operator()(Deriv<0>, const typename View_type::size_type i) const {
+  KOKKOS_INLINE_FUNCTION void operator()(Deriv<0>, const int i) const {
     H_[i] = 2.0;
   }
 
@@ -370,6 +349,76 @@ class HModel {
 private:
   View_type H_;
   cView_type F_;
+};
+
+
+
+// NOTE: This is tricky code (unfortunately).  This is a compile-time "loop"
+// (through recursion and partial class specialization) to generate, at
+// compile-time, the correct Tags needed to execute the correct derivative
+// operation.  Each Launcher object's launch() call checks if wrt is dependency
+// I, (starting at n_dependencies - 1), and calls Kokkos for_each if so, or
+// recurses to I-1 if not.  When I-1 == -1, then wrt is not in dependencies,
+// and it throws an error (ending the recursion).  Deriv<I> is the tag
+// corresponding to dependency I, as indexed in the Model's list of
+// dependencies.
+template<int I, class Model_type, class Device_type>
+class Launcher {
+ public:
+  Launcher(const std::string& name,
+           const KeyPair& wrt,
+           const KeyPairVector& dependencies,
+           const Model_type& model,
+           const int extent) :
+      name_(name),
+      wrt_(wrt),
+      dependencies_(dependencies),
+      model_(model),
+      extent_(extent) {}
+
+  void launch() {
+    // std::cout << "wrt: " << wrt_.first << " matches " << dependencies_[I].first << " in slot " << I << "?";
+    if (wrt_ == dependencies_[I]) {
+      // std::cout << "  YUP, go!" << std::endl;
+      Kokkos::RangePolicy<Deriv<I>, typename Device_type::execution_space> range(0, extent_);
+      Kokkos::parallel_for(name_, range, model_);
+    } else {
+      // std::cout << "  nope, recurse!" << std::endl;
+      Launcher<I-1,Model_type,Device_type> launcher(name_, wrt_, dependencies_, model_, extent_);
+      launcher.launch();
+    }              
+  }
+
+ private:
+  const std::string& name_;
+  const KeyPair& wrt_;
+  const KeyPairVector& dependencies_;
+  const Model_type& model_;
+  const int extent_;  
+};
+
+template<class Model_type, class Device_type>
+class Launcher<-1, Model_type, Device_type> {
+ public:
+  Launcher(const std::string& name,
+           const KeyPair& wrt,
+           const KeyPairVector& dependencies,
+           const Model_type& model,
+           const int extent)
+      : name_(name),
+        wrt_(wrt) {}
+
+  void launch() {
+    Errors::Message msg;
+    msg << "EvaluatorModel (" << name_ << "): requested derivative with respect to ( \""
+        << wrt_.first << "\",\"" << wrt_.second << "\" ) is not provided.";
+    throw(msg);
+  }
+
+ private:
+  const std::string& name_;
+  const KeyPair& wrt_;
+  
 };
 
 
@@ -454,76 +503,16 @@ class EvaluatorModel_CompositeVector : public EvaluatorSecondaryMonotype<Composi
 
       // set up the model and range and then dispatch
       model_->SetViews(dependency_views, result_views);
-
-      // which derivative?  This is a bit awkward to ensure compile-time
-      // constants.  Can this be fixed?
       auto wrt = std::make_pair(wrt_key, wrt_tag);
 
-      
-      
-      if (dependencies_.size() > 0 && wrt == dependencies_[0]) {
-        // NOTE: the 0 must be compile-time.  HELP.
-        Kokkos::RangePolicy<Deriv<0>, typename Device_type::execution_space> range(0, result_views[0].extent(0));
-        Kokkos::parallel_for(name_, range, *model_);
-
-      } else if (dependencies_.size() > 1 && wrt == dependencies_[1]) {
-        // NOTE: the 0 must be compile-time.  HELP.
-        Kokkos::RangePolicy<Deriv<1>, typename Device_type::execution_space> range(0, result_views[0].extent(0));
-        Kokkos::parallel_for(name_, range, *model_);
-
-      } else if (dependencies_.size() > 2 && wrt == dependencies_[2]) {
-        // NOTE: the 0 must be compile-time.  HELP.
-        Kokkos::RangePolicy<Deriv<2>, typename Device_type::execution_space> range(0, result_views[0].extent(0));
-        Kokkos::parallel_for(name_, range, *model_);
-
-      } else if (dependencies_.size() > 3 && wrt == dependencies_[3]) {
-        // NOTE: the 0 must be compile-time.  HELP.
-        Kokkos::RangePolicy<Deriv<3>, typename Device_type::execution_space> range(0, result_views[0].extent(0));
-        Kokkos::parallel_for(name_, range, *model_);
-
-      } else if (dependencies_.size() > 4 && wrt == dependencies_[4]) {
-        // NOTE: the 0 must be compile-time.  HELP.
-        Kokkos::RangePolicy<Deriv<4>, typename Device_type::execution_space> range(0, result_views[0].extent(0));
-        Kokkos::parallel_for(name_, range, *model_);
-
-      } else if (dependencies_.size() > 5 && wrt == dependencies_[5]) {
-        // NOTE: the 0 must be compile-time.  HELP.
-        Kokkos::RangePolicy<Deriv<5>, typename Device_type::execution_space> range(0, result_views[0].extent(0));
-        Kokkos::parallel_for(name_, range, *model_);
-
-      } else if (dependencies_.size() > 6 && wrt == dependencies_[6]) {
-        // NOTE: the 0 must be compile-time.  HELP.
-        Kokkos::RangePolicy<Deriv<6>, typename Device_type::execution_space> range(0, result_views[0].extent(0));
-        Kokkos::parallel_for(name_, range, *model_);
-
-      } else if (dependencies_.size() > 7 && wrt == dependencies_[7]) {
-        // NOTE: the 0 must be compile-time.  HELP.
-        Kokkos::RangePolicy<Deriv<7>, typename Device_type::execution_space> range(0, result_views[0].extent(0));
-        Kokkos::parallel_for(name_, range, *model_);
-
-      } else if (dependencies_.size() > 8 && wrt == dependencies_[8]) {
-        // NOTE: the 0 must be compile-time.  HELP.
-        Kokkos::RangePolicy<Deriv<8>, typename Device_type::execution_space> range(0, result_views[0].extent(0));
-        Kokkos::parallel_for(name_, range, *model_);
-
-      } else if (dependencies_.size() > 9 && wrt == dependencies_[9]) {
-        // NOTE: the 0 must be compile-time.  HELP.
-        Kokkos::RangePolicy<Deriv<9>, typename Device_type::execution_space> range(0, result_views[0].extent(0));
-        Kokkos::parallel_for(name_, range, *model_);
-
-      } else if (dependencies_.size() > 10 && wrt == dependencies_[10]) {
-        // NOTE: the 0 must be compile-time.  HELP.
-        Kokkos::RangePolicy<Deriv<10>, typename Device_type::execution_space> range(0, result_views[0].extent(0));
-        Kokkos::parallel_for(name_, range, *model_);
-
-      }      
+      Launcher<Model_type::n_dependencies-1, Model_type, Device_type> launcher(name_, wrt, dependencies_, *model_, result_views[0].extent(0));
+      launcher.launch();
     }
   }
 
   Teuchos::RCP<Model_type> model_;
   std::string name_;
 };
-
 
 class make_state {
  public:
