@@ -224,32 +224,45 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/state_restart.cc
                     LINK_LIBS ${state_test_link_libs})
     add_amanzi_test(state_restart_np2 state_restart NPROCS 2 KIND unit)
-              
+
+    # Tests the logic of base class evaluators, lazy evaluation, etc.
     add_amanzi_test(state_evaluators_basic state_evaluators_basic
                     KIND int
                     SOURCE test/Main.cc test/state_evaluators_basic.cc
                     LINK_LIBS ${state_test_link_libs})
 
+    # Tests evaluators that are fully resolved without physics,
+    # e.g. additive, independent evaluators from functions, etc.
     add_amanzi_test(state_evaluators_functions state_evaluators_functions
                     KIND int
                     SOURCE test/Main.cc test/state_evaluators_functions.cc
                     LINK_LIBS ${state_test_link_libs})
-                  
+
+    # Tests EvaluatorSecondaryMonotype's EnsureConsistency, which
+    # passes dependencies up and down the dag.
     add_amanzi_test(state_evaluators_secondary_ensureconsistency state_evaluators_secondary_ensureconsistency
                     KIND int
                     SOURCE test/Main.cc test/state_evaluators_secondary_ensureconsistency.cc
                     LINK_LIBS ${state_test_link_libs})
 
-    add_amanzi_test(state_dag_double state_dag_double
+    # Tests a full dag using doubles              
+    add_amanzi_test(state_evaluators_dag_double state_evaluators_dag_double
                     KIND int
-                    SOURCE test/Main.cc test/state_dag_double.cc
+                    SOURCE test/Main.cc test/state_evaluators_dag_double.cc
                     LINK_LIBS ${state_test_link_libs})
 
-    add_amanzi_test(state_dag_tpetra state_dag_tpetra 
+    # Same test but with CompositeVectors and hard-coded evaluators
+    add_amanzi_test(state_evaluators_dag_tpetra state_evaluators_dag_tpetra 
           KIND int
-          SOURCE test/Main.cc test/state_dag_tpetra.cc
+          SOURCE test/Main.cc test/state_evaluators_dag_tpetra.cc
           LINK_LIBS ${state_test_link_libs})
 
+    # Same test but with Model and a generic evaluator class
+    add_amanzi_test(state_evaluators_dag_models state_evaluators_dag_models
+          KIND int
+          SOURCE test/Main.cc test/state_evaluators_dag_models.cc
+          LINK_LIBS ${state_test_link_libs})
+        
     add_amanzi_test(state_evaluators_byregion state_evaluators_byregion
           KIND int
           SOURCE test/Main.cc test/state_evaluators_byregion.cc
