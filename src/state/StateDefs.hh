@@ -23,6 +23,11 @@ namespace Amanzi {
 typedef std::string Units;
 typedef bool NullFactory; // placeholder object for no factory required
 
+
+// Tag type for derivatives in models.
+template<int> struct Deriv {};
+
+
 } // namespace Amanzi
 
 #endif
