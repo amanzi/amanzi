@@ -115,7 +115,6 @@ set(state_src_files
   State.cc
   )
 
-
 set(state_link_libs
   error_handling
   atk
@@ -139,7 +138,6 @@ add_amanzi_library(state
 # Install header files
 #
 add_install_include_file(${state_inc_files})
-
 
 #
 # Register with factories

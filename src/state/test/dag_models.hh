@@ -10,15 +10,17 @@
       
 */
 
+#ifndef DAG_MODELS_HH_
+#define DAG_MODELS_HH_
+
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_RCP.hpp"
 #include "UnitTest++.h"
 
+#include "dbc.hh"
 #include "AmanziTypes.hh"
 #include "StateDefs.hh"
-
-
 
 /*
   We will build the following dependencies tree:
@@ -46,12 +48,7 @@
   intermediate derivatives are not saved.
 */
 
-
-//
-// Tag type for derivatives
-template<int> struct Deriv {};
-
-
+using namespace Amanzi;
 
 template<class cView_type, class View_type>
 class AModel {
@@ -61,7 +58,7 @@ class AModel {
   static const std::string name;
   
   AModel(Teuchos::ParameterList& plist) :
-      alpha_(plist.get<double>("alpha", 2.0)) {}
+      alpha_(plist.sublist("model parameters").get<double>("alpha")) {}
 
   void SetViews(const std::vector<cView_type>& dependency_views,
                 const std::vector<View_type>& result_views)
@@ -366,3 +363,4 @@ template<class cView_type, class View_type>
 const std::string HModel<cView_type,View_type>::name("H");
 
 
+#endif
