@@ -223,6 +223,8 @@ if (BUILD_TESTS)
                     LINK_LIBS ${state_test_link_libs})
     add_amanzi_test(state_restart_np2 state_restart NPROCS 2 KIND unit)
 
+    # Test: TODO: Write test for initializing data from XML.
+    
     # Tests the logic of base class evaluators, lazy evaluation, etc.
     add_amanzi_test(state_evaluators_basic state_evaluators_basic
                     KIND int
@@ -261,11 +263,6 @@ if (BUILD_TESTS)
           SOURCE test/Main.cc test/state_evaluators_dag_models.cc
           LINK_LIBS ${state_test_link_libs})
         
-    add_amanzi_test(state_evaluators_byregion state_evaluators_byregion
-          KIND int
-          SOURCE test/Main.cc test/state_evaluators_byregion.cc
-          LINK_LIBS ${state_test_link_libs})
-
     #-add_amanzi_test(state_evaluators_op state_evaluators_op
     #  KIND int
     #  SOURCE test/Main.cc test/state_evaluators_op.cc

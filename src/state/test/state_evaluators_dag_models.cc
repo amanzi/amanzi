@@ -26,7 +26,8 @@
 #include "State.hh"
 #include "evaluator/EvaluatorSecondaryMonotype.hh"
 #include "evaluator/EvaluatorPrimary.hh"
-#include "evaluator/EvaluatorModel.hh"
+#include "evaluator/EvaluatorModel_CompositeVector.hh"
+#include "evaluator/EvaluatorModelByMaterial.hh"
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
@@ -53,12 +54,16 @@ class make_state {
     S.RegisterDomainMesh(mesh);
   }
 
-  void requireEvaluators() {
+  void requireEvaluators()
+  {
     // Secondary fields
     fa_eval = requireSecondary<AModel>("A", { "B", "G" });
     fc_eval = requireSecondary<CModel>("C", {});
     fd_eval = requireSecondary<DModel>("D", {});
-    fe_eval = requireSecondary<EModel>("E", { "G", });
+    fe_eval = requireSecondary<EModel>("E",
+                                       {
+                                         "G",
+                                       });
     ff_eval = requireSecondary<FModel>("F", {});
     fh_eval = requireSecondary<HModel>("H", {});
 
@@ -67,12 +72,16 @@ class make_state {
     fg_eval = requirePrimary("G");
   }
 
-  void requireEvaluatorsByMaterial() {
+  void requireEvaluatorsByMaterial()
+  {
     // Secondary fields
     fa_eval = requireSecondaryByMaterial<AModel>("A", { "B", "G" });
     fc_eval = requireSecondary<CModel>("C", {});
     fd_eval = requireSecondary<DModel>("D", {});
-    fe_eval = requireSecondary<EModel>("E", { "G", });
+    fe_eval = requireSecondary<EModel>("E",
+                                       {
+                                         "G",
+                                       });
     ff_eval = requireSecondary<FModel>("F", {});
     fh_eval = requireSecondary<HModel>("H", {});
 
@@ -81,7 +90,8 @@ class make_state {
     fg_eval = requirePrimary("G");
   }
 
-  void setup() {
+  void setup()
+  {
     // Setup fields initialize
     S.Setup();
     S.GetW<CompositeVector>("B", "B").putScalar(2.0);
@@ -91,89 +101,101 @@ class make_state {
     S.Initialize();
   }
 
-    
-  template<template<class,class> class Model>
+
+  template <template <class, class> class Model>
   Teuchos::RCP<Evaluator>
-  requireSecondary(const std::string& name, const std::vector<std::string>& derivs) {
+  requireSecondary(const std::string& name,
+                   const std::vector<std::string>& derivs)
+  {
     Teuchos::ParameterList es_list(name);
     es_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
+      .set<std::string>("verbosity level", "extreme");
     es_list.setName(name);
     es_list.set("tag", "");
-    if (name == "A") {
-      es_list.sublist("model parameters").set("alpha", 2.0);
-    }
-    S.Require<CompositeVector,CompositeVectorSpace>(name, "", name)
-        .SetMesh(S.GetMesh())
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    if (name == "A") { es_list.sublist("model parameters").set("alpha", 2.0); }
+    S.Require<CompositeVector, CompositeVectorSpace>(name, "", name)
+      .SetMesh(S.GetMesh())
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
 
     for (const auto& deriv : derivs)
-      S.RequireDerivative<CompositeVector,CompositeVectorSpace>(name, "", deriv, "");
-    
+      S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
+        name, "", deriv, "");
+
     //  S.RequireDerivative<double>("fa", "", "fb", "");
     //  S.RequireDerivative<double>("fa", "", "fg", "");
-    auto f_eval = Teuchos::rcp(new EvaluatorModel_CompositeVector<Model>(es_list));
+    auto f_eval =
+      Teuchos::rcp(new EvaluatorModel_CompositeVector<Model>(es_list));
     S.SetEvaluator(name, f_eval);
     return f_eval;
   }
 
 
-  template<template<class,class> class Model>
+  template <template <class, class> class Model>
   Teuchos::RCP<Evaluator>
-  requireSecondaryByMaterial(const std::string& name, const std::vector<std::string>& derivs) {
+  requireSecondaryByMaterial(const std::string& name,
+                             const std::vector<std::string>& derivs)
+  {
     Teuchos::ParameterList es_list(name);
     es_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
+      .set<std::string>("verbosity level", "extreme");
     es_list.setName(name);
     es_list.set("tag", "");
     auto& region_list = es_list.sublist("regions");
     region_list.sublist("left").set("alpha", 2.0);
     region_list.sublist("right").set("alpha", 3.0);
-    
-    S.Require<CompositeVector,CompositeVectorSpace>(name, "", name)
-        .SetMesh(S.GetMesh())
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
+
+    S.Require<CompositeVector, CompositeVectorSpace>(name, "", name)
+      .SetMesh(S.GetMesh())
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
 
     for (const auto& deriv : derivs)
-      S.RequireDerivative<CompositeVector,CompositeVectorSpace>(name, "", deriv, "");
-    
+      S.RequireDerivative<CompositeVector, CompositeVectorSpace>(
+        name, "", deriv, "");
+
     auto f_eval = Teuchos::rcp(new EvaluatorModelByMaterial<Model>(es_list));
     S.SetEvaluator(name, f_eval);
     return f_eval;
   }
-  
 
-  Teuchos::RCP<EvaluatorPrimary_>
-  requirePrimary(const std::string& name) {
+
+  Teuchos::RCP<EvaluatorPrimary_> requirePrimary(const std::string& name)
+  {
     Teuchos::ParameterList es_list(name);
     es_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
+      .set<std::string>("verbosity level", "extreme");
     es_list.setName(name);
     es_list.set("tag", "");
-    S.Require<CompositeVector,CompositeVectorSpace>(name, "", name)
-        .SetMesh(S.GetMesh())
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
-    
+    S.Require<CompositeVector, CompositeVectorSpace>(name, "", name)
+      .SetMesh(S.GetMesh())
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+
     //  S.RequireDerivative<double>("fa", "", "fb", "");
     //  S.RequireDerivative<double>("fa", "", "fg", "");
-    auto f_eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector,CompositeVectorSpace>(es_list));
+    auto f_eval = Teuchos::rcp(
+      new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
     S.SetEvaluator(name, f_eval);
     return f_eval;
   }
 
-  void check_close(double val1, double val2, const std::string& name) {
-    auto cvv = S.Get<CompositeVector>(name, "").ViewComponent<AmanziDefaultHost>("cell", 0, false);
+  void check_close(double val1, double val2, const std::string& name)
+  {
+    auto cvv =
+      S.Get<CompositeVector>(name, "").ViewComponent<AmanziDefaultHost>(
+        "cell", 0, false);
     CHECK_CLOSE(val1, cvv(0), 1.e-10);
     CHECK_CLOSE(val2, cvv(1), 1.e-10);
   }
 
-  void check_close_deriv(double val1, double val2, const std::string& name, const std::string& wrt) {
-    auto cvv = S.GetDerivative<CompositeVector>(name, "", wrt, "").ViewComponent<AmanziDefaultHost>("cell", 0, false);
+  void check_close_deriv(double val1, double val2, const std::string& name,
+                         const std::string& wrt)
+  {
+    auto cvv = S.GetDerivative<CompositeVector>(name, "", wrt, "")
+                 .ViewComponent<AmanziDefaultHost>("cell", 0, false);
     CHECK_CLOSE(val1, cvv(0), 1.e-10);
     CHECK_CLOSE(val2, cvv(1), 1.e-10);
   }
-  
-  
+
+
  public:
   State S;
   Teuchos::RCP<Evaluator> fa_eval;
@@ -191,7 +213,7 @@ SUITE(DAG)
   {
     requireEvaluators();
     setup();
-    
+
     // check initialized properly
     check_close(2.0, 2.0, "B");
     check_close(3.0, 3.0, "G");
@@ -242,7 +264,7 @@ SUITE(DAG)
   {
     requireEvaluatorsByMaterial();
     setup();
-    
+
     // check initialized properly
     check_close(2.0, 2.0, "B");
     check_close(3.0, 3.0, "G");
@@ -288,5 +310,4 @@ SUITE(DAG)
     check_close_deriv(8640.0, 8640.0, "A", "G");
     CHECK(changed);
   }
-
 }
