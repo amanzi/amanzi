@@ -9,8 +9,7 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-
-//!  Region: a geometric or discrete subdomain (abstract)
+//! Region: a geometric or discrete subdomain (abstract)
 
 /*!
 

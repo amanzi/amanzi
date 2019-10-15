@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_GLOBAL_VERBOSITY_

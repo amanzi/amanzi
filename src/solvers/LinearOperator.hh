@@ -9,8 +9,7 @@
       Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-
-//!  Base class for linear solvers.
+//! Base class for linear solvers.
 
 /*!
 

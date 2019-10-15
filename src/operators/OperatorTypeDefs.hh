@@ -8,7 +8,6 @@
       Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATORS_TYPEDEFS_HH_

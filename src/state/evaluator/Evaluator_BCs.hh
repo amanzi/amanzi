@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! Evaluates a function to provide Dirichlet data on faces.
 
 #ifndef AMANZI_EVALUATOR_BCS_DIRICHLET_HH_

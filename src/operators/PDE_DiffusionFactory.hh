@@ -8,7 +8,6 @@
       Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 // PDE_DiffusionFactory constructs objects which implement the interface for a

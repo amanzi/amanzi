@@ -8,7 +8,6 @@
       Rao Garimella, Konstantin Lipnikov, others
 */
 
-
 //! Implementation of the Mesh interface leveraging MOAB.
 
 #ifndef AMANZI_MESH_MOAB_HH_

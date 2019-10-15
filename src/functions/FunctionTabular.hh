@@ -8,7 +8,6 @@
 
 */
 
-
 //! FunctionTabular: Piecewise-defined function.
 
 /*!

@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 // Tests the Record and RecordSet objects, which store meta-data about data.

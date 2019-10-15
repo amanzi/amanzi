@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! A factory for embedding Sperry-style root meshes within a standard 3D mesh.
 
 /*!

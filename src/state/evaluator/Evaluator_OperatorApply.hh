@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! Evaluator_OperatorApply is a secondary evaluator that calculates r = b - Ax
 
 /*!

@@ -1,15 +1,14 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-Amanzi
+/*
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-License: BSD, see $AMANZI_DIR/COPYRIGHT
-Author: Ethan Coon
+  Authors:
+      Ethan Coon
+*/
 
-Basic factory that may store heterogeneous data and create heterogeneous
-Data objects to put into State.
-
-This shares the same design pattern as Data to do type erasure.
-------------------------------------------------------------------------- */
+//!
 
 #ifndef AMANZI_STOREABLE_FACTORY_HH_
 #define AMANZI_STOREABLE_FACTORY_HH_

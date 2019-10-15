@@ -8,7 +8,6 @@
       Konstantin Lipnikov (amklinv@sandia.gov)
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_AMESOS_OPERATOR_HH_

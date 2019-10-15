@@ -8,7 +8,6 @@
       Rao Garimella, others
 */
 
-
 //! Interface for a Mesh object.
 
 /*!

@@ -8,7 +8,6 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OP_CELL_EDGE_HH_

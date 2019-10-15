@@ -8,7 +8,6 @@
       Ethan Coon (ecoon _at_ lanl.gov)
 */
 
-
 //! FunctionAdditive: f(x,y) = f1(x,y) + f2(x,y)
 
 /*!

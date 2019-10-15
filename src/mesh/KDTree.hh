@@ -8,7 +8,6 @@
       Konstantin Lipnikov
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_MESH_KD_TREE_HH_

@@ -9,7 +9,6 @@
       Rao Garimella (rao@lanl.gov)
 */
 
-
 //! RegionBoxVolumeFractions: A rectangular region in space, defined by two
 //! corner points and normals to sides.
 

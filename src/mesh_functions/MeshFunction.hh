@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_MESH_FUNCTION_HH_

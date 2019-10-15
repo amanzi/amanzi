@@ -8,7 +8,6 @@
 
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_GMV_MESH_HH_

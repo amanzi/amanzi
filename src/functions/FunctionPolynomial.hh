@@ -8,7 +8,6 @@
 
 */
 
-
 //! FunctionPolynomial: a polynomial
 
 /*!

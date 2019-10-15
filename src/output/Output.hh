@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! Interface for Output implementations.
 
 /*

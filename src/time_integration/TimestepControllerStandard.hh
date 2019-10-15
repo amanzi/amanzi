@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! Simple timestep control based upon previous iteration count.
 
 /*!

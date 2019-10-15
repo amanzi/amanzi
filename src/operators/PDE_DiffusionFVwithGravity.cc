@@ -9,7 +9,6 @@
       Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #include <vector>

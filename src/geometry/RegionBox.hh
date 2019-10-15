@@ -10,7 +10,6 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-
 //! RegionBox: a rectangular region in space, defined by two corners
 
 /*!

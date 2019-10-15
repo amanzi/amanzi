@@ -8,7 +8,6 @@
       William Perkins, Ethan Coon
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #include <boost/format.hpp>

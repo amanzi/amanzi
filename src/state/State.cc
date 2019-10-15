@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! State is the primary data manager for Amanzi-ATS
 
 /*!

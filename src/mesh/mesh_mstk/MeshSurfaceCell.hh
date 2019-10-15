@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! This is a mesh for a single surface cell.
 
 /*!

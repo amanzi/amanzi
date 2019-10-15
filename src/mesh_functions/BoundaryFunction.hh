@@ -9,7 +9,6 @@
       (v2) Ethan Coon
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_BOUNDARY_FUNCTION_HH_

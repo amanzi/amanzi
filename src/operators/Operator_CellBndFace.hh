@@ -8,7 +8,6 @@
       Daniil Svyatsky(dasvyat@lanl.gov)
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_WITH_CELLBND_HH_

@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! test utilities used in a few tests
 
 #include <string>

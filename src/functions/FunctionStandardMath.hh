@@ -8,7 +8,6 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-
 //! FunctionStandardMath: provides access to many common mathematical functions.
 
 /*!

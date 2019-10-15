@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! OutputUtils: Utility functions for I/O.
 
 #include "AmanziTypes.hh"

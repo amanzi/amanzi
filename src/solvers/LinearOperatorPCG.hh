@@ -9,7 +9,6 @@
       Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_PCG_OPERATOR_HH_

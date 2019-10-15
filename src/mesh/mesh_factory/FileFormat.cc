@@ -8,7 +8,6 @@
       William Perkins, others
 */
 
-
 //! Utility functions for working with various file formats and names.
 
 #include <regex>

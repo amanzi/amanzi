@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! Tests the math functionality in some basic evaluators.
 
 #include "Teuchos_ParameterList.hpp"

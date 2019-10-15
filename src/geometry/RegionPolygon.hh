@@ -8,7 +8,6 @@
       Rao Garimella
 */
 
-
 //! RegionPolygon: A closed polygonal segment of a plane.
 
 /*!

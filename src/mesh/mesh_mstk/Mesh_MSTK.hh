@@ -8,7 +8,6 @@
       Rao Garimella, others
 */
 
-
 //! Implementation of the Mesh interface leveraging MSTK.
 
 #ifndef AMANZI_MESH_MSTK_HH_

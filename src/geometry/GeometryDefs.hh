@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_GEOMETRY_DEFS_HH_

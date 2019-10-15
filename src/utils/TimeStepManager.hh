@@ -9,7 +9,6 @@
       Daniil Svyatskiy
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef TIME_STEP_MANAGER__

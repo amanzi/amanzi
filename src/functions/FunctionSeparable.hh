@@ -8,7 +8,6 @@
       Ethan Coon (ecoon _at_ lanl.gov)
 */
 
-
 //! FunctionSeparable: f(x,y) = f1(x)*f2(y)
 
 /*!

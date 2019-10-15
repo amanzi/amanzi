@@ -8,7 +8,6 @@
       William Perkins, others
 */
 
-
 //! Utility functions for working with various file formats and names.
 
 #ifndef AMANZI_MESH_FILE_TYPE_HH_

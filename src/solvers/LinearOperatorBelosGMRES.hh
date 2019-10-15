@@ -8,7 +8,6 @@
       Alicia Klinvex (amklinv@sandia.gov)
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_BELOS_GMRES_OPERATOR_HH_

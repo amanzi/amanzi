@@ -9,7 +9,6 @@
       Markus Berndt
 */
 
-
 //! Visualization writes data and meshes to files.
 
 /*

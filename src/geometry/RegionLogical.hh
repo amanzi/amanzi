@@ -8,7 +8,6 @@
       Rao Garimella
 */
 
-
 //! RegionLogical: A region defined by a logical operation on one or two other
 //! regions
 

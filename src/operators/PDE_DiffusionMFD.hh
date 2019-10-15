@@ -9,7 +9,6 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 // PDE_DiffusionMFD: elliptic operators using the MFD family of discretizations.

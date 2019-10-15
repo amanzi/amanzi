@@ -8,7 +8,6 @@
       Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 // PDE_DiffusionMFDwithGravity: Discrete gravity operator blended with the MFD

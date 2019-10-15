@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! Base factory for self-registering classes of a given base type.
 
 /*!

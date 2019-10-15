@@ -8,7 +8,6 @@
       Markus Brendt
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #include <string>

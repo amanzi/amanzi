@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_CONTAINER_HH_

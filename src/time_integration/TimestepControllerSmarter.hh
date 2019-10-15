@@ -8,9 +8,8 @@
       Ethan Coon
 */
 
-
-//!  Slightly smarter timestep controller based upon a history of previous
-//!  timesteps.
+//! Slightly smarter timestep controller based upon a history of previous
+//! timesteps.
 
 /*!
 

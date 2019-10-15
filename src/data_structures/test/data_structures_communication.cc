@@ -1,15 +1,15 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-   Amanzi
+/*
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-   License: see $AMANZI_DIR/COPYRIGHT
-   Author: Ethan Coon
+  Authors:
+      Ethan Coon
+*/
 
-   Unit tests for the communication patterns used in CompositeVector
+//!
 
-   NOTE, these are all-Tpetra code and only test our understanding, not Amanzi
-   code.
-------------------------------------------------------------------------- */
 #include <vector>
 
 #include "UnitTest++.h"

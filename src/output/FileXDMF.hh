@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! Reads and writes XDMF files.
 
 /*

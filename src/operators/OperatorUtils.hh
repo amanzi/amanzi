@@ -8,7 +8,6 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATORS_UTILS_HH_

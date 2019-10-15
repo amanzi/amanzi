@@ -9,7 +9,6 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-
 //! Operator represents a linear map, and typically encapsulates a
 //! discretization.
 

@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! OutputXDMF: writes XDMF+H5 files for visualization in VisIt
 
 /*

@@ -8,7 +8,6 @@
       Dylan Harp (dharp@lanl.gov)
 */
 
-
 //! FunctionBilinear: a piecewise bilinear function.
 
 /*!

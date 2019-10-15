@@ -8,7 +8,6 @@
       Konstantin Lipnikov
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_UNITS_HH_

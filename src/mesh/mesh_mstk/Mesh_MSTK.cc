@@ -8,7 +8,6 @@
       Rao Garimella, Konstantin Lipnikov, others
 */
 
-
 //! Implementation of the Mesh interface leveraging MSTK.
 
 #include "dbc.hh"

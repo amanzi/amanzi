@@ -8,7 +8,6 @@
       William Perkins, others
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_MESH_FACTORY_HH_

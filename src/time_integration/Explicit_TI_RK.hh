@@ -8,7 +8,6 @@
       Markus Berndt (berndt@lanl.gov)
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_EXPLICIT_TI_RK_HH_

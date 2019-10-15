@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! Factory for Input objects.
 
 /*

@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! Evaluates a function to provide Dirichlet data on faces.
 
 #include "Evaluator_BCs.hh"

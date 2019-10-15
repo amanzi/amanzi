@@ -9,7 +9,6 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-
 //! RegionLabeledSet: A region defined by a set of mesh entities in a mesh file
 
 /*!

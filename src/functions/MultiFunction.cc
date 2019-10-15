@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! Function from R^d to R^n.
 
 /*!

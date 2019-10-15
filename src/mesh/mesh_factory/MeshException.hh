@@ -8,7 +8,6 @@
       William Perkins, others
 */
 
-
 //! Exceptions for MeshFactory
 
 #ifndef AMANZI_MESH_EXCEPTION_HH_

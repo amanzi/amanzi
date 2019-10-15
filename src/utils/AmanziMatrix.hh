@@ -8,7 +8,6 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-
 //! Includes and a few helper functions and full definitions of Maps.
 
 /*!

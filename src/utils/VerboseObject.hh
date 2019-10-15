@@ -8,7 +8,6 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-
 //! VerboseObject: a controller for writing log files on multiple cores with
 //! varying verbosity.
 

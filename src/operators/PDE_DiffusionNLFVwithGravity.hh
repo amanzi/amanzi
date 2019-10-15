@@ -9,7 +9,6 @@
       Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_OPERATOR_PDE_DIFFUSION_NLFV_WITH_GRAVITY_HH_

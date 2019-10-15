@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! A factory for creating control-volume logical meshes from segments.
 
 /*!

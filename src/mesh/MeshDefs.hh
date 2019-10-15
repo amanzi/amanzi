@@ -9,7 +9,6 @@
       Rao Garimella
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_MESH_DEFS_HH_

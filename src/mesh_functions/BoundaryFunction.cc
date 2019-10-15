@@ -9,7 +9,6 @@
       (v2) Ethan Coon
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #include "BoundaryFunction.hh"

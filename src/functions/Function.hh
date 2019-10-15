@@ -8,7 +8,6 @@
 
 */
 
-
 //! Function: base class for all functions of space and time.
 
 /*!

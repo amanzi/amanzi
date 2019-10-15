@@ -8,7 +8,6 @@
 
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #include "errors.hh"

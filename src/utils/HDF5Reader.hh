@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! Interface for reading vectors of data from HDF5 files, in serial only.
 
 #ifndef AMANZI_HDF5_READER_HH_

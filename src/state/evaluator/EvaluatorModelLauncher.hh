@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! A launcher for constructing Derivative tags based upon a WRT key/value tag.
 
 /*!

@@ -1,23 +1,14 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-Amanzi
+/*
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-License: BSD, see $AMANZI_DIR/COPYRIGHT
-Author: Ethan Coon
+  Authors:
+      Ethan Coon
+*/
 
-Basic object that may store heterogeneous data and put in State.  The
-underlying object is stored as a Teuchos::RCP.
-
-Ownership: Note that this object TAKES OWNERSHIP of whatever it is created
-with.  While initializing the data with a raw pointer is possible, this is a
-bad idea.  Alternatively, you can pass in an RCP, which is then shared
-ownership.
-
-Implementation note -- Teuchos::RCP does NOT support move semantics, but we
-hope it will at some point.
-
-
-------------------------------------------------------------------------- */
+//!
 
 #ifndef AMANZI_DATA_IMPL_HH_
 #define AMANZI_DATA_IMPL_HH_

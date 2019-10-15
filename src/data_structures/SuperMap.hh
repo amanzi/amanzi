@@ -8,7 +8,6 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-
 //! SuperMap class provides a convenient way of creating and using
 //! SuperMapLumped
 

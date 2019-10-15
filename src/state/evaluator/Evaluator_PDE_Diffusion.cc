@@ -8,7 +8,6 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-
 //! Wraps a PDE_Diffusion to be an Evaluator.
 
 /*!

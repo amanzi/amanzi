@@ -8,7 +8,6 @@
       Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-
 //! FunctionDistance: distance from a reference point.
 
 /*!

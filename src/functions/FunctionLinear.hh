@@ -8,7 +8,6 @@
 
 */
 
-
 //! FunctionLinear: a multivariate linear function.
 
 /*!

@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! Self-registering factory for FIELD_EVALUATOR implementations.
 
 #include <string>

@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! A secondary variable evaluator which evaluates functions on its
 //! dependenecies.
 

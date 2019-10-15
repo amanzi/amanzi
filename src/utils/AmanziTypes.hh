@@ -8,7 +8,6 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-
 //! Typedefs to make forward declarations and interfaces a bit easier.
 
 /*!

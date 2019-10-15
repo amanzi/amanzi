@@ -8,7 +8,6 @@
       Konstantin Lipnikov
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_ADAPTIVE_TIMESTEP_CONTROLLER_HH_

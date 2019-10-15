@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! Input/Output via HDF5 file for checkpoint/restart.
 
 /*

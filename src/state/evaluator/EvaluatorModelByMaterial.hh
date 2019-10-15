@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! A secondary evaluator based on a user-provided Model.
 
 /*!

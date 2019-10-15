@@ -8,7 +8,6 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-
 //! Factory for creating TimestepController objects
 
 /*!

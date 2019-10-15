@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! Base class for evaluators with no dependencies.
 
 /*!

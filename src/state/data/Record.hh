@@ -1,13 +1,14 @@
-/* -------------------------------------------------------------------------
-  Arcos
+/*
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-  License: see $ATS_DIR/COPYRIGHT
-  Author: Ethan Coon
+  Authors:
+      Ethan Coon
+*/
 
-  Interface for a Record.  A record contains meta-data about a data
-  structure and that data structure, encapsulating things like vis,
-  checkpointing, ownership, initialization, etc.
-  ------------------------------------------------------------------------- */
+//!
 
 #ifndef AMANZI_STATE_DATA_RECORD_HH_
 #define AMANZI_STATE_DATA_RECORD_HH_

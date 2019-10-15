@@ -8,7 +8,6 @@
       William Perkins
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #include <iostream>

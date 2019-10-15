@@ -7,8 +7,9 @@
   Authors:
       Konstantin Lipnikov (lipnikov@lanl.gov)
       Ethan Coon (coonet@ornl.gov)
-
 */
+
+//!
 
 #ifndef DAG_MODELS_HH_
 #define DAG_MODELS_HH_

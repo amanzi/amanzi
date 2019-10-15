@@ -8,7 +8,6 @@
       Daniil Svyatskiy
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_AA_SOLVER_

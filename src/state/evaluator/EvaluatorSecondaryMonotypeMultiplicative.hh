@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! EvaluatorSecondaryMonotypeMultiplicative adds its dependencies.
 
 /*!

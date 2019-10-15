@@ -8,7 +8,6 @@
 
 */
 
-
 //! FunctionSmoothStep: a smoothed discontinuity.
 
 /*!

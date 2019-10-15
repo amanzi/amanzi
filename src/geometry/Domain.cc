@@ -8,7 +8,6 @@
       Rao Garimella (rao@lanl.gov)
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #include "Domain.hh"

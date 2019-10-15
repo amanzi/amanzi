@@ -8,8 +8,7 @@
       Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-
-//!  Base class for preconditioners.
+//! Base class for preconditioners.
 
 /*!
 

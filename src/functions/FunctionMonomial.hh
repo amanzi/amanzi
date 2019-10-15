@@ -8,7 +8,6 @@
       Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-
 //! FunctionMonomial: a multivariate monomial function.
 
 /*!

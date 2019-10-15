@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! An evaluator with no dependencies specified by discrete data in an HDF5
 //! file.
 

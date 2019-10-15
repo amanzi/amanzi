@@ -8,7 +8,6 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-
 //! Solves globally implicit systems using Backwards Euler
 
 /*!

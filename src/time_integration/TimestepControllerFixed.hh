@@ -8,8 +8,7 @@
       Ethan Coon
 */
 
-
-//!  Timestep controller providing constant timestep size.
+//! Timestep controller providing constant timestep size.
 
 /*!
 

@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! OutputUtils: Utility functions for I/O.
 
 #ifndef AMANZI_OUTPUT_UTILS_HH

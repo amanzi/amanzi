@@ -8,7 +8,6 @@
       Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-
 //! RegionBoundary:  A region consisting of all entities on the domain boundary
 
 /*!

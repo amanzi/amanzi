@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! Data_Initializers are functions that know how to initialize data.
 
 /*

@@ -8,7 +8,6 @@
       Daniil Svyatskiy (dasvyat@lanl.gov)
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_BOUNDARY_FLUX_FUNC

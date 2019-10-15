@@ -8,8 +8,7 @@
       Ethan Coon
 */
 
-
-//!  Timestep controller which loads a timestep history from file.
+//! Timestep controller which loads a timestep history from file.
 
 /*!
 

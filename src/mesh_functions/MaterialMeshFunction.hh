@@ -8,7 +8,6 @@
       Konstantin Lipnikov
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_MATERIAL_MESH_FUNCTION_HH_

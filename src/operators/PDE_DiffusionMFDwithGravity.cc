@@ -8,7 +8,6 @@
       Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 // PDE_DiffusionMFDwithGravity prescribes an elliptic operator with gravity

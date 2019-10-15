@@ -8,7 +8,6 @@
       Nathan Barnett
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_TIMER_MANAGER_HH_

@@ -8,7 +8,6 @@
       Daniil Svyatsky (dasvyat@lanl.gov)
 */
 
-
 //! RegionLineSegment: A line segment, defined by two points in space.
 
 /*!

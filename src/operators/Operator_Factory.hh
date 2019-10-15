@@ -8,7 +8,6 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-
 //! A factory for creating Operator objects (the global version)
 
 /*!

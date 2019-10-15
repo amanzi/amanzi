@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! Process kernel factory for creating PKs from the global input spec.
 
 /*

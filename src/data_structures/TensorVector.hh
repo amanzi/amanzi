@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! Helper data structure and factory for using WhetStone Tensors
 
 #ifndef AMANZI_TENSOR_VECTOR_HH_

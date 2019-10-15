@@ -8,7 +8,6 @@
 
 */
 
-
 //! FunctionConstant: Implements the Function interface using a constant value.
 
 /*!

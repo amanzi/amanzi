@@ -9,7 +9,6 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-
 //! Diffusion generates local Ops and global Operators for an elliptic operator.
 
 #ifndef AMANZI_OPERATOR_PDE_DIFFUSION_HH_

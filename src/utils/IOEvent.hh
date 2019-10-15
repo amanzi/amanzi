@@ -9,7 +9,6 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-
 //! IOEvent: base time/timestep control determing when in time to do something.
 
 /*!

@@ -9,7 +9,6 @@
       Markus Berndt
 */
 
-
 //! Checkpoint writes ALL data, but no meshes to files.
 
 /*

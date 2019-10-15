@@ -8,7 +8,6 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-
 //! SuperMapLumped class for blocking same-type maps into a single, common map.
 
 /*!

@@ -9,7 +9,6 @@
       Daniil Svyatsky (dasvyat@lanl.gov)
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 /*

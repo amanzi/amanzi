@@ -8,7 +8,6 @@
       (v1) Daniil Svyatsky
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_DYNAMICBOUNDARY_FUNCTION_HH_

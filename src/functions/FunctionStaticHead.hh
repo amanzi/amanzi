@@ -8,7 +8,6 @@
       Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-
 //! FunctionStaticHead: f = p0 + rho*g*(z-z0)
 
 /*!

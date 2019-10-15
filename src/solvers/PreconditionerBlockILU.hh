@@ -8,7 +8,6 @@
       Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-
 //! PreconditionerBlockILU:   Incomplete LU preconditioner.
 
 /*!

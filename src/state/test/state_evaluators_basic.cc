@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! Tests the functionality of the base class evaluators, primary, secondary,
 //! and independent.
 

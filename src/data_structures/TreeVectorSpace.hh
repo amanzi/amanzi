@@ -1,12 +1,14 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-   ATS
+/*
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-   License: see $ATS_DIR/COPYRIGHT
-   Author: Ethan Coon
+  Authors:
+      Ethan Coon
+*/
 
-   Space for a TreeVector on an Amanzi mesh.
-   ------------------------------------------------------------------------- */
+//!
 
 #ifndef AMANZI_TREEVECTOR_SPACE_HH_
 #define AMANZI_TREEVECTOR_SPACE_HH_

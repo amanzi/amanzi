@@ -9,7 +9,6 @@
       Daniil Svyatskiy
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #include <algorithm>

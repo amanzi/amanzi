@@ -8,7 +8,6 @@
       Rao Garimella
 */
 
-
 //! RegionPoint: a point in space.
 
 /*!

@@ -8,8 +8,7 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-
-//!  A region consisting of all entities on a mesh.
+//! A region consisting of all entities on a mesh.
 
 #ifndef AMANZI_REGION_ALL_HH_
 #define AMANZI_REGION_ALL_HH_

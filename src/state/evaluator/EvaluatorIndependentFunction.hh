@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! An evaluator with no dependencies specified by a function of t,x,y,z.
 
 /*!

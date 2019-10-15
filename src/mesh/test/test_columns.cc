@@ -8,7 +8,6 @@
       Rao Garimella, others
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #include <vector>

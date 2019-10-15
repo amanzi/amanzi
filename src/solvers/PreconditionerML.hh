@@ -8,7 +8,6 @@
       Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-
 //! PreconditionerML: Trilinos ML multigrid.
 
 /*!

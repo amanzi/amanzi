@@ -8,7 +8,6 @@
       Nathan Barnett
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 // #include <utility>

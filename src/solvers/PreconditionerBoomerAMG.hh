@@ -9,7 +9,6 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-
 //! PreconditionerBoomerAMG: HYPRE's multigrid preconditioner.
 
 /*!

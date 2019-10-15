@@ -9,7 +9,6 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-
 //! RegionHalfSpace: A planar (infinite) region in space, defined by a point and
 //! a normal.
 

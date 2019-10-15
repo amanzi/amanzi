@@ -8,7 +8,6 @@
       Rao Garimella (rao@lanl.gov)
 */
 
-
 //! <MISSING_ONELINE_DOCSTRING>
 
 #ifndef AMANZI_DOMAIN_HH_

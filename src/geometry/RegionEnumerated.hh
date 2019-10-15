@@ -8,7 +8,6 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-
 //! RegionEnumerated: A region enumerated as a list of IDs.
 
 /*!

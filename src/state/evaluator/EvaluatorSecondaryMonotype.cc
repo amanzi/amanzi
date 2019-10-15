@@ -8,7 +8,6 @@
       Ethan Coon
 */
 
-
 //! EvaluatorSecondaryMonotype is algebraic in data from the same time tag.
 
 /*!
