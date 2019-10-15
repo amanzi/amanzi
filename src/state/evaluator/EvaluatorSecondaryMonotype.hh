@@ -144,6 +144,13 @@ EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::EnsureCompatibility(State& S)
 }
 
 
+// Declare Ensure specialization for CompositeVector
+template <>
+void
+EvaluatorSecondaryMonotype<CompositeVector,
+                           CompositeVectorSpace>::EnsureCompatibility(State& S);
+
+
 // ---------------------------------------------------------------------------
 // Updates the field value in state S.
 // ---------------------------------------------------------------------------

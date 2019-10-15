@@ -1,21 +1,28 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-ATS
+/*
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon
+  Authors:
+      Ethan Coon
+*/
 
-A field evaluator base for secondary variables.  A Evaluator is a node in the
-Phalanx-like dependency tree.
 
-Secondary variable evaluators, such as equations of state, water retention
+//! EvaluatorSecondaryMonotype is algebraic in data from the same time tag.
+
+/*!
+
+Algebraic evaluators are secondary evaluators that read only dependencies of
+the same type as they calculate.  This allows requirements placed on the
+calculated variable to be pushed down to the dependencies, checking
+consistency, and also allows derivatives to be calculated automatically.
+
+Algebraic variable evaluators, such as equations of state, water retention
 evaluators, internal energy evaluators, etc should inherit this class,
 implementing the missing Update_() and UpdateFieldDerivative_() methods.
 
-Secondary secondary evaluator where all dependencies and this are
-doubles.
-
-------------------------------------------------------------------------- */
+*/
 
 #include "EvaluatorSecondaryMonotype.hh"
 
