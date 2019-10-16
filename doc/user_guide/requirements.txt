@@ -1,0 +1,4 @@
+# Requires Python 2.x to function 
+
+sphinxcontrib-bibtex < 1.0.0; python_version < '3'
+sphinx <= 1.8.5

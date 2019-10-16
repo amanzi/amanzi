@@ -659,7 +659,7 @@ The ``regions`` block is required.  Within the region block no regions are requi
 
 The elements ``box``, ``point``, and ``plane`` allow for in-line description of regions.  The ``region`` element uses a subelement to either define a ``box`` or ``plane`` region or specify a region file.  Below are further descriptions of these elements.
 
-Additional regions valid only for unstructured are ``polygonal_surface``.  Additional regions valid only for structured include ``polygon`` and ``ellipse`` in 2D and ``rotated_``polygon`` and ``swept_polygon`` in 3D.
+Additional regions valid only for unstructured are ``polygonal_surface``.  Additional regions valid only for structured include ``polygon`` and ``ellipse`` in 2D and ``rotated_polygon`` and ``swept_polygon`` in 3D.
 
 Each region definition requires a ``name`` attribute.  These names must be unique to avoid confusion when other sections refer to the regions.
 
@@ -952,9 +952,9 @@ Mineral concentrations are specified using the volume fraction and specific surf
 
 .. code-block:: xml
 
-       <minerals>
-           <mineral name="Calcite" volume_fraction="0.1" specific_surface_area"1.0"/>
-       </minerals>
+        <minerals>
+            <mineral name="Calcite" volume_fraction="0.1" specific_surface_area="1.0"/>
+        </minerals>
 
 Ion_exchange
 ____________
