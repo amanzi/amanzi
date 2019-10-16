@@ -94,6 +94,38 @@ class BIndependent : public EvaluatorIndependent<double> {
   }
 };
 
+class EmptyEvaluator : public EvaluatorSecondaryMonotype<double> {
+ public:
+  EmptyEvaluator(Teuchos::ParameterList& plist)
+      : EvaluatorSecondaryMonotype<double>(plist)
+  {}
+
+  virtual Teuchos::RCP<Evaluator> Clone() const override
+  {
+    return Teuchos::rcp(new EmptyEvaluator(*this));
+  };
+
+ protected:
+  virtual void
+  Evaluate_(const State& S, const std::vector<double*>& results) override
+  {
+    (*results[0]) = 2.0;
+  }
+
+  virtual void
+  EvaluatePartialDerivative_(const State& S, const Key& wrt_key,
+                             const Key& wrt_tag,
+                             const std::vector<double*>& results) override
+  {
+    throw("fail"); // no dependencies, no derivative call ever
+  }
+};
+  
+
+//
+// NOTE: no owners should be set here.  The evaluators should own themselves.
+//
+
 SUITE(EVALUATORS)
 {
   TEST(PRIMARY)
@@ -106,7 +138,7 @@ SUITE(EVALUATORS)
       .set<std::string>("verbosity level", "extreme");
     es_list.setName("fa");
 
-    S.Require<double>("fa", "", "fa");
+    S.Require<double>("fa", "");
     S.RequireDerivative<double>("fa", "", "fa", "");
 
     // Create the evaluator.  Note: USER CODE SHOULD NOT DO IT THIS WAY!
@@ -126,16 +158,24 @@ SUITE(EVALUATORS)
 
     // dependencies -- none
     CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", ""));    // not self
-    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", "old")); // not self
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", "old")); // not self/tag
     CHECK(!S.GetEvaluator("fa").IsDependency(S, "other", "")); // not other
 
+    // differentiability -- self only
+    CHECK(S.GetEvaluator("fa").IsDifferentiableWRT(S, "fa", "")); // self
+    CHECK(!S.GetEvaluator("fa").IsDifferentiableWRT(S, "fa", "old")); // not self/tag
+    CHECK(!S.GetEvaluator("fa").IsDifferentiableWRT(S, "other", "")); // not other
+    
     // check first call is always "changed"
     CHECK(S.GetEvaluator("fa").Update(S, "my_request"));
     CHECK(S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", ""));
+    CHECK_THROW(S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", "old"), Errors::Message);
 
     // check the value and derivative
     CHECK_CLOSE(1.0, S.Get<double>("fa", ""), 1.e-10);
     CHECK_CLOSE(1.0, S.GetDerivative<double>("fa", "", "fa", ""), 1.e-10);
+    CHECK_THROW(S.GetDerivative<double>("fa", "", "fa", "old"), std::out_of_range);
+    CHECK_THROW(S.GetDerivative<double>("fa", "", "other", ""), std::out_of_range);
 
     // second call should not be changed
     CHECK(!S.GetEvaluator("fa").Update(S, "my_request"));
@@ -157,9 +197,11 @@ SUITE(EVALUATORS)
 
     // now the value is different, and so it has changed
     CHECK(S.GetEvaluator("fa").Update(S, "my_request"));
+    CHECK_CLOSE(1.0, S.Get<double>("fa", ""), 1.e-10);
 
     // but the derivative is not different and has not changed
     CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", ""));
+    CHECK_CLOSE(1.0, S.GetDerivative<double>("fa", "", "fa", ""), 1.e-10);
   }
 
   TEST(SECONDARY)
@@ -172,7 +214,7 @@ SUITE(EVALUATORS)
     es_list.sublist("verbose object")
       .set<std::string>("verbosity level", "extreme");
     es_list.setName("fb");
-    S.Require<double>("fb", "", "fb");
+    S.Require<double>("fb", "");
     auto fb_eval = Teuchos::rcp(new EvaluatorPrimary<double>(es_list));
     S.SetEvaluator("fb", fb_eval);
 
@@ -182,8 +224,9 @@ SUITE(EVALUATORS)
       .set<std::string>("verbosity level", "extreme");
     ea_list.setName("fa");
     ea_list.set("tag", "");
-    S.Require<double>("fa", "", "fa");
+    S.Require<double>("fa", "");
     S.RequireDerivative<double>("fa", "", "fb", "");
+    
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));
     S.SetEvaluator("fa", fa_eval);
 
@@ -200,17 +243,31 @@ SUITE(EVALUATORS)
 
     // dependencies -- fb
     CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", ""));    // not self
-    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", "old")); // not self
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", "old")); // not self/tag
     CHECK(!S.GetEvaluator("fa").IsDependency(S, "other", "")); // not other
     CHECK(S.GetEvaluator("fa").IsDependency(S, "fb", ""));     // but fb is!
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fb", "old")); // not fb/old
 
+    // differentiable -- fb
+    CHECK(S.GetEvaluator("fa").IsDifferentiableWRT(S, "fa", ""));     // self
+    CHECK(!S.GetEvaluator("fa").IsDifferentiableWRT(S, "fa", "old")); // not self/tag
+    CHECK(!S.GetEvaluator("fa").IsDifferentiableWRT(S, "other", "")); // not other
+    CHECK(S.GetEvaluator("fa").IsDifferentiableWRT(S, "fb", ""));     // but fb is!
+    CHECK(!S.GetEvaluator("fa").IsDifferentiableWRT(S, "fb", "old")); // not fb/old
+    
     // check first call is always "changed"
     CHECK(S.GetEvaluator("fa").Update(S, "my_request"));
     CHECK(S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fb", ""));
+    CHECK_THROW(S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "other", ""), Errors::Message);
+    // check throws even on differentiable thing if it hasn't been required!
+    CHECK_THROW(S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", ""), std::out_of_range);
 
     // check the value and derivative
     CHECK_CLOSE(6.0, S.Get<double>("fa", ""), 1.e-10);
     CHECK_CLOSE(2.0, S.GetDerivative<double>("fa", "", "fb", ""), 1.e-10);
+    CHECK_THROW(S.GetDerivative<double>("fa", "", "fa", ""), std::out_of_range);
+    CHECK_THROW(S.GetDerivative<double>("fa", "", "other", ""), std::out_of_range);
+    CHECK_THROW(S.GetDerivative<double>("fa", "", "fb", "other"), std::out_of_range);
 
     // second call should not be changed
     CHECK(!S.GetEvaluator("fa").Update(S, "my_request"));
@@ -251,7 +308,8 @@ SUITE(EVALUATORS)
     es_list.setName("fa");
     es_list.set("constant in time", true);
 
-    S.Require<double>("fa", "", "fa");
+    S.Require<double>("fa", "");
+    S.RequireDerivative<double>("fa", "", "fa", "");
 
     // Create the evaluator.  Note: USER CODE SHOULD NOT DO IT THIS WAY!
     auto fa_eval = Teuchos::rcp(new AIndependent(es_list));
@@ -271,15 +329,18 @@ SUITE(EVALUATORS)
     CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", "old")); // not self
     CHECK(!S.GetEvaluator("fa").IsDependency(S, "other", "")); // not other
 
+    CHECK(S.GetEvaluator("fa").IsDifferentiableWRT(S, "fa", ""));    // yes self
+    CHECK(!S.GetEvaluator("fa").IsDifferentiableWRT(S, "fa", "old")); // not self
+    CHECK(!S.GetEvaluator("fa").IsDifferentiableWRT(S, "other", "")); // not other
+    
     // check first call is always "changed"
     CHECK(S.GetEvaluator("fa").Update(S, "my_request"));
-
-    // no derivatives
-    CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", ""));
+    bool result = S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", "");
+    CHECK(result);
 
     // check the value and derivative
     CHECK_CLOSE(3.0, S.Get<double>("fa", ""), 1.e-10);
-    CHECK_THROW(S.GetDerivative<double>("fa", "", "fa", ""), std::out_of_range);
+    CHECK_CLOSE(1.0, S.GetDerivative<double>("fa", "", "fa", ""), 1.e-10);
 
     // second call should not be changed
     CHECK(!S.GetEvaluator("fa").Update(S, "my_request"));
@@ -287,7 +348,7 @@ SUITE(EVALUATORS)
 
     // but first call with new request should be
     CHECK(S.GetEvaluator("fa").Update(S, "my_request_2"));
-    CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request_2", "fa", ""));
+    CHECK(S.GetEvaluator("fa").UpdateDerivative(S, "my_request_2", "fa", ""));
 
     // check the value and derivative are still the same
     CHECK_CLOSE(3.0, S.Get<double>("fa", ""), 1.e-10);
@@ -304,7 +365,8 @@ SUITE(EVALUATORS)
     es_list.setName("fa");
     es_list.set("constant in time", false);
 
-    S.Require<double>("fa", "", "fa");
+    S.Require<double>("fa", "");
+    S.RequireDerivative<double>("fa", "", "fa", "");
 
     // Create the evaluator.  Note: USER CODE SHOULD NOT DO IT THIS WAY!
     auto fa_eval = Teuchos::rcp(new BIndependent(es_list));
@@ -329,21 +391,21 @@ SUITE(EVALUATORS)
 
     // check first call is always "changed"
     CHECK(S.GetEvaluator("fa").Update(S, "my_request"));
+    CHECK(S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", ""));
 
-    // no derivatives
-    CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", ""));
+    // no derivatives but self
+    CHECK(S.GetEvaluator("fa").IsDifferentiableWRT(S, "fa", ""));
 
-    // check the value and derivative
+    // check the value
     CHECK_CLOSE(1.1, S.Get<double>("fa", ""), 1.e-10);
-    CHECK_THROW(S.GetDerivative<double>("fa", "", "fa", ""), std::out_of_range);
+    CHECK_CLOSE(1.0, S.GetDerivative<double>("fa", "", "fa", ""), 1.e-10);
 
     // second call should not be changed
     CHECK(!S.GetEvaluator("fa").Update(S, "my_request"));
-    CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", ""));
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", ""));
 
     // but first call with new request should be
     CHECK(S.GetEvaluator("fa").Update(S, "my_request_2"));
-    CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request_2", "fa", ""));
 
     // check the value and derivative are still the same
     CHECK_CLOSE(1.1, S.Get<double>("fa", ""), 1.e-10);
@@ -356,4 +418,69 @@ SUITE(EVALUATORS)
     CHECK_CLOSE(3.1, S.Get<double>("fa", ""), 1.e-10);
     CHECK(!S.GetEvaluator("fa").Update(S, "my_request"));
   }
+
+
+  TEST(SECONDARY_WITH_NO_DEPENDENCIES) {
+    std::cout << "Secondary variables with no dependencies" << std::endl;
+    State S;
+
+    Teuchos::ParameterList es_list;
+    es_list.sublist("verbose object")
+      .set<std::string>("verbosity level", "extreme");
+    es_list.setName("fa");
+    es_list.set<std::string>("tag", "");
+
+    S.Require<double>("fa", "");
+    S.RequireDerivative<double>("fa", "", "fa", "");
+
+    // Create the evaluator.  Note: USER CODE SHOULD NOT DO IT THIS WAY!
+    auto fa_eval = Teuchos::rcp(new EmptyEvaluator(es_list));
+    S.SetEvaluator("fa", fa_eval);
+
+    // setup and initialize.  Note: USER CODE SHOULD NOT DO IT THIS WAY!
+    S.Setup();
+    S.Initialize();
+
+    // provides
+    CHECK(S.GetEvaluator("fa").ProvidesKey("fa", ""));     // self
+    CHECK(!S.GetEvaluator("fa").ProvidesKey("fa", "old")); // other tag
+    CHECK(!S.GetEvaluator("fa").ProvidesKey("other", "")); // other key
+
+    // dependencies -- none
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", ""));    // not self
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", "old")); // not self
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "other", "")); // not other
+
+    // derivatives
+    CHECK(S.GetEvaluator("fa").IsDifferentiableWRT(S, "fa", ""));    // not self
+    CHECK(!S.GetEvaluator("fa").IsDifferentiableWRT(S, "fa", "old")); // not self
+    CHECK(!S.GetEvaluator("fa").IsDifferentiableWRT(S, "other", "")); // not other
+    
+    // check first call is always "changed"
+    CHECK(S.GetEvaluator("fa").Update(S, "my_request"));
+    CHECK(S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", ""));
+
+    // check the value and derivative
+    CHECK_CLOSE(2.0, S.Get<double>("fa", ""), 1.e-10);
+    CHECK_CLOSE(1.0, S.GetDerivative<double>("fa", "", "fa", ""), 1.e-10);
+
+    // second call should not be changed
+    CHECK(!S.GetEvaluator("fa").Update(S, "my_request"));
+    CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", ""));
+
+    // but first call with new request should be
+    CHECK(S.GetEvaluator("fa").Update(S, "my_request_2"));
+    CHECK(S.GetEvaluator("fa").UpdateDerivative(S, "my_request_2", "fa", ""));
+
+    // check the value and derivative are still the same
+    CHECK_CLOSE(2.0, S.Get<double>("fa", ""), 1.e-10);
+    CHECK_CLOSE(1.0, S.GetDerivative<double>("fa", "", "fa", ""), 1.e-10);
+
+    // update time
+    S.advance_time(2.0);
+
+    // call after new time
+    CHECK(!S.GetEvaluator("fa").Update(S, "my_request"));
+    CHECK_CLOSE(2.0, S.Get<double>("fa", ""), 1.e-10);
+  }    
 }

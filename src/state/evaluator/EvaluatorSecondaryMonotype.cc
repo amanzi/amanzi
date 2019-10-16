@@ -37,6 +37,7 @@ EvaluatorSecondaryMonotype<double>::UpdateDerivative_(State& S,
                                                       const Key& wrt_key,
                                                       const Key& wrt_tag)
 {
+  // zero out derivatives
   std::vector<double*> results(my_keys_.size());
   int j = 0;
   for (const auto& keytag : my_keys_) {
@@ -46,6 +47,15 @@ EvaluatorSecondaryMonotype<double>::UpdateDerivative_(State& S,
     ++j;
   }
 
+  // if provides key, then the result is 1
+  if (ProvidesKey(wrt_key, wrt_tag)) {
+    int i = std::find(my_keys_.begin(), my_keys_.end(), std::make_pair(wrt_key, wrt_tag))
+            - my_keys_.begin();
+    AMANZI_ASSERT(i < my_keys_.size()); // ensured by IsDifferentiableWRT() check previously
+    *results[i] = 1.0;
+    return;
+  }
+  
   // dF/dx = sum_(deps) partial F/ partial dep * ddep/dx + partial F/partial x
   for (auto& dep : dependencies_) {
     if (wrt_key == dep.first && wrt_tag == dep.second) {
@@ -91,6 +101,7 @@ EvaluatorSecondaryMonotype<
                                                             const Key& wrt_key,
                                                             const Key& wrt_tag)
 {
+  // zero out values
   std::vector<CompositeVector*> results(my_keys_.size());
   int j = 0;
   for (const auto& keytag : my_keys_) {
@@ -98,6 +109,15 @@ EvaluatorSecondaryMonotype<
       keytag.first, keytag.second, wrt_key, wrt_tag, keytag.first);
     results[j]->putScalarMasterAndGhosted(0.);
     ++j;
+  }
+
+  // if provides key, then the result is 1
+  if (ProvidesKey(wrt_key, wrt_tag)) {
+    int i = std::find(my_keys_.begin(), my_keys_.end(), std::make_pair(wrt_key, wrt_tag))
+            - my_keys_.begin();
+    AMANZI_ASSERT(i < my_keys_.size()); // ensured by IsDifferentiableWRT() check previously
+    results[i]->putScalar(1.0);
+    return;
   }
 
   // dF/dx = sum_(deps) partial F/ partial dep * ddep/dx + partial F/partial x

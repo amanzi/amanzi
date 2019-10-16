@@ -131,7 +131,7 @@ EvaluatorSecondaryMonotype<Data_t, DataFactory_t>::EnsureCompatibility(State& S)
       for (const auto& deriv :
            S.GetDerivativeSet(akeytag.first, akeytag.second)) {
         auto wrt = Keys::splitKeyTag(deriv.first);
-        if (eval.IsDifferentiableWRT(S, wrt.first, wrt.second)) {
+        if (eval.IsDependency(S, wrt.first, wrt.second)) {
           auto& dfac = S.RequireDerivative<Data_t, DataFactory_t>(
             dep.first, dep.second, wrt.first, wrt.second);
           dfac = fac;

@@ -62,7 +62,7 @@ class EvaluatorSecondary : public Evaluator {
   virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key,
                                    const Key& wrt_tag) const override
   {
-    return IsDependency(S, wrt_key, wrt_tag);
+    return IsDependency(S, wrt_key, wrt_tag) || ProvidesKey(wrt_key, wrt_tag);
   }
 
   virtual std::string WriteToString() const override;
@@ -81,6 +81,7 @@ class EvaluatorSecondary : public Evaluator {
   KeySet requests_;
   KeyTripleSet deriv_requests_;
   KeyPairVector dependencies_;
+  bool computed_once_;
 
   VerboseObject vo_;
   Teuchos::ParameterList plist_;

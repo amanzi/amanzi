@@ -5,20 +5,10 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-
+      Ethan Coon
 */
 
-//!
-
-/* -------------------------------------------------------------------------
-Arcos
-
-License: BSD
-Author: Ethan Coon
-
-An evaluator with no dependencies solved for by a PK.
-
-------------------------------------------------------------------------- */
+//! An evaluator with no dependencies, solved for by a PK.
 
 #ifndef AMANZI_STATE_EVALUATOR_PRIMARY_
 #define AMANZI_STATE_EVALUATOR_PRIMARY_
@@ -102,7 +92,7 @@ class EvaluatorPrimary_ : public Evaluator {
 // Class to set types that can do requirements for compatibility and
 // derivatives.
 //
-template <typename Data_t, typename DataFactory_t = NullFactory>
+template <typename Data_t, typename DataFactory_t=NullFactory>
 class EvaluatorPrimary : public EvaluatorPrimary_ {
  public:
   using EvaluatorPrimary_::EvaluatorPrimary_;
@@ -114,6 +104,7 @@ class EvaluatorPrimary : public EvaluatorPrimary_ {
 
   virtual void EnsureCompatibility(State& S) override final
   {
+    // claim ownership
     auto& my_fac = S.Require<Data_t, DataFactory_t>(my_key_, my_tag_, my_key_);
     if (S.HasDerivativeSet(my_key_, my_tag_)) {
       for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
@@ -165,6 +156,7 @@ inline void
 EvaluatorPrimary<CompositeVector, CompositeVectorSpace>::EnsureCompatibility(
   State& S)
 {
+  // claim ownership but also set derivatives to the same meta-data.
   auto& my_fac =
     S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_, my_key_);
   if (S.HasDerivativeSet(my_key_, my_tag_)) {

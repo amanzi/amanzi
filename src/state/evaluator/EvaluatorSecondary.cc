@@ -18,7 +18,8 @@ namespace Amanzi {
 // Constructor
 // -----------------------------------------------------------------------------
 EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
-  : vo_(Keys::cleanPListName(plist.name()), plist), plist_(plist)
+    : vo_(Keys::cleanPListName(plist.name()), plist), plist_(plist),
+      computed_once_(false)
 {
   // process the plist for names and tags of the things this evaluator
   // calculates
@@ -135,7 +136,7 @@ EvaluatorSecondary::Update(State& S, const Key& request)
 
   // Check if we need to update ourselves, and potentially update our
   // dependencies.
-  bool update = false;
+  bool update = !computed_once_;
   for (auto& dep : dependencies_) {
     update |=
       S.GetEvaluator(dep.first, dep.second)
@@ -143,6 +144,7 @@ EvaluatorSecondary::Update(State& S, const Key& request)
   }
 
   if (update) {
+    computed_once_ = true;
     if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
       *vo_.os() << "Updating " << my_keys_[0].first << " value... "
                 << std::endl;
@@ -180,20 +182,16 @@ bool
 EvaluatorSecondary::UpdateDerivative(State& S, const Key& requestor,
                                      const Key& wrt_key, const Key& wrt_tag)
 {
-  AMANZI_ASSERT(IsDependency(S, wrt_key, wrt_tag));
+  if (!IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+    Errors::Message msg;
+    msg << "EvaluatorSecondary (" << my_keys_[0].first << "," << my_keys_[0].second << ") is not differentiable with respect to (" << wrt_key << "," << wrt_tag << ").";
+    throw(msg);
+  }
 
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
     *vo_.os() << "Algebraic Variable d" << my_keys_[0].first << "_d" << wrt_key
               << " requested by " << requestor << std::endl;
-  }
-
-  // If wrt_key is not a dependency, no need to differentiate.
-  if (!IsDependency(S, wrt_key, wrt_tag)) {
-    if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-      *vo_.os() << wrt_key << " is not a dependency... " << std::endl;
-    }
-    return false;
   }
 
   // Check if we need to update ourselves, and potentially update our

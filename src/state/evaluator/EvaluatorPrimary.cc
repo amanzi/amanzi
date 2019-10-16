@@ -5,20 +5,10 @@
   provided in the top-level COPYRIGHT file.
 
   Authors:
-
+      Ethan Coon
 */
 
-//!
-
-/* -------------------------------------------------------------------------
-Arcos
-
-License: BSD
-Author: Ethan Coon
-
-An evaluator with no dependencies solved for by a PK.
-
-------------------------------------------------------------------------- */
+//! An evaluator with no dependencies, solved for by a PK.
 
 #include "EvaluatorPrimary.hh"
 #include "UniqueHelpers.hh"
@@ -104,11 +94,12 @@ bool
 EvaluatorPrimary_::UpdateDerivative(State& S, const Key& request,
                                     const Key& wrt_key, const Key& wrt_tag)
 {
-  // enforce the contract: all calls to this must either have wrt_key,wrt_tag
-  // as the key provided (for primary evaluators) or as a dependency (for
-  // secondary evaluators)
-  AMANZI_ASSERT(ProvidesKey(wrt_key, wrt_tag));
-
+  if (!IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+    Errors::Message msg;
+    msg << "EvaluatorPrimary (" << my_key_ << "," << my_tag_ << ") is not differentiable with respect to (" << wrt_key << "," << wrt_tag << ").";
+    throw(msg);
+  }
+  
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
     *vo_.os() << "Primary Variable " << my_key_ << ":" << my_tag_
