@@ -53,6 +53,11 @@ class Evaluator {
                                 const Key& wrt_key, const Key& wrt_tag) = 0;
 
   // ---------------------------------------------------------------------------
+  // Get a list of dependencies, each a Key-Tag pair.
+  // ---------------------------------------------------------------------------
+  virtual KeyPairVector dependencies() const = 0;
+  
+  // ---------------------------------------------------------------------------
   // Does this depend upon key?
   //
   // Searches the dependency graph to see if this evaluator depends upon the

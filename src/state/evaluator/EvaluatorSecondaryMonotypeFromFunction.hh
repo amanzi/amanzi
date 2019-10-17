@@ -76,13 +76,11 @@ class EvaluatorSecondaryMonotypeFromFunction
   // now --etc
   virtual void EvaluatePartialDerivative_(
     const State& S, const Key& wrt_key, const Key& wrt_tag,
-    const std::vector<CompositeVector*>& results) override
-  {
-    for (auto& r : results) { r->putScalar(0.); }
-  }
+    const std::vector<CompositeVector*>& results) override;
 
  protected:
   std::vector<Teuchos::RCP<const Function>> funcs_;
+  std::map<std::string, std::vector<Teuchos::RCP<const Function>>> deriv_funcs_;
 
  private:
   static Utils::RegisteredFactory<Evaluator,

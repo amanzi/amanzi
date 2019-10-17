@@ -62,6 +62,7 @@ set(state_inc_files
   evaluator/EvaluatorIndependent.hh
   evaluator/EvaluatorIndependentFromFile.hh
   evaluator/EvaluatorIndependentFunction.hh
+  evaluator/EvaluatorIndependentConstant.hh
 #  evaluator/EvaluatorIndependentTensorFunction.hh
   evaluator/EvaluatorPrimary.hh
   evaluator/EvaluatorSecondary.hh
@@ -95,6 +96,7 @@ set(state_src_files
   evaluator/EvaluatorIndependent.cc
   evaluator/EvaluatorIndependentFromFile.cc
   evaluator/EvaluatorIndependentFunction.cc
+  evaluator/EvaluatorIndependentConstant.cc
   evaluator/EvaluatorPrimary.cc
   evaluator/EvaluatorSecondary.cc
   evaluator/EvaluatorSecondaryMonotype.cc
@@ -146,6 +148,7 @@ register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorPrimary_reg.hh LIS
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorIndependentFunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 # register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorIndependentTensorFunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorIndependentFromFile_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorIndependentConstant_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 #register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_OperatorApply_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 #register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_PDE_Diffusion_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 #register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_PDE_Accumulation_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
@@ -261,6 +264,16 @@ if (BUILD_TESTS)
     add_amanzi_test(state_evaluators_dag_models state_evaluators_dag_models
           KIND int
           SOURCE test/Main.cc test/state_evaluators_dag_models.cc
+          LINK_LIBS ${state_test_link_libs})
+
+    # Tests a simple physics-based dag using factory -- this is quite
+    # close to how users will use State
+    #
+    # NOTE: this uses a special main to include the static
+    # registrations of the test models.
+    add_amanzi_test(state_evaluators_factory state_evaluators_factory
+          KIND int
+          SOURCE test/Main2.cc test/state_evaluators_factory.cc
           LINK_LIBS ${state_test_link_libs})
         
     #-add_amanzi_test(state_evaluators_op state_evaluators_op

@@ -83,7 +83,7 @@ EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList& plist)
         dependencies_.emplace_back(std::make_pair(dep, tags[i]));
         ++i;
       }
-    } else if (plist_.get<bool>("dependency tags are my tag", false)) {
+    } else if (plist_.get<bool>("dependency tags are my tag", true)) {
       auto my_tag = my_keys_[0].second;
       for (auto dep : deps) {
         dependencies_.emplace_back(std::make_pair(dep, my_tag));

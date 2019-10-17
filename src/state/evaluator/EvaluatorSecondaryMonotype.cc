@@ -193,7 +193,8 @@ EvaluatorSecondaryMonotype<CompositeVector,
   EnsureCompatibility_Flags_(S);
 
   // require evaluators for dependencies
-  for (auto& dep : dependencies_) S.RequireEvaluator(dep.first, dep.second);
+  // NOTE: unnecessary now, as require put in State::SetEvaluator()
+  //  for (auto& dep : dependencies_) S.RequireEvaluator(dep.first, dep.second);
 
   // set requirements on myself, my derivatives, my dependencies, and their
   // derivatives

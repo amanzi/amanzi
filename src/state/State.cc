@@ -147,7 +147,7 @@ Evaluator&
 State::RequireEvaluator(const Key& key, const Key& tag)
 {
   // does it already exist?
-  if (HasEvaluator(key, tag)) { return GetEvaluator(key, tag); }
+  if (HasEvaluator(key, tag)) return GetEvaluator(key, tag);
 
   // See if the key is provided by another existing evaluator.
   for (auto& f_it : evaluators_) {
@@ -164,31 +164,30 @@ State::RequireEvaluator(const Key& key, const Key& tag)
   Teuchos::ParameterList& fm_plist = state_plist_->sublist("evaluators");
 
   if (fm_plist.isSublist(key)) {
-    // -- Get this evaluator's plist.
-    Teuchos::ParameterList sublist = fm_plist.sublist(key);
+    // -- Get _a_copy_ of this evaluator's plist
+    Teuchos::ParameterList sublist(fm_plist.sublist(key));
+    sublist.set("tag", tag);
 
     // -- Insert any model parameters.
-    if (sublist.isParameter("model parameters")) {
-      std::string modelname = sublist.get<std::string>("model parameters");
+    if (sublist.isParameter("common model parameters")) {
+      std::string modelname = sublist.get<std::string>("common model parameters");
       Teuchos::ParameterList modellist = GetModelParameters(modelname);
-      std::string modeltype = modellist.get<std::string>("model type");
-      sublist.set(modeltype, modellist);
-    } else if (sublist.isParameter("models parameters")) {
-      Teuchos::Array<std::string> modelnames =
-        sublist.get<Teuchos::Array<std::string>>("models parameters");
-      for (Teuchos::Array<std::string>::const_iterator modelname =
-             modelnames.begin();
-           modelname != modelnames.end();
-           ++modelname) {
-        Teuchos::ParameterList modellist = GetModelParameters(*modelname);
-        std::string modeltype = modellist.get<std::string>("model type");
-        sublist.set(modeltype, modellist);
-      }
+      sublist.set("model parameters", modellist);
+    // } else if (sublist.isParameter("models parameters")) {
+    //   Teuchos::Array<std::string> modelnames =
+    //     sublist.get<Teuchos::Array<std::string>>("models parameters");
+    //   for (Teuchos::Array<std::string>::const_iterator modelname =
+    //          modelnames.begin();
+    //        modelname != modelnames.end();
+    //        ++modelname) {
+    //     Teuchos::ParameterList modellist = GetModelParameters(*modelname);
+    //     std::string modeltype = modellist.get<std::string>("model type");
+    //     sublist.set(modeltype, modellist);
+    //   }
     }
 
     // -- Create and set the evaluator.
     Evaluator_Factory evaluator_factory;
-    sublist.set("tag", tag);
     auto evaluator = evaluator_factory.createEvaluator(sublist);
     SetEvaluator(key, tag, evaluator);
     return *evaluator;
@@ -249,6 +248,9 @@ State::SetEvaluator(const Key& key, const Key& tag,
                     const Teuchos::RCP<Evaluator>& evaluator)
 {
   evaluators_[key][tag] = evaluator;
+  for (const auto& dep_tag : evaluator->dependencies()) {
+    RequireEvaluator(dep_tag.first, dep_tag.second);
+  }  
 };
 
 void
@@ -267,13 +269,13 @@ State::WriteDependencyGraph() const
 Teuchos::ParameterList
 State::GetModelParameters(std::string modelname)
 {
-  if (!state_plist_->isSublist("model parameters")) {
+  if (!state_plist_->isSublist("common model parameters")) {
     Errors::Message message(
-      "State parameter list is missing \"model parameters\" sublist.");
+      "State parameter list is missing \"common model parameters\" sublist.");
     throw(message);
   }
   Teuchos::ParameterList& model_plist =
-    state_plist_->sublist("model parameters");
+    state_plist_->sublist("common model parameters");
   if (!model_plist.isSublist(modelname)) {
     Errors::Message message;
     message << "State \"model parameters\" list does not have a model named \""

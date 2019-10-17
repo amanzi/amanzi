@@ -13,7 +13,23 @@
 /*!
 
   This implements a very generic EvaluatorSecondaryMonotype which uses a
-  user-provided Model.  The implementation of this is a bit tricky, mainly
+  user-provided Model.  That model provides the list of keys calculated,
+  dependencies, and operator() methods that implement the model (and
+  derivatives) to act as a Kokkos functor.
+
+  Currently, this class assumes that tags of the keys calculated and
+  dependencies are all the same.
+
+  Models are expected to implement a fairly precise set of variables and
+  methods.  Examples of these are shown (for a simple synthetic case) in
+  `src/state/test/dag_models.hh`.
+
+  Use of this evaluator is tested in
+  src/state/test/state_evaluators_dag_models.cc.
+  
+  Developer note:
+  
+  The implementation of this is a bit tricky, mainly
   because of the need for a map from the variable that we wish to differentiate
   with to a functor for that partial derivative.  Obvious implementations are
   not able to take a run-time partial derivative dependency to a compile-time
@@ -28,13 +44,6 @@
   not.  When I-1 == -1, then wrt is not in dependencies, and it throws an error
   (ending the recursion).  Deriv<I> is the tag corresponding to dependency I,
   as indexed in the Model's list of dependencies.
-
-  Models are expected to implement a fairly precise set of variables and
-  methods.  Examples of these are shown (for a simple synthetic case) in
-  `src/state/test/dag_models.hh`.
-
-  Use of this evaluator is tested in
-  src/state/test/state_evaluators_dag_models.cc.
 
 */
 
@@ -77,6 +86,7 @@ class EvaluatorModel_CompositeVector
  protected:
   Teuchos::RCP<Model_type> model_;
   std::string name_;
+  Key tag_;
 };
 
 
@@ -88,9 +98,13 @@ EvaluatorModel_CompositeVector<Model, Device_type>::
   EvaluatorModel_CompositeVector(Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
     model_(Teuchos::rcp(new Model_type(plist))),
-    name_(plist.name())
+    name_(plist.name()),
+    tag_(plist.get<std::string>("tag"))
 {
-  dependencies_ = model_->dependencies();
+  auto dep_list = model_->dependencies();
+  for (const auto& dep : dep_list) {
+    dependencies_.emplace_back(KeyPair(dep, tag_));
+  }
 }
 
 template <template <class, class> class Model, class Device_type>

@@ -56,6 +56,8 @@ class EvaluatorSecondary : public Evaluator {
   UpdateDerivative(State& S, const Key& request, const Key& wrt_key,
                    const Key& wrt_tag) override;
 
+  virtual KeyPairVector dependencies() const override final {
+    return dependencies_; }
   virtual bool
   IsDependency(const State& S, const Key& key, const Key& tag) const override;
   virtual bool ProvidesKey(const Key& key, const Key& tag) const override;

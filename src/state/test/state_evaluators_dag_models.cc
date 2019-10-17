@@ -55,38 +55,35 @@ class make_state {
 
   void requireEvaluators()
   {
+    // Primary fields
+    fb_eval = requirePrimary("B");
+    fg_eval = requirePrimary("G");
+
     // Secondary fields
-    fa_eval = requireSecondary<AModel>("A", { "B", "G" });
-    fc_eval = requireSecondary<CModel>("C", {});
     fd_eval = requireSecondary<DModel>("D", {});
+    fc_eval = requireSecondary<CModel>("C", {});
+    ff_eval = requireSecondary<FModel>("F", {});
     fe_eval = requireSecondary<EModel>("E",
                                        {
                                          "G",
                                        });
-    ff_eval = requireSecondary<FModel>("F", {});
     fh_eval = requireSecondary<HModel>("H", {});
-
-    // Primary fields
-    fb_eval = requirePrimary("B");
-    fg_eval = requirePrimary("G");
+    fa_eval = requireSecondary<AModel>("A", { "B", "G" });
   }
 
   void requireEvaluatorsByMaterial()
   {
-    // Secondary fields
-    fa_eval = requireSecondaryByMaterial<AModel>("A", { "B", "G" });
-    fc_eval = requireSecondary<CModel>("C", {});
-    fd_eval = requireSecondary<DModel>("D", {});
-    fe_eval = requireSecondary<EModel>("E",
-                                       {
-                                         "G",
-                                       });
-    ff_eval = requireSecondary<FModel>("F", {});
-    fh_eval = requireSecondary<HModel>("H", {});
-
     // Primary fields
     fb_eval = requirePrimary("B");
     fg_eval = requirePrimary("G");
+
+    // Secondary fields
+    fd_eval = requireSecondary<DModel>("D", {});
+    fc_eval = requireSecondary<CModel>("C", {});
+    ff_eval = requireSecondary<FModel>("F", {});
+    fe_eval = requireSecondary<EModel>("E", { "G" } );
+    fh_eval = requireSecondary<HModel>("H", {});
+    fa_eval = requireSecondaryByMaterial<AModel>("A", { "B", "G" });
   }
 
   void setup()
@@ -139,7 +136,7 @@ class make_state {
       .set<std::string>("verbosity level", "extreme");
     es_list.setName(name);
     es_list.set("tag", "");
-    auto& region_list = es_list.sublist("regions");
+    auto& region_list = es_list.sublist("model parameters");
     region_list.sublist("left").set("alpha", 2.0);
     region_list.sublist("right").set("alpha", 3.0);
 

@@ -35,53 +35,20 @@ namespace Amanzi {
 template <typename Data_t, typename DataFactory_t = NullFactory>
 class EvaluatorSecondaryMonotypeAdditive
   : public EvaluatorSecondaryMonotype<Data_t, DataFactory_t> {
+
  public:
-  EvaluatorSecondaryMonotypeAdditive(Teuchos::ParameterList& plist)
-    : EvaluatorSecondaryMonotype<Data_t, DataFactory_t>(plist)
-  {
-    AMANZI_ASSERT(this->my_keys_.size() == 1);
-    for (const auto& dep : this->dependencies_) {
-      Key coef_name = dep.first + ":" + dep.second;
-      Key pname = dep.first + " coefficient";
-      Key pname_full = coef_name + " coefficient";
-      if (plist.isParameter(pname_full))
-        coefs_[coef_name] = plist.get<double>(pname_full);
-      else if (plist.isParameter(pname))
-        coefs_[coef_name] = plist.get<double>(pname);
-      else
-        coefs_[coef_name] = 1.0;
-    }
-  }
-
-
-  EvaluatorSecondaryMonotypeAdditive(
-    const EvaluatorSecondaryMonotypeAdditive& other) = default;
-  virtual Teuchos::RCP<Evaluator> Clone() const override
-  {
-    return Teuchos::rcp(new EvaluatorSecondaryMonotypeAdditive(*this));
-  }
+  EvaluatorSecondaryMonotypeAdditive(Teuchos::ParameterList& plist);
+  EvaluatorSecondaryMonotypeAdditive(const EvaluatorSecondaryMonotypeAdditive& other) = default;
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
 
  protected:
   virtual void
-  Evaluate_(const State& S, const std::vector<Data_t*>& results) override
-  {
-    results[0]->putScalar(0.);
-    for (const auto& dep : this->dependencies_) {
-      const auto& term = S.Get<Data_t>(dep.first, dep.second);
-      std::string coef_name = dep.first + ":" + dep.second;
-      double coef = coefs_.at(coef_name);
-      results[0]->update(coef, term, 1.0);
-    }
-  }
+  Evaluate_(const State& S, const std::vector<Data_t*>& results) override;
 
   virtual void
   EvaluatePartialDerivative_(const State& S, const Key& wrt_key,
                              const Key& wrt_tag,
-                             const std::vector<Data_t*>& results) override
-  {
-    Key pname_full = wrt_key + ":" + wrt_tag;
-    results[0]->putScalar(coefs_[pname_full]);
-  }
+                             const std::vector<Data_t*>& results) override;
 
  protected:
   std::map<Key, double> coefs_;
@@ -91,6 +58,58 @@ class EvaluatorSecondaryMonotypeAdditive
     Evaluator, EvaluatorSecondaryMonotypeAdditive<Data_t, DataFactory_t>>
     fac_;
 };
+
+
+template <typename Data_t, typename DataFactory_t>
+EvaluatorSecondaryMonotypeAdditive<Data_t,DataFactory_t>::EvaluatorSecondaryMonotypeAdditive(Teuchos::ParameterList& plist)
+    : EvaluatorSecondaryMonotype<Data_t, DataFactory_t>(plist)
+{
+  AMANZI_ASSERT(this->my_keys_.size() == 1);
+  for (const auto& dep : this->dependencies_) {
+    Key coef_name = dep.first + ":" + dep.second;
+    Key pname = dep.first + " coefficient";
+    Key pname_full = coef_name + " coefficient";
+    if (plist.isParameter(pname_full))
+      coefs_[coef_name] = plist.get<double>(pname_full);
+    else if (plist.isParameter(pname))
+      coefs_[coef_name] = plist.get<double>(pname);
+    else
+      coefs_[coef_name] = 1.0;
+  }
+}
+
+
+template <typename Data_t, typename DataFactory_t>
+Teuchos::RCP<Evaluator>
+EvaluatorSecondaryMonotypeAdditive<Data_t,DataFactory_t>::Clone() const
+{
+  return Teuchos::rcp(new EvaluatorSecondaryMonotypeAdditive(*this));
+}
+
+template <typename Data_t, typename DataFactory_t>
+void
+EvaluatorSecondaryMonotypeAdditive<Data_t,DataFactory_t>::Evaluate_(const State& S, const std::vector<Data_t*>& results)
+{
+  results[0]->putScalar(0.);
+  for (const auto& dep : this->dependencies_) {
+    const auto& term = S.Get<Data_t>(dep.first, dep.second);
+    std::string coef_name = dep.first + ":" + dep.second;
+    double coef = coefs_.at(coef_name);
+    results[0]->update(coef, term, 1.0);
+  }
+}
+
+template <typename Data_t, typename DataFactory_t>
+void
+EvaluatorSecondaryMonotypeAdditive<Data_t,DataFactory_t>::EvaluatePartialDerivative_(const State& S,
+        const Key& wrt_key,
+        const Key& wrt_tag,
+        const std::vector<Data_t*>& results)
+{
+  Key pname_full = wrt_key + ":" + wrt_tag;
+  results[0]->putScalar(coefs_[pname_full]);
+}
+
 
 
 } // namespace Amanzi

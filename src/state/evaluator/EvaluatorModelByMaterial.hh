@@ -75,6 +75,7 @@ class EvaluatorModelByMaterial
  protected:
   std::vector<std::pair<std::string, Teuchos::RCP<Model_type>>> models_;
   std::string name_;
+  Key tag_;
 };
 
 
@@ -82,9 +83,10 @@ template <template <class, class> class Model, class Device_type>
 EvaluatorModelByMaterial<Model, Device_type>::EvaluatorModelByMaterial(
   Teuchos::ParameterList& plist)
   : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist),
-    name_(plist.name())
+    name_(plist.name()),
+    tag_(plist.get<std::string>("tag"))
 {
-  Teuchos::ParameterList& region_plist = plist.sublist("regions");
+  Teuchos::ParameterList& region_plist = plist.sublist("model parameters");
 
   // make a copy for use in the Model
   Teuchos::ParameterList model_list(plist);
@@ -97,7 +99,7 @@ EvaluatorModelByMaterial<Model, Device_type>::EvaluatorModelByMaterial(
         std::make_pair(region_name, Teuchos::rcp(new Model_type(model_list))));
     } else {
       Errors::Message msg(
-        "EvaluatorModelByMaterial: \"regions\" sublist should only contain "
+        "EvaluatorModelByMaterial: \"model parameters\" sublist should only contain "
         "sublists, one per material region.");
       throw(msg);
     }
@@ -112,7 +114,10 @@ EvaluatorModelByMaterial<Model, Device_type>::EvaluatorModelByMaterial(
   // Take the dependencies from the first model.  Could check that they
   // are all the same?  Shouldn't be necessary since they all got constructed
   // from the same list.
-  dependencies_ = models_[0].second->dependencies();
+  auto dep_list = models_[0].second->dependencies();
+  for (const auto& dep : dep_list) {
+    dependencies_.emplace_back(KeyPair(dep, tag_));
+  }
 }
 
 

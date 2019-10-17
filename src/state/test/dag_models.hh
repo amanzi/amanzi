@@ -82,10 +82,10 @@ class AModel {
     };
   };
 
-  KeyPairVector dependencies()
+  KeyVector dependencies()
   {
     // NOTE, a real Model would parse the parameter list to get these
-    return { { "B", "" }, { "C", "" }, { "E", "" }, { "H", "" } };
+    return { "B", "C", "E", "H" };
   };
 
   // the model
@@ -157,7 +157,7 @@ class CModel {
     };
   };
 
-  KeyPairVector dependencies() { return { { "D", "" }, { "G", "" } }; };
+  KeyVector dependencies() { return { "D", "G" }; }
 
   KOKKOS_INLINE_FUNCTION void operator()(const int i) const
   {
@@ -208,7 +208,7 @@ class DModel {
     };
   };
 
-  KeyPairVector dependencies() { return { { "G", "" } }; };
+  KeyVector dependencies() { return { "G", }; }
 
   KOKKOS_INLINE_FUNCTION void operator()(const int i) const
   {
@@ -253,7 +253,7 @@ class EModel {
     };
   };
 
-  KeyPairVector dependencies() { return { { "D", "" }, { "F", "" } }; };
+  KeyVector dependencies() { return { "D", "F" }; }
 
   KOKKOS_INLINE_FUNCTION void operator()(const int i) const
   {
@@ -304,7 +304,7 @@ class FModel {
     };
   };
 
-  KeyPairVector dependencies() { return { { "G", "" } }; };
+  KeyVector dependencies() { return { "G", }; }
 
   KOKKOS_INLINE_FUNCTION void operator()(const int i) const
   {
@@ -349,7 +349,7 @@ class HModel {
     };
   };
 
-  KeyPairVector dependencies() { return { { "F", "" } }; };
+  KeyVector dependencies() { return { "F" }; }
 
 
   KOKKOS_INLINE_FUNCTION void operator()(const int i) const

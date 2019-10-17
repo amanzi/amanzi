@@ -284,50 +284,11 @@ class make_state {
     Teuchos::ParameterList es_list, ep_list;
     es_list.sublist("verbose object")
       .set<std::string>("verbosity level", "extreme");
+    es_list.set("tag", "");
     ep_list.sublist("verbose object")
       .set<std::string>("verbosity level", "extreme");
 
-    // Secondary fields
-    // --  A and its evaluator
-    es_list.setName("fa");
-    es_list.set("tag", "");
-    S.Require<double>("fa", "", "fa");
-    S.RequireDerivative<double>("fa", "", "fb", "");
-    S.RequireDerivative<double>("fa", "", "fg", "");
-    fa_eval = Teuchos::rcp(new AEvaluator(es_list));
-    S.SetEvaluator("fa", fa_eval);
-
-    // --  C and its evaluator
-    es_list.setName("fc");
-    S.Require<double>("fc", "", "fc");
-    fc_eval = Teuchos::rcp(new CEvaluator(es_list));
-    S.SetEvaluator("fc", fc_eval);
-
-    // --  D and its evaluator
-    es_list.setName("fd");
-    S.Require<double>("fd", "", "fd");
-    fd_eval = Teuchos::rcp(new DEvaluator(es_list));
-    S.SetEvaluator("fd", fd_eval);
-
-    // --  E and its evaluator
-    es_list.setName("fe");
-    S.Require<double>("fe", "", "fe");
-    S.RequireDerivative<double>("fe", "", "fg", "");
-    fe_eval = Teuchos::rcp(new EEvaluator(es_list));
-    S.SetEvaluator("fe", fe_eval);
-
-    // --  F and its evaluator
-    es_list.setName("ff");
-    S.Require<double>("ff", "", "ff");
-    ff_eval = Teuchos::rcp(new FEvaluator(es_list));
-    S.SetEvaluator("ff", ff_eval);
-
-    // --  H and its evaluator
-    es_list.setName("fh");
-    S.Require<double>("fh", "", "fh");
-    fh_eval = Teuchos::rcp(new HEvaluator(es_list));
-    S.SetEvaluator("fh", fh_eval);
-
+    // Must call SetEvaluator() from the bottom of the dag up.
     // Primary fields
     ep_list.setName("fb");
     // -- field B and its evaluator
@@ -340,6 +301,46 @@ class make_state {
     S.Require<double>("fg", "", "fg");
     fg_eval = Teuchos::rcp(new EvaluatorPrimary<double>(ep_list));
     S.SetEvaluator("fg", fg_eval);
+
+    // Secondary fields
+    // --  D and its evaluator
+    es_list.setName("fd");
+    S.Require<double>("fd", "", "fd");
+    fd_eval = Teuchos::rcp(new DEvaluator(es_list));
+    S.SetEvaluator("fd", fd_eval);
+
+    // --  C and its evaluator
+    es_list.setName("fc");
+    S.Require<double>("fc", "", "fc");
+    fc_eval = Teuchos::rcp(new CEvaluator(es_list));
+    S.SetEvaluator("fc", fc_eval);
+
+    // --  F and its evaluator
+    es_list.setName("ff");
+    S.Require<double>("ff", "", "ff");
+    ff_eval = Teuchos::rcp(new FEvaluator(es_list));
+    S.SetEvaluator("ff", ff_eval);
+
+    // --  E and its evaluator
+    es_list.setName("fe");
+    S.Require<double>("fe", "", "fe");
+    S.RequireDerivative<double>("fe", "", "fg", "");
+    fe_eval = Teuchos::rcp(new EEvaluator(es_list));
+    S.SetEvaluator("fe", fe_eval);
+    
+    // --  H and its evaluator
+    es_list.setName("fh");
+    S.Require<double>("fh", "", "fh");
+    fh_eval = Teuchos::rcp(new HEvaluator(es_list));
+    S.SetEvaluator("fh", fh_eval);
+
+    // --  A and its evaluator
+    es_list.setName("fa");
+    S.Require<double>("fa", "", "fa");
+    S.RequireDerivative<double>("fa", "", "fb", "");
+    S.RequireDerivative<double>("fa", "", "fg", "");
+    fa_eval = Teuchos::rcp(new AEvaluator(es_list));
+    S.SetEvaluator("fa", fa_eval);
 
     // Setup fields initialize
     S.Setup();
