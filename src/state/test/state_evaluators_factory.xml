@@ -53,8 +53,6 @@
         <Parameter name="evaluator type" type="string" value="independent variable" />
         <ParameterList name="function" type="ParameterList">
           <ParameterList name="left" type="ParameterList">
-            <Parameter name="region" type="string" value="left" />
-            <Parameter name="component" type="string" value="cell" /> <!-- can we get rid of this and infer it? -->
             <ParameterList name="function" type="ParameterList">
               <ParameterList name="function-constant" type="ParameterList">
                 <Parameter name="value" type="double" value="0.5" />
@@ -62,8 +60,6 @@
             </ParameterList>
           </ParameterList>
           <ParameterList name="right" type="ParameterList">
-            <Parameter name="region" type="string" value="right" />
-            <Parameter name="component" type="string" value="cell" /> <!-- can we get rid of this and infer it? -->
             <ParameterList name="function" type="ParameterList">
               <ParameterList name="function-constant" type="ParameterList">
                 <Parameter name="value" type="double" value="0.25" />

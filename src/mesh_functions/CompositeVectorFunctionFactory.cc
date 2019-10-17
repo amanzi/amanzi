@@ -61,11 +61,8 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
           Exceptions::amanzi_throw(msg);
         }
       } else {
-        Errors::Message msg;
-        msg << "CompositeVectorFunctionFactory \"" << plist.name() << "("
-            << name << ")"
-            << "\": parameter \"region\" or \"regions\" must exist.";
-        Exceptions::amanzi_throw(msg);
+        // take region name from plist name
+        regions.push_back(Keys::cleanPListName(sublist.name()));
       }
 
       // grab the name of the components from the list
@@ -91,12 +88,12 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
               << "\": parameter \"components\" should be an Array(string).";
           Exceptions::amanzi_throw(msg);
         }
-      } else {
-        Errors::Message msg;
-        msg << "CompositeVectorFunctionFactory \"" << plist.name() << "("
-            << name << ")"
-            << "\": parameter \"component\" or \"components\" must exist.";
-        Exceptions::amanzi_throw(msg);
+      // } else {
+      //   Errors::Message msg;
+      //   msg << "CompositeVectorFunctionFactory \"" << plist.name() << "("
+      //       << name << ")"
+      //       << "\": parameter \"component\" or \"components\" must exist.";
+      //   Exceptions::amanzi_throw(msg);
       }
 
       // get the function
@@ -113,33 +110,51 @@ CreateCompositeVectorFunction(Teuchos::ParameterList& plist,
       }
 
       // From the above data, add to the cv function.
-      // Loop through components, adding a spec/component name for each.
-      for (std::vector<std::string>::const_iterator component =
-             components.begin();
-           component != components.end();
-           ++component) {
-        // get the entity kind based upon the sample vector
-        if (!sample.HasComponent(*component)) {
-          Errors::Message msg;
-          msg << "CompositeVectorFunctionFactory \"" << plist.name() << "("
-              << name << ")"
-              << "\": specified component \"" << *component
-              << "\" is either not valid or this vector does not include such "
-                 "a component.";
-          Exceptions::amanzi_throw(msg);
+      if (components.size() > 0) {
+        // Loop through components, adding a spec/component name for each.
+        for (std::vector<std::string>::const_iterator component =
+                 components.begin();
+             component != components.end();
+             ++component) {
+          // get the entity kind based upon the sample vector
+          if (!sample.HasComponent(*component)) {
+            Errors::Message msg;
+            msg << "CompositeVectorFunctionFactory \"" << plist.name() << "("
+                << name << ")"
+                << "\": specified component \"" << *component
+                << "\" is either not valid or this vector does not include such "
+                "a component.";
+            Exceptions::amanzi_throw(msg);
+          }
+          AmanziMesh::Entity_kind kind = sample.Location(*component);
+
+          // -- Create the domain,
+          Teuchos::RCP<MeshFunction::Domain> domain =
+              Teuchos::rcp(new MeshFunction::Domain(regions, kind));
+
+          // -- and the spec,
+          Teuchos::RCP<MeshFunction::Spec> spec =
+              Teuchos::rcp(new MeshFunction::Spec(domain, func));
+
+          mesh_func->AddSpec(spec);
+          componentname_list.push_back(*component);
         }
-        AmanziMesh::Entity_kind kind = sample.Location(*component);
+      } else {
+        // Not specific components, do by vector
+        for (const auto& comp : sample) {
+          AmanziMesh::Entity_kind kind = sample.Location(comp);
 
-        // -- Create the domain,
-        Teuchos::RCP<MeshFunction::Domain> domain =
-          Teuchos::rcp(new MeshFunction::Domain(regions, kind));
+          // -- Create the domain,
+          Teuchos::RCP<MeshFunction::Domain> domain =
+              Teuchos::rcp(new MeshFunction::Domain(regions, kind));
+          
+          // -- and the spec,
+          Teuchos::RCP<MeshFunction::Spec> spec =
+              Teuchos::rcp(new MeshFunction::Spec(domain, func));
 
-        // -- and the spec,
-        Teuchos::RCP<MeshFunction::Spec> spec =
-          Teuchos::rcp(new MeshFunction::Spec(domain, func));
-
-        mesh_func->AddSpec(spec);
-        componentname_list.push_back(*component);
+          mesh_func->AddSpec(spec);
+          componentname_list.push_back(comp);
+        }
       }
     } else {
       Errors::Message msg;
