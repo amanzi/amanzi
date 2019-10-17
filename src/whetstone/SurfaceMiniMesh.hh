@@ -67,7 +67,7 @@ class SurfaceMiniMesh {
   }
 
   void edge_get_nodes(const Entity_ID e, Entity_ID* n0, Entity_ID* n1) const {
-    mesh_->edge_get_nodes(e, &n0, &n1);
+    mesh_->edge_get_nodes(e, n0, n1);
   }
 
   // -- geometric objects
@@ -99,7 +99,7 @@ class SurfaceMiniMesh {
   }
 
   AmanziGeometry::Point edge_centroid(Entity_ID e) const {
-    const auto& xe = mesh_->edge_centroid(f);
+    const auto& xe = mesh_->edge_centroid(e);
     return coordsys_->Project(xe, true);
   }
 

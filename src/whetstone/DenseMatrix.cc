@@ -221,6 +221,31 @@ DenseMatrix operator*(const DenseMatrix& A, const DenseMatrix& B)
 
 
 /* ******************************************************************
+* Kroneker product
+****************************************************************** */
+DenseMatrix operator^(const DenseMatrix& A, const Tensor& K)
+{
+  int d = K.dimension();
+  int nrows = A.NumRows();
+  int ncols = A.NumCols();
+
+  DenseMatrix AK(nrows * d, ncols * d);
+
+  for (int m = 0; m < nrows; ++m) {
+    for (int n = 0; n < ncols; ++n) {
+      for (int i = 0; i < d; ++i) {
+        for (int j = 0; j < d; ++j) {
+          AK(d * m + i, d * n + j) = A(m, n) * K(i, j);
+        }
+      }
+    }
+  }
+
+  return AK;
+}
+
+
+/* ******************************************************************
 * Matrix-matrix product. The matrices are ordered by columns.
 ****************************************************************** */
 int DenseMatrix::Multiply(const DenseMatrix& A, 

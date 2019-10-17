@@ -22,6 +22,7 @@
 
 #include "lapack.hh"
 #include "DenseVector.hh"
+#include "Tensor.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -102,6 +103,9 @@ class DenseMatrix {
   friend DenseMatrix operator+(const DenseMatrix& A, const DenseMatrix& B);
   friend DenseMatrix operator-(const DenseMatrix& A, const DenseMatrix& B);
   friend DenseMatrix operator*(const DenseMatrix& A, const DenseMatrix& B);
+
+  // Kroneker product of matrices and tensors
+  friend DenseMatrix operator^(const DenseMatrix& A, const Tensor& K);
 
   // calculates either A * B to A^T * B
   int Multiply(const DenseMatrix& A, const DenseMatrix& B, bool transposeA);

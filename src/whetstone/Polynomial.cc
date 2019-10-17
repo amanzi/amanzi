@@ -517,7 +517,7 @@ void Polynomial::ChangeCoordinates(
 /* ******************************************************************
 * Inverse change of coordinates: s = B^+ (x - x0) for polynomial
 * centered at the origin.
-* Note: resulting polynomial is centered at x0.
+* Note: the modified polynomial is centered at x0.
 ****************************************************************** */
 void Polynomial::InverseChangeCoordinates(
     const AmanziGeometry::Point& x0, const std::vector<AmanziGeometry::Point>& B)

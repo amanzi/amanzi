@@ -9,7 +9,8 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Useful tools for local surface coordinate system.
+  Useful tools for a local surface coordinate system: local coordinate
+  system and transformation of coodinates to and from this system.
 */
 
 #ifndef AMANZI_SURFACE_COORDINATE_SYSTEM_HH_
@@ -17,6 +18,7 @@
 
 #include <memory>
 
+#include "DenseMatrix.hh"
 #include "Point.hh"
 
 namespace Amanzi {
@@ -39,6 +41,11 @@ class SurfaceCoordinateSystem {
   // -- flag = true, calculate coordinates of new points relative to origin
   // -- flag = false, project vectors
   AmanziGeometry::Point Project(const AmanziGeometry::Point& x, bool flag) const;
+
+  // inverse transformation of coordinates
+  // -- matrix of the transformation
+  DenseMatrix InverseTransformation() const;
+  
 
   // const access
   const AmanziGeometry::Point& origin() const { return origin_; }
