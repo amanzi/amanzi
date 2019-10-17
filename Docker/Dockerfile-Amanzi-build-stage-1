@@ -9,14 +9,19 @@ RUN echo "${AMANZI_PREFIX}"
 RUN echo "${AMANZI_TPLS_DIR}"
 
 # Arguments
-ARG amanzi_branch=master 
+ARG amanzi_branch=master
+ARG amanzi_pr=false
 
 # Change the Working Directory and update amanzi
 WORKDIR /home/amanzi_user/amanzi
+
+# Make sure we have updatee branch information
 RUN echo "Amanzi branch = $amanzi_branch"
-RUN git branch --list
 RUN git pull
+RUN git branch --list
+# Checkout the branch and update it
 RUN git checkout $amanzi_branch
+RUN git pull
  
 RUN ./bootstrap.sh --prefix=${AMANZI_PREFIX} \
    --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
