@@ -175,7 +175,7 @@ class MeshEmbeddedLogical : public Mesh {
   virtual
   void cell_get_face_adj_cells(const Entity_ID cellid,
           const Parallel_type ptype,
-          Entity_ID_List *fadj_cellids) const;
+          Entity_ID_List *fadj_cellids) const override;
 
   // Node connected neighboring cells of given cell
   // (a hex in a structured mesh has 26 node connected neighbors)
@@ -183,7 +183,7 @@ class MeshEmbeddedLogical : public Mesh {
   virtual
   void cell_get_node_adj_cells(const Entity_ID cellid,
           const Parallel_type ptype,
-          Entity_ID_List *nadj_cellids) const;
+          Entity_ID_List *nadj_cellids) const override;
 
   //
   // Mesh entity geometry
@@ -286,18 +286,18 @@ class MeshEmbeddedLogical : public Mesh {
   virtual
   int compute_cell_geometry_(const Entity_ID cellid,
                              double *volume,
-                             AmanziGeometry::Point *centroid) const;
+                             AmanziGeometry::Point *centroid) const override;
   virtual
   int compute_face_geometry_(const Entity_ID faceid,
                              double *area,
                              AmanziGeometry::Point *centroid,
-                             std::vector<AmanziGeometry::Point> *normals) const;
+                             std::vector<AmanziGeometry::Point> *normals) const override;
 
   // build the cache
   virtual
-  int compute_cell_geometric_quantities_() const;
+  int compute_cell_geometric_quantities_() const override;
   virtual
-  int compute_face_geometric_quantities_() const;
+  int compute_face_geometric_quantities_() const override;
 
   // build maps
   void init_maps();
