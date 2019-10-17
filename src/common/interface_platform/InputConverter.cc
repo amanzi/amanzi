@@ -1744,7 +1744,7 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
       in_file << "  /\n";
     }
     if (!redoxes.str().empty()) {
-      in_file << "  REDOX_SPECIES\n";
+      in_file << "  DECOUPLED_EQUILIBRIUM_REACTIONS\n";
       in_file << redoxes.str();
       in_file << "  /\n";
     }
