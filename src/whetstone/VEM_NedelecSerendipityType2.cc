@@ -22,6 +22,7 @@
 */
 
 #include <cmath>
+#include <memory>
 #include <tuple>
 #include <vector>
 
@@ -102,7 +103,8 @@ int VEM_NedelecSerendipityType2::L2consistency(
   int ndof_S = nedges * nde;
 
   // Hcurl spaces on faces
-  std::vector<WhetStone::DenseMatrix> vNf;
+  std::vector<WhetStone::DenseMatrix> vNf, vMG;
+  std::vector<std::shared_ptr<WhetStone::SurfaceCoordinateSystem> > vcoordsys;
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
@@ -112,13 +114,27 @@ int VEM_NedelecSerendipityType2::L2consistency(
     auto coordsys = std::make_shared<SurfaceCoordinateSystem>(xf, normal);
     auto surf_mesh = Teuchos::rcp(new SurfaceMiniMesh(mesh_, coordsys));
 
-    DenseMatrix Nf, Mf;
-    vem_surf.L2consistency2D_<SurfaceMiniMesh>(surf_mesh, f, K, Nf, Mf);
+    DenseMatrix Nf, Mf, MG;
+    L2consistency2D_<SurfaceMiniMesh>(surf_mesh, f, K, Nf, Mf, MG);
+
     vNf.push_back(Nf);
+    vMG.push_back(MG);
+    vcoordsys.push_back(coordsys);
   }
 
   // contributions of least square projectors on faces
+  Tensor Id(d_ - 1, 2);
+  Id.MakeDiagonal(1.0);
+
+  N.Reshape(ndof_S, ndc * d_);
+  N.PutScalar(0.0);
+
   for (int n = 0; n < nfaces; ++n) {
+    int f = faces[n];
+    double area = mesh_->face_area(f);
+    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+
     const auto& Nf = vNf[n];
     DenseMatrix NfT(Nf.NumCols(), Nf.NumRows());
     NfT.Transpose(Nf);
@@ -126,71 +142,59 @@ int VEM_NedelecSerendipityType2::L2consistency(
     auto NN = NfT * Nf;
     NN.InverseMoorePenrose();
 
-    // this matrix represents the least square projector
-    auto P0 = Nf * NN;
-
+    // matrix Nf * NN represents the least square projector
+    auto P0 = Nf * NN * (vMG[n] ^ Id);
 
     mesh_->face_get_edges_and_dirs(f, &fedges, &edirs);
     int nfedges = fedges.size();
 
-    WhetStone::DenseMatrix Nf(nfedges * nde, nd * d_);
-
-    int row(0);
+    // local face -> local cell map
+    std::vector<int> map;
     for (int i = 0; i < nfedges; ++i) {
       int e = fedges[i];
-      double len = mesh_->edge_length(e);
-      const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
-      std::vector<AmanziGeometry::Point> tau_edge(1, tau);
-
-      for (auto it = pe.begin(); it < pe.end(); ++it) {
-        int m = it.PolynomialPosition();
-        const int* index = it.multi_index();
-        Polynomial emono(d_, index, 1.0 / len);
-        emono.InverseChangeCoordinates(xe, tau_edge);  
-
-        for (auto jt = pc.begin(1); jt < pc.end(); ++jt) {
-          const int* index = jt.multi_index();
-          double factor = basis.monomial_scales()[jt.MonomialSetOrder()];
-          Polynomial cmono(d_, index, factor);
-          cmono.set_origin(mesh_->cell_centroid(c));
-
-          polys[0] = &cmono;
-          polys[1] = &emono;
-
-          double val = numi.IntegratePolynomialsEdge(e, polys) / len;
-          for (int k = 0; k < d_; ++k) Nf(rowf + m, d_ + k) = val * tau[k] / len;
-        }
-        rowf += nde * d_;
-      }
+      int pos = std::distance(edges.begin(), std::find(edges.begin(), edges.end(), e));
+      for (int l = 0; l < nde; ++l) map.push_back(nde * pos + l); 
     }
 
-    // lowest-order implementation (for testing only)
-    WhetStone::DenseVector v(d_), p0v(nfedges);
+    // integral over face requires vector of polynomial coefficients of pc
+    WhetStone::DenseVector v(P0.NumCols()), p0v(P0.NumRows());
+    auto tau& = *vcoordsys[n]->tau();
 
-    for (int k = 0; k < d_; ++k) {
-      AmanziGeometry::Point p(d_);
-      p[k] = 1.0;
-      auto tmp = ((xf - xc) ^ p) ^ normal;
+    for (auto it = pc.begin(); it < pc.end(); ++it) {
+      int m = it.PolynomialPosition();
 
-      for (int l = 0; l < d_; ++l) v(l) = tmp[l];
-      P0.Multiply(v, p0v, false);
+      const int* index = it.multi_index();
+      double factor = basis.monomial_scales()[it.MonomialSetOrder()];
+      Polynomial qe(d_, index, factor);
+      qe.set_origin(xc);
+      qe.ChangeCoordinates(xf, tau);
 
-      for (int i = 0; i < nfedges; ++i) {
-        int e = fedges[i];
-        int pos = std::distance(edges.begin(), std::find(edges.begin(), edges.end(), e));
-        N(pos, k) += p0v(i) * fdirs[n] / 2;
+      int s(0);
+      for (int k = 0; k < d_; ++k) {
+        for (int i = 0; i < d_ - 1; ++i) {
+          Polynomial q1(d_, 1);
+          for (int l = 0; l < d_; ++l) {
+            q1(l + 1) = tau[i][l] * normal[k] - tau[i][k] * normal[l];
+          }
+          q1.set_origin(xc);
+          q1.ChangeCoordinates(xf, tau);
+
+          q1 *= qe;
+
+          // AmanziGeometry::Point p(d_);
+          // p[k] = 1.0 / area;
+          // auto tmp = vcoordsys[n]->Project(((xf - xc) ^ p) ^ normal, false);
+
+        for (int l = 0; l < d_ - 1; ++l) v(l) = tmp[l];
+        P0.Multiply(v, p0v, false);
+
+        for (int i = 0; i < p0v.NumRows(); ++i) {
+          N(map[i], d_ * m + k) += p0v(i) * fdirs[n] / 2;
+        }
       }
     }
   }
 
-  // calculate matrices of degrees of freedom
-  AmanziGeometry::Point x0(d_), x1(d_);
-  std::vector<const PolynomialBase*> polys(2);
-
-  N.Reshape(ndof_S, ndc * d_);
-  N.PutScalar(0.0);
-
- 
   // calculate Mc = R (R^T N)^{-1} R^T 
   AmanziGeometry::Point v1(d_), v2(d_), v3(d_);
 
@@ -223,25 +227,12 @@ int VEM_NedelecSerendipityType2::L2consistency(
   DenseMatrix M1(nd, nd);
   GrammMatrix(poly, integrals_, basis, M1);
 
-  DenseMatrix M3(nd * d_, nd * d_);
-  M3.PutScalar(0.0);
-
   Tensor Kinv(d_, 2);
-  if (K.rank() == 2)
-    Kinv = K;
-  else
-    Kinv += K(0, 0);
+  if (K.rank() == 2) Kinv = K;
+  else Kinv += K(0, 0);
   Kinv.Inverse();
 
-  for (int m = 0; m < nd; ++m) {
-    for (int n = 0; n < nd; ++n) {
-      for (int i = 0; i < d_; ++i) {
-        for (int j = 0; j < d_; ++j) {
-          M3(d_ * m + i, d_ * n + j) = M1(m, n) * Kinv(i, j);
-        }
-      }
-    }
-  }
+  auto M3 = M1 ^ Kinv;
 
   // Integrate least-square polynomial
   DenseMatrix P0T(P0.NumCols(), P0.NumRows());

@@ -21,10 +21,12 @@
 #include "Mesh.hh"
 #include "Point.hh"
 
+#include "Basis_Regularized.hh"
 #include "BilinearFormFactory.hh"
 #include "DenseMatrix.hh"
 #include "DeRham_Edge.hh"
 #include "MFD3D.hh"
+#include "NumericalIntegration.hh"
 #include "Polynomial.hh"
 #include "PolynomialOnMesh.hh"
 #include "SurfaceMiniMesh.hh"
@@ -55,7 +57,7 @@ class VEM_NedelecSerendipityType2 : public MFD3D,
  protected:
   template<typename MyMesh>
   int L2consistency2D_(const Teuchos::RCP<const MyMesh>& mymesh,
-                       int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
+                       int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, DenseMatrix& MG);
 
  protected:
   using MFD3D::mesh_;
@@ -75,64 +77,67 @@ class VEM_NedelecSerendipityType2 : public MFD3D,
 template <class MyMesh>
 int VEM_NedelecSerendipityType2::L2consistency2D_(
     const Teuchos::RCP<const MyMesh>& mymesh,
-    int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
+    int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, DenseMatrix& MG)
 {
   // input mesh may have a different dimension than base mesh
   int d = mymesh->space_dimension();
 
-  Entity_ID_List faces;
+  Entity_ID_List edges;
   mymesh->cell_get_edges(c, &edges);
   int nedges = edges.size();
+
+  Polynomial pc(d, order_), pe(d - 1, order_);
 
   int ndc = PolynomialSpaceDimension(d, order_);
   int nde = PolynomialSpaceDimension(d - 1, order_);
   N.Reshape(nedges * nde, ndc * d);
 
+  // selecting regularized basis (parameter integrals is not used)
+  PolynomialOnMesh integrals;
+  Basis_Regularized<MyMesh> basis;
+  basis.Init(mymesh, c, order_, integrals.poly());
+
+  // pre-calculate integrals of monomials 
+  NumericalIntegration<MyMesh> numi(mymesh);
+  numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals);
+
+  std::vector<const PolynomialBase*> polys(2);
+
   int row(0);
   for (int i = 0; i < nedges; ++i) {
     int e = edges[i];
-    double len = mymesh->edge_area(f);
-    const AmanziGeometry::Point& normal = mesh_->edge_vector(e);
-      std::vector<AmanziGeometry::Point> tau_edge(1, tau);
+    double len = mymesh->edge_length(e);
+    const AmanziGeometry::Point& xe = mymesh->edge_centroid(e);
 
-      for (auto it = pe.begin(); it < pe.end(); ++it) {
-        int m = it.PolynomialPosition();
-        const int* index = it.multi_index();
-        Polynomial emono(d_, index, 1.0 / len);
-        emono.InverseChangeCoordinates(xe, tau_edge);  
+    const AmanziGeometry::Point& tau = mymesh->edge_vector(e);
+    std::vector<AmanziGeometry::Point> tau_edge(1, tau);
 
-        for (auto jt = pc.begin(1); jt < pc.end(); ++jt) {
-          const int* index = jt.multi_index();
-          double factor = basis.monomial_scales()[jt.MonomialSetOrder()];
-          Polynomial cmono(d_, index, factor);
-          cmono.set_origin(mesh_->cell_centroid(c));
+    for (auto it = pe.begin(); it < pe.end(); ++it) {
+      const int* index = it.multi_index();
+      Polynomial emono(d, index, 1.0);
+      emono.InverseChangeCoordinates(xe, tau_edge);  
 
-          polys[0] = &cmono;
-          polys[1] = &emono;
+      for (auto jt = pc.begin(); jt < pc.end(); ++jt) {
+        int m = jt.PolynomialPosition();
+        const int* jndex = jt.multi_index();
+        double factor = basis.monomial_scales()[jt.MonomialSetOrder()];
+        Polynomial cmono(d, jndex, factor);
+        cmono.set_origin(mymesh->cell_centroid(c));
 
-          double val = numi.IntegratePolynomialsEdge(e, polys) / len;
-          for (int k = 0; k < d_; ++k) Nf(rowf + m, d_ + k) = val * tau[k] / len;
-        }
-        rowf += nde * d_;
+        polys[0] = &cmono;
+        polys[1] = &emono;
+
+        double val = numi.IntegratePolynomialsEdge(e, polys) / len;
+        for (int k = 0; k < d; ++k) N(row, d * m + k) = val * tau[k] / len;
       }
+      row++;
     }
+  }
 
-    // lowest-order implementation (for testing only)
-    WhetStone::DenseVector v(d_), p0v(nfedges);
+  // calculate Mc = P0 M_G P0^T  FIXME
+  GrammMatrix(pc, integrals, basis, MG);
 
-    for (int k = 0; k < d_; ++k) {
-      AmanziGeometry::Point p(d_);
-      p[k] = 1.0;
-      auto tmp = ((xf - xc) ^ p) ^ normal;
-
-      for (int l = 0; l < d_; ++l) v(l) = tmp[l];
-      P0.Multiply(v, p0v, false);
-
-      for (int i = 0; i < nfedges; ++i) {
-        int e = fedges[i];
-        int pos = std::distance(edges.begin(), std::find(edges.begin(), edges.end(), e));
-        N(pos, k) += p0v(i) * fdirs[n] / 2;
-      }
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
 }  // namespace WhetStone

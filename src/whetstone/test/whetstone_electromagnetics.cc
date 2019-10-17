@@ -162,7 +162,7 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
   T(1, 0) = 1.0;
   T(2, 2) = 1.0;
 
-  for (int method = 0; method < 5; method++) {
+  for (int method = 0; method < 6; method++) {
     DenseMatrix M(nrows, nrows);
 
     if (method == 0) {
@@ -176,6 +176,9 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
       mfd.MassMatrixInverseOptimized(cell, T, M);
       M.Inverse();
     } else if (method == 4) {
+      vem.MassMatrix(cell, T, M);
+    } else if (method == 5) {
+      vem.set_order(1);
       vem.MassMatrix(cell, T, M);
     }
     CHECK(M.NumRows() == nrows);
@@ -217,6 +220,7 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
 
 TEST(MASS_MATRIX_3D_CUBE) {
   MassMatrix3D("", 12);
+exit(0);
 }
 
 TEST(MASS_MATRIX_3D_HEX) {
