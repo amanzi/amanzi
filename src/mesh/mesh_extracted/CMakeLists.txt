@@ -60,14 +60,17 @@ if (BUILD_TESTS)
 
    # Need to copy files for the tests 
    if (NOT (${MSTK_SOURCE_DIR} EQUAL ${MSTK_BINARY_DIR}))
-       file(GLOB DataFiles "${MESH_EXTRACTED_SOURCE_DIR}/test/*.xml")
+       file(GLOB DataFiles "${MESH_EXTRACTED_SOURCE_DIR}/test/*.exo"
+                           "${MESH_EXTRACTED_SOURCE_DIR}/test/*.xml")
        file(COPY ${DataFiles} DESTINATION ${MESH_EXTRACTED_BINARY_DIR}/test/)
    endif()
 
    add_amanzi_test(mesh_extracted_fracture mesh_extracted_fracture
                    KIND unit
                    SOURCE test/Main.cc test/mesh_extracted_fracture.cc
-                   LINK_LIBS ${mesh_frameworks} mesh_extracted geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+                   LINK_LIBS ${mesh_frameworks} mesh_extracted mesh_audit geometry ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
+   add_amanzi_test(mesh_extracted_fracture_3pe mesh_extracted_fracture NPROCS 3 KIND unit)
 
 endif()
   
