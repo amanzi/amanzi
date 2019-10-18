@@ -32,12 +32,15 @@ namespace AmanziMesh {
 //
 MeshLogical::MeshLogical(const Comm_ptr_type& comm,
                          const std::vector<Entity_ID_List>& face_cell_ids,
-                         const std::vector<AmanziGeometry::Point>& face_normals,
+                         const std::vector<std::vector<int> >& face_cell_dirs,
                          const Teuchos::RCP<const Teuchos::ParameterList>& plist)
     : Mesh(comm, Teuchos::null, plist, true, false)
 {
   logical_ = true;
-  AMANZI_ASSERT(face_cell_ids.size() == face_normals.size());
+  if (face_cell_ids.size() != face_cell_dirs.size()) {
+    Errors::Message mesg("MeshLogical topology created with bad data");
+    Exceptions::amanzi_throw(mesg);
+  }
 
   set_space_dimension(3);
   set_manifold_dimension(1);
@@ -55,43 +58,51 @@ MeshLogical::MeshLogical(const Comm_ptr_type& comm,
       c_max = std::max(c, c_max);
     }
   }
-
   int num_cells = cells.size();
-  AMANZI_ASSERT(num_cells == (c_max+1));
-  cell_volumes_.resize(num_cells, 0.);
+  if (num_cells != c_max + 1) {
+    Errors::Message mesg("MeshLogical expects cells to be 0-indexed and contiguous.");
+    Exceptions::amanzi_throw(mesg);
+  }    
 
-  // normal1 is negative normal0
-  face_normals_.resize(face_normals.size());
-  for (int f=0; f!=face_normals.size(); ++f) {
-    face_normals_[f].resize(2, face_normals[f] / AmanziGeometry::norm(face_normals[f]));
-    face_normals_[f][1] = -face_normals_[f][1];
-  }
+  // geometric info that must get set later
+  cell_volumes_.resize(num_cells, -1.);
+  face_areas_.resize(face_cell_ids_.size(), -1.);
+  
+  face_normals_.resize(face_cell_ids_.size());
+  face_cell_ptype_.resize(face_cell_ids_.size());
 
   // populate cell, extra face info
-  face_cell_ptype_.resize(face_cell_ids_.size());
-  face_areas_.resize(face_cell_ids_.size(), 0.);
-
   cell_face_ids_.resize(num_cells);
   cell_face_dirs_.resize(num_cells);
   cell_face_bisectors_.resize(num_cells);
+
   int f_id=0;
   for (auto & f : face_cell_ids_) {
-    face_cell_ptype_[f_id].push_back(Parallel_type::OWNED);
-    face_cell_ptype_[f_id].push_back(f.size() == 2 ?
-            Parallel_type::OWNED : Parallel_type::PTYPE_UNKNOWN);
-
     cell_face_ids_[f[0]].push_back(f_id);
-    cell_face_dirs_[f[0]].push_back(1);
-    cell_face_bisectors_[f[0]].emplace_back(face_normals_[f_id][0]);
+    cell_face_dirs_[f[0]].push_back(face_cell_dirs[f_id][0]);
+    cell_face_bisectors_[f[0]].emplace_back(AmanziGeometry::Point());
+
+    face_cell_ptype_[f_id].push_back(Parallel_type::OWNED);
+    face_normals_[f_id].resize(2);
+
+    // 1s complement the cell to make it consistent with the dir.  While this
+    // replicates information, it gives a lookup by both face AND cell of the
+    // face dir wrt to the cell with no extra storage.  That said, it means
+    // that indices MUST be signed ints, which limits the size of the mesh
+    // that can fit 32 bit ints...
+    if (face_cell_dirs[f_id][0] < 0) f[0] = ~f[0];
 
     if (f.size() > 1 && f[1] >= 0) {
       cell_face_ids_[f[1]].push_back(f_id);
-      cell_face_dirs_[f[1]].push_back(-1);
-      cell_face_bisectors_[f[1]].push_back(face_normals_[f_id][1]);
+      cell_face_dirs_[f[1]].push_back(face_cell_dirs[f_id][1]);
+      cell_face_bisectors_[f[1]].emplace_back(AmanziGeometry::Point());
+      
+      face_cell_ptype_[f_id].push_back(Parallel_type::OWNED);
+      if (face_cell_dirs[f_id][1] < 0) f[1] = ~f[1];
 
-      f[1] = ~f[1];  // 1s complement as face normal points into cell
-    }
-
+    } else {
+      face_cell_ptype_[f_id].push_back(Parallel_type::PTYPE_UNKNOWN);
+    }      
     f_id++;
   }
 
@@ -125,66 +136,85 @@ MeshLogical::MeshLogical(const Comm_ptr_type& comm,
 // Breaks standards following the rest of the mesh infrastructure.
 //
 MeshLogical::MeshLogical(const Comm_ptr_type& comm,
-                         const std::vector<double>& cell_volumes,
                          const std::vector<Entity_ID_List>& face_cell_ids,
-                         const std::vector<std::vector<double> >& face_cell_lengths,
-                         const std::vector<AmanziGeometry::Point>& face_area_normals,
+                         const std::vector<std::vector<int> >& face_cell_dirs,
+                         const std::vector<double>& cell_volumes,
+                         const std::vector<double>& face_areas,
+                         const std::vector<std::vector<AmanziGeometry::Point> >& face_cell_bisectors,
                          const std::vector<AmanziGeometry::Point>* cell_centroids,
                          const Teuchos::RCP<const Teuchos::ParameterList>& plist)
-: Mesh(comm, Teuchos::null, plist, true, false) {
+  : MeshLogical(comm, face_cell_ids, face_cell_dirs, plist)
+{
+  // set geometry
+  set_logical_geometry(&cell_volumes, &face_areas, &face_cell_bisectors, cell_centroids);
+}
 
-  logical_ = true;
+
+void MeshLogical::get_logical_geometry(std::vector<double>* const cell_volumes,
+        std::vector<double>* const face_areas,
+        std::vector<std::vector<AmanziGeometry::Point> >* const face_cell_bisectors,
+        std::vector<AmanziGeometry::Point>* const cell_centroids) const
+{
+  if (cell_volumes) *cell_volumes = cell_volumes_;
+  if (face_areas) *face_areas = face_areas_;
+  if (cell_centroids) *cell_centroids = cell_centroids_;
+
+  // not sure what would be useful for user here... wait til we have a user and fix it!
+  if (face_cell_bisectors) {
+    face_cell_bisectors->resize(num_entities(FACE, Parallel_type::ALL));
+  }
+}
+
+
+void MeshLogical::set_logical_geometry(std::vector<double> const* const cell_volumes,
+        std::vector<double> const* const face_areas,
+        std::vector<std::vector<AmanziGeometry::Point> > const* const face_cell_bisectors,
+        std::vector<AmanziGeometry::Point> const* const cell_centroids)
+{
+  auto n_cells = num_entities(CELL, Parallel_type::OWNED);
+  auto n_faces = num_entities(FACE, Parallel_type::OWNED);
   
-  if (face_cell_ids.size() != face_cell_lengths.size()) {
-    Errors::Message mesg("MeshLogical created with bad data");
+  if (cell_volumes && n_cells != cell_volumes->size()) {
+    Errors::Message mesg("MeshLogical::set_logical_geometry() called with bad data");
     Exceptions::amanzi_throw(mesg);
   }
-  if (face_cell_ids.size() != face_area_normals.size()) {
-    Errors::Message mesg("MeshLogical created with bad data");
+  if (face_areas && n_faces != face_areas->size()) {
+    Errors::Message mesg("MeshLogical::set_logical_geometry() called with bad data");
     Exceptions::amanzi_throw(mesg);
   }
-  if (cell_centroids != nullptr && cell_centroids->size() != cell_volumes.size()) {
-    Errors::Message mesg("MeshLogical created with bad data");
+  if (face_cell_bisectors && n_faces != face_cell_bisectors->size()) {
+    Errors::Message mesg("MeshLogical::set_logical_geometry() called with bad data");
     Exceptions::amanzi_throw(mesg);
   }
-  for (int f=0; f!=face_cell_ids.size(); ++f) {
-    if (face_cell_ids[f].size() != face_cell_lengths[f].size()) {
-      Errors::Message mesg("MeshLogical created with bad data");
-      Exceptions::amanzi_throw(mesg);
-    }
+  if (cell_centroids && n_cells != cell_centroids->size()) {
+    Errors::Message mesg("MeshLogical::set_logical_geometry() called with bad data");
+    Exceptions::amanzi_throw(mesg);
   }
 
-  
-  set_space_dimension(3);
-  set_manifold_dimension(1);
 
-  cell_volumes_ = cell_volumes;
-  face_cell_ids_ = face_cell_ids;
+  if (cell_volumes) cell_volumes_ = *cell_volumes;
+  if (face_areas) face_areas_ = *face_areas;
 
-  // normal1 is negative normal0
-  face_normals_.resize(face_area_normals.size());  // resize to number of faces
-  for (int f=0; f!=face_area_normals.size(); ++f) {
-    face_normals_[f].resize(2, face_area_normals[f]);
-    if (cell_centroids) {
-      if (face_cell_ids_[f].size() == 2) {
-        if (face_normals_[f][0] * ((*cell_centroids)[face_cell_ids_[f][1]] -
-                               (*cell_centroids)[face_cell_ids_[f][0]]) > 0.) {
-          // normal is outward from cell 0 to cell 1
-          face_normals_[f][1] = -face_normals_[f][1];
-        } else {
-          // normal is outward from cell 1 to cell 0
-          face_normals_[f][0] = -face_normals_[f][0];
-        }
-      } else {
-        // pass, boundary face and we must assume normal given was correct
+  if (face_cell_bisectors) {
+    cell_face_bisectors_.clear();
+    cell_face_bisectors_.resize(n_cells);
+
+    for (Entity_ID f=0; f!=n_faces; ++f) {
+      Entity_ID_List f_cells;
+      face_get_cells(f, Parallel_type::ALL, &f_cells);
+      AMANZI_ASSERT((*face_cell_bisectors)[f].size() == f_cells.size());
+      
+      for (int c_index=0; c_index!=f_cells.size(); ++c_index) {
+        Entity_ID c = f_cells[c_index];
+        cell_face_bisectors_[c].push_back((*face_cell_bisectors)[f][c_index]);
+
+        face_normals_[f][c_index] = face_areas_[f] / AmanziGeometry::norm((*face_cell_bisectors)[f][c_index])
+                                    * (*face_cell_bisectors)[f][c_index];
       }
-    } else {
-      // no centroid info, doesn't matter what we choose
-      face_normals_[f][1] = -face_normals_[f][1];
     }
   }
 
-  // optional centroids
+  // do this after bisectors
   if (cell_centroids) {
     cell_centroids_ = *cell_centroids;
 
@@ -192,126 +222,34 @@ MeshLogical::MeshLogical(const Comm_ptr_type& comm,
     // centroids using assumption of perpendicular bisector
     face_centroids_.resize(face_cell_ids_.size());
     for (int f=0; f!=face_cell_ids_.size(); ++f) {
-      if (face_cell_ids_[f].size() == 2) {
-        face_centroids_[f] = (cell_centroids_[face_cell_ids_[f][0]] +
-                cell_centroids_[face_cell_ids_[f][1]]) / 2.0;
+      AmanziMesh::Entity_ID_List f_cells;
+      face_get_cells(f, AmanziMesh::Parallel_type::ALL, &f_cells);
+
+      auto c0 = f_cells[0];
+      int f_index = 0;
+      for (auto ff : cell_face_ids_[c0]) {
+        if (ff == f) break;
+        f_index++;
+      }
+      AMANZI_ASSERT(f_index < cell_face_ids_[c0].size());
+      auto face_centroid_left = cell_centroids_[c0] + cell_face_bisectors_[c0][f_index];
+
+      if (f_cells.size() == 2) {
+        auto c1 = f_cells[1];
+        int f_index = 0;
+        for (auto ff : cell_face_ids_[c1]) {
+          if (ff == f) break;
+          f_index++;
+        }
+        AMANZI_ASSERT(f_index < cell_face_ids_[c1].size());
+        auto face_centroid_right = cell_centroids_[c1] + cell_face_bisectors_[c1][f_index];
+        face_centroids_[f] = (face_centroid_right + face_centroid_left) / 2.;
       } else {
-        AMANZI_ASSERT(face_cell_ids_[f].size() == 1);
-        face_centroids_[f] = cell_centroids_[face_cell_ids_[f][0]]
-            + (face_cell_lengths[f][0] / AmanziGeometry::norm(face_normals_[f][0]))
-            * face_normals_[f][0];
+        face_centroids_[f] = face_centroid_left;
       }
     }
   }
-
-  // populate cell, extra face info
-  face_cell_ptype_.resize(face_cell_ids_.size());
-  face_areas_.resize(face_cell_ids_.size());
-
-  cell_face_ids_.resize(cell_volumes_.size());
-  cell_face_dirs_.resize(cell_volumes_.size());
-  cell_face_bisectors_.resize(cell_volumes_.size());
-  int f_id=0;
-  for (std::vector<Entity_ID_List>::iterator f=face_cell_ids_.begin();
-       f!=face_cell_ids_.end(); ++f) {
-    face_cell_ptype_[f_id].push_back(Parallel_type::OWNED);
-    face_cell_ptype_[f_id].push_back(f->size() == 2 ?
-            Parallel_type::OWNED : Parallel_type::PTYPE_UNKNOWN);
-    face_areas_[f_id] = AmanziGeometry::norm(face_normals_[f_id][0]);
-
-    cell_face_ids_[(*f)[0]].push_back(f_id);
-    cell_face_dirs_[(*f)[0]].push_back(1);
-
-    AmanziGeometry::Point unit_normal(face_normals_[f_id][0]);
-    unit_normal /= AmanziGeometry::norm(unit_normal);
-    unit_normal *= face_cell_lengths[f_id][0];
-    cell_face_bisectors_[(*f)[0]].push_back(unit_normal);
-
-    if (f->size() > 1 && (*f)[1] >= 0) {
-      cell_face_ids_[(*f)[1]].push_back(f_id);
-      cell_face_dirs_[(*f)[1]].push_back(-1);
-
-      AmanziGeometry::Point unit_normal(face_normals_[f_id][1]);
-      unit_normal /= face_areas_[f_id];
-      cell_face_bisectors_[(*f)[1]].push_back(unit_normal * face_cell_lengths[f_id][1]);
-
-      (*f)[1] = ~((*f)[1]);  // 1s complement as face is pointing into cell 1
-    }
-
-    f_id++;
-  }
-
-  // toggle flags
-  cell_geometry_precomputed_ = true;
-  face_geometry_precomputed_ = true;
-  cell2face_info_cached_ = true;
-  faces_requested_ = true;
-  face2cell_info_cached_ = true;
-
-  // build epetra maps
-  init_maps();
-}
-
-
-void MeshLogical::get_logical_geometry(std::vector<double>* const cell_volumes,
-        std::vector<std::vector<double> >* const cell_face_lengths,
-        std::vector<double>* const face_areas,
-        std::vector<AmanziGeometry::Point>* const cell_centroids) const
-{
-  if (cell_volumes) *cell_volumes = cell_volumes_;
-  if (face_areas) *face_areas = face_areas_;
-  if (cell_centroids) *cell_centroids = cell_centroids_;
-
-  if (cell_face_lengths) {
-    int ncells = cell_face_bisectors_.size();
-    cell_face_lengths->resize(ncells);
-    for (int c=0; c!=ncells; ++c) {
-      const auto& c_bisectors = cell_face_bisectors_[c];
-      (*cell_face_lengths)[c].resize(c_bisectors.size());
-      for (int i=0; i!=c_bisectors.size(); ++i) {
-        (*cell_face_lengths)[c][i] = AmanziGeometry::norm(c_bisectors[i]);
-      }
-    }
-  }
-}
-
-
-void MeshLogical::set_logical_geometry(std::vector<double> const* const cell_volumes,
-        std::vector<std::vector<double> > const* const cell_face_lengths,
-        std::vector<double> const* const face_areas,
-        std::vector<AmanziGeometry::Point> const* const cell_centroids)
-{
-  if (cell_volumes) {
-    AMANZI_ASSERT(cell_volumes_.size() == cell_volumes->size());
-    cell_volumes_ = *cell_volumes;
-  }
-
-  if (cell_centroids) {
-    AMANZI_ASSERT(cell_centroids_.size() == cell_centroids->size());
-    cell_centroids_ = *cell_centroids;
-  }
-
-  if (face_areas) {
-    AMANZI_ASSERT(face_areas_.size() == face_areas->size());
-    for (int f=0; f!=face_areas_.size(); ++f) {
-      face_normals_[f][0] *= ((*face_areas)[f]/face_areas_[f]);
-      face_normals_[f][1] *= ((*face_areas)[f]/face_areas_[f]);
-    }
-    face_areas_ = *face_areas;
-  }
-
-  if (cell_face_lengths) {
-    AMANZI_ASSERT(cell_face_bisectors_.size() == cell_face_lengths->size());
-    int ncells = cell_face_bisectors_.size();
-    for (int c=0; c!=ncells; ++c) {
-      auto& c_bisectors = cell_face_bisectors_[c];
-
-      for (int i=0; i!=c_bisectors.size(); ++i) {
-        c_bisectors[i] *= ((*cell_face_lengths)[c][i] / AmanziGeometry::norm(c_bisectors[i]));
-      }
-    }
-  }
-
+  
   cell_geometry_precomputed_ = true;
   face_geometry_precomputed_ = true;
 }
