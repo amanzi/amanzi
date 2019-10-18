@@ -116,9 +116,6 @@ class ModelCompressiblePorosity {
   Key base_poro_key_;
   Key pressure_key_;
 
-  static Utils::RegisteredFactory<Evaluator, EvaluatorModel_CompositeVector<ModelCompressiblePorosity>> fac1_;
-  static Utils::RegisteredFactory<Evaluator, EvaluatorModelByMaterial<ModelCompressiblePorosity>> fac2_;
-  
 };
 
 
@@ -213,10 +210,6 @@ class ModelWaterRetentionVanGenuchten {
 
   Key result_key_;
   Key cap_pressure_key_;
-
-  static Utils::RegisteredFactory<Evaluator, EvaluatorModel_CompositeVector<ModelWaterRetentionVanGenuchten>> fac1_;
-  static Utils::RegisteredFactory<Evaluator, EvaluatorModelByMaterial<ModelWaterRetentionVanGenuchten>> fac2_;
-
 };
 
 

@@ -87,6 +87,11 @@ class EvaluatorModel_CompositeVector
   Teuchos::RCP<Model_type> model_;
   std::string name_;
   Key tag_;
+
+ private:
+  // registration in the evaluator factory
+  static Utils::RegisteredFactory<Evaluator, EvaluatorModel_CompositeVector<Model,Device_type>> fac_;
+  
 };
 
 

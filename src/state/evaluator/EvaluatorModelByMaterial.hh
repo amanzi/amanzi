@@ -76,6 +76,10 @@ class EvaluatorModelByMaterial
   std::vector<std::pair<std::string, Teuchos::RCP<Model_type>>> models_;
   std::string name_;
   Key tag_;
+
+ private:
+  // registration in the evaluator factory
+  static Utils::RegisteredFactory<Evaluator, EvaluatorModelByMaterial<Model,Device_type>> fac_;
 };
 
 
