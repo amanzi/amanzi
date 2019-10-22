@@ -34,7 +34,7 @@ include_directories(${STATE_SOURCE_DIR}/io)
 include_directories(${OUTPUT_SOURCE_DIR})
 
 # External (TPL) include directories
-include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${Tpetra_INCLUDE_DIRS})
 include_directories(${ASCEMIO_INCLUDE_DIR})
 
 # linking
@@ -56,21 +56,39 @@ set(pks_src_files PK_Default.cc
                   PK_Factory.cc
    )
 
-add_amanzi_library(pks
-                   SOURCE ${pks_src_files}
-                   HEADERS ${pks_inc_files}
-		   LINK_LIBS state data_structures error_handling atk
-                             ${Epetra_LIBRARIES})
-
 #
 # Install Targets
 #
 set(pks_inc_files 
   PK.hh
+  PK_Adaptors.hh
   PK_Default.hh
   PK_MixinLeaf.hh
+  PK_MixinExplicit.hh
+  PK_MixinExplicitSubcycled.hh
+  PK_MixinImplicit.hh
+  PK_MixinImplicitSubcycled.hh
+  PK_MixinPredictorCorrector.hh  
+  PK_MixinMPC.hh
+  PK_MixinMPCAdvanceStepWeak.hh
+  PK_MixinMPCGetDtMin.hh
+  PK_MixinMPCImplicit.hh
   PK_Factory.hh
 )
+
+#
+# link libraries
+#
+set(pks_link_libs state
+  data_structures
+  error_handling
+  atk
+  ${Tpetra_LIBRARIES})
+
+add_amanzi_library(pks
+                   SOURCE ${pks_src_files}
+                   HEADERS ${pks_inc_files}
+		   LINK_LIBS ${pks_link_libs})
 
 add_install_include_file(${pks_inc_files})
 
@@ -79,7 +97,19 @@ add_install_include_file(${pks_inc_files})
 #
 if (BUILD_TESTS) 
 
-    set(pks_test_link_libs pks state error_handling atk mesh mesh_factory data_structures mesh_functions state solvers time_integration pks)
+  set(pks_test_link_libs
+    error_handling
+    atk
+    mesh
+    mesh_factory
+    data_structures
+    mesh_functions
+    state
+    solvers
+    time_integration
+    pks
+    ${UnitTest_LIBRARIES}
+    )
 
     # Add UnitTest include directoy
     include_directories(${UnitTest_INCLUDE_DIRS})
@@ -98,15 +128,15 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/pks_increment.cc
                     LINK_LIBS ${pks_test_link_libs} ${UnitTest_LIBRARIES} ${pks_tpl_libs})
 
-    add_amanzi_test(pks_mpc_heirarchy pks_mpc_heirarchy
-                    KIND unit
-                    SOURCE test/Main.cc test/pks_mpc_heirarchy.cc
-                    LINK_LIBS ${pks_test_link_libs} ${UnitTest_LIBRARIES} ${pks_tpl_libs})
+    # add_amanzi_test(pks_mpc_heirarchy pks_mpc_heirarchy
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/pks_mpc_heirarchy.cc
+    #                 LINK_LIBS ${pks_test_link_libs} ${UnitTest_LIBRARIES} ${pks_tpl_libs})
 
-    add_amanzi_test(pks_mpc pks_mpc
-                    KIND unit
-                    SOURCE test/Main.cc test/pks_mpc.cc
-                    LINK_LIBS ${pks_test_link_libs} ${UnitTest_LIBRARIES} ${pks_tpl_libs})
+    # add_amanzi_test(pks_mpc pks_mpc
+    #                 KIND unit
+    #                 SOURCE test/Main.cc test/pks_mpc.cc
+    #                 LINK_LIBS ${pks_test_link_libs} ${UnitTest_LIBRARIES} ${pks_tpl_libs})
 
     add_amanzi_test(pks_ode pks_ode
                     KIND unit

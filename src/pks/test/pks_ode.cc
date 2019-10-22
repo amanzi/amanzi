@@ -26,7 +26,6 @@ These tests that functionality with a series of ODEs.
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
-#include "TreeVector.hh"
 
 #include "PK.hh"
 #include "PK_Adaptors.hh"

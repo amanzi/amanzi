@@ -120,10 +120,10 @@ PK_MixinExplicitSubcycled<Base_t>::AdvanceStep(const Key& tag_old,
   // create solution vectors, old and intermediate, which are pointers into
   // state data
   auto soln_space = this->SolutionSpace();
-  auto soln_old = Teuchos::rcp(new TreeVector(soln_space));
+  auto soln_old = Teuchos::rcp(new TreeVector(soln_space, InitMode::NOALLOC));
   this->StateToSolution(*soln_old, tag_old_, "");
 
-  auto soln_inter = Teuchos::rcp(new TreeVector(soln_space));
+  auto soln_inter = Teuchos::rcp(new TreeVector(soln_space, InitMode::NOALLOC));
   this->StateToSolution(*soln_inter, tag_inter_, "");
 
   // set the initial inner cycle

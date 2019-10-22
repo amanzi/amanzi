@@ -27,7 +27,6 @@ PK_Implicit<TreeVector> > > >
 
 #include <vector>
 
-#include "Epetra_MpiComm.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 

@@ -17,14 +17,13 @@ These tests that functionality with a series of ODEs.
 
 */
 
-#include "Epetra_MpiComm.h"
-#include "Epetra_Vector.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "UnitTest++.h"
 
+#include "AmanziTypes.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "State.hh"

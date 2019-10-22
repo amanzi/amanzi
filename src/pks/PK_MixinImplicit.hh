@@ -126,10 +126,10 @@ PK_MixinImplicit<Base_t>::AdvanceStep(const Key& tag_old, const Key& tag_new)
   // create solution vectors, old and new, which are pointers into state data
   auto soln_space = this->SolutionSpace();
 
-  auto soln_old = Teuchos::rcp(new TreeVector(soln_space));
+  auto soln_old = Teuchos::rcp(new TreeVector(soln_space, InitMode::NOALLOC));
   this->StateToSolution(*soln_old, tag_old, "");
 
-  auto soln_new = Teuchos::rcp(new TreeVector(soln_space));
+  auto soln_new = Teuchos::rcp(new TreeVector(soln_space, InitMode::NOALLOC));
   this->StateToSolution(*soln_new, tag_new, "");
 
   // create the time integrator if first call
@@ -191,7 +191,7 @@ PK_MixinImplicit<Base_t>::CommitStep(const Key& tag_old, const Key& tag_new)
   // this should eventually be removed -- it is manipulating internal state of
   // the time integrator, and that state should go away --etc
   if (dt > 0. && time_stepper_ != Teuchos::null) {
-    auto soln_new = Teuchos::rcp(new TreeVector(this->SolutionSpace()));
+    auto soln_new = Teuchos::rcp(new TreeVector(this->SolutionSpace(), InitMode::NOALLOC));
     this->StateToSolution(*soln_new, tag_new, "");
     time_stepper_->CommitSolution(dt, soln_new, true);
   }

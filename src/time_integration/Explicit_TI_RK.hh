@@ -320,15 +320,16 @@ template <class Vector>
 void
 RK<Vector>::TimeStep(double t, double h, const Vector& y, Vector& y_new)
 {
-  Vector y_tmp(y, Teuchos::Copy);
-  fn_.ModifySolution(t, y_tmp);
+  y_new.assign(y);
+  fn_.ModifySolution(t, y_new);
+  Vector y_tmp(y_new, Teuchos::Copy);  
 
   double sum_time;
   for (int i = 0; i != order_; ++i) {
     sum_time = t + c_[i] * h;
 
     if (i == 0) {
-      fn_.FunctionalTimeDerivative(sum_time, y_tmp, *k_[0]);
+      fn_.FunctionalTimeDerivative(sum_time, y_new, *k_[0]);
     } else {
       y_new.assign(y_tmp);
 

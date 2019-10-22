@@ -31,7 +31,7 @@ struct PFT {
 };
 
 // the object to be stored/computed/etc
-using PFTList = std::vector<PFT>;
+using PFTList = Kokkos::View<PFT*>;
 
 // the factory
 class PFTListSpace {
@@ -39,43 +39,35 @@ class PFTListSpace {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh;
   Teuchos::RCP<PFTList> Create()
   {
-    return Teuchos::rcp(new PFTList(
+    return Teuchos::rcp(new PFTList("PFT",
       mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED)));
   }
 };
 
-bool inline UserInitialize(Teuchos::ParameterList& plist, PFTList& t,
-                           const Amanzi::Key& fieldname,
-                           const std::vector<std::string>& subfieldnames)
+bool inline UserInitialize(Teuchos::ParameterList& plist,
+                           const Teuchos::ParameterList& attrs,
+                           PFTList& t)
 {
   return true;
 }
 
 void
-UserWriteVis(const Amanzi::Visualization& vis, const Amanzi::Key& fieldname,
-             const std::vector<std::string>& subfieldnames, const PFTList& vec)
-{}
+UserWriteVis(const Amanzi::Visualization& vis, const Teuchos::ParameterList& attrs,
+             const PFTList& vec)
+{
+  // in a real implementation, would likely copy into vector and write that.
+}
 
 void
 UserWriteCheckpoint(const Amanzi::Checkpoint& chkp,
-                    const Amanzi::Key& fieldname, const PFTList& vec)
-{}
+                    const Teuchos::ParameterList& attrs, const PFTList& vec)
+{  // in a real implementation, would likely copy into vector and write that.
+}
 void
-UserReadCheckpoint(const Amanzi::Checkpoint& chkp, const Amanzi::Key& fieldname,
+UserReadCheckpoint(const Amanzi::Checkpoint& chkp, const Teuchos::ParameterList& attrs,
                    PFTList& vec)
-{}
-
-class Grow {
- public:
-  Grow(double C) : C_(C) {}
-  PFT operator()(const PFT& in)
-  {
-    return PFT{ in.Bleaf + C_, in.Broot + C_, in.Bstem + C_ };
-  }
-
- private:
-  double C_;
-};
+{  // in a real implementation, would likely read into vector and copy back.
+}
 
 // the pk
 template <class Base_t>
@@ -133,8 +125,11 @@ class PK_Veg : public Base_t {
     const auto& data_old =
       this->S_->template Get<PFTList>(this->key_, tag_old_);
 
-    Grow g(0.1 * dt);
-    std::transform(data_old.begin(), data_old.end(), data_new.begin(), g);
+    Kokkos::parallel_for(data_new.extent(0), KOKKOS_LAMBDA(const int i) {
+        data_new(i).Bleaf = data_old(i).Bleaf + 0.1*dt;
+        data_new(i).Broot = data_old(i).Broot + 0.1*dt;
+        data_new(i).Bstem = data_old(i).Bstem + 0.1*dt;
+        });
     return false;
   }
 

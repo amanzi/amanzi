@@ -33,6 +33,8 @@ Test PKs:
 
 */
 
+#define DEBUG 0
+
 using namespace Amanzi;
 
 class DudtEvaluatorA
@@ -85,8 +87,8 @@ class DudtEvaluatorB
  protected:
   void Evaluate_(const State& S, const std::vector<CompositeVector*>& results)
   {
-    *results[0] = S.Get<CompositeVector>(dependencies_.begin()->first,
-                                         dependencies_.begin()->second);
+    results[0]->assign(S.Get<CompositeVector>(dependencies_.begin()->first,
+            dependencies_.begin()->second));
   }
 
   void EvaluatePartialDerivative_(const State& S, const Key& wrt_key,
@@ -129,9 +131,9 @@ class DudtEvaluatorC
                                   const std::vector<CompositeVector*>& results)
   {
     if (wrt_key == "primaryC") {
-      *results[0] = S.Get<CompositeVector>("scaling", my_keys_[0].second);
+      results[0]->assign(S.Get<CompositeVector>("scaling", my_keys_[0].second));
     } else if (wrt_key == "scaling") {
-      *results[0] = S.Get<CompositeVector>("primaryC", my_keys_[0].second);
+      results[0]->assign(S.Get<CompositeVector>("primaryC", my_keys_[0].second));
     } else {
       AMANZI_ASSERT(false);
     }
@@ -181,19 +183,37 @@ class PK_ODE_Explicit : public Base_t {
 
   void FunctionalTimeDerivative(double t, const TreeVector& u, TreeVector& f)
   {
-    // these calls are here because the explicit ti is not aware that it should
-    // call it
     this->S_->set_time(tag_inter_, t);
+    // NOTE: Currently, we do not allow time integrators to introduce their own
+    // tags -- time integrators have no knowledge of tags.  This makes it easy
+    // for time integrators to break our state model, by simply
+    // copy-constructing the input vector and giving us the copy instead of the
+    // vector at the right tag.
+    //    
+    // For now, this ASSERT checks to ensure that the time integrator is giving
+    // us what we expect.
+    AMANZI_ASSERT(u.Data() ==
+                  this->S_->template GetPtr<CompositeVector>(this->key_, this->tag_inter_));
+    //
+    // In the future, we should either have:
+    //  1. The time integrator is aware of state, and works with tags.
+
+    //  2. Call S_->SetPtr() and put the copied data into state.  This could be
+    //     problematic, and would need some real testing, but might be the most
+    //     convenient approach.
+    //
+    // For now, we also then need to set the value as changed, since something
+    // may have happened at the inter tag.
     this->ChangedSolutionPK(tag_inter_);
+    // END NOTE AND NONOBVIOUS CODE
 
     // evaluate the derivative
-    this->S_->GetEvaluator(dudt_key_, tag_inter_)
-      .Update(*this->S_, this->name());
+    this->S_->GetEvaluator(dudt_key_, tag_inter_).Update(*this->S_, this->name());
     *f.Data() = this->S_->template Get<CompositeVector>(dudt_key_, tag_inter_);
 
     std::cout << std::setprecision(16) << "  At time t = " << t
-              << ": u = " << (u.Data()->ViewComponent("cell", false))(0, 0)
-              << ", du/dt = " << (f.Data()->ViewComponent("cell", false))(0, 0)
+              << ": u = " << (u.Data()->ViewComponent<AmanziDefaultHost>("cell", false))(0, 0)
+              << ", du/dt = " << (f.Data()->ViewComponent<AmanziDefaultHost>("cell", false))(0, 0)
               << std::endl;
   }
 
@@ -256,44 +276,99 @@ class PK_ODE_Implicit : public Base_t {
     AMANZI_ASSERT(std::abs(t_old - S_->time(tag_old_)) < 1.e-12);
     AMANZI_ASSERT(std::abs(t_new - S_->time(tag_new_)) < 1.e-12);
 
+    // checking correct implementation of implicit time integrator (see note at
+    // Implicit::FunctionalTimeDerivative)
+    AMANZI_ASSERT(u_old->Data() ==
+                  this->S_->template GetPtr<CompositeVector>(this->key_, tag_old_));
+    AMANZI_ASSERT(u_new->Data() ==
+                  this->S_->template GetPtr<CompositeVector>(this->key_, tag_new_));
+    
+
     this->S_->GetEvaluator(dudt_key_, tag_new_).Update(*this->S_, this->name());
-    *f->Data() = this->S_->template Get<CompositeVector>(dudt_key_, tag_new_);
+    f->Data()->assign(this->S_->template Get<CompositeVector>(dudt_key_, tag_new_));
 
     std::cout << "  At time t = " << t_new
-              << ": u = " << (u_new->Data()->ViewComponent("cell", false))(0, 0)
-              << ", du/dt = " << (f->Data()->ViewComponent("cell", false))(0, 0)
+              << ": u = " << (u_new->Data()->ViewComponent<AmanziDefaultHost>("cell", false))(0, 0)
+              << ", du/dt = " << (f->Data()->ViewComponent<AmanziDefaultHost>("cell", false))(0, 0)
               << std::endl;
 
     double dt = t_new - t_old;
     f->update(1.0 / dt, *u_new, -1.0 / dt, *u_old, -1.0);
+#if DEBUG
+    {
+      auto hv = f->Data()->ViewComponent<AmanziDefaultHost>("cell", false);
+      std::cout << "R: res" << hv(0,0)  << std::endl;
+    }
+#endif    
   }
 
-  int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
-                          Teuchos::RCP<TreeVector> Pu)
+  int ApplyPreconditioner(Teuchos::RCP<const TreeVector> r,
+                          Teuchos::RCP<TreeVector> Pr)
   {
-    *Pu->Data() = S_->template GetDerivative<CompositeVector>(
-      this->dudt_key_, tag_new_, this->key_, tag_new_);
+    Pr->Data()->assign(S_->template GetDerivative<CompositeVector>(
+        this->dudt_key_, tag_new_, this->key_, tag_new_));
+#if DEBUG
+    {
+      auto hv = r->Data()->ViewComponent<AmanziDefaultHost>("cell", false);
+      std::cout << "PC: r: " << hv(0,0)  << std::endl;
+    }
 
-    CompositeVector shift(u->Data()->getMap());
-    shift.putScalar(1.0 / h_);
-    Pu->Data()->update(1., shift, 1.);
-    Pu->reciprocal(*Pu);
-    Pu->elementWiseMultiply(1.0, *Pu, *u, 0.);
+    {
+      auto hv = Pr->Data()->ViewComponent<AmanziDefaultHost>("cell", false);
+      std::cout << "PC: dRHS/du: " << hv(0,0)  << std::endl;
+    }
+#endif
+  
+    CompositeVector shift(r->Data()->getMap());
+    shift.putScalar(1.0 / dt_);
+    Pr->Data()->update(1., shift, 1.);
+
+#if DEBUG
+    {
+      auto hv = Pr->Data()->ViewComponent<AmanziDefaultHost>("cell", false);
+      std::cout << "PC: Jac: " << hv(0,0)  << std::endl;
+    }
+#endif
+    
+    Pr->reciprocal(*Pr);
+
+#if DEBUG
+    {
+      auto hv = Pr->Data()->ViewComponent<AmanziDefaultHost>("cell", false);
+      std::cout << "PC: 1/Jac: " << hv(0,0)  << std::endl;
+    }
+#endif
+    
+    Pr->elementWiseMultiply(1.0, *Pr, *r, 0.);
+
+#if DEBUG
+    {
+      auto hv = Pr->Data()->ViewComponent<AmanziDefaultHost>("cell", false);
+      std::cout << "PC: du: " << hv(0,0)  << std::endl;
+    }
+#endif
     return 0;
   }
 
   double
   ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du)
   {
+    AMANZI_ASSERT(u->Data() ==
+                  this->S_->template GetPtr<CompositeVector>(this->key_, tag_new_));
     double norm = du->normInf();
-    std::cout << "     error = " << norm << std::endl;
     return norm;
   }
 
   void
-  UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h)
+  UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u, double dt)
   {
-    h_ = h;
+    AMANZI_ASSERT(u->Data() ==
+                  this->S_->template GetPtr<CompositeVector>(this->key_, tag_new_));
+    AMANZI_ASSERT(std::abs(this->S_->template Get<double>("time", tag_new_) -
+                           this->S_->template Get<double>("time", tag_old_) - dt) < 1.e-10);
+                  
+    dt_ = dt;
+    
     this->S_->GetEvaluator(dudt_key_, tag_new_)
       .UpdateDerivative(*this->S_, this->name(), this->key_, tag_new_);
   }
@@ -303,7 +378,7 @@ class PK_ODE_Implicit : public Base_t {
   void UpdateContinuationParameter(double lambda){};
 
  protected:
-  double h_;
+  double dt_;
   Key dudt_key_;
 
   using Base_t::S_;

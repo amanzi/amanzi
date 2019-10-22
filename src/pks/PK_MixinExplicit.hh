@@ -32,6 +32,7 @@ integrated PKs.  Manages the creation of intermediate data and AdvanceStep().
 
 #include "Explicit_TI_RK.hh"
 #include "Key.hh"
+#include "TreeVector.hh"
 #include "PK.hh"
 
 namespace Amanzi {
@@ -129,10 +130,10 @@ PK_MixinExplicit<Base_t>::AdvanceStep(const Key& tag_old, const Key& tag_new)
   // state data
   auto soln_space = this->SolutionSpace();
 
-  auto soln_old = Teuchos::rcp(new TreeVector(soln_space));
+  auto soln_old = Teuchos::rcp(new TreeVector(soln_space, InitMode::NOALLOC));
   this->StateToSolution(*soln_old, tag_old, "");
 
-  auto soln_inter = Teuchos::rcp(new TreeVector(soln_space));
+  auto soln_inter = Teuchos::rcp(new TreeVector(soln_space, InitMode::NOALLOC));
   this->StateToSolution(*soln_inter, tag_inter_, "");
 
   // -- instantiate time stepper if needed

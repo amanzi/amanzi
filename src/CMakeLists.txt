@@ -38,6 +38,6 @@ add_subdirectory(time_integration)
 add_subdirectory(state)
 
 # PKs
-#add_subdirectory(pks)
+add_subdirectory(pks)
 
 

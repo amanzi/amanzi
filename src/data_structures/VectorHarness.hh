@@ -183,8 +183,8 @@ class LocalAccess {
   // construct "null" / empty master local objects.
   LocalAccess<GlobalObjectType, MemorySpace, am> valid(const bool isValid) const
   {
-    std::cout << "  .valid(" << (isValid ? "true" : "false") << ")"
-              << std::endl;
+    // std::cout << "  .valid(" << (isValid ? "true" : "false") << ")"
+    //           << std::endl;
     return { this->G_, this->space_, isValid };
   }
 
@@ -237,7 +237,7 @@ template <class GOT>
 Impl::LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type, ReadOnly>
 readOnly(GOT& G)
 {
-  std::cout << "readOnly" << std::endl;
+  // std::cout << "readOnly" << std::endl;
   return { G, Impl::DefaultMemorySpace<GOT>::space(G), true };
 }
 
@@ -245,7 +245,7 @@ template <class GOT>
 Impl::LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type, WriteOnly>
 writeOnly(GOT& G)
 {
-  std::cout << "writeOnly" << std::endl;
+  // std::cout << "writeOnly" << std::endl;
   return { G, Impl::DefaultMemorySpace<GOT>::space(G), true };
 }
 
@@ -253,7 +253,7 @@ template <class GOT>
 Impl::LocalAccess<GOT, typename Impl::DefaultMemorySpace<GOT>::type, ReadWrite>
 readWrite(GOT& G)
 {
-  std::cout << "readWrite" << std::endl;
+  // std::cout << "readWrite" << std::endl;
   return { G, Impl::DefaultMemorySpace<GOT>::space(G), true };
 }
 
@@ -431,7 +431,7 @@ struct GetMasterLocalObject<
 
   static master_local_object_type get(local_access_type LA)
   {
-    std::cout << "Get master local object" << std::endl;
+    // std::cout << "Get master local object" << std::endl;
 
     // if (access_mode == WriteOnly) { ...} // FIXME (mfh 22 Oct 2018)
     if (LA.G_.template need_sync<memory_space>()) {
@@ -486,7 +486,7 @@ struct GetMasterLocalObject<
 
   static master_local_object_type get(local_access_type LA)
   {
-    std::cout << "Get master local object" << std::endl;
+    // std::cout << "Get master local object" << std::endl;
 
     // This is a bit evil, but fixing this in a less evil way is hard.
     global_object_type& G = const_cast<global_object_type&>(LA.G_);
