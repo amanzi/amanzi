@@ -265,8 +265,7 @@ LinearOperatorNKA<Matrix, Vector, VectorSpace>::Init(
 
   // NKA
   nka_ = Teuchos::rcp(
-    new NKA_Base<Vector, VectorSpace>(nka_dim_, nka_tol_, m_->getDomainMap()));
-  nka_->Init(plist);
+      new NKA_Base<Vector, VectorSpace>(nka_dim_, nka_tol_, m_->getDomainMap(), vo_));
 
   initialized_ = true;
 }

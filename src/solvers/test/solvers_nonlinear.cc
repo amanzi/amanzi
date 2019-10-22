@@ -79,7 +79,8 @@ SUITE(SOLVERS)
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_SOLVER_EXACT_JACOBIAN)
   {
-    std::cout << "NKA solver, exact Jacobian..." << std::endl;
+    std::cout << "NKA solver, exact Jacobian..." << std::endl
+              << "-----------------------------" << std::endl;
 
     // create the function class
     auto fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, true));
@@ -104,7 +105,10 @@ SUITE(SOLVERS)
 
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_SOLVER_EXACT_JACOBIAN_GLOBALIZED) {
-    std::cout << "NKA solver, exact Jacobian, unstable problem..." << std::endl;
+    std::cout << std::endl
+              << "NKA solver, exact Jacobian, unstable problem..." << std::endl
+              << "-----------------------------------------------" << std::endl;
+        
 
     // create the function class
     auto fn = Teuchos::rcp(new NonlinearProblem6(1.0, 1.0, true, 0.2));
@@ -129,7 +133,9 @@ SUITE(SOLVERS)
 
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_SOLVER_INEXACT_JACOBIAN) {
-    std::cout << "\nNKA solver, inexact Jacobian..." << std::endl;
+    std::cout << std::endl
+              << "NKA solver, inexact Jacobian..." << std::endl
+              << "-------------------------------" << std::endl;
 
     // create the function class
     auto fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, false));
@@ -155,7 +161,9 @@ SUITE(SOLVERS)
 
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NKA_SOLVER_INEXACT_JACOBIAN_GLOBALIZED) {
-    std::cout << "\nNKA solver, inexact Jacobian, unstable problem..." << std::endl;
+    std::cout << std::endl
+              << "NKA solver, inexact Jacobian, unstable problem..." << std::endl
+              << "-------------------------------------------------" << std::endl;
 
     // create the function class
     Teuchos::RCP<NonlinearProblem6> fn = Teuchos::rcp(new
@@ -182,7 +190,9 @@ SUITE(SOLVERS)
 
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NEWTON_SOLVER) {
-    std::cout << "\nNewton solver..." << std::endl;
+    std::cout << std::endl
+              << "Newton solver, exact Jacobian..." << std::endl
+              << "--------------------------------" << std::endl;
 
     // create the function class
     auto fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, true));
@@ -206,7 +216,9 @@ SUITE(SOLVERS)
 
   /* ******************************************************************/
   TEST_FIXTURE(test_data, NEWTON_SOLVER_NO_GLOBALIZATION_FAILS) {
-    std::cout << "\nNewton solver, unstable problem..." << std::endl;
+    std::cout << std::endl
+              << "Newton solver, exact Jacobian, unstable problem..." << std::endl
+              << "--------------------------------------------------" << std::endl;
 
     // create the function class
     auto fn = Teuchos::rcp(new NonlinearProblem6(1.0, 1.0, true, 0.2));
