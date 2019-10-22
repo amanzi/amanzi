@@ -8,12 +8,24 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-//! <MISSING_ONELINE_DOCSTRING>
+//! Newton nonlinear solver
+
+/*!
+
+  Uses a classic Newton iteration.
+
+  NOTE: this is only truely Newton if the provided SolverFnBase provides the
+  true Jacobian in the ApplyJacobian() method.  If not, it is either inexact
+  Newton or Picard, depending upon your preferences.
+
+ */
+
 
 #ifndef AMANZI_NEWTON_SOLVER_
 #define AMANZI_NEWTON_SOLVER_
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 #include "VerboseObject.hh"
 
@@ -27,7 +39,7 @@ namespace AmanziSolvers {
 template <class Vector, class VectorSpace>
 class SolverNewton : public Solver<Vector, VectorSpace> {
  public:
-  SolverNewton(Teuchos::ParameterList& plist) : plist_(plist){};
+  SolverNewton(Teuchos::ParameterList& plist) : plist_(plist) {};
 
   SolverNewton(Teuchos::ParameterList& plist,
                const Teuchos::RCP<SolverFnBase<Vector>>& fn,
@@ -37,16 +49,20 @@ class SolverNewton : public Solver<Vector, VectorSpace> {
     Init(fn, map);
   }
 
-  void
-  Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn, const VectorSpace& map);
+  virtual void
+  Init(const Teuchos::RCP<SolverFnBase<Vector>>& fn,
+       const Teuchos::RCP<const VectorSpace>& map) override;
 
-  virtual int Solve(const Teuchos::RCP<Vector>& u)
+  virtual int Solve(const Teuchos::RCP<Vector>& u) override
   {
     returned_code_ = Newton_(u);
     return (returned_code_ >= 0) ? 0 : 1;
   }
 
   // mutators
+  //
+  // These may be legacy?  Is there an adaptive reason for these to need
+  // setters and not come from the plist?
   void set_tolerance(double tol) { tol_ = tol; }
   void set_pc_lag(double pc_lag){}; // Newton does not need it
 
@@ -80,7 +96,7 @@ class SolverNewton : public Solver<Vector, VectorSpace> {
   int max_error_growth_factor_, max_du_growth_factor_;
   int max_divergence_count_, stagnation_itr_check_;
 
-  int modify_correction_;
+  bool modify_correction_;
   double residual_;
   ConvergenceMonitor monitor_;
 };
@@ -92,7 +108,8 @@ class SolverNewton : public Solver<Vector, VectorSpace> {
 template <class Vector, class VectorSpace>
 void
 SolverNewton<Vector, VectorSpace>::Init(
-  const Teuchos::RCP<SolverFnBase<Vector>>& fn, const VectorSpace& map)
+  const Teuchos::RCP<SolverFnBase<Vector>>& fn,
+  const Teuchos::RCP<const VectorSpace>& map)
 {
   fn_ = fn;
   Init_();
@@ -107,12 +124,16 @@ void
 SolverNewton<Vector, VectorSpace>::Init_()
 {
   tol_ = plist_.get<double>("nonlinear tolerance", 1.0e-6);
+
   overflow_tol_ = plist_.get<double>("diverged tolerance", 1.0e10);
+
   max_itrs_ = plist_.get<int>("limit iterations", 50);
+
   max_du_growth_factor_ = plist_.get<double>("max du growth factor", 1.0e5);
   max_error_growth_factor_ =
     plist_.get<double>("max error growth factor", 1.0e5);
   max_divergence_count_ = plist_.get<int>("max divergent iterations", 3);
+
   stagnation_itr_check_ = plist_.get<int>("stagnation iteration check", 8);
   modify_correction_ = plist_.get<bool>("modify correction", true);
 
@@ -152,8 +173,8 @@ SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u)
   pc_calls_ = 0;
 
   // create storage
-  Teuchos::RCP<Vector> r = Teuchos::rcp(new Vector(*u));
-  Teuchos::RCP<Vector> du = Teuchos::rcp(new Vector(*u));
+  auto r = Teuchos::rcp(new Vector(u->getMap()));
+  auto du = Teuchos::rcp(new Vector(u->getMap()));
 
   // variables to monitor the progress of the nonlinear solver
   double error(0.0), previous_error(0.0), l2_error(0.0);

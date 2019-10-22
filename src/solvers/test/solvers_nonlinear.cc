@@ -16,15 +16,16 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "errors.hh"
 #include "AmanziTypes.hh"
 
 #include "solver_fnbase1.hh"
-// #include "solver_fnbase6.hh"
+#include "solver_fnbase6.hh"
 #include "SolverNKA.hh"
 // #include "SolverNKA_LS.hh"
 // #include "SolverNKA_BT_ATS.hh"
 // #include "SolverNKA_LS_ATS.hh"
-// #include "SolverNewton.hh"
+#include "SolverNewton.hh"
 // #include "SolverJFNK.hh"
 // #include "SolverAA.hh"
 // #include "SolverBT.hh"
@@ -48,7 +49,7 @@ SUITE(SOLVERS)
     }
 
     template <class Solver>
-    void run(Solver& solver)
+    int run(Solver& solver)
     {
       // initial guess
       {
@@ -59,15 +60,18 @@ SUITE(SOLVERS)
       vec->sync_device();
 
       // solve
-      solver->Solve(vec);
+      int ierr = solver->Solve(vec);
 
       // test
-      vec->sync_host();
-      {
-        auto vecv = vec->getLocalViewHost();
-        CHECK_CLOSE(0., vecv(0, 0), 1.e-6);
-        CHECK_CLOSE(0., vecv(1, 0), 1.e-6);
+      if (!ierr) {
+        vec->sync_host();
+        {
+          auto vecv = vec->getLocalViewHost();
+          CHECK_CLOSE(0., vecv(0, 0), 1.e-6);
+          CHECK_CLOSE(0., vecv(1, 0), 1.e-6);
+        }
       }
+      return ierr;
     }
   };
 
@@ -78,8 +82,7 @@ SUITE(SOLVERS)
     std::cout << "NKA solver, exact Jacobian..." << std::endl;
 
     // create the function class
-    Teuchos::RCP<NonlinearProblem> fn =
-      Teuchos::rcp(new NonlinearProblem(1.0, 1.0, true));
+    auto fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, true));
 
     // create the SolverState
     Teuchos::ParameterList plist;
@@ -95,156 +98,138 @@ SUITE(SOLVERS)
     auto nka =
       Teuchos::rcp(new AmanziSolvers::SolverNKA<Vector_type, Map_type>(plist));
     nka->Init(fn, map);
-    run(nka);
+    CHECK(!run(nka));
   };
 
 
-  // /* ******************************************************************/
-  // TEST_FIXTURE(test_data, NKA_SOLVER_EXACT_JACOBIAN_GLOBALIZED) {
-  //   std::cout << "NKA solver, exact Jacobian..." << std::endl;
+  /* ******************************************************************/
+  TEST_FIXTURE(test_data, NKA_SOLVER_EXACT_JACOBIAN_GLOBALIZED) {
+    std::cout << "NKA solver, exact Jacobian, unstable problem..." << std::endl;
 
-  //   // create the function class
-  //   Teuchos::RCP<NonlinearProblem6> fn = Teuchos::rcp(new
-  //   NonlinearProblem6(1.0, 1.0, true));
+    // create the function class
+    auto fn = Teuchos::rcp(new NonlinearProblem6(1.0, 1.0, true, 0.2));
 
-  //   // create the SolverState
-  //   Teuchos::ParameterList plist;
-  //   plist.set("nonlinear tolerance", 1e-8);
-  //   plist.set("diverged tolerance", 1e10);
-  //   plist.set("limit iterations", 10);
-  //   plist.set("max du growth factor", 1e5);
-  //   plist.set("max divergent iterations", 3);
-  //   plist.set("max nka vectors", 1);
-  //   plist.sublist("verbose object").set("verbosity level", "extreme");
+    // create the SolverState
+    Teuchos::ParameterList plist;
+    plist.set("nonlinear tolerance", 1e-8);
+    plist.set("diverged tolerance", 1e10);
+    plist.set("limit iterations", 10);
+    plist.set("max du growth factor", 1e5);
+    plist.set("max divergent iterations", 3);
+    plist.set("max nka vectors", 1);
+    plist.sublist("verbose object").set("verbosity level", "extreme");
 
-  //   // create the Solver
-  //   Teuchos::RCP<AmanziSolvers::SolverNKA<Epetra_Vector, Epetra_BlockMap> >
-  //   nka =
-  //       Teuchos::rcp(new AmanziSolvers::SolverNKA<Epetra_Vector,
-  //       Epetra_BlockMap>(plist));
-  //   nka->Init(fn, *map);
-
-  //   // initial guess
-  //   Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
-  //   (*u)[0] = -0.9;
-  //   (*u)[1] =  0.9;
-
-  //   // solve
-  //   nka->Solve(u);
-  //   CHECK_CLOSE(0.0, (*u)[0], 1.0e-6);
-  //   CHECK_CLOSE(0.0, (*u)[1], 1.0e-6);
-  // };
+    // create the Solver
+    auto nka =
+        Teuchos::rcp(new AmanziSolvers::SolverNKA<Vector_type,Map_type>(plist));
+    nka->Init(fn, map);
+    CHECK(!run(nka));
+  };
 
 
-  // /* ******************************************************************/
-  // TEST_FIXTURE(test_data, NKA_SOLVER_INEXACT_JACOBIAN) {
-  //   std::cout << "\nNKA solver, inexact Jacobian..." << std::endl;
+  /* ******************************************************************/
+  TEST_FIXTURE(test_data, NKA_SOLVER_INEXACT_JACOBIAN) {
+    std::cout << "\nNKA solver, inexact Jacobian..." << std::endl;
 
-  //   // create the function class
-  //   Teuchos::RCP<NonlinearProblem> fn = Teuchos::rcp(new
-  //   NonlinearProblem(1.0, 1.0, false));
+    // create the function class
+    auto fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, false));
 
-  //   // create the SolverState
-  //   Teuchos::ParameterList plist;
-  //   plist.set("nonlinear tolerance", 1e-8);
-  //   plist.set("diverged tolerance", 1e10);
-  //   plist.set("limit iterations", 20);
-  //   plist.set("max du growth factor", 1e5);
-  //   plist.set("max divergent iterations", 3);
-  //   plist.set("max nka vectors", 2);
-  //   plist.sublist("verbose object").set("verbosity level", "high");
+    // create the SolverState
+    Teuchos::ParameterList plist;
+    plist.set("nonlinear tolerance", 1e-8);
+    plist.set("diverged tolerance", 1e10);
+    plist.set("limit iterations", 20);
+    plist.set("max du growth factor", 1e5);
+    plist.set("max divergent iterations", 3);
+    plist.set("max nka vectors", 2);
+    plist.sublist("verbose object").set("verbosity level", "high");
 
-  //   // create the Solver
-  //   Teuchos::RCP<AmanziSolvers::SolverNKA<Epetra_Vector, Epetra_BlockMap> >
-  //   nka =
-  //       Teuchos::rcp(new AmanziSolvers::SolverNKA<Epetra_Vector,
-  //       Epetra_BlockMap>(plist));
-  //   nka->Init(fn, *map);
-
-  //   // initial guess
-  //   Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
-  //   (*u)[0] = -0.9;
-  //   (*u)[1] =  0.9;
-
-  //   // solve
-  //   nka->Solve(u);
-  //   CHECK_CLOSE(0.0, (*u)[0], 1.e-6);
-  //   CHECK_CLOSE(0.0, (*u)[1], 1.e-6);
-  // };
+    // create the Solver
+    auto nka =
+        Teuchos::rcp(new AmanziSolvers::SolverNKA<Vector_type,
+        Map_type>(plist));
+    nka->Init(fn, map);
+    CHECK(!run(nka));
+  };
 
 
-  // /* ******************************************************************/
-  // TEST_FIXTURE(test_data, NKA_SOLVER_INEXACT_JACOBIAN_GLOBALIZED) {
-  //   std::cout << "\nNKA solver, inexact Jacobian..." << std::endl;
+  /* ******************************************************************/
+  TEST_FIXTURE(test_data, NKA_SOLVER_INEXACT_JACOBIAN_GLOBALIZED) {
+    std::cout << "\nNKA solver, inexact Jacobian, unstable problem..." << std::endl;
 
-  //   // create the function class
-  //   Teuchos::RCP<NonlinearProblem6> fn = Teuchos::rcp(new
-  //   NonlinearProblem6(1.0, 1.0, false));
+    // create the function class
+    Teuchos::RCP<NonlinearProblem6> fn = Teuchos::rcp(new
+            NonlinearProblem6(1.0, 1.0, false, 0.2));
 
-  //   // create the SolverState
-  //   Teuchos::ParameterList plist;
-  //   plist.set("nonlinear tolerance", 1e-8);
-  //   plist.set("diverged tolerance", 1e10);
-  //   plist.set("limit iterations", 20);
-  //   plist.set("max du growth factor", 1e5);
-  //   plist.set("max divergent iterations", 3);
-  //   plist.set("max nka vectors", 2);
-  //   plist.sublist("verbose object").set("verbosity level", "high");
+    // create the SolverState
+    Teuchos::ParameterList plist;
+    plist.set("nonlinear tolerance", 1e-8);
+    plist.set("diverged tolerance", 1e10);
+    plist.set("limit iterations", 20);
+    plist.set("max du growth factor", 1e5);
+    plist.set("max divergent iterations", 3);
+    plist.set("max nka vectors", 2);
+    plist.sublist("verbose object").set("verbosity level", "high");
 
-  //   // create the Solver
-  //   Teuchos::RCP<AmanziSolvers::SolverNKA<Epetra_Vector, Epetra_BlockMap> >
-  //   nka =
-  //       Teuchos::rcp(new AmanziSolvers::SolverNKA<Epetra_Vector,
-  //       Epetra_BlockMap>(plist));
-  //   nka->Init(fn, *map);
-
-  //   // initial guess
-  //   Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
-  //   (*u)[0] = -0.9;
-  //   (*u)[1] =  0.9;
-
-  //   // solve
-  //   nka->Solve(u);
-  //   CHECK_CLOSE(0.0, (*u)[0], 1.e-6);
-  //   CHECK_CLOSE(0.0, (*u)[1], 1.e-6);
-  // };
+    // create the Solver
+    auto nka =
+        Teuchos::rcp(new AmanziSolvers::SolverNKA<Vector_type,
+        Map_type>(plist));
+    nka->Init(fn, map);
+    CHECK(!run(nka));
+  };
 
 
-  // /* ******************************************************************/
-  // TEST_FIXTURE(test_data, NEWTON_SOLVER) {
-  //   std::cout << "\nNewton solver..." << std::endl;
+  /* ******************************************************************/
+  TEST_FIXTURE(test_data, NEWTON_SOLVER) {
+    std::cout << "\nNewton solver..." << std::endl;
 
-  //   // create the function class
-  //   Teuchos::RCP<NonlinearProblem> fn = Teuchos::rcp(new
-  //   NonlinearProblem(1.0, 1.0, true));
+    // create the function class
+    auto fn = Teuchos::rcp(new NonlinearProblem(1.0, 1.0, true));
 
-  //   // create the SolverState
-  //   Teuchos::ParameterList plist;
-  //   plist.set("nonlinear tolerance", 1e-6);
-  //   plist.set("diverged tolerance", 1e10);
-  //   plist.set("limit iterations", 15);
-  //   plist.set("max du growth factor", 1e5);
-  //   plist.set("max divergent iterations", 3);
-  //   plist.sublist("verbose object").set("verbosity level", "high");
+    // create the SolverState
+    Teuchos::ParameterList plist;
+    plist.set("nonlinear tolerance", 1e-6);
+    plist.set("diverged tolerance", 1e10);
+    plist.set("limit iterations", 15);
+    plist.set("max du growth factor", 1e5);
+    plist.set("max divergent iterations", 3);
+    plist.sublist("verbose object").set("verbosity level", "high");
 
-  //   // create the Solver
-  //   Teuchos::RCP<AmanziSolvers::SolverNewton<Epetra_Vector, Epetra_BlockMap>
-  //   > newton =
-  //       Teuchos::rcp(new AmanziSolvers::SolverNewton<Epetra_Vector,
-  //       Epetra_BlockMap>(plist));
-  //   newton->Init(fn, *map);
+    // create the Solver
+    auto newton =
+        Teuchos::rcp(new AmanziSolvers::SolverNewton<Vector_type,
+                     Map_type>(plist));
+    newton->Init(fn, map);
+    CHECK(!run(newton));
+  };
 
-  //   // initial guess
-  //   Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
-  //   (*u)[0] = -0.9;
-  //   (*u)[1] =  0.9;
+  /* ******************************************************************/
+  TEST_FIXTURE(test_data, NEWTON_SOLVER_NO_GLOBALIZATION_FAILS) {
+    std::cout << "\nNewton solver, unstable problem..." << std::endl;
 
-  //   // solve
-  //   newton->Solve(u);
-  //   CHECK_CLOSE(0.0, (*u)[0], 1.0e-6);
-  //   CHECK_CLOSE(0.0, (*u)[1], 1.0e-6);
-  // };
+    // create the function class
+    auto fn = Teuchos::rcp(new NonlinearProblem6(1.0, 1.0, true, 0.2));
 
+    // create the SolverState
+    Teuchos::ParameterList plist;
+    plist.set("nonlinear tolerance", 1e-6);
+    plist.set("diverged tolerance", 1e10);
+    plist.set("limit iterations", 15);
+    plist.set("max du growth factor", 1e5);
+    plist.set("max divergent iterations", 3);
+    plist.sublist("verbose object").set("verbosity level", "high");
+
+    // create the Solver
+    auto newton =
+        Teuchos::rcp(new AmanziSolvers::SolverNewton<Vector_type,
+                     Map_type>(plist));
+    newton->Init(fn, map);
+
+    // errors! divergent (unstable)
+    CHECK(run(newton));
+  };
+  
 
   // /* ******************************************************************/
   // TEST_FIXTURE(test_data, JFNK_SOLVER_LEFT_PC) {
@@ -273,14 +258,14 @@ SUITE(SOLVERS)
   //   object").set("verbosity level", "extreme");
 
   //   // create the Solver
-  //   Teuchos::RCP<AmanziSolvers::SolverJFNK<Epetra_Vector, Epetra_BlockMap> >
+  //   Teuchos::RCP<AmanziSolvers::SolverJFNK<Vector_type, Map_type> >
   //   jfnk =
-  //       Teuchos::rcp(new AmanziSolvers::SolverJFNK<Epetra_Vector,
-  //       Epetra_BlockMap>(plist));
-  //   jfnk->Init(fn, *map);
+  //       Teuchos::rcp(new AmanziSolvers::SolverJFNK<Vector_type,
+  //       Map_type>(plist));
+  //   jfnk->Init(fn, map);
 
   //   // initial guess
-  //   Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
+  //   Teuchos::RCP<Vector_type> u = Teuchos::rcp(new Vector_type(*vec));
   //   (*u)[0] = -0.9;
   //   (*u)[1] =  0.9;
 
@@ -290,6 +275,7 @@ SUITE(SOLVERS)
   //   CHECK_CLOSE(0.0, (*u)[1], 1.0e-6);
   // };
 
+  
 
   // /* ******************************************************************/
   // TEST_FIXTURE(test_data, JFNK_SOLVER_RIGHT_PC) {
@@ -320,14 +306,14 @@ SUITE(SOLVERS)
   //   level", "extreme");
 
   //   // create the Solver
-  //   Teuchos::RCP<AmanziSolvers::SolverJFNK<Epetra_Vector, Epetra_BlockMap> >
+  //   Teuchos::RCP<AmanziSolvers::SolverJFNK<Vector_type, Map_type> >
   //   jfnk =
-  //       Teuchos::rcp(new AmanziSolvers::SolverJFNK<Epetra_Vector,
-  //       Epetra_BlockMap>(plist));
-  //   jfnk->Init(fn, *map);
+  //       Teuchos::rcp(new AmanziSolvers::SolverJFNK<Vector_type,
+  //       Map_type>(plist));
+  //   jfnk->Init(fn, map);
 
   //   // initial guess
-  //   Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
+  //   Teuchos::RCP<Vector_type> u = Teuchos::rcp(new Vector_type(*vec));
   //   (*u)[0] = -0.9;
   //   (*u)[1] =  0.9;
 
@@ -356,14 +342,14 @@ SUITE(SOLVERS)
   //   plist.sublist("verbose object").set("verbosity level", "high");
 
   //   // create the Solver
-  //   Teuchos::RCP<AmanziSolvers::SolverNKA_LS<Epetra_Vector, Epetra_BlockMap>
+  //   Teuchos::RCP<AmanziSolvers::SolverNKA_LS<Vector_type, Map_type>
   //   > nka_bt =
-  //       Teuchos::rcp(new AmanziSolvers::SolverNKA_LS<Epetra_Vector,
-  //       Epetra_BlockMap>(plist));
-  //   nka_bt->Init(fn, *map);
+  //       Teuchos::rcp(new AmanziSolvers::SolverNKA_LS<Vector_type,
+  //       Map_type>(plist));
+  //   nka_bt->Init(fn, map);
 
   //   // initial guess
-  //   Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
+  //   Teuchos::RCP<Vector_type> u = Teuchos::rcp(new Vector_type(*vec));
   //   (*u)[0] = -0.9;
   //   (*u)[1] =  0.9;
 
@@ -391,14 +377,14 @@ SUITE(SOLVERS)
   //   plist.sublist("verbose object").set("verbosity level", "high");
 
   //   // create the Solver
-  //   Teuchos::RCP<AmanziSolvers::SolverNKA_LS<Epetra_Vector, Epetra_BlockMap>
+  //   Teuchos::RCP<AmanziSolvers::SolverNKA_LS<Vector_type, Map_type>
   //   > nka_bt =
-  //       Teuchos::rcp(new AmanziSolvers::SolverNKA_LS<Epetra_Vector,
-  //       Epetra_BlockMap>(plist));
-  //   nka_bt->Init(fn, *map);
+  //       Teuchos::rcp(new AmanziSolvers::SolverNKA_LS<Vector_type,
+  //       Map_type>(plist));
+  //   nka_bt->Init(fn, map);
 
   //   // initial guess
-  //   Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
+  //   Teuchos::RCP<Vector_type> u = Teuchos::rcp(new Vector_type(*vec));
   //   (*u)[0] = -0.9;
   //   (*u)[1] =  0.9;
 
@@ -428,14 +414,14 @@ SUITE(SOLVERS)
   //   plist.sublist("verbose object").set("verbosity level", "high");
 
   //   // create the Solver
-  //   Teuchos::RCP<AmanziSolvers::SolverNKA_BT_ATS<Epetra_Vector,
-  //   Epetra_BlockMap> > nka_bt =
-  //       Teuchos::rcp(new AmanziSolvers::SolverNKA_BT_ATS<Epetra_Vector,
-  //       Epetra_BlockMap>(plist));
-  //   nka_bt->Init(fn, *map);
+  //   Teuchos::RCP<AmanziSolvers::SolverNKA_BT_ATS<Vector_type,
+  //   Map_type> > nka_bt =
+  //       Teuchos::rcp(new AmanziSolvers::SolverNKA_BT_ATS<Vector_type,
+  //       Map_type>(plist));
+  //   nka_bt->Init(fn, map);
 
   //   // initial guess
-  //   Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
+  //   Teuchos::RCP<Vector_type> u = Teuchos::rcp(new Vector_type(*vec));
   //   (*u)[0] = -0.9;
   //   (*u)[1] =  0.9;
 
@@ -468,14 +454,14 @@ SUITE(SOLVERS)
   //   plist.sublist("verbose object").set("verbosity level", "high");
 
   //   // create the Solver
-  //   Teuchos::RCP<AmanziSolvers::SolverNKA_BT_ATS<Epetra_Vector,
-  //   Epetra_BlockMap> > nka_bt =
-  //       Teuchos::rcp(new AmanziSolvers::SolverNKA_BT_ATS<Epetra_Vector,
-  //       Epetra_BlockMap>(plist));
-  //   nka_bt->Init(fn, *map);
+  //   Teuchos::RCP<AmanziSolvers::SolverNKA_BT_ATS<Vector_type,
+  //   Map_type> > nka_bt =
+  //       Teuchos::rcp(new AmanziSolvers::SolverNKA_BT_ATS<Vector_type,
+  //       Map_type>(plist));
+  //   nka_bt->Init(fn, map);
 
   //   // initial guess
-  //   Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
+  //   Teuchos::RCP<Vector_type> u = Teuchos::rcp(new Vector_type(*vec));
   //   (*u)[0] = -0.9;
   //   (*u)[1] =  0.9;
 
@@ -508,14 +494,14 @@ SUITE(SOLVERS)
   //   plist.sublist("verbose object").set("verbosity level", "high");
 
   //   // create the Solver
-  //   Teuchos::RCP<AmanziSolvers::SolverNKA_LS_ATS<Epetra_Vector,
-  //   Epetra_BlockMap> > nka_bt =
-  //       Teuchos::rcp(new AmanziSolvers::SolverNKA_LS_ATS<Epetra_Vector,
-  //       Epetra_BlockMap>(plist));
-  //   nka_bt->Init(fn, *map);
+  //   Teuchos::RCP<AmanziSolvers::SolverNKA_LS_ATS<Vector_type,
+  //   Map_type> > nka_bt =
+  //       Teuchos::rcp(new AmanziSolvers::SolverNKA_LS_ATS<Vector_type,
+  //       Map_type>(plist));
+  //   nka_bt->Init(fn, map);
 
   //   // initial guess
-  //   Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
+  //   Teuchos::RCP<Vector_type> u = Teuchos::rcp(new Vector_type(*vec));
   //   (*u)[0] = -0.9;
   //   (*u)[1] =  0.9;
 
@@ -548,14 +534,14 @@ SUITE(SOLVERS)
   //   plist.sublist("verbose object").set("verbosity level", "high");
 
   //   // create the Solver
-  //   Teuchos::RCP<AmanziSolvers::SolverNKA_LS_ATS<Epetra_Vector,
-  //   Epetra_BlockMap> > nka_bt =
-  //       Teuchos::rcp(new AmanziSolvers::SolverNKA_LS_ATS<Epetra_Vector,
-  //       Epetra_BlockMap>(plist));
-  //   nka_bt->Init(fn, *map);
+  //   Teuchos::RCP<AmanziSolvers::SolverNKA_LS_ATS<Vector_type,
+  //   Map_type> > nka_bt =
+  //       Teuchos::rcp(new AmanziSolvers::SolverNKA_LS_ATS<Vector_type,
+  //       Map_type>(plist));
+  //   nka_bt->Init(fn, map);
 
   //   // initial guess
-  //   Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
+  //   Teuchos::RCP<Vector_type> u = Teuchos::rcp(new Vector_type(*vec));
   //   (*u)[0] = -0.9;
   //   (*u)[1] =  0.9;
 
@@ -588,14 +574,14 @@ SUITE(SOLVERS)
   //   plist.sublist("verbose object").set("verbosity level", "high");
 
   //   // create the Solver
-  //   Teuchos::RCP<AmanziSolvers::SolverBT<Epetra_Vector, Epetra_BlockMap> >
+  //   Teuchos::RCP<AmanziSolvers::SolverBT<Vector_type, Map_type> >
   //   nka_bt =
-  //       Teuchos::rcp(new AmanziSolvers::SolverBT<Epetra_Vector,
-  //       Epetra_BlockMap>(plist));
-  //   nka_bt->Init(fn, *map);
+  //       Teuchos::rcp(new AmanziSolvers::SolverBT<Vector_type,
+  //       Map_type>(plist));
+  //   nka_bt->Init(fn, map);
 
   //   // initial guess
-  //   Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
+  //   Teuchos::RCP<Vector_type> u = Teuchos::rcp(new Vector_type(*vec));
   //   (*u)[0] = -0.9;
   //   (*u)[1] =  0.9;
 
@@ -627,14 +613,14 @@ SUITE(SOLVERS)
   //   plist.sublist("verbose object").set("verbosity level", "high");
 
   //   // create the Solver
-  //   Teuchos::RCP<AmanziSolvers::SolverBT<Epetra_Vector, Epetra_BlockMap> >
+  //   Teuchos::RCP<AmanziSolvers::SolverBT<Vector_type, Map_type> >
   //   nka_bt =
-  //       Teuchos::rcp(new AmanziSolvers::SolverBT<Epetra_Vector,
-  //       Epetra_BlockMap>(plist));
-  //   nka_bt->Init(fn, *map);
+  //       Teuchos::rcp(new AmanziSolvers::SolverBT<Vector_type,
+  //       Map_type>(plist));
+  //   nka_bt->Init(fn, map);
 
   //   // initial guess
-  //   Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
+  //   Teuchos::RCP<Vector_type> u = Teuchos::rcp(new Vector_type(*vec));
   //   (*u)[0] = -0.9;
   //   (*u)[1] =  0.9;
 
@@ -666,14 +652,14 @@ SUITE(SOLVERS)
   //   plist.sublist("verbose object").set("verbosity level", "high");
 
   //   // create the Solver
-  //   Teuchos::RCP<AmanziSolvers::SolverAA<Epetra_Vector, Epetra_BlockMap> > aa
+  //   Teuchos::RCP<AmanziSolvers::SolverAA<Vector_type, Map_type> > aa
   //   =
-  //       Teuchos::rcp(new AmanziSolvers::SolverAA<Epetra_Vector,
-  //       Epetra_BlockMap>(plist));
-  //   aa->Init(fn, *map);
+  //       Teuchos::rcp(new AmanziSolvers::SolverAA<Vector_type,
+  //       Map_type>(plist));
+  //   aa->Init(fn, map);
 
   //   // initial guess
-  //   Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
+  //   Teuchos::RCP<Vector_type> u = Teuchos::rcp(new Vector_type(*vec));
   //   (*u)[0] = -0.95;
   //   (*u)[1] =  0.15;
   //   (*u)[2] = -0.51;
@@ -705,14 +691,14 @@ SUITE(SOLVERS)
   //   plist.sublist("verbose object").set("verbosity level", "high");
 
   //   // create the Solver
-  //   Teuchos::RCP<AmanziSolvers::SolverAA<Epetra_Vector, Epetra_BlockMap> > aa
+  //   Teuchos::RCP<AmanziSolvers::SolverAA<Vector_type, Map_type> > aa
   //   =
-  //       Teuchos::rcp(new AmanziSolvers::SolverAA<Epetra_Vector,
-  //       Epetra_BlockMap>(plist));
-  //   aa->Init(fn, *map);
+  //       Teuchos::rcp(new AmanziSolvers::SolverAA<Vector_type,
+  //       Map_type>(plist));
+  //   aa->Init(fn, map);
 
   //   // initial guess
-  //   Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
+  //   Teuchos::RCP<Vector_type> u = Teuchos::rcp(new Vector_type(*vec));
   //   (*u)[0] = -0.95;
   //   (*u)[1] =  0.15;
   //   (*u)[2] = -0.51;
@@ -750,14 +736,14 @@ SUITE(SOLVERS)
   //   object").set("verbosity level", "extreme");
 
   //   // create the Solver
-  //   Teuchos::RCP<AmanziSolvers::SolverNox<Epetra_Vector, Epetra_BlockMap> >
+  //   Teuchos::RCP<AmanziSolvers::SolverNox<Vector_type, Map_type> >
   //   nox =
-  //       Teuchos::rcp(new AmanziSolvers::SolverNox<Epetra_Vector,
-  //       Epetra_BlockMap>(plist));
-  //   nox->Init(fn, *map);
+  //       Teuchos::rcp(new AmanziSolvers::SolverNox<Vector_type,
+  //       Map_type>(plist));
+  //   nox->Init(fn, map);
 
   //   // initial guess
-  //   Teuchos::RCP<Epetra_Vector> u = Teuchos::rcp(new Epetra_Vector(*vec));
+  //   Teuchos::RCP<Vector_type> u = Teuchos::rcp(new Vector_type(*vec));
   //   (*u)[0] = -0.9;
   //   (*u)[1] =  0.9;
 

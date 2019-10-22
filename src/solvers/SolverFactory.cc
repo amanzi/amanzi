@@ -17,7 +17,7 @@
 //#include "SolverNKA_LS.hh"
 //#include "SolverNKA_BT_ATS.hh"
 //#include "SolverNKA_LS_ATS.hh"
-//#include "SolverNewton.hh"
+#include "SolverNewton.hh"
 //#include "SolverNox.hh"
 //#include "SolverJFNK.hh"
 //#include "SolverContinuation.hh"
@@ -87,17 +87,16 @@ SolverFactory<Vector, VectorSpace>::Create(Teuchos::ParameterList& slist)
       //   Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
       //       Teuchos::rcp(new SolverAA<Vector,VectorSpace>(aa_list));
       //   return solver;
-      // } else if (type == "Newton") {
-      //   if (!slist.isSublist("Newton parameters")) {
-      //     Errors::Message msg("SolverFactory: missing sublist \"Newton
-      //     parameters\""); Exceptions::amanzi_throw(msg);
-      //   }
-      //   Teuchos::ParameterList newton_list = slist.sublist("Newton
-      //   parameters"); if (!newton_list.isSublist("verbose object"))
-      //   newton_list.set("verbose object", slist.sublist("verbose object"));
-      //   Teuchos::RCP<Solver<Vector,VectorSpace> > solver =
-      //       Teuchos::rcp(new SolverNewton<Vector,VectorSpace>(newton_list));
-      //   return solver;
+    } else if (type == "Newton") {
+      if (!slist.isSublist("Newton parameters")) {
+        Errors::Message msg("SolverFactory: missing sublist \"Newton parameters\"");
+        Exceptions::amanzi_throw(msg);
+      }
+      Teuchos::ParameterList newton_list = slist.sublist("Newton parameters");
+      if (!newton_list.isSublist("verbose object"))
+        newton_list.set("verbose object", slist.sublist("verbose object"));
+      auto solver = Teuchos::rcp(new SolverNewton<Vector,VectorSpace>(newton_list));
+      return solver;
       // } else if (type == "nka line search") {
       //   if (!slist.isSublist("nka line search parameters")) {
       //     Errors::Message msg("SolverFactory: missing sublist \"nka line

@@ -206,6 +206,8 @@ BDF1_TI<Vector, VectorSpace>::time()
 
 /* ******************************************************************
  * Implementation of implicit Euler time step.
+ *
+ * Why isn't u_prev const?
  ****************************************************************** */
 template <class Vector, class VectorSpace>
 bool
@@ -238,7 +240,7 @@ BDF1_TI<Vector, VectorSpace>::TimeStep(double dt,
         bool changed = fn_->ModifyPredictor(dt, u_prev, u);
         if (changed) fn_->ChangedSolution();
       } else {
-        *u = *u_prev;
+        u->assign(*u_prev);
         fn_->ChangedSolution();
       }
     }
