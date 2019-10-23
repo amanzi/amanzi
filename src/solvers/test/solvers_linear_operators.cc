@@ -58,7 +58,7 @@ SUITE(SOLVERS)
       int N = v.getMap()->getNodeNumElements();
       int n = std::pow(N, 0.5);
 
-      std::array<double, 5> coefs{ -1., -1., 4., -1., -1. };
+      double coefs[5] = { -1., -1., 4., -1., -1. };
       auto vv = v.getLocalViewDevice();
       auto mvv = mv.getLocalViewDevice();
 
@@ -70,14 +70,14 @@ SUITE(SOLVERS)
         int i = k % n;
         int j = k / n;
 
-        std::array<int, 5> inds{ j > 0 ? k - n : -1,
+        int inds[5] = { j > 0 ? k - n : -1,
                                  i > 0 ? k - 1 : -1,
                                  k,
                                  i < n - 1 ? k + 1 : -1,
                                  j < n - 1 ? k + n : -1 };
         double sum = 0.;
         Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, 5),
-                                KOKKOS_LAMBDA(int i, double& lsum) {
+                                [=](int i, double& lsum) {
                                   int c = inds[i];
                                   lsum += c < 0 ? 0. : coefs[i] * vv(c, 0);
                                 },

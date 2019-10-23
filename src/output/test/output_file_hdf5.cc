@@ -49,8 +49,6 @@ SUITE(FILE_HDF5)
       out.WriteAttribute("truthy", "/", truthy);
       out.WriteAttribute("name", "/", name);
     }
-
-
     {
       Amanzi::FileHDF5 in(Amanzi::getDefaultComm(), "test.h5", FILE_READONLY);
       CHECK_CLOSE(

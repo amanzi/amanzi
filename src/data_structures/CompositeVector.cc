@@ -46,11 +46,14 @@ DeriveFaceValuesFromCellValues(CompositeVector& cv)
     Map_ptr_type fb_map = cv.Mesh()->exterior_face_map(false);
     Map_ptr_type f_map = cv.Mesh()->face_map(false);
 
+    auto v_fb_map = fb_map->getMyGlobalIndices(); 
+    auto v_f_map = f_map->getMyGlobalIndices(); 
+
     Kokkos::parallel_for(
       cv_f.extent(0), KOKKOS_LAMBDA(decltype(cv_f)::size_type fb) {
         AmanziMesh::Entity_ID_View cells;
-        int f_gid = fb_map->getGlobalElement(fb);
-        int f_lid = f_map->getLocalElement(f_gid);
+        int f_gid =  v_fb_map(fb); 
+        int f_lid =  v_f_map(f_gid);
 
         mesh->face_get_cells(f_lid, AmanziMesh::Parallel_type::ALL, cells);
         int ncells = cells.size();

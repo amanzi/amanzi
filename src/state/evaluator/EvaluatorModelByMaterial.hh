@@ -64,15 +64,18 @@ class EvaluatorModelByMaterial
 
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 
- protected:
+
+// This function needs to be public for Kokkos::CUDA backend
+// Function calling kernel cannot be protected/private 
+public:
   virtual void Evaluate_(const State& S,
                          const std::vector<CompositeVector*>& results) override;
 
+protected:
   virtual void EvaluatePartialDerivative_(
     const State& S, const Key& wrt_key, const Key& wrt_tag,
     const std::vector<CompositeVector*>& results) override;
 
- protected:
   std::vector<std::pair<std::string, Teuchos::RCP<Model_type>>> models_;
   std::string name_;
   Key tag_;
