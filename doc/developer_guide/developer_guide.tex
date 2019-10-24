@@ -1,26 +1,11 @@
 % ==========================================================================
 %
-%  ASCEM: Developers' Guide (Mathematical Modeling Requirements)
+%  ASCEM: Developers' Guide
 %
 % ==========================================================================
 
-% --------------------------------------------------------------------------
-%  Options for typesetting:
-% --------------------------------
-% 
-%    final     - no watermark
-%    draft     - draft watermark
-%    sidenotes - adjusts margins and enables the todonotes package
-%
-%  For example, draft watermark with sidenotes is written
-%
-%  \documentclass[draft,sidenotes]{guides}
-%
-% --------------------------------
-
 %\documentclass[sidenotes]{../tex/latex/ascem/guides}
-\documentclass[draft]{../tex/latex/ascem/guides}
-%\documentclass{../tex/latex/ascem/guides}
+\documentclass[dvipsnames]{../tex/latex/ascem/guides}
 
 % ---------------------
 % Amanzi TeX:
@@ -42,14 +27,6 @@
 
 % ==========================================================================
 
-% --------------------------------
-%  The alltt environment
-% -------------------------------- 
-
-\usepackage{alltt}
-
-
-% ==========================================================================
 \begin{document}
 
 % -------------------------------------------
@@ -94,10 +71,10 @@
 \input{introduction}
 
 \clearpage
-\input{libraries}
+\input{design}
 
 \clearpage
-\input{design}
+\input{libraries}
 
 \clearpage
 \input{synthetic_example}
