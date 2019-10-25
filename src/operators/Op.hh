@@ -8,16 +8,14 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-//! <MISSING_ONELINE_DOCSTRING>
+//! Container for local matrices.
 
 #ifndef AMANZI_OP_HH_
 #define AMANZI_OP_HH_
 
-#include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
+#include "Kokkos_StaticCrsGraph.hpp"
 
-#include "DenseMatrix.hh"
-#include "Mesh.hh"
 #include "OperatorDefs.hh"
 #include "Schema.hh"
 
@@ -73,21 +71,18 @@ class Op {
   // Clean the operator without destroying memory
   void Init()
   {
-    if (diag != Teuchos::null) {
-      diag->putScalar(0.0);
-      diag_shadow->putScalar(0.0);
-    }
-
-    WhetStone::DenseMatrix null_mat;
-    for (int i = 0; i < matrices.size(); ++i) {
-      matrices[i] = 0.0;
-      matrices_shadow[i] = null_mat;
-    }
+    Kokkos::MDRangePolicy<Kokkos::Rank<2>> policy({0,0},
+            {data_.extent(0), data_.extent(1)});
+    Kokkos::parallel_for(policy,
+                         KOKKOS_LAMBDA(const int i, const int j) {
+                           data_(i,j) = 0.0;
+                         });
   }
 
   // Restore pristine value of the matrices, i.e. before BCs.
   virtual int CopyShadowToMaster()
   {
+    // FIXME --etc
     for (int i = 0; i != matrices.size(); ++i) {
       if (matrices_shadow[i].NumRows() != 0) {
         matrices[i] = matrices_shadow[i];
@@ -100,12 +95,12 @@ class Op {
   // For backward compatibility... must go away
   virtual void RestoreCheckPoint()
   {
+    // FIXME --etc
     for (int i = 0; i != matrices.size(); ++i) {
       if (matrices_shadow[i].NumRows() != 0) {
         matrices[i] = matrices_shadow[i];
       }
     }
-    *diag = *diag_shadow;
   }
 
   // Matching rules for schemas.
@@ -144,8 +139,11 @@ class Op {
   // -- rescale local matrices in the container using a double
   virtual void Rescale(double scaling)
   {
-    for (int i = 0; i != matrices.size(); ++i) { matrices[i] *= scaling; }
-    if (diag.get()) diag->scale(scaling);
+    Kokkos::MDRangePolicy<Kokkos::Rank<2>> policy({0,0},
+            {data_.extent(0), data_.extent(1)});
+    Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const int i,const int j) {
+        data_(i,j) *= scaling;
+        });
   }
 
   // access
@@ -157,12 +155,9 @@ class Op {
   std::string schema_string;
 
   // diagonal matrix
-  Teuchos::RCP<Epetra_MultiVector> diag;
-  Teuchos::RCP<Epetra_MultiVector> diag_shadow;
-
-  // collection of local matrices
-  std::vector<WhetStone::DenseMatrix> matrices;
-  std::vector<WhetStone::DenseMatrix> matrices_shadow;
+  Kokkos::View<double**> data_;
+  Kokkos::Crs<double> sparse_shadow_;
+  Kokkos::View<double**> dense_shadow_;
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

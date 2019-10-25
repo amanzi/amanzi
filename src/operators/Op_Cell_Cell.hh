@@ -26,9 +26,8 @@ class Op_Cell_Cell : public Op {
                const Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : Op(OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL, name, mesh)
   {
-    diag = Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(false), 1));
-    diag_shadow =
-      Teuchos::rcp(new Epetra_MultiVector(mesh->cell_map(false), 1));
+    data_ = Kokkos::View<double**>(name, mesh->cell_map(false)->getNodeNumElements(), 1);
+    dense_shadow_ = Kokkos::View<double**>(name, mesh->cell_map(false)->getNodeNumElements(), 1);
   }
 
   virtual void
@@ -64,13 +63,12 @@ class Op_Cell_Cell : public Op {
   virtual void Rescale(const CompositeVector& scaling)
   {
     if (scaling.HasComponent("cell")) {
-      const Epetra_MultiVector& s_c = *scaling.ViewComponent("cell", false);
-      AMANZI_ASSERT(s_c.getLocalLength() == diag->getLocalLength());
-      for (int k = 0; k != s_c.getNumVectors(); ++k) {
-        for (int i = 0; i != s_c.getLocalLength(); ++i) {
-          (*diag)[k][i] *= s_c[0][i];
-        }
-      }
+      auto scaling_v = scaling.ViewComponent("cell", false);
+      AMANZI_ASSERT(scaling_v.extent(0) == data_.extent(0));
+      
+      Kokkos::parallel_for(scaling_v.extent(0),
+                           KOKKOS_LAMBDA(const int i) {
+                             data_(i,0) *= scaling_v(i,0); });
     }
   }
 };
