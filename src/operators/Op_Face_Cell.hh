@@ -8,13 +8,11 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-//! <MISSING_ONELINE_DOCSTRING>
+//! An Op for face-based, cell entities.
 
 #ifndef AMANZI_OP_FACE_CELL_HH_
 #define AMANZI_OP_FACE_CELL_HH_
 
-#include <vector>
-#include "DenseMatrix.hh"
 #include "Operator.hh"
 #include "Op.hh"
 
@@ -37,11 +35,8 @@ class Op_Face_Cell : public Op {
                const Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : Op(OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL, name, mesh)
   {
-    WhetStone::DenseMatrix null_matrix;
-    nfaces_owned =
-      mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-    matrices.resize(nfaces_owned, null_matrix);
-    matrices_shadow = matrices;
+    // 2 cells per face, squared
+    data = Kokkos::View<double**>(name, mesh->face_map(false)->getNodeNumElements(), 4);
   }
 
   virtual void
@@ -77,17 +72,21 @@ class Op_Face_Cell : public Op {
   virtual void Rescale(const CompositeVector& scaling)
   {
     if (scaling.HasComponent("cell")) {
-      const Epetra_MultiVector& s_c = *scaling.ViewComponent("cell", true);
-      AmanziMesh::Entity_ID_List cells;
-      for (int f = 0; f != matrices.size(); ++f) {
-        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-        matrices[f](0, 0) *= s_c[0][cells[0]];
-        if (cells.size() > 1) {
-          matrices[f](0, 1) *= s_c[0][cells[1]];
-          matrices[f](1, 0) *= s_c[0][cells[0]];
-          matrices[f](1, 1) *= s_c[0][cells[1]];
-        }
-      }
+      auto scaling_v = *scaling.ViewComponent("cell", true);
+
+      AmanziMesh::Mesh* mesh = mesh_.get();
+      Kokkos::parallel_for(data.extent(0),
+                           KOKKOS_LAMBDA(const int f) {
+                             AmanziMesh::Entity_ID_View cells;
+                             mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+                             data(f, 0) *= scaling_v(cells(0),0);
+
+                             if (cells.extent(0) > 1) {
+                               data(f, 1) *= scaling_v(cells(0),0);
+                               data(f, 2) *= scaling_v(cells(1),0);
+                               data(f, 3) *= scaling_v(cells(1),0);
+                             }
+                           });
     }
   }
 

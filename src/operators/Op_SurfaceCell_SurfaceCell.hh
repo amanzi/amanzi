@@ -13,8 +13,6 @@
 #ifndef AMANZI_OP_SURFACECELL_SURFACECELL_HH_
 #define AMANZI_OP_SURFACECELL_SURFACECELL_HH_
 
-#include <vector>
-#include "DenseMatrix.hh"
 #include "Operator.hh"
 #include "Op_Cell_Cell.hh"
 
@@ -23,10 +21,10 @@ namespace Operators {
 
 class Op_SurfaceCell_SurfaceCell : public Op_Cell_Cell {
  public:
-  Op_SurfaceCell_SurfaceCell(
-    const std::string& name,
-    const Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_)
-    : Op_Cell_Cell(name, surf_mesh_), surf_mesh(surf_mesh_)
+  Op_SurfaceCell_SurfaceCell(const std::string& name,
+                             const Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_)
+    : Op_Cell_Cell(name, surf_mesh_),
+      surf_mesh(surf_mesh_)
   {}
 
   virtual void
@@ -55,22 +53,23 @@ class Op_SurfaceCell_SurfaceCell : public Op_Cell_Cell {
   virtual void Rescale(const CompositeVector& scaling)
   {
     if (scaling.HasComponent("cell") &&
-        scaling.ViewComponent("cell", false)->getLocalLength() ==
+        scaling.GetComponent("cell", false)->getLocalLength() ==
           surf_mesh->num_entities(AmanziMesh::CELL,
                                   AmanziMesh::Parallel_type::OWNED)) {
       Op_Cell_Cell::Rescale(scaling);
     }
     if (scaling.HasComponent("face") &&
-        scaling.ViewComponent("face", false)->getLocalLength() ==
+        scaling.GetComponent("face", false)->getLocalLength() ==
           mesh_->num_entities(AmanziMesh::FACE,
                               AmanziMesh::Parallel_type::OWNED)) {
-      const Epetra_MultiVector& s_f = *scaling.ViewComponent("face", false);
-      for (int k = 0; k != s_f.getNumVectors(); ++k) {
-        for (int sc = 0; sc != diag->getLocalLength(); ++sc) {
-          auto f = surf_mesh->entity_get_parent(AmanziMesh::CELL, sc);
-          (*diag)[k][sc] *= s_f[0][f];
-        }
-      }
+
+      auto scaling_v = scaling.ViewComponent("face", false);
+
+      Kokkos::parallel_for(scaling_v.extent(0),
+                           KOKKOS_LAMBDA(const int sc) {
+                             Entity_ID f = surf_mesh->entity_get_parent(AmanziMesh::CELL, sc);
+                             data(sc, 0) *= scaling_v(f, 0);
+                           });
     }
   }
 

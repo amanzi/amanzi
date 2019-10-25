@@ -8,7 +8,7 @@
       Ethan Coon (coonet@ornl.gov)
 */
 
-//! <MISSING_ONELINE_DOCSTRING>
+//! An Op for diagonal Cell-based entries.
 
 #ifndef AMANZI_OP_CELL_CELL_HH_
 #define AMANZI_OP_CELL_CELL_HH_
@@ -26,12 +26,12 @@ class Op_Cell_Cell : public Op {
                const Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : Op(OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL, name, mesh)
   {
-    data_ = Kokkos::View<double**>(name, mesh->cell_map(false)->getNodeNumElements(), 1);
-    dense_shadow_ = Kokkos::View<double**>(name, mesh->cell_map(false)->getNodeNumElements(), 1);
+    data = Kokkos::View<double**>(name, mesh->cell_map(false)->getNodeNumElements(), 1);
   }
 
   virtual void
-  ApplyMatrixFreeOp(const Operator* assembler, const CompositeVector& X,
+  ApplyMatrixFreeOp(const Operator* assembler,
+                    const CompositeVector& X,
                     CompositeVector& Y) const
   {
     assembler->ApplyMatrixFreeOp(*this, X, Y);
@@ -64,7 +64,8 @@ class Op_Cell_Cell : public Op {
   {
     if (scaling.HasComponent("cell")) {
       auto scaling_v = scaling.ViewComponent("cell", false);
-      AMANZI_ASSERT(scaling_v.extent(0) == data_.extent(0));
+      AMANZI_ASSERT(scaling_v.extent(0) == data.extent(0));
+      AMANZI_ASSERT(scaling_v.extent(1) == 1);
       
       Kokkos::parallel_for(scaling_v.extent(0),
                            KOKKOS_LAMBDA(const int i) {

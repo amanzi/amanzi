@@ -13,8 +13,6 @@
 #ifndef AMANZI_OP_SURFACEFACE_SURFACECELL_HH_
 #define AMANZI_OP_SURFACEFACE_SURFACECELL_HH_
 
-#include <vector>
-#include "DenseMatrix.hh"
 #include "Operator.hh"
 #include "Op_Face_Cell.hh"
 
@@ -54,7 +52,7 @@ class Op_SurfaceFace_SurfaceCell : public Op_Face_Cell {
   virtual void Rescale(const CompositeVector& scaling)
   {
     if (scaling.HasComponent("cell") &&
-        scaling.ViewComponent("cell", false)->getLocalLength() ==
+        scaling.GetComponent("cell", false)->getLocalLength() ==
           surf_mesh->num_entities(AmanziMesh::CELL,
                                   AmanziMesh::Parallel_type::OWNED)) {
       // scaling's cell entry is defined on the surface mesh
@@ -62,7 +60,7 @@ class Op_SurfaceFace_SurfaceCell : public Op_Face_Cell {
     }
 
     if (scaling.HasComponent("face") &&
-        scaling.ViewComponent("face", false)->getLocalLength() ==
+        scaling.GetComponent("face", false)->getLocalLength() ==
           mesh_->num_entities(AmanziMesh::FACE,
                               AmanziMesh::Parallel_type::OWNED)) {
       AMANZI_ASSERT(mesh_ != surf_mesh);
