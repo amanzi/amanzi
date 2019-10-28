@@ -339,30 +339,23 @@ BlockVector<Scalar>::putScalarMasterAndGhosted(Scalar scalar)
 };
 
 
-// template<typename Scalar>
-// int
-// BlockVector<Scalar>::putScalarGhosted(Scalar scalar) {
-//   for (int lcv_comp = 0; lcv_comp != NumComponents(); ++lcv_comp) {
-//     int size_owned = mastervec_->size(names_[lcv_comp]);
-//     int size_ghosted = ghostvec_->size(names_[lcv_comp]);
+template<typename Scalar>
+void
+BlockVector<Scalar>::putScalarGhosted(Scalar scalar) {
+  for (const auto& comp : *this) {
+    auto vv = ViewComponent(comp, true);
 
-//     using Range_type = Kokkos::MDRangePolicy<Kokkos::DefaultExecutionSpace,
-//     int>;
-//     /*
-//     auto vec = ViewComponent(names_[lcv_comp], true);
-//     Kokkos::parallel_for("putScalarGhosted", Range_type(size_owned,
-//     size_ghosted),
-// 			 [=] (const int& i) { vec(i) = scalar; })
-//     */
-//     auto vec = ViewComponent(names_[lcv_comp], true);
-//     auto vec_ghost_view = Kokkos::subview(vec, std::make_pair(size_owned,
-//     size_ghosted), Kokkos::ALL()); Kokkos::parallel_for("putScalarGhosted",
-//     Range_type(0, size_ghosted - size_owned),
-
-
-//   }
-//   return 0;
-// }
+    int size_owned = GetComponent(comp,false)->getLocalLength();
+    Kokkos::MDRangePolicy<Kokkos::Rank<2>> range_policy(
+        {size_owned,0}, {vv.extent(0),vv.extent(1)});
+    Kokkos::parallel_for(
+        "putScalarGhosted",
+        range_policy,
+        KOKKOS_LAMBDA (const int i, const int j) {
+          vv(i,j) = scalar;
+        });
+  }
+}
 
 
 // this <- abs(this)

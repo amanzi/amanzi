@@ -30,7 +30,7 @@ class PreconditionerIdentity : public Preconditioner<Matrix, Vector> {
 
   void
   Init(const std::string& name, const Teuchos::ParameterList& list) override{};
-  void Update(const Teuchos::RCP<const Matrix>& A) override{};
+  void Update(const Teuchos::RCP<Matrix>& A) override{};
   void Destroy() override{};
 
   int applyInverse(const Vector& v, Vector& hv) const override

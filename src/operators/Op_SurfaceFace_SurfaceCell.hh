@@ -26,6 +26,28 @@ class Op_SurfaceFace_SurfaceCell : public Op_Face_Cell {
     const Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_)
     : Op_Face_Cell(name, surf_mesh_), surf_mesh(surf_mesh_){};
 
+  
+  virtual void
+  getLocalDiagCopy(CompositeVector& X) const
+  {
+    auto Xv = X.ViewComponent("face", true);
+    
+    AmanziMesh::Mesh const * surf_mesh_ = surf_mesh.get();
+    Kokkos::parallel_for(
+        data.extent(0),
+        KOKKOS_LAMBDA(const int sf) {
+          AmanziMesh::Entity_ID_View cells;
+          surf_mesh_->face_get_cells(sf, AmanziMesh::Parallel_type::ALL, cells);
+          Xv(surf_mesh_->entity_get_parent(AmanziMesh::CELL, cells(0)),0) +=
+              data(sf,0);
+          if (cells.extent(0) > 1) {
+            Xv(surf_mesh_->entity_get_parent(AmanziMesh::CELL, cells(1)),0) +=
+                data(sf,3);
+          }
+        });
+  }
+
+  
   virtual void
   ApplyMatrixFreeOp(const Operator* assembler, const CompositeVector& X,
                     CompositeVector& Y) const
@@ -61,9 +83,9 @@ class Op_SurfaceFace_SurfaceCell : public Op_Face_Cell {
 
     if (scaling.HasComponent("face") &&
         scaling.GetComponent("face", false)->getLocalLength() ==
-          mesh_->num_entities(AmanziMesh::FACE,
+          mesh->num_entities(AmanziMesh::FACE,
                               AmanziMesh::Parallel_type::OWNED)) {
-      AMANZI_ASSERT(mesh_ != surf_mesh);
+      AMANZI_ASSERT(mesh != surf_mesh);
       Exceptions::amanzi_throw("Scaling surface cell entities with subsurface "
                                "face vector not yet implemented");
     }

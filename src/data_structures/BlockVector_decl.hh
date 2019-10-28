@@ -154,12 +154,10 @@ class BlockVector {
   void putScalar(const std::string& name, const std::vector<Scalar>& scalar);
 
   // Sets all vectors to value including ghosted elements.
-  // Different name is given so it cannot be used in a templated code.
   void putScalarMasterAndGhosted(Scalar scalar);
 
   // Sets ghost elements to value.
-  // Different name is given so it cannot be used in a templated code.
-  // void putScalarGhosted(Scalar scalar);
+  void putScalarGhosted(Scalar scalar);
 
   // cheap randomizer
   void random();

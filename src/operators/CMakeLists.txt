@@ -50,14 +50,23 @@ add_definitions("-DMSTK_HAVE_MPI")
 # Library: operators
 #
 set(operators_inc_files
+  OperatorDefs.hh
   Op.hh
   Op_Cell_Cell.hh
   Op_Face_Cell.hh
+  Op_Face_CellBndFace.hh
   Op_SurfaceCell_SurfaceCell.hh  
+  Op_SurfaceFace_SurfaceCell.hh
+  OperatorUtils.hh
+  Operator.hh
+  TreeOperator.hh
   )
 
 set(operators_src_files
   Op.cc
+  OperatorUtils.cc
+  Operator.cc
+  TreeOperator.cc
   )
 
 set(operators_link_libs
@@ -65,6 +74,7 @@ set(operators_link_libs
   whetstone
   mesh
   data_structures
+  solvers
   ${Tpetra_LIBRARIES}
   )
 

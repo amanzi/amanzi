@@ -11,37 +11,35 @@
 
 //! <MISSING_ONELINE_DOCSTRING>
 
-#include <sstream>
+#define ASSEMBLY_DONE 0
 
-// TPLs
-#include "EpetraExt_RowMatrixOut.h"
-#include "Epetra_CrsGraph.h"
-#include "Epetra_Export.h"
-#include "Epetra_FECrsGraph.h"
-#include "Epetra_Map.h"
-#include "Epetra_Vector.h"
+#include <sstream>
 
 // Amanzi
 #include "dbc.hh"
 #include "DenseVector.hh"
+
+#if ASSEMBLY_DONE
 #include "MatrixFE.hh"
+#endif
+
 #include "PreconditionerFactory.hh"
 #include "SuperMap.hh"
 
 // Operators
 #include "Op.hh"
 #include "Op_Cell_Cell.hh"
-#include "Op_Cell_Edge.hh"
-#include "Op_Cell_FaceCell.hh"
-#include "Op_Cell_Face.hh"
-#include "Op_Cell_Node.hh"
-#include "Op_Cell_Schema.hh"
-#include "Op_Diagonal.hh"
-#include "Op_Edge_Edge.hh"
+//#include "Op_Cell_Edge.hh"
+//#include "Op_Cell_FaceCell.hh"
+//#include "Op_Cell_Face.hh"
+//#include "Op_Cell_Node.hh"
+//#include "Op_Cell_Schema.hh"
+//#include "Op_Diagonal.hh"
+//#include "Op_Edge_Edge.hh"
 #include "Op_Face_Cell.hh"
 #include "Op_Face_CellBndFace.hh"
-#include "Op_Face_Schema.hh"
-#include "Op_Node_Node.hh"
+//#include "Op_Face_Schema.hh"
+//#include "Op_Node_Node.hh"
 #include "Op_SurfaceCell_SurfaceCell.hh"
 #include "Op_SurfaceFace_SurfaceCell.hh"
 #include "Operator.hh"
@@ -54,7 +52,7 @@ namespace Operators {
 /* ******************************************************************
  * Deprecated constructor: still supported for compatability
  ****************************************************************** */
-Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
+Operator::Operator(const Teuchos::RCP<const CompositeSpace>& cvs,
                    Teuchos::ParameterList& plist, int schema)
   : cvs_row_(cvs),
     cvs_col_(cvs),
@@ -63,7 +61,7 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
     shift_(0.0)
 {
   mesh_ = cvs_col_->Mesh();
-  rhs_ = Teuchos::rcp(new CompositeVector(*cvs_row_, true));
+  rhs_ = Teuchos::rcp(new CompositeVector(getRangeMap()));
 
   ncells_owned =
     mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -102,8 +100,8 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
  * New default constructor for general (rectangular) operator.
  * Code of two constructors can be optimized.
  ****************************************************************** */
-Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
-                   const Teuchos::RCP<const CompositeVectorSpace>& cvs_col,
+Operator::Operator(const Teuchos::RCP<const CompositeSpace>& cvs_row,
+                   const Teuchos::RCP<const CompositeSpace>& cvs_col,
                    Teuchos::ParameterList& plist, const Schema& schema_row,
                    const Schema& schema_col)
   : cvs_row_(cvs_row),
@@ -113,7 +111,7 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
     shift_(0.0)
 {
   mesh_ = cvs_col_->Mesh();
-  rhs_ = Teuchos::rcp(new CompositeVector(*cvs_row_, true));
+  rhs_ = Teuchos::rcp(new CompositeVector(getRangeMap()));
 
   ncells_owned =
     mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -152,15 +150,39 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
  * Init owned local operators.
  ****************************************************************** */
 void
-Operator::Init()
+Operator::Zero()
 {
   rhs_->putScalarMasterAndGhosted(0.0);
   int nops = ops_.size();
   for (int i = 0; i < nops; ++i) {
     if (!(ops_properties_[i] & OPERATOR_PROPERTY_DATA_READ_ONLY))
-      ops_[i]->Init();
+      ops_[i]->Zero();
   }
 }
+
+
+/* ******************************************************************
+ * Get a copy of the diagonal (typically for preconditioning).
+ ****************************************************************** */
+void
+Operator::getLocalDiagCopy(CompositeVector& X) const
+{
+  if (getDomainMap() != getRangeMap()) {
+    Errors::Message msg("Operator: getLocalDiagCopy() requested on non-diagonal operator.");
+    throw(msg);
+  } else if (X.getMap() != getDomainMap()) {
+    Errors::Message msg("Operator: getLocalDiagCopy() requested with vector not constructed from operator's map.");
+    throw(msg);
+  }
+
+  X.putScalarMasterAndGhosted(0.);
+  for (const auto& op : ops_) {
+    op->getLocalDiagCopy(X);
+  }
+  X.GatherGhostedToMaster(Tpetra::ADD);
+  return;  
+}
+
 
 
 /* ******************************************************************
@@ -169,14 +191,15 @@ Operator::Init()
 void
 Operator::SymbolicAssembleMatrix()
 {
+#if ASSEMBLY_DONE
   // Create the supermap given a space (set of possible schemas) and a
   // specific schema (assumed/checked to be consistent with the space).
-  smap_ = CreateSuperMap(*cvs_col_, schema(), 1);
+  smap_ = createSuperMap(cvs_col_->CreateSpace().ptr());
 
   // create the graph
   int row_size = MaxRowSize(*mesh_, schema(), 1);
   Teuchos::RCP<GraphFE> graph = Teuchos::rcp(new GraphFE(
-    smap_->getMap(), smap_->GhostedMap(), smap_->GhostedMap(), row_size));
+    smap_->getMap(), smap_->getGhostedMap(), smap_->getGhostedMap(), row_size));
 
   // fill the graph
   SymbolicAssembleMatrix(*smap_, *graph, 0, 0);
@@ -188,6 +211,7 @@ Operator::SymbolicAssembleMatrix()
   // create global matrix
   Amat_ = Teuchos::rcp(new MatrixFE(graph));
   A_ = Amat_->Matrix();
+#endif
 }
 
 
@@ -198,11 +222,13 @@ void
 Operator::SymbolicAssembleMatrix(const SuperMap& map, GraphFE& graph,
                                  int my_block_row, int my_block_col) const
 {
+#if ASSEMBLY_DONE
   // first of double dispatch via Visitor pattern
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
     (*it)->SymbolicAssembleMatrixOp(
       this, map, graph, my_block_row, my_block_col);
   }
+#endif
 }
 
 
@@ -212,22 +238,15 @@ Operator::SymbolicAssembleMatrix(const SuperMap& map, GraphFE& graph,
 void
 Operator::AssembleMatrix()
 {
-  if (Amat_ == Teuchos::null) {
-    Errors::Message msg("Symbolic assembling was not performed.");
-    Exceptions::amanzi_throw(msg);
-  }
+#if ASSEMBLY_DONE
+  if (!Amat_.get()) SymbolicAssembleMatrix();
 
   Amat_->Zero();
   AssembleMatrix(*smap_, *Amat_, 0, 0);
   Amat_->FillComplete();
 
   if (shift_ != 0.0) { Amat_->DiagonalShift(shift_); }
-
-  // std::stringstream filename_s2;
-  // filename_s2 << "assembled_matrix" << 0 << ".txt";
-  // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Amat_
-  // ->Matrix());
-  // exit(0);
+#endif
 }
 
 
@@ -254,9 +273,9 @@ Operator::ComputeResidual(const CompositeVector& u, CompositeVector& r,
 {
   int ierr;
   if (zero) {
-    ierr = Apply(u, r);
+    ierr = apply(u, r);
   } else {
-    ierr = Apply(u, r, -1.0);
+    ierr = apply(u, r, -1.0);
   }
   r.update(1.0, *rhs_, -1.0);
   return ierr;
@@ -272,9 +291,9 @@ Operator::ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r,
 {
   int ierr;
   if (zero) {
-    ierr = Apply(u, r);
+    ierr = apply(u, r);
   } else {
-    ierr = Apply(u, r, 1.0);
+    ierr = apply(u, r, 1.0);
   }
 
   r.update(-1.0, *rhs_, 1.0);
@@ -287,7 +306,7 @@ Operator::ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r,
  * Parallel matvec product Y = A * X.
  ******************************************************************* */
 int
-Operator::Apply(const CompositeVector& X, CompositeVector& Y,
+Operator::apply(const CompositeVector& X, CompositeVector& Y,
                 double scalar) const
 {
   X.ScatterMasterToGhosted();
@@ -315,7 +334,7 @@ Operator::Apply(const CompositeVector& X, CompositeVector& Y,
  * Parallel matvec product Y = A^T * X.
  ******************************************************************* */
 int
-Operator::ApplyTranspose(const CompositeVector& X, CompositeVector& Y,
+Operator::applyTranspose(const CompositeVector& X, CompositeVector& Y,
                          double scalar) const
 {
   X.ScatterMasterToGhosted();
@@ -345,7 +364,7 @@ Operator::ApplyTranspose(const CompositeVector& X, CompositeVector& Y,
  * This method is mainly for debugging! Matrix-free apply could better.
  ******************************************************************* */
 int
-Operator::ApplyAssembled(const CompositeVector& X, CompositeVector& Y,
+Operator::applyAssembled(const CompositeVector& X, CompositeVector& Y,
                          double scalar) const
 {
   X.ScatterMasterToGhosted();
@@ -360,21 +379,20 @@ Operator::ApplyAssembled(const CompositeVector& X, CompositeVector& Y,
     Y.putScalarGhosted(0.0);
   }
 
-  Epetra_Vector Xcopy(A_->RowMap());
-  Epetra_Vector Ycopy(A_->RowMap());
+  Vector_type Xcopy(A_->getRowMap());
+  Vector_type Ycopy(A_->getRowMap());
 
-  int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy);
-  ierr |= A_->apply(Xcopy, Ycopy);
-  ierr |= AddSuperVectorToCompositeVector(*smap_, Ycopy, Y);
+  int ierr = copyToSuperVector(*smap_, X, Xcopy);
+  A_->apply(Xcopy, Ycopy);
+  ierr |= addFromSuperVector(*smap_, Ycopy, Y);
 
   if (ierr) {
     Errors::Message msg;
     msg << "Operators: ApplyAssemble failed.\n";
-    Exceptions::amanzi_throw(msg);
+    throw(msg);
   }
 
   apply_calls_++;
-
   return ierr;
 }
 
@@ -383,22 +401,13 @@ Operator::ApplyAssembled(const CompositeVector& X, CompositeVector& Y,
  * Parallel matvec product Y = A * X.
  ******************************************************************* */
 int
-Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
+Operator::applyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
-  int ierr(1);
-
-  Epetra_Vector Xcopy(*smap_->getMap());
-  Epetra_Vector Ycopy(*smap_->getMap());
-
-  ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy);
-  ierr |= preconditioner_->applyInverse(Xcopy, Ycopy);
-  ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y);
-
+  int ierr = preconditioner_->applyInverse(X, Y);
   if (ierr) {
     Errors::Message msg("Operator: ApplyInverse failed.\n");
-    Exceptions::amanzi_throw(msg);
+    throw(msg);
   }
-
   return ierr;
 }
 
@@ -412,8 +421,7 @@ void
 Operator::InitPreconditioner(const std::string& prec_name,
                              const Teuchos::ParameterList& plist)
 {
-  AmanziPreconditioners::PreconditionerFactory factory;
-
+  AmanziPreconditioners::PreconditionerFactory<Operator,CompositeVector> factory;
   preconditioner_ = factory.Create(prec_name, plist);
   UpdatePreconditioner();
 }
@@ -427,9 +435,9 @@ Operator::InitPreconditioner(const std::string& prec_name,
 void
 Operator::InitPreconditioner(Teuchos::ParameterList& plist)
 {
-  AmanziPreconditioners::PreconditionerFactory factory;
+  AmanziPreconditioners::PreconditionerFactory<Operator,CompositeVector> factory;
   preconditioner_ = factory.Create(plist);
-  preconditioner_->update(A_);
+  UpdatePreconditioner();
 }
 
 
@@ -441,33 +449,22 @@ Operator::InitPreconditioner(Teuchos::ParameterList& plist)
 void
 Operator::InitializePreconditioner(Teuchos::ParameterList& plist)
 {
-  if (smap_.get() == NULL) {
-    if (plist.isParameter("preconditioner type") &&
-        plist.get<std::string>("preconditioner type") == "identity") {
-      smap_ = CreateSuperMap(*cvs_col_, schema(), 1);
-    } else {
-      Errors::Message msg("Operator has no super map to be initialized.\n");
-      Exceptions::amanzi_throw(msg);
-    }
-  }
+  // // provide block ids for block strategies.
+  // if (plist.isParameter("preconditioner type") &&
+  //     plist.get<std::string>("preconditioner type") == "boomer amg" &&
+  //     plist.isSublist("boomer amg parameters")) {
+  //   // NOTE: Hypre frees this
+  //   auto block_ids = smap_->BlockIndices();
 
-  // provide block ids for block strategies.
-  if (plist.isParameter("preconditioner type") &&
-      plist.get<std::string>("preconditioner type") == "boomer amg" &&
-      plist.isSublist("boomer amg parameters")) {
-    // NOTE: Hypre frees this
-    auto block_ids = smap_->BlockIndices();
+  //   plist.sublist("boomer amg parameters")
+  //     .set("number of unique block indices", block_ids.first);
 
-    plist.sublist("boomer amg parameters")
-      .set("number of unique block indices", block_ids.first);
-
-    // Note, this passes a raw pointer through a ParameterList.  I was surprised
-    // this worked too, but ParameterList is a boost::any at heart... --etc
-    plist.sublist("boomer amg parameters")
-      .set("block indices", block_ids.second);
-  }
-
-  AmanziPreconditioners::PreconditionerFactory factory;
+  //   // Note, this passes a raw pointer through a ParameterList.  I was surprised
+  //   // this worked too, but ParameterList is a boost::any at heart... --etc
+  //   plist.sublist("boomer amg parameters")
+  //     .set("block indices", block_ids.second);
+  // }
+  AmanziPreconditioners::PreconditionerFactory<Operator,CompositeVector> factory;
   preconditioner_ = factory.Create(plist);
 }
 
@@ -480,12 +477,8 @@ Operator::InitializePreconditioner(Teuchos::ParameterList& plist)
 void
 Operator::UpdatePreconditioner()
 {
-  if (preconditioner_.get() == NULL) {
-    Errors::Message msg(
-      "Operator has no matrix or preconditioner for update.\n");
-    Exceptions::amanzi_throw(msg);
-  }
-  preconditioner_->update(A_);
+  AMANZI_ASSERT(preconditioner_.get());
+  preconditioner_->Update(Teuchos::rcpFromRef<Operator>(*this));
 }
 
 
@@ -496,10 +489,10 @@ Operator::UpdatePreconditioner()
 void
 Operator::UpdateRHS(const CompositeVector& source, bool volume_included)
 {
-  for (auto it = rhs_->begin(); it != rhs_->end(); ++it) {
-    if (source.HasComponent(*it)) {
-      rhs_->ViewComponent(*it, false)
-        ->update(1.0, *source.ViewComponent(*it, false), 1.0);
+  for (const auto& comp : *rhs_) {
+    if (source.HasComponent(comp)) {
+      rhs_->GetComponent(comp, false)
+        ->update(1.0, *source.GetComponent(comp, false), 1.0);
     }
   }
 }
@@ -566,7 +559,7 @@ Operator::RestoreCheckPoint()
 
   // restore local matrices without boundary conditions
   for (op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    (*it)->RestoreCheckPoint();
+    (*it)->CopyShadowToMaster();
   }
 }
 
@@ -653,24 +646,6 @@ Operator::OpExtend(op_iterator begin, op_iterator end)
 
 
 /* ******************************************************************
- * Copies to/from SuperVector for use by Amesos.
- ****************************************************************** */
-void
-Operator::CopyVectorToSuperVector(const CompositeVector& cv,
-                                  Epetra_Vector& sv) const
-{
-  CopyCompositeVectorToSuperVector(*smap_, cv, sv);
-}
-
-void
-Operator::CopySuperVectorToVector(const Epetra_Vector& sv,
-                                  CompositeVector& cv) const
-{
-  CopySuperVectorToCompositeVector(*smap_, sv, cv);
-}
-
-
-/* ******************************************************************
  * Generic error message.
  ****************************************************************** */
 int
@@ -702,36 +677,36 @@ Operator::PrintDiagnostics() const
 /* ******************************************************************
  * Visit methods for Apply: Cell.
  ****************************************************************** */
-int
-Operator::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
-                            const CompositeVector& X, CompositeVector& Y) const
-{
-  return SchemaMismatch_(op.schema_string, schema_string_);
-}
+// int
+// Operator::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
+//                             const CompositeVector& X, CompositeVector& Y) const
+// {
+//   return SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
-int
-Operator::ApplyMatrixFreeOp(const Op_Cell_Face& op, const CompositeVector& X,
-                            CompositeVector& Y) const
-{
-  return SchemaMismatch_(op.schema_string, schema_string_);
-}
+// int
+// Operator::ApplyMatrixFreeOp(const Op_Cell_Face& op, const CompositeVector& X,
+//                             CompositeVector& Y) const
+// {
+//   return SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
-int
-Operator::ApplyMatrixFreeOp(const Op_Cell_Node& op, const CompositeVector& X,
-                            CompositeVector& Y) const
-{
-  return SchemaMismatch_(op.schema_string, schema_string_);
-}
+// int
+// Operator::ApplyMatrixFreeOp(const Op_Cell_Node& op, const CompositeVector& X,
+//                             CompositeVector& Y) const
+// {
+//   return SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
-int
-Operator::ApplyMatrixFreeOp(const Op_Cell_Edge& op, const CompositeVector& X,
-                            CompositeVector& Y) const
-{
-  return SchemaMismatch_(op.schema_string, schema_string_);
-}
+// int
+// Operator::ApplyMatrixFreeOp(const Op_Cell_Edge& op, const CompositeVector& X,
+//                             CompositeVector& Y) const
+// {
+//   return SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
 int
@@ -742,12 +717,12 @@ Operator::ApplyMatrixFreeOp(const Op_Cell_Cell& op, const CompositeVector& X,
 }
 
 
-int
-Operator::ApplyMatrixFreeOp(const Op_Cell_Schema& op, const CompositeVector& X,
-                            CompositeVector& Y) const
-{
-  return SchemaMismatch_(op.schema_string, schema_string_);
-}
+// int
+// Operator::ApplyMatrixFreeOp(const Op_Cell_Schema& op, const CompositeVector& X,
+//                             CompositeVector& Y) const
+// {
+//   return SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
 /* ******************************************************************
@@ -768,34 +743,34 @@ Operator::ApplyMatrixFreeOp(const Op_Face_CellBndFace& op,
 }
 
 
-int
-Operator::ApplyMatrixFreeOp(const Op_Face_Schema& op, const CompositeVector& X,
-                            CompositeVector& Y) const
-{
-  return SchemaMismatch_(op.schema_string, schema_string_);
-}
+// int
+// Operator::ApplyMatrixFreeOp(const Op_Face_Schema& op, const CompositeVector& X,
+//                             CompositeVector& Y) const
+// {
+//   return SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
 /* ******************************************************************
  * Visit methods for Apply: Edges
  ****************************************************************** */
-int
-Operator::ApplyMatrixFreeOp(const Op_Edge_Edge& op, const CompositeVector& X,
-                            CompositeVector& Y) const
-{
-  return SchemaMismatch_(op.schema_string, schema_string_);
-}
+// int
+// Operator::ApplyMatrixFreeOp(const Op_Edge_Edge& op, const CompositeVector& X,
+//                             CompositeVector& Y) const
+// {
+//   return SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
 /* ******************************************************************
  * Visit methods for Apply: Node
  ****************************************************************** */
-int
-Operator::ApplyMatrixFreeOp(const Op_Node_Node& op, const CompositeVector& X,
-                            CompositeVector& Y) const
-{
-  return SchemaMismatch_(op.schema_string, schema_string_);
-}
+// int
+// Operator::ApplyMatrixFreeOp(const Op_Node_Node& op, const CompositeVector& X,
+//                             CompositeVector& Y) const
+// {
+//   return SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
 /* ******************************************************************
@@ -823,72 +798,72 @@ Operator::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
 /* ******************************************************************
  * Visit methods for Apply: Coupling
  ****************************************************************** */
-int
-Operator::ApplyMatrixFreeOp(const Op_Diagonal& op, const CompositeVector& X,
-                            CompositeVector& Y) const
-{
-  return SchemaMismatch_(op.schema_string, schema_string_);
-}
+// int
+// Operator::ApplyMatrixFreeOp(const Op_Diagonal& op, const CompositeVector& X,
+//                             CompositeVector& Y) const
+// {
+//   return SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
 /* ******************************************************************
  * Visit methods for ApplyTranspose: Cell
  ****************************************************************** */
-int
-Operator::ApplyTransposeMatrixFreeOp(const Op_Cell_Schema& op,
-                                     const CompositeVector& X,
-                                     CompositeVector& Y) const
-{
-  return SchemaMismatch_(op.schema_string, schema_string_);
-}
+// int
+// Operator::ApplyTransposeMatrixFreeOp(const Op_Cell_Schema& op,
+//                                      const CompositeVector& X,
+//                                      CompositeVector& Y) const
+// {
+//   return SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
-int
-Operator::ApplyTransposeMatrixFreeOp(const Op_Face_Schema& op,
-                                     const CompositeVector& X,
-                                     CompositeVector& Y) const
-{
-  return SchemaMismatch_(op.schema_string, schema_string_);
-}
+// int
+// Operator::ApplyTransposeMatrixFreeOp(const Op_Face_Schema& op,
+//                                      const CompositeVector& X,
+//                                      CompositeVector& Y) const
+// {
+//   return SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
-/* ******************************************************************
- * Visit methods for symbolic assemble: Cell.
- ****************************************************************** */
-void
-Operator::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
-                                   const SuperMap& map, GraphFE& graph,
-                                   int my_block_row, int my_block_col) const
-{
-  SchemaMismatch_(op.schema_string, schema_string_);
-}
+// /* ******************************************************************
+//  * Visit methods for symbolic assemble: Cell.
+//  ****************************************************************** */
+// void
+// Operator::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
+//                                    const SuperMap& map, GraphFE& graph,
+//                                    int my_block_row, int my_block_col) const
+// {
+//   SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
-void
-Operator::SymbolicAssembleMatrixOp(const Op_Cell_Face& op, const SuperMap& map,
-                                   GraphFE& graph, int my_block_row,
-                                   int my_block_col) const
-{
-  SchemaMismatch_(op.schema_string, schema_string_);
-}
+// void
+// Operator::SymbolicAssembleMatrixOp(const Op_Cell_Face& op, const SuperMap& map,
+//                                    GraphFE& graph, int my_block_row,
+//                                    int my_block_col) const
+// {
+//   SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
-void
-Operator::SymbolicAssembleMatrixOp(const Op_Cell_Node& op, const SuperMap& map,
-                                   GraphFE& graph, int my_block_row,
-                                   int my_block_col) const
-{
-  SchemaMismatch_(op.schema_string, schema_string_);
-}
+// void
+// Operator::SymbolicAssembleMatrixOp(const Op_Cell_Node& op, const SuperMap& map,
+//                                    GraphFE& graph, int my_block_row,
+//                                    int my_block_col) const
+// {
+//   SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
-void
-Operator::SymbolicAssembleMatrixOp(const Op_Cell_Edge& op, const SuperMap& map,
-                                   GraphFE& graph, int my_block_row,
-                                   int my_block_col) const
-{
-  SchemaMismatch_(op.schema_string, schema_string_);
-}
+// void
+// Operator::SymbolicAssembleMatrixOp(const Op_Cell_Edge& op, const SuperMap& map,
+//                                    GraphFE& graph, int my_block_row,
+//                                    int my_block_col) const
+// {
+//   SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
 void
@@ -900,13 +875,13 @@ Operator::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op, const SuperMap& map,
 }
 
 
-void
-Operator::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
-                                   const SuperMap& map, GraphFE& graph,
-                                   int my_block_row, int my_block_col) const
-{
-  SchemaMismatch_(op.schema_string, schema_string_);
-}
+// void
+// Operator::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
+//                                    const SuperMap& map, GraphFE& graph,
+//                                    int my_block_row, int my_block_col) const
+// {
+//   SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
 /* ******************************************************************
@@ -929,37 +904,37 @@ Operator::SymbolicAssembleMatrixOp(const Op_Face_CellBndFace& op,
 }
 
 
-void
-Operator::SymbolicAssembleMatrixOp(const Op_Face_Schema& op,
-                                   const SuperMap& map, GraphFE& graph,
-                                   int my_block_row, int my_block_col) const
-{
-  SchemaMismatch_(op.schema_string, schema_string_);
-}
+// void
+// Operator::SymbolicAssembleMatrixOp(const Op_Face_Schema& op,
+//                                    const SuperMap& map, GraphFE& graph,
+//                                    int my_block_row, int my_block_col) const
+// {
+//   SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
-/* ******************************************************************
- * Visit methods for symbolic assemble: Edge.
- ****************************************************************** */
-void
-Operator::SymbolicAssembleMatrixOp(const Op_Edge_Edge& op, const SuperMap& map,
-                                   GraphFE& graph, int my_block_row,
-                                   int my_block_col) const
-{
-  SchemaMismatch_(op.schema_string, schema_string_);
-}
+// /* ******************************************************************
+//  * Visit methods for symbolic assemble: Edge.
+//  ****************************************************************** */
+// void
+// Operator::SymbolicAssembleMatrixOp(const Op_Edge_Edge& op, const SuperMap& map,
+//                                    GraphFE& graph, int my_block_row,
+//                                    int my_block_col) const
+// {
+//   SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
-/* ******************************************************************
- * Visit methods for symbolic assemble: Node.
- ****************************************************************** */
-void
-Operator::SymbolicAssembleMatrixOp(const Op_Node_Node& op, const SuperMap& map,
-                                   GraphFE& graph, int my_block_row,
-                                   int my_block_col) const
-{
-  SchemaMismatch_(op.schema_string, schema_string_);
-}
+// /* ******************************************************************
+//  * Visit methods for symbolic assemble: Node.
+//  ****************************************************************** */
+// void
+// Operator::SymbolicAssembleMatrixOp(const Op_Node_Node& op, const SuperMap& map,
+//                                    GraphFE& graph, int my_block_row,
+//                                    int my_block_col) const
+// {
+//   SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
 /* ******************************************************************
@@ -997,52 +972,52 @@ Operator::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
 /* ******************************************************************
  * Visit methods for symbolic assemble: Coupling
  ****************************************************************** */
-void
-Operator::SymbolicAssembleMatrixOp(const Op_Diagonal& op, const SuperMap& map,
-                                   GraphFE& graph, int my_block_row,
-                                   int my_block_col) const
-{
-  SchemaMismatch_(op.schema_string, schema_string_);
-}
+// void
+// Operator::SymbolicAssembleMatrixOp(const Op_Diagonal& op, const SuperMap& map,
+//                                    GraphFE& graph, int my_block_row,
+//                                    int my_block_col) const
+// {
+//   SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
-/* ******************************************************************
- * Visit methods for assemble: Cell.
- ****************************************************************** */
-void
-Operator::AssembleMatrixOp(const Op_Cell_FaceCell& op, const SuperMap& map,
-                           MatrixFE& mat, int my_block_row,
-                           int my_block_col) const
-{
-  SchemaMismatch_(op.schema_string, schema_string_);
-}
+// /* ******************************************************************
+//  * Visit methods for assemble: Cell.
+//  ****************************************************************** */
+// void
+// Operator::AssembleMatrixOp(const Op_Cell_FaceCell& op, const SuperMap& map,
+//                            MatrixFE& mat, int my_block_row,
+//                            int my_block_col) const
+// {
+//   SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
-void
-Operator::AssembleMatrixOp(const Op_Cell_Face& op, const SuperMap& map,
-                           MatrixFE& mat, int my_block_row,
-                           int my_block_col) const
-{
-  SchemaMismatch_(op.schema_string, schema_string_);
-}
+// void
+// Operator::AssembleMatrixOp(const Op_Cell_Face& op, const SuperMap& map,
+//                            MatrixFE& mat, int my_block_row,
+//                            int my_block_col) const
+// {
+//   SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
-void
-Operator::AssembleMatrixOp(const Op_Cell_Node& op, const SuperMap& map,
-                           MatrixFE& mat, int my_block_row,
-                           int my_block_col) const
-{
-  SchemaMismatch_(op.schema_string, schema_string_);
-}
+// void
+// Operator::AssembleMatrixOp(const Op_Cell_Node& op, const SuperMap& map,
+//                            MatrixFE& mat, int my_block_row,
+//                            int my_block_col) const
+// {
+//   SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
-void
-Operator::AssembleMatrixOp(const Op_Cell_Edge& op, const SuperMap& map,
-                           MatrixFE& mat, int my_block_row,
-                           int my_block_col) const
-{
-  SchemaMismatch_(op.schema_string, schema_string_);
-}
+// void
+// Operator::AssembleMatrixOp(const Op_Cell_Edge& op, const SuperMap& map,
+//                            MatrixFE& mat, int my_block_row,
+//                            int my_block_col) const
+// {
+//   SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
 void
@@ -1054,13 +1029,13 @@ Operator::AssembleMatrixOp(const Op_Cell_Cell& op, const SuperMap& map,
 }
 
 
-void
-Operator::AssembleMatrixOp(const Op_Cell_Schema& op, const SuperMap& map,
-                           MatrixFE& mat, int my_block_row,
-                           int my_block_col) const
-{
-  SchemaMismatch_(op.schema_string, schema_string_);
-}
+// void
+// Operator::AssembleMatrixOp(const Op_Cell_Schema& op, const SuperMap& map,
+//                            MatrixFE& mat, int my_block_row,
+//                            int my_block_col) const
+// {
+//   SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
 /* ******************************************************************
@@ -1083,37 +1058,37 @@ Operator::AssembleMatrixOp(const Op_Face_CellBndFace& op, const SuperMap& map,
 }
 
 
-void
-Operator::AssembleMatrixOp(const Op_Face_Schema& op, const SuperMap& map,
-                           MatrixFE& mat, int my_block_row,
-                           int my_block_col) const
-{
-  SchemaMismatch_(op.schema_string, schema_string_);
-}
+// void
+// Operator::AssembleMatrixOp(const Op_Face_Schema& op, const SuperMap& map,
+//                            MatrixFE& mat, int my_block_row,
+//                            int my_block_col) const
+// {
+//   SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
-/* ******************************************************************
- * Visit methods for assemble: Edge.
- ****************************************************************** */
-void
-Operator::AssembleMatrixOp(const Op_Edge_Edge& op, const SuperMap& map,
-                           MatrixFE& mat, int my_block_row,
-                           int my_block_col) const
-{
-  SchemaMismatch_(op.schema_string, schema_string_);
-}
+// /* ******************************************************************
+//  * Visit methods for assemble: Edge.
+//  ****************************************************************** */
+// void
+// Operator::AssembleMatrixOp(const Op_Edge_Edge& op, const SuperMap& map,
+//                            MatrixFE& mat, int my_block_row,
+//                            int my_block_col) const
+// {
+//   SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
-/* ******************************************************************
- * Visit methods for assemble: Node.
- ****************************************************************** */
-void
-Operator::AssembleMatrixOp(const Op_Node_Node& op, const SuperMap& map,
-                           MatrixFE& mat, int my_block_row,
-                           int my_block_col) const
-{
-  SchemaMismatch_(op.schema_string, schema_string_);
-}
+// /* ******************************************************************
+//  * Visit methods for assemble: Node.
+//  ****************************************************************** */
+// void
+// Operator::AssembleMatrixOp(const Op_Node_Node& op, const SuperMap& map,
+//                            MatrixFE& mat, int my_block_row,
+//                            int my_block_col) const
+// {
+//   SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
 /* ******************************************************************
@@ -1148,63 +1123,63 @@ Operator::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
 }
 
 
-/* ******************************************************************
- * Visit methods for assemble: Coupling
- ****************************************************************** */
-void
-Operator::AssembleMatrixOp(const Op_Diagonal& op, const SuperMap& map,
-                           MatrixFE& mat, int my_block_row,
-                           int my_block_col) const
-{
-  SchemaMismatch_(op.schema_string, schema_string_);
-}
+// /* ******************************************************************
+//  * Visit methods for assemble: Coupling
+//  ****************************************************************** */
+// void
+// Operator::AssembleMatrixOp(const Op_Diagonal& op, const SuperMap& map,
+//                            MatrixFE& mat, int my_block_row,
+//                            int my_block_col) const
+// {
+//   SchemaMismatch_(op.schema_string, schema_string_);
+// }
 
 
-/* ******************************************************************
- * Local assemble routines (for new schema)
- ****************************************************************** */
-void
-Operator::ExtractVectorCellOp(int c, const Schema& schema,
-                              WhetStone::DenseVector& v,
-                              const CompositeVector& X) const
-{
-  Errors::Message msg(
-    "Extracton fo local cell-based vector is missing for this operator");
-  Exceptions::amanzi_throw(msg);
-}
+// /* ******************************************************************
+//  * Local assemble routines (for new schema)
+//  ****************************************************************** */
+// void
+// Operator::ExtractVectorCellOp(int c, const Schema& schema,
+//                               WhetStone::DenseVector& v,
+//                               const CompositeVector& X) const
+// {
+//   Errors::Message msg(
+//     "Extracton fo local cell-based vector is missing for this operator");
+//   Exceptions::amanzi_throw(msg);
+// }
 
 
-void
-Operator::AssembleVectorCellOp(int c, const Schema& schema,
-                               const WhetStone::DenseVector& v,
-                               CompositeVector& X) const
-{
-  Errors::Message msg(
-    "Extracton fo local cell-based vector is missing for this operator");
-  Exceptions::amanzi_throw(msg);
-}
+// void
+// Operator::AssembleVectorCellOp(int c, const Schema& schema,
+//                                const WhetStone::DenseVector& v,
+//                                CompositeVector& X) const
+// {
+//   Errors::Message msg(
+//     "Extracton fo local cell-based vector is missing for this operator");
+//   Exceptions::amanzi_throw(msg);
+// }
 
 
-void
-Operator::ExtractVectorFaceOp(int c, const Schema& schema,
-                              WhetStone::DenseVector& v,
-                              const CompositeVector& X) const
-{
-  Errors::Message msg(
-    "Extracton fo local cell-based vector is missing for this operator");
-  Exceptions::amanzi_throw(msg);
-}
+// void
+// Operator::ExtractVectorFaceOp(int c, const Schema& schema,
+//                               WhetStone::DenseVector& v,
+//                               const CompositeVector& X) const
+// {
+//   Errors::Message msg(
+//     "Extracton fo local cell-based vector is missing for this operator");
+//   Exceptions::amanzi_throw(msg);
+// }
 
 
-void
-Operator::AssembleVectorFaceOp(int c, const Schema& schema,
-                               const WhetStone::DenseVector& v,
-                               CompositeVector& X) const
-{
-  Errors::Message msg(
-    "Extracton fo local cell-based vector is missing for this operator");
-  Exceptions::amanzi_throw(msg);
-}
+// void
+// Operator::AssembleVectorFaceOp(int c, const Schema& schema,
+//                                const WhetStone::DenseVector& v,
+//                                CompositeVector& X) const
+// {
+//   Errors::Message msg(
+//     "Extracton fo local cell-based vector is missing for this operator");
+//   Exceptions::amanzi_throw(msg);
+// }
 
 } // namespace Operators
 } // namespace Amanzi

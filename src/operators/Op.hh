@@ -48,11 +48,21 @@ struct Op {
      const Teuchos::RCP<const AmanziMesh::Mesh> mesh_)
       : schema_row(schema_row_),
         schema_col(schema_col_),
+        schema_old(-1),
         mesh(mesh_),
-        schema_string(schema_row.CreateUniqueName()+'+'+schema_col.CreateUniqueName())
+        schema_string(schema_row_.CreateUniqueName()+'+'+schema_col_.CreateUniqueName())
   {
-    AMANZI_ASSERT(schema_row_.base() == schema_col.base());
+    AMANZI_ASSERT(schema_row.base() == schema_col.base());
   }
+
+  Op(int schema_old_,
+     const std::string& name,     
+     const Teuchos::RCP<const AmanziMesh::Mesh> mesh_)
+      : schema_old(schema_old_),
+        schema_col(schema_old_),
+        schema_row(schema_old_),
+        mesh(mesh_),
+        schema_string(name) {}     
 
   // Clean the operator without destroying memory
   void Zero();
@@ -64,6 +74,9 @@ struct Op {
   virtual bool Matches(int match_schema, int matching_rule);
 
   // linear operator functionality.
+  virtual void
+  getLocalDiagCopy(CompositeVector& X) const = 0;
+  
   virtual void
   ApplyMatrixFreeOp(const Operator* assembler,
                     const CompositeVector& X,
@@ -94,9 +107,6 @@ struct Op {
   // -- rescale local matrices in the container using a double
   virtual void Rescale(double scaling);
 
-  // access
-  const Schema& schema_row() const { return schema_row_; }
-
  public:
   // diagonal matrix
   std::string schema_string;
@@ -105,11 +115,10 @@ struct Op {
   Kokkos::View<double**> shadow;
   Kokkos::View<int*> shadow_indices;
 
- protected:
-  int schema_old_;
-  Schema schema_row_, schema_col_;
+  int schema_old;
+  Schema schema_row, schema_col;
 
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh;
 };
 
 } // namespace Operators

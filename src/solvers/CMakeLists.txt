@@ -61,8 +61,10 @@ endif()
 set(solvers_inc_files FnBaseDefs.hh
                       #ResidualDebugger.hh
                       Preconditioner.hh
-                      PreconditionerFactory.hh
+                      PreconditionerIdentity.hh
                       PreconditionerDiagonal.hh
+                      PreconditionerAssembled.hh
+                      PreconditionerFactory.hh
                       NKA_Base.hh
                       LinearOperator.hh
                       LinearOperatorPCG.hh

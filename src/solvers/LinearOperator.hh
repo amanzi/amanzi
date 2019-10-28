@@ -55,9 +55,7 @@ class LinearOperator {
   // standard interface recommended in MatrixBase.hh
   virtual int apply(const Vector& v, Vector& mv) const
   {
-    std::cout << "In LinOp::Apply: v = " << v.norm2();
     return m_->apply(v, mv);
-    std::cout << " mv = " << mv.norm2() << std::endl;
   }
   virtual int applyInverse(const Vector& v, Vector& hv) const = 0;
 

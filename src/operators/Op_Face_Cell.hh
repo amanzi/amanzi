@@ -40,6 +40,25 @@ class Op_Face_Cell : public Op {
   }
 
   virtual void
+  getLocalDiagCopy(CompositeVector& X) const
+  {
+    auto Xv = X.ViewComponent("cell", true);
+
+    AmanziMesh::Mesh const * mesh_ = mesh.get();
+    Kokkos::parallel_for(
+        data.extent(0),
+        KOKKOS_LAMBDA(const int f) {
+          AmanziMesh::Entity_ID_View cells;
+          mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+          Xv(cells(0), 0) += data(f,0);
+          if (cells.extent(0) > 1) {
+            Xv(cells(1),0) += data(f,3);
+          }
+        });
+  }
+  
+
+  virtual void
   ApplyMatrixFreeOp(const Operator* assembler, const CompositeVector& X,
                     CompositeVector& Y) const
   {
@@ -72,21 +91,22 @@ class Op_Face_Cell : public Op {
   virtual void Rescale(const CompositeVector& scaling)
   {
     if (scaling.HasComponent("cell")) {
-      auto scaling_v = *scaling.ViewComponent("cell", true);
+      auto scaling_v = scaling.ViewComponent("cell", true);
 
-      AmanziMesh::Mesh* mesh = mesh_.get();
-      Kokkos::parallel_for(data.extent(0),
-                           KOKKOS_LAMBDA(const int f) {
-                             AmanziMesh::Entity_ID_View cells;
-                             mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-                             data(f, 0) *= scaling_v(cells(0),0);
+      AmanziMesh::Mesh const * mesh_ = mesh.get();
+      Kokkos::parallel_for(
+          data.extent(0),
+          KOKKOS_LAMBDA(const int f) {
+            AmanziMesh::Entity_ID_View cells;
+            mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, cells);
+            data(f, 0) *= scaling_v(cells(0),0);
 
-                             if (cells.extent(0) > 1) {
-                               data(f, 1) *= scaling_v(cells(0),0);
-                               data(f, 2) *= scaling_v(cells(1),0);
-                               data(f, 3) *= scaling_v(cells(1),0);
-                             }
-                           });
+            if (cells.extent(0) > 1) {
+              data(f, 1) *= scaling_v(cells(0),0);
+              data(f, 2) *= scaling_v(cells(1),0);
+              data(f, 3) *= scaling_v(cells(1),0);
+            }
+          });
     }
   }
 

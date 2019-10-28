@@ -28,6 +28,18 @@ class Op_SurfaceCell_SurfaceCell : public Op_Cell_Cell {
   {}
 
   virtual void
+  getLocalDiagCopy(CompositeVector& X) const
+  {
+    auto Xv = X.ViewComponent("face", false);
+    Kokkos::parallel_for(
+        data.extent(0),
+        KOKKOS_LAMBDA(const int sc) {
+          auto f = surf_mesh->entity_get_parent(AmanziMesh::CELL, sc);
+          Xv(f,0) += data(sc,0);
+        });
+  }
+  
+  virtual void
   ApplyMatrixFreeOp(const Operator* assembler, const CompositeVector& X,
                     CompositeVector& Y) const
   {
@@ -60,14 +72,14 @@ class Op_SurfaceCell_SurfaceCell : public Op_Cell_Cell {
     }
     if (scaling.HasComponent("face") &&
         scaling.GetComponent("face", false)->getLocalLength() ==
-          mesh_->num_entities(AmanziMesh::FACE,
+          mesh->num_entities(AmanziMesh::FACE,
                               AmanziMesh::Parallel_type::OWNED)) {
 
       auto scaling_v = scaling.ViewComponent("face", false);
 
       Kokkos::parallel_for(scaling_v.extent(0),
                            KOKKOS_LAMBDA(const int sc) {
-                             Entity_ID f = surf_mesh->entity_get_parent(AmanziMesh::CELL, sc);
+                             auto f = surf_mesh->entity_get_parent(AmanziMesh::CELL, sc);
                              data(sc, 0) *= scaling_v(f, 0);
                            });
     }

@@ -110,9 +110,8 @@ class CompositeVectorSpace {
   BlockMap_ptr_type getMap(const std::string& name, bool ghost = false) const;
 
   // Update all specs from another space's specs.
-  // Useful for PKs to maintain default factories that apply to multiple CVs.
-  // Is this different from operator=?  Document how!  --etc
   CompositeVectorSpace* Update(const CompositeVectorSpace& other);
+  CompositeVectorSpace* Update(const CompositeSpace& other);
 
   // component specification
 

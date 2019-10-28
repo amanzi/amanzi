@@ -313,3 +313,65 @@ TEST(COMMUNICATION_INTERMEDIATE)
     }
   }
 }
+
+
+TEST(IMPORTERS_BOUNDARY_FACES)
+{
+  // understand how to go both directions,
+  //
+  // bf = boundary_face_map.LID(face_map.GID(f));
+  // and
+  // f = face_map.LID(boundary_face_map.GID(bf));
+  //
+  // without calling doImport() (not always an option)
+  std::cout << "IMPORTERS BOUNDARY FACES" << std::endl;  
+  auto comm = getDefaultComm();
+
+  int size = comm->getSize();
+  CHECK_EQUAL(2, size);
+  int rank = comm->getRank();
+
+  Map_ptr_type boundary_face_map;
+
+  auto face_map = Teuchos::rcp(new Map_type(8,4,0,comm));
+
+  if (rank == 0) {
+    std::vector<int> bf_gids{ 0, 3 };
+    boundary_face_map = Teuchos::rcp(new Map_type(4, bf_gids.data(), 2, 0, comm));
+  } else {
+    std::vector<int> bf_gids{ 5, 6 };
+    boundary_face_map = Teuchos::rcp(new Map_type(4, bf_gids.data(), 2, 0, comm));
+  }
+
+  Import_type importer(face_map, boundary_face_map);
+
+  // go from bf to f
+  IntVector_type vec(boundary_face_map);
+  {
+    auto vec_view = vec.getLocalViewDevice();
+    auto import_view = importer.getPermuteFromLIDs_dv().view<AmanziDefaultHost>();
+    auto import_to_view = importer.getPermuteToLIDs_dv().view<AmanziDefaultHost>();
+
+    std::stringstream stream;
+    stream << "Rank " << rank << ": len=" << import_view.extent(0) << "," << import_view.extent(1) << ": ";
+    for (int i=0; i!=importer.getNumSameIDs(); ++i)
+      stream << i << "-->" << i << ", ";
+    for (int i=0; i!=import_view.extent(0); ++i)
+      stream << import_view(i) << "-->" << import_to_view(i) << ", ";
+    std::cout << stream.str() << std::endl;
+    // assert(vec_view.extent(0) == import_view.extent(0));
+    // Kokkos::parallel_for(vec_view.extent(0),
+    //                      KOKKOS_LAMBDA(const int bf) {
+    //                        vec_view(bf,0) = import_view(bf);
+    //                      });
+  }
+
+  // {
+  //   auto vec_view = vec.getLocalViewHost();
+  //   for (int bf=0; bf!=vec_view.extent(0); ++bf) {
+  //     std::cout << "bf: " << bf << " = " << vec_view(bf,0) << std::endl;
+  //   }
+  // }
+
+}
+

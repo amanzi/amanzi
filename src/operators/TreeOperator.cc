@@ -10,6 +10,9 @@
 
 //! <MISSING_ONELINE_DOCSTRING>
 
+#define ASSEMBLY_DONE 0
+
+
 #include <vector>
 
 // TPLs
@@ -67,11 +70,19 @@ TreeOperator::SetOperatorBlock(int i, int j,
 }
 
 
+void
+TreeOperator::getLocalDiagCopy(TreeVector& tv) const
+{
+  int i=0;
+  for (auto sv : tv) blocks_[i][i]->getLocalDiagCopy(*sv->Data());
+}
+
+
 /* ******************************************************************
  * Calculate Y = A * X using matrix-free matvec on blocks of operators.
  ****************************************************************** */
 int
-TreeOperator::Apply(const TreeVector& X, TreeVector& Y) const
+TreeOperator::apply(const TreeVector& X, TreeVector& Y) const
 {
   Y.putScalar(0.0);
 
@@ -83,7 +94,7 @@ TreeOperator::Apply(const TreeVector& X, TreeVector& Y) const
          ++xM_tv, ++m) {
       if (blocks_[n][m] != Teuchos::null) {
         if (transpose_[n][m]) {
-          ierr |= blocks_[n][m]->ApplyTranspose(*(*xM_tv)->Data(), yN, 1.0);
+          ierr |= blocks_[n][m]->applyTranspose(*(*xM_tv)->Data(), yN, 1.0);
         } else {
           ierr |= blocks_[n][m]->apply(*(*xM_tv)->Data(), yN, 1.0);
         }
@@ -98,21 +109,20 @@ TreeOperator::Apply(const TreeVector& X, TreeVector& Y) const
  * Calculate Y = A * X using matrix-free matvec on blocks of operators.
  ****************************************************************** */
 int
-TreeOperator::ApplyAssembled(const TreeVector& X, TreeVector& Y) const
+TreeOperator::applyAssembled(const TreeVector& X, TreeVector& Y) const
 {
+#if ASSEMBLY_DONE
   Y.putScalar(0.0);
-  Epetra_Vector Xcopy(A_->RowMap());
-  Epetra_Vector Ycopy(A_->RowMap());
+  Vector_type Xcopy(A_->getRowMap());
+  Vector_type Ycopy(A_->getRowMap());
   double x_norm, y_norm;
 
-  int ierr = CopyTreeVectorToSuperVector(*smap_, X, Xcopy);
-
-  ierr |= A_->apply(Xcopy, Ycopy);
-
-  ierr |= CopySuperVectorToTreeVector(*smap_, Ycopy, Y);
+  int ierr = copyToSuperVector(*smap_, X, Xcopy);
+  A_->apply(Xcopy, Ycopy);
+  ierr |= copyFromSuperVector(*smap_, Ycopy, Y);
   AMANZI_ASSERT(!ierr);
-
   return ierr;
+#endif
 }
 
 
@@ -120,18 +130,11 @@ TreeOperator::ApplyAssembled(const TreeVector& X, TreeVector& Y) const
  * Calculate Y = inv(A) * X using global matrix.
  ****************************************************************** */
 int
-TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
+TreeOperator::applyInverse(const TreeVector& X, TreeVector& Y) const
 {
   int code(0);
   if (!block_diagonal_) {
-    Epetra_Vector Xcopy(A_->RowMap());
-    Epetra_Vector Ycopy(A_->RowMap());
-
-    int ierr = CopyTreeVectorToSuperVector(*smap_, X, Xcopy);
-    code = preconditioner_->applyInverse(Xcopy, Ycopy);
-    ierr |= CopySuperVectorToTreeVector(*smap_, Ycopy, Y);
-
-    AMANZI_ASSERT(!ierr);
+    code = preconditioner_->applyInverse(X, Y);
   } else {
     for (int n = 0; n < tvs_->size(); ++n) {
       const CompositeVector& Xn = *X.SubVector(n)->Data();
@@ -139,7 +142,10 @@ TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
       code |= blocks_[n][n]->applyInverse(Xn, Yn);
     }
   }
-
+  if (code) {
+    Errors::Message msg("TreeOperator: ApplyInverse failed.\n");
+    throw(msg);
+  }
   return code;
 }
 
@@ -151,6 +157,7 @@ TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
 void
 TreeOperator::SymbolicAssembleMatrix()
 {
+#if ASSEMBLY_DONE  
   int n_blocks = blocks_.size();
 
   // Currently we assume all diagonal schema are the same and well defined.
@@ -172,7 +179,7 @@ TreeOperator::SymbolicAssembleMatrix()
 
       if (lcv_row == lcv_col) {
         AMANZI_ASSERT(blocks_[lcv_row][lcv_col] != Teuchos::null);
-        cvs_vec.push_back(blocks_[lcv_row][lcv_col]->DomainMap());
+        cvs_vec.push_back(blocks_[lcv_row][lcv_col]->getDomainMap());
         cvs_names.push_back(std::to_string(lcv_row));
       }
     }
@@ -180,12 +187,12 @@ TreeOperator::SymbolicAssembleMatrix()
   }
 
   // create the supermap and graph
-  smap_ = createSuperMap(DomainMap());
+  smap_ = createSuperMap(*getDomainMap());
 
   // NOTE: this probably needs to be fixed for differing meshes. -etc
   int row_size = MaxRowSize(*an_op->DomainMap().Mesh(), schema, n_blocks);
   auto graph = Teuchos::rcp(new GraphFE(
-    smap_->getMap(), smap_->GhostedMap(), smap_->GhostedMap(), row_size));
+    smap_->getMap(), smap_->getGhostedMap(), smap_->getGhostedMap(), row_size));
 
   // fill the graph
   for (int lcv_row = 0; lcv_row != n_blocks; ++lcv_row) {
@@ -204,6 +211,7 @@ TreeOperator::SymbolicAssembleMatrix()
   // create the matrix
   Amat_ = Teuchos::rcp(new MatrixFE(graph));
   A_ = Amat_->Matrix();
+#endif
 }
 
 
@@ -213,6 +221,9 @@ TreeOperator::SymbolicAssembleMatrix()
 void
 TreeOperator::AssembleMatrix()
 {
+#if ASSEMBLY_DONE
+  if (!Amat_.get()) SymbolicAssembleMatrix();
+  
   int n_blocks = blocks_.size();
   Amat_->Zero();
 
@@ -228,11 +239,7 @@ TreeOperator::AssembleMatrix()
 
   int ierr = Amat_->FillComplete();
   AMANZI_ASSERT(!ierr);
-
-  // std::stringstream filename_s2;
-  // filename_s2 << "assembled_matrix" << 0 << ".txt";
-  // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Amat_
-  // ->Matrix());
+#endif
 }
 
 
@@ -243,9 +250,9 @@ void
 TreeOperator::InitPreconditioner(const std::string& prec_name,
                                  const Teuchos::ParameterList& plist)
 {
-  AmanziPreconditioners::PreconditionerFactory factory;
+  AmanziPreconditioners::PreconditionerFactory<TreeOperator,TreeVector> factory;
   preconditioner_ = factory.Create(prec_name, plist);
-  preconditioner_->update(A_);
+  UpdatePreconditioner();
 }
 
 
@@ -255,9 +262,9 @@ TreeOperator::InitPreconditioner(const std::string& prec_name,
 void
 TreeOperator::InitPreconditioner(Teuchos::ParameterList& plist)
 {
-  AmanziPreconditioners::PreconditionerFactory factory;
+  AmanziPreconditioners::PreconditionerFactory<TreeOperator,TreeVector> factory;
   preconditioner_ = factory.Create(plist);
-  preconditioner_->update(A_);
+  UpdatePreconditioner();
 }
 
 
@@ -268,26 +275,28 @@ TreeOperator::InitPreconditioner(Teuchos::ParameterList& plist)
 void
 TreeOperator::InitializePreconditioner(Teuchos::ParameterList& plist)
 {
-  AMANZI_ASSERT(A_.get());
-  AMANZI_ASSERT(smap_.get());
+  // // provide block ids for block strategies.
+  // if (plist.isParameter("preconditioner type")) {
+  //   std::string pc_type = plist.get<std::string>("preconditioner type");
+  //   if (pc_type == "boomer amg") {
+  //     // NOTE: Hypre frees this
+  //     auto block_ids = smap_->BlockIndices();
 
-  // provide block ids for block strategies.
-  if (plist.isParameter("preconditioner type") &&
-      plist.get<std::string>("preconditioner type") == "boomer amg" &&
-      plist.isSublist("boomer amg parameters")) {
-    // NOTE: Hypre frees this
-    auto block_ids = smap_->BlockIndices();
+  //     plist.sublist("boomer amg parameters")
+  //         .set("number of unique block indices", block_ids.first);
 
-    plist.sublist("boomer amg parameters")
-      .set("number of unique block indices", block_ids.first);
+  //     // Note, this passes a raw pointer through a ParameterList.  I was surprised
+  //     // this worked too, but ParameterList is a boost::any at heart... --etc
+  //     plist.sublist("boomer amg parameters")
+  //         .set("block indices", block_ids.second);
 
-    // Note, this passes a raw pointer through a ParameterList.  I was surprised
-    // this worked too, but ParameterList is a boost::any at heart... --etc
-    plist.sublist("boomer amg parameters")
-      .set("block indices", block_ids.second);
-  }
+  //   } else if (pc_type == "block diagonal") {
+  //     InitBlockDiagonalPreconditioner();
+  //     return;
+  //   }
+  // }
 
-  AmanziPreconditioners::PreconditionerFactory factory;
+  AmanziPreconditioners::PreconditionerFactory<TreeOperator,TreeVector> factory;
   preconditioner_ = factory.Create(plist);
 }
 
@@ -299,9 +308,10 @@ TreeOperator::InitializePreconditioner(Teuchos::ParameterList& plist)
 void
 TreeOperator::UpdatePreconditioner()
 {
-  AMANZI_ASSERT(preconditioner_.get());
-  AMANZI_ASSERT(A_.get());
-  preconditioner_->update(A_);
+  if (!block_diagonal_) {
+    AMANZI_ASSERT(preconditioner_.get());
+    preconditioner_->Update(Teuchos::rcpFromRef(*this));
+  }
 }
 
 
@@ -314,24 +324,6 @@ TreeOperator::InitBlockDiagonalPreconditioner()
   block_diagonal_ = true;
 }
 
-
-/* ******************************************************************
- * Copies to/from SuperVector for use by Amesos.
- ****************************************************************** */
-void
-TreeOperator::CopyVectorToSuperVector(const TreeVector& cv,
-                                      Epetra_Vector& sv) const
-{
-  CopyTreeVectorToSuperVector(*smap_, cv, sv);
-}
-
-
-void
-TreeOperator::CopySuperVectorToVector(const Epetra_Vector& sv,
-                                      TreeVector& cv) const
-{
-  CopySuperVectorToTreeVector(*smap_, sv, cv);
-}
 
 } // namespace Operators
 } // namespace Amanzi

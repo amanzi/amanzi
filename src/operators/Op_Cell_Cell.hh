@@ -30,6 +30,18 @@ class Op_Cell_Cell : public Op {
   }
 
   virtual void
+  getLocalDiagCopy(CompositeVector& X) const
+  {
+    auto Xv = X.ViewComponent("cell", false);
+    Kokkos::parallel_for(
+        "Op_Cell_Cell::getLocalDiagCopy",
+        Xv.extent(0),
+        KOKKOS_LAMBDA(const int i) {
+          Xv(i,0) += data(i,0);
+        });
+  }
+  
+  virtual void
   ApplyMatrixFreeOp(const Operator* assembler,
                     const CompositeVector& X,
                     CompositeVector& Y) const
@@ -69,7 +81,8 @@ class Op_Cell_Cell : public Op {
       
       Kokkos::parallel_for(scaling_v.extent(0),
                            KOKKOS_LAMBDA(const int i) {
-                             data_(i,0) *= scaling_v(i,0); });
+                             data(i,0) *= scaling_v(i,0);
+                           });
     }
   }
 };
