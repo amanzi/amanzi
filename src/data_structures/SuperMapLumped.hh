@@ -52,8 +52,8 @@ class SuperMapLumped {
   bool HasComponent(const std::string& compname) const;
 
   // map accessors
-  Map_ptr_type Map() const { return map_; }
-  Map_ptr_type GhostedMap() const { return ghosted_map_; }
+  Map_ptr_type getMap() const { return map_; }
+  Map_ptr_type getGhostedMap() const { return ghosted_map_; }
 
   // -- component map accessors
   BlockMap_ptr_type ComponentMap(const std::string& compname) const

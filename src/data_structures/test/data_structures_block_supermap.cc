@@ -22,11 +22,6 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
-#include "Epetra_BlockMap.h"
-#include "Epetra_Export.h"
-#include "Epetra_Map.h"
-#include "Epetra_Vector.h"
-
 #include "MeshFactory.hh"
 
 #include "CompositeVectorSpace.hh"
@@ -292,3 +287,6 @@ TEST(SUPERMAP_BLOCK_MANUAL)
     CHECK(inds_m2_d0[6] == 12);
   }
 }
+
+
+

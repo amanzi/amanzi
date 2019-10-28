@@ -51,8 +51,8 @@ class SuperMap {
 
   // map accessors
   // -- global map accessors
-  Map_ptr_type getMap() const { return smap_->Map(); }
-  Map_ptr_type getGhostedMap() const { return smap_->GhostedMap(); }
+  Map_ptr_type getMap() const { return smap_->getMap(); }
+  Map_ptr_type getGhostedMap() const { return smap_->getGhostedMap(); }
 
   // -- component map accessors
   BlockMap_ptr_type
