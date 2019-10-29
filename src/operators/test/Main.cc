@@ -14,6 +14,7 @@
 #include <TestReporterStdout.h>
 
 #include "Teuchos_GlobalMPISession.hpp"
+
 #include "VerboseObject_objs.hh"
 
 #include "bilinear_form_registration.hh"

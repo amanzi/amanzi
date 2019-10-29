@@ -51,6 +51,7 @@ add_definitions("-DMSTK_HAVE_MPI")
 #
 set(operators_inc_files
   OperatorDefs.hh
+  Schema.hh
   Op.hh
   Op_Cell_Cell.hh
   Op_Face_Cell.hh
@@ -63,6 +64,7 @@ set(operators_inc_files
   )
 
 set(operators_src_files
+  Schema.cc
   Op.cc
   OperatorUtils.cc
   Operator.cc
@@ -206,14 +208,12 @@ if (BUILD_TESTS)
         file(COPY ${DataFiles} DESTINATION ${OPERATORS_BINARY_DIR}/test/)
     endif()
 
-    set(operators_test_link_libs atk output geometry mesh mesh_factory mesh_logical data_structures whetstone operators ${UnitTest_LIBRARIES})
+    set(operators_test_link_libs output geometry mesh mstk_mesh mesh_factory data_structures whetstone operators atk ${UnitTest_LIBRARIES})
 
-    # # Tests: diffusion
-    # add_amanzi_test(operators_utils operators_utils
-    #                 KIND unit
-    #                 SOURCE test/Main.cc test/operator_utils.cc
-    #                 LINK_LIBS ${operators_test_link_libs})
-
+    add_amanzi_test(operators_basic operators_basic
+      KIND unit
+      SOURCE test/Main.cc test/operators_basic.cc
+      LINK_LIBS ${operators_test_link_libs})
 
     # if (ENABLE_INDIVIDUAL_TESTS_OPERATORS OR ENABLE_INDIVIDUAL_TESTS)
     #     add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami

@@ -68,8 +68,8 @@ class Schema {
 
   void Finalize(Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
-  void ComputeOffset(int c, Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                     std::vector<int>& offset) const;
+  // void ComputeOffset(int c, Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                     // std::vector<int>& offset) const;
 
   // local converters operators/strings/mesh
   int OldSchema() const;

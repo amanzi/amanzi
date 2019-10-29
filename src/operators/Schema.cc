@@ -150,32 +150,32 @@ Schema::Finalize(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
 /* ******************************************************************
  * Compute local (cell-based) offsets
  ****************************************************************** */
-void
-Schema::ComputeOffset(int c, Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                      std::vector<int>& offset) const
-{
-  AmanziMesh::Entity_ID_List nodes, edges, faces;
+// void
+// Schema::ComputeOffset(int c, Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+//                       std::vector<int>& offset) const
+// {
+//   AmanziMesh::Entity_ID_List nodes, edges, faces;
 
-  offset.clear();
-  offset.push_back(0);
+//   offset.clear();
+//   offset.push_back(0);
 
-  int ndofs;
-  for (auto it = items_.begin(); it != items_.end(); ++it) {
-    if (it->kind == AmanziMesh::NODE) {
-      mesh->cell_get_nodes(c, &nodes);
-      ndofs = nodes.size();
-    } else if (it->kind == AmanziMesh::EDGE) {
-      mesh->cell_get_nodes(c, &edges);
-      ndofs = edges.size();
-    } else if (it->kind == AmanziMesh::FACE) {
-      ndofs = mesh->cell_get_num_faces(c);
-    } else if (it->kind == AmanziMesh::CELL) {
-      ndofs = 1;
-    }
+//   int ndofs;
+//   for (auto it = items_.begin(); it != items_.end(); ++it) {
+//     if (it->kind == AmanziMesh::NODE) {
+//       mesh->cell_get_nodes(c, &nodes);
+//       ndofs = nodes.size();
+//     } else if (it->kind == AmanziMesh::EDGE) {
+//       mesh->cell_get_nodes(c, &edges);
+//       ndofs = edges.size();
+//     } else if (it->kind == AmanziMesh::FACE) {
+//       ndofs = mesh->cell_get_num_faces(c);
+//     } else if (it->kind == AmanziMesh::CELL) {
+//       ndofs = 1;
+//     }
 
-    offset.push_back(ndofs * it->num);
-  }
-}
+//     offset.push_back(ndofs * it->num);
+//   }
+// }
 
 
 /* ******************************************************************

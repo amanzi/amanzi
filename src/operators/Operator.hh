@@ -112,11 +112,15 @@ Note on implementation for discretization/framework developers:
 #include "Mesh.hh"
 #include "CompositeSpace.hh"
 #include "CompositeVector.hh"
-#include "DenseVector.hh"
+//#include "DenseVector.hh"
 #include "OperatorDefs.hh"
 #include "Schema.hh"
 
 namespace Amanzi {
+
+namespace AmanziPreconditioners {
+template<class Matrix, class Vector> class Preconditioner;
+}
 
 namespace Operators {
 
