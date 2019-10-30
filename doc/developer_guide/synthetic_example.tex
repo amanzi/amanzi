@@ -228,29 +228,23 @@ WhetStone::DenseMatrix temp1(3,3), temp2(4,3);
 // lambda = tr(R(R^TN)^t R^T)
 
 // the first summand.
-int k1 = temp1.Multiply(R,N,true);
-int k2 = temp1.InverseMoorePenrose();
-int k3 = temp2.Multiply(R,temp1,false);
+temp1.Multiply(R, N, true);
+temp1.InverseMoorePenrose();
+temp2.Multiply(R, temp1, false);
 TR.Transpose(R);
-int k4 = Mcell.Multiply(temp2,TR,false);
+Mcell.Multiply(temp2, TR, false);
 
 // the second summand.
 double lambda = Mcell.Trace();
-int d1 = temp1.Multiply(N,N,true);
-int d2 = temp1.InverseSPD();
-int d3 = temp2.Multiply(N,temp1,false);
+temp1.Multiply(N, N, true);
+temp1.InverseSPD();
+temp2.Multiply(N, temp1, false);
 TR.Transpose(N);
-int d4 = Scell.Multiply(temp2,TR,false);
+Scell.Multiply(temp2, TR, false);
 
-for(int i = 0; i < 4; i++) {
-  for(int j = 0; j < 4; j++) {
-    if(i == j)
-      Scell(i, j) = lambda * (1.0 - Scell(i, j)) / 2;
-    else
-      Scell(i, j) = -lambda * (Scell(i, j)) / 2;
-  }
-}
-local_op_->matrices[c] = Mcell+Scell;
+Scell *= -lambda / 2;
+for(int i = 0; i < 4; i++) Scell(i, i) += lambda / 2;
+local_op_->matrices[c] = Mcell + Scell;
 \end{lstlisting} 
 %
 The nested for loops that are performed towards the end of the above code are intended to substract the identity while simultaneously multiplying by lambda.
@@ -279,7 +273,7 @@ global_op_->OpPushBack(local_op_);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Creating a Mesh}\label{CreatingAMesh}
+\subsection{Creating a mesh}\label{CreatingAMesh}
 The class {\tt MeshFactory} gives the necessary tools to create a mesh. 
 Mesh factory requires some inputs: the MPI communicator and the preferences which provide the specific capability that is used. 
 A default communicator is already defined in Amanzi namespace and the preference is usually set 
