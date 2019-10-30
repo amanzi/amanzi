@@ -41,11 +41,16 @@ namespace Vegetation {
     void init_ats_fates(int*, site_info*);
     void init_soil_depths(int*, int*, site_info*, double*, double*, double*, double*);
     void init_coldstart(int* );
-    void fatesreadparameters(int*, CFI_cdesc_t * clm, CFI_cdesc_t * fates);
-    void fatesreadpfts(int*, CFI_cdesc_t * clm, CFI_cdesc_t * fates);
+    void fatessetmasterproc(int*);
+    void fatessetinputfiles(CFI_cdesc_t * clm, CFI_cdesc_t * fates);    
+    void fatesreadparameters();
+    void fatesreadpfts();
+    void set_fates_global_elements();
+    void get_nlevsclass(int*);
     void dynamics_driv_per_site(int*, int*, site_info*, double*,
                                 double*, double*, double*, double*,
-                                double*, double*, double*, double*); 
+                                double*);
+    void calculate_biomass(double*  ats_biomass_array, int nsites, int num_scls);
   
 #ifdef __cplusplus
   } // extern "C"
@@ -102,9 +107,11 @@ namespace Vegetation {
     Teuchos::RCP<const AmanziMesh::Mesh> mesh_surf_;
     Key domain_surf_;
     Key trans_key_;
+    Key precip_key_, temp_key_, humidity_key_, wind_key_;
+    Key met_decomp_key_, cel_decomp_key_, lig_decomp_key_;
 
-    int patchno_, nlevdecomp_;
-    int ncells_owned_, ncells_per_col_;
+    int patchno_, nlevdecomp_, nlevsclass_;
+    int ncells_owned_, ncells_per_col_, clump_;
     std::vector<site_info> site_;
 
   // factory registration

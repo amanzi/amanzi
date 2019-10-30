@@ -3,7 +3,9 @@
 # ATS Surface balance PKs describe Evaporation, energy fluxes from
 #  long/showtwave radiation, precip, etc etc etc
 
-add_subdirectory(fates)
+if (ENABLE_FATES)
+  add_subdirectory(fates)
+endif()
 
 include_directories(${ATS_SOURCE_DIR}/src/pks)
 
@@ -29,10 +31,12 @@ register_evaluator_with_factory(
   LISTNAME BGC_REG
 )
 
-register_evaluator_with_factory(
-  HEADERFILE fates/fates_reg.hh
-  LISTNAME BGC_REG
-)
+if (ENABLE_FATES)
+  register_evaluator_with_factory(
+    HEADERFILE fates/fates_reg.hh
+    LISTNAME BGC_REG
+  )
+endif()
 
 register_evaluator_with_factory(
   HEADERFILE carbon/simple/CarbonSimple_reg.hh
