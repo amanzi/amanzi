@@ -65,8 +65,10 @@ Composite vector spaces are factories for composite vectors which is an enhanced
 This factory can help us create vectors for our trial or test spaces which in the case of a square system are the same or at least have the same set of degrees of freedom. 
 %
 In what follows we will explain how to define the global operator, we note that this is all done in the constructor of the PDE class.
-%
-\subsubsection{Constructing the Local Stiffness Matrix}\label{Sec:NumericalScheme}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Constructing the local stiffness matrix}\label{Sec:NumericalScheme}
 We will approximate, for a cell $P$, the bilinear form $a$ as
 %
 \begin{equation}
@@ -99,7 +101,9 @@ for
 where $\left\{\left(x_{v_i},y_{v_i}\right):1\le i\le 4\right\}$ is the set of vertices of the rectangle $P$, $\left\{\left(n_x^{(i)},n_y^{(i)}\right):1\le i\le 4\right\}$ makes a set of outward normal vectors to the edges of $P$. 
 %
 This derivation is an example of a mimetic method presented in chapter 4 of \cite{da2014mimetic}.
-%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection{Populating the local matrices and defining the global operator}\label{Sec:LocalMatAndGlobalOp}
 %
 The first step in populating the local matrices is to define a schema.
@@ -157,34 +161,33 @@ Initally, say to define the matrix in \eqref{eq:LocStiffnessMat} one requires to
 All of these can be attained from the mesh class from the commands displayed below
 %
 \begin{lstlisting}
-AmanziMesh::Entity_ID_List nodeids,edgeids;
-AmanziMesh::Entity_ID Node0,Node1,Node2,Node3;
-AmanziGeometry::Point v0,v1,v2,v3;
-AmanziGeometry::Point n0,n1,n2,n3;
-AmanziGeometry::Point vP;
-double l0,l1,l2,l3;
+AmanziMesh::Entity_ID_List nodeids, edgeids;
+AmanziMesh::Entity_ID node0, node1, node2, node3;
+AmanziGeometry::Point v0, v1, v2, v3;
+AmanziGeometry::Point n0, n1, n2, n3, vP;
+double l0, l1, l2, l3;
 
 vP = mesh_->cell_centroid(c);
-mesh -> cell_get_edges(c, &edgeids);
+mesh->cell_get_edges(c, &edgeids);
 
-mesh_ -> edge_get_nodes(edgeids[0],&Node0,&Node1);
-mesh_ -> edge_get_nodes(edgeids[1],&Node1,&Node2);
-mesh_ -> edge_get_nodes(edgeids[2],&Node2,&Node3);
+mesh_->edge_get_nodes(edgeids[0], &node0, &node1);
+mesh_->edge_get_nodes(edgeids[1], &node1, &node2);
+mesh_->edge_get_nodes(edgeids[2], &node2, &node3);
 
-mesh_ -> node_get_coordinates(Node0,&v0);
-mesh_ -> node_get_coordinates(Node1,&v1);
-mesh_ -> node_get_coordinates(Node2,&v2);  
-mesh_ -> node_get_coordinates(Node3,&v3);
+mesh_->node_get_coordinates(node0, &v0);
+mesh_->node_get_coordinates(node1, &v1);
+mesh_->node_get_coordinates(node2, &v2);  
+mesh_->node_get_coordinates(node3, &v3);
 
-l0 = mesh_ -> edge_length(edgeids[0]);
-l1 = mesh_ -> edge_length(edgeids[1]);
-l2 = mesh_ -> edge_length(edgeids[2]);
-l3 = mesh_ -> edge_length(edgeids[3]);
+l0 = mesh_->edge_length(edgeids[0]);
+l1 = mesh_->edge_length(edgeids[1]);
+l2 = mesh_->edge_length(edgeids[2]);
+l3 = mesh_->edge_length(edgeids[3]);
 
-n0 = mesh_ -> face_normal(edgeids[0],false,c);
-n1 = mesh_ -> face_normal(edgeids[1],false,c);
-n2 = mesh_ -> face_normal(edgeids[2],false,c);
-n3 = mesh_ -> face_normal(edgeids[3],false,c); 
+n0 = mesh_->face_normal(edgeids[0], false, c);
+n1 = mesh_->face_normal(edgeids[1], false, c);
+n2 = mesh_->face_normal(edgeids[2], false, c);
+n3 = mesh_->face_normal(edgeids[3], false, c); 
 \end{lstlisting}
 %
 Notice that to attain normal vectors we use the command {\tt face\_normal} this is because in amanzi faces and edges are the same entity in two dimensions.
@@ -201,10 +204,10 @@ Their construction is:
 WhetStone::DenseMatrix N(4,3);
 WhetStone::DenseMatrix R(4,3);
 
-N(0,0) = 1, N(0,1) = v0[0]-vP[0], N(0,2) = v0[1]-vP[1];  
-N(1,0) = 1, N(1,1) = v1[0]-vP[0], N(1,2) = v1[1]-vP[1];
-N(2,0) = 1, N(2,1) = v2[0]-vP[0], N(2,2) = v2[1]-vP[1];
-N(3,0) = 1, N(3,1) = v3[0]-vP[0], N(3,2) = v3[1]-vP[1];
+N(0,0) = 1, N(0,1) = v0[0] - vP[0], N(0,2) = v0[1] - vP[1];  
+N(1,0) = 1, N(1,1) = v1[0] - vP[0], N(1,2) = v1[1] - vP[1];
+N(2,0) = 1, N(2,1) = v2[0] - vP[0], N(2,2) = v2[1] - vP[1];
+N(3,0) = 1, N(3,1) = v3[0] - vP[0], N(3,2) = v3[1] - vP[1];
 
 R(0,0) = 0, R(0,1) = l3*n3[0]+l0*n0[0], R(0,2) = l3*n3[1]+l0*n0[1];
 R(1,0) = 0, R(1,1) = l0*n0[0]+l1*n1[0], R(1,2) = l0*n0[1]+l1*n1[1];
@@ -218,23 +221,20 @@ To do this we will define a series of temporary variables that store the variabl
 %
 \begin{lstlisting}
 WhetStone::DenseMatrix TR(3,4);
-WhetStone::DenseMatrix Mcell(4,4);
-WhetStone::DenseMatrix Scell(4,4);
-WhetStone::DenseMatrix temp1(3,3);
-WhetStone::DenseMatrix temp2(4,3);
+WhetStone::DenseMatrix Mcell(4,4), Scell(4,4);
+WhetStone::DenseMatrix temp1(3,3), temp2(4,3);
 
-//Formula: R(R^TN)^t R^T+lambda*(Id-N(N^TN)^{-1}N^T)/2
-//lambda = tr(R(R^TN)^t R^T)
+// formula: R(R^TN)^t R^T+lambda*(Id-N(N^TN)^{-1}N^T)/2
+// lambda = tr(R(R^TN)^t R^T)
 
-//This routine defines the first summand.
+// the first summand.
 int k1 = temp1.Multiply(R,N,true);
 int k2 = temp1.InverseMoorePenrose();
 int k3 = temp2.Multiply(R,temp1,false);
 TR.Transpose(R);
 int k4 = Mcell.Multiply(temp2,TR,false);
 
-//This routine defines the second summand.
-
+// the second summand.
 double lambda = Mcell.Trace();
 int d1 = temp1.Multiply(N,N,true);
 int d2 = temp1.InverseSPD();
@@ -242,17 +242,13 @@ int d3 = temp2.Multiply(N,temp1,false);
 TR.Transpose(N);
 int d4 = Scell.Multiply(temp2,TR,false);
 
-
-
-for(int i=0;i<4;i++){
-	for(int j=0;j<4;j++){
-		if(i==j){
-			Scell(i,j) = lambda*(1-Scell(i,j))/2;
-		}
-		else{
-			Scell(i,j) = -lambda*(Scell(i,j))/2;
-		}
-	}
+for(int i = 0; i < 4; i++) {
+  for(int j = 0; j < 4; j++) {
+    if(i == j)
+      Scell(i, j) = lambda * (1.0 - Scell(i, j)) / 2;
+    else
+      Scell(i, j) = -lambda * (Scell(i, j)) / 2;
+  }
 }
 local_op_->matrices[c] = Mcell+Scell;
 \end{lstlisting} 
@@ -280,12 +276,14 @@ std::string my_name = "Diffusion: Poisson";
 local_op_ = Teuchos::rcp(new Op_Cell_Node(my_name, mesh_));
 global_op_->OpPushBack(local_op_);
 \end{lstlisting}
-%
-\subsection{Creating A Mesh}\label{CreatingAMesh}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Creating a Mesh}\label{CreatingAMesh}
 The class {\tt MeshFactory} gives the necessary tools to create a mesh. 
 Mesh factory requires some inputs: the MPI communicator and the preferences which provide the specific capability that is used. 
-A default communicator is already defined in Amanzi namespace and the preferences are usually set 
-to MSTK and STK from the namespace Framework.
+A default communicator is already defined in Amanzi namespace and the preference is usually set 
+to the MSTK framework.
 
 The mesh factory object can create meshes in several ways depending on the dimensionality (2D or 3D) and the types of cells. 
 A complete routine to build a simple quadrilateral mesh in 2D will look like this: 
@@ -299,6 +297,7 @@ Teuchos::RCP<const Mesh> mesh = factory.create(-1.0,-1.0,1.0,1.0, 3,3);
 \end{lstlisting}
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Adding boundary conditions}\label{Sec:AddingBoundaryCond}
 The class {\tt PDE\_HelperDiscretization} has some built-in features to impose boundary conditions 
 but in order to access them we need to define the object of class {\tt BCs} which takes as 
@@ -331,8 +330,11 @@ for (int v = 0; v < nnodes_wghost; ++v) {
   }
 }
 \end{lstlisting}
-%
-\subsection{Assembly and Imposing the Boundary Conditions}\label{Sec:AssemblyAndBoundaryCond}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Assembly and imposing the boundary conditions}\label{Sec:AssemblyAndBoundaryCond}
 %
 Amanzi imposes boundary conditions by placing $1$ in the correct place in the global matrix and adding the value to the right hand side yielding the correct values in the final solution after the linear solve is performed. Thus, before imposing these conditions we must feed the right hand side to the object created by our PDE class. This is fairly simple since we already have created a composite vector space for the functions defined in our schema we can make use of this factory to initialize the right hand side and manually populate its entries as follows
 %
