@@ -50,11 +50,7 @@ void CompW_PK::FunctionalResidual(double t_old, double t_new,
   rel_perm_w_->Compute(*saturation_w);
   upwind_vw_ = S_->GetFieldData("velocity_wet", passwd_);
 
-std::cout << (*rel_perm_w_->Krel()->ViewComponent("face"))[0][0] << " " 
-          << (*rel_perm_w_->Krel()->ViewComponent("face"))[0][4190] << std::endl;
   upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_p, *rel_perm_w_->Krel());
-std::cout << (*rel_perm_w_->Krel()->ViewComponent("face"))[0][0] << " " 
-          << (*rel_perm_w_->Krel()->ViewComponent("face"))[0][4190] << std::endl;
   rel_perm_w_->Krel()->Scale(rho_/mu_);
 
   // compute the upwinded coefficient for the molecular diffusion operator
@@ -88,7 +84,6 @@ std::cout << (*rel_perm_w_->Krel()->ViewComponent("face"))[0][0] << " "
   op1_matrix_->SetDensity(rho_w_);
   op1_matrix_->UpdateMatrices(Teuchos::null, Teuchos::null);
   op1_matrix_->ApplyBCs(true, true, true);
-{double aaa; op1_matrix_->global_operator()->rhs()->Norm2(&aaa); std::cout << dTp << " " << aaa << std::endl; }
 
   op2_matrix_->global_operator()->Init();
   op2_matrix_->Setup(D1ptr, s_with_face, Teuchos::null);

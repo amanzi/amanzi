@@ -193,7 +193,6 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->Setup(Kptr, Teuchos::null, Teuchos::null);
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateMatrices(Teuchos::null, Teuchos::null);
   ((Teuchos::RCP<Operators::PDE_Diffusion>)op2_matrix_)->UpdateFlux(pressure_n.ptr(), upwind_vn_.ptr());
-exit(0);
 
   upwind_w_->Compute(*upwind_vw_, *upwind_vw_, bc_model_p, *coef_w_->Coeff());
   // coef_w_->Coeff()->Scale(dTp / mu1_);

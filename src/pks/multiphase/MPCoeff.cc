@@ -95,6 +95,10 @@ void MPCoeff::Compute(const CompositeVector& Sw)
       dKdS_cell[0][*i] = WRM_[mb]->dKdS(Sw, phase_);
     }
   }
+
+  // add boundary face component
+  Krel_->ViewComponent("dirichlet_faces", true)->PutScalar(1.0);
+  dKdS_->ViewComponent("dirichlet_faces", true)->PutScalar(0.0);
 }
 
 
@@ -134,9 +138,15 @@ void MPCoeff::Compute(const CompositeVector& primary_var, const CompositeVector&
       mpCoeff_cell[0][*i] = tmpRhoCell * krel;
       rhoDerivKrel_cell[0][*i] = tmpRhoCell * dKdS;
       dPc_dS_cell[0][*i] = WRM_[mb]->dPc_dS(Sw);
-      //dKdP_cell[0][*i] = -WRM_[mb]->dKdPc(pc);  // Negative sign indicates that dKdP = -dKdPc.
     }
   }
+
+  // add boundary face component
+  Krel_->ViewComponent("dirichlet_faces", true)->PutScalar(1.0);
+  dKdS_->ViewComponent("dirichlet_faces", true)->PutScalar(0.0);
+  mpCoeff_->ViewComponent("cell", true)->PutScalar(1.0);
+  rhoDerivKrel_->ViewComponent("cell", true)->PutScalar(0.0);
+  dPc_->ViewComponent("cell", true)->PutScalar(0.0);
 }
 
 
