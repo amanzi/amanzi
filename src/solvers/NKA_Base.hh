@@ -74,13 +74,8 @@ namespace AmanziSolvers {
 template <class Vector, class VectorSpace>
 class NKA_Base {
  public:
-  NKA_Base(int mvec, double vtol, const Teuchos::RCP<const VectorSpace>& map);
-
-  void Init(Teuchos::ParameterList& plist)
-  {
-    vo_ = Teuchos::rcp(new VerboseObject("NKA_Base", plist));
-  }
-
+  NKA_Base(int mvec, double vtol, const Teuchos::RCP<const VectorSpace>& map,
+           const Teuchos::RCP<VerboseObject>& vo=Teuchos::null);
 
   void Relax();
   void Restart();
@@ -113,10 +108,21 @@ class NKA_Base {
  * Allocate memory
  ***************************************************************** */
 template <class Vector, class VectorSpace>
-NKA_Base<Vector, VectorSpace>::NKA_Base(
-  int mvec, double vtol, const Teuchos::RCP<const VectorSpace>& map)
-  : subspace_(false), pending_(false), mvec_(std::max(mvec, 1)), vtol_(vtol)
+NKA_Base<Vector, VectorSpace>::NKA_Base(int mvec,
+        double vtol,
+        const Teuchos::RCP<const VectorSpace>& map,
+        const Teuchos::RCP<VerboseObject>& vo)
+  : subspace_(false),
+    pending_(false),
+    mvec_(std::max(mvec, 1)),
+    vtol_(vtol),
+    vo_(vo)    
 {
+  if (vo_ == Teuchos::null) {
+    Teuchos::ParameterList plist;
+    vo_ = Teuchos::rcp(new VerboseObject("NKA_Base", plist));
+  }
+  
   v_.resize(mvec_ + 1);
   w_.resize(mvec_ + 1);
 
