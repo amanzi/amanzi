@@ -1,29 +1,33 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
-  Evaluates the conductivity of surface flow.
+  Evaluates the conductivity of surface flow subgrid model.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ahmad Jan (jana@ornl.gov)
 */
 
 #include "independent_variable_field_evaluator.hh"
-#include "overland_conductivity_evaluator.hh"
-#include "manning_conductivity_model.hh"
-#include "split_denominator_conductivity_model.hh"
-#include "ponded_depth_passthrough_conductivity_model.hh"
+#include "overland_conductivity_subgrid_evaluator.hh"
+#include "manning_conductivity_subgrid_model.hh"
+//#include "split_denominator_conductivity_model.hh"
+//#include "ponded_depth_passthrough_conductivity_model.hh"
 
 namespace Amanzi {
 namespace Flow {
 
-OverlandConductivityEvaluator::OverlandConductivityEvaluator(Teuchos::ParameterList& plist) :
+OverlandConductivitySubgridEvaluator::OverlandConductivitySubgridEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   Key domain = Keys::getDomain(my_key_);
 
   if (plist_.isParameter("height key") || plist_.isParameter("ponded depth key")
       || plist_.isParameter("height key suffix") || plist_.isParameter("ponded depth key suffix")) {
-    Errors::Message message("OverlandConductivity: only use \"depth key\" or \"depth key suffix\", not \"height key\" or \"ponded depth key\".");
+    Errors::Message message("OverlandConductivitySubgrid: only use \"depth key\" or \"depth key suffix\", not \"height key\" or \"ponded depth key\".");
     Exceptions::amanzi_throw(message);
   }
+
+  sg_model_ =  plist_.get<bool>("subgrid model",true);
+  AMANZI_ASSERT(sg_model_);
+
   depth_key_ = Keys::readKey(plist_, domain, "depth", "ponded_depth");
   dependencies_.insert(depth_key_);
 
@@ -44,47 +48,42 @@ OverlandConductivityEvaluator::OverlandConductivityEvaluator(Teuchos::ParameterL
     dependencies_.insert(dens_key_);
   }
 
-  sg_model_ =  plist_.get<bool>("subgrid model", false);
-  AMANZI_ASSERT(!sg_model_);
-  if(sg_model_){
-    pdd_key_ = Keys::readKey(plist_, domain, "ponded depth minus depression depth", "ponded_depth_minus_depression_depth");
-    dependencies_.insert(pdd_key_);
-    
-    frac_cond_key_ = Keys::readKey(plist_, domain, "fractional conductance", "fractional_conductance");
-    dependencies_.insert(frac_cond_key_); 
-
-    vpd_key_ = Keys::readKey(plist_, domain, "volumetric ponded depth", "volumetric_ponded_depth");
-    dependencies_.insert(vpd_key_); 
-
-    drag_exp_key_ = Keys::readKey(plist_, domain, "drag exponent", "drag_exponent");
-    dependencies_.insert(drag_exp_key_); 
-  }
-
+  pdd_key_ = Keys::readKey(plist_, domain, "ponded depth minus depression depth", "ponded_depth_minus_depression_depth");
+  dependencies_.insert(pdd_key_);
+  
+  frac_cond_key_ = Keys::readKey(plist_, domain, "fractional conductance", "fractional_conductance");
+  dependencies_.insert(frac_cond_key_); 
+  
+  vpd_key_ = Keys::readKey(plist_, domain, "volumetric ponded depth", "volumetric_ponded_depth");
+  dependencies_.insert(vpd_key_); 
+  
+  drag_exp_key_ = Keys::readKey(plist_, domain, "drag exponent", "drag_exponent");
+  dependencies_.insert(drag_exp_key_); 
+  
   // create the model
-  std::cout<<"Overland: "<<domain<<"\n";
-  AMANZI_ASSERT(plist_.isSublist("overland conductivity model"));
-  Teuchos::ParameterList sublist = plist_.sublist("overland conductivity model");
+  AMANZI_ASSERT(plist_.isSublist("overland conductivity subgrid model"));
+  Teuchos::ParameterList sublist = plist_.sublist("overland conductivity subgrid model");
   std::string model_type = sublist.get<std::string>("overland conductivity type", "manning");
   if ((model_type == "manning") || (model_type == "manning harmonic mean") ||
       (model_type == "manning cell centered")){
-    model_ = Teuchos::rcp(new ManningConductivityModel(sublist));
-  } else if (model_type == "manning split denominator") {
+    model_ = Teuchos::rcp(new ManningConductivitySubgridModel(sublist));
+  } /*else if (model_type == "manning split denominator") {
     model_ = Teuchos::rcp(new SplitDenominatorConductivityModel(sublist));
   } else if (model_type == "manning ponded depth passthrough") {
     model_ = Teuchos::rcp(new PondedDepthPassthroughConductivityModel(sublist));
-  } else {
+  } */ else {
     AMANZI_ASSERT(0);
   }
 
   if (sg_model_ && model_type != "manning") {
-    Errors::Message message("Subgrid Overland Conductivity: only 'manning' model type is implemented with subgrid models!");
+    Errors::Message message("Subgrid Overland ConductivitySubgrid: only 'manning' model type is implemented with subgrid models!");
     Exceptions::amanzi_throw(message);
   }
   
 }
 
 
-OverlandConductivityEvaluator::OverlandConductivityEvaluator(const OverlandConductivityEvaluator& other) :
+OverlandConductivitySubgridEvaluator::OverlandConductivitySubgridEvaluator(const OverlandConductivitySubgridEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
     depth_key_(other.depth_key_),
     slope_key_(other.slope_key_),
@@ -102,105 +101,72 @@ OverlandConductivityEvaluator::OverlandConductivityEvaluator(const OverlandCondu
 
 
 Teuchos::RCP<FieldEvaluator>
-OverlandConductivityEvaluator::Clone() const {
-  return Teuchos::rcp(new OverlandConductivityEvaluator(*this));
+OverlandConductivitySubgridEvaluator::Clone() const {
+  return Teuchos::rcp(new OverlandConductivitySubgridEvaluator(*this));
 }
 
 
 // Required methods from SecondaryVariableFieldEvaluator
-void OverlandConductivityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
+void OverlandConductivitySubgridEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result) {
 
   Teuchos::RCP<const CompositeVector> depth = S->GetFieldData(depth_key_);
   Teuchos::RCP<const CompositeVector> slope = S->GetFieldData(slope_key_);
   Teuchos::RCP<const CompositeVector> coef = S->GetFieldData(coef_key_);
 
-  if (!sg_model_){
-    for (CompositeVector::name_iterator comp=result->begin();
-         comp!=result->end(); ++comp) {
-      const Epetra_MultiVector& depth_v = *depth->ViewComponent(*comp,false);
-      const Epetra_MultiVector& slope_v = *slope->ViewComponent(*comp,false);
-      const Epetra_MultiVector& coef_v = *coef->ViewComponent(*comp,false);
-      Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
 
-      int ncomp = result->size(*comp, false);
-      if (dt_ && factor_ < 0.) {
-        double dt = S->time() - S->last_time();
-        for (int i=0; i!=ncomp; ++i) {
-          result_v[0][i] = model_->Conductivity(dt*depth_v[0][i], slope_v[0][i], coef_v[0][i]);
-        }
-      } else if (dt_) {
-        double dt = S->time() - S->last_time();
-        for (int i=0; i!=ncomp; ++i) {
-          result_v[0][i] = model_->Conductivity(10*factor_*depth_v[0][i], slope_v[0][i], coef_v[0][i]);
-        }
-      } else {
-        for (int i=0; i!=ncomp; ++i) {
-          result_v[0][i] = model_->Conductivity(depth_v[0][i], slope_v[0][i], coef_v[0][i]);
-        }
-      }
-      if (dens_) {
-        const Epetra_MultiVector& dens_v = *S->GetFieldData(dens_key_)->ViewComponent(*comp,false);
-        for (int i=0; i!=ncomp; ++i)
-          result_v[0][i] *= dens_v[0][i];
-      }
-    }
+  Teuchos::RCP<const CompositeVector> pd_depth = S->GetFieldData(pdd_key_);
+  Teuchos::RCP<const CompositeVector> frac_cond = S->GetFieldData(frac_cond_key_);
+  Teuchos::RCP<const CompositeVector> vpd = S->GetFieldData(vpd_key_);
+  
+  Teuchos::RCP<const CompositeVector> drag = S->GetFieldData(drag_exp_key_);
+  
+  for (CompositeVector::name_iterator comp=result->begin();
+       comp!=result->end(); ++comp) {
+    const Epetra_MultiVector& depth_v = *depth->ViewComponent(*comp,false);
+    const Epetra_MultiVector& pd_depth_v = *pd_depth->ViewComponent(*comp,false);
+    const Epetra_MultiVector& frac_cond_v = *frac_cond->ViewComponent(*comp,false);
+    const Epetra_MultiVector& vpd_v = *vpd->ViewComponent(*comp,false);
+    const Epetra_MultiVector& drag_v = *drag->ViewComponent(*comp,false);
     
-  }
-  else{
-    Teuchos::RCP<const CompositeVector> pd_depth = S->GetFieldData(pdd_key_);
-    Teuchos::RCP<const CompositeVector> frac_cond = S->GetFieldData(frac_cond_key_);
-    Teuchos::RCP<const CompositeVector> vpd = S->GetFieldData(vpd_key_);
-
-    Teuchos::RCP<const CompositeVector> drag = S->GetFieldData(drag_exp_key_);
-
-    for (CompositeVector::name_iterator comp=result->begin();
-         comp!=result->end(); ++comp) {
-      const Epetra_MultiVector& depth_v = *depth->ViewComponent(*comp,false);
-      
-      const Epetra_MultiVector& pd_depth_v = *pd_depth->ViewComponent(*comp,false);
-      const Epetra_MultiVector& frac_cond_v = *frac_cond->ViewComponent(*comp,false);
-      const Epetra_MultiVector& vpd_v = *vpd->ViewComponent(*comp,false);
-      const Epetra_MultiVector& drag_v = *drag->ViewComponent(*comp,false);
-      
-      const Epetra_MultiVector& slope_v = *slope->ViewComponent(*comp,false);
-      const Epetra_MultiVector& coef_v = *coef->ViewComponent(*comp,false);
-      Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
-      
-      int ncomp = result->size(*comp, false);
-      if (dt_ && factor_ < 0.) {
-        double dt = S->time() - S->last_time();
-        for (int i=0; i!=ncomp; ++i) {
-          result_v[0][i] = model_->Conductivity(dt*depth_v[0][i], slope_v[0][i],coef_v[0][i], pd_depth_v[0][i],frac_cond_v[0][i],drag_v[0][i]);
-        }
-      } else if (dt_) {
-        double dt = S->time() - S->last_time();
+    const Epetra_MultiVector& slope_v = *slope->ViewComponent(*comp,false);
+    const Epetra_MultiVector& coef_v = *coef->ViewComponent(*comp,false);
+    Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
+    
+    int ncomp = result->size(*comp, false);
+    if (dt_ && factor_ < 0.) {
+      double dt = S->time() - S->last_time();
+      for (int i=0; i!=ncomp; ++i) {
+        result_v[0][i] = model_->Conductivity(dt*depth_v[0][i], slope_v[0][i],coef_v[0][i], pd_depth_v[0][i],frac_cond_v[0][i],drag_v[0][i]);
+      }
+    } else if (dt_) {
+      double dt = S->time() - S->last_time();
         for (int i=0; i!=ncomp; ++i) {
           result_v[0][i] = model_->Conductivity(10*factor_*depth_v[0][i], slope_v[0][i],coef_v[0][i], pd_depth_v[0][i],frac_cond_v[0][i],drag_v[0][i]);
         }
-      } else {
-        for (int i=0; i!=ncomp; ++i) {
-          result_v[0][i] = model_->Conductivity(depth_v[0][i], slope_v[0][i], coef_v[0][i], pd_depth_v[0][i], frac_cond_v[0][i],drag_v[0][i]);
-        }
+    } else {
+      for (int i=0; i!=ncomp; ++i) {
+        result_v[0][i] = model_->Conductivity(depth_v[0][i], slope_v[0][i], coef_v[0][i], pd_depth_v[0][i], frac_cond_v[0][i],drag_v[0][i]);
       }
-      if (dens_) {
-        const Epetra_MultiVector& dens_v = *S->GetFieldData(dens_key_)->ViewComponent(*comp,false);
-        for (int i=0; i!=ncomp; ++i)
-          result_v[0][i] *= dens_v[0][i];
-      }
+    }
+    if (dens_) {
+      const Epetra_MultiVector& dens_v = *S->GetFieldData(dens_key_)->ViewComponent(*comp,false);
+      for (int i=0; i!=ncomp; ++i)
+        result_v[0][i] *= dens_v[0][i];
     }
   }
 }
+  
 
-
-void OverlandConductivityEvaluator::EvaluateFieldPartialDerivative_(
+void OverlandConductivitySubgridEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-   //never called otherwsise it needs to changed for subgrid model
+  AMANZI_ASSERT(sg_model_);
   if (sg_model_){
-    Errors::Message message("Overland Conductivity Evaluator: Evaluate partial derivaritve not implemented for the Subgrid Model."); 
-    Exceptions::amanzi_throw(message);
+    // Fix me for the subgrid model
+    result->PutScalar(0.);
   }
+  /*
   Teuchos::RCP<const CompositeVector> depth = S->GetFieldData(depth_key_);
   Teuchos::RCP<const CompositeVector> slope = S->GetFieldData(slope_key_);
   Teuchos::RCP<const CompositeVector> coef = S->GetFieldData(coef_key_);
@@ -268,7 +234,7 @@ void OverlandConductivityEvaluator::EvaluateFieldPartialDerivative_(
   } else {
     // FIX ME -- need to add derivatives of conductivity model wrt slope, coef --etc
     result->PutScalar(0.);
-  }
+  }*/
 }
 
 

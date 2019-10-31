@@ -7,9 +7,11 @@
 
 add_library(flow_relations_overland_conductivity
   manning_conductivity_model.cc
+  manning_conductivity_subgrid_model.cc
   split_denominator_conductivity_model.cc
   ponded_depth_passthrough_conductivity_model.cc
   overland_conductivity_evaluator.cc
+  overland_conductivity_subgrid_evaluator.cc
   unfrozen_fraction_model.cc
   unfrozen_fraction_evaluator.cc
   unfrozen_effective_depth_evaluator.cc
