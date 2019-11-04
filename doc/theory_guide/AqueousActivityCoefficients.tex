@@ -1,0 +1,574 @@
+\subsection{Aqueous Activity Coefficients}   \label{sec:AqueousActivityCoefficients}
+
+\subsubsection{Overview}
+
+This Toolset
+%~\todo{are we capitalizing toolset?  is toolset consistent with other documents? -Williamson} 
+includes models for thermodynamic activity coefficients
+in aqueous solutions. Multiple models, each with its own set of
+parameters and limitations, will be provided. In general, the toolset
+user must choose one such model to use in a given modeling
+application. In setting up to run the application, the user must
+ensure that a matching database with the requisite model-specific
+parameters is provided to support the run.
+
+A key solution parameter associated with aqueous species activity
+coefficients is the ionic strength, defined as
+\begin{equation}
+  \label{eq:IonicStrength}
+\bar{I} \eq \frac{1}{2} \sum _{i} m_{i} z_{i}^{2}.
+\end{equation}
+Here $m_{i}$ denotes the molal concentration (molality) of the
+$i^{th}$ solute species and $z_{i}$ denotes its electrical charge
+number. Activity coefficients of charged solute species include a
+functional dependence on the ionic strength. The exact nature of this
+dependence depends on the specific model.
+
+Activity coefficient models can be classified as to the upper limit of
+ionic strength to which a given model provides generally satisfactory
+results. For the most part, there are two kinds of such models. Low
+ionic strength models are generally usable up to an ionic strength of
+more or less 1 molal. Examples include the Davies equation and the
+B-dot equation. These models are based on simple equations and have a
+relatively small number of associated parameters. High ionic strength
+models are usable to very high ionic strength ($>$20 molal).
+The highest
+values of ionic strength normally seen are limited by the solubilities
+of highly soluble salts, such as calcium chloride and calcium nitrate.
+Examples of high ionic strength models include Pitzer's equations and
+Extended UNIQUAC. High ionic strength models have more complex
+equations and require substantially more parameters than low ionic
+strength models. They are most likely to be applied to problems in
+which the ionic strength is higher than 1 molal. At low ionic
+strength, it is generally preferable to use a low ionic strength
+model, because the number of required parameters is smaller. In many
+instances, there will be sufficient supporting data available to
+support the use of low ionic strength models for large numbers of
+chemical components and species, but that may not be the case for the
+high ionic strength models. There are activity coefficient models that
+extend to intermediate ionic strength (4-6 molal). The NEA SIT
+model is an example. These models tend to be intermediate in equation
+complexity and number of required parameters. They have not received
+much attention to date in modeling geochemically complex systems.
+
+It is noted that low ionic strength models are sufficient for many EM
+applications. Hanford tanks and the WIPP site pose notable exceptions, requiring the
+use of high ionic strength models. There may be other instances in
+which the use of low ionic strength models may be inappropriate. 
+
+There are two kinds of activity coefficients that a model should be
+able to provide. The first is the molal activity coefficient of a
+solute species (denoted by $\gamma _{i}$). This is subsequently used
+to compute the thermodynamic activity of the corresponding species
+(denoted by $a_{i}$). The activity of a species is obtained by
+multiplying the molality (molal concentration) of the species (denoted
+by $m_{i}$) by the molal activity coefficient:
+%
+\begin{equation}
+  a_{i} =m_{i} \gamma _{i}.
+\end{equation}
+%
+This activity is then used in various equations describing
+thermodynamic equilibrium and chemical kinetics. 
+
+The second kind of activity coefficient, the rational activity
+coefficient, pertains to the solvent, water ($w$). Its activity
+coefficient is denoted by $\lambda_{w}$ to emphasize that it is
+different in kind: it is a mole fraction activity coefficient. The
+thermodynamic activity of water ($a_{w}$) is obtained by multiplying
+the mole fraction of water ($X_{w}$) by the activity coefficient of
+water:
+\begin{equation}
+a_{w} \eq X_{w} \lambda _{w} .
+\end{equation}
+The activity of water is also different in kind from the activity of a
+solute species (a mole fraction activity as opposed to a molal
+activity).  In treating the thermodynamics of aqueous electrolyte solutions,
+the activity of water and the activity of a solute species are almost
+always treated as described above.
+
+\todo[color=cyan]{GEH: Why are we including this discussion of log vs ln?}Activity coefficients are generally first calculated in logarithmic
+form (e.g., $\ln \gamma_{i}$ or $\log \gamma_{i}$). In practical
+usage, activity coefficients are used most often used in base-10
+logarithmic form, being converted from natural logarithm form as
+necessary. The conversion is illustrated by
+\begin{equation}
+\log\gamma_{i} =\frac{\ln\gamma_{i}}{\ln (10)}.
+\end{equation}
+The conversion factor $\ln(10)$ is approximately equal to 2.303, and
+this value often appears in equations in the literature in place of
+the exact factor. The approximate value should not be used in this
+toolset, as it is insufficiently precise for accurate work. Instead
+the value should be calculated using the same floating-point precision
+that will be used to calculate activity coefficients. This is most
+efficiently done by calculating the value once and then storing it for
+subsequent use. 
+It is noted that ``log'' is somewhat ambiguous, in
+that the literature contains examples of it being used for both
+natural and base-10 logarithms. In the present description given in this section (Section~\ref{sec:AqueousActivityCoefficients}), 
+it will always refer to the base-10 logarithm.
+
+Activity coefficient model equations ideally satisfy thermodynamic
+consistency relations. The value of consistency lies in allowing the
+possibility of accuracy at higher ionic strengths. Low ionic strength
+models typically include inconsistent equations, but the numerical
+consequences of the inconsistencies tend to be acceptable in the range
+of applicability of these models. For electrolyte solutions,
+\citet{wolery-1990} presents equations and methods for ensuring the
+development of 
+consistent equations and for testing the consistency of existing sets
+of equations. The easiest means of testing for consistency is to use
+the cross-differentiation rule, which takes the following forms for
+solute-solute and solvent-solute pairs:
+\begin{eqnarray}
+\frac{\partial\ln\gamma_{j}}{\partial m_{i}} &=&\frac{\partial\ln\gamma_{i}}{\partial m_{j}}, \\
+N_{w}^{kg} \, \frac{\partial \ln a_{w}}{\partial m_{i} } &=&-1-\sum _{j}m_{j} \frac{\partial \ln \gamma_{i}}{\partial m_{j}}
+\end{eqnarray}
+where $i$ and $j$ denote different solute
+species and $N_{w}^{kg}$ is the number of moles of water in a 1 kg mass
+(approximately 55.51).
+
+\subsubsection{The Debye-H\"{u}ckel Equations} 
+\label{sec:debyehuckel}
+
+Activity coefficient model equations for electrolyte solutions
+generally include some type of Debye-H\"{u}ckel term to represent the
+effects of long-range electrical forces. The most common
+representation is based on the ``extended'' Debye-H\"{u}ckel equation,
+which for the activity coefficient of an ionic solute species is given
+by
+%
+\begin{equation}
+   \log \gamma _{i} = - A_{\gamma ,10} z_{i}^{2} 
+                       \left( \frac{\sqrt{ \bar{I} }}{1 + b \sqrt{\bar{I}}} \right).
+\end{equation}
+%
+Here $A_{\gamma ,10} $ is the Debye-H\"{u}ckel ``$A$'' parameter for the
+activity coefficient (hence the subscript ``$\gamma$''), modified for
+consistency with the base-10 \todo[color=cyan]{GEH: I suggest that we pick one convection for log (base-10) vs. natural log and stick with it throughtout this entire document.}logarithmic activity coefficient on the
+left-hand-side of the equation (hence the additional subscript,
+``10''). To assist in avoiding potential confusion, $A_{\gamma ,10}$
+should have a value of 0.5114 at
+25${}^\circ$C and 1.013 bar pressure. The parameter ``$b$'' is
+conceptually the product of the Debye-H\"{u}ckel ``$B$'' parameter for
+the activity coefficient ($B_{\gamma}$) and a length that
+corresponds to either the diameter of the ion in question or a
+characteristic distance of closest approach to itself or any other ion
+in solution. Practical models treat this in various ways. Some assign
+a constant value, typically 1.0, 1.2, or 1.5. Others use the product
+of $B_{\gamma}$ (which has a known temperature and pressure
+dependence) and some sort of length parameter.
+
+The equation for the activity of water corresponding to the extended
+Debye-H\"{u}ckel equation is
+%
+\begin{equation}  \label{eq:ActivityWater}
+  \log a_{w} = \frac{1}{N_{w}^{kg} } 
+                 \left( - \frac{\sum _{i}m_{i}}{\ln(10)} 
+                        + \frac{2}{3} A_{\gamma ,10} \bar{I}^{3/2}
+                          \varsigma(b\sqrt{\bar{I}})
+                 \right).
+\end{equation}
+%
+where the summation over molalities spans all solute
+species (all aqueous species except the solvent), and the function
+$\varsigma $(x) in Equation~\eqref{eq:ActivityWater} is given by
+\begin{equation}
+  \varsigma (x) \eq \frac{3}{x^{3} } \left(1+x-\frac{1}{1+x} -2\ln (1+x)\right),
+\end{equation}
+where $x$ serves the purpose of a generic variable.
+If the activity coefficient of water is desired, it can be obtained
+from the relation
+%
+\begin{equation}
+   \log \lambda _{w} \eq \log a_{w} -\log (X_{w} ),
+\end{equation}
+%
+where the mole fraction of water is given by
+%
+\begin{equation}
+   X_{w} \eq \frac{N_{w}^{kg} }{N_{w}^{kg} +\sum _{i}m_{i}  } .
+\end{equation}
+%
+The activity of water is closely related to the osmotic coefficient, $\varphi$:
+%
+\begin{equation}
+   \varphi \eq -\left(\frac{N_{w}^{kg} }{\sum _{i}m_{i}  } \right)\ln a_{w} .
+\end{equation}
+
+All forms of the extended Debye-H\"{u}ckel equation are consistent with
+the Debye-H\"{u}ckel Limiting Law (DHLL):
+%
+\begin{equation}
+   \lim \limits_{\bar{I}\to 0} \log \gamma _{i} \eq -A_{\gamma ,10} z_{i}^{2} \sqrt{\bar{I}}.
+\end{equation}
+%
+The limiting law is a critical feature describing the behavior of
+ionic activity coefficients in the range of very low ionic strength.
+The ionic activity coefficient plunges rapidly from unity as ionic
+strength increases from zero. There is no comparable limiting relation
+for the activity of water, due to the compositional dependence on both
+the ionic strength and the sum of solute molalities.
+
+In general, the extended Debye-H\"{u}ckel equation is not useful for
+significant practical modeling, as it is accurate only in very dilute aqueous
+solutions. If only monovalent ions are present, it may be useful for
+$\bar{I} < $ 0.1 molal. In the presence of higher valence ions, the
+maximum range becomes more compressed. Most practical models therefore
+extend the ``extended'' Debye-H\"{u}ckel equation by adding additional
+terms or otherwise adding to the mathematical complexity, in the
+process introducing more model parameters.
+
+The activity coefficient models that will be available in this toolset
+include the Davies equation, the B-dot equation, Pitzer's equations,
+Extended UNIQUAC, and NEA-SIT. The models are first addressed, followed by  
+the discussion on rescaling the activity coefficients.
+
+\subsubsection{The Davies Equation} 
+\label{sec:davies}
+
+The \citet{CWDavies_1962} equation is a commonly used at low ionic strength (less
+than about 1 molal) model. The activity coefficient of an aqueous
+solute species is given by
+%
+\begin{equation}
+  \log \gamma _{i} \eq - A_{\gamma ,10} z_{i}^{2} 
+                      \left( \frac{ \sqrt{ \bar{I} } }{1 + \sqrt{ \bar{I} } }- d \bar{I}  \right).
+\end{equation}
+%
+Here $d$ is a constant, either 0.2 as in EQ3/6 \citep{Wolery-1992}
+or 0.3 as in PHREEQC (Parkhurst and Appelo, 1999). If the
+``$d \bar{I}$'' part is dropped, this equation reduces to the extended
+Debye-H\"{u}ckel form with $b$ set to unity. It can be shown
+that the full equation satisfies the solute-solute-form of the
+cross-differentiation rule.
+
+For the activity coefficient of water, the matching equation used in
+EQ3/6 for the activity of water is
+\begin{equation}
+  \log a_{w} \eq \frac{1}{N_{w}^{kg} } \left(-\frac{\sum _{i}m_{i}  }{\ln (10)} 
+  +
+  \frac{2}{3} A_{\gamma ,10} \bar{I}^{\frac{3}{2} } \varsigma (\sqrt{\bar{I}} )-dA_{\gamma ,10} \bar{I}^{2} \right).
+\end{equation}
+where all parameters and the $\varsigma (x)$ function have been
+previously introduced (See Section~\ref{sec:debyehuckel}). This
+equation is a corrected version of that given by \citet{Wolery-1992}
+(Equation 86 in that document). Here a factor of 2 in the 
+``\textit{d}'' term has been
+removed, and $d$ substitutes for the original constant value of
+0.2. This equation is quasi-consistent with the equation for the
+activity coefficient of a solution species, in the sense that the
+solvent-solute form of the cross-differentiation rule is satisfied for
+the case of a pure solution of a uni-univalent electrolyte, such as
+sodium chloride. It does not satisfy this rule in the general case.
+
+The equation used by PHREEQC is symbolically equivalent to
+\begin{equation}
+  a_{w} \eq 1 - \frac{1}{N_{w}^{kg} } \sum _{i}m_{i}.  
+\end{equation}
+As given by the source (Parkhurst and Appelo, 1999, p. 17), the
+factor 1/$N_{w}^{kg} $ is replaced by a constant value of 0.017, which is
+rather approximate, and the molality is replaced by the mole number
+divided by the number of kg of solvent water (this substitution is
+exact). This equation is based on ignoring the activity coefficient of
+water and replacing the mole fraction with a limiting approximation of
+itself. Hence, the activity of water is given in direct form, rather
+than logarithmically.
+
+For the present toolset, it is recommended that the Davies model be
+implemented as two options, one (Davies-EQ3/6) consistent with the
+implementation in EQ3/6, the other (Davies-PHREEQC), with
+PHREEQC. This will permit direct comparison with both codes.
+
+The Davies equation predicts a unit activity coefficient for
+electrically neutral solute species. This is known to be generally
+inaccurate, as the activity coefficients of non-polar neutral solutes
+such as O$_2$(aq) and N$_2$(aq) should increase with ionic strength (the
+``salting out'' effect), while the activity coefficients of polar
+species such as CaSO$_4$(aq) and MgSO$_4$(aq) should decrease
+(``salting-in'').
+
+In practice, the Davies equation is mainly used for low temperatures
+(near 25${}^\circ$C) and near-atmospheric pressures. The $A_{\gamma
+,10}$ parameter has temperature and pressure dependence. As long as
+this is accounted for, the Davies equation model could be applied in
+principle at higher temperatures and pressures. However, it needs to
+be kept in mind that the 0.2 constant was obtained by fitting data to
+solutions for temperature near 25${}^\circ$C and for atmospheric
+pressure. The accuracy of the model is therefore likely to deteriorate
+at higher temperatures and pressures.
+
+\subsubsection{The B-dot Equation} 
+\label{sec:b_dotEquation}
+
+The B-dot equation of \citet{helgeson-1969} is an alternative low ionic
+strength model. The activity coefficient of a solute species is given
+by
+%
+\begin{equation}
+   \log \gamma _{i}  
+      \eq - \frac{A_{\gamma ,10} z_{i}^{2} \sqrt{ \bar{I} }}
+               {1+ \mathring{a_i} B_{\gamma } \sqrt{\bar{I}}} 
+        + \dot{B} \bar{I}.
+\end{equation}
+%
+where $\mathring{a_i}$ is the diameter of the $i^{th}$ solute species,
+$B_{\gamma } $ is the Debye-H\"{u}ckel B parameter for the activity
+coefficient, and $\dot{B}$ is the ``B-dot'' parameter.  Removing the
+$\dot{B}\bar{I}$ term and setting $\mathring{a} B_{\gamma }$ to unity, this
+equation reduces to the Davies equation with the $d\bar{I}$ term omitted.
+Comparison with the Davies equation brings up two points. The first is
+that the B-dot model has more parameters.  The $B_{\gamma}$ parameter
+appears, and each solute species has an assigned diameter. The
+``B-dot'' parameter itself is an additional parameter.
+
+It can be shown that the B-dot equation does not satisfy the
+solute-solute form of the cross-differentiation rule. There is an
+issue with the first term on the right hand side in that the rule can
+only be satisfied if all aqueous ions have the same diameter. There is
+an issue with the second term in that the rule is only satisfied if
+the charge number squared is the same for all ions, as would be the
+case for example in a pure sodium chloride solution.
+
+For an electrically neutral species, the B-dot equation reduces to
+%
+\begin{equation}
+  \log \gamma _{i} \eq \dot{B}\bar{I}.
+\end{equation}
+%
+As the $\dot{B}$ parameter is generally assigned a positive value, this
+would provide for some measure of ``salting-out.'' By tradition,
+however, the B-dot equation is not applied to neutral solute species,
+and it will not be so applied in the present toolset. For non-polar
+neutral species, the common practice is to assign an approximation for
+the activity coefficient of CO$_2$(aq) in otherwise pure sodium chloride
+solution of the same ionic strength. The approximation used in EQ3/6
+(based on \citet{drummond-1981}, and which will be adopted for the present
+toolset) is
+%
+\begin{equation}
+  \ln \gamma_{i} \eq \left( C + FT + \frac{G}{T} \right) I 
+                  -( E + HT ) \left( \frac{\bar{I}}{\bar{I} + 1} \right).
+\end{equation}
+%
+Here T is the absolute temperature and C = -1.0312, F = 0.0012806, G =
+255.9, E = 0.4445, and H = -0.001606. Note that the result is
+presented in terms of the natural logarithm.
+For a polar aqueous species, the EQ3/6 practice (which will be adopted
+in the present toolset) is to use
+%
+\begin{equation}
+\log \gamma _{i} \eq 0.
+\end{equation}
+%
+Because different equations are used for electrically neutral solute
+species than for ionic species, there is necessarily an additional set
+of violations of the solute-solute cross-differentiation rule.
+
+For the activity of water, the B-dot model as implemented in EQ3/6
+(and recommended for the present toolset) is to use the equation
+%
+\begin{equation}
+   \log a_{w} 
+   = \frac{1}{N_{w}^{kg}} 
+     \left( - \frac{\sum _{i}m_{i}}{\ln (10)} 
+            + \frac{2}{3} A_{\gamma ,10} \bar{I}^{\frac{3}{2}} 
+              \sigma( {\mathring{a}} B_{\gamma} \sqrt{\bar{I}} )
+            - \dot{B}\bar{I}^{2} 
+     \right).
+\end{equation}
+%
+All the parameters here have been introduced previously, except for
+the unsubscripted $\mathring{a}$, which is conceptually an effective solute species
+diameter. In practice, this is assigned a constant value of 4.0
+angstroms.
+
+The above equation for the activity of water is quasi-consistent with
+the solvent-solute form of the cross-differentiation rule. The term
+containing the effective solute diameter leads to inconsistency unless
+every ionic solute has a matching diameter value. The term containing
+$\dot{B}$ leads to inconsistency unless the solution is a pure
+solution of a uni-univalent electrolyte such as sodium chloride.
+
+The thermodynamic inconsistencies noted above introduce some level of
+inaccuracy into the model, tending to negate the improvement that
+might be expected by introducing more parameters (e.g., a diameter
+value specific to each solute species). Thus, for temperature near
+25${}^\circ$C and near-atmospheric pressure, the B-dot model is
+probably as good as the Davies equation model.
+
+The B-dot model does have an advantage over the Davies equation model
+in that it is better parameterized to cover a wide range of
+temperature and pressure. In addition to $A_{\gamma ,10}$, the
+$B_{\gamma} $and $\dot{B}$ parameters are treated as functions of
+temperature and pressure. The $A_{\gamma ,10} $ and $B_{\gamma}$ 
+parameters have values derived from pure theory (and models for pure
+water properties). The $\dot{B}$ parameter is obtained by fitting to
+data for pure sodium chloride solutions. The ion size parameters are
+treated as constant with respect to temperature and pressure.
+
+In regard to solute species, diameters are only necessary for ionic
+species. Some means needs to be provided to specify (as on a
+supporting thermodynamic data file) whether a neutral species is to be
+treated as non-polar or polar. All the necessary information could be
+folded into a diameter array or equivalent structure, in which the
+values in the case of neutral species would not be actual diameters,
+but code values specifying non-polar or polar type. However, a
+separate flagging structure should be utilized, as the variable type
+can then be something more appropriate (integer or logical) than the
+floating point necessary for actual diameters. Also, the structure for
+diameters would then be free to include diameters for neutral solute
+species. Although such diameters are not be used in the B-dot model,
+they might be usable in other models.
+
+\include{Pitzer}
+
+\include{UNIQUAC}
+
+\include{NEA-SIT}
+
+\subsubsection{Rescaling Ionic Activity Coefficients}
+
+The activity coefficient models described above include descriptions
+of individual ion activity coefficients. This is problematic in that
+ionic activity coefficients and ionic activities are not measurable
+for individual ions. These quantities are measurable only in
+combinations that correspond to electrical neutrality. For activity
+coefficients, examples of such combinations include 
+$\log \gamma_{H^{+} } +\log \gamma_{Cl^{-} }$ and 
+$2\log \gamma_{H^{+} } +\log \gamma_{SO_{4}^{2-}}$; 
+examples for activities are analogous.
+Molalities of individual ions are measureable (or quantifiable by
+inference). Thus, if one could obtain or specify the activity or
+activity coefficient of one single ion in an aqueous solution, one
+could then use this as a reference to obtain the activities and
+activity coefficients of all other ions present in the same solution.
+
+The need to define activity coefficients and activities for individual
+ionic species is dealt with by the use of a ``splitting'' convention.
+Such a convention is at least somewhat arbitrary, although it may be
+guided in part by theoretical concerns. One could address the issue by
+adopting the results of model equations for single ion activity
+coefficients. The model equations for these are all in part arbitrary,
+implicitly including a splitting based on some combination of
+theoretical notions and pleasing (but not necessarily unique)
+symmetry. The problem with just using the model equations in their
+native form is that other conventions have been previously adopted
+into measurement practice, particularly the measurement of pH. For
+accurate modeling consistent with standard analytical chemistry
+practice, it becomes necessary to rescale the results of the model
+equations presented above. This only affects the activity coefficients
+of ionic species. For most analytical splitting conventions, some
+expression is specified for the activity coefficient of a reference
+ion, usually Cl$^-$ or H$^+$.
+
+The most significant analytical splitting conventions for aqueous ions
+are tied to the definition of the pH. Conceptually,
+%
+\begin{equation}
+   pH = -\log a_{H^{+}} .
+\end{equation}
+%
+In order to provide a practical basis for measuring the pH, it is
+necessary to define the activity of the hydrogen ion. The splitting
+convention used for this purpose then defines a pH scale. The choice
+of pH scale further affects the definition of the redox potential, E$_h$. %\todo{subscript h? - Williamson}
+
+In modern work, the dominant pH scale is the NBS scale, originated by
+the National Bureau of Standards, now the National Institute of
+Standards and Technology. The NBS scale is based on the
+Bates-Guggenhiem equation \citep{bates-1964}:
+%
+\begin{equation}
+  \log \gamma _{Cl^{-} } =-\frac{A_{\gamma ,10} \sqrt{\bar{I}}}{1+1.5\sqrt{\bar{I} } } .
+\end{equation}
+%
+This is a simple form of the extended Debye-H\"{u}ckel equation. It
+defines the activity coefficient of the chloride ion. It may be
+surprising that chloride is used as the reference ion rather than the
+hydrogen ion, which is more closely tied to the pH.  What is apparent is that the Bates-Guggenheim
+equation must give a result that is different from what would be
+obtained for the chloride ion using say the Davies equation or the
+B-dot equation, or for that matter, from Pitzer's equations. In the
+range of low ionic strength (say less than 1 molal), the differences
+should be numerically small for each of the three practical models, as
+they and the Bates-Guggenheim equation all include some form of
+extended Debye-H\"{u}ckel model and thus are all consistent with the
+Debye-H\"{u}ckel limiting law.  At higher ionic strength, however, the differences can be substantial (the equivalent of several pH units). 
+
+The Bates-Guggenheim equation can be applied whether or not there is
+any chloride in aqueous solution, as the equation is sufficient to
+calculate the specified activity coefficient. The charge number of -1
+is effectively built into the equation. 
+
+The Bates-Guggenheim equation (the NBS pH scale) is effectively built
+in to the calibration of all modern means of measuring the pH, whether
+in pH calibration buffers or pH paper. EQ3/6 for example by default
+rescales ionic activity coefficients computed from the models to be
+consistent with the NBS pH scale (other options, including no
+rescaling, may be offered). Rescaling from one scale (scale ``1'') to
+another (scale ``2'') is accomplished using 
+%
+\begin{equation}
+   \log \gamma_{i}^{(2)} 
+     = \log \gamma_{i}^{(1)} 
+     + \frac{z_{i}}{z_{j}} 
+       \left( 
+         \log \gamma_{j}^{(2)} - \log \gamma_{j}^{(1)} 
+       \right).
+\end{equation}
+%
+Here $j$ denotes the reference ion (here Cl$^-$) and $i$ denotes any ion
+(including the reference ion). In the present context, scale ``1'' is
+usually that implied by a model equation and scale ``2'' is the
+desired scale.
+
+An alternative convention is to choose
+%
+\begin{equation}
+  \log \gamma _{H^{+}} = 0.
+\end{equation}
+%
+For the hydrogen ion, this results in
+% 
+\begin{equation}
+  pH = -\log m_{H^{+}} .
+\end{equation}
+%
+as the activity and molality of the hydrogen ion are numerically
+equivalent. The rescaling of ionic activity coefficients for
+consistency does not give an analogous result for other ions. EQ3/6
+allows rescaling using this convention as an option, but it has
+limited utility and it not recommended as a general option in the
+present toolset.
+
+The definition of the pH in terms of molality (``pmH'') is significant independent of rescaling. Thus one has simply
+
+\begin{equation}
+  pmH = -\log m_{H^{+} } .
+\end{equation}
+%
+In concentrated electrolyte solutions (e.g., WIPP, Hanford tanks), pmH
+is often more useful for assessing the acidity/basicity of a solution
+than the NBS pH. The NBS pH cannot be accurately measured in
+concentrated solutions owing to liquid junction effects with
+electrodes and interferences with dyes. Also, the Bates-Guggenheim
+equation (and the NBS pH scale itself) was originally intended for use
+only at low ionic strength. \citet{bates-1964} suggested application
+to solutions with ionic strengths of no greater than 0.1 molal. Since
+then, however, the scale has been used at higher ionic strengths. This
+has led to the problem that of two highly concentrated solutions with
+an NBS pH of say 2, one might be acidic (in the sense that H+ is
+abundant) and the other not (in the sense that H+ is not abundant). In
+other words, the common association of pH values with various degrees
+of acidity/basicity (e.g., 7 is neutral) no longer applies.
+
+Still other conventions and scales exist. However, for the present
+toolset only the following is required. First, the default behavior
+will be to apply rescaling to the NBS scale. Second, the option will
+be available to use the basic model results without rescaling. Third,
+the pmH will be directly calculated and included in the output. An
+option to rescale the activity coefficients for consistency with the
+$\log \gamma _{H^{+}} = 0$ convention will not be required.
+
+ 

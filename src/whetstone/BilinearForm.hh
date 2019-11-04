@@ -25,6 +25,7 @@
 #include "DenseMatrix.hh"
 #include "InnerProductL2.hh"
 #include "InnerProductH1.hh"
+#include "MatrixObjects.hh"
 #include "Polynomial.hh"
 #include "Tensor.hh"
 #include "VectorObjects.hh"
@@ -62,7 +63,7 @@ class BilinearForm : public virtual InnerProductL2,
   }
 
   virtual int DivergenceMatrix(int c, DenseMatrix& A) {
-    Errors::Message msg("DivergenceMatrix is not supported.");
+    Errors::Message msg("Function DivergenceMatrix is not supported.");
     Exceptions::amanzi_throw(msg);
     return 1;
   }
@@ -70,22 +71,34 @@ class BilinearForm : public virtual InnerProductL2,
   // extend interface for the existing members
   // -- high-order schemes may require polynomial coefficients
   using InnerProductL2::MassMatrix;
-  virtual int MassMatrix(int c, const VectorPolynomial& K, DenseMatrix& M) {
+  virtual int MassMatrix(int c, const Polynomial& K, DenseMatrix& M) {
     Errors::Message msg("MassMatrix: polynomial coefficient is not supported.");
     Exceptions::amanzi_throw(msg);
     return 1;
   }
 
   using InnerProductL2::MassMatrixInverse;
-  virtual int MassMatrixInverse(int c, const VectorPolynomial& K, DenseMatrix& M) {
+  virtual int MassMatrixInverse(int c, const Polynomial& K, DenseMatrix& M) {
     Errors::Message msg("MassMatrixInverse: polynomial coefficient is not supported.");
     Exceptions::amanzi_throw(msg);
     return 1;
   }
 
   using InnerProductH1::StiffnessMatrix;
-  virtual int StiffnessMatrix(int c, const VectorPolynomial& K, DenseMatrix& A) {
+  virtual int StiffnessMatrix(int c, const Polynomial& K, DenseMatrix& A) {
     Errors::Message msg("StiffnessMatrix: polynomial coefficient is not supported.");
+    Exceptions::amanzi_throw(msg);
+    return 1;
+  }
+  // -- general coefficient. Qudrature rule is provided via the input parameter list
+  virtual int StiffnessMatrix(int c, const MatrixPolynomial& K, DenseMatrix& A) {
+    Errors::Message msg("StiffnessMatrix: matrix polynomial coefficient is not supported.");
+    Exceptions::amanzi_throw(msg);
+    return 1;
+  }
+  // -- general coefficient. Qudrature rule is provided via the input parameter list
+  virtual int StiffnessMatrix(int c, const WhetStoneFunction* K, DenseMatrix& A) {
+    Errors::Message msg("StiffnessMatrix: general coefficient is not supported.");
     Exceptions::amanzi_throw(msg);
     return 1;
   }

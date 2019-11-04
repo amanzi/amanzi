@@ -1,6 +1,10 @@
 AMANZI: The Multi-Process HPC Simulator 
 ===================================================
+Master:
 [![Build Status](https://travis-ci.org/amanzi/amanzi.svg?branch=master)](https://travis-ci.org/amanzi/amanzi)
+Amanzi-0.88:
+[![Build Status](https://travis-ci.org/amanzi/amanzi.svg?branch=amanzi-0.88)](https://travis-ci.org/amanzi/amanzi)
+
 
 BACKGROUND
 -----------------------------------------------

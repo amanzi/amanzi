@@ -96,11 +96,17 @@ class AnalyticDGBase {
                                        double& l2_mean, double& inf_mean,
                                        double& l2_int);
 
+  void ComputeFaceError(const Amanzi::WhetStone::DG_Modal& dg, Epetra_MultiVector& p, double t,
+                        double& p_inf, double& grad_p_inf);
+
   void ComputeCellErrorRemap(const Amanzi::WhetStone::DG_Modal& dg, Epetra_MultiVector& p, double t,
                              int p_location, Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh1,
                              double& pnorm, double& l2_err, double& inf_err,
                              double& l20_err, double& inf0_err,
                              Epetra_MultiVector* perr = NULL);
+
+  // utilities
+  Amanzi::AmanziGeometry::Point face_normal_exterior(int f, bool* flag);
 
   // communications
   void GlobalOp(std::string op, double* val, int n);
@@ -215,6 +221,68 @@ void AnalyticDGBase::ComputeCellError(
 
 
 /* ******************************************************************
+* Error at discontinuity
+****************************************************************** */
+inline
+void AnalyticDGBase::ComputeFaceError(
+    const Amanzi::WhetStone::DG_Modal& dg, Epetra_MultiVector& p, double t,
+    double& p_inf, double& grad_p_inf)
+{
+  p_inf = grad_p_inf = 0.0;
+
+  int nk = p.NumVectors();
+  Amanzi::WhetStone::DenseVector data(nk);
+  Amanzi::AmanziMesh::Entity_ID_List cells;
+
+  int nfaces = mesh_->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+  for (int f = 0; f < nfaces; ++f) {
+    const Amanzi::AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+
+    mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
+    int ncells = cells.size();
+
+    double err(0.0);
+    Amanzi::WhetStone::DenseVector graderr(d_);
+    graderr.PutScalar(0.0);
+
+    for (int n = 0; n < ncells; ++n) {
+      int c = cells[n];
+      const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+
+      // convert analytic solution from my to natural basis 
+      const Amanzi::WhetStone::Basis<Amanzi::AmanziMesh::Mesh>& basis = dg.cell_basis(c);
+      for (int i = 0; i < nk; ++i) data(i) = p[i][c];
+      basis.ChangeBasisMyToNatural(data);
+
+      Amanzi::WhetStone::Polynomial sol, poly(d_, order_, data); 
+      poly.set_origin(xc);
+
+      // take a difference with analytic solution
+      SolutionTaylor(xc, t, sol);
+
+      Amanzi::WhetStone::Polynomial poly_err(poly);
+      poly_err -= sol;
+      err += poly_err.Value(xf);
+
+      // gradient error
+      auto grad = Gradient(poly_err);
+      graderr += grad.Value(xf);
+    }
+
+    double tmp;
+    graderr.Norm2(&tmp); 
+    p_inf = std::max(p_inf, fabs(err) / nk);
+    grad_p_inf = std::max(grad_p_inf, tmp / nk);
+  }
+
+#ifdef HAVE_MPI
+  GlobalOp("max", &p_inf, 1);
+  GlobalOp("max", &grad_p_inf, 1);
+#endif
+}
+
+
+/* ******************************************************************
 * Error for cell-based fields in original coordinates (p_location=0)
 * or Lagrangian coordinates (p_location=1)
 ****************************************************************** */
@@ -285,6 +353,25 @@ void AnalyticDGBase::ComputeCellErrorRemap(
   pnorm = sqrt(pnorm);
   l2_err = sqrt(l2_err);
   l20_err = sqrt(l20_err);
+}
+
+
+/* ******************************************************************
+* Exterior normal
+****************************************************************** */
+inline
+Amanzi::AmanziGeometry::Point AnalyticDGBase::face_normal_exterior(int f, bool* flag)
+{
+  Amanzi::AmanziMesh::Entity_ID_List cells;
+  mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
+  *flag = (cells.size() == 1);
+
+  int dir;
+  Amanzi::AmanziGeometry::Point normal(d_);
+  if (*flag) 
+    normal = mesh_->face_normal(f, false, cells[0], &dir);
+
+  return normal;
 }
 
 

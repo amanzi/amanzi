@@ -17,6 +17,7 @@
 #include "Polynomial.hh"
 
 // Operators
+#include "InterfaceWhetStone.hh"
 #include "Op.hh"
 #include "Op_Cell_Schema.hh"
 #include "Op_Face_Schema.hh"
@@ -41,6 +42,7 @@ void PDE_DiffusionDG::Init_(Teuchos::ParameterList& plist)
 
   matrix_ = plist.get<std::string>("matrix type");
   method_order_ = schema_list.get<int>("method order", 0);
+  numi_order_ = plist.get<int>("quadrature order", method_order_);
   
   dg_ = Teuchos::rcp(new WhetStone::DG_Modal(schema_list, mesh_));
   my_schema.Init(dg_, mesh_, base);
@@ -93,18 +95,6 @@ void PDE_DiffusionDG::Init_(Teuchos::ParameterList& plist)
 
 
 /* ******************************************************************
-* Setup methods: scalar coefficients
-****************************************************************** */
-void PDE_DiffusionDG::SetProblemCoefficients(
-   const std::shared_ptr<std::vector<WhetStone::Tensor> >& Kc,
-   const std::shared_ptr<std::vector<double> >& Kf) 
-{
-  Kc_ = Kc;
-  Kf_ = Kf;
-}
-
-
-/* ******************************************************************
 * Populate face-based 2x2 matrices on interior faces and 1x1 matrices
 * on boundary faces.
 ****************************************************************** */
@@ -117,29 +107,27 @@ void PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
   double Kf(1.0);
   AmanziMesh::Entity_ID_List cells;
   
-  WhetStone::Tensor Kc1(d, 1), Kc2(d, 1);
-  Kc1(0, 0) = 1.0;
-  Kc2(0, 0) = 1.0;
-
+  // volumetric term
   for (int c = 0; c != ncells_owned; ++c) {
-    if (Kc_.get()) Kc1 = (*Kc_)[c];
-    dg_->StiffnessMatrix(c, Kc1, Acell);
+    interface_->StiffnessMatrix(c, Acell);
     local_op_->matrices[c] = Acell;
   }
 
+  // strenghen stability term
   for (int f = 0; f != nfaces_owned; ++f) {
     if (Kf_.get()) Kf = (*Kf_)[f];
     dg_->FaceMatrixPenalty(f, Kf, Aface);
     penalty_op_->matrices[f] = Aface;
   }
 
+  // stability terms
   for (int f = 0; f != nfaces_owned; ++f) {
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    if (Kc_.get()) {
-      Kc1 = (*Kc_)[cells[0]]; 
-      if (cells.size() > 1) Kc2 = (*Kc_)[cells[1]]; 
-    }
-    dg_->FaceMatrixJump(f, Kc1, Kc2, Aface);
+    int c1 = cells[0];
+    int c2 = (cells.size() > 1) ? cells[1] : c1;
+
+    interface_->FaceMatrixJump(f, c1, c2, Aface);
+
     Aface *= -1.0;
     jump_up_op_->matrices[f] = Aface;
 
@@ -154,6 +142,8 @@ void PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
 ****************************************************************** */
 void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
+  AMANZI_ASSERT(bcs_trial_.size() > 0);
+
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   const std::vector<std::vector<double> >& bc_value = bcs_trial_[0]->bc_value_vector();
   int nk = bc_value[0].size();

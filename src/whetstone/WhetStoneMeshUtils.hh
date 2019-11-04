@@ -142,6 +142,29 @@ AmanziGeometry::Point cell_geometric_center(const AmanziMesh::Mesh& mesh, int c)
   return xg;
 }
 
+
+/* ******************************************************************
+* Geometric center of a mesh face
+****************************************************************** */
+inline
+AmanziGeometry::Point face_geometric_center(const AmanziMesh::Mesh& mesh, int f)
+{
+  int d = mesh.space_dimension();
+  AmanziGeometry::Point v(d), xg(d);
+
+  AmanziMesh::Entity_ID_List nodes;
+  mesh.face_get_nodes(f, &nodes);
+  int nnodes = nodes.size();
+
+  for (int i = 0; i < nnodes; ++i) {
+    mesh.node_get_coordinates(nodes[i], &v);
+    xg += v;
+  } 
+  xg /= nnodes;
+  
+  return xg;
+}
+
 }  // namespace WhetStone
 }  // namespace Amanzi
 

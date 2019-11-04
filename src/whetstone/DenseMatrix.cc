@@ -472,30 +472,29 @@ int DenseMatrix::InverseSPD()
 * The matrix (*this) must have a full rank and have more rows than
 * columns.
 ****************************************************************** */
-int DenseMatrix::NullSpace(DenseMatrix& D)
+DenseMatrix DenseMatrix::NullSpace()
 {
   // We can treat only one type of rectangular matrix.
-  if (m_ <= n_) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+  if (m_ <= n_) AMANZI_ASSERT(false);
 
   // D must have proper size.
-  int m = D.NumRows(), n = D.NumCols();
-  if (m != m_ || n != m_ - n_) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+  DenseMatrix D(m_, m_ - n_);
 
   // Allocate memory for Lapack routine.
   int ldv(1), lwork, info; 
-  lwork = std::max(m_ + 3 * n_, 5*n_);
-  double U[m_ * m_], V, S[n_], work[lwork];
+  lwork = m_ + 5 * n_;
+  double U[m_ * m_], V[ldv], S[n_], work[lwork];
 
   DGESVD_F77("A", "N", &m_,  &n_, data_, &m_, 
-             S, U, &m, &V, &ldv, work, &lwork, &info);
+             S, U, &m_, V, &ldv, work, &lwork, &info);
 
-  if (info != 0) return WHETSTONE_ELEMENTAL_MATRIX_FAILED;
+  if (info != 0) AMANZI_ASSERT(false);
   
   double* data = D.Values();
   int offset = m_ * n_;
-  for (int i = 0; i < m * n; i++) data[i] = U[offset + i];
+  for (int i = 0; i < m_ * (m_ - n_); i++) data[i] = U[offset + i];
 
-  return 0;
+  return D;
 }
 
 
@@ -521,7 +520,7 @@ int DenseMatrix::InverseMoorePenrose()
 
   // inverse of S
   for (int i = 0; i < mn; ++i)
-    if (fabs(S[i]) > 1e-14) S[i] = 1.0 / S[i];
+    if (fabs(S[i]) > 1e-12) S[i] = 1.0 / S[i];
 
   // assemble preuso-inverse
   DenseMatrix UU(m_, m_, U, WHETSTONE_DATA_ACCESS_VIEW);

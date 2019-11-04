@@ -154,8 +154,8 @@ TEST(ADVECTION_NAVIER_STOKES_2D) {
   mfd.AdvectionMatrix(cell, u, A);
 
   printf("Advection matrix for cell %3d\n", cell);
-  for (int i = 0; i < 2*nnodes; i++) {
-    for (int j = 0; j < 2*nnodes; j++ ) printf("%8.5f ", A(i, j)); 
+  for (int i = 0; i < 2 * nnodes; i++) {
+    for (int j = 0; j < 2 * nnodes; j++ ) printf("%8.5f ", A(i, j)); 
     printf("\n");
   }
 }

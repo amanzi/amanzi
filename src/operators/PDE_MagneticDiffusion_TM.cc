@@ -28,6 +28,9 @@ namespace Operators {
 void PDE_MagneticDiffusion_TM::ModifyMatrices(
    CompositeVector& E, CompositeVector& B, double dt)
 {
+  B.ScatterMasterToGhosted("face");
+  global_op_->rhs()->PutScalarGhosted(0.0);
+
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", true);
   Epetra_MultiVector& rhs_v = *global_op_->rhs()->ViewComponent("node", true);
 
@@ -62,6 +65,8 @@ void PDE_MagneticDiffusion_TM::ModifyMatrices(
       rhs_v[0][v] += v3(n);
     }
   }
+
+  global_op_->rhs()->GatherGhostedToMaster("node", Add);
 }
 
 
@@ -220,6 +225,7 @@ void PDE_MagneticDiffusion_TM::ApplyBCs_Node_(
 ****************************************************************** */
 double PDE_MagneticDiffusion_TM::CalculateOhmicHeating(const CompositeVector& E)
 {
+  E.ScatterMasterToGhosted("node");
   const Epetra_MultiVector& Ev = *E.ViewComponent("node", true);
 
   AmanziMesh::Entity_ID_List nodes;
@@ -236,6 +242,9 @@ double PDE_MagneticDiffusion_TM::CalculateOhmicHeating(const CompositeVector& E)
       energy += Ev[0][v] * Ev[0][v] * tmp;
     }
   }
+
+  double tmp(energy);
+  mesh_->get_comm()->SumAll(&tmp, &energy, 1);
 
   return energy;
 }

@@ -82,7 +82,7 @@ class DenseMatrix {
   DenseMatrix& operator+=(const DenseMatrix& A) {
     for (int i = 0; i < m_ * n_; i++) data_[i] += A.data_[i];
     return *this;
-  }
+}
 
   DenseMatrix& operator-=(const DenseMatrix& A) {
     for (int i = 0; i < m_ * n_; i++) data_[i] -= A.data_[i];
@@ -115,6 +115,7 @@ class DenseMatrix {
   // access: the data are ordered by columns
   int NumRows() const { return m_; }
   int NumCols() const { return n_; }
+  int memory() const { return mem_; }
 
   inline double* Values() { return data_; }
   inline double* Value(int i, int j)  { return data_ + j * m_ + i; } 
@@ -123,6 +124,7 @@ class DenseMatrix {
 
   // output 
   friend std::ostream& operator << (std::ostream& os, const DenseMatrix& A) {
+    os << "Matrix: allocated memory=" << A.memory() << "\n";
     for (int i = 0; i < A.NumRows(); i++) {
       for (int j = 0; j < A.NumCols(); j++) {
         os << std::setw(12) << std::setprecision(12) << A(i, j) << " ";
@@ -179,7 +181,7 @@ class DenseMatrix {
   int Inverse();
   int InverseSPD();
   int InverseMoorePenrose();
-  int NullSpace(DenseMatrix& D);
+  DenseMatrix NullSpace();
   double Det();  // limited capabilities
 
   // -- orthonormalize matrix columns between n1 and n2-1.

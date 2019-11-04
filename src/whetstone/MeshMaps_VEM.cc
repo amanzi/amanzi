@@ -94,7 +94,10 @@ void MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
         ve.push_back(v[i]);
       }
 
-      mfd->H1Face(f, ve, NULL, vf[i]);
+      if (projector_ == "L2")
+        mfd->L2Face(f, ve, NULL, vf[i]);
+      else if (projector_ == "H1")
+        mfd->H1Face(f, ve, NULL, vf[i]);
     }
   }
 }

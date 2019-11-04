@@ -137,9 +137,6 @@ class AnalyticDG07b : public AnalyticDGBase {
     src.Reshape(d_, 0, true);
     src.set_origin(p);
   }
-
- private:
-  double x0_, y0_;
 };
 
 #endif
