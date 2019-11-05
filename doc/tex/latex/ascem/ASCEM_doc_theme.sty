@@ -49,6 +49,7 @@
 \def\DocDate#1{\gdef\@DocDate{#1}}
 \def\DocAuthors#1{\gdef\@DocAuthors{#1}}
 \def\LogoPath#1{\gdef\@LogoPath{#1}}
+\def\DocPrevVersions#1{\gdef\@DocPrevVersions{#1}}
 
 \newcommand{\ASCEMcover}{
 \thispagestyle{empty}
@@ -81,7 +82,7 @@
 %
 % Revision Number
 %
-\begin{textblock}{4}(0.99,5.91)
+\begin{textblock}{5}(0.99,5.91)
   {\large \@DocRev}
 \end{textblock}
 
@@ -154,11 +155,13 @@
 
 % =========================================================================
 
+
+
 \newcommand{\ASCEMdisclaimer}{%
 %
 %  Disclaimer
 % 
-\vspace*{1.5in}
+\vspace*{2.5in}
 \begin{center}
   \textbf{DISCLAIMER}
 \end{center}

@@ -9,15 +9,207 @@
 
 \section{Introduction to Process Models Requirements}
 
-\subsection{ASCEM Overview}
+\subsection{Overview}
+
+NEEDS TO BE WRITTEN
+
 
 \subsection{Purpose and Scope of this Document}
 
-\subsection{Links to Other Thrust Areas}
+At the highest level of the HPC Simulator design is a set of process
+models that mathematically represent the physical, chemical, and
+biological phenomena controlling contaminant release into, and
+transport in, the subsurface.  The objective of this requirements
+document is to provide a catalogue of process models, along with their
+detailed mathematical formulation, for potential implementation in the
+HPC Simulator.  This concise mathematical description and accompanying
+analysis, provides critical information for requirements and design of
+both the HPC Core Framework (Task 1.1.2.2) and the HPC Toolsets (Task
+1.1.2.3). 
+
+It is important to note that with its focus on mathematical
+descriptions for a catalogue of process models, this requirements
+document is significantly different from a traditional Software
+Requirements Specification (SRS) document.  Hence, this document does
+not follow the IEEE Std 830-1998 template, and instead uses a process
+category based layout that is summarized in Section~\ref{sec:layout}.
+Moreover, this mathematical focus serves multiple audiences:
+%
+\begin{enumerate}
+\item 
+  This document provides guidance to the developers engaged in
+  designing and implementing the HPC Core Framework and HPC Toolsets.
+  To meet their needs, sufficient detail for each process model is
+  provided in the form of a background discussion, supporting equations, 
+  and references to relevant literature.  
+\item 
+  The document is also intended for ``domain scientists'' whose
+  primary interest is in the processes themselves.  The presentation
+  is intended to justify the choice of process models and their
+  mathematical detail.
+\item 
+  Finally, the document is also intended for end users engaged in
+  individual site applications.
+\end{enumerate}
+%
+Over time this document will evolve into a comprehensive graded
+presentation of models, from complex to simple, under a general
+mathematical framework for each process category.  
+%
+%~\todo{Not sure what categories you are referring to here. -Finsterle}
+Evolution of the list of processes is inevitable, and the modular
+design of the HPC Simulator will easily accommodate the addition of
+new process implementations. 
+
+
 
 \subsection{Organization and Layout of this Document}
+\label{sec:layout}
 
-\subsection{Prioritization and Selection of Process Models}
+The remainder of this document is organized based on individual process category.
+These include presentation of
+\emph{Isothermal Flow Processes} in Section~\ref{sec:flow-processes}, 
+\emph{Thermal Processes} in Section~\ref{sec:thermal-processes},
+\emph{Transport Processes} in Section~\ref{sec:transport-processes}, and 
+\emph{Biogeochemical Reaction Processes} in Section~\ref{sec:biogeochemical}. 
+%\emph{Colloid Transport Processes} in Section~\ref{sec:colloids}, 
+%\emph{Thermal Processes} in Section~\ref{sec:thermal}, 
+%\emph{Geomechanical Processes} in Section~\ref{sec:geomechanics}, and 
+%\emph{Source Terms}, in Section~\ref{sec:source-terms}.  
+%
+Each of these process categories may present multiple process models.  
+%For example, biogeochemistry includes individual process models for sorption, 
+%mineral precipitation-dissolution, microbially-mediated reactions, colloid
+%generation, etc.  
+%In addition, models of differing fidelity can be accommodated by the HPC code so, 
+%for example, several models for sorption 
+%(e.g., classical Kd, multicomponent-multisite ion exchange,
+%non-electrostatic surface complexation, electrostatic surface
+%complexation) are included.
+
+
+In Section~\ref{sec:flow-processes}, \emph{Isothermal Flow Processes}, 
+we consider models of fluid flow at constant temperature.
+We limit ourselves to the case of a single fluid phase, i.e. no water-oil flows.
+Based on the saturation levels we use one of two models:
+fully saturated and partially saturated flows.
+Further, use of Richards Equation requires certain assumptions on the gas phase not moving.
+
+In Section~\ref{sec:thermal-processes}, \emph{Thermal Processes},
+we discuss extension of the models of Section~\ref{sec:flow-processes}
+to the case of changing temperature by adding a concervation of energy equation.
+
+
+In Section~\ref{sec:transport-processes}, \emph{Transport Processes},
+we consider models for transport, i.e. evolution of distributions, of solute species. 
+Each of the species can be part of either gas, fluid or solid phase.
+In the solid phase specied do not move.
+In the gas phase species can only diffuse (due to the assumptions of Richards equation).
+In the fluid phase the transport of the species is affected by the 
+fluid flow as well as dispersion and diffusion processes. 
+In this section we also consider a dual porocity models,
+designed to capture the difference in fluid motion in the cracks and pores.  
+ 
+
+In Section~\ref{sec:biogeochemical}, \emph{Biogeochemical Reaction Processes},
+we consider a variety of biochemical reaction processes,
+which from the point of view of model equations
+convert one species into others and result in various heat sources.
+  
+
+The notational conventions and variables used throughout the document 
+are summarized in Section~\ref{sec:notations}.
+
+
+
+
+%--------------------------------------
+\subsection{Variables and Notations}
+\label{sec:notations}
+
+
+% bold symbols
+\def\bnabla{{\boldsymbol{\nabla}}}
+\def\bg{{\boldsymbol{g}}}
+\def\bq{{\boldsymbol{q}}}
+\def\bx{{\boldsymbol{x}}}
+\def\bJ{{\boldsymbol{J}}}
+\def\K{{\mathbb K}}
+
+% abbreviations
+\def\Frac{\displaystyle \frac}
+
+% units
+\def\ucdot{{\,\cdot\,}}
+\def\ukg{{\rm kg}}
+\def\um{{\rm m}}
+\def\us{{\rm s}}
+\def\umol{{\rm mol}}
+\def\upa{{\rm Pa}}
+
+
+In this section we list all the variables used throughout the rest of the document.
+In particular,
+for multiple variables we use subscript 
+$l$, $s$ and $g$
+to indicate that the particular quantity is the property of the  
+\emph{liquid}, \emph{solid} or \emph{gas}, respectively.
+We also use subscripts $m$ and $f$
+to indicate quantities that are attributed to the  
+\emph{matrix}/pores and  \emph{fracture}, respectively.
+
+
+\begin{center}
+\begin{longtable}{cp{7cm}c}
+\caption{List of global variables.} \label{table:flow-list-of-variables} \\
+
+\multicolumn{1}{c}{Symbol} & \multicolumn{1}{c}{Meaning} & \multicolumn{1}{c}{Units} \\
+\hline  \hline 
+\endfirsthead
+
+\multicolumn{3}{c}{{\tablename} \thetable{} -- Continued} \\
+\multicolumn{1}{c}{Symbol} & \multicolumn{1}{c}{Meaning} & \multicolumn{1}{c}{Units} \\
+\hline  \hline 
+\endhead
+
+\hline \multicolumn{3}{c}{{Continued on next page}} \\ 
+\hline \hline 
+\endfoot
+
+\hline \hline
+\endlastfoot
+
+$C_i$      & concentration of $i$th species    &  $\umol\ucdot\um^{-3}$ \\
+$e_l$      & enthalpy of the liquid        &  $\um$  \\
+$\bg$      & gravity vector       &  $\um\ucdot\us^{-2}$  \\
+$g$        & gravity magnitude    &  $\um\ucdot\us^{-2}$  \\
+$h$        & hydrolic head        &  $\um$  \\
+$\bJ$      & generic flux         &  $\umol\ucdot\um^{-2}\ucdot\us^{-1}$  \\
+$\K$       & absolute permeability tensor & $\um^2$ \\
+$k_{rl}$   & relative permeability&  $-$ \\
+$p_l$      & liquid pressure      &  $\upa$ \\
+$\bq$      & Darcy velocity       &  $\um\ucdot\us^{-1}$  \\
+$S_s$      & specific storage     &  $\um^{-1}$  \\
+$S_y$      & specific yield       &  $-$  \\
+$s_l$      & liquid saturation    &  $-$ \\
+$u_l$      & internal energy of the liquid   &  $\ukg\cdot\um^2\cdot \us^{-2}$ \\
+$u_r$      & internal energy of the rock     &  $\ukg\cdot\um^2\cdot \us^{-2}$  \\
+\hline
+$\mu_l$    & liquid viscosity     &  $\upa\ucdot\us$ \\
+$\rho_l$   & liquid density       &  $\ukg\ucdot\um^{-3}$ \\
+$\phi$     & porosity             &  $-$  \\
+$\phi_f$   & porosity of fracture &  $-$  \\
+$\phi_m$   & porosity of matrix   &  $-$  \\
+$\eta_l$   & molar liquid density &  $\umol\ucdot\um^{-3}$ \\
+$\theta$   & volumetric water content  &  $\umol\ucdot\um^{-3}$ \\
+$\theta_f$ & volumetric water content of fracture &  $\umol\ucdot\um^{-3}$ \\
+$\theta_m$ & volumetric water content of matrix   &  $\umol\ucdot\um^{-3}$ \\
+
+\end{longtable}
+\end{center}
+
+
+
 
 
 
