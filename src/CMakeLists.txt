@@ -56,24 +56,32 @@ endif()
 
 add_subdirectory(common/interface_platform)
 
+message(STATUS "Amanzi: enabled physics packages:")
+message(STATUS "=================================")
+message(STATUS "Native: ${ENABLE_NativePhysics}")
+message(STATUS "ATS: ${ENABLE_ATS}")
+
+
 if (ENABLE_Unstructured)  
   add_subdirectory(pks)
 
-  if (ENABLE_Physics)
+  if (ENABLE_NativePhysics)
      # Multiprocess coordinator
      add_subdirectory(mpc)
 
      # unstructured grid simulation driver, and Amanzi binaries
      add_subdirectory(executables)
-  endif()
+   endif()
+
+   add_subdirectory(physics)
 endif()
 
 # structured grid
-if (ENABLE_Structured AND ENABLE_Physics)
+if (ENABLE_Structured AND ENABLE_NativePhysics)
   add_subdirectory(structured_grid)
 endif()
 
 # standalone driver (produces mesh-independent executable)
-if (ENABLE_Physics)
+if (ENABLE_NativePhysics)
   add_subdirectory(common/standalone_simulation_coordinator)
 endif()

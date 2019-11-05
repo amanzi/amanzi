@@ -130,6 +130,7 @@ shared=${FALSE}
 spacedim=2
 silo=${FALSE}
 physics=${TRUE}
+ats=${FALSE}
 build_stage_1=${FALSE}
 build_stage_2=${FALSE}
 
@@ -336,7 +337,8 @@ Value in brackets indicates default setting.
   crunchtope              build the CrunchTope geochemistry backend ['"${crunchtope}"']
   alquimia                build the Alquimia geochemistry solver APIs ['"${alquimia}"']
 
-  physics		  build subset of Amanzi used in ATS ['"${physics}"']
+  physics		  build Amanzi native physics ['"${physics}"']
+  ats   		  build Amanzi with ATS ['"${ats}"']
 
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
   reg_tests               build regression tests into Amanzi Test Suite ['"${reg_tests}"']
@@ -485,6 +487,7 @@ Build Features:
     pflotran            ='"${pflotran}"'
     crunchtope          ='"${crunchtope}"'
     physics             ='"${physics}"'
+    ats                 ='"${ats}"'
     Spack               ='"${Spack}"'
     xsdk                ='"${xsdk}"'
 
@@ -892,6 +895,14 @@ function build_cmake
 # ---------------------------------------------------------------------------- #
 # Git functions
 # ---------------------------------------------------------------------------- #
+function ats_git_clone
+{
+    ${git_binary} submodule update --init ats
+    if [$? -ne 0 ]; then
+        error_message "Failed to pull submodule ATS"
+        exit_now 30
+    fi
+}
 
 function ascem_git_clone
 {
@@ -1564,6 +1575,12 @@ fi
 
 status_message "Build Amanzi with configure file ${tpl_config_file}"
 
+# clone subrepos
+if [ "${ats}" ]; then
+    # MAYBE SOON? git_change_branch "ats-master"
+    ats_git_clone
+fi
+
 # Configure the Amanzi build
 cmd_configure="${cmake_binary} \
     -C${tpl_config_file} \
@@ -1586,7 +1603,8 @@ cmd_configure="${cmake_binary} \
     -DENABLE_ALQUIMIA:BOOL=${alquimia} \
     -DENABLE_PFLOTRAN:BOOL=${pflotran} \
     -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
-    -DENABLE_Physics:BOOL=${physics} \
+    -DENABLE_NativePhysics:BOOL=${physics} \
+    -DENABLE_ATS:BOOL=${ats} \
     -DBUILD_SHARED_LIBS:BOOL=${shared} \
     -DCCSE_BL_SPACEDIM:INT=${spacedim} \
     -DENABLE_Regression_Tests:BOOL=${reg_tests} \
