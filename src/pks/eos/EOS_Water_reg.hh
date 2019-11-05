@@ -15,10 +15,10 @@
 #include "EOS_Water.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 // registry of method
 Utils::RegisteredFactory<EOS, EOS_Water> EOS_Water::factory_("liquid water");
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi

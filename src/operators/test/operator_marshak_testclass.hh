@@ -77,8 +77,6 @@ class HeatConduction {
   Teuchos::RCP<CompositeVector> values_, derivatives_;
 };
 
-typedef double(HeatConduction::*ModelUpwindFn)(int c, double T) const; 
-
 }  // namespace Amanzi
 
 #endif

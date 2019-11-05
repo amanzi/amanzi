@@ -15,10 +15,10 @@
 #include "ViscosityEvaluator.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 // registry of method
 Utils::RegisteredFactory<FieldEvaluator, ViscosityEvaluator> ViscosityEvaluator::factory_("viscosity");
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi

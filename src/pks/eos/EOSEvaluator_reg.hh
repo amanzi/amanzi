@@ -14,10 +14,10 @@
 #include "EOSEvaluator.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 // registry of method
 Utils::RegisteredFactory<FieldEvaluator, EOSEvaluator> EOSEvaluator::factory_("eos");
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi

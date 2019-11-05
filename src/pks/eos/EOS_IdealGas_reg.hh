@@ -8,16 +8,16 @@
 
   Author: Ethan Coon (ecoon@lanl.gov)
 
-  EOS for the ideal gasi. It does not implement viscosity at this point!
+  EOS for the ideal gas. It does not implement viscosity at this point!
 */
 
 #include "EOS_IdealGas.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 // registry of method
 Utils::RegisteredFactory<EOS, EOS_IdealGas> EOS_IdealGas::factory_("ideal gas");
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi

@@ -21,14 +21,14 @@
 #include "Factory.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 class EOSFactory : public Utils::Factory<EOS> {
  public:
   Teuchos::RCP<EOS> CreateEOS(Teuchos::ParameterList& plist);
 };
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi
 
 #endif

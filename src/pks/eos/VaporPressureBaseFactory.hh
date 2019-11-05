@@ -21,14 +21,14 @@
 #include "Factory.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 class VaporPressureBaseFactory : public Utils::Factory<VaporPressure_Base> {
  public:
   Teuchos::RCP<VaporPressure_Base> CreateVaporPressure(Teuchos::ParameterList& plist);
 };
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi
 
 #endif

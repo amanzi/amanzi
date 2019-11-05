@@ -18,7 +18,7 @@
 #include "secondary_variable_field_evaluator.hh"
 
 namespace Amanzi {
-namespace EOS {
+namespace AmanziEOS {
 
 class EffectivePressureEvaluator : public SecondaryVariableFieldEvaluator {
  public:
@@ -45,7 +45,7 @@ class EffectivePressureEvaluator : public SecondaryVariableFieldEvaluator {
   static Utils::RegisteredFactory<FieldEvaluator, EffectivePressureEvaluator> factory_;
 };
 
-}  // namespace EOS
+}  // namespace AmanziEOS
 }  // namespace Amanzi
 
 #endif
