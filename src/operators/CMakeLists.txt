@@ -60,7 +60,11 @@ set(operators_inc_files
   Op_SurfaceFace_SurfaceCell.hh
   OperatorUtils.hh
   Operator.hh
+  Operator_Cell.hh
+  Operator_CellBndFace.hh
   TreeOperator.hh
+  BCs.hh
+  PDE_HelperBCsList.hh
   )
 
 set(operators_src_files
@@ -68,6 +72,8 @@ set(operators_src_files
   Op.cc
   OperatorUtils.cc
   Operator.cc
+  Operator_Cell.cc
+  Operator_CellBndFace.cc
   TreeOperator.cc
   )
 

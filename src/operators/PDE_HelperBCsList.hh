@@ -8,7 +8,7 @@
       Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-//! <MISSING_ONELINE_DOCSTRING>
+//! A mixin class with setters and getters for BCs.
 
 #ifndef AMANZI_OPERATOR_BCS_LIST_HH_
 #define AMANZI_OPERATOR_BCS_LIST_HH_

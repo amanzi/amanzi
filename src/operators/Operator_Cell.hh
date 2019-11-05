@@ -24,7 +24,7 @@ class Operator_Cell : public Operator {
  public:
   // main constructor
   //   The CVS is the domain and range of the operator
-  Operator_Cell(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
+  Operator_Cell(const Teuchos::RCP<const CompositeSpace>& cvs,
                 Teuchos::ParameterList& plist, int schema)
     : Operator(cvs, plist, schema)
   {
@@ -43,23 +43,23 @@ class Operator_Cell : public Operator {
   ApplyMatrixFreeOp(const Op_Face_Cell& op, const CompositeVector& X,
                     CompositeVector& Y) const;
 
-  // visit methods for symbolic assemble
-  virtual void
-  SymbolicAssembleMatrixOp(const Op_Cell_Cell& op, const SuperMap& map,
-                           GraphFE& graph, int my_block_row,
-                           int my_block_col) const;
-  virtual void
-  SymbolicAssembleMatrixOp(const Op_Face_Cell& op, const SuperMap& map,
-                           GraphFE& graph, int my_block_row,
-                           int my_block_col) const;
+  // // visit methods for symbolic assemble
+  // virtual void
+  // SymbolicAssembleMatrixOp(const Op_Cell_Cell& op, const SuperMap& map,
+  //                          GraphFE& graph, int my_block_row,
+  //                          int my_block_col) const;
+  // virtual void
+  // SymbolicAssembleMatrixOp(const Op_Face_Cell& op, const SuperMap& map,
+  //                          GraphFE& graph, int my_block_row,
+  //                          int my_block_col) const;
 
-  // visit methods for assemble
-  virtual void
-  AssembleMatrixOp(const Op_Cell_Cell& op, const SuperMap& map, MatrixFE& mat,
-                   int my_block_row, int my_block_col) const;
-  virtual void
-  AssembleMatrixOp(const Op_Face_Cell& op, const SuperMap& map, MatrixFE& mat,
-                   int my_block_row, int my_block_col) const;
+  // // visit methods for assemble
+  // virtual void
+  // AssembleMatrixOp(const Op_Cell_Cell& op, const SuperMap& map, MatrixFE& mat,
+  //                  int my_block_row, int my_block_col) const;
+  // virtual void
+  // AssembleMatrixOp(const Op_Face_Cell& op, const SuperMap& map, MatrixFE& mat,
+  //                  int my_block_row, int my_block_col) const;
 
  protected:
   int cell_max_faces;

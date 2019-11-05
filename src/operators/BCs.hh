@@ -8,7 +8,7 @@
       Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-//! <MISSING_ONELINE_DOCSTRING>
+//! Simple struct of views for BCs with first-touch initialization.
 
 #ifndef AMANZI_OPERATORS_BC_HH_
 #define AMANZI_OPERATORS_BC_HH_
@@ -113,7 +113,8 @@ class BCs {
   // -- vector is a general vector DOF (example: moments of pressure)
   // -- normal-component is a geometric DOF (example: normal component of fluid
   // velocity)
-  BCs(Teuchos::RCP<const AmanziMesh::Mesh> mesh, AmanziMesh::Entity_kind kind,
+  BCs(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+      AmanziMesh::Entity_kind kind,
       DOF_Type type)
     : mesh_(mesh), kind_(kind), type_(type){};
   ~BCs(){};
@@ -123,76 +124,75 @@ class BCs {
   AmanziMesh::Entity_kind kind() const { return kind_; }
   DOF_Type type() const { return type_; }
 
-  std::vector<int>& bc_model()
+  Kokkos::View<int*>& bc_model()
   {
     if (bc_model_.size() == 0) {
       int nent = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::ALL);
-      bc_model_.resize(nent, Operators::OPERATOR_BC_NONE);
+      Kokkos::resize(bc_model_, nent); // Kokkos default inits to 0
     }
     return bc_model_;
   }
 
-  std::vector<double>& bc_value()
+  Kokkos::View<double*>& bc_value()
   {
     if (bc_value_.size() == 0) {
       int nent = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::ALL);
-      bc_value_.resize(nent, 0.0);
+      Kokkos::resize(bc_value_, nent);
     }
     return bc_value_;
   }
 
-  std::vector<double>& bc_mixed()
+  Kokkos::View<double*>& bc_mixed()
   {
     if (bc_mixed_.size() == 0) {
       int nent = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::ALL);
-      bc_mixed_.resize(nent, 0.0);
+      Kokkos::resize(bc_mixed_, nent);
     }
     return bc_mixed_;
   }
 
-  std::vector<AmanziGeometry::Point>& bc_value_point()
+  Kokkos::View<AmanziGeometry::Point*>& bc_value_point()
   {
     if (bc_value_point_.size() == 0) {
       AmanziGeometry::Point p(mesh_->space_dimension());
       int nent = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::ALL);
-      bc_value_point_.resize(nent, p);
+      Kokkos::resize(bc_value_point_, nent);
     }
     return bc_value_point_;
   }
 
-  std::vector<std::vector<double>>& bc_value_vector(int n = 1)
+  Kokkos::View<double**>& bc_value_vector(int n = 1)
   {
     if (bc_value_vector_.size() == 0) {
       int nent = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::ALL);
-      bc_value_vector_.resize(nent);
-
-      for (int i = 0; i < nent; ++i) { bc_value_vector_[i].resize(n); }
+      Kokkos::resize(bc_value_vector_, nent, n);
     }
     return bc_value_vector_;
   }
 
-  const std::vector<int>& bc_model() const { return bc_model_; }
-  const std::vector<double>& bc_value() const { return bc_value_; }
-  const std::vector<double>& bc_mixed() const { return bc_mixed_; }
-  const std::vector<AmanziGeometry::Point>& bc_value_point() const
-  {
-    return bc_value_point_;
-  }
-  const std::vector<std::vector<double>>& bc_value_vector() const
-  {
-    return bc_value_vector_;
-  }
+  // Not obvious how this helps the interface...
+  // const std::vector<int>& bc_model() const { return bc_model_; }
+  // const std::vector<double>& bc_value() const { return bc_value_; }
+  // const std::vector<double>& bc_mixed() const { return bc_mixed_; }
+  // const std::vector<AmanziGeometry::Point>& bc_value_point() const
+  // {
+  //   return bc_value_point_;
+  // }
+  // const std::vector<std::vector<double>>& bc_value_vector() const
+  // {
+  //   return bc_value_vector_;
+  // }
 
  private:
   AmanziMesh::Entity_kind kind_;
   DOF_Type type_;
 
-  std::vector<int> bc_model_;
-  std::vector<double> bc_value_;
-  std::vector<double> bc_mixed_;
+  Kokkos::View<int*> bc_model_;
+  Kokkos::View<double*> bc_value_;
+  Kokkos::View<double*> bc_mixed_;
 
-  std::vector<std::vector<double>> bc_value_vector_;
-  std::vector<AmanziGeometry::Point> bc_value_point_;
+  Kokkos::View<double**> bc_value_vector_;
+  Kokkos::View<AmanziGeometry::Point*> bc_value_point_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };

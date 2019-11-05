@@ -591,7 +591,7 @@ Operator::FindMatrixOp(int schema_dofs, int matching_rule, bool action) const
   if (action) {
     Errors::Message msg;
     msg << "Operators: Matching rule " << matching_rule << " not found.\n";
-    Exceptions::amanzi_throw(msg);
+    throw(msg);
   }
 
   return OpEnd();
@@ -611,7 +611,7 @@ Operator::FindMatrixOp(int schema_dofs, int matching_rule, bool action)
   if (action) {
     Errors::Message msg;
     msg << "Operators: Matching rule " << matching_rule << " not found.\n";
-    Exceptions::amanzi_throw(msg);
+    throw(msg);
   }
 
   return OpEnd();
@@ -655,7 +655,7 @@ Operator::SchemaMismatch_(const std::string& schema1,
   std::stringstream err;
   err << "Schemas mismatch " << schema1 << " != " << schema2;
   Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
+  throw(message);
   return 1;
 }
 
@@ -949,7 +949,7 @@ Operator::SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
   err << "Symbolic assemble: invalid schema combination -- " << op.schema_string
       << " cannot be used with a matrix on " << schema_string_;
   Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
+  throw(message);
 }
 
 
@@ -965,7 +965,7 @@ Operator::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
   err << "Symbolic assemble: invalid schema combination -- " << op.schema_string
       << " cannot be used with a matrix on " << schema_string_;
   Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
+  throw(message);
 }
 
 
@@ -1103,7 +1103,7 @@ Operator::AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
   err << "Assemble matrix: invalid schema combination -- " << op.schema_string
       << " cannot be used with a matrix on " << schema_string_;
   Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
+  throw(message);
 }
 
 
@@ -1119,7 +1119,7 @@ Operator::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
   err << "Assemble matrix: invalid schema combination -- " << op.schema_string
       << " cannot be used with a matrix on " << schema_string_;
   Errors::Message message(err.str());
-  Exceptions::amanzi_throw(message);
+  throw(message);
 }
 
 
@@ -1145,7 +1145,7 @@ Operator::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
 // {
 //   Errors::Message msg(
 //     "Extracton fo local cell-based vector is missing for this operator");
-//   Exceptions::amanzi_throw(msg);
+//   throw(msg);
 // }
 
 
@@ -1156,7 +1156,7 @@ Operator::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
 // {
 //   Errors::Message msg(
 //     "Extracton fo local cell-based vector is missing for this operator");
-//   Exceptions::amanzi_throw(msg);
+//   throw(msg);
 // }
 
 
@@ -1167,7 +1167,7 @@ Operator::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
 // {
 //   Errors::Message msg(
 //     "Extracton fo local cell-based vector is missing for this operator");
-//   Exceptions::amanzi_throw(msg);
+//   throw(msg);
 // }
 
 
@@ -1178,7 +1178,7 @@ Operator::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
 // {
 //   Errors::Message msg(
 //     "Extracton fo local cell-based vector is missing for this operator");
-//   Exceptions::amanzi_throw(msg);
+//   throw(msg);
 // }
 
 } // namespace Operators
