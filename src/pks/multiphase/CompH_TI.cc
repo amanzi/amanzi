@@ -207,6 +207,7 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
   cvs.SetComponent("cell", AmanziMesh::CELL, 1);
   cvs.SetOwned(false);
   cvs.AddComponent("face", AmanziMesh::FACE, 1);
+  cvs.AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1);
   Teuchos::RCP<CompositeVector> s_with_face = Teuchos::rcp(new CompositeVector(cvs));
   *s_with_face->ViewComponent("cell") = *saturation_w->ViewComponent("cell");
   //DeriveFaceValuesFromCellValues(*s_with_face->ViewComponent("cell"), *s_with_face->ViewComponent("face"),
@@ -218,6 +219,8 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
   op1_preconditioner_->global_operator()->Init();
   op1_preconditioner_->Setup(Kptr, total_coef, Teuchos::null);
   op1_preconditioner_->UpdateMatrices(Teuchos::null, Teuchos::null);
+std::cout << (*total_coef->ViewComponent("face"))[0][4190] << std::endl;
+std::cout << (op1_preconditioner_->local_op()->matrices)[4190] << std::endl;
   op1_preconditioner_->ApplyBCs(true, true, true);
   // op1_preconditioner_->global_operator()->SymbolicAssembleMatrix();
   // op1_preconditioner_->global_operator()->AssembleMatrix();
@@ -237,7 +240,7 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
   // op_prec_pres_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, op1_preconditioner_->global_operator()));
   op_prec_pres_->Setup(*tmp_flux_);
   // tmp_flux_->Scale(-1.0);
-  op_prec_pres_->UpdateMatrices(tmp_flux_.ptr(), Teuchos::null);
+  op_prec_pres_->UpdateMatrices(tmp_flux_.ptr());
   op_prec_pres_->ApplyBCs(true, true, true);
 
   // create operator for accumulation term
@@ -336,7 +339,7 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
 
   //op_prec_sat_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, op3_preconditioner_->global_operator()));
   op_prec_sat_->Setup(*upwind_vn_);
-  op_prec_sat_->UpdateMatrices(adv_coef.ptr(), Teuchos::null);
+  op_prec_sat_->UpdateMatrices(adv_coef.ptr());
   op_prec_sat_->ApplyBCs(true, true, true);
   op_prec_sat_->global_operator()->Rescale(-1.0);
   //op_prec_sat_->global_operator()->SymbolicAssembleMatrix();
@@ -365,7 +368,7 @@ void CompH_PK::UpdatePreconditioner(double Tp, Teuchos::RCP<const TreeVector> u,
 
   //op_prec_rho_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, op2_preconditioner_->global_operator()));
   op_prec_rho_->Setup(*tmp_flux_);
-  op_prec_rho_->UpdateMatrices(tmp_flux_.ptr(), Teuchos::null);
+  op_prec_rho_->UpdateMatrices(tmp_flux_.ptr());
   op_prec_rho_->ApplyBCs(true, true, true);
 
   //op1_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_prec_rho_->global_operator()));

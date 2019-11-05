@@ -40,8 +40,10 @@ class MPCoeff {
   // main methods
   void Init(std::string phase_name, Teuchos::ParameterList& plist);
   void Init(std::string phase_name, Teuchos::ParameterList& plist, double Cg);
-  void Compute(const CompositeVector& p, const CompositeVector& s);
-  void Compute(const CompositeVector& s);
+  void Compute(const CompositeVector& p, const CompositeVector& s,
+               const std::vector<int>& bc_model, const std::vector<double>& bc_value);
+  void Compute(const CompositeVector& s,
+               const std::vector<int>& bc_model, const std::vector<double>& bc_value);
 
   double ValueKrel(int c, double Sw) const { return WRM_[(*map_c2mb_)[c]]->k_relative(Sw, phase_); } 
   double ValuePrimaryVar(int c, double PrimaryVar) const { return PrimaryVar; }

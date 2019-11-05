@@ -522,9 +522,6 @@ void CompW_PK::ComputeBCs()
   // all models are identical which may be not what we want
   for (int n = 0; n < bc_model_p.size(); n++) {
     bc_model_p[n] = Operators::OPERATOR_BC_NONE;
-    bc_model_s[n] = Operators::OPERATOR_BC_NONE;
-    bc_model_rhl[n] = Operators::OPERATOR_BC_NONE;
-
     bc_value_p[n] = 0.0;
     bc_value_s[n] = 0.0;
     bc_value_rhl[n] = 0.0;
@@ -544,7 +541,6 @@ void CompW_PK::ComputeBCs()
     if (bcs_[i]->bc_name() == "saturation") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
-        bc_model_s[f] = Operators::OPERATOR_BC_DIRICHLET;
         bc_value_s[f] = it->second[0];
       }
     }
@@ -552,7 +548,6 @@ void CompW_PK::ComputeBCs()
     if (bcs_[i]->bc_name() == "hydrogen density") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
-        bc_model_rhl[f] = Operators::OPERATOR_BC_DIRICHLET;
         bc_value_rhl[f] = it->second[0];
       }
     }
@@ -570,21 +565,16 @@ void CompW_PK::ComputeBCs()
       if (bc_model_p[f] == Operators::OPERATOR_BC_NONE) {
         bc_model_p[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_value_p[f] = 0.0;
-      }
-
-      if (bc_model_s[f] == Operators::OPERATOR_BC_NONE) {
-        bc_model_s[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_value_s[f] = 0.0;
-      }
-
-      if (bc_model_rhl[f] == Operators::OPERATOR_BC_NONE) {
-        bc_model_rhl[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_value_rhl[f] = 0.0;
       }
 
       missed_bc_faces_++;
     }
   }
+
+  bc_model_s = bc_model_p;
+  bc_model_rhl = bc_model_p;
 
   // verify that the algebraic problem is consistent
   #ifdef HAVE_MPI

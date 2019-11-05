@@ -428,6 +428,9 @@ void CompH_PK::InitializeComponent()
   op_prec_pres_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, op1_preconditioner_->global_operator()));
   op_prec_sat_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, op3_preconditioner_->global_operator()));
   op_prec_rho_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(olist_adv, op2_preconditioner_->global_operator()));
+  op_prec_pres_->SetBCs(op_bc_p_n_, op_bc_p_n_);
+  op_prec_sat_->SetBCs(op_bc_s_, op_bc_s_);
+  op_prec_rho_->SetBCs(op_bc_p_, op_bc_p_);
 
   // accumulation terms
   op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_prec_pres_->global_operator()));
@@ -637,9 +640,6 @@ void CompH_PK::ComputeBCs(bool stop)
 
   for (int n = 0; n < bc_model_p.size(); n++) {
     bc_model_p[n] = Operators::OPERATOR_BC_NONE;
-    bc_model_p_n[n] = Operators::OPERATOR_BC_NONE;
-    bc_model_s[n] = Operators::OPERATOR_BC_NONE;
-    bc_model_rhl[n] = Operators::OPERATOR_BC_NONE;
 
     bc_value_p[n] = 0.0;
     bc_value_p_n[n] = 0.0;
@@ -661,7 +661,6 @@ void CompH_PK::ComputeBCs(bool stop)
     if (bcs_[i]->bc_name() == "saturation") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
-        bc_model_s[f] = Operators::OPERATOR_BC_DIRICHLET;
         bc_value_s[f] = it->second[0];
       }
     }
@@ -669,7 +668,6 @@ void CompH_PK::ComputeBCs(bool stop)
     if (bcs_[i]->bc_name() == "hydrogen density") {
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
-        bc_model_rhl[f] = Operators::OPERATOR_BC_DIRICHLET;
         bc_value_rhl[f] = it->second[0];
       }
     }
@@ -699,26 +697,18 @@ void CompH_PK::ComputeBCs(bool stop)
       if (bc_model_p[f] == Operators::OPERATOR_BC_NONE) {
         bc_model_p[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_value_p[f] = 0.0;
-      }
-
-      if (bc_model_p_n[f] == Operators::OPERATOR_BC_NONE) {
-        bc_model_p_n[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_value_p_n[f] = 0.0;
-      }
-
-      if (bc_model_s[f] == Operators::OPERATOR_BC_NONE) {
-        bc_model_s[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_value_s[f] = 0.0;
-      }
-
-      if (bc_model_rhl[f] == Operators::OPERATOR_BC_NONE) {
-        bc_model_rhl[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_value_rhl[f] = 0.0;
       }
 
       missed_bc_faces_++;
     }
   }
+
+  bc_model_p_n = bc_model_p;
+  bc_model_s = bc_model_p;
+  bc_model_rhl = bc_model_p;
 
   // verify that the algebraic problem is consistent
   #ifdef HAVE_MPI

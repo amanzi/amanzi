@@ -84,8 +84,8 @@ endif()
 if (ENABLE_Physics)
   add_subdirectory(eos)
   add_subdirectory(flow)
-  add_subdirectory(navier_stokes)
   add_subdirectory(multiphase)
+  add_subdirectory(navier_stokes)
 endif()
 
 # chemistry isn't REALLY physics...

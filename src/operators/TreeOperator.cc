@@ -200,9 +200,11 @@ void TreeOperator::AssembleMatrix() {
       Teuchos::RCP<const Operator> block = blocks_[lcv_row][lcv_col];
       if (block != Teuchos::null) {
         block->AssembleMatrix(*smap_, *Amat_, lcv_row, lcv_col);
+std::cout << lcv_row << " " << lcv_col << " " << Amat_->Matrix()->NormFrobenius() << std::endl;
       }
     }
   }
+exit(0);
 
   int ierr = Amat_->FillComplete();
   AMANZI_ASSERT(!ierr);

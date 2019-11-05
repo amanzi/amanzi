@@ -86,7 +86,7 @@ void Reduced2p2c_PK::Initialize(const Teuchos::Ptr<State>& S)
   comp_h_pk_->Initialize(S_.ptr());
   gas_constraint_pk_->Initialize();
 
-  Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
+  auto cvs = Teuchos::rcp(new CompositeVectorSpace(comp_w_pk_->OpPrec1()->global_operator()->DomainMap()));
   Teuchos::RCP<TreeVectorSpace> tvs = Teuchos::rcp(new TreeVectorSpace());
   Teuchos::RCP<TreeVectorSpace> cvs_as_tvs = Teuchos::rcp(new TreeVectorSpace());
   cvs_as_tvs->SetData(cvs);
@@ -231,8 +231,6 @@ bool Reduced2p2c_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   double time_stop_injection = 1.5768e+13;
   if (state_time - time_stop_injection > 1e-10) {
-    //std::cout << "Stop injection" << endl;
-    //std::cout << "state time: " << state_time << endl;
     comp_h_pk_->ComputeBCs(true);
   }
 
@@ -317,7 +315,6 @@ void Reduced2p2c_PK::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVecto
       systg_list.set("number of inactive cells", 0);
       systg_list.set("coarse indices array", coarse_indices_array_two_level_);
     }
-    //std::cout << systg_list << "\n";
   }
 
   if (cpr_enhanced_) {

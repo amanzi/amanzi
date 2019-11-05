@@ -76,7 +76,9 @@ void MPCoeff::Init(std::string phase_name, Teuchos::ParameterList& plist, double
 /* ******************************************************************
 * Defines relative permeability ONLY for cells.
 ****************************************************************** */
-void MPCoeff::Compute(const CompositeVector& Sw)
+void MPCoeff::Compute(
+    const CompositeVector& Sw,
+    const std::vector<int>& bc_model, const std::vector<double>& bc_value)
 {
   const Epetra_MultiVector& Sw_cell = *Sw.ViewComponent("cell");
   Epetra_MultiVector& Krel_cell = *Krel_->ViewComponent("cell");
@@ -97,7 +99,7 @@ void MPCoeff::Compute(const CompositeVector& Sw)
   }
 
   // add boundary face component
-  Krel_->ViewComponent("dirichlet_faces", true)->PutScalar(1.0);
+  Krel_->ViewComponent("dirichlet_faces", true)->PutScalar(0.0);
   dKdS_->ViewComponent("dirichlet_faces", true)->PutScalar(0.0);
 }
 
@@ -105,7 +107,9 @@ void MPCoeff::Compute(const CompositeVector& Sw)
 /* ******************************************************************
 * Defines relative permeability ONLY for cells.
 ****************************************************************** */
-void MPCoeff::Compute(const CompositeVector& primary_var, const CompositeVector& Sw)
+void MPCoeff::Compute(
+    const CompositeVector& primary_var, const CompositeVector& Sw,
+    const std::vector<int>& bc_model, const std::vector<double>& bc_value)
 {
   const Epetra_MultiVector& Sw_cell = *Sw.ViewComponent("cell");
   const Epetra_MultiVector& primary_var_cell = *primary_var.ViewComponent("cell");
@@ -142,11 +146,8 @@ void MPCoeff::Compute(const CompositeVector& primary_var, const CompositeVector&
   }
 
   // add boundary face component
-  Krel_->ViewComponent("dirichlet_faces", true)->PutScalar(1.0);
+  Krel_->ViewComponent("dirichlet_faces", true)->PutScalar(0.0);
   dKdS_->ViewComponent("dirichlet_faces", true)->PutScalar(0.0);
-  mpCoeff_->ViewComponent("cell", true)->PutScalar(1.0);
-  rhoDerivKrel_->ViewComponent("cell", true)->PutScalar(0.0);
-  dPc_->ViewComponent("cell", true)->PutScalar(0.0);
 }
 
 
