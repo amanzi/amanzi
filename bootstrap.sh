@@ -897,7 +897,8 @@ function build_cmake
 # ---------------------------------------------------------------------------- #
 function ats_git_clone
 {
-    ${git_binary} submodule update --init ats
+    # have to deal with branches at some point?
+    ${git_binary} submodule update --init --remote ats
     if [$? -ne 0 ]; then
         error_message "Failed to pull submodule ATS"
         exit_now 30
@@ -1577,7 +1578,6 @@ status_message "Build Amanzi with configure file ${tpl_config_file}"
 
 # clone subrepos
 if [ "${ats}" ]; then
-    # MAYBE SOON? git_change_branch "ats-master"
     ats_git_clone
 fi
 
